@@ -6,6 +6,8 @@ import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { isEnabled } from '../../../app/flags';
 import { addChart, changeChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { calculatedColumn } from './calculated';
+import { choiceOf } from './choice';
+import { chooseValue, editChoices, filterByChoice, makeChoice } from './choiceOps';
 import {
   applyView,
   deleteView,
@@ -51,15 +53,29 @@ interface Ctx {
   inBody: boolean;
 }
 
-function filterItem({ inst, inBody }: Ctx): MenuItemSpec {
+/** The choice settings of the column with the caret, when it is one and choice columns are on. */
+function choiceHere({ inst, column }: Ctx) {
+  const id = inst.model().columnIds[column];
+  return isEnabled('tables.choice') && id !== undefined ? choiceOf(inst.smart(), id) : null;
+}
+
+function filterItem(ctx: Ctx): MenuItemSpec {
+  const { inst, inBody, column } = ctx;
+  const choice = choiceHere(ctx);
   return {
     id: 'filter',
     label: t('smart.table.filter'),
     separatorBefore: true,
     submenu: [
+      ...(choice?.options ?? []).map((option, index): MenuItemSpec => ({
+        id: `filterChoice-${index}`,
+        label: t('smart.choice.filterOnly', { name: option.name }),
+        onSelect: run(() => filterByChoice(inst, column, option.name)),
+      })),
       {
         id: 'filterEqual',
         label: t('smart.table.filterEqual'),
+        separatorBefore: choice !== null && choice.options.length > 0,
         disabled: !inBody,
         onSelect: run(() => filterBy(inst, 'equal')),
       },
@@ -140,7 +156,9 @@ function savedViewsItem({ inst }: Ctx): MenuItemSpec {
   };
 }
 
-function formatItem({ inst, column, own }: Ctx): MenuItemSpec {
+function formatItem(ctx: Ctx): MenuItemSpec {
+  const { inst, column, own } = ctx;
+  const choices = isEnabled('tables.choice');
   return {
     id: 'format',
     label: t('smart.table.format'),
@@ -159,6 +177,24 @@ function formatItem({ inst, column, own }: Ctx): MenuItemSpec {
         checked: own.type === type,
         onSelect: run(() => setFormat(inst, column, { type })),
       })),
+      ...(choices
+        ? [
+            {
+              id: 'format-choiceOne',
+              label: t('smart.choice.formatOne'),
+              kind: 'radio' as const,
+              checked: own.type === 'choice' && own.multi !== true,
+              onSelect: run(() => makeChoice(inst, column, false)),
+            },
+            {
+              id: 'format-choiceMany',
+              label: t('smart.choice.formatMany'),
+              kind: 'radio' as const,
+              checked: own.type === 'choice' && own.multi === true,
+              onSelect: run(() => makeChoice(inst, column, true)),
+            },
+          ]
+        : []),
       {
         id: 'moreDecimals',
         label: t('smart.table.moreDecimals'),
@@ -216,6 +252,19 @@ export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
       onSelect: run(() => sortColumn(inst, column, true)),
     },
     filterItem(ctx),
+    ...(choiceHere(ctx)
+      ? [
+          {
+            id: 'chooseValue',
+            label: t('smart.choice.choose'),
+            shortcut: 'Alt+Down',
+            disabled: !inBody,
+            separatorBefore: true,
+            onSelect: run(() => chooseValue(inst, column)),
+          },
+          { id: 'editChoices', label: t('smart.choice.edit'), onSelect: run(() => editChoices(inst, column)) },
+        ]
+      : []),
     ...(isEnabled('tables.savedViews') ? [savedViewsItem(ctx)] : []),
     formatItem(ctx),
     totalItem(ctx),

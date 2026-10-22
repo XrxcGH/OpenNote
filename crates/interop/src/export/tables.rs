@@ -8,10 +8,10 @@
 use std::fs;
 use std::path::Path;
 
-use opennote_core::model::{Asset, Page};
-use opennote_core::PageId;
+use opennote_core::model::{Asset, BlockData, Page};
+use opennote_core::{BlockId, PageId};
 
-use super::convert::{page_to_blocks, Resolver};
+use super::convert::{page_to_blocks_traced, Resolver};
 use super::files::{new_folder, write_file, Exported};
 use super::names::sanitize_name;
 use super::plan::{self, Scope};
@@ -40,12 +40,62 @@ impl TableFormat {
     }
 }
 
+/// The options of a column that picks one choice, which Excel can offer as a drop-down list.
+#[derive(Clone, Debug, PartialEq)]
+struct ChoiceList {
+    /// The column's place, counting from 0.
+    column: usize,
+    names: Vec<String>,
+}
+
+/// The most characters Excel allows in a list typed into a data validation.
+const MAX_LIST_CHARS: usize = 255;
+
 /// A table with its text.
 struct Table {
     /// The page's title, with a number when the page has several tables.
     name: String,
     header: bool,
     rows: Vec<Vec<String>>,
+    /// The columns that pick one of a set of choices.
+    lists: Vec<ChoiceList>,
+}
+
+/// The single-choice columns of a table block, from the `smart` data the app keeps beside its cells. A column that
+/// takes several choices has no list, because Excel's drop-down picks one. Names with a comma are left out, because the
+/// list is written with commas between names.
+fn choice_lists(page: &Page, id: Option<&BlockId>) -> Vec<ChoiceList> {
+    let Some(block) = id.and_then(|id| page.blocks.get(*id)) else {
+        return Vec::new();
+    };
+    let BlockData::Table(table) = &block.data else {
+        return Vec::new();
+    };
+    let Some(columns) = table.extra.get("smart").and_then(|smart| smart.get("columns")) else {
+        return Vec::new();
+    };
+    table
+        .columns
+        .iter()
+        .enumerate()
+        .filter_map(|(column, one)| {
+            let own = columns.get(one.id.to_string())?;
+            let single =
+                own.get("type")?.as_str()? == "choice" && own.get("multi").and_then(|m| m.as_bool()) != Some(true);
+            if !single {
+                return None;
+            }
+            let names: Vec<String> = own
+                .get("options")?
+                .as_array()?
+                .iter()
+                .filter_map(|option| option.get("name")?.as_str())
+                .filter(|name| !name.is_empty() && !name.contains(','))
+                .map(str::to_owned)
+                .collect();
+            (!names.is_empty()).then_some(ChoiceList { column, names })
+        })
+        .collect()
 }
 
 /// A resolver that keeps no pictures or links, because a table export has none.
@@ -88,13 +138,15 @@ fn collect_tables(
             title: page.title.clone(),
             ..PageReport::default()
         };
-        let blocks = page_to_blocks(&page, &mut Nothing, &mut page_report);
-        let found: Vec<(bool, Vec<Vec<String>>)> = blocks
+        let (blocks, origins) = page_to_blocks_traced(&page, &mut Nothing, &mut page_report);
+        let found: Vec<(bool, Vec<Vec<String>>, Vec<ChoiceList>)> = blocks
             .iter()
-            .filter_map(|b| match b {
+            .enumerate()
+            .filter_map(|(at, b)| match b {
                 Block::Table { header, rows } => Some((
                     *header,
                     rows.iter().map(|r| r.iter().map(|c| cell_text(c)).collect()).collect(),
+                    choice_lists(&page, origins.get(at)),
                 )),
                 _ => None,
             })
@@ -104,14 +156,28 @@ fn collect_tables(
             title: page.title.clone(),
             ..PageReport::default()
         };
-        for (n, (header, rows)) in found.into_iter().enumerate() {
+        for (n, (header, rows, lists)) in found.into_iter().enumerate() {
+            let (lists, too_long): (Vec<_>, Vec<_>) = lists
+                .into_iter()
+                .partition(|list| list.names.join(",").chars().count() <= MAX_LIST_CHARS);
+            if !too_long.is_empty() {
+                page_report.simplified(
+                    "choices of a column",
+                    "Excel's drop-down list holds 255 characters, so a column with more choices than that keeps its text only.",
+                );
+            }
             let name = if many {
                 format!("{} {}", page.title, n + 1)
             } else {
                 page.title.clone()
             };
             page_report.came_over(format!("table of {} rows", rows.len()));
-            tables.push(Table { name, header, rows });
+            tables.push(Table {
+                name,
+                header,
+                rows,
+                lists,
+            });
         }
         if !page_report.entries.is_empty() {
             page_report.simplified("text and pictures outside tables", "A table export holds only tables.");
@@ -415,8 +481,34 @@ fn sheet_xml(table: &Table) -> String {
     }
     format!(
         "{HEADER}<worksheet xmlns=\"{NS}\"><sheetViews><sheetView workbookViewId=\"0\">{freeze}</sheetView></sheetViews>\
-         <cols>{cols}</cols><sheetData>{data}</sheetData></worksheet>"
+         <cols>{cols}</cols><sheetData>{data}</sheetData>{}</worksheet>",
+        validations(table)
     )
+}
+
+/// The drop-down lists of a sheet: each single-choice column offers its options for every cell below the header.
+fn validations(table: &Table) -> String {
+    if table.lists.is_empty() {
+        return String::new();
+    }
+    let first = if table.header { 2 } else { 1 };
+    let mut out = format!("<dataValidations count=\"{}\">", table.lists.len());
+    for list in &table.lists {
+        let letters = column_letters(list.column);
+        let names = list
+            .names
+            .iter()
+            .map(|name| name.replace('"', "\"\""))
+            .collect::<Vec<_>>()
+            .join(",");
+        out.push_str(&format!(
+            "<dataValidation type=\"list\" allowBlank=\"1\" showErrorMessage=\"0\" sqref=\"{letters}{first}:{letters}1048576\">\
+             <formula1>{}</formula1></dataValidation>",
+            escape(&format!("\"{names}\""))
+        ));
+    }
+    out.push_str("</dataValidations>");
+    out
 }
 
 /// A number that Excel would keep exactly: digits with an optional sign and fraction, no leading zero, no more
@@ -494,6 +586,7 @@ mod tests {
                 vec!["Item".to_owned(), "Cost".to_owned()],
                 vec!["Pens & ink".to_owned(), "12.5".to_owned()],
             ],
+            lists: Vec::new(),
         }];
         let bytes = workbook(&tables).expect("a workbook");
         let entries = crate::docx::read_parts(&bytes);
@@ -503,5 +596,82 @@ mod tests {
             .expect("a sheet");
         let xml = String::from_utf8_lossy(&sheet.1);
         assert!(xml.contains("Pens &amp; ink") && xml.contains("<v>12.5</v>"), "{xml}");
+        assert!(!xml.contains("dataValidation"), "{xml}");
+    }
+
+    #[test]
+    fn the_choices_of_a_page_s_table_block_are_found_through_the_converted_blocks() {
+        use crate::testing::{sample_notebook, TestEnv};
+        let world = TestEnv::new();
+        let env = world.env();
+        let sample = sample_notebook(&env);
+        let mut page = sample.source.page(sample.photo).expect("the page");
+        let block = page
+            .blocks
+            .iter()
+            .find(|b| matches!(b.data, BlockData::Table(_)))
+            .cloned()
+            .expect("a table block");
+        let mut changed = (*block).clone();
+        let BlockData::Table(table) = &mut changed.data else {
+            panic!("a table");
+        };
+        let (first, second) = (table.columns[0].id.to_string(), table.columns[1].id.to_string());
+        table.extra.insert(
+            "smart".to_owned(),
+            serde_json::json!({ "columns": {
+                second: { "type": "choice", "options": [
+                    { "name": "Thylakoid", "color": "fern" },
+                    { "name": "Stroma", "color": "plum" },
+                    { "name": "A, B", "color": "ink" } ] },
+                first: { "type": "choice", "multi": true, "options": [ { "name": "X", "color": "ink" } ] }
+            } }),
+        );
+        page.blocks.replace(std::sync::Arc::new(changed)).expect("replaced");
+        let mut report = PageReport::default();
+        let (blocks, origins) = page_to_blocks_traced(&page, &mut Nothing, &mut report);
+        let at = blocks
+            .iter()
+            .position(|b| matches!(b, Block::Table { .. }))
+            .expect("a table");
+        let lists = choice_lists(&page, origins.get(at));
+        // The column that takes several has no list, and a name with a comma is left out.
+        assert_eq!(
+            lists,
+            vec![ChoiceList {
+                column: 1,
+                names: vec!["Thylakoid".to_owned(), "Stroma".to_owned()]
+            }]
+        );
+        assert!(choice_lists(&page, None).is_empty());
+    }
+
+    #[test]
+    fn a_single_choice_column_becomes_a_drop_down_list_below_the_header() {
+        let table = Table {
+            name: "Tasks".to_owned(),
+            header: true,
+            rows: vec![
+                vec!["Task".to_owned(), "Status".to_owned()],
+                vec!["Write".to_owned(), "Done".to_owned()],
+            ],
+            lists: vec![ChoiceList {
+                column: 1,
+                names: vec!["To do".to_owned(), "Say \"hi\" & go".to_owned(), "Done".to_owned()],
+            }],
+        };
+        let xml = sheet_xml(&table);
+        assert!(xml.contains("</sheetData><dataValidations count=\"1\">"), "{xml}");
+        assert!(
+            xml.contains("type=\"list\"") && xml.contains("sqref=\"B2:B1048576\""),
+            "{xml}"
+        );
+        assert!(
+            xml.contains("<formula1>&quot;To do,Say &quot;&quot;hi&quot;&quot; &amp; go,Done&quot;</formula1>"),
+            "{xml}"
+        );
+        // Without a header row the list starts at the first row.
+        let bare = Table { header: false, ..table };
+        assert!(sheet_xml(&bare).contains("sqref=\"B1:B1048576\""));
     }
 }

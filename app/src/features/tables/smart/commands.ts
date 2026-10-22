@@ -3,6 +3,7 @@
 import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { focusedSmart } from './attach';
 import { calculatedColumn } from './calculated';
+import { chooseValue, editChoices, makeChoice } from './choiceOps';
 import { addChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { applyView, saveViewAsking } from './savedViews';
 import type { FilterMode } from './ops';
@@ -18,7 +19,10 @@ export type SmartCommand =
   | { run: 'saveView' }
   | { run: 'showAllRows' }
   | { run: 'calculated' }
-  | { run: 'clearCalculated' };
+  | { run: 'clearCalculated' }
+  | { run: 'choice'; multi: boolean }
+  | { run: 'chooseValue' }
+  | { run: 'editChoices' };
 
 /** Runs a command on the table with focus. False when there is none or the command had nothing to do. */
 export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
@@ -48,5 +52,11 @@ export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
       return calculatedColumn(inst, column);
     case 'clearCalculated':
       return clearCalculated(inst, column);
+    case 'choice':
+      return makeChoice(inst, column, command.multi);
+    case 'chooseValue':
+      return chooseValue(inst, column);
+    case 'editChoices':
+      return editChoices(inst, column);
   }
 }

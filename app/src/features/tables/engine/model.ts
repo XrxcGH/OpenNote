@@ -6,7 +6,7 @@ import { parseLocaleNumber, type Locale } from './locale';
 import { round15, type Value } from './values';
 import { columnFromLetters, lettersFromColumn } from '../../../core/expr';
 
-export type ColumnType = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'checkbox';
+export type ColumnType = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'checkbox' | 'choice';
 export type TotalKind = 'sum' | 'average' | 'count' | 'min' | 'max' | 'checked';
 
 export interface Column {
@@ -21,6 +21,10 @@ export interface Column {
   /** A calculated column runs this formula, in stored form, on every row. */
   formula?: string;
   total?: TotalKind;
+  /** The names of a choice column's options, in the order the person set. */
+  options?: readonly string[];
+  /** A choice column that lets a cell hold several of its options. */
+  multi?: boolean;
 }
 
 export interface Cell {
@@ -69,6 +73,7 @@ export function parseInput(column: Column, raw: string, locale: Locale): Value {
   if (text === '') return null;
   switch (column.type) {
     case 'text':
+    case 'choice':
       return raw;
     case 'number':
     case 'currency':
@@ -86,5 +91,5 @@ export function parseInput(column: Column, raw: string, locale: Locale): Value {
 
 /** True when a typed column holds text that isn't of its type. Calculated columns never mismatch. */
 export function isMismatch(column: Column, cell: Cell): boolean {
-  return column.type !== 'text' && !column.formula && typeof cell.value === 'string';
+  return column.type !== 'text' && column.type !== 'choice' && !column.formula && typeof cell.value === 'string';
 }

@@ -6,6 +6,8 @@ import type { DragEvent, KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
 import type { Locale } from '../engine';
 import type { ViewKind, ViewSmart } from './data';
+import type { SmartData } from './data';
+import { choiceOf } from './choice';
 import { VIEW_KINDS } from './data';
 import type { SmartModel } from './model';
 import styles from './views.module.css';
@@ -17,6 +19,7 @@ import {
   defaultColumns,
   lanesOf,
   monthOf,
+  movedText,
   monthWeeks,
   neighborLane,
   rowsByDay,
@@ -26,6 +29,7 @@ import type { Month } from './viewLogic';
 
 export interface ViewsProps {
   model: SmartModel;
+  smart: SmartData;
   locale: Locale;
   view: ViewSmart | undefined;
   choose(view: ViewSmart | null): void;
@@ -92,10 +96,14 @@ interface CardProps {
   title: number;
   onKey?(event: KeyboardEvent): void;
   extra?: readonly number[];
+  /** The lane the card is in, for a drag to say where it came from. */
+  lane?: string;
   children?: React.ReactNode;
 }
 
-function Card({ props, row, title, onKey, extra = [], children }: CardProps) {
+const LANE_TYPE = 'application/x-opennote-lane';
+
+function Card({ props, row, title, onKey, extra = [], lane, children }: CardProps) {
   const name = cellText(props.model, row, title, props.locale) || t('smart.views.untitled');
   return (
     <div className={styles.card}>
@@ -104,7 +112,10 @@ function Card({ props, row, title, onKey, extra = [], children }: CardProps) {
         className={styles.cardButton}
         draggable
         aria-label={name}
-        onDragStart={(event: DragEvent) => event.dataTransfer.setData('text/plain', String(row))}
+        onDragStart={(event: DragEvent) => {
+          event.dataTransfer.setData('text/plain', String(row));
+          if (lane !== undefined) event.dataTransfer.setData(LANE_TYPE, lane);
+        }}
         onKeyDown={onKey}
       >
         <strong>{name}</strong>
@@ -123,14 +134,17 @@ function Card({ props, row, title, onKey, extra = [], children }: CardProps) {
 }
 
 const rowOf = (event: DragEvent): number => Number(event.dataTransfer.getData('text/plain'));
+const laneOf = (event: DragEvent): string => event.dataTransfer.getData(LANE_TYPE);
 
 function Board(props: ViewsProps) {
   const title = columnOf(props, 'title') ?? 0;
   const group = columnOf(props, 'group');
   if (group === null) return <p className={styles.note}>{t('smart.views.needGroup')}</p>;
-  const lanes = lanesOf(props.model, group, props.locale);
-  const move = async (row: number, value: string) => {
-    if (await props.setCell(row, group, value)) {
+  const choice = choiceOf(props.smart, props.model.columnIds[group]);
+  const lanes = lanesOf(props.model, group, props.locale, choice);
+  const move = async (row: number, value: string, from: string) => {
+    const text = movedText(choice, props.model.table.rows[row]?.cells[group]?.raw ?? '', from, value);
+    if (await props.setCell(row, group, text)) {
       props.announce(
         t('smart.views.movedLane', {
           card: cellText(props.model, row, title, props.locale),
@@ -153,10 +167,10 @@ function Board(props: ViewsProps) {
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault();
-            void move(rowOf(event), lane.value);
+            void move(rowOf(event), lane.value, laneOf(event));
           }}
         >
-          <h4 className={styles.laneTitle}>
+          <h4 className={styles.laneTitle} data-color={lane.color}>
             {lane.value || t('smart.views.noValue')} <span className={styles.count}>{lane.rows.length}</span>
           </h4>
           {lane.rows.map((row) => (
@@ -165,20 +179,21 @@ function Board(props: ViewsProps) {
               props={props}
               row={row}
               title={title}
+              lane={lane.value}
               extra={others}
               onKey={(event) => {
                 const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
                 if (!event.altKey || step === 0) return;
                 event.preventDefault();
                 const next = neighborLane(lanes, lane.value, step);
-                if (next) void move(row, next.value);
+                if (next) void move(row, next.value, lane.value);
               }}
             >
               <select
                 className={styles.move}
                 aria-label={t('smart.views.moveTo', { card: cellText(props.model, row, title, props.locale) })}
                 value={lane.value}
-                onChange={(event) => void move(row, event.target.value)}
+                onChange={(event) => void move(row, event.target.value, lane.value)}
               >
                 {lanes.map((one) => (
                   <option key={one.value || 'none'} value={one.value}>

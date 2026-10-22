@@ -10,6 +10,8 @@ import type { EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Locale } from '../engine';
 import type { SmartData } from './data';
+import { choiceOf, readCell } from './choice';
+import type { ChoiceInfo } from './choice';
 import { shownFor } from './model';
 import type { Grid, SmartModel } from './model';
 import styles from './smart.module.css';
@@ -32,6 +34,38 @@ export function gridTexts(doc: PMNode): string[][] {
 export function gridOf(doc: PMNode, header: boolean, columnIds: readonly string[]): Grid {
   const texts = gridTexts(doc).map((row) => columnIds.map((_, c) => row[c] ?? ''));
   return { header, columnIds, texts };
+}
+
+/**
+ * Inline decorations that draw each option a choice cell names as a colored chip, and mark text that no option has.
+ * The text stays the cell's own, so the caret, selection, and screen readers read the words.
+ */
+function chipDecorations(cell: PMNode, from: number, info: ChoiceInfo): Decoration[] {
+  const paragraph = cell.childCount === 1 ? cell.firstChild : null;
+  if (!paragraph || paragraph.childCount > 1 || (paragraph.firstChild && !paragraph.firstChild.isText)) return [];
+  const text = paragraph.textContent;
+  const base = from + 2;
+  const names = readCell(info, text);
+  const spans: { start: number; end: number }[] = [];
+  if (info.multi) {
+    for (const match of text.matchAll(/[^,]+/g)) {
+      const word = match[0].trim();
+      if (word === '') continue;
+      const start = match.index + match[0].indexOf(word);
+      spans.push({ start, end: start + word.length });
+    }
+  } else if (text.trim() !== '') {
+    const start = text.length - text.trimStart().length;
+    spans.push({ start, end: start + text.trim().length });
+  }
+  return spans.flatMap((span, index) => {
+    const found = names[index];
+    if (!found) return [];
+    const attrs = found.option
+      ? { class: styles.chip, 'data-chip': found.option.color }
+      : { class: `${styles.chip} ${styles.chipUnknown}`, 'data-chip': 'unknown' };
+    return [Decoration.inline(base + span.start, base + span.end, attrs, { kind: 'chip' })];
+  });
 }
 
 const KIND_CLASS = { number: styles.number, error: styles.error, text: styles.text } as const;
@@ -57,9 +91,11 @@ export function buildDecorations(
       return;
     }
     row.forEach((cell, cellOffset, c) => {
+      const from = rowFrom + 1 + cellOffset;
+      const choice = choiceOf(smart, model.columnIds[c]);
+      if (choice) found.push(...chipDecorations(cell, from, choice));
       const shown = shownFor(model, smart, dataRow, c, locale);
       if (!shown) return;
-      const from = rowFrom + 1 + cellOffset;
       found.push(
         Decoration.node(
           from,

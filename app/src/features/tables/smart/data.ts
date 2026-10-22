@@ -2,7 +2,18 @@
 // format passes through untouched, so older readers still see an ordinary table. Cells keep their text as typed,
 // so a formula is the cell's text ("=B2*C2") and every other reader sees it. Columns, filters, and charts name
 // columns by ID, so adding or moving a column never changes what they mean.
+import { MAX_CHOICES, cleanChoiceName } from '../engine';
 import type { Aggregate, ChartKind, ColumnType, FilterOp, TotalKind } from '../engine';
+
+/** The colors an option can have, named for the brand's pens (theme/tokens.css), so they follow the theme. */
+export const CHOICE_COLORS = ['indigo', 'amber', 'ink', 'fern', 'brick', 'walnut', 'plum'] as const;
+export type ChoiceColor = (typeof CHOICE_COLORS)[number];
+
+/** One option of a choice column: its name, which is the text a cell keeps, and its color. */
+export interface ChoiceOption {
+  name: string;
+  color: ChoiceColor;
+}
 
 export interface ColumnSmart {
   /** A type picked by the person. Without one, the table reads the cells and decides. */
@@ -14,6 +25,10 @@ export interface ColumnSmart {
   total?: TotalKind;
   /** The values a choice column offers, such as the options of a Notion select an import brought in. */
   choices?: string[];
+  /** The options of a choice column, in the order the person set. Names are unique without regard to case. */
+  options?: ChoiceOption[];
+  /** A choice column whose cells may hold several options, written as names joined by a comma and a space. */
+  multi?: boolean;
 }
 
 export interface FilterSmart {
@@ -92,10 +107,29 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 const text = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
 
-const TYPES: readonly ColumnType[] = ['text', 'number', 'currency', 'percent', 'date', 'checkbox'];
+const TYPES: readonly ColumnType[] = ['text', 'number', 'currency', 'percent', 'date', 'checkbox', 'choice'];
 const TOTALS: readonly TotalKind[] = ['sum', 'average', 'count', 'min', 'max', 'checked'];
 const KINDS: readonly ChartKind[] = ['bar', 'line', 'area', 'pie', 'scatter'];
 const AGGREGATES: readonly Aggregate[] = ['none', 'sum', 'average', 'count', 'min', 'max'];
+
+/** The options a stored list means: named, with a color from the set, no repeats, at most MAX_CHOICES. */
+export function readOptions(raw: unknown): ChoiceOption[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: ChoiceOption[] = [];
+  for (const value of raw) {
+    if (!isRecord(value) || typeof value.name !== 'string') continue;
+    const name = cleanChoiceName(value.name);
+    if (name === '' || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    const color = CHOICE_COLORS.includes(value.color as ChoiceColor)
+      ? (value.color as ChoiceColor)
+      : CHOICE_COLORS[out.length % CHOICE_COLORS.length];
+    out.push({ name, color });
+    if (out.length >= MAX_CHOICES) break;
+  }
+  return out;
+}
 
 function readColumn(raw: unknown): ColumnSmart {
   const fields = isRecord(raw) ? raw : {};
@@ -106,6 +140,9 @@ function readColumn(raw: unknown): ColumnSmart {
   }
   if (typeof fields.currency === 'string' && /^[A-Z]{3}$/.test(fields.currency)) out.currency = fields.currency;
   if (TOTALS.includes(fields.total as TotalKind)) out.total = fields.total as TotalKind;
+  const options = readOptions(fields.options);
+  if (options.length > 0) out.options = options;
+  if (fields.multi === true) out.multi = true;
   if (Array.isArray(fields.choices)) {
     const choices = fields.choices.filter((value): value is string => typeof value === 'string').slice(0, 50);
     if (choices.length > 0) out.choices = choices.map((value) => value.slice(0, 200));

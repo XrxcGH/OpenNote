@@ -5,6 +5,9 @@
 import { formatValue, isError } from '../engine';
 import { daysToIso, daysToYmd, ymdToDays } from '../engine/dates';
 import type { Locale } from '../engine';
+import { readCell, rewrite } from './choice';
+import type { ChoiceInfo } from './choice';
+import type { ChoiceColor } from './data';
 import type { SmartModel } from './model';
 
 export { VIEW_KINDS } from './data';
@@ -39,23 +42,33 @@ export function defaultColumns(model: SmartModel): Defaults {
     0,
     columns.findIndex((column) => column.type === 'text'),
   );
+  // A choice column is made to sort cards into lanes, so it comes first.
+  const choice = columns.findIndex((column) => column.type === 'choice' && (column.options?.length ?? 0) > 0);
   const dates = columns.flatMap((column, index) => (column.type === 'date' ? [index] : []));
   const group = columns.findIndex((column, index) => {
     if (index === title || column.type !== 'text') return false;
     const values = new Set(rows.map((row) => row.cells[index]?.raw.trim()).filter(Boolean));
     return values.size > 0 && values.size <= 12 && values.size < rows.length;
   });
-  return { title, group: group < 0 ? null : group, date: dates[0] ?? null, end: dates[1] ?? null };
+  return {
+    title,
+    group: choice >= 0 ? choice : group < 0 ? null : group,
+    date: dates[0] ?? null,
+    end: dates[1] ?? null,
+  };
 }
 
 export interface Lane {
   /** The cell text that puts a card in this lane. Empty for the lane of cards with nothing. */
   value: string;
   rows: number[];
+  /** The color of the option the lane is for, in a choice column. */
+  color?: ChoiceColor;
 }
 
 /** The lanes of a board, in the order their values first appear, with a last lane for rows with no value. */
-export function lanesOf(model: SmartModel, group: number, locale: Locale): Lane[] {
+export function lanesOf(model: SmartModel, group: number, locale: Locale, choice?: ChoiceInfo | null): Lane[] {
+  if (choice) return choiceLanes(model, group, choice);
   const lanes = new Map<string, number[]>();
   for (const row of model.shown) {
     const value = cellText(model, row, group, locale);
@@ -63,6 +76,39 @@ export function lanesOf(model: SmartModel, group: number, locale: Locale): Lane[
   }
   const named = [...lanes.entries()].filter(([value]) => value !== '').map(([value, rows]) => ({ value, rows }));
   return [...named, { value: '', rows: lanes.get('') ?? [] }];
+}
+
+/**
+ * The lanes of a board over a choice column: one for each option, in the order the person set them and even when
+ * empty, then one for each text no option has, then the lane of cards with no value. A card whose cell holds several
+ * options is in the lane of each.
+ */
+function choiceLanes(model: SmartModel, group: number, info: ChoiceInfo): Lane[] {
+  const lanes: Lane[] = info.options.map((option) => ({ value: option.name, rows: [], color: option.color }));
+  const unknown: Lane[] = [];
+  const none: Lane = { value: '', rows: [] };
+  for (const row of model.shown) {
+    const found = readCell(info, model.table.rows[row]?.cells[group]?.raw ?? '');
+    if (found.length === 0) none.rows.push(row);
+    for (const { name, option } of found) {
+      const lane = option
+        ? lanes[info.options.indexOf(option)]
+        : (unknown.find((one) => one.value.toLowerCase() === name.toLowerCase()) ??
+          unknown[unknown.push({ value: name, rows: [] }) - 1]);
+      if (!lane.rows.includes(row)) lane.rows.push(row);
+    }
+  }
+  return [...lanes, ...unknown, none];
+}
+
+/**
+ * The cell text after a card moves from one lane to another. A column that takes several options swaps the lane's
+ * option for the new one and keeps the card's other options; any other column just takes the new value.
+ */
+export function movedText(info: ChoiceInfo | null, text: string, from: string, to: string): string {
+  if (!info?.multi) return to;
+  if (from === '') return to === '' ? text : rewrite(info, `${text},${to}`, (name) => name);
+  return rewrite(info, text, (name) => (name.toLowerCase() === from.toLowerCase() ? (to === '' ? null : to) : name));
 }
 
 /** The lane a card moves to when it goes one lane left or right, or null at the edge. */

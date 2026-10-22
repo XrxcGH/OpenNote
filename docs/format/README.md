@@ -782,6 +782,15 @@ In a table block, `columns` is a list of `{id, width}` objects, and `rows` is a 
 }
 ```
 
+A smart table keeps what it adds beside its cells in the table block's `data.smart`, a key a reader that does not know it passes through unchanged. Its `columns` object maps a column ID to that column's settings (`type`, `decimals`, `currency`, `total`). A column with `"type": "choice"` also has these fields, both optional:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `options` | list | The choices, in the order the person set them. Each is `{name, color}`: `name` is one line of up to 60 characters with no comma, unique without regard to case, and `color` is one of `indigo`, `amber`, `ink`, `fern`, `brick`, `walnut`, or `plum`. At most 50 |
+| `multi` | boolean | `true` when a cell may hold several choices. Defaults to `false` |
+
+A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0047](../adr/0047-choice-columns.md).
+
 ### 6.4 Reserved and extension types
 
 These type names are reserved for later versions: `chart`, `math`, `graph`, `embed`, `audio`, `pdf`, `card`, `break`, `shape`, and `group`. Nobody else may use them.

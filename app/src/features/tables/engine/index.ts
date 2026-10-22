@@ -1,6 +1,16 @@
 // The smart-table engine: pure TypeScript with no React or DOM, so it runs in Node tests and a worker.
 // The feature's UI reaches it through features/tables/index.ts once the Phase 2 shell and the Phase 3 core land.
 
+export {
+  CHOICE_SEPARATOR,
+  MAX_CHOICES,
+  MAX_CHOICE_NAME,
+  choiceIndex,
+  choiceRank,
+  cleanChoiceName,
+  joinChoices,
+  splitChoices,
+} from './choice';
 export { toCanonical, parseCanonical } from './canonical';
 export { daysToIso, excelSerialToDays, parseDate, parseIsoDate, todayDays } from './dates';
 export {

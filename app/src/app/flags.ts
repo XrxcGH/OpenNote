@@ -119,6 +119,7 @@ type ToolsQolFlagId =
   | 'tables.calculated'
   | 'tables.views'
   | 'tables.savedViews'
+  | 'tables.choice'
   | 'tables.chartTable'
   | 'math.quickMath'
   | 'math.notes'
