@@ -79,6 +79,11 @@
     gap: var(--space-3);
   }
 
+  .buttons [aria-pressed='true'] {
+    color: var(--color-text-primary);
+    background: var(--color-surface-selected);
+  }
+
   .check,
   .field {
     display: inline-flex;

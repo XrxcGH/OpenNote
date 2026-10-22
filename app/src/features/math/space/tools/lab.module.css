@@ -43,6 +43,7 @@
   .fields {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    align-items: start;
     gap: var(--space-3);
   }
 
@@ -54,6 +55,9 @@
 
   .number input,
   .select select {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
     min-block-size: var(--size-target-pointer);
     padding: var(--space-1) var(--space-2);
     font-family: var(--font-mono);
