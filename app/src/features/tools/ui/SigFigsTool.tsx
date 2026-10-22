@@ -52,7 +52,7 @@ function readSaved(): Saved {
   };
 }
 
-export function SigFigsTool() {
+function useSigFigs() {
   const [state, setState] = useState<Saved>(readSaved);
   // A number selected on the page is sent here, also while this window is open.
   useEffect(() => {
@@ -64,10 +64,6 @@ export function SigFigsTool() {
     setState(next);
     saveStored(STORE, next);
   };
-  const counted = countFigures(state.input);
-  const shaped = shapeNumber(state.input, state.figures, state.notation);
-  const result = state.sum.trim() === '' ? null : sigFigCalculate(state.sum);
-
   const put = (text: string) => {
     const ok = insertIntoPage({ text });
     announce(ok ? t('science.sigfigs.inserted', { text }) : t('science.sigfigs.noPage'));
@@ -80,9 +76,32 @@ export function SigFigsTool() {
       announce(t('science.sigfigs.noPage'));
     }
   };
+  return { state, update, put, copy };
+}
 
+type Sig = ReturnType<typeof useSigFigs>;
+
+function CountResult({ input, counted }: { input: string; counted: ReturnType<typeof countFigures> }) {
   return (
-    <div className={styles.tool}>
+    <div className={science.result} role="status">
+      {input.trim() === '' ? null : counted === null ? (
+        <span className={styles.problem}>{t('science.sigfigs.notNumber')}</span>
+      ) : (
+        <>
+          <span className={science.big}>{t('science.sigfigs.count', { count: counted.figures })}</span>
+          {counted.ambiguous ? <span>{t('science.sigfigs.ambiguous', { example: counted.scientific })}</span> : null}
+        </>
+      )}
+    </div>
+  );
+}
+
+function RoundSection({ sig }: { sig: Sig }) {
+  const { state, update, put, copy } = sig;
+  const counted = countFigures(state.input);
+  const shaped = shapeNumber(state.input, state.figures, state.notation);
+  return (
+    <>
       <label className={extra.field}>
         {t('science.sigfigs.number')}
         <input
@@ -98,16 +117,7 @@ export function SigFigsTool() {
       <p id="sigfigs-number-help" className={styles.note}>
         {t('science.sigfigs.numberHelp')}
       </p>
-      <div className={science.result} role="status">
-        {state.input.trim() === '' ? null : counted === null ? (
-          <span className={styles.problem}>{t('science.sigfigs.notNumber')}</span>
-        ) : (
-          <>
-            <span className={science.big}>{t('science.sigfigs.count', { count: counted.figures })}</span>
-            {counted.ambiguous ? <span>{t('science.sigfigs.ambiguous', { example: counted.scientific })}</span> : null}
-          </>
-        )}
-      </div>
+      <CountResult input={state.input} counted={counted} />
       <label className={extra.field}>
         {t('science.sigfigs.roundTo')}
         <input
@@ -149,7 +159,15 @@ export function SigFigsTool() {
           {t('science.sigfigs.copy')}
         </Button>
       </div>
+    </>
+  );
+}
 
+function CalculateSection({ sig }: { sig: Sig }) {
+  const { state, update, put } = sig;
+  const result = state.sum.trim() === '' ? null : sigFigCalculate(state.sum);
+  return (
+    <>
       <label className={extra.field}>
         {t('science.sigfigs.calculate')}
         <input
@@ -181,6 +199,16 @@ export function SigFigsTool() {
           {t('science.sigfigs.insert')}
         </Button>
       </div>
+    </>
+  );
+}
+
+export function SigFigsTool() {
+  const sig = useSigFigs();
+  return (
+    <div className={styles.tool}>
+      <RoundSection sig={sig} />
+      <CalculateSection sig={sig} />
     </div>
   );
 }

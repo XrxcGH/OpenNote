@@ -39,7 +39,8 @@ export const science = {
     liveName: 'In Math with variables and units, and in the calculator, write {name}.',
     noLiveName: 'This constant has no short name in the calculator.',
     source:
-      'Values are the 2022 CODATA recommended values, in SI units. The digits in brackets are the standard uncertainty in the last digits. Exact values have none.',
+      'Values are the 2022 CODATA recommended values, in SI units. The digits in brackets are the standard ' +
+      'uncertainty in the last digits. Exact values have none.',
     copy: 'Copy value',
     copyOne: 'Copy the value of {name}',
     copied: 'Copied the value of {name}.',

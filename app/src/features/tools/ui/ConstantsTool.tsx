@@ -46,14 +46,16 @@ const PART_ARIA = {
   both: 'science.constants.insertBoth',
 } as const;
 
-export function ConstantsTool() {
-  const [saved, setSaved] = useState<Saved>(() => {
-    const stored = loadStored<Partial<Saved>>(STORE, {});
-    return {
-      as: stored.as === 'equation' ? 'equation' : 'text',
-      group: GROUPS.includes(stored.group as ConstantGroup) ? (stored.group as Saved['group']) : 'all',
-    };
-  });
+function loadSaved(): Saved {
+  const stored = loadStored<Partial<Saved>>(STORE, {});
+  return {
+    as: stored.as === 'equation' ? 'equation' : 'text',
+    group: GROUPS.includes(stored.group as ConstantGroup) ? (stored.group as Saved['group']) : 'all',
+  };
+}
+
+function useConstants() {
+  const [saved, setSaved] = useState<Saved>(loadSaved);
   const [query, setQuery] = useState('');
   const update = (next: Saved) => {
     setSaved(next);
@@ -63,7 +65,6 @@ export function ConstantsTool() {
     () => searchCodata(query, saved.group === 'all' ? CODATA : CODATA.filter((one) => one.group === saved.group)),
     [query, saved.group],
   );
-
   const insert = (one: Codata, part: InsertPart) => {
     const ok = insertConstant(one, part, saved.as);
     announce(ok ? t('science.constants.inserted', { name: one.name }) : t('science.constants.noPage'));
@@ -76,42 +77,124 @@ export function ConstantsTool() {
       announce(t('science.constants.noPage'));
     }
   };
+  return { saved, query, setQuery, update, shown, insert, copy };
+}
 
+function Controls({ saved, update }: { saved: Saved; update: (next: Saved) => void }) {
+  return (
+    <div className={science.row}>
+      <label className={extra.field}>
+        {t('science.constants.groupLabel')}
+        <select
+          className={extra.input}
+          value={saved.group}
+          onChange={(event) => update({ ...saved, group: event.target.value as Saved['group'] })}
+        >
+          {GROUPS.map((one) => (
+            <option key={one} value={one}>
+              {t(`science.constants.groups.${one}`)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div role="group" aria-label={t('science.constants.as')} className={science.choice}>
+        <span className={science.choiceLabel} aria-hidden="true">
+          {t('science.constants.as')}
+        </span>
+        {(['text', 'equation'] as const).map((one) => (
+          <button
+            key={one}
+            type="button"
+            className={science.toggle}
+            aria-pressed={saved.as === one}
+            onClick={() => update({ ...saved, as: one })}
+          >
+            {t(one === 'text' ? 'science.constants.asText' : 'science.constants.asEquation')}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface RowProps {
+  one: Codata;
+  insert: (one: Codata, part: InsertPart) => void;
+  copy: (one: Codata) => Promise<void>;
+}
+
+function ConstantRow({ one, insert, copy }: RowProps) {
+  return (
+    <tr>
+      <th scope="row" className={science.name}>
+        {one.name}
+        <span className={science.sub}>
+          {one.unc === ''
+            ? t('science.constants.exact')
+            : t('science.constants.uncertainty', { value: codataUncertainty(one).toExponential(1) })}
+          {one.calc === '' ? '' : ` · ${t('science.constants.liveName', { name: one.calc })}`}
+        </span>
+      </th>
+      <td className={science.symbol}>{one.symbol}</td>
+      <td className={science.value}>
+        {codataText(one)}
+        {one.unit === '' ? '' : ` ${one.unit}`}
+      </td>
+      <td>
+        <span className={science.buttons}>
+          {PARTS.map((part) => (
+            <Button
+              key={part}
+              variant="quiet"
+              aria-label={t(PART_ARIA[part], { name: one.name })}
+              onClick={() => insert(one, part)}
+            >
+              {t(PART_LABEL[part])}
+            </Button>
+          ))}
+          <Button
+            variant="quiet"
+            aria-label={t('science.constants.copyOne', { name: one.name })}
+            onClick={() => void copy(one)}
+          >
+            {t('science.constants.copy')}
+          </Button>
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+function ConstantsTable({ shown, insert, copy }: { shown: readonly Codata[] } & Omit<RowProps, 'one'>) {
+  return (
+    <div className={extra.scroll}>
+      <table className={extra.table} aria-label={t('science.constants.list')}>
+        <thead>
+          <tr>
+            <th scope="col">{t('science.constants.name')}</th>
+            <th scope="col">{t('science.constants.symbol')}</th>
+            <th scope="col">{t('science.constants.value')}</th>
+            <th scope="col">
+              <span className={extra.hidden}>{t('science.constants.as')}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {shown.map((one) => (
+            <ConstantRow key={one.id} one={one} insert={insert} copy={copy} />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function ConstantsTool() {
+  const { saved, query, setQuery, update, shown, insert, copy } = useConstants();
   return (
     <div className={styles.tool}>
       <TextField label={t('science.constants.search')} value={query} onChange={setQuery} />
-      <div className={science.row}>
-        <label className={extra.field}>
-          {t('science.constants.groupLabel')}
-          <select
-            className={extra.input}
-            value={saved.group}
-            onChange={(event) => update({ ...saved, group: event.target.value as Saved['group'] })}
-          >
-            {GROUPS.map((one) => (
-              <option key={one} value={one}>
-                {t(`science.constants.groups.${one}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div role="group" aria-label={t('science.constants.as')} className={science.choice}>
-          <span className={science.choiceLabel} aria-hidden="true">
-            {t('science.constants.as')}
-          </span>
-          {(['text', 'equation'] as const).map((one) => (
-            <button
-              key={one}
-              type="button"
-              className={science.toggle}
-              aria-pressed={saved.as === one}
-              onClick={() => update({ ...saved, as: one })}
-            >
-              {t(one === 'text' ? 'science.constants.asText' : 'science.constants.asEquation')}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Controls saved={saved} update={update} />
       <p className={styles.note} role="status">
         {t('science.constants.count', { count: shown.length })}
       </p>
@@ -120,61 +203,7 @@ export function ConstantsTool() {
           {t('science.constants.noMatch', { query: query.trim() })}
         </p>
       ) : null}
-      <div className={extra.scroll}>
-        <table className={extra.table} aria-label={t('science.constants.list')}>
-          <thead>
-            <tr>
-              <th scope="col">{t('science.constants.name')}</th>
-              <th scope="col">{t('science.constants.symbol')}</th>
-              <th scope="col">{t('science.constants.value')}</th>
-              <th scope="col">
-                <span className={extra.hidden}>{t('science.constants.as')}</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((one) => (
-              <tr key={one.id}>
-                <th scope="row" className={science.name}>
-                  {one.name}
-                  <span className={science.sub}>
-                    {one.unc === ''
-                      ? t('science.constants.exact')
-                      : t('science.constants.uncertainty', { value: codataUncertainty(one).toExponential(1) })}
-                    {one.calc === '' ? '' : ` · ${t('science.constants.liveName', { name: one.calc })}`}
-                  </span>
-                </th>
-                <td className={science.symbol}>{one.symbol}</td>
-                <td className={science.value}>
-                  {codataText(one)}
-                  {one.unit === '' ? '' : ` ${one.unit}`}
-                </td>
-                <td>
-                  <span className={science.buttons}>
-                    {PARTS.map((part) => (
-                      <Button
-                        key={part}
-                        variant="quiet"
-                        aria-label={t(PART_ARIA[part], { name: one.name })}
-                        onClick={() => insert(one, part)}
-                      >
-                        {t(PART_LABEL[part])}
-                      </Button>
-                    ))}
-                    <Button
-                      variant="quiet"
-                      aria-label={t('science.constants.copyOne', { name: one.name })}
-                      onClick={() => void copy(one)}
-                    >
-                      {t('science.constants.copy')}
-                    </Button>
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ConstantsTable shown={shown} insert={insert} copy={copy} />
       <p className={styles.note}>{t('science.constants.source')}</p>
     </div>
   );

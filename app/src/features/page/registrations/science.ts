@@ -96,7 +96,7 @@ async function selectedNumber(): Promise<string | null> {
 const looksNumeric = (): boolean => /^[+\-−]?[\d.,\s]*\d[\d.,\seE×x^+\-−·*()⁰¹²³⁴⁵⁶⁷⁸⁹⁻]*$/.test(selectedText());
 
 add({
-  id: 'insert.latex',
+  id: 'tools.latex',
   title: 'science.latex.open',
   keywords: 'science.latex.keywords',
   icon: 'Function',

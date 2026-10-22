@@ -3,7 +3,7 @@
 // runs on the same expression engine as table formulas and the grapher, so results match. History stays on this
 // device and can be cleared. "Insert into page" hands the answer, or the graph, to the page that is open.
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import { t } from '../../../strings/t';
 import { isEnabled } from '../../../app/flags';
 import { Button, Switch, announce } from '../../../ui';
@@ -98,7 +98,7 @@ export function CalculatorTool() {
   );
 }
 
-function Scientific() {
+function useScientific() {
   const [session, setSession] = useState<CalcSession>(() => restoreSession(loadStored(STORE, null)));
   const [input, setInput] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
@@ -112,30 +112,28 @@ function Scientific() {
     setSession(next);
     saveStored(STORE, next);
   };
+  const runConversion = (source: string, converted: NonNullable<ReturnType<typeof convertText>>) => {
+    if (!converted.ok) return setProblem(t('smart.tools.calculator.convertFailed'));
+    const unit = parseConversion(source)?.to.trim() ?? '';
+    const text = unit === '' ? formatNumber(converted.value) : `${formatNumber(converted.value)} ${unit}`;
+    keep(recordConversion(session, source, converted.value, unit));
+    setAnswer({ text, note: t('smart.tools.calculator.converted', { input: source, value: text }) });
+    setProblem('');
+  };
   const run = () => {
     const source = input.trim();
     if (source === '') return;
     const converted = convertText(source);
-    if (converted) {
-      if (converted.ok) {
-        const unit = parseConversion(source)?.to.trim() ?? '';
-        const text = unit === '' ? formatNumber(converted.value) : `${formatNumber(converted.value)} ${unit}`;
-        keep(recordConversion(session, source, converted.value, unit));
-        setAnswer({ text, note: t('smart.tools.calculator.converted', { input: source, value: text }) });
-        setProblem('');
-      } else setProblem(t('smart.tools.calculator.convertFailed'));
-      return;
-    }
+    if (converted) return runConversion(source, converted);
     const done = submit(session, source.replace(/−/g, '-'));
-    if (done.result.ok) {
-      keep(done.session);
-      const figured = sig ? sigFigCalculate(source.replace(/−/g, '-')) : null;
-      setAnswer(
-        figured?.ok ? { text: figured.text, rule: ruleText(figured) } : { text: formatNumber(done.result.value) },
-      );
-      setProblem('');
-      setInput('');
-    } else setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
+    if (!done.result.ok) return setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
+    keep(done.session);
+    const figured = sig ? sigFigCalculate(source.replace(/−/g, '-')) : null;
+    setAnswer(
+      figured?.ok ? { text: figured.text, rule: ruleText(figured) } : { text: formatNumber(done.result.value) },
+    );
+    setProblem('');
+    setInput('');
   };
   const type = (piece: string) => {
     const element = field.current;
@@ -147,6 +145,45 @@ function Scientific() {
       element?.setSelectionRange(start + piece.length, start + piece.length);
     });
   };
+  return { session, input, setInput, answer, problem, sig, field, keep, run, type };
+}
+
+interface EntryProps {
+  field: RefObject<HTMLInputElement | null>;
+  input: string;
+  problem: string;
+  onInput(value: string): void;
+  onRun(): void;
+}
+
+function Entry({ field, input, problem, onInput, onRun }: EntryProps) {
+  return (
+    <div className={styles.entry}>
+      <label className={styles.field}>
+        <span>{t('smart.tools.calculator.expression')}</span>
+        <input
+          ref={field}
+          className={styles.expression}
+          value={input}
+          placeholder={t('smart.tools.calculator.placeholder')}
+          spellCheck={false}
+          autoComplete="off"
+          aria-invalid={problem ? true : undefined}
+          aria-describedby="calc-result"
+          onChange={(event) => onInput(event.target.value)}
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) onRun();
+          }}
+        />
+      </label>
+      <Button variant="primary" onClick={onRun}>
+        {t('smart.tools.calculator.calculate')}
+      </Button>
+    </div>
+  );
+}
+
+function AnswerBlock({ answer, problem }: { answer: Answer | null; problem: string }) {
   const copy = () => {
     if (!answer) return;
     void navigator.clipboard?.writeText(answer.text).then(
@@ -156,28 +193,6 @@ function Scientific() {
   };
   return (
     <>
-      <div className={styles.entry}>
-        <label className={styles.field}>
-          <span>{t('smart.tools.calculator.expression')}</span>
-          <input
-            ref={field}
-            className={styles.expression}
-            value={input}
-            placeholder={t('smart.tools.calculator.placeholder')}
-            spellCheck={false}
-            autoComplete="off"
-            aria-invalid={problem ? true : undefined}
-            aria-describedby="calc-result"
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === 'Enter' && !event.nativeEvent.isComposing) run();
-            }}
-          />
-        </label>
-        <Button variant="primary" onClick={run}>
-          {t('smart.tools.calculator.calculate')}
-        </Button>
-      </div>
       <div id="calc-result" className={styles.result} role="status">
         {problem ? (
           <span className={styles.problem}>{problem}</span>
@@ -186,16 +201,6 @@ function Scientific() {
         ) : null}
       </div>
       {answer?.rule ? <p className={styles.note}>{answer.rule}</p> : null}
-      {isEnabled('tools.sigfigs') ? (
-        <Switch
-          label={t('science.sigfigs.mode')}
-          checked={sig}
-          onChange={(on) => {
-            setSigFigMode(on);
-            announce(t(on ? 'science.sigfigs.modeOn' : 'science.sigfigs.modeOff'));
-          }}
-        />
-      ) : null}
       {answer ? (
         <div className={styles.buttons}>
           <Button variant="quiet" onClick={copy}>
@@ -209,9 +214,29 @@ function Scientific() {
           </Button>
         </div>
       ) : null}
-      <Keypad onKey={type} />
-      <MemoryBar session={session} onChange={keep} onRecall={() => type('m1')} />
-      <History session={session} onUse={type} onClear={() => keep(clearHistory(session))} />
+    </>
+  );
+}
+
+function Scientific() {
+  const calc = useScientific();
+  return (
+    <>
+      <Entry field={calc.field} input={calc.input} problem={calc.problem} onInput={calc.setInput} onRun={calc.run} />
+      <AnswerBlock answer={calc.answer} problem={calc.problem} />
+      {isEnabled('tools.sigfigs') ? (
+        <Switch
+          label={t('science.sigfigs.mode')}
+          checked={calc.sig}
+          onChange={(on) => {
+            setSigFigMode(on);
+            announce(t(on ? 'science.sigfigs.modeOn' : 'science.sigfigs.modeOff'));
+          }}
+        />
+      ) : null}
+      <Keypad onKey={calc.type} />
+      <MemoryBar session={calc.session} onChange={calc.keep} onRecall={() => calc.type('m1')} />
+      <History session={calc.session} onUse={calc.type} onClear={() => calc.keep(clearHistory(calc.session))} />
     </>
   );
 }

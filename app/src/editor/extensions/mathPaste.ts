@@ -9,12 +9,17 @@ export type LatexPiece = { kind: 'text'; text: string } | { kind: 'math'; source
 
 const ENVIRONMENTS = 'equation|equation\\*|align|align\\*|gather|gather\\*|multline|multline\\*|eqnarray|displaymath';
 
-/** Delimited math, tried in this order at each position. Inline dollars cannot start or end with a space (so "$5 and $6" is text). */
+const ENV_ESCAPED = ENVIRONMENTS.replaceAll('*', String.raw`\*`);
+
+/**
+ * Delimited math, tried in this order at each position. Inline dollars cannot start or end with a space (so
+ * "$5 and $6" is text).
+ */
 const DELIMITED = new RegExp(
   [
     String.raw`\$\$([\s\S]+?)\$\$`,
     String.raw`\\\[([\s\S]+?)\\\]`,
-    String.raw`(\\begin\{(?:${ENVIRONMENTS.replaceAll('*', String.raw`\*`)})\}[\s\S]+?\\end\{(?:${ENVIRONMENTS.replaceAll('*', String.raw`\*`)})\})`,
+    String.raw`(\\begin\{(?:${ENV_ESCAPED})\}[\s\S]+?\\end\{(?:${ENV_ESCAPED})\})`,
     String.raw`\\\(([\s\S]+?)\\\)`,
     String.raw`(?<![$\w\\])\$([^$\s](?:[^$]*[^$\s])?)\$(?!\d)`,
   ].join('|'),
@@ -24,8 +29,15 @@ const DELIMITED = new RegExp(
 const COMMAND = /\\[A-Za-z]+/g;
 
 /** Commands only LaTeX has, so a pasted \name that is not one of these (such as a Windows path) stays text. */
-const KNOWN_COMMAND =
-  /\\(?:d?frac|sqrt|sum|prod|int|oint|lim|alpha|beta|gamma|delta|epsilon|varepsilon|theta|lambda|mu|pi|rho|sigma|tau|phi|varphi|omega|Delta|Sigma|Omega|Gamma|Theta|Lambda|Phi|Psi|cdot|cdots|times|pm|mp|infty|approx|neq|leq|geq|le|ge|to|rightarrow|Rightarrow|vec|hat|bar|partial|nabla|mathrm|mathbf|mathbb|text|left|right|begin|sin|cos|tan|log|ln|exp|binom|over)\b/;
+const KNOWN_WORDS = [
+  'd?frac|sqrt|sum|prod|int|oint|lim|alpha|beta|gamma|delta|epsilon',
+  'varepsilon|theta|lambda|mu|pi|rho|sigma|tau|phi|varphi|omega|Delta',
+  'Sigma|Omega|Gamma|Theta|Lambda|Phi|Psi|cdot|cdots|times|pm|mp',
+  'infty|approx|neq|leq|geq|le|ge|to|rightarrow|Rightarrow|vec|hat',
+  'bar|partial|nabla|mathrm|mathbf|mathbb|text|left|right|begin|sin|cos',
+  'tan|log|ln|exp|binom|over',
+].join('|');
+const KNOWN_COMMAND = new RegExp(String.raw`\\(?:${KNOWN_WORDS})\b`);
 
 /** True for text that is LaTeX with no words around it, such as `\frac{a}{b}` or `x^{2}+y_{1}`. */
 export function looksLikeLatex(text: string): boolean {

@@ -2,6 +2,7 @@
 // LaTeX. Pasting `$x^2$`, `$$…$$`, or `\(…\)` takes the marks off and picks the shape. Insert puts the equation at
 // the caret of the page that is open, in the line or on its own line.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ClipboardEvent } from 'react';
 import type { RenderOptions, RenderResult } from '../../math';
 import 'katex/dist/katex.min.css';
 import { splitLatex } from '../../../editor/extensions/mathPaste';
@@ -33,21 +34,28 @@ export function convertPaste(text: string): Saved | null {
   return { source: math[0].source, display: math[0].display };
 }
 
-export function LatexTool() {
-  const [state, setState] = useState<Saved>(() => {
-    const stored = loadStored<Partial<Saved>>(STORE, {});
-    return { source: typeof stored.source === 'string' ? stored.source : '', display: stored.display === true };
-  });
-  const [group, setGroup] = useState<SnippetGroup>('basics');
-  const [note, setNote] = useState('');
-  // KaTeX is large, so it loads when this window opens and not with the rest of the tools.
-  const [render, setRender] = useState<((latex: string, options: RenderOptions) => RenderResult) | null>(null);
+type Renderer = (latex: string, options: RenderOptions) => RenderResult;
+
+function loadSaved(): Saved {
+  const stored = loadStored<Partial<Saved>>(STORE, {});
+  return { source: typeof stored.source === 'string' ? stored.source : '', display: stored.display === true };
+}
+
+/** KaTeX is large, so it loads when this window opens and not with the rest of the tools. */
+function useRenderer(): Renderer | null {
+  const [render, setRender] = useState<Renderer | null>(null);
   useEffect(() => {
     void import('../../math').then((math) => setRender(() => math.renderLatex));
   }, []);
+  return render;
+}
+
+function useLatex() {
+  const [state, setState] = useState<Saved>(loadSaved);
+  const [note, setNote] = useState('');
+  const render = useRenderer();
   const area = useRef<HTMLTextAreaElement>(null);
   const pendingSelect = useRef<[number, number] | null>(null);
-
   const update = (next: Saved) => {
     setState(next);
     saveStored(STORE, next);
@@ -59,13 +67,11 @@ export function LatexTool() {
     area.current.focus();
     area.current.setSelectionRange(range[0], range[1]);
   }, [state.source]);
-
   const clean = withoutGaps(state.source).trim();
   const drawn = useMemo(
     () => (clean === '' || render === null ? null : render(clean, { displayMode: state.display })),
     [clean, render, state.display],
   );
-
   const insert = () => {
     if (clean === '') return;
     const ok = insertIntoPage({ math: { source: clean, display: state.display } });
@@ -79,9 +85,35 @@ export function LatexTool() {
       announce(t('science.latex.noPage'));
     }
   };
+  const addSnippet = (one: (typeof SNIPPETS)[number]) => {
+    const at = area.current;
+    const start = at?.selectionStart ?? state.source.length;
+    const end = at?.selectionEnd ?? state.source.length;
+    const next = applySnippet(state.source, start, end, one);
+    pendingSelect.current = [next.from, next.to];
+    update({ ...state, source: next.text });
+  };
+  const onPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const converted = convertPaste(event.clipboardData.getData('text/plain'));
+    if (converted === null) return;
+    event.preventDefault();
+    update(converted);
+    const shape = t(converted.display ? 'science.latex.convertedDisplay' : 'science.latex.convertedInline');
+    setNote(t('science.latex.converted', { shape }));
+  };
+  const edit = (source: string) => {
+    setNote('');
+    update({ ...state, source });
+  };
+  return { state, note, area, clean, drawn, update, insert, copy, addSnippet, onPaste, edit };
+}
 
+type Latex = ReturnType<typeof useLatex>;
+
+function SourceField({ latex }: { latex: Latex }) {
+  const { state, area, drawn } = latex;
   return (
-    <div className={styles.tool}>
+    <>
       <label className={extra.field}>
         {t('science.latex.source')}
         <textarea
@@ -93,21 +125,8 @@ export function LatexTool() {
           autoCorrect="off"
           aria-describedby="latex-help"
           aria-invalid={drawn !== null && !drawn.ok ? true : undefined}
-          onChange={(event) => {
-            setNote('');
-            update({ ...state, source: event.target.value });
-          }}
-          onPaste={(event) => {
-            const converted = convertPaste(event.clipboardData.getData('text/plain'));
-            if (converted === null) return;
-            event.preventDefault();
-            update(converted);
-            setNote(
-              t('science.latex.converted', {
-                shape: t(converted.display ? 'science.latex.convertedDisplay' : 'science.latex.convertedInline'),
-              }),
-            );
-          }}
+          onChange={(event) => latex.edit(event.target.value)}
+          onPaste={latex.onPaste}
         />
       </label>
       <p id="latex-help" className={styles.note}>
@@ -120,34 +139,36 @@ export function LatexTool() {
             type="button"
             className={science.toggle}
             aria-pressed={state.display === display}
-            onClick={() => update({ ...state, display })}
+            onClick={() => latex.update({ ...state, display })}
           >
             {t(display ? 'science.latex.display' : 'science.latex.inline')}
           </button>
         ))}
       </div>
-      <p className={styles.note} role="status">
-        {note}
-      </p>
-      <div className={science.preview} aria-label={t('science.latex.preview')} role="group">
-        {drawn === null ? (
-          <span className={styles.note}>{t('science.latex.previewEmpty')}</span>
-        ) : drawn.ok ? (
-          <span dangerouslySetInnerHTML={{ __html: drawn.html }} />
-        ) : (
-          <span className={styles.problem} role="alert">
-            {t('science.latex.problem', { message: drawn.error.message })}
-          </span>
-        )}
-      </div>
-      <div className={styles.buttons}>
-        <Button variant="primary" disabled={clean === ''} onClick={insert}>
-          {t('science.latex.insert')}
-        </Button>
-        <Button variant="quiet" disabled={clean === ''} onClick={() => void copy()}>
-          {t('science.latex.copy')}
-        </Button>
-      </div>
+    </>
+  );
+}
+
+function Preview({ drawn }: { drawn: Latex['drawn'] }) {
+  return (
+    <div className={science.preview} aria-label={t('science.latex.preview')} role="group">
+      {drawn === null ? (
+        <span className={styles.note}>{t('science.latex.previewEmpty')}</span>
+      ) : drawn.ok ? (
+        <span dangerouslySetInnerHTML={{ __html: drawn.html }} />
+      ) : (
+        <span className={styles.problem} role="alert">
+          {t('science.latex.problem', { message: drawn.error.message })}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Palette({ addSnippet }: { addSnippet: Latex['addSnippet'] }) {
+  const [group, setGroup] = useState<SnippetGroup>('basics');
+  return (
+    <>
       <div className={styles.tabs} role="tablist" aria-label={t('science.latex.snippets')}>
         {SNIPPET_GROUPS.map((one) => (
           <button
@@ -172,19 +193,34 @@ export function LatexTool() {
             className={science.snippet}
             aria-label={t(`science.latex.snippet.${one.id}` as MessageKey)}
             title={t(`science.latex.snippet.${one.id}` as MessageKey)}
-            onClick={() => {
-              const at = area.current;
-              const start = at?.selectionStart ?? state.source.length;
-              const end = at?.selectionEnd ?? state.source.length;
-              const next = applySnippet(state.source, start, end, one);
-              pendingSelect.current = [next.from, next.to];
-              update({ ...state, source: next.text });
-            }}
+            onClick={() => addSnippet(one)}
           >
             {one.face ?? one.latex}
           </button>
         ))}
       </div>
+    </>
+  );
+}
+
+export function LatexTool() {
+  const latex = useLatex();
+  return (
+    <div className={styles.tool}>
+      <SourceField latex={latex} />
+      <p className={styles.note} role="status">
+        {latex.note}
+      </p>
+      <Preview drawn={latex.drawn} />
+      <div className={styles.buttons}>
+        <Button variant="primary" disabled={latex.clean === ''} onClick={latex.insert}>
+          {t('science.latex.insert')}
+        </Button>
+        <Button variant="quiet" disabled={latex.clean === ''} onClick={() => void latex.copy()}>
+          {t('science.latex.copy')}
+        </Button>
+      </div>
+      <Palette addSnippet={latex.addSnippet} />
       <p className={styles.note}>{t('science.latex.pasteHint')}</p>
     </div>
   );
