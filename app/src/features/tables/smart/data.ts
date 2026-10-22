@@ -109,7 +109,7 @@ const text = (value: unknown): string | undefined => (typeof value === 'string' 
 
 const TYPES: readonly ColumnType[] = ['text', 'number', 'currency', 'percent', 'date', 'checkbox', 'choice'];
 const TOTALS: readonly TotalKind[] = ['sum', 'average', 'count', 'min', 'max', 'checked'];
-const KINDS: readonly ChartKind[] = ['bar', 'line', 'area', 'pie', 'scatter'];
+const KINDS: readonly ChartKind[] = ['bar', 'line', 'area', 'pie', 'scatter', 'box'];
 const AGGREGATES: readonly Aggregate[] = ['none', 'sum', 'average', 'count', 'min', 'max'];
 
 /** The options a stored list means: named, with a color from the set, no repeats, at most MAX_CHOICES. */

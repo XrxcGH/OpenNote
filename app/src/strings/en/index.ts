@@ -51,6 +51,7 @@ import { pdf } from './pdf';
 import { intelSpeech } from './intelSpeech';
 import { intelMore } from './intelMore';
 import { myHand } from './myHand';
+import { tableMath } from './tableMath';
 
 export const en = {
   common,
@@ -104,4 +105,5 @@ export const en = {
   intelMore,
   accounts,
   myHand,
+  tableMath,
 } as const;

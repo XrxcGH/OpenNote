@@ -7,6 +7,8 @@ import { chooseValue, editChoices, makeChoice } from './choiceOps';
 import { addChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { applyView, saveViewAsking } from './savedViews';
 import type { FilterMode } from './ops';
+import { runAnalysis } from '../analysis/run';
+import type { AnalysisTool } from '../analysis/run';
 
 export type SmartCommand =
   | { run: 'sort'; desc: boolean }
@@ -22,7 +24,8 @@ export type SmartCommand =
   | { run: 'clearCalculated' }
   | { run: 'choice'; multi: boolean }
   | { run: 'chooseValue' }
-  | { run: 'editChoices' };
+  | { run: 'editChoices' }
+  | { run: 'analyze'; tool: AnalysisTool; output?: 'equation' };
 
 /** Runs a command on the table with focus. False when there is none or the command had nothing to do. */
 export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
@@ -58,5 +61,7 @@ export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
       return chooseValue(inst, column);
     case 'editChoices':
       return editChoices(inst, column);
+    case 'analyze':
+      return runAnalysis(inst, command.tool, command.output);
   }
 }

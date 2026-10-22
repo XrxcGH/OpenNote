@@ -6,7 +6,7 @@ import type { PatternDef, PatternKind, SymbolName } from './palette';
 
 /** One Plot mark as data. realizePlot turns it into `Plot[mark](data, options)`. */
 export interface MarkSpec {
-  mark: 'barY' | 'barX' | 'lineY' | 'areaY' | 'dot' | 'ruleY' | 'ruleX';
+  mark: 'barY' | 'barX' | 'boxY' | 'lineY' | 'areaY' | 'dot' | 'ruleY' | 'ruleX';
   data: readonly unknown[];
   options: Record<string, unknown>;
 }
@@ -60,7 +60,7 @@ export interface PieSlice {
 }
 
 export interface ChartSpec {
-  kind: 'bar' | 'line' | 'area' | 'pie' | 'scatter';
+  kind: 'bar' | 'line' | 'area' | 'pie' | 'scatter' | 'box';
   title?: string;
   width: number;
   height: number;

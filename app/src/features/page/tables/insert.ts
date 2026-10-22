@@ -35,6 +35,19 @@ function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: nu
 }
 
 export async function insertTable(data: TableData = newTableData(3, 3, true)): Promise<boolean> {
+  return insertBlock('table', data as unknown as Record<string, unknown>);
+}
+
+/** A display equation, as a text block of its own after the block with focus. */
+export function insertMathBlock(source: string): Promise<boolean> {
+  return insertBlock('text', {
+    markdown: `$$
+${source}
+$$`,
+  });
+}
+
+async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>): Promise<boolean> {
   const queue = shownQueue.get();
   const layer = shownLayer.get();
   const pool = shownPool.get();
@@ -51,7 +64,7 @@ export async function insertTable(data: TableData = newTableData(3, 3, true)): P
     const rect = source.measure();
     frame = { x: rect.x, y: rect.y + rect.h + 16 };
   }
-  if (active && !tableOf(active.editor.state.doc) && !floating) {
+  if (active && !tableOf(active.editor.state.doc) && !floating && type === 'table') {
     const split = splitAtCaret(active.editor);
     if (split.tail !== '') {
       const sync = syncOf(active.editor);
@@ -67,7 +80,7 @@ export async function insertTable(data: TableData = newTableData(3, 3, true)): P
   }
   edits.push({
     edit: 'insertBlock',
-    block: { id, type: 'table', data: { ...data }, ...(frame ? { frame } : {}) },
+    block: { id, type, data: { ...data }, ...(frame ? { frame } : {}) },
     after,
   });
   if (tail)
@@ -87,9 +100,9 @@ export async function insertTable(data: TableData = newTableData(3, 3, true)): P
     data: blockData,
     ...(at ? { frame: at } : {}),
   });
-  layer.upsert(made(id, 'table', { ...data }, frame));
+  layer.upsert(made(id, type, { ...data }, frame));
   if (tail) layer.upsert(made(tail.id, 'text', { markdown: tail.markdown }));
-  announce(t('tables.announce.inserted'));
+  if (type === 'table') announce(t('tables.announce.inserted'));
   const view = layer.view(id);
   if (view) await whenViewReady(view.element);
   const editor = pool?.mount(id, { kind: 'start' }, 'focus');

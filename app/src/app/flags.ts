@@ -125,6 +125,7 @@ type ToolsQolFlagId =
   | 'tables.views'
   | 'tables.savedViews'
   | 'tables.choice'
+  | 'tables.analysis'
   | 'tables.chartTable'
   | 'math.quickMath'
   | 'math.notes'

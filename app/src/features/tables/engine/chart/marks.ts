@@ -123,3 +123,11 @@ export const areaLayer = (build: Build): Layer => ({
   marks: build.stacked ? stackedAreas(build) : overlappingAreas(build),
   scales: {},
 });
+
+/** A box plot: Plot computes the quartiles, whiskers, and outliers from the raw values of each category. */
+export function boxLayer(build: Build): Layer {
+  const rows = series(build).flatMap(({ data }) => data.points.map((p) => ({ x: p.x, y: p.y })));
+  const color = build.styles[0]?.color ?? 'currentColor';
+  const options: Record<string, unknown> = { x: 'x', y: 'y', stroke: color, fill: color, fillOpacity: AREA_OPACITY };
+  return { marks: [{ mark: 'boxY', data: rows, options }], scales: {} };
+}
