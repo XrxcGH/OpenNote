@@ -157,6 +157,13 @@ test.describe('the Properties chip', () => {
       const box = (await chip.boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(main.x);
       expect(box.x + box.width).toBeLessThanOrEqual(main.x + main.width);
+      // Clear of the page's scroll bar, with a gap.
+      const contentRight = await page.evaluate(() => {
+        let element = document.querySelector('[data-page-title]') as HTMLElement | null;
+        while (element && getComputedStyle(element).overflowY !== 'auto') element = element.parentElement;
+        return element ? element.getBoundingClientRect().left + element.clientLeft + element.clientWidth : 0;
+      });
+      expect(box.x + box.width).toBeLessThanOrEqual(contentRight - 8);
       await openTool(page, 'Open citations');
       await expect(page.getByRole('dialog', { name: 'Citations' })).toBeVisible();
       const hit = await page.evaluate(

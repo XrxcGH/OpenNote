@@ -13,13 +13,15 @@ export function mountProperties(mounted: MountedPage): () => void {
   const viewport = mounted.viewport.viewport;
   const place = () => {
     const rect = viewport.getBoundingClientRect();
+    // The page area's right edge inside its scroll bar, so the chip never sits on the bar or past it.
+    const right = Math.min(rect.left + viewport.clientLeft + viewport.clientWidth, window.innerWidth);
     const top = Math.max(rect.top, 0) + 8;
     host.style.insetBlockStart = `${top}px`;
     host.style.setProperty('--host-top', `${top}px`);
-    const inset = Math.max(window.innerWidth - rect.right, 0) + 16;
+    const inset = window.innerWidth - right + 16;
     host.style.insetInlineEnd = `${inset}px`;
     // Never wider than the page area, so the chip and its panel stay inside it however narrow the page gets.
-    host.style.maxInlineSize = `${Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0) - 32)}px`;
+    host.style.maxInlineSize = `${Math.max(0, right - Math.max(rect.left, 0) - 32)}px`;
   };
   place();
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
