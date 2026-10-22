@@ -32,6 +32,8 @@ interface Press {
   kind: Kind;
   start: Point;
   block: BlockId | null;
+  /** The press began on a block's body, not its grip: a press that doesn't move is the control's own click. */
+  body: boolean;
   shift: boolean;
   slop: number;
   started: boolean;
@@ -45,6 +47,12 @@ const client = (event: PointerEvent): Point => ({ x: event.clientX, y: event.cli
 
 function handleOf(event: PointerEvent): HTMLElement | null {
   return event.target instanceof Element ? event.target.closest<HTMLElement>('[data-handle]') : null;
+}
+
+/** A control that is the body of a block and moves it when dragged (a study tape): its block, or null. */
+function bodyOf(event: PointerEvent): HTMLElement | null {
+  const body = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-block-drag]') : null;
+  return body?.closest<HTMLElement>('[data-block-id]') ?? null;
 }
 
 function emptyPage(event: PointerEvent, world: HTMLElement): boolean {
@@ -65,19 +73,21 @@ class ObjectsTool implements PointerToolDef {
 
   accepts(event: PointerEvent, ctx: RouterContext): boolean {
     if (ctx.activeTool !== 'select' || event.button !== 0 || readingLock.get()) return false;
-    if (handleOf(event)) return true;
+    if (handleOf(event) || bodyOf(event)) return true;
     return event.pointerType !== 'touch' && emptyPage(event, this.parts.viewport.world);
   }
 
   down(event: PointerEvent, ctx: RouterContext): 'claim' | 'watch' {
     const handle = handleOf(event);
-    const kind: Kind = handle ? (handle.dataset.handle === 'width' ? 'width' : 'move') : 'marquee';
+    const body = handle ? null : bodyOf(event);
+    const kind: Kind = handle ? (handle.dataset.handle === 'width' ? 'width' : 'move') : body ? 'move' : 'marquee';
     const slop = event.pointerType === 'touch' ? 8 : 4;
-    const block = handle?.dataset.block ?? null;
+    const block = handle?.dataset.block ?? body?.dataset.blockId ?? null;
     this.press = {
       kind,
       start: client(event),
       block,
+      body: body !== null,
       shift: event.shiftKey,
       slop,
       started: false,
@@ -109,7 +119,7 @@ class ObjectsTool implements PointerToolDef {
     this.end();
     if (!press) return;
     if (!press.started) {
-      if (press.block) this.selectFromGrip(press);
+      if (press.block && !press.body) this.selectFromGrip(press);
       return;
     }
     const zoom = ctx.camera.zoom;

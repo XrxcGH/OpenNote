@@ -33,6 +33,8 @@ export interface Chrome {
 /** Handles' hit areas at mouse and touch density (BRAND.md section 6). */
 const MOUSE_HIT = 32;
 const TOUCH_HIT = 44;
+/** The least a grip shows when other blocks crowd the strip above its box. */
+const GRIP_MIN = 8;
 
 function div(parent: HTMLElement, className: string): HTMLElement {
   const element = parent.ownerDocument.createElement('div');
@@ -149,8 +151,8 @@ class ChromeLayer implements Chrome {
         this.mark(used, `lock:${block.id}`, styles.lock!, box);
         continue;
       }
-      this.handle(used, block, 'grip', box);
-      if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box);
+      this.handle(used, block, 'grip', box, origin);
+      if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box, origin);
     }
     for (const element of this.watched) {
       if (seen.has(element)) continue;
@@ -168,11 +170,11 @@ class ChromeLayer implements Chrome {
   }
 
   /** A grip bar along the top of a text box, or a width handle on its right edge, with a full-size hit area. */
-  private handle(used: Set<string>, block: BlockJson, kind: 'grip' | 'width', box: DOMRect): void {
+  private handle(used: Set<string>, block: BlockJson, kind: 'grip' | 'width', box: DOMRect, origin: DOMRect): void {
     const hit = getDensity() === 'touch' ? TOUCH_HIT : MOUSE_HIT;
     const area =
       kind === 'grip'
-        ? new DOMRect(box.x, box.y - hit, Math.max(box.width, hit), hit)
+        ? this.gripArea(block, box, origin, hit)
         : new DOMRect(box.right - hit / 2, box.y, hit, Math.max(box.height, hit));
     const element = this.mark(used, `${kind}:${block.id}`, kind === 'grip' ? styles.grip! : styles.width!, area);
     element.dataset.handle = kind;
@@ -180,6 +182,24 @@ class ChromeLayer implements Chrome {
     element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', {
       name: name(liveBlock(this.parts.layer, block)),
     });
+  }
+
+  /**
+   * The grip's hit area lies above its box. Where a floating panel or picture sits wholly in that strip (a study tape just
+   * above a text box), the grip stops short of it, so that block can still be pressed; it never gets thinner than a bar.
+   */
+  private gripArea(block: BlockJson, box: DOMRect, origin: DOMRect, hit: number): DOMRect {
+    const width = Math.max(box.width, hit);
+    let top = box.y - hit;
+    for (const other of this.parts.layer.blocks()) {
+      if (other.id === block.id || other.type === 'text' || !isFloating(other)) continue;
+      const rect = this.parts.layer.view(other.id)?.element.getBoundingClientRect();
+      if (!rect) continue;
+      const bottom = rect.bottom - origin.top;
+      const across = rect.left - origin.left < box.x + width && rect.right - origin.left > box.x;
+      if (across && bottom <= box.y + 1 && bottom > top) top = Math.min(bottom, box.y - GRIP_MIN);
+    }
+    return new DOMRect(box.x, top, width, box.y - top);
   }
 
   private mark(used: Set<string>, key: string, className: string, box: DOMRect): HTMLElement {

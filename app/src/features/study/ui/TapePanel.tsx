@@ -17,6 +17,7 @@ export function TapePanel({ hidden, readOnly, onToggle }: Props) {
       data-hidden={hidden ? '' : undefined}
       aria-pressed={hidden}
       aria-label={t(hidden ? 'study.tape.hiddenLabel' : 'study.tape.shownLabel')}
+      data-block-drag=""
       disabled={readOnly}
       onClick={() => onToggle(!hidden)}
     >

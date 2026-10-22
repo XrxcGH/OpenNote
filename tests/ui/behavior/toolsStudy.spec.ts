@@ -2,7 +2,7 @@
 // chip, the dictionary, and the Home Upcoming section.
 
 import { expect, test } from '../fixtures';
-import { openSmart, runCommand } from './smart';
+import { newLine, openSmart, runCommand } from './smart';
 
 test.describe.configure({ timeout: 90_000 });
 
@@ -60,4 +60,31 @@ test('lists Upcoming on Home', async ({ page }) => {
   await openSmart(page);
   await page.getByRole('toolbar', { name: 'Home' }).getByRole('button', { name: 'Home', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Open Upcoming' })).toBeVisible();
+});
+
+test('study tape uncovers on a mouse click, then moves by dragging and by the arrow keys', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await runCommand(page, 'Insert study tape');
+  const tape = page.getByRole('button', { name: /study tape/i }).first();
+  await expect(tape).toHaveAttribute('aria-pressed', 'true');
+  const box = (await tape.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + 8);
+  await expect(tape).toHaveAttribute('aria-pressed', 'false');
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(tape).toHaveAttribute('aria-pressed', 'true');
+  // A drag moves it and leaves it as it was.
+  await page.mouse.move(box.x + 40, box.y + 14);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 40, box.y + 60, { steps: 6 });
+  await page.mouse.move(box.x + 40, box.y + 94, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => Math.round((await tape.boundingBox())!.y - box.y)).toBe(80);
+  await expect(tape).toHaveAttribute('aria-pressed', 'true');
+  // The arrow keys nudge it.
+  const moved = (await tape.boundingBox())!;
+  await tape.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(async () => Math.round((await tape.boundingBox())!.x - moved.x)).toBe(16);
 });
