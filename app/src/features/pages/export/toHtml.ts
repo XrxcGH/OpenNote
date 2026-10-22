@@ -73,7 +73,7 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   const origins = (options.imageOrigins ?? []).filter((origin) => ORIGIN.test(origin));
   const images = ['data:', 'file:', "'self'", ...origins].join(' ');
   const hasVideo = page.blocks.some((b) => b.type === 'other' && b.video !== undefined);
-  const media = player || hasVideo ? "; media-src 'self' file:" : '';
+  const media = player || hasVideo ? "; media-src 'self' file: data:" : '';
   const script = (player ? `; script-src 'sha256-${sha256Base64(PLAYER_SCRIPT)}'` : '') + media;
   const csp = `default-src 'none'; img-src ${images}; style-src 'unsafe-inline'; font-src data: file: 'self'${script}`;
   const html = [

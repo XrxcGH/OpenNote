@@ -11,7 +11,7 @@ export type VideoKey =
 
 /** What a key does, or null when the key isn't one of the player's. */
 export function keyAction(key: string, shift: boolean): VideoKey | null {
-  switch (key) {
+  switch (key.length === 1 ? key.toLowerCase() : key) {
     case ' ':
     case 'k':
       return { do: 'toggle' };

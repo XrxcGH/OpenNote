@@ -26,7 +26,7 @@ describe('the exported page', () => {
     expect(html).toContain('<video controls');
     expect(html).toContain('src="assets/v1.mp4"');
     expect(html).toContain('<track kind="captions" src="assets/c1.vtt"');
-    expect(html).toContain("media-src 'self' file:");
+    expect(html).toContain("media-src 'self' file: data:");
     expect(assets).toEqual(['v1', 'c1']);
   });
 

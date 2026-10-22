@@ -122,6 +122,8 @@ export async function setCaptions(block: BlockId, file?: File): Promise<void> {
       },
     ];
     await queue.send({ edits });
+    const now = shownLayer.get()?.block(block);
+    if (now) shownLayer.get()?.upsert({ ...now, data: { ...now.data, captions: asset.id, captionsName: chosen.name } });
     announce(t('video.captions.added', { name: data.name }));
   } catch {
     showToast({ message: t('video.insert.failed', { name: chosen.name }), tone: 'danger' });
@@ -137,5 +139,7 @@ export async function removeCaptions(block: BlockId): Promise<void> {
   await queue.send({
     edits: [{ edit: 'patchBlock', block, data: { captions: '', captionsName: '' }, fallback: fallbackFor(data.name) }],
   });
+  const now = shownLayer.get()?.block(block);
+  if (now) shownLayer.get()?.upsert({ ...now, data: { ...now.data, captions: '', captionsName: '' } });
   announce(t('video.captions.removed', { name: data.name }));
 }

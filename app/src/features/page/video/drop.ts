@@ -12,7 +12,7 @@ const videosIn = (files: Iterable<File> | undefined): File[] => [...(files ?? []
 /** Whether a drag in progress carries a video file, as far as its items say. */
 function carriesVideo(data: DataTransfer | null): boolean {
   return [...(data?.items ?? [])].some(
-    (item) => item.kind === 'file' && (item.type === 'video/mp4' || item.type === 'video/webm'),
+    (item) => item.kind === 'file' && (item.type === '' || item.type === 'video/mp4' || item.type === 'video/webm'),
   );
 }
 

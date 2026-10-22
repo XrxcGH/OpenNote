@@ -39,6 +39,10 @@ export function VideoBlockView(props: {
       announce(t('video.block.volume', { percent: said }));
     }
   };
+  // Chromium's own controls toggle play on the key's release, which would undo the toggle done on its press.
+  const onKeyUp = (event: KeyboardEvent<HTMLVideoElement>) => {
+    if (event.key === ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) event.preventDefault();
+  };
   return (
     <div className={styles.card} role="group" aria-label={t('video.block.label', { name: data.name })}>
       <div className={styles.head}>
@@ -58,6 +62,7 @@ export function VideoBlockView(props: {
             crossOrigin="anonymous"
             aria-label={t('video.block.player', { name: data.name })}
             onKeyDown={onKeyDown}
+            onKeyUp={onKeyUp}
             onError={() => setBroken(true)}
           >
             {data.captions && (

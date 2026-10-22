@@ -152,3 +152,10 @@ describe('the content security policy', () => {
     expect(directive('frame-src')).toContain('https://www.youtube-nocookie.com');
   });
 });
+
+describe('video keys with Caps Lock', () => {
+  it('treats a capital letter like its lowercase key', () => {
+    expect(keyAction('K', false)).toEqual({ do: 'toggle' });
+    expect(keyAction('C', false)).toEqual({ do: 'captions' });
+  });
+});

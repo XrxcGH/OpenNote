@@ -48,7 +48,7 @@ describe('web page export with a recording', () => {
   it('allows its one script by hash and nothing else, and adds none without a recording', () => {
     const { html } = exportHtml(page, { player: plan });
     expect(html).toContain(`script-src 'sha256-${sha256Base64(PLAYER_SCRIPT)}'`);
-    expect(html).toContain("media-src 'self' file:");
+    expect(html).toContain("media-src 'self' file: data:");
     expect(html.match(/<script>/g)).toHaveLength(1);
     expect(html).toContain(`<script>${PLAYER_SCRIPT}</script>`);
     const plain = exportHtml(page).html;
