@@ -2,8 +2,10 @@
 // and a lone finger. A tap sets the center. A drag out from the center opens the compass, and the radius snaps to
 // whole spacings of the paper's lines or the grid when snapping is on. A sweep around the center draws an arc, and a
 // full turn a circle, which is saved as an ordinary shape stroke, so its handles edit it like any other circle or
-// arc. The keyboard does the same: arrow keys move the center, plus and minus open and close the compass, and Enter
-// draws a circle.
+// arc. The keyboard does the same: arrow keys move the center, plus and minus open and close the compass, [ and ]
+// sweep the pencil around 15 degrees at a time (Shift, 1 degree), and Enter draws the arc swept, or a circle.
+// Once the compass is open, a press away from the center sweeps; a press on the needle changes the radius. A hint
+// under the needle says so.
 import { newId } from '../../../editor/ids';
 import { createStore } from '../../../state/store';
 import type { Store } from '../../../state/store';
@@ -36,6 +38,11 @@ import type { InkSurface } from './surface';
 const CENTER_PX = 16;
 /** A drag shorter than this many screen pixels is a tap. */
 const TAP_PX = 6;
+/** How far [ and ] sweep the pencil, in radians: 15 degrees, or 1 with Shift. */
+const KEY_SWEEP = Math.PI / 12;
+const KEY_SWEEP_FINE = Math.PI / 180;
+/** Where the pencil rests before a sweep: up and to the right of the needle. */
+const REST_ANGLE = -Math.PI / 4;
 
 export const compassState = createStore<CompassState>(COMPASS_START, 'ink compass');
 
@@ -136,7 +143,7 @@ class CompassLayer {
           'stroke-dasharray': '4 6',
         }),
       );
-      const angle = this.sweep?.last ?? -Math.PI / 4;
+      const angle = this.sweep?.last ?? REST_ANGLE;
       const pencil = toScreen(camera, pencilAt(center, radius, angle));
       this.svg.append(
         svgNode(doc, 'line', {
@@ -165,6 +172,20 @@ class CompassLayer {
         : t('ink.compass.radius', { length: formatLength(radius) });
       this.svg.append(label);
     }
+    // What a press does next, under the needle, so changing the radius is not a guess.
+    const hint = svgNode(doc, 'text', {
+      x: c.x,
+      y: c.y + 30,
+      'text-anchor': 'middle',
+      fill: 'var(--color-text-secondary)',
+      stroke: 'var(--color-surface-page)',
+      'stroke-width': 4,
+      'paint-order': 'stroke',
+      'font-size': 12,
+    });
+    hint.dataset.inkCompassHint = '';
+    hint.textContent = t(radius >= MIN_RADIUS ? 'ink.compass.hintOpen' : 'ink.compass.hintClosed');
+    if (!this.sweep) this.svg.append(hint);
     const shape = this.sweep ? compassShape(center, radius, this.sweep) : null;
     if (shape) {
       const points = shapePoints(shape).map((p) => toScreen(camera, p));
@@ -200,14 +221,37 @@ class CompassLayer {
       next = { ...state, center: { x: state.center.x + arrow[0] * step, y: state.center.y + arrow[1] * step } };
     else if (event.key === '+' || event.key === '=') next = { ...state, radius: state.radius + step };
     else if (event.key === '-' || event.key === '_') next = { ...state, radius: Math.max(0, state.radius - step) };
-    else if (event.key === 'Enter') {
+    else if (event.key === '[' || event.key === ']') {
       event.preventDefault();
+      event.stopPropagation();
+      if (state.radius < MIN_RADIUS) {
+        announce(t('ink.compass.needsRadius'));
+        return;
+      }
+      const turn = (event.key === ']' ? 1 : -1) * (event.shiftKey ? KEY_SWEEP_FINE : KEY_SWEEP);
+      const from = this.sweep ?? { start: REST_ANGLE, last: REST_ANGLE, total: 0 };
+      const total = Math.max(-2 * Math.PI, Math.min(2 * Math.PI, from.total + turn));
+      this.sweep = { start: from.start, last: from.start + total, total };
+      this.draw();
+      announce(t('ink.snap.angle', { degrees: sweepDegrees(this.sweep) }));
+      return;
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const swept = this.sweep;
+      this.sweep = null;
+      const shape = swept ? compassShape(state.center, state.radius, swept) : null;
       if (state.radius < MIN_RADIUS) announce(t('ink.compass.needsRadius'));
+      else if (shape && swept) void commit(this.surface, shape, sweepDegrees(swept));
       else void commit(this.surface, { kind: 'circle', center: state.center, radius: state.radius }, 360);
+      this.draw();
       return;
     } else if (event.key === 'Escape') {
       event.preventDefault();
-      geometryTool.set('none');
+      // Escape first lets go of a sweep, then puts the compass away.
+      if (this.sweep) {
+        this.sweep = null;
+        this.draw();
+      } else geometryTool.set('none');
       return;
     }
     if (!next) return;

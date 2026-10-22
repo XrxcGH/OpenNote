@@ -5,9 +5,19 @@ import { shapeOfStroke } from './shapeEdit';
 import type { InkStroke } from '../model/types';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { compassState, installCompass } from './compass';
-import { installMeasure, measurement, measureSelection } from './measureTool';
+import { installMeasure, measureCursor, measurement, measureSelection } from './measureTool';
 import { setPrefs } from './prefs';
-import { formatLength, geometryTool, installSnapTools, snapGeometry, snapMark } from './snapTools';
+import {
+  formatLength,
+  geometryTool,
+  installSnapTools,
+  showRulerLength,
+  snapGeometry,
+  snapMark,
+  snapToolsNow,
+} from './snapTools';
+import { applyHold, DEFAULT_PROTRACTOR, DEFAULT_RULER, fromRulerSpace, holdFor } from '../snap';
+import { expectWithinBudget, measure as time } from '../bench';
 import type { InkSurface } from './surface';
 import { PAGE_UNITS_PER_MM } from '../geometry/stabilizer';
 
@@ -66,8 +76,143 @@ describe('the geometry tools', () => {
     geometryTool.set('none');
     compassState.set({ center: null, radius: 0 });
     measurement.set(null);
+    snapGeometry.set({ ruler: DEFAULT_RULER, protractor: DEFAULT_PROTRACTOR });
   });
   afterEach(() => document.body.replaceChildren());
+
+  const key = (target: Element, k: string, shiftKey = false) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: k, shiftKey, bubbles: true }));
+
+  it('holds a wobbly line drawn along the ruler to its straight edge, and reads out its length', () => {
+    setPrefs({ ruler: true });
+    // A turned ruler, so the edge is not simply a row of the page.
+    snapGeometry.set({ ruler: { ...DEFAULT_RULER, angle: Math.PI / 6 }, protractor: DEFAULT_PROTRACTOR });
+    const { chrome, stop } = setup(installSnapTools);
+    const ruler = snapGeometry.get().ruler;
+    const tools = snapToolsNow(1)!;
+    // Start just off the top edge and wander up to 3 page units either side of it for 40 mm.
+    const wobbly = Array.from({ length: 41 }, (_, i) =>
+      fromRulerSpace(ruler, -100 + i * PAGE_UNITS_PER_MM, -ruler.width / 2 - 3 * Math.sin(i)),
+    );
+    const hold = holdFor(tools, wobbly[0]!);
+    expect(hold.kind).toBe('ruler');
+    const held = wobbly.map((p) => applyHold(tools, hold, p));
+    const [first, last] = [held[0]!, held.at(-1)!];
+    const len = Math.hypot(last.x - first.x, last.y - first.y);
+    for (const p of held) {
+      // Every point lies on the line from the first point to the last.
+      const off = Math.abs((last.x - first.x) * (first.y - p.y) - (first.x - p.x) * (last.y - first.y)) / len;
+      expect(off).toBeLessThan(1e-9);
+    }
+    expect(len / PAGE_UNITS_PER_MM).toBeCloseTo(40, 6);
+    showRulerLength(first, last);
+    expect(chrome.querySelector('[data-ink-readout="ruler"]')?.textContent).toBe('4.0 cm along the ruler');
+    setPrefs({ rulerUnits: 'imperial' });
+    showRulerLength(first, { x: first.x + 25.4 * PAGE_UNITS_PER_MM, y: first.y });
+    expect(chrome.querySelector('[data-ink-readout="ruler"]')?.textContent).toBe('1 in along the ruler');
+    stop();
+  });
+
+  it('moves the ruler by keyboard a millimeter or a sixteenth of an inch, and turns it', () => {
+    setPrefs({ ruler: true });
+    const { chrome, stop } = setup(installSnapTools);
+    const widget = chrome.querySelector('[data-ink-widget="ruler"]')!;
+    const start = snapGeometry.get().ruler;
+    key(widget, 'ArrowRight');
+    expect(snapGeometry.get().ruler.cx).toBeCloseTo(start.cx + PAGE_UNITS_PER_MM);
+    key(widget, 'ArrowDown', true);
+    expect(snapGeometry.get().ruler.cy).toBeCloseTo(start.cy + 10 * PAGE_UNITS_PER_MM);
+    setPrefs({ rulerUnits: 'imperial' });
+    key(widget, 'ArrowLeft');
+    expect(snapGeometry.get().ruler.cx).toBeCloseTo(start.cx + PAGE_UNITS_PER_MM - (25.4 / 16) * PAGE_UNITS_PER_MM);
+    key(widget, ']');
+    expect(snapGeometry.get().ruler.angle).toBeCloseTo(Math.PI / 180);
+    key(widget, '[', true);
+    expect(snapGeometry.get().ruler.angle).toBeCloseTo(Math.PI / 180 - (15 * Math.PI) / 180);
+    stop();
+  });
+
+  it.each(['pen', 'touch', 'mouse'])('moves and turns the ruler by %s', (pointerType) => {
+    setPrefs({ ruler: true });
+    const { chrome, tools, stop } = setup(installSnapTools);
+    const [widgets] = tools;
+    const body = chrome.querySelector<HTMLElement>('[data-ink-widget="ruler"]')!;
+    const handle = body.querySelector<HTMLElement>('[data-ink-turn]')!;
+    const start = snapGeometry.get().ruler;
+    const at = (x: number, y: number, target: Element) => pen(x, y, { pointerType, target } as Partial<PointerEvent>);
+    expect(widgets!.accepts(at(start.cx, start.cy, body), ctx)).toBe(true);
+    widgets!.down(at(start.cx, start.cy, body), ctx);
+    widgets!.move?.([at(start.cx + 30, start.cy + 40, body)], ctx);
+    widgets!.up?.(at(start.cx + 30, start.cy + 40, body), ctx);
+    expect(snapGeometry.get().ruler).toMatchObject({ cx: start.cx + 30, cy: start.cy + 40, angle: 0 });
+    // A drag on the round handle turns it about its center, a quarter turn here.
+    const r = snapGeometry.get().ruler;
+    widgets!.down(at(r.cx + 100, r.cy, handle), ctx);
+    widgets!.move?.([at(r.cx, r.cy + 100, handle)], ctx);
+    widgets!.up?.(at(r.cx, r.cy + 100, handle), ctx);
+    expect(snapGeometry.get().ruler.angle).toBeCloseTo(Math.PI / 2);
+    expect(snapGeometry.get().ruler.cx).toBe(r.cx);
+    stop();
+  });
+
+  it('measures from the keyboard: arrows move the crosshair and Enter marks each point', () => {
+    const { chrome, stop } = setup(installMeasure);
+    geometryTool.set('measure');
+    const cursor = chrome.querySelector<HTMLElement>('[data-ink-measure-cursor]')!;
+    expect(cursor.style.display).toBe('');
+    const start = measureCursor.get()!;
+    expect(start).toEqual({ x: 400, y: 300 });
+    key(cursor, 'Enter');
+    expect(measurement.get()).toEqual({ a: start, b: null });
+    key(cursor, 'ArrowRight', true);
+    key(cursor, 'ArrowRight', true);
+    key(cursor, 'ArrowUp', true);
+    key(cursor, 'ArrowUp', true);
+    key(cursor, 'Enter');
+    expect(chrome.querySelector('[data-ink-measure]')?.textContent).toBe('2.8 cm at 45 degrees');
+    key(cursor, 'Escape');
+    expect(geometryTool.get()).toBe('none');
+    expect(cursor.style.display).toBe('none');
+    stop();
+  });
+
+  it('sweeps an arc from the keyboard with [ and ], and Escape lets go of the sweep first', async () => {
+    const { chrome, added, stop } = setup(installCompass);
+    geometryTool.set('compass');
+    const needle = chrome.querySelector<HTMLElement>('[data-ink-compass]')!;
+    expect(chrome.querySelector('[data-ink-compass-hint]')?.textContent).toBe('Drag out from the center to open');
+    for (let i = 0; i < 10; i += 1) key(needle, '+', true);
+    expect(chrome.querySelector('[data-ink-compass-hint]')?.textContent).toContain('drag from the center to resize');
+    for (let i = 0; i < 6; i += 1) key(needle, ']');
+    expect(chrome.querySelector('[data-ink-compass-radius]')?.textContent).toContain('90 degrees');
+    key(needle, 'Escape');
+    expect(geometryTool.get()).toBe('compass');
+    for (let i = 0; i < 6; i += 1) key(needle, '[');
+    key(needle, 'Enter');
+    await vi.waitFor(() => expect(added).toHaveLength(1));
+    const shape = shapeOfStroke(added[0]!);
+    expect(shape?.kind).toBe('arc');
+    if (shape?.kind === 'arc') {
+      expect(Math.abs(shape.sweep)).toBeCloseTo(Math.PI / 2, 1);
+      expect(shape.radius / PAGE_UNITS_PER_MM).toBeCloseTo(100, 0);
+    }
+    stop();
+  });
+
+  it('adds no work to normal ink: with neither tool chosen, a pen contact passes in well under a millisecond', () => {
+    const measureTools = setup(installMeasure);
+    const compassTools = setup(installCompass);
+    const both = [...measureTools.tools, ...compassTools.tools];
+    const contact = pen(100, 100);
+    for (const tool of both) expect(tool.accepts(contact, ctx)).toBe(false);
+    // 1,000 pen contacts each asked of both tools: what the router pays per pen down, a thousand times over.
+    const timing = time(() => {
+      for (let i = 0; i < 1000; i += 1) for (const tool of both) tool.accepts(contact, ctx);
+    });
+    expectWithinBudget(timing, 1);
+    measureTools.stop();
+    compassTools.stop();
+  });
 
   it('shows the ruler in centimeters or inches by the units setting', () => {
     setPrefs({ ruler: true });

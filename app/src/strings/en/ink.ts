@@ -265,12 +265,16 @@ export const ink = {
     selectLine: 'Select a line or a shape to measure it',
     firstPoint: 'First point marked. Tap the second point.',
     along: '{length} along the ruler',
+    keys: 'Measure. Arrow keys move the crosshair, Enter marks the first point and then the second. Escape puts it away.',
+    firstKey: 'First point marked. Move to the second point and press Enter.',
   },
   compass: {
     title: 'Compass',
     keywords: 'compass circle arc radius center draw geometry construction',
     label:
-      'Compass. Arrow keys move the center, plus and minus open and close it, and Enter draws a circle. Escape puts it away.',
+      'Compass. Arrow keys move the center, plus and minus open and close it, [ and ] sweep the pencil, and Enter draws the arc or a circle. Escape puts it away.',
+    hintClosed: 'Drag out from the center to open',
+    hintOpen: 'Sweep around to draw · drag from the center to resize',
     center: 'Center set',
     radius: 'Radius {length}',
     circle: 'Circle drawn, radius {length}',
@@ -458,6 +462,10 @@ export const ink = {
   },
   settings: {
     title: 'Pen and touch',
+    rulerUnits: 'Ruler and compass units',
+    rulerUnitsAuto: 'By region',
+    rulerUnitsMetric: 'Centimeters',
+    rulerUnitsImperial: 'Inches',
     handedness: 'Writing hand',
     handednessAuto: 'Detect',
     handednessRight: 'Right hand',
