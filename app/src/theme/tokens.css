@@ -60,7 +60,7 @@
   --ink-plum: #6A4A9C;
   --ink-amber: #B8620F;
   --ink-walnut: #6E4B2E;
-  --font-ui: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "OpenNote Sans", "Atkinson Hyperlegible Next", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-reading: "Literata Variable", "Literata", "Cambria", Georgia, serif;
   --font-mono: "Atkinson Hyperlegible Mono", "Cascadia Code", Consolas, monospace;
   --font-symbol: "Segoe Fluent Icons", "Segoe MDL2 Assets";
@@ -111,8 +111,8 @@
   --size-icon-lg: 24px;
   --size-toolbar-pointer: 44px;
   --size-toolbar-touch: 56px;
-  --size-sidebar: 272px;
-  --size-page-list: 300px;
+  --size-sidebar: 256px;
+  --size-page-list: 280px;
   --size-editor-min: 480px;
   --size-reading-measure: 72ch;
   --size-focus-ring-width: 2px;

@@ -81,16 +81,18 @@
     grid-area: pages;
   }
 
+  /* --pane-padding lets a pane's footer reach the pane's bottom edge (Tree.module.css). */
   .paneBody {
+    --pane-padding: var(--space-4);
     flex: 1;
     min-block-size: 0;
     overflow: auto;
-    padding: var(--space-4);
+    padding: var(--pane-padding);
   }
 
   /* The 24 px touch hit area of a splitter reaches 12 px into the pane, so rows start clear of it. */
   :global(:root[data-density='touch']) .paneBody {
-    padding: var(--space-5);
+    --pane-padding: var(--space-5);
   }
 
   /* The desk the page lies on. By day, warm window light pools from the top corner, and a soft patch of it falls on

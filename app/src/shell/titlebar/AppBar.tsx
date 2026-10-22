@@ -65,7 +65,7 @@ function useAppBarItems() {
 }
 
 export function AppBar() {
-  const region = useRegion('titleBar');
+  const region = useRegion('titleBar', 'top');
   const { title, parent } = useScreenNames();
   const screen = useLayout((state) => state.compactScreen);
   const { items, byPriority, key } = useAppBarItems();

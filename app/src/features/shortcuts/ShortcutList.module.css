@@ -37,12 +37,6 @@
     margin-block-start: calc(var(--type-small-line) + var(--space-2));
   }
 
-  /* The switch's hover area pads it by 8 px and a 1 px border. When the switch ends the row, the area hangs out
-     past the end, so its track lines up with the tables' end edge, as Settings does at the start edge. */
-  .toolbar > [role='switch']:last-child {
-    margin-inline-end: calc(-1 * (var(--space-3) + 1px));
-  }
-
   /* On the Settings page the tables don't scroll on their own, but keep the dialog's space between them. Positioned,
      so the visually hidden table heads stay inside the Settings scroller. Unpositioned, they escaped it and made the
      whole window scrollable. */
@@ -107,6 +101,12 @@
     border-block-end: 1px solid var(--color-border-subtle);
     text-align: start;
     vertical-align: middle;
+  }
+
+  /* The first column's text lines up with the group title and the filter above it. */
+  .table th:first-child,
+  .table td:first-child {
+    padding-inline-start: 0;
   }
 
   .name {

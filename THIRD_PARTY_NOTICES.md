@@ -75,9 +75,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 ## Fonts
 
-The fonts below are bundled in the app, so nothing downloads at run time. They come from the `@fontsource` npm packages, which repackage the fonts unchanged. The fonts are licensed under the SIL Open Font License, Version 1.1, copied in full below.
+The fonts below are bundled in the app, so nothing downloads at run time. They come from the `@fontsource` npm packages, which repackage the fonts unchanged, except OpenNote Sans: a Modified Version of Atkinson Hyperlegible Next whose zero has no slash (the counter is redrawn, every other glyph is unchanged). The fonts are licensed under the SIL Open Font License, Version 1.1, copied in full below.
 
-- Atkinson Hyperlegible Next. Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)
+- OpenNote Sans, modified from Atkinson Hyperlegible Next. Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)
 - Atkinson Hyperlegible Mono. Copyright 2020-2024 The Atkinson Hyperlegible Mono Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next-mono)
 - Literata. Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata)
 

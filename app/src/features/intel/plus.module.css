@@ -151,7 +151,7 @@
 
   .sheet {
     position: fixed;
-    inset-block: 3.5rem var(--space-4);
+    inset-block: var(--panel-top) var(--panel-bottom);
     inset-inline-end: var(--space-4);
     z-index: var(--layer-overlay);
     inline-size: min(22rem, 90vw);

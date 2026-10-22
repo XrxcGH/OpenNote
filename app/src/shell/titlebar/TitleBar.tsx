@@ -89,7 +89,7 @@ function useTitleBarItems() {
 
 function FullTitleBar({ medium }: { medium: boolean }) {
   const { items, movable, key } = useTitleBarItems();
-  const region = useRegion('titleBar');
+  const region = useRegion('titleBar', 'top');
   const customFrame = useCustomFrame();
   const bar = useRef<HTMLElement | null>(null);
   const start = useRef<HTMLDivElement>(null);
@@ -128,7 +128,7 @@ function FullTitleBar({ medium }: { medium: boolean }) {
 }
 
 function SetupTitleBar() {
-  const region = useRegion('titleBar');
+  const region = useRegion('titleBar', 'top');
   const customFrame = useCustomFrame();
   return (
     <Bar variant="setup" region barRef={region.ref}>

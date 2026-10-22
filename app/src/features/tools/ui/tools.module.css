@@ -6,7 +6,6 @@
   .window {
     position: fixed;
     z-index: var(--layer-overlay);
-    max-block-size: calc(100vh - 96px);
     display: flex;
     flex-direction: column;
     color: var(--color-text-primary);
@@ -182,6 +181,11 @@
 
   .expression {
     font-family: var(--font-mono);
+  }
+
+  /* The example is longer than the field at the body size, so it would be cut off. */
+  .expression::placeholder {
+    font-size: var(--type-small-size);
   }
 
   .expression[aria-invalid='true'] {

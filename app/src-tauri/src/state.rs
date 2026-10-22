@@ -112,11 +112,11 @@ impl Default for Panes {
     fn default() -> Self {
         Self {
             notebooks: PanePref {
-                width: 272.0,
+                width: 0.0,
                 collapsed: false,
             },
             pages: PanePref {
-                width: 300.0,
+                width: 0.0,
                 collapsed: false,
             },
         }

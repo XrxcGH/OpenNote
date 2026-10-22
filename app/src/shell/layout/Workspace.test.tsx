@@ -4,13 +4,17 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { executeCommand } from '../../commands/registry';
-import { sessionStore } from '../../state/session';
+import { layoutStore } from '../../state/layout';
+import { AUTO_PANE_WIDTH, sessionStore } from '../../state/session';
 import { announcements, expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
+import { defaultPaneWidth } from './solvePanes';
 
 const notebooksNav = () => screen.getByRole('navigation', { name: 'Notebooks' });
 const separator = (pane: 'notebooks' | 'pages') => screen.getByRole('separator', { name: `Resize the ${pane} pane` });
 const width = (pane: 'notebooks' | 'pages') => Number(separator(pane).getAttribute('aria-valuenow'));
 const storedWidth = (pane: 'notebooks' | 'pages') => sessionStore.get().panes[pane].width;
+/** The width a pane nobody has resized gets in this window. */
+const auto = (pane: 'notebooks' | 'pages') => defaultPaneWidth(pane, layoutStore.get().width);
 
 /**
  * Puts focus on a splitter once the app has settled. While the tree is still drawing, start-up places focus on a
@@ -28,9 +32,9 @@ describe('the wide workspace', () => {
     expect(notebooksNav()).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Pages' })).toBeTruthy();
     expect(screen.getByRole('main')).toBeTruthy();
-    expect(width('notebooks')).toBe(272);
-    expect(width('pages')).toBe(300);
-    expect(separator('notebooks').getAttribute('aria-valuetext')).toBe('Notebooks pane, 272 pixels');
+    expect(width('notebooks')).toBe(auto('notebooks'));
+    expect(width('pages')).toBe(auto('pages'));
+    expect(separator('notebooks').getAttribute('aria-valuetext')).toBe(`Notebooks pane, ${auto('notebooks')} pixels`);
     expect(separator('notebooks').getAttribute('aria-controls')).toBe(notebooksNav().id);
     await screen.findByRole('treeitem', { name: 'Lectures' });
     await expectNoAxeViolations(container);
@@ -70,12 +74,13 @@ describe('the wide splitters', () => {
   it('resizes with the splitter keys, and Enter collapses and expands with focus kept', async () => {
     await renderApp({ sizeClass: 'wide' });
     await focusSplitter('notebooks');
+    const start = auto('notebooks');
     await pressChord('Right');
-    await expect.poll(() => width('notebooks')).toBe(280);
+    await expect.poll(() => width('notebooks')).toBe(start + 8);
     await pressChord('Shift+Right');
-    await expect.poll(() => width('notebooks')).toBe(320);
+    await expect.poll(() => width('notebooks')).toBe(start + 48);
     await pressChord('Left');
-    await expect.poll(() => width('notebooks')).toBe(312);
+    await expect.poll(() => width('notebooks')).toBe(start + 40);
     await pressChord('Home');
     await expect.poll(() => width('notebooks')).toBe(220);
     await pressChord('End');
@@ -93,32 +98,36 @@ describe('the wide splitters', () => {
     await renderApp({ sizeClass: 'wide' });
     await focusSplitter('pages');
     await pressChord('Shift+Right');
-    await expect.poll(() => width('pages')).toBe(340);
+    await expect.poll(() => width('pages')).toBe(auto('pages') + 40);
     fireEvent.doubleClick(separator('pages'));
-    await expect.poll(() => width('pages')).toBe(300);
+    await expect.poll(() => width('pages')).toBe(auto('pages'));
+    expect(storedWidth('pages')).toBe(AUTO_PANE_WIDTH);
   });
 
   it('resizes by dragging, writing the width once per frame and saving it on release', async () => {
     const { container } = await renderApp({ sizeClass: 'wide' });
     const grid = container.querySelector<HTMLElement>('[data-workspace]');
     const handle = separator('notebooks');
-    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientX: 272 });
-    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 322 });
-    await expect.poll(() => grid?.style.getPropertyValue('--pane-notebooks-drag')).toBe('322px');
-    expect(storedWidth('notebooks')).toBe(272);
-    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 322 });
-    await expect.poll(() => width('notebooks')).toBe(322);
+    const start = auto('notebooks');
+    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientX: start });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: start + 50 });
+    await expect.poll(() => grid?.style.getPropertyValue('--pane-notebooks-drag')).toBe(`${start + 50}px`);
+    expect(storedWidth('notebooks')).toBe(AUTO_PANE_WIDTH);
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: start + 50 });
+    await expect.poll(() => width('notebooks')).toBe(start + 50);
     expect(grid?.style.getPropertyValue('--pane-notebooks-drag')).toBe('');
   });
 
   it('collapses a pane dragged 40 pixels past its minimum', async () => {
     await renderApp({ sizeClass: 'wide' });
     const handle = separator('notebooks');
-    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientX: 272 });
-    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 272 - 52 - 45 });
-    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 272 - 52 - 45 });
+    const start = auto('notebooks');
+    const past = 220 - 45; // 45 px past the 220 px minimum
+    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientX: start });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: past });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: past });
     await expect.poll(() => sessionStore.get().panes.notebooks.collapsed).toBe(true);
-    expect(storedWidth('notebooks')).toBe(272);
+    expect(storedWidth('notebooks')).toBe(AUTO_PANE_WIDTH);
   });
 
   it('offers every resize in the splitter menu, without dragging', async () => {
@@ -135,7 +144,7 @@ describe('the wide splitters', () => {
       'Collapse the notebooks pane',
     ]);
     fireEvent.click(within(menu).getByRole('menuitem', { name: 'Widen the notebooks pane' }));
-    await expect.poll(() => width('notebooks')).toBe(312);
+    await expect.poll(() => width('notebooks')).toBe(auto('notebooks') + 40);
   });
 
   it('offers the same items for both panes in the View tab’s Pane widths menu', async () => {

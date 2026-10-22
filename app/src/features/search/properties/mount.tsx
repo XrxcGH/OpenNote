@@ -13,12 +13,23 @@ export function mountProperties(mounted: MountedPage): () => void {
   const viewport = mounted.viewport.viewport;
   const place = () => {
     const rect = viewport.getBoundingClientRect();
-    host.style.insetBlockStart = `${Math.max(rect.top, 0) + 8}px`;
-    host.style.insetInlineEnd = `${Math.max(window.innerWidth - rect.right, 0) + 16}px`;
+    // The page area's right edge inside its scroll bar, so the chip never sits on the bar or past it.
+    const right = Math.min(rect.left + viewport.clientLeft + viewport.clientWidth, window.innerWidth);
+    const top = Math.max(rect.top, 0) + 8;
+    host.style.insetBlockStart = `${top}px`;
+    host.style.setProperty('--host-top', `${top}px`);
+    const inset = window.innerWidth - right + 16;
+    host.style.insetInlineEnd = `${inset}px`;
+    // Never wider than the page area, so the chip and its panel stay inside it however narrow the page gets.
+    host.style.maxInlineSize = `${Math.max(0, right - Math.max(rect.left, 0) - 32)}px`;
+    // The title wraps before it reaches the chip: the chip's width, its 16 px inset, and an 8 px gap.
+    const chip = host.querySelector('button')?.getBoundingClientRect().width ?? 0;
+    viewport.style.setProperty('--page-chip-room', `${chip ? Math.ceil(chip) + 24 : 0}px`);
   };
   place();
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
   observer?.observe(viewport);
+  observer?.observe(host);
   window.addEventListener('resize', place);
   const root = createRoot(host);
   root.render(<PropertiesBar page={mounted.page} />);
@@ -28,5 +39,6 @@ export function mountProperties(mounted: MountedPage): () => void {
     // The page view destroys its hooks while React may be mid-render, which a root cannot unmount in.
     setTimeout(() => root.unmount(), 0);
     host.remove();
+    viewport.style.removeProperty('--page-chip-room');
   };
 }

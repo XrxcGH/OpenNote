@@ -103,7 +103,7 @@ function MoreItems({ onDone }: { onDone(): void }) {
 
 export function BottomBar() {
   const sizeClass = useSizeClass();
-  const region = useRegion('commandBar');
+  const region = useRegion('commandBar', 'bottom');
   const available = useAvailable();
   const more = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);

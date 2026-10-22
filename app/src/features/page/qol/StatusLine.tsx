@@ -13,6 +13,7 @@ import { usePrefs } from './prefs';
 import { readingLock } from './stores';
 import styles from './qol.module.css';
 import { toggleReadingLock } from './lock';
+import { chromeEdge } from '../../../shell/layout/chromeInsets';
 
 const REFRESH_MS = 400;
 
@@ -54,7 +55,7 @@ export function StatusLine({ mounted }: { mounted: MountedPage }) {
         ? t('pageExtras.words.selection', { count: counts.selection.words, total: counts.page.words })
         : t('pageExtras.words.page', { count: counts.page.words, minutes: counts.page.minutes });
   return (
-    <div className={styles.status}>
+    <div className={styles.status} ref={chromeEdge('bottom')}>
       {locked && (
         <span className={styles.locked}>
           {t('pageExtras.lock.chip')}

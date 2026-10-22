@@ -2,8 +2,10 @@
 // button where the app can open a window of its own, and a close button. It moves with a drag or, from the
 // keyboard, with the arrow keys on its title. It never takes focus from the page by itself and never traps it.
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { t } from '../../../strings/t';
+import { tokens } from '../../../theme/tokens';
+import { chromeInsets } from '../../../shell/layout/chromeInsets';
 import { Button } from '../../../ui';
 import { loadStored, saveStored } from './storage';
 import styles from './tools.module.css';
@@ -29,14 +31,44 @@ export interface ToolWindowProps {
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
+/** The row of chips at the top of the page (search/properties/mount.tsx): 8 px down, a chip, and the panel gap. */
+const CHIP_ROW = 8 + tokens.size.chromeHit + 8;
+/** The shortest a window gets when it sits low, so its title and a few lines still show. */
+const MIN_HEIGHT = 160;
+/** The lowest top a window can have and still keep MIN_HEIGHT above the status line, with the panel gap. */
+const lowest = () => Math.max(0, window.innerHeight - chromeInsets().bottom - 8 - MIN_HEIGHT);
+
+/**
+ * Where a window with no saved place opens: left of the ones already open, so none hides another, and with no room
+ * it cascades. It opens below the row of the page's chips, such as Properties, so it doesn't cover them.
+ */
+function firstPlace(width: number, index: number, taken: number): Place {
+  const right = window.innerWidth - width - 32 - taken;
+  const cascade = 16 + index * 28;
+  return {
+    x: Math.max(Math.min(cascade, window.innerWidth - width - 16), 16, right),
+    y: chromeInsets().top + CHIP_ROW + (right < cascade ? index * 28 : 0),
+  };
+}
+
+/**
+ * Never above the command bar's line, and however far down it sits, the window ends above the status line and its
+ * body scrolls (shell/layout/chromeInsets.ts). A window narrower than the tool keeps it inside, 16 px from each edge.
+ */
+function frameStyle(place: Place, width: number): CSSProperties {
+  const top = `max(${place.y}px, var(--panel-top))`;
+  return {
+    insetInlineStart: place.x,
+    insetBlockStart: top,
+    inlineSize: `min(${width}px, calc(100vw - 32px))`,
+    maxBlockSize: `max(${MIN_HEIGHT}px, calc(100vh - ${top} - var(--panel-bottom)))`,
+  };
+}
+
 export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onPopOut, children }: ToolWindowProps) {
   const title = t(tool.title);
   const [place, setPlace] = useState<Place>(() =>
-    loadStored<Place>(`place.${tool.id}`, {
-      // A new window opens left of the ones already open, so none hides another; with no room it cascades.
-      x: Math.max(16 + index * 28, window.innerWidth - tool.width - 32 - taken),
-      y: 72 + (window.innerWidth - tool.width - 32 - taken < 16 + index * 28 ? index * 28 : 0),
-    }),
+    loadStored<Place>(`place.${tool.id}`, firstPlace(tool.width, index, taken)),
   );
   const drag = useRef<{ x: number; y: number; place: Place } | null>(null);
   const frame = useRef<HTMLElement>(null);
@@ -49,7 +81,7 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
       const height = box?.offsetHeight ?? 0;
       setPlace((now) => {
         const x = clamp(now.x, 8, Math.max(8, window.innerWidth - width - 8));
-        const y = clamp(now.y, 0, Math.max(0, window.innerHeight - height - 8));
+        const y = clamp(now.y, 0, Math.max(0, Math.min(window.innerHeight - height - 8, lowest())));
         return x === now.x && y === now.y ? now : { x, y };
       });
     };
@@ -61,7 +93,7 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
     const width = frame.current?.offsetWidth ?? tool.width;
     const clamped = {
       x: clamp(next.x, 8 - width + 80, window.innerWidth - 80),
-      y: clamp(next.y, 0, window.innerHeight - 40),
+      y: clamp(next.y, 0, lowest()),
     };
     setPlace(clamped);
     saveStored(`place.${tool.id}`, clamped);
@@ -99,13 +131,7 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
       role="dialog"
       aria-modal="false"
       aria-label={title}
-      style={{
-        insetInlineStart: place.x,
-        insetBlockStart: place.y,
-        inlineSize: tool.width,
-        // However far down it sits, the window ends inside the screen and its body scrolls.
-        maxBlockSize: `max(160px, calc(100vh - ${Math.max(0, place.y)}px - 8px))`,
-      }}
+      style={frameStyle(place, tool.width)}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && !event.defaultPrevented) {
           event.stopPropagation();
