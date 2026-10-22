@@ -433,6 +433,8 @@ export function PrintDialog(props: PrintDialogProps) {
     id: 'go',
     label: t(mode === 'print' ? 'pageViews.print.print' : 'pageViews.print.export'),
     variant: 'primary' as const,
+    // Print waits for the printer list, so it never goes to a printer the person has not seen.
+    disabled: printers === null,
     onPress: () => (preview.status === 'ready' && !rangeError && copiesOk && printers !== null ? run() : undefined),
   };
   const actions = working

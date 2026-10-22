@@ -207,6 +207,17 @@ describe('PrintDialog', () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
+  it('keeps Print unavailable until the printers are listed, and sends nothing', async () => {
+    const platform = createTestPlatform();
+    vi.spyOn(platform.exports, 'printers').mockReturnValue(new Promise(() => undefined));
+    const submit = vi.spyOn(platform.exports, 'printSubmit');
+    render(<PrintDialog source={printSource()} platform={platform} mode="print" close={vi.fn()} />);
+    const print = await screen.findByRole('button', { name: 'Print…' });
+    expect(print.getAttribute('aria-disabled')).toBe('true');
+    print.click();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it('shows no printer fields in Export as PDF', async () => {
     render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
     await screen.findByLabelText('Pages');
