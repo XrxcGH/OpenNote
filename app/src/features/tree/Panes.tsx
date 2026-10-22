@@ -33,7 +33,11 @@ function TrashButton({ plant }: { plant: boolean }) {
   if (!useFlag('trash.view')) return null;
   return (
     <div className={styles.footer}>
-      <Button variant="quiet" onClick={() => void executeCommand('trash.open', undefined, 'commandBar')}>
+      <Button
+        variant="quiet"
+        className={styles.trash}
+        onClick={() => void executeCommand('trash.open', undefined, 'commandBar')}
+      >
         <TrashIcon aria-hidden="true" />
         {t('tree.trash.open')}
       </Button>
