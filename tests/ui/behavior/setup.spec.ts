@@ -48,3 +48,22 @@ test('keeps Back and Continue in view at the compact size', async ({ page }) => 
   expect(overflow.x).toBeLessThanOrEqual(0);
   expect(overflow.y).toBeLessThanOrEqual(0);
 });
+
+test('shows the language step with English (United States) preselected and lets UK English replace it', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Get started' }).click();
+  const heading = page.getByRole('heading', { level: 1 });
+  for (let step = 0; step < 8; step += 1) {
+    await heading.first().waitFor();
+    if (((await heading.first().textContent()) ?? '').trim() === 'Language and spelling') break;
+    const before = await heading.first().textContent();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(heading.first()).not.toHaveText(before ?? '');
+  }
+  await expect(heading.first()).toHaveText('Language and spelling');
+  await expect(page.getByRole('radio', { name: /English \(United States\)/ })).toBeChecked();
+  await expect(page.getByText(/American English/)).toBeVisible();
+  await page.getByRole('radio', { name: /English \(United Kingdom\)/ }).click();
+  await expect(page.getByRole('radio', { name: /English \(United Kingdom\)/ })).toBeChecked();
+  await expect(page.getByRole('radio', { name: /English \(United States\)/ })).not.toBeChecked();
+});
