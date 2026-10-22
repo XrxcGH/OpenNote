@@ -76,6 +76,13 @@ describe('calculus answers in an equation', () => {
     expect(said.at(-1)).toContain('3x^2');
   });
 
+  it('hides the offered answer while the equation is open', async () => {
+    const ed = make('\\frac{d}{dx}x^{3}=');
+    const offered = (await until(() => ed.view.dom.querySelector('[data-math-suggestion]'))) as HTMLElement;
+    expect(openMathAt(ed, 0)).toBe(true);
+    expect(offered.getBoundingClientRect().height).toBe(0);
+  });
+
   it('shows the answer in gray while editing, and Tab adds it', async () => {
     const ed = make('\\int x^{2}dx');
     await until(() => ed.view.dom.querySelector('.drawn-test'));

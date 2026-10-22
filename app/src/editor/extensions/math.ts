@@ -56,6 +56,8 @@ class MathView implements NodeView {
   private offeredButton: HTMLButtonElement | null = null;
   /** The answer offered in the open field's preview, which Tab adds. */
   private fieldOffer: MathSuggestion | null = null;
+  /** The last answer said aloud, so writing on does not repeat it. */
+  private spokenOffer = '';
   private field: Field | null = null;
   private visual: VisualMathField | null = null;
   private toggle: HTMLButtonElement | null = null;
@@ -182,9 +184,11 @@ class MathView implements NodeView {
     if (!this.offeredButton) {
       this.offeredButton = suggestionButton(() => this.acceptOffer());
       this.offeredButton.hidden = this.field !== null;
+      // Under display math it sits centered below the equation; in a line of text, beside it.
+      if (this.display) this.offeredButton.classList.add(drawn.suggestionBlock);
       this.dom.append(this.offeredButton);
     }
-    fillSuggestion(this.offeredButton, found, (latex) => this.drawHtml(latex));
+    fillSuggestion(this.offeredButton, found, (latex) => this.drawHtml(latex, false));
   }
 
   /** Adds the offered answer after the equals sign, as one undo step. */
@@ -198,8 +202,9 @@ class MathView implements NodeView {
     this.host.announce(t('mathTools.live.accepted', { answer: found.text }));
   }
 
-  private drawHtml(latex: string): string | null {
-    const drawing = this.draw(latex);
+  /** LaTeX drawn as HTML: as display math when `display` (this equation's own style by default), or in a line. */
+  private drawHtml(latex: string, display = this.display): string | null {
+    const drawing = this.renderer && latex.trim() !== '' ? this.renderer.render(latex, display) : null;
     return drawing?.ok ? drawing.html : null;
   }
 
@@ -213,8 +218,9 @@ class MathView implements NodeView {
       if (!found || !field || !preview || !problem || (this.visual ? this.visual.value : field.value) !== value) return;
       this.fieldOffer = found;
       preview.querySelector('[data-math-ghost]')?.remove();
-      preview.append(previewGhost(found, (latex) => this.drawHtml(latex)));
-      if (problem.textContent === '') problem.textContent = t('mathTools.live.suggestion', { answer: found.text });
+      preview.append(previewGhost(found, (latex) => this.drawHtml(latex, false)));
+      if (this.spokenOffer !== found.text) this.host.announce(t('mathTools.live.suggestion', { answer: found.text }));
+      this.spokenOffer = found.text;
     });
   }
 
@@ -228,6 +234,8 @@ class MathView implements NodeView {
     else field.value = value;
     this.showPreview();
     this.host.announce(t('mathTools.live.accepted', { answer: found.text }));
+    // The visual editor may move on to the next button with Tab itself; the answer was the point, so stay here.
+    field.focus();
   }
 
   /** Shows or hides the steps for what is in the field, under the panel's buttons. */
@@ -252,7 +260,7 @@ class MathView implements NodeView {
     if (this.holder !== holder || this.stepsList) return;
     const list = stepsPanel(
       view,
-      (latex) => this.drawHtml(latex),
+      (latex) => this.drawHtml(latex, false),
       (block) => this.insertStepsAfter(block),
     );
     holder.append(list);

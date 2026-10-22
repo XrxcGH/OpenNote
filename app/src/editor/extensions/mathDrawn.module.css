@@ -67,7 +67,6 @@
   .stepMath {
     display: inline-block;
     max-inline-size: 100%;
-    overflow-x: auto;
     vertical-align: middle;
   }
 
@@ -93,6 +92,16 @@
     border: 1px dashed var(--color-border-subtle);
     border-radius: var(--radius-sm);
     cursor: pointer;
+  }
+
+  .suggestion[hidden] {
+    display: none;
+  }
+
+  .suggestionBlock {
+    display: table;
+    margin-inline: auto;
+    margin-block-end: var(--space-2);
   }
 
   .suggestion:hover {

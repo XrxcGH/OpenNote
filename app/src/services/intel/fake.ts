@@ -10,6 +10,7 @@ import type {
   Feature,
   FeatureStatus,
   InkRecognition,
+  InkRequest,
   IntelErrorCode,
   IntelSettings,
   Keyword,
@@ -35,6 +36,11 @@ export interface FakeIntelOptions {
   ocr?: OcrResult;
   /** The answer to every set of strokes. Left out reads all the strokes as the word "sample". */
   ink?: InkRecognition;
+  /**
+   * Reads strokes as text before the fixed answers, so a web preview can script what handwriting says. Null falls
+   * back to `ink` or "sample".
+   */
+  readInk?: (strokes: InkRequest['strokes']) => string | null;
 }
 
 export interface FakeIntelTransport extends IntelTransport {
@@ -187,6 +193,11 @@ function recognitionHandlers(
     },
     intel_ink_recognize: ({ request }) => {
       state.need('handwriting');
+      const scripted = request.strokes.length > 0 ? options.readInk?.(request.strokes) : null;
+      if (scripted) {
+        const read = { text: scripted, alternates: [], strokes: request.strokes.map((s) => s.key), bounds: NO_BOUNDS };
+        return { lines: [{ text: scripted, bounds: NO_BOUNDS, words: [read] }] };
+      }
       if (options.ink) return options.ink;
       if (request.strokes.length === 0) return { lines: [] };
       const word = { text: 'sample', alternates: [], strokes: request.strokes.map((s) => s.key), bounds: NO_BOUNDS };
