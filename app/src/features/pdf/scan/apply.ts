@@ -120,11 +120,35 @@ export async function cleanPicture(
   return true;
 }
 
+/** The size of a picture file, or null when it cannot be read. */
+async function sizeOf(url: string): Promise<{ width: number; height: number } | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const bitmap = await createImageBitmap(await response.blob());
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size.width > 0 && size.height > 0 ? size : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Brings back the photo a cleaned picture was made from. */
 export async function restoreOriginal(target: EditTarget, block: BlockJson): Promise<boolean> {
   const original = typeof block.data.original === 'string' ? block.data.original : null;
   if (!original) return false;
-  await target.send([{ edit: 'patchBlock', block: block.id, data: { asset: original, original: null, scan: null } }]);
+  const edits: Edit[] = [
+    { edit: 'patchBlock', block: block.id, data: { asset: original, original: null, scan: null } },
+  ];
+  // The cleaned page has its own shape, so the frame takes the photo's shape back or the photo would be stretched.
+  const frame = block.frame;
+  if (frame?.w !== undefined && frame.h !== undefined && !block.lock) {
+    const size = await sizeOf(target.page.assetUrl(original));
+    if (size)
+      edits.push({ edit: 'moveBlock', block: block.id, frame: { ...frame, h: (frame.w * size.height) / size.width } });
+  }
+  await target.send(edits);
   return true;
 }
 
