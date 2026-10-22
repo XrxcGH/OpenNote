@@ -111,6 +111,14 @@ fn run_job_process(pdf: &[u8], request_json: &str) -> IpcResult<Receipt> {
     let mut child = command
         .spawn()
         .map_err(|_| spool("The print job could not be started."))?;
+    // A printer that saves to a file (Microsoft XPS Document Writer) shows its Save window from the job's process, so
+    // that process may come to the front; otherwise the window opens behind OpenNote and the job seems stuck.
+    #[cfg(windows)]
+    {
+        use windows::Win32::UI::WindowsAndMessaging::AllowSetForegroundWindow;
+        // SAFETY: plain Win32 call on a process id this process just started; a failure only leaves the window behind.
+        let _ = unsafe { AllowSetForegroundWindow(child.id()) };
+    }
     let started = std::time::Instant::now();
     let exited = loop {
         match child.try_wait() {
