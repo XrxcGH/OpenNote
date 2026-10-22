@@ -137,6 +137,29 @@ describe('DC circuit solver: sources between nodes and failures', () => {
     expect(solveCircuit({ parts: [part('resistor', 0, 0, 0, 0), ground(0, 0)] }).status).toBe('badValue');
   });
 
+  it('joins a wire at a T junction but not where two wires only cross', () => {
+    // An 8 kΩ load hangs from (8, 8) to a ground at (10, 8). A wire that crosses the divider's W3 mid-span leaves the
+    // divider alone; one that ends on W3 puts the load across R2, so the output falls from 8 V to 6 V.
+    const load = [part('resistor', 8, 8, 0, 8000), ground(10, 8)];
+    const crossing = [...starterCircuit().parts, ...load, wire(8, 5, 8, 8)];
+    expect(solveCircuit({ parts: crossing }).status).toBe('solved');
+    expect(voltAt(crossing, 7, 6)).toBeCloseTo(8, 9);
+    const tee = [...starterCircuit().parts, ...load, wire(8, 6, 8, 8)];
+    expect(voltAt(tee, 7, 6)).toBeCloseTo(6, 9);
+  });
+
+  it('names the parts of a loop that has no path to ground', () => {
+    const island = [
+      part('voltage', 20, 0, 90, 5),
+      part('resistor', 20, 2, 0, 100),
+      wire(22, 2, 22, 0),
+      wire(22, 0, 20, 0),
+    ];
+    const result = solveCircuit({ parts: [...starterCircuit().parts, ...island] });
+    expect(result.status).toBe('floating');
+    expect(result.floating).toEqual([island[0].id, island[1].id]);
+  });
+
   it('reads stored data and keeps parts on the grid', () => {
     const read = readCircuit({ parts: [{ kind: 'resistor', x: 1.4, y: 2.6, rotation: 45 }, { kind: 'lamp' }] });
     expect(read.parts).toEqual([{ id: 'p1', kind: 'resistor', label: 'R1', x: 1, y: 3, rotation: 0, value: 1000 }]);

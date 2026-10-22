@@ -1,7 +1,8 @@
 // A DC circuit (item 10) on a grid: resistors, voltage and current sources, grounds, and wires as parts. A two-
 // terminal part spans two grid steps from its first terminal (x, y) in the direction of its rotation; for a voltage
 // source the second terminal is +, and a current source pushes current out of its second terminal. Values are in
-// ohms, volts, and amperes. Terminals on the same grid point are joined, and so is any grid point along a wire.
+// ohms, volts, and amperes. Terminals on the same grid point are joined. A wire joins its two ends and any terminal or
+// wire end that lands along it; two wires that merely cross are not joined.
 
 export type CircuitKind = 'resistor' | 'voltage' | 'current' | 'ground' | 'wire';
 export type Rotation = 0 | 90 | 180 | 270;

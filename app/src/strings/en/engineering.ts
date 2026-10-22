@@ -152,7 +152,8 @@ export const engineering = {
     mode: 'Editing mode',
     modeParts: 'Place and move parts',
     modeWires: 'Draw wires',
-    wireHint: 'Drag from one grid point to another to add a wire. Ends that touch are joined.',
+    wireHint:
+      'Drag from one grid point to another to add a wire. Ends that touch are joined; wires that only cross are not.',
     partsHint: 'Add parts from the toolbar and drag them into place.',
     value: 'Value',
     valueHelp: 'Such as 4.7k, 220 Ω, or 2 mA.',
@@ -173,6 +174,7 @@ export const engineering = {
     delivers: '{label} delivers {power}',
     takes: '{label} takes {power}',
     noGround: 'Add a ground so the voltages have a reference.',
+    floating: 'Part of the circuit is floating, with no path to ground: {list}. Wire it to the rest or add a ground.',
     empty: 'Add a source and some resistors.',
     badValue: 'Every resistor needs a resistance above 0 Ω.',
     singular:

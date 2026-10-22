@@ -405,6 +405,9 @@ function CircuitResults({ model, result }: { model: CircuitModel; result: Circui
     solved: t('engineering.circuit.solved'),
     empty: t('engineering.circuit.empty'),
     noGround: t('engineering.circuit.noGround'),
+    floating: t('engineering.circuit.floating', {
+      list: (result.floating ?? []).map((id) => model.parts.find((p) => p.id === id)?.label ?? id).join(', '),
+    }),
     singular: t('engineering.circuit.singular'),
     badValue: t('engineering.circuit.badValue'),
   }[result.status];

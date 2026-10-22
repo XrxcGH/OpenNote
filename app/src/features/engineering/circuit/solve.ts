@@ -29,7 +29,7 @@ export interface BranchInfo {
   power: number;
 }
 
-export type CircuitStatus = 'solved' | 'empty' | 'noGround' | 'singular' | 'badValue';
+export type CircuitStatus = 'solved' | 'empty' | 'noGround' | 'floating' | 'singular' | 'badValue';
 
 export interface CircuitResult {
   status: CircuitStatus;
@@ -37,6 +37,8 @@ export interface CircuitResult {
   branches: BranchInfo[];
   /** Part ID to the node index of each terminal. */
   ends: Map<string, number[]>;
+  /** For 'floating': the parts with no path to ground through resistors and voltage sources. */
+  floating?: string[];
 }
 
 const key = (p: Pt) => `${p.x},${p.y}`;
@@ -57,14 +59,19 @@ class Joints {
   }
 }
 
-/** Every grid point a wire passes over, when it runs along the grid; just its ends otherwise. */
-function wirePoints(part: CircuitPart): Pt[] {
+/**
+ * The grid points a wire joins: its two ends, and any point along it (when it runs along the grid) where another
+ * part's terminal or another wire's end lands, a T junction. Two wires that only cross mid-span are not joined, as
+ * on a schematic drawn without a junction dot; split one at the crossing to join them.
+ */
+function wirePoints(part: CircuitPart, anchors: ReadonlySet<string>): Pt[] {
   const [a, b] = terminals(part);
   if (a.x !== b.x && a.y !== b.y) return [a, b];
   const steps = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y));
-  const out: Pt[] = [];
-  for (let i = 0; i <= steps; i++) {
-    out.push({ x: a.x + Math.sign(b.x - a.x) * i, y: a.y + Math.sign(b.y - a.y) * i });
+  const out: Pt[] = [a, b];
+  for (let i = 1; i < steps; i++) {
+    const point = { x: a.x + Math.sign(b.x - a.x) * i, y: a.y + Math.sign(b.y - a.y) * i };
+    if (anchors.has(key(point))) out.push(point);
   }
   return out;
 }
@@ -74,8 +81,9 @@ export function solveCircuit(model: CircuitModel): CircuitResult {
   const elements = model.parts.filter((p) => p.kind === 'resistor' || p.kind === 'voltage' || p.kind === 'current');
   const empty = (status: CircuitStatus): CircuitResult => ({ status, nodes: [], branches: [], ends: new Map() });
   if (elements.length === 0) return empty('empty');
+  const anchors = new Set(model.parts.flatMap((p) => terminals(p).map(key)));
   for (const wire of model.parts.filter((p) => p.kind === 'wire')) {
-    const points = wirePoints(wire).map(key);
+    const points = wirePoints(wire, anchors).map(key);
     for (const point of points.slice(1)) joints.join(points[0], point);
   }
   const grounds = model.parts.filter((p) => p.kind === 'ground').map((p) => joints.find(key(p)));
@@ -101,6 +109,23 @@ export function solveCircuit(model: CircuitModel): CircuitResult {
     );
   }
   const n = numbers.size - 1;
+
+  // Nodes with no path to ground through resistors and voltage sources have no defined voltage; name their parts.
+  const reached = new Set([0]);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const part of elements) {
+      if (part.kind === 'current') continue;
+      const [p, q] = ends.get(part.id)!;
+      if (reached.has(p) !== reached.has(q)) {
+        reached.add(p).add(q);
+        grew = true;
+      }
+    }
+  }
+  const floating = elements.filter((part) => ends.get(part.id)!.some((node) => !reached.has(node)));
+  if (floating.length > 0) return { ...empty('floating'), floating: floating.map((part) => part.id) };
+
   const sources = elements.filter((p) => p.kind === 'voltage');
   const size = n + sources.length;
   const A = zeros(size, size);
