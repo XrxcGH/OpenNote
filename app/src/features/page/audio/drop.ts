@@ -3,6 +3,7 @@
 // because it loads at start-up: the work loads when a media file is dropped.
 import { isEnabled } from '../../../app/flags';
 import { shownPage as shownOpenPage } from '../history/shown';
+import { videoMimeOf } from '../video/kinds';
 
 const EXTENSIONS = /\.(mp3|m4a|aac|wav|wma|flac|ogg|oga|opus|mp4|m4v|mov|wmv|webm|mkv|avi)$/i;
 
@@ -31,7 +32,9 @@ export function installDropWatch(): () => void {
   };
   const drop = (event: DragEvent) => {
     if (!isEnabled('audio.import') || !shownOpenPage.get() || !inPage(event.target)) return;
-    const media = [...(event.dataTransfer?.files ?? [])].filter(isMediaFile);
+    // mp4 and webm files become video blocks when local video is on; the video watch takes them.
+    const videos = isEnabled('page.localVideo');
+    const media = [...(event.dataTransfer?.files ?? [])].filter((f) => isMediaFile(f) && !(videos && videoMimeOf(f)));
     if (media.length === 0) return;
     event.preventDefault();
     event.stopPropagation();
