@@ -29,3 +29,13 @@ These tools are new in Beta, so check the answers against your own work while yo
 - Give a joint a pin or a roller, and a load, in the fields under the drawing. A roller's angle is the direction it pushes.
 - Member forces show on the members and in the table beside them, with T for tension and C for compression. Blue members are in tension and red ones in compression. Zero-force members say so.
 - OpenNote counts members, reactions, and joints. It says when the truss can move, and solves a truss with redundant members assuming the same AE for every member.
+
+## Circuits
+
+- Open Insert, then Circuit, or type `/circuit`. The circuit starts as a 12 V battery across two resistors in series, already solved.
+- Add resistors, voltage sources, current sources, grounds, and wires from the toolbar. With Place and move parts on, drag a part to move it on the grid. With Draw wires on, drag from one grid point to another to add a wire.
+- Terminals on the same grid point are joined, and so is any grid point along a wire, so a ground can sit anywhere on the bottom wire.
+- Select a part to change its label and value. Type values with a prefix, such as 4.7k, 220 Ω, or 2 mA. Press R to turn a part, or choose Turn. A voltage source's + end is its long plate; a current source pushes current the way its arrow points.
+- Nodal analysis runs as you work. Each node's voltage shows in the drawing and in the table beside it, with every part's current, which way it flows, and the power it delivers or takes.
+- Without a ground, the circuit asks for one. A circuit with two sources fighting in parallel, or a current source with nowhere to go, says it cannot be solved.
+- The Draw tab's Shapes menu has a Circuit symbols group: resistor, battery, voltage and current sources, ground, capacitor, inductor, and switch, drawn as ink you can move, turn, and resize.

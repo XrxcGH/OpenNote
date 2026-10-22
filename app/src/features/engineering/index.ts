@@ -9,6 +9,11 @@ export { readBeam, solveBeam, starterBeam } from './structures/beam';
 export type { BeamModel, BeamResult } from './structures/beam';
 export { readTruss, solveTruss, starterTruss } from './structures/truss';
 export type { TrussModel, TrussResult } from './structures/truss';
+export { readCircuit, starterCircuit } from './circuit/model';
+export type { CircuitModel, CircuitPart } from './circuit/model';
+export { solveCircuit } from './circuit/solve';
+export type { CircuitResult } from './circuit/solve';
+export { parsePrefixed, withPrefix } from './prefix';
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
@@ -50,4 +55,18 @@ export async function trussStarter(): Promise<{ model: import('./structures/trus
   ]);
   const model = starter();
   return { model, fallback: trussFallback(model) };
+}
+
+export async function mountCircuit(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
+  const [{ mountPanel }, { CircuitPanel }] = await Promise.all([import('./mount'), import('./circuit/CircuitPanel')]);
+  return mountPanel(CircuitPanel)(container, props);
+}
+
+export async function circuitStarter(): Promise<{ model: import('./circuit/model').CircuitModel; fallback: string }> {
+  const [{ starterCircuit: starter }, { circuitFallback }] = await Promise.all([
+    import('./circuit/model'),
+    import('./circuit/CircuitPanel'),
+  ]);
+  const model = starter();
+  return { model, fallback: circuitFallback(model) };
 }

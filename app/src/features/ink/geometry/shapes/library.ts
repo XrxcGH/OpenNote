@@ -4,10 +4,10 @@
 
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
-import { ENGINEERING_BUILDERS, MECHANICS_SHAPES } from './engineering';
+import { CIRCUIT_SHAPES, ENGINEERING_BUILDERS, MECHANICS_SHAPES } from './engineering';
 import { polygonCorners, sampleArc, sampleEllipse, shapePoints, starCorners } from './generate';
 
-export type LibraryGroup = 'basic' | 'flowchart' | 'network' | 'entity' | 'mechanics';
+export type LibraryGroup = 'basic' | 'flowchart' | 'network' | 'entity' | 'mechanics' | 'circuit';
 
 export interface LibraryItem {
   readonly id: string;
@@ -37,6 +37,7 @@ export const LIBRARY: readonly LibraryItem[] = [
   ...(['database', 'cloud', 'server', 'router'] as const).map((id) => ({ id, group: 'network' as const })),
   ...(['entity', 'weakEntity', 'relationship', 'attribute'] as const).map((id) => ({ id, group: 'entity' as const })),
   ...MECHANICS_SHAPES.map((id) => ({ id, group: 'mechanics' as const })),
+  ...CIRCUIT_SHAPES.map((id) => ({ id, group: 'circuit' as const })),
 ];
 
 const rect = (c: Vec, w: number, h: number): Vec[] => {

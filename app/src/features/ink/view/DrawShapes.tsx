@@ -16,8 +16,13 @@ const GROUPS: readonly LibraryGroup[] = ['basic', 'flowchart', 'network', 'entit
 export function DrawShapes({ toolProps }: CommandBarComponentProps) {
   const on = useFlag('ink.shapeTools');
   const mechanics = useFlag('engineering.fbd');
+  const circuit = useFlag('engineering.circuit');
   if (!on) return null;
-  const groups: readonly LibraryGroup[] = [...GROUPS, ...(mechanics ? (['mechanics'] as const) : [])];
+  const groups: readonly LibraryGroup[] = [
+    ...GROUPS,
+    ...(mechanics ? (['mechanics'] as const) : []),
+    ...(circuit ? (['circuit'] as const) : []),
+  ];
 
   const open = async (anchor: HTMLElement) => {
     await openMenu({

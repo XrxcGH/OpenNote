@@ -10,6 +10,8 @@ export interface View {
   scale: number;
   sx(x: number): number;
   sy(y: number): number;
+  /** The model point under a screen point. */
+  toModel(clientX: number, clientY: number): Point;
   /** Follows one pointer: `move` gets the model point and where the drag started. */
   drag(event: ReactPointerEvent, move: (p: Point, start: Point) => void, end?: (p: Point) => void): void;
 }
@@ -30,7 +32,7 @@ interface Props {
   rows: number;
   scale?: number;
   /** Pointer down on the empty grid, at a model point. */
-  onBackground?(p: Point, event: ReactPointerEvent): void;
+  onBackground?(p: Point, event: ReactPointerEvent, view: View): void;
   children: ReactNode;
 }
 
@@ -55,6 +57,7 @@ export function Canvas({ label, columns, rows, scale = 40, onBackground, childre
   const view = useMemo<View>(
     () => ({
       scale,
+      toModel,
       sx: (x) => PAD + x * scale,
       sy: (y) => PAD + (rows - y) * scale,
       drag(event, move, end) {
@@ -106,7 +109,7 @@ export function Canvas({ label, columns, rows, scale = 40, onBackground, childre
         aria-label={label}
         onPointerDown={(event) => {
           if (event.target === svg.current || (event.target as Element).hasAttribute('data-grid')) {
-            onBackground?.(toModel(event.clientX, event.clientY), event);
+            onBackground?.(toModel(event.clientX, event.clientY), event, view);
           }
         }}
         onPointerMove={(event) => {

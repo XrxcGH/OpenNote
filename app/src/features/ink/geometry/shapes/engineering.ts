@@ -113,6 +113,88 @@ const spring: Builder = (c, w, h) => {
   return [points];
 };
 
+/** The leads of a horizontal two-terminal symbol: from the left edge to `from`, and from `to` to the right edge. */
+const leads = (c: Vec, w: number, from: number, to: number): Vec[][] => [
+  line(c.x - w / 2, c.y, c.x - w / 2 + from * w, c.y),
+  line(c.x - w / 2 + to * w, c.y, c.x + w / 2, c.y),
+];
+
+const resistor: Builder = (c, w, h) => {
+  const points: Vec[] = [{ x: c.x - w * 0.2, y: c.y }];
+  for (let i = 0; i < 6; i++) {
+    points.push({ x: c.x - w * 0.2 + ((i + 0.5) / 6) * w * 0.4, y: c.y + (i % 2 === 0 ? -h : h) * 0.25 });
+  }
+  points.push({ x: c.x + w * 0.2, y: c.y });
+  return [...leads(c, w, 0.3, 0.7), points];
+};
+
+const battery: Builder = (c, w, h) => [
+  ...leads(c, w, 0.45, 0.55),
+  line(c.x - w * 0.05, c.y - h * 0.4, c.x - w * 0.05, c.y + h * 0.4),
+  line(c.x + w * 0.05, c.y - h * 0.2, c.x + w * 0.05, c.y + h * 0.2),
+];
+
+const voltageSource: Builder = (c, w, h) => {
+  const r = h * 0.35;
+  return [
+    ...leads(c, w, 0.5 - r / w, 0.5 + r / w),
+    sampleArc(c, r, 0, Math.PI * 2),
+    line(c.x - r * 0.65, c.y - r * 0.2, c.x - r * 0.25, c.y - r * 0.2),
+    line(c.x - r * 0.45, c.y - r * 0.4, c.x - r * 0.45, c.y),
+    line(c.x + r * 0.25, c.y - r * 0.2, c.x + r * 0.65, c.y - r * 0.2),
+  ];
+};
+
+const currentSource: Builder = (c, w, h) => {
+  const r = h * 0.35;
+  return [
+    ...leads(c, w, 0.5 - r / w, 0.5 + r / w),
+    sampleArc(c, r, 0, Math.PI * 2),
+    ...arrow(c.x - r * 0.6, c.y, c.x + r * 0.6, c.y, r * 0.4),
+  ];
+};
+
+const ground: Builder = (c, w, h) => [
+  line(c.x, c.y - h / 2, c.x, c.y),
+  line(c.x - w * 0.25, c.y, c.x + w * 0.25, c.y),
+  line(c.x - w * 0.16, c.y + h * 0.15, c.x + w * 0.16, c.y + h * 0.15),
+  line(c.x - w * 0.07, c.y + h * 0.3, c.x + w * 0.07, c.y + h * 0.3),
+];
+
+const capacitor: Builder = (c, w, h) => [
+  ...leads(c, w, 0.45, 0.55),
+  line(c.x - w * 0.05, c.y - h * 0.35, c.x - w * 0.05, c.y + h * 0.35),
+  line(c.x + w * 0.05, c.y - h * 0.35, c.x + w * 0.05, c.y + h * 0.35),
+];
+
+/** Four half loops above the line, as in IEEE 315. */
+const inductor: Builder = (c, w) => {
+  const loops = 4;
+  const r = (w * 0.4) / loops / 2;
+  const out: Vec[][] = [...leads(c, w, 0.3, 0.7)];
+  for (let i = 0; i < loops; i++)
+    out.push(sampleArc({ x: c.x - w * 0.2 + r * (2 * i + 1), y: c.y }, r, Math.PI, Math.PI));
+  return out;
+};
+
+const switchOpen: Builder = (c, w, h) => [
+  ...leads(c, w, 0.35, 0.65),
+  line(c.x - w * 0.15, c.y, c.x + w * 0.12, c.y - h * 0.3),
+  sampleArc({ x: c.x - w * 0.15, y: c.y }, 3, 0, Math.PI * 2),
+  sampleArc({ x: c.x + w * 0.15, y: c.y }, 3, 0, Math.PI * 2),
+];
+
+export const CIRCUIT_SHAPES = [
+  'resistor',
+  'battery',
+  'voltageSource',
+  'currentSource',
+  'ground',
+  'capacitor',
+  'inductor',
+  'switch',
+] as const;
+
 export const MECHANICS_SHAPES = [
   'pinSupport',
   'rollerSupport',
@@ -131,4 +213,12 @@ export const ENGINEERING_BUILDERS: Readonly<Record<string, Builder>> = {
   momentArrow,
   distributedLoad,
   spring,
+  resistor,
+  battery,
+  voltageSource,
+  currentSource,
+  ground,
+  capacitor,
+  inductor,
+  switch: switchOpen,
 };

@@ -5,7 +5,7 @@ import type { MessageKey } from '../../../strings/t';
 import { LIBRARY } from '../geometry/shapes';
 import type { LibraryGroup } from '../geometry/shapes';
 
-const ENGINEERING_GROUPS: ReadonlySet<LibraryGroup> = new Set(['mechanics']);
+const ENGINEERING_GROUPS: ReadonlySet<LibraryGroup> = new Set(['mechanics', 'circuit']);
 
 export function groupLabel(group: LibraryGroup): string {
   return t(

@@ -94,6 +94,35 @@ addCommand({
   },
 });
 
+blockRenderers.register(
+  panelRenderer({
+    type: PANEL_TYPES.circuit,
+    label: 'engineering.circuit.block',
+    flag: 'engineering.circuit',
+    load: async () => {
+      const { mountCircuit } = await import('../../engineering');
+      return { mount: (container, props) => lazyHandle(mountCircuit(container, props)) };
+    },
+  }),
+);
+
+addCommand({
+  id: 'insert.circuit',
+  title: 'engineering.circuit.insert',
+  keywords: 'engineering.circuit.insertKeywords',
+  icon: 'Circuitry',
+  flag: 'engineering.circuit',
+  slash: { group: 'advanced', order: 43 },
+  bar: { group: 'engineering', priority: 27 },
+  run: async () => {
+    const { circuitStarter } = await import('../../engineering');
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    const { model, fallback } = await circuitStarter();
+    const id = await insertPanelBlock(PANEL_TYPES.circuit, { model }, fallback);
+    if (id) announce(t('engineering.circuit.inserted'));
+  },
+});
+
 /** A block handle for a mount that finishes later: updates before then are kept and passed on. */
 function lazyHandle<P>(pending: Promise<{ update(props: P): void; destroy(): void }>) {
   let handle: { update(props: P): void; destroy(): void } | null = null;
