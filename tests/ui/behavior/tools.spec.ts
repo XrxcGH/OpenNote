@@ -36,7 +36,7 @@ test('answers in the calculator, converts units, and explains a mistake', async 
   await expect(page.locator('#calc-result')).toHaveText('= 18.8495559215');
   await expression.fill('5 km to mi');
   await page.keyboard.press('Enter');
-  await expect(page.locator('#calc-result')).toHaveText('= 3.10685596119');
+  await expect(page.locator('#calc-result')).toHaveText('= 3.10685596119 mi');
   await expression.fill('1 / 0');
   await page.keyboard.press('Enter');
   await expect(page.locator('#calc-result')).toHaveText('Dividing by zero has no answer.');
