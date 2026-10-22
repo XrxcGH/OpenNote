@@ -6,13 +6,37 @@ const MASS = new Map(ELEMENTS.map((element) => [element.symbol, element.mass]));
 
 export type Composition = Map<string, number>;
 
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+
+/**
+ * Splits a trailing ion charge off a formula. Accepts Fe^3+, Fe3+, SO4^2-, SO42-, MnO4-, NH4+, and superscripts.
+ * Without a caret, a digit before the sign is ambiguous (the 4 in MnO4- is a subscript): more than one digit means
+ * the last is the charge (SO42-), and a single digit is the charge only on a lone atom (Cu2+, Fe3+).
+ */
+export function splitCharge(text: string): { body: string; charge: number } {
+  const source = text
+    .replace(/\s+/g, '')
+    .replace(/[⁰-⁹]+(?=[⁺⁻]|$)/g, (run) => '^' + [...run].map((c) => SUPERSCRIPT.indexOf(c)).join(''))
+    .replace(/⁺/g, '+')
+    .replace(/[⁻−]/g, '-');
+  const caret = /^(.*?)\^(\d*)([+-])$/.exec(source);
+  if (caret) return { body: caret[1], charge: (caret[2] === '' ? 1 : Number(caret[2])) * (caret[3] === '+' ? 1 : -1) };
+  const plain = /^(.*?)(\d*)([+-])$/.exec(source);
+  if (!plain || plain[1] === '') return { body: source, charge: 0 };
+  const sign = plain[3] === '+' ? 1 : -1;
+  const [, front, digits] = plain;
+  if (digits === '') return { body: front, charge: sign };
+  if (digits.length > 1) return { body: front + digits.slice(0, -1), charge: sign * Number(digits.slice(-1)) };
+  return /^[A-Z][a-z]?$/.test(front) ? { body: front, charge: sign * Number(digits) } : { body: front + digits, charge: sign };
+}
+
 /** Element counts of a formula, or null when it cannot be read (unknown symbol, unbalanced bracket). */
 export function parseFormula(text: string): Composition | null {
-  const source = text
+  let source = text
     .replace(/[₀-₉]/g, (c) => String(c.charCodeAt(0) - 0x2080))
     .replace(/[·•*]/g, '.')
-    .replace(/\s+/g, '')
-    .replace(/\^\d*[+-]$|[+-]$/, '');
+    .replace(/\s+/g, '');
+  source = splitCharge(source).body;
   if (source === '') return null;
   let pos = 0;
   const number = (): number => {

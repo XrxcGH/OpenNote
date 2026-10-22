@@ -77,11 +77,12 @@ export const chem = {
       curve: 'Titration curve',
       unknown: 'Unknown concentration',
     },
-    balanceIntro: 'Type an equation with an arrow, such as H2 + O2 -> H2O. Charges: Fe^3+, MnO4-, e-.',
+    balanceIntro: 'Type an equation with an arrow, such as H2 + O2 -> H2O. Charges: Fe3+, Cu2+, MnO4-, SO42-, Fe^3+, e-.',
     balanceErrors: {
       format: 'Write reactants, an arrow (->), and products.',
       formula: 'One of the formulas cannot be read. Check the capital letters and brackets.',
       element: 'An element appears on only one side, so the equation cannot balance.',
+      many: 'This equation has more than one valid balance, so a single answer is not defined. Remove a product or reactant that can form in more than one way, or split it into separate reactions.',
       cannot: 'This equation has no single whole-number balance. Check the formulas.',
     },
     formulaError: 'That formula cannot be read. Use capitals for elements, such as Ca(OH)2 or CuSO4.5H2O.',

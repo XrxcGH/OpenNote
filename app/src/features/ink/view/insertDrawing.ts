@@ -15,6 +15,8 @@ export interface DrawingParts {
 }
 
 const LABEL_HEIGHT = 28;
+/** Bonds keep one width whatever the pen is, so a molecule reads the same in any pen; the color still follows the pen. */
+const BOND_WIDTH = 2.5;
 
 /** Adds the drawing at the middle of the view. Returns false when no editable page is showing. */
 export async function insertDrawing(parts: DrawingParts): Promise<boolean> {
@@ -30,11 +32,10 @@ export async function insertDrawing(parts: DrawingParts): Promise<boolean> {
     y: (camera.scrollY + camera.viewport.h / 2) / camera.zoom,
   };
   const pen = styleOf(activeSlot());
-  const tool = pen.tool === 'highlighter' ? 'pen' : pen.tool;
   const strokes: InkStroke[] = parts.lines.map((points) => ({
     id: newId(),
-    tool,
-    width: pen.width,
+    tool: 'pen' as const,
+    width: BOND_WIDTH,
     startTime: Date.now(),
     points: points.map((p) => ({ x: center.x + p.x, y: center.y + p.y })),
     block: surface.layerFor(),

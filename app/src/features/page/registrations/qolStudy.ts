@@ -409,6 +409,13 @@ if (typeof window !== 'undefined') {
   }, 30_000);
 }
 
+// The chemistry tools also have a keyboard shortcut and an Insert tab button.
+const CHEM_ENTRY: Record<string, { key: string; priority: number } | undefined> = {
+  chemcalc: { key: 'Ctrl+Alt+Y', priority: 50 },
+  structure: { key: 'Ctrl+Alt+X', priority: 51 },
+  properties: { key: 'Ctrl+Alt+U', priority: 52 },
+};
+
 // Study tools in their own windows: the unit converter and the reference tables open from the palette.
 for (const [tool, flag, title, keywords, icon] of [
   ['converter', 'tools.converter', 'study.converter.open', 'study.converter.keywords', 'Ruler'],
@@ -418,6 +425,7 @@ for (const [tool, flag, title, keywords, icon] of [
   ['structure', 'tools.structure', 'chem.structure.open', 'chem.structure.keywords', 'Atom'],
   ['properties', 'tools.properties', 'chem.data.open', 'chem.data.keywords', 'Table'],
 ] as const) {
+  const chem = CHEM_ENTRY[tool as string];
   addCommand({
     id: `tools.${tool}`,
     title,
@@ -426,6 +434,7 @@ for (const [tool, flag, title, keywords, icon] of [
     icon,
     flag,
     anywhere: true,
+    ...(chem ? { keys: [chem.key], bar: { group: 'math', priority: chem.priority } } : {}),
     run: async () => (await import('../../tools')).openTool(tool),
   });
 }

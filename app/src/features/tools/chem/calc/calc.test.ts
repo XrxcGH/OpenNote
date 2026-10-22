@@ -47,6 +47,16 @@ describe('balancing', () => {
   it('balances charge too', () => {
     expect(text('MnO4- + Fe^2+ + H+ -> Mn^2+ + Fe^3+ + H2O')).toBe('1,5,8,1,5,4');
   });
+  it('reads textbook ion charges without a caret', () => {
+    expect(text('Cu + Ag+ -> Cu2+ + Ag')).toBe('1,2,1,2');
+    expect(text('MnO4- + Fe2+ + H+ -> Mn2+ + Fe3+ + H2O')).toBe('1,5,8,1,5,4');
+    expect(text('Cr2O72- + Fe2+ + H+ -> Cr3+ + Fe3+ + H2O')).toBe('1,6,14,2,6,7');
+    expect(molarMass('SO42-')).toBeCloseTo(96.06, 1);
+    expect(molarMass('NH4+')).toBeCloseTo(18.04, 1);
+  });
+  it('says when there are many balances', () => {
+    expect(text('H2 + O2 -> H2O + H2O2')).toBe('many');
+  });
   it('says why it cannot', () => {
     expect(text('H2 + O2')).toBe('format');
     expect(text('H2 + O2 -> H2O + N2')).toBe('element');

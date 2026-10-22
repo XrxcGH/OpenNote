@@ -2,7 +2,7 @@
 
 Balance equations, solve chemistry problems with steps, draw structures, and look up steam, gas, and material properties. Everything works offline and keeps your work on this computer.
 
-Open any of these from the command palette (Ctrl+K): "Open the chemistry calculators", "Open the chemical structure drawer", or "Open the steam, gas, and materials tables". Each opens in a small window that you can move, pin, and pop out.
+Open any of these from the Insert tab (Math group), with Ctrl+Alt+Y (calculators), Ctrl+Alt+X (structure drawer) or Ctrl+Alt+U (tables), or from the command palette (Ctrl+K): "Open the chemistry calculators", "Open the chemical structure drawer", or "Open the steam, gas, and materials tables". Each opens in a small window that you can move, pin, and pop out.
 
 ## Chemistry calculators
 
@@ -36,3 +36,10 @@ The drawer lays out chains and single or fused rings. A crowded molecule can nee
 - **Materials.** Density, Young's modulus, yield strength, thermal conductivity, and specific heat for common metals, plastics, ceramics, and wood. Values are typical for the stated condition. Check the named source before using one for a design.
 
 Every table is searchable. Each row has an Insert button, and "Insert table of the rows shown" adds a table to the page. Every row names its source, and the sources and licenses are listed at the bottom of the window and in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).
+
+
+## Ion charges
+
+Write ions the way a textbook does: Cu2+, Fe3+, SO42-, MnO4-, NH4+, or with a caret (Cu^2+). A digit before the sign is a subscript in a molecular ion (the 4 in MnO4-) and the charge on a single atom (Cu2+). If an equation has more than one valid balance, the balancer says so instead of picking one.
+
+Bonds placed on the page are line shapes of one width, in the pen color, so you can drag their handles; labels are text boxes.

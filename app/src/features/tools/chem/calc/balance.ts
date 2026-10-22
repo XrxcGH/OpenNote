@@ -1,6 +1,6 @@
 // Balancing a chemical equation. The elements (and charge, for ions) give a linear system; the coefficients are its
 // smallest whole-number solution, found by exact fraction elimination.
-import { parseFormula } from './formula';
+import { parseFormula, splitCharge } from './formula';
 
 export interface Balanced {
   reactants: { text: string; coefficient: number }[];
@@ -9,7 +9,7 @@ export interface Balanced {
 }
 
 export type BalanceResult =
-  { ok: true; balanced: Balanced } | { ok: false; reason: 'format' | 'formula' | 'element' | 'cannot' };
+  { ok: true; balanced: Balanced } | { ok: false; reason: 'format' | 'formula' | 'element' | 'cannot' | 'many' };
 
 interface Species {
   text: string;
@@ -20,19 +20,12 @@ type Fraction = [bigint, bigint];
 
 const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? (a < 0n ? -a : a) : gcd(b, a % b));
 
-function chargeOf(text: string): number {
-  if (text === 'e-') return -1;
-  const match = /(?:\^(\d*))?([+-])$/.exec(text);
-  if (!match) return 0;
-  return ((match[1] ?? '') === '' ? 1 : Number(match[1])) * (match[2] === '+' ? 1 : -1);
-}
-
 function species(text: string): Species | null {
   const bare = text.trim().replace(/^\d+\s*/, '');
   if (bare === 'e-') return { text: bare, counts: new Map([['charge', -1]]) };
   const counts = parseFormula(bare);
   if (!counts) return null;
-  const charge = chargeOf(bare);
+  const charge = splitCharge(bare).charge;
   if (charge !== 0) counts.set('charge', charge);
   return { text: bare, counts };
 }
@@ -97,6 +90,7 @@ export function balance(equation: string): BalanceResult {
     row += 1;
   }
   const free = Array.from({ length: n }, (_, i) => i).filter((i) => !pivots.includes(i));
+  if (free.length > 1) return { ok: false, reason: 'many' };
   if (free.length !== 1) return { ok: false, reason: 'cannot' };
   const f = free[0];
   const solution: Fraction[] = Array.from({ length: n }, () => [0n, 1n] as Fraction);
