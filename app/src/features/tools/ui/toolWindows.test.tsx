@@ -36,6 +36,19 @@ describe('tool window shortcuts', () => {
   });
 });
 
+describe('symbol palette shortcut', () => {
+  it('is Ctrl+Alt+Shift+S while writing in a page, and no other command shares it', async () => {
+    await renderApp();
+    const def = commands.get('tools.symbols');
+    expect(def?.keys).toEqual([chord('Ctrl+Alt+Shift+S')]);
+    expect(def?.scope).toBe('editor');
+    const sharing = commands
+      .list()
+      .filter((c) => c.id !== 'tools.symbols' && c.keys?.includes(chord('Ctrl+Alt+Shift+S')));
+    expect(sharing.map((c) => c.id)).toEqual([]);
+  });
+});
+
 describe('reset tool windows', () => {
   it('forgets where a floating window was moved and draws it at its first place', async () => {
     await renderApp();

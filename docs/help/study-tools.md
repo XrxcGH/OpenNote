@@ -50,6 +50,10 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 
 ![The timers window with a countdown running](../screens/tool-timer-light.png)
 
+### Typing a literal backslash word
+
+While the symbol list is open, Enter and Tab insert the highlighted symbol instead of starting a new line or moving on. If you meant to write a word such as \int as plain text, press Escape to close the list first, or keep typing past the name; the list closes when nothing matches.
+
 ## Math across a page
 
 Define a variable such as rent = 1,200 in one text box and use it in another on the same page. Text that handwriting recognition adds to the page works the same way.

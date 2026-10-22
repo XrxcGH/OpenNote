@@ -56,6 +56,26 @@ test('looks a word up in the dictionary', async ({ page }) => {
   await expect(dialog.getByRole('button', { name: /^Insert synonym / }).first()).toBeVisible();
 });
 
+test('opens the symbol palette, searches by LaTeX name, and inserts at the caret', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.press('Control+Alt+Shift+S');
+  const dialog = page.getByRole('dialog', { name: 'Symbols' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox', { name: 'Search symbols' }).fill('alpha');
+  await dialog.getByRole('button', { name: 'Insert alpha' }).first().click();
+  await expect(page.getByRole('textbox', { name: 'Text' }).first()).toContainText('α');
+  await expect(dialog.getByRole('group', { name: 'Recent' }).getByRole('button')).toHaveCount(1);
+});
+
+test('completes a backslash name in page text', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.type(String.raw`\beta`);
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('textbox', { name: 'Text' }).first()).toContainText('β');
+});
+
 test('lists Upcoming on Home', async ({ page }) => {
   await openSmart(page);
   await page.getByRole('toolbar', { name: 'Home' }).getByRole('button', { name: 'Home', exact: true }).click();
