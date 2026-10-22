@@ -181,6 +181,26 @@ export function measureLines(symbols: readonly Labelled[], lineCount: number, me
 
 const SCRIPT_BASE = /^[\p{L}\p{N})\]]$/u;
 
+/** How big the letters and digits written just under and over a sum or a product are, against full size. */
+function limitSizes(
+  op: Labelled,
+  symbols: readonly Labelled[],
+  xh: number,
+  expected: (label: string, xh: number) => number | null,
+): number[] {
+  const out: number[] = [];
+  for (const o of symbols) {
+    const mid = (o.rect.x0 + o.rect.x1) / 2;
+    if (o === op || mid < op.rect.x0 - xh * 0.3 || mid > op.rect.x1 + xh * 0.3) continue;
+    const near =
+      (o.rect.y0 > op.rect.y1 && o.rect.y0 - op.rect.y1 < xh) ||
+      (o.rect.y1 < op.rect.y0 && op.rect.y0 - o.rect.y1 < xh);
+    const full = expected(o.label, xh);
+    if (near && full) out.push(heightOf(o.rect) / full);
+  }
+  return out;
+}
+
 /** The person's math layout habits from confirmed symbols, blended with what the style already holds. */
 export function measureHabits(
   symbols: readonly Labelled[],
@@ -193,6 +213,7 @@ export function measureHabits(
   const overhang: number[] = [];
   const gaps: number[] = [];
   const bigOps: number[] = [];
+  const limits: number[] = [];
   const expected = (label: string, xh: number) =>
     X_HEIGHT_LETTERS.includes(label) ? xh : CAP_LETTERS.includes(label) || DIGITS.includes(label) ? xh * 1.45 : null;
   for (const s of symbols) {
@@ -200,6 +221,7 @@ export function measureHabits(
     if (!line || !(line.xHeight > 0)) continue;
     const xh = line.xHeight;
     if ('∫∑∏'.includes(s.label)) bigOps.push(heightOf(s.rect) / (xh * 1.45));
+    if ('∑∏'.includes(s.label)) limits.push(...limitSizes(s, symbols, xh, expected));
     const full = expected(s.label, xh);
     if (full) {
       // A script: a letter or digit smaller than its line's, raised, or lowered, just after another symbol.
@@ -249,5 +271,6 @@ export function measureHabits(
     fracOverhang: blend(overhang, current.fracOverhang, 0, 1.5),
     fracGap: blend(gaps, current.fracGap, 0.05, 1.5),
     bigOpScale: blend(bigOps, current.bigOpScale, 0.9, 3.5),
+    limitScale: blend(limits, current.limitScale, 0.3, 1),
   };
 }

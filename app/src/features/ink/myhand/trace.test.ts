@@ -214,6 +214,17 @@ describe('lines and symbols on an upload', () => {
     expect(measures[1].xHeight).toBeCloseTo(14.5 / DEFAULT_METRICS.capHeight, 5);
   });
 
+  it('learns how small the person writes the limits of a sum', () => {
+    const symbols = [
+      { label: '∑', rect: { x0: 0, y0: 80, x1: 16, y1: 100 }, line: 0 },
+      { label: 'n', rect: { x0: 5, y0: 73, x1: 11, y1: 78 }, line: 0 },
+      { label: 'i', rect: { x0: 6, y0: 102, x1: 9, y1: 107 }, line: 0 },
+    ];
+    const habits = measureHabits(symbols, [{ baseline: 100, xHeight: 10 }]);
+    expect(habits.limitScale).toBeLessThan(0.62);
+    expect(habits.bigOpScale).toBeLessThan(1.55);
+  });
+
   it('learns how high and how small the person writes superscripts', () => {
     const symbols = [
       { label: 'x', rect: { x0: 0, y0: 90, x1: 8, y1: 100 }, line: 0 },
