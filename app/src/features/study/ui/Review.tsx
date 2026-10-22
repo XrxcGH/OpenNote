@@ -10,6 +10,7 @@ import { recordReview, statesOf } from '../deck/library';
 import { todaysQueue } from '../deck/schedule';
 import type { Card, Deck, Grade } from '../deck/types';
 import styles from './study.module.css';
+import { currentLocale } from '../../../state/language';
 
 interface FaceProps {
   card: Card;
@@ -147,7 +148,7 @@ export function Review({ deck }: { deck: Deck }) {
         {next ? (
           <p className={styles.note}>
             {t('study.review.nextDue', {
-              date: new Date(`${next}T00:00`).toLocaleDateString(undefined, { dateStyle: 'medium' }),
+              date: new Date(`${next}T00:00`).toLocaleDateString(currentLocale(), { dateStyle: 'medium' }),
             })}
           </p>
         ) : null}

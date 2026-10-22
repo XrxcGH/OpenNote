@@ -7,6 +7,7 @@ import { t } from '../../strings/t';
 import { Button } from '../../ui';
 import type { UpcomingItem } from '../tools';
 import styles from './Home.module.css';
+import { currentLocale } from '../../state/language';
 
 const loadItems = async (): Promise<UpcomingItem[]> => (await import('../tools')).homeUpcoming();
 
@@ -14,7 +15,7 @@ function dayText(item: UpcomingItem): string {
   const due = item.due;
   if (!due) return '';
   const day = new Date(due.date.year, due.date.month - 1, due.date.day);
-  return day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  return day.toLocaleDateString(currentLocale(), { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export interface UpcomingSectionProps {

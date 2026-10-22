@@ -11,12 +11,13 @@ import { chooseReminder, hasReminder } from './itemReminder';
 import { repeatBadge } from './repeatWords';
 import { readReminders } from './upcomingStores';
 import styles from './tools.module.css';
+import { currentLocale } from '../../../state/language';
 
 export function whenText(due: Due): string {
   const day = new Date(due.date.year, due.date.month - 1, due.date.day);
-  const date = day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const date = day.toLocaleDateString(currentLocale(), { weekday: 'short', month: 'short', day: 'numeric' });
   if (!due.time) return date;
-  const time = new Date(2000, 0, 1, due.time.hour, due.time.minute).toLocaleTimeString(undefined, {
+  const time = new Date(2000, 0, 1, due.time.hour, due.time.minute).toLocaleTimeString(currentLocale(), {
     hour: 'numeric',
     minute: '2-digit',
   });

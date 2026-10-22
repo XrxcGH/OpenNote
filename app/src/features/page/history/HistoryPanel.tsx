@@ -15,6 +15,7 @@ import { CompareView } from './CompareView';
 import type { CompareActions } from './CompareView';
 import styles from './history.module.css';
 import { restoreBlocks, restoreParagraph, restoreVersion } from './restore';
+import { currentLocale } from '../../../state/language';
 
 const REASONS = new Set([
   'beforeEdit',
@@ -30,7 +31,7 @@ const REASONS = new Set([
   'recovered',
 ]);
 
-const when = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+const when = new Intl.DateTimeFormat(currentLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 
 export function reasonText(reason: string): string {
   return REASONS.has(reason) ? t(`history.reasons.${reason as 'closed'}`) : t('history.reasons.unknown');

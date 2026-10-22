@@ -21,6 +21,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
+- [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 
 ## Draw and design pages
 

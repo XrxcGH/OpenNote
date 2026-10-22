@@ -13,6 +13,7 @@ import { syncTasks } from './sync';
 import { microsoftTodo } from './todo';
 import { EMPTY_STATE } from './types';
 import type { SyncResult, TasksApi, TasksState } from './types';
+import { currentLocale } from '../../../state/language';
 
 export type TasksService = 'microsoft' | 'google';
 
@@ -74,7 +75,7 @@ export async function showConflicts(): Promise<void> {
         label: one.title,
         detail: t('accounts.tasks.log.entry', {
           service: service === 'google' ? 'Google Tasks' : 'Microsoft To Do',
-          when: new Date(one.at).toLocaleString(),
+          when: new Date(one.at).toLocaleString(currentLocale()),
           kept: t(one.kept === 'here' ? 'accounts.tasks.log.keptHere' : 'accounts.tasks.log.keptThere'),
           other: [
             one.other.done ? t('accounts.tasks.log.done') : '',

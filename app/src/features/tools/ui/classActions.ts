@@ -8,6 +8,7 @@ import type { PageService } from '../../../services/pages/types';
 import { dateKey } from '../upcoming';
 import type { CivilDate, ClassSlot } from '../upcoming';
 import { loadStored, saveStored } from './storage';
+import { currentLocale } from '../../../state/language';
 
 export const DEFAULT_CLASS_TEMPLATE = '## {class}, {longDate}\n\n';
 
@@ -43,8 +44,13 @@ export function renderClassTemplate(template: string, slot: ClassSlot, date: Civ
   const values: Record<string, string> = {
     class: slot.name,
     date: dateKey(date),
-    longDate: day.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-    weekday: day.toLocaleDateString(undefined, { weekday: 'long' }),
+    longDate: day.toLocaleDateString(currentLocale(), {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }),
+    weekday: day.toLocaleDateString(currentLocale(), { weekday: 'long' }),
     room: slot.room,
     start: slot.start,
     end: slot.end,

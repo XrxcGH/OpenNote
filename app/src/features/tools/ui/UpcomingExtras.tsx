@@ -27,10 +27,13 @@ import { examWhen } from './upcomingShared';
 import { examsStore, setExams, setTimetable, timetableStore } from './upcomingStores';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
+import { currentLocale } from '../../../state/language';
 
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
-const weekday = (day: number): string => new Date(2023, 0, 1 + day).toLocaleDateString(undefined, { weekday: 'short' });
-const longDay = (day: number): string => new Date(2023, 0, 1 + day).toLocaleDateString(undefined, { weekday: 'long' });
+const weekday = (day: number): string =>
+  new Date(2023, 0, 1 + day).toLocaleDateString(currentLocale(), { weekday: 'short' });
+const longDay = (day: number): string =>
+  new Date(2023, 0, 1 + day).toLocaleDateString(currentLocale(), { weekday: 'long' });
 const WEEK = [1, 2, 3, 4, 5, 6, 0] as const;
 let counter = 0;
 const newId = (prefix: string): string => `${prefix}${Date.now().toString(36)}${(counter += 1)}`;

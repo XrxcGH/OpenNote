@@ -22,6 +22,7 @@ import { classroomApi } from './classroom';
 import { moodleApi } from './moodle';
 import { CONNECTOR_OF } from './types';
 import type { Assignment, Course, LmsApi, LmsService } from './types';
+import { currentLocale } from '../../../state/language';
 
 const ORDER: readonly LmsService[] = ['canvas', 'moodle', 'classroom'];
 
@@ -103,7 +104,7 @@ export async function bringAssignments(): Promise<void> {
 
 function detailOf(assignment: Assignment): string {
   const when = assignment.due
-    ? new Date(assignment.due).toLocaleString(undefined, {
+    ? new Date(assignment.due).toLocaleString(currentLocale(), {
         weekday: 'short',
         month: 'short',
         day: 'numeric',

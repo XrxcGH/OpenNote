@@ -11,6 +11,7 @@ import type { AccountsHost } from '../host';
 import { cleanTitle, findOrCreate, replaceHeader, appendMarkdown, createPage } from '../notebook';
 import { loadState, saveState } from '../state';
 import type { Assignment, Course } from './types';
+import { currentLocale } from '../../../state/language';
 
 export const STATE_NAME = 'lms.courses';
 
@@ -51,7 +52,7 @@ export function dueText(iso: string | null, zone: string): string {
   if (!iso) return t('accounts.lms.page.noDue');
   const when = new Date(iso);
   return t('accounts.lms.page.due', {
-    when: when.toLocaleString(undefined, {
+    when: when.toLocaleString(currentLocale(), {
       weekday: 'short',
       month: 'short',
       day: 'numeric',

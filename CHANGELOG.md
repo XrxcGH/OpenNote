@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- OpenNote uses American English by default, even when Windows uses another language. One language setting (Settings, Language) now sets spell check, the dictionary, hyphenation, the read-aloud voice, handwriting and math recognition, and text in pictures, and first-run setup has a Language and spelling step with English (United States) chosen. The interface text stays in American English for now. The spelling check in CHECKS also reads the text in string literals, so a British spelling in the app's text is caught.
 - Quick capture no longer takes Ctrl+Alt+Q, which AltGr+Q also presses and which types @ on many keyboards. It is off until it is turned on in Settings, where the shortcut can be chosen and a clash with OpenNote's own keys is shown. A beta 4 profile that kept Ctrl+Alt+Q gets no shortcut until new keys are chosen, and its switch can still be turned off.
 - Search by meaning and text in images keep nothing of a page in a protected section, and drop what they kept of a page whose section becomes protected.
 

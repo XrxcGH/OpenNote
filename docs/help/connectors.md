@@ -55,13 +55,13 @@ After that, OpenNote keeps the devices in step quietly, about every half hour wh
 
 ### Tasks with Microsoft To Do and Google Tasks
 
-Connect Microsoft or Google, then press Ctrl+K and choose Sync tasks with Microsoft To Do or Sync tasks with Google Tasks. The tasks you keep in Upcoming (the ones you add and tick off yourself) and the tasks in the service's main list are matched. The tick box, the title, and the due date are copied both ways. With To Do, the time of day on a task is its reminder: set a time in Upcoming and To Do reminds you then, and a reminder set in To Do shows in Upcoming as the time. Google Tasks keeps dates only.
+Connect Microsoft or Google, then press Ctrl+K and choose Sync tasks with Microsoft To Do or Sync tasks with Google Tasks. The tasks you keep in Upcoming (the ones you add and check off yourself) and the tasks in the service's main list are matched. The checkbox, the title, and the due date are copied both ways. With To Do, the time of day on a task is its reminder: set a time in Upcoming and To Do reminds you then, and a reminder set in To Do shows in Upcoming as the time. Google Tasks keeps dates only.
 
 After you have synced once, OpenNote keeps the lists in step while it is open, quietly, about every quarter of an hour. If the same task was changed in both places between two syncs, the newer change is kept and the other is written to the sync log (Ctrl+K, then Show task sync changes made in both places). A task you delete in one place is deleted in the other only if it has not changed there. Otherwise it comes back. Tasks that come from a page, a course, or a calendar file are not synced.
 
 ### Courses and assignments
 
-Connect Canvas or Moodle with your personal token, or Google for Classroom. Then press Ctrl+K and choose Bring in course assignments. Pick a course, or all of them. Each course becomes a section in the notebook you have open, with a page for each assignment. The top of the page holds the due date, a link to the assignment, and its instructions. Assignments with a due date also appear in Upcoming, and the ones you have already handed in are ticked.
+Connect Canvas or Moodle with your personal token, or Google for Classroom. Then press Ctrl+K and choose Bring in course assignments. Pick a course, or all of them. Each course becomes a section in the notebook you have open, with a page for each assignment. The top of the page holds the due date, a link to the assignment, and its instructions. Assignments with a due date also appear in Upcoming, and the ones you have already handed in are checked off.
 
 Bring them in again at any time. OpenNote updates what your school changed and never touches the lines you wrote on a page.
 

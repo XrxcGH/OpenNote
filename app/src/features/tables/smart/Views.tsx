@@ -23,6 +23,7 @@ import {
   shiftMonth,
 } from './viewLogic';
 import type { Month } from './viewLogic';
+import { currentLocale } from '../../../state/language';
 
 export interface ViewsProps {
   model: SmartModel;
@@ -210,7 +211,7 @@ function Calendar(props: ViewsProps) {
       );
     }
   };
-  const label = new Date(Date.UTC(at.year, at.month - 1, 1)).toLocaleDateString(undefined, {
+  const label = new Date(Date.UTC(at.year, at.month - 1, 1)).toLocaleDateString(currentLocale(), {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
@@ -229,7 +230,10 @@ function Calendar(props: ViewsProps) {
       <div className={styles.week} aria-hidden="true">
         {[0, 1, 2, 3, 4, 5, 6].map((d) => (
           <span key={d}>
-            {new Date(Date.UTC(2023, 0, 1 + d)).toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' })}
+            {new Date(Date.UTC(2023, 0, 1 + d)).toLocaleDateString(currentLocale(), {
+              weekday: 'short',
+              timeZone: 'UTC',
+            })}
           </span>
         ))}
       </div>
