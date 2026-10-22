@@ -272,6 +272,9 @@ export function snapShape(snap: PaperSnap, shape: Shape): SnappedShape {
     case 'arc':
     case 'curvedArrow':
       return moveOnto(snap, shape, shape.center);
+    case 'spline':
+      // A curve moves onto the paper by its first point, keeping its path.
+      return moveOnto(snap, shape, shape.controls[0]);
     case 'freeform': {
       // An irregular outline (a trapezoid, a house) moves onto the paper by its first corner, keeping its shape.
       const first = shape.corners[0];
@@ -327,6 +330,8 @@ export function anchorsOf(shape: Shape): Vec[] {
     case 'arc':
     case 'curvedArrow':
       return [shape.center];
+    case 'spline':
+      return shape.controls.filter((_, i) => i % 3 === 0);
   }
 }
 

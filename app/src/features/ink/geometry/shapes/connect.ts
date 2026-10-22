@@ -12,7 +12,11 @@ export type End = 'start' | 'end';
 /** True for the shapes that join other shapes. */
 export function isConnector(shape: Shape): boolean {
   return (
-    shape.kind === 'line' || shape.kind === 'arrow' || shape.kind === 'doubleArrow' || shape.kind === 'curvedArrow'
+    shape.kind === 'line' ||
+    shape.kind === 'arrow' ||
+    shape.kind === 'doubleArrow' ||
+    shape.kind === 'curvedArrow' ||
+    (shape.kind === 'spline' && !shape.closed)
   );
 }
 
@@ -32,6 +36,8 @@ export function endsOf(shape: Shape): { start: Vec; end: Vec } | null {
       });
       return { start: at(shape.start), end: at(shape.start + shape.sweep) };
     }
+    case 'spline':
+      return shape.closed ? null : { start: shape.controls[0], end: shape.controls[shape.controls.length - 1] };
     default:
       return null;
   }

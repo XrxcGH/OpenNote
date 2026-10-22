@@ -27,6 +27,7 @@ import {
   ungroupSelection,
 } from './groups';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
+import { canMakeCurve, editCurve, makeCurve, selectedCurve } from './curves';
 import { inkLinks, selectionLinked, unlinkSelection } from './inkLinks';
 import { inkLayers, layerName, moveSelectionToLayer } from './layers';
 import { makeLinkFromSelection } from './linkDialogs';
@@ -163,6 +164,14 @@ class FrameView implements SelectionFrame {
             ],
           ] as [MessageKey, string, () => void][])
         : []),
+      ...(isEnabled('ink.splines')
+        ? ([
+            ['ink.curves.make', 'curve', () => void makeCurve(host, surface)],
+            ['ink.curves.addPoint', 'curveAdd', () => void editCurve(host, surface, 'add')],
+            ['ink.curves.removePoint', 'curveRemove', () => void editCurve(host, surface, 'remove')],
+            ['ink.curves.toggle', 'curveToggle', () => void editCurve(host, surface, 'toggle')],
+          ] as [MessageKey, string, () => void][])
+        : []),
       ...(isEnabled('ink.anchoring')
         ? ([
             ['ink.anchor.anchor', 'anchor', () => void anchorSelection(host, surface)],
@@ -231,6 +240,7 @@ class FrameView implements SelectionFrame {
     this.offerTable();
     this.offerGroups();
     this.offerLinks();
+    this.offerCurves();
     this.stops = [
       host.selection.subscribe(() => this.selectionChanged()),
       surface.onChange(() => this.place()),
@@ -366,6 +376,7 @@ class FrameView implements SelectionFrame {
   }
 
   private selectionChanged(): void {
+    this.offerCurves();
     this.offerTable();
     this.offerGroups();
     this.offerLinks();
@@ -419,6 +430,21 @@ class FrameView implements SelectionFrame {
   }
 
   /** Convert to table shows only when the selected strokes draw a grid. */
+  /** Make curve for one line, shape, or ink stroke; the point commands for one curve. */
+  private offerCurves(): void {
+    const curve = selectedCurve(this.host, this.surface) !== null;
+    const offers: [string, boolean][] = [
+      ['curve', canMakeCurve(this.host, this.surface)],
+      ['curveAdd', curve],
+      ['curveRemove', curve],
+      ['curveToggle', curve],
+    ];
+    for (const [id, on] of offers) {
+      const action = this.bar.querySelector<HTMLElement>(`[data-ink-action="${id}"]`);
+      if (action) action.style.display = on ? '' : 'none';
+    }
+  }
+
   private offerTable(): void {
     const action = this.bar.querySelector<HTMLElement>('[data-ink-action="table"]');
     if (!action) return;

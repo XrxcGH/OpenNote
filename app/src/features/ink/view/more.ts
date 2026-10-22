@@ -31,7 +31,9 @@ import { DrawShapes } from './DrawShapes';
 import { installHover } from './hover';
 import { installReplay, startReplay } from './replay';
 import { installZoomBox, toggleZoomBox } from './zoomBox';
-import { installShapeHandles } from './shapeEdit';
+import { installShapeHandles, setCurveCommand } from './shapeEdit';
+import { editCurve, makeCurve, selectedCurve } from './curves';
+import type { CurveEdit } from './curves';
 import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
 import { followPaper, hasPaperLines } from './paperSnap';
@@ -105,6 +107,7 @@ export function installMore(context: MoreContext): () => void {
     followPaper(host),
     installSnapTools(host, surfaces),
     installShapeHandles(host, surfaces),
+    () => setCurveCommand(null),
     installReplay(host, surfaces),
     installZoomBox(host, surfaces),
     installAnchoring(host, surfaces),
@@ -117,6 +120,7 @@ export function installMore(context: MoreContext): () => void {
       keyboard: systemKeyboard,
     }),
   ];
+  setCurveCommand((what: CurveEdit) => editCurve(host, surface(), what));
   const defs: CommandDef[] = [
     {
       id: 'ink.canvasLock',
@@ -186,6 +190,32 @@ export function installMore(context: MoreContext): () => void {
         if (current) void addTextToShape(host, current);
       },
     },
+    {
+      id: 'ink.curve.make',
+      title: 'ink.curves.make',
+      keywords: 'ink.curves.keywords',
+      category: 'editing',
+      flag: 'ink.splines',
+      // Always enabled: the Draw tab's button does not follow the ink selection, and with nothing to work on the
+      // command says what to select.
+      run: () => void makeCurve(host, surface()),
+    },
+    ...(
+      [
+        ['ink.curve.addPoint', 'ink.curves.addPoint', 'add'],
+        ['ink.curve.removePoint', 'ink.curves.removePoint', 'remove'],
+        ['ink.curve.smooth', 'ink.curves.smooth', 'smooth'],
+        ['ink.curve.corner', 'ink.curves.corner', 'corner'],
+      ] as const
+    ).map(([id, title, what]): CommandDef => ({
+      id,
+      title,
+      keywords: 'ink.curves.keywords',
+      category: 'editing',
+      flag: 'ink.splines',
+      enabled: () => selectedCurve(host, surface()) !== null,
+      run: () => void editCurve(host, surface(), what),
+    })),
     {
       id: 'ink.replay',
       title: 'ink.replay.title',
@@ -420,6 +450,15 @@ export function installMore(context: MoreContext): () => void {
       presentation: 'component',
       Component: DrawShapes,
       flag: 'ink.shapeTools',
+    }),
+    commandBar.register({
+      id: 'ink.curve.make',
+      tab: 'draw',
+      group: 'shapes',
+      command: 'ink.curve.make',
+      priority: 50,
+      presentation: 'button',
+      flag: 'ink.splines',
     }),
     commandBar.register({
       id: 'ink.replay',

@@ -16,8 +16,12 @@ import {
   isConnector,
   moveEnd,
   nearestOnOutline,
+  isSmooth,
+  nodeCount,
+  readSpline,
 } from '../geometry/shapes';
-import type { Shape } from '../geometry/shapes';
+import type { Shape, Spline } from '../geometry/shapes';
+import { createStore } from '../../../state/store';
 import { pagePoints } from '../geometry/strokeIndex';
 import { strokeBounds } from '../geometry/bounds';
 import type { Matrix, Vec } from '../geometry/types';
@@ -42,7 +46,31 @@ export function shapeOfStroke(stroke: InkStroke): Shape | null {
   const [a, b] = points;
   if (points.length === 2) return { kind: 'line', from: a, to: b };
   const scale = stroke.transform ? widthScale(stroke.transform) : 1;
+  // A curve is read first: it starts on a doubled point, which no other shape does.
+  const curve = readSpline(points, 0.06 * Math.max(1, scale));
+  if (curve) return curve;
   return recognizeShape(points, { minSize: 1, width: stroke.width * scale, extra: true })?.shape ?? null;
+}
+
+/** The point of the selected curve that its commands act on: the one last pressed or focused, by stroke. */
+export const activeCurvePoint = createStore<{ stroke: string; index: number } | null>(null, 'ink active curve point');
+
+/** The arrow keys' steps, for moving a focused curve point or handle, in page units. */
+const KEY_STEPS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
+const CURVE_HANDLE_PX = 14;
+
+/** The accessible name of a curve's point or handle. */
+function curveLabel(shape: Spline, id: string): string {
+  const index = Number(id.slice(1)) + 1;
+  if (id.startsWith('i')) return t('ink.curves.handleIn', { index });
+  if (id.startsWith('o')) return t('ink.curves.handleOut', { index });
+  const kind = isSmooth(shape, index - 1) ? t('ink.curves.pointSmooth') : t('ink.curves.pointCorner');
+  return t('ink.curves.point', { index, count: nodeCount(shape), kind });
 }
 
 /** The stroke for a reshaped shape, in the style of the one it replaces. */
@@ -144,6 +172,10 @@ class HandleLayer {
   private readonly stops: (() => void)[];
   /** The shape being edited and the stroke it came from. */
   private editing: { stroke: InkStroke; shape: Shape } | null = null;
+  /** The lines from a curve's points to their handles. */
+  private arms: SVGSVGElement | null = null;
+  /** Where focus goes back to after the handles are made again, by handle ID. */
+  private refocus: string | null = null;
   drag: { id: string; pointerId: number } | null = null;
 
   constructor(
@@ -171,25 +203,57 @@ class HandleLayer {
 
   private refresh(): void {
     if (this.drag) return;
+    const focused = this.buttons.find((b) => b === b.ownerDocument.activeElement)?.dataset.inkShapeHandle;
     this.buttons.splice(0).forEach((button) => button.remove());
+    this.arms?.remove();
+    this.arms = null;
     this.editing = null;
+    this.refocus = focused ?? this.refocus;
     const selection = this.host.selection.get();
     if (!isEnabled('ink.shapeTools') || this.surface.readOnly || selection.strokes.length !== 1) return;
     const stroke = this.surface.strokes(selection.strokes)[0];
     const shape = stroke ? shapeOfStroke(stroke) : null;
-    if (!stroke || !shape) return;
+    if (!stroke || !shape || (shape.kind === 'spline' && !isEnabled('ink.splines'))) return;
     this.editing = { stroke, shape };
     const doc = this.surface.chrome.ownerDocument;
+    if (shape.kind === 'spline') {
+      this.arms = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      this.arms.dataset.inkCurveArms = '';
+      this.arms.setAttribute('aria-hidden', 'true');
+      Object.assign(this.arms.style, {
+        position: 'absolute',
+        left: '0',
+        top: '0',
+        width: '100%',
+        height: '100%',
+        overflow: 'visible',
+        pointerEvents: 'none',
+        zIndex: 'var(--layer-page-chrome)',
+      });
+      this.surface.chrome.append(this.arms);
+      const active = activeCurvePoint.get();
+      if (active && active.stroke !== stroke.id) activeCurvePoint.set(null);
+    }
     for (const handle of handlesOf(shape)) {
       const button = doc.createElement('button');
       button.type = 'button';
       button.dataset.inkShapeHandle = handle.id;
-      button.setAttribute('aria-label', t('ink.library.handle'));
+      const curve = shape.kind === 'spline' ? shape : null;
+      const node = curve !== null && handle.id.startsWith('n');
+      const size = curve && !node ? CURVE_HANDLE_PX : HANDLE_PX;
+      button.setAttribute('aria-label', curve ? curveLabel(curve, handle.id) : t('ink.library.handle'));
+      if (node) {
+        button.dataset.inkCurvePoint = handle.id.slice(1);
+        button.setAttribute('aria-keyshortcuts', 'Delete Insert S');
+        button.addEventListener('focus', () => this.activate(Number(handle.id.slice(1))));
+      }
+      if (curve) button.addEventListener('keydown', (event) => this.onCurveKey(event, handle.id));
       Object.assign(button.style, {
         position: 'absolute',
-        width: `${HANDLE_PX}px`,
-        height: `${HANDLE_PX}px`,
-        borderRadius: '50%',
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: curve && !node ? '2px' : '50%',
+        transform: curve && !node ? 'rotate(45deg)' : '',
         border: '2px solid var(--color-accent-primary)',
         background: 'var(--color-surface-page)',
         pointerEvents: 'auto',
@@ -200,29 +264,109 @@ class HandleLayer {
       this.surface.chrome.append(button);
       this.buttons.push(button);
     }
+    this.markActive();
     this.place();
   }
 
-  place(): void {
-    if (!this.editing) return;
+  /** Makes point `index` of the curve the one its commands act on. */
+  activate(index: number): void {
+    const stroke = this.editing?.stroke;
+    if (!stroke || this.editing?.shape.kind !== 'spline') return;
+    activeCurvePoint.set({ stroke: stroke.id, index });
+    this.markActive();
+  }
+
+  /** Fills the active point's handle, so the point the commands act on shows. */
+  private markActive(): void {
+    const active = activeCurvePoint.get();
+    for (const button of this.buttons) {
+      const point = button.dataset.inkCurvePoint;
+      if (point === undefined) continue;
+      const on = active !== null && active.stroke === this.editing?.stroke.id && Number(point) === active.index;
+      button.style.background = on ? 'var(--color-accent-primary)' : 'var(--color-surface-page)';
+      button.setAttribute('aria-pressed', String(on));
+    }
+  }
+
+  /** Keys on a focused curve point or handle: arrows move it, Delete removes the point, Insert adds one, S toggles. */
+  private onCurveKey(event: KeyboardEvent, id: string): void {
+    const shape = this.editing?.shape;
+    if (!shape || shape.kind !== 'spline') return;
+    const step = KEY_STEPS[event.key];
+    const at = handlesOf(shape).find((h) => h.id === id)?.at;
+    let run: (() => unknown) | null = null;
+    if (step && at) {
+      const by = event.shiftKey ? 10 : 1;
+      run = () => this.commit(id, { x: at.x + step[0] * by, y: at.y + step[1] * by }, true, id);
+    } else if (id.startsWith('n') && (event.key === 'Delete' || event.key === 'Backspace')) {
+      run = () => curveCommand?.('remove');
+    } else if (id.startsWith('n') && (event.key === 'Insert' || event.key === '+')) {
+      run = () => curveCommand?.('add');
+    } else if (id.startsWith('n') && event.key.toLowerCase() === 's' && !event.ctrlKey && !event.metaKey) {
+      run = () => curveCommand?.('toggle');
+    }
+    if (!run) return;
+    event.preventDefault();
+    event.stopPropagation();
+    void run();
+  }
+
+  place(shape: Shape | undefined = this.editing?.shape): void {
+    if (!this.editing || !shape) return;
     const { zoom, scrollX, scrollY } = this.surface.cameraNow();
-    const handles = handlesOf(this.editing.shape);
+    const handles = handlesOf(shape);
+    const curve = shape.kind === 'spline';
     this.buttons.forEach((button, i) => {
-      const at = handles[i]?.at;
-      if (!at) return;
-      button.style.left = `${at.x * zoom - scrollX - HANDLE_PX / 2}px`;
-      button.style.top = `${at.y * zoom - scrollY - HANDLE_PX / 2}px`;
+      const handle = handles.find((h) => h.id === button.dataset.inkShapeHandle) ?? handles[i];
+      if (!handle) return;
+      const size = curve && !handle.id.startsWith('n') ? CURVE_HANDLE_PX : HANDLE_PX;
+      button.style.left = `${handle.at.x * zoom - scrollX - size / 2}px`;
+      button.style.top = `${handle.at.y * zoom - scrollY - size / 2}px`;
     });
+    if (this.arms && shape.kind === 'spline') {
+      this.drawArms(shape, (p) => [p.x * zoom - scrollX, p.y * zoom - scrollY]);
+    }
+    if (this.refocus) {
+      const again = this.buttons.find((b) => b.dataset.inkShapeHandle === this.refocus);
+      this.refocus = null;
+      again?.focus({ preventScroll: true });
+    }
+  }
+
+  /** The thin lines from each curve point to its handles, in the chrome's own pixels. */
+  private drawArms(shape: Spline, toScreen: (p: Vec) => [number, number]): void {
+    const arms = this.arms!;
+    const handles = handlesOf(shape);
+    const points = new Map(handles.filter((h) => h.id.startsWith('n')).map((h) => [h.id.slice(1), h.at]));
+    let d = '';
+    for (const handle of handles) {
+      if (handle.id.startsWith('n')) continue;
+      const node = points.get(handle.id.slice(1));
+      if (!node) continue;
+      const [x1, y1] = toScreen(node);
+      const [x2, y2] = toScreen(handle.at);
+      d += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    }
+    let path = arms.firstElementChild as SVGPathElement | null;
+    if (!path) {
+      path = arms.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'var(--color-accent-primary)');
+      path.setAttribute('stroke-width', '1.5');
+      arms.append(path);
+    }
+    path.setAttribute('d', d);
   }
 
   /**
    * Where a dragged handle goes: onto the paper's lines when they are near and snapping is on, unless Alt is held. The
    * handles of arcs only turn their ends, so they are left free.
    */
-  private snapped(to: Vec, alt: boolean, linger = false): Vec {
+  private snapped(to: Vec, alt: boolean, linger = false, id?: string): Vec {
     const snap = paperSnapNow(this.surface.cameraNow().zoom, alt);
     const kind = this.editing?.shape.kind;
-    if (!snap || kind === 'arc' || kind === 'curvedArrow') {
+    const curveHandle = kind === 'spline' && id !== undefined && !id.startsWith('n');
+    if (!snap || kind === 'arc' || kind === 'curvedArrow' || curveHandle) {
       clearSnapMarks(this.surface);
       return to;
     }
@@ -235,11 +379,12 @@ class HandleLayer {
   moveTo(id: string, at: Vec, alt = false): void {
     if (!this.editing) return;
     const { stroke, shape } = this.editing;
-    const to = this.snapped(at, alt);
-    const next = restroke(stroke, dragHandle(shape, id, to), `${stroke.id}`);
+    const to = this.snapped(at, alt, false, id);
+    const reshaped = dragHandle(shape, id, to);
+    const next = restroke(stroke, reshaped, `${stroke.id}`);
     const followers = this.followers(stroke, next);
     this.surface.preview([stroke.id, ...followers.remove], [next, ...followers.add]);
-    this.place();
+    this.place(reshaped);
   }
 
   private followers(old: InkStroke, next: InkStroke): Follow {
@@ -247,17 +392,31 @@ class HandleLayer {
     return connectorFollowers(this.surface, [old], (end) => nearestOnOutline(outline, end, Infinity) ?? end);
   }
 
-  async commit(id: string, at: Vec, alt = false): Promise<void> {
+  async commit(id: string, at: Vec, alt = false, refocus?: string): Promise<void> {
     if (!this.editing) return;
     const { stroke, shape } = this.editing;
-    const to = this.snapped(at, alt, true);
+    const to = this.snapped(at, alt, true, id);
     const made = restroke(stroke, dragHandle(shape, id, to));
+    await this.replaceWith(stroke, made, refocus);
+  }
+
+  /** Swaps the edited stroke for `made` in one undo step, with the connectors on its outline, and selects it. */
+  async replaceWith(stroke: InkStroke, made: InkStroke, refocus?: string): Promise<boolean> {
     const followers = this.followers(stroke, made);
     this.surface.endPreview();
     const ok = await this.surface.replace({ remove: [stroke.id, ...followers.remove], add: [made, ...followers.add] });
     this.drag = null;
+    const active = activeCurvePoint.get();
+    if (ok && active?.stroke === stroke.id) activeCurvePoint.set({ ...active, stroke: made.id });
+    if (refocus) this.refocus = refocus;
     if (ok) this.host.select({ strokes: [made.id], blocks: [] });
     else this.refresh();
+    return ok;
+  }
+
+  /** The stroke and shape being edited, for curve commands. */
+  current(): { stroke: InkStroke; shape: Shape } | null {
+    return this.editing;
   }
 
   cancel(): void {
@@ -270,8 +429,20 @@ class HandleLayer {
   destroy(): void {
     this.stops.forEach((stop) => stop());
     this.buttons.forEach((button) => button.remove());
+    this.arms?.remove();
   }
 }
+
+/** Runs a curve command on the active point, for the keys on a focused curve point (more.ts sets it). */
+let curveCommand: ((what: 'add' | 'remove' | 'toggle') => unknown) | null = null;
+export function setCurveCommand(run: typeof curveCommand): void {
+  curveCommand = run;
+}
+
+/** The handle layer on the shown page, for the curve commands (curves.ts). */
+let shown: HandleLayer | null = null;
+export const shapeHandles = (): HandleLayer | null => shown;
+export type { HandleLayer };
 
 /** The pointer tool for shape handles. */
 export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | null>): () => void {
@@ -283,6 +454,7 @@ export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | 
     layer?.destroy();
     const surface = surfaces.get();
     layer = surface ? new HandleLayer(host, surface) : null;
+    shown = layer;
   };
   const stopSurface = surfaces.subscribe(sync);
   sync();
@@ -298,6 +470,7 @@ export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | 
       if (layer.drag) return 'claim';
       ctx.capture(event.pointerId);
       layer.drag = { id: button.dataset.inkShapeHandle, pointerId: event.pointerId };
+      if (button.dataset.inkCurvePoint !== undefined) layer.activate(Number(button.dataset.inkCurvePoint));
       last = ctx.toWorld(event.clientX, event.clientY);
       alt = event.altKey;
       return 'claim';
@@ -328,5 +501,6 @@ export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | 
     stopSurface();
     layer?.destroy();
     layer = null;
+    shown = null;
   };
 }

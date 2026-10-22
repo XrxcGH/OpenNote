@@ -15,7 +15,8 @@ export type ShapeKind =
   | 'star'
   | 'arc'
   | 'curvedArrow'
-  | 'doubleArrow';
+  | 'doubleArrow'
+  | 'spline';
 
 export type Shape =
   | { readonly kind: 'line'; readonly from: Vec; readonly to: Vec }
@@ -77,6 +78,18 @@ export type Shape =
       readonly to: Vec;
       readonly barbsFrom: readonly [Vec, Vec];
       readonly barbsTo: readonly [Vec, Vec];
+    }
+  /**
+   * An editable curve of cubic Bezier segments (spline.ts). `controls` is the control polygon: a point, its out handle,
+   * the next point's in handle, the next point, and so on; a closed curve ends on its first point again. Either end of
+   * an open curve can carry an arrow's head.
+   */
+  | {
+      readonly kind: 'spline';
+      readonly controls: readonly Vec[];
+      readonly closed: boolean;
+      readonly startBarbs?: readonly [Vec, Vec];
+      readonly endBarbs?: readonly [Vec, Vec];
     };
 
 export interface ShapeMatch {
@@ -119,4 +132,5 @@ export const SIMPLICITY: Record<ShapeKind, number> = {
   polygon: 6,
   freeform: 8,
   star: 7,
+  spline: 9,
 };
