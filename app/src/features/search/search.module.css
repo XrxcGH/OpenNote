@@ -54,7 +54,19 @@
     font-weight: var(--font-weight-semibold);
   }
 
-  .filters,
+  /* The switches share one row and the selects the next, in equal columns, so the controls line up in columns
+     instead of following their labels' widths. */
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    align-items: end;
+    gap: var(--space-3) var(--space-4);
+  }
+
+  .filters .filter select {
+    inline-size: 100%;
+  }
+
   .saved,
   .naming {
     display: flex;

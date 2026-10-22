@@ -189,13 +189,6 @@ function FilterBar({ filters, tags, set }: FilterBarProps) {
         checked={filters.titleOnly}
         onChange={(titleOnly) => set({ titleOnly })}
       />
-      <Select label={t('search.panel.tag')} value={filters.tag} options={tagOptions} onChange={(tag) => set({ tag })} />
-      <Select
-        label={t('search.panel.date')}
-        value={filters.date}
-        options={DATES.map((value) => ({ value, text: t(`search.panel.dates.${value}`) }))}
-        onChange={(date) => set({ date })}
-      />
       {isEnabled('search.advanced') && (
         <Switch
           label={t('search.panel.archived')}
@@ -203,6 +196,13 @@ function FilterBar({ filters, tags, set }: FilterBarProps) {
           onChange={(archived) => set({ archived })}
         />
       )}
+      <Select label={t('search.panel.tag')} value={filters.tag} options={tagOptions} onChange={(tag) => set({ tag })} />
+      <Select
+        label={t('search.panel.date')}
+        value={filters.date}
+        options={DATES.map((value) => ({ value, text: t(`search.panel.dates.${value}`) }))}
+        onChange={(date) => set({ date })}
+      />
       <Select
         label={t('search.panel.type')}
         value={filters.type}
