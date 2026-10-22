@@ -175,4 +175,24 @@ describe('the sandbox', () => {
     expect(ran.truncated).toBe(true);
     expect(ran.out.length).toBeLessThanOrEqual(1000);
   });
+
+  it('says the output was cut when the time limit ends a run that printed past the limit', async () => {
+    const ran = await py('while True:\n    print("x" * 1000)', { ...QUICK, outputChars: 5000 });
+    expect(ran.status).toBe('time');
+    expect(ran.truncated).toBe(true);
+    const jsRan = await js('while (true) console.log("x".repeat(1000));', { ...QUICK, outputChars: 5000 });
+    expect(jsRan.status).toBe('time');
+    expect(jsRan.truncated).toBe(true);
+  });
+
+  it('reports deep recursion in JavaScript as an error in the cell', async () => {
+    const ran = await js('function f() { f(); }\nf();');
+    expect(ran.status).toBe('error');
+    expect(ran.err).toMatch(/stack overflow/i);
+  });
+
+  it('does not let a cell fake the time limit', async () => {
+    const ran = await js('throw { name: "InternalError", message: "interrupted" };');
+    expect(ran.status).toBe('error');
+  });
 });
