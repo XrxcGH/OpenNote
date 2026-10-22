@@ -335,7 +335,7 @@ test.describe('controls line up with the text and fields around them', () => {
     await expect(dialog).toBeVisible();
     const lefts = await dialog.evaluate((root) => {
       const title = root.querySelector('h2:not(:first-of-type), h3')!.getBoundingClientRect().left;
-      const cell = root.querySelector('tbody td')!;
+      const cell = root.querySelector('tbody th, tbody td')!;
       const range = document.createRange();
       range.selectNodeContents(cell);
       return { title, cell: range.getBoundingClientRect().left };
