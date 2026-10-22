@@ -59,6 +59,12 @@ describe('BibTeX', () => {
     const back = parseBibtex(toBibtex([article()]));
     expect(back.sources[0]).toMatchObject({ title: 'Sleep and Memory in Students', year: '2020', pages: '45–67' });
   });
+  it('keeps a conference paper a conference paper', () => {
+    const text = '@inproceedings{k, title={T}, author={Lee, Ann}, booktitle={Proc. of Conf}, year={2019}}';
+    const out = toBibtex(parseBibtex(text).sources);
+    expect(out).toContain('@inproceedings{');
+    expect(out).toContain('booktitle = {Proc. of Conf}');
+  });
   it('writes a backslash and the characters BibTeX reserves, and reads them back', () => {
     const title = String.raw`Paths like C:\Notes & 50% of #1 \& more_`;
     const back = parseBibtex(toBibtex([{ ...article(), title }]));

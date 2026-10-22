@@ -192,6 +192,7 @@ function sourceOf(entry: Entry): Source | null {
     url,
     doi: get('doi').replace(/^https?:\/\/(dx\.)?doi\.org\//i, ''),
     accessed: get('urldate', 'accessed'),
+    ...(entry.type === 'inproceedings' || entry.type === 'conference' ? { proceedings: true } : {}),
   };
 }
 
@@ -232,7 +233,14 @@ export function toBibtex(sources: readonly Source[]): string {
       let key = base;
       for (let n = 2; used.has(key); n += 1) key = `${base}${String.fromCharCode(96 + n)}`;
       used.add(key);
-      const type = source.type === 'article' ? 'article' : source.type === 'book' ? 'book' : 'misc';
+      const paper = source.type === 'article' && source.proceedings === true;
+      const type = paper
+        ? 'inproceedings'
+        : source.type === 'article'
+          ? 'article'
+          : source.type === 'book'
+            ? 'book'
+            : 'misc';
       const lines: [string, string][] = [
         [
           'author',
@@ -241,7 +249,16 @@ export function toBibtex(sources: readonly Source[]): string {
             .join(' and '),
         ],
         ['title', source.title],
-        [source.type === 'article' ? 'journal' : source.type === 'web' ? 'howpublished' : 'series', source.container],
+        [
+          paper
+            ? 'booktitle'
+            : source.type === 'article'
+              ? 'journal'
+              : source.type === 'web'
+                ? 'howpublished'
+                : 'series',
+          source.container,
+        ],
         ['publisher', source.publisher],
         ['address', source.place],
         ['edition', source.edition],
