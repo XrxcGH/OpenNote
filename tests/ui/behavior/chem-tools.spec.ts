@@ -20,7 +20,7 @@ test('opens the chemistry calculators from the palette and balances an equation'
   await dialog.getByLabel('Mass of N2 (g)').fill('10');
   await dialog.getByLabel('Mass of H2 (g)').fill('10');
   await expect(dialog.locator('[data-chem-answer]')).toContainText('Limiting reagent: N2');
-  await expect(dialog.locator('[data-chem-answer]')).toContainText('NH3: 12.17 g');
+  await expect(dialog.locator('[data-chem-answer]')).toContainText('NH3: 12.16 g');
 });
 
 test('draws a structure on the page as one line for each bond', async ({ page }) => {
