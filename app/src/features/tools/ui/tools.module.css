@@ -10,12 +10,39 @@
     flex-direction: column;
     color: var(--color-text-primary);
     background: var(--color-surface-raised);
+    box-sizing: border-box;
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-lg);
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+    /* Over the page (too narrow to dock), the panel casts a shadow from its left edge so it reads as above the text. */
+    box-shadow: -8px 0 24px color-mix(in srgb, var(--color-text-primary) 22%, transparent);
     font-family: var(--font-ui);
     font-size: var(--type-body-size);
     line-height: var(--type-body-line);
+  }
+
+  /* Docked: a column at the right edge, flush with the command bar's line above and the status line below. */
+  .window[data-docked] {
+    border-block: 0;
+    border-inline-end: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* The edge that resizes the panel. It is a 12 px strip over the panel's left border. */
+  .edge {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -6px;
+    inline-size: 12px;
+    z-index: 1;
+    cursor: ew-resize;
+    touch-action: none;
+  }
+
+  .edge:hover,
+  .edge:focus-visible {
+    background: color-mix(in srgb, var(--color-accent-primary) 35%, transparent);
+    outline: none;
   }
 
   .window[data-pinned] {
@@ -29,14 +56,11 @@
     gap: var(--space-2);
     padding: var(--space-3) var(--space-4);
     border-block-end: 1px solid var(--color-border-subtle);
-    cursor: grab;
-    touch-action: none;
     user-select: none;
   }
 
-  .header:focus-visible {
-    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
-    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  .header:focus {
+    outline: none;
   }
 
   .title {

@@ -135,17 +135,101 @@ test.describe('panels stay between the toolbar and the status line', () => {
         const edges = await chrome(page);
         expect(edges.bottom, 'the status line shows').toBeLessThan(height);
         const box = (await panel.boundingBox())!;
-        expect(box.y, 'below the command bar and its line, with a gap').toBeGreaterThanOrEqual(edges.top + 4);
-        expect(box.y + box.height, 'above the status line, with a gap').toBeLessThanOrEqual(edges.bottom - 4);
-        // Dragged to the top, the panel still stops below the command bar.
-        await panel.getByRole('heading', { name: tool }).or(panel.locator('header').first()).first().hover();
-        await page.mouse.down();
-        await page.mouse.move(box.x + 40, 0, { steps: 4 });
-        await page.mouse.up();
-        expect((await panel.boundingBox())!.y).toBeGreaterThanOrEqual(edges.top + 4);
+        expect(box.y, 'below the command bar and its line').toBeGreaterThanOrEqual(edges.top - 1);
+        expect(box.y + box.height, 'above the status line').toBeLessThanOrEqual(edges.bottom + 1);
       });
     }
   }
+});
+
+test.describe('a docked panel leaves the page alone', () => {
+  for (const width of [1600, 2000] as const) {
+    for (const scheme of ['light', 'dark'] as const) {
+      test(`Citations at ${width}, ${scheme}, shares no pixel with page text, title, chip or divider`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme: scheme });
+        await openMembranes(page, width);
+        await openTool(page, 'Open citations');
+        const panel = page.getByRole('dialog', { name: 'Citations' });
+        await expect(panel).toBeVisible();
+        const edges = await chrome(page);
+        const found = await page.evaluate(() => {
+          const rect = (element: Element | null) => {
+            const box = element?.getBoundingClientRect();
+            return box ? { left: box.left, right: box.right, top: box.top, bottom: box.bottom } : null;
+          };
+          const texts: { left: number; right: number; top: number; bottom: number }[] = [];
+          const editor = document.querySelector('[contenteditable=true]')!;
+          const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+          for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            for (const box of range.getClientRects()) {
+              texts.push({ left: box.left, right: box.right, top: box.top, bottom: box.bottom });
+            }
+          }
+          const main = document.querySelector('main')!.getBoundingClientRect();
+          return {
+            texts,
+            title: rect(document.querySelector('[data-page-title]')),
+            chip: rect(
+              [...document.querySelectorAll('button')].find((one) => /^Properties/.test(one.textContent ?? '')) ?? null,
+            ),
+            mainRight: main.right,
+          };
+        });
+        const box = (await panel.boundingBox())!;
+        const hits = (one: { left: number; right: number; top: number; bottom: number } | null) =>
+          !!one &&
+          one.right > box.x &&
+          one.left < box.x + box.width &&
+          one.bottom > box.y &&
+          one.top < box.y + box.height;
+        expect(found.texts.length).toBeGreaterThan(0);
+        expect(found.texts.filter(hits), 'page text under the panel').toEqual([]);
+        expect(hits(found.title), 'the title under the panel').toBe(false);
+        expect(hits(found.chip), 'the Properties chip under the panel').toBe(false);
+        expect(found.mainRight, 'the page region, its scroll bar included, ends at the panel').toBeLessThanOrEqual(
+          box.x + 1,
+        );
+        expect(box.y, 'top at or below the toolbar divider').toBeGreaterThanOrEqual(edges.top - 1);
+        expect(box.y + box.height, 'bottom at or above the status bar').toBeLessThanOrEqual(edges.bottom + 1);
+        expect(box.x + box.width, 'at the right edge').toBeGreaterThanOrEqual(width - 1);
+        // Closing gives the space back.
+        await panel.getByRole('button', { name: 'Close Citations' }).click();
+        await expect(panel).toHaveCount(0);
+        const after = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
+        expect(after).toBeGreaterThanOrEqual(width - 1);
+      });
+    }
+  }
+
+  test('at 1100 the panel overlays from the right edge with a shadow', async ({ page }) => {
+    await openMembranes(page, 1100);
+    await openTool(page, 'Open citations');
+    const panel = page.getByRole('dialog', { name: 'Citations' });
+    await expect(panel).toBeVisible();
+    const box = (await panel.boundingBox())!;
+    expect(box.x + box.width, 'from the right edge').toBeGreaterThanOrEqual(1100 - 1);
+    expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
+    const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
+    expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(1100 - 1);
+  });
+
+  test('the edge resizes the panel and the width is remembered', async ({ page }) => {
+    await openMembranes(page, 2000);
+    await openTool(page, 'Open citations');
+    const panel = page.getByRole('dialog', { name: 'Citations' });
+    const edge = panel.getByRole('separator');
+    const before = (await panel.boundingBox())!.width;
+    await edge.focus();
+    await page.keyboard.press('ArrowLeft');
+    expect((await panel.boundingBox())!.width).toBe(before + 16);
+    await openMembranes(page, 2000);
+    await openTool(page, 'Open citations');
+    expect((await page.getByRole('dialog', { name: 'Citations' }).boundingBox())!.width).toBe(before + 16);
+  });
 });
 
 test.describe('the Properties chip', () => {
@@ -167,11 +251,11 @@ test.describe('the Properties chip', () => {
       expect(box.x + box.width).toBeLessThanOrEqual(contentRight - 8);
       await openTool(page, 'Open citations');
       await expect(page.getByRole('dialog', { name: 'Citations' })).toBeVisible();
-      const hit = await page.evaluate(
-        ([x, y]) => document.elementFromPoint(x, y)?.closest('button')?.textContent ?? '',
-        [box.x + box.width / 2, box.y + box.height / 2],
-      );
-      expect(hit).toMatch(/^Properties/);
+      // Docked, the chip moves beside the panel instead of sitting under it. At 1280 there is no room, so it overlays.
+      if (width < 1600) return;
+      const panelBox = (await page.getByRole('dialog', { name: 'Citations' }).boundingBox())!;
+      const moved = (await chip.boundingBox())!;
+      expect(moved.x + moved.width).toBeLessThanOrEqual(panelBox.x);
     });
   }
 });
@@ -184,8 +268,8 @@ test('a tool window wider than a phone-size window stays inside it', async ({ pa
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
   await openTool(page, 'Open citations');
   const box = (await page.getByRole('dialog', { name: 'Citations' }).boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(8);
-  expect(box.x + box.width).toBeLessThanOrEqual(420 - 8);
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(420);
 });
 
 test('a long title wraps before the Properties chip', async ({ page }) => {

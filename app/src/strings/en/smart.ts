@@ -47,7 +47,7 @@ export const smart = {
       close: 'Close {title}',
       keepOnTop: 'Keep on top',
       popOut: 'Open in its own window',
-      move: 'Move {title}. Use the arrow keys, or drag.',
+      resize: 'Resize {title}. Use the left and right arrow keys, or drag.',
     },
     timers: {
       title: 'Timers',

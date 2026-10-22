@@ -102,6 +102,8 @@
      text. */
   .page {
     grid-area: page;
+    /* Docked panels take the right edge (dock.ts), so the page, its scroll bar, and its chips end beside them. */
+    margin-inline-end: var(--dock-inset-right, 0px);
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
@@ -116,7 +118,7 @@
 
   /* The linked pages pane (search/backlinks) is a sheet at the window's end: the page leaves room for it. */
   :global(body[data-linked-pages]) .page {
-    margin-inline-end: calc(min(24rem, 90vw) + var(--space-4));
+    margin-inline-end: calc(var(--dock-inset-right, 0px) + min(24rem, 90vw) + var(--space-4));
   }
 
   :global(:root[data-theme='dark']) .page {
