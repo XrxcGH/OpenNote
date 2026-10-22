@@ -144,7 +144,8 @@ class ScreenPaginator implements Paginator {
     const style = this.mounted.flow.element.style;
     style.marginBlockStart = '0px';
     style.paddingBlockStart = '0px';
-    style.marginInlineStart = `${column.x}px`;
+    // The title band starts where the column does (viewport.module.css).
+    this.mounted.viewport.world.style.setProperty('--flow-start', `${column.x}px`);
     style.inlineSize = `${column.width}px`;
     const top = this.mounted.flow.element.offsetTop;
     style.marginBlockStart = `${Math.max(0, flowSheet.margins[0] - top)}px`;
@@ -154,7 +155,7 @@ class ScreenPaginator implements Paginator {
     const style = this.mounted.flow.element.style;
     style.marginBlockStart = '';
     style.paddingBlockStart = '';
-    style.marginInlineStart = '';
+    this.mounted.viewport.world.style.removeProperty('--flow-start');
     style.inlineSize = '';
   }
 

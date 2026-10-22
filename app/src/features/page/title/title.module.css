@@ -1,10 +1,10 @@
 @layer components {
-  /* The title band (ARCHITECTURE.md section 5.8): x 48 and y 24 in page units, and the flow starts 16 units below
-     it. The Page title style is the reading face at the title size, with the logo's short clay stroke under it. */
+  /* The title band (ARCHITECTURE.md section 5.8): y 24 in page units and x where the flow's text starts, so the
+     title's left edge is the text's, and the flow starts 16 units below it. The Page title style is the reading face at the title size, with the logo's short clay stroke under it. */
   .band {
     /* Positioned, so it paints above the sheets of pages with breaks, as the flow below it does. */
     position: relative;
-    padding: 24px 48px 0;
+    padding: 24px var(--flow-margin, 48px) 0 var(--flow-start, 48px);
     margin-block-end: 16px;
   }
 
