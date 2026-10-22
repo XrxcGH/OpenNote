@@ -318,8 +318,15 @@ if (typeof window !== 'undefined') {
     const detail = (event as CustomEvent<{ text?: string; graph?: string; handled: boolean }>).detail;
     const editor = targetEditor();
     if (!detail || !editor) return;
-    if (detail.text !== undefined) detail.handled = editor.chain().focus().insertContent(detail.text).run();
-    else if (detail.graph !== undefined) {
+    if (detail.text !== undefined) {
+      // A double-click selects the word and the space after it. The text replaces the word, and the space stays.
+      const { from, to } = editor.state.selection;
+      const selected = editor.state.doc.textBetween(from, to, ' ', ' ');
+      const lead = selected.length - selected.trimStart().length;
+      const trail = selected.length - selected.trimEnd().length;
+      const range = selected.trim() === '' ? { from, to } : { from: from + lead, to: to - trail };
+      detail.handled = editor.chain().focus().insertContentAt(range, detail.text).run();
+    } else if (detail.graph !== undefined) {
       // The listener must answer at once, so a graph is claimed now and added when its code arrives.
       detail.handled = true;
       void import('../../../editor/extensions/graphFence').then(({ insertGraph }) => insertGraph(editor, detail.graph));

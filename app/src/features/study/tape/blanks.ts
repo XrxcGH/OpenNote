@@ -20,7 +20,7 @@ const WORD = /[\p{L}\p{N}]+/gu;
 
 /** Text with each word replaced by a line of its length (3 to 12 marks), leaving the Markdown marks around it. */
 export function blankText(markdown: string): string {
-  return markdown.replace(WORD, (word) => '_'.repeat(Math.max(3, Math.min(12, word.length))));
+  return markdown.replace(WORD, (word) => '\\_'.repeat(Math.max(3, Math.min(12, word.length))));
 }
 
 const oneLine = (s: string): string => s.replace(/\s+/g, ' ').trim();

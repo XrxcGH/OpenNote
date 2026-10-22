@@ -3,6 +3,7 @@
 import { expandEmbedText, loadEmbed, shownAssetUrl, shownMounted, snapshotShownPage } from '../../page';
 import { isEnabled } from '../../../app/flags';
 import type { NodeId, NotesService } from '../../../services/notes';
+import type { PageJson } from '../../../services/pages/types';
 import { titleOf } from '../../tree';
 import { readExportPage, withBlanks, type ExportBlock, type TapeBox, type ExportPage } from '../export';
 import { t } from '../../../strings/t';
@@ -94,6 +95,33 @@ async function withDiagrams(page: ExportPage): Promise<ExportPage> {
   return { ...page, blocks };
 }
 
+/**
+ * Gives the live citation and bibliography blocks the words they show now. A block keeps the words from when it was
+ * added, for readers that do not know it, so a change of style or source would leave those stale in a file.
+ */
+async function withLiveCitations(json: PageJson): Promise<PageJson> {
+  const live = (type: string) => type === 'ext:org.opennote/citation' || type === 'ext:org.opennote/bibliography';
+  if (!json.blocks.some((block) => live(block.type))) return json;
+  const citations = await import('../../citations');
+  const style = citations.styleStore.get();
+  const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+  const blocks = json.blocks.map((block) => {
+    if (!live(block.type)) return block;
+    const sources = citations.sourcesOf(text(block.data.notebook));
+    let markdown: string | null = null;
+    if (block.type === 'ext:org.opennote/citation') {
+      const at = sources.findIndex((one) => one.id === block.data.source);
+      if (at >= 0) markdown = citations.styleOf(style).inline(sources[at], at + 1);
+    } else {
+      const wanted = Array.isArray(block.data.sources) ? block.data.sources : null;
+      const chosen = wanted === null ? sources : sources.filter((one) => wanted.includes(one.id));
+      if (chosen.length > 0) markdown = citations.bibliography(chosen, style);
+    }
+    return markdown === null ? block : { ...block, fallback: { ...block.fallback, markdown } };
+  });
+  return { ...json, blocks };
+}
+
 /** The shown page as export data, or null when no page is shown. */
 export async function collectSource(notes: NotesService, language = 'en'): Promise<PageSource | null> {
   const mounted = shownMounted.get();
@@ -103,7 +131,7 @@ export async function collectSource(notes: NotesService, language = 'en'): Promi
   const json = await snapshotShownPage(place.title);
   if (!json) return null;
   const strokes = await collectStrokes(pageId);
-  const read = await withDiagrams(await withEmbeds(readExportPage(json, strokes, language)));
+  const read = await withDiagrams(await withEmbeds(readExportPage(await withLiveCitations(json), strokes, language)));
   const page = tapeBlanksOn() ? withBlanks(read, shownBoxes(), tapeLabels()) : read;
   const assetUrls: Record<string, string> = {};
   for (const id of Object.keys(page.assets)) {

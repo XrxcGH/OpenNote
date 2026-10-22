@@ -68,7 +68,7 @@ export function blankText(markdown: string): string {
     .map((line) => {
       const lead = /^\s*(?:#{1,6}\s+|[-*+]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+|>\s*)?/.exec(line)?.[0] ?? '';
       const rest = line.slice(lead.length);
-      return lead + rest.replace(/\S+/g, (word) => '_'.repeat(Math.min(Math.max([...word].length, 3), 14)));
+      return lead + rest.replace(/\S+/g, (word) => '\\_'.repeat(Math.min(Math.max([...word].length, 3), 14)));
     })
     .join('\n');
 }
@@ -133,9 +133,13 @@ export function withBlanks(
     }
   }
   const last = page.blocks.reduce((max, block) => (block.order > max ? block.order : max), '');
+  // One block with the ID the HTML export looks for, so the key starts a new sheet.
   const key: ExportBlock[] = [
-    keyBlock('answer-key-title', `${last}~0`, `## ${labels.answerKey}`),
-    keyBlock('answer-key', `${last}~1`, answers.map((answer, index) => `${index + 1}. ${answer}`).join('\n')),
+    keyBlock(
+      'tape-answer-key',
+      `${last}~0`,
+      [`## ${labels.answerKey}`, '', ...answers.map((answer, index) => `${index + 1}. ${answer}`)].join('\n'),
+    ),
   ];
   return {
     ...page,

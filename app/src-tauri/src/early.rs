@@ -93,6 +93,10 @@ impl Steps for System {
 
 /// Runs the early steps for this process.
 pub fn run() -> EarlyOutcome {
+    // `--print-job` does one print job for the app in a process of its own, and never starts the app.
+    if let Some(code) = crate::print_job::run_job_from_args() {
+        return EarlyOutcome::Exit(code);
+    }
     perf::init();
     perf::mark_at("processCreated", boot::process_start_epoch_ms(), None);
     perf::mark("mainEntered", None);

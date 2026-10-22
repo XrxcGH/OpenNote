@@ -93,6 +93,8 @@ export interface ClassSlot {
   start: string;
   end: string;
   room: string;
+  /** The first day the class meets (a date key), when a calendar file said so. Earlier days have no class. */
+  from?: string;
   /** The section the class's notes go in. The name is kept so it still reads right if the section is gone. */
   section?: ClassSection;
   source?: string;
@@ -129,8 +131,9 @@ export const clockText = (minutes: number): string =>
 /** The classes on a day, in time order. */
 export function classesOn(slots: readonly ClassSlot[], date: CivilDate): ClassSlot[] {
   const day = dayOfWeek(date);
+  const key = dateKey(date);
   return slots
-    .filter((slot) => slot.days.includes(day))
+    .filter((slot) => slot.days.includes(day) && (slot.from === undefined || slot.from <= key))
     .sort((a, b) => minutesOfText(a.start) - minutesOfText(b.start) || a.name.localeCompare(b.name));
 }
 
@@ -167,6 +170,7 @@ function slotOf(component: IcsComponent, zone: string): ClassSlot | null {
     start: clockText(startMinutes),
     end: clockText(end?.time ? minutesOf(end.time) : startMinutes),
     room: component.location ?? '',
+    from: dateKey(start.date),
   };
 }
 

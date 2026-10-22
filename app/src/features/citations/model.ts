@@ -31,6 +31,8 @@ export interface Source {
   doi: string;
   /** The day a web page was read, as YYYY-MM-DD. */
   accessed: string;
+  /** True for a paper in conference proceedings (an article type), so BibTeX writes it back as one. */
+  proceedings?: boolean;
 }
 
 let counter = 0;

@@ -147,6 +147,11 @@ describe('text import and export', () => {
     expect(plan.fresh.map((one) => one.id)).toEqual(['1']);
     expect(plan.duplicates.map((one) => one.id)).toEqual(['2', '3']);
   });
+  it('knows a multiple choice card again when it comes back from its own export', () => {
+    const choice = { ...card('m', 'Capital?', ''), kind: 'choice' as const, choices: ['Rome', 'Paris'], answer: 1 };
+    const back = card('n', 'Capital?\n1. Rome\n2. Paris', 'Paris');
+    expect(planImport([back], [choice]).duplicates).toHaveLength(1);
+  });
   it('writes CSV and counts image cards it cannot write', () => {
     const deck: Deck = {
       id: 'd',

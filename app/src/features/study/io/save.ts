@@ -1,7 +1,7 @@
 // Saving a file from the study tools (a deck as CSV or an Anki package, a bibliography). In the app the Save
 // dialog picks the place and the shell writes the file; in a browser the browser's own save flow names it.
 import { t } from '../../../strings/t';
-import { announce, showToast } from '../../../ui';
+import { showToast } from '../../../ui';
 import { deckToCsv } from '../deck/exchange';
 import type { Deck } from '../deck/types';
 
@@ -49,16 +49,17 @@ export async function exportDeck(deck: Deck, format: 'csv' | 'apkg'): Promise<vo
   try {
     const name = fileName(deck.name, format);
     let saved: boolean;
+    let note = '';
     if (format === 'csv') {
       const { csv, skipped } = deckToCsv(deck);
       const bytes = new TextEncoder().encode(String.fromCharCode(0xfeff) + csv);
       saved = await saveBytes(name, t('study.io.csvLabel'), bytes, 'text/csv');
-      if (saved && skipped > 0) announce(t('study.io.exportSkipped', { count: skipped }));
+      if (skipped > 0) note = ` ${t('study.io.exportSkipped', { count: skipped })}`;
     } else {
       const { writeAnkiPackage } = await import('./anki');
       saved = await saveBytes(name, t('study.io.ankiLabel'), await writeAnkiPackage(deck), 'application/octet-stream');
     }
-    if (saved) showToast({ message: t('study.io.exported', { name }) });
+    if (saved) showToast({ message: `${t('study.io.exported', { name })}${note}` });
   } catch {
     showToast({ message: t('study.io.exportFailed'), tone: 'danger' });
   }

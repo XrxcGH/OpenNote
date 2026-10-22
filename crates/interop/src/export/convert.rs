@@ -46,6 +46,8 @@ struct Tally {
     ink_pictured: bool,
     floating: usize,
     with_fallback: usize,
+    /// Blocks of OpenNote's own extra types (flashcards, study tape, live citations), which a file shows as text.
+    own_with_fallback: usize,
     unknown: Vec<String>,
 }
 
@@ -66,6 +68,12 @@ impl Tally {
         report.simplified_count(self.dead_links, dead, "Only the link text was kept.");
         let newer = ("block from a newer version", "blocks from a newer version");
         report.simplified_count(self.with_fallback, newer, "Their readable stand-in was used.");
+        let own = ("live block shown as text", "live blocks shown as text");
+        report.simplified_count(
+            self.own_with_fallback,
+            own,
+            "Flashcards, study tape, and citations that follow a style stay as the text saved with them.",
+        );
         if self.ink_blocks > 0 && self.strokes > 0 {
             let what = format!("handwriting and drawings ({} strokes)", self.strokes);
             if self.ink_pictured {
@@ -126,7 +134,11 @@ impl Convert<'_> {
             BlockData::Ink(ink) => self.ink(ink, out),
             BlockData::Other(other) => match &block.fallback {
                 Some(fallback) => {
-                    self.tally.with_fallback += 1;
+                    if other.type_name.starts_with("ext:org.opennote/") {
+                        self.tally.own_with_fallback += 1;
+                    } else {
+                        self.tally.with_fallback += 1;
+                    }
                     out.extend(self.markdown(&fallback.markdown));
                     if let Some(asset) = fallback.image {
                         self.image_paragraph(asset, "", out);

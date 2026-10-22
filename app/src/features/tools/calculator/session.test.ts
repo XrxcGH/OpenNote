@@ -6,6 +6,7 @@ import {
   memoryAdd,
   memoryClear,
   memoryStore,
+  recordConversion,
   newSession,
   restoreSession,
   setAngleMode,
@@ -118,5 +119,14 @@ describe('long input', () => {
     expect(result.ok ? null : result.error.code).toBe('too-long');
     expect(performance.now() - started).toBeLessThan(1000);
     expect(submit(newSession(), '6*7 ===').result).toMatchObject({ ok: true, value: 42 });
+  });
+});
+
+describe('unit conversions in the history', () => {
+  it('keeps the answer with its unit, and it becomes ans', () => {
+    const kept = recordConversion(newSession(), '5 km to mi', 3.1, 'mi');
+    expect(kept.history).toEqual([{ id: 1, expression: '5 km to mi', value: 3.1, angle: 'deg', unit: 'mi' }]);
+    expect(restoreSession(JSON.parse(JSON.stringify(kept))).history[0]?.unit).toBe('mi');
+    expect(lastAnswer(kept)).toBe(3.1);
   });
 });
