@@ -4,6 +4,7 @@
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
+import { loadScreens, openScreen, VIEWPORTS } from '../screens';
 import { runCommand } from './smart';
 
 const WIDTHS = [1280, 1600, 2000] as const;
@@ -200,4 +201,60 @@ test('a long title wraps before the Properties chip', async ({ page }) => {
     return Math.max(...[...range.getClientRects()].map((rect) => rect.right));
   });
   expect(right).toBeLessThanOrEqual(chip.x - 4);
+});
+
+test.describe('controls line up with the text and fields around them', () => {
+  for (const width of WIDTHS) {
+    test(`a settings switch lines up with its heading, and its track with the fields at ${width}`, async ({ page }) => {
+      VIEWPORTS.wide = { width, height: 900 };
+      const screen = (await loadScreens()).find((candidate) => candidate.id === 'recording.settings')!;
+      await openScreen(page, screen, { size: 'wide', theme: 'light' });
+      const edges = await page.evaluate(() => {
+        const heading = document.querySelector('h1')!.getBoundingClientRect();
+        const row = [...document.querySelectorAll('main [role=switch]')].find((s) => s.querySelector('span'))!;
+        const label = document.createRange();
+        label.selectNodeContents(row.querySelector('span')!);
+        const track = row.querySelector('span:last-child')!.getBoundingClientRect();
+        const select = document.querySelector('main select')!.getBoundingClientRect();
+        return {
+          heading: heading.left,
+          label: label.getBoundingClientRect().left,
+          track: track.right,
+          select: select.right,
+        };
+      });
+      expect(Math.abs(edges.label - edges.heading)).toBeLessThanOrEqual(1);
+      expect(Math.abs(edges.track - edges.select)).toBeLessThanOrEqual(2);
+    });
+  }
+
+  test('the calculator answer keeps a gap under the entry row', async ({ page }) => {
+    await openMembranes(page, 1280);
+    await openTool(page, 'Calculator');
+    const field = page.getByRole('textbox', { name: 'Expression' });
+    await field.fill('2+2');
+    await field.press('Enter');
+    const gap = await page.evaluate(() => {
+      const input = document.querySelector('input[aria-describedby="calc-result"]')!.getBoundingClientRect();
+      const answer = document.getElementById('calc-result')!.getBoundingClientRect();
+      return answer.top - input.bottom;
+    });
+    expect(gap).toBeGreaterThanOrEqual(8);
+  });
+
+  test('the shortcuts table starts at the group title', async ({ page }) => {
+    VIEWPORTS.wide = { width: 1280, height: 900 };
+    const screen = (await loadScreens()).find((candidate) => candidate.id === 'shortcuts.dialog')!;
+    await openScreen(page, screen, { size: 'wide', theme: 'light' });
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const lefts = await dialog.evaluate((root) => {
+      const title = root.querySelector('h2:not(:first-of-type), h3')!.getBoundingClientRect().left;
+      const cell = root.querySelector('tbody td')!;
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      return { title, cell: range.getBoundingClientRect().left };
+    });
+    expect(Math.abs(lefts.title - lefts.cell)).toBeLessThanOrEqual(1);
+  });
 });
