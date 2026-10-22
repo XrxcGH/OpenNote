@@ -48,6 +48,19 @@ Press Ctrl+K and choose one of these by name.
 | Zoom writing box                    | Write large in a box. It lands small on the line.               |
 | Replay ink                          | Plays your strokes back, and plays a recording along with them. |
 | Ruler, Protractor, and Snap to grid | Help you draw neat diagrams.                                    |
+| Measure, Compass                    | Measure distances, and draw circles and arcs.                   |
+
+### Measure and draw with the ruler and the compass
+
+Turn on Ruler in the Draw tab. Drag it to move it, and drag its round handle to turn it. With it selected, the arrow keys move it a millimeter (or a sixteenth of an inch) and the bracket keys turn it; hold Shift for bigger steps.
+
+- **Straight lines:** start a stroke at either long edge and it runs straight along it. The ruler shows the line's length as you draw.
+- **Units:** the ruler shows centimeters or inches. Choose Units in the Draw tab: Automatic follows your region, or pick Centimeters or Inches.
+- **Measure:** choose Measure in the Draw tab, or press Ctrl+Alt+Shift+M. Drag from one point to another, or tap one point and then the other. The page shows the distance and the angle, and nothing is drawn. Points snap to the ruler's edge and to the paper's lines.
+- **Length of a line:** select a line or a shape, then press Ctrl+K and choose Measure the selected line.
+- **Compass:** choose Compass in the Draw tab, or press Ctrl+Alt+Shift+C. Tap to set the center. Drag out from the center to open the compass; the radius shows as you drag and snaps to the paper's lines or the grid when snapping is on. Then sweep around the center to draw an arc, or all the way around for a circle. It is saved as a shape, so you can reshape it by its handles. Tap somewhere else to move the center and keep the radius.
+- **Compass by keyboard:** while the compass is out, its center has the keyboard. The arrow keys move it, plus and minus open and close it, Enter draws a circle, and Escape puts it away.
+- Choosing a pen, the eraser, or the lasso puts the measure and the compass away. Hold Alt to place a point without snapping.
 
 ### Snap to paper lines
 
