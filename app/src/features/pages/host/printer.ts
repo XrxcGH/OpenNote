@@ -50,6 +50,16 @@ export function chosenPrinter(printers: readonly PrinterInfo[], name: string): P
   return name === '' ? null : (printers.find((printer) => printer.name === name) ?? null);
 }
 
+/** Windows' own PDF printer. The PDF is already made, so OpenNote saves it through its own Save window instead. */
+export const PDF_PRINTER = 'Microsoft Print to PDF';
+
+/**
+ * Whether the printer only turns the job into a PDF file. Sending it there would draw the page again through the
+ * graphics driver (where Microsoft Print to PDF has crashed) behind a Save window the driver opens out of sight, so the
+ * dialog saves the PDF it made instead, with the same Save window as Export as PDF.
+ */
+export const savesPdf = (printer: PrinterInfo | null): boolean => printer?.name === PDF_PRINTER;
+
 /** Whether the printer can print on both sides. A printer that doesn't say is given the benefit of the doubt. */
 export const canDuplex = (printer: PrinterInfo | null): boolean => printer !== null && printer.twoSided !== false;
 

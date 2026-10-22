@@ -234,6 +234,45 @@ describe('PrintDialog', () => {
     expect(print.getAttribute('aria-disabled')).not.toBe('true');
   });
 
+  it('saves through its own Save window for Microsoft Print to PDF, and sends no job', async () => {
+    const platform = createTestPlatform();
+    vi.spyOn(platform.exports, 'printers').mockResolvedValue([
+      { name: 'Studio Printer', default: true, twoSided: true },
+      { name: 'Microsoft Print to PDF', default: false, twoSided: false },
+    ]);
+    const submit = vi.spyOn(platform.exports, 'printSubmit');
+    const pickSave = vi.spyOn(platform.exports, 'pickSave');
+    const write = vi.spyOn(platform.exports, 'write');
+    const close = vi.fn();
+    render(<PrintDialog source={printSource()} platform={platform} mode="print" close={close} />);
+    await userEvent.selectOptions(await screen.findByLabelText('Printer'), 'Microsoft Print to PDF');
+    expect(screen.getByText('OpenNote saves the PDF itself and asks where to put it.')).toBeTruthy();
+    expect(screen.queryByLabelText('Copies')).toBeNull();
+    await screen.findByText(/sheet on /, undefined, { timeout: 10_000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Print…' }));
+    await waitFor(() => expect(write).toHaveBeenCalledOnce(), { timeout: 10_000 });
+    expect(pickSave.mock.calls[0][0]).toMatchObject({ extension: 'pdf' });
+    expect(submit).not.toHaveBeenCalled();
+    await waitFor(() => expect(close).toHaveBeenCalled());
+  });
+
+  it('says calmly when the printer turns the job down, and stays open', async () => {
+    const platform = createTestPlatform();
+    const submit = vi.spyOn(platform.exports, 'printSubmit').mockRejectedValue({
+      code: 'spool',
+      message: "The printer's driver stopped while printing. Nothing was sent, and your notes are untouched.",
+    });
+    const close = vi.fn();
+    render(<PrintDialog source={printSource()} platform={platform} mode="print" close={close} />);
+    await userEvent.selectOptions(await screen.findByLabelText('Printer'), 'Studio Printer');
+    await screen.findByText(/sheet on /, undefined, { timeout: 10_000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Print…' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce(), { timeout: 10_000 });
+    // The dialog goes back to its options, ready to try again.
+    expect(await screen.findByLabelText('Printer', undefined, { timeout: 10_000 })).toBeTruthy();
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('shows no printer fields in Export as PDF', async () => {
     render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
     await screen.findByLabelText('Pages');

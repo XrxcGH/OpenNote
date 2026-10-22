@@ -18,6 +18,7 @@ import {
   MAX_COPIES,
   parseCopies,
   printToPrinter,
+  savesPdf,
   toJobRequest,
 } from '../host/printer';
 import type { DuplexChoice, PrinterForm } from '../host/printer';
@@ -197,6 +198,17 @@ function useExport(
     }
     setWorking({ stage: 'prepare', fraction: 0 });
     try {
+      if (printing && savesPdf(chosenPrinter(printing.printers, printing.form.printer))) {
+        const outcome = await exportPdfFile(platform.exports, source, {
+          print: options,
+          accessible: false,
+          signal: controller.signal,
+          onProgress: (progress) => setWorking({ stage: progress.stage, fraction: progress.fraction }),
+        });
+        if (outcome.status === 'canceled') return setWorking(null);
+        close();
+        return reportSaved(outcome, platform, false);
+      }
       if (printing) {
         const request = toJobRequest(printing.form, printing.printers, source.title);
         if (!request) return setWorking(null);
@@ -350,8 +362,6 @@ interface PrinterFieldsProps {
 /** Where to print and how: the printer, copies, both sides, color, and shrink to fit. */
 function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
   const printer = chosenPrinter(printers, form.printer);
-  const copies = parseCopies(form.copies);
-  const copiesError = copies === null ? t('pageViews.print.badCopies', { max: MAX_COPIES }) : undefined;
   return (
     <div className={styles.form}>
       <div className={styles.row}>
@@ -376,6 +386,26 @@ function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
           ))}
         </select>
       </div>
+      {savesPdf(printer) ? (
+        <p className={styles.hint}>{t('pageViews.print.pdfPrinterHint')}</p>
+      ) : (
+        <PrintOptionsFields form={form} printer={printer} paper={paper} set={set} />
+      )}
+    </div>
+  );
+}
+
+/** Copies, both sides, shrink to fit, and color, for a printer that puts the job on paper. */
+function PrintOptionsFields({
+  form,
+  printer,
+  paper,
+  set,
+}: Omit<PrinterFieldsProps, 'printers'> & { readonly printer: PrinterInfo | null }) {
+  const copies = parseCopies(form.copies);
+  const copiesError = copies === null ? t('pageViews.print.badCopies', { max: MAX_COPIES }) : undefined;
+  return (
+    <>
       <TextField
         label={t('pageViews.print.copies')}
         value={form.copies}
@@ -405,7 +435,7 @@ function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
       <p className={styles.hint}>{t('pageViews.print.shrinkHint')}</p>
       {paper ? <p className={styles.hint}>{t('pageViews.print.paperHint', { paper })}</p> : null}
       <Switch label={t('pageViews.print.grayscale')} checked={form.grayscale} onChange={(v) => set('grayscale', v)} />
-    </div>
+    </>
   );
 }
 
@@ -430,7 +460,7 @@ export function PrintDialog(props: PrintDialogProps) {
   const chosen = printing ? chosenPrinter(printing.printers, printerForm.printer) : null;
   // Print waits for a printer the person chose; there is no default to fall back to.
   const printerOk = printing === null || chosen !== null;
-  const copiesOk = printing === null || parseCopies(printerForm.copies) !== null;
+  const copiesOk = printing === null || savesPdf(chosen) || parseCopies(printerForm.copies) !== null;
   const total = preview.status === 'ready' ? preview.result.sheets : 0;
   const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => {

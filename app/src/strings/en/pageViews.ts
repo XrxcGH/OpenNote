@@ -114,6 +114,7 @@ export const pageViews = {
     stop: 'Stop',
     printer: 'Printer',
     choosePrinter: 'Choose a printer',
+    pdfPrinterHint: 'OpenNote saves the PDF itself and asks where to put it.',
     defaultPrinter: '{name} (default)',
     copies: 'Copies',
     badCopies: 'Choose a whole number from 1 to {max}.',

@@ -5,7 +5,16 @@ import { createWebExports } from '../../../platform/web/exports';
 import type { PrinterInfo } from '../../../platform/types';
 import { inspectPdf } from '../pdf';
 import { pageOf, textBlock } from '../testing/build';
-import { canDuplex, chosenPrinter, DEFAULT_PRINTER_FORM, parseCopies, printToPrinter, toJobRequest } from './printer';
+import {
+  canDuplex,
+  chosenPrinter,
+  DEFAULT_PRINTER_FORM,
+  parseCopies,
+  PDF_PRINTER,
+  printToPrinter,
+  savesPdf,
+  toJobRequest,
+} from './printer';
 import type { PageSource } from './source';
 
 const OFFICE: PrinterInfo = { name: 'Office', default: true, twoSided: true };
@@ -97,6 +106,11 @@ describe('chosenPrinter and canDuplex', () => {
       true,
       false,
     ]);
+  });
+
+  it('knows the printer that only makes a PDF file', () => {
+    expect(savesPdf({ name: PDF_PRINTER, default: false, twoSided: false })).toBe(true);
+    expect([savesPdf(OFFICE), savesPdf(null)]).toEqual([false, false]);
   });
 });
 
