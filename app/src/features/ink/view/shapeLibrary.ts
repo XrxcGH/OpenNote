@@ -5,7 +5,6 @@
 import { newId } from '../../../editor/ids';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
-import type { MessageKey } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { strokeBounds, union } from '../geometry/bounds';
 import { libraryShape } from '../geometry/shapes';
@@ -19,6 +18,7 @@ import { paperSnapNow, showSnapMarks } from './paperSnap';
 import { shapeOfStroke } from './shapeEdit';
 import { activeSlot, styleOf } from './state';
 import type { InkSurface } from './surface';
+import { itemLabel } from './libraryLabels';
 
 /** Library shapes are about this wide, in page units. */
 export const LIBRARY_SIZE = 170;
@@ -53,7 +53,7 @@ export async function insertLibraryShape(host: InkHost, surface: InkSurface, id:
   if (await surface.add(strokes)) {
     if (placed.marks.length > 0) showSnapMarks(surface, placed.marks, true);
     host.select({ strokes: strokes.map((s) => s.id), blocks: [] });
-    announce(t('ink.library.inserted', { shape: t(`ink.library.${id}` as MessageKey) }));
+    announce(t('ink.library.inserted', { shape: itemLabel(id) }));
   }
 }
 

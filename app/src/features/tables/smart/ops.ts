@@ -96,7 +96,11 @@ export async function filterBy(inst: SmartInstance, mode: FilterMode): Promise<b
   return true;
 }
 
-export type FormatChange = { type: ColumnType | null } | { moreDecimals: 1 | -1 };
+export type FormatChange =
+  | { type: ColumnType | null }
+  | { moreDecimals: 1 | -1 }
+  | { unit: string | null }
+  | { notation: 'engineering' | 'si' | null };
 
 export async function setFormat(inst: SmartInstance, column: number, change: FormatChange): Promise<boolean> {
   const model = inst.model();
@@ -104,13 +108,30 @@ export async function setFormat(inst: SmartInstance, column: number, change: For
   const smart = inst.smart();
   const own = smart.columns[id] ?? {};
   let next: SmartData;
-  if ('type' in change) {
+  if ('unit' in change) {
+    // A unit makes the column a number column; removing it leaves the type the person picked.
+    next = withColumn(smart, id, {
+      unit: change.unit ?? undefined,
+      ...(change.unit ? { type: 'number' as const, currency: undefined } : {}),
+    });
+  } else if ('notation' in change) {
+    next = withColumn(smart, id, {
+      notation: change.notation ?? undefined,
+      ...(change.notation && own.type !== 'number' ? { type: 'number' as const, currency: undefined } : {}),
+    });
+  } else if ('type' in change) {
     next = change.type
       ? withColumn(smart, id, {
           type: change.type,
           currency: change.type === 'currency' ? (own.currency ?? inst.locale.currency) : undefined,
         })
-      : withColumn(smart, id, { type: undefined, decimals: undefined, currency: undefined });
+      : withColumn(smart, id, {
+          type: undefined,
+          decimals: undefined,
+          currency: undefined,
+          unit: undefined,
+          notation: undefined,
+        });
   } else {
     const shown = own.decimals ?? 2;
     next = withColumn(smart, id, { decimals: Math.min(10, Math.max(0, shown + change.moreDecimals)) });

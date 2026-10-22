@@ -55,6 +55,7 @@ import { myHand } from './myHand';
 import { tableMath } from './tableMath';
 import { solvers } from './solvers';
 import { graph3d } from './graph3d';
+import { engineering } from './engineering';
 
 export const en = {
   common,
@@ -112,4 +113,5 @@ export const en = {
   science,
   solvers,
   graph3d,
+  engineering,
 } as const;

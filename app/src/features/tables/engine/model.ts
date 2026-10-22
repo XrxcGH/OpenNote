@@ -5,6 +5,7 @@ import { parseDate } from './dates';
 import { parseLocaleNumber, type Locale } from './locale';
 import { round15, type Value } from './values';
 import { columnFromLetters, lettersFromColumn } from '../../../core/expr';
+import { convertUnit, splitQuantity } from '../../../core/units';
 
 export type ColumnType = 'text' | 'number' | 'currency' | 'percent' | 'date' | 'checkbox' | 'choice';
 export type TotalKind = 'sum' | 'average' | 'count' | 'min' | 'max' | 'checked';
@@ -25,6 +26,13 @@ export interface Column {
   options?: readonly string[];
   /** A choice column that lets a cell hold several of its options. */
   multi?: boolean;
+  /**
+   * The unit of a number column's values, such as "kN" (Engineering tools). A cell typed in another unit of the same
+   * kind, such as "250 N", is converted to it, so totals and formulas add like with like.
+   */
+  unit?: string;
+  /** How a number column writes its values: in engineering notation (12.5×10³), or with SI prefixes (12.5 kN). */
+  notation?: 'engineering' | 'si';
 }
 
 export interface Cell {
@@ -76,6 +84,8 @@ export function parseInput(column: Column, raw: string, locale: Locale): Value {
     case 'choice':
       return raw;
     case 'number':
+      if (column.unit) return parseQuantityIn(column.unit, raw, text, locale);
+    // falls through
     case 'currency':
     case 'percent': {
       const parsed = parseLocaleNumber(text, locale);
@@ -87,6 +97,15 @@ export function parseInput(column: Column, raw: string, locale: Locale): Value {
     case 'checkbox':
       return parseCheckbox(text) ?? raw;
   }
+}
+
+/** A number in a column with a unit: "250 N" in a kN column is 0.25, and "3" is 3 kN. Other text stays as text. */
+function parseQuantityIn(unit: string, raw: string, text: string, locale: Locale): Value {
+  const parts = splitQuantity(text);
+  const parsed = parseLocaleNumber(parts.number, locale);
+  if (!parsed || parsed.percent) return raw;
+  if (parts.unit === '') return parsed.value;
+  return convertUnit(parsed.value, parts.unit, unit) ?? raw;
 }
 
 /** True when a typed column holds text that isn't of its type. Calculated columns never mismatch. */

@@ -24,6 +24,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md): surfaces, curves, vectors, solids, and projectiles.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
+- [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
 
 ## Draw and design pages
 
