@@ -405,4 +405,21 @@ mod tests {
         ]);
         let _ = check(huge, "a.emf", "", false);
     }
+
+    /// A placeable WMF: a 200 by 100 frame with a red rectangle. (An earlier fixture gave its first record 8 words
+    /// for 7, which no reader can follow, so the walk saw this as a refused drop.)
+    #[test]
+    fn a_placeable_wmf_becomes_an_svg() {
+        let hex = "d7cdc69a0000000000 00c8006400a005000000001d52 0100090000031e000000010008000000000007000000fc02000000 00ff000000040000002d0100000700 00001b045a00be000a000a00030000000000";
+        let digits: Vec<u8> = hex.bytes().filter(|b| !b.is_ascii_whitespace()).collect();
+        let bytes: Vec<u8> = digits
+            .chunks(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect();
+        for declared in ["image/x-wmf", "image/wmf", "application/x-msmetafile", ""] {
+            let checked =
+                check(bytes.clone(), "t.wmf", declared, false).unwrap_or_else(|e| panic!("{declared}: {e:?}"));
+            assert_eq!(checked.mime, "image/svg+xml");
+        }
+    }
 }
