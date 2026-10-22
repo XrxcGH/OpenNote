@@ -588,7 +588,7 @@ mod tests {
                 Ok(count)
             };
             // The mode turns on once the first piece has gone.
-            let on = || fake.sent.lock().unwrap().len() >= 1;
+            let on = || !fake.sent.lock().unwrap().is_empty();
             let result = cloud.transcribe(
                 &mut read,
                 None,

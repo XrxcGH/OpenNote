@@ -183,7 +183,7 @@ fn save_now(app: &AppHandle, tool: &str, window: &WebviewWindow) {
 fn beside_open_tools(app: &AppHandle, window: &WebviewWindow) -> Option<(i32, i32)> {
     const GAP: i32 = 8;
     let own = window.outer_size().ok()?;
-    let work = window.current_monitor().ok().flatten()?.work_area().clone();
+    let work = window.current_monitor().ok().flatten()?.work_area().to_owned();
     let (left, right) = (work.position.x, work.position.x + edge(work.size.width));
     let others: Vec<(i32, i32, i32)> = TOOLS
         .iter()
