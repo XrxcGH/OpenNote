@@ -5,6 +5,8 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
 import { blockRenderers } from '../registries';
+import { commands } from '../../../registries';
+import { currentTable } from '../tables/current';
 import { addCommand } from './qolStudy';
 
 blockRenderers.register(
@@ -122,6 +124,25 @@ addCommand({
     if (id) announce(t('engineering.circuit.inserted'));
   },
 });
+
+// Units in smart tables: the column's unit and notation, from the palette as well as the table's Format menu.
+for (const [id, title, command] of [
+  ['table.setUnit', 'engineering.table.unitCommand', { run: 'unit' }],
+  ['table.engineeringNotation', 'engineering.table.engineeringCommand', { run: 'notation', notation: 'engineering' }],
+  ['table.siPrefixes', 'engineering.table.siCommand', { run: 'notation', notation: 'si' }],
+  ['table.plainNotation', 'engineering.table.plainCommand', { run: 'notation', notation: null }],
+] as const) {
+  commands.register({
+    id,
+    title,
+    keywords: 'engineering.table.unitKeywords',
+    category: 'table',
+    icon: 'Ruler',
+    flag: 'tables.units',
+    when: () => currentTable.get() !== null,
+    run: async () => void (await (await import('../../tables')).runSmartCommand(command)),
+  });
+}
 
 /** A block handle for a mount that finishes later: updates before then are kept and passed on. */
 function lazyHandle<P>(pending: Promise<{ update(props: P): void; destroy(): void }>) {

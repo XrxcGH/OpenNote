@@ -3,6 +3,7 @@
 // so a formula is the cell's text ("=B2*C2") and every other reader sees it. Columns, filters, and charts name
 // columns by ID, so adding or moving a column never changes what they mean.
 import { MAX_CHOICES, cleanChoiceName } from '../engine';
+import { parseUnit } from '../../../core/units';
 import type { Aggregate, ChartKind, ColumnType, FilterOp, TotalKind } from '../engine';
 
 /** The colors an option can have, named for the brand's pens (theme/tokens.css), so they follow the theme. */
@@ -29,6 +30,10 @@ export interface ColumnSmart {
   options?: ChoiceOption[];
   /** A choice column whose cells may hold several options, written as names joined by a comma and a space. */
   multi?: boolean;
+  /** A number column's unit, such as "kN" or "N/mm^2" (Engineering tools). */
+  unit?: string;
+  /** Engineering notation, or SI prefixes on the unit. */
+  notation?: 'engineering' | 'si';
 }
 
 export interface FilterSmart {
@@ -143,6 +148,8 @@ function readColumn(raw: unknown): ColumnSmart {
   const options = readOptions(fields.options);
   if (options.length > 0) out.options = options;
   if (fields.multi === true) out.multi = true;
+  if (typeof fields.unit === 'string' && fields.unit.length <= 40 && parseUnit(fields.unit)) out.unit = fields.unit;
+  if (fields.notation === 'engineering' || fields.notation === 'si') out.notation = fields.notation;
   if (Array.isArray(fields.choices)) {
     const choices = fields.choices.filter((value): value is string => typeof value === 'string').slice(0, 50);
     if (choices.length > 0) out.choices = choices.map((value) => value.slice(0, 200));

@@ -2,6 +2,9 @@
 // change, and picked up again when undo, redo, or another window changes the block; and how numbers read.
 import { useCallback, useState } from 'react';
 import { formatNumber } from '../../../core/expr';
+import { superscriptPower } from '../../../core/units';
+
+export { superscriptPower };
 
 export interface BlockProps {
   data: Record<string, unknown>;
@@ -48,29 +51,6 @@ export function fmt(value: number, digits = 4): string {
   if (!Number.isFinite(value)) return '—';
   const text = formatNumber(Math.abs(value) < 1e-9 ? 0 : value, { digits });
   return superscriptPower(text).replace(/^-/, '−');
-}
-
-const SUPERSCRIPT: Record<string, string> = {
-  '0': '⁰',
-  '1': '¹',
-  '2': '²',
-  '3': '³',
-  '4': '⁴',
-  '5': '⁵',
-  '6': '⁶',
-  '7': '⁷',
-  '8': '⁸',
-  '9': '⁹',
-  '-': '⁻',
-  '+': '',
-};
-
-/** "1.5e-7" becomes "1.5×10⁻⁷"; text without a power stays as it is. */
-export function superscriptPower(text: string): string {
-  const match = /^(-?[\d.]+)e([+-]?\d+)$/.exec(text);
-  if (!match) return text;
-  if (Number(match[2]) === 0) return match[1];
-  return `${match[1]}×10${[...match[2]].map((c) => SUPERSCRIPT[c] ?? c).join('')}`;
 }
 
 /** A quantity for people: "6.25 kN". */

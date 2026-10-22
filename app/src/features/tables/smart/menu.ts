@@ -6,6 +6,7 @@ import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { isEnabled } from '../../../app/flags';
 import { addChart, changeChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { calculatedColumn } from './calculated';
+import { unitItems } from './units';
 import { choiceOf } from './choice';
 import { chooseValue, editChoices, filterByChoice, makeChoice } from './choiceOps';
 import {
@@ -206,6 +207,7 @@ function formatItem(ctx: Ctx): MenuItemSpec {
         label: t('smart.table.fewerDecimals'),
         onSelect: run(() => setFormat(inst, column, { moreDecimals: -1 })),
       },
+      ...unitItems(inst, column, own),
     ],
   };
 }

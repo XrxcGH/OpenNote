@@ -14,7 +14,7 @@ import type { Point } from '../canvas/geometry';
 import { fmt, useBlockModel } from '../canvas/shared';
 import type { BlockProps } from '../canvas/shared';
 import styles from '../canvas/canvas.module.css';
-import { parsePrefixed, withPrefix } from '../prefix';
+import { parsePrefixed, withPrefix } from '../../../core/units';
 import { PREFIXES, UNITS, readCircuit, terminals, turn } from './model';
 import type { CircuitKind, CircuitModel, CircuitPart } from './model';
 import { solveCircuit } from './solve';

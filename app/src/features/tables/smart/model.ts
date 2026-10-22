@@ -56,6 +56,7 @@ export function buildModel(grid: Grid, smart: SmartData, locale: Locale): SmartM
     const own = smart.columns[id] ?? {};
     const type =
       own.type ??
+      (own.unit ? 'number' : undefined) ??
       inferType(
         body.map((row) => row[c] ?? ''),
         locale,
@@ -67,6 +68,8 @@ export function buildModel(grid: Grid, smart: SmartData, locale: Locale): SmartM
       ...(own.decimals !== undefined ? { decimals: own.decimals } : {}),
       ...(own.currency ? { currency: own.currency } : {}),
       ...(own.total ? { total: own.total } : {}),
+      ...(type === 'number' && own.unit ? { unit: own.unit } : {}),
+      ...(type === 'number' && own.notation ? { notation: own.notation } : {}),
       ...(type === 'choice'
         ? { options: (own.options ?? []).map((option) => option.name), ...(own.multi ? { multi: true } : {}) }
         : {}),
@@ -106,7 +109,12 @@ export function shownFor(
   const col = model.table.columns[column];
   if (!cell || !col) return null;
   const own = smart.columns[model.columnIds[column]];
-  const formatted = own?.type !== undefined || own?.decimals !== undefined || own?.currency !== undefined;
+  const formatted =
+    own?.type !== undefined ||
+    own?.decimals !== undefined ||
+    own?.currency !== undefined ||
+    own?.unit !== undefined ||
+    own?.notation !== undefined;
   if (cell.formula === undefined && !(formatted && cell.value !== null && typeof cell.value !== 'string')) return null;
   const text = formatValue(cell.value, col, locale);
   if (cell.formula === undefined && text === cell.raw.trim()) return null;

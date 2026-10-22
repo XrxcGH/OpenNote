@@ -3,6 +3,7 @@
 import type { Column } from './model';
 import type { Locale } from './locale';
 import { ERROR_WORDS, isError, numberToText, type Value } from './values';
+import { engineeringText, prefixedText } from '../../../core/units';
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
 const dateFormats = new Map<string, Intl.DateTimeFormat>();
@@ -52,8 +53,25 @@ function formatNumber(value: number, column: Column, locale: Locale): string {
     case 'date':
       return dateFormat(locale, value !== Math.floor(value)).format(new Date(value * 86_400_000));
     default:
-      return numberFormat(locale, fixed(column)).format(value);
+      return column.unit || column.notation
+        ? withUnit(value, column, locale)
+        : numberFormat(locale, fixed(column)).format(value);
   }
+}
+
+/** A number column with a unit or a notation: "12.5 kN", "12.5×10³ N", or "12,500 N". */
+function withUnit(value: number, column: Column, locale: Locale): string {
+  const unit = column.unit ?? '';
+  const digits = column.decimals === undefined ? 4 : Math.max(1, column.decimals + 1);
+  if (column.notation === 'si' && unit) {
+    const prefixed = prefixedText(value, unit, digits);
+    if (prefixed) return prefixed;
+  }
+  const number =
+    column.notation === 'engineering'
+      ? engineeringText(value, digits)
+      : numberFormat(locale, fixed(column)).format(value);
+  return unit ? `${number} ${unit}` : number;
 }
 
 function digits(column: Column): Intl.NumberFormatOptions {

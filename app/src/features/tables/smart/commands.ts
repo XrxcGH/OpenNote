@@ -6,6 +6,7 @@ import { calculatedColumn } from './calculated';
 import { chooseValue, editChoices, makeChoice } from './choiceOps';
 import { addChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { applyView, saveViewAsking } from './savedViews';
+import { askUnit } from './units';
 import type { FilterMode } from './ops';
 
 export type SmartCommand =
@@ -22,7 +23,9 @@ export type SmartCommand =
   | { run: 'clearCalculated' }
   | { run: 'choice'; multi: boolean }
   | { run: 'chooseValue' }
-  | { run: 'editChoices' };
+  | { run: 'editChoices' }
+  | { run: 'unit' }
+  | { run: 'notation'; notation: 'engineering' | 'si' | null };
 
 /** Runs a command on the table with focus. False when there is none or the command had nothing to do. */
 export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
@@ -58,5 +61,9 @@ export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
       return chooseValue(inst, column);
     case 'editChoices':
       return editChoices(inst, column);
+    case 'unit':
+      return askUnit(inst, column);
+    case 'notation':
+      return setFormat(inst, column, { notation: command.notation });
   }
 }

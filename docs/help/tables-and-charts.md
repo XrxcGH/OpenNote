@@ -10,6 +10,7 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 - Format a column as number, currency, percent, date, or text. Sort and filter the rows, and use Board to group rows by any column of repeating text (the stand-in for a choice column).
 - Draw a grid with the pen and it becomes a table.
 - Import an Excel file and each sheet becomes a table page.
+- Give a number column a unit, such as kN or mm, and cells in other units of the same kind convert to it. See [Engineering tools](engineering-tools.md#units-in-tables).
 
 ## Formulas
 

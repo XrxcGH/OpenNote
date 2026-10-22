@@ -182,6 +182,7 @@ export const engineering = {
   },
   table: {
     unit: 'Unit…',
+    unitNamed: 'Unit: {unit}…',
     unitTitle: 'Column unit',
     unitDescription:
       'Cells are numbers in this unit. A cell in another unit of the same kind, such as 250 N in a kN column, is converted.',
@@ -196,6 +197,9 @@ export const engineering = {
     notationEngineering: 'Engineering (×10³ steps)',
     notationSi: 'SI prefixes (k, M, m, µ)',
     unitCommand: 'Set column unit',
+    engineeringCommand: 'Show column in engineering notation',
+    siCommand: 'Show column with SI prefixes',
+    plainCommand: 'Show column in plain numbers',
     unitKeywords: 'unit units table column engineering notation si prefix convert',
   },
   shapes: {

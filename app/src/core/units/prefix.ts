@@ -1,7 +1,7 @@
 // SI prefixes: "4.7 kΩ" and "2 mA" in place of 4700 Ω and 0.002 A, both ways. A value is shown with the prefix that
 // leaves between 1 and 1000 of it, so 0.000047 F reads 47 µF. Typed text takes a prefix with or without the unit:
 // "4.7k", "4.7 kΩ", "4k7" is not read, and "u" stands in for µ.
-import { formatNumber } from '../../core/expr';
+import { formatNumber } from '../expr';
 
 export const SI_PREFIXES: readonly { symbol: string; power: number }[] = [
   { symbol: 'Q', power: 30 },
@@ -55,4 +55,27 @@ export function parsePrefixed(text: string, unit = ''): number | null {
   const prefix = SI_PREFIXES.find((p) => p.symbol === symbol && (symbol !== '' || match[2] === ''));
   if (!prefix) return null;
   return Number(match[1]) * 10 ** prefix.power;
+}
+
+const SUPERSCRIPT: Record<string, string> = {
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+  '-': '⁻',
+  '+': '',
+};
+
+/** "1.5e-7" becomes "1.5×10⁻⁷"; text without a power stays as it is. */
+export function superscriptPower(text: string): string {
+  const match = /^(-?[\d.]+)e([+-]?\d+)$/.exec(text);
+  if (!match) return text;
+  if (Number(match[2]) === 0) return match[1];
+  return `${match[1]}×10${[...match[2]].map((c) => SUPERSCRIPT[c] ?? c).join('')}`;
 }
