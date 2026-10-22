@@ -106,9 +106,26 @@ export interface ImportPlan {
   duplicates: Card[];
 }
 
+/**
+ * A multiple choice card as the plain Front and Back an export writes for it: the Anki package lists the options in
+ * the front and puts the right one in the back, and the CSV puts the right one and the options in the back. A file
+ * made from the deck comes back as basic cards, so these forms are what it is compared with.
+ */
+function exportedForms(card: Card): Pick<Card, 'front' | 'back'>[] {
+  if (card.kind !== 'choice') return [];
+  const choices = card.choices ?? [];
+  const right = choices[card.answer ?? 0] ?? '';
+  const options = choices.map((choice, index) => `${index + 1}. ${choice}`).join('\n');
+  const list = choices.join(' | ');
+  return [
+    { front: `${card.front}\n${options}`, back: [right, card.back].filter(Boolean).join('\n') },
+    { front: card.front, back: [right, list && `Options: ${list}`].filter(Boolean).join('\n') },
+  ];
+}
+
 /** Sorts incoming cards into those to add and those that repeat a card already there. */
 export function planImport(incoming: readonly Card[], existing: readonly Card[]): ImportPlan {
-  const seen = new Set(existing.map(key));
+  const seen = new Set(existing.flatMap((card) => [key(card), ...exportedForms(card).map(key)]));
   const plan: ImportPlan = { fresh: [], duplicates: [] };
   for (const card of incoming) {
     const id = key(card);
