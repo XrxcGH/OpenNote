@@ -12,7 +12,8 @@ export type ToolId =
   | 'citations'
   | 'constants'
   | 'sigfigs'
-  | 'latex';
+  | 'latex'
+  | 'solvers';
 
 export interface ToolDef {
   id: ToolId;
@@ -32,6 +33,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'constants', title: 'science.constants.title', width: 520 },
   { id: 'sigfigs', title: 'science.sigfigs.title', width: 420 },
   { id: 'latex', title: 'science.latex.title', width: 480 },
+  { id: 'solvers', title: 'solvers.title', width: 560 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

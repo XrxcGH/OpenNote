@@ -35,3 +35,14 @@ export type { KnownFunction } from './calculus';
 
 /** The calculus tools: derivatives, integrals, limits, and sums. Their code loads on first use. */
 export const loadCalculus = () => import('./calculus');
+
+
+/** The Math solvers window, loaded the first time it opens. */
+export const loadSolversTool = () => import('./solvers/ui/SolversTool');
+
+/** Picks the solver the Math solvers window shows, before a command opens it. */
+export async function chooseSolverTab(tab: string): Promise<void> {
+  const state = await import('./solvers/ui/state');
+  if ((state.SOLVER_TABS as readonly string[]).includes(tab))
+    state.chooseTab(tab as (typeof state.SOLVER_TABS)[number]);
+}

@@ -3,7 +3,7 @@
 // hand test before Stable. app/flags.ts joins this list to the others.
 import type { FlagDef } from '../../app/flags';
 
-export type MathToolsFlagId = 'math.calcModes' | 'math.graph3d' | 'math.liveSolve' | 'math.graphPopup' | 'math.steps';
+export type MathToolsFlagId = 'math.calcModes' | 'math.graph3d' | 'math.liveSolve' | 'math.graphPopup' | 'math.steps' | 'math.solvers';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const beta = { dev: true, nightly: true, beta: true, stable: false };
@@ -21,4 +21,9 @@ export const MATH_TOOLS_FLAGS: readonly FlagDef[] = [
   flag('math.liveSolve', 'Solutions to equations as you type, on page lines and beside equations.'),
   flag('math.graphPopup', 'A Graph button on a selected equation or on handwriting turned into math.'),
   flag('math.steps', 'Step-by-step derivatives and integrals, and linear systems in Solve.'),
+  flag(
+    'math.solvers',
+    // checks-disable-next-line length: one flag description, kept whole as the flags panel shows it
+    'The Math solvers window: double and triple integrals, differential equations, Laplace and Fourier transforms, Taylor series, root finding, error propagation and units, probability and regression, eigenvalues, and projectiles.',
+  ),
 ];

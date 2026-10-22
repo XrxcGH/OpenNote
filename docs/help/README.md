@@ -20,6 +20,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Typed notes](typed-notes.md): text, lists, checklists, the slash menu, templates, and find and replace.
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
+- [Math solvers](math-solvers.md): integrals, differential equations, transforms, series, roots, uncertainty, probability, matrices, and projectiles, with worked steps.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 

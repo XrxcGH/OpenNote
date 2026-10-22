@@ -53,6 +53,7 @@ import { intelSpeech } from './intelSpeech';
 import { intelMore } from './intelMore';
 import { myHand } from './myHand';
 import { tableMath } from './tableMath';
+import { solvers } from './solvers';
 
 export const en = {
   common,
@@ -108,4 +109,5 @@ export const en = {
   myHand,
   tableMath,
   science,
+  solvers,
 } as const;
