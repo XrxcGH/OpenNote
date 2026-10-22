@@ -31,6 +31,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 base64 = "0.23.1"
+# My handwriting: the style is encrypted at rest with the audited RustCrypto AEAD crates/interop/src/lock.rs uses.
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc", "zeroize"] }
 crc32fast = "1.5.2"
 flate2 = "1.1.10"
 # Connectors: PKCE and sign-in state need the operating system's random generator, the token endpoints take

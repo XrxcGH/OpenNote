@@ -39,6 +39,8 @@ export interface GlyphSample {
   readonly width: number;
   /** Where it came from: the calibration page, the Math and science section, or an upload the person confirmed. */
   readonly source: 'pen' | 'upload';
+  /** A bracket or root written tall, which only the math layout uses, for tall contents. */
+  readonly tall?: boolean;
 }
 
 export interface Spread {
@@ -226,7 +228,8 @@ function readGlyph(value: unknown): GlyphSample | null {
   if (!isObject(value)) return null;
   const strokes = readStrokes(value.strokes);
   if (!strokes) return null;
-  return { strokes, width: finite(value.width, 0, 0, 100), source: value.source === 'upload' ? 'upload' : 'pen' };
+  const glyph: GlyphSample = { strokes, width: finite(value.width, 0, 0, 100), source: value.source === 'upload' ? 'upload' : 'pen' };
+  return value.tall === true ? { ...glyph, tall: true } : glyph;
 }
 
 function readSpread(value: unknown, fallback: Spread, lo: number, hi: number): Spread {

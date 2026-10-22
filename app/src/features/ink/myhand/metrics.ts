@@ -6,6 +6,7 @@ import {
   CALIBRATION_CHARS,
   CAP_LETTERS,
   DESCENDER_LETTERS,
+  SAMPLES_PER_CHAR,
   SENTENCES,
   X_HEIGHT_LETTERS,
   parseSampleId,
@@ -130,6 +131,7 @@ export function completion(progress: Progress): number {
 interface CharSample {
   readonly char: string;
   readonly kind: 'char' | 'math';
+  readonly n: number;
   readonly sample: RawSample;
   readonly box: Box;
 }
@@ -139,7 +141,7 @@ function charSamples(progress: Progress): CharSample[] {
   for (const [id, sample] of Object.entries(progress.samples)) {
     const parsed = parseSampleId(id);
     const box = boxOfStrokes(sample.strokes);
-    if (parsed && parsed.kind !== 'sentence' && box) out.push({ char: parsed.char, kind: parsed.kind, sample, box });
+    if (parsed && parsed.kind !== 'sentence' && box) out.push({ char: parsed.char, kind: parsed.kind, n: parsed.n, sample, box });
   }
   return out;
 }
@@ -375,7 +377,9 @@ export function buildStyle(progress: Progress, previous: HandStyle | null, now: 
   const metrics = measure(progress);
   const glyphs: Record<string, GlyphSample[]> = {};
   for (const s of charSamples(progress)) {
-    const glyph = normalizeSample(s.sample, metrics.xHeight);
+    const normal = normalizeSample(s.sample, metrics.xHeight);
+    // The Math and science section asks for brackets a fourth and fifth time, written tall.
+    const glyph = normal && s.kind === 'math' && s.n >= SAMPLES_PER_CHAR ? { ...normal, tall: true } : normal;
     if (glyph) glyphs[s.char] = [...(glyphs[s.char] ?? []), glyph].slice(0, LIMITS.variantsPerChar);
   }
   for (const [char, list] of Object.entries(previous?.glyphs ?? {})) {

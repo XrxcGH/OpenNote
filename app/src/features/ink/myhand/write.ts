@@ -94,7 +94,10 @@ export class GlyphPicker {
   ) {}
 
   pick(char: string): PlacedGlyph | null {
-    const own = this.style?.glyphs[char];
+    // Tall brackets are for the math layout's tall contents, so they are left out unless they are all there is.
+    const all = this.style?.glyphs[char];
+    const regular = all?.filter((g) => !g.tall);
+    const own = regular && regular.length > 0 ? regular : all;
     if (own && own.length > 0) {
       const previous = this.last.get(char) ?? -1;
       let index = Math.floor(this.rand() * own.length);
