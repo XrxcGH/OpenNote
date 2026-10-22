@@ -253,6 +253,7 @@ fn tasks(line: &str) -> String {
             if bullet.is_empty() { "- " } else { "" }
         );
     }
+    // checks-disable-next-line spelling: Logseq writes both spellings as its task marker
     for marker in ["CANCELED ", "CANCELLED "] {
         if let Some(task) = text.strip_prefix(marker) {
             return format!(

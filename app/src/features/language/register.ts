@@ -6,7 +6,7 @@ import { settingsSections, setupSteps } from '../../registries';
 setupSteps.register({
   id: 'language',
   title: 'setup.steps.language',
-  order: 25,
+  order: 22,
   scope: 'person',
   isEnabled: (ctx) => ctx.firstRun && isEnabled('setup.language'),
   load: () => import('./LanguageStep'),

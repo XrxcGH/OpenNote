@@ -34,7 +34,7 @@ Other options: `--staged`, `--base <ref>`, `--rules spelling,grammar`, `--strict
 | Rule | Covers | Applies to |
 |---|---|---|
 | `hygiene` | Trailing spaces, Windows line endings, missing final newline, invisible characters, merge markers, leaked keys, files over 1 MB | All text files |
-| `spelling` | British and other non-American spellings, such as `colour` or `organise` | Docs and code comments |
+| `spelling` | British and other non-American spellings, such as `colour` or `organise`. OpenNote's default language is American English, so the docs, the help pages, and the text people read in the app all use it | Docs, code comments, and the text in the string literals of UI code and Rust (the `strings` setting) |
 | `grammar` | Missing serial (Oxford) comma, wrong article (`a`/`an`), repeated words, `could of`, `then`/`than`, spacing and bracket slips | Docs and code comments |
 | `ai-markers` | Chatbot leftovers, stock AI phrases such as `delve`, heavy em dash use, emoji headings, formulaic bold-label lists | Docs and code comments |
 | `redundancy` | Wordy phrases such as `in order to`, repeated sentences and paragraphs, paragraphs copied between documents | Docs and code comments |
@@ -79,6 +79,7 @@ A suppression without a reason, or with an unknown rule, is itself an error and 
 - `severity`: `"error"`, `"warning"`, or `"off"` to override every finding of that rule
 - `exclude`: glob patterns of files the rule skips
 - rule-specific limits, such as `length.sentenceWords` or `modifiability.functionLines`
+- `spelling.allow`: words to let through, such as a proper name. `spelling.strings`: the globs of source files whose string literals are read; the default is `app/src/**/*.tsx`, `app/src-tauri/src/**/*.rs`, and `crates/*/src/**/*.rs` (the strings in `app/src/strings/en` are read by `ui-voice`). A literal that must keep a British spelling, such as a file format's keyword, takes a `checks-disable-next-line spelling: <reason>` comment
 
 Top-level `ignore` patterns skip files entirely. Change a limit only with a reason in the pull request, because loosening limits is how quality slips.
 
