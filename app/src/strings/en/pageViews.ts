@@ -113,6 +113,7 @@ export const pageViews = {
     noGrayscale: "This printer can't print in black and white. Turn that option off and print again.",
     stop: 'Stop',
     printer: 'Printer',
+    choosePrinter: 'Choose a printer',
     defaultPrinter: '{name} (default)',
     copies: 'Copies',
     badCopies: 'Choose a whole number from 1 to {max}.',

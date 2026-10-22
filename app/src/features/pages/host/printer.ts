@@ -16,7 +16,7 @@ export type DuplexChoice = 'default' | 'off' | 'longEdge' | 'shortEdge';
 
 /** What the printer part of the dialog holds. */
 export interface PrinterForm {
-  /** The printer's name, or empty for the system's default. */
+  /** The printer the person chose, or empty until they choose one. Nothing prints to a printer they did not choose. */
   readonly printer: string;
   /** The copies as typed. */
   readonly copies: string;
@@ -42,14 +42,12 @@ export function parseCopies(text: string): number | null {
   return copies >= 1 && copies <= MAX_COPIES ? copies : null;
 }
 
-/** The printer the form names, or the default one, or the first. Null when there are none. */
+/**
+ * The printer the form names, or null when the person has not chosen one or it is no longer listed. There is no
+ * fallback to the system's default or to the first printer: a job goes only where the person sent it.
+ */
 export function chosenPrinter(printers: readonly PrinterInfo[], name: string): PrinterInfo | null {
-  return (
-    printers.find((printer) => printer.name === name) ??
-    printers.find((printer) => printer.default) ??
-    printers[0] ??
-    null
-  );
+  return name === '' ? null : (printers.find((printer) => printer.name === name) ?? null);
 }
 
 /** Whether the printer can print on both sides. A printer that doesn't say is given the benefit of the doubt. */

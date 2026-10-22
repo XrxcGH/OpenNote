@@ -154,7 +154,7 @@ function reportFailure(error: unknown, platform: Platform): void {
   if (name === 'AbortError') return void showToast({ message: t('pageViews.print.stopped') });
   if (name === 'TimeoutError') return void showToast({ message: t('pageViews.print.timedOut'), tone: 'danger' });
   if (code === 'notImplemented') return void showToast({ message: t('pageViews.print.unavailable'), tone: 'danger' });
-  if (code === 'spool' || code === 'noPrinter') {
+  if (code === 'spool' || code === 'noPrinter' || code === 'notAllowed') {
     platform.log('error', `Printing failed: ${String((error as { message?: string }).message)}`);
     const grayscale = String((error as { message?: string }).message).includes('grayscale');
     return void showToast({
@@ -364,6 +364,11 @@ function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
           value={printer?.name ?? ''}
           onChange={(event) => set('printer', event.target.value)}
         >
+          {printer === null ? (
+            <option value="" disabled>
+              {t('pageViews.print.choosePrinter')}
+            </option>
+          ) : null}
           {printers.map((entry) => (
             <option key={entry.name} value={entry.name}>
               {entry.default ? t('pageViews.print.defaultPrinter', { name: entry.name }) : entry.name}
@@ -422,6 +427,9 @@ export function PrintDialog(props: PrintDialogProps) {
   const printers = usePrinters(props.platform, wantsPrinter);
   const printing = wantsPrinter && printers !== null && printers.length > 0 ? { form: printerForm, printers } : null;
   const { working, run, stop } = useExport(props, options, form.accessible, printing);
+  const chosen = printing ? chosenPrinter(printing.printers, printerForm.printer) : null;
+  // Print waits for a printer the person chose; there is no default to fall back to.
+  const printerOk = printing === null || chosen !== null;
   const copiesOk = printing === null || parseCopies(printerForm.copies) !== null;
   const total = preview.status === 'ready' ? preview.result.sheets : 0;
   const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
@@ -434,8 +442,9 @@ export function PrintDialog(props: PrintDialogProps) {
     label: t(mode === 'print' ? 'pageViews.print.print' : 'pageViews.print.export'),
     variant: 'primary' as const,
     // Print waits for the printer list, so it never goes to a printer the person has not seen.
-    disabled: printers === null,
-    onPress: () => (preview.status === 'ready' && !rangeError && copiesOk && printers !== null ? run() : undefined),
+    disabled: printers === null || !printerOk,
+    onPress: () =>
+      preview.status === 'ready' && !rangeError && copiesOk && printerOk && printers !== null ? run() : undefined,
   };
   const actions = working
     ? [{ id: 'stop', label: t('pageViews.print.stop'), variant: 'secondary' as const, onPress: stop }]

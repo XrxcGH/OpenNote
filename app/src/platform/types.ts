@@ -328,7 +328,7 @@ export interface PrinterInfo {
 
 /** What the print dialog asks of the spooler. */
 export interface PrintJobRequest {
-  /** Null is the system's default printer. */
+  /** The printer the person chose. Null is refused: a job never goes to the system's default by fallback. */
   readonly printer: string | null;
   readonly copies: number;
   readonly collate: boolean;

@@ -106,6 +106,10 @@ export function createWebExports(): ExportsClient {
         state.printFailNext = false;
         throw { code: 'spool', message: 'The printer is offline.' };
       }
+      // As the shell does: a job goes only to a listed printer the person chose, never to a default.
+      if (!request.printer) {
+        throw { code: 'noPrinter', message: 'Choose a printer in the Print window first.' };
+      }
       printed.push({ request, bytes: pdf.length, text: new TextDecoder().decode(pdf.subarray(0, 2000)) });
       return { message: 'spooled', printer: request.printer };
     },

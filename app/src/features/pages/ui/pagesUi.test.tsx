@@ -159,7 +159,8 @@ describe('PrintDialog', () => {
     const close = vi.fn();
     render(<PrintDialog source={printSource()} platform={platform} mode="print" close={close} />);
     const printer = (await screen.findByLabelText('Printer')) as HTMLSelectElement;
-    expect(printer.value).toBe('Studio Printer');
+    // Nothing is chosen for the person, not even the default printer.
+    expect(printer.value).toBe('');
     await userEvent.selectOptions(printer, 'Hallway Printer');
     // The hallway printer prints on one side only, so the choice of sides goes away.
     expect(screen.queryByRole('radiogroup', { name: 'Sides' })).toBeNull();
@@ -198,6 +199,7 @@ describe('PrintDialog', () => {
     const platform = createTestPlatform();
     const submit = vi.spyOn(platform.exports, 'printSubmit');
     render(<PrintDialog source={printSource()} platform={platform} mode="print" close={vi.fn()} />);
+    await userEvent.selectOptions(await screen.findByLabelText('Printer'), 'Studio Printer');
     const copies = await screen.findByLabelText('Copies');
     await userEvent.clear(copies);
     await userEvent.type(copies, '0');
@@ -216,6 +218,20 @@ describe('PrintDialog', () => {
     expect(print.getAttribute('aria-disabled')).toBe('true');
     print.click();
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('keeps Print unavailable until the person chooses a printer, and never sends to the default', async () => {
+    const platform = createTestPlatform();
+    const submit = vi.spyOn(platform.exports, 'printSubmit');
+    render(<PrintDialog source={printSource()} platform={platform} mode="print" close={vi.fn()} />);
+    expect(await screen.findByRole('option', { name: 'Choose a printer' })).toBeTruthy();
+    await screen.findByText(/sheet on /, undefined, { timeout: 10_000 });
+    const print = screen.getByRole('button', { name: 'Print…' });
+    expect(print.getAttribute('aria-disabled')).toBe('true');
+    print.click();
+    expect(submit).not.toHaveBeenCalled();
+    await userEvent.selectOptions(screen.getByLabelText('Printer'), 'Hallway Printer');
+    expect(print.getAttribute('aria-disabled')).not.toBe('true');
   });
 
   it('shows no printer fields in Export as PDF', async () => {

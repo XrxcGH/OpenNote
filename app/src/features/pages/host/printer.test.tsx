@@ -11,6 +11,8 @@ import type { PageSource } from './source';
 const OFFICE: PrinterInfo = { name: 'Office', default: true, twoSided: true };
 const HALL: PrinterInfo = { name: 'Hall', default: false, twoSided: false };
 const UNKNOWN: PrinterInfo = { name: 'Unknown', default: false, twoSided: null };
+/** The form once the person has chosen the office printer. */
+const FORM = { ...DEFAULT_PRINTER_FORM, printer: 'Office' };
 
 const PARAGRAPH = 'The reading room was quiet. A lamp threw a warm circle over the page while the afternoon went on.';
 
@@ -37,8 +39,13 @@ describe('parseCopies', () => {
 });
 
 describe('toJobRequest', () => {
-  it('names the default printer when none is chosen and keeps the printer defaults', () => {
-    const request = toJobRequest(DEFAULT_PRINTER_FORM, [HALL, OFFICE], 'Notes');
+  it('has no request until a printer is chosen, even with a default printer listed', () => {
+    expect(toJobRequest(DEFAULT_PRINTER_FORM, [HALL, OFFICE], 'Notes')).toBeNull();
+    expect(toJobRequest({ ...DEFAULT_PRINTER_FORM, printer: 'Gone' }, [HALL, OFFICE], 'Notes')).toBeNull();
+  });
+
+  it('names the chosen printer and keeps the printer defaults', () => {
+    const request = toJobRequest(FORM, [HALL, OFFICE], 'Notes');
     expect(request).toEqual({
       printer: 'Office',
       copies: 1,
@@ -73,15 +80,16 @@ describe('toJobRequest', () => {
   });
 
   it('has no request for bad copies or no printers', () => {
-    expect(toJobRequest({ ...DEFAULT_PRINTER_FORM, copies: '0' }, [OFFICE], 'Notes')).toBeNull();
-    expect(toJobRequest(DEFAULT_PRINTER_FORM, [], 'Notes')).toBeNull();
+    expect(toJobRequest({ ...FORM, copies: '0' }, [OFFICE], 'Notes')).toBeNull();
+    expect(toJobRequest(FORM, [], 'Notes')).toBeNull();
   });
 });
 
 describe('chosenPrinter and canDuplex', () => {
-  it('falls back to the default, then the first, and trusts a printer that does not say', () => {
-    expect(chosenPrinter([HALL, OFFICE], 'Gone')?.name).toBe('Office');
-    expect(chosenPrinter([HALL, UNKNOWN], '')?.name).toBe('Hall');
+  it('never falls back to the default or the first printer, and trusts a printer that does not say', () => {
+    expect(chosenPrinter([HALL, OFFICE], 'Gone')).toBeNull();
+    expect(chosenPrinter([OFFICE, HALL], '')).toBeNull();
+    expect(chosenPrinter([HALL, OFFICE], 'Hall')?.name).toBe('Hall');
     expect(chosenPrinter([], '')).toBeNull();
     expect([canDuplex(OFFICE), canDuplex(HALL), canDuplex(UNKNOWN), canDuplex(null)]).toEqual([
       true,
@@ -96,7 +104,7 @@ describe('printToPrinter', () => {
   it('sends the PDF of the chosen sheets to the printer with the request', async () => {
     const client = createWebExports();
     const submit = vi.spyOn(client, 'printSubmit');
-    const request = toJobRequest({ ...DEFAULT_PRINTER_FORM, copies: '2' }, [OFFICE], 'Field notes');
+    const request = toJobRequest({ ...FORM, copies: '2' }, [OFFICE], 'Field notes');
     if (!request) throw new Error('The request was not made.');
     const outcome = await printToPrinter(client, source(40), { print: { range: '1' }, request });
     expect(outcome.sheets).toBe(1);
@@ -110,7 +118,7 @@ describe('printToPrinter', () => {
   it('prints every sheet when no range is given', async () => {
     const client = createWebExports();
     const submit = vi.spyOn(client, 'printSubmit');
-    const request = toJobRequest(DEFAULT_PRINTER_FORM, [OFFICE], '');
+    const request = toJobRequest(FORM, [OFFICE], '');
     if (!request) throw new Error('The request was not made.');
     const outcome = await printToPrinter(client, source(40), { print: {}, request });
     expect(outcome.sheets).toBeGreaterThan(1);
@@ -121,7 +129,7 @@ describe('printToPrinter', () => {
   it('hands nothing over when stopped, and passes on the spooler refusing the job', async () => {
     const client = createWebExports();
     const submit = vi.spyOn(client, 'printSubmit');
-    const request = toJobRequest(DEFAULT_PRINTER_FORM, [OFFICE], 'Notes');
+    const request = toJobRequest(FORM, [OFFICE], 'Notes');
     if (!request) throw new Error('The request was not made.');
     const stop = new AbortController();
     stop.abort();
@@ -133,10 +141,20 @@ describe('printToPrinter', () => {
     await expect(printToPrinter(client, source(2), { print: {}, request })).rejects.toMatchObject({ code: 'spool' });
   });
 
+  it('is refused by the stand-in spooler when no printer is named, as the shell refuses it', async () => {
+    const client = createWebExports();
+    const made = toJobRequest(FORM, [OFFICE], 'Notes');
+    if (!made) throw new Error('The request was not made.');
+    const request = { ...made, printer: null };
+    await expect(printToPrinter(client, source(2), { print: {}, request })).rejects.toMatchObject({
+      code: 'noPrinter',
+    });
+  });
+
   it('ends the wait when stopped while the spooler still holds the job (a Save window left open)', async () => {
     const client = createWebExports();
     vi.spyOn(client, 'printSubmit').mockReturnValue(new Promise(() => undefined));
-    const request = toJobRequest(DEFAULT_PRINTER_FORM, [OFFICE], 'Notes');
+    const request = toJobRequest(FORM, [OFFICE], 'Notes');
     if (!request) throw new Error('The request was not made.');
     const stop = new AbortController();
     const run = printToPrinter(client, source(2), { print: {}, request, signal: stop.signal });

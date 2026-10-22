@@ -21,6 +21,9 @@ pub const MAX_COPIES: u32 = 999;
 pub const MAX_PDF_BYTES: usize = 512 * 1024 * 1024;
 /// The longest document name the spooler shows.
 pub const MAX_TITLE_CHARS: usize = 120;
+/// A test-only guard: when set, a `;`-separated list of the only printers a job may go to. Every other printer is
+/// refused before any job is made, so a test run can never reach a physical printer.
+pub const ALLOWLIST_ENV: &str = "OPENNOTE_PRINT_ALLOWLIST";
 
 /// A printer the system lists.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,7 +60,7 @@ pub enum Fit {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct PrintRequest {
-    /// `None` is the system's default printer.
+    /// The printer the person chose. `None` is refused: a job never falls back to the system's default printer.
     pub printer: Option<String>,
     pub copies: u32,
     pub collate: bool,
@@ -100,8 +103,10 @@ pub enum ErrorCode {
     BadCopies,
     /// The named printer is not in the list.
     UnknownPrinter,
-    /// There are no printers to send to.
+    /// There are no printers to send to, or none was chosen.
     NoPrinter,
+    /// The printer is not in `OPENNOTE_PRINT_ALLOWLIST`.
+    NotAllowed,
     /// The system turned the job down.
     Spool,
 }
@@ -127,7 +132,7 @@ impl std::error::Error for PrintError {}
 #[serde(rename_all = "camelCase")]
 pub struct Receipt {
     pub message: String,
-    /// The printer the job went to, or `None` for the system's default.
+    /// The printer the job went to.
     pub printer: Option<String>,
 }
 
@@ -145,8 +150,43 @@ pub trait PrintBackend: Send + Sync {
     ) -> Result<String, PrintError>;
 }
 
+/// The allowlist this process runs under: `OPENNOTE_PRINT_ALLOWLIST`, or `None` when it is not set.
+pub fn allowlist_from_env() -> Option<String> {
+    std::env::var(ALLOWLIST_ENV).ok()
+}
+
+/// The printer a request names, refused when it names none or the allowlist (when there is one) leaves it out. Runs
+/// before anything else about a job, so a refused printer never sees one.
+pub fn guard<'r>(request: &'r PrintRequest, allowlist: Option<&str>) -> Result<&'r str, PrintError> {
+    let name = request
+        .printer
+        .as_deref()
+        .filter(|name| !name.trim().is_empty())
+        .ok_or_else(|| PrintError::new(ErrorCode::NoPrinter, "Choose a printer in the Print window first."))?;
+    if let Some(list) = allowlist {
+        if !list.split(';').map(str::trim).any(|allowed| allowed == name) {
+            return Err(PrintError::new(
+                ErrorCode::NotAllowed,
+                format!("{name} is not in {ALLOWLIST_ENV}, so nothing was sent to it."),
+            ));
+        }
+    }
+    Ok(name)
+}
+
 /// The request as the spooler will see it: the title cleaned, and everything checked against `printers`.
 pub fn checked(pdf: &[u8], request: &PrintRequest, printers: &[PrinterInfo]) -> Result<PrintRequest, PrintError> {
+    checked_with(pdf, request, printers, allowlist_from_env().as_deref())
+}
+
+/// [`checked`] under a given allowlist.
+pub fn checked_with(
+    pdf: &[u8],
+    request: &PrintRequest,
+    printers: &[PrinterInfo],
+    allowlist: Option<&str>,
+) -> Result<PrintRequest, PrintError> {
+    let name = guard(request, allowlist)?;
     if !pdf.starts_with(b"%PDF-") || pdf.len() > MAX_PDF_BYTES {
         return Err(PrintError::new(
             ErrorCode::BadDocument,
@@ -165,13 +205,11 @@ pub fn checked(pdf: &[u8], request: &PrintRequest, printers: &[PrinterInfo]) -> 
             "No printer is set up on this computer.",
         ));
     }
-    if let Some(name) = &request.printer {
-        if !printers.iter().any(|p| &p.name == name) {
-            return Err(PrintError::new(
-                ErrorCode::UnknownPrinter,
-                "That printer is not in the list.",
-            ));
-        }
+    if !printers.iter().any(|p| p.name == name) {
+        return Err(PrintError::new(
+            ErrorCode::UnknownPrinter,
+            "That printer is not in the list.",
+        ));
     }
     let title: String = request
         .title
@@ -197,7 +235,20 @@ pub fn print(
     request: &PrintRequest,
     progress: &mut dyn FnMut(usize, usize),
 ) -> Result<Receipt, PrintError> {
-    let request = checked(pdf, request, &backend.printers())?;
+    print_with(backend, pdf, request, allowlist_from_env().as_deref(), progress)
+}
+
+/// [`print`] under a given allowlist. The allowlist and the chosen printer are checked before the backend is asked
+/// anything, even for its printer list.
+pub fn print_with(
+    backend: &dyn PrintBackend,
+    pdf: &[u8],
+    request: &PrintRequest,
+    allowlist: Option<&str>,
+    progress: &mut dyn FnMut(usize, usize),
+) -> Result<Receipt, PrintError> {
+    guard(request, allowlist)?;
+    let request = checked_with(pdf, request, &backend.printers(), allowlist)?;
     let message = backend.submit(pdf, &request, progress)?;
     Ok(Receipt {
         message,
@@ -356,7 +407,7 @@ mod tests {
             title: "Notes".into(),
         };
         let mut seen = Vec::new();
-        let receipt = print(&backend, PDF, &request, &mut |a, b| seen.push((a, b))).unwrap();
+        let receipt = print_with(&backend, PDF, &request, None, &mut |a, b| seen.push((a, b))).unwrap();
         assert_eq!(receipt.printer.as_deref(), Some("Hall"));
         assert_eq!(seen, vec![(0, 1), (1, 1)]);
         assert_eq!(
@@ -368,24 +419,59 @@ mod tests {
         );
     }
 
+    fn to(name: &str) -> PrintRequest {
+        PrintRequest {
+            printer: Some(name.into()),
+            ..PrintRequest::default()
+        }
+    }
+
     #[test]
-    fn the_default_printer_is_used_when_none_is_named() {
+    fn a_job_without_a_chosen_printer_never_falls_back_to_the_default() {
         let backend = mock();
-        print(&backend, PDF, &PrintRequest::default(), &mut |_, _| {}).unwrap();
-        assert_eq!(backend.jobs()[0].request.printer, None);
+        for request in [PrintRequest::default(), to(""), to("  ")] {
+            let error = print_with(&backend, PDF, &request, None, &mut |_, _| {}).unwrap_err();
+            assert_eq!(error.code, ErrorCode::NoPrinter);
+        }
+        assert!(backend.jobs().is_empty());
+    }
+
+    #[test]
+    fn the_allowlist_refuses_every_other_printer_before_any_job() {
+        let backend = mock();
+        let list = Some("Microsoft Print to PDF; Hall");
+        let error = print_with(&backend, PDF, &to("Office"), list, &mut |_, _| {}).unwrap_err();
+        assert_eq!(error.code, ErrorCode::NotAllowed);
+        assert!(error.message.contains(ALLOWLIST_ENV));
+        // An empty allowlist allows nothing.
+        let error = print_with(&backend, PDF, &to("Hall"), Some(""), &mut |_, _| {}).unwrap_err();
+        assert_eq!(error.code, ErrorCode::NotAllowed);
+        assert!(backend.jobs().is_empty());
+        print_with(&backend, PDF, &to("Hall"), list, &mut |_, _| {}).unwrap();
+        assert_eq!(backend.jobs()[0].request.printer.as_deref(), Some("Hall"));
+    }
+
+    #[test]
+    fn the_guard_runs_before_the_document_is_looked_at() {
+        let error = checked_with(b"not a pdf", &to("Office"), &[], Some("Hall")).unwrap_err();
+        assert_eq!(error.code, ErrorCode::NotAllowed);
     }
 
     #[test]
     fn bad_input_never_reaches_the_backend() {
         let backend = mock();
-        let go = |pdf: &[u8], request: PrintRequest| print(&backend, pdf, &request, &mut |_, _| {}).unwrap_err().code;
-        assert_eq!(go(b"hello", PrintRequest::default()), ErrorCode::BadDocument);
+        let go = |pdf: &[u8], request: PrintRequest| {
+            print_with(&backend, pdf, &request, None, &mut |_, _| {})
+                .unwrap_err()
+                .code
+        };
+        assert_eq!(go(b"hello", to("Office")), ErrorCode::BadDocument);
         assert_eq!(
             go(
                 PDF,
                 PrintRequest {
                     copies: 0,
-                    ..PrintRequest::default()
+                    ..to("Office")
                 }
             ),
             ErrorCode::BadCopies
@@ -395,7 +481,7 @@ mod tests {
                 PDF,
                 PrintRequest {
                     copies: 1000,
-                    ..PrintRequest::default()
+                    ..to("Office")
                 }
             ),
             ErrorCode::BadCopies
@@ -411,7 +497,7 @@ mod tests {
     #[test]
     fn no_printers_is_its_own_error() {
         let backend = MockBackend::new(Vec::new());
-        let error = print(&backend, PDF, &PrintRequest::default(), &mut |_, _| {}).unwrap_err();
+        let error = print_with(&backend, PDF, &to("Office"), None, &mut |_, _| {}).unwrap_err();
         assert_eq!(error.code, ErrorCode::NoPrinter);
     }
 
@@ -419,12 +505,12 @@ mod tests {
     fn a_failing_spooler_is_reported_once() {
         let backend = mock();
         backend.fail_next("The queue is full.");
-        let error = print(&backend, PDF, &PrintRequest::default(), &mut |_, _| {}).unwrap_err();
+        let error = print_with(&backend, PDF, &to("Office"), None, &mut |_, _| {}).unwrap_err();
         assert_eq!(
             (error.code, error.message.as_str()),
             (ErrorCode::Spool, "The queue is full.")
         );
-        assert!(print(&backend, PDF, &PrintRequest::default(), &mut |_, _| {}).is_ok());
+        assert!(print_with(&backend, PDF, &to("Office"), None, &mut |_, _| {}).is_ok());
     }
 
     #[test]
@@ -432,13 +518,14 @@ mod tests {
         let printers = [printer("Office", true)];
         let long = "x".repeat(500);
         let clean = |title: &str| {
-            checked(
+            checked_with(
                 PDF,
                 &PrintRequest {
                     title: title.into(),
-                    ..Default::default()
+                    ..to("Office")
                 },
                 &printers,
+                None,
             )
             .unwrap()
             .title

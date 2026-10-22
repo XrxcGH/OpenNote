@@ -17,6 +17,7 @@ fn ipc_error(error: PrintError) -> IpcError {
     let code = match error.code {
         ErrorCode::BadDocument | ErrorCode::BadCopies | ErrorCode::UnknownPrinter => codes::INVALID,
         ErrorCode::NoPrinter => "noPrinter",
+        ErrorCode::NotAllowed => "notAllowed",
         ErrorCode::Spool => "spool",
     };
     IpcError::new(code, error.message)
@@ -58,8 +59,9 @@ pub async fn print_submit(request: tauri::ipc::Request<'_>) -> IpcResult<Receipt
         .and_then(|value| value.to_str().ok())
         .ok_or_else(|| IpcError::invalid("x-opennote-print", "The print header is missing."))?;
     let text = percent_decode(header);
-    serde_json::from_str::<PrintRequest>(&text)
+    let job = serde_json::from_str::<PrintRequest>(&text)
         .map_err(|_| IpcError::invalid("x-opennote-print", "The print header isn't valid JSON."))?;
+    refuse_before_job(&job, opennote_print::allowlist_from_env().as_deref())?;
     let pdf = match request.body() {
         InvokeBody::Raw(bytes) => bytes.clone(),
         InvokeBody::Json(_) => return Err(IpcError::invalid("body", "The document must come as raw bytes.")),
@@ -67,6 +69,18 @@ pub async fn print_submit(request: tauri::ipc::Request<'_>) -> IpcResult<Receipt
     tauri::async_runtime::spawn_blocking(move || run_job_process(&pdf, &text))
         .await
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
+}
+
+/// The check made before a job process starts: a job goes only to the printer the person chose, and under
+/// `OPENNOTE_PRINT_ALLOWLIST` only to a printer the list names. A refusal is logged; nothing else happens.
+fn refuse_before_job(job: &PrintRequest, allowlist: Option<&str>) -> IpcResult<()> {
+    match opennote_print::guard(job, allowlist) {
+        Ok(_) => Ok(()),
+        Err(error) => {
+            log::warn!("Print refused before any job was made: {}", error.message);
+            Err(ipc_error(error))
+        }
+    }
 }
 
 /// Runs one job in a copy of this exe and reads what it leaves. A process that ends without a result, or does not
@@ -83,14 +97,20 @@ fn run_job_process(pdf: &[u8], request_json: &str) -> IpcResult<Receipt> {
     std::fs::write(&request_path, request_json).map_err(|_| spool("The print job could not be prepared."))?;
     let exe = std::env::current_exe().map_err(|_| spool("The print job could not be started."))?;
     let mut command = Command::new(exe);
-    command.arg(JOB_FLAG).arg(&pdf_path).arg(&request_path).arg(&result_path);
+    command
+        .arg(JOB_FLAG)
+        .arg(&pdf_path)
+        .arg(&request_path)
+        .arg(&result_path);
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
         // No console window for the job.
         command.creation_flags(0x0800_0000);
     }
-    let mut child = command.spawn().map_err(|_| spool("The print job could not be started."))?;
+    let mut child = command
+        .spawn()
+        .map_err(|_| spool("The print job could not be started."))?;
     let started = std::time::Instant::now();
     let exited = loop {
         match child.try_wait() {
@@ -147,9 +167,41 @@ pub fn run_job_from_args() -> Option<i32> {
 }
 
 fn print_from_files(pdf: &Path, request: &Path) -> Result<Receipt, PrintError> {
-    let bad = |message: &str| PrintError { code: ErrorCode::BadDocument, message: message.to_owned() };
+    let bad = |message: &str| PrintError {
+        code: ErrorCode::BadDocument,
+        message: message.to_owned(),
+    };
     let pdf = std::fs::read(pdf).map_err(|_| bad("The document could not be read."))?;
     let text = std::fs::read_to_string(request).map_err(|_| bad("The request could not be read."))?;
     let job: PrintRequest = serde_json::from_str(&text).map_err(|_| bad("The request isn't valid."))?;
     opennote_print::print(&SystemBackend, &pdf, &job, &mut |_, _| {})
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    fn to(printer: Option<&str>) -> PrintRequest {
+        PrintRequest {
+            printer: printer.map(str::to_owned),
+            ..PrintRequest::default()
+        }
+    }
+
+    #[test]
+    fn no_job_starts_without_a_chosen_printer() {
+        assert_eq!(refuse_before_job(&to(None), None).unwrap_err().code, "noPrinter");
+        assert!(refuse_before_job(&to(Some("Office")), None).is_ok());
+    }
+
+    #[test]
+    fn the_allowlist_refuses_before_a_job_starts() {
+        let list = Some("Microsoft Print to PDF");
+        assert_eq!(
+            refuse_before_job(&to(Some("HP LaserJet")), list).unwrap_err().code,
+            "notAllowed"
+        );
+        assert!(refuse_before_job(&to(Some("Microsoft Print to PDF")), list).is_ok());
+    }
 }
