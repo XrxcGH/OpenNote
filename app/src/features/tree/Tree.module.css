@@ -23,7 +23,7 @@
     /* Titles truncate, so a tree never scrolls sideways; a button's hit area can reach a little past a row. */
     overflow-x: hidden;
     overflow-y: auto;
-    scroll-padding-block-end: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
+    scroll-padding-block-end: calc(var(--toast-height, 0px) + var(--panel-inset-bottom, 0px) + var(--space-4));
   }
 
   .rows {

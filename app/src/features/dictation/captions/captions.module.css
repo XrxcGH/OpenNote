@@ -10,11 +10,11 @@
   }
 
   .bottom {
-    inset-block-end: var(--space-6);
+    inset-block-end: calc(var(--panel-bottom) + var(--space-5));
   }
 
   .top {
-    inset-block-start: var(--space-8);
+    inset-block-start: calc(var(--panel-top) + var(--space-5));
   }
 
   .box {

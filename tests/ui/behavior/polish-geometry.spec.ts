@@ -16,11 +16,23 @@ async function openMembranes(page: Page, width: number, fixture = 'smart') {
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
 }
 
-const rect = (page: Page, selector: string) =>
-  page
-    .locator(selector)
-    .first()
-    .evaluate((element) => element.getBoundingClientRect().toJSON() as DOMRect);
+/** The command bar's bottom edge (its divider line included) and the status line's top, in CSS px. */
+const chrome = (page: Page) =>
+  page.evaluate(() => {
+    const bar = document.querySelector('[data-region="commandBar"]')!.getBoundingClientRect();
+    const status = [...document.querySelectorAll('main div')].find(
+      (element) => element.children.length < 4 && /^\d+ words?/.test(element.textContent ?? ''),
+    );
+    return { top: bar.bottom, bottom: status?.getBoundingClientRect().top ?? window.innerHeight };
+  });
+
+/** Opens a tool from the command palette, with the caret in the page's text. */
+async function openTool(page: Page, name: string) {
+  await page.locator('[contenteditable=true] p').first().click();
+  await page.keyboard.press('Control+k');
+  await page.getByPlaceholder('Type a command or a page name').fill(name);
+  await page.getByRole('option', { name }).first().click();
+}
 
 test.describe('the notebooks pane footer', () => {
   for (const width of WIDTHS) {
@@ -102,5 +114,56 @@ test.describe('the page title lines up with the text', () => {
           .toBeLessThanOrEqual(1);
       });
     }
+  }
+});
+
+test.describe('panels stay between the toolbar and the status line', () => {
+  for (const [width, height] of [
+    [1280, 900],
+    [1600, 900],
+    [2000, 900],
+    [1280, 600],
+  ] as const) {
+    for (const tool of ['Citations', 'Timers']) {
+      test(`${tool} at ${width} by ${height}`, async ({ page }) => {
+        await openMembranes(page, width);
+        await page.setViewportSize({ width, height });
+        await openTool(page, `Open ${tool.toLowerCase()}`);
+        const panel = page.getByRole('dialog', { name: tool });
+        await expect(panel).toBeVisible();
+        const edges = await chrome(page);
+        expect(edges.bottom, 'the status line shows').toBeLessThan(height);
+        const box = (await panel.boundingBox())!;
+        expect(box.y, 'below the command bar and its line, with a gap').toBeGreaterThanOrEqual(edges.top + 4);
+        expect(box.y + box.height, 'above the status line, with a gap').toBeLessThanOrEqual(edges.bottom - 4);
+        // Dragged to the top, the panel still stops below the command bar.
+        await panel.getByRole('heading', { name: tool }).or(panel.locator('header').first()).first().hover();
+        await page.mouse.down();
+        await page.mouse.move(box.x + 40, 0, { steps: 4 });
+        await page.mouse.up();
+        expect((await panel.boundingBox())!.y).toBeGreaterThanOrEqual(edges.top + 4);
+      });
+    }
+  }
+});
+
+test.describe('the Properties chip', () => {
+  for (const width of WIDTHS) {
+    test(`stays inside the page area and clear of a new tool window at ${width}`, async ({ page }) => {
+      await openMembranes(page, width);
+      const chip = page.getByRole('button', { name: /^Properties/ });
+      await expect(chip).toBeVisible();
+      const main = (await page.locator('main').boundingBox())!;
+      const box = (await chip.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(main.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(main.x + main.width);
+      await openTool(page, 'Open citations');
+      await expect(page.getByRole('dialog', { name: 'Citations' })).toBeVisible();
+      const hit = await page.evaluate(
+        ([x, y]) => document.elementFromPoint(x, y)?.closest('button')?.textContent ?? '',
+        [box.x + box.width / 2, box.y + box.height / 2],
+      );
+      expect(hit).toMatch(/^Properties/);
+    });
   }
 });

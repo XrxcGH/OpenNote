@@ -159,7 +159,7 @@
   /* The linked pages pane sits beside the page, over the page region, and the page stays usable. */
   .sheet {
     position: fixed;
-    inset-block: 3.5rem var(--space-4);
+    inset-block: var(--panel-top) var(--panel-bottom);
     inset-inline-end: var(--space-4);
     z-index: var(--layer-overlay);
     inline-size: min(24rem, 90vw);

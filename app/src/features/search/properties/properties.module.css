@@ -53,7 +53,11 @@
     display: grid;
     gap: var(--space-2);
     inline-size: 100%;
-    max-block-size: 60vh;
+    /* It ends above the status line, like every panel (base.css), and its fields scroll. */
+    max-block-size: min(
+      60vh,
+      calc(100vh - var(--host-top, 0px) - var(--size-chrome-hit) - var(--space-2) - var(--panel-bottom))
+    );
     overflow-y: auto;
     padding: var(--space-3);
     border: 1px solid var(--color-border-control);

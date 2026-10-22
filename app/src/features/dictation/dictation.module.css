@@ -2,7 +2,7 @@
 @layer components {
   .bar {
     position: fixed;
-    inset-block-start: var(--space-4);
+    inset-block-start: var(--panel-top);
     inset-inline: var(--space-4);
     z-index: var(--layer-overlay);
     display: flex;

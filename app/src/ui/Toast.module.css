@@ -4,7 +4,7 @@
 @layer components {
   .region {
     position: fixed;
-    inset-block-end: var(--bottom-bar-height, 0px);
+    inset-block-end: var(--panel-inset-bottom, 0px);
     inset-inline: 0;
     z-index: var(--layer-toast);
     display: grid;
