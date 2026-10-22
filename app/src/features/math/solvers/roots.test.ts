@@ -53,4 +53,12 @@ describe('root finding', () => {
     expect(result.outcome).toBe('converged');
     expect(result.order!).toBeLessThan(1.2);
   });
+
+  it('converges at a repeated root from far away, and says the root is repeated', () => {
+    const result = findRoot({ f: '(x - 1)^2', method: 'newton', x0: 3 });
+    expect(result.outcome).toBe('converged');
+    expect(result.root!).toBeCloseTo(1, 8);
+    expect(result.steps.some((s) => s.key === 'rootMultiple')).toBe(true);
+    expect(findRoot({ f: 'x^2 - 2', method: 'newton', x0: 1 }).steps.some((s) => s.key === 'rootMultiple')).toBe(false);
+  });
 });

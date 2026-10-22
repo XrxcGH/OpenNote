@@ -202,6 +202,9 @@ export function findRoot(input: RootInput): RootResult {
     undefined: step('rootUndefined'),
   };
   steps.push(report[outcome]);
+  // Newton's method converges only linearly at a repeated root, so an order near 1 points to one.
+  if (input.method === 'newton' && outcome === 'converged' && order !== null && order < 1.5)
+    steps.push(step('rootMultiple'));
   const xs = [...rows.map((r) => r.x), input.x0, input.x1 ?? input.x0].filter(
     (x) => Number.isFinite(x) && Math.abs(x) < 1e6,
   );
@@ -226,7 +229,13 @@ function judge(
     Math.abs(f(next)) < 1e-6 * Math.max(1, Math.abs(rows[0].fx))
   )
     return 'converged';
-  if (seen.slice(0, -1).some((x) => Math.abs(x - next) <= 1e-9 * Math.max(1, Math.abs(x)))) return 'cycle';
+  // A cycle returns to an earlier guess while still taking real steps; guesses that close in on a root slowly (a
+  // repeated root) also come near earlier ones, but their steps shrink toward nothing.
+  if (
+    Math.abs(next - last.x) > 1e-6 * Math.max(1, Math.abs(next)) &&
+    seen.slice(0, -1).some((x) => Math.abs(x - next) <= 1e-9 * Math.max(1, Math.abs(x)))
+  )
+    return 'cycle';
   // Steps that keep growing for six in a row mean the guesses run away.
   if (rows.length >= 6) {
     const sizes = rows.slice(-6).map((r) => Math.abs(r.change));

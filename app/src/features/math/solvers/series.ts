@@ -126,10 +126,20 @@ export function taylor(input: SeriesInput): SeriesResult {
     const x = input.at;
     const next = compile(derivatives[order + 1], ['x']);
     const [lo, hi] = x < a ? [x, a] : [a, x];
-    let M = 0;
-    for (let i = 0; i <= 400; i += 1) M = Math.max(M, Math.abs(next([lo + ((hi - lo) * i) / 400])));
-    // Sampling can miss the top of a peak between samples, so the bound is padded a little.
-    M *= 1.001;
+    const g = (t: number) => Math.abs(next([t]));
+    const at = (i: number) => lo + ((hi - lo) * i) / 400;
+    let [M, best] = [0, 0];
+    for (let i = 0; i <= 400; i += 1) if (g(at(i)) > M) [M, best] = [g(at(i)), i];
+    // Sampling can miss the top of a peak between samples, so the peak is refined between its neighbors.
+    let [p, q] = [at(Math.max(0, best - 1)), at(Math.min(400, best + 1))];
+    for (let k = 0; k < 80; k += 1) {
+      const [u, v] = [p + (q - p) / 3, q - (q - p) / 3];
+      if (g(u) < g(v)) p = u;
+      else q = v;
+    }
+    M = Math.max(M, g((p + q) / 2));
+    // A hair of padding covers rounding in the derivative.
+    M *= 1 + 1e-9;
     const bound = (M * Math.abs(x - a) ** (order + 1)) / fact(order + 1);
     const actual = Math.abs(fx([x]) - partial(order, x));
     remainder = { x, bound, actual };

@@ -8,7 +8,7 @@ describe('Taylor series', () => {
     result.coefficients.forEach((c, k) => expect(c).toBeCloseTo(want[k], 14));
     expect(result.polynomial).toBe('x − x^3/6 + x^5/120 − x^7/5040');
     expect(result.remainder!.actual).toBeLessThanOrEqual(result.remainder!.bound);
-    expect(result.remainder!.bound).toBeCloseTo((Math.sin(1) * 1.001) / 40320, 9);
+    expect(result.remainder!.bound).toBeCloseTo(Math.sin(1) / 40320, 12);
     expect(result.graph.partials).toHaveLength(7);
   });
 
@@ -33,5 +33,11 @@ describe('Taylor series', () => {
 
   it('refuses a center where f is not defined', () => {
     expect(() => taylor({ f: 'ln(x)', center: 0, order: 3, from: 0, to: 1 })).toThrow('series-undefined');
+  });
+
+  it('gives the exact Lagrange bound when the largest derivative sits at an end', () => {
+    const result = taylor({ f: '1/(1 - x)', center: 0, order: 3, at: 0.9, from: -0.5, to: 0.95 });
+    expect(result.remainder!.bound).toBeCloseTo(65610, 3);
+    expect(result.remainder!.actual).toBeLessThanOrEqual(result.remainder!.bound);
   });
 });

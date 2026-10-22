@@ -39,4 +39,11 @@ describe('projectile', () => {
   it('refuses a launch into the ground', () => {
     expect(() => simulate({ speed: 10, angle: -10 })).toThrow('projectile-input');
   });
+
+  it('flies straight up and back at 90°', () => {
+    const run = simulate({ speed: 20, angle: 90 });
+    expect(run.range).toBe(0);
+    expect(run.maxHeight).toBeCloseTo(400 / (2 * 9.81), 6);
+    expect(run.time).toBeCloseTo(40 / 9.81, 6);
+  });
 });

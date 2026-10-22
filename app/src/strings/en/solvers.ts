@@ -348,6 +348,8 @@ export const solvers = {
     rootDiverged: 'Diverged: the guesses run away from the root. Try a starting point closer to it.',
     rootFlat: 'Stopped: the tangent (or secant) is flat, so it never crosses the x-axis. Try another starting point.',
     rootCycle: 'Stopped: the guesses repeat in a cycle and never settle. Try another starting point.',
+    rootMultiple:
+      'The steps shrink only linearly, which suggests a repeated root, where f′ is zero too. Newton converges slowly there.',
     rootIterations: 'Stopped after {n} steps without settling.',
     rootNoSignChange: 'f has the same sign at both ends, so bisection cannot start. Choose ends where f changes sign.',
     rootUndefined: 'Stopped: f is not defined at a guess.',

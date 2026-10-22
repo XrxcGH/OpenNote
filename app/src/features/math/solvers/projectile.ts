@@ -50,7 +50,7 @@ export const dragFactor = (density: number, coefficient: number, area: number, m
 /** The flight without air resistance, in closed form. */
 export function vacuumFlight(speed: number, angle: number, height = 0, gravity = 9.81): Flight {
   const theta = (angle * Math.PI) / 180;
-  const [vx, vy] = [speed * Math.cos(theta), speed * Math.sin(theta)];
+  const [vx, vy] = [Math.abs(angle) === 90 ? 0 : speed * Math.cos(theta), speed * Math.sin(theta)];
   const time = (vy + Math.sqrt(vy * vy + 2 * gravity * height)) / gravity;
   const top = Math.max(0, vy / gravity);
   const vyEnd = vy - gravity * time;
@@ -71,7 +71,7 @@ export function simulate(input: ProjectileInput): ProjectileResult {
   const height = input.height ?? 0;
   const g = input.gravity ?? 9.81;
   const k = input.drag ?? 0;
-  if (!(speed > 0) || !(angle > -90 && angle < 90) || !(height >= 0) || !(g > 0) || !(k >= 0))
+  if (!(speed > 0) || !(angle >= -90 && angle <= 90) || !(height >= 0) || !(g > 0) || !(k >= 0))
     throw new SolverError('projectile-input');
   if (height === 0 && angle <= 0) throw new SolverError('projectile-input');
   const vacuum = vacuumFlight(speed, angle, height, g);
@@ -82,7 +82,7 @@ export function simulate(input: ProjectileInput): ProjectileResult {
   };
   const dt = vacuum.time / 2000;
   let t = 0;
-  let s: State = [0, height, speed * Math.cos(theta), speed * Math.sin(theta)];
+  let s: State = [0, height, Math.abs(angle) === 90 ? 0 : speed * Math.cos(theta), speed * Math.sin(theta)];
   const path: FlightPoint[] = [{ t, x: s[0], y: s[1], vx: s[2], vy: s[3] }];
   let top = { t: 0, y: height };
   for (let i = 0; i < 2_000_000; i += 1) {
