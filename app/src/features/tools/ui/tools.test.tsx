@@ -110,7 +110,8 @@ describe('the calculator', () => {
     renderUi(<CalculatorTool />);
     await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '5 km to mi');
     await userEvent.keyboard('{Enter}');
-    expect(document.getElementById('calc-result')!.textContent).toBe('= 3.10685596119');
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 3.10685596119 mi');
+    expect(screen.getAllByText('= 3.10685596119 mi').length).toBeGreaterThan(1);
   });
 
   it('explains a mistake in words and keeps the expression', async () => {

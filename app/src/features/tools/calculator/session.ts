@@ -15,6 +15,8 @@ export interface HistoryEntry {
   value: number;
   /** The angle mode in force, because sin(30) means different things in degrees and radians. */
   angle: AngleMode;
+  /** The unit a unit conversion's answer is in, such as "mi". Other answers have none. */
+  unit?: string;
 }
 
 export interface CalcSession {
@@ -48,6 +50,13 @@ export function submit(session: CalcSession, input: string): { session: CalcSess
   const entry: HistoryEntry = { id: session.nextId, expression, value: result.value, angle: session.angle };
   const history = [...session.history, entry].slice(-MAX_HISTORY);
   return { session: { ...session, history, nextId: session.nextId + 1 }, result };
+}
+
+/** Puts a unit conversion's answer in the history, where it becomes "ans" like any other answer. */
+export function recordConversion(session: CalcSession, expression: string, value: number, unit: string): CalcSession {
+  const entry: HistoryEntry = { id: session.nextId, expression, value, angle: session.angle, unit };
+  const history = [...session.history, entry].slice(-MAX_HISTORY);
+  return { ...session, history, nextId: session.nextId + 1 };
 }
 
 export function setAngleMode(session: CalcSession, angle: AngleMode): CalcSession {
@@ -86,7 +95,14 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 function restoreEntry(raw: unknown): HistoryEntry | null {
   if (!isObject(raw) || typeof raw.expression !== 'string' || !isNumber(raw.value) || !isNumber(raw.id)) return null;
-  return { id: raw.id, expression: raw.expression, value: raw.value, angle: raw.angle === 'rad' ? 'rad' : 'deg' };
+  const unit = typeof raw.unit === 'string' && raw.unit !== '' ? { unit: raw.unit.slice(0, 40) } : {};
+  return {
+    id: raw.id,
+    expression: raw.expression,
+    value: raw.value,
+    angle: raw.angle === 'rad' ? 'rad' : 'deg',
+    ...unit,
+  };
 }
 
 /** Rebuilds a session from saved JSON, dropping anything it can't read. */

@@ -21,6 +21,7 @@ export {
   memoryClear,
   memoryStore,
   newSession,
+  recordConversion,
   restoreSession,
   setAngleMode,
   submit,

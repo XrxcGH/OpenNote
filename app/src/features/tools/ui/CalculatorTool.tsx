@@ -14,6 +14,8 @@ import {
   memoryClear,
   memoryStore,
   newSession,
+  parseConversion,
+  recordConversion,
   restoreSession,
   setAngleMode,
   submit,
@@ -106,7 +108,9 @@ function Scientific() {
     const converted = convertText(source);
     if (converted) {
       if (converted.ok) {
-        const text = formatNumber(converted.value);
+        const unit = parseConversion(source)?.to.trim() ?? '';
+        const text = unit === '' ? formatNumber(converted.value) : `${formatNumber(converted.value)} ${unit}`;
+        keep(recordConversion(session, source, converted.value, unit));
         setAnswer({ text, note: t('smart.tools.calculator.converted', { input: source, value: text }) });
         setProblem('');
       } else setProblem(t('smart.tools.calculator.convertFailed'));
@@ -278,7 +282,9 @@ function History({ session, onUse, onClear }: HistoryProps) {
                     {entry.expression}
                   </button>
                   <span className={styles.itemDue}>
-                    {t('smart.tools.calculator.answer', { value: formatNumber(entry.value) })}
+                    {t('smart.tools.calculator.answer', {
+                      value: entry.unit ? `${formatNumber(entry.value)} ${entry.unit}` : formatNumber(entry.value),
+                    })}
                   </span>
                 </li>
               ))}
