@@ -2,9 +2,12 @@
 // or a small tool of this one. They share the window, the storage, and the pop-out of the first three.
 import { CitationsPanel } from '../../citations';
 import { DeckPanel } from '../../study';
+import { ConstantsTool } from './ConstantsTool';
 import { ConverterTool } from './ConverterTool';
 import { DictionaryTool } from './DictionaryTool';
+import { LatexTool } from './LatexTool';
 import { ReferenceTool } from './ReferenceTool';
+import { SigFigsTool } from './SigFigsTool';
 import type { ToolId } from './tools';
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
@@ -13,5 +16,8 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'reference') return <ReferenceTool />;
   if (tool === 'citations') return <CitationsPanel />;
   if (tool === 'dictionary') return <DictionaryTool />;
+  if (tool === 'constants') return <ConstantsTool />;
+  if (tool === 'sigfigs') return <SigFigsTool />;
+  if (tool === 'latex') return <LatexTool />;
   return null;
 }

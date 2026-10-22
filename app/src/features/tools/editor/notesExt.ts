@@ -11,6 +11,8 @@ import { t } from '../../../strings/t';
 import { evaluateNotes } from '../calculator';
 import type { NotesRegion } from '../calculator';
 import { INSERT_EVENT } from '../flags';
+import { sigFigMode, watchSigFigMode } from '../science/mode';
+import { sigFigAnswers } from '../science/notes';
 import { joinScope, linesBefore, refreshOthers, scopeOf } from './pageScope';
 import type { Box } from './pageScope';
 import styles from './editor.module.css';
@@ -50,8 +52,9 @@ function graphThis(text: string): void {
   window.dispatchEvent(new CustomEvent(INSERT_EVENT, { detail: { graph: text, handled: false } }));
 }
 
-function answerWidget(text: string): HTMLElement {
+function answerWidget(text: string, title?: string): HTMLElement {
   const span = document.createElement('span');
+  if (title) span.title = title;
   span.className = styles.answer;
   span.contentEditable = 'false';
   span.dataset.noteAnswer = '';
@@ -76,13 +79,21 @@ function graphWidget(equation: string): HTMLElement {
 export function notesDecorations(doc: PMNode, region: NotesRegion, before: readonly string[] = []): DecorationSet {
   if (doc.textContent.length > MAX_CHARS || !doc.textContent.includes('=')) return DecorationSet.empty;
   const lines = linesOf(doc);
-  const results = evaluateNotes([...before, ...lines.map((line) => line.text)], { region }).slice(before.length);
+  const texts = [...before, ...lines.map((line) => line.text)];
+  const all = evaluateNotes(texts, { region });
+  const results = all.slice(before.length);
+  // Significant-figures mode rounds a question's answer by the rules, and the rule is its tooltip.
+  const rounded = sigFigMode() ? sigFigAnswers(texts, all, region, before.length) : null;
   const found: Decoration[] = [];
   results.forEach((result, index) => {
     const line = lines[index];
     if (result.kind === 'result' || (result.kind === 'define' && result.shown)) {
+      const sig = rounded?.get(before.length + index);
       found.push(
-        Decoration.widget(line.end, () => answerWidget(result.text), { side: 1, key: `a${index}:${result.text}` }),
+        Decoration.widget(line.end, () => answerWidget(sig?.text ?? result.text, sig?.rule), {
+          side: 1,
+          key: `a${index}:${sig?.text ?? result.text}`,
+        }),
       );
     } else if (result.kind === 'equation') {
       found.push(
@@ -134,6 +145,7 @@ export function notesExtension(): Extension {
             };
             // The editor is placed in its block after it is made, so look for the page a moment later.
             const timer = setTimeout(join, 0);
+            const stopWatching = watchSigFigMode(() => self.refresh());
             return {
               update: (updated, prev) => {
                 if (updated.state.doc === prev.doc) return;
@@ -141,6 +153,7 @@ export function notesExtension(): Extension {
               },
               destroy: () => {
                 clearTimeout(timer);
+                stopWatching();
                 leave?.();
                 root = null;
                 box = null;

@@ -2,7 +2,17 @@
 import type { MessageKey } from '../../../strings/t';
 
 export type ToolId =
-  'timers' | 'calculator' | 'upcoming' | 'flashcards' | 'converter' | 'reference' | 'dictionary' | 'citations';
+  | 'timers'
+  | 'calculator'
+  | 'upcoming'
+  | 'flashcards'
+  | 'converter'
+  | 'reference'
+  | 'dictionary'
+  | 'citations'
+  | 'constants'
+  | 'sigfigs'
+  | 'latex';
 
 export interface ToolDef {
   id: ToolId;
@@ -19,6 +29,9 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'reference', title: 'study.reference.title', width: 480 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },
   { id: 'citations', title: 'study.citations.title', width: 440 },
+  { id: 'constants', title: 'science.constants.title', width: 520 },
+  { id: 'sigfigs', title: 'science.sigfigs.title', width: 420 },
+  { id: 'latex', title: 'science.latex.title', width: 480 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

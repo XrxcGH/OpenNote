@@ -6,6 +6,8 @@ export * from './calculator';
 export * from './upcoming';
 export { closeTool, openTool, openTools, resetToolWindows } from './ui/host';
 export { PoppedTool } from './ui/PoppedTool';
+export { countFigures } from './science/sigfigs';
+export { seedSigFigs } from './ui/SigFigsTool';
 export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
 export type { InsertDetail } from './ui/CalculatorTool';

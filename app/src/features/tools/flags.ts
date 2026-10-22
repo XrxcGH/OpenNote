@@ -45,6 +45,9 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.reminders', 'Windows notifications for due items and finished timers.'),
   flag('tools.citations', 'The citation helper with BibTeX, RIS, and Zotero.'),
   flag('tools.zotero', 'Zotero citations and bibliographies in the page, using the windows Zotero provides.'),
+  flag('tools.constants', 'The scientific constants picker with CODATA 2022 values.'),
+  flag('tools.sigfigs', 'The significant-figures helper and its mode in the calculator and on page lines.'),
+  flag('math.latexInsert', 'The Insert LaTeX window with live preview, snippets, and paste conversion.'),
 ];
 
 /**

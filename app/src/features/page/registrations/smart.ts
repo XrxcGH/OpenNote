@@ -344,7 +344,14 @@ for (const [tool, title, icon, keywords] of [
 
 if (typeof window !== 'undefined') {
   window.addEventListener(INSERT_EVENT, (event) => {
-    const detail = (event as CustomEvent<{ text?: string; graph?: string; handled: boolean }>).detail;
+    const detail = (
+      event as CustomEvent<{
+        text?: string;
+        graph?: string;
+        math?: { source: string; display: boolean };
+        handled: boolean;
+      }>
+    ).detail;
     const editor = targetEditor();
     if (!detail || !editor) return;
     if (detail.text !== undefined) {
@@ -355,6 +362,16 @@ if (typeof window !== 'undefined') {
       const trail = selected.length - selected.trimEnd().length;
       const range = selected.trim() === '' ? { from, to } : { from: from + lead, to: to - trail };
       detail.handled = editor.chain().focus().insertContentAt(range, detail.text).run();
+    } else if (detail.math !== undefined) {
+      const { source, display } = detail.math;
+      const type = editor.schema.nodes[display ? 'mathBlock' : 'mathInline'];
+      if (type && source.trim() !== '') {
+        detail.handled = editor
+          .chain()
+          .focus()
+          .insertContent({ type: type.name, attrs: { source: source.trim() } })
+          .run();
+      }
     } else if (detail.graph !== undefined) {
       // The listener must answer at once, so a graph is claimed now and added when its code arrives.
       detail.handled = true;

@@ -5,7 +5,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
-import { Button, announce } from '../../../ui';
+import { isEnabled } from '../../../app/flags';
+import { Button, Switch, announce } from '../../../ui';
 import type { CalcSession } from '../calculator';
 import {
   clearHistory,
@@ -21,6 +22,9 @@ import {
   submit,
 } from '../calculator';
 import { INSERT_EVENT } from '../flags';
+import { ruleText } from '../science/explain';
+import { setSigFigMode, sigFigMode, watchSigFigMode } from '../science/mode';
+import { sigFigCalculate } from '../science/sigfigs';
 import { loadStored, saveStored, watchStored } from './storage';
 import styles from './tools.module.css';
 
@@ -33,6 +37,8 @@ const FIRST_GRAPH = 'y = sin(x)';
 export interface InsertDetail {
   text?: string;
   graph?: string;
+  /** An equation for the page: LaTeX source and whether it stands on its own line. */
+  math?: { source: string; display: boolean };
   handled: boolean;
 }
 
@@ -54,6 +60,8 @@ const KEYS: readonly (readonly string[])[] = [
 interface Answer {
   text: string;
   note?: string;
+  /** The significant-figures rule that rounded the answer. */
+  rule?: string;
 }
 
 export function CalculatorTool() {
@@ -95,7 +103,9 @@ function Scientific() {
   const [input, setInput] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [problem, setProblem] = useState('');
+  const [sig, setSig] = useState(sigFigMode);
   const field = useRef<HTMLInputElement>(null);
+  useEffect(() => watchSigFigMode(() => setSig(sigFigMode())), []);
   useEffect(() => watchStored(STORE, () => setSession(restoreSession(loadStored(STORE, null)))), []);
 
   const keep = (next: CalcSession) => {
@@ -119,7 +129,10 @@ function Scientific() {
     const done = submit(session, source.replace(/−/g, '-'));
     if (done.result.ok) {
       keep(done.session);
-      setAnswer({ text: formatNumber(done.result.value) });
+      const figured = sig ? sigFigCalculate(source.replace(/−/g, '-')) : null;
+      setAnswer(
+        figured?.ok ? { text: figured.text, rule: ruleText(figured) } : { text: formatNumber(done.result.value) },
+      );
       setProblem('');
       setInput('');
     } else setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
@@ -172,6 +185,17 @@ function Scientific() {
           <strong>{t('smart.tools.calculator.answer', { value: answer.text })}</strong>
         ) : null}
       </div>
+      {answer?.rule ? <p className={styles.note}>{answer.rule}</p> : null}
+      {isEnabled('tools.sigfigs') ? (
+        <Switch
+          label={t('science.sigfigs.mode')}
+          checked={sig}
+          onChange={(on) => {
+            setSigFigMode(on);
+            announce(t(on ? 'science.sigfigs.modeOn' : 'science.sigfigs.modeOff'));
+          }}
+        />
+      ) : null}
       {answer ? (
         <div className={styles.buttons}>
           <Button variant="quiet" onClick={copy}>

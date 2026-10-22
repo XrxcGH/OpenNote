@@ -37,6 +37,7 @@ import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
 import { study } from './study';
+import { science } from './science';
 import { qolSearch } from './qolSearch';
 import { intelPlus } from './intelPlus';
 import { qol } from './qol';
@@ -96,4 +97,5 @@ export const en = {
   intelSpeech,
   intelMore,
   accounts,
+  science,
 } as const;

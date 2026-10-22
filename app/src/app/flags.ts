@@ -140,7 +140,10 @@ type ToolsQolFlagId =
   | 'tools.dueDates'
   | 'tools.reminders'
   | 'tools.citations'
-  | 'tools.zotero';
+  | 'tools.zotero'
+  | 'tools.constants'
+  | 'tools.sigfigs'
+  | 'math.latexInsert';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
 type Phase8FlagId =
   'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags' | QolSearchFlagId;
