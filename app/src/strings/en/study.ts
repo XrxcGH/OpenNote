@@ -483,6 +483,7 @@ export const study = {
     word: 'Word',
     empty: 'Type a word to see what it means and which words mean the same.',
     found: '{word}: {count, plural, one {# part of speech} other {# parts of speech}}.',
+    americanSpelling: '(American: {word})',
     notFound: 'No entry for {word}.',
     baseForm: '(from {query})',
     synonyms: 'Same meaning',

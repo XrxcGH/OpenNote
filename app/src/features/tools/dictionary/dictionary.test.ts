@@ -228,3 +228,15 @@ describe('the full download', () => {
     expect(errorCode(new Error('x'))).toBe('unknown');
   });
 });
+
+describe('dialect spelling', () => {
+  it('maps American words to the dialect and back', async () => {
+    const { toAmericanSpelling, toDialectSpelling } = await import('./spelling');
+    expect(toDialectSpelling('color')).toBe('colour');
+    expect(toDialectSpelling('organize')).toBe('organise');
+    expect(toDialectSpelling('size')).toBe('size');
+    expect(toAmericanSpelling('colours')).toBe('colors');
+    expect(toAmericanSpelling('organisation')).toBe('organization');
+    expect(toAmericanSpelling('promise')).toBe('promise');
+  });
+});

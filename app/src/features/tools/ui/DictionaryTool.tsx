@@ -3,6 +3,7 @@
 // on the page. It works offline from words kept on this device. English comes with the app; a dictionary for another
 // language is added by choosing a file, and stays on this device.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { dictionaryLanguageFor, useLocale } from '../../../state/language';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
@@ -10,10 +11,12 @@ import { englishLoader } from '../dictionary/data';
 import { indexLoaders, layered, shellFullClient } from '../dictionary/full';
 import type { FullClient } from '../dictionary/full';
 import { lookupWord } from '../dictionary/lookup';
+import { toAmericanSpelling, toDialectSpelling } from '../dictionary/spelling';
 import { MAX_PACK_BYTES, browserPackStore, packLoader, readPackFile } from '../dictionary/packs';
 import type { PackInfo, PackStore } from '../dictionary/packs';
 import { wordRequest } from '../dictionary/request';
 import type { Lookup } from '../dictionary/types';
+import { DictionaryNote } from '../../language';
 import { INSERT_EVENT } from '../flags';
 import { FullDictionary } from './FullDictionary';
 import { RelatedWords } from './RelatedWords';
@@ -41,6 +44,10 @@ interface DictionaryToolProps {
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function DictionaryTool({ store = packs(), full = shellFullClient() }: DictionaryToolProps) {
   const request = useStore(wordRequest, (current) => current);
+  const locale = useLocale();
+  const dialect = dictionaryLanguageFor(locale);
+  const gb = dialect.spelling === 'gb';
+  const show = (word: string) => (gb ? toDialectSpelling(word) : word);
   const [text, setText] = useState(request.word);
   const [language, setLanguage] = useState(ENGLISH);
   const [added, setAdded] = useState<PackInfo[]>([]);
@@ -87,7 +94,13 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
           : language === ENGLISH
             ? englishLoader
             : await store.get(language).then((pack) => (pack ? packLoader(pack) : englishLoader));
-        const result = await lookupWord(word, loader, useFull ? loaders.related : undefined);
+        const related = useFull ? loaders.related : undefined;
+        // A word typed the dialect's way finds its American entry.
+        const result =
+          (await lookupWord(word, loader, related)) ??
+          (gb && toAmericanSpelling(word) !== word
+            ? await lookupWord(toAmericanSpelling(word), loader, related)
+            : null);
         if (!current) return;
         setFound(result);
         setSearched(word);
@@ -102,7 +115,7 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
       current = false;
       clearTimeout(timer);
     };
-  }, [text, language, store, request.count, loaders]);
+  }, [text, language, store, request.count, loaders, gb]);
 
   const replace = (synonym: string) => {
     const ok = insertIntoPage(synonym);
@@ -136,6 +149,7 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
 
   return (
     <div className={styles.tool}>
+      <DictionaryNote locale={locale} />
       <form
         className={styles.form}
         onSubmit={(event) => {
@@ -166,9 +180,12 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
       {found ? (
         <section aria-labelledby={headingId} className={styles.group}>
           <h3 id={headingId} className={styles.groupTitle}>
-            {found.word}
+            {show(found.word)}
             {found.word !== found.query ? (
               <span className={styles.note}> {t('study.dictionary.baseForm', { query: found.query })}</span>
+            ) : null}
+            {show(found.word) !== found.word ? (
+              <span className={styles.note}> {t('study.dictionary.americanSpelling', { word: found.word })}</span>
             ) : null}
           </h3>
           {found.meanings.map((meaning) => (
@@ -190,32 +207,35 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
             <div className={styles.group}>
               <h4 className={styles.groupTitle}>{t('study.dictionary.synonyms')}</h4>
               <ul className={styles.items}>
-                {found.synonyms.map((synonym) => (
-                  <li key={synonym} className={styles.item}>
-                    <span className={styles.itemTitle}>{synonym}</span>
-                    <Button
-                      variant="quiet"
-                      aria-label={t('study.dictionary.insertNamed', { word: synonym })}
-                      onClick={() => replace(synonym)}
-                    >
-                      {t('study.dictionary.insert')}
-                    </Button>
-                    <Button
-                      variant="quiet"
-                      aria-label={t('study.dictionary.lookUpNamed', { word: synonym })}
-                      onClick={() => setText(synonym)}
-                    >
-                      {t('study.dictionary.lookUp')}
-                    </Button>
-                  </li>
-                ))}
+                {found.synonyms.map((raw) => {
+                  const synonym = show(raw);
+                  return (
+                    <li key={synonym} className={styles.item}>
+                      <span className={styles.itemTitle}>{synonym}</span>
+                      <Button
+                        variant="quiet"
+                        aria-label={t('study.dictionary.insertNamed', { word: synonym })}
+                        onClick={() => replace(synonym)}
+                      >
+                        {t('study.dictionary.insert')}
+                      </Button>
+                      <Button
+                        variant="quiet"
+                        aria-label={t('study.dictionary.lookUpNamed', { word: synonym })}
+                        onClick={() => setText(synonym)}
+                      >
+                        {t('study.dictionary.lookUp')}
+                      </Button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : null}
         </section>
       ) : null}
       {found && found.related.length > 0 ? (
-        <RelatedWords words={found.related} onInsert={replace} onLookUp={setText} />
+        <RelatedWords words={found.related.map(show)} onInsert={replace} onLookUp={setText} />
       ) : null}
       {note ? (
         <p className={styles.note} role="status">

@@ -1,3 +1,4 @@
+/* eslint-disable opennote/feature-boundaries -- This test checks each subsystem's own language hook, which the features do not export. */
 // Each subsystem gets the chosen language: spelling, text in pictures, handwriting, the voice, and hyphenation.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { IntelClient } from '../../services/intel';
