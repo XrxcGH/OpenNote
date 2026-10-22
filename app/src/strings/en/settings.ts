@@ -10,6 +10,7 @@ export const settings = {
     general: 'General',
     appearance: 'Appearance',
     editing: 'Editing',
+    language: 'Language',
     updates: 'Updates',
     shortcuts: 'Shortcuts',
     about: 'About',

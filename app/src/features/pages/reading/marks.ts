@@ -1,6 +1,7 @@
 // Syllable marks for the reading view. The note's text never changes: this finds, in a piece of text, the spans of
 // every second syllable of the long words, and the view paints those spans in another color. A reader sees where each
 // word divides, and copying text out of the page gives back the words whole.
+import { hyphenationLanguage } from '../../../state/language';
 import { MIN_WORD, syllables } from './syllables';
 
 export interface Span {
@@ -13,7 +14,7 @@ export interface Span {
 const SKIP = /[\d@/\\_#]/;
 
 /** The spans of the second, fourth, and so on syllable of each long English word in `text`, as offsets in `text`. */
-export function alternateSpans(text: string, language = 'en', minWord = MIN_WORD): Span[] {
+export function alternateSpans(text: string, language = hyphenationLanguage(), minWord = MIN_WORD): Span[] {
   const out: Span[] = [];
   for (const token of text.matchAll(/\S+/g)) {
     if (SKIP.test(token[0])) continue;

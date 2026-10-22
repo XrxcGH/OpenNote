@@ -41,6 +41,7 @@ export type FlagId =
   | 'commandBar.draw'
   | 'setup.smartFeatures'
   | 'setup.import'
+  | 'setup.language'
   | 'settings.recording'
   | 'bottomBar.recent'
   /** Notes kept on disk in every build: the library file and the core's pages in the notes folder. */
@@ -299,6 +300,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('commandBar.draw', 'The Draw tab of the command bar.', on),
   flag('setup.smartFeatures', 'The smart features step of setup.', on),
   flag('setup.import', 'The step of setup that brings in notes from other apps.', on),
+  flag('setup.language', 'The Language and spelling step of setup.', on),
   flag('settings.recording', 'The Recording section of Settings.', on),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', on),
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
