@@ -919,7 +919,7 @@ export const tokens = {
     ]
   },
   "font": {
-    "ui": "\"Atkinson Hyperlegible Next Variable\", \"Atkinson Hyperlegible Next\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
+    "ui": "\"OpenNote Sans\", \"Atkinson Hyperlegible Next\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
     "reading": "\"Literata Variable\", \"Literata\", \"Cambria\", Georgia, serif",
     "mono": "\"Atkinson Hyperlegible Mono\", \"Cascadia Code\", Consolas, monospace",
     "symbol": "\"Segoe Fluent Icons\", \"Segoe MDL2 Assets\"",

@@ -172,9 +172,9 @@ Rules for the switch:
 
 | Role | Font | Why |
 |---|---|---|
-| Interface and default note text | Atkinson Hyperlegible Next | Designed by the Braille Institute for legibility; distinct letter shapes (I, l, 1) help everyone, including low-vision readers |
+| Interface and default note text | OpenNote Sans (Atkinson Hyperlegible Next with an open zero) | Designed by the Braille Institute for legibility; distinct letter shapes (I, l, 1) help everyone, including low-vision readers. The original draws a slash through 0 in its default glyph, with no feature to turn it off, so OpenNote ships a Modified Version whose 0 is open; every other glyph, metric and feature is unchanged. `brand/fonts/open-zero.py` rebuilds it |
 | Optional reading font for notes | Literata | A warm serif built for long reading on screens |
-| Code and monospace | Atkinson Hyperlegible Mono | Matches the interface font |
+| Code and monospace | Atkinson Hyperlegible Mono | Matches the interface font; keeps its slashed zero, which code needs to tell 0 from O |
 | Fallbacks on Windows | Segoe UI Variable, Cambria, Cascadia Code | System fonts if a bundled font fails to load |
 
 All fonts use the Open Font License (OFL) and ship inside the app, so the app never downloads fonts at run time.

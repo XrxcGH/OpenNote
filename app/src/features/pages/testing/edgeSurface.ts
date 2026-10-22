@@ -86,9 +86,11 @@ export function bundledFontFaces(): string {
       'woff2',
     ),
     face(
-      'Atkinson Hyperlegible Next Variable',
+      'OpenNote Sans',
       '200 800',
-      font('@fontsource-variable/atkinson-hyperlegible-next', 'atkinson-hyperlegible-next-latin-wght-normal.woff2'),
+      readFileSync(new URL('../../../theme/fonts/opennote-sans-latin-wght-normal.woff2', import.meta.url)).toString(
+        'base64',
+      ),
       'woff2',
     ),
     face(
