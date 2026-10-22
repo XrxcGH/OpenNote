@@ -8,6 +8,72 @@
     color: var(--color-text-primary);
   }
 
+  /* The live answer after an equation, such as "x = 4": the color of an answer on a page line. */
+  .answer {
+    margin-inline-start: var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-accent-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .answer::before {
+    content: '\21D2\00A0';
+    color: var(--color-text-secondary);
+  }
+
+  /* The steps of a derivative or an integral, under the equation panel's buttons. */
+  .steps {
+    flex-basis: 100%;
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+  }
+
+  .steps h4 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .steps ol {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+  }
+
+  .stepRule {
+    display: block;
+    color: var(--color-text-secondary);
+  }
+
+  /* The Graph button beside a selected equation. */
+  .graphButton {
+    display: inline-block;
+    margin-inline-start: var(--space-2);
+    vertical-align: middle;
+    min-block-size: var(--size-target-min);
+    padding: 0 var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+  }
+
+  .graphButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .graphButton:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
   .invalid {
     outline: 1px dashed var(--color-status-danger);
     outline-offset: 2px;

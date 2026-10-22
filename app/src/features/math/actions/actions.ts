@@ -2,8 +2,18 @@
 // tidies the expression, and gives a plain fraction when it has no letters in it. Solve finds the real values of the
 // one letter that make an equation true, by looking for where its two sides meet, and says which it found. Neither
 // pretends: what they cannot read or cannot find, they say so.
-import { evaluateExact, formatExpression, freeNames, simplify, tryParse, fractions } from '../../../core/expr';
+import {
+  evaluateExact,
+  findRoots,
+  formatExpression,
+  freeNames,
+  simplify,
+  tryParse,
+  fractions,
+} from '../../../core/expr';
 import type { Node } from '../../../core/expr';
+import * as matrices from '../../../core/matrix';
+import type { Matrix } from '../../../core/matrix';
 import { compileExpression } from '../grapher';
 import { Unsupported, latexToText, treeToLatex } from './convert';
 
@@ -81,60 +91,6 @@ export function simplifyLatex(latex: string): ActionResult {
   return compact(next) === compact(latex) ? { ok: false, reason: 'unchanged' } : { ok: true, latex: next };
 }
 
-const RANGE = 1000;
-const STEPS = 20_000;
-const TOLERANCE = 1e-7;
-
-/** The values of x where `f` crosses or touches zero between -RANGE and RANGE, smallest first. */
-function roots(f: (x: number) => number): number[] {
-  const found: number[] = [];
-  const add = (x: number) => {
-    if (!found.some((other) => Math.abs(other - x) < 1e-6)) found.push(x);
-  };
-  const step = (2 * RANGE) / STEPS;
-  let previousX = -RANGE;
-  let previous = f(previousX);
-  let beforePrevious = NaN;
-  for (let i = 1; i <= STEPS; i += 1) {
-    const x = -RANGE + i * step;
-    const value = f(x);
-    if (Number.isFinite(previous) && Number.isFinite(value)) {
-      if (previous === 0) add(previousX);
-      else if (previous * value < 0) {
-        let [low, high] = [previousX, x];
-        for (let k = 0; k < 80; k += 1) {
-          const mid = (low + high) / 2;
-          if (f(mid) * f(low) <= 0) high = mid;
-          else low = mid;
-        }
-        const at = (low + high) / 2;
-        // A jump across a gap in the function, such as 1/x at 0, is not a root.
-        if (Math.abs(f(at)) < 1e-6 * (1 + Math.abs(previous) + Math.abs(value))) add(at);
-      } else if (
-        Number.isFinite(beforePrevious) &&
-        Math.abs(previous) < Math.abs(beforePrevious) &&
-        Math.abs(previous) <= Math.abs(value) &&
-        Math.abs(previous) < 1e-4
-      ) {
-        // The curve touches zero without crossing, as (x - 1)^2 does.
-        let [low, high] = [previousX - step, x];
-        for (let k = 0; k < 100; k += 1) {
-          const a = low + (high - low) / 3;
-          const b = high - (high - low) / 3;
-          if (Math.abs(f(a)) < Math.abs(f(b))) high = b;
-          else low = a;
-        }
-        const at = (low + high) / 2;
-        if (Math.abs(f(at)) < TOLERANCE) add(at);
-      }
-    }
-    beforePrevious = previous;
-    previousX = x;
-    previous = value;
-  }
-  return found.sort((a, b) => a - b);
-}
-
 /** A root as LaTeX: a whole number, a small fraction, or a number to six digits. */
 function rootLatex(value: number): string {
   const rounded = Math.round(value);
@@ -146,7 +102,114 @@ function rootLatex(value: number): string {
   return String(Number(value.toPrecision(6)));
 }
 
+/** The equations of a system: rows of cases, aligned, or a list split by \\ or semicolons. Null for one equation. */
+function equationsOf(latex: string): string[] | null {
+  const inner = latex
+    .replace(/\\begin\{(?:cases|aligned|align\*?|array)\}(?:\{[^}]*\})?/g, '')
+    .replace(/\\end\{(?:cases|aligned|align\*?|array)\}/g, '')
+    .replace(/&/g, '');
+  const parts = inner
+    .split(/\\\\|;/)
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+  return parts.length > 1 ? parts : null;
+}
+
+/**
+ * Solves a system of linear equations, such as x + y = 3 \\ x - y = 1, by elimination. Each equation must be linear
+ * in the letters, and there must be as many equations as letters.
+ */
+function solveSystem(latex: string, equations: readonly string[]): ActionResult {
+  const parsed = equations.map((one) => parseLatex(one));
+  if (parsed.some((one) => one === null || one.right === null)) return unsupported;
+  const sides = parsed as { left: Node; right: Node }[];
+  const names = letters(...sides.flatMap((one) => [one.left, one.right]));
+  if (names.length === 0 || names.length !== sides.length) return { ok: false, reason: 'letters' };
+  const others = names.filter((name) => name !== 'x');
+  const fns: ((values: Record<string, number>) => number)[] = [];
+  for (const one of sides) {
+    const compiled = compileExpression(`(${formatExpression(one.left)})-(${formatExpression(one.right)})`, {
+      parameters: others,
+    });
+    if (!compiled.ok) return unsupported;
+    fns.push((values: Record<string, number>) => compiled.expression.evaluate(values.x ?? 0, values));
+  }
+  const at = (values: Record<string, number>) => fns.map((f) => f(values));
+  const zero = Object.fromEntries(names.map((name) => [name, 0]));
+  const base = at(zero);
+  const a: Matrix = names.map(() => []);
+  names.forEach((name, j) => {
+    const unit = at({ ...zero, [name]: 1 });
+    unit.forEach((value, i) => (a[i][j] = value - base[i]));
+  });
+  const b: Matrix = base.map((value) => [-value]);
+  // A system that is not linear gives a different gap at another point than its coefficients predict.
+  const probe = Object.fromEntries(names.map((name, i) => [name, 1.7 + i * 0.9]));
+  const predicted = a.map((row, i) => row.reduce((sum, c, j) => sum + c * probe[names[j]], base[i]));
+  if (at(probe).some((value, i) => !(Math.abs(value - predicted[i]) < 1e-7 * (1 + Math.abs(value))))) {
+    return unsupported;
+  }
+  const solved = matrices.solve(a, b);
+  if (!solved.ok) return { ok: false, reason: 'none' };
+  const answer = names.map((name, i) => `${name} = ${rootLatex(solved.value[i][0])}`).join(',\\ ');
+  return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad ${answer}` };
+}
+
+const MATRIX = /^\s*(\\det\s*)?\\begin\{([pbv]?matrix)\}([\s\S]*?)\\end\{\2\}\s*(\^\s*\{?\s*(-1|T|\\top)\s*\}?)?\s*$/;
+
+/** A matrix written in LaTeX, solved: its determinant and inverse, or what its power or \\det asks for. */
+function solveMatrix(latex: string): ActionResult | null {
+  const found = MATRIX.exec(latex);
+  if (!found) return null;
+  // Each entry is a number, or a constant expression such as \frac{1}{2} or \sqrt{2}.
+  const entry = (cell: string): number => {
+    const node = parseOne(cell.trim());
+    if (!node || letters(node).length > 0) return NaN;
+    try {
+      const value = evaluateExact(node, { name: () => undefined });
+      return value.exact ? Number(value.value.n) / Number(value.value.d) : value.value;
+    } catch {
+      return NaN;
+    }
+  };
+  let m: Matrix;
+  try {
+    m = found[3]
+      .split(/\\\\/)
+      .map((row) => row.trim())
+      .filter((row) => row !== '')
+      .map((row) => row.split('&').map(entry));
+  } catch (error) {
+    if (error instanceof Unsupported) return unsupported;
+    throw error;
+  }
+  if (m.length === 0 || m.some((row) => row.length !== m[0].length || row.some((v) => !Number.isFinite(v)))) {
+    return unsupported;
+  }
+  const latexOf = (matrix: Matrix) =>
+    `\\begin{pmatrix}${matrix.map((row) => row.map(rootLatex).join(' & ')).join(' \\\\ ')}\\end{pmatrix}`;
+  const power = found[5];
+  if (power === 'T' || power === '\\top')
+    return { ok: true, latex: `${latex.trim()} = ${latexOf(matrices.transpose(m))}` };
+  const det = matrices.determinant(m);
+  if (found[1]) return det.ok ? { ok: true, latex: `${latex.trim()} = ${rootLatex(det.value)}` } : unsupported;
+  const inverse = matrices.inverse(m);
+  if (power === '-1')
+    return inverse.ok
+      ? { ok: true, latex: `${latex.trim()} = ${latexOf(inverse.value)}` }
+      : { ok: false, reason: 'none' };
+  if (!det.ok)
+    return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad \\operatorname{rank} = ${matrices.rank(m)}` };
+  const parts = [`\\det = ${rootLatex(det.value)}`];
+  if (inverse.ok) parts.push(`\\text{inverse} = ${latexOf(inverse.value)}`);
+  return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad ${parts.join(',\\ ')}` };
+}
+
 export function solveLatex(latex: string): ActionResult {
+  const matrix = solveMatrix(latex);
+  if (matrix) return matrix;
+  const system = equationsOf(latex);
+  if (system) return solveSystem(latex, system);
   const sides = parseLatex(latex);
   if (!sides) return unsupported;
   const names = letters(sides.left, ...(sides.right ? [sides.right] : []));
@@ -157,8 +220,93 @@ export function solveLatex(latex: string): ActionResult {
   const text = sides.right ? `(${source(sides.left)})-(${source(sides.right)})` : source(sides.left);
   const compiled = compileExpression(text);
   if (!compiled.ok) return unsupported;
-  const found = roots((x) => compiled.expression.evaluate(x));
+  const found = findRoots((x) => compiled.expression.evaluate(x));
   if (found.length === 0) return { ok: false, reason: 'none' };
   const answer = found.map((value) => `${name} = ${rootLatex(value)}`).join(',\\ ');
   return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad ${answer}` };
+}
+
+/** A root as plain text: a whole number, a small fraction, or a number to six digits. */
+function rootText(value: number): string {
+  return rootLatex(value).replace(/\\frac\{(\d+)\}\{(\d+)\}/, '$1/$2');
+}
+
+/**
+ * The short answer shown beside an equation as it is written: "x = 4" for an equation in one letter, or "= 5/6" for
+ * an expression with no letters. Null when there is nothing to show, so writing never brings up noise.
+ */
+export function liveAnswer(latex: string): string | null {
+  if (latex.trim() === '' || latex.length > 2000) return null;
+  const sides = parseLatex(latex);
+  if (!sides) return null;
+  const nodes = sides.right ? [sides.left, sides.right] : [sides.left];
+  const names = letters(...nodes);
+  if (names.length === 0) {
+    if (sides.right) return null;
+    const value = constantLatex(sides.left);
+    if (value === null) return null;
+    const text = value.replace(/^(-?)\\frac\{(\d+)\}\{(\d+)\}$/, '$1$2/$3');
+    const compact = (s: string) => s.replace(/\s+/g, '');
+    return compact(text) === compact(latex) ? null : `= ${text}`;
+  }
+  if (!sides.right || names.length !== 1) return null;
+  const [name] = names;
+  const source = (node: Node) =>
+    formatExpression(node).replace(new RegExp(`(?<![A-Za-z])${name}(?![A-Za-z])`, 'g'), 'x');
+  const compiled = compileExpression(`(${source(sides.left)})-(${source(sides.right)})`);
+  if (!compiled.ok) return null;
+  const found = findRoots((x) => compiled.expression.evaluate(x), { steps: 4000, limit: 4 });
+  if (found.length === 0) return null;
+  return found.map((value) => `${name} = ${rootText(value)}`).join(', ');
+}
+
+/** What an equation graphs as: the text of a graph block, and whether it draws in 3D. */
+export interface EquationGraph {
+  source: string;
+  three: boolean;
+}
+
+/** The text of an expression with one letter renamed to x, as the grapher reads it. */
+function asX(node: Node, name: string): string {
+  const text = formatExpression(node);
+  return name === 'x' ? text : text.replace(new RegExp(`(?<![A-Za-z])${name}(?![A-Za-z])`, 'g'), 'x');
+}
+
+const isName = (node: Node, name: string) => node.type === 'name' && node.name === name;
+
+/**
+ * The graph of an equation, or null when it has nothing to draw. y = f(x) and an expression in x draw in 2D;
+ * z = f(x, y) and an expression in x and y draw in 3D. An equation in one letter, such as 2x + 3 = 11, draws both
+ * sides, so the answer is where they cross. Other letters become sliders.
+ */
+export function graphOfLatex(latex: string): EquationGraph | null {
+  if (latex.trim() === '' || latex.length > 2000) return null;
+  const at = topLevelEquals(latex);
+  const head = at < 0 ? '' : latex.slice(0, at).trim();
+  // f(x) = ... draws as y = ...
+  if (/^[A-Za-z]\s*(?:\\left)?\(\s*x\s*(?:\\right)?\)$/.test(head)) return graphOfLatex(`y = ${latex.slice(at + 1)}`);
+  const sides = parseLatex(latex);
+  if (!sides) return null;
+  const { left, right } = sides;
+  const lettersOf = (node: Node) => letters(node);
+  const plain = (node: Node) => formatExpression(node);
+  if (right) {
+    if (isName(left, 'y') && !lettersOf(right).includes('y')) {
+      return { source: `y = ${plain(right)}`, three: false };
+    }
+    if (isName(left, 'z') && !lettersOf(right).includes('z')) {
+      return { source: `z = ${plain(right)}`, three: true };
+    }
+    const all = letters(left, right);
+    if (all.length === 1) {
+      const [name] = all;
+      return { source: `y = ${asX(left, name)}\ny = ${asX(right, name)}`, three: false };
+    }
+    return null;
+  }
+  const all = lettersOf(left);
+  if (all.includes('x') && all.includes('y')) return { source: `z = ${plain(left)}`, three: true };
+  if (all.includes('x')) return { source: `y = ${plain(left)}`, three: false };
+  if (all.length === 1) return { source: `y = ${asX(left, all[0])}`, three: false };
+  return null;
 }

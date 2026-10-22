@@ -1,0 +1,105 @@
+/*
+ * The calculator's modes: the wrapping tab row, the basic keypad, the programmer's bases, and the result tables of
+ * statistics and matrices. Everything is on tokens, so a theme switch recolors it with no redraw.
+ */
+@layer components {
+  .modeTabs {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .basicKeys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-2);
+  }
+
+  .basicKeys > button {
+    min-block-size: calc(var(--size-target-pointer) + var(--space-2));
+    font-size: var(--type-subtitle-size);
+  }
+
+  .hexKeys {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-2);
+  }
+
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-pointer);
+    font-size: var(--type-small-size);
+  }
+
+  .data {
+    min-block-size: 6lh;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+
+  .data[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-3);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .table th {
+    color: var(--color-text-secondary);
+    font-weight: normal;
+  }
+
+  .matrix td {
+    font-family: var(--font-mono);
+    text-align: end;
+  }
+
+  .bases {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    overflow-wrap: anywhere;
+  }
+
+  .bases dt {
+    color: var(--color-text-secondary);
+  }
+
+  .bases dd {
+    margin: 0;
+  }
+}

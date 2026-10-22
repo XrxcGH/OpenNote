@@ -36,7 +36,7 @@ test('answers in the calculator, converts units, and explains a mistake', async 
   await expect(page.locator('#calc-result')).toHaveText('= 18.8495559215');
   await expression.fill('5 km to mi');
   await page.keyboard.press('Enter');
-  await expect(page.locator('#calc-result')).toHaveText('= 3.10685596119');
+  await expect(page.locator('#calc-result')).toHaveText('= 3.10685596119 mi');
   await expression.fill('1 / 0');
   await page.keyboard.press('Enter');
   await expect(page.locator('#calc-result')).toHaveText('Dividing by zero has no answer.');
@@ -45,8 +45,34 @@ test('answers in the calculator, converts units, and explains a mistake', async 
 test('graphs in the calculator’s Graphing tab', async ({ page }) => {
   await openSmart(page);
   await runCommand(page, 'Open calculator');
-  await page.getByRole('tab', { name: 'Graphing' }).click();
+  await page.getByRole('tab', { name: 'Graphing 2D' }).click();
   await expect(page.getByRole('application', { name: /^Graph of 1 function/ })).toBeVisible();
+});
+
+test('switches the calculator between its modes with the mouse and the keyboard', async ({ page }) => {
+  await openSmart(page);
+  await runCommand(page, 'Programmer calculator');
+  const dialog = page.getByRole('dialog', { name: 'Calculator' });
+  await expect(dialog.getByRole('tab', { name: 'Programmer' })).toHaveAttribute('aria-selected', 'true');
+  await dialog.getByRole('textbox', { name: 'Expression' }).fill('0xF0 | 0x0F');
+  await page.keyboard.press('Enter');
+  await expect(dialog.getByLabel('The answer in each base')).toContainText('255');
+  await dialog.getByRole('tab', { name: 'Statistics' }).click();
+  await dialog.getByRole('textbox', { name: 'Data' }).fill('2, 4, 6');
+  await dialog.getByRole('button', { name: 'Calculate' }).click();
+  await expect(dialog.getByRole('table', { name: 'Statistics of the data' })).toContainText('Mean4');
+  await dialog.getByRole('tab', { name: 'Statistics' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(dialog.getByRole('tab', { name: 'Matrix' })).toBeFocused();
+  await expect(dialog.getByRole('button', { name: 'Determinant of A' })).toBeVisible();
+  await page.keyboard.press('Home');
+  await expect(dialog.getByRole('tab', { name: 'Basic' })).toHaveAttribute('aria-selected', 'true');
+  await dialog.getByRole('tab', { name: 'Graphing 3D' }).click();
+  const plot = dialog.getByRole('application', { name: '3D graph of 1 function' });
+  await expect(plot).toBeVisible();
+  await plot.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(dialog.getByText(/Turned -50 degrees/)).toBeVisible();
 });
 
 test('puts a calculator answer into the page', async ({ page }) => {

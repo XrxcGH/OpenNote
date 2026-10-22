@@ -13,6 +13,8 @@ import { INTEGRATIONS_FLAGS } from '../features/integrations/flags';
 import type { IntegrationsFlagId } from '../features/integrations/flags';
 import { PDF_FLAGS } from '../features/pdf/flags';
 import type { PdfFlagId } from '../features/pdf/flags';
+import { MATH_TOOLS_FLAGS } from '../features/math/flags';
+import type { MathToolsFlagId } from '../features/math/flags';
 import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
@@ -91,7 +93,8 @@ type Phase4FlagId =
   | 'editor.spelling'
   | 'editor.readAloud'
   | IntegrationsFlagId
-  | PdfFlagId;
+  | PdfFlagId
+  | MathToolsFlagId;
 
 /** Phase 6: page views and export (features/pages/flags.ts). */
 type Phase6FlagId =
@@ -316,6 +319,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INTEROP_FLAGS,
   ...INTEGRATIONS_FLAGS,
   ...PDF_FLAGS,
+  ...MATH_TOOLS_FLAGS,
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
   ...QOL_FLAGS,

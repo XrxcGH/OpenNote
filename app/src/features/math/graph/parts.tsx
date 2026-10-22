@@ -3,7 +3,7 @@
 import { t } from '../../../strings/t';
 import { Button } from '../../../ui';
 import { compileExpression, defaultViewport, differentiateExpression, panByFraction, zoomAtCenter } from '../grapher';
-import type { GraphScene, Viewport } from '../grapher';
+import type { ExpressionProblem, GraphScene, Viewport } from '../grapher';
 import styles from './graph.module.css';
 import type { GraphSource } from './source';
 
@@ -156,13 +156,16 @@ export function PlotLayers({ scene, trace }: { scene: GraphScene; trace: Trace |
 
 export interface FunctionBoxesProps {
   graph: GraphSource;
-  scene: GraphScene;
+  /** The engine's complaint about each function, or null. */
+  problems: readonly (ExpressionProblem | null)[];
   editable: boolean;
+  /** The function the Add button starts with. */
+  addLine?: string;
   onFunctions(functions: string[]): void;
 }
 
 /** One text box per function, with the engine's complaint under a box it cannot read. */
-export function FunctionBoxes({ graph, scene, editable, onFunctions }: FunctionBoxesProps) {
+export function FunctionBoxes({ graph, problems, editable, addLine = 'y = x', onFunctions }: FunctionBoxesProps) {
   const edit = (index: number, text: string) => {
     const functions = graph.functions.map((line, i) => (i === index ? text : line));
     onFunctions(text === '' ? functions.filter((_, i) => i !== index) : functions);
@@ -170,7 +173,7 @@ export function FunctionBoxes({ graph, scene, editable, onFunctions }: FunctionB
   return (
     <div className={styles.inputs}>
       {graph.functions.map((line, index) => {
-        const problem = scene.curves[index]?.error;
+        const problem = problems[index];
         return (
           <div key={index} className={styles.row}>
             <span
@@ -197,7 +200,7 @@ export function FunctionBoxes({ graph, scene, editable, onFunctions }: FunctionB
         );
       })}
       {editable ? (
-        <Button variant="quiet" onClick={() => onFunctions([...graph.functions, 'y = x'])}>
+        <Button variant="quiet" onClick={() => onFunctions([...graph.functions, addLine])}>
           {t('smart.grapher.add')}
         </Button>
       ) : null}

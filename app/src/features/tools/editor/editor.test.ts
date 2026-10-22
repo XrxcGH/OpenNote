@@ -2,7 +2,7 @@
 import { Schema } from '@tiptap/pm/model';
 import { describe, expect, it } from 'vitest';
 import { findDuesIn } from './dueChipsExt';
-import { notesDecorations, regionOfBrowser } from './notesExt';
+import { notesDecorations, notesState, regionOfBrowser } from './notesExt';
 
 const schema = new Schema({
   nodes: {
@@ -32,6 +32,16 @@ describe('math on page lines', () => {
   });
   it('offers Graph this for an equation', () => {
     expect(widgets(notesDecorations(doc('y = x^2'), region))).toBe(1);
+  });
+  it('offers the solution of an equation on the caret line only, and what Tab adds', () => {
+    const page = doc('rate = 3', 'rate * t = 12', '2x + 3 = 11');
+    // The third line's text runs from 26 to 37; the caret is at its end.
+    const solved = notesState(page, region, [], 37);
+    expect(solved.ghost).toEqual({ at: 37, text: 'x = 4', insert: 'x = 4' });
+    expect(widgets(solved.set)).toBe(1);
+    expect(notesState(page, region, [], 20).ghost?.text).toBe('t = 4');
+    expect(notesState(page, region, [], null).ghost).toBeNull();
+    expect(notesState(doc('x^2 = 9'), region, [], 8).ghost?.text).toBe('x = -3 or x = 3');
   });
   it('reads the region from the browser', () => {
     expect(['.', ',']).toContain(regionOfBrowser().decimal);

@@ -10,6 +10,25 @@
     user-select: all;
   }
 
+  /* A solution offered on the line being typed: quieter than an answer, with the key that adds it. */
+  .ghost {
+    margin-inline-start: var(--space-1);
+    color: var(--color-text-secondary);
+    font-style: italic;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+
+  .ghostKey {
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-1);
+    font-family: var(--font-ui);
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
   .graph,
   .chip {
     margin-inline-start: var(--space-2);

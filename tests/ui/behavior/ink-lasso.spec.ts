@@ -145,3 +145,20 @@ test('groups two drawings, selects both from either, and deletes and restores th
   await page.keyboard.press('Control+z');
   await expect.poll(async () => (await heldStrokes(page)).length).toBe(2);
 });
+
+test('lassoed handwriting offers Graph in its bar, which reads it as math and opens a graph', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [220, 420]));
+  await draw(page, line([220, 350], [150, 420]));
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(1);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(185, 385, 120, 90));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  await bar.getByRole('button', { name: 'Graph' }).click();
+  await page
+    .getByRole('dialog', { name: /Turn on/ })
+    .getByRole('button', { name: 'Turn on' })
+    .click();
+  await expect(page.locator('[data-graph-popup]').getByRole('application')).toBeVisible();
+});

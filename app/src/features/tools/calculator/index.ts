@@ -29,5 +29,17 @@ export {
 export type { CalcSession, HistoryEntry } from './session';
 export type { AngleMode } from '../../../core/expr';
 export { calculatorUnits } from './unitSystem';
+export * as matrices from '../../../core/matrix';
+export type { Matrix } from '../../../core/matrix';
+export {
+  DEFAULT_ANSWER_FORMAT,
+  countSigFigs,
+  formatAnswer,
+  leastSigFigs,
+  numbersIn,
+  restoreAnswerFormat,
+  roundSigFigs,
+} from './sigfigs';
+export type { AnswerFormat, SigFigChoice } from './sigfigs';
 export { UNIT_CATEGORIES, convert, convertText, findUnit, parseConversion, unitsIn } from './units';
 export type { ConvertFailure, ConvertResult, UnitCategory, UnitDef } from './units';

@@ -2,7 +2,7 @@
 // cannot read the equation, find nothing, or have nothing to do.
 import { describe, expect, it } from 'vitest';
 import { Unsupported, latexToText } from './convert';
-import { simplifyLatex, solveLatex } from './actions';
+import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions';
 
 describe('latexToText', () => {
   it('reads fractions, roots, products, and functions', () => {
@@ -93,5 +93,47 @@ describe('solve', () => {
     expect(answer('x+y=1')).toBe('letters');
     expect(answer('4=4')).toBe('letters');
     expect(answer(String.raw`\int x=0`)).toBe('unsupported');
+  });
+});
+
+describe('live answers', () => {
+  it('solves an equation in one letter and works out a sum of numbers', () => {
+    expect(liveAnswer('2x+3=11')).toBe('x = 4');
+    expect(liveAnswer('t^2=9')).toBe('t = -3, t = 3');
+    expect(liveAnswer('3x = 1')).toBe('x = 1/3');
+    expect(liveAnswer(String.raw`\frac{1}{2}+\frac{1}{3}`)).toBe('= 5/6');
+  });
+
+  it('shows nothing where there is nothing to say', () => {
+    expect(liveAnswer('')).toBeNull();
+    expect(liveAnswer('y = 2x + 1')).toBeNull();
+    expect(liveAnswer('x^2 + 1')).toBeNull();
+    expect(liveAnswer('4')).toBeNull();
+    expect(liveAnswer('x^2 = -1')).toBeNull();
+    expect(liveAnswer(String.raw`\int_0^1 x`)).toBeNull();
+  });
+});
+
+describe('graphs of equations', () => {
+  it('draws y = f(x) and an expression in x in 2D', () => {
+    expect(graphOfLatex('y = x^2')).toEqual({ source: 'y = x^2', three: false });
+    expect(graphOfLatex('f(x) = 2x + 1')).toEqual({ source: 'y = 2x+1', three: false });
+    expect(graphOfLatex('x^2 - 1')).toEqual({ source: 'y = x^2-1', three: false });
+    expect(graphOfLatex('t^2')).toEqual({ source: 'y = x^2', three: false });
+  });
+
+  it('draws z = f(x, y) and an expression in x and y in 3D', () => {
+    expect(graphOfLatex('z = x y')).toEqual({ source: 'z = x y', three: true });
+    expect(graphOfLatex('x^2 + y^2')).toEqual({ source: 'z = x^2+y^2', three: true });
+  });
+
+  it('draws both sides of an equation in one letter, so the answer is where they cross', () => {
+    expect(graphOfLatex('2t + 3 = 11')).toEqual({ source: 'y = 2x+3\ny = 11', three: false });
+  });
+
+  it('has nothing to draw for a number or an equation it cannot read', () => {
+    expect(graphOfLatex('4')).toBeNull();
+    expect(graphOfLatex('x^2 + y^2 = 1')).toBeNull();
+    expect(graphOfLatex('')).toBeNull();
   });
 });

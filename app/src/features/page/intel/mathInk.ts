@@ -35,8 +35,50 @@ export async function convertToMath(): Promise<void> {
   const ack = await mounted.sync.send({ edits });
   // The page shows what this window inserted at the order the service gave it.
   showInserted(mounted, edits, ack.orderKeys);
+  // The handwriting's answer, such as x = 4, when live solving is on: what was written is checked at a glance.
+  const tools = await import('../../tools');
+  const answer = tools.liveSolveOn() ? (await import('../../math')).liveAnswer(found.latex) : null;
   showToast({
-    message: found.unread > 0 ? t('intelMore.math.unread', { count: found.unread }) : t('intelMore.math.inserted'),
+    message:
+      found.unread > 0
+        ? t('intelMore.math.unread', { count: found.unread })
+        : answer
+          ? t('mathTools.live.inkSolved', { answer })
+          : t('intelMore.math.inserted'),
     action: { label: t('intelMore.math.undo'), run: () => mounted.sync.undo() },
   });
+}
+
+/** The ink selection's frame on screen, or a point at the middle of the page view, for the graph to open beside. */
+function selectionAnchor(): HTMLElement {
+  const frame = document.querySelector<HTMLElement>('[data-ink-selection]');
+  if (frame && frame.getBoundingClientRect().width > 0) return frame;
+  const spot = document.createElement('div');
+  spot.dataset.graphAnchor = '';
+  Object.assign(spot.style, { position: 'fixed', insetInlineStart: '50%', insetBlockStart: '30%', inlineSize: '1px' });
+  document.body.append(spot);
+  setTimeout(() => spot.remove(), 60_000);
+  return spot;
+}
+
+/** Reads the selected handwriting as math and opens its graph (2D or 3D) beside it, with Insert graph. */
+export async function graphHandwriting(): Promise<void> {
+  const mounted = shownMedia.get();
+  const ids = pageSelection.get().strokes;
+  if (!mounted || ids.length === 0) return;
+  const api = await intel();
+  if (!(await api.askToTurnOn('handwriting'))) return;
+  announce(t('mathTools.graphPopup.inkWorking'));
+  const strokes = shownStrokes(ids).map((stroke) => ({
+    key: stroke.id,
+    points: stroke.points.map((point): [number, number] => [point.x, point.y]),
+  }));
+  const found = await api.recognizeMath(strokes, api.readWith(api.intelClient));
+  const math = await import('../../math');
+  const graph = found.latex ? math.graphOfLatex(found.latex) : null;
+  if (!found.latex || !graph) {
+    showToast({ message: t('mathTools.graphPopup.inkNone') });
+    return;
+  }
+  await math.openGraphPopup({ source: graph.source, anchor: selectionAnchor(), equation: found.latex });
 }

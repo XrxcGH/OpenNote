@@ -2,15 +2,20 @@
 // second line shows its answer after the equals sign. Units work as well (`5 mi in km =`). An equation such as
 // `y = x^2` gets a "Graph this" button that hands it to the grapher. The answers are drawn beside the text and are
 // never part of it, so the page's words and its Markdown stay as typed. The editor holds one block of text, so the
-// lines of that block share their variables.
+// lines of that block share their variables. On the line being typed, an equation with one unknown such as
+// `2x + 3 = 11` shows its solution in gray, and Tab adds it as a line of its own (`x = 4`) that later lines can use.
 import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import type { EditorState } from '@tiptap/pm/state';
+import type { EditorView } from '@tiptap/pm/view';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { t } from '../../../strings/t';
 import { evaluateNotes } from '../calculator';
 import type { NotesRegion } from '../calculator';
 import { INSERT_EVENT } from '../flags';
+import { announce } from '../../../ui';
+import { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn } from './liveMath';
 import { joinScope, linesBefore, refreshOthers, scopeOf } from './pageScope';
 import type { Box } from './pageScope';
 import styles from './editor.module.css';
@@ -29,6 +34,8 @@ export function regionOfBrowser(): NotesRegion {
 }
 
 interface Line {
+  /** The position of the line's first character. */
+  start: number;
   /** The position after the line's last character. */
   end: number;
   text: string;
@@ -40,7 +47,11 @@ function linesOf(doc: PMNode): Line[] {
   doc.descendants((node, pos) => {
     if (!node.isTextblock) return true;
     if (!node.type.spec.code)
-      lines.push({ end: pos + 1 + node.content.size, text: node.textBetween(0, node.content.size, undefined, LEAF) });
+      lines.push({
+        start: pos + 1,
+        end: pos + 1 + node.content.size,
+        text: node.textBetween(0, node.content.size, undefined, LEAF),
+      });
     return false;
   });
   return lines;
@@ -72,15 +83,69 @@ function graphWidget(equation: string): HTMLElement {
   return button;
 }
 
-/** The answers for a box. `before` is the lines of the page's earlier boxes, which lend their variables. */
-export function notesDecorations(doc: PMNode, region: NotesRegion, before: readonly string[] = []): DecorationSet {
-  if (doc.textContent.length > MAX_CHARS || !doc.textContent.includes('=')) return DecorationSet.empty;
+function ghostWidget(answer: string): HTMLElement {
+  const span = document.createElement('span');
+  span.className = styles.ghost;
+  span.contentEditable = 'false';
+  span.dataset.noteGhost = '';
+  span.textContent = ` ${answer}`;
+  span.title = t('mathTools.live.ghost', { answer });
+  const key = document.createElement('kbd');
+  key.className = styles.ghostKey;
+  key.textContent = 'Tab';
+  span.append(key);
+  return span;
+}
+
+/** A solution offered on the line being typed: where it shows, its text, and the line Tab adds. */
+export interface Ghost {
+  at: number;
+  text: string;
+  /** The definition Tab adds, such as "x = 4", or the text itself when there are several answers. */
+  insert: string;
+}
+
+export interface NotesState {
+  set: DecorationSet;
+  ghost: Ghost | null;
+}
+
+const EMPTY: NotesState = { set: DecorationSet.empty, ghost: null };
+
+/** The index of the line the caret is in, when the selection is a caret. */
+function caretLine(lines: readonly Line[], caret: number | null): number | undefined {
+  if (caret === null) return undefined;
+  const index = lines.findIndex((line) => caret >= line.start && caret <= line.end);
+  return index < 0 ? undefined : index;
+}
+
+/**
+ * The answers for a box, and the solution offered on the caret's line. `before` is the lines of the page's earlier
+ * boxes, which lend their variables. `caret` is the caret's place, or null for no caret (or no solving).
+ */
+export function notesState(
+  doc: PMNode,
+  region: NotesRegion,
+  before: readonly string[] = [],
+  caret: number | null = null,
+): NotesState {
+  if (doc.textContent.length > MAX_CHARS || !doc.textContent.includes('=')) return EMPTY;
   const lines = linesOf(doc);
-  const results = evaluateNotes([...before, ...lines.map((line) => line.text)], { region }).slice(before.length);
+  const solveAt = caretLine(lines, caret);
+  const results = evaluateNotes([...before, ...lines.map((line) => line.text)], {
+    region,
+    ...(solveAt === undefined ? {} : { solveLine: before.length + solveAt }),
+  }).slice(before.length);
   const found: Decoration[] = [];
+  let ghost: Ghost | null = null;
   results.forEach((result, index) => {
     const line = lines[index];
-    if (result.kind === 'result' || (result.kind === 'define' && result.shown)) {
+    if (result.kind === 'solve') {
+      ghost = { at: line.end, text: result.text, insert: result.text };
+      found.push(
+        Decoration.widget(line.end, () => ghostWidget(result.text), { side: 1, key: `s${index}:${result.text}` }),
+      );
+    } else if (result.kind === 'result' || (result.kind === 'define' && result.shown)) {
       found.push(
         Decoration.widget(line.end, () => answerWidget(result.text), { side: 1, key: `a${index}:${result.text}` }),
       );
@@ -90,11 +155,33 @@ export function notesDecorations(doc: PMNode, region: NotesRegion, before: reado
       );
     }
   });
-  return DecorationSet.create(doc, found);
+  return { set: DecorationSet.create(doc, found), ghost };
 }
 
-const key = new PluginKey<DecorationSet>('opennoteNotes');
+/** The answers for a box, with no solving. */
+export function notesDecorations(doc: PMNode, region: NotesRegion, before: readonly string[] = []): DecorationSet {
+  return notesState(doc, region, before).set;
+}
+
+/** Adds the offered solution as a line of its own after its equation, with the caret at its end. */
+export function acceptGhost(view: EditorView, ghost: Ghost): boolean {
+  const { state } = view;
+  const $at = state.doc.resolve(ghost.at);
+  if (!$at.parent.isTextblock || $at.parentOffset !== $at.parent.content.size) return false;
+  const tr = state.tr.split(ghost.at).insertText(ghost.insert);
+  view.dispatch(tr.scrollIntoView());
+  return true;
+}
+
+const key = new PluginKey<NotesState>('opennoteNotes');
 const REFRESH = 'opennoteNotesRefresh';
+
+/** The state for an editor: nothing when answers are turned off, and solving only for a caret. */
+function compute(state: EditorState, region: NotesRegion, before: readonly string[]): NotesState {
+  if (!lineAnswersOn()) return EMPTY;
+  const caret = liveSolveOn() && state.selection.empty ? state.selection.from : null;
+  return notesState(state.doc, region, before, caret);
+}
 
 export function notesExtension(): Extension {
   const region = regionOfBrowser();
@@ -106,14 +193,27 @@ export function notesExtension(): Extension {
       let box: Box | null = null;
       const before = () => (root !== null && box !== null ? linesBefore(root, box) : []);
       return [
-        new Plugin<DecorationSet>({
+        new Plugin<NotesState>({
           key,
           state: {
-            init: (_config, state) => notesDecorations(state.doc, region),
+            init: (_config, state) => compute(state, region, []),
             apply: (tr, old, _before, state) =>
-              tr.docChanged || tr.getMeta(REFRESH) ? notesDecorations(state.doc, region, before()) : old,
+              tr.docChanged || tr.getMeta(REFRESH) || (tr.selectionSet && liveSolveOn())
+                ? compute(state, region, before())
+                : old,
           },
-          props: { decorations: (state) => key.getState(state) },
+          props: {
+            decorations: (state) => key.getState(state)?.set,
+            handleKeyDown: (view, event) => {
+              if (event.key !== 'Tab' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return false;
+              const ghost = key.getState(view.state)?.ghost;
+              const { selection } = view.state;
+              if (!ghost || !selection.empty || selection.from !== ghost.at) return false;
+              if (!acceptGhost(view, ghost)) return false;
+              announce(t('mathTools.live.added', { answer: ghost.insert }));
+              return true;
+            },
+          },
           view: (view) => {
             const self: Box = {
               element: view.dom,
@@ -134,6 +234,8 @@ export function notesExtension(): Extension {
             };
             // The editor is placed in its block after it is made, so look for the page a moment later.
             const timer = setTimeout(join, 0);
+            const changed = () => self.refresh();
+            window.addEventListener(LIVE_MATH_EVENT, changed);
             return {
               update: (updated, prev) => {
                 if (updated.state.doc === prev.doc) return;
@@ -141,6 +243,7 @@ export function notesExtension(): Extension {
               },
               destroy: () => {
                 clearTimeout(timer);
+                window.removeEventListener(LIVE_MATH_EVENT, changed);
                 leave?.();
                 root = null;
                 box = null;

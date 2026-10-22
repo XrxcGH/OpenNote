@@ -11,6 +11,7 @@ import type { FormatOptions } from './numfmt';
 import { formatExpression } from './print';
 import { formatQuantity, type Quantity, type UnitSystem } from './quantity';
 import { evaluateQuantity, type QuantityEnv, type UserFunction } from './quantityEval';
+import { solveLine } from './lineSolve';
 import { parseStatement } from './statement';
 import type { AngleMode } from './trig';
 
@@ -23,6 +24,11 @@ export interface LinesOptions {
   angle?: AngleMode;
   /** How results are written. */
   format?: FormatOptions;
+  /**
+   * The line (by index) to solve as an equation when it reads as one with a single unknown, such as `2x + 3 = 11`.
+   * Only one line is solved, the one being typed, because solving takes thousands of evaluations.
+   */
+  solveLine?: number;
 }
 
 export type LineResult =
@@ -36,6 +42,8 @@ export type LineResult =
   | { kind: 'function'; name: string; params: string[]; body: Node; bodyText: string }
   /** An equation such as `y = x^2` that the grapher can draw. `bodyText` is the right side. */
   | { kind: 'equation'; body: Node; bodyText: string }
+  /** An equation such as `2x + 3 = 11`, solved for its one unknown. `text` reads "x = 4". */
+  | { kind: 'solve'; name: string; values: Quantity[]; text: string }
   | { kind: 'error'; error: ExprProblem };
 
 /** Errors that mean "this was not math after all" when a line did not ask for an answer. */
@@ -95,7 +103,21 @@ class Page {
     return freeNames(node).filter((name) => this.owns(name));
   }
 
-  line(raw: string): LineResult {
+  line(raw: string, solve = false): LineResult {
+    const result = this.read(raw);
+    if (!solve || (result.kind !== 'text' && result.kind !== 'error') || raw.trim().endsWith('=')) return result;
+    const solution = solveLine(
+      raw.trim(),
+      (letters) => this.lineDialect(letters),
+      this.env(),
+      (name) => this.owns(name),
+    );
+    if (!solution) return result;
+    const answers = solution.values.map((value) => `${solution.name} = ${this.text(value)}`);
+    return { kind: 'solve', name: solution.name, values: solution.values, text: answers.join(' or ') };
+  }
+
+  private read(raw: string): LineResult {
     const trimmed = raw.trim();
     const shown = trimmed.endsWith('=');
     const source = shown ? dropTrailingEquals(trimmed) : trimmed;
@@ -151,5 +173,5 @@ class Page {
 /** Evaluates each line of a page in order. The result has one entry per line. */
 export function evaluateLines(lines: readonly string[], options: LinesOptions): LineResult[] {
   const page = new Page(options);
-  return lines.map((line) => page.line(line));
+  return lines.map((line, index) => page.line(line, index === options.solveLine));
 }

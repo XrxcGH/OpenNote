@@ -63,6 +63,8 @@ export interface NotesOptions {
   format?: FormatOptions;
   /** How numbers are written in the user's region. Default DEFAULT_REGION. */
   region?: NotesRegion;
+  /** The line to solve when it is an equation with one unknown, such as 2x + 3 = 11 (the line being typed). */
+  solveLine?: number;
 }
 
 /** Evaluates the lines of a page in order. The result has one entry per line. */
@@ -73,5 +75,6 @@ export function evaluateNotes(lines: readonly string[], options: NotesOptions = 
     constants: (name) => findConstant(name)?.value,
     angle: options.angle ?? 'deg',
     ...(options.format === undefined ? {} : { format: options.format }),
+    ...(options.solveLine === undefined ? {} : { solveLine: options.solveLine }),
   });
 }
