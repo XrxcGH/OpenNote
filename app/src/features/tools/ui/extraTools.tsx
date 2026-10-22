@@ -13,6 +13,7 @@ import { PropertiesTool } from './PropertiesTool';
 import { ReferenceTool } from './ReferenceTool';
 import { SigFigsTool } from './SigFigsTool';
 import { StructureTool } from './StructureTool';
+import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
 // The solvers are a large window of their own, so they load the first time it opens.
@@ -62,5 +63,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
+  if (tool === 'symbols') return <SymbolsTool />;
   return null;
 }

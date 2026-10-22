@@ -39,6 +39,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('study.tapeBlanks', 'Print and export can turn study tape into blanks, with an answer key at the end.'),
   flag('tools.converter', 'The unit converter tool.'),
   flag('tools.reference', 'The reference tables tool.'),
+  flag('tools.symbols', 'The symbol palette, with recent symbols and LaTeX-name autocompletion in page text.'),
   flag('tools.dictionary', 'The dictionary and thesaurus tool.'),
   flag('tools.exams', 'Exam countdowns in Upcoming.'),
   flag('tools.timetable', 'The class timetable in Upcoming.'),

@@ -22,7 +22,8 @@ export type ToolId =
   | 'properties'
   | 'formulasheet'
   | 'practice'
-  | 'figure';
+  | 'figure'
+  | 'symbols';
 
 export interface ToolDef {
   id: ToolId;
@@ -38,6 +39,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'converter', title: 'study.converter.title', width: 380 },
   { id: 'reference', title: 'study.reference.title', width: 640 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },
+  { id: 'symbols', title: 'study.symbols.title', width: 420 },
   { id: 'citations', title: 'study.citations.title', width: 440 },
   { id: 'constants', title: 'science.constants.title', width: 520 },
   { id: 'sigfigs', title: 'science.sigfigs.title', width: 420 },

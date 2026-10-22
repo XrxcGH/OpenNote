@@ -439,6 +439,21 @@ for (const [tool, flag, title, keywords, icon] of [
   });
 }
 
+// The symbol palette: Insert tab, command palette, slash menu, and Ctrl+Alt+Shift+S.
+addCommand({
+  id: 'tools.symbols',
+  title: 'study.symbols.open',
+  keywords: 'study.symbols.keywords',
+  category: 'insert',
+  icon: 'Atom',
+  flag: 'tools.symbols',
+  anywhere: true,
+  keys: ['Ctrl+Alt+Shift+S'],
+  slash: { group: 'advanced', order: 36 },
+  bar: { group: 'study', priority: 37 },
+  run: async () => (await import('../../tools')).openTool('symbols'),
+});
+
 // Import cards: opens the Flashcards window on its import view (CSV, text, or an Anki package).
 addCommand({
   id: 'study.import',
