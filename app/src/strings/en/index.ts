@@ -40,6 +40,7 @@ import { intel } from './intel';
 import { pageExtras } from './pageExtras';
 import { video } from './video';
 import { study } from './study';
+import { science } from './science';
 import { qolSearch } from './qolSearch';
 import { intelPlus } from './intelPlus';
 import { qol } from './qol';
@@ -106,4 +107,5 @@ export const en = {
   accounts,
   myHand,
   tableMath,
+  science,
 } as const;

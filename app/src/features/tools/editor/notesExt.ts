@@ -16,6 +16,8 @@ import type { NotesRegion } from '../calculator';
 import { INSERT_EVENT } from '../flags';
 import { announce } from '../../../ui';
 import { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn } from './liveMath';
+import { sigFigMode, watchSigFigMode } from '../science/mode';
+import { sigFigAnswers } from '../science/notes';
 import { joinScope, linesBefore, refreshOthers, scopeOf } from './pageScope';
 import type { Box } from './pageScope';
 import styles from './editor.module.css';
@@ -61,8 +63,9 @@ function graphThis(text: string): void {
   window.dispatchEvent(new CustomEvent(INSERT_EVENT, { detail: { graph: text, handled: false } }));
 }
 
-function answerWidget(text: string): HTMLElement {
+function answerWidget(text: string, title?: string): HTMLElement {
   const span = document.createElement('span');
+  if (title) span.title = title;
   span.className = styles.answer;
   span.contentEditable = 'false';
   span.dataset.noteAnswer = '';
@@ -132,10 +135,14 @@ export function notesState(
   if (doc.textContent.length > MAX_CHARS || !doc.textContent.includes('=')) return EMPTY;
   const lines = linesOf(doc);
   const solveAt = caretLine(lines, caret);
-  const results = evaluateNotes([...before, ...lines.map((line) => line.text)], {
+  const texts = [...before, ...lines.map((line) => line.text)];
+  const all = evaluateNotes(texts, {
     region,
     ...(solveAt === undefined ? {} : { solveLine: before.length + solveAt }),
-  }).slice(before.length);
+  });
+  const results = all.slice(before.length);
+  // Significant-figures mode rounds a question's answer by the rules, and the rule is its tooltip.
+  const rounded = sigFigMode() ? sigFigAnswers(texts, all, region, before.length) : null;
   const found: Decoration[] = [];
   let ghost: Ghost | null = null;
   results.forEach((result, index) => {
@@ -146,8 +153,12 @@ export function notesState(
         Decoration.widget(line.end, () => ghostWidget(result.text), { side: 1, key: `s${index}:${result.text}` }),
       );
     } else if (result.kind === 'result' || (result.kind === 'define' && result.shown)) {
+      const sig = rounded?.get(before.length + index);
       found.push(
-        Decoration.widget(line.end, () => answerWidget(result.text), { side: 1, key: `a${index}:${result.text}` }),
+        Decoration.widget(line.end, () => answerWidget(sig?.text ?? result.text, sig?.rule), {
+          side: 1,
+          key: `a${index}:${sig?.text ?? result.text}`,
+        }),
       );
     } else if (result.kind === 'equation') {
       found.push(
@@ -236,6 +247,7 @@ export function notesExtension(): Extension {
             const timer = setTimeout(join, 0);
             const changed = () => self.refresh();
             window.addEventListener(LIVE_MATH_EVENT, changed);
+            const stopWatching = watchSigFigMode(() => self.refresh());
             return {
               update: (updated, prev) => {
                 if (updated.state.doc === prev.doc) return;
@@ -244,6 +256,7 @@ export function notesExtension(): Extension {
               destroy: () => {
                 clearTimeout(timer);
                 window.removeEventListener(LIVE_MATH_EVENT, changed);
+                stopWatching();
                 leave?.();
                 root = null;
                 box = null;

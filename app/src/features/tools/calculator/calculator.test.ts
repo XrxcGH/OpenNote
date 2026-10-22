@@ -199,7 +199,7 @@ describe('names', () => {
     expect(value('G')).toBe(6.6743e-11);
     expect(value('NA * kB')).toBeCloseTo(8.31446261815, 9);
     expect(value('0.5 * me * c^2 / qe')).toBeGreaterThan(255000);
-    expect(CONSTANTS.filter((k) => k.group === 'physics').every((k) => k.unit !== '')).toBe(true);
+    expect(CONSTANTS.filter((k) => k.group === 'physics').every((k) => k.unit !== '' || k.name === 'alpha')).toBe(true);
   });
 
   it('reads ans and memory slots', () => {

@@ -1,6 +1,8 @@
-// Named constants. Physical values are the 2019 SI definitions or the 2018 CODATA recommended values, in SI units.
+// Named constants. Physical values are the 2022 CODATA recommended values (features/tools/science/codata.ts), in SI units.
 // Names are case-sensitive, so "G" (gravitation) and "g" (standard gravity) differ. The elementary charge is "qe"
 // because "e" is Euler's number.
+
+import { CODATA, codataValue } from '../science/codata';
 
 export interface Constant {
   name: string;
@@ -10,25 +12,36 @@ export interface Constant {
   group: 'math' | 'physics';
 }
 
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+
+/** `m³ kg⁻¹ s⁻²` as `m³/(kg·s²)`: the form the calculator lists units in. */
+function slashed(unit: string): string {
+  const top: string[] = [];
+  const bottom: string[] = [];
+  for (const part of unit.split(' ').filter((one) => one !== '')) {
+    const at = part.indexOf('⁻');
+    if (at < 0) top.push(part);
+    else {
+      const power = [...part.slice(at + 1)].filter((ch) => SUPERSCRIPT.includes(ch)).join('');
+      bottom.push(part.slice(0, at) + (power === '¹' ? '' : power));
+    }
+  }
+  const over = bottom.length > 1 ? `(${bottom.join('·')})` : bottom.join('');
+  if (bottom.length === 0) return top.join('·');
+  return `${top.length === 0 ? '1' : top.join('·')}/${over}`;
+}
+
 export const CONSTANTS: readonly Constant[] = [
   { name: 'pi', value: Math.PI, unit: '', group: 'math' },
   { name: 'e', value: Math.E, unit: '', group: 'math' },
   { name: 'tau', value: 2 * Math.PI, unit: '', group: 'math' },
   { name: 'phi', value: (1 + Math.sqrt(5)) / 2, unit: '', group: 'math' },
-  { name: 'c', value: 299792458, unit: 'm/s', group: 'physics' },
-  { name: 'g', value: 9.80665, unit: 'm/s²', group: 'physics' },
-  { name: 'G', value: 6.6743e-11, unit: 'm³/(kg·s²)', group: 'physics' },
-  { name: 'h', value: 6.62607015e-34, unit: 'J·s', group: 'physics' },
-  { name: 'hbar', value: 1.054571817e-34, unit: 'J·s', group: 'physics' },
-  { name: 'kB', value: 1.380649e-23, unit: 'J/K', group: 'physics' },
-  { name: 'NA', value: 6.02214076e23, unit: '1/mol', group: 'physics' },
-  { name: 'R', value: 8.314462618, unit: 'J/(mol·K)', group: 'physics' },
-  { name: 'qe', value: 1.602176634e-19, unit: 'C', group: 'physics' },
-  { name: 'me', value: 9.1093837015e-31, unit: 'kg', group: 'physics' },
-  { name: 'mp', value: 1.67262192369e-27, unit: 'kg', group: 'physics' },
-  { name: 'eps0', value: 8.8541878128e-12, unit: 'F/m', group: 'physics' },
-  { name: 'mu0', value: 1.25663706212e-6, unit: 'N/A²', group: 'physics' },
-  { name: 'atm', value: 101325, unit: 'Pa', group: 'physics' },
+  ...CODATA.filter((one) => one.calc !== '').map((one): Constant => ({
+    name: one.calc,
+    value: codataValue(one),
+    unit: slashed(one.unit),
+    group: 'physics',
+  })),
 ];
 
 const BY_NAME = new Map(CONSTANTS.map((c) => [c.name, c]));

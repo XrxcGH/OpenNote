@@ -11,6 +11,7 @@ import { t } from '../../strings/t';
 import type { EditorHost, MathActionResult, MathRenderer, VisualMathField } from '../host';
 import { META_COMMAND } from '../meta';
 import { GRAPH_LANGUAGE } from './graphFence';
+import { mathPastePlugin } from './mathPaste';
 import { createPenPad } from './mathPen';
 import type { PenPad } from './mathPen';
 import { MathBlock, MathInline } from '../schema/nodes';
@@ -636,6 +637,10 @@ export function mathInlineExtensions(host: EditorHost): Extensions {
           new MathView(node, editor, getPos, false, host),
       addKeyboardShortcuts() {
         return { Enter: () => openSelected(this.editor) };
+      },
+      // Pasting LaTeX makes equations (mathPaste.ts).
+      addProseMirrorPlugins() {
+        return [mathPastePlugin()];
       },
       // Typing $x^2$ makes an equation; "$5 and $" stays text because the source can't end in a space.
       addInputRules() {

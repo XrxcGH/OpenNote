@@ -6,7 +6,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
-import { Button, announce } from '../../../ui';
+import { Button, Switch, announce } from '../../../ui';
 import type { AnswerFormat, CalcSession } from '../calculator';
 import {
   clearHistory,
@@ -25,6 +25,9 @@ import {
   submit,
 } from '../calculator';
 import { isEnabled } from '../../../app/flags';
+import { ruleText } from '../science/explain';
+import { setSigFigMode, sigFigMode, watchSigFigMode } from '../science/mode';
+import { sigFigCalculate } from '../science/sigfigs';
 import { INSERT_EVENT } from '../flags';
 import { AnswerActions, MatrixMode, Programmer, Statistics } from './CalculatorModes';
 import { CALCULATOR_MODES, followCalculatorMode, saveCalculatorMode, savedCalculatorMode } from './calculatorMode';
@@ -45,6 +48,8 @@ export interface InsertDetail {
   text?: string;
   graph?: string;
   picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
+  /** An equation for the page: LaTeX source and whether it stands on its own line. */
+  math?: { source: string; display: boolean };
   handled: boolean;
 }
 
@@ -75,6 +80,8 @@ interface Answer {
   /** The number and what was typed, so a change of notation rewrites the answer. */
   value?: number;
   expression?: string;
+  /** The significant-figures rule that rounded the answer. */
+  rule?: string;
 }
 
 const FORMAT_STORE = 'calculator.format';
@@ -287,8 +294,10 @@ function useScientific(basic: boolean) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [format, setFormatState] = useState<AnswerFormat>(() => restoreAnswerFormat(loadStored(FORMAT_STORE, null)));
   const [problem, setProblem] = useState('');
+  const [sig, setSig] = useState(sigFigMode);
   const field = useRef<HTMLInputElement>(null);
   useEffect(() => watchStored(STORE, () => setSession(restoreSession(loadStored(STORE, null)))), []);
+  useEffect(() => watchSigFigMode(() => setSig(sigFigMode())), []);
 
   const keep = (next: CalcSession) => {
     setSession(next);
@@ -313,7 +322,9 @@ function useScientific(basic: boolean) {
     if (!done.result.ok) return setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
     const { value } = done.result;
     keep(done.session);
-    setAnswer({ text: basic ? formatNumber(value) : formatAnswer(value, source, format), value, expression: source });
+    const figured = sig && !basic ? sigFigCalculate(source.replace(/−/g, '-')) : null;
+    if (figured?.ok) setAnswer({ text: figured.text, rule: ruleText(figured) });
+    else setAnswer({ text: basic ? formatNumber(value) : formatAnswer(value, source, format), value, expression: source });
     setProblem('');
     setInput('');
   };
@@ -338,7 +349,7 @@ function useScientific(basic: boolean) {
     setAnswer(null);
     setProblem('');
   };
-  return { session, keep, input, setInput, answer, problem, field, run, type, format, setFormat, clear };
+  return { session, keep, input, setInput, answer, problem, sig, field, run, type, format, setFormat, clear };
 }
 
 /** Scientific mode, or with `basic` the four-function calculator, which shares its history. */
@@ -376,6 +387,7 @@ function Scientific({ basic = false }: { basic?: boolean }) {
           <strong>{t('smart.tools.calculator.answer', { value: answer.text })}</strong>
         ) : null}
       </div>
+      {answer?.rule ? <p className={styles.note}>{answer.rule}</p> : null}
       {answer ? <AnswerActions text={answer.text} /> : null}
       {basic ? (
         <BasicKeypad
@@ -387,6 +399,16 @@ function Scientific({ basic = false }: { basic?: boolean }) {
         />
       ) : (
         <>
+          {isEnabled('tools.sigfigs') ? (
+            <Switch
+              label={t('science.sigfigs.mode')}
+              checked={calc.sig}
+              onChange={(on) => {
+                setSigFigMode(on);
+                announce(t(on ? 'science.sigfigs.modeOn' : 'science.sigfigs.modeOff'));
+              }}
+            />
+          ) : null}
           <AnswerFormatBar format={calc.format} typed={answer?.expression ?? input} onChange={calc.setFormat} />
           <Keypad onKey={type} />
           <MemoryBar session={session} onChange={keep} onRecall={() => type('m1')} />

@@ -403,6 +403,7 @@ if (typeof window !== 'undefined') {
       event as CustomEvent<{
         text?: string;
         graph?: string;
+        math?: { source: string; display: boolean };
         picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
         handled: boolean;
       }>
@@ -427,6 +428,16 @@ if (typeof window !== 'undefined') {
       const trail = selected.length - selected.trimEnd().length;
       const range = selected.trim() === '' ? { from, to } : { from: from + lead, to: to - trail };
       detail.handled = editor.chain().focus().insertContentAt(range, detail.text).run();
+    } else if (detail.math !== undefined) {
+      const { source, display } = detail.math;
+      const type = editor.schema.nodes[display ? 'mathBlock' : 'mathInline'];
+      if (type && source.trim() !== '') {
+        detail.handled = editor
+          .chain()
+          .focus()
+          .insertContent({ type: type.name, attrs: { source: source.trim() } })
+          .run();
+      }
     } else if (detail.graph !== undefined) {
       // The listener must answer at once, so a graph is claimed now and added when its code arrives.
       detail.handled = true;

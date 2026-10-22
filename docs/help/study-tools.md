@@ -42,6 +42,9 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 | Timers | Countdowns that keep running while you write. A running timer shows in the title bar, and you can ask each timer to notify you when it finishes, even with the window closed. |
 | Calculator | Works out sums and unit conversions, and keeps a history. |
 | Unit converter | Converts length, mass, time, temperature, area, volume, speed, pressure, energy, power, angle, data size, force, frequency, density, torque, fuel economy, electric current, voltage, and resistance. |
+| Scientific constants | A searchable list of physical constants with their 2022 CODATA values, uncertainties, and units. Insert the symbol, the value, or both. |
+| Insert LaTeX | Type or paste LaTeX, see it drawn, pick snippets, and insert it as an equation. |
+| Significant figures | Count, round, and write numbers in scientific or engineering notation, and calculate by the significant-figures rules. |
 | Reference tables | Looks up the periodic table as a grid you can move through with the arrow keys, with a card of facts for each element (density, melting and boiling points, electronegativity, oxidation states, isotopes, and electron configuration), a Units tab with SI units, CODATA 2022 constants, and formulas for math, physics, and chemistry, a Chemistry tab that balances equations and finds molar mass, metric prefixes, and Greek letters. Every row has an Insert button. |
 | Exam countdown | Counts the days to each exam. |
 | Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations that follow your chosen style (APA, MLA, Chicago, Vancouver, ACS, AMA, Turabian, and more), so changing the style updates them. A DOI or ISBN look-up happens only when you ask, and is listed in the Privacy panel. With Zotero running, it also adds, edits, and refreshes Zotero citations and bibliographies in the page. |
