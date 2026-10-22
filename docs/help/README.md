@@ -26,6 +26,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
+- [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
 
 ## Draw and design pages
 

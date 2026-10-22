@@ -6,12 +6,14 @@ export type ExprFlagId = Extract<FlagId, `tables.${string}` | `math.${string}` |
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
+/** On in Beta while it is new; off in Stable. */
+const beta = { dev: true, nightly: true, beta: true, stable: false };
 
-const flag = (id: ExprFlagId, description: string): FlagDef => ({
+const flag = (id: ExprFlagId, description: string, enabled: FlagDef['enabled'] = on): FlagDef => ({
   id,
   description,
   issue: `${ISSUES}${encodeURIComponent(id)}`,
-  enabled: on,
+  enabled,
 });
 
 export const EXPR_FLAGS: readonly FlagDef[] = [
@@ -30,6 +32,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('math.quickMath', 'Type a sum and an equals sign in text, then Space, to add the answer.'),
   flag('math.notes', 'Variables and units on page lines, with answers after the equals sign.'),
   flag('math.diagrams', 'Diagrams drawn from Mermaid text.'),
+  flag('math.codeCells', 'Code cells that run Python and JavaScript on this device in a sandbox.', beta),
   flag('math.mindmapExport', 'Save a mind map as an SVG, PNG, or PDF picture.'),
   flag('math.mindmapPen', 'Build and edit a mind map with the pen: tap to write, drag to add or move a branch.'),
   flag('math.mindMaps', 'Mind maps that turn to and from an outline.'),

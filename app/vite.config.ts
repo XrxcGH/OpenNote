@@ -29,6 +29,8 @@ export function viteConfig(env: Pick<ConfigEnv, 'mode' | 'command'>): UserConfig
     clearScreen: false,
     define: { 'import.meta.env.VITE_PLATFORM': JSON.stringify(platform) },
     // Tauri expects a fixed dev server port and serves the built files from app/dist.
+    // Workers are ES modules: the code cells' Python runtime (features/codecells) uses top-level await.
+    worker: { format: 'es' },
     server: { port: 1420, strictPort: true },
     preview: { host: '127.0.0.1', port: 4173, strictPort: true },
     build: {

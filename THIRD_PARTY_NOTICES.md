@@ -206,6 +206,33 @@ The steam, ideal-gas, and materials tables in the Property tables window hold va
 | Ideal-gas specific heats (17 gases, 250 to 1000 K) and molar masses | Ideal gases tab | Computed once from CoolProp 8.0.0 ideal-gas heat capacity functions. The gas constant is the CODATA 2018 value, 8.314462618 J/(mol K). | CoolProp is MIT licensed. Values are facts. |
 | Materials (32 rows) | Materials tab | Rounded typical values chosen to agree with the ranges in MIL-HDBK-5J (US Department of Defense), NIST standard reference data, the Wood Handbook FPL-GTR-190 (US Forest Products Laboratory), NASA technical reports, and the ACI 318 modulus relation for concrete. | The US Government sources are public domain. The ACI relation is a formula. Real stock varies, so the window tells people to check the source before a design. |
 
+## Code cell runtimes
+
+Code cells (docs/help/code-cells.md) run in two interpreters compiled to WebAssembly. Both are bundled with the app from npm and run offline in a sandbox worker.
+
+| Component | Used for | Package | License |
+|---|---|---|---|
+| MicroPython, WebAssembly port | Running Python code cells | `@micropython/micropython-webassembly-pyscript` 1.27.0, from `https://github.com/micropython/micropython`. Copyright (c) 2013-2025 Damien P. George and other MicroPython contributors. | MIT |
+| QuickJS | Running JavaScript code cells | `@jitl/quickjs-wasmfile-release-sync` 0.32.0, built from `https://bellard.org/quickjs/`. Copyright (c) 2017-2021 Fabrice Bellard and Charlie Gordon. | MIT |
+| quickjs-emscripten | Loading QuickJS and calling it from the sandbox worker | `quickjs-emscripten-core` 0.32.0, from `https://github.com/justjake/quickjs-emscripten`. Copyright (c) 2019-2024 Jake Teton-Landis. | MIT |
+
+The MIT License, as each of these projects grants it under its own copyright line above:
+
+```text
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+```
+
 ## Software libraries
 
 The npm packages the interface imports and the Rust crates the app is built from each keep their own license. Their names, versions, licenses, and hashes are listed in the bill of materials (`OpenNote.sbom.cdx.json`) that comes with every release, and in `package-lock.json` and `Cargo.lock`.

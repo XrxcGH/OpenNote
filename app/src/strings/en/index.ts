@@ -58,6 +58,7 @@ import { graph3d } from './graph3d';
 import { engineering } from './engineering';
 import { chem } from './chem';
 import { docStructure } from './docStructure';
+import { codeCells } from './codeCells';
 
 export const en = {
   common,
@@ -118,4 +119,5 @@ export const en = {
   engineering,
   chem,
   docStructure,
+  codeCells,
 } as const;
