@@ -115,9 +115,11 @@ Linked accounts (Phase 11):
 
 - Draw a rough shape and hold still for half a second. It snaps to a clean circle, ellipse, rectangle, triangle, polygon, star, or arrow. Status: Built, untested by hand.
 - Keep holding and move to resize or rotate it before lifting the pen. Status: Built, untested by hand.
+- A held line or arrow works differently: keep holding and move, and its far end follows the pen, snapping to the paper's lines and crossings when snapping is on. An arrow whose head was drawn before the hold stays an arrow. Lifting places it. Status: Built, untested by hand. Unit tests (follow.test.ts) and a UI test (ink-hold-follow.spec.ts) take the end to a grid crossing.
 - Irregular shapes snap too: a trapezoid, a parallelogram, a house, an L, or any closed outline of 4 to 7 corners becomes a clean polygon with a handle on each corner. A wobbly circle stays a circle. Status: Built, untested by hand.
 - Straight lines, arcs, curved arrows, and double arrows snap the same way. Lines snap to 15° steps near horizontal and vertical. Status: Built, untested by hand.
 - Shapes keep editable handles, and connectors stay attached when shapes move. Status: Built, untested by hand.
+- Editable curves (Beta): Make curve turns a line, arrow, connector, recognized shape, or freehand stroke into a curve of Bezier segments with a point at each join and two handles. Dragging points and handles bends it around other objects; points can be added and removed, and each is smooth or a corner. Arrow heads follow the curve, curve connectors stay attached, each change is one undo step, and a saved curve reads back as a curve. From the selection bar, its right-click menu, the Draw tab, the command palette, and the keys on a focused point (Insert, Delete, S, arrows). Status: Built, untested by hand. Flag ink.splines, on through Beta. Unit tests (spline.test.ts) and a UI test (ink-shapes.spec.ts).
 
 ## Transcripts and summaries
 

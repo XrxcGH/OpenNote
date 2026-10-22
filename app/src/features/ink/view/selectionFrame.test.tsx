@@ -42,8 +42,8 @@ describe('the lasso frame', () => {
     for (const action of actions) expect(action.checkVisibility()).toBe(false);
     selection = { blocks: [], strokes: ['s1'] };
     listeners.forEach((fn) => fn());
-    // Some actions need more than one stroke or a made group, a link, or a table-shaped selection.
-    const needsMore = new Set(['table', 'group', 'ungroup', 'unlink']);
+    // Some actions need more than one stroke or a made group, a link, a table-shaped selection, or a curve.
+    const needsMore = new Set(['table', 'group', 'ungroup', 'unlink', 'curveAdd', 'curveRemove', 'curveToggle']);
     for (const action of actions) {
       const shown = action.getBoundingClientRect().width > 0;
       expect(shown, action.dataset.inkAction).toBe(!needsMore.has(action.dataset.inkAction ?? ''));

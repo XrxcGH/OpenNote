@@ -207,6 +207,7 @@ type Phase5FlagId =
   | 'ink.paperSnap'
   | 'ink.replay'
   | 'ink.shapeTools'
+  | 'ink.splines'
   | 'ink.handwriting'
   | 'ink.gridTable'
   | 'ink.penEditing'

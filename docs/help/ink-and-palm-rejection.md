@@ -4,6 +4,20 @@ Draw with a pen or a finger on any page. Open the Draw tab to pick a tool, a col
 
 ![Ink on a page: a highlighter, three pens, and a pencil sketch](../screens/ink-pens-light.png)
 
+## Contents
+
+- [Pens and erasers](#pens-and-erasers)
+- [Palm rejection](#palm-rejection)
+- [Shapes and gestures](#shapes-and-gestures)
+- [Helpers](#helpers)
+- [Export a selection](#export-a-selection)
+- [Handwriting to text](#handwriting-to-text)
+- [Group things together](#group-things-together)
+- [More pens](#more-pens)
+- [Links on handwriting](#links-on-handwriting)
+- [Layers](#layers)
+- [Writing in text fields with the pen](#writing-in-text-fields-with-the-pen)
+
 ## Pens and erasers
 
 The Draw tab has pens, a highlighter, two erasers, the lasso, and shapes. In a wide window the pen slots sit in the bar. In a narrow one they sit under More.
@@ -33,10 +47,18 @@ Open Settings, then Pen and touch, to change this.
 ## Shapes and gestures
 
 - Draw a rough shape and hold the pen still. It snaps to a clean circle, rectangle, triangle, star, or arrow. Keep holding to resize it before you lift. Uneven outlines with 4 to 7 corners, such as a trapezoid or a house, snap to a clean polygon you can reshape by its corner handles.
+- A held line or arrow works differently: keep holding and move, and its far end follows the pen to any point. On lined, grid, or dot paper the end snaps to the nearest line or crossing. If you drew the arrow's head before holding, it stays an arrow. Lift the pen to place it.
 - Scribble over words to erase them. Circle something, then tap, to select it.
 - Double tap with two fingers to undo. Double tap with three to redo.
 - On typed text, the pen edits: strike through words to delete them, draw a short line between words to add a space or a long one to split the paragraph, and circle words to select them. With on-device handwriting recognition on, write in a gap between words, or where the cursor is, and a moment after you stop the words are typed in there. Each edit shows Undo, and each can be turned off: press Ctrl+K and type "pen edit".
 - Draw a grid of at least three lines each way, and OpenNote offers Convert to table. You can also lasso a grid you drew earlier and choose Convert to table on the bar, or press Ctrl+K and type it. With on-device handwriting recognition on, what you wrote in each cell becomes the cell's text. One Ctrl+Z puts the lines and the writing back.
+
+### Curves
+
+- Select a line, an arrow, a connector, a shape, or a freehand stroke. Then choose Make curve to bend it. It is on the selection bar and the Draw tab, or press Ctrl+K and type "curve".
+- Its points show as circles and their handles as small diamonds. Drag a point or a handle to bend the curve around other things on the page. An arrow keeps its head, and a connector's ends stay attached to the shapes they touch.
+- Add curve point splits the curve after the chosen point (the filled circle). Remove curve point takes that point out. Smooth or corner point switches it between a smooth point, whose handles stay in line, and a sharp corner.
+- From the keyboard, press Tab to reach a point. Then press Insert to add a point after it, Delete to remove it, S to switch smooth and corner, or an arrow key to move it. Ctrl+Z undoes each change.
 
 ## Helpers
 

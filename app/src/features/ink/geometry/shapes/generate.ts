@@ -2,6 +2,7 @@
 // the first for closed shapes. Curves are sampled so no segment strays far from the true curve.
 
 import type { Vec } from '../types';
+import { splinePoints } from './spline';
 import type { Shape } from './types';
 
 /** Points along a circle from `start` by `sweep` radians, enough that no segment strays far from the arc. */
@@ -91,5 +92,7 @@ export function shapePoints(shape: Shape): Vec[] {
         shape.to,
         shape.barbsTo[1],
       ];
+    case 'spline':
+      return splinePoints(shape);
   }
 }

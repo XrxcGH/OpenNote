@@ -6,6 +6,7 @@ import { distance } from '../primitives';
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
 import { sampleArc } from './generate';
+import { dragSpline, splineHandles } from './spline';
 import type { Shape } from './types';
 
 export interface Handle {
@@ -94,6 +95,8 @@ export function handlesOf(shape: Shape): Handle[] {
         { id: 'start', at: at(shape.center, shape.radius, shape.start) },
         { id: 'end', at: at(shape.center, shape.radius, shape.start + shape.sweep) },
       ];
+    case 'spline':
+      return splineHandles(shape);
   }
 }
 
@@ -191,6 +194,8 @@ export function dragHandle(shape: Shape, id: string, to: Vec): Shape {
       const head = distance(shape.barbs[0], at(shape.center, shape.radius, shape.start + shape.sweep));
       return { ...shape, ...next, barbs: headBarbs(tip, unit(back, tip), head || 24) };
     }
+    case 'spline':
+      return dragSpline(shape, id, to);
   }
 }
 

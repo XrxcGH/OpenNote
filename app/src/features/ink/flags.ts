@@ -40,6 +40,11 @@ export const INK_FLAGS: readonly FlagDef[] = [
     'More shapes (including irregular polygons), editable handles, connectors, and shape libraries.',
     on,
   ),
+  flag(
+    'ink.splines',
+    'Editable curves: lines, connectors, shapes, and ink become curves with points and handles to bend them.',
+    beta,
+  ),
   flag('ink.handwriting', 'Writing pen, convert with the lasso, and tidy handwriting.', on),
   flag('ink.gridTable', 'Draw a grid to make a table.', on),
   flag('ink.penEditing', 'Edit typed text with the pen.', on),
