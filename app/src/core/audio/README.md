@@ -16,19 +16,19 @@ The client does the work that does not need the host. Positions and stamps are c
 
 ## Public API
 
-| Item                                                  | File           | Use                                                                                                                                                                                              |
-| ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `AudioHost`, `hostOver(invoke)`                       | `host.ts`      | The commands as an interface, and an implementation over Tauri's `invoke`. Only `platform/tauri` may import `@tauri-apps`, so it passes `invoke` in.                                             |
-| `RecordingSession`                                    | `recording.ts` | `start` saves the page before any file exists, and removes what it saved if the devices don't open. `watch` polls levels and warnings. `stamp` gives the recording and capture time for an edit. |
-| `PlaybackSession`                                     | `playback.ts`  | `open`, `toggle`, `playFrom(target)`, `skipBack`, `skipForward`, `jumpToFlag`, `setSpeed`, and `watch`, which reports what to highlight.                                                         |
-| `HostClock`                                           | `clock.ts`     | Learns the offset between `performance.now` and the capture clock.                                                                                                                               |
-| `PositionMap`                                         | `positions.ts` | Converts between capture times and positions in the audio.                                                                                                                                       |
-| `TextMarks`, `StampIndex`                             | `stamps.ts`    | Marks on text that move with edits, and the index of everything written.                                                                                                                         |
-| `strokeEntry`, `strokeEntries`, `captureOf`, `unixOf` | `strokes.ts`   | Turn a stroke's Unix start time into a stamp entry by the recording's clock anchor.                                                                                                              |
-| `Flags`                                               | `flags.ts`     | Drop, rename, and remove flags at a moment of a recording, and save them in the recording entry.                                                                                                 |
-| `InkReplay`                                           | `replay.ts`    | Plays strokes back in the order written, with long pauses shortened, and says where the audio belongs for any moment.                                                                            |
-| `advance`, `toDb`, `fraction`                         | `meter.ts`     | Level meter fall-off, peak hold, and scale.                                                                                                                                                      |
-| Types                                                 | `types.ts`     | The JSON the host sends, matching the Rust types.                                                                                                                                                |
+| Item | File | Use |
+|---|---|---|
+| `AudioHost`, `hostOver(invoke)` | `host.ts` | The commands as an interface, and an implementation over Tauri's `invoke`. Only `platform/tauri` may import `@tauri-apps`, so it passes `invoke` in. |
+| `RecordingSession` | `recording.ts` | `start` saves the page before any file exists, and removes what it saved if the devices don't open. `watch` polls levels and warnings. `stamp` gives the recording and capture time for an edit. |
+| `PlaybackSession` | `playback.ts` | `open`, `toggle`, `playFrom(target)`, `skipBack`, `skipForward`, `jumpToFlag`, `setSpeed`, and `watch`, which reports what to highlight. |
+| `HostClock` | `clock.ts` | Learns the offset between `performance.now` and the capture clock. |
+| `PositionMap` | `positions.ts` | Converts between capture times and positions in the audio. |
+| `TextMarks`, `StampIndex` | `stamps.ts` | Marks on text that move with edits, and the index of everything written. |
+| `strokeEntry`, `strokeEntries`, `captureOf`, `unixOf` | `strokes.ts` | Turn a stroke's Unix start time into a stamp entry by the recording's clock anchor. |
+| `Flags` | `flags.ts` | Drop, rename, and remove flags at a moment of a recording, and save them in the recording entry. |
+| `InkReplay` | `replay.ts` | Plays strokes back in the order written, with long pauses shortened, and says where the audio belongs for any moment. |
+| `advance`, `toDb`, `fraction` | `meter.ts` | Level meter fall-off, peak hold, and scale. |
+| Types | `types.ts` | The JSON the host sends, matching the Rust types. |
 
 ## Time
 

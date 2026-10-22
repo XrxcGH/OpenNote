@@ -24,14 +24,14 @@ With the flag off, the buttons render nothing, and they report no caption layout
 
 ## Public API
 
-| Name                                              | Kind      | Use                                                                                         |
-| ------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------- |
-| `CaptionButtons`                                  | component | The three buttons, last in the title bar. They are outside the tab order, like native ones. |
-| `DragRegion`                                      | component | The gap before the buttons, at least 200 DIPs wide at every text size.                      |
-| `titleBarDragProps(customFrame)`                  | function  | Spread on the bar, so its padding and gaps drag too. Its items stay page content.           |
-| `useCustomFrame()`, `useSnapLayoutsOverlay()`     | hooks     | The two flags.                                                                              |
-| `frameWindow()`                                   | function  | The window client the commands were given at start-up.                                      |
-| `captionLayout(rect, ratio, labels, snapLayouts)` | function  | The report sent to Rust.                                                                    |
+| Name | Kind | Use |
+|---|---|---|
+| `CaptionButtons` | component | The three buttons, last in the title bar. They are outside the tab order, like native ones. |
+| `DragRegion` | component | The gap before the buttons, at least 200 DIPs wide at every text size. |
+| `titleBarDragProps(customFrame)` | function | Spread on the bar, so its padding and gaps drag too. Its items stay page content. |
+| `useCustomFrame()`, `useSnapLayoutsOverlay()` | hooks | The two flags. |
+| `frameWindow()` | function | The window client the commands were given at start-up. |
+| `captionLayout(rect, ratio, labels, snapLayouts)` | function | The report sent to Rust. |
 
 ## How the title bar uses it
 

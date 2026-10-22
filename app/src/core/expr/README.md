@@ -9,7 +9,7 @@ A host describes its language with a **dialect**: a small object that says what 
 | Host           | Dialect lives in                              | What is special                                                                                  |
 | -------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Calculator     | `features/tools/calculator/dialect.ts`        | Brackets for every function, `2pi` multiplies, `2 3` is a mistake, `mod`, `!`, `%`, and `°`.     |
-| Note lines     | `features/tools/calculator/notes.ts`          | The calculator plus units, `1,200`, definitions, `;` between arguments, and your own functions.  |
+| Note lines     | `features/tools/calculator/notes.ts`          | The calculator plus units, `1,200`, definitions, `;` between arguments, and your own functions. |
 | Grapher        | `features/math/grapher/dialect.ts`            | Letters split into names (`pix`), `sin 2x`, `sin^2(x)`, `sin^-1(x)`, and parameters.             |
 | Table formulas | `sheet.ts` (used by `features/tables/engine`) | Cells and ranges (`A1`, `B:B`), `[Column]`, `{id}`, `"text"`, comparisons, `&`, a decimal comma. |
 
