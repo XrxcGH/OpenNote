@@ -3,6 +3,7 @@
 // gives the value and the slope. Each letter a function uses besides x gets a slider. The graph's whole state is its
 // text (source.ts), so every change goes out as new text and undo, copy, and export follow from that.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { isEnabled } from '../../../app/flags';
 import type { KeyboardEvent, PointerEvent, RefObject, WheelEvent } from 'react';
 import { t } from '../../../strings/t';
 import {
@@ -16,6 +17,7 @@ import {
 } from '../grapher';
 import type { Viewport } from '../grapher';
 import styles from './graph.module.css';
+import { Graph3DView } from './Graph3DView';
 import { FunctionBoxes, PlotLayers, SIZE, Sliders, ZoomButtons, keyEffect, readoutText, traceAt } from './parts';
 import { readGraph, writeGraph } from './source';
 import type { GraphSource } from './source';
@@ -92,8 +94,17 @@ function usePlotInput({ svg, drag, view, live, editable, traceX, setTraceX, setL
   return { onPointerDown, onPointerMove, onPointerUp, onWheel, onKeyDown };
 }
 
+/** A 2D or a 3D graph, whichever its text describes. */
 export function GraphView({ source, editable, onSource }: GraphViewProps) {
   const graph = useMemo(() => readGraph(source), [source]);
+  return graph.three && isEnabled('math.graph3d') ? (
+    <Graph3DView graph={graph} editable={editable} onSource={onSource} />
+  ) : (
+    <Graph2DView graph={graph} source={source} editable={editable} onSource={onSource} />
+  );
+}
+
+function Graph2DView({ graph, source, editable, onSource }: GraphViewProps & { graph: GraphSource }) {
   // A view being dragged or zoomed belongs to the text it began from, so new text brings back its own view.
   const [liveState, setLiveState] = useState<{ source: string; view: Viewport } | null>(null);
   const live = liveState?.source === source ? liveState.view : null;
@@ -142,7 +153,12 @@ export function GraphView({ source, editable, onSource }: GraphViewProps) {
 
   return (
     <div className={styles.graph}>
-      <FunctionBoxes graph={graph} scene={scene} editable={editable} onFunctions={(functions) => send({ functions })} />
+      <FunctionBoxes
+        graph={graph}
+        problems={scene.curves.map((curve) => curve.error)}
+        editable={editable}
+        onFunctions={(functions) => send({ functions })}
+      />
       <svg
         ref={svg}
         className={styles.plot}

@@ -29,10 +29,11 @@ const STORE = 'calculator';
 const GRAPH_STORE = 'calculator.graph';
 const FIRST_GRAPH = 'y = sin(x)';
 
-/** What a tool asks the page to take: text for the caret, or a graph for a code block. */
+/** What a tool asks the page to take: text for the caret, a graph for a code block, or a picture. */
 export interface InsertDetail {
   text?: string;
   graph?: string;
+  picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
   handled: boolean;
 }
 

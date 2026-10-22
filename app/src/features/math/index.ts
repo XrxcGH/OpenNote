@@ -2,12 +2,15 @@
 // The editor, the blocks, and the screen wiring come later, so nothing here touches React or Tauri.
 
 export * from './grapher';
+export * from './grapher3d';
 export * from './latex';
 export { mathRenderer } from './mathHost';
 export { exportGraph, exportMath } from './exportRenderers';
 export { insertMath } from './insert';
 export { graphRenderer } from './graph/renderer';
 export { GraphView } from './graph/GraphView';
+export { graphPicture } from './graph/picture';
+export type { GraphPicture } from './graph/picture';
 export { readGraph, writeGraph } from './graph/source';
 export type { GraphSource } from './graph/source';
 export { applyQuickMath, browserLocale, quickMathEnabled, setQuickMathEnabled } from './quickMath';

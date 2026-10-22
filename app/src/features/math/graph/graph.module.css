@@ -109,6 +109,28 @@
     stroke-width: 2;
   }
 
+  .face {
+    stroke: var(--color-surface-page);
+    stroke-width: 0.5;
+    stroke-opacity: 0.6;
+    stroke-linejoin: round;
+  }
+
+  .box3d,
+  .axis3d {
+    fill: none;
+  }
+
+  .box3d {
+    stroke: var(--color-border-subtle);
+    stroke-width: 1;
+  }
+
+  .axis3d {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+  }
+
   .readout {
     margin: 0;
     min-block-size: var(--type-small-line);

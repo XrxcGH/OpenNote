@@ -344,7 +344,24 @@ for (const [tool, title, icon, keywords] of [
 
 if (typeof window !== 'undefined') {
   window.addEventListener(INSERT_EVENT, (event) => {
-    const detail = (event as CustomEvent<{ text?: string; graph?: string; handled: boolean }>).detail;
+    const detail = (
+      event as CustomEvent<{
+        text?: string;
+        graph?: string;
+        picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
+        handled: boolean;
+      }>
+    ).detail;
+    if (detail?.picture) {
+      // A picture goes on the page as an image block, where the page puts new images.
+      const picture = detail.picture;
+      detail.handled = true;
+      void Promise.all([import('../images/insert'), import('../images/shown')]).then(([insert, shown]) => {
+        const mounted = shown.shownMedia.get();
+        if (mounted && !mounted.page.readOnly) void insert.insertImages(mounted, [{ kind: 'bytes', ...picture }]);
+      });
+      return;
+    }
     const editor = targetEditor();
     if (!detail || !editor) return;
     if (detail.text !== undefined) {

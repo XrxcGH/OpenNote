@@ -29,6 +29,7 @@ import { ink } from './ink';
 import { pageViews } from './pageViews';
 import { pagesPlus } from './pagesPlus';
 import { smart } from './smart';
+import { mathTools } from './mathTools';
 import { search } from './search';
 import { audio } from './audio';
 import { audioMore } from './audioMore';
@@ -78,6 +79,7 @@ export const en = {
   pageViews,
   pagesPlus,
   smart,
+  mathTools,
   search,
   audio,
   audioMore,
