@@ -179,6 +179,7 @@ class ChromeLayer implements Chrome {
     const element = this.mark(used, `${kind}:${block.id}`, kind === 'grip' ? styles.grip! : styles.width!, area);
     element.dataset.handle = kind;
     element.dataset.block = block.id;
+    element.style.clipPath = kind === 'grip' ? this.gripHoles(block, area, origin) : '';
     element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', {
       name: name(liveBlock(this.parts.layer, block)),
     });
@@ -200,6 +201,30 @@ class ChromeLayer implements Chrome {
       if (across && bottom <= box.y + 1 && bottom > top) top = Math.min(bottom, box.y - GRIP_MIN);
     }
     return new DOMRect(box.x, top, width, box.y - top);
+  }
+
+  /**
+   * A floating panel or picture that reaches into the grip's strip (a study tape laid over the top of a text box) must
+   * still take its presses, so the grip is cut around it: its centre is never under the grip.
+   */
+  private gripHoles(block: BlockJson, area: DOMRect, origin: DOMRect): string {
+    const holes: string[] = [];
+    for (const other of this.parts.layer.blocks()) {
+      if (other.id === block.id || other.type === 'text' || !isFloating(other)) continue;
+      const rect = this.parts.layer.view(other.id)?.element.getBoundingClientRect();
+      if (!rect) continue;
+      const left = Math.max(rect.left - origin.left - area.x, 0);
+      const right = Math.min(rect.right - origin.left - area.x, area.width);
+      const top = Math.max(rect.top - origin.top - area.y, 0);
+      const bottom = Math.min(rect.bottom - origin.top - area.y, area.height);
+      if (right <= left || bottom <= top) continue;
+      holes.push(
+        `${left}px ${top}px, ${right}px ${top}px, ${right}px ${bottom}px, ${left}px ${bottom}px, ${left}px ${top}px, 0 0`,
+      );
+    }
+    if (holes.length === 0) return '';
+    const outer = `0 0, ${area.width}px 0, ${area.width}px ${area.height}px, 0 ${area.height}px, 0 0`;
+    return `polygon(evenodd, ${outer}, ${holes.join(', ')})`;
   }
 
   private mark(used: Set<string>, key: string, className: string, box: DOMRect): HTMLElement {

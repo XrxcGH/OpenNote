@@ -33,16 +33,36 @@ export const SHARED = 'shared';
 /** Every list that has been opened, by notebook. */
 export const sourcesStore = createStore<Readonly<Record<string, readonly Source[]>>>({}, 'citation sources');
 
-export function sourcesOf(notebook: string): readonly Source[] {
-  const cached = sourcesStore.get()[notebook];
-  if (cached) return cached;
-  const list = read<unknown>(`sources.${notebook}`, []);
-  const sources = Array.isArray(list)
+function parseSources(list: unknown): readonly Source[] {
+  return Array.isArray(list)
     ? (list as Source[]).filter((one) => typeof one?.id === 'string' && typeof one.title === 'string')
     : [];
+}
+
+export function sourcesOf(notebook: string): readonly Source[] {
+  const cached = sourcesStore.get()[notebook];
+  // An empty copy is read again: another window (a popped-out Citations window) may have saved sources since.
+  if (cached && cached.length > 0) return cached;
+  const sources = parseSources(read<unknown>(`sources.${notebook}`, []));
   // Reading must not notify, so a component can call this while it renders.
   (sourcesStore.get() as Record<string, readonly Source[]>)[notebook] = sources;
   return sources;
+}
+
+// Another window of the app (a popped-out Citations window) saves to the same device storage. This window follows,
+// so its live citation and bibliography blocks show those sources and that style, not the list it read first.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === null || !event.key.startsWith(PREFIX)) return;
+    const name = event.key.slice(PREFIX.length);
+    if (name.startsWith('sources.')) {
+      const notebook = name.slice('sources.'.length);
+      sourcesStore.set((current) => ({ ...current, [notebook]: parseSources(read<unknown>(name, [])) }));
+    } else if (name === 'style') {
+      const saved = read<string>('style', 'apa');
+      if (Object.hasOwn(STYLES, saved)) styleStore.set(saved);
+    }
+  });
 }
 
 export function setSources(notebook: string, sources: readonly Source[]): void {
