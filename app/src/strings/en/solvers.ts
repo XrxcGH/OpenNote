@@ -1,0 +1,53 @@
+// The math solvers window (flag math.solvers; owner: the calc-solvers lane): multiple integrals, differential
+// equations, transforms, series, roots, uncertainty and units, probability, eigenvalues, and projectiles. Each
+// namespace file has one owner, so parallel work never edits the same file.
+
+export const solvers = {
+  step: {
+    integralSetup: 'Write the integral with its limits, innermost first.',
+    integralChange:
+      '{system, select, polar {Change to polar coordinates.} cylindrical {Change to cylindrical coordinates.} other {Change to spherical coordinates.}} Multiply by the Jacobian.',
+    integralIntegrand: 'The integrand in the new coordinates, with the Jacobian:',
+    integralInner: 'Integrate with respect to {variable}, holding the other variables fixed.',
+    integralBounds: 'Evaluate at the limits and subtract.',
+    integralNoRule: 'No rule finds an antiderivative of this in {variable}, so the rest is found numerically.',
+    integralValue: 'The value of the integral:',
+    integralNumeric: 'The value of the integral, found numerically:',
+    odeSeparable: 'Write dy/dx as a function of x times a function of y.',
+    odeSeparate: 'Separate the variables.',
+    odeIntegrateBoth: 'Integrate both sides.',
+    odeConstant: 'Use y({x0}) = {y0} to find the constant.',
+    odeSolution: 'The solution:',
+    odeNumericOnly:
+      'The steps cannot be finished by hand here, so the solution is found numerically (fourth-order Runge-Kutta) and shown on the graph.',
+    odeLinear: 'Write the equation in the form y′ + P(x)·y = Q(x).',
+    odeFactor: 'Find the integrating factor.',
+    odeMultiply: 'Multiply both sides by it. The left side is now the derivative of a product.',
+    odeIntegrateRight: 'Integrate both sides.',
+    odeSecond: 'A second-order linear equation with constant coefficients:',
+    odeCharacteristic: 'Write the characteristic equation.',
+    odeRootRepeated: 'It has one repeated root.',
+    odeRootsReal: 'It has two real roots.',
+    odeRootsComplex: 'It has two complex roots.',
+    odeHomogeneous: 'The solution of the homogeneous equation:',
+    odeGuess: 'Guess a particular solution of the same form as the right side (times x where it repeats a root).',
+    odeParticular: 'Put the guess into the equation and match coefficients.',
+    odeConstants: 'Use y({x0}) = {y0} and y′({x0}) = {v0} to find the constants.',
+  },
+  error: {
+    empty: 'Type an expression first.',
+    unreadable: '"{detail}" couldn\'t be read as math. Check the brackets and put * between letters, as in x*y.',
+    'unknown-name': '"{detail}" has no value here. Use only the variables this solver lists.',
+    'no-derivative': "This expression can't be differentiated with respect to {detail}.",
+    'limits-count': 'Give one, two, or three integrals.',
+    'limits-variables': 'Each integral needs its own variable, written in letters.',
+    'limits-order':
+      'The limits of {detail} use a variable that is integrated before it. Put integrals with variable limits inside the ones they depend on.',
+    'not-separable': "This can't be written as a function of x times a function of y.",
+    'ode-range': 'Check the starting point and the range: the range must run from left to right.',
+    'ode-coefficients': "The coefficients a, b, and c must be numbers, and a can't be 0.",
+    'ode-forcing':
+      'The right side must be a sum of polynomials, exponentials, sines, and cosines, such as 3x^2 + e^(2x) + sin(x).',
+    unknown: "This couldn't be worked out. Check the input.",
+  },
+} as const;
