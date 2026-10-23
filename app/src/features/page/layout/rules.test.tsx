@@ -135,7 +135,9 @@ describe('ruled paper', () => {
         root.querySelector('h2')!,
         root.querySelector('li > p')!,
       ]) {
-        expect(offLift(baseline(harness, line), next)).toBeLessThan(TOLERANCE);
+        const world = harness.viewport.world;
+        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${world.style.getPropertyValue('--rule')}, lift ${world.style.getPropertyValue('--rule-lift')}`;
+        expect(offLift(baseline(harness, line), next), note).toBeLessThan(TOLERANCE);
       }
     });
   });
