@@ -36,6 +36,17 @@
     margin: 0;
   }
 
+  /* The window never scrolls: only the setup step, a dialog, and the page viewport do. clip, unlike hidden, also
+     refuses scrolls that focus, selection drags, and scrollIntoView ask for, so nothing can shift the title bar. */
+  html,
+  body {
+    overflow: clip;
+  }
+
+  #root {
+    overflow: clip;
+  }
+
   body {
     background: var(--color-surface-app);
     color: var(--color-text-primary);
