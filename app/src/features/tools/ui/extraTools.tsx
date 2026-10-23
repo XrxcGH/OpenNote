@@ -28,6 +28,9 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The engineering mathematics kit loads the first time its window opens.
+const MathKit = lazy(() => import('../mathkit/ui/MathKitTool'));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-math')
+    return (
+      <Suspense fallback={null}>
+        <MathKit />
+      </Suspense>
+    );
   return null;
 }

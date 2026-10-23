@@ -64,6 +64,7 @@ export type FlagId =
   | Phase5FlagId
   | Phase6FlagId
   | ExprFlagId
+  | 'kits.math'
   | DocFlagId
   | Phase8FlagId
   | Phase9FlagId
