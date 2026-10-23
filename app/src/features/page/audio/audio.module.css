@@ -123,9 +123,13 @@
 
   .panel {
     display: grid;
+    /* One column that may shrink below its widest child: a long device name never widens the panel past its
+       limit, so the popover sizes to the panel and shows the microphone list whole. */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
+    inline-size: 26rem;
     min-inline-size: 16rem;
-    max-inline-size: 22rem;
+    max-inline-size: min(26rem, calc(100vw - 6 * var(--space-5)));
     padding: var(--space-4);
     color: var(--color-text-primary);
     font-size: var(--type-small-size);
@@ -146,11 +150,15 @@
 
   .field {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
   }
 
   .select {
+    inline-size: 100%;
+    min-inline-size: 0;
     min-block-size: var(--size-target-pointer);
+    text-overflow: ellipsis;
     padding-inline: var(--space-3);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-md);
