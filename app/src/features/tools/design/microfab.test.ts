@@ -53,8 +53,14 @@ describe('Stoney and evaporation', () => {
   });
   it('sign follows the curvature and a thick film is refused', () => {
     expect(ok(stoney({ es: 130e9, nus: 0.28, hs: 500e-6, hf: 1e-6, radius: -100 })).stress).toBeLessThan(0);
-    expect(stoney({ es: 130e9, nus: 0.28, hs: 500e-6, hf: 1e-6, radius: 0 })).toEqual({ ok: false, problem: 'radiusNonZero' });
-    expect(stoney({ es: 130e9, nus: 0.28, hs: 500e-6, hf: 100e-6, radius: 10 })).toEqual({ ok: false, problem: 'filmNotThin' });
+    expect(stoney({ es: 130e9, nus: 0.28, hs: 500e-6, hf: 1e-6, radius: 0 })).toEqual({
+      ok: false,
+      problem: 'radiusNonZero',
+    });
+    expect(stoney({ es: 130e9, nus: 0.28, hs: 500e-6, hf: 100e-6, radius: 10 })).toEqual({
+      ok: false,
+      problem: 'filmNotThin',
+    });
   });
   it('cosine-law thickness falls as (1 + (x/h)^2)^-2', () => {
     const r = ok(evaporation(1e-3, 2700, 0.3, 0.3));
@@ -68,7 +74,7 @@ describe('wafer', () => {
   it('300 mm wafer, 100 mm2 die gives 640.2 dies', () => {
     const r = ok(diesPerWafer(300, 100));
     expect(rel(r.dies, 640.2)).toBeLessThan(1e-3);
-    expect(r.dies).toBeCloseTo(Math.PI * 150 ** 2 / 100 - (Math.PI * 300) / Math.sqrt(200), 9);
+    expect(r.dies).toBeCloseTo((Math.PI * 150 ** 2) / 100 - (Math.PI * 300) / Math.sqrt(200), 9);
   });
   it('edge exclusion reduces the count; an absurd die is refused', () => {
     expect(ok(diesPerWafer(300, 100, 3)).dies).toBeLessThan(ok(diesPerWafer(300, 100)).dies);

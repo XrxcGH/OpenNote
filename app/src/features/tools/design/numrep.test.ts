@@ -31,7 +31,7 @@ const ref32 = (x: number): bigint => BigInt(new Uint32Array(new Float32Array([x]
 const ref64 = (x: number): bigint => new BigUint64Array(new Float64Array([x]).buffer)[0]!;
 
 describe('integers', () => {
-  it('-5 in 8-bit two\'s complement is 11111011', () => {
+  it("-5 in 8-bit two's complement is 11111011", () => {
     expect(ok(encodeInt(-5n, 8, 'twos')).bits).toBe('11111011');
     expect(ok(decodeInt('11111011', 'twos')).value).toBe(-5n);
   });
@@ -126,11 +126,36 @@ describe('IEEE 754 encode', () => {
     expect(o.overflow).toBe(true);
   });
   it('agrees with the machine for many values', () => {
-    const values = ['0.1', '0.2', '0.3', '3.14159265358979', '1e10', '1e-10', '123456789', '-0.000123', '5e-324', '1.7976931348623157e308', '2.2250738585072014e-308', '16777217'];
+    const values = [
+      '0.1',
+      '0.2',
+      '0.3',
+      '3.14159265358979',
+      '1e10',
+      '1e-10',
+      '123456789',
+      '-0.000123',
+      '5e-324',
+      '1.7976931348623157e308',
+      '2.2250738585072014e-308',
+      '16777217',
+    ];
     for (const v of values) {
       expect(ok(encodeDecimal(v, double)).encoding.bits).toBe(ref64(Number(v)));
     }
-    for (const v of ['0.1', '0.2', '0.3', '1e10', '1e-10', '123456789', '-0.000123', '1e-45', '3.4028235e38', '16777217', '1.17549435e-38']) {
+    for (const v of [
+      '0.1',
+      '0.2',
+      '0.3',
+      '1e10',
+      '1e-10',
+      '123456789',
+      '-0.000123',
+      '1e-45',
+      '3.4028235e38',
+      '16777217',
+      '1.17549435e-38',
+    ]) {
       expect(ok(encodeDecimal(v, single)).encoding.bits).toBe(ref32(Number(v)));
     }
   });

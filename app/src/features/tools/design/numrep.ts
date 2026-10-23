@@ -124,7 +124,7 @@ export interface IntEncoding {
 /** Bit pattern of a value. An out-of-range value is an error; `wrapInt` shows what overflow does. */
 export function encodeInt(value: bigint, width: number, scheme: IntScheme, excess = 0n): Outcome<IntEncoding> {
   if (!Number.isInteger(width) || width < 1 || width > 128) return bad('widthRange');
-  if (scheme === 'excess' && (excess < 0n || excess > (1n << BigInt(width)))) return bad('excessRange');
+  if (scheme === 'excess' && (excess < 0n || excess > 1n << BigInt(width))) return bad('excessRange');
   if (scheme !== 'unsigned' && width < 2 && scheme !== 'excess') return bad('widthRange');
   const { min, max } = intRange(width, scheme, excess);
   if (value < min || value > max) return bad('outOfRange');
@@ -141,7 +141,7 @@ export function encodeInt(value: bigint, width: number, scheme: IntScheme, exces
       if (value < 0n) steps.push({ key: 'twos', latex: `2^{${width}}-${abs(value)}=${(1n << w) + value}` });
       break;
     case 'ones':
-      pattern = value < 0n ? ~(-value) & mask : value;
+      pattern = value < 0n ? ~-value & mask : value;
       if (value < 0n) steps.push({ key: 'ones', latex: `\\overline{${abs(value).toString(2).padStart(width, '0')}}` });
       break;
     case 'signmag':
@@ -313,9 +313,7 @@ export function decodeFloat(bits: bigint, f: FloatFormat): Outcome<{ decoded: Fl
   const p = splitFloat(bits, f);
   const maxExp = (1n << BigInt(f.exp)) - 1n;
   const sgn = p.sign === 1 ? -1n : 1n;
-  const steps: Step[] = [
-    { key: 'fields', latex: `s=${p.sign},\\ e=${p.exponent},\\ f=${p.fraction}` },
-  ];
+  const steps: Step[] = [{ key: 'fields', latex: `s=${p.sign},\\ e=${p.exponent},\\ f=${p.fraction}` }];
   let cls: FloatClass;
   let exact: Rational | null = null;
   if (p.exponent === maxExp) {
@@ -334,7 +332,10 @@ export function decodeFloat(bits: bigint, f: FloatFormat): Outcome<{ decoded: Fl
     const shift = e - f.frac;
     exact = scaled(sgn * sig, shift);
     steps.push({ key: 'bias', latex: `E=e-\\text{bias}=${p.exponent}-${f.bias}=${e}` });
-    steps.push({ key: 'significand', latex: `1.f=1+\\dfrac{${p.fraction}}{2^{${f.frac}}}=${dyadicToDecimal(rat(sig, 1n << BigInt(f.frac)))}` });
+    steps.push({
+      key: 'significand',
+      latex: `1.f=1+\\dfrac{${p.fraction}}{2^{${f.frac}}}=${dyadicToDecimal(rat(sig, 1n << BigInt(f.frac)))}`,
+    });
     steps.push({ key: 'value', latex: `(-1)^{${p.sign}}\\times 1.f\\times 2^{${e}}` });
   }
   let decimal: string;
@@ -406,7 +407,14 @@ export function encodeRational(r: Rational, f: FloatFormat, negativeZero = false
     if (expField >= maxExp) overflow = true;
   }
   if (overflow) {
-    return { bits: signBit | (maxExp << BigInt(f.frac)), stored: null, error: 'infinity', rounded: true, overflow, steps };
+    return {
+      bits: signBit | (maxExp << BigInt(f.frac)),
+      stored: null,
+      error: 'infinity',
+      rounded: true,
+      overflow,
+      steps,
+    };
   }
   const bits = signBit | (expField << BigInt(f.frac)) | frac;
   const stored = exactOf(splitFloat(bits, f), f);
@@ -455,7 +463,8 @@ function plainSci(s: string): string {
   const [, sign = '', first = '', rest = '', ex = '0'] = m;
   const e = Number(ex);
   const digits = `${first}${rest}`;
-  if (e >= 0 && e < 7) return `${sign}${digits.padEnd(e + 1, '0').slice(0, e + 1)}${digits.length > e + 1 ? `.${digits.slice(e + 1)}` : ''}`;
+  if (e >= 0 && e < 7)
+    return `${sign}${digits.padEnd(e + 1, '0').slice(0, e + 1)}${digits.length > e + 1 ? `.${digits.slice(e + 1)}` : ''}`;
   if (e < 0 && e >= -5) return `${sign}0.${'0'.repeat(-e - 1)}${digits}`;
   return `${sign}${first}${rest ? `.${rest}` : ''}e${e}`;
 }
@@ -488,7 +497,17 @@ export interface CharInfo {
 }
 
 const CONTROL: Record<number, string> = {
-  0: 'NUL', 7: 'BEL', 8: 'BS', 9: 'TAB', 10: 'LF', 11: 'VT', 12: 'FF', 13: 'CR', 27: 'ESC', 32: 'space', 127: 'DEL',
+  0: 'NUL',
+  7: 'BEL',
+  8: 'BS',
+  9: 'TAB',
+  10: 'LF',
+  11: 'VT',
+  12: 'FF',
+  13: 'CR',
+  27: 'ESC',
+  32: 'space',
+  127: 'DEL',
 };
 
 /** Code points, UTF-8 bytes and UTF-16 units of each character of the text. */

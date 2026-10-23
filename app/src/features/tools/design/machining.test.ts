@@ -28,7 +28,10 @@ describe('turning', () => {
   });
   it('rejects impossible cuts', () => {
     expect(turning({ d: 50, v: 150, f: 0.25, depth: 25, length: 200 })).toEqual({ ok: false, problem: 'depthTooDeep' });
-    expect(turning({ d: 0, v: 150, f: 0.25, depth: 2, length: 200 })).toEqual({ ok: false, problem: 'diameterPositive' });
+    expect(turning({ d: 0, v: 150, f: 0.25, depth: 2, length: 200 })).toEqual({
+      ok: false,
+      problem: 'diameterPositive',
+    });
     expect(turning({ d: 50, v: -1, f: 0.25, depth: 2, length: 200 })).toEqual({ ok: false, problem: 'speedPositive' });
     expect(turning({ d: 50, v: 150, f: 0, depth: 2, length: 200 })).toEqual({ ok: false, problem: 'feedPositive' });
     expect(turning({ d: 50, v: NaN, f: 0.25, depth: 2, length: 200 })).toEqual({ ok: false, problem: 'notNumber' });
@@ -47,7 +50,10 @@ describe('drilling and milling', () => {
     const tip = 5 / Math.tan((59 * Math.PI) / 180);
     expect(r.time).toBeCloseTo((20 + tip) / (0.2 * n), 9);
     expect(r.mrrMin).toBeCloseTo((Math.PI * 100 * 0.2 * n) / 4, 6);
-    expect(drilling({ d: 10, v: 30, f: 0.2, depth: 20, pointAngle: 180 })).toEqual({ ok: false, problem: 'pointAngleRange' });
+    expect(drilling({ d: 10, v: 30, f: 0.2, depth: 20, pointAngle: 180 })).toEqual({
+      ok: false,
+      problem: 'pointAngleRange',
+    });
   });
   it('milling feed rate, MRR and approach', () => {
     const r = ok(milling({ d: 20, v: 60, fz: 0.1, teeth: 4, width: 20, depth: 3, length: 100, kind: 'slot' }));

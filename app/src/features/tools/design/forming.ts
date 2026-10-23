@@ -48,7 +48,10 @@ export function rolling(
   const power = rollRevPerS === null ? null : 2 * Math.PI * rollRevPerS * force * contact;
   const steps: Step[] = [
     { key: 'draft', latex: `\\Delta h=h_0-h_f=${fmt(draft)}\\ \\mathrm{mm}` },
-    { key: 'contact', latex: `L=\\sqrt{R\\,\\Delta h}=\\sqrt{(${fmt(radius)})(${fmt(draft)})}=${fmt(contact)}\\ \\mathrm{mm}` },
+    {
+      key: 'contact',
+      latex: `L=\\sqrt{R\\,\\Delta h}=\\sqrt{(${fmt(radius)})(${fmt(draft)})}=${fmt(contact)}\\ \\mathrm{mm}`,
+    },
     { key: 'force', latex: `F=Y_f\\,w\\,L=(${fmt(yf)})(${fmt(width)})(${fmt(contact)})=${fmt(force)}\\ \\mathrm{N}` },
     { key: 'maxDraft', latex: `\\Delta h_{\\max}=\\mu^2R=${fmt(maxDraft)}\\ \\mathrm{mm}` },
   ];
@@ -157,7 +160,10 @@ export function drawing(a0: number, af: number, yf: number, mu: number, halfAngl
     stressRatio: stress / yf,
     steps: [
       { key: 'strain', latex: `\\varepsilon=\\ln\\dfrac{A_0}{A_f}=${fmt(e)}` },
-      { key: 'stress', latex: `\\sigma_d=Y_f\\left(1+\\dfrac{\\mu}{\\tan\\alpha}\\right)\\varepsilon=${fmt(stress)}\\ \\mathrm{MPa}` },
+      {
+        key: 'stress',
+        latex: `\\sigma_d=Y_f\\left(1+\\dfrac{\\mu}{\\tan\\alpha}\\right)\\varepsilon=${fmt(stress)}\\ \\mathrm{MPa}`,
+      },
     ],
   };
 }
@@ -185,7 +191,10 @@ export function bend(angleDeg: number, radius: number, thickness: number, k: num
     outsideSetback: ossb,
     deduction: 2 * ossb - ba,
     steps: [
-      { key: 'allowance', latex: `BA=\\alpha(R+Kt)=${fmt(a)}(${fmt(radius)}+${fmt(k)}\\cdot${fmt(thickness)})=${fmt(ba)}\\ \\mathrm{mm}` },
+      {
+        key: 'allowance',
+        latex: `BA=\\alpha(R+Kt)=${fmt(a)}(${fmt(radius)}+${fmt(k)}\\cdot${fmt(thickness)})=${fmt(ba)}\\ \\mathrm{mm}`,
+      },
       { key: 'setback', latex: `OSSB=\\tan\\dfrac{\\alpha}{2}(R+t)=${fmt(ossb)}\\ \\mathrm{mm}` },
       { key: 'deduction', latex: `BD=2\\,OSSB-BA=${fmt(2 * ossb - ba)}\\ \\mathrm{mm}` },
     ],
@@ -193,7 +202,11 @@ export function bend(angleDeg: number, radius: number, thickness: number, k: num
 }
 
 /** Blanking or punching force F = 0.7 UTS t L for the cut edge length L (a circle's is pi D). */
-export function blanking(edgeLength: number, thickness: number, uts: number): Outcome<{ force: number; steps: Step[] }> {
+export function blanking(
+  edgeLength: number,
+  thickness: number,
+  uts: number,
+): Outcome<{ force: number; steps: Step[] }> {
   if (!finite(edgeLength, thickness, uts)) return bad('notNumber');
   if (edgeLength <= 0 || thickness <= 0) return bad('dimensionPositive');
   if (uts <= 0) return bad('strengthPositive');
@@ -201,12 +214,22 @@ export function blanking(edgeLength: number, thickness: number, uts: number): Ou
   return {
     ok: true,
     force,
-    steps: [{ key: 'force', latex: `F=0.7\\,S_{ut}\\,t\\,L=0.7(${fmt(uts)})(${fmt(thickness)})(${fmt(edgeLength)})=${fmt(force)}\\ \\mathrm{N}` }],
+    steps: [
+      {
+        key: 'force',
+        latex: `F=0.7\\,S_{ut}\\,t\\,L=0.7(${fmt(uts)})(${fmt(thickness)})(${fmt(edgeLength)})=${fmt(force)}\\ \\mathrm{N}`,
+      },
+    ],
   };
 }
 
 /** Chvorinov's rule t = B (V/A)^n; n is 2 for the usual form. V in cm3, A in cm2, B in min/cm2. */
-export function chvorinov(b: number, volume: number, area: number, n = 2): Outcome<{ time: number; modulus: number; steps: Step[] }> {
+export function chvorinov(
+  b: number,
+  volume: number,
+  area: number,
+  n = 2,
+): Outcome<{ time: number; modulus: number; steps: Step[] }> {
   if (!finite(b, volume, area, n)) return bad('notNumber');
   if (b <= 0) return bad('moldConstantPositive');
   if (volume <= 0 || area <= 0) return bad('dimensionPositive');
@@ -257,7 +280,10 @@ export function riser(castingVolume: number, castingArea: number, hOverD: number
     steps: [
       { key: 'castingModulus', latex: `M_c=\\dfrac{V}{A}=${fmt(mc)}\\ \\mathrm{cm}` },
       { key: 'riserModulus', latex: `M_r=\\sqrt{${fmt(factor)}}\\,M_c=${fmt(mr)}\\ \\mathrm{cm}` },
-      { key: 'diameter', latex: `M_r=\\dfrac{D\\,k}{4k+2}\\Rightarrow D=${fmt(d)}\\ \\mathrm{cm},\\ H=kD=${fmt(h)}\\ \\mathrm{cm}` },
+      {
+        key: 'diameter',
+        latex: `M_r=\\dfrac{D\\,k}{4k+2}\\Rightarrow D=${fmt(d)}\\ \\mathrm{cm},\\ H=kD=${fmt(h)}\\ \\mathrm{cm}`,
+      },
     ],
   };
 }
@@ -271,7 +297,12 @@ export function patternSize(finalLength: number, shrinkage: number): Outcome<{ p
 }
 
 /** Arc weld heat input per unit length, HI = eta V I / v, in J/mm with the travel speed in mm/s. */
-export function weldHeat(volts: number, amps: number, travel: number, efficiency: number): Outcome<{ heatInput: number; steps: Step[] }> {
+export function weldHeat(
+  volts: number,
+  amps: number,
+  travel: number,
+  efficiency: number,
+): Outcome<{ heatInput: number; steps: Step[] }> {
   if (!finite(volts, amps, travel, efficiency)) return bad('notNumber');
   if (volts <= 0 || amps <= 0) return bad('electricalPositive');
   if (travel <= 0) return bad('travelPositive');
@@ -280,7 +311,12 @@ export function weldHeat(volts: number, amps: number, travel: number, efficiency
   return {
     ok: true,
     heatInput: hi,
-    steps: [{ key: 'heat', latex: `HI=\\dfrac{\\eta VI}{v}=\\dfrac{(${fmt(efficiency)})(${fmt(volts)})(${fmt(amps)})}{${fmt(travel)}}=${fmt(hi)}\\ \\mathrm{J/mm}` }],
+    steps: [
+      {
+        key: 'heat',
+        latex: `HI=\\dfrac{\\eta VI}{v}=\\dfrac{(${fmt(efficiency)})(${fmt(volts)})(${fmt(amps)})}{${fmt(travel)}}=${fmt(hi)}\\ \\mathrm{J/mm}`,
+      },
+    ],
   };
 }
 
@@ -308,8 +344,14 @@ export function layers(height: number, layer: number, angleDeg: number): Outcome
     built: n * layer,
     cusp,
     steps: [
-      { key: 'layers', latex: `n=\\left\\lceil \\dfrac{H}{t}\\right\\rceil=\\left\\lceil \\dfrac{${fmt(height)}}{${fmt(layer)}}\\right\\rceil=${n}` },
-      { key: 'cusp', latex: `c=t\\,|\\cos\\theta|=${fmt(layer)}\\,|\\cos ${fmt(angleDeg)}^\\circ|=${fmt(cusp)}\\ \\mathrm{mm}` },
+      {
+        key: 'layers',
+        latex: `n=\\left\\lceil \\dfrac{H}{t}\\right\\rceil=\\left\\lceil \\dfrac{${fmt(height)}}{${fmt(layer)}}\\right\\rceil=${n}`,
+      },
+      {
+        key: 'cusp',
+        latex: `c=t\\,|\\cos\\theta|=${fmt(layer)}\\,|\\cos ${fmt(angleDeg)}^\\circ|=${fmt(cusp)}\\ \\mathrm{mm}`,
+      },
     ],
   };
 }

@@ -20,7 +20,10 @@ export function lithography(
     resolution,
     dof,
     steps: [
-      { key: 'resolution', latex: `R=\\dfrac{k_1\\lambda}{NA}=\\dfrac{(${fmt(k1)})(${fmt(wavelength)})}{${fmt(na)}}=${fmt(resolution)}\\ \\mathrm{nm}` },
+      {
+        key: 'resolution',
+        latex: `R=\\dfrac{k_1\\lambda}{NA}=\\dfrac{(${fmt(k1)})(${fmt(wavelength)})}{${fmt(na)}}=${fmt(resolution)}\\ \\mathrm{nm}`,
+      },
       { key: 'dof', latex: `\\mathrm{DOF}=\\dfrac{k_2\\lambda}{NA^2}=${fmt(dof)}\\ \\mathrm{nm}` },
     ],
   };
@@ -96,7 +99,12 @@ export function stoney(i: StoneyInput): Outcome<{ stress: number; steps: Step[] 
  * Film thickness from a surface (Knudsen cosine-law) evaporation source on a flat substrate facing it at height h:
  * t(x) = t0 / (1 + (x/h)^2)^2, with t0 = m / (pi rho h^2) straight above the source. m in kg, rho in kg/m3, h in m.
  */
-export function evaporation(mass: number, density: number, height: number, offset: number): Outcome<{ center: number; at: number }> {
+export function evaporation(
+  mass: number,
+  density: number,
+  height: number,
+  offset: number,
+): Outcome<{ center: number; at: number }> {
   if (!finite(mass, density, height, offset)) return bad('notNumber');
   if (mass <= 0) return bad('massPositive');
   if (density <= 0) return bad('densityPositive');

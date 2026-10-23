@@ -100,7 +100,7 @@ describe('casting', () => {
   it('a riser freezes after the casting', () => {
     const c = ok(chvorinov(2, 1000, 600));
     const r = ok(riser(1000, 600, 1.5));
-    const t = ok(chvorinov(2, r.volume, (Math.PI * r.diameter * r.height) + (Math.PI * r.diameter ** 2) / 2));
+    const t = ok(chvorinov(2, r.volume, Math.PI * r.diameter * r.height + (Math.PI * r.diameter ** 2) / 2));
     expect(t.time / c.time).toBeCloseTo(1.25, 9);
     expect(r.height).toBeCloseTo(1.5 * r.diameter, 12);
   });

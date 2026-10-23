@@ -55,9 +55,15 @@ export function turning(i: TurningInput): Outcome<CutResult> {
     mrrSec: mrrMin / 60,
     time,
     steps: [
-      { key: 'rpm', latex: `N=\\dfrac{1000V}{\\pi D}=\\dfrac{1000(${fmt(i.v)})}{\\pi(${fmt(i.d)})}=${fmt(s.rpm)}\\ \\mathrm{rpm}` },
+      {
+        key: 'rpm',
+        latex: `N=\\dfrac{1000V}{\\pi D}=\\dfrac{1000(${fmt(i.v)})}{\\pi(${fmt(i.d)})}=${fmt(s.rpm)}\\ \\mathrm{rpm}`,
+      },
       { key: 'mrr', latex: `\\mathrm{MRR}=1000\\,V f d=${fmt(mrrMin)}\\ \\mathrm{mm^3/min}` },
-      { key: 'time', latex: `t=\\dfrac{L}{fN}=\\dfrac{${fmt(i.length)}}{(${fmt(i.f)})(${fmt(s.rpm)})}=${fmt(time)}\\ \\mathrm{min}` },
+      {
+        key: 'time',
+        latex: `t=\\dfrac{L}{fN}=\\dfrac{${fmt(i.length)}}{(${fmt(i.f)})(${fmt(s.rpm)})}=${fmt(time)}\\ \\mathrm{min}`,
+      },
     ],
   };
 }
@@ -95,7 +101,10 @@ export function drilling(i: DrillingInput): Outcome<CutResult> {
       { key: 'rpm', latex: `N=\\dfrac{1000V}{\\pi D}=${fmt(s.rpm)}\\ \\mathrm{rpm}` },
       { key: 'tip', latex: `A=\\dfrac{D/2}{\\tan(\\theta/2)}=${fmt(tip)}\\ \\mathrm{mm}` },
       { key: 'mrr', latex: `\\mathrm{MRR}=\\dfrac{\\pi D^2}{4}fN=${fmt(mrrMin)}\\ \\mathrm{mm^3/min}` },
-      { key: 'time', latex: `t=\\dfrac{L+A}{fN}=\\dfrac{${fmt(i.depth)}+${fmt(tip)}}{${fmt(vf)}}=${fmt(time)}\\ \\mathrm{min}` },
+      {
+        key: 'time',
+        latex: `t=\\dfrac{L+A}{fN}=\\dfrac{${fmt(i.depth)}+${fmt(tip)}}{${fmt(vf)}}=${fmt(time)}\\ \\mathrm{min}`,
+      },
     ],
   };
 }
@@ -139,9 +148,15 @@ export function milling(i: MillingInput): Outcome<CutResult> {
     time,
     steps: [
       { key: 'rpm', latex: `N=\\dfrac{1000V}{\\pi D}=${fmt(s.rpm)}\\ \\mathrm{rpm}` },
-      { key: 'feedRate', latex: `v_f=f_z\\,z\\,N=${fmt(i.fz)}(${i.teeth})(${fmt(s.rpm)})=${fmt(vf)}\\ \\mathrm{mm/min}` },
+      {
+        key: 'feedRate',
+        latex: `v_f=f_z\\,z\\,N=${fmt(i.fz)}(${i.teeth})(${fmt(s.rpm)})=${fmt(vf)}\\ \\mathrm{mm/min}`,
+      },
       { key: 'mrr', latex: `\\mathrm{MRR}=w\\,d\\,v_f=${fmt(mrrMin)}\\ \\mathrm{mm^3/min}` },
-      { key: 'time', latex: `t=\\dfrac{L+A}{v_f}=\\dfrac{${fmt(i.length)}+${fmt(approach)}}{${fmt(vf)}}=${fmt(time)}\\ \\mathrm{min}` },
+      {
+        key: 'time',
+        latex: `t=\\dfrac{L+A}{v_f}=\\dfrac{${fmt(i.length)}+${fmt(approach)}}{${fmt(vf)}}=${fmt(time)}\\ \\mathrm{min}`,
+      },
     ],
   };
 }
@@ -157,7 +172,12 @@ export function toolLife(n: number, c: number, v: number): Outcome<{ life: numbe
   return {
     ok: true,
     life,
-    steps: [{ key: 'life', latex: `T=\\left(\\dfrac{C}{V}\\right)^{1/n}=\\left(\\dfrac{${fmt(c)}}{${fmt(v)}}\\right)^{1/${fmt(n)}}=${fmt(life)}\\ \\mathrm{min}` }],
+    steps: [
+      {
+        key: 'life',
+        latex: `T=\\left(\\dfrac{C}{V}\\right)^{1/n}=\\left(\\dfrac{${fmt(c)}}{${fmt(v)}}\\right)^{1/${fmt(n)}}=${fmt(life)}\\ \\mathrm{min}`,
+      },
+    ],
   };
 }
 
@@ -185,7 +205,13 @@ export interface EconomicsResult {
  * `rate` the machine plus operator cost per minute. Minimum cost: T = (1/n - 1)(Tc + Ce/Co); maximum production:
  * T = (1/n - 1) Tc. Both need n < 1.
  */
-export function economics(n: number, c: number, changeTime: number, edgeCost: number, rate: number): Outcome<EconomicsResult> {
+export function economics(
+  n: number,
+  c: number,
+  changeTime: number,
+  edgeCost: number,
+  rate: number,
+): Outcome<EconomicsResult> {
   if (!finite(n, c, changeTime, edgeCost, rate)) return bad('notNumber');
   if (n <= 0 || n >= 1) return bad('taylorNEconomics');
   if (c <= 0) return bad('taylorC');
@@ -204,7 +230,10 @@ export function economics(n: number, c: number, changeTime: number, edgeCost: nu
     rateLife,
     rateSpeed,
     steps: [
-      { key: 'costLife', latex: `T_c=\\left(\\dfrac1n-1\\right)\\left(T_{ch}+\\dfrac{C_e}{C_o}\\right)=${fmt(costLife)}\\ \\mathrm{min}` },
+      {
+        key: 'costLife',
+        latex: `T_c=\\left(\\dfrac1n-1\\right)\\left(T_{ch}+\\dfrac{C_e}{C_o}\\right)=${fmt(costLife)}\\ \\mathrm{min}`,
+      },
       { key: 'costSpeed', latex: `V_c=\\dfrac{C}{T_c^{\\,n}}=${fmt(costSpeed)}\\ \\mathrm{m/min}` },
       { key: 'rateLife', latex: `T_p=\\left(\\dfrac1n-1\\right)T_{ch}=${fmt(rateLife)}\\ \\mathrm{min}` },
       { key: 'rateSpeed', latex: `V_p=\\dfrac{C}{T_p^{\\,n}}=${fmt(rateSpeed)}\\ \\mathrm{m/min}` },
@@ -253,7 +282,15 @@ export interface ForcesResult {
  * Merchant's circle from the measured cutting force Fc and thrust force Ft (N), rake alpha and shear angle phi
  * (degrees), uncut chip thickness t0 and width w (mm) and cutting speed V (m/min).
  */
-export function forces(fc: number, ft: number, rake: number, phi: number, t0: number, w: number, v: number): Outcome<ForcesResult> {
+export function forces(
+  fc: number,
+  ft: number,
+  rake: number,
+  phi: number,
+  t0: number,
+  w: number,
+  v: number,
+): Outcome<ForcesResult> {
   if (!finite(fc, ft, rake, phi, t0, w, v)) return bad('notNumber');
   if (fc <= 0) return bad('forcePositive');
   if (t0 <= 0 || w <= 0) return bad('depthPositive');
@@ -285,7 +322,10 @@ export function forces(fc: number, ft: number, rake: number, phi: number, t0: nu
       { key: 'friction', latex: `F=F_c\\sin\\alpha+F_t\\cos\\alpha=${fmt(friction)}\\ \\mathrm{N}` },
       { key: 'normal', latex: `N=F_c\\cos\\alpha-F_t\\sin\\alpha=${fmt(normal)}\\ \\mathrm{N}` },
       { key: 'shear', latex: `F_s=F_c\\cos\\phi-F_t\\sin\\phi=${fmt(shear)}\\ \\mathrm{N}` },
-      { key: 'mu', latex: `\\mu=\\dfrac{F}{N}=${fmt(mu)},\\quad \\beta=\\arctan\\mu=${fmt(Math.atan(mu) / DEG)}^\\circ` },
+      {
+        key: 'mu',
+        latex: `\\mu=\\dfrac{F}{N}=${fmt(mu)},\\quad \\beta=\\arctan\\mu=${fmt(Math.atan(mu) / DEG)}^\\circ`,
+      },
       { key: 'power', latex: `P_c=F_cV=${fmt(power)}\\ \\mathrm{W}` },
     ],
   };
