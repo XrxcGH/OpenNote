@@ -76,7 +76,13 @@ export function MathView({ latex, display = true }: { latex: string; display?: b
 
 /** A step in words. */
 export function stepText(item: KitStep): string {
-  return say(`kitMath.step.${item.key}`, item.vars ?? {});
+  const vars: Record<string, string> = {};
+  // A variable named $name holds a message key, so the engine can name a kind or a method without words.
+  for (const [name, value] of Object.entries(item.vars ?? {})) {
+    if (name.startsWith('$')) vars[name.slice(1)] = say(value);
+    else vars[name] = value;
+  }
+  return say(`kitMath.step.${item.key}`, vars);
 }
 
 export function Steps({ steps }: { steps: readonly KitStep[] }) {
