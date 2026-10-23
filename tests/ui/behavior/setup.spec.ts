@@ -49,7 +49,9 @@ test('keeps Back and Continue in view at the compact size', async ({ page }) => 
   expect(overflow.y).toBeLessThanOrEqual(0);
 });
 
-test('shows the language step with English (United States) preselected and lets UK English replace it', async ({ page }) => {
+test('shows the language step with English (United States) preselected and lets UK English replace it', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Get started' }).click();
   const heading = page.getByRole('heading', { level: 1 });

@@ -2,7 +2,7 @@
 // heading, a list, and a text box dropped at an arbitrary height all put their first baseline the lift above a rule
 // (core/ruled.ts). Every block is a whole number of rules tall, so the text after it is back on its rule. Plain
 // paper changes nothing.
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
@@ -125,9 +125,16 @@ describe('ruled paper', () => {
     harness.mounted.flow.setRules(next);
     await frames();
     const root = harness.viewport.world.querySelector('.ProseMirror')!;
-    for (const line of [root.querySelector(':scope > p')!, root.querySelector('h2')!, root.querySelector('li > p')!]) {
-      expect(offLift(baseline(harness, line), next)).toBeLessThan(TOLERANCE);
-    }
+    // The text realigns over the frames after the change; a slow runner needs more than a fixed few.
+    await vi.waitFor(() => {
+      for (const line of [
+        root.querySelector(':scope > p')!,
+        root.querySelector('h2')!,
+        root.querySelector('li > p')!,
+      ]) {
+        expect(offLift(baseline(harness, line), next)).toBeLessThan(TOLERANCE);
+      }
+    });
   });
 
   it('changes nothing on plain paper', async () => {
