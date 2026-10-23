@@ -16,6 +16,7 @@ import { showRulerLength, snapToolsNow } from './snapTools';
 import { activeSlot, drawState, styleOf, writesInk } from './state';
 import type { DrawTool } from './state';
 import type { InkSurface } from './surface';
+import { isDwellTap, isEditing, objectAt, onObjectHandle, selectObject } from './objectTaps';
 
 /** The tools the palm filter manages touch for: every pen tool, not only the ones that write ink. */
 const penTool = (tool: DrawTool): boolean => tool !== 'select';
@@ -30,6 +31,24 @@ function palmSettings(palm: Palm) {
 
 /** A touch this wide (CSS px, about 7 mm) while a pen is in use is a palm, not a finger. */
 const PALM_PX = 28;
+
+/** True for a contact as wide as a palm. */
+export const palmSized = (event: PointerEvent): boolean => Math.max(event.width, event.height) >= PALM_PX;
+
+/** What a tap that selects or edits must not take from: the controls a tap presses. */
+const CONTROLS = 'a, button, input, label, summary, [role="button"], [role="checkbox"], [role="link"]';
+
+/** A lifted contact is forgotten this long (ms) after it lifted, once its ink has long been committed or taken back. */
+const CONTACT_KEEP_MS = 30_000;
+
+/** When and where a contact began, how far it went (CSS px), and when it lifted, for a finger's held tap. */
+interface Contact {
+  t0: number;
+  t1: number;
+  x0: number;
+  y0: number;
+  travel: number;
+}
 /** How long before a palm-sized touch landed the pen may have been active for its click to be dropped. */
 const PEN_RECENT_MS = 1500;
 
@@ -70,6 +89,10 @@ export class TouchTool {
   private readonly rulerFrom = new Map<number, { x: number; y: number }>();
   /** Where each live contact is, for the tap and long press the filter allows. */
   private readonly at = new Map<number, { x: number; y: number }>();
+  /** Each contact from its landing until its ink commits or is taken back. */
+  private readonly contacts = new Map<number, Contact>();
+  /** Touch ink that selected a text box instead of being added, so taking it back removes nothing. */
+  private readonly swallowed = new Set<number>();
   private glideFrame = 0;
   private stopTool: (() => void) | null = null;
   private pipeline: InkPipeline | null = null;
@@ -92,6 +115,11 @@ export class TouchTool {
         ctx.capture(event.pointerId);
         this.stopGlide();
         this.at.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const t = event.timeStamp;
+        for (const [id, old] of this.contacts) {
+          if (!this.at.has(id) && t - old.t1 > CONTACT_KEEP_MS) this.contacts.delete(id);
+        }
+        this.contacts.set(event.pointerId, { t0: t, t1: t, x0: event.clientX, y0: event.clientY, travel: 0 });
         this.syncViewport();
         focusPage(host.viewport.get()?.viewport);
         this.ensure().handle(fill(this.record, event, 'down'));
@@ -101,12 +129,20 @@ export class TouchTool {
         const pipeline = this.ensure();
         for (const event of events) {
           this.at.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          const contact = this.contacts.get(event.pointerId);
+          if (contact)
+            contact.travel = Math.max(
+              contact.travel,
+              Math.hypot(event.clientX - contact.x0, event.clientY - contact.y0),
+            );
           pipeline.handle(fill(this.record, event, 'move'));
         }
         return 'claim';
       },
       up: (event) => {
         this.at.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const contact = this.contacts.get(event.pointerId);
+        if (contact) contact.t1 = event.timeStamp;
         this.ensure().handle(fill(this.record, event, 'up'));
         this.at.delete(event.pointerId);
       },
@@ -144,6 +180,8 @@ export class TouchTool {
     this.holds.clear();
     this.snapshots.clear();
     this.at.clear();
+    this.contacts.clear();
+    this.swallowed.clear();
   }
 
   destroy(): void {
@@ -164,7 +202,9 @@ export class TouchTool {
   }
 
   private accepts(event: PointerEvent): boolean {
-    return event.pointerType === 'touch' && this.active();
+    if (event.pointerType !== 'touch' || !this.active()) return false;
+    // A finger on the grip or width handle of a selected or edited text box moves or resizes it; a palm stays here.
+    return palmSized(event) || !onObjectHandle(this.host, event);
   }
 
   /**
@@ -204,7 +244,7 @@ export class TouchTool {
   /** Notes a palm-sized touch, whether it landed before, or after the pen: its click is dropped if the pen was in use. */
   private readonly onTouchDown = (event: PointerEvent) => {
     if (event.pointerType !== 'touch' || !this.active()) return;
-    if (Math.max(event.width, event.height) >= PALM_PX) this.palms.set(event.pointerId, event.timeStamp);
+    if (palmSized(event)) this.palms.set(event.pointerId, event.timeStamp);
   };
 
   private readonly onTouchEnd = (event: PointerEvent) => {
@@ -225,7 +265,7 @@ export class TouchTool {
 
   /** Controls that press on pointerdown or pointerup (menus, pickers, toolbars) never hear a palm while the pen is in use. */
   private readonly onPalmPress = (event: PointerEvent) => {
-    if (event.pointerType !== 'touch' || Math.max(event.width, event.height) < PALM_PX || !this.active()) return;
+    if (event.pointerType !== 'touch' || !palmSized(event) || !this.active()) return;
     if (this.lastPenAt < (this.palms.get(event.pointerId) ?? event.timeStamp) - PEN_RECENT_MS) return;
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest(PRESSABLE)) event.stopImmediatePropagation();
@@ -321,9 +361,16 @@ export class TouchTool {
     if (phase === 'retract') this.shown.delete(id);
     if (phase === 'commit') {
       this.shown.delete(id);
-      if (ink.strokes) void surface.add(ink.strokes);
+      const object = this.heldTapObject(id);
+      if (object) {
+        this.swallowed.add(id);
+        selectObject(this.host, object);
+      } else if (ink.strokes) void surface.add(ink.strokes);
     }
-    if (phase === 'uncommit' && ink.strokes) void surface.remove(ink.strokes.map((s) => s.id));
+    if (phase === 'uncommit' && ink.strokes && !this.swallowed.delete(id)) {
+      void surface.remove(ink.strokes.map((s) => s.id));
+    }
+    if (phase === 'retract' || phase === 'commit') this.contacts.delete(id);
     surface.clearLive();
     const style = styleOf(activeSlot());
     for (const shown of this.shown.values()) surface.drawLive(shown.builder.points, style);
@@ -337,11 +384,27 @@ export class TouchTool {
     return el ? { el, x: at.x, y: at.y } : null;
   }
 
-  /** A tap the filter allows does what a tap does: clicks a checkbox or link, or puts the caret where it landed. */
+  /**
+   * The text box or picture a finger that draws held still on, which it selects instead of leaving a dot. A quick tap
+   * stays a dot, as the pen's does.
+   */
+  private heldTapObject(id: number): string | null {
+    const contact = this.contacts.get(id);
+    if (!contact || !isDwellTap(contact.t0, contact.t1, contact.travel)) return null;
+    const at = this.host.viewport.get()?.toWorld(contact.x0, contact.y0);
+    return at ? objectAt(this.host, at) : null;
+  }
+
+  /**
+   * A tap the filter allows does what a tap does. It clicks a checkbox or link. It selects the text box or picture it
+   * landed on, so the selection frame can move, resize, or delete it. In the text box being edited, it puts the caret
+   * where it landed. A tap on empty page lets go of the selection.
+   */
   private tapAt(id: number, allowed: boolean): void {
     const hit = allowed ? this.under(id) : null;
     if (!hit) return;
     const { el, x, y } = hit;
+    if (!el.closest(CONTROLS) && this.tapObject(x, y)) return;
     const editable = el.closest('[contenteditable="true"]');
     if (editable instanceof HTMLElement) {
       editable.focus({ preventScroll: true });
@@ -352,8 +415,23 @@ export class TouchTool {
         selection.addRange(range);
       }
     }
-    const target = el.closest('a, button, input, label, summary, [role="button"], [role="checkbox"], [role="link"]');
+    const target = el.closest(CONTROLS);
     if (target instanceof HTMLElement) target.click();
+  }
+
+  /** Selects the text box or picture a tap landed on, or lets go of the selection on empty page. True when it acted. */
+  private tapObject(x: number, y: number): boolean {
+    const at = this.host.viewport.get()?.toWorld(x, y);
+    const object = at ? objectAt(this.host, at) : null;
+    if (object && isEditing(this.host, object)) return false;
+    if (object) {
+      selectObject(this.host, object);
+      return true;
+    }
+    const selection = this.host.selection.get();
+    if (selection.blocks.length + selection.strokes.length === 0) return false;
+    this.host.select({ blocks: [], strokes: [] });
+    return false;
   }
 
   /** A long press the filter allows opens the context menu at the contact. */

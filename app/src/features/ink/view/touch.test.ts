@@ -9,6 +9,8 @@ import { TouchTool } from './touch';
 type Priv = {
   pipeline: { filter: { setViewport(w: number, h: number): void; configure(s: object): void } } & Record<string, never>;
   tapAt(id: number, allowed: boolean): void;
+  touchStroke(id: number, phase: string, ink: object): void;
+  contacts: Map<number, { t0: number; t1: number; x0: number; y0: number; travel: number }>;
   pressAt(id: number, allowed: boolean): void;
   at: Map<number, unknown>;
   snapshots: Map<number, unknown>;
@@ -30,7 +32,7 @@ const touch = (id: number, x = 300, y = 300, type = 'pointerdown') =>
     timeStamp: performance.now(),
   }) as unknown as PointerEvent;
 
-function setup() {
+function setup(extra: object = {}) {
   const scroller = document.createElement('div');
   const viewport = {
     viewport: scroller,
@@ -42,6 +44,7 @@ function setup() {
   const host = {
     registerPointerTool: () => () => undefined,
     viewport: { get: () => viewport },
+    ...extra,
   } as unknown as InkHost;
   const surface = {
     readOnly: false,
@@ -53,7 +56,7 @@ function setup() {
   } as unknown as InkSurface;
   const tool = new TouchTool(host, () => surface);
   const ctx = { capture: () => undefined } as never;
-  return { tool, ctx, priv: tool as unknown as Priv };
+  return { tool, ctx, priv: tool as unknown as Priv, surface };
 }
 
 async function ready(tool: TouchTool): Promise<void> {
@@ -160,6 +163,70 @@ describe('the touch tool', () => {
     tool.pageSwitch();
     expect(priv.at.size).toBe(0);
     expect(priv.snapshots.size).toBe(0);
+    tool.destroy();
+  });
+});
+
+describe('text boxes under a finger while a pen tool is active', () => {
+  const block = { id: 'box', type: 'text', frame: { x: 100, y: 100 } };
+  const element = document.createElement('div');
+  const layer = {
+    blocks: () => [block],
+    block: (id: string) => (id === 'box' ? block : null),
+    view: () => ({ element, measure: () => ({ x: 100, y: 100, w: 200, h: 50 }) }),
+  };
+
+  function withBox(selected: string[] = []) {
+    const select = vi.fn();
+    const parts = setup({
+      layer: { get: () => layer },
+      selection: { get: () => ({ blocks: selected, strokes: [] }) },
+      select,
+    });
+    return { ...parts, select };
+  }
+
+  it('selects the text box a tap lands on, and lets go of the selection on empty page', async () => {
+    const { tool, ctx, priv, select } = withBox(['box']);
+    await ready(tool);
+    const inside = document.createElement('p');
+    document.body.append(inside);
+    document.elementsFromPoint = () => [inside];
+    tool.tool.down(touch(6, 150, 120), ctx);
+    priv.tapAt(6, true);
+    expect(select).toHaveBeenLastCalledWith({ blocks: ['box'], strokes: [] }, { announce: true });
+    tool.tool.down(touch(7, 400, 400), ctx);
+    priv.tapAt(7, true);
+    expect(select).toHaveBeenLastCalledWith({ blocks: [], strokes: [] });
+    tool.destroy();
+  });
+
+  it('leaves the grip of a selected box to the objects tool for a finger, and keeps a palm', async () => {
+    const { tool } = withBox(['box']);
+    await ready(tool);
+    const grip = document.createElement('div');
+    grip.dataset.handle = 'grip';
+    grip.dataset.block = 'box';
+    const on = (width: number) => ({ ...touch(8), width, height: width, target: grip }) as unknown as PointerEvent;
+    expect(tool.tool.accepts(on(20), {} as never)).toBe(false);
+    expect(tool.tool.accepts(on(40), {} as never)).toBe(true);
+    tool.destroy();
+  });
+
+  it('selects a box a drawing finger held still on instead of adding a dot, and keeps a quick dot', async () => {
+    const { tool, priv, select, surface } = withBox();
+    await ready(tool);
+    const ink = { id: 9, builder: { points: [] }, strokes: [{ id: 's9' }] };
+    priv.contacts.set(9, { t0: 0, t1: 400, x0: 150, y0: 120, travel: 0 });
+    priv.touchStroke(9, 'commit', ink);
+    expect(select).toHaveBeenCalledWith({ blocks: ['box'], strokes: [] }, { announce: true });
+    expect(surface.add).not.toHaveBeenCalled();
+    // Taking it back removes nothing, since nothing was added.
+    priv.touchStroke(9, 'uncommit', ink);
+    expect(surface.remove).not.toHaveBeenCalled();
+    priv.contacts.set(10, { t0: 0, t1: 80, x0: 150, y0: 120, travel: 0 });
+    priv.touchStroke(10, 'commit', { ...ink, id: 10 });
+    expect(surface.add).toHaveBeenCalledTimes(1);
     tool.destroy();
   });
 });
