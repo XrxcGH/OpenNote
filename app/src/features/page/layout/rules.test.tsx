@@ -111,10 +111,13 @@ describe('ruled paper', () => {
       const harness = await ruled(floating(y));
       const wrapper = harness.viewport.world.querySelector<HTMLElement>('[data-block-id]')!;
       const line = wrapper.querySelector('.ProseMirror > p')!;
-      expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
-      expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
-      const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
-      expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
+      // The box settles onto its rule over the frames after it mounts; a slow runner needs more than a fixed few.
+      await vi.waitFor(() => {
+        expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
+        expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
+        const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
+        expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
+      });
       await cleanupPages();
     }
   });
