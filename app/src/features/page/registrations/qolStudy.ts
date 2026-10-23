@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { getLocation } from '../../../app/location';
 import { announce } from '../../../ui';
+import { say } from './say';
 import type { IconName } from '../../../ui/icons';
 import { currentSection } from '../../tree';
 import { transcriptActions } from '../audio/transcripts/actionRegistry';
@@ -174,14 +175,14 @@ addCommand({
 
 async function makeCards(selection: boolean): Promise<void> {
   const shown = shownText();
-  if (!shown) return void announce(t('study.generate.noPage'));
+  if (!shown) return void say(t('study.generate.noPage'));
   let text = shown.text;
   if (selection) {
     const editor = targetEditor();
     const { from, to } = editor?.state.selection ?? { from: 0, to: 0 };
     text = editor && from !== to ? editor.state.doc.textBetween(from, to, '\n') : '';
-    if (!text.trim()) return void announce(t('study.generate.emptySelection'));
-  } else if (!text.trim()) return void announce(t('study.generate.emptyPage'));
+    if (!text.trim()) return void say(t('study.generate.emptySelection'));
+  } else if (!text.trim()) return void say(t('study.generate.emptyPage'));
   const [{ requestCards }, { openTool }] = await Promise.all([import('../../study'), import('../../tools')]);
   requestCards(text, shown.title || t('study.deck.untitled', { number: 1 }));
   openTool('flashcards');
@@ -218,10 +219,10 @@ commands.register(
     flag: 'study.cards',
     run: async (ctx) => {
       const section = currentSection(ctx);
-      if (!section) return void announce(t('study.generate.noSection'));
+      if (!section) return void say(t('study.generate.noSection'));
       const { sectionText } = await import('../../study');
       const words = await sectionText(ctx.notes, ctx.platform.pages, section);
-      if (!words.text.trim()) return void announce(t('study.generate.emptySection'));
+      if (!words.text.trim()) return void say(t('study.generate.emptySection'));
       const [{ requestCards }, { openTool }] = await Promise.all([import('../../study'), import('../../tools')]);
       requestCards(words.text, section.title);
       openTool('flashcards');
@@ -244,7 +245,7 @@ transcriptActions.register({
   label: 'study.generate.transcript',
   flag: 'study.cards',
   run: async ({ text, source }) => {
-    if (!text.trim()) return void announce(t('study.generate.emptyTranscript'));
+    if (!text.trim()) return void say(t('study.generate.emptyTranscript'));
     const [{ requestCards }, { openTool }] = await Promise.all([import('../../study'), import('../../tools')]);
     requestCards(text, source || t('study.deck.untitled', { number: 1 }));
     openTool('flashcards');
@@ -287,7 +288,7 @@ addCommand({
     const here = getLocation();
     const notebook = here.view === 'workspace' && here.notebookId ? String(here.notebookId) : citations.SHARED;
     const sources = citations.sourcesOf(notebook);
-    if (sources.length === 0) return void announce(t('study.citations.none'));
+    if (sources.length === 0) return void say(t('study.citations.none'));
     const text = citations.bibliography(sources, citations.styleStore.get());
     const id = await insertPanelBlock(PANEL_TYPES.bibliography, { notebook, sources: null }, text);
     if (id) announce(t('study.citations.live.bibliographyInserted'));
@@ -493,7 +494,7 @@ addCommand({
     const editor = targetEditor();
     const { from, to } = editor?.state.selection ?? { from: 0, to: 0 };
     const word = editor && from !== to ? editor.state.doc.textBetween(from, to, ' ').trim() : '';
-    if (!word) return void announce(t('study.dictionary.selectFirst'));
+    if (!word) return void say(t('study.dictionary.selectFirst'));
     const tools = await import('../../tools');
     tools.requestWord(word);
     tools.openTool('dictionary');
@@ -612,7 +613,7 @@ async function setAllTape(hidden: boolean): Promise<void> {
   const queue = shownQueue.get();
   if (!mounted || !queue) return;
   const tapes = mounted.layer.blocks().filter((block) => block.type === PANEL_TYPES.tape);
-  if (tapes.length === 0) return void announce(t('study.tape.none'));
+  if (tapes.length === 0) return void say(t('study.tape.none'));
   await queue.send({
     edits: tapes.map((block) => ({ edit: 'patchBlock' as const, block: block.id, data: { hidden } })),
   });
