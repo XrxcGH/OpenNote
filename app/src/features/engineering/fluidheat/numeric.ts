@@ -214,3 +214,41 @@ export function positive(x: number, name: string): void {
 export function nonNegative(x: number, name: string): void {
   need(Number.isFinite(x) && x >= 0, 'nonnegative', `${name} must be zero or more.`);
 }
+
+/** erf(x) by its Maclaurin series, accurate to about 1e-16 relative for |x| < 2.5. */
+function erfSeries(x: number): number {
+  let term = x;
+  let sum = x;
+  const x2 = x * x;
+  for (let n = 1; n < 200; n++) {
+    term *= -x2 / n;
+    const add = term / (2 * n + 1);
+    sum += add;
+    if (Math.abs(add) < 1e-17 * Math.abs(sum)) break;
+  }
+  return (2 / Math.sqrt(Math.PI)) * sum;
+}
+
+/** Scaled complementary error function exp(x^2) erfc(x) for x >= 0: series below 2.5, continued fraction above. */
+function erfcxPositive(x: number): number {
+  if (x < 2.5) return Math.exp(x * x) * (1 - erfSeries(x));
+  // Laplace continued fraction: erfc(x) exp(x^2) sqrt(pi) = 1/(x + (1/2)/(x + 1/(x + (3/2)/(x + ...))))
+  let f = x;
+  for (let n = 60; n >= 1; n--) f = x + n / 2 / f;
+  return 1 / (Math.sqrt(Math.PI) * f);
+}
+
+/** exp(x^2) erfc(x) for any real x (large positive x does not underflow). */
+export function erfcx(x: number): number {
+  return x >= 0 ? erfcxPositive(x) : 2 * Math.exp(x * x) - erfcxPositive(-x);
+}
+
+export function erfc(x: number): number {
+  if (x < 0) return 2 - erfc(-x);
+  return Math.exp(-x * x) * erfcxPositive(x);
+}
+
+export function erf(x: number): number {
+  if (x < 0) return -erf(-x);
+  return x < 2.5 ? erfSeries(x) : 1 - erfc(x);
+}

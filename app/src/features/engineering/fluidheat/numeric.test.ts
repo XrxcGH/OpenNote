@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bracketScan, besselI, besselJ, besselK, brent, CalcError, fmt } from './numeric';
+import { bracketScan, besselI, besselJ, besselK, brent, CalcError, erf, erfc, erfcx, fmt } from './numeric';
 
 describe('numeric helpers', () => {
   it('brent finds sqrt(2)', () => {
@@ -39,5 +39,23 @@ describe('numeric helpers', () => {
   it('fmt', () => {
     expect(fmt(1234.5678)).toBe('1234.6');
     expect(fmt(0.00001234)).toBe('1.234e-5');
+  });
+});
+
+describe('error functions', () => {
+  // reference values from SciPy
+  it('erf and erfc', () => {
+    expect(erf(0.4729202948659715)).toBeCloseTo(0.4963835012592, 10);
+    expect(erf(1)).toBeCloseTo(0.8427007929497149, 14);
+    expect(erfc(1)).toBeCloseTo(0.15729920705028513, 14);
+    expect(erfc(3)).toBeCloseTo(2.209049699858544e-5, 18);
+    expect(erfc(5) / 1.5374597944280347e-12 - 1).toBeLessThan(1e-9);
+    expect(erf(-0.5)).toBeCloseTo(-0.5204998778130465, 14);
+    expect(erfc(0)).toBe(1);
+  });
+  it('erfcx stays finite for large arguments', () => {
+    expect(erfcx(10)).toBeCloseTo(0.056140992743822, 12);
+    expect(erfcx(1e5)).toBeCloseTo(1 / (1e5 * Math.sqrt(Math.PI)), 12);
+    expect(erfcx(-1)).toBeCloseTo(5.00898008076228, 10);
   });
 });
