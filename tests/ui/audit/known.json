@@ -283,12 +283,16 @@
     "workspace | target-small | div[data-region=page-properties].host > section.bar > button.fold"
   ],
   "intermittent": [
+    "block | box-overlap | div.form > div.buttons > button.button x div.status > span",
     "block | box-overlap | div.root > label.field > textarea.source x div.status > span",
     "block | target-small | p > span.mathInline > input.mathField",
     "block | text-overlap | div.column > div.status > span x div.root > p.help",
     "block | text-overlap | div.column > div.status > span x p.help > span",
+    "command | clipped-by-ancestor | div.body > div[role=listbox].results > div[role=option].option",
+    "command | clipped-by-ancestor | div[role=option].option > span.optionTitle > span",
     "command | document-scroll | ",
     "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
+    "command | offscreen | div[data-scope=palette].panel > div.body > div[role=listbox].results",
     "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option",
     "settings | target-small | article.card > details.details > summary",
     "settings | target-small | div.main > section.block > select.select",
