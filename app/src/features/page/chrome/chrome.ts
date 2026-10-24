@@ -8,7 +8,7 @@ import { t } from '../../../strings/t';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { hasGrip, isFloating, liveBlock } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
-import { pageSelection } from '../seams/selectionStore';
+import { inkFrameShown, pageSelection } from '../seams/selectionStore';
 import type { PageViewport } from '../viewport/viewport';
 import styles from './chrome.module.css';
 
@@ -84,6 +84,7 @@ class ChromeLayer implements Chrome {
       () => world.removeEventListener('pointerover', this.onOver),
       () => world.removeEventListener('pointerleave', this.onLeave),
       pageSelection.subscribe(() => this.update()),
+      inkFrameShown.subscribe(() => this.update()),
       parts.pool.onActiveChange(() => this.update()),
       parts.viewport.onCamera(() => this.update()),
       parts.layer.onChange(() => this.update()),
@@ -137,6 +138,8 @@ class ChromeLayer implements Chrome {
     const used = new Set<string>();
     const origin = this.element.getBoundingClientRect();
     const seen = new Set<Element>();
+    // Phase 5's selection frame moves and resizes what it frames, so a selected block shows no grip of its own then.
+    const framed = inkFrameShown.get();
     for (const { block, selected, editing } of this.shown()) {
       const element = this.parts.layer.view(block.id)?.element;
       if (!element) continue;
@@ -156,6 +159,7 @@ class ChromeLayer implements Chrome {
         this.mark(used, `lock:${block.id}`, styles.lock!, box);
         continue;
       }
+      if (selected && framed) continue;
       this.handle(used, block, 'grip', box, origin);
       if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box, origin);
     }
