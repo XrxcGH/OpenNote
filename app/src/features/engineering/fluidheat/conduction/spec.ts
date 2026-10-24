@@ -139,7 +139,7 @@ export const conductionSpec: ToolSpec = {
     { id: 'size', type: 'quantity', kind: 'length', first: '5 mm', when: is('generation') },
     { id: 'k', type: 'quantity', kind: 'conductivity', first: '0.04 W/(m·K)', when: is('critical', 'generation') },
     { id: 'h', type: 'quantity', kind: 'htc', first: '10 W/(m²·K)', when: is('critical') },
-    { id: 'hGen', type: 'quantity', kind: 'htc', first: '', optional: true, when: is('generation') },
+    { id: 'hGen', type: 'quantity', kind: 'htc', first: '5000 W/(m²·K)', optional: true, when: is('generation') },
     { id: 'qGen', type: 'quantity', kind: 'powerDensity', first: '1e6 W/m^3', when: is('generation') },
     { id: 'tSurfaceGen', type: 'quantity', kind: 'temperature', first: '', optional: true, when: is('generation') },
     { id: 'tFluidGen', type: 'quantity', kind: 'temperature', first: '25 °C', optional: true, when: is('generation') },
