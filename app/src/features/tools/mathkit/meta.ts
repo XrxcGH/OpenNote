@@ -14,4 +14,5 @@ export const MATH_TOOLS: readonly MathToolMeta[] = [
   { id: 'series', title: 'kitMath.series.title', keywords: 'kitMath.series.keywords', icon: 'Atom' },
   { id: 'complex', title: 'kitMath.complex.title', keywords: 'kitMath.complex.keywords', icon: 'Atom' },
   { id: 'odes', title: 'kitMath.odes.title', keywords: 'kitMath.odes.keywords', icon: 'Atom' },
+  { id: 'fourier', title: 'kitMath.fourier.title', keywords: 'kitMath.fourier.keywords', icon: 'Atom' },
 ];
