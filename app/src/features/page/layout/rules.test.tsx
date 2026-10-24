@@ -17,6 +17,8 @@ const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
  * off (1.03 for a box at 201.2 on CI's Ubuntu). On Windows the same boxes are within 0.03.
  */
 const TOLERANCE = 1.1;
+/** How long the text may take to settle on a loaded 2-core runner, where Vitest's one second is not enough. */
+const SETTLE = { timeout: 8000 };
 
 afterEach(cleanupPages);
 
@@ -117,7 +119,7 @@ describe('ruled paper', () => {
         expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
         const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
         expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
-      });
+      }, SETTLE);
       await cleanupPages();
     }
   });
@@ -136,10 +138,12 @@ describe('ruled paper', () => {
         root.querySelector('li > p')!,
       ]) {
         const world = harness.viewport.world;
-        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${world.style.getPropertyValue('--rule')}, lift ${world.style.getPropertyValue('--rule-lift')}`;
+        const rule = world.style.getPropertyValue('--rule');
+        const lift = world.style.getPropertyValue('--rule-lift');
+        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${rule}, lift ${lift}`;
         expect(offLift(baseline(harness, line), next), note).toBeLessThan(TOLERANCE);
       }
-    });
+    }, SETTLE);
   });
 
   it('changes nothing on plain paper', async () => {

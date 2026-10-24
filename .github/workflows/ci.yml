@@ -217,6 +217,8 @@ jobs:
       - name: Clippy ratchet (no new unwrap, expect, or panic in shipped code)
         # Existing uses are counted per file in checks/data/clippy-ratchet.json. A count may go down, never up.
         run: node checks/clippy-ratchet.ts
+      - name: Fetch every platform's crates (the no-network test reads all of them offline)
+        run: cargo fetch --locked
       - name: Rust tests
         run: cargo test --workspace
       - name: The notes contract suite against the app's notes bridge and the core
