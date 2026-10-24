@@ -3,7 +3,7 @@
 // names only; each tool's forms and engines load when its tab is first opened (kit.ts).
 import type { MessageKey } from '../../../strings/t';
 
-export type LifeSysToolId = 'diversity';
+export type LifeSysToolId = 'diversity' | 'bench';
 
 export interface LifeSysMeta {
   id: LifeSysToolId;
@@ -14,6 +14,12 @@ export interface LifeSysMeta {
 }
 
 export const LIFESYS_TOOLS: readonly LifeSysMeta[] = [
+  {
+    id: 'bench',
+    title: 'kitLifeSys.tools.bench.open',
+    keywords: 'kitLifeSys.tools.bench.keywords',
+    icon: 'TestTube',
+  },
   {
     id: 'diversity',
     title: 'kitLifeSys.tools.diversity.open',
