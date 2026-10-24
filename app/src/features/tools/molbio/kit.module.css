@@ -1,0 +1,273 @@
+/*
+ * The molecular biology kit window: tabs, a form, the answer, tables, pictures, and worked steps. Tokens only, so it
+ * follows the theme; fields stack at narrow widths, wide tables and sequences scroll in their own box, and every
+ * control is at least the target size.
+ */
+@layer components {
+  .kit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .tab {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border-color: var(--color-accent-primary);
+  }
+
+  .about,
+  .hint,
+  .source {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    align-content: start;
+    gap: var(--space-1);
+    font-size: var(--type-small-size);
+    min-inline-size: 0;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .input {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    min-inline-size: 0;
+  }
+
+  .area {
+    padding-block: var(--space-2);
+    font-family: var(--font-mono);
+    line-height: 1.5;
+    resize: vertical;
+    min-block-size: 7rem;
+  }
+
+  .problem {
+    margin: 0;
+    padding: var(--space-3);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-inline-start: 4px solid var(--color-status-warning);
+    border-radius: var(--radius-sm);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .subheading {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .answer {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .rows {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+    font-size: var(--type-small-size);
+  }
+
+  .row {
+    display: contents;
+  }
+
+  .rows dt {
+    color: var(--color-text-secondary);
+  }
+
+  .rows dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .part {
+    display: grid;
+    gap: var(--space-2);
+    min-inline-size: 0;
+  }
+
+  .partHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .scroll {
+    overflow: auto;
+    max-block-size: 24rem;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .table {
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+    min-inline-size: 100%;
+  }
+
+  .table th,
+  .table td {
+    padding-block: var(--space-1);
+    padding-inline: var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+    white-space: nowrap;
+  }
+
+  .table th {
+    position: sticky;
+    inset-block-start: 0;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    background: var(--color-surface-raised);
+  }
+
+  .block {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    overflow: auto;
+    max-block-size: 20rem;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    line-height: 1.5;
+    color: var(--color-text-primary);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+
+  .scroll:focus-visible,
+  .block:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .math {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .notes {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .figure {
+    inline-size: 100%;
+    block-size: auto;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+  }
+
+  .sInk {
+    stroke: var(--color-text-primary);
+  }
+
+  .sMuted {
+    stroke: var(--color-text-secondary);
+  }
+
+  .sFaint {
+    stroke: var(--color-border-subtle);
+  }
+
+  .sAccent {
+    stroke: var(--color-accent-primary);
+  }
+
+  .sPaper {
+    stroke: var(--color-surface-page);
+  }
+
+  .fInk {
+    fill: var(--color-text-primary);
+  }
+
+  .fMuted {
+    fill: var(--color-text-secondary);
+  }
+
+  .fFaint {
+    fill: var(--color-border-subtle);
+  }
+
+  .fAccent {
+    fill: var(--color-accent-primary);
+  }
+
+  .fPaper {
+    fill: var(--color-surface-page);
+  }
+}
