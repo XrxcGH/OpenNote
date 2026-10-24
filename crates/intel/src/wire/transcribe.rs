@@ -350,7 +350,11 @@ impl TranscribeHub {
             None => None,
         };
         let held = self.queue_for(engines, model)?;
-        let queue = held.as_ref().expect("the queue was just made");
+        let Some(queue) = held.as_ref() else {
+            return Err(IntelError::InvalidInput(
+                "the transcription queue could not be made".to_owned(),
+            ));
+        };
         let listening = choices.speakers.then(Listening::new);
         let audio: Box<dyn AudioSource> = match &listening {
             Some(listening) => Box::new(Tee::new(audio, listening.clone())),

@@ -35,7 +35,9 @@ export default function CaptionsSwitch() {
         onChange={(next) => void turn(next)}
         describedBy={helpId}
       />
-      <p id={helpId} className={styles.help}>{t('intelMore.captions.help')}</p>
+      <p id={helpId} className={styles.help}>
+        {t('intelMore.captions.help')}
+      </p>
       {choices.on && (
         <div>
           <label htmlFor={positionId}>{t('intelMore.captions.position')} </label>

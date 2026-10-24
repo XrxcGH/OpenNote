@@ -85,11 +85,11 @@ impl<'a> Server<'a> {
     }
 
     fn session(&mut self) -> Result<&Session, CliError> {
-        if self.session.is_none() {
-            let session = Session::open(self.env, self.identity.clone(), &mut *self.log)?;
-            self.session = Some(session);
-        }
-        Ok(self.session.as_ref().expect("opened above"))
+        let session = match self.session.take() {
+            Some(session) => session,
+            None => Session::open(self.env, self.identity.clone(), &mut *self.log)?,
+        };
+        Ok(&*self.session.insert(session))
     }
 
     /// Answers one message; `None` for a notification.

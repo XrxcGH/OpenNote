@@ -12,5 +12,10 @@ export default defineConfig({
   workers: 4,
   reporter: 'list',
   timeout: 60_000,
-  use: { baseURL: 'http://127.0.0.1:4617', browserName: 'chromium', channel: browserChannel(), screenshot: 'only-on-failure' },
+  use: {
+    baseURL: 'http://127.0.0.1:4617',
+    browserName: 'chromium',
+    channel: browserChannel(),
+    screenshot: 'only-on-failure',
+  },
 });

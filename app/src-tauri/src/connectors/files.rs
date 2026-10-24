@@ -117,8 +117,8 @@ pub fn save_client(config: &Path, connector: &str, id: &str, secret: Option<&str
         .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
         .filter(serde_json::Value::is_object)
         .unwrap_or_else(|| serde_json::json!({}));
-    let entry = object_at(object_at(&mut root, "clients"), connector);
-    let fields = entry.as_object_mut().expect("an object");
+    let entry = object_at(object_at(&mut root, "clients")?, connector)?;
+    let fields = entry.as_object_mut().ok_or_else(not_an_object)?;
     fields.insert("clientId".to_owned(), serde_json::Value::String(id));
     match secret {
         Some(text) => fields.insert("clientSecret".to_owned(), serde_json::Value::String(text)),
@@ -128,16 +128,20 @@ pub fn save_client(config: &Path, connector: &str, id: &str, secret: Option<&str
 }
 
 /// The object under `key` of an object, made when it is missing or isn't one.
-fn object_at<'a>(parent: &'a mut serde_json::Value, key: &str) -> &'a mut serde_json::Value {
+fn object_at<'a>(parent: &'a mut serde_json::Value, key: &str) -> io::Result<&'a mut serde_json::Value> {
     let slot = parent
         .as_object_mut()
-        .expect("an object")
+        .ok_or_else(not_an_object)?
         .entry(key.to_owned())
         .or_insert_with(|| serde_json::json!({}));
     if !slot.is_object() {
         *slot = serde_json::json!({});
     }
-    slot
+    Ok(slot)
+}
+
+fn not_an_object() -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, "not a JSON object")
 }
 
 /// What a stored credential is: a refresh token to trade for access tokens, or an access token that doesn't expire,
