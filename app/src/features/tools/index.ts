@@ -12,6 +12,7 @@ export { countFigures } from './science/sigfigs';
 export { seedSigFigs } from './ui/SigFigsTool';
 export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
+export { openHumanitiesTool } from './humanities/open';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { TOOLS, isToolId } from './ui/tools';
 export type { ToolId } from './ui/tools';

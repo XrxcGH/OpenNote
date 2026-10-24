@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
 import { DeckPanel } from '../../study';
+import { HumanitiesKit } from '../humanities';
 import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
 import { ConverterTool } from './ConverterTool';
@@ -64,5 +65,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-humanities')
+    return (
+      <Suspense fallback={null}>
+        <HumanitiesKit />
+      </Suspense>
+    );
   return null;
 }

@@ -2,6 +2,12 @@
 // once its feature works end to end in the app; turning one off hides its commands, menu items, and blocks.
 import type { FlagDef, FlagId } from '../../app/flags';
 
+// The humanities kit's flag and tool list load at start-up with the other flags, before the kit's own code.
+export { HUMANITIES_FLAGS } from './humanities/flags';
+export type { HumanitiesFlagId } from './humanities/flags';
+export { HUMANITIES_TOOLS } from './humanities/meta';
+export type { HumanitiesToolId } from './humanities/meta';
+
 export type ExprFlagId = Extract<FlagId, `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}`>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
