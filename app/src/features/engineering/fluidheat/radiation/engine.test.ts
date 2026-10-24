@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CalcError, SIGMA } from '../numeric';
 import {
   bandFractionTo,
+  C2,
   blackbody,
   concentric,
   disks,
@@ -189,5 +190,16 @@ describe('N-surface gray enclosure', () => {
         ],
       ),
     ).toThrow(CalcError);
+  });
+});
+
+describe('band fraction near the switch between its two series', () => {
+  // SciPy quad of (15/pi^4) x^3/(e^x - 1) from z to infinity, z = C2 / (lambda T); lambda chosen so z is exact
+  const at = (z: number) => bandFractionTo(C2 / (z * 1000), 1000);
+  it('agrees with quadrature to 1e-9 at z = 1.99, 0.6, 0.49 and 0.3', () => {
+    expect(Math.abs(at(1.99) - 0.8207801595280518)).toBeLessThan(1e-9);
+    expect(Math.abs(at(0.6) - 0.9912086518004244)).toBeLessThan(1e-9);
+    expect(Math.abs(at(0.49) - 0.9949984466397975)).toBeLessThan(1e-9);
+    expect(Math.abs(at(0.3) - 0.9987637770878295)).toBeLessThan(1e-9);
   });
 });

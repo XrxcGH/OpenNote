@@ -21,7 +21,7 @@ export function planck(lambda: number, t: number): number {
 /** Fraction of blackbody emission between wavelength 0 and lambda at temperature t. */
 export function bandFractionTo(lambda: number, t: number): number {
   const z = C2 / (lambda * t);
-  if (z < 2) {
+  if (z < 0.5) {
     // Series about lambda T = infinity (complement form).
     const s = 1 / 3 - z / 8 + z ** 2 / 60 - z ** 4 / 5040 + z ** 6 / 272160 - z ** 8 / 13305600;
     return 1 - (15 / Math.PI ** 4) * z ** 3 * s;
