@@ -78,6 +78,8 @@ export const e = {
 
     dateFormat: 'Write the date as YYYY-MM-DD and the time as HH:MM, such as 2024-06-20 and 12:00.',
     clockFormat: 'Write the time as HH:MM on a 24-hour clock, such as 14:30.',
+    netDirective: 'Line {line}: {word} is not an analysis line. Use .op, .ac start stop points, .tran step stop, or .thev a b.',
+    netKeepUnknown: '{name} is not a V or I source in the netlist.',
     netNumber: 'Line {line}: "{text}" is not a number. Use values such as 4.7k, 10u, or 1e-3.',
     netSourceCount: 'Line {line}: "{word}" needs more numbers.',
     netSourceWord: 'Line {line}: "{word}" is not a source type. Use DC, AC, STEP, PULSE, or SIN.',

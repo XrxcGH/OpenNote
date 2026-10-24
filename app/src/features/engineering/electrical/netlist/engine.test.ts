@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { initialValues, runTool } from '../spec';
 import { acSweep, findResonance, operatingPoint, thevenin, transient } from './analysis';
+import { keepOnly } from './directives';
 import { layoutOf } from './mna';
 import { nodeIndex, parseNetlist, readValue } from './parse';
 import { parseProbe, parseProbes } from './probes';
@@ -362,5 +363,34 @@ describe('the simulator tool form', () => {
     expect(runTool(spec, { ...base, analysis: 'netThev', thevA: 'out', thevB: 'out' }).ok).toBe(false);
     expect(runTool(spec, { ...base, analysis: 'netTran', tranStep: '1n', tranStop: '1' }).ok).toBe(false);
     expect(runTool(spec, { ...base, analysis: 'netOp', netlist: 'V1 a 0 1\nV2 a 0 2' }).ok).toBe(false);
+  });
+});
+
+describe('analysis lines and superposition', () => {
+  const lines = (...rows: string[]) => rows.join(String.fromCharCode(10));
+  const base = initialValues(spec);
+  const BRIDGE = lines('V1 a 0 10', 'I1 0 b 2m', 'R1 a b 1k', 'R2 b 0 1k');
+  it('.tran, .ac, .op and .thev lines choose the analysis without touching the form', () => {
+    const tranRun = runTool(spec, { ...base, netlist: lines(BRIDGE, '.tran 1m 5m'), analysis: 'netAc', probes: 'b' });
+    expect(tranRun.ok).toBe(true);
+    if (tranRun.ok) expect(tranRun.plot?.xLabel).toBe('t (s)');
+    const op = runTool(spec, { ...base, netlist: lines(BRIDGE, '.op'), analysis: 'netAc', probes: 'b' });
+    expect(op.ok && op.rows.some((r) => r.key === 'nodeVoltage')).toBe(true);
+    const thev = runTool(spec, { ...base, netlist: lines(BRIDGE, '.thev b 0') });
+    // Thevenin at b: the source V1 through R1 against R2 gives Rth = 500 ohm, Vth = 5 V plus the I1 term 1 V.
+    expect(thev.ok && thev.answer).toContain('Rth = 500');
+    expect(runTool(spec, { ...base, netlist: lines(BRIDGE, '.bogus 1') }).ok).toBe(false);
+  });
+  it('superposition keeps one source: V1 alone gives 5 V at b, I1 alone gives 1 V, and together they add', () => {
+    const at = (keep: string) => {
+      const c = parseNetlist(BRIDGE);
+      const only = keep === '' ? c : keepOnly(c, keep);
+      return operatingPoint(only).x[nodeIndex(only, 'b')!]!;
+    };
+    near(at('V1'), 5, 1e-9);
+    near(at('I1'), 1, 1e-9);
+    near(at(''), 6, 1e-9);
+    near(at('V1') + at('I1'), at(''), 1e-9);
+    expect(() => keepOnly(parseNetlist(BRIDGE), 'V9')).toThrow();
   });
 });

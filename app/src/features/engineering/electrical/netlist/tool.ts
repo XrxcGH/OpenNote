@@ -5,6 +5,7 @@ import { eng, fail, fmt, need, ok, positive } from '../shared';
 import type { KitOk, KitRow, KitStep, Plot, Values } from '../shared';
 import { acSweep, findResonance, operatingPoint, thevenin, transient } from './analysis';
 import { layoutOf } from './mna';
+import { keepOnly, readDirectives } from './directives';
 import { nodeIndex, parseNetlist } from './parse';
 import type { Circuit } from './parse';
 import { parseProbes } from './probes';
@@ -31,6 +32,7 @@ const FIELDS: readonly Field[] = [
     options: ANALYSES.map((value) => ({ value, label: value as Field['label'] })),
   },
   { id: 'netlist', label: 'netlistText', initial: NETLIST, kind: 'area', hint: 'netlistHint' },
+  { id: 'keep', label: 'keepSource', initial: '', hint: 'keepHint' },
   { id: 'probes', label: 'probesText', initial: 'out', hint: 'probesHint', when: when('ac', 'tran') },
   { id: 'acStart', label: 'acStart', initial: '10', unit: 'Hz', when: when('ac') },
   { id: 'acStop', label: 'acStop', initial: '100k', unit: 'Hz', when: when('ac') },
@@ -264,9 +266,18 @@ function theveninCase(circuit: Circuit, values: Values, code: string): KitOk {
 export const spec: ToolSpec = {
   id: 'netlist',
   fields: FIELDS,
-  run: (values) => {
-    const text = values.netlist ?? '';
-    const circuit = parseNetlist(text);
+  run: (form) => {
+    const text = form.netlist ?? '';
+    // Lines such as .tran 10u 5m choose the analysis and its numbers, the same as the form fields.
+    const directives = readDirectives(text);
+    const values: Values = {
+      ...form,
+      ...directives.fields,
+      ...(directives.analysis ? { analysis: directives.analysis } : {}),
+    };
+    const parsed = parseNetlist(directives.text);
+    const only = (values.keep ?? '').trim();
+    const circuit = only === '' ? parsed : keepOnly(parsed, only);
     switch (KEY_OF[analysisOf(values)]) {
       case 'op':
         return operating(circuit, text);

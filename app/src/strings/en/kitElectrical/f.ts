@@ -305,7 +305,9 @@ export const f = {
     netThev: 'Thevenin and Norton equivalent',
     netlistText: 'Netlist, one element per line',
     netlistHint:
-      'Elements R C L V I E G H F O S. Node 0 is ground. Values: 4.7k, 10uF, 1kΩ, 1meg. Sources: DC, AC, STEP, PULSE, SIN.',
+      'Elements R C L V I E G H F O S; node 0 is ground; values 4.7k, 10uF, 1kΩ. Sources DC AC STEP PULSE SIN. Lines .op .ac .tran .thev.',
+    keepSource: 'Superposition: keep only this source',
+    keepHint: 'Name one V or I source, such as V1: every other independent source is set to zero. Leave blank to use all.',
     probesText: 'What to plot',
     probesHint: 'Node names or currents, separated by commas, such as out, v(a,b), i(R1).',
     acStart: 'Start frequency (Hz)',

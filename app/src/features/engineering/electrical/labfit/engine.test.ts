@@ -252,7 +252,7 @@ describe('the fitting tool form', () => {
     const inverse = run('1/b');
     close(inverse.value, 1 / 2.05094, 1e-4);
     close(inverse.u, 0.05549 / 2.05094 ** 2, 2e-3);
-    // The prediction at x = 3 is a + 3b, and its uncertainty uses the negative covariance of a and b.
+    // The prediction at x = 3 is the intercept plus 3 times the slope, and its uncertainty uses the negative covariance between them.
     const sum = run('a + 3*b');
     close(sum.value, 0.91138 + 3 * 2.05094, 1e-4);
     const independent = Math.hypot(0.12862, 3 * 0.05549);
