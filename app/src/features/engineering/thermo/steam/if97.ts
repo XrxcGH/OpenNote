@@ -383,21 +383,30 @@ export function region3(rho: number, T: number): WaterState {
   };
 }
 
-/** Every density in region 3 where p(ρ, T) equals p, from a scan of 50 to 1100 kg/m³. */
+/**
+ * Region 3's highest physical density (kg/m³), a little above region 1 at its corner (623.15 K,
+ * 100 MPa: 762.6 kg/m³). The region 3 equation has spurious roots near 960 to 1040 kg/m³ that a
+ * wider scan would pick as the "liquid" root.
+ */
+const RHO3_MAX = 765;
+
+/** Every density in region 3 where p(ρ, T) equals p, from a scan of 50 to RHO3_MAX kg/m³. */
 function region3Roots(T: number, p: number): number[] {
   const f = (rho: number) => region3(rho, T).p - p;
   const roots: number[] = [];
-  const n = 420;
-  let a = 50;
+  const lo = 50;
+  const n = 300;
+  let a = lo;
   let fa = f(a);
   for (let i = 1; i <= n; i++) {
-    const b = 50 + (1050 * i) / n;
+    const b = lo + ((RHO3_MAX - lo) * i) / n;
     const fb = f(b);
     if (fa === 0) roots.push(a);
     else if (fa * fb < 0) roots.push(brent(f, a, b, 1e-13));
     a = b;
     fa = fb;
   }
+  if (fa === 0) roots.push(a);
   return roots;
 }
 

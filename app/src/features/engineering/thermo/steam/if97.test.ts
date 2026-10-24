@@ -2,7 +2,7 @@
 // table the chemistry tools ship, and against itself: the region boundaries meet, and h - u = p v everywhere.
 /* eslint-disable opennote/feature-boundaries -- The test compares with the chemistry tools' IAPWS-95 table. */
 import { describe, expect, it } from 'vitest';
-import { STEAM_BY_P } from '../../../tools/chem/data/steamData';
+import { STEAM_BY_P, STEAM_BY_T } from '../../../tools/chem/data/steamData';
 import { psat, pB23, region1, region2, region3, region5, tB23, tsat } from './if97';
 import { fromPH, fromPS, fromPX, fromTP, fromTX } from './water';
 
@@ -107,12 +107,45 @@ describe('IF97 states from two properties', () => {
     expect(fromTX(mixed.T, 0.3).h).toBeCloseTo(mixed.h, 4);
   });
 
-  it('saturated states above 623.15 K come from region 3', () => {
-    const f = fromTX(640, 0);
-    const g = fromTX(640, 1);
+  // The IAPWS-95 saturation table at 360 and 370 C (by T) and 20 MPa (by p). IF97 region 3 departs from IAPWS-95
+  // by a few tenths of a percent this close to the critical point: 0.5 % on v and 0.2 % on h.
+  it.each([
+    ['T', 360],
+    ['T', 370],
+    ['p', 20000],
+  ] as const)('saturated liquid and vapor in region 3 (%s = %s) match the IAPWS-95 table', (by, value) => {
+    const table = by === 'T' ? STEAM_BY_T : STEAM_BY_P;
+    const row = table.find((r) => r[by === 'T' ? 0 : 1] === value);
+    if (!row) throw new Error('no table row');
+    const [tC, p, vf, vg, , , , hf, , hg] = row;
+    const f = by === 'T' ? fromTX(tC + 273.15, 0) : fromPX(p, 0);
+    const g = by === 'T' ? fromTX(tC + 273.15, 1) : fromPX(p, 1);
     expect(f.sat?.liquid.region).toBe(3);
-    expect(1 / f.v).toBeGreaterThan(1 / g.v);
-    expect(rel(f.p, psat(640))).toBeLessThan(1e-12);
+    expect(rel(f.v, vf)).toBeLessThan(5e-3);
+    expect(rel(f.h, hf)).toBeLessThan(2e-3);
+    expect(rel(g.v, vg)).toBeLessThan(5e-3);
+    expect(rel(g.h, hg)).toBeLessThan(2e-3);
+    expect(rel(f.p, p)).toBeLessThan(2e-3);
+  });
+
+  // IAPWS SR5-05 (2016), the backward v(T, p) check values for subregions 3a and 3c, which lie below the critical
+  // temperature on the liquid side. The backward equations agree with IF97 to about 1e-5.
+  it.each([
+    [630, 50000, 1.470853100e-3],
+    [630, 20000, 1.761696406e-3],
+    [650, 30000, 1.819560617e-3],
+  ])('liquid-like region 3 at %s K and %s kPa matches SR5-05', (T, p, v) => {
+    expect(rel(fromTP(T, p).v, v)).toBeLessThan(2e-5);
+  });
+
+  // IAPWS SR3-03 (2014), the backward T(p, h) check values in region 3; those equations are within 25 mK of IF97.
+  it.each([
+    [20000, 1700, 629.3083892],
+    [100000, 2100, 733.6163014],
+  ])('region 3 from p = %s kPa and h = %s kJ/kg is compressed liquid at the SR3-03 temperature', (p, h, T) => {
+    const s = fromPH(p, h);
+    expect(s.phase).not.toBe('mixture');
+    expect(Math.abs(s.T - T)).toBeLessThan(0.025);
   });
 
   it('regions 1 and 2 meet at the saturation line and regions 2 and 3 at B23', () => {
