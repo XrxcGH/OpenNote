@@ -30,6 +30,7 @@ export function rowNumber(row: Row, system: System): { value: number; unit: stri
 
 /** A row's value as text. */
 export function rowText(c: InsertContext, row: Row): string {
+  if (row.text !== undefined) return row.text;
   if (row.word !== undefined) return c.say(`kitDesign.${c.tool}.word.${row.word}`);
   const shown = rowNumber(row, c.system);
   return shown ? withUnit(numberText(shown.value, row.digits ?? 5), shown.unit) : '';
@@ -37,6 +38,7 @@ export function rowText(c: InsertContext, row: Row): string {
 
 /** A row's value as LaTeX. */
 export function rowLatex(c: InsertContext, row: Row): string {
+  if (row.text !== undefined) return `\\texttt{${row.text.replace(/[\\{}$&#^_%~]/g, (ch) => `\\${ch}`)}}`;
   if (row.word !== undefined) return `\\text{${c.say(`kitDesign.${c.tool}.word.${row.word}`)}}`;
   const shown = rowNumber(row, c.system);
   return shown ? `${numberLatex(shown.value, row.digits ?? 5)}${unitLatex(shown.unit)}` : '';

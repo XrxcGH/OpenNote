@@ -43,6 +43,8 @@ export interface Row {
   readonly dim?: DimId;
   /** A unit to write as it is, for a value the window does not convert. */
   readonly unit?: string;
+  /** Text to show as it is, such as a bit pattern or a long decimal. */
+  readonly text?: string;
   /** A word under word.<id> in the tool's strings, instead of a number. */
   readonly word?: string;
   /** The symbol in LaTeX, for the equation an answer inserts. */

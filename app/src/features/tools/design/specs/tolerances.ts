@@ -1,3 +1,5 @@
+// checks-disable-file length: worked-step formulas are written as one line each
+
 // The tolerances tool: a stack-up of a chain of dimensions by worst case, root sum square and Monte Carlo; a fit from
 // hole and shaft limits; and true position with a bonus tolerance. The engine is ../tolerances.ts.
 import type { Outcome, Result, ToolSpec, Values } from '../kit/spec';

@@ -6,4 +6,5 @@ export const SPECS: Record<string, () => Promise<ToolSpec>> = {
   machining: () => import('./machining').then((m) => m.machiningSpec),
   forming: () => import('./forming').then((m) => m.formingSpec),
   microfab: () => import('./microfab').then((m) => m.microfabSpec),
+  numrep: () => import('./numrep').then((m) => m.numrepSpec),
 };

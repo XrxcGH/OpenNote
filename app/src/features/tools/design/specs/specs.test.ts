@@ -129,3 +129,41 @@ describe('micro and nano fabrication against hand calculations', () => {
     expect(row(o, 'theta')).toBeCloseTo(0.5, 9);
   });
 });
+
+describe('number representation against independent calculations', () => {
+  it('-42 in 8 bits is 1101 0110, 0xD6', async () => {
+    const o = await run('numrep', { mode: 'encode', value: '-42', width: '8' });
+    expect(o.rows.find((r) => r.id === 'bits')?.text).toBe('1101 0110');
+    expect(o.rows.find((r) => r.id === 'hex')?.text).toBe('0xD6');
+    expect(o.rows.find((r) => r.id === 'min')?.text).toBe('-128');
+  });
+  it('0xD6 read as each scheme', async () => {
+    const o = await run('numrep', { mode: 'decode', bits: '1101 0110' });
+    const text = (id: string) => o.rows.find((r) => r.id === id)?.text;
+    expect(text('asUnsigned')).toBe('214');
+    expect(text('asTwos')).toBe('-42');
+    expect(text('asOnes')).toBe('-41');
+    expect(text('asSignmag')).toBe('-86');
+  });
+  it('200 wraps to -56 in a signed byte', async () => {
+    const o = await run('numrep', { mode: 'overflow', value: '200', width: '8' });
+    expect(o.rows.find((r) => r.id === 'wrapped')?.text).toBe('-56');
+  });
+  it('255 in base 16 is FF and 0.1 in single is 0x3DCCCCCD, as the platform stores it', async () => {
+    expect((await run('numrep', { mode: 'base', digits: '255', from: '10', to: '16' })).rows[0]?.text).toBe('FF');
+    const o = await run('numrep', { mode: 'float', decimal: '0.1', format: 'single' });
+    const view = new DataView(new ArrayBuffer(4));
+    view.setFloat32(0, 0.1);
+    expect(o.rows.find((r) => r.id === 'hex')?.text).toBe(`0x${view.getUint32(0).toString(16).toUpperCase()}`);
+    expect(o.rows.find((r) => r.id === 'exact')?.text).toBe('0.100000001490116119384765625');
+  });
+  it('the single-precision pattern of pi decodes to 3.1415927', async () => {
+    const o = await run('numrep', { mode: 'floatBits', pattern: '0x40490FDB', format: 'single' });
+    expect(o.rows.find((r) => r.id === 'shortest')?.text).toBe('3.1415927');
+  });
+  it('an unfit value names the range', async () => {
+    const spec = await SPECS.numrep!();
+    const done = runTool(spec, { ...firstTexts(spec), value: '300' }, {});
+    expect(done.ok && !done.result.ok && done.result.detail).toBe('-128 to 127');
+  });
+});

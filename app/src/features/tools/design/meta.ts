@@ -15,6 +15,7 @@ export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
   { id: 'machining', title: 'kitDesign.machining.title', keywords: 'kitDesign.machining.keywords', icon: 'Wrench' },
   { id: 'forming', title: 'kitDesign.forming.title', keywords: 'kitDesign.forming.keywords', icon: 'Hammer' },
   { id: 'microfab', title: 'kitDesign.microfab.title', keywords: 'kitDesign.microfab.keywords', icon: 'Cpu' },
+  { id: 'numrep', title: 'kitDesign.numrep.title', keywords: 'kitDesign.numrep.keywords', icon: 'Binary' },
 ];
 
 export const DESIGN_TOOL_IDS: readonly string[] = DESIGN_TOOLS.map((tool) => tool.id);

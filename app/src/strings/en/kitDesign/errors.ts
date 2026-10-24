@@ -83,11 +83,15 @@ export const errors = {
   rateConstantPositive: 'Both rate constants must be greater than zero.',
   // Numbers
   baseRange: 'The base must be a whole number from 2 to 36.',
-  bitsRange: 'Use a bit string of 0s and 1s of the width the format needs.',
+  bitsRange: 'That bit pattern is wider than the format. Check the number of bits.',
   digitTooBig: 'A digit is too large for that base.',
   excessRange: 'The bias is out of range for that width.',
   notBits: 'That is not a string of bits. Use only 0 and 1.',
-  notDigits: 'That has a digit that does not belong to the base.',
-  outOfRange: 'That number does not fit in the width chosen. The range is shown in the results of the next size up.',
-  widthRange: 'The width must be a whole number of bits from 1 to 128.',
+  notDigits: 'Use only digits and letters, with an optional minus sign in front.',
+  notInteger: 'That is not a whole number. Use decimal digits, or 0x or 0b in front for hexadecimal or binary.',
+  outOfRange: 'That number does not fit in the width chosen. The range is {detail}.',
+  widthRange: 'The width must be a whole number of bits from 1 to 128, and at least 2 for a signed scheme.',
+  noCharacters: 'Type some text to look at.',
+  floatPattern:
+    'Type the bits as hexadecimal with 0x in front, or as exactly as many 0s and 1s as the format has bits.',
 };
