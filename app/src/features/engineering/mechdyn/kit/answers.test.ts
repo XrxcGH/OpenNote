@@ -1,0 +1,74 @@
+// The answers each tool shows, read from the form the way a student types it. These are the plan's validation
+// cases, run through the units, the spec, and the row text, so a slip between engine and window shows up here.
+/* eslint-disable opennote/feature-boundaries -- The tests hand the engines the math feature's algebra directly. */
+import { describe, expect, it } from 'vitest';
+import { t } from '../../../../strings/t';
+import { SPECS } from '../specs';
+import { rowText, type Say } from '../ui/insert';
+import { firstTexts, runTool } from './read';
+import type { System } from './units';
+import { simplest, substitute } from '../../../math/calculus/algebra';
+import { derivativeOf } from '../../../math/calculus/derivative';
+import { latexOf } from '../../../math/calculus/print';
+import { provideSymbolic } from '../symbolic';
+
+provideSymbolic({ derivativeOf, latexOf, simplest, substitute });
+
+const say = t as unknown as Say;
+
+interface Case {
+  readonly name: string;
+  readonly tool: string;
+  readonly texts: Readonly<Record<string, string>>;
+  readonly system?: System;
+  /** Row id (with its vars' first value after a colon when rows repeat) and the text it shows. */
+  readonly expect: Readonly<Record<string, string>>;
+}
+
+const CASES: readonly Case[] = [
+  {
+    name: 'free vibration: natural frequency, damping, and decrement',
+    tool: 'sdof',
+    texts: { m: '10 kg', k: '4000 N/m', c: '40 N*s/m' },
+    expect: { omegaN: '20 rad/s', zeta: '0.1', omegaD: '19.9 rad/s', logDec: '0.63148', regime: 'Underdamped' },
+  },
+  {
+    name: 'a harmonic force: steady amplitude and phase',
+    tool: 'sdof',
+    texts: { forcing: 'harmonic', F0: '100 N', omega: '15 rad/s' },
+    expect: { X: '54.054 mm', phase: '18.925°' },
+  },
+  {
+    name: 'base motion at r = 2: transmissibility',
+    tool: 'sdof',
+    texts: { damping: 'zeta', zeta: '0.1', forcing: 'base', omega: '40 rad/s' },
+    expect: { r: '2', transmissibility: '0.35586' },
+  },
+  {
+    name: 'the same mass and spring in US units',
+    tool: 'sdof',
+    system: 'us',
+    texts: { m: '22.046226 lb', k: '22.840589 lbf/in', c: '0.22840589 lbf*s/in' },
+    expect: { omegaN: '20 rad/s', zeta: '0.1' },
+  },
+];
+
+describe('the answers the window shows', () => {
+  for (const one of CASES) {
+    it(`${one.tool}: ${one.name}`, async () => {
+      const spec = await SPECS[one.tool]();
+      const system = one.system ?? 'si';
+      const run = runTool(spec, { ...firstTexts(spec), ...one.texts }, system);
+      if (!run.ok) throw new Error(run.error?.key ?? run.fields.map((f) => `${f.field} ${f.error.key}`).join());
+      const c = { tool: one.tool, outcome: run.outcome, system, say };
+      for (const [key, text] of Object.entries(one.expect)) {
+        const [id, first] = key.split(':');
+        const row = run.outcome.rows.find(
+          (r) => r.id === id && (first === undefined || Object.values(r.vars ?? {})[0] === first),
+        );
+        expect(row, key).toBeDefined();
+        if (row) expect(rowText(c, row), key).toBe(text);
+      }
+    });
+  }
+});

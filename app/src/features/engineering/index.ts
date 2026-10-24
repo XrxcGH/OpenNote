@@ -14,6 +14,8 @@ export type { CircuitModel, CircuitPart } from './circuit/model';
 export { solveCircuit } from './circuit/solve';
 export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
+export const loadMechDynKit = () => import('./mechdyn/ui/MechDynKit');
+export { openMechDynKit } from './mechdyn/open';
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);

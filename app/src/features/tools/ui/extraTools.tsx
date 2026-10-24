@@ -21,6 +21,13 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The mechanisms and dynamics kit loads on first open.
+const KitMechDyn = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadMechDynKit())
+    .then((loaded) => ({ default: loaded.MechDynKit })),
+);
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -64,5 +71,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-mechdyn')
+    return (
+      <Suspense fallback={null}>
+        <KitMechDyn />
+      </Suspense>
+    );
   return null;
 }
