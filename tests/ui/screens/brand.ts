@@ -52,8 +52,9 @@ export default defineScreens([
     id: 'settings.appearance',
     description: 'Settings, Appearance, with the three theme cards in a row',
     prepare: async (page) => {
-      await page.keyboard.press('Control+Comma');
+      // The app answers keys once it has drawn its first screen; a key sent before that is lost.
       await page.getByRole('heading', { level: 1 }).first().waitFor();
+      await page.keyboard.press('Control+Comma');
       const link = page.getByRole('link', { name: 'Appearance', exact: true });
       if (await link.isVisible()) await link.click();
       await page.getByRole('heading', { level: 1, name: 'Appearance', exact: true }).waitFor();

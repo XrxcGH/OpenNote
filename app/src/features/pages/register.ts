@@ -219,12 +219,14 @@ function menuCommand(
   menu: MenuId,
   flag: FlagId,
   keywords?: MessageKey,
+  enabled?: () => boolean,
 ): void {
   command({
     id,
     title,
     keywords,
     flag,
+    enabled,
     palette: false,
     run: async (ctx: CommandContext) => {
       const anchor = document.activeElement instanceof HTMLElement ? document.activeElement : { x: 0, y: 0 };
@@ -232,8 +234,19 @@ function menuCommand(
     },
   });
 }
-menuCommand('pages.paperMenu', 'pageViews.commands.paperMenu', 'pages.paper', 'pages.view');
-menuCommand('pages.backgroundMenu', 'pageViews.commands.backgroundMenu', 'pages.background', 'pages.view');
+// The paper and background items change the page view, which attaches a moment after the page shows. A menu lists its
+// items when it opens and does not read them again, so the menu's control waits for the view: one opened sooner would
+// list items that stay disabled.
+const viewAttached = () => api() !== null;
+menuCommand('pages.paperMenu', 'pageViews.commands.paperMenu', 'pages.paper', 'pages.view', undefined, viewAttached);
+menuCommand(
+  'pages.backgroundMenu',
+  'pageViews.commands.backgroundMenu',
+  'pages.background',
+  'pages.view',
+  undefined,
+  viewAttached,
+);
 menuCommand('pages.exportMenu', 'pageViews.commands.exportMenu', 'pages.export', 'pages.pdf');
 
 let order = 0;

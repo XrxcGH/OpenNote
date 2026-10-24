@@ -96,13 +96,13 @@ test('files a task under the date it finds and checks it off', async ({ page }) 
   await expect(dialog.getByText('Read chapter 4', { exact: true })).toHaveCount(0);
 });
 
-test('closes with Escape and moves from its title with the arrow keys', async ({ page }) => {
+test('closes with Escape and resizes from its edge with the arrow keys', async ({ page }) => {
   await openSmart(page);
   await runCommand(page, 'Open upcoming');
   const dialog = page.getByRole('dialog', { name: 'Upcoming' });
   const before = await dialog.boundingBox();
-  await dialog.getByLabel(/^Move Upcoming/).press('ArrowLeft');
-  expect((await dialog.boundingBox())!.x).toBe(before!.x - 16);
+  await dialog.getByRole('separator', { name: /^Resize Upcoming/ }).press('ArrowLeft');
+  await expect.poll(async () => (await dialog.boundingBox())!.width).toBe(before!.width + 16);
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
 });
