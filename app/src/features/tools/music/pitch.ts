@@ -2,7 +2,7 @@
 
 export const A4_HZ = 440;
 
-/** Frequency of the note with a MIDI number: f = A4 × 2^((m − 69) / 12). */
+/** Frequency of the note with an MIDI number: f = A4 × 2^((m − 69) / 12). */
 export const midiToHz = (midi: number, a4 = A4_HZ): number => a4 * 2 ** ((midi - 69) / 12);
 
 /** The (fractional) MIDI number of a frequency. */
@@ -17,7 +17,7 @@ export const ratioOf = (cents: number): number => 2 ** (cents / 1200);
 const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'] as const;
 const FLAT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
-/** The name and octave for a MIDI number, such as C4 for 60. */
+/** The name and octave for an MIDI number, such as C4 for 60. */
 export function midiName(midi: number, flats = false): string {
   const rounded = Math.round(midi);
   const names = flats ? FLAT_NAMES : SHARP_NAMES;
