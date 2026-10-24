@@ -2,8 +2,10 @@
 // typing is never undone by a tree command. A hidden window flushes (ARCHITECTURE.md section 10.2), so typed text
 // reaches the core before Windows can suspend or end the app.
 import { dismissActionToasts } from '../../../state/toasts';
+import { titleBarItems } from '../../../registries';
 import { registerPageCommand } from '../keys';
 import { shownQueue } from '../sync/shown';
+import { RedoButton, UndoButton } from '../sync/UndoRedoButtons';
 
 /**
  * Whether Ctrl+Z means the shown page: focus is in the page, or on nothing at all. Focus falls to the body when an undo
@@ -39,3 +41,22 @@ if (typeof document !== 'undefined') {
     if (document.visibilityState === 'hidden') void shownQueue.get()?.flushAll('hidden');
   });
 }
+// On screen in every tab and in tablet mode: the title bar, and in the compact layout the app bar. They move into More
+// after everything but the recording indicator and the theme switch, since they are the only way to undo without a
+// keyboard.
+titleBarItems.register({
+  id: 'page.undoButton',
+  side: 'end',
+  order: 5,
+  priority: 97,
+  compact: 'appBar',
+  Component: UndoButton,
+});
+titleBarItems.register({
+  id: 'page.redoButton',
+  side: 'end',
+  order: 6,
+  priority: 96,
+  compact: 'appBar',
+  Component: RedoButton,
+});

@@ -5,7 +5,11 @@
   .screen {
     display: grid;
     place-items: center;
-    min-block-size: calc(100dvh - var(--size-title-bar));
+    /* The window below the title bar, whatever its height (48 px with touch density): the card scrolls inside
+       itself, never this screen, or the window. */
+    grid-template-rows: minmax(0, 1fr);
+    block-size: 100%;
+    min-block-size: 0;
     padding: var(--space-5);
     background: var(--color-surface-app);
   }
@@ -32,7 +36,7 @@
     grid-template-rows: minmax(0, 1fr) auto;
     inline-size: min(var(--size-setup-card-width), 100%);
     block-size: min(var(--size-setup-card-height), 100%);
-    max-block-size: calc(100dvh - var(--size-title-bar) - var(--space-8));
+    max-block-size: 100%;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-xl);
     background: var(--color-surface-raised);
@@ -174,10 +178,7 @@
   }
 
   :global(:root[data-size-class='compact']) .screen {
-    grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
-    min-block-size: 0;
-    block-size: calc(100dvh - var(--size-title-bar));
   }
 
   :global(:root[data-size-class='compact']) .card {
