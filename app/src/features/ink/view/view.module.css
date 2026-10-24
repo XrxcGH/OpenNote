@@ -151,4 +151,42 @@
   :global(.ink-selection-frame) [data-ink-side]:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
   }
+
+  /*
+   * On a touch screen a handle takes a press about 40 px across, so a finger a little off the small circle resizes
+   * rather than landing on the mover beneath. The area reaches further out of the frame than into it, so the mover of
+   * a small selection still has room.
+   */
+  @media (any-pointer: coarse) {
+    :global(.ink-selection-frame) [data-ink-corner]::before,
+    :global(.ink-selection-frame) [data-ink-side]::before {
+      position: absolute;
+      content: '';
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='nw']::before {
+      inset-block: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+      inset-inline: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='ne']::before {
+      inset-block: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='se']::before {
+      inset-block: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='sw']::before {
+      inset-block: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+      inset-inline: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+    }
+
+    :global(.ink-selection-frame) [data-ink-side]::before {
+      inset-block: calc(-1 * var(--space-4));
+      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+    }
+  }
 }

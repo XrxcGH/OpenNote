@@ -53,16 +53,47 @@ function inkPixels(browser: Browser): Promise<number> {
   });
 }
 
-/** Chooses the first pen on the Draw tab, then draws a line with pen pointer events. */
-async function drawLine(browser: Browser, y: number): Promise<void> {
+/**
+ * Chooses the pen on the Draw tab. A window wide enough shows the pen slots on the bar, and the first one is clicked.
+ * A narrower one moves them into the More menu, where only the Pen tool is left, and that one is chosen.
+ */
+async function choosePen(browser: Browser): Promise<void> {
   await browser.execute(() => {
     [...document.querySelectorAll<HTMLElement>('[role="tab"]')].find((tab) => tab.textContent === 'Draw')?.click();
   });
-  await browser.waitUntil(() => browser.execute(() => document.querySelector('[data-ink-slot="p1"]') !== null), {
-    timeout: 10_000,
+  await browser.waitUntil(
+    () => browser.execute(() => document.querySelector('[role="tab"][aria-selected="true"]')?.textContent === 'Draw'),
+    { timeout: 10_000 },
+  );
+  const onBar = await browser
+    .waitUntil(() => browser.execute(() => document.querySelector('[data-ink-slot="p1"]') !== null), { timeout: 2_000 })
+    .catch(() => false);
+  if (onBar) {
+    await browser.execute(() => document.querySelector<HTMLElement>('[data-ink-slot="p1"]')!.click());
+    return;
+  }
+  await browser.execute(() => {
+    [...document.querySelectorAll<HTMLElement>('[role="tabpanel"] button')]
+      .find((button) => button.textContent === 'More')
+      ?.click();
   });
+  await browser.waitUntil(
+    () =>
+      browser.execute(() => {
+        const item = [...document.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]')].find(
+          (candidate) => candidate.textContent === 'Pen',
+        );
+        item?.click();
+        return Boolean(item);
+      }),
+    { timeout: 10_000, timeoutMsg: 'neither a pen slot nor the Pen item in More showed' },
+  );
+}
+
+/** Chooses the pen, then draws a line with pen pointer events. */
+async function drawLine(browser: Browser, y: number): Promise<void> {
+  await choosePen(browser);
   await browser.execute((y) => {
-    document.querySelector<HTMLElement>('[data-ink-slot="p1"]')!.click();
     const box = document.querySelector('[data-ink-overlay]')!.getBoundingClientRect();
     const target = document.elementFromPoint(box.x + 120, box.y + y)!;
     const send = (type: string, x: number, y: number, buttons: number, t: number) =>
