@@ -105,6 +105,8 @@ export interface PotentialResult {
   readonly lift: number;
   readonly stagnation: readonly { readonly x: number; readonly y: number }[];
   readonly streamlines: readonly LevelCurve[];
+  /** Contours of Cp = 1 - V^2/U^2 at CP_LEVELS (empty without a uniform flow). */
+  readonly cpContours: readonly LevelCurve[];
   readonly window: { readonly x0: number; readonly x1: number; readonly y0: number; readonly y1: number };
   readonly steps: readonly AeroStep[];
 }
@@ -195,6 +197,7 @@ export function potentialFlow(input: PotentialInput): PotentialResult {
     lift,
     stagnation,
     streamlines: streamlines(els, win),
+    cpContours: U > 0 ? cpContours(els, win, U) : [],
     window: win,
     steps,
   };
@@ -236,13 +239,35 @@ function stagnationPoints(els: readonly FlowElement[], win: PotentialResult['win
 
 const maxStrength = (els: readonly FlowElement[]) => els.reduce((m, e) => Math.max(m, Math.abs(e.strength)), 0);
 
-function streamlines(els: readonly FlowElement[], win: PotentialResult['window']): LevelCurve[] {
+/** The plot grid over the window: 120 cells across and square cells (at least 40 down). */
+function plotGrid(win: PotentialResult['window']) {
   const nx = 120;
   const ny = Math.max(40, Math.round((nx * (win.y1 - win.y0)) / (win.x1 - win.x0)));
   const xs = Array.from({ length: nx + 1 }, (_, i) => win.x0 + ((win.x1 - win.x0) * i) / nx);
   const ys = Array.from({ length: ny + 1 }, (_, j) => win.y0 + ((win.y1 - win.y0) * j) / ny);
-  const dx = (win.x1 - win.x0) / nx;
-  const dy = (win.y1 - win.y0) / ny;
+  return { xs, ys, dx: (win.x1 - win.x0) / nx, dy: (win.y1 - win.y0) / ny };
+}
+
+/** Cp levels drawn: -3 to 1 in steps of 0.25. */
+export const CP_LEVELS: readonly number[] = Array.from({ length: 17 }, (_, k) => -3 + 0.25 * k);
+
+/** Contours of Cp = 1 - |dW/dz|^2/U^2, masked in the cells at each singularity, where the speed is unbounded. */
+function cpContours(els: readonly FlowElement[], win: PotentialResult['window'], U: number): LevelCurve[] {
+  const { xs, ys, dx, dy } = plotGrid(win);
+  const z = ys.map((y) =>
+    xs.map((x) => {
+      for (const e of els) {
+        if (e.kind !== 'uniform' && Math.abs(x - e.x) < 1.5 * dx && Math.abs(y - e.y) < 1.5 * dy) return NaN;
+      }
+      const { w } = velocity(els, c(x, y));
+      return 1 - (w.re * w.re + w.im * w.im) / (U * U);
+    }),
+  );
+  return levelCurves({ xs, ys, z }, CP_LEVELS);
+}
+
+function streamlines(els: readonly FlowElement[], win: PotentialResult['window']): LevelCurve[] {
+  const { xs, ys, dx, dy } = plotGrid(win);
   const z = ys.map((y) =>
     xs.map((x) => {
       for (const e of els) {

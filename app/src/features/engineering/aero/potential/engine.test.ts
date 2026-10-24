@@ -61,3 +61,33 @@ describe('potential flow', () => {
     close(r.v, -1 / (2 * Math.PI), 1e-12);
   });
 });
+
+describe('Cp contours', () => {
+  const win = { x0: -3, x1: 3, y0: -2, y1: 2 };
+  // Where a contour segment crosses the line x = 0 (or y = 0), the y (or x) of the crossing.
+  const crossings = (segments: readonly (readonly [number, number, number, number])[], axis: 'x' | 'y') =>
+    segments.flatMap(([x1, y1, x2, y2]) => {
+      const [a1, a2, b1, b2] = axis === 'x' ? [x1, x2, y1, y2] : [y1, y2, x1, x2];
+      if (a1 === a2 || a1 * a2 > 0) return [];
+      return [b1 + ((b2 - b1) * (0 - a1)) / (a2 - a1)];
+    });
+
+  it('places the cylinder contours where Cp = 1 - (1 +/- a^2/r^2)^2 says', () => {
+    const r = potentialFlow({ elements: cylinder(10, 1), rho: 1.225, px: 0, py: 1.5, window: win });
+    const level = (cp: number) => r.cpContours.find((c) => Math.abs(c.level - cp) < 1e-12)!;
+    // Above the cylinder V = U(1 + a^2/y^2): Cp = -1 at y = 1/sqrt(sqrt(2) - 1) = 1.553774.
+    const above = crossings(level(-1).segments, 'x').filter((y) => y > 1.05);
+    expect(above.length).toBeGreaterThan(0);
+    above.forEach((y) => close(y, 1 / Math.sqrt(Math.SQRT2 - 1), 0.01));
+    // Upstream on the axis V = U(1 - a^2/x^2): Cp = 0.75 at x = -sqrt(2).
+    const ahead = crossings(level(0.75).segments, 'y').filter((x) => x < -1.05);
+    expect(ahead.length).toBeGreaterThan(0);
+    ahead.forEach((x) => close(x, -Math.SQRT2, 0.01));
+    expect(r.cpContours.map((c) => c.level)).toEqual(Array.from({ length: 17 }, (_, k) => -3 + 0.25 * k));
+  });
+
+  it('draws no Cp contours without a free stream', () => {
+    const r = potentialFlow({ elements: [{ kind: 'vortex', strength: 1, x: 0, y: 0 }], rho: 1, px: 1, py: 0 });
+    expect(r.cpContours).toEqual([]);
+  });
+});

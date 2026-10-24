@@ -89,6 +89,28 @@ function streamPlot(r: PotentialResult, px: number, py: number) {
   };
 }
 
+/** Cp contours, split into suction (Cp < 0), Cp = 0, and Cp > 0 so the legend reads the sign. */
+function cpPlot(r: PotentialResult) {
+  const groups: Record<'cpSuction' | 'cpZero' | 'cpPressure', XY[]> = { cpSuction: [], cpZero: [], cpPressure: [] };
+  for (const curve of r.cpContours) {
+    const key = curve.level < 0 ? 'cpSuction' : curve.level === 0 ? 'cpZero' : 'cpPressure';
+    for (const [x1, y1, x2, y2] of curve.segments) groups[key].push({ x: x1, y: y1 }, { x: x2, y: y2 });
+  }
+  return {
+    title: 'cpContours',
+    x: 'x',
+    y: 'y',
+    equal: true,
+    window: r.window,
+    series: [
+      { label: 'cpSuction', points: groups.cpSuction, style: 'segments' as const },
+      { label: 'cpZero', points: groups.cpZero, style: 'segments' as const },
+      { label: 'cpPressure', points: groups.cpPressure, style: 'segments' as const },
+    ],
+    marks: r.stagnation.map((s) => ({ x: s.x, y: s.y, label: '' })),
+  };
+}
+
 export const spec: ToolSpec = {
   id: 'potential',
   fields: [
@@ -128,7 +150,7 @@ export const spec: ToolSpec = {
       rows,
       steps: r.steps,
       ...(r.steps[0]?.math ? { latex: r.steps[0].math } : {}),
-      plots: [streamPlot(r, px, py)],
+      plots: [streamPlot(r, px, py), ...(r.cpContours.length > 0 ? [cpPlot(r)] : [])],
     };
   },
 };

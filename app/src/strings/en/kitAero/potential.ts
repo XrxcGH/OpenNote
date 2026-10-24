@@ -54,6 +54,10 @@ export const potential = {
     y: 'y, m',
     psi: 'Streamlines (ψ constant)',
     probe: 'Probe',
+    cpContours: 'Pressure coefficient Cp, contours from −3 to 1 every 0.25',
+    cpSuction: 'Cp < 0 (suction)',
+    cpZero: 'Cp = 0',
+    cpPressure: 'Cp > 0',
   },
   s: {
     pfComplex: 'Add the complex potentials of the {count} elements (vortex strength positive clockwise).',
@@ -70,7 +74,6 @@ export const potential = {
     elementText: 'Cannot read “{part}”. Write a kind and its numbers, such as source 2*pi 0 0.',
     tooManyElements: 'Use at most 20 flow elements.',
     windowRange: 'The plot window needs a positive width and height.',
-    probeOnElement:
-      'The probe point sits on a singularity, where the velocity is infinite. Move it off the element.',
+    probeOnElement: 'The probe point sits on a singularity, where the velocity is infinite. Move it off the element.',
   },
 } as const;
