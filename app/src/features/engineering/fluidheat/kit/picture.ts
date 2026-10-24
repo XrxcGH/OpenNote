@@ -55,6 +55,9 @@ export interface PlotSpec {
   readonly y: { readonly label: string; readonly kind: Kind };
   readonly series: readonly PlotSeries[];
   readonly marks?: readonly { readonly x: number; readonly y: number; readonly id: string }[];
+  /** Draw an axis on a logarithmic scale (its values must be above zero). */
+  readonly xLog?: boolean;
+  readonly yLog?: boolean;
 }
 
 export const escapeXml = (text: string): string =>
@@ -69,6 +72,21 @@ export function ticks(lo: number, hi: number): number[] {
   const out: number[] = [];
   for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step)
     out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+  return out;
+}
+
+/** Round numbers for a logarithmic axis: each power of ten, and 2 and 5 times it when there are few decades. */
+export function logTicks(lo: number, hi: number): number[] {
+  if (!(lo > 0) || !(hi > lo)) return [lo];
+  const first = Math.floor(Math.log10(lo));
+  const last = Math.ceil(Math.log10(hi));
+  const multipliers = last - first <= 2 ? [1, 2, 5] : [1];
+  const out: number[] = [];
+  for (let k = first; k <= last; k++)
+    for (const m of multipliers) {
+      const v = m * 10 ** k;
+      if (v >= lo * (1 - 1e-9) && v <= hi * (1 + 1e-9)) out.push(v);
+    }
   return out;
 }
 
@@ -93,32 +111,38 @@ export function plotSvg(spec: PlotSpec, ctx: DrawContext, prefix: string): strin
   const { palette: p, system } = ctx;
   const sx = (v: number) => toShown(v, spec.x.kind, system);
   const sy = (v: number) => toShown(v, spec.y.kind, system);
-  const xs = spec.series.flatMap((s) => s.points.map(([x]) => sx(x)));
+  const xs = spec.series.flatMap((s) => s.points.map(([x]) => sx(x))).concat((spec.marks ?? []).map((m) => sx(m.x)));
   const ys = spec.series.flatMap((s) => s.points.map(([, y]) => sy(y))).concat((spec.marks ?? []).map((m) => sy(m.y)));
   const [x0, x1] = range(xs);
   const [y0raw, y1raw] = range(ys);
-  const pad = (y1raw - y0raw) * 0.08;
+  const pad = spec.yLog ? 0 : (y1raw - y0raw) * 0.08;
   const [y0, y1] = [y0raw - pad, y1raw + pad];
-  const px = (v: number) => M.left + ((v - x0) / (x1 - x0)) * (W - M.left - M.right);
-  const py = (v: number) => H - M.bottom - ((v - y0) / (y1 - y0)) * (H - M.top - M.bottom);
+  const fx = spec.xLog ? Math.log10 : (v: number) => v;
+  const fy = spec.yLog ? Math.log10 : (v: number) => v;
+  const px = (v: number) => M.left + ((fx(v) - fx(x0)) / (fx(x1) - fx(x0))) * (W - M.left - M.right);
+  const py = (v: number) => H - M.bottom - ((fy(v) - fy(y0)) / (fy(y1) - fy(y0))) * (H - M.top - M.bottom);
   const parts: string[] = [`<rect width="${W}" height="${H}" fill="${p.surface}"/>`];
-  for (const t of ticks(x0, x1)) {
+  for (const t of spec.xLog ? logTicks(x0, x1) : ticks(x0, x1)) {
     parts.push(`<line x1="${px(t)}" y1="${M.top}" x2="${px(t)}" y2="${H - M.bottom}" stroke="${p.grid}"/>`);
     parts.push(text(px(t), H - M.bottom + 16, numberText(t, 4), p.muted, 'middle'));
   }
-  for (const t of ticks(y0, y1)) {
+  for (const t of spec.yLog ? logTicks(y0, y1) : ticks(y0, y1)) {
     parts.push(`<line x1="${M.left}" y1="${py(t)}" x2="${W - M.right}" y2="${py(t)}" stroke="${p.grid}"/>`);
     parts.push(text(M.left - 6, py(t) + 4, numberText(t, 4), p.muted, 'end'));
   }
-  if (y0 < 0 && y1 > 0) parts.push(axisLine(M.left, py(0), W - M.right, py(0), p.muted));
+  if (!spec.yLog && y0 < 0 && y1 > 0) parts.push(axisLine(M.left, py(0), W - M.right, py(0), p.muted));
   spec.series.forEach((series, i) => parts.push(path(series, i, { sx, sy, px, py, p })));
   for (const mark of spec.marks ?? []) {
     const [x, y] = [px(sx(mark.x)), py(sy(mark.y))];
     parts.push(`<circle cx="${x}" cy="${y}" r="4" fill="${p.text}"/>`);
     parts.push(text(x + 6, y - 6, ctx.say(`${prefix}.plot.${mark.id}`), p.text, 'start'));
   }
-  const xLabel = `${ctx.say(`${prefix}.plot.${spec.x.label}`)} (${unitOf(spec.x.kind, system)})`;
-  const yLabel = `${ctx.say(`${prefix}.plot.${spec.y.label}`)} (${unitOf(spec.y.kind, system)})`;
+  const withUnit = (label: string, kind: Kind) => {
+    const unit = unitOf(kind, system);
+    return unit === '' ? label : `${label} (${unit})`;
+  };
+  const xLabel = withUnit(ctx.say(`${prefix}.plot.${spec.x.label}`), spec.x.kind);
+  const yLabel = withUnit(ctx.say(`${prefix}.plot.${spec.y.label}`), spec.y.kind);
   parts.push(text((M.left + W - M.right) / 2, H - 8, xLabel, p.text, 'middle'));
   parts.push(
     `<text x="14" y="${(M.top + H - M.bottom) / 2}" fill="${p.text}" font-size="12" text-anchor="middle" ` +
