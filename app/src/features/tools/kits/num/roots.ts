@@ -82,6 +82,10 @@ function interpolate(a: number, b: number, c: number, fa: number, fb: number, fc
 /**
  * Every root of f on [lo, hi] that shows as a sign change on a grid of `samples` intervals, each refined by Brent's
  * method. A sign change across a pole (where |f| grows instead of shrinking) is left out.
+ *
+ * It finds only sign changes, so it misses a root where f touches zero without crossing, such as (x - 1)² at 1, and
+ * any pair of roots closer than one grid interval. A tool that lists every root uses scanRoots, which also reports
+ * touching roots, and tells the student that roots closer than the grid spacing can still be missed.
  */
 export function bracketScan(f: (x: number) => number, lo: number, hi: number, samples = 200, tol = 1e-12): number[] {
   if (!(hi > lo)) throw new NumError('domain', 'the interval is empty');
@@ -101,6 +105,56 @@ export function bracketScan(f: (x: number) => number, lo: number, hi: number, sa
   }
   if (f0 === 0) roots.push(x0);
   return roots;
+}
+
+export interface ScannedRoot {
+  x: number;
+  /** f touches zero here without changing sign (an even multiplicity, such as (x - 1)² at 1). */
+  touching: boolean;
+}
+
+/** The x in [a, b] where |f| is least, by golden-section search. */
+function leastAbs(f: (x: number) => number, a: number, b: number): number {
+  const g = (Math.sqrt(5) - 1) / 2;
+  let c = b - g * (b - a);
+  let d = a + g * (b - a);
+  let fc = Math.abs(f(c));
+  let fd = Math.abs(f(d));
+  for (let i = 0; i < 200 && b - a > 1e-15 * (Math.abs(a) + Math.abs(b) + 1e-300); i += 1) {
+    if (fc <= fd) {
+      [b, d, fd] = [d, c, fc];
+      c = b - g * (b - a);
+      fc = Math.abs(f(c));
+    } else {
+      [a, c, fc] = [c, d, fd];
+      d = a + g * (b - a);
+      fd = Math.abs(f(d));
+    }
+  }
+  return fc <= fd ? c : d;
+}
+
+/**
+ * The roots bracketScan finds, plus touching roots: a grid point where |f| is a local minimum with no sign change on
+ * either side is refined by golden-section search on |f|, and kept when |f| there is below 1e-10 of the largest |f|
+ * on the grid. Roots closer together than the grid spacing can still be missed.
+ */
+export function scanRoots(f: (x: number) => number, lo: number, hi: number, samples = 200, tol = 1e-12): ScannedRoot[] {
+  const found: ScannedRoot[] = bracketScan(f, lo, hi, samples, tol).map((x) => ({ x, touching: false }));
+  const xs = Array.from({ length: samples + 1 }, (_, i) => lo + ((hi - lo) * i) / samples);
+  const fs = xs.map(f);
+  const scale = Math.max(...fs.filter(Number.isFinite).map(Math.abs));
+  for (let i = 1; i < samples; i += 1) {
+    const [a, b, c] = [fs[i - 1], fs[i], fs[i + 1]];
+    if (![a, b, c].every(Number.isFinite) || b === 0) continue;
+    const sameSign = a > 0 === b > 0 && b > 0 === c > 0 && a !== 0 && c !== 0;
+    if (!sameSign || Math.abs(b) > Math.abs(a) || Math.abs(b) > Math.abs(c)) continue;
+    const x = leastAbs(f, xs[i - 1], xs[i + 1]);
+    if (Math.abs(f(x)) <= 1e-10 * scale && !found.some((r) => Math.abs(r.x - x) <= (hi - lo) / samples)) {
+      found.push({ x, touching: true });
+    }
+  }
+  return found.sort((p, q) => p.x - q.x);
 }
 
 export interface NewtonStep {

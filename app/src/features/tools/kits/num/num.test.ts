@@ -5,7 +5,7 @@ import { NumError } from './errors';
 import { dopri45, rk4 } from './ode';
 import { compose, fromDescending, partialFractions, polyRoots, toDescending } from './poly';
 import { gaussIntegrate, gaussLegendre, integrate } from './quad';
-import { bracketScan, brent, newtonSystem } from './roots';
+import { bracketScan, brent, newtonSystem, scanRoots } from './roots';
 
 describe('complex numbers', () => {
   it('take principal branches', () => {
@@ -104,6 +104,21 @@ describe('roots', () => {
     const roots = bracketScan(Math.sin, 0.5, 10);
     expect(roots.map((r) => r / Math.PI)).toEqual([1, 2, 3].map((k) => expect.closeTo(k, 10)));
     expect(bracketScan(Math.tan, 1, 2)).toEqual([]);
+  });
+
+  it('misses a touching root in bracketScan, and reports it flagged in scanRoots', () => {
+    const square = (x: number) => (x - 1) ** 2;
+    expect(bracketScan(square, 0, 3)).toEqual([]);
+    const touching = scanRoots(square, 0, 3);
+    expect(touching).toHaveLength(1);
+    expect(touching[0].touching).toBe(true);
+    expect(touching[0].x).toBeCloseTo(1, 6);
+    // (x - 2)²(x - 0.5) crosses at 0.5 and touches at 2; x² + 0.01 never reaches zero.
+    const mixed = scanRoots((x) => (x - 2) ** 2 * (x - 0.5), 0, 3);
+    expect(mixed.map((r) => r.touching)).toEqual([false, true]);
+    expect(mixed[0].x).toBeCloseTo(0.5, 10);
+    expect(mixed[1].x).toBeCloseTo(2, 6);
+    expect(scanRoots((x) => x * x + 0.01, -1, 1)).toEqual([]);
   });
 
   it('solves a nonlinear system and reports its steps', () => {
