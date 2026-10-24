@@ -10,7 +10,14 @@ export interface Q {
 
 export const q = (v: number, k: Kind): Q => ({ v, k });
 
-export type Cell = string | number | Q;
+/** A word for a table cell, under word.<w> in the tool's strings. */
+export interface W {
+  readonly w: string;
+}
+
+export const word = (w: string): W => ({ w });
+
+export type Cell = string | number | Q | W;
 
 const SUPER = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const superscript = (text: string) => text.replace(/-/g, '⁻').replace(/[0-9]/g, (c) => SUPER[Number(c)]);
@@ -56,6 +63,7 @@ export function unitLatex(unit: string): string {
 export function cellText(value: Cell, system: System, digits = 5): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'number') return numberText(value, digits);
+  if ('w' in value) return value.w;
   const unit = unitOf(value.k, system);
   const number = numberText(toShown(value.v, value.k, system), digits);
   if (unit === '') return number;
@@ -66,6 +74,7 @@ export function cellText(value: Cell, system: System, digits = 5): string {
 export function cellLatex(value: Cell, system: System, digits = 5): string {
   if (typeof value === 'string') return `\\text{${value.replace(/[\\{}$&#^_%~]/g, '')}}`;
   if (typeof value === 'number') return numberLatex(value, digits);
+  if ('w' in value) return `\\text{${value.w}}`;
   return `${numberLatex(toShown(value.v, value.k, system), digits)}${unitLatex(unitOf(value.k, system))}`;
 }
 

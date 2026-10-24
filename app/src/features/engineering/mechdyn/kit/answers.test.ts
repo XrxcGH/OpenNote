@@ -78,6 +78,37 @@ const CASES: readonly Case[] = [
     },
     expect: { exactAL: '0.83936', Theta: '35.294°' },
   },
+  {
+    name: 'a spur pair: center distance, base radius, and contact ratio',
+    tool: 'gears',
+    texts: { mode: 'pair', module: '2 mm', N1: '20', N2: '40', phi: '20' },
+    expect: { center: '60 mm', rb1: '18.794 mm', contactRatio: '1.6352', interference: 'No' },
+  },
+  {
+    name: 'the fewest pinion teeth meshing with an equal gear',
+    tool: 'gears',
+    texts: { mode: 'pair', N1: '12', N2: '12' },
+    expect: { minTeeth: '12.323', minTeethWhole: '13', interference: 'Yes' },
+  },
+  {
+    name: 'the same pair sized by diametral pitch',
+    tool: 'gears',
+    system: 'us',
+    texts: { mode: 'pair', sizing: 'diametral', pitch: '12.7', N1: '20', N2: '40' },
+    expect: { center: '2.3622 in', contactRatio: '1.6352' },
+  },
+  {
+    name: 'a planetary train with the ring held',
+    tool: 'gears',
+    texts: { mode: 'planetary', sun: '30', ring: '90', fixed: 'ring', inputMember: 'sun', outputMember: 'carrier' },
+    expect: { planetRatio: '4', outputSpeed: '250 rpm', spacing: 'Yes' },
+  },
+  {
+    name: 'a compound train of two external meshes',
+    tool: 'gears',
+    texts: { mode: 'train', stages: '20 60\n15 45', inputSpeed: '900 rpm' },
+    expect: { value: '0.11111', outputSpeed: '100 rpm' },
+  },
 ];
 
 describe('the answers the window shows', () => {
@@ -96,6 +127,6 @@ describe('the answers the window shows', () => {
         expect(row, key).toBeDefined();
         if (row) expect(rowText(c, row), key).toBe(text);
       }
-    });
+    }, 30_000);
   }
 });

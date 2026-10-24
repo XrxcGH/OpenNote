@@ -3,11 +3,19 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
-import { cellText } from '../kit/format';
 import { SCREEN } from '../kit/picture';
 import type { Outcome } from '../kit/spec';
 import type { System } from '../kit/units';
-import { plotPicture, plotTitle, rowLabel, rowText, stepWords, type InsertContext, type Say } from './insert';
+import {
+  cellWords,
+  plotPicture,
+  plotTitle,
+  rowLabel,
+  rowText,
+  stepWords,
+  type InsertContext,
+  type Say,
+} from './insert';
 import styles from './mechdyn.module.css';
 
 function Math({ latex }: { latex: string }) {
@@ -67,7 +75,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
                     <tr key={r}>
                       {cells.map((cell, i) => (
                         <td key={i} className={styles.number}>
-                          {cellText(cell, system)}
+                          {cellWords(c, cell)}
                         </td>
                       ))}
                     </tr>

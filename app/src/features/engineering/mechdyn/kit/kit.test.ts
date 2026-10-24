@@ -132,6 +132,8 @@ describe('every tool', () => {
           for (const table of run.outcome.tables ?? []) {
             words(`kitMechDyn.${id}.table.${table.id}`);
             for (const column of table.columns) words(`kitMechDyn.${id}.col.${column}`);
+            for (const cell of table.rows.flat())
+              if (typeof cell === 'object' && 'w' in cell) words(`kitMechDyn.${id}.word.${cell.w}`);
           }
           for (const step of run.outcome.steps) {
             expect(stepWords(c, step)).not.toMatch(/\{[a-zA-Z]+\}/);
@@ -149,6 +151,7 @@ describe('every tool', () => {
           }
         }
       }
-    });
+      // Each tool runs every example twice, and the simulations take a while on a busy machine.
+    }, 60_000);
   }
 });

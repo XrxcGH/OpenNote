@@ -2,7 +2,7 @@
 // worked steps as a numbered list with typeset math, and each plot as an SVG picture. Each goes through the tools'
 // insert event, which the page answers; the window says in words what happened.
 import { INSERT_EVENT, type InsertDetail } from '../../../tools';
-import { cellLatex, cellText } from '../kit/format';
+import { cellLatex, cellText, type Cell } from '../kit/format';
 import { escapeXml, plotSvg, type Palette, type PlotWords } from '../kit/picture';
 import type { Outcome, ResultRow } from '../kit/spec';
 import type { System } from '../kit/units';
@@ -24,6 +24,10 @@ export function rowText(c: InsertContext, row: ResultRow): string {
   if (row.word !== undefined) return c.say(`kitMechDyn.${c.tool}.word.${row.word}`);
   return row.value === undefined ? '' : cellText(row.value, c.system);
 }
+
+/** A table cell as text: a word from the tool's strings, or a value in the chosen units. */
+export const cellWords = (c: InsertContext, cell: Cell): string =>
+  typeof cell === 'object' && 'w' in cell ? c.say(`kitMechDyn.${c.tool}.word.${cell.w}`) : cellText(cell, c.system);
 
 const answers = (c: InsertContext) => {
   const marked = c.outcome.rows.filter((row) => row.answer);
@@ -56,7 +60,7 @@ export function extraTable(c: InsertContext, index: number): { header: string[];
   if (!table) return null;
   return {
     header: table.columns.map((id) => c.say(`kitMechDyn.${c.tool}.col.${id}`)),
-    rows: table.rows.map((row) => row.map((cell) => cellText(cell, c.system))),
+    rows: table.rows.map((row) => row.map((cell) => cellWords(c, cell))),
   };
 }
 
