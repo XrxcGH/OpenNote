@@ -24,7 +24,7 @@ export function ChemCalcTool() {
     saveStored(STORE, { tab: nextTab, sub: nextSub });
 
   return (
-    <div className={styles.tool}>
+    <div className={styles.toolFill}>
       <div className={styles.tabs} role="tablist" aria-label={t('chem.calc.title')}>
         {CALC_TABS.map((id) => (
           <button

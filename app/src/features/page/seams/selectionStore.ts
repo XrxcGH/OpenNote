@@ -14,6 +14,13 @@ export interface PageSelection {
 
 export const pageSelection = createStore<PageSelection>({ blocks: [], strokes: [] }, 'page selection');
 
+/**
+ * True while Phase 5's selection frame shows around the selection (a lasso's selection, or a block selected in a draw
+ * tool). The frame then moves, resizes, and deletes the selected blocks, so the chrome leaves off their grips and width
+ * handles: one chrome per selection, and the grip strip never lies over the frame's bar.
+ */
+export const inkFrameShown = createStore<boolean>(false, 'ink frame shown');
+
 /** Sets the selection. With `announce`, a screen reader hears how many blocks and strokes are selected. */
 export function selectOnPage(next: PageSelection, options: { announce?: boolean } = {}): void {
   pageSelection.set(next);

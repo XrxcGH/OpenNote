@@ -70,10 +70,14 @@
     padding: var(--space-6) var(--space-8) var(--space-2);
   }
 
+  /* The page view and the chrome layers beside it, where the pointer router hears every press. Touch and pen pan only
+     through the router: a drag on the lasso frame, a grip, or a handle never scrolls or bounces the window. A scroller
+     inside, such as a menu, still pans by itself. */
   .body {
     position: relative;
     flex: 1;
     min-block-size: 0;
+    touch-action: none;
   }
 
   @media (forced-colors: active) {

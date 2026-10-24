@@ -38,7 +38,7 @@ export function SymbolsTool() {
   );
 
   return (
-    <div className={styles.tool}>
+    <div className={styles.toolFill}>
       <TextField label={t('study.symbols.search')} value={query} onChange={setQuery} />
       <p className={styles.empty}>{t('study.symbols.searchHelp')}</p>
       <div className={styles.tabs} role="group" aria-label={t('study.symbols.groups')}>
