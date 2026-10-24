@@ -1,0 +1,73 @@
+// The words of the solid mechanics kit's columns and buckling tool: its form, results, notes, and plot, then
+// the wording of its worked steps.
+export const columns = {
+  title: 'Columns and buckling',
+  keywords: 'column buckling euler critical load effective length slenderness johnson parabola secant eccentric',
+  field: {
+    ends: 'End conditions',
+    K: 'Effective-length factor, K',
+    E: 'Elastic modulus, E',
+    I: 'Least second moment of area, I',
+    L: 'Length, L',
+    A: 'Area, A (optional)',
+    Sy: 'Yield strength, Sy (optional)',
+    P: 'Applied load, P (optional, for the secant formula)',
+    e: 'Eccentricity, e',
+    c: 'Distance to the extreme fiber, c',
+  },
+  option: {
+    pinned: 'Pinned at both ends (K = 1)',
+    fixedFree: 'Fixed and free (K = 2)',
+    fixedPinned: 'Fixed and pinned (K = 0.7)',
+    fixedFixed: 'Fixed at both ends (K = 0.5)',
+    custom: 'Another K',
+  },
+  example: {
+    euler: 'Euler load of a pinned column',
+    johnson: 'Johnson parabola',
+    secant: 'Eccentric load (secant formula)',
+  },
+  row: {
+    Pcr: 'Euler critical load, Pcr',
+    Le: 'Effective length, Le',
+    r: 'Radius of gyration, r',
+    slenderness: 'Slenderness ratio, Le/r',
+    sigmaEuler: 'Euler critical stress',
+    Cc: 'Transition slenderness, Cc',
+    regime: 'Column type',
+    sigmaCr: 'Critical stress, σcr',
+    Pallow: 'Critical load for that stress',
+    sigmaMax: 'Largest stress (secant), σmax',
+    Pyield: 'Load that first yields the column',
+  },
+  word: { euler: 'Long: Euler governs', johnson: 'Intermediate: Johnson governs' },
+  note: {
+    ideal: 'A straight, elastic, prismatic column loaded along its axis, buckling about the axis of the least I.',
+    kValues: 'K is the theoretical value for ideal ends. Design codes often use larger values for real ends.',
+    secant: 'The secant formula uses the effective length, with the eccentric load at both ends.',
+  },
+  plot: {
+    slenderness: 'Slenderness Le/r',
+    stress: 'Critical stress',
+    euler: 'Euler',
+    johnson: 'Johnson',
+    here: 'This column',
+  },
+  picture: 'Critical stress against slenderness, with this column marked',
+} as const;
+
+export const columnsSteps = {
+  effective: 'Find the effective length from the end conditions.',
+  euler: 'Use the Euler critical load.',
+  gyration: 'Find the radius of gyration.',
+  slenderness: 'Find the slenderness ratio.',
+  eulerStress: 'The Euler critical stress is the critical load over the area.',
+  transition: 'Find the slenderness that separates intermediate columns from long ones.',
+  longColumn: 'The column is long, so the Euler curve governs.',
+  intermediate: 'The column is intermediate, so the Johnson parabola governs.',
+  johnson: 'Use the Johnson parabola for the critical stress.',
+  johnsonLoad: 'The critical load is the critical stress times the area.',
+  secantAngle: 'Find the angle in the secant formula.',
+  secant: 'Use the secant formula for the largest stress, with ec/r² = {ratio}.',
+  secantYield: 'Solve the secant formula for the load at which the largest stress reaches the yield strength.',
+} as const;
