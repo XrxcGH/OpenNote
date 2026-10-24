@@ -85,7 +85,6 @@ export const kitChemMatSol = {
     points: 'The boiling point must be above the freezing point, and both above zero kelvin.',
     tooConcentrated:
       'The freezing point would fall below absolute zero. The solution is too concentrated for this model.',
-    conc: 'The concentration must be zero or more.',
     deltaT: 'Enter the temperature change as a number.',
     moles: 'The amount reacted must be above zero.',
     capacity: 'The heat capacity must be above zero. A bomb run needs the calorimeter heat capacity.',
@@ -105,7 +104,6 @@ export const kitChemMatSol = {
     epsilon: 'Molar absorptivity ε',
     pathLength: 'Path length b',
     concBeer: 'Concentration c',
-    molality: 'Molality of the solution',
     molesSolute: 'Amount of solute',
     molarMass: 'Molar mass of the solute',
     molality: 'Molality',
@@ -126,7 +124,6 @@ export const kitChemMatSol = {
     r2: 'R²',
     unknown: 'Unknown concentration',
     unknownErr: 'Standard error of the unknown',
-    epsilon: 'Molar absorptivity',
     yield: 'Percent yield',
     pureYield: 'Yield corrected for purity',
   },
@@ -152,7 +149,7 @@ export const kitChemMatSol = {
     pure: 'Multiply by the purity to correct for impurities.',
   },
   note: {
-    beer: 'Beer–Lambert holds for dilute solutions, one absorbing species, and absorbances below about 1.',
+    beerLambert: 'Beer–Lambert holds for dilute solutions, one absorbing species, and absorbances below about 1.',
     molarMassFreezing: 'Use i = 1 for a molecular solute. A dissociating solute needs its real i, or the molar mass comes out too small.',
     dilute: 'Valid for dilute, ideal solutions. Real solutions deviate as concentration rises.',
     factor: 'The factor i is the ideal count of particles. Ion pairing lowers it in real solutions.',

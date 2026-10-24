@@ -41,22 +41,22 @@ export function beerLambert(input: BeerInput): Outcome {
   const shown = (name: string, x: number) => `${name}=${latexNumber(x, 5)}`;
   const given = [
     unknown !== 'A' ? shown('A', A) : '',
-    unknown !== 'eps' ? shown('\varepsilon', eps) : '',
+    unknown !== 'eps' ? shown('\\varepsilon', eps) : '',
     unknown !== 'b' ? shown('b', b) : '',
     unknown !== 'c' ? shown('c', c) : '',
   ]
     .filter(Boolean)
-    .join(',\ ');
-  const symbol = { A: 'A', eps: '\varepsilon', b: 'b', c: 'c' }[unknown]!;
+    .join(',\\ ');
+  const symbol = { A: 'A', eps: '\\varepsilon', b: 'b', c: 'c' }[unknown]!;
   return {
     ok: true,
     rows,
     steps: [
-      { key: 'kitChemMat.sol.step.beerLaw', math: 'A=\varepsilon\,b\,c' },
-      { key: 'kitChemMat.sol.step.beerSolve', math: `${given}\ \Rightarrow\ ${symbol}=${latexNumber(value, 5)}` },
+      { key: 'kitChemMat.sol.step.beerLaw', math: 'A=\\varepsilon\\,b\\,c' },
+      { key: 'kitChemMat.sol.step.beerSolve', math: `${given}\\ \\Rightarrow\\ ${symbol}=${latexNumber(value, 5)}` },
     ],
-    notes: [{ key: 'kitChemMat.sol.note.beer' }],
-    equation: 'A=\varepsilon\,b\,c',
+    notes: [{ key: 'kitChemMat.sol.note.beerLambert' }],
+    equation: 'A=\\varepsilon\\,b\\,c',
   };
 }
 
@@ -92,16 +92,16 @@ export function molarMassFromFreezing(input: MolarMassInput): Outcome {
     steps: [
       {
         key: 'kitChemMat.sol.step.molalityFrom',
-        math: `m=\frac{\Delta T_f}{iK_f}=${latexNumber(molality, 5)}\ \mathrm{mol/kg}`,
+        math: `m=\\frac{\\Delta T_f}{iK_f}=${latexNumber(molality, 5)}\\ \\mathrm{mol/kg}`,
       },
       {
         key: 'kitChemMat.sol.step.molarMassFrom',
         math:
-          `M=\frac{m_{\text{solute}}}{m\,\cdot\,\text{kg solvent}}=\frac{${latexNumber(input.soluteMass, 5)}\ \mathrm{g}}` +
-          `{${latexNumber(moles, 5)}\ \mathrm{mol}}=${latexNumber(M, 5)}\ \mathrm{g/mol}`,
+          `M=\\frac{m_{\\text{solute}}}{m\\,\\cdot\\,\\text{kg solvent}}=\\frac{${latexNumber(input.soluteMass, 5)}\\ \\mathrm{g}}` +
+          `{${latexNumber(moles, 5)}\\ \\mathrm{mol}}=${latexNumber(M, 5)}\\ \\mathrm{g/mol}`,
       },
     ],
     notes: [{ key: 'kitChemMat.sol.note.molarMassFreezing' }],
-    equation: 'M=\frac{m_{\text{solute}}\,i\,K_f}{\Delta T_f\;m_{\text{solvent}}}',
+    equation: 'M=\\frac{m_{\\text{solute}}\\,i\\,K_f}{\\Delta T_f\\;m_{\\text{solvent}}}',
   };
 }

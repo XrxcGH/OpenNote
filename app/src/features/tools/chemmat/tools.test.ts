@@ -1,5 +1,6 @@
 // Every tool of the kit solves from its own starting values, every message it can show exists in the strings with all
 // the variables it needs, and the meta list (read at start-up) matches the tools.
+import katex from 'katex';
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../strings/en';
 import { buildInput } from './input';
@@ -30,7 +31,15 @@ export function keysOf(outcome: Outcome, where: string) {
     check(r.key, r.keyVars, where);
     if (r.word) check(r.word, r.wordVars, where);
   }
-  for (const s of outcome.steps) check(s.key, s.vars, where);
+  for (const s of outcome.steps) {
+    check(s.key, s.vars, where);
+    // Every equation must be valid LaTeX, so a lost backslash or a stray brace fails here and not on a student's screen.
+    if (s.math)
+      expect(() => katex.renderToString(s.math!, { throwOnError: true }), `${where}: ${s.math}`).not.toThrow();
+  }
+  if (outcome.equation) {
+    expect(() => katex.renderToString(outcome.equation!, { throwOnError: true }), `${where}: equation`).not.toThrow();
+  }
   for (const n of outcome.notes) check(n.key, n.vars, where);
   for (const tb of outcome.tables ?? []) {
     check(tb.title, undefined, where);

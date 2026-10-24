@@ -72,12 +72,12 @@ export function density(input: DensityInput): Outcome {
         {
           key: 'kitChemMat.cx.step.linear',
           math:
-            `\text{LD}_{[${label}]}=\frac{1}{\text{repeat}}=\frac{1}{${latexNumber(repeat * 1e9, 5)}\ \mathrm{nm}}` +
-            `=${latexNumber(ld * perNm, 5)}\ \mathrm{nm^{-1}}`,
+            `\\text{LD}_{[${label}]}=\\frac{1}{\\text{repeat}}=\\frac{1}{${latexNumber(repeat * 1e9, 5)}\\ \\mathrm{nm}}` +
+            `=${latexNumber(ld * perNm, 5)}\\ \\mathrm{nm^{-1}}`,
         },
       ],
       notes: [{ key: 'kitChemMat.cx.note.density' }],
-      equation: '\text{LD}=\frac{\text{atoms centered on the line}}{\text{length of the line}}',
+      equation: '\\text{LD}=\\frac{\\text{atoms centered on the line}}{\\text{length of the line}}',
     };
   }
   const d = planeSpacing(s, prim) * a;
@@ -94,12 +94,12 @@ export function density(input: DensityInput): Outcome {
       {
         key: 'kitChemMat.cx.step.planar',
         math:
-          `\text{PD}_{(${label})}=\frac{n}{a^3}\,d=\frac{${CELL[s].atoms}}{(${plain(a * 1e9, 5)}\ \mathrm{nm})^3}` +
-          `\times${latexNumber(d * 1e9, 5)}\ \mathrm{nm}=${latexNumber(pd * perNm * perNm, 5)}\ \mathrm{nm^{-2}}`,
+          `\\text{PD}_{(${label})}=\\frac{n}{a^3}\\,d=\\frac{${CELL[s].atoms}}{(${plain(a * 1e9, 5)}\\ \\mathrm{nm})^3}` +
+          `\\times${latexNumber(d * 1e9, 5)}\\ \\mathrm{nm}=${latexNumber(pd * perNm * perNm, 5)}\\ \\mathrm{nm^{-2}}`,
       },
     ],
     notes: [{ key: 'kitChemMat.cx.note.density' }],
-    equation: '\text{PD}=\frac{\text{atoms centered on the plane}}{\text{area of the plane}}',
+    equation: '\\text{PD}=\\frac{\\text{atoms centered on the plane}}{\\text{area of the plane}}',
   };
 }
 
@@ -131,11 +131,11 @@ export function millerBravais(input: MillerBravaisInput): Outcome {
       steps: [
         {
           key: 'kitChemMat.cx.step.toThree',
-          math: `u=U-T,\ v=V-T,\ w=W\ \Rightarrow\ [${out.join('\ ')}]`,
+          math: `u=U-T,\\ v=V-T,\\ w=W\\ \\Rightarrow\\ [${out.join('\\ ')}]`,
         },
       ],
       notes: [{ key: 'kitChemMat.cx.note.millerBravais' }],
-      equation: 'u=U-T,\quad v=V-T,\quad w=W',
+      equation: 'u=U-T,\\quad v=V-T,\\quad w=W',
     };
   }
   if (idx === null || idx.length !== 3 || idx.every((x) => x === 0)) return fail('kitChemMat.cx.err.indices');
@@ -147,10 +147,10 @@ export function millerBravais(input: MillerBravaisInput): Outcome {
     steps: [
       {
         key: 'kitChemMat.cx.step.toFour',
-        math: `U=\frac{2u-v}{3},\ V=\frac{2v-u}{3},\ T=-(U+V),\ W=w\ \Rightarrow\ [${out.join('\ ')}]`,
+        math: `U=\\frac{2u-v}{3},\\ V=\\frac{2v-u}{3},\\ T=-(U+V),\\ W=w\\ \\Rightarrow\\ [${out.join('\\ ')}]`,
       },
     ],
     notes: [{ key: 'kitChemMat.cx.note.millerBravais' }],
-    equation: 'U=\frac{2u-v}{3},\ V=\frac{2v-u}{3},\ T=-(U+V),\ W=w',
+    equation: 'U=\\frac{2u-v}{3},\\ V=\\frac{2v-u}{3},\\ T=-(U+V),\\ W=w',
   };
 }
