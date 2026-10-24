@@ -4,6 +4,11 @@ import type { FlagDef, FlagId } from '../../app/flags';
 
 export type ExprFlagId = Extract<FlagId, `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}`>;
 
+// The psychology and behavior kit's flag and tool list are plain data the start-up code reads, so they are public here.
+export { MIND_FLAGS } from './mind/flags';
+export type { MindFlagId } from './mind/flags';
+export { MIND_TOOLS } from './mind/meta';
+
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
 /** On in Beta while it is new; off in Stable. */
