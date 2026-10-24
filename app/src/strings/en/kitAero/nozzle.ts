@@ -10,11 +10,14 @@ export const nozzle = {
     'state, and the mass flow.',
   assume:
     'Quasi-one-dimensional steady flow of a calorically perfect gas, isentropic except across a normal shock. ' +
-    'The walls are drawn parabolic for the pressure plot; the results depend only on the area ratio. The gas ' +
+    'Without an area profile the walls are drawn parabolic for the plots; the results depend only on the ' +
+    'area ratio, and an area profile places the shock along it. The gas ' +
     'leaves into a still back pressure. Oblique shocks and expansion fans outside the exit are named but not ' +
     'solved.',
   f: {
+    shape: 'Nozzle given by',
     areaRatio: 'Exit to throat area ratio Ae/At',
+    profile: 'Area profile: x and A/At',
     throat: 'Throat area At',
     p0: 'Stagnation pressure p₀',
     T0: 'Stagnation temperature T₀',
@@ -24,6 +27,13 @@ export const nozzle = {
   },
   h: {
     R: 'Air is 287 J/(kg K).',
+    profile:
+      'Pairs of position x and area ratio A/At from inlet to exit, separated by semicolons. Areas run straight ' +
+      'between points. The smallest A/At must be 1 (the throat); the last point is the exit.',
+  },
+  o: {
+    ratio: 'Exit area ratio',
+    profile: 'Area profile',
   },
   r: {
     pbp0: 'Back pressure ratio pb/p₀',
@@ -37,6 +47,7 @@ export const nozzle = {
     mdot: 'Mass flow ṁ',
     As: 'Shock area ratio As/At',
     xs: 'Shock position along the diverging section (0 throat, 1 exit)',
+    xsProfile: 'Shock position x along the profile',
     M1: 'Mach number ahead of the shock',
     p02p01: 'Stagnation pressure ratio across the shock',
   },
@@ -44,6 +55,7 @@ export const nozzle = {
     pressure: 'Pressure along the nozzle',
     area: 'Nozzle area',
     x: 'Position: −1 inlet, 0 throat, 1 exit',
+    xProfile: 'Position x along the profile',
     pp0: 'Pressure ratio p/p₀',
     AAt: 'Area ratio A/At',
     shock: 'Shock',
@@ -80,6 +92,11 @@ export const nozzle = {
   },
   e: {
     backflow: 'The back pressure is above the stagnation pressure, so the flow would run backward.',
+    profileText: 'Cannot read “{part}”. Write a position and an area ratio, such as 0 1.',
+    profileShort: 'The area profile needs at least 2 points.',
+    profileOrder: 'The positions x must increase from inlet to exit.',
+    profileThroat: 'The smallest A/At in the profile is {min}. The throat must be at A/At = 1.',
+    profileShape: 'The area must narrow to the throat and then widen, with one throat.',
   },
   regime: {
     noFlow: 'No flow: the back pressure equals the stagnation pressure.',

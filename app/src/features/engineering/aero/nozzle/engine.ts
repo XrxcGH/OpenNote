@@ -15,9 +15,17 @@ export type Regime =
   | 'design'
   | 'underexpanded';
 
+/** One point of a tabulated nozzle: position x (any length unit) and the area ratio A/At there. */
+export interface ProfilePoint {
+  readonly x: number;
+  readonly A: number;
+}
+
 export interface NozzleInput {
-  /** Exit to throat area ratio, at least 1. */
+  /** Exit to throat area ratio, at least 1. Ignored when a profile is given: its last point is the exit. */
   readonly areaRatio: number;
+  /** An area profile, inlet to exit, with x increasing and its smallest A/At equal to 1 (the throat). */
+  readonly profile?: readonly ProfilePoint[];
   /** Stagnation pressure, Pa. */
   readonly p0: number;
   /** Stagnation temperature, K. */
@@ -48,7 +56,7 @@ export interface NozzleResult {
   /** Shock area ratio As/At and the Mach number just upstream, when a shock stands in the nozzle. */
   readonly shock?: { readonly areaRatio: number; readonly M1: number; readonly p02p01: number; readonly x: number };
   readonly steps: readonly AeroStep[];
-  /** p/p0 against position, -1 at the inlet, 0 at the throat, 1 at the exit. */
+  /** p/p0 against position: -1 inlet, 0 throat, 1 exit, or the profile's own x when one is given. */
   readonly plot: { readonly p: readonly XY[]; readonly area: readonly XY[] };
 }
 
@@ -145,7 +153,8 @@ function shockInsideFlow(s: Setup): Flow {
   const { e, g, r } = s;
   const found = brent((As: number) => exitWithShock(As, e, g).pe - r, 1 + 1e-12, e, 1e-13);
   const sh = exitWithShock(found.root, e, g);
-  const shock: Shock = { areaRatio: found.root, M1: sh.M1, p02p01: sh.loss, x: Math.sqrt((found.root - 1) / (e - 1)) };
+  // The position is filled in from the nozzle's shape once the flow is known.
+  const shock: Shock = { areaRatio: found.root, M1: sh.M1, p02p01: sh.loss, x: NaN };
   s.steps.push(step('nzShockRegime', undefined, { r: num(r, 6), c1: num(s.crit[0], 6), c2: num(s.crit[1], 6) }));
   const exit = eq(
     '\\frac{p_e}{p_0}',
@@ -175,7 +184,7 @@ function supersonicFlow(s: Setup): Flow {
   if (r >= c2 * (1 - TOL)) {
     const sh = normalShock(Msup, g);
     s.steps.push(step('nzShockExit', undefined, { r: num(r, 6) }));
-    const shock: Shock = { areaRatio: s.e, M1: Msup, p02p01: sh.p02p01, x: 1 };
+    const shock: Shock = { areaRatio: s.e, M1: Msup, p02p01: sh.p02p01, x: NaN };
     return { ...base, regime: 'shockAtExit', Me: sh.M2, pe: s.pb, p0e: s.p0 * sh.p02p01, shock };
   }
   const regime: Regime =
@@ -196,9 +205,71 @@ function regimeFlow(s: Setup): Flow {
   return s.r > c2 * (1 + TOL) ? shockInsideFlow(s) : supersonicFlow(s);
 }
 
-function setup(input: NozzleInput): Setup {
+/** The nozzle's walls: where it starts, where the throat is and where it ends, and A/At along it. */
+interface Shape {
+  readonly x0: number;
+  readonly throat: number;
+  readonly x1: number;
+  readonly exit: number;
+  area(x: number): number;
+  /** Where in the diverging section A/At equals As. */
+  shockX(As: number): number;
+}
+
+/** Parabolic walls on -1..1: A/At = 1 + (end - 1) x^2, the end being the inlet or the exit. */
+function parabolic(e: number, inlet: number): Shape {
+  return {
+    x0: -1,
+    throat: 0,
+    x1: 1,
+    exit: e,
+    area: (x) => (x < 0 ? 1 + (inlet - 1) * x * x : 1 + (e - 1) * x * x),
+    shockX: (As) => (e > 1 ? Math.sqrt((As - 1) / (e - 1)) : 1),
+  };
+}
+
+/** A tabulated profile, straight between its points. It must narrow to one throat (A/At = 1), then widen. */
+export function tabulated(points: readonly ProfilePoint[]): Shape {
+  if (points.length < 2) throw new AeroError('profileShort');
+  points.forEach((p) => {
+    finite(p.x, 'x');
+    finite(p.A, 'A/At');
+  });
+  if (points.some((p, i) => i > 0 && !(p.x > points[i - 1]!.x))) throw new AeroError('profileOrder');
+  const min = Math.min(...points.map((p) => p.A));
+  if (Math.abs(min - 1) > 1e-9) throw new AeroError('profileThroat', { min: num(min, 6) });
+  const t = points.findIndex((p) => p.A === min);
+  const narrows = points.slice(0, t + 1).every((p, i, a) => i === 0 || p.A <= a[i - 1]!.A);
+  const widens = points.slice(t).every((p, i, a) => i === 0 || p.A >= a[i - 1]!.A);
+  if (!narrows || !widens) throw new AeroError('profileShape');
+  const area = (x: number) => {
+    const j = points.findIndex((p, i) => i > 0 && x <= p.x);
+    if (j <= 0) return points[x <= points[0]!.x ? 0 : points.length - 1]!.A;
+    const a = points[j - 1]!;
+    const b = points[j]!;
+    return a.A + ((b.A - a.A) * (x - a.x)) / (b.x - a.x);
+  };
+  const last = points[points.length - 1]!;
+  return {
+    x0: points[0]!.x,
+    throat: points[t]!.x,
+    x1: last.x,
+    exit: last.A,
+    area,
+    shockX(As) {
+      for (let j = t + 1; j < points.length; j += 1) {
+        const a = points[j - 1]!;
+        const b = points[j]!;
+        if (As <= b.A && b.A > a.A) return a.x + ((As - a.A) * (b.x - a.x)) / (b.A - a.A);
+      }
+      return last.x;
+    },
+  };
+}
+
+function setup(input: NozzleInput, shape: Shape): Setup {
   const g = checkGamma(input.gamma);
-  const e = finite(input.areaRatio, 'Ae/At');
+  const e = finite(shape.exit, 'Ae/At');
   if (e < 1) throw new AeroError('areaRatioBelowOne');
   const p0 = positive(input.p0, 'p₀');
   const T0 = positive(input.T0, 'T₀');
@@ -213,10 +284,11 @@ function setup(input: NozzleInput): Setup {
 }
 
 export function nozzle(input: NozzleInput): NozzleResult {
-  const s = setup(input);
-  const inlet = Math.max(input.inlet ?? 3, 1.05);
+  const shape = input.profile ? tabulated(input.profile) : parabolic(input.areaRatio, Math.max(input.inlet ?? 3, 1.05));
+  const s = setup(input, shape);
   criticalSteps(s);
-  const flow = regimeFlow(s);
+  const found = regimeFlow(s);
+  const flow = found.shock ? { ...found, shock: { ...found.shock, x: shape.shockX(found.shock.areaRatio) } } : found;
   const { g, R, T0 } = s;
   const Te = T0 * isentropicT(flow.Me, g);
   if (flow.regime !== 'noFlow') {
@@ -237,32 +309,26 @@ export function nozzle(input: NozzleInput): NozzleResult {
     choked: flow.regime !== 'noFlow' && flow.regime !== 'subsonic',
     ...(flow.shock ? { shock: flow.shock } : {}),
     steps: s.steps,
-    plot: profile(s.e, inlet, g, flow.regime, flow.throatMach, flow.shock, flow.p0e / s.p0),
+    plot: profile(shape, g, flow.regime, flow.throatMach, flow.shock, flow.p0e / s.p0),
   };
 }
 
-/** p/p0 along a nozzle with parabolic converging and diverging walls: A/At = 1 + (end - 1) x^2. */
-function profile(
-  e: number,
-  inlet: number,
-  g: number,
-  regime: Regime,
-  Mt: number,
-  shock: NozzleResult['shock'],
-  exitP0: number,
-) {
+/** p/p0 and A/At along the nozzle's shape. */
+function profile(shape: Shape, g: number, regime: Regime, Mt: number, shock: NozzleResult['shock'], exitP0: number) {
   const p: XY[] = [];
   const area: XY[] = [];
-  const n = 60;
+  const n = 120;
   // The sonic area the subsonic upstream flow sees: At when choked, larger when not.
   const aStar = regime === 'noFlow' ? Infinity : Mt >= 1 ? 1 : 1 / areaRatio(Mt, g);
-  for (let i = -n; i <= n; i += 1) {
-    const x = i / n;
-    const A = x < 0 ? 1 + (inlet - 1) * x * x : 1 + (e - 1) * x * x;
+  const xs = Array.from({ length: n + 1 }, (_, i) => shape.x0 + ((shape.x1 - shape.x0) * i) / n);
+  if (!xs.includes(shape.throat)) xs.push(shape.throat);
+  xs.sort((a, b) => a - b);
+  for (const x of xs) {
+    const A = shape.area(x);
     area.push({ x, y: A });
     let ratio: number;
     if (regime === 'noFlow') ratio = 1;
-    else if (x <= 0 || regime === 'subsonic' || regime === 'chokedSubsonic') {
+    else if (x <= shape.throat || regime === 'subsonic' || regime === 'chokedSubsonic') {
       ratio = A / aStar <= 1 + 1e-12 ? isentropicP(Mt, g) : isentropicP(machFromArea(A / aStar, g, 'subsonic').root, g);
     } else if (shock && x > shock.x) {
       const M = machFromArea(Math.max(A * shock.p02p01, 1), g, 'subsonic').root;

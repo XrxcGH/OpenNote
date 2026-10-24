@@ -57,4 +57,14 @@ describe('the nozzle tool', () => {
     const small = runSpec(spec, { ...initialValues(spec, 'si'), areaRatio: '0.5' });
     expect(small.ok ? '' : small.error.code).toBe('areaRatioBelowOne');
   });
+
+  it('reads an area profile and reports the shock position along it', () => {
+    const out = run({ shape: 'profile', profile: '-1 3; 0 1; 0.5 1.5; 1 2', pb: '350000' });
+    // Linear walls A/At = 1 + x, so the shock at As/At = 1.5100947 (SciPy) sits at x = 0.5100947.
+    expect(row(out, 'xsProfile')).toBeCloseTo(0.5100947, 6);
+    expect(row(out, 'As')).toBeCloseTo(1.5100947, 6);
+    expect(out.plots?.[0]?.x).toBe('xProfile');
+    const bad = runSpec(spec, { ...initialValues(spec, 'si'), shape: 'profile', profile: '0 1; one 2' });
+    expect(bad.ok ? '' : bad.error.code).toBe('profileText');
+  });
 });

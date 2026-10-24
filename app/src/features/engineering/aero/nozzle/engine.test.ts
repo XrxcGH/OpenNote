@@ -81,3 +81,58 @@ describe('nozzle flow', () => {
     expect(() => nozzle({ ...base, pb: -1 })).toThrow(AeroError);
   });
 });
+
+describe('nozzle area profile', () => {
+  // Independent: a separate SciPy solve of pe(As) = pb for Ae/At = 2, pb/p0 = 0.7 gives As/At = 1.5100947,
+  // M1 = 1.8627125 and Me = 0.4066881. On walls A/At = 1 + x the shock then sits at x = As/At - 1.
+  const linear = [
+    { x: -1, A: 3 },
+    { x: 0, A: 1 },
+    { x: 0.5, A: 1.5 },
+    { x: 1, A: 2 },
+  ];
+
+  it('takes the exit area from the last point and places the shock along the profile', () => {
+    const r = at(0.7, { areaRatio: Number.NaN, profile: linear });
+    expect(r.regime).toBe('shockInside');
+    close(r.shock!.areaRatio, 1.5100947, 1e-6);
+    close(r.shock!.M1, 1.8627125, 1e-6);
+    close(r.exitMach, 0.4066881, 1e-6);
+    close(r.shock!.x, 0.5100947, 1e-6);
+    close(r.plot.area[r.plot.area.length - 1]!.y, 2, 1e-12);
+    // Parabolic walls with the same area ratio put the shock at x = sqrt(As/At - 1).
+    close(at(0.7).shock!.x, Math.sqrt(0.5100947), 1e-6);
+  });
+
+  it('rejects a profile that is out of order, has no throat at 1, or has two throats', () => {
+    const code = (profile: { x: number; A: number }[]) => {
+      try {
+        at(0.7, { profile });
+      } catch (e) {
+        if (e instanceof AeroError) return e.code;
+      }
+      return 'none';
+    };
+    expect(code([{ x: 0, A: 1 }])).toBe('profileShort');
+    expect(
+      code([
+        { x: 0, A: 1 },
+        { x: 0, A: 2 },
+      ]),
+    ).toBe('profileOrder');
+    expect(
+      code([
+        { x: 0, A: 1.2 },
+        { x: 1, A: 2 },
+      ]),
+    ).toBe('profileThroat');
+    expect(
+      code([
+        { x: 0, A: 2 },
+        { x: 1, A: 1 },
+        { x: 2, A: 1.5 },
+        { x: 3, A: 1.2 },
+      ]),
+    ).toBe('profileShape');
+  });
+});
