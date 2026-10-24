@@ -22,6 +22,8 @@ const HOLD_MS = 500;
 test.use({
   boot: { settings: { ink: { shapes: { hold: true, holdMs: HOLD_MS, inkToShape: false } } } } as never,
   viewport: { width: 1600, height: 1000 },
+  // The crops are rendered at 4x, not a 1x bitmap scaled up, so they show whether corners are crisp and outlines close.
+  deviceScaleFactor: 4,
 });
 
 /** The time channel's bit in a stored stroke: a shape is stored without one. */
