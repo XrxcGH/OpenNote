@@ -28,6 +28,7 @@ export const SOLIDS_TOOLS: readonly SolidsToolMeta[] = [
     keywords: 'kitSolids.thinwalled.keywords',
     icon: 'AirplaneTilt',
   },
+  { id: 'composites', title: 'kitSolids.composites.title', keywords: 'kitSolids.composites.keywords', icon: 'Stack' },
 ];
 
 export const SOLIDS_TOOL_IDS: readonly string[] = SOLIDS_TOOLS.map((tool) => tool.id);

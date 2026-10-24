@@ -8,6 +8,7 @@ import { members, membersSteps } from './kitSolids/members';
 import { deflection, deflectionSteps } from './kitSolids/deflection';
 import { vessels, vesselsSteps } from './kitSolids/vessels';
 import { thinwalled, thinwalledSteps } from './kitSolids/thinwalled';
+import { composites, compositesSteps } from './kitSolids/composites';
 
 export const kitSolids = {
   title: 'Solid mechanics',
@@ -84,6 +85,9 @@ export const kitSolids = {
     crossing: 'Walls cross each other. Put a boom where they meet.',
     boomLine: 'Boom line {detail} could not be read. Type x y B.',
     wallLine: 'Wall line {detail} could not be read. Type two boom numbers and a thickness.',
+    laminaPoisson: "ν12 times ν21 must be less than 1. Check Poisson's ratio and the two moduli.",
+    layup: 'The layup could not be read at {detail}. Type angles in degrees, such as [0/90]s.',
+    singularLaminate: 'The laminate has no stiffness in some direction. Check the plies.',
     unknown: 'That could not be worked out.',
   },
   columns,
@@ -93,6 +97,7 @@ export const kitSolids = {
   deflection,
   vessels,
   thinwalled,
+  composites,
   step: {
     columns: columnsSteps,
     stress: stressSteps,
@@ -101,5 +106,6 @@ export const kitSolids = {
     deflection: deflectionSteps,
     vessels: vesselsSteps,
     thinwalled: thinwalledSteps,
+    composites: compositesSteps,
   },
 } as const;
