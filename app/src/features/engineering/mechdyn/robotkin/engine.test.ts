@@ -136,3 +136,21 @@ describe('planar 3R and impossible input', () => {
     expect(solveRobotKin({ ...ROBOTKIN_DEFAULTS, rows: bad })).toEqual({ ok: false, error: 'robotLimits' });
   });
 });
+
+describe('numeric inverse kinematics on the workspace boundary', () => {
+  it('reaches the fully stretched spatial RRR target and flags it singular', () => {
+    // By hand: q1 = 30 deg, q2 = q3 = 0 lays links 2 and 3 end to end, 2 m out at the base height 0.5 m.
+    const c30 = Math.cos(Math.PI / 6),
+      s30 = Math.sin(Math.PI / 6);
+    const r = ok(solveRobotKin({ ...ROBOTKIN_DEFAULTS, rows: SPATIAL_RRR, target: [2 * c30, 2 * s30, 0.5] }));
+    expect(r.ik.reachable).toBe(true);
+    const best = r.ik.solutions.reduce((a, b) => (a.error < b.error ? a : b));
+    expect(best.error).toBeLessThan(1e-7 * 2.5);
+    expect(best.singular).toBe(true);
+    const wrap = (v: number) => Math.atan2(Math.sin(v), Math.cos(v));
+    expect(wrap(best.q[0] - Math.PI / 6)).toBeCloseTo(0, 3);
+    expect(wrap(best.q[1])).toBeCloseTo(0, 3);
+    expect(wrap(best.q[2])).toBeCloseTo(0, 3);
+    expect(r.steps.some((step) => step.key === 'robotKinBoundary')).toBe(true);
+  });
+});

@@ -196,6 +196,8 @@ export const steps = {
   robotKinElbows: 'Each sign of the elbow angle gives one solution (elbow up and elbow down):',
   robotKinDls:
     'Numerical inverse kinematics: damped least squares, from the current joint values and two other starts, within the joint limits.',
+  robotKinBoundary:
+    'The target is on the edge of the workspace, a singular pose: the solver closes in slowly, to within 10⁻⁷ of the reach.',
   robotKinUnreachable: 'The target is out of reach, so no solution lands on it.',
   lagrangeL: 'Form the Lagrangian, the kinetic energy minus the potential energy:',
   lagrangePartials:

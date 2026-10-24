@@ -135,6 +135,8 @@ export interface IkSolution {
   error: number;
   withinLimits: boolean;
   label: 'elbowUp' | 'elbowDown' | 'numeric';
+  /** Reached only by slow convergence, as on the edge of the workspace where the Jacobian loses rank. */
+  singular: boolean;
 }
 
 export interface RobotKinResult {
@@ -182,13 +184,15 @@ export function ik2R(
   });
 }
 
-/** Damped least squares on the position, from a start; null when it stalls. */
+/** Damped least squares on the position, from a start; null when it stalls short of the target. A target on the
+ * workspace boundary, where the Jacobian is singular, converges only slowly: it is accepted to 1e-7 of the reach and
+ * flagged singular. */
 export function ikNumeric(
   rows: readonly DhRow[],
   c: DhConvention,
   target: readonly number[],
   start: readonly number[],
-): number[] | null {
+): { q: number[]; singular: boolean } | null {
   let q = [...start];
   const reach = rows.reduce((s, r) => s + Math.abs(r.a) + Math.abs(r.d), 0) || 1;
   const lambda = 1e-3 * reach;
@@ -196,7 +200,7 @@ export function ikNumeric(
     const arm = setJoints(rows, q);
     const p = endPos(arm, c);
     const e = [target[0] - p[0], target[1] - p[1], target[2] - p[2]];
-    if (Math.hypot(...e) < 1e-12 * reach) return q;
+    if (Math.hypot(...e) < 1e-12 * reach) return { q, singular: false };
     const Jv = jacobian(arm, c).slice(0, 3);
     const JJt = gram(Jv, true).map((row, i) => row.map((v, j) => v + (i === j ? lambda * lambda : 0)));
     const y = solve(JJt, e);
@@ -214,7 +218,9 @@ export function ikNumeric(
     });
   }
   const p = endPos(setJoints(rows, q), c);
-  return Math.hypot(target[0] - p[0], target[1] - p[1], target[2] - p[2]) < 1e-9 * reach ? q : null;
+  const miss = Math.hypot(target[0] - p[0], target[1] - p[1], target[2] - p[2]);
+  if (miss < 1e-9 * reach) return { q, singular: false };
+  return miss < 1e-7 * reach ? { q, singular: true } : null;
 }
 
 const matTex = (A: Mat) =>
@@ -325,12 +331,12 @@ function numericIk(rows: readonly DhRow[], c: DhConvention, target: readonly num
     rows.map((r, i) => (r.type === 'R' ? r.theta + (i % 2 ? -1 : 1) * 1.2 : r.d)),
   ];
   for (const s of starts) {
-    const q = ikNumeric(rows, c, target, s);
-    if (!q) continue;
-    const norm = q.map((v, i) => (rows[i].type === 'R' ? wrapAngle(v) : v));
+    const found = ikNumeric(rows, c, target, s);
+    if (!found) continue;
+    const norm = found.q.map((v, i) => (rows[i].type === 'R' ? wrapAngle(v) : v));
     if (seen.some((o) => o.every((v, i) => Math.abs(v - norm[i]) < 1e-6))) continue;
     seen.push(norm);
-    solutions.push(check(norm, 'numeric'));
+    solutions.push({ ...check(norm, 'numeric'), singular: found.singular });
   }
   return solutions;
 }
@@ -344,13 +350,14 @@ function inverse(input: RobotKinInput, p: Pose, steps: MechStep[]): RobotKinResu
     const at = endPos(setJoints(rows, q), c);
     const z = p.planar ? p.position[2] : target[2];
     const error = Math.hypot(target[0] - at[0], target[1] - at[1], z - at[2]);
-    return { q, error, withinLimits: withinLimits(rows, q), label };
+    return { q, error, withinLimits: withinLimits(rows, q), label, singular: false };
   };
   const closed = p.planar && rows.every((r) => r.d === 0) && (n === 2 || n === 3);
   const solutions = closed ? closedIk(rows, target, check, steps) : numericIk(rows, c, target, check);
   if (!closed) steps.push({ key: 'robotKinDls', math: DLS });
   const reachable = solutions.some((s) => s.error < 1e-6 * armReach(rows));
   if (!reachable) steps.push({ key: 'robotKinUnreachable' });
+  else if (solutions.some((s) => s.singular)) steps.push({ key: 'robotKinBoundary' });
   return { solutions, reachable, method: closed ? (n === 2 ? 'closed2R' : 'closed3R') : 'numeric' };
 }
 
