@@ -1,7 +1,7 @@
-// The physics tools window: a tab per tool (arrow keys, Home and End move between them), the unit system, and the
-// tool that is shown. The window remembers its tab, its unit system, and what was typed in each tool.
-import { Suspense, useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+// The physics tools window: a tool picker, the unit system, and the tool that is shown. With 9 tools a list box
+// stays one row high at any width, where a row of tabs would fill a narrow window. The window remembers its tool, its
+// unit system, and what was typed in each tool.
+import { Suspense, useEffect, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { PHYSICS_KIT } from '../kit';
 import { sayKey } from '../kit/say';
@@ -27,24 +27,15 @@ export function PhysicsKit() {
   const [tab, setTab] = useState(() => known(savedPhysicsTab()));
   const [system, setSystem] = useState<UnitSystem>(saved.system === 'US' ? 'US' : 'SI');
   const [inputs, setInputs] = useState<Record<string, unknown>>(saved.inputs ?? {});
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => followPhysicsTab(() => setTab(known(savedPhysicsTab()))), []);
   useEffect(() => saveStored(STORE, { system, inputs }), [system, inputs]);
 
-  const choose = (index: number, focus: boolean) => {
-    const tool = PHYSICS_KIT.tools[index];
+  const choose = (id: string) => {
+    const tool = PHYSICS_KIT.tools.find((one) => one.id === id);
     if (!tool) return;
     setTab(tool.id);
     savePhysicsTab(tool.id);
-    if (focus) tabs.current[index]?.focus();
-  };
-  const onKey = (event: KeyboardEvent, index: number) => {
-    const last = PHYSICS_KIT.tools.length - 1;
-    const next = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: last }[event.key];
-    if (next === undefined) return;
-    event.preventDefault();
-    choose(next > last ? 0 : next < 0 ? last : next, true);
   };
 
   const shown = PHYSICS_KIT.tools.find((tool) => tool.id === tab);
@@ -53,27 +44,16 @@ export function PhysicsKit() {
   return (
     <div className={tools.tool}>
       <div className={styles.bar}>
-        <div className={styles.tabs} role="tablist" aria-label={t('kitPhysics.ui.tools')}>
-          {PHYSICS_KIT.tools.map((tool, index) => (
-            <button
-              key={tool.id}
-              ref={(node) => {
-                tabs.current[index] = node;
-              }}
-              type="button"
-              role="tab"
-              id={`physics-tab-${tool.id}`}
-              aria-selected={tool.id === tab}
-              aria-controls="physics-panel"
-              tabIndex={tool.id === tab ? 0 : -1}
-              className={tools.tab}
-              onClick={() => choose(index, false)}
-              onKeyDown={(event) => onKey(event, index)}
-            >
-              {sayKey(tool.title)}
-            </button>
-          ))}
-        </div>
+        <label className={styles.picker}>
+          {t('kitPhysics.ui.tool')}
+          <select className={extra.input} value={shown.id} onChange={(event) => choose(event.target.value)}>
+            {PHYSICS_KIT.tools.map((tool) => (
+              <option key={tool.id} value={tool.id}>
+                {sayKey(tool.title)}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className={styles.system}>
           {t('kitPhysics.ui.units')}
           <select
@@ -86,7 +66,7 @@ export function PhysicsKit() {
           </select>
         </label>
       </div>
-      <div id="physics-panel" role="tabpanel" aria-labelledby={`physics-tab-${shown.id}`}>
+      <section aria-label={sayKey(shown.title)}>
         <Suspense fallback={<p className={tools.note}>{t('kitPhysics.ui.loading')}</p>}>
           <Tool
             key={shown.id}
@@ -96,7 +76,7 @@ export function PhysicsKit() {
             insert={pageInsert}
           />
         </Suspense>
-      </div>
+      </section>
     </div>
   );
 }

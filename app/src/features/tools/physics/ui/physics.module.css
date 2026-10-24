@@ -1,5 +1,5 @@
 /*
- * The physics tools window: a wrapping row of tool tabs with the unit system beside it, the fields, and a result
+ * The physics tools window: a tool picker with the unit system beside it, the fields, and a result
  * card with a table, the worked steps, and a figure. On tokens, so light, dark, and contrast themes all work, and
  * nothing is told by color alone.
  */
@@ -12,12 +12,16 @@
     justify-content: space-between;
   }
 
-  .tabs {
-    display: flex;
-    flex-wrap: wrap;
+  .picker {
+    display: grid;
     gap: var(--space-1);
     flex: 1 1 16rem;
-    border-block-end: 1px solid var(--color-border-subtle);
+    min-inline-size: 0;
+    font-size: var(--type-small-size);
+  }
+
+  .picker select {
+    inline-size: 100%;
   }
 
   .system {

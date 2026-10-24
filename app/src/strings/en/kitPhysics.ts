@@ -16,7 +16,7 @@ export const kitPhysics = {
   open: 'Open physics tools',
   keywords: 'physics fields waves optics relativity nuclear orbits spacecraft',
   ui: {
-    tools: 'Physics tools',
+    tool: 'Tool',
     units: 'Units',
     si: 'SI',
     us: 'US customary',
