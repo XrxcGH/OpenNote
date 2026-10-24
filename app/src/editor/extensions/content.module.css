@@ -73,8 +73,8 @@
   .foldButton {
     display: inline-grid;
     place-items: center;
-    min-inline-size: var(--size-chrome-hit);
-    min-block-size: var(--size-chrome-hit);
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
     padding: 0;
     border: 0;
     border-radius: var(--radius-sm);
@@ -82,6 +82,12 @@
     background: transparent;
     font: inherit;
     cursor: pointer;
+  }
+
+  /* display above would show a button the callout hides (a callout that cannot fold has no fold button). */
+  .calloutType[hidden],
+  .foldButton[hidden] {
+    display: none;
   }
 
   .calloutType::before {
@@ -125,6 +131,7 @@
   }
 
   .mathField {
+    min-block-size: var(--target-size);
     font: inherit;
     color: var(--color-text-primary);
     background: var(--color-surface-raised);

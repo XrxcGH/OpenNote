@@ -10,6 +10,10 @@
     margin-block-end: var(--space-3);
   }
 
+  .bar select {
+    min-block-size: var(--target-size);
+  }
+
   .rules {
     display: grid;
     gap: var(--space-2);
@@ -35,7 +39,7 @@
 
   .cell {
     box-sizing: border-box;
-    min-block-size: var(--size-chrome-hit);
+    min-block-size: var(--target-size);
     max-inline-size: 100%;
     padding-inline: var(--space-2);
     border: 1px solid var(--color-border-control);

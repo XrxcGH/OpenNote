@@ -163,8 +163,8 @@
   }
 
   .toggle {
-    min-block-size: var(--size-target-min);
-    margin-block-start: var(--space-1);
+    min-block-size: var(--target-size);
+    margin-block-start: var(--space-2);
     margin-inline-end: var(--space-2);
     padding: var(--space-1) var(--space-2);
     font: inherit;
@@ -220,11 +220,11 @@
   .actions {
     display: flex;
     gap: var(--space-3);
-    margin-block-start: var(--space-2);
+    margin-block-start: var(--space-3);
   }
 
   .actions button {
-    min-block-size: var(--size-target-min);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);

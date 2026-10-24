@@ -23,7 +23,7 @@
     display: inline-flex;
     gap: var(--space-2);
     align-items: center;
-    min-block-size: var(--size-chrome-hit);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-pill);
@@ -90,7 +90,7 @@
   .input {
     box-sizing: border-box;
     inline-size: 100%;
-    min-block-size: var(--size-chrome-hit);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
