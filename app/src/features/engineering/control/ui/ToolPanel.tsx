@@ -8,7 +8,7 @@ import type { MenuItemSpec } from '../../../../ui';
 import { PAGE } from './plot';
 import { pinUnits, runTool, type Problem } from './read';
 import { firstTexts, shownFields, type Field, type ToolSpec } from './spec';
-import { unitOf, type System } from './units';
+import { differsBySystem, unitOf, type System } from './units';
 import {
   answerLatex,
   answerText,
@@ -186,7 +186,8 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const settled = useDeferredValue(texts);
   const run = useMemo(() => runTool(spec, settled, system), [spec, settled, system]);
   const problems = new Map(run.ok ? [] : run.fields.map((one) => [one.field, one.problem] as const));
-  const hasUnits = spec.fields.some((field) => field.type === 'number' && field.unit);
+  // The choice of units shows only when it changes something.
+  const hasUnits = spec.fields.some((field) => field.type === 'number' && field.unit && differsBySystem(field.unit));
   const changeSystem = (next: System) => {
     if (next === system) return;
     setTexts(pinUnits(spec, texts, system, next));

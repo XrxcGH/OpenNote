@@ -30,6 +30,9 @@ export type UnitKind = keyof typeof KINDS;
 
 export const isUnitKind = (text: string): text is UnitKind => text in KINDS;
 
+/** True when the kind is shown in different units in SI and US customary. */
+export const differsBySystem = (kind: UnitKind): boolean => KINDS[kind].si !== KINDS[kind].us;
+
 /** The unit a kind is typed in, in core/units syntax. */
 export const typedUnit = (kind: UnitKind, system: System): string => KINDS[kind][system];
 
