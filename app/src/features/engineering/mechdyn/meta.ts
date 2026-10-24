@@ -24,6 +24,7 @@ export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [
   tool('compliant', 'Spiral'),
   tool('kinetics', 'Path'),
   tool('sdof', 'Waveform'),
+  tool('mdof', 'Waves'),
   tool('robotkin', 'Robot'),
   tool('robotdyn', 'Joystick'),
 ];

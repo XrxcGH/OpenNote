@@ -92,6 +92,9 @@ export const kitMechDyn = {
     camReturn: 'The follower doesn’t end where it started. Make the returns add up to the rises.',
     camOffset: 'The offset must be smaller than the prime circle radius.',
     mdofEmpty: 'Add at least one mass.',
+    mdofSprings:
+      'Type {count} springs: wall to the first mass, between each pair, then the last mass to the wall (0 for none).',
+    mdofDampers: 'Type at most {count} dampers, placed like the springs.',
     mdofTooBig: 'This tool handles up to 12 degrees of freedom.',
     mdofShape: 'M, K, and C must be square and the same size.',
     mdofSymmetric: 'M, K, and C must be symmetric.',

@@ -157,6 +157,31 @@ const CASES: readonly Case[] = [
     texts: { x: '1.5 ft', y: '0.5 ft' },
     expect: { x: '1.1248 ft', y: '1.4659 ft', solutions: '2' },
   },
+  {
+    name: 'two masses between walls: both natural frequencies',
+    tool: 'mdof',
+    texts: {},
+    expect: { 'omega:1': '1 rad/s', 'omega:2': '1.7321 rad/s' },
+  },
+  {
+    name: 'three masses, fixed and free',
+    tool: 'mdof',
+    texts: { masses: '1 1 1', springs: '1 1 1 0', x0: '10 0 0' },
+    expect: { 'omega:1': '0.44504 rad/s', 'omega:2': '1.247 rad/s', 'omega:3': '1.8019 rad/s' },
+  },
+  {
+    name: 'the same two masses in US units',
+    tool: 'mdof',
+    system: 'us',
+    texts: { masses: '2.2046226 2.2046226', springs: '0.0057101471 0.0057101471 0.0057101471', x0: '0.4 0' },
+    expect: { 'omega:1': '1 rad/s', 'omega:2': '1.7321 rad/s' },
+  },
+  {
+    name: 'a steel cantilever: first bending frequency',
+    tool: 'mdof',
+    texts: { model: 'member' },
+    expect: { 'f:1': '28.246 Hz' },
+  },
 ];
 
 describe('the answers the window shows', () => {
