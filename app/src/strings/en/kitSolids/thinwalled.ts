@@ -20,7 +20,9 @@ export const thinwalled = {
   },
   hint: {
     booms: 'Type x y B for each boom: x and y in {length}, and the boom area B in {area}. Booms are numbered from 1.',
-    walls: 'Type i j t for each wall: the two boom numbers it joins, and its thickness in {length}.',
+    walls:
+      'Type i j t for each wall: the two boom numbers it joins, and its thickness in {length}. Add tD, the ' +
+      'thickness that carries direct stress, to idealize the skin into the booms.',
   },
   option: { shear: 'Through the shear center', point: 'At a point' },
   example: {
@@ -28,6 +30,7 @@ export const thinwalled = {
     bredt: 'Single-cell box under a torque',
     twoCell: 'Two-cell box under a torque',
     channel: 'Open channel: shear center',
+    skin: 'Stiffened box, skin idealized into the booms, under a moment',
     offset: 'Box with an offset shear and a moment',
   },
   row: {
@@ -79,6 +82,9 @@ export const thinwalled = {
 } as const;
 
 export const thinwalledSteps = {
+  idealize: 'Idealize the effective skin into the booms, with the stress ratio from the bending moment.',
+  idealizeShear: 'Idealize the effective skin into the booms, with the stress ratio from the moment the shear sets up.',
+  idealized: 'These are the boom areas, worked out again until they settle, used from here on.',
   centroid: 'Find the centroid of the boom areas.',
   inertia: 'Find the second moments of the boom areas about the centroid.',
   direct: 'The bending moments give each boom its direct stress.',

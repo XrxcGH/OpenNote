@@ -102,6 +102,7 @@ export const kitSolids = {
     blockLine: 'Block line {detail} could not be read. Type the cycles applied, then the cycles to failure.',
     preloadFraction: 'The preload fraction must be more than 0 and at most 1.',
     jointConstant: 'C must be between 0 and 1.',
+    idealizeLoad: 'To idealize the skin, give a bending moment, or a shear force, to set the stress ratio.',
     fewTeeth: 'The Lewis table starts at {detail} teeth.',
     threadLength: 'The threaded length within the grip cannot be more than the grip.',
     springIndex: 'The coil diameter must be larger than the wire diameter.',

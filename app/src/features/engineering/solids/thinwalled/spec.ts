@@ -27,9 +27,11 @@ function readBooms(text: string, system: System): Boom[] {
 function readWalls(text: string, system: System): Wall[] {
   return typedLines(text).map(({ words, line }) => {
     const n = words.map(Number);
-    if (n.length !== 3 || !n.every(Number.isFinite) || !Number.isInteger(n[0]) || !Number.isInteger(n[1]))
+    const sized = n.length === 3 || n.length === 4;
+    if (!sized || !n.every(Number.isFinite) || !Number.isInteger(n[0]) || !Number.isInteger(n[1]))
       fail('wallLine', String(line));
-    return { i: n[0] - 1, j: n[1] - 1, t: fromShown(n[2], 'length', system) };
+    const wall = { i: n[0] - 1, j: n[1] - 1, t: fromShown(n[2], 'length', system) };
+    return n.length === 4 ? { ...wall, tD: fromShown(n[3], 'length', system) } : wall;
   });
 }
 
@@ -78,6 +80,15 @@ export const thinwalledSpec: ToolSpec = {
         walls: '1 2 2\n2 3 2\n3 4 2',
         Sy: '5 kN',
         at: 'shear',
+      },
+    },
+    {
+      id: 'skin',
+      values: {
+        booms: BOX,
+        walls: '1 2 1 1\n2 3 1 1\n3 4 1 1\n4 1 1 1',
+        Sy: '',
+        Mx: '10 kN·m',
       },
     },
     {

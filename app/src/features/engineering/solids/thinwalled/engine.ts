@@ -8,7 +8,7 @@
 // q0 in each cell then closes it. The q0s and Gθ′ follow from the cells' equal rate of twist and the moments
 // about the origin. Each wall's flow is positive from its first boom to its second. Everything is in base SI.
 import { solveLinear } from '../../linalg';
-import { fail, notNegative, positive, q, step, type KitStep } from '../kit/types';
+import { fail, notNegative, positive, q, step, type KitStep, type StepValue } from '../kit/types';
 
 export interface Boom {
   readonly x: number;
@@ -21,6 +21,9 @@ export interface Wall {
   readonly i: number;
   readonly j: number;
   readonly t: number;
+  /** The thickness of the skin that carries direct stress, when it is idealized into the booms; 0 or none for a
+   * wall that carries shear only. */
+  readonly tD?: number;
 }
 
 export interface ThinLoads {
@@ -245,7 +248,85 @@ export interface ThinResult {
   readonly steps: KitStep[];
 }
 
-export function thinWalled(booms: readonly Boom[], walls: readonly Wall[], loads: ThinLoads): ThinResult {
+/**
+ * Boom idealization of a skin that carries direct stress (Megson). Take a wall of effective thickness tD and length
+ * b between booms i and j. It adds tD b/6 (2 + σj/σi) to boom i, and tD b/6 (2 + σi/σj) to boom j. The stress ratio
+ * comes from the bending moment, or from the shear's moment when no moment is given. The ratio depends on the areas it
+ * gives, so it is worked out again until the areas settle. A boom on the neutral axis takes nothing.
+ */
+export function idealize(
+  booms: readonly Boom[],
+  walls: readonly Wall[],
+  loads: Pick<ThinLoads, 'Sx' | 'Sy' | 'Mx' | 'My'>,
+): { booms: Boom[]; added: number[]; steps: KitStep[] } {
+  const typed = booms.map((b) => b.B);
+  if (!walls.some((w) => (w.tD ?? 0) > 0)) return { booms: [...booms], added: typed.map(() => 0), steps: [] };
+  walls.forEach((w) => notNegative(w.tD ?? 0, 'tD'));
+  const bending = loads.Mx !== 0 || loads.My !== 0;
+  const [Mx, My] = bending ? [loads.Mx, loads.My] : [loads.Sy, loads.Sx];
+  if (Mx === 0 && My === 0) fail('idealizeLoad');
+  const length = (w: Wall) => {
+    if (!(w.i >= 0 && w.j >= 0 && w.i < booms.length && w.j < booms.length) || w.i === w.j) fail('wallBooms');
+    return Math.hypot(booms[w.j].x - booms[w.i].x, booms[w.j].y - booms[w.i].y);
+  };
+  // A first guess: the skin's area shared equally, as for equal stresses at both ends.
+  let added = typed.map(() => 0);
+  walls.forEach((w) => {
+    const half = ((w.tD ?? 0) * length(w)) / 2;
+    added[w.i] += half;
+    added[w.j] += half;
+  });
+  for (let round = 0; round < 50; round++) {
+    const areas = typed.map((B, n) => B + added[n]);
+    const sigma = stressShape(booms, areas, Mx, My);
+    const top = Math.max(...sigma.map(Math.abs));
+    const next = typed.map(() => 0);
+    const share = (from: number, to: number, w: Wall) =>
+      Math.abs(sigma[from]) <= 1e-9 * top ? 0 : (((w.tD ?? 0) * length(w)) / 6) * (2 + sigma[to] / sigma[from]);
+    walls.forEach((w) => {
+      next[w.i] += share(w.i, w.j, w);
+      next[w.j] += share(w.j, w.i, w);
+    });
+    const change = Math.max(...next.map((value, n) => Math.abs(value - added[n])));
+    added = next;
+    if (change <= 1e-12 * Math.max(...areas)) break;
+  }
+  const out = booms.map((b, n) => ({ ...b, B: typed[n] + added[n] }));
+  const vars: Record<string, StepValue> = {};
+  const parts = out.map((b, n) => {
+    vars[`B${n}`] = q(b.B, 'area');
+    return `B_{${n + 1}} = [[B${n}]]`;
+  });
+  return {
+    booms: out,
+    added,
+    steps: [
+      step(
+        bending ? 'thinwalled.idealize' : 'thinwalled.idealizeShear',
+        'B_i = B_{i,0} + \\sum \\frac{t_D b}{6}\\left(2 + \\frac{\\sigma_j}{\\sigma_i}\\right)',
+      ),
+      step('thinwalled.idealized', parts.join(',\\quad '), vars),
+    ],
+  };
+}
+
+/** The direct stress at each boom for a moment, up to a factor, with these boom areas. */
+function stressShape(booms: readonly Boom[], areas: readonly number[], Mx: number, My: number): number[] {
+  const A = areas.reduce((s, B) => s + B, 0);
+  if (!(A > 0)) fail('inertiaMatrix');
+  const xc = booms.reduce((s, b, n) => s + areas[n] * b.x, 0) / A;
+  const yc = booms.reduce((s, b, n) => s + areas[n] * b.y, 0) / A;
+  const Ixx = booms.reduce((s, b, n) => s + areas[n] * (b.y - yc) ** 2, 0);
+  const Iyy = booms.reduce((s, b, n) => s + areas[n] * (b.x - xc) ** 2, 0);
+  const Ixy = booms.reduce((s, b, n) => s + areas[n] * (b.x - xc) * (b.y - yc), 0);
+  const D = Ixx * Iyy - Ixy ** 2;
+  if (!(D > 0)) fail('inertiaMatrix');
+  return booms.map((b) => ((My * Ixx - Mx * Ixy) * (b.x - xc) + (Mx * Iyy - My * Ixy) * (b.y - yc)) / D);
+}
+
+export function thinWalled(typedBooms: readonly Boom[], walls: readonly Wall[], loads: ThinLoads): ThinResult {
+  const ideal = idealize(typedBooms, walls, loads);
+  const booms = ideal.booms;
   const g = thinGeometry(booms, walls);
   const center = shearCenter(g);
   const D = g.Ixx * g.Iyy - g.Ixy ** 2;
@@ -275,7 +356,7 @@ export function thinWalled(booms: readonly Boom[], walls: readonly Wall[], loads
     center,
     sigma,
     ...(openTorsion ? { openTorsion } : {}),
-    steps: thinSteps(g, result, loads, center, M),
+    steps: [...ideal.steps, ...thinSteps(g, result, loads, center, M)],
   };
 }
 

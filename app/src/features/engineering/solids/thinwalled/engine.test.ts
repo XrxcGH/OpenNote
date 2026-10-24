@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { firstTexts, runTool } from '../kit/read';
 import { SolidsError } from '../kit/types';
-import { thinWalled, type Boom, type ThinLoads, type Wall } from './engine';
+import { idealize, thinWalled, type Boom, type ThinLoads, type Wall } from './engine';
 import { thinwalledSpec } from './spec';
 
 const rel = (a: number | undefined, b: number, tol: number) =>
@@ -222,5 +222,37 @@ describe('impossible sections', () => {
     expect(bad({ booms: '1 2' })).toBe('boomLine');
     expect(bad({ walls: '1 2.5 1' })).toBe('wallLine');
     expect(bad({ Sy: '10 MPa' })).toBe('unitMismatch');
+  });
+});
+
+describe('boom idealization', () => {
+  const mm = 1e-3;
+  const box: Boom[] = [
+    { x: 100 * mm, y: 50 * mm, B: 100 * mm * mm },
+    { x: -100 * mm, y: 50 * mm, B: 100 * mm * mm },
+    { x: -100 * mm, y: -50 * mm, B: 100 * mm * mm },
+    { x: 100 * mm, y: -50 * mm, B: 100 * mm * mm },
+  ];
+  const skin: Wall[] = [0, 1, 2, 3].map((i) => ({ i, j: (i + 1) % 4, t: 1 * mm, tD: 1 * mm }));
+
+  it('adds t b/6 (2 + ratio) of each effective wall to its booms', () => {
+    const r = idealize(box, skin, { Sx: 0, Sy: 0, Mx: 10e3, My: 0 });
+    // Covers: equal stresses at both ends, t b/2 = 100 mm²; sides: opposite stresses, t h/6 = 16.667 mm².
+    for (const b of r.booms) rel(b.B / mm ** 2, 100 + 100 + 100 / 6, 1e-12);
+  });
+
+  it('gives the I of the stringers and the skin worked out directly', () => {
+    const r = thinWalled(box, skin, { Sx: 0, Sy: 0, T: 0, Mx: 10e3, My: 0, at: 'shear' });
+    // Stringers 4 x 100 x 50² + covers 2 x 200 x 1 x 50² + sides 2 x 1 x 100³/12, in mm⁴.
+    rel(r.g.Ixx / mm ** 4, 4 * 100 * 2500 + 2 * 200 * 2500 + (2 * 100 ** 3) / 12, 1e-12);
+    // The shear's own moment gives the same stress ratio, so the same areas.
+    const shear = idealize(box, skin, { Sx: 0, Sy: 5e3, Mx: 0, My: 0 });
+    rel(shear.booms[0].B / mm ** 2, 100 + 100 + 100 / 6, 1e-12);
+  });
+
+  it('needs a load for the ratio, and leaves walls without tD alone', () => {
+    expect(code(() => idealize(box, skin, { Sx: 0, Sy: 0, Mx: 0, My: 0 }))).toBe('idealizeLoad');
+    const plain = skin.map(({ i, j, t }) => ({ i, j, t }));
+    expect(idealize(box, plain, { Sx: 0, Sy: 0, Mx: 1, My: 0 }).booms).toEqual(box);
   });
 });
