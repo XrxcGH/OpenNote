@@ -220,7 +220,11 @@ test.describe('a docked panel leaves the page alone', () => {
     const panel = page.getByRole('dialog', { name: 'Citations' });
     await expect(panel).toBeVisible();
     const box = (await panel.boundingBox())!;
-    expect(box.x + box.width, 'from the right edge').toBeGreaterThanOrEqual(1100 - 1);
+    // It stops short of the page's scroll bar, which stays in reach.
+    const scrollbar = await page.evaluate(() =>
+      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scrollbar-size') || '0'),
+    );
+    expect(box.x + box.width, 'from the right edge').toBeGreaterThanOrEqual(1100 - scrollbar - 1);
     expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
     const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
     expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(1100 - 1);

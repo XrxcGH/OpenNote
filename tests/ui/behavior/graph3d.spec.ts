@@ -2,33 +2,15 @@
 // from the keyboard, keeping the turn in its text. A parametric graph traces its curve. The Vectors, Solids of
 // revolution, and Projectile simulator windows open from the palette and put their results into the page.
 
-import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { newLine, openSmart, runCommand } from './smart';
 
-// The slash command now inserts the calculator lane's 3D graph; a block that starts with "@3d" is the Tangent plane,
-// Contour and save-as view, so these specs replace the starter with that text.
-const SPACE_GRAPH = ['@3d', 'z = x^2 - y^2', '@tangent 1 0.5', '@show both'];
-
-async function insertSpaceGraph(page: Page): Promise<void> {
+test('draws a 3D graph from the slash menu and keeps a turn in its text', async ({ page }) => {
+  await openSmart(page);
   await newLine(page);
   await page.keyboard.type('/3d graph');
   await expect(page.getByRole('option', { name: 'Insert 3D graph' })).toBeVisible();
   await page.keyboard.press('Enter');
-  const source = page.locator('pre code', { hasText: 'z = sin(x) cos(y)' });
-  await expect(source).toBeVisible();
-  await source.click();
-  await page.keyboard.press('End');
-  await page.keyboard.press('Shift+Home');
-  for (const [index, line] of SPACE_GRAPH.entries()) {
-    if (index > 0) await page.keyboard.press('Enter');
-    await page.keyboard.insertText(line);
-  }
-}
-
-test('draws a 3D graph from the slash menu and keeps a turn in its text', async ({ page }) => {
-  await openSmart(page);
-  await insertSpaceGraph(page);
   const plot = page.getByRole('application', { name: '3D graph of 1 item' });
   await expect(plot).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/^Tangent plane at \(1, 0\.5, 0\.75\)/)).toBeVisible();
@@ -77,7 +59,10 @@ test('flies a projectile', async ({ page }) => {
 
 test('saves a 3D graph as SVG and PNG', async ({ page }) => {
   await openSmart(page);
-  await insertSpaceGraph(page);
+  await newLine(page);
+  await page.keyboard.type('/3d graph');
+  await expect(page.getByRole('option', { name: 'Insert 3D graph' })).toBeVisible();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('application', { name: '3D graph of 1 item' })).toBeVisible({ timeout: 20_000 });
 
   const read = async (name: string): Promise<{ file: string; bytes: Buffer }> => {
