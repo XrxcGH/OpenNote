@@ -1,7 +1,7 @@
 // The four analyses of a netlist: the DC operating point (with power in each element), an AC frequency sweep with
 // resonance and bandwidth, a transient response, and a Thevenin/Norton equivalent between 2 nodes.
 import { fail } from '../shared';
-import { assemble, layoutOf, R_OFF, R_ON, solve } from './mna';
+import { assemble, layoutOf, solve, switchConductance } from './mna';
 import type { Context, Layout, System, TranState } from './mna';
 import { breakpoints, switchClosed, valueAt } from './sources';
 import type { Circuit, Element } from './parse';
@@ -34,7 +34,7 @@ function absorbed(e: Element, lay: Layout, x: number[]): number {
     case 'R':
       return (v * v) / e.value;
     case 'S':
-      return (v * v) / (switchClosed(e, 0, true) ? R_ON : R_OFF);
+      return v * v * switchConductance(switchClosed(e, 0, true), true);
     case 'V':
     case 'E':
     case 'H':

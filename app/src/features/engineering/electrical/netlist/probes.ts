@@ -1,6 +1,6 @@
 // Reading what to look at: v(node), v(a,b), i(name), or a bare node name; and evaluating it on a solution.
 import { fail } from '../shared';
-import { R_OFF, R_ON } from './mna';
+import { switchConductance } from './mna';
 import type { Layout } from './mna';
 import { nodeIndex } from './parse';
 import type { Circuit, Element } from './parse';
@@ -37,7 +37,7 @@ function elementCurrent(e: Element, lay: Layout, sol: Solution, aux: Aux): { re:
   const v = sub(at(sol, e.nodes[0]!), at(sol, e.nodes[1]!));
   if (e.kind === 'R') return { re: v.re / e.value, im: v.im / e.value };
   if (e.kind === 'S') {
-    const g = 1 / (switchClosed(e, aux.t ?? 0, aux.initial) ? R_ON : R_OFF);
+    const g = switchConductance(switchClosed(e, aux.t ?? 0, aux.initial), aux.initial);
     return { re: v.re * g, im: v.im * g };
   }
   if (e.kind === 'C') {

@@ -53,8 +53,21 @@ export interface Context {
 
 export const R_ON = 1e-3;
 export const R_OFF = 1e9;
-/** A tiny conductance from every node to ground so a node with no DC path reads 0 V instead of failing. */
-const GMIN = 1e-14;
+/**
+ * A tiny conductance from every node to ground so a node with no DC path reads 0 V instead of failing. It is kept
+ * a million times below the smallest conductance in the circuit so it cannot disturb a high-resistance divider.
+ */
+function gminOf(circuit: Circuit): number {
+  let largest = 0;
+  for (const e of circuit.elements) if (e.kind === 'R' && e.value > largest) largest = e.value;
+  return Math.min(1e-14, 1e-6 / Math.max(largest, 1));
+}
+
+/** The conductance of a switch. Just before t = 0 an open switch is left out of the circuit, not a 1 GOhm leak. */
+export function switchConductance(closed: boolean, initial: boolean | undefined): number {
+  if (closed) return 1 / R_ON;
+  return initial ? 0 : 1 / R_OFF;
+}
 
 export class System {
   re: number[][];
@@ -137,7 +150,7 @@ function stampInductor(s: System, e: Element, c: Context, lay: Layout): void {
 
 const STAMPS: Record<Element['kind'], Stamp> = {
   R: (s, e) => s.admit(e.nodes[0]!, e.nodes[1]!, 1 / e.value),
-  S: (s, e, c) => s.admit(e.nodes[0]!, e.nodes[1]!, 1 / (switchClosed(e, c.t ?? 0, c.initial) ? R_ON : R_OFF)),
+  S: (s, e, c) => s.admit(e.nodes[0]!, e.nodes[1]!, switchConductance(switchClosed(e, c.t ?? 0, c.initial), c.initial)),
   C: stampCapacitor,
   L: stampInductor,
   V: (s, e, c, lay) => {
@@ -186,8 +199,9 @@ const STAMPS: Record<Element['kind'], Stamp> = {
 /** The full system for the circuit in this context. */
 export function assemble(circuit: Circuit, lay: Layout, c: Context): System {
   const s = new System(lay.size);
+  const gmin = gminOf(circuit);
   for (const e of circuit.elements) STAMPS[e.kind](s, e, c, lay);
-  for (let i = 0; i < lay.n; i++) s.add(i, i, GMIN);
+  for (let i = 0; i < lay.n; i++) s.add(i, i, gmin);
   if (c.test) {
     s.rhs(c.test.plus, 1);
     s.rhs(c.test.minus, -1);

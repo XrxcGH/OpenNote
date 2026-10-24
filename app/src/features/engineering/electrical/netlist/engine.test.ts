@@ -29,6 +29,12 @@ const at = (run: { t: number[]; values: number[][] }, time: number, probe = 0): 
 
 describe('DC operating point', () => {
   const divider = 'V1 in 0 10\nR1 in mid 1k\nR2 mid 0 1k';
+  it('the leak to ground is far below the circuit conductances: 1 V across 1e12 + 1e12 ohm reads 500 mV', () => {
+    const net = `V1 in 0 1
+R1 in mid 1e12
+R2 mid 0 1e12`;
+    near(volt(net, 'mid'), 0.5, 1e-6);
+  });
   it('10 V across 1 k and 1 k: midpoint 5 V, current 5 mA', () => {
     const c = parseNetlist(divider);
     const op = operatingPoint(c);
@@ -226,6 +232,16 @@ describe('transient response', () => {
     const run = tran('V1 in 0 5\nS1 in out 1m\nR1 out 0 1k', 'out', 1e-4, 2e-3);
     near(at(run, 5e-4), 0, 1e-4);
     near(at(run, 1.5e-3), 5, 1e-4);
+  });
+  it('a capacitor behind an open switch starts at 0 V and charges to 1 - e^-1 of the source after one time constant', () => {
+    // Textbook RC step: tau = R C = 1 ms after the switch closes at 0.2 ms, so v(1.2 ms) = 10 (1 - e^-1) = 6.3212 V.
+    const net = `V1 in 0 10
+S1 in a 0.2m
+R1 a out 1k
+C1 out 0 1u`;
+    const run = tran(net, 'out', 1e-5, 1.2e-3);
+    near(at(run, 1e-4), 0, 1e-3);
+    near(at(run, 1.2e-3), 10 * (1 - Math.exp(-1)), 5e-3);
   });
   it('a pulse source rises, holds, and falls on schedule', () => {
     const run = tran('V1 a 0 PULSE 0 1 1m 0 0 2m 5m\nR1 a 0 1k', 'a', 1e-4, 8e-3);
