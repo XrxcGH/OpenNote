@@ -326,6 +326,7 @@ impl Bridge {
                         notebook: notebook.path().to_path_buf(),
                         items: vec![file.id],
                     }],
+                    call: 0,
                 });
                 let at = file.deleted_at.to_rfc3339();
                 out.push((
@@ -347,6 +348,7 @@ impl Bridge {
             let key = notebook_key(&path);
             let (receipt, order) = self.receipt_of(&key, || TrashReceipt {
                 parts: vec![ReceiptPart::Notebook { path: path.clone() }],
+                call: 0,
             });
             let at = removed.removed_at.to_rfc3339();
             let node = trashed_node(
@@ -384,6 +386,9 @@ impl Bridge {
     /// The contract's restore: what is left of one trash call goes back.
     pub(crate) fn restore(&mut self, receipt: &str) -> IpcResult<Vec<NodeSummary>> {
         let parsed = TrashReceipt::decode(receipt).map_err(|_| not_found("That receipt"))?;
+        if self.notes.used_receipts.contains(receipt) {
+            return Err(not_found("Anything of that receipt in Trash"));
+        }
         let mut entries = Vec::new();
         for part in &parsed.parts {
             match part {
@@ -408,7 +413,9 @@ impl Bridge {
         if entries.is_empty() {
             return Err(not_found("Anything of that receipt in Trash"));
         }
-        self.restore_entries(entries)
+        let restored = self.restore_entries(entries)?;
+        self.notes.used_receipts.insert(receipt.to_owned());
+        Ok(restored)
     }
 
     /// Restores the listed items with these root IDs.

@@ -33,6 +33,9 @@ function fakePage(view: Record<string, unknown>) {
     },
   } as unknown as MountedPage;
   const queue = {
+    canUndo: () => false,
+    canRedo: () => false,
+    onUndoState: () => () => undefined,
     send: async (batch: { edits: unknown[] }) => {
       sent.push(...batch.edits);
       return { seq: 1, orderKeys: {}, canUndo: true, canRedo: false };

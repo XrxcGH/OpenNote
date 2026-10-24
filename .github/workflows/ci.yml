@@ -63,8 +63,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally under 2 minutes.
-    timeout-minutes: 10
+    # Normally under 4 minutes.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -76,7 +76,13 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Component tests (Vitest browser mode)
-        run: npm run test:components
+        # In three runs, each with a fresh browser: on Ubuntu one browser session that runs all 159 files was closed by
+        # the runner about three minutes in, with a different file running each time.
+        shell: bash
+        run: |
+          status=0
+          for shard in 1 2 3; do npm run test:components -- --shard=$shard/3 || status=1; done
+          exit $status
       - name: Keep the failure screenshots
         # Vitest saves a screenshot of the page for each failed test.
         if: failure()
@@ -90,8 +96,8 @@ jobs:
   ui-web:
     # The production interface in Edge: the bundle budget, then Playwright against the test build.
     runs-on: windows-latest
-    # Normally about 5 minutes.
-    timeout-minutes: 15
+    # The suite is 1400 tests (about 380 screenshots and 450 axe checks) on two workers: about 45 minutes.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -133,6 +139,32 @@ jobs:
           path: |
             tests/ui/report
             tests/ui/results
+          retention-days: 7
+
+  layout-audit:
+    # The whole app at three window sizes, in both themes and densities, checked for clipped text, overlap, covered scroll
+    # bars, and dead space (tests/ui/audit). Findings must match tests/ui/audit/known.json, in both directions. CI runs the
+    # three cells that between them hold every size, theme, and density; `npm run audit:layout` runs all 12.
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Layout audit
+        run: npm run audit:layout
+      - name: Keep the findings
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: layout-audit
+          path: tests/ui/audit/out
           retention-days: 7
 
   perf-typing:
@@ -191,8 +223,9 @@ jobs:
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
-    # Normally about 11 minutes with a cold cache.
-    timeout-minutes: 35
+    # About 11 minutes with a warm cache. The cache is saved only by a green run, so while the branch is red every run
+    # starts cold, and the build with the app's whole dependency tree then takes over 35 minutes on a 4-core runner.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -217,6 +250,8 @@ jobs:
       - name: Clippy ratchet (no new unwrap, expect, or panic in shipped code)
         # Existing uses are counted per file in checks/data/clippy-ratchet.json. A count may go down, never up.
         run: node checks/clippy-ratchet.ts
+      - name: Fetch every platform's crates (the no-network test reads all of them offline)
+        run: cargo fetch --locked
       - name: Rust tests
         run: cargo test --workspace
       - name: The notes contract suite against the app's notes bridge and the core

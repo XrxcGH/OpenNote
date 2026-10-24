@@ -15,7 +15,7 @@
 
   .withUnit {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-2);
     align-items: end;
   }
@@ -85,8 +85,7 @@
   }
 
   .tableWrap {
-    overflow: auto;
-    max-block-size: 50vh;
+    overflow-x: auto;
   }
 
   .numeric {

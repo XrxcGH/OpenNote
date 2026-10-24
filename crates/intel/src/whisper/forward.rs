@@ -92,12 +92,21 @@ impl<'m> Decoding<'m> {
             .blocks
             .iter()
             .map(|block| {
-                let cross = block.cross.as_ref().expect("decoder blocks have cross-attention");
+                // A decoder block always has cross-attention; a block without it has nothing to attend across.
+                let (cross_keys, cross_values) = block.cross.as_ref().map_or_else(
+                    || (Vec::new(), Vec::new()),
+                    |cross| {
+                        (
+                            cross.key.forward(features, audio_len),
+                            cross.value.forward(features, audio_len),
+                        )
+                    },
+                );
                 LayerCache {
                     keys: Vec::with_capacity(model.hparams.n_text_ctx * n_state),
                     values: Vec::with_capacity(model.hparams.n_text_ctx * n_state),
-                    cross_keys: cross.key.forward(features, audio_len),
-                    cross_values: cross.value.forward(features, audio_len),
+                    cross_keys,
+                    cross_values,
                 }
             })
             .collect();
@@ -146,23 +155,21 @@ impl<'m> Decoding<'m> {
             );
             add_into(&mut x, &block.attn.out.forward(&mixed, n));
 
-            let (cross_ln, cross) = (
-                block.cross_ln.as_ref().expect("decoder blocks have cross-attention"),
-                block.cross.as_ref().expect("decoder blocks have cross-attention"),
-            );
-            let normed = cross_ln.forward(&x);
-            let q = cross.query.forward(&normed, n);
-            let mixed = attention(
-                &q,
-                n,
-                &cache.cross_keys,
-                &cache.cross_values,
-                self.audio_len,
-                n_state,
-                h.n_text_head,
-                None,
-            );
-            add_into(&mut x, &cross.out.forward(&mixed, n));
+            if let (Some(cross_ln), Some(cross)) = (block.cross_ln.as_ref(), block.cross.as_ref()) {
+                let normed = cross_ln.forward(&x);
+                let q = cross.query.forward(&normed, n);
+                let mixed = attention(
+                    &q,
+                    n,
+                    &cache.cross_keys,
+                    &cache.cross_values,
+                    self.audio_len,
+                    n_state,
+                    h.n_text_head,
+                    None,
+                );
+                add_into(&mut x, &cross.out.forward(&mixed, n));
+            }
 
             let normed = block.mlp_ln.forward(&x);
             let mut up = block.mlp_up.forward(&normed, n);

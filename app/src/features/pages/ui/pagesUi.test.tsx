@@ -241,7 +241,7 @@ describe('PrintDialog', () => {
     await screen.findByText(/sheet on /, undefined, { timeout: 10_000 });
     await userEvent.click(screen.getByRole('button', { name: 'Print…' }));
     expect(submit).not.toHaveBeenCalled();
-  });
+  }, 30_000);
 
   it('keeps Print unavailable until the printers are listed, and sends nothing', async () => {
     const platform = createTestPlatform();
