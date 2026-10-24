@@ -15,6 +15,8 @@ export { INSERT_EVENT } from './flags';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { TOOLS, isToolId } from './ui/tools';
 export type { ToolId } from './ui/tools';
+export { openReasoningKit } from './reasoning/open';
+export type { ReasoningToolId } from './reasoning/meta';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { forgetPageItems, setPageItems } from './ui/upcomingStores';
 export { readUpcoming, setSourceItems, sourceItems, updateUpcomingItems } from './ui/upcomingMerge';

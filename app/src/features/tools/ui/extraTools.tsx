@@ -28,7 +28,16 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The reasoning kit loads on first open, and each of its tools loads when its tab opens.
+const KitReasoning = lazy(() => import('../reasoning').then((kit) => ({ default: kit.KitReasoningWindow })));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
+  if (tool === 'kit-reasoning')
+    return (
+      <Suspense fallback={null}>
+        <KitReasoning />
+      </Suspense>
+    );
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
     return (

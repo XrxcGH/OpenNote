@@ -2,6 +2,9 @@
 // once its feature works end to end in the app; turning one off hides its commands, menu items, and blocks.
 import type { FlagDef, FlagId } from '../../app/flags';
 
+export { REASONING_FLAGS } from './reasoning/flags';
+export type { ReasoningFlagId } from './reasoning/flags';
+
 export type ExprFlagId = Extract<FlagId, `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}`>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
