@@ -8,6 +8,7 @@ const TOOLS = [
   ['steam', 'CloudFog'],
   ['r134a', 'Snowflake'],
   ['idealgas', 'Cylinder'],
+  ['realgas', 'Gauge'],
   ['devices', 'Fan'],
   ['cycles', 'ArrowsClockwise'],
   ['psychro', 'DropHalf'],

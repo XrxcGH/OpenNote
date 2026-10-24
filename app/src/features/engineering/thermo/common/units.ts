@@ -25,6 +25,8 @@ export type Qty =
   | 'wavenumber'
   | 'k'
   | 'mu'
+  | 'molarV'
+  | 'eosA'
   | 'percent';
 
 export type System = 'SI' | 'US';
@@ -67,6 +69,11 @@ export const UNITS: Record<Qty, { SI: readonly UnitDef[]; US: readonly UnitDef[]
   wavenumber: { SI: [u('cm⁻¹', 1)], US: [u('cm⁻¹', 1)] },
   k: { SI: [u('W/(m·K)', 1)], US: [u('Btu/(h·ft·R)', (BTU * 1000) / 3600 / FT / (5 / 9))] },
   mu: { SI: [u('Pa·s', 1), u('µPa·s', 1e-6)], US: [u('lbm/(ft·s)', LBM / FT)] },
+  molarV: { SI: [u('m³/mol', 1), u('L/mol', 0.001), u('cm³/mol', 1e-6)], US: [u('ft³/lbmol', FT ** 3 / (LBM * 1000))] },
+  eosA: {
+    SI: [u('Pa·m⁶/mol²', 1), u('bar·L²/mol²', 0.1)],
+    US: [u('psia·ft⁶/lbmol²', (PSI * 1000 * FT ** 6) / (LBM * 1000) ** 2)],
+  },
 };
 
 /** Every unit of a kind, the chosen system's first. */

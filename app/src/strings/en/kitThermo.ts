@@ -2,6 +2,8 @@
 // real gases, steady-flow devices, cycles, psychrometrics, combustion, and statistical thermodynamics. Each
 // namespace file has one owner, so parallel work never edits the same file.
 
+import { kitThermoSteps } from './kitThermoSteps';
+
 export const kitThermo = {
   title: 'Thermodynamics kit',
   open: {
@@ -13,6 +15,7 @@ export const kitThermo = {
     r134a: 'Find a state of refrigerant R-134a from two properties',
     devices: 'Balance a turbine, compressor, nozzle, or other steady-flow device with the second law',
     cycles: 'Analyze a Rankine, Brayton, Otto, Diesel, refrigeration, or Carnot cycle',
+    realgas: 'Find Z and departures from a cubic equation of state, or the properties of a gas mixture',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -38,6 +41,10 @@ export const kitThermo = {
       'power cycle refrigeration cycle rankine reheat regenerative feedwater heater brayton gas turbine ' +
       'regeneration intercooling otto diesel dual carnot vapor compression heat pump cop thermal efficiency ' +
       'back work ratio mean effective pressure state table',
+    realgas:
+      'real gas compressibility factor z van der waals redlich kwong soave peng robinson cubic equation of ' +
+      'state departure function enthalpy entropy fugacity reduced pressure temperature gas mixture mole ' +
+      'fraction mass fraction dalton amagat partial pressure kay rule pseudo critical',
   },
   tab: {
     statthermo: 'Statistical',
@@ -47,6 +54,7 @@ export const kitThermo = {
     r134a: 'R-134a',
     devices: 'Devices',
     cycles: 'Cycles',
+    realgas: 'Real gas',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -98,6 +106,7 @@ export const kitThermo = {
     cycleTs: 'Cycle on a T-s diagram',
     cyclePh: 'Cycle on a p-h diagram',
     cyclePv: 'Cycle on a p-v diagram',
+    zIsotherm: 'Compressibility along the isotherm',
   },
   mode: {
     gas: 'Gas molecule',
@@ -114,6 +123,8 @@ export const kitThermo = {
     piston: 'Otto, Diesel, or dual cycle',
     fridge: 'Vapor-compression refrigeration, R-134a',
     carnot: 'Carnot limits between two reservoirs',
+    eosState: 'One state from a cubic equation of state',
+    mixture: 'An ideal-gas mixture',
   },
   field: {
     molarMass: 'Molar mass',
@@ -218,6 +229,25 @@ export const kitThermo = {
     subcool: 'Subcooling at the condenser exit',
     coolingLoadOptional: 'Cooling load (optional)',
     heatInOptional: 'Heat from the hot reservoir (optional)',
+    criticalT: 'Critical temperature T_c',
+    criticalP: 'Critical pressure p_c',
+    acentric: 'Acentric factor ω',
+    specificVolume: 'Specific volume v',
+    eos: 'Equation of state',
+    root: 'Root of the cubic',
+    basis: 'Composition by',
+    mixGas1: 'Gas 1',
+    mixGas2: 'Gas 2',
+    mixGas3: 'Gas 3',
+    mixGas4: 'Gas 4',
+    massPart1: 'Parts by mass of gas 1',
+    massPart2: 'Parts by mass of gas 2',
+    massPart3: 'Parts by mass of gas 3',
+    massPart4: 'Parts by mass of gas 4',
+    molePart1: 'Parts by moles of gas 1',
+    molePart2: 'Parts by moles of gas 2',
+    molePart3: 'Parts by moles of gas 3',
+    molePart4: 'Parts by moles of gas 4',
   },
   choice: {
     atom: 'Single atom',
@@ -293,6 +323,20 @@ export const kitThermo = {
     otto: 'Otto',
     diesel: 'Diesel',
     dual: 'Dual',
+    C2H6: 'Ethane, C₂H₆',
+    C4H10: 'n-Butane, C₄H₁₀',
+    NH3: 'Ammonia, NH₃',
+    customGas: 'Another gas: type its constants',
+    pengRobinson: 'Peng-Robinson',
+    srk: 'Soave-Redlich-Kwong',
+    redlichKwong: 'Redlich-Kwong',
+    vanDerWaals: 'Van der Waals',
+    pairTv: 'Temperature and specific volume',
+    rootStable: 'The stable one, by fugacity',
+    rootGas: 'Gas-like, the largest Z',
+    rootLiquid: 'Liquid-like, the smallest Z',
+    byMass: 'Mass',
+    byMoles: 'Moles',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -397,196 +441,32 @@ export const kitThermo = {
     qL: 'Heat from the cold space',
     qH: 'Heat to the warm space',
     yFraction: 'Fraction extracted',
+    zFactor: 'Compressibility factor Z',
+    vMolar: 'Molar volume',
+    vIdeal: 'Ideal-gas specific volume',
+    pIdeal: 'Ideal-gas pressure',
+    idealError: 'Ideal-gas error, 1/Z − 1',
+    reducedT: 'Reduced temperature',
+    reducedP: 'Reduced pressure',
+    pseudoReducedV: 'Pseudo-reduced volume',
+    hDeparture: 'Enthalpy departure h − h*',
+    sDeparture: 'Entropy departure s − s*',
+    zH: 'Enthalpy departure factor Z_h',
+    zS: 'Entropy departure factor Z_s',
+    fugacityCoeff: 'Fugacity coefficient',
+    fugacity: 'Fugacity',
+    eosA: 'Attraction constant a',
+    eosB: 'Co-volume b',
+    mixEntropy: 'Entropy of mixing',
+    moleFraction: 'Mole fraction,',
+    massFraction: 'Mass fraction,',
+    partialPressure: 'Partial pressure,',
+    pseudoTc: 'Pseudo-critical temperature',
+    pseudoPc: 'Pseudo-critical pressure',
+    pseudoOmega: 'Pseudo-critical acentric factor',
+    vKay: 'Specific volume, Peng-Robinson with Kay’s rule',
   },
-  step: {
-    stat: {
-      trans:
-        'Translation: the thermal wavelength is Λ = {lambda} pm, so the partition function per molecule is ' +
-        'q_tr = {q}.',
-      sackur: 'Sackur-Tetrode: the translational entropy is {S} J/(mol·K).',
-      rot: 'Rotation: θ_rot = hcB/k = {theta} K; with σ = {sigma}, q_rot = T/(σθ_rot) = {q}.',
-      vib: 'Vibration mode {n}: θ_vib = hcν̃/k = {theta} K, and its cv/R = {cv}.',
-      elec: 'The electronic ground level has degeneracy {g}, which adds R ln g = {S} J/(mol·K) to the entropy.',
-      total: 'Adding the modes: cv = {cv} J/(mol·K), cp = cv + R = {cp} J/(mol·K), and S = {S} J/(mol·K).',
-      einstein: 'Einstein solid with x = θ_E/T = {x}: cv/R = {cv}.',
-      debye: 'Debye solid with θ_D/T = {x}: the integral by quadrature gives cv/R = {cv}.',
-      dulong: 'That is {ratio} of the Dulong-Petit limit of 3R.',
-      speeds: 'Maxwell-Boltzmann speeds: most probable {mp} m/s, mean {mean} m/s, and root-mean-square {rms} m/s.',
-      mfp: 'Mean free path of hard spheres: λ = kT/(√2 π d² p) = {lambda} nm.',
-      kn: 'Knudsen number: Kn = λ/L = {kn}.',
-      knContinuum: 'Kn is below 0.01, so the gas behaves as a continuum.',
-      knSlip: 'Kn is between 0.01 and 0.1: continuum with slip at the walls.',
-      knTransition: 'Kn is between 0.1 and 10: transitional flow, where neither model is exact.',
-      knFree: 'Kn is above 10: free molecular flow.',
-      kinetic:
-        'Simple kinetic theory gives k = {k} W/(m·K) and μ = {mu} Pa·s; real gases are about 2 to 3 times higher.',
-      occX: 'With kT = {kT} eV, the reduced energy is x = (E - μ)/kT = {x}.',
-      occ: 'The occupancy is {fd} for fermions, {be} for bosons, and {mb} in the classical limit.',
-    },
-    gas: {
-      model: {
-        variable:
-          'Variable specific heats from the NASA polynomials: R = {R} kJ/(kg·K), and at T₁ cp = {cp} kJ/(kg·K) ' +
-          'and k = {k}.',
-        constant: 'Constant specific heats taken at 300 K: R = {R} kJ/(kg·K), cp = {cp} kJ/(kg·K), and k = {k}.',
-        cold: 'Cold-air standard: R = {R} kJ/(kg·K), cp = {cp} kJ/(kg·K), and k = {k}.',
-      },
-      isentropicVariable:
-        'Isentropic with variable specific heats: s°(T₂) = s°(T₁) + R ln(p₂/p₁), with s°(T₁) = {s1} and ' +
-        's°(T₂) = {s2} kJ/(kg·K) for a pressure ratio of {ratio}.',
-      isentropicConstant: 'Isentropic with constant specific heats and k = {k}.',
-      polytropic: 'Polytropic with n = {n}: p vⁿ stays constant.',
-      isothermal: 'Isothermal: T stays constant, so p v stays constant.',
-      isobaric: 'Constant pressure: v changes in proportion to T.',
-      isochoric: 'Constant volume: p changes in proportion to T.',
-      end: 'State 2: T₂ = {T2} K and p₂ = {p2} kPa; v₁ = {v1} and v₂ = {v2} m³/kg.',
-      changes: 'Changes: Δu = {du} kJ/kg, Δh = {dh} kJ/kg, and Δs = {ds} kJ/(kg·K).',
-      work: 'Work and heat: w_b = {wb} kJ/kg, q = Δu + w_b = {q} kJ/kg, and the steady-flow shaft work is {ws} kJ/kg.',
-      law: 'Ideal gas law: v = RT/p = {v} m³/kg.',
-      entropy: 'Entropy: s = s°(T) − R ln(p/100 kPa) = {s0} − R ln(p/100 kPa) = {s} kJ/(kg·K).',
-      relative: 'Relative pressure and volume: Pr = exp((s° − s°ref)/R) = {pr} and vr = (T/Tref)/Pr = {vr}.',
-      sound: 'Speed of sound: a = √(kRT) = {a} m/s.',
-    },
-    steam: {
-      test: {
-        abovePsat:
-          'Region test: at T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is above it, so the ' +
-          'state is liquid in region 1.',
-        belowPsat:
-          'Region test: at T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is below it, so the ' +
-          'state is vapor in region 2.',
-        aboveB23:
-          'Region test: T = {T} K is above 623.15 K, and p = {p} kPa is above the B23 boundary pressure of {pb} kPa, ' +
-          'so the state is in region 3.',
-        belowB23:
-          'Region test: T = {T} K is above 623.15 K, and p = {p} kPa is below the B23 boundary pressure of {pb} kPa, ' +
-          'so the state is in region 2.',
-        aboveRegion2: 'Region test: T = {T} K is above 1073.15 K, so the state is in region 5.',
-        saturated: 'The state is on the saturation line, region 4: T_sat = {T} K and p_sat = {p} kPa.',
-      },
-      vars1: 'Region 1 uses π = p/16.53 MPa = {pi} and τ = 1386 K/T = {tau} in the Gibbs energy γ(π, τ).',
-      vars2: 'Region 2 uses π = p/1 MPa = {pi} and τ = 540 K/T = {tau} in the Gibbs energy γ° + γʳ.',
-      vars5: 'Region 5 uses π = p/1 MPa = {pi} and τ = 1000 K/T = {tau} in the Gibbs energy γ° + γʳ.',
-      vars3:
-        'Region 3 uses the Helmholtz energy φ(δ, τ): the density that matches p is {rho} kg/m³, so δ = ρ/322 = ' +
-        '{delta} and τ = 647.096 K/T = {tau}.',
-      belowF:
-        'At this pressure the saturated liquid has {key}_f = {f}, and {key} = {value} is below it: compressed ' +
-        'liquid. Brent’s method on T gives T = {T} K.',
-      aboveG:
-        'At this pressure the saturated vapor has {key}_g = {g}, and {key} = {value} is above it: superheated ' +
-        'vapor. Brent’s method on T gives T = {T} K.',
-      between:
-        'At this pressure {key}_f = {f} and {key}_g = {g}, and {key} = {value} lies between them: a saturated ' +
-        'mixture at T_sat = {T} K.',
-      supercritical:
-        'The pressure is above the critical pressure, so there is no saturation line. Brent’s method on T gives ' +
-        'T = {T} K.',
-      lever: 'Lever rule: h = h_f + x h_fg = {hf} + {x} × {hfg} = {h} kJ/kg.',
-      leverS: 'In the same way s = s_f + x s_fg = {sf} + x × {sfg} = {s} kJ/(kg·K), and v = {v} m³/kg.',
-      result: 'The state: v = {v} m³/kg, u = {u} kJ/kg, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
-    },
-    psy: {
-      pwsWater: 'State {label} at {t} °C: the saturation pressure over water, by IF97, is p_ws = {pws} kPa.',
-      pwsIce: 'State {label} at {t} °C: the saturation pressure over ice, by IAPWS R14-08, is p_ws = {pws} kPa.',
-      omega: 'The vapor pressure is p_v = {pv} kPa (φ = {phi} %), so the humidity ratio is ω = {omega} kg/kg.',
-      enthalpy: 'The enthalpy is h = {h} kJ/kg dry air.',
-      wetDew:
-        'The adiabatic-saturation balance gives the wet bulb {twb} °C, p_ws(T_dp) = p_v gives the dew point ' +
-        '{tdp} °C, and v = {v} m³/kg dry air.',
-      sensible: 'At constant ω the energy balance is q = h₂ − h₁ = {q} kJ/kg dry air, with h₂ = {h2}.',
-      dehumidify:
-        'Water balance: {water} kg/kg dry air condenses and leaves as liquid with h_w = 4.186 t₂ = {hw} kJ/kg. ' +
-        'Energy balance: the coil removes {q} kJ/kg dry air.',
-      evaporative:
-        'Evaporative cooling follows the line of constant wet bulb, {twb} °C, so the air leaves at {t2} °C and ' +
-        'gains {water} kg water per kg dry air.',
-      mixing:
-        'Mass and energy balances weighted by the dry-air flows: ω₃ = {omega} and h₃ = {h} kJ/kg dry air, so ' +
-        'T₃ = {t} °C.',
-    },
-    r134a: {
-      liquidSide:
-        'At T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is above it: compressed liquid, so ' +
-        'the largest density root of p(ρ, T) = p is used.',
-      vaporSide:
-        'At T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is below it: superheated vapor, so ' +
-        'the smallest density root of p(ρ, T) = p is used.',
-      aboveCritical: 'T = {T} K is at or above the critical temperature, so there is one density root.',
-      eos:
-        'Tillner-Roth and Baehr: φ = φ° + φʳ, with 5 ideal-gas and 21 residual terms, at δ = ρ/508 kg/m³ = ' +
-        '{delta} and τ = 374.18 K/T = {tau}.',
-      iteration: 'Saturation step {n}: at p = {p} kPa, g_l − g_v = {dg} kJ/kg; Newton moves p by −Δg/(v_l − v_v).',
-      saturation:
-        'Equal pressure and Gibbs energy hold at T = {T} K and p_sat = {p} kPa, with ρ_l = {rl} and ρ_v = {rv} kg/m³.',
-    },
-    dev: {
-      state: 'State {label}: T = {T} K, p = {p} kPa, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
-      isentropic:
-        'Isentropic exit: at p₂ = {p2} kPa with s₂ₛ = s₁ = {s} kJ/(kg·K), the state has T₂ₛ = {T} K and ' +
-        'h₂ₛ = {h} kJ/kg.',
-      etaTurbine: 'Turbine efficiency: w = η_t (h₁ − h₂ₛ) = {eta} × {ws} = {w} kJ/kg.',
-      etaCompressor: 'Compressor or pump efficiency: w = (h₂ₛ − h₁)/η = {ws}/{eta} = {w} kJ/kg.',
-      exitState:
-        'Actual exit from the energy balance: T₂ = {T} K, h₂ = {h} kJ/kg, s₂ = {s} kJ/(kg·K), so ' +
-        's_gen = s₂ − s₁ = {sgen} kJ/(kg·K).',
-      power: 'With ṁ = {m} kg/s the power is Ẇ = ṁ w = {W} kW.',
-      nozzle: 'Energy balance with η_N = {eta}: h₂ = {h2} kJ/kg, and V₂ = √(2(h₁ − h₂) + V₁²) = {V2} m/s.',
-      diffuser: 'Energy balance: h₂ = h₁ + (V₁² − V₂²)/2 = {h2} kJ/kg, so T₂ = {T2} K at the exit pressure.',
-      throttle: 'A throttle keeps h: at p₂ = {p} kPa with h₂ = h₁ = {h} kJ/kg, T₂ = {T} K and s₂ = {s} kJ/(kg·K).',
-      exchanger: 'Energy balance: stream A gives Q̇ = {Q} kW, so stream B needs ṁ_B = {mB} kg/s.',
-      exchangerEntropy:
-        'Entropy balance: Ṡ_gen = {sgen} kW/K, so Ẋ_dest = {x} kW; stream B gains {eta} % of the exergy A gives.',
-      mixing: 'Energy balance with {loss} kW lost: h₃ = {h3} kJ/kg, so T₃ = {T3} K.',
-      mixingEntropy: 'Entropy balance: Ṡ_gen = {sgen} kW/K, so Ẋ_dest = T₀ Ṡ_gen = {x} kW.',
-      reservoirs: 'Entropy balance for {Q} kW from {TH} K to {TL} K: Ṡ_gen = Q̇/T_L − Q̇/T_H = {sgen} kW/K.',
-      exergy: 'Exergy destroyed: T₀ s_gen = {T0} × {sgen} = {x}.',
-      etaII: 'Second-law efficiency: {eta} %.',
-    },
-    cyc: {
-      fix: {
-        Tp: 'State {label}: fixed by T = {T} K and p = {p} kPa, so h = {h} kJ/kg and s = {s} kJ/(kg·K).',
-        px: 'State {label}: saturated at p = {p} kPa with x = {x}, so T = {T} K, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
-        ps: 'State {label}: fixed by p = {p} kPa and s = {s} kJ/(kg·K), so T = {T} K and h = {h} kJ/kg.',
-        ph:
-          'State {label}: fixed by p = {p} kPa and h = {h} kJ/kg from the energy balance after state {from}, so ' +
-          'T = {T} K and s = {s} kJ/(kg·K).',
-        Tv:
-          'State {label}: heated at constant volume, v = {v} m³/kg, to T = {T} K, so p = {p} kPa, h = {h} kJ/kg, ' +
-          'and s = {s} kJ/(kg·K).',
-        sv:
-          'State {label}: isentropic from state {from} to v = {v} m³/kg, so T = {T} K, p = {p} kPa, and ' +
-          'h = {h} kJ/kg.',
-        quality: 'State {label} is a saturated mixture with quality x = {x}.',
-      },
-      heatV: 'Heat added at constant volume: q = {q} kJ/kg.',
-      heatP: 'Heat added at constant pressure: q = {q} kJ/kg.',
-      rejectV: 'Heat rejected at constant volume: q_out = u₄ − u₁ = {q} kJ/kg.',
-      totals: 'Totals: w_net = {w} kJ/kg, q_in = {qin} kJ/kg, and q_out = {qout} kJ/kg, so η_th = {eta} %.',
-      mep: 'Mean effective pressure: MEP = {mep} kPa.',
-      intercool: 'Intercooler: back to T₁ at constant pressure, rejecting {q} kJ/kg.',
-      compressor: 'Compressor: the isentropic work is {ws} kJ/kg, so w_c = w_s/η_c = {w} kJ/kg.',
-      regenerator:
-        'Regenerator with effectiveness {eps}: the air takes q = ε (h_exhaust − h_compressor exit) = {q} kJ/kg ' +
-        'from the exhaust, and the exhaust gives the same back.',
-      combustor: 'Heat added at constant pressure (combustor or reheater): q = {q} kJ/kg.',
-      turbine: 'Turbine: w_t = {w} kJ/kg.',
-      cooler: 'Heat rejected at constant pressure, back to state 1: q = {q} kJ/kg.',
-      bwr: 'Back work ratio: r_bw = w_c/w_t = {bwr}.',
-      carnot: 'Carnot limits: η = {eta} %, COP_R = {copR}, and COP_HP = {copHP}.',
-      mass: 'For Ẇ_net = {W} kW the mass flow is ṁ = {m} kg/s, and the heat input is Q̇_in = {Q} kW.',
-      pump: 'Pump: w_p = {w} kJ/kg.',
-      boiler: 'Boiler: q_in = {q} kJ/kg.',
-      reheat: 'Reheater: q = {q} kJ/kg.',
-      fwhOpen: 'Open feedwater heater: the energy balance with a fraction y extracted from the turbine gives y = {y}.',
-      fwhClosed: 'Closed feedwater heater: the energy balance gives y = {y}; the drain is throttled to the condenser.',
-      condenser: 'Condenser: q_out = {q} kJ/kg.',
-      valve: 'Expansion valve: h₄ = h₃ = {h} kJ/kg, so x₄ = {x}.',
-      evaporator: 'Evaporator: q_L = h₁ − h₄ = {q} kJ/kg.',
-      cop: 'COP_R = q_L/w_in = {cop}, and as a heat pump COP_HP = q_H/w_in = {hp}.',
-      load: 'For a cooling load of {Q} kW: ṁ = {m} kg/s and Ẇ_in = {W} kW.',
-    },
-  },
+  step: kitThermoSteps,
   note: {
     idealGasMolecules: 'Ideal gas of independent molecules; energies are counted from the ground level.',
     rigidRotor: 'Rigid rotor at high temperature and harmonic vibrations, so results drift at very high T.',
@@ -619,6 +499,16 @@ export const kitThermo = {
       'work and heat are per kg of working fluid.',
     carnotLimit: 'Reversible engine, refrigerator, and heat pump between two reservoirs: no real cycle does better.',
     perKgBoiler: 'With a feedwater heater, work and heat are per kg through the boiler, and y kg per kg is extracted.',
+    cubicEos:
+      'A cubic equation of state: good for gases, rougher for liquids, and a few percent off near the critical ' +
+      'point. Volumes and departures are per kg; the constants (a, b) are per mole.',
+    departureRef:
+      'Departures compare with an ideal gas at the same T and p (marked *): Z_h = (h* − h)/(R_u T_c) and ' +
+      'Z_s = (s* − s)/R_u per mole, the factors generalized charts plot.',
+    idealMixture: 'Each gas and the mixture are ideal gases, so Dalton’s and Amagat’s laws hold exactly.',
+    mixParts: 'Parts can be fractions, percentages, or amounts in kg or kmol; they are scaled to add up to 1.',
+    kayRule:
+      'Kay’s rule treats the mixture as one gas with mole-weighted critical constants; it is rough for H₂ and He.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -671,6 +561,10 @@ export const kitThermo = {
     pressureBetween: '{name} must lie between the low and high pressures.',
     fwhTooCold: 'At that pressure the extracted steam is no hotter than the feedwater; raise the heater pressure.',
     notNegative: '{name} must be zero or more.',
+    omegaRange: 'The acentric factor must be between −1 and 2.',
+    eosCovolume: 'The specific volume must be above the co-volume b of this equation, {b} m³/kg.',
+    eosNegativePressure: 'At that T and v the equation gives a negative pressure, {p} kPa, which no gas state has.',
+    mixEmpty: 'Give at least one gas an amount above zero.',
   },
   word: {
     liquid: 'Compressed liquid',
@@ -681,5 +575,8 @@ export const kitThermo = {
     supercritical: 'Supercritical fluid',
     path: 'Process path',
     saturationLine: 'Saturation line',
+    gasRoot: 'Gas-like root',
+    liquidRoot: 'Liquid-like root',
+    idealGasLine: 'Ideal gas, Z = 1',
   },
 } as const;

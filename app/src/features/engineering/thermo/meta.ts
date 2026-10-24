@@ -2,7 +2,16 @@
 // registration reads it at start-up, and each tool's engine loads only when its tab opens (kit.ts).
 import type { IconName } from '../../../ui/icons';
 
-export const THERMO_TOOL_IDS = ['steam', 'r134a', 'idealgas', 'devices', 'cycles', 'psychro', 'statthermo'] as const;
+export const THERMO_TOOL_IDS = [
+  'steam',
+  'r134a',
+  'idealgas',
+  'realgas',
+  'devices',
+  'cycles',
+  'psychro',
+  'statthermo',
+] as const;
 
 export type ThermoToolId = (typeof THERMO_TOOL_IDS)[number];
 
@@ -16,6 +25,7 @@ export const THERMO_META: readonly ThermoToolMeta[] = [
   { id: 'steam', icon: 'CloudFog', subject: 'thermodynamics' },
   { id: 'r134a', icon: 'Snowflake', subject: 'thermodynamics' },
   { id: 'idealgas', icon: 'Cylinder', subject: 'thermodynamics' },
+  { id: 'realgas', icon: 'Gauge', subject: 'thermodynamics' },
   { id: 'devices', icon: 'Fan', subject: 'thermodynamics' },
   { id: 'cycles', icon: 'ArrowsClockwise', subject: 'thermodynamics' },
   { id: 'psychro', icon: 'DropHalf', subject: 'thermodynamics' },

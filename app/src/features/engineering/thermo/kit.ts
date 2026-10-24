@@ -7,6 +7,7 @@ export const THERMO_LOADERS: Record<ThermoToolId, () => Promise<{ spec: ToolSpec
   steam: () => import('./steam/spec'),
   r134a: () => import('./r134a/spec'),
   idealgas: () => import('./idealgas/spec'),
+  realgas: () => import('./realgas/spec'),
   devices: () => import('./devices/spec'),
   cycles: () => import('./cycles/spec'),
   psychro: () => import('./psychro/spec'),

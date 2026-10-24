@@ -130,3 +130,42 @@ export function integrate(f: (x: number) => number, a: number, b: number, panels
 export function linspace(a: number, b: number, n: number): number[] {
   return Array.from({ length: n }, (_, i) => a + ((b - a) * i) / (n - 1));
 }
+
+/**
+ * The real roots of x³ + b x² + c x + d = 0, smallest first: Cardano's formula for one real root and the
+ * trigonometric form for three, each polished by Newton's method. A double root is reported once.
+ */
+export function cubicRoots(b: number, c: number, d: number): number[] {
+  const p = c - (b * b) / 3;
+  const q = (2 * b ** 3) / 27 - (b * c) / 3 + d;
+  const shift = -b / 3;
+  const disc = (q / 2) ** 2 + (p / 3) ** 3;
+  const scale = Math.max(1, Math.abs(b), Math.abs(c) ** 0.5, Math.abs(d) ** (1 / 3));
+  let roots: number[];
+  if (disc > 1e-14 * scale ** 6) {
+    // One real root. Take the larger cube root first so the two parts never cancel.
+    const big = -Math.sign(q || 1) * Math.cbrt(Math.abs(q) / 2 + Math.sqrt(disc));
+    roots = [big + (big === 0 ? 0 : -p / (3 * big)) + shift];
+  } else if (Math.abs(p) <= 1e-14 * scale ** 2) {
+    roots = [shift];
+  } else {
+    const r = 2 * Math.sqrt(-p / 3);
+    const angle = Math.acos(Math.max(-1, Math.min(1, ((3 * q) / (2 * p)) * Math.sqrt(-3 / p)))) / 3;
+    roots = [0, 1, 2].map((k) => r * Math.cos(angle - (2 * Math.PI * k) / 3) + shift);
+  }
+  const f = (x: number) => ((x + b) * x + c) * x + d;
+  const df = (x: number) => (3 * x + 2 * b) * x + c;
+  const polished = roots.map((x) => {
+    let y = x;
+    for (let i = 0; i < 4; i++) {
+      const slope = df(y);
+      if (slope === 0) break;
+      const next = y - f(y) / slope;
+      if (!Number.isFinite(next) || Math.abs(f(next)) > Math.abs(f(y))) break;
+      y = next;
+    }
+    return y;
+  });
+  polished.sort((x, y) => x - y);
+  return polished.filter((x, i) => i === 0 || Math.abs(x - polished[i - 1]) > 1e-9 * Math.max(1, Math.abs(x)));
+}
