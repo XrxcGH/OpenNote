@@ -311,6 +311,7 @@ export const kitThermo = {
     pairPs: 'Pressure and entropy',
     pairTx: 'Temperature and quality',
     pairPx: 'Pressure and quality',
+    pairHs: 'Enthalpy and entropy',
     byPressure: 'Pressure',
     byAltitude: 'Altitude, standard atmosphere',
     tPhi: 'Dry bulb and relative humidity',

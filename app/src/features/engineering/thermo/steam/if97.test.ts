@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { STEAM_BY_P, STEAM_BY_T } from '../../../tools/chem/data/steamData';
 import { psat, pB23, region1, region2, region3, region5, tB23, tsat } from './if97';
-import { fromPH, fromPS, fromPX, fromTP, fromTX } from './water';
+import { fromHS, fromPH, fromPS, fromPX, fromTP, fromTX } from './water';
 
 const rel = (actual: number, expected: number) => Math.abs(actual / expected - 1);
 
@@ -107,6 +107,30 @@ describe('IF97 states from two properties', () => {
     expect(fromTX(mixed.T, 0.3).h).toBeCloseTo(mixed.h, 4);
   });
 
+  it('regions 1 and 2 meet at the saturation line and regions 2 and 3 at B23', () => {
+    const T = 600;
+    const p = psat(T);
+    const liquid = region1(T, p);
+    const vapor = region2(T, p);
+    // Clausius-Clapeyron: the Gibbs energies are equal at saturation.
+    expect(Math.abs(liquid.h - T * liquid.s - (vapor.h - T * vapor.s))).toBeLessThan(0.05);
+    const pb = pB23(700);
+    const two = region2(700, pb);
+    const three = fromTP(700, pb * 1.000001);
+    expect(rel(three.v, two.v)).toBeLessThan(1e-3);
+  });
+
+  it('names the phase of a state', () => {
+    expect(fromTP(300, 100).phase).toBe('liquid');
+    expect(fromTP(500, 100).phase).toBe('vapor');
+    expect(fromTP(700, 30000).phase).toBe('supercritical');
+    expect(fromPX(100, 0).phase).toBe('satLiquid');
+  });
+});
+
+// Region 3 below the critical temperature has a liquid-like and a vapor-like root of p(rho, T) at each pressure.
+// These published values pin both sides, so a wrong root (or a spurious one past the region) fails them.
+describe('IF97 region 3 and the IAPWS backward check values', () => {
   // The IAPWS-95 saturation table at 360 and 370 C (by T) and 20 MPa (by p). IF97 region 3 departs from IAPWS-95
   // by a few tenths of a percent this close to the critical point: 0.5 % on v and 0.2 % on h.
   it.each([
@@ -128,6 +152,27 @@ describe('IF97 states from two properties', () => {
     expect(rel(f.p, p)).toBeLessThan(2e-3);
   });
 
+  // IAPWS SR4-04 (2014), the backward p(h, s) check values in regions 1 and 2; those equations are within 0.01 %.
+  it.each([
+    [1500, 3.4, 58682.94423],
+    [2800, 6.5, 1371.012767],
+    [4100, 9.5, 102.4788997],
+    [3600, 7, 7527.161441],
+  ])('(h, s) = (%s, %s) gives the SR4-04 pressure', (h, s, p) => {
+    const state = fromHS(h, s);
+    expect(rel(state.p, p)).toBeLessThan(1e-4);
+    expect(state.h).toBeCloseTo(h, 6);
+    expect(state.s).toBeCloseTo(s, 9);
+  });
+
+  it('(h, s) inside the dome gives back the mixture', () => {
+    const mixture = fromPX(100, 0.5);
+    const back = fromHS(mixture.h, mixture.s);
+    expect(back.phase).toBe('mixture');
+    expect(back.p).toBeCloseTo(100, 6);
+    expect(back.x).toBeCloseTo(0.5, 8);
+  });
+
   // IAPWS SR5-05 (2016), the backward v(T, p) check values for subregions 3a and 3c, which lie below the critical
   // temperature on the liquid side. The backward equations agree with IF97 to about 1e-5.
   it.each([
@@ -146,25 +191,5 @@ describe('IF97 states from two properties', () => {
     const s = fromPH(p, h);
     expect(s.phase).not.toBe('mixture');
     expect(Math.abs(s.T - T)).toBeLessThan(0.025);
-  });
-
-  it('regions 1 and 2 meet at the saturation line and regions 2 and 3 at B23', () => {
-    const T = 600;
-    const p = psat(T);
-    const liquid = region1(T, p);
-    const vapor = region2(T, p);
-    // Clausius-Clapeyron: the Gibbs energies are equal at saturation.
-    expect(Math.abs(liquid.h - T * liquid.s - (vapor.h - T * vapor.s))).toBeLessThan(0.05);
-    const pb = pB23(700);
-    const two = region2(700, pb);
-    const three = fromTP(700, pb * 1.000001);
-    expect(rel(three.v, two.v)).toBeLessThan(1e-3);
-  });
-
-  it('names the phase of a state', () => {
-    expect(fromTP(300, 100).phase).toBe('liquid');
-    expect(fromTP(500, 100).phase).toBe('vapor');
-    expect(fromTP(700, 30000).phase).toBe('supercritical');
-    expect(fromPX(100, 0).phase).toBe('satLiquid');
   });
 });

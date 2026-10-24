@@ -81,6 +81,9 @@ export const kitThermoSteps = {
     between:
       'At this pressure {key}_f = {f} and {key}_g = {g}, and {key} = {value} lies between them: a saturated ' +
       'mixture at T_sat = {T} K.',
+    fromHS:
+      "No equation gives p from h and s, so Brent's method finds the pressure where the (p, h) state has s = {s} " +
+      'kJ/(kg·K): p = {p} kPa, with T = {T} K.',
     supercritical:
       'The pressure is above the critical pressure, so there is no saturation line. Brent’s method on T gives ' +
       'T = {T} K.',

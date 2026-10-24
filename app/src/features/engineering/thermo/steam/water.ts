@@ -1,12 +1,13 @@
-// A state of water from any two independent properties: (T, p), (p, h), (p, s), (T, x), or (p, x). Single-phase
-// states come from the IF97 basic equations, and a state given by p with h or s finds T by Brent's method on the
-// right side of the saturation line. Two-phase states mix saturated liquid and vapor by the lever rule. Devices and
-// cycles call these functions state by state.
+// A state of water from any two independent properties: (T, p), (p, h), (p, s), (T, x), (p, x), or (h, s).
+// Single-phase states come from the IF97 basic equations. A state given by p with h or s finds T by Brent's method
+// on the right side of the saturation line, and (h, s) finds p around (p, h) the same way. Two-phase states mix
+// saturated liquid and vapor by the lever rule. Devices and cycles call these functions state by state.
 import { brent } from '../common/num';
 import { ThermoError } from '../common/types';
 import {
   P_CRIT,
   P_MAX,
+  P_TRIPLE,
   P_MAX_5,
   RHO_CRIT,
   T_CRIT,
@@ -144,6 +145,36 @@ function fromP(p: number, value: number, key: 'h' | 's'): WaterPoint {
 
 export const fromPH = (p: number, h: number): WaterPoint => fromP(p, h, 'h');
 export const fromPS = (p: number, s: number): WaterPoint => fromP(p, s, 's');
+
+/**
+ * A state from h and s. At fixed h, s falls as p rises ((∂s/∂p)_h = −v/T), so one pressure has the entropy s: a scan
+ * on ln p brackets it between the triple-point and the top pressure, and Brent's method finds it.
+ */
+export function fromHS(h: number, s: number): WaterPoint {
+  if (!Number.isFinite(h) || !Number.isFinite(s)) throw new ThermoError('steamRange');
+  const f = (lnp: number): number => {
+    try {
+      return fromPH(Math.exp(lnp), h).s - s;
+    } catch {
+      return Number.NaN;
+    }
+  };
+  const lo = Math.log(P_TRIPLE * 1.0001);
+  const hi = Math.log(P_MAX);
+  const n = 60;
+  let a = lo;
+  let fa = f(a);
+  for (let i = 1; i <= n; i++) {
+    const b = lo + ((hi - lo) * i) / n;
+    const fb = f(b);
+    if (fa === 0) return fromPH(Math.exp(a), h);
+    if (fa * fb < 0) return fromPH(Math.exp(brent(f, a, b, 1e-14)), h);
+    a = b;
+    fa = fb;
+  }
+  if (fa === 0) return fromPH(Math.exp(a), h);
+  throw new ThermoError('steamRange');
+}
 
 /** The critical point by the region 3 equation. */
 export const criticalState = (): WaterState => region3(RHO_CRIT, T_CRIT);

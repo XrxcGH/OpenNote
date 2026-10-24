@@ -10,9 +10,9 @@ import {
   type ThermoResult,
 } from '../common/types';
 import { IF97_SOURCE, P_CRIT, pB23, psat, type WaterState } from './if97';
-import { dome, fromPH, fromPS, fromPX, fromTP, fromTX, saturationAtP, type WaterPoint } from './water';
+import { dome, fromHS, fromPH, fromPS, fromPX, fromTP, fromTX, saturationAtP, type WaterPoint } from './water';
 
-export type SteamPair = 'Tp' | 'ph' | 'ps' | 'Tx' | 'px';
+export type SteamPair = 'Tp' | 'ph' | 'ps' | 'Tx' | 'px' | 'hs';
 
 export interface SteamInput {
   pair: SteamPair;
@@ -36,6 +36,7 @@ export function steamPoint(input: SteamInput): WaterPoint {
   if (input.pair === 'ph') return fromPH(get('p'), get('h'));
   if (input.pair === 'ps') return fromPS(get('p'), get('s'));
   if (input.pair === 'Tx') return fromTX(get('T'), get('x'));
+  if (input.pair === 'hs') return fromHS(get('h'), get('s'));
   return fromPX(get('p'), get('x'));
 }
 
@@ -80,6 +81,14 @@ function variableStep(state: Pick<WaterPoint, 'region' | 'T' | 'p' | 'v'>): KitS
 
 /** For (p, h) and (p, s): where the value sits against the saturated liquid and vapor. */
 function compareStep(input: SteamInput, point: WaterPoint): KitStep[] {
+  if (input.pair === 'hs')
+    return [
+      {
+        key: 'steam.fromHS',
+        vars: { h: fmt(point.h, 6), s: fmt(point.s, 6), p: fmt(point.p, 6), T: fmt(point.T, 6) },
+        math: 's(p,h)=s',
+      },
+    ];
   if (input.pair !== 'ph' && input.pair !== 'ps') return [];
   const key = input.pair === 'ph' ? 'h' : 's';
   const value = fmt(point[key], 6);
