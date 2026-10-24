@@ -25,9 +25,11 @@
     gap: var(--space-3);
   }
 
+  /* The part of a tool that scrolls: as tall as its content, and no taller than the room the window leaves (toolFill). */
   .scroll {
+    flex: 0 1 auto;
+    min-block-size: 0;
     overflow: auto;
-    max-block-size: 60vh;
   }
 
   .table {

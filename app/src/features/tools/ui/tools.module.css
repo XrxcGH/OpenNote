@@ -95,6 +95,16 @@
     gap: var(--space-4);
   }
 
+  /* A tool whose long part scrolls on its own: the part fills what the window leaves, so the window never holds an empty box
+     under a cut-off table. Without a fixed height (a window of its own) it is as tall as its content. */
+  .toolFill {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
   .empty,
   .note {
     margin: 0;

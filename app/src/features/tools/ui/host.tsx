@@ -54,6 +54,16 @@ export const MIN_PAGE = 480;
 const widthOf = (state: Layer, id: ToolId): number =>
   state.widths[id] ?? loadStored<number>(`width.${id}`, TOOLS.find((one) => one.id === id)!.width);
 
+/** The width of a scroll bar here, 0 where scroll bars float over the content. */
+function scrollbarSize(): number {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;inline-size:100px;block-size:100px;overflow:scroll';
+  document.body.append(probe);
+  const size = probe.offsetWidth - probe.clientWidth;
+  probe.remove();
+  return size;
+}
+
 function Windows() {
   const state = useStore(layer, (current) => current);
   const [viewport, setViewport] = useState(window.innerWidth);
@@ -68,6 +78,9 @@ function Windows() {
   const pageLeft = document.querySelector('main')?.getBoundingClientRect().left ?? 0;
   const room = viewport - pageLeft - MIN_PAGE;
   const overlay = total > Math.max(room, 0);
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty('--scrollbar-size', `${scrollbarSize()}px`);
+  }, []);
   useLayoutEffect(() => {
     setDockInset(overlay ? 0 : total);
     return () => setDockInset(0);
