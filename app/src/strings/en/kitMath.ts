@@ -255,6 +255,14 @@ export const kitMath = {
     equilibrium: '({x}, {y}): {kind}',
     equilibriumOpen: '({x}, {y}): {kind} (the linearization does not decide the nonlinear behavior)',
     plot: 'Phase portrait with the direction field and solution curves',
+    plotTraceDet:
+      'The trace-determinant plane: the point (trace, determinant), the parabola det = trace squared over 4, and the axes',
+    cycleStable: 'a stable limit cycle',
+    cycleUnstable: 'an unstable limit cycle',
+    cycleStableLine:
+      'Stable limit cycle round {at}: on the horizontal line through that point it passes x = {x}, with period {period}.',
+    cycleUnstableLine:
+      'Unstable limit cycle round {at}: on the horizontal line through that point it passes x = {x}, with period {period}.',
     kind: {
       stableNode: 'a stable node',
       unstableNode: 'an unstable node',
@@ -1053,6 +1061,13 @@ export const kitMath = {
     odeGeneralized: 'A second vector g with (A minus lambda I) g = v completes the solutions.',
     odeKind: 'The equilibrium at the origin is {kind}.',
     odeGeneral: 'The general solution is:',
+    odeFundamental: 'The fundamental matrix, with x(t) = e^(At) x(0), is:',
+    odeTraceDet:
+      'On the trace-determinant plane the point is ({trace}, {det}). Above the parabola det = trace squared over 4 ' +
+      'the eigenvalues are complex, below it real, and below the trace axis they have opposite signs (a saddle).',
+    odeLimitCycle:
+      'Round the equilibrium {at} there is {$stability}: the orbit crosses the ray to the right of it at x = {x}, ' +
+      'and one turn takes {period}.',
     odeReduce: 'Let x1 = y and x2 = y prime, which turns the equation into a first-order system.',
     odeNonlinear: 'The system is nonlinear. Its equilibria are the points where both right-hand sides are zero.',
     odeFindEquilibria: 'Newton iteration from a grid of starting points found {count} equilibria in the window.',

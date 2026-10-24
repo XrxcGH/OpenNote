@@ -62,12 +62,21 @@ function linearSeries(r: LinearResult): Series[] {
   ];
 }
 
+function traceDetSeries(r: LinearResult): Series[] {
+  return [
+    { points: r.traceDet.parabola, tone: 1 },
+    ...r.traceDet.axes.map((points): Series => ({ points, tone: 5, dashed: true })),
+    { points: [r.traceDet.point], tone: 3, dots: true },
+  ];
+}
+
 function nonlinearSeries(r: NonlinearResult): Series[] {
   return [
     ...r.field.map((points): Series => ({ points, tone: 5 })),
     ...r.trajectories.map((points): Series => ({ points, tone: 0 })),
     ...r.nullclines.f.map((points): Series => ({ points, tone: 1, dashed: true })),
     ...r.nullclines.g.map((points): Series => ({ points, tone: 2, dashed: true })),
+    ...r.cycles.map((cycle): Series => ({ points: cycle.path, tone: 4 })),
     { points: r.equilibria.map((e): [number, number] => [e.x, e.y]), tone: 3, dots: true },
   ];
 }
@@ -88,7 +97,9 @@ function LinearOutput({ out }: { out: LinearResult }) {
         ].join('\n')}
       </Result>
       <MathView latex={out.generalSolution} />
+      <MathView latex={out.fundamental} />
       <LinePlot equal label={t('kitMath.odes.plot')} series={linearSeries(out)} />
+      <LinePlot label={t('kitMath.odes.plotTraceDet')} series={traceDetSeries(out)} />
       <Steps steps={out.steps} />
       <InsertBar
         answer={`${answer} ${t('kitMath.odes.eigenvalues', { values: eig })}`}
@@ -110,7 +121,18 @@ function NonlinearOutput({ out }: { out: NonlinearResult }) {
   }));
   return (
     <>
-      <Result>{rows.map((row) => row.text).join('\n')}</Result>
+      <Result>
+        {[
+          ...rows.map((row) => row.text),
+          ...out.cycles.map((cycle) =>
+            t(cycle.stable ? 'kitMath.odes.cycleStableLine' : 'kitMath.odes.cycleUnstableLine', {
+              at: `(${fmt(cycle.around[0], 6)}, ${fmt(cycle.around[1], 6)})`,
+              x: fmt(cycle.crossing, 6),
+              period: fmt(cycle.period, 6),
+            }),
+          ),
+        ].join('\n')}
+      </Result>
       <LinePlot label={t('kitMath.odes.plot')} series={nonlinearSeries(out)} />
       <Steps steps={out.steps} />
       <InsertBar

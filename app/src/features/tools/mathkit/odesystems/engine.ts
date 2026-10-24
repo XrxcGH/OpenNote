@@ -6,6 +6,14 @@ import { dopri45 } from '../integrators';
 import { expm, newtonSystem, type Mat } from '../dense';
 import { fmt } from '../numeric';
 import { KitError, step, type KitStep } from '../types';
+import {
+  cycleStep,
+  fundamentalMatrix,
+  limitCyclesAround,
+  traceDeterminant,
+  type LimitCycle,
+  type TraceDetPlane,
+} from './extra';
 
 export type Kind =
   | 'stableNode'
@@ -99,6 +107,10 @@ export interface LinearResult {
   /** Straight-line solutions along the real eigenvectors. */
   axes: Path[];
   extent: number;
+  /** The parabola det = trace^2 / 4, the axes, and the point (trace, det). */
+  traceDet: TraceDetPlane;
+  /** e^(At) in closed form, as LaTeX. */
+  fundamental: string;
 }
 
 interface Solution {
@@ -215,6 +227,7 @@ export function analyzeLinear(a: number, b: number, c: number, d: number, extent
   const k = classify(a, b, c, d);
   const matrix = `\\begin{pmatrix}${fmt(a)}&${fmt(b)}\\\\${fmt(c)}&${fmt(d)}\\end{pmatrix}`;
   const solution = solutionFor(a, b, c, d, k);
+  const fundamental = fundamentalMatrix(a, b, c, d);
   const steps: KitStep[] = [
     step('odeSystem', `\\mathbf x'=${matrix}\\mathbf x`),
     step('odeCharacteristic', `\\lambda^{2}-(${fmt(k.trace)})\\lambda+(${fmt(k.det)})=0`, {
@@ -224,6 +237,11 @@ export function analyzeLinear(a: number, b: number, c: number, d: number, extent
     ...solution.steps,
     step('odeKind', undefined, { $kind: `kitMath.odes.kind.${k.kind}` }),
     step('odeGeneral', solution.latex),
+    fundamental.step,
+    step('odeTraceDet', `(\\operatorname{tr}A,\\det A)=(${fmt(k.trace, 6)},${fmt(k.det, 6)})`, {
+      trace: fmt(k.trace, 6),
+      det: fmt(k.det, 6),
+    }),
   ];
   const win: Window = [-extent, extent, -extent, extent];
   const axes: Path[] = solution.eigenvectors
@@ -248,6 +266,8 @@ export function analyzeLinear(a: number, b: number, c: number, d: number, extent
     field: fieldSegments((x, y) => [a * x + b * y, c * x + d * y], win, 8),
     axes,
     extent,
+    traceDet: traceDeterminant(k.trace, k.det),
+    fundamental: fundamental.latex,
   };
 }
 
@@ -276,6 +296,8 @@ export interface NonlinearResult {
   field: Path[];
   steps: KitStep[];
   window: Window;
+  /** Closed orbits found round the spirals and centers, by a return map. */
+  cycles: LimitCycle[];
 }
 
 /** The curve h(x, y) = 0 on a grid of the window, as short segments (marching squares). */
@@ -414,8 +436,15 @@ export function analyzeNonlinear(fText: string, gText: string, win: Window = [-5
     );
     if (e.inconclusive) steps.push(step('odeInconclusive', undefined, { at }));
   }
+  const cycles = equilibria
+    .filter((e) => ['stableSpiral', 'unstableSpiral', 'center'].includes(e.classification.kind))
+    .flatMap((e) =>
+      limitCyclesAround((x, y) => [field.f([x, y]), field.g([x, y])], [e.x, e.y], Math.min(x1 - x0, y1 - y0) / 2),
+    );
+  steps.push(...cycles.map(cycleStep));
   return {
     equilibria,
+    cycles,
     jacobianLatex: field.jacobianLatex,
     nullclines: { f: marching((x, y) => field.f([x, y]), win), g: marching((x, y) => field.g([x, y]), win) },
     trajectories: trajectoriesOf(field, win),

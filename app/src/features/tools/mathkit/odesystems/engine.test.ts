@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { expm } from '../dense';
 import { dopri45, fixedSteps } from '../integrators';
 import { analyzeLinear, analyzeNonlinear, analyzeSecondOrder, classify, eigenvector } from './engine';
+import { fundamentalMatrix } from './extra';
 
 describe("classification of x' = A x", () => {
   it('A = [[0,1],[-2,-3]] has eigenvalues -1 and -2: a stable node', () => {
@@ -116,5 +117,50 @@ describe('initial value solvers', () => {
     const back = dopri45(f, 1, [Math.E], 0, { rtol: 1e-10, atol: 1e-12 }).at(-1)!;
     expect(back.y[0]).toBeCloseTo(1, 8);
     expect(() => fixedSteps('rk4', f, 0, [1], 1, 0)).toThrow();
+  });
+});
+
+describe('fundamental matrix, trace-determinant plane and limit cycles', () => {
+  const cases: [string, number[]][] = [
+    ['real distinct', [0, 1, -2, -3]],
+    ['repeated, defective', [1, 1, 0, 1]],
+    ['repeated, star', [-2, 0, 0, -2]],
+    ['complex', [1, -2, 3, 1]],
+    ['center', [0, 2, -2, 0]],
+  ];
+  it.each(cases)('e^(At) in closed form matches the matrix exponential: %s', (_name, [a, b, c, d]) => {
+    const Phi = fundamentalMatrix(a, b, c, d);
+    for (const t of [0, 0.3, 1, -0.7]) {
+      const E = expm([
+        [a * t, b * t],
+        [c * t, d * t],
+      ]);
+      const P = Phi.at(t);
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) expect(P[i][j]).toBeCloseTo(E[i][j], 9);
+    }
+    expect(Phi.latex.startsWith('e^{At}=')).toBe(true);
+  });
+  it('the linear analysis shows the fundamental matrix and the trace-determinant point on the parabola side', () => {
+    const r = analyzeLinear(1, -2, 3, 1);
+    expect(r.steps.some((s) => s.key === 'odeFundamental')).toBe(true);
+    expect(r.traceDet.point).toEqual([2, 7]);
+    // det = 7 is above trace^2 / 4 = 1, so the eigenvalues are complex.
+    expect(r.traceDet.point[1]).toBeGreaterThan(r.traceDet.point[0] ** 2 / 4);
+    expect(r.traceDet.parabola.every(([x, y]) => Math.abs(y - (x * x) / 4) < 1e-12)).toBe(true);
+  });
+  it('Van der Pol with mu = 1 has a stable limit cycle of amplitude 2.00862 and period 6.66338', () => {
+    const r = analyzeNonlinear('y', '(1-x^2)*y-x', [-4, 4, -4, 4]);
+    expect(r.cycles).toHaveLength(1);
+    expect(r.cycles[0].stable).toBe(true);
+    expect(r.cycles[0].crossing).toBeCloseTo(2.00862, 4);
+    expect(r.cycles[0].period).toBeCloseTo(6.66338, 3);
+    expect(r.steps.some((s) => s.key === 'odeLimitCycle')).toBe(true);
+  });
+  it('a center (a family of closed orbits) is not reported as a limit cycle', () => {
+    expect(analyzeNonlinear('x*(1-0.5*y)', 'y*(-0.75+0.25*x)', [-1, 6, -1, 5]).cycles).toHaveLength(0);
+    expect(analyzeNonlinear('y', '-x', [-3, 3, -3, 3]).cycles).toHaveLength(0);
+  });
+  it('a stable spiral has no limit cycle', () => {
+    expect(analyzeNonlinear('-x-y', 'x-y', [-3, 3, -3, 3]).cycles).toHaveLength(0);
   });
 });
