@@ -36,14 +36,24 @@ export class Auditor {
   /** Waits for fades and mounting to finish. */
   async settle(): Promise<void> {
     await this.page.evaluate(async () => {
-      const frame = () => new Promise<void>((done) => requestAnimationFrame(() => done()));
-      await document.fonts.ready;
+      const frame = () =>
+        new Promise<void>((done) => {
+          requestAnimationFrame(() => done());
+          setTimeout(done, 500);
+        });
+      await Promise.race([document.fonts.ready, new Promise((done) => setTimeout(done, 1500))]);
       await frame();
       await new Promise<void>((done) => setTimeout(done, 120));
-      for (const animation of document.getAnimations()) {
-        if (animation.effect?.getComputedTiming().iterations !== Infinity)
-          await animation.finished.catch(() => undefined);
-      }
+      // A paused or very long animation never finishes, so each wait is capped; one command's leftover must not hang a cell.
+      const cap = new Promise<void>((done) => setTimeout(done, 1500));
+      const running = document
+        .getAnimations()
+        .filter(
+          (animation) =>
+            animation.playState === 'running' && animation.effect?.getComputedTiming().iterations !== Infinity,
+        )
+        .map((animation) => animation.finished.catch(() => undefined));
+      await Promise.race([Promise.all(running), cap]);
       await frame();
     });
   }

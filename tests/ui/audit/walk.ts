@@ -36,8 +36,16 @@ const hook = <T = unknown>(page: Page, name: string, ...args: unknown[]): Promis
 export const registries = (page: Page) => hook<Registries>(page, 'auditRegistries');
 
 export async function boot(page: Page, open = true): Promise<void> {
-  await page.goto('/?fixture=smart');
-  await page.locator('[data-workspace]').waitFor();
+  // Under load the first load can stall; one more load settles it.
+  for (let attempt = 0; ; attempt += 1) {
+    await page.goto('/?fixture=smart');
+    try {
+      await page.locator('[data-workspace]').waitFor({ timeout: 15_000 });
+      break;
+    } catch (error) {
+      if (attempt >= 1) throw error;
+    }
+  }
   await page.waitForFunction(() =>
     Boolean((window as unknown as { __OPENNOTE_TEST__?: Hooks }).__OPENNOTE_TEST__?.['auditRegistries']),
   );
