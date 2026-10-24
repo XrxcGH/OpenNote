@@ -43,11 +43,11 @@ describe.each(FLUIDHEAT_TOOLS.map((tool) => tool.id))('the %s tool', (tool) => {
     const spec = await SPECS[tool]();
     const modeField = spec.fields.find((field) => field.id === 'mode');
     const sweep = modeField?.type === 'choice' ? modeField.options : [];
-    const problems: { name: string; texts: Record<string, string>; lenient?: boolean }[] = [
+    const problems: { name: string; texts: Record<string, string> }[] = [
       { name: 'first', texts: firstTexts(spec) },
       ...(spec.examples ?? []).map((one) => ({ name: one.id, texts: { ...firstTexts(spec), ...one.values } })),
       // Each mode on its first values: the words of a mode no example reaches are still checked when it runs.
-      ...sweep.map((mode) => ({ name: `mode ${mode}`, texts: { ...firstTexts(spec), mode }, lenient: true })),
+      ...sweep.map((mode) => ({ name: `mode ${mode}`, texts: { ...firstTexts(spec), mode } })),
     ];
     for (const field of spec.fields) {
       expect(has(`${tool}.field.${field.id}`), `missing label of ${field.id}`).toBe(true);
@@ -59,8 +59,6 @@ describe.each(FLUIDHEAT_TOOLS.map((tool) => tool.id))('the %s tool', (tool) => {
     for (const system of ['si', 'us'] as System[]) {
       for (const problem of problems) {
         const run = runTool(spec, problem.texts, system);
-        // Bare numbers in an example are in the system's units, so only the SI run has to succeed on typed examples.
-        if (!run.ok && (system === 'us' || problem.lenient)) continue;
         const why = run.ok ? '' : JSON.stringify(run.error?.detail) + JSON.stringify(run.fields.map((f) => f.field));
         expect(run.ok, `${tool} ${problem.name} ${system}: ${why}`).toBe(true);
         if (!run.ok) continue;

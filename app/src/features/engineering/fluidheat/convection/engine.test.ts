@@ -197,3 +197,27 @@ describe('tube energy balance and helpers', () => {
     expect(suggestPlate(1e6)).toBe('plateMixed');
   });
 });
+
+describe('correlations against values computed outside the engine', () => {
+  // Each number was computed once from the textbook formula in Python; none is the engine's own expression.
+  const natural = (ra: number, pr: number) => ({ length: 1, deltaT: 1, beta: 1, g: ra / pr });
+  it('Hausen entry length, Re 1500, Pr 5, D/L 0.02: Nu = 8.365897', () => {
+    const r = correlate('tubeEntry', fluid(5), { length: 1, velocity: 1500, tubeLength: 50 });
+    expect(r.nusselt).toBeCloseTo(8.365897, 5);
+  });
+  it('Sieder-Tate, Re 5e4, Pr 5, mu/mu_s 0.5: Nu = 240.6498', () => {
+    const r = correlate('siederTate', fluid(5, { muRatio: 0.5 }), { length: 1, velocity: 5e4 });
+    expect(r.nusselt).toBeCloseTo(240.6498, 3);
+  });
+  it('Ranz-Marshall, Re 1e4, Pr 0.7: Nu = 55.27424', () => {
+    expect(correlate('sphereRanzMarshall', fluid(0.7), { length: 1, velocity: 1e4 }).nusselt).toBeCloseTo(55.27424, 4);
+  });
+  it('Churchill natural convection on a sphere, Ra 1e8, Pr 0.7: Nu = 47.37776', () => {
+    expect(correlate('sphereNatural', fluid(0.7), natural(1e8, 0.7)).nusselt).toBeCloseTo(47.37776, 4);
+  });
+  it('horizontal plates: up 1e6 gives 17.0763, up 1e9 gives 150, down 1e7 gives 15.18322', () => {
+    expect(correlate('horizontalPlateUp', fluid(0.7), natural(1e6, 0.7)).nusselt).toBeCloseTo(17.0763, 4);
+    expect(correlate('horizontalPlateUp', fluid(0.7), natural(1e9, 0.7)).nusselt).toBeCloseTo(150, 6);
+    expect(correlate('horizontalPlateDown', fluid(0.7), natural(1e7, 0.7)).nusselt).toBeCloseTo(15.18322, 4);
+  });
+});

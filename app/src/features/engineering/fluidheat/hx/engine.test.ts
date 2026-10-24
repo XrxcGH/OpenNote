@@ -136,3 +136,14 @@ describe('the one-shell two-pass limit', () => {
     expect(ntuFor('shell', 0.55, 1)).toBeGreaterThan(0);
   });
 });
+
+describe('mixed cross-flow forms against values computed outside the engine', () => {
+  it('Cmax mixed: NTU 2, Cr 0.5 gives 0.7020127; NTU 3, Cr 0.8 gives 0.6655165', () => {
+    expect(effectiveness('crossCmaxMixed', 2, 0.5)).toBeCloseTo(0.7020127, 6);
+    expect(effectiveness('crossCmaxMixed', 3, 0.8)).toBeCloseTo(0.6655165, 6);
+  });
+  it('Cmin mixed: NTU 2, Cr 0.5 gives 0.7175464; NTU 3, Cr 0.8 gives 0.6790926', () => {
+    expect(effectiveness('crossCminMixed', 2, 0.5)).toBeCloseTo(0.7175464, 6);
+    expect(effectiveness('crossCminMixed', 3, 0.8)).toBeCloseTo(0.6790926, 6);
+  });
+});
