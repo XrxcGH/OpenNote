@@ -26,6 +26,7 @@ export const CONTROL_TOOLS: readonly ControlToolMeta[] = [
   tool('systems', 'ChartLine'),
   tool('rootlocus', 'Graph'),
   tool('frequency', 'Waveform'),
+  tool('compensator', 'Sliders'),
   tool('statespace', 'MathOperations'),
   tool('digital', 'Timer'),
   tool('stochastic', 'Sparkle'),

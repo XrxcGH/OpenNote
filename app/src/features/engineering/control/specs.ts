@@ -2,6 +2,7 @@
 import type { ToolSpec } from './ui/spec';
 
 export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
+  compensator: () => import('./compensator/spec').then((m) => m.spec),
   digital: () => import('./digital/spec').then((m) => m.spec),
   distributions: () => import('./distributions/spec').then((m) => m.spec),
   frequency: () => import('./frequency/spec').then((m) => m.spec),
