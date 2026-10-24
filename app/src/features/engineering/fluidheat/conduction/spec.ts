@@ -1,5 +1,5 @@
-// The conduction tool's form and results: layered walls, cylinders and spheres as a thermal resistance network, the
-// critical radius of insulation, uniform heat generation, and a linearised radiation coefficient.
+// The conduction tool's form and results: layered walls, cylinders, and spheres as a thermal resistance network, the
+// critical radius of insulation, uniform heat generation, and a linearized radiation coefficient.
 import { q, type KitStep } from '../kit/types';
 import { readLines } from '../kit/lines';
 import type { Outcome, ToolSpec, Values } from '../kit/spec';

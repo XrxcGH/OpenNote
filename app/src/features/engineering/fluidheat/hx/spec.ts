@@ -1,5 +1,5 @@
-// The heat exchanger tool's form and results: rating by the effectiveness-NTU method, sizing for a duty or an outlet
-// temperature, and the log-mean temperature difference method from four temperatures.
+// The heat exchanger tool's form and results: rating by the effectiveness-NTU method, sizing for a given duty, sizing for a
+// given outlet temperature, and the log-mean temperature difference method from four temperatures.
 import { fail, q, type KitStep } from '../kit/types';
 import type { Outcome, ResultRow, ToolSpec, Values } from '../kit/spec';
 import type { System } from '../kit/units';

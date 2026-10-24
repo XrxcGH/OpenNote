@@ -49,7 +49,7 @@ export interface WallResult {
   steps: Step[];
 }
 
-/** Resistance of a conduction layer from position a out to position b, for the given geometry. */
+/** Resistance of a conduction layer from its inner position a to its outer position b, for the given geometry. */
 export function layerResistance(geometry: Geometry, a: number, b: number, k: number, extent: number): number {
   switch (geometry) {
     case 'plane':

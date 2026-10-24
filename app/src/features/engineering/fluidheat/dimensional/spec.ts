@@ -99,7 +99,7 @@ function groupsOutcome(values: Values): Outcome {
       {
         id: 'groups',
         columns: ['group', 'expression', 'name'],
-        rows: r.groups.map((g, i) => [`Π${i + 1}`, texts[i], names[i] || '—']),
+        rows: r.groups.map((_, i) => [`Π${i + 1}`, texts[i], names[i] || '—']),
       },
     ],
     steps: steps(r.steps),

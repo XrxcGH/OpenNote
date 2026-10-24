@@ -1,4 +1,4 @@
-// The transient conduction form end to end, checked against closed forms and round trips.
+// The transient conduction form end to end, checked against closed forms, then by round trip.
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { transientSpec } from './spec';
@@ -30,6 +30,9 @@ describe('transient conduction form', () => {
     expect(o.notes).toContain('fhTransWarnBiot');
     expect(o.rows.find((r) => r.id === 'valid')?.word).toBe('invalid');
   });
+});
+
+describe('transient conduction form, solids', () => {
   it('a plane wall at late times follows the one-term solution', () => {
     const o = solve({
       mode: 'solid',

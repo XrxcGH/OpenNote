@@ -316,7 +316,8 @@ export const pipesSpec: ToolSpec = {
       id: 'netPipes',
       type: 'text',
       first:
-        '100 mm, 300 m, 0.26 mm, 0, 20 L/s\n100 mm, 200 m, 0.26 mm, 0, 20 L/s\n80 mm, 250 m, 0.26 mm, 0, 10 L/s\n80 mm, 250 m, 0.26 mm, 0, 10 L/s',
+        '100 mm, 300 m, 0.26 mm, 0, 20 L/s\n100 mm, 200 m, 0.26 mm, 0, 20 L/s\n80 mm, 250 m, 0.26 mm, 0,' +
+        ' 10 L/s\n80 mm, 250 m, 0.26 mm, 0, 10 L/s',
       rows: 5,
       when: is('network'),
     },
