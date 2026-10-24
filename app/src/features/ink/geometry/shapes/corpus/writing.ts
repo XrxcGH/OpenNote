@@ -3,7 +3,7 @@
 
 import type { Vec } from '../../types';
 import { curve, dist, lerp, polyline, uniform, type Intent, type Rand } from './intent';
-import { LETTERS, LIFT_ONLY_LETTERS, WORDS } from './letters';
+import { LETTERS, LIFT_ONLY_LETTERS, NOTE_SIZE_LETTERS, WORDS } from './letters';
 
 /** A uniform Catmull-Rom curve through a glyph's points, sharp at the marked turns. */
 function glyphPath(points: readonly Vec[], sharp: readonly boolean[]): Vec[] {
@@ -47,6 +47,10 @@ function written(r: Rand, text: string, height: number): Intent {
 export interface InkSpec {
   readonly name: string;
   readonly liftOnly?: boolean;
+  /** Writing, sized from note size to a heading, rather than a scribble, sized as a shape. */
+  readonly writing?: boolean;
+  /** Writing at note size only: a letter that is also a shape (an O is a circle), checked as people take notes. */
+  readonly noteSize?: boolean;
   readonly make: (r: Rand, size: number) => Intent;
 }
 
@@ -158,8 +162,14 @@ export const NOT_SHAPES: readonly InkSpec[] = [
   ...Object.keys(LETTERS).map((ch) => ({
     name: `letter ${ch}`,
     liftOnly: LIFT_ONLY_LETTERS.includes(ch),
+    writing: true,
+    noteSize: NOTE_SIZE_LETTERS.includes(ch),
     make: (r: Rand, size: number) => written(r, ch, size),
   })),
-  ...WORDS.map((word) => ({ name: `word ${word}`, make: (r: Rand, size: number) => written(r, word, size) })),
+  ...WORDS.map((word) => ({
+    name: `word ${word}`,
+    writing: true,
+    make: (r: Rand, size: number) => written(r, word, size),
+  })),
   ...SCRIBBLES,
 ];

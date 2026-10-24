@@ -233,6 +233,88 @@ export const LETTERS: Readonly<Record<string, Glyph>> = {
     [0.72, 0.1, 1],
     [0.7, 0.97],
   ],
+  // The letters a note-taker writes most that are also shapes: a round o, O, or 0 is an ellipse, an l a line, and a C
+  // or U an arc. They are checked with ink-to-shape only, since a pen held still at the end of one asks for the shape.
+  o: [
+    [0.55, 0.3],
+    [0.3, 0.38],
+    [0.2, 0.62],
+    [0.3, 0.88],
+    [0.52, 0.95],
+    [0.7, 0.8],
+    [0.72, 0.52],
+    [0.6, 0.32],
+    [0.48, 0.3],
+  ],
+  O: [
+    [0.5, 0.02],
+    [0.22, 0.15],
+    [0.1, 0.5],
+    [0.22, 0.85],
+    [0.5, 0.97],
+    [0.78, 0.85],
+    [0.88, 0.5],
+    [0.76, 0.15],
+    [0.5, 0.02],
+    [0.42, 0.05],
+  ],
+  '0': [
+    [0.45, 0.02],
+    [0.22, 0.15],
+    [0.15, 0.5],
+    [0.22, 0.85],
+    [0.45, 0.97],
+    [0.66, 0.85],
+    [0.73, 0.5],
+    [0.66, 0.15],
+    [0.45, 0.02],
+  ],
+  l: [
+    [0.3, 0],
+    [0.28, 0.97],
+  ],
+  C: [
+    [0.8, 0.15],
+    [0.55, 0.02],
+    [0.25, 0.12],
+    [0.1, 0.5],
+    [0.25, 0.87],
+    [0.55, 0.97],
+    [0.82, 0.85],
+  ],
+  U: [
+    [0.15, 0.02],
+    [0.15, 0.65],
+    [0.3, 0.92],
+    [0.5, 0.97],
+    [0.7, 0.92],
+    [0.83, 0.65],
+    [0.83, 0.02],
+  ],
+  '1': [
+    [0.18, 0.2],
+    [0.42, 0.02, 1],
+    [0.42, 0.97],
+  ],
+  S: [
+    [0.78, 0.12],
+    [0.5, 0.02],
+    [0.22, 0.12],
+    [0.2, 0.35],
+    [0.5, 0.5],
+    [0.78, 0.65],
+    [0.78, 0.88],
+    [0.5, 0.98],
+    [0.18, 0.88],
+  ],
+  J: [
+    [0.7, 0.02],
+    [0.7, 0.75],
+    [0.6, 0.93],
+    [0.4, 0.97],
+    [0.2, 0.88],
+    [0.15, 0.72],
+  ],
   // An open curve: a shape only when the extra shapes are asked for (an arc), so it is checked with ink-to-shape only.
   c: [
     [0.75, 0.35],
@@ -245,6 +327,26 @@ export const LETTERS: Readonly<Record<string, Glyph>> = {
 };
 
 /** Letters a held pen may fairly read as a shape (a c is an arc), checked only when strokes are not held. */
-export const LIFT_ONLY_LETTERS: readonly string[] = ['c'];
+export const LIFT_ONLY_LETTERS: readonly string[] = ['c', 'o', 'O', '0', 'l', 'C', 'U'];
 
-export const WORDS: readonly string[] = ['me', 'run', 'see', 'name', 'wave', 'hum', 'bed', 'zap', 'up', 'sky'];
+/**
+ * Letters that are also shapes, written at note size only (14 to 45 units tall). Written larger, as a heading, an O is
+ * a circle; ink-to-shape leaves it as ink only beside the rest of its line (handwriting.ts).
+ */
+export const NOTE_SIZE_LETTERS: readonly string[] = ['o', 'O', '0', 'l', '1', 'C', 'U', 'S', 'J'];
+
+export const WORDS: readonly string[] = [
+  'me',
+  'run',
+  'see',
+  'name',
+  'wave',
+  'hum',
+  'bed',
+  'zap',
+  'up',
+  'sky',
+  'look',
+  'cool',
+  'all',
+];

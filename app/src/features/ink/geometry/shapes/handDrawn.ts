@@ -52,7 +52,7 @@ export function inkCorpus(count: number, ending: Ending, seed = 1): Drawing[] {
   return NOT_SHAPES.filter((spec) => ending === 'lift' || spec.liftOnly !== true).flatMap((spec, s) =>
     Array.from({ length: count }, (_, k) => {
       const r = seededRandom(seed * 2_000_003 + s * 7919 + k * 104_729);
-      const size = spec.name.startsWith('letter') || spec.name.startsWith('word') ? writingSize(r) : shapeSize(r);
+      const size = spec.noteSize ? uniform(r, 14, 45) : spec.writing ? writingSize(r) : shapeSize(r);
       const points = draw(r, spec.make(r, size), size, RATES[k % RATES.length], ending, false, careOf(k));
       return { name: spec.name, expect: null, extraOnly: false, points };
     }),

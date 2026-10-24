@@ -12,8 +12,20 @@ import { createPartialEraseSession, createStrokeEraseSession } from '../edits/er
 import type { PartialEraseSession, StrokeEraseSession } from '../edits/eraseSession';
 import { eraserSkip, ERASE_ALL } from '../edits/filters';
 import type { EraserFilter } from '../edits/filters';
-import { applyReshape, followEnd, followsEnd, pivotOf, recognizeShape, reshapeFor } from '../geometry/shapes';
+import {
+  applyReshape,
+  besideBox,
+  followEnd,
+  followsEnd,
+  inLineOfWriting,
+  pivotOf,
+  recognizeShape,
+  reshapeFor,
+  smallAndQuick,
+} from '../geometry/shapes';
 import type { Shape, ShapeMatch } from '../geometry/shapes';
+import { boundsOf, strokeBounds } from '../geometry/bounds';
+import { isExactStroke } from '../geometry/outline';
 import type { InkPoint, Vec } from '../geometry/types';
 import { resolvePenAction, suppressContextMenu } from './../input/buttons';
 import type { PenAction } from '../input/buttons';
@@ -502,6 +514,21 @@ function asShape(stroke: InkStroke, match: ShapeMatch): InkStroke {
   return { ...stroke, points: match.points.map((p) => ({ x: p.x, y: p.y })) };
 }
 
+/**
+ * Whether ink-to-shape leaves a lifted stroke as ink because it is writing: small and written quickly, or in a line of
+ * freehand writing about as tall as it (geometry/shapes/handwriting.ts). A held pen asked for a shape, so it is never
+ * asked here.
+ */
+function written(stroke: InkStroke, surface: InkSurface, zoom: number): boolean {
+  if (smallAndQuick(stroke.points, zoom)) return true;
+  const box = boundsOf(stroke.points);
+  const writing = surface
+    .query(besideBox(box))
+    .filter((other) => other.id !== stroke.id && other.tool !== 'highlighter' && !isExactStroke(other))
+    .map(strokeBounds);
+  return inLineOfWriting(box, writing);
+}
+
 async function finish(
   g: InkGesture,
   surface: InkSurface,
@@ -534,7 +561,7 @@ async function finish(
       }
       const found =
         (held && g.hold?.live ? { ...held, points: g.hold.live } : held) ??
-        (shapes.inkToShape && g.style.tool !== 'highlighter'
+        (shapes.inkToShape && g.style.tool !== 'highlighter' && !written(strokes[0], surface, zoom)
           ? recognizeShape(strokes[0].points, { minSize: 16 / zoom, width: g.style.width })
           : null);
       // A shape the pen grew or turned is read back from its points, so it snaps by what it now is.
