@@ -204,6 +204,19 @@ describe('angles between directions', () => {
 describe('allowed reflections', () => {
   const rowsOf = (o: Outcome) => (o.ok ? o.tables![0].rows : []);
 
+  it('high-angle lines are kept: Fe to 180 degrees has (310) at 116.39 and (222) at 137.1; Cu has (331) and (420)', () => {
+    const fe = rowsOf(pattern({ structure: 'bcc', a: 0.2866 * NM, ca: NaN, lambda: CU_KA, maxTwoTheta: 180 }));
+    const f310 = fe.find((r) => r[0] === '310');
+    const f222 = fe.find((r) => r[0] === '222');
+    expect(Math.abs(Number(f310?.[2]) - 116.39)).toBeLessThan(0.02);
+    expect(Math.abs(Number(f222?.[2]) - 137.1)).toBeLessThan(0.1);
+    const cu = rowsOf(pattern({ structure: 'fcc', a: 0.3615 * NM, ca: NaN, lambda: CU_KA, maxTwoTheta: 180 })).map(
+      (r) => r[0],
+    );
+    expect(cu).toContain('331');
+    expect(cu).toContain('420');
+  });
+
   it('BCC iron at Cu K-alpha: (110) 44.680, (200) 65.033, (211) 82.349 degrees', () => {
     const o = pattern({ structure: 'bcc', a: 0.2866 * NM, ca: NaN, lambda: CU_KA, maxTwoTheta: 90 });
     const rows = rowsOf(o);
@@ -289,7 +302,25 @@ describe('indexing a powder pattern', () => {
   it('a diamond pattern with its 111 220 311 400 lines indexes with a = 0.5431 nm', () => {
     const o = indexPattern(peaksOf('diamond', 0.5431, 100), CU_KA);
     expect(o.ok).toBe(true);
+    expect(o.ok && o.rows[0].word).toBe('kitChemMat.cx.structure.diamond');
     expect(Math.abs(val(o, 'kitChemMat.cx.row.a') / NM - 0.5431)).toBeLessThan(1e-3);
+  });
+
+  it('silicon lines from a handbook indexes as diamond, not FCC (200 and 222 absent)', () => {
+    const o = indexPattern('28.443 47.304 56.122 69.132 76.380 88.033', CU_KA);
+    expect(o.ok && o.rows[0].word).toBe('kitChemMat.cx.structure.diamond');
+    expect(Math.abs(val(o, 'kitChemMat.cx.row.a') / NM - 0.5431)).toBeLessThan(1e-3);
+  });
+
+  it('a simple cubic pattern (Po, a = 0.3359 nm, N = 1-6 and 8) indexes as SC, not BCC', () => {
+    const lambda = CU_KA;
+    const peaks = [1, 2, 3, 4, 5, 6, 8].map((N) => {
+      const s = (lambda * Math.sqrt(N)) / (2 * 0.3359 * NM);
+      return ((2 * Math.asin(s)) / Math.PI) * 180;
+    });
+    const o = indexPattern(peaks.map((p) => p.toFixed(3)).join(' '), lambda);
+    expect(o.ok && o.rows[0].word).toBe('kitChemMat.cx.structure.sc');
+    expect(Math.abs(val(o, 'kitChemMat.cx.row.a') / NM - 0.3359)).toBeLessThan(1e-4);
   });
 
   it('peaks given in any order and with commas are sorted before matching', () => {

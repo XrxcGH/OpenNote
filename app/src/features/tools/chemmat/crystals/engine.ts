@@ -377,7 +377,7 @@ export function pattern(input: PatternInput): Outcome {
       if (tt !== null && tt <= input.maxTwoTheta) found.push({ label: g.label, d: g.d, tt, mult: Math.round(g.mult) });
     }
   } else {
-    const maxN = Math.floor((2 * input.a) / input.lambda) ** 2;
+    const maxN = Math.floor(((2 * input.a) / input.lambda) ** 2);
     for (const r of cubicReflections(s, Math.min(maxN, 400))) {
       const d = dCubic(input.a, Math.sqrt(r.N), 0, 0);
       const tt = twoTheta(d, input.lambda);
@@ -440,6 +440,8 @@ export interface IndexFit {
   /** How many of the lowest allowed reflections lie below the first peak (0 when the pattern starts at the lowest). */
   skipped: number;
   hkls: number[];
+  /** Allowed reflections between the first and last indexed peaks that have no observed peak. */
+  missing: number;
 }
 
 /** Tries each cubic structure for peaks given as 2 theta in degrees (sorted); returns the fits, best first. */
@@ -472,12 +474,17 @@ export function indexCubic(twoThetas: readonly number[], lambda: number, maxSkip
       // lambda^2 / (4 a^2) = q  ->  a = lambda / (2 sqrt q); take a from a least-squares-like mean of the N values
       const aValues = sin2.map((x, i) => (lambda * Math.sqrt(hkls[i])) / (2 * Math.sqrt(x)));
       const a = aValues.reduce((p, v) => p + v, 0) / aValues.length;
-      const fit: IndexFit = { structure: s, a, spread: worst, skipped: m, hkls };
+      const lo = Math.min(...hkls);
+      const hi = Math.max(...hkls);
+      const missing = allowed.filter((N) => N >= lo && N <= hi && !hkls.includes(N)).length;
+      const fit: IndexFit = { structure: s, a, spread: worst, skipped: m, hkls, missing };
       fits.push(fit);
       break;
     }
   }
-  return fits.sort((x, y) => INDEXABLE.indexOf(x.structure) - INDEXABLE.indexOf(y.structure));
+  return fits.sort(
+    (x, y) => x.missing - y.missing || INDEXABLE.indexOf(x.structure) - INDEXABLE.indexOf(y.structure),
+  );
 }
 
 export function indexPattern(peaks: string, lambda: number): Outcome | Failed {
