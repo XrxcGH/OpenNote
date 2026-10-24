@@ -46,6 +46,8 @@ export const KINDS = {
   bigMoment: { dim: D(2, 1, -2), si: shown('kN·m', 1e3), us: shown('kip·ft', KIP * 0.3048) },
   smallMoment: { dim: D(2, 1, -2), si: shown('N·m', 1), us: shown('lbf·in', LBF * IN) },
   stress: { dim: D(-1, 1, -2), si: shown('MPa', 1e6), us: shown('ksi', KSI) },
+  stress2: { dim: D(-2, 2, -4), si: shown('MPa²', 1e12, 'MPa^2'), us: shown('ksi²', KSI ** 2, 'ksi^2') },
+  stress3: { dim: D(-3, 3, -6), si: shown('MPa³', 1e18, 'MPa^3'), us: shown('ksi³', KSI ** 3, 'ksi^3') },
   modulus: { dim: D(-1, 1, -2), si: shown('GPa', 1e9), us: shown('ksi', KSI) },
   lineLoad: { dim: D(0, 1, -2), si: shown('N/mm', 1e3), us: shown('kip/in', KIP / IN) },
   spanLoad: { dim: D(0, 1, -2), si: shown('kN/m', 1e3), us: shown('kip/ft', KIP / 0.3048) },

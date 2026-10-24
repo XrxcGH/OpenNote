@@ -12,6 +12,7 @@ export interface SolidsToolMeta {
 
 export const SOLIDS_TOOLS: readonly SolidsToolMeta[] = [
   { id: 'columns', title: 'kitSolids.columns.title', keywords: 'kitSolids.columns.keywords', icon: 'Bridge' },
+  { id: 'stress', title: 'kitSolids.stress.title', keywords: 'kitSolids.stress.keywords', icon: 'CircleHalf' },
 ];
 
 export const SOLIDS_TOOL_IDS: readonly string[] = SOLIDS_TOOLS.map((tool) => tool.id);
