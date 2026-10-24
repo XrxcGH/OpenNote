@@ -279,6 +279,15 @@ const UNSUPPORTED_TYPES = new Set([
   'map',
   'set',
   'wchar_t',
+  'size_t',
+  'int8_t',
+  'int16_t',
+  'int32_t',
+  'int64_t',
+  'uint8_t',
+  'uint16_t',
+  'uint32_t',
+  'uint64_t',
 ]);
 const UNSUPPORTED_WORDS = new Set([
   'class',

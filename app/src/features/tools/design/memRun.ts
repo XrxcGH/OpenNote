@@ -109,12 +109,30 @@ function sizeOf(t: Ty, structs: Map<string, StructDef>): number {
       return 1;
     case 'void':
       return 1;
-    case 'struct': {
-      const def = structs.get(t.name);
-      if (!def) return 1;
-      return def.fields.reduce((a, f) => a + sizeOf(f.ty, structs) * (f.count ?? 1), 0) || 1;
-    }
+    case 'struct':
+      return layout(t.name, structs).size;
   }
+}
+
+function alignOf(t: Ty, structs: Map<string, StructDef>): number {
+  return t.k === 'struct' ? layout(t.name, structs).align : t.k === 'void' ? 1 : sizeOf(t, structs);
+}
+
+/** A struct laid out as a C++ compiler does: each field at a multiple of its alignment, the size a multiple of the largest. */
+function layout(name: string, structs: Map<string, StructDef>): { size: number; align: number; offsets: number[] } {
+  const def = structs.get(name);
+  if (!def) return { size: 1, align: 1, offsets: [] };
+  let off = 0;
+  let align = 1;
+  const offsets: number[] = [];
+  for (const f of def.fields) {
+    const a = alignOf(f.ty, structs);
+    align = Math.max(align, a);
+    off = Math.ceil(off / a) * a;
+    offsets.push(off);
+    off += sizeOf(f.ty, structs) * (f.count ?? 1);
+  }
+  return { size: Math.max(1, Math.ceil(off / align) * align), align, offsets };
 }
 
 function formatG(x: number): string {
@@ -321,8 +339,8 @@ class Machine {
       this.globalNext += Math.ceil(total / 8) * 8;
     }
     if (def) {
-      let off = 0;
-      for (const f of def.fields) {
+      const offsets = layout(def.name, this.p.structs).offsets;
+      for (const [fi, f] of def.fields.entries()) {
         b.fieldStart.set(f.name, b.cells.length);
         const n = f.count ?? 1;
         for (let k = 0; k < n; k++) {
@@ -332,9 +350,8 @@ class Machine {
             block: b,
             idx: b.cells.length,
             label: f.count ? `${f.name}[${k}]` : f.name,
-            offset: off,
+            offset: (offsets[fi] ?? 0) + k * sizeOf(f.ty, this.p.structs),
           });
-          off += sizeOf(f.ty, this.p.structs);
         }
       }
     } else {
@@ -895,6 +912,7 @@ class Machine {
       count = Math.trunc(this.num(this.rv(e.count), e.line));
       if (count < 0 || count > HEAP_CAP) return this.fail(e.line, `an array of ${count} elements`);
     }
+    if (e.count !== undefined && e.ty.k === 'struct') return this.unsupported(e.line, 'new arrays of structs');
     const b = this.alloc('heap', '', e.ty, count, e.count !== undefined, e.line);
     if (e.parens && !e.init) this.zeroBlock(b);
     if (e.init) {
@@ -1131,6 +1149,7 @@ class Machine {
       return;
     }
     const region: Region = global ? 'global' : 'stack';
+    if (d.size !== undefined && d.ty.k === 'struct') return this.unsupported(d.line, 'arrays of structs');
     if (d.size !== undefined) {
       let count: number;
       if (d.size === 'infer') {

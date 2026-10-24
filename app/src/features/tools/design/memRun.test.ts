@@ -243,6 +243,23 @@ describe('limits and unsupported code', () => {
     expect(run('long y = 2;')).toMatchObject({ ok: false, line: 1, kind: 'unsupported' });
   });
 
+  it('names size_t and arrays of structs instead of failing obscurely', () => {
+    expect(run('size_t n = 3;')).toMatchObject({ ok: false, line: 1, kind: 'unsupported' });
+    const r = ok('struct P { int x; int y; };\nint main() {\n  P ps[2];\n  return 0;\n}\n');
+    expect(r.stop).toMatchObject({ line: 3, kind: 'unsupported' });
+    expect(r.stop?.detail).toContain('arrays of structs');
+  });
+
+  it('sizeof a struct includes alignment padding', () => {
+    // By the C++ layout rules: {char; int} is 1 + 3 pad + 4 = 8; {int; char; double} is 4 + 1 + 3 pad + 8 = 16;
+    // {char; char; char} needs no padding and is 3; {double; char} is 8 + 1 + 7 trailing pad = 16.
+    const size = (decl: string, name: string) => text(last(ok(`${decl}\nint n = sizeof(${name});`)), 'n');
+    expect(size('struct S { char c; int x; };', 'S')).toBe('8');
+    expect(size('struct T { int a; char b; double c; };', 'T')).toBe('16');
+    expect(size('struct U { char a; char b; char c; };', 'U')).toBe('3');
+    expect(size('struct V { double d; char c; };', 'V')).toBe('16');
+  });
+
   it('reports syntax errors with their line', () => {
     expect(run('int x = 5\nint y = 6;')).toMatchObject({ ok: false, line: 2, kind: 'syntax' });
     expect(run('int x = ;')).toMatchObject({ ok: false, line: 1, kind: 'syntax' });
