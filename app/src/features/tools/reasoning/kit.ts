@@ -4,6 +4,7 @@ import type { ToolSpec } from './ui/types';
 
 const LOADERS: Record<ReasoningToolId, () => Promise<ToolSpec>> = {
   digital: () => import('./digital/forms').then((m) => m.DIGITAL),
+  games: () => import('./games/forms').then((m) => m.GAMES),
 };
 
 export const loadTool = (tool: ReasoningToolId): Promise<ToolSpec> => LOADERS[tool]();

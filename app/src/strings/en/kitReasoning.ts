@@ -2,6 +2,7 @@
 // modes, fields, steps, and errors. Each tool's strings are in kitReasoning/, joined here into one namespace.
 // Every interface string is a full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19).
 import { digital } from './kitReasoning/digital';
+import { games } from './kitReasoning/games';
 
 export const kitReasoning = {
   title: 'Reasoning kit',
@@ -17,6 +18,15 @@ export const kitReasoning = {
         'digital logic boolean algebra karnaugh map k-map quine mccluskey minimize sop pos nand nor gates ' +
         'flip-flop state machine mealy moore counter elmore logical effort',
       summary: 'From truth tables to minimal circuits: maps, gates, timing, flip-flops, and state machines.',
+    },
+    games: {
+      tab: 'Games and voting',
+      open: 'Open games, voting, and apportionment',
+      keywords:
+        'game theory nash equilibrium mixed strategy dominance zero-sum backward induction bargaining auction ' +
+        'voting borda condorcet instant runoff stv apportionment shapley banzhaf efficiency gap compactness',
+      summary:
+        'Solve games, tally elections under many rules, apportion seats, and measure voting power and districts.',
     },
   },
   common: {
@@ -36,4 +46,5 @@ export const kitReasoning = {
     insertPicture: 'Insert picture',
   },
   digital,
+  games,
 } as const;

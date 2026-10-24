@@ -5,7 +5,10 @@ import type { IconName } from '../../../ui/icons';
 import type { MessageKey } from '../../../strings/t';
 import { addCommand } from './qolStudy';
 
-const TOOLS: readonly (readonly [ReasoningToolId, IconName])[] = [['digital', 'Circuitry']];
+const TOOLS: readonly (readonly [ReasoningToolId, IconName])[] = [
+  ['digital', 'Circuitry'],
+  ['games', 'ChartBar'],
+];
 
 async function open(tool?: ReasoningToolId): Promise<void> {
   (await import('../../tools')).openReasoningKit(tool);
