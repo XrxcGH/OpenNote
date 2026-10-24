@@ -33,6 +33,7 @@
     "command | box-overlap | td > span.buttons > button.button x div.toolFill > p.note",
     "command | dead-space | div[role=option].cell > div.thumbBox > div.thumbScale (empty box)",
     "command | scrollbar-occluded | div.column > div.body > div[data-scope=page].viewport <- other",
+    "command | scrollbar-occluded | div.column > div.body > div[data-scope=page].viewport <- tool window",
     "command | target-gap | div.fields > div.field > input.input x div.field > input.input",
     "command | target-gap | div.fields > div.field > input.input x label.number > input",
     "command | target-gap | div.scroll > div[role=group].table > button.cell x div[role=group].table > button.cell",
