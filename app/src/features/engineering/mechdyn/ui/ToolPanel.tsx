@@ -22,6 +22,7 @@ import {
   type InsertContext,
   type Say,
 } from './insert';
+import { calcData } from './calc';
 import { Results } from './Results';
 import styles from './mechdyn.module.css';
 
@@ -29,6 +30,8 @@ import styles from './mechdyn.module.css';
 export const say = t as unknown as Say;
 
 const PREFIX = 'opennote.tools.kitMechDyn.';
+/** The page's panel type for a calculation block (PANEL_TYPES.kitCalc); the page checks it before it inserts. */
+const KIT_CALC_TYPE = 'ext:org.opennote/kitcalc';
 
 function load<T>(name: string, fallback: T): T {
   try {
@@ -139,7 +142,7 @@ function FieldInput(props: {
   );
 }
 
-function insertItems(c: InsertContext): MenuItemSpec[] {
+function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>): MenuItemSpec[] {
   const done = (ok: boolean) => announce(say(ok ? 'kitMechDyn.ui.inserted' : 'kitMechDyn.ui.noPage'));
   const items: MenuItemSpec[] = [
     {
@@ -167,6 +170,15 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
       onSelect: () => done(sendToPage({ text: stepsHtml(c) })),
     },
   );
+  // A live block: the answer, with a button that reopens this tool with these inputs.
+  items.push({
+    id: 'calc',
+    label: say('kitMechDyn.ui.insertCalc'),
+    onSelect: () => {
+      const data = calcData(c, texts);
+      done(sendToPage({ panel: { type: KIT_CALC_TYPE, data: { ...data }, fallback: data.summary } }));
+    },
+  });
   c.outcome.tables?.forEach((table, i) =>
     items.push({
       id: `table-${table.id}`,
@@ -211,7 +223,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const openInsert = (anchor: HTMLElement) => {
     if (!run.ok) return;
     const c: InsertContext = { tool, outcome: run.outcome, system, say };
-    void openMenu({ label: say('kitMechDyn.ui.insertMenu'), items: insertItems(c), anchor });
+    void openMenu({ label: say('kitMechDyn.ui.insertMenu'), items: insertItems(c, texts), anchor });
   };
   return (
     <div className={styles.panel}>

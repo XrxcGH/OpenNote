@@ -12,9 +12,17 @@ import { INSERT_EVENT } from '../../../tools/flags';
 import { closeTool, openTools } from '../../../tools/ui/host';
 import { MECHDYN_TOOLS } from '../meta';
 import { saveTab } from '../open';
+import { PANEL_TYPES } from '../../../page/panels/kinds';
+import { CalcBlock } from './CalcBlock';
 import { MechDynKit } from './MechDynKit';
 
-type Detail = { text?: string; math?: { source: string }; table?: { rows: string[][] }; picture?: object };
+type Detail = {
+  text?: string;
+  math?: { source: string };
+  table?: { rows: string[][] };
+  picture?: object;
+  panel?: { type: string; data: Record<string, unknown>; fallback: string };
+};
 const inserted: Detail[] = [];
 window.addEventListener(INSERT_EVENT, (event: Event) => {
   const detail = (event as CustomEvent<Detail & { handled: boolean }>).detail;
@@ -95,6 +103,27 @@ describe('the mechanisms and dynamics kit window', () => {
     expect(inserted[3].text).toMatch(/^<p>Single-degree-of-freedom vibration<\/p><ol><li>/);
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].picture).toBeTruthy();
+  });
+
+  it('inserts a live calculation block that reopens the tool with its inputs', async () => {
+    saveTab('sdof');
+    const kit = renderUi(<MechDynKit />);
+    await userEvent.fill(await screen.findByRole('textbox', { name: 'Mass, m' }), '12.5 kg');
+    await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    await userEvent.click((await screen.findAllByRole('menuitem', { name: 'Live calculation block' }))[0]);
+    const panel = inserted[0].panel!;
+    expect(panel.type).toBe(PANEL_TYPES.kitCalc);
+    expect(panel.fallback).toContain('Single-degree-of-freedom vibration');
+    // The page keeps the data as JSON; change the field in the window, then reopen from the block.
+    const data = JSON.parse(JSON.stringify(panel.data)) as Record<string, unknown>;
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Mass, m' }), '3 kg');
+    kit.unmount();
+    renderUi(<MechDynKit />);
+    renderUi(<CalcBlock data={data} readOnly={false} patch={() => undefined} announce={() => undefined} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Open in the tool' }));
+    await waitFor(() =>
+      expect((screen.getByRole('textbox', { name: 'Mass, m' }) as HTMLInputElement).value).toBe('12.5 kg'),
+    );
   });
 
   it('opens on the tool a palette command names', async () => {

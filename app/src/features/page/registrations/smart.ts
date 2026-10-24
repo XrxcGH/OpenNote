@@ -10,6 +10,7 @@ import type { CommandCategory } from '../../../commands/types';
 import { announce } from '../../../ui';
 import type { IconName } from '../../../ui/icons';
 import { INSERT_EVENT } from '../../tools/flags';
+import { PANEL_TYPES, type PanelType } from '../panels/kinds';
 import { targetEditor } from '../formattingBar/target';
 import { shownMedia } from '../images/shown';
 import { slashItems } from '../registries';
@@ -406,9 +407,19 @@ if (typeof window !== 'undefined') {
         table?: { header: string[]; rows: string[][] };
         math?: { source: string; display: boolean };
         picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
+        panel?: { type: string; data: Record<string, unknown>; fallback: string };
         handled: boolean;
       }>
     ).detail;
+    const panel = detail?.panel;
+    if (panel && (Object.values(PANEL_TYPES) as string[]).includes(panel.type)) {
+      // A panel block goes in after the block with the caret, through the page's queue.
+      detail.handled = true;
+      void import('../panels/insertPanel').then(({ insertPanelBlock }) =>
+        insertPanelBlock(panel.type as PanelType, panel.data, panel.fallback),
+      );
+      return;
+    }
     if (detail?.picture) {
       // A picture goes on the page as an image block, where the page puts new images.
       const picture = detail.picture;

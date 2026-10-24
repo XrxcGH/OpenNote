@@ -52,6 +52,8 @@ export interface InsertDetail {
   math?: { source: string; display: boolean };
   /** A table for the page: a header row, then rows of cell text. */
   table?: { header: string[]; rows: string[][] };
+  /** A panel block for the page: its type, its data, and the text a reader without it shows. */
+  panel?: { type: string; data: Record<string, unknown>; fallback: string };
   handled: boolean;
 }
 

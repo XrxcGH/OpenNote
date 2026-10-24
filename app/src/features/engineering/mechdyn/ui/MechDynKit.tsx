@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { ToolSpec } from '../kit/spec';
 import { MECHDYN_TOOLS, MECHDYN_TOOL_IDS as IDS } from '../meta';
-import { followTab, saveTab, savedTab } from '../open';
+import { followTab, restoreStamp, saveTab, savedTab } from '../open';
 import { SPECS } from '../specs';
 import { ToolPanel, say } from './ToolPanel';
 import styles from './mechdyn.module.css';
@@ -30,8 +30,17 @@ function useSpec(id: string): ToolSpec | null {
 
 export function MechDynKit() {
   const [tab, setTab] = useState(chosen);
+  // A calculation block that hands over its inputs bumps the stamp, and the panel remounts to read them.
+  const [stamp, setStamp] = useState(restoreStamp);
   const buttons = useRef<Record<string, HTMLButtonElement | null>>({});
-  useEffect(() => followTab(() => setTab(chosen())), []);
+  useEffect(
+    () =>
+      followTab(() => {
+        setTab(chosen());
+        setStamp(restoreStamp());
+      }),
+    [],
+  );
   const spec = useSpec(tab);
   const pick = (id: string, focus = false) => {
     saveTab(id);
@@ -75,7 +84,11 @@ export function MechDynKit() {
         ))}
       </div>
       <div id="kit-mechdyn-panel" role="tabpanel" aria-labelledby={`kit-mechdyn-tab-${tab}`}>
-        {spec ? <ToolPanel key={tab} tool={tab} spec={spec} /> : <p role="status">{say('kitMechDyn.loading')}</p>}
+        {spec ? (
+          <ToolPanel key={`${tab}-${stamp}`} tool={tab} spec={spec} />
+        ) : (
+          <p role="status">{say('kitMechDyn.loading')}</p>
+        )}
       </div>
     </div>
   );

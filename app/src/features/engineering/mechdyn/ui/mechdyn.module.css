@@ -201,6 +201,21 @@
     gap: var(--space-2);
   }
 
+  .calc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .calcSummary {
+    flex: 1 1 16rem;
+    margin: 0;
+  }
+
   .mono {
     font-family: var(--font-mono);
     font-size: var(--type-small-size);

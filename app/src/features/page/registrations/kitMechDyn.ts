@@ -2,7 +2,23 @@
 // its subject words in the command palette. This file loads at start-up, so it holds only definitions; the window
 // and its tools load on first use.
 import { MECHDYN_TOOLS } from '../../engineering/flags';
+import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
+import { blockRenderers } from '../registries';
+import { lazyHandle } from './engineering';
 import { addCommand } from './qolStudy';
+
+// A calculation block from the kit's Insert menu: the answer on the page, and a button that reopens the tool.
+blockRenderers.register(
+  panelRenderer({
+    type: PANEL_TYPES.kitCalc,
+    label: 'kitMechDyn.ui.calcBlock',
+    flag: 'kits.mechdyn',
+    load: async () => {
+      const { mountMechDynCalc } = await import('../../engineering');
+      return { mount: (container, props) => lazyHandle(mountMechDynCalc(container, props)) };
+    },
+  }),
+);
 
 const open = async (tool?: string) => (await import('../../engineering')).openMechDynKit(tool);
 
