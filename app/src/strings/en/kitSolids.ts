@@ -9,6 +9,7 @@ import { deflection, deflectionSteps } from './kitSolids/deflection';
 import { vessels, vesselsSteps } from './kitSolids/vessels';
 import { thinwalled, thinwalledSteps } from './kitSolids/thinwalled';
 import { composites, compositesSteps } from './kitSolids/composites';
+import { biomech, biomechSteps } from './kitSolids/biomech';
 
 export const kitSolids = {
   title: 'Solid mechanics',
@@ -88,6 +89,8 @@ export const kitSolids = {
     laminaPoisson: "ν12 times ν21 must be less than 1. Check Poisson's ratio and the two moduli.",
     layup: 'The layup could not be read at {detail}. Type angles in degrees, such as [0/90]s.',
     singularLaminate: 'The laminate has no stiffness in some direction. Check the plies.',
+    muscleLine: 'The muscle runs along the segment, so it has no moment about the joint. Check α.',
+    fraction: 'The volume fraction must be from 0 to 1.',
     unknown: 'That could not be worked out.',
   },
   columns,
@@ -98,6 +101,7 @@ export const kitSolids = {
   vessels,
   thinwalled,
   composites,
+  biomech,
   step: {
     columns: columnsSteps,
     stress: stressSteps,
@@ -107,5 +111,6 @@ export const kitSolids = {
     vessels: vesselsSteps,
     thinwalled: thinwalledSteps,
     composites: compositesSteps,
+    biomech: biomechSteps,
   },
 } as const;
