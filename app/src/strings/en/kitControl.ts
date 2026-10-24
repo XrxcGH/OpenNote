@@ -443,6 +443,9 @@ export const kitControl = {
       crossing: 'It crosses the imaginary axis at ω = {w} rad/s, when K = {k}.',
       ranges: 'The closed loop is stable for {ranges}.',
       angleCondition: 'A point is on the locus when the angle of G there is ±180°; here it is {angle}°.',
+      nearLocus:
+        'The point is {off}° off the locus, within the 0.5° allowed for a rounded point, so the gain below is ' +
+        'approximate.',
       magnitude: 'The magnitude condition gives the gain there, K = {k}:',
       zetaLine: 'Damping ratio ζ = {zeta} is the line at {angle}° from the negative real axis.',
       zetaFound: 'The locus meets it at s = {point} (ωₙ = {wn} rad/s), where K = {k}.',

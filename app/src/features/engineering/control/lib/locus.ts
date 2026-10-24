@@ -166,10 +166,21 @@ export function breakPoints(n: Poly, d: Poly): { point: Complex; k: number }[] {
   return out;
 }
 
-/** The gain that puts a closed-loop pole at s₀, and the angle of N/D there (180° on the locus). */
-export function gainAt(n: Poly, d: Poly, s0: Complex): { k: number; angleDeg: number; onLocus: boolean } {
+/** How far, in degrees, a point may miss the angle condition and still count as on the locus (typed rounding). */
+export const LOCUS_ANGLE_TOL = 0.5;
+
+/**
+ * The gain that puts a closed-loop pole at s₀, the angle of N/D there (180° on the locus), and how far that angle is
+ * from 180°. A point within LOCUS_ANGLE_TOL counts, so a point rounded to a few decimals is accepted.
+ */
+export function gainAt(
+  n: Poly,
+  d: Poly,
+  s0: Complex,
+): { k: number; angleDeg: number; offDeg: number; onLocus: boolean } {
   const g = cdiv(pevalC(n, s0), pevalC(d, s0));
   const k = 1 / cabs(g);
   const angleDeg = (Math.atan2(g.im, g.re) * 180) / Math.PI;
-  return { k, angleDeg, onLocus: Math.abs(Math.abs(angleDeg) - 180) < 1e-3 };
+  const offDeg = 180 - Math.abs(angleDeg);
+  return { k, angleDeg, offDeg, onLocus: offDeg < LOCUS_ANGLE_TOL };
 }

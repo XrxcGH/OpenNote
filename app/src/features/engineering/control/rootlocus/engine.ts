@@ -372,6 +372,8 @@ export function gainForPoint(g: TF, s0: Complex): GainPoint & { angleDeg: number
     closed: closedAt(g, r.k),
     steps: [
       step('locus.angleCondition', { angle: fmt(r.angleDeg) }, `\\angle G(s_0) = \\pm 180^\\circ`),
+      // A typed point rounded to a few decimals misses 180° slightly; say by how much.
+      ...(r.offDeg > 1e-6 ? [step('locus.nearLocus', { off: fmt(r.offDeg, 3) })] : []),
       step('locus.magnitude', { k: fmt(r.k) }, `K = \\frac{1}{|G(s_0)|} = ${fmt(r.k)}`),
     ],
   };

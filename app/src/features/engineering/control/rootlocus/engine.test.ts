@@ -174,3 +174,21 @@ describe('negative loop gain and complex break points', () => {
     expect(r.breaks[1].k).toBeCloseTo(100, 8);
   });
 });
+
+describe('gain for a typed, rounded point', () => {
+  it('accepts the ζ = 0.5 point of 1/(s(s + 2)(s + 4)) rounded to 4 decimals, K ≈ 224/27', () => {
+    const g = readTF('1/(s (s + 2) (s + 4))');
+    // Exact point: s = (4/3)(−1/2 + j√3/2), where K = |s||s + 2||s + 4| = 224/27.
+    const r = gainForPoint(g, cx(-0.6667, 1.1547));
+    expect(Math.abs(r.k - 224 / 27) / (224 / 27)).toBeLessThan(1e-3);
+    expect(r.steps.some((x) => x.key === 'locus.nearLocus')).toBe(true);
+    expect(
+      gainForPoint(g, cx(-4 / 6, (4 / 3) * (Math.sqrt(3) / 2))).steps.some((x) => x.key === 'locus.nearLocus'),
+    ).toBe(false);
+  });
+
+  it('still rejects a point well off the locus', () => {
+    const g = readTF('1/(s (s + 2) (s + 4))');
+    expect(() => gainForPoint(g, cx(-1, 1))).toThrow(ControlError);
+  });
+});
