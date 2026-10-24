@@ -1,6 +1,13 @@
 // The tool windows added after the first three (Phase 10 and the study tools): each body is another feature's panel
 // or a small tool of this one. They share the window, the storage, and the pop-out of the first three.
 import { lazy, Suspense } from 'react';
+
+// The fluid and heat transfer kit loads with its engineering feature the first time its window opens.
+const FluidHeatKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadFluidHeatKit())
+    .then((m) => ({ default: m.FluidHeatKit })),
+);
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
 import { DeckPanel } from '../../study';
@@ -63,6 +70,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
+  if (tool === 'kit-fluidheat')
+    return (
+      <Suspense fallback={null}>
+        <FluidHeatKit />
+      </Suspense>
+    );
   if (tool === 'symbols') return <SymbolsTool />;
   return null;
 }
