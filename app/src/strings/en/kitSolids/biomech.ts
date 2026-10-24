@@ -4,7 +4,8 @@ export const biomech = {
   title: 'Tissues and joints',
   keywords:
     'biomechanics viscoelastic tissue Maxwell Kelvin-Voigt standard linear solid creep stress relaxation ramp ' +
-    'Boltzmann complex modulus storage loss modulus hysteresis joint reaction muscle force elbow bone rule of mixtures',
+    'Boltzmann complex modulus storage loss modulus hysteresis joint reaction muscle force elbow ' +
+    'body segment parameters Dempster bone rule of mixtures',
   field: {
     mode: 'Problem',
     model: 'Model',
@@ -20,6 +21,9 @@ export const biomech = {
     phi: 'Segment angle above horizontal, φ',
     dm: 'Muscle insertion from the joint, dm',
     alpha: 'Angle between muscle and segment, α',
+    segment: 'Segment',
+    bodyMass: 'Body mass, m',
+    segLength: 'Segment length, Ls (from the joint)',
     Ws: 'Segment weight, Ws',
     ds: 'Segment weight from the joint, ds',
     Wh: 'Load in the hand, Wh (optional)',
@@ -29,6 +33,17 @@ export const biomech = {
     Em: 'Modulus of the soft phase, Em',
   },
   option: {
+    typed: 'Typed weight and distance',
+    hand: 'Hand (Dempster)',
+    forearm: 'Forearm (Dempster)',
+    upperArm: 'Upper arm (Dempster)',
+    forearmHand: 'Forearm and hand (Dempster)',
+    foot: 'Foot (Dempster)',
+    shank: 'Shank (Dempster)',
+    thigh: 'Thigh (Dempster)',
+    footShank: 'Foot and shank (Dempster)',
+    trunk: 'Trunk (Dempster)',
+    headNeck: 'Head and neck (Dempster)',
     creep: 'Creep',
     relax: 'Stress relaxation',
     dynamic: 'Cyclic loading',
@@ -44,6 +59,7 @@ export const biomech = {
     slsRamp: 'Standard linear solid under a ramp and hold',
     cycle: 'Standard linear solid at 0.02 Hz',
     elbow: 'Elbow at 90° holding a load',
+    elbowDempster: 'Elbow at 90°, forearm and hand from Dempster’s data',
     bone: 'Bone as mineral and collagen',
   },
   row: {
@@ -65,6 +81,10 @@ export const biomech = {
     reuss: 'Equal-stress (Reuss) modulus',
   },
   note: {
+    dempster:
+      'Ws and ds come from Dempster’s cadaver data (WADC TR 55-159, 1955, as tabulated by Winter): the segment’s ' +
+      'share of body mass, and its center of mass as a share of its length from the proximal joint. Measure Ls ' +
+      'from the joint the moments are taken about.',
     models:
       'Maxwell is a spring and dashpot in series, Kelvin–Voigt the two side by side, and the standard linear ' +
       'solid a spring E∞ beside a Maxwell arm of E and η.',
@@ -76,7 +96,7 @@ export const biomech = {
     jointModel:
       'The joint is a frictionless pin, and one muscle carries the whole moment. The reaction is the force on ' +
       'the segment at the joint.',
-    segments: 'Type the segment weight and where its center of mass is, from your course’s data or a table.',
+    segments: 'Type the segment weight and where its center of mass is, or pick a segment to use Dempster’s data.',
     bounds:
       'The true modulus lies between the two bounds. Equal strain suits loading along aligned fibers, and equal ' +
       'stress loading across them.',
@@ -103,6 +123,7 @@ export const biomech = {
 } as const;
 
 export const biomechSteps = {
+  segment: 'Take the segment’s weight and center of mass from Dempster’s fractions of body mass and length.',
   maxwellCreep: 'A Maxwell model under a held stress stretches at once, then flows steadily.',
   kelvinCreep: 'A Kelvin–Voigt model creeps toward σ0/E with the retardation time {tau}.',
   slsCreep: 'The standard linear solid jumps to its instant strain, then creeps with the time {tau}.',

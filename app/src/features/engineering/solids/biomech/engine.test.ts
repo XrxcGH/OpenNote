@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { firstTexts, runTool } from '../kit/read';
 import { SolidsError } from '../kit/types';
 import { creep, dynamic, joint, mixture, relaxation, type ModelInput } from './engine';
+import { SEGMENTS } from './dempster';
 import { biomechSpec } from './spec';
 
 const rel = (a: number | undefined, b: number, tol: number) =>
@@ -148,5 +149,40 @@ describe('joints and tissues', () => {
     expect(runTool(biomechSpec, firstTexts(biomechSpec), 'us').ok).toBe(true);
     const r = runTool(biomechSpec, { ...firstTexts(biomechSpec), eta: '100 MPa' }, 'si');
     expect(r.ok ? 'none' : r.fields.map((one) => one.error.code).join()).toBe('unitMismatch');
+  });
+});
+
+describe('Dempster body segment parameters', () => {
+  it('holds the transcribed fractions', () => {
+    // Mass over body mass, and center of mass from the proximal end over the segment length (Winter, Table 4.1).
+    const table: Record<string, [number, number]> = {
+      hand: [0.006, 0.506],
+      forearm: [0.016, 0.43],
+      upperArm: [0.028, 0.436],
+      forearmHand: [0.022, 0.682],
+      foot: [0.0145, 0.5],
+      shank: [0.0465, 0.433],
+      thigh: [0.1, 0.433],
+      footShank: [0.061, 0.606],
+      trunk: [0.497, 0.5],
+      headNeck: [0.081, 1],
+    };
+    for (const [id, [mass, com]] of Object.entries(table))
+      expect(SEGMENTS[id as keyof typeof SEGMENTS], id).toMatchObject({ mass, com });
+    // The forearm and hand together weigh the forearm plus the hand.
+    near(SEGMENTS.forearmHand.mass, SEGMENTS.forearm.mass + SEGMENTS.hand.mass, 1e-12);
+  });
+
+  it('fills the segment weight and distance in the joint mode', () => {
+    const r = runTool(
+      biomechSpec,
+      { ...firstTexts(biomechSpec), mode: 'joint', segment: 'forearmHand', bodyMass: '70 kg', segLength: '300 mm' },
+      'si',
+    );
+    expect(r.ok).toBe(true);
+    // Ws = 0.022 x 70 kg x 9.80665 = 15.10224 N at 0.682 x 0.3 m = 0.2046 m; with 50 N at 0.35 m and the muscle at
+    // 0.04 m, square to the forearm: Fm = (15.10224 x 0.2046 + 50 x 0.35) / 0.04.
+    const F = r.ok ? r.outcome.rows.find((row) => row.id === 'muscle')?.value : undefined;
+    rel((F as { v: number }).v, (0.022 * 70 * 9.80665 * 0.2046 + 50 * 0.35) / 0.04, 1e-9);
   });
 });

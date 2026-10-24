@@ -3,7 +3,8 @@
 // segment about a joint, and the rule-of-mixtures bounds for a two-phase tissue such as bone.
 import type { DrawContext } from '../kit/picture';
 import type { Outcome, ResultRow, ToolSpec, Values } from '../kit/spec';
-import { q } from '../kit/types';
+import { positive, q, step, type KitStep } from '../kit/types';
+import { G0, SEGMENTS, type SegmentId } from './dempster';
 import { jointSvg } from './draw';
 import { constants, creep, dynamic, joint, mixture, relaxation, type Model, type ModelInput } from './engine';
 
@@ -13,6 +14,8 @@ const isMode =
   (...modes: string[]) =>
   (v: Values) =>
     modes.includes(v.mode as string);
+const typedSegment = (v: Values) => v.mode === 'joint' && !((v.segment as string) in SEGMENTS);
+const tableSegment = (v: Values) => v.mode === 'joint' && (v.segment as string) in SEGMENTS;
 const span = (hi: number, n = 80) => [...Array(n + 1).keys()].map((i) => (hi * i) / n);
 
 function modelOf(values: Values): ModelInput {
@@ -104,8 +107,32 @@ function runDynamic(values: Values): Outcome {
   };
 }
 
+/** The segment's weight and the distance of its center of mass from the joint: typed, or from Dempster's table. */
+function segmentLoad(values: Values): { W: number; d: number; steps: KitStep[] } {
+  const id = values.segment as string;
+  if (!(id in SEGMENTS)) return { W: num(values, 'Ws'), d: num(values, 'ds'), steps: [] };
+  const segment = SEGMENTS[id as SegmentId];
+  const mass = positive(num(values, 'bodyMass'), 'm');
+  const length = positive(num(values, 'segLength'), 'L');
+  const W = segment.mass * mass * G0;
+  const d = segment.com * length;
+  return {
+    W,
+    d,
+    steps: [
+      step('biomech.segment', 'W_s = [[f]]\\, m g = [[W]], \\quad d_s = [[c]]\\, L_s = [[d]]', {
+        f: segment.mass,
+        c: segment.com,
+        W: q(W, 'smallForce'),
+        d: q(d, 'length'),
+      }),
+    ],
+  };
+}
+
 function runJoint(values: Values): Outcome {
-  const loads = [{ W: num(values, 'Ws'), d: num(values, 'ds') }];
+  const segment = segmentLoad(values);
+  const loads = [{ W: segment.W, d: segment.d }];
   if (Number.isFinite(num(values, 'Wh'))) loads.push({ W: num(values, 'Wh'), d: num(values, 'dh') });
   const input = { phi: num(values, 'phi'), dm: num(values, 'dm'), alpha: num(values, 'alpha'), loads };
   const r = joint(input);
@@ -118,8 +145,8 @@ function runJoint(values: Values): Outcome {
       { id: 'direction', value: q(r.direction, 'angle'), sym: '\\theta_R' },
       { id: 'ratio', value: r.F / loads.reduce((sum, one) => sum + one.W, 0), sym: 'F_m/\\sum W' },
     ],
-    steps: r.steps,
-    notes: ['jointAxes', 'jointModel', 'segments'],
+    steps: [...segment.steps, ...r.steps],
+    notes: ['jointAxes', 'jointModel', 'segments', ...(segment.steps.length > 0 ? ['dempster'] : [])],
     picture: { type: 'draw', draw: (ctx: DrawContext) => jointSvg({ ...input, F: r.F, Rx: r.Rx, Ry: r.Ry }, ctx) },
   };
 }
@@ -168,8 +195,17 @@ export const biomechSpec: ToolSpec = {
     { id: 'phi', type: 'quantity', kind: 'angle', first: '0', when: isMode('joint') },
     { id: 'dm', type: 'quantity', kind: 'length', first: '40 mm', when: isMode('joint') },
     { id: 'alpha', type: 'quantity', kind: 'angle', first: '90', when: isMode('joint') },
-    { id: 'Ws', type: 'quantity', kind: 'smallForce', first: '20 N', when: isMode('joint') },
-    { id: 'ds', type: 'quantity', kind: 'length', first: '150 mm', when: isMode('joint') },
+    {
+      id: 'segment',
+      type: 'choice',
+      options: ['typed', ...Object.keys(SEGMENTS)],
+      first: 'typed',
+      when: isMode('joint'),
+    },
+    { id: 'Ws', type: 'quantity', kind: 'smallForce', first: '20 N', when: typedSegment },
+    { id: 'ds', type: 'quantity', kind: 'length', first: '150 mm', when: typedSegment },
+    { id: 'bodyMass', type: 'quantity', kind: 'mass', first: '70 kg', when: tableSegment },
+    { id: 'segLength', type: 'quantity', kind: 'length', first: '300 mm', when: tableSegment },
     { id: 'Wh', type: 'quantity', kind: 'smallForce', first: '50 N', optional: true, when: isMode('joint') },
     { id: 'dh', type: 'quantity', kind: 'length', first: '350 mm', when: isMode('joint') },
     { id: 'Vf', type: 'quantity', kind: 'ratio', first: '0.4', when: isMode('bone') },
@@ -190,6 +226,20 @@ export const biomechSpec: ToolSpec = {
     {
       id: 'elbow',
       values: { mode: 'joint', phi: '0', dm: '40 mm', alpha: '90', Ws: '20 N', ds: '150 mm', Wh: '50 N', dh: '350 mm' },
+    },
+    {
+      id: 'elbowDempster',
+      values: {
+        mode: 'joint',
+        phi: '0',
+        dm: '40 mm',
+        alpha: '90',
+        segment: 'forearmHand',
+        bodyMass: '70 kg',
+        segLength: '300 mm',
+        Wh: '50 N',
+        dh: '350 mm',
+      },
     },
     { id: 'bone', values: { mode: 'bone', Vf: '0.4', Ef: '100 GPa', Em: '1 GPa' } },
   ],

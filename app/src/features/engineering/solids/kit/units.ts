@@ -62,6 +62,7 @@ export const KINDS = {
   curvature: { dim: D(-1), si: shown('1/mm', 1e3, 'mm^-1'), us: shown('1/in', 1 / IN, 'in^-1') },
   twistRate: { dim: D(-1), si: shown('rad/m', 1), us: shown('rad/in', 1 / IN) },
   stressPerLength: { dim: D(-2, 1, -2), si: shown('N/mm³', 1e9), us: shown('kip/in³', KIP / IN ** 3) },
+  mass: { dim: D(0, 1), si: shown('kg', 1), us: shown('lb', 0.45359237) },
   density: { dim: D(-3, 1), si: shown('kg/m³', 1), us: shown('lb/ft³', 0.45359237 / 0.3048 ** 3) },
   power: { dim: D(2, 1, -3), si: shown('kW', 1e3), us: shown('hp', 745.69987158227) },
   speed: { dim: D(0, 0, -1), si: shown('rpm', 1 / 60), us: shown('rpm', 1 / 60) },
