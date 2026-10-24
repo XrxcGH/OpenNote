@@ -6,6 +6,8 @@ import { forming, formingSteps } from './kitDesign/forming';
 import { machining, machiningSteps } from './kitDesign/machining';
 import { microfab, microfabSteps } from './kitDesign/microfab';
 import { numrep, numrepSteps } from './kitDesign/numrep';
+import { views } from './kitDesign/views';
+import { references } from './kitDesign/references';
 import { tolerances, tolerancesErrors, tolerancesSteps } from './kitDesign/tolerances';
 
 export const kitDesign = {
@@ -58,4 +60,6 @@ export const kitDesign = {
   forming,
   microfab,
   numrep,
+  references,
+  views,
 } as const;

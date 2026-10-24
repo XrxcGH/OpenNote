@@ -16,6 +16,13 @@ export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
   { id: 'forming', title: 'kitDesign.forming.title', keywords: 'kitDesign.forming.keywords', icon: 'Hammer' },
   { id: 'microfab', title: 'kitDesign.microfab.title', keywords: 'kitDesign.microfab.keywords', icon: 'Cpu' },
   { id: 'numrep', title: 'kitDesign.numrep.title', keywords: 'kitDesign.numrep.keywords', icon: 'Binary' },
+  {
+    id: 'references',
+    title: 'kitDesign.references.title',
+    keywords: 'kitDesign.references.keywords',
+    icon: 'BookOpen',
+  },
+  { id: 'views', title: 'kitDesign.views.title', keywords: 'kitDesign.views.keywords', icon: 'Box' },
 ];
 
 export const DESIGN_TOOL_IDS: readonly string[] = DESIGN_TOOLS.map((tool) => tool.id);

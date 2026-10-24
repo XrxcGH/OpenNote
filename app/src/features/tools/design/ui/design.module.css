@@ -231,4 +231,60 @@
     font-family: var(--font-mono);
     font-size: var(--type-small-size);
   }
+
+  .cards {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    min-inline-size: 0;
+  }
+
+  .cardBody {
+    margin: 0;
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .code {
+    margin: 0;
+    padding: var(--space-2);
+    overflow: auto;
+    white-space: pre;
+    background: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+    border-radius: var(--radius-sm);
+  }
+
+  .cellGrid {
+    display: grid;
+    gap: var(--space-1);
+    justify-content: start;
+    max-inline-size: 100%;
+    overflow: auto;
+  }
+
+  .cell {
+    block-size: var(--size-target-pointer);
+    inline-size: var(--size-target-pointer);
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .cell:hover {
+    background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  }
+
+  .cellOn,
+  .cellOn:hover {
+    background: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
+  }
 }

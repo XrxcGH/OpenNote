@@ -12,6 +12,12 @@ function specPanel(tool: string, load: () => Promise<ToolSpec>): LazyExoticCompo
   });
 }
 
-export const PANELS: Record<string, LazyExoticComponent<ComponentType>> = Object.fromEntries(
-  Object.entries(SPECS).map(([tool, load]) => [tool, specPanel(tool, load)]),
-);
+const OWN: Record<string, LazyExoticComponent<ComponentType>> = {
+  references: lazy(() => import('./ReferencesTool')),
+  views: lazy(() => import('./ViewsTool')),
+};
+
+export const PANELS: Record<string, LazyExoticComponent<ComponentType>> = {
+  ...Object.fromEntries(Object.entries(SPECS).map(([tool, load]) => [tool, specPanel(tool, load)])),
+  ...OWN,
+};
