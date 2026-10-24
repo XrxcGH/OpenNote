@@ -9,6 +9,7 @@ import { announce, Button } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { setPrefs, usePrefs } from '../qol/prefs';
 import styles from '../qol/qol.module.css';
+import paneStyles from '../readingOrder/pane.module.css';
 import { goToHeading, pageHeadings, topLevel } from './headings';
 import type { Heading } from './headings';
 
@@ -121,14 +122,14 @@ export function TocPane({ mounted }: { mounted: MountedPage }) {
   const current = useCurrentHeading(mounted, open, headings);
   if (!open) return null;
   return (
-    <nav className={styles.toc} aria-label={t('pageExtras.toc.label')}>
+    <nav className={styles.toc} aria-label={t('pageExtras.toc.label')} data-page-pane="" data-toast-avoid="">
       <h2 className={styles.tocTitle}>{t('pageExtras.toc.title')}</h2>
       {headings.length === 0 ? (
         <p className={styles.tocEmpty}>{t('pageExtras.toc.empty')}</p>
       ) : (
         <HeadingList mounted={mounted} headings={headings} current={current} />
       )}
-      <Button variant="quiet" onClick={() => setPrefs({ toc: false })}>
+      <Button variant="quiet" className={paneStyles.link} onClick={() => setPrefs({ toc: false })}>
         {t('pageExtras.toc.close')}
       </Button>
     </nav>
