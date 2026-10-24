@@ -8,7 +8,7 @@ export function parseNumber(text: string): number | null {
   const raw = text
     .trim()
     .replace(/,/g, '')
-    .replace(/×\s*10\^?/, 'e')
+    .replace(/\s*[×x]\s*10\^?/i, 'e')
     .replace(/−/g, '-');
   if (raw === '') return null;
   return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(raw) ? Number(raw) : NaN;

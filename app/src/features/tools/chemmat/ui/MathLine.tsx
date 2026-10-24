@@ -9,7 +9,7 @@ type Renderer = (latex: string, options: RenderOptions) => RenderResult;
 let loaded: Renderer | null = null;
 
 export function MathLine({ latex, display = false }: { latex: string; display?: boolean }) {
-  const [render, setRender] = useState<Renderer | null>(loaded);
+  const [render, setRender] = useState<Renderer | null>(() => loaded);
   useEffect(() => {
     if (loaded) return;
     let live = true;
