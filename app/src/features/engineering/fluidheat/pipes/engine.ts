@@ -101,6 +101,14 @@ function validatePipe(p: PipeSpec, fl: FluidProps) {
   );
 }
 
+const JUMP_MESSAGE =
+  'The target falls in the jump of the friction factor between laminar and turbulent flow (Re about 2300), ' +
+  'where the head loss rises suddenly, so no flow rate gives exactly the value asked for. Choose a slightly ' +
+  'different value.';
+
+/** Whether a solved root reproduces its target: a root found on the laminar-to-turbulent jump does not. */
+const reproduces = (value: number, target: number): boolean => Math.abs(value - target) <= 1e-6 * Math.abs(target);
+
 /** Problem type 1: flow rate known, find friction, and head loss. */
 export function headLossFromFlow(fluid: FluidProps, pipe: PipeSpec, q: number, g = G0): PipeState {
   validatePipe(pipe, fluid);
@@ -175,8 +183,8 @@ export function headLossFromFlow(fluid: FluidProps, pipe: PipeSpec, q: number, g
   };
 }
 
-/** Problem type 2: head loss known, find the flow rate. */
-export function flowFromHeadLoss(fluid: FluidProps, pipe: PipeSpec, hl: number, g = G0): PipeState {
+/** The flow whose head loss is hl, and whether it reproduces hl (it does not when hl lies in the Re 2300 jump). */
+function solveFlow(fluid: FluidProps, pipe: PipeSpec, hl: number, g: number): { q: number; exact: boolean } {
   validatePipe(pipe, fluid);
   need(Number.isFinite(hl) && hl > 0, 'headLoss', 'The head loss must be greater than zero to drive a flow.');
   const area = (Math.PI * pipe.diameter ** 2) / 4;
@@ -189,6 +197,13 @@ export function flowFromHeadLoss(fluid: FluidProps, pipe: PipeSpec, hl: number, 
     if (++guard > 80) throw new CalcError('range', 'No flow rate in a reasonable range gives that head loss.');
   }
   const q = brent(h, 0, hi, 1e-15);
+  return { q, exact: reproduces(headLossFromFlow(fluid, pipe, q, g).headLoss, hl) };
+}
+
+/** Problem type 2: head loss known, find the flow rate. */
+export function flowFromHeadLoss(fluid: FluidProps, pipe: PipeSpec, hl: number, g = G0): PipeState {
+  const { q, exact } = solveFlow(fluid, pipe, hl, g);
+  if (!exact) throw new CalcError('jump', JUMP_MESSAGE);
   const state = headLossFromFlow(fluid, pipe, q, g);
   return { ...state, steps: [{ key: 'fhPipesSolveFlow', vars: { Q: fmt(q) } }, ...state.steps] };
 }
@@ -216,6 +231,7 @@ export function diameterFromFlow(
     );
   const d = brent(h, lo, hi, 1e-15);
   const state = headLossFromFlow(fluid, { ...pipe, diameter: d }, q, g);
+  if (!reproduces(state.headLoss, hl)) throw new CalcError('jump', JUMP_MESSAGE);
   return { ...state, diameter: d, steps: [{ key: 'fhPipesSolveDiameter', vars: { D: fmt(d) } }, ...state.steps] };
 }
 
@@ -245,6 +261,12 @@ export function operatingPoint(
     throw new CalcError('range', 'The curves do not cross below the largest flow searched; raise the limit.');
   const q = brent(diff, 0, qMax, 1e-15);
   const head = pump(q);
+  if (Math.abs(diff(q)) > 1e-6 * Math.max(Math.abs(head), 1e-9))
+    throw new CalcError(
+      'jump',
+      'The pump curve crosses the system curve where the system head jumps (laminar to turbulent flow at Re about ' +
+        '2300), so there is no operating point there. Change the pump curve or the pipe a little.',
+    );
   return {
     q,
     head,
@@ -284,7 +306,7 @@ export function parallelSplit(
 ): { headLoss: number; flows: number[]; parts: PipeState[] } {
   need(pipes.length > 1, 'pipes', 'Parallel pipes need at least two branches.');
   positive(total, 'The total flow');
-  const sumFlow = (hl: number) => (hl <= 0 ? 0 : pipes.reduce((s, p) => s + flowFromHeadLoss(fluid, p, hl, g).q, 0));
+  const sumFlow = (hl: number) => (hl <= 0 ? 0 : pipes.reduce((s, p) => s + solveFlow(fluid, p, hl, g).q, 0));
   let hi = 1e-6;
   let guard = 0;
   while (sumFlow(hi) < total) {
@@ -292,6 +314,8 @@ export function parallelSplit(
     if (++guard > 80) throw new CalcError('range', 'The branches cannot carry that flow with a reasonable head loss.');
   }
   const hl = brent((x) => sumFlow(x) - total, 0, hi, 1e-13);
+  if (Math.abs(sumFlow(hl) - total) > 1e-6 * total || pipes.some((p) => !solveFlow(fluid, p, hl, g).exact))
+    throw new CalcError('jump', JUMP_MESSAGE);
   const parts = pipes.map((p) => flowFromHeadLoss(fluid, p, hl, g));
   return { headLoss: hl, flows: parts.map((p) => p.q), parts };
 }

@@ -1,6 +1,7 @@
 // The pipe flow tool's form and results: head loss from the flow, flow from the head loss, the diameter for a flow, a
 // pump on a system curve, pipes in series and in parallel, and a pipe network by the Hardy Cross method.
 import { fail, q, type KitStep } from '../kit/types';
+import { fmt } from '../numeric';
 import { readLines } from '../kit/lines';
 import type { Outcome, ResultRow, ToolSpec, Values } from '../kit/spec';
 import type { System } from '../kit/units';
@@ -46,6 +47,13 @@ const pipeFromLine = ([diameter, length, roughness, sumK]: number[]): PipeSpec =
   roughness,
   sumK,
 });
+
+/** The standing notes, plus a warning when any solved Reynolds number lies in the transitional band. */
+const flowNotes = (states: PipeState[]): string[] => [
+  'darcy',
+  'colebrook',
+  ...(states.some((s) => s.regime === 'transitional') ? ['transitional'] : []),
+];
 
 function stateRows(s: PipeState): ResultRow[] {
   return [
@@ -100,7 +108,7 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   headLoss: (values) => {
     const fluid = fluidOf(values);
     const s = headLossFromFlow(fluid, pipeOf(values), num(values, 'flowRate'));
-    return { rows: stateRows(s), steps: steps(s.steps), notes: ['darcy', 'colebrook'] };
+    return { rows: stateRows(s), steps: steps(s.steps), notes: flowNotes([s]) };
   },
   flow: (values) => {
     const fluid = fluidOf(values);
@@ -108,7 +116,7 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
     return {
       rows: stateRows(s).map((r) => ({ ...r, answer: r.id === 'flow' })),
       steps: steps(s.steps),
-      notes: ['darcy', 'colebrook'],
+      notes: flowNotes([s]),
     };
   },
   diameter: (values) => {
@@ -125,7 +133,7 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
         ...stateRows(s).map((r) => ({ ...r, answer: false })),
       ],
       steps: steps(s.steps),
-      notes: ['darcy', 'colebrook'],
+      notes: flowNotes([s]),
     };
   },
   pump: (values, system) => {
@@ -149,11 +157,11 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
         { id: 'hydraulicPower', value: q(fluid.density * 9.80665 * op.q * op.head, 'power') },
       ],
       steps: steps([
-        { key: 'fhPipesPumpFit', vars: { c0: String(c0), c1: String(c1), c2: String(c2) } },
+        { key: 'fhPipesPumpFit', vars: { c0: fmt(c0), c1: fmt(c1), c2: fmt(c2) } },
         ...op.steps,
         ...state.steps,
       ]),
-      notes: ['pumpFit', 'darcy'],
+      notes: ['pumpFit', ...flowNotes([state])],
       picture: {
         type: 'plot',
         plot: {
@@ -191,11 +199,11 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
       ],
       steps: steps(
         r.parts.flatMap((p, i) => [
-          { key: 'fhPipesPart', vars: { n: String(i + 1), hl: String(p.headLoss) } },
+          { key: 'fhPipesPart', vars: { n: String(i + 1), hl: fmt(p.headLoss) } },
           ...p.steps,
         ]),
       ),
-      notes: ['series'],
+      notes: ['series', ...flowNotes(r.parts)],
     };
   },
   parallel: (values, system) => {
@@ -225,8 +233,8 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
           ]),
         },
       ],
-      steps: steps([{ key: 'fhPipesSplit', vars: { hl: String(r.headLoss) } }]),
-      notes: ['parallel'],
+      steps: steps([{ key: 'fhPipesSplit', vars: { hl: fmt(r.headLoss) } }]),
+      notes: ['parallel', ...flowNotes(r.parts)],
     };
   },
   network: (values, system) => {

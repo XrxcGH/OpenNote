@@ -86,6 +86,9 @@ export const pipes = {
     colebrook:
       'The turbulent friction factor is the Colebrook equation solved exactly. Between Re 2300 and ' +
       '4000 the flow is transitional and the result is uncertain.',
+    transitional:
+      'The Reynolds number is between 2300 and 4000, where the flow switches between laminar and turbulent and ' +
+      'the friction factor is uncertain. Treat the result as an estimate.',
     pumpFit:
       'The pump curve is a parabola through your points; the system curve is the static head plus the ' +
       'pipe’s head loss.',
@@ -115,7 +118,8 @@ export const pipesStep = {
   fhPipesSolveFlow: 'Search for the flow rate that gives this head loss: Q = {Q} m³/s.',
   fhPipesSolveDiameter: 'Search for the diameter that gives this head loss at this flow: D = {D} m.',
   fhPipesOperating: 'The pump and system curves cross at Q = {Q} m³/s and H = {H} m.',
-  fhPipesPumpFit: 'Fit the pump curve H = c0 + c1 Q + c2 Q²: c0 = {c0}, c1 = {c1}, c2 = {c2} (m and m³/s).',
+  fhPipesPumpFit:
+    'Fit the pump curve H = c0 + c1 Q + c2 Q²: c0 = {c0} m, c1 = {c1} s/m², c2 = {c2} s²/m⁵ (SI, with the flow in m³/s).',
   fhPipesPart: 'Pipe {n} loses {hl} m of head.',
   fhPipesSplit: 'The branches share one head loss, hL = {hl} m, and their flows add up to the total.',
   fhPipesCross: 'The loop corrections settled after {n} passes.',

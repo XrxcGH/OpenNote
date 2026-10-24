@@ -168,3 +168,45 @@ describe('pumps and networks', () => {
     );
   });
 });
+
+describe('targets inside the laminar-to-turbulent jump (Re 2300)', () => {
+  // water, smooth pipe D 20 mm, L 10 m: hand-written head loss on each side of Re = 2300
+  const thin = { diameter: 0.02, length: 10, roughness: 0, sumK: 0 };
+  const vAt = (re: number, d: number) => (re * water.viscosity) / (water.density * d);
+  const headAt = (f: number, v: number, d = thin.diameter) => (f * thin.length * v * v) / (d * 2 * 9.80665);
+  const below = headAt(64 / 2300, vAt(2300, thin.diameter));
+  const above = headAt(colebrookFixed(2300, 0), vAt(2300, thin.diameter));
+  const middle = (below + above) / 2;
+
+  it('the jump is real: the head loss rises by more than a quarter across Re 2300', () => {
+    expect(above / below).toBeGreaterThan(1.25);
+  });
+  it('flow from head loss refuses a target in the jump instead of returning a flow that misses it', () => {
+    expect(() => flowFromHeadLoss(water, thin, middle)).toThrow(/jump/);
+  });
+  it('flow from head loss still solves targets on each side to 1e-6, with the head loss reproduced', () => {
+    for (const target of [below * 0.9, above * 1.1]) {
+      const s = flowFromHeadLoss(water, thin, target);
+      expect(rel(headAt(s.f, s.velocity), target)).toBeLessThan(1e-6);
+      expect(rel(s.headLoss, target)).toBeLessThan(1e-6);
+    }
+  });
+  it('diameter from flow refuses a target in the jump', () => {
+    const q = 1e-4;
+    const dStar = (4 * water.density * q) / (Math.PI * water.viscosity * 2300);
+    const pipeD = { length: 10, roughness: 0, sumK: 0 };
+    const lo = headAt(64 / 2300, vAt(2300, dStar), dStar);
+    const hi = headAt(colebrookFixed(2300, 0), vAt(2300, dStar), dStar);
+    // a larger diameter has lower Re, so lower Re (laminar) belongs to the larger diameter and the smaller head loss
+    expect(() => diameterFromFlow(water, pipeD, q, (lo + hi) / 2).diameter).toThrow(/jump/);
+    const ok = diameterFromFlow(water, pipeD, q, hi * 1.2);
+    expect(rel(ok.headLoss, hi * 1.2)).toBeLessThan(1e-6);
+  });
+  it('the pump operating point refuses a crossing inside the jump', () => {
+    expect(() => operatingPoint(() => middle, pipeSystemCurve(water, thin, 0), 1e-3)).toThrow(/jump/);
+  });
+  it('parallel branches refuse a split that lands in the jump', () => {
+    const qStar = (Math.PI * thin.diameter ** 2 * vAt(2300, thin.diameter)) / 4;
+    expect(() => parallelSplit(water, [thin, thin], 2 * qStar)).toThrow(/jump/);
+  });
+});
