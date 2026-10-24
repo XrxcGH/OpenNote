@@ -131,7 +131,7 @@ describe('IF97 states from two properties', () => {
   // IAPWS SR5-05 (2016), the backward v(T, p) check values for subregions 3a and 3c, which lie below the critical
   // temperature on the liquid side. The backward equations agree with IF97 to about 1e-5.
   it.each([
-    [630, 50000, 1.470853100e-3],
+    [630, 50000, 1.4708531e-3],
     [630, 20000, 1.761696406e-3],
     [650, 30000, 1.819560617e-3],
   ])('liquid-like region 3 at %s K and %s kPa matches SR5-05', (T, p, v) => {

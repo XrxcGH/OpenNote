@@ -46,10 +46,10 @@ function isentropeV(fluid: Fluid, model: GasModel, a: FluidState, v2: number): F
 }
 
 const engineRows = (w: number, qin: number, qout: number): ResultRow[] => [
-  { key: 'wNet', symbol: 'w_{net}', value: w, qty: 'e' },
+  { key: 'wNet', symbol: 'w_{net}', value: w, qty: 'e', answer: true },
   { key: 'qIn', symbol: 'q_{in}', value: qin, qty: 'e' },
   { key: 'qOut', symbol: 'q_{out}', value: qout, qty: 'e' },
-  { key: 'etaTh', symbol: '\\eta_{th}', value: (100 * w) / qin, qty: 'percent' },
+  { key: 'etaTh', symbol: '\\eta_{th}', value: (100 * w) / qin, qty: 'percent', answer: true },
 ];
 
 export function solvePiston(input: PistonInput): ThermoResult {
@@ -249,8 +249,8 @@ export function solveCarnot(TH: number, TL: number, QH?: number): ThermoResult {
   const copR = cold / (hot - cold);
   const copHP = hot / (hot - cold);
   const rows: ResultRow[] = [
-    { key: 'etaTh', symbol: '\\eta_{Carnot}', value: eta * 100, qty: 'percent' },
-    { key: 'copR', symbol: '\\mathrm{COP}_R', value: copR, qty: 'none' },
+    { key: 'etaTh', symbol: '\\eta_{Carnot}', value: eta * 100, qty: 'percent', answer: true },
+    { key: 'copR', symbol: '\\mathrm{COP}_R', value: copR, qty: 'none', answer: true },
     { key: 'copHP', symbol: '\\mathrm{COP}_{HP}', value: copHP, qty: 'none' },
   ];
   if (QH !== undefined)

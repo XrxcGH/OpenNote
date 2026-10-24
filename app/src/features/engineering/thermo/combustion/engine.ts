@@ -3,7 +3,14 @@
 // units are K and kPa, with J/mol inside; results are in kJ/mol and kJ/kg.
 import { fmt, tex } from '../common/format';
 import { linspace } from '../common/num';
-import { ThermoError, type KitStep, type PlotSeries, type ResultRow, type ThermoResult } from '../common/types';
+import {
+  ThermoError,
+  markAnswer,
+  type KitStep,
+  type PlotSeries,
+  type ResultRow,
+  type ThermoResult,
+} from '../common/types';
 import { RU } from '../data/nasa';
 import { equilibriumFlame, frozenFlame, productsAt, type FlameSetup, type FlameTry } from './flame';
 import {
@@ -124,7 +131,7 @@ function completeFacts(input: CombustionInput, mix: Mixture, n: Amounts, steps: 
   });
   const air2 = mix.oxidizer === 'air';
   return [
-    { key: air2 ? 'afrMass' : 'ofrMass', symbol: air2 ? 'AF' : 'OF', value: air.mass, qty: 'none' },
+    { key: air2 ? 'afrMass' : 'ofrMass', symbol: air2 ? 'AF' : 'OF', value: air.mass, qty: 'none', answer: true },
     { key: air2 ? 'afrMole' : 'ofrMole', symbol: air2 ? '\\bar{AF}' : '\\bar{OF}', value: air.mole, qty: 'none' },
     { key: 'productMoles', symbol: 'n_P', value: total, qty: 'none' },
     ...fractionRows(n, 0),
@@ -196,6 +203,7 @@ const flameRow = (T: number, constantVolume: boolean, key: 'flameT' | 'flameTCom
   symbol: constantVolume ? 'T_{ad,v}' : 'T_{ad,p}',
   value: T,
   qty: 'T',
+  answer: key === 'flameT',
 });
 
 export function solveComplete(input: CombustionInput): ThermoResult {
@@ -255,7 +263,7 @@ export interface EquilibriumInput extends CombustionInput {
 export function solveEquilibrium(input: EquilibriumInput): ThermoResult {
   const mix = mixtureOf(input.fuel, input.oxidizer, input.phi);
   const steps: KitStep[] = [];
-  const rows = mixtureSteps(mix, steps);
+  const rows = markAnswer(mixtureSteps(mix, steps), ['equivalenceRatio']);
   const start = startingProducts(mix);
   const setup = setupOf(input, mix);
   let T: number;
@@ -275,7 +283,7 @@ export function solveEquilibrium(input: EquilibriumInput): ThermoResult {
     compareComplete(setup, mix, T, steps, rows);
   }
   steps.push({ key: 'comb.eqReaction', math: reactionTex(mix, eq.n, 1e-4 * eq.moles) });
-  rows.push({ key: 'productMoles', symbol: 'n_P', value: eq.moles, qty: 'none' });
+  rows.push({ key: 'productMoles', symbol: 'n_P', value: eq.moles, qty: 'none', answer: input.productT !== null });
   if (input.constantVolume) rows.push({ key: 'flameP', symbol: 'p_2', value: eq.p, qty: 'p' });
   rows.push(...fractionRows(eq.n, 1e-6));
   return {

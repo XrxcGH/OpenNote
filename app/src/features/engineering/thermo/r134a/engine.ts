@@ -1,7 +1,14 @@
 // The R-134a tool: a refrigerant state from two properties, with the equation-of-state terms, the saturation
 // iteration, the lever rule for a mixture, and a p-h diagram with the saturation dome.
 import { fmt, tex } from '../common/format';
-import { ThermoError, type KitStep, type PlotSpec, type ResultRow, type ThermoResult } from '../common/types';
+import {
+  ThermoError,
+  markAnswer,
+  type KitStep,
+  type PlotSpec,
+  type ResultRow,
+  type ThermoResult,
+} from '../common/types';
 import { R134A_SOURCE, RHO_C, T_C, T_SAT_MAX, saturationP, saturationT } from './eos';
 import {
   fromPH,
@@ -147,7 +154,7 @@ export function solveRefrigerant(input: RefrigerantInput): ThermoResult {
     },
   ];
   return {
-    rows: refrigerantRows(point),
+    rows: markAnswer(refrigerantRows(point), ['v', 'h', 's', 'quality']),
     steps,
     latex:
       `T=${tex(point.T, 6)}\\ \\mathrm{K},\\ p=${tex(point.p, 6)}\\ \\mathrm{kPa}:\\ ` +

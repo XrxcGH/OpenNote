@@ -46,10 +46,10 @@ const between = (low: number, mid: number | undefined, high: number, name: strin
 
 function engineRows(w: number, qin: number, qout: number, wt: number, wp: number): ResultRow[] {
   return [
-    { key: 'wNet', symbol: 'w_{net}', value: w, qty: 'e' },
+    { key: 'wNet', symbol: 'w_{net}', value: w, qty: 'e', answer: true },
     { key: 'qIn', symbol: 'q_{in}', value: qin, qty: 'e' },
     { key: 'qOut', symbol: 'q_{out}', value: qout, qty: 'e' },
-    { key: 'etaTh', symbol: '\\eta_{th}', value: (100 * w) / qin, qty: 'percent' },
+    { key: 'etaTh', symbol: '\\eta_{th}', value: (100 * w) / qin, qty: 'percent', answer: true },
     { key: 'wTurbine', symbol: 'w_t', value: wt, qty: 'e' },
     { key: 'wPump', symbol: 'w_p', value: wp, qty: 'e' },
     { key: 'bwr', symbol: 'r_{bw}', value: wp / wt, qty: 'none' },
@@ -205,7 +205,7 @@ export function solveFridge(input: FridgeInput): ThermoResult {
     math: '\\mathrm{COP}_R=\\frac{h_1-h_4}{h_2-h_1}',
   });
   const rows: ResultRow[] = [
-    { key: 'copR', symbol: '\\mathrm{COP}_R', value: copR, qty: 'none' },
+    { key: 'copR', symbol: '\\mathrm{COP}_R', value: copR, qty: 'none', answer: true },
     { key: 'copHP', symbol: '\\mathrm{COP}_{HP}', value: copHP, qty: 'none' },
     { key: 'qL', symbol: 'q_L', value: qL, qty: 'e' },
     { key: 'qH', symbol: 'q_H', value: qH, qty: 'e' },

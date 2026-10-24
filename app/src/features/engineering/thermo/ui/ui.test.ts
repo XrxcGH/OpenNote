@@ -55,6 +55,28 @@ describe('form state', () => {
   });
 });
 
+describe('the answer line', () => {
+  // The line names the tool's results, not the inputs that come first in the table.
+  it.each([
+    ['steam', 'state', ['v', 'h', 's']],
+    ['r134a', 'state', ['v', 'h', 's']],
+    ['psychro', 'air', ['omega', 'hMoist', 'twb']],
+    ['combustion', 'complete', ['afrMass', 'flameT']],
+    ['combustion', 'equilibrium', ['equivalenceRatio', 'flameT']],
+    ['cycles', 'rankine', ['wNet', 'etaTh']],
+    ['cycles', 'brayton', ['wNet', 'etaTh']],
+  ] as const)('%s %s gives %j', async (id, modeId, keys) => {
+    const { spec } = await THERMO_LOADERS[id]();
+    const mode = spec.modes.find((one) => one.id === modeId)!;
+    const form = { mode: mode.id, text: {}, unit: {} };
+    const { values } = valuesOf(fieldsOf(mode, form, 'SI'), form, 'SI');
+    const parts = answerLine(spec.solve(mode.id, values), 'SI', say).split('; ');
+    expect(parts.map((part) => part.replace(/ -?[\d.].*$/, ''))).toEqual(
+      keys.map((key) => (kitThermo.row as Record<string, string>)[key]),
+    );
+  });
+});
+
 describe('every tool works its first values and every string exists', () => {
   it.each(THERMO_TOOL_IDS)('%s', async (id) => {
     const { spec } = await THERMO_LOADERS[id]();

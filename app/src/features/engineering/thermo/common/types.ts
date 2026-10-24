@@ -39,7 +39,13 @@ export interface ResultRow {
   unit?: PreferredUnit;
   /** Extra words after the name, such as the state number. */
   tag?: string;
+  /** One of the results the Insert menu's answer line gives (the first three rows when none is). */
+  answer?: boolean;
 }
+
+/** The rows with the given keys marked as the answer. */
+export const markAnswer = (rows: readonly ResultRow[], keys: readonly ResultRow['key'][]): ResultRow[] =>
+  rows.map((row) => (keys.includes(row.key) ? { ...row, answer: true } : row));
 
 export interface PlotSeries {
   /** The legend text when it is a symbol, such as φ = 40 %; a word key takes its place in sentences. */

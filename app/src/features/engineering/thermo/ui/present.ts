@@ -17,10 +17,13 @@ export function shown(row: ResultRow, system: System, say?: Say, sig = 5): { val
 export const rowName = (row: ResultRow, say: Say): string =>
   say(`kitThermo.row.${row.key}`) + (row.tag ? ` ${row.tag}` : '');
 
-/** The first few results on one line, such as "Temperature 300 K; Enthalpy 115.33 kJ/kg". */
+/**
+ * The answer on one line, such as "Specific volume 0.001 m³/kg; Enthalpy 115.33 kJ/kg": the rows the tool marks as
+ * its answer, or the first few when it marks none.
+ */
 export function answerLine(result: ThermoResult, system: System, say: Say, count = 3): string {
-  return result.rows
-    .slice(0, count)
+  const marked = result.rows.filter((row) => row.answer);
+  return (marked.length ? marked : result.rows.slice(0, count))
     .map((row) => {
       const { value, unit } = shown(row, system, say);
       return `${rowName(row, say)} ${value}${unit ? ` ${unit}` : ''}`;

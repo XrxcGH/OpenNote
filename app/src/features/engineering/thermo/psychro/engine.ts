@@ -6,6 +6,7 @@ import { fmt, tex } from '../common/format';
 import { linspace } from '../common/num';
 import {
   ThermoError,
+  markAnswer,
   positive,
   type KitStep,
   type PlotSeries,
@@ -200,7 +201,7 @@ const result = (
 export function solveState(input: StateInput): ThermoResult {
   const state = stateFrom(input);
   return result(
-    stateRows(state),
+    markAnswer(stateRows(state), ['omega', 'hMoist', 'twb']),
     stateSteps(state, '1'),
     `\\omega=${tex(state.omega, 5)},\\ h=${tex(state.h, 5)}\\ \\mathrm{kJ/kg_{da}},\\ \\phi=${fmt(state.phi * 100, 4)}\\,\\%`,
     [state],

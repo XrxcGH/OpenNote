@@ -1,7 +1,14 @@
 // The steam tool: a state of water from two properties, with the region test, the dimensionless variables, the
 // lever rule for a mixture, and T-s and p-h diagrams with the saturation dome. Pure, like every engine of the kit.
 import { fmt, tex } from '../common/format';
-import { ThermoError, type KitStep, type PlotSpec, type ResultRow, type ThermoResult } from '../common/types';
+import {
+  ThermoError,
+  markAnswer,
+  type KitStep,
+  type PlotSpec,
+  type ResultRow,
+  type ThermoResult,
+} from '../common/types';
 import { IF97_SOURCE, P_CRIT, pB23, psat, type WaterState } from './if97';
 import { dome, fromPH, fromPS, fromPX, fromTP, fromTX, saturationAtP, type WaterPoint } from './water';
 
@@ -162,7 +169,7 @@ export function solveSteam(input: SteamInput): ThermoResult {
     },
   ];
   return {
-    rows: waterRows(point),
+    rows: markAnswer(waterRows(point), ['v', 'h', 's', 'quality']),
     steps,
     latex:
       `T=${tex(point.T, 6)}\\ \\mathrm{K},\\ p=${tex(point.p, 6)}\\ \\mathrm{kPa}:\\ ` +
