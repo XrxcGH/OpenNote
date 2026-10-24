@@ -169,14 +169,14 @@ export const geooptics = {
     refraction: 'Both media are clear and the face is flat; angles are from the normal.',
     lens:
       'Paraxial thin lens in air. Light goes left to right; s is positive in front of the lens and s′ positive ' +
-      'behind it.',
+      'behind it. The ray diagram stretches heights so the rays can be seen.',
     mirror:
       'Paraxial spherical mirror. The object is in front; s′ positive is a real image in front of the mirror, negative ' +
-      'is virtual behind it.',
+      'is virtual behind it. The ray diagram stretches heights so the rays can be seen.',
     lensmaker: 'Paraxial rays. A radius is positive when its center of curvature is after the face.',
     system:
       'Paraxial rays on (height, angle); distances from the last element are positive after it. A mirror is unfolded, ' +
-      'so the light after it is drawn going on.',
+      'so the light after it is drawn going on. The picture stretches heights so the rays can be seen.',
     virtualFocus: 'A negative back focal length means the rear focal point is virtual, in front of the last element.',
     fiber: 'Step-index fiber, rays in the meridional plane; the single-mode limit is the first zero of J₀.',
     beam: 'Paraxial Gaussian beam; w is the 1/e² intensity radius and z is measured from the waist.',

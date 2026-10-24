@@ -112,6 +112,32 @@ export function principalRays(f: number, s: number, h: number, si: number, mirro
   };
 }
 
+/**
+ * Stretches a ray diagram's heights so the rays can be seen: paraxial pictures are long and flat. Scaling one axis
+ * keeps straight lines straight and where they cross, so the picture still reads true.
+ */
+export function stretch(plot: Plot, aspect = 0.4): Plot {
+  const xs = plot.series.flatMap((one) => one.points.map(([x]) => x));
+  const ys = plot.series.flatMap((one) => one.points.map(([, y]) => Math.abs(y)));
+  const width = Math.max(...xs) - Math.min(...xs);
+  const height = 2 * Math.max(...ys, 1e-300);
+  const k = (aspect * width) / height;
+  if (!(k > 1) || !Number.isFinite(k)) return plot;
+  const y = (v: number) => v * k;
+  return {
+    ...plot,
+    y: {
+      ...plot.y,
+      ...(plot.y.min !== undefined ? { min: y(plot.y.min) } : {}),
+      ...(plot.y.max !== undefined ? { max: y(plot.y.max) } : {}),
+    },
+    series: plot.series.map((one) => ({ ...one, points: one.points.map(([px, py]): Point => [px, y(py)]) })),
+    ...(plot.circles ? { circles: plot.circles.map((c) => ({ ...c, y: y(c.y) })) } : {}),
+    ...(plot.labels ? { labels: plot.labels.map((l) => ({ ...l, y: y(l.y) })) } : {}),
+    ...(plot.arrows ? { arrows: plot.arrows.map((a) => ({ ...a, y1: y(a.y1), y2: y(a.y2) })) } : {}),
+  };
+}
+
 /** Incident, reflected, and refracted rays at a flat face between n1 (above) and n2 (below). */
 export function interfaceSketch(theta1: number, theta2: number | null): Plot {
   const sin1 = Math.sin(theta1);

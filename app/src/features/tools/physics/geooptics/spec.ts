@@ -5,7 +5,7 @@ import { deg, fmt, q, qIn } from '../kit/format';
 import { fail } from '../kit/read';
 import type { KitStep, ModeDef, Outcome, Plot, PlotSeries, ResultRow, ToolSpec } from '../kit/types';
 import { fromSI, toSI } from '../kit/units';
-import { beamEnvelope, interfaceSketch, principalRays, traceRay } from './diagram';
+import { beamEnvelope, interfaceSketch, principalRays, stretch, traceRay } from './diagram';
 import {
   SINGLE_MODE_V,
   beamThroughLens,
@@ -168,7 +168,7 @@ const lensMode: ModeDef = {
         { key: mirror ? `${K}.s.readMirror` : `${K}.s.readLens`, labels: { kind, orientation } },
       ],
       notes: [{ key: mirror ? `${K}.notes.mirror` : `${K}.notes.lens` }],
-      plot: principalRays(f, s, h, image.si, mirror),
+      plot: stretch(principalRays(f, s, h, image.si, mirror)),
     };
   },
 };
@@ -411,7 +411,7 @@ const systemMode: ModeDef = {
         'M=M_n\\cdots M_2M_1=\\begin{pmatrix}A&B\\\\C&D\\end{pmatrix},\\quad f=-\\frac{1}{C},\\quad \\mathrm{BFL}=-\\frac{A}{C}',
       steps,
       notes,
-      plot: systemPlot(elements, traced.each, traced.positions, s, h, image?.si ?? null, focal),
+      plot: stretch(systemPlot(elements, traced.each, traced.positions, s, h, image?.si ?? null, focal)),
     };
   },
 };
