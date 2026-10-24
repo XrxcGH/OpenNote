@@ -419,3 +419,25 @@ describe('the examples', () => {
     expect(get(s, 'x').d[0]).toBeCloseTo(Math.SQRT2, 14);
   });
 });
+
+describe('printing zeros and underdetermined systems', () => {
+  it('prints an exact zero in a decimal matrix as 0, like MATLAB', () => {
+    const { out } = run("x = linspace(0, 1, 3)'");
+    expect(out.split('\n').map((l) => l.trim())).toEqual(expect.arrayContaining(['0', '0.5000', '1.0000']));
+    expect(out).not.toContain('0.0000');
+  });
+  it('prints the L and U of lu with 0 in the zero places', () => {
+    const { out } = run('A = [4 3; 6 3.5]; [L, U] = lu(A); L');
+    expect(out).toMatch(/\b0\b/);
+    expect(out).not.toContain('0.0000');
+  });
+  it('says that A\\b for an underdetermined system is the minimum-norm solution, equal to pinv(A)*b', () => {
+    const { s, entries } = run('A = [1 1 1]; b = 3; x = A\\b; y = pinv(A)*b;');
+    expect(entries.some((e) => e.kind === 'note' && e.key === 'warnMinimumNorm')).toBe(true);
+    // The minimum-norm solution of x1 + x2 + x3 = 3 is (1, 1, 1); a basic solution would be (3, 0, 0).
+    for (let i = 0; i < 3; i++) {
+      expect(get(s, 'x').d[i]).toBeCloseTo(1, 12);
+      expect(get(s, 'y').d[i]).toBeCloseTo(1, 12);
+    }
+  });
+});

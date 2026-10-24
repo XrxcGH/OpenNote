@@ -45,7 +45,8 @@ function columns(m: M, long: boolean): string[] {
     big >= 1000 || (big > 0 && big < 0.001) || (small < 1e-5 && big > 0) ? Math.floor(Math.log10(big)) : 0;
   const shown = (x: number) => {
     if (!Number.isFinite(x)) return scalarText(x);
-    return (x / 10 ** exponent).toFixed(places);
+    // MATLAB prints an exact zero as 0, not 0.0000, so the zeros stand out from small numbers.
+    return x === 0 ? '0' : (x / 10 ** exponent).toFixed(places);
   };
   if (exponent !== 0)
     rows.push(`   1.0e${exponent < 0 ? '-' : '+'}${String(Math.abs(exponent)).padStart(2, '0')} *`, '');

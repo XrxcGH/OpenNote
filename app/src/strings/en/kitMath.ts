@@ -649,6 +649,10 @@ export const kitMath = {
     note: {
       warnSingular: 'Warning: the matrix is singular, so there is no single answer. The result is Inf.',
       explainSolve: 'Backslash solves the {size} system by LU elimination with row swaps.',
+      warnMinimumNorm:
+        'The {size} system has more unknowns than equations, so it has many solutions. Backslash here gives the ' +
+        'minimum-norm solution, the same as pinv(A)*b. MATLAB gives a basic solution with at most rank(A) nonzero ' +
+        'entries, so its numbers can differ.',
       explainLeastSquares: 'The {size} system is not square, so backslash gives the least-squares solution.',
       explainMatmul: 'Matrix product: {a} times {b}. Each entry is a row of the first times a column of the second.',
       explainScale: 'A single number times a matrix scales every entry.',

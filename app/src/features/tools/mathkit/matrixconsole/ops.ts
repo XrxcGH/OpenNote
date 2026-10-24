@@ -89,7 +89,7 @@ export function leftDivide(a: M, b: M, say: Say): M {
     say('explainSolve', { size: sizeText(a) });
     return x ? fromRows(x) : singularWarning(say, mat(a.c, b.c, new Array<number>(a.c * b.c).fill(0)));
   }
-  say('explainLeastSquares', { size: sizeText(a) });
+  say(a.r < a.c ? 'warnMinimumNorm' : 'explainLeastSquares', { size: sizeText(a) });
   return fromRows(lstsq(toRows(a), toRows(b)));
 }
 
