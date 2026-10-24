@@ -17,6 +17,8 @@ export interface ResultRow {
   label: LsKey;
   vars?: LsVars;
   value: number | string;
+  /** A word for the value, such as a stability class, shown in place of `value`. */
+  word?: LsKey;
   unit?: string;
   /** Significant figures to show (default 6). */
   digits?: number;

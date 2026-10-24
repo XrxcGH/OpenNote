@@ -7,7 +7,7 @@ import { formatNumber } from './text';
 import { word } from './words';
 
 export const rowValue = (row: ResultRow): string =>
-  typeof row.value === 'number' ? formatNumber(row.value, row.digits ?? 6) : row.value;
+  row.word ? word(row.word) : typeof row.value === 'number' ? formatNumber(row.value, row.digits ?? 6) : row.value;
 
 export const rowText = (row: ResultRow): string =>
   `${word(row.label, row.vars)}: ${rowValue(row)}${row.unit ? ` ${row.unit}` : ''}`;
