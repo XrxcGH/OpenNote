@@ -159,23 +159,32 @@ export function simulatePaths(
   const m = cols(s.b);
   const rng: Random = seeded(seed);
   const c0 = s.c[0];
-  const out = (x: readonly number[]) => c0.reduce((acc, cj, j) => acc + cj * x[j], 0);
+  const out = (x: ArrayLike<number>) => c0.reduce((acc, cj, j) => acc + cj * x[j], 0);
   const shown: number[][] = [];
   let sum = 0;
   let sum2 = 0;
+  // Euler-Maruyama as x ← Mx + Gξ with M = I + Ah and G = B L √h, in flat buffers so long runs stay quick.
+  const mFlat = Float64Array.from(
+    { length: n * n },
+    (_, k) => (Math.floor(k / n) === k % n ? 1 : 0) + s.a[Math.floor(k / n)][k % n] * h,
+  );
+  const gm = mul(s.b, lw);
+  const gFlat = Float64Array.from({ length: n * m }, (_, k) => gm[Math.floor(k / m)][k % m] * Math.sqrt(h));
+  let x = new Float64Array(n);
+  let nx = new Float64Array(n);
+  const xi = new Float64Array(m);
   for (let p = 0; p < paths; p += 1) {
-    let x = [...x0];
+    x.set(x0);
     const keep = p < 3 ? [out(x)] : null;
     for (let k = 0; k < steps; k += 1) {
-      const xi = Array.from({ length: m }, () => rng.normal());
-      const dw = lw.map((row) => row.reduce((acc, lij, j) => acc + lij * xi[j], 0) * Math.sqrt(h));
-      x = x.map((xi0, i) => {
-        let drift = 0;
-        for (let j = 0; j < n; j += 1) drift += s.a[i][j] * x[j];
-        let kick = 0;
-        for (let j = 0; j < m; j += 1) kick += s.b[i][j] * dw[j];
-        return xi0 + drift * h + kick;
-      });
+      for (let j = 0; j < m; j += 1) xi[j] = rng.normal();
+      for (let i = 0; i < n; i += 1) {
+        let v = 0;
+        for (let j = 0; j < n; j += 1) v += mFlat[i * n + j] * x[j];
+        for (let j = 0; j < m; j += 1) v += gFlat[i * m + j] * xi[j];
+        nx[i] = v;
+      }
+      [x, nx] = [nx, x];
       keep?.push(out(x));
     }
     if (keep) shown.push(keep);

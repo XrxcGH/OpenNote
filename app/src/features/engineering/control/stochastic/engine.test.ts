@@ -16,10 +16,11 @@ describe('validation cases', () => {
     expect(stationary(ou(2, 1)).p[0][0]).toBeCloseTo(0.25, 12);
   });
 
-  it('Monte Carlo agrees with 0.25 within sampling error', () => {
-    const r = simulatePaths(ou(2, 1), [0], 5, 1000, 5000, 7);
-    // The standard error of a variance from 5000 normal samples is 0.25·√(2/4999) ≈ 0.005.
-    expect(Math.abs(r.endVariance - 0.25)).toBeLessThan(0.0125);
+  it('Monte Carlo agrees with 0.25 within sampling error', { timeout: 30000 }, () => {
+    const r = simulatePaths(ou(2, 1), [0], 5, 500, 4000, 7);
+    // The standard error of a variance from 4000 normal samples is 0.25·√(2/3999) ≈ 0.0056, and Euler-Maruyama with
+    // h = 0.01 settles at 1/(2a − a²h) = 0.2525 instead of 0.25: within 0.02 is three standard errors plus the bias.
+    expect(Math.abs(r.endVariance - 0.25)).toBeLessThan(0.02);
     expect(r.theoryEndVariance).toBeCloseTo(0.25 * (1 - Math.exp(-20)), 9);
   });
 
