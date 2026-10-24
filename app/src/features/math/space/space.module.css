@@ -60,6 +60,14 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
+  .plot text {
+    font-size: calc(11px * var(--svg-k, 1));
+    paint-order: stroke;
+    stroke: var(--color-surface-page);
+    stroke-width: calc(3px * var(--svg-k, 1));
+    stroke-linejoin: round;
+  }
+
   .paper {
     fill: var(--color-surface-page);
   }
