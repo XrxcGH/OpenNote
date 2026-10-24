@@ -97,6 +97,27 @@ describe('sphere drag and settling', () => {
     expect(Math.abs(sphereCd(799, 'schillerNaumann') - sphereCd(801, 'schillerNaumann'))).toBeLessThan(0.1);
     expect(sphereCd(0.1, 'stokes')).toBeCloseTo(240, 9);
   });
+  it('has no step at the switch: both sides give 0.44 within 1e-6 at Re 988.948 (SciPy root of SN = 0.44)', () => {
+    expect(Math.abs(sphereCd(988.9478, 'schillerNaumann') - 0.44)).toBeLessThan(1e-6);
+    expect(Math.abs(sphereCd(988.9479, 'schillerNaumann') - 0.44)).toBeLessThan(1e-6);
+    expect(sphereCd(800, 'schillerNaumann')).toBeCloseTo((24 / 800) * (1 + 0.15 * 800 ** 0.687), 12);
+  });
+  it('drag rises steadily with speed through Re 800 to 1200, so every weight has one terminal speed', () => {
+    const fluidDensity = 1000;
+    const viscosity = 1e-3;
+    const d = 0.01;
+    let last = 0;
+    for (let re = 700; re <= 1300; re += 5) {
+      const v = (re * viscosity) / (fluidDensity * d);
+      const drag = sphereCd(re, 'schillerNaumann') * v * v;
+      expect(drag).toBeGreaterThan(last);
+      last = drag;
+    }
+  });
+  it('warns once about a low Reynolds number', () => {
+    const r = flatPlate({ speed: 0.001, length: 0.01, nu: 1.5e-5, density: 1.2 });
+    expect(r.warnings.filter((w) => w === 'fhExtWarnLowRe')).toHaveLength(1);
+  });
   it('warns outside Stokes range and rejects a neutrally buoyant sphere', () => {
     expect(
       terminalVelocity({ diameter: 1e-2, sphereDensity: 2650, fluidDensity: 998, viscosity: 1e-3, model: 'stokes' })

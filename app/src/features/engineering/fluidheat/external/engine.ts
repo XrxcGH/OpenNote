@@ -138,7 +138,6 @@ export function flatPlate(inp: PlateInput): PlateResult {
     }
     if (reL > 1e9) warnings.push('fhExtWarnHighRe');
   }
-  if (regime === 'laminar' && reL < 1) warnings.push('fhExtWarnLowRe');
   if (reL < 100 && regime === 'laminar') warnings.push('fhExtWarnLowRe');
   let drag: number | undefined;
   let wallShear: number | undefined;
@@ -168,6 +167,13 @@ export function flatPlate(inp: PlateInput): PlateResult {
   };
 }
 
+/**
+ * The Reynolds number where the Schiller-Naumann coefficient 24/Re (1 + 0.15 Re^0.687) falls to the constant 0.44 of the
+ * Newton regime. Switching here keeps the drag continuous, so the drag always rises with speed and a sphere has one
+ * terminal speed (the usual switch at 800 steps from 0.474 to 0.44 and gives some spheres two).
+ */
+export const SN_SWITCH = 988.9478531195837;
+
 export type SphereModel = 'stokes' | 'schillerNaumann' | 'fixed';
 
 /** Sphere drag coefficient; the correlation named in the tool, valid up to its stated Reynolds number. */
@@ -175,7 +181,7 @@ export function sphereCd(re: number, model: SphereModel = 'schillerNaumann', fix
   positive(re, 'The Reynolds number');
   if (model === 'stokes') return 24 / re;
   if (model === 'fixed') return fixedCd;
-  return re < 800 ? (24 / re) * (1 + 0.15 * re ** 0.687) : 0.44;
+  return re < SN_SWITCH ? (24 / re) * (1 + 0.15 * re ** 0.687) : 0.44;
 }
 
 export interface SphereInput {
