@@ -176,3 +176,24 @@ describe('impossible input', () => {
   ];
   it.each(cases)('names %s', (want, f) => expect(code(f)).toBe(want));
 });
+
+describe('steady state with a cancelled pole at the origin', () => {
+  it('s/(s² + s) is 1/(s + 1): type 0, Kp 1, step error 1/2, closed loop 1/(s + 2)', () => {
+    for (const text of ['s/(s (s + 1))', 's/(s^2 + s)']) {
+      const r = steadyState(readTF(text));
+      expect(r.type).toBe(0);
+      expect(r.kp).toBeCloseTo(1, 12);
+      expect(r.step).toBeCloseTo(0.5, 12);
+      expect(r.ramp).toBe(Infinity);
+      expect(r.stable).toBe(true);
+      same(r.closed, readTF('1/(s + 2)'));
+      expect(r.steps[0].key).toBe('sys.cancelledHidden');
+    }
+  });
+
+  it('(s + 1)/((s + 1)(s + 2)) cancels a stable pair and reports it', () => {
+    const r = steadyState(readTF('(s + 1)/((s + 1) (s + 2))'));
+    expect(r.kp).toBeCloseTo(0.5, 9);
+    expect(r.steps[0].key).toBe('sys.cancelled');
+  });
+});

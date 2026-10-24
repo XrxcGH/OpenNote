@@ -477,6 +477,10 @@ export const kitControl = {
       formulaOs: 'The overshoot formula gives {os}%:',
       formulaTp: 'The peak time formula gives {tp} s:',
       formulaTs: 'The settling time estimate gives {ts} s:',
+      cancelled: 'The pole and zero at {roots} cancel, so G reduces to:',
+      cancelledHidden:
+        'The pole and zero at {roots} cancel, so G reduces to the form below. That canceled mode is not in the left ' +
+        'half-plane: it does not show in T(s), but a real loop with it is not internally stable.',
       closed: 'With unity feedback the closed loop is:',
       closedStable: 'Every closed-loop pole is in the left half-plane, so the errors below hold.',
       closedUnstable:

@@ -119,15 +119,29 @@ export function polyFromRoots(rs: readonly Complex[]): Poly {
   return re;
 }
 
-/** The number of open-loop poles at the origin: the system type. */
-export function systemType(g: TF): number {
+/** The number of roots at the origin: the low coefficients that are zero (relative to the leading one). */
+function originOrder(p: Poly): number {
+  const t = trim(p);
   let k = 0;
-  while (k < g.den.length - 1 && Math.abs(g.den[k]) < 1e-12 * Math.max(1, Math.abs(g.den[g.den.length - 1]))) k += 1;
+  while (k < t.length - 1 && Math.abs(t[k]) < 1e-12 * Math.max(1, Math.abs(t[t.length - 1]))) k += 1;
   return k;
 }
 
+/** G with common factors of s canceled exactly, so s/(s² + s) becomes 1/(s + 1). */
+export function cancelOrigin(g: TF): { tf: TF; cancelled: number } {
+  if (isZeroPoly(g.num)) return { tf: g, cancelled: 0 };
+  const k = Math.min(originOrder(g.num), originOrder(g.den));
+  return k ? { tf: makeTF(trim(g.num).slice(k), trim(g.den).slice(k)), cancelled: k } : { tf: g, cancelled: 0 };
+}
+
+/** The number of open-loop poles at the origin, after any zeros there cancel them: the system type. */
+export function systemType(g: TF): number {
+  return originOrder(cancelOrigin(g).tf.den);
+}
+
 /** lim_{s→0} s^k G(s) for k = 0, 1, 2: the position, velocity, and acceleration error constants. */
-export function errorConstants(g: TF): { kp: number; kv: number; ka: number; type: number } {
+export function errorConstants(g0: TF): { kp: number; kv: number; ka: number; type: number } {
+  const g = cancelOrigin(g0).tf;
   const type = systemType(g);
   const lowNum = g.num[0] ?? 0;
   const limit = (k: number): number => {

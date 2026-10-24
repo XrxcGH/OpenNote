@@ -9,11 +9,13 @@ import { brent } from '../lib/num';
 import { simulate } from '../lib/sim';
 import { step, type Step } from '../lib/steps';
 import {
+  complexText,
   dcGain,
   errorConstants,
   feedback,
   fmt,
   isProper,
+  minreal,
   poles as polesOf,
   tfTex,
   tfToSS,
@@ -235,8 +237,11 @@ export interface SteadyState {
 }
 
 /** Steady-state errors of the unity feedback loop around G for unit step, ramp, and parabola inputs. */
-export function steadyState(g: TF): SteadyState {
-  checkSystem(g);
+export function steadyState(g0: TF): SteadyState {
+  checkSystem(g0);
+  // Cancel pole-zero pairs first: s/(s² + s) is 1/(s + 1), type 0, not type 1.
+  const reduced = minreal(g0);
+  const g = reduced.tf;
   const closed = feedback(g);
   const stable = polesOf(closed).every((p) => p.re < -1e-12);
   const { kp, kv, ka, type } = errorConstants(g);
@@ -253,6 +258,15 @@ export function steadyState(g: TF): SteadyState {
     closed,
     stable,
     steps: [
+      ...(reduced.cancelled.length
+        ? [
+            step(
+              reduced.cancelled.some((z) => z.re >= -1e-12) ? 'sys.cancelledHidden' : 'sys.cancelled',
+              { roots: reduced.cancelled.map((z) => complexText(z)).join(', ') },
+              `G(s) = ${tfTex(g)}`,
+            ),
+          ]
+        : []),
       step('sys.closed', {}, `T(s) = \\frac{G}{1 + G} = ${tfTex(closed)}`),
       step(stable ? 'sys.closedStable' : 'sys.closedUnstable'),
       step('sys.type', { type: String(type) }),
