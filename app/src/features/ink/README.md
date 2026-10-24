@@ -46,7 +46,7 @@ Each folder's README ends with what the page view must do for that part. The sha
 
 `features/page/registrations/ink.ts` loads the view when the first page shows and hands it the page view's seams. Those are the pointer router, the shown page's viewport, sync queue, open page, and block layer, and the page selection.
 
-- `install.ts` registers three pointer tools: the pen and mouse tool (priority 80), the palm filter for touch (100), and the lasso frame's handles (95). It also registers the commands, the Draw tab, and the Pen and touch section of Settings.
+- `install.ts` registers three pointer tools: the pen and mouse tool (priority 80), the palm filter for touch (100), and the lasso frame (101), which a finger drags above the palm filter. It also registers the commands, the Draw tab, and the Pen and touch section of Settings.
 - `surface.ts` is one page's ink. An overlay over the viewport holds the tile layer (`tiles.ts`) and a live canvas for the stroke in progress, the eraser, and the lasso. Its chrome layer holds the lasso frame.
 - Every change shows at once and goes through the page's sync queue. New strokes ride in a batch's `strokes` as ink records, so the core saves them to the page's ink segments and they join the undo history. `OpenPage.ink` brings them back at open and after undo and redo.
 - The palm filter loads in its own chunk (`palm.ts`), and the touch tool feeds it pen hover and contact.

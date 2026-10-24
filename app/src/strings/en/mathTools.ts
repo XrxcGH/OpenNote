@@ -288,8 +288,8 @@ export const mathTools = {
     exportTitle: '3D graph',
     exportDescription:
       'Plots {functions} in 3D, with x from {xLo} to {xHi}, y from {yLo} to {yHi}, and z from {zLo} to {zHi}.',
-    insert: 'Insert 3D graph',
-    insertKeywords: '3d graph surface plot parametric curve z equation',
+    insert: 'Insert 3D function plot',
+    insertKeywords: '3d function plot surface parametric surface u v curve z equation camera calculator',
     picture: 'Insert as picture',
     pictureAlt: 'Graph of {functions}',
     pictureAdded: 'Picture of the graph added to the page.',
