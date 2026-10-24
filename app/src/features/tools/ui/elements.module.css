@@ -15,16 +15,15 @@
 
   .table {
     display: grid;
-    grid-template-columns: repeat(18, minmax(2.1rem, 1fr));
+    grid-template-columns: repeat(18, minmax(1.9rem, 1fr));
     grid-template-rows: repeat(7, auto) var(--space-2) repeat(2, auto);
     gap: 2px;
-    min-inline-size: 40rem;
   }
 
   .cell,
   .ghost {
     aspect-ratio: 1;
-    min-block-size: 2.1rem;
+    min-block-size: 1.9rem;
     border-radius: var(--radius-sm);
   }
 
@@ -35,8 +34,11 @@
 
   .cell {
     position: relative;
+    /* The number takes the top row and the symbol the rest, so the two never share a line. */
     display: grid;
-    place-items: center;
+    grid-template-rows: auto 1fr;
+    justify-items: center;
+    align-items: center;
     padding: 0;
     font: inherit;
     color: var(--color-text-primary);
@@ -60,14 +62,15 @@
   }
 
   .number {
-    position: absolute;
-    inset-block-start: 1px;
-    inset-inline-start: 3px;
+    justify-self: start;
+    padding-inline-start: 2px;
+    line-height: 1;
     font-size: 0.6rem;
     color: var(--color-text-secondary);
   }
 
   .symbol {
+    line-height: 1;
     font-weight: var(--font-weight-semibold);
     font-size: var(--type-small-size);
   }
