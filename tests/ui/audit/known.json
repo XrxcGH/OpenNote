@@ -81,6 +81,8 @@
   "block | box-overlap | div.form > label.field > input x div.status > span",
   "command | clipped-by-ancestor | div.scroller > div[role=listbox].grid > div[role=option].cell",
   "block | document-scroll | ",
-  "workspace | target-small | div[data-region=page-properties].host > section.bar > button.fold"
+  "workspace | target-small | div[data-region=page-properties].host > section.bar > button.fold",
+  "block | text-overlap | div.column > div.status > span x div.drawing > p.hint",
+  "block | text-overlap | div.column > div.status > span x tr > th"
  ]
 }
