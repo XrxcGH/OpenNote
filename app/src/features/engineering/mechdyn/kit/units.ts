@@ -43,6 +43,11 @@ export const KINDS = {
   massPerLength: { dim: D(-1, 1), si: shown('kg/m', 1), us: shown('lb/ft', LB / FT) },
   density: { dim: D(-3, 1), si: shown('kg/m³', 1, 'kg/m^3'), us: shown('lb/ft³', LB / FT ** 3, 'lb/ft^3') },
   massInertia: { dim: D(2, 1), si: shown('kg·m²', 1, 'kg*m^2'), us: shown('lb·ft²', LB * FT ** 2, 'lb*ft^2') },
+  angularMomentum: {
+    dim: D(2, 1, -1),
+    si: shown('kg·m²/s', 1, 'kg*m^2/s'),
+    us: shown('lb·ft²/s', LB * FT ** 2, 'lb*ft^2/s'),
+  },
   unbalance: { dim: D(1, 1), si: shown('kg·m', 1, 'kg*m'), us: shown('lb·in', LB * IN, 'lb*in') },
   force: { dim: D(1, 1, -2), si: shown('N', 1), us: shown('lbf', LBF) },
   moment: { dim: D(2, 1, -2), si: shown('N·m', 1, 'N*m'), us: shown('lbf·ft', LBF * FT, 'lbf*ft') },

@@ -124,6 +124,25 @@ export const kitMechDyn = {
     robotKinType: 'Row {row} needs R (a revolute joint) or P (a prismatic joint) before its numbers.',
     robotKinLimitPair: 'Row {row} needs both joint limits, low and high, or neither.',
     lagrangeCoords: 'Use 1 to 3 generalized coordinates.',
+    rigidMass: 'Every mass must be zero or more, and the total more than zero.',
+    rigidSize: 'Every size must be greater than zero.',
+    rigidTensor: 'Type 3 rows of 3 numbers.',
+    rigidSymmetric: 'The inertia tensor must be symmetric.',
+    rigidTriangle:
+      'That tensor isn’t a real body’s: no principal moment can be negative or more than the other two added.',
+    rigidShape: 'Line {line} needs one shape: box, cylinder, sphere, rod, plate, or point.',
+    rigidLine:
+      // checks-disable-next-line length: one message with its plural argument, kept whole so the argument is typed
+      'Line {line} needs the mass, {count, plural, =0 {no sizes} one {# size} other {# sizes}}, x, y, and z, and optionally yaw, pitch, and roll.',
+    rigidVector:
+      // checks-disable-next-line length: one message with its select argument, kept whole so the argument is typed
+      '{field, select, omega0 {The angular velocity} torque {The torque} other {This field}} needs 3 numbers: x, y, and z.',
+    rigidCount:
+      // checks-disable-next-line length: one message with its select argument, kept whole so the argument is typed
+      '{field, select, euler {Type yaw, pitch, and roll in degrees.} quaternion {Type 4 numbers: w, x, y, and z.} other {Type the angle in degrees, then the axis x, y, and z.}}',
+    rotQuatZero: 'The quaternion can’t be all zeros.',
+    rotAxisZero: 'The axis can’t be all zeros.',
+    rotMatrix: 'That matrix isn’t a rotation: its columns must be unit length and at right angles, with determinant 1.',
     lagrangeParam: '“{text}” isn’t a parameter. Write it as name = value, such as g = 9.81.',
     lagrangeForces:
       'Type at most {count, plural, one {# generalized force} other {# generalized forces}}, one per line.',
@@ -170,6 +189,7 @@ export const kitMechDyn = {
     linkage: 'Links at the input angle',
     couplerPoint: 'Coupler point',
     startPose: 'Starting position',
+    principalOmega: 'ω about principal axis {n}',
     workspaceTop: 'Workspace, top view (x, y)',
     workspaceSide: 'Workspace, side view (reach, z)',
     armTop: 'Arm, top view (x, y)',

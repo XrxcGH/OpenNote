@@ -24,6 +24,7 @@ export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [
   tool('gears', 'GearSix'),
   tool('compliant', 'Spiral'),
   tool('kinetics', 'Path'),
+  tool('rigid3d', 'Cube'),
   tool('lagrange', 'Function'),
   tool('sdof', 'Waveform'),
   tool('mdof', 'Waves'),

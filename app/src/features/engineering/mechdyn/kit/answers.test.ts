@@ -216,6 +216,39 @@ const CASES: readonly Case[] = [
     texts: {},
     expect: { 'omega:1': '3.1321 rad/s', periodRatio: '1.1803', equilibria: '3' },
   },
+  {
+    name: 'a thin plate about its corner: tensor and principal moments',
+    tool: 'rigid3d',
+    texts: {},
+    expect: {
+      Ixx: '0.026667 kg·m²',
+      Iyy: '0.10667 kg·m²',
+      Izz: '0.13333 kg·m²',
+      Ixy: '−0.04 kg·m²',
+      'principal:1': '0.010098 kg·m²',
+      'principal:2': '0.12324 kg·m²',
+      'principal:3': '0.13333 kg·m²',
+    },
+  },
+  {
+    name: 'the same plate in pounds and feet',
+    tool: 'rigid3d',
+    system: 'us',
+    texts: { bodies: 'plate 4.4092452 1.312336 0.65616798 0.65616798 0.32808399 0' },
+    expect: { 'principal:3': '3.164 lb·ft²' },
+  },
+  {
+    name: 'torque-free precession of an axisymmetric body',
+    tool: 'rigid3d',
+    texts: { task: 'tensor' },
+    expect: { bodyRate: '10 rad/s' },
+  },
+  {
+    name: 'Euler angles 30°, 20°, 10° as a quaternion and an axis-angle',
+    tool: 'rigid3d',
+    texts: { task: 'rotation' },
+    expect: { qw: '0.95155', qx: '0.038135', qy: '0.18931', qz: '0.2393', angle: '35.817°' },
+  },
 ];
 
 describe('the answers the window shows', () => {
