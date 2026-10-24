@@ -70,7 +70,10 @@ function Editor(props: { title: string; initial: string; onSave(text: string): P
           onChange={(event) => setText(event.target.value)}
         />
         <p id={helpId} className={styles.help}>
-          {t('intelPlus.vocabulary.help')} {t('intelPlus.vocabulary.count', { count: countTerms(text) })}
+          {t('intelPlus.vocabulary.help')}
+        </p>
+        <p className={styles.help} aria-live="polite">
+          {t('intelPlus.vocabulary.count', { count: countTerms(text) })}
         </p>
         <div className={styles.actions}>
           <Button variant="secondary" onClick={() => file.current?.click()}>

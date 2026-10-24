@@ -1,19 +1,11 @@
 // The Settings page, for the focus walk, axe, and the screenshot matrix.
 
-import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { defineScreens } from '../screens';
+import { openSettingsSection } from '../settingsOpen';
 
 async function openSection(page: Page, name: string): Promise<void> {
-  const link = page.getByRole('link', { name, exact: true });
-  const heading = page.getByRole('heading', { level: 1, name, exact: true });
-  // The key handler is installed late on a slow machine: press again until Settings shows, as the palette steps do.
-  await expect(async () => {
-    if (await heading.isVisible()) return;
-    if (await link.isVisible()) await link.click();
-    else await page.keyboard.press('Control+Comma');
-    await expect(heading).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 20_000 });
+  await openSettingsSection(page, name);
 }
 
 export default defineScreens([

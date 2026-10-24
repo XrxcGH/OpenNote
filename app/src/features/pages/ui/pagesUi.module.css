@@ -5,6 +5,23 @@
     gap: var(--space-4);
   }
 
+  .group {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .legend {
+    padding: 0;
+    margin-block-end: var(--space-3);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    color: var(--color-text-secondary);
+  }
+
   .row {
     display: grid;
     gap: var(--space-2);
@@ -67,10 +84,16 @@
     pointer-events: none;
   }
 
+  .stepper > span {
+    text-align: center;
+  }
+
   .stepper {
-    display: flex;
-    gap: var(--space-2);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-3);
     align-items: center;
+    white-space: nowrap;
     font-size: var(--type-caption-size);
     color: var(--color-text-secondary);
     flex-wrap: wrap;
@@ -149,7 +172,8 @@
     color: var(--color-text-secondary);
   }
 
-  .stageBar button {
+  /* The pressed tool keeps the primary button's on-accent text; only the quiet ones follow the bar. */
+  .stageBar button:not([aria-pressed='true']) {
     color: inherit;
   }
 
@@ -184,7 +208,8 @@
   .buttons {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
+    gap: var(--space-4);
+    align-items: center;
   }
 
   .items {
