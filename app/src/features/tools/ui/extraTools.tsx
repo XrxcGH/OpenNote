@@ -28,6 +28,13 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The solid mechanics kit loads with its engineering feature the first time its window opens.
+const SolidsKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadSolidsKit())
+    .then((m) => ({ default: m.SolidsKit })),
+);
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -64,5 +71,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-solids')
+    return (
+      <Suspense fallback={null}>
+        <SolidsKit />
+      </Suspense>
+    );
   return null;
 }
