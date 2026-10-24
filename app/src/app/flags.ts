@@ -19,7 +19,8 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { EXPR_FLAGS } from '../features/tools/flags';
+import { CHEMMAT_FLAGS, EXPR_FLAGS } from '../features/tools/flags';
+import type { ChemMatFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -100,7 +101,8 @@ type Phase4FlagId =
   | 'editor.readAloud'
   | IntegrationsFlagId
   | PdfFlagId
-  | MathToolsFlagId;
+  | MathToolsFlagId
+  | ChemMatFlagId;
 
 /** Phase 6: page views and export (features/pages/flags.ts). */
 type Phase6FlagId =
@@ -331,6 +333,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INK_FLAGS,
   ...PAGES_FLAGS,
   ...EXPR_FLAGS,
+  ...CHEMMAT_FLAGS,
   ...DOC_FLAGS,
   ...SEARCH_FLAGS,
   ...AUDIO_FLAGS,

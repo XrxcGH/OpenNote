@@ -28,6 +28,9 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The Chemistry and materials window loads the first time it opens: it carries the engines and the species data.
+const ChemMatKit = lazy(() => import('../chemmat/ui/KitWindow').then((loaded) => ({ default: loaded.KitWindow })));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-chemmat')
+    return (
+      <Suspense fallback={null}>
+        <ChemMatKit />
+      </Suspense>
+    );
   return null;
 }

@@ -1,0 +1,54 @@
+/*
+ * The chemistry and materials kit window: the system switch, the answer table, and small headings. The rest of the
+ * look comes from the chemistry tools' own styles, so the two sets of tools read alike.
+ */
+@layer components {
+  .rows {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rows th {
+    text-align: start;
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-secondary);
+    padding-block: var(--space-1);
+    padding-inline-end: var(--space-3);
+  }
+
+  .rows td {
+    padding-block: var(--space-1);
+    padding-inline-end: var(--space-2);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .heading {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  .notes {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .system {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+}
