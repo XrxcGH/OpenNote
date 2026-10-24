@@ -57,11 +57,18 @@ export function omegaFromWetBulb(t: number, twb: number, p: number): number {
   return ((2830 - 0.24 * twb) * ws - 1.006 * (t - twb)) / (2830 + 1.86 * t - 2.1 * twb);
 }
 
+/** Round-off taken as zero at the ends of a root search: saturation, where the wet bulb is the dry bulb. */
+const WET_BULB_TOL = 1e-12;
+
 /** Wet-bulb temperature by Brent's method on the adiabatic-saturation balance. */
+
 export function wetBulb(t: number, omega: number, p: number): number {
   const f = (twb: number) => omegaFromWetBulb(t, twb, p) - omega;
   const lo = Math.max(T_LOW, t - 80);
-  if (f(lo) > 0 || f(t) < 0) throw new ThermoError('noRoot');
+  // Saturated air has its wet bulb at the dry bulb, where f is zero up to round-off of either sign.
+  const ft = f(t);
+  if (Math.abs(ft) <= WET_BULB_TOL) return t;
+  if (f(lo) > 0 || ft < 0) throw new ThermoError('noRoot');
   return brent(f, lo, t, 1e-10);
 }
 
@@ -121,6 +128,11 @@ export function moistFromPhi(t: number, phi: number, p: number): MoistState {
 
 /** Dry bulb where a function of t crosses a target, searched from the lowest temperature to the highest. */
 export function solveDryBulb(f: (t: number) => number, lo = T_LOW, hi = T_HIGH - 1): number {
-  if (!(f(lo) * f(hi) <= 0)) throw new ThermoError('noRoot');
+  // An end that is a root up to round-off (saturation at the wet bulb, say) is the answer, whatever its sign.
+  const flo = f(lo);
+  const fhi = f(hi);
+  if (Math.abs(flo) <= WET_BULB_TOL) return lo;
+  if (Math.abs(fhi) <= WET_BULB_TOL) return hi;
+  if (!(flo * fhi <= 0)) throw new ThermoError('noRoot');
   return brent(f, lo, hi, 1e-10);
 }

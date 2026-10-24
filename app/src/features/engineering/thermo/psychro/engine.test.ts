@@ -121,6 +121,26 @@ describe('psychrometrics: independent checks', () => {
   });
 });
 
+describe('psychrometrics: saturated air', () => {
+  // At saturation the wet bulb is the dry bulb by definition, though the balance there is zero only to round-off.
+  it('has its wet bulb at the dry bulb from -50 to 90 °C', () => {
+    for (let t = -50; t <= 90; t += 0.5) expect(moistFromPhi(t, 1, P).twb).toBeCloseTo(t, 8);
+  });
+
+  it('dehumidifies 30 °C 60 % to saturation at 5 °C', () => {
+    // IAPWS saturation pressures: 4.2470 kPa at 30 °C and 0.87258 kPa at 5 °C; ω = 0.621945 pv / (p - pv).
+    const w = (pv: number) => (0.621945 * pv) / (P - pv);
+    const result = solveProcess({ process: 'dehumidify', p: P, t1: 30, phi1: 0.6, t2: 5, phi2: 1 });
+    expect(rel(row(result, 'waterRemoved'), w(0.6 * 4.247) - w(0.87258))).toBeLessThan(2e-3);
+  });
+
+  it('evaporative cooling to saturation ends at the wet bulb', () => {
+    const result = solveProcess({ process: 'evaporative', p: P, t1: 35, phi1: 0.2, phi2: 1 });
+    expect(row(result, 'phi')).toBeCloseTo(100, 6);
+    expect(row(result, 'tdb')).toBeCloseTo(moistFromPhi(35, 0.2, P).twb + 273.15, 4);
+  });
+});
+
 describe('psychrometrics: problems in words', () => {
   it('explains impossible and out-of-range inputs', () => {
     expect(code(() => moistFromPhi(25, 1.2, P))).toBe('psychroPhi');
