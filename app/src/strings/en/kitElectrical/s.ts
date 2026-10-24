@@ -43,7 +43,7 @@ export const s = {
   corrQ: 'Reactive power before and after is Q = P tan φ: {q1} and {q2}.',
   corrQc: 'The capacitor supplies the difference: Qc = {value}.',
   corrC:
-    'A capacitor across the load takes Qc = ω C V², so the element is {value}. A leading load takes an inductor, L = V²/(ω |Qc|). A three-phase bank has three equal elements.',
+    'A capacitor across the load takes Qc = ω C V², so the element is {value}. A leading load takes an inductor, L = V²/(ω |Qc|).',
   tfRefer: 'Referring the series impedance to the low side divides it by a²: Req = {r}, Xeq = {x}.',
   tfDrop:
     'Adding the drop in the series impedance to the load voltage gives the source voltage, {value} on the high side.',
@@ -68,6 +68,8 @@ export const s = {
   capacity:
     'Averaging the power curve over the distribution gives a capacity factor of {cf} on a rated power of {rated}.',
   cooper: 'Cooper’s equation gives the declination for the day: δ = {value}°.',
+  noaaStep:
+    'NOAA gives the equation of time {eot} min and the declination {value}°. Solar time is clock time plus these corrections.',
   noonStep: 'At solar noon the altitude is {value}°.',
   altitudeStep: 'At hour angle {omega}° the altitude is {value}°.',
   incidenceStep: 'The sun’s rays meet the surface at {value}° from its normal.',

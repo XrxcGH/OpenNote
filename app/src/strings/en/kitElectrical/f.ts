@@ -111,6 +111,18 @@ export const f = {
     newBaseVoltage: 'New base line voltage (V)',
 
     energyMode: 'Calculation',
+    energyUnits: 'Units you type in',
+    si: 'SI (m/s, m, m², °C)',
+    us: 'US (mph, ft, ft², °F)',
+    usUnitsHint:
+      'With US units, type speeds in mph, lengths in ft, area in ft², density in lb/ft³, irradiance in BTU/(h·ft²), and temperature in °F.',
+    solarMethod: 'Sun position method',
+    cooper: 'Cooper (day of the year, solar time)',
+    noaa: 'NOAA (date, clock time, longitude)',
+    dateText: 'Date (YYYY-MM-DD)',
+    clockTime: 'Local clock time (HH:MM, 24 hours)',
+    zoneOffset: 'Time zone (hours from UTC, such as -5)',
+    longitude: 'Longitude (degrees, east positive)',
     wind: 'Wind power and the Betz limit',
     windStats: 'Wind statistics and capacity factor',
     solar: 'Sun position and surface angle',
@@ -291,7 +303,7 @@ export const f = {
     netThev: 'Thevenin and Norton equivalent',
     netlistText: 'Netlist, one element per line',
     netlistHint:
-      'Elements R C L V I E G H F O S. Node 0 is ground. Values such as 4.7k, 10uF, 1kΩ or 1meg. Example: R1 a b 1k. Sources: DC, AC, STEP, PULSE, SIN.',
+      'Elements R C L V I E G H F O S. Node 0 is ground. Values: 4.7k, 10uF, 1kΩ, 1meg. Sources: DC, AC, STEP, PULSE, SIN.',
     probesText: 'What to plot',
     probesHint: 'Node names or currents, separated by commas, such as out, v(a,b), i(R1).',
     acStart: 'Start frequency (Hz)',

@@ -138,7 +138,9 @@ function correct(values: Values): KitOk {
   return ok({
     rows,
     steps,
-    answer: `Qc = ${eng(r.qc, 'var')}, ${r.l === null ? 'C' : 'L'} = ${element}${three ? ' each' : ''} to raise the power factor from ${fmt(pf1)} to ${fmt(pf2)}`,
+    answer:
+      `Qc = ${eng(r.qc, 'var')}, ${r.l === null ? 'C' : 'L'} = ${element}${three ? ' each' : ''}` +
+      ` to raise the power factor from ${fmt(pf1)} to ${fmt(pf2)}`,
     latex: `Q_c = ${fmt(r.qc)}\\ \\mathrm{var},\\quad ${r.l === null ? `C = ${fmt(r.c)}\\ \\mathrm{F}` : `L = ${fmt(r.l)}\\ \\mathrm{H}`}`,
     plot: {
       xLabel: 'P (W)',
@@ -270,7 +272,7 @@ function transformerMode(values: Values): KitOk {
     { key: 'turnsRatio', value: fmt(r.ratio) },
     { key: 'reqLow', value: eng(r.reqLow, 'Ω') },
     { key: 'xeqLow', value: eng(r.xeqLow, 'Ω') },
-    { key: 'loadCurrent', value: eng(r.iLoad, 'A') },
+    { key: 'tfLoadCurrent', value: eng(r.iLoad, 'A') },
     { key: 'sourceVoltage', value: eng(r.vSourceHigh, 'V') },
     { key: 'regulation', value: `${fmt(r.regulation, 4)} %` },
     { key: 'copperLoss', value: eng(r.copper, 'W') },

@@ -256,7 +256,8 @@ export function transient(circuit: Circuit, lay: Layout, probes: Probe[], step: 
   const factors = new Map<string, { dt: number; lu: Factored }>();
   for (let k = 1; k < times.length; k++) {
     const trap = !useEuler;
-    const key = `${(times[k]! - times[k - 1]!).toPrecision(9)}|${trap}|${switches.map((e) => (switchClosed(e, times[k]!) ? 1 : 0)).join('')}`;
+    const states = switches.map((e) => (switchClosed(e, times[k]!) ? 1 : 0)).join('');
+    const key = `${(times[k]! - times[k - 1]!).toPrecision(9)}|${trap}|${states}`;
     const cached = factors.get(key);
     const dt = cached ? cached.dt : times[k]! - times[k - 1]!;
     const system = assemble(circuit, lay, { mode: 'tran', t: times[k]!, dt, trap, state });

@@ -73,7 +73,8 @@ export interface CorrectionOptions {
 
 /**
  * Qc = P (tan φ1 − tan φ2) for a parallel element that moves the load to the target power factor (lagging, or
- * (of the same kind as the load, or unity). A lagging load takes a capacitor; a leading load takes an inductor. Single phase: `voltage` is across the
+ * (of the same kind as the load, or unity). A lagging load takes a capacitor; a leading load takes an
+ * inductor. Single phase: `voltage` is across the
  * element. Three phase: `voltage` is line to line, and three equal elements each carry Qc/3 across the line voltage
  * (delta) or the line voltage over √3 (wye).
  */

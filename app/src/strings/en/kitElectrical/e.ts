@@ -74,6 +74,8 @@ export const e = {
     fitManyParameters: 'This tool fits up to 6 parameters.',
     fitStartNumber: 'A starting value is not a number: {text}',
 
+    dateFormat: 'Write the date as YYYY-MM-DD and the time as HH:MM, such as 2024-06-20 and 12:00.',
+    clockFormat: 'Write the time as HH:MM on a 24-hour clock, such as 14:30.',
     netNumber: 'Line {line}: "{text}" is not a number. Use values such as 4.7k, 10u, or 1e-3.',
     netSourceCount: 'Line {line}: "{word}" needs more numbers.',
     netSourceWord: 'Line {line}: "{word}" is not a source type. Use DC, AC, STEP, PULSE, or SIN.',

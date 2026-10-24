@@ -1,6 +1,6 @@
 // The energy tool: wind, wind statistics, sun position, photovoltaics, emissions, cost of energy, and energy units.
 import type { Field, ToolSpec } from '../spec';
-import { fail, eng, fmt, need, nonNegative, ok, positive } from '../shared';
+import { fail, eng, fmt, need, nonNegative, ok, positive, readNumber } from '../shared';
 import type { KitOk, KitRow, KitStep, Values } from '../shared';
 import {
   BETZ,
@@ -13,6 +13,7 @@ import {
   cosIncidence,
   declination,
   exceedance,
+  noaaSun,
   lcoe,
   meanCube,
   pvOutput,
@@ -23,6 +24,34 @@ import {
   windPowerDensity,
 } from './engine';
 import { toDegrees } from '../shared';
+
+const US_FACTORS: Record<string, number> = {
+  speed: 0.44704,
+  mean: 0.44704,
+  above: 0.44704,
+  cutin: 0.44704,
+  rated: 0.44704,
+  cutout: 0.44704,
+  dia: 0.3048,
+  rho: 16.018463,
+  area: 0.09290304,
+  g: 3.154591,
+};
+
+/** With US units chosen, the numbers typed in mph, ft, ft², lb/ft³, BTU/(h ft²) and °F become SI before any engine runs. */
+function toSi(values: Values): Values {
+  if (values.units !== 'us') return values;
+  const out = { ...values };
+  for (const [id, factor] of Object.entries(US_FACTORS)) {
+    const n = readNumber(values[id] ?? '');
+    if (n !== null) out[id] = String(n * factor);
+  }
+  for (const id of ['tamb', 'noct']) {
+    const n = readNumber(values[id] ?? '');
+    if (n !== null) out[id] = String(((n - 32) * 5) / 9);
+  }
+  return out;
+}
 
 const MODES = ['wind', 'windStats', 'solar', 'pv', 'emissions', 'lcoe', 'convert'] as const;
 const modeOf = (v: Values): string => v.mode ?? 'wind';
@@ -43,6 +72,7 @@ const choice = (id: string, label: Field['label'], initial: string, values: read
 
 const FIELDS: readonly Field[] = [
   choice('mode', 'energyMode', 'wind', MODES),
+  { ...choice('units', 'energyUnits', 'si', ['si', 'us'], only('wind', 'windStats', 'pv')), hint: 'usUnitsHint' },
   { id: 'speed', label: 'windSpeed', initial: '8', unit: 'm/s', when: only('wind') },
   { id: 'rho', label: 'airDensity', initial: '1.225', unit: 'kg/m³', when: only('wind', 'windStats') },
   { id: 'dia', label: 'rotorDiameter', initial: '80', unit: 'm', when: only('wind', 'windStats') },
@@ -53,9 +83,20 @@ const FIELDS: readonly Field[] = [
   { id: 'cutin', label: 'cutIn', initial: '3', unit: 'm/s', when: only('windStats') },
   { id: 'rated', label: 'ratedSpeed', initial: '12', unit: 'm/s', when: only('windStats') },
   { id: 'cutout', label: 'cutOut', initial: '25', unit: 'm/s', when: only('windStats') },
+  choice('method', 'solarMethod', 'cooper', ['cooper', 'noaa'], only('solar')),
   { id: 'lat', label: 'latitude', initial: '34', when: only('solar'), hint: 'latitudeHint' },
-  { id: 'day', label: 'dayOfYear', initial: '172', when: only('solar') },
-  { id: 'hour', label: 'solarHour', initial: '12', when: only('solar'), hint: 'solarHourHint' },
+  { id: 'day', label: 'dayOfYear', initial: '172', when: (v) => modeOf(v) === 'solar' && v.method !== 'noaa' },
+  {
+    id: 'hour',
+    label: 'solarHour',
+    initial: '12',
+    when: (v) => modeOf(v) === 'solar' && v.method !== 'noaa',
+    hint: 'solarHourHint',
+  },
+  { id: 'date', label: 'dateText', initial: '2024-06-20', when: (v) => modeOf(v) === 'solar' && v.method === 'noaa' },
+  { id: 'clock', label: 'clockTime', initial: '12:00', when: (v) => modeOf(v) === 'solar' && v.method === 'noaa' },
+  { id: 'zone', label: 'zoneOffset', initial: '-5', when: (v) => modeOf(v) === 'solar' && v.method === 'noaa' },
+  { id: 'lon', label: 'longitude', initial: '-84', when: (v) => modeOf(v) === 'solar' && v.method === 'noaa' },
   { id: 'tilt', label: 'tilt', initial: '34', when: only('solar') },
   { id: 'azi', label: 'surfaceAzimuth', initial: '0', when: only('solar'), hint: 'azimuthHint' },
   { id: 'g', label: 'irradiance', initial: '1000', unit: 'W/m²', when: only('pv') },
@@ -77,6 +118,21 @@ const FIELDS: readonly Field[] = [
   { id: 'ev', label: 'energyValue', initial: '1', when: only('convert') },
   choice('eunit', 'energyUnit', 'kWh', Object.keys(ENERGY_UNITS), only('convert')),
 ];
+
+/** Reads the date, the clock time, the zone, and the longitude, then runs the NOAA algorithm. */
+function noaaTime(values: Values, lat: number) {
+  const date = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec((values.date ?? '').trim());
+  const clock = /^(\d{1,2}):(\d{2})$/.exec((values.clock ?? '').trim());
+  if (!date) fail('dateFormat');
+  if (!clock) fail('clockFormat');
+  const [year, month, day] = [Number(date![1]), Number(date![2]), Number(date![3])];
+  const time = Number(clock![1]) + Number(clock![2]) / 60;
+  if (month < 1 || month > 12 || day < 1 || day > 31 || time >= 24 || Number(clock![2]) > 59) fail('dateFormat');
+  const zone = need(values, 'zone', 'zoneOffset');
+  const longitude = need(values, 'lon', 'longitude');
+  if (Math.abs(zone) > 14 || Math.abs(longitude) > 180) fail('latitudeRange');
+  return noaaSun({ year, month, day, clock: time, zone, latitude: lat, longitude });
+}
 
 const hours = (h: number): string => {
   const whole = Math.floor(h);
@@ -165,14 +221,16 @@ function windStats(values: Values): KitOk {
 function solar(values: Values): KitOk {
   const lat = need(values, 'lat', 'latitude');
   if (Math.abs(lat) > 90) fail('latitudeRange');
-  const day = need(values, 'day', 'dayOfYear');
-  if (!Number.isInteger(day) || day < 1 || day > 366) fail('dayRange');
-  const hour = need(values, 'hour', 'solarHour');
+  const noaa = values.method === 'noaa';
+  const day = noaa ? 0 : need(values, 'day', 'dayOfYear');
+  if (!noaa && (!Number.isInteger(day) || day < 1 || day > 366)) fail('dayRange');
+  const sunTime = noaa ? noaaTime(values, lat) : null;
+  const hour = noaa ? 12 : need(values, 'hour', 'solarHour');
   const tilt = need(values, 'tilt', 'tilt');
   if (tilt < 0 || tilt > 180) fail('tiltRange');
   const azi = need(values, 'azi', 'surfaceAzimuth');
-  const decl = declination(day);
-  const hourAngle = 15 * (hour - 12);
+  const decl = sunTime ? sunTime.declination : declination(day);
+  const hourAngle = sunTime ? sunTime.hourAngle : 15 * (hour - 12);
   const sun = sunPosition(lat, decl, hourAngle);
   const noon = 90 - Math.abs(lat - decl);
   const rise = sunriseHourAngle(lat, decl);
@@ -185,7 +243,19 @@ function solar(values: Values): KitOk {
     { key: 'altitude', value: `${fmt(sun.altitude, 5)}°` },
     { key: 'azimuth', value: `${fmt(sun.azimuth, 5)}°` },
   ];
-  if (typeof rise === 'number') {
+  if (sunTime) {
+    rows.push(
+      { key: 'equationOfTime', value: `${fmt(sunTime.equationOfTime, 5)} min` },
+      { key: 'trueSolarTime', value: hours(sunTime.solarTime / 60) },
+      { key: 'solarNoonClock', value: hours(sunTime.solarNoon / 60) },
+    );
+    if (sunTime.sunrise !== null && sunTime.sunset !== null) {
+      rows.push(
+        { key: 'sunriseClock', value: hours(sunTime.sunrise / 60) },
+        { key: 'sunsetClock', value: hours(sunTime.sunset / 60) },
+      );
+    } else rows.push({ key: 'dayLength', value: '', word: lat * decl > 0 || lat === 0 ? 'polarDay' : 'polarNight' });
+  } else if (typeof rise === 'number') {
     rows.push(
       { key: 'sunrise', value: hours(12 - rise / 15) },
       { key: 'sunset', value: hours(12 + rise / 15) },
@@ -219,10 +289,19 @@ function solar(values: Values): KitOk {
       math: '\\cos\\theta = \\hat{n}\\cdot\\hat{s}\\ \\text{(tilted surface)}',
     },
   ];
+  if (sunTime) {
+    steps.unshift({
+      key: 'noaaStep',
+      vars: { eot: fmt(sunTime.equationOfTime, 4), value: fmt(decl, 5) },
+      math: '\\mathrm{TST} = t_\\mathrm{clock} + E + 4\\lambda - 60z',
+    });
+  }
   return ok({
     rows,
     steps,
-    answer: `Day ${day}: declination ${fmt(decl, 5)}°, noon altitude ${fmt(noon, 5)}° at latitude ${fmt(lat)}°`,
+    answer: sunTime
+      ? `${values.date}: declination ${fmt(decl, 5)}°, equation of time ${fmt(sunTime.equationOfTime, 4)} min`
+      : `Day ${day}: declination ${fmt(decl, 5)}°, noon altitude ${fmt(noon, 5)}° at latitude ${fmt(lat)}°`,
     latex: `\\delta = ${fmt(decl, 5)}^\\circ,\\quad \\alpha_\\mathrm{noon} = ${fmt(noon, 5)}^\\circ`,
     notes: ['solarNote'],
   });
@@ -364,5 +443,5 @@ const MODE: Record<string, (values: Values) => KitOk> = {
 export const spec: ToolSpec = {
   id: 'energy',
   fields: FIELDS,
-  run: (values) => (MODE[modeOf(values)] ?? wind)(values),
+  run: (values) => (MODE[modeOf(values)] ?? wind)(toSi(values)),
 };

@@ -46,7 +46,7 @@ const MAX_ELEMENTS = 200;
 
 /**
  * A value as students write it: 4.7k, 2.2K, 10uF, 1kΩ, 1kohm, 5V, 1meg. A trailing unit word is dropped (ohm, Ω, Hz and
- * a capital F, H, V or A, so a lowercase f stays femto); K is kilo, and M stays mega as the hint says.
+ * a capital F, H, V, or A, so a lowercase f stays femto); K is kilo, and M stays mega as the hint says.
  */
 export function readValue(text: string): number | null {
   const bare = text

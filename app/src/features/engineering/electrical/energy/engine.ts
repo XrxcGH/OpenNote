@@ -142,6 +142,98 @@ export function cosIncidence(
   );
 }
 
+// ---- NOAA solar position ----
+
+export interface Noaa {
+  /** Julian day of the instant, from the date, clock time and time zone. */
+  jd: number;
+  /** Declination of the sun (degrees). */
+  declination: number;
+  /** Equation of time (minutes): apparent solar time minus mean solar time. */
+  equationOfTime: number;
+  /** True solar time (minutes after midnight, 0 to 1440). */
+  solarTime: number;
+  /** Hour angle (degrees), 0 at solar noon and negative in the morning. */
+  hourAngle: number;
+  /** Clock times in minutes after local midnight; null on a polar day or night. */
+  sunrise: number | null;
+  sunset: number | null;
+  solarNoon: number;
+}
+
+/** The Julian day of a calendar date and universal time in hours (Gregorian calendar). */
+export function julianDay(year: number, month: number, day: number, utcHours: number): number {
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(0, 0, 0, 0);
+  return date.getTime() / 86400000 + 2440587.5 + utcHours / 24;
+}
+
+const sinD = (deg: number): number => Math.sin(toRadians(deg));
+const cosD = (deg: number): number => Math.cos(toRadians(deg));
+
+/**
+ * The NOAA solar position algorithm (Meeus, as in NOAA's solar calculator): sun declination and equation of time from
+ * the Julian century, then true solar time from the clock time, longitude (east positive), and time zone (hours east
+ * of UTC). Good to about 0.01 degrees for 1900 to 2100.
+ */
+export function noaaSun(args: {
+  year: number;
+  month: number;
+  day: number;
+  /** Local clock time in hours after midnight. */
+  clock: number;
+  /** Hours east of UTC, such as -5 for US Eastern standard time. */
+  zone: number;
+  latitude: number;
+  longitude: number;
+}): Noaa {
+  const { year, month, day, clock, zone, latitude, longitude } = args;
+  const jd = julianDay(year, month, day, clock - zone);
+  const t = (jd - 2451545) / 36525;
+  const l0 = (((280.46646 + t * (36000.76983 + t * 0.0003032)) % 360) + 360) % 360;
+  const m = 357.52911 + t * (35999.05029 - 0.0001537 * t);
+  const e = 0.016708634 - t * (0.000042037 + 0.0000001267 * t);
+  const center =
+    sinD(m) * (1.914602 - t * (0.004817 + 0.000014 * t)) +
+    sinD(2 * m) * (0.019993 - 0.000101 * t) +
+    sinD(3 * m) * 0.000289;
+  const trueLong = l0 + center;
+  const omega = 125.04 - 1934.136 * t;
+  const apparentLong = trueLong - 0.00569 - 0.00478 * sinD(omega);
+  const meanObliquity = 23 + (26 + (21.448 - t * (46.815 + t * (0.00059 - t * 0.001813))) / 60) / 60;
+  const obliquity = meanObliquity + 0.00256 * cosD(omega);
+  const decl = toDegrees(Math.asin(sinD(obliquity) * sinD(apparentLong)));
+  const y = Math.tan(toRadians(obliquity / 2)) ** 2;
+  const eot =
+    4 *
+    toDegrees(
+      y * Math.sin(2 * toRadians(l0)) -
+        2 * e * Math.sin(toRadians(m)) +
+        4 * e * y * Math.sin(toRadians(m)) * Math.cos(2 * toRadians(l0)) -
+        0.5 * y * y * Math.sin(4 * toRadians(l0)) -
+        1.25 * e * e * Math.sin(2 * toRadians(m)),
+    );
+  const solarTime = (((clock * 60 + eot + 4 * longitude - 60 * zone) % 1440) + 1440) % 1440;
+  const hourAngle = solarTime / 4 - 180;
+  const noonUtc = 720 - 4 * longitude - eot;
+  // Sunrise and sunset use a zenith of 90.833 degrees: the solar radius plus atmospheric refraction.
+  const cosHa =
+    cosD(90.833) / (cosD(latitude) * cosD(decl)) - Math.tan(toRadians(latitude)) * Math.tan(toRadians(decl));
+  const x = Math.abs(cosHa) <= 1 ? toDegrees(Math.acos(cosHa)) : null;
+  const toClock = (utcMinutes: number): number => utcMinutes + 60 * zone;
+  return {
+    jd,
+    declination: decl,
+    equationOfTime: eot,
+    solarTime,
+    hourAngle,
+    sunrise: x !== null ? toClock(noonUtc - 4 * x) : null,
+    sunset: x !== null ? toClock(noonUtc + 4 * x) : null,
+    solarNoon: toClock(noonUtc),
+  };
+}
+
 // ---- Photovoltaics ----
 
 export interface Pv {
