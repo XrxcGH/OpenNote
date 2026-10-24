@@ -4,7 +4,10 @@
 import { commandBar, commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
 
-export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string])[] = [['waves', 'WaveSine']];
+export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string])[] = [
+  ['waves', 'WaveSine'],
+  ['relativity', 'HourglassMedium'],
+];
 
 const open = async (tool: string | null) => (await import('../../tools')).openPhysicsTool(tool);
 

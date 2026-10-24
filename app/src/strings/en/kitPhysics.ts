@@ -1,6 +1,7 @@
 // The physics tool kit (owner: the physics tools lane): fields, waves, optics, relativity, nuclear science, orbits,
 // maneuvers and spacecraft budgets. Each tool has its own group of messages; worked steps name their numbers in
 // braces, and the numbers arrive already written with their units. Each tool's group lives in kitPhysics/<tool>.ts.
+import { relativity } from './kitPhysics/relativity';
 import { waves } from './kitPhysics/waves';
 
 export const kitPhysics = {
@@ -50,4 +51,5 @@ export const kitPhysics = {
     failed: 'This calculation didn’t work with these numbers. Check the inputs.',
   },
   waves,
+  relativity,
 } as const;
