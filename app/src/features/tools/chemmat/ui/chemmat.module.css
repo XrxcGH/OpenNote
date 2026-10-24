@@ -9,6 +9,12 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* A long value or label scrolls sideways inside its box instead of being clipped by the window. */
+  .rowsWrap {
+    max-inline-size: 100%;
+    overflow-x: auto;
+  }
+
   .rows th {
     text-align: start;
     font-weight: var(--font-weight-regular);
@@ -18,6 +24,7 @@
   }
 
   .rows td {
+    overflow-wrap: anywhere;
     padding-block: var(--space-1);
     padding-inline-end: var(--space-2);
     font-weight: var(--font-weight-semibold);
@@ -63,5 +70,29 @@
   .tabList .tabButton {
     padding-inline: var(--space-3);
     font-size: var(--type-small-size);
+  }
+
+  /* The window is a container: when it is narrow, a menu replaces the tab strip, which would take five rows. */
+  .root {
+    container-type: inline-size;
+  }
+
+  .toolMenu {
+    display: none;
+    flex: 1 1 100%;
+  }
+
+  .toolMenu select {
+    inline-size: 100%;
+  }
+
+  @container (inline-size < 36rem) {
+    .tabList {
+      display: none;
+    }
+
+    .toolMenu {
+      display: flex;
+    }
   }
 }

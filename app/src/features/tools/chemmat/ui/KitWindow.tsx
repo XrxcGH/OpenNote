@@ -61,7 +61,7 @@ export function KitWindow() {
   const spec = CHEMMAT_TOOLS.find((x) => x.id === tab) ?? CHEMMAT_TOOLS[0];
 
   return (
-    <div className={tools.tool}>
+    <div className={`${tools.tool} ${own.root}`}>
       <div className={own.bar}>
         <div className={`${tools.tabs} ${own.tabList}`} role="tablist" aria-label={tr('kitChemMat.title')}>
           {CHEMMAT_TOOLS.map((x, i) => (
@@ -84,6 +84,20 @@ export function KitWindow() {
             </button>
           ))}
         </div>
+        <label className={own.toolMenu}>
+          <select
+            className={extra.input}
+            aria-label={tr('kitChemMat.title')}
+            value={spec.id}
+            onChange={(e) => choose(e.target.value)}
+          >
+            {CHEMMAT_TOOLS.map((x) => (
+              <option key={x.id} value={x.id}>
+                {tr(x.title)}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className={own.system}>
           {tr('kitChemMat.common.system')}
           <select

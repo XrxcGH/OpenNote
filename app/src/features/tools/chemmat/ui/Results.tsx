@@ -18,20 +18,22 @@ const text = (s: string) => (s.startsWith('kitChemMat.') ? tr(s as MessageKey) :
 function ResultRows({ solved, system }: { solved: Solved; system: System }) {
   return (
     <div className={chem.result}>
-      <table className={own.rows}>
-        <tbody>
-          {solved.rows.map((row, i) => {
-            const s = showRow(row, system);
-            return (
-              <tr key={i}>
-                <th scope="row">{s.label}</th>
-                <td className={chem.numeric}>{s.value}</td>
-                <td>{s.unit}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className={own.rowsWrap}>
+        <table className={own.rows}>
+          <tbody>
+            {solved.rows.map((row, i) => {
+              const s = showRow(row, system);
+              return (
+                <tr key={i}>
+                  <th scope="row">{s.label}</th>
+                  <td className={chem.numeric}>{s.value}</td>
+                  <td>{s.unit}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
