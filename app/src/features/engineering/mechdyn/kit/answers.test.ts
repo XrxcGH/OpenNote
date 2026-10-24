@@ -210,6 +210,12 @@ const CASES: readonly Case[] = [
     texts: { type: 'slider', a: '50 mm', b: '150 mm', e: '0 in', theta2: '60', omega2: '100 rad/s' },
     expect: { x: '6.6383 in', a: '−547.63 ft/s²' },
   },
+  {
+    name: 'a pendulum released from 90°: small-oscillation frequency and period ratio',
+    tool: 'lagrange',
+    texts: {},
+    expect: { 'omega:1': '3.1321 rad/s', periodRatio: '1.1803', equilibria: '3' },
+  },
 ];
 
 describe('the answers the window shows', () => {

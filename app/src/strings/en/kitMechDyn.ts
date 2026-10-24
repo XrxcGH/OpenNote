@@ -124,6 +124,9 @@ export const kitMechDyn = {
     robotKinType: 'Row {row} needs R (a revolute joint) or P (a prismatic joint) before its numbers.',
     robotKinLimitPair: 'Row {row} needs both joint limits, low and high, or neither.',
     lagrangeCoords: 'Use 1 to 3 generalized coordinates.',
+    lagrangeParam: '“{text}” isn’t a parameter. Write it as name = value, such as g = 9.81.',
+    lagrangeForces:
+      'Type at most {count, plural, one {# generalized force} other {# generalized forces}}, one per line.',
     lagrangeNames:
       'Name each coordinate with a letter, then letters, digits, or underscores, such as th or x1, apart from the parameters.',
     lagrangeT: 'The kinetic energy T couldn’t be read. Check its brackets and operators.',
@@ -166,6 +169,7 @@ export const kitMechDyn = {
     couplerCurve: 'Coupler curve',
     linkage: 'Links at the input angle',
     couplerPoint: 'Coupler point',
+    startPose: 'Starting position',
     workspaceTop: 'Workspace, top view (x, y)',
     workspaceSide: 'Workspace, side view (reach, z)',
     armTop: 'Arm, top view (x, y)',

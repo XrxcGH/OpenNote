@@ -8,6 +8,7 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   gears: () => import('./gears/spec').then((m) => m.gearsSpec),
   compliant: () => import('./compliant/spec').then((m) => m.compliantSpec),
   kinetics: () => Promise.all([import('./kinetics/spec'), loadSymbolic()]).then(([m]) => m.kineticsSpec),
+  lagrange: () => Promise.all([import('./lagrange/spec'), loadSymbolic()]).then(([m]) => m.lagrangeSpec),
   sdof: () => import('./sdof/spec').then((m) => m.sdofSpec),
   mdof: () => import('./mdof/spec').then((m) => m.mdofSpec),
   robotkin: () => import('./robotkin/spec').then((m) => m.robotKinSpec),

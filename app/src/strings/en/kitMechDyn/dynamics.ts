@@ -123,4 +123,76 @@ export const dynamics = {
       slipping: 'A hoop that slips on a 60° incline',
     },
   },
+  lagrange: {
+    title: 'Lagrangian mechanics',
+    short: 'Lagrange',
+    about:
+      'Equations of motion from the kinetic and potential energy, the equilibria and their small oscillations, ' +
+      'and a simulation.',
+    keywords:
+      'lagrange lagrangian euler-lagrange generalized coordinates kinetic energy potential energy equations of ' +
+      'motion pendulum double pendulum spring pendulum cart equilibrium small oscillations',
+    field: {
+      coords: 'Generalized coordinates',
+      T: 'Kinetic energy, T',
+      V: 'Potential energy, V',
+      forces: 'Generalized forces, Q',
+      params: 'Parameters',
+      q0: 'Starting values, q(0)',
+      qd0: 'Starting rates, q̇(0)',
+      duration: 'Time to simulate',
+      drawing: 'Draw the motion as',
+    },
+    option: {
+      pendulum: 'A pendulum',
+      double: 'A double pendulum',
+      spring: 'A spring pendulum',
+      cart: 'A pendulum on a cart',
+      none: 'No drawing',
+    },
+    hint: {
+      coords: 'Up to three names split by spaces, such as th1 th2. Write a rate as th1_dot.',
+      T: 'In the coordinates, their rates, t, and the parameters, such as 1/2*m*L^2*th_dot^2.',
+      V: 'In the coordinates, t, and the parameters, such as -m*g*L*cos(th).',
+      forces: 'One line per coordinate for forces that aren’t in V, such as damping -c*th_dot. Leave empty for none.',
+      params: 'Name = value pairs, such as m = 1, L = 1, g = 9.81.',
+      q0: 'One per coordinate. Angles are in radians, so type pi/2 for 90°.',
+      qd0: 'One per coordinate, in units per second.',
+    },
+    row: {
+      omega: 'Small-oscillation frequency, ω{n}',
+      period: 'Simulated period',
+      periodRatio: 'Period over the small-oscillation period',
+      drift: 'Largest relative change in T + V',
+      equilibria: 'Equilibria found',
+    },
+    word: {
+      stable: 'Stable',
+      unstable: 'Unstable',
+    },
+    table: {
+      equilibria: 'Equilibria',
+    },
+    col: {
+      q: 'Coordinates',
+      kind: 'Kind',
+      omega: 'ω (rad/s)',
+    },
+    note: {
+      units:
+        'The tool doesn’t carry units through the formulas, so use one consistent set: SI with g = 9.81, or ' +
+        'feet, slugs, and seconds with g = 32.174.',
+      coords: 'Angles are in radians. The equilibria are searched between −7 and 7 in each coordinate.',
+      energy: 'With no generalized forces, T + V should stay constant; its drift checks the simulation.',
+      forced: 'The generalized forces or a T or V that changes with t do work, so T + V isn’t constant.',
+      noDrawing: 'The drawing needs the template’s own coordinates, so it isn’t shown for these.',
+    },
+    example: {
+      pendulum: 'A pendulum released from 90°',
+      double: 'A double pendulum',
+      spring: 'A spring pendulum',
+      cart: 'A pendulum on a sprung cart',
+      damped: 'A damped pendulum',
+    },
+  },
 };
