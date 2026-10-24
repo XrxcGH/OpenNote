@@ -125,6 +125,7 @@
   "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
   "command | offscreen | div[data-scope=palette].panel > div.body > div[role=listbox].results",
   "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option",
-  "tool.chemcalc | target-gap | div.withUnit > div.field > input.input x div.withUnit > select.input"
+  "tool.chemcalc | target-gap | div.withUnit > div.field > input.input x div.withUnit > select.input",
+  "tool.timers | text-overlap | div.column > div.status > span x div[role=textbox][data-scope=editor][data-block=01k6f00000000000000000ygj0].tiptap > p"
  ]
 }
