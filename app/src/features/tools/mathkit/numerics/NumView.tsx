@@ -8,7 +8,8 @@ import type { NumField, NumOut, NumTable } from './common';
 
 const column = (name: string): string => (name.startsWith('~') ? name.slice(1) : say(`kitMath.numerics.col.${name}`));
 
-export const lineText = (item: NumOut['lines'][number]): string => say(`kitMath.numerics.line.${item.key}`, item.vars);
+export const lineText = (item: NumOut['lines'][number], ns = 'numerics'): string =>
+  say(`kitMath.${ns}.line.${item.key}`, item.vars);
 
 function TableView({ table }: { table: NumTable }) {
   const title = say(`kitMath.numerics.table.${table.title}`);
@@ -78,11 +79,11 @@ export function FieldView({ field }: { field: NumField }) {
   );
 }
 
-export function NumView({ out, answer }: { out: NumOut; answer: string }) {
+export function NumView({ out, answer, ns = 'numerics' }: { out: NumOut; answer: string; ns?: string }) {
   const first = out.tables[0];
   return (
     <>
-      <Result>{out.lines.map(lineText).join('\n')}</Result>
+      <Result>{out.lines.map((item) => lineText(item, ns)).join('\n')}</Result>
       {out.tables.map((one, index) => (
         <TableView key={index} table={one} />
       ))}

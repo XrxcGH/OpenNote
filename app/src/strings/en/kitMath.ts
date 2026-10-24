@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one catalog of the mathematics tools strings, split it when it grows again
 // The engineering mathematics kit (the math lane of the course tool kits): one window with a tab for each tool.
 // Owner: the math lane. The shared words come first, then one group for each tool, then the worked-step wording.
 export const kitMath = {
@@ -97,6 +98,19 @@ export const kitMath = {
     mcUndefined: 'Undefined variable or function: {detail}.',
     mcNotFunction: 'That is not a function.',
     mcDepth: 'Functions call each other too deeply.',
+    laDivideByZero: 'Dividing by zero in {detail}.',
+    laTooBig: 'A number there is too large to work with exactly.',
+    laBadEntry: '{detail} is not a number. Use integers, decimals, or fractions such as 3/4.',
+    laEmpty: 'Type the entries of {detail}, one row per line.',
+    laRagged: 'The rows of {detail} must all have the same number of entries.',
+    laTooLarge: 'The exact tools take matrices up to {detail} by {detail}.',
+    laShapes: 'These sizes do not fit together: {detail}.',
+    laNotSquare: '{detail} must be a square matrix.',
+    laWide: 'QR by Gram-Schmidt needs at least as many rows as columns.',
+    laDependent: 'Column {detail} depends on the columns before it, so Gram-Schmidt cannot continue.',
+    laDependentColumns: 'The columns of A depend on each other, so there is more than one least-squares solution.',
+    laNotBasis: '{detail} is not a basis: its columns are not independent.',
+    laNoConverge: 'The eigenvalues could not be found.',
   },
   series: {
     title: 'Series and convergence',
@@ -596,6 +610,132 @@ export const kitMath = {
       explainIndex: '{name}(...) picks entries of the {size} matrix. Counting runs down the columns.',
     },
   },
+  linalg: {
+    title: 'Linear algebra workbench',
+    keywords:
+      'linear algebra matrix gaussian elimination gauss jordan rref inverse determinant ' +
+      'cofactor rank null space column space lu qr gram schmidt eigenvalue eigenvector ' +
+      'diagonalization projection least squares svd singular value change of basis',
+    operation: 'What to do',
+    op: {
+      solve: 'Solve A x = b',
+      rref: 'Row reduce (RREF) and rank',
+      inverse: 'Inverse by [A | I]',
+      det: 'Determinant',
+      spaces: 'Null, column, and row spaces',
+      lu: 'LU factorization with row exchanges',
+      qr: 'QR by Gram-Schmidt',
+      eigen: 'Eigenvalues and diagonalization',
+      svd: 'Singular value decomposition',
+      projection: 'Projection onto the column space',
+      lsq: 'Least squares for A x = b',
+      polyfit: 'Fit a polynomial to points',
+      coords: 'Coordinates in a basis',
+      transition: 'Change of basis matrix',
+      map: 'Matrix of a map in two bases',
+    },
+    matrixLabel: {
+      solve: 'Coefficient matrix A, one row per line',
+      rref: 'Matrix A, one row per line',
+      inverse: 'Square matrix A, one row per line',
+      det: 'Square matrix A, one row per line',
+      spaces: 'Matrix A, one row per line',
+      lu: 'Square matrix A, one row per line',
+      qr: 'Matrix A with independent columns, one row per line',
+      eigen: 'Square matrix A, one row per line',
+      svd: 'Matrix A, one row per line',
+      projection: 'Matrix A whose columns span the space',
+      lsq: 'Matrix A, one row per line',
+      coords: 'Basis B, one basis vector per column',
+      transition: 'Basis B, one basis vector per column',
+      map: 'Standard matrix of the map, T',
+    },
+    vectorLabel: {
+      solve: 'Right side b',
+      projection: 'Vector b to project',
+      lsq: 'Right side b',
+      coords: 'Vector v',
+    },
+    field: {
+      degree: 'Degree of the polynomial',
+      points: 'Points, one "x, y" per line',
+      basisIn: 'Basis B of the input space, one vector per column',
+      basisOut: 'Basis C of the output space, one vector per column',
+      basisC: 'Basis C, one basis vector per column',
+    },
+    assume: {
+      solve:
+        'Entries may be integers, decimals, or fractions such as 3/4. All arithmetic is exact, up ' +
+        'to 8 by 8. A column of x is free when its column has no pivot.',
+      rref:
+        'Reduced row echelon form by Gauss-Jordan elimination, with every row operation shown. ' +
+        'Arithmetic is exact.',
+      inverse: 'Row reduces [A | I]. If A cannot be reduced to I it has no inverse.',
+      det:
+        'Shown by cofactor expansion along the first row (up to 4 by 4) and by elimination to a ' +
+        'triangle, where each swap changes the sign.',
+      spaces:
+        'Bases come from the reduced form: the pivot columns of A span the column space, the ' +
+        'nonzero rows of the reduced form span the row space.',
+      lu:
+        'Partial pivoting: the largest entry in each column is used as the pivot, giving P A = L ' +
+        'U. Arithmetic is exact.',
+      qr:
+        'Gram-Schmidt in decimals (square roots are not fractions). Q has orthonormal columns and ' +
+        'R is upper triangular.',
+      eigen:
+        'Eigenvalues that are rational are found exactly from the characteristic polynomial. ' +
+        'Others are given in decimals, and the diagonalization is shown only when all are ' +
+        'rational.',
+      svd:
+        'Decimal arithmetic. The singular values are the square roots of the eigenvalues of A ' +
+        'transpose A, largest first.',
+      projection:
+        'Solves the normal equations A transpose A x = A transpose b exactly. The projection is A ' +
+        'x, and the error is perpendicular to every column of A.',
+      lsq:
+        'The best fit in the sense of the smallest sum of squared errors, from the normal ' +
+        'equations in exact arithmetic. The columns of A must be independent.',
+      polyfit:
+        'Builds the matrix with columns 1, x, x squared, and so on, and solves the normal ' +
+        'equations in exact arithmetic.',
+      coords: 'The coordinates c satisfy B c = v, where the columns of B are the basis vectors.',
+      transition: 'Converts coordinates in basis B to coordinates in basis C by C inverse times B.',
+      map:
+        'If T takes the input space to the output space, its matrix in the bases B and C is C ' +
+        'inverse times T times B.',
+    },
+    line: {
+      laNone: 'The system has no solution, because a row of the reduced form says 0 = {value}.',
+      laUnique: 'The system has exactly one solution: x = {x}.',
+      laInfinite: 'The system has infinitely many solutions, with {free} free variable(s). One solution is x = {x}.',
+      laRank: 'The rank is {rank} and the nullity is {nullity}.',
+      laPivots: 'The pivot columns are {cols}.',
+      laInverse: 'The inverse has rows: {inverse}.',
+      laSingular: 'The matrix is singular, so it has no inverse.',
+      laDet: 'The determinant is {det}.',
+      laNullText: 'A basis for the null space: {basis}.',
+      laColText: 'A basis for the column space: {basis}.',
+      laRowText: 'A basis for the row space: {basis}.',
+      laEigenvalues: 'The rational eigenvalues are {values}.',
+      laDefective:
+        'The matrix is not diagonalizable: the eigenvalue {value} repeats {algebraic} times but ' +
+        'has only {geometric} independent eigenvector(s).',
+      laDiagonalizable: 'The matrix is diagonalizable. Eigenvectors by eigenvalue: {vectors}.',
+      laEigenApprox: 'The other eigenvalues are not rational. In decimals they are {values}.',
+      laLu: 'The factorization P A = L U checks exactly: {check}.',
+      laQr: 'The factorization Q R rebuilds A with an error of {error}.',
+      laProjection: 'The projection is p = {p}, and the error is r = {r}.',
+      laLsq: 'The least-squares solution is x = {x}. The squared error is {e2}, so the error length is {e}.',
+      laFit:
+        'The coefficients, constant term first, are {coefficients}. The fit is y = {model}, with ' +
+        'error length {e}.',
+      laSingularValues: 'The singular values are {values}. The rank is {rank}.',
+      laCoordinates: 'The coordinates are {c}.',
+      laTransitionLine: 'The change of basis matrix has rows: {p}.',
+      laMapLine: 'The matrix of the map in these bases has rows: {m}.',
+    },
+  },
   step: {
     series: 'The series is the sum of the terms a(n) = {term}, starting at n = {start}.',
     nthDiverge: 'The n-th term test: the limit of the terms is {limit}, which is not 0, so the series diverges.',
@@ -711,5 +851,53 @@ export const kitMath = {
     gridSize: 'The grid spacing:',
     heatStability: 'The time step has to stay under the stability limit:',
     fftPad: 'The samples are padded to a power of two:',
+    laSetup: 'The problem:',
+    laRowOp: 'Row operation {op}:',
+    laSwap: 'Swap rows {op}:',
+    laScale: 'Scale a row {op}:',
+    laInconsistent: 'A row of zeros on the left with {value} on the right says 0 = {value}, which is impossible.',
+    laReadSolution: 'Every column has a pivot, so the solution can be read off:',
+    laFreeVariables:
+      'The columns without a pivot are free ({free}). Setting each free variable to a parameter ' + 't gives:',
+    laReadInverse: 'The left half is now the identity, so the right half is the inverse:',
+    laNoInverse: 'The reduced form has only {rank} pivots for {n} columns, so A is singular and has no inverse.',
+    laCofactor: 'Cofactor expansion along the first row, with signs +, -, +, and so on:',
+    laDiagonalProduct: 'The determinant is the product of the diagonal, with a minus sign for each swap:',
+    laNullBasis: 'Each free column gives a null space vector:',
+    laColBasis: 'The columns of A that hold pivots span the column space:',
+    laRowBasis: 'The nonzero rows of the reduced form span the row space:',
+    laRankNullity: 'The rank and the nullity add up to the number of columns:',
+    laLuMultiplier: 'Eliminate with multiplier {l}: {op}.',
+    laLuResult: 'The factors:',
+    laLuCheck: 'Multiplying out:',
+    laGramSchmidt: 'Subtract from column {j} its components along the earlier q vectors:',
+    laNormalize: 'Divide by the length to get q{j}:',
+    laQrResult: 'The factors, with the largest entry of Q R minus A equal to {error}:',
+    laNormal: 'The normal equations:',
+    laLsqSolution: 'The solution of the normal equations:',
+    laProjectionVector: 'The projection and the error:',
+    laOrthogonal: 'The error is perpendicular to every column of A:',
+    laAtA: 'The matrix A transpose A is symmetric:',
+    laSigma: 'Its eigenvalues, largest first:',
+    laSigmaRoots: 'The singular values are their square roots:',
+    laSvdV: 'The unit eigenvectors of A transpose A are the columns of V:',
+    laSvdU: 'The columns of U come from A v divided by sigma:',
+    laSvdCheck: 'The largest entry of the error when the factors are multiplied back:',
+    laCoords: 'The coordinates solve:',
+    laCoordsResult: 'The coordinates:',
+    laTransition: 'The columns of B written in the basis C:',
+    laTransitionResult: 'The change of basis matrix:',
+    laMapRule: 'The matrix of a map in bases:',
+    laMapProduct: 'First apply T to the basis B:',
+    laMapResult: 'The matrix of the map:',
+    laCharPoly: 'The characteristic polynomial and its factors:',
+    laEigenspace:
+      'For the eigenvalue {value} (repeated {algebraic} times) the eigenvectors solve the ' +
+      'system below. There are {geometric} independent eigenvector(s):',
+    laNotDiagonalizable:
+      'Too few independent eigenvectors for the eigenvalue {value}, so the matrix is not ' + 'diagonalizable.',
+    laDiagonalize: 'With the eigenvectors as the columns of P and the eigenvalues on the diagonal of D:',
+    laDiagCheck: 'Multiplying back:',
+    laIrrational: 'The remaining factor has no rational root. Its roots in decimals are {values}:',
   },
 } as const;

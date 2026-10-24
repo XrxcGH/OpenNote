@@ -17,4 +17,5 @@ export const MATH_TOOLS: readonly MathToolMeta[] = [
   { id: 'fourier', title: 'kitMath.fourier.title', keywords: 'kitMath.fourier.keywords', icon: 'Atom' },
   { id: 'numerics', title: 'kitMath.numerics.title', keywords: 'kitMath.numerics.keywords', icon: 'Atom' },
   { id: 'console', title: 'kitMath.console.title', keywords: 'kitMath.console.keywords', icon: 'Atom' },
+  { id: 'linalg', title: 'kitMath.linalg.title', keywords: 'kitMath.linalg.keywords', icon: 'Atom' },
 ];
