@@ -49,7 +49,7 @@ let loading: Promise<void> | null = null;
 
 /** KaTeX is large, so it loads when the first equation is drawn and not with the rest of the tools. */
 function useRenderer(): Renderer | null {
-  const [render, setRender] = useState<Renderer | null>(renderer);
+  const [render, setRender] = useState<Renderer | null>(() => renderer);
   useEffect(() => {
     if (renderer) return;
     loading ??= import('../../../math').then((math) => {
