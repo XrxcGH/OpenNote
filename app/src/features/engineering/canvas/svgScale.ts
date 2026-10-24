@@ -1,4 +1,5 @@
-// The engineering diagrams' copy of math/svgScale.ts (features may not import each other's files). Keeps an SVG plot's text the same size on screen. The picture scales with its box, so a label set at 11 px in the
+// The engineering diagrams' copy of math/svgScale.ts: features may not import each other's files.
+// Keeps an SVG plot's text the same size on screen. The picture scales with its box, so a label set at 11 px in the
 // picture's own units shrinks to 6 px in a narrow column. The hook writes --svg-k (picture units per screen pixel,
 // kept in a calm range) onto the element; the plot's text and halo sizes multiply by it. It follows the element
 // across renders, so a plot that appears late (after a parse) is still measured.
