@@ -120,6 +120,12 @@ export const steps = {
   compliantElasticaResult: 'The elastica gives the tip position and the end angle:',
   compliantPrbmSpring:
     'Pseudo-rigid-body model: a rigid link of length γL pinned at the characteristic pivot, with a torsion spring of stiffness K.',
+  compliantPrbmMomentSpring:
+    'Pseudo-rigid-body model for an end moment: a link of length γL with γ = 0.7346 and a torsion spring K = γK_Θ EI/L with K_Θ = 2.0643.',
+  compliantCombinedLoad:
+    'With both an end force and an end moment, the end-force constants are only approximate. The elastica is the answer here.',
+  compliantBuckled:
+    'The compressive end load is {ratio} times the critical load, so the straight shape is unstable: the beam buckles.',
   compliantGuidedSpring:
     'A fixed-guided flexure bends in an S shape, so model each half as a cantilever of length L/2 with its own pivot and spring.',
   compliantPivotSpring: 'A short flexural pivot acts like a pin at its middle with a torsion spring K = EI/l.',
@@ -127,7 +133,7 @@ export const steps = {
     'The spring torque balances the moment of the load about the pivot. Solve for the pseudo-rigid angle Θ:',
   compliantPrbmTip: 'The link end gives the tip position, and the end angle is c_θ times Θ:',
   compliantGuidedTip: 'The two halves give the tip position, and the guided end doesn’t turn:',
-  compliantOutOfRange: 'Θ is beyond about 64°, where the published constants lose accuracy. Trust the elastica here.',
+  compliantOutOfRange: 'Θ is beyond about {limit}°, where the published constants lose accuracy. Trust the elastica here.',
   compliantCompare: 'The two tip positions differ by {percent}% of the length.',
   compliantStress: 'The largest stress adds the bending stress at the largest moment to the axial stress there.',
   robotDynEquation: 'The equations of motion of the arm, one row per joint:',

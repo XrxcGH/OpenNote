@@ -65,10 +65,13 @@ describe('compliant mechanisms', () => {
     expect(r.positionError).toBeLessThan(0.01);
   });
 
-  it('stress is the bending stress at the root plus the axial stress', () => {
-    const r = ok(solveCompliant({ ...unit, force: 2 * EI }));
-    const I = (0.01 * 1e-9) / 12;
-    expect(r.stress.bending).toBeCloseTo((Math.abs(r.exact.rootMoment) * 0.0005) / I, 0);
+  it('stress at a small load is the root bending stress 6FL/(wt^2)', () => {
+    const P = 1e-4 * EI;
+    const r = ok(solveCompliant({ ...unit, force: P }));
+    // By hand: M = F L at the root, sigma = M (t/2) / (w t^3 / 12) = 6 F L / (w t^2).
+    const sigma = (6 * P * 1) / (0.01 * 1e-6);
+    expect(Math.abs(r.stress.bending - sigma) / sigma).toBeLessThan(1e-6);
+    expect(Math.abs(r.stress.axial)).toBeLessThan(1e-3 * sigma);
   });
 
   it('rejects impossible input with a reason', () => {
@@ -77,5 +80,76 @@ describe('compliant mechanisms', () => {
     expect(solveCompliant({ ...unit, type: 'pivot', rigidLength: 0 })).toEqual({ ok: false, error: 'pivotRigid' });
     expect(solveCompliant({ ...unit, type: 'fixedGuided', moment: 1 })).toEqual({ ok: false, error: 'guidedMoment' });
     expect(solveCompliant({ ...unit, force: Number.NaN })).toEqual({ ok: false, error: 'notNumber' });
+  });
+});
+
+// The complete elliptic integrals by the arithmetic-geometric mean, for the buckled elastica.
+function ellipticKE(k: number): [number, number] {
+  let a = 1,
+    g = Math.sqrt(1 - k * k),
+    c = k,
+    sum = (k * k) / 2,
+    pow = 0.5;
+  while (Math.abs(c) > 1e-15) {
+    const an = (a + g) / 2;
+    c = (a - g) / 2;
+    g = Math.sqrt(a * g);
+    a = an;
+    pow *= 2;
+    sum += pow * c * c;
+  }
+  const K = Math.PI / (2 * a);
+  return [K, K * (1 - sum)];
+}
+
+describe('compliant mechanisms: end moment and buckling', () => {
+  it('a pure end moment ML/EI = 1 uses the moment-load model, within 1% of the circular arc', () => {
+    const r = ok(solveCompliant({ ...unit, force: 0, moment: EI }));
+    // Exact: a circular arc of curvature M/EI = 1, so a/L = sin 1, b/L = 1 - cos 1, theta0 = 1 rad.
+    expect(r.exact.a).toBeCloseTo(Math.sin(1), 6);
+    expect(r.exact.b).toBeCloseTo(1 - Math.cos(1), 6);
+    expect(r.exact.theta).toBeCloseTo(1, 6);
+    // Howell's moment-load model: K = 1.5164 EI/L, Theta = 1/1.5164, theta0 = 1.5164 Theta = 1 rad.
+    expect(r.prbm.constants).toBe('moment');
+    expect(r.prbm.a).toBeCloseTo(0.846, 3);
+    expect(r.prbm.b).toBeCloseTo(0.4501, 3);
+    expect((r.prbm.endAngle * 180) / Math.PI).toBeCloseTo(57.3, 1);
+    expect(Math.abs(r.prbm.a - Math.sin(1))).toBeLessThan(0.01);
+    expect(Math.abs(r.prbm.b - (1 - Math.cos(1)))).toBeLessThan(0.01);
+    expect(r.positionError).toBeLessThan(0.011);
+  });
+
+  it('a force with a moment keeps the end-force constants and says they are approximate', () => {
+    const r = ok(solveCompliant({ ...unit, force: EI, moment: EI }));
+    expect(r.prbm.constants).toBe('force');
+    expect(r.steps.some((step) => step.key === 'compliantCombinedLoad')).toBe(true);
+  });
+
+  it('a compressive load of 1.5 times the critical load buckles the cantilever', () => {
+    const Pcr = (Math.PI ** 2 * EI) / 4;
+    const r = ok(solveCompliant({ ...unit, force: 1.5 * Pcr, forceAngle: Math.PI }));
+    expect(r.buckled).toBe(true);
+    expect(r.critical).toBeCloseTo(Pcr, 12);
+    expect(r.steps.some((step) => step.key === 'compliantBuckled')).toBe(true);
+    // Independent: the buckled cantilever has P/Pcr = (2K(k)/pi)^2, tip deflection 2k/K, tip x = 2E/K - 1, and end
+    // angle 2 asin k. Solve K(k) = (pi/2) sqrt(1.5) by bisection.
+    let [lo, hi] = [0, 0.999];
+    for (let i = 0; i < 80; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (ellipticKE(mid)[0] < (Math.PI / 2) * Math.sqrt(1.5)) lo = mid;
+      else hi = mid;
+    }
+    const k = lo;
+    const [K, E] = ellipticKE(k);
+    expect(Math.abs(r.exact.b)).toBeCloseTo((2 * k) / K, 4);
+    expect(r.exact.a).toBeCloseTo((2 * E) / K - 1, 4);
+    expect(Math.abs(r.exact.theta)).toBeCloseTo(2 * Math.asin(k), 4);
+  });
+
+  it('below the critical load the straight shape stands', () => {
+    const Pcr = (Math.PI ** 2 * EI) / 4;
+    const r = ok(solveCompliant({ ...unit, force: 0.5 * Pcr, forceAngle: Math.PI }));
+    expect(r.buckled).toBe(false);
+    expect(Math.abs(r.exact.b)).toBeLessThan(1e-6);
   });
 });

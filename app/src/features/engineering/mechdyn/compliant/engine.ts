@@ -1,16 +1,20 @@
 // Compliant mechanisms: large deflection of flexures by the pseudo-rigid-body model (PRBM), checked against the exact
 // elastica. The elastica is EI dtheta/ds = M with dM/ds = Fx sin(theta) - Fy cos(theta), solved by shooting on the
 // root moment (Brent on a bracket scan, fourth-order Runge-Kutta along the beam). PRBM constants for an end force are
-// gamma = 0.85, K_Theta = 2.65, c_theta = 1.24 (Howell and Midha, 1995); a small-length flexural pivot uses K = EI/l.
+// gamma = 0.85, K_Theta = 2.65, c_theta = 1.24 (Howell and Midha, 1995), and for an end moment alone gamma = 0.7346,
+// K_Theta = 2.0643, c_theta = 1.5164 (Howell, Compliant Mechanisms, 2001); a small-length flexural pivot uses K = EI/l.
 // The beam starts along +x, fixed at the origin; forces are in N, lengths in m, angles in rad.
 import { bracketScan } from '../num';
 import { tex } from '../tex';
 import { fail, finite, fmt, type MechStep, type Outcome, type Plot } from '../types';
 
 export const PRBM = { gamma: 0.85, kTheta: 2.65, cTheta: 1.24, maxTheta: (64.3 * Math.PI) / 180 } as const;
+/** The end-moment constants: the beam bends into a circular arc, and the model tracks it to Theta = 124.4 degrees. */
+export const PRBM_MOMENT = { gamma: 0.7346, kTheta: 2.0643, cTheta: 1.5164, maxTheta: (124.4 * Math.PI) / 180 } as const;
 export const SOURCES = [
   // checks-disable-next-line length: one citation, kept whole so it reads as written
   'Howell, L. L., and Midha, A., Parametric deflection approximations for end-loaded, large-deflection beams in compliant mechanisms, ASME Journal of Mechanical Design 117 (1995).',
+  'Howell, L. L., Compliant Mechanisms, Wiley (2001), chapter 5.',
 ];
 
 export type FlexureType = 'cantilever' | 'fixedGuided' | 'pivot';
@@ -57,6 +61,8 @@ export interface ElasticaResult {
   rootMoment: number;
   /** Largest bending moment magnitude in the flexible parts, and the axial force there. */
   maxMoment: number;
+  /** Total potential energy: strain energy less the work of the end force and moment, J. */
+  energy: number;
   axialAtMax: number;
   points: [number, number][];
 }
@@ -85,7 +91,8 @@ export function elastica(segments: readonly Segment[], Fx: number, Fy: number, M
     let y = [0, 0, 0, m0];
     const pts: [number, number][] = [[0, 0]];
     let maxM = Math.abs(m0),
-      axial = Fx;
+      axial = Fx,
+      strain = 0;
     for (let i = 0; i < STEPS; i += 1) {
       const s = i * h + h * 1e-9;
       const k1 = rhs(s, y);
@@ -104,27 +111,39 @@ export function elastica(segments: readonly Segment[], Fx: number, Fy: number, M
       y = y.map((v, j) => v + (h / 6) * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]));
       if (keep) {
         pts.push([y[0], y[1]]);
+        if (Number.isFinite(ei(s + h / 2))) strain += (h * y[3] * y[3]) / (2 * ei(s + h / 2));
         if (Number.isFinite(ei(s + h / 2)) && Math.abs(y[3]) > maxM) {
           maxM = Math.abs(y[3]);
           axial = Fx * Math.cos(y[2]) + Fy * Math.sin(y[2]);
         }
       }
     }
-    return { y, pts, maxM, axial };
+    const energy = strain - Fx * y[0] - Fy * y[1] - M0 * y[2];
+    return { y, pts, maxM, axial, energy };
   };
   const reach = 1.02 * (total * Math.hypot(Fx, Fy) + Math.abs(M0)) + 1e-12;
   const roots = bracketScan((m) => shoot(m).y[3] - M0, -reach, reach, 160);
   if (roots.length === 0) return null;
-  // Of several equilibria (after buckling), keep the one nearest the small-deflection answer.
+  // Of several equilibria (after buckling), keep the stable one, the lowest total potential energy; the straight shape
+  // under a compressive load past the critical load is an equilibrium too, but an unstable one. A tie (a symmetric
+  // buckle) goes to the root nearest the small-deflection answer, then to the positive one.
   const linear = total * Fy + M0;
-  const root = roots.reduce((best, r) => (Math.abs(r - linear) < Math.abs(best - linear) ? r : best));
-  const end = shoot(root, true);
+  const ends = roots.map((r) => ({ r, end: shoot(r, true) }));
+  const scale = total * Math.hypot(Fx, Fy) + Math.abs(M0) + 1e-300;
+  const better = (p: (typeof ends)[number], q: (typeof ends)[number]) => {
+    const de = p.end.energy - q.end.energy;
+    if (Math.abs(de) > 1e-9 * scale) return de < 0;
+    const dl = Math.abs(p.r - linear) - Math.abs(q.r - linear);
+    return Math.abs(dl) > 1e-9 * scale ? dl < 0 : p.r > q.r;
+  };
+  const { r: root, end } = ends.reduce((best, p) => (better(p, best) ? p : best));
   return {
     a: end.y[0],
     b: end.y[1],
     theta: end.y[2],
     rootMoment: root,
     maxMoment: end.maxM,
+    energy: end.energy,
     axialAtMax: end.axial,
     points: end.pts.filter((_, i) => i % 8 === 0 || i === end.pts.length - 1),
   };
@@ -136,9 +155,22 @@ export interface CompliantResult {
   /** PL^2/EI, the load index. */
   loadIndex: number;
   exact: ElasticaResult;
-  prbm: { Theta: number; a: number; b: number; endAngle: number; K: number; pivot: [number, number]; inRange: boolean };
+  prbm: {
+    Theta: number;
+    a: number;
+    b: number;
+    endAngle: number;
+    K: number;
+    pivot: [number, number];
+    inRange: boolean;
+    /** Which published constants the model used. */
+    constants: 'force' | 'moment';
+  };
   /** Distance between the two tip positions over the length, as a fraction. */
   positionError: number;
+  /** Euler critical load of the flexure's compressive mode, N, and whether the compressive end load reaches it. */
+  critical: number | null;
+  buckled: boolean;
   stress: { bending: number; axial: number; max: number };
   shape: Plot;
   steps: MechStep[];
@@ -175,10 +207,15 @@ interface Model {
   endAngle: (T: number) => number;
 }
 
+/** The PRBM constants for the load: an end moment alone has its own; an end force, with or without a moment, uses
+ * the end-force ones (approximate once a moment is added). */
+export const constantsFor = (input: CompliantInput) =>
+  input.type === 'cantilever' && input.force === 0 && input.moment !== 0 ? PRBM_MOMENT : PRBM;
+
 /** The pseudo-rigid-body model: a pin at the characteristic pivot with a torsion spring. */
 function prbmModel(input: CompliantInput, EI: number, Fx: number, Fy: number, steps: MechStep[]): Model {
   const { type, length: L, moment, rigidLength } = input;
-  const { gamma, kTheta, cTheta } = PRBM;
+  const { gamma, kTheta, cTheta } = constantsFor(input);
   if (type === 'pivot') {
     const K = EI / L;
     const link = L / 2 + rigidLength;
@@ -190,8 +227,9 @@ function prbmModel(input: CompliantInput, EI: number, Fx: number, Fy: number, st
   const len = guided ? L / 2 : L;
   const K = (gamma * kTheta * EI) / len;
   const link = gamma * len;
+  const momentOnly = constantsFor(input) === PRBM_MOMENT;
   steps.push({
-    key: guided ? 'compliantGuidedSpring' : 'compliantPrbmSpring',
+    key: guided ? 'compliantGuidedSpring' : momentOnly ? 'compliantPrbmMomentSpring' : 'compliantPrbmSpring',
     math:
       `K = \\gamma K_\\Theta\\frac{EI}{${guided ? 'L/2' : 'L'}} = ${gamma} \\times ${kTheta} \\times ` +
       `\\frac{${tex(EI)}}{${tex(len)}} = ${tex(K)}\\ \\mathrm{N\\,m/rad}`,
@@ -234,6 +272,36 @@ function balanceModel(type: FlexureType, model: Model, steps: MechStep[]): Solve
   return { Theta, tip: [pa, pb], shape };
 }
 
+/** The exact shape with its steps, and whether a compressive end load has buckled the flexure. */
+function exactWithSteps(input: CompliantInput, EI: number, Fx: number, Fy: number, steps: MechStep[]) {
+  const exact = exactShape(input, EI, Fx, Fy);
+  if (!exact) return null;
+  // A cantilever buckles at pi^2 EI / (4 L^2); a fixed-guided beam is two such halves of length L/2.
+  const { type, length: L } = input;
+  const half = type === 'fixedGuided' ? L / 2 : L;
+  const critical = type === 'pivot' ? null : (Math.PI ** 2 * EI) / (4 * half * half);
+  const buckled = critical !== null && -Fx >= critical;
+  steps.push({
+    key: 'compliantElastica',
+    math: `EI\\frac{d\\theta}{ds} = M,\\quad \\frac{dM}{ds} = F_x\\sin\\theta - F_y\\cos\\theta,\\quad \\theta(0) = 0`,
+  });
+  steps.push({
+    key: 'compliantElasticaResult',
+    math:
+      `M(0) = ${tex(exact.rootMoment)}\\ \\mathrm{N\\,m}:\\quad a = ${tex(exact.a)}\\ \\mathrm{m},\\ ` +
+      `b = ${tex(exact.b)}\\ \\mathrm{m},\\ \\theta_0 = ${deg(exact.theta)}^\\circ`,
+  });
+  if (critical !== null && buckled) {
+    const arm = type === 'fixedGuided' ? '(L/2)' : 'L';
+    steps.push({
+      key: 'compliantBuckled',
+      vars: { ratio: fmt(-Fx / critical, 4) },
+      math: `P_{cr} = \\frac{\\pi^2 EI}{4${arm}^2} = ${tex(critical)}\\ \\mathrm{N}`,
+    });
+  }
+  return { exact, critical, buckled };
+}
+
 export function solveCompliant(input: CompliantInput): Outcome<CompliantResult> {
   const { type, length: L, E, width, thickness, force, forceAngle, moment, rigidLength } = input;
   if (!finite(L, E, width, thickness, force, forceAngle, moment, rigidLength)) return fail('notNumber');
@@ -253,24 +321,17 @@ export function solveCompliant(input: CompliantInput): Outcome<CompliantResult> 
   ];
   const reach = type === 'pivot' ? L + rigidLength : L;
   const loadIndex = (force * reach * reach) / EI;
-  const exact = exactShape(input, EI, Fx, Fy);
-  if (!exact) return fail('noConvergence');
-  steps.push({
-    key: 'compliantElastica',
-    math: `EI\\frac{d\\theta}{ds} = M,\\quad \\frac{dM}{ds} = F_x\\sin\\theta - F_y\\cos\\theta,\\quad \\theta(0) = 0`,
-  });
-  steps.push({
-    key: 'compliantElasticaResult',
-    math:
-      `M(0) = ${tex(exact.rootMoment)}\\ \\mathrm{N\\,m}:\\quad a = ${tex(exact.a)}\\ \\mathrm{m},\\ ` +
-      `b = ${tex(exact.b)}\\ \\mathrm{m},\\ \\theta_0 = ${deg(exact.theta)}^\\circ`,
-  });
+  const solvedExact = exactWithSteps(input, EI, Fx, Fy, steps);
+  if (!solvedExact) return fail('noConvergence');
+  const { exact, critical, buckled } = solvedExact;
   const model = prbmModel(input, EI, Fx, Fy, steps);
+  if (type === 'cantilever' && force !== 0 && moment !== 0) steps.push({ key: 'compliantCombinedLoad' });
   const solved = balanceModel(type, model, steps);
   if (!solved) return fail('noConvergence');
   const { Theta, tip } = solved;
-  const inRange = type === 'pivot' || Math.abs(Theta) <= PRBM.maxTheta;
-  if (!inRange) steps.push({ key: 'compliantOutOfRange' });
+  const inRange = type === 'pivot' || Math.abs(Theta) <= constantsFor(input).maxTheta;
+  const limit = (constantsFor(input).maxTheta * 180) / Math.PI;
+  if (!inRange) steps.push({ key: 'compliantOutOfRange', vars: { limit: fmt(limit, 3) } });
   const positionError = Math.hypot(tip[0] - exact.a, tip[1] - exact.b) / reach;
   steps.push({ key: 'compliantCompare', vars: { percent: fmt(100 * positionError, 3) } });
   const c = thickness / 2;
@@ -296,8 +357,19 @@ export function solveCompliant(input: CompliantInput): Outcome<CompliantResult> 
       EI,
       loadIndex,
       exact,
-      prbm: { Theta, a: tip[0], b: tip[1], endAngle: model.endAngle(Theta), K: model.K, pivot: model.pivot, inRange },
+      prbm: {
+        Theta,
+        a: tip[0],
+        b: tip[1],
+        endAngle: model.endAngle(Theta),
+        K: model.K,
+        pivot: model.pivot,
+        inRange,
+        constants: constantsFor(input) === PRBM_MOMENT ? 'moment' : 'force',
+      },
       positionError,
+      critical,
+      buckled,
       stress: { bending, axial, max },
       shape: {
         x: 'x',

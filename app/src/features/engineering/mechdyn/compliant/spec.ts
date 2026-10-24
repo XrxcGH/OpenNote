@@ -62,7 +62,9 @@ export const compliantSpec: ToolSpec = {
       { id: 'axial', value: q(r.stress.axial, 'stress') },
       { id: 'stress', value: q(r.stress.max, 'stress'), sym: '\\sigma_{max}', answer: true },
     ];
-    const notes = ['elastic', 'sign', r.prbm.inRange ? 'prbm' : 'prbmRange'];
+    const prbm = r.prbm.constants === 'moment' ? 'prbmMoment' : 'prbm';
+    const notes = ['elastic', 'sign', r.prbm.inRange ? prbm : `${prbm}Range`];
+    if (r.buckled) notes.push('buckled');
     return { rows, steps: r.steps, notes, plots: [r.shape], sources: SOURCES };
   },
 };

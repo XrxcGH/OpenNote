@@ -313,6 +313,9 @@ export const mechanisms = {
       sign: 'The beam starts along +x from a fixed root; angles and moments are counterclockwise positive.',
       prbm: 'The model uses γ = 0.85, K_Θ = 2.65, and c_θ = 1.24, which hold for Θ up to about 64°.',
       prbmRange: 'Θ is beyond about 64°, where the model’s constants lose accuracy. Trust the elastica here.',
+      prbmMoment: 'For an end moment alone the model uses γ = 0.7346, K_Θ = 2.0643, and c_θ = 1.5164, which hold for Θ up to about 124°.',
+      prbmMomentRange: 'Θ is beyond about 124°, where the model’s constants lose accuracy. Trust the elastica here.',
+      buckled: 'The compressive load is past the critical load. The straight shape is unstable, so the elastica shows the buckled shape.',
     },
     example: {
       index2: 'Cantilever with PL²/EI = 2',
