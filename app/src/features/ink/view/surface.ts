@@ -96,7 +96,13 @@ export class InkSurface {
     this.liveCtx = this.live.getContext('2d', { desynchronized: true }) as CanvasRenderingContext2D | null;
     this.chrome = doc.createElement('div');
     this.chrome.dataset.inkChrome = '';
-    Object.assign(this.chrome.style, { position: 'absolute', left: '0', top: '0', pointerEvents: 'none' });
+    Object.assign(this.chrome.style, {
+      position: 'absolute',
+      left: '0',
+      top: '0',
+      overflow: 'clip',
+      pointerEvents: 'none',
+    });
     viewport.viewport.parentElement?.append(this.chrome);
     this.camera = viewport.camera();
     this.findLayer();
@@ -493,6 +499,8 @@ export class InkSurface {
     if (w !== this.size.w || h !== this.size.h || camera.dpr !== this.size.dpr) {
       this.size = { w, h, dpr: camera.dpr };
       Object.assign(this.overlay.style, { width: `${w}px`, height: `${h}px` });
+      // The rulers and compass stay inside the page's own box, so they never paint over a side pane.
+      Object.assign(this.chrome.style, { width: `${w}px`, height: `${h}px` });
       Object.assign(this.live.style, { width: `${w}px`, height: `${h}px` });
       this.live.width = Math.round(w * camera.dpr);
       this.live.height = Math.round(h * camera.dpr);

@@ -41,6 +41,11 @@ const MAX_PIECES = 64;
 const FILTER_REACH = 2;
 /** A miter longer than this many half widths becomes a round join, as in SVG. */
 export const MITER_LIMIT = 4;
+/**
+ * A point the line passes through twice (an arrow's tip) gets a miter at each visit, and a sharp one on the first
+ * reaches past the other visit's V and shows as a spike. Past this many half widths such a visit is round instead.
+ */
+const REVISIT_MITER_LIMIT = 2.5;
 
 const dist = (a: XY, b: XY): number => Math.hypot(b.x - a.x, b.y - a.y);
 
@@ -182,7 +187,7 @@ export function disc(c: XY, r: number): XY[] {
 }
 
 /** The join at `v` between the segment from `a` and the segment to `b`: a miter, a round join, or none when straight. */
-function join(a: XY, v: XY, b: XY, half: number): XY[] | null {
+function join(a: XY, v: XY, b: XY, half: number, revisited = false): XY[] | null {
   const l1 = dist(a, v);
   const l2 = dist(v, b);
   const d1 = { x: (v.x - a.x) / l1, y: (v.y - a.y) / l1 };
@@ -192,7 +197,7 @@ function join(a: XY, v: XY, b: XY, half: number): XY[] | null {
   if (Math.abs(cross) < 1e-9 && dot > 0) return null;
   const turn = Math.atan2(Math.abs(cross), dot);
   const ratio = 1 / Math.cos(turn / 2);
-  if (!(ratio <= MITER_LIMIT)) return disc(v, half);
+  if (!(ratio <= MITER_LIMIT) || (revisited && ratio > REVISIT_MITER_LIMIT)) return disc(v, half);
   // The outer side of the turn: away from the way the line turns.
   const side = cross > 0 ? -1 : 1;
   const n1 = { x: -d1.y * side, y: d1.x * side };
@@ -242,8 +247,9 @@ export function exactOutline(points: readonly XY[], width: number): XY[][] {
       ]),
     );
   }
+  const visitedAgain = (i: number): boolean => line.some((p, j) => j !== i && dist(p, line[i]) <= 1e-6);
   for (let i = 1; i < last; i++) {
-    const piece = join(line[i - 1], line[i], line[i + 1], half);
+    const piece = join(line[i - 1], line[i], line[i + 1], half, visitedAgain(i));
     if (piece) out.push(piece);
   }
   if (closed) {
