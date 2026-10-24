@@ -57,7 +57,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
       {outcome.tables?.map((table) => {
         const name = say(`kitMechDyn.${tool}.table.${table.id}`);
         return (
-          <section key={table.id} className={styles.section} aria-label={name}>
+          <div key={table.id} className={styles.section}>
             <h3 className={styles.heading}>{name}</h3>
             <div className={styles.scroll} tabIndex={0} role="region" aria-label={name}>
               <table className={styles.table}>
@@ -83,7 +83,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
                 </tbody>
               </table>
             </div>
-          </section>
+          </div>
         );
       })}
       {pictures.map((picture, i) => (
