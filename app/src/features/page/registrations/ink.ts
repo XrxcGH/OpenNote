@@ -35,6 +35,7 @@ function start(): void {
         layer: part((page) => page.layer),
         selection: selection.pageSelection,
         select: selection.selectOnPage,
+        frameShown: (shown) => selection.inkFrameShown.set(shown),
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
         paper: shownPaper,
         handwriting: {
