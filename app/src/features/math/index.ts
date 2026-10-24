@@ -36,7 +36,6 @@ export type { KnownFunction } from './calculus';
 /** The calculus tools: derivatives, integrals, limits, and sums. Their code loads on first use. */
 export const loadCalculus = () => import('./calculus');
 
-
 /** The Math solvers window, loaded the first time it opens. */
 export const loadSolversTool = () => import('./solvers/ui/SolversTool');
 
