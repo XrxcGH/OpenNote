@@ -129,6 +129,12 @@ export interface FourierResult {
   samples: { f: [number, number][]; sum: [number, number][] };
 }
 
+const SETUP: Record<FourierKind, string> = {
+  full: 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1}\\left(a_n\\cos\\frac{n\\pi x}{L}+b_n\\sin\\frac{n\\pi x}{L}\\right)',
+  sine: 'f(x)\\sim\\sum_{n\\ge1} b_n\\sin\\frac{n\\pi x}{L}',
+  cosine: 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1} a_n\\cos\\frac{n\\pi x}{L}',
+};
+
 const FORMULAS: Record<FourierKind, { a: string; b: string }> = {
   full: {
     a: 'a_n=\\frac{1}{L}\\int_{-L}^{L} f(x)\\cos\\frac{n\\pi x}{L}\\,dx',
@@ -137,6 +143,45 @@ const FORMULAS: Record<FourierKind, { a: string; b: string }> = {
   sine: { a: '', b: 'b_n=\\frac{2}{L}\\int_{0}^{L} f(x)\\sin\\frac{n\\pi x}{L}\\,dx' },
   cosine: { a: 'a_n=\\frac{2}{L}\\int_{0}^{L} f(x)\\cos\\frac{n\\pi x}{L}\\,dx', b: '' },
 };
+
+/** The overshoot of the partial sum near the largest jump (the Gibbs phenomenon), or null when there is no jump. */
+function gibbsOf(
+  pieces: readonly Piece[],
+  kind: FourierKind,
+  L: number,
+  terms: number,
+  partial: (x: number) => number,
+): FourierResult['gibbs'] {
+  // Jumps between pieces and at the ends of the period.
+  const edges: { x: number; left: number; right: number }[] = [];
+  for (let i = 1; i < pieces.length; i++) {
+    edges.push({ x: pieces[i].a, left: pieces[i - 1].f(pieces[i - 1].b), right: pieces[i].f(pieces[i].a) });
+  }
+  const first = pieces[0].f(pieces[0].a);
+  const last = pieces[pieces.length - 1].f(pieces[pieces.length - 1].b);
+  if (kind === 'full') edges.push({ x: L, left: last, right: first });
+  if (kind === 'sine') edges.push({ x: 0, left: -first, right: first }, { x: L, left: last, right: -last });
+  const jumpy = edges
+    .filter((e) => Math.abs(e.left - e.right) > 1e-9)
+    .sort((p, q) => Math.abs(q.left - q.right) - Math.abs(p.left - p.right));
+  if (!jumpy.length || terms < 8) return null;
+  const e = jumpy[0];
+  const high = Math.max(e.left, e.right);
+  const low = Math.min(e.left, e.right);
+  const width = (3 * L) / terms;
+  let best = 0;
+  let where = e.x;
+  for (let i = -400; i <= 400; i++) {
+    const x = e.x + (width * i) / 400;
+    const v = partial(x);
+    const over = Math.max(v - high, low - v);
+    if (over > best) {
+      best = over;
+      where = x;
+    }
+  }
+  return { jump: high - low, overshoot: best, at: where };
+}
 
 /** The Fourier series of a piecewise function on (-L, L), or its half-range sine or cosine series on (0, L). */
 export function fourierSeries(source: string, kind: FourierKind, L: number, terms: number): FourierResult {
@@ -166,64 +211,20 @@ export function fourierSeries(source: string, kind: FourierKind, L: number, term
   // The period is 2L; the series repeats the function (or its odd/even extension) outside the interval.
   const aPattern = a.length >= 6 ? recognizePattern(a.slice(0, 12), 'a_n') : null;
   const bPattern = b.length >= 6 ? recognizePattern(b.slice(0, 12), 'b_n') : null;
-  const steps: KitStep[] = [
-    step(
-      'fsSetup',
-      kind === 'full'
-        ? 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1}\\left(a_n\\cos\\frac{n\\pi x}{L}+b_n\\sin\\frac{n\\pi x}{L}\\right)'
-        : kind === 'sine'
-          ? 'f(x)\\sim\\sum_{n\\ge1} b_n\\sin\\frac{n\\pi x}{L}'
-          : 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1} a_n\\cos\\frac{n\\pi x}{L}',
-      {
-        kind,
-        L: fmt(L, 8),
-      },
-    ),
-  ];
+  const steps: KitStep[] = [step('fsSetup', SETUP[kind], { kind, L: fmt(L, 8) })];
   if (a.length)
     steps.push(step('fsCoefficientA', FORMULAS[kind].a), step('fsA0', `a_0=${fmt(a0, 10)}`, { a0: fmt(a0, 10) }));
   if (b.length) steps.push(step('fsCoefficientB', FORMULAS[kind].b));
   if (aPattern) steps.push(step('fsPattern', aPattern.latex));
   if (bPattern) steps.push(step('fsPattern', bPattern.latex));
   steps.push(step('fsParseval', undefined, { lhs: fmt(integral, 10), rhs: fmt(series, 10), n: String(terms) }));
-  // Jumps between pieces and at the ends of the period, for the Gibbs overshoot.
-  let gibbs: FourierResult['gibbs'] = null;
-  const edges: { x: number; left: number; right: number }[] = [];
-  for (let i = 1; i < pieces.length; i++) {
-    edges.push({ x: pieces[i].a, left: pieces[i - 1].f(pieces[i - 1].b), right: pieces[i].f(pieces[i].a) });
-  }
-  if (kind === 'full') {
-    const first = pieces[0].f(pieces[0].a);
-    const last = pieces[pieces.length - 1].f(pieces[pieces.length - 1].b);
-    edges.push({ x: L, left: last, right: first });
-  }
-  if (kind === 'sine') {
-    const first = pieces[0].f(pieces[0].a);
-    const last = pieces[pieces.length - 1].f(pieces[pieces.length - 1].b);
-    edges.push({ x: 0, left: -first, right: first }, { x: L, left: last, right: -last });
-  }
-  const jumpy = edges
-    .filter((e) => Math.abs(e.left - e.right) > 1e-9)
-    .sort((p, q) => Math.abs(q.left - q.right) - Math.abs(p.left - p.right));
-  if (jumpy.length && terms >= 8) {
-    const e = jumpy[0];
-    const high = Math.max(e.left, e.right);
-    const low = Math.min(e.left, e.right);
-    const width = (3 * L) / terms;
-    let best = 0;
-    let where = e.x;
-    for (let i = -400; i <= 400; i++) {
-      const x = e.x + (width * i) / 400;
-      const v = partial(x);
-      const over = Math.max(v - high, low - v);
-      if (over > best) {
-        best = over;
-        where = x;
-      }
-    }
-    const jump = high - low;
-    gibbs = { jump, overshoot: best, at: where };
-    const vars = { jump: fmt(jump, 6), overshoot: fmt(best, 6), percent: fmt((100 * best) / jump, 4) };
+  const gibbs = gibbsOf(pieces, kind, L, terms, partial);
+  if (gibbs) {
+    const vars = {
+      jump: fmt(gibbs.jump, 6),
+      overshoot: fmt(gibbs.overshoot, 6),
+      percent: fmt((100 * gibbs.overshoot) / gibbs.jump, 4),
+    };
     steps.push(step('fsGibbs', undefined, vars));
   }
   const shown = kind === 'full' ? 2 * L : L;
