@@ -11,4 +11,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   fins: () => import('./fins/spec').then((m) => m.finsSpec),
   transient: () => import('./transient/spec').then((m) => m.transientSpec),
   convection: () => import('./convection/spec').then((m) => m.convectionSpec),
+  hx: () => import('./hx/spec').then((m) => m.hxSpec),
 };
