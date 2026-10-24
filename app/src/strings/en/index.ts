@@ -57,6 +57,7 @@ import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
 import { chem } from './chem';
+import { kitChemMat } from './kitChemMat';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 
@@ -118,6 +119,7 @@ export const en = {
   graph3d,
   engineering,
   chem,
+  kitChemMat,
   docStructure,
   codeCells,
 } as const;

@@ -22,3 +22,5 @@ export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
+export { CHEMMAT_META } from './chemmat/meta';
+export { openChemMatTool } from './chemmat/open';

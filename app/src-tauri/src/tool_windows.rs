@@ -97,6 +97,12 @@ pub const TOOLS: &[Tool] = &[
         height: 640.0,
     },
     Tool {
+        id: "kit-chemmat",
+        title: "Chemistry and materials",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
         id: "solvers",
         title: "Math solvers",
         width: 600.0,
