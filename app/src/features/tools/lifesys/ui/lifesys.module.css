@@ -226,6 +226,17 @@
     fill: currentColor;
   }
 
+  .bar {
+    fill: currentColor;
+    fill-opacity: 0.75;
+  }
+
+  .outline {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+  }
+
   .series0 {
     color: var(--color-accent-primary);
   }

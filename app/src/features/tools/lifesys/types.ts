@@ -27,13 +27,17 @@ export interface Series {
   vars?: LsVars;
   points: readonly (readonly [number, number])[];
   /** Lines, markers, or a dashed line; each series also differs in dash pattern, so color is never the only cue. */
-  style?: 'line' | 'points' | 'dashed';
+  style?: 'line' | 'points' | 'dashed' | 'bars' | 'outline';
 }
 
 export interface Axis {
   label: LsKey;
   vars?: LsVars;
   log?: boolean;
+  /** Tick labels without a sign, for the two sides of a population pyramid. */
+  absolute?: boolean;
+  /** Names at positions 0, 1, 2, and so on, for bars by category. */
+  categories?: readonly string[];
   min?: number;
   max?: number;
 }

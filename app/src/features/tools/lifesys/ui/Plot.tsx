@@ -3,6 +3,7 @@
 // in the result table and the inserted table.
 import type { PlotData } from '../types';
 import { HEIGHT, WIDTH, plotModel } from './plotModel';
+import type { PlotPath } from './plotModel';
 import styles from './lifesys.module.css';
 import { word } from './words';
 
@@ -13,6 +14,35 @@ export function plotLabels(plot: PlotData) {
     y: word(plot.y.label, plot.y.vars),
     names: plot.series.map((s) => word(s.name, s.vars)),
   };
+}
+
+function Series({ path }: { path: PlotPath }) {
+  const tone = styles[`series${path.index % 5}`];
+  if (path.kind === 'points')
+    return (
+      <g className={tone}>
+        {path.markers.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={2.5} className={styles.marker} />
+        ))}
+      </g>
+    );
+  if (path.kind === 'bars' || path.kind === 'outline')
+    return (
+      <g className={tone}>
+        {path.rects.map((r, i) => (
+          <rect
+            key={i}
+            x={r.x}
+            y={r.y}
+            width={r.w}
+            height={r.h}
+            className={path.kind === 'bars' ? styles.bar : styles.outline}
+            strokeDasharray={path.kind === 'outline' ? path.dash : undefined}
+          />
+        ))}
+      </g>
+    );
+  return <path d={path.d} className={`${styles.line} ${tone}`} strokeDasharray={path.dash} />;
 }
 
 export function Plot({ plot }: { plot: PlotData }) {
@@ -55,29 +85,18 @@ export function Plot({ plot }: { plot: PlotData }) {
         >
           {labels.y}
         </text>
-        {model.paths.map((path) =>
-          path.points ? (
-            <g key={path.index} className={styles[`series${path.index % 5}`]}>
-              {path.markers.map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r={2.5} className={styles.marker} />
-              ))}
-            </g>
-          ) : (
-            <path
-              key={path.index}
-              d={path.d}
-              className={`${styles.line} ${styles[`series${path.index % 5}`]}`}
-              strokeDasharray={path.dash}
-            />
-          ),
-        )}
+        {model.paths.map((path) => (
+          <Series key={path.index} path={path} />
+        ))}
       </svg>
       <figcaption className={styles.legend}>
         {model.paths.map((path) => (
           <span key={path.index} className={styles.legendItem}>
             <svg width="24" height="8" aria-hidden="true" className={styles[`series${path.index % 5}`]}>
-              {path.points ? (
+              {path.kind === 'points' ? (
                 <circle cx="12" cy="4" r="3" className={styles.marker} />
+              ) : path.kind === 'bars' ? (
+                <rect x="2" y="1" width="20" height="6" className={styles.bar} />
               ) : (
                 <path d="M0 4H24" className={styles.line} strokeDasharray={path.dash} />
               )}
