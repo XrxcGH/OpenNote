@@ -4,6 +4,7 @@ import type { IconName } from '../../../ui/icons';
 export const MUSIC_TOOLS = [
   { id: 'camera', icon: 'Camera' },
   { id: 'studio', icon: 'Palette' },
+  { id: 'rhythm', icon: 'Metronome' },
 ] as const satisfies readonly {
   id: string;
   icon: IconName;

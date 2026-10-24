@@ -2,6 +2,7 @@
 // input can have. Courses are never named here. Each tool's text lives in its own file under ./kitMusic.
 import { camera } from './kitMusic/camera';
 import { common } from './kitMusic/common';
+import { rhythm } from './kitMusic/rhythm';
 import { studio } from './kitMusic/studio';
 
 export const kitMusic = {
@@ -22,10 +23,16 @@ export const kitMusic = {
   steps: 'Worked steps',
   source: 'Source: {source}',
   loading: 'Loading the tool',
-  t: { ...camera.t, ...studio.t },
-  f: { ...camera.f, ...studio.f },
-  r: { ...camera.r, ...studio.r },
-  s: { ...camera.s, ...studio.s },
-  e: { ...common.e, ...camera.e, ...studio.e },
-  n: { ...camera.n, ...studio.n },
+  sound: 'Sound',
+  play: 'Play',
+  stop: 'Stop',
+  tap: 'Tap tempo',
+  playing: 'Playing.',
+  noAudio: 'This device cannot play sound here.',
+  t: { ...camera.t, ...studio.t, ...rhythm.t },
+  f: { ...camera.f, ...studio.f, ...rhythm.f },
+  r: { ...camera.r, ...studio.r, ...rhythm.r },
+  s: { ...camera.s, ...studio.s, ...rhythm.s },
+  e: { ...common.e, ...camera.e, ...studio.e, ...rhythm.e },
+  n: { ...camera.n, ...studio.n, ...rhythm.n },
 } as const;

@@ -5,6 +5,7 @@ import { useId, useMemo } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
 import { insertIntoPage } from '../ui/CalculatorTool';
+import { PlayBar } from './PlayBar';
 import { runTool } from './spec';
 import type { Field, ToolSpec } from './spec';
 import type { KitOk, Values } from './shared';
@@ -109,7 +110,7 @@ function InsertBar({ result }: { result: KitOk }) {
   );
 }
 
-function Answer({ result }: { result: KitOk }) {
+function Answer({ result, onTempo }: { result: KitOk; onTempo?(bpm: number): void }) {
   return (
     <>
       <h3 className={styles.heading}>{t('kitMusic.results')}</h3>
@@ -130,6 +131,7 @@ function Answer({ result }: { result: KitOk }) {
         />
       ) : null}
       {result.code ? <pre className={styles.code}>{result.code}</pre> : null}
+      {result.play ? <PlayBar plan={result.play} onTempo={onTempo} /> : null}
       <InsertBar result={result} />
       <h3 className={styles.heading}>{t('kitMusic.steps')}</h3>
       <ol className={styles.steps}>
@@ -183,7 +185,13 @@ export function ToolPanel({
           ))}
       </div>
       {result.ok ? (
-        <Answer result={result} />
+        <Answer
+          result={result}
+          onTempo={(bpm) => {
+            const field = result.play?.tempoField;
+            if (field) onValues({ ...values, [field]: String(bpm) });
+          }}
+        />
       ) : (
         <p className={styles.problem} role="alert">
           {problemText(result.error, result.vars)}

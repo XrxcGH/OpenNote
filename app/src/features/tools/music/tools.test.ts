@@ -1,6 +1,7 @@
 // checks-disable-file brand-consistency: color values are data here, not styling
 import { describe, expect, it } from 'vitest';
 import { spec as camera } from './camera/tool';
+import { spec as rhythm } from './rhythm/tool';
 import { initialValues, runTool } from './spec';
 import type { ToolSpec } from './spec';
 import { spec as studio } from './studio/tool';
@@ -135,5 +136,87 @@ describe('the studio tool as a student uses it', () => {
     const fabric = run(studio, 'yardage', { pieces: '20 x 30 x 4', fabric: '45' });
     expect(rowOf(fabric, 'fabricLength')).toBe('60 in');
     expect(rowOf(fabric, 'fabricYards')).toBe('1.667 yd');
+  });
+});
+
+describe('the tuning and rhythm tool as a student uses it', () => {
+  it('turns 5/4 into cents and a frequency', () => {
+    const result = run(rhythm, 'convert', { ratio: '5/4', base: '200' });
+    expect(rowOf(result, 'centsOut')).toBe('386.314');
+    expect(rowOf(result, 'hzAbove')).toBe('250 Hz');
+    expect(rowOf(run(rhythm, 'convert', { ratio: '', cents: '1200' }), 'ratioOut')).toBe('2');
+  });
+  it('lists a temperament table and the beat rates of its fifth', () => {
+    const table = run(rhythm, 'temperament', { tuning: 'werckmeister' });
+    expect(table.ok && table.code).toContain('90.225');
+    expect(table.ok && table.source).toContain('Werckmeister');
+    expect(rowOf(run(rhythm, 'beats', { tuning: 'equal', tonic: '0' }), 'fifthRow')).toContain('0.89 beats per second');
+  });
+  it('builds the harmonic series and the equal divisions', () => {
+    const series = run(rhythm, 'series', { fundamental: '55', partials: '8' });
+    expect(series.ok && series.code).toContain('385.00');
+    expect(rowOf(run(rhythm, 'edo', { divisions: '12' }), 'stepSize')).toBe('100.0000 cents');
+  });
+  it('makes a Euclidean rhythm that plays one click for each hit', () => {
+    const result = run(rhythm, 'euclid', { onsets: '3', steps: '8', rotation: '0', bpm: '100', spb: '2' });
+    expect(rowOf(result, 'patternOut')).toBe('x..x..x.');
+    expect(rowOf(result, 'gapsOut')).toBe('3, 3, 2');
+    expect(result.ok && result.play?.notes).toHaveLength(3);
+    expect(result.ok && result.play?.beats).toBe(4);
+    expect(result.ok && result.play?.bpm).toBe(100);
+    expect(result.ok && result.play?.notes[0]?.level).toBe(2);
+  });
+  it('draws teentaal and plays its sam loudest and khali softest', () => {
+    const result = run(rhythm, 'cycle', { cycleId: 'teentaal', bpm: '60' });
+    expect(rowOf(result, 'cycleBeats')).toBe('16');
+    expect(rowOf(result, 'cycleLength')).toContain('16.00 s');
+    const notes = result.ok ? result.play!.notes : [];
+    expect(notes).toHaveLength(16);
+    expect(notes[0]!.level).toBe(2);
+    expect(notes[8]!.level).toBe(0);
+    expect(result.ok && result.code).toContain('| ');
+  });
+  it('plays an Arabic pattern with a deep and a sharp stroke', () => {
+    const result = run(rhythm, 'pattern', { patternId: 'maqsum', spb: '2' });
+    const notes = result.ok ? result.play!.notes : [];
+    expect(notes.map((n) => n.hz)).toEqual([220, 880, 880, 220, 880]);
+  });
+  it('lays out a polyrhythm of three against two', () => {
+    const result = run(rhythm, 'poly', { polyA: '3', polyB: '2', spb: '1' });
+    expect(rowOf(result, 'gridLength')).toBe('6');
+    expect(result.ok && result.play?.notes).toHaveLength(5);
+    expect(result.ok && result.code).toBe(['3: x . x . x .', '2: x . . x . .'].join(String.fromCharCode(10)));
+  });
+  it('gives delay times and swing at 120 BPM', () => {
+    const result = run(rhythm, 'tempo', { bpm: '120', swing: '2:1' });
+    expect(rowOf(result, 'quarterMs')).toBe('500.00 ms');
+    expect(rowOf(result, 'dottedEighthMs')).toBe('375.00 ms');
+    expect(rowOf(result, 'swingLong')).toBe('333.33 ms');
+  });
+  it('builds a metronome bar with subdivisions and an accent on the first beat', () => {
+    const result = run(rhythm, 'metronome', { bpm: '90', bar: '3', sub: '2', accent: 'first' });
+    const notes = result.ok ? result.play!.notes : [];
+    expect(notes.map((n) => n.at)).toEqual([0, 0.5, 1, 1.5, 2, 2.5]);
+    expect(notes.map((n) => n.level)).toEqual([2, 0, 1, 0, 1, 0]);
+    const plain = run(rhythm, 'metronome', { accent: 'none' });
+    expect(plain.ok && plain.play?.notes[0]?.level).toBe(1);
+  });
+  it.each([
+    ['convert', { ratio: '3/0' }, 'rhyRatioFormat'],
+    ['convert', { ratio: '', cents: '' }, 'number'],
+    ['series', { partials: '1' }, 'rhyPartialsRange'],
+    ['edo', { divisions: '0' }, 'rhyDivisionsRange'],
+    ['euclid', { steps: '100' }, 'rhyStepsRange'],
+    ['euclid', { onsets: '9', steps: '8' }, 'rhyOnsetsRange'],
+    ['euclid', { rotation: '1.5' }, 'rhyRotationWhole'],
+    ['euclid', { bpm: '5' }, 'rhyBpmRange'],
+    ['poly', { polyA: '0' }, 'rhyPolyRange'],
+    ['tempo', { swing: '1:2' }, 'rhySwingFormat'],
+    ['metronome', { bar: '40' }, 'rhyBarRange'],
+    ['temperament', { a4: '0' }, 'positive'],
+  ])('rejects %s with %j as %s', (mode, changes, error) => {
+    const result = run(rhythm, mode, changes);
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error).toBe(error);
   });
 });

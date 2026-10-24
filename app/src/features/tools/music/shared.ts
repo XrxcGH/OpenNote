@@ -4,6 +4,7 @@
 import { formatNumber } from '../../../core/expr';
 import { parsePrefixed } from '../../../core/units';
 import type { kitMusic } from '../../../strings/en/kitMusic';
+import type { PlayPlan } from './audio';
 
 type Ns = typeof kitMusic;
 export type StepKey = keyof Ns['s'] & string;
@@ -35,6 +36,8 @@ export interface KitOk {
   svg?: { markup: string; label: string };
   /** Text for a code block or a plain-text table. */
   code?: string;
+  /** Sound the page can play for this answer, such as a click track or a scale. */
+  play?: PlayPlan;
   notes: NoteKey[];
   source?: string;
 }
@@ -72,6 +75,17 @@ export function fmt(value: number, digits = 5): string {
 
 /** A whole number with thousands separators, such as 107,892. */
 export const count = (value: number): string => Math.round(value).toLocaleString('en-US');
+
+/** A signed number with a true minus sign and a plus for zero or more, such as +13.7 or −31.2. */
+export const signed = (value: number, decimals: number): string =>
+  `${value < 0 && Number(Math.abs(value).toFixed(decimals)) !== 0 ? '−' : '+'}${Math.abs(value).toFixed(decimals)}`;
+
+/** Plain-text columns: the first cell is left-aligned in its width, and the rest are right-aligned. */
+export function textTable(rows: readonly (readonly string[])[], widths: readonly number[]): string {
+  return rows
+    .map((row) => row.map((cell, i) => (i === 0 ? cell.padEnd(widths[i]!) : cell.padStart(widths[i]!))).join(''))
+    .join('\n');
+}
 
 /** A number with a fixed count of decimals and a true minus sign. */
 export function fixed(value: number, decimals: number): string {
