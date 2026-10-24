@@ -196,7 +196,9 @@ describe('page inserts', () => {
     expect(seen[1]).toMatchObject({ math: { source: 'p = 1', display: true } });
     expect(seen[2]).toMatchObject({ table: { header: ['Quantity', 'Value'], rows: [['Pressure', '1 kPa']] } });
     expect(seen[3]).toMatchObject({
-      text: 'Worked steps\n1. The ideal gas law relates pressure, volume, amount, and temperature.\n    pV = nRT',
+      text:
+        '<p>Worked steps</p><ol><li><p>The ideal gas law relates pressure, volume, amount, and temperature.</p>' +
+        '<div data-math-block="pV = nRT"></div></li></ol>',
     });
     const picture = seen[4].picture as { bytes: ArrayBuffer; mime: string; alt: string };
     expect(picture.mime).toBe('image/svg+xml');
