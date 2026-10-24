@@ -309,7 +309,7 @@ fn renames_colors_and_the_page_title_is_one_field() {
     let odd = lib.ok("notes_set_color", json!({ "id": section, "color": "#ff0000" }));
     assert_eq!(odd["color"], Value::Null);
     let on_page = lib.ok("notes_set_color", json!({ "id": page, "color": "fern" }));
-    assert_eq!(on_page["color"], Value::Null);
+    assert_eq!(on_page["color"], "fern");
     let notebook_color = lib.ok("notes_set_color", json!({ "id": notebook, "color": "plum" }));
     assert_eq!(notebook_color["color"], "plum");
 }
