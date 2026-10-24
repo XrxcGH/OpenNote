@@ -4,4 +4,5 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 export const PANELS: Readonly<Record<string, LazyExoticComponent<ComponentType>>> = {
   series: lazy(() => import('../series/SeriesTool')),
   complex: lazy(() => import('../complex/ComplexTool')),
+  odes: lazy(() => import('../odesystems/OdeTool')),
 };
