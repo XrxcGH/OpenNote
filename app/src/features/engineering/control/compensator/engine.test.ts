@@ -7,7 +7,17 @@ import { padd, pmul } from '../lib/poly';
 import { cabs, cx, evalTF, feedback, readTF, rootsOf, series } from '../lib/tf';
 import { grid, makeLoop, margins } from '../frequency/engine';
 import { stepSpecs } from '../systems/engine';
-import { designLag, designLead, designLocusLead, leadRatio, pidTF, simc, ultimate, zieglerNichols } from './engine';
+import {
+  designLag,
+  designLead,
+  designLeadLag,
+  designLocusLead,
+  leadRatio,
+  pidTF,
+  simc,
+  ultimate,
+  zieglerNichols,
+} from './engine';
 
 const DEG = 180 / Math.PI;
 
@@ -121,4 +131,32 @@ describe('impossible input', () => {
     ['tauCPositive', () => simc(1, 1, 0, 0)],
   ];
   it.each(cases)('names %s', (want, f) => expect(code(f)).toBe(want));
+});
+
+describe('lead-lag and missed targets', () => {
+  it('lead-lag for 1/(s(s + 1)(s + 2)), Kv = 10, PM 50°: crossover at √2, Kv kept, PM met', () => {
+    const g = readTF('1/(s (s + 1) (s + 2))');
+    const d = designLeadLag(g, 50, 10, 5);
+    // With K = 20 the phase of KG is −180° exactly at ω = √2 (the imaginary part of the cubic vanishes there).
+    expect(d.values.wc).toBeCloseTo(Math.SQRT2, 9);
+    const l = series(d.c, g);
+    // Independent: |L(j√2)| = 1, and the margin is 180° + ∠L(j√2).
+    const at = evalTF(l, cx(0, Math.SQRT2));
+    expect(cabs(at)).toBeCloseTo(1, 9);
+    const pm = 180 + (Math.atan2(at.im, at.re) * 180) / Math.PI;
+    expect(pm).toBeGreaterThan(49.5);
+    expect(pm).toBeLessThan(55);
+    // Kv = lim s L(s), read at a small s.
+    const s = 1e-10;
+    expect(s * cabs(evalTF(l, cx(s)))).toBeCloseTo(10, 5);
+    expect(rootsOf(feedback(l).den).every((r) => r.re < 0)).toBe(true);
+    expect(d.missed).toBe(false);
+  });
+
+  it('flags a lead that misses its target: 1/(s(s + 1)(s + 2)), Kv 5, PM 45°', () => {
+    const d = designLead(readTF('1/(s (s + 1) (s + 2))'), 45, 5, 5);
+    expect(d.after.margins.pm).toBeLessThan(44.5);
+    expect(d.missed).toBe(true);
+    expect(d.steps[d.steps.length - 1].key).toBe('comp.missed');
+  });
 });

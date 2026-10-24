@@ -530,6 +530,14 @@ export const kitControl = {
       lagCrossover: 'The phase of KG is {phase}° (the target margin plus {extra}° for the lag) at ω_c = {wc} rad/s.',
       beta: 'The lag must lower the gain there to 1:',
       lagCorners: 'Put the zero a decade below ω_c and the pole lower by β:',
+      missed:
+        'The target was not met: the phase margin is {pm}°, short of {target}°. Raise the extra phase allowance, ' +
+        'use two lead stages, or use lead-lag.',
+      leadLagCrossover:
+        'Take the new crossover where the phase of KG is −180°: ω_c = {wc} rad/s, where the margin is {pm}°.',
+      leadLagPhi: 'The lead must add the missing margin there, plus {extra}° for the lag’s phase:',
+      leadLagBeta:
+        'The lag, with its zero a decade below ω_c, must bring |C G(jω_c)| down to 1; it costs {lag}° of phase there:',
       target: 'For ζ = {zeta} and tₛ = {ts} s the target poles are:',
       deficit: 'The plant’s angle at s_d is {angle}°, so the compensator must add {deficit}°:',
       zero: 'Place the zero at s = −{a}; its angle at s_d is {theta}°.',
@@ -1688,9 +1696,9 @@ export const kitControl = {
     tab: 'Compensators',
     keywords:
       'compensator design lead lag phase margin error constant root locus design damping ratio settling time pid ' +
-      'tuning ziegler nichols ultimate gain simc imc controller',
+      'tuning ziegler nichols ultimate gain simc imc controller lead-lag',
     lead:
-      'Design a lead or lag compensator for a phase margin, a lead for target poles on the root locus, or PID ' +
+      'Design a lead, lag or lead-lag compensator for a phase margin, a lead for target poles on the root locus, or PID ' +
       'gains by Ziegler-Nichols or SIMC, and check the closed loop.',
     field: {
       mode: 'Design',
@@ -1715,6 +1723,7 @@ export const kitControl = {
     option: {
       lead: 'Lead for a phase margin',
       lag: 'Lag for a phase margin',
+      leadLag: 'Lead-lag for a phase margin',
       locus: 'Lead on the root locus',
       zn: 'PID by Ziegler-Nichols',
       simc: 'PI by SIMC',
@@ -1731,6 +1740,10 @@ export const kitControl = {
       wc: 'New crossover ω_c',
       zero: 'Zero',
       pole: 'Pole',
+      leadZero: 'Lead zero',
+      leadPole: 'Lead pole',
+      lagZero: 'Lag zero',
+      lagPole: 'Lag pole',
       target: 'Target poles s_d',
       deficit: 'Angle to add',
       pmAfter: 'Phase margin after',
@@ -1769,6 +1782,10 @@ export const kitControl = {
     note: {
       leadForm: 'The lead is C(s) = K(1 + s/z)/(1 + s/p) with p > z, so it keeps the error constant set by K.',
       lagForm: 'The lag is C(s) = K(1 + s/z)/(1 + s/p) with p < z, so it keeps the error constant set by K.',
+      leadLagForm:
+        'The lead-lag is C(s) = K(1 + s/z₁)(1 + s/z₂)/((1 + s/p₁)(1 + s/p₂)): the lead (p₁ > z₁) adds phase at the ' +
+        'crossover and the lag (p₂ < z₂) lowers the gain there, and neither changes the error constant set by K.',
+      pmMissed: 'The design misses its phase-margin target (it reaches {pm}°). See the last step for what to try.',
       extraPhase: 'The extra allowance covers the phase the compensator costs away from its design frequency.',
       unity: 'Every check closes a unity negative feedback loop around C(s)G(s).',
       afterUnstable: 'The compensated loop is not stable, so its step specifications are not shown.',
@@ -1783,6 +1800,7 @@ export const kitControl = {
     example: {
       lead: 'Lead for 4/(s(s + 2)), Kv = 20, PM 50°',
       lag: 'Lag for Kv = 5, PM 40°',
+      leadLag: 'Lead-lag for 1/(s(s + 1)(s + 2)), Kv = 10, PM 50°',
       locus: 'Lead for ζ = 0.5, tₛ = 2 s',
       zn: 'Ziegler-Nichols from K_u = 48, ω_u = 2.83 rad/s',
       znPlant: 'Ziegler-Nichols for 1/(s(s + 2)(s + 4))',

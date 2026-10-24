@@ -46,3 +46,18 @@ describe('the compensator tool', () => {
     expect(problem({ mode: 'simc', tauC: '0' })).toBe('tauC: tauCPositive');
   });
 });
+
+describe('lead-lag mode and the missed-target note', () => {
+  it('runs the lead-lag example and shows no missed note', () => {
+    const r = run({ mode: 'leadLag', g: '1/(s (s + 1) (s + 2))', pm: '50', errorTarget: '10' });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    expect(r.outcome.notes?.some((n) => n.id === 'pmMissed')).toBe(false);
+    expect(r.outcome.rows.some((x) => x.id === 'lagPole')).toBe(true);
+  });
+
+  it('adds the pmMissed note when a lead falls short', () => {
+    const r = run({ mode: 'lead', g: '1/(s (s + 1) (s + 2))', pm: '45', errorTarget: '5' });
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    expect(r.outcome.notes?.some((n) => n.id === 'pmMissed')).toBe(true);
+  });
+});

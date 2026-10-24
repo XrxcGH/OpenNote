@@ -6,6 +6,7 @@
 import { ControlError } from '../lib/errors';
 import { boundaryCrossings } from '../lib/locus';
 import { brent } from '../lib/num';
+import { pmul } from '../lib/poly';
 import { step, type Step } from '../lib/steps';
 import {
   cabs,
@@ -83,6 +84,8 @@ export interface Design {
   readonly before: Check;
   readonly after: Check;
   readonly values: Readonly<Record<string, number>>;
+  /** True when a phase-margin design ends more than PM_SLACK below its target. */
+  readonly missed?: boolean;
 }
 
 /** The frequency where |K G(jω)| has the given level in dB, searched on a log grid. */
@@ -100,6 +103,15 @@ function whereMagIs(g: TF, k: number, db: number): number {
 
 /** The phase of G(jω) in degrees, continuous as the frequency tool draws it. */
 const phaseAt = (g: TF, w: number): number => phaseDeg(makeLoop(g), w);
+
+/** How far below its phase-margin target a finished design may end before it is flagged (degrees). */
+export const PM_SLACK = 0.5;
+
+const missedPm = (after: Check, pmTarget: number): boolean => !(after.margins.pm >= pmTarget - PM_SLACK);
+
+/** A step saying the target was missed, and what to try, when the finished design falls short. */
+const missedSteps = (after: Check, pmTarget: number): Step[] =>
+  missedPm(after, pmTarget) ? [step('comp.missed', { pm: fmt(after.margins.pm), target: fmt(pmTarget) })] : [];
 
 /** A lead compensator K(1 + s/z)/(1 + s/p) that adds the missing phase margin at the new crossover. */
 export function designLead(g: TF, pmTarget: number, errorTarget?: number, extra = 5): Design {
@@ -121,6 +133,7 @@ export function designLead(g: TF, pmTarget: number, errorTarget?: number, extra 
     c,
     before,
     after,
+    missed: missedPm(after, pmTarget),
     values: { k, alpha, phi, wm, z, p },
     steps: [
       ...steps,
@@ -147,6 +160,7 @@ export function designLead(g: TF, pmTarget: number, errorTarget?: number, extra 
       ),
       step('comp.result', {}, `C(s) = ${tfTex(c)}`),
       step('comp.check', { pm: fmt(after.margins.pm), gm: fmt(after.margins.gm) }),
+      ...missedSteps(after, pmTarget),
     ],
   };
 }
@@ -181,6 +195,7 @@ export function designLag(g: TF, pmTarget: number, errorTarget?: number, extra =
     c,
     before,
     after,
+    missed: missedPm(after, pmTarget),
     values: { k, beta, wc, z, p },
     steps: [
       ...steps,
@@ -194,6 +209,92 @@ export function designLag(g: TF, pmTarget: number, errorTarget?: number, extra =
       ),
       step('comp.result', {}, `C(s) = ${tfTex(c)}`),
       step('comp.check', { pm: fmt(after.margins.pm), gm: fmt(after.margins.gm) }),
+      ...missedSteps(after, pmTarget),
+    ],
+  };
+}
+
+/** The lowest frequency where the continuous phase of G(jω) crosses the given angle, or NaN. */
+function wherePhaseIs(g: TF, deg: number): number {
+  const ws = grid(makeLoop(g), undefined, undefined, 2000);
+  const f = (lw: number) => phaseAt(g, 10 ** lw) - deg;
+  for (let i = 1; i < ws.length; i += 1) {
+    const a = Math.log10(ws[i - 1]);
+    const b = Math.log10(ws[i]);
+    if (Math.sign(f(a)) !== Math.sign(f(b))) return 10 ** brent(f, a, b, 1e-14);
+  }
+  return Number.NaN;
+}
+
+/**
+ * A lag-lead compensator K·lead·lag. K sets the error constant. The new crossover ω_c is where ∠KG = −180° (or,
+ * when the phase never gets there, where a 50° lead would meet the target). The lead adds the missing phase at ω_c,
+ * and the lag, a decade below ω_c, brings |C G(jω_c)| down to 1 without touching the error constant.
+ */
+export function designLeadLag(g: TF, pmTarget: number, errorTarget?: number, extra = 5): Design {
+  if (!(pmTarget > 0 && pmTarget < 90)) throw new ControlError('pmRange');
+  const { k, steps } = gainForError(g, errorTarget);
+  const kg = series(makeTF([k], [1]), g);
+  const before = check(makeTF([k], [1]), g);
+  let wc = wherePhaseIs(kg, -180);
+  if (!Number.isFinite(wc)) wc = wherePhaseIs(kg, -180 + pmTarget + extra - 50);
+  if (!Number.isFinite(wc)) throw new ControlError('designNoFrequency');
+  const pmAt = 180 + phaseAt(kg, wc);
+  const phi = pmTarget + extra - pmAt;
+  if (phi <= 0) throw new ControlError('leadNotNeeded', { pm: fmt(before.margins.pm) });
+  if (phi >= 75) throw new ControlError('leadTooMuch', { phi: fmt(phi) });
+  const alpha = leadRatio(phi);
+  const z1 = wc / Math.sqrt(alpha);
+  const p1 = wc * Math.sqrt(alpha);
+  // With the lead's √α gain at ω_c, the lag must divide |KG(jω_c)|·√α down to 1. With its zero at ω_c/10,
+  // |lag(jω_c)|² = (1 + 10²)/(1 + 10²β²), which gives β exactly.
+  const m = cabs(evalTF(kg, cx(0, wc))) * Math.sqrt(alpha);
+  if (m <= 1) throw new ControlError('lagNotNeeded', { pm: fmt(before.margins.pm) });
+  const a = 10;
+  const beta = Math.sqrt((m * m * (1 + a * a) - 1) / (a * a));
+  const z2 = wc / a;
+  const p2 = z2 / beta;
+  const lagPhase = (Math.atan(wc / p2) - Math.atan(wc / z2)) * DEG;
+  const c = makeTF(pmul([k, k / z1], [1, 1 / z2]), pmul([1, 1 / p1], [1, 1 / p2]));
+  const after = check(c, g);
+  return {
+    c,
+    before,
+    after,
+    missed: missedPm(after, pmTarget),
+    values: { k, alpha, phi, wc, beta, z1, p1, z2, p2 },
+    steps: [
+      ...steps,
+      step('comp.pmNow', { pm: fmt(before.margins.pm) }),
+      step('comp.leadLagCrossover', { wc: fmt(wc), pm: fmt(pmAt) }),
+      step(
+        'comp.leadLagPhi',
+        { phi: fmt(phi), extra: fmt(extra) },
+        `\\phi_{max} = ${fmt(pmTarget)}^\\circ - ${fmt(pmAt)}^\\circ + ${fmt(extra)}^\\circ = ${fmt(phi)}^\\circ`,
+      ),
+      step(
+        'comp.alpha',
+        { alpha: fmt(alpha) },
+        `\\alpha = \\frac{1 + \\sin\\phi_{max}}{1 - \\sin\\phi_{max}} = ${fmt(alpha)}`,
+      ),
+      step(
+        'comp.leadCorners',
+        { z: fmt(z1), p: fmt(p1) },
+        `z_1 = \\frac{\\omega_c}{\\sqrt\\alpha} = ${fmt(z1)},\\quad p_1 = \\omega_c\\sqrt\\alpha = ${fmt(p1)}`,
+      ),
+      step(
+        'comp.leadLagBeta',
+        { beta: fmt(beta), lag: fmt(lagPhase) },
+        `|KG(j\\omega_c)|\\sqrt\\alpha\\,\\sqrt{\\frac{1 + 10^2}{1 + 10^2\\beta^2}} = 1 \\Rightarrow \\beta = ${fmt(beta)}`,
+      ),
+      step(
+        'comp.lagCorners',
+        { z: fmt(z2), p: fmt(p2) },
+        `z_2 = \\frac{\\omega_c}{10} = ${fmt(z2)},\\quad p_2 = \\frac{z_2}{\\beta} = ${fmt(p2)}`,
+      ),
+      step('comp.result', {}, `C(s) = ${tfTex(c)}`),
+      step('comp.check', { pm: fmt(after.margins.pm), gm: fmt(after.margins.gm) }),
+      ...missedSteps(after, pmTarget),
     ],
   };
 }

@@ -9,6 +9,7 @@ import {
   check,
   designLag,
   designLead,
+  designLeadLag,
   designLocusLead,
   pidTF,
   simc,
@@ -71,7 +72,10 @@ function outcome(d: Design, rows: Row[], notes: string[]): Outcome {
     steps: d.steps,
     latex: `C(s) = ${tfTex(d.c)}`,
     plots: d.after.specs || d.before.specs ? [stepPlot(d.before, d.after)] : [],
-    notes: [...notes, ...(d.after.specs ? [] : ['afterUnstable'])].map((id) => ({ id })),
+    notes: [
+      ...[...notes, ...(d.after.specs ? [] : ['afterUnstable'])].map((id) => ({ id })),
+      ...(d.missed ? [{ id: 'pmMissed', vars: { pm: fmt(d.after.margins.pm) } }] : []),
+    ],
   };
 }
 
@@ -129,6 +133,39 @@ function runLag(values: Values): Outcome {
       { id: 'pole', value: fmt(-v.p) },
     ],
     ['lagForm', 'extraPhase', 'unity'],
+  );
+}
+
+function runLeadLag(values: Values): Outcome {
+  const g = plant(values);
+  const d = inField(
+    null,
+    () => designLeadLag(g, num(values, 'pm'), optional(values, 'errorTarget'), num(values, 'extra')),
+    {
+      pmRange: 'pm',
+      errorTarget: 'errorTarget',
+      typeTooHigh: 'g',
+      leadNotNeeded: 'pm',
+      leadTooMuch: 'pm',
+      lagNotNeeded: 'pm',
+      designNoFrequency: 'pm',
+      improper: 'g',
+    },
+  );
+  const v = d.values;
+  return outcome(
+    d,
+    [
+      { id: 'k', value: fmt(v.k) },
+      { id: 'wc', value: `${fmt(v.wc)} rad/s` },
+      { id: 'alpha', value: fmt(v.alpha), answer: true },
+      { id: 'beta', value: fmt(v.beta), answer: true },
+      { id: 'leadZero', value: fmt(-v.z1) },
+      { id: 'leadPole', value: fmt(-v.p1) },
+      { id: 'lagZero', value: fmt(-v.z2) },
+      { id: 'lagPole', value: fmt(-v.p2) },
+    ],
+    ['leadLagForm', 'extraPhase', 'unity'],
   );
 }
 
@@ -225,6 +262,7 @@ function runSimc(values: Values): Outcome {
 const RUN: Readonly<Record<string, (values: Values) => Outcome>> = {
   lead: runLead,
   lag: runLag,
+  leadLag: runLeadLag,
   locus: runLocus,
   zn: runZn,
   simc: runSimc,
@@ -238,11 +276,17 @@ export const spec: ToolSpec = {
       id: 'g',
       type: 'text',
       first: '4/(s (s + 2))',
-      when: (t) => ['lead', 'lag', 'locus'].includes(t.mode) || (t.mode === 'zn' && t.source === 'plant'),
+      when: (t) => ['lead', 'lag', 'leadLag', 'locus'].includes(t.mode) || (t.mode === 'zn' && t.source === 'plant'),
     },
-    { id: 'pm', type: 'number', first: '50', when: mode('lead', 'lag') },
-    { id: 'errorTarget', type: 'number', first: '20', optional: true, when: mode('lead', 'lag') },
-    { id: 'extra', type: 'number', first: '5', when: mode('lead', 'lag') },
+    { id: 'pm', type: 'number', first: '50', when: mode('lead', 'lag', 'leadLag') },
+    {
+      id: 'errorTarget',
+      type: 'number',
+      first: '20',
+      optional: true,
+      when: mode('lead', 'lag', 'leadLag'),
+    },
+    { id: 'extra', type: 'number', first: '5', when: mode('lead', 'lag', 'leadLag') },
     { id: 'zeta', type: 'number', first: '0.5', when: mode('locus') },
     { id: 'ts', type: 'number', unit: 'time', first: '2', when: mode('locus') },
     { id: 'zeroAt', type: 'number', first: '', optional: true, when: mode('locus') },
@@ -259,6 +303,7 @@ export const spec: ToolSpec = {
   examples: [
     { id: 'lead', texts: { mode: 'lead', g: '4/(s (s + 2))', pm: '50', errorTarget: '20' } },
     { id: 'lag', texts: { mode: 'lag', g: '1/(s (s + 1) (0.5 s + 1))', pm: '40', errorTarget: '5' } },
+    { id: 'leadLag', texts: { mode: 'leadLag', g: '1/(s (s + 1) (s + 2))', pm: '50', errorTarget: '10' } },
     { id: 'locus', texts: { mode: 'locus', g: '1/(s (s + 2))', zeta: '0.5', ts: '2' } },
     { id: 'zn', texts: { mode: 'zn', source: 'ultimate', ku: '48', wu: '2.8284' } },
     { id: 'znPlant', texts: { mode: 'zn', source: 'plant', g: '1/(s (s + 2) (s + 4))' } },
