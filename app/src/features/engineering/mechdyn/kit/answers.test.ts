@@ -51,6 +51,33 @@ const CASES: readonly Case[] = [
     texts: { m: '22.046226 lb', k: '22.840589 lbf/in', c: '0.22840589 lbf*s/in' },
     expect: { omegaN: '20 rad/s', zeta: '0.1' },
   },
+  {
+    name: 'a cantilever at PL²/EI = 2: elastica and pseudo-rigid-body model',
+    tool: 'compliant',
+    texts: { force: '0.56 N' },
+    expect: {
+      loadIndex: '2',
+      exactAL: '0.83936',
+      exactBL: '0.49346',
+      exactTheta: '44.791°',
+      prbmAL: '0.84377',
+      prbmBL: '0.49111',
+      Theta: '35.294°',
+    },
+  },
+  {
+    name: 'the same flexure typed in inches and pounds',
+    tool: 'compliant',
+    system: 'us',
+    texts: {
+      length: '1.9685039 in',
+      width: '0.23622047 in',
+      thickness: '0.039370079 in',
+      E: '203.05283 ksi',
+      force: '0.12589301 lbf',
+    },
+    expect: { exactAL: '0.83936', Theta: '35.294°' },
+  },
 ];
 
 describe('the answers the window shows', () => {

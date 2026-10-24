@@ -18,6 +18,6 @@ const tool = (id: string, icon: IconName): MechDynToolMeta => ({
   icon,
 });
 
-export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [tool('sdof', 'Waveform')];
+export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [tool('compliant', 'Spiral'), tool('sdof', 'Waveform')];
 
 export const MECHDYN_TOOL_IDS: readonly string[] = MECHDYN_TOOLS.map((tool) => tool.id);
