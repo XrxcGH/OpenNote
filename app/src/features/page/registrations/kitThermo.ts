@@ -4,7 +4,10 @@
 import type { IconName } from '../../../ui/icons';
 import { addCommand } from './qolStudy';
 
-const TOOLS = [['statthermo', 'Atom']] as const satisfies readonly (readonly [string, IconName])[];
+const TOOLS = [
+  ['idealgas', 'Cylinder'],
+  ['statthermo', 'Atom'],
+] as const satisfies readonly (readonly [string, IconName])[];
 
 async function open(tool?: string): Promise<void> {
   await (await import('../../engineering')).openThermoTool(tool);

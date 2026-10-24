@@ -4,5 +4,6 @@ import type { ToolSpec } from './common/spec';
 import type { ThermoToolId } from './meta';
 
 export const THERMO_LOADERS: Record<ThermoToolId, () => Promise<{ spec: ToolSpec }>> = {
+  idealgas: () => import('./idealgas/spec'),
   statthermo: () => import('./statthermo/spec'),
 };
