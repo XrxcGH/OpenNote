@@ -75,7 +75,9 @@ export type FlagId =
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
-  | AccountsFlagId;
+  | AccountsFlagId
+  /** The physics tool kit window (features/tools/physics). */
+  | 'kits.physics';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -327,6 +329,11 @@ export const FLAGS: readonly FlagDef[] = [
   flag('settings.recording', 'The Recording section of Settings.', on),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', on),
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
+  flag(
+    'kits.physics',
+    'The physics tools: fields, waves, optics, relativity, nuclear, orbits, and spacecraft.',
+    betaBuilds,
+  ),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,

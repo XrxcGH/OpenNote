@@ -21,6 +21,9 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The physics tools are a kit window whose tools each load the first time their tab opens.
+const PhysicsKit = lazy(() => import('../physics/ui/PhysicsKit').then((kit) => ({ default: kit.PhysicsKit })));
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-physics')
+    return (
+      <Suspense fallback={null}>
+        <PhysicsKit />
+      </Suspense>
+    );
   return null;
 }

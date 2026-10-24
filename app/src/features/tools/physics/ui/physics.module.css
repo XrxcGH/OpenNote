@@ -1,0 +1,81 @@
+/*
+ * The physics tools window: a wrapping row of tool tabs with the unit system beside it, the fields, and a result
+ * card with a table, the worked steps, and a figure. On tokens, so light, dark, and contrast themes all work, and
+ * nothing is told by color alone.
+ */
+@layer components {
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: end;
+    justify-content: space-between;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    flex: 1 1 16rem;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .system {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--type-small-size);
+  }
+
+  .rows {
+    min-block-size: 6rem;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-mono);
+    resize: vertical;
+  }
+
+  .columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+    vertical-align: baseline;
+  }
+
+  .table th {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .number {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .equation {
+    overflow-x: auto;
+  }
+
+  .insert {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .insertLabel {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+}
