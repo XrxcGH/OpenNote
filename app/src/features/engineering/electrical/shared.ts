@@ -31,6 +31,10 @@ export interface PlotSeries {
   name: string;
   x: number[];
   y: number[];
+  /** Draw this series as dots rather than a line. */
+  dots?: boolean;
+  /** Half the length of the error bar on each y, for dots. */
+  err?: number[];
 }
 
 export interface Plot {
@@ -52,6 +56,8 @@ export interface KitOk {
   /** Text for a code block, such as a netlist. */
   code?: string;
   plot?: Plot;
+  /** A second plot, such as the residuals of a fit. */
+  plot2?: Plot;
   notes: NoteKey[];
   source?: string;
 }

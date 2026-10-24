@@ -10,16 +10,27 @@ const H = 260;
 const PAD = { left: 52, right: 12, top: 12, bottom: 36 };
 const COLORS = ['var(--color-accent-primary)', 'var(--color-text-secondary)', 'var(--color-text-primary)'];
 
+interface Drawn {
+  /** Index of the series, for its color and dash. */
+  i: number;
+  /** A line as a path, or dots as points. */
+  path?: string;
+  dots?: [number, number][];
+  /** Error bars as [x, top, bottom]. */
+  bars?: [number, number, number][];
+}
+
 interface Layout {
-  paths: string[];
-  dots: [number, number][][];
+  drawn: Drawn[];
   xTicks: [number, string][];
   yTicks: [number, string][];
 }
 
 function layout(plot: PlotData): Layout {
   const xs = plot.series.flatMap((s) => s.x).filter(Number.isFinite);
-  const ys = plot.series.flatMap((s) => s.y).filter(Number.isFinite);
+  const ys = plot.series
+    .flatMap((s) => [...s.y, ...s.y.map((v, k) => v + (s.err?.[k] ?? 0)), ...s.y.map((v, k) => v - (s.err?.[k] ?? 0))])
+    .filter(Number.isFinite);
   const tx = (v: number) => (plot.logX ? Math.log10(Math.max(v, 1e-300)) : v);
   const x0 = Math.min(...xs.map(tx));
   const x1 = Math.max(...xs.map(tx));
@@ -34,11 +45,6 @@ function layout(plot: PlotData): Layout {
   y1 += pad;
   const sx = (v: number) => PAD.left + ((tx(v) - x0) / (x1 - x0 || 1)) * (W - PAD.left - PAD.right);
   const sy = (v: number) => H - PAD.bottom - ((v - y0) / (y1 - y0)) * (H - PAD.top - PAD.bottom);
-  const points = plot.series.map((s) =>
-    s.x
-      .map((x, i) => [sx(x), sy(s.y[i]!)] as [number, number])
-      .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b)),
-  );
   const xTicks: [number, string][] = [0, 0.25, 0.5, 0.75, 1].map((f) => {
     const v = x0 + f * (x1 - x0);
     return [PAD.left + f * (W - PAD.left - PAD.right), fmt(plot.logX ? 10 ** v : v, 3)];
@@ -47,30 +53,46 @@ function layout(plot: PlotData): Layout {
     const v = y0 + f * (y1 - y0);
     return [H - PAD.bottom - f * (H - PAD.top - PAD.bottom), fmt(v, 3)];
   });
-  return {
-    paths: plot.dots
-      ? []
-      : points.map((p) => p.map(([a, b], i) => `${i === 0 ? 'M' : 'L'}${a.toFixed(1)} ${b.toFixed(1)}`).join(' ')),
-    dots: plot.dots ? points : [],
-    xTicks,
-    yTicks,
-  };
+  const drawn = plot.series.map((s, i): Drawn => {
+    const points = s.x
+      .map((x, k) => [sx(x), sy(s.y[k]!), s.err?.[k] ?? 0] as const)
+      .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+    if (s.dots ?? plot.dots) {
+      const bars = s.err
+        ? s.x
+            .map((x, k): [number, number, number] => [sx(x), sy(s.y[k]! + s.err![k]!), sy(s.y[k]! - s.err![k]!)])
+            .filter(([a, b, c]) => Number.isFinite(a) && Number.isFinite(b) && Number.isFinite(c))
+        : undefined;
+      return { i, dots: points.map(([a, b]) => [a, b] as [number, number]), bars };
+    }
+    return { i, path: points.map(([a, b], k) => `${k === 0 ? 'M' : 'L'}${a.toFixed(1)} ${b.toFixed(1)}`).join(' ') };
+  });
+  return { drawn, xTicks, yTicks };
 }
 
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 /**
  * The plot as a standalone SVG file, for inserting into a page as a picture. It draws in the current text color on a
- * transparent background, so it reads on a light or a dark page; a second curve is dashed.
+ * transparent background, so it reads on a light or a dark page; later curves are dashed.
  */
 export function plotSvg(plot: PlotData): string {
-  const { paths, dots, xTicks, yTicks } = layout(plot);
+  const { drawn, xTicks, yTicks } = layout(plot);
   const dash = (i: number) => (i === 0 ? '' : ' stroke-dasharray="6 4"');
-  const lines = paths
-    .map((d, i) => `<path d="${d}" fill="none" stroke="currentColor" stroke-width="2"${dash(i)}/>`)
-    .join('');
-  const circles = dots
-    .flatMap((set) => set.map(([a, b]) => `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="3"/>`))
+  const marks = drawn
+    .map((d) => {
+      if (d.path) return `<path d="${d.path}" fill="none" stroke="currentColor" stroke-width="2"${dash(d.i)}/>`;
+      const bars = (d.bars ?? [])
+        .map(
+          ([a, top, bottom]) =>
+            `<path d="M${a.toFixed(1)} ${top.toFixed(1)}V${bottom.toFixed(1)}" stroke="currentColor"/>`,
+        )
+        .join('');
+      const circles = (d.dots ?? [])
+        .map(([a, b]) => `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="3"/>`)
+        .join('');
+      return bars + circles;
+    })
     .join('');
   const label = (x: number, y: number, anchor: string, text: string, extra = '') =>
     `<text x="${x}" y="${y}" font-size="11" text-anchor="${anchor}"${extra}>${esc(text)}</text>`;
@@ -81,11 +103,11 @@ export function plotSvg(plot: PlotData): string {
   const axes = label(W / 2, H - 3, 'middle', plot.xLabel) + label(12, H / 2, 'middle', plot.yLabel, turn);
   const frame = `<rect ${box} fill="none" stroke="currentColor" stroke-opacity="0.4"/>`;
   const open = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
-  return `${open}${frame}${lines}${circles}${xt}${yt}${axes}</svg>`;
+  return `${open}${frame}${marks}${xt}${yt}${axes}</svg>`;
 }
 
 export function Plot({ plot }: { plot: PlotData }) {
-  const { paths, dots, xTicks, yTicks } = layout(plot);
+  const { drawn, xTicks, yTicks } = layout(plot);
   const label = t('kitElectrical.plotLabel', { x: plot.xLabel, y: plot.yLabel });
   return (
     <svg className={styles.plot} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
@@ -97,12 +119,20 @@ export function Plot({ plot }: { plot: PlotData }) {
         fill="none"
         stroke="var(--color-border-control)"
       />
-      {paths.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke={COLORS[i % COLORS.length]} strokeWidth="2" />
-      ))}
-      {dots.flatMap((set, i) =>
-        set.map(([a, b], j) => <circle key={`${i}-${j}`} cx={a} cy={b} r="3" fill={COLORS[i % COLORS.length]} />),
-      )}
+      {drawn.map((d) => {
+        const color = COLORS[d.i % COLORS.length];
+        return (
+          <g key={d.i}>
+            {d.path ? <path d={d.path} fill="none" stroke={color} strokeWidth="2" /> : null}
+            {(d.bars ?? []).map(([a, top, bottom], j) => (
+              <path key={`b${j}`} d={`M${a} ${top}V${bottom}`} stroke={color} strokeWidth="1.5" />
+            ))}
+            {(d.dots ?? []).map(([a, b], j) => (
+              <circle key={`c${j}`} cx={a} cy={b} r="3" fill={color} />
+            ))}
+          </g>
+        );
+      })}
       {xTicks.map(([a, l]) => (
         <text key={`x${a}`} x={a} y={H - 18} fontSize="11" textAnchor="middle" fill="currentColor">
           {l}

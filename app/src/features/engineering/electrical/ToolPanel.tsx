@@ -7,7 +7,7 @@ import { insertIntoPage } from '../../tools';
 import { Plot, plotSvg } from './Plot';
 import { runTool } from './spec';
 import type { Field, ToolSpec } from './spec';
-import type { KitOk, Values } from './shared';
+import type { KitOk, Plot as PlotData, Values } from './shared';
 import styles from './kit.module.css';
 
 /** Looks up a message whose key an engine named; the keys are checked against the strings file by their types. */
@@ -84,6 +84,20 @@ function Math({ latex }: { latex: string }) {
   );
 }
 
+/** Puts a plot into the page as an SVG picture; false when no page is open. */
+function insertPlot(plot: PlotData | undefined): boolean {
+  if (!plot) return false;
+  const bytes = new TextEncoder().encode(plotSvg(plot));
+  return insertIntoPage({
+    picture: {
+      bytes: bytes.buffer as ArrayBuffer,
+      name: 'plot.svg',
+      alt: t('kitElectrical.plotAlt', { x: plot.xLabel, y: plot.yLabel }),
+      mime: 'image/svg+xml',
+    },
+  });
+}
+
 function InsertBar({ result }: { result: KitOk }) {
   const done = (inserted: boolean) => announce(t(inserted ? 'kitElectrical.inserted' : 'kitElectrical.noPage'));
   const rows = result.rows.map((row) => [say('r', row.key, row.vars), row.word ? say('r', row.word) : row.value]);
@@ -118,25 +132,13 @@ function InsertBar({ result }: { result: KitOk }) {
         </Button>
       ) : null}
       {result.plot ? (
-        <Button
-          variant="quiet"
-          onClick={() => {
-            const plot = result.plot;
-            if (!plot) return;
-            const bytes = new TextEncoder().encode(plotSvg(plot));
-            done(
-              insertIntoPage({
-                picture: {
-                  bytes: bytes.buffer as ArrayBuffer,
-                  name: 'plot.svg',
-                  alt: t('kitElectrical.plotAlt', { x: plot.xLabel, y: plot.yLabel }),
-                  mime: 'image/svg+xml',
-                },
-              }),
-            );
-          }}
-        >
+        <Button variant="quiet" onClick={() => done(insertPlot(result.plot))}>
           {t('kitElectrical.insertPicture')}
+        </Button>
+      ) : null}
+      {result.plot2 ? (
+        <Button variant="quiet" onClick={() => done(insertPlot(result.plot2))}>
+          {t('kitElectrical.insertSecondPicture')}
         </Button>
       ) : null}
     </div>
@@ -180,6 +182,7 @@ export function ToolPanel({
             ))}
           </dl>
           {result.plot ? <Plot plot={result.plot} /> : null}
+          {result.plot2 ? <Plot plot={result.plot2} /> : null}
           <InsertBar result={result} />
           <h3 className={styles.heading}>{t('kitElectrical.steps')}</h3>
           <ol className={styles.steps}>
