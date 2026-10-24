@@ -90,7 +90,10 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Crop image' })).toBeVisible();
 
   // A table, through the slash menu, typed into.
-  await page.getByRole('textbox', { name: 'Text' }).last().click();
+  const last = page.getByRole('textbox', { name: 'Text' }).last();
+  await last.click();
+  // The view can still take the focus back for the image; type the slash only once the text has it for good.
+  await expect(last).toBeFocused();
   await keyboard.press('Control+End');
   await slash(page, 'table');
   const table = page.getByRole('group', { name: /^Table(:|$)/ });

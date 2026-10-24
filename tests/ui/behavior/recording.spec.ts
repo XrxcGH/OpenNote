@@ -11,6 +11,8 @@ async function openPage(page: Page) {
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  // Record, clicked before the page's commands have loaded, did nothing: wait for the page to say they are ready.
+  await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
 }
 
 const record = (page: Page) => page.getByRole('group', { name: 'Recording', exact: true });
