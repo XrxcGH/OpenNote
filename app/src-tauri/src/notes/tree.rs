@@ -69,17 +69,12 @@ pub(crate) fn kind_name(kind: NodeKind) -> &'static str {
 
 /// A node summary from the core's description of it.
 pub(crate) fn summary(info: NodeInfo) -> NodeSummary {
-    let page = info.kind == NodeKind::Page;
     NodeSummary {
         id: info.id,
         kind: kind_name(info.kind),
         parent_id: info.parent_id,
         title: info.title,
-        color: if page {
-            None
-        } else {
-            info.color.map(|color| color.to_text())
-        },
+        color: info.color.map(|color| color.to_text()),
         page_level: info.page_level,
         child_count: info.child_count,
         created: info.created.to_rfc3339(),
