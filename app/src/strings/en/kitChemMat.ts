@@ -40,7 +40,17 @@ export const kitChemMat = {
     keywords:
       'enthalpy entropy gibbs free energy hess law spontaneity equilibrium constant van t hoff heat of reaction',
     intro: 'Reaction enthalpy, entropy, Gibbs energy, and K from standard data, and how they change with temperature.',
+    mode: {
+      reaction: 'From formation data (Hess’s law)',
+      bonds: 'Estimate from bond enthalpies',
+    },
+    word: { exo: 'Exothermic: the reaction releases heat', endo: 'Endothermic: the reaction absorbs heat' },
     field: {
+      mode: 'Method',
+      broken: 'Bonds broken (reactants)',
+      formed: 'Bonds formed (products)',
+      bondsHelp:
+        'Count every bond in the molecules, for example 4 C-H, 2 O=O. Use - for single, = for double, # for triple bonds.',
       equation: 'Balanced reaction with phases',
       equationHelp:
         'Write each species with its phase, such as N2(g) + 3 H2(g) -> 2 NH3(g). Phases: g, l, s, aq. No phase means the usual one.',
@@ -51,6 +61,8 @@ export const kitChemMat = {
       unbalanced: 'The reaction is not balanced. Balance atoms and charge first.',
       unbalancedHint: 'The reaction is not balanced. These coefficients balance it: {hint}.',
       format: 'Write the reaction as reactants -> products, with terms joined by " + ".',
+      bond: 'There is no bond enthalpy for "{term}". Write bonds like C-H, O=O, or N#N, with an optional count.',
+      bondsEmpty: 'List the bonds broken and the bonds formed.',
     },
     row: {
       dH: 'Reaction enthalpy ΔH°',
@@ -61,6 +73,10 @@ export const kitChemMat = {
       dGT: 'Gibbs energy ΔG° at the chosen temperature',
       KT: 'Equilibrium constant K at the chosen temperature',
       crossover: 'Crossover temperature ΔH°/ΔS°',
+      broken: 'Energy to break the bonds',
+      formed: 'Energy released forming bonds',
+      dHBonds: 'Estimated reaction enthalpy ΔH',
+      kind: 'Heat flow',
     },
     spontaneous: 'Spontaneous (ΔG° is negative)',
     notSpontaneous: 'Not spontaneous (ΔG° is positive)',
@@ -75,10 +91,15 @@ export const kitChemMat = {
       atT: 'At {T} K, holding ΔH° and ΔS° constant.',
       vanthoff: "This is the van 't Hoff equation: K changes with temperature through ΔH°.",
       crossover: 'ΔG° changes sign where ΔH° = T ΔS°.',
+      bondsBroken: 'Add the enthalpies of all the bonds broken in the reactants.',
+      bondsFormed: 'Add the enthalpies of all the bonds formed in the products.',
+      bondsSum: 'Bonds broken minus bonds formed.',
     },
     note: {
       constant:
         "ΔH° and ΔS° are held constant with temperature, so K at other temperatures follows the van 't Hoff equation.",
+      bonds:
+        'Average bond enthalpies are rough, usually within 5 to 10 percent, and apply to gas-phase molecules. Use formation data for better answers.',
       standard:
         'Standard state: 1 bar and 298.15 K, one mole of reaction as written. Energies are per mole of reaction as written.',
     },
