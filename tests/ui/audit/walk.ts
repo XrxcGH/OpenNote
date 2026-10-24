@@ -103,6 +103,13 @@ export async function walkSettings(audit: Auditor, page: Page): Promise<void> {
   for (const section of (await registries(page)).settingsSections) {
     await hook(page, 'navigate', { view: 'settings', section: section.id });
     await page.locator('h1, h2').first().waitFor();
+    // A section's body loads after its heading (a lazy chunk, then its own data), so a capture taken at once shows only
+    // the heading. A panel with nothing under its heading is rare, so the wait is short.
+    await page
+      .locator('main h1 ~ *')
+      .first()
+      .waitFor({ timeout: 8000 })
+      .catch(() => undefined);
     await audit.visit(`settings.${section.id}`);
   }
 }

@@ -113,10 +113,17 @@
   }
 
   .details summary {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--size-target-pointer);
     cursor: pointer;
     color: var(--color-text-link);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
+  }
+
+  :global(:root[data-density='touch']) .details summary {
+    min-block-size: var(--size-target-touch);
   }
 
   .details summary:focus-visible {
