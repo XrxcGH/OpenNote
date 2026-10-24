@@ -76,6 +76,8 @@
     min-block-size: 0;
     overflow: auto;
     padding: var(--space-4);
+    /* A switch reaches out past the content edge by more than the padding, so its focus ring would be cut. */
+    padding-inline: calc(var(--space-4) + var(--space-1));
     scroll-padding: var(--space-3);
   }
 

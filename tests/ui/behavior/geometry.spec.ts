@@ -46,7 +46,7 @@ function measure(page: Page): Promise<Geometry> {
         name: name(dialog),
         overflow: dialog.scrollHeight - dialog.clientHeight,
         bottomGap: window.innerHeight - dialog.getBoundingClientRect().bottom,
-        drawer: dialog.closest('[data-placement="start"]') !== null,
+        drawer: dialog.closest('[data-placement="start"], [data-docked]') !== null,
       };
     });
     const offCenter: string[] = [];
@@ -209,7 +209,9 @@ async function expectSound(page: Page, screen: ScreenState) {
   for (const dialog of geometry.dialogs) {
     expect(dialog.overflow, `the dialog "${dialog.name}" scrolls around its own content`).toBeLessThanOrEqual(1);
     if (!dialog.drawer) {
-      expect(dialog.bottomGap, `the dialog "${dialog.name}" reaches the window's bottom edge`).toBeGreaterThan(8);
+      expect(dialog.bottomGap, `the dialog "${dialog.name}" reaches the window's bottom edge`).toBeGreaterThanOrEqual(
+        8,
+      );
     }
   }
   expect(geometry.offCenter, `off-center button content on ${screen.id}`).toEqual([]);

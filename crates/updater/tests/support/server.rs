@@ -6,10 +6,11 @@
 
 use std::{
     collections::HashMap,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Read, Write},
     net::{TcpListener, TcpStream},
     sync::{Arc, Mutex},
     thread,
+    time::Duration,
 };
 
 #[derive(Clone)]
@@ -124,5 +125,13 @@ impl Server {
         head.push_str("Connection: close\r\n\r\n");
         let _ = stream.write_all(head.as_bytes());
         let _ = stream.write_all(&route.body);
+        let _ = stream.flush();
+        // The socket stays open until the client has read the answer and closed its side. Dropping it at once can
+        // reset the connection on Windows while the answer is still in flight, and the client then sees "Peer
+        // disconnected" instead of the answer.
+        let _ = stream.shutdown(std::net::Shutdown::Write);
+        let _ = stream.set_read_timeout(Some(Duration::from_secs(10)));
+        let mut rest = [0u8; 512];
+        while matches!(stream.read(&mut rest), Ok(count) if count > 0) {}
     }
 }
