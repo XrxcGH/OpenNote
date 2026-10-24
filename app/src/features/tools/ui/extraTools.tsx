@@ -28,6 +28,13 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The dynamics and control kit loads with its engineering feature the first time its window opens.
+const ControlKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadControlKit())
+    .then((m) => ({ default: m.ControlKit })),
+);
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -64,5 +71,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-control')
+    return (
+      <Suspense fallback={null}>
+        <ControlKit />
+      </Suspense>
+    );
   return null;
 }
