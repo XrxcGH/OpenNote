@@ -47,6 +47,14 @@ const fromData = (t: Texts) => t.source === 'data';
 const isInterval = (t: Texts, target: string) => t.mode === 'interval' && t.target === target;
 const isTest = (t: Texts, test: string) => t.mode === 'test' && t.test === test;
 const proportion = (t: Texts) => isInterval(t, 'proportion') || isTest(t, 'proportion');
+/** Notes for a moment that is infinite (the integral diverges) or undefined (shown as —). */
+function momentNotes(mean: number, variance: number): { id: string }[] {
+  const notes: { id: string }[] = [];
+  if (Number.isNaN(mean) || Number.isNaN(variance)) notes.push({ id: 'momentUndefined' });
+  if (mean === Infinity || variance === Infinity) notes.push({ id: 'momentInfinite' });
+  return notes;
+}
+
 const variance = (t: Texts) => isInterval(t, 'variance') || isTest(t, 'variance');
 /** A sample described by n, mean, and s, or by its data. */
 const summaryNeeded = (t: Texts) => isInterval(t, 'mean') || isTest(t, 'mean') || isTest(t, 'twoMeans') || variance(t);
@@ -142,6 +150,7 @@ function runProbability(values: Values): Outcome {
     ],
     steps: r.steps,
     plots: [distPlot('region', dist, inRegion(kind, a, b))],
+    notes: momentNotes(r.mean, r.variance),
   };
 }
 

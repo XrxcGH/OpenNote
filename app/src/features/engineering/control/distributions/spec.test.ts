@@ -54,3 +54,31 @@ describe('the distributions tool', () => {
     expect(!conf.ok && conf.fields[0].field).toBe('conf');
   });
 });
+
+describe('moments that diverge or are undefined', () => {
+  const run = (texts: Record<string, string>): Record<string, string> => {
+    const r = runTool(spec, { ...firstTexts(spec), region: 'le', a: '1', ...texts }, 'si');
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const row: Record<string, string> = Object.fromEntries(r.outcome.rows.map((x) => [x.id, String(x.value)]));
+    return { ...row, notes: (r.outcome.notes ?? []).map((n) => n.id).join(',') };
+  };
+
+  it('F(1, 1): mean ∞, variance undefined; F(12, 3): variance ∞', () => {
+    const a = run({ dist: 'f', df1: '1', df2: '1' });
+    expect(a.mean).toBe('∞');
+    expect(a.variance).toBe('—');
+    expect(a.notes).toBe('momentUndefined,momentInfinite');
+    const b = run({ dist: 'f', df1: '12', df2: '3' });
+    expect(b.mean).toBe('3');
+    expect(b.variance).toBe('∞');
+  });
+
+  it('t(1) has an undefined mean, t(1.5) an infinite variance, and no row shows NaN', () => {
+    const a = run({ dist: 't', df: '1' });
+    expect(a.mean).toBe('—');
+    expect(a.notes).toContain('momentUndefined');
+    const b = run({ dist: 't', df: '1.5' });
+    expect(b.variance).toBe('∞');
+    for (const v of [...Object.values(a), ...Object.values(b)]) expect(v).not.toContain('NaN');
+  });
+});

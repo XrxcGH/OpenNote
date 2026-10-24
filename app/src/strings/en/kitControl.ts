@@ -687,6 +687,12 @@ export const kitControl = {
     note: {
       proportion:
         'The Wald interval needs at least 10 successes and 10 failures; the Wilson interval is better otherwise.',
+      momentUndefined:
+        'A moment shown as — is undefined for these parameters: the t mean needs df > 1, the t variance df > 1, ' +
+        'and the F variance d₂ > 2.',
+      momentInfinite:
+        'A moment shown as ∞ diverges: the t variance for 1 < df ≤ 2, the F mean for d₂ ≤ 2, and the F variance ' +
+        'for 2 < d₂ ≤ 4.',
       normalPopulation: 'The interval for a variance assumes the population is normal.',
       knownSigma: 'The population standard deviation is taken as known, so the normal distribution is used.',
       tInterval: 'The population standard deviation is estimated by s, so the t distribution is used.',

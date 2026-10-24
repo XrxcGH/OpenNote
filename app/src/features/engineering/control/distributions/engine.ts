@@ -300,8 +300,9 @@ const BUILDERS: Readonly<Record<DistId, (a: number, b: number, c: number) => Dis
             ),
       (x) => fCdf(x, a, b),
       (p) => invertCdf((x) => fCdf(x, a, b), p, 1, 0, Infinity),
-      b > 2 ? b / (b - 2) : Number.NaN,
-      b > 4 ? (2 * b * b * (a + b - 2)) / (a * (b - 2) ** 2 * (b - 4)) : Number.NaN,
+      // The mean diverges for d2 ≤ 2; the variance diverges for 2 < d2 ≤ 4 and is undefined below that.
+      b > 2 ? b / (b - 2) : Infinity,
+      b > 4 ? (2 * b * b * (a + b - 2)) / (a * (b - 2) ** 2 * (b - 4)) : b > 2 ? Infinity : Number.NaN,
       `F(${fmt(a)}, ${fmt(b)})`,
     );
   },
