@@ -57,6 +57,7 @@ import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
 import { chem } from './chem';
+import { kitEcon } from './kitEcon';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 
@@ -120,4 +121,5 @@ export const en = {
   chem,
   docStructure,
   codeCells,
+  kitEcon,
 } as const;

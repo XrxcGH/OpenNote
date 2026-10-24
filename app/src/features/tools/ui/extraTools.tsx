@@ -16,6 +16,8 @@ import { StructureTool } from './StructureTool';
 import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
+const EconTool = lazy(() => import('../econ/EconTool').then((m) => ({ default: m.EconTool })));
+
 // The solvers are a large window of their own, so they load the first time it opens.
 const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
@@ -64,5 +66,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'econ')
+    return (
+      <Suspense fallback={null}>
+        <EconTool />
+      </Suspense>
+    );
   return null;
 }
