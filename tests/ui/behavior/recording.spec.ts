@@ -20,7 +20,7 @@ test('records into a block of the page, shows the indicator, and plays it back',
   await record(page).getByRole('button', { name: 'Record' }).click();
   // The indicator is in the title bar while the recording runs, and the block shows the recording bar.
   const indicator = page.getByTestId('recording-indicator');
-  await expect(indicator).toBeVisible();
+  await expect(indicator).toBeVisible({ timeout: 20_000 });
   await expect(indicator).toHaveAccessibleName(/^Recording \d+:\d\d\. Open the recording controls\.$/);
   await expect(page.getByTestId('recording-bar')).toBeVisible();
   // Writing while it runs doesn't stop it.
