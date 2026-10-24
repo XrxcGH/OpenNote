@@ -1,13 +1,16 @@
 // Liquid water for the fluids, heat-transfer, and aero kits, from public IAPWS formulations. Density, cp, and
 // enthalpy come from IAPWS-IF97 region 1 (the industrial formulation, 273.15 to 623.15 K, up to 100 MPa). The
-// saturation pressure comes from IAPWS-IF97 region 4. Viscosity follows IAPWS R12-08 and thermal conductivity
-// IAPWS R15-11, both without the critical enhancement (which matters only within a few kelvins of 647 K). Each
-// formulation reproduces the check values its release publishes (see props.test.ts).
+// saturation pressure comes from IAPWS-IF97 region 4. Viscosity follows IAPWS R12-08 without its critical term,
+// which matters only within a few kelvins of 647 K. Thermal conductivity follows IAPWS R15-11 with its critical
+// enhancement λ₂, which is broad: it adds about 1% to saturated liquid at 300 °C. λ₂ takes cp, cv, and the
+// compressibility from IF97 region 1, and the reference compressibility from the IF97 option of R15-11.
+//
+// Each formulation reproduces the check values its release publishes (see props.test.ts).
 import { NumError } from '../num/errors';
 
 export const WATER_SOURCE =
   'IAPWS-IF97 region 1 and 4 (density, cp, saturation pressure); ' +
-  'IAPWS R12-08 (viscosity) and R15-11 (thermal conductivity), without the critical enhancement';
+  'IAPWS R12-08 (viscosity, without the critical term) and R15-11 (thermal conductivity, with it)';
 
 const R = 461.526; // J/(kg·K), IF97
 const T_CRIT = 647.096;
@@ -42,21 +45,47 @@ export function waterSaturationPressure(T: number): number {
   return ((2 * c) / (-b + Math.sqrt(b * b - 4 * a * c))) ** 4 * 1e6;
 }
 
-/** IF97 region 1 at T (K) and p (Pa): specific volume, enthalpy, and cp. */
-function region1(T: number, p: number): { v: number; h: number; cp: number } {
+interface Region1 {
+  /** m³/kg */
+  v: number;
+  /** J/kg */
+  h: number;
+  /** J/(kg·K) */
+  cp: number;
+  /** J/(kg·K) */
+  cv: number;
+  /** (∂ρ/∂p) at constant T, s²/m² */
+  drhodp: number;
+}
+
+/** IF97 region 1 at T (K) and p (Pa), from the Gibbs energy γ(π, τ) and its derivatives. */
+function region1(T: number, p: number): Region1 {
   const pi = p / 16.53e6;
   const tau = 1386 / T;
   let gp = 0;
+  let gpp = 0;
+  let gpt = 0;
   let gt = 0;
   let gtt = 0;
   for (let i = 0; i < 34; i += 1) {
     const a = (7.1 - pi) ** I1[i];
     const b = (tau - 1.222) ** J1[i];
     gp -= (N1[i] * I1[i] * a * b) / (7.1 - pi);
+    gpp += (N1[i] * I1[i] * (I1[i] - 1) * a * b) / (7.1 - pi) ** 2;
+    gpt -= (N1[i] * I1[i] * J1[i] * a * b) / ((7.1 - pi) * (tau - 1.222));
     gt += (N1[i] * a * J1[i] * b) / (tau - 1.222);
     gtt += (N1[i] * a * J1[i] * (J1[i] - 1) * b) / (tau - 1.222) ** 2;
   }
-  return { v: (R * T * pi * gp) / p, h: R * T * tau * gt, cp: -R * tau * tau * gtt };
+  const v = (R * T * pi * gp) / p;
+  // κ_T = -(1/v)(∂v/∂p)_T = -π γ_ππ / (p γ_π), and (∂ρ/∂p)_T = ρ κ_T.
+  const kappaT = (-pi * gpp) / (p * gp);
+  return {
+    v,
+    h: R * T * tau * gt,
+    cp: -R * tau * tau * gtt,
+    cv: R * (-tau * tau * gtt + (gp - tau * gpt) ** 2 / gpp),
+    drhodp: kappaT / v,
+  };
 }
 
 const H0 = [1.67752, 2.20462, 0.6366564, -0.241605];
@@ -95,12 +124,56 @@ export function waterViscosity(T: number, rho: number): number {
   return mu0 * Math.exp(rhoBar * residualSum(H1, tBar, rhoBar)) * 1e-6;
 }
 
-/** Thermal conductivity in W/(m·K) from T (K) and density (kg/m³), IAPWS R15-11 without the critical term. */
+/**
+ * The background thermal conductivity λ₀·λ₁ in W/(m·K) from T (K) and density (kg/m³), IAPWS R15-11 without the
+ * critical enhancement; the release's check values (its Table 4) are for this part.
+ */
 export function waterConductivity(T: number, rho: number): number {
   const tBar = T / T_CRIT;
   const rhoBar = rho / RHO_CRIT;
   const k0 = Math.sqrt(tBar) / L0.reduce((s, l, i) => s + l / tBar ** i, 0);
   return k0 * Math.exp(rhoBar * residualSum(L1, tBar, rhoBar)) * 1e-3;
+}
+
+/** R15-11 Table 6: 1/ζ(T̄_R, ρ̄) = Σ aᵢ ρ̄ⁱ on five density ranges, for use with IF97 instead of IAPWS-95. */
+const ZETA_REF_BOUNDS = [0.310559006, 0.776397516, 1.242236025, 1.863354037, Infinity];
+const ZETA_REF: readonly (readonly number[])[] = [
+  [6.53786807199516, -5.61149954923348, 3.39624167361325, -2.27492629730878, 10.2631854662709, 1.97815050331519],
+  [6.52717759281799, -6.30816983387575, 8.08379285492595, -9.82240510197603, 12.1358413791395, -5.54349664571295],
+  [5.35500529896124, -3.96415689925446, 8.91990208918795, -12.033872950579, 9.19494865194302, -2.16866274479712],
+  [1.55225959906681, 0.464621290821181, 8.93237374861479, -11.0321960061126, 6.1678099993336, -0.965458722086812],
+  [1.11999926419994, 0.595748562571649, 9.8895256507892, -10.325505114704, 4.66861294457414, -0.503243546373828],
+];
+
+/** What the critical enhancement needs besides T and ρ, all in SI units. */
+export interface ConductivityState {
+  cp: number;
+  cv: number;
+  /** (∂ρ/∂p) at constant T, s²/m² */
+  drhodp: number;
+  /** viscosity, Pa·s */
+  mu: number;
+}
+
+/** The critical enhancement λ₂ of IAPWS R15-11 (its eqs. 15 to 20) in W/(m·K). */
+export function waterConductivityEnhancement(T: number, rho: number, state: ConductivityState): number {
+  const tBar = T / T_CRIT;
+  const rhoBar = rho / RHO_CRIT;
+  const zeta = state.drhodp * (22.064e6 / RHO_CRIT);
+  const a = ZETA_REF[ZETA_REF_BOUNDS.findIndex((bound) => rhoBar <= bound)];
+  const zetaRef = 1 / a.reduce((s, ai, i) => s + ai * rhoBar ** i, 0);
+  const dChi = rhoBar * (zeta - (zetaRef * 1.5) / tBar);
+  if (!(dChi > 0)) return 0;
+  // ξ = ξ₀ (Δχ̄/Γ₀)^(ν/γ) with ξ₀ = 0.13 nm, Γ₀ = 0.06, ν = 0.630, γ = 1.239; y = q̄_D ξ with 1/q̄_D = 0.40 nm.
+  const y = (0.13 / 0.4) * (dChi / 0.06) ** (0.63 / 1.239);
+  if (y < 1.2e-7) return 0;
+  const kappa = state.cp / state.cv;
+  const z =
+    (2 / (Math.PI * y)) *
+    ((1 - 1 / kappa) * Math.atan(y) + y / kappa - (1 - Math.exp(-1 / (1 / y + (y * y) / (3 * rhoBar * rhoBar)))));
+  const cpBar = state.cp / 461.51805;
+  const muBar = state.mu / 1e-6;
+  return ((177.8514 * rhoBar * cpBar * tBar) / muBar) * z * 1e-3;
 }
 
 export interface LiquidWater {
@@ -139,10 +212,10 @@ export function liquidWater(T: number, p?: number): LiquidWater {
   const pressure = p ?? pSat;
   if (pressure < pSat * (1 - 1e-9)) throw new NumError('domain', 'below the saturation pressure the water is steam');
   if (pressure > 100e6) throw new NumError('domain', 'the formulation stops at 100 MPa');
-  const { v, h, cp } = region1(T, pressure);
+  const { v, h, cp, cv, drhodp } = region1(T, pressure);
   const rho = 1 / v;
   const mu = waterViscosity(T, rho);
-  const k = waterConductivity(T, rho);
+  const k = waterConductivity(T, rho) + waterConductivityEnhancement(T, rho, { cp, cv, drhodp, mu });
   return {
     T,
     p: pressure,
