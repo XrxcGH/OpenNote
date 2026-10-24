@@ -89,7 +89,7 @@
   /* A section heading: set apart from the field labels by its size, weight, and color. 24 px above (the grid gap and
      this margin), 8 px below (the gap, less what this takes back). */
   .heading {
-    margin: var(--space-2) 0 calc(-1 * var(--space-2));
+    margin: var(--space-4) 0 calc(-1 * var(--space-2));
     font-size: var(--type-body-size);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);

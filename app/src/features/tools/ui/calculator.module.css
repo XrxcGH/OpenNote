@@ -18,14 +18,13 @@
   .ops {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   /* A row of borderless text buttons: their own padding is taken back, so the first label lines up with the left edge of
      the fields above it. */
   .flush {
     margin-inline-start: calc(-1 * (var(--space-3) + 1px));
-    gap: var(--space-1);
   }
 
   .hexKeys {

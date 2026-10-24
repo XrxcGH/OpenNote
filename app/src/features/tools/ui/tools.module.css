@@ -185,8 +185,17 @@
   /* Short fields side by side, sharing the width equally, and stacking only when the window is too narrow for two. */
   .pair {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
     gap: var(--space-3);
+  }
+
+  .pair > * {
+    min-inline-size: 0;
+  }
+
+  .pair input {
+    inline-size: 100%;
+    min-inline-size: 0;
   }
 
   .field {
@@ -255,6 +264,7 @@
      never wraps, so every underline sits on the same line. */
   .tabs {
     display: flex;
+    flex: none;
     gap: var(--space-2);
     overflow-x: auto;
     scrollbar-width: none;
