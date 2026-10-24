@@ -22,8 +22,6 @@
     min-block-size: 0;
     overflow-y: auto;
     scroll-padding-block: var(--space-3);
-    /* The window's height is the nav's limit: a short window makes the list scroll inside itself. */
-    container-type: size;
   }
 
   :global(:root[data-size-class='compact']) .body {
@@ -36,7 +34,7 @@
     position: sticky;
     inset-block-start: 0;
     align-self: start;
-    max-block-size: 100cqb;
+    max-block-size: calc(100dvh - var(--size-title-bar) - var(--space-10) - var(--space-3));
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
