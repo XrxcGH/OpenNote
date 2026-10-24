@@ -6,7 +6,7 @@
 
 import { boundsOf, grow } from '../../geometry/bounds';
 import { widthScale } from '../../geometry/matrix';
-import { strokeOutline } from '../../geometry/outline';
+import { isExactStroke, strokeShapes } from '../../geometry/outline';
 import { pagePoints } from '../../geometry/strokeIndex';
 import type { Bounds, InkPoint, Stroke } from '../../geometry/types';
 
@@ -24,7 +24,8 @@ export function inkBounds(stroke: Stroke): Bounds {
       ? stroke.points.map((p, i) => ({ ...p, x: placed[i].x, y: placed[i].y }))
       : [...stroke.points];
     const scale = stroke.transform ? widthScale(stroke.transform) : 1;
-    const outline = strokeOutline(points, { tool: stroke.tool, width: stroke.width, scale });
+    const exact = isExactStroke(stroke);
+    const outline = strokeShapes(points, { tool: stroke.tool, width: stroke.width, scale, exact }).flat();
     box = grow(boundsOf([...outline, ...placed]), EDGE_MARGIN);
     cache.set(stroke, box);
   }

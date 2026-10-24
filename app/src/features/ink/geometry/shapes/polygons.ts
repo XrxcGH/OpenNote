@@ -9,7 +9,18 @@ import type { Candidate, Shape } from './types';
 export const POLYGON_TOLERANCE = 0.05;
 
 const DEGREES = Math.PI / 180;
+/**
+ * A rectangle's corners are right angles within this on average (root mean square), and each within the larger angle.
+ * A parallelogram skewed by less is a rectangle (Beta 5 walk W2-2). A hand turns one corner of a box a good way off,
+ * but a trapezoid or a parallelogram has all four off at once.
+ */
 const RIGHT_ANGLE_TOLERANCE = 15 * DEGREES;
+const MAX_RIGHT_ANGLE_OFF = 22 * DEGREES;
+/**
+ * ...and both pairs of opposite sides run within this of parallel. A narrow trapezoid's corners are each within 15
+ * degrees of square, but its legs splay by twice that, 28 degrees or more; a hand's own error splays a box's less.
+ */
+const MAX_SIDE_SPLAY = 24 * DEGREES;
 /** Sides within this of horizontal and vertical make an upright rectangle. */
 const UPRIGHT_TOLERANCE = 10 * DEGREES;
 /** A rectangle whose sides differ by less than this share is a square. */
@@ -33,9 +44,25 @@ function angleAt(corners: readonly Vec[], i: number): number {
   return Math.acos(Math.max(-1, Math.min(1, (ax * bx + ay * by) / (Math.hypot(ax, ay) * Math.hypot(bx, by)))));
 }
 
+/**
+ * Whether a pair of opposite sides of a four-cornered outline splays too far from parallel for a rectangle, as a
+ * trapezoid's legs do.
+ */
+export function tapers(corners: readonly Vec[]): boolean {
+  const heading = (i: number) =>
+    Math.atan2(corners[(i + 1) % 4].y - corners[i].y, corners[(i + 1) % 4].x - corners[i].x);
+  return [0, 1].some((i) => {
+    const turn = heading(i + 2) - heading(i);
+    return Math.PI - Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn))) > MAX_SIDE_SPLAY;
+  });
+}
+
 function rectangleShape(corners: readonly Vec[]): Shape | null {
   const angles = corners.map((_, i) => angleAt(corners, i));
-  if (angles.some((a) => Math.abs(a - Math.PI / 2) > RIGHT_ANGLE_TOLERANCE)) return null;
+  const off = angles.map((a) => Math.abs(a - Math.PI / 2));
+  const rms = Math.sqrt(off.reduce((sum, d) => sum + d * d, 0) / off.length);
+  if (rms > RIGHT_ANGLE_TOLERANCE || off.some((d) => d > MAX_RIGHT_ANGLE_OFF)) return null;
+  if (tapers(corners)) return null;
   const center = { x: corners.reduce((s, p) => s + p.x, 0) / 4, y: corners.reduce((s, p) => s + p.y, 0) / 4 };
   // Side directions repeat every 90 degrees, so averaging four times the angle averages them without wrap-around.
   let sin4 = 0;
