@@ -50,7 +50,6 @@ describe('aircraft dynamic modes', () => {
       }
     }
   });
-
 });
 
 describe('aircraft dynamic modes: approximations, derivatives, and edge cases', () => {
@@ -124,5 +123,29 @@ describe('aircraft dynamic modes: approximations, derivatives, and edge cases', 
     const d = { Xu: 0, Xw: 0, Zu: 0, Zw: 0, Mu: 0, Mw: 0, Mq: 0, Mwdot: 0, theta0: 0 };
     expect(() => longitudinalA({ ...d, U0: 0 })).toThrow(AeroError);
     expect(() => longitudinalA({ ...d, U0: -50 })).toThrow(AeroError);
+  });
+});
+
+describe('naming longitudinal modes by frequency', () => {
+  it('labels an overdamped short period and keeps the slow pair as the phugoid', () => {
+    const r = flightModes({
+      axis: 'longitudinal',
+      A: [
+        [-0.045, 0.036, 0, -9.81],
+        [-0.37, -6, 50, 0],
+        [0, -0.02, -12, 0],
+        [0, 0, 1, 0],
+      ],
+    });
+    // Eigenvalues from numpy.linalg.eigvals: -11.82836935, -6.16967162, -0.02347952 +/- 0.02105854i.
+    const sp = r.modes.filter((m) => m.id === 'shortPeriodOverdamped').map((m) => m.root.re);
+    expect(sp).toHaveLength(2);
+    close(Math.min(...sp), -11.82836935, 1e-6);
+    close(Math.max(...sp), -6.16967162, 1e-6);
+    const ph = r.modes.filter((m) => m.id === 'phugoid');
+    expect(ph).toHaveLength(1);
+    close(ph[0]!.root.re, -0.02347952, 1e-7);
+    close(ph[0]!.root.im, 0.02105854, 1e-7);
+    expect(r.modes.some((m) => m.id === 'oscillation' || m.id === 'real' || m.id === 'shortPeriod')).toBe(false);
   });
 });

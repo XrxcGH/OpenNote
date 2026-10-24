@@ -5,8 +5,7 @@ export const flightmodes = {
   keywords:
     'aircraft dynamic stability modes short period phugoid dutch roll spiral roll subsidence eigenvalues state ' +
     'matrix stability derivatives damping ratio natural frequency',
-  about:
-    'The short period, phugoid, Dutch roll, roll, and spiral modes from a state matrix or stability derivatives.',
+  about: 'The short period, phugoid, Dutch roll, roll, and spiral modes from a state matrix or stability derivatives.',
   assume:
     'Small disturbances about steady, wings-level flight, so the equations are linear: ẋ = Ax. Longitudinal ' +
     'state [u, w, q, θ]; lateral-directional state [v, p, r, φ]. Body axes, SI units, angles in radians in the ' +
@@ -56,6 +55,8 @@ export const flightmodes = {
     approx: 'Two-state approximations',
     shortPeriod: 'Short period',
     phugoid: 'Phugoid',
+    shortPeriodOverdamped: 'Short period (overdamped)',
+    phugoidOverdamped: 'Phugoid (overdamped)',
     dutchRoll: 'Dutch roll',
     roll: 'Roll',
     spiral: 'Spiral',
@@ -74,8 +75,8 @@ export const flightmodes = {
       '{time} s.',
     fmReal: '{mode}: a real root; the response halves (or doubles) in {time} s.',
     fmClassifyLong:
-      'The faster, well-damped pair is the short period; the slow, lightly damped pair is the phugoid. The ' +
-      'two-state approximations below check each one.',
+      'By frequency, the two fastest roots are the short period and the two slowest the phugoid; either can be ' +
+      'an oscillatory pair or, when overdamped, two real roots. The two-state approximations below check each one.',
     fmClassifyLat:
       'The oscillatory pair is the Dutch roll; the fast real root is the roll subsidence and the slow one the ' +
       'spiral mode.',
@@ -86,6 +87,8 @@ export const flightmodes = {
   mode: {
     shortPeriod: 'Short period',
     phugoid: 'Phugoid',
+    shortPeriodOverdamped: 'Short period (overdamped)',
+    phugoidOverdamped: 'Phugoid (overdamped)',
     dutchRoll: 'Dutch roll',
     roll: 'Roll subsidence',
     spiral: 'Spiral',

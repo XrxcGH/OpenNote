@@ -6,7 +6,16 @@ import { AeroError, finite, num, step, tex, type AeroStep } from '../common';
 import { polyRoots, type Complex } from '../num';
 
 export type Axis = 'longitudinal' | 'lateral';
-export type ModeId = 'shortPeriod' | 'phugoid' | 'dutchRoll' | 'roll' | 'spiral' | 'oscillation' | 'real';
+export type ModeId =
+  | 'shortPeriod'
+  | 'phugoid'
+  | 'shortPeriodOverdamped'
+  | 'phugoidOverdamped'
+  | 'dutchRoll'
+  | 'roll'
+  | 'spiral'
+  | 'oscillation'
+  | 'real';
 
 export interface Derivatives {
   readonly Xu: number;
@@ -129,6 +138,39 @@ function eigenvector(A: readonly (readonly number[])[], s: Cx): Cx[] {
   return best.map((z) => cdiv(z, ref));
 }
 
+/**
+ * Names the longitudinal roots by frequency: the two of largest magnitude are the short period and the two of
+ * smallest the phugoid, each either a complex pair or two real roots (an overdamped mode). Roots that do not split
+ * that way (a pair straddling the middle) fall back to plain oscillation and real labels.
+ */
+function longitudinalModes(all: readonly Complex[], make: (id: ModeId, z: Complex) => Mode): Mode[] {
+  const byMagnitude = [...all].sort((a, b) => cabs(b) - cabs(a));
+  const groups = [byMagnitude.slice(0, 2), byMagnitude.slice(2)];
+  const isPair = (g: readonly Complex[]) => g.length === 2 && g[0]!.im * g[1]!.im < 0;
+  const isReal = (g: readonly Complex[]) => g.length === 2 && g.every((z) => z.im === 0);
+  if (all.length === 4 && groups.every((g) => isPair(g) || isReal(g))) {
+    const names: [ModeId, ModeId][] = [
+      ['shortPeriod', 'shortPeriodOverdamped'],
+      ['phugoid', 'phugoidOverdamped'],
+    ];
+    return groups.flatMap((g, i) => {
+      const [pair, overdamped] = names[i]!;
+      if (isPair(g)) return [make(pair, g[0]!.im > 0 ? g[0]! : g[1]!)];
+      return g.map((z) => make(overdamped, z));
+    });
+  }
+  return [
+    ...all
+      .filter((z) => z.im > 0)
+      .sort((a, b) => cabs(b) - cabs(a))
+      .map((z) => make('oscillation', z)),
+    ...all
+      .filter((z) => z.im === 0)
+      .sort((a, b) => Math.abs(b.re) - Math.abs(a.re))
+      .map((z) => make('real', z)),
+  ];
+}
+
 export function flightModes(input: { readonly axis: Axis; readonly A: readonly (readonly number[])[] }): ModesResult {
   const A = input.A;
   if (A.length !== 4 || A.some((r) => r.length !== 4)) throw new AeroError('matrixShape');
@@ -154,10 +196,7 @@ export function flightModes(input: { readonly axis: Axis; readonly A: readonly (
     };
   };
   if (input.axis === 'longitudinal') {
-    pairs.forEach((z, i) =>
-      modes.push(make(pairs.length === 2 ? (i === 0 ? 'shortPeriod' : 'phugoid') : 'oscillation', z)),
-    );
-    reals.forEach((z) => modes.push(make('real', z)));
+    modes.push(...longitudinalModes(all, make));
   } else {
     pairs.forEach((z, i) => modes.push(make(i === 0 ? 'dutchRoll' : 'oscillation', z)));
     reals.forEach((z, i) => modes.push(make(reals.length === 2 ? (i === 0 ? 'roll' : 'spiral') : 'real', z)));
