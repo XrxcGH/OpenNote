@@ -35,8 +35,10 @@ export interface Ref {
 }
 
 export interface Row {
-  /** The label's key, "r.<id>". */
+  /** The label's key, "r.<id>", unless `label` names it. */
   readonly id: string;
+  /** The label's key when rows repeat one label with different vars, such as a value for each mode. */
+  readonly label?: string;
   /** An SI value, shown in the chosen system when `qty` is given. */
   readonly value?: number;
   readonly qty?: QtyKind;

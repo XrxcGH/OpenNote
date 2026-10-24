@@ -84,4 +84,4 @@ export function rowValue(tool: AeroToolId, row: Row, system: UnitSystem): string
   return row.unit === '°' ? `${pretty(row.value, row.sig)}°` : `${pretty(row.value, row.sig)} ${row.unit}`;
 }
 
-export const rowLabel = (tool: AeroToolId, row: Row): string => toolText(tool, `r.${row.id}`, row.vars);
+export const rowLabel = (tool: AeroToolId, row: Row): string => toolText(tool, `r.${row.label ?? row.id}`, row.vars);

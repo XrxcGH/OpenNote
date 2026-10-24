@@ -121,7 +121,7 @@ describe('every tool in the window', () => {
       if (!si.ok) throw si.error;
       if (!us.ok) throw us.error;
       si.output.rows.forEach((row, i) => {
-        expect(hasText(id, `r.${row.id}`), row.id).toBe(true);
+        expect(hasText(id, `r.${row.label ?? row.id}`), row.id).toBe(true);
         if (row.word) expect(hasText(id, row.word.slice(1)), row.word).toBe(true);
         const other = us.output.rows[i]?.value;
         if (row.value !== undefined && Number.isFinite(row.value))

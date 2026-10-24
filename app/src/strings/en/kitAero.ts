@@ -9,6 +9,7 @@ import { rocket } from './kitAero/rocket';
 import { wing } from './kitAero/wing';
 import { performance } from './kitAero/performance';
 import { potential } from './kitAero/potential';
+import { flightmodes } from './kitAero/flightmodes';
 
 export const kitAero = {
   window: 'Aerospace',
@@ -55,5 +56,6 @@ export const kitAero = {
     wing,
     performance,
     potential,
+    flightmodes,
   },
 } as const;
