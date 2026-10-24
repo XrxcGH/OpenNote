@@ -133,15 +133,25 @@ export function plotSvg(spec: PlotSpec, system: System, colors: PlotColors, name
     `<text transform="translate(14 ${(PAD.top + H - PAD.bottom) / 2}) rotate(-90)" text-anchor="middle" ` +
       `fill="${colors.text}">${escape(axisTitle(spec.y, system))}</text>`,
   );
+  let legend = 0;
   series.forEach((one, i) => {
     const pen = colors.pens[i % colors.pens.length];
-    const points = one.points
-      .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y) && (!ax.log || x > 0) && (!ay.log || y > 0))
-      .map(([x, y]) => `${px(x).toFixed(1)},${py(y).toFixed(1)}`)
-      .join(' ');
+    const kept = one.points.filter(
+      ([x, y]) => Number.isFinite(x) && Number.isFinite(y) && (!ax.log || x > 0) && (!ay.log || y > 0),
+    );
+    const points = kept.map(([x, y]) => `${px(x).toFixed(1)},${py(y).toFixed(1)}`).join(' ');
     const dash = one.dashed ? ' stroke-dasharray="6 4"' : '';
     parts.push(`<polyline points="${points}" fill="none" stroke="${pen}" stroke-width="2"${dash}/>`);
-    const ly = PAD.top + 12 + i * 14;
+    if (one.inline) {
+      const end = kept[kept.length - 1];
+      if (end)
+        parts.push(
+          `<text x="${px(end[0]).toFixed(1)}" y="${py(end[1]).toFixed(1)}" dx="3" dy="-3" font-size="10" ` +
+            `fill="${colors.text}">${escape(one.name)}</text>`,
+        );
+      return;
+    }
+    const ly = PAD.top + 12 + legend++ * 14;
     parts.push(
       `<line x1="${W - PAD.right - 118}" y1="${ly - 4}" x2="${W - PAD.right - 100}" y2="${ly - 4}" stroke="${pen}" ` +
         `stroke-width="2"${dash}/>`,

@@ -9,6 +9,7 @@ export const kitThermo = {
     statthermo: 'Find partition functions, heat capacities, and molecular speeds',
     idealgas: 'Work an ideal-gas process or state with variable specific heats',
     steam: 'Find a state of water or steam from two properties',
+    psychro: 'Work moist-air states and air-conditioning processes',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -21,11 +22,15 @@ export const kitThermo = {
     steam:
       'steam tables water properties compressed liquid saturated mixture superheated vapor quality supercritical ' +
       'enthalpy entropy iapws if97 mollier dome',
+    psychro:
+      'psychrometrics psychrometric chart moist air humidity ratio relative humidity dew point wet bulb ' +
+      'air conditioning dehumidification evaporative cooling adiabatic mixing hvac',
   },
   tab: {
     statthermo: 'Statistical',
     idealgas: 'Ideal gas',
     steam: 'Steam',
+    psychro: 'Moist air',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -71,6 +76,7 @@ export const kitThermo = {
     Ts: 'Path on a T-s diagram',
     waterTs: 'Water on a T-s diagram',
     waterPh: 'Water on a p-h diagram',
+    psychroChart: 'Psychrometric chart',
   },
   mode: {
     gas: 'Gas molecule',
@@ -79,6 +85,8 @@ export const kitThermo = {
     occupancy: 'Occupancy',
     process: 'A process from state 1',
     state: 'One state',
+    airState: 'One moist-air state',
+    airProcess: 'An air-conditioning process',
   },
   field: {
     molarMass: 'Molar mass',
@@ -110,6 +118,22 @@ export const kitThermo = {
     enthalpy: 'Enthalpy h',
     entropy: 'Entropy s',
     quality: 'Quality x',
+    pressureFrom: 'Air pressure from',
+    altitude: 'Altitude',
+    dryBulb: 'Dry-bulb temperature',
+    relHumidity: 'Relative humidity',
+    wetBulb: 'Wet-bulb temperature',
+    humidityRatio: 'Humidity ratio ω, kg water per kg dry air',
+    dewPointT: 'Dew-point temperature',
+    moistEnthalpy: 'Enthalpy per kg dry air',
+    dryBulb1: 'Dry-bulb temperature at state 1',
+    relHumidity1: 'Relative humidity at state 1',
+    dryBulb2: 'Dry-bulb temperature at state 2',
+    relHumidity2: 'Relative humidity at state 2',
+    coilExit: 'Air temperature leaving the coil',
+    dryAirFlow: 'Dry-air flow (optional)',
+    dryAir1: 'Dry-air flow of stream 1',
+    dryAir2: 'Dry-air flow of stream 2',
   },
   choice: {
     atom: 'Single atom',
@@ -143,6 +167,21 @@ export const kitThermo = {
     pairPs: 'Pressure and entropy',
     pairTx: 'Temperature and quality',
     pairPx: 'Pressure and quality',
+    byPressure: 'Pressure',
+    byAltitude: 'Altitude, standard atmosphere',
+    tPhi: 'Dry bulb and relative humidity',
+    tTwb: 'Dry bulb and wet bulb',
+    tOmega: 'Dry bulb and humidity ratio',
+    tTdp: 'Dry bulb and dew point',
+    tH: 'Dry bulb and enthalpy',
+    twbPhi: 'Wet bulb and relative humidity',
+    tdpPhi: 'Dew point and relative humidity',
+    hPhi: 'Enthalpy and relative humidity',
+    hOmega: 'Enthalpy and humidity ratio',
+    sensible: 'Heating or cooling, no condensation',
+    dehumidify: 'Cooling with dehumidification',
+    evaporative: 'Evaporative cooling',
+    mixing: 'Adiabatic mixing of two streams',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -200,6 +239,21 @@ export const kitThermo = {
     temperature: 'Temperature',
     pressure: 'Pressure',
     quality: 'Quality',
+    tdb: 'Dry-bulb temperature',
+    phi: 'Relative humidity',
+    omega: 'Humidity ratio, kg/kg dry air',
+    hMoist: 'Enthalpy per kg dry air',
+    twb: 'Wet-bulb temperature',
+    tdp: 'Dew-point temperature',
+    vMoist: 'Specific volume per kg dry air',
+    pv: 'Vapor pressure',
+    pws: 'Saturation pressure of water',
+    qMoist: 'Heat added per kg dry air',
+    qRate: 'Heat rate',
+    waterRate: 'Water rate',
+    waterRemoved: 'Water removed per kg dry air',
+    qRemoved: 'Heat removed per kg dry air',
+    waterAdded: 'Water added per kg dry air',
   },
   step: {
     stat: {
@@ -289,6 +343,25 @@ export const kitThermo = {
       leverS: 'In the same way s = s_f + x s_fg = {sf} + x × {sfg} = {s} kJ/(kg·K), and v = {v} m³/kg.',
       result: 'The state: v = {v} m³/kg, u = {u} kJ/kg, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
     },
+    psy: {
+      pwsWater: 'State {label} at {t} °C: the saturation pressure over water, by IF97, is p_ws = {pws} kPa.',
+      pwsIce: 'State {label} at {t} °C: the saturation pressure over ice, by IAPWS R14-08, is p_ws = {pws} kPa.',
+      omega: 'The vapor pressure is p_v = {pv} kPa (φ = {phi} %), so the humidity ratio is ω = {omega} kg/kg.',
+      enthalpy: 'The enthalpy is h = {h} kJ/kg dry air.',
+      wetDew:
+        'The adiabatic-saturation balance gives the wet bulb {twb} °C, p_ws(T_dp) = p_v gives the dew point ' +
+        '{tdp} °C, and v = {v} m³/kg dry air.',
+      sensible: 'At constant ω the energy balance is q = h₂ − h₁ = {q} kJ/kg dry air, with h₂ = {h2}.',
+      dehumidify:
+        'Water balance: {water} kg/kg dry air condenses and leaves as liquid with h_w = 4.186 t₂ = {hw} kJ/kg. ' +
+        'Energy balance: the coil removes {q} kJ/kg dry air.',
+      evaporative:
+        'Evaporative cooling follows the line of constant wet bulb, {twb} °C, so the air leaves at {t2} °C and ' +
+        'gains {water} kg water per kg dry air.',
+      mixing:
+        'Mass and energy balances weighted by the dry-air flows: ω₃ = {omega} and h₃ = {h} kJ/kg dry air, so ' +
+        'T₃ = {t} °C.',
+    },
   },
   note: {
     idealGasMolecules: 'Ideal gas of independent molecules; energies are counted from the ground level.',
@@ -305,6 +378,8 @@ export const kitThermo = {
     if97Reference:
       'IAPWS-IF97: u and s are 0 for saturated liquid at the triple point, the same reference as steam tables.',
     twoPhaseNoCp: 'cp, cv, and the speed of sound are not defined for a two-phase mixture.',
+    psychroIdeal: 'Dry air and water vapor are ideal gases; enthalpies are 0 for dry air and liquid water at 0 °C.',
+    perDryAir: 'Humidity ratio, enthalpy, and volume are per kg of dry air, as on a psychrometric chart.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -321,6 +396,17 @@ export const kitThermo = {
     steamSatRange: 'Saturation exists only between the triple point and the critical point, 0.01 to 373.946 °C.',
     steamAboveCritical: 'Above the critical pressure of 22.064 MPa there is no saturated state; give T instead.',
     qualityRange: 'Quality must be between 0 and 1.',
+    psychroRange: 'The moist-air formulas here cover −60 to 200 °C.',
+    psychroVapor: 'At this pressure the water would boil: the vapor pressure cannot reach the total pressure.',
+    psychroOmega: 'The humidity ratio must be zero or more.',
+    psychroSupersaturated: 'Those values hold more water than saturated air can at that temperature.',
+    psychroPhi: 'Relative humidity must be between 0 and 100 %.',
+    psychroWetBulb: 'The wet-bulb temperature cannot be above the dry-bulb temperature.',
+    psychroDewPoint: 'The dew point cannot be above the dry-bulb temperature.',
+    psychroBelowDew: 'That cools the air below its dew point; use cooling with dehumidification instead.',
+    psychroNoCondense:
+      'The coil exit holds as much water as the entering air, so nothing condenses; cool below the dew point, {tdp} °C.',
+    psychroEvaporative: 'The exit relative humidity must be above the entering one and at most 100 %.',
   },
   word: {
     liquid: 'Compressed liquid',
@@ -329,5 +415,7 @@ export const kitThermo = {
     satVapor: 'Saturated vapor',
     vapor: 'Superheated vapor',
     supercritical: 'Supercritical fluid',
+    path: 'Process path',
+    saturationLine: 'Saturation line',
   },
 } as const;

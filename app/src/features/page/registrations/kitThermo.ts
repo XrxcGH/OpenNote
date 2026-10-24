@@ -7,6 +7,7 @@ import { addCommand } from './qolStudy';
 const TOOLS = [
   ['steam', 'CloudFog'],
   ['idealgas', 'Cylinder'],
+  ['psychro', 'DropHalf'],
   ['statthermo', 'Atom'],
 ] as const satisfies readonly (readonly [string, IconName])[];
 

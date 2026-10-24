@@ -116,14 +116,14 @@ export function steamPlots(
       title: 'waterTs',
       x: { label: 's', qty: 's' },
       y: { label: 'T', qty: 'T', unit: C },
-      series: [{ name: 'dome', points: line((one) => [one.s, one.T]) }],
+      series: [{ name: '', word: 'saturationLine', points: line((one) => [one.s, one.T]) }],
       marks: points.map((one) => ({ x: one.s, y: one.T, label: one.label })),
     },
     {
       title: 'waterPh',
       x: { label: 'h', qty: 'e' },
       y: { label: 'p', qty: 'p', log: true },
-      series: [{ name: 'dome', points: line((one) => [one.h, one.p]) }],
+      series: [{ name: '', word: 'saturationLine', points: line((one) => [one.h, one.p]) }],
       marks: points.map((one) => ({ x: one.h, y: one.p, label: one.label })),
     },
   ];

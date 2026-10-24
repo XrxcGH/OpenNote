@@ -7,7 +7,7 @@ import type { System } from '../common/units';
 import { PICTURE_COLORS } from './exportColors';
 import { insertIntoPage, svgToPng } from './insert';
 import { plotSvg } from './plotSvg';
-import { answerLine, resultTable, stateTable, stepsText } from './present';
+import { answerLine, plotWords, resultTable, stateTable, stepsText } from './present';
 import { say } from './say';
 
 export function InsertMenu({ result, system, title }: { result: ThermoResult | null; system: System; title: string }) {
@@ -21,7 +21,7 @@ export function InsertMenu({ result, system, title }: { result: ThermoResult | n
   };
   const picture = async (plot: PlotSpec) => {
     const name = say(`kitThermo.plot.${plot.title}`);
-    const bytes = await svgToPng(plotSvg(plot, system, PICTURE_COLORS, name));
+    const bytes = await svgToPng(plotSvg(plotWords(plot, say), system, PICTURE_COLORS, name));
     if (!bytes) return announce(t('kitThermo.ui.pictureFailed'));
     done(insertIntoPage({ picture: { bytes, name: `${name}.png`, alt: name, mime: 'image/png' } }));
   };

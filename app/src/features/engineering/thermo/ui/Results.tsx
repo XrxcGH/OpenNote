@@ -7,7 +7,7 @@ import { t } from '../../../../strings/t';
 import type { ThermoResult } from '../common/types';
 import type { System } from '../common/units';
 import { plotSvg, SCREEN_COLORS } from './plotSvg';
-import { rowName, shown, stepText } from './present';
+import { plotWords, rowName, shown, stepText } from './present';
 import { say } from './say';
 import styles from './thermo.module.css';
 
@@ -65,7 +65,7 @@ export function Notes({ result }: { result: ThermoResult }) {
 export function PlotView({ result, system }: { result: ThermoResult; system: System }) {
   return (result.plots ?? []).map((plot) => {
     const name = t('kitThermo.ui.plotLabel', { title: say(`kitThermo.plot.${plot.title}`) });
-    const svg = plotSvg(plot, system, SCREEN_COLORS, name);
+    const svg = plotSvg(plotWords(plot, say), system, SCREEN_COLORS, name);
     return <div key={plot.title} className={styles.plot} dangerouslySetInnerHTML={{ __html: svg }} />;
   });
 }

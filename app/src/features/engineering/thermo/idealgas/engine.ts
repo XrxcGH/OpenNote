@@ -139,14 +139,14 @@ function plots(gas: Gas, input: ProcessInput, e: End): PlotSpec[] {
       title: 'pv',
       x: { label: 'v', qty: 'v' },
       y: { label: 'p', qty: 'p' },
-      series: [{ name: input.process, points: points.map((pt) => [v(pt), pt.p] as const) }],
+      series: [{ name: '', word: 'path', points: points.map((pt) => [v(pt), pt.p] as const) }],
       marks: ends.map((pt, i) => ({ x: v(pt), y: pt.p, label: String(i + 1) })),
     },
     {
       title: 'Ts',
       x: { label: 's - s₁', qty: 's' },
       y: { label: 'T', qty: 'T' },
-      series: [{ name: input.process, points: points.map((pt) => [s(pt), pt.T] as const) }],
+      series: [{ name: '', word: 'path', points: points.map((pt) => [s(pt), pt.T] as const) }],
       marks: ends.map((pt, i) => ({ x: s(pt), y: pt.T, label: String(i + 1) })),
     },
   ];

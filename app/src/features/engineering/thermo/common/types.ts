@@ -42,9 +42,13 @@ export interface ResultRow {
 }
 
 export interface PlotSeries {
+  /** The legend text when it is a symbol, such as φ = 40 %; a word key takes its place in sentences. */
   name: string;
+  word?: ThermoWordKey;
   points: readonly (readonly [number, number])[];
   dashed?: boolean;
+  /** Label the line at its end instead of in the legend. */
+  inline?: boolean;
 }
 
 export interface PlotMark {

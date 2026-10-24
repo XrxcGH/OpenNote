@@ -1,7 +1,7 @@
 // Results as text for the screen and the page: each value in the chosen unit system, the answer line, the result
 // table, the worked steps as numbered lines, and a cycle's state table. Pure: the words come in through say().
 import { fmt } from '../common/format';
-import type { KitStep, ResultRow, StateRow, ThermoResult } from '../common/types';
+import type { KitStep, PlotSpec, ResultRow, StateRow, ThermoResult } from '../common/types';
 import { defaultUnit, fromEngine, type System } from '../common/units';
 
 export type Say = (key: string, vars?: Record<string, string>) => string;
@@ -37,6 +37,12 @@ export function resultTable(result: ThermoResult, system: System, say: Say): { h
     }),
   };
 }
+
+/** The plot with each series' word, such as "Saturation line", in the reader's language. */
+export const plotWords = (plot: PlotSpec, say: Say): PlotSpec => ({
+  ...plot,
+  series: plot.series.map((one) => (one.word ? { ...one, name: say(`kitThermo.word.${one.word}`) } : one)),
+});
 
 export const stepText = (step: KitStep, say: Say): string => say(`kitThermo.step.${step.key}`, step.vars);
 
