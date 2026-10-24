@@ -2,8 +2,10 @@ import type { MessageKey } from '../../../../strings/t';
 import { HALF_REACTIONS, PRODUCTS } from '../data/halfReactions';
 import type { ToolSpec } from '../spec';
 import { cell, electrolysis } from './engine';
+import { cellFromNotation } from './notation';
 
 const mode = (v: Readonly<Record<string, string>>) => v.mode ?? 'cell';
+const picked = (v: Readonly<Record<string, string>>) => mode(v) === 'cell';
 
 /** The choice list of half-reactions, each named by its reduction equation. */
 const halfChoices = HALF_REACTIONS.map((h) => ({ value: h.id, label: `kitChemMat.ec.half.${h.id}` as MessageKey }));
@@ -23,6 +25,7 @@ export const electrochemTool: ToolSpec = {
       initial: 'cell',
       choices: [
         { value: 'cell', label: 'kitChemMat.ec.mode.cell' },
+        { value: 'notation', label: 'kitChemMat.ec.mode.notation' },
         { value: 'electrolysis', label: 'kitChemMat.ec.mode.electrolysis' },
       ],
     },
@@ -63,7 +66,15 @@ export const electrochemTool: ToolSpec = {
       kind: 'number',
       dim: 'temperature',
       initial: '298.15',
-      when: (v) => mode(v) === 'cell',
+      when: (v) => picked(v) || mode(v) === 'notation',
+    },
+    {
+      id: 'notation',
+      label: 'kitChemMat.ec.field.notation',
+      kind: 'text',
+      initial: 'Zn(s) | Zn2+(0.1 M) || Cu2+(0.001 M) | Cu(s)',
+      help: 'kitChemMat.ec.field.notationHelp',
+      when: (v) => mode(v) === 'notation',
     },
     {
       id: 'product',
@@ -117,20 +128,22 @@ export const electrochemTool: ToolSpec = {
     },
   ],
   solve: (input) =>
-    input.mode === 'electrolysis'
-      ? electrolysis({
-          product: String(input.product),
-          find: String(input.find),
-          I: Number(input.I),
-          t: Number(input.t),
-          m: Number(input.m),
-          efficiency: Number(input.efficiency),
-        })
-      : cell({
-          a: String(input.a),
-          b: String(input.b),
-          concA: String(input.concA),
-          concB: String(input.concB),
-          T: Number(input.T),
-        }),
+    input.mode === 'notation'
+      ? cellFromNotation({ notation: String(input.notation), T: Number(input.T) })
+      : input.mode === 'electrolysis'
+        ? electrolysis({
+            product: String(input.product),
+            find: String(input.find),
+            I: Number(input.I),
+            t: Number(input.t),
+            m: Number(input.m),
+            efficiency: Number(input.efficiency),
+          })
+        : cell({
+            a: String(input.a),
+            b: String(input.b),
+            concA: String(input.concA),
+            concB: String(input.concB),
+            T: Number(input.T),
+          }),
 };

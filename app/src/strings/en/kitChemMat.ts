@@ -303,13 +303,16 @@ export const kitChemMat = {
     keywords:
       'electrochemistry cell potential nernst galvanic electrolysis faraday half reaction anode cathode battery',
     intro: "Cell potentials, the Nernst equation, ΔG and K, concentration cells, and electrolysis with Faraday's laws.",
-    mode: { cell: 'Cell potential', electrolysis: 'Electrolysis' },
+    mode: { cell: 'Cell potential', notation: 'Cell potential from cell notation', electrolysis: 'Electrolysis' },
     field: {
       mode: 'What to find',
       a: 'First half-reaction',
       b: 'Second half-reaction',
       concA: 'Amounts in the first half-cell',
       concB: 'Amounts in the second half-cell',
+      notation: 'Cell notation',
+      notationHelp:
+        'Anode on the left, cathode on the right, with | between phases and || for the salt bridge, such as Zn(s) | Zn2+(0.1 M) || Cu2+(0.001 M) | Cu(s). Amounts default to 1.',
       concHelp: 'Ions in mol/L and gases in bar, as name = amount, such as Zn2+ = 0.1. Anything left out is 1.',
       T: 'Temperature',
       product: 'Substance formed at the electrode',
@@ -322,6 +325,9 @@ export const kitChemMat = {
     find: { mass: 'Mass formed', time: 'Time needed' },
     err: {
       half: 'Choose 2 half-reactions.',
+      notation:
+        'Write the cell as anode half-cell || cathode half-cell, with | between the electrode and the solution.',
+      notationHalf: 'This half-cell is not in the table of half-reactions. Check the formulas, such as Zn2+ and Zn.',
       conc: 'Write each amount as name = number, one per line, or separated by commas.',
       concPositive: 'Amounts must be greater than zero.',
       product: 'Choose a substance.',
@@ -367,6 +373,8 @@ export const kitChemMat = {
       activity: 'Concentrations stand in for activities. Gases use partial pressures in bar.',
       concentration:
         'Both half-cells are the same couple, so E° is zero and the cell is driven only by the difference in amounts.',
+      notationFlipped:
+        'The left half-cell has the higher standard potential, so it is the cathode here, and the cell runs the other way from how it was written.',
       faraday: 'F = 96485.33212 C/mol. Current efficiency below 100 percent means some charge goes to other reactions.',
     },
     half: {
