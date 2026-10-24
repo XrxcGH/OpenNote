@@ -157,6 +157,25 @@ describe('failure', () => {
     );
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.outcome.rows.find((row) => row.id === 'firstPly')?.value).toBeTypeOf('number');
+    // Loaded by its first-ply failure load, the laminate is just at failure: the strength ratio is 1.
+    const fpf = r.ok ? r.outcome.rows.find((row) => row.id === 'NxFpf')?.value : undefined;
+    expect(fpf).toBeTypeOf('object');
+    const atFailure = runTool(
+      compositesSpec,
+      {
+        ...firstTexts(compositesSpec),
+        layup: '[0/45/-45/90]s',
+        Xt: '1500',
+        Xc: '1500',
+        Yt: '40',
+        Yc: '246',
+        S: '68',
+        Nx: `${(fpf as { v: number }).v / 1000} N/mm`,
+      },
+      'si',
+    );
+    const R = atFailure.ok ? atFailure.outcome.rows.find((row) => row.id === 'ratio')?.value : NaN;
+    rel(R as number, 1, 1e-9);
     const bad = runTool(compositesSpec, { ...firstTexts(compositesSpec), Nx: '100 MPa' }, 'si');
     expect(bad.ok ? 'none' : bad.fields.map((one) => one.error.code).join()).toBe('unitMismatch');
   });

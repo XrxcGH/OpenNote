@@ -101,6 +101,21 @@ export const compositesSpec: ToolSpec = {
         { id: 'ratioMax', value: Math.min(...r.faces.map((f) => f.ratioMax ?? Infinity)), sym: 'R_{MS}' },
         { id: 'ratioHill', value: Math.min(...r.faces.map((f) => f.ratioHill ?? Infinity)), sym: 'R_{TH}' },
       );
+      // The first-ply failure load: the applied load scaled by the Tsai-Wu strength ratio.
+      const R = ratios[worst];
+      const loads = [
+        ['Nx', 'lineLoad', 'N_x'],
+        ['Ny', 'lineLoad', 'N_y'],
+        ['Nxy', 'lineLoad', 'N_{xy}'],
+        ['Mx', 'smallForce', 'M_x'],
+        ['My', 'smallForce', 'M_y'],
+        ['Mxy', 'smallForce', 'M_{xy}'],
+      ] as const;
+      for (const [id, kind, sym] of loads) {
+        const applied = or0(values, id);
+        if (applied !== 0 && Number.isFinite(R))
+          rows.push({ id: `${id}Fpf`, value: q(R * applied, kind), sym: `${sym}^{FPF}` });
+      }
       faceColumns.push('maxStress', 'tsaiHill', 'tsaiWu');
       notes.push('failure');
     }

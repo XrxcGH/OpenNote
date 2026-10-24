@@ -55,6 +55,12 @@ export const composites = {
     firstPly: 'Ply that fails first',
     ratioMax: 'Strength ratio by maximum stress',
     ratioHill: 'Strength ratio by Tsai–Hill',
+    NxFpf: 'First-ply failure load, Nx',
+    NyFpf: 'First-ply failure load, Ny',
+    NxyFpf: 'First-ply failure load, Nxy',
+    MxFpf: 'First-ply failure moment, Mx',
+    MyFpf: 'First-ply failure moment, My',
+    MxyFpf: 'First-ply failure moment, Mxy',
   },
   table: {
     qbar: 'Transformed stiffness of each ply, Q̄',
