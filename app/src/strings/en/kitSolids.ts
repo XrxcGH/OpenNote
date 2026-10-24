@@ -11,6 +11,7 @@ import { thinwalled, thinwalledSteps } from './kitSolids/thinwalled';
 import { composites, compositesSteps } from './kitSolids/composites';
 import { biomech, biomechSteps } from './kitSolids/biomech';
 import { machine, machineSteps } from './kitSolids/machine';
+import { fem, femSteps } from './kitSolids/fem';
 
 export const kitSolids = {
   title: 'Solid mechanics',
@@ -103,6 +104,20 @@ export const kitSolids = {
     jointConstant: 'C must be between 0 and 1.',
     springIndex: 'The coil diameter must be larger than the wire diameter.',
     needSpeed: 'Type the speed for the dynamic factor, or choose none.',
+    noFreedom: 'Every freedom is held, so nothing can move.',
+    mechanism: 'The model can move freely: add a support, or check that every node is joined.',
+    zeroElement: 'An element joins two nodes in the same place.',
+    badElement: 'An element is folded or flat. Check its nodes.',
+    meshCount: 'The number of elements must be a whole number of at least 1, or 2 for a bar fixed at both ends.',
+    meshSize: 'The mesh is too large for the window. Use at most {detail} cells.',
+    fewNodes: 'Type at least two nodes.',
+    noElements: 'Type at least one element.',
+    noTemperature: 'Fix the temperature at one node at least.',
+    nodeNumber: 'There is no node {detail}.',
+    nodeLine: 'Node line {detail} could not be read.',
+    elementLine: 'Element line {detail} could not be read. Check its word and how many numbers it has.',
+    femSupportLine: 'Support line {detail} could not be read. Type the node, then how it is held.',
+    holeSize: 'The hole’s diameter must be less than 0.9 times the plate’s width and its height.',
     unknown: 'That could not be worked out.',
   },
   columns,
@@ -115,6 +130,7 @@ export const kitSolids = {
   composites,
   biomech,
   machine,
+  fem,
   step: {
     columns: columnsSteps,
     stress: stressSteps,
@@ -126,5 +142,6 @@ export const kitSolids = {
     composites: compositesSteps,
     biomech: biomechSteps,
     machine: machineSteps,
+    fem: femSteps,
   },
 } as const;

@@ -85,6 +85,12 @@ function FieldInput(props: {
           force: unitOf('bigForce', system),
           load: unitOf('spanLoad', system),
           moment: unitOf('bigMoment', system),
+          modulus: unitOf('modulus', system),
+          inertia: unitOf('inertia', system),
+          stiffness: unitOf('stiffness', system),
+          conductivity: unitOf('conductivity', system),
+          temperature: unitOf('tempChange', system),
+          heat: unitOf('heat', system),
         })
       : '';
   const unit = field.type === 'quantity' ? unitOf(field.kind, system) : '';

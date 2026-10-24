@@ -27,6 +27,8 @@ const IN = 0.0254;
 const KIP = 4448.2216152605;
 const LBF = 4.4482216152605;
 const KSI = KIP / IN ** 2;
+const BTU_H = 1055.05585262 / 3600;
+const FT = 0.3048;
 const shown = (label: string, factor: number, typed?: string): Shown => ({
   label,
   factor,
@@ -65,6 +67,22 @@ export const KINDS = {
   viscosity: { dim: D(-1, 1, -1), si: shown('MPa·s', 1e6), us: shown('ksi·s', KSI) },
   expansion: { dim: D(0, 0, 0, -1), si: shown('1/K', 1, 'K^-1'), us: shown('1/°F', 9 / 5, 'degF^-1') },
   tempChange: { dim: D(0, 0, 0, 1), si: shown('K', 1), us: shown('°F', 5 / 9) },
+  conductivity: {
+    dim: D(1, 1, -3, -1),
+    si: shown('W/(m·K)', 1, 'W/(m*K)'),
+    us: shown('Btu/(h·ft·°F)', BTU_H / (FT * (5 / 9)), 'Btu/(hr*ft*degF)'),
+  },
+  heat: { dim: D(2, 1, -3), si: shown('W', 1), us: shown('Btu/h', BTU_H, 'Btu/hr') },
+  heatGen: {
+    dim: D(-1, 1, -3),
+    si: shown('W/m³', 1, 'W/m^3'),
+    us: shown('Btu/(h·ft³)', BTU_H / FT ** 3, 'Btu/(hr*ft^3)'),
+  },
+  heatFlux: {
+    dim: D(0, 1, -3),
+    si: shown('W/m²', 1, 'W/m^2'),
+    us: shown('Btu/(h·ft²)', BTU_H / FT ** 2, 'Btu/(hr*ft^2)'),
+  },
   angle: { dim: D(), si: shown('°', Math.PI / 180), us: shown('°', Math.PI / 180) },
   radians: { dim: D(), si: shown('rad', 1), us: shown('rad', 1) },
   strain: { dim: D(), si: shown('µε', 1e-6), us: shown('µε', 1e-6) },

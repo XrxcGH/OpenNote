@@ -12,4 +12,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   composites: () => import('./composites/spec').then((m) => m.compositesSpec),
   biomech: () => import('./biomech/spec').then((m) => m.biomechSpec),
   machine: () => import('./machine/spec').then((m) => m.machineSpec),
+  fem: () => import('./fem/spec').then((m) => m.femSpec),
 };
