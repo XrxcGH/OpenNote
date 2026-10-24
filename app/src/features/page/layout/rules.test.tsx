@@ -28,8 +28,22 @@ const frames = (n = 3) =>
     tick(n);
   });
 
+const trace: string[] = [];
+const here = () => `${Math.round(performance.now())}ms ${new Error().stack?.split('\n').slice(2, 6).join(' < ')}`;
+
 async function ruled(fixture: PageFixture, grid: RuleGrid | null = GRID): Promise<PageHarness> {
   const harness = await renderPage({ fixture });
+  const { flow } = harness.mounted;
+  const stop = flow.stop.bind(flow);
+  flow.stop = () => {
+    trace.push(`stop ${here()}`);
+    stop();
+  };
+  const set = flow.setRules.bind(flow);
+  flow.setRules = (next) => {
+    trace.push(`setRules(${next ? 'grid' : 'null'}) ${here()}`);
+    set(next);
+  };
   harness.mounted.flow.setRules(grid);
   await document.fonts?.ready;
   await frames();
@@ -125,6 +139,7 @@ describe('ruled paper', () => {
           `zoom=${harness.viewport.camera().zoom} dpr=${devicePixelRatio} top=${wrapper.getBoundingClientRect().top}`,
           `font=${getComputedStyle(line).fontFamily} lh=${getComputedStyle(line).lineHeight}`,
           `pad=${getComputedStyle(line).paddingTop}`,
+          `trace=${trace.join(' ## ')}`,
         ].join(' | ');
         expect(offLift(baseline(harness, line)), `box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
         expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
