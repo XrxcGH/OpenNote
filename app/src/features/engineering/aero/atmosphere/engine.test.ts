@@ -57,9 +57,14 @@ describe('standard atmosphere', () => {
     }
   });
 
-  it('reaches 86 km geometric with the published top temperature', () => {
+  it('reaches 86 km geometric with the published kinetic temperature', () => {
     const r = at(86, 'geometric');
-    expect(Math.abs(r.T - 186.946)).toBeLessThan(2e-3);
+    // USSA 1976 Table I at 86 km: T = 186.87 K, mu = 1.2529e-5 Pa s, rho = 6.958e-6 kg/m^3. TM there is 186.946 K.
+    expect(Math.abs(r.T - 186.87)).toBeLessThan(5e-3);
+    rel(r.mu, 1.2529e-5, 1e-4);
+    rel(r.rho, 6.958e-6, 1e-3);
+    // The speed of sound is defined with TM, not T.
+    rel(r.a, Math.sqrt(1.4 * (8314.32 / 28.9644) * 186.946), 1e-5);
     expect(r.layer).toBe('mesosphere2');
   });
 

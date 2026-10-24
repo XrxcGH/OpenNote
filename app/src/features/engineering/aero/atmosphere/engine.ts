@@ -77,6 +77,25 @@ export function standard(H: number): { T: number; p: number; layer: Layer } {
   return { T: layer.T + layer.lapse * dH, p: layerPressure(layer.p, layer.T, layer.lapse, dH), layer };
 }
 
+/**
+ * USSA 1976 Table 8: the molecular-weight ratio M/M0 from 80 to 86 km geometric, every 0.5 km. Below 80 km it is 1.
+ * The layer formulas give the molecular-scale temperature TM; the kinetic temperature is T = TM M/M0.
+ */
+const M_RATIO = [
+  1.0, 0.999996, 0.999989, 0.999971, 0.999941, 0.999909, 0.99987, 0.999829, 0.999786, 0.999741, 0.999694, 0.999641,
+  0.999579,
+] as const;
+
+/** M/M0 at a geometric altitude in m, interpolated linearly in the 1976 table. */
+export function molecularRatio(z: number): number {
+  const x = (z - 80000) / 500;
+  if (x <= 0) return 1;
+  const last = M_RATIO.length - 1;
+  if (x >= last) return M_RATIO[last]!;
+  const i = Math.floor(x);
+  return M_RATIO[i]! + (x - i) * (M_RATIO[i + 1]! - M_RATIO[i]!);
+}
+
 export const sutherland = (T: number) => (SUTHERLAND_BETA * Math.pow(T, 1.5)) / (T + SUTHERLAND_S);
 
 export type AltitudeKind = 'geometric' | 'geopotential';
@@ -200,17 +219,18 @@ function layerSteps(H: number, layer: Layer, Tstd: number, T: number, p: number,
 }
 
 /** Density, speed of sound, and viscosity from the temperature and pressure. */
-function propertySteps(T: number, p: number, rho: number, a: number, mu: number): AeroStep[] {
+function propertySteps(T: number, TM: number, p: number, rho: number, a: number, mu: number): AeroStep[] {
   const R = tex(R_AIR, 6);
   const Tt = tex(T, 6);
+  const TMt = tex(TM, 6);
   return [
     step(
       'atmDensity',
-      eq('\\rho = \\frac{p}{R T}', `\\frac{${tex(p, 6)}}{${R} \\times ${Tt}}`, `${tex(rho, 6)}\\ \\text{kg/m}^3`),
+      eq('\\rho = \\frac{p}{R T}', `\\frac{${tex(p, 6)}}{${R} \\times ${TMt}}`, `${tex(rho, 6)}\\ \\text{kg/m}^3`),
     ),
     step(
       'atmSound',
-      eq('a = \\sqrt{\\gamma R T}', `\\sqrt{1.4 \\times ${R} \\times ${Tt}}`, `${tex(a, 6)}\\ \\text{m/s}`),
+      eq('a = \\sqrt{\\gamma R T}', `\\sqrt{1.4 \\times ${R} \\times ${TMt}}`, `${tex(a, 6)}\\ \\text{m/s}`),
     ),
     step(
       'atmViscosity',
@@ -228,14 +248,22 @@ export function atmosphere(input: AtmosphereInput): AtmosphereResult {
   const steps: AeroStep[] = [];
   const H = resolveAltitude(input, dT, steps);
   const { T: Tstd, p, layer } = standard(H);
-  const T = Tstd + dT;
-  if (T <= 0) throw new AeroError('temperatureNegative');
+  // TM, the molecular-scale temperature, is what the standard defines density and sound speed with.
+  const TM = Tstd + dT;
+  if (TM <= 0) throw new AeroError('temperatureNegative');
   const z = geometricOf(H);
-  const rho = p / (R_AIR * T);
-  const a = Math.sqrt(GAMMA_AIR * R_AIR * T);
+  const ratio = molecularRatio(z);
+  const T = TM * ratio;
+  const rho = p / (R_AIR * TM);
+  const a = Math.sqrt(GAMMA_AIR * R_AIR * TM);
   const mu = sutherland(T);
   const g = G0 * Math.pow(R0 / (R0 + z), 2);
-  steps.push(...layerSteps(H, layer, Tstd, T, p, dT), ...propertySteps(T, p, rho, a, mu));
+  steps.push(...layerSteps(H, layer, Tstd, TM, p, dT));
+  if (ratio !== 1) {
+    const math = eq('T = T_M \\frac{M}{M_0}', `${tex(TM, 6)} \\times ${tex(ratio, 6)}`, `${tex(T, 6)}\\ \\text{K}`);
+    steps.push(step('atmKinetic', math));
+  }
+  steps.push(...propertySteps(T, TM, p, rho, a, mu));
   return {
     z,
     H,
@@ -260,7 +288,7 @@ function plotData(dT: number) {
   const at = (f: (s: { T: number; p: number }) => number) =>
     sample((km) => f(standard(km * 1000)), 0, H_TOP / 1000, 170);
   return {
-    T: at((s) => s.T + dT),
+    T: sample((km) => (standard(km * 1000).T + dT) * molecularRatio(geometricOf(km * 1000)), 0, H_TOP / 1000, 170),
     p: at((s) => s.p / 1000),
     rho: at((s) => s.p / (R_AIR * (s.T + dT))),
   };

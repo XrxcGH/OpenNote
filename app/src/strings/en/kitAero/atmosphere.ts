@@ -2,10 +2,8 @@
 export const atmosphere = {
   title: 'Standard atmosphere',
   short: 'Atmosphere',
-  keywords:
-    'standard atmosphere isa altitude density altitude pressure altitude speed of sound viscosity lapse rate',
-  about:
-    'Air temperature, pressure, density, speed of sound and viscosity at altitude, or the altitude for a value.',
+  keywords: 'standard atmosphere isa altitude density altitude pressure altitude speed of sound viscosity lapse rate',
+  about: 'Air temperature, pressure, density, speed of sound and viscosity at altitude, or the altitude for a value.',
   assume:
     'U.S. Standard Atmosphere 1976 from −5 km to 86 km: dry air as an ideal gas with R = 287.053 J/(kg K) and ' +
     'γ = 1.4, in hydrostatic balance. An offset ΔT shifts the temperature at standard pressure.',
@@ -56,10 +54,8 @@ export const atmosphere = {
     atmGeopotential: 'Convert the geometric altitude z to geopotential altitude H, with r₀ = 6356.766 km.',
     atmInvertPressure:
       'Find the altitude where the standard pressure is {value} Pa (the pressure altitude), by Brent’s method.',
-    atmInvertDensity:
-      'Find the altitude where the density is {value} kg/m³ (the density altitude), by Brent’s method.',
-    atmInvertTemperature:
-      'Find the altitude in the troposphere where the temperature is {value} K, by Brent’s method.',
+    atmInvertDensity: 'Find the altitude where the density is {value} kg/m³ (the density altitude), by Brent’s method.',
+    atmInvertTemperature: 'Find the altitude in the troposphere where the temperature is {value} K, by Brent’s method.',
     atmLayer:
       'The altitude is in the {layer} layer: base {base} km, base temperature {Tb} K, base pressure {pb} Pa, ' +
       'lapse rate {lapse} K/km.',
@@ -69,6 +65,10 @@ export const atmosphere = {
       'temperature.',
     atmPressureIso: 'The layer is isothermal, so the hydrostatic equation gives an exponential pressure decay.',
     atmPressureLapse: 'The layer has a constant lapse rate L, so the hydrostatic equation gives a power law.',
+    atmKinetic:
+      'Above 80 km the mean molecular weight M falls below its sea-level value M₀, so the kinetic temperature is ' +
+      'T = TM M/M₀ (USSA 1976 Table 8). The layer temperature above is TM; the standard defines density and the ' +
+      'speed of sound with TM, and viscosity uses T.',
     atmDensity: 'Density from the ideal gas law, with R = 8314.32/28.9644 = 287.053 J/(kg K).',
     atmSound: 'Speed of sound for air as a calorically perfect gas, γ = 1.4.',
     atmViscosity: 'Dynamic viscosity by Sutherland’s law, β = 1.458 × 10⁻⁶ kg/(m s K^½) and S = 110.4 K.',
