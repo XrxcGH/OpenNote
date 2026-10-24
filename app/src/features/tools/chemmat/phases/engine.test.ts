@@ -195,6 +195,24 @@ describe('tensile test', () => {
     expect(rel(val(o, 'kitChemMat.ph.row.yield') / MPA, sStar)).toBeLessThan(1e-6);
   });
 
+  it('a low-yield, high-hardening curve gives E = 110 GPa and the analytic offset yield with the default window', () => {
+    // E 110 GPa to 70 MPa, then 1000 MPa per unit strain to 310 MPa; the offset line meets it at e = 289.364/109000.
+    const ey = 70 / 110000;
+    const pts = [0, 0.0002, 0.0004, 0.0006].map((e) => [e, 110000 * e]);
+    for (const e of [0.001, 0.005, 0.02, 0.05, 0.1, 0.2]) pts.push([e, 70 + 1000 * (e - ey)]);
+    const exact = pts.map((p) => p.join(', ')).join('\n');
+    const o = tensile({ ...input, data: exact, elasticPercent: 100 });
+    expect(rel(val(o, 'kitChemMat.ph.row.E'), 110e9)).toBeLessThan(1e-6);
+    const eStar = (110000 * 0.002 + 70 - 1000 * ey) / 109000;
+    expect(rel(val(o, 'kitChemMat.ph.row.yieldStrain'), eStar)).toBeLessThan(1e-5);
+    expect(rel(val(o, 'kitChemMat.ph.row.yield') / MPA, 110000 * (eStar - 0.002))).toBeLessThan(1e-5);
+  });
+
+  it('refuses a curve that ends below its elastic line instead of reporting a negative elongation', () => {
+    const data = '0, 0\n0.001, 100\n0.002, 200\n0.003, 300\n0.0035, 2000';
+    expect(tensile({ ...input, data })).toMatchObject({ key: 'kitChemMat.ph.err.elongation' });
+  });
+
   it('ultimate strength, fracture strain, toughness and true values come from the data', () => {
     const o = tensile(input);
     expect(val(o, 'kitChemMat.ph.row.uts')).toBe(497 * MPA);

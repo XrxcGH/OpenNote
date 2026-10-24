@@ -88,9 +88,24 @@ function elasticLine(curve: Curve, input: TensileInput): Elastic | Failed {
   const limit = (input.elasticPercent / 100) * sig[iMax];
   const idx = sig.map((s, i) => (s <= limit && i <= iMax ? i : -1)).filter((i) => i >= 0);
   if (idx.length < 3) return fail('kitChemMat.ph.err.fewElastic');
+  // Grow the fit from the origin while each next point stays on the line, so a ductile curve that hardens strongly
+  // is fitted on its straight part only. The percent is an upper cap.
+  let k = Math.min(3, idx.length);
+  while (k < idx.length) {
+    const part = lineFit(
+      idx.slice(0, k).map((i) => eps[i]),
+      idx.slice(0, k).map((i) => sig[i]),
+    );
+    if (!part) break;
+    const next = idx[k];
+    const off = Math.abs(sig[next] - (part.slope * eps[next] + part.intercept));
+    if (off > 0.01 * sig[next] + 0.002 * sig[iMax]) break;
+    k++;
+  }
+  const used = idx.slice(0, k);
   const fit = lineFit(
-    idx.map((i) => eps[i]),
-    idx.map((i) => sig[i]),
+    used.map((i) => eps[i]),
+    used.map((i) => sig[i]),
   );
   if (!fit || !(fit.slope > 0)) return fail('kitChemMat.ph.err.slope');
   return {
@@ -181,6 +196,7 @@ export function tensile(input: TensileInput): Outcome {
   if ('ok' in el) return el;
   const { eps, sig, iMax } = curve;
   const yieldPoint = offsetYield(curve, el, input.offset);
+  if (eps[eps.length - 1] < sig[sig.length - 1] / el.E) return fail('kitChemMat.ph.err.elongation');
   const steps: KitStep[] = [el.step];
   if (yieldPoint) {
     const [ey, sy] = yieldPoint;

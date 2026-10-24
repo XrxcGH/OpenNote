@@ -95,7 +95,7 @@ export const phasesTool: ToolSpec = {
       only('tensile'),
     ),
     choice('sunit', 'kitChemMat.ph.field.sunit', STRESS_UNITS, 'MPa', only('tensile', 'fatigue')),
-    num('elastic', '40', only('tensile'), { help: 'kitChemMat.ph.field.elasticHelp' }),
+    num('elastic', '100', only('tensile'), { help: 'kitChemMat.ph.field.elasticHelp' }),
     { ...num('tE', '', only('tensile'), { optional: true, help: 'kitChemMat.ph.field.tEHelp' }), dim: 'stress' },
     num('offset', '0.002', only('tensile')),
     choice(
