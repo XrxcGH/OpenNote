@@ -36,6 +36,8 @@ test('the section list stays in view while a long section scrolls', async ({ pag
 
 test('Ctrl+/ lists the shortcuts in tables, and Escape closes the list', async ({ page }) => {
   await page.goto('/');
+  // The app answers keys once it has drawn its first screen; a key sent before that is lost.
+  await expect(page.getByText('Biology 101')).toBeVisible();
   await page.keyboard.press('Control+Slash');
   const dialog = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
   await expect(dialog).toBeVisible();
