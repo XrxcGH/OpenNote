@@ -1,5 +1,5 @@
 // Fourier series and boundary value problems: the coefficients of a piecewise function with a partial-sum plot, and
-// the heat, wave and Laplace equations solved by separation of variables.
+// the heat, wave, and Laplace equations solved by separation of variables.
 import { t } from '../../../../strings/t';
 import { numberOf } from '../expr';
 import { fmt } from '../numeric';
@@ -250,7 +250,11 @@ export default function FourierTool() {
         <>
           <div className={styles.row}>
             <TextInput label={t('kitMath.fourier.width')} value={state.width} onChange={(width) => set({ width })} />
-            <TextInput label={t('kitMath.fourier.height')} value={state.height} onChange={(height) => set({ height })} />
+            <TextInput
+              label={t('kitMath.fourier.height')}
+              value={state.height}
+              onChange={(height) => set({ height })}
+            />
             <Choice
               label={t('kitMath.fourier.side')}
               value={state.side}

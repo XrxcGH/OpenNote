@@ -1,7 +1,7 @@
 // Fourier series and boundary value problems. A function can be given in pieces. The tool finds its Fourier
-// coefficients by numerical integration and recognizes a closed form for them when there is a simple one, and it
-// solves the heat, wave, and Laplace equations by separation of variables: eigenvalues from the boundary
-// conditions, then coefficients from the starting data.
+// coefficients by numerical integration. It recognizes a closed form when there is a simple one. It solves the
+// heat, wave, and Laplace equations by separation of variables: eigenvalues from the boundary conditions, then
+// coefficients from the starting data.
 import { numberOf, readFunction } from '../expr';
 import { fmt, integrate, toFraction } from '../numeric';
 import { KitError, step, type KitStep } from '../types';
@@ -13,7 +13,7 @@ export interface Piece {
   b: number;
 }
 
-/** Reads a function given in pieces, one per line as "expression ; from ; to", or as one expression for everything. */
+/** Reads a function given in pieces, one per line as "expression; from; to", or as one expression for everything. */
 export function readPieces(source: string, lo: number, hi: number): Piece[] {
   const lines = source
     .split('\n')
@@ -50,7 +50,12 @@ export function valueAt(pieces: readonly Piece[], x: number): number {
 }
 
 /** The integral of g(x) over [lo, hi], split at the breaks of the pieces. */
-export function integratePieces(pieces: readonly Piece[], g: (x: number, f: number) => number, lo: number, hi: number): number {
+export function integratePieces(
+  pieces: readonly Piece[],
+  g: (x: number, f: number) => number,
+  lo: number,
+  hi: number,
+): number {
   let total = 0;
   for (const piece of pieces) {
     const a = Math.max(lo, piece.a);
@@ -97,7 +102,8 @@ export function recognizePattern(values: readonly number[], name: string): Patte
         if (sign.name === 'altNeg') return { latex: text(`(-1)^{n}${core}`), at: amount };
         const where = sign.name.startsWith('odd') ? 'n\\text{ odd}' : 'n\\text{ even}';
         const other = sign.name.startsWith('odd') ? 'n\\text{ even}' : 'n\\text{ odd}';
-        const body = sign.name === 'oddAlt' ? `(-1)^{(n-1)/2}${core}` : sign.name === 'evenAlt' ? `(-1)^{n/2+1}${core}` : core;
+        const body =
+          sign.name === 'oddAlt' ? `(-1)^{(n-1)/2}${core}` : sign.name === 'evenAlt' ? `(-1)^{n/2+1}${core}` : core;
         return { latex: text(`\\begin{cases}${body}&${where}\\\\0&${other}\\end{cases}`), at: amount };
       }
     }
@@ -155,23 +161,31 @@ export function fourierSeries(source: string, kind: FourierKind, L: number, term
   };
   const energy = scale === 1 / L ? 1 / L : 2 / L;
   const integral = energy * integratePieces(pieces, (_x, f) => f * f, lo, L);
-  const series = (kind === 'sine' ? 0 : (a0 * a0) / 2) + a.reduce((s, v) => s + v * v, 0) + b.reduce((s, v) => s + v * v, 0);
+  const series =
+    (kind === 'sine' ? 0 : (a0 * a0) / 2) + a.reduce((s, v) => s + v * v, 0) + b.reduce((s, v) => s + v * v, 0);
   // The period is 2L; the series repeats the function (or its odd/even extension) outside the interval.
   const aPattern = a.length >= 6 ? recognizePattern(a.slice(0, 12), 'a_n') : null;
   const bPattern = b.length >= 6 ? recognizePattern(b.slice(0, 12), 'b_n') : null;
   const steps: KitStep[] = [
-    step('fsSetup', kind === 'full' ? 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1}\\left(a_n\\cos\\frac{n\\pi x}{L}+b_n\\sin\\frac{n\\pi x}{L}\\right)' : kind === 'sine' ? 'f(x)\\sim\\sum_{n\\ge1} b_n\\sin\\frac{n\\pi x}{L}' : 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1} a_n\\cos\\frac{n\\pi x}{L}', {
-      kind,
-      L: fmt(L, 8),
-    }),
+    step(
+      'fsSetup',
+      kind === 'full'
+        ? 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1}\\left(a_n\\cos\\frac{n\\pi x}{L}+b_n\\sin\\frac{n\\pi x}{L}\\right)'
+        : kind === 'sine'
+          ? 'f(x)\\sim\\sum_{n\\ge1} b_n\\sin\\frac{n\\pi x}{L}'
+          : 'f(x)\\sim\\frac{a_0}{2}+\\sum_{n\\ge1} a_n\\cos\\frac{n\\pi x}{L}',
+      {
+        kind,
+        L: fmt(L, 8),
+      },
+    ),
   ];
-  if (a.length) steps.push(step('fsCoefficientA', FORMULAS[kind].a), step('fsA0', `a_0=${fmt(a0, 10)}`, { a0: fmt(a0, 10) }));
+  if (a.length)
+    steps.push(step('fsCoefficientA', FORMULAS[kind].a), step('fsA0', `a_0=${fmt(a0, 10)}`, { a0: fmt(a0, 10) }));
   if (b.length) steps.push(step('fsCoefficientB', FORMULAS[kind].b));
   if (aPattern) steps.push(step('fsPattern', aPattern.latex));
   if (bPattern) steps.push(step('fsPattern', bPattern.latex));
-  steps.push(
-    step('fsParseval', undefined, { lhs: fmt(integral, 10), rhs: fmt(series, 10), n: String(terms) }),
-  );
+  steps.push(step('fsParseval', undefined, { lhs: fmt(integral, 10), rhs: fmt(series, 10), n: String(terms) }));
   // Jumps between pieces and at the ends of the period, for the Gibbs overshoot.
   let gibbs: FourierResult['gibbs'] = null;
   const edges: { x: number; left: number; right: number }[] = [];
@@ -221,7 +235,20 @@ export function fourierSeries(source: string, kind: FourierKind, L: number, term
     f.push([x, valueAt(pieces, x)]);
     sum.push([x, partial(x)]);
   }
-  return { kind, L, a0, a, b, aPattern, bPattern, partial, parseval: { integral, series }, gibbs, steps, samples: { f, sum } };
+  return {
+    kind,
+    L,
+    a0,
+    a,
+    b,
+    aPattern,
+    bPattern,
+    partial,
+    parseval: { integral, series },
+    gibbs,
+    steps,
+    samples: { f, sum },
+  };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -326,17 +353,30 @@ export function solveBvp(options: {
   const at = (x: number, t: number) => pairs.reduce((s, pair, k) => s + timeFactor(pair, k, t) * pair.phi(x), 0);
   const symbol = equation === 'heat' ? '\\alpha' : 'c';
   const steps: KitStep[] = [
-    step(equation === 'heat' ? 'pdeHeat' : 'pdeWave', equation === 'heat' ? 'u_t=\\alpha\\,u_{xx}' : 'u_{tt}=c^{2}u_{xx}', {
-      conditions: CONDITION_LATEX[conditions],
-    }),
-    step('pdeSeparate', 'u(x,t)=X(x)\\,T(t)\\;\\Rightarrow\\;X\'\'=-\\mu^{2}X', {}),
+    step(
+      equation === 'heat' ? 'pdeHeat' : 'pdeWave',
+      equation === 'heat' ? 'u_t=\\alpha\\,u_{xx}' : 'u_{tt}=c^{2}u_{xx}',
+      {
+        conditions: CONDITION_LATEX[conditions],
+      },
+    ),
+    step('pdeSeparate', "u(x,t)=X(x)\\,T(t)\\;\\Rightarrow\\;X''=-\\mu^{2}X", {}),
     step('pdeEigen', undefined, {
-      mus: pairs.slice(0, 3).map((p) => fmt(p.mu, 6)).join(', '),
+      mus: pairs
+        .slice(0, 3)
+        .map((p) => fmt(p.mu, 6))
+        .join(', '),
       conditions: conditions,
     }),
-    step('pdeTime', equation === 'heat' ? `T_n(t)=e^{-${symbol}\\mu_n^{2}t}` : 'T_n(t)=A_n\\cos(c\\mu_nt)+B_n\\sin(c\\mu_nt)'),
+    step(
+      'pdeTime',
+      equation === 'heat' ? `T_n(t)=e^{-${symbol}\\mu_n^{2}t}` : 'T_n(t)=A_n\\cos(c\\mu_nt)+B_n\\sin(c\\mu_nt)',
+    ),
     step('pdeCoefficients', 'c_n=\\frac{\\int_0^L f(x)\\varphi_n(x)\\,dx}{\\int_0^L\\varphi_n(x)^{2}\\,dx}', {
-      list: coefficients.slice(0, 4).map((c) => fmt(c, 6)).join(', '),
+      list: coefficients
+        .slice(0, 4)
+        .map((c) => fmt(c, 6))
+        .join(', '),
     }),
   ];
   const snapshots = options.times.map((t) => ({
@@ -381,14 +421,21 @@ export function solveLaplace(a: number, b: number, side: Side, source: string, t
     if (side === 'right') return solved(y, x);
     return solved(y, a - x);
   };
-  const grid = Array.from({ length: 5 }, (_, j) => Array.from({ length: 5 }, (_, i) => at((a * i) / 4, (b * (4 - j)) / 4)));
+  const grid = Array.from({ length: 5 }, (_, j) =>
+    Array.from({ length: 5 }, (_, i) => at((a * i) / 4, (b * (4 - j)) / 4)),
+  );
   const steps: KitStep[] = [
     step('pdeLaplace', '\\nabla^{2}u=u_{xx}+u_{yy}=0', { a: fmt(a, 6), b: fmt(b, 6) }),
-    step('pdeLaplaceSeries', 'u=\\sum_{n\\ge1}c_n\\sin\\frac{n\\pi s}{\\ell}\\,\\frac{\\sinh(n\\pi r/\\ell)}{\\sinh(n\\pi h/\\ell)}'),
+    step(
+      'pdeLaplaceSeries',
+      'u=\\sum_{n\\ge1}c_n\\sin\\frac{n\\pi s}{\\ell}\\,\\frac{\\sinh(n\\pi r/\\ell)}{\\sinh(n\\pi h/\\ell)}',
+    ),
     step('pdeCoefficients', 'c_n=\\frac{2}{\\ell}\\int_0^{\\ell} f(s)\\sin\\frac{n\\pi s}{\\ell}\\,ds', {
-      list: coefficients.slice(0, 4).map((c) => fmt(c, 6)).join(', '),
+      list: coefficients
+        .slice(0, 4)
+        .map((c) => fmt(c, 6))
+        .join(', '),
     }),
   ];
   return { at, coefficients, steps, grid };
 }
-

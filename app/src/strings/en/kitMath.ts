@@ -36,7 +36,7 @@ export const kitMath = {
     trigForm: 'The expression must repeat every 2 pi in t, such as cos(t) and sin(t) alone.',
     badMatrix: 'The matrix entries must be numbers, and the plot size must be positive.',
     badRegion: 'The region needs x from less than x to, and y from less than y to.',
-    pieceFormat: 'Write each piece as expression ; from ; to, or one expression alone: {detail}',
+    pieceFormat: 'Write each piece as expression; from; to, or one expression alone: {detail}',
     pieceRange: 'A piece needs a start that is less than its end: {detail}',
     pieceOverlap: 'The pieces overlap. Make each start at or after the end of the one before.',
     pieceGap: 'No piece covers x = {detail}. Cover the whole interval.',
@@ -164,7 +164,7 @@ export const kitMath = {
   fourier: {
     title: 'Fourier series and boundary value problems',
     keywords:
-      'fourier series coefficients half range sine cosine gibbs parseval heat equation wave equation laplace separation of variables boundary value problem',
+      'fourier series half range gibbs parseval heat wave laplace equation separation of variables boundary value',
     problem: 'Problem',
     problemFull: 'Fourier series on (-L, L)',
     problemSine: 'Half-range sine series on (0, L)',
@@ -172,7 +172,7 @@ export const kitMath = {
     problemHeat: 'Heat equation on a rod',
     problemWave: 'Wave equation on a string',
     problemLaplace: 'Laplace equation on a rectangle',
-    function: 'Function, one piece per line as expression ; from ; to',
+    function: 'Function, one piece per line as expression; from; to',
     initial: 'Starting temperature or shape, one piece per line',
     velocity: 'Starting velocity, one piece per line',
     length: 'Half-period L',
@@ -194,9 +194,9 @@ export const kitMath = {
     sideBottom: 'Bottom',
     sideLeft: 'Left',
     sideRight: 'Right',
-    data: 'Values on that side, as expression ; from ; to',
+    data: 'Values on that side, as expression; from; to',
     assumptions:
-      'Coefficients come from numerical integration. A pattern is shown only when it matches the first twelve coefficients. All other sides of the rectangle are held at zero.',
+      'Coefficients come from numerical integration. A pattern is shown only when it fits the first 12 coefficients. Other sides of the rectangle are held at zero.',
     hint: 'Use x as the variable and pi for pi, for example x^2 ; 0 ; pi.',
     a0: 'a0 = {a0}',
     coefficients: 'Coefficients',
@@ -294,15 +294,19 @@ export const kitMath = {
     fsA0: 'The constant term needs its own integral: {a0}.',
     fsCoefficientB: 'The sine coefficients are found by integrating over the pieces:',
     fsPattern: 'The coefficients follow a pattern:',
-    fsParseval: 'Parseval check: the integral of f squared is {lhs}, and the sum of the squared coefficients is {rhs} using {n} terms.',
-    fsGibbs: 'Near the largest jump, of size {jump}, the partial sum overshoots by {overshoot}, which is {percent} percent of the jump.',
+    fsParseval:
+      'Parseval check: the integral of f squared is {lhs}, and the sum of the squared coefficients is {rhs} using {n} terms.',
+    fsGibbs:
+      'Near the largest jump, of size {jump}, the partial sum overshoots by {overshoot}, which is {percent} percent of the jump.',
     pdeHeat: 'The heat equation, with the boundary conditions {conditions}:',
     pdeWave: 'The wave equation, with the boundary conditions {conditions}:',
     pdeSeparate: 'Separation of variables writes the solution as a product, which splits the equation in two:',
     pdeEigen: 'The boundary conditions allow only these values of mu, the first three being {mus}.',
     pdeTime: 'The time factor for each mu is:',
     pdeCoefficients: 'The starting data fixes the coefficients by projection. The first few are {list}.',
-    pdeLaplace: 'Laplace equation on a rectangle {a} wide and {b} high, with the data on one side and zero on the others:',
-    pdeLaplaceSeries: 'Separation of variables gives a sine series in the side coordinate with a hyperbolic factor across:',
+    pdeLaplace:
+      'Laplace equation on a rectangle {a} wide and {b} high, with the data on one side and zero on the others:',
+    pdeLaplaceSeries:
+      'Separation of variables gives a sine series in the side coordinate with a hyperbolic factor across:',
   },
 } as const;
