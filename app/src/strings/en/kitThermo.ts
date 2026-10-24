@@ -10,6 +10,7 @@ export const kitThermo = {
     idealgas: 'Work an ideal-gas process or state with variable specific heats',
     steam: 'Find a state of water or steam from two properties',
     psychro: 'Work moist-air states and air-conditioning processes',
+    r134a: 'Find a state of refrigerant R-134a from two properties',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -25,12 +26,16 @@ export const kitThermo = {
     psychro:
       'psychrometrics psychrometric chart moist air humidity ratio relative humidity dew point wet bulb ' +
       'air conditioning dehumidification evaporative cooling adiabatic mixing hvac',
+    r134a:
+      'refrigerant r134a r-134a tetrafluoroethane refrigeration heat pump tables saturated superheated ' +
+      'compressed liquid evaporator condenser',
   },
   tab: {
     statthermo: 'Statistical',
     idealgas: 'Ideal gas',
     steam: 'Steam',
     psychro: 'Moist air',
+    r134a: 'R-134a',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -77,6 +82,7 @@ export const kitThermo = {
     waterTs: 'Water on a T-s diagram',
     waterPh: 'Water on a p-h diagram',
     psychroChart: 'Psychrometric chart',
+    refrigerantPh: 'R-134a on a p-h diagram',
   },
   mode: {
     gas: 'Gas molecule',
@@ -134,6 +140,7 @@ export const kitThermo = {
     dryAirFlow: 'Dry-air flow (optional)',
     dryAir1: 'Dry-air flow of stream 1',
     dryAir2: 'Dry-air flow of stream 2',
+    reference: 'Reference state for h and s',
   },
   choice: {
     atom: 'Single atom',
@@ -182,6 +189,8 @@ export const kitThermo = {
     dehumidify: 'Cooling with dehumidification',
     evaporative: 'Evaporative cooling',
     mixing: 'Adiabatic mixing of two streams',
+    iir: 'IIR: h = 200 kJ/kg and s = 1 kJ/(kg·K) for liquid at 0 °C',
+    ashrae: 'ASHRAE: h = 0 and s = 0 for liquid at −40 °C',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -362,6 +371,21 @@ export const kitThermo = {
         'Mass and energy balances weighted by the dry-air flows: ω₃ = {omega} and h₃ = {h} kJ/kg dry air, so ' +
         'T₃ = {t} °C.',
     },
+    r134a: {
+      liquidSide:
+        'At T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is above it: compressed liquid, so ' +
+        'the largest density root of p(ρ, T) = p is used.',
+      vaporSide:
+        'At T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is below it: superheated vapor, so ' +
+        'the smallest density root of p(ρ, T) = p is used.',
+      aboveCritical: 'T = {T} K is at or above the critical temperature, so there is one density root.',
+      eos:
+        'Tillner-Roth and Baehr: φ = φ° + φʳ, with 5 ideal-gas and 21 residual terms, at δ = ρ/508 kg/m³ = ' +
+        '{delta} and τ = 374.18 K/T = {tau}.',
+      iteration: 'Saturation step {n}: at p = {p} kPa, g_l − g_v = {dg} kJ/kg; Newton moves p by −Δg/(v_l − v_v).',
+      saturation:
+        'Equal pressure and Gibbs energy hold at T = {T} K and p_sat = {p} kPa, with ρ_l = {rl} and ρ_v = {rv} kg/m³.',
+    },
   },
   note: {
     idealGasMolecules: 'Ideal gas of independent molecules; energies are counted from the ground level.',
@@ -380,6 +404,8 @@ export const kitThermo = {
     twoPhaseNoCp: 'cp, cv, and the speed of sound are not defined for a two-phase mixture.',
     psychroIdeal: 'Dry air and water vapor are ideal gases; enthalpies are 0 for dry air and liquid water at 0 °C.',
     perDryAir: 'Humidity ratio, enthalpy, and volume are per kg of dry air, as on a psychrometric chart.',
+    iirReference: 'IIR reference state: h = 200 kJ/kg and s = 1 kJ/(kg·K) for saturated liquid at 0 °C.',
+    ashraeReference: 'ASHRAE reference state: h = 0 and s = 0 for saturated liquid at −40 °C, as in US tables.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -407,6 +433,8 @@ export const kitThermo = {
     psychroNoCondense:
       'The coil exit holds as much water as the entering air, so nothing condenses; cool below the dew point, {tdp} °C.',
     psychroEvaporative: 'The exit relative humidity must be above the entering one and at most 100 %.',
+    r134aRange: 'The R-134a equation covers −103.3 to 181.85 °C up to 70 MPa; that state is outside it.',
+    r134aSatRange: 'R-134a saturation is solved from −103.3 °C to 100.85 °C, just below the critical point.',
   },
   word: {
     liquid: 'Compressed liquid',

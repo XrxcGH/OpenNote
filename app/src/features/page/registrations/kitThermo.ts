@@ -6,6 +6,7 @@ import { addCommand } from './qolStudy';
 
 const TOOLS = [
   ['steam', 'CloudFog'],
+  ['r134a', 'Snowflake'],
   ['idealgas', 'Cylinder'],
   ['psychro', 'DropHalf'],
   ['statthermo', 'Atom'],
