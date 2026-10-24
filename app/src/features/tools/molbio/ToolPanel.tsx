@@ -61,11 +61,12 @@ function FieldInput({ field, value, onChange }: { field: Field; value: string; o
 
 const cellText = (cell: Cell): string => (typeof cell === 'string' ? cell : say(cell.word, cell.vars));
 const stepText = (step: KitStep): string => say(step.key, step.vars);
+const headerText = (table: KitTable): string[] => table.headText ?? table.head.map((key) => say(key));
 const done = (inserted: boolean) => announce(t(inserted ? 'kitMolBio.inserted' : 'kitMolBio.noPage'));
 
 function insertTable(table: KitTable): boolean {
   return insertIntoPage({
-    table: { header: table.head.map((key) => say(key)), rows: table.rows.map((row) => row.map(cellText)) },
+    table: { header: headerText(table), rows: table.rows.map((row) => row.map(cellText)) },
   });
 }
 
@@ -156,9 +157,9 @@ function TableView({ table }: { table: KitTable }) {
         <table className={styles.table}>
           <thead>
             <tr>
-              {table.head.map((key, i) => (
+              {headerText(table).map((text, i) => (
                 <th key={i} scope="col">
-                  {say(key)}
+                  {text}
                 </th>
               ))}
             </tr>

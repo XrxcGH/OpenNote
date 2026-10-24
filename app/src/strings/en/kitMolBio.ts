@@ -1,4 +1,5 @@
 // The molecular biology, genetics, and evolution kit: the window, what every tool shares, and one part per tool.
+import { align } from './kitMolBio/align';
 import { protein } from './kitMolBio/protein';
 import { sequence } from './kitMolBio/sequence';
 
@@ -39,4 +40,5 @@ export const kitMolBio = {
   },
   sequence,
   protein,
+  align,
 } as const;

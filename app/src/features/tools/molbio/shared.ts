@@ -32,6 +32,8 @@ export interface KitTable {
   title: MolKey;
   vars?: Vars;
   head: MolKey[];
+  /** Header text that is data, such as the letters of a sequence, used instead of `head`. */
+  headText?: string[];
   rows: Cell[][];
 }
 

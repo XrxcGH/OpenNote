@@ -4,6 +4,7 @@ import type { IconName } from '../../../ui/icons';
 export const MOLBIO_TOOLS = [
   { id: 'sequence', icon: 'Dna' },
   { id: 'protein', icon: 'Atom' },
+  { id: 'align', icon: 'Rows' },
 ] as const satisfies readonly {
   id: string;
   icon: IconName;
