@@ -1,4 +1,6 @@
 // Every word a spec asks for exists in the strings: fields, choices, rows, tables, notes, plots, steps, and errors.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../../strings/en';
 import { firstTexts, firstUnits, readFields } from '../kit/read';
@@ -66,4 +68,14 @@ describe('the design kit strings', () => {
       expect([...missing]).toEqual([]);
     });
   }
+});
+
+describe('the command palette', () => {
+  it('has a command for every tool in the window, and no other', () => {
+    const file = join(import.meta.dirname, '../../../page/registrations/kitDesign.ts');
+    const source = readFileSync(file, 'utf8');
+    const block = /const TOOLS = \[([\s\S]*?)\n\] as const;/.exec(source)?.[1] ?? '';
+    const ids = [...block.matchAll(/\['(\w+)',/g)].map((m) => m[1]);
+    expect(ids.sort()).toEqual([...DESIGN_TOOL_IDS].sort());
+  });
 });

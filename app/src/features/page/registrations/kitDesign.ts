@@ -18,7 +18,17 @@ addCommand({
   run: () => open(),
 });
 
-const TOOLS = [['tolerances', 'Ruler']] as const;
+const TOOLS = [
+  ['drafting', 'PencilRuler'],
+  ['views', 'Box'],
+  ['tolerances', 'Ruler'],
+  ['machining', 'Wrench'],
+  ['forming', 'Hammer'],
+  ['microfab', 'Cpu'],
+  ['memtrace', 'Waypoints'],
+  ['numrep', 'Binary'],
+  ['references', 'BookOpen'],
+] as const;
 
 for (const [id, icon] of TOOLS) {
   addCommand({

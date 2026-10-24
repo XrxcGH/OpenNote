@@ -12,10 +12,12 @@ export interface DesignToolMeta {
 
 export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
   { id: 'drafting', title: 'kitDesign.drafting.title', keywords: 'kitDesign.drafting.keywords', icon: 'PencilRuler' },
+  { id: 'views', title: 'kitDesign.views.title', keywords: 'kitDesign.views.keywords', icon: 'Box' },
   { id: 'tolerances', title: 'kitDesign.tolerances.title', keywords: 'kitDesign.tolerances.keywords', icon: 'Ruler' },
   { id: 'machining', title: 'kitDesign.machining.title', keywords: 'kitDesign.machining.keywords', icon: 'Wrench' },
   { id: 'forming', title: 'kitDesign.forming.title', keywords: 'kitDesign.forming.keywords', icon: 'Hammer' },
   { id: 'microfab', title: 'kitDesign.microfab.title', keywords: 'kitDesign.microfab.keywords', icon: 'Cpu' },
+  { id: 'memtrace', title: 'kitDesign.memtrace.title', keywords: 'kitDesign.memtrace.keywords', icon: 'Waypoints' },
   { id: 'numrep', title: 'kitDesign.numrep.title', keywords: 'kitDesign.numrep.keywords', icon: 'Binary' },
   {
     id: 'references',
@@ -23,8 +25,6 @@ export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
     keywords: 'kitDesign.references.keywords',
     icon: 'BookOpen',
   },
-  { id: 'views', title: 'kitDesign.views.title', keywords: 'kitDesign.views.keywords', icon: 'Box' },
-  { id: 'memtrace', title: 'kitDesign.memtrace.title', keywords: 'kitDesign.memtrace.keywords', icon: 'Waypoints' },
 ];
 
 export const DESIGN_TOOL_IDS: readonly string[] = DESIGN_TOOLS.map((tool) => tool.id);
