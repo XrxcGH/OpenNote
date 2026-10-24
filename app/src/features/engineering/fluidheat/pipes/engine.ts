@@ -320,10 +320,6 @@ export function parallelSplit(
   return { headLoss: hl, flows: parts.map((p) => p.q), parts };
 }
 
-export interface NetworkPipe {
-  spec: PipeSpec;
-}
-
 export interface HardyCrossInput {
   fluid: FluidProps;
   pipes: PipeSpec[];
@@ -388,4 +384,119 @@ export function hardyCross(inp: HardyCrossInput): HardyCrossResult {
   );
   const loopResidual = inp.loops.map((loop) => loop.reduce((s, { pipe, sign }) => s + sign * head(pipe), 0));
   return { flows: q, iterations: it, loopResidual, headLoss: q.map((_, i) => head(i)) };
+}
+
+export interface NetworkPipe extends PipeSpec {
+  /** Names of the nodes at the two ends; a positive flow runs from `from` to `to`. */
+  from: string;
+  to: string;
+}
+
+export interface BuiltNetwork {
+  nodes: string[];
+  /** A starting flow in each pipe that satisfies continuity at every node (m3/s). */
+  flows: number[];
+  /** One independent loop for each pipe left out of a spanning tree, with the traversal direction as the sign. */
+  loops: { pipe: number; sign: 1 | -1 }[][];
+}
+
+/**
+ * Builds what Hardy Cross needs from the nodes. `external` is the flow entering the network at a node (negative where
+ * it leaves). The starting flows come from a spanning tree, so continuity holds from the first pass, and the loops are
+ * the fundamental loops of that tree.
+ */
+export function buildNetwork(pipes: NetworkPipe[], external: Record<string, number>): BuiltNetwork {
+  need(pipes.length > 0, 'pipes', 'Add at least one pipe.');
+  pipes.forEach((p, i) => {
+    need(p.from !== p.to, 'node', `Pipe ${i + 1} starts and ends at the same node.`);
+    need(p.from !== '' && p.to !== '', 'node', `Pipe ${i + 1} needs a node at each end.`);
+  });
+  const nodes = [...new Set([...pipes.flatMap((p) => [p.from, p.to]), ...Object.keys(external)])];
+  Object.entries(external).forEach(([name, flow]) => {
+    need(Number.isFinite(flow), 'node', `The flow at node ${name} must be a number.`);
+    need(
+      pipes.some((p) => p.from === name || p.to === name),
+      'node',
+      `Node ${name} has a flow but no pipe reaches it.`,
+    );
+  });
+  const total = nodes.reduce((s, n) => s + (external[n] ?? 0), 0);
+  const scale = Math.max(...nodes.map((n) => Math.abs(external[n] ?? 0)), 1e-12);
+  need(
+    Math.abs(total) <= 1e-9 * scale,
+    'balance',
+    `The flows entering and leaving the network must balance: they differ by ${fmt(total)} m³/s.`,
+  );
+  // spanning tree by breadth-first search from the first node
+  const parent = new Map<string, { node: string; pipe: number }>();
+  const order = [nodes[0]!];
+  const seen = new Set(order);
+  for (let at = 0; at < order.length; at++) {
+    const u = order[at]!;
+    pipes.forEach((p, i) => {
+      const v = p.from === u ? p.to : p.to === u ? p.from : undefined;
+      if (v !== undefined && !seen.has(v)) {
+        seen.add(v);
+        parent.set(v, { node: u, pipe: i });
+        order.push(v);
+      }
+    });
+  }
+  need(order.length === nodes.length, 'connected', 'Every node must be joined to the others by pipes.');
+  const flows = new Array<number>(pipes.length).fill(0);
+  const subtree = new Map(nodes.map((n) => [n, external[n] ?? 0]));
+  for (let k = order.length - 1; k > 0; k--) {
+    const u = order[k]!;
+    const { node: p, pipe } = parent.get(u)!;
+    const s = subtree.get(u)!;
+    // everything entering the subtree below u leaves it through the pipe to its parent
+    flows[pipe] = pipes[pipe]!.from === u ? s : -s;
+    subtree.set(p, subtree.get(p)! + s);
+  }
+  const treePipes = new Set([...parent.values()].map((e) => e.pipe));
+  const up = (u: string) => {
+    const edge = parent.get(u)!;
+    return { sign: (pipes[edge.pipe]!.from === u ? 1 : -1) as 1 | -1, edge };
+  };
+  const ancestors = (u: string): string[] => {
+    const out = [u];
+    while (parent.has(out.at(-1)!)) out.push(parent.get(out.at(-1)!)!.node);
+    return out;
+  };
+  const loops = pipes.flatMap((p, i) => {
+    if (treePipes.has(i)) return [];
+    // travel along the pipe from -> to, then back through the tree from `to` to `from`
+    const fromUp = ancestors(p.from);
+    const toUp = ancestors(p.to);
+    const common = toUp.find((n) => fromUp.includes(n))!;
+    const loop: { pipe: number; sign: 1 | -1 }[] = [{ pipe: i, sign: 1 }];
+    for (let u = p.to; u !== common; u = parent.get(u)!.node) {
+      const { sign, edge } = up(u);
+      loop.push({ pipe: edge.pipe, sign });
+    }
+    const down: { pipe: number; sign: 1 | -1 }[] = [];
+    for (let u = p.from; u !== common; u = parent.get(u)!.node) {
+      const { sign, edge } = up(u);
+      // walking from the common node down to u is the opposite of walking up from u
+      down.push({ pipe: edge.pipe, sign: -sign as 1 | -1 });
+    }
+    return [[...loop, ...down.reverse()]];
+  });
+  return { nodes, flows, loops };
+}
+
+/** The flow that fails to balance at each node (m3/s), given the flows in the pipes and the flow entering the node. */
+export function nodeImbalance(
+  pipes: NetworkPipe[],
+  flows: number[],
+  external: Record<string, number>,
+): Map<string, number> {
+  const out = new Map<string, number>();
+  const add = (name: string, v: number) => out.set(name, (out.get(name) ?? 0) + v);
+  Object.entries(external).forEach(([n, v]) => add(n, v));
+  pipes.forEach((p, i) => {
+    add(p.from, -flows[i]!);
+    add(p.to, flows[i]!);
+  });
+  return out;
 }

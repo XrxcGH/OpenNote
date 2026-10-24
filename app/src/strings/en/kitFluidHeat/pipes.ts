@@ -18,7 +18,7 @@ export const pipes = {
     pumpCurve: 'Points of the pump curve, one per line',
     pipes: 'Pipes, one per line',
     netPipes: 'Pipes of the network, one per line',
-    loops: 'Loops, one per line',
+    netNodes: 'Flow entering or leaving at each node, one per line',
   },
   option: {
     headLoss: 'Head loss from the flow rate',
@@ -38,11 +38,12 @@ export const pipes = {
       'Each line is the diameter, length, roughness, and sum of minor-loss coefficients, such as 50 ' +
       'mm, 100 m, 0.046 mm, 2. A bare number is in mm and m for SI, or in and ft for US.',
     netPipes:
-      'Each line is the diameter, length, roughness, minor losses, and an assumed flow rate. The ' +
-      'assumed flows must balance at every junction, with the sign giving the direction of the pipe.',
-    loops:
-      'Each line lists the pipe numbers around one loop. A negative number means the loop runs ' +
-      'against that pipe’s direction, such as 1 2 -4 -3.',
+      'Each line is the pipe from one node to another: the two node names, then the diameter, length, roughness, ' +
+      'and minor losses, such as A, B, 100 mm, 300 m, 0.26 mm, 0. A positive flow runs from the first node to the second.',
+    netNodes:
+      'Each line is a node name and the flow entering the network there; a negative flow leaves it, such as A, ' +
+      '30 L/s and C, -30 L/s. The flows must add up to zero. The starting flows and the loops are built from the pipes, ' +
+      'so continuity holds at every node.',
   },
   example: {
     steel: 'Water through 100 m of commercial steel pipe',
@@ -67,12 +68,23 @@ export const pipes = {
     diameter: 'Pipe diameter, D',
     head: 'Head at the operating point, H',
     hydraulicPower: 'Hydraulic power of the pump',
+    imbalance: 'Largest flow not balanced at a node',
     iterations: 'Corrections needed',
     loopResidual: 'Largest remaining head imbalance in a loop',
   },
   word: { laminar: 'Laminar', transitional: 'Transitional', turbulent: 'Turbulent' },
-  table: { parts: 'Pipes in series', branches: 'Flow in each branch', pipes: 'Flow in each pipe' },
+  table: {
+    parts: 'Pipes in series',
+    branches: 'Flow in each branch',
+    pipes: 'Flow in each pipe',
+    nodes: 'Balance at each node',
+  },
   col: {
+    from: 'From node',
+    to: 'To node',
+    node: 'Node',
+    external: 'Flow entering the network',
+    imbalance: 'Flow not balanced',
     pipe: 'Pipe',
     velocity: 'Speed',
     reynolds: 'Reynolds number',
@@ -102,8 +114,15 @@ export const pipes = {
     pump: 'Pump curve',
     system: 'System curve',
     operating: 'Operating point',
+    reynolds: 'Reynolds number',
+    friction: 'Darcy friction factor',
+    laminar: 'Laminar, 64/Re',
+    smooth: 'Smooth pipe',
+    pipe: 'This pipe',
+    rough: 'Roughness 0.01 of the diameter',
   },
-  picture: 'The pump curve and the system curve, crossing at the operating point',
+  picture:
+    'The Moody chart with this flow marked on it, or the pump curve and the system curve crossing at the operating point',
 } as const;
 
 export const pipesStep = {

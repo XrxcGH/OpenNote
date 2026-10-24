@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CalcError } from '../numeric';
 import {
+  buildNetwork,
   colebrook,
   diameterFromFlow,
   evalPoly,
@@ -9,6 +10,7 @@ import {
   hardyCross,
   haaland,
   headLossFromFlow,
+  nodeImbalance,
   operatingPoint,
   parallelSplit,
   pipeSystemCurve,
@@ -208,5 +210,47 @@ describe('targets inside the laminar-to-turbulent jump (Re 2300)', () => {
   it('parallel branches refuse a split that lands in the jump', () => {
     const qStar = (Math.PI * thin.diameter ** 2 * vAt(2300, thin.diameter)) / 4;
     expect(() => parallelSplit(water, [thin, thin], 2 * qStar)).toThrow(/jump/);
+  });
+});
+
+describe('pipe network built from nodes', () => {
+  // five nodes, seven pipes (three independent loops), flow enters at A and leaves at C and E
+  const mk = (from: string, to: string, d: number, l: number) => ({
+    from,
+    to,
+    diameter: d,
+    length: l,
+    roughness: 2.6e-4,
+    sumK: 0,
+  });
+  const pipes = [
+    mk('A', 'B', 0.15, 300),
+    mk('B', 'C', 0.1, 200),
+    mk('A', 'D', 0.1, 250),
+    mk('D', 'E', 0.1, 150),
+    mk('B', 'D', 0.08, 180),
+    mk('C', 'E', 0.1, 220),
+    mk('A', 'E', 0.08, 400),
+  ];
+  const external = { A: 0.06, C: -0.02, E: -0.04 };
+  it('starts with flows that already satisfy continuity at every node, and one loop for each extra pipe', () => {
+    const net = buildNetwork(pipes, external);
+    expect(net.loops).toHaveLength(pipes.length - net.nodes.length + 1);
+    for (const v of nodeImbalance(pipes, net.flows, external).values()) expect(Math.abs(v)).toBeLessThan(1e-12);
+  });
+  it('Hardy Cross from that start keeps continuity and balances the head around every loop', () => {
+    const net = buildNetwork(pipes, external);
+    const hc = hardyCross({ fluid: water, pipes, loops: net.loops, flows: net.flows, tol: 1e-12 });
+    for (const v of nodeImbalance(pipes, hc.flows, external).values()) expect(Math.abs(v)).toBeLessThan(1e-12);
+    for (const r of hc.loopResidual) expect(Math.abs(r)).toBeLessThan(1e-6);
+    // an independent check of the head: node heads from pipe losses along any path agree (A to E by two routes)
+    const viaD = hc.headLoss[2]! + hc.headLoss[3]!;
+    expect(Math.abs(viaD - hc.headLoss[6]!)).toBeLessThan(1e-6);
+  });
+  it('refuses flows that do not balance, unknown nodes, and pieces that are not joined', () => {
+    expect(() => buildNetwork(pipes, { A: 0.06, C: -0.02 })).toThrow(/balance/);
+    expect(() => buildNetwork(pipes, { Z: 0.01, A: -0.01 })).toThrow(/no pipe reaches/);
+    expect(() => buildNetwork([mk('A', 'B', 0.1, 10), mk('C', 'D', 0.1, 10)], { A: 1, B: -1 })).toThrow(/joined/);
+    expect(() => buildNetwork([mk('A', 'A', 0.1, 10)], {})).toThrow(/same node/);
   });
 });

@@ -1,20 +1,24 @@
 // The pipe flow tool's form and results: head loss from the flow, flow from the head loss, the diameter for a flow, a
 // pump on a system curve, pipes in series and in parallel, and a pipe network by the Hardy Cross method.
-import { fail, q, type KitStep } from '../kit/types';
+import { FluidHeatError, fail, q, type KitStep } from '../kit/types';
 import { fmt } from '../numeric';
 import { readLines } from '../kit/lines';
 import type { Outcome, ResultRow, ToolSpec, Values } from '../kit/spec';
-import type { System } from '../kit/units';
+import { readQuantity, type System } from '../kit/units';
 import {
+  buildNetwork,
+  colebrook,
   diameterFromFlow,
   flowFromHeadLoss,
   hardyCross,
   headLossFromFlow,
+  nodeImbalance,
   operatingPoint,
   parallelSplit,
   pipeSystemCurve,
   seriesLoss,
   type FluidProps,
+  type NetworkPipe,
   type PipeSpec,
   type PipeState,
 } from './engine';
@@ -54,6 +58,76 @@ const flowNotes = (states: PipeState[]): string[] => [
   'colebrook',
   ...(states.some((s) => s.regime === 'transitional') ? ['transitional'] : []),
 ];
+
+/** Pipe lines of a network: from node, to node, diameter, length, roughness, and minor losses. */
+function readNetworkPipes(text: string, system: System): NetworkPipe[] {
+  const list: NetworkPipe[] = [];
+  text.split(/\r?\n/).forEach((line, index) => {
+    if (line.trim() === '') return;
+    const parts = line.split(/[,;]/).map((part) => part.trim());
+    if (parts.length !== 6 || parts[0] === '' || parts[1] === '') fail('partsLine', String(index + 1));
+    try {
+      list.push({
+        from: parts[0],
+        to: parts[1],
+        diameter: readQuantity(parts[2], 'length', system),
+        length: readQuantity(parts[3], 'span', system),
+        roughness: readQuantity(parts[4], 'length', system),
+        sumK: readQuantity(parts[5], 'ratio', system),
+      });
+    } catch (error) {
+      if (error instanceof FluidHeatError) fail('partsLine', String(index + 1));
+      throw error;
+    }
+  });
+  return list;
+}
+
+/** Node lines: a name and the flow entering the network there (a negative flow leaves it). */
+function readNodes(text: string, system: System): Record<string, number> {
+  const out: Record<string, number> = {};
+  text.split(/\r?\n/).forEach((line, index) => {
+    if (line.trim() === '') return;
+    const parts = line.split(/[,;]/).map((part) => part.trim());
+    if (parts.length !== 2 || parts[0] === '' || parts[0] in out) fail('partsLine', String(index + 1));
+    try {
+      out[parts[0]] = readQuantity(parts[1], 'flow', system);
+    } catch (error) {
+      if (error instanceof FluidHeatError) fail('partsLine', String(index + 1));
+      throw error;
+    }
+  });
+  return out;
+}
+
+const MOODY_RE = Array.from({ length: 56 }, (_, i) => 4000 * 10 ** ((i / 55) * 4.4));
+
+/** The Moody chart as a log-log plot: friction against Reynolds number, with this flow marked on it. */
+function moodyPicture(s: PipeState, relRough: number): Outcome['picture'] {
+  if (!(s.re > 0)) return undefined;
+  const turbulent = (rr: number) => MOODY_RE.map((re) => [re, colebrook(re, rr)] as [number, number]);
+  const start = Math.min(600, s.re * 0.8);
+  const laminar = Array.from({ length: 12 }, (_, i) => {
+    const re = start + ((2300 - start) * i) / 11;
+    return [re, 64 / re] as [number, number];
+  });
+  return {
+    type: 'plot',
+    plot: {
+      x: { label: 'reynolds', kind: 'ratio' },
+      y: { label: 'friction', kind: 'ratio' },
+      xLog: true,
+      yLog: true,
+      series: [
+        { id: 'laminar', points: laminar },
+        { id: 'smooth', points: turbulent(0) },
+        ...(relRough > 0 && relRough < 0.1 ? [{ id: 'pipe', points: turbulent(relRough) }] : []),
+        { id: 'rough', points: turbulent(0.01), dashed: true },
+      ],
+      marks: [{ x: s.re, y: s.f, id: 'operating' }],
+    },
+  };
+}
 
 function stateRows(s: PipeState): ResultRow[] {
   return [
@@ -108,15 +182,23 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   headLoss: (values) => {
     const fluid = fluidOf(values);
     const s = headLossFromFlow(fluid, pipeOf(values), num(values, 'flowRate'));
-    return { rows: stateRows(s), steps: steps(s.steps), notes: flowNotes([s]) };
+    const pipe = pipeOf(values);
+    return {
+      rows: stateRows(s),
+      steps: steps(s.steps),
+      notes: flowNotes([s]),
+      picture: moodyPicture(s, pipe.roughness / pipe.diameter),
+    };
   },
   flow: (values) => {
     const fluid = fluidOf(values);
-    const s = flowFromHeadLoss(fluid, pipeOf(values), num(values, 'headLossIn'));
+    const pipe = pipeOf(values);
+    const s = flowFromHeadLoss(fluid, pipe, num(values, 'headLossIn'));
     return {
       rows: stateRows(s).map((r) => ({ ...r, answer: r.id === 'flow' })),
       steps: steps(s.steps),
       notes: flowNotes([s]),
+      picture: moodyPicture(s, pipe.roughness / pipe.diameter),
     };
   },
   diameter: (values) => {
@@ -134,6 +216,7 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
       ],
       steps: steps(s.steps),
       notes: flowNotes([s]),
+      picture: moodyPicture(s, optional(values, 'roughness') / s.diameter),
     };
   },
   pump: (values, system) => {
@@ -239,33 +322,28 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   },
   network: (values, system) => {
     const fluid = fluidOf(values);
-    const lines = readLines(String(values.netPipes), ['length', 'span', 'length', 'ratio', 'flow'], system);
-    const list = lines.map((l) => pipeFromLine(l));
-    const loops = String(values.loops)
-      .split(/\r?\n/)
-      .map((line, index) => ({ line, index }))
-      .filter(({ line }) => line.trim() !== '')
-      .map(({ line, index }) =>
-        line
-          .trim()
-          .split(/[\s,;]+/)
-          .map((token) => {
-            const n = Number(token);
-            if (!Number.isInteger(n) || n === 0 || Math.abs(n) > list.length) fail('partsLine', String(index + 1));
-            return { pipe: Math.abs(n) - 1, sign: (n > 0 ? 1 : -1) as 1 | -1 };
-          }),
-      );
-    const r = hardyCross({ fluid, pipes: list, loops, flows: lines.map((l) => l[4]) });
+    const list = readNetworkPipes(String(values.netPipes), system);
+    const external = readNodes(String(values.netNodes), system);
+    const built = buildNetwork(list, external);
+    const r = hardyCross({ fluid, pipes: list, loops: built.loops, flows: built.flows });
+    const imbalance = nodeImbalance(list, r.flows, external);
+    const worstImbalance = Math.max(...built.nodes.map((n) => Math.abs(imbalance.get(n) ?? 0)));
     return {
       rows: [
+        { id: 'imbalance', value: q(worstImbalance, 'flow') },
         { id: 'iterations', value: r.iterations },
-        { id: 'loopResidual', value: q(Math.max(...r.loopResidual.map(Math.abs)), 'span') },
+        { id: 'loopResidual', value: q(Math.max(0, ...r.loopResidual.map(Math.abs)), 'span') },
       ],
       tables: [
         {
           id: 'pipes',
-          columns: ['pipe', 'flow', 'headLoss'],
-          rows: r.flows.map((f, i) => [i + 1, q(f, 'flow'), q(r.headLoss[i], 'span')]),
+          columns: ['pipe', 'from', 'to', 'flow', 'headLoss'],
+          rows: r.flows.map((f, i) => [i + 1, list[i]!.from, list[i]!.to, q(f, 'flow'), q(r.headLoss[i]!, 'span')]),
+        },
+        {
+          id: 'nodes',
+          columns: ['node', 'external', 'imbalance'],
+          rows: built.nodes.map((n) => [n, q(external[n] ?? 0, 'flow'), q(imbalance.get(n) ?? 0, 'flow')]),
         },
       ],
       steps: steps([{ key: 'fhPipesCross', vars: { n: String(r.iterations) } }]),
@@ -324,12 +402,12 @@ export const pipesSpec: ToolSpec = {
       id: 'netPipes',
       type: 'text',
       first:
-        '100 mm, 300 m, 0.26 mm, 0, 20 L/s\n100 mm, 200 m, 0.26 mm, 0, 20 L/s\n80 mm, 250 m, 0.26 mm, 0,' +
-        ' 10 L/s\n80 mm, 250 m, 0.26 mm, 0, 10 L/s',
+        'A, B, 100 mm, 300 m, 0.26 mm, 0\nB, C, 100 mm, 200 m, 0.26 mm, 0\nA, D, 80 mm, 250 m, 0.26 mm, 0\n' +
+        'D, C, 80 mm, 250 m, 0.26 mm, 0',
       rows: 5,
       when: is('network'),
     },
-    { id: 'loops', type: 'text', first: '1 2 -4 -3', rows: 3, when: is('network') },
+    { id: 'netNodes', type: 'text', first: 'A, 30 L/s\nC, -30 L/s', rows: 3, when: is('network') },
   ],
   examples: [
     {

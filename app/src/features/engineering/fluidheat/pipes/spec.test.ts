@@ -69,10 +69,20 @@ describe('pipe form', () => {
   it('the network settles with balanced loops and unchanged junction flows', () => {
     const o = solve({ mode: 'network' });
     expect(row(o, 'loopResidual')).toBeLessThan(1e-6);
-    const flows = o.tables![0].rows.map((r) => (r[1] as { v: number }).v);
+    const flows = o.tables![0].rows.map((r) => (r[3] as { v: number }).v);
     expect(flows[0]).toBeCloseTo(flows[1], 9);
     expect(flows[2]).toBeCloseTo(flows[3], 9);
     expect(flows[0] + flows[2]).toBeCloseTo(0.03, 9);
+  });
+  it('the network balances every node, and both branches lose the same head', () => {
+    const o = solve({ mode: 'network' });
+    expect(row(o, 'imbalance')).toBeLessThan(1e-12);
+    const heads = o.tables![0].rows.map((r) => (r[4] as { v: number }).v);
+    expect(heads[0] + heads[1]).toBeCloseTo(heads[2] + heads[3], 6);
+    const nodes = o.tables![1].rows;
+    expect(nodes.map((r) => r[0])).toEqual(['A', 'B', 'C', 'D']);
+    expect((nodes[0][1] as { v: number }).v).toBeCloseTo(0.03, 12);
+    expect((nodes[2][1] as { v: number }).v).toBeCloseTo(-0.03, 12);
   });
   it('explains impossible input', () => {
     const run = (t: Record<string, string>) => runTool(pipesSpec, { ...firstTexts(pipesSpec), ...t }, 'si');
@@ -82,7 +92,27 @@ describe('pipe form', () => {
     expect(run({ mode: 'pump', pumpCurve: '0, 30\n5, 26' }).ok).toBe(false);
     expect(run({ mode: 'pump', staticHead: '80 m' }).ok).toBe(false);
     expect(run({ mode: 'series', pipes: '50 mm, 100 m' }).ok).toBe(false);
-    expect(run({ mode: 'network', loops: '1 9' }).ok).toBe(false);
+    expect(run({ mode: 'network', netNodes: 'A, 30 L/s\\nC, -20 L/s' }).ok).toBe(false);
+    expect(run({ mode: 'network', netNodes: 'A, 30 L/s\\nZ, -30 L/s' }).ok).toBe(false);
     expect(run({ diameter: '5 kg' }).ok).toBe(false);
+  });
+});
+
+describe('the Moody chart picture', () => {
+  it('marks the operating point at the solved Reynolds number and friction factor on a log-log plot', () => {
+    const o = solve({ flowRate: '5 L/s' });
+    const picture = o.picture;
+    expect(picture?.type).toBe('plot');
+    if (picture?.type !== 'plot') return;
+    expect(picture.plot.xLog).toBe(true);
+    expect(picture.plot.yLog).toBe(true);
+    const mark = picture.plot.marks![0];
+    expect(mark.x).toBeCloseTo(row(o, 'reynolds'), 6);
+    expect(mark.y).toBeCloseTo(row(o, 'friction'), 12);
+    const smooth = picture.plot.series.find((s) => s.id === 'smooth')!;
+    // the smooth curve is Colebrook with no roughness: f(1e5) = 0.017997 (published Moody value 0.018)
+    const near = smooth.points.reduce((a, b) => (Math.abs(b[0] - 1e5) < Math.abs(a[0] - 1e5) ? b : a));
+    expect(near[1]).toBeGreaterThan(0.0165);
+    expect(near[1]).toBeLessThan(0.0205);
   });
 });
