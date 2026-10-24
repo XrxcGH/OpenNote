@@ -59,11 +59,6 @@
     "palette | clipped-by-ancestor | div[role=group].group > div[role=option].option > span.optionTitle",
     "palette.results | clipped-by-ancestor | div[role=group].group > div[role=option].option > span.optionTitle",
     "palette.results | clipped-by-ancestor | div[role=listbox].list > div[role=group].group > div[role=option].option",
-    "settings | target-gap | ul > li > a.link x li > a.link",
-    "settings | target-small | div.main > details.notices > summary",
-    "setup | box-overlap | div.picker > div.other > select x footer.footer > button.button",
-    "setup | box-overlap | section.group > div.field > input.input x footer.footer > button.button",
-    "setup | target-small | div.picker > div.other > select",
     "tool.calculator | target-small | div.inputs > div.row > input.input",
     "tool.calculator | target-small | div[data-region=page-properties].host > section.bar > button.fold",
     "tool.chemcalc | target-small | div[data-region=page-properties].host > section.bar > button.fold",
@@ -118,6 +113,8 @@
     "tools.two-docked | target-small | div[data-region=page-properties].host > section.bar > button.fold"
   ],
   "intermittent": [
+    "command | clipped-by-ancestor | div[role=group].group > div[role=option].option > span.detail",
+    "command | clipped-by-ancestor | div[role=listbox].list > div[role=group].group > div[role=option].option",
     "tool.solids | target-gap | div.fields > div.field > input.input x div.field > input.input",
     "tool.solids | target-gap | div.fields > div.field > input.input x label.number > input",
     "tool.solids | target-small | div.tangent > label.check > input",
@@ -132,15 +129,10 @@
     "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
     "command | offscreen | div[data-scope=palette].panel > div.body > div[role=listbox].results",
     "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option",
-    "settings | target-small | article.card > details.details > summary",
-    "settings | target-small | div.main > section.block > select.select",
-    "settings | target-small | div.picker > div.other > select",
     "tool.chemcalc | target-gap | div.withUnit > div.field > input.input x div.withUnit > select.input",
     "block | box-overlap | div.form > label.field > input x div.status > span",
     "command | clipped-by-ancestor | div.scroller > div[role=listbox].grid > div[role=option].cell",
-    "command | clipped-by-ancestor | div[role=listbox].list > div[role=group].group > div[role=option].option",
     "block | document-scroll | ",
-    "workspace | target-small | div[data-region=page-properties].host > section.bar > button.fold",
-    "command | clipped-by-ancestor | div[role=group].group > div[role=option].option > span.detail"
+    "workspace | target-small | div[data-region=page-properties].host > section.bar > button.fold"
   ]
 }

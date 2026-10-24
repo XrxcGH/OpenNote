@@ -20,7 +20,7 @@ OpenNote is in beta testing on Windows. Each phase of the [development plan](doc
 | [5 to 12](docs/DEVELOPMENT.md#5-phases)   | Ink, page views and export, tables and charts, search, audio, math, import, intelligence | Built, and in beta testing on branch `beta` ([pull request #16](https://github.com/XrxcGH/OpenNote/pull/16), 0.1.0-beta.6) |
 | [13 and 14](docs/DEVELOPMENT.md#5-phases) | Hardening and privacy; the release pipeline                                              | Built, waiting on the beta period, code signing, and the update key, which are the owner's                                 |
 
-Agents compiled and unit-tested beta 4 and started the real app. Nobody has used most of it by hand yet. [docs/FEATURES.md](docs/FEATURES.md) marks every feature as built, built but untested by hand, not built yet, or needing the owner. The [changelog](CHANGELOG.md) lists what each beta added.
+Agents compiled and unit-tested beta 6 and started the real app. Nobody has used most of it by hand yet. [docs/FEATURES.md](docs/FEATURES.md) marks every feature as built, built but untested by hand, not built yet, or needing the owner. The [changelog](CHANGELOG.md) lists what each beta added.
 
 ## What the app does today
 
@@ -52,7 +52,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | ![An inline equation in a sentence and a graph block with its function](docs/screens/math-graph-light.png) | ![The search panel with a result, the matched word in bold, and a preview](docs/screens/search-light.png) | ![The recording options under the Record button](docs/screens/recording-light.png) |
 
-Every screen is in [docs/screens](docs/screens/README.md), in light and dark. Not built yet in beta 4: the pen library, PDF import, the local API, the web clipper, and the speech engine for transcripts. The full list is in [docs/FEATURES.md](docs/FEATURES.md).
+Every screen is in [docs/screens](docs/screens/README.md), in light and dark. Not built yet in beta 6: the pen library, PDF import, the local API, the web clipper, and the speech engine for transcripts. The full list is in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Try the beta
 
@@ -157,7 +157,7 @@ The [documentation index](docs/README.md) lists everything in `docs/`. Start wit
 | [Help pages](docs/help/README.md)                                    | How to use each part of the app, with screenshots                                      |
 | [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)              | The user guide, development updates, and the developer guide                           |
 | [CHANGELOG.md](CHANGELOG.md)                                         | What each beta added, changed, and fixed                                               |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a beta 4 status under each phase |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a beta 6 status under each phase |
 | [docs/FEATURES.md](docs/FEATURES.md)                                 | The feature spec, with what is built, untested, not built, or waiting on the owner     |
 | [docs/RESEARCH.md](docs/RESEARCH.md)                                 | Popular and rising note apps, the features people love, and the gaps OpenNote can fill |
 | [docs/BRAND.md](docs/BRAND.md)                                       | Colors, type, layout, motion, accessibility, and performance budgets                   |
@@ -166,7 +166,7 @@ The [documentation index](docs/README.md) lists everything in `docs/`. Start wit
 | [docs/CHECKS.md](docs/CHECKS.md)                                     | The quality gate every file change must pass                                           |
 | [docs/format/README.md](docs/format/README.md)                       | The note file format specification and tools                                           |
 | [docs/adr/README.md](docs/adr/README.md)                             | Every architecture decision record (ADR), its status, and how to write one             |
-| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist for beta 4, starting with the safest way to run it             |
+| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist for the beta (written at beta 4), starting with the safest way to run it             |
 | [docs/HARDENING.md](docs/HARDENING.md)                               | Crash reports, the self-check, the feedback file, and safe start                       |
 | [docs/RELEASING.md](docs/RELEASING.md)                               | The maintainer guide to cutting, checking, and rolling back a release                  |
 | [docs/CONNECTORS.md](docs/CONNECTORS.md)                             | Registering OpenNote with each connected service, and where the client IDs go          |
