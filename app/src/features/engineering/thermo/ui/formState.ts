@@ -33,8 +33,14 @@ export function textOf(form: SavedForm, field: FieldSpec, system: System): strin
 /** The fields a mode shows, worked out from the choices made so far. */
 export function fieldsOf(mode: ModeSpec, form: SavedForm, system: System): readonly FieldSpec[] {
   let fields = mode.fields({});
-  // Choices decide which fields appear, so read them, then ask again (twice covers a choice behind a choice).
-  for (let pass = 0; pass < 2; pass++) fields = mode.fields(valuesOf(fields, form, system).values);
+  // Choices decide which fields appear, so read them and ask again until the list settles (a choice can sit
+  // behind another, such as a device's fluid and then how its inlet is given).
+  for (let pass = 0; pass < 5; pass++) {
+    const next = mode.fields(valuesOf(fields, form, system).values);
+    const same = next.length === fields.length && next.every((field, i) => field.id === fields[i].id);
+    fields = next;
+    if (same) break;
+  }
   return fields;
 }
 

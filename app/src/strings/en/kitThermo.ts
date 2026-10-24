@@ -11,6 +11,7 @@ export const kitThermo = {
     steam: 'Find a state of water or steam from two properties',
     psychro: 'Work moist-air states and air-conditioning processes',
     r134a: 'Find a state of refrigerant R-134a from two properties',
+    devices: 'Balance a turbine, compressor, nozzle, or other steady-flow device with the second law',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -29,6 +30,9 @@ export const kitThermo = {
     r134a:
       'refrigerant r134a r-134a tetrafluoroethane refrigeration heat pump tables saturated superheated ' +
       'compressed liquid evaporator condenser',
+    devices:
+      'steady flow devices turbine compressor pump nozzle diffuser throttle valve heat exchanger mixing chamber ' +
+      'isentropic efficiency entropy generation exergy destruction availability second law efficiency',
   },
   tab: {
     statthermo: 'Statistical',
@@ -36,6 +40,7 @@ export const kitThermo = {
     steam: 'Steam',
     psychro: 'Moist air',
     r134a: 'R-134a',
+    devices: 'Devices',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -83,6 +88,7 @@ export const kitThermo = {
     waterPh: 'Water on a p-h diagram',
     psychroChart: 'Psychrometric chart',
     refrigerantPh: 'R-134a on a p-h diagram',
+    deviceTs: 'Process on a T-s diagram',
   },
   mode: {
     gas: 'Gas molecule',
@@ -93,6 +99,7 @@ export const kitThermo = {
     state: 'One state',
     airState: 'One moist-air state',
     airProcess: 'An air-conditioning process',
+    device: 'A steady-flow device',
   },
   field: {
     molarMass: 'Molar mass',
@@ -141,6 +148,35 @@ export const kitThermo = {
     dryAir1: 'Dry-air flow of stream 1',
     dryAir2: 'Dry-air flow of stream 2',
     reference: 'Reference state for h and s',
+    device: 'Device',
+    fluid: 'Working fluid',
+    known: 'Inlet given by',
+    knownB: 'Stream B inlet given by',
+    inletTA: 'Inlet temperature',
+    inletPA: 'Inlet pressure',
+    inletXA: 'Inlet quality',
+    inletTB: 'Inlet temperature of stream B',
+    inletPB: 'Inlet pressure of stream B',
+    inletXB: 'Inlet quality of stream B',
+    exitKnown: 'Exit of stream A given by',
+    exitKnownB: 'Exit of stream B given by',
+    exitTA: 'Exit temperature of stream A',
+    exitXA: 'Exit quality of stream A',
+    exitTB: 'Exit temperature of stream B',
+    exitXB: 'Exit quality of stream B',
+    exitPressure: 'Exit pressure',
+    efficiency: 'Isentropic efficiency',
+    massFlowOptional: 'Mass flow (optional)',
+    massFlowA: 'Mass flow of stream A, the hot or first stream',
+    massFlowB: 'Mass flow of stream B',
+    inletSpeed: 'Inlet velocity',
+    exitSpeed: 'Exit velocity',
+    heatLoss: 'Heat lost to the surroundings (optional)',
+    heatRate: 'Heat flow',
+    hotT: 'Hot reservoir temperature',
+    coldT: 'Cold reservoir temperature',
+    deadT: 'Dead-state temperature T₀',
+    deadP: 'Dead-state pressure p₀',
   },
   choice: {
     atom: 'Single atom',
@@ -191,6 +227,20 @@ export const kitThermo = {
     mixing: 'Adiabatic mixing of two streams',
     iir: 'IIR: h = 200 kJ/kg and s = 1 kJ/(kg·K) for liquid at 0 °C',
     ashrae: 'ASHRAE: h = 0 and s = 0 for liquid at −40 °C',
+    turbine: 'Turbine',
+    compressor: 'Compressor',
+    pump: 'Pump',
+    nozzle: 'Nozzle',
+    diffuser: 'Diffuser',
+    throttle: 'Throttling valve',
+    exchanger: 'Heat exchanger, one fluid on both sides',
+    mixingChamber: 'Mixing chamber',
+    reservoirs: 'Heat flow between two reservoirs',
+    fluidWater: 'Water and steam',
+    fluidR134a: 'Refrigerant R-134a',
+    fluidGas: 'Ideal gas',
+    exitByT: 'Temperature',
+    exitByX: 'Quality',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -263,6 +313,20 @@ export const kitThermo = {
     waterRemoved: 'Water removed per kg dry air',
     qRemoved: 'Heat removed per kg dry air',
     waterAdded: 'Water added per kg dry air',
+    wOut: 'Work out per kg',
+    wIn: 'Work in per kg',
+    wsIsentropic: 'Isentropic work per kg',
+    powerRow: 'Power',
+    T2s: 'Isentropic exit temperature',
+    h2s: 'Isentropic exit enthalpy',
+    sgen: 'Entropy generated per kg',
+    xdest: 'Exergy destroyed per kg',
+    sgenRate: 'Entropy generation rate',
+    xdestRate: 'Exergy destruction rate',
+    etaII: 'Second-law efficiency',
+    V2: 'Exit velocity',
+    mCold: 'Mass flow of stream B',
+    m3: 'Exit mass flow',
   },
   step: {
     stat: {
@@ -386,6 +450,29 @@ export const kitThermo = {
       saturation:
         'Equal pressure and Gibbs energy hold at T = {T} K and p_sat = {p} kPa, with ρ_l = {rl} and ρ_v = {rv} kg/m³.',
     },
+    dev: {
+      state: 'State {label}: T = {T} K, p = {p} kPa, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
+      isentropic:
+        'Isentropic exit: at p₂ = {p2} kPa with s₂ₛ = s₁ = {s} kJ/(kg·K), the state has T₂ₛ = {T} K and ' +
+        'h₂ₛ = {h} kJ/kg.',
+      etaTurbine: 'Turbine efficiency: w = η_t (h₁ − h₂ₛ) = {eta} × {ws} = {w} kJ/kg.',
+      etaCompressor: 'Compressor or pump efficiency: w = (h₂ₛ − h₁)/η = {ws}/{eta} = {w} kJ/kg.',
+      exitState:
+        'Actual exit from the energy balance: T₂ = {T} K, h₂ = {h} kJ/kg, s₂ = {s} kJ/(kg·K), so ' +
+        's_gen = s₂ − s₁ = {sgen} kJ/(kg·K).',
+      power: 'With ṁ = {m} kg/s the power is Ẇ = ṁ w = {W} kW.',
+      nozzle: 'Energy balance with η_N = {eta}: h₂ = {h2} kJ/kg, and V₂ = √(2(h₁ − h₂) + V₁²) = {V2} m/s.',
+      diffuser: 'Energy balance: h₂ = h₁ + (V₁² − V₂²)/2 = {h2} kJ/kg, so T₂ = {T2} K at the exit pressure.',
+      throttle: 'A throttle keeps h: at p₂ = {p} kPa with h₂ = h₁ = {h} kJ/kg, T₂ = {T} K and s₂ = {s} kJ/(kg·K).',
+      exchanger: 'Energy balance: stream A gives Q̇ = {Q} kW, so stream B needs ṁ_B = {mB} kg/s.',
+      exchangerEntropy:
+        'Entropy balance: Ṡ_gen = {sgen} kW/K, so Ẋ_dest = {x} kW; stream B gains {eta} % of the exergy A gives.',
+      mixing: 'Energy balance with {loss} kW lost: h₃ = {h3} kJ/kg, so T₃ = {T3} K.',
+      mixingEntropy: 'Entropy balance: Ṡ_gen = {sgen} kW/K, so Ẋ_dest = T₀ Ṡ_gen = {x} kW.',
+      reservoirs: 'Entropy balance for {Q} kW from {TH} K to {TL} K: Ṡ_gen = Q̇/T_L − Q̇/T_H = {sgen} kW/K.',
+      exergy: 'Exergy destroyed: T₀ s_gen = {T0} × {sgen} = {x}.',
+      etaII: 'Second-law efficiency: {eta} %.',
+    },
   },
   note: {
     idealGasMolecules: 'Ideal gas of independent molecules; energies are counted from the ground level.',
@@ -406,6 +493,11 @@ export const kitThermo = {
     perDryAir: 'Humidity ratio, enthalpy, and volume are per kg of dry air, as on a psychrometric chart.',
     iirReference: 'IIR reference state: h = 200 kJ/kg and s = 1 kJ/(kg·K) for saturated liquid at 0 °C.',
     ashraeReference: 'ASHRAE reference state: h = 0 and s = 0 for saturated liquid at −40 °C, as in US tables.',
+    steadyFlow:
+      'Steady flow with one inlet and one exit per stream; kinetic energy counts only where velocities are given.',
+    deviceSigns:
+      'Turbines are adiabatic with work out; compressors and pumps take work in; s_gen must be zero or more.',
+    reservoirsNote: 'Heat flows through the wall, which keeps no energy; T₀ is the dead-state temperature.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -435,6 +527,16 @@ export const kitThermo = {
     psychroEvaporative: 'The exit relative humidity must be above the entering one and at most 100 %.',
     r134aRange: 'The R-134a equation covers −103.3 to 181.85 °C up to 70 MPa; that state is outside it.',
     r134aSatRange: 'R-134a saturation is solved from −103.3 °C to 100.85 °C, just below the critical point.',
+    gasNoSaturation: 'An ideal gas has no saturated states; give its temperature instead.',
+    efficiencyRange: 'The isentropic efficiency must be above 0 and at most 100 %.',
+    turbinePressure: 'A turbine expands the fluid, so the exit pressure must be below the inlet pressure.',
+    compressorPressure: 'A compressor or pump raises the pressure, so the exit pressure must be above the inlet.',
+    nozzlePressure: 'A nozzle speeds the flow up as the pressure falls; the exit pressure must be lower.',
+    throttlePressure: 'A throttle lowers the pressure; the exit pressure must be below the inlet pressure.',
+    diffuserSpeed: 'A diffuser slows the flow: the exit velocity must be between 0 and the inlet velocity.',
+    exchangerDirection: 'Stream A must cool and stream B must warm; check the exit states.',
+    reservoirOrder: 'Heat flows by itself from hot to cold: T_H must be above T_L.',
+    secondLaw: 'Those states would destroy entropy (s_gen = {sgen}), which the second law forbids; check the inputs.',
   },
   word: {
     liquid: 'Compressed liquid',

@@ -37,6 +37,11 @@ export interface Gas {
   M: number;
   /** Gas constant, kJ/(kg K). */
   R: number;
+  /**
+   * The gas constant in s = s°(T) − R ln(p/p₀). It is R, except in the cold-air standard, where cp (k − 1)/k
+   * keeps isentropes at T₂/T₁ = (p₂/p₁)^((k−1)/k) with k = 1.4, as textbooks do.
+   */
+  Rs: number;
   cp(T: number): number;
   cv(T: number): number;
   k(T: number): number;
@@ -72,6 +77,7 @@ function variableGas(id: GasId): Gas {
     model: 'variable',
     M,
     R,
+    Rs: R,
     cp,
     cv: (T) => cp(T) - R,
     k: (T) => cp(T) / (cp(T) - R),
@@ -100,6 +106,7 @@ function constantGas(id: GasId, model: 'constant' | 'cold'): Gas {
     model,
     M: cold ? RU / 0.287 : M,
     R,
+    Rs: cold ? (cp * (k - 1)) / k : R,
     cp: () => cp,
     cv: () => cv,
     k: () => k,

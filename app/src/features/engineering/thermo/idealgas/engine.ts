@@ -130,8 +130,8 @@ function pathPoints(gas: Gas, input: ProcessInput, e: End): { p: number; T: numb
 
 function plots(gas: Gas, input: ProcessInput, e: End): PlotSpec[] {
   const points = pathPoints(gas, input, e);
-  const s1 = gas.s0(input.T1) - gas.R * Math.log(input.p1 / 100);
-  const s = (pt: { p: number; T: number }) => gas.s0(pt.T) - gas.R * Math.log(pt.p / 100) - s1;
+  const s1 = gas.s0(input.T1) - gas.Rs * Math.log(input.p1 / 100);
+  const s = (pt: { p: number; T: number }) => gas.s0(pt.T) - gas.Rs * Math.log(pt.p / 100) - s1;
   const v = (pt: { p: number; T: number }) => (gas.R * pt.T) / pt.p;
   const ends = [points[0], points[points.length - 1]];
   return [
@@ -185,7 +185,7 @@ export function solveProcess(input: ProcessInput): ThermoResult {
   const v2 = (gas.R * e.T2) / e.p2;
   const du = gas.u(e.T2) - gas.u(T1);
   const dh = gas.h(e.T2) - gas.h(T1);
-  const ds = gas.s0(e.T2) - gas.s0(T1) - gas.R * Math.log(e.p2 / p1);
+  const ds = gas.s0(e.T2) - gas.s0(T1) - gas.Rs * Math.log(e.p2 / p1);
   const { wb, ws } = works(gas, input, e, v1, v2);
   const perMol = (x: number) => (x * gas.M) / 1000;
   const rows: ResultRow[] = [
@@ -234,10 +234,10 @@ export function solveState(input: StateInput): ThermoResult {
   const p = positive(input.p, 'p');
   const gas = gasOf(input.gas, input.model);
   const v = (gas.R * T) / p;
-  const s = gas.s0(T) - gas.R * Math.log(p / 100);
+  const s = gas.s0(T) - gas.Rs * Math.log(p / 100);
   const k = gas.k(T);
   const a = Math.sqrt(k * gas.R * 1000 * T);
-  const pr = Math.exp((gas.s0(T) - gas.s0(T_REF)) / gas.R);
+  const pr = Math.exp((gas.s0(T) - gas.s0(T_REF)) / gas.Rs);
   const vr = T / T_REF / pr;
   return {
     rows: [
