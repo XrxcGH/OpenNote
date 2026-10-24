@@ -124,3 +124,15 @@ describe('rating and sizing', () => {
     expect(() => profile({ ...base, type: 'shell', ua: 1 })).toThrow(CalcError);
   });
 });
+
+describe('the one-shell two-pass limit', () => {
+  it('cannot exceed 2 / (1 + Cr + sqrt(1 + Cr^2)): 0.5858 at Cr = 1, 0.7639 at Cr = 0.5 (hand values)', () => {
+    expect(maxEffectiveness('shell', 1)).toBeCloseTo(2 / (2 + Math.SQRT2), 12);
+    expect(maxEffectiveness('shell', 1)).toBeCloseTo(0.585786, 6);
+    expect(maxEffectiveness('shell', 0.5)).toBeCloseTo(2 / (1.5 + Math.sqrt(1.25)), 12);
+  });
+  it('sizing past the limit gives the tool message, not a bracketing error', () => {
+    expect(() => ntuFor('shell', 0.6, 1)).toThrow(/limit is 0\.5858/);
+    expect(ntuFor('shell', 0.55, 1)).toBeGreaterThan(0);
+  });
+});

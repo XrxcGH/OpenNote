@@ -33,6 +33,7 @@ export function maxEffectiveness(type: HxType, cr: number): number {
   if (type === 'parallel') return 1 / (1 + cr);
   if (type === 'crossCmaxMixed') return (1 / cr) * (1 - Math.exp(-cr));
   if (type === 'crossCminMixed') return 1 - Math.exp(-1 / cr);
+  if (type === 'shell') return 2 / (1 + cr + Math.sqrt(1 + cr * cr));
   return 1;
 }
 
