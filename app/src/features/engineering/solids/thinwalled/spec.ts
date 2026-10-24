@@ -3,7 +3,7 @@
 // all go through the same engine.
 import type { DrawContext } from '../kit/picture';
 import { typedLines } from '../kit/lines';
-import type { ResultRow, ToolSpec, Values } from '../kit/spec';
+import { fixed, type ResultRow, type ToolSpec, type Values } from '../kit/spec';
 import { fail, q } from '../kit/types';
 import { fromShown, type System } from '../kit/units';
 import { thinSvg } from './draw';
@@ -38,8 +38,8 @@ const BOX_WALLS = '1 2 1\n2 3 1\n3 4 1\n4 1 1';
 
 export const thinwalledSpec: ToolSpec = {
   fields: [
-    { id: 'booms', type: 'text', rows: 5, first: BOX },
-    { id: 'walls', type: 'text', rows: 5, first: BOX_WALLS },
+    { id: 'booms', type: 'text', rows: 5, first: BOX, columns: fixed('length', 'length', 'area') },
+    { id: 'walls', type: 'text', rows: 5, first: BOX_WALLS, columns: fixed(null, null, 'length', 'length') },
     { id: 'Sx', type: 'quantity', kind: 'bigForce', first: '', optional: true },
     { id: 'Sy', type: 'quantity', kind: 'bigForce', first: '10 kN', optional: true },
     { id: 'at', type: 'choice', options: ['shear', 'point'], first: 'shear' },

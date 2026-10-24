@@ -3,7 +3,16 @@
 // assembly map, the reduced system, and how stresses are recovered.
 import { numberLatex } from '../kit/format';
 import type { DrawContext } from '../kit/picture';
-import type { Outcome, ResultRow, ResultTable, ToolSpec, Values } from '../kit/spec';
+import {
+  every,
+  fixed,
+  byFirst,
+  type Outcome,
+  type ResultRow,
+  type ResultTable,
+  type ToolSpec,
+  type Values,
+} from '../kit/spec';
 import { q, step, type KitStep, type StepValue } from '../kit/types';
 import { toShown, unitOf, type Kind, type System } from '../kit/units';
 import { heywood, solveHeat1D, solveHeat2D, solveModal, solvePlate, type Ends } from './continuum';
@@ -236,7 +245,7 @@ function runHeat1D(values: Values, system: System): Outcome {
     system,
     'elementLine',
   ).map(([i, j, k, A]) => ({ i, j, k, A }));
-  const temps = rows(str(values, 'heatTemps'), ['node', 'tempChange'], system, 'femSupportLine').map(([node, T]) => ({
+  const temps = rows(str(values, 'heatTemps'), ['node', 'temperature'], system, 'femSupportLine').map(([node, T]) => ({
     node,
     T,
   }));
@@ -247,15 +256,15 @@ function runHeat1D(values: Values, system: System): Outcome {
   const r = solveHeat1D(nodes, elements, temps, inputs, or0(values, 'qdot'));
   return {
     rows: [
-      { id: 'Tmax', value: q(Math.max(...r.T), 'tempChange'), sym: 'T_{max}', answer: true },
-      { id: 'Tmin', value: q(Math.min(...r.T), 'tempChange'), sym: 'T_{min}' },
+      { id: 'Tmax', value: q(Math.max(...r.T), 'temperature'), sym: 'T_{max}', answer: true },
+      { id: 'Tmin', value: q(Math.min(...r.T), 'temperature'), sym: 'T_{min}' },
     ],
     steps: r.steps,
     tables: [
       {
         id: 'nodes',
         columns: ['node', 'x', 'T'],
-        rows: nodes.map((x, n) => [String(n + 1), q(x, 'span'), q(r.T[n], 'tempChange')]),
+        rows: nodes.map((x, n) => [String(n + 1), q(x, 'span'), q(r.T[n], 'temperature')]),
       },
       { id: 'flows', columns: ['node', 'Q'], rows: [...r.flows].map(([n, Q]) => [String(n + 1), q(Q, 'heat')]) },
       { id: 'fluxes', columns: ['element', 'flux'], rows: r.flux.map((f, e) => [String(e + 1), q(f, 'heatFlux')]) },
@@ -265,7 +274,7 @@ function runHeat1D(values: Values, system: System): Outcome {
       type: 'plot',
       plot: {
         x: { label: 'x', kind: 'span' },
-        y: { label: 'T', kind: 'tempChange' },
+        y: { label: 'T', kind: 'temperature' },
         series: [{ id: 'T', points: nodes.map((x, n) => [x, r.T[n]] as const).sort((a, b) => a[0] - b[0]) }],
       },
     },
@@ -288,14 +297,14 @@ function runHeat2D(values: Values): Outcome {
   return {
     rows: [
       { id: 'heatIn', value: q(r.left, 'heat'), sym: 'Q_{left}', answer: true },
-      { id: 'Tmax', value: q(Math.max(...r.T), 'tempChange'), sym: 'T_{max}' },
+      { id: 'Tmax', value: q(Math.max(...r.T), 'temperature'), sym: 'T_{max}' },
     ],
     steps: r.steps,
     notes: ['heatLinear', 'heatEdges', 'mesh'],
     picture: {
       type: 'draw',
       draw: (ctx: DrawContext) =>
-        plateSvg({ mesh: r.mesh, values: average, kind: 'tempChange', label: ctx.say('kitSolids.fem.plot.T') }, ctx),
+        plateSvg({ mesh: r.mesh, values: average, kind: 'temperature', label: ctx.say('kitSolids.fem.plot.T') }, ctx),
     },
   };
 }
@@ -360,6 +369,10 @@ function runModal(values: Values): Outcome {
   };
 }
 
+const BAR_COLUMNS = byFirst({ bar: [null, null, 'modulus', 'area'], spring: [null, null, 'stiffness'] });
+const MEMBERS = fixed(null, null, 'modulus', 'area', 'inertia');
+const LOADS = fixed(null, 'bigForce', 'bigForce', 'bigMoment');
+
 const FOUR_BARS = {
   barNodes: '0\n1\n2',
   barElements: 'bar 1 2 200 100\nbar 2 3 200 50',
@@ -375,28 +388,57 @@ export const femSpec: ToolSpec = {
       options: ['bar', 'truss', 'frame', 'plane', 'heat1d', 'heat2d', 'modal'],
       first: 'bar',
     },
-    { id: 'barNodes', type: 'text', rows: 3, first: FOUR_BARS.barNodes, when: isKind('bar') },
-    { id: 'barElements', type: 'text', rows: 3, first: FOUR_BARS.barElements, when: isKind('bar') },
+    { id: 'barNodes', type: 'text', rows: 3, first: FOUR_BARS.barNodes, columns: every('span'), when: isKind('bar') },
+    {
+      id: 'barElements',
+      type: 'text',
+      rows: 3,
+      first: FOUR_BARS.barElements,
+      columns: BAR_COLUMNS,
+      when: isKind('bar'),
+    },
     { id: 'barSupports', type: 'text', rows: 1, first: FOUR_BARS.barSupports, when: isKind('bar') },
-    { id: 'barLoads', type: 'text', rows: 2, first: FOUR_BARS.barLoads, when: isKind('bar') },
-    { id: 'trussNodes', type: 'text', rows: 5, first: '2 2\n5 2\n8 2\n3.5 4.5\n6.5 4.5', when: isKind('truss') },
+    { id: 'barLoads', type: 'text', rows: 2, first: FOUR_BARS.barLoads, columns: LOADS, when: isKind('bar') },
+    {
+      id: 'trussNodes',
+      type: 'text',
+      rows: 5,
+      first: '2 2\n5 2\n8 2\n3.5 4.5\n6.5 4.5',
+      columns: every('span'),
+      when: isKind('truss'),
+    },
     {
       id: 'trussMembers',
       type: 'text',
       rows: 5,
       first: '1 2 200 1000\n2 3 200 1000\n1 4 200 1000\n4 2 200 1000\n2 5 200 1000\n5 3 200 1000\n4 5 200 1000',
+      columns: MEMBERS,
       when: isKind('truss'),
     },
     { id: 'trussSupports', type: 'text', rows: 2, first: '1 pin\n3 roller', when: isKind('truss') },
-    { id: 'trussLoads', type: 'text', rows: 2, first: '2 0 -10', when: isKind('truss') },
-    { id: 'frameNodes', type: 'text', rows: 3, first: '0 0\n3 0', when: isKind('frame') },
-    { id: 'frameMembers', type: 'text', rows: 3, first: '1 2 200 5000 8e6', when: isKind('frame') },
+    { id: 'trussLoads', type: 'text', rows: 2, first: '2 0 -10', columns: LOADS, when: isKind('truss') },
+    { id: 'frameNodes', type: 'text', rows: 3, first: '0 0\n3 0', columns: every('span'), when: isKind('frame') },
+    { id: 'frameMembers', type: 'text', rows: 3, first: '1 2 200 5000 8e6', columns: MEMBERS, when: isKind('frame') },
     { id: 'frameSupports', type: 'text', rows: 2, first: '1 fixed', when: isKind('frame') },
-    { id: 'frameLoads', type: 'text', rows: 2, first: '2 0 -10 0', when: isKind('frame') },
-    { id: 'heatNodes', type: 'text', rows: 3, first: '0\n0.5\n1', when: isKind('heat1d') },
-    { id: 'heatElements', type: 'text', rows: 3, first: '1 2 50 10000\n2 3 50 10000', when: isKind('heat1d') },
-    { id: 'heatTemps', type: 'text', rows: 2, first: '1 100\n3 20', when: isKind('heat1d') },
-    { id: 'heatInputs', type: 'text', rows: 2, first: '', when: isKind('heat1d') },
+    { id: 'frameLoads', type: 'text', rows: 2, first: '2 0 -10 0', columns: LOADS, when: isKind('frame') },
+    { id: 'heatNodes', type: 'text', rows: 3, first: '0\n0.5\n1', columns: every('span'), when: isKind('heat1d') },
+    {
+      id: 'heatElements',
+      type: 'text',
+      rows: 3,
+      first: '1 2 50 10000\n2 3 50 10000',
+      columns: fixed(null, null, 'conductivity', 'area'),
+      when: isKind('heat1d'),
+    },
+    {
+      id: 'heatTemps',
+      type: 'text',
+      rows: 2,
+      first: '1 100\n3 20',
+      columns: fixed(null, 'temperature'),
+      when: isKind('heat1d'),
+    },
+    { id: 'heatInputs', type: 'text', rows: 2, first: '', columns: fixed(null, 'heat'), when: isKind('heat1d') },
     { id: 'W', type: 'quantity', kind: 'length', first: '200 mm', when: isKind('plane', 'heat2d') },
     { id: 'H', type: 'quantity', kind: 'length', first: '100 mm', when: isKind('plane', 'heat2d') },
     { id: 't', type: 'quantity', kind: 'length', first: '10 mm', when: isKind('plane', 'heat2d') },
@@ -420,8 +462,8 @@ export const femSpec: ToolSpec = {
     { id: 'E', type: 'quantity', kind: 'modulus', first: '200 GPa', when: isKind('plane', 'modal') },
     { id: 'nu', type: 'quantity', kind: 'ratio', first: '0.3', when: isKind('plane') },
     { id: 'kc', type: 'quantity', kind: 'conductivity', first: '50 W/(m*K)', when: isKind('heat2d') },
-    { id: 'T1', type: 'quantity', kind: 'tempChange', first: '100 K', when: isKind('heat2d') },
-    { id: 'T2', type: 'quantity', kind: 'tempChange', first: '20 K', when: isKind('heat2d') },
+    { id: 'T1', type: 'quantity', kind: 'temperature', first: '100 degC', when: isKind('heat2d') },
+    { id: 'T2', type: 'quantity', kind: 'temperature', first: '20 degC', when: isKind('heat2d') },
     { id: 'qdot', type: 'quantity', kind: 'heatGen', first: '', optional: true, when: isKind('heat1d', 'heat2d') },
     { id: 'L', type: 'quantity', kind: 'span', first: '1 m', when: isKind('modal') },
     { id: 'rho', type: 'quantity', kind: 'density', first: '7850 kg/m^3', when: isKind('modal') },

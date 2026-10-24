@@ -5,7 +5,7 @@ import { numberLatex } from '../kit/format';
 import { typedLines } from '../kit/lines';
 import type { KitStep } from '../kit/types';
 import { fail, q, step } from '../kit/types';
-import type { ToolSpec, Values } from '../kit/spec';
+import { byFirst, every, fixed, type ToolSpec, type Values } from '../kit/spec';
 import { fromShown, toShown, unitOf, type Kind, type System } from '../kit/units';
 import { beamDeflection, type DeflectionLoad, type MomentPiece } from './engine';
 import type { BeamSupportKind } from '../../structures/beam';
@@ -115,15 +115,22 @@ function pieceSteps(pieces: readonly MomentPiece[], system: System): KitStep[] {
   );
 }
 
+const LOAD_COLUMNS = byFirst({
+  point: ['span', 'bigForce'],
+  moment: ['span', 'bigMoment'],
+  udl: ['span', 'span', 'spanLoad', 'spanLoad'],
+  dist: ['span', 'span', 'spanLoad', 'spanLoad'],
+});
+
 export const deflectionSpec: ToolSpec = {
   fields: [
     { id: 'E', type: 'quantity', kind: 'modulus', first: '200 GPa' },
     { id: 'I', type: 'quantity', kind: 'inertia', first: '8e6 mm^4' },
     { id: 'L', type: 'quantity', kind: 'span', first: '4 m' },
-    { id: 'supports', type: 'text', rows: 3, first: 'pin 0\nroller 4' },
-    { id: 'loads', type: 'text', rows: 3, first: 'udl 0 4 10' },
-    { id: 'segments', type: 'text', rows: 2, first: '' },
-    { id: 'points', type: 'text', rows: 1, first: '1 2' },
+    { id: 'supports', type: 'text', rows: 3, first: 'pin 0\nroller 4', columns: every('span') },
+    { id: 'loads', type: 'text', rows: 3, first: 'udl 0 4 10', columns: LOAD_COLUMNS },
+    { id: 'segments', type: 'text', rows: 2, first: '', columns: fixed('span', 'span', null) },
+    { id: 'points', type: 'text', rows: 1, first: '1 2', columns: every('span') },
   ],
   examples: [
     { id: 'simple', values: { L: '4 m', supports: 'pin 0\nroller 4', loads: 'udl 0 4 10', segments: '' } },

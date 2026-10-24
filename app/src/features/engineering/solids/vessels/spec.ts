@@ -3,7 +3,7 @@
 // circles, or stacked strips (for tees and I-sections).
 import { typedLines } from '../kit/lines';
 import type { PlotSeries } from '../kit/picture';
-import type { Outcome, ResultRow, ToolSpec, Values } from '../kit/spec';
+import { every, type Outcome, type ResultRow, type ToolSpec, type Values } from '../kit/spec';
 import { fail, q } from '../kit/types';
 import { fromShown, type System } from '../kit/units';
 import { curvedBeam, shrinkFit, thickCylinder, thinVessel, type CurvedSection } from './engine';
@@ -217,7 +217,14 @@ export const vesselsSpec: ToolSpec = {
     },
     { id: 'd', type: 'quantity', kind: 'length', first: '40 mm', when: curvedOf('circle') },
     { id: 'rc', type: 'quantity', kind: 'length', first: '60 mm', when: curvedOf('circle') },
-    { id: 'strips', type: 'text', rows: 3, first: '60 50 60\n10 60 110', when: curvedOf('strips') },
+    {
+      id: 'strips',
+      type: 'text',
+      rows: 3,
+      first: '60 50 60\n10 60 110',
+      columns: every('length'),
+      when: curvedOf('strips'),
+    },
     { id: 'M', type: 'quantity', kind: 'bigMoment', first: '1 kN·m', when: isMode('curved') },
     { id: 'N', type: 'quantity', kind: 'bigForce', first: '', optional: true, when: isMode('curved') },
     { id: 'pi', type: 'quantity', kind: 'stress', first: '100 MPa', when: isMode('thick') },

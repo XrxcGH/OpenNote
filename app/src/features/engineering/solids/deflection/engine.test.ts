@@ -184,7 +184,7 @@ describe('the deflection form', () => {
       deflectionSpec,
       {
         ...firstTexts(deflectionSpec),
-        E: '29000',
+        E: '29', // Msi
         I: '100',
         L: '10',
         supports: 'fixed 0',
@@ -194,7 +194,7 @@ describe('the deflection form', () => {
       'us',
     );
     expect(r.ok).toBe(true);
-    // PL³/(3EI) = 1 kip × (120 in)³ / (3 × 29000 ksi × 100 in⁴) = 0.19862 in.
+    // PL³/(3EI) = 1 kip × (120 in)³ / (3 × 29 Msi × 100 in⁴) = 0.19862 in.
     rel(-value(r, 'vMax') / 0.0254, 1728000 / 8.7e6, 1e-9);
   });
 

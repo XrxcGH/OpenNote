@@ -89,7 +89,7 @@ function FieldInput(props: {
           inertia: unitOf('inertia', system),
           stiffness: unitOf('stiffness', system),
           conductivity: unitOf('conductivity', system),
-          temperature: unitOf('tempChange', system),
+          temperature: unitOf('temperature', system),
           heat: unitOf('heat', system),
         })
       : '';
@@ -194,7 +194,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const problems = new Map(run.ok ? [] : run.fields.map((one) => [one.field, one.error] as const));
   const changeSystem = (next: System) => {
     if (next === system) return;
-    setTexts(pinUnits(spec, texts, system));
+    setTexts(pinUnits(spec, texts, system, next));
     setSystem(next);
   };
   const pickExample = (id: string) => {

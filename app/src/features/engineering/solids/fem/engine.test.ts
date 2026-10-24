@@ -248,6 +248,19 @@ describe('the workbench form', () => {
         expect(runTool(femSpec, { ...firstTexts(femSpec), kind }, system).ok, `${kind} ${system}`).toBe(true);
   });
 
+  it('reads held temperatures typed in different units as absolute temperatures', () => {
+    // 212 °F is 100 °C, so a wall held at 212 °F and 20 °C runs from 373.15 K down to 293.15 K.
+    const value = (r: ReturnType<typeof runTool>, id: string) => {
+      const row = r.ok ? r.outcome.rows.find((one) => one.id === id) : undefined;
+      return typeof row?.value === 'object' ? row.value.v : NaN;
+    };
+    const plate = runTool(femSpec, { ...firstTexts(femSpec), kind: 'heat2d', T1: '212 degF', T2: '20' }, 'si');
+    near(value(plate, 'Tmax'), 373.15, 1e-9);
+    const line = runTool(femSpec, { ...firstTexts(femSpec), kind: 'heat1d', heatTemps: '1 212\n3 68' }, 'us');
+    near(value(line, 'Tmax'), 373.15, 1e-9);
+    near(value(line, 'Tmin'), 293.15, 1e-9);
+  });
+
   it('marks bad lines', () => {
     const bad = (texts: Record<string, string>) => {
       const r = runTool(femSpec, { ...firstTexts(femSpec), ...texts }, 'si');

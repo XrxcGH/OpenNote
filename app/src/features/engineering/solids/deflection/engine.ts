@@ -256,25 +256,47 @@ function constantsOf(input: DeflectionInput, particular: Curve) {
   return { v0, theta0, jumps, at };
 }
 
-/** The largest |f| over the nodes and the roots of g inside each piece, where f peaks. */
+/**
+ * The largest |f| over the nodes and the roots of g inside each piece, where f peaks. Peaks equal to a part in a
+ * million, as on the two spans of a symmetric beam, go to the leftmost, so round-off cannot move the answer across.
+ */
 function largest(X: readonly number[], L: number, f: (x: number) => number, g: (x: number) => number) {
-  let best = { x: 0, value: 0 };
-  const consider = (x: number) => {
-    const value = f(x);
-    if (Math.abs(value) > Math.abs(best.value)) best = { x, value };
-  };
-  X.forEach(consider);
+  const found: { x: number; value: number }[] = X.map((x) => ({ x, value: f(x) }));
   for (let i = 0; i < X.length - 1; i++) {
     const [a, b] = [X[i] + 1e-12 * L, X[i + 1] - 1e-12 * L];
     if (g(a) * g(b) < 0) {
       const root = brent(g, a, b, 1e-13 * L);
-      if (root !== null) consider(root);
+      if (root !== null) found.push({ x: root, value: f(root) });
     }
   }
-  return best;
+  const top = Math.max(0, ...found.map((one) => Math.abs(one.value)));
+  if (top === 0) return { x: 0, value: 0 };
+  return found.filter((one) => Math.abs(one.value) >= top * (1 - 1e-6)).sort((p, r) => p.x - r.x)[0];
 }
 
-export function beamDeflection(input: DeflectionInput): DeflectionResult {
+/**
+ * Puts a place within a hundred-thousandth of the span of an end exactly on that end. A table turned into the other unit
+ * system keeps 6 figures, so "4 m" read back as 13.1234 ft is a hair past the end of a beam typed as 4 m.
+ */
+function snapToEnds(input: DeflectionInput): DeflectionInput {
+  const { L } = input;
+  if (!(L > 0)) return input;
+  const snap = (x: number) => (Math.abs(x) <= 1e-5 * L ? 0 : Math.abs(x - L) <= 1e-5 * L ? L : x);
+  return {
+    ...input,
+    supports: input.supports.map((s) => ({ ...s, x: snap(s.x) })),
+    loads: input.loads.map((load) =>
+      load.kind === 'udl' ? { ...load, x1: snap(load.x1), x2: snap(load.x2) } : { ...load, x: snap(load.x) },
+    ),
+    ...(input.segments
+      ? { segments: input.segments.map((seg) => ({ ...seg, x1: snap(seg.x1), x2: snap(seg.x2) })) }
+      : {}),
+    ...(input.at ? { at: input.at.map(snap) } : {}),
+  };
+}
+
+export function beamDeflection(typed: DeflectionInput): DeflectionResult {
+  const input = snapToEnds(typed);
   checkInput(input);
   const { L } = input;
   const { status, reactions, moment } = reactionsAndMoment(input);

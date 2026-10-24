@@ -6,6 +6,9 @@ import type { DrawContext, PlotSpec } from './picture';
 import type { KitStep, StepValue } from './types';
 import type { Kind, System } from './units';
 
+/** The kind of each word of a typed line, null for a word that is not a quantity (a name, a node number, a count). */
+export type Columns = (words: readonly string[]) => readonly (Kind | null)[];
+
 /** A field's value: a quantity in base SI (NaN when an optional one is empty), a choice, or text. */
 export type Values = Readonly<Record<string, number | string>>;
 
@@ -33,6 +36,8 @@ export interface TextAreaField extends FieldBase {
   readonly type: 'text';
   readonly first: string;
   readonly rows: number;
+  /** The kinds of the numbers typed, so they can be turned into the other system's units when it changes. */
+  readonly columns?: Columns;
 }
 
 export type Field = QuantityField | ChoiceField | TextAreaField;
@@ -77,3 +82,20 @@ export interface ToolSpec {
 /** The fields shown for these values. */
 export const shownFields = (spec: ToolSpec, values: Values): Field[] =>
   spec.fields.filter((field) => !field.when || field.when(values));
+
+/** Columns where every number is of one kind; the words that are not numbers are kept. */
+export const every =
+  (kind: Kind): Columns =>
+  (words) =>
+    words.map(() => kind);
+
+/** Columns of a line that starts with a word, such as "point x P": the kinds after each first word. */
+export const byFirst =
+  (kinds: Readonly<Record<string, readonly (Kind | null)[]>>): Columns =>
+  (words) => [null, ...(kinds[words[0]?.toLowerCase() ?? ''] ?? [])];
+
+/** Columns in a fixed order. */
+export const fixed =
+  (...kinds: readonly (Kind | null)[]): Columns =>
+  () =>
+    kinds;

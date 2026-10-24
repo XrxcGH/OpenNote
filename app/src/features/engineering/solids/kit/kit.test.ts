@@ -29,6 +29,48 @@ describe('reading quantities', () => {
     close(readQuantity('29000 ksi', 'modulus', 'si'), 29000 * 6894757.293168361);
   });
 
+  it('reads a degree or percent sign once', () => {
+    for (const text of ['30°', '30 °', '30 deg', '30']) close(readQuantity(text, 'angle', 'si'), Math.PI / 6);
+    close(readQuantity('30°', 'angle', 'us'), 0.5235987755982988);
+    close(readQuantity('0.2 %', 'strain', 'si'), 0.002);
+    close(readQuantity('20%', 'percent', 'si'), 0.2);
+    expect(() => readQuantity('30°', 'length', 'si')).toThrow(SolidsError);
+    // An angle pinned on a change of system reads the same.
+    const spec: ToolSpec = {
+      fields: [{ id: 'a', type: 'quantity', kind: 'angle', first: '30' }],
+      run: () => ({ rows: [], steps: [] }),
+    };
+    expect(pinUnits(spec, { a: '30' }, 'si').a).toBe('30 deg');
+    expect(pinUnits(spec, { a: '30°' }, 'si').a).toBe('30°');
+    close(readValues(spec, pinUnits(spec, { a: '30' }, 'si'), 'us').values.a as number, Math.PI / 6);
+  });
+
+  it('turns radians into turns for rpm and Hz fields, and turns into radians for rad/s fields', () => {
+    // 157.08 rad/s is 1500 rpm, 25 rev/s; 6.283 rad/s is 1 Hz.
+    close(readQuantity('157.0796327 rad/s', 'speed', 'si'), 25, 1e-8);
+    close(readQuantity('2*pi rad/s', 'frequency', 'si'), 1);
+    close(readQuantity('1500 rpm', 'angularSpeed', 'si'), 50 * Math.PI);
+    close(readQuantity('1 Hz', 'angularSpeed', 'si'), 2 * Math.PI);
+    close(readQuantity('1500 rpm', 'speed', 'si'), 25);
+  });
+
+  it('reads 1/X units, Msi, and absolute temperatures', () => {
+    close(readQuantity('12e-6 1/K', 'expansion', 'si'), 12e-6);
+    close(readQuantity('6.5e-6 1/°F', 'expansion', 'si'), 6.5e-6 * 1.8);
+    close(readQuantity('0.002 1/mm', 'curvature', 'si'), 2);
+    close(readQuantity('29 Msi', 'modulus', 'si'), 29e6 * 6894.757293168361);
+    close(readQuantity('29', 'modulus', 'us'), 29e6 * 6894.757293168361);
+    close(readQuantity('100 lbf/in', 'lineLoad', 'si'), (100 * 4.4482216152605) / 0.0254);
+    // 212 °F is 100 °C is 373.15 K, whichever way it is typed; a bare number is °C in SI and °F in US.
+    close(readQuantity('212 degF', 'temperature', 'si'), 373.15);
+    close(readQuantity('100 degC', 'temperature', 'us'), 373.15);
+    close(readQuantity('373.15 K', 'temperature', 'si'), 373.15);
+    close(readQuantity('100', 'temperature', 'si'), 373.15);
+    close(readQuantity('32', 'temperature', 'us'), 273.15);
+    // A difference keeps no offset.
+    close(readQuantity('18 degF', 'tempChange', 'si'), 10);
+  });
+
   it('names both units when a typed unit measures something else', () => {
     try {
       readQuantity('5 kN', 'length', 'si');

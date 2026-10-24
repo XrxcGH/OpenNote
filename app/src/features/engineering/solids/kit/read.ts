@@ -2,8 +2,9 @@
 // that field, so the window can mark it, and the tool is not run until every shown field reads.
 import { SolidsError } from './types';
 import { evaluate } from '../../../../core/expr';
-import { readQuantity, typedUnit, type System } from './units';
-import { shownFields, type Outcome, type ToolSpec, type Values } from './spec';
+import { endsInSign, fromShown, readQuantity, toShown, typedUnit, type System } from './units';
+import { typedLines } from './lines';
+import { shownFields, type Columns, type Outcome, type ToolSpec, type Values } from './spec';
 
 export interface FieldProblem {
   readonly field: string;
@@ -57,21 +58,49 @@ export function runTool(spec: ToolSpec, texts: Readonly<Record<string, string>>,
   }
 }
 
+/** A number to 6 significant figures, without trailing zeros. */
+const tidy = (value: number): string => String(Number(value.toPrecision(6)));
+
 /**
- * Before the unit system changes, a bare number gets the unit it was read in, so "100" in mm becomes "100 mm" and
- * the values, and so the results, stay the same while they are shown in the other system.
+ * A typed table with its numbers turned from one system's units into the other's, so the table still says the same
+ * thing. Words that are not quantities, comment lines, and words that are not plain numbers are kept as typed.
+ */
+export function convertTable(text: string, columns: Columns, from: System, to: System): string {
+  const lines = text.split(/\r?\n/);
+  for (const { words, line } of typedLines(text)) {
+    const kinds = columns(words);
+    if (!words.some((word, i) => kinds[i] && Number.isFinite(Number(word)))) continue;
+    const out = words.map((word, i) => {
+      const kind = kinds[i];
+      const value = Number(word);
+      return kind && Number.isFinite(value) ? tidy(toShown(fromShown(value, kind, from), kind, to)) : word;
+    });
+    lines[line - 1] = out.join(' ');
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Before the unit system changes, a bare number gets the unit it was read in, so "100" in mm becomes "100 mm". The
+ * numbers of a typed table are turned into the other system's units. So the values, and the results, stay the same
+ * while they are shown in the other system.
  */
 export function pinUnits(
   spec: ToolSpec,
   texts: Readonly<Record<string, string>>,
   from: System,
+  to: System = from === 'si' ? 'us' : 'si',
 ): Record<string, string> {
   const out: Record<string, string> = { ...texts };
   for (const field of spec.fields) {
-    if (field.type !== 'quantity') continue;
     const text = (texts[field.id] ?? field.first).trim();
+    if (field.type === 'text') {
+      if (field.columns && text !== '') out[field.id] = convertTable(text, field.columns, from, to);
+      continue;
+    }
+    if (field.type !== 'quantity') continue;
     const unit = typedUnit(field.kind, from);
-    if (text === '' || unit === '' || !evaluate(text).ok) continue;
+    if (text === '' || unit === '' || endsInSign(text) || !evaluate(text).ok) continue;
     out[field.id] = `${text} ${unit}`;
   }
   return out;
