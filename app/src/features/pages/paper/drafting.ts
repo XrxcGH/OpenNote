@@ -1,6 +1,6 @@
 // Engineering paper: computation paper, a three-view layout with projection lines, and a title block. Like the other
 // built-in templates these are data, not code, and applying one copies it into the page. The label text comes from the
-// caller's strings. The sheet sizes are the drafting standards' (ANSI A and B, ISO A4 and A3).
+// caller's strings. The sheet sizes are the drafting standards' (ANSI A and B, ISO A4, and A3).
 
 import type { AreaSize } from './templates';
 import type { PaperTemplate, TemplateElement, Weight } from './types';
@@ -14,13 +14,13 @@ export const DRAFTING_IDS = {
 
 export type DraftingKey = keyof typeof DRAFTING_IDS;
 
-/** Page units (1/96 inch) in one millimetre and one inch. */
+/** Page units (1/96 inch) in one millimeter and one inch. */
 export const UNITS_PER_MM = 96 / 25.4;
 export const UNITS_PER_INCH = 96;
 
 export interface Sheet {
   readonly id: 'ansiA' | 'ansiB' | 'a4' | 'a3';
-  /** Portrait width and height in millimetres, exactly as the standards state them. */
+  /** Portrait width and height in millimeters, exactly as the standards state them. */
   readonly widthMm: number;
   readonly heightMm: number;
 }
@@ -103,7 +103,7 @@ export function titleBlockElements(text: TitleBlockText, area: AreaSize): Templa
     const b = at(fx2, fy2);
     return line(a.x, a.y, b.x, b.y, weight);
   };
-  // Rows: the title takes the top 40 percent, then drawn by, date, scale and sheet, then material and the note.
+  // Rows: the title takes the top 40 percent, then drawn by, date, scale, and sheet, then material and the note.
   return [
     rect(x, y, w, h, 'strong'),
     seg(0, 0.4, 1, 0.4),
@@ -140,7 +140,7 @@ export function computationPaper(name: string, area: AreaSize): PaperTemplate {
 }
 
 /**
- * Front, top and right views in the third-angle arrangement: the top view above the front view and the right view
+ * Front, top, and right views in the third-angle arrangement: the top view above the front view and the right view
  * to its right, joined by the projection lines that carry widths up and heights across. A title block sits below.
  */
 export function threeViewLayout(name: string, text: ThreeViewText, area: AreaSize): PaperTemplate {

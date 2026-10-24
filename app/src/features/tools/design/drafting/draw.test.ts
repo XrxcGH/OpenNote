@@ -53,8 +53,10 @@ describe('drawing primitives', () => {
 
   it('dimension text reads upright whatever the direction', () => {
     const steep: Dim = { id: 'd2', k: 'aligned', a: { x: 0, y: 0 }, b: { x: -10, y: -30 }, off: 4 };
-    for (const t of texts(doc([], [steep])))
-      expect(t.angle).toBeGreaterThan(-90 - 1e-9) && expect(t.angle).toBeLessThanOrEqual(90);
+    for (const t of texts(doc([], [steep]))) {
+      expect(t.angle).toBeGreaterThan(-90 - 1e-9);
+      expect(t.angle).toBeLessThanOrEqual(90);
+    }
     const down: Dim = { id: 'd3', k: 'aligned', a: { x: 0, y: 0 }, b: { x: -20, y: 0 }, off: 4 };
     expect(texts(doc([], [down])).find((t) => t.text === '20.00')!.angle).toBe(0);
   });

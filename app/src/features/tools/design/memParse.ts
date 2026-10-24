@@ -1,5 +1,7 @@
+// checks-disable-file modifiability: the parser is one recursive-descent unit that shares its token state
+
 // A small C++ subset: lexer and parser for the memory and pointer tracer. It builds a syntax tree for int, double,
-// char and bool values, arrays, pointers, references, structs, new and delete, control flow and functions. Anything
+// char and bool values, arrays, pointers, references, structs, new, and delete, control flow, and functions. Anything
 // outside the subset is reported with its line number, never guessed at.
 
 export class ParseError extends Error {

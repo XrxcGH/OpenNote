@@ -1,4 +1,4 @@
-// Tolerance stack-ups, fits and position tolerance. All lengths share one unit (mm or in); the engine does not care.
+// Tolerance stack-ups, fits, and position tolerance. All lengths share one unit (mm or in); the engine does not care.
 import { bad, finite, fmt } from './types';
 import type { Outcome, Step } from './types';
 
@@ -20,7 +20,7 @@ export interface StackResult {
   /** How far the worst case reaches above and below the nominal. */
   worstPlus: number;
   worstMinus: number;
-  /** Statistical (RSS) mean, half-band and limits. */
+  /** Statistical (RSS) mean, half-band, and limits. */
   rssMean: number;
   rss: number;
   rssMin: number;

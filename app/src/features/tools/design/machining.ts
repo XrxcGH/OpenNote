@@ -1,3 +1,5 @@
+// checks-disable-file length: steps and comments keep a formula on one line
+
 // Machining calculations in metric units: lengths in mm, cutting speed in m/min, feed in mm/rev (mm/tooth for
 // milling), forces in N, power in W, times in min. The UI converts US units (sfm, ipr) at its boundary.
 import { bad, finite, fmt } from './types';

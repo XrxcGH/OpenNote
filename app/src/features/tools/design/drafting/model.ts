@@ -1,6 +1,8 @@
-// The drafting sheet's document: geometry in millimetres on the sheet (y up), live dimensions that follow the
+// checks-disable-file modifiability: reading a saved sheet checks each field in turn, in one place
+
+// The drafting sheet's document: geometry in millimeters on the sheet (y up), live dimensions that follow the
 // geometry, line types after the usual drafting conventions, and the snapping that lets a pen land on exact points.
-// Pure TypeScript: the block editor, the SVG export and the tests all use these functions.
+// Pure TypeScript: the block editor, the SVG export, and the tests all use these functions.
 
 export type Pt = readonly [number, number];
 
@@ -10,9 +12,9 @@ export type LineType = 'visible' | 'hidden' | 'center' | 'phantom' | 'dimension'
 
 export interface LineStyle {
   id: LineType;
-  /** Stroke width in millimetres: thick lines are 0.6 and thin lines 0.3. */
+  /** Stroke width in millimeters: thick lines are 0.6 and thin lines 0.3. */
   weight: number;
-  /** Dash and gap lengths in millimetres, empty for a continuous line. */
+  /** Dash and gap lengths in millimeters, empty for a continuous line. */
   dash: readonly number[];
 }
 
@@ -83,7 +85,7 @@ export interface DraftingDoc {
 
 export type SheetId = 'ansiA' | 'ansiB' | 'a4' | 'a3';
 
-/** Landscape sheet sizes in millimetres. */
+/** Landscape sheet sizes in millimeters. */
 export const SHEET_MM: Record<SheetId, readonly [number, number]> = {
   ansiA: [279.4, 215.9],
   ansiB: [431.8, 279.4],
@@ -131,7 +133,7 @@ export const mid = (a: Pt, b: Pt): Pt => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 const rad = (d: number) => (d * Math.PI) / 180;
 export const deg = (r: number) => (r * 180) / Math.PI;
 
-/** Normalised rectangle corners: bottom-left, bottom-right, top-right, top-left. */
+/** Normalized rectangle corners: bottom-left, bottom-right, top-right, top-left. */
 export function rectCorners(a: Pt, b: Pt): [Pt, Pt, Pt, Pt] {
   const x0 = Math.min(a[0], b[0]);
   const x1 = Math.max(a[0], b[0]);
@@ -412,7 +414,7 @@ export function polygonArea(poly: readonly Pt[]): number {
 
 /**
  * Parallel hatch lines clipped to a polygon, at `angle` degrees and `spacing` mm apart (even-odd fill, so a shape
- * with a self-crossing is hatched sensibly). Lines sit on multiples of the spacing so neighbouring hatches match.
+ * with a self-crossing is hatched sensibly). Lines sit on multiples of the spacing so neighboring hatches match.
  */
 export function hatchLines(poly: readonly Pt[], spacing: number, angle: number): [Pt, Pt][] {
   if (poly.length < 3 || !(spacing > 0.05)) return [];

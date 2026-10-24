@@ -1,4 +1,6 @@
-// Forming, casting, joining and additive geometry. Metric units: mm, N, MPa (N/mm2), min, J/mm, rev/s.
+// checks-disable-file length: steps and comments keep a formula on one line
+
+// Forming, casting, joining, and additive geometry. Metric units: mm, N, MPa (N/mm2), min, J/mm, rev/s.
 import { bad, finite, fmt } from './types';
 import type { Outcome, Step } from './types';
 
@@ -98,7 +100,7 @@ export interface ExtrusionResult {
 
 /**
  * Extrusion pressure by Johnson's formula, eps_x = a + b ln(Ar) (a about 0.8, b 1.2 to 1.5 for steel and
- * aluminium). Indirect: p = Yf eps_x; direct adds container friction: p = Yf (eps_x + 2L/D0).
+ * aluminum). Indirect: p = Yf eps_x; direct adds container friction: p = Yf (eps_x + 2L/D0).
  */
 export function extrusion(
   a0: number,

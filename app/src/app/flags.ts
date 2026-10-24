@@ -28,6 +28,8 @@ import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { DESIGN_KIT_FLAGS } from '../features/tools/design/flags';
+import type { DesignKitFlagId } from '../features/tools/design/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -72,6 +74,7 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  | DesignKitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
@@ -345,6 +348,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...DESIGN_KIT_FLAGS,
 ];
 
 interface FlagState {

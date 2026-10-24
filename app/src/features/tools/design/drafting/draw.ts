@@ -1,4 +1,6 @@
-// Turns a drafting document into drawing primitives in sheet millimetres with y down (screen orientation), which the
+// checks-disable-file modifiability, length: one drawing function per kind of dimension would scatter the shared geometry
+
+// Turns a drafting document into drawing primitives in sheet millimeters with y down (screen orientation), which the
 // editor draws as React elements and the export writes as an SVG file. Sharing one list keeps the picture on the page
 // and the exported picture the same.
 import {
@@ -19,7 +21,7 @@ import type { DraftingDoc, Dim, LineType, Pt, TitleKey } from './model';
 export interface PathPrim {
   t: 'path';
   d: string;
-  /** Stroke width in millimetres and the dash lengths. */
+  /** Stroke width in millimeters and the dash lengths. */
   weight: number;
   dash: readonly number[];
   fill: 'none' | 'ink';
@@ -60,7 +62,7 @@ const EXT_OVER = 2;
 
 const r3 = (n: number): string => String(Math.round(n * 1000) / 1000);
 
-/** The sheet size of a document in millimetres. */
+/** The sheet size of a document in millimeters. */
 export function sheetSize(doc: DraftingDoc): { w: number; h: number } {
   const [w, h] = SHEET_MM[doc.sheet];
   return { w, h };
@@ -298,7 +300,7 @@ function titleBlock(doc: DraftingDoc, labels: TitleLabels, W: number, H: number)
   return out;
 }
 
-/** Every primitive of a document: the sheet frame, the title block, the geometry, the hatching and the dimensions. */
+/** Every primitive of a document: the sheet frame, the title block, the geometry, the hatching, and the dimensions. */
 export function drawDoc(doc: DraftingDoc, labels: TitleLabels): Prim[] {
   const { w: W, h: H } = sheetSize(doc);
   const P = (p: Pt) => `${r3(p[0])} ${r3(H - p[1])}`;
@@ -386,7 +388,7 @@ export function drawDoc(doc: DraftingDoc, labels: TitleLabels): Prim[] {
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** A standalone SVG file of the drawing: black lines on white paper at the sheet's true size in millimetres. */
+/** A standalone SVG file of the drawing: black lines on white paper at the sheet's true size in millimeters. */
 export function toSvg(doc: DraftingDoc, labels: TitleLabels, alt: string): string {
   const { w, h } = sheetSize(doc);
   const body = drawDoc(doc, labels)
@@ -402,6 +404,7 @@ export function toSvg(doc: DraftingDoc, labels: TitleLabels, alt: string): strin
     .join('');
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}mm" height="${h}mm" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(alt)}" ` +
+    // checks-disable-next-line brand-consistency: a printed drawing sheet is black on white whatever the theme
     `color="#000" font-family="Arial, Helvetica, sans-serif"><title>${esc(alt)}</title><rect width="${w}" height="${h}" fill="#fff"/>${body}</svg>`
   );
 }

@@ -1,5 +1,7 @@
+// checks-disable-file modifiability: the interpreter shares one machine state across every statement kind
+
 // The memory and pointer tracer's interpreter. It runs a program from memParse over a simulated memory made of typed
-// cells grouped in blocks (a variable, an array, a struct or a heap allocation) and takes a snapshot of the whole
+// cells grouped in blocks (a variable, an array, a struct, or a heap allocation) and takes a snapshot of the whole
 // state after each statement. Pointers carry the block they came from, so a step outside it is caught exactly.
 // This is not a compiler and not full C++: the tool says so on screen.
 import { BOOL, CHAR, DOUBLE, INT, ParseError, VOID, parse, sameTy, tyText } from './memParse';

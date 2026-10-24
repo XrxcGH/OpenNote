@@ -1,4 +1,4 @@
-// Number representations: integers in several signed schemes, IEEE 754 binary16, binary32 and binary64 decoded
+// Number representations: integers in several signed schemes, IEEE 754 binary16, binary32, and binary64 decoded
 // exactly and encoded with round-half-to-even, and characters as code points, UTF-8 and UTF-16.
 import { bad } from './types';
 import type { Outcome, Step } from './types';
@@ -270,7 +270,7 @@ export interface FloatDecoded extends FloatFields {
   cls: FloatClass;
   /** The exact value, or null for infinity and NaN. */
   exact: Rational | null;
-  /** The exact decimal expansion, or the words infinity, -infinity or NaN. */
+  /** The exact decimal expansion, or the words infinity, -infinity, or NaN. */
   decimal: string;
   /** The shortest decimal that encodes back to the same bits. */
   shortest: string;
@@ -428,7 +428,7 @@ export function encodeRational(r: Rational, f: FloatFormat, negativeZero = false
   return { bits, stored, error, rounded, overflow, steps };
 }
 
-/** Encodes decimal text, including the words inf, -inf and nan. */
+/** Encodes decimal text, including the words inf, -inf, and nan. */
 export function encodeDecimal(text: string, f: FloatFormat): Outcome<{ encoding: FloatEncoding }> {
   const t = text.trim().toLowerCase();
   const total = floatBits(f);
@@ -510,7 +510,7 @@ const CONTROL: Record<number, string> = {
   127: 'DEL',
 };
 
-/** Code points, UTF-8 bytes and UTF-16 units of each character of the text. */
+/** Code points, UTF-8 bytes, and UTF-16 units of each character of the text. */
 export function characters(text: string): CharInfo[] {
   const enc = new TextEncoder();
   return Array.from(text).map((char) => {

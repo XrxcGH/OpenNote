@@ -62,7 +62,7 @@ function basis(name: ViewName): (c: Cube) => { u: number; v: number; depth: numb
 }
 
 /**
- * The depth planes at which an edge of the solid lies on the line between two neighbouring picture cells. Plane j
+ * The depth planes at which an edge of the solid lies on the line between two neighboring picture cells. Plane j
  * lies between depth layers j - 1 and j. Looking along the line, the four cubes around it form a pattern: all
  * empty or all full has no edge, and two filled cubes side by side (a flat face) has none either; anything else is
  * an edge of the solid.
@@ -83,7 +83,7 @@ function edgePlanes(a: Set<number> | undefined, b: Set<number> | undefined): num
 }
 
 /**
- * One view. A line between two neighbouring cells is visible when an edge lies at the front plane of the nearest
+ * One view. A line between two neighboring cells is visible when an edge lies at the front plane of the nearest
  * cube there (a step in the surface or an outline) and hidden when edges exist only farther back (a notch or step
  * behind level faces). Coplanar faces merge, so no line is drawn between them.
  */

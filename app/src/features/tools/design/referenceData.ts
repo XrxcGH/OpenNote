@@ -1,3 +1,5 @@
+// checks-disable-file length: reference tables are long rows of data, and wrapping them would make them harder to compare
+
 // Reference content for the programming references tool. Everything here is original text written for OpenNote.
 // Each card has a group, a short title, a plain explanation, and optionally a code sample.
 
@@ -411,7 +413,7 @@ export const MATLAB_CARDS: readonly RefCard[] = [
 
 export const ALL_CARDS: readonly RefCard[] = [...TYPE_CARDS, ...ESCAPE_CARDS, ...ERROR_CARDS, ...MATLAB_CARDS];
 
-/** Cards matching every word of the query in the title, body, tags or code, titles first. */
+/** Cards matching every word of the query in the title, body, tags, or code, titles first. */
 export function searchCards(cards: readonly RefCard[], query: string): RefCard[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [...cards];

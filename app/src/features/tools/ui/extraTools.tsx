@@ -28,6 +28,9 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The design kit loads the first time its window opens.
+const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ default: m.DesignKit })));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-design')
+    return (
+      <Suspense fallback={null}>
+        <DesignKit />
+      </Suspense>
+    );
   return null;
 }

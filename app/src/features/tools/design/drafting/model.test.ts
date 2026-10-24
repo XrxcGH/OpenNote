@@ -1,3 +1,5 @@
+// checks-disable-file modifiability: one describe block per feature
+
 import { describe, expect, it } from 'vitest';
 import {
   ALL_SNAPS,
@@ -24,14 +26,6 @@ function doc(entities: Entity[], dims: Dim[] = [], patch: Partial<DraftingDoc> =
   return { ...emptyDoc('mm'), entities, dims, ...patch };
 }
 const line = (id: string, a: [number, number], b: [number, number]): Entity => ({ id, k: 'line', a, b, lt: 'visible' });
-const aligned = (a: string, b: string, off = 5): Dim => ({
-  id: 'd1',
-  k: 'aligned',
-  a: { id: a, at: 'a' },
-  b: { id: a, at: 'b' },
-  off,
-});
-void aligned;
 
 describe('dimensions measured from geometry', () => {
   const l = line('l1', [0, 0], [30, 40]);
@@ -205,9 +199,10 @@ describe('hatching', () => {
     expect(polygonArea(c)).toBeCloseTo(Math.PI * 100, 0);
     const lines = hatchLines(c, 1, 0);
     expect(lines.length).toBeGreaterThanOrEqual(19);
-    for (const [p, q] of lines)
-      expect(Math.hypot(p[0], p[1])).toBeLessThanOrEqual(10 + 1e-6) &&
-        expect(Math.hypot(q[0], q[1])).toBeLessThanOrEqual(10 + 1e-6);
+    for (const [p, q] of lines) {
+      expect(Math.hypot(p[0], p[1])).toBeLessThanOrEqual(10 + 1e-6);
+      expect(Math.hypot(q[0], q[1])).toBeLessThanOrEqual(10 + 1e-6);
+    }
     // an L shape: hatch length at spacing 1 and angle 0 equals the horizontal width summed over rows
     const L: [number, number][] = [
       [0, 0],

@@ -1,3 +1,5 @@
+// checks-disable-file length: steps and comments keep a formula on one line
+
 // Micro and nano fabrication process numbers. Each function states its units; the UI picks the display units.
 import { bad, finite, fmt } from './types';
 import type { Outcome, Step } from './types';
