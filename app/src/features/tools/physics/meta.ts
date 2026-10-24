@@ -3,6 +3,7 @@
 // (registrations/kitPhysics.ts), and a test checks the two agree.
 export const PHYSICS_TOOLS = [
   { id: 'waves', icon: 'WaveSine' },
+  { id: 'geooptics', icon: 'Eyeglasses' },
   { id: 'waveoptics', icon: 'Rainbow' },
   { id: 'relativity', icon: 'HourglassMedium' },
 ] as const satisfies readonly {
