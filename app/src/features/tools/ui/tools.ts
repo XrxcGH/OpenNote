@@ -23,7 +23,8 @@ export type ToolId =
   | 'formulasheet'
   | 'practice'
   | 'figure'
-  | 'symbols';
+  | 'symbols'
+  | 'kit-statmodels';
 
 export interface ToolDef {
   id: ToolId;
@@ -54,6 +55,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'formulasheet', title: 'docStructure.sheet.title', width: 400 },
   { id: 'practice', title: 'docStructure.practice.title', width: 440 },
   { id: 'figure', title: 'docStructure.figure.title', width: 420 },
+  { id: 'kit-statmodels', title: 'kitStatModels.title', width: 600 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

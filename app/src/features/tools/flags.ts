@@ -70,3 +70,8 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
+
+// The statistical models kit's tool list is plain data the command palette reads at start-up, so it is public here.
+export { STATMODELS_TOOLS } from './statmodels/meta';
+export { STATMODELS_FLAGS } from './statmodels/flags';
+export type { StatModelsFlagId } from './statmodels/flags';

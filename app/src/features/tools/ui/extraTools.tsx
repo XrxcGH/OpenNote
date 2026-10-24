@@ -28,6 +28,9 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The statistical models kit loads the first time its window opens.
+const StatModelsKit = lazy(() => import('../statmodels/ui/StatModelsKit').then((m) => ({ default: m.StatModelsKit })));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-statmodels')
+    return (
+      <Suspense fallback={null}>
+        <StatModelsKit />
+      </Suspense>
+    );
   return null;
 }
