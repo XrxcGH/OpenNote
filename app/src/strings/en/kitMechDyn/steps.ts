@@ -165,6 +165,8 @@ export const steps = {
     // checks-disable-next-line length: one message with its select argument, kept whole so the argument is typed
     'Solve the quadratic in tan(θ₄/2) for the output angle. The {circuit, select, open {open} other {crossed}} circuit takes the {circuit, select, open {minus} other {plus}} sign.',
   linkTheta3: 'Solve the matching quadratic for the coupler angle:',
+  linkToggle:
+    'At {angle}° the coupler and rocker line up (a toggle): the positions are shown, but the rates are undefined.',
   linkVelocity: 'Differentiate the loop once and solve the two equations for the angular velocities:',
   linkAcceleration: 'Differentiate again and solve the same matrix for the angular accelerations:',
   linkTransmission: 'The transmission angle between coupler and rocker is {angle}°.',

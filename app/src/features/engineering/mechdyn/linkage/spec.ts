@@ -39,8 +39,8 @@ function stateRows(type: LinkageType, s: LinkageState): ResultRow[] {
     return [
       ang('theta3', s.theta3, '\\theta_3'),
       ang('theta4', s.theta4, '\\theta_4'),
-      { ...rate('omega3', s.omega3, '\\omega_3'), answer: true },
-      { ...rate('omega4', s.omega4, '\\omega_4'), answer: true },
+      { ...rate('omega3', s.omega3, '\\omega_3'), answer: !s.toggle },
+      { ...rate('omega4', s.omega4, '\\omega_4'), answer: !s.toggle },
       acc('alpha3', s.alpha3, '\\alpha_3'),
       acc('alpha4', s.alpha4, '\\alpha_4'),
       ang('transmission', s.transmission, '\\mu', false),

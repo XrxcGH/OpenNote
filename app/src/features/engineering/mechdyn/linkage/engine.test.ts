@@ -137,3 +137,29 @@ describe('sweeps, limits, and impossible input', () => {
     expect(solveLinkage({ ...LINKAGE_DEFAULTS, b: Number.NaN })).toEqual({ ok: false, error: 'notNumber' });
   });
 });
+
+describe('toggle and change-point positions', () => {
+  it('a 5, b 7, c 9, d 6 at its input limit assembles with b and c in line, rates undefined', () => {
+    // By hand: at the limit |A - O4| = c - b = 2, so cos theta2 = (25 + 36 - 4) / 60 and B = O4 + 9 (A - O4) / 2.
+    const theta2 = Math.acos(57 / 60);
+    const input: LinkageInput = { ...LINKAGE_DEFAULTS, a: 5, b: 7, c: 9, d: 6, theta2 };
+    const r = ok(solveLinkage(input));
+    const A = [5 * Math.cos(theta2), 5 * Math.sin(theta2)];
+    const B = [6 + 4.5 * (A[0] - 6), 4.5 * A[1]];
+    expect(r.state.joints.B[0]).toBeCloseTo(B[0], 4);
+    expect(r.state.joints.B[1]).toBeCloseTo(B[1], 4);
+    expect(r.state.toggle).toBe(true);
+    expect(Number.isNaN(r.state.omega3)).toBe(true);
+    expect(r.steps.some((step) => step.key === 'linkToggle')).toBe(true);
+    // The angle the tool lists, typed to four places, assembles too.
+    expect(solveLinkage({ ...input, theta2: rad(18.1949) }).ok).toBe(true);
+  });
+
+  it('the change point a 2, b 6, c 4, d 4 at theta2 0 lies flat along the ground', () => {
+    const r = ok(solveLinkage({ ...LINKAGE_DEFAULTS, a: 2, b: 6, c: 4, d: 4, theta2: 0 }));
+    // By hand: A (2, 0), O4 (4, 0), and |AB| = 6 with |O4B| = 4 puts B at (8, 0).
+    expect(r.state.joints.B[0]).toBeCloseTo(8, 6);
+    expect(Math.abs(r.state.joints.B[1])).toBeLessThan(1e-6);
+    expect(r.state.toggle).toBe(true);
+  });
+});

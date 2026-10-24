@@ -64,6 +64,8 @@ export interface LinkageState {
   joints: { O2: P; A: P; B: P; O4: P | null; C: P };
   coupler: { pos: P; vel: P; acc: P };
   residual: number;
+  /** A toggle or change point: the linkage assembles, but the velocity matrix is singular, so the rates are NaN. */
+  toggle: boolean;
 }
 
 export interface GrashofResult {
@@ -158,15 +160,12 @@ function fourBarState(input: LinkageInput, theta2: number, crank: Crank): Linkag
     [-b * s3, c * s4],
     [b * c3, -c * c4],
   ];
-  const vel = solve(J, [a * w2 * s2, -a * w2 * c2]);
-  if (!vel) return null;
-  const [w3, w4] = vel;
-  const acc = solve(J, [
+  // In line (a toggle or change point) the matrix is singular: the positions stand, the rates are undefined.
+  const [w3, w4] = solve(J, [a * w2 * s2, -a * w2 * c2]) ?? [Number.NaN, Number.NaN];
+  const [al3, al4] = solve(J, [
     a * al2 * s2 + a * w2 * w2 * c2 + b * w3 * w3 * c3 - c * w4 * w4 * c4,
     -a * al2 * c2 + a * w2 * w2 * s2 + b * w3 * w3 * s3 - c * w4 * w4 * s4,
-  ]);
-  if (!acc) return null;
-  const [al3, al4] = acc;
+  ]) ?? [Number.NaN, Number.NaN];
   const loop = add(add(A, polar(b, angles.theta3)), [-d - c * c4, -c * s4]);
   const r = polar(p, theta3 + delta);
   const cp = rigid(r, crank.v, crank.a, w3, al3);
@@ -184,6 +183,7 @@ function fourBarState(input: LinkageInput, theta2: number, crank: Crank): Linkag
     joints: { O2: [0, 0], A, B, O4, C: add(A, r) },
     coupler: { pos: add(A, r), vel: cp.v, acc: cp.a },
     residual: Math.hypot(...loop) / Math.max(a, b, c, d),
+    toggle: !Number.isFinite(w3),
   };
 }
 
@@ -220,6 +220,7 @@ function sliderState(input: LinkageInput, theta2: number, crank: Crank): Linkage
     joints: { O2: [0, 0], A, B, O4: null, C: add(A, r) },
     coupler: { pos: add(A, r), vel: cp.v, acc: cp.a },
     residual: Math.hypot(...loop) / Math.max(a, b),
+    toggle: false,
   };
 }
 
@@ -252,6 +253,7 @@ function invertedState(input: LinkageInput, theta2: number, crank: Crank): Linka
     joints: { O2: [0, 0], A, B: add(O4, polar(len, theta4)), O4, C: add(O4, cpR) },
     coupler: { pos: add(O4, cpR), vel: cp.v, acc: cp.a },
     residual: 0,
+    toggle: false,
   };
 }
 
@@ -317,6 +319,21 @@ const VELOCITY_SYSTEM =
   '\\begin{bmatrix}\\omega_3 \\\\ \\omega_4\\end{bmatrix} = ' +
   '\\begin{bmatrix} a\\omega_2\\sin\\theta_2 \\\\ -a\\omega_2\\cos\\theta_2 \\end{bmatrix}';
 
+/** The velocity and acceleration steps, or at a toggle the reason there are none. */
+function rateSteps(state: LinkageState, rates: string): MechStep[] {
+  if (state.toggle) {
+    const det = `\\det J = bc\\sin(\\theta_3 - \\theta_4) = 0`;
+    return [{ key: 'linkToggle', vars: { angle: fmt(deg(state.theta2), 4) }, math: det }];
+  }
+  return [
+    { key: 'linkVelocity', math: `${VELOCITY_SYSTEM}:\\ ${rates}` },
+    {
+      key: 'linkAcceleration',
+      math: `\\alpha_3 = ${tex(state.alpha3)},\\ \\alpha_4 = ${tex(state.alpha4)}\\ \\mathrm{rad/s^2}`,
+    },
+  ];
+}
+
 function fourBarSteps(input: LinkageInput, state: LinkageState, g: GrashofResult): MechStep[] {
   const { a, b, c, d, theta2 } = input;
   const K = freudenstein(a, b, c, d);
@@ -350,11 +367,7 @@ function fourBarSteps(input: LinkageInput, state: LinkageState, g: GrashofResult
       math: `A = ${tex(A4)},\\ B = ${tex(B4)},\\ C = ${tex(C4)}:\\quad ${t4}`,
     },
     { key: 'linkTheta3', math: `D = ${tex(D3)},\\ E = ${tex(E3)},\\ F = ${tex(F3)}:\\quad ${t3}` },
-    { key: 'linkVelocity', math: `${VELOCITY_SYSTEM}:\\ ${rates}` },
-    {
-      key: 'linkAcceleration',
-      math: `\\alpha_3 = ${tex(state.alpha3)},\\ \\alpha_4 = ${tex(state.alpha4)}\\ \\mathrm{rad/s^2}`,
-    },
+    ...rateSteps(state, rates),
     {
       key: 'linkTransmission',
       vars: { angle: fmt(deg(state.transmission), 4) },
