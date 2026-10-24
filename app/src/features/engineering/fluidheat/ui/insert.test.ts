@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { answerHtml, stepsHtml, type InsertContext } from './insert';
 
 const say: InsertContext['say'] = (key, params) =>
-  key.endsWith('.title') ? 'Pipe <flow> & heads' : key.includes('.row.') ? 'Q < 1 & more' : `${key}${params ? '!' : ''}`;
+  key.endsWith('.title')
+    ? 'Pipe <flow> & heads'
+    : key.includes('.row.')
+      ? 'Q < 1 & more'
+      : `${key}${params ? '!' : ''}`;
 
 const context: InsertContext = {
   tool: 'pipes',

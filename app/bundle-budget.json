@@ -74,7 +74,9 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
-    "features/tools": 260
+    "features/tools": 260,
+    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 120,
+    "features/engineering/index.ts": 44
   },
   "lazyDefaultKb": 40
 }
