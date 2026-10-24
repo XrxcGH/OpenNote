@@ -5,17 +5,17 @@ import { useMemo, useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button, TextField } from '../../../ui';
 import type { ElementGroup } from '../reference/data';
-import { formatNumber } from '../calculator';
 import { ELEMENTS, ELEMENT_GROUPS, GREEK, PHYSICAL_CONSTANTS, PREFIXES, matches } from '../reference/data';
-import { searchSheet, countSheet, SHEET_SECTIONS } from '../reference/unitsSheet';
+import { keepTogether, displaySymbol } from '../reference/format';
+import { searchSheet, countSheet, scientific, SHEET_SECTIONS } from '../reference/unitsSheet';
 import type { SheetSection } from '../reference/unitsSheet';
 import { ChemistryTab } from './ChemistryTab';
 import { ElementsGrid } from './ElementsGrid';
 import { ElementsTable } from './ElementsTable';
 import { InsertButton } from './InsertButton';
 import { UnitsSheet } from './UnitsSheet';
-import grid from './elements.module.css';
 import extra from './extra.module.css';
+import ref from './reference.module.css';
 import styles from './tools.module.css';
 
 type Tab = 'elements' | 'units' | 'chemistry' | 'constants' | 'prefixes' | 'greek';
@@ -79,50 +79,56 @@ export function ReferenceTool() {
           </button>
         ))}
       </div>
-      {searchable ? <TextField label={t('study.reference.search')} value={query} onChange={setQuery} /> : null}
-      {tab === 'units' ? (
-        <label className={extra.field}>
-          {t('study.reference.units.section')}
-          <select
-            className={extra.input}
-            value={section}
-            onChange={(event) => setSection(event.target.value as SheetSection | 'all')}
-          >
-            <option value="all">{t('study.reference.units.allSections')}</option>
-            {SHEET_SECTIONS.map((one) => (
-              <option key={one} value={one}>
-                {t(`study.reference.units.sections.${one}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-      {tab === 'elements' ? (
-        <div className={grid.toolbar}>
+      <div className={ref.controls}>
+        {searchable ? (
+          <div className={ref.grow}>
+            <TextField label={t('study.reference.search')} value={query} onChange={setQuery} />
+          </div>
+        ) : null}
+        {tab === 'units' ? (
           <label className={extra.field}>
-            {t('study.reference.familyFilter')}
+            {t('study.reference.units.section')}
             <select
               className={extra.input}
-              value={family}
-              onChange={(event) => setFamily(event.target.value as ElementGroup | 'all')}
+              value={section}
+              onChange={(event) => setSection(event.target.value as SheetSection | 'all')}
             >
-              <option value="all">{t('study.reference.allFamilies')}</option>
-              {ELEMENT_GROUPS.map((one) => (
+              <option value="all">{t('study.reference.units.allSections')}</option>
+              {SHEET_SECTIONS.map((one) => (
                 <option key={one} value={one}>
-                  {t(`study.reference.groups.${one}`)}
+                  {t(`study.reference.units.sections.${one}`)}
                 </option>
               ))}
             </select>
           </label>
-          <div className={styles.buttons} role="group" aria-label={t('study.reference.view')}>
-            {(['grid', 'list'] as const).map((one) => (
-              <Button key={one} variant="quiet" aria-pressed={view === one} onClick={() => setView(one)}>
-                {t(`study.reference.views.${one}`)}
-              </Button>
-            ))}
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+        {tab === 'elements' ? (
+          <>
+            <label className={extra.field}>
+              {t('study.reference.familyFilter')}
+              <select
+                className={extra.input}
+                value={family}
+                onChange={(event) => setFamily(event.target.value as ElementGroup | 'all')}
+              >
+                <option value="all">{t('study.reference.allFamilies')}</option>
+                {ELEMENT_GROUPS.map((one) => (
+                  <option key={one} value={one}>
+                    {t(`study.reference.groups.${one}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className={styles.buttons} role="group" aria-label={t('study.reference.view')}>
+              {(['grid', 'list'] as const).map((one) => (
+                <Button key={one} variant="quiet" aria-pressed={view === one} onClick={() => setView(one)}>
+                  {t(`study.reference.views.${one}`)}
+                </Button>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </div>
       <div id="reference-panel" role="tabpanel" aria-labelledby={`reference-tab-${tab}`} className={extra.scroll}>
         {searchable && (query.trim() !== '' || (tab === 'units' && section !== 'all')) && shown === 0 ? (
           <p className={styles.empty} role="status">
@@ -134,7 +140,7 @@ export function ReferenceTool() {
         {tab === 'elements' && view === 'grid' ? <ElementsGrid elements={elements} /> : null}
         {tab === 'elements' && view === 'list' ? <ElementsTable elements={elements} /> : null}
         {tab === 'constants' ? (
-          <table className={extra.table}>
+          <table className={`${ref.table} ${ref.withActions}`}>
             <thead>
               <tr>
                 <th scope="col">{t('study.reference.name')}</th>
@@ -147,12 +153,13 @@ export function ReferenceTool() {
             </thead>
             <tbody>
               {constants.map((one) => {
-                const text = `${one.symbol} = ${formatNumber(one.value)}${one.unit ? ` ${one.unit}` : ''}`;
+                const value = `${scientific(one.value)}${one.unit ? ` ${one.unit}` : ''}`;
+                const text = `${displaySymbol(one.symbol)} = ${value}`;
                 return (
                   <tr key={one.symbol}>
                     <th scope="row">{one.name}</th>
-                    <td>{one.symbol}</td>
-                    <td>{text.slice(one.symbol.length + 3)}</td>
+                    <td>{displaySymbol(one.symbol)}</td>
+                    <td className={ref.num}>{keepTogether(value)}</td>
                     <td>
                       <InsertButton text={text} label={t('study.reference.insertNamed', { name: one.name })} />
                     </td>
@@ -163,7 +170,7 @@ export function ReferenceTool() {
           </table>
         ) : null}
         {tab === 'prefixes' ? (
-          <table className={extra.table}>
+          <table className={`${ref.table} ${ref.withActions}`}>
             <thead>
               <tr>
                 <th scope="col">{t('study.reference.name')}</th>
@@ -179,7 +186,9 @@ export function ReferenceTool() {
                 <tr key={one.symbol}>
                   <th scope="row">{one.name}</th>
                   <td>{one.symbol}</td>
-                  <td>{`10^${one.power}`}</td>
+                  <td className={ref.num}>
+                    10<sup className={ref.sup}>{one.power}</sup>
+                  </td>
                   <td>
                     <InsertButton text={one.symbol} label={t('study.reference.insertNamed', { name: one.name })} />
                   </td>
@@ -189,7 +198,7 @@ export function ReferenceTool() {
           </table>
         ) : null}
         {tab === 'greek' ? (
-          <table className={extra.table}>
+          <table className={`${ref.table} ${ref.withActions}`}>
             <thead>
               <tr>
                 <th scope="col">{t('study.reference.name')}</th>

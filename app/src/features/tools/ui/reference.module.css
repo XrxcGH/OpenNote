@@ -1,0 +1,108 @@
+/*
+ * The reference tables' tables and rows (periodic table list, units, constants, prefixes, greek, steam, materials).
+ * Every table has the same shape: a name first, values that never break inside a number, and the Insert column last
+ * and right-aligned. Every length is a token.
+ */
+@layer components {
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .grow {
+    flex: 1 1 12rem;
+    min-inline-size: 0;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-2) var(--space-3);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+  }
+
+  .table th:first-child,
+  .table td:first-child {
+    padding-inline-start: 0;
+  }
+
+  .table thead th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--layer-sticky);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* The Insert column is the last one in every table: as narrow as its buttons, against the right edge. */
+  .withActions tr > :last-child {
+    padding-inline-end: 0;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .num {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .right {
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap {
+    overflow-x: auto;
+    padding-block-end: var(--space-3);
+  }
+
+  /* A text button's label sits on the content edge, not inset by the button's own padding. */
+  .flush {
+    margin-inline-start: calc(-1 * var(--space-3));
+  }
+
+  .sup {
+    font-size: 0.75em;
+    vertical-align: super;
+    line-height: 0;
+  }
+
+  /* A wide table keeps its first column while it scrolls sideways. */
+  .sticky tbody th:first-child {
+    position: sticky;
+    inset-inline-start: 0;
+    background: var(--color-surface-raised);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+  }
+
+  .fact {
+    display: grid;
+    font-size: var(--type-small-size);
+  }
+
+  .fact dt {
+    color: var(--color-text-secondary);
+  }
+
+  .fact dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}

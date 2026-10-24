@@ -15,6 +15,7 @@ import {
 import type { Codata, ConstantGroup, InsertPart } from '../science/codata';
 import { insertIntoPage } from './CalculatorTool';
 import { loadStored, saveStored } from './storage';
+import cs from './constants.module.css';
 import extra from './extra.module.css';
 import science from './science.module.css';
 import styles from './tools.module.css';
@@ -126,7 +127,7 @@ interface RowProps {
 function ConstantRow({ one, insert, copy }: RowProps) {
   return (
     <tr>
-      <th scope="row" className={science.name}>
+      <th scope="row" className={`${cs.name}`}>
         {one.name}
         <span className={science.sub}>
           {one.unc === ''
@@ -135,13 +136,11 @@ function ConstantRow({ one, insert, copy }: RowProps) {
           {one.calc === '' ? '' : ` · ${t('science.constants.liveName', { name: one.calc })}`}
         </span>
       </th>
-      <td className={science.symbol}>{one.symbol}</td>
-      <td className={science.value}>
-        {codataText(one)}
-        {one.unit === '' ? '' : ` ${one.unit}`}
-      </td>
-      <td>
-        <span className={science.buttons}>
+      <td className={cs.symbol}>{one.symbol}</td>
+      <td className={cs.value}>
+        <span className={cs.number}>{codataText(one)}</span>
+        {one.unit === '' ? null : <span className={cs.unit}>{one.unit}</span>}
+        <span className={cs.buttons} role="group" aria-label={one.name}>
           {PARTS.map((part) => (
             <Button
               key={part}
@@ -167,16 +166,13 @@ function ConstantRow({ one, insert, copy }: RowProps) {
 
 function ConstantsTable({ shown, insert, copy }: { shown: readonly Codata[] } & Omit<RowProps, 'one'>) {
   return (
-    <div className={extra.scroll}>
-      <table className={extra.table} aria-label={t('science.constants.list')}>
+    <div className={cs.scroll}>
+      <table className={cs.table} aria-label={t('science.constants.list')}>
         <thead>
           <tr>
             <th scope="col">{t('science.constants.name')}</th>
             <th scope="col">{t('science.constants.symbol')}</th>
             <th scope="col">{t('science.constants.value')}</th>
-            <th scope="col">
-              <span className={extra.hidden}>{t('science.constants.as')}</span>
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -185,6 +181,7 @@ function ConstantsTable({ shown, insert, copy }: { shown: readonly Codata[] } & 
           ))}
         </tbody>
       </table>
+      <p className={`${styles.note} ${cs.footnote}`}>{t('science.constants.source')}</p>
     </div>
   );
 }
@@ -204,7 +201,6 @@ export function ConstantsTool() {
         </p>
       ) : null}
       <ConstantsTable shown={shown} insert={insert} copy={copy} />
-      <p className={styles.note}>{t('science.constants.source')}</p>
     </div>
   );
 }
