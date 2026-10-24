@@ -11,6 +11,7 @@ import { commandContext, executeCommand } from '../../commands/registry';
 import { commands } from '../../registries';
 import type { CommandBarComponentProps } from '../../registries/types';
 import { t } from '../../strings/t';
+import type { MessageKey } from '../../strings/t';
 import { openMenu, Tooltip } from '../../ui';
 import type { MenuItemSpec } from '../../ui';
 import styles from './CommandBar.module.css';
@@ -28,12 +29,23 @@ async function showMenu(entry: BarEntry, anchor: HTMLElement, setOpen: (open: bo
   setOpen(false);
 }
 
+const SHORT_LABELS: Partial<Record<string, MessageKey>> = {
+  'tools.chemcalc': 'commands.bar.short.chemCalc',
+  'tools.structure': 'commands.bar.short.structure',
+  'tools.properties': 'commands.bar.short.properties',
+  'tools.symbols': 'commands.bar.short.symbols',
+  'tools.converter': 'commands.bar.short.converter',
+  'tools.reference': 'commands.bar.short.reference',
+};
+
 function Tool({ entry }: { entry: BarEntry }) {
   const { item, def, disabled, checked } = entry;
   const keys = useKeysFor(def.id);
   const [menuOpen, setMenuOpen] = useState(false);
   if (item.presentation === 'component' && item.Component) return <item.Component toolProps={TOOL_PROPS} />;
-  const label = t(def.title);
+  const full = t(def.title);
+  const shortKey = SHORT_LABELS[def.id];
+  const label = shortKey ? t(shortKey) : full;
   const isMenu = item.presentation === 'menu' && item.menu !== undefined;
   const onClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
@@ -50,6 +62,7 @@ function Tool({ entry }: { entry: BarEntry }) {
       type="button"
       {...TOOL_PROPS}
       className={styles.tool}
+      aria-label={label === full ? undefined : full}
       aria-disabled={disabled || undefined}
       aria-pressed={item.presentation === 'toggle' ? Boolean(checked) : undefined}
       aria-haspopup={item.menu ? 'menu' : undefined}
@@ -61,9 +74,9 @@ function Tool({ entry }: { entry: BarEntry }) {
       {label}
     </button>
   );
-  // The button shows its label, so a tooltip only earns its place when it adds the shortcut.
-  return keys[0] ? (
-    <Tooltip label={label} shortcut={formatChord(keys[0])}>
+  // The button shows its label, so a tooltip earns its place when it adds the shortcut or the full name.
+  return keys[0] || label !== full ? (
+    <Tooltip label={full} shortcut={keys[0] ? formatChord(keys[0]) : undefined}>
       {button}
     </Tooltip>
   ) : (
