@@ -13,6 +13,8 @@ async function openPage(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
   // Record, clicked before the page's commands have loaded, did nothing: wait for the page to say they are ready.
   await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
+  // The recorder needs the page's text mounted: Record before that says to open a page first.
+  await expect(page.getByRole('textbox', { name: 'Text' }).first()).toBeVisible();
 }
 
 const record = (page: Page) => page.getByRole('group', { name: 'Recording', exact: true });
