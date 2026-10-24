@@ -209,6 +209,7 @@ export const r = {
     pValue: 'p-value of the chi-square',
     rSquared: 'R²',
     prediction: 'Predicted y at x = {x}',
+    derivedRow: 'Propagated: {text}',
 
     nodeVoltage: 'Voltage at {name}',
     branchCurrent: 'Current through {name}',

@@ -236,6 +236,29 @@ describe('the fitting tool form', () => {
       expect(Number(row.value.replace('−', '-'))).toBeCloseTo(chi2, 3);
     }
   });
+  it('propagates a formula in the fitted parameters with the covariance: 1/b and a + 3b', () => {
+    const rows = '1 2.9 0.1,2 5.1 0.1,3 7.0 0.2,4 9.2 0.2,5 10.9 0.3'.split(',').join(String.fromCharCode(10));
+    const run = (derived: string) => {
+      const r = runTool(spec, { ...base, data: rows, derived });
+      if (!r.ok) throw new Error(r.error);
+      const row = r.rows.find((x) => x.key === 'derivedRow')!;
+      const [value, u] = row.value
+        .replace(/−/g, '-')
+        .split('±')
+        .map((t) => Number(t.trim().split(' ')[0]));
+      return { value: value!, u: u! };
+    };
+    // Slope 2.05094 +/- 0.05549 (checked by hand elsewhere): u(1/b) = u_b / b^2.
+    const inverse = run('1/b');
+    close(inverse.value, 1 / 2.05094, 1e-4);
+    close(inverse.u, 0.05549 / 2.05094 ** 2, 2e-3);
+    // The prediction at x = 3 is a + 3b, and its uncertainty uses the negative covariance of a and b.
+    const sum = run('a + 3*b');
+    close(sum.value, 0.91138 + 3 * 2.05094, 1e-4);
+    const independent = Math.hypot(0.12862, 3 * 0.05549);
+    expect(sum.u).toBeLessThan(independent);
+    expect(runTool(spec, { ...base, data: rows, derived: 'z + 1' }).ok).toBe(false);
+  });
   it('names the problem: bad data, bad expression, logs of non-positive numbers, bad degree', () => {
     expect(runTool(spec, { ...base, data: '1 x' }).ok).toBe(false);
     expect(runTool(spec, { ...base, model: 'custom', expression: 'a*(' }).ok).toBe(false);

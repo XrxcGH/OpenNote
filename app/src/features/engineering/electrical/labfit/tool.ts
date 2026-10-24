@@ -12,6 +12,7 @@ import {
   parseData,
   polynomialBasis,
   predict,
+  propagateParameters,
   rSquared,
 } from './engine';
 import type { Data, Fit, Model } from './engine';
@@ -45,6 +46,7 @@ const FIELDS: readonly Field[] = [
   { id: 'xUnit', label: 'xUnit', initial: '', hint: 'unitHint' },
   { id: 'yUnit', label: 'yUnit', initial: '' },
   { id: 'xnew', label: 'predictAt', initial: '', hint: 'blankHint' },
+  { id: 'derived', label: 'derivedQuantity', initial: '', hint: 'derivedHint' },
 ];
 
 const plusMinus = (v: number, u: number, unit = ''): string => `${fmt(v, 5)} ± ${fmt(u, 3)}${unit ? ` ${unit}` : ''}`;
@@ -129,6 +131,7 @@ function finish(args: {
   cov: number[][];
   values: Values;
   notes: NoteKey[];
+  labels?: string[];
 }): KitOk {
   const { data, fit, model, p, cov, values } = args;
   const stats = statistics(fit, data, args.notes);
@@ -151,6 +154,19 @@ function finish(args: {
     const pr = predict(model, p, cov, x0!);
     const yUnit = (values.yUnit ?? '').trim();
     rows.push({ key: 'prediction', vars: { x: fmt(x0!) }, value: plusMinus(pr.y, pr.u, yUnit) });
+  }
+  const derivedText = (values.derived ?? '').trim();
+  if (derivedText !== '') {
+    const tree = readExpression(derivedText);
+    if (!tree) fail('fitExpression', { text: derivedText });
+    const labels = args.labels ?? names(p.length);
+    const used = [...namesIn(tree!)];
+    const unknown = used.find((n) => !labels.includes(n));
+    if (unknown !== undefined) fail('fitDerivedName', { name: unknown, names: labels.join(', ') });
+    const run = compileExpression(tree!, labels);
+    const out = propagateParameters((q) => run(q), p, cov);
+    if (!Number.isFinite(out.y)) fail('fitDerivedValue', { text: derivedText });
+    rows.push({ key: 'derivedRow', vars: { text: derivedText }, value: plusMinus(out.y, out.u, '') });
   }
   const { main, residual } = plots(
     data,
@@ -418,6 +434,7 @@ function custom(data: Data, values: Values): KitOk {
     p: nl.coef,
     cov: nl.cov,
     values,
+    labels,
     notes: ['customNote'],
   });
 }

@@ -69,6 +69,8 @@ export const e = {
     fitNoConverge: 'The fit did not settle. Try better starting values or a simpler model.',
     fitDegree: 'The degree is a whole number from 1 to 8.',
     fitLogDomain: 'Fitting logarithms needs every {what} to be above zero.',
+    fitDerivedName: 'The formula uses {name}, which is not a fitted parameter. The parameters are {names}.',
+    fitDerivedValue: 'The formula is not a number for these parameters: {text}',
     fitExpression: 'The formula could not be read: {text}',
     fitNoParameters: 'The formula needs at least one parameter besides x, such as a.',
     fitManyParameters: 'This tool fits up to 6 parameters.',

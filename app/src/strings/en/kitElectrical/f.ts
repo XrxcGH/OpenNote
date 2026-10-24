@@ -295,6 +295,8 @@ export const f = {
     unitHint: 'Optional, such as s or m.',
     yUnit: 'Unit of y, for labels',
     predictAt: 'Predict y at this x',
+    derivedQuantity: 'A quantity from the fitted parameters',
+    derivedHint: 'A formula in the parameters, such as 1/b or a*b. Leave blank to leave this out.',
 
     netAnalysis: 'Analysis',
     netOp: 'DC operating point',

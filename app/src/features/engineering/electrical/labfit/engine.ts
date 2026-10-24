@@ -368,14 +368,22 @@ export function rSquared(y: number[], fitted: number[]): number {
 
 /** The value of a model at x and its uncertainty from the parameter covariance: u^2 = g^T C g. */
 export function predict(model: Model, p: number[], cov: number[][], x: number) {
-  const y = model(x, p);
+  return propagateParameters((q) => model(x, q), p, cov);
+}
+
+/**
+ * A quantity computed from the fitted parameters, with its uncertainty from the full covariance matrix (so the
+ * correlation between the parameters counts, which an error solver that treats them as independent cannot do).
+ */
+export function propagateParameters(quantity: (p: number[]) => number, p: number[], cov: number[][]) {
+  const y = quantity(p);
   const g = p.map((v, k) => {
-    const h = 6e-6 * Math.max(Math.abs(v), 1e-3);
+    const h = 6e-6 * (v === 0 ? 1e-3 : Math.abs(v));
     const up = [...p];
     const down = [...p];
     up[k]! += h;
     down[k]! -= h;
-    return (model(x, up) - model(x, down)) / (2 * h);
+    return (quantity(up) - quantity(down)) / (2 * h);
   });
   let variance = 0;
   for (let i = 0; i < p.length; i++) for (let j = 0; j < p.length; j++) variance += g[i]! * cov[i]![j]! * g[j]!;
