@@ -14,6 +14,10 @@ export type { CircuitModel, CircuitPart } from './circuit/model';
 export { solveCircuit } from './circuit/solve';
 export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
+export const loadAeroKit = () => import('./aero/ui/KitAeroTool');
+export { AERO_TOOLS } from './aero/meta';
+export type { AeroToolId } from './aero/meta';
+export { openAeroKit } from './aero/open';
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
