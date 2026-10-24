@@ -5,4 +5,7 @@ import type { HumanitiesToolId } from './meta';
 
 export const TOOL_BODIES: Record<HumanitiesToolId, LazyExoticComponent<ComponentType>> = {
   frames: lazy(() => import('./frames/FramesTool').then((module) => ({ default: module.FramesTool }))),
+  coordinates: lazy(() =>
+    import('./coordinates/CoordinatesTool').then((module) => ({ default: module.CoordinatesTool })),
+  ),
 };

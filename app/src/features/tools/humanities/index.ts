@@ -2,9 +2,7 @@
 // the first time it opens; each tool's code loads the first time its tab is shown.
 import { lazy } from 'react';
 
-export const HumanitiesKit = lazy(() =>
-  import('./ui/KitWindow').then((module) => ({ default: module.HumanitiesKit })),
-);
+export const HumanitiesKit = lazy(() => import('./ui/KitWindow').then((module) => ({ default: module.HumanitiesKit })));
 export { openHumanitiesTool } from './open';
 export { HUMANITIES_FLAGS } from './flags';
 export type { HumanitiesFlagId } from './flags';

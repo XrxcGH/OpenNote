@@ -65,7 +65,8 @@ export function parseOutline(outline: string, emptyRows = 4): FrameBlock[] {
     else blocks.push({ kind: 'prompt', text: line });
   }
   if (table) {
-    const rows = table.rows.length > 0 ? table.rows : Array.from({ length: emptyRows }, () => table!.header.map(() => ''));
+    const rows =
+      table.rows.length > 0 ? table.rows : Array.from({ length: emptyRows }, () => table!.header.map(() => ''));
     blocks.push({ kind: 'table', header: table.header, rows });
   }
   return blocks;

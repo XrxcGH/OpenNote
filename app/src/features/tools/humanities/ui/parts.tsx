@@ -262,3 +262,28 @@ export function InsertBar({ payloads }: { payloads: Payloads }) {
 
 /** Says whether a custom insert reached a page. */
 export const announceInsert = done;
+
+/** What most tools show for a result: the values, a note, a picture, the steps, and the insert buttons. */
+export interface Outcome {
+  rows: [string, string][];
+  steps: string[];
+  answer: string;
+  picture?: { svg: string; name: string; alt: string };
+  note?: string;
+  latex?: string;
+}
+
+const outcomeHeader = () => [t('kitHumanities.common.quantity'), t('kitHumanities.common.value')];
+
+export function OutcomeView({ outcome }: { outcome: Outcome }) {
+  const { rows, steps, answer, picture, note, latex } = outcome;
+  return (
+    <>
+      <Results label={t('kitHumanities.common.results')} rows={rows} />
+      {note ? <Note>{note}</Note> : null}
+      {picture ? <Picture svg={picture.svg} alt={picture.alt} /> : null}
+      <Steps steps={steps} />
+      <InsertBar payloads={{ answer, table: { header: outcomeHeader(), rows }, steps, picture, latex }} />
+    </>
+  );
+}

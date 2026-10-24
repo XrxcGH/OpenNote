@@ -1,7 +1,10 @@
 // The tools of the history, places, languages, and texts kit: an id, an icon, and the order they are listed in.
 // Start-up code reads this list to register one palette command per tool, so it holds data only.
 
-export const HUMANITIES_TOOLS = [{ id: 'frames', icon: 'Layout' }] as const;
+export const HUMANITIES_TOOLS = [
+  { id: 'frames', icon: 'Layout' },
+  { id: 'coordinates', icon: 'Compass' },
+] as const;
 
 export type HumanitiesToolId = (typeof HUMANITIES_TOOLS)[number]['id'];
 
