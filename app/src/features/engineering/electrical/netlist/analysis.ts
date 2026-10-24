@@ -146,7 +146,10 @@ export function findResonance(circuit: Circuit, lay: Layout, probe: Probe, sweep
   const f = sweep.freqs;
   const at = (hz: number) => magnitude(probe, circuit, lay, hz);
   const top = m.indexOf(Math.max(...m));
-  if (top > 0 && top < m.length - 1) {
+  // An interior maximum is a resonance only when it stands clear of both sweep ends; otherwise rounding noise on a
+  // flat passband would be read as a peak.
+  const margin = 1e-3 * m[top]!;
+  if (top > 0 && top < m.length - 1 && m[top]! - m[0]! > margin && m[top]! - m[m.length - 1]! > margin) {
     const f0 = goldenMax(at, f[top - 1]!, f[top + 1]!);
     const peak = at(f0);
     const half = peak / Math.SQRT2;
@@ -155,12 +158,15 @@ export function findResonance(circuit: Circuit, lay: Layout, probe: Probe, sweep
     const bandwidth = below !== null && above !== null ? above - below : null;
     return { f0, peak, bandwidth, q: bandwidth ? f0 / bandwidth : null, cutoff: null, lowpass: null };
   }
-  const lowpass = top === 0;
-  const edge = m[top]!;
-  const half = edge / Math.SQRT2;
-  const end = m[lowpass ? m.length - 1 : 0]!;
-  const cutoff = end < half ? bisect((x) => at(x) - half, f[0]!, f[f.length - 1]!) : null;
-  return { f0: f[top]!, peak: edge, bandwidth: null, q: null, cutoff, lowpass };
+  const last = m.length - 1;
+  const lowpass = m[0]! >= m[last]!;
+  // The passband gain is the limit far outside the sweep (the DC gain of a low-pass, the high-frequency gain of a
+  // high-pass), not the gain at the sweep's edge, so a narrow sweep still gives the true 3 dB point.
+  const reference = lowpass ? at(f[0]! * 1e-6) : at(f[last]! * 1e6);
+  const half = reference / Math.SQRT2;
+  const inside = lowpass ? m[0]! > half && m[last]! < half : m[last]! > half && m[0]! < half;
+  const cutoff = inside ? bisect((x) => at(x) - half, f[0]!, f[last]!) : null;
+  return { f0: f[top]!, peak: m[top]!, bandwidth: null, q: null, cutoff, lowpass };
 }
 
 // ---- Transient ----

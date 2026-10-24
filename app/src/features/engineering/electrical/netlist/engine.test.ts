@@ -132,6 +132,34 @@ describe('AC sweep', () => {
     expect(r.lowpass).toBe(false);
     close(r.cutoff!, 1 / (2 * Math.PI * 1e-3), 1e-6);
   });
+  it('the 3 dB point is measured from the passband gain, however narrow the sweep', () => {
+    // RC 1k, 1 uF: the true cutoff is 1 / (2 pi R C) = 159.155 Hz.
+    const net = (...lines: string[]) => parseNetlist(lines.join('\n'));
+    const lp = net('V1 in 0 AC 1 0', 'R1 in out 1k', 'C1 out 0 1u');
+    const hp = net('V1 in 0 AC 1 0', 'C1 in out 1u', 'R1 out 0 1k');
+    const cut = (c: ReturnType<typeof parseNetlist>, lo: number, hi: number) => {
+      const lay = layoutOf(c);
+      const probes = parseProbes(c, lay, 'out');
+      return findResonance(c, lay, probes[0]!, acSweep(c, lay, probes, lo, hi, 200)).cutoff!;
+    };
+    const exact = 1 / (2 * Math.PI * 1e-3);
+    close(cut(lp, 100, 1e4), exact, 1e-6);
+    close(cut(lp, 10, 1e5), exact, 1e-6);
+    close(cut(hp, 1, 1e3), exact, 1e-6);
+  });
+  it('a maximally flat Sallen-Key high-pass has a cutoff, not a phantom peak, and Q 0.70711 at f0', () => {
+    const c = parseNetlist(
+      ['V1 in 0 AC 1 0', 'C1 in a 10n', 'C2 a b 10n', 'R1 a out 10k', 'R2 b 0 20k', 'E1 out 0 b 0 1'].join('\n'),
+    );
+    const lay = layoutOf(c);
+    const probes = parseProbes(c, lay, 'out');
+    const r = findResonance(c, lay, probes[0]!, acSweep(c, lay, probes, 1, 1e7, 400));
+    // Hand derivation: f0 = 1 / (2 pi sqrt(R1 R2 C1 C2)) = 1125.4 Hz and Q = sqrt(R2 C1 C2 / R1) / (C1 + C2) = 0.70711.
+    const f0 = 1 / (2 * Math.PI * Math.sqrt(1e4 * 2e4 * 1e-16));
+    expect(r.cutoff).not.toBeNull();
+    close(r.cutoff!, f0, 1e-4);
+    close(acSweep(c, lay, probes, f0, f0 * 1.0001, 2).mag[0]![0]!, 0.70711, 1e-5);
+  });
   it('a sweep with AC magnitude and phase on the source', () => {
     const c = parseNetlist('V1 in 0 AC 2 90\nR1 in 0 1k');
     const lay = layoutOf(c);
