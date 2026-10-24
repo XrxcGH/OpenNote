@@ -1,5 +1,4 @@
-// Market power: monopoly, price discrimination, Cournot, Bertrand, Stackelberg, collusion, and concentration.
-// Demand is linear, P = a - bQ, and marginal costs are constant, unless a function says otherwise.
+// Market power as pure functions. Demand is linear, P = a - bQ, and marginal costs are constant.
 import { solveLinear } from './num';
 
 export interface Monopoly {

@@ -1,5 +1,4 @@
-// Measurement in economics: price indexes and inflation adjustment, growth rates, inequality and poverty, segregation,
-// regional analysis, the Human Development Index, and tax schedules. Pure functions over lists of numbers.
+// Measurement in economics as pure functions over lists of numbers.
 import { invert } from './num';
 
 const sum = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0);

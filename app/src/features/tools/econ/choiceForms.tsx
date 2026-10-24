@@ -1,6 +1,5 @@
-// The choice forms: utility maximization, price-change decomposition, cost minimization, short-run costs, and
-// two-period consumption. The methods are in choice.ts; this file reads the fields, words the result with its
-// steps, and draws the indifference curves and budget lines.
+// The choice forms. Each reads its fields, words the result with its steps, and draws the graph.
+// The methods are in choice.ts.
 import {
   costMinimization,
   firmSupply,
@@ -207,13 +206,13 @@ const cost: EconForm = {
     const [w, r, q] = kind === 'cd' ? n.slice(3) : n.slice(2);
     const result = costMinimization(p, w, r, q);
     if (!result) return bad('choice.cost.invalid');
-    const steps = [tx(`choice.cost.${kind}`, { w: m(w), r: m(r), l: m(result.labour), k: m(result.capital) })];
+    const steps = [tx(`choice.cost.${kind}`, { w: m(w), r: m(r), l: m(result.labor), k: m(result.capital) })];
     if (result.mrts !== null) steps.push(tx('choice.cost.mrts', { v: m(result.mrts) }));
     if (result.returns) steps.push(tx(`choice.cost.${result.returns}`));
     steps.push(
-      tx('choice.cost.total', { w: m(w), l: m(result.labour), r: m(r), k: m(result.capital), c: m(result.cost) }),
+      tx('choice.cost.total', { w: m(w), l: m(result.labor), r: m(r), k: m(result.capital), c: m(result.cost) }),
     );
-    return ok(tx('choice.cost.headline', { l: m(result.labour), k: m(result.capital), c: m(result.cost) }), steps);
+    return ok(tx('choice.cost.headline', { l: m(result.labor), k: m(result.capital), c: m(result.cost) }), steps);
   },
 };
 
@@ -237,7 +236,7 @@ const shortRun: EconForm = {
     const s = shortRunCosts(n[0], n[1], n[2], n[3], n[4], n[5], n[6]);
     if (!s) return bad('choice.short.invalid');
     const steps = [
-      tx('choice.short.labour', { l: m(s.labour) }),
+      tx('choice.short.labor', { l: m(s.labor) }),
       tx('choice.short.costs', { vc: m(s.variableCost), fc: m(n[5] * n[3]), tc: m(s.totalCost) }),
       tx('choice.short.averages', { mc: m(s.marginalCost), avc: m(s.averageVariable), atc: m(s.averageTotal) }),
     ];

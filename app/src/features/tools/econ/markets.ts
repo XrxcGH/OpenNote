@@ -1,5 +1,4 @@
-// Supply and demand with linear curves: Qd = a - bP and Qs = c + dP. Equilibrium, elasticity, surplus, taxes and
-// subsidies, price controls, quotas, trade, externalities, and the labour market. Areas are exact for linear curves.
+// Supply and demand with linear curves, Qd = a - bP and Qs = c + dP. Areas are exact for linear curves.
 
 export interface Curves {
   a: number;
@@ -87,7 +86,7 @@ function taxOutcome(k: Curves, e: Equilibrium, buyersPay: number, sellersGet: nu
     sellersGet,
     quantity,
     revenue: wedge * quantity,
-    deadweightLoss: (Math.abs(wedge) * (e.quantity - quantity)) / 2,
+    deadweightLoss: (Math.abs(wedge) * Math.abs(e.quantity - quantity)) / 2,
     buyerShare: wedge === 0 ? 0 : (buyersPay - e.price) / wedge,
     sellerShare: wedge === 0 ? 0 : (e.price - sellersGet) / wedge,
     consumerSurplus: consumerSurplus(k, quantity, buyersPay),
@@ -271,15 +270,15 @@ export function externality(k: Curves, external: number): Externality | null {
   };
 }
 
-export interface Labour {
+export interface Labor {
   competitiveWage: number;
   competitiveEmployment: number;
   monopsonyWage: number;
   monopsonyEmployment: number;
 }
 
-/** Labour demand (the marginal revenue product) w = m0 - m1 L against supply w = s0 + s1 L, with a monopsony. */
-export function labour(m0: number, m1: number, s0: number, s1: number): Labour | null {
+/** Labor demand (the marginal revenue product) w = m0 - m1 L against supply w = s0 + s1 L, with a monopsony. */
+export function labor(m0: number, m1: number, s0: number, s1: number): Labor | null {
   if (!(m1 > 0) || !(s1 > 0) || !(m0 > s0)) return null;
   const competitiveEmployment = (m0 - s0) / (m1 + s1);
   const monopsonyEmployment = (m0 - s0) / (m1 + 2 * s1);

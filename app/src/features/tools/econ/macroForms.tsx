@@ -1,5 +1,4 @@
-// The macroeconomics forms: the Keynesian cross, IS-LM, Solow growth and accounting, policy rules, money and price
-// relations, parity conditions, and difference equations. The methods are in macro.ts.
+// The macroeconomics forms. Each reads its fields and words the result; the methods are in macro.ts.
 import { Plot } from './Plot';
 import { bad, failed, field, ok, optional, read, tx } from './forms';
 import type { EconForm, EconToolDef } from './forms';
@@ -212,7 +211,7 @@ const accounting = form(
     const residual = solowResidual(n[0], n[1], n[2], n[3]);
     return ok(tx('macro.accounting.headline', { a: m(residual) }), [
       tx('macro.accounting.step', { gy: m(n[0]), a: m(n[3]), gk: m(n[1]), gl: m(n[2]), r: m(residual) }),
-      tx('macro.accounting.parts', { capital: m(n[3] * n[1]), labour: m((1 - n[3]) * n[2]), tfp: m(residual) }),
+      tx('macro.accounting.parts', { capital: m(n[3] * n[1]), labor: m((1 - n[3]) * n[2]), tfp: m(residual) }),
     ]);
   },
 );

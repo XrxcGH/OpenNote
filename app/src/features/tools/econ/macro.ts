@@ -1,5 +1,4 @@
-// Macroeconomic models: the Keynesian cross, IS-LM, the Solow growth model with growth accounting, the Taylor rule
-// and Phillips curve, money and price relations, parity conditions, and first-order difference equations.
+// Macroeconomic models as pure functions. Rates are fractions unless a function says percent.
 import { solveLinear } from './num';
 
 export interface Cross {
@@ -55,7 +54,7 @@ export interface IsLmParams {
 /** IS: Y = c0 + c1 (Y - T) + i0 - i1 r + G. LM: M/P = k Y - h r. */
 export function isLm(p: IsLmParams): IsLm | null {
   if (!(p.c1 >= 0) || !(p.c1 < 1) || !(p.i1 >= 0) || !(p.h > 0) || !(p.k >= 0)) return null;
-  // (1 - c1) Y + i1 r = c0 - c1 T + i0 + G ; k Y - h r = M/P
+  // The two equations: (1 - c1) Y + i1 r = c0 - c1 T + i0 + G, and k Y - h r = M/P.
   const sol = solveLinear(
     [
       [1 - p.c1, p.i1],
@@ -109,7 +108,7 @@ export function solowPath(
   return path;
 }
 
-/** The Solow residual: output growth not explained by capital and labour growth. */
+/** The Solow residual: output growth not explained by capital and labor growth. */
 export const solowResidual = (gY: number, gK: number, gL: number, alpha: number): number =>
   gY - alpha * gK - (1 - alpha) * gL;
 
@@ -157,7 +156,7 @@ export interface Difference {
   path: number[];
 }
 
-/** x(t+1) = a x(t) + b from x0. */
+/** The path of x next = a times x now plus b, from the start x0. */
 export function difference(a: number, b: number, x0: number, periods: number): Difference {
   const path = [x0];
   for (let t = 0; t < periods; t += 1) path.push(a * path[t] + b);

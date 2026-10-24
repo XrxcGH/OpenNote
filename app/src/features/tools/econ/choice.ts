@@ -1,5 +1,4 @@
-// Consumer and producer choice: utility maximization with corner checks, expenditure minimization, Slutsky
-// decomposition, compensating and equivalent variation, cost minimization, short-run costs, and two-period choice.
+// Consumer and producer choice as pure functions. Prices and incomes are positive numbers.
 import { brent } from './num';
 
 export type UtilityKind = 'cd' | 'subs' | 'compl' | 'quasi' | 'ces';
@@ -153,15 +152,15 @@ export interface Production {
   kind: ProductionKind;
   /** Scale A for Cobb-Douglas; otherwise the weight on capital. */
   a: number;
-  /** The exponent on capital for Cobb-Douglas; otherwise the weight on labour. */
+  /** The exponent on capital for Cobb-Douglas; otherwise the weight on labor. */
   b: number;
-  /** The exponent on labour for Cobb-Douglas. */
+  /** The exponent on labor for Cobb-Douglas. */
   c?: number;
 }
 
 export interface CostMin {
   capital: number;
-  labour: number;
+  labor: number;
   cost: number;
   returns: 'increasing' | 'constant' | 'decreasing' | null;
   mrts: number | null;
@@ -175,26 +174,26 @@ export function costMinimization(p: Production, w: number, r: number, q: number)
     const beta = p.c ?? 0;
     if (!(beta > 0)) return null;
     const ratio = (alpha * w) / (beta * r);
-    const labour = (q / (p.a * ratio ** alpha)) ** (1 / (alpha + beta));
-    const capital = ratio * labour;
+    const labor = (q / (p.a * ratio ** alpha)) ** (1 / (alpha + beta));
+    const capital = ratio * labor;
     const total = alpha + beta;
     return {
       capital,
-      labour,
-      cost: w * labour + r * capital,
+      labor,
+      cost: w * labor + r * capital,
       returns: Math.abs(total - 1) < 1e-12 ? 'constant' : total > 1 ? 'increasing' : 'decreasing',
-      mrts: (beta / alpha) * (capital / labour),
+      mrts: (beta / alpha) * (capital / labor),
     };
   }
   if (p.kind === 'leontief') {
-    // Q = min(K / a, L / b): a units of capital and b of labour per unit of output.
-    return { capital: p.a * q, labour: p.b * q, cost: w * p.b * q + r * p.a * q, returns: 'constant', mrts: null };
+    // Q = min(K / a, L / b): a units of capital and b of labor per unit of output.
+    return { capital: p.a * q, labor: p.b * q, cost: w * p.b * q + r * p.a * q, returns: 'constant', mrts: null };
   }
   // Q = a K + b L: only the cheaper input per unit of output is used.
   const useCapital = p.a / r >= p.b / w;
   return {
     capital: useCapital ? q / p.a : 0,
-    labour: useCapital ? 0 : q / p.b,
+    labor: useCapital ? 0 : q / p.b,
     cost: useCapital ? (r * q) / p.a : (w * q) / p.b,
     returns: 'constant',
     mrts: p.b / p.a,
@@ -202,7 +201,7 @@ export function costMinimization(p: Production, w: number, r: number, q: number)
 }
 
 export interface ShortRun {
-  labour: number;
+  labor: number;
   variableCost: number;
   totalCost: number;
   marginalCost: number;
@@ -221,19 +220,19 @@ export function shortRunCosts(
   q: number,
 ): ShortRun | null {
   if (![A, alpha, beta, k, w, r, q].every((x) => x > 0)) return null;
-  const labour = (q / (A * k ** alpha)) ** (1 / beta);
-  const variableCost = w * labour;
+  const labor = (q / (A * k ** alpha)) ** (1 / beta);
+  const variableCost = w * labor;
   return {
-    labour,
+    labor,
     variableCost,
     totalCost: variableCost + r * k,
-    marginalCost: (w * labour) / (beta * q),
+    marginalCost: (w * labor) / (beta * q),
     averageVariable: variableCost / q,
     averageTotal: (variableCost + r * k) / q,
   };
 }
 
-/** The output where price equals short-run marginal cost (decreasing returns to labour: beta below 1). */
+/** The output where price equals short-run marginal cost (decreasing returns to labor: beta below 1). */
 export function firmSupply(A: number, alpha: number, beta: number, k: number, w: number, price: number): number | null {
   if (![A, alpha, beta, k, w, price].every((x) => x > 0) || beta >= 1) return null;
   const c = (A * k ** alpha) ** (-1 / beta);

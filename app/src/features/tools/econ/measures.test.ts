@@ -179,7 +179,7 @@ const headline = (o: ReturnType<typeof run>) => (o.ok ? o.headline : o.message);
 
 describe('measure forms', () => {
   it('words the answers', () => {
-    expect(headline(run('index'))).toMatch(/Laspeyres 1\.35/);
+    expect(headline(run('index'))).toMatch(/Laspeyres index is 1\.35/);
     expect(headline(run('real'))).toMatch(/198\.02/);
     expect(headline(run('inequality'))).toMatch(/Gini 0\.25/);
     expect(headline(run('segregation'))).toMatch(/0\.5/);

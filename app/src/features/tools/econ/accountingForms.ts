@@ -1,6 +1,4 @@
-// The accounting forms: the ledger and statements, inventory costing, ratios, cost-volume-profit, variances,
-// process and activity-based costing, bonds payable, audit analytics, and unit economics. The methods are in
-// accounting.ts; this file reads the fields and words the result with its steps.
+// The accounting forms. Each reads its fields and words the result; the methods are in accounting.ts.
 import {
   activityCosting,
   attributeSample,
@@ -382,17 +380,15 @@ const bonds = form(
             : 'accounting.bonds.par',
         { amount: m(Math.abs(n[0] - r.issue)) },
       ),
-      ...r.rows
-        .slice(0, 12)
-        .map((row) =>
-          tx('accounting.bonds.row', {
-            n: row.period,
-            expense: m(row.expense),
-            cash: m(row.cash),
-            amort: m(row.amortization),
-            carrying: m(row.carrying),
-          }),
-        ),
+      ...r.rows.slice(0, 12).map((row) =>
+        tx('accounting.bonds.row', {
+          n: row.period,
+          expense: m(row.expense),
+          cash: m(row.cash),
+          amort: m(row.amortization),
+          carrying: m(row.carrying),
+        }),
+      ),
     ];
     return ok(tx('accounting.bonds.headline', { issue: m(r.issue) }), steps);
   },
@@ -464,17 +460,15 @@ const unit = form(
       funnel.length > 1 &&
       funnel.every((x, i) => x >= 0 && (i === 0 || x <= funnel[i - 1]) && funnel[0] > 0)
     ) {
-      funnel
-        .slice(1)
-        .forEach((x, i) =>
-          steps.push(
-            tx('accounting.unit.step', {
-              n: i + 1,
-              step: pct(funnel[i] > 0 ? x / funnel[i] : 0, 1),
-              cumulative: pct(x / funnel[0], 2),
-            }),
-          ),
-        );
+      funnel.slice(1).forEach((x, i) =>
+        steps.push(
+          tx('accounting.unit.step', {
+            n: i + 1,
+            step: pct(funnel[i] > 0 ? x / funnel[i] : 0, 1),
+            cumulative: pct(x / funnel[0], 2),
+          }),
+        ),
+      );
     }
     for (const t of [1, 2, 3, 6, 12]) steps.push(tx('accounting.unit.cohort', { t, share: pct(n[1] ** t, 1) }));
     return ok(tx('accounting.unit.headline', { value: m(r.lifetimeValue) }), steps);

@@ -1,5 +1,4 @@
-// Accounting and managerial analysis: the ledger from journal entries to statements, inventory costing, ratios,
-// cost-volume-profit, variances, process and activity-based costing, bonds payable, audit analytics, and unit economics.
+// Accounting and managerial analysis as pure functions over journal entries and lists of numbers.
 
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
 
@@ -47,7 +46,7 @@ function parseSide(side: string): Line[] | null {
     : null;
 }
 
-/** Journal entries, one per line or separated by a bar: "debits ; credits" where each side is "Account amount, Account amount". */
+/** Journal entries, one per line, or separated by a bar, as "debits ; credits" where each side lists "Account amount" items. */
 export function parseJournal(source: string): ParseResult<Entry[]> {
   const entries: Entry[] = [];
   const lines = source.split(/\n|\|/).map((l) => l.trim());
@@ -447,15 +446,14 @@ function gammaQ(a: number, x: number): number {
 
 function lnGamma(z: number): number {
   const c = [
-    76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.001208650973866179,
-    -0.000005395239384953,
+    76.1800917294715, -86.5053203294168, 24.0140982408309, -1.23173957245015, 0.0012086509738662, -0.000005395239385,
   ];
   let y = z;
   let tmp = z + 5.5;
   tmp -= (z + 0.5) * Math.log(tmp);
   let ser = 1.000000000190015;
   for (const coefficient of c) ser += coefficient / (y += 1);
-  return -tmp + Math.log((2.5066282746310005 * ser) / z);
+  return -tmp + Math.log((Math.sqrt(2 * Math.PI) * ser) / z);
 }
 
 /** The upper-tail probability of a chi-square statistic with the given degrees of freedom. */

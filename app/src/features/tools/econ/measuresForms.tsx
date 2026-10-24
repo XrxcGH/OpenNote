@@ -1,5 +1,4 @@
-// The measurement forms: price indexes and inflation adjustment, growth, inequality and poverty, segregation,
-// regional analysis, the Human Development Index, and taxes. The methods are in measures.ts.
+// The measurement forms. Each reads its fields and words the result; the methods are in measures.ts.
 import { CPI_UPDATED, cpiFor } from './cpi';
 import { Plot } from './Plot';
 import { bad, choice, failed, field, ok, optional, read, text, tx } from './forms';

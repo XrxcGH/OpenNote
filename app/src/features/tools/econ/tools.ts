@@ -6,6 +6,7 @@ import { MACRO } from './macroForms';
 import { MEASURES } from './measuresForms';
 import { CHOICE } from './choiceForms';
 import { ACCOUNTING } from './accountingForms';
+import { INVEST } from './investForms';
 import type { EconToolDef } from './forms';
 
-export const ECON_TOOLS: readonly EconToolDef[] = [MONEY, FIRMS, MARKETS, MACRO, MEASURES, CHOICE, ACCOUNTING];
+export const ECON_TOOLS: readonly EconToolDef[] = [MONEY, FIRMS, MARKETS, MACRO, MEASURES, CHOICE, ACCOUNTING, INVEST];

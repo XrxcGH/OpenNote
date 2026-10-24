@@ -31,13 +31,14 @@ const W = 360;
 const H = 240;
 const PAD = { left: 44, right: 14, top: 12, bottom: 34 };
 
-function ticks(max: number, count = 4): number[] {
-  if (!(max > 0)) return [0];
-  const raw = max / count;
+function ticks(lo: number, hi: number, count = 4): number[] {
+  if (!(hi > lo)) return [lo];
+  const raw = (hi - lo) / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw;
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw) ?? raw;
   const out: number[] = [];
-  for (let v = 0; v <= max + 1e-9; v += step) out.push(v);
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step)
+    out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
   return out;
 }
 
@@ -47,14 +48,18 @@ export function Plot({ summary, xLabel, yLabel, curves, areas = [], marks = [] }
     ...areas.flatMap((a) => a.points),
     ...marks.map((m) => [m.x, m.y] as const),
   ];
-  const xMax = Math.max(...all.map((p) => p[0]), 1e-9);
-  const yMax = Math.max(...all.map((p) => p[1]), 1e-9);
-  const xt = ticks(xMax);
-  const yt = ticks(yMax);
-  const xs = Math.max(xt[xt.length - 1], xMax);
-  const ys = Math.max(yt[yt.length - 1], yMax);
-  const sx = (x: number) => PAD.left + (x / xs) * (W - PAD.left - PAD.right);
-  const sy = (y: number) => H - PAD.bottom - (y / ys) * (H - PAD.top - PAD.bottom);
+  const xLow = Math.min(0, ...all.map((p) => p[0]));
+  const yLow = Math.min(0, ...all.map((p) => p[1]));
+  const xHigh = Math.max(...all.map((p) => p[0]), xLow + 1e-9);
+  const yHigh = Math.max(...all.map((p) => p[1]), yLow + 1e-9);
+  const xt = ticks(xLow, xHigh);
+  const yt = ticks(yLow, yHigh);
+  const x0 = Math.min(xLow, xt[0]);
+  const y0 = Math.min(yLow, yt[0]);
+  const x1 = Math.max(xHigh, xt[xt.length - 1]);
+  const y1 = Math.max(yHigh, yt[yt.length - 1]);
+  const sx = (x: number) => PAD.left + ((x - x0) / (x1 - x0)) * (W - PAD.left - PAD.right);
+  const sy = (y: number) => H - PAD.bottom - ((y - y0) / (y1 - y0)) * (H - PAD.top - PAD.bottom);
   const path = (pts: readonly (readonly [number, number])[]) =>
     pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p[0]).toFixed(1)} ${sy(p[1]).toFixed(1)}`).join(' ');
   return (
@@ -73,8 +78,8 @@ export function Plot({ summary, xLabel, yLabel, curves, areas = [], marks = [] }
             {fmt(v, 2)}
           </text>
         ))}
-        <line className={styles.axis} x1={PAD.left} x2={PAD.left} y1={PAD.top} y2={H - PAD.bottom} />
-        <line className={styles.axis} x1={PAD.left} x2={W - PAD.right} y1={H - PAD.bottom} y2={H - PAD.bottom} />
+        <line className={styles.axis} x1={sx(0)} x2={sx(0)} y1={PAD.top} y2={H - PAD.bottom} />
+        <line className={styles.axis} x1={PAD.left} x2={W - PAD.right} y1={sy(0)} y2={sy(0)} />
         {areas.map((a, i) => (
           <path key={a.label} className={i % 2 ? styles.areaB : styles.areaA} d={`${path(a.points)}Z`}>
             <title>{a.label}</title>

@@ -1,6 +1,5 @@
-// The supply-and-demand forms: equilibrium and surplus, elasticity, taxes and price controls, trade policy,
-// externalities, and the labour market. The methods are in markets.ts; this file reads the fields and words the
-// result with its steps and draws the graph.
+// The supply and demand forms. Each reads its fields, words the result with its steps, and draws the graph.
+// The methods are in markets.ts.
 import { Plot } from './Plot';
 import type { Area, Curve, Mark } from './Plot';
 import { bad, choice, failed, field, ok, read, text, tx } from './forms';
@@ -11,7 +10,7 @@ import {
   equilibrium,
   externality,
   importPolicy,
-  labour,
+  labor,
   openEconomy,
   priceControl,
   quota,
@@ -20,7 +19,7 @@ import {
   valueTax,
   validCurves,
 } from './markets';
-import type { Curves } from './markets';
+import type { Curves, Equilibrium } from './markets';
 import { fmt, pct } from './num';
 
 const T = 'markets';
@@ -167,6 +166,179 @@ const elasticity: EconForm = {
 
 const POLICIES = ['tax', 'subsidy', 'valueTax', 'ceiling', 'floor', 'quota'];
 
+interface PolicyContext {
+  k: Curves;
+  e: Equilibrium;
+  x: number;
+  policy: string;
+  qmax: number;
+  total: number;
+}
+
+function taxCase({ k, e, x, policy, qmax, total }: PolicyContext) {
+  const r = policy === 'valueTax' ? valueTax(k, x / 100) : unitTax(k, policy === 'tax' ? x : -x);
+  if (!r) return bad('markets.noTrade');
+  const wedge = r.buyersPay - r.sellersGet;
+  const subsidy = wedge < 0;
+  const steps = [
+    tx(policy === 'valueTax' ? 'markets.tax.valueStep' : 'markets.tax.step', {
+      t: m(Math.abs(wedge)),
+      rate: fmt(x, 3),
+      buyers: m(r.buyersPay),
+      sellers: m(r.sellersGet),
+      q: m(r.quantity),
+    }),
+    tx(subsidy ? 'markets.tax.cost' : 'markets.tax.revenue', { value: m(Math.abs(r.revenue)) }),
+    tx('markets.tax.dwl', {
+      wedge: m(Math.abs(wedge)),
+      lost: m(e.quantity - r.quantity),
+      dwl: m(r.deadweightLoss),
+    }),
+    tx('markets.tax.incidence', { buyers: pct(r.buyerShare, 2), sellers: pct(r.sellerShare, 2) }),
+    tx('markets.tax.surplus', { cs: m(r.consumerSurplus), ps: m(r.producerSurplus), total: m(total) }),
+  ];
+  const lo = Math.min(r.buyersPay, r.sellersGet);
+  const hi = Math.max(r.buyersPay, r.sellersGet);
+  const areas: Area[] = [
+    {
+      label: tx(subsidy ? 'markets.tax.costArea' : 'markets.tax.revenueArea', { value: m(Math.abs(r.revenue)) }),
+      points: [
+        [0, hi],
+        [r.quantity, hi],
+        [r.quantity, lo],
+        [0, lo],
+      ],
+    },
+    {
+      label: tx('markets.tax.dwlArea', { value: m(r.deadweightLoss) }),
+      points: [
+        [r.quantity, hi],
+        [e.quantity, e.price],
+        [r.quantity, lo],
+      ],
+    },
+  ];
+  const figure = graph(
+    tx('markets.plotTax', { pb: m(r.buyersPay), ps: m(r.sellersGet), q: m(r.quantity) }),
+    k,
+    qmax,
+    [],
+    areas,
+    [
+      { label: tx('markets.tax.buyers'), x: r.quantity, y: r.buyersPay },
+      { label: tx('markets.tax.sellers'), x: r.quantity, y: r.sellersGet },
+    ],
+  );
+  return ok(
+    tx('markets.tax.headline', { buyers: m(r.buyersPay), sellers: m(r.sellersGet), q: m(r.quantity) }),
+    steps,
+    figure,
+  );
+}
+
+function controlCase({ k, e, x, policy, qmax }: PolicyContext) {
+  const r = priceControl(k, policy as 'ceiling' | 'floor', x);
+  if (!r) return bad('markets.control.invalid');
+  if (!r.binding)
+    return ok(tx('markets.control.notBinding', { p: m(e.price) }), [
+      tx('markets.control.notBindingStep', { level: m(x), p: m(e.price) }),
+    ]);
+  const ceiling = policy === 'ceiling';
+  const steps = [
+    tx('markets.control.quantities', { p: m(r.price), qd: m(r.quantityDemanded), qs: m(r.quantitySupplied) }),
+    tx(ceiling ? 'markets.control.shortage' : 'markets.control.surplus', { gap: m(r.gap), traded: m(r.traded) }),
+    tx('markets.control.surplusStep', {
+      cs: m(r.consumerSurplus),
+      ps: m(r.producerSurplus),
+      dwl: m(r.deadweightLoss),
+    }),
+  ];
+  const qHi = Math.max(r.quantityDemanded, r.quantitySupplied);
+  const figure = graph(
+    tx('markets.plotControl', { p: m(r.price), traded: m(r.traded) }),
+    k,
+    Math.min(k.a, Math.max(qmax, qHi * 1.1)),
+    [
+      {
+        label: tx(ceiling ? 'markets.ceiling' : 'markets.floor'),
+        points: [
+          [0, r.price],
+          [Math.min(k.a, Math.max(qmax, qHi * 1.1)), r.price],
+        ],
+      },
+    ],
+    [
+      {
+        label: tx('markets.tax.dwlArea', { value: m(r.deadweightLoss) }),
+        points: [
+          [r.traded, buyerPrice(k, r.traded)],
+          [e.quantity, e.price],
+          [r.traded, sellerPrice(k, r.traded)],
+        ],
+      },
+    ],
+    [{ label: tx('markets.eq'), x: e.quantity, y: e.price }],
+  );
+  return ok(
+    tx(ceiling ? 'markets.control.shortageHeadline' : 'markets.control.surplusHeadline', { gap: m(r.gap) }),
+    steps,
+    figure,
+  );
+}
+
+function quotaCase({ k, e, x, qmax }: PolicyContext) {
+  const r = quota(k, x);
+  if (!r) return bad('markets.control.invalid');
+  if (!r.binding)
+    return ok(tx('markets.control.notBinding', { p: m(e.price) }), [
+      tx('markets.quota.notBinding', { q: m(e.quantity) }),
+    ]);
+  const figure = graph(
+    tx('markets.plotQuota', { pb: m(r.buyersPay), ps: m(r.sellersGet), q: m(x) }),
+    k,
+    qmax,
+    [
+      {
+        label: tx('markets.quota.limit'),
+        points: [
+          [x, 0],
+          [x, r.buyersPay],
+        ],
+        dashed: true,
+      },
+    ],
+    [
+      {
+        label: tx('markets.quota.rentArea', { value: m(r.rent) }),
+        points: [
+          [0, r.buyersPay],
+          [x, r.buyersPay],
+          [x, r.sellersGet],
+          [0, r.sellersGet],
+        ],
+      },
+      {
+        label: tx('markets.tax.dwlArea', { value: m(r.deadweightLoss) }),
+        points: [
+          [x, r.buyersPay],
+          [e.quantity, e.price],
+          [x, r.sellersGet],
+        ],
+      },
+    ],
+    [{ label: tx('markets.eq'), x: e.quantity, y: e.price }],
+  );
+  return ok(
+    tx('markets.quota.headline', { pb: m(r.buyersPay), ps: m(r.sellersGet), q: m(x) }),
+    [
+      tx('markets.quota.step', { pb: m(r.buyersPay), ps: m(r.sellersGet), gap: m(r.rentPerUnit) }),
+      tx('markets.quota.rent', { rent: m(r.rent) }),
+      tx('markets.tax.dwl', { wedge: m(r.rentPerUnit), lost: m(e.quantity - x), dwl: m(r.deadweightLoss) }),
+    ],
+    figure,
+  );
+}
+
 const policyForm: EconForm = {
   id: 'policy',
   name: 'markets-policy',
@@ -182,165 +354,10 @@ const policyForm: EconForm = {
     const e = equilibrium(k)!;
     const total = e.consumerSurplus + e.producerSurplus;
     const qmax = Math.min(k.a, e.quantity * 1.8);
-    if (policy === 'tax' || policy === 'subsidy' || policy === 'valueTax') {
-      const r = policy === 'valueTax' ? valueTax(k, x / 100) : unitTax(k, policy === 'tax' ? x : -x);
-      if (!r) return bad('markets.noTrade');
-      const wedge = r.buyersPay - r.sellersGet;
-      const subsidy = wedge < 0;
-      const steps = [
-        tx(policy === 'valueTax' ? 'markets.tax.valueStep' : 'markets.tax.step', {
-          t: m(Math.abs(wedge)),
-          rate: fmt(x, 3),
-          buyers: m(r.buyersPay),
-          sellers: m(r.sellersGet),
-          q: m(r.quantity),
-        }),
-        tx(subsidy ? 'markets.tax.cost' : 'markets.tax.revenue', { value: m(Math.abs(r.revenue)) }),
-        tx('markets.tax.dwl', {
-          wedge: m(Math.abs(wedge)),
-          lost: m(e.quantity - r.quantity),
-          dwl: m(r.deadweightLoss),
-        }),
-        tx('markets.tax.incidence', { buyers: pct(r.buyerShare, 2), sellers: pct(r.sellerShare, 2) }),
-        tx('markets.tax.surplus', { cs: m(r.consumerSurplus), ps: m(r.producerSurplus), total: m(total) }),
-      ];
-      const lo = Math.min(r.buyersPay, r.sellersGet);
-      const hi = Math.max(r.buyersPay, r.sellersGet);
-      const areas: Area[] = [
-        {
-          label: tx(subsidy ? 'markets.tax.costArea' : 'markets.tax.revenueArea', { value: m(Math.abs(r.revenue)) }),
-          points: [
-            [0, hi],
-            [r.quantity, hi],
-            [r.quantity, lo],
-            [0, lo],
-          ],
-        },
-        {
-          label: tx('markets.tax.dwlArea', { value: m(r.deadweightLoss) }),
-          points: [
-            [r.quantity, hi],
-            [e.quantity, e.price],
-            [r.quantity, lo],
-          ],
-        },
-      ];
-      const figure = graph(
-        tx('markets.plotTax', { pb: m(r.buyersPay), ps: m(r.sellersGet), q: m(r.quantity) }),
-        k,
-        qmax,
-        [],
-        areas,
-        [
-          { label: tx('markets.tax.buyers'), x: r.quantity, y: r.buyersPay },
-          { label: tx('markets.tax.sellers'), x: r.quantity, y: r.sellersGet },
-        ],
-      );
-      return ok(
-        tx('markets.tax.headline', { buyers: m(r.buyersPay), sellers: m(r.sellersGet), q: m(r.quantity) }),
-        steps,
-        figure,
-      );
-    }
-    if (policy === 'ceiling' || policy === 'floor') {
-      const r = priceControl(k, policy, x);
-      if (!r) return bad('markets.control.invalid');
-      if (!r.binding)
-        return ok(tx('markets.control.notBinding', { p: m(e.price) }), [
-          tx('markets.control.notBindingStep', { level: m(x), p: m(e.price) }),
-        ]);
-      const ceiling = policy === 'ceiling';
-      const steps = [
-        tx('markets.control.quantities', { p: m(r.price), qd: m(r.quantityDemanded), qs: m(r.quantitySupplied) }),
-        tx(ceiling ? 'markets.control.shortage' : 'markets.control.surplus', { gap: m(r.gap), traded: m(r.traded) }),
-        tx('markets.control.surplusStep', {
-          cs: m(r.consumerSurplus),
-          ps: m(r.producerSurplus),
-          dwl: m(r.deadweightLoss),
-        }),
-      ];
-      const qHi = Math.max(r.quantityDemanded, r.quantitySupplied);
-      const figure = graph(
-        tx('markets.plotControl', { p: m(r.price), traded: m(r.traded) }),
-        k,
-        Math.min(k.a, Math.max(qmax, qHi * 1.1)),
-        [
-          {
-            label: tx(ceiling ? 'markets.ceiling' : 'markets.floor'),
-            points: [
-              [0, r.price],
-              [Math.min(k.a, Math.max(qmax, qHi * 1.1)), r.price],
-            ],
-          },
-        ],
-        [
-          {
-            label: tx('markets.tax.dwlArea', { value: m(r.deadweightLoss) }),
-            points: [
-              [r.traded, buyerPrice(k, r.traded)],
-              [e.quantity, e.price],
-              [r.traded, sellerPrice(k, r.traded)],
-            ],
-          },
-        ],
-        [{ label: tx('markets.eq'), x: e.quantity, y: e.price }],
-      );
-      return ok(
-        tx(ceiling ? 'markets.control.shortageHeadline' : 'markets.control.surplusHeadline', { gap: m(r.gap) }),
-        steps,
-        figure,
-      );
-    }
-    const r = quota(k, x);
-    if (!r) return bad('markets.control.invalid');
-    if (!r.binding)
-      return ok(tx('markets.control.notBinding', { p: m(e.price) }), [
-        tx('markets.quota.notBinding', { q: m(e.quantity) }),
-      ]);
-    const figure = graph(
-      tx('markets.plotQuota', { pb: m(r.buyersPay), ps: m(r.sellersGet), q: m(x) }),
-      k,
-      qmax,
-      [
-        {
-          label: tx('markets.quota.limit'),
-          points: [
-            [x, 0],
-            [x, r.buyersPay],
-          ],
-          dashed: true,
-        },
-      ],
-      [
-        {
-          label: tx('markets.quota.rentArea', { value: m(r.rent) }),
-          points: [
-            [0, r.buyersPay],
-            [x, r.buyersPay],
-            [x, r.sellersGet],
-            [0, r.sellersGet],
-          ],
-        },
-        {
-          label: tx('markets.tax.dwlArea', { value: m(r.deadweightLoss) }),
-          points: [
-            [x, r.buyersPay],
-            [e.quantity, e.price],
-            [x, r.sellersGet],
-          ],
-        },
-      ],
-      [{ label: tx('markets.eq'), x: e.quantity, y: e.price }],
-    );
-    return ok(
-      tx('markets.quota.headline', { pb: m(r.buyersPay), ps: m(r.sellersGet), q: m(x) }),
-      [
-        tx('markets.quota.step', { pb: m(r.buyersPay), ps: m(r.sellersGet), gap: m(r.rentPerUnit) }),
-        tx('markets.quota.rent', { rent: m(r.rent) }),
-        tx('markets.tax.dwl', { wedge: m(r.rentPerUnit), lost: m(e.quantity - x), dwl: m(r.deadweightLoss) }),
-      ],
-      figure,
-    );
+    const context = { k, e, x, policy, qmax, total };
+    if (policy === 'tax' || policy === 'subsidy' || policy === 'valueTax') return taxCase(context);
+    if (policy === 'ceiling' || policy === 'floor') return controlCase(context);
+    return quotaCase(context);
   },
 };
 
@@ -466,9 +483,9 @@ const externalityForm: EconForm = {
   },
 };
 
-const labourForm: EconForm = {
-  id: 'labour',
-  name: 'markets-labour',
+const laborForm: EconForm = {
+  id: 'labor',
+  name: 'markets-labor',
   intro: true,
   fields: [
     f('m0', { initial: '50' }),
@@ -479,21 +496,21 @@ const labourForm: EconForm = {
   solve(values) {
     const nums = read(T, values, ['m0', 'm1', 's0', 's1']);
     if (failed(nums)) return nums;
-    const r = labour(nums[0], nums[1], nums[2], nums[3]);
-    if (!r) return bad('markets.labour.invalid');
-    return ok(tx('markets.labour.headline', { w: m(r.monopsonyWage), l: m(r.monopsonyEmployment) }), [
-      tx('markets.labour.competitive', { w: m(r.competitiveWage), l: m(r.competitiveEmployment) }),
-      tx('markets.labour.mfc', { l: m(r.monopsonyEmployment), w: m(r.monopsonyWage) }),
-      tx('markets.labour.compare', {
+    const r = labor(nums[0], nums[1], nums[2], nums[3]);
+    if (!r) return bad('markets.labor.invalid');
+    return ok(tx('markets.labor.headline', { w: m(r.monopsonyWage), l: m(r.monopsonyEmployment) }), [
+      tx('markets.labor.competitive', { w: m(r.competitiveWage), l: m(r.competitiveEmployment) }),
+      tx('markets.labor.mfc', { l: m(r.monopsonyEmployment), w: m(r.monopsonyWage) }),
+      tx('markets.labor.compare', {
         dw: m(r.competitiveWage - r.monopsonyWage),
         dl: m(r.competitiveEmployment - r.monopsonyEmployment),
       }),
-      tx('markets.labour.minimum', { w: m(r.competitiveWage) }),
+      tx('markets.labor.minimum', { w: m(r.competitiveWage) }),
     ]);
   },
 };
 
 export const MARKETS: EconToolDef = {
   id: 'markets',
-  forms: [marketForm, elasticity, policyForm, tradeForm, externalityForm, labourForm],
+  forms: [marketForm, elasticity, policyForm, tradeForm, externalityForm, laborForm],
 };

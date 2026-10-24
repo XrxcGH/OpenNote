@@ -1,5 +1,4 @@
-// Time value of money, loans, project appraisal, depreciation, and property and health-economics ratios. Rates are
-// fractions per period (0.05 for 5%); cash flows are in order, the first at time zero.
+// Time value of money, loans, projects, and depreciation as pure functions. Rates are fractions per period.
 import { scanRoots } from './num';
 
 export const fv = (present: number, rate: number, n: number): number => present * (1 + rate) ** n;

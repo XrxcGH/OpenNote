@@ -5,7 +5,7 @@ import {
   equilibrium,
   externality,
   importPolicy,
-  labour,
+  labor,
   openEconomy,
   priceControl,
   quota,
@@ -39,7 +39,7 @@ describe('equilibrium and elasticity', () => {
     expect(a.range).toBe('inelastic');
     expect(a.revenueChange).toBe(80);
     expect(arcElasticity(10, 100, 10, 90)).toBeNull();
-    expect(arcElasticity(10, 100, 20, 50)!.range).toBe('elastic');
+    expect(arcElasticity(10, 100, 20, 40)!.range).toBe('elastic');
   });
 });
 
@@ -120,8 +120,8 @@ describe('trade', () => {
     expect(t.production).toBeCloseTo(20, 9);
     expect(t.flow).toBeCloseTo(40, 9);
     expect(t.gainFromTrade).toBeGreaterThan(0);
-    // total surplus: CS = 0.5 * 60 * 30 = 900, PS = 0.5 * 20 * 20 = 200
-    expect(t.totalSurplus).toBeCloseTo(1100, 9);
+    // total surplus: CS = 0.5 * 60 * 30 = 900, PS = 0.5 * 20 * (20 - 10) = 100
+    expect(t.totalSurplus).toBeCloseTo(1000, 9);
   });
   it('exports at a high world price', () => {
     expect(openEconomy(K, 40)!.direction).toBe('exports');
@@ -143,7 +143,7 @@ describe('trade', () => {
   });
 });
 
-describe('externalities and labour', () => {
+describe('externalities and labor', () => {
   it('finds the efficient quantity and the corrective tax', () => {
     const x = externality(K, 10)!;
     expect(x.efficientQuantity).toBeCloseTo(30, 9);
@@ -157,12 +157,12 @@ describe('externalities and labour', () => {
     expect(x.deadweightLoss).toBeCloseTo(50, 9);
   });
   it('compares competition with monopsony', () => {
-    const l = labour(50, 1, 10, 1)!;
+    const l = labor(50, 1, 10, 1)!;
     expect(l.competitiveEmployment).toBeCloseTo(20, 9);
     expect(l.competitiveWage).toBeCloseTo(30, 9);
     expect(l.monopsonyEmployment).toBeCloseTo(40 / 3, 9);
     expect(l.monopsonyWage).toBeCloseTo(10 + 40 / 3, 9);
-    expect(labour(5, 1, 10, 1)).toBeNull();
+    expect(labor(5, 1, 10, 1)).toBeNull();
   });
 });
 

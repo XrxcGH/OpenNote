@@ -103,7 +103,7 @@ describe('indifference curves', () => {
 describe('production and cost', () => {
   it('minimizes the cost of Q = K^0.5 L^0.5', () => {
     const r = costMinimization({ kind: 'cd', a: 1, b: 0.5, c: 0.5 }, 4, 1, 10)!;
-    expect(r.labour).toBeCloseTo(5, 9);
+    expect(r.labor).toBeCloseTo(5, 9);
     expect(r.capital).toBeCloseTo(20, 9);
     expect(r.cost).toBeCloseTo(40, 9);
     expect(r.returns).toBe('constant');
@@ -113,17 +113,17 @@ describe('production and cost', () => {
   it('handles fixed proportions and perfect substitutes', () => {
     const l = costMinimization({ kind: 'leontief', a: 2, b: 3 }, 4, 1, 10)!;
     expect(l.capital).toBe(20);
-    expect(l.labour).toBe(30);
+    expect(l.labor).toBe(30);
     expect(l.cost).toBe(140);
     const s = costMinimization({ kind: 'linear', a: 1, b: 1 }, 4, 1, 10)!;
     expect(s.capital).toBe(10);
-    expect(s.labour).toBe(0);
+    expect(s.labor).toBe(0);
     expect(costMinimization({ kind: 'cd', a: 1, b: 0.5, c: 0.5 }, 0, 1, 10)).toBeNull();
   });
   it('computes short-run costs and supply', () => {
     // Q = 2 sqrt(K L) with K = 4: L = Q^2 / 16
     const s = shortRunCosts(1, 0.5, 0.5, 4, 1, 1, 8)!;
-    expect(s.labour).toBeCloseTo(16, 9);
+    expect(s.labor).toBeCloseTo(16, 9);
     expect(s.totalCost).toBeCloseTo(20, 9);
     expect(s.marginalCost).toBeCloseTo((1 * 16) / (0.5 * 8), 9);
     expect(s.averageVariable).toBeCloseTo(2, 9);
