@@ -97,6 +97,16 @@
     gap: var(--space-4);
   }
 
+  /* A tool whose long part scrolls on its own: the part fills what the window leaves, so the window never holds an empty box
+     under a cut-off table. Without a fixed height (a window of its own) it is as tall as its content. */
+  .toolFill {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
   .empty,
   .note {
     margin: 0;
@@ -172,10 +182,20 @@
     gap: var(--space-3);
   }
 
+  /* Short fields side by side, sharing the width equally, and stacking only when the window is too narrow for two. */
   .pair {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
     gap: var(--space-3);
+  }
+
+  .pair > * {
+    min-inline-size: 0;
+  }
+
+  .pair input {
+    inline-size: 100%;
+    min-inline-size: 0;
   }
 
   .field {
@@ -186,7 +206,7 @@
 
   .field select,
   .expression {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     color: var(--color-text-primary);
@@ -209,9 +229,12 @@
     font-family: var(--font-mono);
   }
 
-  /* The example is longer than the field at the body size, so it would be cut off. */
+  /* The example is longer than the field at the body size, so it would be cut off. The color is the theme's, not the
+     browser's gray, which falls under 4.5:1 on the dark page. */
   .expression::placeholder {
     font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    opacity: 1;
   }
 
   .expression[aria-invalid='true'] {
@@ -224,20 +247,45 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The answer line stays in the page for a screen reader. With nothing in it, it takes no room: no reserved line, and
+     the grid gap it would add is taken back. */
+  .result:empty {
+    min-block-size: 0;
+    margin-block-end: calc(-1 * var(--space-4));
+  }
+
   .keys {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: var(--space-2);
   }
 
+  /* One row that scrolls sideways when the tabs do not fit, with a soft fade at each end to say there is more. A tab
+     never wraps, so every underline sits on the same line. */
   .tabs {
     display: flex;
+    flex: none;
     gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
     border-block-end: 1px solid var(--color-border-subtle);
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-text-primary) var(--space-3),
+      var(--color-text-primary) calc(100% - var(--space-3)),
+      transparent
+    );
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    flex: none;
+    white-space: nowrap;
+    min-block-size: var(--target-size);
     padding-inline: var(--space-4);
     font: inherit;
     color: var(--color-text-secondary);
@@ -260,6 +308,13 @@
   .group {
     display: grid;
     gap: var(--space-2);
+  }
+
+  /* A disclosure heading is a target like any other. */
+  .group > summary {
+    min-block-size: var(--target-size);
+    padding-block: var(--space-1);
+    box-sizing: border-box;
   }
 
   .groupTitle {
@@ -291,7 +346,7 @@
 
   .link {
     flex: 1;
-    min-block-size: var(--size-target-min);
+    min-block-size: var(--target-size);
     padding: 0;
     font: inherit;
     font-family: var(--font-mono);

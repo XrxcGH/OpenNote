@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { t } from '../../../strings/t';
 import { TextField } from '../../../ui';
 import { balanceEquation, formatMass, molarMass, prettyFormula } from '../reference/chemistry';
-import extra from './extra.module.css';
+import ref from './reference.module.css';
 import { InsertButton } from './InsertButton';
 import styles from './tools.module.css';
 
@@ -43,6 +43,7 @@ function Balancer() {
       </p>
       {result.ok ? (
         <InsertButton
+          flush
           text={result.text}
           label={t('study.reference.chemistry.insertEquation')}
           caption={t('study.reference.chemistry.insertEquationShort')}
@@ -69,7 +70,7 @@ function MolarMassCalculator() {
       </p>
       {result.ok ? (
         <>
-          <table className={extra.table}>
+          <table className={ref.table}>
             <thead>
               <tr>
                 <th scope="col">{t('study.reference.symbol')}</th>
@@ -90,6 +91,7 @@ function MolarMassCalculator() {
             </tbody>
           </table>
           <InsertButton
+            flush
             text={line}
             label={t('study.reference.chemistry.insertMass')}
             caption={t('study.reference.chemistry.insertMassShort')}

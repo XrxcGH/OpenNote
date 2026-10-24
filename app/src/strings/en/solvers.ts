@@ -196,7 +196,7 @@ export const solvers = {
     phasePath: 'Path',
     center: 'Center a',
     order: 'Order n',
-    boundAt: 'Bound the error at x =',
+    boundAt: 'Error at x =',
     remainder: 'Error bound there: {bound}. Actual error: {actual}.',
     seriesPlot: 'f with its Taylor polynomials',
     partialSum: 'Taylor polynomial',

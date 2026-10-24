@@ -37,7 +37,8 @@ function frameStyle(width: number, right: number, overlay: boolean): CSSProperti
   const top = overlay ? 'var(--panel-top)' : 'var(--panel-inset-top)';
   const bottom = overlay ? 'var(--panel-bottom)' : 'var(--panel-inset-bottom)';
   return {
-    insetInlineEnd: right,
+    // Over the page, the panel stops short of the page's scroll bar, which stays in reach (--scrollbar-size is set by the host).
+    insetInlineEnd: overlay ? `calc(${right}px + var(--scrollbar-size, 0px))` : right,
     insetBlockStart: top,
     insetBlockEnd: bottom,
     inlineSize: `min(${width}px, calc(100% - ${right}px))`,

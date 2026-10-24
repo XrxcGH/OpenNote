@@ -15,7 +15,7 @@
       'title title title'
       'commands commands commands'
       'notebooks pages page';
-    overflow: hidden;
+    overflow: clip;
   }
 
   /* Focus mode: only the title bar and the page. */

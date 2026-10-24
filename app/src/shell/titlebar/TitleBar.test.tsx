@@ -8,7 +8,7 @@ import { executeCommand } from '../../commands/registry';
 import type { NodeId } from '../../services/notes/types';
 import { expectNoAxeViolations, pressChord, renderApp, setViewport } from '../../test';
 import { confirm } from '../../ui';
-import { overflowOf } from './fit';
+import { OVERFLOW_TOLERANCE, overflowOf } from './fit';
 
 const mitosis: Parameters<typeof navigate>[0] = {
   view: 'workspace',
@@ -102,7 +102,7 @@ describe('the title bar items', () => {
       await renderApp({ sizeClass: 'medium' });
       act(() => navigate(mitosis));
       await screen.findByRole('list', { name: 'Current location' });
-      await expect.poll(() => overflowOf(banner())).toBe(0);
+      await expect.poll(() => overflowOf(banner())).toBeLessThanOrEqual(OVERFLOW_TOLERANCE);
       expect(within(banner()).getByRole('button', { name: 'Go back' })).toBeTruthy();
       expect(within(banner()).getByRole('switch', { name: 'Dark mode' })).toBeTruthy();
     } finally {

@@ -8,29 +8,47 @@
     gap: var(--space-3);
   }
 
+  /* Previous, the range, and next on one line; Today under the range, so it never wraps alone to the left. */
   .bar {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'previous range next'
+      '. today .';
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
+    justify-items: center;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .previous {
+    grid-area: previous;
+  }
+
+  .next {
+    grid-area: next;
+  }
+
+  .today {
+    grid-area: today;
   }
 
   .range {
+    grid-area: range;
     margin: 0;
     font-size: var(--type-small-size);
     font-weight: var(--font-weight-semibold);
+    text-align: center;
   }
 
   .grid {
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
   .row {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
   .head {
@@ -44,7 +62,7 @@
     justify-items: center;
     align-content: start;
     gap: var(--space-1);
-    min-block-size: var(--size-target-min);
+    min-block-size: var(--target-size);
     padding: var(--space-1);
     font: inherit;
     font-size: var(--type-small-size);

@@ -60,6 +60,14 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
+  .plot text {
+    font-size: calc(11px * var(--svg-k, 1));
+    paint-order: stroke;
+    stroke: var(--color-surface-page);
+    stroke-width: calc(3px * var(--svg-k, 1));
+    stroke-linejoin: round;
+  }
+
   .paper {
     fill: var(--color-surface-page);
   }
@@ -91,8 +99,14 @@
     gap: var(--space-2);
   }
 
+  .check input {
+    inline-size: var(--target-size);
+    block-size: var(--target-size);
+  }
+
   .field input {
     inline-size: 9ch;
+    min-block-size: var(--target-size);
     padding: var(--space-1) var(--space-2);
     font-family: var(--font-mono);
     color: var(--color-text-primary);

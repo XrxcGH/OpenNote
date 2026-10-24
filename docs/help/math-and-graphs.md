@@ -41,7 +41,7 @@ Type an equation with one unknown letter, such as `2x + 3 = 11`, and its solutio
 
 Open Insert, then Graph. Type a function, such as `y = sin(x)`. Pan and zoom the graph with the mouse, the pen, or your fingers.
 
-Open Insert, then 3D graph, for a surface such as `z = sin(x) cos(y)`. A curve such as `(cos(t), sin(t), t/5)` and a surface in u and v such as `(cos(u) sin(v), sin(u) sin(v), cos(v))` work too. Drag the graph or press the arrow keys to turn it. Plus and minus zoom, and 0 resets the view. Add `@range t 0 12` to set how far t runs.
+Open Insert, then 3D function plot, or type `/3d function plot`, for a surface such as `z = sin(x) cos(y)`. A curve such as `(cos(t), sin(t), t/5)` and a surface in u and v such as `(cos(u) sin(v), sin(u) sin(v), cos(v))` work too. Drag the graph or press the arrow keys to turn it. Plus and minus zoom, and 0 resets the view. Add `@range t 0 12` to set how far t runs.
 
 To graph handwriting, lasso it and choose Graph in the bar above the selection.
 

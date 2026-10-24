@@ -54,6 +54,18 @@ export const MIN_PAGE = 480;
 const widthOf = (state: Layer, id: ToolId): number =>
   state.widths[id] ?? loadStored<number>(`width.${id}`, TOOLS.find((one) => one.id === id)!.width);
 
+/** The width of the page's scroll bar (a styled one differs from the browser's own), 0 where bars float over the content. */
+function scrollbarSize(): number {
+  const page = document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]');
+  if (page && page.offsetWidth > page.clientWidth) return page.offsetWidth - page.clientWidth;
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;inline-size:100px;block-size:100px;overflow:scroll';
+  document.body.append(probe);
+  const size = probe.offsetWidth - probe.clientWidth;
+  probe.remove();
+  return size;
+}
+
 function Windows() {
   const state = useStore(layer, (current) => current);
   const [viewport, setViewport] = useState(window.innerWidth);
@@ -68,6 +80,9 @@ function Windows() {
   const pageLeft = document.querySelector('main')?.getBoundingClientRect().left ?? 0;
   const room = viewport - pageLeft - MIN_PAGE;
   const overlay = total > Math.max(room, 0);
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty('--scrollbar-size', `${scrollbarSize()}px`);
+  });
   useLayoutEffect(() => {
     setDockInset(overlay ? 0 : total);
     return () => setDockInset(0);
@@ -84,7 +99,7 @@ function Windows() {
             key={`${id}-${state.epoch}`}
             tool={tool}
             width={Math.min(widths[index]!, overlay ? viewport : widths[index]!)}
-            right={overlay ? Math.min(right, Math.max(0, viewport - MIN_PANEL)) : right}
+            right={overlay ? Math.min(right, Math.max(0, viewport - Math.min(widths[index]!, viewport))) : right}
             overlay={overlay}
             maxWidth={overlay ? viewport : Math.max(MIN_PANEL, room - others)}
             onResize={(width) => {

@@ -4,7 +4,7 @@
 import { isEnabled } from '../../../app/flags';
 import type { Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { compose } from '../geometry/matrix';
 import type { Matrix } from '../geometry/types';
 import { planInsertSpace, sheetPush, spaceAmount } from '../space';
@@ -74,7 +74,7 @@ export async function commitSpace(host: InkHost, surface: InkSurface, y: number,
   const planned = plan(host, surface, y, dy);
   const moved = planned.strokes.length + planned.blocks.length;
   if (Math.abs(planned.dy) < 0.5 || moved === 0) {
-    announce(t(moved === 0 ? 'ink.space.nothing' : 'ink.space.none'));
+    say(t(moved === 0 ? 'ink.space.nothing' : 'ink.space.none'));
     return;
   }
   const { edits, before } = blockEdits(host, planned);
@@ -87,7 +87,7 @@ export async function commitSpace(host: InkHost, surface: InkSurface, y: number,
   if (!saved) for (const block of before) layer?.upsert(block);
   else {
     const kept = planned.lockedStay > 0 ? ` ${t('ink.space.lockedStay', { locked: planned.lockedStay })}` : '';
-    announce(`${t('ink.space.inserted', { moved })}.${kept}`);
+    say(`${t('ink.space.inserted', { moved })}.${kept}`);
   }
 }
 
