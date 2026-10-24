@@ -35,6 +35,23 @@ describe('composite sections', () => {
     rel(na.Q / mm ** 3, 20 * 80 * 40, 1e-12);
     rel(na.width, 20 * mm, 1e-12);
     expect(t.center).toEqual({ x: 50 * mm, y: 110 * mm });
+    // At the joint of flange and web, y = 100 mm: Q is the flange, 100·20·(110 − 80) = 60 000 mm³, and t is the
+    // web's 20 mm (just below), not 0; the flange's 100 mm is just above.
+    const joint = firstMoment(t.parts, 100 * mm, r.yBar);
+    rel(joint.Q / mm ** 3, 60000, 1e-12);
+    rel(joint.width, 20 * mm, 1e-12);
+    rel(joint.below, 20 * mm, 1e-12);
+    rel(joint.above, 100 * mm, 1e-12);
+  });
+
+  it('gives the width of two stacked plates where they meet, on the neutral axis', () => {
+    const plates: Placed[] = [
+      { kind: 'rect', b: 100 * mm, h: 20 * mm, x: 0, y: 10 * mm },
+      { kind: 'rect', b: 100 * mm, h: 20 * mm, x: 0, y: 30 * mm },
+    ];
+    const na = firstMoment(plates, 20 * mm, 20 * mm);
+    rel(na.width, 100 * mm, 1e-12);
+    rel(na.Q / mm ** 3, 100 * 20 * 10, 1e-12);
   });
 
   it('agrees with the closed forms of a rectangle, circle, tube, box, and I', () => {

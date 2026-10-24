@@ -243,46 +243,81 @@ function sectionSteps(s: Sums): KitStep[] {
   ];
 }
 
-/** The part of a circle above the line y = cut: its area and the height of its centroid. */
-function circleAbove(r: number, yc: number, cut: number): { A: number; y: number; width: number } {
-  const d = cut - yc;
-  if (d <= -r) return { A: Math.PI * r * r, y: yc, width: 0 };
-  if (d >= r) return { A: 0, y: cut, width: 0 };
-  const half = Math.sqrt(r * r - d * d);
-  const A = r * r * Math.acos(d / r) - d * half;
-  return { A, y: yc + (2 * half ** 3) / (3 * A), width: 2 * half };
+/**
+ * A part's area above y = cut, the height of that area's centroid, and the part's width just below and just above
+ * the cut. The two widths differ only where the cut is on an edge of the part.
+ */
+interface Above {
+  readonly A: number;
+  readonly y: number;
+  readonly below: number;
+  readonly above: number;
 }
 
-function partAbove(part: Placed, cut: number): { A: number; y: number; width: number } {
+/** The part of a circle above the line y = cut: its area and the height of its centroid. */
+function circleAbove(r: number, yc: number, cut: number): Above {
+  const d = cut - yc;
+  if (d <= -r) return { A: Math.PI * r * r, y: yc, below: 0, above: 0 };
+  if (d >= r) return { A: 0, y: cut, below: 0, above: 0 };
+  const half = Math.sqrt(r * r - d * d);
+  const A = r * r * Math.acos(d / r) - d * half;
+  return { A, y: yc + (2 * half ** 3) / (3 * A), below: 2 * half, above: 2 * half };
+}
+
+/**
+ * Width w over lo < y < hi: just below the cut it counts when lo < cut <= hi, just above when lo <= cut < hi. A cut
+ * within a billionth of the part's height of an edge is on that edge, as 100 mm is on an edge at 110 mm − 10 mm.
+ */
+function sides(w: number, lo: number, hi: number, cut: number) {
+  const tol = 1e-9 * (hi - lo);
+  const at = Math.abs(cut - lo) <= tol ? lo : Math.abs(cut - hi) <= tol ? hi : cut;
+  return { below: at > lo && at <= hi ? w : 0, above: at >= lo && at < hi ? w : 0 };
+}
+
+function partAbove(part: Placed, cut: number): Above {
   if (part.kind === 'rect') {
     const [lo, hi] = [part.y - part.h / 2, part.y + part.h / 2];
     const from = Math.max(lo, cut);
-    if (from >= hi) return { A: 0, y: cut, width: 0 };
-    return { A: part.b * (hi - from), y: (from + hi) / 2, width: cut > lo && cut < hi ? part.b : 0 };
+    const width = sides(part.b, lo, hi, cut);
+    if (from >= hi) return { A: 0, y: cut, ...width };
+    return { A: part.b * (hi - from), y: (from + hi) / 2, ...width };
   }
   if (part.kind === 'circle') return circleAbove(part.d / 2, part.y, cut);
   // A thin wall: the length of its centerline above the cut, times its thickness.
   const [yLo, yHi] = [Math.min(part.y1, part.y2), Math.max(part.y1, part.y2)];
   const L = Math.hypot(part.x2 - part.x1, part.y2 - part.y1);
-  if (yHi === yLo) return yLo > cut ? { A: L * part.t, y: yLo, width: 0 } : { A: 0, y: cut, width: 0 };
+  const none = { below: 0, above: 0 };
+  if (yHi === yLo) return yLo > cut ? { A: L * part.t, y: yLo, ...none } : { A: 0, y: cut, ...none };
   const from = Math.max(yLo, cut);
-  if (from >= yHi) return { A: 0, y: cut, width: 0 };
+  const width = sides((part.t * L) / (yHi - yLo), yLo, yHi, cut);
+  if (from >= yHi) return { A: 0, y: cut, ...width };
   const fraction = (yHi - from) / (yHi - yLo);
-  const width = cut > yLo && cut < yHi ? (part.t * L) / (yHi - yLo) : 0;
-  return { A: L * fraction * part.t, y: (from + yHi) / 2, width };
+  return { A: L * fraction * part.t, y: (from + yHi) / 2, ...width };
 }
 
-/** The first moment about the centroidal x axis of the area above y = cut, and the width of the section there. */
-export function firstMoment(parts: readonly Placed[], cut: number, yBar: number): { Q: number; width: number } {
+/**
+ * The first moment about the centroidal x axis of the area above y = cut, and the width of the section there. On a
+ * line where the width changes, such as the joint of a tee's flange and web, `width` is the smaller of the widths
+ * just below and just above, where VQ/(It) is largest, and `below` and `above` give both.
+ */
+export function firstMoment(
+  parts: readonly Placed[],
+  cut: number,
+  yBar: number,
+): { Q: number; width: number; below: number; above: number } {
   let Q = 0;
-  let width = 0;
+  let below = 0;
+  let above = 0;
   for (const part of parts) {
-    const above = partAbove(part, cut);
+    const one = partAbove(part, cut);
     const sign = part.hole ? -1 : 1;
-    Q += sign * above.A * (above.y - yBar);
-    width += sign * above.width;
+    Q += sign * one.A * (one.y - yBar);
+    below += sign * one.below;
+    above += sign * one.above;
   }
-  return { Q, width: Math.max(width, 0) };
+  [below, above] = [Math.max(below, 0), Math.max(above, 0)];
+  const positive = [below, above].filter((w) => w > 0);
+  return { Q, width: positive.length > 0 ? Math.min(...positive) : 0, below, above };
 }
 
 export interface Wall {

@@ -1,7 +1,7 @@
 // The section tool's form: a library shape with its dimensions, a typed list of rectangles and circles (holes
 // allowed), or a thin-walled centerline. An optional cut height adds Q there; Q at the centroid is always shown.
 import type { DrawContext } from '../kit/picture';
-import type { ResultRow, ToolSpec, Values } from '../kit/spec';
+import { every, type ResultRow, type ToolSpec, type Values } from '../kit/spec';
 import { q } from '../kit/types';
 import { fromShown, type System } from '../kit/units';
 import { sectionSvg } from './draw';
@@ -51,8 +51,22 @@ export const sectionsSpec: ToolSpec = {
     { id: 'tf', type: 'quantity', kind: 'length', first: '20 mm', when: among('I', 'T', 'C', 'Z') },
     { id: 'tw', type: 'quantity', kind: 'length', first: '20 mm', when: among('I', 'T', 'C', 'Z') },
     { id: 't', type: 'quantity', kind: 'length', first: '5 mm', when: among('tube', 'L', 'box', 'thin') },
-    { id: 'parts', type: 'text', rows: 5, first: 'rect 100 20 50 110\nrect 20 100 50 50', when: among('parts') },
-    { id: 'points', type: 'text', rows: 5, first: '50 100\n0 100\n0 0\n50 0', when: among('thin') },
+    {
+      id: 'parts',
+      type: 'text',
+      rows: 5,
+      first: 'rect 100 20 50 110\nrect 20 100 50 50',
+      columns: every('length'),
+      when: among('parts'),
+    },
+    {
+      id: 'points',
+      type: 'text',
+      rows: 5,
+      first: '50 100\n0 100\n0 0\n50 0',
+      columns: every('length'),
+      when: among('thin'),
+    },
     { id: 'cut', type: 'quantity', kind: 'length', first: '', optional: true },
   ],
   examples: [
@@ -88,10 +102,18 @@ export const sectionsSpec: ToolSpec = {
       { id: 'Qna', value: q(na.Q, 'volume'), sym: 'Q_{NA}' },
       { id: 'tNa', value: q(na.width, 'length'), sym: 't_{NA}' },
     ];
+    if (na.below !== na.above)
+      rows.push({ id: 'tNaBelow', value: q(na.below, 'length') }, { id: 'tNaAbove', value: q(na.above, 'length') });
     if (atCut)
       rows.push(
         { id: 'Qcut', value: q(atCut.Q, 'volume'), sym: 'Q' },
         { id: 'tCut', value: q(atCut.width, 'length'), sym: 't' },
+        ...(atCut.below === atCut.above
+          ? []
+          : [
+              { id: 'tBelow', value: q(atCut.below, 'length') },
+              { id: 'tAbove', value: q(atCut.above, 'length') },
+            ]),
       );
     if (sc)
       rows.push({ id: 'xS', value: q(sc.x, 'length'), sym: 'x_S' }, { id: 'yS', value: q(sc.y, 'length'), sym: 'y_S' });
@@ -118,6 +140,7 @@ export const sectionsSpec: ToolSpec = {
     if (built.chain) notes.push('shear');
     if (values.shape === 'thin' && !built.chain) notes.push('closed');
     if (values.shape === 'parts') notes.push('noShear');
+    if (na.below !== na.above || (atCut && atCut.below !== atCut.above)) notes.push('edge');
     const labels = built.parts.map((_, i) => String(i + 1));
     return {
       rows,

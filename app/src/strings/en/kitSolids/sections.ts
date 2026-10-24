@@ -62,6 +62,10 @@ export const sections = {
     tNa: 'Width at the centroid, t',
     Qcut: 'First moment above the cut, Q',
     tCut: 'Width at the cut, t',
+    tBelow: 'Width just below the cut',
+    tAbove: 'Width just above the cut',
+    tNaBelow: 'Width just below the centroid',
+    tNaAbove: 'Width just above the centroid',
     xS: 'Shear center, xS',
     yS: 'Shear center, yS',
   },
@@ -85,6 +89,9 @@ export const sections = {
     Q: 'Q is the first moment, about the centroidal x axis, of the area above the cut. Use it in τ = VQ/(It).',
     shear: 'The shear center uses thin-wall integrals along the centerlines of an open section.',
     closed: 'The points close on themselves, so the section is closed and no open-section shear center is given.',
+    edge:
+      'A cut is on a line where the width changes, so t is the smaller width, where VQ/(It) is larger; both ' +
+      'widths are shown.',
     noShear: 'The shear center is found for the library shapes and thin-walled centerlines.',
   },
   plot: { centroid: 'Centroid', shear: 'Shear center', cut: 'Cut' },
