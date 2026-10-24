@@ -2,12 +2,26 @@
 // window, panels between the toolbar and the status bar, the title in line with the text, and the Properties chip
 // inside the page. Each is measured from bounding boxes, at the window widths and zoom levels people use.
 
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { loadScreens, openScreen, VIEWPORTS } from '../screens';
 import { runCommand } from './smart';
 
 const WIDTHS = [1280, 1600, 2000] as const;
+
+/** Waits for a panel that slides in to stop moving: its box is the same on two frames in a row. */
+async function settled(page: Page, panel: Locator): Promise<void> {
+  let last = '';
+  await expect
+    .poll(async () => {
+      const now = JSON.stringify(await panel.boundingBox());
+      await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+      const same = now === last;
+      last = now;
+      return same;
+    })
+    .toBe(true);
+}
 
 async function openMembranes(page: Page, width: number, fixture = 'smart') {
   await page.setViewportSize({ width, height: 900 });
@@ -140,6 +154,7 @@ test.describe('panels stay between the toolbar and the status line', () => {
         await openTool(page, `Open ${tool.toLowerCase()}`);
         const panel = page.getByRole('dialog', { name: tool });
         await expect(panel).toBeVisible();
+        await settled(page, panel);
         const edges = await chrome(page);
         expect(edges.bottom, 'the status line shows').toBeLessThan(height);
         const box = (await panel.boundingBox())!;
@@ -162,6 +177,7 @@ test.describe('a docked panel leaves the page alone', () => {
         await openTool(page, 'Open citations');
         const panel = page.getByRole('dialog', { name: 'Citations' });
         await expect(panel).toBeVisible();
+        await settled(page, panel);
         const edges = await chrome(page);
         const found = await page.evaluate(() => {
           const rect = (element: Element | null) => {
@@ -219,8 +235,16 @@ test.describe('a docked panel leaves the page alone', () => {
     await openTool(page, 'Open citations');
     const panel = page.getByRole('dialog', { name: 'Citations' });
     await expect(panel).toBeVisible();
-    const box = (await panel.boundingBox())!;
-    expect(box.x + box.width, 'from the right edge').toBeGreaterThanOrEqual(1100 - 1);
+    // The panel slides in, so measure once it has settled at the edge.
+    await expect
+      .poll(
+        async () => {
+          const box = (await panel.boundingBox())!;
+          return box.x + box.width;
+        },
+        { message: 'from the right edge' },
+      )
+      .toBeGreaterThanOrEqual(1100 - 1);
     expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
     const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
     expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(1100 - 1);
@@ -276,9 +300,14 @@ test('a tool window wider than a phone-size window stays inside it', async ({ pa
   await page.getByRole('treeitem', { name: 'Membranes' }).first().click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
   await openTool(page, 'Open citations');
-  const box = (await page.getByRole('dialog', { name: 'Citations' }).boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(420);
+  const panel = page.getByRole('dialog', { name: 'Citations' });
+  // The window slides in, so measure once it has settled.
+  await expect
+    .poll(async () => {
+      const box = (await panel.boundingBox())!;
+      return box.x >= 0 && box.x + box.width <= 420;
+    })
+    .toBe(true);
 });
 
 test('a long title wraps before the Properties chip', async ({ page }) => {

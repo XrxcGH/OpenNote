@@ -77,8 +77,12 @@ test('formats with keys: marks, a link, headings, an outline move, a date, and A
   await keys(page, '{Control+u}under{Control+u} {Control+Shift+S}gone{Control+Shift+S} ');
   await keys(page, '{Control+Shift+H}marked{Control+Shift+H} {Control+e}code{Control+e}{Enter}');
   await keys(page, 'Heading{Control+Alt+2}{Enter}Plain{Control+Alt+1}{Control+Shift+N}{Enter}');
-  // The address is typed straight after Ctrl+K, before the link field has loaded.
-  await keys(page, 'Visit site{Control+Shift+ArrowLeft}{Control+k}example.com{Enter}{End}{Enter}');
+  await keys(page, 'Visit site{Control+Shift+ArrowLeft}{Control+k}');
+  // The popover takes the focus when it has loaded; the address goes into its field, and Enter saves and closes it.
+  await expect(page.getByRole('textbox', { name: 'Address' })).toBeFocused();
+  await keys(page, 'example.com{Enter}');
+  await expect(page.getByRole('dialog', { name: 'Link' })).toHaveCount(0);
+  await keys(page, '{End}{Enter}');
   await keys(page, '- one{Enter}two{Alt+Shift+ArrowUp}{Control+End}{Enter}{Enter}');
   // AutoCorrect fixes "teh", and one undo puts back what was typed.
   await keys(page, 'I saw teh {Control+z}cat{Enter}Due {Alt+Shift+D}');
