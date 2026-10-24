@@ -99,7 +99,8 @@ export const kitChemMat = {
       constant:
         "ΔH° and ΔS° are held constant with temperature, so K at other temperatures follows the van 't Hoff equation.",
       bonds:
-        'Average bond enthalpies are rough, usually within 5 to 10 percent, and apply to gas-phase molecules. Use formation data for better answers.',
+        'Average bond enthalpies are rough, usually within 5 to 10 percent, and apply to gas-phase molecules. ' +
+        'Use formation data for better answers.',
       standard:
         'Standard state: 1 bar and 298.15 K, one mole of reaction as written. Energies are per mole of reaction as written.',
     },
@@ -312,7 +313,8 @@ export const kitChemMat = {
       concB: 'Amounts in the second half-cell',
       notation: 'Cell notation',
       notationHelp:
-        'Anode on the left, cathode on the right, with | between phases and || for the salt bridge, such as Zn(s) | Zn2+(0.1 M) || Cu2+(0.001 M) | Cu(s). Amounts default to 1.',
+        'Anode on the left, cathode on the right, with | between phases and || for the salt bridge, such as ' +
+        'Zn(s) | Zn2+(0.1 M) || Cu2+(0.001 M) | Cu(s). Amounts default to 1.',
       concHelp: 'Ions in mol/L and gases in bar, as name = amount, such as Zn2+ = 0.1. Anything left out is 1.',
       T: 'Temperature',
       product: 'Substance formed at the electrode',
@@ -374,7 +376,8 @@ export const kitChemMat = {
       concentration:
         'Both half-cells are the same couple, so E° is zero and the cell is driven only by the difference in amounts.',
       notationFlipped:
-        'The left half-cell has the higher standard potential, so it is the cathode here, and the cell runs the other way from how it was written.',
+        'The left half-cell has the higher standard potential, so it is the cathode here, and the cell runs ' +
+        'the other way from how it was written.',
       faraday: 'F = 96485.33212 C/mol. Current efficiency below 100 percent means some charge goes to other reactions.',
     },
     half: {

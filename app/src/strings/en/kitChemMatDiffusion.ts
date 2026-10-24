@@ -161,7 +161,8 @@ export const kitChemMatDiffusion = {
       'Lengths and times use cm and s, the semiconductor convention. D is constant, and the drive-in conserves the dose.',
     dg: 'The Deal–Grove model assumes a steady oxidant supply. It is poor for the first 20 nm of dry oxide.',
     dgConstants:
-      'Published Arrhenius constants from Deal and Grove (1965), measured on (111) silicon. For (100) the linear constant B/A is divided by 1.68. Real furnaces differ by tens of percent.',
+      'Published Arrhenius constants from Deal and Grove (1965), measured on (111) silicon. For (100) the ' +
+      'linear constant B/A is divided by 1.68. Real furnaces differ by tens of percent.',
   },
   plot: {
     depth: 'Depth (m)',

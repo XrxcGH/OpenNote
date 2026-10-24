@@ -4,7 +4,7 @@ import { addCommand } from './qolStudy';
 import { CHEMMAT_META } from '../../tools';
 
 addCommand({
-  id: 'tools.kitChemMat',
+  id: 'tools.kit-chemmat',
   title: 'kitChemMat.open',
   keywords: 'kitChemMat.keywords',
   category: 'general',

@@ -92,7 +92,8 @@ export const kitChemMatPhases = {
     elastic: 'The percent must be above 0 and at most 100.',
     fewElastic: 'Fewer than three points lie in the elastic range. Raise the percent or enter the modulus.',
     elongation:
-      'The last point lies below the elastic line, so the elongation after fracture would be negative. Check the strain column and the modulus.',
+      'The last point lies below the elastic line, so the elongation after fracture would be negative. ' +
+      'Check the strain column and the modulus.',
     slope: 'The elastic part does not rise. Check the columns.',
     modulus: 'The modulus must be above zero.',
     fatigueTable: 'Write each test as two numbers on a line: cycles, stress amplitude.',

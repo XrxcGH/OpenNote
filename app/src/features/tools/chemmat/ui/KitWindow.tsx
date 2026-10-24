@@ -15,13 +15,88 @@ import { tr } from './text';
 
 const SYSTEM_STORE = 'chemmat.system';
 
+/** The arrow keys, Home, and End move between tabs; this gives the index of the tab to go to, or -1 for any other key. */
+function targetTab(key: string, index: number): number {
+  const last = CHEMMAT_TOOLS.length - 1;
+  if (key === 'ArrowRight' || key === 'ArrowDown') return index === last ? 0 : index + 1;
+  if (key === 'ArrowLeft' || key === 'ArrowUp') return index === 0 ? last : index - 1;
+  if (key === 'Home') return 0;
+  return key === 'End' ? last : -1;
+}
+
+function TabStrip({ tab, choose }: { tab: string; choose: (id: string) => void }) {
+  const refs = useRef(new Map<string, HTMLButtonElement>());
+  const onKey = (event: KeyboardEvent, index: number) => {
+    const to = targetTab(event.key, index);
+    if (to < 0) return;
+    event.preventDefault();
+    const id = CHEMMAT_TOOLS[to].id;
+    choose(id);
+    refs.current.get(id)?.focus();
+  };
+  return (
+    <div className={`${tools.tabs} ${own.tabList}`} role="tablist" aria-label={tr('kitChemMat.title')}>
+      {CHEMMAT_TOOLS.map((x, i) => (
+        <button
+          key={x.id}
+          ref={(node) => {
+            if (node) refs.current.set(x.id, node);
+          }}
+          type="button"
+          role="tab"
+          id={`chemmat-tab-${x.id}`}
+          aria-selected={tab === x.id}
+          aria-controls="chemmat-panel"
+          tabIndex={tab === x.id ? 0 : -1}
+          className={`${tools.tab} ${own.tabButton}`}
+          onClick={() => choose(x.id)}
+          onKeyDown={(e) => onKey(e, i)}
+        >
+          {tr(x.title)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The menu that stands in for the tab strip when the window is narrow. */
+function ToolMenu({ tab, choose }: { tab: string; choose: (id: string) => void }) {
+  return (
+    <label className={own.toolMenu}>
+      <select
+        className={extra.input}
+        aria-label={tr('kitChemMat.title')}
+        value={tab}
+        onChange={(e) => choose(e.target.value)}
+      >
+        {CHEMMAT_TOOLS.map((x) => (
+          <option key={x.id} value={x.id}>
+            {tr(x.title)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function SystemSwitch({ system, onChange }: { system: System; onChange: (next: System) => void }) {
+  return (
+    <label className={own.system}>
+      {tr('kitChemMat.common.system')}
+      <select className={extra.input} value={system} onChange={(e) => onChange(e.target.value === 'US' ? 'US' : 'SI')}>
+        <option value="SI">{tr('kitChemMat.common.si')}</option>
+        <option value="US">{tr('kitChemMat.common.us')}</option>
+      </select>
+    </label>
+  );
+}
+
 export function KitWindow() {
   const [tab, setTab] = useState<string>(() => {
     const saved = loadStored<string>(TAB_STORE, '');
     return CHEMMAT_TOOLS.some((x) => x.id === saved) ? saved : CHEMMAT_TOOLS[0].id;
   });
   const [system, setSystem] = useState<System>(() => (loadStored<string>(SYSTEM_STORE, 'SI') === 'US' ? 'US' : 'SI'));
-  const refs = useRef(new Map<string, HTMLButtonElement>());
 
   useEffect(() => {
     const listen = () => {
@@ -36,83 +111,20 @@ export function KitWindow() {
     setTab(id);
     saveStored(TAB_STORE, id);
   };
-  const onKey = (event: KeyboardEvent, index: number) => {
-    const last = CHEMMAT_TOOLS.length - 1;
-    const to =
-      event.key === 'ArrowRight' || event.key === 'ArrowDown'
-        ? index === last
-          ? 0
-          : index + 1
-        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-          ? index === 0
-            ? last
-            : index - 1
-          : event.key === 'Home'
-            ? 0
-            : event.key === 'End'
-              ? last
-              : -1;
-    if (to < 0) return;
-    event.preventDefault();
-    const id = CHEMMAT_TOOLS[to].id;
-    choose(id);
-    refs.current.get(id)?.focus();
-  };
   const spec = CHEMMAT_TOOLS.find((x) => x.id === tab) ?? CHEMMAT_TOOLS[0];
 
   return (
     <div className={`${tools.tool} ${own.root}`}>
       <div className={own.bar}>
-        <div className={`${tools.tabs} ${own.tabList}`} role="tablist" aria-label={tr('kitChemMat.title')}>
-          {CHEMMAT_TOOLS.map((x, i) => (
-            <button
-              key={x.id}
-              ref={(node) => {
-                if (node) refs.current.set(x.id, node);
-              }}
-              type="button"
-              role="tab"
-              id={`chemmat-tab-${x.id}`}
-              aria-selected={tab === x.id}
-              aria-controls="chemmat-panel"
-              tabIndex={tab === x.id ? 0 : -1}
-              className={`${tools.tab} ${own.tabButton}`}
-              onClick={() => choose(x.id)}
-              onKeyDown={(e) => onKey(e, i)}
-            >
-              {tr(x.title)}
-            </button>
-          ))}
-        </div>
-        <label className={own.toolMenu}>
-          <select
-            className={extra.input}
-            aria-label={tr('kitChemMat.title')}
-            value={spec.id}
-            onChange={(e) => choose(e.target.value)}
-          >
-            {CHEMMAT_TOOLS.map((x) => (
-              <option key={x.id} value={x.id}>
-                {tr(x.title)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={own.system}>
-          {tr('kitChemMat.common.system')}
-          <select
-            className={extra.input}
-            value={system}
-            onChange={(e) => {
-              const next = e.target.value === 'US' ? 'US' : 'SI';
-              setSystem(next);
-              saveStored(SYSTEM_STORE, next);
-            }}
-          >
-            <option value="SI">{tr('kitChemMat.common.si')}</option>
-            <option value="US">{tr('kitChemMat.common.us')}</option>
-          </select>
-        </label>
+        <TabStrip tab={tab} choose={choose} />
+        <ToolMenu tab={spec.id} choose={choose} />
+        <SystemSwitch
+          system={system}
+          onChange={(next) => {
+            setSystem(next);
+            saveStored(SYSTEM_STORE, next);
+          }}
+        />
       </div>
       <div id="chemmat-panel" role="tabpanel" aria-labelledby={`chemmat-tab-${spec.id}`} className={extra.scroll}>
         <ToolView key={spec.id} spec={spec} system={system} />

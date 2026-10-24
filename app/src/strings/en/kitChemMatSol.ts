@@ -150,7 +150,8 @@ export const kitChemMatSol = {
   },
   note: {
     beerLambert: 'Beer–Lambert holds for dilute solutions, one absorbing species, and absorbances below about 1.',
-    molarMassFreezing: 'Use i = 1 for a molecular solute. A dissociating solute needs its real i, or the molar mass comes out too small.',
+    molarMassFreezing:
+      'Use i = 1 for a molecular solute. A dissociating solute needs its real i, or the molar mass comes out too small.',
     dilute: 'Valid for dilute, ideal solutions. Real solutions deviate as concentration rises.',
     factor: 'The factor i is the ideal count of particles. Ion pairing lowers it in real solutions.',
     ideal: 'Ideal-solution model with the gas constant R = 8.314462618 J/(mol K).',

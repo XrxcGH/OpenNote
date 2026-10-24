@@ -139,7 +139,8 @@ export const kitChemMatCrystals = {
     cscl: 'Cesium chloride: every plane reflects (the intensities alternate).',
   },
   step: {
-    linear: 'Count the atoms centered on the line and divide by its length, which is the distance between neighboring atoms along it.',
+    linear:
+      'Count the atoms centered on the line and divide by its length, which is the distance between neighboring atoms along it.',
     planar: 'Atoms per volume times the spacing of the lattice planes gives the atoms per area of one plane.',
     toThree: 'Convert with u = U − T, v = V − T, w = W, then clear common factors.',
     toFour: 'Convert with U = (2u − v)/3, V = (2v − u)/3, T = −(U + V), W = w, then clear fractions.',
@@ -157,7 +158,9 @@ export const kitChemMatCrystals = {
     scherrer: 'The Scherrer equation, with the width in radians.',
   },
   note: {
-    density: 'Atoms are counted as hard spheres touching along the closest-packed direction. Only atoms whose centers lie on the line or plane count.',
+    density:
+      'Atoms are counted as hard spheres touching along the closest-packed direction. Only atoms whose ' +
+      'centers lie on the line or plane count.',
     millerBravais: 'The same direction can be written with different multiples; the smallest whole numbers are shown.',
     hard: 'Atoms are treated as hard spheres that touch along the closest direction.',
     caSmall: 'With c/a below 1 the packing factor assumes in-plane contact, which no longer holds.',

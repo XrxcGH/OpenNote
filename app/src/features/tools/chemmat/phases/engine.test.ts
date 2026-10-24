@@ -172,18 +172,18 @@ describe('Larson-Miller parameter', () => {
   });
 });
 
-describe('tensile test', () => {
-  // Elastic to 300 MPa at 0.0015 (E = 200 GPa), then a straight hardening line of slope 2000 MPa per unit strain.
-  const bilinear = '0, 0\n0.0005, 100\n0.001, 200\n0.0015, 300\n0.01, 317\n0.05, 397\n0.1, 497';
-  const input = {
-    data: bilinear,
-    strainUnit: 'fraction',
-    stressUnit: 'MPa',
-    elasticPercent: 50,
-    E: NaN,
-    offset: 0.002,
-  };
+// Elastic to 300 MPa at 0.0015 (E = 200 GPa), then a straight hardening line of slope 2000 MPa per unit strain.
+const bilinear = '0, 0\n0.0005, 100\n0.001, 200\n0.0015, 300\n0.01, 317\n0.05, 397\n0.1, 497';
+const input = {
+  data: bilinear,
+  strainUnit: 'fraction',
+  stressUnit: 'MPa',
+  elasticPercent: 50,
+  E: NaN,
+  offset: 0.002,
+};
 
+describe('tensile test', () => {
   it('the 0.2% offset yield equals the analytic intersection of the offset line and the hardening line', () => {
     // hardening line: s = 300 + 2000 (e - 0.0015); offset line: s = 200000 (e - 0.002)
     // 300 - 3 + 2000 e = 200000 e - 400, so e = 697 / 198000
@@ -212,7 +212,9 @@ describe('tensile test', () => {
     const data = '0, 0\n0.001, 100\n0.002, 200\n0.003, 300\n0.0035, 2000';
     expect(tensile({ ...input, data })).toMatchObject({ key: 'kitChemMat.ph.err.elongation' });
   });
+});
 
+describe('tensile test details', () => {
   it('ultimate strength, fracture strain, toughness and true values come from the data', () => {
     const o = tensile(input);
     expect(val(o, 'kitChemMat.ph.row.uts')).toBe(497 * MPA);
