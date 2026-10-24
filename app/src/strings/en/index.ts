@@ -56,6 +56,7 @@ import { tableMath } from './tableMath';
 import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
+import { kitMusic } from './kitMusic';
 import { chem } from './chem';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
@@ -117,6 +118,7 @@ export const en = {
   solvers,
   graph3d,
   engineering,
+  kitMusic,
   chem,
   docStructure,
   codeCells,

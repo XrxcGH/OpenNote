@@ -22,3 +22,6 @@ export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
+export { MUSIC_TOOLS } from './music/meta';
+export type { MusicToolId } from './music/meta';
+export { openKit as openMusicKit } from './music/open';

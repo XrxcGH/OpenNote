@@ -56,6 +56,12 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.chemCalc', 'Chemistry calculators: balancing, stoichiometry, gas laws, dilution, pH, and titration.'),
   flag('tools.structure', 'Chemical structure drawing: skeletal formulas as editable ink, with SVG export.'),
   flag('tools.properties', 'Steam, ideal-gas, and materials property tables with sources.'),
+  flag(
+    'tools.music',
+    'The music, script, camera, and studio tools in one window: notation, theory, tuning, rhythm, screenplays, ' +
+      'exposure and timecode, color, and scale.',
+    beta,
+  ),
 ];
 
 /**
