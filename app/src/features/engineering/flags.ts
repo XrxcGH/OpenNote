@@ -2,11 +2,7 @@
 import type { FlagDef } from '../../app/flags';
 
 export type EngineeringFlagId =
-  | 'engineering.fbd'
-  | 'engineering.structures'
-  | 'engineering.circuit'
-  | 'tables.units'
-  | 'kits.electrical';
+  'engineering.fbd' | 'engineering.structures' | 'engineering.circuit' | 'tables.units' | 'kits.electrical';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };

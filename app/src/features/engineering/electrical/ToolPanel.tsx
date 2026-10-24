@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
-import { insertIntoPage } from '../../tools';
+import { insertIntoPage } from './store';
 import { Plot, plotSvg } from './Plot';
 import { runTool } from './spec';
 import type { Field, ToolSpec } from './spec';

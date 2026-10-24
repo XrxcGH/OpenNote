@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
-import { loadStored, saveStored } from '../../tools';
+import { loadStored, saveStored } from './store';
 import { KIT_STORE, KIT_TAB_EVENT } from './events';
 import { LOADERS } from './kit';
 import { ELECTRICAL_TOOLS } from './meta';

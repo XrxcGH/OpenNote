@@ -1,9 +1,11 @@
 // The circuits and energy kit's commands: one to open the window, and one per tool that opens it on that tool.
-import { ELECTRICAL_TOOLS, openElectricalKit } from '../../engineering';
+/* eslint-disable opennote/feature-boundaries -- The engineering index also pulls in the diagram and circuit solvers, which would join start-up; these two small files are all the commands need. */
+import { ELECTRICAL_TOOLS } from '../../engineering/electrical/meta';
+import { openKit as openElectricalKit } from '../../engineering/electrical/open';
 import { addCommand } from './qolStudy';
 
 addCommand({
-  id: 'kits.electrical',
+  id: 'tools.kitelectrical',
   title: 'kitElectrical.open',
   keywords: 'kitElectrical.openKeywords',
   category: 'general',
