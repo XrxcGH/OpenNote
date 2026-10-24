@@ -11,6 +11,7 @@ import type { Viewport } from '../grapher';
 import { lineParameters } from '../grapher/curves';
 import { CurveDot, CurveTraceControls, useCurveTrace } from './curveTrace';
 import styles from './graph.module.css';
+import { useSvgScale } from '../svgScale';
 import { FunctionBoxes, PlotLayers, SIZE, Sliders, ZoomButtons, keyEffect, readoutText, traceAt } from './parts';
 import { readGraph, writeGraph } from './source';
 import type { GraphSource } from './source';
@@ -112,6 +113,7 @@ function Graph2DView({ graph, source, editable, onSource }: GraphViewProps & { g
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const drag = useRef<{ x: number; y: number } | null>(null);
   const svg = useRef<SVGSVGElement>(null);
+  useSvgScale(svg, SIZE.width);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const view = live ?? graph.view ?? defaultViewport(SIZE, 20);

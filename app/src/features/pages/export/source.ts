@@ -139,6 +139,11 @@ export interface ExportStroke {
   /** Pressure from 0 to 1 for each point, or null when the stroke has none. */
   readonly pressure: Float64Array | readonly number[] | null;
   readonly transform: Transform | null;
+  /**
+   * True for exact geometry, such as a recognized shape (no time, no pressure, start time known): it draws at one even
+   * width with crisp corners. Otherwise the points are a pen's samples, drawn as the smooth curve through them.
+   */
+  readonly exact?: boolean;
 }
 
 export interface ExportPage {
