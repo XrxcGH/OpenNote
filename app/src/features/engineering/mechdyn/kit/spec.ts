@@ -68,6 +68,14 @@ export interface Outcome {
   readonly plots?: readonly Plot[];
   /** Where published constants came from. */
   readonly sources?: readonly string[];
+  /** Frames of a drawing over a sweep or a run, each at an input angle (rad) or a time (s). */
+  readonly animation?: Animation;
+}
+
+export interface Animation {
+  readonly frames: readonly Plot[];
+  readonly at: 'angle' | 'time';
+  readonly values: readonly number[];
 }
 
 export interface ToolSpec {

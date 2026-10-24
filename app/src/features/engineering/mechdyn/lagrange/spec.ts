@@ -4,7 +4,7 @@ import { evaluate } from '../../../../core/expr';
 import { fail, unwrap } from '../kit/errors';
 import { q, word, type Cell } from '../kit/format';
 import { readList } from '../kit/lines';
-import { num, str, type ResultRow, type ToolSpec } from '../kit/spec';
+import { num, str, type Animation, type ResultRow, type ToolSpec } from '../kit/spec';
 import { fmt, type Plot } from '../types';
 import { LAGRANGE_TEMPLATES, solveLagrange, templateFrame, type LagrangeResult, type LagrangeTemplate } from './engine';
 
@@ -50,6 +50,29 @@ function drawingPlot(template: LagrangeTemplate, params: [string, number][], r: 
       { name: 'startPose', points: frames[0] },
       { name: 'path', points: frames.map((f) => f[f.length - 1]) },
     ],
+  };
+}
+
+/** The template drawn through the run, at most 300 frames, each with the path of its last mass so far. */
+function runAnimation(template: LagrangeTemplate, params: [string, number][], r: LagrangeResult, n: number): Animation {
+  const stride = Math.max(1, Math.ceil(r.states.length / 300));
+  const picked = r.states.map((y, i) => ({ y, t: r.times[i] })).filter((_, i) => i % stride === 0);
+  const poses = picked.map(({ y }) => templateFrame(template, params, y.slice(0, n)));
+  const tips = poses.map((pose) => pose[pose.length - 1]);
+  const extent = poses.flat();
+  return {
+    frames: poses.map((pose, i) => ({
+      x: 'x',
+      y: 'y',
+      equal: true,
+      extent,
+      series: [
+        { name: 'pose', points: pose },
+        { name: 'path', points: tips.slice(0, i + 1) },
+      ],
+    })),
+    at: 'time',
+    values: picked.map(({ t }) => t),
   };
 }
 
@@ -131,6 +154,7 @@ export const lagrangeSpec: ToolSpec = {
       ...(r.energyDrift === null ? ['forced'] : ['energy']),
       ...(template !== 'none' && !drawn ? ['noDrawing'] : []),
     ];
-    return { rows, steps: r.steps, tables: r.equilibria.length ? [table] : [], notes, plots };
+    const animation = known && drawn ? runAnimation(known, params, r, n) : undefined;
+    return { rows, steps: r.steps, tables: r.equilibria.length ? [table] : [], notes, plots, animation };
   },
 };

@@ -16,6 +16,7 @@ import {
   type InsertContext,
   type Say,
 } from './insert';
+import { Animation } from './Animation';
 import styles from './mechdyn.module.css';
 
 function Math({ latex }: { latex: string }) {
@@ -92,6 +93,9 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
           <figcaption className={styles.caption}>{picture.title}</figcaption>
         </figure>
       ))}
+      {outcome.animation && outcome.animation.frames.length > 0 && (
+        <Animation tool={tool} animation={outcome.animation} say={say} />
+      )}
       {(outcome.notes?.length ?? 0) > 0 && (
         <section className={styles.section} aria-label={say('kitMechDyn.ui.assumptions')}>
           <h3 className={styles.heading}>{say('kitMechDyn.ui.assumptions')}</h3>

@@ -96,8 +96,9 @@ const text = (x: number, y: number, words: string, fill: string, anchor: 'start'
 export function plotSvg(plot: Plot, words: PlotWords, p: Palette): string {
   const series = plot.series.map((one) => thin(one.points));
   const single = series.map((points) => points.length === 1);
-  let [x0, x1] = range(series.flatMap((points) => points.map(([x]) => x)));
-  let [y0, y1] = range(series.flatMap((points) => points.map(([, y]) => y)));
+  const all = [...series.flat(), ...(plot.extent ?? [])];
+  let [x0, x1] = range(all.map(([x]) => x));
+  let [y0, y1] = range(all.map(([, y]) => y));
   const innerW = W - M.left - M.right;
   const innerH = PLOT_H - M.top - M.bottom;
   if (plot.equal) {

@@ -29,6 +29,8 @@ export interface Plot {
   series: Series[];
   /** Equal scales on both axes, for drawings and paths. */
   equal?: boolean;
+  /** Points the axes must take in, so every frame of an animation keeps one scale. */
+  extent?: [number, number][];
 }
 
 export type Outcome<T> = { ok: true; value: T } | { ok: false; error: ErrorKey; vars?: Record<string, string> };

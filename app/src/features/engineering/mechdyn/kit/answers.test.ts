@@ -302,3 +302,20 @@ describe('the answers the window shows', () => {
     }, 30_000);
   }
 });
+
+describe('the animations the window shows', () => {
+  it('the pendulum moves from its starting pose, every frame at one scale', async () => {
+    const spec = await SPECS.lagrange();
+    const run = runTool(spec, firstTexts(spec), 'si');
+    if (!run.ok) throw new Error('the pendulum did not run');
+    const animation = run.outcome.animation!;
+    expect(animation.at).toBe('time');
+    expect(animation.frames.length).toBeGreaterThan(50);
+    expect(animation.frames.length).toBeLessThanOrEqual(301);
+    // By hand: released level (q0 = 90°) on a 1 m string, the bob starts at (1, 0).
+    const [, bob] = animation.frames[0].series[0].points;
+    expect(bob[0]).toBeCloseTo(1, 9);
+    expect(bob[1]).toBeCloseTo(0, 9);
+    expect(animation.frames.every((f) => f.extent === animation.frames[0].extent)).toBe(true);
+  });
+});

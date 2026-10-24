@@ -2,7 +2,7 @@
 // link lengths, the circuit, the input angle and its rates, and a coupler point.
 import { unwrap } from '../kit/errors';
 import { q, word, type Cell } from '../kit/format';
-import { num, str, type ResultRow, type ResultTable, type ToolSpec, type Values } from '../kit/spec';
+import { num, str, type Animation, type ResultRow, type ResultTable, type ToolSpec, type Values } from '../kit/spec';
 import type { Plot } from '../types';
 import { solveLinkage, type Circuit, type LinkageState, type LinkageType } from './engine';
 
@@ -143,6 +143,17 @@ export const linkageSpec: ToolSpec = {
       ...(type === 'slider' && !r.stroke ? ['sliderLimited'] : []),
       'plotsSi',
     ];
-    return { rows, steps: r.steps, tables, notes, plots };
+    return { rows, steps: r.steps, tables, notes, plots, animation: sweepAnimation(type, r.sweep) };
   },
 };
+
+/** The linkage through its sweep, a frame a degree, all drawn at one scale. */
+function sweepAnimation(type: LinkageType, sweep: readonly LinkageState[]): Animation {
+  const frames = sweep.map((s) => drawing(type, s));
+  const extent = frames.flatMap((f) => f.series.flatMap((one) => one.points));
+  return {
+    frames: frames.map((f) => ({ ...f, extent })),
+    at: 'angle',
+    values: sweep.map((s) => s.theta2),
+  };
+}

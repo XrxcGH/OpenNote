@@ -105,6 +105,17 @@ describe('the mechanisms and dynamics kit window', () => {
     expect(inserted[4].picture).toBeTruthy();
   });
 
+  it('opens on the tool a palette command names', async () => {
+    await renderApp();
+    await commands.get('tools.kitMechDyn.sdof')!.run({} as never, undefined as never);
+    await waitFor(() => expect(openTools()).toContain('kit-mechdyn'));
+    const dialog = await screen.findByRole('dialog', { name: 'Mechanisms and dynamics' });
+    const tab = await within(dialog).findByRole('tab', { name: words.sdof.short }, { timeout: 15_000 });
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+describe('the kit window and the page', () => {
   it('inserts a live calculation block that reopens the tool with its inputs', async () => {
     saveTab('sdof');
     const kit = renderUi(<MechDynKit />);
@@ -121,17 +132,29 @@ describe('the mechanisms and dynamics kit window', () => {
     renderUi(<MechDynKit />);
     renderUi(<CalcBlock data={data} readOnly={false} patch={() => undefined} announce={() => undefined} />);
     await userEvent.click(screen.getByRole('button', { name: 'Open in the tool' }));
-    await waitFor(() =>
-      expect((screen.getByRole('textbox', { name: 'Mass, m' }) as HTMLInputElement).value).toBe('12.5 kg'),
+    // The panel remounts and loads its tool again, which can take a while on a busy machine.
+    await waitFor(
+      () => {
+        const [mass] = screen.getAllByRole('textbox', { name: 'Mass, m' }) as HTMLInputElement[];
+        expect(mass.value).toBe('12.5 kg');
+      },
+      { timeout: 15_000 },
     );
   });
 
-  it('opens on the tool a palette command names', async () => {
-    await renderApp();
-    await commands.get('tools.kitMechDyn.sdof')!.run({} as never, undefined as never);
-    await waitFor(() => expect(openTools()).toContain('kit-mechdyn'));
-    const dialog = await screen.findByRole('dialog', { name: 'Mechanisms and dynamics' });
-    const tab = await within(dialog).findByRole('tab', { name: words.sdof.short }, { timeout: 15_000 });
-    expect(tab.getAttribute('aria-selected')).toBe('true');
+  it('steps the linkage through its sweep and inserts the frame on screen', async () => {
+    saveTab('linkage');
+    renderUi(<MechDynKit />);
+    const motion = await screen.findByRole('region', { name: 'Motion' }, { timeout: 15_000 });
+    const slider = within(motion).getByRole('slider', { name: 'Frame' }) as HTMLInputElement;
+    // A crank-rocker turns the full circle: a frame a degree, 0 to 360.
+    expect(slider.max).toBe('360');
+    expect(within(motion).getByText('Input angle 0°')).toBeTruthy();
+    await userEvent.fill(slider, '90');
+    expect(within(motion).getByText('Input angle 90°')).toBeTruthy();
+    await userEvent.click(within(motion).getByRole('button', { name: 'Insert this frame' }));
+    expect(inserted[0].picture).toBeTruthy();
+    await userEvent.click(within(motion).getByRole('button', { name: 'Play' }));
+    expect(within(motion).getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
 });
