@@ -48,7 +48,12 @@ export function ChemCalcTool() {
           </button>
         ))}
       </div>
-      <div id="chem-panel" role="tabpanel" aria-labelledby={`chem-tab-${tab}`} className={`${extra.scroll} ${chem.panel}`}>
+      <div
+        id="chem-panel"
+        role="tabpanel"
+        aria-labelledby={`chem-tab-${tab}`}
+        className={`${extra.scroll} ${chem.panel}`}
+      >
         {forms.length > 1 ? (
           <label className={extra.field}>
             {t('chem.calc.kind')}

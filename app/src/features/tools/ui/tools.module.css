@@ -230,7 +230,7 @@
   }
 
   /* The example is longer than the field at the body size, so it would be cut off. The color is the theme's, not the
-     browser's grey, which falls under 4.5:1 on the dark page. */
+     browser's gray, which falls under 4.5:1 on the dark page. */
   .expression::placeholder {
     font-size: var(--type-small-size);
     color: var(--color-text-secondary);
@@ -247,7 +247,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* The answer line stays in the page for a screen reader, but with nothing in it takes no room: no reserved line, and
+  /* The answer line stays in the page for a screen reader. With nothing in it, it takes no room: no reserved line, and
      the grid gap it would add is taken back. */
   .result:empty {
     min-block-size: 0;
@@ -269,7 +269,13 @@
     overflow-x: auto;
     scrollbar-width: none;
     border-block-end: 1px solid var(--color-border-subtle);
-    mask-image: linear-gradient(to right, transparent, #000 var(--space-3), #000 calc(100% - var(--space-3)), transparent);
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-text-primary) var(--space-3),
+      var(--color-text-primary) calc(100% - var(--space-3)),
+      transparent
+    );
   }
 
   .tabs::-webkit-scrollbar {

@@ -181,12 +181,7 @@ export function CalculatorTool() {
   };
   return (
     <div className={styles.tool}>
-      <div
-        ref={tabs}
-        role="tablist"
-        aria-label={t('smart.tools.calculator.tabs')}
-        className={styles.tabs}
-      >
+      <div ref={tabs} role="tablist" aria-label={t('smart.tools.calculator.tabs')} className={styles.tabs}>
         {modes.map((id) => (
           <button
             key={id}
