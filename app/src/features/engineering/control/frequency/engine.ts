@@ -4,7 +4,7 @@
 // around the indented contour. The phase is the sum of each factor's angle, so it is continuous and starts where a
 // textbook plot does.
 import { ControlError } from '../lib/errors';
-import { brent, rootsOnGrid } from '../lib/num';
+import { brent, goldenMax, rootsOnGrid } from '../lib/num';
 import { step, type Step } from '../lib/steps';
 import { padd } from '../lib/poly';
 import { cabs, cadd, cdiv, cmul, cx, evalTF, fmt, order, rootsOf, zpk, type Complex, type TF } from '../lib/tf';
@@ -174,11 +174,23 @@ export function closedLoop(l: Loop, ws: readonly number[]): Closed {
   const dc = t(lowW);
   let peak = -Infinity;
   let wPeak = Number.NaN;
-  for (const w of ws) {
+  let iPeak = -1;
+  ws.forEach((w, i) => {
     const v = 20 * Math.log10(t(w));
     if (v > peak) {
       peak = v;
       wPeak = w;
+      iPeak = i;
+    }
+  });
+  // Refine an interior grid maximum on log ω between its neighbors; a peak at the grid's end is left as is.
+  if (iPeak > 0 && iPeak < ws.length - 1) {
+    const g = (lw: number) => t(10 ** lw);
+    const lw = goldenMax(g, Math.log10(ws[iPeak - 1]), Math.log10(ws[iPeak + 1]), 1e-14);
+    const v = 20 * Math.log10(g(lw));
+    if (v >= peak) {
+      peak = v;
+      wPeak = 10 ** lw;
     }
   }
   const target = 20 * Math.log10(dc) - 20 * Math.log10(Math.SQRT2);

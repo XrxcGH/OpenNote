@@ -106,6 +106,19 @@ describe('closed loop', () => {
     expect(c.peakDb).toBeCloseTo(20 * Math.log10(1 / (2 * z * Math.sqrt(1 - z * z))), 4);
     expect(c.wPeak).toBeCloseTo(wn * Math.sqrt(1 - 2 * z * z), 2);
   });
+
+  it('refines the resonant peak off the default grid', () => {
+    const [z, wn] = [0.3, 2];
+    const l = loop(`${wn * wn}/(s (s + ${2 * z * wn}))`);
+    const c = closedLoop(l, grid(l));
+    expect(Math.abs(c.wPeak - wn * Math.sqrt(1 - 2 * z * z))).toBeLessThan(1e-6);
+    expect(c.peakDb).toBeCloseTo(20 * Math.log10(1 / (2 * z * Math.sqrt(1 - z * z))), 8);
+    // 2/(s(s + 1)(s + 2)): |D(jω)|² = u³ + 5u² − 8u + 4 with u = ω², least at u = 2/3, where it is 32/27.
+    const k = loop('2/(s (s + 1) (s + 2))');
+    const ck = closedLoop(k, grid(k));
+    expect(Math.abs(ck.wPeak - Math.sqrt(2 / 3))).toBeLessThan(1e-6);
+    expect(ck.peakDb).toBeCloseTo(20 * Math.log10(2 / Math.sqrt(32 / 27)), 8);
+  });
 });
 
 describe('the Nyquist criterion against closed-loop roots', () => {
