@@ -500,7 +500,7 @@ export const kitMath = {
         'Fits a model that is not linear in its parameters, starting from your guess. A poor ' +
         'guess can end in a local minimum.',
       fft:
-        'Samples are padded with zeros to a power of two. Amplitudes are shown for a signal of ' +
+        'The transform uses exactly the samples given, of any count, with no padding. Amplitudes are shown for a signal of ' +
         'the form A sin(2 pi f t), so a peak of 2 means an amplitude of 2.',
     },
     line: {
