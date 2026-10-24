@@ -38,6 +38,8 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+    /* A link scrolled into view keeps its focus ring inside the list, not on its edge. */
+    scroll-padding-block: var(--space-3);
   }
 
   /* The list's block padding is room inside the scroller for the first link's focus ring. The header and the
