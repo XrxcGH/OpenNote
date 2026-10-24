@@ -214,17 +214,20 @@ test.describe('a docked panel leaves the page alone', () => {
     }
   }
 
-  test('at 1100 the panel overlays from the right edge with a shadow', async ({ page }) => {
+  test('at 1100 the panel overlays from the right edge with a shadow, 8 px clear of the scroll bar', async ({
+    page,
+  }) => {
     await openMembranes(page, 1100);
     await openTool(page, 'Open citations');
     const panel = page.getByRole('dialog', { name: 'Citations' });
     await expect(panel).toBeVisible();
     const box = (await panel.boundingBox())!;
-    // It stops short of the page's scroll bar, which stays in reach.
-    const scrollbar = await page.evaluate(() =>
-      Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scrollbar-size') || '0'),
-    );
-    expect(box.x + box.width, 'from the right edge').toBeGreaterThanOrEqual(1100 - scrollbar - 1);
+    const track = await page.evaluate(() => {
+      const scroller =
+        document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]') ?? document.querySelector('main')!;
+      return scroller.getBoundingClientRect().left + scroller.clientLeft + scroller.clientWidth;
+    });
+    expect(box.x + box.width, 'from the right edge, 8 px clear of the scroll bar').toBeCloseTo(track - 8, 0);
     expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
     const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
     expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(1100 - 1);

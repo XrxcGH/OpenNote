@@ -2,14 +2,10 @@
 
 import type { Page } from '@playwright/test';
 import { defineScreens } from '../screens';
+import { openSettingsSection } from '../settingsOpen';
 
 async function openSection(page: Page, name: string): Promise<void> {
-  // The app answers keys once it has drawn its first screen; a key sent before that is lost.
-  await page.getByRole('heading', { level: 1 }).first().waitFor();
-  await page.keyboard.press('Control+Comma');
-  const link = page.getByRole('link', { name, exact: true });
-  if (await link.isVisible()) await link.click();
-  await page.getByRole('heading', { level: 1, name, exact: true }).waitFor();
+  await openSettingsSection(page, name);
 }
 
 export default defineScreens([

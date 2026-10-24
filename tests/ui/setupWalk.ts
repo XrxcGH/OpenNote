@@ -6,12 +6,15 @@ import type { Page } from '@playwright/test';
 
 export async function walkToStorage(page: Page): Promise<void> {
   const heading = page.getByRole('heading', { level: 1 }).first();
-  const next = page.getByRole('button', { name: /^(Get started|Continue)$/ });
-  for (let step = 0; step < 9; step += 1) {
+  const start = page.getByRole('button', { name: 'Get started' });
+  // The first step has to be drawn before it can be asked about: a check that does not wait skipped Get started.
+  await heading.waitFor();
+  if (await start.isVisible()) await start.click();
+  for (let step = 0; step < 8; step += 1) {
     await heading.waitFor();
     const current = (await heading.textContent()) ?? '';
     if (current.trim() === 'Where to keep things') return;
-    await next.click();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(heading).not.toHaveText(current);
   }
   throw new Error('Setup did not reach Where to keep things.');

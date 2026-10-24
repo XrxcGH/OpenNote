@@ -26,6 +26,8 @@ function framed(id: 'timers' | 'calculator' | 'upcoming', body: React.ReactNode)
       width={tool(id).width}
       right={0}
       overlay={false}
+      stack={1}
+      onRaise={() => undefined}
       maxWidth={800}
       onResize={onResize}
       pinned={false}
