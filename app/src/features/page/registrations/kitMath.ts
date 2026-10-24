@@ -5,7 +5,7 @@ import { MATH_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
 
 addCommand({
-  id: 'tools.kitMath',
+  id: 'tools.kit-math',
   title: 'kitMath.open',
   keywords: 'kitMath.keywords',
   category: 'general',
