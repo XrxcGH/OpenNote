@@ -3,6 +3,7 @@
 
 import { dynamics } from './kitMechDyn/dynamics';
 import { mechanisms } from './kitMechDyn/mechanisms';
+import { robotics } from './kitMechDyn/robotics';
 import { steps } from './kitMechDyn/steps';
 import { vibrations } from './kitMechDyn/vibrations';
 
@@ -195,4 +196,5 @@ export const kitMechDyn = {
   ...mechanisms,
   ...dynamics,
   ...vibrations,
+  ...robotics,
 };

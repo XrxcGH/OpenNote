@@ -24,6 +24,7 @@ export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [
   tool('compliant', 'Spiral'),
   tool('kinetics', 'Path'),
   tool('sdof', 'Waveform'),
+  tool('robotdyn', 'Joystick'),
 ];
 
 export const MECHDYN_TOOL_IDS: readonly string[] = MECHDYN_TOOLS.map((tool) => tool.id);
