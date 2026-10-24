@@ -17,6 +17,12 @@
     color: var(--color-accent-night);
   }
 
+  /* The title bar's other buttons rest without a fill, so this one does too: it shows its state in the icon and the
+     tooltip, and takes the fill only for hover and keyboard focus. */
+  .toggle [role='switch'][aria-checked='true']:not(:hover, :focus-visible) {
+    background: transparent;
+  }
+
   .hidden {
     position: absolute;
     inline-size: 1px;
