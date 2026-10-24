@@ -13,4 +13,10 @@ export interface StatModelsToolMeta {
 
 export const STATMODELS_TOOLS: readonly StatModelsToolMeta[] = [
   { id: 'glm', title: 'kitStatModels.glm.title', keywords: 'kitStatModels.glm.keywords', icon: 'Function' },
+  {
+    id: 'survival',
+    title: 'kitStatModels.survival.title',
+    keywords: 'kitStatModels.survival.keywords',
+    icon: 'HourglassMedium',
+  },
 ];
