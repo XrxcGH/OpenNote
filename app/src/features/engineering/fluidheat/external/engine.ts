@@ -1,4 +1,4 @@
-// External flow: boundary layers on a flat plate, plate drag, sphere drag and terminal velocity.
+// External flow: boundary layers on a flat plate, plate drag, sphere drag, and terminal velocity.
 import { brent, CalcError, fmt, G0, need, positive, type Step } from '../numeric';
 
 export const DEFAULT_TRANSITION_RE = 5e5;
@@ -41,7 +41,10 @@ export interface PlateResult {
   steps: Step[];
 }
 
-/** Blasius similarity solution: f''' + f f''/2 = 0, f(0) = f'(0) = 0, f'(inf) = 1, by RK4 from f''(0) = 0.332057336215. */
+/**
+ * Blasius similarity solution of f''' + 0.5 * f * f'' = 0 with f(0) = f'(0) = 0 and f'(inf) = 1, by RK4 from
+ * f''(0) = 0.332057336215.
+ */
 export function blasius(etaMax = 10, n = 400): { eta: number[]; uOverU: number[] } {
   const fpp0 = 0.332057336215;
   let f = 0;

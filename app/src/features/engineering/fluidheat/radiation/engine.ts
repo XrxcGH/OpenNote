@@ -73,7 +73,9 @@ export function blackbody(t: number, lambda1?: number, lambda2?: number): Blackb
     steps.push({
       key: 'fhRadBand',
       vars: { f: fmt(f) },
-      math: `F_{\\lambda_1-\\lambda_2} = F_{0-\\lambda_2T} - F_{0-\\lambda_1T} = ${fmt(bandFractionTo(lambda2!, t))} - ${fmt(bandFractionTo(lambda1!, t))} = ${fmt(f)}`,
+      math:
+        `F_{\\lambda_1-\\lambda_2} = F_{0-\\lambda_2T} - F_{0-\\lambda_1T} ` +
+        `= ${fmt(bandFractionTo(lambda2!, t))} - ${fmt(bandFractionTo(lambda1!, t))} = ${fmt(f)}`,
     });
   } else if (has1) {
     out.spectral = planck(lambda1!, t);
@@ -123,7 +125,9 @@ export function disks(r1: number, r2: number, h: number): ViewFactorResult {
       {
         key: 'fhRadDisks',
         vars: { f: fmt(f12) },
-        math: `S = 1 + \\frac{1+R_2^2}{R_1^2} = ${fmt(S)},\\quad F_{12} = \\frac12\\left[S - \\sqrt{S^2 - 4(R_2/R_1)^2}\\right] = ${fmt(f12)}`,
+        math:
+          `S = 1 + \\frac{1+R_2^2}{R_1^2} = ${fmt(S)},\\quad F_{12} = \\frac12\\left[S - \\sqrt{S^2 - ` +
+          `4(R_2/R_1)^2}\\right] = ${fmt(f12)}`,
       },
       { key: 'fhRadRecip', vars: { f: fmt(f21) }, math: `F_{21} = F_{12}\\frac{A_1}{A_2} = ${fmt(f21)}` },
     ],
@@ -264,7 +268,10 @@ export function twoSurfaces(inp: TwoSurfaceInput): TwoSurfaceResult {
       {
         key: 'fhRadResistances',
         vars: { r1: fmt(r1), rs: fmt(rs), r2: fmt(r2) },
-        math: `R_1 = \\frac{1-\\varepsilon_1}{A_1\\varepsilon_1} = ${fmt(r1)},\\ R_{12} = \\frac{1}{A_1F_{12}} = ${fmt(rs)},\\ R_2 = \\frac{1-\\varepsilon_2}{A_2\\varepsilon_2} = ${fmt(r2)}\\ \\mathrm{m^{-2}}`,
+        math:
+          `R_1 = \\frac{1-\\varepsilon_1}{A_1\\varepsilon_1} = ${fmt(r1)},\\ R_{12} ` +
+          `= \\frac{1}{A_1F_{12}} = ${fmt(rs)},\\ R_2 = \\frac{1-\\varepsilon_2}{A_2\\varepsilon_2} ` +
+          `= ${fmt(r2)}\\ \\mathrm{m^{-2}}`,
       },
       {
         key: 'fhRadQ',
@@ -336,7 +343,10 @@ export function shields(inp: ShieldInput): ShieldResult {
       {
         key: 'fhRadShield',
         vars: { q: fmt(flux), n: String(inp.count) },
-        math: `q = \\frac{\\sigma(T_1^4 - T_2^4)}{\\sum_k (1/\\varepsilon_a + 1/\\varepsilon_b - 1)} = \\frac{${fmt(SIGMA * (inp.t1 ** 4 - inp.t2 ** 4))}}{${fmt(total)}} = ${fmt(flux)}\\ \\mathrm{W/m^2}`,
+        math:
+          `q = \\frac{\\sigma(T_1^4 - T_2^4)}{\\sum_k (1/\\varepsilon_a + 1/\\varepsilon_b - 1)} ` +
+          `= \\frac{${fmt(SIGMA * (inp.t1 ** 4 - inp.t2 ** 4))}}{${fmt(total)}} ` +
+          `= ${fmt(flux)}\\ \\mathrm{W/m^2}`,
       },
       ...temps.map((t, i) => ({
         key: 'fhRadShieldT',

@@ -1,4 +1,5 @@
-// Exact laminar viscous flow solutions: Couette-Poiseuille, pipe and annulus flow, power-law, Bingham and Casson fluids, Womersley pulsatile flow, Murray's law.
+// Exact laminar viscous flow solutions: Couette-Poiseuille, pipe, and annulus flow, power-law, Bingham, and Casson
+// fluids, Womersley pulsatile flow, and Murray's law.
 import { CalcError, fmt, need, nonNegative, positive, type Step } from '../numeric';
 
 // --- complex helpers (tiny, local) -------------------------------------------------------------------------------
@@ -219,7 +220,7 @@ export function annulus(inp: AnnulusInput): { q: number; velocityMax: number; rM
 export interface PowerLawInput extends Omit<PipeInput, 'viscosity'> {
   /** Consistency index K (Pa s^n). */
   k: number;
-  /** Flow behaviour index n. */
+  /** Flow behavior index n. */
   n: number;
 }
 
@@ -314,7 +315,9 @@ export function bingham(inp: YieldInput): YieldResult {
     {
       key: 'fhViscBingham',
       vars: { Q: fmt(q), rp: fmt(plug) },
-      math: `Q = \\frac{\\pi R^4\\Delta p}{8\\mu L}\\left(1 - \\frac43\\varphi + \\frac{\\varphi^4}{3}\\right),\\ \\varphi = \\frac{\\tau_y}{\\tau_w} = ${fmt(phi)}`,
+      math:
+        `Q = \\frac{\\pi R^4\\Delta p}{8\\mu L}\\left(1 - \\frac43\\varphi ` +
+        `+ \\frac{\\varphi^4}{3}\\right),\\ \\varphi = \\frac{\\tau_y}{\\tau_w} = ${fmt(phi)}`,
     },
   ];
   return res;
@@ -357,7 +360,9 @@ export function casson(inp: YieldInput): YieldResult {
     {
       key: 'fhViscCasson',
       vars: { Q: fmt(q), rp: fmt(plug) },
-      math: `Q = \\frac{\\pi R^3\\tau_w}{4\\mu_c}\\left[1 - \\frac{16}{7}\\sqrt\\varphi + \\frac43\\varphi - \\frac{\\varphi^4}{21}\\right],\\ \\varphi = ${fmt(phi)}`,
+      math:
+        `Q = \\frac{\\pi R^3\\tau_w}{4\\mu_c}\\left[1 - \\frac{16}{7}\\sqrt\\varphi + \\frac43\\varphi ` +
+        `- \\frac{\\varphi^4}{21}\\right],\\ \\varphi = ${fmt(phi)}`,
     },
   ];
   return res;
@@ -457,7 +462,9 @@ export function womersley(inp: WomersleyInput): WomersleyResult {
       },
       {
         key: 'fhViscWomersley',
-        math: String.raw`u(r,t) = \mathrm{Re}\left\{\frac{A}{i\rho\omega}\left[1 - \frac{J_0(i^{3/2}\alpha r/R)}{J_0(i^{3/2}\alpha)}\right]e^{i\omega t}\right\}`,
+        math:
+          String.raw`u(r,t) = \mathrm{Re}\left\{\frac{A}{i\rho\omega}\left[1 - \frac{J_0(i^{3/2}\alpha ` +
+          String.raw`r/R)}{J_0(i^{3/2}\alpha)}\right]e^{i\omega t}\right\}`,
       },
     ],
   };

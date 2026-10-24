@@ -33,7 +33,7 @@ export interface Fluid {
 }
 
 export interface Geometry {
-  /** Characteristic length: plate length, cylinder or sphere diameter, tube diameter, vertical plate height (m). */
+  /** Characteristic length: plate length, cylinder, or sphere diameter, tube diameter, vertical plate height (m). */
   length: number;
   /** Free-stream or mean velocity (m/s) for forced convection. */
   velocity?: number;
@@ -226,6 +226,137 @@ export function rayleigh(f: Fluid, g: Geometry): number {
   return ((g.g ?? G0) * g.beta! * g.deltaT! * g.length ** 3) / (f.nu * alpha);
 }
 
+interface Ctx {
+  /** Reynolds number (0 for natural convection), Rayleigh number (0 for forced convection). */
+  R: number;
+  A: number;
+  pr: number;
+  /** Viscosity ratio mu / mu_s. */
+  mu: number;
+  g: Geometry;
+}
+
+interface Evaluated {
+  nu: number;
+  math: string;
+  warnings: string[];
+  frictionFactor?: number;
+}
+
+const turbulent = 'fhConvWarnTurbulent';
+const range = 'fhConvWarnRange';
+const flag = (bad: boolean, key: string): string[] => (bad ? [key] : []);
+const shortTube = (g: Geometry): boolean => g.tubeLength !== undefined && g.tubeLength / g.length < 10;
+
+/** Each correlation: the Nusselt number, its equation in LaTeX, and the warnings for the ranges it is outside. */
+const FORMS: Record<CorrelationId, (c: Ctx) => Evaluated> = {
+  plateLocal: ({ R, pr }) => ({
+    nu: 0.332 * R ** 0.5 * pr ** (1 / 3),
+    math: 'Nu_x = 0.332\\,Re_x^{1/2}Pr^{1/3}',
+    warnings: [...flag(R >= 5e5, turbulent), ...flag(pr < 0.6, 'fhConvWarnPr')],
+  }),
+  plateLaminar: ({ R, pr }) => ({
+    nu: 0.664 * R ** 0.5 * pr ** (1 / 3),
+    math: '\\overline{Nu}_L = 0.664\\,Re_L^{1/2}Pr^{1/3}',
+    warnings: [...flag(R >= 5e5, turbulent), ...flag(pr < 0.6, 'fhConvWarnPr')],
+  }),
+  plateTurbulent: ({ R, pr }) => ({
+    nu: 0.037 * R ** 0.8 * pr ** (1 / 3),
+    math: '\\overline{Nu}_L = 0.037\\,Re_L^{4/5}Pr^{1/3}',
+    warnings: flag(!inRange(R, 5e5, 1e7) || !inRange(pr, 0.6, 60), range),
+  }),
+  plateMixed: ({ R, pr }) => ({
+    nu: (0.037 * R ** 0.8 - 871) * pr ** (1 / 3),
+    math: '\\overline{Nu}_L = (0.037\\,Re_L^{4/5} - 871)Pr^{1/3}',
+    warnings: flag(!inRange(R, 5e5, 1e8) || !inRange(pr, 0.6, 60), range),
+  }),
+  cylinderCross: ({ R, pr }) => ({
+    nu:
+      0.3 +
+      ((0.62 * R ** 0.5 * pr ** (1 / 3)) / (1 + (0.4 / pr) ** (2 / 3)) ** 0.25) *
+        (1 + (R / 282000) ** (5 / 8)) ** (4 / 5),
+    math:
+      'Nu_D = 0.3 + \\frac{0.62\\,Re^{1/2}Pr^{1/3}}{[1+(0.4/Pr)^{2/3}]^{1/4}}\\left[1 ' +
+      '+ \\left(\\frac{Re}{282000}\\right)^{5/8}\\right]^{4/5}',
+    warnings: flag(R * pr <= 0.2, range),
+  }),
+  sphereWhitaker: ({ R, pr, mu }) => ({
+    nu: 2 + (0.4 * R ** 0.5 + 0.06 * R ** (2 / 3)) * pr ** 0.4 * mu ** 0.25,
+    math: 'Nu_D = 2 + (0.4\\,Re^{1/2} + 0.06\\,Re^{2/3})Pr^{0.4}(\\mu/\\mu_s)^{1/4}',
+    warnings: flag(!inRange(R, 3.5, 7.6e4) || !inRange(pr, 0.7, 380) || !inRange(mu, 1, 3.2), range),
+  }),
+  sphereRanzMarshall: ({ R, pr }) => ({
+    nu: 2 + 0.6 * R ** 0.5 * pr ** (1 / 3),
+    math: 'Nu_D = 2 + 0.6\\,Re^{1/2}Pr^{1/3}',
+    warnings: flag(!inRange(R, 0, 7e4) || !inRange(pr, 0.6, 400), range),
+  }),
+  tubeLaminarFlux: ({ R }) => ({ nu: 4.36, math: 'Nu_D = 4.36', warnings: flag(R >= 2300, turbulent) }),
+  tubeLaminarTemp: ({ R }) => ({ nu: 3.66, math: 'Nu_D = 3.66', warnings: flag(R >= 2300, turbulent) }),
+  tubeEntry: ({ R, pr, g }) => {
+    positive(g.tubeLength ?? NaN, 'The tube length');
+    const gz = (g.length / g.tubeLength!) * R * pr;
+    return {
+      nu: 3.66 + (0.0668 * gz) / (1 + 0.04 * gz ** (2 / 3)),
+      math: `Nu_D = 3.66 + \\frac{0.0668\\,Gz}{1 + 0.04\\,Gz^{2/3}},\\ Gz = \\frac{D}{L}Re\\,Pr = ${fmt(gz, 5)}`,
+      warnings: flag(R >= 2300, turbulent),
+    };
+  },
+  dittusBoelter: ({ R, pr, g }) => {
+    const n = (g.heating ?? true) ? 0.4 : 0.3;
+    return {
+      nu: 0.023 * R ** 0.8 * pr ** n,
+      math: `Nu_D = 0.023\\,Re^{4/5}Pr^{${n}}`,
+      warnings: flag(R < 1e4 || !inRange(pr, 0.6, 160) || shortTube(g), range),
+    };
+  },
+  gnielinski: ({ R, pr }) => {
+    const ff = (0.79 * Math.log(R) - 1.64) ** -2;
+    return {
+      nu: ((ff / 8) * (R - 1000) * pr) / (1 + 12.7 * (ff / 8) ** 0.5 * (pr ** (2 / 3) - 1)),
+      math:
+        'Nu_D = \\frac{(f/8)(Re - 1000)Pr}{1 + 12.7\\sqrt{f/8}\\,(Pr^{2/3} - 1)},\\ ' +
+        `f = (0.790\\ln Re - 1.64)^{-2} = ${fmt(ff, 5)}`,
+      warnings: flag(!inRange(R, 3000, 5e6) || !inRange(pr, 0.5, 2000), range),
+      frictionFactor: ff,
+    };
+  },
+  siederTate: ({ R, pr, mu, g }) => ({
+    nu: 0.027 * R ** 0.8 * pr ** (1 / 3) * mu ** 0.14,
+    math: 'Nu_D = 0.027\\,Re^{4/5}Pr^{1/3}(\\mu/\\mu_s)^{0.14}',
+    warnings: flag(R < 1e4 || !inRange(pr, 0.7, 16700) || shortTube(g), range),
+  }),
+  verticalPlateFull: ({ A, pr }) => ({
+    nu: (0.825 + (0.387 * A ** (1 / 6)) / (1 + (0.492 / pr) ** (9 / 16)) ** (8 / 27)) ** 2,
+    math: 'Nu_L = \\left[0.825 + \\frac{0.387\\,Ra^{1/6}}{[1 + (0.492/Pr)^{9/16}]^{8/27}}\\right]^2',
+    warnings: flag(A > 1e12, range),
+  }),
+  verticalPlateLaminar: ({ A, pr }) => ({
+    nu: 0.68 + (0.67 * A ** 0.25) / (1 + (0.492 / pr) ** (9 / 16)) ** (4 / 9),
+    math: 'Nu_L = 0.68 + \\frac{0.670\\,Ra^{1/4}}{[1 + (0.492/Pr)^{9/16}]^{4/9}}',
+    warnings: flag(A >= 1e9, range),
+  }),
+  horizontalPlateUp: ({ A }) => ({
+    nu: A < 1e7 ? 0.54 * A ** 0.25 : 0.15 * A ** (1 / 3),
+    math: A < 1e7 ? 'Nu = 0.54\\,Ra^{1/4}' : 'Nu = 0.15\\,Ra^{1/3}',
+    warnings: flag(!inRange(A, 1e4, 1e11), range),
+  }),
+  horizontalPlateDown: ({ A }) => ({
+    nu: 0.27 * A ** 0.25,
+    math: 'Nu = 0.27\\,Ra^{1/4}',
+    warnings: flag(!inRange(A, 1e5, 1e10), range),
+  }),
+  horizontalCylinder: ({ A, pr }) => ({
+    nu: (0.6 + (0.387 * A ** (1 / 6)) / (1 + (0.559 / pr) ** (9 / 16)) ** (8 / 27)) ** 2,
+    math: 'Nu_D = \\left[0.60 + \\frac{0.387\\,Ra^{1/6}}{[1 + (0.559/Pr)^{9/16}]^{8/27}}\\right]^2',
+    warnings: flag(A > 1e12, range),
+  }),
+  sphereNatural: ({ A, pr }) => ({
+    nu: 2 + (0.589 * A ** 0.25) / (1 + (0.469 / pr) ** (9 / 16)) ** (4 / 9),
+    math: 'Nu_D = 2 + \\frac{0.589\\,Ra^{1/4}}{[1 + (0.469/Pr)^{9/16}]^{4/9}}',
+    warnings: flag(A > 1e11 || pr < 0.7, range),
+  }),
+};
+
 export function correlate(id: CorrelationId, f: Fluid, g: Geometry): CorrelationResult {
   positive(f.k, 'The conductivity');
   positive(f.nu, 'The kinematic viscosity');
@@ -233,16 +364,11 @@ export function correlate(id: CorrelationId, f: Fluid, g: Geometry): Correlation
   positive(g.length, 'The characteristic length');
   const info = CORRELATIONS.find((c) => c.id === id);
   need(info !== undefined, 'id', 'Unknown correlation.');
-  const pr = f.pr;
   const mu = f.muRatio ?? 1;
   positive(mu, 'The viscosity ratio');
-  const warnings: string[] = [];
   const steps: Step[] = [];
   let re: number | undefined;
   let ra: number | undefined;
-  let nu: number;
-  let ff: number | undefined;
-  let math: string;
   if (info!.needs === 'forced') {
     need(
       g.velocity !== undefined && Number.isFinite(g.velocity) && g.velocity > 0,
@@ -259,131 +385,32 @@ export function correlate(id: CorrelationId, f: Fluid, g: Geometry): Correlation
       math: `Ra = \\frac{g\\beta\\Delta T L^3}{\\nu\\alpha} = ${fmt(ra, 5)}`,
     });
   }
-  const R = re ?? 0;
-  const A = ra ?? 0;
-  switch (id) {
-    case 'plateLocal':
-      nu = 0.332 * R ** 0.5 * pr ** (1 / 3);
-      math = 'Nu_x = 0.332\\,Re_x^{1/2}Pr^{1/3}';
-      if (R >= 5e5) warnings.push('fhConvWarnTurbulent');
-      if (pr < 0.6) warnings.push('fhConvWarnPr');
-      break;
-    case 'plateLaminar':
-      nu = 0.664 * R ** 0.5 * pr ** (1 / 3);
-      math = '\\overline{Nu}_L = 0.664\\,Re_L^{1/2}Pr^{1/3}';
-      if (R >= 5e5) warnings.push('fhConvWarnTurbulent');
-      if (pr < 0.6) warnings.push('fhConvWarnPr');
-      break;
-    case 'plateTurbulent':
-      nu = 0.037 * R ** 0.8 * pr ** (1 / 3);
-      math = '\\overline{Nu}_L = 0.037\\,Re_L^{4/5}Pr^{1/3}';
-      if (!inRange(R, 5e5, 1e7) || !inRange(pr, 0.6, 60)) warnings.push('fhConvWarnRange');
-      break;
-    case 'plateMixed':
-      nu = (0.037 * R ** 0.8 - 871) * pr ** (1 / 3);
-      math = '\\overline{Nu}_L = (0.037\\,Re_L^{4/5} - 871)Pr^{1/3}';
-      if (!inRange(R, 5e5, 1e8) || !inRange(pr, 0.6, 60)) warnings.push('fhConvWarnRange');
-      break;
-    case 'cylinderCross':
-      nu =
-        0.3 +
-        ((0.62 * R ** 0.5 * pr ** (1 / 3)) / (1 + (0.4 / pr) ** (2 / 3)) ** 0.25) *
-          (1 + (R / 282000) ** (5 / 8)) ** (4 / 5);
-      math =
-        'Nu_D = 0.3 + \\frac{0.62\\,Re^{1/2}Pr^{1/3}}{[1+(0.4/Pr)^{2/3}]^{1/4}}\\left[1 + \\left(\\frac{Re}{282000}\\right)^{5/8}\\right]^{4/5}';
-      if (R * pr <= 0.2) warnings.push('fhConvWarnRange');
-      break;
-    case 'sphereWhitaker':
-      nu = 2 + (0.4 * R ** 0.5 + 0.06 * R ** (2 / 3)) * pr ** 0.4 * mu ** 0.25;
-      math = 'Nu_D = 2 + (0.4\\,Re^{1/2} + 0.06\\,Re^{2/3})Pr^{0.4}(\\mu/\\mu_s)^{1/4}';
-      if (!inRange(R, 3.5, 7.6e4) || !inRange(pr, 0.7, 380) || !inRange(mu, 1, 3.2)) warnings.push('fhConvWarnRange');
-      break;
-    case 'sphereRanzMarshall':
-      nu = 2 + 0.6 * R ** 0.5 * pr ** (1 / 3);
-      math = 'Nu_D = 2 + 0.6\\,Re^{1/2}Pr^{1/3}';
-      if (!inRange(R, 0, 7e4) || !inRange(pr, 0.6, 400)) warnings.push('fhConvWarnRange');
-      break;
-    case 'tubeLaminarFlux':
-      nu = 4.36;
-      math = 'Nu_D = 4.36';
-      if (R >= 2300) warnings.push('fhConvWarnTurbulent');
-      break;
-    case 'tubeLaminarTemp':
-      nu = 3.66;
-      math = 'Nu_D = 3.66';
-      if (R >= 2300) warnings.push('fhConvWarnTurbulent');
-      break;
-    case 'tubeEntry': {
-      positive(g.tubeLength ?? NaN, 'The tube length');
-      const gz = (g.length / g.tubeLength!) * R * pr;
-      nu = 3.66 + (0.0668 * gz) / (1 + 0.04 * gz ** (2 / 3));
-      math = `Nu_D = 3.66 + \\frac{0.0668\\,Gz}{1 + 0.04\\,Gz^{2/3}},\\ Gz = \\frac{D}{L}Re\\,Pr = ${fmt(gz, 5)}`;
-      if (R >= 2300) warnings.push('fhConvWarnTurbulent');
-      break;
-    }
-    case 'dittusBoelter': {
-      const n = (g.heating ?? true) ? 0.4 : 0.3;
-      nu = 0.023 * R ** 0.8 * pr ** n;
-      math = `Nu_D = 0.023\\,Re^{4/5}Pr^{${n}}`;
-      if (R < 1e4 || !inRange(pr, 0.6, 160) || (g.tubeLength !== undefined && g.tubeLength / g.length < 10))
-        warnings.push('fhConvWarnRange');
-      break;
-    }
-    case 'gnielinski': {
-      ff = (0.79 * Math.log(R) - 1.64) ** -2;
-      nu = ((ff / 8) * (R - 1000) * pr) / (1 + 12.7 * (ff / 8) ** 0.5 * (pr ** (2 / 3) - 1));
-      math = `Nu_D = \\frac{(f/8)(Re - 1000)Pr}{1 + 12.7\\sqrt{f/8}\\,(Pr^{2/3} - 1)},\\ f = (0.790\\ln Re - 1.64)^{-2} = ${fmt(ff, 5)}`;
-      if (!inRange(R, 3000, 5e6) || !inRange(pr, 0.5, 2000)) warnings.push('fhConvWarnRange');
-      break;
-    }
-    case 'siederTate':
-      nu = 0.027 * R ** 0.8 * pr ** (1 / 3) * mu ** 0.14;
-      math = 'Nu_D = 0.027\\,Re^{4/5}Pr^{1/3}(\\mu/\\mu_s)^{0.14}';
-      if (R < 1e4 || !inRange(pr, 0.7, 16700) || (g.tubeLength !== undefined && g.tubeLength / g.length < 10))
-        warnings.push('fhConvWarnRange');
-      break;
-    case 'verticalPlateFull':
-      nu = (0.825 + (0.387 * A ** (1 / 6)) / (1 + (0.492 / pr) ** (9 / 16)) ** (8 / 27)) ** 2;
-      math = 'Nu_L = \\left[0.825 + \\frac{0.387\\,Ra^{1/6}}{[1 + (0.492/Pr)^{9/16}]^{8/27}}\\right]^2';
-      if (A > 1e12) warnings.push('fhConvWarnRange');
-      break;
-    case 'verticalPlateLaminar':
-      nu = 0.68 + (0.67 * A ** 0.25) / (1 + (0.492 / pr) ** (9 / 16)) ** (4 / 9);
-      math = 'Nu_L = 0.68 + \\frac{0.670\\,Ra^{1/4}}{[1 + (0.492/Pr)^{9/16}]^{4/9}}';
-      if (A >= 1e9) warnings.push('fhConvWarnRange');
-      break;
-    case 'horizontalPlateUp':
-      nu = A < 1e7 ? 0.54 * A ** 0.25 : 0.15 * A ** (1 / 3);
-      math = A < 1e7 ? 'Nu = 0.54\\,Ra^{1/4}' : 'Nu = 0.15\\,Ra^{1/3}';
-      if (!inRange(A, 1e4, 1e11)) warnings.push('fhConvWarnRange');
-      break;
-    case 'horizontalPlateDown':
-      nu = 0.27 * A ** 0.25;
-      math = 'Nu = 0.27\\,Ra^{1/4}';
-      if (!inRange(A, 1e5, 1e10)) warnings.push('fhConvWarnRange');
-      break;
-    case 'horizontalCylinder':
-      nu = (0.6 + (0.387 * A ** (1 / 6)) / (1 + (0.559 / pr) ** (9 / 16)) ** (8 / 27)) ** 2;
-      math = 'Nu_D = \\left[0.60 + \\frac{0.387\\,Ra^{1/6}}{[1 + (0.559/Pr)^{9/16}]^{8/27}}\\right]^2';
-      if (A > 1e12) warnings.push('fhConvWarnRange');
-      break;
-    case 'sphereNatural':
-      nu = 2 + (0.589 * A ** 0.25) / (1 + (0.469 / pr) ** (9 / 16)) ** (4 / 9);
-      math = 'Nu_D = 2 + \\frac{0.589\\,Ra^{1/4}}{[1 + (0.469/Pr)^{9/16}]^{4/9}}';
-      if (A > 1e11 || pr < 0.7) warnings.push('fhConvWarnRange');
-      break;
-  }
-  if (!Number.isFinite(nu!) || nu! <= 0)
+  const result = FORMS[id]({ R: re ?? 0, A: ra ?? 0, pr: f.pr, mu, g });
+  if (!Number.isFinite(result.nu) || result.nu <= 0)
     throw new CalcError(
       'nu',
-      'This correlation gives no usable result at these inputs: they are well outside its range of validity. Choose another correlation.',
+      'This correlation gives no usable result at these inputs: they are well outside its range of validity. ' +
+        'Choose another correlation.',
     );
-  const h = (nu! * f.k) / g.length;
+  const h = (result.nu * f.k) / g.length;
   steps.push(
-    { key: 'fhConvCorrelation', vars: { name: info!.name, range: info!.range }, math: `${math} = ${fmt(nu!, 5)}` },
+    {
+      key: 'fhConvCorrelation',
+      vars: { name: info!.name, range: info!.range },
+      math: `${result.math} = ${fmt(result.nu, 5)}`,
+    },
     { key: 'fhConvH', vars: { h: fmt(h, 5) }, math: `h = \\frac{Nu\\,k}{L} = ${fmt(h, 5)}\\ \\mathrm{W/m^2 K}` },
   );
-  return { id, nusselt: nu!, h, re, ra, frictionFactor: ff, warnings, steps };
+  return {
+    id,
+    nusselt: result.nu,
+    h,
+    re,
+    ra,
+    frictionFactor: result.frictionFactor,
+    warnings: result.warnings,
+    steps,
+  };
 }
 
 /** Pick the right flat-plate form for the Reynolds number when the user does not choose. */

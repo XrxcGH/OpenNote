@@ -203,7 +203,9 @@ export function annularFin(inp: AnnularInput): AnnularResult {
       {
         key: 'fhFinsAnnularEta',
         vars: { e: fmt(eta, 5) },
-        math: `\\eta_f = \\frac{2r_1}{m(r_{2c}^2 - r_1^2)}\\,\\frac{K_1(mr_1)I_1(mr_{2c}) - I_1(mr_1)K_1(mr_{2c})}{I_0(mr_1)K_1(mr_{2c}) + K_0(mr_1)I_1(mr_{2c})} = ${fmt(eta, 5)}`,
+        math:
+          `\\eta_f = \\frac{2r_1}{m(r_{2c}^2 - r_1^2)}\\,\\frac{K_1(mr_1)I_1(mr_{2c}) - ` +
+          `I_1(mr_1)K_1(mr_{2c})}{I_0(mr_1)K_1(mr_{2c}) + K_0(mr_1)I_1(mr_{2c})} = ${fmt(eta, 5)}`,
       },
     ],
   };

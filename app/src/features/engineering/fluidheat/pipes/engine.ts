@@ -1,4 +1,5 @@
-// Pipe flow: friction factor, head loss, the three classic pipe problems, pump operating points, series and parallel pipes, Hardy Cross loops.
+// Pipe flow: friction factor, head loss, the three classic pipe problems, pump operating points, series and
+// parallel pipes, and Hardy Cross loops.
 import { brent, CalcError, fmt, G0, need, nonNegative, positive, type Step } from '../numeric';
 
 export const LAMINAR_LIMIT = 2300;
@@ -49,7 +50,10 @@ export function swameeJain(re: number, relRough: number): number {
   return 0.25 / Math.log10(relRough / 3.7 + 5.74 / re ** 0.9) ** 2;
 }
 
-/** Darcy friction factor: 64/Re when laminar, Colebrook when turbulent; the 2300 to 4000 band is flagged, and uses the larger of the two. */
+/**
+ * Darcy friction factor: 64/Re when laminar, Colebrook when turbulent. The 2300 to 4000 band is flagged, and uses
+ * the larger of the two.
+ */
 export function friction(re: number, relRough: number): FrictionResult {
   positive(re, 'The Reynolds number');
   nonNegative(relRough, 'The relative roughness');
@@ -97,7 +101,7 @@ function validatePipe(p: PipeSpec, fl: FluidProps) {
   );
 }
 
-/** Problem type 1: flow rate known, find friction and head loss. */
+/** Problem type 1: flow rate known, find friction, and head loss. */
 export function headLossFromFlow(fluid: FluidProps, pipe: PipeSpec, q: number, g = G0): PipeState {
   validatePipe(pipe, fluid);
   need(Number.isFinite(q) && q >= 0, 'flow', 'The flow rate must be zero or more.');
@@ -144,7 +148,8 @@ export function headLossFromFlow(fluid: FluidProps, pipe: PipeSpec, q: number, g
       math:
         fr.regime === 'laminar'
           ? `f = \\frac{64}{Re} = ${fmt(fr.f)}`
-          : `\\frac{1}{\\sqrt f} = -2\\log_{10}\\left(\\frac{\\varepsilon/D}{3.7} + \\frac{2.51}{Re\\sqrt f}\\right) \\Rightarrow f = ${fmt(fr.f)}`,
+          : `\\frac{1}{\\sqrt f} = -2\\log_{10}\\left(\\frac{\\varepsilon/D}{3.7} + \\frac{2.51}{Re\\sqrt ` +
+            `f}\\right) \\Rightarrow f = ${fmt(fr.f)}`,
     },
     {
       key: 'fhPipesHeadLoss',
@@ -300,7 +305,10 @@ export interface HardyCrossInput {
   pipes: PipeSpec[];
   /** Each loop lists pipe indices with a sign: +1 when the assumed flow in that pipe runs clockwise around the loop, -1 otherwise. */
   loops: { pipe: number; sign: 1 | -1 }[][];
-  /** Assumed flow in each pipe (m3/s), positive in the pipe's own reference direction; the initial guess must satisfy continuity at every node. */
+  /**
+   * Assumed flow in each pipe (m3/s), positive in the pipe's own reference direction. The initial guess must satisfy
+   * continuity at every node.
+   */
   flows: number[];
   g?: number;
   tol?: number;

@@ -206,7 +206,9 @@ function finish(
       : {
           key: 'fhHxNtuInverse',
           vars: { ntu: fmt(r.ntu), eps: fmt(r.eps) },
-          math: `\\varepsilon = \\frac{q}{C_{min}(T_{h,in} - T_{c,in})} = ${fmt(r.eps)},\\quad NTU = ${fmt(r.ntu)},\\quad UA = NTU\\,C_{min} = ${fmt(r.ua)}\\ \\mathrm{W/K}`,
+          math:
+            `\\varepsilon = \\frac{q}{C_{min}(T_{h,in} - T_{c,in})} = ${fmt(r.eps)},\\quad NTU ` +
+            `= ${fmt(r.ntu)},\\quad UA = NTU\\,C_{min} = ${fmt(r.ua)}\\ \\mathrm{W/K}`,
         },
     {
       key: 'fhHxEps',
@@ -216,7 +218,10 @@ function finish(
     {
       key: 'fhHxQ',
       vars: { q: fmt(r.q) },
-      math: `q = \\varepsilon C_{min}(T_{h,in} - T_{c,in}) = ${fmt(r.eps)}\\cdot${fmt(r.cmin)}\\cdot${fmt(inp.thIn - inp.tcIn)} = ${fmt(r.q)}\\ \\mathrm{W}`,
+      math:
+        `q = \\varepsilon C_{min}(T_{h,in} - T_{c,in}) ` +
+        `= ${fmt(r.eps)}\\cdot${fmt(r.cmin)}\\cdot${fmt(inp.thIn - inp.tcIn)} ` +
+        `= ${fmt(r.q)}\\ \\mathrm{W}`,
     },
     {
       key: 'fhHxOutlets',
@@ -228,7 +233,9 @@ function finish(
     steps.push({
       key: 'fhHxLmtd',
       vars: { lmtd: fmt(meanDt), f: fmt(f) },
-      math: `\\Delta T_{lm} = \\frac{\\Delta T_1 - \\Delta T_2}{\\ln(\\Delta T_1/\\Delta T_2)} = ${fmt(meanDt)},\\quad q = F\\,UA\\,\\Delta T_{lm} \\Rightarrow F = ${fmt(f)}`,
+      math:
+        `\\Delta T_{lm} = \\frac{\\Delta T_1 - \\Delta T_2}{\\ln(\\Delta T_1/\\Delta T_2)} ` +
+        `= ${fmt(meanDt)},\\quad q = F\\,UA\\,\\Delta T_{lm} \\Rightarrow F = ${fmt(f)}`,
     });
   }
   return { ...r, lmtd: meanDt, f, steps };

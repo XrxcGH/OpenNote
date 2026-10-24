@@ -5,7 +5,7 @@ import { fmt, need, positive, type Step } from '../numeric';
 export interface Variable {
   /** The symbol, such as "rho" or "V". */
   name: string;
-  /** Exponents of metre, kilogram, second, kelvin, ampere, mole and candela. */
+  /** Exponents of meter, kilogram, second, kelvin, ampere, mole, and candela. */
   dim: readonly number[];
 }
 
@@ -138,7 +138,10 @@ function reduce(M: Frac[][], cols: number): number[] {
   return pivots;
 }
 
-/** Pi groups of the variables. The first variable is the dependent one. `repeating` names the repeating set, or is left out to choose it. */
+/**
+ * Pi groups of the variables. The first variable is the dependent one. `repeating` names the repeating set, or is
+ * left out to choose it.
+ */
 export function piGroups(vars: Variable[], repeating?: string[]): DimensionalResult {
   need(vars.length >= 2, 'fewVariables', 'List at least two variables.');
   const seen = new Set<string>();
@@ -272,14 +275,19 @@ export function scaleModel(inp: ScaleInput): ScaleResult {
     steps.push({
       key: 'fhDimScaleRe',
       vars: { v: fmt(speedRatio * inp.prototypeSpeed) },
-      math: `\\frac{V_m L_m}{\\nu_m} = \\frac{V_p L_p}{\\nu_p} \\Rightarrow V_m = V_p\\frac{\\nu_m}{\\nu_p}\\frac{L_p}{L_m} = ${fmt(speedRatio * inp.prototypeSpeed)}\\ \\mathrm{m/s}`,
+      math:
+        `\\frac{V_m L_m}{\\nu_m} = \\frac{V_p L_p}{\\nu_p} \\Rightarrow V_m = ` +
+        `V_p\\frac{\\nu_m}{\\nu_p}\\frac{L_p}{L_m} ` +
+        `= ${fmt(speedRatio * inp.prototypeSpeed)}\\ \\mathrm{m/s}`,
     });
   } else if (inp.criterion === 'froude') {
     speedRatio = Math.sqrt(lr);
     steps.push({
       key: 'fhDimScaleFr',
       vars: { v: fmt(speedRatio * inp.prototypeSpeed) },
-      math: `\\frac{V_m}{\\sqrt{g L_m}} = \\frac{V_p}{\\sqrt{g L_p}} \\Rightarrow V_m = V_p\\sqrt{L_m/L_p} = ${fmt(speedRatio * inp.prototypeSpeed)}\\ \\mathrm{m/s}`,
+      math:
+        `\\frac{V_m}{\\sqrt{g L_m}} = \\frac{V_p}{\\sqrt{g L_p}} \\Rightarrow V_m = V_p\\sqrt{L_m/L_p} ` +
+        `= ${fmt(speedRatio * inp.prototypeSpeed)}\\ \\mathrm{m/s}`,
     });
   } else {
     positive(inp.aPrototype ?? NaN, 'The prototype speed of sound');
@@ -288,7 +296,9 @@ export function scaleModel(inp: ScaleInput): ScaleResult {
     steps.push({
       key: 'fhDimScaleMa',
       vars: { v: fmt(speedRatio * inp.prototypeSpeed) },
-      math: `\\frac{V_m}{a_m} = \\frac{V_p}{a_p} \\Rightarrow V_m = V_p\\frac{a_m}{a_p} = ${fmt(speedRatio * inp.prototypeSpeed)}\\ \\mathrm{m/s}`,
+      math:
+        `\\frac{V_m}{a_m} = \\frac{V_p}{a_p} \\Rightarrow V_m = V_p\\frac{a_m}{a_p} ` +
+        `= ${fmt(speedRatio * inp.prototypeSpeed)}\\ \\mathrm{m/s}`,
     });
   }
   let rhoRatio = 1;
@@ -302,7 +312,10 @@ export function scaleModel(inp: ScaleInput): ScaleResult {
   steps.push({
     key: 'fhDimScaleForce',
     vars: { f: fmt(forceRatio), t: fmt(timeRatio) },
-    math: `\\frac{F_m}{F_p} = \\frac{\\rho_m}{\\rho_p}\\left(\\frac{V_m}{V_p}\\right)^2\\left(\\frac{L_m}{L_p}\\right)^2 = ${fmt(forceRatio)}`,
+    math:
+      `\\frac{F_m}{F_p} ` +
+      `= \\frac{\\rho_m}{\\rho_p}\\left(\\frac{V_m}{V_p}\\right)^2\\left(\\frac{L_m}{L_p}\\right)^2 ` +
+      `= ${fmt(forceRatio)}`,
   });
   const out: ScaleResult = { modelSpeed: speedRatio * inp.prototypeSpeed, speedRatio, forceRatio, timeRatio, steps };
   if (inp.modelForce !== undefined && Number.isFinite(inp.modelForce)) {

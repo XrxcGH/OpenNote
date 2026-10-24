@@ -1,4 +1,4 @@
-// Fluid statics, buoyancy and the Bernoulli equation. Everything is in SI; the window converts units.
+// Fluid statics, buoyancy, and the Bernoulli equation. Everything is in SI; the window converts units.
 import { CalcError, fmt, G0, need, nonNegative, positive, sq, type Step } from '../numeric';
 
 export type PlateShape = 'rectangle' | 'circle' | 'triangleApexUp' | 'triangleBaseUp';
@@ -90,7 +90,10 @@ export function planeForce(inp: PlateInput): PlateResult {
     {
       key: 'fhStaticsForce',
       vars: { F: fmt(force) },
-      math: `F = (p_0 + \\rho g h_c)A = (${fmt(p0)} + ${fmt(inp.density)}\\cdot${fmt(g)}\\cdot${fmt(hc)})\\cdot${fmt(area)} = ${fmt(force)}\\ \\mathrm{N}`,
+      math:
+        `F = (p_0 + \\rho g h_c)A = (${fmt(p0)} ` +
+        `+ ${fmt(inp.density)}\\cdot${fmt(g)}\\cdot${fmt(hc)})\\cdot${fmt(area)} ` +
+        `= ${fmt(force)}\\ \\mathrm{N}`,
     },
     {
       key: 'fhStaticsCenter',
@@ -316,7 +319,7 @@ export interface BernoulliResult {
 
 /**
  * p1/(rho g) + V1^2/(2g) + z1 + hp = p2/(rho g) + V2^2/(2g) + z2 + hL.
- * Exactly one of p1, V1, z1, p2, V2, z2, hL is left undefined and is solved for.
+ * Exactly one of p1, V1, z1, p2, V2, z2, hL is left undefined, and is solved for.
  */
 export function bernoulli(inp: BernoulliInput): BernoulliResult {
   const g = inp.g ?? G0;
@@ -415,7 +418,9 @@ export function pitot(inp: PitotInput): FlowMeterResult {
       {
         key: 'fhStaticsPitot',
         vars: { V: fmt(v) },
-        math: `V = \\sqrt{\\frac{2\\,\\Delta p}{\\rho}} = \\sqrt{\\frac{2\\cdot${fmt(inp.dp)}}{${fmt(inp.density)}}} = ${fmt(v)}\\ \\mathrm{m/s}`,
+        math:
+          `V = \\sqrt{\\frac{2\\,\\Delta p}{\\rho}} ` +
+          `= \\sqrt{\\frac{2\\cdot${fmt(inp.dp)}}{${fmt(inp.density)}}} = ${fmt(v)}\\ \\mathrm{m/s}`,
       },
     ],
   };

@@ -370,7 +370,9 @@ export function semiInfinite(inp: SemiInput): SemiResult {
       steps.push({
         key: 'fhTransSemiQ',
         vars: { T: fmt(t) },
-        math: `T - T_i = \\frac{2q''\\sqrt{\\alpha t/\\pi}}{k}e^{-\\eta^2} - \\frac{q'' x}{k}\\operatorname{erfc}(\\eta) = ${fmt(t - inp.tInitial)}`,
+        math:
+          `T - T_i = \\frac{2q''\\sqrt{\\alpha t/\\pi}}{k}e^{-\\eta^2} - \\frac{q'' ` +
+          `x}{k}\\operatorname{erfc}(\\eta) = ${fmt(t - inp.tInitial)}`,
       });
       break;
     case 'convection': {
@@ -384,7 +386,10 @@ export function semiInfinite(inp: SemiInput): SemiResult {
       steps.push({
         key: 'fhTransSemiH',
         vars: { T: fmt(t) },
-        math: `\\frac{T - T_i}{T_\\infty - T_i} = \\operatorname{erfc}\\eta - e^{hx/k + h^2\\alpha t/k^2}\\operatorname{erfc}\\left(\\eta + \\frac{h\\sqrt{\\alpha t}}{k}\\right) = ${fmt(theta, 5)}`,
+        math:
+          `\\frac{T - T_i}{T_\\infty - T_i} = \\operatorname{erfc}\\eta - e^{hx/k + h^2\\alpha ` +
+          `t/k^2}\\operatorname{erfc}\\left(\\eta + \\frac{h\\sqrt{\\alpha t}}{k}\\right) ` +
+          `= ${fmt(theta, 5)}`,
       });
       break;
     }

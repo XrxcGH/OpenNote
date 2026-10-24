@@ -1,4 +1,4 @@
-// Steady one-dimensional conduction as a thermal resistance network: plane walls, cylindrical and spherical shells,
+// Steady one-dimensional conduction as a thermal resistance network: plane walls, cylindrical, and spherical shells,
 // contact and convection resistances, linearised radiation, critical radius of insulation, and uniform heat generation.
 import { fmt, need, nonNegative, positive, SIGMA, type Step } from '../numeric';
 
@@ -49,7 +49,7 @@ export interface WallResult {
   steps: Step[];
 }
 
-/** Resistance of a conduction layer between a and b (positions), for the given geometry. */
+/** Resistance of a conduction layer from position a out to position b, for the given geometry. */
 export function layerResistance(geometry: Geometry, a: number, b: number, k: number, extent: number): number {
   switch (geometry) {
     case 'plane':
