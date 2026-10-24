@@ -14,6 +14,10 @@ export type { CircuitModel, CircuitPart } from './circuit/model';
 export { solveCircuit } from './circuit/solve';
 export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
+export { openSolidsKit } from './solids/open';
+
+/** The solid mechanics kit window, loaded the first time it opens. */
+export const loadSolidsKit = () => import('./solids/ui/SolidsKit');
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
