@@ -45,10 +45,14 @@ export function fromPhasors(v: Cx, i: Cx): LoadPower {
 }
 
 export interface Correction {
-  /** Reactive power the capacitor must supply (var). */
+  /** Reactive power the correcting element must supply (var); negative when the load leads and needs an inductor. */
   qc: number;
-  /** The capacitor, per phase for the voltage and connection given (F). */
+  /** The capacitor, one of `parts`, across its own voltage (F); 0 when an inductor is needed. */
   c: number;
+  /** The inductor, one of `parts` (H); null when a capacitor is needed. */
+  l: number | null;
+  /** The voltage across each correcting element (V): the line voltage over √3 for a wye bank. */
+  vElement: number;
   q1: number;
   q2: number;
   s1: number;
@@ -58,26 +62,59 @@ export interface Correction {
   i2: number;
 }
 
+export interface CorrectionOptions {
+  /** 1 for a single-phase load, 3 for a balanced three-phase load; the voltage is then the line voltage. */
+  phases?: 1 | 3;
+  /** How the three equal elements of a three-phase bank are connected. */
+  bank?: Connection;
+  /** Whether the load's current lags (inductive) or leads (capacitive) the voltage. */
+  lag?: Lag;
+}
+
 /**
- * Qc = P (tan φ1 − tan φ2) for a parallel capacitor that raises a lagging power factor to the target.
- * `voltage` is the voltage across the capacitor and `parts` the number of equal capacitors sharing Qc
- * (1 for single phase, 3 for a three-phase bank).
+ * Qc = P (tan φ1 − tan φ2) for a parallel element that moves the load to the target power factor (lagging, or
+ * (of the same kind as the load, or unity). A lagging load takes a capacitor; a leading load takes an inductor. Single phase: `voltage` is across the
+ * element. Three phase: `voltage` is line to line, and three equal elements each carry Qc/3 across the line voltage
+ * (delta) or the line voltage over √3 (wye).
  */
-export function correction(p: number, pf1: number, pf2: number, voltage: number, hz: number, parts = 1): Correction {
+export function correction(
+  p: number,
+  pf1: number,
+  pf2: number,
+  voltage: number,
+  hz: number,
+  options: CorrectionOptions = {},
+): Correction {
+  const { phases = 1, bank = 'delta', lag = 'lagging' } = options;
   checkPf(pf1);
   checkPf(pf2);
   if (!(p > 0)) fail('positive', { field: 'realPower' });
   if (pf2 < pf1) fail('targetBelow');
   if (!(voltage > 0)) fail('positive', { field: 'voltage' });
   if (!(hz > 0)) fail('positive', { field: 'frequency' });
-  const q1 = p * Math.tan(Math.acos(pf1));
-  const q2 = p * Math.tan(Math.acos(pf2));
+  const sign = lag === 'lagging' ? 1 : -1;
+  const q1 = sign * p * Math.tan(Math.acos(pf1));
+  const q2 = sign * p * Math.tan(Math.acos(pf2));
   const qc = q1 - q2;
   const s1 = p / pf1;
   const s2 = p / pf2;
-  const c = qc / parts / (2 * Math.PI * hz * voltage * voltage);
-  const phase = parts === 3 ? Math.sqrt(3) : 1;
-  return { qc, c, q1, q2, s1, s2, i1: s1 / (phase * voltage), i2: s2 / (phase * voltage) };
+  const parts = phases === 3 ? 3 : 1;
+  const vElement = phases === 3 && bank === 'wye' ? voltage / Math.sqrt(3) : voltage;
+  const omega = 2 * Math.PI * hz;
+  const each = Math.abs(qc) / parts;
+  const phase = phases === 3 ? Math.sqrt(3) : 1;
+  return {
+    qc,
+    c: qc >= 0 ? each / (omega * vElement * vElement) : 0,
+    l: qc < 0 ? (vElement * vElement) / (omega * each) : null,
+    vElement,
+    q1,
+    q2,
+    s1,
+    s2,
+    i1: s1 / (phase * voltage),
+    i2: s2 / (phase * voltage),
+  };
 }
 
 export type Connection = 'wye' | 'delta';
@@ -130,4 +167,74 @@ export function changeBase(zPu: number, sOld: number, vOld: number, sNew: number
   if (!(sOld > 0 && sNew > 0)) fail('positive', { field: 'baseApparent' });
   if (!(vOld > 0 && vNew > 0)) fail('positive', { field: 'baseVoltage' });
   return zPu * (sNew / sOld) * (vOld / vNew) ** 2;
+}
+
+export interface Transformer {
+  /** Turns ratio a = high-side rated voltage over low-side rated voltage. */
+  ratio: number;
+  /** The series equivalent impedance referred to the low side (Ω). */
+  reqLow: number;
+  xeqLow: number;
+  /** Load current on the low side (A). */
+  iLoad: number;
+  /** The source voltage that holds the rated low-side voltage, referred to the low side and on the high side (V). */
+  vSourceLow: number;
+  vSourceHigh: number;
+  /** (V_source − V_load) / V_load in percent: positive when the voltage falls under load. */
+  regulation: number;
+  pOut: number;
+  copper: number;
+  core: number;
+  efficiency: number;
+  /** The load fraction of maximum efficiency, where copper loss equals core loss. */
+  bestLoad: number;
+}
+
+/**
+ * A transformer by its series equivalent circuit, referred to the low side, loaded at `load` times its rating at a
+ * power factor. The load voltage is the rated low-side voltage; the source voltage is V2 + I2 (Req + jXeq).
+ */
+export function transformer(args: {
+  sRated: number;
+  vHigh: number;
+  vLow: number;
+  reqHigh: number;
+  xeqHigh: number;
+  core: number;
+  load: number;
+  pf: number;
+  lag: Lag;
+}): Transformer {
+  const { sRated, vHigh, vLow, reqHigh, xeqHigh, core, load, pf, lag } = args;
+  checkPf(pf);
+  if (!(sRated > 0)) fail('positive', { field: 'ratedApparent' });
+  if (!(vHigh > 0 && vLow > 0)) fail('positive', { field: 'voltage' });
+  if (!(load > 0)) fail('positive', { field: 'loadFraction' });
+  if (reqHigh < 0 || core < 0) fail('positive', { field: 'equivalentR' });
+  const ratio = vHigh / vLow;
+  const reqLow = reqHigh / (ratio * ratio);
+  const xeqLow = xeqHigh / (ratio * ratio);
+  const iLoad = (load * sRated) / vLow;
+  // I2 = I (cos φ ∓ j sin φ): a lagging current has a negative imaginary part, so sin is signed +1 for lagging.
+  const sin = (lag === 'lagging' ? 1 : -1) * Math.sqrt(1 - pf * pf);
+  const re = vLow + iLoad * (pf * reqLow + sin * xeqLow);
+  const im = iLoad * (pf * xeqLow - sin * reqLow);
+  const vSourceLow = Math.hypot(re, im);
+  const pOut = load * sRated * pf;
+  const copper = iLoad * iLoad * reqLow;
+  const copperRated = (sRated / vLow) ** 2 * reqLow;
+  return {
+    ratio,
+    reqLow,
+    xeqLow,
+    iLoad,
+    vSourceLow,
+    vSourceHigh: vSourceLow * ratio,
+    regulation: ((vSourceLow - vLow) / vLow) * 100,
+    pOut,
+    copper,
+    core,
+    efficiency: pOut / (pOut + copper + core),
+    bestLoad: copperRated > 0 ? Math.sqrt(core / copperRated) : Infinity,
+  };
 }

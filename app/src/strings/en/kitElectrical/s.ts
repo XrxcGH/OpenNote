@@ -42,7 +42,13 @@ export const s = {
   currentFromS: 'The current is the apparent power over the voltage: {value}.',
   corrQ: 'Reactive power before and after is Q = P tan φ: {q1} and {q2}.',
   corrQc: 'The capacitor supplies the difference: Qc = {value}.',
-  corrC: 'A capacitor across the load takes Qc = ω C V², so C = {value}.',
+  corrC:
+    'A capacitor across the load takes Qc = ω C V², so the element is {value}. A leading load takes an inductor, L = V²/(ω |Qc|). A three-phase bank has three equal elements.',
+  tfRefer: 'Referring the series impedance to the low side divides it by a²: Req = {r}, Xeq = {x}.',
+  tfDrop:
+    'Adding the drop in the series impedance to the load voltage gives the source voltage, {value} on the high side.',
+  tfRegulation: 'The voltage regulation is {value} % of the full-load voltage.',
+  tfEfficiency: 'Output power over output plus copper and core losses gives an efficiency of {value} %.',
   corrCurrent: 'The line current falls from {before} to {after}.',
   wyeRelations:
     'In a wye connection the phase voltage is the line voltage over √3 = {vph}, and the line current is the phase current.',

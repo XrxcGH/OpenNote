@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { initialValues, runTool } from '../spec';
 import { cx } from '../shared';
-import { changeBase, correction, fromPhasors, fromPowerFactor, perUnitBase, threePhase } from './engine';
+import { changeBase, correction, fromPhasors, fromPowerFactor, perUnitBase, threePhase, transformer } from './engine';
 import { spec } from './tool';
 
 const close = (a: number, b: number, rel: number) => expect(Math.abs(a - b)).toBeLessThanOrEqual(rel * Math.abs(b));
@@ -16,6 +16,25 @@ describe('power factor correction', () => {
     close(240 * (240 * 2 * Math.PI * 60 * r.c), r.qc, 1e-12);
     close(r.i1, 10000 / 0.8 / 240, 1e-12);
     expect(r.i2).toBeLessThan(r.i1);
+  });
+  it('a three-phase bank: 30 kW at 0.8 to 0.95, 480 V line, 60 Hz', () => {
+    // Qc = 30 kW (0.75 - 0.32868) = 12.639 kvar, shared by three capacitors.
+    const delta = correction(30000, 0.8, 0.95, 480, 60, { phases: 3, bank: 'delta' });
+    close(delta.qc, 12639.48, 1e-6);
+    close(delta.c, 48.506e-6, 1e-4);
+    const wye = correction(30000, 0.8, 0.95, 480, 60, { phases: 3, bank: 'wye' });
+    close(wye.vElement, 277.128, 1e-5);
+    close(wye.c, 145.52e-6, 1e-4);
+    // A wye bank needs three times the capacitance of a delta bank for the same kvar.
+    close(wye.c / delta.c, 3, 1e-9);
+    close(delta.i1, 30000 / 0.8 / (Math.sqrt(3) * 480), 1e-12);
+    close(delta.i1, 45.1055, 1e-5);
+  });
+  it('a leading load takes an inductor: 10 kW at 0.8 leading to 0.95 leading, 240 V', () => {
+    const r = correction(10000, 0.8, 0.95, 240, 60, { lag: 'leading' });
+    close(r.qc, -4213.16, 1e-5);
+    expect(r.c).toBe(0);
+    close(r.l!, 36.265e-3, 1e-4);
   });
   it('refuses a target below the present power factor, and a power factor outside 0 to 1', () => {
     expect(() => correction(10000, 0.9, 0.8, 240, 60)).toThrow();
@@ -93,5 +112,32 @@ describe('the AC power form', () => {
     }
     const huge = runTool(spec, { ...values, p: '1e15' });
     expect(huge.ok).toBe(true);
+  });
+  it('runs the transformer mode and the three-phase and leading choices of the correction mode', () => {
+    const values = initialValues(spec);
+    const tf = runTool(spec, { ...values, mode: 'transformer' });
+    expect(tf.ok && tf.answer).toContain('Regulation 0.3474 %');
+    const bank = runTool(spec, { ...values, phases: 'three', bank: 'delta', p: '30k', v: '', vl: '480' });
+    expect(bank.ok && bank.answer).toContain('48.506 µF each');
+    const leading = runTool(spec, { ...values, lag: 'leading' });
+    expect(leading.ok && leading.answer).toContain('L = 36.265 mH');
+  });
+});
+
+describe('transformer equivalent circuit', () => {
+  const base = { sRated: 10000, vHigh: 2400, vLow: 240, reqHigh: 1, xeqHigh: 2, core: 40, load: 1, pf: 0.8 };
+  it('10 kVA 2400/240 V, Req 1 ohm, Xeq 2 ohm on the high side, full load at 0.8 lagging', () => {
+    const r = transformer({ ...base, lag: 'lagging' });
+    // Hand values referred to the low side: Req 0.01, Xeq 0.02, I2 = 41.667 A, drop = I2 (0.02 + j0.01),
+    // so V1/a = 240.8333 + j0.41667 = 240.8337 V.
+    close(r.reqLow, 0.01, 1e-12);
+    close(r.iLoad, 41.6667, 1e-6);
+    close(r.vSourceLow, 240.8337, 1e-6);
+    close(r.regulation, 0.34737, 1e-4);
+    close(r.efficiency, 0.992881, 1e-6);
+    close(r.bestLoad, 1.51789, 1e-5);
+  });
+  it('a leading load can raise the voltage: regulation is negative', () => {
+    close(transformer({ ...base, lag: 'leading' }).regulation, -0.068715, 1e-4);
   });
 });

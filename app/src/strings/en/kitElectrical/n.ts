@@ -18,6 +18,8 @@ export const n = {
     acNote: 'Voltages and currents are rms values. A lagging (inductive) load has positive reactive power.',
     correctionNote:
       'The capacitor is placed in parallel with the load, so the real power and the voltage do not change.',
+    transformerNote:
+      'The series equivalent circuit referred to the low side, with the magnetizing branch left at the supply and its loss given as a fixed core loss.',
     threePhaseNote: 'A balanced load with equal impedances, a balanced supply, and line-to-line voltage given.',
     perUnitNote: 'A three-phase base: base impedance is the base line voltage squared over the base power.',
 

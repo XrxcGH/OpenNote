@@ -18,8 +18,8 @@ export const t = {
       title: 'AC power and three-phase systems',
       short: 'AC power',
       keywords:
-        'complex power real reactive apparent power factor correction capacitor three-phase wye delta per-unit pu base',
-      about: 'Power triangles, power factor correction, balanced three-phase loads, and the per-unit system.',
+        'complex power real reactive apparent power factor correction capacitor three-phase wye delta per-unit pu base transformer regulation efficiency',
+      about: 'Power triangles, single- and three-phase power factor correction, transformer equivalent circuits, balanced three-phase loads, and the per-unit system.',
     },
 
     energy: {
