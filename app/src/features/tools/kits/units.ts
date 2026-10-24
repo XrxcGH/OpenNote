@@ -22,6 +22,7 @@ export type QuantityKind =
   | 'area'
   | 'volume'
   | 'mass'
+  | 'amount'
   | 'time'
   | 'temperature'
   | 'temperatureDifference'
@@ -66,6 +67,7 @@ const KINDS: Readonly<Record<QuantityKind, readonly [string, readonly Entry[], r
   area: ['m^2', ['m^2', 'mm^2', 'cm^2'], ['ft^2', 'in^2']],
   volume: ['m^3', ['m^3', 'L', 'mL', 'cm^3'], ['ft^3', 'in^3', 'gal']],
   mass: ['kg', ['kg', 'g', 't'], ['lbm', 'slug', 'oz']],
+  amount: ['mol', ['mol', 'kmol'], [['lbmol', 'mol*453.59237']]],
   time: ['s', ['s', 'ms', 'min', 'h'], ['s', 'min', 'h']],
   temperature: ['K', ['K', '°C'], ['°R', '°F']],
   temperatureDifference: [
