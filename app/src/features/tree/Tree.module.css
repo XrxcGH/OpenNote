@@ -282,7 +282,7 @@
 
   .empty p {
     margin: 0;
-    /* A short sentence breaks into even lines, not a full one and a single word. */
+    /* A short sentence breaks into even lines, not a full one, and a single word. */
     text-wrap: balance;
   }
 

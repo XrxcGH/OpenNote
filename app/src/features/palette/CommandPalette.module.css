@@ -5,7 +5,8 @@
     gap: var(--space-3);
     min-inline-size: 0;
     /* The list runs on to the dialog's own edge, past the dialog's bottom padding, so no empty band sits under it
-       and a row is never cut off above one. The dialog body's own padding (16 px) is what the list reaches into, and 4 px of the dialog's edge remain. */
+       and a row is never cut off above one. It reaches into the dialog body's 16 px of padding, which leaves 4 px
+       of the dialog's edge. */
     margin-block-end: calc(-1 * var(--space-5));
   }
 
@@ -62,7 +63,7 @@
     /* The padding is inside the scroller, with a short fade, so the last row scrolls clear of the edge and a row
        cut by it fades out instead of showing as a sliver of glyph tops. */
     padding-block-end: var(--space-7);
-    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--space-7)), transparent);
+    mask-image: linear-gradient(to bottom, black calc(100% - var(--space-7)), transparent);
     overflow-y: auto;
     overscroll-behavior: contain;
   }

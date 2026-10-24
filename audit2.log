@@ -1,7 +1,0 @@
-
-Running 2 tests using 2 workers
-
-  ok 1 [audit] › tests\ui\audit\layout.audit.spec.ts:15:3 › audit w1280 light touch (1.8m)
-  ok 2 [audit] › tests\ui\audit\layout.audit.spec.ts:15:3 › audit w820 light mouse (1.8m)
-
-  2 passed (2.1m)
