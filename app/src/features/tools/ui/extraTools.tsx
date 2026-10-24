@@ -21,6 +21,9 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The thermodynamics kit loads with its engines' forms on first open, so the tool windows' own code stays small.
+const ThermoKit = lazy(() => import('../../engineering').then((engineering) => engineering.loadThermoKit()));
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-thermo')
+    return (
+      <Suspense fallback={null}>
+        <ThermoKit />
+      </Suspense>
+    );
   return null;
 }
