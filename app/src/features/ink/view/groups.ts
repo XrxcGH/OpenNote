@@ -6,7 +6,7 @@ import { newId } from '../../../editor/ids';
 import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { followView } from './host';
 import type { InkHost, InkQueue, InkSelection } from './host';
 import type { InkSurface } from './surface';
@@ -187,17 +187,17 @@ async function sendGroups(surface: InkSurface, changes: Record<string, ObjectGro
 export async function groupSelection(host: InkHost, surface: InkSurface): Promise<void> {
   const selection = host.selection.get();
   const changes = groupChange(objectGroups.get(), selection);
-  if (!changes) return announce(t('ink.groups.tooFew'));
+  if (!changes) return say(t('ink.groups.tooFew'));
   if (await sendGroups(surface, changes)) {
-    announce(t('ink.groups.grouped', { count: selection.blocks.length + selection.strokes.length }));
+    say(t('ink.groups.grouped', { count: selection.blocks.length + selection.strokes.length }));
   }
 }
 
 /** Ungroup (Ctrl+Shift+G): the groups the selection touches come apart; everything stays selected. */
 export async function ungroupSelection(host: InkHost, surface: InkSurface): Promise<void> {
   const changes = ungroupChange(objectGroups.get(), host.selection.get());
-  if (!changes) return announce(t('ink.groups.none'));
-  if (await sendGroups(surface, changes)) announce(t('ink.groups.ungrouped'));
+  if (!changes) return say(t('ink.groups.none'));
+  if (await sendGroups(surface, changes)) say(t('ink.groups.ungrouped'));
 }
 
 /** Whether the selection touches a group, for Ungroup's enabled state. */

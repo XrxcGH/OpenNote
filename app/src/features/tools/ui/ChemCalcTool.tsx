@@ -1,12 +1,14 @@
 // The chemistry calculators window: balancing, molar mass, stoichiometry, gas laws, solutions, and titration. Each tab
 // holds one or more forms (chemForms.tsx) over the methods in ../chem/calc.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { t } from '../../../strings/t';
 import { ChemForm } from './ChemForm';
 import { CALC_TABS, SUB_FORMS } from './chemForms';
 import type { CalcTab } from './chemForms';
+import chem from './chem.module.css';
 import extra from './extra.module.css';
 import { loadStored, saveStored } from './storage';
+import { useSelectedTabInView } from './tabScroll';
 import styles from './tools.module.css';
 
 const STORE = 'chemcalc';
@@ -17,6 +19,8 @@ export function ChemCalcTool() {
     CALC_TABS.includes(saved.tab as CalcTab) ? (saved.tab as CalcTab) : 'balance',
   );
   const [sub, setSub] = useState<Record<string, string>>(saved.sub ?? {});
+  const strip = useRef<HTMLDivElement>(null);
+  useSelectedTabInView(strip, tab);
   const forms = SUB_FORMS[tab];
   const current = forms.find((f) => f.id === sub[tab]) ?? forms[0];
 
@@ -25,7 +29,7 @@ export function ChemCalcTool() {
 
   return (
     <div className={styles.toolFill}>
-      <div className={styles.tabs} role="tablist" aria-label={t('chem.calc.title')}>
+      <div ref={strip} className={styles.tabs} role="tablist" aria-label={t('chem.calc.title')}>
         {CALC_TABS.map((id) => (
           <button
             key={id}
@@ -44,7 +48,12 @@ export function ChemCalcTool() {
           </button>
         ))}
       </div>
-      <div id="chem-panel" role="tabpanel" aria-labelledby={`chem-tab-${tab}`} className={extra.scroll}>
+      <div
+        id="chem-panel"
+        role="tabpanel"
+        aria-labelledby={`chem-tab-${tab}`}
+        className={`${extra.scroll} ${chem.panel}`}
+      >
         {forms.length > 1 ? (
           <label className={extra.field}>
             {t('chem.calc.kind')}

@@ -322,6 +322,8 @@ register(
     title: 'qol.commands.dockLeft',
     category: 'view',
     flag: 'qol.dock',
+    // Docking moves the main window, so a tool window beside it does not offer it.
+    when: () => isMainWindow(),
     checked: () => qolStore.get().docked === 'left',
     run: () => toggleDock('left'),
   }),
@@ -330,6 +332,8 @@ register(
     title: 'qol.commands.dockRight',
     category: 'view',
     flag: 'qol.dock',
+    // Docking moves the main window, so a tool window beside it does not offer it.
+    when: () => isMainWindow(),
     checked: () => qolStore.get().docked === 'right',
     run: () => toggleDock('right'),
   }),
