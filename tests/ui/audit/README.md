@@ -1,9 +1,14 @@
 # Layout audit
 
-`npm run audit:layout` walks the whole app on the web build and measures what is on screen: clipped or spilled text,
-overlapping text and controls, boxes cut by an ancestor, scroll bars covered by another box, menus and windows that
-leave the window, targets that are too small or too close, the document itself scrolling, and dead space (an empty
-box of 32 px or more in a window, panel, card, or dialog that also cuts its content off or scrolls).
+`npm run audit:layout` walks the whole app on the web build and measures what is on screen. It looks for these:
+
+- text that is clipped or spills out of its box;
+- overlapping text and controls, and boxes cut by an ancestor;
+- scroll bars covered by another box;
+- menus and windows that leave the window;
+- targets that are too small or too close;
+- the document itself scrolling;
+- dead space: an empty box of 32 px or more in a window, panel, card, or dialog that also cuts its content off or scrolls.
 
 ## What it visits
 
@@ -19,7 +24,7 @@ A new tool, command, settings section, setup step, or slash item is therefore au
 
 ## The matrix
 
-Sizes 1280x800, 820x620, and 2560x1600 (device scale factor 2 in screenshots), light and dark, mouse and touch
+Sizes 1280x800, 820x620, and 2560x1600 (device scale factor 2 in screenshots), light and dark, and mouse and touch
 density: 12 cells, one test each (`layout.audit.spec.ts`).
 
 ## The ratchet

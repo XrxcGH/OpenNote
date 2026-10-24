@@ -1,3 +1,4 @@
+// checks-disable-file length: the long lines are selectors and trace messages.
 // The walks of the layout audit: each lists its surfaces from the app's registries (see app/src/app/auditHooks.ts), so
 // a new tool, command, settings section, or setup step is audited the day it is registered.
 

@@ -1,3 +1,4 @@
+// checks-disable-file length, modifiability: Page.evaluate runs this one function in the page, so it uses nothing from outside and cannot be split across modules.
 // The layout audit's measuring function. It runs inside the page (Page.evaluate), so it uses nothing from outside and
 // reads only the live layout: boxes, text ranges, computed styles, and elementFromPoint. It returns findings of the
 // kinds the owner listed, each with a stable selector and the numbers measured (see README.md).

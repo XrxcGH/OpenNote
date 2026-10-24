@@ -1,6 +1,6 @@
-// The layout audit (npm run audit:layout): every screen, tool, dialog, menu, and page block of the app at three
-// window sizes, in both themes and both densities, checked for clipped text, overlap, covered scroll bars, content
-// outside the window, targets too small or too close, and empty space. The findings go to the ratchet
+// The layout audit (npm run audit:layout): every screen, tool, dialog, menu, and page block of the app. Each is
+// measured at three window sizes, in both themes and both densities, for clipped text, overlap, covered scroll bars,
+// content outside the window, targets too small or too close, and empty space. The findings go to the ratchet
 // (ratchet.spec.ts), which compares them with known.json. See README.md.
 
 import { test } from '../fixtures';

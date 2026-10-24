@@ -1,7 +1,7 @@
-// Test hooks for the layout audit (tests/ui/audit). Only `vite build --mode test` builds expose them. The audit
-// lists every surface from the registries instead of a list kept by hand, so a new tool, command, or settings section
-// is checked the day it is registered: window.__OPENNOTE_TEST__.auditRegistries() names them, and runCommand(id)
-// opens one the way the palette does.
+// Test hooks for the layout audit (tests/ui/audit). Only `vite build --mode test` builds expose them.
+// The audit lists every surface from the registries, not from a list kept by hand. A new tool, command, or settings
+// section is therefore checked the day it is registered. auditRegistries() names them, and runCommand(id) opens one
+// the way the palette does.
 import { executeCommand } from '../commands/registry';
 import type { CommandId } from '../commands/types';
 import { navigate } from './location';
