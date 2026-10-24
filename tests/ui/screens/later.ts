@@ -7,6 +7,7 @@
 import type { Page } from '@playwright/test';
 import { defineScreens } from '../screens';
 import { loose as n } from '../pseudoName';
+import { openSettingsSection } from '../settingsOpen';
 
 /** Waits for the shell, so the shortcut listeners are installed before a key is pressed. */
 async function ready(page: Page): Promise<void> {
@@ -45,11 +46,7 @@ async function runCommand(page: Page, search: string, name: RegExp): Promise<voi
 
 async function openSettings(page: Page, section: string): Promise<void> {
   await ready(page);
-  await page.keyboard.press('Control+Comma');
-  await page.getByRole('heading', { level: 1 }).first().waitFor();
-  const link = page.getByRole('navigation', { name: n('Settings sections') }).getByRole('link', { name: n(section) });
-  if (await link.isVisible()) await link.click();
-  await page.getByRole('heading', { level: 1, name: n(section) }).waitFor();
+  await openSettingsSection(page, n(section), n('Settings sections'));
 }
 
 async function openExport(page: Page): Promise<void> {
@@ -185,7 +182,7 @@ export default defineScreens([
     description: 'Home, with its recent pages and notebooks',
     prepare: async (page) => {
       await ready(page);
-      await runCommand(page, 'home', n('Home', { prefix: true }));
+      await runCommand(page, 'home', n('Go home', { prefix: true }));
       await page.getByRole('heading', { level: 1 }).first().waitFor();
     },
   },
