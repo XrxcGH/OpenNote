@@ -111,8 +111,11 @@ function starFrom(corners: readonly Vec[], error: number): Candidate | null {
 const MAX_FREEFORM_CORNERS = 7;
 /** An irregular polygon's corners each turn the path by at least this much, or they are no corner. */
 const MIN_CORNER_TURN = 30 * DEGREES;
-/** Its sides are each at least this share of its perimeter, so a crowded pair of corners is no polygon. */
-const MIN_SIDE_SHARE = 0.07;
+/**
+ * Its sides are each at least this share of its perimeter, so a crowded pair of corners is no polygon. An L's foot is
+ * 7 to 11% of its outline as meant, and less once the hand's corners wander; pickCorners already keeps sides over 3%.
+ */
+const MIN_SIDE_SHARE = 0.04;
 /** One more corner is taken only when it cuts the fit error below this share of the fewer-cornered fit's. */
 const EXTRA_CORNER_GAIN = 0.4;
 /**
