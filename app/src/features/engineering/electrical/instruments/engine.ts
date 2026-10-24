@@ -210,7 +210,7 @@ export interface Adc {
   lsb: number;
   /** The ideal code for the input, clamped to the range. */
   code: number;
-  /** The voltage the code stands for (the bottom of its step). */
+  /** The voltage the code stands for (the middle of its step, so the error is at most half a step). */
   reconstructed: number;
   /** The largest error of an ideal converter, half a step. */
   maxError: number;
@@ -223,7 +223,7 @@ export function adc(bits: number, vref: number, input: number): Adc {
   if (!Number.isInteger(bits) || bits < 1 || bits > 32) return fail('bits');
   const levels = 2 ** bits;
   const lsb = vref / levels;
-  const code = Math.max(0, Math.min(levels - 1, Math.floor(input / lsb)));
+  const code = Math.max(0, Math.min(levels - 1, Math.round(input / lsb)));
   return {
     levels,
     lsb,

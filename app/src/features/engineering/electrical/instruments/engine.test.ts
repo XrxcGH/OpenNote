@@ -163,6 +163,13 @@ describe('converters', () => {
     close(a.snr, 74.0, 1e-3);
     close(a.rmsError, a.lsb / Math.sqrt(12), 1e-12);
   });
+  it('rounds to the nearest code so the error stays within half a step: 10-bit, 5 V, 4.87 mV reads code 1', () => {
+    const a = adc(10, 5, 4.87e-3);
+    expect(a.code).toBe(1);
+    close(a.reconstructed, 5 / 1024, 1e-12);
+    expect(Math.abs(a.reconstructed - 4.87e-3)).toBeLessThanOrEqual(a.maxError);
+    expect(Math.abs(adc(10, 5, 2.4e-3).reconstructed - 2.4e-3)).toBeLessThanOrEqual(a.maxError);
+  });
   it('clamps to the range and refuses nonsense bit counts', () => {
     expect(adc(8, 5, 6).code).toBe(255);
     expect(adc(8, 5, -1).code).toBe(0);

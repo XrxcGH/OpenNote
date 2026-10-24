@@ -229,7 +229,7 @@ export function converter(values: Values): KitOk {
     {
       key: 'adcCode',
       vars: { code: String(c.code) },
-      math: '\\mathrm{code} = \\left\\lfloor \\frac{V_\\mathrm{in}}{\\mathrm{LSB}} \\right\\rfloor',
+      math: '\\mathrm{code} = \\operatorname{round}\\left( \\frac{V_\\mathrm{in}}{\\mathrm{LSB}} \\right)',
     },
     { key: 'adcSnr', vars: { value: fmt(c.snr, 5) }, math: '\\mathrm{SNR} = 6.02\\,N + 1.76\\ \\mathrm{dB}' },
   ];
