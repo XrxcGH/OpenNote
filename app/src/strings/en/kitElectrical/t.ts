@@ -61,4 +61,13 @@ export const t = {
         'least squares regression fit line chi-square residuals uncertainty error bars exponential power levenberg',
       about: 'Fit a line, polynomial, exponential, power law, or your own formula to lab data with uncertainties.',
     },
+
+    netlist: {
+      title: 'Circuit simulator',
+      short: 'Simulator',
+      keywords:
+        'spice netlist circuit simulator nodal mna ac sweep bode transient thevenin norton op-amp rlc phasor impedance',
+      about:
+        'Type a circuit as a short netlist, then find its DC operating point, AC sweep, transient response, or Thevenin equivalent.',
+    },
 } as const;

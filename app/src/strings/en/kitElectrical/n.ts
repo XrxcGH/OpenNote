@@ -74,4 +74,10 @@ export const n = {
       'No σ was given, so the uncertainties assume every point has the same error, estimated from the scatter.',
     chiNote:
       'A reduced χ² near 1 means the scatter agrees with the uncertainties. Far above 1 means the model or the σ is wrong.',
+
+    netNote: 'Values take SI prefixes: m is milli, u is micro, k is kilo, and M or meg is mega.',
+    netDcNote: 'A capacitor is open, an inductor is a short, and a source current is positive into its + terminal.',
+    netAcNote: 'Only the AC part of each source is used, in steady state. Phase is plotted without jumps of 360 degrees.',
+    netTranNote: 'A switch is 1 mΩ closed and 1 GΩ open. With ic values on capacitors or inductors, t = 0 uses them.',
+    netThevNote: 'Dependent sources stay active when the independent sources are set to zero.',
 } as const;

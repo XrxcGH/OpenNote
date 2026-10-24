@@ -3,6 +3,7 @@ import type { ToolSpec } from './spec';
 import type { ElectricalToolId } from './meta';
 
 export const LOADERS: Record<ElectricalToolId, () => Promise<{ spec: ToolSpec }>> = {
+  netlist: () => import('./netlist/tool'),
   transients: () => import('./transients/tool'),
   instruments: () => import('./instruments/tool'),
   acpower: () => import('./acpower/tool'),

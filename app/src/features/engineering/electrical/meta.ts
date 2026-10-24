@@ -3,10 +3,11 @@ import type { IconName } from '../../../ui/icons';
 
 export const ELECTRICAL_TOOLS = [
   { id: 'transients', icon: 'Lightning' },
-  { id: 'instruments', icon: 'Gauge' },
-  { id: 'acpower', icon: 'Lightning' },
+  { id: 'netlist', icon: 'Circuitry' },
   { id: 'opamps', icon: 'Function' },
   { id: 'semis', icon: 'Circuitry' },
+  { id: 'instruments', icon: 'Gauge' },
+  { id: 'acpower', icon: 'Lightning' },
   { id: 'powerflow', icon: 'TreeStructure' },
   { id: 'labfit', icon: 'ChartLine' },
   { id: 'energy', icon: 'Leaf' },

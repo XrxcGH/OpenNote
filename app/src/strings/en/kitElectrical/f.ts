@@ -271,4 +271,22 @@ export const f = {
     unitHint: 'Optional, such as s or m.',
     yUnit: 'Unit of y, for labels',
     predictAt: 'Predict y at this x',
+
+    netAnalysis: 'Analysis',
+    netOp: 'DC operating point',
+    netAc: 'AC frequency sweep',
+    netTran: 'Transient response',
+    netThev: 'Thevenin and Norton equivalent',
+    netlistText: 'Netlist, one element per line',
+    netlistHint:
+      'Elements R C L V I E G H F O S. Node 0 is ground. Example: R1 a b 1k. Sources: DC, AC, STEP, PULSE, SIN.',
+    probesText: 'What to plot',
+    probesHint: 'Node names or currents, separated by commas, such as out, v(a,b), i(R1).',
+    acStart: 'Start frequency (Hz)',
+    acStop: 'Stop frequency (Hz)',
+    acPoints: 'Number of frequencies',
+    tranStep: 'Time step (s)',
+    tranStop: 'Stop time (s)',
+    thevA: 'Terminal node (+)',
+    thevB: 'Reference node (−)',
 } as const;
