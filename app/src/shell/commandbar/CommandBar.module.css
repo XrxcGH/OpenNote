@@ -22,8 +22,10 @@
 
   /* The active tab's indicator is a 3 px bottom border, which forced colors keep. */
   .tab {
-    /* The 3 px indicator below is balanced above, so a tab's label sits level with the tools' labels. */
-    padding-block: 3px 0;
+    /* The 4 px above keeps a tab off the title bar's buttons, and a pixel below balances it with the 3 px
+       indicator, so a tab's label sits level with the tools' labels. */
+    margin-block-start: var(--space-2);
+    padding-block: 0 1px;
     padding-inline: var(--space-4);
     border: none;
     border-block-end: 3px solid transparent;

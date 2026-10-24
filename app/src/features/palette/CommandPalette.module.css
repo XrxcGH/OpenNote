@@ -5,8 +5,8 @@
     gap: var(--space-3);
     min-inline-size: 0;
     /* The list runs on to the dialog's own edge, past the dialog's bottom padding, so no empty band sits under it
-       and a row is never cut off above one. The dialog body's own padding keeps the last 4 px inside. */
-    margin-block-end: calc(-1 * var(--space-7) + var(--space-2));
+       and a row is never cut off above one. The dialog body's own padding (16 px) is what the list reaches into, and 4 px of the dialog's edge remain. */
+    margin-block-end: calc(-1 * var(--space-5));
   }
 
   .input {
@@ -57,8 +57,8 @@
   .list {
     display: grid;
     gap: var(--space-3);
-    /* The list reaches into the dialog's bottom padding (24 px less 4), so it may be that much taller. */
-    max-block-size: min(60vh, calc(100dvh - var(--size-palette-top) - 174px + var(--space-7) - var(--space-2)));
+    /* The list reaches into the dialog's bottom padding (16 px), so it may be that much taller. */
+    max-block-size: min(60vh, calc(100dvh - var(--size-palette-top) - 174px + var(--space-5)));
     /* The padding is inside the scroller, with a short fade, so the last row scrolls clear of the edge and a row
        cut by it fades out instead of showing as a sliver of glyph tops. */
     padding-block-end: var(--space-7);

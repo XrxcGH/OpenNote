@@ -1,0 +1,1051 @@
+
+> opennote@0.1.0-beta.5 app:build:test
+> npm run tokens && vite build --config app/vite.config.ts --mode test
+
+
+> opennote@0.1.0-beta.5 tokens
+> node app/scripts/build-tokens.ts
+
+Wrote 3 theme files.
+[36mvite v8.3.1 [32mbuilding client environment for test...[36m[39m
+transforming...
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+[33m[plugin rolldown:vite-resolve] Module "path" has been externalized for browser compatibility, imported by "C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/ua-shell/node_modules/@micropython/micropython-webassembly-pyscript/micropython.mjs". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "fs" has been externalized for browser compatibility, imported by "C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/ua-shell/node_modules/@micropython/micropython-webassembly-pyscript/micropython.mjs". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "url" has been externalized for browser compatibility, imported by "C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/ua-shell/node_modules/@micropython/micropython-webassembly-pyscript/micropython.mjs". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[plugin rolldown:vite-resolve] Module "module" has been externalized for browser compatibility, imported by "C:/Users/ericj/GitHub/OpenNote/.claude/worktrees/ua-shell/node_modules/@micropython/micropython-webassembly-pyscript/micropython.mjs". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.[39m
+[33m[33m[PLUGIN_TIMINGS] [0mJavaScript callbacks ran for 88ms of this 23.5s build (0%).
+1 callback is listed without a time. Its calls overlapped, so the time inside one call includes work from other calls. To find its cost, profile the build with `node --cpu-prof`:
+  - plugin vite:asset load (2 calls)
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+[39m
+✓ 4689 modules transformed.
+rendering chunks...
+computing gzip size...
+app/dist-test/assets/__vite-browser-external-CqGsXVYU.js                                 0.11 kB
+app/dist-test/assets/module-ES6BEMUI-DrvWXhXz.js                                         0.18 kB
+app/dist-test/assets/rolldown-runtime-CbXtAM7H.js                                        0.58 kB
+app/dist-test/print.html                                                                 1.48 kB │ gzip:   0.43 kB
+app/dist-test/assets/worker-DcJf1cYY.js                                                  3.66 kB
+app/dist-test/assets/KaTeX_Size3-Regular-CTq5MqoE.woff                                   4.42 kB
+app/dist-test/assets/javascript-BpVHpK-j.js                                              4.59 kB
+app/dist-test/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2                                  4.92 kB
+app/dist-test/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2                                  5.20 kB
+app/dist-test/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2                                  5.46 kB
+app/dist-test/assets/KaTeX_Size4-Regular-BF-4gkZK.woff                                   5.98 kB
+app/dist-test/assets/KaTeX_Size2-Regular-oD1tc_U0.woff                                   6.18 kB
+app/dist-test/gallery.html                                                               6.20 kB │ gzip:   1.25 kB
+app/dist-test/assets/ffi-4V2b7xu3.js                                                     6.32 kB
+app/dist-test/assets/KaTeX_Size1-Regular-C195tn64.woff                                   6.49 kB
+app/dist-test/assets/atkinson-hyperlegible-mono-latin-ext-400-normal-CpVFOiMk.woff2      6.52 kB
+app/dist-test/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2                            6.90 kB
+app/dist-test/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2                               6.91 kB
+app/dist-test/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf                                    7.58 kB
+app/dist-test/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff                             7.65 kB
+app/dist-test/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff                                7.71 kB
+app/dist-test/assets/atkinson-hyperlegible-mono-latin-ext-400-normal-ITMuFrSK.woff       8.38 kB
+app/dist-test/assets/emscripten-module.browser-D72eEgXo.js                               9.21 kB
+app/dist-test/assets/KaTeX_Script-Regular-D3wIWfF6.woff2                                 9.64 kB
+app/dist-test/assets/literata-cyrillic-ext-wght-normal-CGKlZYBf.woff2                    9.72 kB
+app/dist-test/assets/atkinson-hyperlegible-mono-latin-400-normal-CmMGer93.woff2         10.05 kB
+app/dist-test/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2                             10.34 kB
+app/dist-test/assets/KaTeX_Size4-Regular-DWFBv043.ttf                                   10.36 kB
+app/dist-test/assets/KaTeX_Script-Regular-D5yQViql.woff                                 10.58 kB
+app/dist-test/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2                               11.31 kB
+app/dist-test/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2                                  11.34 kB
+app/dist-test/assets/literata-vietnamese-wght-normal-LcSrhZ7T.woff2                     11.40 kB
+app/dist-test/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf                                   11.50 kB
+app/dist-test/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2                              12.02 kB
+app/dist-test/assets/literata-greek-ext-wght-normal-e3e57Shi.woff2                      12.19 kB
+app/dist-test/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2                                12.21 kB
+app/dist-test/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf                                   12.22 kB
+app/dist-test/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff                              12.31 kB
+app/dist-test/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf                             12.34 kB
+app/dist-test/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf                                12.36 kB
+app/dist-test/index.html                                                                12.54 kB │ gzip:   2.25 kB
+app/dist-test/assets/atkinson-hyperlegible-mono-latin-400-normal-Cmjm2dBj.woff          12.76 kB
+app/dist-test/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff                                13.20 kB
+app/dist-test/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff                                   13.29 kB
+app/dist-test/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2                            13.56 kB
+app/dist-test/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff                               14.11 kB
+app/dist-test/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff                                 14.40 kB
+app/dist-test/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff                             16.02 kB
+app/dist-test/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2                               16.40 kB
+app/dist-test/assets/KaTeX_Math-Italic-t53AETM-.woff2                                   16.44 kB
+app/dist-test/assets/KaTeX_Script-Regular-C5JkGWo-.ttf                                  16.64 kB
+app/dist-test/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2                               16.78 kB
+app/dist-test/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2                                   16.98 kB
+app/dist-test/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff                                18.66 kB
+app/dist-test/assets/KaTeX_Math-Italic-DA0__PXp.woff                                    18.74 kB
+app/dist-test/assets/opennote-sans-latin-ext-wght-normal-C6vrW8VD.woff2                 19.09 kB
+app/dist-test/assets/literata-greek-wght-normal-CO1l-giJ.woff2                          19.25 kB
+app/dist-test/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff                                19.41 kB
+app/dist-test/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf                               19.43 kB
+app/dist-test/assets/KaTeX_Fraktur-Regular-CB_wures.ttf                                 19.57 kB
+app/dist-test/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf                                    19.58 kB
+app/dist-test/assets/KaTeX_Main-Italic-BMLOBm91.woff                                    19.67 kB
+app/dist-test/assets/opennote-sans-latin-ext-wght-italic-Cigfgs4r.woff2                 20.13 kB
+app/dist-test/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf                                22.36 kB
+app/dist-test/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf                                  24.50 kB
+app/dist-test/assets/KaTeX_Main-Bold-Cx986IdX.woff2                                     25.32 kB
+app/dist-test/assets/KaTeX_Main-Regular-B22Nviop.woff2                                  26.27 kB
+app/dist-test/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf                              27.55 kB
+app/dist-test/assets/literata-cyrillic-wght-normal-DLqwHbi6.woff2                       28.06 kB
+app/dist-test/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2                                   28.07 kB
+app/dist-test/assets/KaTeX_Main-Bold-Jm3AIy58.woff                                      29.91 kB
+app/dist-test/assets/KaTeX_Main-Regular-Dr94JaBh.woff                                   30.77 kB
+app/dist-test/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf                                 31.19 kB
+app/dist-test/assets/KaTeX_Math-Italic-flOr_0UB.ttf                                     31.30 kB
+app/dist-test/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf                                 32.96 kB
+app/dist-test/assets/KaTeX_AMS-Regular-DMm9YOAa.woff                                    33.51 kB
+app/dist-test/assets/KaTeX_Main-Italic-3WenGoN9.ttf                                     33.58 kB
+app/dist-test/assets/opennote-sans-latin-wght-normal-C_5I8mjT.woff2                     34.07 kB
+app/dist-test/assets/chunk-V2S4ZYJR-D3zsAQXf.js                                         34.19 kB
+app/dist-test/assets/opennote-sans-latin-wght-italic-B7zzfYXF.woff2                     37.60 kB
+app/dist-test/assets/literata-latin-ext-wght-normal-BnEbWgdZ.woff2                      42.65 kB
+app/dist-test/assets/KaTeX_Main-Bold-waoOVXN0.ttf                                       51.33 kB
+app/dist-test/assets/literata-latin-wght-normal-DLxlUchJ.woff2                          52.49 kB
+app/dist-test/assets/KaTeX_Main-Regular-ypZvNtVU.ttf                                    53.58 kB
+app/dist-test/assets/KaTeX_AMS-Regular-DRggAlZN.ttf                                     63.63 kB
+app/dist-test/assets/python-C9n2q71i.js                                                 78.21 kB
+app/dist-test/.vite/manifest.json                                                      345.74 kB │ gzip:  43.34 kB
+app/dist-test/assets/workerMain-1i0xIn7W.js                                            412.32 kB
+app/dist-test/assets/micropython-CtuBaDUc.wasm                                         433.74 kB │ gzip: 195.11 kB
+app/dist-test/assets/emscripten-module-uFzwHH0Y.wasm                                   503.13 kB │ gzip: 235.94 kB
+app/dist-test/assets/pdf.worker.min-Dswkl-cV.mjs                                     1,265.41 kB
+app/dist-test/assets/appearance-CEH41KZX.css                                             0.18 kB │ gzip:   0.14 kB
+app/dist-test/assets/PageWindow-D6lsqswz.css                                             0.18 kB │ gzip:   0.15 kB
+app/dist-test/assets/LinkPopover-Bttot-vy.css                                            0.33 kB │ gzip:   0.23 kB
+app/dist-test/assets/sections-BVTSrg3b.css                                               0.48 kB │ gzip:   0.28 kB
+app/dist-test/assets/a11yCheck-5aHQTCpY.css                                              0.48 kB │ gzip:   0.27 kB
+app/dist-test/assets/jump-BQW8_Ue4.css                                                   0.50 kB │ gzip:   0.29 kB
+app/dist-test/assets/CheckNotebook-_aXDDvTX.css                                          0.54 kB │ gzip:   0.30 kB
+app/dist-test/assets/EditingTyping-rU7a1ArV.css                                          0.55 kB │ gzip:   0.30 kB
+app/dist-test/assets/ConflictDialog-BKNc7wTu.css                                         0.61 kB │ gzip:   0.35 kB
+app/dist-test/assets/open-VbKZew0k.css                                                   0.70 kB │ gzip:   0.37 kB
+app/dist-test/assets/LocalePicker-vneq4--e.css                                           0.78 kB │ gzip:   0.35 kB
+app/dist-test/assets/registerEditor-D72R6zvv.css                                         0.84 kB │ gzip:   0.40 kB
+app/dist-test/assets/theme-kYl4ZTQH.css                                                  0.85 kB │ gzip:   0.43 kB
+app/dist-test/assets/QuickCapture-CB9P4Ah5.css                                           0.85 kB │ gzip:   0.42 kB
+app/dist-test/assets/textBlock-WyNh9TxE.css                                              0.88 kB │ gzip:   0.41 kB
+app/dist-test/assets/viewport-D9rE6UYT.css                                               0.88 kB │ gzip:   0.45 kB
+app/dist-test/assets/parts-D4671v9p.css                                                  0.89 kB │ gzip:   0.38 kB
+app/dist-test/assets/entryLock-t0493_zg.css                                              0.90 kB │ gzip:   0.45 kB
+app/dist-test/assets/slashMenu-DJYyIGbK.css                                              0.91 kB │ gzip:   0.44 kB
+app/dist-test/assets/ExternalNotice-BtsA8Zrm.css                                         0.93 kB │ gzip:   0.46 kB
+app/dist-test/assets/bar-BcFMW_aX.css                                                    0.94 kB │ gzip:   0.43 kB
+app/dist-test/assets/TextStylesDialog-DBmbHvpX.css                                       0.97 kB │ gzip:   0.44 kB
+app/dist-test/assets/AppearanceSection-QJ0r-Nu-.css                                      1.09 kB │ gzip:   0.51 kB
+app/dist-test/assets/prompts-DZOvuc-C.css                                                1.12 kB │ gzip:   0.50 kB
+app/dist-test/assets/PageBody-WS5Qoihp.css                                               1.18 kB │ gzip:   0.51 kB
+app/dist-test/assets/MoveToDialog-DGaLofNw.css                                           1.25 kB │ gzip:   0.52 kB
+app/dist-test/assets/qol-SOW8EeP4.css                                                    1.28 kB │ gzip:   0.55 kB
+app/dist-test/assets/ReadAloudBar-CtIzVqUU.css                                           1.34 kB │ gzip:   0.57 kB
+app/dist-test/assets/codeBlock-nBgV52L0.css                                              1.37 kB │ gzip:   0.56 kB
+app/dist-test/assets/picker-Cwr9vB6s.css                                                 1.38 kB │ gzip:   0.52 kB
+app/dist-test/assets/codecells-CNTmtiN6.css                                              1.45 kB │ gzip:   0.51 kB
+app/dist-test/assets/PageView-Bh-feqaZ.css                                               1.46 kB │ gzip:   0.58 kB
+app/dist-test/assets/gallery-BtY2QDey.css                                                1.51 kB │ gzip:   0.55 kB
+app/dist-test/assets/dialog-tLwppYZx.css                                                 1.54 kB │ gzip:   0.56 kB
+app/dist-test/assets/galleryCommands-QFH6eLTC.css                                        1.63 kB │ gzip:   0.68 kB
+app/dist-test/assets/title-Ctn2L_xK.css                                                  1.76 kB │ gzip:   0.68 kB
+app/dist-test/assets/intel-DmhM2iyP.css                                                  1.77 kB │ gzip:   0.58 kB
+app/dist-test/assets/more-CDf9M9_d.css                                                   1.79 kB │ gzip:   0.72 kB
+app/dist-test/assets/docTools-DZHzDiSH.css                                               1.89 kB │ gzip:   0.62 kB
+app/dist-test/assets/blockRenderer-DzsxXASW.css                                          1.94 kB │ gzip:   0.78 kB
+app/dist-test/assets/HomeView-B8lt0Vaa.css                                               1.95 kB │ gzip:   0.74 kB
+app/dist-test/assets/UpdateDetails-Bg1tEKH9.css                                          1.95 kB │ gzip:   0.63 kB
+app/dist-test/assets/TagsPane-CFvs_SIO.css                                               1.97 kB │ gzip:   0.68 kB
+app/dist-test/assets/citations-jtDTxgF6.css                                              1.98 kB │ gzip:   0.65 kB
+app/dist-test/assets/dictation-DBL3L5Ey.css                                              2.04 kB │ gzip:   0.72 kB
+app/dist-test/assets/embed-BoSLlvM9.css                                                  2.07 kB │ gzip:   0.76 kB
+app/dist-test/assets/GraphView-_wQ6WRqo.css                                              2.13 kB │ gzip:   0.75 kB
+app/dist-test/assets/ThemeCards-DAhdKwwg.css                                             2.32 kB │ gzip:   0.84 kB
+app/dist-test/assets/Parts-Cz1quEG6.css                                                  2.51 kB │ gzip:   0.75 kB
+app/dist-test/assets/DailyCalendar-DaTEIIMH.css                                          2.57 kB │ gzip:   0.81 kB
+app/dist-test/assets/ScopePicker-D6moBQPT.css                                            2.66 kB │ gzip:   0.83 kB
+app/dist-test/assets/fileBlock-Dn-A8X2z.css                                              2.67 kB │ gzip:   0.81 kB
+app/dist-test/assets/mount-CG9cmv4J.css                                                  2.72 kB │ gzip:   0.87 kB
+app/dist-test/assets/CanvasView-zuVqch5t.css                                             2.74 kB │ gzip:   0.90 kB
+app/dist-test/assets/mount-CacEeYoR.css                                                  2.95 kB │ gzip:   0.95 kB
+app/dist-test/assets/ConnectorCard-DAQU0GnC.css                                          2.96 kB │ gzip:   0.82 kB
+app/dist-test/assets/source-BA3HLWkK.css                                                 2.98 kB │ gzip:   0.97 kB
+app/dist-test/assets/deleteHistory-CkK8JaQm.css                                          2.99 kB │ gzip:   1.01 kB
+app/dist-test/assets/tableBlock-mIv1njTQ.css                                             3.00 kB │ gzip:   0.98 kB
+app/dist-test/assets/install-BIZeiSYD.css                                                3.27 kB │ gzip:   0.79 kB
+app/dist-test/assets/reading-CNyIS472.css                                                3.33 kB │ gzip:   1.02 kB
+app/dist-test/assets/transcripts-yMuUUH-g.css                                            3.35 kB │ gzip:   0.96 kB
+app/dist-test/assets/host-DlUFR5Cb.css                                                   3.41 kB │ gzip:   1.06 kB
+app/dist-test/assets/ShortcutList-B6u3enQx.css                                           3.43 kB │ gzip:   1.12 kB
+app/dist-test/assets/plus-lCX0GNPg.css                                                   3.44 kB │ gzip:   1.05 kB
+app/dist-test/assets/CommandPalette-Bmxyp6fL.css                                         3.46 kB │ gzip:   1.07 kB
+app/dist-test/assets/views-Decov_MJ.css                                                  3.50 kB │ gzip:   1.02 kB
+app/dist-test/assets/audio-CrgxpSLO.css                                                  3.50 kB │ gzip:   1.08 kB
+app/dist-test/assets/MathPen-DWVs4teK.css                                                3.53 kB │ gzip:   1.09 kB
+app/dist-test/assets/geometry-DHUezHHR.css                                               3.81 kB │ gzip:   1.13 kB
+app/dist-test/assets/StepHeader-CL-B-NUA.css                                             3.87 kB │ gzip:   1.21 kB
+app/dist-test/assets/images-BoWsrBNj.css                                                 4.10 kB │ gzip:   1.17 kB
+app/dist-test/assets/pdf-DNqCrr3w.css                                                    4.12 kB │ gzip:   1.24 kB
+app/dist-test/assets/Diagnostics-B05h-2up.css                                            4.16 kB │ gzip:   1.15 kB
+app/dist-test/assets/Logo-DPOhbmim.css                                                   4.21 kB │ gzip:   1.16 kB
+app/dist-test/assets/study-CIRWR9KV.css                                                  4.42 kB │ gzip:   1.19 kB
+app/dist-test/assets/pagesUi-B5aLkWSV.css                                                4.43 kB │ gzip:   1.28 kB
+app/dist-test/assets/toast-KMnEnjei.css                                                  5.69 kB │ gzip:   1.47 kB
+app/dist-test/assets/SolversTool-CtuoPnFV.css                                            5.75 kB │ gzip:   1.49 kB
+app/dist-test/assets/search-CTw6mcEY.css                                                 6.77 kB │ gzip:   1.59 kB
+app/dist-test/assets/qol-CRWHwZr4.css                                                    7.01 kB │ gzip:   1.73 kB
+app/dist-test/assets/math-BEs9vLZ5.css                                                   7.16 kB │ gzip:   1.57 kB
+app/dist-test/assets/tree-BlJTfc7k.css                                                   7.36 kB │ gzip:   1.81 kB
+app/dist-test/assets/blocks-BtCknzeu.css                                                 8.83 kB │ gzip:   1.98 kB
+app/dist-test/assets/tables-B6gM6s6F.css                                                 8.93 kB │ gzip:   2.03 kB
+app/dist-test/assets/math-CApCnqM5.css                                                   9.58 kB │ gzip:   2.20 kB
+app/dist-test/assets/main-CIFSohYY.css                                                  13.03 kB │ gzip:   2.95 kB
+app/dist-test/assets/ui-CO9nM_Qj.css                                                    17.49 kB │ gzip:   3.43 kB
+app/dist-test/assets/base-nSYM1F1N.css                                                  20.23 kB │ gzip:   3.94 kB
+app/dist-test/assets/tools-BCDT68Ql.css                                                 20.76 kB │ gzip:   3.84 kB
+app/dist-test/assets/liveMath-lxMheimU.css                                              29.84 kB │ gzip:   8.01 kB
+app/dist-test/assets/intel-DFcV5496.js                                                   0.02 kB │ gzip:   0.04 kB
+app/dist-test/assets/paper-74FtMtRW.js                                                   0.02 kB │ gzip:   0.04 kB
+app/dist-test/assets/commands-CPyvTz7B.js                                                0.03 kB │ gzip:   0.05 kB
+app/dist-test/assets/palette-DTybD5PT.js                                                 0.03 kB │ gzip:   0.05 kB
+app/dist-test/assets/model-BncZHP3q.js                                                   0.05 kB │ gzip:   0.07 kB
+app/dist-test/assets/choices-B8SNk4ut.js                                                 0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/host-DcoDIksz.js                                                    0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/render-C1-Zz7cu.js                                                  0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/shown-D2pNi0L5.js                                                   0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/open-CmHTqOp3.js                                                    0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/runtime-PQv6NSDB.js                                                 0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/location-B7o3VGnc.js                                                0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/pdf.worker.min-zC6nfbxG.js                                          0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/blocks-BQ8b8WCy.js                                                  0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/cropMode-ChF6VuK7.js                                                0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/insert-DrlutnLr.js                                                  0.06 kB │ gzip:   0.07 kB
+app/dist-test/assets/math-CzWQiL2e.js                                                    0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/render-B7PCnkTk.js                                                  0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/auto-KKvSUT0m.js                                                    0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/openers-CIXVT2Dl.js                                                 0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/pageText-DQiDREk9.js                                                0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/store-kTzWAASK.js                                                   0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/open-DnE2TVwf.js                                                    0.06 kB │ gzip:   0.08 kB
+app/dist-test/assets/lock-BKM_11uu.js                                                    0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/controller-DdUyJXV-.js                                              0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/imageBlock-Bu346Kch.js                                              0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/timerSet-BBQ7lTgz.js                                                0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/client-DDPZ0U62.js                                                  0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/picker-DDPZ0U62.js                                                  0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/picker-DHGiyicy.js                                                  0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/tapePref-CbFa7AVK.js                                                0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/commit-DepF-EOR.js                                                  0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/exportTarget-Uk12xzuE.js                                            0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/fake-BfeE7Knb.js                                                    0.07 kB │ gzip:   0.09 kB
+app/dist-test/assets/editorExtension-CHEmJ-99.js                                         0.07 kB │ gzip:   0.09 kB
+app/dist-test/assets/extras-pJRZm2j6.js                                                  0.07 kB │ gzip:   0.09 kB
+app/dist-test/assets/pick-B__ARLKn.js                                                    0.07 kB │ gzip:   0.08 kB
+app/dist-test/assets/a11yCheck-DBOB9bt0.js                                               0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/current-B7hjEt46.js                                                 0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/shown-CwYRa7bU.js                                                   0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/shown-DqnQRON8.js                                                   0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/types-hqI7-TNN.js                                                   0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/actionRegistry-C_V5iDZR.js                                          0.08 kB │ gzip:   0.10 kB
+app/dist-test/assets/chipStore-CV65eQr3.js                                               0.08 kB │ gzip:   0.10 kB
+app/dist-test/assets/commands-D81yEba1.js                                                0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/openFiles-DUInaq9i.js                                               0.08 kB │ gzip:   0.08 kB
+app/dist-test/assets/textBlock-Dog0c4F0.js                                               0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/ui-BQL8HHei.js                                                      0.08 kB │ gzip:   0.09 kB
+app/dist-test/assets/commands-BXTNmmii.js                                                0.09 kB │ gzip:   0.09 kB
+app/dist-test/assets/engine-Dig-W2bU.js                                                  0.09 kB │ gzip:   0.09 kB
+app/dist-test/assets/stamps-C05SVtrF.js                                                  0.09 kB │ gzip:   0.09 kB
+app/dist-test/assets/selectionStore-DnpuKmfM.js                                          0.09 kB │ gzip:   0.09 kB
+app/dist-test/assets/store-D83NupqW.js                                                   0.09 kB │ gzip:   0.10 kB
+app/dist-test/assets/engine-CVu3jYjF.js                                                  0.10 kB │ gzip:   0.10 kB
+app/dist-test/assets/notes-B6gF_cWI.js                                                   0.10 kB │ gzip:   0.10 kB
+app/dist-test/assets/admin-rjmNePSD.js                                                   0.10 kB │ gzip:   0.09 kB
+app/dist-test/assets/testHooks-D-0dXfoB.js                                               0.10 kB │ gzip:   0.11 kB
+app/dist-test/assets/array-BifhSqXX.js                                                   0.10 kB │ gzip:   0.11 kB
+app/dist-test/assets/truss-CLlxw-cU.js                                                   0.11 kB │ gzip:   0.10 kB
+app/dist-test/assets/channel-C8QCCNXF.js                                                 0.11 kB │ gzip:   0.12 kB
+app/dist-test/assets/target-BDYiFhia.js                                                  0.11 kB │ gzip:   0.11 kB
+app/dist-test/assets/pie-XZMESJXO-CQIQasY-.js                                            0.11 kB │ gzip:   0.11 kB
+app/dist-test/assets/info-OHQRW6UA-BDFQOo4H.js                                           0.11 kB │ gzip:   0.12 kB
+app/dist-test/assets/title.module-C8Opqlx9.js                                            0.11 kB │ gzip:   0.10 kB
+app/dist-test/assets/radar-ABXABTNO-ByfpCXh9.js                                          0.11 kB │ gzip:   0.12 kB
+app/dist-test/assets/shown-Ca5EJMG6.js                                                   0.11 kB │ gzip:   0.11 kB
+app/dist-test/assets/inkStrokes-DUg0XWLH.js                                              0.12 kB │ gzip:   0.11 kB
+app/dist-test/assets/packet-JDAUHWVQ-DJ9K2MA4.js                                         0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/cynefin-EF2NZ3EQ-DVkJeZ8i.js                                        0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/treemap-SAJKECNS-BcCHmcAX.js                                        0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/wardley-7MLQ67FV-DOahSwbZ.js                                        0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/gitGraph-VSP46ZUC-1499lQAI.js                                       0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/railroad-I3PHUGI6-CTUn9HhI.js                                       0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/treeView-D4JQ5SDB-DcX7Bx0H.js                                       0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/meta-BOlIWmDk.js                                                    0.12 kB │ gzip:   0.10 kB
+app/dist-test/assets/tables-HYr3Bznh.js                                                  0.12 kB │ gzip:   0.11 kB
+app/dist-test/assets/ExternalNotice-D5_asN_a.js                                          0.12 kB │ gzip:   0.11 kB
+app/dist-test/assets/railroad-peg-JR7BVNR7-Dj23PxYc.js                                   0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/architecture-WOLXFQ4H-C0NxYiG7.js                                   0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/railroad-abnf-LNEFI6M7-Ct-b-y0F.js                                  0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/railroad-ebnf-DWYD2UWJ-BZMYMWOe.js                                  0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/store-PrKxUuaE.js                                                   0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/eventmodeling-K75KTNOO-BWBlZ5cR.js                                  0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/state-QE9p2d8P.js                                                   0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/beam-L5e_qRf9.js                                                    0.12 kB │ gzip:   0.11 kB
+app/dist-test/assets/playback-DjhKlV0E.js                                                0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/edits-DGGvYWZq.js                                                   0.12 kB │ gzip:   0.12 kB
+app/dist-test/assets/types-KubbvRU7.js                                                   0.12 kB │ gzip:   0.13 kB
+app/dist-test/assets/graphFence-C8IeK3xj.js                                              0.13 kB │ gzip:   0.12 kB
+app/dist-test/assets/EditingTyping.module-jg8arrTG.js                                    0.13 kB │ gzip:   0.11 kB
+app/dist-test/assets/FbdPanel-pGzkPRFl.js                                                0.13 kB │ gzip:   0.12 kB
+app/dist-test/assets/shown-DEgxOBaM.js                                                   0.14 kB │ gzip:   0.14 kB
+app/dist-test/assets/j-st0pxJ4M.js                                                       0.14 kB │ gzip:   0.13 kB
+app/dist-test/assets/webviewWindow-BdrdQvFn.js                                           0.14 kB │ gzip:   0.11 kB
+app/dist-test/assets/insert-BhMKqrZu.js                                                  0.14 kB │ gzip:   0.13 kB
+app/dist-test/assets/g-BQ-6ckJs.js                                                       0.14 kB │ gzip:   0.13 kB
+app/dist-test/assets/commands-CucG_fd8.js                                                0.15 kB │ gzip:   0.13 kB
+app/dist-test/assets/notes-BMiNYikX.js                                                   0.15 kB │ gzip:   0.13 kB
+app/dist-test/assets/blocks.module-ClsUpqgd.js                                           0.15 kB │ gzip:   0.12 kB
+app/dist-test/assets/chunk-Y2CYZVJY-DsF7k-Jl.js                                          0.15 kB │ gzip:   0.14 kB
+app/dist-test/assets/runtime-DAnFSZV6.js                                                 0.15 kB │ gzip:   0.14 kB
+app/dist-test/assets/calculus-Co_W7KMt.js                                                0.15 kB │ gzip:   0.13 kB
+app/dist-test/assets/router-LaogTc9W.js                                                  0.16 kB │ gzip:   0.13 kB
+app/dist-test/assets/accounts-BLcTSPVe.js                                                0.16 kB │ gzip:   0.14 kB
+app/dist-test/assets/model-4JYyRZaQ.js                                                   0.16 kB │ gzip:   0.14 kB
+app/dist-test/assets/protect-D2kzPxSU.js                                                 0.17 kB │ gzip:   0.14 kB
+app/dist-test/assets/intel-1LfUjZHE.js                                                   0.17 kB │ gzip:   0.14 kB
+app/dist-test/assets/search-I9k-wgqk.js                                                  0.17 kB │ gzip:   0.13 kB
+app/dist-test/assets/types-m21AwZZz.js                                                   0.17 kB │ gzip:   0.15 kB
+app/dist-test/assets/dom-BvfD2T7U.js                                                     0.17 kB │ gzip:   0.16 kB
+app/dist-test/assets/exportPrefs-BKgfycxG.js                                             0.18 kB │ gzip:   0.14 kB
+app/dist-test/assets/writeInk-SPRAd2j4.js                                                0.18 kB │ gzip:   0.14 kB
+app/dist-test/assets/model-D3zWlHNB.js                                                   0.18 kB │ gzip:   0.15 kB
+app/dist-test/assets/Tableau10-C-q0Q2RN.js                                               0.18 kB │ gzip:   0.17 kB
+app/dist-test/assets/qol-Csfc4Qrb.js                                                     0.18 kB │ gzip:   0.17 kB
+app/dist-test/assets/chunk-2Q5K7J3B-C1jixKkw.js                                          0.19 kB │ gzip:   0.16 kB
+app/dist-test/assets/parts.module-BWDa70Sd.js                                            0.19 kB │ gzip:   0.13 kB
+app/dist-test/assets/TextStylesDialog.module-BeScQWmn.js                                 0.21 kB │ gzip:   0.13 kB
+app/dist-test/assets/refines-D0YPHZKV.js                                                 0.21 kB │ gzip:   0.18 kB
+app/dist-test/assets/u-gb2BfAdE.js                                                       0.21 kB │ gzip:   0.17 kB
+app/dist-test/assets/dock-B4ZEQ9M1.js                                                    0.22 kB │ gzip:   0.18 kB
+app/dist-test/assets/dialog.module-Bg5JZPgS.js                                           0.22 kB │ gzip:   0.15 kB
+app/dist-test/assets/chunk-JWPE2WC7-DVXcaiue.js                                          0.22 kB │ gzip:   0.17 kB
+app/dist-test/assets/moment-B-U1KzVP.js                                                  0.23 kB │ gzip:   0.20 kB
+app/dist-test/assets/habits-3uF2WMpj.js                                                  0.24 kB │ gzip:   0.19 kB
+app/dist-test/assets/shown-Ol0u_DMZ.js                                                   0.24 kB │ gzip:   0.20 kB
+app/dist-test/assets/invoke-D8sYhvWO.js                                                  0.24 kB │ gzip:   0.21 kB
+app/dist-test/assets/text-QBQfOLWc.js                                                    0.24 kB │ gzip:   0.21 kB
+app/dist-test/assets/choices-Ct5YwE5M.js                                                 0.25 kB │ gzip:   0.21 kB
+app/dist-test/assets/registries-DHvjN7lY.js                                              0.25 kB │ gzip:   0.18 kB
+app/dist-test/assets/audio-DUaEHIDF.js                                                   0.25 kB │ gzip:   0.18 kB
+app/dist-test/assets/ids-fEz0Lvw5.js                                                     0.25 kB │ gzip:   0.22 kB
+app/dist-test/assets/modal-DJthNwQ4.js                                                   0.25 kB │ gzip:   0.21 kB
+app/dist-test/assets/dialogHost-BpKRKmtS.js                                              0.25 kB │ gzip:   0.21 kB
+app/dist-test/assets/os-DfTjCuCn.js                                                      0.26 kB │ gzip:   0.21 kB
+app/dist-test/assets/chunk-XXDRQBXY-YtrT5v6M.js                                          0.26 kB │ gzip:   0.22 kB
+app/dist-test/assets/localApi-D-B8Qs6F.js                                                0.26 kB │ gzip:   0.22 kB
+app/dist-test/assets/entryLock-Cf5caG_I.js                                               0.27 kB │ gzip:   0.19 kB
+app/dist-test/assets/host-CLAHD6kS.js                                                    0.27 kB │ gzip:   0.22 kB
+app/dist-test/assets/state-CE6fd8xD.js                                                   0.27 kB │ gzip:   0.20 kB
+app/dist-test/assets/dialog-CQ1FdIx-.js                                                  0.27 kB │ gzip:   0.22 kB
+app/dist-test/assets/openDialog-CQ1FdIx-.js                                              0.27 kB │ gzip:   0.22 kB
+app/dist-test/assets/format-CGBrPy1D.js                                                  0.28 kB │ gzip:   0.18 kB
+app/dist-test/assets/registry-_xBTzJIJ.js                                                0.29 kB │ gzip:   0.21 kB
+app/dist-test/assets/t-GWE8yd9n.js                                                       0.29 kB │ gzip:   0.21 kB
+app/dist-test/assets/windowKind-DaQikI1S.js                                              0.30 kB │ gzip:   0.22 kB
+app/dist-test/assets/apply-D1c9BmH8.js                                                   0.30 kB │ gzip:   0.20 kB
+app/dist-test/assets/math-Bi_r_ZWc.js                                                    0.31 kB │ gzip:   0.20 kB
+app/dist-test/assets/inkSeams-C11LbSRe.js                                                0.31 kB │ gzip:   0.20 kB
+app/dist-test/assets/core-rIeFb2QZ.js                                                    0.31 kB │ gzip:   0.22 kB
+app/dist-test/assets/selectionStore-DvrhSgcO.js                                          0.32 kB │ gzip:   0.23 kB
+app/dist-test/assets/stores-Aj8hb95j.js                                                  0.32 kB │ gzip:   0.22 kB
+app/dist-test/assets/dates-CdFcdBp-.js                                                   0.32 kB │ gzip:   0.21 kB
+app/dist-test/assets/chunk-Z6ETV63D-DBe9qC35.js                                          0.32 kB │ gzip:   0.25 kB
+app/dist-test/assets/selection-BDAom1V1.js                                               0.33 kB │ gzip:   0.22 kB
+app/dist-test/assets/auto-CBM_i8I7.js                                                    0.33 kB │ gzip:   0.26 kB
+app/dist-test/assets/mount-DLf9oC_5.js                                                   0.33 kB │ gzip:   0.25 kB
+app/dist-test/assets/mergePatch-BRbJ-w22.js                                              0.34 kB │ gzip:   0.22 kB
+app/dist-test/assets/mapping-DbW0_fTi.js                                                 0.34 kB │ gzip:   0.22 kB
+app/dist-test/assets/Highlighted-DFyONQBz.js                                             0.35 kB │ gzip:   0.24 kB
+app/dist-test/assets/chosen-DjmwQA7v.js                                                  0.35 kB │ gzip:   0.22 kB
+app/dist-test/assets/dictation-Cw2BW_Sk.js                                               0.35 kB │ gzip:   0.21 kB
+app/dist-test/assets/init-ZlXS9mIS.js                                                    0.35 kB │ gzip:   0.17 kB
+app/dist-test/assets/insertDate-E4gD6e9O.js                                              0.36 kB │ gzip:   0.25 kB
+app/dist-test/assets/chunk-5VM5RSS4-ZNzvKenW.js                                          0.36 kB │ gzip:   0.27 kB
+app/dist-test/assets/assets-irZSmTqA.js                                                  0.36 kB │ gzip:   0.25 kB
+app/dist-test/assets/target-_4rBwJ2v.js                                                  0.36 kB │ gzip:   0.25 kB
+app/dist-test/assets/more.module-Dl3u6z1n.js                                             0.36 kB │ gzip:   0.20 kB
+app/dist-test/assets/registries-DEdV48W1.js                                              0.37 kB │ gzip:   0.24 kB
+app/dist-test/assets/audio.module-FpeEOCZP.js                                            0.37 kB │ gzip:   0.21 kB
+app/dist-test/assets/intel.module-mXO6X9Av.js                                            0.38 kB │ gzip:   0.19 kB
+app/dist-test/assets/engine-Bfr-_CRL.js                                                  0.40 kB │ gzip:   0.24 kB
+app/dist-test/assets/auto-eHU7qXjr.js                                                    0.40 kB │ gzip:   0.29 kB
+app/dist-test/assets/dockerfile-C0zufGsU.js                                              0.40 kB │ gzip:   0.31 kB
+app/dist-test/assets/fallback-CugCeOCr.js                                                0.41 kB │ gzip:   0.22 kB
+app/dist-test/assets/pick-DR5E91gB.js                                                    0.42 kB │ gzip:   0.30 kB
+app/dist-test/assets/pdf.module-CqA43iCJ.js                                              0.42 kB │ gzip:   0.21 kB
+app/dist-test/assets/playhead-GPUWw8Uj.js                                                0.42 kB │ gzip:   0.31 kB
+app/dist-test/assets/insert-CoaRa8wK.js                                                  0.42 kB │ gzip:   0.27 kB
+app/dist-test/assets/snapshot-sAPqt1L_.js                                                0.42 kB │ gzip:   0.30 kB
+app/dist-test/assets/jsx-runtime-DREnUpxT.js                                             0.43 kB │ gzip:   0.30 kB
+app/dist-test/assets/shown-tihiewQo.js                                                   0.44 kB │ gzip:   0.30 kB
+app/dist-test/assets/ShortcutsDialog-u_6mJfj5.js                                         0.44 kB │ gzip:   0.30 kB
+app/dist-test/assets/controller-DWdjnKGM.js                                              0.45 kB │ gzip:   0.27 kB
+app/dist-test/assets/chunk-OD3NTWWA-Dz9nCUGX.js                                          0.45 kB │ gzip:   0.31 kB
+app/dist-test/assets/chunk-VTWWFHGB-SZnJiyWY.js                                          0.45 kB │ gzip:   0.31 kB
+app/dist-test/assets/embed.module-w7mv5GQ9.js                                            0.46 kB │ gzip:   0.24 kB
+app/dist-test/assets/print-BpvsHHSv.js                                                   0.46 kB │ gzip:   0.35 kB
+app/dist-test/assets/chunk-3M4EKCLJ-D-sZGCtO.js                                          0.46 kB │ gzip:   0.31 kB
+app/dist-test/assets/format-CvWp6RxF.js                                                  0.46 kB │ gzip:   0.29 kB
+app/dist-test/assets/state-4x4P8xTL.js                                                   0.46 kB │ gzip:   0.29 kB
+app/dist-test/assets/testing-wRiXdxOi.js                                                 0.46 kB │ gzip:   0.34 kB
+app/dist-test/assets/excerpt-MMVo4pav.js                                                 0.46 kB │ gzip:   0.28 kB
+app/dist-test/assets/chunk-VZTHESGH-eHyXmK8W.js                                          0.46 kB │ gzip:   0.31 kB
+app/dist-test/assets/chunk-VPELOWWC-DXayM28-.js                                          0.46 kB │ gzip:   0.31 kB
+app/dist-test/assets/model-I3p3cskm.js                                                   0.46 kB │ gzip:   0.27 kB
+app/dist-test/assets/store-CRQiHnO3.js                                                   0.47 kB │ gzip:   0.26 kB
+app/dist-test/assets/strokes-Z0Dzzhw_.js                                                 0.47 kB │ gzip:   0.29 kB
+app/dist-test/assets/actions-sRgkxRC0.js                                                 0.47 kB │ gzip:   0.28 kB
+app/dist-test/assets/tapePref-DR7KK1sw.js                                                0.48 kB │ gzip:   0.31 kB
+app/dist-test/assets/b-CIzcTEy3.js                                                       0.48 kB │ gzip:   0.30 kB
+app/dist-test/assets/PageWindow-BG9C67hz.js                                              0.48 kB │ gzip:   0.32 kB
+app/dist-test/assets/appearance-bc_fU53H.js                                              0.49 kB │ gzip:   0.32 kB
+app/dist-test/assets/chunk-53FOQ5SW-5lPdGYP4.js                                          0.50 kB │ gzip:   0.35 kB
+app/dist-test/assets/openPage-BUDy0zyd.js                                                0.50 kB │ gzip:   0.33 kB
+app/dist-test/assets/h-C-9aC5R_.js                                                       0.50 kB │ gzip:   0.30 kB
+app/dist-test/assets/commands-BD7_BLrX.js                                                0.51 kB │ gzip:   0.33 kB
+app/dist-test/assets/crashPointer-ShcOUGkc.js                                            0.51 kB │ gzip:   0.33 kB
+app/dist-test/assets/m-BU92624o.js                                                       0.51 kB │ gzip:   0.32 kB
+app/dist-test/assets/wrap-n7Vgc1Ii.js                                                    0.53 kB │ gzip:   0.29 kB
+app/dist-test/assets/lazyView-q95Rm1SO.js                                                0.53 kB │ gzip:   0.35 kB
+app/dist-test/assets/Diagnostics.module-CXI_F7me.js                                      0.53 kB │ gzip:   0.27 kB
+app/dist-test/assets/state-CpbpYEim.js                                                   0.53 kB │ gzip:   0.32 kB
+app/dist-test/assets/updater-BvA3KzJJ.js                                                 0.54 kB │ gzip:   0.33 kB
+app/dist-test/assets/sections-CWYSj9aA.js                                                0.57 kB │ gzip:   0.31 kB
+app/dist-test/assets/WelcomeStep-BDSoFmk4.js                                             0.57 kB │ gzip:   0.33 kB
+app/dist-test/assets/v-CgtcDXNt.js                                                       0.57 kB │ gzip:   0.34 kB
+app/dist-test/assets/Meter-CaxYo-Qe.js                                                   0.57 kB │ gzip:   0.36 kB
+app/dist-test/assets/chunk-KQW6MTUR-CwSfYfz-.js                                          0.58 kB │ gzip:   0.40 kB
+app/dist-test/assets/diff-BhdZizse.js                                                    0.58 kB │ gzip:   0.30 kB
+app/dist-test/assets/json-PmyKWHmm.js                                                    0.58 kB │ gzip:   0.41 kB
+app/dist-test/assets/o-BCH1hsIl.js                                                       0.58 kB │ gzip:   0.34 kB
+app/dist-test/assets/insertPanel-hUF3z3By.js                                             0.59 kB │ gzip:   0.37 kB
+app/dist-test/assets/flagEdits-Cy1-NC3t.js                                               0.59 kB │ gzip:   0.37 kB
+app/dist-test/assets/chunk-QNH66VMT-Cb9xxTwQ.js                                          0.60 kB │ gzip:   0.39 kB
+app/dist-test/assets/citations-Dj8Ff_8F.js                                               0.60 kB │ gzip:   0.34 kB
+app/dist-test/assets/codec-DeehCPkK.js                                                   0.60 kB │ gzip:   0.33 kB
+app/dist-test/assets/host-Da1N8ocH.js                                                    0.60 kB │ gzip:   0.33 kB
+app/dist-test/assets/expand-CSLyrKPE.js                                                  0.61 kB │ gzip:   0.41 kB
+app/dist-test/assets/flowDiagram-OXPTDLAJ-DJPznBu0.js                                    0.62 kB │ gzip:   0.33 kB
+app/dist-test/assets/drag-CsNlVadQ.js                                                    0.62 kB │ gzip:   0.33 kB
+app/dist-test/assets/protocol-GlfPG3Y3.js                                                0.62 kB │ gzip:   0.36 kB
+app/dist-test/assets/EditingSection-BfGUHuqe.js                                          0.63 kB │ gzip:   0.39 kB
+app/dist-test/assets/chunk-J5ZVWO5B-oDCd-gWO.js                                          0.63 kB │ gzip:   0.43 kB
+app/dist-test/assets/rename-DcJa9s95.js                                                  0.64 kB │ gzip:   0.35 kB
+app/dist-test/assets/LanguageSection-Bc10sA9x.js                                         0.65 kB │ gzip:   0.35 kB
+app/dist-test/assets/shellqol-BgJpK3Zh.js                                                0.65 kB │ gzip:   0.40 kB
+app/dist-test/assets/infoDiagram-5W2HQ5XZ-CCZrRq0w.js                                    0.66 kB │ gzip:   0.42 kB
+app/dist-test/assets/commands-By3-7Ou1.js                                                0.66 kB │ gzip:   0.35 kB
+app/dist-test/assets/modulepreload-polyfill-P2Xu9kJm.js                                  0.67 kB │ gzip:   0.38 kB
+app/dist-test/assets/plus.module-DyAVmLPU.js                                             0.68 kB │ gzip:   0.33 kB
+app/dist-test/assets/LanguageStep-BvJ0w22t.js                                            0.69 kB │ gzip:   0.41 kB
+app/dist-test/assets/kinds-KRnalHuS.js                                                   0.69 kB │ gzip:   0.40 kB
+app/dist-test/assets/ShortcutList.module-D-z2lsQT.js                                     0.70 kB │ gzip:   0.31 kB
+app/dist-test/assets/lock-DNzJJ-RP.js                                                    0.70 kB │ gzip:   0.42 kB
+app/dist-test/assets/graphql-BHHhacaR.js                                                 0.70 kB │ gzip:   0.46 kB
+app/dist-test/assets/transcripts.module-CDeTMZQf.js                                      0.71 kB │ gzip:   0.31 kB
+app/dist-test/assets/headings-oLv2UplU.js                                                0.73 kB │ gzip:   0.47 kB
+app/dist-test/assets/keymap-DVtB1S2X.js                                                  0.74 kB │ gzip:   0.41 kB
+app/dist-test/assets/r-CUScByPE.js                                                       0.74 kB │ gzip:   0.41 kB
+app/dist-test/assets/folds-DNyhBmvO.js                                                   0.74 kB │ gzip:   0.43 kB
+app/dist-test/assets/study-DouexWTi.js                                                   0.74 kB │ gzip:   0.41 kB
+app/dist-test/assets/store-D10ex3Ff.js                                                   0.76 kB │ gzip:   0.45 kB
+app/dist-test/assets/load-DPEbtXTp.js                                                    0.77 kB │ gzip:   0.47 kB
+app/dist-test/assets/overlays-CR8O5mSb.js                                                0.77 kB │ gzip:   0.46 kB
+app/dist-test/assets/merge-D9UDFF8a.js                                                   0.78 kB │ gzip:   0.50 kB
+app/dist-test/assets/linalg-BTzUVLOF.js                                                  0.79 kB │ gzip:   0.43 kB
+app/dist-test/assets/panelBlock-J541XVJW.js                                              0.80 kB │ gzip:   0.51 kB
+app/dist-test/assets/moreClient-BsqEKerI.js                                              0.80 kB │ gzip:   0.50 kB
+app/dist-test/assets/CustomTag-DH6h8TEc.js                                               0.81 kB │ gzip:   0.46 kB
+app/dist-test/assets/copies-F7Ys1nL3.js                                                  0.81 kB │ gzip:   0.45 kB
+app/dist-test/assets/Pause.es-D0o9-Bk3.js                                                0.81 kB │ gzip:   0.38 kB
+app/dist-test/assets/text-CsN7Uy03.js                                                    0.81 kB │ gzip:   0.53 kB
+app/dist-test/assets/layoutStore-BXc2e744.js                                             0.81 kB │ gzip:   0.48 kB
+app/dist-test/assets/order-Bxou3eN1.js                                                   0.82 kB │ gzip:   0.43 kB
+app/dist-test/assets/chunk-YK26KJH5-DVy3MGMd.js                                          0.83 kB │ gzip:   0.46 kB
+app/dist-test/assets/shareRender-BLikx-zP.js                                             0.84 kB │ gzip:   0.52 kB
+app/dist-test/assets/LookStep-l_r6i_DJ.js                                                0.84 kB │ gzip:   0.50 kB
+app/dist-test/assets/state-DRVtV_vd.js                                                   0.84 kB │ gzip:   0.47 kB
+app/dist-test/assets/events-CT6Nc7oB.js                                                  0.85 kB │ gzip:   0.41 kB
+app/dist-test/assets/files-1rVnhexw.js                                                   0.85 kB │ gzip:   0.53 kB
+app/dist-test/assets/seriesList-D5bQgFtU.js                                              0.85 kB │ gzip:   0.52 kB
+app/dist-test/assets/f-DpIckLuO.js                                                       0.85 kB │ gzip:   0.44 kB
+app/dist-test/assets/ImportStep-CbgjUXtL.js                                              0.86 kB │ gzip:   0.41 kB
+app/dist-test/assets/X.es-D4TVfV2Y.js                                                    0.86 kB │ gzip:   0.42 kB
+app/dist-test/assets/sizeCapture-INFHLROL-3uHXrFqA.js                                    0.87 kB │ gzip:   0.51 kB
+app/dist-test/assets/positions-B7H2gfFE.js                                               0.87 kB │ gzip:   0.39 kB
+app/dist-test/assets/swimlanesDiagram-K3J5GTZL-Z_rd2M1U.js                               0.88 kB │ gzip:   0.49 kB
+app/dist-test/assets/PreviewDialog-D01WIwt7.js                                           0.88 kB │ gzip:   0.48 kB
+app/dist-test/assets/applyEdits-CoZnJPGJ.js                                              0.88 kB │ gzip:   0.52 kB
+app/dist-test/assets/chunk-DUW6YSOI-Dgx8z5s3.js                                          0.89 kB │ gzip:   0.46 kB
+app/dist-test/assets/exportAudio-BtHieA4N.js                                             0.89 kB │ gzip:   0.50 kB
+app/dist-test/assets/model-BjxAjq5G.js                                                   0.90 kB │ gzip:   0.55 kB
+app/dist-test/assets/chunk-24IY7LWP-flnn6SWX.js                                          0.90 kB │ gzip:   0.48 kB
+app/dist-test/assets/url-BU2My6V2.js                                                     0.90 kB │ gzip:   0.43 kB
+app/dist-test/assets/page-BVdmJOfN.js                                                    0.91 kB │ gzip:   0.48 kB
+app/dist-test/assets/locate-DRAjp8Fg.js                                                  0.91 kB │ gzip:   0.40 kB
+app/dist-test/assets/search--doxnamO.js                                                  0.92 kB │ gzip:   0.48 kB
+app/dist-test/assets/chunk-KPI5JJXK-B2ld5-w4.js                                          0.92 kB │ gzip:   0.49 kB
+app/dist-test/assets/ini-B1CroMsf.js                                                     0.92 kB │ gzip:   0.53 kB
+app/dist-test/assets/EditingHistory-CdJdjM6U.js                                          0.93 kB │ gzip:   0.46 kB
+app/dist-test/assets/run-CrQH9UNA.js                                                     0.93 kB │ gzip:   0.55 kB
+app/dist-test/assets/store-Bu-5yqlz.js                                                   0.94 kB │ gzip:   0.53 kB
+app/dist-test/assets/line-uTHJCQn1.js                                                    0.94 kB │ gzip:   0.46 kB
+app/dist-test/assets/p-DQcQvH9g.js                                                       0.94 kB │ gzip:   0.51 kB
+app/dist-test/assets/ShortcutsSection-CQABuH5q.js                                        0.95 kB │ gzip:   0.47 kB
+app/dist-test/assets/videoRaster-CMv2ughT.js                                             0.95 kB │ gzip:   0.59 kB
+app/dist-test/assets/ruled-B12HvZsE.js                                                   0.95 kB │ gzip:   0.46 kB
+app/dist-test/assets/StepHeader-DAwrtrzN.js                                              0.96 kB │ gzip:   0.49 kB
+app/dist-test/assets/pagesUi.module-BI0LllgP.js                                          0.96 kB │ gzip:   0.40 kB
+app/dist-test/assets/askCustomTag-ylU7-J2s.js                                            0.97 kB │ gzip:   0.53 kB
+app/dist-test/assets/registries-DV4qIa8W.js                                              0.98 kB │ gzip:   0.57 kB
+app/dist-test/assets/pageScan-Dj8_qQ_s.js                                                0.99 kB │ gzip:   0.61 kB
+app/dist-test/assets/shown-B6YBO_4Q.js                                                   1.03 kB │ gzip:   0.55 kB
+app/dist-test/assets/receive-Cm-7NHSM.js                                                 1.03 kB │ gzip:   0.58 kB
+app/dist-test/assets/chunk-ZO67DCNQ-BAOMIkLF.js                                          1.04 kB │ gzip:   0.58 kB
+app/dist-test/assets/makefile-BX-o3EIz.js                                                1.04 kB │ gzip:   0.58 kB
+app/dist-test/assets/quickCaptureControls-4sOQeyo3.js                                    1.04 kB │ gzip:   0.56 kB
+app/dist-test/assets/captions-DzaAu3-b.js                                                1.05 kB │ gzip:   0.64 kB
+app/dist-test/assets/stabilizer-BKv1_GY-.js                                              1.05 kB │ gzip:   0.59 kB
+app/dist-test/assets/chunk-BP2KR52E-DAQ1pzDV.js                                          1.06 kB │ gzip:   0.59 kB
+app/dist-test/assets/motion-DG-j-N1M.js                                                  1.07 kB │ gzip:   0.56 kB
+app/dist-test/assets/command-BEQS3aC8.js                                                 1.08 kB │ gzip:   0.59 kB
+app/dist-test/assets/storage-BVoAtrj5.js                                                 1.08 kB │ gzip:   0.58 kB
+app/dist-test/assets/capture-4oDn1oR-.js                                                 1.08 kB │ gzip:   0.60 kB
+app/dist-test/assets/summarize-BtnxH31x.js                                               1.08 kB │ gzip:   0.65 kB
+app/dist-test/assets/s-C2F5XOz3.js                                                       1.09 kB │ gzip:   0.57 kB
+app/dist-test/assets/EditingPaste-BNP2JITq.js                                            1.09 kB │ gzip:   0.47 kB
+app/dist-test/assets/rolldown-runtime-Dd_uD5pT.js                                        1.10 kB │ gzip:   0.62 kB
+app/dist-test/assets/inkHits-neX_lb8W.js                                                 1.12 kB │ gzip:   0.68 kB
+app/dist-test/assets/chunk-F6S3BTY2-DVWKCAHp.js                                          1.13 kB │ gzip:   0.61 kB
+app/dist-test/assets/watch-BppnTeRv.js                                                   1.14 kB │ gzip:   0.62 kB
+app/dist-test/assets/qol.module-1uEp9QzM.js                                              1.16 kB │ gzip:   0.46 kB
+app/dist-test/assets/open-BAL8__jp.js                                                    1.16 kB │ gzip:   0.61 kB
+app/dist-test/assets/dates-CuQMnrYJ.js                                                   1.18 kB │ gzip:   0.60 kB
+app/dist-test/assets/Logo-BUYo_6SE.js                                                    1.18 kB │ gzip:   0.59 kB
+app/dist-test/assets/register-Cdoe9fMb.js                                                1.19 kB │ gzip:   0.61 kB
+app/dist-test/assets/jump-Lar__Ujj.js                                                    1.20 kB │ gzip:   0.70 kB
+app/dist-test/assets/open-CUfYVY9k.js                                                    1.21 kB │ gzip:   0.63 kB
+app/dist-test/assets/captions-D6eiCqHe.js                                                1.21 kB │ gzip:   0.67 kB
+app/dist-test/assets/preload-helper-BZ1Pz5am.js                                          1.21 kB │ gzip:   0.69 kB
+app/dist-test/assets/constants-De2ujBp9.js                                               1.22 kB │ gzip:   0.70 kB
+app/dist-test/assets/handwriting-KFX6oxZ4.js                                             1.24 kB │ gzip:   0.64 kB
+app/dist-test/assets/interop-BPlrXrUr.js                                                 1.24 kB │ gzip:   0.65 kB
+app/dist-test/assets/editorExtension-CU0ImKzm.js                                         1.26 kB │ gzip:   0.64 kB
+app/dist-test/assets/copyImageText-Cflx47ce.js                                           1.26 kB │ gzip:   0.71 kB
+app/dist-test/assets/checklistCommands-DmuuGGYm.js                                       1.27 kB │ gzip:   0.65 kB
+app/dist-test/assets/Stop.es-CS9wSYvU.js                                                 1.28 kB │ gzip:   0.55 kB
+app/dist-test/assets/writing-CQt4Zts1.js                                                 1.32 kB │ gzip:   0.72 kB
+app/dist-test/assets/protection-DKE9qaXM.js                                              1.32 kB │ gzip:   0.58 kB
+app/dist-test/assets/audio-BL8lQ9v8.js                                                   1.34 kB │ gzip:   0.66 kB
+app/dist-test/assets/run-B9S5nTQM.js                                                     1.34 kB │ gzip:   0.63 kB
+app/dist-test/assets/steps-Bb5QPky-.js                                                   1.36 kB │ gzip:   0.73 kB
+app/dist-test/assets/changeSet-DxUrLp-o.js                                               1.37 kB │ gzip:   0.78 kB
+app/dist-test/assets/sheetCommands-xnPdyqAS.js                                           1.37 kB │ gzip:   0.70 kB
+app/dist-test/assets/EditingGeneral-D4rO6xrG.js                                          1.39 kB │ gzip:   0.56 kB
+app/dist-test/assets/commit-DPYOHvHI.js                                                  1.39 kB │ gzip:   0.70 kB
+app/dist-test/assets/touchNav-DUKmjjsz.js                                                1.40 kB │ gzip:   0.68 kB
+app/dist-test/assets/go-B-PCS5zA.js                                                      1.40 kB │ gzip:   0.70 kB
+app/dist-test/assets/SeriesDialog-9K1J2Q72.js                                            1.40 kB │ gzip:   0.76 kB
+app/dist-test/assets/answer-Dytq7JCA.js                                                  1.40 kB │ gzip:   0.76 kB
+app/dist-test/assets/model-ByIMtff8.js                                                   1.41 kB │ gzip:   0.65 kB
+app/dist-test/assets/chunk-DBDB3WZW-BPM1-KZ8.js                                          1.42 kB │ gzip:   0.79 kB
+app/dist-test/assets/docTools.module-DowAUFwY.js                                         1.42 kB │ gzip:   0.75 kB
+app/dist-test/assets/search.module-D43db4JT.js                                           1.42 kB │ gzip:   0.52 kB
+app/dist-test/assets/HabitsStep-Bq01nFtN.js                                              1.43 kB │ gzip:   0.66 kB
+app/dist-test/assets/PageView.module-03M-ZYvR.js                                         1.44 kB │ gzip:   0.73 kB
+app/dist-test/assets/EditingReadAloud-7J38pney.js                                        1.45 kB │ gzip:   0.71 kB
+app/dist-test/assets/i-Cf2-az02.js                                                       1.45 kB │ gzip:   0.70 kB
+app/dist-test/assets/exportPlayer-CqegLQeU.js                                            1.45 kB │ gzip:   0.81 kB
+app/dist-test/assets/chunk-4S7OKTRW-BpUW13a3.js                                          1.46 kB │ gzip:   0.78 kB
+app/dist-test/assets/ordinal-B3ycVpmn.js                                                 1.46 kB │ gzip:   0.59 kB
+app/dist-test/assets/prefs-DnQliwtk.js                                                   1.48 kB │ gzip:   0.73 kB
+app/dist-test/assets/enhance-DJSWUVW5.js                                                 1.49 kB │ gzip:   0.69 kB
+app/dist-test/assets/diagnostics-DsKi6ArJ.js                                             1.50 kB │ gzip:   0.77 kB
+app/dist-test/assets/d-Bz6hFEDs.js                                                       1.51 kB │ gzip:   0.72 kB
+app/dist-test/assets/band-C0M1-bVZ.js                                                    1.54 kB │ gzip:   0.66 kB
+app/dist-test/assets/CustomColor-Cvdr84Q4.js                                             1.55 kB │ gzip:   0.85 kB
+app/dist-test/assets/e-CU8JkyTF.js                                                       1.55 kB │ gzip:   0.74 kB
+app/dist-test/assets/equationNumbers-oESd-jGZ.js                                         1.58 kB │ gzip:   0.81 kB
+app/dist-test/assets/exportTarget-Cip8p4yf.js                                            1.58 kB │ gzip:   0.64 kB
+app/dist-test/assets/pageText-CELsJccC.js                                                1.58 kB │ gzip:   0.87 kB
+app/dist-test/assets/IndicatorPanel-DRp6QgKO.js                                          1.59 kB │ gzip:   0.73 kB
+app/dist-test/assets/model-BvmTim3s.js                                                   1.60 kB │ gzip:   0.72 kB
+app/dist-test/assets/checklist-Cr1tTQ9z.js                                               1.61 kB │ gzip:   0.80 kB
+app/dist-test/assets/menus-DNLbCscq.js                                                   1.62 kB │ gzip:   0.84 kB
+app/dist-test/assets/modes-WZ8oJsXh.js                                                   1.63 kB │ gzip:   0.79 kB
+app/dist-test/assets/testHooks-BUSCJXgg.js                                               1.63 kB │ gzip:   0.87 kB
+app/dist-test/assets/QuickCapture-DXofWGfZ.js                                            1.66 kB │ gzip:   0.83 kB
+app/dist-test/assets/defs-DwbdLygY.js                                                    1.66 kB │ gzip:   0.91 kB
+app/dist-test/assets/chunk-TPMEZKFX-DIPHIqGb.js                                          1.67 kB │ gzip:   0.74 kB
+app/dist-test/assets/openers-_R4yyZkd.js                                                 1.67 kB │ gzip:   0.69 kB
+app/dist-test/assets/CloudChoice-CTdz4zXF.js                                             1.69 kB │ gzip:   0.75 kB
+app/dist-test/assets/commands-Dr6l0vJj.js                                                1.69 kB │ gzip:   0.85 kB
+app/dist-test/assets/railroadDiagram-SM67HX2B-DuqUqs2M.js                                1.72 kB │ gzip:   0.79 kB
+app/dist-test/assets/state-hPy5ItnU.js                                                   1.73 kB │ gzip:   0.77 kB
+app/dist-test/assets/geometry-DYB6Vi0C.js                                                1.73 kB │ gzip:   0.79 kB
+app/dist-test/assets/meeting-BmIIoros.js                                                 1.74 kB │ gzip:   0.89 kB
+app/dist-test/assets/equations-Vzejlfua.js                                               1.75 kB │ gzip:   0.88 kB
+app/dist-test/assets/page-C6wrkeAv.js                                                    1.75 kB │ gzip:   0.91 kB
+app/dist-test/assets/model-nvRmkLCT.js                                                   1.76 kB │ gzip:   0.77 kB
+app/dist-test/assets/OptionsPanel-DubjtRS8.js                                            1.76 kB │ gzip:   0.81 kB
+app/dist-test/assets/GraphPopup-B8mnwyLE.js                                              1.76 kB │ gzip:   0.87 kB
+app/dist-test/assets/ReviewDialog-BFsrTa0D.js                                            1.77 kB │ gzip:   0.88 kB
+app/dist-test/assets/bounds-D3EUqNQ9.js                                                  1.79 kB │ gzip:   0.80 kB
+app/dist-test/assets/language-2sk1DZ_v.js                                                1.79 kB │ gzip:   0.87 kB
+app/dist-test/assets/exportVideo-DPkhPD0Y.js                                             1.81 kB │ gzip:   0.92 kB
+app/dist-test/assets/text-vdCdO7s2.js                                                    1.81 kB │ gzip:   0.91 kB
+app/dist-test/assets/handwriting-B_q8yXhl.js                                             1.81 kB │ gzip:   0.96 kB
+app/dist-test/assets/prompts-DtK-wQRC.js                                                 1.83 kB │ gzip:   0.83 kB
+app/dist-test/assets/yaml-DjOhhVLG.js                                                    1.83 kB │ gzip:   0.82 kB
+app/dist-test/assets/dist-BRuBKNNy.js                                                    1.87 kB │ gzip:   0.83 kB
+app/dist-test/assets/lua-aZNm1DXx.js                                                     1.87 kB │ gzip:   1.04 kB
+app/dist-test/assets/SummaryDialog-Dyo5yUgb.js                                           1.88 kB │ gzip:   0.86 kB
+app/dist-test/assets/commands-Cj797zP_.js                                                1.89 kB │ gzip:   0.78 kB
+app/dist-test/assets/xml-DasnpDVC.js                                                     1.89 kB │ gzip:   0.77 kB
+app/dist-test/assets/abnfDiagram-YUKMZFIV-BzQkMHIL.js                                    1.91 kB │ gzip:   0.92 kB
+app/dist-test/assets/render-BXaRN15G.js                                                  1.93 kB │ gzip:   1.07 kB
+app/dist-test/assets/recover-BRbun4yb.js                                                 1.95 kB │ gzip:   0.97 kB
+app/dist-test/assets/chunk-4EA7E6EY-VHo4y-Jg.js                                          1.95 kB │ gzip:   0.95 kB
+app/dist-test/assets/chunk-7TKQ45FW-DAlW1vFD.js                                          1.97 kB │ gzip:   0.88 kB
+app/dist-test/assets/render-BpR1KhoR.js                                                  2.00 kB │ gzip:   1.13 kB
+app/dist-test/assets/styleVars-B2zfmB4_.js                                               2.02 kB │ gzip:   1.08 kB
+app/dist-test/assets/FindDialog-BnxORQXH.js                                              2.03 kB │ gzip:   0.93 kB
+app/dist-test/assets/slides-bIi_6M7N.js                                                  2.03 kB │ gzip:   1.03 kB
+app/dist-test/assets/store-Bhf8nB-X.js                                                   2.03 kB │ gzip:   0.90 kB
+app/dist-test/assets/slash-DZj6hudu.js                                                   2.04 kB │ gzip:   1.06 kB
+app/dist-test/assets/scala-C9lP4FWY.js                                                   2.04 kB │ gzip:   0.87 kB
+app/dist-test/assets/dart-CDc1Vb3D.js                                                    2.05 kB │ gzip:   1.01 kB
+app/dist-test/assets/StatusChips-ZeR2t1XZ.js                                             2.05 kB │ gzip:   0.85 kB
+app/dist-test/assets/markdown-C8bVcNXx.js                                                2.07 kB │ gzip:   0.87 kB
+app/dist-test/assets/pegDiagram-BGZESJAR-BUsSX85_.js                                     2.07 kB │ gzip:   0.96 kB
+app/dist-test/assets/RelatedPane-D0jGStjN.js                                             2.07 kB │ gzip:   1.00 kB
+app/dist-test/assets/a-BqHPkn4x.js                                                       2.09 kB │ gzip:   1.04 kB
+app/dist-test/assets/router-o96rz6AR.js                                                  2.09 kB │ gzip:   0.92 kB
+app/dist-test/assets/insert-BxZb9Ecg.js                                                  2.10 kB │ gzip:   1.13 kB
+app/dist-test/assets/attach-DLLUusaQ.js                                                  2.11 kB │ gzip:   1.11 kB
+app/dist-test/assets/ebnfDiagram-VR2GEFS7-8TKE1aZ_.js                                    2.12 kB │ gzip:   0.91 kB
+app/dist-test/assets/haskell-CPLFVNxS.js                                                 2.12 kB │ gzip:   0.95 kB
+app/dist-test/assets/thumbnails-6ZHsr6e8.js                                              2.15 kB │ gzip:   1.16 kB
+app/dist-test/assets/ScopePicker-B6yngRfF.js                                             2.15 kB │ gzip:   0.91 kB
+app/dist-test/assets/LocalePicker-BcXKWgxX.js                                            2.15 kB │ gzip:   0.98 kB
+app/dist-test/assets/start-DtypS537.js                                                   2.17 kB │ gzip:   1.12 kB
+app/dist-test/assets/ConnectorsSection-CcmLBGem.js                                       2.19 kB │ gzip:   1.06 kB
+app/dist-test/assets/notebook-BnFlqRq8.js                                                2.20 kB │ gzip:   0.85 kB
+app/dist-test/assets/graphFence-3aU3qeFk.js                                              2.20 kB │ gzip:   1.11 kB
+app/dist-test/assets/marks-BT3GlmoH.js                                                   2.23 kB │ gzip:   1.09 kB
+app/dist-test/assets/matlab-DkTKhn5C.js                                                  2.23 kB │ gzip:   1.16 kB
+app/dist-test/assets/speechEngine-BCwFP4j8.js                                            2.23 kB │ gzip:   1.03 kB
+app/dist-test/assets/insert-CzRgpfW9.js                                                  2.24 kB │ gzip:   1.13 kB
+app/dist-test/assets/highlights-B3nKU__T.js                                              2.24 kB │ gzip:   1.10 kB
+app/dist-test/assets/model-Cz0Y37BA.js                                                   2.25 kB │ gzip:   1.03 kB
+app/dist-test/assets/canvas-B8ZLBg8p.js                                                  2.29 kB │ gzip:   1.05 kB
+app/dist-test/assets/dictation-HRPokKm9.js                                               2.29 kB │ gzip:   1.13 kB
+app/dist-test/assets/connectors-C4g6THWK.js                                              2.29 kB │ gzip:   1.15 kB
+app/dist-test/assets/ConflictDialog-BaDmVMst.js                                          2.31 kB │ gzip:   0.98 kB
+app/dist-test/assets/picture-BCJ1bi-Y.js                                                 2.31 kB │ gzip:   1.22 kB
+app/dist-test/assets/path-D5y2OZDj.js                                                    2.31 kB │ gzip:   1.00 kB
+app/dist-test/assets/runtime-9PkjinG-.js                                                 2.33 kB │ gzip:   1.09 kB
+app/dist-test/assets/model-D8CTF1BS.js                                                   2.33 kB │ gzip:   1.06 kB
+app/dist-test/assets/General-D_qQAGpw.js                                                 2.34 kB │ gzip:   0.85 kB
+app/dist-test/assets/deleteHistory-D7fgKjyC.js                                           2.36 kB │ gzip:   1.14 kB
+app/dist-test/assets/convert-qfDDliJD.js                                                 2.37 kB │ gzip:   1.15 kB
+app/dist-test/assets/elixir-DXIHlGsR.js                                                  2.37 kB │ gzip:   1.05 kB
+app/dist-test/assets/notes-Ce62osB4.js                                                   2.38 kB │ gzip:   1.14 kB
+app/dist-test/assets/readingCommands-Sb8e6047.js                                         2.39 kB │ gzip:   0.91 kB
+app/dist-test/assets/sequence-Dqwikd4x.js                                                2.39 kB │ gzip:   1.05 kB
+app/dist-test/assets/AskDialog-tpEUWWJT.js                                               2.40 kB │ gzip:   1.09 kB
+app/dist-test/assets/extras-C-cN703J.js                                                  2.41 kB │ gzip:   1.30 kB
+app/dist-test/assets/EditingAutoCorrect-C3UTTgnT.js                                      2.46 kB │ gzip:   0.94 kB
+app/dist-test/assets/open-CZfVMbik.js                                                    2.48 kB │ gzip:   1.19 kB
+app/dist-test/assets/accessors-DnzpEPMN.js                                               2.49 kB │ gzip:   1.04 kB
+app/dist-test/assets/canvas-DUSyMjMg.js                                                  2.49 kB │ gzip:   1.18 kB
+app/dist-test/assets/images.module-CmH6Pq-N.js                                           2.51 kB │ gzip:   1.19 kB
+app/dist-test/assets/java-BaXwJpWq.js                                                    2.52 kB │ gzip:   1.19 kB
+app/dist-test/assets/order-DX57VXaX.js                                                   2.52 kB │ gzip:   1.07 kB
+app/dist-test/assets/bar-CCTNjDl5.js                                                     2.53 kB │ gzip:   1.20 kB
+app/dist-test/assets/sheets-BrTuqbDg.js                                                  2.53 kB │ gzip:   1.08 kB
+app/dist-test/assets/paperLattice-dz-rCYm8.js                                            2.54 kB │ gzip:   1.08 kB
+app/dist-test/assets/open-7ljpGoLA.js                                                    2.59 kB │ gzip:   1.24 kB
+app/dist-test/assets/SuggestionDialog-BgHYfl8o.js                                        2.59 kB │ gzip:   1.10 kB
+app/dist-test/assets/open-_NAi5K37.js                                                    2.59 kB │ gzip:   1.24 kB
+app/dist-test/assets/objectivec-DLXDdhyK.js                                              2.60 kB │ gzip:   1.43 kB
+app/dist-test/assets/vbnet-BiMsFFN_.js                                                   2.61 kB │ gzip:   1.35 kB
+app/dist-test/assets/core-CDQi5eQD.js                                                    2.62 kB │ gzip:   1.03 kB
+app/dist-test/assets/location-B8u5kJSU.js                                                2.65 kB │ gzip:   1.00 kB
+app/dist-test/assets/rust-BECLvyNb.js                                                    2.66 kB │ gzip:   1.42 kB
+app/dist-test/assets/open-BALe5e9H.js                                                    2.67 kB │ gzip:   1.29 kB
+app/dist-test/assets/open-wEuue3EF.js                                                    2.67 kB │ gzip:   1.26 kB
+app/dist-test/assets/open-D1m_dstk.js                                                    2.67 kB │ gzip:   1.27 kB
+app/dist-test/assets/qolActions-CpCyF2Es.js                                              2.67 kB │ gzip:   1.19 kB
+app/dist-test/assets/runtime-Cphow28U.js                                                 2.69 kB │ gzip:   1.43 kB
+app/dist-test/assets/commands-DoR_8XaC.js                                                2.73 kB │ gzip:   1.11 kB
+app/dist-test/assets/sections-Bj5Gr1Do.js                                                2.74 kB │ gzip:   1.29 kB
+app/dist-test/assets/fold-D-sBxs_N.js                                                    2.76 kB │ gzip:   1.26 kB
+app/dist-test/assets/tables-xg5fCa2A.js                                                  2.76 kB │ gzip:   1.12 kB
+app/dist-test/assets/picker-9ZxUjIFq.js                                                  2.76 kB │ gzip:   1.39 kB
+app/dist-test/assets/ThemeCards-BIP8bkUj.js                                              2.81 kB │ gzip:   1.18 kB
+app/dist-test/assets/edit-d_gaC4ub.js                                                    2.81 kB │ gzip:   1.17 kB
+app/dist-test/assets/LinkPopover-Dwx1okjZ.js                                             2.82 kB │ gzip:   1.34 kB
+app/dist-test/assets/bash-LmRjUKlR.js                                                    2.83 kB │ gzip:   1.56 kB
+app/dist-test/assets/objects-DQYH2kOB.js                                                 2.85 kB │ gzip:   1.37 kB
+app/dist-test/assets/registry-CIj0uQIb.js                                                2.85 kB │ gzip:   1.37 kB
+app/dist-test/assets/cropMode-C8Q4I-Cb.js                                                2.88 kB │ gzip:   1.33 kB
+app/dist-test/assets/r-DNWPCnjT.js                                                       2.90 kB │ gzip:   1.40 kB
+app/dist-test/assets/AppearanceSection-6RvjFD80.js                                       2.91 kB │ gzip:   0.95 kB
+app/dist-test/assets/noteSpace-D8ZbJucT.js                                               2.91 kB │ gzip:   1.40 kB
+app/dist-test/assets/multiActions-B1Dtr2-y.js                                            2.92 kB │ gzip:   1.31 kB
+app/dist-test/assets/mapping-DFm3c_aD.js                                                 2.94 kB │ gzip:   1.25 kB
+app/dist-test/assets/commands-BR7rVobq.js                                                2.95 kB │ gzip:   1.33 kB
+app/dist-test/assets/theme-ol8SLKW-.js                                                   2.98 kB │ gzip:   1.40 kB
+app/dist-test/assets/truss-BGGscOl_.js                                                   3.08 kB │ gzip:   1.36 kB
+app/dist-test/assets/liveMath-Dr7GjIkE.js                                                3.08 kB │ gzip:   1.45 kB
+app/dist-test/assets/captionsCommand-ZEAZGnEN.js                                         3.10 kB │ gzip:   1.36 kB
+app/dist-test/assets/settings-Dm83H3az.js                                                3.14 kB │ gzip:   1.45 kB
+app/dist-test/assets/insert-CQzuHKiQ.js                                                  3.16 kB │ gzip:   1.29 kB
+app/dist-test/assets/commands-CmmmC-1N.js                                                3.16 kB │ gzip:   1.35 kB
+app/dist-test/assets/target-D52oXv1f.js                                                  3.18 kB │ gzip:   1.48 kB
+app/dist-test/assets/approvals-CJRg_ocG.js                                               3.19 kB │ gzip:   1.35 kB
+app/dist-test/assets/importPdf-CZJjFEgq.js                                               3.19 kB │ gzip:   1.52 kB
+app/dist-test/assets/pagesApi-DfehI9Fk.js                                                3.20 kB │ gzip:   1.56 kB
+app/dist-test/assets/safeStart-DZADZ8qW.js                                               3.21 kB │ gzip:   1.20 kB
+app/dist-test/assets/snap-zxAShtUo.js                                                    3.22 kB │ gzip:   1.51 kB
+app/dist-test/assets/translate-By_auI91.js                                               3.23 kB │ gzip:   1.51 kB
+app/dist-test/assets/EditingSpelling-COOdsBRM.js                                         3.25 kB │ gzip:   1.23 kB
+app/dist-test/assets/python-DwhXSSGr.js                                                  3.25 kB │ gzip:   1.46 kB
+app/dist-test/assets/Parts-CuKhVbRw.js                                                   3.27 kB │ gzip:   1.45 kB
+app/dist-test/assets/store-DORpOwNf.js                                                   3.28 kB │ gzip:   1.40 kB
+app/dist-test/assets/parser-3XnPn-Hu.js                                                  3.30 kB │ gzip:   1.65 kB
+app/dist-test/assets/kotlin-D_ESCULk.js                                                  3.31 kB │ gzip:   1.40 kB
+app/dist-test/assets/anki-PbAQ1lO2.js                                                    3.33 kB │ gzip:   1.68 kB
+app/dist-test/assets/c-Cgj59nqq.js                                                       3.36 kB │ gzip:   1.48 kB
+app/dist-test/assets/accounts-DUFrriSA.js                                                3.39 kB │ gzip:   1.57 kB
+app/dist-test/assets/latex-ifxXhTOO.js                                                   3.40 kB │ gzip:   1.50 kB
+app/dist-test/assets/shortcuts-CXMhLRiE.js                                               3.40 kB │ gzip:   1.46 kB
+app/dist-test/assets/regions-DPzNqiRW.js                                                 3.43 kB │ gzip:   1.59 kB
+app/dist-test/assets/settings-D-oQoRpT.js                                                3.44 kB │ gzip:   1.53 kB
+app/dist-test/assets/UpdatesSection-DgP9D0Xj.js                                          3.45 kB │ gzip:   1.19 kB
+app/dist-test/assets/chunk-SVEVUXB4-tI0wahqq.js                                          3.46 kB │ gzip:   1.50 kB
+app/dist-test/assets/arc-DFjYkwVu.js                                                     3.47 kB │ gzip:   1.46 kB
+app/dist-test/assets/julia-C_UcIgej.js                                                   3.47 kB │ gzip:   1.73 kB
+app/dist-test/assets/LinkAllDialog-CWOCfyFd.js                                           3.48 kB │ gzip:   1.56 kB
+app/dist-test/assets/plus-ANtjmEH1.js                                                    3.51 kB │ gzip:   1.42 kB
+app/dist-test/assets/register-LLrYIUjt.js                                                3.51 kB │ gzip:   1.41 kB
+app/dist-test/assets/HelpSection-CjRsZPBH.js                                             3.53 kB │ gzip:   1.22 kB
+app/dist-test/assets/spellingText-D5-wR4V2.js                                            3.54 kB │ gzip:   1.56 kB
+app/dist-test/assets/tools-D95rUuD0.js                                                   3.56 kB │ gzip:   1.70 kB
+app/dist-test/assets/slashMenu-KJaxD9bf.js                                               3.57 kB │ gzip:   1.54 kB
+app/dist-test/assets/blocks-C2y5urZo.js                                                  3.58 kB │ gzip:   1.59 kB
+app/dist-test/assets/WindowsSection-CDt82dQ2.js                                          3.61 kB │ gzip:   1.28 kB
+app/dist-test/assets/SmartFeaturesStep-DgY1BO03.js                                       3.61 kB │ gzip:   1.42 kB
+app/dist-test/assets/host-eY724XQv.js                                                    3.62 kB │ gzip:   1.71 kB
+app/dist-test/assets/toolbar-Za2eOL0t.js                                                 3.63 kB │ gzip:   1.73 kB
+app/dist-test/assets/setup-Bsl5Y_RF.js                                                   3.66 kB │ gzip:   1.78 kB
+app/dist-test/assets/switcher-CxeBRg7-.js                                                3.67 kB │ gzip:   1.67 kB
+app/dist-test/assets/selfCheck-BdjK4BRc.js                                               3.74 kB │ gzip:   1.28 kB
+app/dist-test/assets/equationCommands-Cak9dccQ.js                                        3.75 kB │ gzip:   1.63 kB
+app/dist-test/assets/ruby-D6zc0cUO.js                                                    3.79 kB │ gzip:   1.72 kB
+app/dist-test/assets/EditingExtras-DDgqKOMy.js                                           3.80 kB │ gzip:   1.07 kB
+app/dist-test/assets/fsharp-73P-F8U9.js                                                  3.81 kB │ gzip:   1.90 kB
+app/dist-test/assets/state-CCZHveRy.js                                                   3.84 kB │ gzip:   1.78 kB
+app/dist-test/assets/csharp-BKMciq5g.js                                                  3.84 kB │ gzip:   1.59 kB
+app/dist-test/assets/presentCommands-D8vV2tLl.js                                         3.86 kB │ gzip:   1.67 kB
+app/dist-test/assets/engineering-CrW1CcYU.js                                             3.87 kB │ gzip:   1.03 kB
+app/dist-test/assets/c-CVYb4e6m.js                                                       3.92 kB │ gzip:   1.85 kB
+app/dist-test/assets/AltTextDialog-CrSax19_.js                                           3.93 kB │ gzip:   1.85 kB
+app/dist-test/assets/intel-DXmno2RF.js                                                   3.94 kB │ gzip:   1.59 kB
+app/dist-test/assets/feedback-vkg-MQep.js                                                3.96 kB │ gzip:   1.20 kB
+app/dist-test/assets/Graph3DView-BkOb6nv0.js                                             4.16 kB │ gzip:   1.92 kB
+app/dist-test/assets/FormulaSheetTool-DAQ6rHai.js                                        4.18 kB │ gzip:   1.85 kB
+app/dist-test/assets/perl-CvqMZYuf.js                                                    4.19 kB │ gzip:   1.91 kB
+app/dist-test/assets/chunk-CcH8P3hP.js                                                   4.25 kB │ gzip:   2.03 kB
+app/dist-test/assets/ink-BuZVVht0.js                                                     4.25 kB │ gzip:   2.08 kB
+app/dist-test/assets/blocks-DX9OYZk5.js                                                  4.29 kB │ gzip:   1.99 kB
+app/dist-test/assets/playback-nN1USCmt.js                                                4.32 kB │ gzip:   1.72 kB
+app/dist-test/assets/powershell-BUe16zE4.js                                              4.35 kB │ gzip:   2.16 kB
+app/dist-test/assets/open-BXR9bSPB.js                                                    4.35 kB │ gzip:   1.93 kB
+app/dist-test/assets/diagram-UMYRVEAY-B5G4pef3.js                                        4.35 kB │ gzip:   1.90 kB
+app/dist-test/assets/follow-BxC8Ezrb.js                                                  4.38 kB │ gzip:   2.22 kB
+app/dist-test/assets/nodes-mfRqgF6x.js                                                   4.39 kB │ gzip:   1.44 kB
+app/dist-test/assets/PdfToolsDialog-DQqN7ywf.js                                          4.40 kB │ gzip:   1.82 kB
+app/dist-test/assets/layout-BmZloqRC.js                                                  4.55 kB │ gzip:   2.15 kB
+app/dist-test/assets/collections-BH_P0jV8.js                                             4.55 kB │ gzip:   1.98 kB
+app/dist-test/assets/embed-BGOnhfly.js                                                   4.55 kB │ gzip:   2.30 kB
+app/dist-test/assets/ops-CLoXjUao.js                                                     4.58 kB │ gzip:   2.05 kB
+app/dist-test/assets/openStorage-CBaVZGvV.js                                             4.60 kB │ gzip:   1.72 kB
+app/dist-test/assets/defaultLocale-BFoDCU3G.js                                           4.63 kB │ gzip:   2.12 kB
+app/dist-test/assets/protect-C1puNuAY.js                                                 4.63 kB │ gzip:   1.86 kB
+app/dist-test/assets/extension-B86L49hN.js                                               4.70 kB │ gzip:   2.04 kB
+app/dist-test/assets/current-CHXvr8dh.js                                                 4.80 kB │ gzip:   1.83 kB
+app/dist-test/assets/typeMode-DMzkdMfQ.js                                                4.85 kB │ gzip:   1.98 kB
+app/dist-test/assets/entries-BCW6yMIQ.js                                                 4.88 kB │ gzip:   2.31 kB
+app/dist-test/assets/commands-8IWL_nlS.js                                                4.88 kB │ gzip:   2.01 kB
+app/dist-test/assets/StorageStep-bI_P9DuW.js                                             4.89 kB │ gzip:   1.74 kB
+app/dist-test/assets/writeInk-fMvQuR9t.js                                                4.93 kB │ gzip:   2.28 kB
+app/dist-test/assets/docstructure-CtPCC0R9.js                                            4.93 kB │ gzip:   1.96 kB
+app/dist-test/assets/keys-DtDncw6D.js                                                    4.97 kB │ gzip:   1.46 kB
+app/dist-test/assets/CheckNotebook-s7n1KR3x.js                                           4.98 kB │ gzip:   1.92 kB
+app/dist-test/assets/dialogs-BmnmBJDn.js                                                 4.98 kB │ gzip:   1.66 kB
+app/dist-test/assets/reading-ClJf0k6H.js                                                 5.01 kB │ gzip:   2.27 kB
+app/dist-test/assets/entryLock-CKIrljgt.js                                               5.02 kB │ gzip:   2.18 kB
+app/dist-test/assets/importFiles-D8mVSXJb.js                                             5.04 kB │ gzip:   2.33 kB
+app/dist-test/assets/HighlightsDialog-BVEhlCr_.js                                        5.06 kB │ gzip:   2.32 kB
+app/dist-test/assets/reading-y1Tf3sJZ.js                                                 5.12 kB │ gzip:   2.33 kB
+app/dist-test/assets/ScanDialog-C4v9b4bF.js                                              5.12 kB │ gzip:   2.25 kB
+app/dist-test/assets/ReadAloudBar-CnEjUCVT.js                                            5.14 kB │ gzip:   2.20 kB
+app/dist-test/assets/codecells-olEktIsN.js                                               5.18 kB │ gzip:   2.26 kB
+app/dist-test/assets/TextStylesDialog-Z4Qo5K89.js                                        5.23 kB │ gzip:   1.87 kB
+app/dist-test/assets/chunk-Cs0sgm2i.js                                                   5.25 kB │ gzip:   2.41 kB
+app/dist-test/assets/IndicatorChip-P4N1PAIB.js                                           5.25 kB │ gzip:   2.40 kB
+app/dist-test/assets/auto-BWRY_SfH.js                                                    5.34 kB │ gzip:   2.54 kB
+app/dist-test/assets/stamps-Q74-TB-d.js                                                  5.36 kB │ gzip:   2.25 kB
+app/dist-test/assets/commands-C6kI-1b2.js                                                5.38 kB │ gzip:   2.39 kB
+app/dist-test/assets/cpp-CQeGnIiS.js                                                     5.42 kB │ gzip:   2.47 kB
+app/dist-test/assets/chunk-HTAEGDNF-B1lLjZMx.js                                          5.43 kB │ gzip:   2.49 kB
+app/dist-test/assets/controller-B4tMhhXk.js                                              5.44 kB │ gzip:   2.35 kB
+app/dist-test/assets/protectedPages-DLOzacS4.js                                          5.45 kB │ gzip:   2.33 kB
+app/dist-test/assets/fileBlock-DIL7z13V.js                                               5.48 kB │ gzip:   2.19 kB
+app/dist-test/assets/UpdateDetails-Cmw0S5hH.js                                           5.54 kB │ gzip:   1.72 kB
+app/dist-test/assets/sql-DWRKyvJ-.js                                                     5.56 kB │ gzip:   2.40 kB
+app/dist-test/assets/DailyCalendar-CvRt3F-c.js                                           5.59 kB │ gzip:   2.14 kB
+app/dist-test/assets/slideCommands-BAozD_i1.js                                           5.67 kB │ gzip:   2.46 kB
+app/dist-test/assets/theme-Cftf6DKy.js                                                   5.68 kB │ gzip:   2.37 kB
+app/dist-test/assets/beam-DMqTBn2C.js                                                    5.71 kB │ gzip:   2.35 kB
+app/dist-test/assets/linear-jCAlAPgH.js                                                  5.74 kB │ gzip:   2.37 kB
+app/dist-test/assets/TagsDialog-D5SmHJa2.js                                              5.77 kB │ gzip:   2.28 kB
+app/dist-test/assets/geometry-lWIkfuc9.js                                                5.82 kB │ gzip:   2.58 kB
+app/dist-test/assets/chunk-HJ2JQQFS-3DfEuxe3.js                                          5.83 kB │ gzip:   2.69 kB
+app/dist-test/assets/turnInto-8-_bFxu2.js                                                5.85 kB │ gzip:   2.33 kB
+app/dist-test/assets/apply-C8zbnm1f.js                                                   5.88 kB │ gzip:   2.52 kB
+app/dist-test/assets/commands-DziR9g1z.js                                                5.91 kB │ gzip:   2.54 kB
+app/dist-test/assets/units-CzljzdQe.js                                                   5.91 kB │ gzip:   2.54 kB
+app/dist-test/assets/MoveToDialog-BYw7X5SD.js                                            5.99 kB │ gzip:   2.61 kB
+app/dist-test/assets/attach-y0OBZdYv.js                                                  6.03 kB │ gzip:   2.61 kB
+app/dist-test/assets/pages-MyDBBJjC.js                                                   6.04 kB │ gzip:   2.80 kB
+app/dist-test/assets/layoutCommands-BIxBhJFd.js                                          6.05 kB │ gzip:   2.18 kB
+app/dist-test/assets/commands-DHCpWOJu.js                                                6.07 kB │ gzip:   2.33 kB
+app/dist-test/assets/diagram-YEKJPTXX-tLWssQdt.js                                        6.07 kB │ gzip:   2.57 kB
+app/dist-test/assets/php-DuZl5e-L.js                                                     6.10 kB │ gzip:   2.52 kB
+app/dist-test/assets/CollectionsDialog-lLPVHJDl.js                                       6.18 kB │ gzip:   2.27 kB
+app/dist-test/assets/commands-QBULlFh-.js                                                6.24 kB │ gzip:   2.75 kB
+app/dist-test/assets/pieDiagram-CAPJLFHJ-DQ4oEk1B.js                                     6.26 kB │ gzip:   2.62 kB
+app/dist-test/assets/viewport-BRiA-98m.js                                                6.26 kB │ gzip:   2.12 kB
+app/dist-test/assets/inkSeams-u2LX29nu.js                                                6.27 kB │ gzip:   2.86 kB
+app/dist-test/assets/javascript-Dao35r8N.js                                              6.34 kB │ gzip:   2.61 kB
+app/dist-test/assets/css-t-GZbT9m.js                                                     6.34 kB │ gzip:   2.75 kB
+app/dist-test/assets/auditHooks-DV7YkqTb.js                                              6.36 kB │ gzip:   2.48 kB
+app/dist-test/assets/imageCommands-CitSbGim.js                                           6.41 kB │ gzip:   2.47 kB
+app/dist-test/assets/palm-j_nKNFlp.js                                                    6.44 kB │ gzip:   2.52 kB
+app/dist-test/assets/pane-DX71vJFN.js                                                    6.45 kB │ gzip:   2.44 kB
+app/dist-test/assets/commands-cCjGeyY0.js                                                6.53 kB │ gzip:   2.68 kB
+app/dist-test/assets/mermaid-parser.core-D-FPHe03.js                                     6.57 kB │ gzip:   1.86 kB
+app/dist-test/assets/insert-DZbAQ5ng.js                                                  6.59 kB │ gzip:   3.09 kB
+app/dist-test/assets/CommandPalette-CS6n5LdQ.js                                          6.61 kB │ gzip:   2.88 kB
+app/dist-test/assets/style-5yX_Wc7L.js                                                   6.65 kB │ gzip:   2.72 kB
+app/dist-test/assets/StorageSection-Bm6XMQ4d.js                                          6.83 kB │ gzip:   2.34 kB
+app/dist-test/assets/model-DBynGhGl.js                                                   6.90 kB │ gzip:   2.48 kB
+app/dist-test/assets/commands-CIc5Lfvs.js                                                6.96 kB │ gzip:   3.05 kB
+app/dist-test/assets/dom-CI8Idaai.js                                                     7.03 kB │ gzip:   3.12 kB
+app/dist-test/assets/selection-C1MtipOX.js                                               7.08 kB │ gzip:   3.14 kB
+app/dist-test/assets/PrivacySection-COMbXL7M.js                                          7.12 kB │ gzip:   2.09 kB
+app/dist-test/assets/edits-R8H6aeHQ.js                                                   7.17 kB │ gzip:   3.08 kB
+app/dist-test/assets/translate-Cm0TXi4b.js                                               7.23 kB │ gzip:   3.20 kB
+app/dist-test/assets/diagnostics-BdyA1Hvg.js                                             7.25 kB │ gzip:   3.06 kB
+app/dist-test/assets/register-7NPZ6wSt.js                                                7.36 kB │ gzip:   2.72 kB
+app/dist-test/assets/ReplaceDialog-BvfOSKsN.js                                           7.37 kB │ gzip:   2.82 kB
+app/dist-test/assets/outline-hMpwJnY5.js                                                 7.37 kB │ gzip:   3.09 kB
+app/dist-test/assets/engine-D5-_H2O1.js                                                  7.55 kB │ gzip:   3.18 kB
+app/dist-test/assets/a11yCheck-BOCkwAcA.js                                               7.59 kB │ gzip:   3.08 kB
+app/dist-test/assets/typescript-Cby3KMgn.js                                              7.60 kB │ gzip:   3.07 kB
+app/dist-test/assets/blockRenderer-1zgGz-0v.js                                           7.73 kB │ gzip:   3.35 kB
+app/dist-test/assets/apply-BVAvW_QO.js                                                   7.79 kB │ gzip:   3.26 kB
+app/dist-test/assets/TagsPane-BBut8BRA.js                                                7.79 kB │ gzip:   3.26 kB
+app/dist-test/assets/ink-FWJwy5yH.js                                                     7.82 kB │ gzip:   3.59 kB
+app/dist-test/assets/mathInk-QBirBBm5.js                                                 7.83 kB │ gzip:   3.40 kB
+app/dist-test/assets/commands-CfFmApqX.js                                                7.87 kB │ gzip:   3.13 kB
+app/dist-test/assets/react-CQOZoUwg.js                                                   7.87 kB │ gzip:   3.00 kB
+app/dist-test/assets/SettingsSection-88N-ZiTM.js                                         7.92 kB │ gzip:   3.12 kB
+app/dist-test/assets/autocorrect-CrpllHjB.js                                             7.94 kB │ gzip:   3.34 kB
+app/dist-test/assets/swift-DoVWcw3Q.js                                                   7.96 kB │ gzip:   3.49 kB
+app/dist-test/assets/openFiles-Bj05nk9B.js                                               7.98 kB │ gzip:   3.25 kB
+app/dist-test/assets/gallery-BfKT3GhT.js                                                 8.17 kB │ gzip:   3.19 kB
+app/dist-test/assets/diagram-PFPMY2P6-BZGh3Ato.js                                        8.21 kB │ gzip:   3.66 kB
+app/dist-test/assets/PageBody-CyYYhUHY.js                                                8.22 kB │ gzip:   3.58 kB
+app/dist-test/assets/install-DCNHFIok.js                                                 8.31 kB │ gzip:   3.67 kB
+app/dist-test/assets/ExternalNotice-D3Jq-kJb.js                                          8.33 kB │ gzip:   2.91 kB
+app/dist-test/assets/runtime-DpNnoDSw.js                                                 8.40 kB │ gzip:   3.26 kB
+app/dist-test/assets/galleryCommands-x2t0KZrt.js                                         8.41 kB │ gzip:   3.60 kB
+app/dist-test/assets/pageTools-Bf_BWFec.js                                               8.57 kB │ gzip:   3.65 kB
+app/dist-test/assets/view-DC0t43MG.js                                                    8.58 kB │ gzip:   3.45 kB
+app/dist-test/assets/chunk-X3CZISLH-CPntZlW3.js                                          8.59 kB │ gzip:   3.56 kB
+app/dist-test/assets/timerSet-x1p04BLe.js                                                8.62 kB │ gzip:   3.45 kB
+app/dist-test/assets/qol-D-JQa7if.js                                                     8.63 kB │ gzip:   3.55 kB
+app/dist-test/assets/commands-vh1gA3jd.js                                                8.72 kB │ gzip:   3.48 kB
+app/dist-test/assets/pages-AeoRN9Hj.js                                                   8.75 kB │ gzip:   3.78 kB
+app/dist-test/assets/auto-DNaZLNC3.js                                                    8.81 kB │ gzip:   3.60 kB
+app/dist-test/assets/pool-CqIbrFQO.js                                                    9.13 kB │ gzip:   3.51 kB
+app/dist-test/assets/PracticeTool-DiUFZamK.js                                            9.33 kB │ gzip:   3.61 kB
+app/dist-test/assets/commands-BNsno4Iy.js                                                9.35 kB │ gzip:   3.71 kB
+app/dist-test/assets/imageBlock-CIgBtAIT.js                                              9.58 kB │ gzip:   3.57 kB
+app/dist-test/assets/SettingsSection-NeccR1fh.js                                         9.68 kB │ gzip:   2.65 kB
+app/dist-test/assets/TrussPanel-DIzml4-n.js                                              9.70 kB │ gzip:   3.39 kB
+app/dist-test/assets/store-DbnbD8Hx.js                                                   9.70 kB │ gzip:   3.96 kB
+app/dist-test/assets/GraphView-GUbalVdp.js                                               9.75 kB │ gzip:   3.81 kB
+app/dist-test/assets/page-Bx2cm7qz.js                                                    9.93 kB │ gzip:   4.10 kB
+app/dist-test/assets/cynefinDiagram-3GCD6N5R-D5yGiZyv.js                                 9.94 kB │ gzip:   3.52 kB
+app/dist-test/assets/FigureTool-B7ngoMKN.js                                             10.03 kB │ gzip:   4.30 kB
+app/dist-test/assets/strokes-CriQueGT.js                                                10.10 kB │ gzip:   4.59 kB
+app/dist-test/assets/dictation-BQEHbNmA.js                                              10.34 kB │ gzip:   4.13 kB
+app/dist-test/assets/chunk-FVRAUYC3-BhOMRXEc.js                                         10.39 kB │ gzip:   4.31 kB
+app/dist-test/assets/registerMore-CGa7C9-T.js                                           10.73 kB │ gzip:   3.05 kB
+app/dist-test/assets/snapTools-WYsrnSfu.js                                              10.95 kB │ gzip:   4.31 kB
+app/dist-test/assets/diagram-ZIFT7M5P-BWP0op95.js                                       10.96 kB │ gzip:   4.27 kB
+app/dist-test/assets/blockRenderer-CSiXaSiP.js                                          10.96 kB │ gzip:   4.60 kB
+app/dist-test/assets/dialogs-BImgbsMq.js                                                11.00 kB │ gzip:   3.27 kB
+app/dist-test/assets/HomeView-B22Kjm2z.js                                               11.11 kB │ gzip:   4.38 kB
+app/dist-test/assets/ConnectorCard-CiKHbPLp.js                                          11.22 kB │ gzip:   3.54 kB
+app/dist-test/assets/ExportDialog-B4Nuj1fK.js                                           11.22 kB │ gzip:   3.65 kB
+app/dist-test/assets/views-kczE88Bf.js                                                  11.24 kB │ gzip:   3.91 kB
+app/dist-test/assets/errors-Sk5BZNdb.js                                                 11.28 kB │ gzip:   4.02 kB
+app/dist-test/assets/codec-BCboTs4O.js                                                  11.46 kB │ gzip:   4.55 kB
+app/dist-test/assets/catalog-QWHfYrol.js                                                11.76 kB │ gzip:   4.24 kB
+app/dist-test/assets/base64-BPGc42z7.js                                                 11.77 kB │ gzip:   4.22 kB
+app/dist-test/assets/ShortcutList-CJ5H6pBk.js                                           11.85 kB │ gzip:   3.88 kB
+app/dist-test/assets/cloze-Da6kxgch.js                                                  11.88 kB │ gzip:   4.67 kB
+app/dist-test/assets/css-BFVIRmYH.js                                                    11.92 kB │ gzip:   4.28 kB
+app/dist-test/assets/SearchPanel-CuJPW-vx.js                                            11.96 kB │ gzip:   4.63 kB
+app/dist-test/assets/codeBlock-B9IYNjcZ.js                                              11.98 kB │ gzip:   5.19 kB
+app/dist-test/assets/prepare-DP26nJ1W.js                                                12.57 kB │ gzip:   5.34 kB
+app/dist-test/assets/CanvasView-opgpI1HZ.js                                             12.67 kB │ gzip:   4.80 kB
+app/dist-test/assets/mount-BBYe05sZ.js                                                  12.86 kB │ gzip:   4.01 kB
+app/dist-test/assets/tokens-DfCdSwv5.js                                                 12.90 kB │ gzip:   3.49 kB
+app/dist-test/assets/CircuitPanel-DjUp3hRT.js                                           13.01 kB │ gzip:   4.69 kB
+app/dist-test/assets/actions-Ck_ToRXh.js                                                13.02 kB │ gzip:   5.37 kB
+app/dist-test/assets/scss-BpB848q1.js                                                   13.02 kB │ gzip:   4.70 kB
+app/dist-test/assets/PageExtras-Dy7Y1csh.js                                             13.16 kB │ gzip:   5.01 kB
+app/dist-test/assets/BeamPanel-BJpHgvwa.js                                              13.29 kB │ gzip:   4.22 kB
+app/dist-test/assets/ImportDialog-BvcAjyAS.js                                           13.41 kB │ gzip:   3.99 kB
+app/dist-test/assets/diagram-OVF4WLC6-CU0lgVmD.js                                       13.41 kB │ gzip:   4.69 kB
+app/dist-test/assets/fake-BEaX5io7.js                                                   13.48 kB │ gzip:   5.54 kB
+app/dist-test/assets/sections-CjrZ-r5v.js                                               13.48 kB │ gzip:   5.31 kB
+app/dist-test/assets/elementCommands-CnGWFgLA.js                                        13.51 kB │ gzip:   4.53 kB
+app/dist-test/assets/FbdPanel-xov063XM.js                                               14.01 kB │ gzip:   4.58 kB
+app/dist-test/assets/commands-Bq0zh3-x.js                                               14.02 kB │ gzip:   4.38 kB
+app/dist-test/assets/blockRenderer-x-q2hYe2.js                                          14.21 kB │ gzip:   5.03 kB
+app/dist-test/assets/open-ChiSk1bU.js                                                   14.37 kB │ gzip:   5.46 kB
+app/dist-test/assets/grapher-CeSstDgp.js                                                14.41 kB │ gzip:   5.80 kB
+app/dist-test/assets/AppPermissionsSection-CUnCZleA.js                                  14.70 kB │ gzip:   3.84 kB
+app/dist-test/assets/chunk-NTY3LDVX-DEMyihvq.js                                         14.87 kB │ gzip:   4.24 kB
+app/dist-test/assets/step-YyU7_h7p.js                                                   15.11 kB │ gzip:   2.50 kB
+app/dist-test/assets/source-D6k0xk8l.js                                                 15.32 kB │ gzip:   6.33 kB
+app/dist-test/assets/exportCommands-CuBhx2X4.js                                         15.39 kB │ gzip:   5.41 kB
+app/dist-test/assets/commands-Dt_0zJy-.js                                               15.59 kB │ gzip:   5.47 kB
+app/dist-test/assets/chunk-AW2ZBBNX-BEH2C8wS.js                                         15.65 kB │ gzip:   4.36 kB
+app/dist-test/assets/toast-CUj4xZGv.js                                                  15.76 kB │ gzip:   6.49 kB
+app/dist-test/assets/chunk-3YJQHVM4-ChtBd87J.js                                         15.85 kB │ gzip:   6.21 kB
+app/dist-test/assets/chunk-B9Bm0VN5.js                                                  16.44 kB │ gzip:   5.88 kB
+app/dist-test/assets/registerEditor-DfvEvJg5.js                                         16.53 kB │ gzip:   6.39 kB
+app/dist-test/assets/ishikawaDiagram-K3B6WC7H-UBqrSEZ9.js                               17.31 kB │ gzip:   6.54 kB
+app/dist-test/assets/commands-BOH2clju.js                                               17.35 kB │ gzip:   6.74 kB
+app/dist-test/assets/controller-z0Myjc83.js                                             18.18 kB │ gzip:   6.99 kB
+app/dist-test/assets/webviewWindow-C4gMVmWL.js                                          18.82 kB │ gzip:   4.04 kB
+app/dist-test/assets/time-D04TgH-8.js                                                   20.04 kB │ gzip:   6.82 kB
+app/dist-test/assets/kanban-definition-P3RFRI5V-BxE739-Y.js                             20.31 kB │ gzip:   7.17 kB
+app/dist-test/assets/blockRenderer-C197jnt9.js                                          20.80 kB │ gzip:   7.13 kB
+app/dist-test/assets/upcomingStores-Uua_Ha42.js                                         22.02 kB │ gzip:   8.45 kB
+app/dist-test/assets/MathPen-BHC5aH9u.js                                                22.03 kB │ gzip:   9.15 kB
+app/dist-test/assets/math-C9W_KND-.js                                                   22.63 kB │ gzip:   7.21 kB
+app/dist-test/assets/notes-BKcdmju1.js                                                  22.68 kB │ gzip:   7.94 kB
+app/dist-test/assets/sankeyDiagram-UM26HJRW-zaKahtuV.js                                 22.70 kB │ gzip:   8.19 kB
+app/dist-test/assets/api-8gFPEOek.js                                                    22.85 kB │ gzip:   8.52 kB
+app/dist-test/assets/controller-DCgeQEl6.js                                             22.86 kB │ gzip:   8.03 kB
+app/dist-test/assets/journeyDiagram-COXZFDF6-phYQH9ue.js                                23.19 kB │ gzip:   8.18 kB
+app/dist-test/assets/kit-BnMFldKj.js                                                    23.27 kB │ gzip:   8.24 kB
+app/dist-test/assets/About-CwILf9lM.js                                                  23.31 kB │ gzip:   9.13 kB
+app/dist-test/assets/mindmap-definition-LZFPQGKD-8p2YF_te.js                            23.44 kB │ gzip:   7.98 kB
+app/dist-test/assets/textBlock-C-UlfNKf.js                                              23.62 kB │ gzip:   8.24 kB
+app/dist-test/assets/PenSettings-Cjl3zNob.js                                            23.66 kB │ gzip:   7.03 kB
+app/dist-test/assets/graphlib-DS17s2tU.js                                               23.90 kB │ gzip:   8.31 kB
+app/dist-test/assets/tableBlock-BcAbLDOH.js                                             24.25 kB │ gzip:   8.06 kB
+app/dist-test/assets/source-BTs7Q1rM.js                                                 24.76 kB │ gzip:  10.02 kB
+app/dist-test/assets/wardleyDiagram-YMQ3BMBF-BgFFcvXM.js                                25.21 kB │ gzip:   6.56 kB
+app/dist-test/assets/pipeline-BJdsZI53.js                                               25.40 kB │ gzip:  10.37 kB
+app/dist-test/assets/engine-BxMOIu8S.js                                                 26.10 kB │ gzip:   9.98 kB
+app/dist-test/assets/rough.esm-Dy-Kn_BL.js                                              27.10 kB │ gzip:   8.85 kB
+app/dist-test/assets/store-Khgc4Pwo.js                                                  28.63 kB │ gzip:  11.39 kB
+app/dist-test/assets/gitGraphDiagram-XJZIOB7I-Cz0tOzze.js                               29.05 kB │ gzip:   8.57 kB
+app/dist-test/assets/timeline-definition-YOQAKGHF-B90HgZdW.js                           30.49 kB │ gzip:  10.04 kB
+app/dist-test/assets/erDiagram-O2IAPWRE-DVfNVPI_.js                                     30.70 kB │ gzip:  10.59 kB
+app/dist-test/assets/requirementDiagram-X7JNWC4A-UOUWWmKn.js                            31.08 kB │ gzip:   9.82 kB
+app/dist-test/assets/flags-DTB-3l3g.js                                                  31.90 kB │ gzip:  11.81 kB
+app/dist-test/assets/ui-Ctqgg0dx.js                                                     32.14 kB │ gzip:  11.82 kB
+app/dist-test/assets/quadrantDiagram-GDMTTRAM-BvHrAVoN.js                               33.55 kB │ gzip:   9.76 kB
+app/dist-test/assets/renderers-CI6bn-fd.js                                              33.84 kB │ gzip:  13.86 kB
+app/dist-test/assets/study-DIk0g3Th.js                                                  36.06 kB │ gzip:  11.15 kB
+app/dist-test/assets/context-B74d7HIz.js                                                36.33 kB │ gzip:  13.87 kB
+app/dist-test/assets/src-cELI9DNZ.js                                                    37.64 kB │ gzip:  12.84 kB
+app/dist-test/assets/mermaid.core-CdxdA0W8.js                                           37.84 kB │ gzip:  12.87 kB
+app/dist-test/assets/chunk-2BW5OAIV-RHlS_s4e.js                                         37.90 kB │ gzip:   8.18 kB
+app/dist-test/assets/tree-D2U2EiR3.js                                                   38.95 kB │ gzip:  14.01 kB
+app/dist-test/assets/MyHandSection-BGDELqKI.js                                          40.25 kB │ gzip:  14.61 kB
+app/dist-test/assets/vennDiagram-BLWOH2XV-8DyX4Zr2.js                                   41.22 kB │ gzip:  15.14 kB
+app/dist-test/assets/stateDiagram-v2-TBUQTH76-CC3sBSmm.js                               41.59 kB │ gzip:  13.89 kB
+app/dist-test/assets/blockDiagram-E7TT5TSB-SlGwcyA6.js                                  42.50 kB │ gzip:  13.89 kB
+app/dist-test/assets/xychartDiagram-TAQBALBS-B6DIbWCY.js                                43.27 kB │ gzip:  11.89 kB
+app/dist-test/assets/chunk-LNGE3PJU-5-SxdO55.js                                         46.38 kB │ gzip:  15.54 kB
+app/dist-test/assets/calculus-Dg0MPILi.js                                               47.53 kB │ gzip:  17.24 kB
+app/dist-test/assets/dagre-W4DXFKR2-BKpwDuuQ.js                                         47.84 kB │ gzip:  17.11 kB
+app/dist-test/assets/citations-mnMJHVsB.js                                              48.67 kB │ gzip:  15.98 kB
+app/dist-test/assets/multiTap-Dj3Ytpqh.js                                               48.89 kB │ gzip:  16.45 kB
+app/dist-test/assets/classDiagram-v2-K4WV4PDN-FhBr2TEU.js                               49.75 kB │ gzip:  16.18 kB
+app/dist-test/assets/ganttDiagram-R7TSEDQI-BLz9IVrA.js                                  50.44 kB │ gzip:  16.67 kB
+app/dist-test/assets/prefs-CsoZpD5e.js                                                  51.06 kB │ gzip:  18.19 kB
+app/dist-test/assets/chunk-E2ZNV5FY-BWsqshxO.js                                         51.91 kB │ gzip:  16.65 kB
+app/dist-test/assets/expr-CKUoqSfB.js                                                   54.12 kB │ gzip:  18.53 kB
+app/dist-test/assets/mount-BvEDeQ_0.js                                                  56.87 kB │ gzip:  19.17 kB
+app/dist-test/assets/math-CKQBBju9.js                                                   60.21 kB │ gzip:  22.38 kB
+app/dist-test/assets/chunk-EU5HNXII-I7WTsVPo.js                                         62.88 kB │ gzip:  20.42 kB
+app/dist-test/assets/c4Diagram-CRA5TL53-cueasXGq.js                                     65.12 kB │ gzip:  18.63 kB
+app/dist-test/assets/markdown-CVJa0OkH.js                                               76.11 kB │ gzip:  25.28 kB
+app/dist-test/assets/diagram-2UJZ2QOL-afQoJw8d.js                                       80.56 kB │ gzip:  25.20 kB
+app/dist-test/assets/cose-bilkent-JH36ORCC-BJlTifa9.js                                  81.29 kB │ gzip:  21.56 kB
+app/dist-test/assets/dist-DYygFE2y.js                                                   89.05 kB │ gzip:  26.74 kB
+app/dist-test/assets/SolversTool-DteB9kys.js                                            96.16 kB │ gzip:  33.41 kB
+app/dist-test/assets/dist-BY8GbkCJ.js                                                   97.39 kB │ gzip:  30.97 kB
+app/dist-test/assets/dist-BMFEK67a.js                                                   99.60 kB │ gzip:  31.09 kB
+app/dist-test/assets/escape-CE9PKXOo.js                                                 99.75 kB │ gzip:  41.93 kB
+app/dist-test/assets/swimlanes-N4OXWK64-DpASZ3gd.js                                    106.24 kB │ gzip:  36.12 kB
+app/dist-test/assets/chunk-XC4XBNZT-DnC9jjN_.js                                        115.54 kB │ gzip:  29.11 kB
+app/dist-test/assets/sequenceDiagram-ZO4K6R2Y-DDtAJ1Xd.js                              117.72 kB │ gzip:  31.40 kB
+app/dist-test/assets/tables-CjF18N3A.js                                                118.24 kB │ gzip:  39.53 kB
+app/dist-test/assets/architectureDiagram-47P4ROYG-CltWEnwy.js                          148.95 kB │ gzip:  41.15 kB
+app/dist-test/assets/install-CavnQykC.js                                               154.99 kB │ gzip:  50.21 kB
+app/dist-test/assets/usecaseDiagram-VIAY4XPW-Bf4VGV34.js                               187.96 kB │ gzip:  49.29 kB
+app/dist-test/assets/client-SKsmYcL3.js                                                210.61 kB │ gzip:  65.68 kB
+app/dist-test/assets/chunk-VPRB5NB3-CE7Xkk9t.js                                        240.44 kB │ gzip:  39.95 kB
+app/dist-test/assets/katex-ZlcWpGUi.js                                                 258.68 kB │ gzip:  77.43 kB
+app/dist-test/assets/tools-cezbZVwd.js                                                 273.93 kB │ gzip:  94.17 kB
+app/dist-test/assets/picture-CReqx5Jd.js                                               291.69 kB │ gzip:  90.54 kB
+app/dist-test/assets/src-CwoCS2Og.js                                                   297.69 kB │ gzip: 102.77 kB
+app/dist-test/assets/t-COceA47I.js                                                     332.95 kB │ gzip: 109.65 kB
+app/dist-test/assets/main-BRIih3cD.js                                                  381.57 kB │ gzip:  99.88 kB
+app/dist-test/assets/pdf-BHDyQiZ-.js                                                   430.94 kB │ gzip: 129.04 kB
+app/dist-test/assets/cytoscape.esm-Yq6u8L66.js                                         434.85 kB │ gzip: 137.78 kB
+app/dist-test/assets/chunk-NGNAAXSQ-DqoPQk1a.js                                        629.05 kB │ gzip: 127.32 kB
+app/dist-test/assets/mathlive.min-COPAy3Kv.js                                          807.43 kB │ gzip: 221.34 kB
+app/dist-test/assets/elk-IJKZMXRS-ADlbncvG.js                                        1,462.99 kB │ gzip: 455.86 kB
+
+[32m✓ built in 1m 25s[39m
+[33m[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m

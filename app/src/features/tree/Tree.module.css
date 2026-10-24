@@ -277,6 +277,7 @@
   .empty {
     margin: 0;
     color: var(--color-text-secondary);
+    text-wrap: balance;
   }
 
   .empty p {
