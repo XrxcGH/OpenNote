@@ -70,3 +70,8 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
+
+// The signals and sound kit's flag and tool list load at start-up with these, so the palette can name each tool.
+export { SIGNALS_FLAGS } from './signals/flags';
+export type { SignalsFlagId } from './signals/flags';
+export { SIGNAL_TOOLS, chooseSignalTool } from './signals/meta';

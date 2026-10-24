@@ -1,0 +1,392 @@
+/*
+ * The signals and sound kit: calm, on tokens, with every control at least the target size. Fields wrap to one
+ * column at narrow widths; plots scale to the window; color is never the only cue (lines also differ in dashes,
+ * and every plot has a sentence and a table of values beside it).
+ */
+@layer components {
+  .kit,
+  .tool {
+    display: grid;
+    gap: var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    color: var(--color-text-primary);
+  }
+
+  .kit {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+
+  .picker {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .about {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .field small {
+    color: var(--color-text-secondary);
+  }
+
+  .withUnit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .unit {
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .field input,
+  .field select,
+  .textarea {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .field select {
+    font-family: var(--font-ui);
+  }
+
+  .textarea {
+    resize: vertical;
+    line-height: var(--type-small-line);
+  }
+
+  .field input:focus-visible,
+  .field select:focus-visible,
+  .textarea:focus-visible,
+  .check input:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-pointer);
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tab {
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    color: var(--color-text-secondary);
+    background: none;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .tab:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .answer {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .results {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .result {
+    display: grid;
+    grid-template-columns: minmax(10ch, 1fr) 2fr;
+    gap: var(--space-3);
+  }
+
+  .result dt {
+    color: var(--color-text-secondary);
+  }
+
+  .result dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+  }
+
+  .table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table caption {
+    text-align: start;
+    font-weight: 600;
+    padding-block-end: var(--space-1);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .table th {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+  }
+
+  .stepsBox {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: 600;
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .steps li {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .math {
+    font-family: var(--font-mono);
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .figure {
+    margin: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .plot,
+  .heat {
+    inline-size: 100%;
+    block-size: auto;
+    color: var(--color-text-secondary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .grid line {
+    stroke: var(--color-border-subtle);
+    stroke-width: 1;
+  }
+
+  .frame {
+    fill: none;
+    stroke: var(--color-border-control);
+    stroke-width: 1;
+  }
+
+  .tickText text {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: 11px;
+  }
+
+  .circle {
+    fill: none;
+    stroke: var(--color-text-muted);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+  }
+
+  .marker {
+    stroke: var(--color-text-muted);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+
+  .markerText {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: 10px;
+  }
+
+  .line {
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+  }
+
+  .dashed {
+    stroke-dasharray: 6 4;
+  }
+
+  .dots circle {
+    stroke: none;
+  }
+
+  .tone0 {
+    stroke: var(--ink-indigo);
+    fill: var(--ink-indigo);
+  }
+
+  .tone1 {
+    stroke: var(--ink-brick);
+    fill: var(--ink-brick);
+  }
+
+  .tone2 {
+    stroke: var(--ink-fern);
+    fill: var(--ink-fern);
+  }
+
+  .tone3 {
+    stroke: var(--ink-amber);
+    fill: var(--ink-amber);
+  }
+
+  .tone4 {
+    stroke: var(--ink-plum);
+    fill: var(--ink-plum);
+  }
+
+  path.tone0,
+  path.tone1,
+  path.tone2,
+  path.tone3,
+  path.tone4 {
+    fill: none;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    color: var(--color-text-secondary);
+  }
+
+  .legendItem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .swatch {
+    inline-size: 14px;
+    block-size: 3px;
+    background: currentColor;
+  }
+
+  .swatch.tone0 {
+    background: var(--ink-indigo);
+  }
+
+  .swatch.tone1 {
+    background: var(--ink-brick);
+  }
+
+  .swatch.tone2 {
+    background: var(--ink-fern);
+  }
+
+  .swatch.tone3 {
+    background: var(--ink-amber);
+  }
+
+  .swatch.tone4 {
+    background: var(--ink-plum);
+  }
+
+  .preview {
+    max-inline-size: 100%;
+    block-size: auto;
+    image-rendering: pixelated;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .safety {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+}

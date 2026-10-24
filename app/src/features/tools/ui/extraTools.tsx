@@ -28,7 +28,16 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The signals and sound kit loads its tools on first open.
+const SignalsKit = lazy(() => import('../signals/kit').then((kit) => ({ default: kit.SignalsKit })));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
+  if (tool === 'kit-signals')
+    return (
+      <Suspense fallback={null}>
+        <SignalsKit />
+      </Suspense>
+    );
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
     return (
