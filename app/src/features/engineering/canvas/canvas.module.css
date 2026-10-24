@@ -34,6 +34,7 @@
 
   .canvas {
     display: block;
+    min-inline-size: 560px;
     max-inline-size: 100%;
     block-size: auto;
     touch-action: none;
@@ -122,13 +123,21 @@
 
   .label {
     fill: var(--color-text-primary);
-    font-size: var(--type-small-size);
+    font-size: calc(var(--type-small-size) * var(--svg-k, 1));
     font-family: var(--font-ui);
+    paint-order: stroke;
+    stroke: var(--color-surface-page);
+    stroke-width: calc(3px * var(--svg-k, 1));
+    stroke-linejoin: round;
   }
 
   .muted {
     fill: var(--color-text-secondary);
-    font-size: var(--type-caption-size);
+    font-size: calc(var(--type-caption-size) * var(--svg-k, 1));
+    paint-order: stroke;
+    stroke: var(--color-surface-page);
+    stroke-width: calc(3px * var(--svg-k, 1));
+    stroke-linejoin: round;
   }
 
   .origin {
