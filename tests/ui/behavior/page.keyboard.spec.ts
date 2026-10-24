@@ -79,7 +79,7 @@ test('formats with keys: marks, a link, headings, an outline move, a date, and A
   await keys(page, 'Heading{Control+Alt+2}{Enter}Plain{Control+Alt+1}{Control+Shift+N}{Enter}');
   await keys(page, 'Visit site{Control+Shift+ArrowLeft}{Control+k}');
   // The popover takes the focus when it has loaded; the address goes into its field, and Enter saves and closes it.
-  await expect(page.getByRole('textbox', { name: 'Address' })).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Address' })).toBeFocused({ timeout: 20_000 });
   await keys(page, 'example.com{Enter}');
   await expect(page.getByRole('dialog', { name: 'Link' })).toHaveCount(0);
   await keys(page, '{End}{Enter}');

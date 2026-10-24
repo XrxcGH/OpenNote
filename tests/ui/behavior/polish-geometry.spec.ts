@@ -235,8 +235,11 @@ test.describe('a docked panel leaves the page alone', () => {
     await openTool(page, 'Open citations');
     const panel = page.getByRole('dialog', { name: 'Citations' });
     await expect(panel).toBeVisible();
-    // The edge is the window less a scroll bar where the system draws one, 15 pixels wide on the CI runners.
-    const edge = await page.evaluate(() => document.documentElement.clientWidth);
+    // The panel stops short of the page's scroll bar where the system draws one, 15 pixels wide on the CI runners.
+    const edge = await page.evaluate(() => {
+      const main = document.querySelector('main')!;
+      return document.documentElement.clientWidth - (main.offsetWidth - main.clientWidth);
+    });
     // The panel slides in, so measure once it has settled at the edge.
     await expect
       .poll(

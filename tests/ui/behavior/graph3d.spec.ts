@@ -9,8 +9,8 @@ test('draws a 3D graph from the slash menu and turns it from the keyboard', asyn
   await openSmart(page);
   await newLine(page);
   await page.keyboard.type('/3d graph');
-  await expect(page.getByRole('option', { name: 'Insert 3D graph' })).toBeVisible();
-  await page.keyboard.press('Enter');
+  // Pick the item itself: the list sorts as the typed words arrive, and Enter takes whichever is first by then.
+  await page.getByRole('option', { name: 'Insert 3D graph' }).click();
   const plot = page.getByRole('application', { name: '3D graph of 1 function' });
   await expect(plot).toBeVisible({ timeout: 20_000 });
   const readout = page.getByText(/^x from -5 to 5, y from -5 to 5.*Turned/);

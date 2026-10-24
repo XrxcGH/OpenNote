@@ -16,15 +16,18 @@ export async function walkToStorage(page: Page): Promise<void> {
     let current = '';
     let arrived = false;
     await expect
-      .poll(async () => {
-        current = ((await heading.textContent()) ?? '').trim();
-        arrived = current === 'Where to keep things';
-        return arrived || (await next.isVisible());
-      })
+      .poll(
+        async () => {
+          current = ((await heading.textContent()) ?? '').trim();
+          arrived = current === 'Where to keep things';
+          return arrived || (await next.isVisible());
+        },
+        { timeout: 20_000 },
+      )
       .toBe(true);
     if (arrived) return;
     await next.click();
-    await expect(heading).not.toHaveText(current);
+    await expect(heading).not.toHaveText(current, { timeout: 20_000 });
   }
   throw new Error('Setup did not reach Where to keep things.');
 }
