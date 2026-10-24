@@ -5,6 +5,7 @@
 // Soderberg, and Langer. The other elements are a shaft by DE-Goodman, a bolted joint, a rolling bearing's rating life,
 // a helical compression spring, and Lewis bending of a gear tooth. Everything is in base SI.
 import { fail, finite, notNegative, positive, q, step, type KitStep } from '../kit/types';
+import { LEWIS_Y, RACK_Y } from './data';
 
 const MPa = 1e6;
 
@@ -299,4 +300,65 @@ export function lewis(Wt: number, F: number, m: number, Y: number, finish: Finis
       step('machine.lewis', '\\sigma = \\frac{K_v W_t}{F m Y} = [[s]]', { s: q(sigma, 'stress') }),
     ],
   };
+}
+
+/**
+ * The Lewis form factor for a number of teeth, read from the 20° full-depth table with straight-line interpolation
+ * between its rows, and in 1/N between 400 teeth and a rack.
+ */
+export function lewisY(teeth: number): { Y: number; step: KitStep } {
+  if (!Number.isFinite(teeth) || teeth < LEWIS_Y[0][0]) fail('fewTeeth', String(LEWIS_Y[0][0]));
+  let Y: number;
+  const last = LEWIS_Y[LEWIS_Y.length - 1];
+  if (teeth >= last[0]) Y = RACK_Y + (last[1] - RACK_Y) * (last[0] / teeth);
+  else {
+    const i = LEWIS_Y.findIndex(([n]) => n > teeth);
+    const [[n0, y0], [n1, y1]] = [LEWIS_Y[i - 1], LEWIS_Y[i]];
+    Y = y0 + ((y1 - y0) * (teeth - n0)) / (n1 - n0);
+  }
+  return { Y, step: step('machine.lewisY', 'Y(N_t = [[N]]) = [[Y]]', { N: teeth, Y }) };
+}
+
+export interface BoltStiffnessInput {
+  /** Nominal diameter. */
+  readonly d: number;
+  readonly At: number;
+  /** Grip: the thickness of the members clamped. */
+  readonly l: number;
+  /** The threaded length within the grip; the rest of the grip is the unthreaded shank. */
+  readonly lt: number;
+  readonly E: number;
+  readonly Em: number;
+}
+
+/**
+ * The bolt's stiffness as a shank and a threaded part in series, kb = Ad At E/(Ad lt + At ld), and the members' by
+ * two 30° frusta from a washer face 1.5 d across, km = 0.5774 π Em d / (2 ln(5 (0.5774 l + 0.5 d)/(0.5774 l + 2.5 d))),
+ * for members of one material. The joint constant is C = kb/(kb + km).
+ */
+export function boltStiffness(b: BoltStiffnessInput) {
+  const d = positive(b.d, 'd');
+  const At = positive(b.At, 'At');
+  const l = positive(b.l, 'l');
+  const lt = notNegative(b.lt, 'lt');
+  if (lt > l) fail('threadLength');
+  const E = positive(b.E, 'E');
+  const Em = positive(b.Em, 'Em');
+  const Ad = (Math.PI * d * d) / 4;
+  const ld = l - lt;
+  const kb = (Ad * At * E) / (Ad * lt + At * ld);
+  const km = (0.5774 * Math.PI * Em * d) / (2 * Math.log((5 * (0.5774 * l + 0.5 * d)) / (0.5774 * l + 2.5 * d)));
+  const C = kb / (kb + km);
+  const steps = [
+    step('machine.boltStiffness', 'k_b = \\frac{A_d A_t E}{A_d l_t + A_t l_d} = [[kb]]', {
+      kb: q(kb, 'stiffness'),
+    }),
+    step(
+      'machine.memberStiffness',
+      'k_m = \\frac{0.5774 \\pi E_m d}{2 \\ln\\left(5 \\frac{0.5774 l + 0.5 d}{0.5774 l + 2.5 d}\\right)} = [[km]]',
+      { km: q(km, 'stiffness') },
+    ),
+    step('machine.jointConstant', 'C = \\frac{k_b}{k_b + k_m} = [[C]]', { C }),
+  ];
+  return { Ad, kb, km, C, steps };
 }

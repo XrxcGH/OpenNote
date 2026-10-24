@@ -8,10 +8,12 @@ import { fail, q } from '../kit/types';
 import {
   bearingLife,
   boltedJoint,
+  boltStiffness,
   cycles,
   endurance,
   fluctuating,
   lewis,
+  lewisY,
   miner,
   shaftDiameter,
   spring,
@@ -27,6 +29,7 @@ const isMode =
   (...modes: string[]) =>
   (v: Values) =>
     modes.includes(v.mode as string);
+const stiffnesses = (v: Values) => v.mode === 'bolt' && v.stiffness === 'stiffnesses';
 const line = (n: number, f: (u: number) => readonly [number, number]) => [...Array(n + 1).keys()].map((i) => f(i / n));
 
 function runEndurance(values: Values): Outcome {
@@ -168,15 +171,34 @@ function runShaft(values: Values): Outcome {
 }
 
 function runBolt(values: Values): Outcome {
+  const stiff =
+    values.stiffness === 'stiffnesses'
+      ? boltStiffness({
+          d: num(values, 'dBolt'),
+          At: num(values, 'At'),
+          l: num(values, 'grip'),
+          lt: num(values, 'lt'),
+          E: num(values, 'Eb'),
+          Em: num(values, 'Em'),
+        })
+      : null;
   const r = boltedJoint({
     At: num(values, 'At'),
     Sp: num(values, 'Sp'),
     fraction: num(values, 'fraction'),
-    C: num(values, 'C'),
+    C: stiff ? stiff.C : num(values, 'C'),
     P: num(values, 'P'),
   });
+  const stiffRows: ResultRow[] = stiff
+    ? [
+        { id: 'kBolt', value: q(stiff.kb, 'stiffness'), sym: 'k_b' },
+        { id: 'kMember', value: q(stiff.km, 'stiffness'), sym: 'k_m' },
+        { id: 'Cjoint', value: stiff.C, sym: 'C' },
+      ]
+    : [];
   return {
     rows: [
+      ...stiffRows,
       { id: 'Fi', value: q(r.Fi, 'bigForce'), sym: 'F_i', answer: true },
       { id: 'Fb', value: q(r.Fb, 'bigForce'), sym: 'F_b', answer: true },
       { id: 'Fm', value: q(r.Fm, 'bigForce'), sym: 'F_m' },
@@ -186,8 +208,8 @@ function runBolt(values: Values): Outcome {
       { id: 'nSep', value: r.nSeparation, sym: 'n_0' },
       { id: 'joint', word: r.closed ? 'closed' : 'open' },
     ],
-    steps: r.steps,
-    notes: ['boltNote'],
+    steps: [...(stiff ? stiff.steps : []), ...r.steps],
+    notes: ['boltNote', ...(stiff ? ['boltStiffNote'] : [])],
   };
 }
 
@@ -218,8 +240,18 @@ function runGear(values: Values): Outcome {
   const finish = values.finish as Finish;
   if (finish !== 'none' && !(num(values, 'rpm') > 0)) fail('needSpeed');
   const V = finish === 'none' ? undefined : Math.PI * num(values, 'm') * num(values, 'teeth') * num(values, 'rpm');
-  const r = lewis(num(values, 'Wt'), num(values, 'Fw'), num(values, 'm'), num(values, 'Y'), finish, V);
+  const typedY = Number.isFinite(num(values, 'Y'));
+  const table = typedY ? null : lewisY(num(values, 'teeth'));
+  const r = lewis(
+    num(values, 'Wt'),
+    num(values, 'Fw'),
+    num(values, 'm'),
+    table ? table.Y : num(values, 'Y'),
+    finish,
+    V,
+  );
   const rows: ResultRow[] = [
+    ...(table ? [{ id: 'YLewis', value: table.Y, sym: 'Y' }] : []),
     { id: 'Kv', value: r.Kv, sym: 'K_v' },
     { id: 'sigmaGear', value: q(r.sigma, 'stress'), sym: '\\sigma', answer: true },
   ];
@@ -235,9 +267,10 @@ function runGear(values: Values): Outcome {
               vars: { V: V.toPrecision(5) },
             },
           ]),
+      ...(table ? [table.step] : []),
       ...r.steps,
     ],
-    notes: ['lewisNote'],
+    notes: ['lewisNote', ...(table ? ['lewisTable'] : [])],
   };
 }
 
@@ -303,7 +336,19 @@ export const machineSpec: ToolSpec = {
     { id: 'At', type: 'quantity', kind: 'area', first: '84.3 mm^2', when: isMode('bolt') },
     { id: 'Sp', type: 'quantity', kind: 'stress', first: '600 MPa', when: isMode('bolt') },
     { id: 'fraction', type: 'quantity', kind: 'ratio', first: '0.75', when: isMode('bolt') },
-    { id: 'C', type: 'quantity', kind: 'ratio', first: '0.2', when: isMode('bolt') },
+    { id: 'stiffness', type: 'choice', options: ['typed', 'stiffnesses'], first: 'typed', when: isMode('bolt') },
+    {
+      id: 'C',
+      type: 'quantity',
+      kind: 'ratio',
+      first: '0.2',
+      when: (v) => v.mode === 'bolt' && v.stiffness !== 'stiffnesses',
+    },
+    { id: 'dBolt', type: 'quantity', kind: 'length', first: '12 mm', when: stiffnesses },
+    { id: 'grip', type: 'quantity', kind: 'length', first: '40 mm', when: stiffnesses },
+    { id: 'lt', type: 'quantity', kind: 'length', first: '20 mm', when: stiffnesses },
+    { id: 'Eb', type: 'quantity', kind: 'modulus', first: '200 GPa', when: stiffnesses },
+    { id: 'Em', type: 'quantity', kind: 'modulus', first: '200 GPa', when: stiffnesses },
     { id: 'P', type: 'quantity', kind: 'bigForce', first: '10 kN', when: isMode('bolt') },
     { id: 'kind', type: 'choice', options: ['ball', 'roller'], first: 'ball', when: isMode('bearing') },
     { id: 'Cr', type: 'quantity', kind: 'bigForce', first: '30 kN', when: isMode('bearing') },
@@ -317,7 +362,7 @@ export const machineSpec: ToolSpec = {
     { id: 'Wt', type: 'quantity', kind: 'bigForce', first: '2 kN', when: isMode('gear') },
     { id: 'Fw', type: 'quantity', kind: 'length', first: '25 mm', when: isMode('gear') },
     { id: 'm', type: 'quantity', kind: 'length', first: '3 mm', when: isMode('gear') },
-    { id: 'Y', type: 'quantity', kind: 'ratio', first: '0.322', when: isMode('gear') },
+    { id: 'Y', type: 'quantity', kind: 'ratio', first: '', optional: true, when: isMode('gear') },
     {
       id: 'finish',
       type: 'choice',
@@ -330,7 +375,7 @@ export const machineSpec: ToolSpec = {
       type: 'quantity',
       kind: 'count',
       first: '20',
-      when: (v) => v.mode === 'gear' && v.finish !== 'none',
+      when: isMode('gear'),
     },
   ],
   examples: [
@@ -342,6 +387,22 @@ export const machineSpec: ToolSpec = {
     { id: 'life', values: { mode: 'life', sa: '300 MPa', sm: '0 MPa', Se: '250 MPa', Sut: '600 MPa', f: '0.9' } },
     { id: 'miner', values: { mode: 'miner', blocks: '10000 50000\n200000 1000000' } },
     { id: 'bolt', values: { mode: 'bolt', At: '84.3 mm^2', Sp: '600 MPa', fraction: '0.75', C: '0.2', P: '10 kN' } },
+    {
+      id: 'boltStiff',
+      values: {
+        mode: 'bolt',
+        At: '84.3 mm^2',
+        Sp: '600 MPa',
+        fraction: '0.75',
+        stiffness: 'stiffnesses',
+        dBolt: '12 mm',
+        grip: '40 mm',
+        lt: '20 mm',
+        Eb: '200 GPa',
+        Em: '200 GPa',
+        P: '10 kN',
+      },
+    },
     { id: 'bearing', values: { mode: 'bearing', kind: 'ball', Cr: '30 kN', Pb: '5 kN', rpm: '1500 rpm' } },
     { id: 'spring', values: { mode: 'spring', dw: '3 mm', Dm: '24 mm', Na: '10', G: '79.3 GPa', Fs: '50 N' } },
     {

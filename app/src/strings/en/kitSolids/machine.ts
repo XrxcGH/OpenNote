@@ -31,6 +31,12 @@ export const machine = {
     Sp: 'Proof strength, Sp',
     fraction: 'Preload as a fraction of the proof load',
     C: 'Joint stiffness constant, C',
+    stiffness: 'Joint constant C',
+    dBolt: 'Nominal bolt diameter, d',
+    grip: 'Grip, l',
+    lt: 'Threaded length within the grip, lt',
+    Eb: 'Bolt modulus, E',
+    Em: 'Member modulus, Em',
     P: 'External load per bolt, P',
     kind: 'Bearing',
     Cr: 'Basic load rating, C',
@@ -44,12 +50,14 @@ export const machine = {
     Wt: 'Tangential load, Wt',
     Fw: 'Face width, F',
     m: 'Module, m',
-    Y: 'Lewis form factor, Y',
+    Y: 'Lewis form factor, Y (optional: from the number of teeth)',
     finish: 'Dynamic factor',
     teeth: 'Number of teeth',
   },
   hint: { blocks: 'For each block, type the cycles applied, then the cycles to failure at that stress.' },
   option: {
+    typed: 'Typed',
+    stiffnesses: 'From the bolt and member stiffnesses',
     endurance: 'Endurance limit',
     fluctuating: 'Fluctuating stress',
     life: 'Life on the S-N line',
@@ -81,6 +89,7 @@ export const machine = {
     shaved: 'Shaved or ground profile',
   },
   example: {
+    boltStiff: 'Bolted joint, C from the stiffnesses',
     marin: 'Machined steel shaft, 30 mm, bending',
     goodman: 'Fluctuating stress on a fatigue diagram',
     life: 'Life at 300 MPa fully reversed',
@@ -91,6 +100,10 @@ export const machine = {
     gear: 'Hobbed spur gear tooth',
   },
   row: {
+    kBolt: 'Bolt stiffness, kb',
+    kMember: 'Member stiffness, km',
+    Cjoint: 'Joint constant, C',
+    YLewis: 'Lewis form factor, Y',
     prime: "Unmodified endurance limit, Se'",
     ka: 'Surface factor, ka',
     kb: 'Size factor, kb',
@@ -144,12 +157,16 @@ export const machine = {
     minerNote: "Miner's rule adds the fraction of life used at each level. Failure is predicted when D reaches 1.",
     deGoodman: 'DE-Goodman: distortion energy with the modified Goodman line, for a round solid shaft.',
     boltNote: 'C = kb/(kb + km). The joint separates once the external load passes P0.',
+    boltStiffNote:
+      'km is for members of one material, by two 30° cones from a washer face 1.5 d across. The shank and the ' +
+      'threaded part of the bolt act as two springs in series.',
+    lewisTable: 'Y is read from the Lewis table for 20° full-depth teeth, between its rows.',
     bearingNote: 'L10 is the life that 90% of a group of bearings reach or pass.',
     springNote: 'The Bergsträsser factor allows for the curvature and direct shear of the wire.',
     springIndexRange: 'The spring index is outside 4 to 12, which is hard to make or prone to tangle.',
     lewisNote:
       'The Lewis equation takes the tooth as a cantilever with the load at its tip. Type Y for your number of ' +
-      'teeth from your table. Kv follows Barth, with V in m/s.',
+      'teeth, or leave it empty to read it from the Lewis table. Kv follows Barth, with V in m/s.',
   },
   plot: {
     mean: 'Mean stress, σm',
@@ -165,6 +182,10 @@ export const machine = {
 } as const;
 
 export const machineSteps = {
+  lewisY: 'Read the Lewis form factor for {N} teeth from the table.',
+  boltStiffness: 'Find the bolt stiffness, with the shank and the threaded length as springs in series.',
+  memberStiffness: 'Find the member stiffness from the frustum formula.',
+  jointConstant: 'Find the joint constant.',
   prime: 'Start from the endurance limit of a polished test specimen.',
   ka: 'Find the surface factor from the finish.',
   kb: 'Find the size factor from the diameter.',

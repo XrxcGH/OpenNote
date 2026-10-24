@@ -4,14 +4,17 @@ import { SolidsError } from '../kit/types';
 import {
   bearingLife,
   boltedJoint,
+  boltStiffness,
   cycles,
   endurance,
   fluctuating,
   lewis,
+  lewisY,
   miner,
   shaftDiameter,
   spring,
 } from './engine';
+import { LEWIS_Y } from './data';
 import { machineSpec } from './spec';
 
 const rel = (a: number | undefined, b: number, tol: number) =>
@@ -156,5 +159,57 @@ describe('machine elements', () => {
     expect(bad({ mode: 'miner', blocks: '1 2 3' })).toBe('blockLine');
     expect(bad({ mode: 'gear', finish: 'cut', rpm: '' })).toBe('needSpeed');
     expect(bad({ Sut: '600 mm' })).toBe('unitMismatch');
+  });
+});
+
+describe('Lewis form factor table', () => {
+  it('holds the 20° full-depth values and reads between them', () => {
+    // Transcribed rows of the table, checked one by one against the source.
+    expect(LEWIS_Y.find(([n]) => n === 12)?.[1]).toBe(0.245);
+    expect(LEWIS_Y.find(([n]) => n === 20)?.[1]).toBe(0.322);
+    expect(LEWIS_Y.find(([n]) => n === 50)?.[1]).toBe(0.409);
+    expect(LEWIS_Y.find(([n]) => n === 400)?.[1]).toBe(0.48);
+    expect(LEWIS_Y).toHaveLength(25);
+    // Y grows with the number of teeth.
+    LEWIS_Y.slice(1).forEach(([, y], i) => expect(y).toBeGreaterThan(LEWIS_Y[i][1]));
+    rel(lewisY(20).Y, 0.322, 1e-12);
+    // 23 teeth is halfway between 22 (0.331) and 24 (0.337).
+    rel(lewisY(23).Y, 0.334, 1e-12);
+    // 800 teeth is halfway, in 1/N, from 400 teeth (0.480) to a rack (0.485).
+    rel(lewisY(800).Y, 0.4825, 1e-12);
+    expect(code(() => lewisY(10))).toBe('fewTeeth');
+  });
+
+  it('fills Y from the teeth when Y is left empty', () => {
+    const r = runTool(machineSpec, { ...firstTexts(machineSpec), mode: 'gear', Y: '', teeth: '30' }, 'si');
+    // sigma = Wt/(F m Y) = 2000/(0.025 x 0.003 x 0.359).
+    const sigma = r.ok ? r.outcome.rows.find((row) => row.id === 'sigmaGear')?.value : undefined;
+    rel((sigma as { v: number }).v, 2000 / (0.025 * 0.003 * 0.359), 1e-12);
+  });
+});
+
+describe('bolt and member stiffness', () => {
+  const input = { d: 0.012, At: 84.3e-6, l: 0.04, lt: 0.02, E: 200e9, Em: 200e9 };
+
+  it('gives kb, km, and C', () => {
+    const r = boltStiffness(input);
+    // kb by hand: Ad = pi 12^2/4 = 113.097 mm^2; 113.097 x 84.3 x 200 000 / (113.097 x 20 + 84.3 x 20) N/mm.
+    const Ad = 113.09733552923255;
+    rel(r.kb / 1e3, (Ad * 84.3 * 200000) / (Ad * 20 + 84.3 * 20), 1e-12);
+    // km by the general frustum formula for one 30° cone of thickness t = l/2 from a washer face D = 1.5 d,
+    // k = 0.5774 pi E d / ln[(1.155 t + D - d)(D + d) / ((1.155 t + D + d)(D - d))], two in series.
+    const [d, t, D] = [12, 20, 18];
+    const one =
+      (0.5774 * Math.PI * 200000 * d) / Math.log(((1.155 * t + D - d) * (D + d)) / ((1.155 * t + D + d) * (D - d)));
+    rel(r.km / 1e3, one / 2, 1e-3);
+    rel(r.C, r.kb / (r.kb + r.km), 1e-12);
+    expect(code(() => boltStiffness({ ...input, lt: 0.05 }))).toBe('threadLength');
+  });
+
+  it('uses that C in the joint', () => {
+    const r = runTool(machineSpec, { ...firstTexts(machineSpec), mode: 'bolt', stiffness: 'stiffnesses' }, 'si');
+    expect(r.ok).toBe(true);
+    const C = r.ok ? r.outcome.rows.find((row) => row.id === 'Cjoint')?.value : NaN;
+    rel(C as number, boltStiffness(input).C, 1e-12);
   });
 });
