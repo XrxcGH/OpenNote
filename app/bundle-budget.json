@@ -68,6 +68,7 @@
     "features/search/lineTags": 160,
     "features/page": 40,
     "features/ink/view/install": 110,
+    "features/ink/view/myhand/MyHandSection.tsx": 44,
     "features/palette": 40,
     "features/settings": 40,
     "features/setup": 40,
