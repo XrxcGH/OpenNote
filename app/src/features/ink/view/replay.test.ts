@@ -22,7 +22,12 @@ describe('ink replay on the page', () => {
       stroke('a', 1000, [0, 100, 400]),
       stroke('b', 5000, [0, 50], { startUnknown: true }),
       stroke('c', 9000, []),
-      stroke('d', 0, [], { points: [{ x: 0, y: 0 }, { x: 10, y: 0 }] }),
+      stroke('d', 0, [], {
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+        ],
+      }),
     ]);
     expect(entries.map((e) => e.id)).toEqual(['a', 'b', 'd']);
     expect(entries[0]).toEqual({ id: 'a', startMs: 1000, durationMs: 400 });
@@ -32,7 +37,14 @@ describe('ink replay on the page', () => {
   });
 
   it('plays shapes that carry no times, which used to leave Replay with nothing to show', () => {
-    const shape = stroke('s', 0, [], { points: [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 0 }] });
+    const shape = stroke('s', 0, [], {
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 },
+        { x: 0, y: 0 },
+      ],
+    });
     const entries = replayEntries([shape]);
     expect(entries).toHaveLength(1);
     expect(new InkReplay(entries).durationMs).toBeGreaterThan(0);

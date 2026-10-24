@@ -30,13 +30,19 @@ describe('Convert to text when it cannot run', () => {
 
   it('tells the person to select handwriting first', async () => {
     vi.spyOn(flags, 'isEnabled').mockReturnValue(true);
-    await convertSelection(hostWith(() => Promise.resolve(true), []), { ...surface(), strokes: () => [] } as never);
+    await convertSelection(
+      hostWith(() => Promise.resolve(true), []),
+      { ...surface(), strokes: () => [] } as never,
+    );
     expect(toast).toHaveBeenCalledWith({ message: t('ink.handwriting.selectFirst') });
   });
 
   it('says a read-only page cannot be changed', async () => {
     vi.spyOn(flags, 'isEnabled').mockReturnValue(true);
-    await convertSelection(hostWith(() => Promise.resolve(true)), surface(true));
+    await convertSelection(
+      hostWith(() => Promise.resolve(true)),
+      surface(true),
+    );
     expect(toast).toHaveBeenCalledWith({ message: t('ink.handwriting.readOnly') });
   });
 });
