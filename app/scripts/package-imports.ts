@@ -14,7 +14,8 @@ const IMPORT = /\b(?:import|export)\s+(?!type\b)[^'"`;]*?\bfrom\s+'([^'./][^']*)
 const SKIPPED = /^(node:|virtual:|vitest($|\/)|@vitest\/|hast$)/;
 
 const SOURCE = /\.tsx?$/;
-const TEST = /\.test\.tsx?$/;
+// Component tests (.test.tsx) run in the browser and import packages of their own; .test.ts files run in Node.
+const NODE_TEST = /\.test\.ts$/;
 
 /** The package modules imported in one module's text. */
 export function importsIn(source: string): string[] {
@@ -26,14 +27,14 @@ export function importsIn(source: string): string[] {
   return found;
 }
 
-/** Every package module imported under `dir`, outside test files, sorted. */
+/** Every package module imported under `dir`, outside the tests that run in Node, sorted. */
 export function packageImports(dir: string): string[] {
   const found = new Set<string>();
   const walk = (folder: string): void => {
     for (const entry of readdirSync(folder, { withFileTypes: true })) {
       const path = join(folder, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (SOURCE.test(entry.name) && !TEST.test(entry.name)) {
+      else if (SOURCE.test(entry.name) && !NODE_TEST.test(entry.name)) {
         for (const name of importsIn(readFileSync(path, 'utf8'))) found.add(name);
       }
     }

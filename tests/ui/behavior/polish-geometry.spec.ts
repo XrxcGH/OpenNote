@@ -95,7 +95,15 @@ test.describe('the page title lines up with the text', () => {
     for (const [width, mode, background] of papers) {
       test(`${mode}${background ? `, ${background}` : ''} at ${width}, 100% and 150%`, async ({ page }) => {
         await openMembranes(page, width, 'sampler');
-        if (mode !== 'Infinite canvas') await runCommand(page, 'Document flow');
+        if (mode !== 'Infinite canvas') {
+          // The view's commands come on once the pages feature has loaded; the View tab shows when it has.
+          await page.getByRole('tab', { name: 'View' }).click();
+          await expect(page.getByRole('toolbar').getByRole('button', { name: 'Infinite canvas' })).toHaveAttribute(
+            'aria-pressed',
+            'true',
+          );
+          await runCommand(page, 'Document flow');
+        }
         if (mode === 'Pages with breaks') await runCommand(page, 'Pages with breaks');
         if (background) {
           await page.getByRole('tab', { name: 'View' }).click();

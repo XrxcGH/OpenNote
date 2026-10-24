@@ -192,7 +192,7 @@ function ConstantsTable({ shown, insert, copy }: { shown: readonly Codata[] } & 
 export function ConstantsTool() {
   const { saved, query, setQuery, update, shown, insert, copy } = useConstants();
   return (
-    <div className={styles.tool}>
+    <div className={styles.toolFill}>
       <TextField label={t('science.constants.search')} value={query} onChange={setQuery} />
       <Controls saved={saved} update={update} />
       <p className={styles.note} role="status">
