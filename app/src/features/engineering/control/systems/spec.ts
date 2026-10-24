@@ -1,14 +1,28 @@
 // The system models and responses tool: a transfer function typed, built from a physical model, or reduced from a
 // block diagram, shown in transfer function, zero-pole-gain, and state-space form with its time response and step
 // specifications. It also finds steady-state errors and fits a model to a measured step.
-import { ControlError } from '../lib/errors';
-import { complexText, fmt, readTF, tfTex, tfText, zpk, type Complex, type TF } from '../lib/tf';
+import { conjugateClosed, readComplexList } from '../lib/complexList';
+import { ControlError, readNumberMatrix } from '../lib/errors';
+import { step } from '../lib/steps';
+import {
+  complexText,
+  fmt,
+  makeTF,
+  polyFromRoots,
+  readTF,
+  ssToTF,
+  tfTex,
+  tfText,
+  zpk,
+  type Complex,
+  type TF,
+} from '../lib/tf';
 import { poleZeroMap } from '../ui/maps';
 import type { PlotSpec } from '../ui/plot';
 import { inField } from '../ui/read';
 import { FieldProblem, type Outcome, type Row, type ToolSpec, type Values } from '../ui/spec';
 import type { UnitKind } from '../ui/units';
-import { matrixText } from '../statespace/engine';
+import { makeSS, matrixText } from '../statespace/engine';
 import { reduceDiagram } from './blocks';
 import {
   checkSystem,
@@ -126,6 +140,44 @@ function runResponse(values: Values): Outcome {
   );
 }
 
+/** G(s) = k Π(s − zᵢ)/Π(s − pᵢ) from typed zeros, poles and gain. */
+function runZpk(values: Values): Outcome {
+  const roots = (id: string) => {
+    const zs = inField(id, () => readComplexList(text(values, id)));
+    if (!conjugateClosed(zs)) throw new FieldProblem(id, 'rootsConjugate');
+    return zs;
+  };
+  const zs = roots('zeros');
+  const ps = roots('poles');
+  if (!ps.length) throw new FieldProblem('poles', 'required');
+  const k = num(values, 'gain');
+  if (!Number.isFinite(k) || k === 0) throw new FieldProblem('gain', 'gainNonzero');
+  const g = makeTF(
+    polyFromRoots(zs).map((c) => c * k),
+    polyFromRoots(ps),
+  );
+  return analyze(g, values, [step('sys.fromZpk', {}, `G(s) = ${tfTex(g)}`)]);
+}
+
+/** G(s) = C(sI − A)⁻¹B + D from a single-input, single-output state-space model; an empty D is zero. */
+function runAbcd(values: Values): Outcome {
+  const read = (id: string) => inField(id, () => readNumberMatrix(text(values, id)));
+  const [a, b, c] = [read('a'), read('b'), read('c')];
+  const dText = text(values, 'd').trim();
+  const d = dText ? read('d') : null;
+  const ss = inField(null, () => makeSS(a, b, c, d), {
+    notSquare: 'a',
+    tooManyStates: 'a',
+    bRows: 'b',
+    cCols: 'c',
+    dShape: 'd',
+  });
+  if (ss.b[0]?.length !== 1) throw new FieldProblem('b', 'sisoOnly');
+  if (ss.c.length !== 1) throw new FieldProblem('c', 'sisoOnly');
+  const g = ssToTF(ss);
+  return analyze(g, values, [step('sys.fromSs', {}, `G(s) = C(sI - A)^{-1}B + D = ${tfTex(g)}`)]);
+}
+
 const KIND_UNITS: Readonly<Record<string, UnitKind>> = {
   mass: 'mass',
   damping: 'damping',
@@ -237,6 +289,8 @@ function runIdentify(values: Values): Outcome {
 
 const RUN: Readonly<Record<string, (values: Values) => Outcome>> = {
   response: runResponse,
+  zpk: runZpk,
+  abcd: runAbcd,
   model: runModel,
   blocks: runBlocks,
   error: runError,
@@ -260,6 +314,13 @@ export const spec: ToolSpec = {
   fields: [
     { id: 'mode', type: 'choice', options: Object.keys(RUN), first: 'response' },
     { id: 'g', type: 'text', first: '4/(s^2 + 2s + 4)', when: mode('response', 'error') },
+    { id: 'zeros', type: 'text', first: '', when: mode('zpk') },
+    { id: 'poles', type: 'text', first: '-1 ± 1.7321i', when: mode('zpk') },
+    { id: 'gain', type: 'number', first: '4', when: mode('zpk') },
+    { id: 'a', type: 'text', rows: 3, first: '0 1\n-4 -2', when: mode('abcd') },
+    { id: 'b', type: 'text', rows: 3, first: '0\n4', when: mode('abcd') },
+    { id: 'c', type: 'text', first: '1 0', when: mode('abcd') },
+    { id: 'd', type: 'text', first: '', when: mode('abcd') },
     {
       id: 'model',
       type: 'choice',
@@ -286,15 +347,22 @@ export const spec: ToolSpec = {
       type: 'choice',
       options: ['step', 'impulse', 'ramp', 'custom'],
       first: 'step',
-      when: mode('response', 'model', 'blocks'),
+      when: mode('response', 'zpk', 'abcd', 'model', 'blocks'),
     },
     {
       id: 'u',
       type: 'text',
       first: 'sin(2 t)',
-      when: (t) => mode('response', 'model', 'blocks')(t) && t.input === 'custom',
+      when: (t) => mode('response', 'zpk', 'abcd', 'model', 'blocks')(t) && t.input === 'custom',
     },
-    { id: 'span', type: 'number', unit: 'time', first: '', optional: true, when: mode('response', 'model', 'blocks') },
+    {
+      id: 'span',
+      type: 'number',
+      unit: 'time',
+      first: '',
+      optional: true,
+      when: mode('response', 'zpk', 'abcd', 'model', 'blocks'),
+    },
     { id: 'data', type: 'text', rows: 6, first: STEP_DATA, when: mode('identify') },
     { id: 'du', type: 'number', first: '1', when: mode('identify') },
     { id: 'fit', type: 'choice', options: ['fopdt', 'second'], first: 'fopdt', when: mode('identify') },
@@ -306,6 +374,8 @@ export const spec: ToolSpec = {
     { id: 'second', texts: { mode: 'response', g: '4/(s^2 + 2s + 4)', input: 'step' } },
     { id: 'zero', texts: { mode: 'response', g: '(s + 3)/(s^2 + 2s + 3)', input: 'step' } },
     { id: 'ramp', texts: { mode: 'response', g: '10/(s^2 + s + 10)', input: 'ramp' } },
+    { id: 'zpk', texts: { mode: 'zpk', zeros: '-3', poles: '-1 ± 1.4142i', gain: '1' } },
+    { id: 'abcd', texts: { mode: 'abcd', a: '0 1\n-4 -2', b: '0\n4', c: '1 0', d: '' } },
     { id: 'msd', texts: { mode: 'model', model: 'msd' } },
     { id: 'rlc', texts: { mode: 'model', model: 'rlc' } },
     { id: 'motor', texts: { mode: 'model', model: 'motor', resistance: '1', inductance: '0.5' } },

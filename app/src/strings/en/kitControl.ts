@@ -126,6 +126,9 @@ export const kitControl = {
     unobservable: 'The observability matrix has rank {rank}, not {n}, so an observer cannot place every pole.',
     polesCount: 'Type {n} poles, one for each state; there are {given}.',
     polesConjugate: 'Complex poles must come in conjugate pairs, such as −2 ± 2i, so the gains are real.',
+    rootsConjugate: 'Complex roots must come in conjugate pairs, such as −1 ± 2i, so the coefficients are real.',
+    gainNonzero: 'Type a gain other than 0.',
+    sisoOnly: 'This takes one input and one output: B has one column and C one row.',
     bRows: 'B needs {n} rows, one for each state.',
     cCols: 'C needs {n} columns, one for each state.',
     dShape: 'D needs {p} rows and {m} columns, or leave it empty for zero.',
@@ -468,6 +471,8 @@ export const kitControl = {
       criterion: 'Closed-loop poles in the right half-plane: Z = P − N = {z}, with P = {p} and N = {ccw}.',
     },
     sys: {
+      fromZpk: 'Multiply out the factors, k Π(s − zᵢ)/Π(s − pᵢ):',
+      fromSs: 'The transfer function of the state-space model, by the Faddeev-Leverrier method:',
       final: 'By the final value theorem the step response settles at {final}:',
       rise: 'It reaches 10% at {t10} s and 90% at {t90} s, so the rise time is {rise} s.',
       peak: 'It peaks at {peak} at t = {tp} s, an overshoot of {os}%.',
@@ -1560,6 +1565,13 @@ export const kitControl = {
     field: {
       mode: 'Problem',
       g: 'Transfer function G(s)',
+      zeros: 'Zeros (optional)',
+      poles: 'Poles',
+      gain: 'Gain k',
+      a: 'A',
+      b: 'B',
+      c: 'C',
+      d: 'D (optional)',
       model: 'Model',
       mass: 'Mass m',
       damping: 'Damping c',
@@ -1584,6 +1596,12 @@ export const kitControl = {
     },
     hint: {
       g: 'A proper ratio of polynomials in s, such as 4/(s^2 + 2s + 4).',
+      zeros: 'Numbers separated by commas; a ± bi gives a conjugate pair, such as -1 ± 2i.',
+      poles: 'Numbers separated by commas; a ± bi gives a conjugate pair, such as -1 ± 2i.',
+      a: 'One row per line, numbers separated by spaces.',
+      b: 'One column: one row per state.',
+      c: 'One row: one number per state.',
+      d: 'One number; leave it empty for 0.',
       diagram:
         'Nest series(a, b), parallel(a, b), feedback(g, h), and posfeedback(g, h), such as feedback(series(10/(s + 1), 1/s), 1).',
       u: 'An expression in t, such as sin(2 t), exp(-t), or t^2.',
@@ -1591,6 +1609,8 @@ export const kitControl = {
     },
     option: {
       response: 'Response of a transfer function',
+      zpk: 'Response from zeros, poles, and gain',
+      abcd: 'Response from A, B, C, D',
       model: 'Physical model',
       blocks: 'Block diagram',
       error: 'Steady-state error',
@@ -1680,6 +1700,8 @@ export const kitControl = {
     },
     example: {
       second: 'Second order: 4/(s² + 2s + 4)',
+      zpk: 'Zero at −3, poles at −1 ± 1.41i',
+      abcd: 'State space of 4/(s² + 2s + 4)',
       zero: 'Second order with a zero',
       ramp: 'Ramp response of 10/(s² + s + 10)',
       msd: 'Mass, spring, and damper',

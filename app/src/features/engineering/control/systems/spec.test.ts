@@ -60,3 +60,32 @@ describe('the systems tool', () => {
     expect(problem({ mode: 'identify', data: '0 0\n1 1' })).toBe('data: dataFew');
   });
 });
+
+describe('zeros, poles and gain, and A, B, C, D input', () => {
+  it('builds 4/(s² + 2s + 4) from poles −1 ± √3 i and gain 4: overshoot 16.303%', () => {
+    const r = runTool(
+      spec,
+      { ...firstTexts(spec), mode: 'zpk', zeros: '', poles: '-1 ± 1.7320508075688772i', gain: '4' },
+      'si',
+    );
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const row = Object.fromEntries(r.outcome.rows.map((x) => [x.id, String(x.value)]));
+    expect(Math.abs(Number(row.overshoot.replace('%', '')) - 16.303)).toBeLessThan(5e-3);
+    expect(r.outcome.steps[0].key).toBe('sys.fromZpk');
+  });
+
+  it('builds the same system from A = [0 1; −4 −2], B = [0; 4], C = [1 0]', () => {
+    const r = runTool(spec, { ...firstTexts(spec), mode: 'abcd', a: '0 1\n-4 -2', b: '0\n4', c: '1 0', d: '' }, 'si');
+    if (!r.ok) throw new Error(JSON.stringify(r));
+    const row = Object.fromEntries(r.outcome.rows.map((x) => [x.id, String(x.value)]));
+    expect(Math.abs(Number(row.overshoot.replace('%', '')) - 16.303)).toBeLessThan(5e-3);
+    expect(r.outcome.steps[0].key).toBe('sys.fromSs');
+  });
+
+  it('rejects an unpaired complex pole and a two-input B', () => {
+    const a = runTool(spec, { ...firstTexts(spec), mode: 'zpk', poles: '-1 + 2i', gain: '1' }, 'si');
+    expect(a.ok).toBe(false);
+    const b = runTool(spec, { ...firstTexts(spec), mode: 'abcd', a: '0 1\n-4 -2', b: '0 1\n4 0', c: '1 0' }, 'si');
+    expect(b.ok).toBe(false);
+  });
+});
