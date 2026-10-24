@@ -242,3 +242,83 @@ describe('every operation runs on its sample', () => {
     });
   }
 });
+
+describe('fields with a hole, degenerate points and unbounded constraints', () => {
+  const VORTEX = '-y/(x^2+y^2), x/(x^2+y^2)';
+  it('the vortex around the unit circle is 2 pi and is not called conservative', () => {
+    const out = lineIntegral('vector', VORTEX, 'cos(t), sin(t)', '0, 2*pi');
+    expect(num(vars(out, 'vcLineValue')!.value)).toBeCloseTo(2 * Math.PI, 8);
+    expect(keys(out)).toContain('vcHole');
+    expect(keys(out)).not.toContain('vcConservative');
+  });
+  it('the vortex over the upper half circle is pi, not the 0 of a conservative field', () => {
+    const out = lineIntegral('vector', VORTEX, 'cos(t), sin(t)', '0, pi');
+    expect(num(vars(out, 'vcLineValue')!.value)).toBeCloseTo(Math.PI, 8);
+    expect(keys(out)).not.toContain('vcConservative');
+  });
+  it('a conservative field away from its pole still says so', () => {
+    const out = lineIntegral('vector', '1/x, 1/y', '1+t, 1+2*t', '0, 1');
+    expect(num(vars(out, 'vcLineValue')!.value)).toBeCloseTo(Math.log(2) + Math.log(3), 8);
+    expect(keys(out)).toContain('vcConservative');
+  });
+  it('the potential of (1/x, 1/y) is built from A: ln 6 from (1,1) to (2,3), and its gradient matches', () => {
+    const out = potentialDifference('1/x, 1/y', '1, 1', '2, 3');
+    expect(num(vars(out, 'vcPotentialDifference')!.value)).toBeCloseTo(Math.log(6), 9);
+    expect(num(vars(out, 'vcPotentialAtB')!.err)).toBeLessThan(1e-6);
+    expect(keys(out)).not.toContain('vcHole');
+  });
+  it('the vortex potential between (1,0) and (0,1) is pi/2 with a warning about the hole at the origin', () => {
+    const out = potentialDifference(VORTEX, '1, 0', '0, 1');
+    expect(num(vars(out, 'vcPotentialDifference')!.value)).toBeCloseTo(Math.PI / 2, 8);
+    expect(keys(out)).toContain('vcHole');
+    expect(() => potentialDifference(VORTEX, '1, 0', '-1, 0')).toThrow();
+  });
+  it("Green's theorem on the vortex over the unit disk explains why the sides differ", () => {
+    const out = greenTheorem(VORTEX, 'disk', GREEN);
+    expect(num(vars(out, 'vcGreen')!.boundary)).toBeCloseTo(2 * Math.PI, 8);
+    expect(keys(out)).toContain('vcGreenSingular');
+    expect(keys(out)).toContain('vcGreenDiffer');
+    expect(keys(greenTheorem('0, x', 'disk', GREEN))).toEqual(['vcGreen']);
+  });
+  it('(0, 1/r, 0) in cylindrical coordinates and the Cartesian vortex have zero divergence and zero curl', () => {
+    const cyl = divergenceCurl('0, 1/r, 0', 'cylindrical', '');
+    expect(keys(cyl)).toContain('vcSolenoidal');
+    expect(keys(cyl)).toContain('vcIrrotational');
+    const cart = divergenceCurl('-y/(x^2+y^2), x/(x^2+y^2), 0', 'cartesian', '');
+    expect(keys(cart)).toContain('vcSolenoidal');
+    expect(keys(cart)).toContain('vcIrrotational');
+    expect(keys(divergenceCurl('0, r, 0', 'cylindrical', ''))).toContain('vcNotIrrotational');
+  });
+  it('x^4 + y^4 has one critical point, at the origin, and x^3 + y^3 has it exactly at (0, 0)', () => {
+    const quartic = criticalPoints('x^4 + y^4', '-3, 3, -3, 3').tables[0].rows;
+    expect(quartic).toHaveLength(1);
+    expect(quartic[0].slice(0, 2).map(num)).toEqual([0, 0]);
+    const cubic = criticalPoints('x^3 + y^3', '-3, 3, -3, 3').tables[0].rows;
+    expect(cubic).toHaveLength(1);
+    expect(cubic[0].slice(0, 2).map(num)).toEqual([0, 0]);
+  });
+  it('a function of three variables is refused with a clear code', () => {
+    expect(() => criticalPoints('x^2 + y^2 + z^2', '-2, 2, -2, 2')).toThrow(/vcTwoVariables/);
+  });
+  it('xyz on x + y + z = 3 is unbounded: (1,1,1) is a local maximum and no point is a global minimum', () => {
+    const out = lagrange('x*y*z', 'x + y + z', '3', '-4, 4, -4, 4, -4, 4');
+    const rows = out.tables[0].rows;
+    expect(keys(out)).toContain('vcLagrangeUnbounded');
+    expect(
+      rows
+        .find((r) =>
+          r
+            .slice(0, 3)
+            .map(num)
+            .every((v) => Math.abs(v - 1) < 1e-6),
+        )!
+        .at(-1),
+    ).toBe('@max');
+    expect(rows.some((r) => r.at(-1) === '@min')).toBe(false);
+  });
+  it('a bounded constraint (the sphere) still labels the global extrema', () => {
+    const out = lagrange('x + y + z', 'x^2 + y^2 + z^2', '3', '-3, 3, -3, 3, -3, 3');
+    expect(keys(out)).not.toContain('vcLagrangeUnbounded');
+    expect(out.tables[0].rows.map((r) => r.at(-1))).toEqual(['@max', '@min']);
+  });
+});

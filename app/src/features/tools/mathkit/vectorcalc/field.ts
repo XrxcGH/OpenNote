@@ -84,3 +84,48 @@ export function sumText(terms: readonly string[]): string {
 }
 
 export const isZeroText = (t: string): boolean => t === '0' || t === '-0';
+
+/**
+ * Whether a field is undefined or unbounded at or near any sample point. That means a value that is not finite, or
+ * one far beyond the field's size on the other samples, or a size that keeps growing as we close in on the largest
+ * one (a pole such as 1/(x^2 + y^2) near the origin).
+ */
+export function singularAmong(F: (p: number[]) => number[], points: readonly number[][], climb = true): boolean {
+  const sizes = points.map((p) => {
+    const v = F(p);
+    return v.every(Number.isFinite) ? normV(v) : Infinity;
+  });
+  if (sizes.some((s) => !Number.isFinite(s))) return true;
+  const sorted = [...sizes].sort((a, b) => a - b);
+  const typical = sorted[Math.floor(sorted.length / 2)];
+  const top = sorted[sorted.length - 1];
+  if (top > 1e6 * (1 + typical)) return true;
+  if (!climb) return false;
+  // Climb from the largest value toward larger ones inside the sampled box. A pole keeps growing as we close in;
+  // a bounded field levels off near its own maximum.
+  const dim = points[0].length;
+  const lo = Array.from({ length: dim }, (_, i) => Math.min(...points.map((p) => p[i])));
+  const hi = Array.from({ length: dim }, (_, i) => Math.max(...points.map((p) => p[i])));
+  const pad = lo.map((v, i) => 0.05 * (hi[i] - v) + 1e-9);
+  let at = points[sizes.indexOf(top)];
+  let size = top;
+  let h = Math.max(...hi.map((v, i) => v - lo[i]), 1e-3) / 16;
+  for (let k = 0; k < 120 && h > 1e-14; k++) {
+    let moved = false;
+    for (let i = 0; i < dim; i++) {
+      for (const sign of [-1, 1]) {
+        const q = at.map((v, j) => (j === i ? v + sign * h : v));
+        if (q.some((v, j) => v < lo[j] - pad[j] || v > hi[j] + pad[j])) continue;
+        const value = normV(F(q));
+        if (!Number.isFinite(value)) return true;
+        if (value > size) {
+          size = value;
+          at = q;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) h /= 2;
+  }
+  return size > 100 * (1 + typical) && size > 10 * top;
+}

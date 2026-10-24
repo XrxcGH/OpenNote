@@ -3,7 +3,7 @@
 import { fmt } from '../numeric';
 import { line, numbers, type NumLine, type NumOut } from '../numerics/common';
 import { KitError, step, type KitStep } from '../types';
-import { checkNames, compiled, compiledMany, components, dotV, normV, partial, tex } from './field';
+import { checkNames, compiled, compiledMany, components, dotV, normV, partial, singularAmong, tex } from './field';
 import { int1, int2 } from './quad';
 
 const AXES = ['x', 'y', 'z'];
@@ -104,7 +104,7 @@ export function lineIntegral(
   const value = int1(integrand, a, b);
   lines.push(line(kind === 'vector' ? 'vcLineValue' : 'vcLineScalarValue', { value: fmt(value, 12) }));
   steps.push(step('numValue', `\\int=${fmt(value, 12)}`));
-  if (kind === 'vector') addConservativeNotes(lines, steps, comps, curve, a, b, names);
+  if (kind === 'vector') addConservativeNotes(lines, steps, comps, curve, [a, b], names, value);
   const ts = Array.from({ length: 161 }, (_, k) => a + ((b - a) * k) / 160);
   return {
     lines,
@@ -129,9 +129,9 @@ function addConservativeNotes(
   steps: KitStep[],
   comps: string[],
   curve: Curve,
-  a: number,
-  b: number,
+  [a, b]: [number, number],
   names: string[],
+  value: number,
 ): void {
   const samples = Array.from({ length: 9 }, (_, k) => curve.r(a + ((b - a) * (k + 0.5)) / 9));
   const start = curve.r(a);
@@ -143,7 +143,24 @@ function addConservativeNotes(
     return;
   }
   const F = compiledMany(comps, names);
+  // A zero curl proves path independence only on a region without holes: F must be defined and bounded on the curve,
+  // on the straight path, and everywhere between them.
+  const sweep: number[][] = [];
+  for (let k = 0; k <= 24; k++) {
+    const t = a + ((b - a) * k) / 24;
+    const p = curve.r(t);
+    const q = start.map((v, i) => v + ((end[i] - v) * k) / 24);
+    for (let j = 0; j <= 8; j++) sweep.push(p.map((v, i) => v + ((q[i] - v) * j) / 8));
+  }
+  if (singularAmong(F, sweep)) {
+    lines.push(line('vcHole'));
+    return;
+  }
   const alt = closed ? 0 : straightLine(F, start, end);
+  if (Math.abs(value - alt) > 1e-6 * (1 + Math.abs(alt))) {
+    lines.push(line('vcPathDiffers', { value: fmt(value, 12), alt: fmt(alt, 12) }));
+    return;
+  }
   lines.push(line('vcConservative', { alt: fmt(alt, 12) }));
   steps.push(
     step(
@@ -166,15 +183,28 @@ export function potentialDifference(fieldText: string, fromText: string, toText:
   const around = [A, B, mid, mid.map((v, i) => v + (i === 0 ? 0.3 : -0.2))];
   if (!curlVanishes(comps, around)) throw new KitError('vcNotConservative');
   const F = compiledMany(comps, names);
+  // The potential is measured from A along straight lines (a field that blows up at the origin has no value there),
+  // and the straight path itself must stay where F is defined.
+  const along = Array.from({ length: 33 }, (_, k) => A.map((v, i) => v + ((B[i] - v) * k) / 32));
+  if (singularAmong(F, along, false)) throw new KitError('vcSingularPath');
   const value = straightLine(F, A, B);
-  // The potential from the origin along straight lines, checked by differences against F at the end point.
-  const origin = new Array<number>(dim).fill(0);
-  const phi = (p: number[]) => straightLine(F, origin, p);
+  const phi = (p: number[]) => straightLine(F, A, p);
   const h = 1e-5;
   const grad = B.map(
     (_, i) => (phi(B.map((v, j) => (j === i ? v + h : v))) - phi(B.map((v, j) => (j === i ? v - h : v)))) / (2 * h),
   );
   const err = normV(grad.map((g, i) => g - F(B)[i]));
+  // A hole in the box around A and B (a pole of F) means a zero curl is not enough for path independence.
+  const box: number[][] = [[]];
+  for (let i = 0; i < dim; i++) {
+    const [lo, hi] = [Math.min(A[i], B[i]), Math.max(A[i], B[i])];
+    box.splice(
+      0,
+      box.length,
+      ...box.flatMap((p) => Array.from({ length: 9 }, (_, k) => [...p, lo + ((hi - lo) * k) / 8])),
+    );
+  }
+  const hole = singularAmong(F, box);
   const steps = [
     step('vcCurlZero', `\\nabla\\times\\mathbf{F}=\\mathbf{0}`),
     step(
@@ -186,7 +216,8 @@ export function potentialDifference(fieldText: string, fromText: string, toText:
   return {
     lines: [
       line('vcPotentialDifference', { value: fmt(value, 12) }),
-      line('vcPotentialAtB', { phi: fmt(phi(B), 12), err: fmt(err, 3) }),
+      line('vcPotentialAtB', { err: fmt(err, 3) }),
+      ...(hole ? [line('vcHole')] : []),
     ],
     tables: [],
     plots: [],
@@ -223,6 +254,12 @@ export function greenTheorem(
   else if (region === 'disk') both = greenDisk(p, q, curl, params.disk);
   else both = greenTypeI(p, q, curl, params);
   const diff = Math.abs(both.boundary - both.area);
+  const lines: NumLine[] = [
+    line('vcGreen', { boundary: fmt(both.boundary, 12), area: fmt(both.area, 12), diff: fmt(diff, 3) }),
+  ];
+  // Green's theorem needs F and its first derivatives to be defined and continuous on the whole region.
+  if (singularAmong((v) => [p(v), q(v)], regionPoints(region, params))) lines.push(line('vcGreenSingular'));
+  if (diff > 1e-6 * (1 + Math.abs(both.boundary))) lines.push(line('vcGreenDiffer'));
   const steps = [
     step(
       'vcGreenStatement',
@@ -232,7 +269,7 @@ export function greenTheorem(
     step('vcGreenSides', `\\oint=${fmt(both.boundary, 12)},\\ \\iint=${fmt(both.area, 12)}`),
   ];
   return {
-    lines: [line('vcGreen', { boundary: fmt(both.boundary, 12), area: fmt(both.area, 12), diff: fmt(diff, 3) })],
+    lines,
     tables: [],
     plots: [],
     fields: [],
@@ -242,6 +279,33 @@ export function greenTheorem(
 }
 
 type Fn2 = (v: readonly number[]) => number;
+
+/** A grid over the region, including its boundary and (for a disk) its center. */
+function regionPoints(
+  region: GreenRegion,
+  params: { rect: string; disk: string; lower: string; upper: string; xRange: string },
+): number[][] {
+  const pts: number[][] = [];
+  const steps = (n: number) => Array.from({ length: n + 1 }, (_, k) => k / n);
+  if (region === 'rect') {
+    const [a, b, c, d] = numbers(params.rect, 'rectangle');
+    for (const u of steps(16)) for (const v of steps(16)) pts.push([a + (b - a) * u, c + (d - c) * v]);
+  } else if (region === 'disk') {
+    const [cx, cy, R] = numbers(params.disk, 'disk');
+    for (const u of steps(8))
+      for (const k of steps(24))
+        pts.push([cx + R * u * Math.cos(2 * Math.PI * k), cy + R * u * Math.sin(2 * Math.PI * k)]);
+  } else {
+    const [a, b] = interval(params.xRange, 'x');
+    const g1 = compiled(params.lower, ['x']);
+    const g2 = compiled(params.upper, ['x']);
+    for (const u of steps(16)) {
+      const x = a + (b - a) * u;
+      for (const v of steps(8)) pts.push([x, g1([x]) + (g2([x]) - g1([x])) * v]);
+    }
+  }
+  return pts;
+}
 
 function greenRect(p: Fn2, q: Fn2, curl: Fn2, text: string): Both {
   const [a, b, c, d] = numbers(text, 'rectangle');

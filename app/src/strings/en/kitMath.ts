@@ -122,6 +122,10 @@ export const kitMath = {
     vcRegion: 'That region is empty or backwards. Check that each start is less than its end.',
     vcRanges: 'Give the ranges for {detail} as pairs, each start less than its end.',
     vcNotConservative: 'The curl of F is not zero, so F is not conservative and has no potential.',
+    vcTwoVariables:
+      'Critical points are found for a function of two variables, x and y. Use Lagrange multipliers for three.',
+    vcSingularPath:
+      'F is undefined or unbounded at a point on the straight path from A to B, so there is no potential difference along it.',
   },
   series: {
     title: 'Series and convergence',
@@ -855,9 +859,9 @@ export const kitMath = {
       vcDiv: 'The divergence is {div}.',
       vcCurl: 'The curl is {curl}.',
       vcCurl2: 'The curl, along z, is {curl}.',
-      vcSolenoidal: 'The divergence is zero everywhere.',
+      vcSolenoidal: 'The divergence is zero at every point where F is defined.',
       vcNotSolenoidal: 'The divergence is not zero everywhere.',
-      vcIrrotational: 'The curl is zero everywhere.',
+      vcIrrotational: 'The curl is zero at every point where F is defined.',
       vcNotIrrotational: 'The curl is not zero everywhere.',
       vcDivAt: 'At {point}, the divergence is {div}.',
       vcCurlAt: 'At that point the curl is {curl}.',
@@ -866,6 +870,9 @@ export const kitMath = {
       vcCriticalCount: 'Found {n} critical point(s) in the window.',
       vcCriticalNone: 'No critical points in the window.',
       vcLagrangeBest: 'The largest value among the {n} candidate(s) is {max} and the smallest is {min}.',
+      vcLagrangeUnbounded:
+        'The constraint set is not bounded, so a largest or smallest value is not guaranteed. Each point is ' +
+        'classified locally by the second-order test.',
       vcLagrangeNone: 'No point on the constraint was found in the window.',
       vcLineValue: 'The line integral is {value}.',
       vcLineScalarValue: 'The integral of f along the curve is {value}.',
@@ -875,10 +882,21 @@ export const kitMath = {
         'The curl of F is zero along the curve, so the answer depends only on the endpoints. The ' +
         'straight path between them gives {alt}.',
       vcPotentialDifference: 'The potential changes by {value} from A to B.',
-      vcPotentialAtB:
-        'The potential at B, measured from zero at the origin, is {phi}. The gradient of the ' +
-        'potential matches F to within {err}.',
+      vcPotentialAtB: 'The potential is measured from zero at A. Its gradient matches F at B to within {err}.',
+      vcHole:
+        'The curl is zero, but F is undefined or unbounded at a point on or between the paths, so the region has ' +
+        'a hole. Path independence is not guaranteed there: the integral can depend on how the path goes around ' +
+        'the hole.',
+      vcPathDiffers:
+        'The curl is zero, but the integral along the curve ({value}) differs from the straight path ' +
+        '({alt}), so here the answer does depend on the path.',
       vcGreen: 'The boundary integral is {boundary} and the double integral is {area}. They differ by {diff}.',
+      vcGreenSingular:
+        "F is undefined or unbounded at a point inside the region, so the hypotheses of Green's theorem fail " +
+        'and the two sides need not agree. This is the tool working, not an error.',
+      vcGreenDiffer:
+        "The two sides differ by more than rounding. Green's theorem needs F and its first derivatives to be " +
+        'continuous on the whole region, and the boundary to be traversed counterclockwise.',
       vcFlux: 'The flux is {value} (that is {pi} times pi).',
       vcSurfaceScalar: 'The surface integral is {value} (that is {pi} times pi).',
       vcArea: 'The area is {value} (that is {pi} times pi).',

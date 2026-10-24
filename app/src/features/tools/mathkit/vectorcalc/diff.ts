@@ -134,6 +134,48 @@ function sphericalOps([Fr, Ft, Fp]: string[]): DivCurl {
   };
 }
 
+/** A fixed pseudo-random sequence in [0, 1), so the same field always gets the same sample points. */
+function unitRandom(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 2 ** 32;
+  };
+}
+
+/**
+ * Whether the divergence and the curl vanish at about 20 sample points around the given point, with the symbolic text
+ * only for show: unsimplified text such as (1/r - r*(1/r^2))/r equals 0 and is still not the string "0". Null when too
+ * few of the sample points are defined to say.
+ */
+function vanishAround(
+  div: (p: readonly number[]) => number,
+  curl: (p: readonly number[]) => number[],
+  field: (p: readonly number[]) => number[],
+  base: readonly number[],
+  polar: boolean,
+): { div: boolean; curl: boolean } | null {
+  const next = unitRandom(12345);
+  let scale = 1;
+  let maxDiv = 0;
+  let maxCurl = 0;
+  let used = 0;
+  for (let k = 0; k < 24; k++) {
+    const p = base.map((b, i) => {
+      const lo = polar && i === 0 ? Math.max(1e-3, b - 0.5) : b - 0.5;
+      return lo + next() * (b + 0.5 - lo);
+    });
+    const [dv, cv, fv] = [div(p), curl(p), field(p)];
+    if (![dv, ...cv, ...fv].every(Number.isFinite)) continue;
+    used++;
+    maxDiv = Math.max(maxDiv, Math.abs(dv));
+    maxCurl = Math.max(maxCurl, ...cv.map(Math.abs));
+    scale = Math.max(scale, ...fv.map(Math.abs));
+  }
+  if (used < 3) return null;
+  return { div: maxDiv < 1e-9 * scale, curl: maxCurl < 1e-9 * scale };
+}
+
 export function divergenceCurl(fieldText: string, system: CoordinateSystem, pointText: string): NumOut {
   const sys = SYSTEMS[system];
   const comps = components(fieldText, system === 'cartesian' ? [2, 3] : [3]);
@@ -143,6 +185,19 @@ export function divergenceCurl(fieldText: string, system: CoordinateSystem, poin
   const ops =
     system === 'cartesian' ? cartesianOps(full) : system === 'cylindrical' ? cylindricalOps(full) : sphericalOps(full);
   const curl = planar ? [ops.curl[2]] : ops.curl;
+  const base = pointText.trim() ? numbers(pointText, 'point') : [];
+  const around = base.length === 3 ? base : system === 'cartesian' ? [1, 1, 1] : [2, 1.2, 1];
+  const sampled = vanishAround(
+    compiled(ops.div, sys.vars),
+    compiledMany(curl, sys.vars),
+    compiledMany(full, sys.vars),
+    around,
+    system !== 'cartesian',
+  );
+  const zero = {
+    div: isZeroText(ops.div) || (sampled?.div ?? false),
+    curl: curl.every(isZeroText) || (sampled?.curl ?? false),
+  };
   const steps: KitStep[] = [
     step('vcFieldStep', `\\mathbf{F}=${texRow(comps)}`),
     step('vcDivStep', `\\nabla\\cdot\\mathbf{F}=${tex(ops.div)}`, { $system: `kitMath.vectorcalc.system.${system}` }),
@@ -157,8 +212,8 @@ export function divergenceCurl(fieldText: string, system: CoordinateSystem, poin
   const lines: NumLine[] = [
     line('vcDiv', { div: ops.div }),
     line(planar ? 'vcCurl2' : 'vcCurl', { curl: planar ? curl[0] : textTuple(curl) }),
-    line(isZeroText(ops.div) ? 'vcSolenoidal' : 'vcNotSolenoidal'),
-    line(curl.every(isZeroText) ? 'vcIrrotational' : 'vcNotIrrotational'),
+    line(zero.div ? 'vcSolenoidal' : 'vcNotSolenoidal'),
+    line(zero.curl ? 'vcIrrotational' : 'vcNotIrrotational'),
   ];
   if (pointText.trim()) {
     const p = numbers(pointText, 'point');
