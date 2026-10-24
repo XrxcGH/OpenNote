@@ -44,6 +44,10 @@ function setup(extra: object = {}) {
   const host = {
     registerPointerTool: () => () => undefined,
     viewport: { get: () => viewport },
+    // A page with no text boxes or pictures, and nothing selected: a still finger's lift asks what it landed on.
+    layer: { get: () => null },
+    selection: { get: () => ({ blocks: [], strokes: [] }) },
+    select: () => undefined,
     ...extra,
   } as unknown as InkHost;
   const surface = {
@@ -63,7 +67,11 @@ async function ready(tool: TouchTool): Promise<void> {
   await vi.waitFor(() => expect(tool.tool.accepts(touch(1), {} as never)).toBe(true));
 }
 
-beforeEach(() => chooseTool('pen'));
+beforeEach(() => {
+  chooseTool('pen');
+  // What a test's filter learned (a pen seen) is not carried into the next test.
+  localStorage.removeItem('opennote.ink.palmLearned');
+});
 afterEach(() => vi.restoreAllMocks());
 
 describe('the touch tool', () => {
@@ -213,20 +221,89 @@ describe('text boxes under a finger while a pen tool is active', () => {
     tool.destroy();
   });
 
-  it('selects a box a drawing finger held still on instead of adding a dot, and keeps a quick dot', async () => {
+  it('selects a box a drawing finger tapped, quick or held, instead of adding a dot', async () => {
     const { tool, priv, select, surface } = withBox();
     await ready(tool);
     const ink = { id: 9, builder: { points: [] }, strokes: [{ id: 's9' }] };
-    priv.contacts.set(9, { t0: 0, t1: 400, x0: 150, y0: 120, travel: 0 });
-    priv.touchStroke(9, 'commit', ink);
-    expect(select).toHaveBeenCalledWith({ blocks: ['box'], strokes: [] }, { announce: true });
+    for (const [id, t1] of [
+      [9, 400],
+      [10, 80],
+    ] as const) {
+      select.mockClear();
+      priv.contacts.set(id, { t0: 0, t1, x0: 150, y0: 120, travel: 0 });
+      priv.touchStroke(id, 'commit', { ...ink, id });
+      expect(select).toHaveBeenCalledWith({ blocks: ['box'], strokes: [] }, { announce: true });
+      // Taking it back removes nothing, since nothing was added.
+      priv.touchStroke(id, 'uncommit', { ...ink, id });
+    }
     expect(surface.add).not.toHaveBeenCalled();
-    // Taking it back removes nothing, since nothing was added.
-    priv.touchStroke(9, 'uncommit', ink);
     expect(surface.remove).not.toHaveBeenCalled();
-    priv.contacts.set(10, { t0: 0, t1: 80, x0: 150, y0: 120, travel: 0 });
-    priv.touchStroke(10, 'commit', { ...ink, id: 10 });
-    expect(surface.add).toHaveBeenCalledTimes(1);
+    // A dot on empty page, and a stroke that moved across the box, are ink.
+    priv.contacts.set(11, { t0: 0, t1: 80, x0: 400, y0: 400, travel: 0 });
+    priv.touchStroke(11, 'commit', { ...ink, id: 11 });
+    priv.contacts.set(12, { t0: 0, t1: 300, x0: 150, y0: 120, travel: 40 });
+    priv.touchStroke(12, 'commit', { ...ink, id: 12 });
+    expect(surface.add).toHaveBeenCalledTimes(2);
+    tool.destroy();
+  });
+});
+
+describe('the selection frame bar under a finger', () => {
+  it('is a control outside the page to the filter, so a tap presses its button while fingers draw', async () => {
+    const { tool, ctx, priv } = setup();
+    await ready(tool);
+    const bar = document.createElement('div');
+    bar.dataset.inkSelectionBar = '';
+    const button = document.createElement('button');
+    bar.append(button);
+    document.body.append(bar);
+    tool.tool.down(touch(1), ctx);
+    const pipeline = priv.pipeline as unknown as { handle(r: { type: string; surface: string }): void };
+    const handle = pipeline.handle.bind(pipeline);
+    const seen: string[] = [];
+    vi.spyOn(pipeline, 'handle').mockImplementation((r) => {
+      seen.push(`${r.type}:${r.surface}`);
+      handle(r);
+    });
+    tool.tool.down(Object.assign(touch(2), { target: button }), ctx);
+    tool.tool.up?.(Object.assign(touch(2, 300, 300, 'pointerup'), { target: button }), ctx);
+    tool.tool.down(touch(3), ctx);
+    expect(seen).toEqual(['down:chrome', 'up:page', 'down:page']);
+    bar.remove();
+    tool.destroy();
+  });
+});
+
+describe('what the palm filter learned', () => {
+  const pen = () => {
+    const event = new Event('pointermove');
+    return Object.assign(event, { pointerType: 'pen', pointerId: 2, clientX: 50, clientY: 50, buttons: 0 });
+  };
+  const filter = (priv: Priv) => (priv.pipeline as unknown as { filter: { penSeen(): boolean } }).filter;
+
+  it('remembers a pen once it is seen, and starts the next filter knowing it', async () => {
+    const first = setup();
+    await ready(first.tool);
+    first.tool.tool.down(touch(1), first.ctx);
+    expect(filter(first.priv).penSeen()).toBe(false);
+    window.dispatchEvent(pen());
+    expect(filter(first.priv).penSeen()).toBe(true);
+    expect(JSON.parse(localStorage.getItem('opennote.ink.palmLearned') ?? '{}')).toMatchObject({ penSeen: true });
+    first.tool.destroy();
+
+    const next = setup();
+    await ready(next.tool);
+    next.tool.tool.down(touch(1), next.ctx);
+    expect(filter(next.priv).penSeen()).toBe(true);
+    next.tool.destroy();
+  });
+
+  it('starts without a pen on a device that never used one, and survives a damaged value', async () => {
+    localStorage.setItem('opennote.ink.palmLearned', '{not json');
+    const { tool, ctx, priv } = setup();
+    await ready(tool);
+    tool.tool.down(touch(1), ctx);
+    expect(filter(priv).penSeen()).toBe(false);
     tool.destroy();
   });
 });
