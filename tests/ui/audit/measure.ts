@@ -472,7 +472,7 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
         'scrollbar-occluded',
         el,
         `the ${side} scroll bar is covered at (${Math.round(x)}, ${Math.round(y)}) by ${describe(hit, 2)}`,
-        ` <- ${describe(hit, 2)}`,
+        hit.closest('[data-tool]') ? ' <- tool window' : ' <- other',
       );
     };
     if (scrollsY && barW > 3) {
