@@ -110,13 +110,15 @@ export const lagrangeSpec: ToolSpec = {
     if (r.periodRatio !== null) rows.push({ id: 'periodRatio', value: r.periodRatio, sym: 'T_p / T_0' });
     if (r.energyDrift !== null) rows.push({ id: 'drift', value: r.energyDrift, sym: '\\Delta E / E' });
     rows.push({ id: 'equilibria', value: r.equilibria.length });
+    // A list of numbers in one cell, with a true minus like every other number the window shows.
+    const listText = (values: readonly number[]) => values.map((v) => fmt(v, 4).replace('-', '−')).join(', ');
     const table = {
       id: 'equilibria',
       columns: ['q', 'kind', 'omega'],
       rows: r.equilibria.map((e): Cell[] => [
-        e.q.map((v) => fmt(v, 4)).join(', '),
+        listText(e.q),
         word(e.stable ? 'stable' : 'unstable'),
-        e.omegas ? e.omegas.map((w) => fmt(w, 4)).join(', ') : '',
+        e.omegas ? listText(e.omegas) : '',
       ]),
     };
     const plots = [r.motion];
