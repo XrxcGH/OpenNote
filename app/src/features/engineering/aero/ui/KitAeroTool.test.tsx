@@ -36,4 +36,20 @@ describe('the aerospace window', () => {
     expect(await screen.findByText(/covers −5 km to 86 km/)).toBeTruthy();
     await expectNoAxeViolations(container);
   });
+
+  it('shows the coordinates of a section and the stations of an engine, and inserts each as a table', async () => {
+    const { container } = renderUi(<KitAeroTool />);
+    await userEvent.click(await screen.findByRole('tab', { name: 'Airfoil' }));
+    expect(await screen.findByRole('table', { name: 'Coordinates per unit chord' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Coordinates per unit chord' }).tabIndex).toBe(0);
+    await userEvent.click(screen.getByRole('button', { name: 'Insert this table' }));
+    const table = inserted[0]?.table as { header: string[]; rows: string[][] } | undefined;
+    expect(table?.header[0]).toBe('Station x/c');
+    expect(table?.rows.length).toBe(18);
+    await expectNoAxeViolations(container);
+    await userEvent.click(screen.getByRole('tab', { name: 'Jet engine' }));
+    expect(await screen.findByRole('table', { name: 'Stations' })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Total temperature Tt (K)' })).toBeTruthy();
+    await expectNoAxeViolations(container);
+  });
 });
