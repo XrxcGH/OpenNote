@@ -8,4 +8,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   external: () => import('./external/spec').then((m) => m.externalSpec),
   viscous: () => import('./viscous/spec').then((m) => m.viscousSpec),
   conduction: () => import('./conduction/spec').then((m) => m.conductionSpec),
+  fins: () => import('./fins/spec').then((m) => m.finsSpec),
 };

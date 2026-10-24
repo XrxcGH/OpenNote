@@ -18,6 +18,7 @@ export const FLUIDHEAT_TOOLS: readonly FluidHeatToolMeta[] = [
   { id: 'external', title: 'kitFluidHeat.external.title', keywords: 'kitFluidHeat.external.keywords', icon: 'Wind' },
   { id: 'viscous', title: 'kitFluidHeat.viscous.title', keywords: 'kitFluidHeat.viscous.keywords', icon: 'Waves' },
   { id: 'conduction', title: 'kitFluidHeat.conduction.title', keywords: 'kitFluidHeat.conduction.keywords', icon: 'Thermometer' },
+  { id: 'fins', title: 'kitFluidHeat.fins.title', keywords: 'kitFluidHeat.fins.keywords', icon: 'Fan' },
 ];
 
 export const FLUIDHEAT_TOOL_IDS: readonly string[] = FLUIDHEAT_TOOLS.map((tool) => tool.id);
