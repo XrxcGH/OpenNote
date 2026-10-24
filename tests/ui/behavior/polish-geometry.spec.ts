@@ -15,18 +15,12 @@ function whereIs(panel: Locator): Promise<string> {
     const chain: string[] = [];
     for (let node = one.parentElement; node; node = node.parentElement) {
       const style = getComputedStyle(node);
-      chain.push(
-        `${node.tagName}.${String(node.className).slice(0, 24)} ${node.clientWidth}/${node.offsetWidth} ${style.position} ${style.transform} ${style.contain} ${style.overflowY}`,
-      );
+      const size = `${node.clientWidth}/${node.offsetWidth}`;
+      chain.push(`${node.tagName}.${String(node.className).slice(0, 24)} ${size} ${style.position} ${style.transform}`);
     }
     const box = one.getBoundingClientRect();
-    return JSON.stringify({
-      x: box.x,
-      w: box.width,
-      inner: innerWidth,
-      client: document.documentElement.clientWidth,
-      chain,
-    });
+    const client = document.documentElement.clientWidth;
+    return JSON.stringify({ x: box.x, w: box.width, inner: innerWidth, client, chain });
   });
 }
 
