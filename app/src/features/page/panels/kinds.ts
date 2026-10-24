@@ -24,6 +24,7 @@ export const PANEL_TYPES = {
   beam: 'ext:org.opennote/beam',
   truss: 'ext:org.opennote/truss',
   circuit: 'ext:org.opennote/circuit',
+  kitCalc: 'ext:org.opennote/kitcalc',
 } as const;
 
 export type PanelType = (typeof PANEL_TYPES)[keyof typeof PANEL_TYPES];

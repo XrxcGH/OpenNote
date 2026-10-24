@@ -9,6 +9,7 @@ import { firstTexts, pinUnits, runTool } from '../kit/read';
 import { shownFields, type Field, type ToolSpec } from '../kit/spec';
 import type { SolidsError } from '../kit/types';
 import { unitOf, type System } from '../kit/units';
+import { CALC_EVENT, calcFallback, followRestore, type KitCalcRequest } from '../open';
 import {
   answerLatex,
   answerText,
@@ -142,7 +143,19 @@ function FieldInput(props: {
   );
 }
 
-function insertItems(c: InsertContext): MenuItemSpec[] {
+/** Asks the page to keep this calculation as a live block; false when no page is listening. */
+function insertLive(c: InsertContext, texts: Readonly<Record<string, string>>): boolean {
+  const summary = answerText(c);
+  const request: KitCalcRequest = {
+    data: { tool: c.tool, texts: { ...texts }, system: c.system, summary, latex: answerLatex(c) },
+    fallback: calcFallback(summary, texts),
+    handled: false,
+  };
+  window.dispatchEvent(new CustomEvent<KitCalcRequest>(CALC_EVENT, { detail: request }));
+  return request.handled;
+}
+
+function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>): MenuItemSpec[] {
   const done = (ok: boolean) => announce(say(ok ? 'kitSolids.ui.inserted' : 'kitSolids.ui.noPage'));
   const items: MenuItemSpec[] = [
     {
@@ -161,6 +174,14 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
       onSelect: () => done(sendToPage({ table: resultTable(c) })),
     },
     { id: 'steps', label: say('kitSolids.ui.insertSteps'), onSelect: () => done(sendToPage({ text: stepsHtml(c) })) },
+    {
+      id: 'live',
+      label: say('kitSolids.ui.insertLive'),
+      // The page announces the insert itself once the block is in.
+      onSelect: () => {
+        if (!insertLive(c, texts)) done(false);
+      },
+    },
   ];
   c.outcome.tables?.forEach((table, i) =>
     items.push({
@@ -189,6 +210,15 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const [system, setSystem] = useState<System>(() => (load<string>('system', 'si') === 'us' ? 'us' : 'si'));
   useEffect(() => save(tool, texts), [tool, texts]);
   useEffect(() => save('system', system), [system]);
+  // A live calculation in a page put its values back: read them again.
+  useEffect(
+    () =>
+      followRestore(tool, () => {
+        setTexts({ ...firstTexts(spec), ...load(tool, {}) });
+        setSystem(load<string>('system', 'si') === 'us' ? 'us' : 'si');
+      }),
+    [tool, spec],
+  );
   const run = useMemo(() => runTool(spec, texts, system), [spec, texts, system]);
   const values = run.ok ? run.values : Object.fromEntries(spec.fields.map((f) => [f.id, texts[f.id] ?? f.first]));
   const problems = new Map(run.ok ? [] : run.fields.map((one) => [one.field, one.error] as const));
@@ -204,7 +234,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const openInsert = (anchor: HTMLElement) => {
     if (!run.ok) return;
     const c: InsertContext = { tool, outcome: run.outcome, system, say };
-    void openMenu({ label: say('kitSolids.ui.insertMenu'), items: insertItems(c), anchor });
+    void openMenu({ label: say('kitSolids.ui.insertMenu'), items: insertItems(c, texts), anchor });
   };
   return (
     <div className={styles.panel}>

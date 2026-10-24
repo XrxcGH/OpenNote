@@ -4,6 +4,7 @@ import { SOLIDS_KIT_FLAGS, type SolidsKitFlagId } from './solids/flags';
 
 // The solid mechanics kit's tool list is plain data the command palette reads at start-up, so it is public here.
 export { SOLIDS_TOOLS } from './solids/meta';
+export { CALC_EVENT, type KitCalcRequest } from './solids/open';
 
 export type EngineeringFlagId =
   'engineering.fbd' | 'engineering.structures' | 'engineering.circuit' | 'tables.units' | SolidsKitFlagId;

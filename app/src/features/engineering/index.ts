@@ -16,6 +16,12 @@ export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
 export { openSolidsKit } from './solids/open';
 
+/** A live calculation block of the solid mechanics kit. */
+export async function mountKitCalc(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
+  const [{ mountPanel }, { KitCalcPanel }] = await Promise.all([import('./mount'), import('./solids/ui/KitCalcPanel')]);
+  return mountPanel(KitCalcPanel)(container, props);
+}
+
 /** The solid mechanics kit window, loaded the first time it opens. */
 export const loadSolidsKit = () => import('./solids/ui/SolidsKit');
 

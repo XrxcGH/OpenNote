@@ -11,7 +11,8 @@ import { expectNoAxeViolations, renderApp, renderUi } from '../../../../test';
 import { INSERT_EVENT } from '../../../tools/flags';
 import { closeTool, openTools } from '../../../tools/ui/host';
 import { SOLIDS_TOOLS } from '../meta';
-import { saveTab } from '../open';
+import { CALC_EVENT, saveTab, type KitCalcRequest } from '../open';
+import { KitCalcPanel } from './KitCalcPanel';
 import { SolidsKit } from './SolidsKit';
 
 type Detail = { text?: string; math?: { source: string }; table?: { rows: string[][] }; picture?: object };
@@ -85,6 +86,39 @@ describe('the solid mechanics kit window', () => {
     expect(inserted[3].text).toMatch(/^<p>Columns and buckling<\/p><ol><li>/);
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].picture).toBeTruthy();
+  });
+
+  it('keeps a live calculation that opens the tool on its values again', async () => {
+    const asked: KitCalcRequest[] = [];
+    const keep = (event: Event) => {
+      const request = (event as CustomEvent<KitCalcRequest>).detail;
+      asked.push(request);
+      request.handled = true;
+    };
+    window.addEventListener(CALC_EVENT, keep);
+    try {
+      saveTab('columns');
+      renderUi(<SolidsKit />);
+      await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Example' }), 'johnson');
+      await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
+      await userEvent.click(await screen.findByRole('menuitem', { name: 'Live calculation' }));
+      expect(asked).toHaveLength(1);
+      const data = asked[0].data;
+      expect(data).toMatchObject({ tool: 'columns', system: 'si' });
+      expect(data.texts.L).toBe('3 m');
+      expect(data.summary).toContain('1754.6 kN');
+      expect(asked[0].fallback).toContain('L = 3 m');
+      // The student changes the length, then opens the calculation from the page: the length comes back.
+      const length = screen.getAllByRole('textbox', { name: 'Length, L' })[0];
+      await userEvent.fill(length, '5 m');
+      renderUi(<KitCalcPanel data={{ ...data }} readOnly={false} patch={() => {}} announce={() => {}} />);
+      await userEvent.click(screen.getByRole('button', { name: 'Open in the tool' }));
+      await waitFor(() =>
+        expect((screen.getAllByRole('textbox', { name: 'Length, L' })[0] as HTMLInputElement).value).toBe('3 m'),
+      );
+    } finally {
+      window.removeEventListener(CALC_EVENT, keep);
+    }
   });
 
   it('opens on the tool a palette command names', async () => {

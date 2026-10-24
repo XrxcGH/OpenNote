@@ -117,6 +117,31 @@
     font-size: var(--type-small-size);
   }
 
+  /* A live calculation in a page: a quiet card with the answer, the typed values, and a way back to the tool. */
+  .calc {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .calc p {
+    margin: 0;
+  }
+
+  .calcTitle {
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .calcInputs {
+    margin: var(--space-1) 0 0;
+    padding-inline-start: var(--space-4);
+    font-size: var(--type-small-size);
+  }
+
   .heading {
     margin: 0;
     font-size: var(--type-body-size);
