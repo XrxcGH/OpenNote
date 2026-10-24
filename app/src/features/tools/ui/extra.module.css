@@ -5,16 +5,18 @@
 @layer components {
   .field {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-inline-size: 0;
     gap: var(--space-2);
     font-size: var(--type-small-size);
   }
 
   .field input[type='file'] {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
   }
 
   .input {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     color: var(--color-text-primary);
@@ -135,6 +137,6 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    min-block-size: var(--size-target-min);
+    min-block-size: var(--target-size);
   }
 }

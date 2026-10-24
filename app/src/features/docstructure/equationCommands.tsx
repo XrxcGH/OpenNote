@@ -9,7 +9,10 @@ import { numberingOf } from '../../editor/extensions/equationNumbers';
 import { freeLabel, labelOf, refSource, stripLabels, withLabel } from '../../editor/equations';
 import { META_COMMAND } from '../../editor/meta';
 import { t } from '../../strings/t';
-import { Dialog, RadioCard, RadioGroup, announce, showToast } from '../../ui';
+import { Dialog, RadioCard, RadioGroup, showToast } from '../../ui';
+
+/** Says what an equation command did, as a toast: a bare announcement is silent on the screen. */
+const say = (message: string): void => void showToast({ message });
 
 /** The display equation the selection is on or in, with its place. */
 function equationAt(editor: Editor): { pos: number; source: string } | null {
@@ -60,7 +63,7 @@ function setSource(editor: Editor, edits: readonly { pos: number; source: string
 export function numberEquation(editor: Editor): boolean {
   const found = equationAt(editor);
   if (!found) {
-    announce(t('docStructure.eq.noEquation'));
+    say(t('docStructure.eq.noEquation'));
     return false;
   }
   if (labelOf(found.source) === null) {
@@ -70,7 +73,7 @@ export function numberEquation(editor: Editor): boolean {
   const { blocks, numbering } = numberingOf(editor.state.doc);
   const index = blocks.findIndex((b) => b.pos === found.pos);
   const message = t('docStructure.eq.numbered', { number: numbering.numbers[index] ?? 0 });
-  announce(message);
+  say(message);
   showToast({ message });
   return true;
 }
@@ -79,15 +82,15 @@ export function numberEquation(editor: Editor): boolean {
 export function unnumberEquation(editor: Editor): boolean {
   const found = equationAt(editor);
   if (!found) {
-    announce(t('docStructure.eq.noEquation'));
+    say(t('docStructure.eq.noEquation'));
     return false;
   }
   if (labelOf(found.source) === null) {
-    announce(t('docStructure.eq.notNumbered'));
+    say(t('docStructure.eq.notNumbered'));
     return false;
   }
   setSource(editor, [{ pos: found.pos, source: stripLabels(found.source) }]);
-  announce(t('docStructure.eq.unnumbered'));
+  say(t('docStructure.eq.unnumbered'));
   return true;
 }
 
@@ -103,7 +106,7 @@ export function numberAllEquations(editor: Editor): number {
     edits.push({ pos: b.pos, source: withLabel(source, label) });
   }
   if (edits.length > 0) setSource(editor, edits);
-  announce(t('docStructure.eq.numberedAll', { count: edits.length }));
+  say(t('docStructure.eq.numberedAll', { count: edits.length }));
   return edits.length;
 }
 
@@ -180,7 +183,7 @@ function pick(choices: readonly Choice[]): Promise<string | null> {
 export async function insertReference(editor: Editor): Promise<boolean> {
   const choices = choicesIn(editor);
   if (choices.length === 0) {
-    announce(t('docStructure.eq.none'));
+    say(t('docStructure.eq.none'));
     showToast({ message: t('docStructure.eq.none') });
     return false;
   }
@@ -191,6 +194,6 @@ export async function insertReference(editor: Editor): Promise<boolean> {
   editor.view.dispatch(editor.state.tr.replaceSelectionWith(node, false).setMeta(META_COMMAND, true));
   editor.view.focus();
   const number = choices.find((c) => c.key === key)?.number ?? 0;
-  announce(t('docStructure.eq.inserted', { number }));
+  say(t('docStructure.eq.inserted', { number }));
   return true;
 }

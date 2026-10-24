@@ -225,7 +225,7 @@ describe('the calculator popped out, and its answer format', () => {
   it('writes the answer in scientific notation to the fewest significant figures typed', async () => {
     renderUi(<CalculatorTool />);
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Notation' }), 'scientific');
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Significant figures' }), 'match');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Figures shown' }), 'match');
     await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '2.50 * 3100.');
     await userEvent.keyboard('{Enter}');
     expect(document.getElementById('calc-result')!.textContent).toMatch(/^= 7\.75.*3$/);

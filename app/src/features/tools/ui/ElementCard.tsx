@@ -15,7 +15,7 @@ function temperature(kelvin: number | null): string {
   });
 }
 
-export function ElementCard({ element }: { element: Element }) {
+function factRows(element: Element): [string, string][] {
   const unknown = t('study.reference.unknown');
   const rows: [string, string][] = [
     [t('study.reference.number'), String(element.number)],
@@ -37,6 +37,15 @@ export function ElementCard({ element }: { element: Element }) {
     [t('study.reference.oxidation'), element.oxidation === '' ? unknown : element.oxidation],
     [t('study.reference.isotopes'), element.isotopes === '' ? unknown : element.isotopes],
   ];
+  return rows;
+}
+
+/** The summary above the table: name, number, mass, family, and the Insert actions. */
+export function ElementCard({ element }: { element: Element }) {
+  const rows = factRows(element);
+  // The name, number, mass, and family come first, with the actions, above the table so they never fall below the fold.
+  // The rest of the facts follow the table.
+  const head = rows.slice(0, 3);
   return (
     <section className={grid.card} aria-labelledby="element-card-title" data-group={element.group}>
       <h3 id="element-card-title" className={grid.cardTitle}>
@@ -45,8 +54,8 @@ export function ElementCard({ element }: { element: Element }) {
         </span>
         {element.name}
       </h3>
-      <dl className={grid.facts}>
-        {rows.map(([label, value]) => (
+      <dl className={grid.summary}>
+        {head.map(([label, value]) => (
           <div key={label} className={grid.fact}>
             <dt>{label}</dt>
             <dd>{value}</dd>
@@ -54,10 +63,16 @@ export function ElementCard({ element }: { element: Element }) {
         ))}
       </dl>
       <div className={grid.actions}>
-        <InsertButton text={element.symbol} label={t('study.reference.insertNamed', { name: element.name })} />
+        <InsertButton
+          flush
+          text={element.symbol}
+          label={t('study.reference.insertNamed', { name: element.name })}
+          caption={t('study.reference.insertSymbolShort')}
+        />
         <InsertButton
           text={`${element.symbol}: ${element.configuration}`}
           label={t('study.reference.insertConfiguration', { name: element.name })}
+          caption={t('study.reference.insertConfigurationShort')}
         />
         <InsertButton
           text={elementSummary(element)}
@@ -65,6 +80,23 @@ export function ElementCard({ element }: { element: Element }) {
           caption={t('study.reference.insertDataShort')}
         />
       </div>
+    </section>
+  );
+}
+
+/** The rest of the facts, below the table. */
+export function ElementFacts({ element }: { element: Element }) {
+  const more = factRows(element).slice(3);
+  return (
+    <section aria-label={t('study.reference.moreFacts', { name: element.name })}>
+      <dl className={grid.facts}>
+        {more.map(([label, value]) => (
+          <div key={label} className={grid.fact}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

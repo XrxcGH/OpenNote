@@ -4,7 +4,7 @@
 @layer components {
   .screen {
     display: grid;
-    place-items: center;
+    place-items: start center;
     /* The window below the title bar, whatever its height (48 px with touch density): the card scrolls inside
        itself, never this screen, or the window. */
     grid-template-rows: minmax(0, 1fr);
@@ -35,8 +35,13 @@
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     inline-size: min(var(--size-setup-card-width), 100%);
-    block-size: min(var(--size-setup-card-height), 100%);
-    max-block-size: 100%;
+    /* The card is as tall as its step, never taller than the window, so a short step leaves no empty band above the
+       footer. A short floor keeps the steps close in height. A tall step scrolls inside the card. */
+    block-size: auto;
+    min-block-size: min(27.5rem, 100%);
+    /* A fixed distance from the top keeps the step's title where it is on every step, whatever the step's height. */
+    margin-block-start: min(12vh, var(--space-11));
+    max-block-size: calc(100% - min(12vh, var(--space-11)));
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-xl);
     background: var(--color-surface-raised);
@@ -46,8 +51,28 @@
   /* The scroll padding brings a control that Tab reaches below the fold in with room for its focus ring. */
   .content {
     overflow-y: auto;
-    padding: var(--space-8) var(--space-8) var(--space-5);
-    scroll-padding-block: var(--space-3);
+    padding: var(--space-8) var(--space-8) var(--space-6);
+    scroll-padding-block: var(--space-5);
+    /* A soft shadow shows at the top or bottom edge while more of the step lies past it, so a cut control reads as
+       scrolled, never as clipped. The covers fade the shadow out once the end is reached. */
+    background:
+      linear-gradient(var(--color-surface-raised) 30%, transparent) top / 100% var(--space-7) no-repeat local,
+      linear-gradient(transparent, var(--color-surface-raised) 70%) bottom / 100% var(--space-7) no-repeat local,
+      radial-gradient(
+          farthest-side at 50% 0,
+          color-mix(in srgb, var(--color-text-primary) 16%, transparent),
+          transparent
+        )
+        top / 100% var(--space-3) no-repeat scroll,
+      radial-gradient(
+          farthest-side at 50% 100%,
+          color-mix(in srgb, var(--color-text-primary) 16%, transparent),
+          transparent
+        )
+        bottom / 100% var(--space-3) no-repeat scroll,
+      var(--color-surface-raised);
+    border-start-start-radius: var(--radius-xl);
+    border-start-end-radius: var(--radius-xl);
   }
 
   .step {
@@ -64,6 +89,30 @@
 
   .look [role='radiogroup'] > [role='radio'] {
     max-inline-size: none;
+  }
+
+  /* Every other step's choices are full-width cards in one column, with one gap, so their edges line up. */
+  .step:not(.look) > [role='radiogroup']:not([style*='--radio-columns']),
+  .step:not(.look) :not(.chips) > [role='radiogroup']:not([style*='--radio-columns']) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .step select {
+    min-block-size: var(--size-chrome-hit);
+  }
+
+  :global(:root[data-density='touch']) .step select {
+    min-block-size: var(--size-target-touch);
+  }
+
+  /* The section label inside a step (Pen top button, Notebook name) is one size on every step. */
+  .step h2 {
+    margin: 0;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+    font-weight: var(--font-weight-semibold);
   }
 
   /* At first run the Match Windows caption says why it is preselected, which takes two lines in a row of cards.
@@ -96,7 +145,7 @@
 
   .subtitle {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
   }
 
   /* The welcome step: the title stays where every other step has it, the note sits at the bottom, and the desk is
@@ -172,6 +221,10 @@
   }
 
   /* The notebook color chips share the width evenly, so every chip is the same size. */
+  .chips [role='radio'] {
+    padding: var(--space-3);
+  }
+
   .chips :where([role='radiogroup']) {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-9) * 2), 1fr));
@@ -184,6 +237,50 @@
   :global(:root[data-size-class='compact']) .card {
     block-size: 100%;
     max-block-size: none;
+    margin-block-start: 0;
+  }
+
+  /* A short window (the smallest the app runs in is 620 px) gives the step the whole window and a smaller header,
+     so every step fits or scrolls only a little. */
+  @media (max-height: 700px) {
+    .screen {
+      padding: 0;
+    }
+
+    .card {
+      block-size: 100%;
+      max-block-size: none;
+      margin-block-start: 0;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .content {
+      padding-block: var(--space-5) var(--space-6);
+      border-radius: 0;
+    }
+
+    .step {
+      gap: var(--space-4);
+    }
+
+    .header {
+      gap: var(--space-2);
+    }
+
+    .header > svg {
+      display: none;
+    }
+
+    .title {
+      font-size: calc(var(--type-display-size) * 2 / 3);
+      line-height: calc(var(--type-display-line) * 2 / 3);
+    }
+
+    .footer {
+      padding-block: var(--space-4);
+    }
   }
 
   :global(:root[data-size-class='compact']) .content,

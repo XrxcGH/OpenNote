@@ -96,6 +96,11 @@
     white-space: nowrap;
     font-size: var(--type-caption-size);
     color: var(--color-text-secondary);
+    flex-wrap: wrap;
+  }
+
+  .stepper > * {
+    white-space: nowrap;
   }
 
   .progress {

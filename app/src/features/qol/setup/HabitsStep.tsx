@@ -18,7 +18,7 @@ export default function HabitsStep(props: SetupStepProps) {
   const preset = shortcutSet(draft, current);
   const [opened, setOpened] = useState(false);
   return (
-    <div className={`${styles.step} ${styles.look}`}>
+    <div className={styles.step}>
       <StepHeader {...props} title={t('qol.setup.title')} subtitle={t('qol.setup.subtitle')} />
       <RadioGroup
         label={t('shortcuts.set.label')}
@@ -28,18 +28,20 @@ export default function HabitsStep(props: SetupStepProps) {
         <RadioCard value="default" label={t('shortcuts.set.default')} description={t('shortcuts.set.defaultHelp')} />
         <RadioCard value="onenote" label={t('shortcuts.set.onenote')} description={t('shortcuts.set.onenoteHelp')} />
       </RadioGroup>
-      {preset === 'onenote' && <p className={styles.subtitle}>{t('qol.setup.onenoteClash')}</p>}
-      <section aria-labelledby="habits-pen">
+      {preset === 'onenote' && <p className={styles.note}>{t('qol.setup.onenoteClash')}</p>}
+      <section className={styles.group} aria-labelledby="habits-pen">
         <h2 id="habits-pen">{t('qol.setup.penTitle')}</h2>
-        <p>{t('qol.setup.penBody')}</p>
-        <Button
-          onClick={() => {
-            setOpened(true);
-            void openPenSettings();
-          }}
-        >
-          {t(opened ? 'qol.setup.penOpened' : 'qol.setup.penOpen')}
-        </Button>
+        <p className={styles.note}>{t('qol.setup.penBody')}</p>
+        <div>
+          <Button
+            onClick={() => {
+              setOpened(true);
+              void openPenSettings();
+            }}
+          >
+            {t(opened ? 'qol.setup.penOpened' : 'qol.setup.penOpen')}
+          </Button>
+        </div>
       </section>
     </div>
   );

@@ -149,9 +149,16 @@
 
   .row {
     display: grid;
-    gap: var(--space-1);
-    padding-block: var(--space-3);
+    gap: var(--space-2);
+    padding-block: var(--space-4);
     border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  /* The title leads, and what it says sits below in the quieter weight and size, so the larger text is the heading. */
+  .row > :not(.rowTitle):not(.status):not(.help):not(ul) {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
   }
 
   .row:last-child {
@@ -159,7 +166,8 @@
   }
 
   .rowTitle {
-    font-weight: var(--font-weight-medium);
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
   }
 
   .reportRow {
@@ -177,6 +185,17 @@
     align-items: center;
     gap: var(--space-2);
     font-weight: var(--font-weight-medium);
+  }
+
+  /* The result is a status beside the title, not part of the name. */
+  .status > :last-child {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-regular);
+  }
+
+  .status > :last-child::before {
+    content: '\00b7';
+    margin-inline-end: var(--space-2);
   }
 
   .mark {

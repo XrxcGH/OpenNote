@@ -6,6 +6,7 @@ import { chord } from '../../../commands/registry';
 import { commandBar, commands, contextMenus } from '../../../registries';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
+import { say } from './say';
 import { targetEditor } from '../formattingBar/target';
 import { editingSettingsParts, slashItems } from '../registries';
 import { pageSelection } from '../seams/selectionStore';
@@ -103,7 +104,7 @@ commands.register({
     const editor = targetEditor();
     if (!editor) return;
     const { runMathAction } = await import('../../../editor/extensions/math');
-    if (!runMathAction(editor, 'graph')) announce(t('mathTools.graphPopup.noEquation'));
+    if (!runMathAction(editor, 'graph')) say(t('mathTools.graphPopup.noEquation'));
   },
 });
 commands.register({
@@ -128,7 +129,7 @@ commands.register({
     const editor = targetEditor();
     if (!editor) return;
     const { runMathAction } = await import('../../../editor/extensions/math');
-    if (!runMathAction(editor, 'steps')) announce(t('mathTools.steps.noEquation'));
+    if (!runMathAction(editor, 'steps')) say(t('mathTools.steps.noEquation'));
   },
 });
 commandBar.register({

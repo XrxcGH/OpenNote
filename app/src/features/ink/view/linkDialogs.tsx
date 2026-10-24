@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { t } from '../../../strings/t';
-import { announce, Button, Dialog, RadioCard, RadioGroup, TextField } from '../../../ui';
+import { Button, Dialog, RadioCard, RadioGroup, TextField } from '../../../ui';
+import { say } from './say';
 import { maybeSearchClient, openPage } from '../../search';
 import type { InkHost } from './host';
 import { inkLinks, isWebAddress, linkSelection, liveLinks } from './inkLinks';
@@ -226,7 +227,7 @@ export function showLinkList(host: InkHost, surface: InkSurface): Promise<void> 
 /** Make link: asks where the selected writing should go, then links it. */
 export async function makeLinkFromSelection(host: InkHost, surface: InkSurface): Promise<void> {
   const selection = host.selection.get();
-  if (selection.strokes.length === 0) return announce(t('ink.links.selectFirst'));
+  if (selection.strokes.length === 0) return say(t('ink.links.selectFirst'));
   const answer = await askLinkTarget(host, '');
   if (answer) await linkSelection(surface, selection, answer.target, answer.label);
 }

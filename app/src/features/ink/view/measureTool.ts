@@ -9,6 +9,7 @@ import { createStore } from '../../../state/store';
 import type { Store } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
+import { say } from './say';
 import { pagePoints } from '../geometry/strokeIndex';
 import type { Vec } from '../geometry/types';
 import { distance, lineAngle, polylineLength, unitStep } from '../snap';
@@ -88,7 +89,7 @@ export function measureSelection(host: InkHost, surface: InkSurface | null): str
   const ids = host.selection.get().strokes;
   const strokes = surface ? surface.strokes(ids) : [];
   if (strokes.length === 0) {
-    announce(t('ink.measure.selectLine'));
+    say(t('ink.measure.selectLine'));
     return null;
   }
   const total = strokes.reduce((sum, stroke) => sum + polylineLength(pagePoints(stroke)), 0);
