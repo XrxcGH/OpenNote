@@ -25,7 +25,8 @@ export interface RollingResult {
 
 /**
  * Flat rolling. `yf` is the average flow stress (MPa). Contact length L = sqrt(R dh), force F = Yf w L, the largest
- * draft the friction can pull in is mu^2 R. Power uses both rolls: P = 2 pi N F L with N in rev/s.
+ * draft the friction can pull in is mu^2 R. Power uses both rolls: P = 2 pi N F L with N in rev/s, F in N, and L in
+ * meters (the contact length is in mm), so P is in W.
  */
 export function rolling(
   radius: number,
@@ -47,7 +48,7 @@ export function rolling(
   const contact = Math.sqrt(radius * draft);
   const force = yf * width * contact;
   const maxDraft = mu * mu * radius;
-  const power = rollRevPerS === null ? null : 2 * Math.PI * rollRevPerS * force * contact;
+  const power = rollRevPerS === null ? null : 2 * Math.PI * rollRevPerS * force * (contact / 1000);
   const steps: Step[] = [
     { key: 'draft', latex: `\\Delta h=h_0-h_f=${fmt(draft)}\\ \\mathrm{mm}` },
     {
@@ -259,18 +260,26 @@ export interface RiserResult {
 }
 
 /**
- * Cylindrical riser, closed (a top that cools like the sides), height to diameter ratio k = H/D. With the same
+ * Cylindrical riser of height to diameter ratio k = H/D. A riser sitting on the casting cools through its side and top
+ * (form 'top', modulus D k / (4k + 1)); a free cylinder cools through both ends too (form 'free', D k / (4k + 2)). With the same
  * mold constant and n = 2 the riser must freeze later: its modulus is at least sqrt(factor) times the casting's,
- * the factor being 1.25 in common practice. Riser modulus is D k / (4k + 2).
+ * the factor being 1.25 in common practice.
  */
-export function riser(castingVolume: number, castingArea: number, hOverD: number, factor = 1.25): Outcome<RiserResult> {
+export function riser(
+  castingVolume: number,
+  castingArea: number,
+  hOverD: number,
+  factor = 1.25,
+  form: 'top' | 'free' = 'top',
+): Outcome<RiserResult> {
   if (!finite(castingVolume, castingArea, hOverD, factor)) return bad('notNumber');
   if (castingVolume <= 0 || castingArea <= 0) return bad('dimensionPositive');
   if (hOverD <= 0) return bad('ratioPositive');
   if (factor < 1) return bad('riserFactorRange');
   const mc = castingVolume / castingArea;
   const mr = Math.sqrt(factor) * mc;
-  const d = (mr * (4 * hOverD + 2)) / hOverD;
+  const faces = form === 'free' ? 2 : 1;
+  const d = (mr * (4 * hOverD + faces)) / hOverD;
   const h = hOverD * d;
   return {
     ok: true,

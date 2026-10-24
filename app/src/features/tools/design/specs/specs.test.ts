@@ -18,6 +18,19 @@ const row = (o: Outcome, id: string): number => {
   return found.value;
 };
 
+describe('true position with a bonus from sizes', () => {
+  const base = { mode: 'position', dx: '0.03', dy: '0.04', tolerance: '0.1', modifier: 'MMC' };
+  it('a hole 10.05 on an MMC of 10.00 gets a 0.05 bonus: allowed 0.15', async () => {
+    const o = await run('tolerances', { ...base, actualSize: '10.05', limitSize: '10' });
+    expect(row(o, 'bonus')).toBeCloseTo(0.05, 12);
+    expect(row(o, 'allowed')).toBeCloseTo(0.15, 12);
+  });
+  it('RFS ignores the sizes', async () => {
+    const o = await run('tolerances', { ...base, modifier: 'RFS', actualSize: '10.5', limitSize: '10' });
+    expect(row(o, 'bonus')).toBe(0);
+  });
+});
+
 describe('every example works', () => {
   for (const [tool, load] of Object.entries(SPECS)) {
     it(`${tool}`, async () => {
@@ -84,11 +97,11 @@ describe('forming against hand calculations', () => {
   });
   it('rolling power appears when a roll speed is typed (rpm in, W out)', async () => {
     const o = await run('forming', { mode: 'rolling', speed: '120' }, { speed: 'rpm' });
-    const contact = Math.sqrt(1250);
-    expect(row(o, 'power')).toBeCloseTo(2 * Math.PI * 2 * (250 * 300 * contact) * contact, 3);
+    // Worked by hand: F = 2.65165e6 N, L = 35.3553 mm, P = 2 pi (2 rev/s)(2.65165e6 N)(0.0353553 m) = 1.17810e6 W.
+    expect(row(o, 'power')).toBeCloseTo(1.1781e6, -2);
   });
   it('bend allowance BA = a (R + K t)', async () => {
-    const o = await run('forming', { mode: 'bend', radius: '5', angle: '90', thickness: '2', kFactor: '0.33' });
+    const o = await run('forming', { mode: 'bend', bendRadius: '5', angle: '90', thickness: '2', kFactor: '0.33' });
     expect(row(o, 'allowance')).toBeCloseTo((Math.PI / 2) * (5 + 0.33 * 2), 9);
   });
   it('the pattern allows the shrinkage typed as a percent', async () => {

@@ -31,7 +31,8 @@ describe('rolling', () => {
   });
   it('power uses both rolls', () => {
     const r = ok(rolling(250, 25, 20, 300, 250, 0.12, 2));
-    expect(r.power).toBeCloseTo(2 * Math.PI * 2 * r.force * r.contact, 3);
+    // By hand: 2 pi (2 rev/s)(2.65165e6 N)(0.0353553 m) = 1.17810e6 W (1.178 MW).
+    expect(r.power).toBeCloseTo(1.1781e6, -2);
   });
   it('rejects a thickness gain, zero radius and negative friction', () => {
     expect(rolling(250, 20, 25, 300, 250, 0.12, null)).toEqual({ ok: false, problem: 'thicknessIncrease' });
@@ -100,9 +101,18 @@ describe('casting', () => {
   it('a riser freezes after the casting', () => {
     const c = ok(chvorinov(2, 1000, 600));
     const r = ok(riser(1000, 600, 1.5));
-    const t = ok(chvorinov(2, r.volume, Math.PI * r.diameter * r.height + (Math.PI * r.diameter ** 2) / 2));
+    const t = ok(chvorinov(2, r.volume, Math.PI * r.diameter * r.height + (Math.PI * r.diameter ** 2) / 4));
     expect(t.time / c.time).toBeCloseTo(1.25, 9);
     expect(r.height).toBeCloseTo(1.5 * r.diameter, 12);
+  });
+  it('a riser on the casting cools through its side and top: D = 8.70 cm for k 1.5', () => {
+    // By hand: Mc = 1000/600 = 1.6667 cm, Mr = sqrt(1.25)(1.6667) = 1.8634 cm, D = Mr (4k + 1)/k = 8.696 cm.
+    const r = ok(riser(1000, 600, 1.5));
+    expect(r.diameter).toBeCloseTo(8.696, 3);
+    expect(r.height).toBeCloseTo(13.044, 3);
+  });
+  it('a free cylinder riser also cools through its base: D = 9.94 cm', () => {
+    expect(ok(riser(1000, 600, 1.5, 1.25, 'free')).diameter).toBeCloseTo(9.938, 3);
   });
   it('pattern size', () => {
     expect(ok(patternSize(100, 0.01)).pattern).toBeCloseTo(101, 12);
