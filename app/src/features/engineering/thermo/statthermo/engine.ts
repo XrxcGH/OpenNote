@@ -270,7 +270,7 @@ export function solveSpeeds(input: SpeedInput): ThermoResult {
       row('vRms', 'v_{rms}', v.rms, 'speed'),
       row('numberDensity', 'n', n, 'none'),
       row('meanFreePath', '\\lambda', lambda * 1e9, 'nano'),
-      row('collisionRate', 'z', v.mean / lambda, 'none'),
+      row('collisionRate', 'z', v.mean / lambda, 'frequency'),
       row('knudsen', 'Kn', kn, 'none'),
       row('kKinetic', 'k', k, 'k'),
       row('muKinetic', '\\mu', mu, 'mu'),

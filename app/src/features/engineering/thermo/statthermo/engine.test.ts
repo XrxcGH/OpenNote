@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ThermoError } from '../common/types';
+import { shown } from '../ui/present';
 import {
   debyeCv,
   einsteinCv,
@@ -101,6 +102,10 @@ describe('statistical thermodynamics: independent checks', () => {
     const lambda = (k * 300) / (Math.SQRT2 * Math.PI * 0.37e-9 ** 2 * 101325);
     expect(rel(get('kKinetic'), (n * 2.5 * k * vbar * lambda) / 3)).toBeLessThan(1e-10);
     expect(rel(get('knudsen'), lambda / 1e-6)).toBeLessThan(1e-10);
+    // The collision rate is a frequency, v_mean / lambda per second (about 7.1e9 for air here), shown in 1/s.
+    const z = result.rows.find((r) => r.key === 'collisionRate')!;
+    expect(rel(z.value, vbar / lambda)).toBeLessThan(1e-10);
+    expect(shown(z, 'SI').unit).toBe('1/s');
   });
 });
 

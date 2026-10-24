@@ -23,6 +23,7 @@ export type Qty =
   | 'nano'
   | 'eV'
   | 'wavenumber'
+  | 'frequency'
   | 'k'
   | 'mu'
   | 'molarV'
@@ -48,6 +49,7 @@ const u = (id: string, factor: number, offset = 0): UnitDef => ({ id, factor, of
 /** The SI and US unit lists for each kind; the first of each is the default. */
 export const UNITS: Record<Qty, { SI: readonly UnitDef[]; US: readonly UnitDef[] }> = {
   none: { SI: [u('', 1)], US: [u('', 1)] },
+  frequency: { SI: [u('1/s', 1)], US: [u('1/s', 1)] },
   percent: { SI: [u('%', 1)], US: [u('%', 1)] },
   T: { SI: [u('K', 1), u('°C', 1, 273.15)], US: [u('°F', 5 / 9, 459.67 * (5 / 9)), u('R', 5 / 9)] },
   dT: { SI: [u('K', 1), u('°C', 1)], US: [u('°F', 5 / 9), u('R', 5 / 9)] },
