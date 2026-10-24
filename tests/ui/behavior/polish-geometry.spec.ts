@@ -252,8 +252,9 @@ test.describe('a docked panel leaves the page alone', () => {
     await expect(panel).toBeVisible();
     // The panel stops short of the page's scroll bar where the system draws one, 15 pixels wide on the CI runners.
     const edge = await page.evaluate(() => {
-      const main = document.querySelector('main')!;
-      return document.documentElement.clientWidth - (main.offsetWidth - main.clientWidth);
+      // The host measures the system's scroll bar once and sets this variable, whether or not this page overflows.
+      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scrollbar-size')) || 0;
+      return document.documentElement.clientWidth - bar;
     });
     // The panel slides in, so measure once it has settled at the edge.
     await expect
