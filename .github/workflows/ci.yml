@@ -63,8 +63,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally under 2 minutes.
-    timeout-minutes: 10
+    # Normally under 4 minutes.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -76,7 +76,13 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Component tests (Vitest browser mode)
-        run: npm run test:components
+        # In three runs, each with a fresh browser: on Ubuntu one browser session that runs all 159 files was closed by
+        # the runner about three minutes in, with a different file running each time.
+        shell: bash
+        run: |
+          status=0
+          for shard in 1 2 3; do npm run test:components -- --shard=$shard/3 || status=1; done
+          exit $status
       - name: Keep the failure screenshots
         # Vitest saves a screenshot of the page for each failed test.
         if: failure()
