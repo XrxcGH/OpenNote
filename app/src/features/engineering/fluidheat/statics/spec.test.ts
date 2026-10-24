@@ -59,6 +59,12 @@ describe('statics form', () => {
     });
     expect(v(viaReading.velocity)).toBeCloseTo(Math.sqrt((2 * (1000 - 1.2) * 9.80665 * 0.05) / 1.2), 9);
   });
+  it('a venturi takes a manometer reading: dp = (rho_m - rho) g h, then the same closed form', () => {
+    const r = solve({ mode: 'venturi', dp: '', meterFluid: '13600 kg/m^3', reading: '200 mm', cd: '0.98' });
+    const dp = (13600 - 1000) * 9.80665 * 0.2;
+    const q = 0.98 * ((Math.PI * 0.06 ** 2) / 4) * Math.sqrt((2 * dp) / (1000 * (1 - 0.6 ** 4)));
+    expect(v(r.flow)).toBeCloseTo(q, 12);
+  });
   it('reports impossible input in words', () => {
     const run = runTool(staticsSpec, { ...firstTexts(staticsSpec), mode: 'venturi', throatD: '150 mm' }, 'si');
     expect(run.ok).toBe(false);

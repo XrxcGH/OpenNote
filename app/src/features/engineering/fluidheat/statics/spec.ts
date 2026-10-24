@@ -62,6 +62,16 @@ function gateDrawing(angleRad: number, topDepth: number, extent: number, hcp: nu
   return parts;
 }
 
+/** The pressure difference of a flow meter: a manometer reading with its fluid, (rho_m - rho) g h, or the typed value. */
+function meterPressure(values: Values, rho: number): number {
+  const h = opt(values, 'reading');
+  const mf = opt(values, 'meterFluid');
+  if (h !== undefined && mf !== undefined) return manometerDifference(mf, rho, h);
+  const dp = opt(values, 'dp');
+  if (dp === undefined) fail('calc', 'Give the pressure difference, or a manometer reading with its fluid density.');
+  return dp;
+}
+
 const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   plane: (values) => {
     const rho = num(values, 'density');
@@ -190,17 +200,12 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   },
   pitot: (values) => {
     const rho = num(values, 'density');
-    let dp = opt(values, 'dp');
-    const h = opt(values, 'reading');
-    const mf = opt(values, 'meterFluid');
-    if (h !== undefined && mf !== undefined) dp = manometerDifference(mf, rho, h);
-    else if (dp === undefined)
-      fail('calc', 'Give the pressure difference, or a manometer reading with its fluid density.');
-    const r = pitot({ density: rho, dp: dp! });
+    const dp = meterPressure(values, rho);
+    const r = pitot({ density: rho, dp });
     return {
       rows: [
         { id: 'velocity', value: q(r.value, 'speed'), sym: 'V', answer: true },
-        { id: 'dp', value: q(dp!, 'pressure') },
+        { id: 'dp', value: q(dp, 'pressure') },
       ],
       steps: steps(r.steps),
       notes: ['pitot'],
@@ -208,12 +213,11 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
   },
   venturi: (values) => {
     const rho = num(values, 'density');
-    const dp = opt(values, 'dp');
-    if (dp === undefined) fail('calc', 'Give the pressure difference, or a manometer reading with its fluid density.');
+    const dp = meterPressure(values, rho);
     const cd = opt(values, 'cd');
     const r = venturi({
       density: rho,
-      dp: dp!,
+      dp,
       upstreamDiameter: num(values, 'pipeD'),
       throatDiameter: num(values, 'throatD'),
       ...(cd !== undefined ? { cd } : {}),
@@ -281,8 +285,8 @@ export const staticsSpec: ToolSpec = {
     { id: 'hL', type: 'quantity', kind: 'span', first: '0 m', optional: true, when: is('bernoulli') },
     { id: 'pumpHead', type: 'quantity', kind: 'span', first: '', optional: true, when: is('bernoulli') },
     { id: 'dp', type: 'quantity', kind: 'pressure', first: '5 kPa', optional: true, when: is('pitot', 'venturi') },
-    { id: 'meterFluid', type: 'quantity', kind: 'density', first: '', optional: true, when: is('pitot') },
-    { id: 'reading', type: 'quantity', kind: 'length', first: '', optional: true, when: is('pitot') },
+    { id: 'meterFluid', type: 'quantity', kind: 'density', first: '', optional: true, when: is('pitot', 'venturi') },
+    { id: 'reading', type: 'quantity', kind: 'length', first: '', optional: true, when: is('pitot', 'venturi') },
     { id: 'pipeD', type: 'quantity', kind: 'length', first: '100 mm', when: is('venturi') },
     { id: 'throatD', type: 'quantity', kind: 'length', first: '60 mm', when: is('venturi') },
     { id: 'cd', type: 'quantity', kind: 'ratio', first: '0.98', optional: true, when: is('venturi') },
