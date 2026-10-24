@@ -219,12 +219,16 @@ pub(super) fn stat(args: PathArgs) -> IpcResult<Value> {
     if let Ok(path) = granted(&args.path) {
         return Ok(json!({ "exists": true, "modified": modified(&path)? }));
     }
-    // A granted file that has since gone no longer resolves, so it is matched by the path it was granted under.
-    let gone = !asked.exists()
-        && lock()
-            .grants
-            .iter()
-            .any(|g| display(g).eq_ignore_ascii_case(&display(&asked)));
+    // A granted file that has since gone no longer resolves, so it is matched by the path it was granted under: its
+    // folder, resolved as the grant was (a short 8.3 name or a link in the folder's path is spelled out there), and
+    // its name.
+    let resolved = asked
+        .parent()
+        .and_then(|folder| fs::canonicalize(folder).ok())
+        .zip(asked.file_name())
+        .map(|(folder, name)| folder.join(name));
+    let wanted = display(resolved.as_deref().unwrap_or(&asked));
+    let gone = !asked.exists() && lock().grants.iter().any(|g| display(g).eq_ignore_ascii_case(&wanted));
     if gone {
         Ok(json!({ "exists": false, "modified": null }))
     } else {

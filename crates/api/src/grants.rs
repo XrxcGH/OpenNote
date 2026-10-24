@@ -192,6 +192,7 @@ pub fn token_target(app: &str) -> String {
 pub const TOKEN_PREFIX: &str = "onapi";
 
 /// `count` random bytes from the operating system.
+#[allow(clippy::expect_used)] // Without operating-system randomness no token or code can be made safely, so stopping is right.
 pub fn random_bytes(count: usize) -> Vec<u8> {
     let mut bytes = vec![0u8; count];
     getrandom::fill(&mut bytes).expect("the operating system's random generator works");
