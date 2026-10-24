@@ -9,7 +9,7 @@ import { newId } from '../../../editor/ids';
 import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { followView } from './host';
 import type { InkHost, InkQueue } from './host';
 import type { InkStroke } from '../model/types';
@@ -288,10 +288,10 @@ export async function sendLayers(surface: InkSurface, patch: LayersPatch): Promi
 /** Moves the selected writing to a layer. */
 export async function moveSelectionToLayer(host: InkHost, surface: InkSurface, layer: string): Promise<void> {
   const ids = host.selection.get().strokes;
-  if (ids.length === 0) return announce(t('ink.layers.selectFirst'));
+  if (ids.length === 0) return say(t('ink.layers.selectFirst'));
   if (!inkLayers.get().defs.has(layer)) return;
   if (await sendLayers(surface, moveStrokesPatch(ids, layer))) {
-    announce(t('ink.layers.moved', { count: ids.length, layer: layerName(inkLayers.get(), layer) }));
+    say(t('ink.layers.moved', { count: ids.length, layer: layerName(inkLayers.get(), layer) }));
   }
 }
 

@@ -15,6 +15,7 @@ export const docStructure = {
     refDescription: 'Choose the numbered equation to refer to. The reference shows its number and follows it.',
     refAction: 'Insert reference',
     refChoice: 'Equation {number}: {source}',
+    needsText: 'Click in the text of the page first, then choose this again.',
     noEquation: 'Put the caret on a display equation first.',
     none: 'No equation on this page is numbered yet. Choose Number this equation first.',
     numbered: 'Equation {number} numbered.',

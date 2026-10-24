@@ -3,7 +3,7 @@
 // area is described on its own; any other ink is the page's ink layer, which this describes.
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { ask } from './ask';
 import type { InkHost } from './host';
 import type { InkSurface } from './surface';
@@ -24,7 +24,7 @@ export async function describeDrawing(host: InkHost, surface: InkSurface): Promi
   const block = describedBlock(host, surface);
   const queue = host.queue.get();
   if (!block || !queue || surface.readOnly) {
-    announce(t('ink.describe.none'));
+    say(t('ink.describe.none'));
     return;
   }
   const data = block.data;
@@ -43,9 +43,9 @@ export async function describeDrawing(host: InkHost, surface: InkSurface): Promi
   layer?.upsert({ ...block, data: { ...data, ...patch } });
   try {
     await queue.send({ edits: [{ edit: 'patchBlock', block: block.id, data: patch }] });
-    announce(t(decorative ? 'ink.describe.markedDecorative' : 'ink.describe.saved'));
+    say(t(decorative ? 'ink.describe.markedDecorative' : 'ink.describe.saved'));
   } catch {
     layer?.upsert(block);
-    announce(t('ink.errors.notSaved'));
+    say(t('ink.errors.notSaved'));
   }
 }
