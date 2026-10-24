@@ -43,6 +43,7 @@ export const FLUIDHEAT_TOOLS: readonly FluidHeatToolMeta[] = [
   },
   { id: 'hx', title: 'kitFluidHeat.hx.title', keywords: 'kitFluidHeat.hx.keywords', icon: 'ArrowsLeftRight' },
   { id: 'radiation', title: 'kitFluidHeat.radiation.title', keywords: 'kitFluidHeat.radiation.keywords', icon: 'Sun' },
+  { id: 'props', title: 'kitFluidHeat.props.title', keywords: 'kitFluidHeat.props.keywords', icon: 'Table' },
 ];
 
 export const FLUIDHEAT_TOOL_IDS: readonly string[] = FLUIDHEAT_TOOLS.map((tool) => tool.id);

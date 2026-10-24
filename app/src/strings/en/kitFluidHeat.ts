@@ -12,6 +12,7 @@ import { transient, transientStep } from './kitFluidHeat/transient';
 import { convection, convectionStep } from './kitFluidHeat/convection';
 import { hx, hxStep } from './kitFluidHeat/hx';
 import { radiation, radiationStep } from './kitFluidHeat/radiation';
+import { props, propsStep } from './kitFluidHeat/props';
 
 export const kitFluidHeat = {
   title: 'Fluids and heat transfer',
@@ -69,6 +70,7 @@ export const kitFluidHeat = {
   convection,
   hx,
   radiation,
+  props,
   step: {
     ...staticsStep,
     ...pipesStep,
@@ -81,5 +83,6 @@ export const kitFluidHeat = {
     ...convectionStep,
     ...hxStep,
     ...radiationStep,
+    ...propsStep,
   },
 } as const;
