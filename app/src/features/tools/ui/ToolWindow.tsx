@@ -41,7 +41,7 @@ function frameStyle(width: number, right: number, overlay: boolean): CSSProperti
     insetInlineEnd: overlay ? `calc(${right}px + var(--scrollbar-size, 0px))` : right,
     insetBlockStart: top,
     insetBlockEnd: bottom,
-    inlineSize: `min(${width}px, 100vw)`,
+    inlineSize: `min(${width}px, calc(100% - ${right}px))`,
   };
 }
 

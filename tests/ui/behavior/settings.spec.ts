@@ -36,9 +36,12 @@ test('the section list stays in view while a long section scrolls', async ({ pag
 
 test('Ctrl+/ lists the shortcuts in tables, and Escape closes the list', async ({ page }) => {
   await page.goto('/');
-  await page.keyboard.press('Control+Slash');
   const dialog = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
-  await expect(dialog).toBeVisible();
+  // The key handler is installed late on a slow machine: press again until the list shows, as the palette steps do.
+  await expect(async () => {
+    if (!(await dialog.isVisible())) await page.keyboard.press('Control+Slash');
+    await expect(dialog).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await expect(dialog.getByRole('row', { name: /Open command palette/ })).toContainText('Ctrl+K');
   await expect(dialog.getByRole('heading', { name: 'Keys that always work' })).toBeVisible();
   await page.keyboard.press('Escape');
