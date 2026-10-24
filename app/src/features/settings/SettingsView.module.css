@@ -191,7 +191,7 @@
     border-inline-end: 2px solid currentColor;
     border-block-end: 2px solid currentColor;
     transform: rotate(-45deg);
-    transition: transform var(--duration-fast, 120ms);
+    transition: transform var(--motion-duration-base) var(--motion-easing-standard);
   }
 
   .notices[open] summary::before {
