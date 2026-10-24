@@ -43,6 +43,25 @@ describe('devices: validation cases', () => {
     expect(rel(row(result, 'temperature', '2'), 604.29)).toBeLessThan(1e-4);
   });
 
+  it('cold-air turbine 1000 K, 1 MPa to 100 kPa, efficiency 0.90, losing 20 kJ/kg', () => {
+    // By hand with cp = 1.005, k = 1.4: T2s = 1000 (0.1)^(0.4/1.4) = 517.947 K, h1 - h2 = 0.9 cp (1000 - T2s) =
+    // 436.017 kJ/kg, so T2 = 566.153 K and w = 436.017 - 20 = 416.017 kJ/kg. s2 - s1 = cp ln(T2/T1) - R ln(p2/p1)
+    // = 0.089435, and the heat leaving at T0 = 298.15 K adds 20/298.15: s_gen = 0.156515 kJ/(kg K).
+    const turbine = { ...air, device: 'turbine' as const, inlet: { known: 'Tp' as const, T: 1000, p: 1000 }, p2: 100 };
+    const result = solveDevice({ ...turbine, eta: 0.9, qOut: 20 });
+    expect(rel(row(result, 'wOut'), 416.0165)).toBeLessThan(1e-5);
+    expect(rel(row(result, 'temperature', '2'), 566.1527)).toBeLessThan(1e-5);
+    expect(rel(row(result, 'sgen'), 0.1565153)).toBeLessThan(1e-5);
+    expect(rel(row(result, 'etaII') / 100, 0.8991422)).toBeLessThan(1e-5);
+    // At a 400 K boundary less entropy leaves with the heat, but the heat's exergy is lost too: eta_II is the same.
+    const warm = solveDevice({ ...turbine, eta: 0.9, qOut: 20, Tb: 400 });
+    expect(rel(row(warm, 'sgen'), 0.139435)).toBeLessThan(1e-5);
+    expect(rel(row(warm, 'etaII') / 100, 0.8991422)).toBeLessThan(1e-5);
+    // A throttle that loses heat leaves at h2 = h1 - q.
+    const valve = solveDevice({ ...turbine, device: 'throttle', qOut: 20 });
+    expect(rel(row(valve, 'temperature', '2'), 1000 - 20 / 1.005)).toBeLessThan(1e-9);
+  });
+
   it('isentropic air nozzle 600 K, 500 kPa, V1 = 0, to 100 kPa', () => {
     const result = solveDevice({
       ...air,

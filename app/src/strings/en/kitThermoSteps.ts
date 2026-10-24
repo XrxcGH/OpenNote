@@ -132,6 +132,25 @@ export const kitThermoSteps = {
     exitState:
       'Actual exit from the energy balance: T₂ = {T} K, h₂ = {h} kJ/kg, s₂ = {s} kJ/(kg·K), so ' +
       's_gen = s₂ − s₁ = {sgen} kJ/(kg·K).',
+    etaTurbineQ:
+      'Turbine efficiency: h₁ − h₂ = η_t (h₁ − h₂ₛ) = {eta} × {ws} = {dh} kJ/kg; with q_out = {q} kJ/kg lost, ' +
+      'w = (h₁ − h₂) − q_out = {w} kJ/kg.',
+    etaCompressorQ:
+      'Compressor or pump efficiency: h₂ − h₁ = (h₂ₛ − h₁)/η = {ws}/{eta} = {dh} kJ/kg; with q_out = {q} kJ/kg ' +
+      'lost, w = (h₂ − h₁) + q_out = {w} kJ/kg.',
+    exitStateQ:
+      'Actual exit from the energy balance: T₂ = {T} K, h₂ = {h} kJ/kg, s₂ = {s} kJ/(kg·K). The lost heat ' +
+      'carries entropy out at T_b = {Tb} K, so s_gen = s₂ − s₁ + q_out/T_b = {sgen} kJ/(kg·K).',
+    heatEntropy:
+      'Entropy balance: q_out = {q} kJ/kg leaves at T_b = {Tb} K, so s_gen = s₂ − s₁ + q_out/T_b = {sgen} kJ/(kg·K).',
+    nozzleQ:
+      'Energy balance with η_N = {eta} and q_out = {q} kJ/kg lost: h₂ = {h2} kJ/kg, and ' +
+      'V₂ = √(2(h₁ − h₂ − q_out) + V₁²) = {V2} m/s.',
+    diffuserQ:
+      'Energy balance with q_out = {q} kJ/kg lost: h₂ = h₁ + (V₁² − V₂²)/2 − q_out = {h2} kJ/kg, so T₂ = {T2} K ' +
+      'at the exit pressure.',
+    throttleQ:
+      'With q_out = {q} kJ/kg lost, h₂ = h₁ − q_out = {h} kJ/kg at p₂ = {p} kPa: T₂ = {T} K and s₂ = {s} kJ/(kg·K).',
     power: 'With ṁ = {m} kg/s the power is Ẇ = ṁ w = {W} kW.',
     nozzle: 'Energy balance with η_N = {eta}: h₂ = {h2} kJ/kg, and V₂ = √(2(h₁ − h₂) + V₁²) = {V2} m/s.',
     diffuser: 'Energy balance: h₂ = h₁ + (V₁² − V₂²)/2 = {h2} kJ/kg, so T₂ = {T2} K at the exit pressure.',
@@ -246,7 +265,8 @@ export const kitThermoSteps = {
     fuel: 'The fuel is {formula}, with molar mass M = {M} g/mol.',
     stoich: 'Complete combustion needs a_st = {a} mol of O₂ per mol of fuel.',
     suppliedAir: 'With φ = {phi}, the oxygen supplied is a = {a} mol per mol of fuel, which is {excess} % excess air.',
-    suppliedO2: 'With φ = {phi}, the oxygen supplied is a = {a} mol per mol of fuel, which is {excess} % excess oxygen.',
+    suppliedO2:
+      'With φ = {phi}, the oxygen supplied is a = {a} mol per mol of fuel, which is {excess} % excess oxygen.',
     reaction: 'Balancing C, H, O, and N atoms gives the reaction:',
     afr: 'Air-fuel ratio AF = 4.76 a M_air/M_fuel = {mass} kg of air per kg of fuel, or {mole} mol per mol.',
     ofr: 'Oxygen-fuel ratio = a M_O₂/M_fuel = {mass} kg of oxygen per kg of fuel, or {mole} mol per mol.',

@@ -49,6 +49,9 @@ export interface DeviceInput {
   /** Mixing chamber: the second stream's flow, and heat lost to the surroundings, kW. */
   mB?: number;
   qLoss?: number;
+  /** One-stream devices: heat lost per kg of flow (kJ/kg; negative is heat gained), at boundary temperature Tb (K). */
+  qOut?: number;
+  Tb?: number;
   /** Reservoirs: heat (kW) from T_H to T_L. */
   Q?: number;
   TH?: number;
@@ -153,6 +156,38 @@ function secondLaw(sgen: number, T0: number, m: number | undefined, etaII: numbe
   };
 }
 
+/** Heat lost per kg and the boundary temperature it crosses, T₀ unless given; zero loss is adiabatic. */
+function heatOf(input: DeviceInput, T0: number): { q: number; Tb: number; sq: number } {
+  const q = input.qOut ?? 0;
+  if (!Number.isFinite(q)) throw new ThermoError('missing', { name: 'q_out' });
+  const Tb = input.Tb === undefined ? T0 : positive(input.Tb, 'T_b');
+  return { q, Tb, sq: q / Tb };
+}
+
+/** The exit state's step, with the entropy the lost heat carries out when there is any. */
+const exitStep = (two: FluidState, sgen: number, q: number, Tb: number): KitStep =>
+  q === 0
+    ? { key: 'dev.exitState', vars: { ...stateVars(two, '2'), sgen: fmt(sgen, 5) }, math: 's_{gen}=s_2-s_1' }
+    : {
+        key: 'dev.exitStateQ',
+        vars: { ...stateVars(two, '2'), q: fmt(q, 6), Tb: fmt(Tb, 5), sgen: fmt(sgen, 5) },
+        math: 's_{gen}=s_2-s_1+\\frac{q_{out}}{T_b}',
+      };
+
+/** The entropy balance with heat lost, for the devices whose energy step does not give s_gen. */
+const entropySteps = (q: number, Tb: number, sgen: number): KitStep[] =>
+  q === 0
+    ? []
+    : [
+        {
+          key: 'dev.heatEntropy',
+          vars: { q: fmt(q, 6), Tb: fmt(Tb, 5), sgen: fmt(sgen, 5) },
+          math: 's_{gen}=s_2-s_1+\\frac{q_{out}}{T_b}',
+        },
+      ];
+
+const heatRows = (q: number): ResultRow[] => (q === 0 ? [] : [{ key: 'qOut', symbol: 'q_{out}', value: q, qty: 'e' }]);
+
 function finish(
   fluid: Fluid,
   rows: ResultRow[],
@@ -181,16 +216,23 @@ function workDevice(input: DeviceInput, fluid: Fluid): ThermoResult {
   if (expands ? p2 >= one.p : p2 <= one.p) throw new ThermoError(expands ? 'turbinePressure' : 'compressorPressure');
   const twoS = fluid.fromPS(p2, one.s);
   const ws = expands ? one.h - twoS.h : twoS.h - one.h;
-  const w = expands ? eta * ws : ws / eta;
-  const two = fluid.fromPH(p2, expands ? one.h - w : one.h + w);
-  const sgen = two.s - one.s;
+  // The efficiency sets the exit enthalpy; heat lost on the way takes work from a turbine and adds it to a compressor.
+  const dh = expands ? eta * ws : ws / eta;
+  const two = fluid.fromPH(p2, expands ? one.h - dh : one.h + dh);
   const T0 = positive(input.T0, 'T₀');
-  const etaII = expands ? w / (w + T0 * sgen) : (w - T0 * sgen) / w;
+  const { q, Tb, sq } = heatOf(input, T0);
+  const w = expands ? dh - q : dh + q;
+  if (!(w > 0)) throw new ThermoError('heatLossTooLarge');
+  const sgen = two.s - one.s + sq;
+  // The exergy the lost heat carries out at Tb, q (1 − T₀/Tb), leaves the device but is not destroyed in it.
+  const xHeat = q * (1 - T0 / Tb);
+  const etaII = expands ? w / (w + T0 * sgen + xHeat) : (w - T0 * sgen - xHeat) / w;
   const second = secondLaw(sgen, T0, input.m, etaII);
   const unit = fluid.kind === 'gas' ? undefined : C;
   const rows: ResultRow[] = [
     { key: expands ? 'wOut' : 'wIn', symbol: 'w', value: w, qty: 'e' },
     { key: 'wsIsentropic', symbol: 'w_s', value: ws, qty: 'e' },
+    ...heatRows(q),
     ...(input.m === undefined
       ? []
       : [{ key: 'powerRow' as const, symbol: '\\dot W', value: input.m * w, qty: 'power' as const }]),
@@ -207,12 +249,18 @@ function workDevice(input: DeviceInput, fluid: Fluid): ThermoResult {
       vars: { p2: fmt(p2, 6), s: fmt(one.s, 6), T: fmt(twoS.T, 6), h: fmt(twoS.h, 6) },
       math: 's_{2s}=s_1',
     },
-    {
-      key: effKey,
-      vars: { eta: fmt(eta, 4), ws: fmt(ws, 6), w: fmt(w, 6) },
-      math: expands ? 'w=\\eta_t(h_1-h_{2s})' : 'w=\\frac{h_{2s}-h_1}{\\eta_c}',
-    },
-    { key: 'dev.exitState', vars: { ...stateVars(two, '2'), sgen: fmt(sgen, 5) }, math: 's_{gen}=s_2-s_1' },
+    q === 0
+      ? {
+          key: effKey,
+          vars: { eta: fmt(eta, 4), ws: fmt(ws, 6), w: fmt(w, 6) },
+          math: expands ? 'w=\\eta_t(h_1-h_{2s})' : 'w=\\frac{h_{2s}-h_1}{\\eta_c}',
+        }
+      : {
+          key: expands ? 'dev.etaTurbineQ' : 'dev.etaCompressorQ',
+          vars: { eta: fmt(eta, 4), ws: fmt(ws, 6), dh: fmt(dh, 6), q: fmt(q, 6), w: fmt(w, 6) },
+          math: expands ? 'w=\\eta_t(h_1-h_{2s})-q_{out}' : 'w=\\frac{h_{2s}-h_1}{\\eta_c}+q_{out}',
+        },
+    exitStep(two, sgen, q, Tb),
     ...(input.m === undefined
       ? []
       : [
@@ -238,6 +286,7 @@ function flowDevice(input: DeviceInput, fluid: Fluid): ThermoResult {
   const V1 = need(input.V1, 'V₁');
   if (V1 < 0) throw new ThermoError('notPositive', { name: 'V₁' });
   const T0 = positive(input.T0, 'T₀');
+  const { q, Tb, sq } = heatOf(input, T0);
   const unit = fluid.kind === 'gas' ? undefined : C;
   if (input.device === 'nozzle') {
     const eta = input.eta ?? 1;
@@ -246,12 +295,15 @@ function flowDevice(input: DeviceInput, fluid: Fluid): ThermoResult {
     const twoS = fluid.fromPS(p2, one.s);
     const drop = eta * (one.h - twoS.h);
     const two = fluid.fromPH(p2, one.h - drop);
-    const V2 = Math.sqrt(2000 * drop + V1 * V1);
-    const second = secondLaw(two.s - one.s, T0, input.m, null);
+    const kinetic = 2000 * (drop - q) + V1 * V1;
+    if (!(kinetic >= 0)) throw new ThermoError('heatLossTooLarge');
+    const V2 = Math.sqrt(kinetic);
+    const second = secondLaw(two.s - one.s + sq, T0, input.m, null);
     return finish(
       fluid,
       [
         { key: 'V2', symbol: 'V_2', value: V2, qty: 'speed' },
+        ...heatRows(q),
         { key: 'T2s', symbol: 'T_{2s}', value: twoS.T, qty: 'T', unit },
         ...stateRows(two, '2', fluid),
         ...second.rows,
@@ -263,11 +315,18 @@ function flowDevice(input: DeviceInput, fluid: Fluid): ThermoResult {
           vars: { p2: fmt(p2, 6), s: fmt(one.s, 6), T: fmt(twoS.T, 6), h: fmt(twoS.h, 6) },
           math: 's_{2s}=s_1',
         },
-        {
-          key: 'dev.nozzle',
-          vars: { eta: fmt(eta, 4), h2: fmt(two.h, 6), V2: fmt(V2, 6) },
-          math: 'V_2=\\sqrt{2(h_1-h_2)+V_1^2}',
-        },
+        q === 0
+          ? {
+              key: 'dev.nozzle',
+              vars: { eta: fmt(eta, 4), h2: fmt(two.h, 6), V2: fmt(V2, 6) },
+              math: 'V_2=\\sqrt{2(h_1-h_2)+V_1^2}',
+            }
+          : {
+              key: 'dev.nozzleQ',
+              vars: { eta: fmt(eta, 4), q: fmt(q, 6), h2: fmt(two.h, 6), V2: fmt(V2, 6) },
+              math: 'V_2=\\sqrt{2(h_1-h_2-q_{out})+V_1^2}',
+            },
+        ...entropySteps(q, Tb, two.s - one.s + sq),
         ...second.steps,
       ],
       `V_2=${fmt(V2, 6)}\\ \\mathrm{m/s},\\ T_2=${fmt(two.T, 6)}\\ \\mathrm{K}`,
@@ -279,14 +338,25 @@ function flowDevice(input: DeviceInput, fluid: Fluid): ThermoResult {
   }
   const V2 = need(input.V2, 'V₂');
   if (V2 < 0 || V2 > V1) throw new ThermoError('diffuserSpeed');
-  const two = fluid.fromPH(p2, one.h + (V1 * V1 - V2 * V2) / 2000);
-  const second = secondLaw(two.s - one.s, T0, input.m, null);
+  const two = fluid.fromPH(p2, one.h + (V1 * V1 - V2 * V2) / 2000 - q);
+  const second = secondLaw(two.s - one.s + sq, T0, input.m, null);
   return finish(
     fluid,
-    [...stateRows(two, '2', fluid), ...second.rows],
+    [...heatRows(q), ...stateRows(two, '2', fluid), ...second.rows],
     [
       { key: 'dev.state', vars: stateVars(one, '1') },
-      { key: 'dev.diffuser', vars: { h2: fmt(two.h, 6), T2: fmt(two.T, 6) }, math: 'h_2=h_1+\\frac{V_1^2-V_2^2}{2}' },
+      q === 0
+        ? {
+            key: 'dev.diffuser',
+            vars: { h2: fmt(two.h, 6), T2: fmt(two.T, 6) },
+            math: 'h_2=h_1+\\frac{V_1^2-V_2^2}{2}',
+          }
+        : {
+            key: 'dev.diffuserQ',
+            vars: { q: fmt(q, 6), h2: fmt(two.h, 6), T2: fmt(two.T, 6) },
+            math: 'h_2=h_1+\\frac{V_1^2-V_2^2}{2}-q_{out}',
+          },
+      ...entropySteps(q, Tb, two.s - one.s + sq),
       ...second.steps,
     ],
     `T_2=${fmt(two.T, 6)}\\ \\mathrm{K}`,
@@ -301,14 +371,19 @@ function throttle(input: DeviceInput, fluid: Fluid): ThermoResult {
   const one = stateOf(fluid, input.inlet);
   const p2 = positive(input.p2, 'p₂');
   if (p2 >= one.p) throw new ThermoError('throttlePressure');
-  const two = fluid.fromPH(p2, one.h);
-  const second = secondLaw(two.s - one.s, positive(input.T0, 'T₀'), input.m, null);
+  const T0 = positive(input.T0, 'T₀');
+  const { q, Tb, sq } = heatOf(input, T0);
+  const two = fluid.fromPH(p2, one.h - q);
+  const second = secondLaw(two.s - one.s + sq, T0, input.m, null);
   return finish(
     fluid,
-    [...stateRows(two, '2', fluid), ...second.rows],
+    [...heatRows(q), ...stateRows(two, '2', fluid), ...second.rows],
     [
       { key: 'dev.state', vars: stateVars(one, '1') },
-      { key: 'dev.throttle', vars: { ...stateVars(two, '2') }, math: 'h_2=h_1' },
+      q === 0
+        ? { key: 'dev.throttle', vars: { ...stateVars(two, '2') }, math: 'h_2=h_1' }
+        : { key: 'dev.throttleQ', vars: { ...stateVars(two, '2'), q: fmt(q, 6) }, math: 'h_2=h_1-q_{out}' },
+      ...entropySteps(q, Tb, two.s - one.s + sq),
       ...second.steps,
     ],
     `h_2=h_1=${fmt(one.h, 6)}\\ \\mathrm{kJ/kg},\\ T_2=${fmt(two.T, 6)}\\ \\mathrm{K}`,

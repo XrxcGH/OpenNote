@@ -143,22 +143,24 @@ function deviceFields(device: Device, first: Initial, saturable: boolean, values
   const p2 = q('p2', 'exitPressure', 'p', Number(first.p2));
   const eta = q('eta', 'efficiency', 'percent', Number(first.eta));
   const flow = q('m', 'massFlowOptional', 'mdot', null, true);
+  const heat = [q('qOut', 'heatLossPerKg', 'e', null, true), { ...q('Tb', 'boundaryT', 'T', null, true), unit: C }];
   switch (device) {
     case 'turbine':
     case 'compressor':
     case 'pump':
-      return [p2, eta, flow];
+      return [p2, eta, flow, ...heat];
     case 'nozzle':
-      return [q('V1', 'inletSpeed', 'speed', Number(first.V1)), p2, eta, flow];
+      return [q('V1', 'inletSpeed', 'speed', Number(first.V1)), p2, eta, flow, ...heat];
     case 'diffuser':
       return [
         q('V1', 'inletSpeed', 'speed', Number(first.V1)),
         q('V2', 'exitSpeed', 'speed', Number(first.V2)),
         p2,
         flow,
+        ...heat,
       ];
     case 'throttle':
-      return [p2, flow];
+      return [p2, flow, ...heat];
     case 'exchanger':
       return [
         q('m', 'massFlowA', 'mdot', Number(first.m)),
@@ -261,6 +263,8 @@ export const spec: ToolSpec = {
       exitB: exit('B'),
       mB: get('mB'),
       qLoss: get('qLoss'),
+      qOut: get('qOut'),
+      Tb: get('Tb'),
       T0: num(values, 'T0'),
       p0: num(values, 'p0'),
     });
