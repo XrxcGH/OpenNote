@@ -102,6 +102,12 @@ function loadFlow(values: Values, net: Network, gauss: boolean): KitOk {
       vars: { first: fmt(r.history[0]!, 3), last: fmt(r.history[r.history.length - 1]!, 3), n: String(r.iterations) },
       math: '\\Delta P_i = P_i^{sched} - \\sum_k |V_i||V_k|(G_{ik}\\cos\\theta_{ik} + B_{ik}\\sin\\theta_{ik})',
     },
+    ...(r.mismatches.length > 0 && net.buses.length <= 6
+      ? r.mismatches.map((vector, i): KitStep => ({
+          key: 'pfMismatchVector',
+          vars: { n: String(i), vector: vector.map((m) => fmt(m, 4)).join(', ') },
+        }))
+      : []),
     { key: 'pfLineFlow', math: 'S_{ij} = V_i\\,I_{ij}^*,\\quad I_{ij} = (V_i - V_j)\\,y_{ij} + V_i\\,\\frac{jB}{2}' },
     { key: 'pfLossStep', vars: { value: `${fmt(lossTotal * base)} MW` } },
   ];

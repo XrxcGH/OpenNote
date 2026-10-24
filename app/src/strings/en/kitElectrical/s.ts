@@ -150,6 +150,8 @@ export const s = {
   pfNewton:
     'Newton-Raphson solves the power mismatches for the angle and magnitude corrections, using the Jacobian of the power equations.',
   pfMismatch: 'The largest mismatch fell from {first} pu to {last} pu in {n} iterations.',
+  pfMismatchVector:
+    'Iteration {n}: the mismatch vector (ΔP at each bus but the slack, then ΔQ at each PQ bus) is [{vector}] pu.',
   pfLineFlow:
     'The power into each end of a line is the bus voltage times the conjugate of the current there; the 2 ends add to the line loss.',
   pfLossStep: 'The lines lose {value} in total.',

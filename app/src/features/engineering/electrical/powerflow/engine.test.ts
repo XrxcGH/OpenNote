@@ -170,3 +170,20 @@ describe('the power flow tool form', () => {
     expect(runTool(spec, { ...base, mode: 'dispatch', demand: '99999' }).ok).toBe(false);
   });
 });
+
+describe('the mismatch vector of each iteration', () => {
+  it('starts at the scheduled injection of the load bus on a flat start: [-1, -0.5] for the two-bus case', () => {
+    const r = newtonRaphson(parseNetwork(TWO));
+    expect(r.mismatches[0]![0]).toBeCloseTo(-1, 12);
+    expect(r.mismatches[0]![1]).toBeCloseTo(-0.5, 12);
+    expect(r.mismatches).toHaveLength(r.iterations + 1);
+    expect(Math.max(...r.mismatches[r.iterations]!.map(Math.abs))).toBeLessThan(1e-6);
+  });
+  it('the tool lists one mismatch step per iteration for a small network and none for Gauss-Seidel', () => {
+    const base = initialValues(spec);
+    const newton = runTool(spec, { ...base, network: TWO, mode: 'newton' });
+    expect(newton.ok && newton.steps.filter((s) => s.key === 'pfMismatchVector').length).toBeGreaterThan(1);
+    const gauss = runTool(spec, { ...base, network: TWO, mode: 'gauss' });
+    expect(gauss.ok && gauss.steps.filter((s) => s.key === 'pfMismatchVector').length).toBe(0);
+  });
+});

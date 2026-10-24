@@ -173,6 +173,8 @@ export interface FlowResult {
   iterations: number;
   /** The largest power mismatch at the start and after each iteration. */
   history: number[];
+  /** Newton-Raphson only: the mismatch vector (ΔP for the non-slack buses, then ΔQ for the PQ buses) at each iteration. */
+  mismatches: number[][];
   y: Cx[][];
   method: 'newton' | 'gauss';
 }
@@ -208,12 +210,14 @@ export function newtonRaphson(net: Network, options: FlowOptions = {}): FlowResu
   const angleIdx = net.buses.map((b, i) => (b.type !== 'slack' ? i : -1)).filter((i) => i >= 0);
   const magIdx = net.buses.map((b, i) => (b.type === 'pq' ? i : -1)).filter((i) => i >= 0);
   const history: number[] = [];
+  const mismatches: number[][] = [];
   let iterations = 0;
   for (; iterations <= max; iterations++) {
     const calc = Array.from({ length: n }, (_, i) => injection(y, v, th, i));
     const mismatch = [...angleIdx.map((i) => sched[i]!.p - calc[i]!.p), ...magIdx.map((i) => sched[i]!.q - calc[i]!.q)];
     const worst = Math.max(0, ...mismatch.map(Math.abs));
     history.push(worst);
+    mismatches.push(mismatch);
     if (worst < tol) break;
     if (iterations === max) fail('pfNoConverge', { count: String(max) });
     const size = mismatch.length;
@@ -249,7 +253,17 @@ export function newtonRaphson(net: Network, options: FlowOptions = {}): FlowResu
     if (magIdx.some((i) => v[i]! <= 0)) fail('pfCollapse');
   }
   const final = Array.from({ length: n }, (_, i) => injection(y, v, th, i));
-  return { v, theta: th, p: final.map((s) => s.p), q: final.map((s) => s.q), iterations, history, y, method: 'newton' };
+  return {
+    v,
+    theta: th,
+    p: final.map((s) => s.p),
+    q: final.map((s) => s.q),
+    iterations,
+    history,
+    mismatches,
+    y,
+    method: 'newton',
+  };
 }
 
 /** Gauss-Seidel load flow: slow, but each step is just an update of one voltage. */
@@ -290,7 +304,17 @@ export function gaussSeidel(net: Network, options: FlowOptions = {}): FlowResult
   const v = volt.map(cAbs);
   const th = volt.map(cArg);
   const final = Array.from({ length: n }, (_, i) => injection(y, v, th, i));
-  return { v, theta: th, p: final.map((s) => s.p), q: final.map((s) => s.q), iterations, history, y, method: 'gauss' };
+  return {
+    v,
+    theta: th,
+    p: final.map((s) => s.p),
+    q: final.map((s) => s.q),
+    iterations,
+    history,
+    mismatches: [],
+    y,
+    method: 'gauss',
+  };
 }
 
 export interface LineFlow {
