@@ -4,26 +4,30 @@
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { runCommand } from './smart';
+import { openSmart } from './smart';
 
 async function openMembranes(page: Page, width: number, height: number) {
+  await openSmart(page);
   await page.setViewportSize({ width, height });
-  await page.goto('/?fixture=smart');
-  const open = async (tree: string, item: string, rail: string) => {
-    const row = page.getByRole('tree', { name: tree }).getByRole('treeitem', { name: item });
-    if (!(await row.isVisible())) await page.getByRole('button', { name: rail }).click();
-    await row.click();
-  };
-  await open('Notebooks', 'Lectures', 'Show notebooks');
-  await open('Pages', 'Membranes', 'Show pages');
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
-  await page.locator('[contenteditable=true] p').first().click();
+  await expect(page.locator('[contenteditable=true] p').first()).toBeVisible();
+}
+
+/** Runs a command from the palette. A tool window's own fields are comboboxes too, so this finds the palette by its placeholder. */
+async function palette(page: Page, name: string) {
+  const input = page.getByPlaceholder('Type a command or a page name');
+  await expect(async () => {
+    if (!(await input.isVisible())) await page.keyboard.press('Control+k');
+    await expect(input).toBeFocused({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await input.fill(name);
+  await page.getByRole('option', { name }).first().click();
 }
 
 test('two floating tool windows stay inside an 820 px window, the newer one in front', async ({ page }) => {
   await openMembranes(page, 820, 620);
-  await runCommand(page, 'Open the reference tables');
-  await runCommand(page, 'Open calculator');
+  await palette(page, 'Open the reference tables');
+  await palette(page, 'Open calculator');
   const reference = page.getByRole('dialog', { name: 'Reference tables' });
   const calculator = page.getByRole('dialog', { name: 'Calculator' });
   await expect(calculator).toBeVisible();
@@ -43,10 +47,11 @@ test('two floating tool windows stay inside an 820 px window, the newer one in f
 
 test('a floating window keeps 8 px clear of the page scroll bar', async ({ page }) => {
   await openMembranes(page, 1280, 800);
-  await runCommand(page, 'Open the reference tables');
+  await palette(page, 'Open the reference tables');
   const window = (await page.getByRole('dialog', { name: 'Reference tables' }).boundingBox())!;
   const track = await page.evaluate(() => {
-    const scroller = document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]')!;
+    const scroller =
+      document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]') ?? document.querySelector('main')!;
     return scroller.getBoundingClientRect().left + scroller.clientLeft + scroller.clientWidth;
   });
   expect(window.x + window.width).toBeLessThanOrEqual(track - 8 + 0.5);
@@ -54,7 +59,7 @@ test('a floating window keeps 8 px clear of the page scroll bar', async ({ page 
 
 test('the Reference tables scroll to the window bottom edge, with no band of padding under them', async ({ page }) => {
   await openMembranes(page, 1280, 800);
-  await runCommand(page, 'Open the reference tables');
+  await palette(page, 'Open the reference tables');
   const gap = await page.evaluate(() => {
     const window = document.querySelector('[data-tool=reference]')!;
     const panel = window.querySelector('[role=tabpanel]')!;
@@ -66,7 +71,7 @@ test('the Reference tables scroll to the window bottom edge, with no band of pad
 
 test('a short tool window is as tall as its content', async ({ page }) => {
   await openMembranes(page, 1280, 800);
-  await runCommand(page, 'Open upcoming');
+  await palette(page, 'Open upcoming');
   const sizes = await page.evaluate(() => {
     const body = document.querySelector('[data-tool=upcoming]')!.lastElementChild!;
     return { scroll: body.scrollHeight, client: body.clientHeight };
@@ -82,12 +87,17 @@ for (const [width, height] of [
 ] as const) {
   test(`Reading order and Contents leave the page a readable column at ${width}`, async ({ page }) => {
     await openMembranes(page, width, height);
-    await runCommand(page, 'Reading order');
+    // Both commands act on the page, so the caret goes into its text first.
+    const text = page.locator('[contenteditable=true] p').first();
+    await text.click();
+    await palette(page, 'Reading order');
     await expect(page.getByRole('complementary', { name: 'Reading order' })).toBeVisible();
-    await runCommand(page, 'Show or hide the table of contents');
+    await text.click();
+    await palette(page, 'Show or hide the table of contents');
     await expect(page.getByRole('navigation', { name: 'Table of contents' })).toBeVisible();
     const column = await page.evaluate(() => {
-      const scroller = document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]')!;
+      const scroller =
+        document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]') ?? document.querySelector('main')!;
       return scroller.getBoundingClientRect().width;
     });
     expect(column).toBeGreaterThanOrEqual(width >= 1280 ? 420 : 360);
