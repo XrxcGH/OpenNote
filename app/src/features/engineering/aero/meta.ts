@@ -7,6 +7,7 @@ export const AERO_TOOLS = [
   { id: 'compressible', icon: 'Wind' },
   { id: 'nozzle', icon: 'Funnel' },
   { id: 'rocket', icon: 'RocketLaunch' },
+  { id: 'airfoil', icon: 'AirplaneTilt' },
   { id: 'wing', icon: 'Airplane' },
   { id: 'performance', icon: 'Gauge' },
   { id: 'potential', icon: 'Waves' },
