@@ -7,6 +7,7 @@ import { sections, sectionsSteps } from './kitSolids/sections';
 import { members, membersSteps } from './kitSolids/members';
 import { deflection, deflectionSteps } from './kitSolids/deflection';
 import { vessels, vesselsSteps } from './kitSolids/vessels';
+import { thinwalled, thinwalledSteps } from './kitSolids/thinwalled';
 
 export const kitSolids = {
   title: 'Solid mechanics',
@@ -75,6 +76,14 @@ export const kitSolids = {
     fitRadii: 'The radii must grow outward: the bore a, then the common radius b, then the hub’s outside c.',
     curvedRadius: 'Each part must lie at a positive radius, with its outer radius beyond its inner one.',
     stripLine: 'Strip line {detail} could not be read. Type b r1 r2.',
+    fewBooms: 'Type at least two booms.',
+    noWalls: 'Type at least one wall.',
+    wallBooms: 'Each wall must join two different booms from the list.',
+    wallTwice: 'Two walls join the same pair of booms. Type each wall once.',
+    apart: 'The walls must join every boom into one section.',
+    crossing: 'Walls cross each other. Put a boom where they meet.',
+    boomLine: 'Boom line {detail} could not be read. Type x y B.',
+    wallLine: 'Wall line {detail} could not be read. Type two boom numbers and a thickness.',
     unknown: 'That could not be worked out.',
   },
   columns,
@@ -83,6 +92,7 @@ export const kitSolids = {
   members,
   deflection,
   vessels,
+  thinwalled,
   step: {
     columns: columnsSteps,
     stress: stressSteps,
@@ -90,5 +100,6 @@ export const kitSolids = {
     members: membersSteps,
     deflection: deflectionSteps,
     vessels: vesselsSteps,
+    thinwalled: thinwalledSteps,
   },
 } as const;

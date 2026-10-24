@@ -80,6 +80,7 @@ function FieldInput(props: {
     field.type === 'text'
       ? say(`kitSolids.${tool}.hint.${field.id}`, {
           length: unitOf('length', system),
+          area: unitOf('area', system),
           span: unitOf('span', system),
           force: unitOf('bigForce', system),
           load: unitOf('spanLoad', system),

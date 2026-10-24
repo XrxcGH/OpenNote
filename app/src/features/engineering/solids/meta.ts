@@ -22,6 +22,12 @@ export const SOLIDS_TOOLS: readonly SolidsToolMeta[] = [
     icon: 'ChartLine',
   },
   { id: 'vessels', title: 'kitSolids.vessels.title', keywords: 'kitSolids.vessels.keywords', icon: 'Cylinder' },
+  {
+    id: 'thinwalled',
+    title: 'kitSolids.thinwalled.title',
+    keywords: 'kitSolids.thinwalled.keywords',
+    icon: 'AirplaneTilt',
+  },
 ];
 
 export const SOLIDS_TOOL_IDS: readonly string[] = SOLIDS_TOOLS.map((tool) => tool.id);
