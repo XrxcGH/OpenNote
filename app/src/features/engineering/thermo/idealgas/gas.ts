@@ -95,6 +95,8 @@ function variableGas(id: GasId): Gas {
 function constantGas(id: GasId, model: 'constant' | 'cold'): Gas {
   const M = molarMassOf(id);
   const cold = model === 'cold';
+  // The cold-air standard's R, cp, and k are air's; on another gas they would give that gas wrong numbers.
+  if (cold && id !== 'air') throw new ThermoError('coldAirOnly', { gas: id });
   const R = cold ? 0.287 : RU / M;
   const cp = cold ? 1.005 : mixMolar(id, molarCp, 300) / M;
   const cv = cold ? 0.718 : cp - R;

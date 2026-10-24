@@ -2,7 +2,7 @@
 // turbine starts at 3 MPa and 400 °C, an air compressor at 300 K and 100 kPa.
 import { choice, num, optionalNum, pick, q, type FieldSpec, type ToolSpec, type Values } from '../common/spec';
 import type { GasId, GasModel } from '../idealgas/gas';
-import { GAS_FIELD, MODEL_FIELD } from '../idealgas/spec';
+import { GAS_FIELD, modelField } from '../idealgas/spec';
 import { solveDevice, type Device, type ExitSpec, type StateSpec } from './engine';
 import type { FluidId } from './fluids';
 
@@ -210,7 +210,7 @@ export const spec: ToolSpec = {
         return [
           DEVICE_FIELD,
           fluidField,
-          ...(fluid === 'gas' ? [GAS_FIELD, MODEL_FIELD] : []),
+          ...(fluid === 'gas' ? [GAS_FIELD, modelField(choice<GasId>(values, 'gas', 'air'))] : []),
           ...stateFields('', first, saturable, values),
           ...deviceFields(device, first, saturable, values),
           ...DEAD,

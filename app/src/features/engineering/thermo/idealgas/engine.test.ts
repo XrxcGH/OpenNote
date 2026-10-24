@@ -126,6 +126,19 @@ describe('ideal gases: independent checks', () => {
     expect(RU / air.M).toBeCloseTo(0.28706, 4);
   });
 
+  it('offers the cold-air standard only for air, and refuses it for another gas', () => {
+    // Helium is monatomic, k = 5/3: isentropic 300 K, 100 kPa to 1 MPa gives 300 (10)^0.4 = 753.57 K.
+    expect(code(() => solveProcess({ ...compression, gas: 'He' }))).toBe('coldAirOnly');
+    expect(row(solveProcess({ ...compression, gas: 'He', model: 'constant' }), 'T2')).toBeCloseTo(300 * 10 ** 0.4, 0);
+    const models = (gas: string) =>
+      spec.modes[1]
+        .fields({ gas })
+        .find((field) => field.id === 'model')!
+        .options!.map((one) => one.value);
+    expect(models('air')).toContain('cold');
+    expect(models('He')).not.toContain('cold');
+  });
+
   it('reads a temperature typed in °C through the form', () => {
     const values = {
       gas: 'air',

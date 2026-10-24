@@ -17,11 +17,16 @@ export const GAS_FIELD = pick('gas', 'gas', [
   ['C3H8', 'C3H8'],
 ]);
 
-export const MODEL_FIELD = pick('model', 'gasModel', [
-  ['variable', 'variable'],
-  ['constant', 'constant'],
-  ['cold', 'cold'],
-]);
+/** The property models for a gas. The cold-air standard's constants are air's, so only air offers it. */
+export const modelField = (gas: string): FieldSpec =>
+  pick('model', 'gasModel', [
+    ['variable', 'variable'],
+    ['constant', 'constant'],
+    ...(gas === 'air' ? ([['cold', 'cold']] as const) : []),
+  ]);
+
+/** The model field for air, which the gas cycles use. */
+export const MODEL_FIELD = modelField('air');
 
 const ENDS: Record<Process, readonly EndKind[]> = {
   isothermal: ['p2', 'r'],
@@ -48,7 +53,7 @@ export const spec: ToolSpec = {
         const end = ends.includes(values.end as EndKind) ? (values.end as EndKind) : ends[0];
         return [
           GAS_FIELD,
-          MODEL_FIELD,
+          modelField(choice<GasId>(values, 'gas', 'air')),
           pick('process', 'process', [
             ['isentropic', 'isentropic'],
             ['polytropic', 'polytropic'],
@@ -72,7 +77,12 @@ export const spec: ToolSpec = {
     {
       id: 'state',
       label: 'state',
-      fields: () => [GAS_FIELD, MODEL_FIELD, q('T', 'temperature', 'T', 300), q('p', 'pressure', 'p', 100)],
+      fields: (values) => [
+        GAS_FIELD,
+        modelField(choice<GasId>(values, 'gas', 'air')),
+        q('T', 'temperature', 'T', 300),
+        q('p', 'pressure', 'p', 100),
+      ],
     },
   ],
   solve(mode, values) {

@@ -597,6 +597,8 @@ export const kitThermo = {
     endNotAllowed: 'That end condition does not fit this process; pick another.',
     badExponent: 'The polytropic exponent must be above zero.',
     unknownGas: 'The kit has no data for {gas}.',
+    coldAirOnly:
+      'The cold-air standard uses the constants of air. For {gas}, choose constant or variable specific heats.',
     steamRange: 'IF97 covers 0 to 800 °C up to 100 MPa, and up to 2000 °C below 50 MPa; that state is outside it.',
     steamSatRange: 'Saturation exists only between the triple point and the critical point, 0.01 to 373.946 °C.',
     steamAboveCritical: 'Above the critical pressure of 22.064 MPa there is no saturated state; give T instead.',
@@ -647,7 +649,8 @@ export const kitThermo = {
     tooRich:
       'Too rich for complete combustion: the oxygen cannot even turn all the carbon to CO, so soot would form. ' +
       'Try the equilibrium mode or a smaller φ.',
-    tooRichEquilibrium: 'Too rich: there is less oxygen than carbon, so solid carbon would form, which the kit leaves out.',
+    tooRichEquilibrium:
+      'Too rich: there is less oxygen than carbon, so solid carbon would form, which the kit leaves out.',
     flameLow: 'Keep every temperature at 200 K or above.',
     reactantRange: 'Keep the reactant temperature between 200 K and 2000 K.',
     flameHigh:
