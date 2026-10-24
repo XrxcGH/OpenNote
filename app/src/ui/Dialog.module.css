@@ -104,6 +104,11 @@
     place-self: center;
   }
 
+  /* The palette sits at the top and has no buttons at its foot, so a toast below it takes no room from it. */
+  .layer[data-placement='top'] {
+    padding-block-end: var(--space-5);
+  }
+
   .layer[data-placement='top'] .dialog {
     align-self: start;
     justify-self: center;
