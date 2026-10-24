@@ -146,6 +146,8 @@ export function installInk(host: InkHost): () => void {
       priority: 90,
       presentation: 'component',
       Component: DrawTools,
+      // The tools stay reachable from More on a bar too narrow for all of them.
+      overflow: ['ink.select', 'ink.eraser', 'ink.partialEraser', 'ink.lasso'],
       flag: 'ink.core',
     }),
     commandBar.register({
