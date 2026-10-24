@@ -108,12 +108,6 @@
     "command | truncation-no-tooltip | div[role=listbox].grid > div[role=option].cell > span.title",
     "commandbar | target-small | span.slot > div[role=group].group > button[data-tool].tool",
     "palette | clipped-by-ancestor | div[role=listbox].list > div[role=group].group > div[role=option].option",
-    "settings | target-gap | ul > li > a.link x li > a.link",
-    "settings | target-small | div.main > details.notices > summary",
-    "setup | box-overlap | div.picker > div.other > select x footer.footer > button.button",
-    "setup | box-overlap | form.card > footer.footer > button.button x section > h2",
-    "setup | box-overlap | section.group > div.field > input.input x footer.footer > button.button",
-    "setup | target-small | div.picker > div.other > select",
     "tool.calculator | target-gap | section[data-region=commandBar].commandBar > div[role=tablist].tabs > button[role=tab].tab x span.wrapper > button.iconButton",
     "tool.calculator | target-gap | span.item > span.wrapper > button.iconButton x div[role=tablist].tabs > button[role=tab].tab",
     "tool.calculator | target-small | div.entry > label.field > input.expression",
@@ -294,9 +288,6 @@
     "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
     "command | offscreen | div[data-scope=palette].panel > div.body > div[role=listbox].results",
     "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option",
-    "settings | target-small | article.card > details.details > summary",
-    "settings | target-small | div.main > section.block > select.select",
-    "settings | target-small | div.picker > div.other > select",
     "tool.chemcalc | target-gap | div.withUnit > div.field > input.input x div.withUnit > select.input"
   ]
 }

@@ -10,7 +10,12 @@
   .section > [role='radiogroup'] {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-inline-size: 44rem;
+    /* The same width as the list below, so the cards, the filter row, and the table end on one edge. */
+    max-inline-size: 56rem;
+  }
+
+  .section > [role='radiogroup'] > [role='radio'] {
+    align-content: start;
   }
 
   :global(:root[data-size-class='compact']) .section > [role='radiogroup'] {
@@ -146,7 +151,7 @@
   }
 
   .kbd {
-    padding: var(--space-0) var(--space-2);
+    padding: var(--space-1) var(--space-3);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
     background: var(--color-surface-sunken);
