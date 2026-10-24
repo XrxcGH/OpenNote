@@ -4,6 +4,9 @@
     display: grid;
     gap: var(--space-3);
     min-inline-size: 0;
+    /* The list runs on to the dialog's own edge, past the dialog's bottom padding, so no empty band sits under it
+       and a row is never cut off above one. The dialog body's own padding keeps the last 4 px inside. */
+    margin-block-end: calc(-1 * var(--space-7) + var(--space-2));
   }
 
   .input {
@@ -54,7 +57,12 @@
   .list {
     display: grid;
     gap: var(--space-3);
-    max-block-size: min(60vh, calc(100dvh - var(--size-palette-top) - 174px));
+    /* The list reaches into the dialog's bottom padding (24 px less 4), so it may be that much taller. */
+    max-block-size: min(60vh, calc(100dvh - var(--size-palette-top) - 174px + var(--space-7) - var(--space-2)));
+    /* The padding is inside the scroller, with a short fade, so the last row scrolls clear of the edge and a row
+       cut by it fades out instead of showing as a sliver of glyph tops. */
+    padding-block-end: var(--space-7);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--space-7)), transparent);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -99,11 +107,18 @@
     min-block-size: var(--size-row-touch);
   }
 
-  /* The highlighted option. Forced colors keep the outline, which marks it without color. */
+  /* The highlighted option: a fill and an accent bar, so the input keeps the only full focus ring. Forced colors
+     keep an outline, which marks it without color. */
   .option[aria-selected='true'] {
-    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
-    outline-offset: calc(-1 * var(--size-focus-ring-width));
     background: var(--color-surface-selected);
+    box-shadow: inset var(--space-1) 0 0 var(--color-accent-primary);
+  }
+
+  @media (forced-colors: active) {
+    .option[aria-selected='true'] {
+      outline: var(--size-focus-ring-width) solid Highlight;
+      outline-offset: calc(-1 * var(--size-focus-ring-width));
+    }
   }
 
   .option[aria-disabled='true'] {

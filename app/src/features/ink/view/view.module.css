@@ -43,16 +43,16 @@
     display: inline-block;
     inline-size: var(--space-5);
     block-size: var(--space-5);
-    border: 1px solid var(--color-border-subtle);
+    /* A ring in the text color's secondary shade keeps a dark ink visible on the dark bar. */
+    border: 1.5px solid var(--color-text-secondary);
     border-radius: 50%;
+    box-sizing: border-box;
   }
 
-  .swatch[data-tool='highlighter'] {
-    border-radius: var(--radius-sm);
-  }
-
-  .swatch[data-tool='pencil'] {
-    border-style: dashed;
+  /* A pen slot's button is as wide as a touch target, so a finger lands on one swatch. */
+  :global(:root[data-density='touch']) .tool:has(.swatch) {
+    justify-content: center;
+    min-inline-size: var(--size-target-touch);
   }
 
   /* The lasso's frame and its bar, over the page in screen space. */
