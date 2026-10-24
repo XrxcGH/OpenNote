@@ -86,7 +86,8 @@ export const UNITS: Readonly<Record<QtyKind, { readonly si: readonly UnitDef[]; 
     si: [core('J/(kg·K)'), core('kJ/(kg·K)')],
     us: [own('ft·lbf/(slug·°R)', core('ft·lbf/(slug·K)').factor / RANKINE), own('Btu/(lbm·°R)', 4186.8)],
   },
-  molarMass: { si: [core('kg/kmol')], us: [own('lbm/lbmol', 1)] },
+  // The SI base is kg/mol; a pound-mole is 453.59237 mol, so lbm/lbmol is the same size as kg/kmol.
+  molarMass: { si: [core('kg/kmol')], us: [own('lbm/lbmol', core('kg/kmol').factor)] },
   rate: { si: [core('1/s', 's^-1'), core('1/h', 'h^-1')], us: [core('1/s', 's^-1'), core('1/h', 'h^-1')] },
   accel: { si: [core('m/s²')], us: [core('ft/s²')] },
 };
