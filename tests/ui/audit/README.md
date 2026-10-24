@@ -31,7 +31,7 @@ density: 12 cells, one test each (`layout.audit.spec.ts`).
 
 `ratchet.spec.ts` merges the cells' findings and compares them with `known.json`. A finding not in the list fails the
 run, and so does a listed finding that no longer occurs, so a fix shrinks the list and nothing new gets in. A finding
-is `surface | kind | selector`, where the surface is the tool, or the first word of the others (`settings`, `command`, `block`). To accept the current findings after a deliberate change, run with
+is `surface | kind | selector`, where the surface is the tool, or the first word of the others (`settings`, `command`, `block`). Findings that depend on timing, such as a menu a swept command leaves open, are listed under `intermittent`: allowed, never required. Findings that depend on timing, such as a menu a swept command leaves open, are listed under `intermittent`: allowed, never required. To accept the current findings after a deliberate change, run with
 `OPENNOTE_AUDIT_UPDATE=1`, and say why in the commit.
 
 ## Looking at the results

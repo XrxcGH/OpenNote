@@ -46,15 +46,19 @@ test('the layout has no findings beyond the known list', () => {
     JSON.stringify({ cells: cells.length, surfaces: surfaces.size, findings: all }, null, 1),
   );
 
-  const known: string[] = existsSync(KNOWN)
-    ? (JSON.parse(readFileSync(KNOWN, 'utf8')) as { known: string[] }).known
-    : [];
+  const list: { known: string[]; intermittent?: string[] } = existsSync(KNOWN)
+    ? (JSON.parse(readFileSync(KNOWN, 'utf8')) as { known: string[]; intermittent?: string[] })
+    : { known: [] };
+  const known = list.known;
+  // Findings that depend on timing (a menu caught open by a swept command): allowed, never required.
+  const intermittent = list.intermittent ?? [];
   if (process.env.OPENNOTE_AUDIT_UPDATE) {
-    writeFileSync(KNOWN, `${JSON.stringify({ known: all.map(keyOf) }, null, 1)}\n`);
+    const keys = all.map(keyOf).filter((key) => !intermittent.includes(key));
+    writeFileSync(KNOWN, `${JSON.stringify({ known: keys, intermittent }, null, 1)}\n`);
     return;
   }
   const found = new Set(all.map(keyOf));
-  const fresh = [...found].filter((key) => !known.includes(key));
+  const fresh = [...found].filter((key) => !known.includes(key) && !intermittent.includes(key));
   // A cell the run skipped cannot show that a finding is gone, so the list is checked for staleness only after a full run.
   const full = cells.length === CELLS.length;
   const gone = full ? known.filter((key) => !found.has(key)) : [];
