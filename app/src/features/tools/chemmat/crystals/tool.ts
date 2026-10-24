@@ -1,4 +1,5 @@
 import type { FieldSpec, ToolSpec } from '../spec';
+import { density, millerBravais } from './density';
 import { angle, cell, indexPattern, pattern, scherrer, spacing } from './engine';
 import type { Structure } from './engine';
 
@@ -59,10 +60,59 @@ export const crystalsTool: ToolSpec = {
         ['pattern', 'kitChemMat.cx.mode.pattern'],
         ['index', 'kitChemMat.cx.mode.index'],
         ['scherrer', 'kitChemMat.cx.mode.scherrer'],
+        ['density', 'kitChemMat.cx.mode.density'],
+        ['millerbravais', 'kitChemMat.cx.mode.millerbravais'],
       ],
       'cell',
     ),
     choice('structure', 'kitChemMat.cx.field.structure', STRUCTURES, 'fcc', only('cell', 'pattern')),
+    choice(
+      'dkind',
+      'kitChemMat.cx.field.dkind',
+      [
+        ['linear', 'kitChemMat.cx.dkind.linear'],
+        ['planar', 'kitChemMat.cx.dkind.planar'],
+      ],
+      'linear',
+      only('density'),
+    ),
+    choice(
+      'dstruct',
+      'kitChemMat.cx.field.dstruct',
+      [
+        ['fcc', 'kitChemMat.cx.cubicOnly.fcc'],
+        ['bcc', 'kitChemMat.cx.cubicOnly.bcc'],
+        ['sc', 'kitChemMat.cx.cubicOnly.sc'],
+      ],
+      'fcc',
+      only('density'),
+    ),
+    {
+      id: 'dindices',
+      label: 'kitChemMat.cx.field.dindices',
+      kind: 'text',
+      initial: '1 1 0',
+      help: 'kitChemMat.cx.field.dindicesHelp',
+      when: only('density'),
+    },
+    choice(
+      'mbdir',
+      'kitChemMat.cx.field.mbdir',
+      [
+        ['toFour', 'kitChemMat.cx.mbdir.toFour'],
+        ['toThree', 'kitChemMat.cx.mbdir.toThree'],
+      ],
+      'toFour',
+      only('millerbravais'),
+    ),
+    {
+      id: 'mbindices',
+      label: 'kitChemMat.cx.field.mbindices',
+      kind: 'text',
+      initial: '1 1 0',
+      help: 'kitChemMat.cx.field.mbindicesHelp',
+      when: only('millerbravais'),
+    },
     choice(
       'known',
       'kitChemMat.cx.field.known',
@@ -71,7 +121,7 @@ export const crystalsTool: ToolSpec = {
         ['R', 'kitChemMat.cx.known.R'],
       ],
       'a',
-      only('cell'),
+      only('cell', 'density'),
     ),
     {
       id: 'length',
@@ -79,7 +129,7 @@ export const crystalsTool: ToolSpec = {
       kind: 'number',
       dim: 'length',
       initial: '0.3615',
-      when: only('cell'),
+      when: only('cell', 'density'),
     },
     {
       id: 'M',
@@ -203,6 +253,16 @@ export const crystalsTool: ToolSpec = {
   ],
   solve: (input) => {
     switch (input.mode) {
+      case 'density':
+        return density({
+          kind: String(input.dkind),
+          structure: String(input.dstruct),
+          known: String(input.known),
+          length: Number(input.length),
+          indices: String(input.dindices),
+        });
+      case 'millerbravais':
+        return millerBravais({ direction: String(input.mbdir), indices: String(input.mbindices) });
       case 'spacing':
         return spacing({
           system: String(input.system),

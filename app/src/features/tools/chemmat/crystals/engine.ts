@@ -11,7 +11,7 @@ export type Structure = 'sc' | 'bcc' | 'fcc' | 'hcp' | 'diamond' | 'nacl' | 'csc
 export const STRUCTURES: readonly Structure[] = ['sc', 'bcc', 'fcc', 'hcp', 'diamond', 'nacl', 'cscl'];
 
 /** Atoms (or formula units) per conventional cell, coordination number, and the closest-contact distance over a. */
-const CELL = {
+export const CELL = {
   sc: { atoms: 1, coordination: '6', contact: 0.5 },
   bcc: { atoms: 2, coordination: '8', contact: Math.sqrt(3) / 4 },
   fcc: { atoms: 4, coordination: '12', contact: Math.sqrt(2) / 4 },
