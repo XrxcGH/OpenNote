@@ -1,6 +1,7 @@
 // The psychology and behavior kit: perception, learning, decisions, response times, observation, agreement,
 // questionnaires, and qualitative coding. Tool titles, field labels, row labels, worked-step sentences, and the
 // problems an input can have. Each tool's words live in ./kitMind so no file grows too long.
+import { agreement } from './kitMind/agreement';
 import { sdt } from './kitMind/sdt';
 
 export const kitMind = {
@@ -47,7 +48,22 @@ export const kitMind = {
     perfect: 'A proportion correct of 1 has no finite d′. Correct it first, for example with 1 − 1/(2N).',
     noSolution: 'No d′ gives that proportion correct.',
     sameLength: 'The signal and noise lists need the same number of categories.',
-    fewCategories: 'A rating scale needs at least 2 categories.',
+    fewCategories: 'This needs at least 2 categories.',
+    notInOrder: '"{code}" is a code but is not in the order of the categories.',
+    square: 'A cross-table needs as many columns as rows.',
+    fewSubjects: 'This needs at least 2 subjects.',
+    sameRaters: 'Every subject needs the same number of raters.',
+    fewRaters: 'Each subject needs at least 2 raters.',
+    noPairs: 'No unit has values from 2 or more coders, so nothing can be compared.',
+    numbersNeeded: 'Ordinal, interval, and ratio data need numbers.',
+    noVariation: 'Every value is the same, so agreement beyond chance cannot be measured.',
+    fewTargets: 'This needs at least 2 targets.',
+    fewJudges: 'This needs at least 2 judges.',
+    complete: 'Every target needs a rating from every judge.',
+    fewPairs: 'This needs at least 3 pairs.',
+    twoCodes: 'Line {line} needs 2 codes separated by a comma.',
+    twoColumns: 'Each line needs 2 measurements.',
   },
   sdt,
+  agreement,
 } as const;
