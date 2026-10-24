@@ -32,6 +32,9 @@ describe('aerospace units', () => {
     close(toSI(1, unit('gasConstant', 'ft·lbf/(slug·°R)')), (0.3048 * 4.4482216152605 * 1.8) / 14.593902937206364);
     close(toSI(1, unit('specificThrust', 'lbf·s/lbm')), 4.4482216152605 / 0.45359237);
     close(toSI(1, unit('rate', '1/h')), 1 / 3600);
+    close(toSI(1, unit('psfc', 'lb/(hp·h)')), 4.4482216152605 / (745.6998715822702 * 3600));
+    close(toSI(1, unit('psfc', 'N/(kW·h)')), 1 / 3.6e6);
+    close(toSI(2, unit('duration', 'h')), 7200);
     // Molar mass in the SI base, kg/mol: 1 kg/kmol and 1 lbm/lbmol are both 1 g/mol.
     close(toSI(1, unit('molarMass', 'kg/kmol')), 1e-3);
     close(toSI(1, unit('molarMass', 'lbm/lbmol')), 1e-3);

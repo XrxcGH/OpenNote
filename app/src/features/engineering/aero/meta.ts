@@ -8,6 +8,7 @@ export const AERO_TOOLS = [
   { id: 'nozzle', icon: 'Funnel' },
   { id: 'rocket', icon: 'RocketLaunch' },
   { id: 'wing', icon: 'Airplane' },
+  { id: 'performance', icon: 'Gauge' },
 ] as const satisfies readonly {
   id: string;
   icon: IconName;

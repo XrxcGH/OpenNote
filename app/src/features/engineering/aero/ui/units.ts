@@ -24,6 +24,7 @@ export type QtyKind =
   | 'massFlow'
   | 'power'
   | 'time'
+  | 'duration'
   | 'angle'
   | 'specificThrust'
   | 'tsfc'
@@ -31,6 +32,7 @@ export type QtyKind =
   | 'gasConstant'
   | 'molarMass'
   | 'rate'
+  | 'psfc'
   | 'accel';
 
 export interface UnitDef {
@@ -49,6 +51,8 @@ function core(sym: string, text = sym): UnitDef {
 }
 
 const KNOT = 1852 / 3600;
+const HP = 745.6998715822702; // W, mechanical horsepower
+const LBF = 4.4482216152605; // N
 const RANKINE = 5 / 9;
 
 const own = (sym: string, factor: number): UnitDef => ({ sym, factor });
@@ -78,6 +82,8 @@ export const UNITS: Readonly<Record<QtyKind, { readonly si: readonly UnitDef[]; 
   massFlow: { si: [core('kg/s')], us: [core('lbm/s'), core('slug/s')] },
   power: { si: [core('W'), core('kW')], us: [core('hp'), core('ft·lbf/s')] },
   time: { si: [core('s'), core('min'), core('h')], us: [core('s'), core('min'), core('h')] },
+  // A flight's endurance, read in hours.
+  duration: { si: [core('h'), core('min'), core('s')], us: [core('h'), core('min'), core('s')] },
   angle: { si: [core('°', 'deg'), core('rad')], us: [core('°', 'deg'), core('rad')] },
   specificThrust: { si: [core('N·s/kg')], us: [core('lbf·s/lbm')] },
   tsfc: { si: [core('mg/(N·s)'), core('kg/(N·h)')], us: [core('lbm/(lbf·h)')] },
@@ -88,7 +94,13 @@ export const UNITS: Readonly<Record<QtyKind, { readonly si: readonly UnitDef[]; 
   },
   // The SI base is kg/mol; a pound-mole is 453.59237 mol, so lbm/lbmol is the same size as kg/kmol.
   molarMass: { si: [core('kg/kmol')], us: [own('lbm/lbmol', core('kg/kmol').factor)] },
-  rate: { si: [core('1/s', 's^-1'), core('1/h', 'h^-1')], us: [core('1/s', 's^-1'), core('1/h', 'h^-1')] },
+  // Thrust-specific fuel consumption by weight is a rate, usually quoted per hour.
+  rate: { si: [core('1/h', 'h^-1'), core('1/s', 's^-1')], us: [core('1/h', 'h^-1'), core('1/s', 's^-1')] },
+  // Power-specific fuel consumption by weight: fuel weight per unit of shaft energy, so 1/m in the SI base.
+  psfc: {
+    si: [own('N/(kW·h)', 1 / 3.6e6), own('1/m', 1)],
+    us: [own('lb/(hp·h)', LBF / (HP * 3600))],
+  },
   accel: { si: [core('m/s²')], us: [core('ft/s²')] },
 };
 
