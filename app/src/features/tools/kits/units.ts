@@ -103,7 +103,17 @@ const KINDS: Readonly<Record<QuantityKind, readonly [string, readonly Entry[], r
   torque: ['N*m', ['N·m', 'kN·m'], ['lbf·ft', 'lbf·in', 'kip·ft']],
   angle: ['rad', ['rad', 'deg'], ['deg', 'rad']],
   frequency: ['Hz', ['Hz', 'kHz', 'MHz'], ['Hz', 'kHz']],
-  angularVelocity: ['1/s', [['rad/s', 'rad/s'], 'rpm'], [['rad/s', 'rad/s'], 'rpm']],
+  angularVelocity: [
+    '1/s',
+    [
+      ['rad/s', 'rad/s'],
+      ['rpm', 'rad/s*0.10471975511965977'],
+    ],
+    [
+      ['rad/s', 'rad/s'],
+      ['rpm', 'rad/s*0.10471975511965977'],
+    ],
+  ],
   dynamicViscosity: ['Pa*s', ['Pa·s', 'mPa·s', ['cP', 'mPa*s']], ['lbf·s/ft^2', 'lbm/(ft·s)']],
   kinematicViscosity: ['m^2/s', ['m^2/s', 'mm^2/s', ['cSt', 'mm^2/s']], ['ft^2/s']],
   conductivity: ['W/(m*K)', ['W/(m·K)'], [['Btu/(h·ft·°F)', 'Btu/(h*ft*°F)']]],
