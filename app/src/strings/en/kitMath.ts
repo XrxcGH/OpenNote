@@ -303,7 +303,7 @@ export const kitMath = {
     sideBottom: 'Bottom',
     sideLeft: 'Left',
     sideRight: 'Right',
-    data: 'Values on that side, as expression; from; to',
+    data: 'Values along that side, as expression in x (top, bottom) or y (left, right); from; to',
     assumptions:
       'Coefficients come from numerical integration. A pattern is shown only when it fits the ' +
       'first 12 coefficients. Other sides of the rectangle are held at zero.',

@@ -14,7 +14,7 @@ export interface Piece {
 }
 
 /** Reads a function given in pieces, one per line as "expression; from; to", or as one expression for everything. */
-export function readPieces(source: string, lo: number, hi: number): Piece[] {
+export function readPieces(source: string, lo: number, hi: number, names: readonly string[] = ['x']): Piece[] {
   const lines = source
     .split('\n')
     .map((line) => line.trim())
@@ -26,8 +26,9 @@ export function readPieces(source: string, lo: number, hi: number): Piece[] {
     const a = parts.length === 3 ? numberOf(parts[1]) : lo;
     const b = parts.length === 3 ? numberOf(parts[2]) : hi;
     if (!Number.isFinite(a) || !Number.isFinite(b) || !(b > a)) throw new KitError('pieceRange', line);
-    const fn = readFunction(parts[0], ['x']);
-    return { text: parts[0], f: (x: number) => fn([x]), a, b };
+    const fn = readFunction(parts[0], names);
+    // Every name stands for the one coordinate along the side.
+    return { text: parts[0], f: (x: number) => fn(names.map(() => x)), a, b };
   });
   pieces.sort((p, q) => p.a - q.a);
   for (let k = 1; k < pieces.length; k++) {
@@ -283,9 +284,16 @@ export function eigenpairs(bc: Conditions, L: number, count: number, h = 1): Eig
       out.push({ n, mu, phi: (x) => Math.cos(mu * x) });
     } else {
       if (!(h >= 0) || !Number.isFinite(h)) throw new KitError('badRobin');
+      if (h === 0) {
+        // With h = 0 the condition is u_x(L) = 0: the same eigenvalues as Dirichlet-Neumann, and the bracket below
+        // (which starts above (n - 1/2) pi / L) would miss the root that sits exactly at its start.
+        const mu = ((n - 0.5) * Math.PI) / L;
+        out.push({ n, mu, phi: (x) => Math.sin(mu * x) });
+        continue;
+      }
       // mu cos(mu L) + h sin(mu L) = 0 has exactly one root in each ((n - 1/2) pi / L, n pi / L).
       const g = (mu: number) => mu * Math.cos(mu * L) + h * Math.sin(mu * L);
-      let lo = ((n - 0.5) * Math.PI) / L + 1e-12;
+      let lo = ((n - 0.5) * Math.PI) / L;
       let hi = (n * Math.PI) / L;
       for (let i = 0; i < 200; i++) {
         const mid = (lo + hi) / 2;
@@ -404,7 +412,9 @@ export function solveLaplace(a: number, b: number, side: Side, source: string, t
   // A side along x uses the width a, a side along y uses the height b, so work in the side's own coordinates.
   const along = side === 'top' || side === 'bottom' ? a : b;
   const across = side === 'top' || side === 'bottom' ? b : a;
-  const pieces = readPieces(source, 0, along);
+  // The data is written in the coordinate along its side: x on the top and bottom, and y on the left
+  // and right (s works for any side).
+  const pieces = readPieces(source, 0, along, side === 'top' || side === 'bottom' ? ['x', 's'] : ['x', 'y', 's']);
   const coefficients = Array.from({ length: terms }, (_, i) => {
     const k = ((i + 1) * Math.PI) / along;
     return (2 / along) * integratePieces(pieces, (s, f) => f * Math.sin(k * s), 0, along);

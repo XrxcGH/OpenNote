@@ -70,6 +70,11 @@ describe('eigenfunctions', () => {
     expect(second.mu).toBeCloseTo(4.9131804394, 9);
     expect(() => eigenpairs('DR', 1, 2, -1)).toThrow();
   });
+  it('a Robin constant of 0 is the Dirichlet-Neumann case: pi/2 and 3 pi/2', () => {
+    const mus = eigenpairs('DR', 1, 2, 0).map((p) => p.mu);
+    expect(mus[0]).toBeCloseTo(Math.PI / 2, 12);
+    expect(mus[1]).toBeCloseTo((3 * Math.PI) / 2, 12);
+  });
 });
 
 describe('heat and wave equations', () => {
@@ -127,6 +132,17 @@ describe('Laplace equation on a rectangle', () => {
     const [x, y] = [0.7, 0.4];
     const lap = (r.at(x + h, y) + r.at(x - h, y) + r.at(x, y + h) + r.at(x, y - h) - 4 * r.at(x, y)) / (h * h);
     expect(Math.abs(lap)).toBeLessThan(1e-3);
+  });
+  it('data on the left or right side is written in y (or s), which varies along that side', () => {
+    // Width 1, height 2, u = sin(pi y / 2) on the left: u = sin(pi y / 2) sinh(pi (1 - x) / 2) / sinh(pi / 2).
+    const exact = (x: number, y: number) =>
+      (Math.sin((Math.PI * y) / 2) * Math.sinh((Math.PI * (1 - x)) / 2)) / Math.sinh(Math.PI / 2);
+    for (const text of ['sin(pi*y/2)', 'sin(pi*s/2)']) {
+      const r = solveLaplace(1, 2, 'left', text, 20);
+      expect(r.at(0.5, 1)).toBeCloseTo(exact(0.5, 1), 9);
+      expect(r.at(0.25, 0.7)).toBeCloseTo(exact(0.25, 0.7), 9);
+    }
+    expect(solveLaplace(1, 2, 'right', 'sin(pi*y/2)', 20).at(0.5, 1)).toBeCloseTo(exact(0.5, 1), 9);
   });
   it('rejects bad sizes', () => {
     expect(() => solveLaplace(0, 1, 'top', '1', 5)).toThrow();
