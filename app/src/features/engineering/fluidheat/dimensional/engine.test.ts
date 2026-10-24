@@ -83,12 +83,13 @@ describe('model scaling', () => {
     expect(r.prototypeForce).toBeCloseTo(2 / r.forceRatio, 9);
   });
   it('Mach scaling and errors', () => {
-    expect(scaleModel({ criterion: 'mach', lengthRatio: 0.1, prototypeSpeed: 200, aPrototype: 340, aModel: 300 }).modelSpeed).toBeCloseTo(
-      (200 * 300) / 340,
-      9,
-    );
+    expect(
+      scaleModel({ criterion: 'mach', lengthRatio: 0.1, prototypeSpeed: 200, aPrototype: 340, aModel: 300 }).modelSpeed,
+    ).toBeCloseTo((200 * 300) / 340, 9);
     expect(() => scaleModel({ criterion: 'reynolds', lengthRatio: 0, prototypeSpeed: 1 })).toThrow(CalcError);
     expect(() => scaleModel({ criterion: 'reynolds', lengthRatio: 1, prototypeSpeed: 1 })).toThrow(CalcError);
-    expect(() => scaleModel({ criterion: 'mach', lengthRatio: 1, prototypeSpeed: -1, aPrototype: 1, aModel: 1 })).toThrow(CalcError);
+    expect(() =>
+      scaleModel({ criterion: 'mach', lengthRatio: 1, prototypeSpeed: -1, aPrototype: 1, aModel: 1 }),
+    ).toThrow(CalcError);
   });
 });

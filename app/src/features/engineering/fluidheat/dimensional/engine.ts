@@ -169,7 +169,11 @@ export function piGroups(vars: Variable[], repeating?: string[]): DimensionalRes
   if (repeating && repeating.length > 0) {
     rep = repeating.map((name) => {
       const i = vars.findIndex((v) => v.name === name);
-      need(i > 0, 'repeating', `${name} cannot be a repeating variable: it is missing or it is the dependent variable.`);
+      need(
+        i > 0,
+        'repeating',
+        `${name} cannot be a repeating variable: it is missing or it is the dependent variable.`,
+      );
       return i;
     });
     need(rep.length === rank, 'repeatingCount', `Choose exactly ${rank} repeating variables (the rank of the matrix).`);

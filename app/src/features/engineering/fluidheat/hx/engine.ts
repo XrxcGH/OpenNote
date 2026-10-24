@@ -52,7 +52,11 @@ export function ntuFor(type: HxType, eps: number, cr: number): number {
 
 /** Log-mean temperature difference of two end differences. */
 export function lmtd(d1: number, d2: number): number {
-  need(d1 > 0 && d2 > 0, 'lmtd', 'Both end temperature differences must be above zero: a temperature cross is not possible.');
+  need(
+    d1 > 0 && d2 > 0,
+    'lmtd',
+    'Both end temperature differences must be above zero: a temperature cross is not possible.',
+  );
   return Math.abs(d1 - d2) < 1e-9 * Math.max(d1, d2) ? (d1 + d2) / 2 : (d1 - d2) / Math.log(d1 / d2);
 }
 
@@ -63,13 +67,21 @@ export function shellCorrection(p: number, r: number): number {
   if (Math.abs(r - 1) < 1e-9) {
     const a = 2 - p * (2 - Math.SQRT2);
     const b = 2 - p * (2 + Math.SQRT2);
-    need(b > 0, 'infeasible', 'This temperature program is impossible in one shell: use more shells or a counterflow exchanger.');
-    return ((Math.SQRT2 * p) / (1 - p)) / Math.log(a / b);
+    need(
+      b > 0,
+      'infeasible',
+      'This temperature program is impossible in one shell: use more shells or a counterflow exchanger.',
+    );
+    return (Math.SQRT2 * p) / (1 - p) / Math.log(a / b);
   }
   const s = Math.sqrt(r * r + 1);
   const a = 2 - p * (r + 1 - s);
   const b = 2 - p * (r + 1 + s);
-  need(b > 0 && (1 - p) / (1 - r * p) > 0, 'infeasible', 'This temperature program is impossible in one shell: use more shells or a counterflow exchanger.');
+  need(
+    b > 0 && (1 - p) / (1 - r * p) > 0,
+    'infeasible',
+    'This temperature program is impossible in one shell: use more shells or a counterflow exchanger.',
+  );
   return ((s / (r - 1)) * Math.log((1 - p) / (1 - r * p))) / Math.log(a / b);
 }
 
@@ -147,10 +159,26 @@ export function size(inp: HxInput & { q?: number; thOut?: number; tcOut?: number
 
 function finish(
   inp: HxInput,
-  r: { cmin: number; cmax: number; cr: number; ntu: number; eps: number; q: number; thOut: number; tcOut: number; ua: number },
+  r: {
+    cmin: number;
+    cmax: number;
+    cr: number;
+    ntu: number;
+    eps: number;
+    q: number;
+    thOut: number;
+    tcOut: number;
+    ua: number;
+  },
   mode: 'rate' | 'size',
 ): HxResult {
-  const [d1, d2] = endDifferences(inp.type === 'parallel' ? 'parallel' : 'counter', inp.thIn, r.thOut, inp.tcIn, r.tcOut);
+  const [d1, d2] = endDifferences(
+    inp.type === 'parallel' ? 'parallel' : 'counter',
+    inp.thIn,
+    r.thOut,
+    inp.tcIn,
+    r.tcOut,
+  );
   let meanDt = NaN;
   let f = 1;
   if (d1 > 0 && d2 > 0) {
@@ -219,7 +247,13 @@ export function fromTemperatures(inp: {
   positive(inp.q, 'The heat duty');
   need(inp.thIn > inp.thOut, 'hotDrop', 'The hot stream must cool: its outlet must be below its inlet.');
   need(inp.tcOut > inp.tcIn, 'coldRise', 'The cold stream must warm: its outlet must be above its inlet.');
-  const [d1, d2] = endDifferences(inp.type === 'parallel' ? 'parallel' : 'counter', inp.thIn, inp.thOut, inp.tcIn, inp.tcOut);
+  const [d1, d2] = endDifferences(
+    inp.type === 'parallel' ? 'parallel' : 'counter',
+    inp.thIn,
+    inp.thOut,
+    inp.tcIn,
+    inp.tcOut,
+  );
   const meanDt = lmtd(d1, d2);
   const p = (inp.tcOut - inp.tcIn) / (inp.thIn - inp.tcIn);
   const r = (inp.thIn - inp.thOut) / (inp.tcOut - inp.tcIn);
@@ -227,7 +261,11 @@ export function fromTemperatures(inp: {
   const ua = inp.q / (f * meanDt);
   nonNegative(ua, 'UA');
   const steps: Step[] = [
-    { key: 'fhHxDiffs', vars: { d1: fmt(d1), d2: fmt(d2) }, math: `\\Delta T_1 = ${fmt(d1)},\\quad \\Delta T_2 = ${fmt(d2)}` },
+    {
+      key: 'fhHxDiffs',
+      vars: { d1: fmt(d1), d2: fmt(d2) },
+      math: `\\Delta T_1 = ${fmt(d1)},\\quad \\Delta T_2 = ${fmt(d2)}`,
+    },
     { key: 'fhHxLmtdOnly', vars: { lmtd: fmt(meanDt) }, math: `\\Delta T_{lm} = ${fmt(meanDt)}` },
     ...(inp.type === 'shell'
       ? [
@@ -245,7 +283,11 @@ export function fromTemperatures(inp: {
 
 /** Temperature profile of a parallel or counterflow exchanger along its length (x from 0 to 1). */
 export function profile(inp: HxInput & { ua: number }, points = 41): { x: number[]; hot: number[]; cold: number[] } {
-  need(inp.type === 'parallel' || inp.type === 'counter', 'profileType', 'The profile is drawn for parallel and counterflow exchangers.');
+  need(
+    inp.type === 'parallel' || inp.type === 'counter',
+    'profileType',
+    'The profile is drawn for parallel and counterflow exchangers.',
+  );
   const res = rate(inp);
   const ih = Number.isFinite(inp.ch) ? 1 / inp.ch : 0;
   const ic = Number.isFinite(inp.cc) ? 1 / inp.cc : 0;

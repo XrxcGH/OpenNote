@@ -65,9 +65,13 @@ describe('LMTD and the correction factor', () => {
   });
   it('rejects a temperature cross and an impossible shell program', () => {
     expect(() => lmtd(0, 10)).toThrow(/cross/);
-    expect(() => fromTemperatures({ type: 'counter', thIn: 100, thOut: 80, tcIn: 60, tcOut: 110, q: 1 })).toThrow(CalcError);
+    expect(() => fromTemperatures({ type: 'counter', thIn: 100, thOut: 80, tcIn: 60, tcOut: 110, q: 1 })).toThrow(
+      CalcError,
+    );
     expect(() => shellCorrection(0.9, 2)).toThrow(/impossible/);
-    expect(() => fromTemperatures({ type: 'shell', thIn: 100, thOut: 120, tcIn: 20, tcOut: 40, q: 1 })).toThrow(CalcError);
+    expect(() => fromTemperatures({ type: 'shell', thIn: 100, thOut: 120, tcIn: 20, tcOut: 40, q: 1 })).toThrow(
+      CalcError,
+    );
   });
 });
 
