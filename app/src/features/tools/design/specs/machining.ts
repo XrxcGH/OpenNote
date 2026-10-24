@@ -18,7 +18,7 @@ import type { CutResult } from '../machining';
 import { fmt } from '../types';
 import { choiceField, failed, modeField, numField, success } from './helpers';
 
-const cut = (r: CutResult) =>
+const cut = (r: CutResult, ...more: string[]) =>
   success({
     rows: [
       { id: 'rpm', value: r.rpm, dim: 'rpm', sym: 'N', answer: true },
@@ -27,7 +27,7 @@ const cut = (r: CutResult) =>
       { id: 'time', value: r.time, dim: 'min', sym: 't', answer: true },
     ],
     steps: r.steps,
-    notes: ['cut'],
+    notes: ['cut', ...more],
   });
 
 function run(v: Values) {
@@ -53,7 +53,8 @@ function run(v: Values) {
         length: n('length'),
         kind,
       });
-      return r.ok ? cut(r) : failed(r);
+      const slotMismatch = kind === 'slot' && Math.abs(n('width') - n('d')) > 1e-9;
+      return r.ok ? cut(r, ...(slotMismatch ? ['slotWidth'] : [])) : failed(r);
     }
     case 'life':
       return life(v);
@@ -95,11 +96,15 @@ function costs(v: Values) {
     rows: [
       { id: 'costLife', value: r.costLife, dim: 'min', sym: 'T_c', answer: true },
       { id: 'costSpeed', value: r.costSpeed, dim: 'm/min', sym: 'V_c', answer: true },
-      { id: 'rateLife', value: r.rateLife, dim: 'min', sym: 'T_p' },
-      { id: 'rateSpeed', value: r.rateSpeed, dim: 'm/min', sym: 'V_p' },
+      r.rateLife === null
+        ? { id: 'rateLife', word: 'notDefined' }
+        : { id: 'rateLife', value: r.rateLife, dim: 'min', sym: 'T_p' },
+      r.rateSpeed === null
+        ? { id: 'rateSpeed', word: 'notDefined' }
+        : { id: 'rateSpeed', value: r.rateSpeed, dim: 'm/min', sym: 'V_p' },
     ],
     steps: r.steps,
-    notes: ['taylor', 'economics'],
+    notes: r.rateLife === null ? ['taylor', 'economics', 'noChangeTime'] : ['taylor', 'economics'],
   });
 }
 

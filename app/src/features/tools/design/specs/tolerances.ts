@@ -138,9 +138,18 @@ function fitResult(v: Values): Result {
   };
 }
 
+/** The position tolerance is modified, so the feature's size matters. */
+const modified = (v: Values): boolean => v.mode === 'position' && v.modifier !== 'RFS';
+
 function positionResult(v: Values): Result {
   const modifier = v.modifier === 'MMC' || v.modifier === 'LMC' ? v.modifier : 'RFS';
-  const r = position(v.dx as number, v.dy as number, v.tolerance as number, modifier, v.departure as number);
+  const r = position(
+    v.dx as number,
+    v.dy as number,
+    v.tolerance as number,
+    modifier,
+    modifier === 'RFS' ? 0 : Math.abs((v.actualSize as number) - (v.limitSize as number)),
+  );
   if (!r.ok) return { ok: false, problem: r.problem };
   return {
     ok: true,
@@ -181,7 +190,8 @@ export const tolerancesSpec: ToolSpec = {
     { type: 'num', id: 'dy', dim: 'mm', def: '0.04', when: (v) => v.mode === 'position' },
     { type: 'num', id: 'tolerance', dim: 'mm', def: '0.1', when: (v) => v.mode === 'position' },
     { type: 'choice', id: 'modifier', options: ['RFS', 'MMC', 'LMC'], def: 'MMC', when: (v) => v.mode === 'position' },
-    { type: 'num', id: 'departure', dim: 'mm', def: '0.05', when: (v) => v.mode === 'position' },
+    { type: 'num', id: 'actualSize', dim: 'mm', def: '10.05', when: modified },
+    { type: 'num', id: 'limitSize', dim: 'mm', def: '10', when: modified },
   ],
   run(v) {
     return v.mode === 'fit' ? fitResult(v) : v.mode === 'position' ? positionResult(v) : stackResult(v);
@@ -202,7 +212,15 @@ export const tolerancesSpec: ToolSpec = {
     { id: 'press', values: { mode: 'fit', holeMin: '25', holeMax: '25.021', shaftMin: '25.028', shaftMax: '25.041' } },
     {
       id: 'hole',
-      values: { mode: 'position', dx: '0.03', dy: '0.04', tolerance: '0.1', modifier: 'MMC', departure: '0.05' },
+      values: {
+        mode: 'position',
+        dx: '0.03',
+        dy: '0.04',
+        tolerance: '0.1',
+        modifier: 'MMC',
+        actualSize: '10.05',
+        limitSize: '10',
+      },
     },
   ],
 };

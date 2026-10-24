@@ -197,8 +197,8 @@ export interface EconomicsResult {
   costLife: number;
   costSpeed: number;
   /** Tool life and cutting speed for maximum production rate. */
-  rateLife: number;
-  rateSpeed: number;
+  rateLife: number | null;
+  rateSpeed: number | null;
   steps: Step[];
 }
 
@@ -221,10 +221,11 @@ export function economics(
   if (rate <= 0) return bad('ratePositive');
   const k = 1 / n - 1;
   const costLife = k * (changeTime + edgeCost / rate);
-  const rateLife = k * changeTime;
-  if (costLife <= 0 || rateLife <= 0) return bad('changeTimePositive');
+  // With no time lost to a tool change the fastest speed is unbounded, but the least-cost answer still stands.
+  const rateLife = changeTime > 0 ? k * changeTime : null;
+  if (costLife <= 0) return bad('changeTimePositive');
   const costSpeed = c / costLife ** n;
-  const rateSpeed = c / rateLife ** n;
+  const rateSpeed = rateLife === null ? null : c / rateLife ** n;
   return {
     ok: true,
     costLife,
@@ -237,8 +238,12 @@ export function economics(
         latex: `T_c=\\left(\\dfrac1n-1\\right)\\left(T_{ch}+\\dfrac{C_e}{C_o}\\right)=${fmt(costLife)}\\ \\mathrm{min}`,
       },
       { key: 'costSpeed', latex: `V_c=\\dfrac{C}{T_c^{\\,n}}=${fmt(costSpeed)}\\ \\mathrm{m/min}` },
-      { key: 'rateLife', latex: `T_p=\\left(\\dfrac1n-1\\right)T_{ch}=${fmt(rateLife)}\\ \\mathrm{min}` },
-      { key: 'rateSpeed', latex: `V_p=\\dfrac{C}{T_p^{\\,n}}=${fmt(rateSpeed)}\\ \\mathrm{m/min}` },
+      ...(rateLife === null || rateSpeed === null
+        ? []
+        : [
+            { key: 'rateLife', latex: `T_p=\\left(\\dfrac1n-1\\right)T_{ch}=${fmt(rateLife)}\\ \\mathrm{min}` },
+            { key: 'rateSpeed', latex: `V_p=\\dfrac{C}{T_p^{\\,n}}=${fmt(rateSpeed)}\\ \\mathrm{m/min}` },
+          ]),
     ],
   };
 }

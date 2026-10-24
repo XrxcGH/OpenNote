@@ -70,3 +70,6 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
+
+export { DESIGN_KIT_FLAGS } from './design/flags';
+export type { DesignKitFlagId } from './design/flags';

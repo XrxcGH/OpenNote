@@ -25,7 +25,8 @@ export const tolerances = {
     dy: 'Offset in y from the true position',
     tolerance: 'Position tolerance (zone diameter)',
     modifier: 'Material condition modifier',
-    departure: 'How far the feature size is from the modified condition',
+    actualSize: 'Actual size of the feature',
+    limitSize: 'Size at the modified condition (MMC or LMC)',
   },
   option: {
     stack: 'Stack-up of a chain of dimensions',
@@ -91,7 +92,7 @@ export const tolerances = {
     fit: 'Limits are the sizes you type; no standard table of fits is built in. Clearance is hole minus shaft: a negative value is interference.',
     noTables: 'Check a standard such as ISO 286 for the limits of a named fit like H7/g6.',
     position:
-      'The zone diameter used is twice the distance from the true position. At MMC or LMC the allowed zone grows by the bonus, which you enter as how far the feature size is from that condition.',
+      'The zone diameter used is twice the distance from the true position. At MMC or LMC the allowed zone grows by the bonus, which is how far the actual size is from the size at that condition. Enter both sizes and the bonus is worked out. With RFS there is no bonus, so no sizes are asked for.',
   },
   plot: {
     histogram: {

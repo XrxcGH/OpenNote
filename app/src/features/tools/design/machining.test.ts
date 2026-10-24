@@ -85,6 +85,14 @@ describe('Taylor tool life', () => {
     expect(toolLife(1.2, 400, 150)).toEqual({ ok: false, problem: 'taylorN' });
     expect(toolLife(0.01, 400, 1e-9)).toEqual({ ok: false, problem: 'tooLarge' });
   });
+  it('economics with no tool change time still gives the least-cost answer', () => {
+    // By hand: n 0.25, Tch 0, Ce 4, Co 1: T = (4 - 1)(0 + 4) = 12 min, V = 400 / 12^0.25 = 214.9 m/min.
+    const r = ok(economics(0.25, 400, 0, 4, 1));
+    expect(r.costLife).toBeCloseTo(12, 12);
+    expect(r.costSpeed).toBeCloseTo(214.9, 1);
+    expect(r.rateLife).toBeNull();
+    expect(economics(0.25, 400, 0, 0, 1)).toEqual({ ok: false, problem: 'changeTimePositive' });
+  });
   it('economics: n 0.25, Tch 2, Ce 4, Co 1', () => {
     const r = ok(economics(0.25, 400, 2, 4, 1));
     expect(r.costLife).toBeCloseTo(3 * 6, 12);
@@ -92,7 +100,7 @@ describe('Taylor tool life', () => {
     expect(r.costSpeed).toBeCloseTo(400 / 18 ** 0.25, 12);
     expect(r.rateSpeed).toBeGreaterThan(r.costSpeed);
     expect(economics(1, 400, 2, 4, 1)).toEqual({ ok: false, problem: 'taylorNEconomics' });
-    expect(economics(0.25, 400, 0, 4, 0)).toEqual({ ok: false, problem: 'ratePositive' });
+    expect(economics(0.25, 400, 1, 4, 0)).toEqual({ ok: false, problem: 'ratePositive' });
   });
 });
 

@@ -81,7 +81,12 @@ export const machining = {
     power: 'Cutting power',
     specificEnergy: 'Specific cutting energy',
   },
+  word: { notDefined: 'not defined' },
   note: {
+    noChangeTime:
+      'With no time lost to a tool change there is no limit to how fast production can go, so the highest-rate life and speed are not defined. The least-cost answer still holds.',
+    slotWidth:
+      'A slot is as wide as the cutter. The width you typed differs from the cutter diameter, so the removal rate is for a cut of that width.',
     cut: 'Cutting speed is the surface speed at the cutter diameter. Milling and drilling times include the cutter approach or the drill point, as the steps show.',
     taylor:
       'The Taylor equation V T^n = C comes from tests on one tool and work material at one set of conditions. Take n and C from the tool maker or your own tests; this tool has no table of them.',

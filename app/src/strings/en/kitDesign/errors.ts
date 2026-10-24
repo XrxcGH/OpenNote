@@ -25,7 +25,7 @@ export const errors = {
   taylorNEconomics: 'The economic life needs n between 0 and 1, not including 1.',
   taylorC: 'The Taylor constant C must be greater than zero.',
   lifePositive: 'The wanted tool life must be greater than zero.',
-  changeTimePositive: 'The tool change time cannot be negative.',
+  changeTimePositive: 'The tool change time and the cost of an edge cannot both be zero.',
   negativeCost: 'Tool change time and edge cost cannot be negative.',
   ratePositive: 'The machine cost per minute must be greater than zero.',
   rakeRange: 'The rake angle must be between −90 and 90 degrees.',

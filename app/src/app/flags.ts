@@ -28,8 +28,8 @@ import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
-import { DESIGN_KIT_FLAGS } from '../features/tools/design/flags';
-import type { DesignKitFlagId } from '../features/tools/design/flags';
+import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
+import type { DesignKitFlagId } from '../features/tools/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';

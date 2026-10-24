@@ -51,7 +51,8 @@ function etching(v: Values) {
       latex: `S=\\dfrac{r_v}{r_{mask}}=\\dfrac{${fmt(v.vertical as number)}}{${fmt(v.mask as number)}}=${fmt(s.selectivity)}`,
     });
   }
-  return success({ rows, steps, notes: ['etch'] });
+  const noMask = v.mask === 0;
+  return success({ rows, steps, notes: noMask ? ['etch', 'noMask'] : ['etch'] });
 }
 
 function film(v: Values) {

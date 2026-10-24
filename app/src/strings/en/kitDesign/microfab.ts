@@ -80,6 +80,7 @@ export const microfab = {
     t95: 'Time to reach 95 percent of equilibrium',
   },
   note: {
+    noMask: 'The mask etch rate is zero, so the selectivity is not defined and is left out.',
     litho:
       'The factors are set by the process, often about 0.25 to 0.6 for k₁ and about 1 for k₂. They are inputs here, not looked up.',
     etch: 'The rates must use the same length and time units, and the depth is the vertical rate times the time. Anisotropy is one minus the lateral over the vertical rate.',
