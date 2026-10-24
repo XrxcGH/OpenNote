@@ -9,6 +9,27 @@ import { runCommand } from './smart';
 
 const WIDTHS = [1280, 1600, 2000] as const;
 
+/** Where a panel is and what it sits in, for the message of a geometry check that fails. */
+function whereIs(panel: Locator): Promise<string> {
+  return panel.evaluate((one) => {
+    const chain: string[] = [];
+    for (let node = one.parentElement; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      chain.push(
+        `${node.tagName}.${String(node.className).slice(0, 24)} ${node.clientWidth}/${node.offsetWidth} ${style.position} ${style.transform} ${style.contain} ${style.overflowY}`,
+      );
+    }
+    const box = one.getBoundingClientRect();
+    return JSON.stringify({
+      x: box.x,
+      w: box.width,
+      inner: innerWidth,
+      client: document.documentElement.clientWidth,
+      chain,
+    });
+  });
+}
+
 /** Waits for a panel that slides in to stop moving: its box is the same on two frames in a row. */
 async function settled(page: Page, panel: Locator): Promise<void> {
   let last = '';
@@ -249,7 +270,10 @@ test.describe('a docked panel leaves the page alone', () => {
         },
         { message: 'from the right edge' },
       )
-      .toBeGreaterThanOrEqual(edge - 1);
+      .toBeGreaterThanOrEqual(edge - 1)
+      .catch(async (error: Error) => {
+        throw new Error(`${error.message} (edge ${edge}) ${await whereIs(panel)}`);
+      });
     expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
     const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
     expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(edge - 1);
@@ -312,7 +336,10 @@ test('a tool window wider than a phone-size window stays inside it', async ({ pa
       const box = (await panel.boundingBox())!;
       return box.x >= 0 && box.x + box.width <= 420;
     })
-    .toBe(true);
+    .toBe(true)
+    .catch(async (error: Error) => {
+      throw new Error(`${error.message} ${await whereIs(panel)}`);
+    });
 });
 
 test('a long title wraps before the Properties chip', async ({ page }) => {
