@@ -17,6 +17,8 @@ const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
  * off (1.03 for a box at 201.2 on CI's Ubuntu). On Windows the same boxes are within 0.03.
  */
 const TOLERANCE = 1.1;
+/** How long the text may take to settle on a loaded 2-core runner, where Vitest's one second is not enough. */
+const SETTLE = { timeout: 8000 };
 
 afterEach(cleanupPages);
 
@@ -27,7 +29,10 @@ const frames = (n = 3) =>
   });
 
 async function ruled(fixture: PageFixture, grid: RuleGrid | null = GRID): Promise<PageHarness> {
-  const harness = await renderPage({ fixture });
+  // The pages feature's view attaches once its chunk has loaded and sets the paper's own rules (none, for plain
+  // paper). On a cold, loaded runner that lands after this test's rules and clears them, so the view stays off: this
+  // test is about the rules, which it sets itself.
+  const harness = await renderPage({ fixture, flags: { 'pages.view': false } });
   harness.mounted.flow.setRules(grid);
   await document.fonts?.ready;
   await frames();
@@ -113,11 +118,22 @@ describe('ruled paper', () => {
       const line = wrapper.querySelector('.ProseMirror > p')!;
       // The box settles onto its rule over the frames after it mounts; a slow runner needs more than a fixed few.
       await vi.waitFor(() => {
-        expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
-        expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
+        const css = getComputedStyle(wrapper);
+        const where = [
+          `ruled=${harness.viewport.world.dataset.ruled}`,
+          `classes=${wrapper.className}`,
+          `style=${wrapper.getAttribute('style')}`,
+          `inset=${css.insetBlockStart} top=${css.top} position=${css.position}`,
+          `world=${harness.viewport.world.getAttribute('style')}`,
+          `zoom=${harness.viewport.camera().zoom} dpr=${devicePixelRatio} top=${wrapper.getBoundingClientRect().top}`,
+          `font=${getComputedStyle(line).fontFamily} lh=${getComputedStyle(line).lineHeight}`,
+          `pad=${getComputedStyle(line).paddingTop}`,
+        ].join(' | ');
+        expect(offLift(baseline(harness, line)), `box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
+        expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
         const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
         expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
-      });
+      }, SETTLE);
       await cleanupPages();
     }
   });
@@ -136,10 +152,12 @@ describe('ruled paper', () => {
         root.querySelector('li > p')!,
       ]) {
         const world = harness.viewport.world;
-        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${world.style.getPropertyValue('--rule')}, lift ${world.style.getPropertyValue('--rule-lift')}`;
+        const rule = world.style.getPropertyValue('--rule');
+        const lift = world.style.getPropertyValue('--rule-lift');
+        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${rule}, lift ${lift}`;
         expect(offLift(baseline(harness, line), next), note).toBeLessThan(TOLERANCE);
       }
-    });
+    }, SETTLE);
   });
 
   it('changes nothing on plain paper', async () => {

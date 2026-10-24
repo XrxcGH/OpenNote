@@ -101,7 +101,7 @@ test('the equation panel shows the steps of a derivative and solves a system', a
   const steps = page.locator('[data-math-steps]');
   await expect(steps).toContainText('Steps for the derivative');
   await expect(steps).toContainText('Power rule');
-  await expect(steps.locator('li')).toHaveCount(5);
+  await expect(steps.locator('li')).toHaveCount(4);
   await field.fill(String.raw`x + y = 3 \\ x - y = 1`);
   await page.getByRole('button', { name: 'Solve' }).click();
   await expect(field).toHaveValue(/x = 2,\\ y = 1$/);

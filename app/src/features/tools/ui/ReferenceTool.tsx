@@ -56,7 +56,7 @@ export function ReferenceTool() {
   const searchable = tab !== 'chemistry';
 
   return (
-    <div className={styles.tool}>
+    <div className={styles.toolFill}>
       <div className={styles.tabs} role="tablist" aria-label={t('study.reference.title')}>
         {TABS.map((one) => (
           <button

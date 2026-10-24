@@ -9,6 +9,10 @@
     font-size: var(--type-small-size);
   }
 
+  .field input[type='file'] {
+    min-block-size: var(--size-target-pointer);
+  }
+
   .input {
     min-block-size: var(--size-target-pointer);
     padding-inline: var(--space-3);
@@ -25,9 +29,11 @@
     gap: var(--space-3);
   }
 
+  /* The part of a tool that scrolls: as tall as its content, and no taller than the room the window leaves (toolFill). */
   .scroll {
+    flex: 0 1 auto;
+    min-block-size: 0;
     overflow: auto;
-    max-block-size: 60vh;
   }
 
   .table {

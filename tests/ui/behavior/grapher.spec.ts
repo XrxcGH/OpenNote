@@ -63,6 +63,13 @@ test('says what is wrong with a function and still draws the others', async ({ p
 test('inserts a graph from the Insert tab before the page is clicked into (Beta 5 walk W2-17)', async ({ page }) => {
   await openSmart(page);
   await page.getByRole('tab', { name: 'Insert' }).click();
-  await page.getByRole('toolbar', { name: 'Insert' }).getByRole('button', { name: 'Insert graph' }).click();
+  // The Insert tab shows what fits, and the rest is under More.
+  const bar = page.getByRole('toolbar', { name: 'Insert' });
+  const button = bar.getByRole('button', { name: 'Insert graph' });
+  if (await button.isVisible()) await button.click();
+  else {
+    await bar.getByRole('button', { name: 'More' }).click();
+    await page.getByRole('menuitem', { name: 'Insert graph' }).click();
+  }
   await expect(page.getByRole('application', { name: /^Graph of/ })).toBeVisible({ timeout: 20_000 });
 });
