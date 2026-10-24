@@ -2,6 +2,7 @@
 import { FIRMS } from './firmsForms';
 import { MONEY } from './moneyForms';
 import { MARKETS } from './marketsForms';
+import { MACRO } from './macroForms';
 import type { EconToolDef } from './forms';
 
-export const ECON_TOOLS: readonly EconToolDef[] = [MONEY, FIRMS, MARKETS];
+export const ECON_TOOLS: readonly EconToolDef[] = [MONEY, FIRMS, MARKETS, MACRO];
