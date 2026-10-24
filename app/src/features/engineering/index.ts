@@ -14,6 +14,10 @@ export type { CircuitModel, CircuitPart } from './circuit/model';
 export { solveCircuit } from './circuit/solve';
 export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
+export const loadElectricalKit = () => import('./electrical/KitElectricalTool');
+export { ELECTRICAL_TOOLS } from './electrical/meta';
+export type { ElectricalToolId } from './electrical/meta';
+export { openKit as openElectricalKit } from './electrical/open';
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
