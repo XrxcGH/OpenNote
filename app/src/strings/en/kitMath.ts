@@ -36,6 +36,7 @@ export const kitMath = {
     realPole: 'A pole lies on the real axis, so the integral is not defined without a principal value.',
     trigForm: 'The expression must repeat every 2 pi in t, such as cos(t) and sin(t) alone.',
     badMatrix: 'The matrix entries must be numbers, and the plot size must be positive.',
+    badOrder: 'Ask for a whole number of terms from 1 to 20 on each side.',
     badRegion: 'The region needs x from less than x to, and y from less than y to.',
     pieceFormat: 'Write each piece as expression; from; to, or one expression alone: {detail}',
     pieceRange: 'A piece needs a start that is less than its end: {detail}',
@@ -160,6 +161,26 @@ export const kitMath = {
     modeResidues: 'Poles and contour',
     modeReal: 'Real integrals',
     modeMap: 'Conformal map',
+    modeAnalytic: 'Cauchy-Riemann',
+    modeLaurent: 'Laurent series',
+    crRegion: 'Region: x from, x to, y from, y to',
+    crTable: 'Partial derivatives of u and v, and whether the equations hold',
+    crHeader: 'x, y, u_x, v_y, u_y, -v_x, holds',
+    crYes: 'yes',
+    crNo: 'no',
+    crAnalytic: 'The equations hold at every sampled point, so f is analytic there (its partials are continuous).',
+    crNotAnalytic: 'The equations fail at some sampled points, so f is not analytic on this region.',
+    crDerivative: "f'(z) at the middle of the region: {value}",
+    laurentCenter: 'Center z0',
+    laurentRadius: 'Circle radius',
+    laurentOrder: 'Terms on each side',
+    laurentTable: 'Laurent coefficients',
+    laurentHeader: 'k, a_k',
+    laurentPrincipal: 'Principal part, the negative powers of (z - z0):',
+    laurentResidue: 'Residue a_-1 = {value}',
+    laurentUnsteady:
+      'The coefficients change with the radius, so a singularity lies between the circle and a slightly ' +
+      'smaller one. Choose a radius inside one annulus where f is analytic.',
     expression: 'Expression',
     expressionZ: 'Function of z',
     expressionX: 'Rational function of x',
@@ -195,6 +216,10 @@ export const kitMath = {
     poleRow: 'z = {at}: pole of order {order}, residue {residue}',
     byResidues: 'By residues: {value}',
     byQuadrature: 'By numerical integration: {value}',
+    disagree:
+      'The residue sum and the numerical integral disagree. f is not analytic inside the contour (for example it ' +
+      'uses conj, |z| or Re), or it has an essential singularity, which has no residue formula here. The ' +
+      'numerical integral is the answer given.',
     value: 'Value: {value}',
     check: 'Numerical check: {value}',
     plotRoots: 'The roots on a circle in the complex plane',
@@ -992,6 +1017,24 @@ export const kitMath = {
     cxPoleOut: 'There is a pole of order {order} at z = {at}, outside the contour, so it does not count.',
     cxResidue: 'The residue at z = {at} is {residue}.',
     cxResidueSum: 'By the residue theorem, the integral is 2 pi i times the sum of the residues inside: {value}.',
+    cxDisagree:
+      'The two results disagree, so the residues do not describe f inside the contour. The integral is the ' +
+      'numerical value {value}.',
+    cxCRSetup:
+      'Write f(x + iy) = u(x, y) + i v(x, y). A function is analytic where it satisfies the Cauchy-Riemann equations:',
+    cxCREquations: 'The equations to test, with the partial derivatives found by central differences:',
+    cxCRGrid: 'Tested at {n} points of a grid over the region.',
+    cxCRHold: 'The equations hold at all {n} points.',
+    cxCRFail: 'The equations hold at only {held} of {n} points.',
+    cxCRDerivative: 'Where they hold, the derivative is u_x + i v_x. At {at} it is {value}.',
+    cxLaurentSetup:
+      'The Laurent series of f about z0 = {center}, with the coefficients found on the circle of radius {radius}:',
+    cxLaurentFormula: 'Each coefficient is a contour integral around the circle, found by the trapezoid rule:',
+    cxLaurentPrincipal: 'The negative powers form the principal part:',
+    cxLaurentResidue: 'The coefficient of 1/(z - z0) is the residue, {residue}.',
+    cxLaurentUnsteady:
+      'The coefficients change when the radius shrinks a little, so the circle is not inside a single annulus ' +
+      'where f is analytic.',
     cxNumeric: 'Checking by numerical integration along the contour gives {value}.',
     cxRealSetup: 'Close the real line with a large semicircle in the upper half plane.',
     cxRealClose:

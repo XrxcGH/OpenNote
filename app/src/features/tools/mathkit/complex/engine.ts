@@ -350,6 +350,10 @@ export interface ContourResult {
   inside: Pole[];
   byResidues: C;
   numeric: C;
+  /** The answer to give: the residue sum, unless the quadrature disagrees with it, and then the quadrature. */
+  value: C;
+  /** True when the two disagree, which means f is not analytic inside or has a singularity that is not a pole. */
+  disagree: boolean;
   steps: KitStep[];
 }
 
@@ -383,11 +387,16 @@ export function contourIntegral(text: string, contour: Contour): ContourResult {
           ...contour.points.map((a, k) => distanceToSegment(a, contour.points[(k + 1) % contour.points.length], p)),
         );
   if (poles.some((p) => edgeDistance(p.at) < 1e-6)) throw new KitError('poleOnContour');
-  const inside = poles.filter((p) =>
-    contour.kind === 'circle' ? abs(sub(p.at, contour.center)) < contour.radius : winding(contour.points, p.at) !== 0,
-  );
+  // Each residue counts as many times as the contour winds around its pole: -1 for a clockwise polygon.
+  const turns = (p: Pole) =>
+    contour.kind === 'circle'
+      ? abs(sub(p.at, contour.center)) < contour.radius
+        ? 1
+        : 0
+      : winding(contour.points, p.at);
+  const inside = poles.filter((p) => turns(p) !== 0);
   let total = ZERO;
-  for (const p of inside) total = add(total, p.residue);
+  for (const p of inside) total = add(total, scale(p.residue, turns(p)));
   const byResidues = mul(c(0, 2 * Math.PI), total);
   const numeric = pathIntegral(f, contour);
   const steps: KitStep[] = [step('cxContour', `\\oint f(z)\\,dz,\\quad f(z)=${text}`)];
@@ -410,7 +419,9 @@ export function contourIntegral(text: string, contour: Contour): ContourResult {
     }),
     step('cxNumeric', undefined, { value: formatC(numeric, 10) }),
   );
-  return { inside, byResidues, numeric, steps };
+  const disagree = abs(sub(byResidues, numeric)) > 1e-8 * (1 + abs(numeric));
+  if (disagree) steps.push(step('cxDisagree', undefined, { value: formatC(numeric, 10) }));
+  return { inside, byResidues, numeric, value: disagree ? numeric : byResidues, disagree, steps };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -418,6 +429,8 @@ export function contourIntegral(text: string, contour: Contour): ContourResult {
 // ---------------------------------------------------------------------------------------------------------------
 
 export interface RealIntegralResult {
+  /** The integral as LaTeX, up to the equals sign. */
+  integral: string;
   value: number;
   poles: Pole[];
   numeric: number;
@@ -456,10 +469,17 @@ export function improperIntegral(text: string): RealIntegralResult {
     step('cxRealResult', `2\\pi i\\sum\\operatorname{Res}=${fmt(value, 10)}`, { value: fmt(value, 10) }),
     step('cxRealCheck', undefined, { value: fmt(numeric, 10) }),
   );
-  return { value, poles: upper, numeric, steps };
+  return {
+    integral: `\\int_{-\\infty}^{\\infty} ${source.replace(/z/g, 'x')}\\,dx`,
+    value,
+    poles: upper,
+    numeric,
+    steps,
+  };
 }
 
 export interface TrigIntegralResult {
+  integral: string;
   value: number;
   poles: Pole[];
   numeric: number;
@@ -503,7 +523,7 @@ export function trigIntegral(text: string): TrigIntegralResult {
     step('cxRealResult', `2\\pi i\\sum\\operatorname{Res}=${fmt(value, 10)}`, { value: fmt(value, 10) }),
     step('cxRealCheck', undefined, { value: fmt(numeric, 10) }),
   ];
-  return { value, poles, numeric, steps };
+  return { integral: `\\int_0^{2\\pi} ${text}\\,dt`, value, poles, numeric, steps };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

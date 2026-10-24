@@ -85,6 +85,36 @@ describe('contour integrals', () => {
     near(r.byResidues, 0, 0, 1e-12);
     near(r.numeric, 0, 0, 1e-9);
   });
+  it('a clockwise square around the origin gives -2 pi i for 1/z, by both methods', () => {
+    const r = contourIntegral('1/z', { kind: 'polygon', points: [c(-1, -1), c(-1, 1), c(1, 1), c(1, -1)] });
+    near(r.byResidues, 0, -2 * Math.PI, 1e-10);
+    near(r.numeric, 0, -2 * Math.PI, 1e-9);
+    expect(r.disagree).toBe(false);
+  });
+  it('a figure eight winds +1 around one pole and -1 around the other', () => {
+    // Lobes: the square [0,1]x[-1,1] counterclockwise, then [-1,0]x[-1,1] clockwise would share an edge; use two
+    // separate loops joined at the origin: 1/(z-i/2) is wound once, 1/(z+i/2) wound minus once.
+    const points = [c(0), c(1, 1), c(-1, 1), c(0), c(1, -1), c(-1, -1)];
+    const r = contourIntegral('1/(z-0.5i)+2/(z+0.5i)', { kind: 'polygon', points });
+    near(r.numeric, 0, 2 * Math.PI * (1 - 2), 1e-8);
+    near(r.byResidues, 0, 2 * Math.PI * (1 - 2), 1e-8);
+  });
+  it('exp(1/z) around the unit circle is 2 pi i (an essential singularity), and the tool says the residues fail', () => {
+    const r = contourIntegral('exp(1/z)', { kind: 'circle', center: c(0), radius: 1 });
+    near(r.numeric, 0, 2 * Math.PI, 1e-8);
+    near(r.value, 0, 2 * Math.PI, 1e-8);
+    expect(r.disagree).toBe(true);
+  });
+  it('conj(z) around the unit circle is 2 pi i, not 0: it is not analytic', () => {
+    const r = contourIntegral('conj(z)', { kind: 'circle', center: c(0), radius: 1 });
+    near(r.value, 0, 2 * Math.PI, 1e-8);
+    expect(r.disagree).toBe(true);
+  });
+  it('an analytic function raises no warning', () => {
+    const r = contourIntegral('e^z/(z-1)', { kind: 'circle', center: c(0), radius: 2 });
+    expect(r.disagree).toBe(false);
+    near(r.value, 0, 2 * Math.PI * Math.E, 1e-8);
+  });
   it('refuses a pole on the contour', () => {
     expect(() => contourIntegral('1/(z-1)', { kind: 'circle', center: c(0), radius: 1 })).toThrow();
   });

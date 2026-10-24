@@ -17,6 +17,7 @@ import {
   useSolved,
   useStored,
 } from '../ui/parts';
+import { cauchyRiemann, laurent } from './analytic';
 import { evaluateTree, formatC, latexC, readComplex, type C } from './cmath';
 import {
   MAPS,
@@ -30,7 +31,7 @@ import {
   type MapName,
 } from './engine';
 
-type Mode = 'value' | 'roots' | 'residues' | 'real' | 'map';
+type Mode = 'value' | 'roots' | 'residues' | 'real' | 'map' | 'analytic' | 'laurent';
 
 const FIRST = {
   mode: 'value' as Mode,
@@ -47,6 +48,12 @@ const FIRST = {
   realTrig: '1/(2+cos(t))',
   map: 'square' as MapName,
   region: '-1, 1, -1, 1',
+  crFn: 'z^2',
+  crRegion: '-2, 2, -2, 2',
+  laurentFn: 'exp(1/z)',
+  laurentCenter: '0',
+  laurentRadius: '1',
+  laurentOrder: '5',
 };
 
 type State = typeof FIRST;
@@ -88,6 +95,19 @@ function run(state: State) {
       return state.realKind === 'line'
         ? { kind: 'real' as const, out: improperIntegral(state.realLine) }
         : { kind: 'real' as const, out: trigIntegral(state.realTrig) };
+    case 'analytic':
+      return {
+        kind: 'analytic' as const,
+        out: cauchyRiemann(
+          state.crFn,
+          state.crRegion.split(',').map((part) => Number(part.trim())),
+        ),
+      };
+    case 'laurent':
+      return {
+        kind: 'laurent' as const,
+        out: laurent(state.laurentFn, state.laurentCenter, Number(state.laurentRadius), Number(state.laurentOrder)),
+      };
     default: {
       const [x0, x1, y0, y1] = state.region.split(',').map((part) => Number(part.trim()));
       return { kind: 'map' as const, out: mapGrid(state.map, x0, x1, y0, y1) };
@@ -160,6 +180,49 @@ function RealFields({ state, set }: { state: State; set: Patch }) {
   );
 }
 
+function AnalyticFields({ state, set }: { state: State; set: Patch }) {
+  return (
+    <div className={styles.row}>
+      <TextInput wide label={t('kitMath.complex.expressionZ')} value={state.crFn} onChange={(crFn) => set({ crFn })} />
+      <TextInput
+        label={t('kitMath.complex.crRegion')}
+        value={state.crRegion}
+        onChange={(crRegion) => set({ crRegion })}
+      />
+    </div>
+  );
+}
+
+function LaurentFields({ state, set }: { state: State; set: Patch }) {
+  return (
+    <>
+      <TextInput
+        wide
+        label={t('kitMath.complex.expressionZ')}
+        value={state.laurentFn}
+        onChange={(laurentFn) => set({ laurentFn })}
+      />
+      <div className={styles.row}>
+        <TextInput
+          label={t('kitMath.complex.laurentCenter')}
+          value={state.laurentCenter}
+          onChange={(laurentCenter) => set({ laurentCenter })}
+        />
+        <TextInput
+          label={t('kitMath.complex.laurentRadius')}
+          value={state.laurentRadius}
+          onChange={(laurentRadius) => set({ laurentRadius })}
+        />
+        <TextInput
+          label={t('kitMath.complex.laurentOrder')}
+          value={state.laurentOrder}
+          onChange={(laurentOrder) => set({ laurentOrder })}
+        />
+      </div>
+    </>
+  );
+}
+
 function Fields({ state, set }: { state: State; set: Patch }) {
   if (state.mode === 'value') {
     return (
@@ -189,6 +252,8 @@ function Fields({ state, set }: { state: State; set: Patch }) {
   }
   if (state.mode === 'residues') return <ResidueFields state={state} set={set} />;
   if (state.mode === 'real') return <RealFields state={state} set={set} />;
+  if (state.mode === 'analytic') return <AnalyticFields state={state} set={set} />;
+  if (state.mode === 'laurent') return <LaurentFields state={state} set={set} />;
   return (
     <div className={styles.row}>
       <Choice
@@ -216,6 +281,8 @@ export default function ComplexTool() {
           { value: 'residues', label: t('kitMath.complex.modeResidues') },
           { value: 'real', label: t('kitMath.complex.modeReal') },
           { value: 'map', label: t('kitMath.complex.modeMap') },
+          { value: 'analytic', label: t('kitMath.complex.modeAnalytic') },
+          { value: 'laurent', label: t('kitMath.complex.modeLaurent') },
         ]}
         onChange={(mode) => set({ mode })}
       />
@@ -271,12 +338,13 @@ function RootsOutput({ out }: { out: Extract<Run, { kind: 'roots' }>['out'] }) {
 }
 
 function ContourOutput({ out }: { out: Extract<Run, { kind: 'contour' }>['out'] }) {
-  const answer = t('kitMath.complex.byResidues', { value: formatC(out.byResidues, 10) });
-  const latex = `\\oint f\\,dz=${latexC(out.byResidues, 10)}`;
+  const answer = t('kitMath.complex.byResidues', { value: formatC(out.value, 10) });
+  const latex = `\\oint f\\,dz=${latexC(out.value, 10)}`;
   return (
     <>
       <Result>{`${answer}\n${t('kitMath.complex.byQuadrature', { value: formatC(out.numeric, 10) })}`}</Result>
       <MathView latex={latex} />
+      {out.disagree ? <Note>{t('kitMath.complex.disagree')}</Note> : null}
       {out.inside.map((p, k) => (
         <Note key={k}>
           {t('kitMath.complex.poleRow', { at: formatC(p.at, 8), order: p.order, residue: formatC(p.residue, 10) })}
@@ -294,12 +362,75 @@ function RealOutput({ out }: { out: Extract<Run, { kind: 'real' }>['out'] }) {
     <>
       <Result>{`${answer}\n${t('kitMath.complex.check', { value: fmt(out.numeric, 10) })}`}</Result>
       <Steps steps={out.steps} />
-      <InsertBar answer={answer} latex={`=${fmt(out.value, 10)}`} steps={out.steps} />
+      <InsertBar answer={answer} latex={`${out.integral}=${fmt(out.value, 10)}`} steps={out.steps} />
+    </>
+  );
+}
+
+function AnalyticOutput({ out }: { out: Extract<Run, { kind: 'analytic' }>['out'] }) {
+  const yes = t('kitMath.complex.crYes');
+  const no = t('kitMath.complex.crNo');
+  const header = t('kitMath.complex.crHeader').split(', ');
+  const rows = out.rows.map((r) => [
+    fmt(r.x, 4),
+    fmt(r.y, 4),
+    fmt(r.ux, 6),
+    fmt(r.vy, 6),
+    fmt(r.uy, 6),
+    fmt(-r.vx, 6),
+    r.holds ? yes : no,
+  ]);
+  const answer = t(out.analytic ? 'kitMath.complex.crAnalytic' : 'kitMath.complex.crNotAnalytic');
+  return (
+    <>
+      <Result>{answer}</Result>
+      {out.derivative ? <Note>{t('kitMath.complex.crDerivative', { value: formatC(out.derivative, 8) })}</Note> : null}
+      <table className={styles.table} aria-label={t('kitMath.complex.crTable')}>
+        <thead>
+          <tr>
+            {header.map((h) => (
+              <th key={h} scope="col">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i}>
+              {row.map((cell, j) => (
+                <td key={j}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <Steps steps={out.steps} />
+      <InsertBar answer={answer} table={{ header, rows }} steps={out.steps} />
+    </>
+  );
+}
+
+function LaurentOutput({ out }: { out: Extract<Run, { kind: 'laurent' }>['out'] }) {
+  const header = t('kitMath.complex.laurentHeader').split(', ');
+  const rows = out.coefficients.map((p) => [String(p.k), formatC(p.a, 8)]);
+  const answer = t('kitMath.complex.laurentResidue', { value: formatC(out.residue, 10) });
+  const latex = `f(z)=${out.series}`;
+  return (
+    <>
+      <Result>{answer}</Result>
+      <Note>{t('kitMath.complex.laurentPrincipal')}</Note>
+      <MathView latex={out.principal} />
+      {out.steady ? null : <Note>{t('kitMath.complex.laurentUnsteady')}</Note>}
+      <Steps steps={out.steps} />
+      <InsertBar answer={answer} latex={latex} table={{ header, rows }} steps={out.steps} />
     </>
   );
 }
 
 function Output({ result }: { result: Run }) {
+  if (result.kind === 'analytic') return <AnalyticOutput out={result.out} />;
+  if (result.kind === 'laurent') return <LaurentOutput out={result.out} />;
   if (result.kind === 'value') return <ValueOutput out={result.out} />;
   if (result.kind === 'roots') return <RootsOutput out={result.out} />;
   if (result.kind === 'contour') return <ContourOutput out={result.out} />;
