@@ -3,11 +3,6 @@
  * statistics and matrices. Everything is on tokens, so a theme switch recolors it with no redraw.
  */
 @layer components {
-  .modeTabs {
-    flex-wrap: wrap;
-    row-gap: 0;
-  }
-
   .basicKeys {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -15,8 +10,21 @@
   }
 
   .basicKeys > button {
-    min-block-size: calc(var(--size-target-pointer) + var(--space-2));
+    min-block-size: calc(var(--target-size) + var(--space-2));
     font-size: var(--type-subtitle-size);
+  }
+
+  /* Equal buttons in rows that all end at the same edge, as wide as the two matrix boxes above them. */
+  .ops {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  /* A row of borderless text buttons: their own padding is taken back, so the first label lines up with the left edge of
+     the fields above it. */
+  .flush {
+    margin-inline-start: calc(-1 * (var(--space-3) + 1px));
   }
 
   .hexKeys {
@@ -36,7 +44,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     font-size: var(--type-small-size);
   }
 

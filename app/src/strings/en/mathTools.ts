@@ -133,7 +133,7 @@ export const mathTools = {
     normal: 'Normal',
     scientific: 'Scientific',
     engineering: 'Engineering',
-    figures: 'Significant figures',
+    figures: 'Figures shown',
     auto: 'As needed',
     match: 'Fewest typed',
     count: '{count, plural, one {# figure} other {# figures}}',

@@ -28,7 +28,7 @@
   }
 
   .field select {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     color: var(--color-text-primary);
@@ -110,8 +110,12 @@
 
   .status {
     margin: 0;
-    min-block-size: 1.5em;
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
+  }
+
+  /* An empty status line holds no room: no reserved line and no grid gap above it. */
+  .status:empty {
+    margin-block-end: calc(-1 * var(--space-4));
   }
 }
