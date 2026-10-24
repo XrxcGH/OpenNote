@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import { LifeSysTool } from './LifeSysTool';
 
-beforeEach(() => localStorage.clear());
+// The window opens on the last tool used; these tests start on biodiversity, whatever tab comes first.
+beforeEach(() => {
+  localStorage.clear();
+  localStorage.setItem('opennote.tools.lifesys', JSON.stringify({ tool: 'diversity' }));
+});
 afterEach(() => localStorage.clear());
 
 const answer = () => document.querySelector('[data-ls-answer]')?.textContent ?? '';
