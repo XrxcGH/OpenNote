@@ -46,7 +46,9 @@ test('the layout has no findings beyond the known list', () => {
     JSON.stringify({ cells: cells.length, surfaces: surfaces.size, findings: all }, null, 1),
   );
 
-  const known: string[] = existsSync(KNOWN) ? (JSON.parse(readFileSync(KNOWN, 'utf8')) as { known: string[] }).known : [];
+  const known: string[] = existsSync(KNOWN)
+    ? (JSON.parse(readFileSync(KNOWN, 'utf8')) as { known: string[] }).known
+    : [];
   if (process.env.OPENNOTE_AUDIT_UPDATE) {
     writeFileSync(KNOWN, `${JSON.stringify({ known: all.map(keyOf) }, null, 1)}\n`);
     return;

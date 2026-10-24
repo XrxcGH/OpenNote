@@ -41,7 +41,8 @@ export class Auditor {
       await frame();
       await new Promise<void>((done) => setTimeout(done, 120));
       for (const animation of document.getAnimations()) {
-        if (animation.effect?.getComputedTiming().iterations !== Infinity) await animation.finished.catch(() => undefined);
+        if (animation.effect?.getComputedTiming().iterations !== Infinity)
+          await animation.finished.catch(() => undefined);
       }
       await frame();
     });

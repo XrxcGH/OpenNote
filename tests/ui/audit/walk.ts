@@ -20,7 +20,6 @@ type Hooks = Record<string, (...args: unknown[]) => unknown>;
 export const FLOATING =
   '[role=dialog], [role=alertdialog], [role=menu], [role=listbox], [popover], [data-tool], [data-region=notifications]';
 
-
 /** Commands that close the window, remove data, or leave the app: the sweep never runs them. */
 const SKIP_COMMAND =
   /^(window\.|api\.|updates\.(restart|download|check)|app\.palette|notes\.openFolder)|delete|trash|\.close$|protect\.|history\.|\.remove|\.clear|reset/i;

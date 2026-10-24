@@ -129,7 +129,14 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       }
       skipStatic = false;
       if (s.position === 'fixed' && at !== el) break;
-      if (clips(s.overflowX) || clips(s.overflowY) || s.overflowX === 'auto' || s.overflowX === 'scroll' || s.overflowY === 'auto' || s.overflowY === 'scroll') {
+      if (
+        clips(s.overflowX) ||
+        clips(s.overflowY) ||
+        s.overflowX === 'auto' ||
+        s.overflowX === 'scroll' ||
+        s.overflowY === 'auto' ||
+        s.overflowY === 'scroll'
+      ) {
         const r = at.getBoundingClientRect();
         if (s.overflowX !== 'visible') {
           left = Math.max(left, r.left);
@@ -162,7 +169,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
 
   const hasTooltip = (el: Element): boolean => {
     for (let at: Element | null = el, i = 0; at && i < 4; i += 1, at = at.parentElement) {
-      if (at.getAttribute('title') || at.hasAttribute('data-tooltip') || at.getAttribute('aria-describedby')) return true;
+      if (at.getAttribute('title') || at.hasAttribute('data-tooltip') || at.getAttribute('aria-describedby'))
+        return true;
     }
     return false;
   };
@@ -177,7 +185,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     const tiny = parseFloat(s.width) <= 1 && parseFloat(s.height) <= 1 && s.overflow !== 'visible';
     const clippedAway = (s.clip && s.clip !== 'auto') || s.clipPath === 'inset(50%)';
     const named = /visuallyHidden|visually-hidden|sr-only|srOnly/i.test(String(el.getAttribute('class') ?? ''));
-    const result = named || (s.position === 'absolute' && Boolean(tiny || clippedAway)) || visuallyHidden(el.parentElement);
+    const result =
+      named || (s.position === 'absolute' && Boolean(tiny || clippedAway)) || visuallyHidden(el.parentElement);
     hiddenCache.set(el, result);
     return result;
   };
@@ -193,7 +202,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
    * The floating surface an element belongs to (a dialog, menu, tool window, or fixed layer), or the page. Boxes in
    * different layers lie over one another by design, so only boxes of one layer are checked against each other.
    */
-  const LAYER = '[role=dialog], [role=alertdialog], [role=menu], [role=listbox], [role=tooltip], [popover], [data-tool], [aria-modal=true]';
+  const LAYER =
+    '[role=dialog], [role=alertdialog], [role=menu], [role=listbox], [role=tooltip], [popover], [data-tool], [aria-modal=true]';
   const layerCache = new WeakMap<Element, Element | null>();
   const layerOf = (el: Element): Element | null => {
     if (layerCache.has(el)) return layerCache.get(el) ?? null;
@@ -222,7 +232,9 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     const shown = shownRect(el);
     if (!shown || visuallyHidden(el) || el.closest('[inert]') || behindModal(el, shown)) continue;
     // Text that a scrolling or clipping ancestor has moved out of sight takes no part in what a person sees.
-    const texts = ownTextRects(el).filter((r) => r.right > shown.left && r.left < shown.right && r.bottom > shown.top && r.top < shown.bottom);
+    const texts = ownTextRects(el).filter(
+      (r) => r.right > shown.left && r.left < shown.right && r.bottom > shown.top && r.top < shown.bottom,
+    );
     const interactive = el.matches(INTERACTIVE);
     if (texts.length === 0 && !interactive && !el.matches(MEDIA)) continue;
     items.push({ el, box, texts, interactive });
@@ -241,14 +253,16 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     if ((texts.length > 0 || isField) && el.clientWidth > 0) {
       if (isHorizontalClip && wider > 1.5) {
         if (ellipsis || clamped) {
-          if (!hasTooltip(el)) add('truncation-no-tooltip', el, `text is ${round(wider)} px wider than its ${el.clientWidth} px box`);
+          if (!hasTooltip(el))
+            add('truncation-no-tooltip', el, `text is ${round(wider)} px wider than its ${el.clientWidth} px box`);
         } else if (isField ? !(el instanceof HTMLTextAreaElement) : true) {
           add('text-clip', el, `text is ${round(wider)} px wider than its ${el.clientWidth} px box`);
         }
       }
       if (isVerticalClip && taller > 1.5 && !isField) {
         if (clamped) {
-          if (!hasTooltip(el)) add('truncation-no-tooltip', el, `${round(taller)} px of text is cut below a ${el.clientHeight} px box`);
+          if (!hasTooltip(el))
+            add('truncation-no-tooltip', el, `${round(taller)} px of text is cut below a ${el.clientHeight} px box`);
         } else {
           add('text-clip', el, `text is ${round(taller)} px taller than its ${el.clientHeight} px box`);
         }
@@ -262,17 +276,17 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
         const top = Math.min(...texts.map((r) => r.top));
         const bottom = Math.max(...texts.map((r) => r.bottom));
         const spill = Math.max(box.left - left, right - box.right, box.top - top, bottom - box.bottom);
-        if (spill > 2) add('text-spill', el, `text leaves the ${round(box.width)} x ${round(box.height)} px box by ${round(spill)} px`);
+        if (spill > 2)
+          add(
+            'text-spill',
+            el,
+            `text leaves the ${round(box.width)} x ${round(box.height)} px box by ${round(spill)} px`,
+          );
       }
     }
     // Clipped by an ancestor that hides overflow: the part of the box or the text that is cut away.
     const targets = texts.length > 0 ? texts : [box];
-    const full = new DOMRect(
-      Math.min(...targets.map((r) => r.left)),
-      Math.min(...targets.map((r) => r.top)),
-      0,
-      0,
-    );
+    const full = new DOMRect(Math.min(...targets.map((r) => r.left)), Math.min(...targets.map((r) => r.top)), 0, 0);
     const fullRight = Math.max(...targets.map((r) => r.right));
     const fullBottom = Math.max(...targets.map((r) => r.bottom));
     const shown = shownRect(el);
@@ -280,7 +294,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     // The element shows partly: cut by 2 px or more on a side, and not nothing at all.
     const cutX = Math.max(0, shown.left - full.left, fullRight - shown.right);
     const cutY = Math.max(0, shown.top - full.top, fullBottom - shown.bottom);
-    const insideWindow = full.left >= -1 && fullRight <= view.width + 1 && full.top >= -1 && fullBottom <= view.height + 1;
+    const insideWindow =
+      full.left >= -1 && fullRight <= view.width + 1 && full.top >= -1 && fullBottom <= view.height + 1;
     if (insideWindow && (cutX > 2 || cutY > 2) && !(el.matches('[role=tabpanel], .sr-only') || ellipsis)) {
       // Find the ancestor that does the clipping, to name it.
       let culprit: Element | null = null;
@@ -294,7 +309,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
           }
         }
       }
-      if (culprit) add('clipped-by-ancestor', el, `cut by ${round(Math.max(cutX, cutY))} px by ${describe(culprit, 1)}`);
+      if (culprit)
+        add('clipped-by-ancestor', el, `cut by ${round(Math.max(cutX, cutY))} px by ${describe(culprit, 1)}`);
     }
   }
 
@@ -312,7 +328,9 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     return w > min && h > min ? w * h : 0;
   };
   const sorted = items
-    .filter((item) => item.el.getAttribute('role') !== 'separator' && !item.el.closest('[aria-hidden=true][data-decor]'))
+    .filter(
+      (item) => item.el.getAttribute('role') !== 'separator' && !item.el.closest('[aria-hidden=true][data-decor]'),
+    )
     .sort((a, b) => a.box.left - b.box.left)
     .slice(0, 4000);
   for (let i = 0; i < sorted.length; i += 1) {
@@ -342,7 +360,13 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       if (aInB || bInA) continue;
       if (a.interactive && b.interactive) {
         const area = crossing(a.box, b.box, 2);
-        if (area > 12) add('box-overlap', a.el, `${describe(a.el, 1)} and ${describe(b.el, 1)} overlap by ${round(area)} px2`, ` x ${describe(b.el, 2)}`);
+        if (area > 12)
+          add(
+            'box-overlap',
+            a.el,
+            `${describe(a.el, 1)} and ${describe(b.el, 1)} overlap by ${round(area)} px2`,
+            ` x ${describe(b.el, 2)}`,
+          );
       } else if (a.interactive !== b.interactive) {
         const control = a.interactive ? a : b;
         const text = a.interactive ? b : a;
@@ -350,7 +374,12 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
         for (const r of text.texts) {
           const area = crossing(control.box, r, 2);
           if (area > 12) {
-            add('box-overlap', control.el, `text of ${describe(text.el, 1)} lies ${round(area)} px2 over this control`, ` x ${describe(text.el, 2)}`);
+            add(
+              'box-overlap',
+              control.el,
+              `text of ${describe(text.el, 1)} lies ${round(area)} px2 over this control`,
+              ` x ${describe(text.el, 2)}`,
+            );
             break;
           }
         }
@@ -382,7 +411,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       add('target-small', el, `${round(box.width)} x ${round(box.height)} px, the least is ${MIN_TARGET}`);
     }
   }
-  const JOINED = '[role=tree], [role=listbox], [role=menu], [role=tablist], [role=toolbar], [role=group], [role=radiogroup], [role=grid], [role=table], [role=list], ul, ol, table, nav';
+  const JOINED =
+    '[role=tree], [role=listbox], [role=menu], [role=tablist], [role=toolbar], [role=group], [role=radiogroup], [role=grid], [role=table], [role=list], ul, ol, table, nav';
   /** Two targets inside one list, strip, or group: the closest container that holds both is of that kind. */
   const joined = (a: Element, b: Element): boolean => {
     let at: Element | null = a.parentElement;
@@ -422,8 +452,14 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     if (!visible) continue;
     const bw = parseFloat(s.borderLeftWidth) + parseFloat(s.borderRightWidth);
     const bh = parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth);
-    const barW = el === document.documentElement ? window.innerWidth - root.clientWidth : (el as HTMLElement).offsetWidth - el.clientWidth - bw;
-    const barH = el === document.documentElement ? window.innerHeight - root.clientHeight : (el as HTMLElement).offsetHeight - el.clientHeight - bh;
+    const barW =
+      el === document.documentElement
+        ? window.innerWidth - root.clientWidth
+        : (el as HTMLElement).offsetWidth - el.clientWidth - bw;
+    const barH =
+      el === document.documentElement
+        ? window.innerHeight - root.clientHeight
+        : (el as HTMLElement).offsetHeight - el.clientHeight - bh;
     const probe = (x: number, y: number, side: string) => {
       if (x < 0 || y < 0 || x >= view.width || y >= view.height) return;
       const hit = document.elementFromPoint(x, y);
@@ -432,24 +468,32 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       if (hit.closest('[aria-modal=true], [class*=scrim], [class*=backdrop]') && !hit.closest('[data-tool]')) return;
       // Something inside the scroller under the pointer means the bar is not there (an overlay bar, or a scaled page); a toast is brief.
       if ((el !== document.documentElement && el.contains(hit)) || hit.closest('[role=status], [class*=toast]')) return;
-      add('scrollbar-occluded', el, `the ${side} scroll bar is covered at (${Math.round(x)}, ${Math.round(y)}) by ${describe(hit, 2)}`, ` <- ${describe(hit, 2)}`);
+      add(
+        'scrollbar-occluded',
+        el,
+        `the ${side} scroll bar is covered at (${Math.round(x)}, ${Math.round(y)}) by ${describe(hit, 2)}`,
+        ` <- ${describe(hit, 2)}`,
+      );
     };
     if (scrollsY && barW > 3) {
       const x = rect.right - parseFloat(s.borderRightWidth) - barW / 2;
       const top = Math.max(visible.top, 0) + 12;
       const bottom = Math.min(visible.bottom, view.height) - 12;
-      if (x <= visible.right && x >= visible.left && bottom > top) for (const f of [0, 0.25, 0.5, 0.75, 1]) probe(x, top + (bottom - top) * f, 'vertical');
+      if (x <= visible.right && x >= visible.left && bottom > top)
+        for (const f of [0, 0.25, 0.5, 0.75, 1]) probe(x, top + (bottom - top) * f, 'vertical');
     }
     if (scrollsX && barH > 3) {
       const y = rect.bottom - parseFloat(s.borderBottomWidth) - barH / 2;
       const left = Math.max(visible.left, 0) + 12;
       const right = Math.min(visible.right, view.width) - 12;
-      if (y <= visible.bottom && y >= visible.top && right > left) for (const f of [0, 0.25, 0.5, 0.75, 1]) probe(left + (right - left) * f, y, 'horizontal');
+      if (y <= visible.bottom && y >= visible.top && right > left)
+        for (const f of [0, 0.25, 0.5, 0.75, 1]) probe(left + (right - left) * f, y, 'horizontal');
     }
   }
 
   // ---- 5: menus, popovers, and windows that do not fit the window --------------------------------------------
-  const FLOATING = '[role=menu], [role=listbox], [role=dialog], [role=tooltip], [popover], [data-tool], [role=alertdialog]';
+  const FLOATING =
+    '[role=menu], [role=listbox], [role=dialog], [role=tooltip], [popover], [data-tool], [role=alertdialog]';
   for (const el of document.querySelectorAll(FLOATING)) {
     if (el.tagName === 'CANVAS') continue;
     if (options.scope && !scopeRoots.some((base) => base === el || base.contains(el) || el.contains(base))) continue;
@@ -457,14 +501,19 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     if (!isBoxVisible(el, r)) continue;
     const over = Math.max(-r.left, -r.top, r.right - view.width, r.bottom - view.height);
     if (over > 1) {
-      add('offscreen', el, `${round(over)} px outside the ${view.width} x ${view.height} px window (box ${round(r.left)}, ${round(r.top)}, ${round(r.right)}, ${round(r.bottom)})`);
+      add(
+        'offscreen',
+        el,
+        `${round(over)} px outside the ${view.width} x ${view.height} px window (box ${round(r.left)}, ${round(r.top)}, ${round(r.right)}, ${round(r.bottom)})`,
+      );
     }
   }
 
   // ---- 7: the document itself scrolls -------------------------------------------------------------------------
   const sx = root.scrollWidth - root.clientWidth;
   const sy = root.scrollHeight - root.clientHeight;
-  if (sx > 1 || sy > 1) add('document-scroll', document.body, `the document scrolls by ${round(sx)} px across and ${round(sy)} px down`);
+  if (sx > 1 || sy > 1)
+    add('document-scroll', document.body, `the document scrolls by ${round(sx)} px across and ${round(sy)} px down`);
 
   // ---- 8: dead space in a window, panel, or dialog -----------------------------------------------------------
   const SURFACES = '[role=dialog], [role=alertdialog], [data-tool], [role=menu], [role=listbox], aside, [data-panel]';
@@ -480,12 +529,20 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
         el.matches(`${INTERACTIVE}, ${MEDIA}`) ||
         parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth) > 0 ||
         isOpaque(s.backgroundColor);
-      if (paints) low = Math.max(low, ownTextRects(el).reduce((m, t) => Math.max(m, t.bottom), r.bottom));
+      if (paints)
+        low = Math.max(
+          low,
+          ownTextRects(el).reduce((m, t) => Math.max(m, t.bottom), r.bottom),
+        );
     }
     return low;
   };
   for (const surface of document.querySelectorAll(SURFACES)) {
-    if (options.scope && !scopeRoots.some((base) => base === surface || base.contains(surface) || surface.contains(base))) continue;
+    if (
+      options.scope &&
+      !scopeRoots.some((base) => base === surface || base.contains(surface) || surface.contains(base))
+    )
+      continue;
     const sr = surface.getBoundingClientRect();
     const ss = style(surface);
     if (!isBoxVisible(surface, sr) || sr.height < 120) continue;
@@ -511,12 +568,21 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       const empty = Math.min(innerBottom, view.height) - emptyFrom;
       const need = k.scrollHeight - k.clientHeight;
       if (empty >= 32) {
-        add('dead-space', k, `${round(empty)} px under it in ${describe(surface, 1)} show nothing while it scrolls by ${round(need)} px (it is ${round(kr.height)} px tall)`);
+        add(
+          'dead-space',
+          k,
+          `${round(empty)} px under it in ${describe(surface, 1)} show nothing while it scrolls by ${round(need)} px (it is ${round(kr.height)} px tall)`,
+        );
       }
       // A scroller inside a scroller: two scroll bars where the outer one could hold everything.
       const outer = scrollers.find((o) => o !== k && o.contains(k));
       if (outer && outer !== surface && need > 1) {
-        add('dead-space', k, `scrolls inside ${describe(outer, 1)}, which also scrolls (${round(need)} px and ${round(outer.scrollHeight - outer.clientHeight)} px)`, ' (nested)');
+        add(
+          'dead-space',
+          k,
+          `scrolls inside ${describe(outer, 1)}, which also scrolls (${round(need)} px and ${round(outer.scrollHeight - outer.clientHeight)} px)`,
+          ' (nested)',
+        );
       }
     }
     // An empty box of 32 px or more, in a surface whose content is cut off or scrolls.
@@ -528,14 +594,20 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       if (el.matches(`${INTERACTIVE}, ${MEDIA}`) || ownTextRects(el).length > 0) return false;
       if (el.querySelector(`${INTERACTIVE}, ${MEDIA}, canvas`)) return false;
       if ((el.textContent ?? '').trim()) return false;
-      if (parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth) + parseFloat(s.borderLeftWidth) > 0) return false;
+      if (parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth) + parseFloat(s.borderLeftWidth) > 0)
+        return false;
       if (isOpaque(s.backgroundColor) && s.backgroundColor !== ss.backgroundColor) return false;
       if (s.backgroundImage !== 'none') return false;
       return !el.closest('[aria-hidden=true][data-decor]');
     });
     for (const el of candidates) {
       if (candidates.some((other) => other !== el && other.contains(el))) continue;
-      add('dead-space', el, `an empty ${round(el.getBoundingClientRect().width)} x ${round(el.getBoundingClientRect().height)} px box in ${describe(surface, 1)}, which scrolls or is cut off`, ' (empty box)');
+      add(
+        'dead-space',
+        el,
+        `an empty ${round(el.getBoundingClientRect().width)} x ${round(el.getBoundingClientRect().height)} px box in ${describe(surface, 1)}, which scrolls or is cut off`,
+        ' (empty box)',
+      );
     }
   }
 
