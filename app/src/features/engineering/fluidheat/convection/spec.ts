@@ -38,6 +38,7 @@ const isCorrelation = (v: Values) => v.mode === 'correlation';
 const inGroup = (group: string) => (v: Values) => v.mode === 'correlation' && v.group === group;
 const isMass = (v: Values) => v.mode === 'correlation' && v.transfer === 'mass';
 const isHeat = (v: Values) => v.mode === 'correlation' && v.transfer === 'heat';
+const naturalHeat = (v: Values) => inGroup('natural')(v) && v.transfer === 'heat';
 const isTube = (v: Values) => v.mode === 'tube';
 
 function correlationOutcome(values: Values): Outcome {
@@ -52,10 +53,13 @@ function correlationOutcome(values: Values): Outcome {
   };
   const geometry: Geometry = { length: num(values, 'length') };
   if (natural) {
-    const ts = num(values, 'tSurface');
-    const tf = num(values, 'tFluid');
-    geometry.deltaT = Math.abs(ts - tf);
-    geometry.beta = opt(values, 'beta') ?? 1 / ((ts + tf) / 2);
+    if (mass) geometry.driving = Math.abs(num(values, 'drho'));
+    else {
+      const ts = num(values, 'tSurface');
+      const tf = num(values, 'tFluid');
+      geometry.deltaT = Math.abs(ts - tf);
+      geometry.beta = opt(values, 'beta') ?? 1 / ((ts + tf) / 2);
+    }
   } else {
     geometry.velocity = num(values, 'velocity');
     if (opt(values, 'tubeLength') !== undefined) geometry.tubeLength = opt(values, 'tubeLength');
@@ -121,7 +125,7 @@ export const convectionSpec: ToolSpec = {
       first: 'external',
       when: isCorrelation,
     },
-    { id: 'corrExt', type: 'choice', options: EXTERNAL, first: 'plateMixed', when: inGroup('external') },
+    { id: 'corrExt', type: 'choice', options: EXTERNAL, first: 'plateLaminar', when: inGroup('external') },
     { id: 'corrInt', type: 'choice', options: INTERNAL, first: 'gnielinski', when: inGroup('internal') },
     { id: 'corrNat', type: 'choice', options: NATURAL, first: 'verticalPlateFull', when: inGroup('natural') },
     { id: 'length', type: 'quantity', kind: 'span', first: '1 m', when: isCorrelation },
@@ -134,9 +138,10 @@ export const convectionSpec: ToolSpec = {
     },
     { id: 'tubeLength', type: 'quantity', kind: 'span', first: '', optional: true, when: inGroup('internal') },
     { id: 'heating', type: 'choice', options: ['yes', 'no'], first: 'yes', when: inGroup('internal') },
-    { id: 'tSurface', type: 'quantity', kind: 'temperature', first: '60 °C', when: inGroup('natural') },
-    { id: 'tFluid', type: 'quantity', kind: 'temperature', first: '20 °C', when: inGroup('natural') },
-    { id: 'beta', type: 'quantity', kind: 'expansion', first: '', optional: true, when: inGroup('natural') },
+    { id: 'tSurface', type: 'quantity', kind: 'temperature', first: '60 °C', when: naturalHeat },
+    { id: 'tFluid', type: 'quantity', kind: 'temperature', first: '20 °C', when: naturalHeat },
+    { id: 'beta', type: 'quantity', kind: 'expansion', first: '', optional: true, when: naturalHeat },
+    { id: 'drho', type: 'quantity', kind: 'ratio', first: '0.01', when: (v) => inGroup('natural')(v) && isMass(v) },
     { id: 'k', type: 'quantity', kind: 'conductivity', first: '0.026 W/(m·K)', when: isHeat },
     { id: 'dab', type: 'quantity', kind: 'diffusivity', first: '0.25 cm^2/s', when: isMass },
     { id: 'nu', type: 'quantity', kind: 'kinematic', first: '15.9 mm^2/s', when: isCorrelation },
@@ -178,7 +183,7 @@ export const convectionSpec: ToolSpec = {
         group: 'external',
         corrExt: 'plateMixed',
         length: '1 m',
-        velocity: '5 m/s',
+        velocity: '20 m/s',
         k: '0.026 W/(m·K)',
         nu: '15.9 mm^2/s',
         pr: '0.71',
@@ -235,7 +240,7 @@ export const convectionSpec: ToolSpec = {
         group: 'external',
         corrExt: 'plateMixed',
         length: '1 m',
-        velocity: '5 m/s',
+        velocity: '20 m/s',
         dab: '0.25 cm^2/s',
         nu: '15.9 mm^2/s',
         sc: '0.63',

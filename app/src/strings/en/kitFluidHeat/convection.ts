@@ -19,6 +19,7 @@ export const convection = {
     tSurface: 'Surface temperature, Ts',
     tFluid: 'Fluid temperature, T∞',
     beta: 'Expansion coefficient, β (optional, 1/T of the film for a gas)',
+    drho: 'Density difference over density, Δρ / ρ (from the concentration difference)',
     k: 'Thermal conductivity of the fluid, k',
     dab: 'Diffusivity of the species, DAB',
     nu: 'Kinematic viscosity, ν',
@@ -115,7 +116,7 @@ export const convectionStep = {
   fhConvRa: 'The Rayleigh number is Ra = {Ra}.',
   fhConvCorrelation: 'Use the correlation “{name}”, valid for {range}.',
   fhConvH: 'The coefficient follows from the Nusselt (or Sherwood) number: h = {h} in SI units.',
-  fhConvOutletFlux: 'With a fixed heat flux the outlet temperature is {To} K.',
-  fhConvOutletTemp: 'With a fixed wall temperature the outlet temperature is {To} K.',
+  fhConvOutletFlux: 'With a fixed heat flux the outlet temperature is {To}.',
+  fhConvOutletTemp: 'With a fixed wall temperature the outlet temperature is {To}.',
   fhConvTubeHeat: 'The heat transferred to the fluid is q = {q} W.',
 } as const;

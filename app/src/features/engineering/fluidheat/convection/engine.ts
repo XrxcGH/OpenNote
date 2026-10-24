@@ -1,6 +1,6 @@
 // Convection heat (and mass) transfer coefficients from the standard published correlations, each with its validity range checked.
 // Mass transfer uses the same formulas with the Sherwood number in place of Nusselt and the Schmidt number in place of Prandtl.
-import { CalcError, fmt, G0, need, positive, type Step } from '../numeric';
+import { CalcError, fmt, G0, need, positive, temp, type Step } from '../numeric';
 
 export type CorrelationId =
   | 'plateLocal'
@@ -41,6 +41,8 @@ export interface Geometry {
   deltaT?: number;
   /** Volumetric expansion coefficient (1/K); for an ideal gas 1/T_film with T in kelvin. */
   beta?: number;
+  /** Buoyancy driving ratio (delta rho / rho) in place of beta times delta T, for natural mass transfer. */
+  driving?: number;
   /** Tube length (m), for the entrance-region correlations. */
   tubeLength?: number;
   /** true when the fluid is being heated (for Dittus-Boelter's exponent). */
@@ -212,6 +214,15 @@ const inRange = (v: number, lo: number, hi: number) => v >= lo && v <= hi;
 
 export function rayleigh(f: Fluid, g: Geometry): number {
   positive(g.length, 'The length');
+  if (g.driving !== undefined) {
+    need(
+      Number.isFinite(g.driving) && g.driving > 0,
+      'drho',
+      'The density difference ratio (delta rho / rho) must be above zero (give its size, not its sign).',
+    );
+    const diffusivity = f.nu / f.pr;
+    return ((g.g ?? G0) * g.driving * g.length ** 3) / (f.nu * diffusivity);
+  }
   need(
     g.deltaT !== undefined && Number.isFinite(g.deltaT) && g.deltaT > 0,
     'deltaT',
@@ -246,6 +257,13 @@ interface Evaluated {
 const turbulent = 'fhConvWarnTurbulent';
 const range = 'fhConvWarnRange';
 const flag = (bad: boolean, key: string): string[] => (bad ? [key] : []);
+/** The average flat-plate forms that assume transition at Re 5e5 mean nothing below it (they go to a tiny or negative Nu). */
+const needTransition = (R: number, name: string): void =>
+  need(
+    R >= 5e5,
+    'velocity',
+    `The ${name} flat-plate form needs Re_L of at least 5e5 (this plate has Re_L ${fmt(R, 3)}); below that the flow is laminar. Use the laminar average form.`,
+  );
 const shortTube = (g: Geometry): boolean => g.tubeLength !== undefined && g.tubeLength / g.length < 10;
 
 /** Each correlation: the Nusselt number, its equation in LaTeX, and the warnings for the ranges it is outside. */
@@ -260,16 +278,22 @@ const FORMS: Record<CorrelationId, (c: Ctx) => Evaluated> = {
     math: '\\overline{Nu}_L = 0.664\\,Re_L^{1/2}Pr^{1/3}',
     warnings: [...flag(R >= 5e5, turbulent), ...flag(pr < 0.6, 'fhConvWarnPr')],
   }),
-  plateTurbulent: ({ R, pr }) => ({
-    nu: 0.037 * R ** 0.8 * pr ** (1 / 3),
-    math: '\\overline{Nu}_L = 0.037\\,Re_L^{4/5}Pr^{1/3}',
-    warnings: flag(!inRange(R, 5e5, 1e7) || !inRange(pr, 0.6, 60), range),
-  }),
-  plateMixed: ({ R, pr }) => ({
-    nu: (0.037 * R ** 0.8 - 871) * pr ** (1 / 3),
-    math: '\\overline{Nu}_L = (0.037\\,Re_L^{4/5} - 871)Pr^{1/3}',
-    warnings: flag(!inRange(R, 5e5, 1e8) || !inRange(pr, 0.6, 60), range),
-  }),
+  plateTurbulent: ({ R, pr }) => {
+    needTransition(R, 'turbulent');
+    return {
+      nu: 0.037 * R ** 0.8 * pr ** (1 / 3),
+      math: '\\overline{Nu}_L = 0.037\\,Re_L^{4/5}Pr^{1/3}',
+      warnings: flag(!inRange(R, 5e5, 1e7) || !inRange(pr, 0.6, 60), range),
+    };
+  },
+  plateMixed: ({ R, pr }) => {
+    needTransition(R, 'mixed');
+    return {
+      nu: (0.037 * R ** 0.8 - 871) * pr ** (1 / 3),
+      math: '\\overline{Nu}_L = (0.037\\,Re_L^{4/5} - 871)Pr^{1/3}',
+      warnings: flag(!inRange(R, 5e5, 1e8) || !inRange(pr, 0.6, 60), range),
+    };
+  },
   cylinderCross: ({ R, pr }) => ({
     nu:
       0.3 +
@@ -489,13 +513,13 @@ export function tubeFlow(inp: TubeInput): TubeResult {
     inp.wall.kind === 'flux'
       ? {
           key: 'fhConvOutletFlux',
-          vars: { To: fmt(tOut, 5) },
-          math: `T_o = T_i + \\frac{q'' P L}{\\dot m c_p} = ${fmt(tOut, 5)}`,
+          vars: { To: temp(tOut) },
+          math: `T_o = T_i + \\frac{q'' P L}{\\dot m c_p} = [[To]]`,
         }
       : {
           key: 'fhConvOutletTemp',
-          vars: { To: fmt(tOut, 5) },
-          math: `T_o = T_s - (T_s - T_i)\\exp\\left(-\\frac{\\bar h P L}{\\dot m c_p}\\right) = ${fmt(tOut, 5)}`,
+          vars: { To: temp(tOut) },
+          math: `T_o = T_s - (T_s - T_i)\\exp\\left(-\\frac{\\bar h P L}{\\dot m c_p}\\right) = [[To]]`,
         },
     {
       key: 'fhConvTubeHeat',

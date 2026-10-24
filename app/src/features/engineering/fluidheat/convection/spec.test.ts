@@ -9,13 +9,40 @@ const pr = 0.71;
 const k = 0.026;
 
 describe('convection form', () => {
-  it('a flat plate, laminar then turbulent: Nu = (0.037 Re^0.8 - 871) Pr^(1/3)', () => {
+  it('the first problem is a laminar plate: Nu = 0.664 Re^0.5 Pr^(1/3), about 332 at Re 3.1e5', () => {
     const o = solve();
     const re = (5 * 1) / nu;
-    const nuL = (0.037 * re ** 0.8 - 871) * pr ** (1 / 3);
+    const nuL = 0.664 * Math.sqrt(re) * pr ** (1 / 3);
     expect(row(o, 'reynolds')).toBeCloseTo(re, 6);
     expect(row(o, 'nusselt')).toBeCloseTo(nuL, 8);
+    expect(row(o, 'nusselt')).toBeGreaterThan(331);
+    expect(row(o, 'nusselt')).toBeLessThan(333);
     expect(row(o, 'h')).toBeCloseTo((nuL * k) / 1, 10);
+  });
+  it('a plate laminar then turbulent: Nu = (0.037 Re^0.8 - 871) Pr^(1/3), refused below Re 5e5', () => {
+    const o = solve({ corrExt: 'plateMixed', velocity: '20 m/s' });
+    const re = 20 / nu;
+    expect(row(o, 'nusselt')).toBeCloseTo((0.037 * re ** 0.8 - 871) * pr ** (1 / 3), 8);
+    expect(refuses(convectionSpec, { corrExt: 'plateMixed', velocity: '5 m/s' })).toBeTruthy();
+    expect(refuses(convectionSpec, { corrExt: 'plateTurbulent', velocity: '5 m/s' })).toBeTruthy();
+  });
+  it('the evaporation example gives a Sherwood number from the mixed form at Re 1.26e6', () => {
+    const o = solve({ transfer: 'mass', corrExt: 'plateMixed', velocity: '20 m/s', dab: '0.25 cm^2/s', sc: '0.63' });
+    expect(row(o, 'sherwood')).toBeCloseTo((0.037 * (20 / nu) ** 0.8 - 871) * 0.63 ** (1 / 3), 6);
+  });
+  it('natural mass transfer is driven by delta rho / rho: Ra = g (drho/rho) L^3 / (nu D)', () => {
+    const o = solve({
+      transfer: 'mass',
+      group: 'natural',
+      corrNat: 'verticalPlateFull',
+      length: '0.2 m',
+      drho: '0.02',
+      dab: '0.25 cm^2/s',
+      nu: '15.9 mm^2/s',
+      sc: '0.63',
+    });
+    const d = 15.9e-6 / 0.63;
+    expect(row(o, 'rayleigh') / ((9.80665 * 0.02 * 0.2 ** 3) / (15.9e-6 * d))).toBeCloseTo(1, 10);
   });
   it('a laminar plate and a Gnielinski tube', () => {
     const lam = solve({ corrExt: 'plateLaminar', velocity: '1 m/s' });
