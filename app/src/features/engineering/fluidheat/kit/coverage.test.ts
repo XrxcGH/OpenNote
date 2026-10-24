@@ -20,7 +20,7 @@ const has = (path: string): boolean => {
 };
 
 function used(tool: string, spec: ToolSpec, outcome: Outcome, texts: Record<string, string>): string[] {
-  const keys: string[] = [`${tool}.title`, `${tool}.keywords`, `${tool}.picture`];
+  const keys: string[] = [`${tool}.title`, `${tool}.keywords`, ...(outcome.picture ? [`${tool}.picture`] : [])];
   const values: Record<string, string> = {};
   for (const field of spec.fields) values[field.id] = texts[field.id] ?? field.first;
   for (const field of shownFields(spec, values)) {
@@ -41,15 +41,26 @@ function used(tool: string, spec: ToolSpec, outcome: Outcome, texts: Record<stri
 describe.each(FLUIDHEAT_TOOLS.map((tool) => tool.id))('the %s tool', (tool) => {
   it('works its first problem and every example, in both unit systems, with every word in the strings', async () => {
     const spec = await SPECS[tool]();
-    const problems: { name: string; texts: Record<string, string> }[] = [
+    const modeField = spec.fields.find((field) => field.id === 'mode');
+    const sweep = modeField?.type === 'choice' ? modeField.options : [];
+    const problems: { name: string; texts: Record<string, string>; lenient?: boolean }[] = [
       { name: 'first', texts: firstTexts(spec) },
       ...(spec.examples ?? []).map((one) => ({ name: one.id, texts: { ...firstTexts(spec), ...one.values } })),
+      // Each mode on its first values: the words of a mode no example reaches are still checked when it runs.
+      ...sweep.map((mode) => ({ name: `mode ${mode}`, texts: { ...firstTexts(spec), mode }, lenient: true })),
     ];
+    for (const field of spec.fields) {
+      expect(has(`${tool}.field.${field.id}`), `missing label of ${field.id}`).toBe(true);
+      if (field.type === 'choice')
+        for (const option of field.options)
+          expect(has(`${tool}.option.${option}`), `missing option ${option}`).toBe(true);
+      if (field.type === 'text') expect(has(`${tool}.hint.${field.id}`), `missing hint of ${field.id}`).toBe(true);
+    }
     for (const system of ['si', 'us'] as System[]) {
       for (const problem of problems) {
         const run = runTool(spec, problem.texts, system);
         // Bare numbers in an example are in the system's units, so only the SI run has to succeed on typed examples.
-        if (!run.ok && system === 'us') continue;
+        if (!run.ok && (system === 'us' || problem.lenient)) continue;
         const why = run.ok ? '' : JSON.stringify(run.error?.detail) + JSON.stringify(run.fields.map((f) => f.field));
         expect(run.ok, `${tool} ${problem.name} ${system}: ${why}`).toBe(true);
         if (!run.ok) continue;

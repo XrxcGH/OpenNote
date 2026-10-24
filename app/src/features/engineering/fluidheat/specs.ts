@@ -3,4 +3,5 @@ import type { ToolSpec } from './kit/spec';
 
 export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   statics: () => import('./statics/spec').then((m) => m.staticsSpec),
+  pipes: () => import('./pipes/spec').then((m) => m.pipesSpec),
 };
