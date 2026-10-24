@@ -276,17 +276,20 @@ export function LinePlot({
     const cy = (y0 + y1) / 2;
     [x0, x1, y0, y1] = [cx - span / 2, cx + span / 2, cy - span / 2, cy + span / 2];
   }
-  const px = (x: number) => pad + ((fx(x) - x0) / (x1 - x0)) * (W - 2 * pad);
+  const tickText = (v: number, log: boolean) => (log ? `1e${Math.round(v)}` : Number(v.toPrecision(3)).toString());
+  // Leave room on the left for the longest label on the vertical axis.
+  const padL = Math.max(pad, 12 + 6.5 * Math.max(tickText(y0, logy).length, tickText(y1, logy).length));
+  const px = (x: number) => padL + ((fx(x) - x0) / (x1 - x0)) * (W - padL - pad);
   const py = (y: number) => H - pad - ((fy(y) - y0) / (y1 - y0)) * (H - 2 * pad);
-  const tick = (v: number, log: boolean) => (log ? `1e${Math.round(v)}` : Number(v.toPrecision(3)).toString());
+  const tick = tickText;
   const zeroX = !logx && x0 < 0 && x1 > 0 ? px(0) : null;
   const zeroY = !logy && y0 < 0 && y1 > 0 ? py(0) : null;
   return (
     <svg className={styles.plot} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label}>
       <rect
-        x={pad}
+        x={padL}
         y={pad / 2}
-        width={W - 2 * pad}
+        width={W - padL - pad}
         height={H - pad - pad / 2}
         fill="none"
         stroke="var(--color-border-subtle)"
@@ -295,19 +298,19 @@ export function LinePlot({
         <line x1={zeroX} x2={zeroX} y1={pad / 2} y2={H - pad} stroke="var(--color-border-control)" />
       ) : null}
       {zeroY !== null ? (
-        <line x1={pad} x2={W - pad} y1={zeroY} y2={zeroY} stroke="var(--color-border-control)" />
+        <line x1={padL} x2={W - pad} y1={zeroY} y2={zeroY} stroke="var(--color-border-control)" />
       ) : null}
       <g fill="var(--color-text-muted)" fontSize="10">
-        <text x={pad} y={H - pad + 14}>
+        <text x={padL} y={H - pad + 14}>
           {tick(x0, logx)}
         </text>
         <text x={W - pad} y={H - pad + 14} textAnchor="end">
           {tick(x1, logx)}
         </text>
-        <text x={pad - 4} y={H - pad} textAnchor="end">
+        <text x={padL - 4} y={H - pad} textAnchor="end">
           {tick(y0, logy)}
         </text>
-        <text x={pad - 4} y={pad / 2 + 8} textAnchor="end">
+        <text x={padL - 4} y={pad / 2 + 8} textAnchor="end">
           {tick(y1, logy)}
         </text>
       </g>
