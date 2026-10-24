@@ -84,6 +84,16 @@ export function axisTitle(axis: PlotSpec['x'], system: System): string {
   return unit ? `${label} (${unit})` : label;
 }
 
+/** The pieces of a line between points that cannot be drawn. */
+function runs<P>(points: readonly P[], shows: (point: P) => boolean): P[][] {
+  const out: P[][] = [[]];
+  for (const point of points) {
+    if (shows(point)) out[out.length - 1].push(point);
+    else if (out[out.length - 1].length) out.push([]);
+  }
+  return out.filter((run) => run.length > 0);
+}
+
 /** The plot as SVG text, in the chosen unit system. */
 // checks-disable-next-line modifiability: one drawing whose parts share the scales; the helpers above hold the math
 export function plotSvg(spec: PlotSpec, system: System, colors: PlotColors, name: string): string {
@@ -136,12 +146,15 @@ export function plotSvg(spec: PlotSpec, system: System, colors: PlotColors, name
   let legend = 0;
   series.forEach((one, i) => {
     const pen = colors.pens[i % colors.pens.length];
-    const kept = one.points.filter(
-      ([x, y]) => Number.isFinite(x) && Number.isFinite(y) && (!ax.log || x > 0) && (!ay.log || y > 0),
-    );
-    const points = kept.map(([x, y]) => `${px(x).toFixed(1)},${py(y).toFixed(1)}`).join(' ');
+    const shows = ([x, y]: readonly [number, number]) =>
+      Number.isFinite(x) && Number.isFinite(y) && (!ax.log || x > 0) && (!ay.log || y > 0);
+    const kept = one.points.filter(shows);
     const dash = one.dashed ? ' stroke-dasharray="6 4"' : '';
-    parts.push(`<polyline points="${points}" fill="none" stroke="${pen}" stroke-width="2"${dash}/>`);
+    // A point that cannot be drawn, such as NaN, breaks the line, so one series can hold separate pieces.
+    for (const run of runs(one.points, shows)) {
+      const points = run.map(([x, y]) => `${px(x).toFixed(1)},${py(y).toFixed(1)}`).join(' ');
+      parts.push(`<polyline points="${points}" fill="none" stroke="${pen}" stroke-width="2"${dash}/>`);
+    }
     if (one.inline) {
       const end = kept[kept.length - 1];
       if (end)

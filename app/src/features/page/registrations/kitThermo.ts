@@ -9,6 +9,7 @@ const TOOLS = [
   ['r134a', 'Snowflake'],
   ['idealgas', 'Cylinder'],
   ['devices', 'Fan'],
+  ['cycles', 'ArrowsClockwise'],
   ['psychro', 'DropHalf'],
   ['statthermo', 'Atom'],
 ] as const satisfies readonly (readonly [string, IconName])[];

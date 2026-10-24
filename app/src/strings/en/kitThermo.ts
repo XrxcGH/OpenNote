@@ -12,6 +12,7 @@ export const kitThermo = {
     psychro: 'Work moist-air states and air-conditioning processes',
     r134a: 'Find a state of refrigerant R-134a from two properties',
     devices: 'Balance a turbine, compressor, nozzle, or other steady-flow device with the second law',
+    cycles: 'Analyze a Rankine, Brayton, Otto, Diesel, refrigeration, or Carnot cycle',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -33,6 +34,10 @@ export const kitThermo = {
     devices:
       'steady flow devices turbine compressor pump nozzle diffuser throttle valve heat exchanger mixing chamber ' +
       'isentropic efficiency entropy generation exergy destruction availability second law efficiency',
+    cycles:
+      'power cycle refrigeration cycle rankine reheat regenerative feedwater heater brayton gas turbine ' +
+      'regeneration intercooling otto diesel dual carnot vapor compression heat pump cop thermal efficiency ' +
+      'back work ratio mean effective pressure state table',
   },
   tab: {
     statthermo: 'Statistical',
@@ -41,6 +46,7 @@ export const kitThermo = {
     psychro: 'Moist air',
     r134a: 'R-134a',
     devices: 'Devices',
+    cycles: 'Cycles',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -89,6 +95,9 @@ export const kitThermo = {
     psychroChart: 'Psychrometric chart',
     refrigerantPh: 'R-134a on a p-h diagram',
     deviceTs: 'Process on a T-s diagram',
+    cycleTs: 'Cycle on a T-s diagram',
+    cyclePh: 'Cycle on a p-h diagram',
+    cyclePv: 'Cycle on a p-v diagram',
   },
   mode: {
     gas: 'Gas molecule',
@@ -100,6 +109,11 @@ export const kitThermo = {
     airState: 'One moist-air state',
     airProcess: 'An air-conditioning process',
     device: 'A steady-flow device',
+    rankine: 'Steam Rankine cycle',
+    brayton: 'Gas-turbine Brayton cycle',
+    piston: 'Otto, Diesel, or dual cycle',
+    fridge: 'Vapor-compression refrigeration, R-134a',
+    carnot: 'Carnot limits between two reservoirs',
   },
   field: {
     molarMass: 'Molar mass',
@@ -177,6 +191,33 @@ export const kitThermo = {
     coldT: 'Cold reservoir temperature',
     deadT: 'Dead-state temperature T₀',
     deadP: 'Dead-state pressure p₀',
+    layout: 'Layout',
+    boilerP: 'Boiler pressure',
+    condenserP: 'Condenser pressure',
+    turbineInlet: 'Turbine inlet',
+    turbineInletT: 'Turbine inlet temperature',
+    reheatP: 'Reheat pressure',
+    reheatTOptional: 'Reheat temperature (empty: same as the turbine inlet)',
+    fwhP: 'Feedwater heater pressure',
+    turbineEta: 'Turbine isentropic efficiency',
+    pumpEta: 'Pump isentropic efficiency',
+    netPowerOptional: 'Net power (optional)',
+    compressorInletT: 'Compressor inlet temperature',
+    compressorInletP: 'Compressor inlet pressure',
+    pressureRatio: 'Pressure ratio p₂/p₁',
+    compressorEta: 'Compressor isentropic efficiency',
+    regenerator: 'Regenerator effectiveness (0 for none)',
+    intercool: 'Intercooling',
+    reheatGas: 'Reheat',
+    engineCycle: 'Cycle',
+    peakT: 'Peak temperature T₃',
+    cutoffRatio: 'Cutoff ratio r_c = v₃/v₂',
+    pressureRatioV: 'Pressure ratio of the constant-volume heating',
+    evaporatorP: 'Evaporator pressure',
+    superheat: 'Superheat at the compressor inlet',
+    subcool: 'Subcooling at the condenser exit',
+    coolingLoadOptional: 'Cooling load (optional)',
+    heatInOptional: 'Heat from the hot reservoir (optional)',
   },
   choice: {
     atom: 'Single atom',
@@ -241,6 +282,17 @@ export const kitThermo = {
     fluidGas: 'Ideal gas',
     exitByT: 'Temperature',
     exitByX: 'Quality',
+    simpleRankine: 'Simple',
+    reheatRankine: 'With reheat',
+    openFwh: 'With an open feedwater heater',
+    closedFwh: 'With a closed feedwater heater',
+    satVaporInlet: 'Saturated vapor',
+    superheatedInlet: 'Superheated, at a temperature',
+    off: 'None',
+    twoStages: 'Two equal stages',
+    otto: 'Otto',
+    diesel: 'Diesel',
+    dual: 'Dual',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -327,6 +379,24 @@ export const kitThermo = {
     V2: 'Exit velocity',
     mCold: 'Mass flow of stream B',
     m3: 'Exit mass flow',
+    wNet: 'Net work',
+    qIn: 'Heat in',
+    qOut: 'Heat out',
+    etaTh: 'Thermal efficiency',
+    mep: 'Mean effective pressure',
+    peakT: 'Peak temperature',
+    peakP: 'Peak pressure',
+    wTurbine: 'Turbine work',
+    wCompressor: 'Compressor work',
+    wPump: 'Pump work',
+    bwr: 'Back work ratio',
+    mFlow: 'Mass flow',
+    heatInRate: 'Heat input rate',
+    copR: 'COP as a refrigerator',
+    copHP: 'COP as a heat pump',
+    qL: 'Heat from the cold space',
+    qH: 'Heat to the warm space',
+    yFraction: 'Fraction extracted',
   },
   step: {
     stat: {
@@ -473,6 +543,49 @@ export const kitThermo = {
       exergy: 'Exergy destroyed: T₀ s_gen = {T0} × {sgen} = {x}.',
       etaII: 'Second-law efficiency: {eta} %.',
     },
+    cyc: {
+      fix: {
+        Tp: 'State {label}: fixed by T = {T} K and p = {p} kPa, so h = {h} kJ/kg and s = {s} kJ/(kg·K).',
+        px: 'State {label}: saturated at p = {p} kPa with x = {x}, so T = {T} K, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
+        ps: 'State {label}: fixed by p = {p} kPa and s = {s} kJ/(kg·K), so T = {T} K and h = {h} kJ/kg.',
+        ph:
+          'State {label}: fixed by p = {p} kPa and h = {h} kJ/kg from the energy balance after state {from}, so ' +
+          'T = {T} K and s = {s} kJ/(kg·K).',
+        Tv:
+          'State {label}: heated at constant volume, v = {v} m³/kg, to T = {T} K, so p = {p} kPa, h = {h} kJ/kg, ' +
+          'and s = {s} kJ/(kg·K).',
+        sv:
+          'State {label}: isentropic from state {from} to v = {v} m³/kg, so T = {T} K, p = {p} kPa, and ' +
+          'h = {h} kJ/kg.',
+        quality: 'State {label} is a saturated mixture with quality x = {x}.',
+      },
+      heatV: 'Heat added at constant volume: q = {q} kJ/kg.',
+      heatP: 'Heat added at constant pressure: q = {q} kJ/kg.',
+      rejectV: 'Heat rejected at constant volume: q_out = u₄ − u₁ = {q} kJ/kg.',
+      totals: 'Totals: w_net = {w} kJ/kg, q_in = {qin} kJ/kg, and q_out = {qout} kJ/kg, so η_th = {eta} %.',
+      mep: 'Mean effective pressure: MEP = {mep} kPa.',
+      intercool: 'Intercooler: back to T₁ at constant pressure, rejecting {q} kJ/kg.',
+      compressor: 'Compressor: the isentropic work is {ws} kJ/kg, so w_c = w_s/η_c = {w} kJ/kg.',
+      regenerator:
+        'Regenerator with effectiveness {eps}: the air takes q = ε (h_exhaust − h_compressor exit) = {q} kJ/kg ' +
+        'from the exhaust, and the exhaust gives the same back.',
+      combustor: 'Heat added at constant pressure (combustor or reheater): q = {q} kJ/kg.',
+      turbine: 'Turbine: w_t = {w} kJ/kg.',
+      cooler: 'Heat rejected at constant pressure, back to state 1: q = {q} kJ/kg.',
+      bwr: 'Back work ratio: r_bw = w_c/w_t = {bwr}.',
+      carnot: 'Carnot limits: η = {eta} %, COP_R = {copR}, and COP_HP = {copHP}.',
+      mass: 'For Ẇ_net = {W} kW the mass flow is ṁ = {m} kg/s, and the heat input is Q̇_in = {Q} kW.',
+      pump: 'Pump: w_p = {w} kJ/kg.',
+      boiler: 'Boiler: q_in = {q} kJ/kg.',
+      reheat: 'Reheater: q = {q} kJ/kg.',
+      fwhOpen: 'Open feedwater heater: the energy balance with a fraction y extracted from the turbine gives y = {y}.',
+      fwhClosed: 'Closed feedwater heater: the energy balance gives y = {y}; the drain is throttled to the condenser.',
+      condenser: 'Condenser: q_out = {q} kJ/kg.',
+      valve: 'Expansion valve: h₄ = h₃ = {h} kJ/kg, so x₄ = {x}.',
+      evaporator: 'Evaporator: q_L = h₁ − h₄ = {q} kJ/kg.',
+      cop: 'COP_R = q_L/w_in = {cop}, and as a heat pump COP_HP = q_H/w_in = {hp}.',
+      load: 'For a cooling load of {Q} kW: ṁ = {m} kg/s and Ẇ_in = {W} kW.',
+    },
   },
   note: {
     idealGasMolecules: 'Ideal gas of independent molecules; energies are counted from the ground level.',
@@ -498,6 +611,14 @@ export const kitThermo = {
     deviceSigns:
       'Turbines are adiabatic with work out; compressors and pumps take work in; s_gen must be zero or more.',
     reservoirsNote: 'Heat flows through the wall, which keeps no energy; T₀ is the dead-state temperature.',
+    airStandard:
+      'Air-standard cycle: air alone is the working fluid, an outside source replaces combustion, and heat ' +
+      'rejection replaces the exhaust; processes are reversible unless an efficiency is given.',
+    steadyCycle:
+      'Steady flow: kinetic and potential energy and pressure losses in pipes and heat exchangers are left out; ' +
+      'work and heat are per kg of working fluid.',
+    carnotLimit: 'Reversible engine, refrigerator, and heat pump between two reservoirs: no real cycle does better.',
+    perKgBoiler: 'With a feedwater heater, work and heat are per kg through the boiler, and y kg per kg is extracted.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -537,6 +658,19 @@ export const kitThermo = {
     exchangerDirection: 'Stream A must cool and stream B must warm; check the exit states.',
     reservoirOrder: 'Heat flows by itself from hot to cold: T_H must be above T_L.',
     secondLaw: 'Those states would destroy entropy (s_gen = {sgen}), which the second law forbids; check the inputs.',
+    ratioAboveOne: '{name} must be above 1.',
+    ratioAtLeastOne: '{name} must be 1 or more.',
+    cycleHeatIn: 'The peak temperature must be above the end of compression, {T} K.',
+    effectivenessRange: 'The regenerator effectiveness must be between 0 and 100 %.',
+    regenImpossible:
+      'The turbine exhaust is no hotter than the compressor exit, so a regenerator cannot help; set it to 0.',
+    cycleNoWork:
+      'The turbine makes no more work than the compressor takes, so the cycle has no net work; raise T₃ or the ' +
+      'efficiencies.',
+    pressureOrder: 'The high pressure must be above the low pressure.',
+    pressureBetween: '{name} must lie between the low and high pressures.',
+    fwhTooCold: 'At that pressure the extracted steam is no hotter than the feedwater; raise the heater pressure.',
+    notNegative: '{name} must be zero or more.',
   },
   word: {
     liquid: 'Compressed liquid',
