@@ -6,5 +6,6 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   distributions: () => import('./distributions/spec').then((m) => m.spec),
   markov: () => import('./markov/spec').then((m) => m.spec),
   statespace: () => import('./statespace/spec').then((m) => m.spec),
+  stochastic: () => import('./stochastic/spec').then((m) => m.spec),
   reliability: () => import('./reliability/spec').then((m) => m.spec),
 };

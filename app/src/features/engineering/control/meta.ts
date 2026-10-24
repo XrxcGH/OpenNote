@@ -25,6 +25,7 @@ const tool = (id: string, icon: IconName): ControlToolMeta => ({
 export const CONTROL_TOOLS: readonly ControlToolMeta[] = [
   tool('statespace', 'MathOperations'),
   tool('digital', 'Timer'),
+  tool('stochastic', 'Sparkle'),
   tool('markov', 'FlowArrow'),
   tool('distributions', 'ChartBar'),
   tool('reliability', 'ListChecks'),
