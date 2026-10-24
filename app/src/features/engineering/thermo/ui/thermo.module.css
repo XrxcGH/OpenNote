@@ -25,6 +25,25 @@
     border-block-end: 1px solid var(--color-border-subtle);
   }
 
+  .tabGroup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .tabRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .subject {
+    padding-inline-end: var(--space-1);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
   .tab {
     min-block-size: var(--size-target-pointer);
     padding-inline: var(--space-3);

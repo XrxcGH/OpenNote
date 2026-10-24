@@ -7,7 +7,7 @@ import { userEvent } from 'vitest/browser';
 import { kitThermo } from '../../../../strings/en/kitThermo';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import { INSERT_EVENT } from '../../../tools/flags';
-import { THERMO_TOOL_IDS } from '../meta';
+import { THERMO_META, THERMO_TOOL_IDS } from '../meta';
 import { chooseTool } from './store';
 import { ThermoKit } from './ThermoKit';
 
@@ -44,6 +44,21 @@ describe('the thermodynamics kit', () => {
     expect(last.getAttribute('aria-selected')).toBe('true');
     expect(document.activeElement).toBe(last);
     await expectNoAxeViolations(container);
+  });
+
+  it('groups the tabs by subject, and the arrow keys cross from one group to the next', async () => {
+    chooseTool('psychro');
+    renderUi(<ThermoKit />);
+    await results();
+    for (const meta of THERMO_META) {
+      const group = screen.getByRole('tablist', { name: kitThermo.subject[meta.subject] });
+      expect(within(group).getByRole('tab', { name: kitThermo.tab[meta.id] })).toBeTruthy();
+    }
+    await userEvent.click(screen.getByRole('tab', { name: kitThermo.tab.psychro }));
+    await userEvent.keyboard('{ArrowRight}');
+    const next = screen.getByRole('tab', { name: kitThermo.tab.combustion });
+    expect(next.getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(next);
   });
 
   it('works the problem again when an input changes and inserts the answer', async () => {
