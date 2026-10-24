@@ -64,6 +64,16 @@ export const DIMS: Record<Exclude<Dim, 'none'> | 'current', DimDef> = {
     si: 'nm',
     us: 'in',
   },
+  frequency: {
+    units: [u('THz', 1e12), u('Hz', 1), u('kHz', 1e3), u('MHz', 1e6), u('GHz', 1e9), u('PHz', 1e15)],
+    si: 'THz',
+    us: 'THz',
+  },
+  photonEnergy: {
+    units: [u('eV', 1.602176634e-19), u('J', 1), u('kJ', 1e3), u('meV', 1.602176634e-22), u('keV', 1.602176634e-16)],
+    si: 'eV',
+    us: 'eV',
+  },
   stress: {
     units: [
       u('MPa', 1e6),

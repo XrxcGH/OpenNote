@@ -24,6 +24,8 @@ export type Dim =
   | 'volume'
   | 'diffusivity'
   | 'stress'
+  | 'frequency'
+  | 'photonEnergy'
   | 'energy'
   | 'none';
 

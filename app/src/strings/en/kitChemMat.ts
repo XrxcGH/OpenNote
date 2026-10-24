@@ -1,5 +1,6 @@
 // The Chemistry and materials window: thermochemistry, equilibrium, acid-base chemistry, electrochemistry, kinetics, atoms
 // and bonding, solutions and lab work, crystals, diffusion, and phase diagrams. Owner: the chemmat lane.
+import { kitChemMatAtoms } from './kitChemMatAtoms';
 import { kitChemMatCrystals } from './kitChemMatCrystals';
 import { kitChemMatDiffusion } from './kitChemMatDiffusion';
 import { kitChemMatPhases } from './kitChemMatPhases';
@@ -493,4 +494,5 @@ export const kitChemMat = {
   cx: kitChemMatCrystals,
   df: kitChemMatDiffusion,
   ph: kitChemMatPhases,
+  at: kitChemMatAtoms,
 } as const;
