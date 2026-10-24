@@ -1,7 +1,7 @@
 // The frequency response tool: Bode plots with the straight-line asymptotes and margins marked, the closed-loop
 // bandwidth and peak, and the Nyquist plot with the encirclement count Z = P − N.
 import { step, type Step } from '../lib/steps';
-import { complexText, fmt, readTF, tfText, type Complex } from '../lib/tf';
+import { complexText, cx, fmt, readTF, tfText, type Complex } from '../lib/tf';
 import type { PlotSpec, Series } from '../ui/plot';
 import { inField } from '../ui/read';
 import type { Outcome, Row, ToolSpec, Values } from '../ui/spec';
@@ -11,6 +11,7 @@ import {
   closedLoop,
   corners,
   grid,
+  loopAt,
   magDb,
   makeLoop,
   marginSteps,
@@ -47,6 +48,9 @@ function units(values: Values) {
     axis: hz ? 'frequencyHz' : 'frequencyRad',
   };
 }
+
+/** A magnitude that is round-off away from 0 dB, as at a gain crossover, shown as 0. */
+const tidyDb = (db: number) => (Math.abs(db) < 1e-9 ? 0 : db);
 
 function marginRows(m: Margins, show: (w: number) => string): Row[] {
   return [
@@ -148,7 +152,7 @@ function runBode(values: Values): Outcome {
       {
         id: 'points',
         columns: ['w', 'mag', 'phase'],
-        rows: marks.map((w) => [u.show(w), fmt(magDb(l, w)), fmt(phaseDeg(l, w))]),
+        rows: marks.map((w) => [u.show(w), fmt(tidyDb(magDb(l, w))), fmt(phaseDeg(l, w))]),
       },
     ],
     plots: bodePlots(l, ws, m, u),
@@ -156,9 +160,11 @@ function runBode(values: Values): Outcome {
   };
 }
 
-function nyquistPlot(upper: readonly Complex[]): PlotSpec {
-  const sizes = upper.map((z) => Math.hypot(z.re, z.im)).filter(Number.isFinite);
-  const radius = Math.max(3, 1.5 * Math.min(Math.max(...sizes), 20));
+/** The Nyquist plot, framed on the part near −1: out to a little past |L| at the lowest corner frequency. */
+function nyquistPlot(l: Loop, upper: readonly Complex[]): PlotSpec {
+  const c = corners(l);
+  const near = c.length ? Math.hypot(loopAt(l, cx(0, c[0])).re, loopAt(l, cx(0, c[0])).im) : 1;
+  const radius = Math.max(2.5, Math.min(1.3 * near, 20));
   const segments: Complex[][] = [[]];
   for (const z of upper) {
     if (Number.isFinite(z.re) && Math.hypot(z.re, z.im) <= radius) segments[segments.length - 1].push(z);
@@ -172,7 +178,13 @@ function nyquistPlot(upper: readonly Complex[]): PlotSpec {
       series.push({ id: i ? '' : 'negative', pen: 0, style: 'dash', points: s.map((z) => [z.re, -z.im] as const) });
     });
   series.push({ id: 'critical', style: 'markers', marker: 'x', pen: 1, points: [[-1, 0]] });
-  return { id: 'nyquistPlot', x: { label: 'real' }, y: { label: 'imag' }, equal: true, series };
+  return {
+    id: 'nyquistPlot',
+    x: { label: 'real', min: -radius, max: radius },
+    y: { label: 'imag', min: -radius, max: radius },
+    equal: true,
+    series,
+  };
 }
 
 function runNyquist(values: Values): Outcome {
@@ -201,7 +213,7 @@ function runNyquist(values: Values): Outcome {
       ...marginRows(m, u.show),
     ],
     steps: [...steps, ...marginSteps(l, m)],
-    plots: [nyquistPlot(r.upper)],
+    plots: [nyquistPlot(l, r.upper)],
     notes: [{ id: 'contour' }, { id: 'unity' }, ...(r.marginal ? [{ id: 'marginal' }] : [])],
   };
 }

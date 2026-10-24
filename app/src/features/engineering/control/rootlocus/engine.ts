@@ -265,12 +265,10 @@ export function locusRules(g: TF): Rules {
   const locus = trackLocus(g.num, g.den, top * 50, span);
   const list = (zs: readonly Complex[]) => zs.map((z) => complexText(z)).join(', ') || '—';
   const steps: Step[] = [
-    step(
-      'locus.equation',
-      {},
-      `1 + K\\,\\frac{N(s)}{D(s)} = 0 \\iff ${polyTex(g.den)} + K\\left(${polyTex(g.num)}\\right) = 0`,
-    ),
-    step('locus.ends', { n: String(n), m: String(m), poles: list(poles), zeros: list(zeros) }),
+    step('locus.equation', {}, `1 + K\\,\\frac{N(s)}{D(s)} = 0 \\iff ${polyTex(g.den)} + ${gainTerm(g)} = 0`),
+    m
+      ? step('locus.ends', { n: String(n), m: String(m), poles: list(poles), zeros: list(zeros) })
+      : step('locus.endsNoZeros', { n: String(n), poles: list(poles) }),
     step('locus.realAxis'),
   ];
   if (centroid !== null) {
@@ -298,6 +296,12 @@ export function locusRules(g: TF): Rules {
   crossings.forEach((c) => steps.push(step('locus.crossing', { w: fmt(c.at), k: fmt(c.k) })));
   steps.push(step('locus.ranges', { ranges: rangesText(ranges) }));
   return { poles, zeros, centroid, asymptotes, breaks, departures, arrivals, crossings, ranges, locus, steps };
+}
+
+/** K N(s) in LaTeX: "K", "2\,K", or "K(s + 1)". */
+function gainTerm(g: TF): string {
+  if (g.num.length > 1) return `K\\left(${polyTex(g.num)}\\right)`;
+  return Math.abs(g.num[0] - 1) < 1e-12 ? 'K' : `${polyTex(g.num)}\\,K`;
 }
 
 export const rangesText = (ranges: readonly [number, number][]): string =>

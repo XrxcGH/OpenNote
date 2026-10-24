@@ -386,6 +386,7 @@ export const kitControl = {
     locus: {
       equation: 'The locus is every root of 1 + K G(s) = 0 as K goes from 0 to ∞:',
       ends: 'It starts at the {n} poles ({poles}) and ends at the {m} zeros ({zeros}) or at infinity.',
+      endsNoZeros: 'It starts at the {n} poles ({poles}); with no zeros, every branch goes to infinity.',
       realAxis: 'On the real axis it lies to the left of an odd number of real poles and zeros.',
       centroid: '{q} branches go to infinity along asymptotes from the centroid:',
       asymptotes: 'The asymptotes leave at {angles}:',
@@ -413,9 +414,9 @@ export const kitControl = {
       closed: 'With unity feedback the closed loop has a bandwidth of {bw} rad/s and a resonant peak of {peak} dB.',
       contour:
         'Run s up the imaginary axis, stepping round the {axis} open-loop poles on it by small semicircles to the right.',
-      openRhp: 'The open loop has P = {p} poles in the right half-plane.',
-      encircle: 'The plot of L(jω) goes round −1 counter-clockwise {ccw} times (negative means clockwise).',
-      criterion: 'The closed loop has Z = P − N = {z} poles in the right half-plane, with P = {p} and N = {ccw}:',
+      openRhp: 'Open-loop poles in the right half-plane: P = {p}.',
+      encircle: 'Counter-clockwise encirclements of −1 by L(jω): N = {ccw} (negative means clockwise).',
+      criterion: 'Closed-loop poles in the right half-plane: Z = P − N = {z}, with P = {p} and N = {ccw}.',
     },
     queue: {
       rho:
