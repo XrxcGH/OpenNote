@@ -1,6 +1,6 @@
 // Steady one-dimensional conduction as a thermal resistance network: plane walls, cylindrical, and spherical shells,
 // contact and convection resistances, linearised radiation, critical radius of insulation, and uniform heat generation.
-import { fmt, need, nonNegative, positive, SIGMA, type Step } from '../numeric';
+import { dtemp, fmt, need, nonNegative, positive, SIGMA, temp, type Step } from '../numeric';
 
 export type Geometry = 'plane' | 'cylinder' | 'sphere';
 
@@ -140,7 +140,7 @@ export function solveWall(inp: WallInput): WallResult {
   );
   nodes.forEach((t, i) => {
     if (i > 0 && i < nodes.length - 1)
-      steps.push({ key: 'fhCondNode', vars: { n: String(i), T: fmt(t, 5) }, math: `T_{${i}} = ${fmt(t, 5)}` });
+      steps.push({ key: 'fhCondNode', vars: { n: String(i), T: temp(t) }, math: `T_{${i}} = [[T]]` });
   });
   return { items, total, q, nodes, profile, innerFlux: q / A(edges[0]!), steps };
 }
@@ -229,13 +229,13 @@ export function generation(inp: GenerationInput): GenerationResult {
     steps: [
       {
         key: 'fhCondGeneration',
-        vars: { dT: fmt(rise), Tmax: fmt(ts + rise) },
+        vars: { dT: dtemp(rise), Tmax: temp(ts + rise) },
         math:
           inp.geometry === 'plane'
-            ? `T_{max} - T_s = \\frac{\\dot q L^2}{2k} = ${fmt(rise)}`
+            ? `T_{max} - T_s = \\frac{\\dot q L^2}{2k} = [[dT]]`
             : inp.geometry === 'cylinder'
-              ? `T_{max} - T_s = \\frac{\\dot q r_0^2}{4k} = ${fmt(rise)}`
-              : `T_{max} - T_s = \\frac{\\dot q r_0^2}{6k} = ${fmt(rise)}`,
+              ? `T_{max} - T_s = \\frac{\\dot q r_0^2}{4k} = [[dT]]`
+              : `T_{max} - T_s = \\frac{\\dot q r_0^2}{6k} = [[dT]]`,
       },
     ],
   };

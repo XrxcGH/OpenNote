@@ -1,7 +1,7 @@
 // Heat exchangers by the effectiveness-NTU and log-mean temperature difference methods: parallel flow, counterflow,
 // one shell with 2n tube passes, three cross-flow arrangements, and a condenser or boiler (Cr = 0). Temperatures in
 // kelvin or celsius (the same scale in and out), heat capacity rates in W/K, UA in W/K.
-import { brent, CalcError, fmt, need, nonNegative, positive, type Step } from '../numeric';
+import { brent, CalcError, dtemp, fmt, need, nonNegative, positive, temp, type Step } from '../numeric';
 
 export type HxType = 'counter' | 'parallel' | 'shell' | 'crossUnmixed' | 'crossCmaxMixed' | 'crossCminMixed';
 
@@ -225,17 +225,17 @@ function finish(
     },
     {
       key: 'fhHxOutlets',
-      vars: { th: fmt(r.thOut), tc: fmt(r.tcOut) },
-      math: `T_{h,out} = ${fmt(r.thOut)},\\quad T_{c,out} = ${fmt(r.tcOut)}`,
+      vars: { th: temp(r.thOut), tc: temp(r.tcOut) },
+      math: `T_{h,out} = [[th]],\\quad T_{c,out} = [[tc]]`,
     },
   ];
   if (Number.isFinite(meanDt)) {
     steps.push({
       key: 'fhHxLmtd',
-      vars: { lmtd: fmt(meanDt), f: fmt(f) },
+      vars: { lmtd: dtemp(meanDt), f: fmt(f) },
       math:
         `\\Delta T_{lm} = \\frac{\\Delta T_1 - \\Delta T_2}{\\ln(\\Delta T_1/\\Delta T_2)} ` +
-        `= ${fmt(meanDt)},\\quad q = F\\,UA\\,\\Delta T_{lm} \\Rightarrow F = ${fmt(f)}`,
+        `= [[lmtd]],\\quad q = F\\,UA\\,\\Delta T_{lm} \\Rightarrow F = ${fmt(f)}`,
     });
   }
   return { ...r, lmtd: meanDt, f, steps };
@@ -270,10 +270,10 @@ export function fromTemperatures(inp: {
   const steps: Step[] = [
     {
       key: 'fhHxDiffs',
-      vars: { d1: fmt(d1), d2: fmt(d2) },
-      math: `\\Delta T_1 = ${fmt(d1)},\\quad \\Delta T_2 = ${fmt(d2)}`,
+      vars: { d1: dtemp(d1), d2: dtemp(d2) },
+      math: `\\Delta T_1 = [[d1]],\\quad \\Delta T_2 = [[d2]]`,
     },
-    { key: 'fhHxLmtdOnly', vars: { lmtd: fmt(meanDt) }, math: `\\Delta T_{lm} = ${fmt(meanDt)}` },
+    { key: 'fhHxLmtdOnly', vars: { lmtd: dtemp(meanDt) }, math: `\\Delta T_{lm} = [[lmtd]]` },
     ...(inp.type === 'shell'
       ? [
           {

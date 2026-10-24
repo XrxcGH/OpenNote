@@ -1,6 +1,20 @@
 // Transient conduction (and the identical diffusion problem for mass): lumped capacitance, the exact series solutions for the
 // plane wall, long cylinder and sphere, and the semi-infinite solid. Temperature and concentration share every formula.
-import { besselJ, bracketScan, brent, CalcError, erf, erfc, erfcx, fmt, need, positive, type Step } from '../numeric';
+import {
+  besselJ,
+  bracketScan,
+  brent,
+  CalcError,
+  dtemp,
+  erf,
+  erfc,
+  erfcx,
+  fmt,
+  need,
+  positive,
+  temp,
+  type Step,
+} from '../numeric';
 
 export type SolidShape = 'wall' | 'cylinder' | 'sphere';
 
@@ -60,8 +74,8 @@ export function lumped(inp: LumpedInput): LumpedResult {
     out.temperature = inp.tFluid + (inp.tInitial - inp.tFluid) * Math.exp(-inp.time / tau);
     steps.push({
       key: 'fhTransLumpedT',
-      vars: { T: fmt(out.temperature) },
-      math: `T = T_\\infty + (T_i - T_\\infty)e^{-t/\\tau} = ${fmt(out.temperature)}`,
+      vars: { T: temp(out.temperature) },
+      math: `T = T_\\infty + (T_i - T_\\infty)e^{-t/\\tau} = [[T]]`,
     });
   }
   if (inp.target !== undefined) {
@@ -358,8 +372,8 @@ export function semiInfinite(inp: SemiInput): SemiResult {
       t = inp.value + (inp.tInitial - inp.value) * erf(eta);
       steps.push({
         key: 'fhTransSemiT',
-        vars: { T: fmt(t) },
-        math: `\\frac{T - T_s}{T_i - T_s} = \\operatorname{erf}(\\eta) \\Rightarrow T = ${fmt(t)}`,
+        vars: { T: temp(t) },
+        math: `\\frac{T - T_s}{T_i - T_s} = \\operatorname{erf}(\\eta) \\Rightarrow T = [[T]]`,
       });
       break;
     case 'flux':
@@ -369,10 +383,10 @@ export function semiInfinite(inp: SemiInput): SemiResult {
         ((inp.value * inp.depth) / inp.k) * erfc(eta);
       steps.push({
         key: 'fhTransSemiQ',
-        vars: { T: fmt(t) },
+        vars: { T: temp(t), dT: dtemp(t - inp.tInitial) },
         math:
           `T - T_i = \\frac{2q''\\sqrt{\\alpha t/\\pi}}{k}e^{-\\eta^2} - \\frac{q'' ` +
-          `x}{k}\\operatorname{erfc}(\\eta) = ${fmt(t - inp.tInitial)}`,
+          `x}{k}\\operatorname{erfc}(\\eta) = [[dT]]`,
       });
       break;
     case 'convection': {
@@ -385,7 +399,7 @@ export function semiInfinite(inp: SemiInput): SemiResult {
       t = inp.tInitial + theta * (inp.value - inp.tInitial);
       steps.push({
         key: 'fhTransSemiH',
-        vars: { T: fmt(t) },
+        vars: { T: temp(t) },
         math:
           `\\frac{T - T_i}{T_\\infty - T_i} = \\operatorname{erfc}\\eta - e^{hx/k + h^2\\alpha ` +
           `t/k^2}\\operatorname{erfc}\\left(\\eta + \\frac{h\\sqrt{\\alpha t}}{k}\\right) ` +

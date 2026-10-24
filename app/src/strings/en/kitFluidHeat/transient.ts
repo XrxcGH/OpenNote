@@ -73,14 +73,14 @@ export const transient = {
 export const transientStep = {
   fhTransBiot: 'The Biot number is Bi = {Bi}.',
   fhTransTau: 'The time constant is τ = {tau} s.',
-  fhTransLumpedT: 'After that time the temperature is T = {T} K.',
+  fhTransLumpedT: 'After that time the temperature is T = {T}.',
   fhTransLumpedTime: 'The solid reaches the target after t = {t} s.',
   fhTransEigen: 'The first eigenvalue is ζ1 = {z1} and the first coefficient is C1 = {c1}.',
   fhTransSeries: 'The series, summed over {n} terms, gives the dimensionless temperature θ = {th}.',
   fhTransHeat: 'The share of the largest possible heat transfer is Q/Q0 = {q}.',
   fhTransDimensionless: 'The Biot number is {Bi} and the Fourier number is {Fo}.',
   fhTransEta: 'The similarity variable is η = {eta}.',
-  fhTransSemiT: 'The temperature at that depth is T = {T} K.',
-  fhTransSemiQ: 'With constant heat flux the temperature at that depth is T = {T} K.',
-  fhTransSemiH: 'With surface convection the temperature at that depth is T = {T} K.',
+  fhTransSemiT: 'The temperature at that depth is T = {T}.',
+  fhTransSemiQ: 'With constant heat flux the temperature at that depth is T = {T}.',
+  fhTransSemiH: 'With surface convection the temperature at that depth is T = {T}.',
 } as const;

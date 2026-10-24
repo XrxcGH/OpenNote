@@ -1,11 +1,26 @@
 // The heat exchanger form end to end, checked against energy balances, then the effectiveness-NTU relations.
 import { describe, expect, it } from 'vitest';
 import { refusal, refuses, row, solver } from '../kit/testing';
+import { valueLatex, valueText } from '../kit/format';
 import { hxSpec } from './spec';
 
 const solve = solver(hxSpec);
 const ch = 0.5 * 4180;
 const cc = 1.0 * 4180;
+
+describe('worked steps write temperatures in the chosen scale', () => {
+  it('the outlet temperatures read in degrees Celsius or Fahrenheit, never as bare kelvin', () => {
+    const o = solve();
+    const step = o.steps?.find((x) => x.key === 'fhHxOutlets');
+    const th = step?.vars?.th;
+    expect(th).toBeDefined();
+    const hotC = row(o, 'thOut') - 273.15;
+    expect(valueText(th!, 'si', 8)).toBe(`${Number(hotC.toPrecision(8))} °C`);
+    expect(valueText(th!, 'us')).toMatch(/°F$/);
+    expect(valueLatex(th!, 'si')).toMatch(/83.879.*C}$/);
+    expect(step?.math).toContain('[[th]]');
+  });
+});
 
 describe('heat exchanger form', () => {
   it('rating a counterflow exchanger: energy balance and the counterflow effectiveness', () => {

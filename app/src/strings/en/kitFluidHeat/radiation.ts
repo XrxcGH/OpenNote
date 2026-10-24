@@ -124,7 +124,7 @@ export const radiationStep = {
   fhRadQ: 'The net heat from surface 1 to surface 2 is q12 = {q} W.',
   fhRadShieldNo: 'Without shields the heat flux is {q} W/m².',
   fhRadShield: 'With {n} shields the heat flux is {q} W/m².',
-  fhRadShieldT: 'Shield {i} settles at {t} K.',
+  fhRadShieldT: 'Shield {i} settles at {t}.',
   fhRadRadiosity: 'Solve the radiosity equations for the {n} surfaces.',
   fhRadNet: 'The net heat from the surfaces adds up to {sum} W, which should be close to zero.',
 } as const;

@@ -83,8 +83,8 @@ export const conductionStep = {
   fhCondLayer: 'The conduction resistance of {name} is {R} K/W.',
   fhCondTotal: 'The resistances add in series to Rtot = {R} K/W.',
   fhCondRate: 'The heat transfer rate is the temperature difference over the total resistance: q = {q} W.',
-  fhCondNode: 'The temperature at node {n} is {T} K.',
+  fhCondNode: 'The temperature at node {n} is {T}.',
   fhCondCritical: 'The critical radius of insulation is rcr = {r} m.',
-  fhCondGeneration: 'The center is {dT} hotter than the surface, at Tmax = {Tmax} K.',
+  fhCondGeneration: 'The center is {dT} hotter than the surface, at Tmax = {Tmax}.',
   fhCondRadiation: 'The linearized radiation coefficient is hr = {h} W/(m²·K).',
 } as const;

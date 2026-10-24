@@ -3,10 +3,21 @@
 export const G0 = 9.80665;
 export const SIGMA = 5.670374419e-8;
 
+export interface StepQuantity {
+  readonly v: number;
+  readonly k: string;
+}
+
+/** A temperature in kelvin, shown in the system's scale (°C or °F). */
+export const temp = (v: number): StepQuantity => ({ v, k: 'temperature' });
+/** A temperature difference in kelvin, shown as K or °F. */
+export const dtemp = (v: number): StepQuantity => ({ v, k: 'tempChange' });
+
 /** One line of worked steps. `key` names a string in the tool's namespace; `vars` fill its placeholders; `math` is LaTeX. */
 export interface Step {
   key: string;
-  vars?: Record<string, string>;
+  /** A value is text, a number, or a quantity (base SI value and its kind) that the window writes in the chosen units. */
+  vars?: Record<string, string | number | StepQuantity>;
   math?: string;
 }
 

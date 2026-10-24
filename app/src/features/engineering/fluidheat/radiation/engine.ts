@@ -1,7 +1,7 @@
 // Radiation heat transfer: blackbody emission (Stefan-Boltzmann, Wien, Planck, band fractions), view factors from
 // published closed forms, exchange between two gray surfaces, radiation shields, and an N-surface gray enclosure
 // solved by the radiosity method. Temperatures in kelvin, SI throughout.
-import { fmt, need, nonNegative, positive, SIGMA, sq, type Step } from '../numeric';
+import { fmt, need, nonNegative, positive, SIGMA, sq, temp, type Step } from '../numeric';
 
 /** Planck's second radiation constant h c / k (m K), from the exact SI constants. */
 export const C2 = (6.62607015e-34 * 299792458) / 1.380649e-23;
@@ -350,8 +350,8 @@ export function shields(inp: ShieldInput): ShieldResult {
       },
       ...temps.map((t, i) => ({
         key: 'fhRadShieldT',
-        vars: { i: String(i + 1), t: fmt(t) },
-        math: `T_{s${i + 1}} = ${fmt(t)}\\ \\mathrm{K}`,
+        vars: { i: String(i + 1), t: temp(t) },
+        math: `T_{s${i + 1}} = [[t]]`,
       })),
     ],
   };
