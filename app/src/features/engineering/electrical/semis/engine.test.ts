@@ -62,6 +62,11 @@ describe('rectifier ripple', () => {
     close(r.ripple, 10 / 6, 1e-12);
     close(r.dc, 10 - 10 / 12, 1e-12);
   });
+  it('peak diode current follows Sedra and Smith: half wave 1 + 2 pi sqrt(2Vp/Vr), full wave 1 + pi sqrt(2Vp/Vr)', () => {
+    // Hand values: IL = 9.1667 mA, sqrt(2 Vp / Vr) = sqrt(12); full wave: IL = 8.9125 mA, sqrt(2 Vp / Vr) = sqrt(24).
+    close(rectifier(10, 0, 60, false, 1000, 100e-6).diodePeak, 0.208685, 1e-5);
+    close(rectifier(10, 0.7, 60, true, 1000, 100e-6).diodePeak, 0.146081, 1e-5);
+  });
   it('full wave halves the ripple, and a diode drop lowers the peak', () => {
     const full = rectifier(10, 0.7, 60, true, 1000, 100e-6);
     close(full.ripple, 9.3 / (120 * 1000 * 100e-6), 1e-12);

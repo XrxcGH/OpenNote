@@ -89,7 +89,8 @@ export function rectifier(vp: number, drop: number, hz: number, full: boolean, r
   // The straight-line model gives a ripple larger than the peak when C is far too small.
   if (ripple >= peak) fail('rippleTooBig');
   const iLoad = (peak - ripple / 2) / r;
-  const diodePeak = iLoad * (1 + Math.PI * Math.sqrt((2 * peak) / ripple));
+  // Sedra and Smith: half wave IL (1 + 2 pi sqrt(2 Vp / Vr)); full wave (two conduction pulses a cycle) half of the pi term.
+  const diodePeak = iLoad * (1 + (full ? 1 : 2) * Math.PI * Math.sqrt((2 * peak) / ripple));
   return { peak, ripple, low: peak - ripple, dc: peak - ripple / 2, rippleHz, diodePeak };
 }
 
