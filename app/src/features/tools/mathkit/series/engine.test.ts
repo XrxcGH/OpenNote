@@ -53,11 +53,44 @@ describe('series tests', () => {
   });
 });
 
+describe('series that look like they fail the n-th term test but do not', () => {
+  // Known from the p-series and Bertrand rules, and the alternating series test.
+  const cases: [string, number, string][] = [
+    ['1/n^1.01', 1, 'absolute'],
+    ['sin(n)/n^2', 1, 'absolute'],
+    ['ln(n)/n^2', 2, 'absolute'],
+    ['1/(n*ln(n)^2)', 2, 'absolute'],
+    ['n^5/1.01^n', 1, 'absolute'],
+    ['(-1)^n/sqrt(n)', 1, 'conditional'],
+    ['(-1)^n/ln(n)', 2, 'conditional'],
+    ['1/(n*ln(n))', 2, 'diverges'],
+    ['1/(n*ln(n)^0.5)', 2, 'diverges'],
+    ['1/n^0.99', 1, 'diverges'],
+    ['(-1)^n*(1+1/n)', 1, 'diverges'],
+    ['cos(n)', 1, 'diverges'],
+  ];
+  it.each(cases)('%s from %i is %s', (term, start, verdict) => {
+    expect(analyzeSeries(term, start).verdict).toBe(verdict);
+  });
+  it('1/(n ln n) is not called divergent because of a limit that is not zero', () => {
+    const r = analyzeSeries('1/(n*ln(n))', 2);
+    expect(r.steps.some((s) => s.key === 'nthDiverge')).toBe(false);
+    expect(r.steps.some((s) => s.key === 'bertrandDiv')).toBe(true);
+  });
+  it('a terms-do-not-vanish verdict never reports a negative limit', () => {
+    const r = analyzeSeries('n/(n+1)');
+    expect(r.steps.find((s) => s.key === 'nthDiverge')!.vars!.limit.startsWith('-')).toBe(false);
+  });
+});
+
 describe('power series', () => {
   it('sum x^n/n has R = 1 and interval [-1, 1)', () => {
     const r = analyzePowerSeries('x^n/n', '0', 1);
     expect(r.radius).toBeCloseTo(1, 6);
     expect(r.interval).toBe('[−1, 1)');
+  });
+  it('sum x^n/sqrt(n) has interval [-1, 1)', () => {
+    expect(analyzePowerSeries('x^n/sqrt(n)', '0', 1).interval).toBe('[−1, 1)');
   });
   it('sum (x-2)^n/(3^n n^2) has R = 3 and interval [-1, 5]', () => {
     const r = analyzePowerSeries('(x-2)^n/(3^n*n^2)', '2', 1);

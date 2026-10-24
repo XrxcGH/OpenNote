@@ -3,7 +3,8 @@
 // limit is shown to a few digits, never as a proof. A power series gets its radius from the ratio of coefficients
 // and its endpoints are fed back through the same tests.
 import { readFunction } from '../expr';
-import { close, closedForm, fmt, sequenceLimit, toFraction } from '../numeric';
+import { limitOf, positive, tidy, type Positive, type Term } from './positive';
+import { close, closedForm, fmt, toFraction } from '../numeric';
 import { KitError, step, type KitStep } from '../types';
 
 export type Verdict = 'absolute' | 'conditional' | 'diverges' | 'unknown';
@@ -18,29 +19,6 @@ export interface SeriesResult {
   partial: [number, number][];
 }
 
-type Term = (n: number) => number;
-
-/** A limit of u(n), trying smaller starting points when large n overflows. */
-function limitOf(u: (n: number) => number): number {
-  for (const from of [64, 32, 16, 8]) {
-    const value = sequenceLimit(u, from);
-    if (Number.isFinite(value)) {
-      // A sequence that is still growing fast has no finite limit.
-      const big = Math.abs(u(from * 8));
-      if (big > 10 && big > 1.5 * Math.abs(u(from * 4))) return Infinity;
-      return value;
-    }
-    if (Math.abs(u(from * 8)) === Infinity) return Infinity;
-  }
-  return NaN;
-}
-
-const tidy = (value: number): string => {
-  const fraction = toFraction(value, 24, 1e-5);
-  if (fraction && fraction[1] > 1) return `${fraction[0]}/${fraction[1]} (about ${fmt(value, 5)})`;
-  return fmt(Math.abs(value) < 1e-5 ? 0 : value, 6);
-};
-
 function alternates(a: Term, start: number): boolean {
   let last = 0;
   for (let n = start; n < start + 12; n++) {
@@ -51,95 +29,6 @@ function alternates(a: Term, start: number): boolean {
     last = sign;
   }
   return true;
-}
-
-interface Positive {
-  verdict: 'converges' | 'diverges' | 'unknown';
-  steps: KitStep[];
-  /** Decay rate q for summing: the partial sums miss by about N^-q. NaN for fast decay. */
-  power: number;
-  fast: boolean;
-  /** The exponent p of a power-law decay 1/n^p, when there is one. */
-  decay?: number;
-}
-
-/** The tests for a series of terms b_n = |a_n|. */
-function positive(b: Term, start: number, termText: string): Positive {
-  const steps: KitStep[] = [];
-  const done = (verdict: Positive['verdict'], power = NaN, fast = false): Positive => ({
-    verdict,
-    steps,
-    power,
-    fast,
-  });
-  const zero = limitOf(b);
-  if (!(Math.abs(zero) < 1e-6)) {
-    steps.push(step('nthDiverge', undefined, { limit: Number.isFinite(zero) ? fmt(zero, 6) : '∞' }));
-    return done('diverges');
-  }
-  steps.push(step('nthZero'));
-  // A geometric series: the ratio of neighbors is the same everywhere.
-  const r0 = b(start + 1) / b(start);
-  if (Number.isFinite(r0) && [3, 7, 12].every((k) => close(b(start + 1 + k) / b(start + k), r0, 1e-9))) {
-    steps.push(step('geometric', undefined, { ratio: fmt(r0, 8) }));
-    if (r0 < 1) {
-      steps.push(step('geometricConv', undefined, { abs: fmt(r0, 8) }));
-      return done('converges', NaN, true);
-    }
-    steps.push(step('geometricDiv', undefined, { abs: fmt(r0, 8) }));
-    return done('diverges');
-  }
-  // The ratio test.
-  const ratio = limitOf((n) => b(n + 1) / b(n));
-  if (Number.isFinite(ratio)) {
-    steps.push(step('ratio', undefined, { limit: tidy(ratio) }));
-    if (ratio < 1 - 1e-5) {
-      steps.push(step('ratioConv'));
-      return done('converges', NaN, true);
-    }
-    if (ratio > 1 + 1e-5) {
-      steps.push(step('ratioDiv'));
-      return done('diverges');
-    }
-    steps.push(step('ratioNone'));
-  }
-  // The root test, where the terms are small enough to take a root.
-  const root = limitOf((n) => Math.exp(Math.log(b(n)) / n));
-  if (Number.isFinite(root) && !Number.isFinite(ratio)) {
-    steps.push(step('root', undefined, { limit: tidy(root) }));
-    if (root < 1 - 1e-5) {
-      steps.push(step('rootConv'));
-      return done('converges', NaN, true);
-    }
-    if (root > 1 + 1e-5) {
-      steps.push(step('rootDiv'));
-      return done('diverges');
-    }
-    steps.push(step('rootNone'));
-  }
-  // A power law: b_n behaves like C / n^p. Then the p-series settles it.
-  let p = NaN;
-  for (let k = 16; k >= 5 && !Number.isFinite(p); k--) p = -Math.log(b(2 ** (k + 1)) / b(2 ** k)) / Math.LN2;
-  const nearest = Math.round(p * 4) / 4;
-  if (Number.isFinite(p) && Math.abs(p - nearest) < 2e-3) {
-    const c = limitOf((n) => b(n) * n ** nearest);
-    if (Number.isFinite(c) && c > 0) {
-      const exact = close(b(7) * 7 ** nearest, 1, 1e-12) && close(b(31) * 31 ** nearest, 1, 1e-12);
-      if (exact) {
-        steps.push(step('pseries', `a_n=\\frac{1}{n^{${fmt(nearest)}}}`, { p: fmt(nearest) }));
-      } else {
-        steps.push(step('compare', undefined, { p: fmt(nearest), limit: tidy(c) }));
-      }
-      if (nearest > 1) {
-        steps.push(step('pseriesConv', undefined, { p: fmt(nearest) }));
-        return { ...done('converges', nearest - 1), decay: nearest };
-      }
-      steps.push(step('pseriesDiv', undefined, { p: fmt(nearest) }));
-      return { ...done('diverges'), decay: nearest };
-    }
-  }
-  steps.push(step('noTest', undefined, { term: termText }));
-  return { ...done('unknown'), decay: Number.isFinite(p) ? p : NaN };
 }
 
 /** Richardson extrapolation of partial sums that miss by about N^-q, q+1, q+2, ... */
@@ -172,7 +61,8 @@ function sumOf(a: Term, start: number, info: Positive, alternating: boolean): nu
   }
   if (alternating) {
     const averaged = (n: number) => (partial(n) + partial(n + 1)) / 2;
-    return extrapolate(averaged, (Number.isFinite(info.decay) ? info.decay! : 1) + 1, 128);
+    // The error of the averaged sums is known only for a plain power law.
+    return Number.isFinite(info.decay) ? extrapolate(averaged, info.decay! + 1, 128) : null;
   }
   if (!Number.isFinite(info.power)) return null;
   return extrapolate(partial, info.power);
@@ -215,7 +105,9 @@ export function analyzeSeries(termText: string, start = 1): SeriesResult {
     // Alternating series test on b_n = |a_n|.
     let decreasing = true;
     for (let n = start; n < start + 400; n++) if (abs(n + 1) > abs(n) * (1 + 1e-12)) decreasing = false;
-    const vanishes = Math.abs(limitOf(abs)) < 1e-6;
+    // Falling toward 0: b(1e6) < b(1e3) < b(start + 10), the far terms still shrinking, and no clear nonzero limit.
+    const [near, mid, far, farther] = [start + 10, 1e3, 1e6, 1e9].map(abs);
+    const vanishes = !inner.nonzero && far < mid && mid < near && farther < far;
     if (decreasing && vanishes) {
       steps.push(step('altTest'));
       steps.push(step('altBound', undefined, { n: '10', bound: fmt(abs(start + 10), 6) }));

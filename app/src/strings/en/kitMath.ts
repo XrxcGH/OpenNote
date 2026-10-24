@@ -931,6 +931,15 @@ export const kitMath = {
     compare: 'Limit comparison with 1/n^{p}: a(n) times n^{p} tends to {limit}, which is positive and finite.',
     pseriesConv: 'A p-series converges when p is greater than 1, and here p = {p}, so the series converges.',
     pseriesDiv: 'A p-series diverges when p is at most 1, and here p = {p}, so the series diverges.',
+    compareTrig:
+      'Sine and cosine are at most 1 in size, so each term is at most the same term with them removed. ' +
+      'If those larger terms form a convergent series, so does this one (the comparison test):',
+    bertrandConv:
+      'The terms behave like 1/(n^{p} (ln n)^{q}), and with p = {p} and q = {q} this series converges ' +
+      '(it converges when p > 1, or when p = 1 and q > 1).',
+    bertrandDiv:
+      'The terms behave like 1/(n^{p} (ln n)^{q}), and with p = {p} and q = {q} this series diverges ' +
+      '(it converges only when p > 1, or when p = 1 and q > 1).',
     noTest:
       'None of the tests here decides the series with terms {term}. Try the integral test or a comparison by hand.',
     alternating: 'The terms alternate in sign.',
