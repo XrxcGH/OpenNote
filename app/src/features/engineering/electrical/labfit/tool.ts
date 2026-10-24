@@ -139,7 +139,7 @@ function finish(args: {
       rows.push({
         key: 'covarianceRow',
         vars: { a: names(p.length)[i]!, b: names(p.length)[j]! },
-        value: `${fmt(cov[i]![j]!, 4)} (correlation ${fmt(corr, 3)})`,
+        value: `${fmt(cov[i]![j]!, 4)} (correlation ${Number.isFinite(corr) ? fmt(corr, 3) : '—'})`,
       });
     }
   }
@@ -312,10 +312,12 @@ function expOrPower(data: Data, values: Values, kind: 'exponential' | 'power', l
       [a0 * lin.cov[1]![0]!, lin.cov[1]![1]!],
     ];
     const fitted = data.x.map((x) => model(x, p));
+    // Chi-square in y space, the same formula as the other fits, not the log-space value of the straight-line fit.
+    const chi2 = data.y.reduce((sum, v, i) => sum + ((v - fitted[i]!) / (data.sigma ? data.sigma[i]! : 1)) ** 2, 0);
     fit = {
       coef: p,
       cov,
-      chi2: lin.chi2,
+      chi2,
       dof: lin.dof,
       scaled: lin.scaled,
       fitted,
@@ -351,7 +353,10 @@ function expOrPower(data: Data, values: Values, kind: 'exponential' | 'power', l
     math: '\\chi^2 = \\sum_i \\left(\\frac{y_i - f(x_i)}{\\sigma_i}\\right)^2',
   });
   return finish({
-    rows: [{ key: 'modelRow', value: form }, ...parameterRows(p, cov, [yu, power || xu === '' ? '' : `1/${xu}`])],
+    rows: [
+      { key: 'modelRow', value: form },
+      ...parameterRows(p, cov, [power ? (xu === '' ? yu : `${yu}/${xu}^b`) : yu, power || xu === '' ? '' : `1/${xu}`]),
+    ],
     steps,
     answer: `${form} with ${listParams(['a', 'b'], p, cov)}`,
     latex: power ? `y = ${ascii(p[0]!)}\\,x^{${ascii(p[1]!)}}` : `y = ${ascii(p[0]!)}\\,e^{${ascii(p[1]!)}x}`,

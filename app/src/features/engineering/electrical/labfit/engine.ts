@@ -9,12 +9,13 @@ export interface Data {
   sigma: number[] | null;
 }
 
-/** Reads rows of "x y [sigma]" separated by spaces, commas, semicolons, or tabs. A first row of words is a header. */
+/** Reads rows of "x y [sigma]" separated by spaces, commas, semicolons, or tabs. The first non-comment row may be a header of words. */
 export function parseData(text: string): Data {
   const x: number[] = [];
   const y: number[] = [];
   const sigma: number[] = [];
   let withSigma: boolean | null = null;
+  let headerSeen = false;
   text.split('\n').forEach((raw, index) => {
     const stripped = raw.replace(/#.*/, '').trim();
     if (stripped === '') return;
@@ -22,7 +23,10 @@ export function parseData(text: string): Data {
     const nums = parts.map((w) => readNumber(w));
     const line = String(index + 1);
     if (nums.some((v) => v === null || !Number.isFinite(v))) {
-      if (x.length === 0 && index === 0) return;
+      if (x.length === 0 && !headerSeen && nums.every((v) => v === null)) {
+        headerSeen = true;
+        return;
+      }
       fail('fitDataNumber', { line });
     }
     if (nums.length < 2 || nums.length > 3) fail('fitDataCount', { line });
@@ -159,7 +163,8 @@ function residualsOf(model: Model, data: Data, sig: number[], q: number[]): numb
 function numericJacobian(model: Model, data: Data, sig: number[], q: number[]): Matrix {
   const jac: Matrix = data.x.map(() => q.map(() => 0));
   q.forEach((value, k) => {
-    const h = 6e-6 * Math.max(Math.abs(value), 1e-3);
+    // Relative to the parameter, so one near 1e-16 (a diode's saturation current) is not stepped across zero.
+    const h = 6e-6 * (value === 0 ? 1e-3 : Math.abs(value));
     const up = [...q];
     const down = [...q];
     up[k]! += h;
@@ -186,16 +191,27 @@ interface Trial {
   small: boolean;
 }
 
+/** Each parameter's size, as the unit of its step; 1 for a parameter that is exactly 0. */
+const parameterScale = (q: number[]): number[] => q.map((v) => (v === 0 ? 1 : Math.abs(v)));
+
 /** One damped Gauss-Newton step; null when no damping gives a lower chi-square. */
 function tryStep(model: Model, data: Data, sig: number[], q: number[], res: number[], chi2: number, lambda: number) {
   const jac = numericJacobian(model, data, sig, q);
   const g = q.map((_, k) => jac.reduce((s, row, i) => s + row[k]! * res[i]!, 0));
   const h = normalMatrix(jac, q.length);
+  // Work in steps relative to each parameter, so parameters of very different size (1e-16 and 2) stay solvable.
+  const d = parameterScale(q);
   let damping = lambda;
   for (let attempt = 0; attempt < 30; attempt++, damping *= 10) {
-    const damped = h.map((row, a) => row.map((v, b) => (a === b ? v + damping * Math.max(h[a]![a]!, 1e-300) : v)));
-    const step = solveReal(damped, g);
-    if (!step) continue;
+    const damped = h.map((row, a) =>
+      row.map((v, b) => (a === b ? v + damping * Math.max(h[a]![a]!, 1e-300) : v) * d[a]! * d[b]!),
+    );
+    const scaledStep = solveReal(
+      damped,
+      g.map((v, k) => v * d[k]!),
+    );
+    if (!scaledStep) continue;
+    const step = scaledStep.map((v, k) => v * d[k]!);
     const trial = q.map((v, k) => v + step[k]!);
     let next: number[];
     try {
@@ -205,7 +221,7 @@ function tryStep(model: Model, data: Data, sig: number[], q: number[], res: numb
     }
     const trialChi = sumSquares(next);
     if (trialChi > chi2) continue;
-    const small = step.every((s, k) => Math.abs(s) <= 1e-13 * (Math.abs(q[k]!) + 1e-12));
+    const small = step.every((s, k) => Math.abs(s) <= 1e-13 * Math.abs(q[k]!) + 1e-15 * Math.max(...q.map(Math.abs)));
     const result: Trial = {
       q: trial,
       res: next,
@@ -217,8 +233,30 @@ function tryStep(model: Model, data: Data, sig: number[], q: number[], res: numb
   return null;
 }
 
-/** Levenberg-Marquardt from a starting guess; the Jacobian is found by central differences. */
+/**
+ * Levenberg-Marquardt from a starting guess; the Jacobian is found by central differences. The fit runs on y divided by
+ * its largest magnitude, so data of any size (a diode current of 1e-16 A) keeps the normal matrix well scaled; the
+ * parameters and their covariance do not change, and the sums are scaled back.
+ */
 export function levenbergMarquardt(model: Model, data: Data, start: number[]): NonlinearFit {
+  const s = Math.max(...data.y.map(Math.abs));
+  if (!(s > 0) || (s > 1e-3 && s < 1e3)) return lmCore(model, data, start);
+  const scaled: Data = {
+    x: data.x,
+    y: data.y.map((v) => v / s),
+    sigma: data.sigma ? data.sigma.map((v) => v / s) : null,
+  };
+  const fit = lmCore((x, q) => model(x, q) / s, scaled, start);
+  const fitted = fit.fitted.map((v) => v * s);
+  return {
+    ...fit,
+    chi2: data.sigma ? fit.chi2 : fit.chi2 * s * s,
+    fitted,
+    residuals: data.y.map((v, i) => v - fitted[i]!),
+  };
+}
+
+function lmCore(model: Model, data: Data, start: number[]): NonlinearFit {
   const n = data.x.length;
   const p = start.length;
   if (n < p) fail('fitTooFew', { have: String(n), need: String(p) });
@@ -240,14 +278,16 @@ export function levenbergMarquardt(model: Model, data: Data, start: number[]): N
   if (!settled && iterations >= 500) fail('fitNoConverge');
   const jtj = normalMatrix(numericJacobian(model, data, sig, q), p);
   const cov: Matrix = jtj.map(() => jtj.map(() => 0));
+  const d = parameterScale(q);
+  const scaledJtj = jtj.map((row, a) => row.map((v, b) => v * d[a]! * d[b]!));
   for (let c = 0; c < p; c++) {
     const col = solveReal(
-      jtj,
+      scaledJtj,
       jtj.map((_, i) => (i === c ? 1 : 0)),
     );
     if (!col) return fail('fitSingular');
     col.forEach((v, r) => {
-      cov[r]![c] = v;
+      cov[r]![c] = v * d[r]! * d[c]!;
     });
   }
   const dof = n - p;

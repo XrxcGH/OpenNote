@@ -89,7 +89,7 @@ export const fail = (key: ErrorKey, vars?: Record<string, string>): never => {
 /** A number to `digits` significant figures, with a true minus sign. */
 export function fmt(value: number, digits = 5): string {
   if (!Number.isFinite(value)) return String(value);
-  if (value === 0 || Math.abs(value) < 1e-15) return '0';
+  if (value === 0) return '0';
   return formatNumber(value, { digits }).replace(/^-/, '−');
 }
 

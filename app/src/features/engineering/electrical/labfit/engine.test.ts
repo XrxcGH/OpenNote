@@ -207,6 +207,35 @@ describe('the fitting tool form', () => {
       }
     }
   });
+  it('shows tiny parameters instead of zero, and a header after a comment line', () => {
+    const data = '# my data\nx y\n' + [1, 2, 3, 4].map((v) => `${v} ${(2e-16 * v ** 2).toExponential(6)}`).join('\n');
+    const r = runTool(spec, { ...base, data, model: 'powerlaw' });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const a = r.rows.find((row) => row.key === 'parameter' && row.vars?.name === 'a')!;
+      expect(Number(a.value.split(' ')[0]!.replace('−', '-'))).toBeCloseTo(2e-16, 20);
+      expect(a.value.startsWith('0 ')).toBe(false);
+    }
+  });
+  it('labels the power-law a in y over x to the b and fits the linearised chi-square in y space', () => {
+    const data = '1 2.1\n2 5.5\n3 10.6\n4 15.8\n5 22.7';
+    const r = runTool(spec, { ...base, data, model: 'powerLinear', xUnit: 'm', yUnit: 'N' });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const a = r.rows.find((row) => row.key === 'parameter' && row.vars?.name === 'a')!;
+      expect(a.value).toContain('N/m^b');
+      // Independent chi-square: unweighted sum of squared y residuals about the fitted curve.
+      const lx = [1, 2, 3, 4, 5].map(Math.log);
+      const ly = [2.1, 5.5, 10.6, 15.8, 22.7].map(Math.log);
+      const mx = lx.reduce((u, v) => u + v) / 5;
+      const my = ly.reduce((u, v) => u + v) / 5;
+      const b = lx.reduce((u, v, i) => u + (v - mx) * (ly[i]! - my), 0) / lx.reduce((u, v) => u + (v - mx) ** 2, 0);
+      const aa = Math.exp(my - b * mx);
+      const chi2 = [1, 2, 3, 4, 5].reduce((u, v, i) => u + ([2.1, 5.5, 10.6, 15.8, 22.7][i]! - aa * v ** b) ** 2, 0);
+      const row = r.rows.find((row2) => row2.key === 'chiSquare')!;
+      expect(Number(row.value.replace('−', '-'))).toBeCloseTo(chi2, 3);
+    }
+  });
   it('names the problem: bad data, bad expression, logs of non-positive numbers, bad degree', () => {
     expect(runTool(spec, { ...base, data: '1 x' }).ok).toBe(false);
     expect(runTool(spec, { ...base, model: 'custom', expression: 'a*(' }).ok).toBe(false);
