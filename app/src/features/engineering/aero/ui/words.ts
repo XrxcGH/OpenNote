@@ -79,7 +79,9 @@ export function rowValue(tool: AeroToolId, row: Row, system: UnitSystem): string
     const unit = defaultUnit(row.qty, system);
     return `${pretty(fromSI(row.value, unit), row.sig)} ${unit.sym}`;
   }
-  return row.unit ? `${pretty(row.value, row.sig)} ${row.unit}` : pretty(row.value, row.sig);
+  if (!row.unit) return pretty(row.value, row.sig);
+  // Degrees sit against the number, as 39.3°; every other unit takes a space.
+  return row.unit === '°' ? `${pretty(row.value, row.sig)}°` : `${pretty(row.value, row.sig)} ${row.unit}`;
 }
 
 export const rowLabel = (tool: AeroToolId, row: Row): string => toolText(tool, `r.${row.id}`, row.vars);

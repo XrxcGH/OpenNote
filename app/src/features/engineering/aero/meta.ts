@@ -2,7 +2,10 @@
 // no engine code, so the palette can list the tools at start-up without loading them.
 import type { IconName } from '../../../ui/icons';
 
-export const AERO_TOOLS = [{ id: 'atmosphere', icon: 'Mountains' }] as const satisfies readonly {
+export const AERO_TOOLS = [
+  { id: 'atmosphere', icon: 'Mountains' },
+  { id: 'compressible', icon: 'Wind' },
+] as const satisfies readonly {
   id: string;
   icon: IconName;
 }[];

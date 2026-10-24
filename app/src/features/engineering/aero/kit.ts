@@ -4,4 +4,5 @@ import type { ToolSpec } from './ui/spec';
 
 export const LOADERS: Record<AeroToolId, () => Promise<{ spec: ToolSpec }>> = {
   atmosphere: () => import('./atmosphere/tool'),
+  compressible: () => import('./compressible/tool'),
 };
