@@ -62,13 +62,16 @@ function FieldInput(props: {
   const id = useId();
   const label = say(`kitFluidHeat.${tool}.field.${field.id}`);
   if (field.type === 'choice') {
+    // A choice with long options takes the whole row, so the window's width does not cut the option off.
+    const options = field.options.map((option) => say(`kitFluidHeat.${tool}.option.${option}`));
+    const long = options.some((one) => one.length > 14);
     return (
-      <label className={styles.field}>
+      <label className={long ? `${styles.field} ${styles.wide}` : styles.field}>
         <span>{label}</span>
         <select className={styles.input} value={text} onChange={(event) => props.onChange(event.target.value)}>
-          {field.options.map((option) => (
+          {field.options.map((option, index) => (
             <option key={option} value={option}>
-              {say(`kitFluidHeat.${tool}.option.${option}`)}
+              {options[index]}
             </option>
           ))}
         </select>

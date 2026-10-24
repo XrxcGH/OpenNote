@@ -81,12 +81,23 @@ describe('the fluid and heat transfer kit window', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
       await userEvent.click(await screen.findByRole('menuitem', { name }));
     }
-    expect(inserted[0].text).toContain('Resultant force, F = 51485 N');
+    expect(inserted[0].text).toMatch(
+      /^<p>Fluid statics, Bernoulli, and flow measurement: Resultant force, F = 51485 N; [^<]*<\/p>$/,
+    );
     expect(inserted[1].math?.source).toContain('F = 51485');
     expect(inserted[2].table?.rows.length).toBeGreaterThan(4);
     expect(inserted[3].text).toMatch(/^<p>Fluid statics, Bernoulli, and flow measurement<\/p><ol><li>/);
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].picture).toBeTruthy();
+  });
+
+  it('gives a choice with long option names the whole row, so they are not cut off', async () => {
+    saveTab('hx');
+    renderUi(<FluidHeatKit />);
+    const choice = await screen.findByRole('combobox', { name: 'Flow arrangement' });
+    const label = choice.closest('label')!;
+    const row = label.parentElement!;
+    expect(label.getBoundingClientRect().width).toBeGreaterThanOrEqual(row.getBoundingClientRect().width - 2);
   });
 
   it('opens on the tool a palette command names', async () => {
