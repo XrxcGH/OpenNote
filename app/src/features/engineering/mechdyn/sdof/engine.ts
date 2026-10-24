@@ -96,8 +96,7 @@ export const transmissibility = (r: number, zeta: number) => Math.hypot(1, 2 * z
 export const phaseLag = (r: number, zeta: number) => Math.atan2(2 * zeta * r, 1 - r * r);
 
 /** Phase lag of the absolute motion x behind the base motion y: atan2(2 zeta r^3, 1 - r^2 + (2 zeta r)^2). */
-export const basePhaseLag = (r: number, zeta: number) =>
-  Math.atan2(2 * zeta * r ** 3, 1 - r * r + (2 * zeta * r) ** 2);
+export const basePhaseLag = (r: number, zeta: number) => Math.atan2(2 * zeta * r ** 3, 1 - r * r + (2 * zeta * r) ** 2);
 
 interface Base {
   m: number;

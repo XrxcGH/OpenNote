@@ -10,7 +10,12 @@ import { fail, finite, fmt, type MechStep, type Outcome, type Plot } from '../ty
 
 export const PRBM = { gamma: 0.85, kTheta: 2.65, cTheta: 1.24, maxTheta: (64.3 * Math.PI) / 180 } as const;
 /** The end-moment constants: the beam bends into a circular arc, and the model tracks it to Theta = 124.4 degrees. */
-export const PRBM_MOMENT = { gamma: 0.7346, kTheta: 2.0643, cTheta: 1.5164, maxTheta: (124.4 * Math.PI) / 180 } as const;
+export const PRBM_MOMENT = {
+  gamma: 0.7346,
+  kTheta: 2.0643,
+  cTheta: 1.5164,
+  maxTheta: (124.4 * Math.PI) / 180,
+} as const;
 export const SOURCES = [
   // checks-disable-next-line length: one citation, kept whole so it reads as written
   'Howell, L. L., and Midha, A., Parametric deflection approximations for end-loaded, large-deflection beams in compliant mechanisms, ASME Journal of Mechanical Design 117 (1995).',
