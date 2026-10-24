@@ -1,6 +1,7 @@
 // Mechanisms, dynamics, vibrations, and robotics kit (owner: the mechdyn tool lane). Every interface string is a
 // full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19). Keywords are subject words only.
 
+import { dynamics } from './kitMechDyn/dynamics';
 import { mechanisms } from './kitMechDyn/mechanisms';
 import { steps } from './kitMechDyn/steps';
 import { vibrations } from './kitMechDyn/vibrations';
@@ -192,5 +193,6 @@ export const kitMechDyn = {
   },
   steps,
   ...mechanisms,
+  ...dynamics,
   ...vibrations,
 };

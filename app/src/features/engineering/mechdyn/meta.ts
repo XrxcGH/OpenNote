@@ -22,6 +22,7 @@ export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [
   tool('cam', 'Disc'),
   tool('gears', 'GearSix'),
   tool('compliant', 'Spiral'),
+  tool('kinetics', 'Path'),
   tool('sdof', 'Waveform'),
 ];
 
