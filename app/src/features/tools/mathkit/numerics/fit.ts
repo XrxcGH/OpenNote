@@ -248,19 +248,68 @@ export interface SpectrumResult extends NumOut {
   peak: { frequency: number; amplitude: number };
 }
 
-/** The amplitude spectrum of samples taken at a sampling rate (zero-padded to a power of two). */
+/**
+ * The exact discrete Fourier transform of any length. A power of two goes straight to the fast transform.
+ * Any other length uses Bluestein's method, which turns the sum into a convolution, because n k equals
+ * (n^2 + k^2 - (k - n)^2) / 2, and does it with power-of-two transforms. Zero-padding instead would sample the
+ * spectrum at other frequencies. A tone that fits the record exactly would then smear across bins.
+ */
+export function dft(re: readonly number[], im: readonly number[]): { re: number[]; im: number[] } {
+  const n = re.length;
+  if ((n & (n - 1)) === 0) return fft(re, im);
+  let m = 1;
+  while (m < 2 * n - 1) m <<= 1;
+  // The chirp b_j = e^(i pi j^2 / n); j^2 is reduced mod 2n first so large j keeps its precision.
+  const chirp = Array.from({ length: n }, (_, j) => {
+    const angle = (Math.PI * ((j * j) % (2 * n))) / n;
+    return [Math.cos(angle), Math.sin(angle)];
+  });
+  const ar = new Array<number>(m).fill(0);
+  const ai = new Array<number>(m).fill(0);
+  const br = new Array<number>(m).fill(0);
+  const bi = new Array<number>(m).fill(0);
+  for (let j = 0; j < n; j++) {
+    const [cr, ci] = chirp[j];
+    // a_j = x_j conj(b_j)
+    ar[j] = re[j] * cr + im[j] * ci;
+    ai[j] = im[j] * cr - re[j] * ci;
+    br[j] = cr;
+    bi[j] = ci;
+    if (j > 0) {
+      br[m - j] = cr;
+      bi[m - j] = ci;
+    }
+  }
+  const A = fft(ar, ai);
+  const B = fft(br, bi);
+  // Pointwise product, then the inverse transform by conjugation.
+  const pr = A.re.map((v, j) => v * B.re[j] - A.im[j] * B.im[j]);
+  const pi = A.re.map((v, j) => -(v * B.im[j] + A.im[j] * B.re[j]));
+  const back = fft(pr, pi);
+  const outRe = new Array<number>(n);
+  const outIm = new Array<number>(n);
+  for (let k = 0; k < n; k++) {
+    const cr = back.re[k] / m;
+    const ci = -back.im[k] / m;
+    const [wr, wi] = chirp[k];
+    // X_k = conj(b_k) times the convolution
+    outRe[k] = cr * wr + ci * wi;
+    outIm[k] = ci * wr - cr * wi;
+  }
+  return { re: outRe, im: outIm };
+}
+
+/** The amplitude spectrum of samples taken at a sampling rate, from the exact transform of exactly those samples. */
 export function spectrum(samples: string, rate: number): SpectrumResult {
   const x = numbers(samples, 'samples');
   if (x.length < 2 || x.length > 65536) throw new KitError('badWhole', 'samples: 2 to 65536');
   if (!(rate > 0)) throw new KitError('badRate');
-  let size = 1;
-  while (size < x.length) size <<= 1;
-  const padded = [...x, ...new Array<number>(size - x.length).fill(0)];
-  const { re, im } = fft(padded, new Array<number>(size).fill(0));
-  const half = size / 2;
+  const size = x.length;
+  const { re, im } = dft(x, new Array<number>(size).fill(0));
+  const half = Math.floor(size / 2);
   const magnitude = Array.from({ length: half + 1 }, (_, k) => {
     const m = Math.hypot(re[k], im[k]) / x.length;
-    return k === 0 || k === half ? m : 2 * m;
+    return k === 0 || (size % 2 === 0 && k === half) ? m : 2 * m;
   });
   const frequencies = Array.from({ length: half + 1 }, (_, k) => (k * rate) / size);
   let peakAt = 1;

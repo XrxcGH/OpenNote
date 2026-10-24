@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composite, differentiate, quadrature, rombergTable } from './calculus';
-import { fft, nonlinearFit, polyfit, polynomialFit, spectrum } from './fit';
+import { dft, fft, nonlinearFit, polyfit, polynomialFit, spectrum } from './fit';
 import { interpolate, newtonCoefficients, readPoints } from './interp';
 import { iterativeSolve, newtonSolve } from './linsolve';
 import { solveBvp, solveIvp, thomas } from './ode';
@@ -326,8 +326,34 @@ describe('fitting and the transform', () => {
     expect(r.peak.frequency).toBeCloseTo(50, 6);
     expect(r.peak.amplitude).toBeCloseTo(2, 6);
   });
-  it('pads to a power of two and rejects a bad rate', () => {
-    expect(spectrum('1, 2, 3, 4, 5', 10).size).toBe(8);
+  it('finds the 2 Hz component of 1, 0, -1, 1, 0, -1 at 6 Hz exactly, with amplitude 2/sqrt(3)', () => {
+    // By hand: the pattern (1, 0, -1) repeats twice, X_2 = 2 (1 - e^{-4 pi i / 3}) = 3 - sqrt(3) i, and the
+    // amplitude is 2 |X_2| / 6 = 2 sqrt(12) / 6 = 2/sqrt(3).
+    const r = spectrum('1, 0, -1, 1, 0, -1', 6);
+    expect(r.peak.frequency).toBeCloseTo(2, 12);
+    expect(r.peak.amplitude).toBeCloseTo(1.1547005383792515, 10);
+    expect(r.size).toBe(6);
+  });
+  it('a tone with a whole number of periods in a non-power-of-two record has no leakage', () => {
+    const x = Array.from({ length: 100 }, (_, n) => 3 * Math.cos((2 * Math.PI * 7 * n) / 100 + 0.4));
+    const r = spectrum(x.join(', '), 100);
+    expect(r.peak.frequency).toBeCloseTo(7, 10);
+    expect(r.peak.amplitude).toBeCloseTo(3, 10);
+    const rest = r.magnitude.filter((_, k) => k !== 7);
+    expect(Math.max(...rest)).toBeLessThan(1e-10);
+  });
+  it('the exact transform of any length agrees with the O(n^2) sum', () => {
+    const x = [3, -1, 4, 1, -5, 9, 2];
+    const { re, im } = dft(x, new Array<number>(7).fill(0));
+    for (let k = 0; k < 7; k++) {
+      const sr = x.reduce((s, v, n) => s + v * Math.cos((2 * Math.PI * k * n) / 7), 0);
+      const si = x.reduce((s, v, n) => s - v * Math.sin((2 * Math.PI * k * n) / 7), 0);
+      expect(re[k]).toBeCloseTo(sr, 10);
+      expect(im[k]).toBeCloseTo(si, 10);
+    }
+  });
+  it('rejects a bad rate', () => {
+    expect(spectrum('1, 2, 3, 4, 5', 10).size).toBe(5);
     expect(() => spectrum('1, 2, 3', 0)).toThrow();
   });
 });

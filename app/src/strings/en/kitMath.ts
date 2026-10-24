@@ -1096,7 +1096,7 @@ export const kitMath = {
     gridSor: 'The relaxation factor that converges fastest on this grid is:',
     gridSize: 'The grid spacing:',
     heatStability: 'The time step has to stay under the stability limit:',
-    fftPad: 'The samples are padded to a power of two:',
+    fftPad: 'The transform uses exactly the samples given, with no zero padding, so no bin falls between frequencies:',
     laSetup: 'The problem:',
     laRowOp: 'Row operation {op}:',
     laSwap: 'Swap rows {op}:',
