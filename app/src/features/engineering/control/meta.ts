@@ -13,12 +13,16 @@ export interface ControlToolMeta {
   readonly icon: IconName;
 }
 
+/** A tool's entry; its words are kitControl.<id>.title, .tab, and .keywords (the kit's test checks each exists). */
+const tool = (id: string, icon: IconName): ControlToolMeta => ({
+  id,
+  title: `kitControl.${id}.title` as MessageKey,
+  tab: `kitControl.${id}.tab` as MessageKey,
+  keywords: `kitControl.${id}.keywords` as MessageKey,
+  icon,
+});
+
 export const CONTROL_TOOLS: readonly ControlToolMeta[] = [
-  {
-    id: 'markov',
-    title: 'kitControl.markov.title',
-    tab: 'kitControl.markov.tab',
-    keywords: 'kitControl.markov.keywords',
-    icon: 'FlowArrow',
-  },
+  tool('markov', 'FlowArrow'),
+  tool('distributions', 'ChartBar'),
 ];
