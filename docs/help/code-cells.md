@@ -4,7 +4,7 @@ Write a short Python or JavaScript program on a page and run it there. Use it to
 
 ## Add a code cell
 
-- Open Insert, then Code cell. Or type `/code cell` in text, or press Ctrl+Alt+Shift+C. The command palette (Ctrl+K) finds it too.
+- Open Insert, then Code cell. Or type `/code cell` in text, or press Ctrl+Alt+Shift+K. The command palette (Ctrl+K) finds it too.
 - Choose Python or JavaScript from Language. The cell starts with an example you can change or delete.
 - Write your code in the Code box. Tab indents and Shift+Tab outdents. To move on with the keyboard, press Escape, then Tab.
 

@@ -20,6 +20,7 @@ import PalmLab from './PalmLab';
 import type { UnitsChoice } from '../snap';
 import { inkPrefs, penDevice, setPrefs, updatePen } from './prefs';
 import { setRulerUnits } from './snapTools';
+import styles from './penSettings.module.css';
 
 const BARRELS: readonly [BarrelAction, MessageKey][] = [
   ['lasso', 'ink.settings.barrelLasso'],
@@ -125,7 +126,7 @@ function ButtonChoices({ pen, set }: { pen: PenDevice; set: (change: PenChange) 
 function CustomCurve({ pen, set }: { pen: PenDevice; set: (change: PenChange) => void }) {
   const custom = pen.customCurve ?? [0.33, 0.33, 0.67, 0.67];
   const slider = (label: MessageKey, value: number, change: (next: number) => PenChange) => (
-    <label>
+    <label className={styles.slider}>
       {t(label)}
       <input
         type="range"
@@ -261,7 +262,7 @@ export default function PenSettings() {
   const hovering = useStore(inkPrefs, (state) => state.hover);
   const fields = useStore(inkPrefs, (state) => state.penFields);
   return (
-    <section aria-labelledby="ink-settings">
+    <section className={styles.section} aria-labelledby="ink-settings">
       <h2 id="ink-settings">{t('ink.settings.title')}</h2>
       <RadioGroup<Handedness>
         label={t('ink.settings.handedness')}

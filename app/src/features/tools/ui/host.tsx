@@ -99,7 +99,7 @@ function Windows() {
             key={`${id}-${state.epoch}`}
             tool={tool}
             width={Math.min(widths[index]!, overlay ? viewport : widths[index]!)}
-            right={overlay ? Math.min(right, Math.max(0, viewport - MIN_PANEL)) : right}
+            right={overlay ? Math.min(right, Math.max(0, viewport - Math.min(widths[index]!, viewport))) : right}
             overlay={overlay}
             maxWidth={overlay ? viewport : Math.max(MIN_PANEL, room - others)}
             onResize={(width) => {

@@ -94,11 +94,19 @@ class Widgets {
 
 function plugin(host: EditorHost): Plugin {
   const widgets = new WeakMap<EditorView, Widgets>();
+  // The first decorations are drawn while the view is still being built, before the plugin view exists.
+  const widgetsOf = (view: EditorView): Widgets => {
+    let mine = widgets.get(view);
+    if (!mine) {
+      mine = new Widgets(view, host);
+      widgets.set(view, mine);
+    }
+    return mine;
+  };
   return new Plugin({
     key,
     view(view) {
-      const mine = new Widgets(view, host);
-      widgets.set(view, mine);
+      const mine = widgetsOf(view);
       return {
         update: (updated) => mine.sync(updated.state),
         destroy: () => mine.destroy(),
@@ -111,7 +119,7 @@ function plugin(host: EditorHost): Plugin {
         return DecorationSet.create(
           state.doc,
           found.map(({ pos, node }, index) =>
-            Decoration.widget(pos + node.nodeSize, (view) => widgets.get(view)!.container(index), {
+            Decoration.widget(pos + node.nodeSize, (view) => widgetsOf(view).container(index), {
               side: -1,
               key: `graph-${index}`,
               stopEvent: () => true,

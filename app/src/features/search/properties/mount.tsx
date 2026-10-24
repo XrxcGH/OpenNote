@@ -27,14 +27,24 @@ export function mountProperties(mounted: MountedPage): () => void {
     viewport.style.setProperty('--page-chip-room', `${chip ? Math.ceil(chip) + 24 : 0}px`);
   };
   place();
-  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
+  // Placing the chip resizes the host and the title room, which the observer watches: placing from inside its callback
+  // makes the browser report a "ResizeObserver loop" error. The next animation frame is still before paint.
+  let frame = 0;
+  const placeLater = () => {
+    frame ||= requestAnimationFrame(() => {
+      frame = 0;
+      place();
+    });
+  };
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(placeLater);
   observer?.observe(viewport);
   observer?.observe(host);
-  window.addEventListener('resize', place);
+  window.addEventListener('resize', placeLater);
   const root = createRoot(host);
   root.render(<PropertiesBar page={mounted.page} />);
   return () => {
-    window.removeEventListener('resize', place);
+    window.removeEventListener('resize', placeLater);
+    cancelAnimationFrame(frame);
     observer?.disconnect();
     // The page view destroys its hooks while React may be mid-render, which a root cannot unmount in.
     setTimeout(() => root.unmount(), 0);
