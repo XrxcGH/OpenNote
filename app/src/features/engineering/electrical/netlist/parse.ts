@@ -44,8 +44,21 @@ const GROUND = new Set(['0', 'gnd']);
 const NODE_COUNT: Record<Kind, number> = { R: 2, C: 2, L: 2, V: 2, I: 2, E: 4, G: 4, H: 2, F: 2, O: 3, S: 2 };
 const MAX_ELEMENTS = 200;
 
+/**
+ * A value as students write it: 4.7k, 2.2K, 10uF, 1kΩ, 1kohm, 5V, 1meg. A trailing unit word is dropped (ohm, Ω, Hz and
+ * a capital F, H, V or A, so a lowercase f stays femto); K is kilo, and M stays mega as the hint says.
+ */
+export function readValue(text: string): number | null {
+  const bare = text
+    .trim()
+    .replace(/(ohms?|Ω|hz)$/i, '')
+    .replace(/(?<=[0-9.a-zµ])[FHVA]$/, '')
+    .replace(/(?<=[0-9.])K$/, 'k');
+  return readNumber(bare);
+}
+
 function num(text: string | undefined, line: number): number {
-  const value = text === undefined ? null : readNumber(text);
+  const value = text === undefined ? null : readValue(text);
   if (value === null || !Number.isFinite(value)) return fail('netNumber', { line: String(line), text: text ?? '' });
   return value;
 }
@@ -54,7 +67,7 @@ function num(text: string | undefined, line: number): number {
 function takeNumbers(tokens: string[], at: number, min: number, max: number, line: number) {
   const out: number[] = [];
   let i = at;
-  while (i < tokens.length && out.length < max && readNumber(tokens[i]!) !== null) out.push(num(tokens[i++], line));
+  while (i < tokens.length && out.length < max && readValue(tokens[i]!) !== null) out.push(num(tokens[i++], line));
   if (out.length < min) fail('netSourceCount', { line: String(line), word: tokens[at - 1] ?? '' });
   return { values: out, next: i };
 }
@@ -66,10 +79,11 @@ function parseSource(tokens: string[], line: number): SourceSpec {
   let acPhase = 0;
   let i = 0;
   while (i < tokens.length) {
-    const word = tokens[i]!.toLowerCase();
+    const raw = tokens[i]!;
+    const word = raw.toLowerCase();
     i++;
-    if (readNumber(word) !== null) {
-      shape = { kind: 'dc', value: num(word, line) };
+    if (readValue(raw) !== null) {
+      shape = { kind: 'dc', value: num(raw, line) };
       continue;
     }
     const spec = SHAPES[word];

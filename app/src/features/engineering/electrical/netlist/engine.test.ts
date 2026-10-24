@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { initialValues, runTool } from '../spec';
 import { acSweep, findResonance, operatingPoint, thevenin, transient } from './analysis';
 import { layoutOf } from './mna';
-import { nodeIndex, parseNetlist } from './parse';
+import { nodeIndex, parseNetlist, readValue } from './parse';
 import { parseProbe, parseProbes } from './probes';
 import { breakpoints, switchClosed, valueAt } from './sources';
 import { spec } from './tool';
@@ -159,6 +159,20 @@ describe('AC sweep', () => {
     expect(r.cutoff).not.toBeNull();
     close(r.cutoff!, f0, 1e-4);
     close(acSweep(c, lay, probes, f0, f0 * 1.0001, 2).mag[0]![0]!, 0.70711, 1e-5);
+  });
+  it('reads values with a unit word or a capital K: 10uF, 1kΩ, 1kohm, 2.2K, 5V', () => {
+    expect(readValue('10uF')).toBeCloseTo(1e-5, 15);
+    expect(readValue('1kΩ')).toBe(1000);
+    expect(readValue('1kohm')).toBe(1000);
+    expect(readValue('2.2K')).toBeCloseTo(2200, 9);
+    expect(readValue('5V')).toBe(5);
+    expect(readValue('1meg')).toBe(1e6);
+    expect(readValue('10f')).toBeCloseTo(1e-14, 25);
+    expect(readValue('AC')).toBeNull();
+    const c = parseNetlist(['V1 in 0 5V', 'R1 in out 1kΩ', 'C1 out 0 10uF'].join(String.fromCharCode(10)));
+    expect(c.elements[1]!.value).toBe(1000);
+    expect(c.elements[2]!.value).toBeCloseTo(1e-5, 15);
+    near(volt(['V1 in 0 5V', 'R1 in out 1kΩ', 'R2 out 0 1kohm'].join(String.fromCharCode(10)), 'out'), 2.5, 1e-9);
   });
   it('a sweep with AC magnitude and phase on the source', () => {
     const c = parseNetlist('V1 in 0 AC 2 90\nR1 in 0 1k');

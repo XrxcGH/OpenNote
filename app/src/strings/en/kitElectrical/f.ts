@@ -279,7 +279,7 @@ export const f = {
     netThev: 'Thevenin and Norton equivalent',
     netlistText: 'Netlist, one element per line',
     netlistHint:
-      'Elements R C L V I E G H F O S. Node 0 is ground. Example: R1 a b 1k. Sources: DC, AC, STEP, PULSE, SIN.',
+      'Elements R C L V I E G H F O S. Node 0 is ground. Values such as 4.7k, 10uF, 1kΩ or 1meg. Example: R1 a b 1k. Sources: DC, AC, STEP, PULSE, SIN.',
     probesText: 'What to plot',
     probesHint: 'Node names or currents, separated by commas, such as out, v(a,b), i(R1).',
     acStart: 'Start frequency (Hz)',
