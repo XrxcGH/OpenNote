@@ -12,7 +12,7 @@ export type SubjectErrorCode =
   | 'noConvergence'
   | 'noBracket'
   | 'cycle'
-  | 'cancelled';
+  | 'canceled';
 
 export class SubjectError extends Error {
   constructor(
