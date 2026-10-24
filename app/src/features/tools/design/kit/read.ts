@@ -87,8 +87,22 @@ export function convertTexts(
     nextUnits[field.id] = to;
     const parsed = parseNumber(texts[field.id] ?? field.def);
     if (typeof parsed === 'number' && from !== to && hasUnit(field.dim, from)) {
-      nextTexts[field.id] = String(Number(fromEngine(field.dim, to, toEngine(field.dim, from, parsed)).toPrecision(6)));
+      nextTexts[field.id] = String(
+        Number(fromEngine(field.dim, to, toEngine(field.dim, from, parsed)).toPrecision(15)),
+      );
     }
   }
   return { texts: nextTexts, units: nextUnits };
+}
+
+/**
+ * The texts and units of a tool that has never been used, in the system the kit last used. The field defaults are
+ * written in SI, so in US they are converted rather than read as inches and feet.
+ */
+export function firstState(
+  spec: ToolSpec,
+  system: System,
+): { texts: Record<string, string>; units: Record<string, string> } {
+  const si = { texts: firstTexts(spec), units: firstUnits(spec, 'si') };
+  return system === 'si' ? si : convertTexts(spec, si.texts, si.units, system);
 }

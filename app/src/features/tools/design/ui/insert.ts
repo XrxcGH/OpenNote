@@ -85,7 +85,9 @@ export function stepsHtml(c: InsertContext): string {
     const words = escapeXml(c.say(`kitDesign.step.${one.key}`));
     return `<li><p>${words} <span data-math="${escapeXml(one.latex)}"></span></p></li>`;
   });
-  return `<p>${escapeXml(c.say(`kitDesign.${c.tool}.title`))}</p><ol>${items.join('')}</ol>`;
+  // The steps stay in the formulas' own units; beside a US answer they say so.
+  const units = c.system === 'us' ? `<p>${escapeXml(c.say('kitDesign.ui.stepsUnits'))}</p>` : '';
+  return `<p>${escapeXml(c.say(`kitDesign.${c.tool}.title`))}</p>${units}<ol>${items.join('')}</ol>`;
 }
 
 export interface InsertRequest {

@@ -7,7 +7,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
-import { convertTexts, firstTexts, firstUnits, runTool, type FieldError } from '../kit/read';
+import { convertTexts, firstState, firstTexts, firstUnits, runTool, type FieldError } from '../kit/read';
 import { shownFields, type Field, type ToolSpec } from '../kit/spec';
 import { unitsOf, type System } from '../kit/units';
 import {
@@ -187,11 +187,11 @@ export const savedSystem = (): System => (load<string>('system', 'si') === 'us' 
 export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const [system, setSystem] = useState<System>(savedSystem);
   const [texts, setTexts] = useState<Record<string, string>>(() => ({
-    ...firstTexts(spec),
+    ...firstState(spec, savedSystem()).texts,
     ...load(`${tool}.texts`, {}),
   }));
   const [units, setUnits] = useState<Record<string, string>>(() => ({
-    ...firstUnits(spec, savedSystem()),
+    ...firstState(spec, savedSystem()).units,
     ...load(`${tool}.units`, {}),
   }));
   useEffect(() => save(`${tool}.texts`, texts), [tool, texts]);
