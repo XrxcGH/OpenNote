@@ -7,9 +7,9 @@ import { resample } from '../simplify';
 import type { Vec } from '../types';
 import {
   afterLanding,
-  endHeads,
+  endTips,
+  fitHead,
   headBarbs,
-  headFitRatio,
   headLength,
   landed,
   onlyLanding,
@@ -294,7 +294,7 @@ const unit = (from: Vec, to: Vec): Vec => {
 export function curvedArrowCandidate(points: readonly Vec[], _size: number, width: number): Candidate | null {
   const { path, at } = sharpTurns(points);
   let best: Candidate | null = null;
-  for (const { head, tipAt, before } of endHeads(path, at)) {
+  for (const { tipAt, before } of endTips(path, at)) {
     if (!onlyLanding(path, at, before)) continue;
     const body = path.slice(afterLanding(at, before, tipAt), tipAt + 1);
     if (body.length < 8) continue;
@@ -311,8 +311,11 @@ export function curvedArrowCandidate(points: readonly Vec[], _size: number, widt
     const way = Math.sign(arc.sweep);
     const direction = { x: -Math.sin(endAngle) * way, y: Math.cos(endAngle) * way };
     const length = polylineLength(body);
-    const ratio = Math.max(arc.fit.error / ARC_TOLERANCE, headFitRatio(head, direction, length));
-    if (!(ratio < 1) || (best && best.ratio <= ratio)) continue;
+    const fit = fitHead(path, tipAt, direction, length);
+    if (!fit) continue;
+    const { head } = fit;
+    const ratio = Math.max(arc.fit.error / ARC_TOLERANCE, fit.ratio);
+    if (best && best.ratio <= ratio) continue;
     const barbs = headBarbs(tip, direction, headLength(head, width, length));
     best = { shape: { kind: 'curvedArrow', center, radius, start, sweep, barbs }, ratio };
   }
@@ -321,41 +324,42 @@ export function curvedArrowCandidate(points: readonly Vec[], _size: number, widt
 
 // ---- double arrows ----
 
-/** A shaft with a head at each end, drawn head, shaft, head in one stroke: each end holds a straight arrow's head. */
+/**
+ * A shaft with a head at each end, drawn head, shaft, head in one stroke: each end holds a straight arrow's head, and
+ * the first is drawn backwards from the shaft. The shaft runs between two sharp turns in a row, the heads' tips: the
+ * last turn of the first head and the first of the second, so no sharp turn lies on it.
+ */
 export function doubleArrowCandidate(points: readonly Vec[], _size: number, width: number): Candidate | null {
   const { path, at } = sharpTurns(points);
   const n = path.length;
   // The first head, drawn barb, tip, barb, tip, is a straight arrow's head drawn backwards from the shaft.
   const reversed = [...path].reverse();
-  const reversedAt = at.map((i) => n - 1 - i).reverse();
+  const starts = endTips(reversed, at.map((i) => n - 1 - i).reverse()).map(({ tipAt }) => n - 1 - tipAt);
   let best: Candidate | null = null;
-  for (const end of endHeads(path, at)) {
-    for (const start of endHeads(reversed, reversedAt)) {
-      const fromAt = n - 1 - start.tipAt;
-      if (fromAt >= end.tipAt || at.some((i) => i > fromAt && i < end.tipAt)) continue;
-      const shaft = shaftLine(path, fromAt, end.tipAt, fromAt, true);
-      if (!shaft) continue;
-      const forward = unit(shaft.from, shaft.to);
-      const backward = { x: -forward.x, y: -forward.y };
-      const ratio = Math.max(
-        shaft.ratio,
-        headFitRatio(end.head, forward, shaft.length),
-        headFitRatio(start.head, backward, shaft.length),
-      );
-      if (!(ratio < 1) || (best && best.ratio <= ratio)) continue;
-      const [from, to] = snapSegment(shaft.from, shaft.to);
-      const length = Math.max(headLength(end.head, width, shaft.length), headLength(start.head, width, shaft.length));
-      best = {
-        shape: {
-          kind: 'doubleArrow',
-          from,
-          to,
-          barbsFrom: headBarbs(from, unit(to, from), length),
-          barbsTo: headBarbs(to, unit(from, to), length),
-        },
-        ratio,
-      };
-    }
+  for (const { tipAt } of endTips(path, at)) {
+    const k = at.indexOf(tipAt);
+    const fromAt = k > 0 ? at[k - 1] : -1;
+    if (!starts.includes(fromAt)) continue;
+    const shaft = shaftLine(path, fromAt, tipAt, fromAt, true);
+    if (!(shaft && shaft.ratio < 1)) continue;
+    const forward = unit(shaft.from, shaft.to);
+    const end = fitHead(path, tipAt, forward, shaft.length);
+    const start = end && fitHead(reversed, n - 1 - fromAt, { x: -forward.x, y: -forward.y }, shaft.length);
+    if (!end || !start) continue;
+    const ratio = Math.max(shaft.ratio, end.ratio, start.ratio);
+    if (best && best.ratio <= ratio) continue;
+    const [from, to] = snapSegment(shaft.from, shaft.to);
+    const length = Math.max(headLength(end.head, width, shaft.length), headLength(start.head, width, shaft.length));
+    best = {
+      shape: {
+        kind: 'doubleArrow',
+        from,
+        to,
+        barbsFrom: headBarbs(from, unit(to, from), length),
+        barbsTo: headBarbs(to, unit(from, to), length),
+      },
+      ratio,
+    };
   }
   return best;
 }

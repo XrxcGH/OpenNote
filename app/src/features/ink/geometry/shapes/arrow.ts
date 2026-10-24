@@ -1,14 +1,16 @@
 // Arrows drawn in one stroke (design 11.3): a straight shaft, then a head drawn as tip to one barb, back to the tip,
-// then to the other barb. The tip and the first barb are where the path turns sharply. The return to the tip turns
-// gently once a hand rounds it, so it is found as where the pen comes back nearest the tip.
+// then to the other barb. The tip is where the path turns sharply at the end of the shaft. The barbs are where the pen
+// goes farthest from the tip and from its return to the tip. The return is the point that makes the best head, so a
+// short barb's end and a rounded return need not read as sharp turns.
+//
 // A hand rounds and hooks past turns, and lands and lifts with small hooks. Its samples carry digitizer noise. So:
 // - the noise is smoothed away first;
-// - turns are measured across a stretch of the path, and close turns count as one;
+// - turns are measured across a stretch a share of the stroke's size long, and close turns count as one;
 // - turns at the very ends do not count.
 // The same head parser reads a curved arrow's head and both heads of a double arrow (extra.ts).
 
 import { boundsOf } from '../bounds';
-import { distance } from '../primitives';
+import { distance, polylineLength } from '../primitives';
 import { resample, simplify } from '../simplify';
 import type { Vec } from '../types';
 import { fitLine, LINE_TOLERANCE, snapSegment } from './lines';
@@ -32,12 +34,20 @@ const DIGITIZER_NOISE = 1;
 const NOISE_SHARE = 0.008;
 /** The path is spaced out to this many points to find its sharp turns. */
 const HEAD_SAMPLES = 120;
-/** A turn is measured across this share of the path on each side of a point. */
-const TURN_REACH = 0.025;
+/**
+ * A turn is measured across this share of the stroke's size (its box's diagonal) on each side of a point, and across
+ * at least two points. A share of the path would reach farther on a double arrow than on a single arrow of the same
+ * size, since its second head makes the path longer.
+ */
+const TURN_REACH = 0.04;
+const MIN_TURN_REACH = 2;
 /** Where the path turns more than this, it has a corner of a head: the tip, a barb, or the tip again. */
 const SHARP_TURN = 75 * DEGREES;
-/** Sharp turns closer than this share of the path are one corner, such as one the pen hooked round. */
-const SAME_TURN = 0.04;
+/**
+ * Sharp turns closer than this share of the stroke's size are one corner, such as one the pen hooked round. A share of
+ * the path would merge a double arrow's short barbs with their tips.
+ */
+const SAME_TURN = 0.05;
 /** Turns this near the end, as a share of the path, are the pen landing or lifting, and no corner. */
 const END_HOOK = 0.04;
 /** A shaft may turn sharply only this near its start, where the pen lands. */
@@ -123,16 +133,19 @@ export function sharpTurns(points: readonly Vec[]): { path: Vec[]; at: number[] 
   // The digitizer's noise is smoothed away first. Where the pen moves slowly its samples crowd together, and the
   // noise between them zigzags. Spaced out evenly, that zigzag would read as sharp turns.
   const box = boundsOf(points);
-  const noise = Math.max(DIGITIZER_NOISE, NOISE_SHARE * Math.hypot(box.maxX - box.minX, box.maxY - box.minY));
-  const path = resample(simplify(points, noise), HEAD_SAMPLES);
+  const size = Math.hypot(box.maxX - box.minX, box.maxY - box.minY);
+  const path = resample(simplify(points, Math.max(DIGITIZER_NOISE, NOISE_SHARE * size)), HEAD_SAMPLES);
   const n = path.length;
-  const turns = turnsAlong(path, Math.max(2, Math.round(TURN_REACH * n)));
+  // Points a share of the stroke's size spans along the evenly spaced path.
+  const spacing = polylineLength(path) / Math.max(1, n - 1) || 1;
+  const span = (share: number) => (share * size) / spacing;
+  const turns = turnsAlong(path, Math.max(MIN_TURN_REACH, Math.round(span(TURN_REACH))));
   const hook = Math.round(END_HOOK * n);
   const at: number[] = [];
   for (let i = hook; i < n - hook; i++) {
     if (turns[i] < SHARP_TURN || turns[i] < turns[i - 1] || turns[i] <= turns[i + 1]) continue;
     const last = at[at.length - 1];
-    if (last !== undefined && i - last < SAME_TURN * n) {
+    if (last !== undefined && i - last < span(SAME_TURN)) {
       if (turns[i] > turns[last]) at[at.length - 1] = i;
     } else at.push(i);
   }
@@ -149,41 +162,49 @@ function extreme(path: readonly Vec[], from: number, to: number, origin: Vec, fa
   return best;
 }
 
-/** A head drawn at the end of a path: its geometry, its tip's index, and how many sharp turns come before the tip. */
-export interface EndHead {
-  readonly head: DrawnHead;
+/** A tip the end of a path may hold: its index, and how many sharp turns come before it. */
+export interface EndTip {
   readonly tipAt: number;
   readonly before: number;
 }
 
 /**
- * The heads the end of `path` may hold, given its sharp turns `at`. The tip and the first barb are two sharp turns in
- * a row. After them only the return to the tip may turn sharply, wherever the hand placed it. The return turns by 180
- * degrees less both barbs' angles, which a hand rounds into a gentle turn. So it is found as where the pen comes
- * nearest the tip again.
+ * The tips the end of `path` may hold, given its sharp turns `at`: each of the last three, since the first barb's end
+ * and the return to the tip may each turn sharply or not.
  */
-export function endHeads(path: readonly Vec[], at: readonly number[]): EndHead[] {
-  const out: EndHead[] = [];
-  const last = path.length - 1;
+export function endTips(path: readonly Vec[], at: readonly number[]): EndTip[] {
   // Turns near the end are the pen flicking off as it lifts, and no part of the head.
   const body = at.filter((i) => i < (1 - LIFTING) * path.length);
-  for (let m = body.length - 2; m >= 0 && m >= body.length - 3; m--) {
-    const tipAt = body[m];
-    const tip = path[tipAt];
-    const againAt = extreme(path, body[m + 1], last, tip, false);
-    const again = path[againAt];
-    const barbs: [Vec, Vec] = [
-      path[extreme(path, tipAt, againAt, tip, true)],
-      path[extreme(path, againAt, last, again, true)],
-    ];
-    out.push({ head: { tip, again, barbs }, tipAt, before: m });
-  }
+  const out: EndTip[] = [];
+  for (let m = body.length - 1; m >= 0 && m >= body.length - 3; m--) out.push({ tipAt: body[m], before: m });
   return out;
 }
 
-/** How well a head fits a shaft that ends at its tip going along `shaft`: under 1 when it does, else Infinity. */
-export function headFitRatio(head: DrawnHead, shaft: Vec, shaftLength: number): number {
-  return headRatio(head.tip, head.again, head.barbs, shaft, shaftLength);
+/**
+ * The head drawn after the tip at `tipAt` that best fits a shaft running into the tip along the unit vector `shaft`,
+ * `shaftLength` long, and how well (headRatio); or null when no head fits. The pen goes out to one barb, back to the
+ * tip, and out to the other. Each barb is where the pen goes farthest, not a sharp turn: a short barb's end turns
+ * within the stretch a turn is measured across, and a hand rounds the return. Every point after the tip is tried as
+ * the return, so a pen that hooks past the tip, or comes back to it wide, still finds the head it drew.
+ */
+export function fitHead(
+  path: readonly Vec[],
+  tipAt: number,
+  shaft: Vec,
+  shaftLength: number,
+): { head: DrawnHead; ratio: number } | null {
+  const last = path.length - 1;
+  const tip = path[tipAt];
+  let best: { head: DrawnHead; ratio: number } | null = null;
+  let firstAt = tipAt;
+  for (let againAt = tipAt + 1; againAt < last; againAt++) {
+    if (distance(path[againAt], tip) > distance(path[firstAt], tip)) firstAt = againAt;
+    const again = path[againAt];
+    const head: DrawnHead = { tip, again, barbs: [path[firstAt], path[extreme(path, againAt, last, again, true)]] };
+    const ratio = headRatio(tip, again, head.barbs, shaft, shaftLength);
+    if (ratio < (best?.ratio ?? 1)) best = { head, ratio };
+  }
+  return best;
 }
 
 /**
@@ -245,13 +266,16 @@ export function headLength(head: DrawnHead, width: number, shaftLength: number):
 export function arrowCandidate(points: readonly Vec[], _size: number, width: number): Candidate | null {
   const { path, at } = sharpTurns(points);
   let best: Candidate | null = null;
-  for (const { head, tipAt, before } of endHeads(path, at)) {
+  for (const { tipAt, before } of endTips(path, at)) {
     // The shaft turns sharply nowhere but where the pen landed, and is fitted without that first stretch.
     if (!onlyLanding(path, at, before)) continue;
     const shaftFit = shaftLine(path, afterLanding(at, before, tipAt), tipAt, landed(at, before));
-    if (!shaftFit) continue;
-    const ratio = Math.max(shaftFit.ratio, headFitRatio(head, unit(shaftFit.from, shaftFit.to), shaftFit.length));
-    if (!(ratio < 1) || (best && best.ratio <= ratio)) continue;
+    if (!(shaftFit && shaftFit.ratio < 1)) continue;
+    const fit = fitHead(path, tipAt, unit(shaftFit.from, shaftFit.to), shaftFit.length);
+    if (!fit) continue;
+    const { head } = fit;
+    const ratio = Math.max(shaftFit.ratio, fit.ratio);
+    if (best && best.ratio <= ratio) continue;
     const [from, end] = snapSegment(shaftFit.from, shaftFit.to);
     const barbs = drawnBarbs(end, unit(from, end), headLength(head, width, shaftFit.length));
     best = { shape: { kind: 'arrow', from, tip: end, barbs }, ratio };
