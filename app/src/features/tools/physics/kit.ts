@@ -23,6 +23,7 @@ const LOADERS: Record<PhysicsToolId, Loader> = {
   geooptics: () => import('./geooptics/Tool'),
   nuclear: () => import('./nuclear/Tool'),
   orbits: () => import('./orbits/Tool'),
+  maneuvers: () => import('./maneuvers/Tool'),
   spacecraft: () => import('./spacecraft/Tool'),
 };
 

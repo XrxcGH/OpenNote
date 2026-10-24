@@ -3,6 +3,7 @@
 // braces, and the numbers arrive already written with their units. Each tool's group lives in kitPhysics/<tool>.ts.
 import { fields } from './kitPhysics/fields';
 import { geooptics } from './kitPhysics/geooptics';
+import { maneuvers } from './kitPhysics/maneuvers';
 import { nuclear } from './kitPhysics/nuclear';
 import { spacecraft } from './kitPhysics/spacecraft';
 import { orbits } from './kitPhysics/orbits';
@@ -64,4 +65,5 @@ export const kitPhysics = {
   spacecraft,
   fields,
   orbits,
+  maneuvers,
 } as const;

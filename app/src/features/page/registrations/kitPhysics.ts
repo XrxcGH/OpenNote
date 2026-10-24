@@ -12,6 +12,7 @@ export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string
   ['relativity', 'HourglassMedium'],
   ['nuclear', 'Radioactive'],
   ['orbits', 'Planet'],
+  ['maneuvers', 'RocketLaunch'],
   ['spacecraft', 'Rocket'],
 ];
 
