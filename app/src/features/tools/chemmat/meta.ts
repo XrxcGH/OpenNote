@@ -46,4 +46,11 @@ export const CHEMMAT_META: readonly ChemMatMeta[] = [
     keywords: 'kitChemMat.kin.keywords',
     icon: 'Flask',
   },
+  {
+    id: 'solutions',
+    title: 'kitChemMat.sol.title',
+    open: 'kitChemMat.sol.open',
+    keywords: 'kitChemMat.sol.keywords',
+    icon: 'Flask',
+  },
 ];
