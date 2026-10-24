@@ -115,8 +115,19 @@ describe('ruled paper', () => {
       const line = wrapper.querySelector('.ProseMirror > p')!;
       // The box settles onto its rule over the frames after it mounts; a slow runner needs more than a fixed few.
       await vi.waitFor(() => {
-        expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
-        expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
+        const css = getComputedStyle(wrapper);
+        const where = [
+          `ruled=${harness.viewport.world.dataset.ruled}`,
+          `classes=${wrapper.className}`,
+          `style=${wrapper.getAttribute('style')}`,
+          `inset=${css.insetBlockStart} top=${css.top} position=${css.position}`,
+          `world=${harness.viewport.world.getAttribute('style')}`,
+          `zoom=${harness.viewport.camera().zoom} dpr=${devicePixelRatio} top=${wrapper.getBoundingClientRect().top}`,
+          `font=${getComputedStyle(line).fontFamily} lh=${getComputedStyle(line).lineHeight}`,
+          `pad=${getComputedStyle(line).paddingTop}`,
+        ].join(' | ');
+        expect(offLift(baseline(harness, line)), `box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
+        expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
         const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
         expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
       }, SETTLE);
