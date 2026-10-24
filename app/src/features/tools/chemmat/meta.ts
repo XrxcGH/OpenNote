@@ -53,4 +53,11 @@ export const CHEMMAT_META: readonly ChemMatMeta[] = [
     keywords: 'kitChemMat.sol.keywords',
     icon: 'Flask',
   },
+  {
+    id: 'crystals',
+    title: 'kitChemMat.cx.title',
+    open: 'kitChemMat.cx.open',
+    keywords: 'kitChemMat.cx.keywords',
+    icon: 'Flask',
+  },
 ];
