@@ -439,13 +439,23 @@ function DimFields(props: { doc: DraftingDoc; d: Dim; onDoc(next: DraftingDoc): 
         />
       )}
       {d.k === 'angular' && (
-        <CommitNumber
-          label={say('kitDesign.drafting.arcRadius')}
-          value={d.r}
-          doc={doc}
-          length
-          onCommit={(r) => r > 0 && set({ r })}
-        />
+        <>
+          <CommitNumber
+            label={say('kitDesign.drafting.arcRadius')}
+            value={d.r}
+            doc={doc}
+            length
+            onCommit={(r) => r > 0 && set({ r })}
+          />
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={d.supp === true}
+              onChange={(event) => set({ supp: event.target.checked })}
+            />
+            <span>{say('kitDesign.drafting.supplement')}</span>
+          </label>
+        </>
       )}
       {(d.k === 'radius' || d.k === 'diameter') && (
         <CommitNumber

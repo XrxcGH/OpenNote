@@ -85,6 +85,7 @@ export const drafting = {
   alt: 'Drafting sheet with {shapes, plural, one {# shape} other {# shapes}} and {dims, plural, one {# dimension} other {# dimensions}}.',
   textHead: 'Dimensions',
   textNone: 'none yet',
+  supplement: 'Measure the other angle (180� minus the acute one)',
   dimKinds: {
     linear: 'Linear dimension',
     aligned: 'Aligned dimension',

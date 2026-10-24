@@ -68,6 +68,31 @@ describe('dimensions measured from geometry', () => {
     expect(dimLines(c)[0]!.value).toBeCloseTo(90, 9);
   });
 
+  it('crossing lines read the same angle whichever way their endpoints were drawn', () => {
+    // The line along x and the line along y = x cross at 45 degrees (and 135 degrees).
+    const reads = (a: [[number, number], [number, number]], b: [[number, number], [number, number]], supp = false) => {
+      const d = doc(
+        [line('a', a[0], a[1]), line('b', b[0], b[1])],
+        [{ id: 'x', k: 'angular', l1: 'a', l2: 'b', r: 5, ...(supp ? { supp: true } : {}) }],
+      );
+      return dimLines(d)[0]!.value;
+    };
+    const along: [[number, number], [number, number]] = [
+      [-10, 0],
+      [10, 0],
+    ];
+    const diag: [[number, number], [number, number]] = [
+      [-3, -3],
+      [5, 5],
+    ];
+    expect(reads(along, diag)).toBeCloseTo(45, 9);
+    expect(reads([along[1], along[0]], diag)).toBeCloseTo(45, 9);
+    expect(reads(along, [diag[1], diag[0]])).toBeCloseTo(45, 9);
+    expect(reads([along[1], along[0]], [diag[1], diag[0]])).toBeCloseTo(45, 9);
+    expect(reads(along, diag, true)).toBeCloseTo(135, 9);
+    expect(reads([along[1], along[0]], diag, true)).toBeCloseTo(135, 9);
+  });
+
   it('a circle of radius 12.5 mm with dual units', () => {
     const c: Entity = { id: 'c1', k: 'circle', c: [50, 50], r: 12.5, lt: 'visible' };
     const d = doc(

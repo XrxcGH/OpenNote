@@ -57,7 +57,7 @@ export interface Tol {
 export type Dim =
   | { id: string; k: 'linear'; a: Ref; b: Ref; axis: 'h' | 'v'; off: number; tol?: Tol }
   | { id: string; k: 'aligned'; a: Ref; b: Ref; off: number; tol?: Tol }
-  | { id: string; k: 'angular'; l1: string; l2: string; r: number }
+  | { id: string; k: 'angular'; l1: string; l2: string; r: number; supp?: boolean }
   | { id: string; k: 'radius' | 'diameter'; of: string; ang: number; tol?: Tol };
 
 export type Units = 'mm' | 'in';
@@ -298,9 +298,16 @@ export function measure(d: Dim, doc: DraftingDoc): DimValue | DimProblem {
       if (!x) return 'parallel';
       const far = (e: { a: Pt; b: Pt }): Pt => (dist(e.a, x) >= dist(e.b, x) ? e.a : e.b);
       const p1 = far(e1);
-      const p2 = far(e2);
+      let p2 = far(e2);
       const a1 = Math.atan2(p1[1] - x[1], p1[0] - x[0]);
-      const a2 = Math.atan2(p2[1] - x[1], p2[0] - x[0]);
+      let a2 = Math.atan2(p2[1] - x[1], p2[0] - x[0]);
+      // Two crossing lines make an acute angle and its supplement. Which one is measured must not depend on the order
+      // the endpoints were drawn in, so the second ray is turned to the acute side, or to the obtuse one when asked.
+      const acute = Math.cos(a1) * Math.cos(a2) + Math.sin(a1) * Math.sin(a2) >= 0;
+      if (acute === (d.supp === true)) {
+        a2 += Math.PI;
+        p2 = [2 * x[0] - p2[0], 2 * x[1] - p2[1]];
+      }
       const cross = Math.cos(a1) * Math.sin(a2) - Math.sin(a1) * Math.cos(a2);
       const dot = Math.cos(a1) * Math.cos(a2) + Math.sin(a1) * Math.sin(a2);
       const between = deg(Math.atan2(Math.abs(cross), dot));
@@ -696,7 +703,14 @@ export function readDoc(raw: unknown): DraftingDoc {
         doc.dims.push({ id, k: 'linear', a, b, axis: item.axis === 'v' ? 'v' : 'h', off, ...withTol });
       else doc.dims.push({ id, k: 'aligned', a, b, off, ...withTol });
     } else if (item.k === 'angular' && typeof item.l1 === 'string' && typeof item.l2 === 'string') {
-      doc.dims.push({ id, k: 'angular', l1: item.l1, l2: item.l2, r: num(item.r, 1, 1000, 12) });
+      doc.dims.push({
+        id,
+        k: 'angular',
+        l1: item.l1,
+        l2: item.l2,
+        r: num(item.r, 1, 1000, 12),
+        ...(item.supp === true ? { supp: true } : {}),
+      });
     } else if ((item.k === 'radius' || item.k === 'diameter') && typeof item.of === 'string') {
       doc.dims.push({ id, k: item.k, of: item.of, ang: finiteNum(item.ang, 45), ...withTol });
     }
