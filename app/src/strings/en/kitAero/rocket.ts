@@ -53,8 +53,8 @@ export const rocket = {
   },
   p: {
     altitude: 'Thrust against altitude',
-    H: 'Geopotential altitude H, km',
-    F: 'Thrust F, kN',
+    H: 'Geopotential altitude H',
+    F: 'Thrust F',
   },
   n: {
     separation: 'The exit pressure is far below the ambient pressure, so the flow will likely separate.',

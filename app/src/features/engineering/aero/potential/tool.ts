@@ -79,6 +79,8 @@ function presetFlow(inputs: Inputs): { elements: FlowElement[]; size: number } {
   return { elements: [uniform, doublet, ...vortex], size: 1.5 * a };
 }
 
+const LENGTH = { qty: 'length' } as const;
+
 function streamPlot(r: PotentialResult, px: number, py: number) {
   const points: XY[] = [];
   for (const curve of r.streamlines)
@@ -88,6 +90,8 @@ function streamPlot(r: PotentialResult, px: number, py: number) {
     title: 'streamlines',
     x: 'x',
     y: 'y',
+    xUnit: LENGTH,
+    yUnit: LENGTH,
     equal: true,
     window: r.window,
     series: [{ label: 'psi', points, style: 'segments' as const }],
@@ -106,6 +110,8 @@ function cpPlot(r: PotentialResult) {
     title: 'cpContours',
     x: 'x',
     y: 'y',
+    xUnit: LENGTH,
+    yUnit: LENGTH,
     equal: true,
     window: r.window,
     series: [

@@ -83,7 +83,6 @@ function polarOutput(p: Polar): ToolOutput {
     { id: 'LDminP', value: r.LDminP, sig: 5 },
     { id: 'wingLoading', value: r.wingLoading, qty: 'pressure', sig: 5 },
   ];
-  const kilo = (points: readonly { x: number; y: number }[]) => points.map((q) => ({ x: q.x, y: q.y / 1000 }));
   return {
     rows,
     steps: r.steps,
@@ -93,15 +92,19 @@ function polarOutput(p: Polar): ToolOutput {
         title: 'thrust',
         x: 'V',
         y: 'D',
-        series: [{ label: 'D', points: kilo(r.plot.thrust) }],
-        marks: [{ x: r.VminD, y: r.Dmin / 1000, label: 'minD' }],
+        xUnit: { qty: 'speed' },
+        yUnit: { qty: 'force', si: 'kN' },
+        series: [{ label: 'D', points: r.plot.thrust }],
+        marks: [{ x: r.VminD, y: r.Dmin, label: 'minD' }],
       },
       {
         title: 'power',
         x: 'V',
         y: 'P',
-        series: [{ label: 'P', points: kilo(r.plot.power) }],
-        marks: [{ x: r.VminP, y: r.Pmin / 1000, label: 'minP' }],
+        xUnit: { qty: 'speed' },
+        yUnit: { qty: 'power', si: 'kW' },
+        series: [{ label: 'P', points: r.plot.power }],
+        marks: [{ x: r.VminP, y: r.Pmin, label: 'minP' }],
       },
     ],
   };

@@ -10,7 +10,7 @@ import { DataTable } from './DataTable';
 import { insert } from './insert';
 import { PLOT_H, PLOT_W, plotTree, svgText } from './plot';
 import type { SvgNode } from './plot';
-import { readNumber, runSpec, unitKey, visibleFields } from './spec';
+import { plotInSystem, readNumber, runSpec, unitKey, visibleFields } from './spec';
 import type { FieldDef, PlotSpec, ToolOutput, ToolSpec, Values } from './spec';
 import { unitsFor } from './units';
 import type { UnitSystem } from './units';
@@ -187,7 +187,7 @@ function Answer({ spec, output, system }: { spec: ToolSpec; output: ToolOutput; 
         <DataTable key={table.title} tool={tool} table={table} system={system} />
       ))}
       {(output.plots ?? []).map((plot, i) => (
-        <Plot key={plot.title} tool={tool} plot={plot} index={i} />
+        <Plot key={plot.title} tool={tool} plot={plot} index={i} system={system} />
       ))}
       <details className={styles.steps} open>
         <summary>{t('kitAero.steps')}</summary>
@@ -255,12 +255,25 @@ function toReact(tree: SvgNode | string, key: number): ReactNode {
   return createElement(tree.tag, props, ...(tree.children ?? []).map((child, i) => toReact(child, i)));
 }
 
-function Plot({ tool, plot, index }: { tool: ToolSpec['id']; plot: PlotSpec; index: number }) {
+interface PlotProps {
+  readonly tool: ToolSpec['id'];
+  readonly plot: PlotSpec;
+  readonly index: number;
+  readonly system: UnitSystem;
+}
+
+function Plot({ tool, plot: given, index, system }: PlotProps) {
   const id = useId().replace(/:/g, '');
+  const shown = plotInSystem(given, system);
+  const plot = shown.plot;
+  const axis = (key: string, sym: string | undefined) => {
+    const name = toolText(tool, `p.${key}`);
+    return sym === undefined ? name : `${name}, ${sym}`;
+  };
   const words = {
     title: toolText(tool, `p.${plot.title}`),
-    x: toolText(tool, `p.${plot.x}`),
-    y: toolText(tool, `p.${plot.y}`),
+    x: axis(plot.x, shown.x),
+    y: axis(plot.y, shown.y),
     series: plot.series.map((series) => (series.label === '' ? '' : toolText(tool, `p.${series.label}`))),
   };
   const label = t('kitAero.plotLabel', { title: words.title, x: words.x, y: words.y });

@@ -1,6 +1,6 @@
 // The standard atmosphere tool: the state at an altitude, or the altitude for a pressure, density or temperature.
 import type { XY } from '../common';
-import type { PlotSpec, ToolSpec, Values } from '../ui/spec';
+import type { AxisUnit, PlotSpec, ToolSpec, Values } from '../ui/spec';
 import { SOURCES, atmosphere } from './engine';
 import type { AtmosphereMode } from './engine';
 
@@ -45,15 +45,18 @@ export const spec: ToolSpec = {
             dT,
           })
         : atmosphere({ mode: chosen, value: inputs.q(chosen), dT });
-    const Hkm = r.H / 1000;
-    const plot = (title: string, x: string, points: readonly XY[], value: number): PlotSpec => ({
+    // The engine samples H in km and p in kPa; the plot takes SI base units and draws them in the chosen system.
+    const plot = (title: string, x: string, points: readonly XY[], value: number, xUnit: AxisUnit): PlotSpec => ({
       title,
       x,
       y: 'H',
-      series: [{ label: 'standard', points: upward(points) }],
-      marks: [{ x: value, y: Hkm, label: 'here' }],
+      xUnit,
+      yUnit: { qty: 'altitude', si: 'km' },
+      series: [{ label: 'standard', points: upward(points).map((p) => ({ x: p.x, y: p.y * 1000 })) }],
+      marks: [{ x: value, y: r.H, label: 'here' }],
       ...(title === 'pTitle' ? { logX: true } : {}),
     });
+    const kiloX = (points: readonly XY[]) => points.map((p) => ({ x: p.x, y: p.y * 1000 }));
     const pressureStep = r.steps.find((s) => s.key === 'atmPressureIso' || s.key === 'atmPressureLapse');
     return {
       rows: [
@@ -74,9 +77,9 @@ export const spec: ToolSpec = {
       steps: r.steps,
       ...(pressureStep?.math ? { latex: pressureStep.math } : {}),
       plots: [
-        plot('tTitle', 'T', r.plot.T, r.T),
-        plot('pTitle', 'p', r.plot.p, r.p / 1000),
-        plot('rhoTitle', 'rho', r.plot.rho, r.rho),
+        plot('tTitle', 'T', r.plot.T, r.T, { qty: 'temperature' }),
+        plot('pTitle', 'p', kiloX(r.plot.p), r.p, { qty: 'pressure', si: 'kPa' }),
+        plot('rhoTitle', 'rho', r.plot.rho, r.rho, { qty: 'density' }),
       ],
     };
   },

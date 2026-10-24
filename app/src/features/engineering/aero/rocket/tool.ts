@@ -65,7 +65,10 @@ export const spec: ToolSpec = {
           title: 'altitude',
           x: 'H',
           y: 'F',
-          series: [{ label: 'F', points: r.plot.map((p) => ({ x: p.x, y: p.y / 1000 })) }],
+          xUnit: { qty: 'altitude', si: 'km' },
+          yUnit: { qty: 'force', si: 'kN' },
+          // The engine samples altitude in km.
+          series: [{ label: 'F', points: r.plot.map((p) => ({ x: p.x * 1000, y: p.y })) }],
         },
       ],
     };

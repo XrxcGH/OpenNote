@@ -97,9 +97,9 @@ export const performance = {
   p: {
     thrust: 'Thrust required',
     power: 'Power required',
-    V: 'Airspeed V, m/s',
-    D: 'Thrust required, kN',
-    P: 'Power required, kW',
+    V: 'Airspeed V',
+    D: 'Thrust required',
+    P: 'Power required',
     minD: 'Minimum drag',
     minP: 'Minimum power',
   },
@@ -122,8 +122,7 @@ export const performance = {
       'coefficient, CL = {CL}.',
     pfJetClimb: 'Maximum rate of climb for a jet with constant thrust (small climb angle, parabolic polar).',
     pfJetClimbAngle: 'Steepest climb angle for a jet.',
-    pfPropClimb:
-      'Maximum rate of climb for a propeller aircraft: the most excess power, at the minimum power speed.',
+    pfPropClimb: 'Maximum rate of climb for a propeller aircraft: the most excess power, at the minimum power speed.',
     pfGlide: 'Flattest glide angle at (L/D)max.',
     pfMinSink: 'Smallest sink rate, at the minimum power speed.',
     pfGlideRange: 'Glide range in still air from the height given.',

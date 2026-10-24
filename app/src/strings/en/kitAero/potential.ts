@@ -51,8 +51,8 @@ export const potential = {
   },
   p: {
     streamlines: 'Streamlines',
-    x: 'x, m',
-    y: 'y, m',
+    x: 'x',
+    y: 'y',
     psi: 'Streamlines (ψ constant)',
     probe: 'Probe',
     cpContours: 'Pressure coefficient Cp, contours from −3 to 1 every 0.25',

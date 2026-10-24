@@ -62,11 +62,21 @@ export interface PlotSeries {
   readonly style?: 'line' | 'dashed' | 'dots' | 'segments';
 }
 
+/** What an axis measures. Its numbers are SI base units; the plot draws them in the chosen system. */
+export interface AxisUnit {
+  readonly qty: QtyKind;
+  /** The SI unit to draw in when not the kind's first, such as km or kN. */
+  readonly si?: string;
+}
+
 export interface PlotSpec {
   /** The plot's title key, "p.<title>"; the axis keys likewise. */
   readonly title: string;
   readonly x: string;
   readonly y: string;
+  /** With a unit, the axis key names the quantity alone and the unit symbol follows it, ", ft/s". */
+  readonly xUnit?: AxisUnit;
+  readonly yUnit?: AxisUnit;
   readonly series: readonly PlotSeries[];
   readonly logX?: boolean;
   readonly logY?: boolean;
@@ -176,6 +186,32 @@ export function readNumber(text: string): number | undefined {
   if (Number.isFinite(direct)) return direct;
   const result = evaluate(plain);
   return result.ok && Number.isFinite(result.value) ? result.value : NaN;
+}
+
+/** The plot with its axes in the chosen system, and the unit symbols for the axis names. */
+export function plotInSystem(plot: PlotSpec, system: UnitSystem): { plot: PlotSpec; x?: string; y?: string } {
+  const unitOf = (axis: AxisUnit | undefined) => {
+    if (!axis) return undefined;
+    const named = system === 'si' && axis.si !== undefined ? findUnit(axis.qty, axis.si) : undefined;
+    return named ?? defaultUnit(axis.qty, system);
+  };
+  const ux = unitOf(plot.xUnit);
+  const uy = unitOf(plot.yUnit);
+  if (!ux && !uy) return { plot };
+  const cx = (v: number) => (ux ? fromSI(v, ux) : v);
+  const cy = (v: number) => (uy ? fromSI(v, uy) : v);
+  const point = <P extends XY>(p: P): P => ({ ...p, x: cx(p.x), y: cy(p.y) });
+  const w = plot.window;
+  return {
+    plot: {
+      ...plot,
+      series: plot.series.map((s) => ({ ...s, points: s.points.map(point) })),
+      ...(plot.marks ? { marks: plot.marks.map(point) } : {}),
+      ...(w ? { window: { x0: cx(w.x0), x1: cx(w.x1), y0: cy(w.y0), y1: cy(w.y1) } } : {}),
+    },
+    ...(ux ? { x: ux.sym } : {}),
+    ...(uy ? { y: uy.sym } : {}),
+  };
 }
 
 export function readInputs(spec: ToolSpec, values: Values, system: UnitSystem = 'si'): Inputs {

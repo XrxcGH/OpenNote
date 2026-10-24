@@ -5,7 +5,7 @@ import { AeroError } from '../common';
 import { LOADERS } from '../kit';
 import { AERO_TOOLS } from '../meta';
 import { ticks, plotTree, svgText } from './plot';
-import { initialValues, readInputs, readNumber, runSpec, switchSystem, unitKey } from './spec';
+import { initialValues, plotInSystem, readInputs, readNumber, runSpec, switchSystem, unitKey } from './spec';
 import type { ToolSpec } from './spec';
 import { hasText, pretty } from './words';
 
@@ -154,4 +154,46 @@ describe('every tool in the window', () => {
       expect(Object.keys(kitAero.t)).toContain(id);
     });
   }
+});
+
+describe('plots in the chosen unit system', () => {
+  it('draws the thrust-required plot in kN and m/s, or lbf and ft/s', async () => {
+    const { spec } = await LOADERS.performance();
+    const result = runSpec(spec, initialValues(spec, 'si'));
+    if (!result.ok) throw result.error;
+    const plot = result.output.plots![0]!;
+    const D = result.output.rows.find((r) => r.id === 'Dmin')!.value!;
+    const V = result.output.rows.find((r) => r.id === 'VminD')!.value!;
+    const si = plotInSystem(plot, 'si');
+    expect([si.x, si.y]).toEqual(['m/s', 'kN']);
+    expect(si.plot.marks![0]!.x).toBeCloseTo(V, 9);
+    expect(si.plot.marks![0]!.y).toBeCloseTo(D / 1000, 9);
+    const us = plotInSystem(plot, 'us');
+    expect([us.x, us.y]).toEqual(['ft/s', 'lbf']);
+    // 1 ft = 0.3048 m and 1 lbf = 4.4482216152605 N exactly.
+    expect(us.plot.marks![0]!.x).toBeCloseTo(V / 0.3048, 9);
+    expect(us.plot.marks![0]!.y).toBeCloseTo(D / 4.4482216152605, 9);
+    expect(us.plot.series[0]!.points.length).toBe(plot.series[0]!.points.length);
+  });
+
+  it('draws the atmosphere against altitude in km, or ft', async () => {
+    const { spec } = await LOADERS.atmosphere();
+    const result = runSpec(spec, initialValues(spec, 'si'));
+    if (!result.ok) throw result.error;
+    const pressure = result.output.plots![1]!;
+    const H = result.output.rows.find((r) => r.id === 'H')!.value!;
+    const p = result.output.rows.find((r) => r.id === 'p')!.value!;
+    const si = plotInSystem(pressure, 'si');
+    expect([si.x, si.y]).toEqual(['kPa', 'km']);
+    expect(si.plot.marks![0]!.y).toBeCloseTo(H / 1000, 9);
+    expect(si.plot.marks![0]!.x).toBeCloseTo(p / 1000, 9);
+    const us = plotInSystem(pressure, 'us');
+    expect([us.x, us.y]).toEqual(['lbf/ft²', 'ft']);
+    expect(us.plot.marks![0]!.y).toBeCloseTo(H / 0.3048, 6);
+  });
+
+  it('leaves a plot without units alone', () => {
+    const plot = { title: 't', x: 'x', y: 'y', series: [{ label: 's', points: [{ x: 1, y: 2 }] }] };
+    expect(plotInSystem(plot, 'us').plot).toBe(plot);
+  });
 });
