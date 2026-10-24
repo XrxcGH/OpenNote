@@ -27,6 +27,25 @@ interface Case {
 
 const CASES: readonly Case[] = [
   {
+    name: 'a rod pinned at one end, released level: alpha = 3g/2L, pin reaction mg/4',
+    tool: 'kinetics',
+    texts: { mode: 'forces', support: 'pinned', mass: '2 kg', IG: '0.16666667 kg*m^2', px: '-0.5 m' },
+    expect: { bodyAlpha: '−14.715 rad/s²', aGy: '−7.3575 m/s²', Ry: '4.905 N', Rx: '0 N' },
+  },
+  {
+    name: 'the same rod in feet and pounds',
+    tool: 'kinetics',
+    system: 'us',
+    texts: { mode: 'forces', support: 'pinned', mass: '2 kg', IG: '0.16666667 kg*m^2', px: '-0.5 m', g: '9.81 m/s^2' },
+    expect: { bodyAlpha: '−14.715 rad/s²', Ry: '1.1027 lbf' },
+  },
+  {
+    name: 'a ladder at 60° on a smooth floor and wall, from rest',
+    tool: 'kinetics',
+    texts: { mode: 'forces', support: 'sliding', mass: '10 kg', IG: '13.333333 kg*m^2' },
+    expect: { bodyAlpha: '1.8394 rad/s²', NA: '79.706 N', NB: '31.859 N' },
+  },
+  {
     name: 'free vibration: natural frequency, damping, and decrement',
     tool: 'sdof',
     texts: { m: '10 kg', k: '4000 N/m', c: '40 N*s/m' },

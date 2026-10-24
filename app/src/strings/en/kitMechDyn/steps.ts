@@ -76,6 +76,17 @@ export const steps = {
     'Rolling needs a friction coefficient of at least {needed}, but μ is {mu}, so the body slips as it rolls.',
   kinRollingEnergy:
     'Check by work and energy: the drop in potential energy becomes translational and rotational energy.',
+  kinForcesLoads: 'Add up the applied forces, with the weight at G, and their moment about G.',
+  kinForces_free: 'A free body: Newton’s second law for the center of mass, and for rotation about it.',
+  kinForces_pinned:
+    'A pinned body: the pin reaction is unknown, and the pin point doesn’t accelerate, which ties a_G to α and ω.',
+  kinForces_rolling:
+    'Rolling without slipping on level ground: the normal force and friction are unknown, the center stays level, and a_G = −αr.',
+  kinForces_sliding:
+    'Two smooth contacts: each pushes along its normal, and each contact point can’t accelerate into its surface.',
+  kinForcesSolve: 'Solve the equations together for the accelerations and the reactions:',
+  kinForcesLeaves: 'A normal force came out negative: a contact would have to pull, so the body leaves that surface.',
+  kinForcesFriction: 'Rolling needs at least this friction coefficient:',
   kinSlidingSpeed: 'While it slips, kinetic friction sets the acceleration, and energy is lost to friction.',
   camLaw_harmonic: 'Simple harmonic motion: smooth velocity, but the acceleration jumps at the ends of each segment.',
   camLaw_cycloidal: 'Cycloidal motion: velocity and acceleration are both zero at the ends, so the jerk stays finite.',

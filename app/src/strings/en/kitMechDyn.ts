@@ -55,6 +55,9 @@ export const kitMechDyn = {
     listEmpty: 'Type at least one line.',
     notNumber: 'Enter a number in every field.',
     positiveMass: 'The mass must be greater than zero.',
+    positiveInertia: 'The moment of inertia must be greater than zero.',
+    forcesSingular:
+      'The supports can’t hold the body this way: two of them push along the same line. Move a contact or turn its normal.',
     positiveStiffness: 'The stiffness must be greater than zero.',
     negativeDamping: 'Damping can’t be negative.',
     positiveFrequency: 'The forcing frequency must be greater than zero.',
