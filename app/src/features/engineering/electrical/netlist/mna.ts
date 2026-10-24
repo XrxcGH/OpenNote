@@ -279,3 +279,57 @@ function backSubstitute(a: Z[][], b: Z[], n: number): { re: number[]; im: number
   }
   return { re, im };
 }
+
+/** A real LU factorization with row exchanges, reusable for any right-hand side. */
+export interface Factored {
+  lu: number[][];
+  /** The row swapped into place at each column. */
+  swaps: number[];
+}
+
+/**
+ * Factors the real matrix of a system. A transient whose step size and switch states repeat has the same matrix at
+ * every step, so it is factored once and each step costs only a forward and a back substitution.
+ */
+export function factor(s: System): Factored {
+  const n = s.size;
+  const lu = s.re.map((row) => [...row]);
+  const rowSize = lu.map((row) => Math.max(...row.map(Math.abs), 1e-300));
+  const swaps: number[] = [];
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(lu[r]![col]!) / rowSize[r]! > Math.abs(lu[pivot]![col]!) / rowSize[pivot]!) pivot = r;
+    }
+    if (Math.abs(lu[pivot]![col]!) <= 1e-11 * rowSize[pivot]!) return fail('netSingular');
+    [lu[col], lu[pivot]] = [lu[pivot]!, lu[col]!];
+    [rowSize[col], rowSize[pivot]] = [rowSize[pivot]!, rowSize[col]!];
+    swaps.push(pivot);
+    const top = lu[col]!;
+    for (let r = col + 1; r < n; r++) {
+      const row = lu[r]!;
+      const f = row[col]! / top[col]!;
+      row[col] = f;
+      if (f !== 0) for (let k = col + 1; k < n; k++) row[k]! -= f * top[k]!;
+    }
+  }
+  return { lu, swaps };
+}
+
+/** Solves with a factorization; a node held only by current sources (an enormous voltage) is reported as singular. */
+export function solveFactored(f: Factored, rhs: number[]): number[] {
+  const n = rhs.length;
+  const x = [...rhs];
+  for (let col = 0; col < n; col++) {
+    const p = f.swaps[col]!;
+    if (p !== col) [x[col], x[p]] = [x[p]!, x[col]!];
+    for (let r = col + 1; r < n; r++) x[r]! -= f.lu[r]![col]! * x[col]!;
+  }
+  for (let r = n - 1; r >= 0; r--) {
+    let sum = x[r]!;
+    for (let k = r + 1; k < n; k++) sum -= f.lu[r]![k]! * x[k]!;
+    x[r] = sum / f.lu[r]![r]!;
+  }
+  if (x.some((v) => Math.abs(v) > 1e9)) return fail('netSingular');
+  return x;
+}

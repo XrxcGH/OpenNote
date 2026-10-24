@@ -1,8 +1,8 @@
 // The four analyses of a netlist: the DC operating point (with power in each element), an AC frequency sweep with
 // resonance and bandwidth, a transient response, and a Thevenin/Norton equivalent between 2 nodes.
 import { fail } from '../shared';
-import { assemble, layoutOf, solve, switchConductance } from './mna';
-import type { Context, Layout, System, TranState } from './mna';
+import { assemble, factor, layoutOf, solve, solveFactored, switchConductance } from './mna';
+import type { Context, Factored, Layout, System, TranState } from './mna';
 import { breakpoints, switchClosed, valueAt } from './sources';
 import type { Circuit, Element } from './parse';
 import type { Probe, Solution } from './probes';
@@ -250,10 +250,22 @@ export function transient(circuit: Circuit, lay: Layout, probes: Probe[], step: 
   const first: Solution = { re: zero.re, im: zero.re.map(() => 0) };
   const values = probes.map((p) => [p.value(first, { t: 0, initial: true }).re]);
   let useEuler = true;
+  // The matrix depends only on the step size, the method, and which switches conduct, so it is factored once per
+  // combination and reused; only the right-hand side changes from step to step.
+  const switches = circuit.elements.filter((e) => e.kind === 'S');
+  const factors = new Map<string, { dt: number; lu: Factored }>();
   for (let k = 1; k < times.length; k++) {
-    const dt = times[k]! - times[k - 1]!;
     const trap = !useEuler;
-    const { re } = solve(assemble(circuit, lay, { mode: 'tran', t: times[k]!, dt, trap, state }), false);
+    const key = `${(times[k]! - times[k - 1]!).toPrecision(9)}|${trap}|${switches.map((e) => (switchClosed(e, times[k]!) ? 1 : 0)).join('')}`;
+    const cached = factors.get(key);
+    const dt = cached ? cached.dt : times[k]! - times[k - 1]!;
+    const system = assemble(circuit, lay, { mode: 'tran', t: times[k]!, dt, trap, state });
+    const entry = cached ?? { dt, lu: factor(system) };
+    if (!cached) {
+      if (factors.size >= 64) factors.clear();
+      factors.set(key, entry);
+    }
+    const re = solveFactored(entry.lu, system.zr);
     advanceState(circuit, lay, re, state, dt, trap);
     const sol: Solution = { re, im: re.map(() => 0) };
     probes.forEach((p, i) => values[i]!.push(p.value(sol, { t: times[k]!, capI: state.capI }).re));

@@ -95,11 +95,33 @@ export function fmt(value: number, digits = 5): string {
 
 const PREFIXES: Record<number, string> = { [-12]: 'p', [-9]: 'n', [-6]: 'µ', [-3]: 'm', 0: '', 3: 'k', 6: 'M', 9: 'G' };
 
+const SUPERSCRIPT: Record<string, string> = {
+  '-': '⁻',
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+};
+const superscript = (n: number): string => [...String(n)].map((c) => SUPERSCRIPT[c] ?? c).join('');
+
 /** The value with an engineering prefix and unit, such as "4.7 kΩ". */
 export function eng(value: number, unit: string, digits = 5): string {
   if (!Number.isFinite(value)) return `${value} ${unit}`;
   if (value === 0) return `0 ${unit}`;
   const power = Math.max(-12, Math.min(9, Math.floor(Math.log10(Math.abs(value)) / 3) * 3));
+  if (unit === '1/s' || unit === 'rad/s') {
+    // A prefix on 1/s reads as "k1" ("12.5 k1/s"), so rates take a power of ten instead.
+    const shown = unit === '1/s' ? 's⁻¹' : 'rad/s';
+    return power === 0
+      ? `${fmt(value, digits)} ${shown}`
+      : `${fmt(value / 10 ** power, digits)} × 10${superscript(power)} ${shown}`;
+  }
   return `${fmt(value / 10 ** power, digits)} ${PREFIXES[power] ?? ''}${unit}`.trim();
 }
 

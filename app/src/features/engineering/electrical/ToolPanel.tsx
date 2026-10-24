@@ -145,6 +145,23 @@ function InsertBar({ result }: { result: KitOk }) {
   );
 }
 
+/**
+ * The value after it has stopped changing for `ms`; the value itself at once when `ms` is 0 or when `owner` (the tool
+ * the value belongs to) has just changed, so a new tool never runs on the old tool's fields.
+ */
+function useSettled<T>(value: T, ms: number, owner: string): { value: T; owner: string } {
+  const [settled, setSettled] = useState({ value, owner });
+  useEffect(() => {
+    if (ms === 0) return undefined;
+    const timer = setTimeout(() => setSettled({ value, owner }), ms);
+    return () => clearTimeout(timer);
+  }, [value, ms, owner]);
+  return ms === 0 || settled.owner !== owner ? { value, owner } : settled;
+}
+
+/** Tools whose analysis can take a while wait for a pause in typing before they run. */
+const SLOW_TOOLS: Record<string, number> = { netlist: 300 };
+
 export function ToolPanel({
   spec,
   values,
@@ -154,7 +171,8 @@ export function ToolPanel({
   values: Values;
   onValues(next: Values): void;
 }) {
-  const result = useMemo(() => runTool(spec, values), [spec, values]);
+  const settled = useSettled(values, SLOW_TOOLS[spec.id] ?? 0, spec.id).value;
+  const result = useMemo(() => runTool(spec, settled), [spec, settled]);
   return (
     <div className={styles.kit}>
       <p className={styles.about}>{say('t', `${spec.id}.about`)}</p>

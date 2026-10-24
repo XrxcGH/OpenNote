@@ -120,6 +120,12 @@ pub const TOOLS: &[Tool] = &[
         width: 560.0,
         height: 720.0,
     },
+    Tool {
+        id: "kitelectrical",
+        title: "Circuits and energy",
+        width: 560.0,
+        height: 720.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it
@@ -321,6 +327,10 @@ mod tests {
     #[test]
     fn finds_only_the_tools_it_lists() {
         assert_eq!(find("timers").map(|tool| tool.title), Some("Timers"));
+        assert_eq!(
+            find("kitelectrical").map(|tool| tool.title),
+            Some("Circuits and energy")
+        );
         assert!(find("Timers").is_none());
         assert!(find("timers\"; alert(1); \"").is_none());
         assert!(find("").is_none());

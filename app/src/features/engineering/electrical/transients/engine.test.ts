@@ -87,7 +87,7 @@ describe('the tool', () => {
       is: '1',
     });
     expect(out.ok).toBe(true);
-    if (out.ok) expect(out.rows.find((row) => row.key === 'alpha')!.value).toBe('250 1/s');
+    if (out.ok) expect(out.rows.find((row) => row.key === 'alpha')!.value).toBe('250 s⁻¹');
   });
 
   it('says which input is wrong', () => {

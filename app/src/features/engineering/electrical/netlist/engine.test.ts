@@ -243,6 +243,15 @@ C1 out 0 1u`;
     near(at(run, 1e-4), 0, 1e-3);
     near(at(run, 1.2e-3), 10 * (1 - Math.exp(-1)), 5e-3);
   });
+  it('a 20-section RC ladder settles to the source and does not take seconds', () => {
+    const lines = ['V1 n0 0 1'];
+    for (let i = 1; i <= 20; i++) lines.push(`R${i} n${i - 1} n${i} 1k`, `C${i} n${i} 0 1u`);
+    const started = Date.now();
+    const run = tran(lines.join(String.fromCharCode(10)), 'n20', 1e-4, 1);
+    // After 1 s (tau of the ladder is about 0.1 s) every node has reached the 1 V source.
+    near(run.values[0]![run.values[0]!.length - 1]!, 1, 1e-3);
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
   it('a pulse source rises, holds, and falls on schedule', () => {
     const run = tran('V1 a 0 PULSE 0 1 1m 0 0 2m 5m\nR1 a 0 1k', 'a', 1e-4, 8e-3);
     near(at(run, 5e-4), 0, 1e-12);
