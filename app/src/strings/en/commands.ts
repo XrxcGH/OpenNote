@@ -24,6 +24,15 @@ export const commands = {
     draw: 'Draw',
     view: 'View',
     more: 'More',
+    // Short names for the tools whose command names are whole sentences, so the Insert tab fits a narrow bar.
+    short: {
+      chemCalc: 'Chemistry calculators',
+      structure: 'Structure drawer',
+      properties: 'Materials tables',
+      symbols: 'Symbol palette',
+      converter: 'Unit converter',
+      reference: 'Reference tables',
+    },
     moreLabel: 'More commands',
     bottom: 'Quick actions',
     notebooks: 'Notebooks',
