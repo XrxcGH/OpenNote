@@ -257,12 +257,13 @@ interface Evaluated {
 const turbulent = 'fhConvWarnTurbulent';
 const range = 'fhConvWarnRange';
 const flag = (bad: boolean, key: string): string[] => (bad ? [key] : []);
-/** The average flat-plate forms that assume transition at Re 5e5 mean nothing below it (they go to a tiny or negative Nu). */
+/** The average flat-plate forms that assume transition at Re 5e5 mean little below it (a tiny or negative Nu). */
 const needTransition = (R: number, name: string): void =>
   need(
     R >= 5e5,
     'velocity',
-    `The ${name} flat-plate form needs Re_L of at least 5e5 (this plate has Re_L ${fmt(R, 3)}); below that the flow is laminar. Use the laminar average form.`,
+    `The ${name} flat-plate form needs Re_L of at least 5e5 (this plate has Re_L ${fmt(R, 3)}); ` +
+      'below that the flow is laminar. Use the laminar average form.',
   );
 const shortTube = (g: Geometry): boolean => g.tubeLength !== undefined && g.tubeLength / g.length < 10;
 

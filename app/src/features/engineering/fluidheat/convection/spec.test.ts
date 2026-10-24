@@ -8,7 +8,7 @@ const nu = 15.9e-6;
 const pr = 0.71;
 const k = 0.026;
 
-describe('convection form', () => {
+describe('convection form, plates and mass transfer', () => {
   it('the first problem is a laminar plate: Nu = 0.664 Re^0.5 Pr^(1/3), about 332 at Re 3.1e5', () => {
     const o = solve();
     const re = (5 * 1) / nu;
@@ -44,6 +44,9 @@ describe('convection form', () => {
     const d = 15.9e-6 / 0.63;
     expect(row(o, 'rayleigh') / ((9.80665 * 0.02 * 0.2 ** 3) / (15.9e-6 * d))).toBeCloseTo(1, 10);
   });
+});
+
+describe('convection form, other correlations', () => {
   it('a laminar plate and a Gnielinski tube', () => {
     const lam = solve({ corrExt: 'plateLaminar', velocity: '1 m/s' });
     const re = 1 / nu;
