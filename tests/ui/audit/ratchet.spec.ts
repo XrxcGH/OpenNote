@@ -18,7 +18,15 @@ interface CellFile {
   findings: Finding[];
 }
 
-const keyOf = (one: Finding) => `${one.surface} | ${one.kind} | ${one.selector}`;
+/**
+ * A finding is named by what it is and where, not by every surface that shows it: the command bar sits in every
+ * surface of a sweep, so its finding is one entry. A tool keeps its own name; other surfaces share their first word.
+ */
+const groupOf = (surface: string): string => {
+  const parts = surface.split('.');
+  return parts[0] === 'tool' || parts[0] === 'tools' ? parts.slice(0, 2).join('.') : (parts[0] ?? surface);
+};
+const keyOf = (one: Finding) => `${groupOf(one.surface)} | ${one.kind} | ${one.selector}`;
 
 test('the layout has no findings beyond the known list', () => {
   const files = readdirSync(OUT_DIR).filter((name) => name.startsWith('cell-') && name.endsWith('.json'));

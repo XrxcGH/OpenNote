@@ -20,13 +20,13 @@ A new tool, command, settings section, setup step, or slash item is therefore au
 ## The matrix
 
 Sizes 1280x800, 820x620, and 2560x1600 (device scale factor 2 in screenshots), light and dark, mouse and touch
-density: 18 cells, one test each (`layout.audit.spec.ts`).
+density: 12 cells, one test each (`layout.audit.spec.ts`).
 
 ## The ratchet
 
 `ratchet.spec.ts` merges the cells' findings and compares them with `known.json`. A finding not in the list fails the
 run, and so does a listed finding that no longer occurs, so a fix shrinks the list and nothing new gets in. A finding
-is `surface | kind | selector`. To accept the current findings after a deliberate change, run with
+is `surface | kind | selector`, where the surface is the tool, or the first word of the others (`settings`, `command`, `block`). To accept the current findings after a deliberate change, run with
 `OPENNOTE_AUDIT_UPDATE=1`, and say why in the commit.
 
 ## Looking at the results

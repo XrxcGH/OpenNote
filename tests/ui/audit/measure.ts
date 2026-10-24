@@ -92,9 +92,17 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     all.push(base);
     for (const el of base.querySelectorAll('*')) all.push(el);
   }
+  /** The inside of a closed details element (its summary stays) is not shown, though it still has boxes. */
+  const inClosedDetails = (el: Element): boolean => {
+    for (let at: Element | null = el.parentElement; at; at = at.parentElement) {
+      if (at.tagName === 'DETAILS' && !(at as HTMLDetailsElement).open && !el.closest('summary')) return true;
+    }
+    return false;
+  };
   const unique = [...new Set(all)].filter(
     (el) =>
       !SKIP_TAGS.has(el.tagName) &&
+      !inClosedDetails(el) &&
       !(el instanceof SVGElement && el.tagName.toLowerCase() !== 'svg') &&
       !el.closest('[data-audit-skip], canvas, svg'),
   );
@@ -180,6 +188,25 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     return Boolean(modal && !modal.contains(el));
   };
 
+  /**
+   * The floating surface an element belongs to (a dialog, menu, tool window, or fixed layer), or the page. Boxes in
+   * different layers lie over one another by design, so only boxes of one layer are checked against each other.
+   */
+  const LAYER = '[role=dialog], [role=alertdialog], [role=menu], [role=listbox], [role=tooltip], [popover], [data-tool], [aria-modal=true]';
+  const layerCache = new WeakMap<Element, Element | null>();
+  const layerOf = (el: Element): Element | null => {
+    if (layerCache.has(el)) return layerCache.get(el) ?? null;
+    let found: Element | null = null;
+    for (let at: Element | null = el; at && at !== document.body; at = at.parentElement) {
+      if (at.matches(LAYER) || style(at).position === 'fixed') {
+        found = at;
+        break;
+      }
+    }
+    layerCache.set(el, found);
+    return found;
+  };
+
   // ---- gather the boxes that carry text or take input ---------------------------------------------------------
   interface Item {
     el: Element;
@@ -193,7 +220,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     if (!isBoxVisible(el, box)) continue;
     const shown = shownRect(el);
     if (!shown || visuallyHidden(el) || el.closest('[inert]') || behindModal(el, shown)) continue;
-    const texts = ownTextRects(el);
+    // Text that a scrolling or clipping ancestor has moved out of sight takes no part in what a person sees.
+    const texts = ownTextRects(el).filter((r) => r.right > shown.left && r.left < shown.right && r.bottom > shown.top && r.top < shown.bottom);
     const interactive = el.matches(INTERACTIVE);
     if (texts.length === 0 && !interactive && !el.matches(MEDIA)) continue;
     items.push({ el, box, texts, interactive });
@@ -292,7 +320,7 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       const b = sorted[j]!;
       // The list is sorted by left edge, but text can start left of its box, so leave a margin before stopping.
       if (b.box.left > a.box.right + 400 && b.texts.every((r) => r.left > a.box.right + 400)) break;
-      if (a.el === b.el) continue;
+      if (a.el === b.el || layerOf(a.el) !== layerOf(b.el)) continue;
       const aInB = b.el.contains(a.el);
       const bInA = a.el.contains(b.el);
       // Text against text, whoever owns it: the periodic table's number over its symbol is this case.
@@ -366,7 +394,7 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     for (let j = i + 1; j < byLeft.length; j += 1) {
       const b = byLeft[j]!;
       if (b.box.left > a.box.right + 4) break;
-      if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      if (a.el.contains(b.el) || b.el.contains(a.el) || layerOf(a.el) !== layerOf(b.el)) continue;
       const gapX = Math.max(a.box.left, b.box.left) - Math.min(a.box.right, b.box.right);
       const gapY = Math.max(a.box.top, b.box.top) - Math.min(a.box.bottom, b.box.bottom);
       // Side by side or one above the other, and closer than 4 px, but not overlapping (that is its own finding).
@@ -399,9 +427,10 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       if (x < 0 || y < 0 || x >= view.width || y >= view.height) return;
       const hit = document.elementFromPoint(x, y);
       if (!hit || hit === el || (el === document.documentElement && (hit === document.body || hit === root))) return;
-      if (el.contains(hit) && el !== document.documentElement && !hit.closest('[data-scrollbar-cover]')) {
-        // A descendant under the pointer on the bar means it paints over its own scroll bar.
-      }
+      // A modal's scrim covers the whole window on purpose; a tool window or panel over a scroll bar does not.
+      if (hit.closest('[aria-modal=true], [class*=scrim], [class*=backdrop]') && !hit.closest('[data-tool]')) return;
+      // Something inside the scroller under the pointer means the bar is not there (an overlay bar, or a scaled page); a toast is brief.
+      if ((el !== document.documentElement && el.contains(hit)) || hit.closest('[role=status], [class*=toast]')) return;
       add('scrollbar-occluded', el, `the ${side} scroll bar is covered at (${Math.round(x)}, ${Math.round(y)}) by ${describe(hit, 2)}`, ` <- ${describe(hit, 2)}`);
     };
     if (scrollsY && barW > 3) {
@@ -421,6 +450,7 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
   // ---- 5: menus, popovers, and windows that do not fit the window --------------------------------------------
   const FLOATING = '[role=menu], [role=listbox], [role=dialog], [role=tooltip], [popover], [data-tool], [role=alertdialog]';
   for (const el of document.querySelectorAll(FLOATING)) {
+    if (el.tagName === 'CANVAS') continue;
     if (options.scope && !scopeRoots.some((base) => base === el || base.contains(el) || el.contains(base))) continue;
     const r = el.getBoundingClientRect();
     if (!isBoxVisible(el, r)) continue;
@@ -490,6 +520,7 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     }
     // An empty box of 32 px or more, in a surface whose content is cut off or scrolls.
     const candidates = [...surface.querySelectorAll('*')].filter((el) => {
+      if (el.closest('svg')) return false;
       const r = el.getBoundingClientRect();
       if (r.width < 32 || r.height < 32 || !isBoxVisible(el, r)) return false;
       const s = style(el);

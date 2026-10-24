@@ -270,6 +270,13 @@
     gap: var(--space-2);
   }
 
+  /* A disclosure heading is a target like any other. */
+  .group > summary {
+    min-block-size: var(--size-target-pointer);
+    padding-block: var(--space-1);
+    box-sizing: border-box;
+  }
+
   .groupTitle {
     margin: 0;
     font-size: var(--type-small-size);

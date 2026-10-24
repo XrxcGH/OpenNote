@@ -25,7 +25,7 @@ export const cellName = (cell: Cell): string => `${cell.size.id} ${cell.theme} $
 export const SWEEP_CELLS = new Set(['w1280 light mouse', 'w820 dark touch', 'w2560 dark mouse']);
 
 /**
- * The cells a run covers: all 18 by default, and the three sweep cells (which between them hold every size, theme, and
+ * The cells a run covers: all 12 by default, and the three sweep cells (which between them hold every size, theme, and
  * density) in CI, where the run has to be short. OPENNOTE_AUDIT_CELLS=all or =sweep overrides either way.
  */
 export function activeCells(): Cell[] {

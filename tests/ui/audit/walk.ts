@@ -206,8 +206,8 @@ export async function walkBlocks(audit: Auditor, page: Page): Promise<void> {
     await hook(page, 'runCommand', 'notes.newPage');
     const body = page.getByRole('textbox', { name: 'Text' }).first();
     await body.waitFor();
-    await body.click();
     try {
+      await body.click({ timeout: 5_000 });
       await hook(page, 'runCommand', id);
     } catch {
       continue;

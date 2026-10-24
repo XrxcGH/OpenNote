@@ -135,6 +135,32 @@ jobs:
             tests/ui/results
           retention-days: 7
 
+  layout-audit:
+    # The whole app at three window sizes, in both themes and densities, checked for clipped text, overlap, covered scroll
+    # bars, and dead space (tests/ui/audit). Findings must match tests/ui/audit/known.json, in both directions. CI runs the
+    # three cells that between them hold every size, theme, and density; `npm run audit:layout` runs all 12.
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Layout audit
+        run: npm run audit:layout
+      - name: Keep the findings
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: layout-audit
+          path: tests/ui/audit/out
+          retention-days: 7
+
   perf-typing:
     # Phase 4's typing benchmark, in-page measure only (ARCHITECTURE.md section 24.5): every typing condition and
     # the motion gestures, recorded as an artifact. Hosted runners are too noisy for the 16 ms gate itself, which
