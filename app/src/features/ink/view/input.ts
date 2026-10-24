@@ -56,6 +56,7 @@ import { activeSlot, chooseTool, drawState, penSlots, styleOf, writesInk } from 
 import type { PenStyle } from './state';
 import type { InkSurface } from './surface';
 import { focusPage } from './touch';
+import { isDwellTap, objectAt, onObjectHandle, selectObject, TAP_SLOP_PX } from './objectTaps';
 
 /** The stroke eraser's reach, in screen pixels. */
 const STROKE_ERASER_PX = 6;
@@ -79,6 +80,8 @@ interface InkGesture {
   t0?: number;
   x0: number;
   y0: number;
+  /** Where the contact began, in page units. */
+  start?: Vec;
   travel: number;
   lastTime: number;
   lastX: number;
@@ -205,7 +208,9 @@ export function createPenTool(
       }
       g.travel = Math.max(g.travel, Math.hypot(event.clientX - g.x0, event.clientY - g.y0));
       if (event.altKey) g.alt = true;
-      samples.push(snapped(g, surface, sampleOf(event, ctx)));
+      const sample = sampleOf(event, ctx);
+      g.start ??= { x: sample.x, y: sample.y };
+      samples.push(snapped(g, surface, sample));
     }
     if (samples.length === 0) return;
     const area = target();
@@ -267,6 +272,8 @@ export function createPenTool(
       const surface = surfaceOf();
       if (!surface || surface.readOnly || event.pointerType === 'touch' || !isEnabled('ink.core')) return false;
       if (event.pointerType === 'mouse' && event.button !== 0) return false;
+      // The grip and width handle of a selected or edited text box move and resize it in every tool.
+      if (onObjectHandle(host, event)) return false;
       const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, buttonsOf(penKeyOf(event))) : null;
       if (buttons && buttons.action !== null) return modeFor(buttons.action) !== null;
       return DRAW_TOOLS.has(drawState.get().tool) && ctx.activeTool !== 'select';
@@ -543,6 +550,12 @@ async function finish(
       surface,
     );
     if (taken) return;
+    // A press held still on a text box or picture selects it, with no dot left behind.
+    const object = g.start && isDwellTap(g.t0 ?? g.lastTime, g.lastTime, g.travel) ? objectAt(host, g.start) : null;
+    if (object) {
+      surface.clearLive();
+      return selectObject(host, object);
+    }
     if (strokes.length === 1 && (await hooks.before(strokes[0], surface))) {
       surface.clearLive();
       return;
@@ -616,7 +629,10 @@ async function finish(
       surface.show(gone);
     });
   } else if (g.lasso) {
-    finishLasso(g.lasso, surface, host);
+    // A lasso tap on a text box or picture selects it, as a lasso drawn around it does.
+    const object = g.start && g.travel <= TAP_SLOP_PX ? objectAt(host, g.start) : null;
+    if (object) selectObject(host, object);
+    else finishLasso(g.lasso, surface, host);
   } else if (g.space) {
     await g.space.commit();
   }
