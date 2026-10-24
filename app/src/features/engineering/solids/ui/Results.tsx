@@ -52,7 +52,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
         </table>
       </section>
       {outcome.tables?.map((table) => (
-        <section key={table.id} className={styles.section} aria-label={say(`kitSolids.${tool}.table.${table.id}`)}>
+        <section key={table.id} className={styles.section}>
           <h3 className={styles.heading}>{say(`kitSolids.${tool}.table.${table.id}`)}</h3>
           <div
             className={styles.scroll}
