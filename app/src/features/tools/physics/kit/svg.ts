@@ -13,6 +13,8 @@ export interface Palette {
   third: string;
   danger: string;
   font: string;
+  /** A background for the whole picture, so a picture on the page stays readable when the theme changes. */
+  paper?: string;
 }
 
 /** Theme tokens, for the picture shown in the window. */
@@ -270,9 +272,10 @@ export function plotToSvg(plot: Plot, palette: Palette, alt: string, word: (key:
     ...legend(plot, f, palette, word),
   ];
   const size = `width="${n(f.width)}" height="${n(f.height)}" viewBox="0 0 ${n(f.width)} ${n(f.height)}"`;
+  const paper = palette.paper ? `<rect width="100%" height="100%" style="fill:${palette.paper}"/>` : '';
   const rect = `<rect x="${n(f.left)}" y="${n(f.top)}" width="${n(f.right - f.left)}" height="${n(f.bottom - f.top)}"/>`;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" ${size} role="img" aria-label="${escape(alt)}">` +
-    `<title>${escape(alt)}</title><defs><clipPath id="${clip}">${rect}</clipPath></defs>${body.join('')}</svg>`
+    `<title>${escape(alt)}</title><defs><clipPath id="${clip}">${rect}</clipPath></defs>${paper}${body.join('')}</svg>`
   );
 }

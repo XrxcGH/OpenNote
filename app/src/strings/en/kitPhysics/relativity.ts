@@ -77,6 +77,11 @@ export const relativity = {
     spacelike: 'Spacelike',
     lightlike: 'Lightlike',
   },
+  kindWord: {
+    timelike: 'timelike',
+    spacelike: 'spacelike',
+    lightlike: 'lightlike',
+  },
   s: {
     beta: 'β = v / c = {v} / {c} = {beta}.',
     gamma: 'Lorentz factor: γ = 1 / √(1 − β²) = 1 / √(1 − {beta}²) = {gamma}.',
@@ -111,12 +116,8 @@ export const relativity = {
   },
   plot: {
     events:
-      'Spacetime diagram: the x and ct axes of S, the tilted x′ and ct′ axes of S′, the light lines, and the event.',
-  },
-  legend: {
-    rest: 'Frame S',
-    moving: 'Frame S′',
-    light: 'Light',
+      'Spacetime diagram: the x and ct axes of S, the tilted x′ and ct′ axes of S′, the dashed light lines, ' +
+      'and the event E.',
   },
   errors: {
     speed: 'The speed must be less than the speed of light, so β must be between −1 and 1.',

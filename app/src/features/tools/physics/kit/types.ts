@@ -157,7 +157,7 @@ export interface KitInsert {
   equation(latex: string, display: boolean): boolean;
   table(header: string[], rows: string[][]): boolean;
   steps(lines: readonly string[]): boolean;
-  picture(svg: string, alt: string): boolean;
+  picture(svg: string, alt: string): boolean | Promise<boolean>;
 }
 
 export interface KitToolProps {

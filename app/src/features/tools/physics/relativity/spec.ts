@@ -135,11 +135,6 @@ function spacetimePlot(X: number, T: number, Xp: number, Tp: number, beta: numbe
       { x: beta * R * 0.94 + R * 0.04, y: R * 0.94, text: 'ct′', anchor: 'start', tone: 'second' },
       { x: X + R * 0.04, y: T + R * 0.04, text: 'E', anchor: 'start', tone: 'accent' },
     ],
-    legend: [
-      { tone: 'ink', key: 'kitPhysics.relativity.legend.rest' },
-      { tone: 'second', key: 'kitPhysics.relativity.legend.moving' },
-      { tone: 'third', key: 'kitPhysics.relativity.legend.light', dash: true },
-    ],
   };
 }
 
@@ -210,7 +205,7 @@ const eventsMode: ModeDef = {
         {
           key: 'kitPhysics.relativity.s.interval',
           vars: { s2: q(span.s2, 'm²') },
-          labels: { kind: `kitPhysics.relativity.kind.${span.kind}` },
+          labels: { kind: `kitPhysics.relativity.kindWord.${span.kind}` },
         },
         { key: 'kitPhysics.relativity.s.simultaneity', vars: { shift: T((-out.gamma * beta * x) / C) } },
       ],

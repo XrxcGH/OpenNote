@@ -97,7 +97,11 @@ function InsertButtons(props: {
       {plot ? (
         <Button
           variant="quiet"
-          onClick={() => done(insert.picture(plotToSvg(plot, currentPalette(), say(plot.alt), sayText), say(plot.alt)))}
+          onClick={() =>
+            void Promise.resolve(
+              insert.picture(plotToSvg(plot, currentPalette(), say(plot.alt), sayText), say(plot.alt)),
+            ).then(done)
+          }
         >
           {t('kitPhysics.ui.insertPicture')}
         </Button>

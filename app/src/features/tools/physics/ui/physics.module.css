@@ -26,6 +26,28 @@
     font-size: var(--type-small-size);
   }
 
+  /* Fields wrap to one per row in a narrow window; a number and its unit share a row and never overflow it. */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: var(--space-3);
+  }
+
+  .withUnit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: end;
+  }
+
+  .withUnit input {
+    min-inline-size: 0;
+  }
+
+  .withUnit select {
+    max-inline-size: 8rem;
+  }
+
   .rows {
     min-block-size: 6rem;
     padding: var(--space-2) var(--space-3);

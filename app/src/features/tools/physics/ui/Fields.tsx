@@ -125,7 +125,7 @@ function Field(props: FieldsProps & { field: FieldDef }) {
   const wide = kind === 'rows' || kind === 'vector';
   return (
     <div className={wide ? chem.wide : undefined}>
-      <div className={field.dim && kind !== 'rows' ? chem.withUnit : undefined}>
+      <div className={field.dim && kind !== 'rows' ? styles.withUnit : undefined}>
         <div className={extra.field}>
           <label htmlFor={id}>{label}</label>
           {control}
@@ -153,7 +153,7 @@ export function Fields(props: FieldsProps) {
   const choice = (id: string) => props.inputs.text[id] ?? props.mode.fields.find((one) => one.id === id)?.initial ?? '';
   const shown = props.mode.fields.filter((field) => !field.when || field.when(choice));
   return (
-    <div className={chem.grid}>
+    <div className={styles.grid}>
       {shown.map((field) => (
         <Field key={`${props.mode.id}.${field.id}`} {...props} field={field} />
       ))}
