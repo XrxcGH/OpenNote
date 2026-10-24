@@ -36,9 +36,9 @@
     margin: 0;
   }
 
-  /* The window never scrolls: only the setup step, a dialog, and the page viewport do. #root clips, unlike hidden, so
-     it also refuses the scrolls that focus, selection drags, and scrollIntoView ask for, and nothing shifts the title
-     bar. html and body stay hidden, because axe reads clip as a visible overflow and flags targets below the fold. */
+  /* The window never scrolls. Only the setup step, a dialog, and the page viewport do.
+     The app root clips, which unlike hidden also refuses scrolls from focus, selection drags, and scrollIntoView.
+     Html and body stay hidden, because axe reads clip as visible overflow and flags targets below the fold. */
   html,
   body {
     overflow: hidden;
