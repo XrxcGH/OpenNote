@@ -39,7 +39,11 @@ export default defineConfig((env) =>
               enabled: true,
               headless: true,
               // Uses the installed Edge or Chrome, never a downloaded browser.
-              provider: playwright({ launchOptions: { channel: browserChannel() } }),
+              // On CI the browser keeps its shared memory in ordinary files, not in /dev/shm: on Ubuntu's runner
+              // Chrome closed its connection partway through a long run of component tests.
+              provider: playwright({
+                launchOptions: { channel: browserChannel(), args: process.env.CI ? ['--disable-dev-shm-usage'] : [] },
+              }),
               instances: [{ browser: 'chromium' }],
               viewport: { width: 1280, height: 800 },
             },

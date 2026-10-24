@@ -37,7 +37,7 @@ test('adds display math from the slash menu', async ({ page }) => {
   await openSmart(page);
   await newLine(page);
   await page.keyboard.type('/equation');
-  await expect(page.getByRole('option', { name: 'Insert equation' })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Insert equation', exact: true })).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('textbox', { name: 'Math source' })).toBeFocused();
   await page.keyboard.insertText(String.raw`\int_0^1 x^2\,dx = \frac13`);
