@@ -3,6 +3,7 @@ import type { ToolSpec } from './kit/spec';
 import { loadSymbolic } from './symbolic';
 
 export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
+  linkage: () => import('./linkage/spec').then((m) => m.linkageSpec),
   cam: () => import('./cam/spec').then((m) => m.camSpec),
   gears: () => import('./gears/spec').then((m) => m.gearsSpec),
   compliant: () => import('./compliant/spec').then((m) => m.compliantSpec),

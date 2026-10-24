@@ -182,6 +182,34 @@ const CASES: readonly Case[] = [
     texts: { model: 'member' },
     expect: { 'f:1': '28.246 Hz' },
   },
+  {
+    name: 'a crank-rocker at 30°: Grashof class, angles, and rates',
+    tool: 'linkage',
+    texts: {},
+    expect: {
+      grashof: 'Crank-rocker',
+      theta3: '88.837°',
+      theta4: '117.29°',
+      transmission: '28.449°',
+      omega3: '−5.991 rad/s',
+      omega4: '−3.9917 rad/s',
+      alpha3: '26.08 rad/s²',
+      alpha4: '53.331 rad/s²',
+    },
+  },
+  {
+    name: 'a slider-crank at 60°: slider position, velocity, and acceleration',
+    tool: 'linkage',
+    texts: { type: 'slider', a: '50 mm', b: '150 mm', e: '0 mm', theta2: '60', omega2: '100 rad/s' },
+    expect: { x: '168.61 mm', v: '−5.0839 m/s', a: '−166.92 m/s²' },
+  },
+  {
+    name: 'the same slider-crank in inches',
+    tool: 'linkage',
+    system: 'us',
+    texts: { type: 'slider', a: '50 mm', b: '150 mm', e: '0 in', theta2: '60', omega2: '100 rad/s' },
+    expect: { x: '6.6383 in', a: '−547.63 ft/s²' },
+  },
 ];
 
 describe('the answers the window shows', () => {

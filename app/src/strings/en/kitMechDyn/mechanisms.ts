@@ -1,6 +1,101 @@
 // The mechanism tools of the mechanisms and dynamics kit: their fields, results, notes, and examples. Part of
 // kitMechDyn.
 export const mechanisms = {
+  linkage: {
+    title: 'Linkage analyzer',
+    short: 'Linkages',
+    about:
+      'Positions, velocities, and accelerations of a four-bar or slider-crank through its whole cycle, with the ' +
+      'Grashof class, transmission angle, and coupler curve.',
+    keywords:
+      'linkage four-bar fourbar slider-crank inverted slider crank rocker coupler grashof transmission angle ' +
+      'freudenstein toggle vector loop coupler curve mechanism',
+    field: {
+      type: 'Mechanism',
+      a: 'Crank, a (O₂A)',
+      b: 'Coupler or rod, b (AB)',
+      c: 'Rocker, c (O₄B)',
+      e: 'Slider offset, e',
+      d: 'Ground, d (O₂O₄)',
+      circuit: 'Circuit',
+      theta2: 'Input angle, θ₂',
+      omega2: 'Input speed, ω₂',
+      alpha2: 'Input acceleration, α₂',
+      p: 'Coupler point distance, p',
+      delta: 'Coupler point angle, δ',
+    },
+    option: {
+      fourbar: 'Four-bar',
+      slider: 'Slider-crank',
+      inverted: 'Inverted slider-crank',
+      open: 'Open',
+      crossed: 'Crossed',
+    },
+    hint: {
+      e: 'Height of the slider’s line above the crank pivot O₂.',
+      circuit: 'The two ways to put the linkage together at one input angle. Open is the usual drawing.',
+      p: 'From A along the coupler, turned by δ. For the inverted slider-crank, from O₄ along link 4.',
+    },
+    row: {
+      grashof: 'Grashof class',
+      theta3: 'Coupler angle, θ₃',
+      theta4: 'Output angle, θ₄',
+      omega3: 'Coupler angular velocity, ω₃',
+      omega4: 'Output angular velocity, ω₄',
+      alpha3: 'Coupler angular acceleration, α₃',
+      alpha4: 'Output angular acceleration, α₄',
+      transmission: 'Transmission angle, μ',
+      x: 'Slider position, x',
+      v: 'Slider velocity, ẋ',
+      a: 'Slider acceleration, ẍ',
+      b: 'Distance O₄A along link 4, b',
+      bDot: 'Sliding speed of the block, ḃ',
+      bDdot: 'Sliding acceleration of the block, b̈',
+      coriolis: 'Coriolis acceleration, 2ḃω₄',
+      cx: 'Coupler point x',
+      cy: 'Coupler point y',
+      cv: 'Coupler point speed',
+      ca: 'Coupler point acceleration',
+      stroke: 'Stroke',
+    },
+    word: {
+      crankRocker: 'Crank-rocker',
+      rockerCrank: 'Rocker-crank',
+      doubleCrank: 'Double crank (drag link)',
+      doubleRocker: 'Double rocker',
+      changePoint: 'Change point',
+      tripleRocker: 'Triple rocker (non-Grashof)',
+      extended: 'Extended',
+      folded: 'Folded',
+    },
+    table: {
+      toggles: 'Toggle positions of the output',
+      limits: 'Input angles where the input stops',
+    },
+    col: {
+      theta2: 'Input angle θ₂',
+      theta4: 'Output angle θ₄',
+      kind: 'Crank and coupler',
+    },
+    note: {
+      signs:
+        'O₂ is at the origin and O₄ on the +x axis. Angles are from +x, counterclockwise positive, and so are ' +
+        'the angular velocities and accelerations.',
+      sliderAxis: 'The slider moves along a line parallel to x at the offset e, with x measured from O₂.',
+      invertedAxis: 'The block is pinned to the crank at A and slides along link 4, which turns about O₄.',
+      gaps: 'The input can’t turn fully, so the plots have gaps where the linkage can’t be put together.',
+      sliderLimited: 'The rod is too short for the crank and offset, so the crank can’t turn fully.',
+      plotsSi: 'The plots use SI units: lengths in m, speeds in m/s.',
+    },
+    example: {
+      crankRocker: 'Crank-rocker: 20, 70, 90, 60 mm',
+      crossed: 'The same linkage, crossed circuit',
+      slider: 'Slider-crank: 50 mm crank, 150 mm rod',
+      offset: 'Offset slider-crank',
+      inverted: 'Inverted slider-crank (quick return)',
+      tripleRocker: 'A triple rocker',
+    },
+  },
   cam: {
     title: 'Cam designer',
     short: 'Cams',

@@ -166,7 +166,7 @@ export const steps = {
   linkSliderPosition: 'The slider position follows from the triangle formed by the crank, the rod, and the offset:',
   linkSliderVelocity: 'Differentiate for the rod’s angular velocity and the slider velocity:',
   linkSliderAcceleration: 'Differentiate again for the accelerations:',
-  linkStroke: 'The stroke is {stroke}, between the two dead centers where crank and rod line up.',
+  linkStroke: 'The stroke is {stroke} m, between the two dead centers where crank and rod line up.',
   linkSliderLimited: 'The rod is too short for the crank and offset, so the crank can’t turn fully.',
   linkInvertedGeometry: 'The block at A slides along link 4, so link 4 points from O₄ toward A:',
   linkInvertedVelocity: 'The turning rate of link 4 and the sliding speed of the block:',
