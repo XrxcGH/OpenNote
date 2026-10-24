@@ -78,16 +78,17 @@ const scale = (axis: Axis, v: number, from: number, to: number): number => {
 };
 
 /** The axis title with its unit in the chosen system, such as "T (°C)". */
-export function axisTitle(label: string, qty: PlotSpec['x']['qty'], system: System): string {
-  const unit = defaultUnit(qty, system);
+export function axisTitle(axis: PlotSpec['x'], system: System): string {
+  const { label } = axis;
+  const unit = defaultUnit(axis.qty, system, axis.unit);
   return unit ? `${label} (${unit})` : label;
 }
 
 /** The plot as SVG text, in the chosen unit system. */
 // checks-disable-next-line modifiability: one drawing whose parts share the scales; the helpers above hold the math
 export function plotSvg(spec: PlotSpec, system: System, colors: PlotColors, name: string): string {
-  const xUnit = defaultUnit(spec.x.qty, system);
-  const yUnit = defaultUnit(spec.y.qty, system);
+  const xUnit = defaultUnit(spec.x.qty, system, spec.x.unit);
+  const yUnit = defaultUnit(spec.y.qty, system, spec.y.unit);
   const series = spec.series.map((one) => ({
     ...one,
     points: one.points.map(([x, y]) => [fromEngine(x, spec.x.qty, xUnit), fromEngine(y, spec.y.qty, yUnit)] as const),
@@ -128,9 +129,9 @@ export function plotSvg(spec: PlotSpec, system: System, colors: PlotColors, name
   );
   parts.push(
     `<text x="${(PAD.left + W - PAD.right) / 2}" y="${H - 8}" text-anchor="middle" fill="${colors.text}">` +
-      `${escape(axisTitle(spec.x.label, spec.x.qty, system))}</text>`,
+      `${escape(axisTitle(spec.x, system))}</text>`,
     `<text transform="translate(14 ${(PAD.top + H - PAD.bottom) / 2}) rotate(-90)" text-anchor="middle" ` +
-      `fill="${colors.text}">${escape(axisTitle(spec.y.label, spec.y.qty, system))}</text>`,
+      `fill="${colors.text}">${escape(axisTitle(spec.y, system))}</text>`,
   );
   series.forEach((one, i) => {
     const pen = colors.pens[i % colors.pens.length];

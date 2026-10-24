@@ -7,9 +7,10 @@ import { defaultUnit, fromEngine, type System } from '../common/units';
 export type Say = (key: string, vars?: Record<string, string>) => string;
 
 /** A result's value and unit in the chosen system. */
-export function shown(row: ResultRow, system: System, sig = 5): { value: string; unit: string } {
+export function shown(row: ResultRow, system: System, say?: Say, sig = 5): { value: string; unit: string } {
+  if (row.word && say) return { value: say(`kitThermo.word.${row.word}`), unit: '' };
   if (row.text !== undefined) return { value: row.text, unit: '' };
-  const unit = defaultUnit(row.qty, system);
+  const unit = defaultUnit(row.qty, system, row.unit);
   return { value: fmt(fromEngine(row.value, row.qty, unit), sig), unit };
 }
 
@@ -21,7 +22,7 @@ export function answerLine(result: ThermoResult, system: System, say: Say, count
   return result.rows
     .slice(0, count)
     .map((row) => {
-      const { value, unit } = shown(row, system);
+      const { value, unit } = shown(row, system, say);
       return `${rowName(row, say)} ${value}${unit ? ` ${unit}` : ''}`;
     })
     .join('; ');
@@ -31,7 +32,7 @@ export function resultTable(result: ThermoResult, system: System, say: Say): { h
   return {
     header: [say('kitThermo.ui.quantity'), say('kitThermo.ui.value'), say('kitThermo.ui.unit')],
     rows: result.rows.map((row) => {
-      const { value, unit } = shown(row, system);
+      const { value, unit } = shown(row, system, say);
       return [rowName(row, say), value, unit];
     }),
   };

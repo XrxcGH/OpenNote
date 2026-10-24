@@ -8,6 +8,7 @@ export const kitThermo = {
     window: 'Open the thermodynamics kit',
     statthermo: 'Find partition functions, heat capacities, and molecular speeds',
     idealgas: 'Work an ideal-gas process or state with variable specific heats',
+    steam: 'Find a state of water or steam from two properties',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -17,10 +18,14 @@ export const kitThermo = {
     idealgas:
       'ideal gas law process isentropic polytropic isothermal isobaric isochoric boundary work variable specific ' +
       'heats cold air standard gas tables relative pressure air nitrogen oxygen carbon dioxide',
+    steam:
+      'steam tables water properties compressed liquid saturated mixture superheated vapor quality supercritical ' +
+      'enthalpy entropy iapws if97 mollier dome',
   },
   tab: {
     statthermo: 'Statistical',
     idealgas: 'Ideal gas',
+    steam: 'Steam',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -64,6 +69,8 @@ export const kitThermo = {
     occupancy: 'Occupancy of a level',
     pv: 'Path on a p-v diagram',
     Ts: 'Path on a T-s diagram',
+    waterTs: 'Water on a T-s diagram',
+    waterPh: 'Water on a p-h diagram',
   },
   mode: {
     gas: 'Gas molecule',
@@ -99,6 +106,10 @@ export const kitThermo = {
     p2: 'Pressure at state 2',
     T2: 'Temperature at state 2',
     ratio: 'Compression ratio v₁/v₂',
+    pair: 'Known properties',
+    enthalpy: 'Enthalpy h',
+    entropy: 'Entropy s',
+    quality: 'Quality x',
   },
   choice: {
     atom: 'Single atom',
@@ -127,6 +138,11 @@ export const kitThermo = {
     end_p2: 'End pressure p₂',
     end_T2: 'End temperature T₂',
     end_r: 'Volume ratio v₁/v₂',
+    pairTp: 'Temperature and pressure',
+    pairPh: 'Pressure and enthalpy',
+    pairPs: 'Pressure and entropy',
+    pairTx: 'Temperature and quality',
+    pairPx: 'Pressure and quality',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -179,6 +195,11 @@ export const kitThermo = {
     molarMassRow: 'Molar mass',
     pr: 'Relative pressure Pr',
     vr: 'Relative volume vr',
+    phase: 'Phase',
+    region: 'IF97 region',
+    temperature: 'Temperature',
+    pressure: 'Pressure',
+    quality: 'Quality',
   },
   step: {
     stat: {
@@ -229,6 +250,45 @@ export const kitThermo = {
       relative: 'Relative pressure and volume: Pr = exp((s° − s°ref)/R) = {pr} and vr = (T/Tref)/Pr = {vr}.',
       sound: 'Speed of sound: a = √(kRT) = {a} m/s.',
     },
+    steam: {
+      test: {
+        abovePsat:
+          'Region test: at T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is above it, so the ' +
+          'state is liquid in region 1.',
+        belowPsat:
+          'Region test: at T = {T} K the saturation pressure is {psat} kPa, and p = {p} kPa is below it, so the ' +
+          'state is vapor in region 2.',
+        aboveB23:
+          'Region test: T = {T} K is above 623.15 K, and p = {p} kPa is above the B23 boundary pressure of {pb} kPa, ' +
+          'so the state is in region 3.',
+        belowB23:
+          'Region test: T = {T} K is above 623.15 K, and p = {p} kPa is below the B23 boundary pressure of {pb} kPa, ' +
+          'so the state is in region 2.',
+        aboveRegion2: 'Region test: T = {T} K is above 1073.15 K, so the state is in region 5.',
+        saturated: 'The state is on the saturation line, region 4: T_sat = {T} K and p_sat = {p} kPa.',
+      },
+      vars1: 'Region 1 uses π = p/16.53 MPa = {pi} and τ = 1386 K/T = {tau} in the Gibbs energy γ(π, τ).',
+      vars2: 'Region 2 uses π = p/1 MPa = {pi} and τ = 540 K/T = {tau} in the Gibbs energy γ° + γʳ.',
+      vars5: 'Region 5 uses π = p/1 MPa = {pi} and τ = 1000 K/T = {tau} in the Gibbs energy γ° + γʳ.',
+      vars3:
+        'Region 3 uses the Helmholtz energy φ(δ, τ): the density that matches p is {rho} kg/m³, so δ = ρ/322 = ' +
+        '{delta} and τ = 647.096 K/T = {tau}.',
+      belowF:
+        'At this pressure the saturated liquid has {key}_f = {f}, and {key} = {value} is below it: compressed ' +
+        'liquid. Brent’s method on T gives T = {T} K.',
+      aboveG:
+        'At this pressure the saturated vapor has {key}_g = {g}, and {key} = {value} is above it: superheated ' +
+        'vapor. Brent’s method on T gives T = {T} K.',
+      between:
+        'At this pressure {key}_f = {f} and {key}_g = {g}, and {key} = {value} lies between them: a saturated ' +
+        'mixture at T_sat = {T} K.',
+      supercritical:
+        'The pressure is above the critical pressure, so there is no saturation line. Brent’s method on T gives ' +
+        'T = {T} K.',
+      lever: 'Lever rule: h = h_f + x h_fg = {hf} + {x} × {hfg} = {h} kJ/kg.',
+      leverS: 'In the same way s = s_f + x s_fg = {sf} + x × {sfg} = {s} kJ/(kg·K), and v = {v} m³/kg.',
+      result: 'The state: v = {v} m³/kg, u = {u} kJ/kg, h = {h} kJ/kg, and s = {s} kJ/(kg·K).',
+    },
   },
   note: {
     idealGasMolecules: 'Ideal gas of independent molecules; energies are counted from the ground level.',
@@ -242,6 +302,9 @@ export const kitThermo = {
     hReference: 'h includes the enthalpy of formation at 25 °C, so only differences compare with gas tables.',
     hFromZero: 'With constant specific heats, h = cp T and u = cv T, measured from 0 at 0 K.',
     relativeRef: 'Pr and vr are relative, set to 1 at 298.15 K: only their ratios between states matter.',
+    if97Reference:
+      'IAPWS-IF97: u and s are 0 for saturated liquid at the triple point, the same reference as steam tables.',
+    twoPhaseNoCp: 'cp, cv, and the speed of sound are not defined for a two-phase mixture.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -254,5 +317,17 @@ export const kitThermo = {
     endNotAllowed: 'That end condition does not fit this process; pick another.',
     badExponent: 'The polytropic exponent must be above zero.',
     unknownGas: 'The kit has no data for {gas}.',
+    steamRange: 'IF97 covers 0 to 800 °C up to 100 MPa, and up to 2000 °C below 50 MPa; that state is outside it.',
+    steamSatRange: 'Saturation exists only between the triple point and the critical point, 0.01 to 373.946 °C.',
+    steamAboveCritical: 'Above the critical pressure of 22.064 MPa there is no saturated state; give T instead.',
+    qualityRange: 'Quality must be between 0 and 1.',
+  },
+  word: {
+    liquid: 'Compressed liquid',
+    mixture: 'Saturated mixture',
+    satLiquid: 'Saturated liquid',
+    satVapor: 'Saturated vapor',
+    vapor: 'Superheated vapor',
+    supercritical: 'Supercritical fluid',
   },
 } as const;

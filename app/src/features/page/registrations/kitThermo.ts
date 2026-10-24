@@ -5,6 +5,7 @@ import type { IconName } from '../../../ui/icons';
 import { addCommand } from './qolStudy';
 
 const TOOLS = [
+  ['steam', 'CloudFog'],
   ['idealgas', 'Cylinder'],
   ['statthermo', 'Atom'],
 ] as const satisfies readonly (readonly [string, IconName])[];

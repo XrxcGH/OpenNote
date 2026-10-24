@@ -31,7 +31,7 @@ export function ResultTable({ result, system }: { result: ThermoResult; system: 
         </thead>
         <tbody>
           {result.rows.map((row, i) => {
-            const { value, unit } = shown(row, system);
+            const { value, unit } = shown(row, system, say);
             return (
               <tr key={`${row.key}-${i}`}>
                 <th scope="row">{rowName(row, say)}</th>

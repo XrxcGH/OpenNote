@@ -2,7 +2,7 @@
 // so the window renders every tool the same way and the forms can be tested without a DOM.
 import type { kitThermo } from '../../../../strings/en/kitThermo';
 import { ThermoError, type ThermoResult } from './types';
-import type { Qty } from './units';
+import type { Qty, System } from './units';
 
 export type ThermoFieldKey = keyof (typeof kitThermo)['field'];
 export type ThermoChoiceKey = keyof (typeof kitThermo)['choice'];
@@ -22,6 +22,8 @@ export interface FieldSpec {
   options?: readonly { value: string; label: ThermoChoiceKey }[];
   /** A field the engine can do without; left empty, it is null. */
   optional?: boolean;
+  /** The unit a field starts in, when not the system's first, such as °C for steam. */
+  unit?: Partial<Record<System, string>>;
 }
 
 export interface ModeSpec {

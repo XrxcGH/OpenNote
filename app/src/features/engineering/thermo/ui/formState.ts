@@ -16,7 +16,7 @@ export function readNumber(text: string): number | null {
 }
 
 export const unitOf = (form: SavedForm, field: FieldSpec, system: System): string =>
-  form.unit[field.id] ?? defaultUnit(field.qty ?? 'none', system);
+  form.unit[field.id] ?? defaultUnit(field.qty ?? 'none', system, field.unit);
 
 /** The text a field shows: what was typed, or its first value in the field's unit. */
 export function textOf(form: SavedForm, field: FieldSpec, system: System): string {
@@ -75,7 +75,7 @@ export function switchSystem(form: SavedForm, fields: readonly FieldSpec[], from
     if (field.kind === 'choice' || field.kind === 'list' || !field.qty) continue;
     const current = unitOf(form, field, from);
     if (UNITS[field.qty][to].some((one) => one.id === current)) continue;
-    const next = defaultUnit(field.qty, to);
+    const next = defaultUnit(field.qty, to, field.unit);
     const typed = form.text[field.id];
     const number = typed === undefined ? null : readNumber(typed);
     if (typed !== undefined && number !== null && Number.isFinite(number))

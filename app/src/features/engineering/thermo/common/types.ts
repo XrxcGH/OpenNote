@@ -3,7 +3,7 @@
 // keys into sentences.
 import type { kitThermo } from '../../../../strings/en/kitThermo';
 import type { DottedKeys } from '../../../../strings/t';
-import type { Qty } from './units';
+import type { Qty, System } from './units';
 
 /** A worked-step sentence in strings/en/kitThermo.ts under step. */
 export type ThermoStepKey = DottedKeys<(typeof kitThermo)['step']>;
@@ -13,6 +13,10 @@ export type ThermoRowKey = keyof (typeof kitThermo)['row'];
 export type ThermoErrorCode = keyof (typeof kitThermo)['error'];
 /** An assumption or note in strings/en/kitThermo.ts under note. */
 export type ThermoNoteKey = keyof (typeof kitThermo)['note'];
+/** A word that stands in for a number, such as a phase name, in strings/en/kitThermo.ts under word. */
+export type ThermoWordKey = keyof (typeof kitThermo)['word'];
+/** A unit to show instead of the system's first unit, such as °C for steam. */
+export type PreferredUnit = Partial<Record<System, string>>;
 /** A plot title in strings/en/kitThermo.ts under plot. */
 export type ThermoPlotKey = keyof (typeof kitThermo)['plot'];
 
@@ -31,6 +35,8 @@ export interface ResultRow {
   qty: Qty;
   /** Words that stand in for a number, such as a phase name; the value is then ignored. */
   text?: string;
+  word?: ThermoWordKey;
+  unit?: PreferredUnit;
   /** Extra words after the name, such as the state number. */
   tag?: string;
 }
@@ -50,8 +56,8 @@ export interface PlotMark {
 /** A small line chart: axes with their quantity kinds, a few series, and marked points. */
 export interface PlotSpec {
   title: ThermoPlotKey;
-  x: { label: string; qty: Qty; log?: boolean };
-  y: { label: string; qty: Qty; log?: boolean };
+  x: { label: string; qty: Qty; log?: boolean; unit?: PreferredUnit };
+  y: { label: string; qty: Qty; log?: boolean; unit?: PreferredUnit };
   series: readonly PlotSeries[];
   marks?: readonly PlotMark[];
 }

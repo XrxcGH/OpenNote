@@ -76,7 +76,10 @@ export function unitsFor(qty: Qty, system: System): readonly UnitDef[] {
   return [...UNITS[qty][system], ...UNITS[qty][other]].filter((one) => !seen.has(one.id) && seen.add(one.id));
 }
 
-export const defaultUnit = (qty: Qty, system: System): string => UNITS[qty][system][0].id;
+export const defaultUnit = (qty: Qty, system: System, prefer?: Partial<Record<System, string>>): string => {
+  const wanted = prefer?.[system];
+  return wanted && UNITS[qty][system].some((one) => one.id === wanted) ? wanted : UNITS[qty][system][0].id;
+};
 
 function find(qty: Qty, id: string): UnitDef {
   const all = [...UNITS[qty].SI, ...UNITS[qty].US];
