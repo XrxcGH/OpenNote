@@ -22,6 +22,7 @@ export const FLUIDHEAT_TOOLS: readonly FluidHeatToolMeta[] = [
   { id: 'transient', title: 'kitFluidHeat.transient.title', keywords: 'kitFluidHeat.transient.keywords', icon: 'Timer' },
   { id: 'convection', title: 'kitFluidHeat.convection.title', keywords: 'kitFluidHeat.convection.keywords', icon: 'ArrowsClockwise' },
   { id: 'hx', title: 'kitFluidHeat.hx.title', keywords: 'kitFluidHeat.hx.keywords', icon: 'ArrowsLeftRight' },
+  { id: 'radiation', title: 'kitFluidHeat.radiation.title', keywords: 'kitFluidHeat.radiation.keywords', icon: 'Sun' },
 ];
 
 export const FLUIDHEAT_TOOL_IDS: readonly string[] = FLUIDHEAT_TOOLS.map((tool) => tool.id);
