@@ -1,6 +1,10 @@
 // The design kit (the design lane of the course tool kits): one window with a tab for each tool. The shared words are
 // here. Each tool's group (its title and keywords, field labels, choices, result rows, assumptions, and plot labels)
 // is in kitDesign/<tool>.ts, along with the wording of its worked steps and its error messages.
+import { errors } from './kitDesign/errors';
+import { forming, formingSteps } from './kitDesign/forming';
+import { machining, machiningSteps } from './kitDesign/machining';
+import { microfab, microfabSteps } from './kitDesign/microfab';
 import { tolerances, tolerancesErrors, tolerancesSteps } from './kitDesign/tolerances';
 
 export const kitDesign = {
@@ -39,9 +43,16 @@ export const kitDesign = {
     typeNumber: 'Type a number.',
     notNumber: 'That is not a number. Use digits, a decimal point, and e for a power of ten.',
     ...tolerancesErrors,
+    ...errors,
   },
   step: {
     ...tolerancesSteps,
+    ...machiningSteps,
+    ...formingSteps,
+    ...microfabSteps,
   },
   tolerances,
+  machining,
+  forming,
+  microfab,
 } as const;

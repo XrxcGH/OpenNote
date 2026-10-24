@@ -12,6 +12,9 @@ export interface DesignToolMeta {
 
 export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
   { id: 'tolerances', title: 'kitDesign.tolerances.title', keywords: 'kitDesign.tolerances.keywords', icon: 'Ruler' },
+  { id: 'machining', title: 'kitDesign.machining.title', keywords: 'kitDesign.machining.keywords', icon: 'Wrench' },
+  { id: 'forming', title: 'kitDesign.forming.title', keywords: 'kitDesign.forming.keywords', icon: 'Hammer' },
+  { id: 'microfab', title: 'kitDesign.microfab.title', keywords: 'kitDesign.microfab.keywords', icon: 'Cpu' },
 ];
 
 export const DESIGN_TOOL_IDS: readonly string[] = DESIGN_TOOLS.map((tool) => tool.id);
