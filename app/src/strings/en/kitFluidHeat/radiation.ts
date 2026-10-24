@@ -47,12 +47,15 @@ export const radiation = {
   },
   hint: {
     surfaces:
-      'Each line is the area, the emissivity, and the temperature of one surface, such as 1 m², 0.8, ' +
-      '500 K. A bare number is in m² and °C (or ft² and °F for US).',
+      'Each line is the area, the emissivity, and then the temperature of one surface, such as 1 m², 0.8, ' +
+      '500 K (a bare number is in m² and °C, or ft² and °F for US). For a surface with a known net heat loss, ' +
+      'give it in watts instead, such as 1 m², 0.8, 200 W; for an insulated surface that reradiates, write ' +
+      'insulated, such as 1 m², 0.8, insulated. The temperature of those surfaces is found.',
     matrix:
       'Row i lists the view factors Fi1, Fi2, and so on. Each row must add up to 1, and Ai Fij must equal Aj Fji.',
   },
   example: {
+    reradiating: 'A duct with one insulated (reradiating) face',
     sun: 'The Sun as a 5800 K blackbody',
     disks: 'Two disks facing each other',
     plates: 'Two large parallel gray plates',

@@ -45,11 +45,26 @@ describe('radiation form', () => {
     expect(none.tables).toEqual([]);
     expect(row(solve({ ...base, count: '2', eShield: '0.05' }), 'fluxShield')).toBeLessThan(row(two, 'fluxShield') / 4);
   });
+  it('surfaces can be given by temperature, by heat in watts, or as insulated', () => {
+    const o = solve({
+      mode: 'enclosure',
+      surfaces: '1 m^2, 1, 1000 K\n1 m^2, 1, 500 K\n1 m^2, 0.7, insulated',
+    });
+    const rows = o.tables![0].rows;
+    const t3 = rows[2][2] as { v: number };
+    expect(t3.v).toBeCloseTo(((1000 ** 4 + 500 ** 4) / 2) ** 0.25, 6);
+    const byHeat = solve({
+      mode: 'enclosure',
+      surfaces: '1 m^2, 1, 1000 K\n1 m^2, 1, 500 K\n1 m^2, 0.7, 0 W',
+    });
+    expect((byHeat.tables![0].rows[2][2] as { v: number }).v).toBeCloseTo(t3.v, 9);
+    expect(refuses(radiationSpec, { mode: 'enclosure', surfaces: '1 m^2, 1, 5 parsecs\n1 m^2, 1, 300 K' })).toBe(true);
+  });
   it('a gray enclosure conserves energy and lets a black surface radiate its own Eb', () => {
     const o = solve({ mode: 'enclosure' });
     expect(Math.abs(row(o, 'sum'))).toBeLessThan(1e-6);
     const table = o.tables![0].rows;
-    expect((table[0][2] as { v: number }).v).toBeCloseTo(SIGMA * 1000 ** 4, 3);
+    expect((table[0][3] as { v: number }).v).toBeCloseTo(SIGMA * 1000 ** 4, 3);
     expect((table[0][1] as { v: number }).v).toBeGreaterThan(0);
     expect((table[2][1] as { v: number }).v).toBeLessThan(0);
   });

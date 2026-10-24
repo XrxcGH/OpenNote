@@ -357,16 +357,21 @@ export function shields(inp: ShieldInput): ShieldResult {
   };
 }
 
+/** A surface of an enclosure knows either its temperature or its net heat loss; reradiating (insulated) is q = 0. */
 export interface EnclosureSurface {
   area: number;
   emissivity: number;
-  /** Temperature (K). */
-  t: number;
+  /** Temperature (K), when the surface is held at a temperature. */
+  t?: number;
+  /** Net heat leaving the surface (W), when the heat is known instead; 0 for a reradiating surface. */
+  q?: number;
 }
 
 export interface EnclosureResult {
   /** Net heat leaving each surface (W); positive when the surface loses heat. */
   q: number[];
+  /** Temperature of each surface (K): the given one, or the one solved for a surface with known heat. */
+  t: number[];
   radiosity: number[];
   emissive: number[];
   /** Largest violation of the summation rule (sum_j F_ij = 1) and of reciprocity (A_i F_ij = A_j F_ji). */
@@ -375,14 +380,24 @@ export interface EnclosureResult {
   steps: Step[];
 }
 
-/** Gray diffuse enclosure of N isothermal surfaces with a given view-factor matrix F[i][j]. */
+/**
+ * Gray diffuse enclosure of N isothermal surfaces with a given view-factor matrix F[i][j]. A surface with a known
+ * temperature gives J_i - (1 - e_i) sum F_ij J_j = e_i Eb_i. A surface with known heat q_i (zero when it reradiates)
+ * gives J_i - sum F_ij J_j = q_i / A_i, and its temperature follows from Eb_i = J_i + (1 - e_i) q_i / (e_i A_i).
+ */
 export function enclosure(surfaces: EnclosureSurface[], f: number[][]): EnclosureResult {
   const n = surfaces.length;
   need(n >= 2, 'surfaces', 'An enclosure needs at least two surfaces.');
   need(f.length === n && f.every((r) => r.length === n), 'matrix', `The view-factor matrix must be ${n} by ${n}.`);
   surfaces.forEach((s, i) => {
     positive(s.area, `The area of surface ${i + 1}`);
-    positive(s.t, `The temperature of surface ${i + 1}`);
+    need(
+      (s.t === undefined) !== (s.q === undefined),
+      'known',
+      `Surface ${i + 1} needs either a temperature or a heat rate, not both and not neither.`,
+    );
+    if (s.t !== undefined) positive(s.t, `The temperature of surface ${i + 1}`);
+    else need(Number.isFinite(s.q), 'known', `The heat rate of surface ${i + 1} must be a number.`);
     need(
       s.emissivity > 0 && s.emissivity <= 1,
       'emissivity',
@@ -409,15 +424,34 @@ export function enclosure(surfaces: EnclosureSurface[], f: number[][]): Enclosur
     summation = Math.max(summation, Math.abs(sum - 1));
   }
   need(summation < 1e-3, 'summation', 'Each row of view factors must add to 1 for a closed enclosure.');
-  const eb = surfaces.map((s) => SIGMA * s.t ** 4);
-  // J_i - (1 - e_i) sum_j F_ij J_j = e_i Eb_i
-  const A = surfaces.map((s, i) => f[i].map((fij, j) => (i === j ? 1 : 0) - (1 - s.emissivity) * fij));
-  const b = surfaces.map((s, i) => s.emissivity * eb[i]);
+  need(
+    surfaces.some((s) => s.t !== undefined),
+    'known',
+    'At least one surface needs a temperature: with only heat rates the radiosities are not fixed.',
+  );
+  const A = surfaces.map((s, i) =>
+    f[i].map((fij, j) => (i === j ? 1 : 0) - (s.t !== undefined ? 1 - s.emissivity : 1) * fij),
+  );
+  const b = surfaces.map((s) => (s.t !== undefined ? s.emissivity * SIGMA * s.t ** 4 : s.q! / s.area));
   const j = solveLinear(A, b);
-  const q = surfaces.map((s, i) => s.area * (j[i] - f[i].reduce((acc, fij, k) => acc + fij * j[k], 0)));
+  const q = surfaces.map((s, i) =>
+    s.t !== undefined ? s.area * (j[i] - f[i].reduce((acc, fij, k) => acc + fij * j[k], 0)) : s.q!,
+  );
+  const eb = surfaces.map((s, i) =>
+    s.t !== undefined ? SIGMA * s.t ** 4 : j[i] + ((1 - s.emissivity) * s.q!) / (s.emissivity * s.area),
+  );
+  eb.forEach((e, i) =>
+    need(
+      e > 0,
+      'known',
+      `The heat given for surface ${i + 1} cannot be radiated: it would need a negative temperature.`,
+    ),
+  );
+  const t = eb.map((e) => (e / SIGMA) ** 0.25);
   const total = q.reduce((a, c) => a + c, 0);
   return {
     q,
+    t,
     radiosity: j,
     emissive: eb,
     summationError: summation,
@@ -426,7 +460,9 @@ export function enclosure(surfaces: EnclosureSurface[], f: number[][]): Enclosur
       {
         key: 'fhRadRadiosity',
         vars: { n: String(n) },
-        math: `J_i - (1-\\varepsilon_i)\\sum_j F_{ij}J_j = \\varepsilon_i E_{b,i}`,
+        math:
+          `J_i - (1-\\varepsilon_i)\\sum_j F_{ij}J_j = \\varepsilon_i E_{b,i}\\ (\\text{known } T),\\quad ` +
+          `J_i - \\sum_j F_{ij}J_j = q_i/A_i\\ (\\text{known } q;\\ q = 0 \\text{ reradiates})`,
       },
       {
         key: 'fhRadNet',

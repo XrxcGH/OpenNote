@@ -193,6 +193,93 @@ describe('N-surface gray enclosure', () => {
   });
 });
 
+describe('enclosure with a reradiating surface or a known heat rate', () => {
+  const duct = [
+    [0, 0.5, 0.5],
+    [0.5, 0, 0.5],
+    [0.5, 0.5, 0],
+  ];
+  it('an insulated third face of a black duct sits at ((T1^4 + T2^4) / 2)^(1/4) and passes 0.75 sigma (T1^4 - T2^4)', () => {
+    const r = enclosure(
+      [
+        { area: 1, emissivity: 1, t: 1000 },
+        { area: 1, emissivity: 1, t: 500 },
+        { area: 1, emissivity: 0.7, q: 0 },
+      ],
+      duct,
+    );
+    expect(r.t[2]).toBeCloseTo(((1000 ** 4 + 500 ** 4) / 2) ** 0.25, 6);
+    expect(r.q[0]).toBeCloseTo(0.75 * SIGMA * (1000 ** 4 - 500 ** 4), 3);
+    expect(r.q[1]).toBeCloseTo(-r.q[0], 3);
+    expect(r.q[2]).toBe(0);
+    expect(r.t[0]).toBe(1000);
+  });
+  it('a known heat rate gives back the temperature that produces it', () => {
+    const all = enclosure(
+      [
+        { area: 1, emissivity: 1, t: 1000 },
+        { area: 2, emissivity: 0.5, t: 500 },
+        { area: 1, emissivity: 0.8, t: 300 },
+      ],
+      [
+        [0, 0.5, 0.5],
+        [0.25, 0.5, 0.25],
+        [0.5, 0.5, 0],
+      ],
+    );
+    const some = enclosure(
+      [
+        { area: 1, emissivity: 1, t: 1000 },
+        { area: 2, emissivity: 0.5, q: all.q[1] },
+        { area: 1, emissivity: 0.8, t: 300 },
+      ],
+      [
+        [0, 0.5, 0.5],
+        [0.25, 0.5, 0.25],
+        [0.5, 0.5, 0],
+      ],
+    );
+    expect(some.t[1]).toBeCloseTo(500, 6);
+    expect(some.q[0]).toBeCloseTo(all.q[0], 3);
+  });
+  it('needs a temperature somewhere, and a heat that can be radiated', () => {
+    const q0 = { area: 1, emissivity: 0.5, q: 0 };
+    expect(() =>
+      enclosure(
+        [q0, q0],
+        [
+          [0, 1],
+          [1, 0],
+        ],
+      ),
+    ).toThrow(/At least one surface needs a temperature/);
+    expect(() =>
+      enclosure(
+        [
+          { area: 1, emissivity: 1, t: 300 },
+          { area: 1, emissivity: 0.5, q: -1e6 },
+        ],
+        [
+          [0, 1],
+          [1, 0],
+        ],
+      ),
+    ).toThrow(/negative temperature/);
+    expect(() =>
+      enclosure(
+        [
+          { area: 1, emissivity: 1, t: 300, q: 1 },
+          { area: 1, emissivity: 1, t: 300 },
+        ],
+        [
+          [0, 1],
+          [1, 0],
+        ],
+      ),
+    ).toThrow(/not both/);
+  });
+});
+
 describe('band fraction near the switch between its two series', () => {
   // SciPy quad of (15/pi^4) x^3/(e^x - 1) from z to infinity, z = C2 / (lambda T); lambda chosen so z is exact
   const at = (z: number) => bandFractionTo(C2 / (z * 1000), 1000);

@@ -2,13 +2,15 @@
 // gray surfaces, radiation shields, and an N-surface gray enclosure by radiosity.
 import { fail, q, type KitStep } from '../kit/types';
 import { readLines } from '../kit/lines';
+import { FluidHeatError } from '../kit/types';
 import type { Outcome, ToolSpec, Values } from '../kit/spec';
-import type { System } from '../kit/units';
+import { readQuantity, type System } from '../kit/units';
 import {
   blackbody,
   concentric,
   disks,
   enclosure,
+  type EnclosureSurface,
   parallelRectangles,
   perpendicularRectangles,
   planck,
@@ -20,6 +22,36 @@ import {
 
 const num = (values: Values, id: string) => values[id] as number;
 const opt = (values: Values, id: string) => (Number.isFinite(num(values, id)) ? num(values, id) : undefined);
+/**
+ * One surface per line: area, emissivity, and then its temperature (a bare number is a temperature) or its net heat
+ * loss in watts, or the word "insulated" for a reradiating surface (q = 0).
+ */
+function readSurfaces(text: string, system: System): EnclosureSurface[] {
+  const surfaces: EnclosureSurface[] = [];
+  text.split(/\r?\n/).forEach((line, index) => {
+    if (line.trim() === '') return;
+    const parts = line.split(/[,;]/).map((part) => part.trim());
+    if (parts.length !== 3) fail('partsLine', String(index + 1));
+    try {
+      const area = readQuantity(parts[0], 'area', system);
+      const emissivity = readQuantity(parts[1], 'ratio', system);
+      if (/^(insulated|reradiating|adiabatic)$/i.test(parts[2])) surfaces.push({ area, emissivity, q: 0 });
+      else {
+        try {
+          surfaces.push({ area, emissivity, t: readQuantity(parts[2], 'temperature', system) });
+        } catch (error) {
+          if (!(error instanceof FluidHeatError)) throw error;
+          surfaces.push({ area, emissivity, q: readQuantity(parts[2], 'heat', system) });
+        }
+      }
+    } catch (error) {
+      if (error instanceof FluidHeatError) fail('partsLine', String(index + 1));
+      throw error;
+    }
+  });
+  return surfaces;
+}
+
 const steps = (list: unknown): KitStep[] => list as KitStep[];
 
 type Mode = 'blackbody' | 'view' | 'two' | 'shields' | 'enclosure';
@@ -143,8 +175,7 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
     };
   },
   enclosure: (values, system) => {
-    const lines = readLines(String(values.surfaces), ['area', 'ratio', 'temperature'], system);
-    const surfaces = lines.map(([area, emissivity, t]) => ({ area, emissivity, t }));
+    const surfaces = readSurfaces(String(values.surfaces), system);
     const r = enclosure(surfaces, readMatrix(String(values.matrix), surfaces.length, system));
     return {
       rows: [
@@ -161,10 +192,11 @@ const HANDLERS: Record<Mode, (values: Values, system: System) => Outcome> = {
       tables: [
         {
           id: 'surfaces',
-          columns: ['surface', 'heat', 'radiosity', 'emissive'],
+          columns: ['surface', 'heat', 'temperature', 'radiosity', 'emissive'],
           rows: r.q.map((heat, i) => [
             i + 1,
             q(heat, 'heat'),
+            q(r.t[i], 'temperature'),
             q(r.radiosity[i], 'heatFlux'),
             q(r.emissive[i], 'heatFlux'),
           ]),
@@ -234,6 +266,14 @@ export const radiationSpec: ToolSpec = {
       values: {
         mode: 'enclosure',
         surfaces: '1 m^2, 1, 1000 K\n1 m^2, 0.5, 500 K\n1 m^2, 0.8, 300 K',
+        matrix: '0, 0.5, 0.5\n0.5, 0, 0.5\n0.5, 0.5, 0',
+      },
+    },
+    {
+      id: 'reradiating',
+      values: {
+        mode: 'enclosure',
+        surfaces: '1 m^2, 1, 1000 K\n1 m^2, 1, 500 K\n1 m^2, 0.7, insulated',
         matrix: '0, 0.5, 0.5\n0.5, 0, 0.5\n0.5, 0.5, 0',
       },
     },
