@@ -1,0 +1,72 @@
+/*
+ * The economics graphs: thin lines on tokens, shaded areas in two tints, and direct labels. Curves are told apart by
+ * dash and label, not color alone.
+ */
+@layer components {
+  .figure {
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .svg {
+    inline-size: 100%;
+    max-inline-size: 28rem;
+    block-size: auto;
+    color: var(--color-text-primary);
+  }
+
+  .grid {
+    stroke: var(--color-border-subtle);
+    stroke-width: 1;
+  }
+
+  .axis {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1;
+  }
+
+  .curve {
+    fill: none;
+    stroke: var(--color-text-primary);
+    stroke-width: 2;
+  }
+
+  .areaA {
+    fill: var(--color-accent-primary);
+    fill-opacity: 0.22;
+    stroke: none;
+  }
+
+  .areaB {
+    fill: var(--color-status-danger);
+    fill-opacity: 0.2;
+    stroke: none;
+  }
+
+  .mark {
+    fill: var(--color-accent-primary);
+    stroke: var(--color-surface-page);
+    stroke-width: 1.5;
+  }
+
+  .tick,
+  .axisLabel,
+  .label {
+    fill: var(--color-text-secondary);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label {
+    fill: var(--color-text-primary);
+  }
+
+  .caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+}
