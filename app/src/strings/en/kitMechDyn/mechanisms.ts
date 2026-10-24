@@ -1,6 +1,58 @@
 // The mechanism tools of the mechanisms and dynamics kit: their fields, results, notes, and examples. Part of
 // kitMechDyn.
 export const mechanisms = {
+  cam: {
+    title: 'Cam designer',
+    short: 'Cams',
+    about: 'A follower motion program, its SVAJ diagrams, and the cam profile, with the pressure angle and curvature.',
+    keywords: 'cam follower svaj displacement velocity acceleration jerk cycloidal harmonic polynomial pressure angle',
+    field: {
+      program: 'Motion program, one segment per line',
+      follower: 'Follower',
+      baseRadius: 'Base circle radius, R_b',
+      rollerRadius: 'Roller radius, R_f',
+      offset: 'Follower offset, e',
+      speed: 'Cam speed',
+    },
+    option: {
+      roller: 'Translating roller',
+      flat: 'Translating flat-faced',
+    },
+    hint: {
+      program:
+        'Each line: rise, dwell, or return; degrees; lift (mm, or in for US units); then harmonic, cycloidal, poly345, or poly4567.',
+      offset: 'Positive moves the follower axis to the right of the cam center.',
+    },
+    row: {
+      lift: 'Total lift, h',
+      vPerRad: 'Largest velocity, per radian of cam turn',
+      aPerRad: 'Largest acceleration, per radian²',
+      jPerRad: 'Largest jerk, per radian³',
+      vt: 'Largest follower velocity',
+      at: 'Largest follower acceleration',
+      jt: 'Largest follower jerk',
+      pressure: 'Largest pressure angle',
+      pressureAt: 'At cam angle',
+      curvature: 'Smallest radius of curvature',
+      curvatureAt: 'At cam angle',
+      undercut: 'Undercut or cusp',
+      face: 'Face half-width needed',
+    },
+    word: { yes: 'Yes', no: 'No' },
+    note: {
+      turning:
+        'The cam turns counterclockwise at a steady speed, and angles are measured from the start of the program.',
+      roller: 'The roller follower moves on a straight line. The profile is the inner envelope of the roller.',
+      flat: 'The flat face is square to the follower’s stem, so the pressure angle is zero.',
+      perRadian: 'Per-radian values don’t depend on the speed. Multiply by ω, ω², or ω³ for values per second.',
+    },
+    example: {
+      cycloidal: 'Cycloidal rise and return of 25 mm',
+      harmonic: 'Simple harmonic rise and return',
+      poly: 'Polynomial laws over 120°',
+      flat: 'Flat-faced follower',
+    },
+  },
   gears: {
     title: 'Gears and gear trains',
     short: 'Gears',

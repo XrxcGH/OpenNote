@@ -19,6 +19,7 @@ const tool = (id: string, icon: IconName): MechDynToolMeta => ({
 });
 
 export const MECHDYN_TOOLS: readonly MechDynToolMeta[] = [
+  tool('cam', 'Disc'),
   tool('gears', 'GearSix'),
   tool('compliant', 'Spiral'),
   tool('sdof', 'Waveform'),

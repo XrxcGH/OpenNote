@@ -23,7 +23,7 @@ export function readRows(text: string, count: number, most = count): Row[] {
     for (const cell of cells) {
       const value = evaluate(cell);
       if (value.ok && Number.isFinite(value.value)) numbers.push(value.value);
-      else if (/^[a-z]+$/i.test(cell)) words.push(cell.toLowerCase());
+      else if (/^[a-z][a-z0-9]*$/i.test(cell)) words.push(cell.toLowerCase());
       else fail('listRow', { line: String(index + 1), count: String(count) });
     }
     if (numbers.length < count || numbers.length > most)

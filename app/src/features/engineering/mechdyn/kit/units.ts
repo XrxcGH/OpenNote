@@ -66,6 +66,7 @@ export const KINDS = {
   },
   velocity: { dim: D(1, 0, -1), si: shown('m/s', 1), us: shown('ft/s', FT) },
   acceleration: { dim: D(1, 0, -2), si: shown('m/s²', 1, 'm/s^2'), us: shown('ft/s²', FT, 'ft/s^2') },
+  jerk: { dim: D(1, 0, -3), si: shown('m/s³', 1, 'm/s^3'), us: shown('ft/s³', FT, 'ft/s^3') },
   time: { dim: D(0, 0, 1), si: shown('s', 1), us: shown('s', 1) },
   frequency: { dim: D(0, 0, -1), si: shown('Hz', 1), us: shown('Hz', 1) },
   angularSpeed: { dim: D(0, 0, -1), si: shown('rad/s', 1), us: shown('rad/s', 1) },

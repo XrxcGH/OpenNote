@@ -109,6 +109,35 @@ const CASES: readonly Case[] = [
     texts: { mode: 'train', stages: '20 60\n15 45', inputSpeed: '900 rpm' },
     expect: { value: '0.11111', outputSpeed: '100 rpm' },
   },
+  {
+    name: 'a cycloidal rise of 25 mm over 90°: peaks per radian',
+    tool: 'cam',
+    texts: { program: 'rise 90 25 cycloidal\ndwell 90\nreturn 90 25 cycloidal\ndwell 90' },
+    expect: { vPerRad: '31.831 mm', aPerRad: '63.662 mm', lift: '25 mm', undercut: 'No' },
+  },
+  {
+    name: 'the same rise with simple harmonic motion',
+    tool: 'cam',
+    texts: { program: 'rise 90 25 harmonic\ndwell 90\nreturn 90 25 harmonic\ndwell 90' },
+    expect: { vPerRad: '25 mm', aPerRad: '50 mm' },
+  },
+  {
+    name: 'the same rise with the 3-4-5 polynomial',
+    tool: 'cam',
+    texts: { program: 'rise 90 25 poly345\ndwell 90\nreturn 90 25 poly345\ndwell 90' },
+    expect: { vPerRad: '29.842 mm' },
+  },
+  {
+    name: 'a cycloidal rise of 1 inch in US units',
+    tool: 'cam',
+    system: 'us',
+    texts: {
+      program: 'rise 90 1 cycloidal\ndwell 90\nreturn 90 1 cycloidal\ndwell 90',
+      baseRadius: '2 in',
+      rollerRadius: '0.5 in',
+    },
+    expect: { lift: '1 in', vPerRad: '1.2732 in' },
+  },
 ];
 
 describe('the answers the window shows', () => {
