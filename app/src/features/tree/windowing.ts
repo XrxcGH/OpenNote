@@ -56,9 +56,17 @@ export function useViewport(ref: RefObject<HTMLElement | null>, active: boolean)
     if (!element || !active) return;
     measure();
     element.addEventListener('scroll', measure, { passive: true });
-    const observer = new ResizeObserver(measure);
+    // Measuring inside the callback re-renders the rows in the same frame; the next frame is still before paint.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
+    });
     observer.observe(element);
     return () => {
+      cancelAnimationFrame(frame);
       element.removeEventListener('scroll', measure);
       observer.disconnect();
     };

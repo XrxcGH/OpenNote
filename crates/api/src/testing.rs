@@ -365,6 +365,7 @@ pub struct TestApi {
 }
 
 impl TestApi {
+    #[allow(clippy::expect_used)] // Test support: a server that will not start fails the test that asked for it.
     pub fn start() -> TestApi {
         let backend = Arc::new(MemoryBackend::default());
         let approver = Arc::new(ScriptedApprover::default());

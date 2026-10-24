@@ -137,6 +137,8 @@
     "allow-export-pick-save",
     "allow-export-write",
     "allow-export-open",
+    "allow-export-replace",
+    "allow-export-undo-replace",
     "allow-export-selection-docx",
     "allow-print-printers",
     "allow-print-submit",
