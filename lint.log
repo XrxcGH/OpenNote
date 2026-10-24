@@ -1,0 +1,9 @@
+
+C:\Users\ericj\GitHub\OpenNote\.claude\worktrees\ua-mathviz\app\src\features\engineering\canvas\Canvas.tsx
+  7:1  error  Import "math" through features/math/index.ts, not features/math/svgScale  opennote/feature-boundaries
+
+C:\Users\ericj\GitHub\OpenNote\.claude\worktrees\ua-mathviz\app\src\features\engineering\structures\BeamPanel.tsx
+  15:1  error  Import "math" through features/math/index.ts, not features/math/svgScale  opennote/feature-boundaries
+
+✖ 2 problems (2 errors, 0 warnings)
+

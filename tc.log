@@ -1,0 +1,8 @@
+
+> opennote@0.1.0-beta.5 typecheck
+> tsc -p checks/tsconfig.json && tsc -p docs/design/tsconfig.json && tsc -p spikes/web/tsconfig.json && tsc -p eslint/tsconfig.json && tsc -p tests/tsconfig.json && npm run app:typecheck
+
+
+> opennote@0.1.0-beta.5 app:typecheck
+> tsc -p app/tsconfig.json && tsc -p app/scripts/tsconfig.json
+

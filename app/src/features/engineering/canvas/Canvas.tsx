@@ -4,7 +4,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef } from 'react';
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import type { Point } from './geometry';
-import { useSvgScale } from '../../math/svgScale';
+import { useSvgScale } from './svgScale';
 import styles from './canvas.module.css';
 
 export interface View {

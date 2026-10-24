@@ -12,7 +12,7 @@ import type { BlockProps } from '../canvas/shared';
 import { KeysHint } from '../canvas/KeysHint';
 import styles from '../canvas/canvas.module.css';
 import { SupportSymbol } from '../fbd/FbdPanel';
-import { useSvgScale } from '../../math/svgScale';
+import { useSvgScale } from '../canvas/svgScale';
 import { readBeam, solveBeam } from './beam';
 import type { BeamLoad, BeamModel, BeamResult, BeamSample, BeamSegment, BeamSupport, BeamSupportKind } from './beam';
 
