@@ -57,6 +57,12 @@ describe('the planned validation cases', () => {
     expect(values[0]).toBeCloseTo(5, 12);
     expect(values[1]).toBeCloseTo(3, 12);
     expect(out.latex).toBe('\\sigma=5,\\ 3');
+    // A 2x3 matrix has rank 2, and U is the 2x2 orthonormal matrix, not a 2x3 one with a zero column.
+    expect(vars(out, 'laSingularValues')!.rank).toBe('2');
+    const u = out.steps.find((s) => s.key === 'laSvdU')!.math!;
+    expect(u.split('\\\\').length).toBe(2);
+    expect(u.split('&').length - 1).toBe(2);
+    expect(out.steps.find((s) => s.key === 'laSigma')!.math).toContain('\\lambda_{3}=0');
   });
   it('the least-squares line through (0,1), (1,3), (2,4), (3,4) is y = 1.5 + 1.0 x', () => {
     const a = leastSquares('1 0\n1 1\n1 2\n1 3', '1 3 4 4');

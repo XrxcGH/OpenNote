@@ -267,10 +267,13 @@ export function svdSteps(aText: string): NumOut {
   const AtA = multiply(transpose(A), A);
   const e = symmetricEigen(AtA.map((r) => r.map(toNum)));
   const order = e.values.map((_, i) => i).sort((i, j) => e.values[j] - e.values[i]);
-  const lambdas = order.map((i) => Math.max(0, e.values[i]));
+  // The rank is decided on the eigenvalues of A^T A, whose rounding error is about eps times the largest one: a
+  // lambda of 1e-15 is a zero, though its square root, 3e-8, would look like a real singular value.
+  const top = Math.max(0, e.values[order[0]] ?? 0);
+  const floor = Math.max(m, n) * top * 2.2e-16 * 10;
+  const lambdas = order.map((i) => (e.values[i] > floor ? e.values[i] : 0));
   const sigmas = lambdas.map(Math.sqrt);
-  const tol = Math.max(m, n) * (sigmas[0] ?? 0) * 2.2e-16 * 10;
-  const rank = sigmas.filter((s) => s > tol).length;
+  const rank = Math.min(m, n, lambdas.filter((l) => l > 0).length);
   const V = e.vectors.map((row) => order.map((j) => row[j]));
   const steps: KitStep[] = [
     step('laSetup', matrixLatex(A), {}),
