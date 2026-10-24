@@ -112,14 +112,13 @@ describe('the engines’ words', () => {
     const listed = new Set(['lib', ...CONTROL_TOOLS.map((tool) => tool.id)]);
     for (const [file, source] of Object.entries(SOURCES)) {
       if (!listed.has(file.split('/')[1])) continue;
-      for (const m of source.matchAll(/new ControlError\(\s*([^,)]*?'\w+'(?:\s*:\s*'\w+')?)/g)) {
-        for (const code of [...m[1].matchAll(/'(\w+)'/g)].map((k) => k[1])) {
-          if (lookup(`kitControl.errors.${code}`) === undefined && !/===\s*$/.test(m[1].split(`'${code}'`)[0])) {
-            absent.push(`${file}: errors.${code}`);
-          }
+      // The first argument up to a comma, bracket, or brace: a key, or a chain of ternaries choosing one.
+      for (const m of source.matchAll(/new ControlError\(\s*([^(){},`]{0,160})/g)) {
+        for (const code of [...m[1].matchAll(/'(\w+)'(?!\s*\?)/g)].map((k) => k[1])) {
+          if (lookup(`kitControl.errors.${code}`) === undefined) absent.push(`${file}: errors.${code}`);
         }
       }
-      for (const m of source.matchAll(/\bstep\(\s*([^()]{0,80}?'[\w]+\.[\w.]+'(?:\s*:\s*'[\w.]+')?)/g)) {
+      for (const m of source.matchAll(/\bstep\(\s*([^(){},`]{0,160})/g)) {
         for (const key of [...m[1].matchAll(/'(\w+\.[\w.]+)'/g)].map((k) => k[1])) {
           if (lookup(`kitControl.steps.${key}`) === undefined) absent.push(`${file}: steps.${key}`);
         }
