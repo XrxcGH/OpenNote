@@ -191,6 +191,7 @@ export const kitChemMatAtoms = {
     ionization: 'Ionization energy from n = 1',
     radius: 'Bohr radius of the lower level',
     lambdaDB: 'de Broglie wavelength',
+    lambdaNR: 'Nonrelativistic wavelength, for comparison',
     momentum: 'Momentum',
     speed: 'Speed',
     kinetic: 'Kinetic energy',
@@ -252,8 +253,8 @@ export const kitChemMatAtoms = {
     emission: 'Going down from the upper level to the lower one emits the photon. Going up absorbs it.',
     rydberg:
       'Uses the hydrogen Rydberg constant, 1.09677583e7 per meter, for any Z. Heavier ions are off by under 0.05 percent.',
-    nonrel: 'Nonrelativistic: the momentum is mass times speed.',
-    fast: 'Above a tenth of the speed of light the nonrelativistic result starts to be noticeably off.',
+    nonrel: 'The momentum is the relativistic one, p = γmv, which equals mv at low speed.',
+    fast: 'Above a tenth of the speed of light the nonrelativistic wavelength (shown for comparison) is noticeably off.',
     box: 'An infinite one-dimensional well. The plot shows the probability density.',
     quantum: 'Each orbital holds two electrons of opposite spin.',
     config: 'Configurations of the heaviest elements are predicted, not measured.',

@@ -183,19 +183,26 @@ export function deBroglie(input: WaveInput): Outcome {
   if (!pos(m)) return fail('kitChemMat.at.err.mass');
   let v: number;
   let K: number;
+  let p: number;
   const steps: KitStep[] = [];
   if (input.given === 'energy') {
     if (!pos(input.energy)) return fail('kitChemMat.at.err.kinetic');
     K = input.energy;
-    v = Math.sqrt((2 * K) / m);
+    // p c = sqrt(K (K + 2 m c^2)), so v = p c^2 / (K + m c^2).
+    p = Math.sqrt(2 * m * K * (1 + K / (2 * m * C * C)));
+    v = (p * C * C) / (K + m * C * C);
   } else {
     if (!pos(input.speed)) return fail('kitChemMat.at.err.speed');
     if (input.speed >= C) return fail('kitChemMat.at.err.light');
     v = input.speed;
-    K = 0.5 * m * v * v;
+    const beta2 = (v * v) / (C * C);
+    const gamma = 1 / Math.sqrt(1 - beta2);
+    p = gamma * m * v;
+    K = (m * C * C * gamma * gamma * beta2) / (gamma + 1);
   }
-  const p = m * v;
   const lambda = H / p;
+  // What the nonrelativistic formula gives for the same input: from the energy, p = sqrt(2mK); from the speed, p = mv.
+  const lambdaNR = input.given === 'energy' ? H / Math.sqrt(2 * m * K) : H / (m * v);
   steps.push({ key: 'kitChemMat.at.step.debroglie', math: `\\lambda=\\frac{h}{p}=\\frac{h}{mv}` });
   steps.push({
     key: 'kitChemMat.at.step.debroglieNumbers',
@@ -204,11 +211,13 @@ export function deBroglie(input: WaveInput): Outcome {
       `${latexNumber(lambda, 6)}\\ \\mathrm{m}`,
   });
   const notes: { key: MessageKey }[] = [{ key: 'kitChemMat.at.note.nonrel' }];
-  if (v > 0.1 * C) notes.push({ key: 'kitChemMat.at.note.fast' });
+  const fast = v > 0.1 * C;
+  if (fast) notes.push({ key: 'kitChemMat.at.note.fast' });
   return {
     ok: true,
     rows: [
       { key: 'kitChemMat.at.row.lambdaDB', value: lambda, dim: 'length', digits: 6 },
+      ...(fast ? [{ key: 'kitChemMat.at.row.lambdaNR' as const, value: lambdaNR, dim: 'length' as const, digits: 6 }] : []),
       { key: 'kitChemMat.at.row.momentum', value: p, unit: 'kg m/s', digits: 5 },
       { key: 'kitChemMat.at.row.speed', value: v, unit: 'm/s', digits: 5 },
       { key: 'kitChemMat.at.row.kinetic', value: K, dim: 'photonEnergy', digits: 5 },

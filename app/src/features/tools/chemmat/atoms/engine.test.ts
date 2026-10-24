@@ -119,6 +119,12 @@ describe('hydrogen atom', () => {
   });
 });
 
+describe('one bonded atom (HF, HCl, H2)', () => {
+  it.each([0, 1, 2, 3])('has a linear diatomic shape with %i lone pairs', (e) => {
+    expect(vsepr(1, e, true).ok).toBe(true);
+  });
+});
+
 describe('de Broglie wavelength', () => {
   it('an electron of 100 eV: 0.12264 nm', () => {
     const o = deBroglie({ particle: 'electron', customMass: NaN, given: 'energy', speed: NaN, energy: 100 * EV });
@@ -126,13 +132,26 @@ describe('de Broglie wavelength', () => {
     // independent: lambda = h / sqrt(2 m K)
     expect(
       rel(val(o, 'kitChemMat.at.row.lambdaDB'), 6.62607015e-34 / Math.sqrt(2 * 9.1093837139e-31 * 100 * EV)),
-    ).toBeLessThan(1e-12);
+    ).toBeLessThan(1e-4);
+  });
+
+  it('a 200 keV electron is 2.5079 pm relativistically, 2.742 pm nonrelativistically (microscope case)', () => {
+    const o = deBroglie({ particle: 'electron', customMass: NaN, given: 'energy', speed: NaN, energy: 200e3 * EV });
+    expect(rel(val(o, 'kitChemMat.at.row.lambdaDB') * 1e12, 2.5079)).toBeLessThan(2e-4);
+    expect(rel(val(o, 'kitChemMat.at.row.lambdaNR') * 1e12, 2.742)).toBeLessThan(1e-3);
+    // independent: lambda = h c / sqrt(K (K + 2 m c^2)), and v = 0.6953 c
+    const K = 200e3 * EV;
+    const mc2 = 9.1093837139e-31 * 299792458 ** 2;
+    expect(rel(val(o, 'kitChemMat.at.row.lambdaDB'), (6.62607015e-34 * 299792458) / Math.sqrt(K * (K + 2 * mc2)))).toBeLessThan(
+      1e-12,
+    );
+    expect(rel(val(o, 'kitChemMat.at.row.speed') / 299792458, 0.6953)).toBeLessThan(1e-3);
   });
 
   it('a 150 g ball at 40 m/s has a wavelength near 1.1e-34 m', () => {
     const o = deBroglie({ particle: 'custom', customMass: 150, given: 'speed', speed: 40, energy: NaN });
-    expect(rel(val(o, 'kitChemMat.at.row.lambdaDB'), 6.62607015e-34 / (0.15 * 40))).toBeLessThan(1e-12);
-    expect(rel(val(o, 'kitChemMat.at.row.kinetic'), 0.5 * 0.15 * 1600)).toBeLessThan(1e-12);
+    expect(rel(val(o, 'kitChemMat.at.row.lambdaDB'), 6.62607015e-34 / (0.15 * 40))).toBeLessThan(1e-9);
+    expect(rel(val(o, 'kitChemMat.at.row.kinetic'), 0.5 * 0.15 * 1600)).toBeLessThan(1e-9);
   });
 
   it('speed and energy give consistent answers, and a heavier particle has a shorter wavelength', () => {
@@ -366,6 +385,11 @@ describe('molecular orbitals', () => {
   const mo = (atom: string, charge = 0) => molecularOrbitals({ atom, charge });
   const order = (o: Outcome) => val(o, 'kitChemMat.at.row.bondOrder');
   const unpaired = (o: Outcome) => str(o, 'kitChemMat.at.row.unpaired');
+
+  it('writes the charge of the ion as superscript digits: O2 with charge -2 is O₂²⁻', () => {
+    expect(str(mo('O', -2), 'kitChemMat.at.row.molecule')).toBe('O₂²⁻');
+    expect(str(mo('O', -1), 'kitChemMat.at.row.molecule')).toBe('O₂⁻');
+  });
 
   it('bond orders: N2 3, O2 2, O2- 1.5, B2 1, C2 2, F2 1, H2 1, Li2 1', () => {
     expect([

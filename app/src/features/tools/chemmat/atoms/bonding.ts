@@ -106,6 +106,9 @@ const angleKey = (name: string) => `kitChemMat.at.angle.${name}` as MessageKey;
 
 /** The shapes by number of bonded atoms and lone pairs on the central atom, keyed "X,E". */
 const SHAPES: Readonly<Record<string, Shape>> = {
+  '1,0': { geometry: geomKey('linear'), shape: shapeKey('diatomic'), angle: angleKey('none') },
+  '1,2': { geometry: geomKey('linear'), shape: shapeKey('diatomic'), angle: angleKey('none') },
+  '1,3': { geometry: geomKey('linear'), shape: shapeKey('diatomic'), angle: angleKey('none') },
   '1,1': { geometry: geomKey('linear'), shape: shapeKey('diatomic'), angle: angleKey('none') },
   '2,0': { geometry: geomKey('linear'), shape: shapeKey('linear'), angle: angleKey('a180') },
   '3,0': { geometry: geomKey('trigonalPlanar'), shape: shapeKey('trigonalPlanar'), angle: angleKey('a120') },
@@ -242,7 +245,7 @@ export function molecularOrbitals(input: MoInput): Outcome {
   }
   const bondOrder = (bonding - anti) / 2;
   const sign = input.charge > 0 ? '⁺' : '⁻';
-  const count = Math.abs(input.charge) === 1 ? '' : String(Math.abs(input.charge));
+  const count = Math.abs(input.charge) === 1 ? '' : '²³⁴'[Math.abs(input.charge) - 2];
   const label = `${el.symbol}₂${input.charge === 0 ? '' : count + sign}`;
   const table = filled
     .slice()
