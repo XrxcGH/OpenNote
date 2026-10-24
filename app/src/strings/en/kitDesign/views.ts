@@ -1,3 +1,5 @@
+// checks-disable-file length: messages are full sentences kept on one line
+
 // The words of the design kit's orthographic views tool.
 export const views = {
   title: 'Orthographic views',

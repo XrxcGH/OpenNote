@@ -1,3 +1,5 @@
+// checks-disable-file length: messages are full sentences kept on one line
+
 // The words of the design kit's programming references tool. The reference cards themselves are in
 // features/tools/design/referenceData.ts, written for OpenNote.
 export const references = {
