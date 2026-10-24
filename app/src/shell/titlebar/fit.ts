@@ -6,6 +6,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
+/** Sub-pixel layout rounding the bar tolerates before it steps to the next level, in pixels. */
+export const OVERFLOW_TOLERANCE = 0.5;
+
 export interface Fit {
   /** Changes when the bar's content changes, which starts fitting again from the lowest level. */
   key: string;
@@ -24,7 +27,7 @@ export function nextFit(fit: Fit, measured: { width: number; overflow: number },
   const { level, needs } = fit;
   if (level < range.min) return { ...fit, level: range.min };
   if (level > range.max) return { ...fit, level: range.max };
-  const overflows = measured.overflow > 0.5;
+  const overflows = measured.overflow > OVERFLOW_TOLERANCE;
   if (overflows && level < range.max) {
     const next = [...needs];
     next[level] = measured.width + measured.overflow;
