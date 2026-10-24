@@ -26,6 +26,10 @@ export const kitChemMatDiffusion = {
     dry: 'Published constants, dry oxygen',
     wet: 'Published constants, steam',
   },
+  basis: {
+    mole: 'Moles per volume (mol/L)',
+    mass: 'Mass per volume (kg/m³)',
+  },
   face: {
     f100: '(100) silicon',
     f111: '(111) silicon',
@@ -45,6 +49,7 @@ export const kitChemMatDiffusion = {
     fitT2: 'Temperature T2',
     fitT3: 'Predict D at a third temperature (optional)',
     fluxD: 'Diffusion coefficient D',
+    cbasis: 'Concentration given as',
     C1: 'Concentration on the high side',
     C2: 'Concentration on the low side',
     dx: 'Thickness',

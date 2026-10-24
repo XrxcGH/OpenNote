@@ -83,8 +83,26 @@ export const diffusionTool: ToolSpec = {
     { ...num('fitT2', '1073.15', only('fit')), dim: 'temperature' },
     { ...num('fitT3', '', only('fit'), { optional: true }), dim: 'temperature' },
     { ...num('fluxD', '1e-10', only('flux')), dim: 'diffusivity' },
-    { ...num('C1', '0.5', only('flux')), dim: 'concentration' },
-    { ...num('C2', '0.1', only('flux')), dim: 'concentration' },
+    choice(
+      'cbasis',
+      'kitChemMat.df.field.cbasis',
+      [
+        ['mole', 'kitChemMat.df.basis.mole'],
+        ['mass', 'kitChemMat.df.basis.mass'],
+      ],
+      'mole',
+      only('flux'),
+    ),
+    { ...num('C1', '0.5', (v) => mode(v) === 'flux' && (v.cbasis ?? 'mole') === 'mole'), dim: 'concentration' },
+    { ...num('C2', '0.1', (v) => mode(v) === 'flux' && (v.cbasis ?? 'mole') === 'mole'), dim: 'concentration' },
+    {
+      ...num('M1', '1.2', (v) => mode(v) === 'flux' && v.cbasis === 'mass', { label: 'kitChemMat.df.field.C1' }),
+      dim: 'massConcentration',
+    },
+    {
+      ...num('M2', '0.8', (v) => mode(v) === 'flux' && v.cbasis === 'mass', { label: 'kitChemMat.df.field.C2' }),
+      dim: 'massConcentration',
+    },
     { ...num('dx', '1', only('flux')), dim: 'distance' },
     num('Cs', '1.2', only('profile'), { help: 'kitChemMat.df.field.CsHelp' }),
     num('C0', '0.25', only('profile')),
@@ -149,7 +167,9 @@ export const diffusionTool: ToolSpec = {
           T3: Number(input.fitT3),
         });
       case 'flux':
-        return firstLaw(Number(input.fluxD), Number(input.C1), Number(input.C2), Number(input.dx));
+        return input.cbasis === 'mass'
+          ? firstLaw(Number(input.fluxD), Number(input.M1), Number(input.M2), Number(input.dx), true)
+          : firstLaw(Number(input.fluxD), Number(input.C1), Number(input.C2), Number(input.dx));
       case 'profile':
         return errorFunction({
           Cs: Number(input.Cs),

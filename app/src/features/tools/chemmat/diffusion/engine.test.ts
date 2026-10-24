@@ -103,6 +103,12 @@ describe("Fick's first law", () => {
     expect(val(firstLaw(1e-10, 0.3, 0.3, 1e-3), 'kitChemMat.df.row.flux')).toBe(0);
   });
 
+  it('mass concentrations carry through: 1.2 and 0.8 kg/m3, D 3e-11 m2/s, 5 mm gives 2.4e-9 kg/(m2 s)', () => {
+    const o = firstLaw(3e-11, 1.2, 0.8, 5e-3, true);
+    expect(rel(val(o, 'kitChemMat.df.row.flux'), 2.4e-9)).toBeLessThan(1e-12);
+    expect(rel(val(o, 'kitChemMat.df.row.gradient'), 0.4 / 5e-3)).toBeLessThan(1e-12);
+  });
+
   it('refuses zero thickness and negative concentration', () => {
     expect(firstLaw(1e-10, 0.5, 0.1, 0)).toMatchObject({ key: 'kitChemMat.df.err.thickness' });
     expect(firstLaw(1e-10, -1, 0.1, 1e-3)).toMatchObject({ key: 'kitChemMat.df.err.conc' });

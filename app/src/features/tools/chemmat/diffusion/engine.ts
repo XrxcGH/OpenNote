@@ -138,26 +138,31 @@ export function arrheniusFit(input: FitInput): Outcome {
 
 // ---------- Fick's first law ----------
 
-export function firstLaw(D: number, C1: number, C2: number, dx: number): Outcome {
+/**
+ * Steady flux. Concentrations are mol/L, or kg/m^3 when `mass` is set (carbon in steel is usually given that way); the
+ * flux then comes out in kg/(m^2 s).
+ */
+export function firstLaw(D: number, C1: number, C2: number, dx: number, mass = false): Outcome {
   if (!pos(D)) return fail('kitChemMat.df.err.d');
   if (!pos(dx)) return fail('kitChemMat.df.err.thickness');
   if (!Number.isFinite(C1) || !Number.isFinite(C2) || C1 < 0 || C2 < 0) return fail('kitChemMat.df.err.conc');
-  // Concentrations arrive in mol/L; the flux is in mol/(m^2 s).
-  const dC = (C1 - C2) * 1000;
+  // Moles arrive per liter and become per cubic meter; masses are already per cubic meter.
+  const dC = (C1 - C2) * (mass ? 1 : 1000);
+  const amount = mass ? 'kg' : 'mol';
   const J = (D * dC) / dx;
   return {
     ok: true,
     rows: [
-      { key: 'kitChemMat.df.row.flux', value: J, unit: 'mol/(m² s)', digits: 5 },
-      { key: 'kitChemMat.df.row.gradient', value: dC / dx, unit: 'mol/m⁴', digits: 5 },
+      { key: 'kitChemMat.df.row.flux', value: J, unit: `${amount}/(m² s)`, digits: 5 },
+      { key: 'kitChemMat.df.row.gradient', value: dC / dx, unit: `${amount}/m⁴`, digits: 5 },
     ],
     steps: [
       {
         key: 'kitChemMat.df.step.first',
         math:
           `J=-D\\frac{dC}{dx}\\approx D\\,\\frac{C_1-C_2}{\\Delta x}=${latexNumber(D, 5)}` +
-          `\\times\\frac{${latexNumber(dC, 5)}\\ \\mathrm{mol/m^3}}{${latexNumber(dx, 5)}` +
-          `\\ \\mathrm{m}}=${latexNumber(J, 5)}\\ \\mathrm{mol/(m^2\\,s)}`,
+          `\\times\\frac{${latexNumber(dC, 5)}\\ \\mathrm{${amount}/m^3}}{${latexNumber(dx, 5)}` +
+          `\\ \\mathrm{m}}=${latexNumber(J, 5)}\\ \\mathrm{${amount}/(m^2\\,s)}`,
       },
     ],
     notes: [{ key: 'kitChemMat.df.note.first' }],

@@ -44,6 +44,11 @@ export const DIMS: Record<Exclude<Dim, 'none'> | 'current', DimDef> = {
     si: 'mol/L',
     us: 'mol/L',
   },
+  massConcentration: {
+    units: [u('kg/m³', 1), u('g/cm³', 1000), u('g/L', 1), u('mg/L', 1e-3), u('lb/ft³', 16.01846337)],
+    si: 'kg/m³',
+    us: 'lb/ft³',
+  },
   time: {
     units: [u('s', 1), u('min', 60), u('h', 3600), u('d', 86400), u('yr', 365.25 * 86400)],
     si: 's',

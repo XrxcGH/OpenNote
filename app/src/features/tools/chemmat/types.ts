@@ -17,6 +17,7 @@ export type Dim =
   | 'temperature'
   | 'pressure'
   | 'concentration'
+  | 'massConcentration'
   | 'time'
   | 'length'
   | 'distance'
