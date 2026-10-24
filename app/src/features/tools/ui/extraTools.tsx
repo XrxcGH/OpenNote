@@ -21,6 +21,9 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The civil and chemical engineering kit loads its window, then each tool's calculations, on first use.
+const CivilTool = lazy(() => import('../civil/ui/CivilTool').then((module) => ({ default: module.CivilTool })));
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-civil')
+    return (
+      <Suspense fallback={null}>
+        <CivilTool />
+      </Suspense>
+    );
   return null;
 }

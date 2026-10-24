@@ -1,0 +1,7 @@
+// Each tool's calculations, loaded the first time the tool is chosen, so the window opens without the engines.
+import type { Calc } from './core/types';
+import type { CivilToolId } from './meta';
+
+export const CIVIL_KIT: Readonly<Record<CivilToolId, () => Promise<readonly Calc[]>>> = {
+  groundwater: () => import('./groundwater/calcs').then((module) => module.CALCS),
+};
