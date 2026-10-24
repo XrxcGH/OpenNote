@@ -133,7 +133,8 @@ export const steps = {
     'The spring torque balances the moment of the load about the pivot. Solve for the pseudo-rigid angle Θ:',
   compliantPrbmTip: 'The link end gives the tip position, and the end angle is c_θ times Θ:',
   compliantGuidedTip: 'The two halves give the tip position, and the guided end doesn’t turn:',
-  compliantOutOfRange: 'Θ is beyond about {limit}°, where the published constants lose accuracy. Trust the elastica here.',
+  compliantOutOfRange:
+    'Θ is beyond about {limit}°, where the published constants lose accuracy. Trust the elastica here.',
   compliantCompare: 'The two tip positions differ by {percent}% of the length.',
   compliantStress: 'The largest stress adds the bending stress at the largest moment to the axial stress there.',
   robotDynEquation: 'The equations of motion of the arm, one row per joint:',
@@ -203,6 +204,8 @@ export const steps = {
   lagrangeExplicit: 'Solved for the acceleration:',
   lagrangeMass: 'Written as M(q) q̈ = f(q, q̇, t), with the mass matrix:',
   lagrangeStable: 'An equilibrium at ({q}) is stable; small oscillations there have ω = {w} rad/s.',
+  lagrangeNeutral:
+    'An equilibrium at ({q}) is neutral: a rigid-body mode drifts with zero stiffness; the others have ω = {w} rad/s.',
   lagrangeUnstable: 'An equilibrium at ({q}) is unstable: a small push grows.',
   lagrangeEnergy:
     'Check: the total energy changed by a fraction {drift} over the simulation, so the integration conserves it.',

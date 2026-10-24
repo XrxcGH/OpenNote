@@ -134,8 +134,11 @@ const NAME = /^[A-Za-z][A-Za-z0-9]*$/;
 
 export interface Equilibrium {
   q: number[];
+  kind: 'stable' | 'neutral' | 'unstable';
   stable: boolean;
-  /** Small-oscillation frequencies, rad/s (null when unstable). */
+  /** How many zero-frequency (rigid-body) modes it has. */
+  neutral: number;
+  /** Small-oscillation frequencies of the positive modes, rad/s (null when unstable). */
   omegas: number[] | null;
 }
 
@@ -317,13 +320,29 @@ function jacobian(g: (q: readonly number[]) => number[], q: readonly number[]): 
   return columns[0].map((_, i) => columns.map((column) => column[i]));
 }
 
+/** The Levenberg-Marquardt step (J^T J + lambda I) s = J^T r with a tiny lambda. */
+function dampedStep(J: readonly (readonly number[])[], r: readonly number[]): number[] | null {
+  const n = r.length;
+  const JtJ = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => J.reduce((s, row) => s + row[i] * row[j], 0)),
+  );
+  const lambda = 1e-12 * Math.max(1e-300, ...JtJ.map((row, i) => row[i]));
+  return solve(
+    JtJ.map((row, i) => row.map((v, j) => (i === j ? v + lambda : v))),
+    Array.from({ length: n }, (_, i) => J.reduce((s, row, k) => s + row[i] * r[k], 0)),
+  );
+}
+
 /** Newton's method on f(q, 0) = 0 from one start; null when it doesn't settle on a root. */
 function newton(f: (q: readonly number[]) => number[], start: readonly number[]): number[] | null {
   let q = [...start];
   for (let it = 0; it < 60; it += 1) {
     const r = f(q);
     if (!finite(...r)) break;
-    const step = solve(jacobian(f, q), r);
+    const J = jacobian(f, q);
+    // A neutral direction (a free cart) makes J singular: fall back to a damped least-squares step, which leaves
+    // the free coordinate where it is.
+    const step = solve(J, r) ?? dampedStep(J, r);
     if (!step) break;
     q = q.map((v, i) => v - step[i]);
     if (Math.hypot(...step) < 1e-12 * Math.max(1, Math.hypot(...q))) break;
@@ -337,18 +356,69 @@ function findEquilibria(num: Numerics): Equilibrium[] {
   const seeds = [-3, -1.5, 0, 1.5, 3];
   let grid: number[][] = [[]];
   for (let i = 0; i < num.n; i += 1) grid = grid.flatMap((g) => seeds.map((s) => [...g, s]));
+  const periodic = periodicCoords(num);
+  // A periodic coordinate is an angle: wrap it into (-pi, pi], and measure differences the short way round.
+  const wrapped = (q: readonly number[]) =>
+    q.map((v, i) => (periodic[i] ? v - TAU * Math.ceil((v - Math.PI) / TAU) : v));
+  const diff = (p: readonly number[], q: readonly number[]) =>
+    p.map((v, i) => (periodic[i] ? Math.atan2(Math.sin(v - q[i]), Math.cos(v - q[i])) : v - q[i]));
   const equilibria: Equilibrium[] = [];
   for (const start of grid) {
-    const q = newton(num.f, start);
-    if (!q || equilibria.some((e) => e.q.every((v, i) => Math.abs(v - q[i]) < 1e-6))) continue;
-    const K = jacobian(num.f, q).map((row) => row.map((v) => -v));
-    const sym = K.map((row, i) => row.map((v, j) => (v + K[j][i]) / 2));
-    const eig = generalizedEigen(sym, num.M(q));
-    const stable = !!eig && eig.values.every((l) => l > 1e-12);
-    equilibria.push({ q, stable, omegas: stable && eig ? eig.values.map(Math.sqrt) : null });
+    const found = newton(num.f, start);
+    if (!found) continue;
+    const q = wrapped(found);
+    if (equilibria.some((e) => diff(e.q, q).every((v) => Math.abs(v) < 1e-6))) continue;
+    const e = classify(num, q);
+    // Equilibria joined by a neutral direction are one family (a free cart rests anywhere): keep the one nearest 0.
+    const joined = (o: Equilibrium) => o.kind === e.kind && o.neutral > 0 && e.neutral > 0;
+    const same = equilibria.findIndex((o) => joined(o) && onFamily(num, o.q, diff(q, o.q)));
+    if (same >= 0) {
+      if (Math.hypot(...q) < Math.hypot(...equilibria[same].q)) equilibria[same] = e;
+      continue;
+    }
+    equilibria.push(e);
     if (equilibria.length >= 8) break;
   }
   return equilibria.sort((a, b) => Math.hypot(...a.q) - Math.hypot(...b.q));
+}
+
+const TAU = 2 * Math.PI;
+
+/** Which coordinates the system repeats in every 2 pi: f, M, and V unchanged, tested at two unremarkable points. */
+function periodicCoords(num: Numerics): boolean[] {
+  const points = [
+    Array.from({ length: num.n }, (_, i) => 0.37 + 0.21 * i),
+    Array.from({ length: num.n }, (_, i) => -0.83 + 0.4 * i),
+  ];
+  return Array.from({ length: num.n }, (_, i) =>
+    points.every((q) => {
+      const shifted = q.map((v, j) => (j === i ? v + TAU : v));
+      const a = [...num.f(q), ...num.M(q).flat(), num.V(q)];
+      const b = [...num.f(shifted), ...num.M(shifted).flat(), num.V(shifted)];
+      const scale = Math.max(1, ...a.map(Math.abs));
+      return a.every((v, k) => Number.isFinite(v) && Math.abs(v - b[k]) <= 1e-9 * scale);
+    }),
+  );
+}
+
+/** Whether the midpoint of a step from an equilibrium is an equilibrium too, so both lie on one neutral family. */
+function onFamily(num: Numerics, q: readonly number[], step: readonly number[]): boolean {
+  const scale = Math.max(1, ...num.M(q).flat().map(Math.abs));
+  return [0.5, 0.25].every((t) => Math.hypot(...num.f(q.map((v, i) => v + t * step[i]))) <= 1e-8 * scale);
+}
+
+/** Stable when every stiffness eigenvalue is positive, neutral when some are zero (a rigid-body mode) and none
+ * negative, unstable when any is negative. Frequencies are those of the positive eigenvalues. */
+function classify(num: Numerics, q: number[]): Equilibrium {
+  const K = jacobian(num.f, q).map((row) => row.map((v) => -v));
+  const sym = K.map((row, i) => row.map((v, j) => (v + K[j][i]) / 2));
+  const eig = generalizedEigen(sym, num.M(q));
+  if (!eig) return { q, kind: 'unstable', stable: false, neutral: 0, omegas: null };
+  const tol = 1e-7 * Math.max(1e-12, ...eig.values.map(Math.abs));
+  const neutral = eig.values.filter((l) => Math.abs(l) <= tol).length;
+  const kind = eig.values.some((l) => l < -tol) ? 'unstable' : neutral > 0 ? 'neutral' : 'stable';
+  const omegas = kind === 'unstable' ? null : eig.values.filter((l) => l > tol).map(Math.sqrt);
+  return { q, kind, stable: kind === 'stable', neutral, omegas };
 }
 
 /** The largest change in T + V over the run, relative to the largest |T| + |V|. */
@@ -387,8 +457,11 @@ export function solveLagrange(input: LagrangeInput): Outcome<LagrangeResult> {
   const equilibria = findEquilibria(num);
   for (const e of equilibria.slice(0, 4))
     steps.push({
-      key: e.stable ? 'lagrangeStable' : 'lagrangeUnstable',
-      vars: { q: e.q.map((v) => fmt(v, 4)).join(', '), w: e.omegas ? e.omegas.map((w) => fmt(w, 4)).join(', ') : '' },
+      key: e.kind === 'stable' ? 'lagrangeStable' : e.kind === 'neutral' ? 'lagrangeNeutral' : 'lagrangeUnstable',
+      vars: {
+        q: e.q.map((v) => fmt(v, 4)).join(', '),
+        w: e.omegas?.length ? e.omegas.map((w) => fmt(w, 4)).join(', ') : '0',
+      },
     });
   const nan = new Array<number>(n).fill(Number.NaN);
   const run = dopri(

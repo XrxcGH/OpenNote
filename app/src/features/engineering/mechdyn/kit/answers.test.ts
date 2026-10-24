@@ -227,7 +227,7 @@ const CASES: readonly Case[] = [
     name: 'a pendulum released from 90°: small-oscillation frequency and period ratio',
     tool: 'lagrange',
     texts: {},
-    expect: { 'omega:1': '3.1321 rad/s', periodRatio: '1.1803', equilibria: '3' },
+    expect: { 'omega:1': '3.1321 rad/s', periodRatio: '1.1803', equilibria: '2' },
   },
   {
     name: 'a thin plate about its corner: tensor and principal moments',

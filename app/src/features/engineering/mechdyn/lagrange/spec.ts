@@ -95,7 +95,7 @@ export const lagrangeSpec: ToolSpec = {
       }),
     );
     const rows: ResultRow[] = [];
-    const stable = r.equilibria.find((e) => e.stable);
+    const stable = r.equilibria.find((e) => e.kind !== 'unstable');
     if (stable?.omegas)
       rows.push(
         ...stable.omegas.map((w, i) => ({
@@ -117,8 +117,8 @@ export const lagrangeSpec: ToolSpec = {
       columns: ['q', 'kind', 'omega'],
       rows: r.equilibria.map((e): Cell[] => [
         listText(e.q),
-        word(e.stable ? 'stable' : 'unstable'),
-        e.omegas ? listText(e.omegas) : '',
+        word(e.kind),
+        e.omegas ? listText([...new Array<number>(e.neutral).fill(0), ...e.omegas]) : '',
       ]),
     };
     const plots = [r.motion];

@@ -109,3 +109,33 @@ describe('names and impossible input', () => {
     expect(solveLagrange({ ...LAGRANGE_DEFAULTS, params: [['th', 1]] })).toEqual({ ok: false, error: 'lagrangeNames' });
   });
 });
+
+describe('equilibria: angles wrap and neutral modes', () => {
+  it('a pendulum has two equilibria, hanging and inverted, with no repeat at -pi and pi', () => {
+    const r = ok(solveLagrange({ ...LAGRANGE_DEFAULTS, duration: 1 }));
+    expect(r.equilibria.length).toBe(2);
+    expect(r.equilibria.map((e) => e.kind)).toEqual(['stable', 'unstable']);
+  });
+
+  it('a double pendulum has four distinct equilibria, one of them stable', () => {
+    const r = ok(solveLagrange(double));
+    // By hand: each link hangs down or stands up, 2 x 2 positions; only both down is stable.
+    expect(r.equilibria.length).toBe(4);
+    expect(r.equilibria.filter((e) => e.stable).length).toBe(1);
+    for (const e of r.equilibria) for (const v of e.q) expect(v > -Math.PI - 1e-9 && v <= Math.PI + 1e-9).toBe(true);
+  });
+
+  it('a free cart (k = 0) hangs in neutral equilibrium with one frequency sqrt((M + m) g / (M L))', () => {
+    const params = LAGRANGE_TEMPLATES.cart.params.map(([n, v]): [string, number] => [n, n === 'k' ? 0 : v]);
+    const r = ok(solveLagrange({ template: 'cart', ...LAGRANGE_TEMPLATES.cart, params, duration: 2 }));
+    const p = Object.fromEntries(params);
+    const hang = r.equilibria[0];
+    expect(hang.kind).toBe('neutral');
+    expect(hang.neutral).toBe(1);
+    expect(hang.omegas!.length).toBe(1);
+    expect(hang.omegas![0]).toBeCloseTo(Math.sqrt(((p.M + p.m) * p.g) / (p.M * p.L)), 6);
+    expect(hang.omegas![0]).toBeCloseTo(3.836, 3);
+    // The cart rests anywhere: one hanging family and one inverted family, not a row per seed.
+    expect(r.equilibria.length).toBe(2);
+  });
+});

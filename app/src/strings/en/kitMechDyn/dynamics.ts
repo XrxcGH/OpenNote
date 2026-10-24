@@ -168,6 +168,7 @@ export const dynamics = {
     },
     word: {
       stable: 'Stable',
+      neutral: 'Neutral (rigid-body mode)',
       unstable: 'Unstable',
     },
     table: {
