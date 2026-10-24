@@ -106,3 +106,19 @@ describe('single-degree-of-freedom vibration', () => {
     expect(tiny.omegaN).toBeCloseTo(20, 9);
   });
 });
+
+describe('base excitation phase', () => {
+  it('base motion at r = 2, zeta 0.1: x lags y by 150.604°, z = x - y lags by 172.405°', () => {
+    const r = run({ damping: 'zeta', zeta: 0.1, forcing: 'base', Y: 0.005, omega: 40, x0: 0, duration: 8 });
+    expect((r.forced!.phase * 180) / Math.PI).toBeCloseTo(150.604, 3);
+    expect((r.forced!.relativePhase! * 180) / Math.PI).toBeCloseTo(172.405, 3);
+    // Independent: X/Y = (1 + 0.4i)/(-3 + 0.4i); its lag is arg(-3 + 0.4i) - arg(1 + 0.4i).
+    const lag = Math.atan2(0.4, -3) - Math.atan2(0.4, 1);
+    expect(r.forced!.phase).toBeCloseTo(lag, 12);
+    // The simulated steady state follows Y TR sin(wt - phi): sample one late instant.
+    const pts = r.response.series[0].points;
+    const [t, x] = pts.filter(([s]) => s > 7)[0];
+    const X = 0.005 * r.forced!.transmissibility;
+    expect(Math.abs(x - X * Math.sin(40 * t - lag))).toBeLessThan(0.02 * X);
+  });
+});

@@ -57,6 +57,7 @@ export const vibrations = {
       isolation: 'Isolation',
       transmitted: 'Force sent to the support',
       relative: 'Motion relative to the base, Z',
+      relativePhase: 'Phase lag of Z behind the base, φ_Z',
       peak: 'Largest displacement in the simulation',
     },
     word: {

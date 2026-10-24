@@ -45,6 +45,19 @@ const CASES: readonly Case[] = [
     expect: { r: '2', transmissibility: '0.35586' },
   },
   {
+    name: 'the isolation example: x lags y by 150.604°, z = x - y by 172.405°',
+    tool: 'sdof',
+    texts: { damping: 'zeta', zeta: '0.1', forcing: 'base', x0: '0 mm', omega: '40 rad/s' },
+    expect: { phase: '150.6°', relativePhase: '172.41°' },
+  },
+  {
+    name: 'the isolation example in US units',
+    tool: 'sdof',
+    system: 'us',
+    texts: { damping: 'zeta', zeta: '0.1', forcing: 'base', x0: '0 in', omega: '40 rad/s' },
+    expect: { phase: '150.6°', relativePhase: '172.41°' },
+  },
+  {
     name: 'the same mass and spring in US units',
     tool: 'sdof',
     system: 'us',

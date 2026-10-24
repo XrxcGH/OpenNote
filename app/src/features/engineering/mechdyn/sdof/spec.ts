@@ -88,6 +88,9 @@ export const sdofSpec: ToolSpec = {
       if (f.isolation !== null) rows.push({ id: 'isolation', value: q(f.isolation, 'percent') });
       if (f.transmitted !== null) rows.push({ id: 'transmitted', value: q(f.transmitted, 'force') });
       if (f.relative !== null) rows.push({ id: 'relative', value: q(f.relative, 'small'), sym: 'Z' });
+      if (f.relativePhase !== null) {
+        rows.push({ id: 'relativePhase', value: q(f.relativePhase, 'angle'), sym: '\\phi_Z' });
+      }
     }
     rows.push({ id: 'peak', value: q(r.peak, 'small') });
     const notes = ['linear', 'sign', HARMONIC.has(forcing) ? 'steady' : 'response'];

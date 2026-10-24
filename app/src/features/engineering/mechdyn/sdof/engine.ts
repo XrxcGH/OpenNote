@@ -47,6 +47,8 @@ export interface SdofForced {
   transmitted: number | null;
   /** Base motion only: amplitude of x - y, m. */
   relative: number | null;
+  /** Base motion only: phase lag of z = x - y behind y, rad. */
+  relativePhase: number | null;
 }
 
 export interface SdofResult {
@@ -92,6 +94,10 @@ export const magnification = (r: number, zeta: number) => 1 / Math.hypot(1 - r *
 export const transmissibility = (r: number, zeta: number) => Math.hypot(1, 2 * zeta * r) * magnification(r, zeta);
 /** Phase lag atan2(2 zeta r, 1 - r^2), from 0 to pi. */
 export const phaseLag = (r: number, zeta: number) => Math.atan2(2 * zeta * r, 1 - r * r);
+
+/** Phase lag of the absolute motion x behind the base motion y: atan2(2 zeta r^3, 1 - r^2 + (2 zeta r)^2). */
+export const basePhaseLag = (r: number, zeta: number) =>
+  Math.atan2(2 * zeta * r ** 3, 1 - r * r + (2 * zeta * r) ** 2);
 
 interface Base {
   m: number;
@@ -149,7 +155,9 @@ function harmonic(input: SdofInput, b: Base, steps: MechStep[]): { forced: SdofF
   const r = w / b.omegaN;
   const mag = magnification(r, zeta);
   const tr = transmissibility(r, zeta);
-  const phase = phaseLag(r, zeta);
+  const base = input.forcing === 'base';
+  const phase = base ? basePhaseLag(r, zeta) : phaseLag(r, zeta);
+  const relativePhase = base ? phaseLag(r, zeta) : null;
   steps.push({ key: 'sdofRatio', math: `r = \\omega/\\omega_n = ${tex(w)}/${tex(b.omegaN)} = ${tex(r)}` });
   let X: number;
   let force: Force;
@@ -185,10 +193,19 @@ function harmonic(input: SdofInput, b: Base, steps: MechStep[]): { forced: SdofF
         `${tex(r * r * mag)} = ${tex(X)}\\ \\mathrm{m}`,
     });
   }
-  steps.push({
-    key: 'sdofPhase',
-    math: `\\phi = \\operatorname{atan2}(2\\zeta r,\\ 1-r^2) = ${tex((phase * 180) / Math.PI)}^\\circ`,
-  });
+  const deg = (a: number) => tex((a * 180) / Math.PI);
+  if (relativePhase === null) {
+    steps.push({ key: 'sdofPhase', math: `\\phi = \\operatorname{atan2}(2\\zeta r,\\ 1-r^2) = ${deg(phase)}^\\circ` });
+  } else {
+    steps.push({
+      key: 'sdofBasePhase',
+      math: `\\phi = \\operatorname{atan2}\\left(2\\zeta r^3,\\ 1-r^2+(2\\zeta r)^2\\right) = ${deg(phase)}^\\circ`,
+    });
+    steps.push({
+      key: 'sdofRelativePhase',
+      math: `\\phi_Z = \\operatorname{atan2}(2\\zeta r,\\ 1-r^2) = ${deg(relativePhase)}^\\circ`,
+    });
+  }
   const isolation = tr < 1 ? 1 - tr : null;
   steps.push({
     key: isolation === null ? 'sdofNoIsolation' : 'sdofIsolation',
@@ -204,6 +221,7 @@ function harmonic(input: SdofInput, b: Base, steps: MechStep[]): { forced: SdofF
     isolation,
     transmitted,
     relative,
+    relativePhase,
   };
   return { forced, force };
 }

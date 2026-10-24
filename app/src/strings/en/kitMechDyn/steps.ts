@@ -14,6 +14,8 @@ export const steps = {
     'For base motion, the absolute amplitude uses the transmissibility, and the motion relative to the base uses r².',
   sdofUnbalance: 'For a rotating unbalance, the force grows with the square of the speed.',
   sdofPhase: 'The response lags the forcing by the phase angle.',
+  sdofBasePhase: 'The absolute motion x lags the base motion y by this phase angle.',
+  sdofRelativePhase: 'The motion relative to the base, z = x − y, lags y by a different angle.',
   sdofIsolation: 'The transmissibility is {tr}, below 1, so the mount isolates {percent}% of the vibration.',
   sdofNoIsolation:
     'The transmissibility is {tr}, not below 1, so the mount doesn’t isolate. Isolation needs r above √2.',
