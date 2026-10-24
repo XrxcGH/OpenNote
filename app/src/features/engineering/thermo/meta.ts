@@ -10,6 +10,7 @@ export const THERMO_TOOL_IDS = [
   'devices',
   'cycles',
   'psychro',
+  'combustion',
   'statthermo',
 ] as const;
 
@@ -29,5 +30,6 @@ export const THERMO_META: readonly ThermoToolMeta[] = [
   { id: 'devices', icon: 'Fan', subject: 'thermodynamics' },
   { id: 'cycles', icon: 'ArrowsClockwise', subject: 'thermodynamics' },
   { id: 'psychro', icon: 'DropHalf', subject: 'thermodynamics' },
+  { id: 'combustion', icon: 'Flame', subject: 'combustion' },
   { id: 'statthermo', icon: 'Atom', subject: 'thermalPhysics' },
 ];

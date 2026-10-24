@@ -12,6 +12,7 @@ const TOOLS = [
   ['devices', 'Fan'],
   ['cycles', 'ArrowsClockwise'],
   ['psychro', 'DropHalf'],
+  ['combustion', 'Flame'],
   ['statthermo', 'Atom'],
 ] as const satisfies readonly (readonly [string, IconName])[];
 

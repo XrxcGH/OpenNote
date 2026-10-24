@@ -242,4 +242,45 @@ export const kitThermoSteps = {
       'Peng-Robinson with those pseudo-critical constants gives Z = {Z}, so v = {v} m³/kg, {err} % from the ' +
       'ideal mixture.',
   },
+  comb: {
+    fuel: 'The fuel is {formula}, with molar mass M = {M} g/mol.',
+    stoich: 'Complete combustion needs a_st = {a} mol of O₂ per mol of fuel.',
+    suppliedAir: 'With φ = {phi}, the oxygen supplied is a = {a} mol per mol of fuel, which is {excess} % excess air.',
+    suppliedO2: 'With φ = {phi}, the oxygen supplied is a = {a} mol per mol of fuel, which is {excess} % excess oxygen.',
+    reaction: 'Balancing C, H, O, and N atoms gives the reaction:',
+    afr: 'Air-fuel ratio AF = 4.76 a M_air/M_fuel = {mass} kg of air per kg of fuel, or {mole} mol per mol.',
+    ofr: 'Oxygen-fuel ratio = a M_O₂/M_fuel = {mass} kg of oxygen per kg of fuel, or {mole} mol per mol.',
+    products: 'The products total {n} mol per mol of fuel; each mole fraction is its moles over that total.',
+    dew:
+      'Water’s mole fraction is {y}, so its partial pressure is {pv} kPa, and the products start to condense at ' +
+      'its saturation temperature, T_dp = {Tdp} °C.',
+    dewNone:
+      'Water’s mole fraction is {y}, so its partial pressure is {pv} kPa, outside the range where water vapor ' +
+      'condenses to a liquid; there is no dew point.',
+    heating:
+      'At 298.15 K the lower heating value, with the water as vapor, is LHV = {lhv} kJ/mol = {lhvKg} MJ/kg. ' +
+      'Condensing the {nw} mol of water adds 44.004 kJ/mol each, so HHV = {hhv} kJ/mol = {hhvKg} MJ/kg.',
+    reactantH: 'The reactants at {T} K hold H_R = Σ n h = {H} kJ per mol of fuel.',
+    reactantU:
+      'At constant volume the balance is in internal energy: U_R = H_R − n_R R_u T = {U} kJ per mol of fuel, ' +
+      'with {n} mol of reactant gas.',
+    try:
+      'Try T = {T} K: the products minus the reactants come to {gap} kJ, changing by {slope} kJ/K, so the ' +
+      'next try is {next} K.',
+    flame: 'The products hold the reactants’ energy at T_ad = {T} K.',
+    flameV: 'The products hold the reactants’ energy at T_ad = {T} K, where the pressure has risen to {p} kPa.',
+    eqIntro:
+      'At each try the products are put in chemical equilibrium by minimizing their Gibbs energy; the last ' +
+      'state took {iterations} Newton steps.',
+    eqCompare: 'Complete combustion would reach {Tc} K; dissociation takes {dT} K off.',
+    eqAtT: 'At {T} K and {p} kPa, the equilibrium products total {n} mol per mol of fuel.',
+    eqReaction: 'The equilibrium products, per mol of fuel (traces below 0.01 % left out):',
+    rocketOF:
+      'O/F = {of} by mass gives a = {a} mol of O₂ per mol of fuel. The stoichiometric O/F is {ofSt}, so ' +
+      'φ = {phi}.',
+    rocketGamma:
+      'Frozen at {T} K and the chamber composition: M = {M} g/mol, c_p = {cp} J/(mol·K), and ' +
+      'γ = c_p/(c_p − R_u) = {gamma}.',
+    cstar: 'The characteristic velocity c* = √(γRT_c) / (γ (2/(γ + 1))^((γ + 1)/(2(γ − 1)))) = {c} m/s.',
+  },
 };

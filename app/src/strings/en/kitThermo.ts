@@ -16,6 +16,7 @@ export const kitThermo = {
     devices: 'Balance a turbine, compressor, nozzle, or other steady-flow device with the second law',
     cycles: 'Analyze a Rankine, Brayton, Otto, Diesel, refrigeration, or Carnot cycle',
     realgas: 'Find Z and departures from a cubic equation of state, or the properties of a gas mixture',
+    combustion: 'Balance a combustion reaction and find heating values and the adiabatic flame temperature',
   },
   keywords: {
     window: 'thermodynamics thermal physics combustion heat engines properties tables cycles kit',
@@ -45,6 +46,10 @@ export const kitThermo = {
       'real gas compressibility factor z van der waals redlich kwong soave peng robinson cubic equation of ' +
       'state departure function enthalpy entropy fugacity reduced pressure temperature gas mixture mole ' +
       'fraction mass fraction dalton amagat partial pressure kay rule pseudo critical',
+    combustion:
+      'combustion stoichiometric air fuel ratio equivalence ratio excess air balanced reaction products mole ' +
+      'fraction dew point heating value lhv hhv adiabatic flame temperature dissociation chemical equilibrium ' +
+      'gibbs rocket chamber characteristic velocity methane propane octane hydrogen kerosene',
   },
   tab: {
     statthermo: 'Statistical',
@@ -55,6 +60,7 @@ export const kitThermo = {
     devices: 'Devices',
     cycles: 'Cycles',
     realgas: 'Real gas',
+    combustion: 'Combustion',
   },
   subject: {
     thermodynamics: 'Thermodynamics',
@@ -107,6 +113,8 @@ export const kitThermo = {
     cyclePh: 'Cycle on a p-h diagram',
     cyclePv: 'Cycle on a p-v diagram',
     zIsotherm: 'Compressibility along the isotherm',
+    flamePhi: 'Adiabatic flame temperature against equivalence ratio',
+    chamberOF: 'Chamber temperature against O/F',
   },
   mode: {
     gas: 'Gas molecule',
@@ -125,6 +133,9 @@ export const kitThermo = {
     carnot: 'Carnot limits between two reservoirs',
     eosState: 'One state from a cubic equation of state',
     mixture: 'An ideal-gas mixture',
+    completeCombustion: 'Complete combustion and heating values',
+    equilibriumCombustion: 'Products in chemical equilibrium',
+    rocketChamber: 'A rocket combustion chamber',
   },
   field: {
     molarMass: 'Molar mass',
@@ -248,6 +259,23 @@ export const kitThermo = {
     molePart2: 'Parts by moles of gas 2',
     molePart3: 'Parts by moles of gas 3',
     molePart4: 'Parts by moles of gas 4',
+    fuel: 'Fuel',
+    carbonAtoms: 'Carbon atoms in the fuel, x',
+    hydrogenAtoms: 'Hydrogen atoms in the fuel, y',
+    oxygenAtoms: 'Oxygen atoms in the fuel, z',
+    nitrogenAtoms: 'Nitrogen atoms in the fuel, w',
+    fuelHf: 'Enthalpy of formation of the fuel, h_f°',
+    fuelPhase: 'The fuel enters as',
+    oxidizer: 'Oxidizer',
+    mixBy: 'Amount of oxidizer by',
+    phi: 'Equivalence ratio φ',
+    excessAir: 'Excess air or oxygen',
+    reactantT: 'Reactant temperature',
+    flameProcess: 'Burning at',
+    eqTemperature: 'Products temperature',
+    productT: 'Temperature of the products',
+    ofRatio: 'Oxidizer-fuel mass ratio O/F',
+    chamberP: 'Chamber pressure p_c',
   },
   choice: {
     atom: 'Single atom',
@@ -337,6 +365,15 @@ export const kitThermo = {
     rootLiquid: 'Liquid-like, the smallest Z',
     byMass: 'Mass',
     byMoles: 'Moles',
+    C8H18: 'n-Octane, C₈H₁₈ (liquid)',
+    C12H23: 'Jet-A kerosene, C₁₂H₂₃ (liquid)',
+    customFuel: 'Another fuel: type its atoms',
+    gasFuel: 'Gas',
+    liquidFuel: 'Liquid',
+    byPhi: 'Equivalence ratio',
+    byExcess: 'Percent excess',
+    adiabaticFlame: 'Adiabatic flame temperature',
+    givenProductT: 'A temperature I give',
   },
   row: {
     qTrans: 'Translational partition function',
@@ -465,6 +502,28 @@ export const kitThermo = {
     pseudoPc: 'Pseudo-critical pressure',
     pseudoOmega: 'Pseudo-critical acentric factor',
     vKay: 'Specific volume, Peng-Robinson with Kay’s rule',
+    aStoich: 'Oxygen for complete combustion, mol per mol of fuel',
+    aSupplied: 'Oxygen supplied, mol per mol of fuel',
+    equivalenceRatio: 'Equivalence ratio',
+    excessAir: 'Excess air',
+    excessO2: 'Excess oxygen',
+    afrMass: 'Air-fuel ratio by mass',
+    afrMole: 'Air-fuel ratio by moles',
+    ofrMass: 'Oxygen-fuel ratio by mass',
+    ofrMole: 'Oxygen-fuel ratio by moles',
+    productMoles: 'Products, mol per mol of fuel',
+    lhvMolar: 'Lower heating value per mole',
+    lhvMass: 'Lower heating value per kg',
+    hhvMolar: 'Higher heating value per mole',
+    hhvMass: 'Higher heating value per kg',
+    flameT: 'Adiabatic flame temperature',
+    flameTComplete: 'Flame temperature with complete combustion',
+    flameP: 'Final pressure',
+    chamberT: 'Chamber temperature',
+    meanM: 'Mean molar mass of the products',
+    gammaFrozen: 'Ratio of specific heats, frozen',
+    cStar: 'Characteristic velocity',
+    ofStoich: 'Stoichiometric O/F',
   },
   step: kitThermoSteps,
   note: {
@@ -509,6 +568,23 @@ export const kitThermo = {
     mixParts: 'Parts can be fractions, percentages, or amounts in kg or kmol; they are scaled to add up to 1.',
     kayRule:
       'Kay’s rule treats the mixture as one gas with mole-weighted critical constants; it is rough for H₂ and He.',
+    combustionIdeal:
+      'Ideal gases; enthalpies include formation at 298.15 K, and the reactants mix before they burn. Lean, ' +
+      'rich, and stoichiometric are by the equivalence ratio φ = a_st/a.',
+    airModel: 'Air is O₂ + 3.76 N₂ (argon counted as nitrogen); the air-fuel ratio uses M_air = 28.97 g/mol.',
+    fuelAt298: 'Octane, Jet-A, and typed fuels enter at 298.15 K in the phase given; only the oxidizer is heated.',
+    completeRule:
+      'Complete combustion: lean, all carbon to CO₂ and hydrogen to H₂O. Rich, hydrogen burns to water first, ' +
+      'then carbon to CO, and any oxygen left turns CO to CO₂.',
+    equilibriumSpecies:
+      'Equilibrium products: N₂, O₂, H₂O, CO₂, CO, H₂, OH, H, O, and NO, with no solid carbon; the Gibbs ' +
+      'energy is minimized as in NASA RP-1311.',
+    heatingRef: 'Heating values per unit of fuel at 298.15 K; the higher value counts the water as condensed.',
+    extrapolatedFit:
+      'The flame is above 3500 K, past the polynomials’ published range; they are extrapolated, good to a few ' +
+      'percent up to 4000 K.',
+    rocketModel: 'Gaseous oxygen; the chamber burns at constant pressure with no heat loss and the products at rest.',
+    frozenGamma: 'γ and c* use the frozen chamber composition; an equilibrium γ would be a little lower.',
   },
   error: {
     missing: 'Type a value for {name}.',
@@ -565,6 +641,22 @@ export const kitThermo = {
     eosCovolume: 'The specific volume must be above the co-volume b of this equation, {b} m³/kg.',
     eosNegativePressure: 'At that T and v the equation gives a negative pressure, {p} kPa, which no gas state has.',
     mixEmpty: 'Give at least one gas an amount above zero.',
+    fuelFormula: 'Give the fuel some carbon or hydrogen atoms.',
+    fuelNeedsNoOxygen: 'This fuel holds enough oxygen to burn itself, so it needs no oxidizer.',
+    phiRange: 'The equivalence ratio must be above zero, which needs excess air above −100 %.',
+    tooRich:
+      'Too rich for complete combustion: the oxygen cannot even turn all the carbon to CO, so soot would form. ' +
+      'Try the equilibrium mode or a smaller φ.',
+    tooRichEquilibrium: 'Too rich: there is less oxygen than carbon, so solid carbon would form, which the kit leaves out.',
+    flameLow: 'Keep every temperature at 200 K or above.',
+    reactantRange: 'Keep the reactant temperature between 200 K and 2000 K.',
+    flameHigh:
+      'The flame would be hotter than {max} K, past the data. Try more excess air, the equilibrium mode, or air ' +
+      'in place of oxygen.',
+    flameNoHeat: 'The products would be no hotter than the reactants, so there is no flame to find.',
+    flameFailed: 'The flame temperature did not settle. Try a value of φ nearer 1.',
+    equilibriumFailed: 'The equilibrium did not settle. Try a temperature or φ nearer the usual range.',
+    ofRange: 'The O/F ratio must be above zero.',
   },
   word: {
     liquid: 'Compressed liquid',
@@ -578,5 +670,8 @@ export const kitThermo = {
     gasRoot: 'Gas-like root',
     liquidRoot: 'Liquid-like root',
     idealGasLine: 'Ideal gas, Z = 1',
+    noDew: 'None above 0.01 °C',
+    completeCombustion: 'Complete combustion',
+    equilibriumProducts: 'Equilibrium',
   },
 } as const;
