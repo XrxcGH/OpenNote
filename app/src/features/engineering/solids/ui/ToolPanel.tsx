@@ -77,7 +77,15 @@ function FieldInput(props: {
   }
   const describedBy = problem ? `${id}-problem` : `${id}-hint`;
   const hint =
-    field.type === 'text' ? say(`kitSolids.${tool}.hint.${field.id}`, { length: unitOf('length', system) }) : '';
+    field.type === 'text'
+      ? say(`kitSolids.${tool}.hint.${field.id}`, {
+          length: unitOf('length', system),
+          span: unitOf('span', system),
+          force: unitOf('bigForce', system),
+          load: unitOf('spanLoad', system),
+          moment: unitOf('bigMoment', system),
+        })
+      : '';
   const unit = field.type === 'quantity' ? unitOf(field.kind, system) : '';
   return (
     <div className={field.type === 'text' ? `${styles.field} ${styles.wide}` : styles.field}>

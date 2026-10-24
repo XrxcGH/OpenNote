@@ -56,6 +56,13 @@ export const kitSolids = {
     inertiaMatrix: 'Iy Iz must be greater than Iyz². Check the second moments.',
     outside: 'The point is outside the section.',
     rectTorsion: 'Torque on a rectangle is not worked out here. Use a round section, or the torsion loading.',
+    unstable: 'The supports cannot hold the beam. Add a support, or fix an end.',
+    offBeam: 'Every support, load, and point must be on the beam, from 0 to L.',
+    udlOrder: 'A distributed load must end to the right of where it starts.',
+    supportLine: 'Support line {detail} could not be read. Type pin, roller, fixed, or hinge, then x.',
+    loadLine: 'Load line {detail} could not be read. Check its word and how many numbers it has.',
+    segmentLine: 'Line {detail} of the changes of EI could not be read. Type x1 x2 factor.',
+    pointLine: 'Line {detail} of the points could not be read. Type numbers only.',
     unknown: 'That could not be worked out.',
   },
   columns: {
@@ -419,6 +426,64 @@ export const kitSolids = {
       chordShear: 'VQ/(It) is the average across the chord through the point, as in the usual textbook method.',
     },
   },
+  deflection: {
+    title: 'Beam deflection',
+    keywords:
+      'beam deflection elastic curve slope double integration superposition singularity functions cantilever ' +
+      'simply supported propped cantilever continuous beam indeterminate hinge EI maximum deflection',
+    field: {
+      E: "Young's modulus, E",
+      I: 'Second moment of area, I',
+      L: 'Length, L',
+      supports: 'Supports, one to a line',
+      loads: 'Loads, one to a line',
+      segments: 'Changes of EI, one to a line (optional)',
+      points: 'Points to report, x (optional)',
+    },
+    hint: {
+      supports: 'Type pin, roller, fixed, or hinge, then x in {span}. A hinge joins two parts of the beam.',
+      loads:
+        'Type point x P in {force}, moment x M in {moment}, or udl x1 x2 w (or w1 w2) in {load}. Loads point ' +
+        'down and moments turn counterclockwise when positive. x is in {span}.',
+      segments: 'Type x1 x2 factor, in {span}, where EI is that many times E·I.',
+      points: 'Type the places, in {span}, where you want v, the slope, and M.',
+    },
+    example: {
+      simple: 'Simply supported, uniform load',
+      cantilever: 'Cantilever, load at the tip',
+      propped: 'Propped cantilever, uniform load',
+      continuous: 'Two equal spans, uniform load',
+      gerber: 'Fixed end with a hinge and a roller',
+      stepped: 'Cantilever twice as stiff near the wall',
+    },
+    row: {
+      vMax: 'Largest deflection, vmax',
+      xMax: 'Where it is, x',
+      thetaA: 'Slope at the left end, θA',
+      thetaB: 'Slope at the right end, θB',
+      thetaMax: 'Largest slope, θmax',
+      xTheta: 'Where the largest slope is',
+    },
+    table: { reactions: 'Reactions', points: 'Values at your points' },
+    col: {
+      support: 'Support',
+      x: 'x',
+      R: 'Force, up',
+      M: 'Moment, counterclockwise',
+      v: 'Deflection, v',
+      theta: 'Slope, θ',
+    },
+    note: {
+      signs:
+        'v is up, so a beam that sags has negative v. The slope θ is dv/dx, in radians, positive counterclockwise.',
+      theory: 'Euler–Bernoulli beams: small deflections, linear elastic material, and no shear deformation.',
+      indeterminate:
+        'The beam is statically indeterminate. The reactions come from the stiffness method, which is exact here.',
+      superpose: 'The answers are linear in the loads, so you can check them by superposing table cases.',
+    },
+    plot: { x: 'Position, x', v: 'Deflection, v', curve: 'Elastic curve', max: 'Largest deflection' },
+    picture: 'The elastic curve along the beam, with the largest deflection marked',
+  },
   step: {
     columns: {
       effective: 'Find the effective length from the end conditions.',
@@ -497,6 +562,18 @@ export const kitSolids = {
       shearParts: 'Add the shear stresses along y from the shear force and the torque.',
       shearPartsZ: 'Add the shear stresses along z the same way.',
       principal: 'Find the principal stresses of the element.',
+    },
+    deflection: {
+      reactions: 'Find the reactions from statics.',
+      indeterminate: 'Find the reactions. The beam is indeterminate, so they come from the stiffness method.',
+      moment: 'Write the bending moment from {a} to {b}, with x in {xu} and M in {mu}.',
+      momentStiff: 'Write the bending moment from {a} to {b}, with x in {xu} and M in {mu}. Here EI is {factor} E·I.',
+      curvature: 'The curvature of the beam is the moment over EI.',
+      integrate: 'Integrate once for the slope and again for the deflection.',
+      conditions: 'The supports give the boundary conditions.',
+      constants: 'Solve the boundary conditions for the constants of integration.',
+      hinge: 'At a hinge the slope may jump, so each hinge adds one more constant.',
+      maximum: 'The largest deflection is where the slope is zero, or at an end or a load.',
     },
   },
 } as const;

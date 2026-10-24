@@ -15,6 +15,12 @@ export const SOLIDS_TOOLS: readonly SolidsToolMeta[] = [
   { id: 'stress', title: 'kitSolids.stress.title', keywords: 'kitSolids.stress.keywords', icon: 'CircleHalf' },
   { id: 'sections', title: 'kitSolids.sections.title', keywords: 'kitSolids.sections.keywords', icon: 'SquareHalf' },
   { id: 'members', title: 'kitSolids.members.title', keywords: 'kitSolids.members.keywords', icon: 'ArrowsClockwise' },
+  {
+    id: 'deflection',
+    title: 'kitSolids.deflection.title',
+    keywords: 'kitSolids.deflection.keywords',
+    icon: 'ChartLine',
+  },
 ];
 
 export const SOLIDS_TOOL_IDS: readonly string[] = SOLIDS_TOOLS.map((tool) => tool.id);

@@ -1,6 +1,7 @@
 // The library shapes as parts, with the origin at the bottom left of each shape, and the typed lists of parts and
 // of centerline points read into parts. The thin-walled open shapes (channel, angle, and Z) also give their
 // centerline chain, so the shear center can be found; the others give it by symmetry.
+import { typedLines } from '../kit/lines';
 import { fail, positive } from '../kit/types';
 import type { Placed, Wall } from './engine';
 
@@ -140,17 +141,7 @@ function numbers(words: readonly string[], toSi: (value: number) => number, line
   });
 }
 
-const lines = (text: string) =>
-  text
-    .split(/\r?\n/)
-    .map((raw, i) => ({
-      words: raw
-        .trim()
-        .split(/[\s,;]+/)
-        .filter(Boolean),
-      line: i + 1,
-    }))
-    .filter((one) => one.words.length > 0 && !one.words[0].startsWith('#'));
+const lines = typedLines;
 
 /**
  * Reads parts typed one to a line: "rect b h x y", "circle d x y", or "wall x1 y1 x2 y2 t", with "hole" first for
