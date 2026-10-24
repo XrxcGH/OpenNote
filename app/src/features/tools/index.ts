@@ -14,6 +14,7 @@ export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { TOOLS, isToolId } from './ui/tools';
+export { openLifeSys } from './lifesys/open';
 export type { ToolId } from './ui/tools';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { forgetPageItems, setPageItems } from './ui/upcomingStores';

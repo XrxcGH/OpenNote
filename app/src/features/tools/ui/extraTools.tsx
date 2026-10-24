@@ -21,6 +21,9 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The life science tools load on first open, each tool's forms and engines only when its tab opens.
+const LifeSysTool = lazy(() => import('../lifesys/ui/LifeSysTool').then((m) => ({ default: m.LifeSysTool })));
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'lifesys')
+    return (
+      <Suspense fallback={null}>
+        <LifeSysTool />
+      </Suspense>
+    );
   return null;
 }
