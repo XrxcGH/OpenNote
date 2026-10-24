@@ -45,6 +45,7 @@ import type { InkSurface } from './surface';
 import { drawState } from './state';
 import { palmSized } from './touch';
 import { editTextAt, TAP_SLOP_PX } from './objectTaps';
+import { showInkOnlyActions } from './inkOnlyActions';
 
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 const CORNERS: readonly Corner[] = ['nw', 'ne', 'se', 'sw'];
@@ -60,20 +61,6 @@ const GRID_MOST = 300;
 const CROP_MIN = 96;
 /** The parts of the frame a drag moves or resizes by. */
 const DRAG_PARTS = '[data-ink-move], [data-ink-corner], [data-ink-side]';
-/** The actions that act on ink alone, hidden while only text boxes or pictures are selected. */
-const INK_ONLY = [
-  'recolor',
-  'thicker',
-  'thinner',
-  'convert',
-  'straighten',
-  'spacing',
-  'anchor',
-  'detach',
-  'replay',
-  'layer',
-  'graph',
-];
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -449,11 +436,7 @@ class FrameView implements SelectionFrame {
 
   /** The ink's own actions show only while ink is selected. */
   private offerInk(): void {
-    const ink = this.selection().strokes.length > 0;
-    for (const id of INK_ONLY) {
-      const action = this.bar.querySelector<HTMLElement>(`[data-ink-action="${id}"]`);
-      if (action) action.style.display = ink ? '' : 'none';
-    }
+    showInkOnlyActions(this.bar, this.selection().strokes.length > 0);
   }
 
   private place(): void {
