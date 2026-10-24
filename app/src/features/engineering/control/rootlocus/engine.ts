@@ -42,6 +42,8 @@ export interface Routh {
   readonly rhp: number;
   readonly axis: number;
   readonly lhp: number;
+  /** Repeated roots on the imaginary axis: the system is unstable, not marginal. */
+  readonly repeatedAxis: boolean;
   /** The auxiliary polynomials of rows of zeros, lowest power first. */
   readonly auxiliary: Poly[];
   readonly roots: Complex[];
@@ -155,8 +157,14 @@ export function routh(p: Poly): Routh {
   for (let i = 1; i < rows.length; i += 1) if (rows[i].sign * rows[i - 1].sign < 0) signChanges += 1;
   const roots = rootsOf(t);
   const scale = Math.max(1, ...roots.map((r) => cabs(r)));
-  const axisRoots = auxiliary.flatMap((q) => rootsOf(q)).filter((r) => Math.abs(r.re) < 1e-6 * scale);
-  const axis = axisRoots.length;
+  // Later auxiliary polynomials are factors of the first, so only the first one's axis roots are counted.
+  // Repeated roots are split by about √ε by the root finder, hence the looser tolerance.
+  const axisRoots = auxiliary.length > 0 ? rootsOf(auxiliary[0]).filter((r) => Math.abs(r.re) < 1e-5 * scale) : [];
+  const axis = Math.min(axisRoots.length, n - signChanges);
+  const lhp = Math.max(0, n - signChanges - axis);
+  const repeatedAxis = axisRoots.some((r, i) =>
+    axisRoots.some((q, j) => j !== i && Math.abs(q.im - r.im) < 1e-4 * scale && Math.abs(q.re - r.re) < 1e-4 * scale),
+  );
   const steps: Step[] = [
     step('routh.poly', {}, `P(s) = ${polyTex(t)}`),
     ...(flip < 0 ? [step('routh.flip')] : []),
@@ -185,10 +193,11 @@ export function routh(p: Poly): Routh {
       changes: String(signChanges),
       rhp: String(signChanges),
       axis: String(axis),
-      lhp: String(n - signChanges - axis),
+      lhp: String(lhp),
     }),
   );
-  return { rows, signChanges, rhp: signChanges, axis, lhp: n - signChanges - axis, auxiliary, roots, steps };
+  if (repeatedAxis) steps.push(step('routh.repeatedAxis'));
+  return { rows, signChanges, rhp: signChanges, axis, lhp, repeatedAxis, auxiliary, roots, steps };
 }
 
 const deg = (z: Complex) => (Math.atan2(z.im, z.re) * 180) / Math.PI;

@@ -414,6 +414,9 @@ export const kitControl = {
       count:
         'The first column changes sign {changes} times: {rhp} roots in the right half-plane, {axis} on the ' +
         'imaginary axis, and {lhp} in the left half-plane.',
+      repeatedAxis:
+        'The imaginary-axis roots are repeated, so the response grows like t·sin ωt: the system is unstable, not ' +
+        'marginally stable.',
     },
     range: {
       equation: 'The closed loop’s characteristic equation is ({poly}) + K({num}) = 0.',

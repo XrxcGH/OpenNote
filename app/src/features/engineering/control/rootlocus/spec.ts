@@ -48,7 +48,7 @@ const sup = (k: number) =>
     .join('');
 
 function verdict(r: Routh): string {
-  if (r.rhp > 0) return 'unstable';
+  if (r.rhp > 0 || r.repeatedAxis) return 'unstable';
   return r.axis > 0 ? 'marginal' : 'stable';
 }
 

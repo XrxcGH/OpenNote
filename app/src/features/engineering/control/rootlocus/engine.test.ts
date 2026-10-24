@@ -42,6 +42,18 @@ describe('validation cases', () => {
     expect(r.rows[2].cells).toEqual(['4']);
     expect([r.rhp, r.axis, r.lhp]).toEqual([0, 2, 1]);
   });
+
+  it.each([
+    // (s² + 1)²: ±i twice. (s² + 1)(s² + 4): ±i and ±2i once each. (s² + 1)²(s + 1) adds −1.
+    [[1, 0, 2, 0, 1], [0, 4, 0], true],
+    [[1, 0, 5, 0, 4], [0, 4, 0], false],
+    [[1, 1, 2, 2, 1, 1], [0, 4, 1], true],
+  ])('counts imaginary-axis roots once: %j', (hi, counts, repeated) => {
+    const r = routh(poly(...hi));
+    expect([r.rhp, r.axis, r.lhp]).toEqual(counts);
+    expect(r.repeatedAxis).toBe(repeated);
+    expect(r.steps.some((x) => x.key === 'routh.repeatedAxis')).toBe(repeated);
+  });
 });
 
 describe('Routh against a root finder', () => {
