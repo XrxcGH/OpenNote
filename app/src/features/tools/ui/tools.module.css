@@ -12,7 +12,7 @@
 
   .window {
     position: fixed;
-    z-index: 1;
+    z-index: var(--layer-base);
     display: flex;
     flex-direction: column;
     color: var(--color-text-primary);
@@ -289,9 +289,11 @@
     gap: var(--space-2);
   }
 
+  /* Tabs that don't fit on one line wrap to another, so none is cut at the window's edge. */
   .tabs {
     display: flex;
-    gap: var(--space-2);
+    flex-wrap: wrap;
+    column-gap: var(--space-2);
     border-block-end: 1px solid var(--color-border-subtle);
   }
 
@@ -326,6 +328,11 @@
     min-block-size: var(--target-size);
     padding-block: var(--space-1);
     box-sizing: border-box;
+  }
+
+  /* A disclosure's triangle takes the accent, like the window's other controls. */
+  .body summary::marker {
+    color: var(--color-accent-primary);
   }
 
   .groupTitle {

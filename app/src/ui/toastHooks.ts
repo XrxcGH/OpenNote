@@ -106,8 +106,8 @@ export interface ToastLane {
 
 /**
  * Where a toast goes across the window: over the page column, clear of the panes beside it and of what stands at its
- * edges (elements marked data-toast-avoid: the Reading order and Contents panes, tool windows). With a dialog open, or
- * when that column is too narrow, it spans the window.
+ * edges. Those are marked data-toast-avoid: the Reading order and Contents panes, and tool windows. With a dialog open,
+ * or when that column is too narrow, it spans the window.
  */
 export function toastLane(modal: boolean): ToastLane {
   const page = document.querySelector('[data-workspace] main');
