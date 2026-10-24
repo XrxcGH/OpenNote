@@ -23,6 +23,7 @@ export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
     icon: 'BookOpen',
   },
   { id: 'views', title: 'kitDesign.views.title', keywords: 'kitDesign.views.keywords', icon: 'Box' },
+  { id: 'memtrace', title: 'kitDesign.memtrace.title', keywords: 'kitDesign.memtrace.keywords', icon: 'Waypoints' },
 ];
 
 export const DESIGN_TOOL_IDS: readonly string[] = DESIGN_TOOLS.map((tool) => tool.id);

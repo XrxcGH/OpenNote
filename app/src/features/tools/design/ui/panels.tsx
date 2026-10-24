@@ -14,6 +14,7 @@ function specPanel(tool: string, load: () => Promise<ToolSpec>): LazyExoticCompo
 
 const OWN: Record<string, LazyExoticComponent<ComponentType>> = {
   references: lazy(() => import('./ReferencesTool')),
+  memtrace: lazy(() => import('./MemTraceTool')),
   views: lazy(() => import('./ViewsTool')),
 };
 

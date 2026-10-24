@@ -287,4 +287,36 @@
   .cellOn:hover {
     background: color-mix(in srgb, var(--color-text-primary) 55%, transparent);
   }
+
+  .listing {
+    margin: 0;
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-6);
+    max-block-size: 14rem;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .codeLine {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: space-between;
+    padding-inline: var(--space-1);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .codeNow {
+    background: color-mix(in srgb, var(--ink-brick) 18%, transparent);
+    border-inline-start: 3px solid var(--ink-brick);
+  }
+
+  .warnMark {
+    flex: none;
+    color: var(--color-status-danger);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+  }
 }
