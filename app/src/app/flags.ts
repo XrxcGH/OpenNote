@@ -19,7 +19,8 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { EXPR_FLAGS } from '../features/tools/flags';
+import { EARTH_FLAGS, EXPR_FLAGS } from '../features/tools/flags';
+import type { EarthFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -72,6 +73,8 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  /** The earth sciences kit (features/tools/earth/flags.ts). */
+  | EarthFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
@@ -345,6 +348,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...EARTH_FLAGS,
 ];
 
 interface FlagState {

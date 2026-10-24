@@ -70,3 +70,8 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
+
+// The earth sciences kit's flag and tool list, public here so start-up code reads them without the kit.
+export { EARTH_FLAGS } from './earth/flags';
+export type { EarthFlagId } from './earth/flags';
+export { EARTH_TOOLS } from './earth/meta';

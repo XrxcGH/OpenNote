@@ -21,6 +21,9 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The earth sciences kit loads the first time its window opens.
+const EarthKit = lazy(() => import('../earth/ui/EarthKit').then((kit) => ({ default: kit.EarthKit })));
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-earth')
+    return (
+      <Suspense fallback={null}>
+        <EarthKit />
+      </Suspense>
+    );
   return null;
 }
