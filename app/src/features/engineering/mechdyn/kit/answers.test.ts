@@ -138,6 +138,25 @@ const CASES: readonly Case[] = [
     },
     expect: { lift: '1 in', vPerRad: '1.2732 in' },
   },
+  {
+    name: 'a planar two-link arm: end point, det J, and both elbows',
+    tool: 'robotkin',
+    texts: {},
+    expect: { x: '1.1248 m', y: '1.4659 m', detJ: '0.70711', solutions: '2', method: 'Closed form, two links' },
+  },
+  {
+    name: 'a spatial three-joint arm in standard form',
+    tool: 'robotkin',
+    texts: { table: 'R 0 90 0.5 30\nR 1 0 0 45\nR 1 0 0 -60', x: '1 m', y: '0.5 m', z: '1 m' },
+    expect: { x: '1.4489 m', y: '0.83652 m', z: '0.94829 m', method: 'Numerical (damped least squares)' },
+  },
+  {
+    name: 'link lengths typed in feet',
+    tool: 'robotkin',
+    system: 'us',
+    texts: { x: '1.5 ft', y: '0.5 ft' },
+    expect: { x: '1.1248 ft', y: '1.4659 ft', solutions: '2' },
+  },
 ];
 
 describe('the answers the window shows', () => {

@@ -8,5 +8,6 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   compliant: () => import('./compliant/spec').then((m) => m.compliantSpec),
   kinetics: () => Promise.all([import('./kinetics/spec'), loadSymbolic()]).then(([m]) => m.kineticsSpec),
   sdof: () => import('./sdof/spec').then((m) => m.sdofSpec),
+  robotkin: () => import('./robotkin/spec').then((m) => m.robotKinSpec),
   robotdyn: () => import('./robotdyn/spec').then((m) => m.robotDynSpec),
 };

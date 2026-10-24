@@ -19,6 +19,8 @@ export interface Series {
   /** Values for the name's placeholders, such as the mode number. */
   vars?: Record<string, string>;
   points: [number, number][];
+  /** Drawn as separate dots, for a cloud of samples such as a workspace. */
+  dots?: boolean;
 }
 
 export interface Plot {

@@ -118,6 +118,8 @@ export const kitMechDyn = {
     linkThroughPivot: 'At {angle}° the crank pin sits on the other pivot, so the slider’s direction is undefined.',
     robotKinRows: 'Use 1 to 6 rows in the table.',
     robotLimits: 'Each joint’s lower limit must be below its upper limit.',
+    robotKinType: 'Row {row} needs R (a revolute joint) or P (a prismatic joint) before its numbers.',
+    robotKinLimitPair: 'Row {row} needs both joint limits, low and high, or neither.',
     lagrangeCoords: 'Use 1 to 3 generalized coordinates.',
     lagrangeNames:
       'Name each coordinate with a letter, then letters, digits, or underscores, such as th or x1, apart from the parameters.',
@@ -161,6 +163,8 @@ export const kitMechDyn = {
     couplerCurve: 'Coupler curve',
     workspaceTop: 'Workspace, top view (x, y)',
     workspaceSide: 'Workspace, side view (reach, z)',
+    armTop: 'Arm, top view (x, y)',
+    armFront: 'Arm, front view (x, z)',
     coordinate: '{name}',
   },
   axes: {

@@ -132,6 +132,12 @@ export function plotSvg(plot: Plot, words: PlotWords, p: Palette): string {
       parts.push(`<circle cx="${px(x).toFixed(2)}" cy="${py(y).toFixed(2)}" r="4" fill="${color}"/>`);
       return;
     }
+    if (plot.series[i].dots) {
+      for (const [x, y] of points)
+        if (Number.isFinite(x) && Number.isFinite(y))
+          parts.push(`<circle cx="${px(x).toFixed(1)}" cy="${py(y).toFixed(1)}" r="1.5" fill="${color}"/>`);
+      return;
+    }
     let d = '';
     let down = false;
     for (const [x, y] of points) {
@@ -155,7 +161,11 @@ export function plotSvg(plot: Plot, words: PlotWords, p: Palette): string {
     const x = M.left + (i % 2) * 200;
     const y = PLOT_H + 14 + Math.floor(i / 2) * 18;
     const color = p.pens[i % p.pens.length];
-    parts.push(`<line x1="${x}" y1="${y - 4}" x2="${x + 20}" y2="${y - 4}" stroke="${color}" stroke-width="2"/>`);
+    parts.push(
+      plot.series[i].dots
+        ? `<circle cx="${x + 10}" cy="${y - 4}" r="3" fill="${color}"/>`
+        : `<line x1="${x}" y1="${y - 4}" x2="${x + 20}" y2="${y - 4}" stroke="${color}" stroke-width="2"/>`,
+    );
     parts.push(text(x + 26, y, name, p.text, 'start'));
   });
   return (
