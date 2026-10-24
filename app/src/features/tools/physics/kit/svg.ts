@@ -240,7 +240,7 @@ function labels(plot: Plot, f: Frame, p: Palette): string[] {
   return out;
 }
 
-function legend(plot: Plot, f: Frame, p: Palette): string[] {
+function legend(plot: Plot, f: Frame, p: Palette, word: (key: string) => string): string[] {
   const out: string[] = [];
   (plot.legend ?? []).forEach((entry, i) => {
     const y = f.top + 14 + i * 16;
@@ -251,13 +251,13 @@ function legend(plot: Plot, f: Frame, p: Palette): string[] {
       `<line x1="${n(x)}" y1="${n(y - 4)}" x2="${n(x + 22)}" y2="${n(y - 4)}" style="stroke:${color};stroke-width:2${dash}"/>`,
     );
     const style = `font-family:${p.font};font-size:11px;fill:${p.ink}`;
-    out.push(`<text x="${n(x + 28)}" y="${n(y)}" style="${style}">${escape(entry.text)}</text>`);
+    out.push(`<text x="${n(x + 28)}" y="${n(y)}" style="${style}">${escape(word(entry.key))}</text>`);
   });
   return out;
 }
 
-/** The plot as SVG text, with `alt` as its accessible name. */
-export function plotToSvg(plot: Plot, palette: Palette, alt: string): string {
+/** The plot as SVG text, with `alt` as its accessible name; `word` says the legend's message keys. */
+export function plotToSvg(plot: Plot, palette: Palette, alt: string, word: (key: string) => string = String): string {
   const box = dataBox(plot);
   const f = frameFor(plot, box);
   const clip = `physics-clip-${Math.round(f.width)}-${Math.round(f.height)}`;
@@ -267,7 +267,7 @@ export function plotToSvg(plot: Plot, palette: Palette, alt: string): string {
     ...marks(plot, f, palette),
     '</g>',
     ...labels(plot, f, palette),
-    ...legend(plot, f, palette),
+    ...legend(plot, f, palette, word),
   ];
   const size = `width="${n(f.width)}" height="${n(f.height)}" viewBox="0 0 ${n(f.width)} ${n(f.height)}"`;
   const rect = `<rect x="${n(f.left)}" y="${n(f.top)}" width="${n(f.right - f.left)}" height="${n(f.bottom - f.top)}"/>`;

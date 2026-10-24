@@ -163,7 +163,7 @@ describe('physics kit pictures', () => {
         circles: [{ x: 1, y: 1, r: 3, px: true, fill: true }],
         labels: [{ x: 0, y: 0, text: 'A&B' }],
         arrows: [{ x1: 0, y1: 0, x2: 1, y2: 0 }],
-        legend: [{ tone: 'accent', text: 'one' }],
+        legend: [{ tone: 'accent', key: 'kitPhysics.title' }],
       },
       TOKEN_PALETTE,
       'A "plot"',

@@ -15,7 +15,9 @@ export interface KitToolDef {
 
 type Loader = () => Promise<{ default: ComponentType<KitToolProps> }>;
 
-const LOADERS: Record<PhysicsToolId, Loader> = {};
+const LOADERS: Record<PhysicsToolId, Loader> = {
+  waves: () => import('./waves/Tool'),
+};
 
 export const PHYSICS_KIT: { id: 'physics'; tools: readonly KitToolDef[] } = {
   id: 'physics',

@@ -25,6 +25,8 @@ export interface ResultRow {
   unit?: string;
   /** The unit to show in US customary units, when the dimension's own US unit does not suit. */
   usUnit?: string;
+  /** A result that is a word, such as 'Fully constructive': the message to show instead of `value`. */
+  word?: MessageKey;
   /** A result that the answer line repeats. */
   primary?: boolean;
   digits?: number;
@@ -84,7 +86,7 @@ export interface Plot {
   labels?: readonly PlotLabel[];
   arrows?: readonly PlotArrow[];
   /** A legend, one entry per tone. */
-  legend?: readonly { tone: Tone; text: string; dash?: boolean }[];
+  legend?: readonly { tone: Tone; key: MessageKey; dash?: boolean }[];
 }
 
 export type Outcome =

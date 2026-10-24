@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import 'katex/dist/katex.min.css';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
-import { say, sayKey, showRow, rowText } from '../kit/say';
+import { say, sayKey, sayText, showRow, rowText } from '../kit/say';
 import type { ShownRow } from '../kit/say';
 import { TOKEN_PALETTE, plotToSvg } from '../kit/svg';
 import type { KitInsert, Outcome, UnitSystem } from '../kit/types';
@@ -97,7 +97,7 @@ function InsertButtons(props: {
       {plot ? (
         <Button
           variant="quiet"
-          onClick={() => done(insert.picture(plotToSvg(plot, currentPalette(), say(plot.alt)), say(plot.alt)))}
+          onClick={() => done(insert.picture(plotToSvg(plot, currentPalette(), say(plot.alt), sayText), say(plot.alt)))}
         >
           {t('kitPhysics.ui.insertPicture')}
         </Button>
@@ -143,7 +143,7 @@ export function OutcomeView({ outcome, system, insert }: { outcome: Outcome; sys
           className={chem.figure}
           role="img"
           aria-label={alt}
-          dangerouslySetInnerHTML={{ __html: plotToSvg(outcome.plot, TOKEN_PALETTE, alt) }}
+          dangerouslySetInnerHTML={{ __html: plotToSvg(outcome.plot, TOKEN_PALETTE, alt, sayText) }}
         />
       ) : null}
       <p className={tools.note}>{t('kitPhysics.ui.steps')}</p>

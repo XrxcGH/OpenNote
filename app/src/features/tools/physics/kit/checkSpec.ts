@@ -30,7 +30,8 @@ export function outcomeProblems(outcome: Outcome, where: string): string[] {
   const steps: KitStep[] = [
     ...outcome.steps,
     ...(outcome.notes ?? []),
-    ...outcome.rows.map((row) => ({ key: row.key })),
+    ...outcome.rows.flatMap((row) => [{ key: row.key }, ...(row.word ? [{ key: row.word }] : [])]),
+    ...(outcome.plot?.legend ?? []).map((entry) => ({ key: entry.key })),
     ...(outcome.plot ? [outcome.plot.alt] : []),
     ...(outcome.source ? [{ key: outcome.source }] : []),
   ];

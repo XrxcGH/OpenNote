@@ -13,6 +13,9 @@ export function sayKey(key: MessageKey, values?: Record<string, string>): string
   return translate(key, values);
 }
 
+/** A message key held as plain text, such as a plot legend's. */
+export const sayText = (key: string): string => translate(key);
+
 export function say(step: KitStep): string {
   const labels = Object.fromEntries(Object.entries(step.labels ?? {}).map(([name, key]) => [name, translate(key)]));
   return translate(step.key, { ...step.vars, ...labels });
@@ -29,6 +32,7 @@ export interface ShownRow {
 export function showRow(row: ResultRow, system: UnitSystem): ShownRow {
   const name = translate(row.key);
   const symbol = row.symbol ?? '';
+  if (row.word) return { name, symbol, value: translate(row.word), unit: '' };
   if (typeof row.value === 'string') return { name, symbol, value: row.value, unit: row.unit ?? '' };
   if (!row.dim) return { name, symbol, value: fmt(row.value, row.digits), unit: row.unit ?? '' };
   const unit = defaultUnit(row.dim, system, row.unit, row.usUnit);
