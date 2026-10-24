@@ -68,7 +68,7 @@ export const pictureFile = (markup: string): ArrayBuffer => new TextEncoder().en
 
 function InsertBar({ result }: { result: KitOk }) {
   const done = (inserted: boolean) => announce(t(inserted ? 'kitMusic.inserted' : 'kitMusic.noPage'));
-  const rows = result.rows.map((row) => [say('r', row.key, row.vars), row.value]);
+  const rows = result.rows.map((row) => [say('r', row.key, row.vars), row.word ? say('r', row.word) : row.value]);
   const steps = result.steps.map((step, i) => `${i + 1}. ${stepText(step)}`).join('\n');
   return (
     <div className={styles.actions} role="group" aria-label={t('kitMusic.insert')}>
@@ -117,7 +117,7 @@ function Answer({ result }: { result: KitOk }) {
         {result.rows.map((row, i) => (
           <div key={`${row.key}${i}`} style={{ display: 'contents' }}>
             <dt>{say('r', row.key, row.vars)}</dt>
-            <dd>{row.value}</dd>
+            <dd>{row.word ? say('r', row.word) : row.value}</dd>
           </div>
         ))}
       </dl>

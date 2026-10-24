@@ -1,7 +1,7 @@
 // The camera, timing, and lighting tool: exposure, depth of field, field of view, shutter angle, timecode, and footage,
 // animation timing, light levels and color temperature, and media storage.
 import type { ToolSpec } from '../spec';
-import { degrees, fail, fixed, fmt, ok, positive, readNumber } from '../shared';
+import { count, degrees, fail, fixed, fmt, ok, positive, readNumber } from '../shared';
 import type { KitOk, KitRow, KitStep, Values } from '../shared';
 import {
   RATES,
@@ -182,8 +182,8 @@ function timecode(v: Values): KitOk {
       { key: 'timecodeOut', value: text },
       { key: 'runningTime', value: `${fmt(typedFrames / rate.fps, 6)} s` },
     );
-    steps.push({ key: drop ? 'tcDropToTc' : 'tcToTc', vars: { frames: fmt(typedFrames), tc: text } });
-    answer = `${fmt(typedFrames)} frames at ${fmt(rate.fps, 5)} fps is ${text}`;
+    steps.push({ key: drop ? 'tcDropToTc' : 'tcToTc', vars: { frames: count(typedFrames), tc: text } });
+    answer = `${count(typedFrames)} frames at ${fmt(rate.fps, 5)} fps is ${text}`;
   } else {
     const tc = parseTimecode(v.tc ?? '');
     if (!tc) return fail('camTimecodeFormat');
@@ -193,20 +193,20 @@ function timecode(v: Values): KitOk {
     }
     const frames = timecodeToFrames(tc, rate);
     rows.push(
-      { key: 'frameCount', value: fmt(frames) },
+      { key: 'frameCount', value: count(frames) },
       { key: 'runningTime', value: `${fmt(frames / rate.fps, 6)} s` },
     );
     const minutes = tc.hours * 60 + tc.minutes;
     const total = (minutes * 60 + tc.seconds) * rate.nominal + tc.frames;
-    steps.push({ key: 'tcCount', vars: { n: fmt(rate.nominal), total: fmt(total) } });
+    steps.push({ key: 'tcCount', vars: { n: fmt(rate.nominal), total: count(total) } });
     if (drop) {
       const dropped = rate.drop * (minutes - Math.floor(minutes / 10));
       steps.push({
         key: 'tcDrop',
-        vars: { drop: fmt(rate.drop), minutes: fmt(minutes), dropped: fmt(dropped), frames: fmt(frames) },
+        vars: { drop: fmt(rate.drop), minutes: count(minutes), dropped: count(dropped), frames: count(frames) },
       });
     }
-    answer = `${timecodeText(tc, drop)} is frame ${fmt(frames)} (${fmt(frames / rate.fps, 6)} s)`;
+    answer = `${timecodeText(tc, drop)} is frame ${count(frames)} (${fmt(frames / rate.fps, 6)} s)`;
   }
   return ok({ rows, steps, answer, notes: drop ? ['camNoteDrop'] : [] });
 }
@@ -224,22 +224,22 @@ function footage(v: Values): KitOk {
   }
   const ff = feetAndFrames(frames, perFoot);
   const rows: KitRow[] = [
-    { key: 'frameCount', value: fmt(frames) },
+    { key: 'frameCount', value: count(frames) },
     { key: 'footageFeet', value: `${ff.feet} ft + ${ff.frames} frames` },
     { key: 'footageLength', value: `${fmt((frames / perFoot) * 0.3048, 4)} m` },
     { key: 'runningTime', value: `${fmt(frames / fps, 6)} s` },
   ];
   const steps: KitStep[] = [
-    { key: 'footageCount', vars: { frames: fmt(frames), fps: fmt(fps) } },
+    { key: 'footageCount', vars: { frames: count(frames), fps: fmt(fps) } },
     {
       key: 'footageFeet',
-      vars: { frames: fmt(frames), per: fmt(perFoot), feet: String(ff.feet), rest: String(ff.frames) },
+      vars: { frames: count(frames), per: fmt(perFoot), feet: String(ff.feet), rest: String(ff.frames) },
     },
   ];
   return ok({
     rows,
     steps,
-    answer: `${fmt(frames)} frames of ${perFoot === 16 ? '35' : '16'} mm film is ${ff.feet} ft + ${ff.frames} frames`,
+    answer: `${count(frames)} frames of ${perFoot === 16 ? '35' : '16'} mm film is ${ff.feet} ft + ${ff.frames} frames`,
     notes: ['camNoteFootage'],
   });
 }
@@ -251,27 +251,27 @@ function animate(v: Values): KitOk {
   const fps = positive(v, 'fps', 'camFps');
   const hold = Number(v.hold ?? '2');
   const a = animation(secs, fps, hold);
-  const count = Math.round(positive(v, 'steps', 'camSteps'));
-  if (count < 2 || count > 48) fail('camStepsRange');
+  const stepCount = Math.round(positive(v, 'steps', 'camSteps'));
+  if (stepCount < 2 || stepCount > 48) fail('camStepsRange');
   const easing = (v.easing ?? 'inout') as Easing;
-  const chart = spacing(count, easing).map((p, i) => `${i}: ${fixed(p * 100, 1)}%`);
+  const chart = spacing(stepCount, easing).map((p, i) => `${i}: ${fixed(p * 100, 1)}%`);
   const sheet = a.sheet.slice(0, 48).map((r) => `${r.drawing}\t${r.from}-${r.to}`);
   const rows: KitRow[] = [
-    { key: 'frameCount', value: fmt(a.frames) },
-    { key: 'drawingCount', value: fmt(a.drawings) },
+    { key: 'frameCount', value: count(a.frames) },
+    { key: 'drawingCount', value: count(a.drawings) },
     { key: 'spacingChart', value: chart.join('  ') },
   ];
   const steps: KitStep[] = [
-    { key: 'animFrames', vars: { s: fmt(secs), fps: fmt(fps), frames: fmt(a.frames) } },
-    { key: 'animDrawings', vars: { frames: fmt(a.frames), hold: fmt(hold), drawings: fmt(a.drawings) } },
-    { key: 'animSpacing', vars: { count: fmt(count) } },
+    { key: 'animFrames', vars: { s: fmt(secs), fps: fmt(fps), frames: count(a.frames) } },
+    { key: 'animDrawings', vars: { frames: count(a.frames), hold: fmt(hold), drawings: count(a.drawings) } },
+    { key: 'animSpacing', vars: { count: fmt(stepCount) } },
   ];
   return ok({
     rows,
     steps,
     answer:
       `${fmt(secs)} s at ${fmt(fps)} fps, ${HOLDS[hold] ?? 'held'}: ` +
-      `${fmt(a.drawings)} drawings over ${fmt(a.frames)} frames`,
+      `${count(a.drawings)} drawings over ${count(a.frames)} frames`,
     code: `Drawing\tFrames\n${sheet.join('\n')}${a.sheet.length > 48 ? '\n…' : ''}`,
     notes: [],
   });

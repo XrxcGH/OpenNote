@@ -11,4 +11,5 @@ export interface LoadedTool {
 
 export const LOADERS: Record<MusicToolId, () => Promise<LoadedTool>> = {
   camera: () => import('./camera/tool'),
+  studio: () => import('./studio/tool'),
 };

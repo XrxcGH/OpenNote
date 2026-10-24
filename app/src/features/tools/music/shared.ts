@@ -20,6 +20,8 @@ export interface KitStep {
 export interface KitRow {
   key: RowKey;
   value: string;
+  /** A word from the row labels shown instead of `value`, such as "Pass". */
+  word?: RowKey;
   vars?: Record<string, string>;
 }
 
@@ -67,6 +69,9 @@ export function fmt(value: number, digits = 5): string {
   if (value === 0 || Math.abs(value) < 1e-15) return '0';
   return formatNumber(value, { digits }).replace(/^-/, '−');
 }
+
+/** A whole number with thousands separators, such as 107,892. */
+export const count = (value: number): string => Math.round(value).toLocaleString('en-US');
 
 /** A number with a fixed count of decimals and a true minus sign. */
 export function fixed(value: number, decimals: number): string {

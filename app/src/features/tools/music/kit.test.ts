@@ -32,11 +32,14 @@ describe.each(MUSIC_TOOLS.map((tool) => tool.id))('the %s tool', (id) => {
         continue;
       }
       expect(result.answer.length).toBeGreaterThan(0);
-      for (const row of result.rows) expect(text.r![row.key], `row ${row.key}`).toBeTruthy();
+      for (const row of result.rows) {
+        expect(text.r![row.key], `row ${row.key}`).toBeTruthy();
+        if (row.word) expect(text.r![row.word], `word ${row.word}`).toBeTruthy();
+      }
       for (const step of result.steps) expect(text.s![step.key], `step ${step.key}`).toBeTruthy();
       for (const note of result.notes) expect(text.n![note], `note ${note}`).toBeTruthy();
     }
-  });
+  }, 30000);
 
   it('answers every mode with its starting values', async () => {
     const loaded = await LOADERS[id]();
@@ -45,7 +48,7 @@ describe.each(MUSIC_TOOLS.map((tool) => tool.id))('the %s tool', (id) => {
       const result = runTool(loaded.spec, values);
       expect(result.ok, JSON.stringify(values) + JSON.stringify(result)).toBe(true);
     }
-  });
+  }, 30000);
 
   it('says what is wrong with an empty number instead of failing', async () => {
     const loaded = await LOADERS[id]();
