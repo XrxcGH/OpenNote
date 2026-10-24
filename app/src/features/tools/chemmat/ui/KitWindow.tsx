@@ -63,7 +63,7 @@ export function KitWindow() {
   return (
     <div className={tools.tool}>
       <div className={own.bar}>
-        <div className={tools.tabs} role="tablist" aria-label={tr('kitChemMat.title')}>
+        <div className={`${tools.tabs} ${own.tabList}`} role="tablist" aria-label={tr('kitChemMat.title')}>
           {CHEMMAT_TOOLS.map((x, i) => (
             <button
               key={x.id}
@@ -76,7 +76,7 @@ export function KitWindow() {
               aria-selected={tab === x.id}
               aria-controls="chemmat-panel"
               tabIndex={tab === x.id ? 0 : -1}
-              className={tools.tab}
+              className={`${tools.tab} ${own.tabButton}`}
               onClick={() => choose(x.id)}
               onKeyDown={(e) => onKey(e, i)}
             >
