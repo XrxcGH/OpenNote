@@ -22,6 +22,8 @@ export interface NumPlot {
   readonly series: readonly Series[];
   readonly logx?: boolean;
   readonly logy?: boolean;
+  /** Draw with the same scale on both axes, as a curve in the plane needs. */
+  readonly equal?: boolean;
 }
 
 /** A grid of values for a field such as a temperature, drawn as shaded cells. Row 0 is the top. */

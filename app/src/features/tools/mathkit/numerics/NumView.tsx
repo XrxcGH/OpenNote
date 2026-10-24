@@ -6,13 +6,18 @@ import styles from '../ui/mathkit.module.css';
 import { InsertBar, LinePlot, Result, Steps, say } from '../ui/parts';
 import type { NumField, NumOut, NumTable } from './common';
 
-const column = (name: string): string => (name.startsWith('~') ? name.slice(1) : say(`kitMath.numerics.col.${name}`));
+const column = (name: string, ns = 'numerics'): string =>
+  name.startsWith('~') ? name.slice(1) : say(`kitMath.${ns}.col.${name}`);
+
+/** A table cell: plain text, or a word from the tool's strings when it starts with "@". */
+const cell = (value: string, ns: string): string =>
+  value.startsWith('@') ? say(`kitMath.${ns}.type.${value.slice(1)}`) : value;
 
 export const lineText = (item: NumOut['lines'][number], ns = 'numerics'): string =>
   say(`kitMath.${ns}.line.${item.key}`, item.vars);
 
-function TableView({ table }: { table: NumTable }) {
-  const title = say(`kitMath.numerics.table.${table.title}`);
+function TableView({ table, ns }: { table: NumTable; ns: string }) {
+  const title = say(`kitMath.${ns}.table.${table.title}`);
   return (
     <div className={styles.scroll}>
       <table className={styles.table}>
@@ -21,7 +26,7 @@ function TableView({ table }: { table: NumTable }) {
           <tr>
             {table.columns.map((name, index) => (
               <th key={index} scope="col">
-                {column(name)}
+                {column(name, ns)}
               </th>
             ))}
           </tr>
@@ -30,7 +35,7 @@ function TableView({ table }: { table: NumTable }) {
           {table.rows.map((row, r) => (
             <tr key={r}>
               {row.map((value, c) => (
-                <td key={c}>{value}</td>
+                <td key={c}>{cell(value, ns)}</td>
               ))}
             </tr>
           ))}
@@ -41,14 +46,14 @@ function TableView({ table }: { table: NumTable }) {
 }
 
 /** A grid of values as shaded cells, cool to warm, with its range written out for readers who cannot see color. */
-export function FieldView({ field }: { field: NumField }) {
+export function FieldView({ field, ns = 'numerics' }: { field: NumField; ns?: string }) {
   const rows = field.values.length;
   const cols = field.values[0].length;
   const flat = field.values.flat();
   const lo = Math.min(...flat);
   const hi = Math.max(...flat);
   const size = Math.min(14, 440 / Math.max(rows, cols));
-  const label = `${say(`kitMath.numerics.plot.${field.label}`)} ${t('kitMath.numerics.range', { lo: fmt(lo, 5), hi: fmt(hi, 5) })}`;
+  const label = `${say(`kitMath.${ns}.plot.${field.label}`)} ${t('kitMath.numerics.range', { lo: fmt(lo, 5), hi: fmt(hi, 5) })}`;
   return (
     <figure className={styles.section}>
       <svg
@@ -85,19 +90,20 @@ export function NumView({ out, answer, ns = 'numerics' }: { out: NumOut; answer:
     <>
       <Result>{out.lines.map((item) => lineText(item, ns)).join('\n')}</Result>
       {out.tables.map((one, index) => (
-        <TableView key={index} table={one} />
+        <TableView key={index} table={one} ns={ns} />
       ))}
       {out.plots.map((plot, index) => (
         <LinePlot
           key={index}
-          label={say(`kitMath.numerics.plot.${plot.label}`)}
+          label={say(`kitMath.${ns}.plot.${plot.label}`)}
           series={plot.series}
           logx={plot.logx ?? false}
           logy={plot.logy ?? false}
+          equal={plot.equal ?? false}
         />
       ))}
       {out.fields.map((field, index) => (
-        <FieldView key={index} field={field} />
+        <FieldView key={index} field={field} ns={ns} />
       ))}
       <Steps steps={out.steps} />
       <InsertBar
@@ -105,7 +111,12 @@ export function NumView({ out, answer, ns = 'numerics' }: { out: NumOut; answer:
         {...(out.latex ? { latex: out.latex } : {})}
         steps={out.steps}
         {...(first
-          ? { table: { header: first.columns.map(column), rows: first.rows.map((row) => [...row]) } }
+          ? {
+              table: {
+                header: first.columns.map((n) => column(n, ns)),
+                rows: first.rows.map((row) => row.map((v) => cell(v, ns))),
+              },
+            }
           : out.fields[0]
             ? {
                 table: {

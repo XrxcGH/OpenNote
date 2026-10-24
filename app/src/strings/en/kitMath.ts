@@ -111,6 +111,17 @@ export const kitMath = {
     laDependentColumns: 'The columns of A depend on each other, so there is more than one least-squares solution.',
     laNotBasis: '{detail} is not a basis: its columns are not independent.',
     laNoConverge: 'The eigenvalues could not be found.',
+    vcComponents: '{detail} components are needed.',
+    vcNoVariables: 'The function has no variable. Use x, y, or z.',
+    vcPointLength: 'Give one number for each of the variables: {detail}.',
+    vcZeroDirection: 'The direction cannot be the zero vector.',
+    vcJacobianSize: 'Give two or three variables, and one component for each.',
+    vcWindow: 'Give {detail} numbers, each start less than its end.',
+    vcLagrangeVariables: 'Use at least two of x, y, z between the function, and the constraint.',
+    vcInterval: 'The interval for {detail} needs a start that is less than its end.',
+    vcRegion: 'That region is empty or backwards. Check that each start is less than its end.',
+    vcRanges: 'Give the ranges for {detail} as pairs, each start less than its end.',
+    vcNotConservative: 'The curl of F is not zero, so F is not conservative and has no potential.',
   },
   series: {
     title: 'Series and convergence',
@@ -705,6 +716,7 @@ export const kitMath = {
         'If T takes the input space to the output space, its matrix in the bases B and C is C ' +
         'inverse times T times B.',
     },
+    plot: { fit: 'The points and the fitted polynomial' },
     line: {
       laNone: 'The system has no solution, because a row of the reduced form says 0 = {value}.',
       laUnique: 'The system has exactly one solution: x = {x}.',
@@ -735,6 +747,170 @@ export const kitMath = {
       laTransitionLine: 'The change of basis matrix has rows: {p}.',
       laMapLine: 'The matrix of the map in these bases has rows: {m}.',
     },
+  },
+  vectorcalc: {
+    title: 'Vector calculus and optimization',
+    keywords:
+      'vector calculus multivariable gradient divergence curl line integral surface integral ' +
+      'flux green stokes divergence theorem jacobian lagrange multipliers critical points ' +
+      'hessian saddle conservative potential directional derivative tangent plane',
+    operation: 'What to do',
+    op: {
+      gradient: 'Gradient, directional derivative, tangent plane',
+      critical: 'Critical points and the second-derivative test',
+      lagrange: 'Constrained extrema by Lagrange multipliers',
+      divcurl: 'Divergence and curl',
+      jacobian: 'Jacobian of a change of variables',
+      line: 'Line integral of a vector field',
+      linescalar: 'Line integral of a scalar function',
+      potential: 'Conservative field and potential',
+      green: "Green's theorem, both sides",
+      surface: 'Surface integral, flux, and area',
+      divergence: 'Divergence theorem, both sides',
+      stokes: "Stokes' theorem, both sides",
+    },
+    system: {
+      cartesian: 'Cartesian coordinates',
+      cylindrical: 'Cylindrical coordinates',
+      spherical: 'Spherical coordinates',
+    },
+    systemOption: {
+      cartesian: 'Cartesian (x, y, z)',
+      cylindrical: 'Cylindrical (r, theta, z)',
+      spherical: 'Spherical (r, theta, phi)',
+    },
+    regionOption: { rect: 'Rectangle', disk: 'Disk', typeI: 'Between two curves y = g(x)' },
+    kindOption: { flux: 'Flux of a vector field', scalar: 'Integral of a scalar function', area: 'Surface area' },
+    solidOption: { sphere: 'Sphere about the origin', box: 'Box' },
+    field: {
+      function: 'Function f of x, y, z',
+      vector: 'Vector field F, written as P, Q, R',
+      point: 'Point',
+      direction: 'Direction (optional)',
+      window: 'Search window: x from, x to, y from, y to',
+      constraint: 'Constraint g(x, y, z)',
+      constraintValue: 'Value c in g = c',
+      system: 'Coordinates',
+      map: 'Map, one component per variable',
+      vars: 'Variables, in order',
+      curve: 'Curve r(t) as x(t), y(t) or x(t), y(t), z(t)',
+      tRange: 't from, t to',
+      start: 'Start point A',
+      end: 'End point B',
+      region: 'Region',
+      rect: 'Rectangle: x from, x to, y from, y to',
+      disk: 'Disk: center x, center y, radius',
+      lower: 'Lower curve g1(x)',
+      upper: 'Upper curve g2(x)',
+      xRange: 'x from, x to',
+      surface: 'Surface r(u, v) as x, y, z',
+      uv: 'u from, u to, v from, v to',
+      kind: 'What to find',
+      solid: 'Solid',
+      radius: 'Radius',
+      box: 'Box: x from, x to, y from, y to, z from, z to',
+    },
+    assume: {
+      gradient:
+        'Use x, y, and z. With two variables the tangent plane is the plane to the graph z = f(x, ' +
+        'y). With three it is the plane tangent to the level surface through the point.',
+      critical:
+        "Newton's method runs from a grid of starting points in the window, so a critical point " +
+        'outside the window is not found. The test uses D = f_xx f_yy - f_xy squared.',
+      lagrange:
+        'Solves the gradient of f equal to lambda times the gradient of g together with g = c. ' +
+        'The largest and smallest values among the candidates are the extrema when the constraint ' +
+        'set is closed and bounded.',
+      divcurl:
+        'Names for cylindrical coordinates are r, theta, z; for spherical, r, theta (angle from ' +
+        'the z axis), phi (angle around it). Components are along the unit vectors of the system.',
+      jacobian:
+        'The determinant of the matrix of partial derivatives of the new coordinates, which ' +
+        'scales area or volume in the integral.',
+      line:
+        'Integrates F dot dr along the curve from t = a to t = b. If the curl of F vanishes along ' +
+        'the curve, the tool also gives the straight-line path between the endpoints.',
+      linescalar: "Integrates f times the speed of the curve, so ds = |r'(t)| dt.",
+      potential:
+        'For a field with zero curl on a region without holes, the integral depends only on the ' +
+        'end points. The potential is found by integrating along straight lines from the origin ' +
+        'and checked against F.',
+      green:
+        'Counterclockwise boundary. Both sides are worked out numerically, so a difference near ' +
+        'zero confirms the theorem for your field and region.',
+      surface:
+        'The normal is r_u cross r_v, so the flux has the sign given by that orientation. The ' +
+        'parameters must stay inside their ranges.',
+      divergence: 'Outward flux through the closed surface against the integral of the divergence over the solid.',
+      stokes:
+        'The surface is traced by r(u, v) over a rectangle in (u, v). The boundary runs ' +
+        'counterclockwise in (u, v), which matches the normal r_u cross r_v.',
+    },
+    line: {
+      vcGradient: 'The gradient is {grad}.',
+      vcGradientAt: 'At {point}, f = {f}, the gradient is {grad}, and its length is {norm}.',
+      vcDirectional: 'The derivative of f in the direction {dir} is {value}.',
+      vcSteepest: 'f increases fastest in the direction {dir}, at the rate {rate}.',
+      vcPlane: 'The tangent plane is {plane}.',
+      vcDiv: 'The divergence is {div}.',
+      vcCurl: 'The curl is {curl}.',
+      vcCurl2: 'The curl, along z, is {curl}.',
+      vcSolenoidal: 'The divergence is zero everywhere.',
+      vcNotSolenoidal: 'The divergence is not zero everywhere.',
+      vcIrrotational: 'The curl is zero everywhere.',
+      vcNotIrrotational: 'The curl is not zero everywhere.',
+      vcDivAt: 'At {point}, the divergence is {div}.',
+      vcCurlAt: 'At that point the curl is {curl}.',
+      vcJacobian: 'The Jacobian determinant is {det}.',
+      vcJacobianAt: 'At {point}, the Jacobian determinant is {det}.',
+      vcCriticalCount: 'Found {n} critical point(s) in the window.',
+      vcCriticalNone: 'No critical points in the window.',
+      vcLagrangeBest: 'The largest value among the {n} candidate(s) is {max} and the smallest is {min}.',
+      vcLagrangeNone: 'No point on the constraint was found in the window.',
+      vcLineValue: 'The line integral is {value}.',
+      vcLineScalarValue: 'The integral of f along the curve is {value}.',
+      vcClosedCurve: 'The curve is closed.',
+      vcNotConservative: 'The curl of F is not zero along the curve, so the answer depends on the path.',
+      vcConservative:
+        'The curl of F is zero along the curve, so the answer depends only on the endpoints. The ' +
+        'straight path between them gives {alt}.',
+      vcPotentialDifference: 'The potential changes by {value} from A to B.',
+      vcPotentialAtB:
+        'The potential at B, measured from zero at the origin, is {phi}. The gradient of the ' +
+        'potential matches F to within {err}.',
+      vcGreen: 'The boundary integral is {boundary} and the double integral is {area}. They differ by {diff}.',
+      vcFlux: 'The flux is {value} (that is {pi} times pi).',
+      vcSurfaceScalar: 'The surface integral is {value} (that is {pi} times pi).',
+      vcArea: 'The area is {value} (that is {pi} times pi).',
+      vcDivergenceTheorem:
+        'The flux through the surface is {flux} and the integral of the divergence is {volume}. ' +
+        'They differ by {diff}. The flux is {pi} times pi.',
+      vcStokes:
+        'The circulation around the boundary is {circulation} and the flux of the curl is {flux}. ' +
+        'They differ by {diff}.',
+    },
+    table: {
+      critical: 'Critical points',
+      lagrange: 'Candidates on the constraint',
+    },
+    col: {
+      x: 'x',
+      y: 'y',
+      f: 'f',
+      fxx: 'f_xx',
+      D: 'D',
+      type: 'Type',
+      lambda: 'lambda',
+    },
+    type: {
+      min: 'local minimum',
+      max: 'local maximum',
+      saddle: 'saddle point',
+      unknown: 'test fails',
+      only: 'only candidate',
+      other: 'other',
+    },
+    plot: { curve: 'The curve in the xy plane' },
   },
   step: {
     series: 'The series is the sum of the terms a(n) = {term}, starting at n = {start}.',
@@ -899,5 +1075,40 @@ export const kitMath = {
     laDiagonalize: 'With the eigenvectors as the columns of P and the eigenvalues on the diagonal of D:',
     laDiagCheck: 'Multiplying back:',
     laIrrational: 'The remaining factor has no rational root. Its roots in decimals are {values}:',
+    vcPartials: 'The partial derivatives:',
+    vcGradientStep: 'The gradient collects them:',
+    vcAtPoint: 'At the point:',
+    vcDirectionalStep: 'The directional derivative is the gradient dotted with the unit direction:',
+    vcPlaneStep: 'The tangent plane:',
+    vcFieldStep: 'The field:',
+    vcDivStep: 'The divergence in {system}:',
+    vcCurlStep: 'The curl in {system}:',
+    vcJacobianMatrix: 'The matrix of partial derivatives:',
+    vcJacobianDet: 'Its determinant:',
+    vcCriticalSystem: 'Critical points are where both partial derivatives vanish:',
+    vcHessian: 'The second partials:',
+    vcSecondTest:
+      'The second-derivative test uses the discriminant, with f_xx telling min from max when D ' + 'is positive:',
+    vcLagrangeSystem: 'At an extremum on the constraint the gradients line up:',
+    vcLagrangeEquations: 'The equations to solve for the variables and lambda:',
+    vcLagrangeCompare: 'Compare the value of f at each candidate:',
+    vcCurveStep: 'The curve and its velocity:',
+    vcLineVector: 'The line integral of a vector field:',
+    vcLineScalar: 'The line integral of a scalar function:',
+    vcConservativeStep: 'A field with zero curl has a potential:',
+    vcCurlZero: 'The curl vanishes:',
+    vcPotentialStep: 'The potential from the origin:',
+    vcPotentialCheck: 'Check that the gradient of the potential is F:',
+    vcGreenStatement: "Green's theorem:",
+    vcGreenIntegrand: 'The integrand of the double integral:',
+    vcGreenSides: 'Working out both sides:',
+    vcSurfaceStep: 'The tangent vectors of the surface:',
+    vcNormalStep: 'The normal vector:',
+    vcFluxStep: 'The flux:',
+    vcScalarSurfaceStep: 'The surface integral of a function:',
+    vcAreaStep: 'The area:',
+    vcDivergenceStatement: 'The divergence theorem:',
+    vcDivergenceIntegrand: 'The divergence of the field:',
+    vcStokesStatement: "Stokes' theorem:",
   },
 } as const;

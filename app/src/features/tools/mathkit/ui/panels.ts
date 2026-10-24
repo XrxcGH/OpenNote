@@ -9,4 +9,5 @@ export const PANELS: Readonly<Record<string, LazyExoticComponent<ComponentType>>
   numerics: lazy(() => import('../numerics/NumericsTool')),
   console: lazy(() => import('../matrixconsole/MatrixConsoleTool')),
   linalg: lazy(() => import('../linalg/LinalgTool')),
+  vectorcalc: lazy(() => import('../vectorcalc/VectorTool')),
 };
