@@ -41,14 +41,14 @@ if (typeof document !== 'undefined') {
     if (document.visibilityState === 'hidden') void shownQueue.get()?.flushAll('hidden');
   });
 }
-
-// Always on screen, in every tab and in tablet mode: the title bar, and in the compact layout the app bar. They move
-// into More last, after everything else, since they are the only way to undo without a keyboard.
+// On screen in every tab and in tablet mode: the title bar, and in the compact layout the app bar. They move into More
+// after everything but the recording indicator and the theme switch, since they are the only way to undo without a
+// keyboard.
 titleBarItems.register({
   id: 'page.undoButton',
   side: 'end',
   order: 5,
-  priority: 900,
+  priority: 97,
   compact: 'appBar',
   Component: UndoButton,
 });
@@ -56,7 +56,7 @@ titleBarItems.register({
   id: 'page.redoButton',
   side: 'end',
   order: 6,
-  priority: 899,
+  priority: 96,
   compact: 'appBar',
   Component: RedoButton,
 });
