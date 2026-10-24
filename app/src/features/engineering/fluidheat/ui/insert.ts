@@ -37,6 +37,9 @@ export function answerText(c: InsertContext): string {
     .join('; ')}`;
 }
 
+/** The answer line as its own paragraph, escaped, so it does not run on from the last item of a list before it. */
+export const answerHtml = (c: InsertContext): string => `<p>${escapeXml(answerText(c))}</p>`;
+
 export function answerLatex(c: InsertContext): string {
   return answers(c)
     .filter((row) => row.value !== undefined)

@@ -7,8 +7,9 @@ export const FLUIDHEAT_KIT_FLAGS: readonly FlagDef[] = [
   {
     id: 'kits.fluidheat',
     description:
-      'The fluid and heat transfer kit: sections, stress, members, beam deflection, columns, vessels, thin-walled structures, ' +
-      'laminates, finite elements, fatigue and machine elements, and biomechanics.',
+      'The fluid and heat transfer kit: fluid statics and Bernoulli, pipe flow and pumps, dimensional analysis, ' +
+      'external flow and drag, viscous and biological flows, conduction, fins, transient conduction and diffusion, ' +
+      'convection correlations, heat exchangers, and radiation.',
     issue: 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3Akits.fluidheat',
     enabled: { dev: true, nightly: true, beta: true, stable: false },
   },

@@ -1,6 +1,6 @@
-// What every solid mechanics tool shares. A worked step is a message key in the kit's strings, the values it names,
-// and the equation it shows in LaTeX. A value is kept as a number in base SI with its kind, so the window can show
-// it in SI or US units without working it out again. The engines never write sentences.
+// What every fluid mechanics and heat transfer tool shares. A worked step is a message key in the kit's strings, the
+// values it names, and the equation it shows in LaTeX. A value is kept as a number in base SI with its kind, so the
+// window can show it in SI or US units without working it out again. The engines never write sentences.
 import type { en } from '../../../../strings/en';
 import type { Kind } from './units';
 

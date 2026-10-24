@@ -1,7 +1,7 @@
 // Opens the kit window on a tool. The choice is saved with the tool windows' other choices, so a window of its own
 // opens on the same tool, and a window that is already open follows it. Nothing heavy loads here.
 const KEY = 'opennote.tools.kitFluidHeat.tab';
-export const TAB_EVENT = 'opennote:kitsolids-tab';
+export const TAB_EVENT = 'opennote:kitfluidheat-tab';
 
 export function savedTab(): string | null {
   try {

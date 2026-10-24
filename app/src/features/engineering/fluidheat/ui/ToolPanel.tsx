@@ -11,7 +11,7 @@ import type { FluidHeatError } from '../kit/types';
 import { unitOf, type System } from '../kit/units';
 import {
   answerLatex,
-  answerText,
+  answerHtml,
   extraTable,
   pictureRequest,
   resultTable,
@@ -133,7 +133,7 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
     {
       id: 'answer',
       label: say('kitFluidHeat.ui.insertAnswer'),
-      onSelect: () => done(sendToPage({ text: `${answerText(c)} ` })),
+      onSelect: () => done(sendToPage({ text: answerHtml(c) })),
     },
     {
       id: 'equation',

@@ -1,6 +1,6 @@
-// The kinds of quantity the solid mechanics tools read and show, each with the unit it shows in SI and in US
-// customary units. The engines work in base SI (m, N, Pa, kg, s, rad, K); these units are only for people. The SI
-// set is N, mm, and MPa, and the US set is kip, in, and ksi, so the numbers in a worked step agree with each other.
+// The kinds of quantity the fluid mechanics and heat transfer tools read and show, each with the unit it shows in SI
+// and in US customary units. The engines work in base SI (m, kg, s, Pa, K); these units are only for people. The SI
+// set is m, mm, kPa, and degrees Celsius, and the US set is ft, in, psi, and degrees Fahrenheit.
 import { evaluate } from '../../../../core/expr';
 import { parseUnit, sameDim, type Dim } from '../../../../core/units';
 import { FluidHeatError } from './types';
