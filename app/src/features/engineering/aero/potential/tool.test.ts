@@ -56,4 +56,23 @@ describe('the potential flow tool', () => {
     const on = runSpec(spec, { ...initialValues(spec, 'si'), py: '0' });
     expect(on.ok ? '' : on.error.code).toBe('probeOnElement');
   });
+
+  it('reads a custom element list in US units when the window is in US units', () => {
+    const ft = 0.3048;
+    expect(parseElements('doublet 1 1 2; vortex 3 0 0; uniform 4', 'us')).toEqual([
+      { kind: 'doublet', strength: ft ** 3, x: ft, y: 2 * ft },
+      { kind: 'vortex', strength: 3 * ft * ft, x: 0, y: 0 },
+      { kind: 'uniform', strength: 4 * ft, x: 0, y: 0, angle: 0 },
+    ]);
+    const values = {
+      ...initialValues(spec, 'us'),
+      preset: 'custom',
+      elements: 'uniform 10; vortex 100 0 0',
+      rho: '0.002377',
+    };
+    const result = runSpec(spec, values, 'us');
+    if (!result.ok) throw result.error;
+    // Kutta-Joukowski in US units: L' = rho U Gamma = 0.002377 x 10 x 100 = 2.377 lbf/ft, held in N/m.
+    expect(row(result.output, 'lift') / ((2.377 * 4.4482216152605) / ft) - 1).toBeCloseTo(0, 9);
+  });
 });

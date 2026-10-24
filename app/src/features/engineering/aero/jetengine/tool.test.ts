@@ -9,7 +9,7 @@ import { cycle, IDEAL } from './engine';
 import { spec } from './tool';
 
 const run = (changes: Record<string, string>, system: 'si' | 'us' = 'si'): ToolOutput => {
-  const result = runSpec(spec, { ...initialValues(spec, system), ...changes });
+  const result = runSpec(spec, { ...initialValues(spec, system), ...changes }, system);
   if (!result.ok) throw result.error;
   return result.output;
 };

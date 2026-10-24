@@ -60,7 +60,7 @@ describe('the performance tool', () => {
     const ids = (mode: string) => visibleFields(spec, { ...initialValues(spec, 'si'), mode }).map((f) => f.id);
     expect(ids('turn')).toEqual(['mode', 'V', 'bank']);
     expect(ids('range')).toContain('ct');
-    const us = runSpec(spec, initialValues(spec, 'us'));
+    const us = runSpec(spec, initialValues(spec, 'us'), 'us');
     if (!us.ok) throw us.error;
     near(row(us.output, 'VminD'), 74.0, 2e-4);
   });

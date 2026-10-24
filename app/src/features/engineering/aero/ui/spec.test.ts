@@ -117,7 +117,7 @@ describe('every tool in the window', () => {
         for (const option of field.options ?? []) expect(hasText(id, `o.${option}`), option).toBe(true);
       }
       const si = runSpec(spec, initialValues(spec, 'si'));
-      const us = runSpec(spec, initialValues(spec, 'us'));
+      const us = runSpec(spec, initialValues(spec, 'us'), 'us');
       if (!si.ok) throw si.error;
       if (!us.ok) throw us.error;
       si.output.rows.forEach((row, i) => {

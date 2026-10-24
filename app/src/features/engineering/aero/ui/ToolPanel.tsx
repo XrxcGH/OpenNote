@@ -25,7 +25,7 @@ interface PanelProps {
 }
 
 export function ToolPanel({ spec, values, system, onValues }: PanelProps) {
-  const result = useMemo(() => runSpec(spec, values), [spec, values]);
+  const result = useMemo(() => runSpec(spec, values, system), [spec, values, system]);
   const tool = spec.id;
   return (
     <div className={styles.panel}>

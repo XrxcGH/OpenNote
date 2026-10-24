@@ -112,6 +112,8 @@ export interface ToolOutput {
 /** What a tool's run reads its fields through: numbers come back in SI, and a missing number is an AeroError. */
 export interface Inputs {
   readonly values: Values;
+  /** The window's unit system, for text a tool reads in units itself and for plots drawn in that system. */
+  readonly system: UnitSystem;
   /** A quantity in SI units. */
   q(id: string): number;
   /** A quantity in SI units, or undefined when left blank. */
@@ -176,7 +178,7 @@ export function readNumber(text: string): number | undefined {
   return result.ok && Number.isFinite(result.value) ? result.value : NaN;
 }
 
-export function readInputs(spec: ToolSpec, values: Values): Inputs {
+export function readInputs(spec: ToolSpec, values: Values, system: UnitSystem = 'si'): Inputs {
   const fields = new Map(spec.fields.map((field) => [field.id, field]));
   const name = (id: string) => ({ name: `@f.${id}` });
   const raw = (id: string): number | undefined => {
@@ -196,6 +198,7 @@ export function readInputs(spec: ToolSpec, values: Values): Inputs {
   };
   return {
     values,
+    system,
     q: (id) => required(id, si(id, raw(id))),
     qOpt: (id) => si(id, raw(id)),
     n: (id) => required(id, raw(id)),
@@ -209,9 +212,9 @@ export type RunResult =
   { readonly ok: true; readonly output: ToolOutput } | { readonly ok: false; readonly error: AeroError };
 
 /** Runs a tool, turning an input problem into a failure the window says in words. Other errors are bugs. */
-export function runSpec(spec: ToolSpec, values: Values): RunResult {
+export function runSpec(spec: ToolSpec, values: Values, system: UnitSystem = 'si'): RunResult {
   try {
-    return { ok: true, output: spec.run(readInputs(spec, values)) };
+    return { ok: true, output: spec.run(readInputs(spec, values, system)) };
   } catch (error) {
     if (error instanceof AeroError) return { ok: false, error };
     throw error;

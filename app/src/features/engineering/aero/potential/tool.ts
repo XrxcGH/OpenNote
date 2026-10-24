@@ -4,6 +4,8 @@ import { AeroError } from '../common';
 import type { XY } from '../common';
 import { readNumber } from '../ui/spec';
 import type { Inputs, Row, ToolSpec, Values } from '../ui/spec';
+import { defaultUnit } from '../ui/units';
+import type { UnitSystem } from '../ui/units';
 import { potentialFlow } from './engine';
 import type { ElementKind, FlowElement, PotentialResult } from './engine';
 
@@ -24,10 +26,13 @@ const KINDS: Readonly<Record<string, ElementKind>> = {
 };
 
 /**
- * Reads elements written as "kind strength x y", one per part between semicolons, in SI units. A uniform flow is
- * "uniform U angle", with the angle in degrees and optional; a sink is a source whose strength is made negative.
+ * Reads elements written as "kind strength x y", one per part between semicolons, and returns them in SI. The
+ * numbers are in the window's unit system: feet and seconds in US units. A uniform flow is "uniform U angle", with
+ * the angle in degrees and optional. A sink is a source whose strength is made negative.
  */
-export function parseElements(text: string): FlowElement[] {
+export function parseElements(text: string, system: UnitSystem = 'si'): FlowElement[] {
+  const L = defaultUnit('length', system).factor;
+  const PER: Readonly<Record<ElementKind, number>> = { uniform: L, source: L * L, vortex: L * L, doublet: L * L * L };
   const parts = text
     .split(/[;\n]/)
     .map((part) => part.trim())
@@ -39,16 +44,17 @@ export function parseElements(text: string): FlowElement[] {
     if (!kind || numbers.some((n) => !Number.isFinite(n))) throw new AeroError('elementText', { part });
     const [strength = NaN, a = 0, b = 0] = numbers;
     if (!Number.isFinite(strength)) throw new AeroError('elementText', { part });
-    if (kind === 'uniform') return { kind, strength, x: 0, y: 0, angle: a };
+    if (kind === 'uniform') return { kind, strength: strength * PER.uniform, x: 0, y: 0, angle: a };
     const signed = word.toLowerCase() === 'sink' ? -Math.abs(strength) : strength;
-    return { kind, strength: signed, x: a, y: b };
+    return { kind, strength: signed * PER[kind], x: a * L, y: b * L };
   });
 }
 
 /** The preset's elements and a window that frames it. */
 function presetFlow(inputs: Inputs): { elements: FlowElement[]; size: number } {
   const chosen = preset(inputs.values);
-  if (chosen === 'custom') return { elements: parseElements(inputs.s('elements')), size: inputs.q('size') };
+  if (chosen === 'custom')
+    return { elements: parseElements(inputs.s('elements'), inputs.system), size: inputs.q('size') };
   const U = inputs.q('U');
   const uniform: FlowElement = { kind: 'uniform', strength: U, x: 0, y: 0 };
   if (chosen === 'halfBody') {

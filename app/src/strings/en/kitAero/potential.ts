@@ -29,7 +29,8 @@ export const potential = {
     gamma: '4πUa puts both stagnation points together at the bottom.',
     elements:
       'Separate elements with semicolons: uniform U angle; source m x y; sink m x y; doublet κ x y; vortex Γ x ' +
-      'y. SI units, angles in degrees.',
+      'y. Numbers use the chosen system: lengths in m (ft), U in m/s (ft/s), m and Γ in m²/s (ft²/s), and κ in ' +
+      'm³/s (ft³/s). Angles are in degrees.',
   },
   o: {
     cylinder: 'Cylinder (uniform flow and doublet)',
