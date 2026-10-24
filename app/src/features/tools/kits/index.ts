@@ -30,3 +30,4 @@ export { InsertMenu, insertActions } from './ui/InsertMenu';
 export type { InsertMenuProps } from './ui/InsertMenu';
 export { KitWindow } from './ui/KitWindow';
 export * from './block/model';
+export { KitCalcView, mountKitCalc } from './block/KitCalcBlock';
