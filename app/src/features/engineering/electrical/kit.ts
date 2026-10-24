@@ -7,5 +7,7 @@ export const LOADERS: Record<ElectricalToolId, () => Promise<{ spec: ToolSpec }>
   instruments: () => import('./instruments/tool'),
   acpower: () => import('./acpower/tool'),
   opamps: () => import('./opamps/tool'),
+  semis: () => import('./semis/tool'),
+  powerflow: () => import('./powerflow/tool'),
   energy: () => import('./energy/tool'),
 };

@@ -5,7 +5,9 @@ export const ELECTRICAL_TOOLS = [
   { id: 'transients', icon: 'Lightning' },
   { id: 'instruments', icon: 'Gauge' },
   { id: 'acpower', icon: 'Lightning' },
-  { id: 'opamps', icon: 'Lightning' },
+  { id: 'opamps', icon: 'Function' },
+  { id: 'semis', icon: 'Circuitry' },
+  { id: 'powerflow', icon: 'TreeStructure' },
   { id: 'energy', icon: 'Leaf' },
 ] as const satisfies readonly {
   id: string;
