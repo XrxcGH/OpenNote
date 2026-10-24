@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ControlError } from '../lib/errors';
 import { integrate } from '../lib/num';
+import { tQuantile } from '../lib/special';
 import { makeDist, plotData, probability, quantileOf, type DistId } from './engine';
 import {
   ciMean,
@@ -292,5 +293,27 @@ describe('inference', () => {
     expect(code(() => ciMean({ n: 1, mean: 5, sd: 1, conf: 0.95 }))).toBe('needTwo');
     expect(code(() => ciVariance(-1, 10, 0.95))).toBe('variancePositive');
     expect(code(() => testMean({ n: 10, mean: 5, sd: 1, mu0: 4, alt: 'two', alpha: 0 }))).toBe('alphaRange');
+  });
+});
+
+describe('heavy-tailed t quantiles (reference values from scipy.stats.t.ppf)', () => {
+  it.each([
+    [0.9995, 1, 636.6192487687897],
+    [0.99, 0.5, 1028.4910104716198],
+    [0.999, 3, 10.214531852407383],
+    [0.0005, 1.5, -82.84744670365761],
+  ])('t quantile p = %s, df = %s', (p, df, want) => {
+    expect(rel(tQuantile(p, df), want)).toBeLessThan(1e-9);
+  });
+
+  it('ciMean n = 2, s = 1, 99.9%: critical 636.6192, half-width 450.158', () => {
+    const r = ciMean({ n: 2, mean: 0, sd: 1, conf: 0.999 });
+    expect(rel(r.critical, 636.6192487687897)).toBeLessThan(1e-9);
+    expect(rel(r.halfWidth, 636.6192487687897 / Math.SQRT2)).toBeLessThan(1e-9);
+  });
+
+  it('testMean n = 2, alpha 0.001 two-sided: critical 636.6192', () => {
+    const r = testMean({ n: 2, mean: 1, sd: 1, mu0: 0, alt: 'two', alpha: 0.001 });
+    expect(rel(r.critical, 636.6192487687897)).toBeLessThan(1e-9);
   });
 });

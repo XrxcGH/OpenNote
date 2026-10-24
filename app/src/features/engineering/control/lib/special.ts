@@ -142,17 +142,26 @@ export function normalQuantile(p: number): number {
   return x - u / (1 + (x * u) / 2);
 }
 
-/** The t quantile, by Newton's method from the normal one. */
+/**
+ * The t quantile. Closed forms for df = 1 and 2; otherwise the lower tail (where tCdf keeps full precision) is
+ * bracketed by doubling outward from the normal quantile and solved by Brent, so heavy tails of any size are reached.
+ */
 export function tQuantile(p: number, df: number): number {
   if (p <= 0) return -Infinity;
   if (p >= 1) return Infinity;
-  let x = normalQuantile(p);
-  for (let i = 0; i < 60; i += 1) {
-    const step = (tCdf(x, df) - p) / tPdf(x, df);
-    x -= Math.max(-2, Math.min(2, step));
-    if (Math.abs(step) < 1e-14 * Math.max(1, Math.abs(x))) break;
+  if (p === 0.5) return 0;
+  if (df === 1) return Math.tan(Math.PI * (p - 0.5));
+  if (df === 2) return (2 * p - 1) * Math.sqrt(2 / (4 * p * (1 - p)));
+  if (p > 0.5) return -tQuantile(1 - p, df);
+  // Lower tail: the root is negative and tCdf(x) is the tail itself.
+  const f = (x: number) => tCdf(x, df) - p;
+  let b = Math.min(-1e-3, normalQuantile(p));
+  let a = 2 * b;
+  for (let i = 0; i < 2000 && f(a) > 0; i += 1) {
+    b = a;
+    a *= 2;
   }
-  return x;
+  return brent(f, a, b, 1e-15 * Math.abs(b), 400);
 }
 
 /** Γ(x) for real x (not a non-positive integer). */
