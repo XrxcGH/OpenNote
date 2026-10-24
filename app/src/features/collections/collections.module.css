@@ -181,9 +181,11 @@
 }
 
 @layer components {
+  /* On the page the block is a control surface, so it uses the interface font, not the page's reading font. */
   .block {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    font-family: var(--font-ui);
     padding: var(--space-3);
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border-subtle);
@@ -193,12 +195,16 @@
   .blockHeader {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
+    gap: var(--space-2) var(--space-5);
     align-items: center;
+  }
+
+  .blockHeader .pick {
+    margin-inline-start: auto;
   }
 
   .blockTitle {
     margin: 0;
-    font-size: var(--font-size-md);
+    font-size: var(--type-subtitle-size);
   }
 }

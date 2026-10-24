@@ -15,13 +15,15 @@
     inset-inline-start: 0;
   }
 
+  /* The ring is drawn outside the box, so the text inside it keeps clear of the line. */
   .outline {
-    border: 1px solid var(--color-border-subtle);
+    outline: 1px solid var(--color-border-subtle);
+    outline-offset: var(--space-1);
     border-radius: var(--radius-sm);
   }
 
   .selected {
-    border: 2px solid var(--color-accent-primary);
+    outline: 2px solid var(--color-accent-primary);
   }
 
   /* A grip bar along the top of a text box, like OneNote's container header. The hit area is the whole box; the
@@ -40,9 +42,9 @@
     content: '';
     position: absolute;
     inset-inline: 0;
-    inset-block-end: 2px;
-    block-size: 6px;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    inset-block-end: 6px;
+    block-size: 2px;
+    border-radius: 1px;
     background: var(--color-border-control);
   }
 
@@ -102,7 +104,10 @@
   }
 
   @media (forced-colors: active) {
-    .selected,
+    .selected {
+      outline-color: Highlight;
+    }
+
     .marquee {
       border-color: Highlight;
     }

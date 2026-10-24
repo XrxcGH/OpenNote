@@ -35,6 +35,8 @@ const MOUSE_HIT = 32;
 const TOUCH_HIT = 44;
 /** The least a grip shows when other blocks crowd the strip above its box. */
 const GRIP_MIN = 8;
+/** How far a text box's ring stands out from each side, beyond its outline offset. */
+const RING_SIDE = 4;
 
 function div(parent: HTMLElement, className: string): HTMLElement {
   const element = parent.ownerDocument.createElement('div');
@@ -145,7 +147,10 @@ class ChromeLayer implements Chrome {
       }
       const rect = element.getBoundingClientRect();
       const box = new DOMRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height);
-      this.mark(used, `outline:${block.id}`, styles.outline!, box).classList.toggle(styles.selected!, selected);
+      // A text box's ring stands a little out from its sides too, so the first letter never touches the line.
+      const ring =
+        block.type === 'text' ? new DOMRect(box.x - RING_SIDE, box.y, box.width + 2 * RING_SIDE, box.height) : box;
+      this.mark(used, `outline:${block.id}`, styles.outline!, ring).classList.toggle(styles.selected!, selected);
       if (!hasGrip(block)) continue;
       if (block.lock) {
         this.mark(used, `lock:${block.id}`, styles.lock!, box);
