@@ -201,4 +201,16 @@
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-sm);
   }
+
+  .consoleError {
+    color: var(--color-status-danger);
+  }
+
+  .check {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-block-size: var(--size-target-pointer);
+    font-size: var(--type-small-size);
+  }
 }

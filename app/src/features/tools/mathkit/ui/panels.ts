@@ -7,4 +7,5 @@ export const PANELS: Readonly<Record<string, LazyExoticComponent<ComponentType>>
   odes: lazy(() => import('../odesystems/OdeTool')),
   fourier: lazy(() => import('../fourierpde/FourierTool')),
   numerics: lazy(() => import('../numerics/NumericsTool')),
+  console: lazy(() => import('../matrixconsole/MatrixConsoleTool')),
 };
