@@ -121,6 +121,8 @@ export const compressible = {
     cfInverse:
       'Solve for M on the {branch} branch by Brent’s method, searching M from {lo} to {hi}: M = {M} after ' +
       '{iterations} iterations.',
+    cfInverseOne:
+      'Solve for M by Brent’s method, searching M from {lo} to {hi}: M = {M} after {iterations} iterations.',
     cfIsenT: 'Static to stagnation temperature for isentropic flow of a calorically perfect gas.',
     cfIsenP: 'Pressure ratio from the temperature ratio.',
     cfIsenRho: 'Density ratio from the temperature ratio.',
@@ -150,6 +152,7 @@ export const compressible = {
     obliqueSubsonic: 'An oblique shock needs a supersonic upstream flow: M₁ must be greater than 1.',
     machTooLarge: 'The Mach number must be at most {max}.',
     valueRange: 'On the {branch} branch, {name} must be between {lo} and {hi}.',
+    valueRangeOne: '{name} must be between {lo} and {hi}.',
     detached: 'The deflection is larger than θmax = {max}°, so the shock detaches and stands off as a bow shock.',
     betaRange: 'The wave angle must be between the Mach angle, {lo}°, and {hi}°.',
   },

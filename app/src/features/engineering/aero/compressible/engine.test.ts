@@ -161,3 +161,42 @@ describe('Fanno and Rayleigh flow', () => {
     close(value(r, 'p0p0s'), 1, 1e-15);
   });
 });
+
+describe('range messages name the branch searched', () => {
+  const caught = (input: Parameters<typeof run>[0]): AeroError => {
+    try {
+      run(input);
+    } catch (e) {
+      if (e instanceof AeroError) return e;
+    }
+    throw new Error('expected an AeroError');
+  };
+
+  it('reports the supersonic branch for a Prandtl-Meyer angle past the limit', () => {
+    // nu_max = 90 (sqrt((g+1)/(g-1)) - 1) = 130.454 deg for g = 1.4, so 140 deg is out of range.
+    const e = caught({ family: 'expansion', known: 'nu', value: 140 });
+    expect(e.code).toBe('valueRange');
+    expect(e.vars.branch).toBe('@branch.supersonic');
+    expect(Number(e.vars.hi)).toBeLessThan(90 * (Math.sqrt(6) - 1));
+    expect(Number(e.vars.hi)).toBeGreaterThan(130);
+  });
+
+  it('reports the supersonic branch for a normal-shock p02/p01 above 1', () => {
+    // A normal shock always loses stagnation pressure, so p02/p01 < 1.
+    const e = caught({ family: 'normal', known: 'p02p01', value: 1.2 });
+    expect(e.code).toBe('valueRange');
+    expect(e.vars.branch).toBe('@branch.supersonic');
+  });
+
+  it('names no branch when the search spans both sides of Mach 1', () => {
+    const e = caught({ family: 'isentropic', known: 'TT0', value: 1.2 });
+    expect(e.code).toBe('valueRangeOne');
+    expect(e.vars.branch).toBeUndefined();
+  });
+
+  it('still names the branch the student picked', () => {
+    const e = caught({ family: 'fanno', known: 'fLD', value: 5, branch: 'supersonic' });
+    expect(e.code).toBe('valueRange');
+    expect(e.vars.branch).toBe('@branch.supersonic');
+  });
+});

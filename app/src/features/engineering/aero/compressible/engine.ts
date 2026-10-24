@@ -239,13 +239,19 @@ function machFrom(input: CompressibleInput, g: number, steps: AeroStep[]): numbe
   const max = Math.max(a, b);
   if (Math.abs(value - a) <= 1e-12 * Math.max(1, Math.abs(a))) return lo;
   if (Math.abs(value - b) <= 1e-12 * Math.max(1, Math.abs(b))) return hi;
+  // The branch named in messages is the interval actually searched: a relation that exists only above Mach 1
+  // (Prandtl-Meyer, normal shock, Mach angle) is supersonic whatever the branch default, and one searched over
+  // both sides has no branch at all.
+  const searched: Branch | null = lo >= 1 ? 'supersonic' : hi <= 1 ? 'subsonic' : null;
   if (!(value > min && value < max)) {
-    throw new AeroError('valueRange', { name: SYMBOL[known], lo: num(min), hi: num(max), branch: `@branch.${branch}` });
+    const range = { name: SYMBOL[known], lo: num(min), hi: num(max) };
+    if (searched === null) throw new AeroError('valueRangeOne', range);
+    throw new AeroError('valueRange', { ...range, branch: `@branch.${searched}` });
   }
   const found = brentOn(f, value, lo, hi);
   steps.push(
-    step('cfInverse', `${SYMBOL[known]}(M) = ${tex(value, 6)}`, {
-      branch: `@branch.${branch}`,
+    step(searched === null ? 'cfInverseOne' : 'cfInverse', `${SYMBOL[known]}(M) = ${tex(value, 6)}`, {
+      ...(searched === null ? {} : { branch: `@branch.${searched}` }),
       lo: num(lo),
       hi: num(hi),
       iterations: String(found.iterations),
