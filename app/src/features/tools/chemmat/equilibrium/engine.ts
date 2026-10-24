@@ -51,8 +51,8 @@ function expression(parts: Part[], side: 'products' | 'reactants'): string {
   return mine.map((p) => `[${latexSpecies(p.name)}]${exponent(p.nu)}`).join('\\,');
 }
 
-/** Q = products / reactants for the amounts, or null when the product of the reactants is zero. */
-function quotient(parts: Part[], amounts: number[]): number | null {
+/** Q = products / reactants for the amounts: Infinity when only products are present, NaN when nothing is. */
+function quotient(parts: Part[], amounts: number[]): number {
   let num = 1;
   let den = 1;
   parts.forEach((p, i) => {
@@ -60,7 +60,8 @@ function quotient(parts: Part[], amounts: number[]): number | null {
     if (p.nu > 0) num *= Math.pow(amounts[i], p.nu);
     else den *= Math.pow(amounts[i], -p.nu);
   });
-  return den === 0 ? null : num / den;
+  if (den === 0) return num > 0 ? Infinity : NaN;
+  return num / den;
 }
 
 interface Problem {
@@ -119,8 +120,49 @@ function solveExtent(p: Problem, lo: number, hi: number): number | null {
   return brent(f, lo, hi);
 }
 
-function directionOf(q0: number | null, K: number) {
-  if (q0 === null || q0 < K * (1 - 1e-12)) return 'kitChemMat.eq.forward' as const;
+/**
+ * When the root sits at the limiting reactant's bound, the subtraction c0 + nu x loses the trace left of it. Solve again
+ * for the residual extent t from the bound, on a log scale, so a limiting species of 1e-33 is still found.
+ */
+function refineAmounts(p: Problem, range: { lo: number; hi: number }, x: number, eq: number[]): number[] {
+  const near = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(Math.abs(b), 1e-300);
+  const candidates = p.parts.flatMap((part, i) => {
+    if (part.pure) return [];
+    if (part.nu < 0 && near(p.c0[i] / -part.nu, range.hi) && Math.abs(x - range.hi) <= 1e-6 * Math.abs(range.hi))
+      return [{ i, sgn: -1, bound: range.hi }];
+    if (part.nu > 0 && near(-p.c0[i] / part.nu, range.lo) && Math.abs(x - range.lo) <= 1e-6 * Math.abs(range.lo))
+      return [{ i, sgn: 1, bound: range.lo }];
+    return [];
+  });
+  const c = candidates[0];
+  if (!c) return eq;
+  const base = p.parts.map((part, i) => (part.pure || i === c.i ? 0 : Math.max(0, p.c0[i] + part.nu * c.bound)));
+  const at = (t: number) => p.parts.map((part, i) => (part.pure ? 0 : base[i] + c.sgn * part.nu * t));
+  const g = (t: number) => {
+    const a = at(t);
+    let prod = 1;
+    let reac = 1;
+    p.parts.forEach((part, i) => {
+      if (part.pure) return;
+      if (part.nu > 0) prod *= Math.pow(a[i], part.nu);
+      else reac *= Math.pow(a[i], -part.nu);
+    });
+    return (prod - p.K * reac) * -c.sgn;
+  };
+  let lo = Math.log(1e-250);
+  let hi = Math.log(range.hi - range.lo);
+  if (!(g(Math.exp(lo)) > 0)) return eq;
+  for (let k = 0; k < 200; k++) {
+    const mid = (lo + hi) / 2;
+    if (g(Math.exp(mid)) > 0) lo = mid;
+    else hi = mid;
+  }
+  const out = at(Math.exp((lo + hi) / 2));
+  return out.every((v, i) => p.parts[i].pure || v >= 0) ? out : eq;
+}
+
+function directionOf(q0: number, K: number) {
+  if (Number.isNaN(q0) || q0 < K * (1 - 1e-12)) return 'kitChemMat.eq.forward' as const;
   return q0 > K * (1 + 1e-12) ? ('kitChemMat.eq.reverse' as const) : ('kitChemMat.eq.already' as const);
 }
 
@@ -153,7 +195,7 @@ function iceRows(p: Problem, x: number, eq: number[], unit: string): Row[] {
       unit,
       digits: 6,
     })),
-    { key: 'kitChemMat.eq.row.Qcheck', value: qEq ?? NaN, digits: 6 },
+    { key: 'kitChemMat.eq.row.Qcheck', value: qEq, digits: 6 },
     { key: 'kitChemMat.eq.row.direction', value: '', word: directionOf(q0, p.K) },
     approximation(p, x),
   ];
@@ -175,7 +217,7 @@ function substitution(p: Problem): string {
   return `\\frac{${side(true)}}{${side(false)}}=${latexNumber(p.K, 5)}`;
 }
 
-function iceSteps(p: Problem, x: number, qEq: number | null, range: { lo: number; hi: number }): KitStep[] {
+function iceSteps(p: Problem, x: number, qEq: number, range: { lo: number; hi: number }): KitStep[] {
   const expr = `K=\\frac{${expression(p.parts, 'products')}}{${expression(p.parts, 'reactants')}}`;
   return [
     { key: 'kitChemMat.eq.step.expression', math: `${expr}=${latexNumber(p.K, 5)}` },
@@ -187,7 +229,7 @@ function iceSteps(p: Problem, x: number, qEq: number | null, range: { lo: number
     },
     {
       key: 'kitChemMat.eq.step.check',
-      math: `Q=${latexNumber(qEq ?? NaN, 6)}\\approx K=${latexNumber(p.K, 6)}`,
+      math: `Q=${latexNumber(qEq, 6)}\\approx K=${latexNumber(p.K, 6)}`,
     },
   ];
 }
@@ -214,7 +256,7 @@ export function iceTable(input: IceInput): Outcome {
   if (!range) return fail('kitChemMat.eq.err.noRoom');
   const x = solveExtent(p, range.lo, range.hi);
   if (x === null) return fail('kitChemMat.eq.err.noRoot');
-  const eq = amountsAt(p, x);
+  const eq = refineAmounts(p, range, x, amountsAt(p, x));
   const qEq = quotient(p.parts, eq);
   return {
     ok: true,

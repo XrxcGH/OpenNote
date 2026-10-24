@@ -34,6 +34,21 @@ describe('ICE tables', () => {
     expect(rel(species(o, 'H2') * species(o, 'I2') * 50, species(o, 'HI') ** 2)).toBeLessThan(1e-9);
   });
 
+  it('products only: the direction is reverse (Q is infinite), and the extent is negative', () => {
+    const o = iceTable({ reaction: 'N2 + 3 H2 <-> 2 NH3', K: 0.5, initial: 'NH3 = 1', unit: 'mol/L' });
+    expect(o.ok && o.rows.find((r) => r.key === 'kitChemMat.eq.row.direction')?.word).toBe('kitChemMat.eq.reverse');
+    expect(val(o, 'kitChemMat.eq.row.x')).toBeLessThan(0);
+    expect(rel(val(o, 'kitChemMat.eq.row.Qcheck'), 0.5)).toBeLessThan(1e-9);
+  });
+
+  it('a huge K keeps the trace of the limiting reactant: H2 + Cl2 <-> 2 HCl, K = 1e33', () => {
+    const o = iceTable({ reaction: 'H2 + Cl2 <-> 2 HCl', K: 1e33, initial: 'H2 = 1\nCl2 = 0.5', unit: 'mol/L' });
+    // HCl = 1 and H2 = 0.5 to 1e-30 relative, so K = 1^2 / (0.5 y) gives y = 2e-33
+    expect(rel(species(o, 'Cl2'), 2e-33)).toBeLessThan(1e-6);
+    expect(rel(species(o, 'HCl'), 1)).toBeLessThan(1e-12);
+    expect(rel(val(o, 'kitChemMat.eq.row.Qcheck'), 1e33)).toBeLessThan(1e-6);
+  });
+
   it('a pure solid takes no part in K, and a dimerization matches its quadratic', () => {
     const o = iceTable({ reaction: 'CaCO3(s) <-> CaO(s) + CO2(g)', K: 0.5, initial: 'CO2(g) = 0', unit: 'bar' });
     expect(val(o, 'kitChemMat.eq.row.x')).toBeCloseTo(0.5, 12); // K = P(CO2), solids do not enter
