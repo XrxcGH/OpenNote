@@ -55,6 +55,8 @@ export interface Axis {
   readonly log?: boolean;
   readonly min?: number;
   readonly max?: number;
+  /** Ticks with names, such as the states of a chain, in place of numbers. */
+  readonly names?: readonly { readonly at: number; readonly text: string }[];
 }
 
 export interface Reference {
@@ -162,11 +164,19 @@ function equalize(x: Scale, y: Scale): [Scale, Scale] {
   ];
 }
 
+const hasBars = (spec: PlotSpec) => spec.series.some((s) => s.style === 'bars');
+
 function scales(spec: PlotSpec): [Scale, Scale] {
   const pts = spec.series.flatMap((s) => s.points);
   const xs = [...pts.map((p) => p[0]), ...(spec.vlines ?? []).map((r) => r.at)];
   const ys = [...pts.map((p) => p[1]), ...(spec.hlines ?? []).map((r) => r.at)];
   if (spec.series.some((s) => s.style === 'bars' || s.style === 'stems' || s.fill)) ys.push(0);
+  if (hasBars(spec)) {
+    // Bars stand on their x values, so half a bar's spacing is left at each end.
+    const sorted = [...new Set(pts.map((p) => p[0]).filter(Number.isFinite))].sort((a, b) => a - b);
+    const gap = sorted.length > 1 ? Math.min(...sorted.slice(1).map((x, i) => x - sorted[i])) : 1;
+    if (sorted.length) xs.push(sorted[0] - 0.6 * gap, sorted[sorted.length - 1] + 0.6 * gap);
+  }
   if (spec.unitCircle) {
     xs.push(-1.1, 1.1);
     ys.push(-1.1, 1.1);
@@ -207,7 +217,8 @@ export function plotSvg(spec: PlotSpec, palette: Palette, words: DrawWords): str
   out.push(...axes(sx, sy, palette, words, spec));
   const body: string[] = [];
   const zeroY = sy.log ? M.top + PH : Math.min(M.top + PH, Math.max(M.top, py(0)));
-  if (!sx.log && sx.lo < 0 && sx.hi > 0) body.push(line(px(0), M.top, px(0), M.top + PH, palette.muted, 1));
+  if (!sx.log && sx.lo < 0 && sx.hi > 0 && !hasBars(spec))
+    body.push(line(px(0), M.top, px(0), M.top + PH, palette.muted, 1));
   if (!sy.log && sy.lo < 0 && sy.hi > 0) body.push(line(M.left, py(0), M.left + PW, py(0), palette.muted, 1));
   if (spec.unitCircle) {
     const r = px(1) - px(0);
@@ -222,7 +233,14 @@ export function plotSvg(spec: PlotSpec, palette: Palette, words: DrawWords): str
   for (const ref of spec.vlines ?? []) {
     body.push(line(px(ref.at), M.top, px(ref.at), M.top + PH, colorOf(palette, ref.pen ?? 1), 1, '5 4'));
   }
-  spec.series.forEach((s, i) => body.push(...drawSeries(s, colorOf(palette, s.pen ?? i), px, py, ok, zeroY)));
+  const barXs = [
+    ...new Set(spec.series.filter((s) => s.style === 'bars').flatMap((s) => s.points.map((p) => px(p[0])))),
+  ]
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+  const barGap = barXs.length > 1 ? Math.min(...barXs.slice(1).map((x, i) => x - barXs[i])) : PW / 4;
+  const draw = { px, py, ok, zeroY, barGap };
+  spec.series.forEach((s, i) => body.push(...drawSeries(s, colorOf(palette, s.pen ?? i), draw)));
   for (const label of spec.labels ?? []) {
     if (!ok([label.x, label.y])) continue;
     body.push(
@@ -252,11 +270,12 @@ function axes(sx: Scale, sy: Scale, palette: Palette, words: DrawWords, spec: Pl
     `<rect x="${left}" y="${M.top}" width="${PW}" height="${PH}" fill="none" stroke="${palette.grid}"/>`,
     `<text x="${left}" y="16" fill="${palette.text}" font-weight="600">${escapeXml(words.plot(spec.id))}</text>`,
   );
-  for (const v of ticks(sx)) {
-    const x = left + ((v - sx.lo) / (sx.hi - sx.lo)) * PW;
+  const xTicks = spec.x.names ?? ticks(sx).map((v) => ({ at: sx.log ? 10 ** v : v, text: tickText(sx, v) }));
+  for (const tick of xTicks) {
+    const x = left + ((tv(sx, tick.at) - sx.lo) / (sx.hi - sx.lo)) * PW;
     out.push(line(x, M.top, x, bottom, palette.grid, 1));
     out.push(
-      `<text x="${n2(x)}" y="${bottom + 14}" text-anchor="middle" fill="${palette.muted}">${tickText(sx, v)}</text>`,
+      `<text x="${n2(x)}" y="${bottom + 14}" text-anchor="middle" fill="${palette.muted}">${escapeXml(tick.text)}</text>`,
     );
   }
   for (const v of ticks(sy)) {
@@ -274,14 +293,17 @@ function axes(sx: Scale, sy: Scale, palette: Palette, words: DrawWords, spec: Pl
   return out;
 }
 
-function drawSeries(
-  s: Series,
-  color: string,
-  px: (v: number) => number,
-  py: (v: number) => number,
-  ok: (p: Point) => boolean,
-  zeroY: number,
-): string[] {
+interface Draw {
+  readonly px: (v: number) => number;
+  readonly py: (v: number) => number;
+  readonly ok: (p: Point) => boolean;
+  readonly zeroY: number;
+  /** The spacing of bars in pixels. */
+  readonly barGap: number;
+}
+
+function drawSeries(s: Series, color: string, draw: Draw): string[] {
+  const { px, py, ok, zeroY } = draw;
   const style = s.style ?? (s.marker ? 'markers' : 'line');
   const out: string[] = [];
   if (style === 'line' || style === 'dash' || style === 'stairs') {
@@ -313,13 +335,12 @@ function drawSeries(
   }
   if (style === 'stems' || style === 'bars') {
     const pts = s.points.filter(ok);
-    const gap = pts.length > 1 ? Math.abs(px(pts[1][0]) - px(pts[0][0])) : 12;
     for (const p of pts) {
       if (style === 'stems') {
         out.push(line(px(p[0]), zeroY, px(p[0]), py(p[1]), color, 1.5));
         out.push(`<circle cx="${n2(px(p[0]))}" cy="${n2(py(p[1]))}" r="2.5" fill="${color}"/>`);
       } else {
-        const w = Math.max(1, gap * 0.7);
+        const w = Math.max(1, draw.barGap * 0.7);
         const top = Math.min(py(p[1]), zeroY);
         out.push(
           `<rect x="${n2(px(p[0]) - w / 2)}" y="${n2(top)}" width="${n2(w)}" height="${n2(Math.abs(zeroY - py(p[1])))}" ` +

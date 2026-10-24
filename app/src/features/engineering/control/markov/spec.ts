@@ -80,10 +80,9 @@ function diagram(r: ChainResult) {
 function bars(id: string, names: readonly string[], cells: readonly Cell[]) {
   return {
     id,
-    x: { label: 'state' },
+    x: { label: 'state', names: names.map((text, at) => ({ at, text })) },
     y: { label: 'probability', min: 0 },
     series: [{ id: '', style: 'bars' as const, points: cells.map((c, i) => [i, c.value] as const) }],
-    labels: names.map((name, i) => ({ x: i, y: 0, text: name })),
   };
 }
 

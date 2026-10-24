@@ -21,7 +21,7 @@ export function stateDiagram(input: DiagramInput, palette: Palette, words: DrawW
   const n = input.names.length;
   const cx = W / 2;
   const cy = H / 2 + 8;
-  const radius = n === 1 ? 0 : Math.min(130, 40 + n * 12);
+  const radius = n === 1 ? 0 : Math.min(125, 60 + n * 15);
   const node = 16;
   const at = (i: number) => {
     const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
