@@ -21,6 +21,7 @@ const LOADERS: Record<PhysicsToolId, Loader> = {
   waveoptics: () => import('./waveoptics/Tool'),
   geooptics: () => import('./geooptics/Tool'),
   nuclear: () => import('./nuclear/Tool'),
+  spacecraft: () => import('./spacecraft/Tool'),
 };
 
 export const PHYSICS_KIT: { id: 'physics'; tools: readonly KitToolDef[] } = {

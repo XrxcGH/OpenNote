@@ -10,6 +10,7 @@ export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string
   ['waveoptics', 'Rainbow'],
   ['relativity', 'HourglassMedium'],
   ['nuclear', 'Radioactive'],
+  ['spacecraft', 'Rocket'],
 ];
 
 const open = async (tool: string | null) => (await import('../../tools')).openPhysicsTool(tool);
