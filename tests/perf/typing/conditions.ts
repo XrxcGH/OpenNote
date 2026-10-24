@@ -140,10 +140,8 @@ async function caretContext(page: Page): Promise<string> {
  * in it. Keys sent before then land at the end of the note's last paragraph, where a block shortcut can't apply.
  */
 async function atEndOfNote(page: Page): Promise<void> {
-  await placeCaret(page, await longestBox(page), 'end');
-  await page.keyboard.press('Enter');
-  await page
-    .waitForFunction(
+  const inNewParagraph = () =>
+    page.waitForFunction(
       () => {
         const node = getSelection()?.anchorNode;
         const element = node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
@@ -151,11 +149,22 @@ async function atEndOfNote(page: Page): Promise<void> {
         return paragraph !== null && paragraph !== undefined && paragraph.textContent === '';
       },
       null,
-      { timeout: 15_000 },
-    )
-    .catch(async (error: unknown) => {
-      throw new Error(`Enter did not put the caret in a new paragraph: ${await caretContext(page)}`, { cause: error });
-    });
+      { timeout: 6_000 },
+    );
+  // On a two-core runner the page can still be settling its layout when the Enter arrives, and the Enter, or the caret
+  // it was sent to, is lost. The caret is put back and the key sent again; each attempt must reach a new paragraph.
+  let failure: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await placeCaret(page, await longestBox(page), 'end');
+    await page.keyboard.press('Enter');
+    try {
+      await inNewParagraph();
+      return;
+    } catch (error: unknown) {
+      failure = error;
+    }
+  }
+  throw new Error(`Enter did not put the caret in a new paragraph: ${await caretContext(page)}`, { cause: failure });
 }
 
 /** Presses page zoom keys until the page's scale passes `target`. */

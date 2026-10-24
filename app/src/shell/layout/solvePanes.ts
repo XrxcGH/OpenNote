@@ -68,7 +68,6 @@ const DRAWER_SHARE = 0.85;
 /** The medium pages pane's share of the window. */
 const MEDIUM_PAGES_SHARE = 0.4;
 
-
 /** A stored width, clamped to the pane's limits. The automatic width, or anything not a number, follows the window. */
 export function clampPaneWidth(pane: PaneId, width: number, windowWidth: number): number {
   const { min, max } = PANE_LIMITS[pane];

@@ -104,7 +104,9 @@
     align-self: start;
     justify-self: center;
     margin-block-start: max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar))));
-    max-block-size: calc(100% - max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar)))));
+    max-block-size: calc(
+      100% - max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar))))
+    );
   }
 
   .layer[data-placement='start'] {

@@ -8,6 +8,7 @@ import { isEnabled } from '../../../app/flags';
 import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
+import { tokens } from '../../../theme/tokens';
 import { announce, buttonClass, openMenu } from '../../../ui';
 import { compose, IDENTITY, scaling, translation } from '../geometry/matrix';
 import type { Bounds, Matrix } from '../geometry/types';
@@ -474,9 +475,33 @@ class FrameView implements SelectionFrame {
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
     this.fitBar(left);
-    const top = shown.minY * zoom - scrollY - 4;
-    this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN + this.titleRoom());
+    this.placeBar(shown.minY * zoom - scrollY - 4, Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8);
     this.placeCrop(shown);
+  }
+
+  /**
+   * Puts the bar above the frame, or below it when there is no room above. When neither side has room, as with a
+   * selection as tall as the view, it stays inside the visible part of the view, beside the frame's visible edge.
+   * `top` is the frame's top in the view, `height` its height.
+   */
+  private placeBar(top: number, height: number): void {
+    const bar = this.bar;
+    const barHeight = bar.offsetHeight;
+    const minY = this.titleRoom() + BAR_MARGIN;
+    const viewHeight = this.surface.parts.viewport.viewport.clientHeight;
+    const known = viewHeight > 0;
+    const roomAbove = top >= barHeight + minY;
+    const roomBelow = !known || top + height + tokens.space[3] + barHeight <= viewHeight - BAR_MARGIN;
+    bar.toggleAttribute('data-below', !roomAbove);
+    bar.toggleAttribute('data-pinned', false);
+    bar.style.removeProperty('inset-block-start');
+    bar.style.removeProperty('inset-block-end');
+    if (roomAbove || roomBelow) return;
+    // No room on either side: keep the bar inside the view, as near the frame as that allows.
+    const wanted = Math.min(Math.max(top, minY), viewHeight - barHeight - BAR_MARGIN);
+    bar.toggleAttribute('data-pinned', true);
+    bar.style.insetBlockStart = `${wanted - top}px`;
+    bar.style.insetBlockEnd = 'auto';
   }
 
   /** Make link shows for writing that is selected; Remove link for writing that is a link. */
