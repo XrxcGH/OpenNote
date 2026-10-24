@@ -96,8 +96,9 @@ jobs:
   ui-web:
     # The production interface in Edge: the bundle budget, then Playwright against the test build.
     runs-on: windows-latest
-    # The suite is 1400 tests (about 380 screenshots and 450 axe checks) on two workers: about 45 minutes.
-    timeout-minutes: 60
+    # The suite is 1400 tests (about 380 screenshots and 450 axe checks) on two workers: about an hour on the
+    # Windows runner, which the old 60-minute limit canceled before the last tests ran.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:

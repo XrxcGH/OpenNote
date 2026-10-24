@@ -9,6 +9,8 @@ async function openMembranes(page: Page): Promise<void> {
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  // The insert command is offered once the page's editor has mounted, which is after its title shows.
+  await expect(page.getByRole('textbox', { name: 'Page text' })).toBeEditable();
 }
 
 async function insertFromLink(page: Page, link: string): Promise<void> {
