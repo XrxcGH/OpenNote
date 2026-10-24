@@ -123,6 +123,8 @@ export interface InkHost {
   readonly layer: Watched<InkBlockLayer | null>;
   readonly selection: Watched<InkSelection>;
   select(next: InkSelection, options?: { announce?: boolean }): void;
+  /** Hears whether the selection frame shows, so Phase 4 leaves off its own grip and width handle for what it frames. */
+  frameShown?(shown: boolean): void;
   /** Runs one of Phase 4's object commands on the selected blocks. */
   objectCommand(command: 'delete'): void;
   /** Reading and tidying handwriting through the on-device recognizer. Absent when the page has none to offer. */
