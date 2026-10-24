@@ -6,6 +6,7 @@ import type { MessageKey } from '../../../strings/t';
 
 export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string])[] = [
   ['waves', 'WaveSine'],
+  ['waveoptics', 'Rainbow'],
   ['relativity', 'HourglassMedium'],
 ];
 
