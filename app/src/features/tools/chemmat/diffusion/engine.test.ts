@@ -264,7 +264,9 @@ describe('Deal-Grove oxidation', () => {
     // independent: the thickness satisfies x^2 + A x = B t
     const x = nm * 1e-3;
     expect(Math.abs(x * x + (B / BA) * x - B)).toBeLessThan(1e-9);
-    expect(val(oxidation({ ...base, source: 'dry', T, orientation: '111' }), 'kitChemMat.df.row.oxide') * 1e9).toBeGreaterThan(nm);
+    expect(
+      val(oxidation({ ...base, source: 'dry', T, orientation: '111' }), 'kitChemMat.df.row.oxide') * 1e9,
+    ).toBeGreaterThan(nm);
   });
 
   it('refuses bad rates, negative time and thickness, and a missing temperature', () => {

@@ -482,9 +482,7 @@ export function indexCubic(twoThetas: readonly number[], lambda: number, maxSkip
       break;
     }
   }
-  return fits.sort(
-    (x, y) => x.missing - y.missing || INDEXABLE.indexOf(x.structure) - INDEXABLE.indexOf(y.structure),
-  );
+  return fits.sort((x, y) => x.missing - y.missing || INDEXABLE.indexOf(x.structure) - INDEXABLE.indexOf(y.structure));
 }
 
 export function indexPattern(peaks: string, lambda: number): Outcome | Failed {

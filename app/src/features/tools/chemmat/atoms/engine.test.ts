@@ -142,9 +142,9 @@ describe('de Broglie wavelength', () => {
     // independent: lambda = h c / sqrt(K (K + 2 m c^2)), and v = 0.6953 c
     const K = 200e3 * EV;
     const mc2 = 9.1093837139e-31 * 299792458 ** 2;
-    expect(rel(val(o, 'kitChemMat.at.row.lambdaDB'), (6.62607015e-34 * 299792458) / Math.sqrt(K * (K + 2 * mc2)))).toBeLessThan(
-      1e-12,
-    );
+    expect(
+      rel(val(o, 'kitChemMat.at.row.lambdaDB'), (6.62607015e-34 * 299792458) / Math.sqrt(K * (K + 2 * mc2))),
+    ).toBeLessThan(1e-12);
     expect(rel(val(o, 'kitChemMat.at.row.speed') / 299792458, 0.6953)).toBeLessThan(1e-3);
   });
 

@@ -217,7 +217,9 @@ export function deBroglie(input: WaveInput): Outcome {
     ok: true,
     rows: [
       { key: 'kitChemMat.at.row.lambdaDB', value: lambda, dim: 'length', digits: 6 },
-      ...(fast ? [{ key: 'kitChemMat.at.row.lambdaNR' as const, value: lambdaNR, dim: 'length' as const, digits: 6 }] : []),
+      ...(fast
+        ? [{ key: 'kitChemMat.at.row.lambdaNR' as const, value: lambdaNR, dim: 'length' as const, digits: 6 }]
+        : []),
       { key: 'kitChemMat.at.row.momentum', value: p, unit: 'kg m/s', digits: 5 },
       { key: 'kitChemMat.at.row.speed', value: v, unit: 'm/s', digits: 5 },
       { key: 'kitChemMat.at.row.kinetic', value: K, dim: 'photonEnergy', digits: 5 },
