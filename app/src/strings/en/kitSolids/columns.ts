@@ -2,8 +2,15 @@
 // the wording of its worked steps.
 export const columns = {
   title: 'Columns and buckling',
-  keywords: 'column buckling euler critical load effective length slenderness johnson parabola secant eccentric',
+  keywords:
+    'column buckling euler critical load effective length slenderness johnson parabola secant eccentric plate buckling local buckling',
   field: {
+    problem: 'Problem',
+    edges: 'Unloaded edges',
+    nu: "Poisson's ratio, ν",
+    b: 'Loaded width, b',
+    t: 'Thickness, t',
+    a: 'Length along the load, a (optional)',
     ends: 'End conditions',
     K: 'Effective-length factor, K',
     E: 'Elastic modulus, E',
@@ -16,6 +23,13 @@ export const columns = {
     c: 'Distance to the extreme fiber, c',
   },
   option: {
+    column: 'Column',
+    plate: 'Flat plate in compression',
+    ss: 'Both simply supported (k = 4)',
+    clamped: 'Both clamped (k = 6.97)',
+    ssClamped: 'One simply supported, one clamped (k = 5.42)',
+    clampedFree: 'One clamped, one free (k = 1.277)',
+    ssFree: 'One simply supported, one free (k = 0.425)',
     pinned: 'Pinned at both ends (K = 1)',
     fixedFree: 'Fixed and free (K = 2)',
     fixedPinned: 'Fixed and pinned (K = 0.7)',
@@ -26,6 +40,7 @@ export const columns = {
     euler: 'Euler load of a pinned column',
     johnson: 'Johnson parabola',
     secant: 'Eccentric load (secant formula)',
+    plate: 'Simply supported plate, a/b = 1.5',
   },
   row: {
     Pcr: 'Euler critical load, Pcr',
@@ -39,12 +54,20 @@ export const columns = {
     Pallow: 'Critical load for that stress',
     sigmaMax: 'Largest stress (secant), σmax',
     Pyield: 'Load that first yields the column',
+    kPlate: 'Buckling coefficient, k',
+    m: 'Half waves along the length, m',
+    sigmaPlate: 'Plate buckling stress, σcr',
+    Ncr: 'Buckling load per unit width, Ncr',
   },
   word: { euler: 'Long: Euler governs', johnson: 'Intermediate: Johnson governs' },
   note: {
     ideal: 'A straight, elastic, prismatic column loaded along its axis, buckling about the axis of the least I.',
     kValues: 'K is the theoretical value for ideal ends. Design codes often use larger values for real ends.',
     secant: 'The secant formula uses the effective length, with the eccentric load at both ends.',
+    plate:
+      'An elastic flat plate under uniform compression on its loaded edges, which are simply supported. The k ' +
+      'values are for long plates; give the length a for simply supported edges to find k for a shorter one.',
+    plateYield: 'σcr is above the yield strength, so the plate yields before it buckles elastically.',
   },
   plot: {
     slenderness: 'Slenderness Le/r',
@@ -69,5 +92,9 @@ export const columnsSteps = {
   johnsonLoad: 'The critical load is the critical stress times the area.',
   secantAngle: 'Find the angle in the secant formula.',
   secant: 'Use the secant formula for the largest stress, with ec/r² = {ratio}.',
+  plateK: 'Take the buckling coefficient for the support of the unloaded edges.',
+  plateWaves: 'Find k for this length: the number of half waves m that gives the least k.',
+  plate: 'Use the plate buckling stress.',
+  plateYield: 'The buckling stress is above the yield strength.',
   secantYield: 'Solve the secant formula for the load at which the largest stress reaches the yield strength.',
 } as const;

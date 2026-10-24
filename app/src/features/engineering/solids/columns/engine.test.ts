@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { END_K, secantStress, solveColumn } from './engine';
+import { END_K, plateBuckling, secantStress, solveColumn } from './engine';
 
 const rel = (a: number | undefined, b: number, tol: number) =>
   expect(Math.abs((a ?? NaN) - b) / Math.abs(b), `${a} vs ${b}`).toBeLessThanOrEqual(tol);
@@ -75,5 +75,32 @@ describe('impossible inputs', () => {
     expect(Number.isFinite(r.Pcr)).toBe(true);
     const tiny = solveColumn({ E: 1, I: 1e-20, L: 1e3, K: 2 });
     expect(tiny.Pcr).toBeGreaterThan(0);
+  });
+});
+
+describe('plate buckling', () => {
+  const steel = { E: 200e9, nu: 0.3, b: 0.5, t: 0.01, a: NaN, Sy: NaN };
+
+  it('gives the buckling stress of a long simply supported plate', () => {
+    // Worked by hand: 4 x 9.8696044 x 200 000 MPa / (12 x 0.91) x (10/500)^2 = 289.219 MPa.
+    const r = plateBuckling({ ...steel, edges: 'ss' });
+    rel(r.sigmaCr / 1e6, 289.219, 1e-5);
+    rel(r.Ncr, 289.219e6 * 0.01, 1e-5);
+    // One unloaded edge free: k = 0.425, so 0.425/4 of that.
+    rel(plateBuckling({ ...steel, edges: 'ssFree' }).sigmaCr / 1e6, (289.219 * 0.425) / 4, 1e-5);
+  });
+
+  it('finds k and the half waves for a shorter plate', () => {
+    // a/b = 1.5: m = 1 gives (1/1.5 + 1.5)^2 = 4.694, m = 2 gives (2/1.5 + 0.75)^2 = (25/12)^2 = 4.3403.
+    const r = plateBuckling({ ...steel, edges: 'ss', a: 0.75 });
+    expect(r.m).toBe(2);
+    rel(r.k, 625 / 144, 1e-12);
+    // A square plate buckles in one half wave with k = 4.
+    rel(plateBuckling({ ...steel, edges: 'ss', a: 0.5 }).k, 4, 1e-12);
+  });
+
+  it('says when the plate yields first, and stops on a bad Poisson ratio', () => {
+    expect(plateBuckling({ ...steel, edges: 'ss', Sy: 250e6 }).yields).toBe(true);
+    expect(() => plateBuckling({ ...steel, edges: 'ss', nu: 0.6 })).toThrow();
   });
 });
