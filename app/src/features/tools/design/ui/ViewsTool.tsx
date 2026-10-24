@@ -269,16 +269,16 @@ export default function ViewsTool() {
           <p role="status">
             {say('kitDesign.views.count', { count: cubes.length })} {summary}
           </p>
-          <section className={styles.section} aria-label={say('kitDesign.views.viewsHeading')}>
+          <section className={styles.section}>
             <h3 className={styles.heading}>{say('kitDesign.views.viewsHeading')}</h3>
-            <figure className={styles.figure}>
+            <figure className={`${styles.figure} ${styles.natural}`}>
               <div dangerouslySetInnerHTML={{ __html: screen }} />
             </figure>
             <p className={styles.hint}>{say('kitDesign.views.dashed')}</p>
           </section>
-          <section className={styles.section} aria-label={say('kitDesign.views.isoHeading')}>
+          <section className={styles.section}>
             <h3 className={styles.heading}>{say('kitDesign.views.isoHeading')}</h3>
-            <figure className={styles.figure}>
+            <figure className={`${styles.figure} ${styles.natural}`}>
               <div dangerouslySetInnerHTML={{ __html: isoScreen }} />
             </figure>
           </section>

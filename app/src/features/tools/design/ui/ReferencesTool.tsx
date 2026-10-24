@@ -33,7 +33,7 @@ function Cards() {
     [group, query],
   );
   return (
-    <section className={styles.section} aria-label={say('kitDesign.references.cards')}>
+    <section className={styles.section}>
       <h3 className={styles.heading}>{say('kitDesign.references.cards')}</h3>
       <div className={styles.row}>
         <div className={styles.field}>
@@ -100,7 +100,7 @@ function Precedence() {
           order: say(`kitDesign.references.order.${verdict === 'right-to-left' ? 'right' : 'left'}`),
         });
   return (
-    <section className={styles.section} aria-label={say('kitDesign.references.precedence')}>
+    <section className={styles.section}>
       <h3 className={styles.heading}>{say('kitDesign.references.precedence')}</h3>
       <p className={styles.hint}>{say('kitDesign.references.precedenceAbout')}</p>
       <div className={styles.row}>
@@ -177,7 +177,7 @@ function Trace() {
     announce(say(took ? 'kitDesign.ui.inserted' : 'kitDesign.ui.noPage'));
   };
   return (
-    <section className={styles.section} aria-label={say('kitDesign.references.trace')}>
+    <section className={styles.section}>
       <h3 className={styles.heading}>{say('kitDesign.references.trace')}</h3>
       <p className={styles.hint}>{say('kitDesign.references.traceAbout')}</p>
       <div className={styles.row}>

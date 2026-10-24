@@ -6,6 +6,7 @@ import { forming, formingSteps } from './kitDesign/forming';
 import { machining, machiningSteps } from './kitDesign/machining';
 import { microfab, microfabSteps } from './kitDesign/microfab';
 import { numrep, numrepSteps } from './kitDesign/numrep';
+import { drafting } from './kitDesign/drafting';
 import { memtrace } from './kitDesign/memtrace';
 import { views } from './kitDesign/views';
 import { references } from './kitDesign/references';
@@ -56,6 +57,24 @@ export const kitDesign = {
     ...microfabSteps,
     ...numrepSteps,
   },
+  paper: {
+    computation: 'Computation paper',
+    threeView: 'Three-view drawing paper',
+    titleBlock: 'Title block',
+    applied: '{name} applied.',
+    noPage: 'Open a page first, then choose the paper.',
+    title: 'Title',
+    drawnBy: 'Drawn by',
+    date: 'Date',
+    scale: 'Scale',
+    sheet: 'Sheet',
+    material: 'Material',
+    tolerance: 'Tolerances unless otherwise specified',
+    front: 'Front',
+    top: 'Top',
+    right: 'Right',
+    keywords: 'engineering paper drafting computation grid three view projection title block sheet',
+  },
   tolerances,
   machining,
   forming,
@@ -64,4 +83,5 @@ export const kitDesign = {
   references,
   views,
   memtrace,
+  drafting,
 } as const;

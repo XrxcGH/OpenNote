@@ -215,6 +215,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
     setTexts({ ...firstTexts(spec), ...example.values });
     setUnits(firstUnits(spec, 'si'));
   };
+  const hasUnits = spec.fields.some((field) => field.type === 'num' && field.dim !== undefined);
   const outcome = run.ok && run.result.ok ? run.result.outcome : null;
   const openInsert = (anchor: HTMLElement) => {
     if (!outcome) return;
@@ -225,17 +226,19 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
     <div className={styles.panel}>
       <p className={styles.hint}>{say(`kitDesign.${tool}.about`)}</p>
       <div className={styles.row}>
-        <label className={styles.field}>
-          <span>{say('kitDesign.ui.units')}</span>
-          <select
-            className={styles.input}
-            value={system}
-            onChange={(event) => changeSystem(event.target.value as System)}
-          >
-            <option value="si">{say('kitDesign.ui.si')}</option>
-            <option value="us">{say('kitDesign.ui.us')}</option>
-          </select>
-        </label>
+        {hasUnits && (
+          <label className={styles.field}>
+            <span>{say('kitDesign.ui.units')}</span>
+            <select
+              className={styles.input}
+              value={system}
+              onChange={(event) => changeSystem(event.target.value as System)}
+            >
+              <option value="si">{say('kitDesign.ui.si')}</option>
+              <option value="us">{say('kitDesign.ui.us')}</option>
+            </select>
+          </label>
+        )}
         {spec.examples && (
           <label className={styles.field}>
             <span>{say('kitDesign.ui.example')}</span>
@@ -281,7 +284,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
               {say('kitDesign.ui.insert')}
             </Button>
           </div>
-          <Results tool={tool} outcome={outcome} system={system} say={say} />
+          <Results tool={tool} outcome={outcome} system={system} say={say} units={hasUnits} />
         </>
       )}
     </div>

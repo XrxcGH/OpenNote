@@ -83,9 +83,9 @@ describe('dimensions measured from geometry', () => {
     expect(di!.text).toBe('⌀25.00 [0.984 in]');
   });
 
-  it('inch drawings show millimetres as the other unit', () => {
+  it('inch drawings read in inches and show millimetres as the other unit', () => {
     const d = doc([l], [dim], { units: 'in', decimals: 3, dual: true });
-    expect(dimLines(d)[0]!.text).toBe('50.000 [1270.00 mm]');
+    expect(dimLines(d)[0]!.text).toBe('1.969 [50.00 mm]');
   });
 
   it('horizontal and vertical linear dimensions', () => {

@@ -192,21 +192,21 @@ function Trace(props: { source: string; result: RunResult }) {
         {say(`kitDesign.memtrace.kind.${snap.kind}`, { line: snap.line })}{' '}
         {summaryText(snap, say('kitDesign.memtrace.null'))}
       </p>
-      <figure className={styles.figure}>
+      <figure className={`${styles.figure} ${styles.natural}`}>
         <div dangerouslySetInnerHTML={{ __html: svg }} />
       </figure>
-      <section className={styles.section} aria-label={say('kitDesign.memtrace.variables')}>
+      <section className={styles.section}>
         <h3 className={styles.heading}>{say('kitDesign.memtrace.variables')}</h3>
         <Variables snap={snap} />
       </section>
-      <section className={styles.section} aria-label={say('kitDesign.memtrace.output')}>
+      <section className={styles.section}>
         <h3 className={styles.heading}>{say('kitDesign.memtrace.output')}</h3>
         <pre className={`${styles.mono} ${styles.code}`}>
           {snap.output === '' ? say('kitDesign.memtrace.noOutput') : snap.output}
         </pre>
       </section>
       {warnings.length > 0 && (
-        <section className={styles.section} aria-label={say('kitDesign.memtrace.warnings')}>
+        <section className={styles.section}>
           <h3 className={styles.heading}>{say('kitDesign.memtrace.warnings')}</h3>
           <ul className={styles.notes}>
             {warnings.map((w, i) => (

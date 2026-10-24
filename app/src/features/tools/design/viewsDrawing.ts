@@ -90,7 +90,7 @@ export function isometricSvg(cubes: readonly Cube[], palette: Palette, alt: stri
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
-  const k = UNIT * 0.9;
+  const k = UNIT * 1.5;
   const shades = [0.08, 0.2, 0.34];
   const parts = faces.map((face) => {
     const points = face.points

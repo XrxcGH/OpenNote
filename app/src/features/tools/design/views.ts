@@ -168,11 +168,14 @@ export function standardViews(
   return { front: project(cubes, 'front'), top: project(cubes, 'top'), right: project(cubes, 'right'), system };
 }
 
-/** Isometric position of a cube corner on screen: x goes right-down, z goes left-down, y up (unit edge = 1). */
+/**
+ * Isometric position of a cube corner on screen, with the second number up. The x axis goes right and down, the
+ * z axis goes left and down, and y goes up (unit edge = 1).
+ */
 export function iso(x: number, y: number, z: number): [number, number] {
   const c = Math.cos(Math.PI / 6);
   const s = 0.5;
-  return [(x - z) * c, (x + z) * s + y];
+  return [(x - z) * c, y - (x + z) * s];
 }
 
 export interface IsoFace {

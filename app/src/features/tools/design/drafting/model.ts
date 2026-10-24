@@ -255,7 +255,8 @@ export function lineIntersection(p: Pt, p2: Pt, q: Pt, q2: Pt): Pt | null {
 
 /** Measures a dimension from the current geometry. Distances are divided by the drawing scale to give true size. */
 export function measure(d: Dim, doc: DraftingDoc): DimValue | DimProblem {
-  const f = scaleFactor(doc.scale);
+  // Geometry is kept in millimeters on the sheet; a dimension reads in the drawing's units at true size.
+  const f = scaleFactor(doc.scale) * (doc.units === 'in' ? MM_PER_IN : 1);
   switch (d.k) {
     case 'linear':
     case 'aligned': {

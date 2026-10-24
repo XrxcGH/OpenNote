@@ -11,6 +11,7 @@ export interface DesignToolMeta {
 }
 
 export const DESIGN_TOOLS: readonly DesignToolMeta[] = [
+  { id: 'drafting', title: 'kitDesign.drafting.title', keywords: 'kitDesign.drafting.keywords', icon: 'PencilRuler' },
   { id: 'tolerances', title: 'kitDesign.tolerances.title', keywords: 'kitDesign.tolerances.keywords', icon: 'Ruler' },
   { id: 'machining', title: 'kitDesign.machining.title', keywords: 'kitDesign.machining.keywords', icon: 'Wrench' },
   { id: 'forming', title: 'kitDesign.forming.title', keywords: 'kitDesign.forming.keywords', icon: 'Hammer' },

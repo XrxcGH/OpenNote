@@ -137,8 +137,10 @@ describe('isometric drawing', () => {
   it('iso projects the axes at 30 degrees', () => {
     const [x, y] = iso(1, 0, 0);
     expect(x).toBeCloseTo(Math.cos(Math.PI / 6), 12);
-    expect(y).toBeCloseTo(0.5, 12);
+    expect(y).toBeCloseTo(-0.5, 12);
     expect(iso(0, 1, 0)).toEqual([0, 1]);
+    // The corner nearest the viewer, (1, 0, 1), is the lowest point on the screen.
+    expect(iso(1, 0, 1)[1]).toBeCloseTo(-1, 12);
   });
   it('bounds', () => {
     expect(inBounds(cube(0, 0, 0))).toBe(true);

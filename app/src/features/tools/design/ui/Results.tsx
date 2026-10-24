@@ -29,12 +29,13 @@ export function Equation({ latex }: { latex: string }) {
   return <div className={styles.math} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-export function Results({ tool, outcome, system, say }: { tool: string; outcome: Outcome; system: System; say: Say }) {
+export function Results(props: { tool: string; outcome: Outcome; system: System; say: Say; units: boolean }) {
+  const { tool, outcome, system, say } = props;
   const c: InsertContext = { tool, outcome, system, say };
   const svgText = pictureSvg(c);
   return (
     <>
-      <section className={styles.section} aria-label={say('kitDesign.ui.results')}>
+      <section className={styles.section}>
         <h3 className={styles.heading}>{say('kitDesign.ui.results')}</h3>
         <table className={styles.table}>
           <thead>
@@ -93,7 +94,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
         </figure>
       )}
       {outcome.notes && outcome.notes.length > 0 && (
-        <section className={styles.section} aria-label={say('kitDesign.ui.assumptions')}>
+        <section className={styles.section}>
           <h3 className={styles.heading}>{say('kitDesign.ui.assumptions')}</h3>
           <ul className={styles.notes}>
             {outcome.notes.map((note) => (
@@ -103,9 +104,9 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
         </section>
       )}
       {outcome.steps.length > 0 && (
-        <section className={styles.section} aria-label={say('kitDesign.ui.steps')}>
+        <section className={styles.section}>
           <h3 className={styles.heading}>{say('kitDesign.ui.steps')}</h3>
-          <p className={styles.hint}>{say('kitDesign.ui.stepsUnits')}</p>
+          {props.units && <p className={styles.hint}>{say('kitDesign.ui.stepsUnits')}</p>}
           <ol className={styles.stepList}>
             {outcome.steps.map((one, i) => (
               <li key={i}>
