@@ -235,6 +235,8 @@ test.describe('a docked panel leaves the page alone', () => {
     await openTool(page, 'Open citations');
     const panel = page.getByRole('dialog', { name: 'Citations' });
     await expect(panel).toBeVisible();
+    // The edge is the window less a scroll bar where the system draws one, 15 pixels wide on the CI runners.
+    const edge = await page.evaluate(() => document.documentElement.clientWidth);
     // The panel slides in, so measure once it has settled at the edge.
     await expect
       .poll(
@@ -244,10 +246,10 @@ test.describe('a docked panel leaves the page alone', () => {
         },
         { message: 'from the right edge' },
       )
-      .toBeGreaterThanOrEqual(1100 - 1);
+      .toBeGreaterThanOrEqual(edge - 1);
     expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
     const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
-    expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(1100 - 1);
+    expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(edge - 1);
   });
 
   test('the edge resizes the panel and the width is remembered', async ({ page }) => {

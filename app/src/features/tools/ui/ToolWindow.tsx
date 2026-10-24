@@ -40,7 +40,7 @@ function frameStyle(width: number, right: number, overlay: boolean): CSSProperti
     insetInlineEnd: right,
     insetBlockStart: top,
     insetBlockEnd: bottom,
-    inlineSize: `min(${width}px, 100vw)`,
+    inlineSize: `min(${width}px, 100%)`,
   };
 }
 
