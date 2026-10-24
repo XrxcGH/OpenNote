@@ -1,5 +1,6 @@
 import type { FieldSpec, ToolSpec } from '../spec';
 import { calibration, calorimetry, colligative, osmotic, yieldCalc } from './engine';
+import { beerLambert, molarMassFromFreezing } from './lab';
 
 const mode = (v: Readonly<Record<string, string>>) => v.mode ?? 'colligative';
 const only =
@@ -7,6 +8,10 @@ const only =
   (v: Readonly<Record<string, string>>) =>
     names.includes(mode(v));
 const custom = (v: Readonly<Record<string, string>>) => mode(v) === 'colligative' && v.solvent === 'custom';
+const customKf = (v: Readonly<Record<string, string>>) =>
+  (mode(v) === 'colligative' || mode(v) === 'molarmass') && v.solvent === 'custom';
+const beerOut = (id: string) => (v: Readonly<Record<string, string>>) =>
+  mode(v) === 'beer' && (v.beerUnknown ?? 'c') !== id;
 const bomb = (v: Readonly<Record<string, string>>) => mode(v) === 'calorimetry' && v.kind === 'bomb';
 const cup = (v: Readonly<Record<string, string>>) => mode(v) === 'calorimetry' && v.kind !== 'bomb';
 
@@ -42,6 +47,8 @@ export const solutionsTool: ToolSpec = {
         ['calorimetry', 'kitChemMat.sol.mode.calorimetry'],
         ['calibration', 'kitChemMat.sol.mode.calibration'],
         ['yield', 'kitChemMat.sol.mode.yield'],
+        ['beer', 'kitChemMat.sol.mode.beer'],
+        ['molarmass', 'kitChemMat.sol.mode.molarmass'],
       ],
       'colligative',
     ),
@@ -56,7 +63,7 @@ export const solutionsTool: ToolSpec = {
         ['custom', 'kitChemMat.sol.solvent.custom'],
       ],
       'water',
-      only('colligative'),
+      only('colligative', 'molarmass'),
     ),
     { id: 'n', label: 'kitChemMat.sol.field.n', kind: 'number', initial: '1', when: only('colligative') },
     {
@@ -65,7 +72,7 @@ export const solutionsTool: ToolSpec = {
       kind: 'number',
       dim: 'mass',
       initial: '1000',
-      when: only('colligative'),
+      when: only('colligative', 'molarmass'),
     },
     {
       id: 'i',
@@ -73,9 +80,9 @@ export const solutionsTool: ToolSpec = {
       kind: 'number',
       initial: '2',
       help: 'kitChemMat.sol.field.iHelp',
-      when: only('colligative', 'osmotic'),
+      when: only('colligative', 'osmotic', 'molarmass'),
     },
-    { id: 'Kf', label: 'kitChemMat.sol.field.Kf', kind: 'number', initial: '1.86', when: custom },
+    { id: 'Kf', label: 'kitChemMat.sol.field.Kf', kind: 'number', initial: '1.86', when: customKf },
     { id: 'Kb', label: 'kitChemMat.sol.field.Kb', kind: 'number', initial: '0.512', when: custom },
     {
       id: 'Tf',
@@ -156,6 +163,45 @@ export const solutionsTool: ToolSpec = {
       help: 'kitChemMat.sol.field.dnHelp',
       when: bomb,
     },
+    choice(
+      'beerUnknown',
+      'kitChemMat.sol.field.beerUnknown',
+      [
+        ['c', 'kitChemMat.sol.beerUnknown.c'],
+        ['A', 'kitChemMat.sol.beerUnknown.A'],
+        ['eps', 'kitChemMat.sol.beerUnknown.eps'],
+        ['b', 'kitChemMat.sol.beerUnknown.b'],
+      ],
+      'c',
+      only('beer'),
+    ),
+    { id: 'beerA', label: 'kitChemMat.sol.field.absorbance', kind: 'number', initial: '0.45', when: beerOut('A') },
+    { id: 'beerEps', label: 'kitChemMat.sol.field.epsilon', kind: 'number', initial: '12000', when: beerOut('eps') },
+    { id: 'beerB', label: 'kitChemMat.sol.field.pathBeer', kind: 'number', initial: '1', when: beerOut('b') },
+    {
+      id: 'beerC',
+      label: 'kitChemMat.sol.field.concBeer',
+      kind: 'number',
+      dim: 'concentration',
+      initial: '3e-5',
+      when: beerOut('c'),
+    },
+    {
+      id: 'soluteMass',
+      label: 'kitChemMat.sol.field.soluteMass',
+      kind: 'number',
+      dim: 'mass',
+      initial: '5',
+      when: only('molarmass'),
+    },
+    {
+      id: 'dTf',
+      label: 'kitChemMat.sol.field.depression',
+      kind: 'number',
+      initial: '0.93',
+      help: 'kitChemMat.sol.field.depressionHelp',
+      when: only('molarmass'),
+    },
     {
       id: 'standards',
       label: 'kitChemMat.sol.field.standards',
@@ -214,6 +260,23 @@ export const solutionsTool: ToolSpec = {
         });
       case 'calibration':
         return calibration(String(input.standards), String(input.unknown), Number(input.path));
+      case 'beer':
+        return beerLambert({
+          unknown: String(input.beerUnknown),
+          A: Number(input.beerA),
+          eps: Number(input.beerEps),
+          b: Number(input.beerB),
+          c: Number(input.beerC),
+        });
+      case 'molarmass':
+        return molarMassFromFreezing({
+          solvent: String(input.solvent),
+          Kf: Number(input.Kf),
+          soluteMass: Number(input.soluteMass),
+          solventMass: Number(input.solventMass),
+          dT: Number(input.dTf),
+          i: Number(input.i),
+        });
       case 'yield':
         return yieldCalc(Number(input.actual), Number(input.theoretical), Number(input.purity));
       default:
