@@ -3,4 +3,4 @@
 /**
  * A top-level settings section that `settings_reset` can put back to its defaults.
  */
-export type SettingsSectionKey = "appearance" | "storage" | "startup" | "shortcuts" | "keymap" | "updates" | "setup" | "experimental" | "editing" | "ink";
+export type SettingsSectionKey = "appearance" | "storage" | "startup" | "shortcuts" | "keymap" | "updates" | "setup" | "experimental" | "editing" | "ink" | "language";

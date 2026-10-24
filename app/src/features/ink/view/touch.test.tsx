@@ -1,0 +1,131 @@
+// T2-12: a palm-sized touch must not press a control while the pen is in use, however long it rests; a pen's own tap
+// and a finger's tap still press.
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { InkHost } from './host';
+import { chooseTool } from './state';
+import { TouchTool } from './touch';
+import type { InkSurface } from './surface';
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const surface = { readOnly: false } as unknown as InkSurface;
+
+function pointer(type: string, init: PointerEventInit): void {
+  const target = type === 'click' ? button : window;
+  target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, ...init }));
+}
+
+let button: HTMLButtonElement;
+let tool: TouchTool;
+let pressed = 0;
+
+beforeEach(async () => {
+  chooseTool('pen');
+  await import('./palm');
+  button = document.body.appendChild(document.createElement('button'));
+  pressed = 0;
+  button.addEventListener('click', () => pressed++);
+  tool = new TouchTool({} as InkHost, () => surface);
+  await import('./palm');
+  await wait(100);
+});
+
+afterEach(() => {
+  tool.destroy();
+  button.remove();
+});
+
+const palm = { pointerType: 'touch', pointerId: 5, width: 60, height: 60 };
+
+describe('a palm-sized touch on a control while the pen is in use', () => {
+  it('does not press it when the palm rests longer than a second and then lifts', async () => {
+    pointer('pointermove', { pointerType: 'pen', pointerId: 2 });
+    pointer('pointerdown', palm);
+    await wait(1200);
+    pointer('pointerup', palm);
+    pointer('click', palm);
+    expect(pressed).toBe(0);
+  });
+
+  it('does not press it when the palm landed before the pen wrote', async () => {
+    pointer('pointerdown', palm);
+    await wait(200);
+    pointer('pointermove', { pointerType: 'pen', pointerId: 2 });
+    pointer('pointerup', palm);
+    pointer('click', palm);
+    expect(pressed).toBe(0);
+  });
+
+  it('does not hand a control the pointerdown or pointerup of a palm that rests on it', () => {
+    const heard: string[] = [];
+    for (const type of ['pointerdown', 'pointerup']) button.addEventListener(type, () => heard.push(type));
+    const onButton = (type: string, init: PointerEventInit) =>
+      button.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, ...init }));
+    pointer('pointermove', { pointerType: 'pen', pointerId: 2 });
+    onButton('pointerdown', palm);
+    onButton('pointerup', palm);
+    expect(heard).toEqual([]);
+    const finger = { pointerType: 'touch', pointerId: 9, width: 10, height: 10 };
+    onButton('pointerdown', finger);
+    expect(heard).toEqual(['pointerdown']);
+  });
+
+  it('lets the pen tap right after the palm landed, and a finger tap', async () => {
+    pointer('pointerdown', palm);
+    pointer('pointerdown', { pointerType: 'pen', pointerId: 2 });
+    pointer('pointerup', { pointerType: 'pen', pointerId: 2 });
+    pointer('click', { pointerType: 'pen', pointerId: 2 });
+    expect(pressed).toBe(1);
+    pointer('pointerup', palm);
+    await wait(100);
+    const finger = { pointerType: 'touch', pointerId: 9, width: 10, height: 10 };
+    pointer('pointerdown', finger);
+    pointer('pointerup', finger);
+    pointer('click', finger);
+    expect(pressed).toBe(2);
+  });
+});
+
+// T2-13: a two-finger double tap with the pen tool active undoes, and a three-finger one redoes, even though every
+// finger is up when the result is due: the tick that delivers it must keep running.
+describe('multi-finger double taps', () => {
+  const ctx = { capture: () => undefined } as never;
+  const fingers = (ids: number[], type: 'down' | 'up'): void => {
+    for (const [i, pointerId] of ids.entries()) {
+      const event = new PointerEvent(`pointer${type}`, {
+        pointerType: 'touch',
+        pointerId,
+        clientX: 100 + i * 150,
+        clientY: 300,
+        width: 8,
+        height: 8,
+      });
+      if (type === 'down') tool.tool.down?.(event, ctx);
+      else tool.tool.up?.(event, ctx);
+    }
+  };
+  const doubleTap = async (ids: number[]) => {
+    for (let round = 0; round < 2; round++) {
+      fingers(ids, 'down');
+      await wait(40);
+      fingers(ids, 'up');
+      await wait(80);
+    }
+  };
+
+  it('delivers undo for two fingers and redo for three', async () => {
+    const heard: string[] = [];
+    const stub = new Proxy({ readOnly: false, layerFor: () => 'layer' } as Record<string, unknown>, {
+      get: (target, key: string) => target[key] ?? (() => undefined),
+    });
+    tool = new TouchTool({ viewport: { get: () => null } } as unknown as InkHost, () => stub as unknown as InkSurface);
+    tool.onGesture = (kind) => heard.push(kind);
+    await import('./palm');
+    await wait(100);
+    await doubleTap([21, 22]);
+    await wait(400);
+    expect(heard).toEqual(['undo']);
+    await doubleTap([31, 32, 33]);
+    await wait(400);
+    expect(heard).toEqual(['undo', 'redo']);
+  });
+});

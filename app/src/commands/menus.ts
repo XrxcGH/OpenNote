@@ -1,7 +1,8 @@
 // Context menus and menu buttons built from the contextMenus registry (ARCHITECTURE.md sections 13.8 and 15.3).
 // Labels, shortcuts, enablement, and checked states come from the commands, as in the palette and the keymap.
 //
-// - Groups keep the order their first item registered, with a separator between them, and 'danger' always last.
+// - Groups keep the order their first item registered, with a separator between them, 'danger' always last, and the
+//   tree's own groups (new, level, edit, move) first, whichever feature registered its items before the tree did.
 // - Items hide when their flag or their command's flag is off, or when the command isn't available (`when`).
 // - A command with a checked state is a checkbox item; a group whose every item has one is a radio group.
 // - An item with submenu 'color' lists the chip colors and "No color", and runs its command with the color.
@@ -19,6 +20,8 @@ import { executeCommand } from './registry';
 import type { CommandContext } from './types';
 
 const DANGER = 'danger';
+/** The groups every menu leads with, in this order, so the order does not depend on which feature loaded first. */
+const LEADING = ['new', 'level', 'edit', 'move'];
 /** The chip colors in pen order, from the tokens, then "No color". */
 const COLORS: readonly (ChipColor | null)[] = [
   ...tokens.ink.pens.map((pen) => pen.name.toLowerCase() as ChipColor),
@@ -27,7 +30,11 @@ const COLORS: readonly (ChipColor | null)[] = [
 
 function inGroupOrder(items: readonly ContextMenuItem[]): ContextMenuItem[] {
   const groups = [...new Set(items.map((item) => item.group))];
-  const rank = (group: string) => (group === DANGER ? groups.length : groups.indexOf(group));
+  const rank = (group: string) => {
+    if (group === DANGER) return groups.length + LEADING.length;
+    const lead = LEADING.indexOf(group);
+    return lead >= 0 ? lead : LEADING.length + groups.indexOf(group);
+  };
   return [...items].sort((a, b) => rank(a.group) - rank(b.group) || a.order - b.order);
 }
 

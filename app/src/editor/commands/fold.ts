@@ -152,6 +152,22 @@ export function unfoldTo(editor: Editor, pos: number): boolean {
   return true;
 }
 
+/**
+ * Unfolds whatever hides a DOM node, in the editor that shows it. For code that reveals something by its element: a
+ * link, a search result, a spoken paragraph. Returns whether anything unfolded; a node outside an editor does nothing.
+ */
+export function unfoldAroundDom(node: Node): boolean {
+  const element = node instanceof Element ? node : node.parentElement;
+  const root = element?.closest('.ProseMirror') as (HTMLElement & { editor?: Editor }) | null | undefined;
+  const editor = root?.editor;
+  if (!editor || editor.isDestroyed || !root?.contains(node)) return false;
+  try {
+    return unfoldTo(editor, editor.view.posAtDOM(node, 0));
+  } catch {
+    return false;
+  }
+}
+
 /** The foldable heading or list item the selection is in: the innermost item with children, else its heading. */
 export function foldTargetAt(state: EditorState): { pos: number; kind: FoldKind } | null {
   const { $from } = state.selection;

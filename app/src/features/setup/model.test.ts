@@ -3,7 +3,7 @@ import { defaultBootData } from '../../boot/defaults';
 import type { SetupContext, SetupStepDef } from '../../registries';
 import { DEFAULT_OS } from '../../state/os';
 import { DEFAULT_SETTINGS } from '../../state/settings';
-import { completedBy, initialDraft, pendingSteps, withCompleted } from './model';
+import { RUN_AFTER_SETUP, afterSetupCommands, completedBy, initialDraft, pendingSteps, withCompleted } from './model';
 import type { DeviceSetup } from './model';
 
 const step = (id: string, scope: SetupStepDef['scope'], order: number, enabled = true): SetupStepDef => ({
@@ -63,5 +63,13 @@ describe('the draft and the records', () => {
     expect(completedBy(STEPS, 'person')).toEqual(['welcome', 'look']);
     expect(completedBy(STEPS, 'device')).toEqual(['storage']);
     expect(withCompleted(['welcome'], ['welcome', 'look'])).toEqual(['welcome', 'look']);
+  });
+});
+
+describe('afterSetupCommands', () => {
+  it('reads the command ids a draft asks for, ignoring anything else', () => {
+    expect(afterSetupCommands({ [RUN_AFTER_SETUP]: ['interop.import', 3] })).toEqual(['interop.import']);
+    expect(afterSetupCommands({ [RUN_AFTER_SETUP]: 'interop.import' })).toEqual([]);
+    expect(afterSetupCommands(null)).toEqual([]);
   });
 });

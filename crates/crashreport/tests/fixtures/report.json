@@ -1,0 +1,29 @@
+{
+  "app_version": "1.0.0-beta.2",
+  "backtrace": [],
+  "exception_code": "0xc0000005",
+  "format": 1,
+  "frames": [
+    {
+      "debug_id": "3E5F3F0C8C2147B3B2C3B3F6F3E6F7E71",
+      "function": "opennote_core::store::Store::save_page",
+      "module": "opennote.exe",
+      "offset": "0x1a2b3c"
+    },
+    {
+      "debug_id": "3E5F3F0C8C2147B3B2C3B3F6F3E6F7E71",
+      "module": "opennote.exe",
+      "offset": "0x2f40a8"
+    },
+    {
+      "debug_id": "8D1C7A5B3E9F4A6C8B2D0E1F3A4B5C6D2",
+      "module": "ntdll.dll",
+      "offset": "0x9f2c0"
+    }
+  ],
+  "kind": "exception",
+  "location": null,
+  "message": null,
+  "os": "Windows 10.0.26200 x86_64",
+  "time_unix": 1790000000
+}

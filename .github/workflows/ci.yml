@@ -8,6 +8,9 @@ on:
   # caller's event, so a release run is a push here and runs CHECKS on all files.
   workflow_call:
 
+# Every action is pinned to a full commit SHA, with the version in a comment. The release workflow runs these jobs
+# in the same run as its build and signing, so they could upload artifacts to it. workflow.test.ts checks the pins.
+#
 # Every job only reads the repository. A called workflow can narrow the caller's permissions but never widen
 # them, so the release workflow's own read-only grant for this call still works. Uploading the debug build
 # as a run artifact uses the runner's own token, not GITHUB_TOKEN, so no job needs more than this.
@@ -25,16 +28,21 @@ jobs:
     # Normally 1 to 3 minutes. A run that passes its limit is stuck, so it ends and says so.
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
       - name: Install tools
         run: npm ci
+      # The PDF tests print Japanese words and check every character reaches the PDF's text layer. Windows has a
+      # Japanese font; Ubuntu runners have none, so Chrome draws empty boxes that carry no text.
+      - name: Install a Japanese font (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends fonts-noto-cjk
       - name: Design tokens are up to date
         run: npm run tokens:check
       - name: Type-check, lint, and format-check
@@ -44,8 +52,8 @@ jobs:
       - name: CHECKS on changed files (pull requests)
         if: github.event_name == 'pull_request'
         run: node checks/cli.ts --base origin/${{ github.base_ref }}
-      - name: CHECKS on all files (pushes)
-        if: github.event_name == 'push'
+      - name: CHECKS on all files (pushes and release dry runs)
+        if: github.event_name != 'pull_request'
         run: node checks/cli.ts --all
 
   components:
@@ -55,24 +63,30 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally under 2 minutes.
-    timeout-minutes: 10
+    # Normally under 4 minutes.
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
       - name: Install tools
         run: npm ci
       - name: Component tests (Vitest browser mode)
-        run: npm run test:components
+        # In three runs, each with a fresh browser: on Ubuntu one browser session that runs all 159 files was closed by
+        # the runner about three minutes in, with a different file running each time.
+        shell: bash
+        run: |
+          status=0
+          for shard in 1 2 3; do npm run test:components -- --shard=$shard/3 || status=1; done
+          exit $status
       - name: Keep the failure screenshots
         # Vitest saves a screenshot of the page for each failed test.
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: component-failures-${{ matrix.os }}
           path: app/.vitest/attachments
@@ -82,13 +96,13 @@ jobs:
   ui-web:
     # The production interface in Edge: the bundle budget, then Playwright against the test build.
     runs-on: windows-latest
-    # Normally about 5 minutes.
-    timeout-minutes: 15
+    # The suite is 1400 tests (about 380 screenshots and 450 axe checks) on two workers: about 45 minutes.
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -119,12 +133,38 @@ jobs:
         run: npx playwright test --config tests/ui/playwright.config.ts
       - name: Keep the Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
           path: |
             tests/ui/report
             tests/ui/results
+          retention-days: 7
+
+  layout-audit:
+    # The whole app at three window sizes, in both themes and densities, checked for clipped text, overlap, covered scroll
+    # bars, and dead space (tests/ui/audit). Findings must match tests/ui/audit/known.json, in both directions. CI runs the
+    # three cells that between them hold every size, theme, and density; `npm run audit:layout` runs all 12.
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Layout audit
+        run: npm run audit:layout
+      - name: Keep the findings
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: layout-audit
+          path: tests/ui/audit/out
           retention-days: 7
 
   perf-typing:
@@ -134,10 +174,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -147,29 +187,58 @@ jobs:
         run: npm run perf:typing
       - name: Keep the numbers
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: perf-typing
           path: tests/perf/typing/results
           retention-days: 30
 
+  native-engines:
+    # whisper.cpp, ONNX Runtime, and the language model program need CMake, a C++ compiler, and libclang, so the other
+    # jobs leave them out. This one builds and tests them on Windows, where the release builds them.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Clippy
+        env:
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: |
+          cargo clippy -p opennote-intel-engines --all-targets --features whisper-cpp,onnx -- -D warnings
+          cargo clippy -p opennote-llm --all-targets --features llama -- -D warnings
+      - name: Tests
+        env:
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: |
+          cargo test -p opennote-intel-engines --features whisper-cpp,onnx
+          cargo test -p opennote-llm --features llama
+
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
-    # Normally about 11 minutes with a cold cache.
-    timeout-minutes: 35
+    # About 11 minutes with a warm cache. The cache is saved only by a green run, so while the branch is red every run
+    # starts cold, and the build with the app's whole dependency tree then takes over 35 minutes on a 4-core runner.
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
+          toolchain: stable
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Install tools
         run: npm ci
       - name: Build the interface (the Rust app embeds it)
@@ -178,8 +247,20 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Clippy ratchet (no new unwrap, expect, or panic in shipped code)
+        # Existing uses are counted per file in checks/data/clippy-ratchet.json. A count may go down, never up.
+        run: node checks/clippy-ratchet.ts
+      - name: Fetch every platform's crates (the no-network test reads all of them offline)
+        run: cargo fetch --locked
       - name: Rust tests
         run: cargo test --workspace
+      - name: The notes contract suite against the app's notes bridge and the core
+        # The suite runs the notes harness example over stdin and stdout.
+        shell: bash
+        run: |
+          cargo build -p opennote --example notes_harness
+          export OPENNOTE_NOTES_HARNESS="$PWD/target/debug/examples/notes_harness.exe"
+          npx vitest run --config app/vitest.config.ts --project unit app/src/services/notes/core
       - name: Core lints and tests with every feature
         run: |
           cargo clippy -p opennote-core --all-targets --all-features -- -D warnings
@@ -193,7 +274,7 @@ jobs:
       - name: Test build of the app (ci profile, with the test endpoints the E2E tests use)
         run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
       - name: Keep the test build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: opennote-e2e-exe
           path: target/ci/opennote.exe
@@ -207,28 +288,30 @@ jobs:
     # session holds the runner for GitHub's six-hour default.
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
       - name: Install tools
         run: npm ci
       - name: Cache tauri-driver
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cargo/bin/tauri-driver.exe
           key: tauri-driver-2.1.0-${{ runner.os }}-${{ runner.arch }}
       - name: Cache msedgedriver
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: tests/e2e/.drivers
           key: msedgedriver-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}
           restore-keys: msedgedriver-${{ runner.os }}-${{ runner.arch }}-
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: opennote-e2e-exe
           path: target/e2e
@@ -252,7 +335,7 @@ jobs:
       - name: Keep the E2E logs
         # A step that times out is canceled, not failed, and its logs are the ones worth reading.
         if: failure() || cancelled()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: e2e-logs
           path: tests/e2e/logs
@@ -264,23 +347,33 @@ jobs:
     # Normally about 10 minutes with a cold cache.
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
+          toolchain: stable
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Clippy for the core, the kill harness, and the benchmarks
         run: >-
           cargo clippy -p opennote-core -p opennote-crashtest -p opennote-perf
           --all-targets --all-features -- -D warnings
       - name: Core tests with every feature
         run: cargo test -p opennote-core --all-features
+      - name: Print crate tests, with stand-in lp and lpstat scripts
+        run: cargo test -p opennote-print
+      - uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2.87.28
+        with:
+          tool: cargo-deny
+      - name: Licenses of every crate the build uses
+        run: cargo deny check licenses
       - name: Benchmark harness tests
         run: cargo test -p opennote-perf
       - name: Fuzz targets compile
-        run: cargo check --manifest-path crates/core/fuzz/Cargo.toml
+        run: |
+          cargo check --manifest-path crates/core/fuzz/Cargo.toml
+          cargo check --manifest-path crates/interop/fuzz/Cargo.toml
       - name: No work package stubs are left (pull requests into main)
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: |
@@ -295,15 +388,17 @@ jobs:
     # Normally about 5 minutes with a cold cache.
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Install tools
         run: npm ci
       - name: Rust fixture tests
@@ -317,10 +412,10 @@ jobs:
     # Normally under 1 minute.
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.x'
       - name: Reference reader tests

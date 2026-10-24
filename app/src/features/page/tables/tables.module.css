@@ -15,6 +15,11 @@
     padding-block: 1px;
   }
 
+  /* The cell editor, like the text editor, keeps spaces as typed; ProseMirror warns when it is left to wrap normally. */
+  .scroller > :global(.ProseMirror) {
+    white-space: pre-wrap;
+  }
+
   .table :global(table) {
     border-collapse: collapse;
     table-layout: fixed;
@@ -44,6 +49,21 @@
     background: var(--color-surface-selected);
   }
 
+  /* Ruled paper (blocks.module.css): each row is whole rules, its text on the rule its row line is drawn on. */
+  :global([data-ruled]) .scroller {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .table :is(:global(td), :global(th)) {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .table :is(:global(td > p), :global(th > p)) {
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
+  }
+
   .toolbarWrap {
     position: absolute;
     inset-block-end: 100%;
@@ -53,6 +73,14 @@
     flex-direction: column;
     gap: var(--space-1);
     padding-block-end: var(--space-1);
+  }
+
+  /* A table at the very top of the flow has the page title above it, so its tools go below it instead of over the
+     title and the date. */
+  :global([data-layout]) > .wrapper:first-child .toolbarWrap {
+    inset-block-end: auto;
+    inset-block-start: 100%;
+    padding-block: var(--space-1) 0;
   }
 
   .wrapper[data-current] .toolbarWrap {

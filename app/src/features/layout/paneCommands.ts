@@ -14,7 +14,7 @@ import {
   setPaneShowing,
   togglePane,
 } from '../../shell/layout/paneActions';
-import { PANE_LIMITS, paneBounds } from '../../shell/layout/solvePanes';
+import { isAutoWidth, paneBounds } from '../../shell/layout/solvePanes';
 import type { PaneId } from '../../shell/layout/solvePanes';
 import { layoutStore } from '../../state/layout';
 import { sessionStore } from '../../state/session';
@@ -86,7 +86,7 @@ function sizeCommands(pane: PaneId): CommandDef[] {
       id: `layout.reset${word}`,
       title: `layout.commands.reset${word}`,
       when: () => isPaneResizable(pane) || collapsible(pane),
-      enabled: () => sessionStore.get().panes[pane].width !== PANE_LIMITS[pane].default,
+      enabled: () => !isAutoWidth(pane, sessionStore.get().panes[pane].width),
       run: () => resetPane(pane),
     }),
     defineCommand({

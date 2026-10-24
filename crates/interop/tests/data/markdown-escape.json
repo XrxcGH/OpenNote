@@ -1,0 +1,244 @@
+{
+  "cases": [
+    {
+      "atLineStart": true,
+      "escaped": "5 \\* 3 = 15",
+      "text": "5 * 3 = 15"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "5 \\* 3 = 15",
+      "text": "5 * 3 = 15"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "a \\=\\= b",
+      "text": "a == b"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "a \\=\\= b",
+      "text": "a == b"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "Costs \\$5",
+      "text": "Costs $5"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "Costs \\$5",
+      "text": "Costs $5"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\#biology and C#",
+      "text": "#biology and C#"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\\#biology and C#",
+      "text": "#biology and C#"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "snake_case and \\_draft",
+      "text": "snake_case and _draft"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "snake_case and \\_draft",
+      "text": "snake_case and _draft"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\[draft\\]",
+      "text": "[draft]"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\\[draft\\]",
+      "text": "[draft]"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "AT&T and \\&amp;",
+      "text": "AT&T and &amp;"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "AT&T and \\&amp;",
+      "text": "AT&T and &amp;"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "x \\< y",
+      "text": "x < y"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "x \\< y",
+      "text": "x < y"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\~5 minutes",
+      "text": "~5 minutes"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\\~5 minutes",
+      "text": "~5 minutes"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\{note}",
+      "text": "{note}"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\\{note}",
+      "text": "{note}"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "1\\. Not a list",
+      "text": "1. Not a list"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "1. Not a list",
+      "text": "1. Not a list"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\- not a bullet",
+      "text": "- not a bullet"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "- not a bullet",
+      "text": "- not a bullet"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "&#32;leading space",
+      "text": " leading space"
+    },
+    {
+      "atLineStart": false,
+      "escaped": " leading space",
+      "text": " leading space"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "trailing space&#32;",
+      "text": "trailing space "
+    },
+    {
+      "atLineStart": false,
+      "escaped": "trailing space&#32;",
+      "text": "trailing space "
+    },
+    {
+      "atLineStart": true,
+      "escaped": "a&#9;tab",
+      "text": "a\ttab"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "a&#9;tab",
+      "text": "a\ttab"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "line one\\\nline two",
+      "text": "line one\nline two"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "line one\\\nline two",
+      "text": "line one\nline two"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "first\\\n\\> not a quote",
+      "text": "first\n> not a quote"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "first\\\n\\> not a quote",
+      "text": "first\n> not a quote"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\u00fcber_stra\u00dfe and \u65e5\u672c_\u8a9e",
+      "text": "\u00fcber_stra\u00dfe and \u65e5\u672c_\u8a9e"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\u00fcber_stra\u00dfe and \u65e5\u672c_\u8a9e",
+      "text": "\u00fcber_stra\u00dfe and \u65e5\u672c_\u8a9e"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "12\\) item and 1234567890. no",
+      "text": "12) item and 1234567890. no"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "12) item and 1234567890. no",
+      "text": "12) item and 1234567890. no"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\=\\=\\= and = alone",
+      "text": "=== and = alone"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\\=\\=\\= and = alone",
+      "text": "=== and = alone"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "back\\\\slash and \\`code\\` and \\|pipe\\|",
+      "text": "back\\slash and `code` and |pipe|"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "back\\\\slash and \\`code\\` and \\|pipe\\|",
+      "text": "back\\slash and `code` and |pipe|"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\&#32; and \\&x; and &;",
+      "text": "&#32; and &x; and &;"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "\\&#32; and \\&x; and &;",
+      "text": "&#32; and &x; and &;"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "\\+ plus and a+b",
+      "text": "+ plus and a+b"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "+ plus and a+b",
+      "text": "+ plus and a+b"
+    },
+    {
+      "atLineStart": true,
+      "escaped": "zero\ufffdwidth\u200bspace",
+      "text": "zero\u0000width\u200bspace"
+    },
+    {
+      "atLineStart": false,
+      "escaped": "zero\ufffdwidth\u200bspace",
+      "text": "zero\u0000width\u200bspace"
+    }
+  ]
+}

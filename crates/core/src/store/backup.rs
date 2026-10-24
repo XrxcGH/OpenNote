@@ -29,6 +29,7 @@ pub fn backup_before_upgrade(
     from: u32,
     to: u32,
 ) -> Result<PathBuf, CoreError> {
+    let fs = crate::store::sealed::at_rest(fs);
     ensure_all(fs, backups)?;
     let stem = format!("{}-v{from}-to-v{to}", file_time(SystemClock::new().now()));
     let set = create_new_dir(fs, backups, &stem)?;

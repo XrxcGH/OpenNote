@@ -262,6 +262,23 @@ fn push_escape(out: &mut String, c: char) {
     }
 }
 
+/// A geometry value as the canonical file holds it: rounded to 0.01, the way [`Json::Geometry`] writes it
+/// (spec 2.3). Every reader of a geometry value applies it, from a file and from an edit alike, so the page in
+/// memory is the page its bytes read back as. Without that, a save's read-back check (spec 17.7, step S5) fails
+/// forever for a value with a third decimal, such as the offset of ink drawn on text.
+pub fn geometry(value: f64) -> f64 {
+    fixed_value(value, 2)
+}
+
+/// A number rounded to `decimals` decimals, as [`fixed`] writes it. A value that is not finite stays as it is,
+/// for validation to refuse.
+pub fn fixed_value(value: f64, decimals: u32) -> f64 {
+    if !value.is_finite() {
+        return value;
+    }
+    fixed(value, decimals).parse().unwrap_or(value)
+}
+
 /// Formats a number rounded to `decimals` decimals, in the shortest form: no exponent, no trailing zeros,
 /// and `0` instead of `-0`. Values that are not finite are written as `0`, which validation never lets
 /// through.

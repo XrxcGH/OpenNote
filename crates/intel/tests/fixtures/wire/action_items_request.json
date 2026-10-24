@@ -1,0 +1,68 @@
+{
+  "transcript": {
+    "language": "en",
+    "device": "cpu",
+    "segments": [
+      {
+        "startMs": 0,
+        "endMs": 19000,
+        "text": "Photosynthesis turns sunlight into chemical energy inside the chloroplast."
+      },
+      {
+        "startMs": 20000,
+        "endMs": 39000,
+        "text": "Chlorophyll absorbs the sunlight, and the chloroplast stores that energy. We decided to cover the Calvin cycle next."
+      },
+      {
+        "startMs": 40000,
+        "endMs": 59000,
+        "text": "The light reactions in the chloroplast split water and release oxygen."
+      },
+      {
+        "startMs": 60000,
+        "endMs": 79000,
+        "text": "Photosynthesis turns sunlight into chemical energy inside the chloroplast."
+      },
+      {
+        "startMs": 80000,
+        "endMs": 99000,
+        "text": "Chlorophyll absorbs the sunlight, and the chloroplast stores that energy."
+      },
+      {
+        "startMs": 100000,
+        "endMs": 119000,
+        "text": "The light reactions in the chloroplast split water and release oxygen."
+      },
+      {
+        "startMs": 120000,
+        "endMs": 139000,
+        "text": "A database index speeds up queries on a large table."
+      },
+      {
+        "startMs": 140000,
+        "endMs": 159000,
+        "text": "The index stores sorted keys, so the database avoids scanning the table."
+      },
+      {
+        "startMs": 160000,
+        "endMs": 179000,
+        "text": "Writing a row means the database must update every index on the table. Maria will write the index chapter by Friday."
+      },
+      {
+        "startMs": 180000,
+        "endMs": 199000,
+        "text": "A database index speeds up queries on a large table."
+      },
+      {
+        "startMs": 200000,
+        "endMs": 219000,
+        "text": "The index stores sorted keys, so the database avoids scanning the table."
+      },
+      {
+        "startMs": 220000,
+        "endMs": 239000,
+        "text": "Writing a row means the database must update every index on the table."
+      }
+    ]
+  }
+}

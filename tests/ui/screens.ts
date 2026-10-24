@@ -32,6 +32,8 @@ export interface ScreenState {
   readonly sizes?: readonly SizeClass[];
   /** Default: both themes. */
   readonly themes?: readonly Theme[];
+  /** Also run in the pseudo-locale pass. Its steps then name controls with loose() from pseudoName.ts. */
+  readonly pseudo?: boolean;
   /** Brings the page into the state, for example by opening a menu. */
   prepare?(page: Page): Promise<void>;
 }
@@ -61,7 +63,10 @@ export async function loadScreens(): Promise<ScreenState[]> {
 /** Opens a screen state at a size and theme, starting the app as Rust would, with a boot payload. */
 export async function openScreen(page: Page, screen: ScreenState, where: { size: SizeClass; theme: Theme }) {
   await page.setViewportSize(VIEWPORTS[where.size]);
-  const boot = { ...screen.boot, settings: { ...screen.boot?.settings, appearance: { theme: where.theme } } };
+  const boot = {
+    ...screen.boot,
+    settings: { ...screen.boot?.settings, appearance: { ...screen.boot?.settings?.appearance, theme: where.theme } },
+  };
   await page.addInitScript(
     (options) => {
       window.__OPENNOTE_DEV__ = { ...window.__OPENNOTE_DEV__, fixture: options.fixture };
@@ -81,9 +86,40 @@ export async function openScreen(page: Page, screen: ScreenState, where: { size:
  * are left out.
  */
 export async function settle(page: Page) {
+  // Feature chunks load after the first paint and add tabs and commands when they arrive.
+  await page.waitForLoadState('networkidle');
   await page.evaluate(async () => {
     const frame = () => new Promise<void>((done) => requestAnimationFrame(() => done()));
     await frame();
+    // Pictures and fonts that are still arriving change what is drawn and how toolbars fit, so wait for them too.
+    // Parts of the page mount a little after it opens, such as the properties bar. Wait until the document has
+    // stopped changing for a moment, with a limit, so a slow machine and a fast one draw the same picture.
+    const quiet = () =>
+      new Promise<void>((done) => {
+        let timer = setTimeout(finish, 250);
+        const limit = setTimeout(finish, 1500);
+        const watch = new MutationObserver(() => {
+          clearTimeout(timer);
+          timer = setTimeout(finish, 250);
+        });
+        watch.observe(document.documentElement, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          characterData: true,
+        });
+        function finish() {
+          clearTimeout(timer);
+          clearTimeout(limit);
+          watch.disconnect();
+          done();
+        }
+      });
+    await document.fonts.ready;
+    await Promise.allSettled([...document.images].map((image) => image.decode()));
+    await frame();
+    await frame();
+    await quiet();
     // Finishing one animation can start another, so look again until nothing is left, with a limit.
     for (let round = 0; round < 10; round += 1) {
       const running = document

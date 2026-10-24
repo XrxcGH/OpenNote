@@ -39,8 +39,8 @@ function boxes(specs: { markdown: string; x: number; y: number; lock?: 'position
   return { page: { ...base, blocks } };
 }
 
-async function open(fixture: PageFixture) {
-  initFlags('dev', { 'page.editor': true });
+async function open(fixture: PageFixture, flags: Record<string, boolean> = {}) {
+  initFlags('dev', { 'page.editor': true, ...flags });
   const service = createMemoryPageService([fixture]);
   const page = await service.open(fixture.page.id, { viewport: null });
   const container = document.body.appendChild(document.createElement('div'));
@@ -229,5 +229,49 @@ describe('pointer moves', () => {
     pointer(world, 'pointerup', end.x, end.y);
     expect([...pageSelection.get().blocks].sort()).toEqual([ids[0], ids[1]]);
     expect(mounted.layer.blocks()).toHaveLength(3);
+  });
+});
+
+describe('a study tape', () => {
+  async function openTape() {
+    const fixture = boxes([{ markdown: 'Text', x: 100, y: 300 }]);
+    const base = fixture.page.blocks[0]!;
+    const tape: BlockJson = {
+      ...base,
+      id: ids[1],
+      type: 'ext:org.opennote/tape',
+      order: 'a1',
+      frame: { x: 100, y: 100, w: 260, h: 34 },
+      data: { hidden: true },
+    };
+    fixture.page.blocks = [base, tape];
+    const opened = await open(fixture, { 'study.tape': true });
+    await expect
+      .poll(() => wrapper(opened.mounted, ids[1]).querySelector('button'), { timeout: 10_000 })
+      .not.toBeNull();
+    return { ...opened, button: wrapper(opened.mounted, ids[1]).querySelector('button')! };
+  }
+
+  it('moves when its body is dragged, and is only pressed when it is not', async () => {
+    const { batches, mounted, button } = await openTape();
+    const box = button.getBoundingClientRect();
+    const [x, y] = [box.left + 40, box.top + 10];
+    pointer(button, 'pointerdown', x, y);
+    pointer(button, 'pointermove', x + 30, y + 20);
+    pointer(button, 'pointermove', x + 50, y + 40);
+    expect(wrapper(mounted, ids[1]).style.transform).toBe('translate(50px, 40px)');
+    pointer(button, 'pointerup', x + 50, y + 40);
+    const moved = () => batches().filter((batch) => batch.edits[0]?.edit === 'moveBlock');
+    await expect.poll(() => moved().length).toBe(1);
+    expect(moved()[0]!.edits).toEqual([{ edit: 'moveBlock', block: ids[1], frame: { x: 150, y: 140, w: 260, h: 34 } }]);
+  });
+
+  it('moves with the arrow keys while its button has focus', async () => {
+    const { edits, button } = await openTape();
+    button.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    await expect
+      .poll(() => edits().at(-1))
+      .toEqual<Edit>({ edit: 'moveBlock', block: ids[1], frame: { x: 100, y: 108, w: 260, h: 34 } });
   });
 });

@@ -129,7 +129,9 @@ pub fn import_asset(
     check_declared_type(&bytes, &mime)?;
     let sha256: [u8; 32] = Sha256::digest(&bytes).into();
     let len = bytes.len() as u64;
-    if let Some(existing) = ctx.existing.values().find(|a| a.sha256 == sha256 && a.bytes == len) {
+    // A recording still being written carries the hash of nothing, which is no file's hash yet.
+    let same = |a: &&Asset| !a.is_recording() && a.sha256 == sha256 && a.bytes == len;
+    if let Some(existing) = ctx.existing.values().find(same) {
         let path = NotebookLayout::asset_path(page_dir, existing)?;
         if fs.metadata(&path).map(|meta| meta.stamp.len) != Ok(len) {
             write_file(fs, page_dir, &path, &bytes)?;

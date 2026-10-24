@@ -116,7 +116,9 @@ fn create_page_dir(ctx: &RecoverCtx<'_>, dir: &Path) -> Result<(), Stop> {
 }
 
 /// Assets whose files went with a lost folder can't come back. Their entries go, with the image and file
-/// blocks that show them, so the recovered page refers only to files that exist (invariant I1).
+/// blocks that show them, so the recovered page refers only to files that exist (invariant I1). A
+/// recording that is still being written stays while its file does, whatever its size, and the audio
+/// code closes it when the page opens.
 fn drop_missing_assets(ctx: &RecoverCtx<'_>, dir: &Path, page: &mut Page) {
     if page.assets.is_empty() {
         return;
@@ -131,7 +133,10 @@ fn drop_missing_assets(ctx: &RecoverCtx<'_>, dir: &Path, page: &mut Page) {
     let gone: Vec<AssetId> = page
         .assets
         .values()
-        .filter(|asset| listing.get(&asset.file) != Some(&asset.bytes))
+        .filter(|asset| match listing.get(&asset.file) {
+            Some(len) => !asset.is_recording() && *len != asset.bytes,
+            None => true,
+        })
         .map(|asset| asset.id)
         .collect();
     for id in &gone {

@@ -1,0 +1,50 @@
+// Structures to start from, as SMILES text. The name is a message key suffix; the formula is worked out, not stored.
+export interface Template {
+  id: string;
+  smiles: string;
+  group: 'rings' | 'chains' | 'groups' | 'small';
+}
+
+export const TEMPLATES: readonly Template[] = [
+  { id: 'benzene', smiles: 'c1ccccc1', group: 'rings' },
+  { id: 'cyclohexane', smiles: 'C1CCCCC1', group: 'rings' },
+  { id: 'cyclopentane', smiles: 'C1CCCC1', group: 'rings' },
+  { id: 'cyclobutane', smiles: 'C1CCC1', group: 'rings' },
+  { id: 'cyclopropane', smiles: 'C1CC1', group: 'rings' },
+  { id: 'pyridine', smiles: 'c1ccncc1', group: 'rings' },
+  { id: 'naphthalene', smiles: 'c1ccc2ccccc2c1', group: 'rings' },
+  { id: 'furan', smiles: 'c1ccoc1', group: 'rings' },
+  { id: 'ethane', smiles: 'CC', group: 'chains' },
+  { id: 'propane', smiles: 'CCC', group: 'chains' },
+  { id: 'butane', smiles: 'CCCC', group: 'chains' },
+  { id: 'pentane', smiles: 'CCCCC', group: 'chains' },
+  { id: 'hexane', smiles: 'CCCCCC', group: 'chains' },
+  { id: 'isobutane', smiles: 'CC(C)C', group: 'chains' },
+  { id: 'ethene', smiles: 'C=C', group: 'chains' },
+  { id: 'propene', smiles: 'CC=C', group: 'chains' },
+  { id: 'ethyne', smiles: 'C#C', group: 'chains' },
+  { id: 'butadiene', smiles: 'C=CC=C', group: 'chains' },
+  { id: 'methanol', smiles: 'CO', group: 'groups' },
+  { id: 'ethanol', smiles: 'CCO', group: 'groups' },
+  { id: 'acetone', smiles: 'CC(=O)C', group: 'groups' },
+  { id: 'acetaldehyde', smiles: 'CC=O', group: 'groups' },
+  { id: 'aceticAcid', smiles: 'CC(=O)O', group: 'groups' },
+  { id: 'ethylAcetate', smiles: 'CC(=O)OCC', group: 'groups' },
+  { id: 'diethylEther', smiles: 'CCOCC', group: 'groups' },
+  { id: 'methylamine', smiles: 'CN', group: 'groups' },
+  { id: 'acetamide', smiles: 'CC(=O)N', group: 'groups' },
+  { id: 'glycine', smiles: 'NCC(=O)O', group: 'groups' },
+  { id: 'toluene', smiles: 'Cc1ccccc1', group: 'groups' },
+  { id: 'phenol', smiles: 'Oc1ccccc1', group: 'groups' },
+  { id: 'aniline', smiles: 'Nc1ccccc1', group: 'groups' },
+  { id: 'benzoicAcid', smiles: 'OC(=O)c1ccccc1', group: 'groups' },
+  { id: 'aspirin', smiles: 'CC(=O)Oc1ccccc1C(=O)O', group: 'groups' },
+  { id: 'chloroform', smiles: 'ClC(Cl)Cl', group: 'groups' },
+  { id: 'water', smiles: 'O', group: 'small' },
+  { id: 'ammonia', smiles: 'N', group: 'small' },
+  { id: 'methane', smiles: 'C', group: 'small' },
+  { id: 'carbonDioxide', smiles: 'O=C=O', group: 'small' },
+  { id: 'hydrogenChloride', smiles: 'Cl', group: 'small' },
+  { id: 'ammonium', smiles: '[NH4+]', group: 'small' },
+  { id: 'hydroxide', smiles: '[OH-]', group: 'small' },
+];

@@ -1,0 +1,38 @@
+/* Line tag badges in the editor. Each shows an icon and a name, so no tag is told apart by color alone. */
+@layer components {
+  .badges {
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    margin-inline-end: var(--space-2);
+    vertical-align: baseline;
+    user-select: none;
+  }
+
+  .chip {
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .todo {
+    inline-size: 1.1em;
+    block-size: 1.1em;
+    margin: 0;
+    accent-color: var(--color-accent-primary);
+  }
+
+  .todo:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+}

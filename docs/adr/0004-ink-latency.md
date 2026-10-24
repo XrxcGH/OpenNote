@@ -3,6 +3,16 @@
 - Status: Accepted, pending the owner's camera check and budget review
 - Date: 2026-09-30
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Options considered](#options-considered)
+- [Consequences](#consequences)
+- [Measurements](#measurements)
+- [Manual check with a camera](#manual-check-with-a-camera)
+- [Update, October 2026: the delegated trail is built, the native layer is not](#update-october-2026-the-delegated-trail-is-built-the-native-layer-is-not)
+
 ## Context
 
 The architecture decision record (ADR) [0001](0001-app-stack.md) chose Tauri 2 and WebView2, as long as ink passes the [Phase 1](../DEVELOPMENT.md#phase-1-spikes) latency spike. [BRAND.md](../BRAND.md#10-comfort-and-performance-budgets) sets the pen budget:
@@ -141,3 +151,12 @@ The spike can't see the digitizer, the flip, the scan-out, or the panel, but a s
 5. Take the median and the worst stroke. Repeat with `--mode canvas2d` to compare.
 6. Repeat with `--mode trail-only` and the real pen. Any ink in this mode means delegated ink trails work with a real pen. If so, time the trail the same way.
 7. Add the numbers for each pen to this record. Ink passes if both the median and the worst stroke are 25 ms or less. The same thresholds apply later on the reference laptop at 60 Hz, unless the owner restates the budget.
+
+## Update, October 2026: the delegated trail is built, the native layer is not
+
+The decision stands: WebView2 stays, and live strokes draw on a desynchronized canvas in the pointer handler. What changed since the spike:
+
+- **Delegated ink trail: built, behind `ink.delegatedTrail`.** While a pen stroke is down, `features/ink/view/delegatedTrail.ts` asks `navigator.ink` for a presenter over the page's ink area and passes it the newest trusted pointer event with the pen's color and its drawn width in pixels. The compositor draws a short trail ahead of the canvas; the canvas still draws the stroke itself, so the trail is only ever a hint. Where the browser has no `navigator.ink`, or the flag is off, nothing changes. The flag is on in dev, nightly, and Beta, and off in Stable until the camera check below passes with a real pen.
+- **Measuring it.** A test build exposes `window.__OPENNOTE_TEST__.inkTrail()`, which answers whether the browser supports it and how many trail updates ran, how many were skipped, and the total and worst time one update took. A perf run reads it after the strokes and notes it beside the drawn-to-present numbers (docs/perf/phase-5.md). The cost of an update has to stay far under a millisecond for the trail to be worth keeping.
+- **Camera check: still the owner's.** Run the steps of "Manual check with a camera" in the app with `ink.delegatedTrail` on and off, using the same pen and screen, and add both rows to the results above. Keep the flag if the trail lowers the median or the worst stroke, and remove it if it does not.
+- **Native low-latency layer: not built.** A DirectComposition or `InkPresenter` layer would draw the live stroke from Rust, outside the page. It is a large, Windows-only piece, and it only earns its place if the delegated trail leaves the app over the budget on the reference laptop. So the flags `ink.nativeTrail` and `ink.openSnapshot` were removed from the registry instead of being left as names with nothing behind them. If the camera check fails with the trail on, write a new ADR that costs the native layer against the budget and start from there.

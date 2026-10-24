@@ -10,8 +10,8 @@ fn defaults_match_the_documented_shape() {
         "stateVersion": 1,
         "window": { "placement": null, "maximized": false },
         "panes": {
-            "notebooks": { "width": 272.0, "collapsed": false },
-            "pages": { "width": 300.0, "collapsed": false }
+            "notebooks": { "width": 0.0, "collapsed": false },
+            "pages": { "width": 0.0, "collapsed": false }
         },
         "location": { "view": "workspace", "notebookId": null, "sectionId": null, "pageId": null },
         "expanded": [],
@@ -63,7 +63,7 @@ fn patches_merge_but_never_touch_the_window() {
     let state = store.get();
     assert!(state.window.maximized);
     assert_eq!(state.location, StoredLocation::Trash);
-    assert!(state.panes.pages.collapsed && state.panes.pages.width == 300.0);
+    assert!(state.panes.pages.collapsed && state.panes.pages.width == 0.0);
     assert!(store.update(json!([1])).is_err());
 }
 

@@ -1,0 +1,6 @@
+{
+  "description": "",
+  "includeCrashReports": false,
+  "includeLogs": true,
+  "logBudgetBytes": 262144
+}

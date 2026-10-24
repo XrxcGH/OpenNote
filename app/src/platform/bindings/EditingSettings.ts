@@ -2,11 +2,7 @@
 import type { AutocorrectEntry } from "./AutocorrectEntry";
 import type { FormattingBar } from "./FormattingBar";
 
-export type EditingSettings = { markdownShortcuts: boolean, slashMenu: boolean, formattingBar: FormattingBar, 
-/**
- * Put the date and time under the title of a new page.
- */
-newPageDateTime: boolean, autocorrect: { enabled: boolean, 
+export type EditingSettings = { markdownShortcuts: boolean, slashMenu: boolean, formattingBar: FormattingBar, autocorrect: { enabled: boolean, 
 /**
  * The person's own pairs; empty means the built-in list.
  */

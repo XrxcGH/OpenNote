@@ -127,8 +127,9 @@ export function letterCase(phrase: string): LetterCase {
   const all = phrase.match(/[A-Za-z][A-Za-z'’-]*/g) ?? [];
   if (all.length === 0) return 'other';
   const letters = all.join('');
-  if (all.length >= 2 && letters.length >= 4 && letters === letters.toUpperCase()) return 'upper';
   const significant = all.filter((w) => !SMALL_WORDS.has(w.toLowerCase()));
+  // "A PDF" is an acronym with its article, not shouting.
+  if (significant.length >= 2 && letters.length >= 4 && letters === letters.toUpperCase()) return 'upper';
   const rest = significant.slice(1);
   const looksLikeName = /[0-9›·/]/.test(phrase);
   if (

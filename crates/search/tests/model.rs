@@ -1,0 +1,274 @@
+//! Reading what search needs from a page of the core model.
+
+mod common;
+
+use std::collections::BTreeMap;
+use std::sync::Arc;
+
+use common::{block_id, notebook_id, page_id, section_id};
+use opennote_core::model::{
+    Block, BlockData, DeviceRef, Fallback, ImageData, InkBlockData, JsonMap, OtherData, Page, Revision, TableCell,
+    TableColumn, TableData, TableRow, TextData,
+};
+use opennote_core::{AssetId, ColumnId, DeviceId, ElementId, Id, OrderKey, RevisionId, RowId, Timestamp};
+use opennote_search::{BlockKind, PageDoc, Query, SearchIndex};
+
+const T: Timestamp = Timestamp::from_unix_ms(1_000);
+
+fn page() -> Page {
+    let device = DeviceRef {
+        id: DeviceId::ZERO,
+        label: "Windows device TEST".into(),
+    };
+    let revision = Revision::new(RevisionId::from(Id::from_parts(9, 9)), T, device, "test");
+    Page::new(page_id(1), T, revision)
+}
+
+fn add(page: &mut Page, n: u64, data: BlockData, fallback: Option<Fallback>) {
+    let order = OrderKey::between(page.blocks.last_key(), None).unwrap();
+    let block = Block {
+        id: block_id(1, n),
+        order,
+        frame: None,
+        lock: None,
+        created: T,
+        modified: T,
+        data,
+        fallback,
+        extra: JsonMap::new(),
+    };
+    page.blocks.insert(Arc::new(block)).unwrap();
+}
+
+fn text(markdown: &str) -> BlockData {
+    BlockData::Text(TextData {
+        markdown: Arc::from(markdown),
+        ..TextData::default()
+    })
+}
+
+fn image(alt: &str, decorative: bool) -> BlockData {
+    let asset = AssetId::from(Id::from_parts(7, 7));
+    BlockData::Image(ImageData {
+        asset,
+        alt: alt.into(),
+        decorative,
+        crop: None,
+        extra: JsonMap::new(),
+    })
+}
+
+fn table() -> BlockData {
+    let (a, b) = (
+        ColumnId::from(Id::from_parts(1, 1)),
+        ColumnId::from(Id::from_parts(1, 2)),
+    );
+    let cell = |markdown: &str| TableCell {
+        markdown: markdown.into(),
+        extra: JsonMap::new(),
+    };
+    let cells = BTreeMap::from([(b, cell("second **cell**")), (a, cell("first cell"))]);
+    BlockData::Table(TableData {
+        header: false,
+        columns: vec![
+            TableColumn {
+                id: a,
+                width: None,
+                extra: JsonMap::new(),
+            },
+            TableColumn {
+                id: b,
+                width: None,
+                extra: JsonMap::new(),
+            },
+        ],
+        rows: vec![TableRow {
+            id: RowId::from(Id::from_parts(2, 1)),
+            cells,
+            extra: JsonMap::new(),
+        }],
+        extra: JsonMap::new(),
+    })
+}
+
+/// A page with one block of every kind, a decorative image, and an empty text block.
+fn rich_page() -> Page {
+    let mut page = page();
+    page.title = "Leaf study".into();
+    page.tags = vec!["biology".into()];
+    let mut first = TextData {
+        markdown: Arc::from("Hello **world**"),
+        ..TextData::default()
+    };
+    first
+        .tags
+        .insert(ElementId::from(Id::from_parts(3, 3)), vec!["Element/Tag".into()]);
+    add(&mut page, 0, BlockData::Text(first), None);
+    add(&mut page, 1, table(), None);
+    add(&mut page, 2, image("a leaf", false), None);
+    add(&mut page, 3, image("hidden", true), None);
+    add(&mut page, 4, text("   "), None);
+    let other = OtherData {
+        type_name: "kanban".into(),
+        data: JsonMap::new(),
+        unreadable: None,
+    };
+    add(
+        &mut page,
+        5,
+        BlockData::Other(other),
+        Some(Fallback {
+            markdown: "Board of cards".into(),
+            ..Fallback::default()
+        }),
+    );
+    let ink = InkBlockData {
+        alt: "a sketch".into(),
+        ..InkBlockData::default()
+    };
+    add(&mut page, 6, BlockData::Ink(ink), None);
+    page
+}
+
+#[test]
+fn reads_the_text_of_every_kind_of_block_in_reading_order() {
+    let page = rich_page();
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let shape: Vec<(BlockKind, &str)> = doc.blocks.iter().map(|b| (b.kind, b.text.as_str())).collect();
+    assert_eq!(
+        shape,
+        [
+            (BlockKind::Text, "Hello **world**"),
+            (BlockKind::Table, "first cell\nsecond **cell**"),
+            (BlockKind::Image, "a leaf"),
+            (BlockKind::Other, "Board of cards"),
+            (BlockKind::Ink, "a sketch"),
+        ]
+    );
+    assert_eq!(doc.title, "Leaf study");
+    assert_eq!(doc.tags, ["biology", "Element/Tag"]);
+    assert_eq!(doc.revision, Some(page.revision.id));
+    assert!(!doc.locked);
+
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    let find = |text: &str| index.search(&Query::text(text)).unwrap().len();
+    assert_eq!(
+        (find("world"), find("cell"), find("leaf"), find("cards"), find("sketch")),
+        (1, 1, 1, 1, 1)
+    );
+    assert_eq!(find("hidden"), 0, "decorative images have no description to search");
+    assert_eq!(find("element"), 1, "element tags belong to the page");
+}
+
+#[test]
+fn a_page_with_an_encryption_key_yields_an_empty_locked_document() {
+    let mut page = page();
+    page.title = "Secret diary".into();
+    page.tags = vec!["private".into()];
+    add(&mut page, 0, text("the butler did it"), None);
+    page.encryption = Some(serde_json::json!({ "scheme": "future" }));
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    assert!(doc.locked);
+    assert!(doc.title.is_empty() && doc.tags.is_empty() && doc.blocks.is_empty());
+
+    let forced = PageDoc::from_page(&self::page(), notebook_id(1), section_id(1), true);
+    assert!(forced.locked);
+}
+
+#[test]
+fn properties_become_searchable_lines() {
+    let mut page = page();
+    add(&mut page, 1, text("Body"), None);
+    page.view.extra.insert(
+        "properties".into(),
+        serde_json::json!({ "fields": [
+            { "id": "a", "name": "Status", "type": "choice", "value": "Open" },
+            { "id": "b", "name": "Rating", "type": "number", "value": 4 },
+            { "id": "c", "name": "Reviewed", "type": "checkbox", "value": true },
+            { "id": "d", "name": "Done", "type": "checkbox", "value": false },
+            { "id": "e", "name": "Course", "type": "page", "value": "x", "label": "Bio 201" },
+        ] }),
+    );
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let last = doc.blocks.last().expect("a properties block");
+    assert_eq!(last.kind, BlockKind::Other);
+    assert_eq!(last.text, "Status: Open\nRating: 4\nReviewed\nCourse: Bio 201");
+    assert_eq!(doc.blocks.len(), 2);
+}
+
+#[test]
+fn a_pdf_page_picture_is_found_by_the_words_on_it() {
+    let mut page = page();
+    let mut extra = JsonMap::new();
+    extra.insert("text".into(), "Photosynthesis needs light\nand water".into());
+    let data = BlockData::Image(ImageData {
+        asset: AssetId::from(Id::from_parts(7, 8)),
+        alt: "Page 1 of 3 from biology.pdf".into(),
+        decorative: false,
+        crop: None,
+        extra,
+    });
+    add(&mut page, 1, data, None);
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    assert_eq!(
+        doc.blocks[0].text,
+        "Page 1 of 3 from biology.pdf\nPhotosynthesis needs light\nand water"
+    );
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    assert_eq!(index.search(&Query::text("photosynthesis")).unwrap().len(), 1);
+}
+
+#[test]
+fn links_on_handwriting_count_as_page_links() {
+    let mut page = page();
+    add(&mut page, 1, BlockData::Ink(InkBlockData::default()), None);
+    let target = page_id(2);
+    page.view.extra.insert(
+        "inkLinks".into(),
+        serde_json::json!({
+            "a": { "block": block_id(1, 1).to_string(), "strokes": ["s1"], "label": "Photosynthesis [notes]",
+                   "target": { "kind": "page", "page": target.to_string() } },
+            "b": { "block": block_id(1, 1).to_string(), "strokes": ["s2"], "label": "Site",
+                   "target": { "kind": "url", "url": "https://example.com" } },
+            "c": { "block": block_id(1, 9).to_string(), "strokes": ["s3"], "label": "Gone",
+                   "target": { "kind": "page", "page": target.to_string() } },
+        }),
+    );
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let texts: Vec<&str> = doc
+        .blocks
+        .iter()
+        .filter(|b| b.kind == BlockKind::Text)
+        .map(|b| b.text.as_str())
+        .collect();
+    assert_eq!(texts, [format!("[Photosynthesis notes](opennote:page/{target})")]);
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    let mut target_doc = PageDoc::from_page(&self::page(), notebook_id(1), section_id(1), false);
+    target_doc.page = target;
+    target_doc.title = "Photosynthesis".into();
+    index.upsert(&target_doc).unwrap();
+    let links = index.backlinks(target).unwrap();
+    assert_eq!(links.len(), 1);
+    assert_eq!(links[0].source, page_id(1));
+}
+
+#[test]
+fn look_in_finds_image_descriptions_and_transcripts_by_their_block_kind() {
+    let page = rich_page();
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    let only = |kind: BlockKind, text: &str| {
+        let mut query = Query::text(text);
+        query.block_types = vec![kind];
+        index.search(&query).unwrap().len()
+    };
+    // The picture's description is on its image block; a transcript is an other block whose fallback text is the words.
+    assert_eq!(only(BlockKind::Image, "leaf"), 1);
+    assert_eq!(only(BlockKind::Other, "cards"), 1);
+    assert_eq!(only(BlockKind::Other, "leaf"), 0, "a description is not a transcript");
+    assert_eq!(only(BlockKind::Image, "cards"), 0, "a transcript is not a description");
+}

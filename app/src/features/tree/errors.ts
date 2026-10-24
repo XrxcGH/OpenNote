@@ -26,6 +26,20 @@ export function toastError(error: unknown, title: string): void {
   showToast({ message: describeError(error, title), tone: 'danger' });
 }
 
+/**
+ * The toast for a refused move. A page can't leave or enter a password-protected section, which the service
+ * reports as read-only; the page itself isn't read-only, so the toast says what the rule is.
+ */
+export function moveErrorText(error: unknown, title: string, touchesProtected: boolean): string {
+  return touchesProtected && isNotesError(error, 'read-only')
+    ? t('tree.errors.protectedMove', { title })
+    : describeError(error, title);
+}
+
+export function toastMoveError(error: unknown, title: string, touchesProtected: boolean): void {
+  showToast({ message: moveErrorText(error, title, touchesProtected), tone: 'danger' });
+}
+
 /** The message under a rename field for a refused name, or null when the error isn't about the name. */
 export function nameError(error: unknown): string | null {
   if (!isNotesError(error, 'invalid-name')) return null;

@@ -89,7 +89,9 @@ for (const theme of THEMES) {
   test(`lays the ambient canvas behind an opaque page card, in ${theme}`, async ({ page }) => {
     await openScreen(page, byId('workspace.sample'), { size: 'wide', theme });
     const found = await page.evaluate((starSelector) => {
-      const card = document.querySelector('article') as HTMLElement;
+      const article = document.querySelector('article') as HTMLElement;
+      // With the editor on, the card is the page's world inside its viewport.
+      const card = article.querySelector<HTMLElement>('[class*="_world_"]') ?? article;
       const stars = document.querySelector<SVGElement>(starSelector);
       let canvas: HTMLElement | null = card.parentElement;
       while (canvas && getComputedStyle(canvas).backgroundImage === 'none') canvas = canvas.parentElement;

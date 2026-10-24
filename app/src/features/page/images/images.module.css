@@ -5,6 +5,40 @@
     touch-action: none;
   }
 
+  /* Text wrap (qol Wrap text around images): left and right float the image with the text beside it, and the gap
+     is the margin on the side that faces the text. In line sits the image beside the images before and after it. */
+  .image[data-wrap='left'] {
+    float: inline-start;
+    margin-inline-end: var(--wrap-gap, 16px);
+    margin-block-end: var(--space-2);
+  }
+
+  .image[data-wrap='right'] {
+    float: inline-end;
+    margin-inline-start: var(--wrap-gap, 16px);
+    margin-block-end: var(--space-2);
+  }
+
+  .image[data-wrap='inline'] {
+    display: inline-block;
+    vertical-align: top;
+    margin-inline-end: var(--space-3);
+  }
+
+  /* The handle on the edge that faces the text changes the gap. */
+  .gapHandle {
+    top: 50%;
+    cursor: ew-resize;
+  }
+
+  .gapHandle[data-side='left'] {
+    left: 100%;
+  }
+
+  .gapHandle[data-side='right'] {
+    left: 0;
+  }
+
   .image:focus-visible {
     outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;

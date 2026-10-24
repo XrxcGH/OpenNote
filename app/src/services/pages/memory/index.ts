@@ -5,6 +5,7 @@ import { newId } from '../../../editor/ids';
 import { PageServiceError } from '../types';
 import type { AssetId, EditBatch, ExternalChange, PageId, PageJson, PageService, ReadOnlyInfo } from '../types';
 import { openClient } from './client';
+import { loadInkCodec } from './ink';
 import type { PageState } from './client';
 import { createVersions } from './versions';
 
@@ -61,6 +62,13 @@ export function createMemoryPageService(
   let clients = 0;
   const splices = options.supportsSplice ?? true;
   return {
+    // Delete history. The memory service doesn't know the tree, so a section or notebook reaches every page.
+    admin: {
+      deleteHistory(_notebook, scope, keepNamed) {
+        for (const [id, state] of pages) if (scope.kind !== 'page' || id === scope.id) state.versions.drop(keepNamed);
+        return Promise.resolve();
+      },
+    },
     open(pageId) {
       let state = pages.get(pageId);
       if (!state) {
@@ -68,7 +76,8 @@ export function createMemoryPageService(
         if (!made) return Promise.reject(new PageServiceError('notFound', `There is no page ${pageId}.`, false));
         state = add({ ...made, id: pageId });
       }
-      return Promise.resolve(openClient(state, `main-${++clients}`, splices, copy));
+      const opened = state;
+      return loadInkCodec().then(() => openClient(opened, `main-${++clients}`, splices, copy));
     },
     sent: (page) => pages.get(page)?.sent ?? [],
     held: (page) => {

@@ -4,7 +4,9 @@ import { userEvent } from 'vitest/browser';
 import { chord, defineCommand } from '../../commands/registry';
 import { commands, shortcutListSections } from '../../registries';
 import { closeOverlay } from '../../shell/commandbar/overlays';
+import { getLocation } from '../../app/location';
 import { setShortcut } from '../../state/keymap';
+import { updateSettings } from '../../state/settings';
 import { announcements, expectNoAxeViolations, pressChord, renderApp, typeInto } from '../../test';
 
 const stops: (() => void)[] = [];
@@ -14,8 +16,8 @@ afterEach(() => {
   stops.splice(0).forEach((stop) => stop());
 });
 
-async function openList() {
-  await pressChord('Ctrl+/');
+async function openList(keys = 'Ctrl+/') {
+  await pressChord(keys);
   return screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
 }
 
@@ -96,7 +98,7 @@ describe('the shortcut list sets and changes', () => {
       ),
     );
     await renderApp({ settings: { keymap: { preset: 'onenote' } } });
-    const dialog = await openList();
+    const dialog = await openList('F1');
     expect(within(rowOf(dialog, 'Go to a page')).getByText('Ctrl+E')).toBeTruthy();
     const moved = rowOf(dialog, 'Ink');
     expect(within(moved).getByText('Ctrl+Alt+E')).toBeTruthy();
@@ -116,5 +118,57 @@ describe('the shortcut list sets and changes', () => {
     const dialog = await openList();
     expect(within(dialog).getByRole('heading', { name: 'More' })).toBeTruthy();
     expect(within(dialog).getByText('Two fingers scroll.')).toBeTruthy();
+  });
+});
+
+describe("the OneNote set's clashes", () => {
+  it('moves the shortcut list to F1 and reopening a tab off Ctrl+Shift+T, and says where each went', async () => {
+    await renderApp({ settings: { keymap: { preset: 'onenote' } } });
+    const dialog = await openList('F1');
+    const list = rowOf(dialog, 'Show keyboard shortcuts');
+    expect(within(list).getByText('F1')).toBeTruthy();
+    expect(list.textContent).toContain('Moved from Ctrl+/, which Numbered list uses in the OneNote set.');
+    expect(list.textContent).toContain('In this set it is F1.');
+    const reopen = rowOf(dialog, 'Reopen closed tab');
+    expect(within(reopen).getByText('Ctrl+Alt+Shift+T')).toBeTruthy();
+    expect(reopen.textContent).toContain(
+      'Moved from Ctrl+Shift+T, which Select the page title uses in the OneNote set.',
+    );
+    expect(within(rowOf(dialog, 'Select the page title')).getByText('Ctrl+Shift+T')).toBeTruthy();
+    // F1 closes the list again, as Ctrl+/ does in the default set.
+    await pressChord('F1');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('keeps Ctrl+/ and Ctrl+Shift+T in the default set, with no moved lines', async () => {
+    await renderApp();
+    const dialog = await openList();
+    const list = rowOf(dialog, 'Show keyboard shortcuts');
+    expect(within(list).getByText('Ctrl+/')).toBeTruthy();
+    expect(list.textContent).not.toContain('Moved');
+    expect(within(rowOf(dialog, 'Reopen closed tab')).getByText('Ctrl+Shift+T')).toBeTruthy();
+  });
+});
+
+describe('the gestures in the shortcut list', () => {
+  it('lists each pen and touch gesture with whether it is on, and links to Pen and touch settings', async () => {
+    await renderApp();
+    await updateSettings({ ink: { gestures: { scribbleErase: false } } });
+    const dialog = await openList();
+    const table = within(dialog).getByRole('table', { name: 'Pen and touch gestures' });
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows.map((row) => within(row).getByRole('rowheader').textContent)).toEqual([
+      'Scribble to erase',
+      'Circle and tap to select',
+      'Two-finger double tap to undo',
+      'Three-finger double tap to redo',
+    ]);
+    expect(rows[0].textContent).toContain('Off');
+    expect(rows[1].textContent).toContain('On');
+    await updateSettings({ ink: { gestures: { scribbleErase: true } } });
+    await waitFor(() => expect(within(table).getAllByRole('row')[1].textContent).toContain('On'));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Open Pen and touch settings' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(getLocation()).toEqual({ view: 'settings', section: 'penAndTouch' });
   });
 });

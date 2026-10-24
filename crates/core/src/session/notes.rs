@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +17,7 @@ use crate::model::{Color, NotebookTree, PageNodeState, TreeChild};
 use crate::session::core::Core;
 use crate::session::notebook::{NodeRef, NotebookHandle};
 use crate::store::notebook_store::{invalid_name, INVALID_MOVE, INVALID_NAME};
+pub use crate::store::sealed::Protection;
 use crate::time::Timestamp;
 
 /// The longest title the notes contract accepts, in characters.
@@ -60,6 +62,28 @@ pub struct NodeInfo {
     pub modified: Timestamp,
     /// Whether it may not change.
     pub read_only: bool,
+    /// A pinned page or section. Always false for everything else.
+    pub pinned: bool,
+    /// Archived: hidden from the tree until "Show archived".
+    pub archived: bool,
+    /// An encrypted section, or a page in one (spec 5.7). Nothing of it may be indexed or cached.
+    pub encrypted: bool,
+    /// Whether a section, or a page's section, is protected and open (ADR 0042).
+    pub protection: Protection,
+}
+
+/// A section's protection as the tree shows it.
+fn protection_of(section: &crate::model::SectionNode) -> Protection {
+    if !section.encrypted {
+        Protection::None
+    } else if matches!(
+        section.access,
+        crate::model::Access::ReadOnly(crate::model::ReadOnlyReason::Encrypted)
+    ) {
+        Protection::Locked
+    } else {
+        Protection::Unlocked
+    }
 }
 
 fn pen(color: &Option<Color>) -> Option<Color> {
@@ -83,6 +107,10 @@ pub fn notebook_node(tree: &NotebookTree) -> NodeInfo {
         created: tree.created,
         modified: tree.changed,
         read_only: tree.access.is_read_only(),
+        pinned: false,
+        archived: tree.archived,
+        encrypted: false,
+        protection: Protection::None,
     }
 }
 
@@ -99,6 +127,10 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             created: group.created,
             modified: group.changed,
             read_only: tree.access.is_read_only(),
+            pinned: false,
+            archived: crate::model::is_archived(&group.extra),
+            encrypted: false,
+            protection: Protection::None,
         },
         TreeChild::Section(section) => NodeInfo {
             id: section.id.to_string(),
@@ -111,6 +143,10 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             created: section.created,
             modified: section.changed,
             read_only: section.access.is_read_only(),
+            pinned: section.pinned,
+            archived: section.archived,
+            encrypted: section.encrypted,
+            protection: protection_of(section),
         },
     }
 }
@@ -139,6 +175,7 @@ pub fn children_of(tree: &NotebookTree, parent: Id) -> Option<Vec<NodeInfo>> {
     }
     let section = tree.section(SectionId(parent))?;
     let read_only = section.access.is_read_only();
+    let protection = protection_of(section);
     let pages = section.pages.iter().map(|page| NodeInfo {
         id: page.id.to_string(),
         kind: NodeKind::Page,
@@ -150,6 +187,10 @@ pub fn children_of(tree: &NotebookTree, parent: Id) -> Option<Vec<NodeInfo>> {
         created: page.created,
         modified: page.modified.unwrap_or(page.created),
         read_only: read_only || !matches!(page.state, PageNodeState::Normal | PageNodeState::Moving),
+        pinned: page.pinned,
+        archived: page.archived,
+        encrypted: section.encrypted,
+        protection,
     });
     Some(pages.collect())
 }
@@ -277,7 +318,17 @@ pub enum ReceiptPart {
 pub struct TrashReceipt {
     /// The parts.
     pub parts: Vec<ReceiptPart>,
+    /// Which trash call made it, in this run. A notebook's part names only its folder, so without this the
+    /// receipt of an earlier call would match the notebook again after it went to Trash a second time.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub call: u64,
 }
+
+fn is_zero(n: &u64) -> bool {
+    *n == 0
+}
+
+static TRASH_CALLS: AtomicU64 = AtomicU64::new(0);
 
 impl TrashReceipt {
     /// The receipt as opaque text.
@@ -329,7 +380,10 @@ impl Core {
     /// for all of them.
     pub fn trash_nodes(&self, targets: &[TrashTarget]) -> Result<TrashReceipt, CoreError> {
         let mut by_notebook: BTreeMap<PathBuf, (NotebookHandle, Vec<NodeRef>)> = BTreeMap::new();
-        let mut receipt = TrashReceipt::default();
+        let mut receipt = TrashReceipt {
+            call: TRASH_CALLS.fetch_add(1, Ordering::Relaxed) + 1,
+            ..TrashReceipt::default()
+        };
         for target in targets {
             match target {
                 TrashTarget::Notebook(path) => {

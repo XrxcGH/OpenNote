@@ -32,6 +32,7 @@ export const commands = {
     settings: 'Settings',
     shortcuts: 'Keyboard shortcuts',
     trash: 'Trash',
+    recent: 'Recent pages',
   },
   colors: {
     ink: 'Ink',

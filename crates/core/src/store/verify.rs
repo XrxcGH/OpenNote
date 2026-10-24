@@ -3,7 +3,8 @@
 //! Every JSON file must read and validate, every segment's checksums must pass and its strokes decode, and
 //! every reference must resolve. No page or section ID may appear twice, and every Trash item must hold what
 //! it lists. The kill harness runs this after every crash, and people run it as "Check this notebook for
-//! problems".
+//! problems". A second pass, once every page is known, finds links that lead nowhere and `page.md` files that
+//! don't match their page (A2-2).
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -19,6 +20,7 @@ use crate::store::fs::{DirEntry, Fs};
 use crate::store::layout::{parse_temp_name, NotebookLayout, ITEM_JSON, OPENNOTE_DIR, SECTION_JSON};
 
 mod page;
+mod readable;
 
 /// What "Check this notebook for problems" found.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
@@ -45,6 +47,8 @@ struct Verifier<'a> {
     report: VerifyReport,
     pages: HashMap<PageId, PathBuf>,
     sections: HashMap<SectionId, PathBuf>,
+    /// Page folders of sections in the tree, not in Trash, for the second pass.
+    live: Vec<PathBuf>,
 }
 
 impl Verifier<'_> {
@@ -105,6 +109,10 @@ impl Verifier<'_> {
         });
         if let Some(file) = &file {
             self.section_identity(dir, file);
+            // A protected section keeps no readable copies, and while locked its pages are sealed (ADR 0042).
+            if file.encryption.is_some() {
+                return;
+            }
         }
         let mut found = Vec::new();
         for entry in self.list(dir).into_iter().filter(|e| e.is_dir) {
@@ -118,6 +126,9 @@ impl Verifier<'_> {
             }
             if let Some(id) = self.page(&page_dir) {
                 found.push(id);
+                if listed {
+                    self.live.push(page_dir);
+                }
             }
         }
         if let (Some(file), true) = (&file, listed) {
@@ -193,6 +204,7 @@ pub fn verify_notebook(
         report: VerifyReport::default(),
         pages: HashMap::new(),
         sections: HashMap::new(),
+        live: Vec::new(),
     };
     verifier.notebook(root);
     for entry in fs.read_dir(root)?.into_iter().filter(|e| e.is_dir) {
@@ -208,6 +220,7 @@ pub fn verify_notebook(
             verifier.trash_item(&trash.join(&entry.name));
         }
     }
+    verifier.links_and_readable();
     Ok(verifier.report)
 }
 

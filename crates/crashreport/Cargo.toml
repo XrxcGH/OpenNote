@@ -1,0 +1,32 @@
+[package]
+name = "opennote-crashreport"
+version = "0.1.0"
+description = "Opt-in crash reports that never include note content, with a scrubber and a local report store"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_crashreport"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.10.9"
+thiserror = "2.0.21"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+  "Wdk_System_SystemServices",
+  "Win32_Foundation",
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_Kernel",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Memory",
+  "Win32_System_SystemInformation",
+] }
+
+[dev-dependencies]
+proptest = "1.11.0"
+tempfile = "3.27.0"

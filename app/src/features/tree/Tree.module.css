@@ -23,7 +23,7 @@
     /* Titles truncate, so a tree never scrolls sideways; a button's hit area can reach a little past a row. */
     overflow-x: hidden;
     overflow-y: auto;
-    scroll-padding-block-end: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
+    scroll-padding-block-end: calc(var(--toast-height, 0px) + var(--panel-inset-bottom, 0px) + var(--space-4));
   }
 
   .rows {
@@ -192,6 +192,21 @@
     line-height: var(--type-small-line);
   }
 
+  .pin {
+    flex: none;
+    color: var(--color-text-muted);
+  }
+
+  /* A row in a selection of several, beside the open row. */
+  .row[data-multi] {
+    background: var(--color-surface-selected);
+  }
+
+  .row[data-archived] {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
   .more {
     flex: none;
     opacity: 0;
@@ -266,7 +281,21 @@
     justify-content: space-between;
     container-type: inline-size;
     border-block-start: 1px solid var(--color-border-subtle);
-    padding-block-start: var(--space-2);
+    /* The footer runs down to the pane's bottom edge, with the same space above and below its contents, so Trash
+       sits centered in the box its line draws. */
+    margin-block-end: calc(-1 * var(--pane-padding, 0px));
+    padding-block: var(--space-3);
+  }
+
+  /* Trash is the footer's only control, so it takes the room: a touch-size row, the note size, and a larger icon. */
+  .trash {
+    min-block-size: var(--size-row-touch);
+    font-size: var(--type-note-size);
+  }
+
+  .trash svg {
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
   }
 
   /* A small plant at the end of the footer, opposite Trash. It needs room, so it hides when the footer is narrow, in
@@ -276,7 +305,7 @@
     display: none;
   }
 
-  @container (min-width: 200px) {
+  @container (min-width: 180px) {
     /* Inset from the end about as far as the Trash icon is from the start. */
     .footer .plant {
       display: block;

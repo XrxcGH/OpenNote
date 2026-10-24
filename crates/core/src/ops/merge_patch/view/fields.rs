@@ -63,6 +63,11 @@ impl<'a> Fields<'a> {
         }
     }
 
+    /// A finite geometry member, if present, rounded to 0.01 as the file writes it.
+    pub fn geometry(&self, key: &str) -> Result<Option<f64>, String> {
+        Ok(self.number(key)?.map(crate::format::json::geometry))
+    }
+
     /// A finite number member that must be present.
     pub fn required_number(&self, key: &str) -> Result<f64, String> {
         self.number(key)?.ok_or_else(|| self.wrong(key, "present"))

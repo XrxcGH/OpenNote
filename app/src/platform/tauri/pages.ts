@@ -7,7 +7,7 @@ import type { ImagesClient, PagesClient } from '../types';
 import { invoke } from './invoke';
 
 const coreInvoke: CoreInvoke = (command, args) =>
-  (invoke as (command: string, args?: Record<string, unknown>) => Promise<unknown>)(command, args);
+  (invoke as (command: string, args?: Record<string, unknown> | Uint8Array) => Promise<unknown>)(command, args);
 
 /** Listens for a core event. The returned function stops listening, even before Tauri confirms the listener. */
 const coreListen: CoreListen = (event, handler) => {
@@ -25,13 +25,22 @@ const coreListen: CoreListen = (event, handler) => {
 export function createTauriPages(images: ImagesClient): PagesClient {
   let service: Promise<PageService> | null = null;
   const load = async () => {
-    const [{ createCoreClient }, { createTauriPageService }] = await Promise.all([
-      import('../../core/client'),
-      import('../../services/pages/tauri'),
-    ]);
-    return createTauriPageService(createCoreClient({ invoke: coreInvoke, listen: coreListen }), images);
+    const [{ createCoreClient }, { clientPrefix, createTauriPageService }, { getCurrentWebviewWindow }] =
+      await Promise.all([
+        import('../../core/client'),
+        import('../../services/pages/tauri'),
+        import('@tauri-apps/api/webviewWindow'),
+      ]);
+    // Each window is a client of its own (see clientPrefix).
+    const prefix = clientPrefix(getCurrentWebviewWindow().label);
+    return createTauriPageService(createCoreClient({ invoke: coreInvoke, listen: coreListen }), images, prefix);
   };
   return {
+    // Delete history (A2-3, A4-12). The shell finds the notebook when the interface doesn't know it.
+    admin: {
+      deleteHistory: async (notebook, scope, keepNamed) =>
+        void (await coreInvoke('history_delete', { notebook, scope, keepNamed })),
+    },
     open(pageId, options) {
       service ??= load();
       return service.then((pages) => pages.open(pageId, options));

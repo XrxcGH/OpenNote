@@ -42,6 +42,7 @@ export function frameContext(pool: EditorPool, layer: () => BlockLayer, hooks: F
       blockLaidOut(block);
     },
     upsertBlock: (block) => layer().upsert(block),
+    reorder: (block, order) => layer().reorder(block, order),
     removeBlock: (block) => layer().remove(block),
     setPageFields: (fields) => hooks.setPageFields(fields),
     restoreSelection(selection) {

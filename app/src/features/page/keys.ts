@@ -45,7 +45,7 @@ export const PAGE_KEYS = {
   'format.italic': editor(['Ctrl+I']),
   'format.underline': editor(['Ctrl+U']),
   'format.strike': editor(['Ctrl+Shift+S'], ['Ctrl+-'], 'view.zoomOut'),
-  'format.highlight': editor(['Ctrl+Shift+H'], ['Ctrl+Alt+H']),
+  'format.highlight': editor(['Ctrl+Shift+H'], ['Ctrl+Alt+H'], 'pdf.highlight'),
   'format.code': editor(['Ctrl+E'], []),
   'format.subscript': editor([], ['Ctrl+='], 'view.zoomIn'),
   'format.superscript': editor([], ['Ctrl++']),

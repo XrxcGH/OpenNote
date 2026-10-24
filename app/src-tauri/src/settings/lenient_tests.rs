@@ -48,7 +48,7 @@ fn keeps_the_good_entries_of_a_map_and_the_good_items_of_a_list() {
         "shortcuts": { "theme.toggle": ["Ctrl+Alt+K"], "app.bad": ["K"], "view.x": [] },
         "ink": { "pens": [
             { "id": "a", "tool": "pen", "color": "indigo", "width": 1.0 },
-            { "id": "b", "tool": "brush", "color": "indigo", "width": 1.0 },
+            { "id": "b", "tool": "chisel", "color": "indigo", "width": 1.0 },
             { "id": "c", "tool": "highlighter", "color": "#f2cf4a66", "width": 4.0 }
         ] }
     }));

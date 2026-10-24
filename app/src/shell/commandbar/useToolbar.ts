@@ -84,7 +84,16 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   const widths = useRef(new Map<string, number>());
   const latest = useRef(entries);
   const density = useDensity();
-  const key = `${density} ${entries.map((entry) => entry.item.id).join(' ')}`;
+  // A font that arrives after the first measure changes every width, so each font load measures again.
+  const [fontLoads, setFontLoads] = useState(0);
+  useEffect(() => {
+    const fonts = typeof document === 'undefined' ? undefined : document.fonts;
+    if (!fonts?.addEventListener) return;
+    const again = () => setFontLoads((count) => count + 1);
+    fonts.addEventListener('loadingdone', again);
+    return () => fonts.removeEventListener('loadingdone', again);
+  }, []);
+  const key = `${density} ${fontLoads} ${entries.map((entry) => entry.item.id).join(' ')}`;
   const [measuredFor, setMeasuredFor] = useState(key);
   if (measuredFor !== key) {
     setMeasuredFor(key);
@@ -108,9 +117,20 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   useEffect(() => {
     const bar = ref.current;
     if (!bar || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => fit());
+    // Fitting inside the callback resizes what it watches in the same frame, which the browser reports as a
+    // "ResizeObserver loop" error; the next animation frame is still before paint.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        fit();
+      });
+    });
     observer.observe(bar);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [ref, fit]);
   return hidden;
 }

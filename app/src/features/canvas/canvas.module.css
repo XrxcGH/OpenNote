@@ -1,0 +1,151 @@
+/* The canvas. A chosen card has a thick outline as well as a tint, and every card says what kind it is in words. */
+@layer components {
+  .tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: end;
+    margin-block-end: var(--space-2);
+  }
+
+  .pick {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--type-small-size);
+  }
+
+  .select {
+    min-block-size: var(--size-chrome-hit);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .select:focus-visible,
+  .link:focus-visible,
+  .edit:focus-visible,
+  .card:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .found {
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+
+  .board {
+    max-block-size: 48vh;
+    overflow: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+  }
+
+  .surface {
+    position: relative;
+  }
+
+  .arrows {
+    position: absolute;
+    inset: 0;
+    color: var(--color-text-secondary);
+    pointer-events: none;
+  }
+
+  .arrows line {
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+
+  .arrows text {
+    fill: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    paint-order: stroke;
+    stroke: var(--color-surface-sunken);
+    stroke-width: 4px;
+  }
+
+  .card {
+    position: absolute;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    overflow: hidden;
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-1);
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .card[data-kind='group'] {
+    border-style: dashed;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .card[data-selected='true'] {
+    border-color: var(--color-accent-primary);
+    outline: 3px solid var(--color-accent-primary);
+    outline-offset: -3px;
+  }
+
+  .kind {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .text {
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .edit {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: 3rem;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+  }
+
+  .json {
+    margin-block-start: var(--space-3);
+  }
+}

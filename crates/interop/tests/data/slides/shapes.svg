@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1440" height="810" viewBox="0 0 960 540">
+<defs>
+<clipPath id="slide">
+<rect width="960" height="540"/>
+</clipPath>
+<linearGradient id="g1" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0" stop-color="#4472c4"/>
+<stop offset="1" stop-color="#5b9bd5" stop-opacity="0.5"/>
+</linearGradient>
+</defs>
+<g clip-path="url(#slide)">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M0 0H960V18H0Z" fill="#4472c4"/>
+<g>
+<text x="73.2" y="118.97" xml:space="preserve">
+<tspan font-family="Calibri Light, Segoe UI, Arial, sans-serif" font-size="44" fill="#000000">Shapes &amp; lines</tspan>
+</text>
+</g>
+<path d="M72 234A72 54 0 1 0 216 234A72 54 0 1 0 72 234Z" fill="#c55a11" stroke="#1f3864" stroke-width="2" stroke-dasharray="8 6"/>
+<path d="M315 180H441A27 27 0 0 1 468 207V261A27 27 0 0 1 441 288H315A27 27 0 0 1 288 261V207A27 27 0 0 1 315 180Z" fill="url(#g1)" transform="rotate(15 378 234)"/>
+<g transform="rotate(15 378 234)">
+<text x="378" y="241.2" text-anchor="middle" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="20" fill="#ffffff" font-weight="bold">Turned card</tspan>
+</text>
+</g>
+<path d="M504 180L648 252" fill="none" stroke="#c00000" stroke-width="1.5" transform="translate(576 216) scale(1 -1) translate(-576 -216)"/>
+<path d="M648 180L644.98 184.02L642.97 180Z" fill="#c00000"/>
+<g transform="translate(72 360) scale(0.5 0.5) translate(0 0)">
+<path d="M108 0L216 216L0 216Z" fill="#70ad47" stroke="#385724" stroke-width="1"/>
+<path d="M288 216L403.2 0C460.8 0 576 86.4 576 216Z" fill="#ffc000" transform="translate(432 108) scale(-1 1) translate(-432 -108)"/>
+</g>
+<path d="M504 324H684V450H504Z" fill="#a5a5a5"/>
+</g>
+</svg>

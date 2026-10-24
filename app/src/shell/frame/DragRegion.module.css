@@ -1,0 +1,22 @@
+/* The drag area (ARCHITECTURE.md section 10.4). Its minimum is 200 DIPs, so the CSS width is divided by the zoom:
+   people need room to grab the window whatever the text size. */
+
+@layer components {
+  .dragRegion {
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-inline-size: calc(var(--size-drag-min) / var(--zoom, 1));
+  }
+
+  :global([data-app-region='drag']) {
+    app-region: drag;
+    -webkit-app-region: drag;
+  }
+
+  /* In a dragging title bar, every item except the drag area stays page content. WebView2 hides whatever a drag
+     area covers from UI Automation hit tests, so Narrator's mouse and touch exploration couldn't read it. */
+  :global([data-app-region='drag']) > :not([data-app-region='drag']) {
+    app-region: no-drag;
+    -webkit-app-region: no-drag;
+  }
+}

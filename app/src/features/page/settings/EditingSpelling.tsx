@@ -2,6 +2,7 @@
 // skip, the personal dictionary, and a way to Windows' language settings.
 import { useEffect, useState } from 'react';
 import { commandContext } from '../../../commands/registry';
+import { spellingLanguages, useLocale } from '../../../state/language';
 import { updateSettings, useSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { Button, Switch } from '../../../ui';
@@ -38,8 +39,8 @@ function useInstalled(): LanguageInfo[] | null {
 
 function Languages({ installed }: { installed: LanguageInfo[] }) {
   const chosen = useSettings((settings) => settings.editing.spelling.languages);
-  const defaults = installed.filter((language) => language.isDefault).map((language) => language.tag);
-  const active = chosen.length ? chosen : defaults;
+  const locale = useLocale();
+  const active = chosen.length ? chosen : spellingLanguages();
   const toggle = (tag: string, on: boolean) => {
     const next = on ? [...active, tag] : active.filter((known) => known !== tag);
     void updateSettings({ editing: { spelling: { languages: next } } });
@@ -54,7 +55,9 @@ function Languages({ installed }: { installed: LanguageInfo[] }) {
             checked={active.includes(language.tag)}
             onChange={(event) => toggle(language.tag, event.currentTarget.checked)}
           />
-          {language.isDefault ? t('spelling.settings.defaultLanguage', { name: nameOf(language) }) : nameOf(language)}
+          {language.tag === locale
+            ? t('spelling.settings.defaultLanguage', { name: nameOf(language) })
+            : nameOf(language)}
         </label>
       ))}
       <p id="spelling-languages-help" className={styles.help}>

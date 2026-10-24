@@ -154,6 +154,9 @@ impl NotebookStore {
         self.check_section_writable(section)?;
         let (t_section, index, level) = target.placement_index(to, &HashSet::new())?;
         target.check_section_writable(t_section)?;
+        if self.section(section)?.encrypted() || target.section(t_section)?.encrypted() {
+            return Err(CoreError::ReadOnly(crate::model::ReadOnlyReason::Encrypted));
+        }
         let shifted = shift_block(&block, level)?;
         if shifted.iter().any(|f| target.section_of(f.id).is_some()) {
             return Err(CoreError::Conflict(format!("page {page} is already in that notebook")));
@@ -243,6 +246,13 @@ impl NotebookStore {
         }
         if sections.iter().any(|s| target.sections.contains_key(s)) {
             return Err(CoreError::Conflict("the section is already in that notebook".into()));
+        }
+        // An unlocked protected section would copy as plain files; a locked one copies sealed (ADR 0042).
+        if sections
+            .iter()
+            .any(|s| self.section(*s).is_ok_and(|st| st.encrypted() && !st.locked()))
+        {
+            return Err(CoreError::ReadOnly(crate::model::ReadOnlyReason::Encrypted));
         }
         let (order, rekeys) = target.child_key(parent, None, to.before.map(super::edit::node_id))?;
         let intent = self.begin(TreeOp::MoveSectionToNotebook {
@@ -414,6 +424,8 @@ fn copy_assets(fs: &dyn Fs, src: &Path, dst: &Path, page: &Page) -> Result<(), C
         }
         fs.create_durable(&to, &bytes)?;
     }
+    // A recording's timeline goes with its audio, so the copy's stamps stay intact.
+    super::companions::copy_companions(fs, src, dst, page)?;
     Ok(())
 }
 

@@ -1,0 +1,43 @@
+// Phase 12's flags. A flag says whether the feature is built, not whether the person turned it on: every on-device
+// feature also stays off in IntelSettings until the person chooses it. app/flags.ts joins these to the other lists.
+import type { FlagDef, FlagId } from '../../app/flags';
+
+export type IntelFlagId = Extract<FlagId, `intel.${string}` | 'math.visualEditor'>;
+
+const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
+/** On in every build. */
+const everywhere = { dev: true, nightly: true, beta: true, stable: true };
+/** On in development, nightly, and Beta builds while the feature is tried, and off in Stable until it is done. */
+const building = { dev: true, nightly: true, beta: true, stable: false };
+
+const flag = (id: IntelFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
+  id,
+  description,
+  issue: `${ISSUES}${encodeURIComponent(id)}`,
+  enabled,
+});
+
+export const INTEL_FLAGS: readonly FlagDef[] = [
+  flag('intel.ocr', 'Copy text from an image.', everywhere),
+  flag('intel.readAloud', 'Read aloud with the voices installed on Windows.', everywhere),
+  flag('intel.summaries', 'Summaries and keywords.', everywhere),
+  flag('intel.handwriting', 'Handwriting to text, from the selected ink.', everywhere),
+  flag('intel.searchText', 'Text in images and handwriting, for search.', everywhere),
+  flag('intel.models', 'Model downloads with consent, and the speech model picker.', everywhere),
+  flag('intel.vocabulary', 'A custom vocabulary for transcripts, kept for each notebook.', everywhere),
+  flag('intel.background', 'The activity panel for background work, with pause and limits.', everywhere),
+  flag('intel.backgroundOcr', 'Read the text in new images in the background.', everywhere),
+  flag('intel.handwritingExtras', 'Special characters, chemistry, and alternatives for handwriting.', everywhere),
+  flag('intel.meaning', 'Find by meaning, and Related pages.', everywhere),
+  flag('intel.ask', 'Ask your notes, with the pages it used.', everywhere),
+  flag('intel.writing', 'Writing tools: proofread, rewrite, shorten, make a list, tidy structure.', everywhere),
+  flag('intel.transcription', 'Transcription on this device with a downloaded Whisper model.', building),
+  flag('intel.autoTranscripts', 'A transcript and summary of every recording, made in the background.', building),
+  flag('math.visualEditor', 'Edit equations visually, with a math keyboard, instead of typing LaTeX.', building),
+  flag('intel.speakers', 'Tell the speakers in a recording apart in its transcript.', building),
+  flag('intel.dictation', 'Dictate with the microphone and have the words typed at the cursor.', building),
+  flag('intel.liveCaptions', 'Captions while a recording runs.', building),
+  flag('intel.mathInk', 'Turn handwritten math into an equation.', building),
+  flag('intel.translate', 'Translate a selection, a page, or a transcript on this device.', building),
+  flag('intel.cloudKeys', 'Run transcription or summaries with your own cloud key instead of this device.', building),
+];

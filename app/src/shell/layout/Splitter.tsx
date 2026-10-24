@@ -137,7 +137,7 @@ export function Splitter({ pane, controls }: { pane: PaneId; controls: string })
   const { width: windowWidth, sizeClass } = useLayout((state) => state);
   const bounds = paneBounds(pane, windowWidth, sizeClass, prefs);
   const collapsed = prefs[pane].collapsed;
-  const width = Math.min(bounds.max, clampPaneWidth(pane, prefs[pane].width));
+  const width = Math.min(bounds.max, clampPaneWidth(pane, prefs[pane].width, windowWidth));
   const drag = useSplitterDrag(pane, collapsed);
   const onKeyDown = useSplitterKeys(pane, bounds);
   useContextMenu(ref, () => ({

@@ -271,8 +271,9 @@ fn renaming_and_recoloring_change_one_file() {
         styles: None,
     };
     store.set_props(NodeRef::Page(a), &pin).unwrap();
+    // Only pages and sections can be pinned.
     assert!(is_invalid_move(
-        &store.set_props(NodeRef::Section(section), &pin).unwrap_err()
+        &store.set_props(NodeRef::Group(group), &pin).unwrap_err()
     ));
     store.rename_notebook("Bio").unwrap();
     let tree = kit.open().unwrap().tree();
@@ -283,6 +284,59 @@ fn renaming_and_recoloring_change_one_file() {
     assert_eq!((node.title.as_str(), node.color.clone()), ("Labs", fern));
     assert!(node.pages[0].pinned);
     assert_eq!(node.pages[0].title, "Alpha");
+}
+
+#[test]
+fn a_pinned_section_and_a_colored_page_survive_a_reopen() {
+    let (kit, mut store, section, [a, b, _c]) = with_pages();
+    let pin = NodeProps {
+        color: None,
+        pinned: Some(true),
+        styles: None,
+    };
+    store.set_props(NodeRef::Section(section), &pin).unwrap();
+    let plum = Some(Color::Palette("plum".into()));
+    let color = NodeProps {
+        color: Some(plum.clone()),
+        pinned: None,
+        styles: None,
+    };
+    store.set_props(NodeRef::Page(a), &color).unwrap();
+    let tree = kit.open().unwrap().tree();
+    let node = tree.section(section).unwrap();
+    assert!(node.pinned);
+    assert_eq!(node.pages.iter().find(|page| page.id == a).unwrap().color, plum);
+    assert_eq!(node.pages.iter().find(|page| page.id == b).unwrap().color, None);
+    // Unpinning removes the key, so the file is as it was.
+    let unpin = NodeProps {
+        color: None,
+        pinned: Some(false),
+        styles: None,
+    };
+    store.set_props(NodeRef::Section(section), &unpin).unwrap();
+    assert!(!kit.open().unwrap().tree().section(section).unwrap().pinned);
+}
+
+#[test]
+fn archiving_marks_an_unknown_key_that_the_next_open_still_sees() {
+    let (kit, mut store, section, [a, b, _c]) = with_pages();
+    let group = store.create_group("G", None, None).unwrap();
+    store.set_archived(NodeRef::Page(a), true).unwrap();
+    store.set_archived(NodeRef::Section(section), true).unwrap();
+    store.set_archived(NodeRef::Group(group), true).unwrap();
+    store.set_notebook_archived(true).unwrap();
+    let tree = kit.open().unwrap().tree();
+    assert!(tree.archived && tree.groups[0].extra.contains_key(crate::model::ARCHIVED_KEY));
+    let node = tree.section(section).unwrap();
+    assert!(node.archived);
+    assert!(node.pages.iter().find(|page| page.id == a).unwrap().archived);
+    assert!(!node.pages.iter().find(|page| page.id == b).unwrap().archived);
+    // Putting an item back removes the key, so the file is as it was.
+    store.set_archived(NodeRef::Page(a), false).unwrap();
+    store.set_notebook_archived(false).unwrap();
+    let tree = kit.open().unwrap().tree();
+    assert!(!tree.archived);
+    assert!(!tree.section(section).unwrap().pages.iter().any(|page| page.archived));
 }
 
 #[test]

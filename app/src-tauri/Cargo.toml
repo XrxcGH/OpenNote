@@ -1,6 +1,6 @@
 [package]
 name = "opennote"
-version = "0.1.0"
+version = "0.1.0-beta.5"
 description = "Open-source note-taking app combining writing, drawing, and recording"
 edition = "2021"
 license = "Apache-2.0"
@@ -14,49 +14,108 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 # For CI's end-to-end builds only: test update endpoints on 127.0.0.1 and a test key compiled in from
 # OPENNOTE_TEST_UPDATE_PUBKEY. The release build job fails for an exe built with it.
 test-endpoints = ["opennote-updater/test-endpoints"]
+# The native engines: whisper.cpp for speech and ONNX Runtime for translation and meaning. Release builds turn it on.
+# It needs CMake, a C++ compiler, and libclang. Without it the pure Rust speech reader runs, and translation and
+# meaning vectors report that this build does not carry them.
+native-engines = ["opennote-intel-engines/whisper-cpp", "opennote-intel-engines/onnx"]
+# The native engines plus DirectML for translation and meaning vectors (graphics card or NPU, processor if it cannot start).
+native-directml = ["native-engines", "opennote-intel-engines/onnx-directml"]
+# Puts the language model program (crates/llm-host, built with its llama feature) inside the exe. The release build sets
+# OPENNOTE_LLM_HOST_BIN to the path of the built program. A release is one exe, so the program cannot travel beside it.
+embed-llm-host = []
 
 [build-dependencies]
 base64 = "0.22.1"
+serde_json.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+base64 = "0.23.1"
+# My handwriting: the style is encrypted at rest with the audited RustCrypto AEAD crates/interop/src/lock.rs uses.
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc", "zeroize"] }
+crc32fast = "1.5.2"
+flate2 = "1.1.10"
+# Connectors: PKCE and sign-in state need the operating system's random generator, the token endpoints take
+# form bodies, and the account name is read from the payload of an ID token. All three are already built.
+getrandom = "0.3.4"
 log.workspace = true
+opennote-api = { path = "../../crates/api" }
 opennote-core = { path = "../../crates/core" }
+opennote-crashreport = { path = "../../crates/crashreport" }
+opennote-diagnostics = { path = "../../crates/diagnostics" }
+opennote-intel = { path = "../../crates/intel" }
+opennote-intel-engines = { path = "../../crates/intel-engines" }
+opennote-interop = { path = "../../crates/interop" }
+# Phase 9: recording to Opus needs libopus, which builds with CMake (preinstalled on the Windows runners).
+opennote-metafile = { path = "../../crates/third_party/metafile" }
+opennote-media = { path = "../../crates/media", features = ["opus"] }
+opennote-print = { path = "../../crates/print" }
+opennote-search = { path = "../../crates/search" }
 opennote-updater = { path = "../../crates/updater" }
+# Phase 10: Anki packages are zip files that hold a SQLite collection, with the same SQLite build as the search crate.
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+notify = "8.2.0"
+# The optional dictionary download (Open English WordNet) is read as XML, and its words are folded to a first letter.
+quick-xml = "0.42.0"
+unicode-normalization = "0.1.25"
 semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha1 = "0.11.0"
 sha2.workspace = true
 tauri = { version = "2", features = [] }
 # Web images for paste (Phase 4 ARCHITECTURE.md section 12.2), with the same TLS stack and version as the updater.
-ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default"] }
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls"] }
+tempfile.workspace = true
+url = "2.5.8"
+# Protected sections: passwords and Hello signatures sit in buffers that are wiped when dropped.
+zeroize = "1.9.0"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
+# For `#[implement]`, which the Snap Layouts overlay's UI Automation provider uses.
+windows-core = "0.62.2"
 
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.62.2"
 features = [
+  "ApplicationModel_Activation",
+  "ApplicationModel_DataTransfer_ShareTarget",
   "Foundation",
+  "Foundation_Collections",
+  "Media_ClosedCaptioning",
   "Networking_Connectivity",
+  "Storage_FileProperties",
+  "Security_Credentials",
+  "Security_Cryptography",
+  "Storage_Streams",
   "UI_ViewManagement",
   "Win32_Foundation",
   "Win32_Globalization",
+  "Win32_Media_MediaFoundation",
   "Win32_Graphics_Dwm",
   "Win32_Graphics_Gdi",
   "Win32_Graphics_Imaging",
   "Win32_Security",
+  "Win32_Security_Credentials",
   "Win32_Storage_FileSystem",
+  "Win32_Storage_Packaging_Appx",
   "Win32_System_Com",
   "Win32_System_Com_StructuredStorage",
   "Win32_System_DataExchange",
   "Win32_System_LibraryLoader",
   "Win32_System_Memory",
   "Win32_System_Ole",
+  "Win32_System_Power",
   "Win32_System_Registry",
+  "Win32_System_RemoteDesktop",
+  "Win32_System_Time",
   "Win32_System_Threading",
   "Win32_System_Variant",
+  "Win32_System_WindowsProgramming",
   "Win32_UI_Accessibility",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_Shell",
   "Win32_UI_Shell_Common",
   "Win32_UI_Shell_PropertiesSystem",
@@ -65,5 +124,8 @@ features = [
 
 [dev-dependencies]
 proptest.workspace = true
+# A local HTTPS server for the web image tests (T1-1): a certificate made per run, so no key is ever committed.
+rcgen = "0.13.2"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 tempfile.workspace = true
 ts-rs = { version = "12.0.1", features = ["no-serde-warnings"] }

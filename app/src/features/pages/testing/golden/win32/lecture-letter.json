@@ -1,0 +1,66 @@
+{
+  "pages": [
+    {
+      "width": 612,
+      "height": 792,
+      "start": "Photosynthesis Light excites chlorophyll in the ",
+      "end": "ve, and 光合成 all appear in this line. Page 1 of 5",
+      "words": 224
+    },
+    {
+      "width": 612,
+      "height": 792,
+      "start": "Column 1Column 2Column 3 Row 1 cell 1Row 1 cell ",
+      "end": " 21 cell 1Row 21 cell 2Row 21 cell 3 Page 2 of 5",
+      "words": 218
+    },
+    {
+      "width": 612,
+      "height": 792,
+      "start": "Section 2: light reactions Water is split, and o",
+      "end": "ke sugar from light, water, and air. Page 3 of 5",
+      "words": 174
+    },
+    {
+      "width": 612,
+      "height": 792,
+      "start": "Section 3: light reactions The Calvin cycle fixe",
+      "end": "intln!(\"light\"); } Life finds a way. Page 4 of 5",
+      "words": 177
+    },
+    {
+      "width": 612,
+      "height": 792,
+      "start": "Section 4: light reactions Énergie, café, naïve,",
+      "end": "cle fixes carbon dioxide into sugar. Page 5 of 5",
+      "words": 210
+    }
+  ],
+  "outline": [
+    "Photosynthesis",
+    "Section 1: light reactions",
+    "Section 2: light reactions",
+    "Section 3: light reactions",
+    "Section 4: light reactions",
+    "The end"
+  ],
+  "structure": {
+    "Document": 1,
+    "NonStruct": 228,
+    "H1": 1,
+    "P": 20,
+    "H2": 5,
+    "L": 8,
+    "LI": 16,
+    "Lbl": 16,
+    "Strong": 67,
+    "Em": 4,
+    "Table": 1,
+    "TR": 22,
+    "TH": 3,
+    "TD": 63,
+    "Figure": 2,
+    "Code": 1,
+    "BlockQuote": 1
+  }
+}

@@ -11,11 +11,22 @@
     --toolbar-size: var(--size-toolbar-pointer);
     /* What scroll containers keep clear at their bottom, so focus never lands under a toast or the bottom bar
        (WCAG 2.4.11). Toaster keeps --toast-height current; scroll containers use this in scroll-padding. */
-    --toast-clearance: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
+    --toast-clearance: calc(var(--toast-height, 0px) + var(--panel-inset-bottom, 0px) + var(--space-4));
   }
 
   html {
     scroll-padding-block-end: var(--toast-clearance);
+  }
+
+  /* Where floating panels may go (shell/layout/chromeInsets.ts): below the title bar, the command bar, and its line,
+     above the word count line and the compact bottom bar, with a gap to each. The two insets are measured at run
+     time; these are their values before the first measure. */
+  :root {
+    --panel-inset-top: calc(var(--size-title-bar) + var(--size-toolbar-pointer));
+    --panel-inset-bottom: 0px;
+    --panel-gap: var(--space-3);
+    --panel-top: calc(var(--panel-inset-top) + var(--panel-gap));
+    --panel-bottom: calc(var(--panel-inset-bottom) + var(--panel-gap));
   }
 
   html,
@@ -23,6 +34,18 @@
   #root {
     block-size: 100%;
     margin: 0;
+  }
+
+  /* The window never scrolls. Only the setup step, a dialog, and the page viewport do.
+     The app root clips, which unlike hidden also refuses scrolls from focus, selection drags, and scrollIntoView.
+     Html and body stay hidden, because axe reads clip as visible overflow and flags targets below the fold. */
+  html,
+  body {
+    overflow: hidden;
+  }
+
+  #root {
+    overflow: clip;
   }
 
   body {

@@ -2,6 +2,8 @@
 // page only through an OpenPage: the memory implementation serves the web platform and tests, and the Tauri adapter
 // maps each call onto Phase 3's core commands. WP2 owns everything in this folder except this file.
 
+import type { InkChanges, PageInk, StrokeEdit } from './ink';
+
 export type PageId = string;
 export type BlockId = string;
 export type AssetId = string;
@@ -34,12 +36,19 @@ export interface BlockJson {
   data: Record<string, unknown>;
   fallback?: { markdown: string; image?: AssetId };
 }
+/**
+ * A type a new block may have: a version 1 type (spec 6.3) or an extension type (spec 6.4), such as OpenNote's own
+ * `ext:org.opennote/...`. The core refuses any other name, so a bare name like "mindmap" fails to type-check here.
+ */
+export type NewBlockType = 'text' | 'ink' | 'image' | 'file' | 'table' | `ext:${string}`;
 export interface NewBlock {
   id: BlockId;
-  type: string;
+  type: NewBlockType;
   frame?: Frame;
   lock?: BlockLock;
   data: Record<string, unknown>;
+  /** Required for types newer than version 1 (spec 6.5). */
+  fallback?: { markdown: string; image?: AssetId };
 }
 export interface PageViewJson {
   layout?: 'freeform' | 'flow';
@@ -84,8 +93,11 @@ export type Edit =
   | { edit: 'moveBlock'; block: BlockId; frame?: Frame | null; after?: BlockId; before?: BlockId }
   | { edit: 'patchBlock'; block: BlockId; lock?: BlockLock | null; data?: JsonPatch; fallback?: unknown }
   | { edit: 'deleteBlocks'; blocks: BlockId[] }
-  | { edit: 'setPage'; title?: string; view?: JsonPatch }
-  | { edit: 'addAsset'; asset: AssetId };
+  | { edit: 'setPage'; title?: string; tags?: string[]; view?: JsonPatch }
+  | { edit: 'addAsset'; asset: AssetId }
+  | { edit: 'removeAsset'; asset: AssetId }
+  /** Phase 5's stroke edits (ink.ts). */
+  | StrokeEdit;
 
 export type UiSelection =
   /** ProseMirror positions in that block. */
@@ -93,12 +105,14 @@ export type UiSelection =
   | { kind: 'objects'; blocks: BlockId[] }
   | { kind: 'title'; anchor: number; head: number };
 
-export type CoalesceKind = 'typing' | 'drag' | 'resize' | 'slider';
+export type CoalesceKind = 'typing' | 'drag' | 'resize' | 'slider' | 'erase';
 
 export interface EditBatch {
   edits: Edit[];
   coalesce?: { kind: CoalesceKind; target: string };
   ui?: { before: UiSelection; after: UiSelection };
+  /** Phase 5: new strokes as ink records, added after `edits` in the same transaction (page_add_strokes). */
+  strokes?: Uint8Array;
 }
 
 export interface TxnAck {
@@ -117,6 +131,8 @@ export interface AppliedFrame {
   readonly ui: { before: UiSelection; after: UiSelection } | null;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
+  /** Phase 5: what the step did to the ink, which PageInk.onChange also hears. */
+  readonly ink?: InkChanges;
 }
 
 export interface ReadOnlyInfo {
@@ -157,13 +173,15 @@ export type ImageSource =
 
 export interface OpenPage {
   readonly id: PageId;
-  /** One client per window, such as "main-1". */
+  /** One client per open in a window, such as "main-1", or "wk3x09ab2-1" in a page window. */
   readonly client: string;
   /** Parsed from the envelope; ink goes to Phase 5. */
   readonly initial: PageJson;
   readonly readOnly: ReadOnlyInfo | null;
   /** Whether the core takes `spliceText` (P3-10). */
   readonly supportsSplice: boolean;
+  /** Phase 5: the page's strokes; absent where the service keeps no ink. */
+  readonly ink?: PageInk;
   /** page_apply through the ordered queue, one request in flight. */
   send(batch: EditBatch): Promise<TxnAck>;
   undo(): Promise<AppliedFrame | null>;
@@ -184,6 +202,8 @@ export interface OpenPage {
 
 export interface PageService {
   open(pageId: PageId, options: { viewport: PageRect | null }): Promise<OpenPage>;
+  /** Delete history for a page, section, or notebook (history_delete), where the service can. */
+  readonly admin?: HistoryAdmin;
 }
 
 export type PageErrorCode =
@@ -197,7 +217,9 @@ export type PageErrorCode =
   | 'tooLarge'
   | 'downloadFailed'
   | 'staleToken'
-  | 'notImplemented';
+  | 'notImplemented'
+  /** The command gave up waiting for the core, which another command has held for too long. */
+  | 'coreBusy';
 
 /** `resync` says the page is out of date, so the view reopens it and remounts its editors. */
 export class PageServiceError extends Error {

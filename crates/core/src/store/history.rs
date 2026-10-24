@@ -196,6 +196,13 @@ fn page_id_of(dir: &Path) -> PageId {
         .unwrap_or(PageId::ZERO)
 }
 
+/// The exact bytes of `page.json` at a saved version, as Check notebook writes them back.
+pub fn snapshot_bytes(files: &PageFiles<'_>, rev: RevisionId, limits: &Limits) -> Result<Vec<u8>, CoreError> {
+    let path = NotebookLayout::version_path(files.dir, rev);
+    let packed = files.fs.read(&path, limits.page_json_bytes)?;
+    Ok(gunzip(&packed, limits.gunzip_bytes)?)
+}
+
 fn read_snapshot(files: &PageFiles<'_>, rev: RevisionId, limits: &Limits) -> Result<ReadPage, CoreError> {
     let path = NotebookLayout::version_path(files.dir, rev);
     let packed = files.fs.read(&path, limits.page_json_bytes)?;

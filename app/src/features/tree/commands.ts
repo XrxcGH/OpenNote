@@ -2,9 +2,10 @@
 // the focused row of the tree that has focus, else what is open (see current.ts). The navigation keys belong to
 // TreeView; these are the keys with modifiers, which can be rebound.
 
-import { chord, defineCommand } from '../../commands/registry';
+import { chord, defineCommand, executeCommand } from '../../commands/registry';
 import type { CommandContext, CommandDef } from '../../commands/types';
 import type { ChipColor, NodeId } from '../../services/notes';
+import { dismissActionToasts } from '../../state/toasts';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import { colorNode } from './actions';
@@ -12,11 +13,24 @@ import { canCreate, createFromContext } from './creation';
 import type { NewKind } from './creation';
 import { currentNode } from './current';
 import { changeLevel, moveStep, moveTo } from './movement';
+import { selectedNodes } from './multi';
+import { loadMultiActions } from './multiActions.lazy';
 import { levelAfter, stepOf } from './moves';
 import { deleteNode } from './remove';
 import { startRename } from './rename';
 import { treeStore } from './store';
 import { redo, undo } from './undo';
+
+/**
+ * Focus falls to nothing after an undo removes the focused block, or after Convert to table replaces the lasso's
+ * strokes. Ctrl+Z and Ctrl+Y then belong to the page shown, when there is one. They never undo a tree change, such as
+ * the page's own creation, behind the person's back (Beta 5 walk W2-4, W2-5). The page's command says if it can.
+ */
+async function toShownPage(id: 'page.undo' | 'page.redo', ctx: CommandContext): Promise<boolean> {
+  const focused = typeof document === 'undefined' ? null : document.activeElement;
+  if (ctx.source !== 'keyboard' || (focused && focused !== document.body)) return false;
+  return executeCommand(id, undefined, 'keyboard');
+}
 
 const creating = (id: string, kind: NewKind, def: Partial<CommandDef> & Pick<CommandDef, 'title'>) =>
   defineCommand({
@@ -34,17 +48,21 @@ const createCommands = [
     title: 'tree.commands.newSection',
     keys: [chord('Ctrl+T')],
     scope: 'workspace',
+    // Made from anywhere, as while typing on a page or in its title.
+    allowInTextInput: true,
   }),
   creating('newPage', 'page', {
     title: 'tree.commands.newPage',
     keywords: 'tree.commands.keywords.newPage',
     keys: [chord('Ctrl+N')],
     scope: 'workspace',
+    allowInTextInput: true,
   }),
   creating('newSubpage', 'subpage', {
     title: 'tree.commands.newSubpage',
     keys: [chord('Ctrl+Alt+Shift+N')],
     scope: 'workspace',
+    allowInTextInput: true,
   }),
 ];
 
@@ -122,8 +140,12 @@ const editCommands = [
     title: 'tree.commands.color',
     category: 'notebooks',
     palette: false,
-    enabled: (ctx) => ![undefined, 'page'].includes(currentNode(ctx)?.kind),
-    run: async (ctx, args) => onNode((c, id) => colorNode(c.notes, id, args?.color ?? null))(ctx),
+    enabled: (ctx) => currentNode(ctx) !== undefined,
+    run: async (ctx, args) => {
+      const many = selectedNodes(ctx);
+      if (many) return (await loadMultiActions()).colorSelection(ctx.notes, many, args?.color ?? null);
+      return onNode((c, id) => colorNode(c.notes, id, args?.color ?? null))(ctx);
+    },
   }),
   defineCommand({
     id: 'tree.moveTo',
@@ -133,6 +155,11 @@ const editCommands = [
     scope: 'tree',
     enabled: (ctx) => ![undefined, 'notebook'].includes(currentNode(ctx)?.kind),
     run: async (ctx) => {
+      const many = selectedNodes(ctx);
+      if (many) {
+        await (await loadMultiActions()).moveSelection(ctx.notes, many);
+        return;
+      }
       const node = currentNode(ctx);
       if (node) await moveTo(ctx.notes, node);
     },
@@ -145,7 +172,14 @@ const editCommands = [
     keys: [chord('Delete')],
     scope: 'tree',
     enabled: (ctx) => currentNode(ctx) !== undefined,
-    run: onNode((ctx, id) => deleteNode(ctx.notes, id)),
+    run: async (ctx) => {
+      const many = selectedNodes(ctx);
+      if (many) {
+        await (await loadMultiActions()).trashSelection(ctx.notes, many);
+        return;
+      }
+      await onNode((c, id) => deleteNode(c.notes, id))(ctx);
+    },
   }),
   defineCommand({
     id: 'edit.undo',
@@ -154,6 +188,8 @@ const editCommands = [
     keys: [chord('Ctrl+Z')],
     scope: 'workspace',
     run: async (ctx) => {
+      if (await toShownPage('page.undo', ctx)) return;
+      dismissActionToasts();
       if (!(await undo(ctx.notes))) announce(t('tree.undo.nothing'));
     },
   }),
@@ -164,6 +200,7 @@ const editCommands = [
     keys: [chord('Ctrl+Y'), chord('Ctrl+Shift+Z')],
     scope: 'workspace',
     run: async (ctx) => {
+      if (await toShownPage('page.redo', ctx)) return;
       if (!(await redo(ctx.notes))) announce(t('tree.undo.nothingToRedo'));
     },
   }),

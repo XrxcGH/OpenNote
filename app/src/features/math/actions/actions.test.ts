@@ -1,0 +1,139 @@
+// Simplify and Solve on LaTeX (Phase 10): what they change, what they find, and the honest answers when they
+// cannot read the equation, find nothing, or have nothing to do.
+import { describe, expect, it } from 'vitest';
+import { Unsupported, latexToText } from './convert';
+import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions';
+
+describe('latexToText', () => {
+  it('reads fractions, roots, products, and functions', () => {
+    expect(latexToText(String.raw`\frac{1}{2}x`)).toBe('((1)/(2))x');
+    expect(latexToText(String.raw`\sqrt{x+1} \cdot 2`)).toBe('sqrt(x+1) * 2');
+    expect(latexToText(String.raw`\sin\left(\pi x\right)`)).toBe('sin(pi x)');
+    expect(latexToText('x^{2}+1')).toBe('x^(2)+1');
+  });
+
+  it('refuses what it cannot read', () => {
+    expect(() => latexToText(String.raw`\int_0^1 x`)).toThrow(Unsupported);
+    expect(() => latexToText(String.raw`\sqrt[3]{x}`)).toThrow(Unsupported);
+    expect(() => latexToText(String.raw`\frac{1`)).toThrow(Unsupported);
+  });
+});
+
+describe('simplify', () => {
+  it('gives a plain fraction for a sum of fractions', () => {
+    expect(simplifyLatex(String.raw`\frac{1}{2}+\frac{1}{3}`)).toEqual({ ok: true, latex: String.raw`\frac{5}{6}` });
+    expect(simplifyLatex(String.raw`\frac{6}{8}`)).toEqual({ ok: true, latex: String.raw`\frac{3}{4}` });
+    expect(simplifyLatex('2+3*4')).toEqual({ ok: true, latex: '14' });
+  });
+
+  it('drops what does nothing in an expression with letters', () => {
+    expect(simplifyLatex('x*1+0')).toEqual({ ok: true, latex: 'x' });
+    expect(simplifyLatex(String.raw`2 \cdot 3x`)).toEqual({ ok: true, latex: '6x' });
+  });
+
+  it('collects like terms (Beta 5 walk W2-10)', () => {
+    expect(simplifyLatex('2x+3x+x')).toEqual({ ok: true, latex: '6x' });
+    expect(simplifyLatex('x+x')).toEqual({ ok: true, latex: '2x' });
+    expect(simplifyLatex('2x+3+3x-1')).toEqual({ ok: true, latex: '5x+2' });
+    expect(simplifyLatex('x^2+2x-x^2')).toEqual({ ok: true, latex: '2x' });
+    expect(simplifyLatex('3y-3y+x')).toEqual({ ok: true, latex: 'x' });
+  });
+
+  it('simplifies both sides of an equation', () => {
+    expect(simplifyLatex('x+0=2+2')).toEqual({ ok: true, latex: 'x = 4' });
+  });
+
+  it('says when there is nothing to do or it cannot read the LaTeX', () => {
+    expect(simplifyLatex('x')).toEqual({ ok: false, reason: 'unchanged' });
+    expect(simplifyLatex(String.raw`\int x`)).toEqual({ ok: false, reason: 'unsupported' });
+    expect(simplifyLatex('2 +')).toEqual({ ok: false, reason: 'unsupported' });
+  });
+});
+
+describe('solve', () => {
+  const answer = (latex: string) => {
+    const result = solveLatex(latex);
+    return result.ok ? result.latex.split(String.raw`\quad\Rightarrow\quad`)[1].trim() : result.reason;
+  };
+
+  it('solves a linear equation', () => {
+    expect(answer('2x+3=11')).toBe('x = 4');
+  });
+
+  it('finds every real root of a quadratic, smallest first', () => {
+    expect(answer('x^2-4=0')).toBe(String.raw`x = -2,\ x = 2`);
+  });
+
+  it('finds a double root that only touches zero', () => {
+    expect(answer('(x-1)^2=0')).toBe('x = 1');
+  });
+
+  it('gives a small fraction as a fraction', () => {
+    expect(answer('2x=1')).toBe(String.raw`x = \frac{1}{2}`);
+  });
+
+  it('treats an expression with no equals sign as equal to zero', () => {
+    expect(answer('x^2-9')).toBe(String.raw`x = -3,\ x = 3`);
+  });
+
+  it('uses whatever one letter the equation has', () => {
+    expect(answer('3t-6=0')).toBe('t = 2');
+  });
+
+  it('keeps the equation and adds the answer after an arrow', () => {
+    expect(solveLatex('2x+3=11')).toEqual({ ok: true, latex: String.raw`2x+3=11 \quad\Rightarrow\quad x = 4` });
+  });
+
+  it('does not count a gap in the curve as a root', () => {
+    expect(answer(String.raw`\frac{1}{x}=0`)).toBe('none');
+  });
+
+  it('says so with no solution, with several letters, or with LaTeX it cannot read', () => {
+    expect(answer('x^2+1=0')).toBe('none');
+    expect(answer('x+y=1')).toBe('letters');
+    expect(answer('4=4')).toBe('letters');
+    expect(answer(String.raw`\int x=0`)).toBe('unsupported');
+  });
+});
+
+describe('live answers', () => {
+  it('solves an equation in one letter and works out a sum of numbers', () => {
+    expect(liveAnswer('2x+3=11')).toBe('x = 4');
+    expect(liveAnswer('t^2=9')).toBe('t = -3, t = 3');
+    expect(liveAnswer('3x = 1')).toBe('x = 1/3');
+    expect(liveAnswer(String.raw`\frac{1}{2}+\frac{1}{3}`)).toBe('= 5/6');
+  });
+
+  it('shows nothing where there is nothing to say', () => {
+    expect(liveAnswer('')).toBeNull();
+    expect(liveAnswer('y = 2x + 1')).toBeNull();
+    expect(liveAnswer('x^2 + 1')).toBeNull();
+    expect(liveAnswer('4')).toBeNull();
+    expect(liveAnswer('x^2 = -1')).toBeNull();
+    expect(liveAnswer(String.raw`\int_0^1 x`)).toBeNull();
+  });
+});
+
+describe('graphs of equations', () => {
+  it('draws y = f(x) and an expression in x in 2D', () => {
+    expect(graphOfLatex('y = x^2')).toEqual({ source: 'y = x^2', three: false });
+    expect(graphOfLatex('f(x) = 2x + 1')).toEqual({ source: 'y = 2x+1', three: false });
+    expect(graphOfLatex('x^2 - 1')).toEqual({ source: 'y = x^2-1', three: false });
+    expect(graphOfLatex('t^2')).toEqual({ source: 'y = x^2', three: false });
+  });
+
+  it('draws z = f(x, y) and an expression in x and y in 3D', () => {
+    expect(graphOfLatex('z = x y')).toEqual({ source: 'z = x y', three: true });
+    expect(graphOfLatex('x^2 + y^2')).toEqual({ source: 'z = x^2+y^2', three: true });
+  });
+
+  it('draws both sides of an equation in one letter, so the answer is where they cross', () => {
+    expect(graphOfLatex('2t + 3 = 11')).toEqual({ source: 'y = 2x+3\ny = 11', three: false });
+  });
+
+  it('has nothing to draw for a number or an equation it cannot read', () => {
+    expect(graphOfLatex('4')).toBeNull();
+    expect(graphOfLatex('x^2 + y^2 = 1')).toBeNull();
+    expect(graphOfLatex('')).toBeNull();
+  });
+});

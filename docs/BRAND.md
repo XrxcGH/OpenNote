@@ -172,9 +172,9 @@ Rules for the switch:
 
 | Role | Font | Why |
 |---|---|---|
-| Interface and default note text | Atkinson Hyperlegible Next | Designed by the Braille Institute for legibility; distinct letter shapes (I, l, 1) help everyone, including low-vision readers |
+| Interface and default note text | OpenNote Sans (Atkinson Hyperlegible Next with an open zero) | Designed by the Braille Institute for legibility; distinct letter shapes (I, l, 1) help everyone, including low-vision readers. The original draws a slash through 0 in its default glyph, with no feature to turn it off, so OpenNote ships a Modified Version whose 0 is open; every other glyph, metric, and feature is unchanged. `brand/fonts/open-zero.py` rebuilds it |
 | Optional reading font for notes | Literata | A warm serif built for long reading on screens |
-| Code and monospace | Atkinson Hyperlegible Mono | Matches the interface font |
+| Code and monospace | Atkinson Hyperlegible Mono | Matches the interface font; keeps its slashed zero, which code needs to tell 0 from O |
 | Fallbacks on Windows | Segoe UI Variable, Cambria, Cascadia Code | System fonts if a bundled font fails to load |
 
 All fonts use the Open Font License (OFL) and ship inside the app, so the app never downloads fonts at run time.
@@ -210,8 +210,8 @@ The layout adapts to the window width, not the device type:
 |---|---|---|
 | Compact | under 600 | One pane at a time. Bottom toolbar. Freeform pages open in a single-column reading view, with a button to switch to the full canvas. |
 | Medium | 600 to 839 | Page list and page side by side. Notebooks in a slide-over drawer. |
-| Expanded | 840 to 1,199 | Notebook sidebar (272) and page. The page list opens as an overlay. |
-| Wide | 1,200 and up | Three panes: notebooks (272), pages (300), page (at least 480). |
+| Expanded | 840 to 1,199 | Notebook sidebar (220 to 256) and page. The page list opens as an overlay. |
+| Wide | 1,200 and up | Three panes: notebooks (14% of the window, 220 to 256), pages (16%, 240 to 280), page (at least 480). A pane someone resized keeps its width. |
 
 Button and row sizes follow the pointer by default. A touch or pen tap switches to the touch sizes, and a mouse click switches back, never in the middle of a gesture. People who want large targets with a mouse can choose Large in Settings, then Appearance. "Interface size" scales the sidebars, toolbars, and menus from 90% to 150% without changing the page zoom. The title bar is 40 tall, or 48 with touch sizes, and the Windows buttons are 46 wide.
 

@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 
 use super::view::named;
-use crate::format::json::{Json, Obj};
+use crate::format::json::{fixed_value, geometry, Json, Obj};
 use crate::id::{ElementId, Id};
 use crate::model::{
     AnchorQuote, BlockData, Crop, FileData, ImageData, InkAnchor, InkBlockData, JsonMap, Named, NamedValue, OtherData,
@@ -96,6 +96,11 @@ impl<'a> View<'a> {
             None => Ok(None),
             Some(value) => number(key, value).map(Some),
         }
+    }
+
+    /// A geometry value, rounded to 0.01 as the file writes it.
+    fn geometry(&mut self, key: &'static str) -> Result<Option<f64>, String> {
+        Ok(self.number(key)?.map(geometry))
     }
 
     fn named<T: NamedValue>(&mut self, key: &'static str) -> Result<Option<Named<T>>, String> {
@@ -223,8 +228,8 @@ fn read_anchor(map: &JsonMap) -> Result<InkAnchor, String> {
         para,
         at,
         quote,
-        dx: view.number("dx")?.unwrap_or(0.0),
-        dy: view.number("dy")?.unwrap_or(0.0),
+        dx: view.geometry("dx")?.unwrap_or(0.0),
+        dy: view.geometry("dy")?.unwrap_or(0.0),
         extra: view.rest(),
     })
 }
@@ -253,7 +258,12 @@ fn read_image(map: &JsonMap) -> Result<ImageData, String> {
 
 fn read_crop(map: &JsonMap) -> Result<Crop, String> {
     let mut view = View::new(map);
-    let mut part = |key| view.number(key)?.ok_or(format!("crop.{key}: missing"));
+    // Crops are written with 6 decimals.
+    let mut part = |key| {
+        view.number(key)
+            .map(|v| v.map(|v| fixed_value(v, 6)))?
+            .ok_or(format!("crop.{key}: missing"))
+    };
     Ok(Crop {
         x: part("x")?,
         y: part("y")?,
@@ -295,7 +305,7 @@ fn read_column(value: &Value) -> Result<TableColumn, String> {
     let mut view = View::new(value.as_object().ok_or("columns: expected objects")?);
     Ok(TableColumn {
         id: view.id("id")?,
-        width: view.number("width")?,
+        width: view.geometry("width")?,
         extra: view.rest(),
     })
 }

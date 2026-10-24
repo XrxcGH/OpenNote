@@ -162,7 +162,7 @@ pub fn resolve(
 
 /// Opens an address or a folder with Windows' default handler.
 #[cfg(windows)]
-fn open(target: &str) -> IpcResult<()> {
+pub(crate) fn open(target: &str) -> IpcResult<()> {
     use windows::{
         core::{w, HSTRING},
         Win32::UI::{Shell::ShellExecuteW, WindowsAndMessaging::SW_SHOWNORMAL},
@@ -179,7 +179,7 @@ fn open(target: &str) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-fn open(_target: &str) -> IpcResult<()> {
+pub(crate) fn open(_target: &str) -> IpcResult<()> {
     Err(IpcError::not_implemented("shell_open_external"))
 }
 

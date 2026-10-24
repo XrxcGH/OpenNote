@@ -13,8 +13,6 @@ pub struct EditingSettings {
     pub markdown_shortcuts: bool,
     pub slash_menu: bool,
     pub formatting_bar: FormattingBar,
-    /// Put the date and time under the title of a new page.
-    pub new_page_date_time: bool,
     #[cfg_attr(test, ts(inline))]
     pub autocorrect: Autocorrect,
     #[cfg_attr(test, ts(inline))]
@@ -33,7 +31,6 @@ impl Default for EditingSettings {
             markdown_shortcuts: true,
             slash_menu: true,
             formatting_bar: FormattingBar::TouchAndPen,
-            new_page_date_time: true,
             autocorrect: Autocorrect::default(),
             paste: Paste::default(),
             spelling: Spelling::default(),
@@ -137,7 +134,7 @@ impl Default for Paste {
     fn default() -> Self {
         Self {
             source_link: SourceLink::Ask,
-            save_web_images: true,
+            save_web_images: false,
             join_pdf_lines: true,
         }
     }
@@ -230,9 +227,8 @@ mod tests {
             "markdownShortcuts": true,
             "slashMenu": true,
             "formattingBar": "touchAndPen",
-            "newPageDateTime": true,
             "autocorrect": { "enabled": true, "entries": [] },
-            "paste": { "sourceLink": "ask", "saveWebImages": true, "joinPdfLines": true },
+            "paste": { "sourceLink": "ask", "saveWebImages": false, "joinPdfLines": true },
             "spelling": {
                 "enabled": true, "languages": [], "personalWords": [], "ignoreUppercase": true,
                 "ignoreWithDigits": true

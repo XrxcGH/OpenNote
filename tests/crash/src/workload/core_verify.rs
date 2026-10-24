@@ -55,8 +55,15 @@ impl VerifyState {
         let fs = StdFs::new(&Timings::for_crash_tests());
         let report = verify_notebook(&fs, &CanonicalCodec, &manifest.notebook, &Limits::default())
             .map_err(|e| format!("verify_notebook: {e}"))?;
-        if !report.is_clean() {
-            return Err(format!("verify_notebook found problems (I1): {:?}", report.problems));
+        // A page.md that lags its page is only the readable copy, which Check notebook writes again; recovery
+        // leaves it, so a kill between a save and the copy leaves it stale. Anything else is a real problem.
+        let problems: Vec<_> = report
+            .problems
+            .iter()
+            .filter(|(_, warning)| !(warning.code == "page.mdMismatch" && warning.detail == "stale"))
+            .collect();
+        if !problems.is_empty() {
+            return Err(format!("verify_notebook found problems (I1): {problems:?}"));
         }
         let pages = load_pages(&manifest)?;
         self.check_pages(iteration, markers, &pages)?;

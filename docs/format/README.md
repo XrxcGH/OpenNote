@@ -782,6 +782,15 @@ In a table block, `columns` is a list of `{id, width}` objects, and `rows` is a 
 }
 ```
 
+A smart table keeps what it adds beside its cells in the table block's `data.smart`, a key a reader that does not know it passes through unchanged. Its `columns` object maps a column ID to that column's settings (`type`, `decimals`, `currency`, `total`). A column with `"type": "choice"` also has these fields, both optional:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `options` | list | The choices, in the order the person set them. Each is `{name, color}`: `name` is one line of up to 60 characters with no comma, unique without regard to case, and `color` is one of `indigo`, `amber`, `ink`, `fern`, `brick`, `walnut`, or `plum`. At most 50 |
+| `multi` | boolean | `true` when a cell may hold several choices. Defaults to `false` |
+
+A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0047](../adr/0048-choice-columns.md).
+
 ### 6.4 Reserved and extension types
 
 These type names are reserved for later versions: `chart`, `math`, `graph`, `embed`, `audio`, `pdf`, `card`, `break`, `shape`, and `group`. Nobody else may use them.
@@ -927,6 +936,15 @@ The rules apply to text outside code spans, code blocks, link destinations, and 
 | `>` | First on a paragraph line | Block quotes |
 | `-` and `+` | First on a paragraph line | Lists, breaks, and setext headings |
 | `.` and `)` | After 1 to 9 digits that begin a paragraph line | Numbered lists |
+
+#### Typed hashtags
+
+A word that starts with `#` is always written with the `#` escaped, as in `\#biology`, whether the editor treats it as a tag. The text of a block is the same in both states of the editor's setting "Turn typed #words into tags".
+
+- **Setting on.** When a typed `#word` is finished by a space or punctuation, the editor also adds the word to the page's `tags` (section 5.2), in the form of its normal tag (folded, with a `/` nesting it). Nothing in the text changes. The tag is its own change in the page's history, so one Undo leaves the plain `#word` in the text and removes the tag.
+- **Setting off.** The editor adds nothing to `tags`. The text is the same.
+- **What counts.** The `#` is at the start of a word, the word has at least one letter, and it uses letters, digits, `_`, `-`, and `/`. A word of digits only (`#1`), a `#` after a letter (`C#`), and text inside code spans, code blocks, link destinations, and web addresses are not tags.
+- **Readers.** A reader treats `\#word` as the text `#word`, and shows the page's `tags` as the page's tags. A tool that reads old pages sees no change: the format does not change, and a page written with the setting off stays valid with it on.
 
 Two characters are written as numeric character references instead of escapes. A space that is first or last on a paragraph line is written `&#32;`, because CommonMark would drop it. A tab is always written `&#9;`.
 
@@ -1247,7 +1265,7 @@ Readers must check an asset's file name before using it. The name must be the as
 | `name` | required | The original file name. Shown for attachments and used by exports, never as a path |
 | `width`, `height` | none | Pixel size, for images. A writer reads it from the file's header when it knows the type, and otherwise takes the size its decoder measured, so a page can keep the picture's shape before the picture loads |
 | `created` | required | When the asset was added |
-| `state` | none | Reserved: `recording` while an audio file is still growing (Phase 9) |
+| `state` | none | Reserved: `recording` while an audio file is still growing (Phase 9). Such an entry may come before its file exists, and its `bytes` and `sha256` are not the file's yet, so checks of size and hash skip it |
 
 ### 10.3 Rules for assets
 
@@ -1822,7 +1840,7 @@ A writer that keeps a journal saves a page in this order. `R` is the revision on
 | S1 | Take a snapshot of the page, and note the last journal sequence number it includes |
 | S2 | Encode a new segment from the strokes and changes since the last save, or a compacted segment |
 | S3 | Write the segment with `create_durable` |
-| S4 | Check that every asset the snapshot refers to exists with its expected size |
+| S4 | Check that every asset the snapshot refers to exists with its expected size. An asset whose `state` is `recording` is still growing, so it is skipped (section 10.2) |
 | S5 | Serialize `page.json` with revision `R'`, whose parent is `R`. Parse the bytes back and compare them with the snapshot. Any difference stops the save before anything is replaced |
 | S6 | Append a `SaveBegin` record for `R'` to the journal, and flush it |
 | S7 | Check the fingerprint of `page.json` on disk again, immediately before S8. If it changed and its revision is not `R`, stop and handle the change (section 14.1) |
@@ -2263,6 +2281,7 @@ The `page.md` in section 11.1 is exact. Its checksum, `d69a2039`, is the CRC-32 
 | `a == b` | `a \=\= b` |
 | `Costs $5` | `Costs \$5` |
 | `#biology and C#` | `\#biology and C#` |
+| `Review #todo, then #exam/unit-3.` | `Review \#todo, then \#exam/unit-3.` |
 | `snake_case and _draft` | `snake_case and \_draft` |
 | `[draft]` | `\[draft\]` |
 | `AT&T and &amp;` | `AT&T and \&amp;` |
@@ -2292,4 +2311,4 @@ The folder `docs/format/tools/` holds `read_opennote.py`, a reference reader wri
 
 | Version | Date | Changes |
 |---|---|---|
-| 1 | 2026 | First version |
+| 1 | 2026 | First version. Section 7.6 says how typed hashtags are written and when they become page tags |

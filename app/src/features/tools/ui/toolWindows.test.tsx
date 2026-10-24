@@ -1,0 +1,73 @@
+/* eslint-disable opennote/feature-boundaries -- The shortcut editor's row list is what the test reads; the feature has no index. */
+// Every tool window has a command, so the shortcut editor lists it and a chosen shortcut opens it. "Reset tool
+// windows" puts the floating windows back where they first open.
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { chord } from '../../../commands/registry';
+import { commands } from '../../../registries';
+import { assignShortcut } from '../../../state/keymap';
+import { pressChord, renderApp } from '../../../test';
+import { shortcutGroups } from '../../shortcuts/rows';
+import { closeTool, openTool, openTools, resetToolWindows } from './host';
+import { loadStored } from './storage';
+import { TOOLS } from './tools';
+
+afterEach(() => {
+  for (const tool of TOOLS) closeTool(tool.id);
+});
+
+describe('tool window shortcuts', () => {
+  it('give each tool a command the shortcut editor lists and lets the person change', async () => {
+    await renderApp();
+    const listed = shortcutGroups('').flatMap((group) => group.rows.map((row) => row.id));
+    for (const tool of TOOLS) {
+      const def = commands.get(`tools.${tool.id}`);
+      expect(def, tool.id).toBeDefined();
+      expect(def?.customizable, tool.id).not.toBe(false);
+      expect(listed, tool.id).toContain(`tools.${tool.id}`);
+    }
+  });
+
+  it('open a tool with the shortcut the person chose', async () => {
+    await renderApp();
+    await assignShortcut('tools.timers', chord('Ctrl+Alt+Shift+T'));
+    await pressChord('Ctrl+Alt+Shift+T');
+    await waitFor(() => expect(openTools()).toContain('timers'));
+  });
+});
+
+describe('symbol palette shortcut', () => {
+  it('is Ctrl+Alt+Shift+S while writing in a page, and no other command shares it', async () => {
+    await renderApp();
+    const def = commands.get('tools.symbols');
+    expect(def?.keys).toEqual([chord('Ctrl+Alt+Shift+S')]);
+    expect(def?.scope).toBe('editor');
+    const sharing = commands
+      .list()
+      .filter((c) => c.id !== 'tools.symbols' && c.keys?.includes(chord('Ctrl+Alt+Shift+S')));
+    expect(sharing.map((c) => c.id)).toEqual([]);
+  });
+});
+
+describe('reset tool windows', () => {
+  it('forgets the width a docked window was dragged to and draws it at its first width', async () => {
+    await renderApp();
+    openTool('timers');
+    const dialog = await screen.findByRole('dialog', { name: 'Timers' });
+    const first = Math.round(dialog.getBoundingClientRect().width);
+    const edge = within(dialog).getByRole('separator');
+    edge.focus();
+    fireEvent.keyDown(edge, { key: 'ArrowRight' });
+    await waitFor(() => expect(Math.round(dialog.getBoundingClientRect().width)).toBe(first - 16));
+    expect(loadStored('width.timers', null)).not.toBeNull();
+    await resetToolWindows();
+    const again = await screen.findByRole('dialog', { name: 'Timers' });
+    expect(Math.round(again.getBoundingClientRect().width)).toBe(first);
+    expect(loadStored('width.timers', null)).toBeNull();
+  });
+
+  it('is a command in the palette list', async () => {
+    await renderApp();
+    expect(commands.get('tools.resetWindows')).toBeDefined();
+  });
+});

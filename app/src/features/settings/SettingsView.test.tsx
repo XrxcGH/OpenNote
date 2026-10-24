@@ -26,8 +26,17 @@ describe('the Settings page', () => {
     expect(links.map((link) => link.textContent)).toEqual([
       'General',
       'Appearance',
+      'Language',
       'Editing',
+      'Recording',
+      'On-device intelligence',
+      'Storage and backups',
       'Updates',
+      'Privacy',
+      'Windows and power',
+      'App permissions',
+      'Connectors',
+      'Help',
       'Shortcuts',
       'About',
     ]);

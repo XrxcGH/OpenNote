@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pushLayer } from '../state/layers';
+import { dismissActionToasts } from '../state/toasts';
 import { announcements, expectNoAxeViolations, renderUi } from '../test';
 import { Announcer } from './announce';
 import { showToast, Toaster } from './toast';
@@ -48,11 +49,23 @@ describe('toasts over time', () => {
     expect(toastText()).toBe('');
   });
 
-  it('keeps a toast with an action until it is dismissed', () => {
+  it('keeps a toast with an action longer, then closes it', () => {
     renderUi(<Page />);
     show({ message: 'Moved to Trash.', action: { label: 'Undo', run() {} } });
-    advance(60_000);
+    advance(8000);
     expect(toastText()).toContain('Moved to Trash.');
+    advance(5000);
+    expect(toastText()).toBe('');
+  });
+
+  it('drops an Undo toast when the page changes or the person undoes, and keeps a plain one', () => {
+    renderUi(<Page />);
+    show({ message: 'Moved to Trash.', action: { label: 'Undo', run() {} } });
+    act(() => dismissActionToasts());
+    expect(toastText()).toBe('');
+    show({ message: 'Saved.' });
+    act(() => dismissActionToasts());
+    expect(toastText()).toContain('Saved.');
   });
 
   it('waits while the pointer is on the toast, then runs out the rest of its time', () => {

@@ -59,9 +59,9 @@ describe('menuItemsFor order and labels', () => {
     add('rename', { keys: [chord('F2')] });
     add('promote', { enabled: () => false });
     add('hidden', { when: () => false });
-    add('flagged', { flag: 'storage.core' });
+    add('flagged', { flag: 'page.imageRenditions' });
     for (const id of ['rename', 'promote', 'hidden', 'flagged']) item(id);
-    item('later', { flag: 'storage.core' });
+    item('later', { flag: 'page.imageRenditions' });
     const specs = menuItemsFor('page.table', ctx());
     expect(specs.map(({ id, label, shortcut, disabled }) => ({ id, label, shortcut, disabled }))).toEqual([
       { id: 'rename', label: 'Toggle dark mode', shortcut: 'F2', disabled: false },
@@ -75,10 +75,10 @@ describe('menuItemsFor states and actions', () => {
     add('light', { checked: () => true });
     add('dark', { checked: () => false });
     add('wrap', { checked: () => true });
-    item('light', { menu: 'page.canvas', group: 'choice' });
-    item('dark', { menu: 'page.canvas', group: 'choice', order: 1 });
-    item('wrap', { menu: 'page.canvas', group: 'other' });
-    const specs = menuItemsFor('page.canvas', ctx());
+    item('light', { menu: 'history.change', group: 'choice' });
+    item('dark', { menu: 'history.change', group: 'choice', order: 1 });
+    item('wrap', { menu: 'history.change', group: 'other' });
+    const specs = menuItemsFor('history.change', ctx());
     expect(specs.map(({ kind, checked }) => ({ kind, checked }))).toEqual([
       { kind: 'radio', checked: true },
       { kind: 'radio', checked: false },

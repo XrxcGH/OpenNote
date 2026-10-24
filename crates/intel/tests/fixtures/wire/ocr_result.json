@@ -1,0 +1,64 @@
+{
+  "language": "en-US",
+  "lines": [
+    {
+      "text": "HELLO PEOPLE",
+      "bounds": {
+        "x": 37.0,
+        "y": 33.0,
+        "width": 570.0,
+        "height": 70.0
+      },
+      "words": [
+        {
+          "text": "HELLO",
+          "bounds": {
+            "x": 37.0,
+            "y": 41.0,
+            "width": 234.0,
+            "height": 62.0
+          }
+        },
+        {
+          "text": "PEOPLE",
+          "bounds": {
+            "x": 325.0,
+            "y": 33.0,
+            "width": 282.0,
+            "height": 63.0
+          }
+        }
+      ]
+    },
+    {
+      "text": "OPEN NOTE",
+      "bounds": {
+        "x": 40.0,
+        "y": 148.0,
+        "width": 426.0,
+        "height": 67.0
+      },
+      "words": [
+        {
+          "text": "OPEN",
+          "bounds": {
+            "x": 40.0,
+            "y": 154.0,
+            "width": 186.0,
+            "height": 61.0
+          }
+        },
+        {
+          "text": "NOTE",
+          "bounds": {
+            "x": 280.0,
+            "y": 148.0,
+            "width": 186.0,
+            "height": 61.0
+          }
+        }
+      ]
+    }
+  ],
+  "angle": 1.4
+}

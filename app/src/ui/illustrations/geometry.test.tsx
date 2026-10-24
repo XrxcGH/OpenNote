@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../test';
 import { along, drawn, expectStandsOn, outline, pointsOf, shelfOf, surface } from '../../test/drawing';
-import { Books, Candle, DeskScene, EmptyArt, StarField, Window } from './index';
+import { Books, Candle, DeskScene, EmptyArt, Glint, InkStroke, Notebook, Plant, StarField, Window } from './index';
 
 afterEach(() => {
   document.documentElement.removeAttribute('data-theme');
@@ -45,6 +45,36 @@ describe('how books rest', () => {
   });
 });
 
+describe('how books are bound', () => {
+  it('sets the bands on every spine the same distance in from its end and apart', () => {
+    const paths = [...drawn(renderUi(<Books />).container).querySelectorAll<SVGGeometryElement>('path')];
+    const books = paths.slice(0, 4).map((book) => book.getBBox());
+    // The bands are vertical strokes, each written as a move then a vertical line.
+    const bands: { x: number; y: number }[] = [];
+    let [x, y] = [0, 0];
+    for (const [, cmd, args] of (paths[4].getAttribute('d') ?? '').matchAll(/([MmVv])([^MmVv]*)/g)) {
+      const n = args.match(/-?\d*\.?\d+/g)?.map(Number) ?? [];
+      if (cmd === 'M') [x, y] = n;
+      if (cmd === 'm') [x, y] = [x + n[0], y + n[1]];
+      if (cmd === 'V' || cmd === 'v') {
+        const end = cmd === 'V' ? n[0] : y + n[0];
+        bands.push({ x, y: (y + end) / 2 });
+        y = end;
+      }
+    }
+    expect(bands).toHaveLength(8);
+    for (const book of books) {
+      const own = bands.filter((b) => b.y > book.y && b.y < book.y + book.height).map((b) => b.x);
+      expect(own).toHaveLength(2);
+      const inset = Math.min(...own.map((bx) => Math.min(bx - book.x, book.x + book.width - bx)));
+      expect(inset).toBeGreaterThanOrEqual(4.2);
+      expect(inset).toBeLessThanOrEqual(5);
+      expect(Math.abs(own[0] - own[1])).toBeGreaterThanOrEqual(3);
+      expect(Math.abs(own[0] - own[1])).toBeLessThanOrEqual(3.41);
+    }
+  });
+});
+
 describe('where things stand', () => {
   it.each(['notebooks', 'page', 'trash'] as const)('stands everything in the %s drawing on the shelf', (kind) => {
     const svg = drawn(renderUi(<EmptyArt kind={kind} />).container);
@@ -78,6 +108,19 @@ describe('where things stand', () => {
 });
 
 describe('where things meet', () => {
+  it("hangs the plant's trailing vine over the pot's rim, never through its wall", () => {
+    const paths = [...drawn(renderUi(<Plant />).container).querySelectorAll<SVGGeometryElement>('path')];
+    const [pot, trailing] = [paths[0], paths[3]];
+    // Every point of the vine is outside the pot's body; where it crosses the rim it lies on top of it.
+    const through = along(trailing, 800).filter((p) => pot.isPointInFill(p));
+    expect(through).toEqual([]);
+    // The same for the shelf plant's tendril in the "No notebooks yet" drawing.
+    const shelf = drawn(renderUi(<EmptyArt kind="notebooks" />).container);
+    const shelfPot = shelf.querySelector<SVGGeometryElement>('path[d^="M82.4"]') as SVGGeometryElement;
+    const tendril = shelf.querySelector<SVGGeometryElement>('path[d^="M82.2"]') as SVGGeometryElement;
+    expect(along(tendril, 800).filter((p) => shelfPot.isPointInFill(p))).toEqual([]);
+  });
+
   it("keeps the plant's left leaf clear of the window's middle bar", () => {
     const svg = drawn(renderUi(<DeskScene sky="day" />).container);
     const [frame, plant] = [...svg.querySelectorAll(':scope > g')];
@@ -107,19 +150,84 @@ describe('where things meet', () => {
   });
 });
 
+describe('how light falls', () => {
+  it("points every ray of the sun glint straight out from the sun's middle, all at the same distance", () => {
+    const [sun, rays] = drawn(renderUi(<Glint kind="sun" />).container).querySelectorAll('path');
+    // The sun is a half disc on the horizon: its middle is the middle of its flat side.
+    const [x0, y0, , , , , , x1] = (sun.getAttribute('d')?.match(/-?[\d.]+/g) ?? []).map(Number);
+    const middle = { x: (x0 + x1) / 2, y: y0 };
+    const segments = (rays.getAttribute('d') ?? '').split('M').slice(2);
+    expect(segments).toHaveLength(3);
+    const inner: number[] = [];
+    const outer: number[] = [];
+    for (const segment of segments) {
+      const [ax, ay, bx, by] = segment
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number);
+      inner.push(Math.hypot(ax - middle.x, ay - middle.y));
+      outer.push(Math.hypot(bx - middle.x, by - middle.y));
+      // The ray's own direction and the direction from the sun to its start agree to within 2 degrees.
+      const ray = Math.atan2(by - ay, bx - ax);
+      const out = Math.atan2(ay - middle.y, ax - middle.x);
+      expect(Math.abs(ray - out) * (180 / Math.PI), segment).toBeLessThan(2);
+    }
+    for (const r of inner) expect(r).toBeCloseTo(inner[0], 1);
+    for (const r of outer) expect(r).toBeCloseTo(outer[0], 1);
+  });
+});
+
+describe('what hides behind what', () => {
+  it("runs no edge of the notebook's cover behind its pages, where a contrast theme would show it", () => {
+    const paths = drawn(renderUi(<Notebook />).container).querySelectorAll<SVGGeometryElement>('path');
+    const [cover, left, right] = [paths[0], paths[1], paths[2]];
+    // A point of the cover's outline may lie on a page's edge, which is drawn, but never inside a page.
+    const hidden = along(cover, 1200).filter((p) =>
+      [left, right].some((page) => page.isPointInFill(p) && !page.isPointInStroke(p)),
+    );
+    expect(hidden).toEqual([]);
+  });
+});
+
 describe('inside their boxes', () => {
-  it.each([64, 103])('keeps every window line, stroke and all, inside the drawing at %i px tall', (height) => {
-    const svg = drawn(renderUi(<Window sky="day" height={height} />).container);
+  const drawings = {
+    'the desk scene': <DeskScene sky="day" />,
+    'the window at 64 px': <Window sky="day" height={64} />,
+    'the window at 103 px': <Window sky="night" />,
+    'the About window at 112 px': <Window sky="day" height={112} />,
+    'the plant': <Plant />,
+    'the books': <Books />,
+    'the candle': <Candle />,
+    'the notebook': <Notebook />,
+    'the notebooks empty state': <EmptyArt kind="notebooks" />,
+    'the page empty state': <EmptyArt kind="page" />,
+    'the trash empty state': <EmptyArt kind="trash" />,
+    'the sun glint': <Glint kind="sun" />,
+    'the moon glint': <Glint kind="moon" />,
+    'the ink stroke': <InkStroke />,
+  };
+
+  it.each(Object.entries(drawings))('draws %s a whole number of pixels wide and tall', (_, drawing) => {
+    // A fraction of a pixel would put the drawing's edges, and everything laid out below it, between pixels.
+    const box = drawn(renderUi(drawing).container).getBoundingClientRect();
+    expect(Number.isInteger(box.width), `${box.width} wide`).toBe(true);
+    expect(Number.isInteger(box.height), `${box.height} tall`).toBe(true);
+  });
+
+  it.each(Object.entries(drawings))('keeps every line, stroke, glow and all, inside %s', (_, drawing) => {
+    const svg = drawn(renderUi(drawing).container);
     const box = svg.getBoundingClientRect();
     for (const shape of svg.querySelectorAll<SVGGeometryElement>('path, circle')) {
       const style = getComputedStyle(shape);
-      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels.
+      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels. A glow
+      // has no line, and its circle is as far as it reaches.
       const half = style.stroke === 'none' ? 0 : parseFloat(style.strokeWidth) / 2;
       const edge = shape.getBoundingClientRect();
-      expect(edge.left - half).toBeGreaterThanOrEqual(box.left);
-      expect(edge.top - half).toBeGreaterThanOrEqual(box.top);
-      expect(edge.right + half).toBeLessThanOrEqual(box.right);
-      expect(edge.bottom + half).toBeLessThanOrEqual(box.bottom);
+      const where = `${shape.tagName} ${shape.getAttribute('d')?.slice(0, 24) ?? shape.getAttribute('class')}`;
+      expect(edge.left - half, where).toBeGreaterThanOrEqual(box.left - 0.01);
+      expect(edge.top - half, where).toBeGreaterThanOrEqual(box.top - 0.01);
+      expect(edge.right + half, where).toBeLessThanOrEqual(box.right + 0.01);
+      expect(edge.bottom + half, where).toBeLessThanOrEqual(box.bottom + 0.01);
     }
   });
 

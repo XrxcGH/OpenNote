@@ -14,6 +14,7 @@ use crate::error::CoreError;
 use crate::id::{ClientId, GroupId, NotebookId, PageId, SectionId, TrashItemId};
 use crate::model::{Color, NotebookStyles, NotebookTree, TrashItemFile, TrashReason};
 use crate::session::page::PageHandle;
+use crate::session::page::PageLinks;
 use crate::store::notebook_store::{invalid_move, FlatPage, Transfer};
 use crate::store::scan::ScanReport;
 use crate::store::verify::VerifyReport;
@@ -73,7 +74,7 @@ pub struct NodeProps {
     /// A new color chip. `Some(None)` removes it.
     #[serde(default)]
     pub color: Option<Option<Color>>,
-    /// Pin or unpin a page.
+    /// Pin or unpin a page or a section.
     #[serde(default)]
     pub pinned: Option<bool>,
     /// New named styles, for the notebook only. An empty map removes them.
@@ -127,6 +128,11 @@ impl NotebookHandle {
         self.inner.is_backup()
     }
 
+    /// Fails when the notebook may not change, as a read-only notebook may not.
+    pub fn check_writable(&self) -> Result<(), CoreError> {
+        self.inner.tree().store.check_writable()
+    }
+
     /// A section's pages in display order, with their levels, as the notes contract lists them.
     pub fn flat_pages(&self, section: SectionId) -> Result<Vec<FlatPage>, CoreError> {
         self.inner.tree().store.flat_pages(section)
@@ -173,6 +179,7 @@ impl NotebookHandle {
             None => None,
         };
         let id = self.change(false, |t| t.store.create_page(section, parent, before, title))?;
+        self.inner.queue_readable(id);
         self.record(TreeAction::Created(vec![NodeRef::Page(id)]));
         Ok(id)
     }
@@ -219,6 +226,11 @@ impl NotebookHandle {
         self.change(true, |t| t.store.move_pages(pages, section, index, level))
     }
 
+    /// Moves pages as [`NotebookHandle::move_pages`] does, with each moved page at its own level.
+    pub fn move_page_blocks(&self, pages: &[(PageId, u8)], section: SectionId, index: usize) -> Result<(), CoreError> {
+        self.change(true, |t| t.store.move_page_blocks(pages, section, index))
+    }
+
     /// Gives pages, with their subpages, a new level in place: the notes contract's `setPageLevel`.
     pub fn set_page_level(&self, pages: &[PageId], level: u8) -> Result<(), CoreError> {
         self.change(false, |t| t.store.set_page_level(pages, level))
@@ -239,6 +251,16 @@ impl NotebookHandle {
         Ok(())
     }
 
+    /// Archives or restores a group, section, or page. It is not part of the tree's undo history.
+    pub fn set_archived(&self, node: NodeRef, archived: bool) -> Result<(), CoreError> {
+        self.change(false, |t| t.store.set_archived(node, archived))
+    }
+
+    /// Archives or restores the notebook itself.
+    pub fn set_notebook_archived(&self, archived: bool) -> Result<(), CoreError> {
+        self.change(false, |t| t.store.set_notebook_archived(archived))
+    }
+
     /// Changes a node's color or pin.
     pub fn set_props(&self, node: NodeRef, props: NodeProps) -> Result<(), CoreError> {
         let before = self.props_of(node)?;
@@ -255,6 +277,7 @@ impl NotebookHandle {
     pub fn duplicate(&self, page: PageId) -> Result<PageId, CoreError> {
         self.save_open(&[page])?;
         let id = self.change(false, |t| t.store.duplicate(page))?;
+        self.inner.queue_readable(id);
         self.record(TreeAction::Created(vec![NodeRef::Page(id)]));
         Ok(id)
     }
@@ -286,6 +309,17 @@ impl NotebookHandle {
         let items = self.delete_nodes(nodes, TrashReason::Deleted)?;
         self.record(TreeAction::Deleted(items.clone()));
         Ok(items)
+    }
+
+    /// Deletes pages of an unlocked protected section for good, with their subpages, after closing them. Trash is
+    /// plain, so it can't hold them (ADR 0042). Returns the pages deleted.
+    pub fn delete_sealed_pages(&self, pages: &[PageId]) -> Result<Vec<PageId>, CoreError> {
+        let nodes: Vec<NodeRef> = pages.iter().map(|p| NodeRef::Page(*p)).collect();
+        self.close_pages(&self.pages_under(&nodes));
+        self.change(true, |t| {
+            t.undo.clear();
+            t.store.delete_sealed_pages(pages)
+        })
     }
 
     /// The Trash items, newest first.
@@ -359,6 +393,11 @@ impl NotebookHandle {
     /// Saves every page, closes the journals, and releases the lock.
     pub fn close(self) -> Result<(), CoreError> {
         self.inner.close()
+    }
+
+    /// Links for writing a page's `page.md` (spec 11.1), as Check notebook's repair writes it again.
+    pub(crate) fn readable_links(&self, page_dir: &std::path::Path, page: &crate::model::Page) -> PageLinks {
+        self.inner.links(page_dir, page)
     }
 }
 

@@ -1,9 +1,9 @@
 // New notebooks, section groups, sections, pages, and subpages (ARCHITECTURE.md section 13.5). A new item goes
 // after the current one, at the same level, and opens in rename mode. A new section or group made from a
-// notebook or group goes inside it, at the end, and opens it. After a new page, the page created hooks run (for
-// example Phase 4's date and time line).
+// notebook or group goes inside it, at the end, and opens it. A new notebook opens too, as the current notebook.
+// After a new page, the page created hooks run. A new page starts empty: its title, the changed line, and a caret.
 
-import { getLocation } from '../../app/location';
+import { getLocation, navigate } from '../../app/location';
 import type { CommandContext } from '../../commands/types';
 import { pageCreated } from '../../registries';
 import type { NodeId, NodeSummary } from '../../services/notes';
@@ -88,7 +88,16 @@ async function runPageCreatedHooks(pageId: NodeId, ctx: CommandContext): Promise
   }
 }
 
-/** Makes the item from where the person is. A new section or page opens; a new container is left closed. */
+/** Opens a new notebook: it becomes the current notebook, so a new section right after it goes into it. */
+function openNotebook(id: NodeId): void {
+  setOpen('notebooks', [id], true);
+  navigate({ view: 'workspace', notebookId: id, sectionId: null, pageId: null }, { focus: 'keep' });
+}
+
+/**
+ * Makes the item from where the person is. A new notebook, section, or page opens; a new section group is left
+ * closed.
+ */
 export async function createFromContext(ctx: CommandContext, kind: NewKind): Promise<void> {
   const state = treeStore.get();
   const item = planNew(state, kind, currentNode(ctx), currentSection(ctx));
@@ -100,6 +109,7 @@ export async function createFromContext(ctx: CommandContext, kind: NewKind): Pro
     if (location.view !== 'workspace' || location.sectionId !== parent.id) select(parent.id, 'now');
   }
   const node = await createItem(ctx.notes, item);
+  if (node?.kind === 'notebook') return openNotebook(node.id);
   if (!node || (node.kind !== 'page' && node.kind !== 'section')) return;
   select(node.id, 'now');
   if (node.kind === 'page') await runPageCreatedHooks(node.id, ctx);

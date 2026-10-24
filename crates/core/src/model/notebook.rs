@@ -162,6 +162,8 @@ pub struct NotebookTree {
     pub access: Access,
     /// Notices from the scan, such as duplicate folders.
     pub notices: Vec<Warning>,
+    /// Archived: hidden from the library until "Show archived" (the unknown key `archived`).
+    pub archived: bool,
 }
 
 /// A group or a section: a child of the notebook or of a group.
@@ -224,6 +226,54 @@ impl NotebookTree {
     }
 }
 
+/// The unknown key in a tree file's entries that marks a node archived. Older versions keep it as it is.
+pub const ARCHIVED_KEY: &str = "archived";
+
+/// Whether an entry's unknown keys mark it archived.
+pub fn is_archived(extra: &JsonMap) -> bool {
+    extra
+        .get(ARCHIVED_KEY)
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// Marks an entry archived or not. True when the entry changed.
+pub fn set_archived(extra: &mut JsonMap, archived: bool) -> bool {
+    if is_archived(extra) == archived {
+        return false;
+    }
+    if archived {
+        extra.insert(ARCHIVED_KEY.to_owned(), serde_json::Value::Bool(true));
+    } else {
+        extra.remove(ARCHIVED_KEY);
+    }
+    true
+}
+
+/// The unknown key in a section's tree file that marks the section pinned. Older versions keep it as it is.
+pub const PINNED_KEY: &str = "pinned";
+
+/// Whether a section file's unknown keys mark it pinned.
+pub fn is_pinned(extra: &JsonMap) -> bool {
+    extra
+        .get(PINNED_KEY)
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// Marks a section file pinned or not. True when it changed.
+pub fn set_pinned(extra: &mut JsonMap, pinned: bool) -> bool {
+    if is_pinned(extra) == pinned {
+        return false;
+    }
+    if pinned {
+        extra.insert(PINNED_KEY.to_owned(), serde_json::Value::Bool(true));
+    } else {
+        extra.remove(PINNED_KEY);
+    }
+    true
+}
+
 /// A section in the navigation tree.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -248,6 +298,10 @@ pub struct SectionNode {
     pub access: Access,
     /// The section is encrypted (spec 5.7). Its pages are locked, and nothing about them is indexed.
     pub encrypted: bool,
+    /// Archived: hidden from the tree until "Show archived" (the unknown key `archived`).
+    pub archived: bool,
+    /// Pinned in the navigation tree (the unknown key `pinned`).
+    pub pinned: bool,
 }
 
 /// A page in the navigation tree.
@@ -266,6 +320,8 @@ pub struct PageNode {
     pub level: u8,
     /// Pinned in the navigation tree.
     pub pinned: bool,
+    /// Archived: hidden from the tree until "Show archived" (the unknown key `archived`).
+    pub archived: bool,
     /// The page's color chip.
     pub color: Option<Color>,
     /// When the page was made: from the device-local cache, or the page ID's time until the cache knows.

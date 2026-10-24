@@ -19,7 +19,11 @@ const CONFUSIONS: [RegExp, string][] = [
 ];
 
 const SILENT_H = /^(hour|honest|honor|heir)/i;
-const YOU_SOUND = /^(uni|use|usu|uti|ure|uri|uro|ura|ubi|eu|ewe|one\b|one-|onenote|once|u-)/i;
+const YOU_SOUND = /^(uni|use|usa|usi|usu|uti|ure|uri|uro|ura|ubi|eu|ewe|one\b|one-|onenote|once|u-)/i;
+// Capitalized acronyms and abbreviations people say as a word, not letter by letter.
+const SPOKEN_AS_WORD = /^(NAS|LOGFONT|FAT[0-9]*)$/;
+// "https" is said letter by letter: an aitch-tee-tee-pee-ess address.
+const SPOKEN_AS_LETTERS = /^https?$/i;
 const VOWEL_LETTER_NAMES = 'AEFHILMNORSX';
 function wordSet(...groups: string[]): Set<string> {
   return new Set(groups.join(' ').split(' '));
@@ -45,6 +49,8 @@ const LOWERCASE_STARTS = /^(iOS|iPadOS|iPhone|iPad|macOS|npm|git|e\.g\.|i\.e\.|v
 
 export function expectedArticle(word: string): 'a' | 'an' | undefined {
   if (/^[0-9]/.test(word)) return undefined;
+  if (SPOKEN_AS_LETTERS.test(word)) return 'an';
+  if (SPOKEN_AS_WORD.test(word)) return /^[aeiou]/i.test(word) ? 'an' : 'a';
   const isLetterName = /^[A-Z][A-Z0-9]*s?$/.test(word) || /^[A-Za-z](-|$)/.test(word);
   if (isLetterName) return VOWEL_LETTER_NAMES.includes(word[0].toUpperCase()) ? 'an' : 'a';
   if (SILENT_H.test(word)) return 'an';

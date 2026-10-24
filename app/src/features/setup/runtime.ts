@@ -3,6 +3,8 @@
 // listeners. When steps are pending, it opens setup at the step a closed run stopped on.
 
 import { navigate } from '../../app/location';
+import { executeCommand } from '../../commands/registry';
+import type { CommandId } from '../../commands/types';
 import type { DeviceSetup } from './model';
 import type { Platform } from '../../platform/types';
 import { setupSteps } from '../../registries';
@@ -12,7 +14,7 @@ import { osStore } from '../../state/os';
 import { getSettings } from '../../state/settings';
 import { DEFAULT_LOCATION, sessionStore } from '../../state/session';
 import { createStore } from '../../state/store';
-import { initialDraft, pendingSteps } from './model';
+import { RUN_AFTER_SETUP, afterSetupCommands, initialDraft, pendingSteps } from './model';
 
 interface Host {
   platform: Platform;
@@ -73,12 +75,27 @@ export function updateDraft(update: Partial<SetupDraft>): void {
   setupStore.set((state) => ({ ...state, draft: { ...state.draft, ...update } }));
 }
 
-/** Records that the run is over, in state.json. */
-export function saveDone(completedSteps: readonly string[]): DeviceSetup {
-  const record: DeviceSetup = { status: 'done', step: null, completedSteps: [...completedSteps], draft: null };
+/**
+ * Records that the run is over, in state.json. `runAfter` names commands the next start runs, for when setup
+ * moves the app and this process ends before it could run them.
+ */
+export function saveDone(completedSteps: readonly string[], runAfter: readonly string[] = []): DeviceSetup {
+  const draft = runAfter.length > 0 ? { [RUN_AFTER_SETUP]: [...runAfter] } : null;
+  const record: DeviceSetup = { status: 'done', step: null, completedSteps: [...completedSteps], draft };
   setupStore.set((state) => ({ ...state, record }));
   getHost().platform.state.update({ setup: record });
   return record;
+}
+
+/** How long after the workspace opens the commands setup asked for run, so the notebook is on screen first. */
+export const RUN_AFTER_SETUP_MS = 700;
+
+/** Runs the commands setup asked for, a moment after the workspace shows. */
+export function runAfterSetup(ids: readonly string[], delayMs = RUN_AFTER_SETUP_MS): void {
+  if (ids.length === 0) return;
+  setTimeout(() => {
+    for (const id of ids) void executeCommand(id as CommandId, undefined, 'menu').catch(() => false);
+  }, delayMs);
 }
 
 /**
@@ -95,6 +112,12 @@ export function installSetup(platform: Platform, notes: NotesService): () => voi
     navigate({ view: 'setup', step: step.id }, { replace: true });
   } else if (sessionStore.get().location.view === 'setup') {
     navigate(DEFAULT_LOCATION, { replace: true });
+  }
+  // Setup moved the app before it could run what the person asked for, so this start runs it, once.
+  const waiting = record.status === 'done' ? afterSetupCommands(record.draft as SetupDraft | null) : [];
+  if (steps.length === 0 && waiting.length > 0) {
+    saveDone(record.completedSteps);
+    runAfterSetup(waiting, RUN_AFTER_SETUP_MS * 2);
   }
   return () => {
     host = null;

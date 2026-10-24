@@ -164,6 +164,12 @@ impl PageStore {
     }
 
     /// The records of a segment this store wrote, when `entry` lists it exactly as written.
+    /// Forgets a segment whose save failed, so a later minor compaction doesn't merge from it.
+    fn forget(&self, entry: &SegmentRef) {
+        let mut written = self.written.lock().unwrap_or_else(PoisonError::into_inner);
+        written.retain(|segment| segment.entry != *entry);
+    }
+
     fn remembered(&self, entry: &SegmentRef) -> Option<DecodedSegment> {
         let written = self.written.lock().unwrap_or_else(PoisonError::into_inner);
         written
