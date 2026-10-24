@@ -18,7 +18,8 @@ import { toShown, unitOf, type Kind, type System } from '../kit/units';
 import { heywood, solveHeat1D, solveHeat2D, solveModal, solvePlate, type Ends } from './continuum';
 import { plateSvg, structureSvg } from './draw';
 import { readBarElements, readLineNodes, readLoads, readMembers, readPlaneNodes, readSupports, rows } from './read';
-import { solveBars, solveFrame, solveTruss, type ElementMatrix } from './structures';
+import { assemble, type Placed } from './core';
+import { solveBars, solveFrame, solveTruss, type ElementMatrix, type NodeLoad, type Support } from './structures';
 
 const num = (values: Values, id: string) => values[id] as number;
 const or0 = (values: Values, id: string) => (Number.isFinite(num(values, id)) ? num(values, id) : 0);
@@ -43,6 +44,53 @@ function elementSteps(matrices: readonly ElementMatrix[], kind: Kind, system: Sy
   );
 }
 
+const columnLatex = (v: readonly number[], kind: Kind, system: System) =>
+  `\\begin{bmatrix} ${v.map((x) => numberLatex(toShown(x, kind, system), 4)).join(' \\\\ ')} \\end{bmatrix}`;
+
+/**
+ * For a model of 12 freedoms or fewer, the assembled K with its numbers, then the reduced system K_ff u_f = F_f
+ * once the held freedoms are taken out, put round the steps that describe them. A bar or truss shows K in the
+ * stiffness unit and F in the matching force unit; a frame mixes forces and moments, so it shows SI base units.
+ */
+function withSystem(
+  steps: readonly KitStep[],
+  model: { matrices: readonly ElementMatrix[]; size: number; F: readonly number[]; held: ReadonlySet<number> },
+  system: System,
+  frame: boolean,
+): KitStep[] {
+  const at = steps.findIndex((one) => one.key === 'fem.reduced');
+  if (model.size > 12 || at < 0) return [...steps];
+  const { K } = assemble(model.size, model.matrices as Placed[]);
+  const free = [...Array(model.size).keys()].filter((d) => !model.held.has(d));
+  const [kKind, fKind]: [Kind, Kind] = frame ? ['ratio', 'ratio'] : ['stiffness', 'smallForce'];
+  const units = { unit: unitOf(kKind, system), force: unitOf(fKind, system) };
+  const Kff = free.map((r) => free.map((c) => K[r][c]));
+  const reduced = `${matrixLatex(Kff, kKind, system)} u_f = ${columnLatex(
+    free.map((d) => model.F[d]),
+    fKind,
+    system,
+  )}`;
+  const global = step(frame ? 'fem.globalSi' : 'fem.global', `K = ${matrixLatex(K, kKind, system)}`, units);
+  const solve = step(frame ? 'fem.reducedSi' : 'fem.reducedNumbers', reduced, {
+    ...units,
+    dofs: free.map((d) => d + 1).join(', '),
+  });
+  return [...steps.slice(0, at), global, steps[at], solve, ...steps.slice(at + 1)];
+}
+
+/** The load vector of a model with `per` freedoms to a node: Fx, then Fy and M as the model has them. */
+function loadVector(size: number, per: number, loads: readonly NodeLoad[]): number[] {
+  const F = new Array<number>(size).fill(0);
+  for (const load of loads) [load.Fx, load.Fy, load.M].slice(0, per).forEach((v, i) => (F[per * load.node + i] += v));
+  return F;
+}
+
+/** The freedoms the supports hold, with `per` freedoms to a node. */
+const heldBy = (supports: readonly Support[], per: number) =>
+  new Set(
+    supports.flatMap((s) => [s.x, s.y, s.r].slice(0, per).flatMap((holds, i) => (holds ? [per * s.node + i] : []))),
+  );
+
 const reactionRows = (reactions: ReadonlyMap<number, number>, perNode: number, kinds: readonly Kind[]) =>
   [...reactions].map(([d, value]) => [
     String(Math.floor(d / perNode) + 1),
@@ -54,11 +102,18 @@ function runBar(values: Values, system: System): Outcome {
   const nodes = readLineNodes(str(values, 'barNodes'), system);
   const elements = readBarElements(str(values, 'barElements'), system);
   const held = rows(str(values, 'barSupports'), ['node'], system, 'femSupportLine').map(([n]) => n);
-  const r = solveBars(nodes, elements, readLoads(str(values, 'barLoads'), system, 1), held);
+  const loads = readLoads(str(values, 'barLoads'), system, 1);
+  const r = solveBars(nodes, elements, loads, held);
+  const model = {
+    matrices: r.matrices,
+    size: nodes.length,
+    F: loadVector(nodes.length, 1, loads),
+    held: new Set(held),
+  };
   const tip = r.u.reduce((best, v) => (Math.abs(v) > Math.abs(best) ? v : best), 0);
   return {
     rows: [{ id: 'uMax', value: q(tip, 'deflection'), sym: 'u_{max}', answer: true }],
-    steps: [...elementSteps(r.matrices, 'stiffness', system), ...r.steps],
+    steps: withSystem([...elementSteps(r.matrices, 'stiffness', system), ...r.steps], model, system, false),
     tables: [
       {
         id: 'nodes',
@@ -130,7 +185,14 @@ function runTrussOrFrame(values: Values, system: System, frame: boolean): Outcom
       }),
     });
   }
-  const steps = frame ? r.steps : [...elementSteps(r.matrices, 'stiffness', system), ...r.steps];
+  const size = per * nodes.length;
+  const model = { matrices: r.matrices, size, F: loadVector(size, per, loads), held: heldBy(supports, per) };
+  const steps = withSystem(
+    frame ? r.steps : [...elementSteps(r.matrices, 'stiffness', system), ...r.steps],
+    model,
+    system,
+    frame,
+  );
   return {
     rows: [{ id: 'dMax', value: q(most, 'deflection'), sym: '\\lvert u \\rvert_{max}', answer: true }],
     steps,

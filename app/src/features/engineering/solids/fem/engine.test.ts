@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { solveTruss as solveStatics, starterTruss } from '../../structures/truss';
+import { numberLatex } from '../kit/format';
 import { firstTexts, runTool } from '../kit/read';
 import { SolidsError } from '../kit/types';
 import { exactBar, solveHeat1D, solveHeat2D, solveModal, solvePlate } from './continuum';
@@ -246,6 +247,33 @@ describe('the workbench form', () => {
     for (const kind of ['bar', 'truss', 'frame', 'plane', 'heat1d', 'heat2d', 'modal'])
       for (const system of ['si', 'us'] as const)
         expect(runTool(femSpec, { ...firstTexts(femSpec), kind }, system).ok, `${kind} ${system}`).toBe(true);
+  });
+
+  it('shows the assembled K and the reduced system with numbers for a small model', () => {
+    // Bars of 1 m: EA/L = 200 GPa x 100 mm² = 20 000 N/mm and 200 GPa x 50 mm² = 10 000 N/mm, end 1 held, 10 kN at 3.
+    const r = runTool(femSpec, firstTexts(femSpec), 'si');
+    const math = (key: string) => (r.ok ? r.outcome.steps.find((one) => one.key === key)?.math : undefined);
+    const n = (v: number) => numberLatex(v, 4);
+    const matrix = (rows: number[][]) =>
+      `\\begin{bmatrix} ${rows.map((row) => row.map(n).join(' & ')).join(' \\\\ ')} \\end{bmatrix}`;
+    expect(math('fem.global')).toBe(
+      `K = ${matrix([
+        [20000, -20000, 0],
+        [-20000, 30000, -10000],
+        [0, -10000, 10000],
+      ])}`,
+    );
+    expect(math('fem.reducedNumbers')).toBe(
+      `${matrix([
+        [30000, -10000],
+        [-10000, 10000],
+      ])} u_f = ${matrix([[0], [10000]])}`,
+    );
+    // A truss of 5 nodes has 10 freedoms, so it is shown too; a frame shows SI base units.
+    const truss = runTool(femSpec, { ...firstTexts(femSpec), kind: 'truss' }, 'si');
+    expect(truss.ok && truss.outcome.steps.some((one) => one.key === 'fem.global')).toBe(true);
+    const frame = runTool(femSpec, { ...firstTexts(femSpec), kind: 'frame' }, 'si');
+    expect(frame.ok && frame.outcome.steps.some((one) => one.key === 'fem.globalSi')).toBe(true);
   });
 
   it('reads held temperatures typed in different units as absolute temperatures', () => {
