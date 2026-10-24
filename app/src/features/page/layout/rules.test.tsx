@@ -166,7 +166,7 @@ describe('ruled paper', () => {
         const world = harness.viewport.world;
         const rule = world.style.getPropertyValue('--rule');
         const lift = world.style.getPropertyValue('--rule-lift');
-        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${rule}, lift ${lift}`;
+        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${rule}, lift ${lift}, ${trace.join(' ## ')}`;
         expect(offLift(baseline(harness, line), next), note).toBeLessThan(TOLERANCE);
       }
     }, SETTLE);
