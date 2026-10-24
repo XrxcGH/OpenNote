@@ -5,6 +5,7 @@ import type { IconName } from '../../../ui/icons';
 export const AERO_TOOLS = [
   { id: 'atmosphere', icon: 'Mountains' },
   { id: 'compressible', icon: 'Wind' },
+  { id: 'nozzle', icon: 'Funnel' },
 ] as const satisfies readonly {
   id: string;
   icon: IconName;
