@@ -23,6 +23,7 @@ const tool = (id: string, icon: IconName): ControlToolMeta => ({
 });
 
 export const CONTROL_TOOLS: readonly ControlToolMeta[] = [
+  tool('systems', 'ChartLine'),
   tool('rootlocus', 'Graph'),
   tool('frequency', 'Waveform'),
   tool('statespace', 'MathOperations'),
