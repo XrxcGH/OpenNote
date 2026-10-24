@@ -77,7 +77,8 @@ export const chem = {
       curve: 'Titration curve',
       unknown: 'Unknown concentration',
     },
-    balanceIntro: 'Type an equation with an arrow, such as H2 + O2 -> H2O. Charges: Fe3+, Cu2+, MnO4-, SO42-, Fe^3+, e-.',
+    balanceIntro:
+      'Type an equation with an arrow, such as H2 + O2 -> H2O. Charges: Fe3+, Cu2+, MnO4-, SO42-, Fe^3+, e-.',
     balanceErrors: {
       format: 'Write reactants, an arrow (->), and products.',
       formula: 'One of the formulas cannot be read. Check the capital letters and brackets.',

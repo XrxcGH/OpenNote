@@ -3,7 +3,13 @@
 // hand test before Stable. app/flags.ts joins this list to the others.
 import type { FlagDef } from '../../app/flags';
 
-export type MathToolsFlagId = 'math.calcModes' | 'math.graph3d' | 'math.liveSolve' | 'math.graphPopup' | 'math.steps' | 'math.solvers'
+export type MathToolsFlagId =
+  | 'math.calcModes'
+  | 'math.graph3d'
+  | 'math.liveSolve'
+  | 'math.graphPopup'
+  | 'math.steps'
+  | 'math.solvers'
   | 'math.curves'
   | 'math.vectors'
   | 'math.geometry3d'

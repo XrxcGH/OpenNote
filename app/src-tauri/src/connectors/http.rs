@@ -313,9 +313,19 @@ mod tests {
         );
         std::thread::spawn(move || {
             if let Ok((mut stream, _)) = listener.accept() {
+                // The whole request is read before the answer goes out: a socket closed with request bytes still
+                // unread resets the connection on Windows, and the client then sees a network error, not the answer.
+                let mut request = Vec::new();
                 let mut buffer = [0u8; 4096];
-                let _ = stream.read(&mut buffer);
+                while !request.windows(4).any(|end| end == b"\r\n\r\n") {
+                    match stream.read(&mut buffer) {
+                        Ok(0) | Err(_) => break,
+                        Ok(count) => request.extend_from_slice(&buffer[..count]),
+                    }
+                }
                 let _ = stream.write_all(answer.as_bytes());
+                let _ = stream.flush();
+                let _ = stream.shutdown(std::net::Shutdown::Write);
             }
         });
         address

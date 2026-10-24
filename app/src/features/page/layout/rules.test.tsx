@@ -2,7 +2,7 @@
 // heading, a list, and a text box dropped at an arbitrary height all put their first baseline the lift above a rule
 // (core/ruled.ts). Every block is a whole number of rules tall, so the text after it is back on its rule. Plain
 // paper changes nothing.
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
@@ -17,6 +17,8 @@ const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
  * off (1.03 for a box at 201.2 on CI's Ubuntu). On Windows the same boxes are within 0.03.
  */
 const TOLERANCE = 1.1;
+/** How long the text may take to settle on a loaded 2-core runner, where Vitest's one second is not enough. */
+const SETTLE = { timeout: 8000 };
 
 afterEach(cleanupPages);
 
@@ -26,8 +28,22 @@ const frames = (n = 3) =>
     tick(n);
   });
 
+const trace: string[] = [];
+const here = () => `${Math.round(performance.now())}ms ${new Error().stack?.split('\n').slice(2, 6).join(' < ')}`;
+
 async function ruled(fixture: PageFixture, grid: RuleGrid | null = GRID): Promise<PageHarness> {
   const harness = await renderPage({ fixture });
+  const { flow } = harness.mounted;
+  const stop = flow.stop.bind(flow);
+  flow.stop = () => {
+    trace.push(`stop ${here()}`);
+    stop();
+  };
+  const set = flow.setRules.bind(flow);
+  flow.setRules = (next) => {
+    trace.push(`setRules(${next ? 'grid' : 'null'}) ${here()}`);
+    set(next);
+  };
   harness.mounted.flow.setRules(grid);
   await document.fonts?.ready;
   await frames();
@@ -111,10 +127,25 @@ describe('ruled paper', () => {
       const harness = await ruled(floating(y));
       const wrapper = harness.viewport.world.querySelector<HTMLElement>('[data-block-id]')!;
       const line = wrapper.querySelector('.ProseMirror > p')!;
-      expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
-      expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
-      const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
-      expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
+      // The box settles onto its rule over the frames after it mounts; a slow runner needs more than a fixed few.
+      await vi.waitFor(() => {
+        const css = getComputedStyle(wrapper);
+        const where = [
+          `ruled=${harness.viewport.world.dataset.ruled}`,
+          `classes=${wrapper.className}`,
+          `style=${wrapper.getAttribute('style')}`,
+          `inset=${css.insetBlockStart} top=${css.top} position=${css.position}`,
+          `world=${harness.viewport.world.getAttribute('style')}`,
+          `zoom=${harness.viewport.camera().zoom} dpr=${devicePixelRatio} top=${wrapper.getBoundingClientRect().top}`,
+          `font=${getComputedStyle(line).fontFamily} lh=${getComputedStyle(line).lineHeight}`,
+          `pad=${getComputedStyle(line).paddingTop}`,
+          `trace=${trace.join(' ## ')}`,
+        ].join(' | ');
+        expect(offLift(baseline(harness, line)), `box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
+        expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}: ${where}`).toBeLessThan(TOLERANCE);
+        const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
+        expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
+      }, SETTLE);
       await cleanupPages();
     }
   });
@@ -125,9 +156,20 @@ describe('ruled paper', () => {
     harness.mounted.flow.setRules(next);
     await frames();
     const root = harness.viewport.world.querySelector('.ProseMirror')!;
-    for (const line of [root.querySelector(':scope > p')!, root.querySelector('h2')!, root.querySelector('li > p')!]) {
-      expect(offLift(baseline(harness, line), next)).toBeLessThan(TOLERANCE);
-    }
+    // The text realigns over the frames after the change; a slow runner needs more than a fixed few.
+    await vi.waitFor(() => {
+      for (const line of [
+        root.querySelector(':scope > p')!,
+        root.querySelector('h2')!,
+        root.querySelector('li > p')!,
+      ]) {
+        const world = harness.viewport.world;
+        const rule = world.style.getPropertyValue('--rule');
+        const lift = world.style.getPropertyValue('--rule-lift');
+        const note = `${line.tagName} at ${baseline(harness, line)}, rule ${rule}, lift ${lift}`;
+        expect(offLift(baseline(harness, line), next), note).toBeLessThan(TOLERANCE);
+      }
+    }, SETTLE);
   });
 
   it('changes nothing on plain paper', async () => {

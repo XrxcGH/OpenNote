@@ -176,12 +176,11 @@ fn group(prints: &[Print]) -> Vec<usize> {
         else {
             break;
         };
-        let nearest = (0..groups.len())
-            .filter(|&g| g != small)
-            .min_by(|&a, &b| {
-                between(prints, &groups[small], &groups[a]).total_cmp(&between(prints, &groups[small], &groups[b]))
-            })
-            .expect("another group exists");
+        let Some(nearest) = (0..groups.len()).filter(|&g| g != small).min_by(|&a, &b| {
+            between(prints, &groups[small], &groups[a]).total_cmp(&between(prints, &groups[small], &groups[b]))
+        }) else {
+            break;
+        };
         let taken = groups.remove(small);
         let nearest = if nearest > small { nearest - 1 } else { nearest };
         groups[nearest].members.extend(taken.members);
@@ -214,14 +213,12 @@ pub fn label_ranges(frames: &[Frame], ranges: &[(u64, u64)]) -> Vec<Option<u32>>
     if have.is_empty() {
         return none;
     }
-    let solid: Vec<Print> = have
+    let solid: Vec<Print> = prints
         .iter()
-        .map(|&i| {
-            let p = prints[i].as_ref().expect("filtered above");
-            Print {
-                vector: p.vector,
-                speech: p.speech,
-            }
+        .flatten()
+        .map(|p| Print {
+            vector: p.vector,
+            speech: p.speech,
         })
         .collect();
     let grouped = group(&solid);
@@ -234,13 +231,11 @@ pub fn label_ranges(frames: &[Frame], ranges: &[(u64, u64)]) -> Vec<Option<u32>>
     }
     let mut out: Vec<Option<u32>> = vec![None; ranges.len()];
     for (k, &i) in have.iter().enumerate() {
-        out[i] = Some(
-            order
-                .iter()
-                .position(|&g| g == grouped[k])
-                .expect("every group is listed") as u32
-                + 1,
-        );
+        // Every group is in `order`, so the position is always found.
+        out[i] = order
+            .iter()
+            .position(|&g| g == grouped[k])
+            .map(|place| place as u32 + 1);
     }
     // The quiet or short stretches follow their neighbors.
     let mut carried = out.iter().flatten().next().copied();

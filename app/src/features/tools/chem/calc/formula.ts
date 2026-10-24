@@ -27,7 +27,9 @@ export function splitCharge(text: string): { body: string; charge: number } {
   const [, front, digits] = plain;
   if (digits === '') return { body: front, charge: sign };
   if (digits.length > 1) return { body: front + digits.slice(0, -1), charge: sign * Number(digits.slice(-1)) };
-  return /^[A-Z][a-z]?$/.test(front) ? { body: front, charge: sign * Number(digits) } : { body: front + digits, charge: sign };
+  return /^[A-Z][a-z]?$/.test(front)
+    ? { body: front, charge: sign * Number(digits) }
+    : { body: front + digits, charge: sign };
 }
 
 /** Element counts of a formula, or null when it cannot be read (unknown symbol, unbalanced bracket). */
