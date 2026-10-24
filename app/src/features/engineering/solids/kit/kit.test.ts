@@ -146,7 +146,6 @@ describe('every tool', () => {
     outcome: ReturnType<ToolSpec['run']>,
     words: Record<string, Record<string, string>>,
   ) {
-    const steps = messages.step[tool] as unknown as Record<string, string>;
     for (const row of outcome.rows) {
       expect(words.row?.[row.id], `${tool}.row.${row.id}`).toBeTypeOf('string');
       if (row.word) expect(words.word?.[row.word], `${tool}.word.${row.word}`).toBeTypeOf('string');
@@ -156,7 +155,12 @@ describe('every tool', () => {
       expect(words.table?.[table.id], `${tool}.table.${table.id}`).toBeTypeOf('string');
       for (const column of table.columns) expect(words.col?.[column], `${tool}.col.${column}`).toBeTypeOf('string');
     }
-    for (const one of outcome.steps) expect(steps?.[one.key.split('.')[1]], one.key).toBeTypeOf('string');
+    for (const one of outcome.steps) {
+      // A tool may borrow another tool's steps, such as the failure criteria, so each key names its own group.
+      const [group, name] = one.key.split('.');
+      const steps = messages.step[group] as unknown as Record<string, string>;
+      expect(steps?.[name], `${tool}: ${one.key}`).toBeTypeOf('string');
+    }
     if (outcome.picture)
       expect((words as unknown as Record<string, unknown>).picture, `${tool}.picture`).toBeTypeOf('string');
     if (outcome.picture) {
