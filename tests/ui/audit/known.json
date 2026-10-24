@@ -105,7 +105,6 @@
     "command | target-small | span > span.wrapper > button[data-tool].iconButton",
     "command | target-small | span.group > span.wrapper > button[data-tool].iconButton",
     "command | target-small | ul.list > li.row > button.grow",
-    "command | truncation-no-tooltip | div[role=listbox].grid > div[role=option].cell > span.title",
     "commandbar | target-small | span.slot > div[role=group].group > button[data-tool].tool",
     "palette | clipped-by-ancestor | div[role=listbox].list > div[role=group].group > div[role=option].option",
     "settings | target-gap | ul > li > a.link x li > a.link",
