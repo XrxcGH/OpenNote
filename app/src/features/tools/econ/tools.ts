@@ -4,6 +4,7 @@ import { MONEY } from './moneyForms';
 import { MARKETS } from './marketsForms';
 import { MACRO } from './macroForms';
 import { MEASURES } from './measuresForms';
+import { CHOICE } from './choiceForms';
 import type { EconToolDef } from './forms';
 
-export const ECON_TOOLS: readonly EconToolDef[] = [MONEY, FIRMS, MARKETS, MACRO, MEASURES];
+export const ECON_TOOLS: readonly EconToolDef[] = [MONEY, FIRMS, MARKETS, MACRO, MEASURES, CHOICE];
