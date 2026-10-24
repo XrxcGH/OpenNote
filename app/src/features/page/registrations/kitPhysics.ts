@@ -5,6 +5,7 @@ import { commandBar, commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
 
 export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string])[] = [
+  ['fields', 'Magnet'],
   ['waves', 'WaveSine'],
   ['geooptics', 'Eyeglasses'],
   ['waveoptics', 'Rainbow'],
