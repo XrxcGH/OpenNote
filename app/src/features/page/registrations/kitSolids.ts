@@ -12,7 +12,7 @@ import { addCommand } from './qolStudy';
 const open = async (tool?: string) => (await import('../../engineering')).openSolidsKit(tool);
 
 addCommand({
-  id: 'tools.kitSolids',
+  id: 'tools.kit-solids',
   title: 'kitSolids.open',
   keywords: 'kitSolids.keywords',
   category: 'general',
