@@ -371,6 +371,7 @@ class FrameView implements SelectionFrame {
 
   stop(): void {
     this.stops.forEach((stop) => stop());
+    this.host.frameShown?.(false);
     this.frame.remove();
     this.crop.remove();
   }
@@ -456,6 +457,7 @@ class FrameView implements SelectionFrame {
 
   private place(): void {
     const box = this.box();
+    this.host.frameShown?.(box !== null);
     if (!box) {
       this.frame.style.display = 'none';
       this.crop.style.display = 'none';
