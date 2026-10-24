@@ -8,4 +8,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   statespace: () => import('./statespace/spec').then((m) => m.spec),
   stochastic: () => import('./stochastic/spec').then((m) => m.spec),
   reliability: () => import('./reliability/spec').then((m) => m.spec),
+  rootlocus: () => import('./rootlocus/spec').then((m) => m.spec),
 };
