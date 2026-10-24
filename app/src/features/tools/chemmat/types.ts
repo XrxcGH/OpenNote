@@ -19,8 +19,10 @@ export type Dim =
   | 'concentration'
   | 'time'
   | 'length'
+  | 'distance'
   | 'mass'
   | 'volume'
+  | 'diffusivity'
   | 'energy'
   | 'none';
 

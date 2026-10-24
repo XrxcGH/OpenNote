@@ -60,4 +60,11 @@ export const CHEMMAT_META: readonly ChemMatMeta[] = [
     keywords: 'kitChemMat.cx.keywords',
     icon: 'Flask',
   },
+  {
+    id: 'diffusion',
+    title: 'kitChemMat.df.title',
+    open: 'kitChemMat.df.open',
+    keywords: 'kitChemMat.df.keywords',
+    icon: 'Flask',
+  },
 ];

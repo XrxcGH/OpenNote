@@ -64,6 +64,11 @@ export const DIMS: Record<Exclude<Dim, 'none'> | 'current', DimDef> = {
     si: 'nm',
     us: 'in',
   },
+  distance: {
+    units: [u('mm', 1e-3), u('m', 1), u('cm', 1e-2), u('µm', 1e-6), u('nm', 1e-9), u('in', 0.0254), u('ft', 0.3048)],
+    si: 'mm',
+    us: 'in',
+  },
   mass: {
     units: [u('g', 1), u('kg', 1e3), u('mg', 1e-3), u('lb', 453.59237), u('oz', 28.349523125)],
     si: 'g',
@@ -78,6 +83,11 @@ export const DIMS: Record<Exclude<Dim, 'none'> | 'current', DimDef> = {
     units: [u('J', 1), u('kJ', 1e3), u('eV', 1.602176634e-19), u('kcal', 4184), u('BTU', 1055.05585262)],
     si: 'J',
     us: 'BTU',
+  },
+  diffusivity: {
+    units: [u('m²/s', 1), u('cm²/s', 1e-4), u('mm²/s', 1e-6), u('µm²/s', 1e-12)],
+    si: 'm²/s',
+    us: 'cm²/s',
   },
   energyMol: { units: [u('kJ/mol', 1e3), u('J/mol', 1), u('kcal/mol', 4184)], si: 'kJ/mol', us: 'kcal/mol' },
   entropyMol: {

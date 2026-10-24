@@ -1,6 +1,7 @@
 // Every tool of the kit with its engine. The window loads this file the first time it opens.
 import { acidBaseTool } from './acidbase/tool';
 import { crystalsTool } from './crystals/tool';
+import { diffusionTool } from './diffusion/tool';
 import { electrochemTool } from './electrochem/tool';
 import { equilibriumTool } from './equilibrium/tool';
 import { kineticsTool } from './kinetics/tool';
@@ -16,4 +17,5 @@ export const CHEMMAT_TOOLS: readonly ToolSpec[] = [
   kineticsTool,
   solutionsTool,
   crystalsTool,
+  diffusionTool,
 ];
