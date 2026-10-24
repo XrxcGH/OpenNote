@@ -30,6 +30,7 @@ export const SOLIDS_TOOLS: readonly SolidsToolMeta[] = [
   },
   { id: 'composites', title: 'kitSolids.composites.title', keywords: 'kitSolids.composites.keywords', icon: 'Stack' },
   { id: 'biomech', title: 'kitSolids.biomech.title', keywords: 'kitSolids.biomech.keywords', icon: 'Heartbeat' },
+  { id: 'machine', title: 'kitSolids.machine.title', keywords: 'kitSolids.machine.keywords', icon: 'Gear' },
 ];
 
 export const SOLIDS_TOOL_IDS: readonly string[] = SOLIDS_TOOLS.map((tool) => tool.id);

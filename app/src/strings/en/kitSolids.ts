@@ -10,6 +10,7 @@ import { vessels, vesselsSteps } from './kitSolids/vessels';
 import { thinwalled, thinwalledSteps } from './kitSolids/thinwalled';
 import { composites, compositesSteps } from './kitSolids/composites';
 import { biomech, biomechSteps } from './kitSolids/biomech';
+import { machine, machineSteps } from './kitSolids/machine';
 
 export const kitSolids = {
   title: 'Solid mechanics',
@@ -91,6 +92,17 @@ export const kitSolids = {
     singularLaminate: 'The laminate has no stiffness in some direction. Check the plies.',
     muscleLine: 'The muscle runs along the segment, so it has no moment about the joint. Check α.',
     fraction: 'The volume fraction must be from 0 to 1.',
+    sizeRange: 'The size factor covers diameters from 2.79 to 254 mm. Leave d empty for kb = 1.',
+    seAboveSut: 'The endurance limit and the mean stress must be less than Sut.',
+    noStress: 'Type a stress or a load to check.',
+    fractionF: 'f must be between 0 and 1.',
+    lowCycle: 'The stress is above f Sut, which is low-cycle fatigue. The S-N line starts at 10³ cycles.',
+    noBlocks: 'Type at least one load block.',
+    blockLine: 'Block line {detail} could not be read. Type the cycles applied, then the cycles to failure.',
+    preloadFraction: 'The preload fraction must be more than 0 and at most 1.',
+    jointConstant: 'C must be between 0 and 1.',
+    springIndex: 'The coil diameter must be larger than the wire diameter.',
+    needSpeed: 'Type the speed for the dynamic factor, or choose none.',
     unknown: 'That could not be worked out.',
   },
   columns,
@@ -102,6 +114,7 @@ export const kitSolids = {
   thinwalled,
   composites,
   biomech,
+  machine,
   step: {
     columns: columnsSteps,
     stress: stressSteps,
@@ -112,5 +125,6 @@ export const kitSolids = {
     thinwalled: thinwalledSteps,
     composites: compositesSteps,
     biomech: biomechSteps,
+    machine: machineSteps,
   },
 } as const;
