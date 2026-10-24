@@ -19,7 +19,7 @@ import {
 import { snapSegment } from './lines';
 import { fitPolygon, pickCorners, polygonArea } from './corners';
 import { ELLIPSE_TOLERANCE, fitEllipse } from './ellipse';
-import { POLYGON_TOLERANCE } from './polygons';
+import { POLYGON_TOLERANCE, tapers } from './polygons';
 import type { Candidate } from './types';
 
 const DEGREES = Math.PI / 180;
@@ -31,9 +31,12 @@ const RADIUS_SPREAD = 0.22;
 const NOTCH_SPREAD = 0.12;
 /**
  * A regular polygon's corners all turn the path by the same angle, within this on average (root mean square). A hand
- * turns one corner a good way off, but a house turns all five off at once.
+ * turns one corner a good way off, but a house turns all five off at once. A pentagon, the house's lookalike, is held
+ * tighter: hand-drawn ones spread under 7 degrees nine times in ten, and a flat-roofed house that read as one spread
+ * 11 to 16.
  */
 const TURN_SPREAD = 16 * DEGREES;
+const PENTAGON_TURN_SPREAD = 13 * DEGREES;
 /** An arc is accepted when its points stray from the circle by less than this share of the radius. */
 const ARC_TOLERANCE = 0.05;
 const MIN_ARC_SWEEP = 40 * DEGREES;
@@ -67,7 +70,8 @@ function regularPolygon(corners: readonly Vec[], error: number): Candidate | nul
   const heading = (i: number) =>
     Math.atan2(corners[(i + 1) % n].y - corners[i].y, corners[(i + 1) % n].x - corners[i].x);
   const turns = corners.map((_, i) => Math.abs(turn(heading((i + n - 1) % n), heading(i))));
-  if (Math.sqrt(mean(turns.map((t) => (t - (2 * Math.PI) / n) ** 2))) > TURN_SPREAD) return null;
+  const spread = n === 5 ? PENTAGON_TURN_SPREAD : TURN_SPREAD;
+  if (Math.sqrt(mean(turns.map((t) => (t - (2 * Math.PI) / n) ** 2))) > spread) return null;
   const rotation = Math.atan2(corners[0].y - center.y, corners[0].x - center.x);
   return { shape: { kind: 'polygon', sides: n, center, radius, rotation }, ratio: error / POLYGON_TOLERANCE };
 }
@@ -128,17 +132,20 @@ const GOOD_FIT = 0.2;
 /** A four-cornered outline whose corners all turn within this of a right angle is a sloppy rectangle, not a new shape. */
 const NEAR_RIGHT_ANGLE = 22 * DEGREES;
 /**
- * ...unless a corner is past the rectangle's own tolerance and two opposite sides are parallel within this: a narrow
- * trapezoid or a slightly slanted parallelogram, drawn on purpose, which the rectangle turns down.
+ * ...unless it is a narrow trapezoid or a slightly slanted parallelogram, drawn on purpose, which the rectangle turns
+ * down. Its legs splay while its bases stay parallel (TAPER_PARALLEL), or a corner is past the rectangle's own
+ * tolerance while two opposite sides are parallel within PARALLEL.
  */
 const RECTANGLE_TOLERANCE = 15 * DEGREES;
 const PARALLEL = 4 * DEGREES;
+/** A trapezoid's bases run within this of each other, as the hand draws them. */
+const TAPER_PARALLEL = 6 * DEGREES;
 
 /** Whether two opposite sides of a four-cornered outline run within `PARALLEL` of each other. */
-function parallelPair(corners: readonly Vec[]): boolean {
+function parallelPair(corners: readonly Vec[], within = PARALLEL): boolean {
   const heading = (i: number) =>
     Math.atan2(corners[(i + 1) % 4].y - corners[i].y, corners[(i + 1) % 4].x - corners[i].x);
-  return [0, 1].some((i) => Math.abs(Math.abs(turn(heading(i), heading(i + 2))) - Math.PI) < PARALLEL);
+  return [0, 1].some((i) => Math.abs(Math.abs(turn(heading(i), heading(i + 2))) - Math.PI) < within);
 }
 
 /** Whether the corners make a simple polygon: no side crosses another, every corner is sharp, no side is tiny. */
@@ -162,7 +169,8 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
       if (segmentsIntersect(corners[i], corners[(i + 1) % n], corners[j], corners[(j + 1) % n])) return false;
     }
   }
-  return !(n === 4 && nearRight === 4) || (pastRectangle && parallelPair(corners));
+  if (n !== 4 || nearRight < 4) return true;
+  return (tapers(corners) && parallelPair(corners, TAPER_PARALLEL)) || (pastRectangle && parallelPair(corners));
 }
 
 /**
