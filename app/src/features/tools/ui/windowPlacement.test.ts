@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FLOAT_GAP, placeWindows } from './windowPlacement';
+import { FLOAT_GAP, MIN_FLOAT, placeWindows } from './windowPlacement';
 
 const left = (viewport: number, one: { width: number; right: number }) => viewport - one.right - one.width;
 
@@ -31,6 +31,11 @@ describe('placeWindows', () => {
     // The newer window keeps the place at the right; the older one stops at the left edge.
     expect(placed.windows[1]).toEqual({ width: 400, right: 23 });
     expect(left(viewport, placed.windows[0]!)).toBe(FLOAT_GAP);
+  });
+
+  it('keeps a usable width when the edge to keep clear takes most of the window', () => {
+    const placed = placeWindows({ widths: [340], viewport: 400, room: 0, edge: 415 });
+    expect(placed.windows[0]).toEqual({ width: MIN_FLOAT, right: 400 - FLOAT_GAP - MIN_FLOAT });
   });
 
   it('narrows a window wider than the room between the edges', () => {

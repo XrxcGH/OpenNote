@@ -30,6 +30,9 @@ export interface Placement {
   windows: Placed[];
 }
 
+/** The narrowest a floating window gets for the room at the page's edge; past that it covers what is there instead. */
+export const MIN_FLOAT = 280;
+
 export function placeWindows({ widths, viewport, room, edge }: PlacementInput): Placement {
   const total = widths.reduce((sum, one) => sum + one, 0);
   if (total <= Math.max(room, 0)) {
@@ -40,7 +43,7 @@ export function placeWindows({ widths, viewport, room, edge }: PlacementInput): 
     });
     return { overlay: false, docked: total, windows };
   }
-  const start = edge + FLOAT_GAP;
+  const start = Math.min(edge + FLOAT_GAP, Math.max(FLOAT_GAP, viewport - FLOAT_GAP - MIN_FLOAT));
   const span = Math.max(0, viewport - start - FLOAT_GAP);
   const windows: Placed[] = new Array<Placed>(widths.length);
   let right = start;

@@ -102,7 +102,9 @@ function Windows() {
   const viewport = useLayoutSize();
   const widths = state.open.map((id) => widthOf(state, id));
   // The page region's left edge does not move when panels dock, so it says how much room the panels may take.
-  const main = document.querySelector('main')?.getBoundingClientRect();
+  // A hidden page region (the compact layout showing a pane) has no box: the windows then go by the window alone.
+  const region = document.querySelector('main')?.getBoundingClientRect();
+  const main = region && region.width > 0 ? region : undefined;
   const pageLeft = main?.left ?? 0;
   // Floating windows keep clear of the page's scroll bar and of anything at the page region's right edge, such as a
   // sheet. The bar is where the page's scroller has it, which a pane beside the page moves in from the edge.
