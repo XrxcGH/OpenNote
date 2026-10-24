@@ -6,4 +6,5 @@ export const PANELS: Readonly<Record<string, LazyExoticComponent<ComponentType>>
   complex: lazy(() => import('../complex/ComplexTool')),
   odes: lazy(() => import('../odesystems/OdeTool')),
   fourier: lazy(() => import('../fourierpde/FourierTool')),
+  numerics: lazy(() => import('../numerics/NumericsTool')),
 };
