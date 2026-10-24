@@ -1,4 +1,4 @@
-// The calculator and graphing lane's registrations: the 3D graph block, the calculator's modes, and the Graph and
+// The calculator and graphing lane's registrations: the 3D function plot, the calculator's modes, and the Graph and
 // Steps actions on an equation. This file loads at start-up, so it holds only definitions; each command loads its
 // feature on first use.
 import { isEnabled } from '../../../app/flags';
@@ -13,15 +13,19 @@ import { pageSelection } from '../seams/selectionStore';
 
 const inEditor = () => targetEditor() !== null;
 
-/** The first text of a new 3D graph block. */
+/**
+ * The first text of a new 3D function plot. It is the calculator's 3D graph (graph/Graph3DView), which also draws
+ * surfaces in u and v and keeps `@camera` and `@range` lines. "Insert 3D graph" (registrations/graph3d.ts) inserts
+ * the "@3d" block instead, with tangent planes, contours, vectors, and `@angle`.
+ */
 export const FIRST_3D = 'z = sin(x) cos(y)';
 
 commands.register({
-  id: 'insert.graph3d',
+  id: 'insert.plot3d',
   title: 'mathTools.graph3d.insert',
   keywords: 'mathTools.graph3d.insertKeywords',
   category: 'insert',
-  icon: 'Cube',
+  icon: 'CubeTransparent',
   flag: 'math.graph3d',
   when: inEditor,
   run: async () => {
@@ -32,20 +36,20 @@ commands.register({
   },
 });
 slashItems.register({
-  id: 'insert.graph3d',
+  id: 'insert.plot3d',
   title: 'mathTools.graph3d.insert',
   keywords: 'mathTools.graph3d.insertKeywords',
-  icon: 'Cube',
+  icon: 'CubeTransparent',
   flag: 'math.graph3d',
-  command: 'insert.graph3d',
+  command: 'insert.plot3d',
   group: 'advanced',
-  order: 23,
+  order: 25,
 });
 commandBar.register({
-  id: 'insert.graph3d',
+  id: 'insert.plot3d',
   tab: 'insert',
   group: 'math',
-  command: 'insert.graph3d',
+  command: 'insert.plot3d',
   flag: 'math.graph3d',
   priority: 37,
 });

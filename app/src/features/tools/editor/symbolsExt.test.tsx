@@ -4,7 +4,7 @@ import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
 import Text from '@tiptap/extension-text';
 import Code from '@tiptap/extension-code';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { readRecent, resetRecent } from '../symbols/recent';
 import { symbolsExtension } from './symbolsExt';
@@ -12,7 +12,7 @@ import { symbolsExtension } from './symbolsExt';
 let editor: Editor;
 let host: HTMLElement;
 
-beforeEach(() => {
+beforeEach(async () => {
   resetRecent();
   host = document.createElement('div');
   document.body.appendChild(host);
@@ -22,6 +22,8 @@ beforeEach(() => {
     content: '<p></p>',
   });
   editor.commands.focus();
+  // Tiptap moves the focus on the next frame, and a slow runner types before then: wait until the editor has it.
+  await vi.waitFor(() => expect(editor.view.hasFocus()).toBe(true));
 });
 afterEach(() => {
   editor.destroy();

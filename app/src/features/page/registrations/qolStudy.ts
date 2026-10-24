@@ -21,7 +21,6 @@ import { isProtectedNode, treeStore } from '../../tree';
 import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
 import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
-import { liveBlock } from '../blocks/textBlock';
 import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 import { currentTable } from '../tables/current';
@@ -328,6 +327,12 @@ function watchText(
   let last = '';
   let had = false;
   let timer: number | undefined;
+  // The text block code (and the editor with it) loads here, not at start-up; a page is mounted by now, so it is ready
+  // before the first scan, which waits for typing to pause.
+  let liveBlock: typeof import('../blocks/textBlock').liveBlock = (_layer, block) => block;
+  void import('../blocks/textBlock').then((loaded) => {
+    liveBlock = loaded.liveBlock;
+  });
   const scan = () => {
     const blocks = mounted.layer
       .blocks()

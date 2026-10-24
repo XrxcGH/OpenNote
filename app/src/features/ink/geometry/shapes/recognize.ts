@@ -2,7 +2,7 @@
 // is not clearly a line, arrow, rectangle, triangle, circle, or ellipse. It is pure, so it runs in the engine worker.
 
 import { boundsOf } from '../bounds';
-import { distance, pointSegmentDistanceSq, polylineLength, segmentsIntersect } from '../primitives';
+import { distance, polylineLength } from '../primitives';
 import { resample, simplify } from '../simplify';
 import type { Vec } from '../types';
 import { arrowCandidate } from './arrow';
@@ -18,21 +18,31 @@ import type { Candidate, RecognizeOptions, ShapeMatch } from './types';
 const SAMPLES = 64;
 /** A stroke is closed when its ends are this close, as a share of its length. */
 const CLOSE_GAP = 0.1;
+/** The pen held still at the end trembles within this share of the stroke's box diagonal. */
+const HOLD_REACH = 0.01;
 /** Strokes that turn more than this, in total, are handwriting. */
-const MAX_TURNING = 6 * Math.PI;
+const MAX_TURNING = 8 * Math.PI;
 /** Turning is measured on the stroke simplified to this share of its box diagonal, so pen jitter does not add up. */
 const TURNING_SIMPLIFY = 0.02;
 /** A line's ends must be at least this share of its skeleton's length apart, so a scribble along a line is no line. */
 const MIN_CHORD_SHARE = 0.8;
-/** An end that stays this close to the start, as a share of the stroke's box diagonal, retraces it. */
-const RETRACE_SHARE = 0.04;
-/** How far from each end of a closed stroke to look for the ends crossing, in samples. */
-const OVERSHOOT_WINDOW = 10;
+/** The loop of a closed stroke is looked for on the stroke spaced out to this many points. */
+const LOOP_SAMPLES = 128;
+/** A loop's ends may overlap by up to this share of the stroke at each end: a circle drawn on past its start. */
+const OVERLAP_SHARE = 0.3;
+/** Where the ends overlap, the later pass runs within this share of the box diagonal of the earlier one. */
+const OVERLAP_REACH = 0.06;
+/** The first and last points may hook away, up to this share of the stroke, where the pen lands and lifts. */
+const HOOK_SHARE = 0.06;
 /** A fit within this factor of the best counts as a tie, and the simpler shape wins. */
 const TIE_FACTOR = 1.1;
 /** A polygon with more corners must fit this much better than a simpler shape to win over it. */
 const MANY_CORNERS_MARGIN = 0.6;
-/** And this much better than a round shape fits, even one too loose to be accepted: a wobbly circle fits a hexagon. */
+/**
+ * And this much better than a round shape fits: a wobbly circle fits a pentagon or a hexagon well, but a drawn one
+ * fits it several times better than any circle. A regular polygon must beat even a round fit too loose to accept; an
+ * irregular one only a round shape that is accepted, since an irregular pentagon is often roundish.
+ */
 const ROUND_MARGIN = 0.4;
 const DEFAULT_MIN_SIZE = 16;
 const DEFAULT_WIDTH = 2;
@@ -40,6 +50,17 @@ const DEFAULT_WIDTH = 2;
 /** The stroke's points without repeats, since pen samples at rest pile up at one spot. */
 function withoutRepeats(points: readonly Vec[]): Vec[] {
   return points.filter((p, i) => i === 0 || p.x !== points[i - 1].x || p.y !== points[i - 1].y);
+}
+
+/**
+ * The stroke without the pen's tremble while it is held still at the end, to ask for a shape: the last points that
+ * stay within `reach` of where the pen stopped become that one point.
+ */
+function withoutHold(points: readonly Vec[], reach: number): Vec[] {
+  const end = points[points.length - 1];
+  let keep = points.length - 1;
+  while (keep > 1 && distance(points[keep - 1], end) <= reach) keep--;
+  return [...points.slice(0, keep), end];
 }
 
 function totalTurning(points: readonly Vec[]): number {
@@ -54,46 +75,40 @@ function totalTurning(points: readonly Vec[]): number {
   return total;
 }
 
-/** Where two segments that cross meet. */
-function crossingPoint(a1: Vec, a2: Vec, b1: Vec, b2: Vec): Vec {
-  const dax = a2.x - a1.x;
-  const day = a2.y - a1.y;
-  const t =
-    ((b1.x - a1.x) * (b2.y - b1.y) - (b1.y - a1.y) * (b2.x - b1.x)) / (dax * (b2.y - b1.y) - day * (b2.x - b1.x));
-  return { x: a1.x + dax * t, y: a1.y + day * t };
-}
-
-/** Cuts off an end that retraces the start of the loop: the last points that lie on the first few segments. */
-function trimRetrace(points: readonly Vec[], tolerance: number): Vec[] {
-  const head = points.slice(0, OVERSHOOT_WINDOW + 1);
-  const onHead = (p: Vec) =>
-    head.slice(1).some((q, i) => pointSegmentDistanceSq(p, head[i], q) <= tolerance * tolerance);
-  let keep = points.length;
-  while (keep > head.length + 1 && onHead(points[keep - 1])) keep--;
-  return points.slice(0, Math.min(points.length, keep + 1));
+/**
+ * Whether a stroke's ends overlap as a loop drawn past its start would, for the loop from point `i` to point `j`.
+ * After `j` the stroke runs on alongside the loop's start, and before `i` alongside its end. It runs point for point,
+ * in the same direction. Only a short hook at either end may stray. A letter's tail or lead-in strays from the loop.
+ */
+function overlapsAt(p: readonly Vec[], i: number, j: number, reach: number, hook: number): boolean {
+  const n = p.length;
+  for (let k = 1; j + k < n - hook; k++) if (distance(p[j + k], p[i + k]) > reach) return false;
+  for (let k = 1; i - k >= hook; k++) if (distance(p[i - k], p[j - k]) > reach) return false;
+  return true;
 }
 
 /**
- * Cuts off the overshoot of a loop whose end runs past its start. Where the end crosses the start, the ends are
- * replaced by the crossing. Where it retraces the start, the retraced points are dropped.
+ * The stroke as `SAMPLES` points evenly spaced around a closed outline, or null when its ends are far apart. A stroke
+ * that runs on past its start, or starts before where it closes, is cut to the loop where its ends come closest.
  */
-function trimOvershoot(points: readonly Vec[], tolerance: number): Vec[] {
-  const n = points.length;
-  for (let i = 0; i < Math.min(OVERSHOOT_WINDOW, n - 2); i++) {
-    for (let j = n - 2; j > Math.max(i + 1, n - 2 - OVERSHOOT_WINDOW); j--) {
-      if (!segmentsIntersect(points[i], points[i + 1], points[j], points[j + 1])) continue;
-      const cross = crossingPoint(points[i], points[i + 1], points[j], points[j + 1]);
-      return [cross, ...points.slice(i + 1, j + 1), cross];
+export function closedOutline(points: readonly Vec[], size: number): Vec[] | null {
+  const p = resample(points, LOOP_SAMPLES + 1);
+  const n = p.length;
+  const reach = OVERLAP_REACH * size;
+  const hook = Math.round(HOOK_SHARE * n);
+  const window = Math.round(OVERLAP_SHARE * n);
+  let best: { i: number; j: number; gap: number } | null = null;
+  for (let i = 0; i <= window; i++) {
+    for (let j = n - 1 - window; j < n; j++) {
+      const gap = distance(p[i], p[j]);
+      if ((best && gap >= best.gap) || !overlapsAt(p, i, j, reach, hook)) continue;
+      best = { i, j, gap };
     }
   }
-  return trimRetrace(points, tolerance);
-}
-
-/** The stroke as `SAMPLES` points evenly spaced around a closed outline, or null when its ends are far apart. */
-function closedOutline(points: readonly Vec[], size: number): Vec[] | null {
-  const trimmed = trimOvershoot(resample(points, SAMPLES + 1), RETRACE_SHARE * size);
-  if (distance(trimmed[0], trimmed[trimmed.length - 1]) >= CLOSE_GAP * polylineLength(trimmed)) return null;
-  return resample([...trimmed, trimmed[0]], SAMPLES + 1).slice(0, SAMPLES);
+  if (!best) return null;
+  const loop = p.slice(best.i, best.j + 1);
+  if (best.gap >= CLOSE_GAP * polylineLength(loop)) return null;
+  return resample([...loop, loop[0]], SAMPLES + 1).slice(0, SAMPLES);
 }
 
 /** The closed outline's candidates, and how badly a round shape fits it (under 1 is a candidate), or Infinity. */
@@ -113,8 +128,9 @@ function closedCandidates(outline: readonly Vec[]): { candidates: Candidate[]; r
  */
 function withoutLookalikes(extras: readonly Candidate[], found: readonly Candidate[], roundRatio: number): Candidate[] {
   const simpler = Math.min(...found.map((c) => c.ratio));
-  const wins = (c: Candidate) =>
-    c.ratio < MANY_CORNERS_MARGIN * simpler && (c.shape.kind === 'freeform' || c.ratio < ROUND_MARGIN * roundRatio);
+  const beatsRound = (c: Candidate) =>
+    (c.shape.kind === 'freeform' && roundRatio >= 1) || c.ratio < ROUND_MARGIN * roundRatio;
+  const wins = (c: Candidate) => c.ratio < MANY_CORNERS_MARGIN * simpler && beatsRound(c);
   return extras.filter((c) => (c.shape.kind !== 'polygon' && c.shape.kind !== 'freeform') || wins(c));
 }
 
@@ -143,9 +159,10 @@ function pickBest(candidates: readonly Candidate[]): Candidate | null {
  */
 export function recognizeShape(points: readonly Vec[], options: RecognizeOptions = {}): ShapeMatch | null {
   const { minSize = DEFAULT_MIN_SIZE, width = DEFAULT_WIDTH, extra = false } = options;
-  const clean = withoutRepeats(points);
-  const box = boundsOf(clean);
+  const drawn = withoutRepeats(points);
+  const box = boundsOf(drawn);
   const diagonal = Math.hypot(box.maxX - box.minX, box.maxY - box.minY);
+  const clean = drawn.length > 2 ? withoutHold(drawn, HOLD_REACH * diagonal) : drawn;
   if (clean.length < 3 || diagonal < minSize) return null;
   if (totalTurning(simplify(clean, TURNING_SIMPLIFY * diagonal)) > MAX_TURNING) return null;
   const outline = closedOutline(clean, diagonal);

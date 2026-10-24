@@ -19,6 +19,10 @@ export { usePrefs as usePageExtrasPrefs } from './qol/prefs';
 export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
 export { assetTable } from './images/assets';
-export { expandEmbedText } from './embeds/expand';
-export { loadEmbed } from './embeds/load';
-export { preparePlayer } from './audio/exportPlayer';
+/** The exporter's helpers load when a page is exported, not at start-up. */
+export const expandEmbedText = async (...args: Parameters<typeof import('./embeds/expand').expandEmbedText>) =>
+  (await import('./embeds/expand')).expandEmbedText(...args);
+export const loadEmbed = async (...args: Parameters<typeof import('./embeds/load').loadEmbed>) =>
+  (await import('./embeds/load')).loadEmbed(...args);
+export const preparePlayer = async (...args: Parameters<typeof import('./audio/exportPlayer').preparePlayer>) =>
+  (await import('./audio/exportPlayer')).preparePlayer(...args);

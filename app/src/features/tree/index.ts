@@ -15,3 +15,4 @@ export const loadQolActions = () => import('./qolActions');
 export { locationFor } from './selection';
 export { ancestors, getNode, isProtectedNode, notebookOf, treeStore } from './store';
 export { relist, startTree, stopTree } from './load';
+export { undoStore } from './undo';

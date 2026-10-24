@@ -34,7 +34,11 @@ async function openPage(p: Page, section: string, title: string) {
 }
 
 const held = (p: Page) => () =>
-  p.evaluate(() => JSON.stringify((window as never as { __OPENNOTE_TEST__: Record<string, () => unknown> }).__OPENNOTE_TEST__.pagesHeld()));
+  p.evaluate(() =>
+    JSON.stringify(
+      (window as never as { __OPENNOTE_TEST__: Record<string, () => unknown> }).__OPENNOTE_TEST__.pagesHeld(),
+    ),
+  );
 
 async function write(p: Page, lines: string[], saved?: string) {
   const box = textBox(p);
@@ -129,17 +133,15 @@ const SHOTS: Shot[] = [
     ['setup-keys-and-pen', 'Keys and pen'],
     ['setup-storage', 'Where to keep things'],
     ['setup-import', 'Bring in your notes'],
-  ].map(
-    ([name, heading], step): Shot => ({
-      name,
-      boot: firstRun,
-      run: async (p) => {
-        for (let i = 0; i < step; i += 1)
-          await p.getByRole('button', { name: i === 0 ? 'Get started' : 'Continue' }).click();
-        await p.getByRole('heading', { level: 1, name: heading }).waitFor();
-      },
-    }),
-  ),
+  ].map(([name, heading], step): Shot => ({
+    name,
+    boot: firstRun,
+    run: async (p) => {
+      for (let i = 0; i < step; i += 1)
+        await p.getByRole('button', { name: i === 0 ? 'Get started' : 'Continue' }).click();
+      await p.getByRole('heading', { level: 1, name: heading }).waitFor();
+    },
+  })),
   {
     name: 'workspace',
     run: async (p) => {
@@ -222,13 +224,26 @@ const SHOTS: Shot[] = [
       await pick(/^Pen, Indigo/);
       await stroke(oval(cx, cy, lb.width / 2 + 14, 20));
       await pick(/^Pen, Fern/);
-      await stroke([[cx - 50, cy + 26], [cx - 120, cy + 70], [cx - 200, cy + 105]]);
-      await stroke([[cx - 200, cy + 105], [cx - 178, cy + 82]]);
-      await stroke([[cx - 200, cy + 105], [cx - 168, cy + 108]]);
+      await stroke([
+        [cx - 50, cy + 26],
+        [cx - 120, cy + 70],
+        [cx - 200, cy + 105],
+      ]);
+      await stroke([
+        [cx - 200, cy + 105],
+        [cx - 178, cy + 82],
+      ]);
+      await stroke([
+        [cx - 200, cy + 105],
+        [cx - 168, cy + 108],
+      ]);
       await pick(/^Pencil, /);
       await stroke(oval(cx - 330, cy + 190, 90, 62));
       await stroke(wavy(cx - 390, cy + 190, 120, 14, 2));
-      await stroke([[cx - 330, cy + 130], [cx - 330, cy + 250]]);
+      await stroke([
+        [cx - 330, cy + 130],
+        [cx - 330, cy + 250],
+      ]);
       await pick(/^Pen, Ink/);
       await stroke(wavy(cx - 230, cy + 175, 230, 9, 5));
       await settle(p);
@@ -263,7 +278,10 @@ const SHOTS: Shot[] = [
       await p.getByRole('menuitem', { name: 'Bar chart' }).click();
       await expect(p.getByRole('img', { name: /^Bar chart/ }).locator('svg')).toBeVisible();
       await p.locator('table tr').first().locator('th').first().click();
-      await p.locator('table').first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await p
+        .locator('table')
+        .first()
+        .evaluate((e) => e.scrollIntoView({ block: 'start' }));
       await settle(p);
     },
   },

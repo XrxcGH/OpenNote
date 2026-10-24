@@ -117,9 +117,20 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   useEffect(() => {
     const bar = ref.current;
     if (!bar || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => fit());
+    // Fitting inside the callback resizes what it watches in the same frame, which the browser reports as a
+    // "ResizeObserver loop" error; the next animation frame is still before paint.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        fit();
+      });
+    });
     observer.observe(bar);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [ref, fit]);
   return hidden;
 }

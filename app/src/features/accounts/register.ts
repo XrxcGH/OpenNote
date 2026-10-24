@@ -240,10 +240,13 @@ shownMounted.subscribe(() => {
   const mounted = shownMounted.get();
   if (!mounted || !isEnabled('accounts.sendTo')) return;
   const page = mounted.page.id;
-  void import('./sendto/commands').then(async (module) => {
-    const node = await commandContext('palette').notes.get(page as NodeId);
-    if (node) await module.offerUpdate(page, node.modified);
-  });
+  void import('./sendto/commands')
+    .then(async (module) => {
+      const node = await commandContext('palette').notes.get(page as NodeId);
+      if (node) await module.offerUpdate(page, node.modified);
+    })
+    // The offer is a courtesy. When the commands are not set up yet, or the page is gone, there is nothing to offer.
+    .catch(() => undefined);
 });
 
 // After a task list has been synced by hand, it is kept in step quietly while the app is open. The timer starts a minute
