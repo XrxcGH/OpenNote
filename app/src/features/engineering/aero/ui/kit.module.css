@@ -1,0 +1,230 @@
+/*
+ * The aerospace window: tool tabs, a form, the answer, plots, and worked steps. Tokens only, so it follows light,
+ * dark and contrast themes; fields stack at narrow widths and every control is at least the target size.
+ */
+@layer components {
+  .kit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .tab {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .tab:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border-color: var(--color-accent-primary);
+  }
+
+  .body,
+  .panel,
+  .answer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: 600;
+  }
+
+  .system {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .about,
+  .hint,
+  .note,
+  .source {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    align-content: start;
+    gap: var(--space-1);
+    font-size: var(--type-small-size);
+    min-inline-size: 0;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .quantity {
+    display: flex;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .quantity .input {
+    flex: 1 1 auto;
+  }
+
+  .input,
+  .unit {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    min-inline-size: 0;
+  }
+
+  .unit {
+    flex: 0 0 auto;
+    max-inline-size: 9rem;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .problem {
+    margin: 0;
+    padding: var(--space-3);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-inline-start: 4px solid var(--color-status-warning);
+    border-radius: var(--radius-sm);
+  }
+
+  .headline {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .rows {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    font-size: var(--type-small-size);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding-block: var(--space-1);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .row dt {
+    color: var(--color-text-secondary);
+  }
+
+  .row dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .figure {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .plot {
+    inline-size: 100%;
+    block-size: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .steps ol {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding-inline-start: var(--space-5);
+    font-size: var(--type-small-size);
+  }
+
+  .steps li {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .steps summary,
+  .assume summary {
+    cursor: pointer;
+    font-weight: 600;
+    min-block-size: var(--size-target-pointer);
+    display: flex;
+    align-items: center;
+  }
+
+  .assume p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .math {
+    display: block;
+    overflow-x: auto;
+    max-inline-size: 100%;
+  }
+
+  @media (width < 30rem) {
+    .row {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+  }
+}
