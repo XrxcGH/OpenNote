@@ -41,7 +41,7 @@ export function initialState(calc: Calc): FieldState {
       if (!(field.id in text)) text[field.id] = field.initial;
       if (field.kind === 'table')
         field.columns.forEach((c, i) => c.quantity && (unit[`${field.id}.${i}`] ??= unitsOf(c.quantity)[0]!));
-      else if (field.kind !== 'select' && field.quantity) unit[field.id] ??= unitsOf(field.quantity)[0]!;
+      else if (field.kind !== 'select' && field.quantity) unit[field.id] ??= field.unit ?? unitsOf(field.quantity)[0]!;
     }
   };
   add(fieldsOf(calc, { text, unit }));
@@ -100,7 +100,7 @@ export function parseFields(fields: readonly Field[], state: FieldState): Parsed
       return bad(field, 'errors.empty');
     }
     if (Number.isNaN(value)) return bad(field, 'errors.notNumber');
-    const si = toSi(field.quantity, value, state.unit[field.id]);
+    const si = toSi(field.quantity, value, state.unit[field.id] ?? field.unit);
     n[field.id] = si;
     o[field.id] = si;
   }

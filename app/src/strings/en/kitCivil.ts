@@ -1,6 +1,7 @@
 // The civil, environmental, and chemical engineering kit (owner: the civil lane). The window's own words are here;
 // each tool's labels, results, and worked steps are in a file of their own under ./kitCivil, all in this namespace.
 import { groundwater } from './kitCivil/groundwater';
+import { water } from './kitCivil/water';
 
 export const kitCivil = {
   title: 'Civil and chemical engineering',
@@ -46,6 +47,14 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    water: {
+      title: 'Water quality and treatment',
+      open: 'Open water quality and treatment',
+      keywords:
+        'water quality treatment wastewater bod oxygen sag streeter phelps dissolved oxygen saturation carbonate ' +
+        'alkalinity ph langelier ryznar hardness softening lime soda stokes settling sedimentation filter headloss ' +
+        'carman kozeny ergun disinfection chick watson ct membrane osmotic pressure flux rejection',
+    },
     groundwater: {
       title: 'Groundwater and wells',
       open: 'Open groundwater and wells',
@@ -56,4 +65,5 @@ export const kitCivil = {
     },
   },
   groundwater,
+  water,
 } as const;

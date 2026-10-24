@@ -91,6 +91,8 @@ export interface NumberField extends FieldBase {
   kind?: 'number';
   quantity?: Quantity;
   initial: string;
+  /** The unit the field starts in, when not the quantity's base unit. */
+  unit?: string;
   /** Left empty, the calculation gets null instead of an error. */
   optional?: boolean;
 }

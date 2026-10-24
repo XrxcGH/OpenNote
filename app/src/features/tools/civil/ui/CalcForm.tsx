@@ -199,7 +199,7 @@ function FieldControl(props: ControlProps) {
             id={`${id}-unit`}
             name={label(field.label)}
             units={units}
-            value={state.unit[field.id] ?? units[0]!}
+            value={state.unit[field.id] ?? field.unit ?? units[0]!}
             onChange={(unit) => setUnit(field.id, unit)}
           />
         ) : null}

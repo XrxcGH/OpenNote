@@ -64,6 +64,8 @@ export const QUANTITIES = {
   density2: [u('veh/km'), u('veh/mi', 1 / 1.609344)],
   percent: [u('%')],
   partition: [u('L/kg'), u('mL/g'), u('m³/kg', 1000)],
+  filterRate: [u('m/h'), u('m/s', 3600), u('m/d', 1 / 24), u('gal/(min·ft²)', 2.4448)],
+  lpmh: [u('L/(m²·h)'), u('m/s', 3.6e6), u('gal/(ft²·d)', 1.6976)],
 } as const satisfies Record<string, readonly UnitDef[]>;
 
 export type Quantity = keyof typeof QUANTITIES;

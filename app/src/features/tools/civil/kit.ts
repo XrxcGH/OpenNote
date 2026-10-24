@@ -4,4 +4,5 @@ import type { CivilToolId } from './meta';
 
 export const CIVIL_KIT: Readonly<Record<CivilToolId, () => Promise<readonly Calc[]>>> = {
   groundwater: () => import('./groundwater/calcs').then((module) => module.CALCS),
+  water: () => import('./water/calcs').then((module) => module.CALCS),
 };

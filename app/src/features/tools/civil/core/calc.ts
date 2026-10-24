@@ -7,7 +7,7 @@ export const num = (
   label: string,
   initial: string,
   quantity?: Quantity,
-  more: Partial<Pick<NumberField, 'optional' | 'help'>> = {},
+  more: Partial<Pick<NumberField, 'optional' | 'help' | 'unit'>> = {},
 ): NumberField => ({ id, label, initial, ...(quantity ? { quantity } : {}), ...more });
 
 export const opt = (id: string, label: string, initial: string, quantity?: Quantity): NumberField =>
