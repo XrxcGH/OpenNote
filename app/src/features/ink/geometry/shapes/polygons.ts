@@ -9,7 +9,13 @@ import type { Candidate, Shape } from './types';
 export const POLYGON_TOLERANCE = 0.05;
 
 const DEGREES = Math.PI / 180;
+/**
+ * A rectangle's corners are right angles within this on average (root mean square), and each within the larger angle.
+ * A parallelogram skewed by less is a rectangle (Beta 5 walk W2-2). A hand turns one corner of a box a good way off,
+ * but a trapezoid or a parallelogram has all four off at once.
+ */
 const RIGHT_ANGLE_TOLERANCE = 15 * DEGREES;
+const MAX_RIGHT_ANGLE_OFF = 22 * DEGREES;
 /** Sides within this of horizontal and vertical make an upright rectangle. */
 const UPRIGHT_TOLERANCE = 10 * DEGREES;
 /** A rectangle whose sides differ by less than this share is a square. */
@@ -35,7 +41,9 @@ function angleAt(corners: readonly Vec[], i: number): number {
 
 function rectangleShape(corners: readonly Vec[]): Shape | null {
   const angles = corners.map((_, i) => angleAt(corners, i));
-  if (angles.some((a) => Math.abs(a - Math.PI / 2) > RIGHT_ANGLE_TOLERANCE)) return null;
+  const off = angles.map((a) => Math.abs(a - Math.PI / 2));
+  const rms = Math.sqrt(off.reduce((sum, d) => sum + d * d, 0) / off.length);
+  if (rms > RIGHT_ANGLE_TOLERANCE || off.some((d) => d > MAX_RIGHT_ANGLE_OFF)) return null;
   const center = { x: corners.reduce((s, p) => s + p.x, 0) / 4, y: corners.reduce((s, p) => s + p.y, 0) / 4 };
   // Side directions repeat every 90 degrees, so averaging four times the angle averages them without wrap-around.
   let sin4 = 0;
