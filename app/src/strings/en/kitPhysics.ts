@@ -5,6 +5,7 @@ import { fields } from './kitPhysics/fields';
 import { geooptics } from './kitPhysics/geooptics';
 import { nuclear } from './kitPhysics/nuclear';
 import { spacecraft } from './kitPhysics/spacecraft';
+import { orbits } from './kitPhysics/orbits';
 import { relativity } from './kitPhysics/relativity';
 import { waveoptics } from './kitPhysics/waveoptics';
 import { waves } from './kitPhysics/waves';
@@ -62,4 +63,5 @@ export const kitPhysics = {
   nuclear,
   spacecraft,
   fields,
+  orbits,
 } as const;

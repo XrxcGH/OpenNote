@@ -11,6 +11,7 @@ export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string
   ['waveoptics', 'Rainbow'],
   ['relativity', 'HourglassMedium'],
   ['nuclear', 'Radioactive'],
+  ['orbits', 'Planet'],
   ['spacecraft', 'Rocket'],
 ];
 
