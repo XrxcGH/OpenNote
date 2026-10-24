@@ -139,3 +139,38 @@ describe('impossible input', () => {
   ];
   it.each(cases)('names %s', (want, f) => expect(code(f)).toBe(want));
 });
+
+describe('negative loop gain and complex break points', () => {
+  it('(1 − s)/(s² + 2s + 2) departs −1 + i at 63.435° by the 0° rule, along the locus', () => {
+    const g = readTF('(1 - s)/(s^2 + 2s + 2)');
+    const r = locusRules(g);
+    expect(r.negative).toBe(true);
+    const d = r.departures.find((x) => x.at.im > 0);
+    expect(d?.angleDeg).toBeCloseTo((Math.atan2(2, 1) * 180) / Math.PI, 9);
+    // Independent: a short step along that angle still satisfies ∠G = 180° (K = −D/N > 0 there).
+    const t = ((d?.angleDeg ?? 0) * Math.PI) / 180;
+    const s = cx(-1 + 1e-5 * Math.cos(t), 1 + 1e-5 * Math.sin(t));
+    expect(Math.abs(angleOfG(g, s))).toBeCloseTo(180, 2);
+    expect(r.asymptotes).toEqual([0]);
+    expect(r.steps.some((x) => x.key === 'locus.realAxisEven')).toBe(true);
+  });
+
+  it('−1/(s(s + 1)(s + 2)) has asymptotes 0° and ±120°, matching the poles at large K', () => {
+    const r = locusRules(readTF('-1/(s (s + 1) (s + 2))'));
+    expect([...r.asymptotes].sort((a, b) => a - b)).toEqual([-120, 0, 120]);
+    // At K = 1e9 the closed-loop poles of s³ + 3s² + 2s − K sit near the centroid −1 along the asymptotes.
+    const far = rootsOf(poly(1, 3, 2, -1e9)).map((z) => Math.round(deg(cx(z.re + 1, z.im))));
+    expect(far.sort((a, b) => a - b)).toEqual([-120, 0, 120]);
+  });
+
+  it('1/(s(s + 4)(s² + 4s + 20)) breaks at −2 (K = 64) and −2 ± j√6 (K = 100)', () => {
+    const r = locusRules(readTF('1/(s (s + 4) (s^2 + 4s + 20))'));
+    expect(r.breaks).toHaveLength(2);
+    expect(r.breaks[0].point.re).toBeCloseTo(-2, 9);
+    expect(r.breaks[0].point.im).toBe(0);
+    expect(r.breaks[0].k).toBeCloseTo(64, 8);
+    expect(r.breaks[1].point.re).toBeCloseTo(-2, 8);
+    expect(r.breaks[1].point.im).toBeCloseTo(Math.sqrt(6), 8);
+    expect(r.breaks[1].k).toBeCloseTo(100, 8);
+  });
+});

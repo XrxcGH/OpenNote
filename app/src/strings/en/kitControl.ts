@@ -429,8 +429,15 @@ export const kitControl = {
       realAxis: 'On the real axis it lies to the left of an odd number of real poles and zeros.',
       centroid: '{q} branches go to infinity along asymptotes from the centroid:',
       asymptotes: 'The asymptotes leave at {angles}:',
-      breakEquation: 'Break points are where K = −D/N has a turning point on the real axis:',
-      breaks: 'Break points with K > 0: {points}.',
+      negative:
+        'The leading coefficients of N and D have opposite signs, so G(s) already carries a factor −1 and the gain ' +
+        'K ≥ 0 follows the 0° locus: the angle condition is ∠G = 0° for the monic N/D, and the angles below start ' +
+        'from 0° instead of 180°.',
+      realAxisEven: 'On the real axis it lies to the left of an even number (including none) of real poles and zeros.',
+      breakEquation: 'Break points are where dK/ds = 0 for K = −D/N:',
+      breaks:
+        'Break points, on or off the real axis, where K is real and positive: {points}. A complex one comes with ' +
+        'its conjugate.',
       departure: 'From the angle condition, the locus leaves the pole {at} at {angle}°.',
       arrival: 'From the angle condition, the locus arrives at the zero {at} at {angle}°.',
       crossing: 'It crosses the imaginary axis at ω = {w} rad/s, when K = {k}.',
@@ -1419,6 +1426,9 @@ export const kitControl = {
       epsilon: 'An entry with ε shows its leading term as ε → 0⁺; only its sign matters for the count.',
       rootsCheck: 'The roots from a numerical solver are shown as a check on the count.',
       gainSign: 'K is the gain in the loop 1 + K G(s)H(s) = 0, and only K ≥ 0 is drawn.',
+      negativeLoop:
+        'G(s)H(s) has a negative leading-coefficient ratio (a zero such as 1 − s, or a negative gain), so the 0° ' +
+        'rules are used for the asymptotes, the angles and the real axis.',
       unity: 'Type G(s)H(s) without the gain K; with unity feedback, H(s) = 1.',
       repeated: 'Departure and arrival angles are shown for simple complex poles and zeros only.',
       dominant: 'The other closed-loop poles should be well to the left for the ζ line to set the response.',

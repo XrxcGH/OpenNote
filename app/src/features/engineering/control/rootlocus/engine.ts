@@ -7,6 +7,7 @@
 import { ControlError } from '../lib/errors';
 import { boundaryCrossings, breakPoints, closedPoly, gainAt, stableRanges, trackLocus, type Locus } from '../lib/locus';
 import { rootsOnGrid } from '../lib/num';
+import { trim } from '../lib/poly';
 import { step, type Step } from '../lib/steps';
 import {
   cabs,
@@ -222,6 +223,8 @@ export interface Rules {
   readonly arrivals: Angle[];
   readonly crossings: { at: number; k: number }[];
   readonly ranges: [number, number][];
+  /** True when N/D has a negative leading-coefficient ratio, so the 0° (complementary) rules apply for K ≥ 0. */
+  readonly negative: boolean;
   readonly locus: Locus;
   readonly steps: Step[];
 }
@@ -229,17 +232,18 @@ export interface Rules {
 const sameAs = (a: Complex, b: Complex) => cabs({ re: a.re - b.re, im: a.im - b.im }) < 1e-6 * Math.max(1, cabs(a));
 
 /**
- * The angle of departure from a pole, or of arrival at a zero, for each simple complex one: from the angle condition
- * near x, θ = 180° + Σ∠(x − the other kind) − Σ∠(x − the others of its own kind).
+ * The angle of departure from a pole, or of arrival at a zero, for each simple complex one. From the angle condition
+ * near x, θ = base + Σ∠(x − the other kind) − Σ∠(x − the others of its own kind). The base is 180°, or 0° when the
+ * loop's leading-coefficient ratio is negative.
  */
-function angles(own: readonly Complex[], other: readonly Complex[]): Angle[] {
+function angles(own: readonly Complex[], other: readonly Complex[], base: number): Angle[] {
   const out: Angle[] = [];
   own.forEach((x, i) => {
     if (x.im <= 1e-9 * Math.max(1, cabs(x))) return;
     if (own.some((y, j) => j !== i && sameAs(x, y))) return;
     const ownSum = own.reduce((s, y, j) => (j === i ? s : s + deg({ re: x.re - y.re, im: x.im - y.im })), 0);
     const otherSum = other.reduce((s, y) => s + deg({ re: x.re - y.re, im: x.im - y.im }), 0);
-    out.push({ at: x, angleDeg: wrap(180 + otherSum - ownSum) });
+    out.push({ at: x, angleDeg: wrap(base + otherSum - ownSum) });
   });
   return out;
 }
@@ -261,10 +265,23 @@ export function locusRules(g: TF): Rules {
   const sumP = poles.reduce((s, p) => s + p.re, 0);
   const sumZ = zeros.reduce((s, z) => s + z.re, 0);
   const centroid = q > 0 ? (sumP - sumZ) / q : null;
-  const asymptotes = Array.from({ length: q }, (_, k) => wrap(((2 * k + 1) * 180) / q));
-  const breaks = breakPoints(g.num, g.den).filter((b) => Math.abs(b.point.im) < 1e-7 * Math.max(1, cabs(b.point)));
-  const departures = angles(poles, zeros);
-  const arrivals = angles(zeros, poles);
+  // A negative leading ratio (such as a zero typed as 1 − s, or a negative plant gain) puts 180° in N/D itself, so
+  // K ≥ 0 follows the 0° locus: asymptotes at 2k·180°/q, angles from 0°, and the even-count real-axis rule.
+  const lead = (p: Poly) => {
+    const t = trim(p);
+    return t[t.length - 1];
+  };
+  const negative = lead(g.num) / lead(g.den) < 0;
+  const odd = negative ? 0 : 1;
+  const asymptotes = Array.from({ length: q }, (_, k) => wrap(((2 * k + odd) * 180) / q));
+  // Complex break points count too where K = −D/N is real and positive (breakPoints checks that); one per pair.
+  const isReal = (z: Complex) => Math.abs(z.im) < 1e-7 * Math.max(1, cabs(z));
+  const breaks = breakPoints(g.num, g.den)
+    .filter((b) => isReal(b.point) || b.point.im > 0)
+    .map((b) => (isReal(b.point) ? { ...b, point: cx(b.point.re) } : b))
+    .sort((a, b) => a.k - b.k);
+  const departures = angles(poles, zeros, negative ? 0 : 180);
+  const arrivals = angles(zeros, poles, negative ? 0 : 180);
   const crossings = boundaryCrossings(g.num, g.den, 's')
     .filter((c) => c.at > 0)
     .map((c) => ({ at: c.at, k: c.k }));
@@ -278,7 +295,7 @@ export function locusRules(g: TF): Rules {
     m
       ? step('locus.ends', { n: String(n), m: String(m), poles: list(poles), zeros: list(zeros) })
       : step('locus.endsNoZeros', { n: String(n), poles: list(poles) }),
-    step('locus.realAxis'),
+    ...(negative ? [step('locus.negative'), step('locus.realAxisEven')] : [step('locus.realAxis')]),
   ];
   if (centroid !== null) {
     steps.push(
@@ -290,22 +307,39 @@ export function locusRules(g: TF): Rules {
       step(
         'locus.asymptotes',
         { angles: asymptotes.map((a) => `${fmt(a)}°`).join(', ') },
-        `\\theta_k = \\frac{(2k + 1)\\,180^\\circ}{${q}}`,
+        negative ? `\\theta_k = \\frac{2k\\,180^\\circ}{${q}}` : `\\theta_k = \\frac{(2k + 1)\\,180^\\circ}{${q}}`,
       ),
     );
   }
   steps.push(
     step('locus.breakEquation', {}, `\\frac{d}{ds}\\left[-\\frac{D(s)}{N(s)}\\right] = 0 \\iff D'N - DN' = 0`),
     step('locus.breaks', {
-      points: breaks.map((b) => `s = ${complexText(b.point)} (K = ${fmt(b.k)})`).join('; ') || '—',
+      points: breaks.map((b) => `s = ${breakText(b.point)} (K = ${fmt(b.k)})`).join('; ') || '—',
     }),
   );
   departures.forEach((d) => steps.push(step('locus.departure', { at: complexText(d.at), angle: fmt(d.angleDeg) })));
   arrivals.forEach((d) => steps.push(step('locus.arrival', { at: complexText(d.at), angle: fmt(d.angleDeg) })));
   crossings.forEach((c) => steps.push(step('locus.crossing', { w: fmt(c.at), k: fmt(c.k) })));
   steps.push(step('locus.ranges', { ranges: rangesText(ranges) }));
-  return { poles, zeros, centroid, asymptotes, breaks, departures, arrivals, crossings, ranges, locus, steps };
+  return {
+    poles,
+    zeros,
+    centroid,
+    asymptotes,
+    breaks,
+    departures,
+    arrivals,
+    crossings,
+    ranges,
+    negative,
+    locus,
+    steps,
+  };
 }
+
+/** A break point as text; a complex one stands for its conjugate pair, "a ± bi". */
+export const breakText = (z: Complex): string =>
+  z.im === 0 ? complexText(z) : `${complexText(cx(z.re))} ± ${complexText(cx(0, Math.abs(z.im)))}`;
 
 /** K N(s) in LaTeX: "K", "2\,K", or "K(s + 1)". */
 function gainTerm(g: TF): string {

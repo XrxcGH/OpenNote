@@ -9,6 +9,7 @@ import type { PlotSpec, Series } from '../ui/plot';
 import { inField } from '../ui/read';
 import { FieldProblem, type Outcome, type Row, type Table, type ToolSpec, type Values } from '../ui/spec';
 import {
+  breakText,
   closedAt,
   gainForDamping,
   gainForPoint,
@@ -121,7 +122,11 @@ function locusPlot(r: Rules, marks: readonly Complex[]): PlotSpec {
       style: 'markers',
       marker: 'dot',
       pen: 3,
-      points: r.breaks.map((b) => [b.point.re, b.point.im] as const),
+      // A complex break point stands for its conjugate pair; mark both.
+      points: r.breaks.flatMap((b) => {
+        const { re, im } = b.point;
+        return im ? [[re, im] as const, [re, -im] as const] : [[re, 0] as const];
+      }),
     });
   if (marks.length)
     extra.push({
@@ -149,7 +154,7 @@ function runLocus(values: Values): Outcome {
     { id: 'asymptotes', value: r.asymptotes.map((a) => `${fmt(a)}°`).join(', ') || '—', answer: true },
     {
       id: 'breaks',
-      value: r.breaks.map((b) => `${complexText(b.point)} (K = ${fmt(b.k)})`).join('; ') || '—',
+      value: r.breaks.map((b) => `${breakText(b.point)} (K = ${fmt(b.k)})`).join('; ') || '—',
       answer: true,
     },
     ...r.departures.map((d) => ({ id: 'departure', vars: { at: complexText(d.at) }, value: `${fmt(d.angleDeg)}°` })),
@@ -166,7 +171,7 @@ function runLocus(values: Values): Outcome {
     steps: r.steps,
     tables: [{ id: 'gains', columns: ['k', 'closedPoles'], rows: unique.map((k) => [fmt(k), list(closedAt(g, k))]) }],
     plots: [locusPlot(r, [])],
-    notes: [{ id: 'gainSign' }, { id: 'unity' }, { id: 'repeated' }],
+    notes: [{ id: 'gainSign' }, ...(r.negative ? [{ id: 'negativeLoop' }] : []), { id: 'unity' }, { id: 'repeated' }],
   };
 }
 
