@@ -64,7 +64,10 @@ test('the layout has no findings beyond the known list', () => {
   // A cell the run skipped cannot show that a finding is gone, so the list is checked for staleness only after a full run.
   const full = cells.length === CELLS.length;
   const gone = full ? known.filter((key) => !found.has(key)) : [];
-  expect(noReason, 'known findings with no reason (say why each cannot be fixed, in tests/ui/audit/known.json)').toEqual([]);
+  expect(
+    noReason,
+    'known findings with no reason (say why each cannot be fixed, in tests/ui/audit/known.json)',
+  ).toEqual([]);
   expect(fresh, 'findings that are not in tests/ui/audit/known.json (fix them, or list them)').toEqual([]);
   expect(gone, 'listed findings that no longer occur (remove them from tests/ui/audit/known.json)').toEqual([]);
 });
