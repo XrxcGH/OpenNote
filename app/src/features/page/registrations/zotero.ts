@@ -2,7 +2,7 @@
 // window. This file loads at start-up, so it holds only definitions; the editor work loads on first use.
 import { commands } from '../../../registries';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { ZOTERO_EVENT } from '../../tools/flags';
 import { targetEditor } from '../formattingBar/target';
 
@@ -16,7 +16,7 @@ const COMMANDS = [
 
 async function run(command: (typeof COMMANDS)[number][0]): Promise<void> {
   const editor = targetEditor();
-  if (!editor) return announce(t('study.citations.zotero.noPage'));
+  if (!editor) return say(t('study.citations.zotero.noPage'));
   const { zoteroCommand } = await import('../../citations');
   await zoteroCommand(command, editor);
 }

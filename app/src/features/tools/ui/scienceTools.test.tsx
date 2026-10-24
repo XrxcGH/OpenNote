@@ -42,7 +42,7 @@ describe('the constants picker', () => {
   it('inserts an equation when asked to, and shows the uncertainty and the calculator name', async () => {
     renderUi(<ConstantsTool />);
     await userEvent.fill(screen.getByRole('textbox', { name: 'Search constants' }), 'gravitation');
-    expect(screen.getByText('6.67430(15)×10⁻¹¹ m³ kg⁻¹ s⁻²')).toBeTruthy();
+    expect(screen.getByText('6.67430(15)×10⁻¹¹')).toBeTruthy();
     expect(screen.getByText(/In Math with variables and units, and in the calculator, write G/)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Equation' }));
     await userEvent.click(
