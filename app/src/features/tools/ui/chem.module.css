@@ -3,8 +3,16 @@
  * card, and a step list on tokens. Nothing here depends on color alone.
  */
 @layer components {
+  /* The kind select, then the form: one gap between them, as between the form's own rows. */
+  .panel {
+    display: grid;
+    align-content: start;
+    gap: var(--space-4);
+  }
+
   .grid {
     display: grid;
+    align-items: start;
     grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
     gap: var(--space-3);
   }

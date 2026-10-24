@@ -44,11 +44,10 @@
     font-size: var(--type-small-size);
   }
 
-  .field input[type='file'],
   .field input[type='text'],
   .field select,
   .field textarea {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding: var(--space-2) var(--space-3);
     font: inherit;
     color: var(--color-text-primary);
@@ -57,17 +56,43 @@
     border-radius: var(--radius-sm);
   }
 
+  /* The file pickers keep the real input, with its button drawn like the other buttons and no second box around it. */
+  .field input[type='file'] {
+    min-block-size: var(--target-size);
+    font: inherit;
+    color: var(--color-text-secondary);
+  }
+
+  .field input[type='file']::file-selector-button {
+    min-block-size: var(--target-size);
+    margin-inline-end: var(--space-3);
+    padding-inline: var(--space-5);
+    font: inherit;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+  }
+
+  .field input[type='file']::file-selector-button:hover {
+    background: var(--color-surface-hover);
+  }
+
   .buttons {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
   }
 
+  /* A section heading: set apart from the field labels by its size, weight, and color. 24 px above (the grid gap and
+     this margin), 8 px below (the gap, less what this takes back). */
   .heading {
-    margin: 0;
-    font-size: var(--type-small-size);
+    margin: var(--space-2) 0 calc(-1 * var(--space-2));
+    font-size: var(--type-body-size);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
   }
 
   .muted {

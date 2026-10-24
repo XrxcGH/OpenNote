@@ -33,6 +33,7 @@ import { AnswerActions, MatrixMode, Programmer, Statistics } from './CalculatorM
 import { CALCULATOR_MODES, followCalculatorMode, saveCalculatorMode, savedCalculatorMode } from './calculatorMode';
 import type { CalculatorMode } from './calculatorMode';
 import { loadStored, saveStored, watchStored } from './storage';
+import { useSelectedTabInView } from './tabScroll';
 import styles from './tools.module.css';
 import own from './calculator.module.css';
 
@@ -169,6 +170,7 @@ export function CalculatorTool() {
     saveCalculatorMode(next);
   };
   const tabs = useRef<HTMLDivElement>(null);
+  useSelectedTabInView(tabs, tab);
   const move = (from: Mode, key: string): Mode | null => {
     const at = modes.indexOf(from);
     if (key === 'ArrowRight') return modes[(at + 1) % modes.length];
@@ -183,7 +185,7 @@ export function CalculatorTool() {
         ref={tabs}
         role="tablist"
         aria-label={t('smart.tools.calculator.tabs')}
-        className={`${styles.tabs} ${own.modeTabs}`}
+        className={styles.tabs}
       >
         {modes.map((id) => (
           <button
@@ -450,7 +452,7 @@ function MemoryBar({ session, onChange, onRecall }: MemoryProps) {
   const slot = session.memory[0];
   return (
     <>
-      <div className={styles.buttons}>
+      <div className={`${styles.buttons} ${own.flush}`}>
         <Button
           variant="quiet"
           aria-pressed={session.angle === 'deg'}
@@ -546,7 +548,7 @@ function Graphing({ store, first }: { store: string; first: string }) {
           saveStored(store, next);
         }}
       />
-      <div className={styles.buttons}>
+      <div className={`${styles.buttons} ${own.flush}`}>
         <Button
           variant="quiet"
           onClick={() => insertIntoPage({ graph: source }) && announce(t('smart.tools.calculator.inserted'))}

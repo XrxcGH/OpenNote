@@ -94,7 +94,12 @@ export function FormulaSheetTool() {
 
   return (
     <div className={docs.tool}>
-      <RadioGroup<Source> label={t('docStructure.sheet.from')} value={source} onChange={setSource}>
+      <RadioGroup<Source>
+        label={t('docStructure.sheet.from')}
+        value={source}
+        onChange={setSource}
+        columns={chosen >= 2 ? 3 : 2}
+      >
         <RadioCard<Source> value="current" label={t('docStructure.sheet.current')} />
         {chosen >= 2 ? (
           <RadioCard<Source> value="selected" label={t('docStructure.sheet.selected', { count: chosen })} />
