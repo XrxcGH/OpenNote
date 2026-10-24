@@ -12,6 +12,62 @@ function erf(x: number): number {
   return 1 - poly * Math.exp(-x * x);
 }
 
+describe('mass diffusion mode', () => {
+  it('semi-infinite solid with a held surface: C = Cs + (Ci - Cs) erf(x / 2 sqrt(D t)) = 55.6187 kg/m3 (SciPy)', () => {
+    const o = solve({
+      mode: 'semi',
+      quantity: 'diffusion',
+      surface: 'temperature',
+      dab: '1.6e-11 m^2/s',
+      cInitial: '15.6 kg/m^3',
+      cSurface: '78 kg/m^3',
+      depth: '0.5 mm',
+      time: '36000 s',
+    });
+    expect(row(o, 'concentration')).toBeCloseTo(55.61865913746451, 5);
+    expect(row(o, 'eta')).toBeCloseTo(0.3294039229342062, 6);
+    const step = o.steps.find((x) => x.key === 'fhTransSemiCS');
+    expect(step?.vars?.T).toEqual({ v: row(o, 'concentration'), k: 'density' });
+    expect(step?.math).not.toMatch(/T_|\\alpha/);
+    expect(o.rows.some((r) => r.id === 'temperature')).toBe(false);
+  });
+  it('lumped solid: tau = Lc / hm, Bi_m = hm Lc / D, and C = Cinf + (Ci - Cinf) exp(-t / tau)', () => {
+    const o = solve({
+      quantity: 'diffusion',
+      dab: '1e-9 m^2/s',
+      hm: '1e-6 m/s',
+      cInitial: '10 kg/m^3',
+      cFluid: '2 kg/m^3',
+      time: '100 s',
+    });
+    const lc = 0.005 / 3;
+    const tau = lc / 1e-6;
+    expect(row(o, 'tau')).toBeCloseTo(tau, 9);
+    expect(row(o, 'biotMass')).toBeCloseTo((1e-6 * lc) / 1e-9, 9);
+    expect(row(o, 'concentration')).toBeCloseTo(2 + 8 * Math.exp(-100 / tau), 9);
+  });
+  it('plane wall: Bi_m = hm L / D = 2 and Fo_m = D t / L^2 = 0.25', () => {
+    const o = solve({
+      mode: 'solid',
+      shape: 'wall',
+      size: '2 mm',
+      quantity: 'diffusion',
+      dab: '1e-9 m^2/s',
+      hm: '1e-6 m/s',
+      cInitial: '10 kg/m^3',
+      cFluid: '0 kg/m^3',
+      position: '0',
+      time: '1000 s',
+    });
+    expect(row(o, 'biotMass')).toBeCloseTo(2, 9);
+    expect(row(o, 'fourierMass')).toBeCloseTo(0.25, 9);
+    expect(row(o, 'centerConcentration')).toBeLessThan(10);
+  });
+  it('heat mode is unchanged and still has no concentration rows', () => {
+    expect(solve().rows.some((r) => r.id === 'concentration')).toBe(false);
+  });
+});
+
 describe('transient conduction form', () => {
   it('lumped sphere: tau = rho cp (R/3) / h and T = Tinf + (Ti - Tinf) exp(-t / tau)', () => {
     const o = solve();

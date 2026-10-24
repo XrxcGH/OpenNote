@@ -56,6 +56,7 @@ export const KINDS = {
   diffusivity: { dim: D(2, 0, -1), si: shown('cm²/s', 1e-4), us: shown('ft²/h', FT ** 2 / 3600) },
   power: { dim: D(2, 1, -3), si: shown('kW', 1e3), us: shown('hp', 745.69987158227) },
   heat: { dim: D(2, 1, -3), si: shown('W', 1), us: shown('Btu/h', BTU / 3600) },
+  massFlux: { dim: D(-2, 1, -1), si: shown('kg/(m²·s)', 1), us: shown('lb/(h·ft²)', LB / 3600 / FT ** 2) },
   heatFlux: { dim: D(0, 1, -3), si: shown('W/m²', 1), us: shown('Btu/(h·ft²)', BTU / 3600 / FT ** 2) },
   conductivity: {
     dim: D(1, 1, -3, -1),

@@ -6,6 +6,7 @@ export const transient = {
     'semi-infinite solid time constant diffusion',
   field: {
     mode: 'Problem',
+    quantity: 'What is changing',
     shape: 'Shape',
     size: 'Sphere or cylinder radius, or half the thickness of a wall',
     k: 'Thermal conductivity, k',
@@ -23,6 +24,14 @@ export const transient = {
     tSurface: 'Surface temperature, Ts',
     flux: 'Heat flux into the solid, q″',
     tFluidSemi: 'Fluid temperature, T∞',
+    dab: 'Mass diffusivity, DAB',
+    hm: 'Mass transfer coefficient, hm',
+    cInitial: 'Initial concentration, Ci',
+    cFluid: 'Concentration of the fluid, C∞',
+    cTarget: 'Target concentration (optional, to find the time)',
+    cSurface: 'Surface concentration, Cs',
+    cFluidSemi: 'Concentration of the fluid, C∞',
+    massFlux: 'Mass flux into the solid, j″',
   },
   option: {
     lumped: 'Lumped capacitance (a uniform temperature)',
@@ -31,14 +40,17 @@ export const transient = {
     sphere: 'Sphere',
     cylinder: 'Long cylinder',
     wall: 'Plane wall (heated or cooled on both faces)',
-    temperature: 'Surface held at a temperature',
-    flux: 'Constant heat flux into the surface',
+    heatTransfer: 'Temperature (heat conduction)',
+    diffusion: 'Concentration (mass diffusion, with Bim = hm L / DAB)',
+    temperature: 'Surface held at a fixed temperature or concentration',
+    flux: 'Constant heat or mass flux into the surface',
     convection: 'Surface in a fluid (convection)',
   },
   example: {
     sphere: 'A copper sphere cooling in air',
     steel: 'A steel slab quenched in a bath',
     ground: 'Ground warmed from the surface for a day',
+    carburizing: 'Carbon diffusing into steel from a rich surface',
   },
   row: {
     temperature: 'Temperature at that time',
@@ -52,6 +64,12 @@ export const transient = {
     heatFraction: 'Share of the largest possible heat transfer so far',
     fourier: 'Fourier number, Fo',
     eta: 'Similarity variable, η',
+    concentration: 'Concentration at that time',
+    centerConcentration: 'Center concentration',
+    surfaceConcentration: 'Surface concentration',
+    biotMass: 'Mass Biot number, Bim',
+    fourierMass: 'Mass Fourier number, Fom',
+    transferFraction: 'Share of the largest possible mass transfer so far',
   },
   word: { valid: 'Yes (Bi is 0.1 or less)', invalid: 'No, Bi is above 0.1: use the series solution' },
   note: {
@@ -59,6 +77,13 @@ export const transient = {
     solid:
       'A solid with constant properties, an initial uniform temperature, and a sudden change to ' +
       'convection at the surface.',
+    lumpedMass:
+      'The solid is taken to have one concentration at every instant, which is accurate when Bim is 0.1 or less.',
+    solidMass:
+      'A solid with constant diffusivity, a uniform initial concentration, and a sudden change to convective ' +
+      'mass transfer at the surface. Use a concentration in kg/m³ (a mass fraction can be given as a density by ' +
+      'multiplying it by the density of the solid).',
+    semiMass: 'The solid is deep enough that its far end stays at the initial concentration during the time you give.',
     semi: 'The solid is deep enough that its far end stays at the initial temperature during the time you give.',
     fhTransWarnBiot:
       'The Biot number is above 0.1, so the temperature is not uniform and the lumped model is not accurate.',
@@ -66,7 +91,12 @@ export const transient = {
       'The Fourier number is very small, so the series needs many terms and the result is less certain.',
     fhTransWarnOneTerm: 'The one-term approximation is only accurate for a Fourier number above 0.2.',
   },
-  plot: { position: 'Position (0 center, 1 surface)', temperature: 'Temperature', profile: 'Temperature profile' },
+  plot: {
+    concentration: 'Concentration',
+    position: 'Position (0 center, 1 surface)',
+    temperature: 'Temperature',
+    profile: 'Temperature profile',
+  },
   picture: 'The temperature profile from the center to the surface at that time',
 } as const;
 
@@ -83,4 +113,8 @@ export const transientStep = {
   fhTransSemiT: 'The temperature at that depth is T = {T}.',
   fhTransSemiQ: 'With constant heat flux the temperature at that depth is T = {T}.',
   fhTransSemiH: 'With surface convection the temperature at that depth is T = {T}.',
+  fhTransLumpedC: 'After that time the concentration is C = {T}.',
+  fhTransSemiCS: 'The concentration at that depth is C = {T}.',
+  fhTransSemiCQ: 'With constant mass flux the concentration at that depth is C = {T}.',
+  fhTransSemiCH: 'With surface convection the concentration at that depth is C = {T}.',
 } as const;
