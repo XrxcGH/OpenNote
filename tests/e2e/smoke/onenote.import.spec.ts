@@ -59,7 +59,11 @@ describe('OneNote import in the real app', { skip: skipReason() }, () => {
   const profileDir = mkdtempSync(join(tmpdir(), 'opennote-e2e-onenote-'));
 
   before(async () => {
-    first = await importFrom('alice@example.com', graph('Biology', 'Cells', 'Mitosis', 'Alice wrote this.'), profileDir);
+    first = await importFrom(
+      'alice@example.com',
+      graph('Biology', 'Cells', 'Mitosis', 'Alice wrote this.'),
+      profileDir,
+    );
   });
 
   after(async () => {
