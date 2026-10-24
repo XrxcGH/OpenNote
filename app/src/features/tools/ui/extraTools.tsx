@@ -28,7 +28,16 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The modern physics and astronomy tools load the first time their window opens.
+const ModPhysWindow = lazy(() => import('../modphys/Window'));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
+  if (tool === 'kit-modphys')
+    return (
+      <Suspense fallback={null}>
+        <ModPhysWindow />
+      </Suspense>
+    );
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
     return (

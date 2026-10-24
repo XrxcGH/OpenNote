@@ -22,3 +22,4 @@ export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
+export { openModPhys } from './modphys/open';

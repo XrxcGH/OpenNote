@@ -70,3 +70,8 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
+
+// The modern physics and astronomy tools' flag and their list, which the palette registers at start-up.
+export { MODPHYS_FLAGS } from './modphys/flags';
+export type { ModPhysFlagId } from './modphys/flags';
+export { MODPHYS_TOOLS } from './modphys/meta';

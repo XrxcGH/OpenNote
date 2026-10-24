@@ -1,0 +1,8 @@
+// The tools the modern physics window lists. Each tool's forms and engine load the first time it is shown.
+import { lazy } from 'react';
+import type { ComponentType, LazyExoticComponent } from 'react';
+import type { ModPhysToolId } from './meta';
+
+export const KIT: Record<ModPhysToolId, LazyExoticComponent<ComponentType>> = {
+  plasma: lazy(() => import('./plasma/Tool')),
+};
