@@ -25,6 +25,20 @@ import { spec } from './tool';
 
 const close = (a: number, b: number, rel: number) => expect(Math.abs(a - b)).toBeLessThanOrEqual(rel * Math.abs(b));
 
+/**
+ * |Vout/Vin| of a Sallen-Key high-pass by nodal solve. Unknowns Va (middle node) and Vb (amplifier input = output);
+ * C1 from the input to a, C2 from a to b, R1 from a to the output, R2 from b to ground.
+ */
+function nodalSallenKeyHigh(r1: number, r2: number, c1: number, c2: number, f: number): number {
+  const w = 2 * Math.PI * f;
+  const a = [
+    [cx(1 / r1, w * (c1 + c2)), cx(-1 / r1, -w * c2)],
+    [cx(0, -w * c2), cx(1 / r2, w * c2)],
+  ];
+  const x = solveComplex(a, [cx(0, w * c1), cx(0)]);
+  return cAbs(x![1]!);
+}
+
 /** |Vout/Vin| of a Sallen-Key low-pass found by solving the nodal equations at one frequency, with no formula for Q. */
 function nodalSallenKeyLow(r1: number, r2: number, c1: number, c2: number, f: number): number {
   const w = 2 * Math.PI * f;
@@ -89,7 +103,10 @@ describe('second-order sections', () => {
   it('Sallen-Key high-pass and multiple-feedback low-pass', () => {
     const h = sallenKeyHigh(1e4, 2e4, 10e-9, 10e-9);
     close(h.f0, 1 / (2 * Math.PI * Math.sqrt(1e4 * 2e4 * 1e-16)), 1e-12);
-    close(biquadResponse(h, true, [h.f0])[0]!, 20 * Math.log10(h.q), 1e-9);
+    // Hand derivation: Q = sqrt(R2 C1 C2 / R1) / (C1 + C2) = 0.70711; the nodal solve gives |H(f0)| = Q independently.
+    close(h.q, Math.SQRT1_2, 1e-9);
+    close(nodalSallenKeyHigh(1e4, 2e4, 10e-9, 10e-9, h.f0), 0.70711, 1e-5);
+    close(nodalSallenKeyHigh(1e4, 2e4, 10e-9, 10e-9, 1e6), 1, 1e-3);
     const m = multipleFeedbackLow(1e4, 1e4, 1e4, 10e-9, 1e-9);
     close(m.q, Math.sqrt(1e8 * 1e-17) / (1e-9 * 3e4), 1e-12);
     close(m.gain, -1, 1e-12);

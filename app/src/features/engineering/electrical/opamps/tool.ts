@@ -328,7 +328,7 @@ function activeSection(values: Values): KitOk {
     notes = ['skHighNote', 'opampNote'];
     steps = [
       { key: 'skF0', math: 'f_0 = \\frac{1}{2\\pi\\sqrt{R_1R_2C_1C_2}}' },
-      { key: 'skQ', math: 'Q = \\frac{\\sqrt{R_1R_2C_1C_2}}{R_2\\,(C_1 + C_2)}' },
+      { key: 'skQ', math: 'Q = \\frac{\\sqrt{R_1R_2C_1C_2}}{R_1\\,(C_1 + C_2)}' },
     ];
   } else if (kind === 'mfbLow') {
     const r3 = positive(values, 'sr3', 'sectionR3', 'Ω');

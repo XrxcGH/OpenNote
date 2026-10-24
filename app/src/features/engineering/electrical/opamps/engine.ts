@@ -73,7 +73,7 @@ export function sallenKeyLow(r1: number, r2: number, c1: number, c2: number): Se
 /** Unity-gain Sallen-Key high-pass: c1 from the input, c2 to the amplifier, r1 from the middle node to the output, r2 to ground. */
 export function sallenKeyHigh(r1: number, r2: number, c1: number, c2: number): Section {
   const root = Math.sqrt(r1 * r2 * c1 * c2);
-  return { f0: 1 / (2 * Math.PI * root), q: root / (r2 * (c1 + c2)), gain: 1 };
+  return { f0: 1 / (2 * Math.PI * root), q: root / (r1 * (c1 + c2)), gain: 1 };
 }
 
 /**
