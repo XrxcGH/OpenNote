@@ -2,41 +2,12 @@
 // window, panels between the toolbar and the status bar, the title in line with the text, and the Properties chip
 // inside the page. Each is measured from bounding boxes, at the window widths and zoom levels people use.
 
-import type { Locator, Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { loadScreens, openScreen, VIEWPORTS } from '../screens';
 import { runCommand } from './smart';
 
 const WIDTHS = [1280, 1600, 2000] as const;
-
-/** Where a panel is and what it sits in, for the message of a geometry check that fails. */
-function whereIs(panel: Locator): Promise<string> {
-  return panel.evaluate((one) => {
-    const chain: string[] = [];
-    for (let node = one.parentElement; node; node = node.parentElement) {
-      const style = getComputedStyle(node);
-      const size = `${node.clientWidth}/${node.offsetWidth}`;
-      chain.push(`${node.tagName}.${String(node.className).slice(0, 24)} ${size} ${style.position} ${style.transform}`);
-    }
-    const box = one.getBoundingClientRect();
-    const client = document.documentElement.clientWidth;
-    return JSON.stringify({ x: box.x, w: box.width, inner: innerWidth, client, chain });
-  });
-}
-
-/** Waits for a panel that slides in to stop moving: its box is the same on two frames in a row. */
-async function settled(page: Page, panel: Locator): Promise<void> {
-  let last = '';
-  await expect
-    .poll(async () => {
-      const now = JSON.stringify(await panel.boundingBox());
-      await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-      const same = now === last;
-      last = now;
-      return same;
-    })
-    .toBe(true);
-}
 
 async function openMembranes(page: Page, width: number, fixture = 'smart') {
   await page.setViewportSize({ width, height: 900 });
@@ -169,7 +140,6 @@ test.describe('panels stay between the toolbar and the status line', () => {
         await openTool(page, `Open ${tool.toLowerCase()}`);
         const panel = page.getByRole('dialog', { name: tool });
         await expect(panel).toBeVisible();
-        await settled(page, panel);
         const edges = await chrome(page);
         expect(edges.bottom, 'the status line shows').toBeLessThan(height);
         const box = (await panel.boundingBox())!;
@@ -192,7 +162,6 @@ test.describe('a docked panel leaves the page alone', () => {
         await openTool(page, 'Open citations');
         const panel = page.getByRole('dialog', { name: 'Citations' });
         await expect(panel).toBeVisible();
-        await settled(page, panel);
         const edges = await chrome(page);
         const found = await page.evaluate(() => {
           const rect = (element: Element | null) => {
@@ -245,33 +214,23 @@ test.describe('a docked panel leaves the page alone', () => {
     }
   }
 
-  test('at 1100 the panel overlays from the right edge with a shadow', async ({ page }) => {
+  test('at 1100 the panel overlays from the right edge with a shadow, 8 px clear of the scroll bar', async ({
+    page,
+  }) => {
     await openMembranes(page, 1100);
     await openTool(page, 'Open citations');
     const panel = page.getByRole('dialog', { name: 'Citations' });
     await expect(panel).toBeVisible();
-    // The panel stops short of the page's scroll bar where the system draws one, 15 pixels wide on the CI runners.
-    const edge = await page.evaluate(() => {
-      // The host measures the system's scroll bar once and sets this variable, even when this page does not overflow.
-      const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scrollbar-size')) || 0;
-      return document.documentElement.clientWidth - bar;
+    const box = (await panel.boundingBox())!;
+    const track = await page.evaluate(() => {
+      const scroller =
+        document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]') ?? document.querySelector('main')!;
+      return scroller.getBoundingClientRect().left + scroller.clientLeft + scroller.clientWidth;
     });
-    // The panel slides in, so measure once it has settled at the edge.
-    await expect
-      .poll(
-        async () => {
-          const box = (await panel.boundingBox())!;
-          return box.x + box.width;
-        },
-        { message: 'from the right edge' },
-      )
-      .toBeGreaterThanOrEqual(edge - 1)
-      .catch(async (error: Error) => {
-        throw new Error(`${error.message} (edge ${edge}) ${await whereIs(panel)}`);
-      });
+    expect(box.x + box.width, 'from the right edge, 8 px clear of the scroll bar').toBeCloseTo(track - 8, 0);
     expect(await panel.evaluate((one) => getComputedStyle(one).boxShadow)).not.toBe('none');
     const main = await page.evaluate(() => document.querySelector('main')!.getBoundingClientRect().right);
-    expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(edge - 1);
+    expect(main, 'the page keeps its width').toBeGreaterThanOrEqual(1100 - 1);
   });
 
   test('the edge resizes the panel and the width is remembered', async ({ page }) => {
@@ -324,17 +283,9 @@ test('a tool window wider than a phone-size window stays inside it', async ({ pa
   await page.getByRole('treeitem', { name: 'Membranes' }).first().click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
   await openTool(page, 'Open citations');
-  const panel = page.getByRole('dialog', { name: 'Citations' });
-  // The window slides in, so measure once it has settled.
-  await expect
-    .poll(async () => {
-      const box = (await panel.boundingBox())!;
-      return box.x >= 0 && box.x + box.width <= 420;
-    })
-    .toBe(true)
-    .catch(async (error: Error) => {
-      throw new Error(`${error.message} ${await whereIs(panel)}`);
-    });
+  const box = (await page.getByRole('dialog', { name: 'Citations' }).boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(420);
 });
 
 test('a long title wraps before the Properties chip', async ({ page }) => {
