@@ -15,6 +15,22 @@ export { solveCircuit } from './circuit/solve';
 export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
 
+/** The thermodynamics kit window, which loads on first open. */
+export const loadThermoKit = () => import('./thermo/ui/ThermoKit');
+
+/** Opens the thermodynamics kit on a tool, such as 'steam', or where it was left. */
+export async function openThermoTool(tool?: string): Promise<void> {
+  if (tool) {
+    const [{ chooseTool }, { THERMO_TOOL_IDS }] = await Promise.all([
+      import('./thermo/ui/store'),
+      import('./thermo/meta'),
+    ]);
+    const known = THERMO_TOOL_IDS.find((id) => id === tool);
+    if (known) chooseTool(known);
+  }
+  (await import('../tools')).openTool('kit-thermo');
+}
+
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
   return mountPanel(FbdPanel)(container, props);

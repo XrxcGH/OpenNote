@@ -1,7 +1,8 @@
 // Flags for the engineering tools: on through Beta while they are new, off in Stable until people have tried them.
 import type { FlagDef } from '../../app/flags';
 
-export type EngineeringFlagId = 'engineering.fbd' | 'engineering.structures' | 'engineering.circuit' | 'tables.units';
+export type EngineeringFlagId =
+  'engineering.fbd' | 'engineering.structures' | 'engineering.circuit' | 'tables.units' | 'kits.thermo';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
@@ -24,4 +25,8 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
   ),
   flag('engineering.circuit', 'Circuit symbols and the DC circuit solver: node voltages and branch currents.'),
   flag('tables.units', 'Units and engineering notation in smart table columns, with totals that convert units.'),
+  flag(
+    'kits.thermo',
+    'The thermodynamics kit: steam, refrigerant, and gas properties, devices, cycles, psychrometrics, and combustion.',
+  ),
 ];
