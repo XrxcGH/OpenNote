@@ -14,15 +14,23 @@ const lines = (solved: Solved, system: System) =>
     return `${shown.label}: ${shown.value}${shown.unit ? ` ${shown.unit}` : ''}`;
   });
 
-const stepText = (solved: Solved) =>
-  solved.steps.map((step, i) => `${i + 1}. ${tr(step.key, step.vars)}${step.math ? `  ${step.math}` : ''}`).join('\n');
-
 export function plotText(solved: Solved) {
   const plot = solved.plot!;
   return { x: tr(plot.xLabel), y: tr(plot.yLabel), series: plot.series.map((s) => tr(s.label, s.labelVars)) };
 }
 
 const done = (ok: boolean) => announce(tr(ok ? 'kitChemMat.common.inserted' : 'kitChemMat.common.noPage'));
+
+/** The answer, then each step as a line of words followed by its equation as a math block, never as LaTeX source. */
+function insertSteps(solved: Solved, system: System) {
+  let ok = insertIntoPage({ text: lines(solved, system).join('\n') });
+  solved.steps.forEach((step, i) => {
+    if (!ok) return;
+    ok = insertIntoPage({ text: `${i + 1}. ${tr(step.key, step.vars)}` });
+    if (ok && step.math) ok = insertIntoPage({ math: { source: step.math, display: true } });
+  });
+  done(ok);
+}
 
 function insertTable(solved: Solved, system: System) {
   const header = [tr('kitChemMat.common.quantity'), tr('kitChemMat.common.value'), tr('kitChemMat.common.unit')];
@@ -48,10 +56,7 @@ export function InsertBar({ solved, system, toolId }: { solved: Solved; system: 
       <Button variant="primary" onClick={() => done(insertIntoPage({ text: lines(solved, system).join('\n') }))}>
         {tr('kitChemMat.common.insertAnswer')}
       </Button>
-      <Button
-        variant="quiet"
-        onClick={() => done(insertIntoPage({ text: `${lines(solved, system).join('\n')}\n${stepText(solved)}` }))}
-      >
+      <Button variant="quiet" onClick={() => insertSteps(solved, system)}>
         {tr('kitChemMat.common.insertSteps')}
       </Button>
       <Button variant="quiet" onClick={() => insertTable(solved, system)}>
