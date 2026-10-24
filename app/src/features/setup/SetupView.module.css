@@ -177,8 +177,6 @@
 
   .footer > :first-child:not(:last-child) {
     margin-inline-end: auto;
-    /* Back's text lines up with the step's left edge, as Continue's edge meets the right. */
-    margin-inline-start: calc(-1 * var(--space-4));
   }
 
   .group {
