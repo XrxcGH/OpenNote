@@ -120,6 +120,16 @@ export const diffusionTool: ToolSpec = {
       'custom',
       only('oxide'),
     ),
+    choice(
+      'face',
+      'kitChemMat.df.field.face',
+      [
+        ['100', 'kitChemMat.df.face.f100'],
+        ['111', 'kitChemMat.df.face.f111'],
+      ],
+      '100',
+      arrOxide,
+    ),
     num('B', '0.027', typedOxide),
     num('BA', '0.62', typedOxide),
     num('oh', '1', only('oxide')),
@@ -162,6 +172,7 @@ export const diffusionTool: ToolSpec = {
       case 'oxide':
         return oxidation({
           source: String(input.source),
+          orientation: String(input.face),
           B: Number(input.B),
           BA: Number(input.BA),
           T: Number(input.T),

@@ -26,6 +26,10 @@ export const kitChemMatDiffusion = {
     dry: 'Published constants, dry oxygen',
     wet: 'Published constants, steam',
   },
+  face: {
+    f100: '(100) silicon',
+    f111: '(111) silicon',
+  },
   field: {
     mode: 'What to calculate',
     qunit: 'Unit of the formation energy',
@@ -59,6 +63,7 @@ export const kitChemMatDiffusion = {
     D2: 'Drive-in diffusion coefficient (optional)',
     t2: 'Drive-in time (optional)',
     source: 'Rate constants',
+    face: 'Silicon face for the published constants',
     B: 'Parabolic constant B (µm²/h)',
     BA: 'Linear constant B/A (µm/h)',
     oh: 'Oxidation time (h)',
@@ -151,7 +156,7 @@ export const kitChemMatDiffusion = {
       'Lengths and times use cm and s, the semiconductor convention. D is constant, and the drive-in conserves the dose.',
     dg: 'The Deal–Grove model assumes a steady oxidant supply. It is poor for the first 20 nm of dry oxide.',
     dgConstants:
-      'Published Arrhenius constants for (100) silicon from Deal and Grove (1965). Real furnaces differ by tens of percent.',
+      'Published Arrhenius constants from Deal and Grove (1965), measured on (111) silicon. For (100) the linear constant B/A is divided by 1.68. Real furnaces differ by tens of percent.',
   },
   plot: {
     depth: 'Depth (m)',

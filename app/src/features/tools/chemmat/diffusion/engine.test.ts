@@ -245,12 +245,26 @@ describe('Deal-Grove oxidation', () => {
   it('the published dry and wet constants at 1000 degrees C match the Arrhenius form', () => {
     const T = 1273.15;
     const kT = 8.617333262e-5 * T;
-    const dry = oxidation({ ...base, source: 'dry', T });
+    const dry = oxidation({ ...base, source: 'dry', T, orientation: '111' });
     expect(rel(val(dry, 'kitChemMat.df.row.B'), 772 * Math.exp(-1.23 / kT))).toBeLessThan(1e-12);
     expect(rel(val(dry, 'kitChemMat.df.row.BA'), 6.23e6 * Math.exp(-2.0 / kT))).toBeLessThan(1e-12);
-    const wet = oxidation({ ...base, source: 'wet', T });
+    const wet = oxidation({ ...base, source: 'wet', T, orientation: '111' });
     // wet oxidation is far faster than dry at the same temperature
     expect(val(wet, 'kitChemMat.df.row.oxide')).toBeGreaterThan(5 * val(dry, 'kitChemMat.df.row.oxide'));
+  });
+
+  it('dry 1000 C, 1 h on (100) silicon grows about 38.5 nm; (111) grows more', () => {
+    const T = 1273.15;
+    const kT = 8.617333262e-5 * T;
+    const B = 772 * Math.exp(-1.23 / kT);
+    const BA = (6.23e6 / 1.68) * Math.exp(-2.0 / kT);
+    const o = oxidation({ ...base, source: 'dry', T, orientation: '100' });
+    const nm = val(o, 'kitChemMat.df.row.oxide') * 1e9;
+    expect(Math.abs(nm - 38.5)).toBeLessThan(1);
+    // independent: the thickness satisfies x^2 + A x = B t
+    const x = nm * 1e-3;
+    expect(Math.abs(x * x + (B / BA) * x - B)).toBeLessThan(1e-9);
+    expect(val(oxidation({ ...base, source: 'dry', T, orientation: '111' }), 'kitChemMat.df.row.oxide') * 1e9).toBeGreaterThan(nm);
   });
 
   it('refuses bad rates, negative time and thickness, and a missing temperature', () => {

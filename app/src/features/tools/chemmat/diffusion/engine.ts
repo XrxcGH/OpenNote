@@ -405,7 +405,7 @@ export function dopant(input: DopantInput): Outcome {
 
 // ---------- Deal-Grove oxidation ----------
 
-/** Published Arrhenius constants for B and B/A on (100) silicon: [C in um^2/h or um/h, E in eV]. */
+/** Published Arrhenius constants for B and B/A on (111) silicon (divide B/A by 1.68 for (100)): [C in um^2/h or um/h, E in eV]. */
 export const DEAL_GROVE = {
   dry: { B: [7.72e2, 1.23], BA: [6.23e6, 2.0] },
   wet: { B: [3.86e2, 0.78], BA: [1.63e8, 2.05] },
@@ -414,6 +414,8 @@ const K_EV = 8.617333262e-5; // eV/K
 
 export interface OxideInput {
   source: string;
+  /** Crystal face for the published constants: '111' as published, '100' with B/A divided by 1.68. */
+  orientation?: string;
   /** um^2/h and um/h, used for the typed source. */
   B: number;
   BA: number;
@@ -437,7 +439,7 @@ export function oxidation(input: OxideInput): Outcome {
     if (!pos(input.T)) return fail('kitChemMat.df.err.temperature');
     const c = DEAL_GROVE[input.source];
     B = c.B[0] * Math.exp(-c.B[1] / (K_EV * input.T));
-    BA = c.BA[0] * Math.exp(-c.BA[1] / (K_EV * input.T));
+    BA = (c.BA[0] / (input.orientation === '100' ? 1.68 : 1)) * Math.exp(-c.BA[1] / (K_EV * input.T));
     rowsHead.push({ key: 'kitChemMat.df.row.B', value: B, unit: 'µm²/h', digits: 4 });
     rowsHead.push({ key: 'kitChemMat.df.row.BA', value: BA, unit: 'µm/h', digits: 4 });
   }
