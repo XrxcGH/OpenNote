@@ -2,6 +2,7 @@
 // and bonding, solutions and lab work, crystals, diffusion, and phase diagrams. Owner: the chemmat lane.
 import { kitChemMatCrystals } from './kitChemMatCrystals';
 import { kitChemMatDiffusion } from './kitChemMatDiffusion';
+import { kitChemMatPhases } from './kitChemMatPhases';
 import { kitChemMatSol } from './kitChemMatSol';
 
 export const kitChemMat = {
@@ -491,4 +492,5 @@ export const kitChemMat = {
   sol: kitChemMatSol,
   cx: kitChemMatCrystals,
   df: kitChemMatDiffusion,
+  ph: kitChemMatPhases,
 } as const;

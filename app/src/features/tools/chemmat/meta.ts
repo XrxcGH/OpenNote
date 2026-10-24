@@ -67,4 +67,11 @@ export const CHEMMAT_META: readonly ChemMatMeta[] = [
     keywords: 'kitChemMat.df.keywords',
     icon: 'Flask',
   },
+  {
+    id: 'phases',
+    title: 'kitChemMat.ph.title',
+    open: 'kitChemMat.ph.open',
+    keywords: 'kitChemMat.ph.keywords',
+    icon: 'Flask',
+  },
 ];

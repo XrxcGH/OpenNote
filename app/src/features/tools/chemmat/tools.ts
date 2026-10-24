@@ -6,6 +6,7 @@ import { electrochemTool } from './electrochem/tool';
 import { equilibriumTool } from './equilibrium/tool';
 import { kineticsTool } from './kinetics/tool';
 import { solutionsTool } from './solutions/tool';
+import { phasesTool } from './phases/tool';
 import { thermochemTool } from './thermochem/tool';
 import type { ToolSpec } from './spec';
 
@@ -18,4 +19,5 @@ export const CHEMMAT_TOOLS: readonly ToolSpec[] = [
   solutionsTool,
   crystalsTool,
   diffusionTool,
+  phasesTool,
 ];

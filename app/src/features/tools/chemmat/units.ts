@@ -64,6 +64,18 @@ export const DIMS: Record<Exclude<Dim, 'none'> | 'current', DimDef> = {
     si: 'nm',
     us: 'in',
   },
+  stress: {
+    units: [
+      u('MPa', 1e6),
+      u('GPa', 1e9),
+      u('kPa', 1e3),
+      u('Pa', 1),
+      u('psi', 6894.757293168),
+      u('ksi', 6894757.293168),
+    ],
+    si: 'MPa',
+    us: 'ksi',
+  },
   distance: {
     units: [u('mm', 1e-3), u('m', 1), u('cm', 1e-2), u('µm', 1e-6), u('nm', 1e-9), u('in', 0.0254), u('ft', 0.3048)],
     si: 'mm',

@@ -23,6 +23,7 @@ export type Dim =
   | 'mass'
   | 'volume'
   | 'diffusivity'
+  | 'stress'
   | 'energy'
   | 'none';
 
