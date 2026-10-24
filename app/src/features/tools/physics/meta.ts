@@ -6,6 +6,7 @@ export const PHYSICS_TOOLS = [
   { id: 'geooptics', icon: 'Eyeglasses' },
   { id: 'waveoptics', icon: 'Rainbow' },
   { id: 'relativity', icon: 'HourglassMedium' },
+  { id: 'nuclear', icon: 'Radioactive' },
 ] as const satisfies readonly {
   id: string;
   icon: string;

@@ -36,3 +36,7 @@ export const M_N = value('mn');
 export const MEV = 1e6 * E_CHARGE;
 /** The atomic mass constant as an energy, MeV (931.494...). */
 export const U_MEV = (U_KG * C * C) / MEV;
+/** Avogadro constant, 1/mol. */
+export const N_A = value('NA');
+/** Newtonian constant of gravitation, m³/(kg s²). */
+export const G_NEWTON = value('G');

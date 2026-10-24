@@ -2,6 +2,7 @@
 // maneuvers and spacecraft budgets. Each tool has its own group of messages; worked steps name their numbers in
 // braces, and the numbers arrive already written with their units. Each tool's group lives in kitPhysics/<tool>.ts.
 import { geooptics } from './kitPhysics/geooptics';
+import { nuclear } from './kitPhysics/nuclear';
 import { relativity } from './kitPhysics/relativity';
 import { waveoptics } from './kitPhysics/waveoptics';
 import { waves } from './kitPhysics/waves';
@@ -56,4 +57,5 @@ export const kitPhysics = {
   relativity,
   waveoptics,
   geooptics,
+  nuclear,
 } as const;

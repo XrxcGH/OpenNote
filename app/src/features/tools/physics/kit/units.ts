@@ -406,6 +406,16 @@ export const DIMS = {
       ['rev/day', (2 * Math.PI) / DAY],
     ],
   },
+  rate: {
+    si: '1/s',
+    units: [
+      ['1/s', 1],
+      ['1/min', 1 / 60],
+      ['1/h', 1 / 3600],
+      ['1/d', 1 / DAY],
+      ['1/y', 1 / (365.25 * DAY)],
+    ],
+  },
   dataRate: {
     si: 'bit/s',
     units: [
