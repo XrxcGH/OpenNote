@@ -1,9 +1,60 @@
 @layer components {
-  /* The page body and the Reading order pane side by side. */
+  /* The page body and the panes beside it (Reading order, Contents: data-page-pane) side by side, while the page keeps
+     a readable column of at least 420 px (page-region is the workspace's page, Workspace.module.css). Narrower, two
+     panes share one column, one above the other, and narrower still they open over the page as a drawer from its end
+     edge, so the page never wraps a word a letter at a time. */
   .row {
+    position: relative;
     display: flex;
     flex: 1;
     min-block-size: 0;
+  }
+
+  .row > [data-page-pane] {
+    flex: none;
+  }
+
+  /* Page 420 + Reading order 18rem + Contents 16rem, down to page 420 + 18rem. */
+  @container page-region (708px <= inline-size < 964px) {
+    .row:has(> [data-page-pane] + [data-page-pane]) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 18rem;
+      grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .row:has(> [data-page-pane] + [data-page-pane]) > :first-child {
+      grid-row: 1 / -1;
+    }
+
+    .row:has(> [data-page-pane] + [data-page-pane]) > [data-page-pane] {
+      grid-column: 2;
+      inline-size: auto;
+    }
+
+    .row > [data-page-pane] + [data-page-pane] {
+      border-block-start: 1px solid var(--color-border-subtle);
+    }
+  }
+
+  /* Page 420 + Reading order 18rem. */
+  @container page-region (inline-size < 708px) {
+    .row > [data-page-pane] {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-end: 0;
+      z-index: var(--layer-sticky);
+      inline-size: min(18rem, calc(100% - var(--space-10)));
+      box-shadow: var(--elevation-3);
+    }
+
+    .row > [data-page-pane]:has(+ [data-page-pane]) {
+      inset-block-end: 50%;
+    }
+
+    .row > [data-page-pane] + [data-page-pane] {
+      inset-block-start: 50%;
+      border-block-start: 1px solid var(--color-border-subtle);
+    }
   }
 
   .pane {
@@ -11,6 +62,7 @@
     flex-direction: column;
     gap: var(--space-3);
     inline-size: min(18rem, 40%);
+    box-sizing: border-box;
     padding: var(--space-4);
     border-inline-start: 1px solid var(--color-border-subtle);
     background: var(--color-surface-app);
@@ -23,8 +75,11 @@
     color: var(--color-text-secondary);
   }
 
+  /* The list takes what the pane leaves and scrolls, so the buttons under it always stay in the window. */
   .list {
-    flex: 1;
+    flex: 1 1 auto;
+    min-block-size: calc(var(--target-size) + 2 * var(--space-1) + 2px);
+    overflow: auto;
     margin: 0;
     padding: var(--space-1);
     list-style: none;
@@ -39,6 +94,10 @@
   }
 
   .option {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-block-size: var(--target-size);
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
     color: var(--color-text-primary);
@@ -52,8 +111,23 @@
 
   .actions {
     display: flex;
+    flex: none;
     flex-wrap: wrap;
     gap: var(--space-2);
+  }
+
+  /* The quiet buttons at a pane's foot, one to a line, their text lined up with the list's edge above them. */
+  .links {
+    display: grid;
+    flex: none;
+    justify-items: start;
+  }
+
+  [data-page-pane] .link {
+    align-self: start;
+    justify-content: start;
+    padding-inline: var(--space-3);
+    margin-inline-start: calc(-1 * var(--space-3) - 1px);
   }
 
   @media (forced-colors: active) {

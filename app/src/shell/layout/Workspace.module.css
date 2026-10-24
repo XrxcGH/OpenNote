@@ -18,6 +18,22 @@
     overflow: clip;
   }
 
+  /* Both panes collapsed: their rails share one column, the notebooks rail above the pages rail, so two rails don't
+     take 96 px for five buttons. */
+  .workspace[data-rails] {
+    grid-template-columns: var(--size-rail) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'title title'
+      'commands commands'
+      'notebooks page'
+      'pages page';
+  }
+
+  .workspace[data-rails] .pages > [data-rail] {
+    padding-block-start: 0;
+  }
+
   /* Focus mode: only the title bar and the page. */
   .workspace[data-focus] {
     grid-template-columns: minmax(0, 1fr);
@@ -107,6 +123,8 @@
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
+    /* The panes inside the page (Reading order, Contents) give way to the page by this width (pane.module.css). */
+    container: page-region / inline-size;
     background:
       /* The patch of window light on the desk, wider than it is tall, as light falls on a flat surface. */
       radial-gradient(closest-side, var(--color-ambient-glow) 40%, transparent) 95.5% 84.5% / min(56%, 420px)

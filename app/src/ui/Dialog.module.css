@@ -9,6 +9,10 @@
     z-index: var(--layer-dialog);
     display: grid;
     padding: var(--space-5);
+    /* A toast shown over a dialog sits at the window's bottom: the dialog rises above it, so the toast never hides
+       its buttons or the text over them (--toast-height is set while a toast shows, toastHooks.ts). */
+    padding-block-end: max(var(--space-5), calc(var(--toast-height, -100vh) + var(--panel-inset-bottom, 0px)));
+    transition: padding-block-end var(--motion-duration-base) var(--motion-easing-standard);
   }
 
   .scrim {
