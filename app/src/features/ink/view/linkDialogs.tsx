@@ -11,6 +11,7 @@ import type { InkHost } from './host';
 import { inkLinks, isWebAddress, linkSelection, liveLinks } from './inkLinks';
 import type { InkLink, LinkTarget } from './inkLinks';
 import type { InkSurface } from './surface';
+import styles from './view.module.css';
 
 type Kind = 'page' | 'url' | 'recording';
 
@@ -97,7 +98,7 @@ function MakeLinkDialog(props: { canRecord: boolean; initialLabel: string; done:
             error={error ?? undefined}
           />
           {!chosen && (
-            <ul aria-label={t('ink.links.pageResults')}>
+            <ul aria-label={t('ink.links.pageResults')} className={styles.layers}>
               {suggestions.map((s) => (
                 <li key={s.page}>
                   <Button variant="quiet" onClick={() => setChosen(s)}>
@@ -127,7 +128,7 @@ function MakeLinkDialog(props: { canRecord: boolean; initialLabel: string; done:
           onCommit={submit}
         />
       )}
-      {kind === 'recording' && <p>{t('ink.links.recordingHelp')}</p>}
+      {kind === 'recording' && <p className={styles.note}>{t('ink.links.recordingHelp')}</p>}
     </Dialog>
   );
 }
@@ -192,11 +193,11 @@ function LinkList(props: { host: InkHost; surface: InkSurface; done: () => void 
       actions={[{ id: 'close', label: t('ink.links.close'), variant: 'primary', onPress: done }]}
     >
       {links.length === 0 ? (
-        <p>{t('ink.links.empty')}</p>
+        <p className={styles.note}>{t('ink.links.empty')}</p>
       ) : (
-        <ul aria-label={t('ink.links.list')}>
+        <ul aria-label={t('ink.links.list')} className={styles.layers}>
           {links.map(([id, link]) => (
-            <li key={id}>
+            <li key={id} className={styles.layerActions}>
               <span>
                 {link.label || t('ink.links.unnamed')} <small>{kindText(link)}</small>
               </span>{' '}

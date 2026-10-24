@@ -88,7 +88,7 @@
      names wrap more gracefully than the keys, so the keys get the room: two chords fit on one line, and no key cap
      runs into the Change button. The actions column holds Change and Reset side by side. */
   .nameColumn {
-    inline-size: 33%;
+    inline-size: 42%;
   }
 
   .actionsColumn {
