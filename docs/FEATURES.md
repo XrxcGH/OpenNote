@@ -1,6 +1,6 @@
 # OpenNote feature specification
 
-This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELOPMENT.md). Each feature notes the phase that builds it, and a status that says where it stands in beta 5 (0.1.0-beta.5).
+This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELOPMENT.md). Each feature notes the phase that builds it, and a status that says where it stands in beta 5 (0.1.0-beta.6).
 
 ## Contents
 
