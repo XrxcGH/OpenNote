@@ -128,7 +128,7 @@ function SteamTab() {
         <label className={extra.field}>
           {t('chem.data.orderedBy')}
           <select
-            className={extra.input}
+            className={`${extra.input} ${ref.control}`}
             value={by}
             onChange={(e) => {
               setBy(e.target.value as 'T' | 'P');
@@ -144,7 +144,7 @@ function SteamTab() {
           <input
             type="text"
             inputMode="decimal"
-            className={extra.input}
+            className={`${extra.input} ${ref.control}`}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             aria-invalid={value.trim() !== '' && !lookup ? true : undefined}
@@ -229,7 +229,7 @@ function GasTab() {
         <input
           type="text"
           inputMode="decimal"
-          className={extra.input}
+          className={`${extra.input} ${ref.control}`}
           value={temp}
           aria-invalid={!valid ? true : undefined}
           onChange={(e) => setTemp(e.target.value)}
@@ -303,7 +303,7 @@ function MaterialsTab() {
         <label className={extra.field}>
           {t('chem.data.group')}
           <select
-            className={extra.input}
+            className={`${extra.input} ${ref.control}`}
             value={group}
             onChange={(e) => setGroup(e.target.value as 'all' | MaterialGroup)}
           >

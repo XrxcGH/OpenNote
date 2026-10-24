@@ -16,6 +16,7 @@ import type { Codata, ConstantGroup, InsertPart } from '../science/codata';
 import { insertIntoPage } from './CalculatorTool';
 import { loadStored, saveStored } from './storage';
 import cs from './constants.module.css';
+import ref from './reference.module.css';
 import extra from './extra.module.css';
 import science from './science.module.css';
 import styles from './tools.module.css';
@@ -87,7 +88,7 @@ function Controls({ saved, update }: { saved: Saved; update: (next: Saved) => vo
       <label className={extra.field}>
         {t('science.constants.groupLabel')}
         <select
-          className={extra.input}
+          className={`${extra.input} ${ref.control}`}
           value={saved.group}
           onChange={(event) => update({ ...saved, group: event.target.value as Saved['group'] })}
         >
@@ -106,7 +107,7 @@ function Controls({ saved, update }: { saved: Saved; update: (next: Saved) => vo
           <button
             key={one}
             type="button"
-            className={science.toggle}
+            className={`${science.toggle} ${ref.touch}`}
             aria-pressed={saved.as === one}
             onClick={() => update({ ...saved, as: one })}
           >

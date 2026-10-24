@@ -89,7 +89,7 @@ export function ReferenceTool() {
           <label className={extra.field}>
             {t('study.reference.units.section')}
             <select
-              className={extra.input}
+              className={`${extra.input} ${ref.control}`}
               value={section}
               onChange={(event) => setSection(event.target.value as SheetSection | 'all')}
             >
@@ -107,7 +107,7 @@ export function ReferenceTool() {
             <label className={extra.field}>
               {t('study.reference.familyFilter')}
               <select
-                className={extra.input}
+                className={`${extra.input} ${ref.control}`}
                 value={family}
                 onChange={(event) => setFamily(event.target.value as ElementGroup | 'all')}
               >
@@ -121,7 +121,13 @@ export function ReferenceTool() {
             </label>
             <div className={styles.buttons} role="group" aria-label={t('study.reference.view')}>
               {(['grid', 'list'] as const).map((one) => (
-                <Button key={one} variant="quiet" aria-pressed={view === one} onClick={() => setView(one)}>
+                <Button
+                  key={one}
+                  variant="quiet"
+                  className={ref.touch}
+                  aria-pressed={view === one}
+                  onClick={() => setView(one)}
+                >
                   {t(`study.reference.views.${one}`)}
                 </Button>
               ))}

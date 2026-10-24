@@ -105,4 +105,14 @@
     margin: 0;
     font-variant-numeric: tabular-nums;
   }
+
+  /* Fields and buttons take the target size of the device: 32 px for a mouse, 44 px for a finger. */
+  .control {
+    min-block-size: var(--target-size);
+  }
+
+  .touch {
+    min-block-size: var(--target-size);
+    min-inline-size: var(--target-size);
+  }
 }
