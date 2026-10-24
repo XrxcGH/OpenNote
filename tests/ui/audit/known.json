@@ -158,6 +158,8 @@
     "workspace | target-small | div[data-region=page-properties].host > section.bar > button.fold"
   ],
   "intermittent": [
+    "command | clipped-by-ancestor | div[role=group].group > div[role=option].option > span.detail",
+    "command | clipped-by-ancestor | div[role=listbox].list > div[role=group].group > div[role=option].option",
     "tool.solids | target-gap | div.fields > div.field > input.input x div.field > input.input",
     "tool.solids | target-gap | div.fields > div.field > input.input x label.number > input",
     "tool.solids | target-small | div.tangent > label.check > input",
