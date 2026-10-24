@@ -80,6 +80,22 @@ export interface PlotSpec {
   readonly window?: { readonly x0: number; readonly x1: number; readonly y0: number; readonly y1: number };
 }
 
+export interface TableColumn {
+  /** The heading's key, "tb.<key>". */
+  readonly key: string;
+  /** What the column's numbers measure: they are SI and shown in the chosen system, with the unit in the heading. */
+  readonly qty?: QtyKind;
+  readonly sig?: number;
+}
+
+export interface TableSpec {
+  /** The caption's key, "tb.<title>". */
+  readonly title: string;
+  readonly columns: readonly TableColumn[];
+  /** Each cell is a number in SI units, a word key such as "@st.0", or text shown as it is. */
+  readonly rows: readonly (readonly (number | string)[])[];
+}
+
 export interface ToolOutput {
   /** A sentence that sums the answer up, such as the flow regime. */
   readonly headline?: Ref;
@@ -88,6 +104,8 @@ export interface ToolOutput {
   /** The key equation, for the Equation insert. */
   readonly latex?: string;
   readonly plots?: readonly PlotSpec[];
+  /** Tables beside the answer, such as the stations of an engine cycle, each with its own Insert button. */
+  readonly tables?: readonly TableSpec[];
   readonly notes?: readonly Ref[];
 }
 

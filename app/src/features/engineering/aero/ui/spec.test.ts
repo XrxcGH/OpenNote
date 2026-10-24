@@ -127,7 +127,17 @@ describe('every tool in the window', () => {
         if (row.value !== undefined && Number.isFinite(row.value))
           expect(Math.abs((other ?? NaN) - row.value)).toBeLessThanOrEqual(1e-4 * Math.max(1, Math.abs(row.value)));
       });
-      for (const step of si.output.steps) expect(hasText(id, `s.${step.key}`), step.key).toBe(true);
+      for (const step of si.output.steps) {
+        expect(hasText(id, `s.${step.key}`), step.key).toBe(true);
+        for (const value of Object.values(step.vars ?? {}))
+          if (value.startsWith('@')) expect(hasText(id, value.slice(1)), value).toBe(true);
+      }
+      for (const table of si.output.tables ?? []) {
+        for (const key of [table.title, ...table.columns.map((c) => c.key)])
+          expect(hasText(id, `tb.${key}`), key).toBe(true);
+        for (const cell of table.rows.flat())
+          if (typeof cell === 'string' && cell.startsWith('@')) expect(hasText(id, cell.slice(1)), cell).toBe(true);
+      }
       // Every equation is LaTeX the page can draw: no lost escapes (a tab or form feed) and nothing KaTeX rejects.
       for (const math of [si.output.latex, ...si.output.steps.map((s) => s.math)]) {
         if (math === undefined) continue;

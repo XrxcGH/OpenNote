@@ -4,10 +4,10 @@
 import { createElement, useEffect, useId, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { t } from '../../../../strings/t';
-import { Button, announce } from '../../../../ui';
-import { INSERT_EVENT } from '../../../tools';
-import type { InsertDetail } from '../../../tools';
+import { Button } from '../../../../ui';
 import type { AeroStep } from '../common';
+import { DataTable } from './DataTable';
+import { insert } from './insert';
 import { PLOT_H, PLOT_W, plotTree, svgText } from './plot';
 import type { SvgNode } from './plot';
 import { readNumber, runSpec, unitKey, visibleFields } from './spec';
@@ -120,13 +120,6 @@ function FieldInput({ spec, field, values, system, onValues }: PanelProps & { fi
   );
 }
 
-/** Puts something on the page the student last worked in, and says whether a page took it. */
-function insert(detail: Omit<InsertDetail, 'handled'>): void {
-  const request: InsertDetail = { ...detail, handled: false };
-  window.dispatchEvent(new CustomEvent<InsertDetail>(INSERT_EVENT, { detail: request }));
-  announce(t(request.handled ? 'kitAero.inserted' : 'kitAero.noPage'));
-}
-
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -189,6 +182,9 @@ function Answer({ spec, output, system }: { spec: ToolSpec; output: ToolOutput; 
         <p key={note.key} className={styles.note}>
           {toolText(tool, note.key, note.vars)}
         </p>
+      ))}
+      {(output.tables ?? []).map((table) => (
+        <DataTable key={table.title} tool={tool} table={table} system={system} />
       ))}
       {(output.plots ?? []).map((plot, i) => (
         <Plot key={plot.title} tool={tool} plot={plot} index={i} />

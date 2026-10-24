@@ -10,6 +10,7 @@ import { wing } from './kitAero/wing';
 import { performance } from './kitAero/performance';
 import { potential } from './kitAero/potential';
 import { flightmodes } from './kitAero/flightmodes';
+import { jetengine } from './kitAero/jetengine';
 
 export const kitAero = {
   window: 'Aerospace',
@@ -36,6 +37,7 @@ export const kitAero = {
   insertTable: 'Result table',
   insertSteps: 'Steps as a list',
   insertPicture: 'Plot as picture',
+  insertThisTable: 'Insert this table',
   inserted: 'Inserted into the page.',
   noPage: 'Click in a page first, then insert.',
   error: {
@@ -57,5 +59,6 @@ export const kitAero = {
     performance,
     potential,
     flightmodes,
+    jetengine,
   },
 } as const;

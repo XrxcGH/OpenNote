@@ -11,4 +11,5 @@ export const LOADERS: Record<AeroToolId, () => Promise<{ spec: ToolSpec }>> = {
   performance: () => import('./performance/tool'),
   potential: () => import('./potential/tool'),
   flightmodes: () => import('./flightmodes/tool'),
+  jetengine: () => import('./jetengine/tool'),
 };
