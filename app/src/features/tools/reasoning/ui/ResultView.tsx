@@ -1,7 +1,7 @@
 // A kit answer: the result in a status region, the worked steps, the picture, and the tables, with Insert buttons
 // that write any of them at the caret of the open page. Long tables show their first rows and say how many there are.
 import { Button, announce } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from './insert';
 import { svgFile } from '../core/svg';
 import { say } from './say';
 import { SvgView } from './SvgView';

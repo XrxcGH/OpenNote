@@ -6,7 +6,7 @@ import { loadStored, saveStored } from '../../ui/storage';
 import { loadTool } from '../kit';
 import { REASONING_TOOLS, isReasoningTool } from '../meta';
 import type { ReasoningToolId } from '../meta';
-import { reasoningTab } from '../open';
+import { reasoningTab } from '../tab';
 import { ModeForm } from './ModeForm';
 import { say } from './say';
 import type { ToolSpec } from './types';
