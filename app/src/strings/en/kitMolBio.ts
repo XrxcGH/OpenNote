@@ -1,4 +1,5 @@
 // The molecular biology, genetics, and evolution kit: the window, what every tool shares, and one part per tool.
+import { protein } from './kitMolBio/protein';
 import { sequence } from './kitMolBio/sequence';
 
 export const kitMolBio = {
@@ -37,4 +38,5 @@ export const kitMolBio = {
     badMotif: '“{char}” at position {position} of the motif is not an IUPAC code.',
   },
   sequence,
+  protein,
 } as const;
