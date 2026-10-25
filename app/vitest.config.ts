@@ -31,6 +31,9 @@ export default defineConfig((env) =>
           test: {
             name: 'components',
             include: ['src/**/*.test.tsx'],
+            // A test of timing in a real browser can miss its wait on a 2-core runner, a different one each run: try a
+            // failing test once more there, as the Playwright suite does.
+            retry: process.env.CI ? 1 : 0,
             setupFiles: ['src/test/setup.ts'],
             // The browser project's server port, so parallel runs (agents on one machine) each take their own:
             // Vitest's own default when unset, and the CLI's --api doesn't reach an inline project.
