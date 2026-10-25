@@ -217,8 +217,9 @@
 
   .text :global(.ProseMirror) [data-callout-title] {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: var(--space-2);
+    min-block-size: 1lh;
     font-weight: var(--font-weight-semibold);
   }
 
@@ -278,7 +279,9 @@
   }
 
   .text :global(.ProseMirror) pre {
-    padding: var(--space-3) var(--space-4);
+    /* The language button sits in the top corner (editor/highlight/code.module.css): its room is kept clear, so it
+       never covers the end of a line. A line longer than that scrolls. */
+    padding: var(--space-3) calc(var(--space-4) + 4.5rem) var(--space-3) var(--space-4);
     overflow-x: auto;
   }
 
@@ -307,6 +310,12 @@
 
   .text :global(.ProseMirror) [data-math-block]:empty::before {
     content: '$$\A' attr(data-math-block) '\A$$';
+  }
+
+  /* An equation with no source has nothing to show: the two bare delimiters were noise, not content. */
+  .text :global(.ProseMirror) :is([data-math-block], [data-math])[data-math-block='']:empty,
+  .text :global(.ProseMirror) [data-math='']:empty {
+    display: none;
   }
 
   .text :global(.ProseMirror) [data-math]:empty {
