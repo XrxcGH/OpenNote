@@ -223,6 +223,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     el: Element;
     box: DOMRect;
     texts: DOMRect[];
+    seen: DOMRect[];
+    shown: DOMRect;
     interactive: boolean;
   }
   const items: Item[] = [];
@@ -235,9 +237,19 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
     const texts = ownTextRects(el).filter(
       (r) => r.right > shown.left && r.left < shown.right && r.bottom > shown.top && r.top < shown.bottom,
     );
+    // For overlap only the part that shows counts: text scrolled half under the status line does not lie over it.
+    const seen = texts.map(
+      (r) =>
+        new DOMRect(
+          Math.max(r.left, shown.left),
+          Math.max(r.top, shown.top),
+          Math.min(r.right, shown.right) - Math.max(r.left, shown.left),
+          Math.min(r.bottom, shown.bottom) - Math.max(r.top, shown.top),
+        ),
+    );
     const interactive = el.matches(INTERACTIVE);
     if (texts.length === 0 && !interactive && !el.matches(MEDIA)) continue;
-    items.push({ el, box, texts, interactive });
+    items.push({ el, box, texts, seen, shown, interactive });
   }
 
   // ---- 1 and 3: text that is cut off, spills out of its box, or is clipped by an ancestor ----------------------
@@ -301,10 +313,13 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       let culprit: Element | null = null;
       for (let at = el.parentElement; at; at = at.parentElement) {
         const cs = style(at);
-        if (clips(cs.overflowX) || clips(cs.overflowY)) {
+        const scrolls = (v: string) => v === 'auto' || v === 'scroll';
+        const isScroller = scrolls(cs.overflowX) || scrolls(cs.overflowY);
+        if (clips(cs.overflowX) || clips(cs.overflowY) || isScroller) {
           const r = at.getBoundingClientRect();
           if (full.left < r.left - 2 || fullRight > r.right + 2 || full.top < r.top - 2 || fullBottom > r.bottom + 2) {
-            culprit = at;
+            // A scroll container cuts what is scrolled out of its view, and the part is reached by scrolling: not a clip.
+            culprit = isScroller && !clips(cs.overflowX) && !clips(cs.overflowY) ? null : at;
             break;
           }
         }
@@ -344,8 +359,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       const bInA = a.el.contains(b.el);
       // Text against text, whoever owns it: the periodic table's number over its symbol is this case.
       let hit = '';
-      outer: for (const ra of a.texts) {
-        for (const rb of b.texts) {
+      outer: for (const ra of a.seen) {
+        for (const rb of b.seen) {
           const area = crossing(ra, rb, 1.5);
           if (area > 6) {
             hit = `text of ${describe(a.el, 1)} and ${describe(b.el, 1)} overlap by ${round(area)} px2`;
@@ -359,7 +374,7 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       }
       if (aInB || bInA) continue;
       if (a.interactive && b.interactive) {
-        const area = crossing(a.box, b.box, 2);
+        const area = crossing(a.shown, b.shown, 2);
         if (area > 12)
           add(
             'box-overlap',
@@ -371,8 +386,8 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
         const control = a.interactive ? a : b;
         const text = a.interactive ? b : a;
         if (control.el.contains(text.el)) continue;
-        for (const r of text.texts) {
-          const area = crossing(control.box, r, 2);
+        for (const r of text.seen) {
+          const area = crossing(control.shown, r, 2);
           if (area > 12) {
             add(
               'box-overlap',
@@ -466,6 +481,12 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
       if (!hit || hit === el || (el === document.documentElement && (hit === document.body || hit === root))) return;
       // A modal's scrim covers the whole window on purpose; a tool window or panel over a scroll bar does not.
       if (hit.closest('[aria-modal=true], [class*=scrim], [class*=backdrop]') && !hit.closest('[data-tool]')) return;
+      // A layer that fills the whole window (the present view) takes the screen over; it is not laid over one bar.
+      for (let at: Element | null = hit; at && at !== document.body; at = at.parentElement) {
+        if (style(at).position !== 'fixed') continue;
+        const r = at.getBoundingClientRect();
+        if (r.width >= view.width - 1 && r.height >= view.height - 1) return;
+      }
       // Something inside the scroller under the pointer means the bar is not there (an overlay bar, or a scaled page); a toast is brief.
       if ((el !== document.documentElement && el.contains(hit)) || hit.closest('[role=status], [class*=toast]')) return;
       add(

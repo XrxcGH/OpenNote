@@ -85,6 +85,12 @@
     cursor: pointer;
   }
 
+  /* display above would show a button the callout hides (a callout that cannot fold has no fold button). */
+  .calloutType[hidden],
+  .foldButton[hidden] {
+    display: none;
+  }
+
   .calloutType::before {
     content: '';
     inline-size: 0.6em;
@@ -130,6 +136,7 @@
   }
 
   .mathField {
+    min-block-size: var(--target-size);
     font: inherit;
     color: var(--color-text-primary);
     background: var(--color-surface-raised);
