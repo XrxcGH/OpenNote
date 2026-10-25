@@ -11,8 +11,8 @@ async function openPage(page: Page) {
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
-  // The title shows before the page body loads, and recording needs the body: a block on the page means it is shown.
-  await expect(page.locator('[data-block-id]').first()).toBeVisible();
+  // The recorder needs the page's text mounted: Record before that says to open a page first.
+  await expect(page.getByRole('textbox', { name: 'Text' }).first()).toBeVisible();
 }
 
 const record = (page: Page) => page.getByRole('group', { name: 'Recording', exact: true });
