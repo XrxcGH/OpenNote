@@ -603,10 +603,15 @@ addCommand({
     const mounted = shownMounted.get();
     if (!mounted) return;
     const { insertPanelBlock } = await import('../panels/insertPanel');
-    // Below the block with the caret, where the person will see it and can move it over what to hide.
-    const active = shownPool.get()?.active();
-    const rect = active ? mounted.layer.view(active.block)?.measure() : undefined;
-    const frame = { x: rect ? rect.x : 80, y: rect ? rect.y + rect.h + 8 : 80, w: 260, h: 56 };
+    // Below everything on the page, in clear paper: a tape is a cover, so it never lands over words or a table the
+    // person has not chosen. They drag it over what to hide.
+    const left = mounted.layer.view(shownPool.get()?.active()?.block ?? '')?.measure()?.x ?? 80;
+    let bottom = 72;
+    for (const block of mounted.layer.blocks()) {
+      const box = mounted.layer.view(block.id)?.measure();
+      if (box) bottom = Math.max(bottom, box.y + box.h);
+    }
+    const frame = { x: left, y: bottom + 16, w: 260, h: 56 };
     const id = await insertPanelBlock(PANEL_TYPES.tape, { hidden: true }, t('study.tape.fallback'), frame);
     if (id) announce(t('study.tape.inserted'));
   },
