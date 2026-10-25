@@ -66,10 +66,19 @@ test('inserts a graph from the Insert tab before the page is clicked into (Beta 
   // The Insert tab shows what fits, and the rest is under More.
   const bar = page.getByRole('toolbar', { name: 'Insert' });
   const button = bar.getByRole('button', { name: 'Insert graph' });
-  if (await button.isVisible()) await button.click();
-  else {
-    await bar.getByRole('button', { name: 'More' }).click();
-    await page.getByRole('menuitem', { name: 'Insert graph' }).click();
-  }
+  // The bar measures what fits after it is drawn, so the button can move under More between looking and clicking:
+  // look again until one of the two routes works.
+  await expect(async () => {
+    if (await button.isVisible()) await button.click({ timeout: 2_000 });
+    else {
+      await bar.getByRole('button', { name: 'More' }).click({ timeout: 2_000 });
+      try {
+        await page.getByRole('menuitem', { name: 'Insert graph' }).click({ timeout: 2_000 });
+      } catch (error) {
+        await page.keyboard.press('Escape');
+        throw error;
+      }
+    }
+  }).toPass({ timeout: 25_000 });
   await expect(page.getByRole('application', { name: /^Graph of/ })).toBeVisible({ timeout: 20_000 });
 });

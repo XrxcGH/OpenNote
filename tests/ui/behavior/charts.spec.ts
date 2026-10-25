@@ -16,7 +16,8 @@ test('makes a bar chart from the table, named and with a legend', async ({ page 
   await fillSales(page);
   await addChart(page, 'Bar chart');
   const chart = page.getByRole('img', { name: /^Bar chart: Sales, Cost by Month/ });
-  await expect(chart.locator('svg')).toBeVisible();
+  // The chart's code loads on first use, which takes longer than the default wait on a slow runner.
+  await expect(chart.locator('svg')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('list', { name: 'Legend' })).toContainText('Sales');
   await expect(page.getByRole('list', { name: 'Legend' })).toContainText('Cost');
 });

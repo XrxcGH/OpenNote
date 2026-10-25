@@ -51,7 +51,12 @@ test('writes a page with Markdown shortcuts, each one undoable back to the typed
   await keys(page, '{Control+a}{Delete}');
   await keys(page, '# Cell division{Enter}Cells divide in two ways.{Enter}');
   await keys(page, '- Mitosis{Enter}{Tab}Two cells{Enter}{Shift+Tab}Meiosis{Enter}{Enter}');
-  await keys(page, '[ ] Read the chapter{Control+Enter}{Enter}{Enter}');
+  // Ctrl+Enter ticks the box it finds, so it goes only after the page holds the unticked one, and the Enters after the tick.
+  await keys(page, '[ ] Read the chapter');
+  await expect.poll(() => held(page)).toContain('- [ ] Read the chapter');
+  await keys(page, '{Control+Enter}');
+  await expect.poll(() => held(page)).toContain('- [x] Read the chapter');
+  await keys(page, '{Enter}{Enter}');
   await keys(page, '> A quote{Enter}{Enter}> [!tip] Remember{Enter}Check the copy.{Enter}{Enter}');
   await keys(page, '```python print(1){ArrowDown}---{Enter}The end.');
   await expect
