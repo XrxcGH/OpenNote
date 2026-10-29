@@ -548,18 +548,26 @@ jobs:
         # if the exporter missed one. It is compiled with shell escape off and file access restricted
         # to the folder (openin_any=p), where the canary, one folder up, must stay unread.
         # Errors in that document are expected and ignored.
+        # LuaLaTeX cannot start with file access restricted (luaotfload reads its font data from outside the folder),
+        # so it compiles only the export, with no restriction. Its canary checks still hold.
         working-directory: ${{ runner.temp }}/latex
         run: |
           set -uo pipefail
-          export openin_any=p openout_any=p
           canary=$(cat canary-secret.txt)
           for engine in xelatex lualatex pdflatex; do
+            if [ "$engine" = lualatex ]; then
+              unset openin_any openout_any
+            else
+              export openin_any=p openout_any=p
+            fi
             (
               cd hostile
               file=$(ls ./*.tex | head -n 1 | sed 's|^\./||')
               "$engine" -no-shell-escape -interaction=nonstopmode -halt-on-error "$file"
             ) || { echo "The hostile export did not compile with $engine."; exit 1; }
-            (cd hostile-raw && "$engine" -no-shell-escape -interaction=nonstopmode main.tex || true)
+            if [ "$engine" != lualatex ]; then
+              (cd hostile-raw && "$engine" -no-shell-escape -interaction=nonstopmode main.tex || true)
+            fi
             for pdf in hostile/*.pdf hostile-raw/main.pdf; do
               [ -f "$pdf" ] || continue
               if pdftotext "$pdf" - | grep -F "$canary"; then

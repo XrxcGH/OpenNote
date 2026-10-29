@@ -21,6 +21,7 @@ const PREAMBLE: &str = r"\usepackage{iftex}
 \else
   \usepackage{unicode-math}
   \providecommand{\square}{\mdlgwhtsquare}
+  \providecommand{\blacksquare}{\mdlgblksquare}
 \fi
 \usepackage{graphicx}
 \usepackage{adjustbox}
