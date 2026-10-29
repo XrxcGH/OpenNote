@@ -1,6 +1,6 @@
-// Soil mechanics: phase relations, gradation and Atterberg limits, USCS and AASHTO classification, compaction,
-// permeability, effective stress, stresses under loads, one-dimensional consolidation, and shear strength. Stresses
-// in kPa, unit weights in kN/m³, lengths in m, water contents and percentages as percent unless a name says otherwise.
+// Soil mechanics: phase relations, gradation, Atterberg limits, soil classes, compaction, permeability, effective
+// stress, stresses under loads, one-dimensional consolidation, and shear strength. Stresses are in kPa, unit weights
+// in kN/m³, and lengths in m. Water contents are in percent unless a name says otherwise.
 import { deg, rad } from '../core/format';
 import { brent, lineFit, maximize, polyAt, polyFit } from '../core/num';
 import { need } from '../core/types';
@@ -539,7 +539,7 @@ export interface SettlementInput {
   sp: number | null;
 }
 
-/** Primary consolidation settlement of a clay layer, normally or over consolidated. */
+/** Primary consolidation settlement of a clay layer, normally consolidated (NC) and overconsolidated (OC) alike. */
 export function settlement({ Cc, Cr, e0, H, s0, ds, sp }: SettlementInput) {
   need(Cc > 0 && e0 > 0 && H > 0 && s0 > 0, 'errors.positive', { name: 'C_c, e₀, H, σ′₀' });
   need(ds > 0, 'errors.positive', { name: 'Δσ' });

@@ -185,7 +185,7 @@ export const foundations = {
     title: 'Rankine earth pressure, layered',
     intro: 'A vertical wall with level backfill. Layers run from the top down; the water table may fall in any layer.',
     answer: 'The resultant is {P} kN/m, acting {z} m above the base.',
-    s1: 'Layer {layer}: K = {K}.',
+    s1: 'In layer {layer}, the coefficient is {K}.',
     s2: 'At each depth, the lateral effective stress comes from the vertical effective stress.',
     s3: 'Adding the pore pressure and integrating over the height of {H} m gives P = {P} kN/m.',
     s4: 'The moment of the diagram about the base, divided by P, puts it {z} m up.',

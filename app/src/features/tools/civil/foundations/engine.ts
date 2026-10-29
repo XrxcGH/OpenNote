@@ -165,7 +165,7 @@ export interface WallInput {
   /** Stem width at the top and at the base, m. The back face is vertical; the front face batters. */
   t1: number;
   t2: number;
-  /** Base slab thickness, toe and heel lengths, m. */
+  /** Base slab thickness, toe length, and heel length, m. */
   tb: number;
   toe: number;
   heel: number;

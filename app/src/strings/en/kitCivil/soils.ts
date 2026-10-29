@@ -395,7 +395,8 @@ export const soils = {
     answer: 'The group symbol is {symbol}: {name}.',
     fine: '{F}% passes the No. 200 sieve, at least 50%, so the soil is fine-grained.',
     coarse:
-      '{F}% passes the No. 200 sieve, so the soil is coarse-grained. {G}% is gravel against half the coarse fraction, {half}%, so it is a {kind}.',
+      '{F}% passes the No. 200 sieve, so the soil is coarse-grained. {G}% is gravel against half the coarse ' +
+      'fraction, {half}%, so it is a {kind}.',
     G: 'gravel',
     S: 'sand',
     clean: 'Under 5% fines: the grading decides the second letter.',
@@ -555,7 +556,7 @@ export const soils = {
     answer: 'B is {B} and A at failure is {A}.',
     s1: 'B = Δu_c/Δσ₃ = {B}; near 1 means the sample is saturated.',
     s2: 'A = Δu_d/(B Δσ_d) = {A}.',
-    soft: 'A above about 0.7 is typical of soft, normally consolidated clays.',
+    soft: 'Skempton’s A above about 0.7 is typical of soft, normally consolidated clays.',
     dense: 'A below 0 is typical of heavily overconsolidated clays and dense sands, which dilate.',
     mid: 'A between 0 and 0.7 is typical of lightly overconsolidated clays.',
   },
