@@ -9,7 +9,7 @@ People moving from handwriting apps on tablets and phones asked to bring their n
 
 ## Decision
 
-- **One reader for the three apps** lives in `crates/interop/src/import/notes_apps/`, run through the file driver in `files.rs`: each file becomes a section, and a folder or ZIP file of them, such as a Goodnotes backup, keeps its folders in the section names. `detect` tells the files by extension and by the ZIP signature, as `SourceKind::NotesApp`.
+- **One reader for the three apps** lives in `crates/interop/src/import/notes_apps/`. The file driver in `files.rs` runs it, so each file becomes a section. A folder or ZIP file of them, such as a Goodnotes backup, keeps its folders in the section names. `detect` tells the files by extension and by the ZIP signature, as `SourceKind::NotesApp`.
 - **Clean-room, from public descriptions and from what the containers show.** No code from another project was read or copied. The sources:
   - Apple's public description of the binary property list (`bplist00`) layout, and of NSKeyedArchiver's `$objects`, `$top`, and UID references.
   - Google's public protocol buffers encoding guide: varint keys, wire types, and length-delimited fields.

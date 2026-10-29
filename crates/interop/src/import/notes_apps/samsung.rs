@@ -1,4 +1,4 @@
-//! Samsung Notes notes (`.sdocx`): a ZIP package.
+//! Samsung Notes files (`.sdocx`): a ZIP package.
 //!
 //! Public descriptions of the format (ADR 0053) say the package holds the note's parts and a `media` folder of its
 //! pictures, recordings, and PDF files. Each page is a binary `.page` file, and the order of the pages is listed
@@ -9,8 +9,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use super::container::{Member, Package};
-use super::media::{self, Media};
-use super::{build_page, keep_page, names, note_refused, text_runs, Attachment, NotesApp, PageParts};
+use super::{note_refused, place, private_pages, read_attachments, NotesApp, PrivatePages};
 use crate::error::{InteropError, Result};
 use crate::import::files::Converted;
 use crate::import::xmltree;
@@ -20,8 +19,6 @@ use crate::sink::ImportEnv;
 const APP: NotesApp = NotesApp::SamsungNotes;
 /// The most XML text read from one note.
 const MAX_XML_BYTES: u64 = 8 << 20;
-/// Past this many media files, they all go on the first page instead of being matched to pages.
-const MATCH_LIMIT: usize = 500;
 
 fn is_media(member: &Member) -> bool {
     member
@@ -57,94 +54,38 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
         ));
     }
     order_pages(&mut package, &mut pages)?;
+    let text = xml_text(&mut package, &xml)?;
+    let files = read_attachments(&mut package, &media_members, env, &mut general)?;
+    let placed = place(&mut package, &pages, files, 5, env)?;
+    let single = placed.len() == 1;
+    let titles = |n: usize| {
+        if single {
+            stem.to_owned()
+        } else {
+            format!("Page {}", n + 1)
+        }
+    };
+    let left = (!pages.is_empty()).then_some("handwriting and shapes");
+    let plan = PrivatePages {
+        app: APP,
+        path,
+        pages: placed,
+        text,
+        left,
+    };
+    private_pages(plan, titles, env, &mut general)
+}
+
+/// The text of the package's XML parts.
+fn xml_text(package: &mut Package, xml: &[Member]) -> Result<Vec<String>> {
     let mut text = Vec::new();
-    for member in &xml {
+    for member in xml {
         if let Ok(bytes) = package.read(member)? {
             let (root, _) = xmltree::parse_at_most(&String::from_utf8_lossy(&bytes), 200_000);
             collect_text(&root, &mut text, 0);
         }
     }
-    let mut files = Vec::new();
-    for member in &media_members {
-        env.control.checkpoint()?;
-        match package.read(member)? {
-            Ok(bytes) => {
-                let kind = media::sniff(&bytes, &member.extension());
-                let ext = match kind {
-                    Media::Image(_, e) | Media::Audio(_, e) => e,
-                    Media::Pdf => "pdf",
-                    Media::Other => "bin",
-                };
-                let name = member.file_name().to_owned();
-                files.push((
-                    name.clone(),
-                    Some(Attachment {
-                        name: media::file_name(&name, ext),
-                        kind,
-                        bytes,
-                    }),
-                ));
-            }
-            Err(why) => general.skipped(member.name.clone(), why),
-        }
-    }
-    let page_count = pages.len().max(1);
-    let mut placed: Vec<Vec<Attachment>> = (0..page_count).map(|_| Vec::new()).collect();
-    if files.len() <= MATCH_LIMIT {
-        for (n, page) in pages.iter().enumerate() {
-            env.control.checkpoint()?;
-            if let Ok(bytes) = package.read(page)? {
-                let runs = text_runs(&bytes, 5);
-                for (name, slot) in &mut files {
-                    if slot.is_some() && names(&runs, name) {
-                        if let (Some(found), Some(list)) = (slot.take(), placed.get_mut(n)) {
-                            list.push(found);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if let Some(first) = placed.first_mut() {
-        first.extend(files.into_iter().filter_map(|(_, a)| a));
-    }
-    let mut out = Converted {
-        pages: Vec::new(),
-        general: Vec::new(),
-    };
-    let mut text = Some(text);
-    for (n, attachments) in placed.into_iter().enumerate() {
-        env.control.checkpoint()?;
-        let title = if page_count == 1 {
-            stem.to_owned()
-        } else {
-            format!("Page {}", n + 1)
-        };
-        let mut page = PageReport {
-            title: title.clone(),
-            source: format!("{} › {title}", path.display()),
-            entries: Vec::new(),
-        };
-        if !pages.is_empty() {
-            page.skipped(
-                "handwriting and shapes",
-                format!(
-                    "Samsung Notes keeps them in a private format that OpenNote cannot read yet. {}",
-                    APP.pdf_route()
-                ),
-            );
-        }
-        let parts = PageParts {
-            title: title.clone(),
-            text: text.take().unwrap_or_default(),
-            attachments,
-            ..PageParts::default()
-        };
-        let made = build_page(parts, APP, env, &mut page);
-        keep_page(made, &title, &mut out, &mut general)?;
-    }
-    out.general = general.entries;
-    Ok(out)
+    Ok(text)
 }
 
 /// Orders the page files by where `pageIdInfo.dat` names them. Without it, or for pages it does not name, the

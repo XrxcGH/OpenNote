@@ -1,4 +1,4 @@
-//! Reading an NSKeyedArchiver archive: a binary property list whose `$objects` array holds every object, and whose
+//! Reading archives that NSKeyedArchiver wrote: a binary property list whose `$objects` array holds every object, and whose
 //! dictionaries point at one another with UID references (Apple's public Foundation documentation).
 //!
 //! Every lookup follows at most [`MAX_HOPS`] references, so a reference loop ends instead of spinning.

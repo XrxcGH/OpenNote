@@ -34,7 +34,7 @@ pub enum Obj {
     Ascii(Range<usize>),
     /// UTF-16 text in big-endian order, as a range of the input.
     Utf16(Range<usize>),
-    /// An NSKeyedArchiver reference to an entry of `$objects`.
+    /// A reference to an entry of `$objects`, as NSKeyedArchiver writes it.
     Uid(u64),
     /// An array or a set: the indexes of its members.
     Array(Vec<usize>),
@@ -331,7 +331,7 @@ pub mod write {
         Str(String),
         /// Bytes.
         Data(Vec<u8>),
-        /// An NSKeyedArchiver reference.
+        /// A reference to an entry of `$objects`.
         Uid(u64),
         /// An array.
         Array(Vec<Value>),

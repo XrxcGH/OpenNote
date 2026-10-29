@@ -1,13 +1,15 @@
 //! Notability notes (`.note`): a ZIP package with a folder named after the note.
 //!
-//! The folder holds `Session.plist`, an NSKeyedArchiver binary property list. Public write-ups of the format
-//! (ADR 0053 lists them) describe the writing as one archived dictionary with these keys, each an NSData blob:
+//! The folder holds `Session.plist`, a binary property list from NSKeyedArchiver. Public write-ups of the format
+//! (ADR 0053 lists them) describe the writing as one archived dictionary. Each of its keys holds bytes:
 //!
-//! - `curvespoints`: x and y of every point of every curve, as 32-bit little-endian floats, in points;
-//! - `curvesnumpoints`: how many points each curve has, as 32-bit little-endian integers;
-//! - `curveswidth`: each curve's width, as 32-bit floats;
-//! - `curvescolors`: each curve's red, green, blue, and alpha, one byte each;
-//! - `curvesfractionalwidths`: when present, a width factor for each point, which becomes pressure.
+//! - The x and y of each point, in points (`curvespoints`).
+//! - How many points each curve has (`curvesnumpoints`).
+//! - Each curve's width (`curveswidth`).
+//! - Each curve's red, green, blue, and alpha, one byte each (`curvescolors`).
+//! - A width factor for each point, which becomes pressure (`curvesfractionalwidths`). Not every note has it.
+//!
+//! Numbers are 32-bit and little-endian: floats, except the counts, which are integers.
 //!
 //! Erasing is already applied in what the app saves: an erased curve is gone, and a partly erased one is saved
 //! as its pieces. Typed text is archived as `NSAttributedString` objects. Pictures sit in an `Images` folder,

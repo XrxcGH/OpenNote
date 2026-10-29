@@ -9,7 +9,7 @@ export const notesApps = {
   apps: {
     goodnotes: 'Goodnotes documents (.goodnotes) and backups of them',
     notability: 'Notability notes (.note), with handwriting, text, pictures, and recordings',
-    samsungNotes: 'Samsung Notes notes (.sdocx)',
+    samsungNotes: 'Samsung Notes files (.sdocx)',
   },
   pdfHint:
     'The dependable way, which keeps every page as it looks: export a PDF from the app, then use Import PDF. ' +

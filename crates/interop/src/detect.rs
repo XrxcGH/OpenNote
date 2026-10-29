@@ -110,7 +110,9 @@ const STICKY_ADVICE: &str = "This is the old Sticky Notes file. Open the Sticky 
     once, so it moves the notes into its new database. Then import plum.sqlite from the app's LocalState folder.";
 
 /// What the dialog says about a PDF file, which the PDF import brings in instead.
-pub const PDF_ADVICE: &str = "A PDF comes in through Import PDF, which turns each of its pages into a page you can     write on. This is also the dependable way to bring notes from Goodnotes, Notability, or Samsung Notes: export     them as a PDF in the app, then import that PDF.";
+pub const PDF_ADVICE: &str = "A PDF comes in through Import PDF, which turns each of its pages into a page you can \
+    write on. This is also the dependable way to bring notes from Goodnotes, Notability, or Samsung Notes: export \
+    them as a PDF in the app, then import that PDF.";
 
 /// A notes app's file is a ZIP package. One that is not cannot be read, and the PDF export is the way instead.
 fn detect_notes_app(path: &Path, ext: &str) -> Result<Detected> {

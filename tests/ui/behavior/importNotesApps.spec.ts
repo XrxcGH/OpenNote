@@ -30,7 +30,7 @@ test('a Goodnotes document reaches the review, names what stays behind, and impo
   const apps = dialog.getByRole('region', { name: 'Handwriting apps' });
   await expect(apps.getByText('Goodnotes documents (.goodnotes) and backups of them')).toBeVisible();
   await expect(apps.getByText(/Notability notes \(\.note\)/)).toBeVisible();
-  await expect(apps.getByText('Samsung Notes notes (.sdocx)')).toBeVisible();
+  await expect(apps.getByText('Samsung Notes files (.sdocx)')).toBeVisible();
   await expect(apps.getByText(/In Samsung Notes, choose Share, then PDF file/)).toBeVisible();
 
   await dialog.getByRole('button', { name: 'Choose a file…' }).click();

@@ -5,7 +5,7 @@
 //! names, through the driver in `files.rs`. All three formats are ZIP packages that their makers do not document.
 //! What OpenNote reads comes from public descriptions of the containers and from what the packages show:
 //!
-//! - Notability keeps its writing in `Session.plist`, an NSKeyedArchiver binary property list, whose curves come
+//! - Notability keeps its writing in `Session.plist`, a binary property list from NSKeyedArchiver. Its curves come
 //!   over as strokes with their colors, widths, and pressure. Typed text, pictures, recordings, and PDF files
 //!   come over too.
 //! - Goodnotes keeps each page in `notes/` and its PDF files and pictures in `attachments/`. The pages come over
@@ -304,6 +304,133 @@ pub(crate) fn text_runs(bytes: &[u8], min: usize) -> HashSet<String> {
 /// Whether the runs name `name`, alone or as a part of a path.
 pub(crate) fn names(runs: &HashSet<String>, name: &str) -> bool {
     !name.is_empty() && runs.contains(name)
+}
+
+/// An attachment read from a package, with the ID or name a page uses for it. `None` once it is placed.
+pub(crate) type Named = (String, Option<Attachment>);
+
+/// Past this many attachments, they all go on the first page instead of being matched to pages.
+const MATCH_LIMIT: usize = 500;
+
+/// Reads attachments, telling each kind by its first bytes. Entries that cannot be read are noted and skipped.
+pub(crate) fn read_attachments(
+    package: &mut container::Package,
+    members: &[container::Member],
+    env: &ImportEnv<'_>,
+    general: &mut PageReport,
+) -> Result<Vec<Named>> {
+    let mut out = Vec::new();
+    for member in members {
+        env.control.checkpoint()?;
+        match package.read(member)? {
+            Ok(bytes) => {
+                let kind = media::sniff(&bytes, &member.extension());
+                let extension = match kind {
+                    Media::Image(_, e) | Media::Audio(_, e) => e,
+                    Media::Pdf => "pdf",
+                    Media::Other => "bin",
+                };
+                let id = member.file_name().to_owned();
+                let name = media::file_name(&id, extension);
+                out.push((id, Some(Attachment { name, kind, bytes })));
+            }
+            Err(why) => general.skipped(member.name.clone(), why),
+        }
+    }
+    Ok(out)
+}
+
+/// Puts each attachment on the first page whose data names it (in runs of at least `min` characters), and the
+/// rest on the first page. There is always at least one page.
+pub(crate) fn place(
+    package: &mut container::Package,
+    pages: &[container::Member],
+    mut attachments: Vec<Named>,
+    min: usize,
+    env: &ImportEnv<'_>,
+) -> Result<Vec<Vec<Attachment>>> {
+    let mut placed: Vec<Vec<Attachment>> = (0..pages.len().max(1)).map(|_| Vec::new()).collect();
+    if attachments.len() <= MATCH_LIMIT {
+        for (n, page) in pages.iter().enumerate() {
+            env.control.checkpoint()?;
+            package.check_time()?;
+            let Ok(bytes) = package.read(page)? else {
+                continue;
+            };
+            let runs = text_runs(&bytes, min);
+            for (id, slot) in &mut attachments {
+                if slot.is_some() && names(&runs, id) {
+                    if let (Some(found), Some(list)) = (slot.take(), placed.get_mut(n)) {
+                        list.push(found);
+                    }
+                }
+            }
+        }
+    }
+    if let Some(first) = placed.first_mut() {
+        first.extend(attachments.into_iter().filter_map(|(_, a)| a));
+    }
+    Ok(placed)
+}
+
+/// The pages of a package whose handwriting stays behind.
+pub(crate) struct PrivatePages<'a> {
+    pub app: NotesApp,
+    /// The file, for the report.
+    pub path: &'a Path,
+    /// The attachments of each page, in order.
+    pub pages: Vec<Vec<Attachment>>,
+    /// Text for the first page.
+    pub text: Vec<String>,
+    /// What stays behind on each page, named in its report.
+    pub left: Option<&'static str>,
+}
+
+/// Makes one page for each list of attachments, titled by `titles`.
+pub(crate) fn private_pages(
+    plan: PrivatePages<'_>,
+    titles: impl Fn(usize) -> String,
+    env: &ImportEnv<'_>,
+    general: &mut PageReport,
+) -> Result<Converted> {
+    let PrivatePages {
+        app,
+        path,
+        pages,
+        mut text,
+        left,
+    } = plan;
+    let mut out = Converted {
+        pages: Vec::new(),
+        general: Vec::new(),
+    };
+    for (n, attachments) in pages.into_iter().enumerate() {
+        env.control.checkpoint()?;
+        let title = titles(n);
+        let mut page = PageReport {
+            title: title.clone(),
+            source: format!("{} › {title}", path.display()),
+            entries: Vec::new(),
+        };
+        if let Some(what) = left {
+            let why = format!(
+                "{} keeps them in a private format that OpenNote cannot read yet. {}",
+                app.name(),
+                app.pdf_route()
+            );
+            page.skipped(what, why);
+        }
+        let parts = PageParts {
+            title: title.clone(),
+            text: std::mem::take(&mut text),
+            attachments,
+            ..PageParts::default()
+        };
+        let made = build_page(parts, app, env, &mut page);
+        keep_page(made, &title, &mut out, general)?;
+    }
+    out.general = std::mem::take(&mut general.entries);
+    Ok(out)
 }
 
 /// Notes the entries a package refused in a file's general report.

@@ -1,6 +1,7 @@
-//! Goodnotes, Notability, and Samsung Notes files (ADR 0053), from synthetic packages built in the documented
-//! layouts: detection, the import job, a written notebook that the core opens and verifies, and the corpus of
-//! malformed packages in `corpus/notes-apps`, each of which must import or be refused quickly and without a panic.
+//! Goodnotes, Notability, and Samsung Notes files (ADR 0053), from synthetic packages in the documented layouts.
+//!
+//! The tests cover detection, the import job, and a written notebook that the core opens and verifies. Each package
+//! in the corpus of malformed ones, `corpus/notes-apps`, must import or be refused quickly and without a panic.
 
 use std::fs;
 use std::path::{Path, PathBuf};

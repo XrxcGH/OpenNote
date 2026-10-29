@@ -9,17 +9,14 @@
 use std::path::Path;
 
 use super::container::{Member, Package};
-use super::media::{self, Media};
 use super::protobuf;
-use super::{build_page, keep_page, names, note_refused, text_runs, Attachment, NotesApp, PageParts};
+use super::{note_refused, place, private_pages, read_attachments, NotesApp, PrivatePages};
 use crate::error::{InteropError, Result};
 use crate::import::files::Converted;
 use crate::report::PageReport;
 use crate::sink::ImportEnv;
 
 const APP: NotesApp = NotesApp::Goodnotes;
-/// Past this many attachments, they all go on the first page instead of being matched to pages.
-const MATCH_LIMIT: usize = 500;
 
 fn in_folder<'m>(package: &'m Package, folder: &str) -> Vec<&'m Member> {
     package
@@ -46,96 +43,29 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
     }
     let order = index_order(&mut package)?;
     sort_by_index(&mut notes, &order);
-    let mut attachments = Vec::new();
-    for member in &attachment_members {
-        env.control.checkpoint()?;
-        match package.read(member)? {
-            Ok(bytes) => {
-                let kind = media::sniff(&bytes, &member.extension());
-                let ext = match kind {
-                    Media::Image(_, e) | Media::Audio(_, e) => e,
-                    Media::Pdf => "pdf",
-                    Media::Other => "bin",
-                };
-                let id = member.file_name().to_owned();
-                attachments.push((
-                    id.clone(),
-                    Some(Attachment {
-                        name: media::file_name(&id, ext),
-                        kind,
-                        bytes,
-                    }),
-                ));
-            }
-            Err(why) => general.skipped(member.name.clone(), why),
-        }
+    let attachments = read_attachments(&mut package, &attachment_members, env, &mut general)?;
+    let extras = ["index.bookmarks.pb", "index.outlines.pb", "index.outline.pb"];
+    if package
+        .members
+        .iter()
+        .any(|m| extras.iter().any(|e| m.file_name().eq_ignore_ascii_case(e)))
+    {
+        general.skipped(
+            "bookmarks and outline",
+            format!("Goodnotes keeps them in a private form. {}", APP.pdf_route()),
+        );
     }
-    for extra in ["index.bookmarks.pb", "index.outlines.pb", "index.outline.pb"] {
-        if package
-            .members
-            .iter()
-            .any(|m| m.file_name().eq_ignore_ascii_case(extra))
-        {
-            general.skipped(
-                "bookmarks and outline",
-                format!("Goodnotes keeps them in a private form. {}", APP.pdf_route()),
-            );
-            break;
-        }
-    }
-    let mut out = Converted {
-        pages: Vec::new(),
-        general: Vec::new(),
+    let pages = place(&mut package, &notes, attachments, 8, env)?;
+    let left = (!notes.is_empty()).then_some("handwriting and typed text");
+    let titles = |n: usize| format!("Page {}", n + 1);
+    let plan = PrivatePages {
+        app: APP,
+        path,
+        pages,
+        text: Vec::new(),
+        left,
     };
-    let page_count = notes.len().max(1);
-    let mut placed: Vec<Vec<Attachment>> = (0..page_count).map(|_| Vec::new()).collect();
-    for (n, note) in notes.iter().enumerate() {
-        env.control.checkpoint()?;
-        package.check_time()?;
-        if attachments.len() > MATCH_LIMIT {
-            break;
-        }
-        if let Ok(bytes) = package.read(note)? {
-            let runs = text_runs(&bytes, 8);
-            for (id, slot) in &mut attachments {
-                if slot.is_some() && names(&runs, id) {
-                    if let (Some(found), Some(list)) = (slot.take(), placed.get_mut(n)) {
-                        list.push(found);
-                    }
-                }
-            }
-        }
-    }
-    if let Some(first) = placed.first_mut() {
-        first.extend(attachments.into_iter().filter_map(|(_, a)| a));
-    }
-    for (n, files) in placed.into_iter().enumerate() {
-        env.control.checkpoint()?;
-        let title = format!("Page {}", n + 1);
-        let mut page = PageReport {
-            title: title.clone(),
-            source: format!("{} › {title}", path.display()),
-            entries: Vec::new(),
-        };
-        if !notes.is_empty() {
-            page.skipped(
-                "handwriting and typed text",
-                format!(
-                    "Goodnotes keeps them in a private format that OpenNote cannot read yet. {}",
-                    APP.pdf_route()
-                ),
-            );
-        }
-        let parts = PageParts {
-            title: title.clone(),
-            attachments: files,
-            ..PageParts::default()
-        };
-        let made = build_page(parts, APP, env, &mut page);
-        keep_page(made, &title, &mut out, &mut general)?;
-    }
-    out.general = general.entries;
-    Ok(out)
+    private_pages(plan, titles, env, &mut general)
 }
 
 /// The names the document's index lists, in order: the text fields of `index.notes.pb`. An index that is not
