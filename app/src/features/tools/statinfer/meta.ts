@@ -15,6 +15,7 @@ export const STAT_TOOLS = [
   ['multiple', 'ListNumbers'],
   ['resample', 'Shuffle'],
   ['design', 'GridFour'],
+  ['bayes', 'Scales'],
 ] as const;
 
 export type StatTool = (typeof STAT_TOOLS)[number][0];

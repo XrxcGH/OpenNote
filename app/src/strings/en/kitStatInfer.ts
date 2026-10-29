@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { bayes } from './kitStatInfer/bayes';
 import { design } from './kitStatInfer/design';
 import { resample } from './kitStatInfer/resample';
 import { multiple } from './kitStatInfer/multiple';
@@ -24,6 +25,7 @@ export const kitStatInfer = {
     multiple: multiple.tab,
     resample: resample.tab,
     design: design.tab,
+    bayes: bayes.tab,
   },
   open: {
     describe: describe.open,
@@ -34,6 +36,7 @@ export const kitStatInfer = {
     multiple: multiple.open,
     resample: resample.open,
     design: design.open,
+    bayes: bayes.open,
   },
   keywords: {
     describe: describe.keywords,
@@ -44,6 +47,7 @@ export const kitStatInfer = {
     multiple: multiple.keywords,
     resample: resample.keywords,
     design: design.keywords,
+    bayes: bayes.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -90,6 +94,7 @@ export const kitStatInfer = {
     ...multiple.err,
     ...resample.err,
     ...design.err,
+    ...bayes.err,
   },
   answer: {
     ...describe.answer,
@@ -100,6 +105,7 @@ export const kitStatInfer = {
     ...multiple.answer,
     ...resample.answer,
     ...design.answer,
+    ...bayes.answer,
   },
   note: {
     ...describe.note,
@@ -110,6 +116,7 @@ export const kitStatInfer = {
     ...multiple.note,
     ...resample.note,
     ...design.note,
+    ...bayes.note,
   },
   col: {
     summary: 'Summary',
@@ -147,6 +154,7 @@ export const kitStatInfer = {
     ...multiple.col,
     ...resample.col,
     ...design.col,
+    ...bayes.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -161,6 +169,7 @@ export const kitStatInfer = {
     ...multiple.axis,
     ...resample.axis,
     ...design.axis,
+    ...bayes.axis,
   },
   step: {
     ...describe.step,
@@ -171,8 +180,10 @@ export const kitStatInfer = {
     ...multiple.step,
     ...resample.step,
     ...design.step,
+    ...bayes.step,
   },
   describe: describe.fields,
+  bayes: bayes.fields,
   design: design.fields,
   resample: resample.fields,
   multiple: multiple.fields,

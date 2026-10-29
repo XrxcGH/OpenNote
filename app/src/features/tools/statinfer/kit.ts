@@ -5,6 +5,7 @@ import { STAT_KIT_ID, STAT_TOOLS, type StatTool } from './meta';
 
 const BODIES: Record<StatTool, KitToolDef['Component']> = {
   describe: lazy(() => import('./describe/Tool')),
+  bayes: lazy(() => import('./bayes/Tool')),
   design: lazy(() => import('./design/Tool')),
   resample: lazy(() => import('./resample/Tool')),
   multiple: lazy(() => import('./multiple/Tool')),
