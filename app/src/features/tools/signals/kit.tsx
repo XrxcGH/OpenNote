@@ -9,6 +9,7 @@ import styles from './shared/kit.module.css';
 const TOOL_BODIES: Record<SignalToolId, LazyExoticComponent<ComponentType>> = {
   spectrum: lazy(() => import('./spectrum/SpectrumTool').then((m) => ({ default: m.SpectrumTool }))),
   systems: lazy(() => import('./systems/SystemsTool').then((m) => ({ default: m.SystemsTool }))),
+  comms: lazy(() => import('./comms/CommsTool').then((m) => ({ default: m.CommsTool }))),
 };
 
 function firstTool(): SignalToolId {

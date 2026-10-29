@@ -69,4 +69,12 @@ describe('signals and sound kit', () => {
     fireEvent.keyDown(screen.getAllByRole('tab')[1]!, { key: 'ArrowLeft' });
     await walkModes(container);
   });
+
+  it('reads the entropy example, inserts it, and walks every information and coding mode', async () => {
+    const { container } = await openAt('comms');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('H = 1.5 bits');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Insert answer' })[0]!);
+    expect(inserted[0]?.text).toContain('1.5');
+    await walkModes(container);
+  });
 });

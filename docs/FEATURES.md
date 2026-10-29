@@ -24,6 +24,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Math solvers](#math-solvers)
 
 - [Document structure](#document-structure)
+- [Signals, images, sound, and communications](#signals-images-sound-and-communications)
 
 ## How to read the status
 
@@ -603,3 +604,13 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Plots and coefficient tables | Histograms, densities, ECDF, Q-Q, box, fit-band, step, forest, and ROC plots, and a coefficient table that states each verdict in words.                                                     | Built, untested by hand |
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
+
+## Signals, images, sound, and communications
+
+(Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Spectrum analyzer | Amplitude, power, density, Welch, and spectrogram views of pasted samples with window corrections, a Parseval check, band powers, peaks, and damping from the half-power points. | Built, untested by hand |
+| Convolution, sampling, and discrete systems | Convolution as a flip, shift, multiply, and sum table, correlation lags, difference equations with their poles, aliasing and reconstruction, quantization noise, rate changes, and continuous convolution. | Built, untested by hand |
+| Information, coding, and modulation | Entropy, mutual information, and channel capacity; Huffman, Shannon-Fano, and LZ78 source codes; Hamming and linear block codes; standard CRCs; Viterbi decoding; and constellations, bit-error rates, and eye diagrams. | Built, untested by hand |
