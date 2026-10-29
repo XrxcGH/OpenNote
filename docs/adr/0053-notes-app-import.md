@@ -26,8 +26,8 @@ People moving from handwriting apps on tablets and phones asked to bring their n
 
 Entries are read into memory under these caps:
 
-- each entry, 256 MiB;
-- all entries together, 1 GiB;
+- each entry, 128 MiB;
+- all entries together, 512 MiB;
 - the number of entries, 20,000;
 - expansion, 200 times the stored size, for entries over 1 MiB.
 
