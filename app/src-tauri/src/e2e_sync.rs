@@ -582,7 +582,7 @@ impl SyncService {
             _ => {
                 let code = vault::create_pairing(store, &keys, now_ms()).map_err(fail)?;
                 let expires = now_ms() + vault::PAIRING_MS;
-                Ok(json!({ "code": code.text(), "rows": code.qr_rows(), "expires": expires }))
+                Ok(json!({ "code": code.text(), "rows": code.qr_rows().as_slice(), "expires": expires }))
             }
         }
     }

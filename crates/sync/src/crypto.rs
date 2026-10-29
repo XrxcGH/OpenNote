@@ -11,7 +11,7 @@ use blake2::digest::{KeyInit as MacInit, Mac};
 use blake2::Blake2bMac;
 use chacha20poly1305::aead::{Aead, Payload};
 use chacha20poly1305::{XChaCha20Poly1305, XNonce};
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 use crate::error::{Result, SyncError};
 
@@ -213,32 +213,42 @@ pub fn unpad(padded: &[u8]) -> Option<&[u8]> {
 /// Crockford's base32 alphabet, which leaves out I, L, O, and U so codes are easy to read aloud and type.
 const BASE32: &[u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
-/// Bytes as Crockford base32, in groups of `group` characters joined by hyphens.
-pub fn base32(bytes: &[u8], group: usize) -> String {
-    let mut chars = Vec::new();
+/// Bytes as Crockford base32, in groups of `group` characters joined by hyphens. Written in one pass into a buffer
+/// of the exact final size, which is wiped when dropped: a recovery key or pairing code leaves no copy behind.
+pub fn base32(bytes: &[u8], group: usize) -> Zeroizing<String> {
+    let group = group.max(1);
+    let chars = (bytes.len() * 8).div_ceil(5);
+    let mut out = Zeroizing::new(String::with_capacity(chars + chars.saturating_sub(1) / group));
+    let mut written = 0;
+    let mut push = |out: &mut String, value: u32| {
+        if written > 0 && written % group == 0 {
+            out.push('-');
+        }
+        out.push(char::from(BASE32[(value & 31) as usize]));
+        written += 1;
+    };
     let (mut buffer, mut bits) = (0u32, 0u32);
     for &byte in bytes {
         buffer = (buffer << 8) | u32::from(byte);
         bits += 8;
         while bits >= 5 {
             bits -= 5;
-            chars.push(BASE32[((buffer >> bits) & 31) as usize]);
+            push(&mut out, buffer >> bits);
         }
+        buffer &= (1 << bits) - 1;
     }
     if bits > 0 {
-        chars.push(BASE32[((buffer << (5 - bits)) & 31) as usize]);
+        push(&mut out, buffer << (5 - bits));
     }
-    chars
-        .chunks(group.max(1))
-        .map(|part| String::from_utf8_lossy(part).into_owned())
-        .collect::<Vec<_>>()
-        .join("-")
+    buffer.zeroize();
+    out
 }
 
 /// Reads base32 typed by a person: case, spaces, and hyphens don't matter, and O, I, and L read as 0, 1, and 1.
-/// `None` for any other character or a length that isn't `len` bytes.
-pub fn from_base32(text: &str, len: usize) -> Option<Vec<u8>> {
-    let mut out = Vec::with_capacity(len);
+/// `None` for any other character or a length that isn't `len` bytes. The bytes go into a buffer that never grows
+/// and is wiped when dropped.
+pub fn from_base32(text: &str, len: usize) -> Option<Zeroizing<Vec<u8>>> {
+    let mut out = Zeroizing::new(Vec::with_capacity(len));
     let (mut buffer, mut bits) = (0u32, 0u32);
     for ch in text.chars() {
         let ch = match ch.to_ascii_uppercase() {
@@ -251,12 +261,17 @@ pub fn from_base32(text: &str, len: usize) -> Option<Vec<u8>> {
         buffer = (buffer << 5) | value;
         bits += 5;
         if bits >= 8 {
+            if out.len() == len {
+                return None;
+            }
             bits -= 8;
             out.push((buffer >> bits) as u8);
             buffer &= (1 << bits) - 1;
         }
     }
-    (out.len() == len && buffer == 0).then_some(out)
+    let whole = out.len() == len && buffer == 0;
+    buffer.zeroize();
+    whole.then_some(out)
 }
 
 /// Lower-case hex.
@@ -325,18 +340,21 @@ mod tests {
     fn base32_codes_survive_how_people_type_them() {
         // RFC 4648's test bytes "f" and "fo", in Crockford's alphabet:
         // 0x66 = 01100 110(00), and 0x666f = 01100 11001 10111 1(0000).
-        assert_eq!(base32(b"f", 4), "CR");
-        assert_eq!(base32(b"fo", 4), "CSQG");
+        assert_eq!(base32(b"f", 4).as_str(), "CR");
+        assert_eq!(base32(b"fo", 4).as_str(), "CSQG");
+        // 0x666f6f = 01100 11001 10111 10110 1111(0) = C S Q P Y, with a hyphen after every two.
+        assert_eq!(base32(b"foo", 2).as_str(), "CS-QP-Y");
         let bytes: Vec<u8> = (0..32).map(|i| (i * 37 + 11) as u8).collect();
         let code = base32(&bytes, 4);
         assert_eq!(code.split('-').count(), 13);
-        assert_eq!(from_base32(&code, 32).expect("reads"), bytes);
+        assert_eq!(code.capacity(), code.len(), "built in place, never grown");
+        assert_eq!(*from_base32(&code, 32).expect("reads"), bytes);
         let typed = code
             .to_lowercase()
             .replace('-', " ")
             .replace('0', "o")
             .replace('1', "l");
-        assert_eq!(from_base32(&typed, 32).expect("reads typed"), bytes);
+        assert_eq!(*from_base32(&typed, 32).expect("reads typed"), bytes);
         assert!(from_base32(&code, 31).is_none());
         assert!(from_base32("U", 1).is_none(), "U is not in the alphabet");
     }

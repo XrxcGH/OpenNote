@@ -74,7 +74,7 @@ impl VaultKeys {
 
     /// A short, non-secret fingerprint of the vault, to show that two devices joined the same one.
     pub fn fingerprint(&self) -> String {
-        base32(&mac(self.root.as_ref(), &[b"fingerprint", &self.id])[..5], 4)
+        base32(&mac(self.root.as_ref(), &[b"fingerprint", &self.id])[..5], 4).to_string()
     }
 
     /// The header's generation when these keys were unlocked.
@@ -323,7 +323,7 @@ pub fn create_with(backend: &dyn Backend, passphrase: &str, cost: Cost) -> Resul
     let recovery = Zeroizing::new(random::<32>()?);
     let slots = slot_bytes(&id, &root, passphrase, cost, &recovery)?;
     backend.put("vault", &finish_header(&root, &slots, 1, &BTreeSet::new()))?;
-    let text = Zeroizing::new(base32(recovery.as_ref(), 4));
+    let text = base32(recovery.as_ref(), 4);
     Ok((VaultKeys::from_root(id, root, 1), RecoveryKey(text)))
 }
 
@@ -419,7 +419,7 @@ fn unlock_passphrase_at(backend: &dyn Backend, passphrase: &str, quick: bool) ->
 /// Unlocks with the recovery key, typed in any case, with or without hyphens.
 pub fn unlock_recovery(backend: &dyn Backend, recovery: &str) -> Result<VaultKeys> {
     let header = read_vault(backend)?;
-    let bytes = Zeroizing::new(from_base32(recovery, 32).ok_or(SyncError::WrongSecret)?);
+    let bytes = from_base32(recovery, 32).ok_or(SyncError::WrongSecret)?;
     let kek = kek_recovery(&bytes, &header.id);
     let root = unwrap_key(
         &kek,
@@ -438,7 +438,7 @@ pub fn change_passphrase(backend: &dyn Backend, keys: &VaultKeys, recovery: &str
         return Err(SyncError::WeakPassphrase(MIN_PASSPHRASE));
     }
     let header = read_vault(backend)?;
-    let rec = Zeroizing::new(from_base32(recovery, 32).ok_or(SyncError::WrongSecret)?);
+    let rec = from_base32(recovery, 32).ok_or(SyncError::WrongSecret)?;
     // The recovery key must open this vault, so a typo can't leave it without one.
     let check = unwrap_key(
         &kek_recovery(&rec, &header.id),
@@ -644,22 +644,28 @@ impl PairingCode {
         &self.0
     }
 
-    /// The code as a QR code: rows of `1` (dark) and `0`, as the phone dialog draws them.
-    pub fn qr_rows(&self) -> Vec<String> {
-        let Ok(code) =
-            qrcodegen::QrCode::encode_text(&format!("OPENNOTE-SYNC:{}", self.text()), qrcodegen::QrCodeEcc::Medium)
-        else {
-            return Vec::new();
+    /// The code as a QR code: rows of `1` (dark) and `0`, as the phone dialog draws them. The text it encodes and
+    /// the rows, which carry the code too, are wiped when dropped.
+    pub fn qr_rows(&self) -> Zeroizing<Vec<String>> {
+        let mut text = Zeroizing::new(String::with_capacity(QR_PREFIX.len() + self.text().len()));
+        text.push_str(QR_PREFIX);
+        text.push_str(self.text());
+        let Ok(code) = qrcodegen::QrCode::encode_text(&text, qrcodegen::QrCodeEcc::Medium) else {
+            return Zeroizing::new(Vec::new());
         };
-        (0..code.size())
-            .map(|y| {
-                (0..code.size())
-                    .map(|x| if code.get_module(x, y) { '1' } else { '0' })
-                    .collect()
-            })
-            .collect()
+        let size = usize::try_from(code.size()).unwrap_or(0);
+        let mut rows = Zeroizing::new(Vec::with_capacity(size));
+        for y in 0..code.size() {
+            let mut row = String::with_capacity(size);
+            row.extend((0..code.size()).map(|x| if code.get_module(x, y) { '1' } else { '0' }));
+            rows.push(row);
+        }
+        rows
     }
 }
+
+/// What the QR code says before the pairing code, so a phone's camera app knows it is OpenNote's.
+const QR_PREFIX: &str = "OPENNOTE-SYNC:";
 
 /// The plain start of a pairing slot: when it was made, then a keyed hash of that under the vault key. Any device
 /// can tell when a slot it can't open is past its day. A joining device can't be told the code is newer.
@@ -705,7 +711,7 @@ pub fn create_pairing(backend: &dyn Backend, keys: &VaultKeys, now: i64) -> Resu
     slot.extend_from_slice(&made_mac(keys, &name, now));
     slot.extend_from_slice(&sealed);
     backend.put(&name, &slot)?;
-    Ok(PairingCode(Zeroizing::new(base32(code.as_ref(), 4)), name))
+    Ok(PairingCode(base32(code.as_ref(), 4), name))
 }
 
 /// Unlocks with a pairing code, which may carry the `OPENNOTE-SYNC:` prefix of the QR code. The code is used up:
@@ -719,7 +725,7 @@ pub fn join_with_code(backend: &dyn Backend, code: &str, now: i64) -> Result<Vau
         .strip_prefix("OPENNOTE-SYNC:")
         .or_else(|| code.strip_prefix("opennote-sync:"))
         .unwrap_or(code);
-    let bytes = Zeroizing::new(from_base32(code, 15).ok_or(SyncError::WrongSecret)?);
+    let bytes = from_base32(code, 15).ok_or(SyncError::WrongSecret)?;
     let name = format!("j/{}", pairing_tag(&bytes, &header.id));
     let slot = backend.get(&name)?.ok_or(SyncError::PairingExpired)?;
     let plain = slot
