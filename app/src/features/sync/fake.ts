@@ -34,6 +34,7 @@ class FakeSync implements SyncClient {
   private codes = new Set<string>();
   private pending: Summary = EMPTY;
   private paused = false;
+  private unfinished = false;
   private made = 0;
 
   constructor(
@@ -53,7 +54,7 @@ class FakeSync implements SyncClient {
       fingerprint: 'K7Q2-M9XA',
     };
     this.rows = [
-      { tag: 'a1', name: 'Desktop', added: this.now() - DAY * 9, thisDevice: false },
+      { tag: 'a1', name: 'Desktop', added: this.now() - DAY * 9, lastSync: this.now() - 600_000, thisDevice: false },
       { tag: 'b2', name: 'Surface Laptop', added: this.now() - DAY * 2, thisDevice: true },
     ];
     this.current = { ...IDLE, state: 'synced', lastSync: this.now() - 120_000 };
@@ -65,7 +66,7 @@ class FakeSync implements SyncClient {
     let state = this.current.state;
     if (this.paused) state = 'paused';
     else if (this.offline()) state = 'offline';
-    return { ...this.view, recoveryKey: undefined, status: { ...this.current, state } };
+    return { ...this.view, recoveryKey: undefined, unfinished: this.unfinished, status: { ...this.current, state } };
   }
 
   private need(): void {
@@ -96,7 +97,23 @@ class FakeSync implements SyncClient {
 
   async setUp(input: BeginInput): Promise<SyncView> {
     if ((input.passphrase ?? '').length < 10) throw new SyncFailure('weakPassphrase');
-    return { ...this.begin(input, 'b2'), recoveryKey: RECOVERY };
+    this.begin(input, 'b2');
+    this.unfinished = true;
+    this.paused = true;
+    return { ...this.snapshot(), recoveryKey: RECOVERY };
+  }
+
+  async finishSetUp(): Promise<SyncView> {
+    this.need();
+    this.unfinished = false;
+    this.paused = false;
+    return this.snapshot();
+  }
+
+  async cancelSetUp(): Promise<SyncView> {
+    if (!this.unfinished) throw new SyncFailure('unknown');
+    this.unfinished = false;
+    return this.turnOff();
   }
 
   async join(input: BeginInput): Promise<SyncView> {
@@ -154,6 +171,7 @@ class FakeSync implements SyncClient {
 
   async turnOff(): Promise<SyncView> {
     this.view = null;
+    this.unfinished = false;
     this.paused = false;
     this.codes = new Set();
     this.current = IDLE;

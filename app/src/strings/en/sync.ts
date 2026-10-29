@@ -81,6 +81,9 @@ export const sync = {
     help: 'Every device that syncs. Removing one stops it from unlocking sync with its own key.',
     thisDevice: '{name} (this device)',
     added: 'Joined {when}',
+    lastSync: 'Last synced {when}',
+    neverSynced: "Hasn't synced yet",
+    quiet: "Hasn't synced in {days} days. Until you remove it, the other devices keep what it might still need.",
     remove: 'Remove {name}',
     removeTitle: 'Remove {name} from sync?',
     removeBody:
@@ -115,6 +118,9 @@ export const sync = {
       'them.',
     item6: 'If you forget the passphrase, the recovery key is the only way back in. Nobody else can recover it.',
   },
+  unfinished:
+    "Setup didn't finish, because the recovery key wasn't checked, so sync hasn't started. Start again to get a new recovery key.",
+  startAgain: 'Start again',
   wizard: {
     title: 'Set up sync',
     joinTitle: 'Join a sync',

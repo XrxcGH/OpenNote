@@ -50,6 +50,10 @@ struct Config {
     device_name: String,
     paused: bool,
     fingerprint: String,
+    /// Set up here, and the recovery key not checked yet: sync waits, paused, until it is (`finishSetUp`), and
+    /// `cancelSetUp` takes the new vault away again.
+    #[serde(default)]
+    unfinished: bool,
 }
 
 /// What the title bar and Settings show.
@@ -172,6 +176,7 @@ impl SyncService {
             "backend": config.as_ref().map(|c| &c.backend),
             "deviceName": config.as_ref().map(|c| c.device_name.clone()),
             "fingerprint": config.as_ref().map(|c| c.fingerprint.clone()),
+            "unfinished": config.as_ref().is_some_and(|c| c.unfinished),
         })
     }
 
@@ -285,8 +290,9 @@ impl SyncService {
             backend,
             device: tag,
             device_name: name.to_owned(),
-            paused: false,
+            paused: create,
             fingerprint: keys.fingerprint(),
+            unfinished: create,
         })?;
         self.set_status(|s| {
             *s = Status {
@@ -386,20 +392,69 @@ impl SyncService {
             }
             "turnOff" => {
                 let _guard = self.inner.running.lock().unwrap_or_else(PoisonError::into_inner);
-                let _ = self.inner.secrets.delete(DEVICE_SECRET);
-                let _ = self.inner.secrets.delete(WEBDAV_PASSWORD);
-                let _ = fs::remove_file(self.config_path());
-                let _ = fs::remove_file(self.state_path());
-                self.set_status(|s| {
-                    *s = Status {
-                        state: "off",
-                        ..Status::default()
-                    }
-                });
+                // Best effort: take this device's slot out of the vault, so the other devices stop waiting for its
+                // heads before they clean up. Storage that can't be reached now doesn't stop turning off; the
+                // device then stays in the list, where another device can remove it.
+                if let Err(error) = self.remove_own_slot(false) {
+                    ::log::info!("Turning off sync left this device's slot: {}", error.code);
+                }
+                Ok(self.forget_here())
+            }
+            "finishSetUp" => {
+                let mut config = self.config().ok_or_else(|| fail(SyncError::NoVault))?;
+                config.unfinished = false;
+                config.paused = false;
+                self.save_config(&config)?;
                 Ok(self.view())
+            }
+            "cancelSetUp" => {
+                let _guard = self.inner.running.lock().unwrap_or_else(PoisonError::into_inner);
+                if !self.config().is_some_and(|c| c.unfinished) {
+                    return Err(bad("Setup is already finished. To stop syncing, choose Turn off sync."));
+                }
+                if let Err(error) = self.remove_own_slot(true) {
+                    ::log::info!("Canceling setup left the vault: {}", error.code);
+                }
+                Ok(self.forget_here())
             }
             _ => Err(bad("That sync operation isn't known.")),
         }
+    }
+
+    /// Takes this device's slot out of the vault. With `whole`, a vault that nothing else uses yet (no other
+    /// device and no head, as right after setting up here) goes too, so setting up again starts clean.
+    fn remove_own_slot(&self, whole: bool) -> IpcResult<()> {
+        let config = self.config().ok_or_else(|| fail(SyncError::NoVault))?;
+        let backend = self.open_backend(&config.backend, None)?;
+        let store = backend.as_ref();
+        let keys = vault::unlock_device(store, &config.device, &self.device_secret()?).map_err(fail)?;
+        if whole {
+            let others = vault::list_devices(store, &keys)
+                .map_err(fail)?
+                .iter()
+                .any(|d| d.tag != config.device);
+            let heads = !store.list("h/").map_err(fail)?.is_empty();
+            if !others && !heads {
+                store.delete(&format!("k/{}", config.device)).map_err(fail)?;
+                return store.delete("vault").map_err(fail);
+            }
+        }
+        vault::remove_device(store, &keys, &config.device, now_ms()).map_err(fail)
+    }
+
+    /// Forgets sync on this device: its key, the server password, the settings, and the state. Notes stay.
+    fn forget_here(&self) -> Value {
+        let _ = self.inner.secrets.delete(DEVICE_SECRET);
+        let _ = self.inner.secrets.delete(WEBDAV_PASSWORD);
+        let _ = fs::remove_file(self.config_path());
+        let _ = fs::remove_file(self.state_path());
+        self.set_status(|s| {
+            *s = Status {
+                state: "off",
+                ..Status::default()
+            }
+        });
+        self.view()
     }
 
     /// The device list, removing a device, and a pairing code: each unlocks with this device's own slot.
@@ -410,12 +465,16 @@ impl SyncService {
         let keys = vault::unlock_device(store, &config.device, &self.device_secret()?).map_err(fail)?;
         match name {
             "devices" => {
+                // When each device last synced, so a device that stopped (a lost laptop, a dead disk) shows, and
+                // can be removed: until it is, the others keep every chunk it might still need.
+                let last = opennote_sync::last_published(store, &keys).unwrap_or_default();
                 let rows: Vec<Value> = vault::list_devices(store, &keys)
                     .map_err(fail)?
                     .into_iter()
                     .map(|d| {
                         let this = d.tag == config.device;
-                        json!({ "tag": d.tag, "name": d.name, "added": d.added, "thisDevice": this })
+                        let synced = last.get(&d.tag).copied().filter(|at| *at > 0);
+                        json!({ "tag": d.tag, "name": d.name, "added": d.added, "lastSync": synced, "thisDevice": this })
                     })
                     .collect();
                 Ok(Value::Array(rows))
@@ -476,7 +535,8 @@ fn unhex(text: &str) -> Option<[u8; 32]> {
     Some(out)
 }
 
-/// Registers the service and starts the background rounds. They run only while sync is set up, not paused, and Work offline is off.
+/// Registers the service and starts the background rounds. They run only while the `sync.e2ee` flag is on, sync is
+/// set up and not paused, and Work offline is off.
 pub fn start(app: &AppHandle) {
     if app.try_state::<SyncService>().is_none() {
         app.manage(SyncService::new(&app.state::<Paths>()));
@@ -486,13 +546,16 @@ pub fn start(app: &AppHandle) {
     if service.inner.started.swap(true, Ordering::SeqCst) {
         return;
     }
+    let app = app.clone();
     let _ = std::thread::Builder::new().name("opennote-sync".into()).spawn(move || {
         std::thread::sleep(FIRST);
         loop {
             if crate::hardening::safe_mode() {
                 return;
             }
-            if service.config().is_some_and(|c| !c.paused) && !crate::hardening::offline() {
+            // A build with the flag off (Stable) shows no Sync page, so a sync set up in a Beta build waits too.
+            let enabled = crate::platform_flags::is_on_for(&app, crate::platform_flags::SYNC_E2EE);
+            if enabled && service.config().is_some_and(|c| !c.paused) && !crate::hardening::offline() {
                 let notes = service.notes();
                 if let Err(error) = service.round(notes, false) {
                     ::log::info!("A background sync round stopped: {}", error.code);
@@ -564,6 +627,13 @@ mod tests {
         let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Laptop" });
         let made = ok(&laptop, None, "setUp", setup);
         assert_eq!(made["recoveryKey"].as_str().expect("key").split('-').count(), 13);
+        assert_eq!(made["unfinished"], true);
+        assert_eq!(
+            code(&laptop, Some(&dir.path().join("notes-a")), "syncNow", Value::Null),
+            "paused",
+            "nothing syncs until the recovery key is checked"
+        );
+        assert_eq!(ok(&laptop, None, "finishSetUp", Value::Null)["unfinished"], false);
         let synced = ok(&laptop, Some(&dir.path().join("notes-a")), "syncNow", Value::Null);
         assert_eq!(synced["view"]["status"]["state"], "synced");
         let pairing = ok(&laptop, None, "pairingCode", Value::Null);
@@ -601,6 +671,24 @@ mod tests {
     }
 
     #[test]
+    fn cancelling_setup_before_the_key_is_checked_takes_the_new_vault_away() {
+        let dir = tempfile::tempdir().expect("temp");
+        let storage = dir.path().join("storage");
+        let backend = json!({ "kind": "folder", "path": storage.to_string_lossy() });
+        let laptop = service(&dir.path().join("laptop"));
+        let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Laptop" });
+        ok(&laptop, None, "setUp", setup.clone());
+        assert!(storage.join("vault").exists());
+        let off = ok(&laptop, None, "cancelSetUp", Value::Null);
+        assert_eq!(off["configured"], false);
+        assert!(!storage.join("vault").exists(), "the vault nothing used yet is gone");
+        let again = ok(&laptop, None, "setUp", setup);
+        assert_eq!(again["unfinished"], true, "setting up again in the same place works");
+        ok(&laptop, None, "finishSetUp", Value::Null);
+        assert_eq!(code(&laptop, None, "cancelSetUp", Value::Null), codes::INVALID);
+    }
+
+    #[test]
     fn devices_are_listed_and_removed_and_pause_and_turn_off_keep_the_notes() {
         let p = pair();
         let notes_b = p.notes("notes-b");
@@ -625,8 +713,33 @@ mod tests {
         ok(&p.desktop, None, "setPaused", json!({ "paused": true }));
         assert_eq!(code(&p.desktop, Some(&notes_b), "syncNow", Value::Null), "paused");
         assert_eq!(ok(&p.desktop, None, "status", Value::Null)["status"]["state"], "paused");
+        ok(&p.desktop, None, "setPaused", json!({ "paused": false }));
+        let rows = ok(&p.desktop, None, "devices", Value::Null);
+        let me = rows
+            .as_array()
+            .expect("list")
+            .iter()
+            .find(|d| d["thisDevice"] == true)
+            .expect("this device")
+            .clone();
+        assert!(me["lastSync"].as_i64().is_some_and(|at| at > 0), "{me}");
+        let tag = me["tag"].as_str().expect("tag").to_owned();
+        let backend = p
+            .desktop
+            .open_backend(&p.desktop.config().expect("config").backend, None)
+            .expect("backend");
+        let keys =
+            vault::unlock_device(backend.as_ref(), &tag, &p.desktop.device_secret().expect("secret")).expect("keys");
         ok(&p.desktop, None, "turnOff", Value::Null);
         assert_eq!(ok(&p.desktop, None, "status", Value::Null)["configured"], false);
+        assert!(
+            vault::is_removed(backend.as_ref(), &keys, &tag).expect("reads"),
+            "turning off takes this device out of the vault, so cleanup elsewhere doesn't wait for it"
+        );
+        assert!(vault::list_devices(backend.as_ref(), &keys)
+            .expect("lists")
+            .iter()
+            .all(|d| d.tag != tag));
         assert!(
             fs::read(notes_b.join("Bio/todo.txt")).is_ok(),
             "turning off keeps the notes"

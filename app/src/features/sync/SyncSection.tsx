@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { t } from '../../strings/t';
-import { Button, Switch, announce, confirm } from '../../ui';
+import { Button, Switch, announce, confirm, showToast } from '../../ui';
 import { useOffline } from '../diagnostics';
 import { Devices } from './Devices';
 import { codeOf, errorText, placeText, stateText, summaryLines, whenText } from './model';
@@ -152,6 +152,33 @@ function Configured({ view }: { view: SyncView }) {
   );
 }
 
+/** Setup stopped before the recovery key was checked, such as when Settings closed. The key can't be shown again. */
+function Unfinished() {
+  const [busy, setBusy] = useState(false);
+  const again = async () => {
+    setBusy(true);
+    try {
+      setView(await syncClient().cancelSetUp());
+    } catch (error) {
+      showToast({ message: errorText(codeOf(error)), tone: 'danger' });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className={styles.block} aria-label={t('sync.setUp')}>
+      <p className={styles.notice} role="status">
+        {t('sync.unfinished')}
+      </p>
+      <div className={styles.actions}>
+        <Button variant="primary" onClick={() => void again()} disabled={busy}>
+          {t('sync.startAgain')}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 export default function SyncSection() {
   useSyncPolling(15_000);
   const view = useSyncView();
@@ -172,7 +199,9 @@ export default function SyncSection() {
           {t('sync.offlineNotice')}
         </p>
       )}
-      {view?.configured ? (
+      {view?.configured && view.unfinished ? (
+        <Unfinished />
+      ) : view?.configured ? (
         <Configured view={view} />
       ) : (
         <section className={styles.block} aria-label={t('sync.setUp')}>

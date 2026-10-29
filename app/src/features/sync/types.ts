@@ -39,6 +39,8 @@ export interface SyncView {
   fingerprint: string | null;
   /** Only in the answer to setUp, once. */
   recoveryKey?: string;
+  /** Set up here, and the recovery key not checked yet: sync waits until it is. */
+  unfinished?: boolean;
 }
 
 export interface Conflict {
@@ -59,6 +61,8 @@ export interface DeviceRow {
   tag: string;
   name: string;
   added: number;
+  /** When it last synced, in Unix milliseconds; null before its first sync, or for a head older than this. */
+  lastSync?: number | null;
   thisDevice: boolean;
 }
 
@@ -91,6 +95,10 @@ export interface SyncClient {
   pairingCode(): Promise<PairingCode>;
   trustStorage(): Promise<SyncView>;
   turnOff(): Promise<SyncView>;
+  /** Ends setup once the recovery key was checked: sync starts. */
+  finishSetUp(): Promise<SyncView>;
+  /** Stops an unfinished setup, and takes away the new vault if nothing else uses it yet. */
+  cancelSetUp(): Promise<SyncView>;
 }
 
 /** A refusal from the host, with its code. */

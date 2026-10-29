@@ -255,13 +255,41 @@ function useWizard(mode: Mode, onDone: (view: SyncView) => void) {
     if (step === 3) return go(4);
     const key = made?.recovery ?? '';
     if (made && groupMatches(key, groups[0], f.first) && groupMatches(key, groups[1], f.second)) {
-      const view = made.view;
-      setMade(null);
-      return finish(view, 'sync.wizard.ready', onDone);
+      return void confirmKey();
     }
     setProblem(t('sync.wizard.checkWrong'));
   };
-  return { step, f, set, problem, busy, recovery: made?.recovery ?? '', groups, go, submit };
+
+  // Sync waits, paused, from setup until the key is checked; only then does it start.
+  const confirmKey = async () => {
+    setBusy(true);
+    try {
+      const view = await syncClient().finishSetUp();
+      setView(view);
+      setMade(null);
+      finish(view, 'sync.wizard.ready', onDone);
+    } catch (error) {
+      setProblem(errorText(codeOf(error)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // After setup made the vault, Cancel takes it away again, so no sync runs with a key nobody saved.
+  const cancel = async (onCancel: () => void) => {
+    if (!made) return onCancel();
+    setBusy(true);
+    try {
+      setView(await syncClient().cancelSetUp());
+      setMade(null);
+      onCancel();
+    } catch (error) {
+      setProblem(errorText(codeOf(error)));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { step, f, set, problem, busy, recovery: made?.recovery ?? '', groups, go, submit, cancel };
 }
 
 export function Wizard({ mode, onDone, onCancel }: WizardProps) {
@@ -301,6 +329,11 @@ export function Wizard({ mode, onDone, onCancel }: WizardProps) {
         {w.step < 3 && (
           <Button onClick={w.step === 1 ? onCancel : () => w.go(1)} disabled={w.busy}>
             {w.step === 1 ? t('sync.wizard.cancel') : t('sync.wizard.back')}
+          </Button>
+        )}
+        {w.step >= 3 && (
+          <Button onClick={() => void w.cancel(onCancel)} disabled={w.busy}>
+            {t('sync.wizard.cancel')}
           </Button>
         )}
         {w.step === 4 && <Button onClick={() => w.go(3)}>{t('sync.wizard.back')}</Button>}

@@ -4,7 +4,7 @@ import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
 import { formatBytes } from '../diagnostics';
 import { SyncFailure } from './types';
-import type { BackendConfig, Summary, SyncErrorCode, SyncState, SyncView } from './types';
+import type { BackendConfig, DeviceRow, Summary, SyncErrorCode, SyncState, SyncView } from './types';
 
 /** The calm sentence for an error code. */
 export function errorText(code: SyncErrorCode): string {
@@ -24,6 +24,22 @@ export function stateText(state: SyncState): string {
 export function whenText(ms: number): string {
   const iso = new Date(ms).toISOString();
   return `${formatDate(iso)}, ${formatTime(iso)}`;
+}
+
+/** After this many days without syncing, a device's row says it is holding up the others' cleanup. */
+export const QUIET_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** A device's second line: when it joined and when it last synced, and a word when it has gone quiet. */
+export function deviceLines(device: DeviceRow, now: number): string[] {
+  const lines = [t('sync.devices.added', { when: whenText(device.added) })];
+  if (device.thisDevice) return lines;
+  const last = device.lastSync ?? null;
+  lines.push(last === null ? t('sync.devices.neverSynced') : t('sync.devices.lastSync', { when: whenText(last) }));
+  const since = last ?? device.added;
+  const days = Math.floor((now - since) / DAY_MS);
+  if (days >= QUIET_DAYS) lines.push(t('sync.devices.quiet', { days }));
+  return lines;
 }
 
 export function placeText(backend: BackendConfig): string {

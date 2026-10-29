@@ -1,11 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import { createFakeSync, FAKE_SECRETS } from './fake';
-import { checkGroups, chipText, groupMatches, passphraseProblem, placeReady, qrPath, summaryLines } from './model';
+import {
+  checkGroups,
+  chipText,
+  deviceLines,
+  groupMatches,
+  passphraseProblem,
+  placeReady,
+  qrPath,
+  summaryLines,
+} from './model';
 import { SyncFailure } from './types';
 import type { Summary, SyncStatus } from './types';
 
 const EMPTY: Summary = { upload: [], download: [], delete: [], conflicts: [], bytesUp: 0, bytesDown: 0 };
 const KEY = 'TEST-ONLY-FAKE-0000-1111-2222-3333-4444-5555-6666-7777-8888-9999';
+
+describe('the device list', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const now = Date.UTC(2026, 9, 29, 12);
+  const row = { tag: 'a1', name: 'Desktop', added: now - 100 * DAY, thisDevice: false };
+
+  it('says when each other device last synced, and when one has gone quiet', () => {
+    const recent = deviceLines({ ...row, lastSync: now - DAY }, now);
+    expect(recent).toHaveLength(2);
+    expect(recent[1]).toMatch(/^Last synced /);
+    const quiet = deviceLines({ ...row, lastSync: now - 45 * DAY }, now);
+    expect(quiet[2]).toBe(
+      "Hasn't synced in 45 days. Until you remove it, the other devices keep what it might still need.",
+    );
+    const never = deviceLines({ ...row, lastSync: null }, now);
+    expect(never[1]).toBe("Hasn't synced yet");
+    expect(never[2]).toMatch(/^Hasn't synced in 100 days/);
+    expect(deviceLines({ ...row, thisDevice: true }, now)).toHaveLength(1);
+  });
+});
 
 describe('the recovery key check', () => {
   it('asks for two different groups that exist', () => {

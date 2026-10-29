@@ -29,5 +29,7 @@ export function createTauriSync(): SyncClient {
     pairingCode: () => call('pairingCode'),
     trustStorage: () => call('trustStorage'),
     turnOff: () => call('turnOff'),
+    finishSetUp: () => call('finishSetUp'),
+    cancelSetUp: () => call('cancelSetUp'),
   };
 }

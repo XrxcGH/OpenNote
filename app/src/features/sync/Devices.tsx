@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { t } from '../../strings/t';
 import { Button, Dialog, announce, confirm, showToast } from '../../ui';
-import { codeOf, errorText, qrPath, whenText } from './model';
+import { codeOf, deviceLines, errorText, qrPath } from './model';
 import { refreshSync, setView, syncClient } from './runtime';
 import styles from './sync.module.css';
 import type { DeviceRow, PairingCode } from './types';
@@ -48,6 +48,8 @@ export function Devices() {
   const [devices, setDevices] = useState<DeviceRow[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [code, setCode] = useState<PairingCode | null>(null);
+  // The time the rows are read against, for "Last synced" and a device that has gone quiet.
+  const [now] = useState(() => Date.now());
   const load = () =>
     syncClient()
       .devices()
@@ -100,7 +102,11 @@ export function Devices() {
             <li key={device.tag} className={styles.row}>
               <span className={styles.rowText}>
                 <span>{device.thisDevice ? t('sync.devices.thisDevice', { name: device.name }) : device.name}</span>
-                <span className={styles.help}>{t('sync.devices.added', { when: whenText(device.added) })}</span>
+                {deviceLines(device, now).map((line) => (
+                  <span key={line} className={styles.help}>
+                    {line}
+                  </span>
+                ))}
               </span>
               {!device.thisDevice && (
                 <Button
