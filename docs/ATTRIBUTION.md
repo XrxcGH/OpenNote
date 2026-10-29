@@ -52,7 +52,7 @@ A crate copied into `crates/third_party/<name>/` gets a row here with its upstre
 
 ## File format descriptions
 
-The Goodnotes, Notability, and Samsung Notes importers were written from public descriptions of those formats, and no code was read or copied. The [import README](../crates/interop/src/import/README.md#goodnotes-notability-and-samsung-notes) lists the sources, and ADR 0053 says what each one gave.
+The Goodnotes, Notability, and Samsung Notes importers were written from public descriptions of those formats, and no code was read or copied. [ADR 0053](adr/0053-notes-app-import.md#decision) lists the sources, under "Clean-room", and says what each one gave.
 
 ## Tools that are built but not shipped
 
