@@ -65,6 +65,7 @@ import { kitElectrical } from './kitElectrical';
 import { kitFluidHeat } from './kitFluidHeat';
 import { kitSolids } from './kitSolids';
 import { kitAero } from './kitAero';
+import { kitThermo } from './kitThermo';
 
 export const en = {
   common,
@@ -132,4 +133,5 @@ export const en = {
   kitFluidHeat,
   kitSolids,
   kitAero,
+  kitThermo,
 } as const;

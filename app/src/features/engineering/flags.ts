@@ -16,7 +16,8 @@ export type EngineeringFlagId =
   | 'kits.electrical'
   | FluidHeatKitFlagId
   | 'kits.aero'
-  | SolidsKitFlagId;
+  | SolidsKitFlagId
+  | 'kits.thermo';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
@@ -49,4 +50,8 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
   ),
   flag('tables.units', 'Units and engineering notation in smart table columns, with totals that convert units.'),
   ...SOLIDS_KIT_FLAGS,
+  flag(
+    'kits.thermo',
+    'The thermodynamics kit: steam, refrigerant, and gas properties, devices, cycles, psychrometrics, and combustion.',
+  ),
 ];

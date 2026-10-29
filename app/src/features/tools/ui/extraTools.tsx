@@ -42,6 +42,9 @@ const KitAero = lazy(() =>
     .then((loaded) => ({ default: loaded.KitAeroTool })),
 );
 
+// The thermodynamics kit loads with its engines' forms on first open, so the tool windows' own code stays small.
+const ThermoKit = lazy(() => import('../../engineering').then((engineering) => engineering.loadThermoKit()));
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -122,6 +125,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     return (
       <Suspense fallback={null}>
         <ChemMatKit />
+      </Suspense>
+    );
+  if (tool === 'kit-thermo')
+    return (
+      <Suspense fallback={null}>
+        <ThermoKit />
       </Suspense>
     );
   return null;
