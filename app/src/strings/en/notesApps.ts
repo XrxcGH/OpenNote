@@ -5,7 +5,10 @@ export const notesApps = {
   heading: 'Handwriting apps',
   intro:
     'OpenNote reads these apps’ own files. What it cannot read yet, such as Goodnotes’ and Samsung Notes’ ' +
-    'handwriting, is listed in the check before anything is added.',
+    'handwriting, is listed in the check before anything is added. ' +
+    // Remove this sentence once the owner has checked the readers against real exported files (ADR 0053).
+    'These readers were built without the apps’ own files; if a note comes in wrong or empty, the PDF export ' +
+    'always works.',
   apps: {
     goodnotes: 'Goodnotes documents (.goodnotes) and backups of them',
     notability: 'Notability notes (.note), with handwriting, text, pictures, and recordings',

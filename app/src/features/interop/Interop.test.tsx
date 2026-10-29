@@ -83,6 +83,7 @@ describe('Import notes', () => {
     const dialog = await openImport();
     const apps = within(dialog).getByRole('region', { name: 'Handwriting apps' });
     expect(within(apps).getByText(/Notability notes \(\.note\)/)).toBeTruthy();
+    expect(within(apps).getByText(/built without the apps’ own files; if a note comes in wrong or empty/)).toBeTruthy();
     expect(within(apps).getByText(/In Goodnotes, choose Share, then Export, then PDF/)).toBeTruthy();
     expect(within(apps).getByRole('button', { name: 'Import a PDF…' })).toBeTruthy();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a file…' }));
