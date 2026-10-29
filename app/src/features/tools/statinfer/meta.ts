@@ -13,6 +13,7 @@ export const STAT_TOOLS = [
   ['correlation', 'ChartScatter'],
   ['ranks', 'Ranking'],
   ['multiple', 'ListNumbers'],
+  ['resample', 'Shuffle'],
 ] as const;
 
 export type StatTool = (typeof STAT_TOOLS)[number][0];

@@ -14,6 +14,7 @@ export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [
   ['correlation', 'ChartScatter'],
   ['ranks', 'Ranking'],
   ['multiple', 'ListNumbers'],
+  ['resample', 'Shuffle'],
 ];
 
 async function open(tool?: string): Promise<void> {

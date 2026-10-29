@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { resample } from './kitStatInfer/resample';
 import { multiple } from './kitStatInfer/multiple';
 import { ranks } from './kitStatInfer/ranks';
 import { correlation } from './kitStatInfer/correlation';
@@ -20,6 +21,7 @@ export const kitStatInfer = {
     correlation: correlation.tab,
     ranks: ranks.tab,
     multiple: multiple.tab,
+    resample: resample.tab,
   },
   open: {
     describe: describe.open,
@@ -28,6 +30,7 @@ export const kitStatInfer = {
     correlation: correlation.open,
     ranks: ranks.open,
     multiple: multiple.open,
+    resample: resample.open,
   },
   keywords: {
     describe: describe.keywords,
@@ -36,6 +39,7 @@ export const kitStatInfer = {
     correlation: correlation.keywords,
     ranks: ranks.keywords,
     multiple: multiple.keywords,
+    resample: resample.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -80,6 +84,7 @@ export const kitStatInfer = {
     ...correlation.err,
     ...ranks.err,
     ...multiple.err,
+    ...resample.err,
   },
   answer: {
     ...describe.answer,
@@ -88,6 +93,7 @@ export const kitStatInfer = {
     ...correlation.answer,
     ...ranks.answer,
     ...multiple.answer,
+    ...resample.answer,
   },
   note: {
     ...describe.note,
@@ -96,6 +102,7 @@ export const kitStatInfer = {
     ...correlation.note,
     ...ranks.note,
     ...multiple.note,
+    ...resample.note,
   },
   col: {
     summary: 'Summary',
@@ -131,6 +138,7 @@ export const kitStatInfer = {
     ...correlation.col,
     ...ranks.col,
     ...multiple.col,
+    ...resample.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -143,6 +151,7 @@ export const kitStatInfer = {
     ...correlation.axis,
     ...ranks.axis,
     ...multiple.axis,
+    ...resample.axis,
   },
   step: {
     ...describe.step,
@@ -151,8 +160,10 @@ export const kitStatInfer = {
     ...correlation.step,
     ...ranks.step,
     ...multiple.step,
+    ...resample.step,
   },
   describe: describe.fields,
+  resample: resample.fields,
   multiple: multiple.fields,
   ranks: ranks.fields,
   correlation: correlation.fields,
