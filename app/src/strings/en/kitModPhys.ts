@@ -8,6 +8,7 @@ import { stars } from './kitModPhys/stars';
 import { cosmos } from './kitModPhys/cosmos';
 import { sky } from './kitModPhys/sky';
 import { solids } from './kitModPhys/solids';
+import { schrodinger } from './kitModPhys/schrodinger';
 
 export const kitModPhys = {
   window: {
@@ -91,6 +92,7 @@ export const kitModPhys = {
     noJunction: 'The doping is too low for a junction: N_A N_D must be larger than n_i².',
     pastBuiltIn: 'The forward bias must stay below the built-in potential for the depletion approximation.',
     noPower: 'The cell gives no current at zero volts with these values.',
+    badLevelsCount: 'Ask for 1 to 12 levels.',
   },
   q: {
     density: 'The density',
@@ -215,6 +217,16 @@ export const kitModPhys = {
     photocurrent: 'The photocurrent',
     resistance: 'The resistance',
     irradiance: 'The irradiance',
+    width: 'The width',
+    depth: 'The depth',
+    hw: 'The oscillator energy ħω',
+    force: 'The force',
+    strength: 'The delta strength',
+    domain: 'The domain edge',
+    points: 'The number of grid points',
+    levels: 'The number of levels',
+    center: 'The packet center',
+    mev: 'The energy',
   },
   tools: {
     plasma: {
@@ -274,6 +286,14 @@ export const kitModPhys = {
         'semiconductor intrinsic doping fermi level mobility hall pn junction depletion diode mos capacitor ' +
         'threshold solar cell fill factor',
     },
+    schrodinger: {
+      title: 'Quantum wells, barriers, and wave packets',
+      open: 'Open the quantum wells and barriers tool',
+      keywords:
+        'schrodinger equation infinite finite square well harmonic oscillator morse double well bound state ' +
+        'eigenvalue wavefunction uncertainty tunneling barrier step transmission reflection transfer matrix ' +
+        'resonant wave packet crank nicolson quantum dot gamow wkb',
+    },
   },
   plasma,
   stars,
@@ -283,4 +303,5 @@ export const kitModPhys = {
   molecules,
   sky,
   solids,
+  schrodinger,
 } as const;

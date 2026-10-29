@@ -52,7 +52,8 @@ export type Problem =
   | 'noCarriers'
   | 'noJunction'
   | 'pastBuiltIn'
-  | 'noPower';
+  | 'noPower'
+  | 'badLevelsCount';
 
 export class PhysicsError extends Error {
   constructor(
