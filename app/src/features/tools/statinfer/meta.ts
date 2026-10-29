@@ -12,6 +12,7 @@ export const STAT_TOOLS = [
   ['epi', 'FirstAidKit'],
   ['correlation', 'ChartScatter'],
   ['ranks', 'Ranking'],
+  ['multiple', 'ListNumbers'],
 ] as const;
 
 export type StatTool = (typeof STAT_TOOLS)[number][0];

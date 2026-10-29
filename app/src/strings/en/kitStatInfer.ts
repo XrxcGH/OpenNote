@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { multiple } from './kitStatInfer/multiple';
 import { ranks } from './kitStatInfer/ranks';
 import { correlation } from './kitStatInfer/correlation';
 import { epi } from './kitStatInfer/epi';
@@ -18,6 +19,7 @@ export const kitStatInfer = {
     epi: epi.tab,
     correlation: correlation.tab,
     ranks: ranks.tab,
+    multiple: multiple.tab,
   },
   open: {
     describe: describe.open,
@@ -25,6 +27,7 @@ export const kitStatInfer = {
     epi: epi.open,
     correlation: correlation.open,
     ranks: ranks.open,
+    multiple: multiple.open,
   },
   keywords: {
     describe: describe.keywords,
@@ -32,6 +35,7 @@ export const kitStatInfer = {
     epi: epi.keywords,
     correlation: correlation.keywords,
     ranks: ranks.keywords,
+    multiple: multiple.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -75,6 +79,7 @@ export const kitStatInfer = {
     ...epi.err,
     ...correlation.err,
     ...ranks.err,
+    ...multiple.err,
   },
   answer: {
     ...describe.answer,
@@ -82,6 +87,7 @@ export const kitStatInfer = {
     ...epi.answer,
     ...correlation.answer,
     ...ranks.answer,
+    ...multiple.answer,
   },
   note: {
     ...describe.note,
@@ -89,6 +95,7 @@ export const kitStatInfer = {
     ...epi.note,
     ...correlation.note,
     ...ranks.note,
+    ...multiple.note,
   },
   col: {
     summary: 'Summary',
@@ -123,6 +130,7 @@ export const kitStatInfer = {
     ...epi.col,
     ...correlation.col,
     ...ranks.col,
+    ...multiple.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -134,6 +142,7 @@ export const kitStatInfer = {
     ...epi.axis,
     ...correlation.axis,
     ...ranks.axis,
+    ...multiple.axis,
   },
   step: {
     ...describe.step,
@@ -141,8 +150,10 @@ export const kitStatInfer = {
     ...epi.step,
     ...correlation.step,
     ...ranks.step,
+    ...multiple.step,
   },
   describe: describe.fields,
+  multiple: multiple.fields,
   ranks: ranks.fields,
   correlation: correlation.fields,
   epi: epi.fields,
