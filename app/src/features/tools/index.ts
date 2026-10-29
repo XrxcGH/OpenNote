@@ -36,3 +36,5 @@ export {
 export type { KitId, KitOpener } from './kits/registry';
 export type { KitDef, KitInsertContent, KitResultRow, KitStep, KitToolDef, KitToolProps } from './kits/types';
 export const loadKits = () => import('./kits');
+// The kit figure block's page view (features/tools/subjects/figure), loaded when a page shows a figure.
+export const loadKitFigure = () => import('./subjects/figure/block');
