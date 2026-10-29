@@ -34,6 +34,7 @@
   .input {
     flex: 1;
     min-inline-size: 12ch;
+    min-block-size: var(--target-size);
     padding: var(--space-2) var(--space-3);
     font-family: var(--font-mono);
     font-size: var(--type-small-size);
@@ -94,7 +95,11 @@
 
   .label {
     fill: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: calc(11px * var(--svg-k, 1));
+    paint-order: stroke;
+    stroke: var(--color-surface-page);
+    stroke-width: calc(3px * var(--svg-k, 1));
+    stroke-linejoin: round;
   }
 
   .curve {

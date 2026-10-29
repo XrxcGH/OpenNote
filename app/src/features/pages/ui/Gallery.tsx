@@ -252,7 +252,9 @@ function GalleryCell(props: CellProps) {
           <Thumbnail platform={platform} node={node} />
         </div>
       </div>
-      <span className={styles.title}>{titleOf(node)}</span>
+      <span className={styles.title} title={titleOf(node)}>
+        {titleOf(node)}
+      </span>
       <span className={styles.date}>{t('pageViews.gallery.modified', { date: formatDate(node.modified) })}</span>
     </div>
   );
@@ -348,7 +350,7 @@ export function Gallery({ notes, platform, notebookId, sectionId, navigate, clos
   const grid = useRef<HTMLDivElement>(null);
   const { width, scroll, setScroll } = useScroller(scroller, pages.length);
   const layout = useMemo(
-    () => gridLayout({ width: Math.max(160, width - 4), count: pages.length, aspect: ASPECT }),
+    () => gridLayout({ width: Math.max(160, width - 16), count: pages.length, aspect: ASPECT, caption: 68 }),
     [width, pages.length],
   );
   const range = visibleRange(layout, scroll.top, scroll.height, 1);

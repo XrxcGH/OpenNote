@@ -120,7 +120,7 @@ export interface Run {
   readonly results: readonly Result[];
 }
 
-const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+const cell = (text: string) => text.replace(/[\\|]/g, '\\$&').replace(/\s+/g, ' ').trim();
 
 /** The run as a Markdown table, for the job summary and for docs/testing/keyboard-and-screen-reader.md. */
 export function table(run: Run): string {

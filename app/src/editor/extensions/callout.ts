@@ -57,7 +57,7 @@ class CalloutView implements NodeView {
     controls.className = styles.calloutControls;
     this.typeButton = button(styles.calloutType, () => void this.chooseType());
     this.typeButton.setAttribute('aria-haspopup', 'menu');
-    this.foldButton = button(styles.foldButton, () => this.toggleFold());
+    this.foldButton = button(styles.calloutFold, () => this.toggleFold());
     controls.append(this.typeButton, this.foldButton);
     this.contentDOM = document.createElement('div');
     this.contentDOM.className = styles.calloutBody;

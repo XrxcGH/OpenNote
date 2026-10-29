@@ -18,7 +18,7 @@ function Facts() {
     [t('settings.about.version'), version],
     [t('settings.about.architecture'), t(`settings.about.architectures.${architecture}`)],
     [t('settings.about.channel'), t(`settings.about.channels.${channel}`)],
-    [t('settings.about.webview'), webview2Version],
+    [t('settings.about.webview'), webview2Version || t('settings.about.notReported')],
     [t('settings.about.license'), t('settings.about.licenseValue')],
   ];
   return (

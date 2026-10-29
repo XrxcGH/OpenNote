@@ -50,7 +50,8 @@
     --row-height: var(--size-row-touch);
   }
 
-  .row[data-kind='page'] {
+  .row[data-kind='page'],
+  :global(:root[data-density='touch']) .row[data-kind='page'] {
     --row-height: var(--size-page-row);
   }
 
@@ -207,8 +208,17 @@
     font-style: italic;
   }
 
+  /* The kebab takes no room while it is hidden, so a name uses the whole row and ends at its edge. When it shows
+     it lies over the end of the row, on the row's own fill, and only then hides the last of the name. */
   .more {
-    flex: none;
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: var(--space-1);
+    display: grid;
+    align-items: center;
+    padding-inline-start: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: inherit;
     opacity: 0;
   }
 
@@ -222,12 +232,15 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    inline-size: 100%;
     min-inline-size: 0;
   }
 
   .renameInput {
+    inline-size: 100%;
     min-inline-size: 0;
-    padding-inline: var(--space-2);
+    box-sizing: border-box;
+    padding-inline: var(--space-3);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
     background: var(--color-surface-raised);
@@ -264,10 +277,13 @@
   .empty {
     margin: 0;
     color: var(--color-text-secondary);
+    text-wrap: balance;
   }
 
   .empty p {
     margin: 0;
+    /* A short sentence breaks into even lines, not a full one, and a single word. */
+    text-wrap: balance;
   }
 
   .emptyArt {

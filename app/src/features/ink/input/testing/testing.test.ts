@@ -107,6 +107,16 @@ describe('the label oracle', () => {
     );
   });
 
+  it('labels a palm whose noisy travel reaches the settle bound as a slide, whichever way the noise points', () => {
+    // CI seed 99990: a lone rest drifting 9.4 mm read 10.07 mm to the filter once the noise of both ends was added.
+    const s = SCENARIOS.find((x) => x.name === 'loneRest')!;
+    const p = PROFILES.find((x) => x.id === 'phone-finger')!;
+    const session = generate(s, p, 99_990);
+    const result = replaySession(session);
+    expect(oracleHolds(session, result)).toEqual([]);
+    expect(session.labels.some((l) => l.limit === 'slides-like-a-stroke')).toBe(true);
+  });
+
   it('gives labeled palms the same outcome when events in a frame arrive in another order', () => {
     fc.assert(
       fc.property(fc.constantFrom(...pairs), fc.integer({ min: 1, max: 100_000 }), ({ s, p }, seed) => {

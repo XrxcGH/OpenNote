@@ -37,6 +37,9 @@ beforeEach(async () => {
   idle = [];
   vi.stubGlobal('requestIdleCallback', (callback: IdleRequestCallback) => idle.push(callback));
   vi.stubGlobal('cancelIdleCallback', () => {});
+  // A highlight that takes over SLOW_MS is dropped as too slow to trust, which a loaded runner does to the first one;
+  // the tests that want colors run on a clock that stands still, and the ones about slowness set their own.
+  vi.spyOn(performance, 'now').mockReturnValue(0);
   await loadEngine();
   await loadGrammar('javascript');
 });
