@@ -1,6 +1,6 @@
 // Ink for export: the live strokes of a page from its segment records (format spec 8.3), decoded into page units.
 
-import { decodePoints, type InkRecord, type Stroke } from '../../../core/ink/codec';
+import { CHANNEL_PRESSURE, CHANNEL_TIME, decodePoints, type InkRecord, type Stroke } from '../../../core/ink/codec';
 import type { ExportStroke, Transform } from './source';
 
 /**
@@ -45,6 +45,7 @@ export function toExportStroke(stroke: Stroke): ExportStroke | null {
       y: Array.from(points.y, (v) => v / 64),
       pressure,
       transform,
+      exact: !stroke.startUnknown && (stroke.channels & (CHANNEL_TIME | CHANNEL_PRESSURE)) === 0,
     };
   } catch {
     // A stroke whose points cannot be read is left out of the export, as the page view leaves it out.

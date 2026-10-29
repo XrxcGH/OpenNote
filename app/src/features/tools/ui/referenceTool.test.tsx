@@ -66,9 +66,10 @@ describe('the reference tables', () => {
     expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Neon/);
     await userEvent.keyboard('{ArrowLeft}');
     expect(document.activeElement?.getAttribute('aria-label')).toMatch(/^Fluorine/);
-    const card = screen.getByRole('region', { name: 'Fluorine' });
-    expect(within(card).getByText('Electronegativity (Pauling)')).toBeTruthy();
-    expect(within(card).getByText('3.98')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Fluorine' })).toBeTruthy();
+    const facts = within(screen.getByRole('region', { name: 'More facts about Fluorine' }));
+    expect(facts.getByText('Electronegativity (Pauling)')).toBeTruthy();
+    expect(facts.getByText('3.98')).toBeTruthy();
     // Only one button is in the tab order.
     const cells = screen.getAllByRole('button', { name: /atomic number/ });
     expect(cells.filter((one) => one.getAttribute('tabindex') === '0')).toHaveLength(1);
@@ -77,11 +78,11 @@ describe('the reference tables', () => {
   it('shows density, melting and boiling points, oxidation states, and isotopes on the card', async () => {
     renderUi(<ReferenceTool />);
     await userEvent.click(screen.getByRole('button', { name: /^Iron, symbol Fe/ }));
-    const card = screen.getByRole('region', { name: 'Iron' });
-    expect(within(card).getByText('7.874 g/cm³')).toBeTruthy();
-    expect(within(card).getByText(/1,?811 K/)).toBeTruthy();
-    expect(within(card).getByText('+2, +3')).toBeTruthy();
-    expect(within(card).getByText('54, 56, 57, 58')).toBeTruthy();
+    const facts = within(screen.getByRole('region', { name: 'More facts about Iron' }));
+    expect(facts.getByText('7.874 g/cm³')).toBeTruthy();
+    expect(facts.getByText(/1,?811 K/)).toBeTruthy();
+    expect(facts.getByText('+2, +3')).toBeTruthy();
+    expect(facts.getByText('54, 56, 57, 58')).toBeTruthy();
   });
 
   it('moves between the f-block and the table with the arrow keys', async () => {

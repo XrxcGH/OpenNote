@@ -37,7 +37,8 @@ export interface TreeRowProps {
   onAux(row: Row, event: MouseEvent): void;
   onToggle(row: Row): void;
   onRename(row: Row): void;
-  onMore(row: Row, anchor: HTMLElement): void;
+  /** The menu hangs from the kebab button; focus comes back to the row. */
+  onMore(row: Row, anchor: HTMLElement, returnFocus: HTMLElement): void;
 }
 
 /** "Section, color Fern", or "Subpage, Sep 28, 2026". */
@@ -99,6 +100,7 @@ function TreeRowView(props: TreeRowProps) {
   const { node } = row;
   const id = useId();
   const element = useRef<HTMLDivElement>(null);
+  const more = useRef<HTMLSpanElement>(null);
   const title = titleOf(node);
   const style = { '--level': row.level - 1, ...(top === undefined ? {} : { top }) } as CSSProperties;
   return (
@@ -151,13 +153,13 @@ function TreeRowView(props: TreeRowProps) {
       </span>
       {node.pinned && !renaming && <PushPinIcon aria-hidden className={styles.pin} weight="fill" />}
       {!renaming && <Protection node={node} />}
-      <span className={styles.more}>
+      <span className={styles.more} ref={more}>
         <IconButton
           label={t('tree.menu.more', { title })}
           icon={DotsThreeIcon}
           tabIndex={-1}
           hasPopup="menu"
-          onPress={() => element.current && props.onMore(row, element.current)}
+          onPress={() => element.current && props.onMore(row, more.current ?? element.current, element.current)}
         />
       </span>
     </div>

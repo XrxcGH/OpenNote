@@ -3,11 +3,12 @@
 import { t } from '../../../strings/t';
 import type { Element } from '../reference/data';
 import extra from './extra.module.css';
+import ref from './reference.module.css';
 import { InsertButton } from './InsertButton';
 
 export function ElementsTable({ elements }: { elements: readonly Element[] }) {
   return (
-    <table className={extra.table}>
+    <table className={`${ref.table} ${ref.withActions}`}>
       <thead>
         <tr>
           <th scope="col">{t('study.reference.number')}</th>

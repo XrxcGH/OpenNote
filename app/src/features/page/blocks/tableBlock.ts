@@ -111,6 +111,7 @@ class TableView implements InnerView {
   private widthOpen = false;
   private extras: TableExtraHandle[] = [];
   private gone = false;
+  private stopOverflow = () => {};
   private stopHandles = () => {};
   private stopActive = () => {};
 
@@ -138,9 +139,27 @@ class TableView implements InnerView {
       selectAll: () => this.selectAll(),
       openColumnWidth: () => this.openColumnWidth(),
     };
+    this.watchOverflow();
     // Static first: the same DOM the editor will show, so nothing moves when it mounts.
     this.showStatic(tableDataToDoc(this.data));
     this.mountEditor();
+  }
+
+  /** Marks the wrapper on each side where the table runs on past the column, for the soft edge (tables.module.css). */
+  private watchOverflow(): void {
+    const mark = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = this.scroller;
+      const start = Math.abs(scrollLeft) > 1;
+      const end = scrollWidth - clientWidth - Math.abs(scrollLeft) > 1;
+      this.element.toggleAttribute('data-more-start', start);
+      this.element.toggleAttribute('data-more-end', end);
+    };
+    this.scroller.addEventListener('scroll', mark, { passive: true });
+    if (typeof ResizeObserver === 'undefined') return;
+    const sizes = new ResizeObserver(mark);
+    sizes.observe(this.scroller);
+    sizes.observe(this.editRoot);
+    this.stopOverflow = () => sizes.disconnect();
   }
 
   private name(doc: PMNode): void {
@@ -414,6 +433,7 @@ class TableView implements InnerView {
 
   destroy(): void {
     this.gone = true;
+    this.stopOverflow();
     for (const extra of this.extras) extra.destroy();
     this.extras = [];
     this.stopHandles();

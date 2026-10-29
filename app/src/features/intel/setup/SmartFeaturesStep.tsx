@@ -7,7 +7,7 @@ import type { SetupStepProps } from '../../../registries';
 import type { Feature, ModelInfo } from '../../../services/intel';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { InkStroke, RadioCard, RadioGroup, Switch } from '../../../ui';
+import { RadioCard, RadioGroup, Switch } from '../../../ui';
 import { formatSize, modelsState, refreshModels } from '../models/store';
 import styles from '../plus.module.css';
 import { CloudChoice } from '../cloud/CloudChoice';
@@ -15,6 +15,7 @@ import { CLOUD_FEATURES, cloudState, usesCloud } from '../cloud/store';
 import { CHOOSABLE, draftForMode, featuresOn, NOT_NOW, RECOMMENDED_SPEECH_MODEL } from './choices';
 import type { SmartDraft, SmartMode } from './choices';
 import { smartDraftOf } from './commit';
+import { StepHeader, setupStyles } from '../../setup';
 
 const NAME = {
   ocr: 'intel.features.ocr',
@@ -91,7 +92,7 @@ function SpeechModelPicker({ speech, chosen, onChoose }: SpeechModelPickerProps)
 }
 
 export default function SmartFeaturesStep(props: SetupStepProps) {
-  const { draft, setDraft, stepIndex, stepCount, titleId, progressId } = props;
+  const { draft, setDraft } = props;
   const smart: SmartDraft = smartDraftOf(draft) ?? NOT_NOW;
   const models = useStore(modelsState, (state) => state.list?.models ?? []);
   const speech = models.filter((model) => model.kind === 'speech');
@@ -115,17 +116,8 @@ export default function SmartFeaturesStep(props: SetupStepProps) {
     on.has('transcription') &&
     !(cloudKeys && usesCloud('transcription', cloud));
   return (
-    <div className={styles.setupStep}>
-      <header>
-        <p id={progressId} className={styles.help}>
-          {t('setup.progress', { step: stepIndex + 1, count: stepCount })}
-        </p>
-        <h1 id={titleId} className={styles.setupTitle}>
-          {t('intelPlus.smart.title')}
-        </h1>
-        <InkStroke />
-        <p>{t('intelPlus.smart.subtitle')}</p>
-      </header>
+    <div className={setupStyles.step}>
+      <StepHeader {...props} title={t('intelPlus.smart.title')} subtitle={t('intelPlus.smart.subtitle')} />
       <RadioGroup label={t('intelPlus.smart.group')} value={smart.mode} onChange={choose}>
         <RadioCard
           value="recommended"

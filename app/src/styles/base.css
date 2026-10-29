@@ -36,6 +36,18 @@
     margin: 0;
   }
 
+  /* The window never scrolls. Only the setup step, a dialog, and the page viewport do.
+     The app root clips, which unlike hidden also refuses scrolls from focus, selection drags, and scrollIntoView.
+     Html and body stay hidden, because axe reads clip as visible overflow and flags targets below the fold. */
+  html,
+  body {
+    overflow: hidden;
+  }
+
+  #root {
+    overflow: clip;
+  }
+
   body {
     background: var(--color-surface-app);
     color: var(--color-text-primary);

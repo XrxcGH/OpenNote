@@ -1,7 +1,7 @@
 // A mock of the OneNote part of Microsoft Graph: notebooks, sections, section groups, the pages of a section (across
 // pages of results), a page's HTML, and the pictures it names. It is the same shape as Graph's answers, with the same
 // next links, so an importer is tested against what Graph really sends.
-import { MockServer } from './server';
+import { MockServer } from './server.ts';
 
 export interface MockOnePage {
   id: string;

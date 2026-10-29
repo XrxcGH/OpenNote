@@ -233,6 +233,16 @@ test.describe('text boxes', () => {
   test('on ruled paper a moved box lands on a rule', async ({ page }) => {
     await openPage(page, 'freeform8');
     await page.getByRole('tab', { name: 'View' }).click();
+    // The free canvas has no paper, so the background menu is off until the page is in the document flow.
+    const flow = page.getByRole('toolbar').getByRole('button', { name: 'Document flow', exact: true });
+    if (await flow.isVisible()) await flow.click();
+    else {
+      await page.getByRole('toolbar').getByRole('button', { name: 'More' }).click();
+      await page
+        .getByRole('menuitemcheckbox', { name: 'Document flow' })
+        .or(page.getByRole('menuitem', { name: 'Document flow' }))
+        .click();
+    }
     await page.getByRole('toolbar').getByRole('button', { name: 'Background' }).click();
     await page.getByRole('menuitemradio', { name: 'Lined, college' }).click();
     const box = await select(page, 'q3c1');

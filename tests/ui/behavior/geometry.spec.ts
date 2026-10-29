@@ -27,6 +27,10 @@ interface Geometry {
   sideways: number;
   /** How far the document itself scrolls down. The app scrolls inside its panes, never the whole window. */
   downward: number;
+  /** Where the window ends up after a script asks it to scroll: the document must refuse, whatever it contains. */
+  shifted: [number, number];
+  /** How far each view beside the title bar scrolls down. Setup's view never does: its card scrolls inside itself. */
+  viewOverflow: number[];
   dialogs: { name: string; overflow: number; bottomGap: number; drawer: boolean }[];
   offCenter: string[];
 }
@@ -76,7 +80,16 @@ function measure(page: Page): Promise<Geometry> {
     }
     const root = document.documentElement;
     const sideways = root.scrollWidth - window.innerWidth;
-    return { sideways, downward: root.scrollHeight - window.innerHeight, dialogs, offCenter };
+    window.scrollTo(400, 400);
+    root.scrollTo(400, 400);
+    const shifted: [number, number] = [window.scrollX, window.scrollY];
+    window.scrollTo(0, 0);
+    const bar = document.querySelector('[data-title-bar]');
+    const views = [...(bar?.parentElement?.children ?? [])].filter(
+      (el) => el !== bar && !el.matches('[data-title-bar]'),
+    );
+    const viewOverflow = views.map((el) => el.scrollHeight - el.clientHeight);
+    return { sideways, downward: root.scrollHeight - window.innerHeight, shifted, viewOverflow, dialogs, offCenter };
   });
 }
 
@@ -206,6 +219,13 @@ async function expectSound(page: Page, screen: ScreenState) {
   const geometry = await measure(page);
   expect(geometry.sideways, 'the page scrolls sideways').toBeLessThanOrEqual(0);
   expect(geometry.downward, 'the whole window scrolls, title bar and all').toBeLessThanOrEqual(0);
+  expect(geometry.shifted, 'the window can be scrolled by a script, a focus change, or a drag').toEqual([0, 0]);
+  if (screen.id.startsWith('setup.')) {
+    expect(
+      geometry.viewOverflow.map((over) => Math.max(0, over)),
+      'the setup view scrolls, not its card',
+    ).toEqual(geometry.viewOverflow.map(() => 0));
+  }
   for (const dialog of geometry.dialogs) {
     expect(dialog.overflow, `the dialog "${dialog.name}" scrolls around its own content`).toBeLessThanOrEqual(1);
     if (!dialog.drawer) {
@@ -283,4 +303,51 @@ test('the setup theme cards meet the footer edges and keep their height when the
     await settle(page);
     expect(Math.abs((await row()).height - before.height), 'the row jumps').toBeLessThanOrEqual(0.5);
   }
+});
+
+// Touch density makes the title bar 48 px tall, 8 px more than the 40 px setup once assumed, so its view scrolled and
+// the whole window seemed to scroll. The document and the setup view stay still at every size and density.
+for (const density of ['touch', 'mouse'] as const) {
+  test(`setup never scrolls the window or its view with ${density} density`, async ({ page }) => {
+    const welcome = screens.find((screen) => screen.id === 'setup.welcome');
+    if (!welcome) throw new Error('The setup.welcome screen is not registered.');
+    const withDensity: ScreenState = {
+      ...welcome,
+      boot: { ...welcome.boot, settings: { appearance: { density } } } as ScreenState['boot'],
+    };
+    for (const size of ['compact', 'medium', 'expanded', 'wide'] as const) {
+      await openScreen(page, withDensity, { size, theme: 'light' });
+      expect(await page.evaluate(() => document.documentElement.dataset['density'])).toBe(density);
+      await expectSound(page, withDensity);
+    }
+  });
+}
+
+// The recording Options popover sizes to its content: nothing inside it is cut off or scrolls, microphone dropdown
+// included, even with a long device name.
+test('the recording Options popover shows the microphone dropdown whole', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
+  await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
+  await page.getByRole('button', { name: 'Options' }).first().click();
+  const popover = page.locator('[role="dialog"][popover]');
+  await expect(popover).toBeVisible();
+  const select = popover.locator('select').first();
+  await expect(select).toBeVisible();
+  const fit = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"][popover]') as HTMLElement;
+    const box = dialog.getBoundingClientRect();
+    const field = dialog.querySelector('select')!.getBoundingClientRect();
+    return {
+      overflowX: dialog.scrollWidth - dialog.clientWidth,
+      overflowY: dialog.scrollHeight - dialog.clientHeight,
+      selectInside:
+        field.left >= box.left && field.right <= box.right && field.top >= box.top && field.bottom <= box.bottom,
+      onScreen: box.left >= 0 && box.top >= 0 && box.right <= innerWidth && box.bottom <= innerHeight,
+    };
+  });
+  expect(fit.overflowX, 'the popover scrolls sideways').toBeLessThanOrEqual(0);
+  expect(fit.overflowY, 'the popover scrolls down').toBeLessThanOrEqual(0);
+  expect(fit.selectInside, 'the microphone dropdown is cut off').toBe(true);
+  expect(fit.onScreen, 'the popover leaves the window').toBe(true);
 });
