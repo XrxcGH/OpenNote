@@ -17,7 +17,7 @@ Write equations, work out sums in your text, and plot functions on a page.
 
 ## Check my work
 
-Check my work looks at your own working, one line at a time, and marks each step beside the line: a check when it follows from the line before, an exclamation mark when it needs a look, and a question mark when it could not be checked. It runs on this device, and nothing is sent anywhere.
+Check my work looks at your own working, one line at a time. Beside each step it puts a check when the step follows from the line before, an exclamation mark when it needs a look, and a question mark when it could not be checked. It runs on this device, and nothing is sent anywhere.
 
 - Select the lines you want checked and choose Check my work from the command palette (Ctrl+K), the slash menu, or the text menu. With nothing selected, it checks every line on the page that looks like working.
 - For handwriting, lasso the rows of working and choose Check my work on the lasso toolbar. Each row is read as math. If some of it was hard to read, you see the lines as read first, and can fix any of them before they are checked. The ink is never changed.

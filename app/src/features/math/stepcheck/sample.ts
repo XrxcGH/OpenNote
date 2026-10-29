@@ -40,7 +40,7 @@ export interface Comparison {
   /** A point where the two differ, for the explanation. */
   at?: Values;
   values?: [number, number];
-  /** The ratio b / a at every usable point when it is the same number everywhere, for "this is twice that". */
+  /** The second value over the first, at every usable point, when it is the same number everywhere, for "this is twice that". */
   ratio?: number;
   /** b - a when it is the same number everywhere, for "off by 3". */
   offset?: number;

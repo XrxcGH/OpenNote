@@ -1,4 +1,4 @@
-// Builds corpus.json: worked solutions for Check my work, both correct ones and ones with one broken step. Each family
+// Builds corpus.json: worked solutions for Check my work. Some are correct; the rest have one broken step. Each family
 // writes a solution the way a student would, from parameters, with the expected values worked out here by plain
 // arithmetic (not by the checker). A broken solution has its slip at `broken` and carries on correctly from it, as a
 // student would. Run: node tests/fixtures/stepcheck/generate.ts (the JSON is committed; the test reads it).
@@ -637,8 +637,8 @@ for (const [a, b] of [
   bad('inequality', [`abs(x ${sg(-a)}) <= ${b}`, `-${b} <= x ${sg(-a)} <= ${b}`, `${-b - a} <= x <= ${b - a}`], 2);
 }
 
-// Correct steps that are easy to mistake for slips: squaring both sides, lost solutions or extra ones, absolute values,
-// partial fractions, and forms that only agree where both have a value. None of them may be called broken.
+// Correct steps that are easy to mistake for slips: squaring both sides, a lost solution, an extra solution, absolute
+// values, partial fractions, and forms that only agree where both have a value. None of them may be called broken.
 ok('precision', ['sqrt(x + 3) = x - 3', 'x + 3 = (x - 3)^2', 'x^2 - 7x + 6 = 0', 'x = 1 or x = 6']);
 ok('precision', ['x^2 = 9', 'x = 3']);
 ok('precision', ['x(x - 2) = 0', 'x = 0 or x = 2']);

@@ -10,8 +10,8 @@ export const stepCheck = {
   working: 'Checking your work…',
   panel: {
     title: 'Check my work',
-    // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
     summary:
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       '{ok, plural, one {# step follows} other {# steps follow}}{broken, plural, =0 {} one {, # needs a look} other {, # need a look}}{unchecked, plural, =0 {} one {, # I could not check} other {, # I could not check}}.',
     allGood: 'Every step I could check follows from the line before it.',
     nothing: 'There was no math here to check. Select some lines of working, or try the whole page.',
