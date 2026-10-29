@@ -16,6 +16,14 @@ The owner asked for practice exams from a person's own notes, after comparing Op
 - **Pages, not a new store.** Before the exam, "Save the blank paper" makes a page in the notebook's "Practice exams" section (made when first needed), so it prints without the answers. The key is never saved before submission, so it cannot be opened mid-exam. "Save results" adds the answer key and a results page with the score, each question's marks and answer, and the weak topics with `opennote://page` links to their notes. They sync, search, print, and export like any page. Exams are never made from that section, and protected pages are left out (ADR 0042).
 - **Flashcards reuse the decks.** Missed questions become cards of the same kind (choice, cloze, or basic) in a deck named for the exam, through the deck library; each card remembers its question, so sending twice adds nothing.
 
+## Time up and changed marks
+
+Time running out never locks the paper or takes it away. This is a choice, made for WCAG 2.2.1 (timing adjustable): the window says time is up, and the person submits when they are ready. A late paper is still marked in full.
+
+The results then say how long after the time ran out the paper was handed in, on screen and on the saved results page. `lateBy` in `timer.ts` reads this from the wall clock, so time with the app closed counts. Lateness belongs to the whole paper; answers carry no times of their own.
+
+A blank in words is matched as spelled. Case and spacing are evened out, and the key may list alternatives with `/`, `;` or `|`. A typo or a plural scores nothing, so the fill-in card says that words must match the key. Every mark the app gives can be changed on the results page, which keeps the app's mark beside the person's.
+
 ## Options considered
 
 | Option | For | Against |

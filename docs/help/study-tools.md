@@ -28,14 +28,18 @@ Open the menu on a section in the notebook tree, or press Ctrl+K and choose "Mak
 Press Ctrl+K and choose "Make a practice exam from this page", "from this section", or "from this notebook". You can also open the menu on a section in the notebook tree. The Practice exams window opens with the settings.
 
 - Choose how many questions, the difficulty, and the question types: short answer, multiple choice, fill in the blanks, worked problem, and true or false.
-- Turn on Time the exam to set the minutes allowed and reminders, such as "10, 5" for reminders with 10 and 5 minutes left. The timer can pause. When time is up, the window tells you, and you choose when to submit.
+- Turn on Time the exam to set the minutes allowed and reminders, such as "10, 5" for reminders with 10 and 5 minutes left. The timer can pause. When time is up, the window tells you, and you choose when to submit. The paper is never locked, and the results say how long after the time you submitted.
 - An exam you have started is kept on this computer as you work: your answers, flags, writing, and the timer. If OpenNote closes or you make another exam, choose Carry on under Unfinished exams in the Practice exams window. A paused timer is still paused; a running one kept counting. Submitting an exam lets go of it, or choose Discard.
 - Questions come from headings with a paragraph under them, "Term: meaning" lines, bold words, `Q :: A` lines, and worked problems with a Solution heading and numbered steps. A worked problem comes back with new numbers when a step shows the arithmetic, such as `v = 120 / 2.5 = 48`.
 - If you have downloaded a language model, it can write the questions on this device. Turn this off in Settings, then Editing, then Practice exams. Your notes never leave this computer for an exam.
 
 Take the exam one question at a time, or press Show all questions. Flag a question to come back to it; the numbered buttons at the top show which are answered and flagged. Type math answers as numbers or expressions, such as `9.8 m/s^2` or `2(x + 1)`. Press Write the answer by hand to answer with a pen or a finger.
 
-After you submit, OpenNote marks multiple choice, true or false, blanks, and math answers by their value, with units. A right number without its unit loses a mark, so a math answer whose key has a unit says Include the unit under it, and the marking guide says so too. You mark answers in words and the working of a worked problem yourself, with the answer key and the marking guide beside your answer. Topics to review lists the topics with less than 60 percent of their marks, each with a button that opens its page. Add missed questions to flashcards puts them in a deck named for the exam.
+After you submit, OpenNote marks multiple choice, true or false, blanks, and math answers by their value, with units.
+
+Blanks in words must match the key's words as spelled, so a typo or a plural gets no mark; the question says so. A right number without its unit loses a mark, so a math answer whose key has a unit says Include the unit under it, and the marking guide says so too. You mark answers in words and the working of a worked problem yourself, with the answer key and the marking guide beside your answer. To change a mark OpenNote gave, choose Change this mark under it.
+
+Topics to review lists the topics with less than 60 percent of their marks, each with a button that opens its page. Add missed questions to flashcards puts them in a deck named for the exam.
 
 Before you start, Save the blank paper as a page saves the paper without the answers in the notebook's Practice exams section, so you can print or export it. The answer key is saved only after you submit: Save results as a page adds the answer key and the results. Exams are never made from that section, and pages in protected sections are left out.
 
