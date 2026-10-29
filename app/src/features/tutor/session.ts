@@ -59,6 +59,16 @@ const granted = new Set<string>();
 const declined = new Set<string>();
 let answerConsent: ((yes: boolean) => void) | null = null;
 
+/** Reasons Check my work gives a line that is not the student's working: the problem itself, a note, or words. */
+const NOT_WORKING = new Set<string>(['start', 'note', 'notMath', 'unreadable']);
+
+/**
+ * Whether the seed holds working of the student's own: a line after the first that Check my work read as a step.
+ * Selecting the problem with a line of words, or the problem alone, is not a try.
+ */
+const hasWorking = (seed: Seed | null): boolean =>
+  seed?.results?.some((result) => result.index > 0 && !NOT_WORKING.has(result.reason)) ?? false;
+
 /** Puts the chosen lines in front of the tutor. The rung starts over; the conversation stays. */
 export function setContext(context: string, seed: Seed | null = null): void {
   tutorState.set((state) => ({
@@ -66,7 +76,7 @@ export function setContext(context: string, seed: Seed | null = null): void {
     context: context.slice(0, MAX_CONTEXT_CHARS * 2),
     seed,
     rung: 0,
-    tried: seed ? seed.lines.length > 1 : false,
+    tried: hasWorking(seed),
   }));
 }
 
