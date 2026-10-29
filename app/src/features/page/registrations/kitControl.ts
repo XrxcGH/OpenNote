@@ -7,7 +7,7 @@ import { addCommand } from './qolStudy';
 const open = async (tool?: string) => (await import('../../engineering')).openControlKit(tool);
 
 addCommand({
-  id: 'tools.kitControl',
+  id: 'tools.kit-control',
   title: 'kitControl.open',
   keywords: 'kitControl.keywords',
   category: 'general',
