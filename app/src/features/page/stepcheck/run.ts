@@ -15,6 +15,9 @@ type Source = { strokes: readonly string[] } | { range: Range | null };
 
 let running = false;
 
+/** Reasons a handwritten row was not read as math: shown in the confirm dialog for the person to fix. */
+const MISREAD = new Set(['unreadable', 'notMath']);
+
 function sourceNow(mounted: MountedPage): Source {
   const { strokes } = pageSelection.get();
   if (strokes.length > 0) return { strokes: [...strokes] };
@@ -52,8 +55,12 @@ export async function checkMyWork(again?: Source): Promise<void> {
     } else lines = typedSelection(mounted, source.range);
     lines = inOrder(lines);
     const { checkSteps, latexToLine } = await (await import('../../math')).loadStepCheck();
-    // Handwriting that was hard to read is confirmed first: never judge what was not written.
-    const unread = (line: GatheredLine) => line.unsure || (line.from === 'ink' && !line.text.trim());
+    const check = () => checkSteps(lines.map((line) => ({ text: line.text, format: line.format })));
+    let results = check();
+    // Handwriting that was hard to read, or that the checker could not read as math, is confirmed first: never judge
+    // what was not written.
+    const unread = (line: GatheredLine, i: number) =>
+      line.unsure || (line.from === 'ink' && (!line.text.trim() || MISREAD.has(results[i]?.reason ?? '')));
     if (lines.some(unread)) {
       const { confirmLines } = await import('./ConfirmLines');
       const fixed = await confirmLines(
@@ -61,8 +68,8 @@ export async function checkMyWork(again?: Source): Promise<void> {
       );
       if (!fixed) return;
       lines = lines.map((line, i) => ({ ...line, text: fixed[i] ?? line.text, format: 'text', unsure: false }));
+      results = check();
     }
-    const results = checkSteps(lines.map((line) => ({ text: line.text, format: line.format })));
     if (shownMedia.get() !== mounted) return;
     showMarks(mounted, { lines, results }, () => void checkAgain(source));
     const stop = shownMedia.subscribe(() => {

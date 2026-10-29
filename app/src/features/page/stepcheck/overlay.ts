@@ -28,6 +28,9 @@ export function reasonText(result: StepResult): string {
   return (t as (key: MessageKey, values?: Record<string, string>) => string)(key, { ...result.params });
 }
 
+/** Unchecked steps whose reason is itself a finding, such as a dropped solution: no "I could not check" before it. */
+const NOTED = new Set<string>(['lostSolutions', 'someValues', 'outsideDomain', 'ambiguous', 'neverEqual']);
+
 function markLabel(result: StepResult, number: number): string {
   if (result.method === 'given') return t('stepCheck.mark.given', { number });
   const reason = reasonText(result);
@@ -35,7 +38,7 @@ function markLabel(result: StepResult, number: number): string {
   const label =
     result.verdict === 'broken'
       ? t('stepCheck.mark.broken', { number, reason })
-      : t('stepCheck.mark.unchecked', { number, reason });
+      : t(NOTED.has(result.reason) ? 'stepCheck.mark.noted' : 'stepCheck.mark.unchecked', { number, reason });
   return result.suggestion ? `${label} ${t('stepCheck.panel.suggestion', { line: result.suggestion })}` : label;
 }
 
