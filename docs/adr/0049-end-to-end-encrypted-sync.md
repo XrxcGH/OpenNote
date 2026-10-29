@@ -17,7 +17,7 @@ ADR 0008 also asks the sync design to make garbage collection safe across device
 
 ## Decision
 
-We will build a sync engine (`crates/sync`, the `opennote-sync` crate) that keeps an encrypted copy of the notes folder in "dumb" storage: storage that can only store, list, read, and delete named blobs. It ships with a **folder** backend (any synced or network folder, including the OneDrive, Dropbox, iCloud Drive, and Syncthing folders people already have, see [ADR 0036](0036-icloud-is-folder-based.md)) and a **WebDAV** backend. An S3-compatible backend fits the same interface and is a follow-up. Sync is off until the person sets it up in Settings > Sync, and it is labeled Beta.
+We will build a sync engine (`crates/sync`, the `opennote-sync` crate) that keeps an encrypted copy of the notes folder in "dumb" storage: storage that can only store, list, read, and delete named blobs. It ships with a **folder** backend (any synced or network folder, including the OneDrive, Dropbox, iCloud Drive, and Syncthing folders people already have, see [ADR 0036](0036-icloud-is-folder-based.md)) and a **WebDAV** backend. A backend for S3-compatible storage fits the same interface and is a follow-up. Sync is off until the person sets it up in Settings > Sync, and it is labeled Beta.
 
 ### What is stored
 
@@ -79,7 +79,7 @@ An edit always beats a delete. When a page folder still has a live `page.json` (
 | A hosted relay run by the project | Push updates, easy pairing | A service to run, pay for, secure, and keep alive. **Open decision for the owner**; this build does not include one |
 | A self-hostable relay | People who want push can run it | More code to secure. It fits later as one more backend |
 | Operation log per page (CRDT) | Merges text at the character level | Needs every writer to log operations, a large change to the core, and a bigger attack surface. Block-level merge of `page.json` is a follow-up |
-| S3-compatible backend | Cheap object storage | Needs request signing. Fits the same interface; a follow-up |
+| A backend for S3-compatible storage | Cheap object storage | Needs request signing. Fits the same interface; a follow-up |
 
 ## Threat model
 
@@ -95,6 +95,6 @@ An edit always beats a delete. When a page folder still has a live `page.json` (
 
 Sync is opt-in and off by default. The folder backend works with every sync tool, and the format's own conflict rules keep working beside it. People who forget both the passphrase and the recovery key, and have no device left, lose the synced copy, by design; each device still has its own notes.
 
-Follow-ups: a full re-key when a device is removed; block-level merge of `page.json` when both copies changed different blocks; the S3-compatible backend; and, if the owner decides, a relay.
+Follow-ups: a full re-key when a device is removed; block-level merge of `page.json` when both copies changed different blocks; a backend for S3-compatible storage; and, if the owner decides, a relay.
 
 The owner decides whether a hosted or self-hostable relay is ever offered, and reviews this design, the threat model, the pairing flow on two real devices, and the device secret's place in Windows Credential Manager.

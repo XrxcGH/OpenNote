@@ -57,6 +57,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [On-device intelligence](on-device-intelligence.md): reading pictures, summaries, Ask your notes, and handwriting to text.
 - [Privacy and Work offline](privacy-and-work-offline.md): what uses the network, and how to stop it.
 - [Connectors](connectors.md): signing in to other services.
+- [Sync (Beta)](sync.md): optional end-to-end-encrypted sync through a folder or WebDAV server you already have.
 - [The local API and app permissions](local-api.md): which programs on your PC may read or add notes, and the access log.
 - [The opennote command](command-line.md): add to and search your notes from a terminal or script.
 - [The web clipper and mail add-ins](web-clipper.md): save web pages and emails into your notes.
