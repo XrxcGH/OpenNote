@@ -46,6 +46,12 @@ export const QUANTITIES = {
   frequency: [u('1/s', 1)],
   acceleration: [u('m/s²', 1), u('ft/s²', 0.3048)],
   gravityStandard: [u('m/s²', 1), u('g₀', G0)],
+  velocity: [u('km/s', 1000), u('m/s', 1), u('ft/s', 0.3048)],
+  modulus: [u('GPa', 1e9), u('MPa', 1e6), u('Pa', 1)],
+  area: [u('km²', 1e6), u('m²', 1), u('mi²', 2589988.110336)],
+  energy: [u('J', 1), u('kWh', 3.6e6), u('MJ', 1e6)],
+  mixing: [u('g/kg', 1e-3), u('kg/kg', 1)],
+  precipitation: [u('mm', 1e-3), u('in', 0.0254)],
 } as const satisfies Record<string, readonly UnitDef[]>;
 
 export type QuantityId = keyof typeof QUANTITIES;
