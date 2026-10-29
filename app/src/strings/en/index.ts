@@ -61,6 +61,7 @@ import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kitMolBio } from './kitMolBio';
 import { kits } from './kits';
+import { kitSubjects } from './kitSubjects';
 
 export const en = {
   common,
@@ -124,4 +125,5 @@ export const en = {
   codeCells,
   kitMolBio,
   kits,
+  kitSubjects,
 } as const;
