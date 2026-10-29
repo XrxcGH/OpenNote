@@ -2,7 +2,8 @@
 //!
 //! The apps measure in points (1/72 inch). OpenNote's page units are 1/96 inch, and stroke points are stored in
 //! 1/64 page units. A curve that is clearly see-through, or wide and a little see-through, is a highlighter stroke,
-//! drawn under the others. Any other curve is a pen stroke that keeps its color's alpha.
+//! drawn under the others. Any other curve is a pen stroke that keeps its color's alpha. A fully transparent curve
+//! draws nothing, so it is left out and counted.
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -51,7 +52,7 @@ pub struct InkStats {
     pub strokes: usize,
     /// Of those, highlighter strokes.
     pub highlighter: usize,
-    /// Curves with no usable point, or beyond the page's limits, that were left out.
+    /// Curves with no usable point, fully transparent, or beyond the page's limits, that were left out.
     pub dropped: usize,
 }
 
@@ -70,7 +71,8 @@ pub fn strokes(curves: &[Curve], block: BlockId, start: Timestamp, env: &ImportE
     let mut stats = InkStats::default();
     let mut budget = MAX_PAGE_POINTS;
     for curve in curves {
-        if out.len() >= MAX_STROKES || curve.points.len() > budget {
+        // A fully transparent curve draws nothing in the app, so it is not made into a visible stroke.
+        if curve.color[3] == 0 || out.len() >= MAX_STROKES || curve.points.len() > budget {
             stats.dropped += 1;
             continue;
         }

@@ -717,6 +717,26 @@ fn a_second_notability_session_the_limits_refuse_is_named_beside_the_one_read() 
 }
 
 #[test]
+fn a_fully_transparent_curve_is_left_out_not_drawn_as_a_highlighter() {
+    let world = TestEnv::new();
+    let env = world.env();
+    let curve = |alpha: u8| Curve {
+        points: vec![(1.0, 1.0), (2.0, 2.0)],
+        pressure: None,
+        width: 3.0,
+        color: [255, 0, 0, alpha],
+    };
+    let block = opennote_core::BlockId::generate(env.clock);
+    let (made, stats) = strokes(&[curve(0)], block, env.clock.now(), &env);
+    assert!(made.is_empty());
+    assert_eq!((stats.strokes, stats.highlighter, stats.dropped), (0, 0, 1));
+    // Alpha 1 is still drawn, as a highlighter.
+    let (made, stats) = strokes(&[curve(1)], block, env.clock.now(), &env);
+    assert_eq!((stats.strokes, stats.highlighter, stats.dropped), (1, 1, 0));
+    assert_eq!(made[0].style.tool, tool::HIGHLIGHTER);
+}
+
+#[test]
 fn the_default_package_limits_hold_one_notes_file_to_half_a_gibibyte() {
     let limits = PackageLimits::default();
     assert_eq!(limits.total_bytes, 536_870_912);

@@ -239,7 +239,7 @@ pub(crate) fn build_page(
         report.skipped_count(
             stats.dropped,
             ("stroke", "strokes"),
-            "It had no usable points, or the page already held as much ink as one page takes.",
+            "It had no usable points, was fully see-through, or the page already held as much ink as one page takes.",
         );
     }
     let page = builder.finish()?;
