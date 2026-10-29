@@ -75,9 +75,17 @@ describe('the tutor with a cloud key', () => {
     answerConsentCard(true);
     await hint;
     expect(host.transport.ext.cloudSent).toHaveLength(1);
-    // The next hint on the same text is covered by that yes.
-    await nextHint();
+    // The next hint sends different text (the next rung, the turns so far), so it shows its own card first.
+    const second = nextHint();
+    await vi.waitFor(() => expect(tutorState.get().consent).not.toBeNull());
+    const shownSecond = tutorState.get().consent?.text;
+    expect(shownSecond).toContain('Tutor:');
+    expect(host.transport.ext.cloudSent).toHaveLength(1);
+    answerConsentCard(true);
+    await second;
     expect(host.transport.ext.cloudSent).toHaveLength(2);
+    const [system2, prompt2] = (host.transport.ext.cloudSent[1] ?? '').split(' | ');
+    expect(shownSecond).toBe(`${system2}\n\n${prompt2}`);
     const question = 'Why did the 3 change sides?';
     const asked = askTutor(question);
     await vi.waitFor(() => expect(tutorState.get().consent?.text).toContain(question));

@@ -31,8 +31,8 @@ DeriveNotes has an AI tutor. The owner asked for one in OpenNote (the dn-tutor l
   - With the person's own key, a cloud service may write it, as below.
   - The full solution of math always comes from the rules, which work it out exactly. A model writes one only where the rules cannot.
 - **The person's own key.** The tutor is its own cloud feature (`tutor`). It has its own key in Windows Credential Manager, its own choice in Settings, and its own line in Privacy.
-  - Before the first request of a session, the panel shows the exact text to be sent (the instructions and the prompt) and the host. It offers Send for this session and Keep it on this device.
-  - A yes covers the rest of the session for that same context, and the card says so. Each later hint sends that context with the next rung's task and the last four turns on screen. Those are not shown again before they go.
+  - Before every cloud request, the panel shows the exact text to be sent (the instructions and the prompt) and the host. It offers Send this and Keep it on this device.
+  - A yes holds only for that exact text. A later hint sends the next rung's task and the last four turns, which is different text, so it shows its own card first, and the card says so.
   - A question the person types in Ask the tutor is new text of theirs. The card shows again with the question in the text to send, and that answer holds for that question only.
   - New or edited context asks again, and a no keeps that context on the device for the session.
   - The shell's `Cloud::tutor` sends only that text, capped, to the one pinned host.
@@ -70,7 +70,7 @@ DeriveNotes has an AI tutor. The owner asked for one in OpenNote (the dn-tutor l
 
 - The tutor works fully offline with no download. Its built-in hints cover slips that Check my work names, linear equations, and the calculus the engine can work. Other math and other subjects get guided questions, and the full solution there needs a model.
 - A model can still word a hint badly. The guard stops the answer and the next line, not every unhelpful hint.
-- A cloud request sends the context and the conversation already on screen, never anything else. The consent card shows the first request in full; later requests in the same session send the same context with the next hint request, the last turns, and any typed question, as the card says.
+- A cloud request sends the context and the conversation already on screen, never anything else. The consent card shows every request in full before it goes; nothing is sent that the card did not show.
 
 ## Not done
 

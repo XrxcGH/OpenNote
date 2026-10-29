@@ -70,10 +70,10 @@ export const tutor = {
     title: 'Send this to {host}?',
     body: 'This text goes to {host} with your key.',
     covers:
-      'If you agree, your next hints on this text go there too, with the last few turns of this conversation, ' +
-      'until you close the panel. New text in What the tutor sees, or a question you type in Ask the tutor, asks again.',
+      'Each request shows its exact text here before it goes, so your next hint asks again. ' +
+      'If you say no, this text stays on this device until you close the panel.',
     sent: 'Text to send',
-    send: 'Send for this session',
+    send: 'Send this',
     keep: 'Keep it on this device',
   },
   solutionConfirm: {

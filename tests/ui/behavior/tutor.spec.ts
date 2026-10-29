@@ -130,7 +130,7 @@ test('asks before text goes to the cloud key, keeps it local on a no, and asks a
   await panel.getByRole('textbox', { name: 'Ask the tutor' }).fill(question);
   await panel.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(card.getByLabel('Text to send')).toContainText(question);
-  await card.getByRole('button', { name: 'Send for this session' }).click();
+  await card.getByRole('button', { name: 'Send this' }).click();
   await expect(log).toContainText(question);
   await expect(log).toContainText('Look again at the line the hint points to.');
   await expect(log).toContainText(/Written with your key by \S+\./);

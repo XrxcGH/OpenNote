@@ -105,20 +105,24 @@ export function answerConsentCard(yes: boolean): void {
 }
 
 /**
- * Asks before text leaves the device. A yes or no holds for one context; a question the person typed is new text of
- * theirs, so it asks again with the question in the text shown, and that answer holds for that question only.
+ * Asks before text leaves the device. A yes holds only for the exact text it showed, so every request whose text
+ * differs (the next rung, new turns, a typed question) shows its own card first. A no keeps that context (or that
+ * typed question) on the device until the panel closes.
  */
 function askConsent(context: string, question: string | undefined, host: string, prompt: Prompt): Promise<boolean> {
-  const key = question === undefined ? context : `${context}\u0000${question}`;
-  if (granted.has(key)) return Promise.resolve(true);
-  if (declined.has(key)) return Promise.resolve(false);
+  const text = `${prompt.system}\n\n${prompt.prompt}`;
+  const yesKey = `${host}\u0000${text}`;
+  const noKey = question === undefined ? context : `${context}\u0000${question}`;
+  if (declined.has(noKey)) return Promise.resolve(false);
+  if (granted.has(yesKey)) return Promise.resolve(true);
   answerConsent?.(false);
   return new Promise((resolve) => {
     answerConsent = (yes) => {
-      (yes ? granted : declined).add(key);
+      if (yes) granted.add(yesKey);
+      else declined.add(noKey);
       resolve(yes);
     };
-    tutorState.set((state) => ({ ...state, consent: { text: `${prompt.system}\n\n${prompt.prompt}`, host } }));
+    tutorState.set((state) => ({ ...state, consent: { text, host } }));
   });
 }
 
