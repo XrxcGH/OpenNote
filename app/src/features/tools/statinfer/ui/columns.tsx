@@ -8,9 +8,16 @@ import { say } from './parts';
 
 const numberColumns = (data: DataSet): string[] => data.columns.filter((c) => c.kind === 'number').map((c) => c.name);
 
-export function ColumnSelect(props: { data: DataSet; label: string; value: string; onChange: (name: string) => void }) {
+export function ColumnSelect(props: {
+  data: DataSet;
+  label: string;
+  value: string;
+  onChange: (name: string) => void;
+  /** Offers every column, not only the numeric ones (for a factor). */
+  any?: boolean;
+}) {
   const id = useId();
-  const names = numberColumns(props.data);
+  const names = props.any ? props.data.columns.map((c) => c.name) : numberColumns(props.data);
   return (
     <div className={styles.field}>
       <label htmlFor={id}>{props.label}</label>

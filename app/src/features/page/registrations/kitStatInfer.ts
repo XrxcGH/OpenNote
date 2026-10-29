@@ -17,6 +17,7 @@ export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [
   ['resample', 'Shuffle'],
   ['design', 'GridFour'],
   ['bayes', 'Scales'],
+  ['groups', 'ChartBarHorizontal'],
 ];
 
 async function open(tool?: string): Promise<void> {

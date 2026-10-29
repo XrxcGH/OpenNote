@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { groups } from './kitStatInfer/groups';
 import { bayes } from './kitStatInfer/bayes';
 import { design } from './kitStatInfer/design';
 import { resample } from './kitStatInfer/resample';
@@ -26,6 +27,7 @@ export const kitStatInfer = {
     resample: resample.tab,
     design: design.tab,
     bayes: bayes.tab,
+    groups: groups.tab,
   },
   open: {
     describe: describe.open,
@@ -37,6 +39,7 @@ export const kitStatInfer = {
     resample: resample.open,
     design: design.open,
     bayes: bayes.open,
+    groups: groups.open,
   },
   keywords: {
     describe: describe.keywords,
@@ -48,6 +51,7 @@ export const kitStatInfer = {
     resample: resample.keywords,
     design: design.keywords,
     bayes: bayes.keywords,
+    groups: groups.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -95,6 +99,7 @@ export const kitStatInfer = {
     ...resample.err,
     ...design.err,
     ...bayes.err,
+    ...groups.err,
   },
   answer: {
     ...describe.answer,
@@ -106,6 +111,7 @@ export const kitStatInfer = {
     ...resample.answer,
     ...design.answer,
     ...bayes.answer,
+    ...groups.answer,
   },
   note: {
     ...describe.note,
@@ -117,6 +123,7 @@ export const kitStatInfer = {
     ...resample.note,
     ...design.note,
     ...bayes.note,
+    ...groups.note,
   },
   col: {
     summary: 'Summary',
@@ -155,6 +162,7 @@ export const kitStatInfer = {
     ...resample.col,
     ...design.col,
     ...bayes.col,
+    ...groups.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -170,6 +178,7 @@ export const kitStatInfer = {
     ...resample.axis,
     ...design.axis,
     ...bayes.axis,
+    ...groups.axis,
   },
   step: {
     ...describe.step,
@@ -181,8 +190,10 @@ export const kitStatInfer = {
     ...resample.step,
     ...design.step,
     ...bayes.step,
+    ...groups.step,
   },
   describe: describe.fields,
+  groups: groups.fields,
   bayes: bayes.fields,
   design: design.fields,
   resample: resample.fields,
