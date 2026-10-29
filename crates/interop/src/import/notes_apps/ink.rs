@@ -1,7 +1,8 @@
 //! Turning the curves read from a notes app into OpenNote strokes (spec 8.2 and 9.4).
 //!
 //! The apps measure in points (1/72 inch). OpenNote's page units are 1/96 inch, and stroke points are stored in
-//! 1/64 page units. A curve with a see-through color is a highlighter stroke, drawn under the others.
+//! 1/64 page units. A curve that is clearly see-through, or wide and a little see-through, is a highlighter stroke,
+//! drawn under the others. Any other curve is a pen stroke that keeps its color's alpha.
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -11,6 +12,17 @@ use opennote_core::model::{stroke::tool, Channels, Point, Stroke, StrokeStyle};
 use opennote_core::{BlockId, StrokeId, Timestamp};
 
 use crate::sink::ImportEnv;
+
+/// The highest alpha a highlighter of any width has.
+pub const HIGHLIGHTER_ALPHA: u8 = 200;
+/// The narrowest width, in points, at which any see-through curve is a highlighter.
+pub const HIGHLIGHTER_WIDTH: f32 = 8.0;
+
+/// Whether a curve of this color and width, in points, is a highlighter stroke.
+pub fn is_highlighter(color: [u8; 4], width: f32) -> bool {
+    let alpha = color[3];
+    alpha <= HIGHLIGHTER_ALPHA || (alpha < 255 && width >= HIGHLIGHTER_WIDTH)
+}
 
 /// Page units in one point.
 pub const UNITS_PER_POINT: f64 = 96.0 / 72.0;
@@ -85,7 +97,7 @@ pub fn strokes(curves: &[Curve], block: BlockId, start: Timestamp, env: &ImportE
         }
         budget -= points.len();
         let channels = Channels(if pressure.is_some() { Channels::PRESSURE } else { 0 });
-        let highlighter = curve.color[3] < 255;
+        let highlighter = is_highlighter(curve.color, curve.width);
         let width = f64::from(curve.width) * UNITS_PER_POINT;
         #[allow(clippy::cast_possible_truncation)]
         let width = if width.is_finite() && width > 0.0 {
@@ -93,11 +105,11 @@ pub fn strokes(curves: &[Curve], block: BlockId, start: Timestamp, env: &ImportE
         } else {
             2.0
         };
-        let [r, g, b, _] = curve.color;
+        let [r, g, b, a] = curve.color;
         let style = StrokeStyle {
             tool: if highlighter { tool::HIGHLIGHTER } else { tool::PEN },
             palette: 0,
-            color: [r, g, b, 255],
+            color: [r, g, b, if highlighter { 255 } else { a }],
             width,
         };
         // A curve longer than a stroke may be goes in pieces that share their end points.

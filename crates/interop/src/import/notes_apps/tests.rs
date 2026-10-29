@@ -505,6 +505,32 @@ fn reading_curves_stops_when_cancel_is_pressed() {
     assert_eq!(read.dropped, 0);
 }
 
+#[test]
+fn a_pen_a_little_see_through_stays_a_pen_and_keeps_its_alpha() {
+    let world = TestEnv::new();
+    let env = world.env();
+    let curve = |alpha: u8, width: f32| Curve {
+        points: vec![(1.0, 1.0)],
+        pressure: None,
+        width,
+        color: [10, 20, 30, alpha],
+    };
+    let curves = [curve(250, 2.0), curve(230, 12.0), curve(200, 1.0), curve(255, 20.0)];
+    let block = opennote_core::BlockId::generate(env.clock);
+    let (made, stats) = strokes(&curves, block, env.clock.now(), &env);
+    assert_eq!(stats.highlighter, 2);
+    let tools: Vec<(u8, u8)> = made.iter().map(|s| (s.style.tool, s.style.color[3])).collect();
+    assert_eq!(
+        tools,
+        [
+            (tool::PEN, 250),
+            (tool::HIGHLIGHTER, 255),
+            (tool::HIGHLIGHTER, 255),
+            (tool::PEN, 255)
+        ]
+    );
+}
+
 fn ordered(note: &[u8], env: &crate::sink::ImportEnv<'_>) -> (Vec<String>, PageReport) {
     let dir = tempfile::tempdir().unwrap();
     let file = dir.path().join("a.sdocx");
