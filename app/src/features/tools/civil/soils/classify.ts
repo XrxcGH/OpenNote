@@ -277,7 +277,7 @@ export const limitsCalc: Calc = {
           { name: 'soils.p.tests', points: data.map((r) => [r[0]!, r[1]!] as const), style: 'points' },
           {
             name: 'soils.p.flowLine',
-            points: logspace(Math.log10(Math.min(10, ...Ns)), Math.log10(Math.max(50, ...Ns)), 20).map(
+            points: logspace(Math.min(10, ...Ns), Math.max(50, ...Ns), 20).map(
               (N) => [N, f.a - f.flowIndex * Math.log10(N)] as const,
             ),
           },

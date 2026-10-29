@@ -308,7 +308,7 @@ export const preconCalc: Calc = {
     const hi = Math.max(...xs);
     const [sb, eb] = p.bend;
     const span = (from: number, to: number, slope: number, x0: number, y0: number) =>
-      logspace(Math.log10(from), Math.log10(to), 12).map((s) => [s, y0 + slope * (Math.log10(s) - x0)] as const);
+      logspace(from, to, 12).map((s) => [s, y0 + slope * (Math.log10(s) - x0)] as const);
     return {
       answer: { key: 'soils.pc.answer', vars: { sp: p.sp } },
       rows: [row('soils.r.sp', p.sp, 'kPa'), row('soils.r.Cc', p.Cc), row('soils.r.Cr', p.Cr)],

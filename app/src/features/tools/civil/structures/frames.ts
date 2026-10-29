@@ -177,7 +177,7 @@ const spectrumCalc: Calc = {
       need(Math.abs(data[i]![0]! - data[i - 1]![0]! - dt) <= 1e-6 * dt, 'structures.errors.step');
     const scale = s.units === 'ms2' ? 1 : 9.80665;
     const ag = data.map((r) => r[1]! * scale);
-    const periods = logspace(Math.log10(n.Tmin!), Math.log10(n.Tmax!), 40);
+    const periods = logspace(n.Tmin!, n.Tmax!, 40);
     const sp = responseSpectrum(ag, dt, n.zeta!, periods);
     const at = o.T === null ? null : responseSpectrum(ag, dt, n.zeta!, [o.T])[0]!;
     const pga = Math.max(...ag.map(Math.abs));
