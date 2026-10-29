@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { design } from './kitStatInfer/design';
 import { resample } from './kitStatInfer/resample';
 import { multiple } from './kitStatInfer/multiple';
 import { ranks } from './kitStatInfer/ranks';
@@ -22,6 +23,7 @@ export const kitStatInfer = {
     ranks: ranks.tab,
     multiple: multiple.tab,
     resample: resample.tab,
+    design: design.tab,
   },
   open: {
     describe: describe.open,
@@ -31,6 +33,7 @@ export const kitStatInfer = {
     ranks: ranks.open,
     multiple: multiple.open,
     resample: resample.open,
+    design: design.open,
   },
   keywords: {
     describe: describe.keywords,
@@ -40,6 +43,7 @@ export const kitStatInfer = {
     ranks: ranks.keywords,
     multiple: multiple.keywords,
     resample: resample.keywords,
+    design: design.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -85,6 +89,7 @@ export const kitStatInfer = {
     ...ranks.err,
     ...multiple.err,
     ...resample.err,
+    ...design.err,
   },
   answer: {
     ...describe.answer,
@@ -94,6 +99,7 @@ export const kitStatInfer = {
     ...ranks.answer,
     ...multiple.answer,
     ...resample.answer,
+    ...design.answer,
   },
   note: {
     ...describe.note,
@@ -103,6 +109,7 @@ export const kitStatInfer = {
     ...ranks.note,
     ...multiple.note,
     ...resample.note,
+    ...design.note,
   },
   col: {
     summary: 'Summary',
@@ -139,6 +146,7 @@ export const kitStatInfer = {
     ...ranks.col,
     ...multiple.col,
     ...resample.col,
+    ...design.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -152,6 +160,7 @@ export const kitStatInfer = {
     ...ranks.axis,
     ...multiple.axis,
     ...resample.axis,
+    ...design.axis,
   },
   step: {
     ...describe.step,
@@ -161,8 +170,10 @@ export const kitStatInfer = {
     ...ranks.step,
     ...multiple.step,
     ...resample.step,
+    ...design.step,
   },
   describe: describe.fields,
+  design: design.fields,
   resample: resample.fields,
   multiple: multiple.fields,
   ranks: ranks.fields,

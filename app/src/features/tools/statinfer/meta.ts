@@ -14,6 +14,7 @@ export const STAT_TOOLS = [
   ['ranks', 'Ranking'],
   ['multiple', 'ListNumbers'],
   ['resample', 'Shuffle'],
+  ['design', 'GridFour'],
 ] as const;
 
 export type StatTool = (typeof STAT_TOOLS)[number][0];
