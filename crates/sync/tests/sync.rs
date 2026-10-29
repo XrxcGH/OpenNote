@@ -569,3 +569,24 @@ fn a_moved_file_is_copied_from_its_old_place_without_storage() {
     assert_eq!(d[1].read("Bio/moved/recording.webm"), Some(big));
     assert_eq!(d[1].read("Bio/assets/recording.webm"), None);
 }
+
+#[test]
+fn paths_that_differ_only_in_case_end_up_the_same_on_every_device() {
+    let (_, d) = pair();
+    d[0].write("Bio/Todo.txt", b"upper");
+    d[1].write("Bio/todo.txt", b"lower");
+    d[0].engine.sync().expect("syncs");
+    let report = d[1].engine.sync().expect("syncs");
+    assert_eq!(report.summary.conflicts.len(), 1, "{:?}", report.summary);
+    assert_eq!(report.summary.conflicts[0].path, "Bio/Todo.txt");
+    settle(&d, 4);
+    let files = d[0].files();
+    assert_eq!(files, d[1].files(), "both devices hold the same files");
+    let mut kept: Vec<_> = files.values().map(|b| b.as_slice()).collect();
+    kept.sort();
+    assert_eq!(kept, [&b"lower"[..], &b"upper"[..]], "neither text was lost");
+    assert_eq!(files.get("Bio/Todo.txt").map(Vec::as_slice), Some(&b"upper"[..]));
+    assert!(files
+        .keys()
+        .any(|p| p.starts_with("Bio/todo (conflicted copy ") && p.ends_with(").txt")));
+}

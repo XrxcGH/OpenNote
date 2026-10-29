@@ -231,7 +231,7 @@ fn actions(merged: &Merged, local_manifest: &Manifest, summary: &mut Summary) ->
             }
             continue;
         }
-        // Windows folders ignore case: two live paths that differ only in case can't both be written.
+        // The merge already moved paths that differ only in case apart; this guards the disk if one slips by.
         if !local::valid_path(path) || !taken.insert(path.to_lowercase()) {
             continue;
         }
@@ -246,5 +246,8 @@ fn actions(merged: &Merged, local_manifest: &Manifest, summary: &mut Summary) ->
             });
         }
     }
+    // Deletes first: on a folder that ignores case, a path that goes must be gone before one differing only in
+    // case is written.
+    actions.sort_by_key(|action| !matches!(action, Action::Delete { .. }));
     actions
 }

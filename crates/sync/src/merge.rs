@@ -390,6 +390,7 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
         }
         extras = next;
     }
+    part_case_collisions(&mut merged, contents)?;
     merged
         .conflicts
         .sort_by(|a, b| (&a.path, &a.kept_as).cmp(&(&b.path, &b.kept_as)));
@@ -401,6 +402,60 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
     revive_referenced(&mut merged.entries, before, contents, &sealed)?;
     copy_sealed_sets(&mut merged.entries, &sealed_sets, contents)?;
     Ok(merged)
+}
+
+/// The version-vector entry that counts moves made because two paths differ only in case. Every device makes the
+/// same move from the same versions, so the count is the same everywhere and needs no device of its own.
+const CASE_MOVE: &str = "~case";
+
+/// Windows and macOS folders ignore case, so two live paths that differ only in case (`Bio/Todo.txt` and
+/// `Bio/todo.txt`, made on two devices) can't both be on disk. The path that sorts first stays. Each other one goes:
+/// its bytes move to a conflicted copy beside it, unless the one that stays holds the same bytes. The move is
+/// published like an edit, so every device agrees, and is reported with the other conflicts.
+fn part_case_collisions(merged: &mut Merged, contents: &dyn Contents) -> Result<()> {
+    let mut first: BTreeMap<String, String> = BTreeMap::new();
+    let mut moves: Vec<(String, String)> = Vec::new();
+    for (path, _) in merged.entries.iter().filter(|(_, e)| e.live()) {
+        match first.entry(path.to_lowercase()) {
+            std::collections::btree_map::Entry::Vacant(slot) => {
+                slot.insert(path.clone());
+            }
+            std::collections::btree_map::Entry::Occupied(slot) => moves.push((slot.get().clone(), path.clone())),
+        }
+    }
+    for (stays, goes) in moves {
+        let entry = merged.entries[&goes].clone();
+        let mut vv = entry.vv.clone();
+        *vv.entry(CASE_MOVE.to_owned()).or_insert(0) += 1;
+        merged.entries.insert(
+            goes.clone(),
+            Entry {
+                vv: vv.clone(),
+                content: entry.content.clone(),
+                deleted: true,
+            },
+        );
+        if merged.entries[&stays].content.id == entry.content.id {
+            continue;
+        }
+        let at = conflicted_copy(&goes, &entry.content);
+        let mut candidates = vec![Entry {
+            vv,
+            content: entry.content,
+            deleted: false,
+        }];
+        candidates.extend(merged.entries.get(&at).cloned());
+        let resolved = resolve(&at, candidates, contents)?;
+        merged.entries.insert(at.clone(), resolved.entry);
+        for (other, e) in resolved.others {
+            merged.entries.entry(other).or_insert(e);
+        }
+        merged.conflicts.push(Conflict {
+            path: stays,
+            kept_as: at,
+        });
+    }
+    Ok(())
 }
 
 /// What the merge knew of each path, for protected sections' folders, which sync can't read.
