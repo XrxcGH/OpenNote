@@ -12,10 +12,10 @@ import { pageSelection } from '../seams/selectionStore';
 import { shownViewport } from '../viewport/viewport';
 import { inkLines, inOrder, typedSelection, type GatheredLine } from '../stepcheck/gather';
 import { shownCheck } from '../stepcheck/overlay';
-import { endSession, explainMistake, loadMathKit, nextHint, setContext, TutorPanel, tutorStyles } from '../../tutor';
-import type { Seed } from '../../tutor';
+import { loadTutorPanel } from '../../tutor';
+import type { Seed, TutorPanelModule } from '../../tutor';
 
-let panel: { host: HTMLElement; root: Root; returnTo: HTMLElement | null } | null = null;
+let panel: { host: HTMLElement; root: Root; returnTo: HTMLElement | null; tutor: TutorPanelModule } | null = null;
 let stopFollowing: (() => void) | null = null;
 
 /** Puts the panel beside the shown page; it follows the page when another one opens, and keeps the conversation. */
@@ -27,32 +27,35 @@ function place(): boolean {
 }
 
 /** Opens the Tutor panel, or brings the focus to it when it is open. */
-export async function openTutor(): Promise<void> {
-  await loadMathKit();
+export async function openTutor(): Promise<TutorPanelModule> {
+  const tutor = await loadTutorPanel();
+  await tutor.loadMathKit();
   if (!panel) {
     const host = document.createElement('div');
-    host.className = tutorStyles.host ?? '';
+    host.className = tutor.tutorStyles.host ?? '';
     const returnTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panel = { host, root: createRoot(host), returnTo };
-    panel.root.render(createElement(TutorPanel, { onClose: closeTutor, onUseSelection: () => void takeSelection() }));
+    panel = { host, root: createRoot(host), returnTo, tutor };
+    const props = { onClose: closeTutor, onUseSelection: () => void takeSelection() };
+    panel.root.render(createElement(tutor.TutorPanel, props));
     stopFollowing = shownViewport.subscribe(() => void place());
   }
   if (!place()) document.body.appendChild(panel.host);
   const host = panel.host;
   requestAnimationFrame(() => host.querySelector<HTMLElement>('textarea, button:not(:disabled)')?.focus());
+  return tutor;
 }
 
 /** Closes the panel and ends the session: the conversation and every consent are forgotten. */
 export function closeTutor(): void {
   if (!panel) return;
-  const { host, root, returnTo } = panel;
+  const { host, root, returnTo, tutor } = panel;
   panel = null;
   stopFollowing?.();
   stopFollowing = null;
   const hadFocus = host.contains(document.activeElement);
   root.unmount();
   host.remove();
-  endSession();
+  tutor.endSession();
   if (hadFocus && returnTo?.isConnected) returnTo.focus({ preventScroll: true });
 }
 
@@ -93,16 +96,16 @@ async function takeSelection(): Promise<void> {
     showToast({ message: t('tutor.errors.nothing') });
     return;
   }
-  setContext(picked.text, picked);
+  (await loadTutorPanel()).setContext(picked.text, picked);
   announce(t('tutor.panel.contextLabel'));
 }
 
 /** Give me a hint: the selected problem goes in front of the tutor, and the first rung shows. */
 export async function hintForSelection(): Promise<void> {
   const picked = await pickedLines();
-  await openTutor();
-  if (picked) setContext(picked.text, picked);
-  await nextHint();
+  const tutor = await openTutor();
+  if (picked) tutor.setContext(picked.text, picked);
+  await tutor.nextHint();
 }
 
 /** Explain this step: the step Check my work flagged (or the first one it flagged), without the corrected line. */
@@ -112,9 +115,9 @@ export async function explainStep(index?: number): Promise<void> {
   const seed: (Seed & { text: string }) | null = check
     ? { lines: texts.map((text) => ({ text })), results: [...check.results], focus: index, text: texts.join('\n') }
     : await pickedLines();
-  await openTutor();
-  if (seed) setContext(seed.text, seed);
-  await explainMistake();
+  const tutor = await openTutor();
+  if (seed) tutor.setContext(seed.text, seed);
+  await tutor.explainMistake();
 }
 
 /** Tests start over. */

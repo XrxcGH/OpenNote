@@ -1,9 +1,11 @@
 // The tutor's one public door (ADR 0050). The page imports it lazily, on the first tutor command or when Settings
-// shows the switch, so none of this is in the start-up bundle.
+// shows the switch, so none of this is in the start-up bundle. The door itself is small: the turn-on choice and the
+// switch. The panel, its session, and the guard load with `loadTutorPanel`, once the tutor is on.
 export { askToTurnOnTutor, chooseTutor, tutorChosen, tutorOn } from './choice';
-export { loadMathKit } from './kit';
-export { TutorPanel } from './TutorPanel';
 export { default as TutorSetting } from './TutorSetting';
-export { endSession, explainMistake, nextHint, setContext, tutorState } from './session';
 export type { Seed } from './session';
-export { default as tutorStyles } from './tutor.module.css';
+
+export type TutorPanelModule = typeof import('./panel');
+
+/** The panel, its session, and the math kit loader. */
+export const loadTutorPanel = (): Promise<TutorPanelModule> => import('./panel');
