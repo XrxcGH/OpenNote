@@ -51,5 +51,5 @@ People who write papers and problem sets want their notes in LaTeX, with heading
 
 - Compiling a `.tex` file that OpenNote wrote needs no shell escape, and CI compiles the fixtures with Tectonic (`latex-export` job) so the preamble stays valid.
 - An equation that fails the check appears as text in the file and in the summary. A person can fix the page and export again.
-- Merged table cells are not written, because OpenNote tables have none. A cropped picture is written whole.
+- Merged table cells are not written, because OpenNote tables have none. A cropped picture is trimmed with `adjustbox` (`trim` and `clip`, as fractions of the picture) and the file in `images/` stays whole, with a `% cropped in OpenNote` comment above it. A page needs the `adjustbox` package, which every full TeX Live and MiKTeX install has.
 - pdfLaTeX shows Latin letters only. For other scripts the person sets a font in the preamble, which has a comment for it, and compiles with XeLaTeX or LuaLaTeX.

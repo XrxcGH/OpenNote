@@ -19,7 +19,6 @@ pub(super) const MAX_COLUMNS: usize = 60;
 pub(super) struct Stats {
     pub equations: usize,
     pub math_as_text: usize,
-    pub cropped_images: usize,
     pub remote_images: usize,
     pub too_deep: usize,
     pub wide_tables: usize,
@@ -38,8 +37,6 @@ impl Stats {
         let math = ("equation shown as text", "equations shown as text");
         let why = "Its TeX is not one that LaTeX can set safely, so it stays as typed.";
         report.simplified_count(self.math_as_text, math, why);
-        let crop = ("cropped image shown whole", "cropped images shown whole");
-        report.simplified_count(self.cropped_images, crop, "LaTeX shows the whole picture.");
         let remote = (
             "image on the web shown as its description",
             "images on the web shown as their descriptions",

@@ -9,7 +9,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use opennote_core::model::{BlockData, Fallback, NotebookFile, OtherData, Page, TextData};
+use opennote_core::model::{BlockData, Crop, Fallback, ImageData, JsonMap, NotebookFile, OtherData, Page, TextData};
 use opennote_core::testing::sample::{sample_asset_id, sample_page};
 use opennote_core::NotebookId;
 use opennote_interop::testing::{at, png_bytes, sample_notebook, unzip, TestEnv};
@@ -110,12 +110,38 @@ fn set_markdown(page: &mut Page, markdown: &str) {
     page.blocks.replace(Arc::new(block)).expect("replaces");
 }
 
-/// A notebook of one page: the core's sample page, with a picture and a stroke, and this Markdown.
+/// Shows only the middle of the page's picture: 10% in from the left, 20% down from the top, half as wide, 30% as tall.
+fn crop_image(page: &mut Page) {
+    let first = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Image(_)))
+        .expect("an image block")
+        .clone();
+    let BlockData::Image(image) = &first.data else {
+        unreachable!()
+    };
+    let mut block = (*first).clone();
+    block.data = BlockData::Image(ImageData {
+        crop: Some(Crop {
+            x: 0.1,
+            y: 0.2,
+            w: 0.5,
+            h: 0.3,
+            extra: JsonMap::new(),
+        }),
+        ..image.clone()
+    });
+    page.blocks.replace(Arc::new(block)).expect("replaces");
+}
+
+/// A notebook of one page: the core's sample page, with a cropped picture and a stroke, and this Markdown.
 fn notebook_with(env: &opennote_interop::ImportEnv<'_>, markdown: &str) -> MemorySource {
     let created = at("2026-03-04T10:00:00Z");
     let mut source = MemorySource::new(NotebookFile::new(NotebookId::generate(env.clock), "Chemistry", created));
     let mut page: Page = sample_page();
     set_markdown(&mut page, markdown);
+    crop_image(&mut page);
     let mut section = SectionBuilder::new(env, "Notes", created);
     section.add_page(&page, None);
     let asset_bytes = BTreeMap::from([(sample_asset_id(), png_bytes())]);

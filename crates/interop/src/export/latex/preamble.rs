@@ -22,6 +22,7 @@ const PREAMBLE: &str = r"\usepackage{iftex}
   \usepackage{unicode-math}
 \fi
 \usepackage{graphicx}
+\usepackage{adjustbox}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[normalem]{ulem}
 \usepackage{booktabs,longtable,tabularx,array}
