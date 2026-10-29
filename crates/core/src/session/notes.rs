@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::{Deserialize, Serialize};
 
@@ -317,7 +318,17 @@ pub enum ReceiptPart {
 pub struct TrashReceipt {
     /// The parts.
     pub parts: Vec<ReceiptPart>,
+    /// Which trash call made it, in this run. A notebook's part names only its folder, so without this the
+    /// receipt of an earlier call would match the notebook again after it went to Trash a second time.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub call: u64,
 }
+
+fn is_zero(n: &u64) -> bool {
+    *n == 0
+}
+
+static TRASH_CALLS: AtomicU64 = AtomicU64::new(0);
 
 impl TrashReceipt {
     /// The receipt as opaque text.
@@ -369,7 +380,10 @@ impl Core {
     /// for all of them.
     pub fn trash_nodes(&self, targets: &[TrashTarget]) -> Result<TrashReceipt, CoreError> {
         let mut by_notebook: BTreeMap<PathBuf, (NotebookHandle, Vec<NodeRef>)> = BTreeMap::new();
-        let mut receipt = TrashReceipt::default();
+        let mut receipt = TrashReceipt {
+            call: TRASH_CALLS.fetch_add(1, Ordering::Relaxed) + 1,
+            ..TrashReceipt::default()
+        };
         for target in targets {
             match target {
                 TrashTarget::Notebook(path) => {

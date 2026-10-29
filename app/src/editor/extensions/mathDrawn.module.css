@@ -162,43 +162,69 @@
     outline-offset: 2px;
   }
 
-  .toggle {
-    min-block-size: var(--size-target-min);
-    margin-block-start: var(--space-1);
-    margin-inline-end: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-    font: inherit;
+  /* One style for every button in the panel: the interface font, a hairline border, the target height. */
+  .toggle,
+  .actions button {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
     color: var(--color-text-primary);
-    background: transparent;
-    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
     cursor: pointer;
   }
 
+  .toggle:hover,
+  .actions button:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .toggle:focus-visible,
+  .actions button:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  /* The panel under an equation: its preview and message take a row each, and its buttons share rows that wrap, with
+     the same gap between them in both directions. */
+  .holderBlock,
+  .holderInline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
   .holderBlock {
-    margin-block-start: var(--space-2);
+    margin-block-start: var(--space-3);
   }
 
   .holderInline {
     position: absolute;
     z-index: var(--layer-dropdown);
-    margin-block-start: var(--space-1);
+    margin-block-start: var(--space-2);
     min-inline-size: 16rem;
-    padding: var(--space-2);
+    max-inline-size: min(28rem, 90vw);
+    padding: var(--space-3);
     background: var(--color-surface-raised);
-    border: 1px solid var(--color-border-subtle);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    box-shadow: var(--elevation-2);
   }
 
   /* With the writing area open, the holder takes its place in the text, so the block grows to hold the area and
      nothing clips it or lies over it. */
   .holderPadOpen {
     position: static;
-    display: block;
     inline-size: min(100%, 42rem);
+    max-inline-size: none;
+    box-shadow: none;
   }
 
   .preview {
+    flex: 1 1 100%;
     padding: var(--space-2) var(--space-3);
     color: var(--color-text-primary);
     background: var(--color-surface-raised);
@@ -209,6 +235,7 @@
   }
 
   .problem {
+    flex: 1 1 100%;
     color: var(--color-status-danger);
     font-size: var(--type-small-size);
   }
@@ -219,25 +246,14 @@
 
   .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-3);
-    margin-block-start: var(--space-2);
-  }
-
-  .actions button {
-    min-block-size: var(--size-target-min);
-    padding-inline: var(--space-3);
-    font: inherit;
-    font-size: var(--type-small-size);
-    color: var(--color-text-primary);
-    background: var(--color-surface-raised);
-    border: 1px solid var(--color-border-control);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
   }
 }
 
 @layer components {
   .pad {
+    flex: 1 1 100%;
     display: grid;
     gap: var(--space-2);
     margin-block-start: var(--space-2);

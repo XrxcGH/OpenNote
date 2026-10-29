@@ -22,6 +22,8 @@
     justify-content: center;
     gap: var(--space-3);
     min-block-size: var(--target-size);
+    /* A short label still makes a target as wide as it is tall. */
+    min-inline-size: var(--target-size);
     padding-inline: var(--space-5);
     font-weight: var(--font-weight-medium);
     text-align: center;

@@ -1,7 +1,11 @@
 // Ink as vector shapes for print and export. Each stroke becomes one closed, filled path in its pen color, so ink
 // prints sharp at any size, selects as graphics, and stays small (ADR 0006: "ink stays vector"). The outline follows
-// the stored points and pressure. Rendering can improve later without changing the data.
+// the smooth curve through the stored points (core/ink/path, as the page view draws it) and their pressure. A shape's
+// exact points draw at one even width with crisp corners, as on the page. Rendering can improve later without
+// changing the data.
 
+import { exactOutline, smoothPath } from '../../../core/ink/path';
+import type { Mix } from '../../../core/ink/path';
 import type { Rect } from '../pagination/geometry';
 import type { ExportStroke } from './source';
 
@@ -115,6 +119,9 @@ function outline(points: readonly Pt[]): Side[] {
   return [...left, ...cap(points[end], tangents[end], 1), ...right.reverse(), ...cap(points[0], tangents[0], -1)];
 }
 
+/** A point between two, with the radius interpolated, for the smooth curve. */
+const mixPt: Mix<Pt> = (a, b, t, x, y) => ({ x, y, r: a.r + (b.r - a.r) * t });
+
 function pathData(ring: readonly Side[]): string {
   return `M${ring.map(([x, y]) => `${tenth(x)} ${tenth(y)}`).join('L')}Z`;
 }
@@ -136,9 +143,17 @@ function boxOf(ring: readonly Side[]): Rect {
 /** One stroke as a filled shape in page coordinates, with its ink block's origin at (dx, dy). Null for no points. */
 export function strokeShape(stroke: ExportStroke, dx = 0, dy = 0): InkShape | null {
   if (stroke.x.length === 0 || stroke.x.length !== stroke.y.length) return null;
-  const points = thin(pointsOf(stroke, dx, dy));
-  const ring = outline(points);
-  return { d: pathData(ring), bbox: boxOf(ring), highlighter: stroke.tool === HIGHLIGHTER, ...colorOf(stroke.color) };
+  const highlighter = stroke.tool === HIGHLIGHTER;
+  const placed = pointsOf(stroke, dx, dy);
+  if (stroke.exact) {
+    // The pieces wind one way, so the path's nonzero fill makes them one shape.
+    const rings = exactOutline(placed, placed[0].r * 2).map((piece) => piece.map((p): Side => [p.x, p.y]));
+    if (rings.length > 0) {
+      return { d: rings.map(pathData).join(''), bbox: boxOf(rings.flat()), highlighter, ...colorOf(stroke.color) };
+    }
+  }
+  const ring = outline(thin(smoothPath(placed, mixPt)));
+  return { d: pathData(ring), bbox: boxOf(ring), highlighter, ...colorOf(stroke.color) };
 }
 
 /**

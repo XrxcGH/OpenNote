@@ -153,3 +153,11 @@ describe('3D graph text', () => {
     expect(readGraph('@3d').three).toBe(true);
   });
 });
+
+describe('a bare expression in x and y', () => {
+  it('is a surface with or without spaces', () => {
+    expect(plotShape('x^2 + y^2')?.kind).toBe('surface');
+    expect(plotShape('x^2+y^2')?.kind).toBe('surface');
+    expect(plotShape('x^2 + 1')).toBeNull();
+  });
+});

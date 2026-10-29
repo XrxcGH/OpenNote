@@ -75,14 +75,27 @@ describe('the pen library: what each pen does', () => {
       { x: 0, y: 0 },
       { x: 120, y: 0 },
     ];
-    const dashes = strokeShapes(line, { tool: 'dashed', width: 3 });
+    // As a pen's samples: one polygon for each dash.
+    const dashes = strokeShapes(line, { tool: 'dashed', width: 3, exact: false });
     expect(dashes.length).toBe(Math.ceil(120 / (3 * 7)));
     const [first, second] = dashes.map((d) => boundsOf(d));
     expect(second.minX - first.maxX).toBeGreaterThan(5);
-    const dots = strokeShapes(line, { tool: 'dotted', width: 3 });
+    const dots = strokeShapes(line, { tool: 'dotted', width: 3, exact: false });
     expect(dots.length).toBe(Math.floor(120 / (3 * 2.2)) + 1);
     expect(dots.every((d) => d.length === 16)).toBe(true);
-    expect(strokeShapes(line, { tool: 'pen', width: 3 }).length).toBe(1);
+    expect(strokeShapes(line, { tool: 'pen', width: 3, exact: false }).length).toBe(1);
+    // As exact geometry (a dashed shape): the same dashes, each filled by the pieces of an even-width line.
+    const spans = strokeShapes(line, { tool: 'dashed', width: 3, exact: true })
+      .map((piece) => boundsOf(piece))
+      .sort((a, b) => a.minX - b.minX)
+      .reduce<{ minX: number; maxX: number }[]>((runs, box) => {
+        const last = runs[runs.length - 1];
+        if (last && box.minX <= last.maxX) last.maxX = Math.max(last.maxX, box.maxX);
+        else runs.push({ minX: box.minX, maxX: box.maxX });
+        return runs;
+      }, []);
+    expect(spans.length).toBe(Math.ceil(120 / (3 * 7)));
+    expect(spans[1].minX - spans[0].maxX).toBeGreaterThan(5);
   });
 
   it('still fills a one-point stroke', () => {

@@ -502,6 +502,9 @@ export const study = {
     cellLabel: '{name}, symbol {symbol}, atomic number {number}, {family}',
     insertData: 'Insert the facts about {name} into the page',
     insertDataShort: 'Insert facts',
+    insertSymbolShort: 'Insert symbol',
+    insertConfigurationShort: 'Insert configuration',
+    moreFacts: 'More facts about {name}',
     units: {
       section: 'Section',
       allSections: 'All sections',

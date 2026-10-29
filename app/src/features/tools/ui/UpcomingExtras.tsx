@@ -259,6 +259,7 @@ export function Planner() {
               <span className={styles.itemTitle}>{slot.name}</span>
               <span className={styles.itemDue}>
                 {slot.days.map(weekday).join(' ')} {clockText(minutesOfText(slot.start))}
+                {slot.room ? `, ${slot.room}` : ''}
               </span>
               <Button
                 variant="quiet"

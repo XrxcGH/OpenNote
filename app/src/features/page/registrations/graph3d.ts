@@ -1,4 +1,4 @@
-// The mt3-graph-3d lane's registrations: Insert parametric or polar graph (Insert tab, slash
+// The mt3-graph-3d lane's registrations: Insert 3D graph and Insert parametric or polar graph (Insert tab, slash
 // menu, and palette), and the Vectors, Solids of revolution, and Projectile simulator tool windows (Insert tab and
 // palette). This file loads at start-up, so it holds only definitions; each command loads its feature on first use.
 import { commandBar, commands } from '../../../registries';
@@ -21,6 +21,7 @@ async function insertStarter(which: '3d' | 'curves'): Promise<void> {
 }
 
 for (const [id, title, keywords, icon, flag, which, order, priority] of [
+  ['insert.graph3d', 'graph3d.insert.graph3d', 'graph3d.insert.graph3dKeywords', 'Cube', 'math.graph3d', '3d', 23, 37],
   [
     'insert.curveGraph',
     'graph3d.insert.curve',
