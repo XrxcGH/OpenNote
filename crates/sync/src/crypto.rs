@@ -167,17 +167,22 @@ pub fn open(key: &[u8; 32], vault: &[u8; 16], kind: &str, name: &str, sealed: &[
 /// Pads `plain` to a size bucket, so storage sees only rough sizes: a power of two from 512 bytes up to 64 KiB,
 /// then whole 64 KiB steps. The first 4 bytes hold the real length.
 pub fn pad(plain: &[u8]) -> Vec<u8> {
-    let need = plain.len() + 4;
-    let size = if need <= 64 * 1024 {
-        need.next_power_of_two().max(512)
-    } else {
-        need.div_ceil(64 * 1024) * 64 * 1024
-    };
+    let size = padded_len(plain.len());
     let mut out = Vec::with_capacity(size);
     out.extend_from_slice(&(plain.len() as u32).to_le_bytes());
     out.extend_from_slice(plain);
     out.resize(size, 0);
     out
+}
+
+/// How long [`pad`] makes `len` bytes.
+pub fn padded_len(len: usize) -> usize {
+    let need = len + 4;
+    if need <= 64 * 1024 {
+        need.next_power_of_two().max(512)
+    } else {
+        need.div_ceil(64 * 1024) * 64 * 1024
+    }
 }
 
 /// Removes the padding. `None` when the length doesn't fit.

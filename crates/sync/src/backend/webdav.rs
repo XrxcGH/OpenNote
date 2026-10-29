@@ -5,6 +5,7 @@
 //! sign-in never crosses a network in the clear. The password stays in a `zeroize` buffer and is never logged.
 
 use std::collections::HashSet;
+use std::io::Read;
 use std::sync::{Mutex, PoisonError};
 use std::time::Duration;
 
@@ -14,7 +15,7 @@ use ureq::http::{Method, Request};
 use ureq::Agent;
 use zeroize::Zeroizing;
 
-use super::{check, valid_name, Backend};
+use super::{check, max_size, too_large, valid_name, Backend};
 use crate::crypto::{hex, random};
 use crate::error::{Result, SyncError};
 
@@ -191,6 +192,24 @@ impl WebDavBackend {
     }
 
     fn request(&self, method: &str, name: &str, body: Vec<u8>, headers: &[(&str, String)]) -> Result<(u16, Vec<u8>)> {
+        let mut response = self.send(method, name, body, headers)?;
+        let status = response.status().as_u16();
+        let bytes = response
+            .body_mut()
+            .with_config()
+            .limit(MAX_BODY)
+            .read_to_vec()
+            .map_err(net)?;
+        Ok((status, bytes))
+    }
+
+    fn send(
+        &self,
+        method: &str,
+        name: &str,
+        body: Vec<u8>,
+        headers: &[(&str, String)],
+    ) -> Result<ureq::http::Response<ureq::Body>> {
         let method = Method::from_bytes(method.as_bytes()).map_err(|_| SyncError::Storage("bad method".into()))?;
         let mut builder = Request::builder().method(method).uri(format!("{}{}", self.base, name));
         if let Some(auth) = &self.auth {
@@ -202,15 +221,7 @@ impl WebDavBackend {
         let request = builder
             .body(body)
             .map_err(|_| SyncError::Storage("the address isn't valid".into()))?;
-        let mut response = self.agent.run(request).map_err(net)?;
-        let status = response.status().as_u16();
-        let bytes = response
-            .body_mut()
-            .with_config()
-            .limit(MAX_BODY)
-            .read_to_vec()
-            .map_err(net)?;
-        Ok((status, bytes))
+        self.agent.run(request).map_err(net)
     }
 
     fn make_dirs(&self, name: &str) -> Result<()> {
@@ -298,10 +309,27 @@ fn base64(bytes: &[u8]) -> String {
 impl Backend for WebDavBackend {
     fn get(&self, name: &str) -> Result<Option<Vec<u8>>> {
         check(name)?;
-        match self.request("GET", name, Vec::new(), &[])? {
-            (200, bytes) => Ok(Some(bytes)),
-            (404 | 410, _) => Ok(None),
-            (status, _) => Err(status_error(status)),
+        let mut response = self.send("GET", name, Vec::new(), &[])?;
+        match response.status().as_u16() {
+            200 => {
+                // Read one byte past what OpenNote ever writes under this name, never the whole of a longer body.
+                let limit = max_size(name);
+                let mut bytes = Vec::new();
+                response
+                    .body_mut()
+                    .with_config()
+                    .limit(u64::MAX)
+                    .reader()
+                    .take(limit + 1)
+                    .read_to_end(&mut bytes)
+                    .map_err(|e| SyncError::Storage(format!("the server's answer broke off ({})", e.kind())))?;
+                if bytes.len() as u64 > limit {
+                    return Err(too_large());
+                }
+                Ok(Some(bytes))
+            }
+            404 | 410 => Ok(None),
+            status => Err(status_error(status)),
         }
     }
 

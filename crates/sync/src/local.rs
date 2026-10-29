@@ -21,7 +21,8 @@ use crate::manifest::Content;
 /// The size of a chunk.
 pub const CHUNK: usize = 1024 * 1024;
 const MAX_DEPTH: usize = 24;
-const MAX_FILES: usize = 2_000_000;
+/// The most files a notes folder may hold for sync, so a head stays under [`crate::manifest::MAX_HEAD`].
+pub const MAX_FILES: usize = 250_000;
 
 /// A file's size and last-write time, to skip hashing files that didn't change.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

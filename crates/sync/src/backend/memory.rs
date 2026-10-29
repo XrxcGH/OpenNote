@@ -4,7 +4,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
-use super::{check, valid_name, Backend};
+use super::{check, max_size, too_large, valid_name, Backend};
 use crate::error::{Result, SyncError};
 
 /// Faults to inject.
@@ -80,7 +80,11 @@ fn spend(budget: &mut Option<usize>) -> Result<()> {
 impl Backend for MemoryBackend {
     fn get(&self, name: &str) -> Result<Option<Vec<u8>>> {
         check(name)?;
-        Ok(self.lock().blobs.get(name).cloned())
+        // The same limits as real storage, so every test also checks that what the engine writes fits them.
+        match self.lock().blobs.get(name) {
+            Some(bytes) if bytes.len() as u64 > max_size(name) => Err(too_large()),
+            found => Ok(found.cloned()),
+        }
     }
 
     fn put(&self, name: &str, bytes: &[u8]) -> Result<()> {

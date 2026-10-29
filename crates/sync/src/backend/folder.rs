@@ -6,10 +6,10 @@
 //! engine didn't write, and symbolic links and junctions are never followed.
 
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use super::{check, valid_name, Backend};
+use super::{check, max_size, too_large, valid_name, Backend};
 use crate::crypto::{hex, random};
 use crate::error::{Result, SyncError};
 
@@ -84,7 +84,21 @@ impl Backend for FolderBackend {
         check(name)?;
         let path = self.path(name);
         match fs::symlink_metadata(&path) {
-            Ok(meta) if meta.file_type().is_file() => fs::read(&path).map(Some).map_err(storage),
+            Ok(meta) if meta.file_type().is_file() => {
+                let limit = max_size(name);
+                if meta.len() > limit {
+                    return Err(too_large());
+                }
+                // The file may grow between the size check and the read, so the read stops one byte past the limit.
+                let mut bytes = Vec::with_capacity(meta.len() as usize);
+                fs::File::open(&path)
+                    .and_then(|file| file.take(limit + 1).read_to_end(&mut bytes))
+                    .map_err(storage)?;
+                if bytes.len() as u64 > limit {
+                    return Err(too_large());
+                }
+                Ok(Some(bytes))
+            }
             Ok(_) => Ok(None),
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
             Err(error) => Err(storage(error)),
@@ -178,5 +192,25 @@ mod tests {
             .filter(|e| e.file_name().to_string_lossy().ends_with(".tmp"))
             .collect();
         assert!(leftovers.is_empty(), "no temporary files stay behind");
+    }
+
+    #[test]
+    fn a_blob_longer_than_opennote_writes_is_refused_before_it_is_read() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let store = FolderBackend::new(dir.path()).expect("folder");
+        let limit = 17 * 65_536 + 40;
+        fs::create_dir_all(dir.path().join("c/ab")).expect("dir");
+        fs::write(dir.path().join("c/ab/ab01"), vec![1u8; limit]).expect("write");
+        assert_eq!(store.get("c/ab/ab01").expect("fits").map(|b| b.len()), Some(limit));
+        fs::write(dir.path().join("c/ab/ab02"), vec![1u8; limit + 1]).expect("write");
+        assert!(matches!(store.get("c/ab/ab02"), Err(SyncError::Tampered(_))));
+        // A multi-gigabyte file at the header's name is refused by its length alone, without reading it.
+        let vault = fs::File::create(dir.path().join("vault")).expect("create");
+        vault.set_len(4 * 1024 * 1024 * 1024).expect("sparse length");
+        drop(vault);
+        assert!(matches!(store.get("vault"), Err(SyncError::Tampered(_))));
+        fs::create_dir_all(dir.path().join("k")).expect("dir");
+        fs::write(dir.path().join("k/0f"), vec![b'x'; 16 * 1024 + 1]).expect("write");
+        assert!(matches!(store.get("k/0f"), Err(SyncError::Tampered(_))));
     }
 }

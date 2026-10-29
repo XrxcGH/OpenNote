@@ -87,8 +87,9 @@ pub struct Head {
     pub entries: Manifest,
 }
 
-/// The largest manifest read: about 3 million files.
-const MAX_HEAD: u64 = 512 * 1024 * 1024;
+/// The largest manifest read, in bytes of JSON: 512 bytes for each of the most files a folder may hold, where a
+/// path with its version and chunk list takes about 330. A longer one is refused, not read into memory.
+pub const MAX_HEAD: u64 = crate::local::MAX_FILES as u64 * 512;
 
 /// Compresses a head for sealing.
 pub fn encode(head: &Head) -> Result<Vec<u8>> {
@@ -101,7 +102,13 @@ pub fn encode(head: &Head) -> Result<Vec<u8>> {
 /// Reads a head. Anything malformed is `None`: a sealed head that opens but doesn't read was not written here.
 pub fn decode(bytes: &[u8]) -> Option<Head> {
     let mut json = Vec::new();
-    DeflateDecoder::new(bytes).take(MAX_HEAD).read_to_end(&mut json).ok()?;
+    DeflateDecoder::new(bytes)
+        .take(MAX_HEAD + 1)
+        .read_to_end(&mut json)
+        .ok()?;
+    if json.len() as u64 > MAX_HEAD {
+        return None;
+    }
     let head: Head = serde_json::from_slice(&json).ok()?;
     let ids_ok = head
         .entries
