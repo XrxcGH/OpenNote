@@ -39,7 +39,14 @@ const CHECK_EVERY: usize = 4096;
 pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Converted> {
     let mut package = Package::open(path)?;
     let mut general = PageReport::default();
-    note_refused(&package.refused, &mut general);
+    let is_session = |name: &str| {
+        name.rsplit(['/', '\\'])
+            .next()
+            .is_some_and(|n| n.eq_ignore_ascii_case("Session.plist"))
+    };
+    let (session_refused, others): (Vec<_>, Vec<_>) =
+        package.refused.iter().cloned().partition(|(name, _)| is_session(name));
+    note_refused(&others, &mut general);
     let mut page = PageReport {
         title: stem.to_owned(),
         source: path.display().to_string(),
@@ -57,10 +64,21 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
         .cloned();
     match session {
         Some(member) => read_session(&mut package, &member, env, &mut parts, &mut page)?,
-        None => page.skipped(
-            "handwriting and typed text",
-            format!("The note has no Session.plist, which holds them. {}", APP.pdf_route()),
-        ),
+        None => match session_refused.first() {
+            // The note has a Session.plist, but the package limits left it out: say so, not that it is missing.
+            Some((_, why)) => page.skipped(
+                "handwriting and typed text",
+                format!(
+                    "Session.plist, which holds the handwriting and typed text, was left out ({}). {}",
+                    lower_first(why.trim_end_matches('.')),
+                    APP.pdf_route()
+                ),
+            ),
+            None => page.skipped(
+                "handwriting and typed text",
+                format!("The note has no Session.plist, which holds them. {}", APP.pdf_route()),
+            ),
+        },
     }
     let members: Vec<Member> = package.members.clone();
     for member in &members {
@@ -102,6 +120,14 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
     keep_page(made, stem, &mut out, &mut general)?;
     out.general = general.entries;
     Ok(out)
+}
+
+/// The text with its first letter in lowercase, to sit inside a sentence.
+fn lower_first(text: &str) -> String {
+    let mut chars = text.chars();
+    chars
+        .next()
+        .map_or_else(String::new, |first| first.to_lowercase().chain(chars).collect())
 }
 
 /// What a member of the package is, when it is content: pictures, recordings, and PDF files. Previews of the

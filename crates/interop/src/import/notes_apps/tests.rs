@@ -625,3 +625,50 @@ fn a_page_id_inside_a_longer_one_is_not_taken_for_it() {
     let (ids, _) = ordered(&note, &world.env());
     assert_eq!(ids, ["page10", "page1"]);
 }
+
+fn why_of(report: &Report, what: &str) -> Vec<String> {
+    report
+        .pages
+        .iter()
+        .chain(std::iter::once(&report.general))
+        .flat_map(|p| p.entries.iter())
+        .filter(|e| e.what == what)
+        .map(|e| e.why.clone().unwrap_or_default())
+        .collect()
+}
+
+#[test]
+fn a_notability_session_left_out_by_the_limits_is_named_as_left_out_not_missing() {
+    let png = png_bytes();
+    // 8 MiB of zeros packs to a few KiB, far past the 200-fold expansion a real entry stays under.
+    let zeros = vec![0u8; 8 << 20];
+    for (name, reason) in [
+        ("Big/Session.plist", "it expands far more"),
+        ("../Session.plist", "its name points outside"),
+    ] {
+        let bytes = zip_bytes(&[(name, &zeros), ("Big/Images/a.png", &png)]);
+        let (sink, report) = import_bytes("Big.note", &bytes);
+        assert_eq!(asset_mimes(pages(&sink)[0]), ["image/png"]);
+        let whys = why_of(&report, "handwriting and typed text");
+        assert_eq!(whys.len(), 1, "{whys:?}");
+        assert!(
+            whys[0].starts_with(&format!(
+                "Session.plist, which holds the handwriting and typed text, was left out ({reason}"
+            )),
+            "{whys:?}"
+        );
+        assert!(!whys[0].contains("has no Session.plist"), "{whys:?}");
+        assert!(whys[0].contains("Share, then PDF"), "{whys:?}");
+        // The refusal is said once, on the page, not again as a separate entry for the file.
+        assert!(why_of(&report, name).is_empty(), "{:?}", report.general);
+    }
+}
+
+#[test]
+fn a_notability_note_with_no_session_says_it_has_none() {
+    let png = png_bytes();
+    let (_, report) = import_bytes("Bare.note", &zip_bytes(&[("Bare/Images/a.png", &png)]));
+    let whys = why_of(&report, "handwriting and typed text");
+    assert_eq!(whys.len(), 1, "{whys:?}");
+    assert!(whys[0].starts_with("The note has no Session.plist"), "{whys:?}");
+}
