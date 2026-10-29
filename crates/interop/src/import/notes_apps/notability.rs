@@ -63,7 +63,11 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
         .min_by_key(|m| m.name.len())
         .cloned();
     match session {
-        Some(member) => read_session(&mut package, &member, env, &mut parts, &mut page)?,
+        Some(member) => {
+            // Any other Session.plist the limits refused is still named, so the report says what was left out.
+            note_refused(&session_refused, &mut general);
+            read_session(&mut package, &member, env, &mut parts, &mut page)?;
+        }
         None => match session_refused.first() {
             // The note has a Session.plist, but the package limits left it out: say so, not that it is missing.
             Some((_, why)) => page.skipped(

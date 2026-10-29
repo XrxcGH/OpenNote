@@ -701,6 +701,22 @@ fn a_notability_picture_without_an_extension_at_the_package_root_comes_over() {
 }
 
 #[test]
+fn a_second_notability_session_the_limits_refuse_is_named_beside_the_one_read() {
+    let zeros = vec![0u8; 8 << 20];
+    let session = fixtures::session_plist();
+    let bytes = zip_bytes(&[("N/Session.plist", &session), ("N/x/Session.plist", &zeros)]);
+    let (sink, report) = import_bytes("N.note", &bytes);
+    assert_eq!(pages(&sink)[0].ink.len(), 2);
+    let came = entries(&report, Outcome::CameOver);
+    assert!(came.contains(&"1 pen stroke".to_owned()), "{came:?}");
+    let whys = why_of(&report, "N/x/Session.plist");
+    assert_eq!(whys.len(), 1, "{:?}", report.general);
+    assert!(whys[0].contains("expands far more"), "{whys:?}");
+    // The one that was read is not reported as left out.
+    assert!(why_of(&report, "handwriting and typed text").is_empty(), "{report:?}");
+}
+
+#[test]
 fn the_default_package_limits_hold_one_notes_file_to_half_a_gibibyte() {
     let limits = PackageLimits::default();
     assert_eq!(limits.total_bytes, 536_870_912);
