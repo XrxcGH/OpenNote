@@ -75,3 +75,6 @@ export const ZOTERO_EVENT = 'opennote:zotero-command';
 export { MODPHYS_FLAGS } from './modphys/flags';
 export type { ModPhysFlagId } from './modphys/flags';
 export { MODPHYS_TOOLS } from './modphys/meta';
+// The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
+export { KIT_FLAGS } from './kits/flags';
+export type { KitFlagId } from './kits/flags';
