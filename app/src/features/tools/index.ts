@@ -25,3 +25,17 @@ export { default as LiveMathSetting } from './ui/LiveMathSetting';
 export { MUSIC_TOOLS } from './music/meta';
 export type { MusicToolId } from './music/meta';
 export { openKit as openMusicKit } from './music/open';
+// The tool kits (features/tools/kits/README.md). Registering a kit and opening a tool are light enough for start-up;
+// the numerics, properties, units, and interface load with loadKits, inside a kit's own lazy window.
+export {
+  onKitInputs,
+  onKitTab,
+  openKitTool,
+  registerKit,
+  savedKitTab,
+  selectKitTab,
+  takeKitInputs,
+} from './kits/registry';
+export type { KitId, KitOpener } from './kits/registry';
+export type { KitDef, KitInsertContent, KitResultRow, KitStep, KitToolDef, KitToolProps } from './kits/types';
+export const loadKits = () => import('./kits');
