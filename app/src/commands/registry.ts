@@ -62,6 +62,14 @@ export function commandContext(source: CommandContext['source'], target?: Comman
   };
 }
 
+/** True when a command exists, its flag is on, and it is available and enabled now: for a button that runs it. */
+export function commandAvailable(id: CommandId, source: CommandContext['source'] = 'menu'): boolean {
+  const def = commands.get(id);
+  if (!def || (def.flag && !isEnabled(def.flag))) return false;
+  const ctx = commandContext(source);
+  return !(def.when && !def.when(ctx)) && !(def.enabled && !def.enabled(ctx));
+}
+
 /** Runs a command if it exists, its flag is on, and it is available and enabled. Resolves true when it ran. */
 export async function executeCommand<Args>(
   id: CommandId,
