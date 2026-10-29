@@ -37,16 +37,12 @@ export const correlation = {
     nDependent: 'n',
   },
   err: {
-    pairLength: 'Each x needs a y: the 2 columns have different lengths.',
     correlationRange: 'A correlation must be between −1 and 1.',
     controlPerfect: 'The variable held fixed is perfectly correlated with x or y, so nothing is left to correlate.',
     notPositive: 'These 3 correlations can’t all hold at once. Check them.',
-    correlationOpen: 'Each correlation must be strictly between −1 and 1.',
     twoColumns: 'Choose at least 2 numeric columns.',
-    chooseColumns: 'Choose the columns to use. The data needs numeric columns.',
   },
   answer: {
-    pair: 'r = {r}, p {p}, n = {n}; {level} interval {lo} to {hi}.',
     matrix: 'The strongest of {count} correlations is {a} with {b}, r = {r}.',
     partial: 'The partial correlation is {r}.',
     compare: 'z = {z}, p {p}.',

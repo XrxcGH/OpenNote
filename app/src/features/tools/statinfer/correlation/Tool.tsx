@@ -12,6 +12,10 @@ import { Choice, Field, Panel, Row, say, useInputs, useReport } from '../ui/part
 import { Results } from '../ui/Results';
 import { compareReport, matrixReport, pairReport, partialReport } from './engine';
 import { pearson } from './stats';
+import { correlation as words } from '../../../../strings/en/kitStatInfer/correlation';
+import { installTool } from '../strings';
+
+installTool('correlation', words);
 
 const MODES = ['pair', 'matrix', 'partial', 'compare'] as const;
 const SOURCES = ['data', 'typed'] as const;

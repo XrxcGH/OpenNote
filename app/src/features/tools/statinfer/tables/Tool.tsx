@@ -8,6 +8,10 @@ import { check } from '../report';
 import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '../ui/parts';
 import { Results } from '../ui/Results';
 import { associationReport, cochranReport, forecastReport, pairedReport } from './engine';
+import { tables as words } from '../../../../strings/en/kitStatInfer/tables';
+import { installTool } from '../strings';
+
+installTool('tables', words);
 
 const MODES = ['association', 'paired', 'cochran', 'forecast'] as const;
 type Mode = (typeof MODES)[number];

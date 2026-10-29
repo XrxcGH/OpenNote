@@ -21,6 +21,10 @@ import {
   type SquareKind,
 } from './engine';
 import type { SampleMethod } from './stats';
+import { design as words } from '../../../../strings/en/kitStatInfer/design';
+import { installTool } from '../strings';
+
+installTool('design', words);
 
 const MODES = [
   'assign',

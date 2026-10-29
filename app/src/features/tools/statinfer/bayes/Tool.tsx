@@ -17,6 +17,10 @@ import {
   normalReport,
   tableReport,
 } from './engine';
+import { bayes as words } from '../../../../strings/en/kitStatInfer/bayes';
+import { installTool } from '../strings';
+
+installTool('bayes', words);
 
 const MODES = ['beta', 'normal', 'nig', 'gamma', 'dirichlet', 'jzs', 'grid', 'metropolis', 'table'] as const;
 type Mode = (typeof MODES)[number];

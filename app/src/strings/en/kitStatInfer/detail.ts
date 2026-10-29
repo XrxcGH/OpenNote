@@ -1,5 +1,5 @@
-// The statistics kit's words beyond the palette's: shared labels and each tool's fields, results, and steps.
-// They load with the kit (statinfer/strings.ts adds them to the strings), so start-up stays small.
+// Every word of the statistics kit beyond the palette's, in one object, for the types of the kit's message keys.
+// At run time the shared words and each tool's words load separately (statinfer/strings.ts).
 import { describe } from './describe';
 import { power } from './power';
 import { groups } from './groups';
@@ -11,45 +11,20 @@ import { ranks } from './ranks';
 import { correlation } from './correlation';
 import { epi } from './epi';
 import { tables } from './tables';
+import { shared } from './shared';
 
 export const kitStatInferDetail = {
   ui: {
-    openFile: 'Open a file',
-    insertTable: 'Insert the table “{name}” into the page',
-    insertTableShort: 'Insert table',
-    inserted: 'Added to the page.',
-    noPage: 'Open a page to insert into.',
-    results: 'Results',
-    chooseColumn: 'Choose a column',
+    ...shared.ui,
   },
   adjust: {
-    none: 'No adjustment',
-    bonferroni: 'Bonferroni',
-    holm: 'Holm',
-    hochberg: 'Hochberg',
-    bh: 'Benjamini-Hochberg (false discovery rate)',
-    by: 'Benjamini-Yekutieli',
+    ...shared.adjust,
   },
   tails: {
-    'two-sided': 'Two-sided',
-    greater: 'Greater',
-    less: 'Less',
+    ...shared.tails,
   },
   err: {
-    unknown: 'Something in the input could not be worked out. Check the values and try again.',
-    empty: 'Enter some data first.',
-    notNumber: '“{text}” is not a number.',
-    fieldNumber: 'Enter a number for {name}.',
-    probabilityRange: '{name} must be between 0 and 1.',
-    tooMany: 'Paste at most {max} values.',
-    tooFew: 'Enter at least {min} values.',
-    ragged: 'Every row needs the same number of counts.',
-    negativeCount: 'Counts can’t be negative: “{text}”.',
-    noRoot: 'The calculation did not settle on an answer for these values.',
-    alphaRange: 'The significance level must be between 0 and 1.',
-    constant: 'Every value is the same, so there is no spread to work with.',
-    seedNumber: 'The seed must be a whole number of 0 or more, at most 20 digits.',
-    cellNumber: 'The cell in row {row}, column {column} is not a number.',
+    ...shared.err,
     ...describe.err,
     ...tables.err,
     ...epi.err,
@@ -63,6 +38,7 @@ export const kitStatInferDetail = {
     ...power.err,
   },
   answer: {
+    ...shared.answer,
     ...describe.answer,
     ...tables.answer,
     ...epi.answer,
@@ -76,6 +52,7 @@ export const kitStatInferDetail = {
     ...power.answer,
   },
   note: {
+    ...shared.note,
     ...describe.note,
     ...tables.note,
     ...epi.note,
@@ -89,33 +66,7 @@ export const kitStatInferDetail = {
     ...power.note,
   },
   col: {
-    summary: 'Summary',
-    statistic: 'Statistic',
-    value: 'Value',
-    unit: 'Unit',
-    n: 'n',
-    mean: 'Mean',
-    median: 'Median',
-    mode: 'Mode',
-    sd: 'Standard deviation',
-    variance: 'Variance',
-    min: 'Least value',
-    max: 'Greatest value',
-    range: 'Range',
-    q1: 'First quartile',
-    q3: 'Third quartile',
-    iqr: 'Interquartile range',
-    se: 'Standard error of the mean',
-    none: 'None',
-    z: 'z',
-    count: 'Count',
-    category: 'Category',
-    proportion: 'Proportion',
-    measure: 'Measure',
-    tests: 'Tests',
-    test: 'Test',
-    df: 'df',
-    p: 'p',
+    ...shared.col,
     ...describe.col,
     ...tables.col,
     ...epi.col,
@@ -129,10 +80,7 @@ export const kitStatInferDetail = {
     ...power.col,
   },
   axis: {
-    outliers: 'Outliers',
-    value: 'Value',
-    count: 'Count',
-    category: 'Category',
+    ...shared.axis,
     ...describe.axis,
     ...tables.axis,
     ...epi.axis,
@@ -146,6 +94,7 @@ export const kitStatInferDetail = {
     ...power.axis,
   },
   step: {
+    ...shared.step,
     ...describe.step,
     ...tables.step,
     ...epi.step,

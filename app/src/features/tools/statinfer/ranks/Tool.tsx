@@ -7,6 +7,10 @@ import { check } from '../report';
 import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '../ui/parts';
 import { Results } from '../ui/Results';
 import { blocksReport, groupsReport, pairedReport, twoSampleReport } from './engine';
+import { ranks as words } from '../../../../strings/en/kitStatInfer/ranks';
+import { installTool } from '../strings';
+
+installTool('ranks', words);
 
 const MODES = ['two', 'paired', 'groups', 'blocks'] as const;
 const TAILS = ['two-sided', 'greater', 'less'] as const;

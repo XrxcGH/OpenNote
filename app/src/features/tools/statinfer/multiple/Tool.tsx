@@ -17,6 +17,10 @@ import {
   type Scale,
 } from './engine';
 import { fisherZ, hedgesG, logRatio, meanDifference, type Study } from './stats';
+import { multiple as words } from '../../../../strings/en/kitStatInfer/multiple';
+import { installTool } from '../strings';
+
+installTool('multiple', words);
 
 const MODES = ['adjust', 'combine', 'meta', 'volcano', 'manhattan', 'tables'] as const;
 const METHODS = ['bonferroni', 'holm', 'hochberg', 'hommel', 'bh', 'by'] as const;

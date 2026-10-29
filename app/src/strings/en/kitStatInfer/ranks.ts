@@ -27,8 +27,6 @@ export const ranks = {
   err: {
     allTied: 'Every value is tied, so the ranks can’t tell the samples apart.',
     allZero: 'Every difference is 0, so there is nothing to rank.',
-    twoGroups: 'Give at least 2 groups or treatments.',
-    exactlyTwo: 'Give exactly 2 samples, one to a line.',
     signCounts: 'The positive count must be a whole number from 0 to the number of non-zero differences.',
     tooManyPairs: 'The samples are too large for every pairwise difference. Use smaller samples.',
   },
@@ -39,11 +37,9 @@ export const ranks = {
     friedman: 'Friedman χ² = {chi2} with {df} df, p {p}; Kendall’s W = {w}.',
   },
   note: {
-    epsilon: 'Effect size: ε² = {e}.',
     kendallW: 'Kendall’s W of {w} measures how much the blocks agree on the order of the treatments.',
   },
   col: {
-    method: 'Method',
     exact: 'Exact',
     normalApprox: 'Normal approximation',
     mannWhitneyU: 'Mann-Whitney U (sample 1)',
@@ -54,21 +50,17 @@ export const ranks = {
     signedRankW: 'Wilcoxon signed-rank W',
     signTestRow: 'Sign test (positive differences)',
     signedRanks: 'Signed ranks of the differences',
-    difference: 'Difference',
     signedRank: 'Signed rank',
     rankSums: 'Rank sums',
-    group: 'Group',
     rankSum: 'Rank sum',
     meanRank: 'Mean rank',
     dunn: 'Dunn’s pairwise tests',
     conover: 'Conover’s pairwise tests',
     nemenyi: 'Nemenyi’s pairwise tests',
-    pair: 'Pair',
     pAdjusted: 'Adjusted p',
   },
   axis: {
     ranksBox: 'The 2 samples',
-    group: 'Sample',
   },
   step: {
     rRankAll: 'Rank all {m} + {n} values together, giving ties their mean rank, and add the ranks of each sample.',

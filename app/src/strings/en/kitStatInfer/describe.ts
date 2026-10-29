@@ -33,9 +33,6 @@ export const describe = {
   },
   err: {
     trimRange: 'The trim fraction must be at least 0 and less than 0.5.',
-    weightsLength: 'Give one weight for each value.',
-    negativeWeight: 'Weights can’t be negative.',
-    zeroWeights: 'At least 1 weight must be more than 0.',
     leafUnit: 'The leaf unit must be more than 0.',
     tooManyStems: 'That leaf unit makes too many stems. Try a larger one.',
     widthPositive: 'The class width must be more than 0.',
@@ -46,10 +43,8 @@ export const describe = {
     noCounts: 'The class counts add up to 0.',
   },
   answer: {
-    describe: 'Mean {mean}{unit}, standard deviation {sd}{unit}, n = {n}.',
     stems: 'Stem {stem} with leaf {leaf} stands for {value}; each leaf is worth {unit}.',
     grouped: 'Grouped mean {mean}{unit}, median {median}{unit}, n = {n}.',
-    categories: 'The most common category is {mode}, with {count} of {n} ({kinds} categories in all).',
   },
   note: {
     zFirst200: 'The z-score table shows the first 200 values.',
@@ -57,7 +52,6 @@ export const describe = {
   },
   col: {
     cv: 'Coefficient of variation',
-    trimmed: 'Trimmed mean',
     winsorized: 'Winsorized mean',
     geometric: 'Geometric mean',
     harmonic: 'Harmonic mean',
@@ -73,7 +67,6 @@ export const describe = {
     chebyshevPct: 'Chebyshev at least (%)',
     zScores: 'z-scores and percentile ranks',
     percentileRank: 'Percentile rank',
-    outliers: 'Outlier screens',
     screen: 'Screen',
     rule: 'Rule',
     flagged: 'Flagged values',

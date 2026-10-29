@@ -5,6 +5,10 @@ import { Choice, Check, Field, Panel, Row, say, useInputs, useReport } from '../
 import { Results } from '../ui/Results';
 import { convertReport, powerReport, type Unknown } from './engine';
 import type { Settings, Tails, Test } from './stats';
+import { power as words } from '../../../../strings/en/kitStatInfer/power';
+import { installTool } from '../strings';
+
+installTool('power', words);
 
 const TESTS = [
   'tTwo',

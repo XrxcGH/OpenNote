@@ -10,6 +10,10 @@ import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '.
 import { Results } from '../ui/Results';
 import { bootstrapReport, labReport, permutationReport, simulationReport } from './engine';
 import { needsTwo, type PermutationKind, type Population, type Simulation, type Statistic } from './stats';
+import { resample as words } from '../../../../strings/en/kitStatInfer/resample';
+import { installTool } from '../strings';
+
+installTool('resample', words);
 
 const MODES = ['bootstrap', 'permutation', 'lab', 'simulate'] as const;
 const STATISTICS = ['mean', 'median', 'sd', 'trimmed', 'correlation', 'diffMeans', 'diffMedians', 'ratio'] as const;

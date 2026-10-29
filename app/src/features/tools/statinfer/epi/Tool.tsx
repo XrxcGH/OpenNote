@@ -17,6 +17,10 @@ import {
   strataReport,
 } from './engine';
 import { STANDARD_SOURCE, US2000_11, US2000_19 } from './standard';
+import { epi as words } from '../../../../strings/en/kitStatInfer/epi';
+import { installTool } from '../strings';
+
+installTool('epi', words);
 
 const MODES = ['cohort', 'strata', 'diagnostic', 'rates', 'direct', 'indirect', 'proportion'] as const;
 const STANDARDS = ['us11', 'us19', 'custom'] as const;

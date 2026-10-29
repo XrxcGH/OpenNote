@@ -7,6 +7,10 @@ import { Results } from '../ui/Results';
 import { summaryReport } from './engine';
 import { autoWidth, categoryReport, classify, groupedReport, parseCategories, parseClasses } from './freq';
 import { stemReport } from './stem';
+import { describe as words } from '../../../../strings/en/kitStatInfer/describe';
+import { installTool } from '../strings';
+
+installTool('describe', words);
 
 const MODES = ['summary', 'stems', 'classes', 'grouped', 'categories'] as const;
 type Mode = (typeof MODES)[number];

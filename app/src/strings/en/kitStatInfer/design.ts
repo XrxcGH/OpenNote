@@ -77,11 +77,9 @@ export const design = {
     sizePositive: 'For PPS, each unit needs a size more than 0.',
     stratumTwo: 'The stratum {name} needs at least 2 values.',
     stratumN: 'The size of the stratum {name} must be at least its sample size.',
-    clusterSize: 'The cluster size must be at least 1.',
     iccRange: 'The intraclass correlation must be between −1 and 1, and the design effect more than 0.',
     populationSmall: 'The population can’t be smaller than the sample.',
     marginPositive: 'The margin must be more than 0.',
-    sdPositive: 'The SD must be more than 0.',
     colonLine: 'Write each line as a name, a colon, and its values: “{text}”.',
   },
   answer: {
@@ -92,7 +90,6 @@ export const design = {
     allocation: 'Allocated: {shares}.',
     stratifiedMean: 'Stratified mean {mean}, standard error {se}.',
     deff: 'Design effect {deff}; effective sample size {effective}.',
-    margin: 'Margin of error ±{e} at {level}.',
     meanSize: 'A sample of {n} gives that margin.',
   },
   note: {
@@ -117,7 +114,6 @@ export const design = {
     standardError: 'Standard error',
     populationTotal: 'Population total',
     deffTable: 'Clustering',
-    designEffect: 'Design effect',
     effectiveN: 'Effective sample size',
     marginTable: 'Margin of error',
     marginPlain: 'Margin of error',

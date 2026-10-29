@@ -11,6 +11,10 @@ import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '.
 import { Results } from '../ui/Results';
 import { effectReport, mixedReport, oneWayReport, repeatedReport, twoWayReport } from './engine';
 import type { PostHoc } from './stats';
+import { groups as words } from '../../../../strings/en/kitStatInfer/groups';
+import { installTool } from '../strings';
+
+installTool('groups', words);
 
 const MODES = ['oneway', 'twoway', 'repeated', 'mixed', 'effect'] as const;
 const POST = ['tukey', 'gamesHowell', 'bonferroni', 'holm'] as const;
