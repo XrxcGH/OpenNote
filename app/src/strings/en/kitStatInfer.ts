@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { correlation } from './kitStatInfer/correlation';
 import { epi } from './kitStatInfer/epi';
 import { tables } from './kitStatInfer/tables';
 
@@ -14,16 +15,19 @@ export const kitStatInfer = {
     describe: describe.tab,
     tables: tables.tab,
     epi: epi.tab,
+    correlation: correlation.tab,
   },
   open: {
     describe: describe.open,
     tables: tables.open,
     epi: epi.open,
+    correlation: correlation.open,
   },
   keywords: {
     describe: describe.keywords,
     tables: tables.keywords,
     epi: epi.keywords,
+    correlation: correlation.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -32,6 +36,20 @@ export const kitStatInfer = {
     inserted: 'Added to the page.',
     noPage: 'Open a page to insert into.',
     results: 'Results',
+    chooseColumn: 'Choose a column',
+  },
+  adjust: {
+    none: 'No adjustment',
+    bonferroni: 'Bonferroni',
+    holm: 'Holm',
+    hochberg: 'Hochberg',
+    bh: 'Benjamini-Hochberg (false discovery rate)',
+    by: 'Benjamini-Yekutieli',
+  },
+  tails: {
+    'two-sided': 'Two-sided',
+    greater: 'Greater',
+    less: 'Less',
   },
   err: {
     unknown: 'Something in the input could not be worked out. Check the values and try again.',
@@ -51,16 +69,19 @@ export const kitStatInfer = {
     ...describe.err,
     ...tables.err,
     ...epi.err,
+    ...correlation.err,
   },
   answer: {
     ...describe.answer,
     ...tables.answer,
     ...epi.answer,
+    ...correlation.answer,
   },
   note: {
     ...describe.note,
     ...tables.note,
     ...epi.note,
+    ...correlation.note,
   },
   col: {
     summary: 'Summary',
@@ -93,6 +114,7 @@ export const kitStatInfer = {
     ...describe.col,
     ...tables.col,
     ...epi.col,
+    ...correlation.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -102,13 +124,16 @@ export const kitStatInfer = {
     ...describe.axis,
     ...tables.axis,
     ...epi.axis,
+    ...correlation.axis,
   },
   step: {
     ...describe.step,
     ...tables.step,
     ...epi.step,
+    ...correlation.step,
   },
   describe: describe.fields,
+  correlation: correlation.fields,
   epi: epi.fields,
   tables: tables.fields,
 };
