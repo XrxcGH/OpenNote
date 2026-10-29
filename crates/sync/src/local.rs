@@ -178,6 +178,7 @@ pub struct Hasher<'k> {
 
 impl<'k> Hasher<'k> {
     /// A hasher under the vault's keys.
+    #[allow(clippy::expect_used)] // BLAKE2b takes keys of 1 to 64 bytes, and the type says this one has 32.
     pub fn new(chunk_key: &'k [u8; 32], content_key: &[u8; 32]) -> Hasher<'k> {
         let whole = <Blake2bMac<U32> as KeyInit>::new_from_slice(content_key).expect("32 byte key");
         Hasher {
@@ -272,17 +273,20 @@ impl Staged {
 
     /// Appends bytes.
     pub fn write(&mut self, bytes: &[u8]) -> Result<()> {
+        self.open()?.write_all(bytes).map_err(SyncError::local)
+    }
+
+    /// The file while it is open: `finish` closes it, and nothing writes after that.
+    fn open(&mut self) -> Result<&mut fs::File> {
         self.file
             .as_mut()
-            .expect("open until finished")
-            .write_all(bytes)
-            .map_err(SyncError::local)
+            .ok_or_else(|| SyncError::Local("a temporary file was written after it was closed".into()))
     }
 
     /// Empties the file, to start it again.
     pub fn rewind(&mut self) -> Result<()> {
         use std::io::Seek;
-        let file = self.file.as_mut().expect("open until finished");
+        let file = self.open()?;
         file.set_len(0).map_err(SyncError::local)?;
         file.rewind().map_err(SyncError::local)
     }

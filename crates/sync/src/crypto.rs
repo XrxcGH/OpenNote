@@ -109,6 +109,7 @@ pub fn passphrase_key(passphrase: &str, salt: &[u8], cost: Cost) -> Result<Key> 
 }
 
 /// Keyed BLAKE2b-256 of the parts, each prefixed with its length so parts can't run together.
+#[allow(clippy::expect_used)] // Every key in this crate is a 32-byte key or a fixed label of under 64 bytes.
 pub fn mac(key: &[u8], parts: &[&[u8]]) -> [u8; 32] {
     let mut state = <Blake2bMac<U32> as MacInit>::new_from_slice(key).expect("keys of 1 to 64 bytes are valid");
     for part in parts {

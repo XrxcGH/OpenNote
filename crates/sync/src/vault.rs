@@ -224,6 +224,14 @@ fn prefix(id: &[u8; 16], cost: Cost, salt: &[u8; 16]) -> Vec<u8> {
     out
 }
 
+/// `N` bytes of the header from `at`, or the calm "didn't unlock" when the header is too short to hold them.
+fn fixed<const N: usize>(bytes: &[u8], at: usize) -> Result<[u8; N]> {
+    bytes
+        .get(at..at.saturating_add(N))
+        .and_then(|part| part.try_into().ok())
+        .ok_or(SyncError::WrongSecret)
+}
+
 fn read_header(bytes: &[u8]) -> Result<Header> {
     if !bytes.starts_with(MAGIC) {
         return Err(SyncError::WrongSecret);
@@ -238,7 +246,7 @@ fn read_header(bytes: &[u8]) -> Result<Header> {
     if bytes.len() < FIXED + SEAL_MAC || bytes.len() > MAX_HEADER {
         return Err(SyncError::WrongSecret);
     }
-    let id: [u8; 16] = bytes[12..28].try_into().expect("16 bytes");
+    let id: [u8; 16] = fixed(bytes, 12)?;
     let cost = Cost {
         memory_kib: word(28),
         passes: word(32),
@@ -247,8 +255,8 @@ fn read_header(bytes: &[u8]) -> Result<Header> {
     if !cost.allowed() {
         return Err(SyncError::WrongSecret);
     }
-    let salt: [u8; 16] = bytes[40..56].try_into().expect("16 bytes");
-    let generation = u64::from_be_bytes(bytes[SLOTS..SLOTS + 8].try_into().expect("8 bytes"));
+    let salt: [u8; 16] = fixed(bytes, 40)?;
+    let generation = u64::from_be_bytes(fixed(bytes, SLOTS)?);
     let count = usize::from(u16::from_be_bytes([bytes[SLOTS + 8], bytes[SLOTS + 9]]));
     let end = bytes.len() - SEAL_MAC;
     let mut at = FIXED;
@@ -516,7 +524,9 @@ pub fn add_device(
         )));
     }
     // The slot first, so the list never names a slot that isn't there.
-    backend.put(&slot, &serde_json::to_vec(&file).expect("plain strings"))?;
+    let file =
+        serde_json::to_vec(&file).map_err(|_| SyncError::Local("the device slot could not be written".into()))?;
+    backend.put(&slot, &file)?;
     rewrite(
         backend,
         keys,

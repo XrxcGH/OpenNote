@@ -191,8 +191,7 @@ impl Engine {
         });
         // A head written since this run listed them may need a chunk it found unused: then wait for the next run.
         let ready = ready && self.heads()?.0 == newest;
-        if ready {
-            let mark = state.gc.take().expect("ready");
+        if let Some(mark) = state.gc.take_if(|_| ready) {
             for id in mark.chunks.intersection(&unused) {
                 self.backend.delete(&chunk_name(id))?;
                 removed.insert(id.clone());

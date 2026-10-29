@@ -15,7 +15,7 @@ use opennote_core::format::tree_json::{merge_notebooks, merge_sections, read_not
 use opennote_core::format::tree_json::{write_notebook, write_section};
 use opennote_core::Limits;
 
-use crate::error::Result;
+use crate::error::{Result, SyncError};
 use crate::manifest::{dominates, join, Content, Entry, Manifest, Vv};
 
 /// Reads small files for the merge rules, and turns bytes a rule wrote into content.
@@ -135,6 +135,7 @@ fn sealed_copy(path: &str, content: &Content) -> String {
     }
 }
 
+#[derive(Clone)]
 struct PageInfo {
     revision: String,
     ancestors: BTreeSet<String>,
@@ -179,9 +180,11 @@ fn resolve(path: &str, candidates: Vec<Entry>, contents: &dyn Contents) -> Resul
 }
 
 /// The merged version of one path from its maximal versions, and any other versions kept at new paths.
-fn resolve_top(path: &str, top: Vec<Entry>, contents: &dyn Contents) -> Result<(Entry, Vec<(String, Entry)>)> {
+fn resolve_top(path: &str, mut top: Vec<Entry>, contents: &dyn Contents) -> Result<(Entry, Vec<(String, Entry)>)> {
     if top.len() == 1 {
-        return Ok((top.into_iter().next().expect("one"), Vec::new()));
+        if let Some(only) = top.pop() {
+            return Ok((only, Vec::new()));
+        }
     }
     let vv = top.iter().fold(Vv::new(), |acc, e| join(&acc, &e.vv));
     let mut live: Vec<Content> = top.iter().filter(|e| e.live()).map(|e| e.content.clone()).collect();
@@ -192,47 +195,56 @@ fn resolve_top(path: &str, top: Vec<Entry>, contents: &dyn Contents) -> Result<(
         content,
         deleted: false,
     };
-    match live.len() {
+    // The live content that sorts highest wins wherever one must; with none, the path was deleted everywhere.
+    let Some(highest) = live.last().cloned() else {
         // Deleted everywhere: keep the last content that sorts highest, so all devices agree.
-        0 => {
-            let content = top.iter().map(|e| e.content.clone()).max().expect("some");
-            return Ok((
-                Entry {
-                    vv,
-                    content,
-                    deleted: true,
-                },
-                Vec::new(),
-            ));
-        }
-        // One content: an edit beats a delete, and equal edits join.
-        1 => return Ok((entry(live.remove(0)), Vec::new())),
-        _ => {}
+        let content = top.into_iter().map(|e| e.content).max().ok_or_else(no_version)?;
+        return Ok((
+            Entry {
+                vv,
+                content,
+                deleted: true,
+            },
+            Vec::new(),
+        ));
+    };
+    // One content: an edit beats a delete, and equal edits join.
+    if live.len() == 1 {
+        return Ok((entry(highest), Vec::new()));
     }
     match kind(path) {
         Kind::Page => resolve_pages(path, live, contents, &entry),
         Kind::Section | Kind::Notebook | Kind::Versions => match merge_tree(path, &live, contents)? {
             Some(bytes) => Ok((entry(contents.make(bytes)), Vec::new())),
-            None => Ok(keep_both(path, live, &entry)),
+            None => keep_both(path, live, &entry),
         },
-        Kind::Derived => Ok((entry(live.pop().expect("two or more")), Vec::new())),
+        Kind::Derived => Ok((entry(highest), Vec::new())),
         Kind::SealedManifest => {
-            let winner = live.pop().expect("two or more");
+            live.pop();
             let others = live.into_iter().map(|c| (sealed_copy(path, &c), entry(c))).collect();
-            Ok((entry(winner), others))
+            Ok((entry(highest), others))
         }
-        Kind::Immutable | Kind::Other => Ok(keep_both(path, live, &entry)),
+        Kind::Immutable | Kind::Other => keep_both(path, live, &entry),
     }
 }
 
+/// A merge was asked for a file with no version at all, which only a damaged change record can cause.
+fn no_version() -> SyncError {
+    SyncError::Tampered("A change record in the sync storage names a file without any version of it.".into())
+}
+
 /// The content that sorts highest stays, and the others go beside it as conflicted copies.
-fn keep_both(path: &str, mut live: Vec<Content>, entry: &dyn Fn(Content) -> Entry) -> (Entry, Vec<(String, Entry)>) {
-    let winner = live.pop().expect("two or more");
+fn keep_both(
+    path: &str,
+    mut live: Vec<Content>,
+    entry: &dyn Fn(Content) -> Entry,
+) -> Result<(Entry, Vec<(String, Entry)>)> {
+    let winner = live.pop().ok_or_else(no_version)?;
     let others = live
         .into_iter()
         .map(|c| (conflicted_copy(path, &c), entry(c)))
         .collect();
-    (entry(winner), others)
+    Ok((entry(winner), others))
 }
 
 fn resolve_pages(
@@ -249,17 +261,30 @@ fn resolve_pages(
             None => unparsed.push(content),
         }
     }
-    // A revision that another lists among its ancestors is an older save of the same page: not a conflict.
+    // A revision that another lists among its ancestors is an older save of the same page: not a conflict. Two that
+    // list each other can only come from a damaged or hostile file, so neither counts as older then.
     let older: BTreeSet<String> = parsed
         .iter()
-        .flat_map(|(info, _)| info.ancestors.iter().filter(|a| **a != info.revision).cloned())
+        .filter(|(r, _)| {
+            parsed.iter().any(|(s, _)| {
+                s.revision != r.revision && s.ancestors.contains(&r.revision) && !r.ancestors.contains(&s.revision)
+            })
+        })
+        .map(|(r, _)| r.revision.clone())
         .collect();
-    parsed.retain(|(info, _)| !older.contains(&info.revision));
-    if parsed.is_empty() {
-        return Ok(keep_both(path, unparsed, entry));
+    let newest: Vec<_> = parsed
+        .iter()
+        .filter(|(info, _)| !older.contains(&info.revision))
+        .cloned()
+        .collect();
+    // A longer loop of ancestors could mark every version older: then all of them stay, so no text is dropped.
+    if !newest.is_empty() {
+        parsed = newest;
     }
     parsed.sort_by(|(a, ac), (b, bc)| (a.saved_at, ac).cmp(&(b.saved_at, bc)));
-    let (_, winner) = parsed.pop().expect("one or more");
+    let Some((_, winner)) = parsed.pop() else {
+        return keep_both(path, unparsed, entry);
+    };
     let (dir, _) = split(path);
     let prefix = if dir.is_empty() {
         String::new()

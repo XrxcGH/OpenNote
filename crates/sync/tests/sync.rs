@@ -129,6 +129,27 @@ fn a_later_save_of_the_same_page_is_not_a_conflict() {
 }
 
 #[test]
+fn two_saves_that_name_each_other_as_ancestors_are_both_kept() {
+    // Only a damaged or hostile page.json can do this. It used to mark both older and stop the round.
+    let (_, d) = pair();
+    let p = page_dir(1);
+    d[0].write(&format!("{p}/page.json"), &page(1, "Laptop text", 2, &[3], 2_000, &[]));
+    d[1].write(&format!("{p}/page.json"), &page(1, "Desktop text", 3, &[2], 3_000, &[]));
+    d[0].engine.sync().expect("syncs");
+    let report = d[1].engine.sync().expect("syncs");
+    assert_eq!(report.summary.conflicts.len(), 1, "{:?}", report.summary);
+    settle(&d, 3);
+    assert_eq!(d[0].files(), d[1].files());
+    let text: String = d[0]
+        .files()
+        .iter()
+        .filter(|(k, _)| k.starts_with(&p))
+        .map(|(_, v)| String::from_utf8_lossy(v).into_owned())
+        .collect();
+    assert!(text.contains("Laptop text") && text.contains("Desktop text"));
+}
+
+#[test]
 fn section_lists_merge_by_the_cores_own_rule() {
     let (_, d) = pair();
     d[0].write(&section_path(), &section(&[(1, "Mitosis", 1_000)], 1_000));
