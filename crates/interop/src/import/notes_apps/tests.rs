@@ -672,3 +672,21 @@ fn a_notability_note_with_no_session_says_it_has_none() {
     assert_eq!(whys.len(), 1, "{whys:?}");
     assert!(whys[0].starts_with("The note has no Session.plist"), "{whys:?}");
 }
+
+#[test]
+fn notability_recordings_the_sniffer_cannot_place_keep_their_own_type() {
+    // None of these bytes match a known header, so the type comes from the name alone.
+    let body: &[u8] = b"damaged recording without a header";
+    let cases = [
+        ("Rec/Recordings/a.aac", "audio/aac"),
+        ("Rec/Recordings/a.caf", "audio/x-caf"),
+        ("Rec/Recordings/a.wav", "audio/wav"),
+        ("Rec/Recordings/a.mp3", "audio/mpeg"),
+        ("Rec/Recordings/a.m4a", "audio/mp4"),
+        ("Rec/Recordings/a", "audio/mp4"),
+    ];
+    for (name, mime) in cases {
+        let (sink, _) = import_bytes("Rec.note", &zip_bytes(&[(name, body)]));
+        assert_eq!(asset_mimes(pages(&sink)[0]), [mime], "{name}");
+    }
+}
