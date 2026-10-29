@@ -56,6 +56,10 @@ pub struct VaultKeys {
     pub(crate) chunk: Key,
     /// Names whole files.
     pub(crate) content: Key,
+    /// Vouches for when a pairing slot was made.
+    pairing_made: Key,
+    /// Keys the vault's fingerprint.
+    fingerprint: Key,
     /// The header's generation when it was unlocked.
     generation: u64,
 }
@@ -68,13 +72,15 @@ impl VaultKeys {
             seal: derive(root.as_ref(), "seal", &id),
             chunk: derive(root.as_ref(), "chunk-name", &id),
             content: derive(root.as_ref(), "content-name", &id),
+            pairing_made: derive(root.as_ref(), "pairing-made", &id),
+            fingerprint: derive(root.as_ref(), "fingerprint", &id),
             root,
         }
     }
 
     /// A short, non-secret fingerprint of the vault, to show that two devices joined the same one.
     pub fn fingerprint(&self) -> String {
-        base32(&mac(self.root.as_ref(), &[b"fingerprint", &self.id])[..5], 4).to_string()
+        base32(&mac(self.fingerprint.as_ref(), &[&self.id])[..5], 4).to_string()
     }
 
     /// The header's generation when these keys were unlocked.
@@ -672,7 +678,7 @@ const QR_PREFIX: &str = "OPENNOTE-SYNC:";
 const MADE: usize = 8 + 32;
 
 fn made_mac(keys: &VaultKeys, name: &str, made: i64) -> [u8; 32] {
-    mac(&keys.root[..], &[b"pairing-made", name.as_bytes(), &made.to_le_bytes()])
+    mac(keys.pairing_made.as_ref(), &[name.as_bytes(), &made.to_le_bytes()])
 }
 
 /// When the slot `name` was made, if its start is genuine.

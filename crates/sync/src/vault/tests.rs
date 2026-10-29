@@ -306,3 +306,27 @@ fn changing_the_passphrase_needs_the_recovery_key_and_keeps_it() {
     assert!(unlock_passphrase(&store, "a new passphrase").is_ok());
     assert!(unlock_recovery(&store, recovery.text()).is_ok());
 }
+
+#[test]
+fn the_pairing_time_and_the_fingerprint_are_keyed_by_their_own_subkeys_not_the_root() {
+    let store = MemoryBackend::new();
+    let (keys, _) = create_with(&store, PASS, QUICK).expect("creates");
+    let root = keys.root.as_ref();
+
+    let subkey = derive(root, "fingerprint", &keys.id);
+    let expected = base32(&mac(subkey.as_ref(), &[&keys.id])[..5], 4).to_string();
+    let rooted = base32(&mac(root, &[b"fingerprint", &keys.id])[..5], 4).to_string();
+    assert_eq!(keys.fingerprint(), expected);
+    assert_ne!(keys.fingerprint(), rooted);
+
+    let made = 1_700_000_000_000i64;
+    let code = create_pairing(&store, &keys, made).expect("pairs");
+    let slot = store.get(&code.1).expect("reads").expect("slot");
+    assert_eq!(&slot[..8], &made.to_le_bytes());
+    let subkey = derive(root, "pairing-made", &keys.id);
+    let at = made.to_le_bytes();
+    assert_eq!(&slot[8..MADE], &mac(subkey.as_ref(), &[code.1.as_bytes(), &at]));
+    assert_ne!(&slot[8..MADE], &mac(root, &[b"pairing-made", code.1.as_bytes(), &at]));
+    assert_eq!(slot_made(&keys, &code.1, &slot), Some(made));
+    join_with_code(&store, code.text(), made + 1).expect("a code made under the subkey still joins");
+}
