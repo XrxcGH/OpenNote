@@ -230,3 +230,44 @@ fn hostile_listings_and_paths_never_escape_the_notes_folder() {
     assert_eq!(d[1].read("Bio/ok.txt").as_deref(), Some(&b"fine"[..]));
     assert!(!d[1].dir.path().join("escape").exists());
 }
+
+#[test]
+fn crash_then_edit_across_many_vaults_never_drops_text() {
+    // A round publishes its head and stops before saving its state. The person then edits the file again before
+    // the next round, while the other device edits the published version. Which edit wins a tie depends on the
+    // vault's keys, so several vaults are tried.
+    for vault in 0..8 {
+        let store = MemoryBackend::new();
+        let mut d = devices(Arc::new(store.clone()), 2);
+        d[0].write("Bio/todo.txt", b"first");
+        settle(&d, 2);
+        d[0].write("Bio/todo.txt", b"second");
+        d[0].write("Bio/new.txt", b"new one");
+        d[0].engine.fail_after(Some(0));
+        assert_eq!(d[0].engine.sync().unwrap_err(), SyncError::Interrupted, "vault {vault}");
+        d[0].restart(Arc::new(store.clone()));
+        d[1].engine.sync().expect("syncs");
+        assert_eq!(
+            d[1].read("Bio/todo.txt").as_deref(),
+            Some(&b"second"[..]),
+            "the head was published"
+        );
+        d[1].write("Bio/todo.txt", b"desktop");
+        d[1].write("Bio/new.txt", b"desktop new");
+        d[1].engine.sync().expect("syncs");
+        d[0].write("Bio/todo.txt", b"third");
+        d[0].write("Bio/new.txt", b"laptop new");
+        settle(&d, 4);
+        let files = d[0].files();
+        assert_eq!(files, d[1].files(), "vault {vault}: the devices agree");
+        let text: BTreeSet<&[u8]> = files.values().map(Vec::as_slice).collect();
+        for needle in [&b"third"[..], b"desktop", b"laptop new", b"desktop new"] {
+            assert!(
+                text.contains(needle),
+                "vault {vault}: {} survived in {:?}",
+                String::from_utf8_lossy(needle),
+                files.keys().collect::<Vec<_>>()
+            );
+        }
+    }
+}

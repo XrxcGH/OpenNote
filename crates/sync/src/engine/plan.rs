@@ -4,7 +4,7 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-use super::{bump, digest, Action, Engine, LocalState, Plan, Store, Summary};
+use super::{digest, Action, Engine, LocalState, Plan, Store, Summary};
 use crate::error::{Result, SyncError};
 use crate::local::{self, Fingerprint};
 use crate::manifest::{Entry, Manifest, Vv};
@@ -25,8 +25,9 @@ impl Engine {
             return Err(SyncError::Removed);
         }
         let state = self.state()?;
-        let (local_manifest, prints) = self.scan_local(&state)?;
         let incoming = self.incoming(&state)?;
+        let floor = self.floor(&state, &incoming.heads);
+        let (local_manifest, prints) = self.scan_local(&state, &floor)?;
 
         let mut local_paths = HashMap::new();
         for (path, entry) in local_manifest.iter().filter(|(_, e)| e.live()) {
@@ -65,8 +66,38 @@ impl Engine {
         })
     }
 
+    /// The highest count of this device's own changes that anything it will merge already used, per path. A round
+    /// that published a head and stopped before saving its state, or a state restored from a backup, knows a lower
+    /// count than its own head does; counting up from there would give a new edit the same version vector the head
+    /// already used for other bytes, and a later version from another device would then hide it.
+    fn floor(&self, state: &LocalState, heads: &[Manifest]) -> HashMap<String, u64> {
+        let mut floor: HashMap<String, u64> = HashMap::new();
+        for manifest in heads.iter().chain(std::iter::once(&state.deferred)) {
+            for (path, entry) in manifest {
+                if let Some(count) = entry.vv.get(&self.device) {
+                    let slot = floor.entry(path.clone()).or_insert(0);
+                    *slot = (*slot).max(*count);
+                }
+            }
+        }
+        floor
+    }
+
+    /// A version vector for a change this device made to `path`, from the version it was made on.
+    fn fresh(&self, from: &Vv, path: &str, floor: &HashMap<String, u64>) -> Vv {
+        let mut vv = from.clone();
+        let used = floor.get(path).copied().unwrap_or(0);
+        let slot = vv.entry(self.device.clone()).or_insert(0);
+        *slot = (*slot).max(used) + 1;
+        vv
+    }
+
     /// This device's folder as a manifest: unchanged files keep their version, and changed ones count up.
-    fn scan_local(&self, state: &LocalState) -> Result<(Manifest, BTreeMap<String, Fingerprint>)> {
+    fn scan_local(
+        &self,
+        state: &LocalState,
+        floor: &HashMap<String, u64>,
+    ) -> Result<(Manifest, BTreeMap<String, Fingerprint>)> {
         let mut manifest = Manifest::new();
         let mut prints = BTreeMap::new();
         for (path, print) in local::scan(&self.root)? {
@@ -79,12 +110,12 @@ impl Engine {
                     match known {
                         Some(k) if k.entry.live() && k.entry.content.id == content.id => k.entry.clone(),
                         Some(k) => Entry {
-                            vv: bump(&k.entry.vv, &self.device),
+                            vv: self.fresh(&k.entry.vv, &path, floor),
                             content,
                             deleted: false,
                         },
                         None => Entry {
-                            vv: bump(&Vv::new(), &self.device),
+                            vv: self.fresh(&Vv::new(), &path, floor),
                             content,
                             deleted: false,
                         },
@@ -99,7 +130,7 @@ impl Engine {
                 continue;
             }
             let entry = if known.entry.live() {
-                let vv = bump(&known.entry.vv, &self.device);
+                let vv = self.fresh(&known.entry.vv, path, floor);
                 Entry {
                     vv,
                     content: known.entry.content.clone(),

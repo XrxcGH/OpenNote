@@ -47,7 +47,7 @@ Keys stay in `zeroize` buffers. No key, passphrase, or recovery key is ever logg
 
 ### Merging
 
-Each file has a version vector. A device that changes a file increments its own counter. When two devices changed a file concurrently, the engine resolves it with rules that give the same answer on every device, in any order, so all devices converge:
+Each file has a version vector. A device that changes a file increments its own counter, counting up from the highest count of its own that any head it merges already used for that path. So a round that published a head and stopped before saving its state, or a state restored from a backup, never gives a new edit a version vector that another version already has. When two devices changed a file concurrently, the engine resolves it with rules that give the same answer on every device, in any order, so all devices converge:
 
 | File | Rule |
 |---|---|

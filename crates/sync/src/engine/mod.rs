@@ -27,7 +27,7 @@ use crate::backend::Backend;
 use crate::crypto::{hex, mac, open, pad, seal, unpad};
 use crate::error::{Result, SyncError};
 use crate::local::{self, Fingerprint};
-use crate::manifest::{self, Content, Entry, Head, Manifest, Vv};
+use crate::manifest::{self, Content, Entry, Head, Manifest};
 use crate::merge::{Conflict, Contents};
 use crate::vault::VaultKeys;
 
@@ -174,12 +174,6 @@ fn head_name(device: &str, generation: u64) -> String {
 
 fn chunk_name(id: &str) -> String {
     format!("c/{}/{id}", &id[..2.min(id.len())])
-}
-
-fn bump(vv: &Vv, device: &str) -> Vv {
-    let mut out = vv.clone();
-    *out.entry(device.to_owned()).or_insert(0) += 1;
-    out
 }
 
 struct Store<'a> {
