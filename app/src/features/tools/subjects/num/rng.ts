@@ -2,7 +2,7 @@
 // generated drills. The same seed gives the same stream on every device. The generator is xoshiro128** (Blackman
 // and Vigna, 2018). Its four 32-bit state words come from two SplitMix64 outputs of the 64-bit seed. All 32-bit
 // products go through Math.imul, so no platform rounds differently.
-import { SubjectError } from '../errors';
+import { SubjectError, ensure } from '../errors';
 
 const MASK64 = (1n << 64n) - 1n;
 const TWO_POW_26 = 67_108_864;
@@ -67,8 +67,12 @@ export class Rng {
   private s3: number;
   private spareNormal: number | null = null;
 
+  /** The seed must be a whole number from 0 to MAX_SEED, so the printed seed is always the one that was given. */
   constructor(seed: bigint | number) {
-    const big = typeof seed === 'bigint' ? seed & MASK64 : BigInt(Math.trunc(Math.abs(seed))) & MASK64;
+    const whole = typeof seed === 'bigint' || Number.isSafeInteger(seed);
+    ensure(whole, 'domain', 'seed');
+    const big = BigInt(seed);
+    ensure(big >= 0n && big <= MASK64, 'domain', 'seed');
     this.seed = big;
     const first = splitMix64(big);
     const second = splitMix64(first.state);

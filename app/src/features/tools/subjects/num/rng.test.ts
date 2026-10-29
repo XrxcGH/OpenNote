@@ -10,6 +10,12 @@ const variance = (xs: readonly number[]) => {
 const draws = (n: number, draw: () => number) => Array.from({ length: n }, draw);
 
 describe('seeded generator', () => {
+  it('refuses a seed it would have to mask or truncate', () => {
+    for (const bad of [-1n, 1n << 64n, 0.5, -3, Number.NaN, 2 ** 60]) expect(() => new Rng(bad)).toThrow(SubjectError);
+    expect(new Rng((1n << 64n) - 1n).seed).toBe(18_446_744_073_709_551_615n);
+    expect(new Rng(0).seed).toBe(0n);
+  });
+
   it('matches the reference stream for seed 42', () => {
     const rng = new Rng(42n);
     expect([rng.nextUint32(), rng.nextUint32(), rng.nextUint32(), rng.nextUint32()]).toEqual([
