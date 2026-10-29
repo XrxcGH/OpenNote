@@ -41,7 +41,12 @@ export type Problem =
   | 'overScreened'
   | 'noBragg'
   | 'tooManyMicrostates'
-  | 'badLevel';
+  | 'badLevel'
+  | 'badIsotope'
+  | 'badAnharmonicity'
+  | 'badRotation'
+  | 'fullConversion'
+  | 'pureComponent';
 
 export class PhysicsError extends Error {
   constructor(

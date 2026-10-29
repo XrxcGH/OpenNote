@@ -10,9 +10,10 @@ import { FORMS as stars } from './stars/Tool';
 import { FORMS as cosmos } from './cosmos/Tool';
 import { FORMS as spin } from './spin/Tool';
 import { FORMS as atoms } from './atoms/Tool';
+import { FORMS as molecules } from './molecules/Tool';
 import ModPhysWindow from './Window';
 
-const TOOLS: Record<string, readonly FormDef[]> = { plasma, stars, cosmos, spin, atoms };
+const TOOLS: Record<string, readonly FormDef[]> = { plasma, stars, cosmos, spin, atoms, molecules };
 
 const cases = Object.entries(TOOLS).flatMap(([tool, forms]) =>
   forms.map((form) => [`${tool} ${form.id}`, tool, form] as const),

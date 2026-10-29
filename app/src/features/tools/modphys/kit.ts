@@ -9,4 +9,5 @@ export const KIT: Record<ModPhysToolId, LazyExoticComponent<ComponentType>> = {
   cosmos: lazy(() => import('./cosmos/Tool')),
   spin: lazy(() => import('./spin/Tool')),
   atoms: lazy(() => import('./atoms/Tool')),
+  molecules: lazy(() => import('./molecules/Tool')),
 };
