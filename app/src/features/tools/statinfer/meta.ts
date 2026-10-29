@@ -8,15 +8,16 @@ export const KIT_WINDOW = 'kit-statinfer';
 
 export const STAT_TOOLS = [
   ['describe', 'ChartBar'],
+  ['groups', 'ChartBarHorizontal'],
+  ['ranks', 'Ranking'],
   ['tables', 'Table'],
   ['epi', 'FirstAidKit'],
   ['correlation', 'ChartScatter'],
-  ['ranks', 'Ranking'],
+  ['power', 'Gauge'],
   ['multiple', 'ListNumbers'],
   ['resample', 'Shuffle'],
-  ['design', 'GridFour'],
   ['bayes', 'Scales'],
-  ['groups', 'ChartBarHorizontal'],
+  ['design', 'GridFour'],
 ] as const;
 
 export type StatTool = (typeof STAT_TOOLS)[number][0];

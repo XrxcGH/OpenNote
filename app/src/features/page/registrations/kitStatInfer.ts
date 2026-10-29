@@ -9,15 +9,16 @@ type Key = Parameters<typeof addCommand>[0]['title'];
 
 export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [
   ['describe', 'ChartBar'],
+  ['groups', 'ChartBarHorizontal'],
+  ['ranks', 'Ranking'],
   ['tables', 'Table'],
   ['epi', 'FirstAidKit'],
   ['correlation', 'ChartScatter'],
-  ['ranks', 'Ranking'],
+  ['power', 'Gauge'],
   ['multiple', 'ListNumbers'],
   ['resample', 'Shuffle'],
-  ['design', 'GridFour'],
   ['bayes', 'Scales'],
-  ['groups', 'ChartBarHorizontal'],
+  ['design', 'GridFour'],
 ];
 
 async function open(tool?: string): Promise<void> {

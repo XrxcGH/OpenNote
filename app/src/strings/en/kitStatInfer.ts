@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { power } from './kitStatInfer/power';
 import { groups } from './kitStatInfer/groups';
 import { bayes } from './kitStatInfer/bayes';
 import { design } from './kitStatInfer/design';
@@ -28,6 +29,7 @@ export const kitStatInfer = {
     design: design.tab,
     bayes: bayes.tab,
     groups: groups.tab,
+    power: power.tab,
   },
   open: {
     describe: describe.open,
@@ -40,6 +42,7 @@ export const kitStatInfer = {
     design: design.open,
     bayes: bayes.open,
     groups: groups.open,
+    power: power.open,
   },
   keywords: {
     describe: describe.keywords,
@@ -52,6 +55,7 @@ export const kitStatInfer = {
     design: design.keywords,
     bayes: bayes.keywords,
     groups: groups.keywords,
+    power: power.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -100,6 +104,7 @@ export const kitStatInfer = {
     ...design.err,
     ...bayes.err,
     ...groups.err,
+    ...power.err,
   },
   answer: {
     ...describe.answer,
@@ -112,6 +117,7 @@ export const kitStatInfer = {
     ...design.answer,
     ...bayes.answer,
     ...groups.answer,
+    ...power.answer,
   },
   note: {
     ...describe.note,
@@ -124,6 +130,7 @@ export const kitStatInfer = {
     ...design.note,
     ...bayes.note,
     ...groups.note,
+    ...power.note,
   },
   col: {
     summary: 'Summary',
@@ -163,6 +170,7 @@ export const kitStatInfer = {
     ...design.col,
     ...bayes.col,
     ...groups.col,
+    ...power.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -179,6 +187,7 @@ export const kitStatInfer = {
     ...design.axis,
     ...bayes.axis,
     ...groups.axis,
+    ...power.axis,
   },
   step: {
     ...describe.step,
@@ -191,8 +200,10 @@ export const kitStatInfer = {
     ...design.step,
     ...bayes.step,
     ...groups.step,
+    ...power.step,
   },
   describe: describe.fields,
+  power: power.fields,
   groups: groups.fields,
   bayes: bayes.fields,
   design: design.fields,
