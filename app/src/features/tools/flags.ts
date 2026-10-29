@@ -76,6 +76,12 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
 
+/**
+ * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
+ * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.
+ */
+export const SUBJECT_TABLES_EVENT = 'opennote:subject-page-tables';
+
 // The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
 export { KIT_FLAGS } from './kits/flags';
 export type { KitFlagId } from './kits/flags';
