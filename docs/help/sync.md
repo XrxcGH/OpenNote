@@ -17,6 +17,8 @@ The first sync starts at once. After that, OpenNote syncs every few minutes whil
 
 On a device that already syncs, open Settings, then Sync, and choose **Add a device**. It shows a pairing code, as a QR code and as text. On the new device, choose **Join a sync from another device**, pick the same folder or server, and type the code. The code works once, for 24 hours. You can also join with the passphrase or the recovery key.
 
+To change the passphrase, open Settings, then Sync, and choose **Change passphrase**, or run Change sync passphrase from the command palette. Type your recovery key and the new passphrase twice. Your devices keep syncing; a device that joins later uses the new passphrase.
+
 Both devices show the same **sync code**, such as `K7Q2-M9XA`, when they joined the same sync.
 
 ## What is encrypted
@@ -30,7 +32,13 @@ Both devices show the same **sync code**, such as `K7Q2-M9XA`, when they joined 
 
 ## When two devices change the same page
 
-Sync never throws away text. If the same page changed on two devices before they synced, both versions are kept: the page shows "This page was also changed on another device. Compare the versions," and you choose which to keep, or keep both as separate pages. Which version opens as the page and which waits to compare follows the time each device's clock gave the save, so if one device's clock is wrong, check both versions before you choose. Section and notebook lists merge on their own. An ordinary file changed on two devices keeps both copies, one named `(conflicted copy)`. Two files whose names differ only in capital letters, such as `Todo.txt` and `todo.txt` made on two devices, can't sit side by side in a Windows folder, so the second becomes a `(conflicted copy)` too. A password-protected section changed on two devices keeps both versions too, and shows "This protected section was changed on two devices." Choose Switch to the other version to look at it; the one you had is kept, so you can switch back. Then remove the version you don't want. An edit always wins over a delete made on a device that hadn't seen it.
+Sync never throws away text.
+
+- **A page.** If the same page changed on two devices before they synced, both versions are kept. The page shows "This page was also changed on another device. Compare the versions," and you choose which to keep, or keep both as separate pages. The time each device's clock gave the save decides which version opens as the page, so if one device's clock is wrong, check both versions before you choose.
+- **Section and notebook lists** merge on their own.
+- **An ordinary file** changed on two devices keeps both copies, one named `(conflicted copy)`. Two files whose names differ only in capital letters, such as `Todo.txt` and `todo.txt`, can't sit side by side in a Windows folder, so the second becomes a `(conflicted copy)` too.
+- **A password-protected section** changed on two devices keeps both versions, and shows "This protected section was changed on two devices." Choose Switch to the other version to look at it; the one you had is kept, so you can switch back. Then remove the version you don't want.
+- **A delete.** An edit always wins over a delete made on a device that hadn't seen it.
 
 ## Pause, preview, and Work offline
 

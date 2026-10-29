@@ -99,6 +99,8 @@ export interface SyncClient {
   finishSetUp(): Promise<SyncView>;
   /** Stops an unfinished setup, and takes away the new vault if nothing else uses it yet. */
   cancelSetUp(): Promise<SyncView>;
+  /** Sets a new passphrase; the recovery key must open the vault. */
+  changePassphrase(input: { recoveryKey: string; passphrase: string }): Promise<SyncView>;
 }
 
 /** A refusal from the host, with its code. */

@@ -8,7 +8,7 @@ import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
 import { SyncChip } from './Chip';
 import { codeOf, errorText, summaryLines } from './model';
-import { refreshSync, setView, syncClient, syncStore } from './runtime';
+import { passphraseAsked, refreshSync, setView, syncClient, syncStore } from './runtime';
 
 const open = () => navigate({ view: 'settings', section: 'sync' });
 
@@ -87,6 +87,21 @@ commands.register(
         const { summary } = await syncClient().preview();
         showToast({ message: summaryLines(summary).join(' ') });
       });
+    },
+  }),
+);
+
+commands.register(
+  defineCommand({
+    id: 'sync.changePassphrase',
+    title: 'sync.commands.changePassphrase',
+    keywords: 'sync.commands.changePassphraseKeywords',
+    category: 'general',
+    flag: 'sync.e2ee',
+    async run() {
+      if (!(await ready())) return;
+      passphraseAsked.set(true);
+      open();
     },
   }),
 );

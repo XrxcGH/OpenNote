@@ -8,6 +8,9 @@ import type { SyncClient, SyncView } from './types';
 
 export const syncStore = createStore<SyncView | null>(null, 'sync view');
 
+/** Whether Settings > Sync shows the Change passphrase form; the palette command opens it. */
+export const passphraseAsked = createStore<boolean>(false, 'sync passphrase form');
+
 export function syncClient(): SyncClient {
   return commandContext('menu').platform.sync;
 }

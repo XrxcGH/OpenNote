@@ -1,6 +1,6 @@
 // Settings > Sync (ADR 0049), labeled Beta. Before setup it explains what sync does and what is encrypted, and
 // offers Set up and Join. After setup it shows the state in words, Sync this device (off pauses), Sync now,
-// Preview changes, the devices, and Turn off. Errors say what happened and what to do; a rollback offers Trust the
+// Preview changes, the devices, Change passphrase, and Turn off. Errors say what happened and what to do; a rollback offers Trust the
 // storage as it is. Work offline keeps every round waiting, with a note.
 
 import { useState } from 'react';
@@ -8,6 +8,7 @@ import { t } from '../../strings/t';
 import { Button, Switch, announce, confirm, showToast } from '../../ui';
 import { useOffline } from '../diagnostics';
 import { Devices } from './Devices';
+import { ChangePassphrase } from './Passphrase';
 import { codeOf, errorText, placeText, stateText, summaryLines, whenText } from './model';
 import { refreshSync, setView, syncClient, useSyncPolling, useSyncView } from './runtime';
 import styles from './sync.module.css';
@@ -143,6 +144,7 @@ function Configured({ view }: { view: SyncView }) {
         )}
       </section>
       <Devices />
+      <ChangePassphrase />
       <div className={styles.actions}>
         <Button variant="danger" onClick={() => void a.turnOff()}>
           {t('sync.turnOff')}

@@ -31,5 +31,6 @@ export function createTauriSync(): SyncClient {
     turnOff: () => call('turnOff'),
     finishSetUp: () => call('finishSetUp'),
     cancelSetUp: () => call('cancelSetUp'),
+    changePassphrase: (input) => call('changePassphrase', input),
   };
 }

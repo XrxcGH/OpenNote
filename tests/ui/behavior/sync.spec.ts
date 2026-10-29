@@ -69,3 +69,25 @@ test('a set-up sync previews, syncs, adds a device, and pauses', async ({ page }
   await page.getByRole('switch', { name: 'Sync this device' }).click();
   await expect(page.getByRole('button', { name: 'Sync now' })).toBeEnabled();
 });
+
+test('the palette opens Change passphrase, which needs the recovery key', async ({ page }) => {
+  await page.goto('/?sync=on');
+  await expect(page.getByText('Biology 101')).toBeVisible();
+  await page.keyboard.press('Control+KeyK');
+  await page.getByRole('combobox', { name: 'Search commands and pages' }).pressSequentially('change sync pass', {
+    delay: 10,
+  });
+  await page.getByRole('option', { name: /Change sync passphrase/ }).click();
+  await expect(page.getByRole('heading', { name: 'Change passphrase', level: 2 })).toBeFocused();
+
+  await page.getByLabel('Recovery key').fill('ABCD-EFGH');
+  await page.getByLabel('New passphrase').fill('a brand new passphrase');
+  await page.getByLabel('Type the passphrase again').fill('a brand new passphrase');
+  await page.getByRole('button', { name: 'Change passphrase' }).click();
+  await expect(page.getByRole('alert')).toContainText('unlock');
+
+  await page.getByLabel('Recovery key').fill('test-only-fake-0000-1111-2222-3333-4444-5555-6666-7777-8888-9999');
+  await page.getByRole('button', { name: 'Change passphrase' }).click();
+  await expect(page.getByRole('heading', { name: 'Change passphrase', level: 2 })).toHaveCount(0);
+  await expect(page.getByLabel('Recovery key')).toHaveCount(0);
+});

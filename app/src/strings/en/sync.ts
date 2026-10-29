@@ -75,6 +75,19 @@ export const sync = {
     removed: 'The device was removed from sync.',
     off: 'Sync is off on this device.',
     trusted: 'This device now trusts the storage as it is.',
+    passphrase: 'The passphrase changed. Use the new one when another device joins.',
+  },
+  passphrase: {
+    open: 'Change passphrase',
+    title: 'Change passphrase',
+    help:
+      'Your devices keep syncing with their own keys. A device that joins later uses the new passphrase. Your ' +
+      'recovery key stays the same.',
+    recovery: 'Recovery key',
+    recoveryHelp: 'The 13 groups of characters you saved when you set sync up.',
+    new: 'New passphrase',
+    save: 'Change passphrase',
+    cancel: 'Cancel',
   },
   devices: {
     title: 'Devices',
@@ -203,6 +216,8 @@ export const sync = {
     previewKeywords: 'sync preview dry run changes what will change',
     open: 'Sync settings',
     openKeywords: 'sync set up devices encryption passphrase recovery key pairing',
+    changePassphrase: 'Change sync passphrase',
+    changePassphraseKeywords: 'sync passphrase password change recovery key',
     notSetUp: 'Sync isn\u2019t set up yet. Set it up in Settings, then Sync.',
   },
 } as const;

@@ -3,6 +3,14 @@
 - Status: Proposed
 - Date: 2026-10-28
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Options considered](#options-considered)
+- [Threat model](#threat-model)
+- [Consequences](#consequences)
+
 ## Context
 
 People keep notebooks on more than one device. Today they can put the notes folder in OneDrive, Dropbox, iCloud Drive, or Syncthing, and the note format already expects it ([ADR 0008](0008-note-file-format.md), spec section 14): immutable ink and asset files, one commit point per page, and conflicts kept in `.conflicts/`. That works, but the sync service can read every note, and the person has to trust it.
@@ -70,7 +78,12 @@ An edit always beats a delete. When a page folder still has a live `page.json` a
 - **Vault checks.** Every unlock, including a device's background unlock and a pairing, checks the header's MAC, in constant time, so a changed slot or cost shows. A passphrase is never checked at less than the 64 MiB, three-pass cost, whatever a header asks.
 - **Bounded memory.** Files stream through one 1 MiB chunk at a time. The manifest is about 150 bytes a file. Every backend refuses a blob longer than OpenNote writes under its name before reading it whole: the header's largest size for `vault`, one padded sealed chunk for `c/`, 512 bytes of JSON for each of the 250,000 files a folder may hold for `h/`, and 16 KiB for slots and notes.
 - **Preview.** Every sync first builds a plan of uploads, downloads, deletions, and conflicts. "Preview changes" shows it without changing anything.
-- **Garbage collection.** A chunk is removed only when no head of any device and no tombstone refers to it. Old heads of a device are removed once a newer one of the same device is in place. A marked chunk waits a week and two newer heads of every device that isn't removed, and a run stops if a head appears while it works. A round that found a chunk already stored checks it again after writing its head and sends it if it went. A chunk lost later (a sync tool that never copied it, a provider that lost it) is asked for under `m/` by the device that needs it, and sent again by any device that holds the file; once a day each device also lists storage and sends again any chunk of its newest head that is gone. A tombstone leaves a device's head at a collection run a grace period after it was marked, once every other device's newest head has merged a head of this device from the mark on and either holds the delete or dropped it already; the device remembers the dropped version, so an older head can't bring it back. Turning sync off removes the device's slot, so it no longer holds collection up, and the device list shows when each device last synced so a lost one can be removed.
+- **Garbage collection.** The shell runs it at most once a day, after a round that finished.
+  - A chunk is removed only when no head of any device and no tombstone refers to it. Old heads of a device are removed once a newer one of the same device is in place.
+  - A marked chunk waits a week and two newer heads of every device that isn't removed, and a run stops if a head appears while it works. A round that found a chunk already stored checks it again after writing its head and sends it if it went.
+  - A chunk can still go missing later, as when a sync tool never copies it or a provider loses it. The device that needs it then asks for it under `m/`, and any device that holds the file sends it again. Once a day each device also lists storage and sends again any chunk of its newest head that is gone.
+  - A tombstone leaves a device's head a grace period after it was marked. Every other device's newest head must first have merged a head of this device from the mark on, and hold the delete or have dropped it already. The device remembers the dropped version, so an older head can't bring it back.
+  - Turning sync off removes the device's slot, so it no longer holds collection up. The device list shows when each device last synced, so a lost one can be removed.
 - **Work offline** pauses sync. Nothing leaves the device unless the person set sync up. There is no telemetry.
 
 ## Options considered
@@ -92,7 +105,7 @@ An edit always beats a delete. When a page folder still has a live `page.json` a
 | Someone who changes or deletes blobs | Stop sync, or withhold the newest changes from a device that never saw them | Make a device accept changed content, or roll back a device that already saw newer changes without a warning |
 | Someone with the passphrase or recovery key and the storage | Read everything | Nothing; these are the keys |
 | A removed device that kept the vault key | Read what it had and new blobs, until a re-key | Join again once its slot is gone, unless it kept the key |
-| A storage writer who keeps old copies of the folder | Put back an older `vault` header, so an old passphrase or a removed device's slot works again. Until a re-key exists, changing the passphrase and removing a device are advisory against this writer | Do it without a warning on every device that saw the newer header: each reports a rollback and stops |
+| A storage writer who keeps old copies of the folder | Put back an older `vault` header, so an old passphrase or a removed device's slot works again. Until a re-key exists, a passphrase change is advisory against this writer, as is removing a device | Do it without a warning on every device that saw the newer header: each reports a rollback and stops |
 | Malware on a device | Everything that device can read | This is out of scope, as it is for the notes on that disk |
 
 ## Consequences

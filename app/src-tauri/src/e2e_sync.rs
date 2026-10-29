@@ -31,6 +31,8 @@ const WEBDAV_PASSWORD: &str = "OpenNote/sync/webdav";
 const EVERY: Duration = Duration::from_secs(5 * 60);
 /// How long after start the first background round waits, so start-up stays quick.
 const FIRST: Duration = Duration::from_secs(45);
+/// How often a finished round also cleans up storage: once a day.
+const COLLECT_EVERY_MS: i64 = 24 * 60 * 60 * 1000;
 
 /// Where sync keeps its data.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -79,6 +81,8 @@ struct Inner {
     status: Mutex<Status>,
     app: Mutex<Option<AppHandle>>,
     started: AtomicBool,
+    /// When a round last ran garbage collection, in Unix milliseconds.
+    collected: Mutex<i64>,
 }
 
 /// The shell's sync state.
@@ -124,6 +128,7 @@ impl SyncService {
                 }),
                 app: Mutex::new(None),
                 started: AtomicBool::new(false),
+                collected: Mutex::new(0),
             }),
         }
     }
@@ -331,10 +336,9 @@ impl SyncService {
                     .map(|plan| json!({ "summary": plan.summary }))
                     .map_err(fail)
             } else {
-                engine
-                    .sync()
-                    .map(|report| json!({ "summary": report.summary, "deferred": report.deferred }))
-                    .map_err(fail)
+                let report = engine.sync().map_err(fail)?;
+                self.collect_daily(&engine);
+                Ok(json!({ "summary": report.summary, "deferred": report.deferred }))
             }
         });
         if !preview {
@@ -364,6 +368,34 @@ impl SyncService {
         })
     }
 
+    /// Removes chunks nothing uses any more, at most once a day and only after a round that finished: otherwise
+    /// storage keeps every old chunk of every edited file. The engine waits out its own grace period.
+    fn collect_daily(&self, engine: &Engine) {
+        let now = now_ms();
+        {
+            let mut last = self.inner.collected.lock().unwrap_or_else(PoisonError::into_inner);
+            if now - *last < COLLECT_EVERY_MS {
+                return;
+            }
+            *last = now;
+        }
+        match engine.collect_garbage(now) {
+            Ok(removed) => ::log::info!("Sync cleanup removed {removed} unused pieces from storage."),
+            Err(error) => ::log::info!("Sync cleanup stopped: {}", error.code()),
+        }
+    }
+
+    /// A new passphrase, checked against the recovery key so a typo can't leave the vault without one. The other
+    /// devices keep syncing with their own keys; a device that joins later uses the new passphrase.
+    fn change_passphrase(&self, args: &Value) -> IpcResult<Value> {
+        let config = self.config().ok_or_else(|| fail(SyncError::NoVault))?;
+        let backend = self.open_backend(&config.backend, None)?;
+        let store = backend.as_ref();
+        let keys = vault::unlock_device(store, &config.device, &self.device_secret()?).map_err(fail)?;
+        vault::change_passphrase(store, &keys, arg(args, "recoveryKey"), arg(args, "passphrase")).map_err(fail)?;
+        Ok(self.view())
+    }
+
     fn call(&self, notes: Option<PathBuf>, name: &str, args: &Value) -> IpcResult<Value> {
         match name {
             "status" => Ok(self.view()),
@@ -378,6 +410,10 @@ impl SyncService {
                 Ok(self.view())
             }
             "devices" | "removeDevice" | "pairingCode" => self.devices_call(name, args),
+            "changePassphrase" => {
+                let _guard = self.inner.running.lock().unwrap_or_else(PoisonError::into_inner);
+                self.change_passphrase(args)
+            }
             "trustStorage" => {
                 let notes = notes.ok_or_else(|| bad("Choose a notes folder in setup first."))?;
                 let _guard = self.inner.running.lock().unwrap_or_else(PoisonError::into_inner);
@@ -578,171 +614,4 @@ pub async fn sync_call(app: AppHandle, service: State<'_, SyncService>, name: St
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::connectors::MemoryStore;
-
-    fn service(dir: &Path) -> SyncService {
-        SyncService::with_store(dir.join("sync"), Arc::new(MemoryStore::default()))
-    }
-
-    fn ok(service: &SyncService, notes: Option<&Path>, name: &str, args: Value) -> Value {
-        service.call(notes.map(Path::to_path_buf), name, &args).expect(name)
-    }
-
-    fn code(service: &SyncService, notes: Option<&Path>, name: &str, args: Value) -> String {
-        service
-            .call(notes.map(Path::to_path_buf), name, &args)
-            .unwrap_err()
-            .code
-    }
-
-    /// A laptop that set sync up in a folder and synced a file, and a desktop that joined with a pairing code.
-    struct Pair {
-        dir: tempfile::TempDir,
-        laptop: SyncService,
-        desktop: SyncService,
-        made: Value,
-    }
-
-    impl Pair {
-        fn notes(&self, which: &str) -> PathBuf {
-            self.dir.path().join(which)
-        }
-    }
-
-    fn pair() -> Pair {
-        let dir = tempfile::tempdir().expect("temp");
-        let backend = json!({ "kind": "folder", "path": dir.path().join("storage").to_string_lossy() });
-        let laptop = service(&dir.path().join("laptop"));
-        fs::create_dir_all(dir.path().join("notes-a/Bio")).expect("dirs");
-        fs::write(dir.path().join("notes-a/Bio/todo.txt"), b"from the laptop").expect("write");
-        let off = ok(&laptop, None, "status", Value::Null);
-        assert_eq!(
-            (off["configured"].clone(), off["status"]["state"].clone()),
-            (json!(false), json!("off"))
-        );
-        let weak = json!({ "backend": backend, "passphrase": "short" });
-        assert_eq!(code(&laptop, None, "setUp", weak), "weakPassphrase");
-        let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Laptop" });
-        let made = ok(&laptop, None, "setUp", setup);
-        assert_eq!(made["recoveryKey"].as_str().expect("key").split('-').count(), 13);
-        assert_eq!(made["unfinished"], true);
-        assert_eq!(
-            code(&laptop, Some(&dir.path().join("notes-a")), "syncNow", Value::Null),
-            "paused",
-            "nothing syncs until the recovery key is checked"
-        );
-        assert_eq!(ok(&laptop, None, "finishSetUp", Value::Null)["unfinished"], false);
-        let synced = ok(&laptop, Some(&dir.path().join("notes-a")), "syncNow", Value::Null);
-        assert_eq!(synced["view"]["status"]["state"], "synced");
-        let pairing = ok(&laptop, None, "pairingCode", Value::Null);
-        assert!(!pairing["rows"].as_array().expect("rows").is_empty());
-        let desktop = service(&dir.path().join("desktop"));
-        let join = json!({ "backend": backend, "code": pairing["code"], "deviceName": "Desktop" });
-        let joined = ok(&desktop, None, "join", join);
-        assert_eq!(joined["fingerprint"], made["fingerprint"]);
-        assert!(
-            joined.get("recoveryKey").is_none(),
-            "only a new sync shows a recovery key"
-        );
-        Pair {
-            dir,
-            laptop,
-            desktop,
-            made,
-        }
-    }
-
-    #[test]
-    fn a_joined_device_previews_then_syncs_through_the_one_command() {
-        let p = pair();
-        let notes_b = p.notes("notes-b");
-        let preview = ok(&p.desktop, Some(&notes_b), "preview", Value::Null);
-        assert_eq!(preview["summary"]["download"][0], "Bio/todo.txt");
-        assert!(!notes_b.join("Bio/todo.txt").exists(), "a preview changes nothing");
-        ok(&p.desktop, Some(&notes_b), "syncNow", Value::Null);
-        assert_eq!(
-            fs::read(notes_b.join("Bio/todo.txt")).expect("read"),
-            b"from the laptop"
-        );
-        assert!(p.made["fingerprint"].is_string());
-        assert_eq!(code(&p.desktop, None, "nonsense", Value::Null), codes::INVALID);
-    }
-
-    #[test]
-    fn cancelling_setup_before_the_key_is_checked_takes_the_new_vault_away() {
-        let dir = tempfile::tempdir().expect("temp");
-        let storage = dir.path().join("storage");
-        let backend = json!({ "kind": "folder", "path": storage.to_string_lossy() });
-        let laptop = service(&dir.path().join("laptop"));
-        let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Laptop" });
-        ok(&laptop, None, "setUp", setup.clone());
-        assert!(storage.join("vault").exists());
-        let off = ok(&laptop, None, "cancelSetUp", Value::Null);
-        assert_eq!(off["configured"], false);
-        assert!(!storage.join("vault").exists(), "the vault nothing used yet is gone");
-        let again = ok(&laptop, None, "setUp", setup);
-        assert_eq!(again["unfinished"], true, "setting up again in the same place works");
-        ok(&laptop, None, "finishSetUp", Value::Null);
-        assert_eq!(code(&laptop, None, "cancelSetUp", Value::Null), codes::INVALID);
-    }
-
-    #[test]
-    fn devices_are_listed_and_removed_and_pause_and_turn_off_keep_the_notes() {
-        let p = pair();
-        let notes_b = p.notes("notes-b");
-        ok(&p.desktop, Some(&notes_b), "syncNow", Value::Null);
-        let devices = ok(&p.desktop, None, "devices", Value::Null);
-        let list = devices.as_array().expect("list");
-        let mut names: Vec<_> = list
-            .iter()
-            .map(|d| d["name"].as_str().unwrap_or("").to_owned())
-            .collect();
-        names.sort();
-        assert_eq!(names, ["Desktop", "Laptop"]);
-        let row = list.iter().find(|d| d["name"] == "Laptop").expect("laptop");
-        assert_eq!(row["thisDevice"], false);
-        ok(&p.desktop, None, "removeDevice", json!({ "tag": row["tag"] }));
-        assert_eq!(
-            code(&p.laptop, Some(&p.notes("notes-a")), "syncNow", Value::Null),
-            "removed"
-        );
-        assert_eq!(ok(&p.laptop, None, "status", Value::Null)["status"]["state"], "error");
-
-        ok(&p.desktop, None, "setPaused", json!({ "paused": true }));
-        assert_eq!(code(&p.desktop, Some(&notes_b), "syncNow", Value::Null), "paused");
-        assert_eq!(ok(&p.desktop, None, "status", Value::Null)["status"]["state"], "paused");
-        ok(&p.desktop, None, "setPaused", json!({ "paused": false }));
-        let rows = ok(&p.desktop, None, "devices", Value::Null);
-        let me = rows
-            .as_array()
-            .expect("list")
-            .iter()
-            .find(|d| d["thisDevice"] == true)
-            .expect("this device")
-            .clone();
-        assert!(me["lastSync"].as_i64().is_some_and(|at| at > 0), "{me}");
-        let tag = me["tag"].as_str().expect("tag").to_owned();
-        let backend = p
-            .desktop
-            .open_backend(&p.desktop.config().expect("config").backend, None)
-            .expect("backend");
-        let keys =
-            vault::unlock_device(backend.as_ref(), &tag, &p.desktop.device_secret().expect("secret")).expect("keys");
-        ok(&p.desktop, None, "turnOff", Value::Null);
-        assert_eq!(ok(&p.desktop, None, "status", Value::Null)["configured"], false);
-        assert!(
-            vault::is_removed(backend.as_ref(), &keys, &tag).expect("reads"),
-            "turning off takes this device out of the vault, so cleanup elsewhere doesn't wait for it"
-        );
-        assert!(vault::list_devices(backend.as_ref(), &keys)
-            .expect("lists")
-            .iter()
-            .all(|d| d.tag != tag));
-        assert!(
-            fs::read(notes_b.join("Bio/todo.txt")).is_ok(),
-            "turning off keeps the notes"
-        );
-    }
-}
+mod tests;

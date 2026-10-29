@@ -110,6 +110,13 @@ class FakeSync implements SyncClient {
     return this.snapshot();
   }
 
+  async changePassphrase(input: { recoveryKey: string; passphrase: string }): Promise<SyncView> {
+    this.need();
+    if ([...input.passphrase].length < 10) throw new SyncFailure('weakPassphrase');
+    if (input.recoveryKey.replace(/\s/g, '').toUpperCase() !== RECOVERY) throw new SyncFailure('wrongSecret');
+    return this.snapshot();
+  }
+
   async cancelSetUp(): Promise<SyncView> {
     if (!this.unfinished) throw new SyncFailure('unknown');
     this.unfinished = false;

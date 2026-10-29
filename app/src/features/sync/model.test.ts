@@ -136,6 +136,18 @@ describe('the in-memory host', () => {
     expect((await host.status()).configured).toBe(false);
   });
 
+  it('changes the passphrase only with the recovery key, like the shell', async () => {
+    const host = createFakeSync({ configured: true });
+    const recoveryKey = FAKE_SECRETS.recoveryKey.toLowerCase();
+    await expect(host.changePassphrase({ recoveryKey, passphrase: 'short' })).rejects.toEqual(
+      new SyncFailure('weakPassphrase'),
+    );
+    await expect(host.changePassphrase({ recoveryKey: 'ABCD', passphrase: 'a brand new passphrase' })).rejects.toEqual(
+      new SyncFailure('wrongSecret'),
+    );
+    expect((await host.changePassphrase({ recoveryKey, passphrase: 'a brand new passphrase' })).configured).toBe(true);
+  });
+
   it('waits while Work offline is on', async () => {
     let offline = true;
     const host = createFakeSync({ configured: true, offline: () => offline });

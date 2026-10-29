@@ -54,7 +54,7 @@ pub fn max_size(name: &str) -> u64 {
     match name.split_once('/').map_or(name, |(kind, _)| kind) {
         "vault" => crate::vault::MAX_HEADER as u64,
         "c" => sealed(padded_len(CHUNK) as u64),
-        // A compressed head is no longer than its JSON, give or take deflate's few bytes per block.
+        // A compressed head is at most its JSON plus a few bytes for each deflate block.
         "h" => sealed(padded_len(MAX_HEAD as usize + 64 * 1024) as u64),
         // Device slots, pairing slots, and removal notes are a few hundred bytes.
         _ => 16 * 1024,
