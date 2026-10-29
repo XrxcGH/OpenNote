@@ -436,6 +436,8 @@ jobs:
         run: npm run app:build
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Fetch every platform's crates (the no-network test reads all of them offline)
+        run: cargo fetch --locked
       - name: Rust tests
         run: cargo test --workspace
       - name: Build of the app, without a bundle
