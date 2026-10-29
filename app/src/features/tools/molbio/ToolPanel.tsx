@@ -153,15 +153,19 @@ function TableView({ table }: { table: KitTable }) {
           {t('kitMolBio.insertShort')}
         </Button>
       </div>
-      <div className={styles.scroll} tabIndex={0} role="region" aria-label={title}>
+      <div className={styles.scroll} tabIndex={0} role="group" aria-label={title}>
         <table className={styles.table}>
           <thead>
             <tr>
-              {headerText(table).map((text, i) => (
-                <th key={i} scope="col">
-                  {text}
-                </th>
-              ))}
+              {headerText(table).map((text, i) =>
+                text === '' ? (
+                  <td key={i} />
+                ) : (
+                  <th key={i} scope="col">
+                    {text}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
           <tbody>
