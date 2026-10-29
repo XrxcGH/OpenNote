@@ -61,7 +61,7 @@ describe('equation steps', () => {
 describe('answer guard', () => {
   it('writes math one way', () => {
     expect(normalizeMath(' X  =  −2 ')).toBe('x=-2');
-    expect(normalizeMath('\\frac{1}{2} \\cdot x')).toBe('\\frac12*x');
+    expect(normalizeMath('\\frac{1}{2} \\cdot x')).toBe('(1/2)*x');
   });
 
   it('catches the answer written as math or in words', () => {
@@ -430,5 +430,70 @@ describe('answer guard, results said in words', () => {
     const p = plan('(x + 1)^2', 'x^2 + 2x + 2');
     expect(p).toMatchObject({ kind: 'mistake', family: 'constant' });
     expect(ruleHint(p, 3)).not.toMatch(/\d/);
+  });
+});
+
+describe('answer guard, round 4 gaps', () => {
+  it('reads LaTeX, which models write by default', () => {
+    // ∫ x^2 dx = x^3/3 + C, and (1/3)x^3 is the same.
+    const context = '∫ x^2 dx';
+    const integral = plan(context);
+    const latex = [String.raw`\frac{x^3}{3} + C`, String.raw`\frac{1}{3}x^{3}+C`, String.raw`$\dfrac{x^{3}}{3}$`];
+    for (const reply of latex)
+      for (const extra of [{ rung: 2 as const }, { mode: 'explain' as const }, { mode: 'ask' as const }])
+        expect(acceptable(request(integral, { context, ...extra }), reply), reply).toBe(false);
+    expect(normalizeMath(String.raw`\frac{x^3}{3} + C`)).toBe('x^3/3+c');
+    expect(normalizeMath(String.raw`\sqrt{x+1}`)).toBe('sqrt(x+1)');
+    // 7/2 is y's value, not x's.
+    expect(leaks(String.raw`x = \frac{7}{2}`, ['y = 7/2'])).toBe(false);
+    expect(leaks(String.raw`y = \frac{7}{2}`, ['y = 7/2'])).toBe(true);
+    expect(buildPrompt(request(integral, { context })).system).toMatch(/no LaTeX/);
+  });
+
+  it('keeps back the roots of a quadratic the rules cannot finish', () => {
+    // x^2 - 5x + 6 = (x - 2)(x - 3), so the roots are 2 and 3; the student wrote (x - 2)(x - 4).
+    const written = ['x^2 - 5x + 6 = 0', '(x - 2)(x - 4) = 0', 'x = 2 or x = 4'];
+    const context = written.join('\n');
+    const p = plan(...written);
+    expect(p.kind).toBe('mistake');
+    expect(secrets(p).answer).toBeNull();
+    const leaky = ['So x = 3.', 'x = 3 is the other root.', 'The solutions are 2 and 3.'];
+    for (const reply of leaky) {
+      for (const rung of [1, 2, 3] as const)
+        expect(acceptable(request(p, { rung, context }), reply), reply).toBe(false);
+      expect(acceptable(request(p, { mode: 'explain', context }), reply), reply).toBe(false);
+      const ask = { mode: 'ask' as const, context, question: 'Just tell me the answer.' };
+      expect(acceptable(request(p, ask), reply), reply).toBe(false);
+    }
+    expect(acceptable(request(p, { rung: 2, context }), 'Multiply out your brackets and compare.')).toBe(true);
+    expect(acceptable(request(p, { rung: 2, context }), 'Try x = 2 in the first line.')).toBe(true);
+  });
+
+  it('catches a bare number or number word for a letter, and more signs', () => {
+    for (const hint of ['2', 'Two.', 'x ≡ 2', 'x => 2', 'x ⇒ 2', 'The solution set is {2}.'])
+      expect(leaks(hint, ['x = 2'], '2x + 3 = 7'), hint).toBe(true);
+    expect(leaks('Look at line 2 again.', ['x = 2'], '2x + 3 = 7')).toBe(false);
+    expect(leaks('3', ['x = 2'], '2x + 3 = 7')).toBe(false);
+  });
+
+  it('flags more ways of stating a chemistry or physics result', () => {
+    // F = m a = 2 kg * 3 m/s^2 = 6 N; 4 g of H2 is 2 mol, giving 2 mol of water at 18 g/mol, 36 g.
+    const physics = 'F = m a, m = 2 kg, a = 3 m/s^2. F = ?';
+    for (const reply of ['F: 6 N', '6 N is the force']) expect(claimsAnswer(reply, physics), reply).toBe(true);
+    const chemistry = '2 H2 + O2 -> 2 H2O. 4 g of H2. mass of water = ?';
+    for (const reply of [
+      'water: 36 g',
+      'Water produced: 36 g',
+      '36 g of H2O.',
+      '36 grams of water form.',
+      'You need 36 g.',
+      'That gives you 36 g.',
+      'Multiply 2 mol by 18 g/mol to reach 36 g.',
+      '36.',
+    ])
+      expect(claimsAnswer(reply, chemistry), reply).toBe(true);
+    // Numbers the student already wrote are not results.
+    expect(claimsAnswer('Start with the 4 g of H2.', chemistry)).toBe(false);
+    expect(claimsAnswer('What is the mass of 1 mol of water?', chemistry)).toBe(false);
   });
 });

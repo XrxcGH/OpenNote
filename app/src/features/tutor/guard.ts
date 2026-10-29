@@ -6,7 +6,8 @@
 // may come in any order, and the sides of an equation either way round.
 //
 // With the math kit loaded, a formula in the hint with the secret's values counts too: "(1/3)x^3" for "x^3/3 + C".
-// A value said in words or as another number counts as well, such as "x is 2", "x = 4/2" or "the limit is 1".
+// A value said in words or as another number counts as well, such as "x is 2", "x = 4/2", "Two." or "the limit is 1".
+// LaTeX, which most models write by default, is read as plain math first: \frac{x^3}{3} is x^3/3.
 //
 // A secret the student already wrote is not a secret, so it never trips the guard. For subjects whose answer the
 // rules cannot work out, `claimsAnswer` is a heuristic: a sentence that states a result the student's text lacks.
@@ -33,6 +34,84 @@ const superscripts = (text: string) =>
 const plainForms = (text: string) =>
   superscripts(text.toLowerCase()).normalize('NFKC').replace(/[−–—]/g, '-').replace(/⁄/g, '/');
 
+/** The group in braces that starts at `open` (a "{"), and the index after it, or null when it does not close. */
+function braced(text: string, open: number): { body: string; end: number } | null {
+  if (text[open] !== '{') return null;
+  let depth = 0;
+  for (let at = open; at < text.length; at += 1) {
+    if (text[at] === '{') depth += 1;
+    if (text[at] === '}') depth -= 1;
+    if (depth === 0) return { body: text.slice(open + 1, at), end: at + 1 };
+  }
+  return null;
+}
+
+/**
+ * LaTeX as plain math, which is how most models write it: \frac{a}{b} is ((a)/(b)), \sqrt{a} is sqrt(a), \sqrt[n]{a}
+ * is (a)^(1/(n)), x^{3} is x^(3), and \( \) \[ \] $ wrapping and other commands' backslashes go. Text without a
+ * backslash is returned as it is.
+ */
+export function plainLatex(text: string): string {
+  if (!text.includes('\\')) return text;
+  let out = text
+    .replace(/\\[()[\]]/g, ' ')
+    .replace(/\$+/g, ' ')
+    .replace(/\\(?:text|mathrm|operatorname|mathit|mathbf|mbox)\s*\{([^{}]*)\}/g, ' $1 ');
+  for (let round = 0; round < 20; round += 1) {
+    const found = /\\(?:[dt]?frac|sqrt)/.exec(out);
+    if (!found) break;
+    const command = found[0];
+    let at = found.index + command.length;
+    while (out[at] === ' ') at += 1;
+    let replaced: string | null = null;
+    let end = at;
+    if (command.endsWith('frac')) {
+      const top = braced(out, at);
+      let next = top ? top.end : at;
+      while (out[next] === ' ') next += 1;
+      const bottom = top ? braced(out, next) : null;
+      if (top && bottom) {
+        replaced = `((${top.body})/(${bottom.body}))`;
+        end = bottom.end;
+      }
+    } else {
+      let root: string | null = null;
+      if (out[at] === '[') {
+        const close = out.indexOf(']', at);
+        if (close > at) {
+          root = out.slice(at + 1, close);
+          at = close + 1;
+        }
+      }
+      const body = braced(out, at);
+      if (body) {
+        replaced = root === null ? `sqrt(${body.body})` : `(${body.body})^(1/(${root}))`;
+        end = body.end;
+      }
+    }
+    // An unclosed command loses its backslash, so the loop moves on.
+    out =
+      replaced === null
+        ? out.replace(command, command.slice(1))
+        : out.slice(0, found.index) + replaced + out.slice(end);
+  }
+  // Powers and subscripts in braces keep their grouping: x^{3} is x^(3), e^{2x} is e^(2x).
+  for (let round = 0; round < 8; round += 1) {
+    const before = out;
+    out = out.replace(/([\^_])\{([^{}]*)\}/g, '$1($2)');
+    if (out === before) break;
+  }
+  return out
+    .replace(/\\left|\\right|\\,|\\;|\\!|\\quad|\\displaystyle/g, ' ')
+    .replace(/\\(?:cdot|times)/g, '*')
+    .replace(/\\div/g, '/')
+    .replace(/\\(?:pm)/g, '±')
+    .replace(/\\(?:approx)/g, '≈')
+    .replace(/\\(?:to|rightarrow)/g, '→')
+    .replace(/\\(?:infty)/g, '∞')
+    .replace(/\\([a-z]+)/gi, '$1');
+}
+
 /** Drops brackets around one number, letter or power, and doubled or whole-side brackets: ((x^3)/(3)) is x^3/3. */
 function unbracket(text: string): string {
   let out = text;
@@ -41,7 +120,9 @@ function unbracket(text: string): string {
     out = out
       .replace(/(?<![a-z0-9\\^_])\((-?[a-z0-9.]+(?:\^-?[a-z0-9.]+)?)\)(?!\^)/g, '$1')
       .replace(/\(\(([^()]*)\)\)/g, '($1)')
-      .replace(/(^|=)\(([^()]*)\)(?=$|=|≈)/g, '$1$2');
+      .replace(/(^|=)\(([^()]*)\)(?=$|=|≈)/g, '$1$2')
+      // One term in brackets among others, as LaTeX fractions come out: (x^3/3)+c is x^3/3+c.
+      .replace(/(^|[=+-])\(([^()+=-]*)\)(?=$|[=+≈-])/g, '$1$2');
     if (out === before) break;
   }
   return out;
@@ -55,7 +136,7 @@ function unbracket(text: string): string {
 export function normalizeMath(text: string): string {
   return unbracket(
     plainForms(
-      text
+      plainLatex(text)
         .replace(/\\left|\\right|\\,|\\;|\\!|\\quad/g, ' ')
         .replace(/\\cdot|\\times|×|·|⋅/g, '*')
         .replace(/\\div|÷/g, '/')
@@ -150,7 +231,7 @@ const LINK_WORDS = [
   'roughly',
 ].join('|');
 /** Signs that link a name to its value. */
-const LINK_SIGNS = String.raw`=|:|→|->|⟶|≈|≃|~|∈\s*\{?`;
+const LINK_SIGNS = String.raw`=>|⇒|=|:|→|->|⟶|≈|≃|≡|~|∈\s*\{?`;
 const LINK = `${LINK_SIGNS}|${LINK_WORDS}`;
 
 const ONES = [
@@ -215,7 +296,7 @@ const same = (a: number, b: number) => Math.abs(a - b) < 1e-6 * Math.max(1, Math
 
 /** Text as words: lower case, plain signs, superscripts as ^n, and number words as digits. */
 function wordsOf(text: string): string {
-  return numberWords(plainForms(text).replace(/\s+/g, ' '));
+  return numberWords(plainForms(plainLatex(text)).replace(/\s+/g, ' '));
 }
 
 /** The value side of a secret such as "x = 2", or null when the secret is not that shape. */
@@ -263,9 +344,14 @@ function loneNumbers(words: string): number[] {
 function saysValue(words: string, shape: { letter: string; value: number }): boolean {
   const told = [
     new RegExp(String.raw`\b${shape.letter}\s*(?:${LINK})\s*(${NUMBER})${NOT_LONGER}`, 'g'),
-    new RegExp(String.raw`\b(?:answer|solution|result)\s*(?:is|=|:)?\s*(${NUMBER})${NOT_LONGER}`, 'g'),
+    new RegExp(
+      String.raw`\b(?:answer|solution|result|root)s?(?:\s+set)?\s*(?:is|are|=|:)?\s*\{?\s*(${NUMBER})${NOT_LONGER}`,
+      'g',
+    ),
   ];
-  return told.some((pattern) => captured(words, pattern).some((one) => same(one, shape.value)));
+  // "2" or "Two." alone, the reply to "What is x?", says the value too.
+  const found = [...told.flatMap((pattern) => captured(words, pattern)), ...loneNumbers(words)];
+  return found.some((one) => same(one, shape.value));
 }
 
 const SUBJECT = String.raw`answer|result|solution|limit|sum|total|value|series|derivative|slope|integral|area|it|this|that|which|side`;
@@ -505,16 +591,66 @@ const CLAIMS = [
   new RegExp(String.raw`\b(?:${STATES})\s+${AMOUNT}(?:\s*${UNIT})?${CLAUSE_END}`, 'g'),
   new RegExp(String.raw`\b(?:so|therefore|thus|hence)\s+${AMOUNT}\s*${UNIT}`, 'g'),
   new RegExp(String.raw`(?:^|[.!?]\s+)${AMOUNT}\s*${UNIT}\s*(?=[.!?]|$)`, 'g'),
+  // "You need 36 g", "to reach 36 g", "That gives you 36 g".
+  new RegExp(
+    String.raw`\b(?:needs?|needed|reach(?:es|ed)?|gives? you|get|gets|got|leaves?|left with)\s+${AMOUNT}\s*${UNIT}`,
+    'g',
+  ),
 ];
+
+/** Results stated outside a question: "What is the mass of 1 mol of water?" asks, it does not tell. */
+const STATEMENTS = [
+  // "F: 6 N", "Water produced: 36 g".
+  new RegExp(String.raw`[a-z)]\s*:\s*${AMOUNT}\s*${UNIT}`, 'g'),
+  // "6 N is the force", "36 g of H2O", "36 grams of water form".
+  new RegExp(String.raw`(?<![\w.])${AMOUNT}\s*${UNIT}\s+(?:is|are|was|of)\b`, 'g'),
+];
+
+/** Words before a letter's value that offer it to try rather than state it: "Try n = 5", "put x = 3 in". */
+const TRIES =
+  /\b(?:try|trying|pick|choose|put|plug|substitute|test|testing|check|let|set|suppose|assume|if|when|say|guess|like)\b/;
+
+/**
+ * The values a reply states for a letter, "x = 3 is the other root", and every number in a list of solutions, "the
+ * solutions are 2 and 3". A letter's value offered to try ("Try n = 5") is not stated.
+ */
+function statedValues(words: string): number[] {
+  const found: number[] = [];
+  for (const sentence of words.split(/\n|[!?;]|\.(?!\d)/)) {
+    for (const match of sentence.matchAll(
+      new RegExp(String.raw`(?<![\w^.'])[a-z]\s*(?:=|≡|=>|⇒)\s*${AMOUNT}(?![a-z(^*/]|\s*[(^*/+-]\s*[\w(])`, 'g'),
+    )) {
+      if (!TRIES.test(sentence.slice(0, match.index))) found.push(numberOf(match[1] ?? ''));
+    }
+    const listed =
+      /\b(?:answers?|results?|solutions?|roots?|zeros?|zeroes)\b(?:\s+set)?[^\d]{0,20}?(?:=|:|\bis\b|\bare\b|\bequals?\b)(.{1,60})/.exec(
+        sentence,
+      );
+    if (listed) found.push(...captured(listed[1] ?? '', new RegExp(`(${NUMBER})${NOT_LONGER}`, 'g')));
+  }
+  return found.filter((one) => !Number.isNaN(one));
+}
 
 /**
  * Whether `reply` states a result that the student's text (`given`) does not already hold. A heuristic, for problems
- * whose answer the rules cannot work out. It catches "the answer is 36 g", "so F = 6 N", "F = 6", "F is 6 N", "you
- * get 36 grams", "it yields 36 g", "so 36 g forms", a number with a unit as a sentence of its own ("Forty mph."),
- * and the same with the number in words.
+ * whose answer the rules cannot work out. It catches "the answer is 36 g", "so F = 6 N", "F is 6 N" and "you get 36
+ * grams". It also catches "F: 6 N", "36 g of water", "you need 36 g" and a number with a unit on its own ("Forty
+ * mph."). A letter's value ("x = 3 is the other root") counts, and so does a list of solutions. A lone number counts
+ * when the student's text ends in a question. Numbers in words count the same.
  */
 export function claimsAnswer(reply: string, given = ''): boolean {
   const words = wordsOf(reply);
   const known = captured(wordsOf(given), new RegExp(`(${NUMBER})`, 'g'));
-  return CLAIMS.some((pattern) => captured(words, pattern).some((one) => !known.some((two) => same(one, two))));
+  const statements = words
+    .split(/(?<=[\n!?]|\.(?!\d))/)
+    .filter((one) => !one.trim().endsWith('?'))
+    .join(' ');
+  const found = [
+    ...CLAIMS.flatMap((pattern) => captured(words, pattern)),
+    ...STATEMENTS.flatMap((pattern) => captured(statements, pattern)),
+    ...statedValues(words),
+  ];
+  // A question that ends asking for its value ("mass = ?", "How fast is it?"): a number on its own answers it.
+  if (/\?\s*$/.test(given.trim())) found.push(...loneNumbers(words));
+  return found.some((one) => !known.some((two) => same(one, two)));
 }
