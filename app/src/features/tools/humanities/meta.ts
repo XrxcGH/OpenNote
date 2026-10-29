@@ -7,6 +7,7 @@ export const KIT_ID = 'humanities';
 export const HUMANITIES_TOOLS = [
   { id: 'frames', icon: 'Layout' },
   { id: 'coordinates', icon: 'Compass' },
+  { id: 'timeline', icon: 'ClockCounterClockwise' },
   { id: 'keys', icon: 'Key' },
 ] as const;
 

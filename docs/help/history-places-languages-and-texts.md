@@ -6,7 +6,18 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 
 - **Note frames**: pick a note structure, such as a case brief, an essay planner, or field notes, by subject or by searching, look at it, and insert it as headings, prompts, lists, and a table.
 - **Coordinates and navigation**: convert between latitude and longitude, UTM, and MGRS, measure distances and bearings on the ellipsoid, and work land and marine navigation problems.
+- **Timeline builder**: type events and periods, or use a table on the page, to draw a timeline with tracks, era bands, uncertain and BCE dates, and a linear, deep-time, or broken axis, then insert it as an editable figure.
 - **Identification keys**: type a character table, or start from a template, to get a numbered dichotomous key and its tree, run the key couplet by couplet, filter with a multi-access key, and keep a catalog of what you identified.
+
+## Timeline builder
+
+- Type one line for each event or period: label, start, end, track, kind, and notes. Leave the end empty for an event. Write era as the kind for a band drawn behind every track.
+- Dates can be a year (1603), a day (1603-03-24), a BCE year (44 BCE), an approximate year (c. 1200 BCE, which means 25 years either way), a spread (1450 ± 10), a decade or century (the 1960s, the 1600s, 5th century BCE), a millennium, or deep time (4.5 Ga, 66 Ma, 12 ka, 11700 BP). Before and after in front of a date put an arrow on its label.
+- Inside, years are astronomical: 1 BCE is year 0. So 63 BCE to 14 CE is 76 years, and the steps show how each date was read.
+- Years before present count back from 1950, as radiocarbon dates do. Choose the logarithmic axis for deep time: each power of ten takes the same width.
+- Zoom and pan with the buttons, or click the picture and press + or - to zoom and the left or right arrow to move.
+- Compare two rows to see the years between their starts and where they overlap.
+- Insert editable figure puts the timeline on the page with its rows, so Open in tool brings it back for editing.
 
 ## Identification keys
 
