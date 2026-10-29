@@ -10,6 +10,8 @@ Graded hints and explanations of flagged steps ([ADR 0050](../../../../docs/adr/
 | `engine.ts`        | Who writes a reply (rules, the on-device model, or the person's own key), the prompt, and the fallbacks |
 | `session.ts`       | One session: the context, the conversation, the rung, and the consent for the person's own key          |
 | `choice.ts`        | The opt-in switch                                                                                       |
+| `index.ts`         | The small door: the opt-in choice, the switch, and `loadTutorPanel`, which loads `panel.ts`             |
+| `panel.ts`         | The heavier half the door loads once the tutor is on: the panel, the session, and the math kit loader   |
 | `TutorPanel.tsx`   | The panel docked at the right                                                                           |
 | `TutorSetting.tsx` | The switch in Settings, then Editing, and the choice of where the tutor writes                          |
 
