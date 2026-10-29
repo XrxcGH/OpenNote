@@ -9,5 +9,6 @@ export const TOOL_BODIES: Record<HumanitiesToolId, LazyExoticComponent<Component
     import('./coordinates/CoordinatesTool').then((module) => ({ default: module.CoordinatesTool })),
   ),
   timeline: lazy(() => import('./timeline/TimelineTool').then((module) => ({ default: module.TimelineTool }))),
+  calendars: lazy(() => import('./calendars/CalendarsTool').then((module) => ({ default: module.CalendarsTool }))),
   keys: lazy(() => import('./keys/KeysTool').then((module) => ({ default: module.KeysTool }))),
 };

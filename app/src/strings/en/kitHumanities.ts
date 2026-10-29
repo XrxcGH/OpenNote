@@ -968,4 +968,255 @@ export const kitHumanities = {
       unknown: 'That could not be drawn. Check the rows.',
     },
   },
+  calendars: {
+    title: 'Calendars and eras',
+    open: 'Open the calendar and era converter',
+    keywords:
+      'calendar convert Julian Gregorian Hebrew Islamic Hijri Persian Chinese lunar new year Easter Maya Coptic Ethiopian era weekday',
+    modes: 'Calendar tools',
+    tabs: { convert: 'Convert a date', festivals: 'Festivals in a year', eras: 'Era table' },
+    system: 'Calendar',
+    systems: {
+      gregorian: 'Gregorian',
+      julian: 'Julian',
+      hebrew: 'Hebrew',
+      islamic: 'Islamic (tabular, civil)',
+      islamicAstro: 'Islamic (tabular, astronomical epoch)',
+      persian: 'Solar Hijri (Persian)',
+      chinese: 'Chinese',
+      coptic: 'Coptic',
+      ethiopian: 'Ethiopian',
+      republican: 'French Republican',
+      saka: 'Indian national (Saka)',
+      maya: 'Maya Long Count',
+      jdn: 'Julian Day Number',
+    },
+    year: 'Year',
+    month: 'Month (number)',
+    day: 'Day',
+    leapMonth: 'Leap month',
+    longCount: 'Long Count',
+    longCountHint: 'Five numbers with dots, such as 13.0.0.0.0.',
+    jdnField: 'Day number',
+    yearHint: 'Gregorian and Julian years are astronomical: 0 is 1 BCE, and -43 is 44 BCE.',
+    results: 'The date in every calendar',
+    rows: {
+      jdn: 'Julian Day Number',
+      weekday: 'Weekday',
+      gregorian: 'Gregorian',
+      julian: 'Julian',
+      iso: 'ISO week',
+      dayOfYear: 'Day of the year',
+      hebrew: 'Hebrew',
+      islamic: 'Islamic, civil',
+      islamicAstro: 'Islamic, astronomical',
+      persian: 'Solar Hijri',
+      chinese: 'Chinese',
+      japanese: 'Japanese era',
+      coptic: 'Coptic',
+      ethiopian: 'Ethiopian',
+      republican: 'French Republican',
+      saka: 'Indian national',
+      maya: 'Maya',
+      roman: 'Roman (Julian date)',
+      olympiad: 'Olympiad',
+      egyptian: 'Egyptian civil',
+      armenian: 'Armenian civil',
+      era: 'Era table',
+    },
+    value: {
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      date: '{day} {month} {year}',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      bce: '{day} {month} {year} BCE',
+      iso: 'Week {week} of {year}, day {day}',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      hebrew: '{day} {month} {year} AM',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      islamic: '{day} {month} {year} AH',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      persian: '{day} {month} {year} SH',
+      chinese: 'Month {month}, day {day}, year of the {animal} ({stem}{branch}); day {dayStem}{dayBranch}',
+      chineseLeap: 'Leap month {month}, day {day}, year of the {animal} ({stem}{branch}); day {dayStem}{dayBranch}',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      japanese: '{era} {year} (imperial year {imperial})',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      maya: '{longCount}, {tzolkinNumber} {tzolkin} {haabDay} {haab}',
+      roman: '{roman}, {auc} AUC',
+      olympiad: 'Olympiad {olympiad}, year {year}',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      era: '{name} {year}',
+      outside: 'Outside this calendar’s range',
+    },
+    roman: {
+      kalends: 'Kal. {month}',
+      nones: 'Non. {month}',
+      ides: 'Id. {month}',
+      pridie: 'prid. {anchor}',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      before: 'a.d. {count} {anchor}',
+      bis: 'a.d. bis VI Kal. Mart.',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      months: 'Ian.|Feb.|Mart.|Apr.|Mai.|Iun.|Iul.|Aug.|Sept.|Oct.|Nov.|Dec.',
+    },
+    // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+    weekdays: 'Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday',
+    stems: 'jia|yi|bing|ding|wu|ji|geng|xin|ren|gui',
+    branches: 'zi|chou|yin|mao|chen|si|wu|wei|shen|you|xu|hai',
+    // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+    animals: 'Rat|Ox|Tiger|Rabbit|Dragon|Snake|Horse|Goat|Monkey|Rooster|Dog|Pig',
+    // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+    tzolkin: 'Imix|Ik|Akbal|Kan|Chicchan|Cimi|Manik|Lamat|Muluc|Oc|Chuen|Eb|Ben|Ix|Men|Cib|Caban|Etznab|Cauac|Ahau',
+    // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+    haab: 'Pop|Uo|Zip|Zotz|Tzec|Xul|Yaxkin|Mol|Chen|Yax|Zac|Ceh|Mac|Kankin|Muan|Pax|Kayab|Cumku|Uayeb',
+    japaneseEras: { meiji: 'Meiji', taisho: 'Taishō', showa: 'Shōwa', heisei: 'Heisei', reiwa: 'Reiwa' },
+    months: {
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      gregorian: 'January|February|March|April|May|June|July|August|September|October|November|December',
+      hebrew: {
+        tishrei: 'Tishrei',
+        heshvan: 'Heshvan',
+        kislev: 'Kislev',
+        tevet: 'Tevet',
+        shevat: 'Shevat',
+        adar: 'Adar',
+        adar1: 'Adar I',
+        adar2: 'Adar II',
+        nisan: 'Nisan',
+        iyar: 'Iyar',
+        sivan: 'Sivan',
+        tammuz: 'Tammuz',
+        av: 'Av',
+        elul: 'Elul',
+      },
+      islamic:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Muharram|Safar|Rabi al-Awwal|Rabi al-Thani|Jumada al-Ula|Jumada al-Akhirah|Rajab|Shaban|Ramadan|Shawwal|Dhu al-Qadah|Dhu al-Hijjah',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      persian: 'Farvardin|Ordibehesht|Khordad|Tir|Mordad|Shahrivar|Mehr|Aban|Azar|Dey|Bahman|Esfand',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      coptic: 'Thout|Paopi|Hathor|Koiak|Tobi|Meshir|Paremhat|Parmouti|Pashons|Paoni|Epip|Mesori|Pi Kogi Enavot',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      ethiopian: 'Meskerem|Tikimt|Hidar|Tahsas|Tir|Yekatit|Megabit|Miyazya|Ginbot|Sene|Hamle|Nehase|Pagume',
+      republican:
+        'Vendémiaire|Brumaire|Frimaire|Nivôse|Pluviôse|Ventôse|Germinal|Floréal|Prairial|Messidor|Thermidor|Fructidor|Sansculottides',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      saka: 'Chaitra|Vaishakha|Jyeshtha|Ashadha|Shravana|Bhadra|Ashvin|Kartika|Agrahayana|Pausha|Magha|Phalguna',
+      egyptian: 'Thoth|Phaophi|Athyr|Choiak|Tybi|Mechir|Phamenoth|Pharmuthi|Pachon|Payni|Epiphi|Mesore|Epagomenal days',
+      // checks-disable-next-line ui-voice: names, lists, and placeholder messages, kept whole so the key types read them
+      armenian: 'Navasard|Hori|Sahmi|Tre|Kaloch|Arats|Mehekan|Areg|Ahekan|Mareri|Margats|Hrotits|Aveleats',
+    },
+    festivalYear: 'Gregorian year',
+    festivals: 'Festivals and holy days in {year}',
+    festivalHeader: { name: 'Day', date: 'Gregorian date', calendar: 'Calendar' },
+    festivalCalendar: {
+      christian: 'Christian',
+      hebrew: 'Hebrew',
+      islamic: 'Islamic (tabular)',
+      chinese: 'Chinese',
+      persian: 'Solar Hijri',
+    },
+    feast: {
+      westernEaster: 'Easter (Western)',
+      orthodoxEaster: 'Easter (Orthodox)',
+      ashWednesday: 'Ash Wednesday',
+      palmSunday: 'Palm Sunday',
+      goodFriday: 'Good Friday',
+      ascension: 'Ascension',
+      pentecost: 'Pentecost',
+      roshHashanah: 'Rosh Hashanah',
+      yomKippur: 'Yom Kippur',
+      sukkot: 'Sukkot',
+      sheminiAtzeret: 'Shemini Atzeret',
+      hanukkah: 'Hanukkah (first day)',
+      purim: 'Purim',
+      passover: 'Passover (first day)',
+      shavuot: 'Shavuot',
+      tishaBav: 'Tisha B’Av',
+      islamicNewYear: 'Islamic New Year',
+      ashura: 'Ashura',
+      mawlid: 'Mawlid',
+      israMiraj: 'Isra and Miraj',
+      ramadan: 'First day of Ramadan',
+      eidFitr: 'Eid al-Fitr',
+      eidAdha: 'Eid al-Adha',
+      springFestival: 'Spring Festival',
+      lantern: 'Lantern Festival',
+      qingming: 'Qingming',
+      dragonBoat: 'Dragon Boat Festival',
+      qixi: 'Qixi',
+      midAutumn: 'Mid-Autumn Festival',
+      doubleNinth: 'Double Ninth Festival',
+      nowruz: 'Nowruz',
+    },
+    islamicNote:
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      'Islamic dates here are tabular. Where the month begins with sighting of the moon, or by the Umm al-Qura calendar, the day can differ by one or two.',
+    erasLabel: 'Eras',
+    erasHint:
+      'One era a line: its first day as a Gregorian date (YYYY-MM-DD), then its name. The year it starts is year 1.',
+    erasExample: '# Replace these lines with your own eras.\n1900-01-01, First era\n1925-06-15, Second era',
+    erasNote:
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      'The Japanese eras from Meiji on are built in. Type earlier Japanese, Chinese, or Korean reign eras here; the table is yours to fill.',
+    source:
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      'Hebrew, Islamic, Coptic, Ethiopian, Saka, Maya, and Roman dates are arithmetic. Equinoxes, solar terms, and new moons use the published series in Meeus, Astronomical Algorithms.',
+    steps: {
+      jdn: 'Julian Day Number {jdn}: the days since noon on 1 January 4713 BCE (Julian). Every calendar converts through it.',
+      gregorian:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Gregorian: a = ⌊(14 − month)/12⌋, y = year + 4800 − a, m = month + 12a − 3, then JDN = day + ⌊(153m + 2)/5⌋ + 365y + ⌊y/4⌋ − ⌊y/100⌋ + ⌊y/400⌋ − 32045.',
+      weekday: 'Weekday: (JDN + 1) mod 7 = {value}, where 0 is Sunday.',
+      hebrew:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Hebrew {year}: {months} months since the epoch. The molad of Tishrei is on {weekday}, {hours} h {parts} parts after 6 p.m. the evening before.',
+      hebrewRules: 'Postponements: {rules}. 1 Tishrei is JDN {jdn}, and the year has {length} days ({kind}).',
+      hebrewNone: 'No postponement applies. 1 Tishrei is JDN {jdn}, and the year has {length} days ({kind}).',
+      islamic:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Islamic: JDN = day + ⌈29.5(month − 1)⌉ + 354(year − 1) + ⌊(3 + 11·year)/30⌋ + epoch − 1, with epoch 1948440 (civil) or 1948439 (astronomical).',
+      persian:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Solar Hijri {year}: the March equinox of {gregorian} is at {time} Tehran time, {side} noon, so the year begins on {start}. The 33-year rule says the year {rule}; the sky says it {sky}.',
+      chinese:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Chinese: the eleventh month holds the winter solstice. From that month to the next eleventh there are {count} new moons, so the year {leap}. New moons and solar terms are reckoned at UTC+8.',
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      maya: 'Maya: days since the creation date (JDN 584283, the GMT correlation) = {days}. Divide by 144000, 7200, 360, and 20 for the Long Count.',
+      roman:
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Roman: count back, counting both ends, to the next Kalends (the 1st), Nones (the 5th, or the 7th in March, May, July, and October), or Ides (the 13th, or the 15th in those months).',
+    },
+    rules: {
+      zaken: 'molad zaken (at or after noon)',
+      gatarad: 'GaTaRaD',
+      betutakpat: 'BeTUTaKPaT',
+      adu: 'lo ADU Rosh (not Sunday, Wednesday, or Friday)',
+    },
+    kinds: { deficient: 'deficient', regular: 'regular', complete: 'complete' },
+    before: 'before',
+    after: 'after',
+    leapYes: 'is leap',
+    leapNo: 'is common',
+    hasLeap: 'has a leap month: the first month without a principal solar term',
+    noLeap: 'has no leap month',
+    errors: {
+      whole: 'Use whole numbers for the year, month, and day.',
+      month: 'That calendar has no such month.',
+      day: 'That month does not have that day.',
+      huge: 'Use a year within a million years.',
+      hebrewYear: 'Hebrew years start at 1 (3761 BCE).',
+      islamicYear: 'Islamic years start at 1 (622 CE).',
+      persianYear: 'Solar Hijri dates here run from 379 to 2379 SH (1000 to 3000 CE).',
+      chineseYear: 'Chinese dates here run from 1645 to 2400 CE.',
+      positiveYear: 'Use a year of 1 or later in that calendar.',
+      beforeEpoch: 'That day is before the calendar began.',
+      maya: 'Type five whole numbers such as 13.0.0.0.0. The second from the right goes up to 17, the others up to 19.',
+      eraLine: 'Write each era as a date (YYYY-MM-DD), a comma, and its name.',
+      roman: 'Roman numerals here go from 1 to 3999.',
+      number: 'Type a number.',
+      unknown: 'That date could not be converted.',
+    },
+  },
 } as const;

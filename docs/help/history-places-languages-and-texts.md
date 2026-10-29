@@ -4,10 +4,11 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 
 ## Tools
 
-- **Note frames**: pick a note structure, such as a case brief, an essay planner, or field notes, by subject or by searching, look at it, and insert it as headings, prompts, lists, and a table.
-- **Coordinates and navigation**: convert between latitude and longitude, UTM, and MGRS, measure distances and bearings on the ellipsoid, and work land and marine navigation problems.
-- **Timeline builder**: type events and periods, or use a table on the page, to draw a timeline with tracks, era bands, uncertain and BCE dates, and a linear, deep-time, or broken axis, then insert it as an editable figure.
-- **Identification keys**: type a character table, or start from a template, to get a numbered dichotomous key and its tree, run the key couplet by couplet, filter with a multi-access key, and keep a catalog of what you identified.
+- **Note frames**: insert a note structure, such as a case brief or field notes. Find it by subject or by searching.
+- **Coordinates and navigation**: convert between latitude and longitude, UTM, and MGRS. Measure distance and bearing, and work navigation problems.
+- **Timeline builder**: draw events and periods on tracks, with BCE dates, uncertain dates, and deep time. Insert it as a figure you can edit.
+- **Calendars and eras**: convert a date between thirteen calendars, such as Hebrew, Islamic, Chinese, and Maya. List the festivals of a year.
+- **Identification keys**: build a numbered key from a table of characters. Run it step by step, or filter with a multi-access key.
 
 ## Timeline builder
 
@@ -18,6 +19,18 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - Zoom and pan with the buttons, or click the picture and press + or - to zoom and the left or right arrow to move.
 - Compare two rows to see the years between their starts and where they overlap.
 - Insert editable figure puts the timeline on the page with its rows, so Open in tool brings it back for editing.
+
+## Calendars and eras
+
+- Pick the calendar you are typing in, then type the year, the month as a number, and the day. Every other calendar, the weekday, the ISO week, and the Julian Day Number follow.
+- Gregorian and Julian years are astronomical: type 0 for 1 BCE and -43 for 44 BCE.
+- Hebrew months are numbered from Tishrei, so Nisan is 7 in a common year and 8 in a leap year. The steps show the molad of Tishrei and any postponement.
+- Islamic dates are tabular, with the civil or the astronomical epoch. Where a month begins with sighting of the moon, or by the Umm al-Qura calendar, the day can differ by one or two.
+- The Solar Hijri year begins on the day of the March equinox if it comes before noon in Tehran, and the next day if not. The steps give the equinox time and compare the 33-year rule.
+- Chinese months begin on the day of the new moon at UTC+8. A year of 13 months repeats the first month that holds no principal solar term. Chinese dates run from 1645 to 2400.
+- The Roman row names the Julian date by Kalends, Nones, and Ides, with the year from the founding of Rome.
+- Festivals in a year lists Easter (Western and Orthodox) and the movable feasts, the Hebrew and Islamic holy days, the Chinese festivals, and Nowruz.
+- Japanese eras from Meiji on are built in. Type other reign eras in the era table. Give each era a line with its first day, then its name.
 
 ## Identification keys
 
