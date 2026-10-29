@@ -3,11 +3,11 @@
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
-/** Applies a cleanup again until it changes nothing, so removing one tag can't leave pieces that join into another. */
-function untilSteady(text: string, clean: (text: string) => string): string {
+/** Replaces every match, and again until none is left, so removing one tag can't leave pieces that join into another. */
+function replaceUntilNone(text: string, pattern: RegExp, replacement: string): string {
   let current = text;
   for (let pass = 0; pass < 20; pass += 1) {
-    const next = clean(current);
+    const next = current.replace(pattern, replacement);
     if (next === current) break;
     current = next;
   }
@@ -16,13 +16,10 @@ function untilSteady(text: string, clean: (text: string) => string): string {
 
 /** Text from HTML: line breaks and paragraphs become new lines, tags go, and the common entities are decoded. */
 export function htmlToText(html: string): string {
-  return untilSteady(html, (text) =>
-    text
-      .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
-      .replace(/<br\s*\/?>|<\/(p|div|li|tr|h[1-6])>/gi, '\n')
-      .replace(/<li[^>]*>/gi, '- ')
-      .replace(/<[^>]+>/g, ''),
-  ).replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, name: string) => {
+  const noScripts = replaceUntilNone(html, /<(script|style)[\s\S]*?<\/\1>/gi, '');
+  const broken = replaceUntilNone(noScripts, /<br\s*\/?>|<\/(p|div|li|tr|h[1-6])>/gi, '\n');
+  const bulleted = replaceUntilNone(broken, /<li[^>]*>/gi, '- ');
+  return replaceUntilNone(bulleted, /<[^>]+>/g, '').replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, name: string) => {
     if (name.startsWith('#x')) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
     if (name.startsWith('#')) return String.fromCodePoint(Number(name.slice(1)));
     return ENTITIES[name.toLowerCase()] ?? whole;

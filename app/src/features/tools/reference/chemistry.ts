@@ -200,7 +200,7 @@ function nullSpace(rows: readonly (readonly number[])[], columns: number): Fract
   });
 }
 
-const ARROW = /\s*(?:\u003c?[-=]+>|→|⟶|⇌|⇒|=)\s*/;
+const ARROW = /\s*(?:[-=]+>|→|⟶|⇌|⇒|=)\s*/;
 
 /** Splits "2H2 + O2" into species, ignoring any coefficient typed in front of one. */
 function species(side: string): string[] {
@@ -212,7 +212,8 @@ function species(side: string): string[] {
 
 /** Balances an equation such as "H2 + O2 -> H2O": the smallest whole-number coefficients that keep every atom. */
 export function balanceEquation(equation: string): Balanced {
-  const text = normalize(equation);
+  // A double arrow's left head is dropped, so the one pattern reads both kinds.
+  const text = normalize(equation).replace(/<(?=[-=])/g, '');
   if (text === '') return { ok: false, reason: 'empty', detail: '' };
   const sides = text.split(ARROW);
   if (sides.length < 2) return { ok: false, reason: 'no-arrow', detail: '' };
