@@ -6,7 +6,7 @@ import { defineCommand } from '../../commands/registry';
 import { commands, settingsSections, titleBarItems } from '../../registries';
 import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
-import { SyncChip } from './Chip';
+import { SyncChip, useSyncChipVisible } from './Chip';
 import { codeOf, errorText, summaryLines } from './model';
 import { passphraseAsked, refreshSync, setView, syncClient, syncStore } from './runtime';
 
@@ -124,4 +124,5 @@ titleBarItems.register({
   priority: 60,
   compact: 'appBar',
   Component: SyncChip,
+  useVisible: useSyncChipVisible,
 });
