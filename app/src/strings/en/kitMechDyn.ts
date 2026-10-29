@@ -26,7 +26,7 @@ export const kitMechDyn = {
     value: 'Value',
     assumptions: 'Assumptions and checks',
     steps: 'Worked steps',
-    stepsInSi: 'The worked steps use SI units.',
+    stepsInSi: 'The worked steps work in SI units, where the formulas hold. Each quantity also shows its US value.',
     animation: 'Motion',
     frame: 'Frame',
     frameAngle: 'Input angle {value}°',

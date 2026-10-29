@@ -5,6 +5,7 @@ import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
 import { SCREEN } from '../kit/picture';
 import type { Outcome } from '../kit/spec';
+import { stepMath } from '../kit/stepUnits';
 import type { System } from '../kit/units';
 import {
   cellWords,
@@ -30,6 +31,7 @@ function Math({ latex }: { latex: string }) {
 
 export function Results({ tool, outcome, system, say }: { tool: string; outcome: Outcome; system: System; say: Say }) {
   const c: InsertContext = { tool, outcome, system, say };
+  const results = outcome.rows.map((row) => row.value);
   const pictures = useMemo(
     () => (outcome.plots ?? []).map((plot) => ({ title: plotTitle(say, plot), svg: plotPicture(say, plot, SCREEN) })),
     [outcome, say],
@@ -114,7 +116,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
             {outcome.steps.map((one, i) => (
               <li key={i}>
                 <span>{stepWords(c, one)}</span>
-                {one.math && <Math latex={one.math} />}
+                {one.math && <Math latex={stepMath(one.math, system, results)} />}
               </li>
             ))}
           </ol>

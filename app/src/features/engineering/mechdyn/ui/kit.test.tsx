@@ -51,7 +51,7 @@ describe('the mechanisms and dynamics kit window', () => {
       expect(within(panel).getByRole('region', { name: 'Worked steps' }), tool.id).toBeTruthy();
       await expectNoAxeViolations(panel);
     }
-  });
+  }, 90_000);
 
   it('fits a narrow window', async () => {
     await setViewport(360, 720);

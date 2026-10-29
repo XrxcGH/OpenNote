@@ -5,6 +5,7 @@ import { INSERT_EVENT, type InsertDetail } from '../../../tools';
 import { cellLatex, cellText, type Cell } from '../kit/format';
 import { escapeXml, plotSvg, type Palette, type PlotWords } from '../kit/picture';
 import type { Outcome, ResultRow } from '../kit/spec';
+import { stepMath } from '../kit/stepUnits';
 import type { System } from '../kit/units';
 import type { Plot } from '../types';
 
@@ -69,8 +70,9 @@ export const stepWords = (c: Pick<InsertContext, 'say'>, step: Outcome['steps'][
 
 /** The steps as an ordered list, in the HTML the page reads: each step's words, then its equation as math. */
 export function stepsHtml(c: InsertContext): string {
+  const results = c.outcome.rows.map((row) => row.value);
   const items = c.outcome.steps.map((one) => {
-    const math = one.math ? ` <span data-math="${escapeXml(one.math)}"></span>` : '';
+    const math = one.math ? ` <span data-math="${escapeXml(stepMath(one.math, c.system, results))}"></span>` : '';
     return `<li><p>${escapeXml(stepWords(c, one))}${math}</p></li>`;
   });
   const title = escapeXml(c.say(`kitMechDyn.${c.tool}.title`));
