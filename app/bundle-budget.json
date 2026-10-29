@@ -79,7 +79,6 @@
     "features/updates": 40,
     "features/tools": 260,
     "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 120,
-    "features/engineering/index.ts": 44,
     "features/engineering/mechdyn": 120
   },
   "lazyDefaultKb": 40
