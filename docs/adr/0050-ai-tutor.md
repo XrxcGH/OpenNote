@@ -9,6 +9,8 @@ DeriveNotes has an AI tutor. The owner asked for one in OpenNote (the dn-tutor l
 
 ## Decision
 
+### The tutor and its ladder
+
 - **Opt-in.** The flag `study.tutor` is on in development, nightly, and Beta builds. On each device the tutor stays off until the person turns it on: a tutor command asks once, and Settings, then Editing, has the switch. There is no telemetry.
 - **The hint ladder.** Each problem has four rungs, one per press of Give me a hint:
   1. where to look,
@@ -20,27 +22,35 @@ DeriveNotes has an AI tutor. The owner asked for one in OpenNote (the dn-tutor l
 
 - **Three ways in.** Explain this step, on each flagged line of the Check my work card and in the palette. Give me a hint, on a selected problem (lassoed handwriting, selected typed lines, or, with nothing selected, the page's math lines), in the palette and the text menu. Open the tutor, in the palette. All three use the Tutor panel docked at the right of the page.
 - **Context is what the person picks.** The panel shows "What the tutor sees": the lines taken from the page, which the person can edit or clear. Nothing else of the page or the notebook is read. The panel keeps the conversation while it is open, also across pages. Closing it forgets the conversation and every consent. At most 6,000 characters are read.
+
+### Who writes the reply
+
 - **Who writes the reply.**
   - The rules tutor always can, with no model (`features/tutor/ladder.ts`). It plans from Check my work's verdicts (a step that needs a look, with its reason code and corrected line), the worked steps of a linear equation in one letter, and the calculus engine's derivation steps (`calculusAnswer`, each step with its rule). Anything else, including questions in words, gets guided questions.
   - With a language model downloaded (`crates/llm-host`, through `intel/localModels`), the model writes the wording on this device. Its prompt carries the built-in hint as a base.
   - With the person's own key, a cloud service may write it, as below.
   - The full solution of math always comes from the rules, which work it out exactly. A model writes one only where the rules cannot.
-- **The person's own key.** The tutor is its own cloud feature (`tutor`), with its own key in Windows Credential Manager, its own choice in Settings, and its own line in Privacy. Before the first request of a session, the panel shows the exact text to be sent (the instructions and the prompt) and the host, with Send for this session and Keep it on this device. A yes covers the rest of the session for that same context; new or edited context asks again, and a no keeps that context on the device for the session. The shell's `Cloud::tutor` sends only that text, capped, to the one pinned host.
+- **The person's own key.** The tutor is its own cloud feature (`tutor`), with its own key in Windows Credential Manager, its own choice in Settings, and its own line in Privacy. Before the first request of a session, the panel shows the exact text to be sent (the instructions and the prompt) and the host, with Send for this session and Keep it on this device. A yes covers the rest of the session for that same context, and the card says so. Each later request sends the same context with the next rung's task, the last four turns on screen, and anything the person types in Ask the tutor. Those are not shown again before they go. New or edited context asks again, and a no keeps that context on the device for the session. The shell's `Cloud::tutor` sends only that text, capped, to the one pinned host.
 - **Work offline.** While it is on, the interface never asks to send and never calls the cloud. The shell refuses `cloud.tutor` with `offline` too, as it does in safe mode. The panel says the tutor stays on this device, and the on-device model or the rules answer.
+
+### The answer-leak guard
+
 - **The answer-leak guard** (`features/tutor/guard.ts`). Every hint before the full solution is checked against what the person is working toward:
   - the final answer, from the linear-equation steps or the calculus engine;
   - before the last rung, the next line too: Check my work's corrected line, or the next worked step.
 
   Both sides are compared in one written form, with spacing, minus signs, and LaTeX wrapping evened out. The guard also catches the value said in words, such as "x is 2" or "the answer is 2". Text the person already wrote is not secret.
 
-- **When a hint leaks.** The on-device model is asked once more with a stricter instruction, then the built-in hint is shown. A cloud reply that leaks is not retried, because the person agreed to one exact text: the built-in hint shows instead. The rules' own hints pass the same guard. A last rung whose next step is the answer says so and leaves the step to the person.
+- **Written another way.** The guard compares the secret written several ways: x^(2) and x² as x^2, 2·x as 2x, terms in any order, sides swapped, "+ C" left off, and a value such as 7/2 written as 3.5 or said in words.
+- **No known answer.** For subjects whose answer the rules cannot work out (chemistry, physics, word problems), the guard is a heuristic. Before the last rung, it refuses a reply that states a result with a number the student's text does not hold, such as "the answer is 36 g" or "F = 6 N".
+- **When a hint leaks.** The on-device model is asked once more with a stricter instruction, then the built-in hint is shown. A cloud reply that leaks is not retried with a stricter text the person never saw: the built-in hint shows instead. The rules' own hints pass the same guard. A last rung whose next step is the answer says so and leaves the step to the person.
 - **Tone.** Short, kind, plain words for students, no jargon. Replies longer than 700 characters, or empty, are refused.
 
 ## Consequences
 
 - The tutor works fully offline with no download. Its built-in hints cover slips that Check my work names, linear equations, and the calculus the engine can work. Other math and other subjects get guided questions, and the full solution there needs a model.
 - A model can still word a hint badly. The guard stops the answer and the next line, not every unhelpful hint.
-- A cloud request sends the context and the conversation already on screen, never anything else. The consent card shows the first request in full; later requests in the same session send the same context with the next hint request.
+- A cloud request sends the context and the conversation already on screen, never anything else. The consent card shows the first request in full; later requests in the same session send the same context with the next hint request, the last turns, and any typed question, as the card says.
 
 ## Not done
 

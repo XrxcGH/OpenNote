@@ -35,6 +35,6 @@ The panel works with a keyboard, a pen, touch, and a screen reader. Escape close
 
 - With no download, the tutor uses its built-in hints. They cover the slips Check my work finds, equations in one letter, and derivatives, integrals, limits, and sums. Other subjects get guiding questions.
 - With a language model downloaded (Settings, then On-device intelligence), the model writes the hints on this device.
-- With your own key for a cloud service (Settings, then Editing, under Tutor), the panel first shows the exact text it would send and where. Press Send for this session to agree, or Keep it on this device. New text asks again.
+- With your own key for a cloud service (Settings, then Editing, under Tutor), the panel first shows the text it would send and where. Press Send for this session to agree, or Keep it on this device. A yes also covers your next hints on the same text and what you type in Ask the tutor, until you close the panel. New text asks again.
 
 While Work offline is on, nothing is sent, and the tutor stays on this device. A hint that would give away the answer is replaced with a built-in hint.
