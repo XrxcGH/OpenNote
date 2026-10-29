@@ -65,9 +65,10 @@ An edit always beats a delete. When a page folder still has a live `page.json` a
 - **Crash safety and resumable transfers.** Chunks are written first, then the head, then the local state. Folder writes go to a temporary name and are renamed. WebDAV writes go to `tmp/` and are moved. A transfer that stops is repeated from the first missing chunk, and a half-written blob fails its tag and is ignored.
 - **Local changes are never overwritten.** Before a downloaded file replaces a local one, the engine checks that the local file still has the bytes it planned against. A file changed in the meantime waits for the next sync.
 - **Tamper and rollback detection.** Every blob is authenticated. Each device remembers the newest generation it has seen from every device. A head older than that is reported as a rollback. A changed blob is reported and skipped. Sync then pauses with a calm message instead of guessing.
+- **Vault checks.** Every unlock, including a device's background unlock and a pairing, checks the header's MAC, in constant time, so a changed slot or cost shows. A passphrase is never checked at less than the 64 MiB, three-pass cost, whatever a header asks.
 - **Bounded memory.** Files stream through one 1 MiB chunk at a time. The manifest is about 150 bytes a file.
 - **Preview.** Every sync first builds a plan of uploads, downloads, deletions, and conflicts. "Preview changes" shows it without changing anything.
-- **Garbage collection.** A chunk is removed only when no head of any device and no tombstone refers to it. Old heads of a device are removed once a newer one of the same device is in place.
+- **Garbage collection.** A chunk is removed only when no head of any device and no tombstone refers to it. Old heads of a device are removed once a newer one of the same device is in place. A marked chunk waits a week and two newer heads of every device that isn't removed, and a run stops if a head appears while it works. A round that found a chunk already stored checks it again after writing its head and sends it if it went. Turning sync off removes the device's slot, so it no longer holds collection up, and the device list shows when each device last synced so a lost one can be removed.
 - **Work offline** pauses sync. Nothing leaves the device unless the person set sync up. There is no telemetry.
 
 ## Options considered
