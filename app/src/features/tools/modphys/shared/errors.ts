@@ -47,7 +47,12 @@ export type Problem =
   | 'badRotation'
   | 'fullConversion'
   | 'pureComponent'
-  | 'sunDown';
+  | 'sunDown'
+  | 'badBands'
+  | 'noCarriers'
+  | 'noJunction'
+  | 'pastBuiltIn'
+  | 'noPower';
 
 export class PhysicsError extends Error {
   constructor(

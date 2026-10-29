@@ -7,6 +7,7 @@ import { plasma } from './kitModPhys/plasma';
 import { stars } from './kitModPhys/stars';
 import { cosmos } from './kitModPhys/cosmos';
 import { sky } from './kitModPhys/sky';
+import { solids } from './kitModPhys/solids';
 
 export const kitModPhys = {
   window: {
@@ -85,6 +86,11 @@ export const kitModPhys = {
     fullConversion: 'At p = 1 the chain is infinitely long. Use a conversion below 1.',
     pureComponent: 'The volume fraction must be between 0 and 1, not at either end.',
     sunDown: 'The Sun is below the horizon at that time, so there is no shadow.',
+    badBands: 'Ask for 1 to 8 bands.',
+    noCarriers: 'There must be some electrons or holes.',
+    noJunction: 'The doping is too low for a junction: N_A N_D must be larger than n_i².',
+    pastBuiltIn: 'The forward bias must stay below the built-in potential for the depletion approximation.',
+    noPower: 'The cell gives no current at zero volts with these values.',
   },
   q: {
     density: 'The density',
@@ -183,6 +189,32 @@ export const kitModPhys = {
     height: 'The height',
     windowHeight: 'The window height',
     azimuth: 'The azimuth',
+    massRatio: 'The effective mass ratio',
+    barrierStrength: 'The barrier strength P',
+    bands: 'The number of bands',
+    latticeConstant: 'The lattice constant',
+    hopping: 'The hopping energy',
+    spring: 'The spring constant',
+    donors: 'The donor density',
+    acceptors: 'The acceptor density',
+    ionization: 'The ionization energy',
+    gapEnergy: 'The band gap',
+    electrons: 'The electron density',
+    holes: 'The hole density',
+    mobility: 'The mobility',
+    gradient: 'The density gradient',
+    intrinsic: 'The intrinsic density',
+    permittivity: 'The relative permittivity',
+    bias: 'The bias voltage',
+    area: 'The area',
+    saturation: 'The saturation current',
+    ideality: 'The ideality factor',
+    oxide: 'The oxide thickness',
+    workFunction: 'The work-function difference',
+    oxideCharge: 'The oxide charge',
+    photocurrent: 'The photocurrent',
+    resistance: 'The resistance',
+    irradiance: 'The irradiance',
   },
   tools: {
     plasma: {
@@ -234,6 +266,14 @@ export const kitModPhys = {
         'julian date sidereal time equation of time sun moon position right ascension declination altitude azimuth ' +
         'ecliptic galactic precession sunrise sunset twilight day length sun path shadow overhang airmass',
     },
+    solids: {
+      title: 'Solids and semiconductor devices',
+      open: 'Open the solids and semiconductors tool',
+      keywords:
+        'fermi energy free electron density of states kronig penney band gap tight binding phonon dispersion ' +
+        'semiconductor intrinsic doping fermi level mobility hall pn junction depletion diode mos capacitor ' +
+        'threshold solar cell fill factor',
+    },
   },
   plasma,
   stars,
@@ -242,4 +282,5 @@ export const kitModPhys = {
   atoms,
   molecules,
   sky,
+  solids,
 } as const;
