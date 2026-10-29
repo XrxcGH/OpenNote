@@ -684,11 +684,20 @@ fn notability_recordings_the_sniffer_cannot_place_keep_their_own_type() {
         ("Rec/Recordings/a.mp3", "audio/mpeg"),
         ("Rec/Recordings/a.m4a", "audio/mp4"),
         ("Rec/Recordings/a", "audio/mp4"),
+        // A package with no top folder named after the note keeps its folders at the root.
+        ("Recordings/a", "audio/mp4"),
     ];
     for (name, mime) in cases {
         let (sink, _) = import_bytes("Rec.note", &zip_bytes(&[(name, body)]));
         assert_eq!(asset_mimes(pages(&sink)[0]), [mime], "{name}");
     }
+}
+
+#[test]
+fn a_notability_picture_without_an_extension_at_the_package_root_comes_over() {
+    let png = png_bytes();
+    let (sink, _) = import_bytes("Root.note", &zip_bytes(&[("Images/b", &png)]));
+    assert_eq!(asset_mimes(pages(&sink)[0]), ["image/png"]);
 }
 
 #[test]

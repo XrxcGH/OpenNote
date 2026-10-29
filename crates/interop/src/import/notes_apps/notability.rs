@@ -149,10 +149,15 @@ fn media_kind(member: &Member) -> Option<Media> {
         "caf" => Some(Media::Audio("audio/x-caf", "caf")),
         "wav" => Some(Media::Audio("audio/wav", "wav")),
         "mp3" => Some(Media::Audio("audio/mpeg", "mp3")),
-        "" if folder.contains("/recordings/") => Some(Media::Audio("audio/mp4", "m4a")),
-        "" if folder.contains("/images/") => Some(Media::Other),
+        "" if in_folder(&folder, "recordings") => Some(Media::Audio("audio/mp4", "m4a")),
+        "" if in_folder(&folder, "images") => Some(Media::Other),
         _ => None,
     }
+}
+
+/// Whether a lowercase entry name sits in a folder named `folder`, at the package root or deeper.
+fn in_folder(name: &str, folder: &str) -> bool {
+    name.strip_prefix(folder).is_some_and(|rest| rest.starts_with('/')) || name.contains(&format!("/{folder}/"))
 }
 
 fn read_session(
