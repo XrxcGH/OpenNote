@@ -147,3 +147,55 @@ pub fn samsung_note() -> Vec<u8> {
         ("end_tag.bin", b"\x00"),
     ])
 }
+
+/// Bytes that do not compress, so that a fixture's large but harmless parts stay within the expansion a package
+/// may have. A fixed linear congruential sequence, the same on every run.
+pub fn noise(len: usize) -> Vec<u8> {
+    let mut state: u32 = 0x1234_5678;
+    (0..len)
+        .map(|_| {
+            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            state.to_le_bytes()[3]
+        })
+        .collect()
+}
+
+fn note_with_curves(holders: Vec<Value>, padding: usize) -> Vec<u8> {
+    let mut objects = vec![Value::Str("$null".into())];
+    objects.extend(holders);
+    objects.push(Value::Data(noise(padding)));
+    let session = plist(&Value::Dict(vec![
+        ("$archiver".into(), Value::Str("NSKeyedArchiver".into())),
+        ("$version".into(), Value::Int(100_000)),
+        ("$top".into(), Value::Dict(vec![("root".into(), Value::Uid(1))])),
+        ("$objects".into(), Value::Array(objects)),
+    ]));
+    zip_bytes(&[("Flood/Session.plist", &session)])
+}
+
+/// A hostile note whose one curve list holds `curves` curves of no points, with no point data at all.
+pub fn notability_zero_count_flood(curves: usize) -> Vec<u8> {
+    let holder = Value::Dict(vec![
+        ("curvespoints".into(), Value::Data(Vec::new())),
+        ("curvesnumpoints".into(), Value::Data(vec![0; curves * 4])),
+    ]);
+    note_with_curves(vec![holder], curves / 50)
+}
+
+/// A hostile note with `holders` curve lists that all point at the same point data: `points` points at (1, 2),
+/// in curves of `per_curve` points each.
+pub fn notability_shared_blob(holders: usize, points: usize, per_curve: usize) -> Vec<u8> {
+    let count = i32::try_from(per_curve).unwrap_or(i32::MAX);
+    let data = u64::try_from(holders).unwrap_or(u64::MAX) + 1;
+    let mut objects: Vec<Value> = (0..holders)
+        .map(|_| {
+            Value::Dict(vec![
+                ("curvespoints".into(), Value::Uid(data)),
+                ("curvesnumpoints".into(), Value::Uid(data + 1)),
+            ])
+        })
+        .collect();
+    objects.push(Value::Data(le_f32(&[1.0, 2.0]).repeat(points)));
+    objects.push(Value::Data(le_i32(&[count]).repeat(points / per_curve)));
+    note_with_curves(objects, points / 20)
+}

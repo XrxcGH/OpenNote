@@ -457,3 +457,50 @@ proptest! {
         }
     }
 }
+
+// Hostile curve lists and page indexes, and what they cost.
+
+#[test]
+fn a_flood_of_empty_curves_is_counted_as_left_out_without_keeping_one() {
+    let curves = 300_000;
+    let (sink, report) = import_bytes("Flood.note", &fixtures::notability_zero_count_flood(curves));
+    assert!(pages(&sink)[0].ink.is_empty());
+    let skipped = entries(&report, Outcome::Skipped);
+    assert!(skipped.contains(&"300000 strokes".to_owned()), "{skipped:?}");
+}
+
+#[test]
+fn curve_lists_that_share_their_points_stop_at_the_page_limits() {
+    // 64 lists each name the same 1,000,000 points, in curves of 1,000. The first two lists fill the page's
+    // 2,000,000 points; lists 3 to 16 are read and their 1,000 curves each left out; lists 17 to 64 are not read.
+    let note = fixtures::notability_shared_blob(64, 1_000_000, 1_000);
+    let (sink, report) = import_bytes("Shared.note", &note);
+    assert_eq!(pages(&sink)[0].ink.len(), 2_000);
+    let skipped = entries(&report, Outcome::Skipped);
+    assert!(skipped.contains(&"14000 strokes".to_owned()), "{skipped:?}");
+    assert!(skipped.contains(&"48 extra curve lists".to_owned()), "{skipped:?}");
+    assert!(entries(&report, Outcome::CameOver).contains(&"2000 pen strokes".to_owned()));
+}
+
+#[test]
+fn reading_curves_stops_when_cancel_is_pressed() {
+    let (bytes, _) = {
+        let note = fixtures::notability_zero_count_flood(10);
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("a.note");
+        std::fs::write(&file, &note).unwrap();
+        let mut package = Package::open(&file).unwrap();
+        let member = package.members[0].clone();
+        (package.read(&member).unwrap().unwrap(), dir)
+    };
+    let plist = Plist::parse(&bytes).unwrap();
+    let archive = Keyed::new(&plist).unwrap();
+    let holder = archive.dicts_with("curvespoints")[0];
+    let mut read = notability::CurveRead::default();
+    let canceled = || Err(crate::error::InteropError::Canceled);
+    assert!(matches!(
+        notability::read_curves(&archive, holder, &mut read, &canceled),
+        Err(crate::error::InteropError::Canceled)
+    ));
+    assert_eq!(read.dropped, 0);
+}

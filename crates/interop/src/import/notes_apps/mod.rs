@@ -165,6 +165,8 @@ pub(crate) struct PageParts {
     pub title: String,
     pub text: Vec<String>,
     pub curves: Vec<Curve>,
+    /// Curves left out while reading, before conversion: those with no point and those past the page's limits.
+    pub dropped: usize,
     pub attachments: Vec<Attachment>,
 }
 
@@ -225,9 +227,10 @@ pub(crate) fn build_page(
         "It is attached to the page as a file you can play. Its timing with the writing did not come over.",
     );
     report.came_over_count(other, "attached file", "attached files");
-    if !parts.curves.is_empty() {
+    if !parts.curves.is_empty() || parts.dropped > 0 {
         let layer = builder.ink_layer();
-        let (strokes, stats) = ink::strokes(&parts.curves, layer, now, env);
+        let (strokes, mut stats) = ink::strokes(&parts.curves, layer, now, env);
+        stats.dropped += parts.dropped;
         for stroke in strokes {
             builder.add_stroke(stroke);
         }

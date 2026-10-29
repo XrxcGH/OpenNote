@@ -11,15 +11,17 @@
 //!
 //! Numbers are 32-bit and little-endian: floats, except the counts, which are integers.
 //!
-//! Erasing is already applied in what the app saves: an erased curve is gone, and a partly erased one is saved
-//! as its pieces. Typed text is archived as `NSAttributedString` objects. Pictures sit in an `Images` folder,
-//! recordings in `Recordings`, and imported PDF files beside them.
+//! Erasing is expected to be applied already in what the app saves, so that an erased curve is gone and a partly
+//! erased one is saved as its pieces. No real note has confirmed it yet. Typed text is archived as
+//! `NSAttributedString` objects. Pictures sit in an `Images` folder, recordings in `Recordings`, and imported PDF
+//! files beside them.
 
+use std::collections::HashSet;
 use std::path::Path;
 
 use super::bplist::Plist;
 use super::container::{Member, Package};
-use super::ink::Curve;
+use super::ink::{Curve, MAX_PAGE_POINTS, MAX_STROKES};
 use super::keyed::Keyed;
 use super::media::{self, Media};
 use super::{build_page, keep_page, note_refused, Attachment, NotesApp, PageParts};
@@ -29,6 +31,10 @@ use crate::report::PageReport;
 use crate::sink::ImportEnv;
 
 const APP: NotesApp = NotesApp::Notability;
+/// The most curve lists read from one note. A real note has one.
+const MAX_HOLDERS: usize = 16;
+/// How many items a loop handles between checks of the time budget and Cancel.
+const CHECK_EVERY: usize = 4096;
 
 pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Converted> {
     let mut package = Package::open(path)?;
@@ -50,7 +56,7 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
         .min_by_key(|m| m.name.len())
         .cloned();
     match session {
-        Some(member) => read_session(&mut package, &member, &mut parts, &mut page)?,
+        Some(member) => read_session(&mut package, &member, env, &mut parts, &mut page)?,
         None => page.skipped(
             "handwriting and typed text",
             format!("The note has no Session.plist, which holds them. {}", APP.pdf_route()),
@@ -119,7 +125,13 @@ fn media_kind(member: &Member) -> Option<Media> {
     }
 }
 
-fn read_session(package: &mut Package, member: &Member, parts: &mut PageParts, page: &mut PageReport) -> Result<()> {
+fn read_session(
+    package: &mut Package,
+    member: &Member,
+    env: &ImportEnv<'_>,
+    parts: &mut PageParts,
+    page: &mut PageReport,
+) -> Result<()> {
     let bytes = match package.read(member)? {
         Ok(bytes) => bytes,
         Err(why) => {
@@ -144,31 +156,50 @@ fn read_session(package: &mut Package, member: &Member, parts: &mut PageParts, p
         );
         return Ok(());
     };
-    let mut bad = 0usize;
-    for holder in archive.dicts_with("curvespoints") {
-        bad += read_curves(&archive, holder, &mut parts.curves);
+    let package: &Package = package;
+    let check = || -> Result<()> {
+        package.check_time()?;
+        env.control.checkpoint()
+    };
+    let mut read = CurveRead::default();
+    let holders = archive.dicts_with("curvespoints");
+    for holder in holders.iter().take(MAX_HOLDERS) {
+        check()?;
+        read_curves(&archive, *holder, &mut read, &check)?;
     }
-    if bad > 0 {
+    parts.curves = read.curves;
+    parts.dropped = read.dropped;
+    page.skipped_count(
+        holders.len().saturating_sub(MAX_HOLDERS),
+        ("extra curve list", "extra curve lists"),
+        &format!(
+            "A note keeps its writing in one list, so OpenNote reads only the first {MAX_HOLDERS}. {}",
+            APP.pdf_route()
+        ),
+    );
+    if read.bad > 0 {
         page.skipped(
-            format!("{bad} damaged curve lists"),
+            format!("{} damaged curve lists", read.bad),
             format!(
                 "Their sizes do not agree, so OpenNote could not tell the strokes apart. {}",
                 APP.pdf_route()
             ),
         );
     }
-    parts.text = texts(&archive);
+    parts.text = texts(&archive, &check)?;
     if !parts.text.is_empty() {
         page.simplified(
             "where text boxes sit",
             "Typed text comes at the top of the page, in the order the note keeps it, with its formatting removed.",
         );
     }
-    let shapes = archive
-        .dicts_with("shapes")
-        .iter()
-        .map(|d| archive.get(*d, "shapes").map_or(0, |s| archive.array(s).len()))
-        .sum::<usize>();
+    let mut shapes = 0usize;
+    for (n, dict) in archive.dicts_with("shapes").into_iter().enumerate() {
+        if n.is_multiple_of(CHECK_EVERY) {
+            check()?;
+        }
+        shapes += archive.get(dict, "shapes").map_or(0, |s| archive.array(s).len());
+    }
     page.skipped_count(
         shapes,
         ("shape", "shapes"),
@@ -180,79 +211,131 @@ fn read_session(package: &mut Package, member: &Member, parts: &mut PageParts, p
     Ok(())
 }
 
-fn f32s(bytes: &[u8]) -> Vec<f32> {
-    bytes
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .map(|c| f32::from_le_bytes(*c))
-        .collect()
+/// The curves read so far from a note's curve lists.
+#[derive(Debug, Default)]
+pub(super) struct CurveRead {
+    /// The curves kept: at most [`MAX_STROKES`] of them, with at most [`MAX_PAGE_POINTS`] points in all.
+    pub curves: Vec<Curve>,
+    /// The points the kept curves hold.
+    pub points: usize,
+    /// Curves left out: those with no point, and those past the page's limits.
+    pub dropped: usize,
+    /// Curve lists whose sizes disagree.
+    pub bad: usize,
 }
 
-/// Reads one dictionary's curves. Returns 1 when its lists disagree, after keeping the curves that fit.
-fn read_curves(archive: &Keyed<'_, '_>, holder: usize, out: &mut Vec<Curve>) -> usize {
+impl CurveRead {
+    fn full(&self) -> bool {
+        self.curves.len() >= MAX_STROKES || self.points >= MAX_PAGE_POINTS
+    }
+}
+
+fn f32_le(bytes: &[u8]) -> f32 {
+    f32::from_le_bytes(bytes.try_into().unwrap_or_default())
+}
+
+/// Reads one dictionary's curves into `read`. Only what one page takes is kept, and only the points of the
+/// curves kept are decoded. When the dictionary's lists disagree, the curves that fit are kept and it counts as bad.
+pub(super) fn read_curves(
+    archive: &Keyed<'_, '_>,
+    holder: usize,
+    read: &mut CurveRead,
+    check: &dyn Fn() -> Result<()>,
+) -> Result<()> {
     let blob = |key: &str| {
         archive
             .get(holder, key)
             .and_then(|v| archive.data(v))
             .unwrap_or_default()
     };
-    let points = f32s(blob("curvespoints"));
-    let counts: Vec<i32> = blob("curvesnumpoints")
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .map(|c| i32::from_le_bytes(*c))
-        .collect();
-    let widths = f32s(blob("curveswidth"));
-    let colors: Vec<[u8; 4]> = blob("curvescolors").as_chunks::<4>().0.to_vec();
-    let fractional = f32s(blob("curvesfractionalwidths"));
-    let total_points = points.len() / 2;
+    // Each point is an x and a y, 4 bytes each.
+    let points = blob("curvespoints").as_chunks::<8>().0;
+    let counts = blob("curvesnumpoints").as_chunks::<4>().0;
+    let widths = blob("curveswidth").as_chunks::<4>().0;
+    let colors = blob("curvescolors").as_chunks::<4>().0;
+    let fractional = blob("curvesfractionalwidths").as_chunks::<4>().0;
+    let total_points = points.len();
     let with_pressure = fractional.len() == total_points && total_points > 0;
     let mut at = 0usize;
     for (n, count) in counts.iter().enumerate() {
-        let Ok(count) = usize::try_from(*count) else {
-            return 1;
+        if n.is_multiple_of(CHECK_EVERY) {
+            check()?;
+        }
+        if read.full() {
+            read.dropped += counts.len() - n;
+            return Ok(());
+        }
+        let Ok(count) = usize::try_from(i32::from_le_bytes(*count)) else {
+            read.bad += 1;
+            return Ok(());
         };
         let Some(end) = at.checked_add(count).filter(|end| *end <= total_points) else {
-            return 1;
+            read.bad += 1;
+            return Ok(());
         };
-        let curve_points: Vec<(f32, f32)> = (at..end)
-            .filter_map(|p| Some((*points.get(2 * p)?, *points.get(2 * p + 1)?)))
+        let range = at..end;
+        at = end;
+        if count == 0 || count > MAX_PAGE_POINTS - read.points {
+            read.dropped += 1;
+            continue;
+        }
+        let curve_points: Vec<(f32, f32)> = points
+            .get(range.clone())
+            .unwrap_or_default()
+            .iter()
+            .map(|p| {
+                let (x, y) = p.split_at(4);
+                (f32_le(x), f32_le(y))
+            })
             .collect();
         let pressure = with_pressure.then(|| {
             fractional
-                .get(at..end)
+                .get(range)
                 .unwrap_or_default()
                 .iter()
-                .map(|f| if f.is_finite() { f * 0.5 } else { 0.5 })
+                .map(|c| {
+                    let f = f32::from_le_bytes(*c);
+                    if f.is_finite() {
+                        f * 0.5
+                    } else {
+                        0.5
+                    }
+                })
                 .collect()
         });
-        out.push(Curve {
+        read.points += curve_points.len();
+        read.curves.push(Curve {
             points: curve_points,
             pressure,
-            width: widths.get(n).copied().unwrap_or(1.5),
+            width: widths.get(n).map_or(1.5, |c| f32::from_le_bytes(*c)),
             color: colors.get(n).copied().unwrap_or([0, 0, 0, 255]),
         });
-        at = end;
     }
-    usize::from(at != total_points && !counts.is_empty())
+    read.bad += usize::from(at != total_points && !counts.is_empty());
+    Ok(())
 }
 
 /// The typed text of every attributed string in the archive, in archive order, once each.
-fn texts(archive: &Keyed<'_, '_>) -> Vec<String> {
+fn texts(archive: &Keyed<'_, '_>, check: &dyn Fn() -> Result<()>) -> Result<Vec<String>> {
     let mut out: Vec<String> = Vec::new();
-    for object in archive.dicts_with("NS.string") {
+    let mut seen: HashSet<String> = HashSet::new();
+    for (n, object) in archive.dicts_with("NS.string").into_iter().enumerate() {
+        if n.is_multiple_of(CHECK_EVERY) {
+            check()?;
+        }
+        if out.len() >= 10_000 {
+            break;
+        }
         let class = archive.class_name(object).unwrap_or_default();
         if !class.contains("AttributedString") {
             continue;
         }
         if let Some(text) = archive.get(object, "NS.string").and_then(|s| archive.string(s)) {
             let text = text.replace('\u{fffc}', "").trim().to_owned();
-            if !text.is_empty() && !out.contains(&text) && out.len() < 10_000 {
+            if !text.is_empty() && seen.insert(text.clone()) {
                 out.push(text);
             }
         }
     }
-    out
+    Ok(out)
 }
