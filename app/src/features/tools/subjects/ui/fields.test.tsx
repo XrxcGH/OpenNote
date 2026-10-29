@@ -1,9 +1,11 @@
 // The subject input fields and outputs, each with an accessibility scan. A data field reads a table from the page.
 // A matrix names a bad cell, and the seed field refuses a bad seed. The coefficient table gives verdicts in words.
-// A figure goes on the page as a block that reopens its tool.
+// A figure goes on the page as a block that reopens its tool. At phone width in the dark theme nothing scrolls the
+// page sideways.
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import { INSERT_EVENT, SUBJECT_TABLES_EVENT } from '../../flags';
 import { registerKit, resetKits, takeKitInputs } from '../../kits/registry';
@@ -187,5 +189,40 @@ describe('subject outputs', () => {
     expect(said).toEqual(['Opened the tool with this figure’s inputs.']);
     handle.destroy();
     host.remove();
+  });
+});
+
+describe('subject fields at phone width in the dark theme', () => {
+  it('keeps the page from scrolling sideways and passes the accessibility scan', async () => {
+    await page.viewport(360, 800);
+    document.documentElement.setAttribute('data-theme', 'dark');
+    try {
+      function Harness() {
+        const [m, setM] = useState<MatrixInputValue>(emptyMatrix(8, 8));
+        return <MatrixField label="Counts" value={m} onChange={setM} />;
+      }
+      const { container } = renderUi(
+        <>
+          <DataHarness />
+          <Harness />
+          <CoefficientTable
+            rows={[
+              { term: 'Intercept', estimate: 2.2, se: 0.94, statistic: 2.34, p: 0.101, low: -0.79, high: 5.19 },
+              { term: 'Slope', estimate: 0.6, se: 0.05, statistic: 12, p: 0.00001, low: 0.44, high: 0.76 },
+            ]}
+          />
+        </>,
+      );
+      fireEvent.change(screen.getByLabelText('Data'), {
+        target: { value: ['dose,response', '1,2.5', '2,4.1'].join('\n') },
+      });
+      await waitFor(() => expect(screen.getByText('2 rows and 2 columns.')).toBeTruthy());
+      const root = document.documentElement;
+      expect(root.scrollWidth).toBeLessThanOrEqual(root.clientWidth);
+      expect(container.scrollWidth).toBeLessThanOrEqual(360);
+      await expectNoAxeViolations(container);
+    } finally {
+      await page.viewport(414, 896);
+    }
   });
 });

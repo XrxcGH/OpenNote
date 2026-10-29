@@ -40,9 +40,10 @@ export function CoefficientTable({ rows, level = 0.95, title, statistic }: Coeff
   const heading = title ?? sayS('coef.title');
   const pct = (x: number) => formatNumber(x * 100, 4);
   return (
-    <section className={kitStyles.section} aria-label={heading}>
+    <section className={kitStyles.section}>
       <h3 className={kitStyles.heading}>{heading}</h3>
-      <div className={styles.gridScroll}>
+      {/* A focusable region, so a keyboard can scroll the table sideways when it is wider than a phone. */}
+      <div className={styles.gridScroll} role="region" tabIndex={0} aria-label={heading}>
         <table className={kitStyles.table}>
           <thead>
             <tr>
