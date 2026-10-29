@@ -197,6 +197,7 @@ impl Engine {
         state.deferred = deferred;
         state.generation = generation;
         state.seen = plan.seen.clone();
+        state.promised = plan.promised.clone();
         state.vault = state.vault.max(plan.vault);
         if plan.publish {
             state.published = super::digest(&plan.merged);

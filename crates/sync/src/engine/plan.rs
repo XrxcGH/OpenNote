@@ -15,6 +15,7 @@ use crate::vault;
 struct Incoming {
     heads: Vec<Manifest>,
     seen: BTreeMap<String, u64>,
+    promised: BTreeMap<String, (u64, i64)>,
     own_max: u64,
 }
 
@@ -64,6 +65,7 @@ impl Engine {
             prints,
             merged: merged.entries,
             seen: incoming.seen,
+            promised: incoming.promised,
             own_max: incoming.own_max,
             vault: vault.generation,
             pending,
@@ -178,25 +180,50 @@ impl Engine {
         {
             return Err(SyncError::Rollback);
         }
+        let listed = |device: &str| newest.get(device).copied().unwrap_or(0);
+        let now = self.now();
         let mut incoming = Incoming {
             heads: Vec::new(),
             seen: state.seen.clone(),
+            // Promises from earlier rounds that storage still doesn't keep.
+            promised: state
+                .promised
+                .iter()
+                .filter(|(device, (generation, _))| listed(device) < *generation)
+                .map(|(device, promise)| (device.clone(), *promise))
+                .collect(),
             own_max,
         };
         for (device, generation) in &newest {
-            if *device == self.device {
+            let read = if *device == self.device {
                 // A head of this device's own that its state doesn't know: a round stopped after writing it.
-                if *generation > state.generation {
-                    incoming
-                        .heads
-                        .push(self.unpruned(state, self.read_entries(device, *generation)?));
+                *generation > state.generation
+            } else {
+                *generation > state.seen.get(device).copied().unwrap_or(0)
+            };
+            if !read {
+                continue;
+            }
+            let head = self.read_usable_head(device, *generation)?;
+            // A head names the newest generation it merged from every other device. Storage that lists less for
+            // one of them is withholding it, unless a sync tool hasn't copied it yet.
+            for (other, merged) in &head.seen {
+                if *other != self.device && listed(other) < *merged {
+                    let promise = incoming.promised.entry(other.clone()).or_insert((*merged, now));
+                    promise.0 = promise.0.max(*merged);
                 }
-            } else if *generation > state.seen.get(device).copied().unwrap_or(0) {
-                incoming
-                    .heads
-                    .push(self.unpruned(state, self.read_entries(device, *generation)?));
+            }
+            if *device != self.device {
                 incoming.seen.insert(device.clone(), *generation);
             }
+            incoming.heads.push(self.unpruned(state, head.entries));
+        }
+        if incoming
+            .promised
+            .values()
+            .any(|(_, since)| now.saturating_sub(*since) > super::WITHHELD_MS)
+        {
+            return Err(SyncError::Rollback);
         }
         Ok(incoming)
     }

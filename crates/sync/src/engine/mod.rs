@@ -72,7 +72,16 @@ pub struct LocalState {
     /// back. An entry goes once no head names the path.
     #[serde(default)]
     pub pruned: BTreeMap<String, crate::manifest::Vv>,
+    /// Heads that another device's head says it merged but that storage doesn't list yet: for each device, the
+    /// newest generation promised, and when this device first found it missing, in Unix milliseconds. A sync
+    /// tool may copy one device's head before another's, so only one missing past [`WITHHELD_MS`] is a rollback.
+    #[serde(default)]
+    pub promised: BTreeMap<String, (u64, i64)>,
 }
+
+/// How long a head that another device merged may stay out of storage's listing before it counts as withheld:
+/// a day, far longer than a sync tool takes to copy it.
+pub const WITHHELD_MS: i64 = 24 * 60 * 60 * 1000;
 
 /// A path as this device last knew it.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -155,6 +164,7 @@ pub struct Plan {
     prints: BTreeMap<String, Fingerprint>,
     merged: Manifest,
     seen: BTreeMap<String, u64>,
+    promised: BTreeMap<String, (u64, i64)>,
     own_max: u64,
     vault: u64,
     pending: HashMap<String, Vec<u8>>,
@@ -415,14 +425,15 @@ impl Engine {
         self.backend.put(&name, &sealed)
     }
 
-    /// A head's entries, without the paths no device may write: an older or hostile device's `../x` or `CON.txt`
-    /// would otherwise be skipped on disk, wait as deferred, and be published again by every device every round.
-    /// Entries whose size is more than their chunks can hold are dropped too: only a damaged or hostile head has
-    /// them, and their sizes would otherwise reach the totals a preview adds up.
-    fn read_entries(&self, device: &str, generation: u64) -> Result<Manifest> {
-        let mut entries = self.read_head(device, generation)?.entries;
-        entries.retain(|path, entry| local::valid_path(path) && fits_chunks(&entry.content));
-        Ok(entries)
+    /// A head, without the paths no device may write: an older or hostile device's `../x` or `CON.txt` would
+    /// otherwise be skipped on disk, wait as deferred, and be published again by every device every round.
+    /// Entries whose chunk list doesn't match their size are dropped too: only a damaged or hostile head has them,
+    /// and they would otherwise make every device fetch pieces it can't use, or reach the totals a preview adds up.
+    fn read_usable_head(&self, device: &str, generation: u64) -> Result<Head> {
+        let mut head = self.read_head(device, generation)?;
+        head.entries
+            .retain(|path, entry| local::valid_path(path) && fits_chunks(&entry.content));
+        Ok(head)
     }
 
     fn read_head(&self, device: &str, generation: u64) -> Result<Head> {

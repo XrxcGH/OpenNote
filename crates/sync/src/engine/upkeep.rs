@@ -24,6 +24,7 @@ impl Engine {
         let mut state = self.state()?;
         let (newest, own) = self.heads()?;
         state.seen = newest.into_iter().filter(|(d, _)| *d != self.device).collect();
+        state.promised.clear();
         state.vault = vault::status(self.backend.as_ref(), &self.keys)?.generation;
         let generation = super::later(state.generation.max(own.last().copied().unwrap_or(0)), 1)?;
         let mut entries: Manifest = state.files.iter().map(|(p, k)| (p.clone(), k.entry.clone())).collect();

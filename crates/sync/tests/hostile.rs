@@ -16,6 +16,14 @@ fn heads_of(backend: &dyn Backend, tag: &str) -> Vec<String> {
     names
 }
 
+/// The name of a device's newest head, by number.
+fn newest_head(backend: &dyn Backend, tag: &str) -> String {
+    heads_of(backend, tag)
+        .into_iter()
+        .max_by_key(|name| name.rsplit('/').next().and_then(|n| n.parse::<u64>().ok()))
+        .expect("the device has heads")
+}
+
 fn is_impossible(result: Result<impl std::fmt::Debug, SyncError>) -> bool {
     matches!(result, Err(SyncError::Tampered(ref m)) if m.contains("impossible number"))
 }
@@ -156,4 +164,60 @@ fn stale_pairing_slots_are_cleared_by_the_next_round() {
     assert!(left.contains(&"j/0123456789abcdef".to_owned()));
     let joined = vault::join_with_code(backend.as_ref(), live.text(), i64::MAX / 4).expect("joins");
     assert_eq!(joined.fingerprint(), keys.fingerprint());
+}
+
+#[test]
+fn a_head_withheld_from_one_device_is_a_rollback_once_another_device_merged_it_a_day_ago() {
+    let store = Arc::new(MemoryBackend::new());
+    let backend: Arc<dyn Backend> = store.clone();
+    let d = devices(backend.clone(), 3);
+    let (a, b, c) = (&d[0], &d[1], &d[2]);
+    b.write("Bio/todo.txt", b"one");
+    settle(&d, 3);
+    b.write("Bio/todo.txt", b"two");
+    b.engine.sync().expect("b publishes");
+    c.engine.sync().expect("c merges b's newest head");
+    let newest = newest_head(backend.as_ref(), &b.tag);
+    assert!(
+        heads_of(backend.as_ref(), &c.tag).len() >= 2,
+        "c published a head that names b's newest"
+    );
+    // The storage hides b's newest head from a, but c's head still says it merged it.
+    store.remove_raw(&newest);
+    // A sync tool may copy c's head before b's, so a carries on for now, with b's last head it can see.
+    a.engine.sync().expect("a waits for the head a little while");
+    assert_eq!(
+        a.read("Bio/todo.txt").as_deref(),
+        Some(&b"two"[..]),
+        "c's merge brings it"
+    );
+    a.engine.set_clock_offset(23 * 60 * 60 * 1000);
+    a.engine.sync().expect("still within a day");
+    a.engine.set_clock_offset(25 * 60 * 60 * 1000);
+    assert_eq!(a.engine.sync().unwrap_err(), SyncError::Rollback);
+    // Trusting the storage on purpose, as after a restore, clears it.
+    a.engine.trust_storage().expect("trusts");
+    a.engine.sync().expect("syncs again");
+}
+
+#[test]
+fn a_device_that_is_only_slow_to_arrive_is_never_a_rollback() {
+    let store = Arc::new(MemoryBackend::new());
+    let backend: Arc<dyn Backend> = store.clone();
+    let d = devices(backend.clone(), 3);
+    let (a, b, c) = (&d[0], &d[1], &d[2]);
+    b.write("Bio/todo.txt", b"one");
+    settle(&d, 3);
+    b.write("Bio/todo.txt", b"two");
+    b.engine.sync().expect("b publishes");
+    c.engine.sync().expect("c merges b's newest head");
+    let newest = newest_head(backend.as_ref(), &b.tag);
+    let held = store.snapshot()[&newest].clone();
+    store.remove_raw(&newest);
+    a.engine.sync().expect("a waits for it");
+    // It arrives within the day, and a day later nothing is owed.
+    store.set_raw(&newest, held);
+    a.engine.sync().expect("a reads it");
+    a.engine.set_clock_offset(25 * 60 * 60 * 1000);
+    a.engine.sync().expect("nothing is withheld");
 }
