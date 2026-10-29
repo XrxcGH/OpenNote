@@ -143,6 +143,20 @@ Linked accounts (Phase 11):
 - Card types: question and answer, fill-in-the-blank, multiple choice, and image occlusion (hide part of a diagram). Status: Built, untested by hand.
 - A spaced-repetition schedule shows which cards are due. Decks export to Anki and CSV. Status: Built, untested by hand.
 
+## Civil, environmental, and chemical engineering tools
+
+(Tool kits, on in Beta as `kits.civil`.) One window with nine tools, opened from Ctrl+K. Each has units, worked steps, plots, and Insert. Guide: [docs/help/civil-and-chemical-engineering.md](help/civil-and-chemical-engineering.md).
+
+- Structures: continuous beams by moment distribution, fixed-end moments, influence lines, moving loads, truss influence lines, portal and cantilever methods, response spectra, and modal combination. Status: Built, untested by hand.
+- Soils: phase relations, classification, compaction, permeability, effective stress, consolidation, and shear strength. Status: Built, untested by hand.
+- Foundations: earth pressure, retaining walls, bearing capacity, slope stability, and piles. Status: Built, untested by hand.
+- Hydrology and open channels: runoff, hydrographs, routing, flood frequency, soil loss, channel flow, jumps, profiles, weirs, and pipe networks. Status: Built, untested by hand.
+- Groundwater and wells: Darcy flow, wells and pumping tests, flow nets, and contaminant transport. Status: Built, untested by hand.
+- Water quality and treatment: oxygen balance, carbonate chemistry, softening, and treatment units. Status: Built, untested by hand.
+- Transportation: traffic flow, queues, signals, highway geometry, travel demand, surveying, earthwork, and site planning. Status: Built, untested by hand.
+- Material balances and separations: flowsheet balances, energy balances, vapor-liquid equilibrium, flash, distillation, and absorption. Status: Built, untested by hand.
+- Chemical and biological reactors: ideal reactors, multiple reactions, temperature effects, residence times, growth, and activated sludge. Status: Built, untested by hand. Sway frames in moment distribution are not built yet.
+
 ## Page layouts
 
 (Phase 6)
