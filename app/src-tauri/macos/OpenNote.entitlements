@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The hardened runtime's entitlements (ADR 0055). OpenNote isn't sandboxed: notebooks are ordinary folders the
+  person picks anywhere, as on Windows and Linux. macOS still asks before the microphone and the
+  Documents, Desktop, and Downloads folders; Info.plist says why.
+-->
+<plist version="1.0">
+<dict>
+  <!-- Recording audio notes, dictation, and live captions. -->
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+</dict>
+</plist>
