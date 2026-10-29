@@ -62,7 +62,7 @@ Nothing in this folder talks to the interface. The wiring calls `import` from `j
 
 A part a package keeps in a private form is reported as not imported. The report then names the app's PDF export as the way around it.
 
-The sources are public descriptions. No code was read or copied.
+The sources are public descriptions. No code was read or copied. [ADR 0053](../../../../docs/adr/0053-notes-app-import.md#decision) lists them, under "Clean-room", and says what each one gave.
 
 - Apple's description of the binary property list and NSKeyedArchiver layouts.
 - Google's protocol buffers encoding guide.

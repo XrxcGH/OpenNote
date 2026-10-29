@@ -67,6 +67,7 @@ fn a_written_property_list_reads_back_with_its_values() {
         ("r".into(), Value::Real(2.5)),
         ("a".into(), Value::Str("plain".into())),
         ("u".into(), Value::Str("Größe".into())),
+        ("Maß".into(), Value::Int(4)),
         ("d".into(), Value::Data(vec![1, 2, 3])),
         ("id".into(), Value::Uid(9)),
         ("list".into(), Value::Array(vec![Value::Bool(true), Value::Int(300)])),
@@ -74,6 +75,10 @@ fn a_written_property_list_reads_back_with_its_values() {
     let list = Plist::parse(&bytes).unwrap();
     let top = list.top();
     assert_eq!(list.get(list.dict_get(top, "n").unwrap()), Some(&Obj::Int(-7)));
+    // A key outside ASCII is written as UTF-16 and found only by its whole text.
+    assert_eq!(list.get(list.dict_get(top, "Maß").unwrap()), Some(&Obj::Int(4)));
+    assert_eq!(list.dict_get(top, "Ma"), None);
+    assert_eq!(list.dict_get(top, "Maße"), None);
     assert_eq!(list.get(list.dict_get(top, "r").unwrap()), Some(&Obj::Real(2.5)));
     assert_eq!(list.string(list.dict_get(top, "a").unwrap()).as_deref(), Some("plain"));
     assert_eq!(list.string(list.dict_get(top, "u").unwrap()).as_deref(), Some("Größe"));
@@ -123,6 +128,42 @@ fn an_array_that_holds_itself_is_read_once_and_a_uid_loop_ends() {
     let list = Plist::parse(&looped).unwrap();
     let archive = Keyed::new(&list).unwrap();
     assert_eq!(archive.resolve(archive.objects()[0]), usize::MAX);
+}
+
+#[test]
+fn a_search_walks_a_dictionary_the_archive_repeats_only_once() {
+    let bytes = fixtures::session_one_dict_many_times(100_000, 100_000);
+    let list = Plist::parse(&bytes).unwrap();
+    let archive = Keyed::new(&list).unwrap();
+    assert_eq!(archive.objects().len(), 100_000);
+    assert_eq!(archive.distinct(), &[2]);
+    let checks = std::cell::Cell::new(0);
+    let count = || {
+        checks.set(checks.get() + 1);
+        Ok(())
+    };
+    let started = std::time::Instant::now();
+    // Walking every reference would be 100,000 x 100,000 key compares; once each, it is 100,000.
+    assert!(archive.dicts_with("curvespoints", &count).unwrap().is_empty());
+    assert_eq!(archive.dicts_with("curvespointX", &count).unwrap(), vec![2]);
+    assert!(
+        started.elapsed() < Duration::from_secs(1),
+        "took {:?}",
+        started.elapsed()
+    );
+    assert_eq!(checks.get(), 2);
+}
+
+#[test]
+fn a_search_stops_when_cancel_is_pressed() {
+    let bytes = fixtures::session_one_dict_many_times(10, 10);
+    let list = Plist::parse(&bytes).unwrap();
+    let archive = Keyed::new(&list).unwrap();
+    let canceled = || Err(crate::error::InteropError::Canceled);
+    assert!(matches!(
+        archive.dicts_with("curvespointX", &canceled),
+        Err(crate::error::InteropError::Canceled)
+    ));
 }
 
 // Protobuf.
@@ -424,7 +465,7 @@ proptest! {
         bytes.extend_from_slice(&tail);
         if let Ok(list) = Plist::parse(&bytes) {
             if let Some(archive) = Keyed::new(&list) {
-                for object in archive.objects() {
+                for object in archive.distinct() {
                     let _ = archive.string(*object);
                     let _ = archive.array(*object);
                     let _ = archive.class_name(*object);
@@ -495,7 +536,7 @@ fn reading_curves_stops_when_cancel_is_pressed() {
     };
     let plist = Plist::parse(&bytes).unwrap();
     let archive = Keyed::new(&plist).unwrap();
-    let holder = archive.dicts_with("curvespoints")[0];
+    let holder = archive.dicts_with("curvespoints", &|| Ok(())).unwrap()[0];
     let mut read = notability::CurveRead::default();
     let canceled = || Err(crate::error::InteropError::Canceled);
     assert!(matches!(

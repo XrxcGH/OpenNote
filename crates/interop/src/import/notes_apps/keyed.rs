@@ -2,17 +2,26 @@
 //! dictionaries point at one another with UID references (Apple's public Foundation documentation).
 //!
 //! Every lookup follows at most [`MAX_HOPS`] references, so a reference loop ends instead of spinning.
+//!
+//! `$objects` may name one object any number of times, so a search over every object walks each distinct object once:
+//! its work is then bounded by the property list's own size, however often the array repeats a large dictionary.
 
 use super::bplist::{Obj, Plist};
+use crate::error::Result;
 
 /// The most UID references one lookup follows.
 const MAX_HOPS: usize = 8;
+
+/// How many objects a search walks between calls to its check, so the time budget and Cancel apply inside it.
+const CHECK_EVERY: usize = 4096;
 
 /// An archive over a parsed property list.
 pub struct Keyed<'p, 'a> {
     plist: &'p Plist<'a>,
     /// The plist indexes of `$objects`, so UID `n` is `objects[n]`.
     objects: Vec<usize>,
+    /// The same indexes once each, in the order they first appear.
+    distinct: Vec<usize>,
 }
 
 impl<'p, 'a> Keyed<'p, 'a> {
@@ -22,15 +31,27 @@ impl<'p, 'a> Keyed<'p, 'a> {
         let Some(Obj::Array(objects)) = plist.get(list) else {
             return None;
         };
+        let mut seen = vec![false; plist.len()];
+        let distinct = objects
+            .iter()
+            .copied()
+            .filter(|o| seen.get_mut(*o).is_some_and(|s| !std::mem::replace(s, true)))
+            .collect();
         Some(Keyed {
             plist,
             objects: objects.clone(),
+            distinct,
         })
     }
 
     /// The plist indexes of every archived object, in archive order.
     pub fn objects(&self) -> &[usize] {
         &self.objects
+    }
+
+    /// The plist indexes of the archived objects once each, in the order they first appear.
+    pub fn distinct(&self) -> &[usize] {
+        &self.distinct
     }
 
     /// The object an index names, with UID references followed.
@@ -108,12 +129,18 @@ impl<'p, 'a> Keyed<'p, 'a> {
             .unwrap_or_default()
     }
 
-    /// Every archived dictionary that has a key, in archive order.
-    pub fn dicts_with(&self, key: &str) -> Vec<usize> {
-        self.objects
-            .iter()
-            .copied()
-            .filter(|o| self.plist.dict_get(*o, key).is_some())
-            .collect()
+    /// Every archived dictionary that has a key, once each, in archive order. `check` runs every [`CHECK_EVERY`]
+    /// objects, so the time budget and Cancel stop a long search.
+    pub fn dicts_with(&self, key: &str, check: &dyn Fn() -> Result<()>) -> Result<Vec<usize>> {
+        let mut out = Vec::new();
+        for (n, object) in self.distinct.iter().copied().enumerate() {
+            if n.is_multiple_of(CHECK_EVERY) {
+                check()?;
+            }
+            if self.plist.dict_get(object, key).is_some() {
+                out.push(object);
+            }
+        }
+        Ok(out)
     }
 }

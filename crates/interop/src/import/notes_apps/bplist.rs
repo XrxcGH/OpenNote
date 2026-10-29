@@ -173,7 +173,13 @@ impl<'a> Plist<'a> {
     fn key_is(&self, index: usize, key: &str) -> bool {
         match self.objects.get(index) {
             Some(Obj::Ascii(range)) => self.bytes.get(range.clone()) == Some(key.as_bytes()),
-            Some(Obj::Utf16(_)) => self.string(index).as_deref() == Some(key),
+            // Decoded as `string` decodes it, without building a string for each key a search passes.
+            Some(Obj::Utf16(range)) => self.bytes.get(range.clone()).is_some_and(|raw| {
+                let units = raw.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes(*c));
+                char::decode_utf16(units)
+                    .map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER))
+                    .eq(key.chars())
+            }),
             _ => false,
         }
     }

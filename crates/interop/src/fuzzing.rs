@@ -183,7 +183,7 @@ pub fn notes_app(data: &[u8]) {
     use crate::import::notes_apps_fuzzing::{protobuf_strings, Keyed, Plist};
     if let Ok(list) = Plist::parse(data) {
         if let Some(archive) = Keyed::new(&list) {
-            for object in archive.objects() {
+            for object in archive.distinct() {
                 let _ = archive.string(*object);
                 let _ = archive.data(*object);
                 let _ = archive.array(*object);

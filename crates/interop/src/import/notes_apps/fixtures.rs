@@ -220,3 +220,54 @@ pub fn samsung_many_pages(pages: usize, filler: usize) -> Vec<u8> {
     files.extend(names.iter().map(|n| (n.as_str(), b"\x01\x02".as_slice())));
     zip_bytes(&files)
 }
+
+/// A hostile `Session.plist` whose `$objects` array names one dictionary `refs` times. The dictionary has `pairs`
+/// pairs, every one with the key `curvespointX`, which no search asks for. Written by hand, since the writer gives
+/// every value its own object: object 0 is the top, 1 is `$objects`, 2 is the dictionary. An unnamed run of
+/// [`noise`] keeps the file within the expansion a package may have.
+pub fn session_one_dict_many_times(refs: usize, pairs: usize) -> Vec<u8> {
+    fn sized(marker: u8, len: usize) -> Vec<u8> {
+        let mut out = vec![marker | 0x0F, 0x12];
+        out.extend_from_slice(&u32::try_from(len).unwrap_or(u32::MAX).to_be_bytes());
+        out
+    }
+    let ascii = |text: &str| {
+        let mut out = vec![0x50 | u8::try_from(text.len()).unwrap_or(0x0F)];
+        out.extend_from_slice(text.as_bytes());
+        out
+    };
+    let mut array = sized(0xA0, refs);
+    array.resize(array.len() + refs, 2);
+    let mut dict = sized(0xD0, pairs);
+    dict.resize(dict.len() + pairs, 3);
+    dict.resize(dict.len() + pairs, 4);
+    let objects = [
+        vec![0xD1, 5, 1],
+        array,
+        dict,
+        ascii("curvespointX"),
+        ascii("NS.strinG"),
+        ascii("$objects"),
+        [sized(0x40, (refs + pairs * 2) / 100), noise((refs + pairs * 2) / 100)].concat(),
+    ];
+    let mut bytes = b"bplist00".to_vec();
+    let mut offsets = Vec::new();
+    for object in &objects {
+        offsets.push(u32::try_from(bytes.len()).unwrap_or(u32::MAX));
+        bytes.extend_from_slice(object);
+    }
+    let table = bytes.len() as u64;
+    for offset in offsets {
+        bytes.extend_from_slice(&offset.to_be_bytes());
+    }
+    bytes.extend_from_slice(&[0, 0, 0, 0, 0, 0, 4, 1]);
+    bytes.extend_from_slice(&(objects.len() as u64).to_be_bytes());
+    bytes.extend_from_slice(&0u64.to_be_bytes());
+    bytes.extend_from_slice(&table.to_be_bytes());
+    bytes
+}
+
+/// [`session_one_dict_many_times`] in a Notability package.
+pub fn notability_one_dict_many_times(refs: usize, pairs: usize) -> Vec<u8> {
+    zip_bytes(&[("Repeat/Session.plist", &session_one_dict_many_times(refs, pairs))])
+}

@@ -162,7 +162,7 @@ fn read_session(
         env.control.checkpoint()
     };
     let mut read = CurveRead::default();
-    let holders = archive.dicts_with("curvespoints");
+    let holders = archive.dicts_with("curvespoints", &check)?;
     for holder in holders.iter().take(MAX_HOLDERS) {
         check()?;
         read_curves(&archive, *holder, &mut read, &check)?;
@@ -194,7 +194,7 @@ fn read_session(
         );
     }
     let mut shapes = 0usize;
-    for (n, dict) in archive.dicts_with("shapes").into_iter().enumerate() {
+    for (n, dict) in archive.dicts_with("shapes", &check)?.into_iter().enumerate() {
         if n.is_multiple_of(CHECK_EVERY) {
             check()?;
         }
@@ -319,7 +319,7 @@ pub(super) fn read_curves(
 fn texts(archive: &Keyed<'_, '_>, check: &dyn Fn() -> Result<()>) -> Result<Vec<String>> {
     let mut out: Vec<String> = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
-    for (n, object) in archive.dicts_with("NS.string").into_iter().enumerate() {
+    for (n, object) in archive.dicts_with("NS.string", check)?.into_iter().enumerate() {
         if n.is_multiple_of(CHECK_EVERY) {
             check()?;
         }

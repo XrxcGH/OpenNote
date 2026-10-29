@@ -151,6 +151,30 @@ fn every_malformed_package_in_the_corpus_returns_quickly_without_a_panic() {
     }
     assert!(seen >= 10, "the corpus holds its files");
 
+    // Generated, being 2 MB: 200,000 references to one dictionary of 1,000,000 pairs, which once took minutes.
+    let dir = tempfile::tempdir().expect("makes a folder");
+    let path = write(
+        dir.path(),
+        "repeat.note",
+        &fixtures::notability_one_dict_many_times(200_000, 1_000_000),
+    );
+    let started = Instant::now();
+    let world = TestEnv::new();
+    let mut sink = MemorySink::default();
+    let report = import_notes_apps(&path, &world.env(), &mut sink).expect("imports");
+    let took = started.elapsed();
+    assert!(took < Duration::from_secs(20), "the repeated dictionary took {took:?}");
+    // The plist was read and searched, not refused as damaged: the note simply holds nothing.
+    let said: Vec<_> = report.pages.iter().flat_map(|p| &p.entries).collect();
+    assert!(
+        said.iter()
+            .any(|e| e.outcome == Outcome::Skipped && e.what == "the note"),
+        "{said:?}"
+    );
+    assert!(!said
+        .iter()
+        .any(|e| e.why.as_deref().is_some_and(|w| w.contains("could not be read"))));
+
     // The bomb's picture is left out, and its page still comes in.
     let world = TestEnv::new();
     let mut sink = MemorySink::default();
