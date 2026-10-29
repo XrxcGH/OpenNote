@@ -130,6 +130,26 @@ function treeOf(path: string, id: number): ImportedTree {
   };
 }
 
+/** A small stand-in for the host's `.tex` text, with the choices of the request in it, so the options can be tested. */
+function fakeLatex(request: ExportRequest): string {
+  const options = request.latex;
+  const lines = [
+    '% Made by OpenNote.',
+    `\\documentclass[11pt,${options?.paper === 'a4' ? 'a4paper' : 'letterpaper'}]{article}`,
+    `% Characters: ${options?.engine === 'pdflatex' ? 'pdfLaTeX only' : 'Unicode'}`,
+    `% Margins: ${options?.margin ?? 'normal'}`,
+    '\\begin{document}',
+  ];
+  if (options?.titleBlock) lines.push(`\\title{${request.title}}`, `\\author{${options.author}}`, '\\maketitle');
+  if (options?.toc) lines.push('\\tableofcontents');
+  for (const section of request.sections) {
+    lines.push(`\\section{${section.title}}`);
+    for (const page of section.pages) lines.push(`\\subsection{${page.title}}`);
+  }
+  lines.push('\\end{document}', '');
+  return lines.join('\n');
+}
+
 export interface InteropLog {
   picks: { kind: PickKind }[];
   previews: string[];
@@ -251,13 +271,16 @@ export function createWebInterop(): InteropClient & {
       log.adopted.push({ dir, pages: [...pages] });
       return Promise.resolve();
     },
+    latexPreview(request, maxChars) {
+      return Promise.resolve(fakeLatex(request).slice(0, maxChars));
+    },
     async exportTo(job, request) {
       log.exports.push(request);
       const count = request.sections.reduce((total, section) => total + section.pages.length, 0);
       if (!(await run(job, `Export ${request.title}`, 'writing', count))) return stopped;
       // A PDF export writes the pages the window printed and staged, and an index.html.
       const printed = request.format === 'pdf' ? extra.staged(job).size : 0;
-      const oneFile = ['htmlSingle', 'docx', 'share'].includes(request.format);
+      const oneFile = ['htmlSingle', 'docx', 'share', 'latex'].includes(request.format);
       const result: ExportResult = {
         reveal: `${request.folder}\\${request.title}`,
         pages: request.format === 'pdf' ? printed : count,

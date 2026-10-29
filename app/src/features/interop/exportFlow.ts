@@ -18,6 +18,8 @@ import { collectRequest, pageCount } from './exportTarget';
 import type { ExportTarget } from './exportTarget';
 import { createFlowState, newJobName } from './flowState';
 import type { FlowState } from './flowState';
+import { latexOptions, loadLatexChoices, saveLatexChoices } from './latex';
+import type { LatexChoices } from './latex';
 
 /** What Share as a file asks besides the folder. The password stays in memory and goes to the host only. */
 export interface ShareChoices {
@@ -36,6 +38,7 @@ export type ExportState =
       folder: string | null;
       error: IpcError | null;
       share?: ShareChoices;
+      latex?: LatexChoices;
     }
   | {
       step: 'exporting';
@@ -48,6 +51,15 @@ export type ExportState =
     }
   | { step: 'done'; result: ExportResult }
   | { step: 'empty'; scope: ExportScope };
+
+/** The start of the `.tex` text a LaTeX export would write, as the options dialog shows it. */
+export type LatexPreview =
+  { status: 'idle' } | { status: 'loading' } | { status: 'ready'; text: string } | { status: 'error'; error: IpcError };
+
+/** How much of the `.tex` text the preview asks for. */
+const PREVIEW_CHARS = 6000;
+/** How long the preview waits after a choice, so typing an author name asks once. */
+const PREVIEW_DELAY_MS = 350;
 
 /** A file that an export made, which can be updated after the notes change. */
 export interface SentCopy {
@@ -64,7 +76,7 @@ export interface SendExtras {
 }
 
 /** The formats that write one file, so a copy can be replaced. */
-const ONE_FILE: readonly ExportFormat[] = ['docx', 'htmlSingle', 'pptx', 'xlsx'];
+const ONE_FILE: readonly ExportFormat[] = ['docx', 'htmlSingle', 'pptx', 'xlsx', 'latex'];
 
 export const folderOf = (path: string) => path.replace(/[\\/][^\\/]*$/, '');
 
@@ -72,6 +84,10 @@ export interface ExportFlow {
   readonly state: FlowState<ExportState>;
   /** The favorite folders and the copies sent before, when the host remembers them. */
   readonly extras: FlowState<SendExtras>;
+  /** LaTeX: the start of the file the current choices would write. */
+  readonly preview: FlowState<LatexPreview>;
+  /** LaTeX: changes the options. */
+  setLatex(choices: Partial<LatexChoices>): void;
   /** Uses a folder, such as a favorite one. */
   useFolder(path: string): void;
   /** Adds the chosen folder to the favorites, or takes it out. */
@@ -129,6 +145,10 @@ interface Run {
   deps: ExportFlowDeps;
   state: FlowState<ExportState>;
   extras: FlowState<SendExtras>;
+  preview: FlowState<LatexPreview>;
+  /** The timer that asks for the next preview, and the number of the latest ask, so an old answer is ignored. */
+  previewTimer: ReturnType<typeof setTimeout> | null;
+  previews: number;
   job: string | null;
   /** Stops the printing of a PDF export's pages. */
   abort: AbortController | null;
@@ -159,12 +179,23 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
     return;
   }
   const extra = share ? { history: share.history, ...(share.password ? { password: share.password } : {}) } : {};
+  const latex = format === 'latex' ? (options.latex ?? loadLatexChoices()) : null;
   const name = newJobName('export');
   try {
     const collected = await collectRequest(notes, target, scope);
+    if (latex) saveLatexChoices(latex);
+    const latexRequest = latex ? { latex: await latexOptions(latex, String(target.notebook.id)) } : {};
     const ids = collected.sections.flatMap((section) => section.pages.map((page) => page.ui));
     if (pageCount(collected) > 0 && !(await checkBeforeOutput(ids, () => reviewPages(ids)))) {
-      run.state.set({ step: 'options', scope, format, folder, error: null });
+      run.state.set({
+        step: 'options',
+        scope,
+        format,
+        folder,
+        error: null,
+        ...(share ? { share } : {}),
+        ...kept(latex),
+      });
       return;
     }
     if (pageCount(collected) === 0) {
@@ -175,7 +206,15 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
     const shown = target.choices.find((choice) => choice.scope === scope)?.node.title ?? collected.title;
     run.state.set({ step: 'exporting', job: name, scope, format, folder, name: shown, progress: null });
     if (format === 'pdf' && run.deps.drawPdf && !(await printPages(run, name, collected))) {
-      run.state.set({ step: 'options', scope, format, folder, error: null });
+      run.state.set({
+        step: 'options',
+        scope,
+        format,
+        folder,
+        error: null,
+        ...(share ? { share } : {}),
+        ...kept(latex),
+      });
       run.deps.announce(t('interop.export.canceled'));
       return;
     }
@@ -184,6 +223,7 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
       format,
       folder,
       ...extra,
+      ...latexRequest,
       ...(replace ? { replace } : {}),
     });
     if (outcome.status === 'done') {
@@ -191,13 +231,55 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
       await rememberCopy(run, scope, format, outcome.result.reveal);
       return;
     }
-    run.state.set({ step: 'options', scope, format, folder, error: null, ...(share ? { share } : {}) });
+    run.state.set({ step: 'options', scope, format, folder, error: null, ...(share ? { share } : {}), ...kept(latex) });
     run.deps.announce(t('interop.export.canceled'));
   } catch (error) {
-    run.state.set({ step: 'options', scope, format, folder, error: asError(error), ...(share ? { share } : {}) });
+    run.state.set({
+      step: 'options',
+      scope,
+      format,
+      folder,
+      error: asError(error),
+      ...(share ? { share } : {}),
+      ...kept(latex),
+    });
   } finally {
     if (run.job === name) run.job = null;
   }
+}
+
+/** The LaTeX choices to keep in the options when the dialog goes back to them. */
+const kept = (latex: LatexChoices | null) => (latex ? { latex } : {});
+
+/** Asks the host for the preview a moment after the last choice. Only LaTeX has one. */
+function schedulePreview(run: Run): void {
+  if (run.previewTimer) clearTimeout(run.previewTimer);
+  run.previewTimer = null;
+  const current = optionsOf(run);
+  const { interop, notes, target } = run.deps;
+  if (!current || current.format !== 'latex' || !interop.latexPreview) {
+    run.preview.set({ status: 'idle' });
+    return;
+  }
+  const ask = interop.latexPreview.bind(interop);
+  const { scope } = current;
+  const choices = current.latex ?? loadLatexChoices();
+  run.preview.set({ status: 'loading' });
+  run.previewTimer = setTimeout(() => {
+    run.previewTimer = null;
+    run.previews += 1;
+    const number = run.previews;
+    void (async () => {
+      try {
+        const collected = await collectRequest(notes, target, scope);
+        const latex = await latexOptions(choices, String(target.notebook.id));
+        const text = await ask({ ...collected, format: 'latex', folder: '', latex }, PREVIEW_CHARS);
+        if (number === run.previews) run.preview.set({ status: 'ready', text });
+      } catch (error) {
+        if (number === run.previews) run.preview.set({ status: 'error', error: asError(error) });
+      }
+    })();
+  }, PREVIEW_DELAY_MS);
 }
 
 /** Prints the pages of a PDF export, showing each as it goes. False when the person canceled. */
@@ -262,13 +344,22 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
     folder: null,
     error: null,
     ...(deps.format === 'share' ? { share: NO_SHARE_CHOICES } : {}),
+    ...(deps.format === 'latex' ? { latex: loadLatexChoices() } : {}),
   });
   const extras = createFlowState<SendExtras>({ favorites: [], copies: [] });
-  const run: Run = { deps, state, extras, job: null, abort: null };
+  const preview = createFlowState<LatexPreview>({ status: 'idle' });
+  const run: Run = { deps, state, extras, preview, previewTimer: null, previews: 0, job: null, abort: null };
   void loadExtras(run);
   return {
     state,
     extras,
+    preview,
+    setLatex(choices) {
+      const current = optionsOf(run);
+      if (!current) return;
+      state.set({ ...current, latex: { ...(current.latex ?? loadLatexChoices()), ...choices }, error: null });
+      schedulePreview(run);
+    },
     useFolder(folder) {
       const current = optionsOf(run);
       if (current) state.set({ ...current, folder, error: null });
@@ -299,11 +390,16 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
     },
     setScope(scope) {
       const current = optionsOf(run);
-      if (current) state.set({ ...current, scope });
+      if (!current) return;
+      state.set({ ...current, scope });
+      schedulePreview(run);
     },
     setFormat(format) {
       const current = optionsOf(run);
-      if (current) state.set({ ...current, format });
+      if (!current) return;
+      const latex = format === 'latex' ? (current.latex ?? loadLatexChoices()) : current.latex;
+      state.set({ ...current, format, ...(latex ? { latex } : {}) });
+      schedulePreview(run);
     },
     setShare(choices) {
       const current = optionsOf(run);
@@ -330,8 +426,11 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
     running: () => run.job !== null,
     attach() {
       const stop = deps.interop.onProgress((event) => onProgress(run, event));
+      schedulePreview(run);
       return () => {
         stop();
+        if (run.previewTimer) clearTimeout(run.previewTimer);
+        run.previews += 1;
         run.abort?.abort();
         if (run.job) deps.interop.cancel(run.job);
         run.job = null;

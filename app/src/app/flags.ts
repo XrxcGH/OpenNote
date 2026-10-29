@@ -56,6 +56,7 @@ export type FlagId =
   | 'interop.import'
   | 'interop.export'
   | 'interop.exportPdf'
+  | 'interop.latexExport'
   | 'interop.oneNoteFiles'
   /** Import of older and binary office files: .doc, .rtf, .xls, .xlsb, and .ods. */
   | 'interop.legacyFormats'

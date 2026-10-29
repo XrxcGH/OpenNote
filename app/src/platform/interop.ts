@@ -104,8 +104,31 @@ export interface ImportResult {
   skipped: number;
 }
 
-export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'share';
+export type ExportFormat =
+  'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'latex' | 'share';
 export type ExportScope = 'notebook' | 'section' | 'page';
+
+/** A source of the citation library with its BibTeX entry, for a LaTeX export's `\cite` commands and `.bib` file. */
+export interface LatexSource {
+  /** The notebook whose list holds the source. */
+  notebook: string;
+  id: string;
+  key: string;
+  entry: string;
+}
+
+/** What a LaTeX export asks besides the folder (ADR 0054). */
+export interface LatexOptions {
+  /** `unicode` keeps all text for XeLaTeX and LuaLaTeX; `pdflatex` limits it to what pdfLaTeX can show. */
+  engine: 'unicode' | 'pdflatex';
+  paper: 'letter' | 'a4';
+  margin: 'narrow' | 'normal' | 'wide';
+  toc: boolean;
+  titleBlock: boolean;
+  author: string;
+  date: 'none' | 'today' | 'edited';
+  citations: LatexSource[];
+}
 
 export interface ExportRequest {
   format: ExportFormat;
@@ -122,6 +145,8 @@ export interface ExportRequest {
   password?: string;
   /** Share as a file: put each page's earlier versions in the file. */
   history?: boolean;
+  /** LaTeX: the options and the citation library. */
+  latex?: LatexOptions;
 }
 
 export interface ExportResult {
@@ -172,6 +197,8 @@ export interface InteropClient {
   /** Tells the host which imported page holds the content of each page node the interface made. The app's host has none to learn. */
   adopt(dir: string, pages: readonly { ui: string; core: string }[]): Promise<void>;
   exportTo(job: string, request: ExportRequest): Promise<JobOutcome<ExportResult>>;
+  /** The start of the `.tex` text a LaTeX export would write, for the live preview. Absent where the host cannot make it. */
+  latexPreview?(request: ExportRequest, maxChars: number): Promise<string>;
   /** Stops a running job at its next checkpoint. */
   cancel(job: string): void;
   /** Shows a file or folder in Explorer. */
