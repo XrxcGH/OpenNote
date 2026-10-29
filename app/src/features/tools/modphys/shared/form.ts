@@ -8,7 +8,8 @@ import type { Dimension } from './units';
 export interface FieldSpec {
   id: string;
   label: string;
-  kind?: 'number' | 'text' | 'select';
+  /** A number (the default), one line of text, several lines of text, or a choice. */
+  kind?: 'number' | 'text' | 'lines' | 'select';
   /** Shows a unit picker for this dimension; the value is read in SI. */
   dimension?: Dimension;
   /** The units offered, when not all the dimension's. */

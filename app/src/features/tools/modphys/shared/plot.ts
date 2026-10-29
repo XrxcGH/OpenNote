@@ -33,6 +33,8 @@ export interface PlotSpec<L extends string = string> {
   y?: readonly [number, number];
   logX?: boolean;
   logY?: boolean;
+  /** Draws x from high to low, as a temperature axis on an HR diagram. */
+  reverseX?: boolean;
 }
 
 export interface SvgNode {
@@ -132,7 +134,7 @@ function axes(spec: PlotSpec): Axes {
   return {
     xr,
     yr,
-    sx: (x) => M.left + ((fx(x) - xr[0]) / (xr[1] - xr[0])) * pw,
+    sx: (x) => M.left + ((spec.reverseX ? xr[1] - fx(x) : fx(x) - xr[0]) / (xr[1] - xr[0])) * pw,
     sy: (y) => M.top + ph - ((fy(y) - yr[0]) / (yr[1] - yr[0])) * ph,
   };
 }

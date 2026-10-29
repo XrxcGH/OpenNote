@@ -182,7 +182,9 @@ export function plasmaParameters(input: PlasmaInput): Calc<PlasmaKey> {
     steps: [
       {
         key: 'debye',
-        text: `λ_D = √(ε₀ k T_e / (n_e e²)) = √(${fmt(C.eps0)} × ${fmt(eV(p.te))} eV / (${fmt(p.ne)} m⁻³ × e)) = ${prefixed(ld, 'm')}`,
+        text:
+          `λ_D = √(ε₀ k T_e / (n_e e²)) = √(${fmt(C.eps0)} × ${fmt(eV(p.te))} eV / (${fmt(p.ne)} m⁻³ × e)) = ` +
+          `${prefixed(ld, 'm')}`,
         tex: `\\lambda_D = \\sqrt{\\frac{\\varepsilon_0 k T_e}{n_e e^2}} = ${prefixedTex(ld, 'm')}`,
       },
       { key: 'debyeNumber', text: `N_D = (4π/3) n_e λ_D³ = ${fmt(nd)}` },

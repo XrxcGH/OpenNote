@@ -28,7 +28,10 @@ export type Problem =
   | 'badCosmology'
   | 'notBound'
   | 'saturated'
-  | 'belowSurface';
+  | 'belowSurface'
+  | 'noTransit'
+  | 'outsideFit'
+  | 'badBand';
 
 export class PhysicsError extends Error {
   constructor(

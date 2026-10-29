@@ -1,6 +1,6 @@
 // The units a field can be typed in, by dimension. Each unit is a factor to SI (and an offset for temperatures in
 // degrees), so engines always work in SI. The first unit of a list is the tool's usual one, not SI.
-import { ASTRO, C } from './constants';
+import { ASTRO, C, MASS_EARTH, MASS_JUPITER, MASS_SUN } from './constants';
 
 export type Dimension =
   | 'length'
@@ -48,7 +48,16 @@ export const UNITS: Record<Dimension, readonly Unit[]> = {
     u('J', 1),
     u('cm⁻¹', C.h * C.c * 100),
   ],
-  mass: [u('mₑ', C.me), u('u', C.u), u('mₚ', C.mp), u('kg', 1), u('g', 1e-3)],
+  mass: [
+    u('mₑ', C.me),
+    u('u', C.u),
+    u('mₚ', C.mp),
+    u('kg', 1),
+    u('g', 1e-3),
+    u('M☉', MASS_SUN),
+    u('M⊕', MASS_EARTH),
+    u('M♃', MASS_JUPITER),
+  ],
   time: [
     u('s', 1),
     u('fs', 1e-15),

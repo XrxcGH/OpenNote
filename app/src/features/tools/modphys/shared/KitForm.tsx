@@ -92,6 +92,16 @@ function Field({
           </option>
         ))}
       </select>
+    ) : field.kind === 'lines' ? (
+      <textarea
+        id={id}
+        className={extra.input}
+        rows={5}
+        value={value}
+        spellCheck={false}
+        aria-describedby={field.help ? `${id}-help` : undefined}
+        onChange={(e) => set(e.target.value)}
+      />
     ) : (
       <input
         id={id}
@@ -107,7 +117,7 @@ function Field({
       />
     );
   return (
-    <div className={field.wide || field.kind === 'text' ? chem.wide : undefined}>
+    <div className={field.wide || field.kind === 'text' || field.kind === 'lines' ? chem.wide : undefined}>
       <div className={units.length > 0 ? chem.withUnit : undefined}>
         <div className={extra.field}>
           <label htmlFor={id}>{field.label}</label>
@@ -148,7 +158,7 @@ function Result({ outcome }: { outcome: Outcome }) {
     <div className={chem.result}>
       <p className={chem.headline}>{outcome.answer}</p>
       {outcome.rows && outcome.rows.length > 0 ? (
-        <div className={chem.tableWrap}>
+        <div className={chem.tableWrap} tabIndex={0} role="region" aria-label={t('kitModPhys.form.values')}>
           <table className={extra.table}>
             <tbody>
               {outcome.rows.map((row, i) => (
