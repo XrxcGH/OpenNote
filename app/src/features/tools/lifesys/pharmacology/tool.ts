@@ -72,10 +72,7 @@ const calcs: CalcSpec[] = [
         num('V', 'pharmacology.f.V', '50', { unit: 'volumeL' }),
         ...elimination(choice),
         ...(route === 'oral'
-          ? [
-              num('ka', 'pharmacology.f.ka', '1'),
-              num('F', 'pharmacology.f.F', '1', { help: 'pharmacology.h.F' }),
-            ]
+          ? [num('ka', 'pharmacology.f.ka', '1'), num('F', 'pharmacology.f.F', '1', { help: 'pharmacology.h.F' })]
           : []),
         ...(route === 'infusion' ? [num('tinf', 'pharmacology.f.tinf', '1', { unit: 'hours' })] : []),
         num('t', 'pharmacology.f.t', '4', { unit: 'hours' }),

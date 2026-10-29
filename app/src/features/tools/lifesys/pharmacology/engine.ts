@@ -99,7 +99,11 @@ export function oneCompartmentResult(p: OneCompartment): CalcResult {
     latex = 'C(t) = \\frac{F D k_a}{V(k_a - k)}\\left(e^{-kt} - e^{-k_a t}\\right)';
     steps.push(
       { key: 'pharmacology.s.oral', vars: { t: p.t, C }, math: latex },
-      { key: 'pharmacology.s.tmax', vars: { ka: p.ka, k: p.k, tmax, cmax }, math: 't_{max} = \\frac{\\ln(k_a/k)}{k_a - k}' },
+      {
+        key: 'pharmacology.s.tmax',
+        vars: { ka: p.ka, k: p.k, tmax, cmax },
+        math: 't_{max} = \\frac{\\ln(k_a/k)}{k_a - k}',
+      },
     );
   }
   const span = Math.max(p.t, 5 * half, p.route === 'infusion' ? p.tinf + 3 * half : 0);
@@ -141,7 +145,14 @@ export interface MultipleDose {
 }
 
 /** Multiple IV bolus doses (ka null) or oral doses every tau: accumulation, steady-state levels, and a loading dose. */
-export function multipleDose(dose: number, tau: number, k: number, V: number, F: number, ka: number | null): MultipleDose {
+export function multipleDose(
+  dose: number,
+  tau: number,
+  k: number,
+  V: number,
+  F: number,
+  ka: number | null,
+): MultipleDose {
   positive(dose, 'D');
   positive(tau, 'τ');
   positive(k, 'k');
@@ -209,7 +220,11 @@ export function multipleDoseResult(
       ka === null
         ? { key: 'pharmacology.s.peakBolus', vars: { max: m.max, min: m.min } }
         : { key: 'pharmacology.s.peakOral', vars: { t: m.tmaxSs, max: m.max, min: m.min } },
-      { key: 'pharmacology.s.loading', vars: { c: m.avg, V, F, L: m.loading }, math: 'D_L = \\frac{\\bar C_{ss} V}{F}' },
+      {
+        key: 'pharmacology.s.loading',
+        vars: { c: m.avg, V, F, L: m.loading },
+        math: 'D_L = \\frac{\\bar C_{ss} V}{F}',
+      },
       { key: 'pharmacology.s.tss', vars: { k, t: m.tss90 } },
     ],
     notes: [COURSEWORK],
@@ -466,8 +481,16 @@ export function ncaResult(
   const steps: Step[] = [
     { key: method === 'linear' ? 'pharmacology.s.trapezoid' : 'pharmacology.s.logDown', vars: { auc: r.auc } },
     { key: 'pharmacology.s.lambdaZ', vars: { n: terminal, l: r.lambdaZ, h: r.half } },
-    { key: 'pharmacology.s.aucInf', vars: { auc: r.auc, c: conc[conc.length - 1], l: r.lambdaZ, inf: r.aucInf }, math: latex },
-    { key: 'pharmacology.s.mrt', vars: { aumc: r.aumcInf, auc: r.aucInf, mrt: r.mrt }, math: 'MRT = \\frac{AUMC_{0-\\infty}}{AUC_{0-\\infty}}' },
+    {
+      key: 'pharmacology.s.aucInf',
+      vars: { auc: r.auc, c: conc[conc.length - 1], l: r.lambdaZ, inf: r.aucInf },
+      math: latex,
+    },
+    {
+      key: 'pharmacology.s.mrt',
+      vars: { aumc: r.aumcInf, auc: r.aucInf, mrt: r.mrt },
+      math: 'MRT = \\frac{AUMC_{0-\\infty}}{AUC_{0-\\infty}}',
+    },
   ];
   const notes: Step[] = [COURSEWORK];
   if (r.aucInf - r.auc > 0.2 * r.aucInf) notes.unshift({ key: 'pharmacology.n.extrapolated' });
@@ -479,7 +502,10 @@ export function ncaResult(
       { label: iv ? 'pharmacology.r.Vz' : 'pharmacology.r.VzF', value: CL / r.lambdaZ, unit: 'L' },
     );
     if (iv) out.push({ label: 'pharmacology.r.vss', value: CL * r.mrt, unit: 'L' });
-    steps.push({ key: 'pharmacology.s.clearance', vars: { D: dose, auc: r.aucInf, CL, l: r.lambdaZ, V: CL / r.lambdaZ } });
+    steps.push({
+      key: 'pharmacology.s.clearance',
+      vars: { D: dose, auc: r.aucInf, CL, l: r.lambdaZ, V: CL / r.lambdaZ },
+    });
   }
   const points = rows.map((row) => [row[0], row[1]] as Point);
   const tail = lineFit(times.slice(-terminal), conc.slice(-terminal).map(Math.log));
@@ -559,7 +585,12 @@ export function michaelisResult(c0: number, vmax: number, km: number, c1: number
 /** Mosteller body-surface area √(height cm × weight kg / 3600) in m². */
 export const mosteller = (heightCm: number, weightKg: number): number => Math.sqrt((heightCm * weightKg) / 3600);
 
-export function scalingResult(heightCm: number, weightKg: number, perKg: number | null, perM2: number | null): CalcResult {
+export function scalingResult(
+  heightCm: number,
+  weightKg: number,
+  perKg: number | null,
+  perM2: number | null,
+): CalcResult {
   positive(heightCm, 'h');
   positive(weightKg, 'w');
   const bsa = mosteller(heightCm, weightKg);

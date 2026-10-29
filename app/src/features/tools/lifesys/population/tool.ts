@@ -61,8 +61,11 @@ const calcs: CalcSpec[] = [
     },
     solve: (read) => {
       const model = (read.choice('model') || 'logistic') as Growth;
-      const opt = (id: string) => (['K', 'A'].includes(id) ? (read.opt(id) ?? NaN) : read.num(id));
-      return growthResult({ model, N0: read.num('N0'), r: read.num('r'), K: opt('K'), A: opt('A'), t: read.num('t') });
+      // K and A are asked only for the models that use them; the others get NaN.
+      const hasK = model !== 'exponential' && model !== 'geometric';
+      const K = hasK ? read.num('K') : NaN;
+      const A = model === 'allee' ? read.num('A') : NaN;
+      return growthResult({ model, N0: read.num('N0'), r: read.num('r'), K, A, t: read.num('t') });
     },
   },
   {
