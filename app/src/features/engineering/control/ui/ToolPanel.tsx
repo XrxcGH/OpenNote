@@ -3,6 +3,7 @@
 // system for the whole kit.
 import { useDeferredValue, useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
+import { followKitForm } from '../../../tools';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
 import { PAGE } from './plot';
@@ -22,6 +23,7 @@ import {
   type Say,
 } from './insert';
 import { Results } from './Results';
+import { CONTROL_TOOLS } from '../meta';
 import styles from './control.module.css';
 
 /** t for keys built at run time. Every key the kit builds exists in strings/en/kitControl.ts (a test checks). */
@@ -130,7 +132,22 @@ function FieldInput(props: {
   );
 }
 
-function insertItems(c: InsertContext): MenuItemSpec[] {
+/** Keeps this calculation as a live block in the page: Open in tool brings these texts and units back. */
+async function insertLive(c: InsertContext, texts: Readonly<Record<string, string>>): Promise<boolean> {
+  const tools = await import('../../../tools');
+  const kits = await tools.loadKits();
+  const title = CONTROL_TOOLS.find((one) => one.id === c.tool)?.title;
+  return kits.insertLiveBlock({
+    kit: 'control',
+    tool: c.tool,
+    title: title ? say(title) : c.tool,
+    summary: answerText(c),
+    inputs: { texts: { ...texts }, system: c.system },
+    latex: answerLatex(c),
+  });
+}
+
+function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>): MenuItemSpec[] {
   const done = (ok: boolean) => announce(say(ok ? 'kitControl.ui.inserted' : 'kitControl.ui.noPage'));
   const items: MenuItemSpec[] = [
     {
@@ -174,12 +191,26 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
       onSelect: () => done(sendToPage({ picture: pictureRequest(plotText(c, plot, PAGE), `${plot.id}.svg`, name) })),
     });
   });
+  items.push({
+    id: 'live',
+    label: say('kitControl.ui.insertLive'),
+    onSelect: () => void insertLive(c, texts).then(done),
+  });
   return items;
 }
 
 export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const [texts, setTexts] = useState<Record<string, string>>(() => ({ ...firstTexts(spec), ...load(tool, {}) }));
   const [system, setSystem] = useState<System>(() => (load<string>('system', 'si') === 'us' ? 'us' : 'si'));
+  // A live calculation block in a page put its values back: read them again.
+  useEffect(
+    () =>
+      followKitForm('control', tool, () => {
+        setTexts({ ...firstTexts(spec), ...load(tool, {}) });
+        setSystem(load<string>('system', 'si') === 'us' ? 'us' : 'si');
+      }),
+    [tool, spec],
+  );
   useEffect(() => save(tool, texts), [tool, texts]);
   useEffect(() => save('system', system), [system]);
   // Typing stays quick: a tool that takes a moment works on the texts once typing pauses.
@@ -199,7 +230,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   };
   const c: InsertContext | null = run.ok ? { tool, outcome: run.outcome, system, say } : null;
   const openInsert = (anchor: HTMLElement) => {
-    if (c) void openMenu({ label: say('kitControl.ui.insertMenu'), items: insertItems(c), anchor });
+    if (c) void openMenu({ label: say('kitControl.ui.insertMenu'), items: insertItems(c, texts), anchor });
   };
   return (
     <div className={styles.panel}>

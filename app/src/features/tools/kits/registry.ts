@@ -153,3 +153,54 @@ export function resetKits(): void {
   latest = null;
   writePending(null);
 }
+
+/** A form kit's inputs in a live calculation block: one tool's typed texts and the kit's unit system. */
+export interface FormInputs {
+  texts: Record<string, string>;
+  system: 'si' | 'us';
+}
+
+/** The inputs as a form kit's, or null when they are not. */
+export function readFormInputs(inputs: unknown): FormInputs | null {
+  if (!inputs || typeof inputs !== 'object') return null;
+  const { texts, system } = inputs as { texts?: unknown; system?: unknown };
+  if (system !== 'si' && system !== 'us') return null;
+  if (!texts || typeof texts !== 'object') return null;
+  const typed = Object.entries(texts as Record<string, unknown>).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string',
+  );
+  return { texts: Object.fromEntries(typed), system };
+}
+
+export const KIT_FORM_EVENT = 'opennote:kit-form';
+
+/**
+ * Registers a kit whose tools keep their typed texts under `prefix + tool` and the unit system under
+ * `prefix + 'system'` in this device's storage. Open in tool writes the block's inputs there, tells an open tool to
+ * read them again (followKitForm), and then opens the tool with `open`.
+ */
+export function registerFormKit(kit: string, prefix: string, open: (tool: string) => void | Promise<void>): void {
+  registerKit(kit, async (tool) => {
+    const form = readFormInputs(takeKitInputs(kit, tool));
+    if (form) {
+      try {
+        localStorage.setItem(prefix + tool, JSON.stringify(form.texts));
+        localStorage.setItem(`${prefix}system`, JSON.stringify(form.system));
+      } catch {
+        // The tool still opens, on what it last had.
+      }
+      window.dispatchEvent(new CustomEvent<{ kit: string; tool: string }>(KIT_FORM_EVENT, { detail: { kit, tool } }));
+    }
+    await open(tool);
+  });
+}
+
+/** Calls `restored` when a live calculation block puts its inputs back into `tool` of `kit`. */
+export function followKitForm(kit: string, tool: string, restored: () => void): () => void {
+  const on = (event: Event) => {
+    const detail = (event as CustomEvent<{ kit: string; tool: string }>).detail;
+    if (detail?.kit === kit && detail.tool === tool) restored();
+  };
+  window.addEventListener(KIT_FORM_EVENT, on);
+  return () => window.removeEventListener(KIT_FORM_EVENT, on);
+}

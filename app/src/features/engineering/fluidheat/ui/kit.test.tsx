@@ -8,13 +8,20 @@ import { userEvent } from 'vitest/browser';
 import { commands } from '../../../../registries';
 import { en } from '../../../../strings/en';
 import { expectNoAxeViolations, renderApp, renderUi } from '../../../../test';
+import { openKitTool, registerFormKit } from '../../../tools';
 import { INSERT_EVENT } from '../../../tools/flags';
 import { closeTool, openTools } from '../../../tools/ui/host';
 import { FLUIDHEAT_TOOLS } from '../meta';
 import { saveTab } from '../open';
 import { FluidHeatKit } from './FluidHeatKit';
 
-type Detail = { text?: string; math?: { source: string }; table?: { rows: string[][] }; picture?: object };
+type Detail = {
+  text?: string;
+  math?: { source: string };
+  table?: { rows: string[][] };
+  picture?: object;
+  panel?: { type: string; data: Record<string, unknown>; fallback: string };
+};
 const inserted: Detail[] = [];
 const listen = (event: Event) => {
   const detail = (event as CustomEvent<Detail & { handled: boolean }>).detail;
@@ -89,6 +96,31 @@ describe('the fluid and heat transfer kit window', () => {
     expect(inserted[3].text).toMatch(/^<p>Fluid statics, Bernoulli, and flow measurement<\/p><ol><li>/);
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].picture).toBeTruthy();
+  });
+
+  it('keeps a live calculation block that opens the tool on its values again', async () => {
+    registerFormKit('fluidheat', 'opennote.tools.kitFluidHeat.', () => {});
+    saveTab('statics');
+    renderUi(<FluidHeatKit />);
+    await screen.findByRole('region', { name: 'Results' });
+    await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Live calculation block' }));
+    await waitFor(() => expect(inserted).toHaveLength(1));
+    const panel = inserted[0].panel!;
+    expect(panel.type).toBe('ext:org.opennote/kitcalc');
+    expect(panel.data).toMatchObject({ kit: 'fluidheat', tool: 'statics', inputs: { system: 'si' } });
+    expect(panel.data.summary).toContain('F = 51485 N');
+    expect(panel.fallback).toContain('Fluid statics');
+    const width = screen.getAllByRole('textbox', { name: /^Width, or diameter/ })[0] as HTMLInputElement;
+    const typed = width.value;
+    await userEvent.fill(width, '9 m');
+    // The block's Open in tool hands the saved inputs back: the width comes back.
+    expect(await openKitTool('fluidheat', 'statics', panel.data.inputs)).toBe(true);
+    await waitFor(() =>
+      expect((screen.getAllByRole('textbox', { name: /^Width, or diameter/ })[0] as HTMLInputElement).value).toBe(
+        typed,
+      ),
+    );
   });
 
   it('gives a choice with long option names the whole row, so they are not cut off', async () => {

@@ -42,6 +42,7 @@ export const kitFluidHeat = {
     insertTable: 'Result table',
     insertSteps: 'Worked steps',
     insertPicture: 'Picture',
+    insertLive: 'Live calculation block',
     insertTables: 'Tables',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',

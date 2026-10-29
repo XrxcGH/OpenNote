@@ -30,15 +30,18 @@ export { openDesignKit } from './design/open';
 // The tool kits (features/tools/kits/README.md). Registering a kit and opening a tool are light enough for start-up;
 // the numerics, properties, units, and interface load with loadKits, inside a kit's own lazy window.
 export {
+  followKitForm,
   onKitInputs,
   onKitTab,
   openKitTool,
+  readFormInputs,
+  registerFormKit,
   registerKit,
   savedKitTab,
   selectKitTab,
   takeKitInputs,
 } from './kits/registry';
-export type { KitId, KitOpener } from './kits/registry';
+export type { FormInputs, KitId, KitOpener } from './kits/registry';
 export type { KitDef, KitInsertContent, KitResultRow, KitStep, KitToolDef, KitToolProps } from './kits/types';
 export const loadKits = () => import('./kits');
 export { CHEMMAT_META } from './chemmat/meta';

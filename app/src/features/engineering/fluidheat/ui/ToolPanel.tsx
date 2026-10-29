@@ -2,6 +2,7 @@
 // menu. The typed texts are kept on this device for each tool, and the unit system for the whole kit.
 import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
+import { followKitForm } from '../../../tools';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
 import { PAGE } from '../kit/picture';
@@ -11,6 +12,7 @@ import type { FluidHeatError } from '../kit/types';
 import { unitOf, type System } from '../kit/units';
 import {
   answerLatex,
+  answerText,
   answerHtml,
   extraTable,
   pictureRequest,
@@ -21,6 +23,7 @@ import {
   type Say,
 } from './insert';
 import { Results, pictureSvg } from './Results';
+import { FLUIDHEAT_TOOLS } from '../meta';
 import styles from './fluidheat.module.css';
 
 /** t for keys built at run time. Every key the kit builds exists in strings/en/kitFluidHeat.ts (a test checks). */
@@ -130,7 +133,22 @@ function FieldInput(props: {
   );
 }
 
-function insertItems(c: InsertContext): MenuItemSpec[] {
+/** Keeps this calculation as a live block in the page: Open in tool brings these texts and units back. */
+async function insertLive(c: InsertContext, texts: Readonly<Record<string, string>>): Promise<boolean> {
+  const tools = await import('../../../tools');
+  const kits = await tools.loadKits();
+  const title = FLUIDHEAT_TOOLS.find((one) => one.id === c.tool)?.title;
+  return kits.insertLiveBlock({
+    kit: 'fluidheat',
+    tool: c.tool,
+    title: title ? say(title) : c.tool,
+    summary: answerText(c),
+    inputs: { texts: { ...texts }, system: c.system },
+    latex: answerLatex(c),
+  });
+}
+
+function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>): MenuItemSpec[] {
   const done = (ok: boolean) => announce(say(ok ? 'kitFluidHeat.ui.inserted' : 'kitFluidHeat.ui.noPage'));
   const items: MenuItemSpec[] = [
     {
@@ -173,12 +191,26 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
       onSelect: () => done(sendToPage({ picture: pictureRequest(svgText, `${c.tool}.svg`, alt) })),
     });
   }
+  items.push({
+    id: 'live',
+    label: say('kitFluidHeat.ui.insertLive'),
+    onSelect: () => void insertLive(c, texts).then(done),
+  });
   return items;
 }
 
 export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const [texts, setTexts] = useState<Record<string, string>>(() => ({ ...firstTexts(spec), ...load(tool, {}) }));
   const [system, setSystem] = useState<System>(() => (load<string>('system', 'si') === 'us' ? 'us' : 'si'));
+  // A live calculation block in a page put its values back: read them again.
+  useEffect(
+    () =>
+      followKitForm('fluidheat', tool, () => {
+        setTexts({ ...firstTexts(spec), ...load(tool, {}) });
+        setSystem(load<string>('system', 'si') === 'us' ? 'us' : 'si');
+      }),
+    [tool, spec],
+  );
   useEffect(() => save(tool, texts), [tool, texts]);
   useEffect(() => save('system', system), [system]);
   const run = useMemo(() => runTool(spec, texts, system), [spec, texts, system]);
@@ -196,7 +228,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const openInsert = (anchor: HTMLElement) => {
     if (!run.ok) return;
     const c: InsertContext = { tool, outcome: run.outcome, system, say };
-    void openMenu({ label: say('kitFluidHeat.ui.insertMenu'), items: insertItems(c), anchor });
+    void openMenu({ label: say('kitFluidHeat.ui.insertMenu'), items: insertItems(c, texts), anchor });
   };
   return (
     <div className={styles.panel}>

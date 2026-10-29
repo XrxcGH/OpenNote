@@ -29,6 +29,7 @@ export const kitControl = {
     insertNamed: 'Table: {name}',
     insertSteps: 'Worked steps',
     insertPicture: 'Picture: {name}',
+    insertLive: 'Live calculation block',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',
     unitHint: 'A number alone is in {unit}. You can type another unit after it, such as 2 slug or 250 mH.',
