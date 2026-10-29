@@ -3,6 +3,7 @@
 // problems an input can have. Each tool's words live in ./kitMind so no file grows too long.
 import { coding } from './kitMind/coding';
 import { observe } from './kitMind/observe';
+import { choice } from './kitMind/choice';
 import { agreement } from './kitMind/agreement';
 import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
@@ -101,10 +102,17 @@ export const kitMind = {
     sameIntervals: 'Observer 1 has {a} intervals and observer 2 has {b}. They need the same number.',
     fewPhases: 'This needs at least 2 phases, such as a baseline A and an intervention B.',
     phaseLine: 'Line {line} needs a phase name, a bar, then its values: A | 3, 4, 5.',
+    ezEdge:
+      'EZ needs a proportion correct above 0 and below 1. Correct a perfect score first, for example to 1 − 1/(2N).',
+    ezChance: 'At chance accuracy (0.5) the drift is 0 and EZ cannot find the boundary.',
+    ezTer: 'These numbers give a decision time longer than the mean RT, so the non-decision time would be negative.',
+    probabilities: 'The probabilities add up to {total}; they must add up to 1.',
+    gambleLine: 'Line {line} needs an amount and a probability separated by a bar: 100 | 0.5.',
   },
   sdt,
   agreement,
   scales,
   coding,
   observe,
+  choice,
 } as const;

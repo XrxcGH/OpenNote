@@ -17,4 +17,5 @@ export const MIND_TOOLS: readonly MindToolMeta[] = [
   { id: 'agreement', title: 'kitMind.agreement.title', keywords: 'kitMind.agreement.keywords', icon: 'Handshake' },
   { id: 'coding', title: 'kitMind.coding.title', keywords: 'kitMind.coding.keywords', icon: 'Tag' },
   { id: 'observe', title: 'kitMind.observe.title', keywords: 'kitMind.observe.keywords', icon: 'Binoculars' },
+  { id: 'choice', title: 'kitMind.choice.title', keywords: 'kitMind.choice.keywords', icon: 'Scales' },
 ];
