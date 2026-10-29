@@ -1,6 +1,7 @@
 // The psychology and behavior kit: perception, learning, decisions, response times, observation, agreement,
 // questionnaires, and qualitative coding. Tool titles, field labels, row labels, worked-step sentences, and the
 // problems an input can have. Each tool's words live in ./kitMind so no file grows too long.
+import { coding } from './kitMind/coding';
 import { agreement } from './kitMind/agreement';
 import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
@@ -76,8 +77,21 @@ export const kitMind = {
     thresholds: 'The item on line {line} needs thresholds in increasing order.',
     subscaleLine: 'Subscale line {line} needs a name, a colon, then item numbers.',
     lowHigh: 'The highest answer must be above the lowest.',
+    segmentLine: 'Line {line} needs a segment, a case, and codes separated by bars: s1 | Interview 1 | cost.',
+    sameSegment: 'The segment "{id}" is listed twice.',
+    codeLine: 'Line {line} needs a code name first.',
+    sameCode: 'The code "{code}" is in the codebook twice.',
+    noParent: 'The code "{code}" names the parent "{parent}", which is not in the codebook.',
+    cycle: 'The code "{code}" is its own ancestor. Each parent chain must end at a top-level code.',
+    coderLine: 'Line {line} needs a segment and both coders’ codes separated by bars: s1 | cost | cost.',
+    fewSegments: 'This needs at least 2 segments.',
+    noCodes: 'Neither coder applied any code.',
+    tallyLine: 'Line {line} needs a unit and a category separated by a bar: ad 1 | humor | 2.',
+    tallyCount: 'The count on line {line} must be a whole number of at least 0.',
+    noTally: 'Every count is 0, so there is nothing to tally.',
   },
   sdt,
   agreement,
   scales,
+  coding,
 } as const;
