@@ -603,3 +603,13 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Plots and coefficient tables | Histograms, densities, ECDF, Q-Q, box, fit-band, step, forest, and ROC plots, and a coefficient table that states each verdict in words.                                                     | Built, untested by hand |
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
+
+## History, places, languages, and texts kit
+
+(Beta 6. On in Beta and off in Stable, with the kits.humanities flag. Help: [History, places, languages, and texts](help/history-places-languages-and-texts.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Note frames | Note structures for writing, history, law, and field work, found by subject or by searching, inserted as headings, prompts, lists, and a table. | Built, untested by hand |
+| Coordinates and navigation | Converts between latitude and longitude, UTM, and MGRS, measures geodesic distance and bearing, and works grid zone, site grid, land, and marine navigation problems. | Built, untested by hand |
+| Identification keys | Builds a numbered dichotomous key and its tree from a character table, runs it couplet by couplet, filters with a multi-access key, and keeps a catalog of identified specimens or objects. | Built, untested by hand |
