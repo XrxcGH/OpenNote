@@ -2,6 +2,7 @@
 // false, blanks, and what is left to the person; totals, weak topics, and missed questions.
 import { describe, expect, it } from 'vitest';
 import { NOTES, calculatorUnits } from '../../tools';
+import { keyHasUnit } from './basics';
 import { cleanMath, compareMath, readsAsMath } from './equivalence';
 import { autoMark, isAnswered, markExam, missedQuestions, selfMark, totals, weakTopics } from './mark';
 import type { Exam, Question } from './types';
@@ -65,6 +66,28 @@ describe('compareMath', () => {
     expect(cleanMath('x² − 2 × 3 =')).toBe('x^2 - 2 * 3');
     expect(readsAsMath('9.8 m/s^2', kit)).toBe(true);
     expect(readsAsMath('mitochondria', kit)).toBe(false);
+  });
+
+  it('reads the root sign with the number, name, or bracket after it', () => {
+    expect(cleanMath('√16')).toBe('sqrt(16)');
+    expect(cleanMath('√ (x+1)')).toBe('sqrt(x+1)');
+    // √16 is 4, √(x + 1) at x = 3 is 2, and 2√9 is 6: values worked by hand, not by the engine.
+    expect(compareMath('√16', '4', kit)).toBe('equal');
+    expect(compareMath('√(x+1)', 'sqrt(x + 1)', kit)).toBe('equal');
+    expect(compareMath('√(x+1)', 'x + 1', kit)).toBe('different');
+    expect(compareMath('2√9', '6', kit)).toBe('equal');
+    expect(compareMath('√2.25', '1.5', kit)).toBe('equal');
+  });
+
+  it('knows when a key has a unit, so the field can ask for it', () => {
+    expect(keyHasUnit('5 m')).toBe(true);
+    expect(keyHasUnit('9.8 m/s^2')).toBe(true);
+    expect(keyHasUnit('20 °C')).toBe(true);
+    expect(keyHasUnit('50 km/h')).toBe(true);
+    expect(keyHasUnit('4')).toBe(false);
+    expect(keyHasUnit('2x + 1')).toBe(false);
+    expect(keyHasUnit('2(x + 1)')).toBe(false);
+    expect(keyHasUnit('Mitochondria')).toBe(false);
   });
 });
 

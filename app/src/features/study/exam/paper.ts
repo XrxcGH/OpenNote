@@ -3,7 +3,7 @@
 // back to the notes each weak topic came from with opennote://page links, which keep working after a move.
 import { hideBlanks } from '../deck/cloze';
 import { t } from '../../../strings/t';
-import { letterOf } from './basics';
+import { keyHasUnit, letterOf } from './basics';
 import { totals, weakTopics } from './mark';
 import type { Answer, Answers, Exam, Question, QuestionMark } from './types';
 
@@ -65,6 +65,7 @@ export function keyMarkdown(exam: Exam): string {
     }
     if (question.math && question.tolerance)
       lines.push(t('exams.key.tolerance', { percent: Math.round(question.tolerance * 1000) / 10 }), '');
+    if (question.math && keyHasUnit(question.answer)) lines.push(t('exams.key.unit'), '');
     lines.push(t('exams.key.source', { title: inline(question.source.title) }), '');
   });
   return lines.join('\n').trim();

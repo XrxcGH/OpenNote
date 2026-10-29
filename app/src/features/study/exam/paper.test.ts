@@ -93,6 +93,8 @@ describe('paper and key', () => {
     expect(key).toContain('- Working: 150 / 3 = 50');
     expect(key).toContain('Accept answers within 1 percent of this value, with the unit.');
     expect(key).toContain('From the notes: Cells');
+    // 50 km/h has a unit, so the guide says the unit is marked, once, for that question only.
+    expect(key.split('a right number without it gets one mark less').length - 1).toBe(1);
   });
 
   it('writes the results with links back to weak topics', () => {

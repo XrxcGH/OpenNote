@@ -34,6 +34,9 @@ export function cleanMath(text: string): string {
     .replace(/[−–—]/g, '-')
     .replace(/²/g, '^2')
     .replace(/³/g, '^3')
+    // The root sign takes the bracket after it, or the number or name right after it: √16 is sqrt(16).
+    .replace(/√\s*\(/g, 'sqrt(')
+    .replace(/√\s*([A-Za-z0-9_.]+)/g, 'sqrt($1)')
     .replace(/√/g, 'sqrt')
     .trim();
   source = dropTrailingEquals(source);

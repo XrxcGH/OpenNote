@@ -105,6 +105,7 @@ export const exams = {
     guide: 'Marking guide:',
     tolerance: 'Accept answers within {percent} percent of this value, with the unit.',
     source: 'From the notes: {title}',
+    unit: 'The unit is part of the answer: a right number without it gets one mark less.',
   },
   answer: {
     true: 'True',
@@ -120,7 +121,18 @@ export const exams = {
     fewer:
       '{count, plural, one {Your notes had enough for # question.} other {Your notes had enough for # questions.}}',
     start: 'Start exam',
-    save: 'Save paper and key as pages',
+    save: 'Save the blank paper as a page',
+    saveNote: 'The answer key is saved with your results, after you submit.',
+  },
+  resume: {
+    heading: 'Unfinished exams',
+    progress: '{answered} of {total} answered.',
+    running: 'Timer running, {time} left.',
+    paused: 'Timer paused with {time} left.',
+    carryOn: 'Carry on with {title}',
+    drop: 'Discard {title}',
+    dropped: 'Discarded {title}.',
+    resumed: 'Carrying on with {title}. Your answers are back.',
   },
   take: {
     counter: 'Question {number} of {total}',
@@ -137,6 +149,7 @@ export const exams = {
     finalAnswer: 'Final answer',
     yourAnswer: 'Your answer',
     mathHint: 'Type a number or an expression, such as 9.8 m/s^2 or 2(x + 1). Units are checked.',
+    unitHint: 'Include the unit. A right number without its unit loses a mark.',
     flag: 'Flag for review',
     unflag: 'Remove flag',
     showAll: 'Show all questions',
@@ -217,7 +230,7 @@ export const exams = {
     again: 'Make another exam',
   },
   save: {
-    paperSaved: 'Saved the paper and the answer key in the Practice exams section. Print or export them from there.',
+    paperSaved: 'Saved the blank paper in the Practice exams section. Print or export it from there.',
     resultsSaved: 'Saved the results in the Practice exams section.',
     noNotebook: "There's no notebook to save in. Open a page in a notebook, then try again.",
     failed: "The exam couldn't be saved. Your answers are still here; try again in a moment.",

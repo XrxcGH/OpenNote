@@ -40,3 +40,11 @@ export function isAnswered(question: Question, answer: Answer | undefined): bool
   if (question.kind === 'fill') return (answer.blanks ?? []).some((blank) => blank.trim() !== '');
   return (answer.text ?? '').trim() !== '' || (answer.working ?? '').trim() !== '' || (answer.ink ?? []).length > 0;
 }
+
+/**
+ * True when a math key is a number with a unit after it, such as "5 m", "9.8 m/s^2" or "20 °C", so the answer field
+ * can say up front that the unit is marked. A letter straight after the number ("2x") is a variable, not a unit.
+ */
+export function keyHasUnit(answer: string): boolean {
+  return /^[-+−]?\d[\d.,]*(?:[eE][-+]?\d+)?(?:\s+[A-Za-zµμΩ°]|\s*°)[^+=<>]*$/.test(answer.trim());
+}
