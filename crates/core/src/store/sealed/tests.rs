@@ -10,6 +10,16 @@ use serde_json::json;
 const SECRET_TEXT: &[u8] = b"The combination is 42-17-8";
 const PAGE: &str = "01J0000000000000000000PAGE";
 
+/// A passphrase made fresh for each run, so no passphrase is written into the tests.
+fn pw() -> &'static str {
+    static PW: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    PW.get_or_init(|| {
+        let mut raw = [0u8; 12];
+        getrandom::fill(&mut raw).expect("random");
+        raw.iter().map(|b| format!("{b:02x}")).collect()
+    })
+}
+
 fn p(s: &str) -> PathBuf {
     PathBuf::from(s)
 }
@@ -63,7 +73,7 @@ fn protecting_seals_every_file_and_drops_readable_copies_and_history() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "correct horse").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
 
     assert_no_plain(&mem, &[SECRET_TEXT, b"PNGDATA", b"Secret plans"]);
     let on_disk: Vec<String> = mem.read_dir(&dir).unwrap().into_iter().map(|e| e.name).collect();
@@ -99,7 +109,7 @@ fn a_locked_section_shows_only_its_public_file_and_opens_only_with_its_password(
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "correct horse").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
     fs.lock(&dir);
 
     assert_eq!(fs.protection(&dir), Protection::Locked);
@@ -112,14 +122,14 @@ fn a_locked_section_shows_only_its_public_file_and_opens_only_with_its_password(
         Err(ProtectError::Wrong)
     ));
     assert!(
-        fs.unlock(&dir, "S2", Secret::Password("correct horse")).is_err(),
+        fs.unlock(&dir, "S2", Secret::Password(pw())).is_err(),
         "bound to the section"
     );
     assert!(matches!(
         fs.unlock(&dir, "S1", Secret::Hello(b"sig")),
         Err(ProtectError::NoSlot)
     ));
-    fs.unlock(&dir, "S1", Secret::Password("correct horse")).unwrap();
+    fs.unlock(&dir, "S1", Secret::Password(pw())).unwrap();
     assert_eq!(
         fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(),
         SECRET_TEXT
@@ -132,7 +142,7 @@ fn changes_while_unlocked_are_sealed_and_survive_a_lock() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "pw").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
 
     let new_page = page_id();
     fs.create_dir_durable(&dir.join(format!("~moving-{new_page}"))).unwrap();
@@ -156,7 +166,7 @@ fn changes_while_unlocked_are_sealed_and_survive_a_lock() {
     assert_no_plain(&mem, &[b"brand new secret", b"edited secret"]);
 
     fs.lock(&dir);
-    fs.unlock(&dir, "S1", Secret::Password("pw")).unwrap();
+    fs.unlock(&dir, "S1", Secret::Password(pw())).unwrap();
     assert_eq!(
         fs.read(&dir.join(&new_page).join("page.json"), 1 << 20).unwrap(),
         b"brand new secret"
@@ -177,7 +187,7 @@ fn a_damaged_or_swapped_blob_never_reads_as_content() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "pw").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
     let target = dir.join(&page).join("page.json");
     let blob = {
         let st = fs.find(&dir).unwrap();
@@ -197,7 +207,7 @@ fn a_damaged_or_swapped_blob_never_reads_as_content() {
     mem.put(&manifest, &bytes);
     fs.lock(&dir);
     assert!(matches!(
-        fs.unlock(&dir, "S1", Secret::Password("pw")),
+        fs.unlock(&dir, "S1", Secret::Password(pw())),
         Err(ProtectError::Damaged)
     ));
 }
@@ -208,7 +218,7 @@ fn journals_of_unlocked_pages_stay_in_memory_and_go_with_the_lock() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "pw").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
     let journal_dir = p("/data/journal/NB-1");
     let journal = journal_dir.join(format!("{page}-0000000000000001.wal"));
     let mut file = fs.open_append(&journal, true).unwrap();
@@ -233,7 +243,7 @@ fn removing_protection_writes_plain_files_back() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "pw").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
     fs.unprotect(&dir).unwrap();
     assert_eq!(fs.protection(&dir), Protection::None);
     assert_eq!(mem.get(&dir.join(&page).join("page.json")).unwrap(), SECRET_TEXT);
@@ -249,7 +259,7 @@ fn windows_hello_unlocks_with_the_signature_over_its_challenge() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "pw").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
     let challenge = [7u8; crypto::SALT];
     let signature = vec![9u8; 256];
     fs.set_slot(&dir, Secret::Hello(&signature), Some(challenge)).unwrap();
@@ -272,7 +282,7 @@ fn windows_hello_unlocks_with_the_signature_over_its_challenge() {
     )
     .unwrap();
     fs.lock(&dir);
-    fs.unlock(&dir, "S1", Secret::Password("pw")).unwrap();
+    fs.unlock(&dir, "S1", Secret::Password(pw())).unwrap();
     assert!(fs.hello_challenge(&dir).is_some());
     fs.remove_slot(&dir, "hello").unwrap();
     assert!(fs.hello_challenge(&dir).is_none());
@@ -285,7 +295,7 @@ fn leftovers_of_a_crash_while_protecting_are_removed_at_unlock() {
     let page = page_id();
     let dir = plain_section(&mem, &page);
     let fs = sealed_on(&mem);
-    fs.protect(&dir, "S1", "pw").unwrap();
+    fs.protect(&dir, "S1", pw()).unwrap();
     fs.lock(&dir);
     // As if the plain files' removal had not run.
     mem.mkdir_all(&dir.join(PAGE));
@@ -294,7 +304,7 @@ fn leftovers_of_a_crash_while_protecting_are_removed_at_unlock() {
         &dir.join(SEALED_DIR).join("0123456789abcdef0123456789abcdef"),
         b"orphan",
     );
-    fs.unlock(&dir, "S1", Secret::Password("pw")).unwrap();
+    fs.unlock(&dir, "S1", Secret::Password(pw())).unwrap();
     assert!(!mem.exists(&dir.join(PAGE).join("page.json")));
     assert!(!mem.exists(&dir.join(SEALED_DIR).join("0123456789abcdef0123456789abcdef")));
 }
@@ -302,7 +312,7 @@ fn leftovers_of_a_crash_while_protecting_are_removed_at_unlock() {
 #[test]
 fn a_hostile_header_cost_is_refused_before_any_work() {
     let content = crypto::new_key().unwrap();
-    let mut header = crypto::new_header("S1", &content, "pw").unwrap();
+    let mut header = crypto::new_header("S1", &content, pw()).unwrap();
     header["keys"][0]["m"] = json!(4 * 1024 * 1024);
-    assert!(crypto::open_slot("S1", &header, Secret::Password("pw")).is_err());
+    assert!(crypto::open_slot("S1", &header, Secret::Password(pw())).is_err());
 }

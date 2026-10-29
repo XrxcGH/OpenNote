@@ -486,7 +486,7 @@ function guessFor(g: Node, roots: readonly { re: number; im: number; times: numb
           ? [`${xPart}${ePart}1`]
           : [`${xPart}${ePart}cos(${numText(w)}*x)`, `${xPart}${ePart}sin(${numText(w)}*x)`];
       for (const text of parts) {
-        const tidyText = text.replace(/\*1$/, '').replace(/^1$/, '1');
+        const tidyText = text.replace(/\*1$/, '');
         if (!out.has(tidyText)) out.set(tidyText, basis(tidyText));
       }
     }

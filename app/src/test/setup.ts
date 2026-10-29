@@ -11,6 +11,12 @@ import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { disposeApp } from './render';
 
+// base.css clips the window because the app never scrolls it; most component tests render bare components that
+// do, and the Playwright suite holds the full-app layout.
+const scrollable = document.createElement('style');
+scrollable.textContent = 'html, body, #root { overflow: visible; }';
+document.head.append(scrollable);
+
 // Finding a row can wait for the notes service and the tree's first load, which a loaded machine slows.
 configure({ asyncUtilTimeout: 5000 });
 

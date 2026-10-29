@@ -29,14 +29,23 @@ function CompactMain({ active, children }: { active: boolean; children: ReactNod
 
 export const PANE_IDS = { notebooks: 'opennote-notebooks-pane', pages: 'opennote-pages-pane' } as const;
 
-export function NotebooksColumn({ layout, children }: { layout: PaneLayout['notebooks']; children: ReactNode }) {
+export function NotebooksColumn({
+  layout,
+  newPage = true,
+  children,
+}: {
+  layout: PaneLayout['notebooks'];
+  /** False when the pages rail shares this column and has the New page button. */
+  newPage?: boolean;
+  children: ReactNode;
+}) {
   const region = useRegion('notebooks');
   const drawerOpen = useLayout((state) => state.drawerOpen);
   const screen = useLayout((state) => state.compactScreen);
   if (layout.mode === 'drawer') {
     return (
       <nav aria-label={t('layout.regions.notebooks')} className={styles.notebooks} data-mode="drawer">
-        <Rail pane="notebooks" opens="drawer" onShow={() => setDrawerOpen(true)} />
+        <Rail pane="notebooks" opens="drawer" newPage={newPage} onShow={() => setDrawerOpen(true)} />
         {drawerOpen && <Drawer>{children}</Drawer>}
       </nav>
     );
@@ -51,7 +60,7 @@ export function NotebooksColumn({ layout, children }: { layout: PaneLayout['note
       hidden={layout.mode === 'screen' && screen !== 'notebooks'}
       {...region}
     >
-      {layout.mode === 'rail' && <Rail pane="notebooks" opens="column" />}
+      {layout.mode === 'rail' && <Rail pane="notebooks" opens="column" newPage={newPage} />}
       <div className={styles.paneBody} data-pane-content="notebooks" hidden={layout.mode === 'rail'}>
         {children}
       </div>

@@ -79,7 +79,7 @@
 
   .counter {
     position: absolute;
-    inset-block-end: var(--space-3);
+    inset-block-end: calc(var(--space-3) + var(--scrollbar-block, 0px));
     inset-inline: 0;
     margin-inline: auto;
     inline-size: max-content;
@@ -97,8 +97,9 @@
   /* The sheet strip: thumbnails down the end of the window, over the page's margin and under the page chrome. */
   .strip {
     position: absolute;
-    inset-block: var(--space-3);
-    inset-inline-end: var(--space-2);
+    /* Beside the viewport's scroll bars, never over them (--scrollbar-inline and --scrollbar-block, controller.ts). */
+    inset-block: var(--space-3) calc(var(--space-3) + var(--scrollbar-block, 0px));
+    inset-inline-end: calc(var(--space-2) + var(--scrollbar-inline, 0px));
     inline-size: 4.5rem;
     display: flex;
     flex-direction: column;

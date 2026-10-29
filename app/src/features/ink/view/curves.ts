@@ -4,7 +4,7 @@
 // curve point all come here (shapeEdit.ts draws the points and handles).
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { strokeKind } from '../edits/filters';
 import {
   insertNode,
@@ -69,18 +69,18 @@ function focusedHandle(surface: InkSurface): string | undefined {
 export async function makeCurve(host: InkHost, surface: InkSurface | null): Promise<void> {
   const stroke = selectedStroke(host, surface);
   if (!surface || !stroke || !canMakeCurve(host, surface)) {
-    announce(t('ink.curves.cannot'));
+    say(t('ink.curves.cannot'));
     return;
   }
   const shape = strokeKind(stroke) === 'ink' ? null : shapeOfStroke(stroke);
   const curve = shape ? toSpline(shape) : splineFromInk(pagePoints(stroke));
   if (!curve) {
-    announce(t('ink.curves.cannot'));
+    say(t('ink.curves.cannot'));
     return;
   }
   const made = restroke(stroke, curve);
   activeCurvePoint.set({ stroke: made.id, index: 0 });
-  if (await swap(host, surface, stroke, made)) announce(t('ink.curves.made'));
+  if (await swap(host, surface, stroke, made)) say(t('ink.curves.made'));
 }
 
 /** The point the commands act on: the one last pressed or focused, or else the middle one. */
@@ -108,7 +108,7 @@ function segmentForNew(stroke: InkStroke, shape: Spline): number {
 export async function editCurve(host: InkHost, surface: InkSurface | null, what: CurveEdit): Promise<void> {
   const selected = selectedCurve(host, surface);
   if (!surface || !selected) {
-    announce(t('ink.curves.cannot'));
+    say(t('ink.curves.cannot'));
     return;
   }
   const { stroke, shape } = selected;
@@ -124,7 +124,7 @@ export async function editCurve(host: InkHost, surface: InkSurface | null, what:
   } else if (what === 'remove') {
     next = removeNode(shape, k);
     if (next === shape) {
-      announce(t('ink.curves.lastPoints'));
+      say(t('ink.curves.lastPoints'));
       return;
     }
     index = Math.max(0, Math.min(k, nodeCount(next) - 1) - (k > 0 ? 1 : 0));
@@ -143,5 +143,5 @@ export async function editCurve(host: InkHost, surface: InkSurface | null, what:
     layer?.current()?.stroke.id === stroke.id
       ? await layer.replaceWith(stroke, made, refocus)
       : await swap(host, surface, stroke, made);
-  if (ok) announce(message);
+  if (ok) say(message);
 }

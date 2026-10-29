@@ -8,7 +8,7 @@ import { t } from '../../../strings/t';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { hasGrip, isFloating, liveBlock } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
-import { pageSelection } from '../seams/selectionStore';
+import { inkFrameShown, pageSelection } from '../seams/selectionStore';
 import type { PageViewport } from '../viewport/viewport';
 import styles from './chrome.module.css';
 
@@ -35,6 +35,8 @@ const MOUSE_HIT = 32;
 const TOUCH_HIT = 44;
 /** The least a grip shows when other blocks crowd the strip above its box. */
 const GRIP_MIN = 8;
+/** How far a text box's ring stands out from each side, beyond its outline offset. */
+const RING_SIDE = 4;
 
 function div(parent: HTMLElement, className: string): HTMLElement {
   const element = parent.ownerDocument.createElement('div');
@@ -82,6 +84,7 @@ class ChromeLayer implements Chrome {
       () => world.removeEventListener('pointerover', this.onOver),
       () => world.removeEventListener('pointerleave', this.onLeave),
       pageSelection.subscribe(() => this.update()),
+      inkFrameShown.subscribe(() => this.update()),
       parts.pool.onActiveChange(() => this.update()),
       parts.viewport.onCamera(() => this.update()),
       parts.layer.onChange(() => this.update()),
@@ -135,6 +138,8 @@ class ChromeLayer implements Chrome {
     const used = new Set<string>();
     const origin = this.element.getBoundingClientRect();
     const seen = new Set<Element>();
+    // Phase 5's selection frame moves and resizes what it frames, so a selected block shows no grip of its own then.
+    const framed = inkFrameShown.get();
     for (const { block, selected, editing } of this.shown()) {
       const element = this.parts.layer.view(block.id)?.element;
       if (!element) continue;
@@ -145,12 +150,16 @@ class ChromeLayer implements Chrome {
       }
       const rect = element.getBoundingClientRect();
       const box = new DOMRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height);
-      this.mark(used, `outline:${block.id}`, styles.outline!, box).classList.toggle(styles.selected!, selected);
+      // A text box's ring stands a little out from its sides too, so the first letter never touches the line.
+      const ring =
+        block.type === 'text' ? new DOMRect(box.x - RING_SIDE, box.y, box.width + 2 * RING_SIDE, box.height) : box;
+      this.mark(used, `outline:${block.id}`, styles.outline!, ring).classList.toggle(styles.selected!, selected);
       if (!hasGrip(block)) continue;
       if (block.lock) {
         this.mark(used, `lock:${block.id}`, styles.lock!, box);
         continue;
       }
+      if (selected && framed) continue;
       this.handle(used, block, 'grip', box, origin);
       if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box, origin);
     }
