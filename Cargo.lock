@@ -3542,6 +3542,7 @@ dependencies = [
  "opennote-metafile",
  "opennote-print",
  "opennote-search",
+ "opennote-sync",
  "opennote-updater",
  "proptest",
  "quick-xml",

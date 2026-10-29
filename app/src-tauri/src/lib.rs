@@ -15,6 +15,7 @@ pub mod connectors;
 pub mod core_bridge;
 pub mod deeplink;
 pub mod dictionary;
+pub mod e2e_sync;
 pub mod early;
 pub mod events;
 pub mod export_replace;
@@ -149,6 +150,7 @@ pub fn run(context: EarlyContext) {
             shellqol::start(app.handle());
             page_extras::attach::sweep_old_copies();
             api::start(app.handle());
+            e2e_sync::start(app.handle());
             Ok(())
         })
         .invoke_handler(commands())
@@ -374,5 +376,6 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         api::api_call,
         share::share_take,
         connectors::accounts_call,
+        e2e_sync::sync_call,
     ]
 }

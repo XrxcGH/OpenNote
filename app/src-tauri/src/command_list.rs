@@ -56,6 +56,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "connectors_list", "connectors_connect", "connectors_cancel", "connectors_disconnect", "connectors_request",
     "api_call", "share_take",
     "accounts_call",
+    "sync_call",
 ];
 
 #[cfg(test)]

@@ -198,6 +198,7 @@
     "allow-connectors-request",
     "allow-api-call",
     "allow-share-take",
-    "allow-accounts-call"
+    "allow-accounts-call",
+    "allow-sync-call"
   ]
 }
