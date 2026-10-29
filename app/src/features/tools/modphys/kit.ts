@@ -10,4 +10,5 @@ export const KIT: Record<ModPhysToolId, LazyExoticComponent<ComponentType>> = {
   spin: lazy(() => import('./spin/Tool')),
   atoms: lazy(() => import('./atoms/Tool')),
   molecules: lazy(() => import('./molecules/Tool')),
+  sky: lazy(() => import('./sky/Tool')),
 };

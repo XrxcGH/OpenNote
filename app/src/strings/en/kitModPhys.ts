@@ -6,6 +6,7 @@ import { molecules } from './kitModPhys/molecules';
 import { plasma } from './kitModPhys/plasma';
 import { stars } from './kitModPhys/stars';
 import { cosmos } from './kitModPhys/cosmos';
+import { sky } from './kitModPhys/sky';
 
 export const kitModPhys = {
   window: {
@@ -83,6 +84,7 @@ export const kitModPhys = {
     badRotation: 'αe is too large: the rotational constant of v = 1 must stay above zero.',
     fullConversion: 'At p = 1 the chain is infinitely long. Use a conversion below 1.',
     pureComponent: 'The volume fraction must be between 0 and 1, not at either end.',
+    sunDown: 'The Sun is below the horizon at that time, so there is no shadow.',
   },
   q: {
     density: 'The density',
@@ -174,6 +176,13 @@ export const kitModPhys = {
     chainLength: 'The chain length',
     chi: 'The interaction parameter χ',
     volumeFraction: 'The volume fraction',
+    longitude: 'The longitude',
+    zone: 'The time zone offset',
+    rightAscension: 'The right ascension',
+    declination: 'The declination',
+    height: 'The height',
+    windowHeight: 'The window height',
+    azimuth: 'The azimuth',
   },
   tools: {
     plasma: {
@@ -218,6 +227,13 @@ export const kitModPhys = {
         'rotor rotational constant vibration anharmonic morse rovibrational branch isotope pattern exact mass ' +
         'unsaturation nmr multiplet coupling polymer molar mass dispersity carothers flory huggins chain',
     },
+    sky: {
+      title: 'Sky positions and sun paths',
+      open: 'Open the sky positions and sun paths tool',
+      keywords:
+        'julian date sidereal time equation of time sun moon position right ascension declination altitude azimuth ' +
+        'ecliptic galactic precession sunrise sunset twilight day length sun path shadow overhang airmass',
+    },
   },
   plasma,
   stars,
@@ -225,4 +241,5 @@ export const kitModPhys = {
   spin,
   atoms,
   molecules,
+  sky,
 } as const;

@@ -46,7 +46,8 @@ export type Problem =
   | 'badAnharmonicity'
   | 'badRotation'
   | 'fullConversion'
-  | 'pureComponent';
+  | 'pureComponent'
+  | 'sunDown';
 
 export class PhysicsError extends Error {
   constructor(
