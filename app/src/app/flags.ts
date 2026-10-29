@@ -29,6 +29,8 @@ import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
+import type { DesignKitFlagId } from '../features/tools/flags';
 import { KIT_FLAGS } from '../features/tools/flags';
 import type { KitFlagId } from '../features/tools/flags';
 import { createStore, useStore } from '../state/store';
@@ -75,6 +77,7 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
@@ -352,6 +355,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...DESIGN_KIT_FLAGS,
   ...KIT_FLAGS,
 ];
 

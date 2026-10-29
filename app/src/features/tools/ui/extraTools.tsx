@@ -68,6 +68,9 @@ const ControlKit = lazy(() =>
     .then((m) => ({ default: m.ControlKit })),
 );
 
+// The design kit loads the first time its window opens.
+const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ default: m.DesignKit })));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -144,6 +147,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     return (
       <Suspense fallback={null}>
         <ControlKit />
+      </Suspense>
+    );
+  if (tool === 'kit-design')
+    return (
+      <Suspense fallback={null}>
+        <DesignKit />
       </Suspense>
     );
   return null;

@@ -75,6 +75,8 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
 
+export { DESIGN_KIT_FLAGS } from './design/flags';
+export type { DesignKitFlagId } from './design/flags';
 // The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
 export { KIT_FLAGS } from './kits/flags';
 export type { KitFlagId } from './kits/flags';

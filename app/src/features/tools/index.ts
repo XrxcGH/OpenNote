@@ -24,6 +24,7 @@ export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
+export { openDesignKit } from './design/open';
 // The tool kits (features/tools/kits/README.md). Registering a kit and opening a tool are light enough for start-up;
 // the numerics, properties, units, and interface load with loadKits, inside a kit's own lazy window.
 export {
