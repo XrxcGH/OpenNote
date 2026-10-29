@@ -296,6 +296,8 @@ mod tests {
         assert!(same_bytes(&a, &b).expect("reads"));
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn the_new_folder_is_checked() {
         let old = Path::new(r"C:\Users\a\Documents\OpenNote");

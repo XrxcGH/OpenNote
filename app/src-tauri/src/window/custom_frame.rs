@@ -164,6 +164,14 @@ mod tests {
     }
 
     #[test]
+    fn keeps_the_native_frame_on_macos_and_linux() {
+        let none = BTreeMap::new();
+        assert_eq!(at_start(Channel::Dev, &none, &flags(true)), cfg!(windows));
+    }
+
+    // The custom frame is a Windows feature (ADR 0055).
+    #[cfg(windows)]
+    #[test]
     fn starts_undecorated_unless_stable_or_the_boot_overrides_or_settings_say_no() {
         let none = BTreeMap::new();
         assert!(at_start(Channel::Dev, &none, &none));
