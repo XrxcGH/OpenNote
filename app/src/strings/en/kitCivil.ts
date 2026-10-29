@@ -1,6 +1,7 @@
 // The civil, environmental, and chemical engineering kit (owner: the civil lane). The window's own words are here;
 // each tool's labels, results, and worked steps are in a file of their own under ./kitCivil, all in this namespace.
 import { foundations } from './kitCivil/foundations';
+import { hydraulics } from './kitCivil/hydraulics';
 import { groundwater } from './kitCivil/groundwater';
 import { processTool } from './kitCivil/process';
 import { reactors } from './kitCivil/reactors';
@@ -51,6 +52,15 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    hydraulics: {
+      title: 'Hydrology and open channels',
+      open: 'Open hydrology and open channels',
+      keywords:
+        'hydrology hydraulics rainfall runoff rational method idf time of concentration kirpich curve number ' +
+        'nrcs scs tr-55 unit hydrograph s-curve flood routing muskingum reservoir puls detention basin flood ' +
+        'frequency gumbel log pearson return period risk usle erosion open channel manning normal depth ' +
+        'critical depth specific energy froude hydraulic jump gradually varied flow weir orifice hardy cross',
+    },
     process: {
       title: 'Material balances and separations',
       open: 'Open material balances and separations',
@@ -106,6 +116,7 @@ export const kitCivil = {
   },
   soils,
   foundations,
+  hydraulics,
   groundwater,
   water,
   process: processTool,
