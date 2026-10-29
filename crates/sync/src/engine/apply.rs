@@ -40,7 +40,9 @@ impl Engine {
             if matches!(result, Err(SyncError::Incomplete)) {
                 let _ = self.ask_for_missing();
             }
-            let _ = self.repair(super::now_ms());
+            let now = super::now_ms();
+            let _ = self.repair(now);
+            let _ = crate::vault::clear_stale_pairings(self.backend.as_ref(), &self.keys, now);
         }
         result
     }

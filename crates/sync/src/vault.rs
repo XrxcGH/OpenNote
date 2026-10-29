@@ -651,26 +651,43 @@ impl PairingCode {
     }
 }
 
+/// The plain start of a pairing slot: when it was made, and a MAC of that under the vault key, so any device can
+/// tell when a slot it can't open is past its day, and a joining device can't be told the code is newer.
+const MADE: usize = 8 + 32;
+
+fn made_mac(keys: &VaultKeys, name: &str, made: i64) -> [u8; 32] {
+    mac(&keys.root[..], &[b"pairing-made", name.as_bytes(), &made.to_le_bytes()])
+}
+
+/// When the slot `name` was made, if its start is genuine.
+fn slot_made(keys: &VaultKeys, name: &str, bytes: &[u8]) -> Option<i64> {
+    let made = i64::from_le_bytes(bytes.get(..8)?.try_into().ok()?);
+    same(&made_mac(keys, name, made), bytes.get(8..MADE)?).then_some(made)
+}
+
 /// Makes a pairing code that works once, for a day.
 pub fn create_pairing(backend: &dyn Backend, keys: &VaultKeys, now: i64) -> Result<PairingCode> {
     let code = Zeroizing::new(random::<15>()?);
     let name = format!("j/{}", pairing_tag(code.as_ref(), &keys.id));
-    let mut plain = Zeroizing::new(Vec::with_capacity(40));
-    plain.extend_from_slice(&(now + PAIRING_MS).to_le_bytes());
-    plain.extend_from_slice(keys.root.as_ref());
     let sealed = seal(
         &kek_pairing(code.as_ref(), &keys.id),
         &keys.id,
         "pairing",
         &name,
-        &plain,
+        keys.root.as_ref(),
     )?;
-    backend.put(&name, &sealed)?;
+    let mut slot = Vec::with_capacity(MADE + sealed.len());
+    slot.extend_from_slice(&now.to_le_bytes());
+    slot.extend_from_slice(&made_mac(keys, &name, now));
+    slot.extend_from_slice(&sealed);
+    backend.put(&name, &slot)?;
     Ok(PairingCode(Zeroizing::new(base32(code.as_ref(), 4)), name))
 }
 
 /// Unlocks with a pairing code, which may carry the `OPENNOTE-SYNC:` prefix of the QR code. The code is used up:
-/// its slot is deleted, so call [`add_device`] next.
+/// its slot is deleted, so call [`add_device`] next. A code works for [`PAIRING_MS`] after it was made, by this
+/// device's clock and by the time on the newest head in storage, so a device whose clock is behind can't use an
+/// old code that was never cleared.
 pub fn join_with_code(backend: &dyn Backend, code: &str, now: i64) -> Result<VaultKeys> {
     let header = read_vault(backend)?;
     let code = code.trim();
@@ -680,19 +697,41 @@ pub fn join_with_code(backend: &dyn Backend, code: &str, now: i64) -> Result<Vau
         .unwrap_or(code);
     let bytes = Zeroizing::new(from_base32(code, 15).ok_or(SyncError::WrongSecret)?);
     let name = format!("j/{}", pairing_tag(&bytes, &header.id));
-    let sealed = backend.get(&name)?.ok_or(SyncError::PairingExpired)?;
-    let plain =
-        open(&kek_pairing(&bytes, &header.id), &header.id, "pairing", &name, &sealed).ok_or(SyncError::WrongSecret)?;
-    if plain.len() != 40 {
-        return Err(SyncError::WrongSecret);
-    }
-    let expires = i64::from_le_bytes(plain[..8].try_into().expect("8 bytes"));
+    let slot = backend.get(&name)?.ok_or(SyncError::PairingExpired)?;
+    let plain = slot
+        .get(MADE..)
+        .and_then(|sealed| open(&kek_pairing(&bytes, &header.id), &header.id, "pairing", &name, sealed))
+        .ok_or(SyncError::WrongSecret)?;
+    let root: [u8; 32] = plain.as_slice().try_into().map_err(|_| SyncError::WrongSecret)?;
     backend.delete(&name)?;
-    if now > expires {
+    let keys = header.verified(Zeroizing::new(root), tampered_header())?;
+    let made = slot_made(&keys, &name, &slot).ok_or_else(tampered_header)?;
+    let until = made.saturating_add(PAIRING_MS);
+    // Best effort: storage that doesn't read here stops the first round instead.
+    let newest = crate::engine::last_published(backend, &keys)
+        .map(|at| at.into_values().max().unwrap_or(i64::MIN))
+        .unwrap_or(i64::MIN);
+    if now > until || newest > until {
         return Err(SyncError::PairingExpired);
     }
-    let root: [u8; 32] = plain[8..].try_into().expect("32 bytes");
-    header.verified(Zeroizing::new(root), tampered_header())
+    Ok(keys)
+}
+
+/// Deletes the pairing slots more than a day old by `now`, as a round does, so a code that was shown and never
+/// used or withdrawn doesn't stay in storage. A slot that isn't this vault's stays. Returns how many went.
+pub fn clear_stale_pairings(backend: &dyn Backend, keys: &VaultKeys, now: i64) -> Result<usize> {
+    let mut cleared = 0;
+    for name in backend.list("j/")? {
+        let stale = backend
+            .get(&name)?
+            .and_then(|slot| slot_made(keys, &name, &slot))
+            .is_some_and(|made| now > made.saturating_add(PAIRING_MS));
+        if stale {
+            backend.delete(&name)?;
+            cleared += 1;
+        }
+    }
+    Ok(cleared)
 }
 
 /// Withdraws a pairing code that wasn't used.

@@ -255,8 +255,10 @@ fn a_third_device_joins_by_pairing_code_and_catches_up() {
     let d = devices(backend.clone(), 1);
     d[0].write("Bio/todo.txt", b"x");
     d[0].engine.sync().expect("syncs");
-    let code = opennote_sync::vault::create_pairing(backend.as_ref(), d[0].engine.keys(), 0).expect("pairs");
-    let keys = opennote_sync::vault::join_with_code(backend.as_ref(), code.text(), 1).expect("joins");
+    // The code is made at the time on the newest head: older than a day by it, a code no longer works.
+    let now = opennote_sync::last_published(backend.as_ref(), d[0].engine.keys()).expect("lists")[&d[0].tag];
+    let code = opennote_sync::vault::create_pairing(backend.as_ref(), d[0].engine.keys(), now).expect("pairs");
+    let keys = opennote_sync::vault::join_with_code(backend.as_ref(), code.text(), now + 1).expect("joins");
     assert_eq!(keys.fingerprint(), d[0].engine.keys().fingerprint());
     let late = join(backend.clone(), "d9");
     late.engine.sync().expect("syncs");
