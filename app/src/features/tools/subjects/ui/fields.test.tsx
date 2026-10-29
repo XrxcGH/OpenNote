@@ -126,6 +126,27 @@ describe('subject outputs', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('marks an estimate at its bound instead of giving it an interval', () => {
+    renderUi(
+      <CoefficientTable
+        rows={[
+          {
+            term: 'Rate',
+            estimate: 0,
+            se: Number.NaN,
+            statistic: Number.NaN,
+            p: Number.NaN,
+            low: 0,
+            high: 0,
+            atBound: true,
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText('At its bound')).toBeTruthy();
+    expect(screen.getAllByText('Not applicable at a bound')).toHaveLength(4);
+  });
+
   it('inserts a figure block whose Open in tool button reopens the tool with its inputs', async () => {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
     const figure = {

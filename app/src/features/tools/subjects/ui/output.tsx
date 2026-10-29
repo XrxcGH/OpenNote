@@ -17,6 +17,8 @@ export interface CoefficientRow {
   p: number;
   low: number;
   high: number;
+  /** The estimate ended on a bound of its fit (LmFit.atBound): the error, test, and interval do not apply. */
+  atBound?: boolean;
 }
 
 /** The verdict a row's p-value gives at `alpha`, in words. */
@@ -54,19 +56,32 @@ export function CoefficientTable({ rows, level = 0.95, title, statistic }: Coeff
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.term}>
-                <th scope="row">{row.term}</th>
-                <td className={kitStyles.value}>{formatNumber(row.estimate)}</td>
-                <td className={kitStyles.value}>{formatNumber(row.se)}</td>
-                <td className={kitStyles.value}>{formatNumber(row.statistic, 4)}</td>
-                <td className={kitStyles.value}>{row.p < 1e-4 ? '< 0.0001' : formatNumber(row.p, 4)}</td>
-                <td className={kitStyles.value}>
-                  {sayS('coef.range', { low: formatNumber(row.low), high: formatNumber(row.high) })}
-                </td>
-                <td>{verdictWords(row.p, alpha)}</td>
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const na = sayS('coef.notApplicable');
+              return row.atBound ? (
+                <tr key={row.term}>
+                  <th scope="row">{row.term}</th>
+                  <td className={kitStyles.value}>{formatNumber(row.estimate)}</td>
+                  <td>{na}</td>
+                  <td>{na}</td>
+                  <td>{na}</td>
+                  <td>{na}</td>
+                  <td>{sayS('coef.atBound')}</td>
+                </tr>
+              ) : (
+                <tr key={row.term}>
+                  <th scope="row">{row.term}</th>
+                  <td className={kitStyles.value}>{formatNumber(row.estimate)}</td>
+                  <td className={kitStyles.value}>{formatNumber(row.se)}</td>
+                  <td className={kitStyles.value}>{formatNumber(row.statistic, 4)}</td>
+                  <td className={kitStyles.value}>{row.p < 1e-4 ? '< 0.0001' : formatNumber(row.p, 4)}</td>
+                  <td className={kitStyles.value}>
+                    {sayS('coef.range', { low: formatNumber(row.low), high: formatNumber(row.high) })}
+                  </td>
+                  <td>{verdictWords(row.p, alpha)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

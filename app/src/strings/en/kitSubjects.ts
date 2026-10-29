@@ -109,6 +109,8 @@ export const kitSubjects = {
     verdict: 'At the {alpha}% level',
     significant: 'Differs from zero',
     notSignificant: 'No clear difference from zero',
+    atBound: 'At its bound',
+    notApplicable: 'Not applicable at a bound',
   },
   plot: {
     count: 'Count',
