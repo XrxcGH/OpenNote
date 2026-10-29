@@ -247,4 +247,15 @@
     padding: 0;
     color: var(--color-text-secondary);
   }
+
+  /* Lines that read as printed text, such as a key's couplets: one to a row, wrapping on a narrow panel. */
+  .lines {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-1);
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
 }

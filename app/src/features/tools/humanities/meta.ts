@@ -4,6 +4,7 @@
 export const HUMANITIES_TOOLS = [
   { id: 'frames', icon: 'Layout' },
   { id: 'coordinates', icon: 'Compass' },
+  { id: 'keys', icon: 'Key' },
 ] as const;
 
 export type HumanitiesToolId = (typeof HUMANITIES_TOOLS)[number]['id'];

@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one catalog of the kit's strings, one namespace for the whole kit
 // The history, places, languages, and texts kit: timelines, calendars, maps, coordinates, scripts, linguistics, text
 // analysis, identification keys, and note frames. Every interface string is a full sentence, never joined from
 // pieces. A note frame's outline is one string in the frame line language (features/tools/humanities/frames).
@@ -651,6 +652,7 @@ export const kitHumanities = {
     gridE: 'Easting (grid units)',
     gridN: 'Northing (grid units)',
     zoneNote:
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
       'Type the zone parameters from its published sheet. State Plane zones are published by the National Geodetic Survey.',
     controls: 'Control points',
     controlsHint: 'One point a line: site x, site y, map easting, map northing.',
@@ -740,7 +742,9 @@ export const kitHumanities = {
     diagram: 'Diagram of the bearing lines',
     currentDiagram: 'Current triangle diagram',
     steps: {
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
       zone: 'Zone {zone}, central meridian {meridian}°: floor((lon + 180) / 6) + 1, with the Norway and Svalbard exceptions.',
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
       tm: 'Transverse Mercator by the Krüger series to sixth order: E = 500 000 + k0 A eta and N = k0 A xi, k0 = 0.9996.',
       south: 'South of the equator a false northing of 10 000 000 m is added.',
       utm: 'Result: {utm}.',
@@ -750,6 +754,7 @@ export const kitHumanities = {
       haversine: 'For comparison, a sphere of radius 6371.0088 km gives {distance} m.',
       direct: "Vincenty's direct formula from ({lat}, {lon}) on azimuth {az}° for {distance} m.",
       lambert:
+        // checks-disable-next-line length: one message or table, kept whole so the key types read it
         'Lambert conformal conic: n, F, and rho0 from the standard parallels, then rho = a·F·t^n, theta = n·(lon − lon0).',
       tmZone: 'Transverse Mercator with k0 = {k0}, northing measured from latitude {lat0}°.',
       units: 'Grid values converted with 1 {unit} = {meters} m.',
@@ -793,6 +798,94 @@ export const kitHumanities = {
       currentTooStrong: 'The current is too strong for the boat to hold that track.',
       twoOfThree: 'Fill in exactly two of time, speed, and distance.',
       unknown: 'That could not be worked out. Check the numbers.',
+    },
+  },
+  keys: {
+    title: 'Identification keys',
+    open: 'Open identification keys',
+    keywords:
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
+      'identification key dichotomous couplet multi-access character matrix taxon specimen mineral artifact instrument catalog',
+    modes: 'Key tools',
+    tabs: { table: 'Character table', key: 'Dichotomous key', multi: 'Multi-access key', catalog: 'Catalog' },
+    template: 'Start from',
+    templates: {
+      letters: 'Four taxa, two characters',
+      instruments: 'Musical instruments, top levels',
+      minerals: 'Minerals by hardness',
+      artifacts: 'Blank artifact types',
+      taxa: 'Blank taxa',
+    },
+    use: 'Use this table',
+    table: 'Character table',
+    tableHint:
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
+      'One line for each taxon or type: its name, then a state for each character, split by commas or tabs. Use ? for unknown and a/b for either state. Numbers and ranges such as 3-5 make a numeric character.',
+    summary:
+      '{taxa, plural, one {# taxon} other {# taxa}} and {characters, plural, one {# character} other {# characters}}.',
+    keySummary:
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
+      'The key has {couplets, plural, one {# couplet} other {# couplets}} and is {depth, plural, one {# couplet} other {# couplets}} deep.',
+    inseparable: 'The characters cannot tell these apart: {names}. Add a character that differs between them.',
+    allSeparated: 'Every taxon is reached on its own.',
+    or: 'or',
+    leadStates: '{character}: {states}',
+    leadAtMost: '{character}: {value} or less',
+    leadAbove: '{character}: more than {value}',
+    keyText: 'Key text',
+    picture: 'Key drawn as a tree',
+    pictureAlt: 'A dichotomous key drawn as a tree, with {couplets, plural, one {# couplet} other {# couplets}}.',
+    why: 'Couplet {number} uses {character}: it splits {before} taxa into {first} and {second} and gives {gain} bits.',
+    whyHint: 'A taxon with an unknown state goes down both leads.',
+    run: 'Run the key',
+    couplet: 'Couplet {number}',
+    trail: 'Path so far',
+    back: 'Back',
+    restart: 'Start again',
+    reached: 'Identified as {name}.',
+    unresolved: 'The key ends with more than one candidate: {names}.',
+    addToCatalog: 'Add to catalog',
+    character: 'Character',
+    any: 'Not answered',
+    measured: 'Measured value',
+    candidates: 'Candidates ({count})',
+    contradictory: 'No taxon fits all of these answers. Check them, or clear one.',
+    clear: 'Clear answers',
+    catalog: 'Catalog rows',
+    catalogHint: 'One row for each specimen or object: id, locality, date, collector, determination.',
+    catalogHeader: {
+      id: 'Id',
+      locality: 'Locality',
+      date: 'Date',
+      collector: 'Collector',
+      determination: 'Determination',
+    },
+    insertCatalog: 'Insert catalog table',
+    insertKey: 'Insert key text',
+    source:
+      // checks-disable-next-line length: one message or table, kept whole so the key types read it
+      'Instrument classes after Hornbostel and Sachs, 1914 (public domain). The Mohs scale minerals and hardness values are common facts.',
+    tables: {
+      letters: 'Taxon, Character 1, Character 2\nA, 1, 1\nB, 1, 0\nC, 0, 1\nD, 0, 0',
+      instruments:
+        // checks-disable-next-line length: one message or table, kept whole so the key types read it
+        'Class, Vibrating part, Set sounding by, Resonator removable, Air enclosed\n11 Struck idiophones, body, struck, ?, ?\n12 Plucked idiophones, body, plucked, ?, ?\n13 Friction idiophones, body, rubbed, ?, ?\n14 Blown idiophones, body, blown, ?, ?\n21 Struck drums, membrane, struck, ?, ?\n22 Plucked drums, membrane, plucked, ?, ?\n23 Friction drums, membrane, rubbed, ?, ?\n24 Singing membranes, membrane, voice, ?, ?\n31 Simple chordophones, string, ?, yes, ?\n32 Composite chordophones, string, ?, no, ?\n41 Free aerophones, air, ?, ?, no\n42 Wind instruments proper, air, ?, ?, yes',
+      minerals:
+        // checks-disable-next-line length: one message or table, kept whole so the key types read it
+        'Mineral, Hardness, Luster\nTalc, 1, nonmetallic\nGypsum, 2, nonmetallic\nCalcite, 3, nonmetallic\nFluorite, 4, nonmetallic\nApatite, 5, nonmetallic\nOrthoclase, 6, nonmetallic\nQuartz, 7, nonmetallic\nTopaz, 8, nonmetallic\nCorundum, 9, nonmetallic\nDiamond, 10, nonmetallic',
+      artifacts: 'Type, Material, Shape, Decoration\nType A, ?, ?, ?\nType B, ?, ?, ?',
+      taxa: 'Taxon, Character 1, Character 2, Character 3\nTaxon A, ?, ?, ?\nTaxon B, ?, ?, ?',
+    },
+    errors: {
+      empty: 'Add a header line and at least one line for a taxon.',
+      noCharacters: 'Add at least one character after the name column.',
+      tooMany: 'That table is too large. Use at most 500 taxa and 100 characters.',
+      unnamed: 'Give every line a name in the first column.',
+      duplicate: 'Two lines have the same name. Give each taxon its own name.',
+      width: 'A line has more cells than the header has columns.',
+      pastEnd: 'The key has already ended.',
+      number: 'Type a number.',
+      unknown: 'That table could not be read. Check its lines.',
     },
   },
 } as const;
