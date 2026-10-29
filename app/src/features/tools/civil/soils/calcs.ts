@@ -674,7 +674,7 @@ const loadsCalc: Calc = {
                     ? [
                         pick('where', 'soils.f.where', [
                           ['corner', 'soils.o.corner'],
-                          ['centre', 'soils.o.centre'],
+                          ['center', 'soils.o.center'],
                         ]),
                       ]
                     : []),
@@ -695,7 +695,7 @@ const loadsCalc: Calc = {
         case 'circle':
           return circleLoad(n.q!, n.a!, z);
         case 'rect':
-          return s.where === 'centre'
+          return s.where === 'center'
             ? n.q! * 4 * cornerFactor(n.B! / 2, n.L! / 2, z)
             : n.q! * cornerFactor(n.B!, n.L!, z);
         default:

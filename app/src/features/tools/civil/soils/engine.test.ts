@@ -167,7 +167,7 @@ describe('compaction and permeability', () => {
   });
 
   it('gives the falling-head k of the plan and layered equivalents', () => {
-    // a 1 cm², L 10 cm, A 50 cm², 600 s, 100 to 50 cm, in metres: k in m/s.
+    // a 1 cm², L 10 cm, A 50 cm², 600 s, 100 to 50 cm, in meters: k in m/s.
     within(fallingHead(1e-4, 0.1, 50e-4, 600, 1, 0.5) * 100, 0.00023104906, 1e-11);
     const k = layeredK([
       [1, 1e-4],

@@ -161,7 +161,7 @@ export function gradation(rows: readonly (readonly number[])[]) {
 
 /**
  * The diameter (mm) of the largest particle still in suspension at the hydrometer's depth by Stokes' law, and the
- * percent finer from a 152H reading, whose scale is grams of soil per litre for G_s = 2.65.
+ * percent finer from a 152H reading, whose scale is grams of soil per liter for G_s = 2.65.
  */
 export function hydrometer(
   Gs: number,
@@ -456,7 +456,7 @@ export function lineLoad(q: number, x: number, z: number) {
   return (2 * q * z ** 3) / (Math.PI * (x * x + z * z) ** 2);
 }
 
-/** A uniform strip load of width B, with x measured from its centreline. */
+/** A uniform strip load of width B, with x measured from its centerline. */
 export function stripLoad(q: number, B: number, x: number, z: number) {
   need(z > 0 && B > 0, 'errors.positive', { name: 'z, B' });
   const delta = Math.atan((x - B / 2) / z);
