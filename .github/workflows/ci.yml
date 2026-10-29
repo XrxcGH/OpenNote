@@ -25,8 +25,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally 1 to 3 minutes. A run that passes its limit is stuck, so it ends and says so.
-    timeout-minutes: 10
+    # Ubuntu takes 3 to 6 minutes. Windows takes about twice that on a pull request that changes most of the files
+    # (about 4 minutes of unit tests, then the changed-file checks). A run that passes its limit is stuck.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
