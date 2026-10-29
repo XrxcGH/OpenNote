@@ -75,3 +75,6 @@ export const ZOTERO_EVENT = 'opennote:zotero-command';
 export { SIGNALS_FLAGS } from './signals/flags';
 export type { SignalsFlagId } from './signals/flags';
 export { SIGNAL_TOOLS, chooseSignalTool } from './signals/meta';
+// The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
+export { KIT_FLAGS } from './kits/flags';
+export type { KitFlagId } from './kits/flags';
