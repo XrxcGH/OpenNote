@@ -9,6 +9,10 @@
 //!
 //! The technique follows the Windows part of `tauri-plugin-single-instance` 2.5.1 (Apache-2.0 or MIT), keyed by
 //! profile instead of by the app identifier, so test profiles can run side by side.
+//!
+//! On macOS and Linux the lock is an exclusive lock on `OpenNote.<key>.lock` in the per-user runtime folder (ADR
+//! 0055). A second launch that can't take it within 2 s exits, so two processes never write one profile. Its
+//! arguments aren't forwarded yet; macOS brings the running app forward on its own.
 
 use std::time::Duration;
 
@@ -46,6 +50,9 @@ type Handler = Box<dyn Fn(Forwarded) + Send + 'static>;
 pub struct InstanceGuard {
     #[cfg(windows)]
     owner: Option<win::Owner>,
+    /// The locked file. The lock goes with the handle, when the guard drops or the process ends.
+    #[cfg(not(windows))]
+    _lock: Option<std::fs::File>,
 }
 
 impl std::fmt::Debug for InstanceGuard {
@@ -61,6 +68,8 @@ impl InstanceGuard {
         Self {
             #[cfg(windows)]
             owner: None,
+            #[cfg(not(windows))]
+            _lock: None,
         }
     }
 
@@ -91,10 +100,47 @@ fn acquire_with(key: &str, payload: &Forwarded, find: Duration, wait: Duration) 
     win::acquire(key, payload, find, wait)
 }
 
-/// Other systems don't share a profile between processes yet.
 #[cfg(not(windows))]
-fn acquire_with(_key: &str, _payload: &Forwarded, _find: Duration, _wait: Duration) -> InstanceOutcome {
-    InstanceOutcome::Owner(InstanceGuard {})
+fn acquire_with(key: &str, _payload: &Forwarded, find: Duration, _wait: Duration) -> InstanceOutcome {
+    let dir = std::env::var_os("XDG_RUNTIME_DIR")
+        .map(std::path::PathBuf::from)
+        .filter(|dir| dir.is_absolute() && dir.is_dir())
+        .unwrap_or_else(std::env::temp_dir);
+    match lock_file(&dir.join(format!("OpenNote.{key}.lock")), find) {
+        Ok(Some(file)) => InstanceOutcome::Owner(InstanceGuard { _lock: Some(file) }),
+        Ok(None) => {
+            log::warn!("Another OpenNote is open with this profile, so this one exits.");
+            InstanceOutcome::Unavailable
+        }
+        // A folder that can't hold the lock mustn't keep OpenNote from starting.
+        Err(error) => {
+            log::warn!("Couldn't take the instance lock, so OpenNote runs without it: {error}");
+            InstanceOutcome::Owner(InstanceGuard { _lock: None })
+        }
+    }
+}
+
+/// Takes an exclusive lock on `path`, trying again for up to `patience` while another process holds it. `None`
+/// when it stayed held.
+#[cfg(any(not(windows), test))]
+fn lock_file(path: &std::path::Path, patience: Duration) -> std::io::Result<Option<std::fs::File>> {
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(path)?;
+    let deadline = std::time::Instant::now() + patience;
+    loop {
+        match file.try_lock() {
+            Ok(()) => return Ok(Some(file)),
+            Err(std::fs::TryLockError::WouldBlock) if std::time::Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(100));
+            }
+            Err(std::fs::TryLockError::WouldBlock) => return Ok(None),
+            Err(std::fs::TryLockError::Error(error)) => return Err(error),
+        }
+    }
 }
 
 /// Launches that arrive before the app installs its handler wait here.
@@ -131,3 +177,27 @@ mod win;
 
 #[cfg(all(test, windows))]
 mod tests;
+
+#[cfg(test)]
+mod lock_tests {
+    use super::*;
+
+    #[test]
+    fn a_second_lock_on_the_profile_file_waits_then_gives_up() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("OpenNote.test.lock");
+        let first = lock_file(&path, Duration::ZERO).unwrap();
+        assert!(first.is_some());
+        let started = std::time::Instant::now();
+        assert!(lock_file(&path, Duration::from_millis(250)).unwrap().is_none());
+        assert!(started.elapsed() >= Duration::from_millis(250));
+        drop(first);
+        assert!(lock_file(&path, Duration::ZERO).unwrap().is_some());
+    }
+
+    #[test]
+    fn a_folder_that_cant_hold_the_lock_is_an_error() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(lock_file(&dir.path().join("missing").join("OpenNote.lock"), Duration::ZERO).is_err());
+    }
+}
