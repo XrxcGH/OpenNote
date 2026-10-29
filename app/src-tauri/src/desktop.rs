@@ -1,9 +1,9 @@
 //! The operating system's file dialogs and its "open with the default app" (ADR 0055).
 //!
 //! Windows has its own code next to each command: the common item dialogs and `ShellExecuteW`. macOS and Linux use
-//! the dialog plugin (NSOpenPanel and NSSavePanel on macOS, GTK's or the desktop portal's chooser on Linux) and the
-//! system's opener: `open` on macOS and `xdg-open` on Linux. A path or address is always one argument to the opener,
-//! never part of a shell command, so no file name can run anything.
+//! the dialog plugin and the system's opener. The plugin shows NSOpenPanel and NSSavePanel on macOS, and the chooser
+//! of GTK or of the desktop portal on Linux. The opener is `open` on macOS and `xdg-open` on Linux. A path or
+//! address is always one argument to the opener, never part of a shell command, so no file name can run anything.
 
 use tauri::WebviewWindow;
 
@@ -23,6 +23,13 @@ pub fn dialog_owner(window: &WebviewWindow) -> DialogOwner {
 #[cfg(not(windows))]
 pub fn dialog_owner(window: &WebviewWindow) -> DialogOwner {
     window.clone()
+}
+
+/// Adds the dialog plugin on macOS and Linux. Only Rust calls it: no capability lets the page reach it.
+pub fn with_dialogs(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
+    #[cfg(not(windows))]
+    let builder = builder.plugin(tauri_plugin_dialog::init());
+    builder
 }
 
 /// The program that opens a file or an address with its default app on this system.

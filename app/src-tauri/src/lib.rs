@@ -123,10 +123,7 @@ pub fn run(context: EarlyContext) {
     let share = share::ShareState {
         inbox: share::inbox(&paths),
     };
-    let builder = images::register_renditions(tauri::Builder::default());
-    // The file dialogs on macOS and Linux (desktop.rs). Only Rust calls it: no capability lets the page reach it.
-    #[cfg(not(windows))]
-    let builder = builder.plugin(tauri_plugin_dialog::init());
+    let builder = desktop::with_dialogs(images::register_renditions(tauri::Builder::default()));
     let app = builder
         .manage(loaded.store)
         .manage(state)
