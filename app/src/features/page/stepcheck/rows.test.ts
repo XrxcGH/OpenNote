@@ -32,6 +32,31 @@ describe('rowsOf', () => {
     expect(rows).toHaveLength(1);
   });
 
+  it('reads a scribble with more points than a call can take, and gives its box', () => {
+    // 200,000 points along y = 50, from x = 0 to x = 199,999.
+    const points = Array.from({ length: 200_000 }, (_, i) => ({ x: i, y: 50 + (i % 2) }));
+    const [row] = rowsOf([{ id: 'scribble', startTime: 0, points }]);
+    expect(row.box).toEqual({ x0: 0, y0: 50, x1: 199_999, y1: 51 });
+  });
+
+  it('keeps a tall bracket from joining the rows above and below it into its own', () => {
+    // Rows of 30-tall letters at y 0-30, 60-90 and 120-150; a bracket from y 50 to 130 sits beside the middle row.
+    const rows = rowsOf([
+      stroke('a', 0, 0, 20, 30),
+      stroke('a2', 30, 0, 50, 30),
+      stroke('b', 0, 60, 20, 90),
+      stroke('b2', 30, 60, 50, 90),
+      stroke('bracket', 60, 50, 65, 130),
+      stroke('c', 0, 120, 20, 150),
+      stroke('c2', 30, 120, 50, 150),
+    ]);
+    expect(rows.map((row) => row.strokes.map((s) => s.id).sort())).toEqual([
+      ['a', 'a2'],
+      ['b', 'b2', 'bracket'],
+      ['c', 'c2'],
+    ]);
+  });
+
   it('leaves out strokes with no points and stops at 60 rows', () => {
     const many = Array.from({ length: 80 }, (_, i) => stroke(`s${i}`, 0, i * 100, 10, i * 100 + 20));
     expect(rowsOf([...many, { id: 'empty', startTime: 0, points: [] }])).toHaveLength(60);
