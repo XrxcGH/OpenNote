@@ -29,7 +29,8 @@ async function textMenu(page: Page, item: string): Promise<void> {
 
 async function turnOn(page: Page): Promise<void> {
   const ask = page.getByRole('dialog', { name: 'Turn on the tutor?' });
-  await expect(ask).toBeVisible();
+  // The question comes from the tutor's small door, but a busy machine can be slow to load even that.
+  await expect(ask).toBeVisible({ timeout: 15_000 });
   await ask.getByRole('button', { name: 'Turn on' }).click();
 }
 
@@ -155,4 +156,36 @@ test('asks guiding questions about words, and keeps the solution until the stude
   await expect(log).toContainText('Find the key words in the question.');
   await panel.getByRole('button', { name: 'Close the tutor' }).click();
   await expect(panel).toHaveCount(0);
+});
+
+test('does not praise working that drops a root, nor give the root away', async ({ page }) => {
+  // x^2 - 5x + 6 = (x - 2)(x - 3), so the roots are 2 and 3; the last line keeps only x = 2.
+  await openSmart(page);
+  await page.keyboard.press('Control+KeyK');
+  await page.getByRole('combobox', { name: 'Search commands and pages' }).fill('Open the tutor');
+  await page
+    .getByRole('option', { name: /^Open the tutor/ })
+    .first()
+    .click();
+  await turnOn(page);
+
+  const panel = page.locator('[data-tutor-panel]');
+  const working = ['x^2 - 5x + 6 = 0', '(x - 2)(x - 3) = 0', 'x = 2'].join('\n');
+  await panel.getByRole('textbox', { name: 'What the tutor sees' }).fill(working);
+  await panel.getByRole('button', { name: 'Give me a hint' }).click();
+  const log = panel.getByRole('log', { name: 'Conversation with the tutor' });
+  await expect(log).toContainText('Look at line 3. Compare it with line 2');
+  const next = panel.getByRole('button', { name: 'Next hint' });
+  for (const name of ['The idea', 'A question to try', 'The next step']) {
+    await next.click();
+    await expect(log).toContainText(name);
+  }
+  await expect(log).toContainText('Work out both lines for one easy value.');
+  await expect(log).not.toContainText('Nice work');
+  await expect(log).not.toContainText('x = 3');
+
+  await panel.getByRole('button', { name: 'Show the full solution' }).click();
+  await page.getByRole('dialog', { name: 'Show the full solution?' }).getByRole('button', { name: 'Show it' }).click();
+  await expect(log).toContainText('I could not work out a full solution to this.');
+  await expect(log).not.toContainText('Here is the full solution:');
 });

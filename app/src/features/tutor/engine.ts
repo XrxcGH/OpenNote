@@ -55,21 +55,19 @@ const MAX_REPLY_CHARS = 700;
 const MAX_SOLUTION_CHARS = 4000;
 const HISTORY_TURNS = 4;
 
-const SYSTEM =
-  'You are a patient, encouraging tutor for a student. Use short, plain words and no jargon. ' +
-  'Reply in at most three short sentences. Write math in plain text, such as x^3/3 or sqrt(x), with no LaTeX. ' +
-  'Never give the final answer unless asked for the full solution.';
-
-const TASK: Record<Mode | `hint${Rung}`, string> = {
-  hint1: 'Give hint 1 of 4: say only where to look. Do not say what is wrong or how to fix it.',
-  hint2: 'Give hint 2 of 4: name the idea or rule involved, in plain words. Do not do the step.',
-  hint3: 'Give hint 3 of 4: ask one question that leads to the next step. Do not do the step.',
-  hint4: 'Give hint 4 of 4: show only the next step. Do not give the final answer.',
-  hint: '',
-  explain: 'Explain kindly what went wrong in the step and the rule involved. Do not give the corrected line.',
-  solution: 'Write the full worked solution, one short step per line, ending with the answer.',
-  ask: "Answer the student's question as a tutor: guide with a hint or a question, and leave the answer to them.",
-};
+/** The task line of a request: what the model is asked to write. */
+function taskFor(request: TutorRequest): string {
+  const tasks = {
+    hint1: t('tutor.prompt.tasks.hint1'),
+    hint2: t('tutor.prompt.tasks.hint2'),
+    hint3: t('tutor.prompt.tasks.hint3'),
+    hint4: t('tutor.prompt.tasks.hint4'),
+    explain: t('tutor.prompt.tasks.explain'),
+    solution: t('tutor.prompt.tasks.solution'),
+    ask: t('tutor.prompt.tasks.ask'),
+  } as const;
+  return request.mode === 'hint' ? tasks[`hint${request.rung}`] : tasks[request.mode];
+}
 
 /** The built-in reply, with the answer guard applied to every hint. */
 export function rulesReply(request: TutorRequest): string {
@@ -87,17 +85,18 @@ export function rulesReply(request: TutorRequest): string {
 
 /** Exactly what a model is sent: the person sees this text before anything goes to a cloud service. */
 export function buildPrompt(request: TutorRequest): Prompt {
-  const task = request.mode === 'hint' ? TASK[`hint${request.rung}`] : TASK[request.mode];
-  const parts = [`The student's text:\n<text>\n${request.context.slice(0, MAX_CONTEXT_CHARS)}\n</text>`];
-  if (request.mode !== 'solution') parts.push(`A built-in hint to build on: ${rulesReply(request)}`);
+  const parts = [`${t('tutor.prompt.text')}\n<text>\n${request.context.slice(0, MAX_CONTEXT_CHARS)}\n</text>`];
+  if (request.mode !== 'solution') parts.push(t('tutor.prompt.builtIn', { hint: rulesReply(request) }));
   const history = (request.history ?? []).slice(-HISTORY_TURNS);
-  if (history.length > 0)
-    parts.push(
-      `The conversation so far:\n${history.map((turn) => `${turn.who === 'you' ? 'Student' : 'Tutor'}: ${turn.text}`).join('\n')}`,
+  if (history.length > 0) {
+    const said = history.map(
+      (turn) => `${t(turn.who === 'you' ? 'tutor.prompt.student' : 'tutor.prompt.tutor')}: ${turn.text}`,
     );
-  if (request.mode === 'ask' && request.question) parts.push(`The student asks: ${request.question}`);
-  parts.push(task);
-  return { system: SYSTEM, prompt: parts.join('\n\n') };
+    parts.push(`${t('tutor.prompt.history')}\n${said.join('\n')}`);
+  }
+  if (request.mode === 'ask' && request.question) parts.push(t('tutor.prompt.asks', { question: request.question }));
+  parts.push(taskFor(request));
+  return { system: t('tutor.prompt.system'), prompt: parts.join('\n\n') };
 }
 
 /** A model's reply without the wrapping models like to add. */
@@ -113,16 +112,16 @@ export function acceptable(request: TutorRequest, reply: string): boolean {
   const most = request.mode === 'solution' ? MAX_SOLUTION_CHARS : MAX_REPLY_CHARS;
   if (reply === '' || reply.length > most) return false;
   if (request.mode === 'solution') return true;
-  const lastRung = request.mode === 'hint' && request.rung === LAST_RUNG;
+  // A question typed after the last hint builds on that rung, as the built-in reply to it does.
+  const lastRung = (request.mode === 'hint' || request.mode === 'ask') && request.rung === LAST_RUNG;
   const { answer, next } = secrets(request.plan);
   // No known answer (chemistry, physics, word problems, or a slip in math the rules cannot finish, such as a
-  // quadratic): before the last rung, a stated result is refused, even when the corrected line is known.
-  if (answer === null && !lastRung && claimsAnswer(reply, request.context)) return false;
-  return !leaks(reply, lastRung ? [answer] : [answer, next], request.context);
+  // quadratic): a stated result is refused at every rung, even when the corrected line is known. The last rung may
+  // show that line, so its values are allowed there, but never a result beyond it.
+  const shown = lastRung && next ? `${request.context}\n${next}` : request.context;
+  if (answer === null && claimsAnswer(reply, shown)) return false;
+  return !leaks(reply, lastRung ? [answer] : [answer, next], request.context, !lastRung);
 }
-
-const STRICTER =
-  ' Your last reply gave away too much. Do not state the answer, the corrected line, or any final value.';
 
 /** The reply from the best writer the person allows, falling back to the built-in tutor. Never throws. */
 export async function tutorReply(request: TutorRequest, writers: Writers): Promise<Reply> {
@@ -145,7 +144,9 @@ export async function tutorReply(request: TutorRequest, writers: Writers): Promi
     try {
       let reply = cleanReply(await writers.device(prompt));
       if (!acceptable(request, reply))
-        reply = cleanReply(await writers.device({ ...prompt, prompt: prompt.prompt + STRICTER }));
+        reply = cleanReply(
+          await writers.device({ ...prompt, prompt: `${prompt.prompt} ${t('tutor.prompt.stricter')}` }),
+        );
       return acceptable(request, reply) ? { text: reply, where: 'device', fellBack: false } : builtIn(true);
     } catch {
       return builtIn(true);

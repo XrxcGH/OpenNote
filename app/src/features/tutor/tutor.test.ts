@@ -497,3 +497,163 @@ describe('answer guard, round 4 gaps', () => {
     expect(claimsAnswer('What is the mass of 1 mol of water?', chemistry)).toBe(false);
   });
 });
+
+describe('answer guard, a dropped root', () => {
+  // x^2 - 5x + 6 = (x - 2)(x - 3), so the roots are 2 and 3; the student kept only x = 2.
+  const dropped = ['x^2 - 5x + 6 = 0', '(x - 2)(x - 3) = 0', 'x = 2'];
+  const droppedContext = dropped.join('\n');
+  const leakyRoots = [
+    'So x = 3.',
+    'x = 3 is the other root.',
+    'The solutions are 2 and 3.',
+    'x = 2 or x = 3',
+    'x ∈ {2, 3}',
+    'The other root is 3.',
+    'Three.',
+    'x = 3',
+    'Both 2 and 3 work.',
+    'x equals 3 as well.',
+  ];
+
+  it('keeps back a root whose number is in the problem itself', () => {
+    const p = plan(...dropped);
+    for (const reply of leakyRoots) {
+      for (const rung of [1, 2, 3] as const)
+        expect(acceptable(request(p, { rung, context: droppedContext }), reply), reply).toBe(false);
+      expect(acceptable(request(p, { mode: 'explain', context: droppedContext }), reply), reply).toBe(false);
+      const ask = { mode: 'ask' as const, context: droppedContext, question: 'Just tell me the answer.' };
+      expect(acceptable(request(p, ask), reply), reply).toBe(false);
+    }
+    // The root the student wrote, and a value offered to try, are not results.
+    expect(claimsAnswer('Your x = 2 works. Is it the only one?', droppedContext)).toBe(false);
+    expect(claimsAnswer('Try x = 3 in the second line.', droppedContext)).toBe(false);
+  });
+
+  it('treats a dropped root as a slip, not finished work', () => {
+    const p = plan(...dropped);
+    expect(p).toMatchObject({ kind: 'mistake', index: 2, family: 'value', suggestion: null });
+    const said = [1, 2, 3, 4].map((rung) => guardedRuleHint(p, rung as 1 | 2 | 3 | 4, droppedContext));
+    expect(said.join(' ')).not.toMatch(/Nice work/);
+    expect(said.join(' ')).not.toMatch(/x = 3/);
+    expect(said[2]).toBe('Work out both lines for one easy value. Do they match? Which move changed it?');
+    expect(ruleSolution(p)).toBeNull();
+  });
+});
+
+describe('answer guard, round 5 notations', () => {
+  it('reads arrows as a stated value', () => {
+    const context = 'lim x->0 sin(x)/x';
+    expect(acceptable(request(plan(context), { rung: 2, context }), 'sin(x)/x → 1')).toBe(false);
+    const physics = 'F = m a, m = 2 kg, a = 3 m/s^2. F = ?';
+    expect(claimsAnswer('F → 6 N', physics)).toBe(true);
+    const chemistry = '2 H2 + O2 -> 2 H2O. 4 g of H2. mass of water = ?';
+    expect(claimsAnswer('→ 36 g', chemistry)).toBe(true);
+  });
+
+  it('works out a value given as a sum, a root, a fraction or in words', () => {
+    // Each of these is 2: 4/2, 1 + 1, 6 - 4, √4, [2], half of 4, 10 - 8.
+    const context = '2x + 3 = 7';
+    const two = plan(context);
+    for (const reply of [
+      String.raw`x=\frac{4}{2}`,
+      'x = 1 + 1',
+      'x = 6 - 4',
+      'x = sqrt(4)',
+      'x = [2]',
+      'x is half of 4.',
+      'x = ten minus eight',
+    ]) {
+      for (const rung of [1, 2, 3] as const)
+        expect(acceptable(request(two, { rung, context }), reply), reply).toBe(false);
+      expect(acceptable(request(two, { mode: 'ask', context }), reply), reply).toBe(false);
+    }
+    // 6 - 4y is not a number, and 1 + 2 is 3.
+    expect(leaks('x = 6 - 4y', ['x = 2'], context)).toBe(false);
+    expect(leaks('x = 1 + 2', ['x = 2'], context)).toBe(false);
+  });
+});
+
+describe('answer guard, round 5 results', () => {
+  it('flags every way of stating a chemistry or physics result', () => {
+    // F = m a = 2 kg * 3 m/s^2 = 6 N; 2 mol of water at 18 g/mol is 36 g.
+    const physics = 'F = m a, m = 2 kg, a = 3 m/s^2. F = ?';
+    for (const reply of ['F would be 6 N', 'F must be 6 N', 'Multiply 2 by 3: 6 N.'])
+      expect(claimsAnswer(reply, physics), reply).toBe(true);
+    const chemistry = '2 H2 + O2 -> 2 H2O. 4 g of H2. mass of water = ?';
+    for (const reply of [
+      'The result should be 36 g',
+      'You end up with 36 g.',
+      'There will be 36 g.',
+      'that would be 36 g',
+      'The mass works out as 36 g',
+      'giving 36 g',
+      'Answer 36 g',
+      '36 g total',
+      '36 g (two moles)',
+      'Multiply 2 mol by 18 g/mol and you have your 36 g',
+    ])
+      expect(claimsAnswer(reply, chemistry), reply).toBe(true);
+    expect(claimsAnswer('Think about how many moles 4 g of H2 is.', chemistry)).toBe(false);
+  });
+
+  it('keeps a result back at the last rung when the answer is unknown', () => {
+    const context = 'F = m a, m = 2 kg, a = 3 m/s^2. What is F?';
+    const physics = planFor(lines(context), null);
+    for (const reply of ['F = 6 N', 'You get 6 N.'])
+      expect(acceptable(request(physics, { rung: 4, context }), reply), reply).toBe(false);
+    expect(acceptable(request(physics, { rung: 4, context }), 'Multiply m by a.')).toBe(true);
+    // A slip with a known corrected line may still show that line at the last rung.
+    const slip = plan('2x + 3 = 7', '2x = 10');
+    expect(acceptable(request(slip, { rung: 4 }), 'Try 2x = 4.')).toBe(true);
+  });
+
+  it('catches an answer given piece by piece, rounded, or with the constant inside', () => {
+    // d/dx(x^3 + 5x) = 3x^2 + 5.
+    const context = 'd/dx(x^3 + 5x)';
+    const derivative = plan(context);
+    for (const reply of [
+      'd/dx(x^3) = 3x^2 and d/dx(5x) = 5',
+      'The derivative of x^3 is 3x^2; add 5.',
+      'The first piece gives 3x^2.',
+    ])
+      for (const rung of [1, 2, 3] as const)
+        expect(acceptable(request(derivative, { rung, context }), reply), reply).toBe(false);
+    // ∫ x^2 dx = x^3/3 + C; (x^3 + 3C)/3 is x^3/3 + C, and 0.333 is 1/3 rounded.
+    const integralContext = '∫ x^2 dx';
+    const integral = plan(integralContext);
+    for (const reply of ['(x^3 + 3C)/3', '0.333x^3 + C'])
+      expect(acceptable(request(integral, { rung: 2, context: integralContext }), reply), reply).toBe(false);
+    // 0.3x^3 is a tenth off, not a rounding.
+    expect(acceptable(request(integral, { rung: 2, context: integralContext }), '0.3x^3 + C')).toBe(true);
+  });
+});
+
+describe('answer guard, corrections and scripts', () => {
+  it('catches a correction that swaps the wrong number for the right one', () => {
+    // 2x + 3 = 7: 2x = 4, not 10.
+    const given = '2x + 3 = 7\n2x = 10';
+    for (const hint of ['Replace 10 with 4.', 'The 10 should be a 4.', 'Not 10, but 4.'])
+      expect(leaks(hint, ['2x = 4'], given), hint).toBe(true);
+    expect(leaks('The 10 should be something smaller.', ['2x = 4'], given)).toBe(false);
+  });
+
+  it('reads digits of other scripts and a few more number words', () => {
+    expect(leaks('x=٢', ['x = 2'])).toBe(true);
+    expect(leaks('x is double one', ['x = 2'])).toBe(true);
+    expect(leaks('ex equals two', ['x = 2'])).toBe(true);
+    expect(leaks('The limit equals unity.', ['1'], 'lim x->0 sin(x)/x')).toBe(true);
+  });
+
+  it('builds the prompt from the strings file', () => {
+    const history = [
+      { who: 'you' as const, text: 'Hi' },
+      { who: 'tutor' as const, text: 'Hello' },
+    ];
+    const slip = plan('2x + 3 = 7', '2x = 10', 'x = 5');
+    const prompt = buildPrompt(request(slip, { mode: 'ask', question: 'Why?', history }));
+    expect(prompt.system).toMatch(/^You are a patient, encouraging tutor/);
+    expect(prompt.prompt).toContain('Student: Hi\nTutor: Hello');
+    expect(prompt.prompt).toContain('The student asks: Why?');
+    expect(prompt.prompt).toMatch(/Answer the student’s question as a tutor/);
+  });
+});

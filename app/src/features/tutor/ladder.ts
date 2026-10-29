@@ -67,6 +67,8 @@ export type Plan =
   | { kind: 'general'; math: boolean };
 
 const ASIDE = new Set<ReasonCode>(['notMath', 'unreadable', 'note']);
+/** Unchecked reasons that are findings in themselves: the step drops a root, or is true for some values only. */
+const FINDINGS = new Set<ReasonCode>(['lostSolutions', 'someValues', 'neverEqual', 'outsideDomain']);
 
 function lineText(line: StepLine): string {
   const kit = mathKit();
@@ -157,6 +159,11 @@ export function planFor(lines: readonly StepLine[], results: readonly StepResult
         rest: suggestion ? equationSteps(suggestion) : null,
       };
     }
+    // A step Check my work could not pass but whose reason is itself a finding, such as a dropped root: a slip to
+    // look at by trying a value, never finished work. Its { at } is the lost solution, so it is not passed on.
+    const flagged = results.findIndex((r) => r.verdict !== 'ok' && (FINDINGS.has(r.reason) || r.reason in FAMILY));
+    if (flagged >= 0)
+      return { kind: 'mistake', index: flagged, family: 'value', params: {}, suggestion: null, answer, rest: null };
   }
   if (firstLine < 0) return { kind: 'general', math: false };
   const mathLines = texts
@@ -164,6 +171,9 @@ export function planFor(lines: readonly StepLine[], results: readonly StepResult
     .filter((one) => one.text !== '' && !ASIDE.has(results?.[one.i]?.reason ?? 'start'));
   const last = mathLines[mathLines.length - 1] ?? { text: '', i: firstLine };
   const fromLast = equationSteps(last.text);
+  // Finished work is praised only when every step Check my work looked at follows.
+  const allOk = !results || results.every((r) => r.verdict === 'ok' || ASIDE.has(r.reason));
+  if (fromLast?.stage === 'solved' && !allOk) return { kind: 'general', math: true };
   if (fromLast?.stage === 'solved') return { kind: 'done', answer: fromLast.answer };
   if (fromLast) return { kind: 'equation', steps: fromLast };
   const calc = calculusPlan(lines[firstLine] as StepLine, mathLines.length - 1);
@@ -263,9 +273,9 @@ export function guardedRuleHint(plan: Plan, rung: Rung, given: string): string {
   // The next step is the answer itself (a limit that comes to 1, say): never show it, whatever the guard reads.
   if (rung === LAST_RUNG && answer && next && sameResult(next, answer)) return t('tutor.mistake.stepIsAnswer');
   const hint = ruleHint(plan, rung);
-  const hidden = rung === LAST_RUNG ? [answer] : [answer, next];
-  if (!leaks(hint, hidden, given)) return hint;
-  return rung === LAST_RUNG ? t('tutor.mistake.stepIsAnswer') : t('tutor.ideas.general');
+  const last = rung === LAST_RUNG;
+  if (!leaks(hint, last ? [answer] : [answer, next], given, !last)) return hint;
+  return last ? t('tutor.mistake.stepIsAnswer') : t('tutor.ideas.general');
 }
 
 /** The built-in explanation of a flagged step: what went wrong and the rule, without the corrected line. */
