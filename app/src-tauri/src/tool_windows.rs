@@ -174,6 +174,18 @@ pub const TOOLS: &[Tool] = &[
         width: 560.0,
         height: 720.0,
     },
+    Tool {
+        id: "kitaero",
+        title: "Aerospace",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-physics",
+        title: "Physics tools",
+        width: 560.0,
+        height: 720.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it
@@ -382,6 +394,22 @@ mod tests {
         assert!(find("Timers").is_none());
         assert!(find("timers\"; alert(1); \"").is_none());
         assert!(find("").is_none());
+    }
+
+    #[test]
+    fn lists_every_kit_window_the_interface_offers() {
+        // Each kit's Open in its own window asks for its tool id; one missing here fails with "does not exist".
+        let ts = include_str!("../../src/features/tools/ui/tools.ts");
+        let kits: Vec<&str> = ts
+            .split("{ id: '")
+            .skip(1)
+            .filter_map(|rest| rest.split("'").next())
+            .filter(|id| id.starts_with("kit"))
+            .collect();
+        assert!(kits.len() >= 11, "found {kits:?}");
+        for id in kits {
+            assert!(find(id).is_some(), "{id} has no tool window");
+        }
     }
 
     #[test]
