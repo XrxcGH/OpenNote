@@ -4,6 +4,7 @@
 import { coding } from './kitMind/coding';
 import { observe } from './kitMind/observe';
 import { choice } from './kitMind/choice';
+import { rt } from './kitMind/rt';
 import { agreement } from './kitMind/agreement';
 import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
@@ -108,6 +109,19 @@ export const kitMind = {
     ezTer: 'These numbers give a decision time longer than the mean RT, so the non-decision time would be negative.',
     probabilities: 'The probabilities add up to {total}; they must add up to 1.',
     gambleLine: 'Line {line} needs an amount and a probability separated by a bar: 100 | 0.5.',
+    trialHeader:
+      'The first line needs the column names subject, condition, and rt (and correct, if you have accuracy).',
+    negativeRt: 'The RT on line {line} is negative.',
+    correctCell: 'The correct column on line {line} must be 1 or 0.',
+    minMax: 'The longest RT kept must be more than the shortest.',
+    fewConditions: 'This needs at least 2 conditions.',
+    fewRts: 'This needs at least {low} response times.',
+    noCondition: 'No kept trials have the condition "{condition}".',
+    fewPoints: 'This needs at least {low} lines.',
+    fittsRow: 'Line {line} needs a distance and a width above 0.',
+    sameId: 'Every line has the same difficulty, so no slope can be fitted.',
+    hickRow: 'Line {line} needs a whole number of alternatives of at least 1.',
+    twoConditions: 'Name exactly 2 conditions, separated by a comma.',
   },
   sdt,
   agreement,
@@ -115,4 +129,5 @@ export const kitMind = {
   coding,
   observe,
   choice,
+  rt,
 } as const;
