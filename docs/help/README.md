@@ -28,7 +28,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
 - [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
-- [Signals and sound tools](signals-tools.md): spectra, filters, convolution and sampling, medical imaging, information and coding, modulation, and transmission lines.
+- [Signals and sound tools](signals-tools.md): spectra, filters, convolution and sampling, sound, medical imaging, information and coding, modulation, and transmission lines.
 
 ## Draw and design pages
 

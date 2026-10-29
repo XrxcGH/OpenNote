@@ -100,4 +100,10 @@ describe('signals and sound kit', () => {
     expect(screen.getAllByRole('status')[0]!.textContent).toContain('0.348981');
     await walkModes(container);
   });
+
+  it('analyzes the example vowel at 120 Hz and walks every sound mode', async () => {
+    const { container } = await openAt('audio');
+    expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/f0 12\d/);
+    await walkModes(container);
+  });
 });

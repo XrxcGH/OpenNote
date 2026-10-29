@@ -8,6 +8,7 @@ import { comms } from './kitSignals/comms';
 import { rf } from './kitSignals/rf';
 import { filters } from './kitSignals/filters';
 import { medimaging } from './kitSignals/medimaging';
+import { audio } from './kitSignals/audio';
 
 export const kitSignals = {
   kit: {
@@ -60,6 +61,14 @@ export const kitSignals = {
       keywords:
         'mri larmor bloch t1 t2 spin echo k-space ct hounsfield window ultrasound doppler x-ray attenuation pet suv',
       about: 'MRI signals and a Bloch simulator, k-space, CT numbers, ultrasound, X-ray attenuation, and PET uptake.',
+    },
+    audio: {
+      title: 'Sound analysis and acoustics',
+      open: 'Open sound analysis and acoustics',
+      keywords:
+        'audio pitch yin formant lpc vowel spectrogram phonetics tuner cents tone chao audiogram decibel a-weighting',
+      about:
+        'Waveform, spectrogram, pitch, intensity, formants, vowel space, a tuner, tones, audiograms, and decibels.',
     },
   },
   ui: {
@@ -170,6 +179,20 @@ export const kitSignals = {
     keepShare: 'The share of k-space kept must be above 0 and at most 1.',
     muAir: 'The air value must be 0 or more and below the water value.',
     dopplerAngle: 'At 90° the beam sees no motion, so the velocity cannot be found.',
+    pitchRange:
+      'The pitch range must have a floor above 0, a ceiling above it, and a ceiling below a quarter of the rate.',
+    tooShort: 'The sound is too short to analyze. Choose a longer stretch.',
+    tooFewVoiced: 'There are too few voiced frames. Choose a stretch with a steady voice.',
+    vowelTable: 'Each vowel line needs a label, then F1 and F2 above 0 Hz.',
+    referencePitch: 'Set A4 between 400 and 480 Hz.',
+    chao: 'Write the tone as 1 to 4 digits from 1 to 5, such as 55, 35, or 214.',
+    ptaFrequencies: 'The pure-tone average needs thresholds at 500, 1000, and 2000 Hz.',
+    levels: 'Give at least one level in decibels.',
+    levelOrder: 'The total must be above the background to take it away.',
+    distances: 'Both distances must be above 0.',
+    toneDuration: 'The tone can last from just above 0 to 10 seconds.',
+    harmonics: 'The number of harmonics must be a whole number from 1 to 40.',
+    labelLine: 'Label line “{text}” needs a start, an end after it, and a label.',
   },
   step: {
     spectrumRecord: 'The record has N samples at the sample rate, so the bins are fs/N apart.',
@@ -309,6 +332,9 @@ export const kitSignals = {
       'The Doppler shift is twice the beam frequency times the velocity along the beam over the speed of sound.',
     petSuv: 'Divide the tissue concentration by the dose per gram of body (1 g/mL).',
     petDecay: 'Correct the injected dose for decay up to the scan.',
+    audioSemitones: 'Count semitones from A4 on the equal-tempered scale.',
+    audioCents: 'The nearest note is {note}; the rest is the deviation in cents.',
+    audioSum: 'Add the levels as powers, then turn the total back into decibels.',
   },
   spectrum,
   systems,
@@ -316,4 +342,5 @@ export const kitSignals = {
   rf,
   filters,
   medimaging,
+  audio,
 } as const;

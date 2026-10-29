@@ -11,6 +11,7 @@ const TOOL_BODIES: Record<SignalToolId, LazyExoticComponent<ComponentType>> = {
   filters: lazy(() => import('./filters/FiltersTool').then((m) => ({ default: m.FiltersTool }))),
   systems: lazy(() => import('./systems/SystemsTool').then((m) => ({ default: m.SystemsTool }))),
   medimaging: lazy(() => import('./medimaging/MedImagingTool').then((m) => ({ default: m.MedImagingTool }))),
+  audio: lazy(() => import('./audio/AudioTool').then((m) => ({ default: m.AudioTool }))),
   comms: lazy(() => import('./comms/CommsTool').then((m) => ({ default: m.CommsTool }))),
   rf: lazy(() => import('./rf/RfTool').then((m) => ({ default: m.RfTool }))),
 };
