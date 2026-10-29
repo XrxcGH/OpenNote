@@ -18,6 +18,8 @@ interface Shown {
   layer: HTMLElement;
   panel: HTMLElement;
   stop: () => void;
+  /** Where focus was when the card opened (the editor), given back when it is dismissed. */
+  back: HTMLElement | null;
 }
 
 let shown: Shown | null = null;
@@ -47,10 +49,15 @@ const GLYPH: Record<StepResult['verdict'], string> = { ok: '✓', broken: '!', u
 /** Takes the marks and the card away. */
 export function dismissMarks(): void {
   if (!shown) return;
+  const { back, panel } = shown;
   shown.stop();
   shown.layer.remove();
-  shown.panel.remove();
+  // Focus goes back to where it was only when it was in the card; never taken from somewhere the person moved to.
+  const doc = panel.ownerDocument;
+  const inCard = panel.contains(doc.activeElement) || doc.activeElement === doc.body;
+  panel.remove();
   shown = null;
+  if (inCard && back?.isConnected) back.focus({ preventScroll: true });
 }
 
 export function marksShown(): boolean {
@@ -76,6 +83,39 @@ function button(doc: Document, label: string, run: () => void): HTMLButtonElemen
   return b;
 }
 
+/** The mark beside one line: a button named with its finding, which takes focus to that finding in the card. */
+function markButton(
+  doc: Document,
+  result: StepResult,
+  i: number,
+  line: GatheredLine,
+  item: () => HTMLElement | undefined,
+): HTMLButtonElement {
+  const mark = doc.createElement('button');
+  mark.type = 'button';
+  mark.className = styles.mark;
+  mark.dataset.stepMark = result.method === 'given' ? 'given' : result.verdict;
+  const label = markLabel(result, i + 1);
+  mark.setAttribute('aria-label', label);
+  mark.title = label;
+  const glyph = doc.createElement('span');
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.textContent = result.method === 'given' ? '·' : GLYPH[result.verdict];
+  mark.append(glyph);
+  const height = Math.max(16, line.box.y1 - line.box.y0);
+  Object.assign(mark.style, {
+    left: `${line.box.x1 + 8}px`,
+    top: `${line.box.y0 + height / 2}px`,
+  });
+  mark.addEventListener('click', () => {
+    const found = item();
+    if (!found) return announce(label);
+    found.focus();
+    found.scrollIntoView({ block: 'nearest' });
+  });
+  return mark;
+}
+
 /** Shows the marks beside the lines and the summary card. `recheck` reads the lines again and checks them. */
 export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () => void): void {
   dismissMarks();
@@ -92,6 +132,7 @@ export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () =
   const heading = doc.createElement('h2');
   heading.className = styles.title;
   heading.textContent = t('stepCheck.panel.title');
+  heading.tabIndex = -1;
   const summary = doc.createElement('p');
   summary.className = styles.summary;
   summary.textContent = summaryText(check.results);
@@ -133,41 +174,25 @@ export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () =
 
   check.results.forEach((result, i) => {
     const line = check.lines[i];
-    if (!line) return;
-    const mark = doc.createElement('button');
-    mark.type = 'button';
-    mark.className = styles.mark;
-    mark.dataset.stepMark = result.method === 'given' ? 'given' : result.verdict;
-    const label = markLabel(result, i + 1);
-    mark.setAttribute('aria-label', label);
-    mark.title = label;
-    const glyph = doc.createElement('span');
-    glyph.setAttribute('aria-hidden', 'true');
-    glyph.textContent = result.method === 'given' ? '·' : GLYPH[result.verdict];
-    mark.append(glyph);
-    const height = Math.max(16, line.box.y1 - line.box.y0);
-    Object.assign(mark.style, {
-      left: `${line.box.x1 + 8}px`,
-      top: `${line.box.y0 + height / 2}px`,
-    });
-    mark.addEventListener('click', () => {
-      const item = items.get(i);
-      if (!item) return announce(label);
-      item.focus();
-      item.scrollIntoView({ block: 'nearest' });
-    });
-    layer.append(mark);
+    if (line) layer.append(markButton(doc, result, i, line, () => items.get(i)));
   });
 
+  // Escape dismisses from anywhere while the marks are shown, not only from inside the card.
   const onKey = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    const inDialog = event.target instanceof Element && event.target.closest('dialog, [role="dialog"]') !== null;
+    if (event.key === 'Escape' && !event.defaultPrevented && !inDialog) {
       event.stopPropagation();
       dismissMarks();
     }
   };
-  panel.addEventListener('keydown', onKey);
+  const active = doc.activeElement;
+  const back =
+    active instanceof HTMLElement && active !== doc.body && !active.closest('[data-step-check-panel]') ? active : null;
+  doc.addEventListener('keydown', onKey);
   mounted.viewport.world.append(layer);
   doc.body.append(panel);
-  shown = { layer, panel, stop: () => panel.removeEventListener('keydown', onKey) };
+  shown = { layer, panel, back, stop: () => doc.removeEventListener('keydown', onKey) };
   announce(summary.textContent);
+  // The card is last on the page: focus moves to its heading so a keyboard reaches the findings at once.
+  heading.focus({ preventScroll: true });
 }
