@@ -39,6 +39,7 @@ describe('the choice of where a feature runs', () => {
     expect(parseChoices('{"summaries":"cloud","transcription":"elsewhere"}')).toEqual({
       transcription: 'device',
       summaries: 'cloud',
+      tutor: 'device',
     });
     expect(parseChoices('not json')).toEqual({ transcription: 'device', summaries: 'device', tutor: 'device' });
   });
