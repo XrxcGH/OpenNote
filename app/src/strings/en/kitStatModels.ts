@@ -8,6 +8,7 @@ import { spatial, spatialSteps } from './kitStatModels/spatial';
 import { causal, causalSteps } from './kitStatModels/causal';
 import { timeseries, timeseriesSteps } from './kitStatModels/timeseries';
 import { multivariate, multivariateSteps } from './kitStatModels/multivariate';
+import { ml, mlSteps } from './kitStatModels/ml';
 
 export const kitStatModels = {
   title: 'Statistical models',
@@ -153,6 +154,17 @@ export const kitStatModels = {
     flatProfile: 'A row has the same value in every column, so its correlation distance is not defined.',
     notSquare: 'A distance table needs as many rows as columns.',
     badDistances: 'Distances must be 0 or more, 0 from each item to itself, and the same in both directions.',
+    thresholdRange: 'The decision threshold must be between 0 and 1.',
+    oneClassOnly: 'The outcome needs at least 2 classes, each with rows.',
+    shareRange: 'The test share must be between 0 and 1.',
+    foldRange: 'The number of folds must be from 2 to {detail}.',
+    emptyClass: 'Class {detail} has no training rows. Use a larger training share or another seed.',
+    tooManyClasses: 'The outcome has more than 10 classes. Choose a column with fewer.',
+    hiddenLayers: 'Type 1 or 2 hidden-layer sizes from 1 to 16, such as 8 or 8, 4.',
+    modelForClasses:
+      'That model predicts classes. For a number, choose linear, ridge, lasso, nearest neighbors, or a tree.',
+    modelForNumbers: 'That model predicts a number. For classes, choose another model.',
+    binaryOnly: 'This model handles 2 classes. Choose nearest neighbors, a tree, or naive Bayes for more.',
     unknown: 'That could not be worked out.',
   },
   glm,
@@ -162,6 +174,7 @@ export const kitStatModels = {
   causal,
   timeseries,
   multivariate,
+  ml,
   step: {
     glm: glmSteps,
     survival: survivalSteps,
@@ -170,5 +183,6 @@ export const kitStatModels = {
     causal: causalSteps,
     timeseries: timeseriesSteps,
     multivariate: multivariateSteps,
+    ml: mlSteps,
   },
 };

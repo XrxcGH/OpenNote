@@ -43,5 +43,6 @@ export const STATMODELS_TOOLS: readonly StatModelsToolMeta[] = [
     keywords: 'kitStatModels.multivariate.keywords',
     icon: 'Graph',
   },
+  { id: 'ml', title: 'kitStatModels.ml.title', keywords: 'kitStatModels.ml.keywords', icon: 'Brain' },
   { id: 'spatial', title: 'kitStatModels.spatial.title', keywords: 'kitStatModels.spatial.keywords', icon: 'MapPin' },
 ];

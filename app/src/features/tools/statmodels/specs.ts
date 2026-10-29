@@ -9,4 +9,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   causal: () => import('./causal/spec').then((m) => m.causalSpec),
   timeseries: () => import('./timeseries/spec').then((m) => m.timeseriesSpec),
   multivariate: () => import('./multivariate/spec').then((m) => m.multivariateSpec),
+  ml: () => import('./ml/spec').then((m) => m.mlSpec),
 };
