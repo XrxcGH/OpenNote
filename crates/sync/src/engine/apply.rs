@@ -94,7 +94,7 @@ impl Engine {
         if !plan.publish {
             return Ok(generation);
         }
-        let generation = generation + 1;
+        let generation = super::later(generation, 1)?;
         let head = Head {
             v: 1,
             device: self.device.clone(),
@@ -206,7 +206,10 @@ impl Engine {
     /// Removes older heads of this device; the one before the newest stays for slow readers.
     fn prune_heads(&self, generation: u64) {
         if let Ok((_, own)) = self.heads() {
-            for old in own.into_iter().filter(|g| *g + 1 < generation) {
+            for old in own
+                .into_iter()
+                .filter(|g| g.checked_add(1).is_some_and(|next| next < generation))
+            {
                 let _ = self.backend.delete(&head_name(&self.device, old));
             }
         }

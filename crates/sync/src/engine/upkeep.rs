@@ -25,7 +25,7 @@ impl Engine {
         let (newest, own) = self.heads()?;
         state.seen = newest.into_iter().filter(|(d, _)| *d != self.device).collect();
         state.vault = vault::status(self.backend.as_ref(), &self.keys)?.generation;
-        let generation = state.generation.max(own.last().copied().unwrap_or(0)) + 1;
+        let generation = super::later(state.generation.max(own.last().copied().unwrap_or(0)), 1)?;
         let mut entries: Manifest = state.files.iter().map(|(p, k)| (p.clone(), k.entry.clone())).collect();
         entries.extend(state.deferred.iter().map(|(p, e)| (p.clone(), e.clone())));
         let head = Head {
@@ -184,7 +184,7 @@ impl Engine {
         let ready = state.gc.as_ref().is_some_and(|mark| {
             now - mark.at >= GC_GRACE_MS
                 && mark.generations.iter().all(|(device, g)| {
-                    newest.get(device).is_some_and(|n| *n >= g + 2)
+                    super::later(*g, 2).is_ok_and(|after| newest.get(device).is_some_and(|n| *n >= after))
                         || !listed.contains(device)
                         || vault::is_removed(self.backend.as_ref(), &self.keys, device).unwrap_or(false)
                 })

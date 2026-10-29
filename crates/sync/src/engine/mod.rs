@@ -387,13 +387,39 @@ impl Engine {
     }
 }
 
-fn parse_head_name(name: &str) -> Option<(&str, u64)> {
+/// The highest head generation this app ever writes. A device writes one head a round, so even a round every
+/// millisecond would take 285,000 years to get here; a higher number in a listing was put there by hand, and
+/// counting on from it could overflow.
+pub(crate) const MAX_GENERATION: u64 = 1 << 53;
+
+/// The error for a head name whose generation no device wrote: zero, or past [`MAX_GENERATION`].
+pub(crate) fn impossible_generation() -> SyncError {
+    SyncError::Tampered("A device's list of changes has an impossible number.".into())
+}
+
+/// The generation `step` after `generation`, or [`impossible_generation`] past [`MAX_GENERATION`].
+pub(crate) fn later(generation: u64, step: u64) -> Result<u64> {
+    generation
+        .checked_add(step)
+        .filter(|next| *next <= MAX_GENERATION)
+        .ok_or_else(impossible_generation)
+}
+
+/// The device and generation of a head name. A generation of zero or past [`MAX_GENERATION`] is an error: the
+/// name is in the head folder but no device wrote it.
+fn parse_head_name(name: &str) -> Result<Option<(&str, u64)>> {
     let mut parts = name.split('/');
     let (Some("h"), Some(device), Some(generation), None) = (parts.next(), parts.next(), parts.next(), parts.next())
     else {
-        return None;
+        return Ok(None);
     };
-    Some((device, generation.parse::<u64>().ok()?))
+    if generation.is_empty() || !generation.bytes().all(|b| b.is_ascii_digit()) {
+        return Ok(None);
+    }
+    match generation.parse::<u64>() {
+        Ok(number @ 1..=MAX_GENERATION) => Ok(Some((device, number))),
+        _ => Err(impossible_generation()),
+    }
 }
 
 /// The newest generation of every device's heads, and every generation of `own`'s, from one listing.
@@ -401,7 +427,7 @@ fn list_heads(backend: &dyn Backend, own: &str) -> Result<(BTreeMap<String, u64>
     let mut newest: BTreeMap<String, u64> = BTreeMap::new();
     let mut mine = Vec::new();
     for name in backend.list("h/")? {
-        if let Some((device, generation)) = parse_head_name(&name) {
+        if let Some((device, generation)) = parse_head_name(&name)? {
             if device == own {
                 mine.push(generation);
             }
