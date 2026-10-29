@@ -38,3 +38,5 @@ export {
 export type { KitId, KitOpener } from './kits/registry';
 export type { KitDef, KitInsertContent, KitResultRow, KitStep, KitToolDef, KitToolProps } from './kits/types';
 export const loadKits = () => import('./kits');
+export { CHEMMAT_META } from './chemmat/meta';
+export { openChemMatTool } from './chemmat/open';

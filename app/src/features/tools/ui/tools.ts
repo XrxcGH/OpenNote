@@ -27,7 +27,8 @@ export type ToolId =
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
-  | 'kitaero';
+  | 'kitaero'
+  | 'kit-chemmat';
 
 export interface ToolDef {
   id: ToolId;
@@ -62,6 +63,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },
+  { id: 'kit-chemmat', title: 'kitChemMat.title', width: 560 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);
