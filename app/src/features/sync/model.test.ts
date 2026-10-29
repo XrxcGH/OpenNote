@@ -5,6 +5,7 @@ import {
   chipText,
   deviceLines,
   groupMatches,
+  isQuiet,
   passphraseProblem,
   placeReady,
   qrPath,
@@ -26,9 +27,11 @@ describe('the device list', () => {
     expect(recent).toHaveLength(2);
     expect(recent[1]).toMatch(/^Last synced /);
     const quiet = deviceLines({ ...row, lastSync: now - 45 * DAY }, now);
-    expect(quiet[2]).toBe(
-      "Hasn't synced in 45 days. Until you remove it, the other devices keep what it might still need.",
-    );
+    expect(quiet[2]).toBe("Hasn't synced in 45 days. Storage cleanup waits for it; if it won't sync again, remove it.");
+    expect(isQuiet({ ...row, lastSync: now - 45 * DAY }, now)).toBe(true);
+    expect(isQuiet({ ...row, lastSync: now - 29 * DAY }, now)).toBe(false);
+    expect(isQuiet({ ...row, lastSync: null }, now)).toBe(true);
+    expect(isQuiet({ ...row, lastSync: null, thisDevice: true }, now)).toBe(false);
     const never = deviceLines({ ...row, lastSync: null }, now);
     expect(never[1]).toBe("Hasn't synced yet");
     expect(never[2]).toMatch(/^Hasn't synced in 100 days/);

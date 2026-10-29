@@ -96,8 +96,9 @@ export const sync = {
     added: 'Joined {when}',
     lastSync: 'Last synced {when}',
     neverSynced: "Hasn't synced yet",
-    quiet: "Hasn't synced in {days} days. Until you remove it, the other devices keep what it might still need.",
+    quiet: "Hasn't synced in {days} days. Storage cleanup waits for it; if it won't sync again, remove it.",
     remove: 'Remove {name}',
+    removeQuiet: 'Remove {name}, which has stopped syncing',
     removeTitle: 'Remove {name} from sync?',
     removeBody:
       'It stops syncing and keeps the notes it has. If it was lost or stolen, it can still read what was synced; to ' +

@@ -30,15 +30,24 @@ export function whenText(ms: number): string {
 export const QUIET_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Whole days since another device last synced (or joined, if it never did); 0 for this device. */
+function quietDays(device: DeviceRow, now: number): number {
+  if (device.thisDevice) return 0;
+  return Math.floor((now - (device.lastSync ?? device.added)) / DAY_MS);
+}
+
+/** Whether another device has been quiet for [QUIET_DAYS] or more, so its row offers Remove up front. */
+export function isQuiet(device: DeviceRow, now: number): boolean {
+  return quietDays(device, now) >= QUIET_DAYS;
+}
+
 /** A device's second line: when it joined and when it last synced, and a word when it has gone quiet. */
 export function deviceLines(device: DeviceRow, now: number): string[] {
   const lines = [t('sync.devices.added', { when: whenText(device.added) })];
   if (device.thisDevice) return lines;
   const last = device.lastSync ?? null;
   lines.push(last === null ? t('sync.devices.neverSynced') : t('sync.devices.lastSync', { when: whenText(last) }));
-  const since = last ?? device.added;
-  const days = Math.floor((now - since) / DAY_MS);
-  if (days >= QUIET_DAYS) lines.push(t('sync.devices.quiet', { days }));
+  if (isQuiet(device, now)) lines.push(t('sync.devices.quiet', { days: quietDays(device, now) }));
   return lines;
 }
 

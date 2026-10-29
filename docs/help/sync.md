@@ -63,6 +63,8 @@ A sync that stops partway, because the PC slept or the app closed, loses nothing
 
 In the device list, choose **Remove** next to a device. It stops syncing and keeps the notes it has. If a device was lost or stolen, know that a device that kept a copy of the key can still read what was synced. To lock it out of new changes, turn sync off on every device and set it up again in a new folder or server.
 
+Storage cleanup waits for every device in the list: pieces of deleted or changed files are removed only after each device has synced twice since, in case one of them still needs them. So a device that never syncs again, such as a lost laptop or a PC that was reset, keeps the sync folder from shrinking. After 30 days without syncing, its row says so, and shows a **Remove** button. Remove it, and cleanup goes ahead on a later sync. If it comes back later, join it again.
+
 **Turn off sync on this device** forgets this device's key. Your notes stay here, and your other devices keep syncing.
 
 Sync is in Beta. Keep your usual backups while you try it.

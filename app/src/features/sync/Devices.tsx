@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { t } from '../../strings/t';
 import { Button, Dialog, announce, confirm, showToast } from '../../ui';
-import { codeOf, deviceLines, errorText, qrPath } from './model';
+import { codeOf, deviceLines, errorText, isQuiet, qrPath } from './model';
 import { refreshSync, setView, syncClient } from './runtime';
 import styles from './sync.module.css';
 import type { DeviceRow, PairingCode } from './types';
@@ -108,10 +108,13 @@ export function Devices() {
                   </span>
                 ))}
               </span>
+              {/* A device that stopped syncing holds up storage cleanup, so its Remove is a full button. */}
               {!device.thisDevice && (
                 <Button
-                  variant="quiet"
-                  aria-label={t('sync.devices.remove', { name: device.name })}
+                  variant={isQuiet(device, now) ? 'secondary' : 'quiet'}
+                  aria-label={t(isQuiet(device, now) ? 'sync.devices.removeQuiet' : 'sync.devices.remove', {
+                    name: device.name,
+                  })}
                   onClick={() => void remove(device)}
                 >
                   {t('sync.devices.removeConfirm')}
