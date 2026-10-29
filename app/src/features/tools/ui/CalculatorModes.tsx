@@ -36,7 +36,7 @@ export function copyText(text: string): void {
 /** Copy and Insert for an answer. */
 export function AnswerActions({ text }: { text: string }) {
   return (
-    <div className={styles.buttons}>
+    <div className={`${styles.buttons} ${own.flush}`}>
       <Button variant="quiet" onClick={() => copyText(text)}>
         {t('smart.tools.calculator.copy')}
       </Button>
@@ -480,7 +480,7 @@ export function MatrixMode() {
         </label>
       </div>
       <p className={styles.note}>{t('mathTools.calc.matrix.note')}</p>
-      <div className={styles.buttons} role="group" aria-label={t('mathTools.calc.matrix.operations')}>
+      <div className={own.ops} role="group" aria-label={t('mathTools.calc.matrix.operations')}>
         {MATRIX_OPS.map((op) => (
           <Button key={op} variant="secondary" onClick={() => run(op)}>
             {t(`mathTools.calc.matrix.ops.${op}`)}

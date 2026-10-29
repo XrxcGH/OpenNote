@@ -11,12 +11,12 @@ fn writes_every_value_installed_apps_shows() {
     let dir = tempfile::tempdir().expect("a temp folder");
     fs::write(dir.path().join(INSTALLED_EXE_NAME), vec![0u8; 4096]).expect("an exe");
     let registry = MemoryRegistry::default();
-    write_entry(&registry, dir.path(), "0.1.0-beta.5").expect("written");
+    write_entry(&registry, dir.path(), "0.1.0-beta.6").expect("written");
 
     let text = |value: &str| Some(RegValue::Text(value.to_owned()));
     let exe = dir.path().join(INSTALLED_EXE_NAME);
     assert_eq!(entry(&registry, "DisplayName"), text("OpenNote"));
-    assert_eq!(entry(&registry, "DisplayVersion"), text("0.1.0-beta.5"));
+    assert_eq!(entry(&registry, "DisplayVersion"), text("0.1.0-beta.6"));
     assert_eq!(entry(&registry, "Publisher"), text(PUBLISHER));
     assert_eq!(
         entry(&registry, "InstallLocation"),

@@ -88,7 +88,7 @@
   .field input[type='date'],
   .field input[type='text'],
   .field input[type='number'] {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding: var(--space-2) var(--space-3);
     font: inherit;
     color: var(--color-text-primary);
@@ -99,7 +99,7 @@
 
   .field textarea {
     resize: vertical;
-    min-block-size: calc(var(--size-target-pointer) * 2);
+    min-block-size: calc(var(--target-size) * 2);
   }
 
   .face {
@@ -187,7 +187,7 @@
   }
 
   .link {
-    min-block-size: var(--size-target-min);
+    min-block-size: var(--target-size);
     padding: 0;
     font: inherit;
     text-align: start;
@@ -219,7 +219,7 @@
     justify-content: center;
     inline-size: 100%;
     block-size: 100%;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding: var(--space-2);
     font: inherit;
     font-size: var(--type-small-size);

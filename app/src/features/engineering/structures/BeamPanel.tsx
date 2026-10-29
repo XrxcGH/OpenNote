@@ -12,6 +12,7 @@ import type { BlockProps } from '../canvas/shared';
 import { KeysHint } from '../canvas/KeysHint';
 import styles from '../canvas/canvas.module.css';
 import { SupportSymbol } from '../fbd/FbdPanel';
+import { useSvgScale } from '../canvas/svgScale';
 import { readBeam, solveBeam } from './beam';
 import type { BeamLoad, BeamModel, BeamResult, BeamSample, BeamSegment, BeamSupport, BeamSupportKind } from './beam';
 
@@ -373,7 +374,7 @@ function itemGlyph(item: Item, model: BeamModel, at: (x: number) => number, axis
       <>
         <rect className={styles.halo} x={x - 10} y={top - 4} width={20} height={axis - top} />
         <path className={styles.load} d={down ? arrowPath(x, top, x, axis - 6) : arrowPath(x, axis - 6, x, top)} />
-        <text className={styles.label} x={x + 5} y={top + 4}>
+        <text className={styles.label} x={x + 12} y={top + 4}>
           {`${fmt(Math.abs(item.part.value))} ${model.forceUnit}`}
         </text>
       </>
@@ -425,9 +426,11 @@ function itemGlyph(item: Item, model: BeamModel, at: (x: number) => number, axis
 }
 
 const PLOT_W = COLUMNS * 40 + 32;
-const PLOT_H = 120;
+const PLOT_H = 136;
 
 function Diagram({ result, model, which }: { result: BeamResult; model: BeamModel; which: 'shear' | 'moment' }) {
+  const svg = useRef<SVGSVGElement>(null);
+  useSvgScale(svg, PLOT_W);
   const samples = result.samples;
   const values = samples.map((s: BeamSample) => s[which]);
   const top = Math.max(0, ...values);
@@ -435,7 +438,7 @@ function Diagram({ result, model, which }: { result: BeamResult; model: BeamMode
   const range = top - bottom || 1;
   const sx = (x: number) => 16 + toCanvas(x, model.length) * 40;
   // Shear and sagging moment are drawn above the axis when positive.
-  const sy = (v: number) => 14 + ((top - v) / range) * (PLOT_H - 28);
+  const sy = (v: number) => 30 + ((top - v) / range) * (PLOT_H - 48);
   const zero = sy(0);
   const path =
     samples.length > 0
@@ -449,6 +452,7 @@ function Diagram({ result, model, which }: { result: BeamResult; model: BeamMode
   return (
     <figure className={styles.figure}>
       <svg
+        ref={svg}
         className={styles.plot}
         viewBox={`0 0 ${PLOT_W} ${PLOT_H}`}
         width={PLOT_W}
@@ -461,14 +465,14 @@ function Diagram({ result, model, which }: { result: BeamResult; model: BeamMode
       >
         <path className={styles.area} d={path} />
         <line className={styles.axis} x1={sx(0)} y1={zero} x2={sx(model.length)} y2={zero} />
-        <text className={styles.label} x={8} y={12}>
+        <text className={styles.label} x={8} y={13}>
           {name}
         </text>
         {peak.value !== 0 ? (
           <text
             className={styles.muted}
-            x={clamp(sx(peak.x) + 4, 0, PLOT_W - 80)}
-            y={clamp(sy(peak.value) + (peak.value > 0 ? -3 : 12), 10, PLOT_H - 2)}
+            x={clamp(sx(peak.x) + 8, 0, PLOT_W - 90)}
+            y={clamp(sy(peak.value) + (peak.value > 0 ? -8 : 16), 28, PLOT_H - 3)}
           >
             {`${fmt(peak.value)} ${unit}`}
           </text>

@@ -189,7 +189,7 @@ export function installMore(context: MoreContext): () => void {
       title: 'ink.measure.title',
       keywords: 'ink.measure.keywords',
       category: 'view',
-      keys: [chord('Ctrl+Alt+Shift+M')],
+      keys: [chord('Ctrl+Alt+Shift+R')],
       flag: 'ink.geometry',
       checked: () => geometryTool.get() === 'measure',
       run: () => toggleGeometryTool('measure'),

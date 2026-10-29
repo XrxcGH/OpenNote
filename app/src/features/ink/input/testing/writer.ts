@@ -57,7 +57,7 @@ export interface WriterOptions {
 }
 
 /** Sensor noise on a touch position, mm peak to peak. */
-const JITTER_MM = 0.5;
+export const JITTER_MM = 0.5;
 
 export class SessionWriter {
   private readonly drafts: Draft[] = [];

@@ -363,7 +363,12 @@ function Symbol({ part }: { part: CircuitPart }) {
         <rect className={styles.halo} x={-4} y={-18} width={L + 8} height={36} />
         {body}
       </g>
-      <text className={styles.label} x={(ax + view.sx(b.x)) / 2 + 6} y={(ay + view.sy(b.y)) / 2 - 12}>
+      <text
+        className={styles.label}
+        x={(ax + view.sx(b.x)) / 2 + (Math.abs(Math.cos((part.rotation * Math.PI) / 180)) > 0.7 ? 0 : 26)}
+        y={(ay + view.sy(b.y)) / 2 + (Math.abs(Math.cos((part.rotation * Math.PI) / 180)) > 0.7 ? -26 : 4)}
+        textAnchor={Math.abs(Math.cos((part.rotation * Math.PI) / 180)) > 0.7 ? 'middle' : 'start'}
+      >
         {`${part.label} ${withPrefix(part.value, UNITS[part.kind])}`}
       </text>
     </>

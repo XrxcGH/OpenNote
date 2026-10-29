@@ -8,6 +8,7 @@ import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
 import type { CommandCategory } from '../../../commands/types';
 import { announce } from '../../../ui';
+import { say } from './say';
 import type { IconName } from '../../../ui/icons';
 import { INSERT_EVENT } from '../../tools/flags';
 import { targetEditor } from '../formattingBar/target';
@@ -91,7 +92,7 @@ async function mathAction(kind: 'simplify' | 'solve'): Promise<void> {
   const editor = targetEditor();
   if (!editor) return;
   const { runMathAction } = await import('../../../editor/extensions/math');
-  if (!runMathAction(editor, kind)) announce(t('smart.math.noEquation'));
+  if (!runMathAction(editor, kind)) say(t('smart.math.noEquation'));
 }
 
 add({

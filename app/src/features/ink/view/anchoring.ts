@@ -9,7 +9,7 @@ import { getSettings } from '../../../state/settings';
 import type { Store } from '../../../state/store';
 import type { BlockJson, Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { codePoints, findAnchor, followDelta, offsetFrom, quoteAt, readAnchor } from '../anchor';
 import type { Quote } from '../anchor';
 import { strokeBounds, union } from '../geometry/bounds';
@@ -320,7 +320,7 @@ export async function anchorSelection(host: InkHost, surface: InkSurface): Promi
   const strokes = surface.strokes(host.selection.get().strokes);
   const made = anchorStrokes(host, surface, strokes, false);
   if (!made || surface.readOnly) {
-    announce(t('ink.anchor.notOnText'));
+    say(t('ink.anchor.notOnText'));
     return;
   }
   const before = strokes;
@@ -329,7 +329,7 @@ export async function anchorSelection(host: InkHost, surface: InkSurface): Promi
     { edits: [...made.edits, { edit: 'moveStrokesToBlock', strokes: strokes.map((s) => s.id), block: made.block }] },
     () => surface.show(before),
   );
-  if (ok) announce(t('ink.anchor.anchored'));
+  if (ok) say(t('ink.anchor.anchored'));
 }
 
 /** Lets the selected ink go back to the page's ink layer, so it stays where it is when the text moves. */
@@ -337,7 +337,7 @@ export async function detachSelection(host: InkHost, surface: InkSurface): Promi
   const anchored = new Set(anchoredBlocks(host).map((block) => block.id));
   const strokes = surface.strokes(host.selection.get().strokes).filter((stroke) => anchored.has(stroke.block));
   if (strokes.length === 0 || surface.readOnly) {
-    announce(t('ink.anchor.noneToDetach'));
+    say(t('ink.anchor.noneToDetach'));
     return;
   }
   const target = surface.layerFor();
@@ -345,6 +345,6 @@ export async function detachSelection(host: InkHost, surface: InkSurface): Promi
   const ok = await surface.send({ edits: [...surface.takeLayerEdit(), ...edits] }, () => surface.show(strokes));
   if (ok) {
     surface.show(strokes.map((s) => ({ ...s, block: target })));
-    announce(t('ink.anchor.detached'));
+    say(t('ink.anchor.detached'));
   }
 }

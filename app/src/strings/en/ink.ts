@@ -177,6 +177,9 @@ export const ink = {
     wordKept: 'Kept "{word}"',
     wordChanged: 'That word has changed since it was written, so it was left as it is.',
     none: 'No words found in that ink.',
+    unavailable: 'Reading handwriting is not available here. Turn it on in Settings, under On-device features.',
+    selectFirst: 'Select some handwriting first, with the lasso.',
+    readOnly: 'This page is read-only, so the handwriting cannot be changed.',
     convert: 'Convert to text',
     straighten: 'Straighten',
     evenSpacing: 'Even spacing',
@@ -207,7 +210,7 @@ export const ink = {
     shorten: 'Shorten pauses',
     close: 'Close',
     clock: '{at} of {total} seconds',
-    none: 'There is no timed ink to replay.',
+    none: 'There is no ink to replay here.',
     audioKeepsPauses: 'Pauses stay as they were while the recording plays.',
   },
   library: {
