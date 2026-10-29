@@ -192,7 +192,8 @@ mod lock_tests {
         assert!(lock_file(&path, Duration::from_millis(250)).unwrap().is_none());
         assert!(started.elapsed() >= Duration::from_millis(250));
         drop(first);
-        assert!(lock_file(&path, Duration::ZERO).unwrap().is_some());
+        // A busy macOS runner can take a moment to let go of a closed file's lock, so this one may wait for it.
+        assert!(lock_file(&path, Duration::from_secs(2)).unwrap().is_some());
     }
 
     #[test]

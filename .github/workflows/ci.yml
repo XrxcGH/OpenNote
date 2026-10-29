@@ -50,11 +50,13 @@ jobs:
         run: npm run typecheck && npm run lint && npm run format:check
       - name: Unit tests
         run: npm test
+      # CHECKS measures text in SVG drawings with the fonts of the runner, and macOS has other fonts, so text that fits
+      # on Windows and Ubuntu overlaps there. macOS runs the type-check, lint, and unit tests only.
       - name: CHECKS on changed files (pull requests)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && runner.os != 'macOS'
         run: node checks/cli.ts --base origin/${{ github.base_ref }}
       - name: CHECKS on all files (pushes and release dry runs)
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && runner.os != 'macOS'
         run: node checks/cli.ts --all
 
   components:
