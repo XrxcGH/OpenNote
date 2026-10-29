@@ -16,7 +16,9 @@ import type { Answers, Exam, Question, QuestionMark } from '../../exam/types';
 import styles from '../study.module.css';
 import own from './exam.module.css';
 import { InkAnswer } from './InkAnswer';
-import { savePages, savedPapers } from './savePages';
+import { inkPictures } from '../../exam/inkPicture';
+import { storedExam } from '../../exam/stored';
+import { patchSavedPage, savePages, savedPapers } from './savePages';
 
 /** The notes dialect and the calculator's units, loaded with the tools on first use. */
 export async function loadKit(): Promise<MathKit> {
@@ -198,14 +200,24 @@ async function saveResults(
   late: number | null,
   notebookId: string | null,
 ) {
-  const paper = savedPapers.has(exam.id) ? [] : [{ title: exam.title, markdown: paperMarkdown(exam) }];
-  const count = await savePages(notebookId, [
+  // Each page keeps the whole exam, so "Retake this practice exam" works from any of them (stored.ts).
+  const view = storedExam(exam);
+  const paperPage = savedPapers.get(exam.id);
+  const paper = savedPapers.has(exam.id) ? [] : [{ title: exam.title, markdown: paperMarkdown(exam), view }];
+  const ids = await savePages(notebookId, [
     ...paper,
-    { title: t('exams.key.title', { title: exam.title }), markdown: keyMarkdown(exam) },
-    { title: t('exams.results.title', { title: exam.title }), markdown: resultsMarkdown(exam, answers, marks, late) },
+    { title: t('exams.key.title', { title: exam.title }), markdown: keyMarkdown(exam), view },
+    {
+      title: t('exams.results.title', { title: exam.title }),
+      markdown: resultsMarkdown(exam, answers, marks, late),
+      view,
+      pictures: inkPictures(exam, answers),
+    },
   ]);
-  if (count === null) return { saved: false, text: t('exams.save.noNotebook') };
-  savedPapers.add(exam.id);
+  if (ids === null) return { saved: false, text: t('exams.save.noNotebook') };
+  // A paper saved before the exam was handed in gets the exam now; one that is gone is left alone.
+  if (paperPage) await patchSavedPage(paperPage, view);
+  if (!savedPapers.has(exam.id)) savedPapers.set(exam.id, ids[0] ?? null);
   return { saved: true, text: t('exams.save.resultsSaved') };
 }
 
@@ -216,8 +228,10 @@ export function ExamResults(props: {
   late?: number | null;
   notebookId: string | null;
   onAgain(): void;
+  /** Takes the same questions again, with no answers. */
+  onRetake?(): void;
 }) {
-  const { exam, answers, late = null, notebookId, onAgain } = props;
+  const { exam, answers, late = null, notebookId, onAgain, onRetake } = props;
   const [marks, setMarks, byApp] = useMarks(exam, answers);
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -277,6 +291,7 @@ export function ExamResults(props: {
         <Button disabled={saved} onClick={() => void save()}>
           {t('exams.results.save')}
         </Button>
+        {onRetake ? <Button onClick={onRetake}>{t('exams.results.retake')}</Button> : null}
         <Button variant="quiet" onClick={onAgain}>
           {t('exams.results.again')}
         </Button>

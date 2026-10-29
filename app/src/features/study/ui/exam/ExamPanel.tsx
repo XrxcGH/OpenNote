@@ -16,6 +16,7 @@ import styles from '../study.module.css';
 import own from './exam.module.css';
 import { ExamSetup } from './ExamSetup';
 import { savePages, savedPapers } from './savePages';
+import { retakeOf } from '../../exam/stored';
 import { clockText, isPaused, timeLeft } from '../../exam/timer';
 import { ExamTake } from './ExamTake';
 // The marking and the question writers load when they are first needed, with the math engine they use.
@@ -126,9 +127,9 @@ function Ready({
     try {
       // Only the blank paper: the answer key is saved with the results, so it is not in the notebook mid-exam.
       const { paperMarkdown } = await import('../../exam/paper');
-      const count = await savePages(notebookId, [{ title: exam.title, markdown: paperMarkdown(exam) }]);
-      if (count !== null) savedPapers.add(exam.id);
-      const message = count === null ? t('exams.save.noNotebook') : t('exams.save.paperSaved');
+      const ids = await savePages(notebookId, [{ title: exam.title, markdown: paperMarkdown(exam) }]);
+      if (ids) savedPapers.set(exam.id, ids[0] ?? null);
+      const message = ids === null ? t('exams.save.noNotebook') : t('exams.save.paperSaved');
       setSaved(message);
       announce(message);
     } catch {
@@ -168,10 +169,18 @@ export function ExamPanel() {
 }
 
 function ExamFlow({ request }: { request: ExamRequest | null }) {
-  const [stage, setStage] = useState<Stage>({ name: 'setup' });
+  // A retake opens on a fresh copy of the saved exam, ready to start.
+  const [stage, setStage] = useState<Stage>(() =>
+    request?.retake ? { name: 'ready', exam: retakeOf(request.retake) } : { name: 'setup' },
+  );
+  const retake = (exam: Exam) => {
+    const fresh = retakeOf(exam);
+    setStage({ name: 'ready', exam: fresh });
+    announce(t('exams.retake.ready', { title: fresh.title }));
+  };
   const [notebookId, setNotebookId] = useState(request?.notebookId ?? null);
   const resume = (attempt: Attempt) => {
-    if (attempt.paperSaved) savedPapers.add(attempt.exam.id);
+    if (attempt.paperSaved) savedPapers.set(attempt.exam.id, attempt.paperPage ?? null);
     setNotebookId(attempt.notebookId);
     setStage({ name: 'taking', exam: attempt.exam, attempt });
     announce(t('exams.resume.resumed', { title: attempt.exam.title }));
@@ -210,8 +219,8 @@ function ExamFlow({ request }: { request: ExamRequest | null }) {
           {problem}
         </p>
       ) : null}
-      {stage.name === 'setup' && !request ? <Empty onResume={resume} /> : null}
-      {stage.name === 'setup' && request ? (
+      {stage.name === 'setup' && (!request || request.retake) ? <Empty onResume={resume} /> : null}
+      {stage.name === 'setup' && request && !request.retake ? (
         <>
           <Unfinished onResume={resume} />
           <ExamSetup request={request} onMake={(title, settings) => void make(title, settings)} />
@@ -246,6 +255,7 @@ function ExamFlow({ request }: { request: ExamRequest | null }) {
             late={stage.late}
             notebookId={notebookId}
             onAgain={() => setStage({ name: 'setup' })}
+            onRetake={() => retake(stage.exam)}
           />
         </Suspense>
       ) : null}

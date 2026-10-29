@@ -26,6 +26,10 @@ export const exams = {
     noNotebook: 'Open a notebook first, then make the exam from it.',
     emptyPage: 'This page has no text to make questions from yet.',
     emptyNotes: 'These pages have no text to make questions from yet.',
+    retake: 'Retake this practice exam',
+    noRetake:
+      "This page isn't a saved practice exam. Open the paper, answer key, or results of a submitted exam, then try " +
+      'again.',
     protected:
       'This page is in a protected section, so it stays out of practice exams. Unlock it and copy what to study to ' +
       'another page.',
@@ -235,11 +239,17 @@ export const exams = {
       // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       '{count, plural, =0 {These questions are in "{deck}" already.} one {Added # card to "{deck}".} other {Added # cards to "{deck}".}}',
     save: 'Save results as a page',
+    retake: 'Take this exam again',
     again: 'Make another exam',
+    inkHeading: 'Handwritten answers',
+    inkLabel: 'Question {number}, as you wrote it:',
+    inkAlt: 'Your handwritten answer to question {number}.',
   },
   save: {
     paperSaved: 'Saved the blank paper in the Practice exams section. Print or export it from there.',
-    resultsSaved: 'Saved the results in the Practice exams section.',
+    resultsSaved:
+      'Saved the results in the Practice exams section. To take the exam again later, open one of its pages and ' +
+      'choose "Retake this practice exam".',
     noNotebook: "There's no notebook to save in. Open a page in a notebook, then try again.",
     failed: "The exam couldn't be saved. Your answers are still here; try again in a moment.",
   },

@@ -98,6 +98,37 @@ for (const [scope, id, title] of [
     }),
   );
 }
+/** The exam the shown page keeps for a retake (study/exam/stored.ts), read without loading the feature. */
+function shownExam(): unknown {
+  const view = shownMounted.get()?.page.initial.view as Record<string, unknown> | undefined;
+  return view?.practiceExam;
+}
+
+/** Opens a fresh copy of the exam saved on the shown page: its paper, its answer key, or its results. */
+async function retakeExam(): Promise<void> {
+  if (!examsChosen()) return void say(t('exams.command.off'));
+  const mounted = shownMounted.get();
+  const study = await import('../../study');
+  const exam = study.readStoredExam(mounted?.page.initial.view);
+  if (!mounted || !exam) return void say(t('exams.command.noRetake'));
+  study.requestRetake(exam, notebookOf(treeStore.get(), mounted.page.id));
+  (await import('../../tools')).openTool('exam');
+  say(t('exams.retake.ready', { title: exam.title }));
+}
+
+commands.register(
+  defineCommand({
+    id: 'study.examRetake',
+    title: 'exams.command.retake',
+    keywords: 'exams.command.keywords',
+    category: 'general',
+    icon: 'Exam',
+    flag: 'study.exams',
+    // Offered on a saved exam's pages only.
+    when: () => examsChosen() && shownExam() !== undefined,
+    run: () => retakeExam(),
+  }),
+);
 contextMenus.register({
   id: 'tree.section.study.exam',
   menu: 'tree.section',

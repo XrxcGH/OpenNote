@@ -5,12 +5,13 @@ import { useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
+import { INK_HEIGHT, INK_WIDTH } from '../../exam/inkPicture';
 import type { InkPoint } from '../../exam/types';
 import styles from './exam.module.css';
 
-/** The area's drawing size; it scales to the width it is given. */
-const WIDTH = 640;
-const HEIGHT = 200;
+/** The area's drawing size; it scales to the width it is given. The saved results draw the strokes at this size. */
+const WIDTH = INK_WIDTH;
+const HEIGHT = INK_HEIGHT;
 const MAX_STROKES = 200;
 const MAX_POINTS = 2000;
 /** A touch this soon after the pen was seen is the hand resting on the screen. */

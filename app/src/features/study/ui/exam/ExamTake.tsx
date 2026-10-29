@@ -381,7 +381,17 @@ export function ExamTake({ exam, attempt, notebookId, onSubmit }: ExamTakeProps)
     if (!done.current && current.current) saveAttempt({ ...current.current, saved: Date.now() });
   });
   useEffect(() => {
-    current.current = { exam, answers, timer, at, notebookId, paperSaved: savedPapers.has(exam.id), saved: 0 };
+    const paperPage = savedPapers.get(exam.id) ?? undefined;
+    current.current = {
+      exam,
+      answers,
+      timer,
+      at,
+      notebookId,
+      paperSaved: savedPapers.has(exam.id),
+      ...(paperPage ? { paperPage } : {}),
+      saved: 0,
+    };
     if (done.current) return;
     if (pending.current !== null) window.clearTimeout(pending.current);
     pending.current = window.setTimeout(keep.current, KEEP_AFTER_MS);

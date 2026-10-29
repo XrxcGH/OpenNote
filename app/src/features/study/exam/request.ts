@@ -4,6 +4,7 @@
 // the questions when one is downloaded.
 import { createStore } from '../../../state/store';
 import type { ExamSource } from './sources';
+import type { Exam } from './types';
 
 export type ExamScope = 'page' | 'section' | 'notebook';
 
@@ -18,6 +19,8 @@ export interface ExamRequest {
   skipped: number;
   /** The notebook the exam pages are saved in. */
   notebookId: string | null;
+  /** A saved exam to take again (stored.ts): the window opens on a fresh copy of it, not on the settings. */
+  retake?: Exam;
 }
 
 export const examRequest = createStore<ExamRequest | null>(null, 'practice exam request');
@@ -30,6 +33,10 @@ export function requestExam(request: Omit<ExamRequest, 'id'>): ExamRequest {
   examRequest.set(made);
   return made;
 }
+
+/** Asks the window for a fresh copy of an exam saved on a page. */
+export const requestRetake = (exam: Exam, notebookId: string | null): ExamRequest =>
+  requestExam({ scope: 'page', title: exam.title, sources: [], skipped: 0, notebookId, retake: exam });
 
 const OFF_KEY = 'opennote.study.exams';
 const MODEL_KEY = 'opennote.study.examsModel';

@@ -1,11 +1,13 @@
 // An exam in progress survives the window going away: the answers, the flag, and the timer come back, with running
 // time counted and paused time not. The ready screen says the key waits for the results, and a math answer whose key
-// has a unit asks for it.
+// has a unit asks for it. The kept attempt holds the paper only; the key comes back at hand-in, and a saved exam
+// can be retaken as a fresh copy.
 import { act, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { renderUi } from '../../../../test';
-import { examRequest, requestExam } from '../../exam/request';
+import { loadAttempts } from '../../exam/attempt';
+import { examRequest, requestExam, requestRetake } from '../../exam/request';
 import type { Exam } from '../../exam/types';
 import { DEFAULT_SETTINGS } from '../../exam/types';
 import { ExamPanel } from './ExamPanel';
@@ -76,8 +78,7 @@ const unitExam = (): Exam => {
 afterEach(() => {
   act(() => examRequest.set(null));
   vi.restoreAllMocks();
-  for (const key of Object.keys(localStorage))
-    if (key.startsWith('opennote.study.exam.attempt')) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage)) if (key.startsWith('opennote.study.exam.')) localStorage.removeItem(key);
 });
 
 describe('an exam in progress', () => {
@@ -130,5 +131,54 @@ describe('the key and the unit', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next question' }));
     expect(screen.getByRole('heading', { name: 'Question 2 of 2' })).toBeTruthy();
     expect(screen.queryByText(UNIT_HINT)).toBeNull();
+  });
+});
+
+describe('the key kept apart', () => {
+  it('keeps no key in storage mid-exam, still asks for the unit after a remount, and marks with the whole key', async () => {
+    const first = renderUi(<ExamTake exam={unitExam()} attempt={null} notebookId={null} onSubmit={() => undefined} />);
+    await userEvent.fill(screen.getByRole('textbox'), 'five');
+    first.unmount();
+    const stored = Object.keys(localStorage)
+      .filter((key) => key.startsWith('opennote.study.exam.'))
+      .map((key) => localStorage.getItem(key))
+      .join(' ');
+    expect(stored).toContain('five');
+    expect(stored).not.toContain('5 m');
+    expect(stored).not.toContain('2x + 2');
+
+    const [kept] = loadAttempts();
+    expect(kept?.exam.questions.map((one) => one.answer)).toEqual(['', '']);
+    const onSubmit = vi.fn();
+    renderUi(<ExamTake exam={kept!.exam} attempt={kept!} notebookId={null} onSubmit={onSubmit} />);
+    expect(screen.getByText(UNIT_HINT)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Submit exam' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Submit the exam?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Submit exam' }));
+    await vi.waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    const [answers, , whole] = onSubmit.mock.calls[0] as [Record<string, { text?: string }>, unknown, Exam];
+    expect(answers.q1?.text).toBe('five');
+    expect(whole).toEqual(unitExam());
+    expect(loadAttempts()).toEqual([]);
+  });
+});
+
+describe('a retake', () => {
+  it('opens a saved exam as a fresh copy, ready to start, and the results offer it again', async () => {
+    renderUi(<ExamPanel />);
+    act(() => void requestRetake(unitExam(), null));
+    expect(await screen.findByRole('heading', { name: 'Units' })).toBeTruthy();
+    expect(screen.getByText('2 questions, 2 marks in all.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Start exam' }));
+    expect(screen.getByRole('heading', { name: 'Question 1 of 2' })).toBeTruthy();
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement | HTMLInputElement).value).toBe('');
+    await userEvent.fill(screen.getByRole('textbox'), '5 m');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit exam' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Submit the exam?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Submit exam' }));
+    await screen.findByRole('heading', { name: /^Score: / });
+    await userEvent.click(screen.getByRole('button', { name: 'Take this exam again' }));
+    expect(await screen.findByRole('button', { name: 'Start exam' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Units' })).toBeTruthy();
   });
 });

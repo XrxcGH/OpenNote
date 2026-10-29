@@ -24,6 +24,8 @@ export interface Attempt {
   notebookId: string | null;
   /** True once the blank paper is saved as a page, so it is not saved twice. */
   paperSaved?: boolean;
+  /** The saved paper's page, so the results can put the exam on it for a retake. */
+  paperPage?: string;
   /** When it was last kept, in milliseconds since the epoch. */
   saved: number;
 }
