@@ -75,3 +75,6 @@ export const ZOTERO_EVENT = 'opennote:zotero-command';
 export { STATMODELS_TOOLS } from './statmodels/meta';
 export { STATMODELS_FLAGS } from './statmodels/flags';
 export type { StatModelsFlagId } from './statmodels/flags';
+// The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
+export { KIT_FLAGS } from './kits/flags';
+export type { KitFlagId } from './kits/flags';
