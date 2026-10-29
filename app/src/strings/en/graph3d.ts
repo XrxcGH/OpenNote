@@ -114,7 +114,7 @@ export const graph3d = {
       open: 'Open solids of revolution',
       keywords: 'solid of revolution volume disk washer shell method revolve rotate region axis integral',
       outer: 'Outer curve, y =',
-      inner: 'Inner curve, y = (0 for a disk)',
+      inner: 'Inner curve, y = (0 = disk)',
       from: 'From x =',
       to: 'To x =',
       axis: 'Axis',

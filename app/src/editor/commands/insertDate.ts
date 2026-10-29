@@ -18,7 +18,10 @@ export function insertDateTime(kind: DateTimeKind, now: Date = new Date()): Comm
   return fromChange((tr) => {
     const { $from } = tr.selection;
     if (!$from.parent.isTextblock) return false;
-    tr.insertText(dateTimeText(kind, now), tr.selection.from, tr.selection.to);
+    // A space first when the text before it ends in a word or a mark, so the value never runs into it.
+    const before = tr.doc.textBetween(Math.max($from.start(), tr.selection.from - 1), tr.selection.from);
+    const gap = before !== '' && !/\s/.test(before) ? ' ' : '';
+    tr.insertText(gap + dateTimeText(kind, now), tr.selection.from, tr.selection.to);
     return true;
   });
 }

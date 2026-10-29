@@ -2,7 +2,7 @@
 // surface for the page that is shown. features/page/registrations/ink.ts calls it once, after start-up.
 import { isEnabled } from '../../../app/flags';
 import type { CommandDef } from '../../../commands/types';
-import { commandBar, commands, settingsSections } from '../../../registries';
+import { commandBar, commands } from '../../../registries';
 import { getSettings, settingsStore, updateSettings } from '../../../state/settings';
 import { createStore } from '../../../state/store';
 import { applyToPoint } from '../geometry/matrix';
@@ -105,14 +105,6 @@ export function installInk(host: InkHost): () => void {
     registerExportStrokes(() => current?.surface ?? null),
     // A settings change reconfigures the live palm filter at once.
     settingsStore.subscribe(() => touch.reset()),
-    settingsSections.register({
-      id: 'penAndTouch',
-      title: 'ink.settings.title',
-      icon: 'Hand',
-      order: 26,
-      flag: 'ink.palm',
-      load: () => import('./PenSettings'),
-    }),
   ];
   const shapesOn = (): boolean => {
     const shapes = getSettings().ink.shapes;
@@ -146,6 +138,8 @@ export function installInk(host: InkHost): () => void {
       priority: 90,
       presentation: 'component',
       Component: DrawTools,
+      // The tools stay reachable from More on a bar too narrow for all of them.
+      overflow: ['ink.select', 'ink.eraser', 'ink.partialEraser', 'ink.lasso'],
       flag: 'ink.core',
     }),
     commandBar.register({

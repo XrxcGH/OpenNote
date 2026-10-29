@@ -19,6 +19,7 @@ import {
 import type { Camera, Scene3d } from '../grapher3d/scene';
 import styles from './graph.module.css';
 import { FunctionBoxes, PENS, SIZE, Sliders } from './parts';
+import { useSvgScale } from '../svgScale';
 import { writeGraph } from './source';
 import type { GraphSource } from './source';
 
@@ -181,6 +182,8 @@ function CameraButtons({ camera, onCamera }: { camera: Camera; onCamera(next: Ca
 }
 
 export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
+  const svg = useRef<SVGSVGElement>(null);
+  useSvgScale(svg, SIZE.width);
   const save = (next: Partial<GraphSource>, camera: Camera) =>
     onSource(writeGraph({ ...graph, three: true, camera, ...next }));
   const { camera, commit, handlers } = useCamera(graph, editable, (next) => save({}, next));
@@ -198,6 +201,7 @@ export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
         onFunctions={(functions) => send({ functions })}
       />
       <svg
+        ref={svg}
         className={styles.plot}
         viewBox={`0 0 ${SIZE.width} ${SIZE.height}`}
         role="application"

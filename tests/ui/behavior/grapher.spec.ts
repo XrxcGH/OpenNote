@@ -63,6 +63,18 @@ test('says what is wrong with a function and still draws the others', async ({ p
 test('inserts a graph from the Insert tab before the page is clicked into (Beta 5 walk W2-17)', async ({ page }) => {
   await openSmart(page);
   await page.getByRole('tab', { name: 'Insert' }).click();
-  await page.getByRole('toolbar', { name: 'Insert' }).getByRole('button', { name: 'Insert graph' }).click();
+  // The Insert tab shows what fits, and the rest is under More.
+  const bar = page.getByRole('toolbar', { name: 'Insert' });
+  const button = bar.getByRole('button', { name: 'Insert graph' });
+  const item = page.getByRole('menuitem', { name: 'Insert graph' });
+  // The toolbar measures what fits after it first shows, so the button can move under More while this runs: look
+  // again each time instead of trusting the first look.
+  await expect(async () => {
+    if (await button.isVisible()) await button.click({ timeout: 2000 });
+    else {
+      if (!(await item.isVisible())) await bar.getByRole('button', { name: 'More' }).click({ timeout: 2000 });
+      await item.click({ timeout: 2000 });
+    }
+  }).toPass({ timeout: 20_000 });
   await expect(page.getByRole('application', { name: /^Graph of/ })).toBeVisible({ timeout: 20_000 });
 });

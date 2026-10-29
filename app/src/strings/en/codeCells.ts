@@ -37,11 +37,10 @@ for step in range(6):
     print(step, x)
 `,
     javascript: `// Newton’s method for the square root of 2
+// No braces here: the message formatter reads them as placeholders.
 let x = 1;
-for (let step = 0; step < 6; step++) {
-  x -= (x * x - 2) / (2 * x);
-  console.log(step, x);
-}
+const next = (v) => v - (v * v - 2) / (2 * v);
+for (let step = 0; step < 6; step++) console.log(step, (x = next(x)));
 `,
   },
 } as const;

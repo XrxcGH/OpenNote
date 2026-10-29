@@ -22,7 +22,7 @@
   }
 
   .toggle {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     color: var(--color-text-primary);
@@ -86,17 +86,21 @@
   .snippets {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1);
+    gap: var(--space-3);
   }
 
+  /* A snippet's face is a short piece of math. It is set at a reading size in the page's serif, with a border that shows
+     in the dark theme too, in a square of at least 36 px. */
   .snippet {
-    min-block-size: var(--size-target-pointer);
-    min-inline-size: var(--size-target-pointer);
+    min-block-size: max(var(--target-size), 36px);
+    min-inline-size: max(var(--target-size), 36px);
     padding-inline: var(--space-2);
     font: inherit;
+    font-family: var(--font-reading);
+    font-size: var(--type-subtitle-size);
     color: var(--color-text-primary);
     background: var(--color-surface-page);
-    border: 1px solid var(--color-border-subtle);
+    border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
     cursor: pointer;
   }
