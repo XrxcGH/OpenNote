@@ -26,8 +26,23 @@ struct Moved {
 impl Engine {
     /// Plans and carries out a round.
     pub fn sync(&self) -> Result<Report> {
-        let plan = self.plan()?;
-        self.apply(plan)
+        let result = self.plan().and_then(|plan| self.apply(plan));
+        // Storage that was changed or rolled back, a removed device, or a stopped round gets nothing more.
+        if !matches!(
+            result,
+            Err(SyncError::Tampered(_)
+                | SyncError::Rollback
+                | SyncError::Removed
+                | SyncError::Newer
+                | SyncError::Interrupted)
+        ) {
+            // Best effort: a failure here leaves the work for the next round.
+            if matches!(result, Err(SyncError::Incomplete)) {
+                let _ = self.ask_for_missing();
+            }
+            let _ = self.repair(super::now_ms());
+        }
+        result
     }
 
     /// Carries out a plan.

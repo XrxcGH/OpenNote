@@ -25,12 +25,13 @@ Every name in storage is random or a keyed hash. Nothing in storage names a note
 
 | Object | Name | Contents |
 |---|---|---|
-| Vault header | `vault` | Format version, vault ID, Argon2id cost and salt, and the vault key wrapped twice: under the passphrase and under the recovery key |
+| Vault header | `vault` | Format version, vault ID, Argon2id cost and salt, and the vault key wrapped twice: under the passphrase and under the recovery key; then a generation and the tags of the devices that may sync, all under a MAC |
 | Chunk | `c/<2 hex>/<64 hex>` | Up to 1 MiB of one file, padded to a size bucket and sealed. The name is a BLAKE2b MAC of the plain bytes under a key derived from the vault key, so equal chunks dedupe while the storage can't test a guess |
 | Head | `h/<device tag>/<generation>` | One device's whole manifest: every path with its chunk list, size, version vector, and tombstone flag, compressed and sealed. A device writes only its own heads, and each generation is a new file |
 | Device slot | `k/<device tag>` | The vault key wrapped under that device's own secret, and the device's name and date sealed under the vault key |
 | Pairing slot | `j/<random tag>` | The vault key wrapped under a one-time pairing code, with an expiry, for adding a device by QR code or typed code |
 | Revocation | `x/<device tag>` | A sealed note that a device was removed |
+| Chunk request | `m/<64 hex>` | A sealed, empty note that a device found this chunk missing, so a device that holds the file sends it again |
 
 Sealing is XChaCha20-Poly1305 with a random 192 bit nonce, from RustCrypto's audited `chacha20poly1305`, as `crates/interop/src/lock.rs` does. The associated data binds each object to the vault ID, its kind, and its name, so objects can't be swapped, renamed, or moved between vaults. The storage backend sees only opaque blobs, their padded sizes, how many there are, and when they change. It sees how many devices sync and how often, but not their names.
 
@@ -69,7 +70,7 @@ An edit always beats a delete. When a page folder still has a live `page.json` a
 - **Vault checks.** Every unlock, including a device's background unlock and a pairing, checks the header's MAC, in constant time, so a changed slot or cost shows. A passphrase is never checked at less than the 64 MiB, three-pass cost, whatever a header asks.
 - **Bounded memory.** Files stream through one 1 MiB chunk at a time. The manifest is about 150 bytes a file. Every backend refuses a blob longer than OpenNote writes under its name before reading it whole: the header's largest size for `vault`, one padded sealed chunk for `c/`, 512 bytes of JSON for each of the 250,000 files a folder may hold for `h/`, and 16 KiB for slots and notes.
 - **Preview.** Every sync first builds a plan of uploads, downloads, deletions, and conflicts. "Preview changes" shows it without changing anything.
-- **Garbage collection.** A chunk is removed only when no head of any device and no tombstone refers to it. Old heads of a device are removed once a newer one of the same device is in place. A marked chunk waits a week and two newer heads of every device that isn't removed, and a run stops if a head appears while it works. A round that found a chunk already stored checks it again after writing its head and sends it if it went. Turning sync off removes the device's slot, so it no longer holds collection up, and the device list shows when each device last synced so a lost one can be removed.
+- **Garbage collection.** A chunk is removed only when no head of any device and no tombstone refers to it. Old heads of a device are removed once a newer one of the same device is in place. A marked chunk waits a week and two newer heads of every device that isn't removed, and a run stops if a head appears while it works. A round that found a chunk already stored checks it again after writing its head and sends it if it went. A chunk lost later (a sync tool that never copied it, a provider that lost it) is asked for under `m/` by the device that needs it, and sent again by any device that holds the file; once a day each device also lists storage and sends again any chunk of its newest head that is gone. Turning sync off removes the device's slot, so it no longer holds collection up, and the device list shows when each device last synced so a lost one can be removed.
 - **Work offline** pauses sync. Nothing leaves the device unless the person set sync up. There is no telemetry.
 
 ## Options considered

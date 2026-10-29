@@ -35,6 +35,8 @@ mod apply;
 mod plan;
 mod upkeep;
 
+pub use upkeep::CHECK_MS;
+
 /// How long a chunk that nothing refers to waits before it is removed: a week.
 pub const GC_GRACE_MS: i64 = 7 * 24 * 60 * 60 * 1000;
 /// The biggest file the merge rules read whole: the core's own limit on a `page.json` (`Limits.page_json_bytes`),
@@ -63,6 +65,9 @@ pub struct LocalState {
     /// The highest vault header generation this device saw, to notice an older header put back.
     #[serde(default)]
     pub vault: u64,
+    /// When this device last checked that storage still holds the chunks of its own files, in Unix milliseconds.
+    #[serde(default)]
+    pub checked: i64,
 }
 
 /// A path as this device last knew it.
@@ -169,6 +174,8 @@ pub struct Engine {
     keys: VaultKeys,
     device: String,
     state_path: PathBuf,
+    /// Chunks a read found missing, to ask the devices that have them to send them again.
+    missing: std::sync::Mutex<BTreeSet<String>>,
     #[cfg(feature = "testing")]
     faults: std::sync::Mutex<Option<usize>>,
 }
@@ -186,6 +193,11 @@ fn head_name(device: &str, generation: u64) -> String {
 
 fn chunk_name(id: &str) -> String {
     format!("c/{}/{id}", id.get(..2).unwrap_or(""))
+}
+
+/// A request that the devices holding this chunk send it again.
+fn request_name(id: &str) -> String {
+    format!("m/{id}")
 }
 
 struct Store<'a> {
@@ -241,6 +253,7 @@ impl Engine {
             keys,
             device: device.into(),
             state_path: state_path.into(),
+            missing: std::sync::Mutex::new(BTreeSet::new()),
             #[cfg(feature = "testing")]
             faults: std::sync::Mutex::new(None),
         }
@@ -313,7 +326,13 @@ impl Engine {
 
     fn fetch_chunk(&self, id: &str) -> Result<Vec<u8>> {
         let name = chunk_name(id);
-        let sealed = self.backend.get(&name)?.ok_or(SyncError::Incomplete)?;
+        let Some(sealed) = self.backend.get(&name)? else {
+            self.missing
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .insert(id.to_owned());
+            return Err(SyncError::Incomplete);
+        };
         let plain = open(&self.keys.seal, &self.keys.id, "chunk", &name, &sealed)
             .ok_or_else(|| SyncError::Tampered("A piece of a file doesn't open.".into()))?;
         let bytes = unpad(&plain)

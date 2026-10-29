@@ -1,13 +1,21 @@
 //! Recovery and housekeeping: trusting storage after a rollback warning, and garbage collection that is safe
 //! across devices (ADR 0049, "Safety").
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
+use std::fs;
+use std::io::{Seek, SeekFrom};
 
-use super::{chunk_name, digest, head_name, Engine, GcMark, GC_GRACE_MS};
-use crate::crypto::{pad, seal};
-use crate::error::Result;
+use super::{chunk_name, digest, head_name, request_name, Engine, GcMark, GC_GRACE_MS};
+use crate::crypto::{hex, mac, open, pad, seal};
+use crate::error::{Result, SyncError};
+use crate::local;
 use crate::manifest::{self, Head, Manifest};
 use crate::vault;
+
+/// How often a device lists storage to check that the chunks of its own files are still there: once a day.
+pub const CHECK_MS: i64 = 24 * 60 * 60 * 1000;
+/// The most chunks one round asks for, so a badly broken storage doesn't fill with requests.
+const MAX_REQUESTS: usize = 64;
 
 impl Engine {
     /// Accepts the storage as it is after a rollback warning, such as after restoring it from a backup on purpose.
@@ -40,6 +48,104 @@ impl Engine {
         state.generation = generation;
         state.published = digest(&head.entries);
         self.save_state(&state)
+    }
+
+    /// Asks, under `m/<chunk id>`, for the chunks this engine found missing, so a device that has them sends them
+    /// again. A chunk can go missing after its head was written: a sync tool that never copied one file, a provider
+    /// that lost it, or a crash. The device whose files they are sees nothing wrong otherwise.
+    pub(super) fn ask_for_missing(&self) -> Result<()> {
+        let missing = std::mem::take(&mut *self.missing.lock().unwrap_or_else(std::sync::PoisonError::into_inner));
+        for id in missing.iter().take(MAX_REQUESTS) {
+            let name = request_name(id);
+            if !self.backend.exists(&name)? {
+                let note = seal(&self.keys.seal, &self.keys.id, "missing", &name, b"")?;
+                self.backend.put(&name, &note)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Sends again the chunks of this device's own files that storage lost: those another device asked for, and,
+    /// once every [`CHECK_MS`], any of the newest own head's that a listing of storage doesn't show. A request is
+    /// removed once its chunk is back. Returns how many chunks were sent.
+    pub fn repair(&self, now: i64) -> Result<usize> {
+        let mut state = self.state()?;
+        let mut wanted: BTreeSet<String> = BTreeSet::new();
+        let mut requests: HashMap<String, String> = HashMap::new();
+        for name in self.backend.list("m/")? {
+            let Some(id) = name.strip_prefix("m/").filter(|id| manifest::is_id(id)) else {
+                continue;
+            };
+            let genuine = self
+                .backend
+                .get(&name)?
+                .is_some_and(|sealed| open(&self.keys.seal, &self.keys.id, "missing", &name, &sealed).is_some());
+            if genuine {
+                wanted.insert(id.to_owned());
+                requests.insert(id.to_owned(), name);
+            }
+        }
+        // Where this device holds each chunk: a file on disk whose bytes matched the version it knows.
+        let mut held: HashMap<&str, (&str, usize)> = HashMap::new();
+        for (path, known) in &state.files {
+            if known.entry.live() && known.print.is_some() {
+                for (index, id) in known.entry.content.chunks.iter().enumerate() {
+                    held.entry(id.as_str()).or_insert((path.as_str(), index));
+                }
+            }
+        }
+        let daily = now - state.checked >= CHECK_MS;
+        if daily && state.generation > 0 {
+            let stored: BTreeSet<String> = self
+                .backend
+                .list("c/")?
+                .into_iter()
+                .filter_map(|name| name.rsplit('/').next().map(str::to_owned))
+                .collect();
+            // Only what this device's newest head names: other versions it knows may have been collected on purpose.
+            match self.read_head(&self.device, state.generation) {
+                Ok(head) => {
+                    for entry in head.entries.values().filter(|e| e.live()) {
+                        let lost = entry.content.chunks.iter().filter(|id| !stored.contains(*id));
+                        wanted.extend(lost.cloned());
+                    }
+                }
+                Err(SyncError::Incomplete) => {}
+                Err(error) => return Err(error),
+            }
+        }
+        let mut sent = 0;
+        let mut buf = Vec::with_capacity(local::CHUNK);
+        for id in &wanted {
+            let mut back = self.backend.exists(&chunk_name(id))?;
+            if !back {
+                if let Some((path, index)) = held.get(id.as_str()) {
+                    // The file may have changed since: send only bytes that still have this chunk's name.
+                    if self.read_held(path, *index, &mut buf)? && hex(&mac(self.keys.chunk.as_ref(), &[&buf])) == *id {
+                        sent += usize::from(self.put_chunk(id, &buf)?);
+                        back = true;
+                    }
+                }
+            }
+            if let Some(name) = requests.get(id).filter(|_| back) {
+                self.backend.delete(name)?;
+            }
+        }
+        if daily {
+            state.checked = now;
+            self.save_state(&state)?;
+        }
+        Ok(sent)
+    }
+
+    /// Reads chunk `index` of a local file into `buf`. `false` when the file is gone or shorter.
+    fn read_held(&self, path: &str, index: usize, buf: &mut Vec<u8>) -> Result<bool> {
+        let Ok(mut file) = fs::File::open(local::join(&self.root, path)) else {
+            return Ok(false);
+        };
+        file.seek(SeekFrom::Start((index * local::CHUNK) as u64))
+            .map_err(SyncError::local)?;
+        Ok(local::read_chunk(&mut file, buf)? > 0)
     }
 
     /// Removes chunks that nothing refers to, safely across devices: a chunk is first marked, and removed only on a

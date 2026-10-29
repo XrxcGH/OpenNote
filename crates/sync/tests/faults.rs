@@ -271,3 +271,37 @@ fn crash_then_edit_across_many_vaults_never_drops_text() {
         }
     }
 }
+
+/// A chunk storage lost after the head that names it was written: other devices ask for it, and the device that
+/// has the file sends it again, so everyone converges instead of waiting forever.
+#[test]
+fn a_chunk_lost_after_its_head_was_written_is_sent_again() {
+    let store = MemoryBackend::new();
+    let backend: Arc<dyn Backend> = Arc::new(store.clone());
+    let d = devices(backend.clone(), 2);
+    let big: Vec<u8> = (0..(3 * 1024 * 1024 + 7)).map(|i| (i % 251) as u8).collect();
+    d[0].write("Bio/scan.bin", &big);
+    d[0].engine.sync().expect("syncs");
+    let chunks = || -> Vec<String> { store.snapshot().into_keys().filter(|n| n.starts_with("c/")).collect() };
+    assert_eq!(chunks().len(), 4, "three whole chunks and the rest");
+    let lost = chunks()[1].clone();
+    store.remove_raw(&lost);
+
+    // The other device can't finish, and asks.
+    assert_eq!(d[1].engine.sync().unwrap_err(), SyncError::Incomplete);
+    let requests: Vec<_> = store.snapshot().into_keys().filter(|n| n.starts_with("m/")).collect();
+    assert_eq!(requests.len(), 1, "{requests:?}");
+    // The device with the file sends it on its next round, and the request goes.
+    d[0].engine.sync().expect("syncs");
+    assert!(store.snapshot().contains_key(&lost));
+    assert!(!store.snapshot().keys().any(|n| n.starts_with("m/")));
+    d[1].engine.sync().expect("syncs");
+    assert_eq!(d[1].read("Bio/scan.bin").as_deref(), Some(&big[..]));
+
+    // With no one asking, the daily check finds a lost chunk too.
+    store.remove_raw(&lost);
+    let later = 2 * opennote_sync::engine::CHECK_MS + 1_800_000_000_000;
+    assert_eq!(d[0].engine.repair(later).expect("repairs"), 1);
+    assert!(store.snapshot().contains_key(&lost));
+    assert_eq!(d[0].engine.repair(later + 1).expect("repairs"), 0, "checked once a day");
+}
