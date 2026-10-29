@@ -55,12 +55,23 @@ export function Workspace(props: WorkspaceSlots) {
   useLayoutFollowsNavigation();
   useWorkspaceFocus(layout, sizeClass, compactScreen);
   const pageRef = usePageScrollMemory(page.ref);
+  // Both panes collapsed to rails share one 48 px column, the notebooks rail above the pages rail.
+  const rails =
+    layout.pages.mode === 'rail' && (layout.notebooks.mode === 'rail' || layout.notebooks.mode === 'drawer');
   return (
-    <div className={styles.workspace} style={style} data-workspace="" data-focus={focus ? '' : undefined}>
+    <div
+      className={styles.workspace}
+      style={style}
+      data-workspace=""
+      data-focus={focus ? '' : undefined}
+      data-rails={rails ? '' : undefined}
+    >
       <div className={styles.titleBar}>{props.titleBar}</div>
       {compact && <div className={styles.appBar}>{props.appBar}</div>}
       <div className={styles.commandBar}>{props.commandBar}</div>
-      <NotebooksColumn layout={layout.notebooks}>{props.notebooks}</NotebooksColumn>
+      <NotebooksColumn layout={layout.notebooks} newPage={!rails}>
+        {props.notebooks}
+      </NotebooksColumn>
       <PagesColumn layout={layout.pages}>{props.pages}</PagesColumn>
       <main
         className={styles.page}

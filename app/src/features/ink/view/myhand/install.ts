@@ -2,7 +2,7 @@
 // in the text menu and the Draw tab, the Settings section, and test hooks. more.ts calls it with the view's seams.
 import { isEnabled } from '../../../../app/flags';
 import type { CommandDef } from '../../../../commands/types';
-import { commandBar, commands, contextMenus, settingsSections } from '../../../../registries';
+import { commandBar, commands, contextMenus } from '../../../../registries';
 import { createStore } from '../../../../state/store';
 import { showToast } from '../../../../ui';
 import { t } from '../../../../strings/t';
@@ -74,14 +74,6 @@ export function installMyHand(host: InkHost, surface: () => InkSurface | null): 
       priority: 28,
       presentation: 'toggle',
       flag: 'ink.myHandwriting',
-    }),
-    settingsSections.register({
-      id: 'myHandwriting',
-      title: 'myHand.section',
-      icon: 'PenNib',
-      order: 27,
-      flag: 'ink.myHandwriting',
-      load: () => import('./MyHandSection'),
     }),
   );
   if (import.meta.env.MODE === 'test' && typeof window !== 'undefined' && isEnabled('ink.myHandwriting')) {

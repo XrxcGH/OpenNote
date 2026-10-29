@@ -56,7 +56,7 @@ function sameIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
   return a.size === b.size && [...a].every((id) => b.has(id));
 }
 
-/** Which items to move into More: none when everything fits, else the lowest priorities until the rest fit. */
+/** Which items to move into More: none when everything fits, else the lowest priorities, and any too wide to fit, until the rest fit. */
 export function overflowing(
   entries: readonly BarEntry[],
   widthOf: (id: string) => number,
@@ -68,7 +68,8 @@ export function overflowing(
   const kept = new Set<string>();
   for (const entry of [...entries].sort((a, b) => b.item.priority - a.item.priority)) {
     const width = widthOf(entry.item.id);
-    if (used + width > room.width) break;
+    // One that is too wide moves to More alone; smaller ones after it can still fit.
+    if (used + width > room.width) continue;
     used += width;
     kept.add(entry.item.id);
   }
@@ -117,9 +118,20 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   useEffect(() => {
     const bar = ref.current;
     if (!bar || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => fit());
+    // Fitting inside the callback resizes what it watches in the same frame, which the browser reports as a
+    // "ResizeObserver loop" error; the next animation frame is still before paint.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        fit();
+      });
+    });
     observer.observe(bar);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [ref, fit]);
   return hidden;
 }

@@ -36,7 +36,16 @@ import type { SlashItemDef } from '../registries';
 import type { SlashSession } from '../../../editor/extensions/slash';
 import type { PageCommandId } from '../keys';
 
-const formatting = () => import('../formattingBar/commands');
+type FormattingCommands = typeof import('../formattingBar/commands');
+let formattingLoaded: FormattingCommands | undefined;
+const formatting = () => import('../formattingBar/commands').then((loaded) => (formattingLoaded = loaded));
+/**
+ * Runs a formatting command at once when its chunk is loaded. A dynamic import() of a loaded module still resolves
+ * on a later task, and a key typed in between landed before the command on a slow machine.
+ */
+function withFormatting<T>(apply: (commands: FormattingCommands) => Promise<T>): Promise<T> {
+  return formattingLoaded ? apply(formattingLoaded) : formatting().then(apply);
+}
 
 // The chunks the page's commands wait for load in idle time once a page is shown. Without this the first Ctrl+B or
 // Ctrl+K waited for its chunk, and whatever was typed in the meantime came out unformatted or was held. The page
@@ -97,7 +106,7 @@ function register({ id, title, keywords, category = 'format', flag = 'page.edito
         }
       : {}),
     ...(on ? { checked: withEditor(on, false) } : {}),
-    run: async (_ctx, args) => (await formatting()).runFormatting(id, args),
+    run: (_ctx, args) => withFormatting((m) => m.runFormatting(id, args)),
   });
 }
 
@@ -217,23 +226,23 @@ registerPageCommand<{ color?: string | null } | undefined>({
   keywords: 'editor.keywords.color',
   category: 'format',
   flag: 'page.editor',
-  run: async (ctx, args) => (await formatting()).setBlocksColor(args?.color, ctx),
+  run: (ctx, args) => withFormatting((m) => m.setBlocksColor(args?.color, ctx)),
 });
 
 // The link menu's commands. They have no keys, so they live outside the keys table.
 const inLink = withEditor((editor) => caretInLink(editor.state), false);
 const LINK_COMMANDS: readonly { id: CommandId; title: MessageKey; run(ctx: CommandContext): Promise<void> }[] = [
-  { id: 'link.open', title: 'editor.link.open', run: async (ctx) => (await formatting()).openLinkAtCaret(ctx) },
-  { id: 'link.copy', title: 'editor.link.copy', run: async (ctx) => (await formatting()).copyLinkAtCaret(ctx) },
+  { id: 'link.open', title: 'editor.link.open', run: (ctx) => withFormatting((m) => m.openLinkAtCaret(ctx)) },
+  { id: 'link.copy', title: 'editor.link.copy', run: (ctx) => withFormatting((m) => m.copyLinkAtCaret(ctx)) },
   {
     id: 'link.edit',
     title: 'editor.link.edit',
-    run: async () => (await formatting()).runFormatting('format.link', {}),
+    run: () => withFormatting((m) => m.runFormatting('format.link', {})),
   },
   {
     id: 'link.remove',
     title: 'editor.link.remove',
-    run: async () => (await formatting()).runFormatting('format.link', { href: '' }),
+    run: () => withFormatting((m) => m.runFormatting('format.link', { href: '' })),
   },
 ];
 for (const { id, title, run } of LINK_COMMANDS) {

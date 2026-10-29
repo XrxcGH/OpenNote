@@ -10,6 +10,11 @@ async function openSamplerPage(page: Page) {
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByText('Every kind of text')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('tab', { name: 'View' }).click();
+  // The view's commands come on once the pages feature has loaded, and a menu opened before then keeps them off.
+  await expect(page.getByRole('toolbar').getByRole('button', { name: 'Infinite canvas' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 }
 
 const toolbar = (page: Page) => page.getByRole('toolbar');

@@ -25,8 +25,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally 1 to 3 minutes. A run that passes its limit is stuck, so it ends and says so.
-    timeout-minutes: 10
+    # Ubuntu takes 3 to 6 minutes. Windows takes about twice that on a pull request that changes most of the files
+    # (about 4 minutes of unit tests, then the changed-file checks). A run that passes its limit is stuck.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -63,8 +64,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Normally under 2 minutes.
-    timeout-minutes: 10
+    # Normally under 4 minutes.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -76,7 +77,13 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Component tests (Vitest browser mode)
-        run: npm run test:components
+        # In three runs, each with a fresh browser: on Ubuntu one browser session that runs all 159 files was closed by
+        # the runner about three minutes in, with a different file running each time.
+        shell: bash
+        run: |
+          status=0
+          for shard in 1 2 3; do npm run test:components -- --shard=$shard/3 || status=1; done
+          exit $status
       - name: Keep the failure screenshots
         # Vitest saves a screenshot of the page for each failed test.
         if: failure()
@@ -87,11 +94,17 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  ui-web:
-    # The production interface in Edge: the bundle budget, then Playwright against the test build.
+  ui-web-shard:
+    # The production interface in Edge: the bundle budget (shard 1 only), then one quarter of the Playwright suite
+    # against the test build. The suite is 1400 tests (about 380 screenshots and 450 axe checks): about 90 minutes
+    # on one two-core runner, so it runs as four shards of about 25 minutes. The "ui-web" job below gathers them.
+    name: ui-web shard ${{ matrix.shard }}/4
     runs-on: windows-latest
-    # Normally about 5 minutes.
-    timeout-minutes: 15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -104,7 +117,7 @@ jobs:
         run: npm ci
       # Builds main with this branch's tools, so the summary shows each group's change without needing artifacts.
       - name: Build main's interface, to compare bundle sizes with
-        if: github.event_name == 'pull_request'
+        if: matrix.shard == 1 && github.event_name == 'pull_request'
         continue-on-error: true
         shell: pwsh
         run: |
@@ -118,21 +131,101 @@ jobs:
           $env:GITHUB_STEP_SUMMARY = ''
           node app/scripts/check-bundle.ts --dist ../opennote-main/app/dist --report bundle-main.json
       - name: Build the production interface
+        if: matrix.shard == 1
         run: npm run app:build
       - name: Bundle budget
+        if: matrix.shard == 1
         run: node app/scripts/check-bundle.ts --compare-with bundle-main.json
       - name: Build the test interface (web platform)
         run: npm run app:build:test
       - name: Playwright
-        run: npx playwright test --config tests/ui/playwright.config.ts
-      - name: Keep the Playwright report
+        # The blob reporter keeps what the merge job needs to build one report from the four shards.
+        run: npx playwright test --config tests/ui/playwright.config.ts --shard=${{ matrix.shard }}/4 --reporter=list,github,blob
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: blob-report
+      - name: Keep this shard's report data
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-blob-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Keep the failure traces and screenshots
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
+          name: playwright-results-${{ matrix.shard }}
+          path: tests/ui/results
+          retention-days: 7
+          if-no-files-found: ignore
+
+  ui-web:
+    # The one name branch protection can require: it passes only when every shard passed, and merges their reports.
+    needs: ui-web-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: playwright-blob-*
+          path: all-blobs
+          merge-multiple: true
+        continue-on-error: true
+      - name: Merge the shards' reports
+        continue-on-error: true
+        run: npx playwright merge-reports --config tests/ui/playwright.config.ts --reporter=html all-blobs
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: tests/ui/report
+          PLAYWRIGHT_HTML_OPEN: never
+      - name: Keep the Playwright report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
           name: playwright-report
-          path: |
-            tests/ui/report
-            tests/ui/results
+          path: tests/ui/report
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Fail unless every shard passed
+        if: needs.ui-web-shard.result != 'success'
+        run: |
+          echo "ui-web shards: ${{ needs.ui-web-shard.result }}"
+          exit 1
+
+  layout-audit:
+    # The whole app at three window sizes, in both themes and densities, checked for clipped text, overlap, covered scroll
+    # bars, and dead space (tests/ui/audit). Findings must match tests/ui/audit/known.json, in both directions. CI runs the
+    # three cells that between them hold every size, theme, and density; `npm run audit:layout` runs all 12.
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Layout audit
+        run: npm run audit:layout
+      - name: Keep the findings
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: layout-audit
+          path: tests/ui/audit/out
           retention-days: 7
 
   perf-typing:
@@ -191,8 +284,9 @@ jobs:
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
-    # Normally about 11 minutes with a cold cache.
-    timeout-minutes: 35
+    # About 11 minutes with a warm cache. The cache is saved only by a green run, so while the branch is red every run
+    # starts cold, and the build with the app's whole dependency tree then takes over 35 minutes on a 4-core runner.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -217,6 +311,8 @@ jobs:
       - name: Clippy ratchet (no new unwrap, expect, or panic in shipped code)
         # Existing uses are counted per file in checks/data/clippy-ratchet.json. A count may go down, never up.
         run: node checks/clippy-ratchet.ts
+      - name: Fetch every platform's crates (the no-network test reads all of them offline)
+        run: cargo fetch --locked
       - name: Rust tests
         run: cargo test --workspace
       - name: The notes contract suite against the app's notes bridge and the core

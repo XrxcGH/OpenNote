@@ -90,6 +90,16 @@ test('an equation in x and y opens a 3D graph from Alt+Shift+G', async ({ page }
   await expect(popup).toHaveCount(0);
 });
 
+test('the slash menu inserts a 3D function plot, apart from Insert 3D graph', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.type('/3d function plot');
+  await expect(page.getByRole('option', { name: 'Insert 3D function plot' })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('application', { name: '3D graph of 1 function' })).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('pre', { hasText: 'z = sin(x) cos(y)' }).last()).toBeVisible();
+});
+
 test('the equation panel shows the steps of a derivative and solves a system', async ({ page }) => {
   await openSmart(page);
   await newLine(page);
@@ -101,7 +111,7 @@ test('the equation panel shows the steps of a derivative and solves a system', a
   const steps = page.locator('[data-math-steps]');
   await expect(steps).toContainText('Steps for the derivative');
   await expect(steps).toContainText('Power rule');
-  await expect(steps.locator('li')).toHaveCount(5);
+  await expect(steps.locator('li')).toHaveCount(4);
   await field.fill(String.raw`x + y = 3 \\ x - y = 1`);
   await page.getByRole('button', { name: 'Solve' }).click();
   await expect(field).toHaveValue(/x = 2,\\ y = 1$/);

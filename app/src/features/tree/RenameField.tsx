@@ -37,7 +37,9 @@ export function RenameField({ tree, renaming, title }: RenameFieldProps) {
   useLayer({ kind: 'rename', modal: false, close: cancel }, true);
   useEffect(() => {
     input.current?.focus();
-    input.current?.select();
+    // Selected with the caret at the start, so a name wider than the field shows its first letters.
+    input.current?.setSelectionRange(0, input.current.value.length, 'backward');
+    if (input.current) input.current.scrollLeft = 0;
   }, []);
   const commit = async (leaving: boolean) => {
     if (settled.current) return;

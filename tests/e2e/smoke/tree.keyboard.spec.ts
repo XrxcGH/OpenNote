@@ -69,7 +69,9 @@ describe('the tree with the keyboard alone', { skip: skipReason() }, () => {
 
   it('enters the tree with Tab, and opens a section and a page with Enter', async () => {
     const { browser } = session;
-    await browser.$('[role="tree"][aria-label="Notebooks"]').waitForExist({ timeout: 20_000 });
+    // The tree element shows before its rows load, and Tab passes a tree with no rows. Forty presses take about a
+    // second, so on a slow runner they ran out before the first row came.
+    await browser.$('[role="tree"][aria-label="Notebooks"] [role="treeitem"]').waitForExist({ timeout: 20_000 });
     for (let presses = 0; presses < 40 && (await focusedRow(browser)) === null; presses += 1) {
       await chord(browser, Key.Tab);
     }
