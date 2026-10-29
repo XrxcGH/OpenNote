@@ -13,5 +13,5 @@ export async function savePages(notebookId: string | null, pages: { title: strin
   return pages.length;
 }
 
-/** The exams whose paper and key are saved already, so saving the results does not save them again. */
+/** The exams whose blank paper is saved already, so saving the results does not save it again. */
 export const savedPapers = new Set<string>();

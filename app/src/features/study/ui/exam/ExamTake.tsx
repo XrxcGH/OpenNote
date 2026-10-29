@@ -8,7 +8,7 @@ import { t } from '../../../../strings/t';
 import type { MessageKey } from '../../../../strings/t';
 import { Button, announce, confirm } from '../../../../ui';
 import { splitBlanks } from '../../deck/cloze';
-import { blanksOfQuestion, isAnswered, letterOf } from '../../exam/basics';
+import { blanksOfQuestion, isAnswered, keyHasUnit, letterOf } from '../../exam/basics';
 import {
   clockText,
   dueReminders,
@@ -20,10 +20,13 @@ import {
   timeLeft,
 } from '../../exam/timer';
 import type { ExamTimer } from '../../exam/timer';
+import { dropAttempt, saveAttempt } from '../../exam/attempt';
+import type { Attempt } from '../../exam/attempt';
 import type { Answer, Answers, Exam, InkPoint, Question } from '../../exam/types';
 import styles from '../study.module.css';
 import own from './exam.module.css';
 import { InkAnswer } from './InkAnswer';
+import { savedPapers } from './savePages';
 
 const KIND_HINT: Record<Question['kind'], MessageKey> = {
   short: 'exams.take.hintShort',
@@ -151,6 +154,7 @@ function TypedFields({ question, answer, onChange }: FieldProps) {
         )}
       </label>
       {question.math ? <p className={styles.note}>{t('exams.take.mathHint')}</p> : null}
+      {question.math && keyHasUnit(question.answer) ? <p className={styles.note}>{t('exams.take.unitHint')}</p> : null}
     </>
   );
 }
@@ -230,12 +234,14 @@ function QuestionCard(props: FieldProps & { total: number }) {
   );
 }
 
-function Clock({ exam }: { exam: Exam }) {
-  const minutes = exam.settings.minutes;
-  const [timer, setTimer] = useState<ExamTimer | null>(() =>
-    minutes === null ? null : startTimer(minutes, Date.now()),
-  );
-  const [now, setNow] = useState(Date.now);
+interface ClockProps {
+  exam: Exam;
+  timer: ExamTimer | null;
+  setTimer(update: (current: ExamTimer | null) => ExamTimer | null): void;
+}
+
+function Clock({ exam, timer, setTimer }: ClockProps) {
+  const [now, setNow] = useState(() => Date.now());
   const told = useRef(false);
   const latest = useRef(timer);
   useEffect(() => {
@@ -256,10 +262,10 @@ function Clock({ exam }: { exam: Exam }) {
         told.current = true;
         announce(t('exams.timer.up'));
       }
-      if (next !== current) setTimer(next);
+      if (next !== current) setTimer(() => next);
     }, 1000);
     return () => window.clearInterval(tick);
-  }, [running, reminders]);
+  }, [running, reminders, setTimer]);
   if (!timer) return null;
   const left = timeLeft(timer, now);
   const paused = isPaused(timer);
@@ -341,10 +347,54 @@ async function sureToSubmit(exam: Exam, answers: Answers): Promise<boolean> {
   });
 }
 
-export function ExamTake({ exam, onSubmit }: { exam: Exam; onSubmit(answers: Answers): void }) {
-  const [answers, setAnswers] = useState<Answers>({});
-  const [at, setAt] = useState(0);
+/** How long the window waits after a change before keeping the attempt, so typing is not written on every key. */
+const KEEP_AFTER_MS = 400;
+
+export interface ExamTakeProps {
+  exam: Exam;
+  /** The attempt to carry on with, or null to start the exam afresh. */
+  attempt: Attempt | null;
+  notebookId: string | null;
+  onSubmit(answers: Answers): void;
+}
+
+export function ExamTake({ exam, attempt, notebookId, onSubmit }: ExamTakeProps) {
+  const [answers, setAnswers] = useState<Answers>(() => attempt?.answers ?? {});
+  const [at, setAt] = useState(() => Math.min(Math.max(0, attempt?.at ?? 0), Math.max(0, exam.questions.length - 1)));
   const [all, setAll] = useState(false);
+  const [timer, setTimer] = useState<ExamTimer | null>(() =>
+    attempt ? attempt.timer : exam.settings.minutes === null ? null : startTimer(exam.settings.minutes, Date.now()),
+  );
+  // The attempt is kept a moment after each change, and at once when the window closes or this view goes away,
+  // until the exam is submitted.
+  const done = useRef(false);
+  const pending = useRef<number | null>(null);
+  const current = useRef<Attempt | null>(null);
+  const keep = useRef(() => {
+    if (pending.current !== null) window.clearTimeout(pending.current);
+    pending.current = null;
+    if (!done.current && current.current) saveAttempt({ ...current.current, saved: Date.now() });
+  });
+  useEffect(() => {
+    current.current = { exam, answers, timer, at, notebookId, paperSaved: savedPapers.has(exam.id), saved: 0 };
+    if (done.current) return;
+    if (pending.current !== null) window.clearTimeout(pending.current);
+    pending.current = window.setTimeout(keep.current, KEEP_AFTER_MS);
+  }, [exam, answers, timer, at, notebookId]);
+  useEffect(() => {
+    const now = keep.current;
+    window.addEventListener('pagehide', now);
+    return () => {
+      window.removeEventListener('pagehide', now);
+      now();
+    };
+  }, []);
+  const submit = (given: Answers) => {
+    done.current = true;
+    if (pending.current !== null) window.clearTimeout(pending.current);
+    dropAttempt(exam.id);
+    onSubmit(given);
+  };
   const total = exam.questions.length;
   const shown = all ? exam.questions : exam.questions.slice(at, at + 1);
   const set = (id: string) => (answer: Answer) => setAnswers((now) => ({ ...now, [id]: answer }));
@@ -356,7 +406,7 @@ export function ExamTake({ exam, onSubmit }: { exam: Exam; onSubmit(answers: Ans
   return (
     <div className={styles.form}>
       <div className={styles.bar}>
-        <Clock exam={exam} />
+        <Clock exam={exam} timer={timer} setTimer={setTimer} />
         <Button variant="quiet" aria-pressed={all} onClick={() => setAll((now) => !now)}>
           {t(all ? 'exams.take.oneAtATime' : 'exams.take.showAll')}
         </Button>
@@ -385,7 +435,7 @@ export function ExamTake({ exam, onSubmit }: { exam: Exam; onSubmit(answers: Ans
         ) : null}
         <Button
           variant="primary"
-          onClick={() => void sureToSubmit(exam, answers).then((sure) => sure && onSubmit(answers))}
+          onClick={() => void sureToSubmit(exam, answers).then((sure) => sure && submit(answers))}
         >
           {t('exams.take.submit')}
         </Button>

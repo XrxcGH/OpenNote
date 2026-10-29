@@ -154,21 +154,17 @@ function useMarks(exam: Exam, answers: Answers) {
   return [marks, setMarks] as const;
 }
 
-/** Saves the results page, with the paper and key first when they are not saved yet. Returns what to tell. */
+/** Saves the results page with the answer key, and the paper first when it is not saved yet. Returns what to tell. */
 async function saveResults(
   exam: Exam,
   answers: Answers,
   marks: Record<string, QuestionMark>,
   notebookId: string | null,
 ) {
-  const paper = savedPapers.has(exam.id)
-    ? []
-    : [
-        { title: exam.title, markdown: paperMarkdown(exam) },
-        { title: t('exams.key.title', { title: exam.title }), markdown: keyMarkdown(exam) },
-      ];
+  const paper = savedPapers.has(exam.id) ? [] : [{ title: exam.title, markdown: paperMarkdown(exam) }];
   const count = await savePages(notebookId, [
     ...paper,
+    { title: t('exams.key.title', { title: exam.title }), markdown: keyMarkdown(exam) },
     { title: t('exams.results.title', { title: exam.title }), markdown: resultsMarkdown(exam, answers, marks) },
   ]);
   if (count === null) return { saved: false, text: t('exams.save.noNotebook') };
