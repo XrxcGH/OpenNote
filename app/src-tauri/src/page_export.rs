@@ -317,13 +317,22 @@ fn start_devtools_print(
         .map_err(IpcError::from)
 }
 
+/// PDF and printing go through WebView2's PrintToPdf, which WKWebView and WebKitGTK don't have (ADR 0055).
+#[cfg(not(windows))]
+fn pdf_unavailable() -> IpcError {
+    IpcError::new(
+        codes::NOT_IMPLEMENTED,
+        "Saving as PDF and printing aren't available on this system yet. Export the page as Word or HTML instead.",
+    )
+}
+
 #[cfg(not(windows))]
 fn start_devtools_print(
     _window: &WebviewWindow,
     _params: String,
     _tx: mpsc::Sender<Result<String, String>>,
 ) -> IpcResult<()> {
-    Err(IpcError::not_implemented("print_render"))
+    Err(pdf_unavailable())
 }
 
 #[cfg(windows)]
@@ -393,7 +402,7 @@ fn start_print(
     _background: bool,
     _tx: mpsc::Sender<Result<bool, String>>,
 ) -> IpcResult<()> {
-    Err(IpcError::not_implemented("print_render"))
+    Err(pdf_unavailable())
 }
 
 /// Closes a job's print window. A window that is already gone is not an error.
