@@ -11,6 +11,7 @@ mod inline;
 mod math;
 mod page;
 mod preamble;
+mod scan;
 mod table;
 mod writer;
 

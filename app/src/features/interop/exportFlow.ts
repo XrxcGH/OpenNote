@@ -336,6 +336,75 @@ function onProgress(run: Run, event: JobEvent): void {
   if (current.step === 'exporting') run.state.set({ ...current, progress: event });
 }
 
+/** Adds the folder to the favorites, or takes it out. */
+async function toggleFavorite(run: Run): Promise<void> {
+  const { interop } = run.deps;
+  const folder = optionsOf(run)?.folder;
+  if (!folder || !interop.more) return;
+  const add = !run.extras.get().favorites.includes(folder);
+  try {
+    await interop.more('send_favorite', { path: folder, add });
+    await loadExtras(run);
+  } catch (error) {
+    const current = optionsOf(run);
+    if (current) run.state.set({ ...current, error: asError(error) });
+  }
+}
+
+/** Exports again over a copy that was sent before. */
+async function updateCopy(run: Run, copy: SentCopy): Promise<void> {
+  const scope = run.deps.target.choices.find((choice) => choice.node.id === copy.node)?.scope;
+  if (!scope) return;
+  const folder = folderOf(copy.path);
+  const options: Options = { step: 'options', scope, format: copy.format, folder, error: null };
+  await exportNow(run, { ...options, folder }, copy.path);
+}
+
+/** Listens for progress. The returned function stops listening, drops the preview, and cancels any job. */
+function attachRun(run: Run): () => void {
+  const { interop } = run.deps;
+  const stop = interop.onProgress((event) => onProgress(run, event));
+  schedulePreview(run);
+  return () => {
+    stop();
+    if (run.previewTimer) clearTimeout(run.previewTimer);
+    run.previews += 1;
+    run.abort?.abort();
+    if (run.job) interop.cancel(run.job);
+    run.job = null;
+  };
+}
+
+/** The choices the options step makes: what to export, the format, and the options of Share and LaTeX. */
+function choices(run: Run): Pick<ExportFlow, 'setScope' | 'setFormat' | 'setShare' | 'setLatex'> {
+  const { state } = run;
+  return {
+    setScope(scope) {
+      const current = optionsOf(run);
+      if (!current) return;
+      state.set({ ...current, scope });
+      schedulePreview(run);
+    },
+    setFormat(format) {
+      const current = optionsOf(run);
+      if (!current) return;
+      const latex = format === 'latex' ? (current.latex ?? loadLatexChoices()) : current.latex;
+      state.set({ ...current, format, ...(latex ? { latex } : {}) });
+      schedulePreview(run);
+    },
+    setShare(share) {
+      const current = optionsOf(run);
+      if (current) state.set({ ...current, share: { ...(current.share ?? NO_SHARE_CHOICES), ...share }, error: null });
+    },
+    setLatex(latex) {
+      const current = optionsOf(run);
+      if (!current) return;
+      state.set({ ...current, latex: { ...(current.latex ?? loadLatexChoices()), ...latex }, error: null });
+      schedulePreview(run);
+    },
+  };
+}
+
 export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
   const state = createFlowState<ExportState>({
     step: 'options',
@@ -354,58 +423,13 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
     state,
     extras,
     preview,
-    setLatex(choices) {
-      const current = optionsOf(run);
-      if (!current) return;
-      state.set({ ...current, latex: { ...(current.latex ?? loadLatexChoices()), ...choices }, error: null });
-      schedulePreview(run);
-    },
+    ...choices(run),
     useFolder(folder) {
       const current = optionsOf(run);
       if (current) state.set({ ...current, folder, error: null });
     },
-    async toggleFavorite() {
-      const folder = optionsOf(run)?.folder;
-      if (!folder || !deps.interop.more) return;
-      const add = !extras.get().favorites.includes(folder);
-      try {
-        await deps.interop.more('send_favorite', { path: folder, add });
-        await loadExtras(run);
-      } catch (error) {
-        const current = optionsOf(run);
-        if (current) state.set({ ...current, error: asError(error) });
-      }
-    },
-    async update(copy) {
-      const scope = deps.target.choices.find((choice) => choice.node.id === copy.node)?.scope;
-      if (!scope) return;
-      const options: Options = {
-        step: 'options',
-        scope,
-        format: copy.format,
-        folder: folderOf(copy.path),
-        error: null,
-      };
-      await exportNow(run, { ...options, folder: folderOf(copy.path) }, copy.path);
-    },
-    setScope(scope) {
-      const current = optionsOf(run);
-      if (!current) return;
-      state.set({ ...current, scope });
-      schedulePreview(run);
-    },
-    setFormat(format) {
-      const current = optionsOf(run);
-      if (!current) return;
-      const latex = format === 'latex' ? (current.latex ?? loadLatexChoices()) : current.latex;
-      state.set({ ...current, format, ...(latex ? { latex } : {}) });
-      schedulePreview(run);
-    },
-    setShare(choices) {
-      const current = optionsOf(run);
-      if (current)
-        state.set({ ...current, share: { ...(current.share ?? NO_SHARE_CHOICES), ...choices }, error: null });
-    },
+    toggleFavorite: () => toggleFavorite(run),
+    update: (copy) => updateCopy(run, copy),
     chooseFolder: () => chooseFolder(run),
     async start() {
       // Without a folder yet, Export asks for one first and goes on once the person has chosen.
@@ -424,17 +448,6 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
       }
     },
     running: () => run.job !== null,
-    attach() {
-      const stop = deps.interop.onProgress((event) => onProgress(run, event));
-      schedulePreview(run);
-      return () => {
-        stop();
-        if (run.previewTimer) clearTimeout(run.previewTimer);
-        run.previews += 1;
-        run.abort?.abort();
-        if (run.job) deps.interop.cancel(run.job);
-        run.job = null;
-      };
-    },
+    attach: () => attachRun(run),
   };
 }

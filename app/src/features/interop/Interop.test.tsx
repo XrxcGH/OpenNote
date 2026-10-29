@@ -142,6 +142,20 @@ describe('Export', () => {
     ]);
   });
 
+  it('can be canceled part way', async () => {
+    const { platform } = await renderApp();
+    platform.interop.setStepMs(400);
+    const dialog = await openExport('Lectures');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
+    await within(dialog).findByText('C:\\Users\\Sample\\Documents');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
+    await userEvent.click(await within(dialog).findByRole('button', { name: 'Cancel' }));
+    await within(dialog).findByRole('button', { name: 'Export' });
+    expect(platform.interop.log.canceled).toHaveLength(1);
+  });
+});
+
+describe('Export as LaTeX', () => {
   it('exports a page as LaTeX with options and a preview of the .tex text that follows them', async () => {
     const { platform } = await renderApp();
     const tree = screen.getByRole('tree', { name: 'Notebooks' });
@@ -174,18 +188,6 @@ describe('Export', () => {
       scope: 'page',
       latex: { paper: 'a4', author: 'Ada Lovelace', toc: true, engine: 'unicode' },
     });
-  });
-
-  it('can be canceled part way', async () => {
-    const { platform } = await renderApp();
-    platform.interop.setStepMs(400);
-    const dialog = await openExport('Lectures');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
-    await within(dialog).findByText('C:\\Users\\Sample\\Documents');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
-    await userEvent.click(await within(dialog).findByRole('button', { name: 'Cancel' }));
-    await within(dialog).findByRole('button', { name: 'Export' });
-    expect(platform.interop.log.canceled).toHaveLength(1);
   });
 });
 

@@ -6,7 +6,7 @@ use super::writer::Writer;
 use crate::doc::{Inline, Marks, Script};
 use crate::export::footnotes::{split_markers, Piece};
 
-/// The color of a highlighter name, as an xcolor expression. The default highlight, `honey`, is yellow.
+/// The color of a highlighter name, written for the color package. The default highlight, `honey`, is yellow.
 fn highlight_color(name: &str) -> &'static str {
     match name {
         "green" | "mint" | "lime" => "green!35",

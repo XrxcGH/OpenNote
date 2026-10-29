@@ -10,7 +10,9 @@ export const interopLatex = {
     label: 'Characters',
     unicode: 'Any language (XeLaTeX or LuaLaTeX)',
     pdflatex: 'Latin letters only (pdfLaTeX)',
-    help: 'The file compiles with any of the three engines. The second choice turns Greek letters and math signs into commands, and shows other characters as question marks.',
+    help:
+      'The file compiles with any of the three engines. The second choice turns Greek letters and math signs ' +
+      'into commands, and shows other characters as question marks.',
   },
   paper: { label: 'Paper size', letter: 'Letter', a4: 'A4' },
   margin: { label: 'Margins', narrow: 'Narrow', normal: 'Normal', wide: 'Wide' },

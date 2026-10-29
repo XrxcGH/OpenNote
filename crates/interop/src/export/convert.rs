@@ -119,7 +119,7 @@ pub(super) struct Converted {
     pub notes: Vec<Vec<Inline>>,
 }
 
-/// Converts a page. With a `label_prefix`, which is the LaTeX export's, equation labels and references keep their
+/// Converts a page. A `label_prefix` is the LaTeX export's: with one, equation labels and references keep their
 /// `\label` and `\eqref` form under that prefix, and footnote definitions are taken out of the text (see
 /// `footnotes`). Without one, labeled equations get their numbers written in.
 pub(super) fn convert_page(

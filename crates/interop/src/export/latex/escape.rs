@@ -42,7 +42,7 @@ fn dropped(c: char) -> bool {
         || c == crate::export::footnotes::CLOSE
 }
 
-/// Text as LaTeX: every special character escaped, line breaks and tabs as spaces. With pdfLaTeX, characters it
+/// Text as LaTeX. Every special character is escaped, and a line break or a tab becomes a space. With pdfLaTeX, characters it
 /// cannot show become a question mark and are noted in `missing`.
 pub fn text(input: &str, engine: Engine, missing: &mut Missing) -> String {
     let mut out = String::with_capacity(input.len() + input.len() / 8);

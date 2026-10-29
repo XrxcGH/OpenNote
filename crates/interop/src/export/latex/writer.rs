@@ -102,7 +102,7 @@ pub(super) struct Writer<'a> {
     pub base: usize,
     /// The keys cited, in the order of their first citation.
     pub cited: Vec<String>,
-    /// The keys the bibliography lists, whether or not they were cited.
+    /// The keys the bibliography lists, including keys that nothing cites.
     pub listed: Vec<String>,
     /// Whether a bibliography has been written.
     pub bibliography: bool,

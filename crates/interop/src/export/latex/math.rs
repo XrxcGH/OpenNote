@@ -6,6 +6,7 @@
 //! fails the check is written as plain text instead, and the report says so.
 
 use super::escape::{math_command, Missing};
+use super::scan::check;
 use super::Engine;
 
 /// Commands that read or write files, define or redefine commands, or change how TeX reads. None has a use in
@@ -117,7 +118,7 @@ const DENIED: &[&str] = &[
 ];
 
 /// Environments an equation may open. `document`, `verbatim`, and the other text environments are not here.
-const ENVIRONMENTS: &[&str] = &[
+pub(super) const ENVIRONMENTS: &[&str] = &[
     "aligned",
     "alignedat",
     "array",
@@ -147,7 +148,7 @@ const ENVIRONMENTS: &[&str] = &[
 ];
 
 /// Environments that make a display equation by themselves, so the equation is not wrapped again.
-const DISPLAY_ENVIRONMENTS: &[&str] = &[
+pub(super) const DISPLAY_ENVIRONMENTS: &[&str] = &[
     "align",
     "align*",
     "gather",
@@ -160,209 +161,13 @@ const DISPLAY_ENVIRONMENTS: &[&str] = &[
     "equation*",
 ];
 
-/// The longest equation that is kept.
-const MAX_CHARS: usize = 20_000;
-
-fn denied(word: &str) -> bool {
+pub(super) fn denied(word: &str) -> bool {
     let lower = word.to_ascii_lowercase();
     DENIED.contains(&lower.as_str())
         || ["pdf", "lua", "directlua", "latelua"]
             .iter()
             .any(|p| lower.starts_with(p))
         || (lower.starts_with("if") && lower != "iff")
-}
-
-/// Equation text that passed the check.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Checked {
-    /// The TeX, without comments and blank lines.
-    pub tex: String,
-    /// Whether it holds a `\label`.
-    pub labeled: bool,
-    /// The environment that makes up the whole equation, such as `align`.
-    pub whole: Option<String>,
-    /// Whether a row break or alignment tab stands outside any environment, so a display needs `aligned`.
-    pub rows: bool,
-}
-
-fn key_ok(key: &str) -> bool {
-    !key.is_empty()
-        && key.len() <= 80
-        && key
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b':' | b'_' | b'.' | b'-'))
-}
-
-/// The text inside the braces that start at `at` (an opening brace), and where they end.
-fn braced(chars: &[char], at: usize) -> Option<(String, usize)> {
-    if chars.get(at) != Some(&'{') {
-        return None;
-    }
-    let mut depth = 0usize;
-    let mut text = String::new();
-    for (i, &c) in chars.iter().enumerate().skip(at) {
-        match c {
-            '{' => {
-                depth += 1;
-                if depth > 1 {
-                    text.push(c);
-                }
-            }
-            '}' => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some((text, i));
-                }
-                text.push(c);
-            }
-            _ => text.push(c),
-        }
-    }
-    None
-}
-
-/// Checks the TeX of one equation and cleans it. `None` when it cannot be kept.
-pub fn check(source: &str, inline: bool) -> Option<Checked> {
-    if source.chars().count() > MAX_CHARS {
-        return None;
-    }
-    let chars: Vec<char> = source
-        .chars()
-        .filter(|c| *c != '\r' && (*c == '\n' || *c == '\t' || !c.is_control()))
-        .collect();
-    let mut out = String::with_capacity(chars.len());
-    let mut stack: Vec<String> = Vec::new();
-    let mut top_levels: Vec<(String, usize, usize)> = Vec::new();
-    let mut depth = 0usize;
-    let (mut lefts, mut rights) = (0usize, 0usize);
-    let (mut labeled, mut rows) = (false, false);
-    let mut i = 0;
-    while i < chars.len() {
-        let c = chars[i];
-        match c {
-            '%' => {
-                while i < chars.len() && chars[i] != '\n' {
-                    i += 1;
-                }
-                continue;
-            }
-            '$' => return None,
-            '^' if chars.get(i + 1) == Some(&'^') => return None,
-            '{' => depth += 1,
-            '}' => {
-                depth = depth.checked_sub(1)?;
-            }
-            '&' => {
-                if stack.is_empty() {
-                    if inline || depth > 0 {
-                        return None;
-                    }
-                    rows = true;
-                }
-            }
-            '\\' => {
-                let next = *chars.get(i + 1)?;
-                if next.is_ascii_alphabetic() {
-                    let end = chars[i + 1..]
-                        .iter()
-                        .position(|c| !c.is_ascii_alphabetic())
-                        .map_or(chars.len(), |p| i + 1 + p);
-                    let word: String = chars[i + 1..end].iter().collect();
-                    out.extend(&chars[i..end]);
-                    i = end;
-                    match word.as_str() {
-                        "begin" | "end" => {
-                            let (name, close) = braced(&chars, skip_space(&chars, i))?;
-                            if !ENVIRONMENTS.contains(&name.as_str()) {
-                                return None;
-                            }
-                            if word == "begin" {
-                                if stack.is_empty() {
-                                    top_levels.push((name.clone(), out.len() - 6, 0));
-                                }
-                                stack.push(name.clone());
-                            } else {
-                                if stack.pop().as_deref() != Some(name.as_str()) {
-                                    return None;
-                                }
-                                if stack.is_empty() {
-                                    let tail = out.len() + (close + 1 - i);
-                                    top_levels.last_mut()?.2 = tail;
-                                }
-                            }
-                            out.extend(&chars[i..=close]);
-                            i = close + 1;
-                            continue;
-                        }
-                        "label" | "ref" | "eqref" => {
-                            let (key, close) = braced(&chars, skip_space(&chars, i))?;
-                            if !key_ok(&key) {
-                                return None;
-                            }
-                            labeled |= word == "label";
-                            out.extend(&chars[i..=close]);
-                            i = close + 1;
-                            continue;
-                        }
-                        "left" => lefts += 1,
-                        "right" => rights += 1,
-                        _ if denied(&word) => return None,
-                        _ => {}
-                    }
-                    continue;
-                }
-                if next == '\\' && stack.is_empty() {
-                    if inline || depth > 0 {
-                        return None;
-                    }
-                    rows = true;
-                }
-                if next == '\n' {
-                    return None;
-                }
-                out.push('\\');
-                out.push(next);
-                i += 2;
-                continue;
-            }
-            _ => {}
-        }
-        out.push(c);
-        i += 1;
-    }
-    if depth != 0 || !stack.is_empty() || lefts != rights {
-        return None;
-    }
-    let tex = tidy(&out);
-    if tex.is_empty() {
-        return None;
-    }
-    let whole = match top_levels.as_slice() {
-        [(name, 0, end)] if *end == out.trim_end().len() && out.trim_start().len() == out.len() => Some(name.clone()),
-        _ => None,
-    };
-    Some(Checked {
-        tex,
-        labeled,
-        whole: whole.filter(|n| DISPLAY_ENVIRONMENTS.contains(&n.as_str())),
-        rows,
-    })
-}
-
-fn skip_space(chars: &[char], mut at: usize) -> usize {
-    while chars.get(at).is_some_and(|c| *c == ' ' || *c == '\t') {
-        at += 1;
-    }
-    at
-}
-
-/// Lines trimmed, blank lines removed, which TeX would read as a paragraph end.
-fn tidy(text: &str) -> String {
-    text.lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .collect::<Vec<_>>()
-        .join("\n")
 }
 
 /// Replaces Unicode math characters with commands for pdfLaTeX. The Unicode engines read them as they are.
