@@ -17,7 +17,7 @@ Most importers read a folder of note files through one driver, `folder.rs`. The 
 | `TextBundleReader` | `textbundle.rs` | Bear's TextBundle folders |
 | `CsvReader` | `sheet.rs` | CSV and TSV files as tables |
 
-Three other drivers cover sources that are not folders of notes. `files.rs` imports each Word or web page archive file as a section: see [word](word/README.md) and `mht.rs`. `enex.rs` streams Evernote export files note by note. `sticky.rs` reads the Windows Sticky Notes database through the `sqlite` module.
+Three other drivers cover sources that are not folders of notes, and `files.rs` also runs `notes_apps/` for Goodnotes, Notability, and Samsung Notes files (ADR 0053). `files.rs` imports each Word or web page archive file as a section: see [word](word/README.md) and `mht.rs`. `enex.rs` streams Evernote export files note by note. `sticky.rs` reads the Windows Sticky Notes database through the `sqlite` module.
 
 ## Public API
 
@@ -31,6 +31,7 @@ Three other drivers cover sources that are not folders of notes. `files.rs` impo
 | `import_docx`, `import_docx_with` | Word files |
 | `import_mht` | Web page archives |
 | `import_sticky_notes`, `sticky_notes_database` | The Windows Sticky Notes database, and where this PC keeps it |
+| `import_notes_apps` | Goodnotes (`.goodnotes`), Notability (`.note`), and Samsung Notes (`.sdocx`) files, or a folder of them |
 | `Flavor` | Which app made a Markdown folder |
 
 ## Links, pictures, and attachments
@@ -44,3 +45,9 @@ A report entry says what came over, what was simplified, and what was skipped, w
 ## What the UI wiring needs
 
 Nothing in this folder talks to the interface. The wiring calls `import` from `job.rs`, which picks the importer from `detect`.
+
+## Goodnotes, Notability, and Samsung Notes
+
+`notes_apps/` reads the three handwriting apps' ZIP packages in memory, under the limits in `container.rs`. `bplist.rs` and `keyed.rs` read Notability's `Session.plist`, `protobuf.rs` walks Goodnotes' index files, `media.rs` tells attachments apart by their signatures, and `ink.rs` turns curves into strokes. What a package keeps in a private form is reported as not imported, with the app's PDF export as the way around it. `fixtures.rs` builds the synthetic packages that the tests and fuzz seeds use.
+
+Sources, all public descriptions (no code was read or copied): Apple's description of the binary property list and NSKeyedArchiver layouts; Google's protocol buffers encoding guide; the published ZIP and media signatures; Julia Evans, "Reverse engineering the Notability file format" (jvns.ca, 2018); trueskawka, "Retrieving drawings from Notability" (2019); the r/RELounge "GoodNotes 5 files discussion" (2020 onward); and the `.sdocx` entries of fileinfo.com and docs.fileformat.com. ADR 0053 says what each one gave.
