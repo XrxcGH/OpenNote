@@ -33,7 +33,10 @@ export type Problem =
   | 'outsideFit'
   | 'badBand'
   | 'noComponent'
-  | 'badMagnitude';
+  | 'badMagnitude'
+  | 'badAnalyzers'
+  | 'tooManyQubits'
+  | 'tableTooLarge';
 
 export class PhysicsError extends Error {
   constructor(
