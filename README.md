@@ -34,7 +34,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [Tables and charts](docs/help/tables-and-charts.md)               | Smart tables with views and formulas, and charts that update with them                                         |
 | [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, the grapher, Mermaid diagrams, and mind maps                                            |
 | [Engineering tools](docs/help/engineering-tools.md)               | Free-body diagrams, beam and truss solvers, DC circuits, and units in tables                                   |
-| [Economics and finance](docs/help/economics-and-finance.md)       | 87 calculators: time value of money, markets, firms, macro, indexes, inequality, accounting, investments       |
+| [Economics and finance](docs/help/economics-and-finance.md)         | 87 calculators: time value of money, markets, firms, macro, indexes, inequality, accounting, investments |
 | [Search and links](docs/help/search-and-links.md)                 | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
 | [Study tools](docs/help/study-tools.md)                           | Flashcards, Anki, study tape, Upcoming, timers, a calculator, and citations                                    |
 | [Recording](docs/help/recording.md)                               | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |
@@ -153,27 +153,27 @@ The root also holds tool settings such as `package.json`, `Cargo.toml`, and `che
 
 The [documentation index](docs/README.md) lists everything in `docs/`. Start with the help pages to use the app, or pick a document below.
 
-| Document                                                             | What it covers                                                                                   |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| [Help pages](docs/help/README.md)                                    | How to use each part of the app, with screenshots                                                |
-| [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)              | The user guide, development updates, and the developer guide                                     |
-| [CHANGELOG.md](CHANGELOG.md)                                         | What each beta added, changed, and fixed                                                         |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a beta 6 status under each phase           |
-| [docs/FEATURES.md](docs/FEATURES.md)                                 | The feature spec, with what is built, untested, not built, or waiting on the owner               |
-| [docs/RESEARCH.md](docs/RESEARCH.md)                                 | Popular and rising note apps, the features people love, and the gaps OpenNote can fill           |
-| [docs/BRAND.md](docs/BRAND.md)                                       | Colors, type, layout, motion, accessibility, and performance budgets                             |
-| [docs/design/SCREENS.md](docs/design/SCREENS.md)                     | Wireframes of each major screen, with sizes and keep-out zones                                   |
-| [docs/screens/README.md](docs/screens/README.md)                     | Real screenshots of every screen, in light and dark                                              |
-| [docs/CHECKS.md](docs/CHECKS.md)                                     | The quality gate every file change must pass                                                     |
-| [docs/format/README.md](docs/format/README.md)                       | The note file format specification and tools                                                     |
-| [docs/adr/README.md](docs/adr/README.md)                             | Every architecture decision record (ADR), its status, and how to write one                       |
-| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist for the beta (written at beta 4), starting with the safest way to run it |
-| [docs/HARDENING.md](docs/HARDENING.md)                               | Crash reports, the self-check, the feedback file, and safe start                                 |
-| [docs/RELEASING.md](docs/RELEASING.md)                               | The maintainer guide to cutting, checking, and rolling back a release                            |
-| [docs/CONNECTORS.md](docs/CONNECTORS.md)                             | Registering OpenNote with each connected service, and where the client IDs go                    |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                                   | How to set up, make a change, and get it merged                                                  |
-| [SECURITY.md](SECURITY.md)                                           | How to report a security problem privately                                                       |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                             | How we treat each other                                                                          |
+| Document                                                             | What it covers                                                                         |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [Help pages](docs/help/README.md)                                    | How to use each part of the app, with screenshots                                      |
+| [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)              | The user guide, development updates, and the developer guide                           |
+| [CHANGELOG.md](CHANGELOG.md)                                         | What each beta added, changed, and fixed                                               |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a beta 6 status under each phase |
+| [docs/FEATURES.md](docs/FEATURES.md)                                 | The feature spec, with what is built, untested, not built, or waiting on the owner     |
+| [docs/RESEARCH.md](docs/RESEARCH.md)                                 | Popular and rising note apps, the features people love, and the gaps OpenNote can fill |
+| [docs/BRAND.md](docs/BRAND.md)                                       | Colors, type, layout, motion, accessibility, and performance budgets                   |
+| [docs/design/SCREENS.md](docs/design/SCREENS.md)                     | Wireframes of each major screen, with sizes and keep-out zones                         |
+| [docs/screens/README.md](docs/screens/README.md)                     | Real screenshots of every screen, in light and dark                                    |
+| [docs/CHECKS.md](docs/CHECKS.md)                                     | The quality gate every file change must pass                                           |
+| [docs/format/README.md](docs/format/README.md)                       | The note file format specification and tools                                           |
+| [docs/adr/README.md](docs/adr/README.md)                             | Every architecture decision record (ADR), its status, and how to write one             |
+| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist for the beta (written at beta 4), starting with the safest way to run it             |
+| [docs/HARDENING.md](docs/HARDENING.md)                               | Crash reports, the self-check, the feedback file, and safe start                       |
+| [docs/RELEASING.md](docs/RELEASING.md)                               | The maintainer guide to cutting, checking, and rolling back a release                  |
+| [docs/CONNECTORS.md](docs/CONNECTORS.md)                             | Registering OpenNote with each connected service, and where the client IDs go          |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                                   | How to set up, make a change, and get it merged                                        |
+| [SECURITY.md](SECURITY.md)                                           | How to report a security problem privately                                             |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                             | How we treat each other                                                                |
 
 ## License
 
