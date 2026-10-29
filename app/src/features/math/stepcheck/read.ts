@@ -284,9 +284,9 @@ function work(q: Question, ctx: Context): Worked {
 }
 
 /**
- * Σ_(k=1)^n k as a formula in n, for a sum to a letter of a polynomial in k: the sums for n = a - 1, a, ..., a + 8
- * are worked out, and their differences give the polynomial in n (Newton's forward differences), checked on the
- * points beyond its degree. Null for anything else, such as 2^k, which is left unchecked.
+ * Σ_(k=1)^n k as a formula in n, for a sum to a letter of a polynomial in k. The sums for n = a - 1 to a + 8 are
+ * worked out. Their differences give the polynomial in n (Newton's forward differences), checked past its degree.
+ * Null for anything else, such as 2^k, which is left unchecked.
  */
 function polynomialSum(q: Extract<Question, { kind: 'sum' }>): Node | null {
   if (!('node' in q.from) || !('node' in q.to) || q.to.node.type !== 'name') return null;

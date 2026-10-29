@@ -1,7 +1,7 @@
-// Corpus families for notation as students write it: y' after a formula with a parameter, ÷ between fractions,
-// values given on one line, a slash before a product, f(x + h), rounding to a whole number, vectors as (a, b) and
-// ⟨a, b⟩, unicode fractions, sums to a letter, and steps joined by arrows on one line. Called by generate.ts;
-// expected values are worked out here by plain arithmetic.
+// Corpus families for notation as students write it. They cover y' after a formula with a parameter, ÷ between
+// fractions, values given on one line, a slash before a product, f(x + h), and rounding to a whole number. They also
+// cover vectors as (a, b) and ⟨a, b⟩, unicode fractions, sums to a letter, and steps joined by arrows on one line.
+// Called by generate.ts; expected values are worked out here by plain arithmetic.
 type Add = (topic: string, lines: string[]) => void;
 type AddBroken = (topic: string, lines: string[], at: number) => void;
 

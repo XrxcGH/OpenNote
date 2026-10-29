@@ -435,6 +435,13 @@ describe('notation as students write it', () => {
     const open = checkSteps(['2x + 3', '= 7'])[1];
     expect([open.verdict, open.reason, open.params.at]).toEqual(['unchecked', 'someValues', 'x = 2']);
   });
+});
+
+describe('notation as students write it, part 2', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
 
   it('reads a slash before a product either way, and never marks it broken on one reading alone', () => {
     expect(pair(['1/2x', '= 1/(2x)'])).toBe('ok/equivalent');
@@ -461,6 +468,13 @@ describe('notation as students write it', () => {
     expect(checkSteps(['x + y = 10', 'x = y + 2'])[1].verdict).toBe('unchecked');
     expect(pair(['y = 3x', 'x + y = 8'])).toBe('ok/systemEquation');
   });
+});
+
+describe('notation as students write it, part 3', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
 
   it('checks f(x + h) against the definition', () => {
     // (x + h)^2 = x^2 + 2xh + h^2.
@@ -495,6 +509,13 @@ describe('notation as students write it', () => {
     // 7/2 = 3.5: no decimals in the working, so 3 is a slip.
     expect(pair(['7/2', '= 3'])).toBe('broken/valueOff');
   });
+});
+
+describe('notation as students write it, part 4', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
 
   it('reads vectors as (a, b, c) and ⟨a, b⟩, det without brackets, and unicode fractions', () => {
     // 1·4 + 2·(-5) + 3·6 = 12; i × j = k; ⟨1, 2⟩ + ⟨3, 4⟩ = ⟨4, 6⟩; 2·3 - 1·5 = 1; 1/2 + 1/3 = 5/6.
