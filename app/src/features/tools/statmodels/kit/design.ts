@@ -2,7 +2,16 @@
 // predictor of words (reference coding) or a column that sets the first level to −1 (effect coding), powers and
 // logarithms, and products for interactions. Rows with a missing value in any column the model uses are left out,
 // and the tools say how many.
-import { completeRows, isNumericColumn, levelsOf, numbersAt, strayWord, wordsAt, type DataTable } from './data';
+import {
+  cellNumber,
+  completeRows,
+  isNumericColumn,
+  levelsOf,
+  numbersAt,
+  strayWord,
+  wordsAt,
+  type DataTable,
+} from './data';
 import type { Matrix } from './linalg';
 import { fail } from './types';
 
@@ -124,4 +133,49 @@ export const mainTerms = (names: readonly string[]): Term[] => names.map((name) 
 export function dropColumns(x: Matrix, drop: readonly number[]): Matrix {
   const gone = new Set(drop);
   return x.map((row) => row.filter((_, j) => !gone.has(j)));
+}
+
+/**
+ * The design row for a new case, built the way the fitted rows were: the same levels and coding, the same means
+ * when centering, and the same powers, logs, and products.
+ */
+export function designRow(
+  table: DataTable,
+  design: Design,
+  terms: readonly Term[],
+  given: ReadonlyMap<string, string>,
+  options: DesignOptions,
+): number[] {
+  const columnsOf = (factor: Factor): number[] => {
+    const text = given.get(factor.name);
+    if (text === undefined) fail('caseMissing', factor.name);
+    const levels = design.levels.get(factor.name);
+    if (levels) {
+      if (!levels.includes(text)) fail('caseLevel', `${factor.name}|${text}`);
+      return levels.slice(1).map((l) => (text === l ? 1 : options.coding === 'effect' && text === levels[0] ? -1 : 0));
+    }
+    if (!isNumericColumn(table, factor.name)) fail('caseLevel', `${factor.name}|${text}`);
+    let v = cellNumber(text);
+    if (v === null || Number.isNaN(v)) fail('notNumeric', `${factor.name}|${text}`);
+    if (factor.log) {
+      if (v <= 0) fail('logPositive', factor.name);
+      v = Math.log(v);
+    } else if (options.center) v -= design.means.get(factor.name) ?? 0;
+    return [v ** (factor.power ?? 1)];
+  };
+  const row = options.intercept === false ? [] : [1];
+  const seen = new Set<string>();
+  for (const term of terms) {
+    const label = termLabel(term);
+    if (seen.has(label)) continue;
+    seen.add(label);
+    let values = [1];
+    for (const factor of term.factors) {
+      const next = columnsOf(factor);
+      values = values.flatMap((a) => next.map((b) => a * b));
+    }
+    row.push(...values);
+  }
+  if (row.length !== design.columns.length) fail('unknown');
+  return row;
 }

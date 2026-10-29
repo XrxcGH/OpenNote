@@ -59,7 +59,7 @@ describe('the statistical models kit window', () => {
     expect(within(predictors).getAllByRole('checkbox')).toHaveLength(3);
     await userEvent.click(within(predictors).getByRole('checkbox', { name: 'extra' }));
     const coefficients = await screen.findByRole('region', { name: 'Coefficients on the link scale' });
-    expect(within(coefficients).getByText('extra')).toBeTruthy();
+    expect(await within(coefficients).findByText('extra')).toBeTruthy();
   });
 
   it('moves between tabs with the arrow keys', async () => {

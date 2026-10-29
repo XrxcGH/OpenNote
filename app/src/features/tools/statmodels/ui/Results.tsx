@@ -4,9 +4,10 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
-import { fillMath, valueText } from '../kit/format';
+import { fillMath } from '../kit/format';
 import type { Outcome } from '../kit/spec';
 import {
+  cellText,
   columnName,
   pictureName,
   pictureSvg,
@@ -51,11 +52,11 @@ function Tables({ c }: { c: InsertContext }) {
                   {cells.map((cell, i) =>
                     i === 0 && typeof cell === 'string' ? (
                       <th key={i} scope="row">
-                        {cell}
+                        {cellText(c, cell)}
                       </th>
                     ) : (
                       <td key={i} className={styles.number}>
-                        {valueText(cell)}
+                        {cellText(c, cell)}
                       </td>
                     ),
                   )}

@@ -5,7 +5,7 @@ import { INSERT_EVENT } from '../../flags';
 import { fillMath, valueLatex, valueText, wordValues } from '../kit/format';
 import { escapeXml, PAGE, plotSvg, SCREEN, type Palette } from '../kit/picture';
 import type { Outcome, Picture, ResultRow } from '../kit/spec';
-import type { KitStep } from '../kit/types';
+import type { KitStep, StepValue } from '../kit/types';
 
 export type Say = (key: string, params?: Readonly<Record<string, string | number>>) => string;
 
@@ -58,6 +58,10 @@ export function resultTable(c: InsertContext): { header: string[]; rows: string[
   };
 }
 
+/** A table cell as text: a number, a name from the data, or @id for a word under word.<id> in the tool's strings. */
+export const cellText = (c: InsertContext, cell: StepValue): string =>
+  typeof cell === 'string' && cell.startsWith('@') ? c.say(`${PREFIX}.${c.tool}.word.${cell.slice(1)}`) : valueText(cell);
+
 /** A column's name: its words under col.<id>, or the text after = for a name from the data, such as a group. */
 export const columnName = (c: InsertContext, id: string): string =>
   id.startsWith('=') ? id.slice(1) : c.say(`${PREFIX}.${c.tool}.col.${id}`);
@@ -68,7 +72,7 @@ export function extraTable(c: InsertContext, index: number): { header: string[];
   if (!table) return null;
   return {
     header: table.columns.map((id) => columnName(c, id)),
-    rows: table.rows.map((row) => row.map((cell) => valueText(cell))),
+    rows: table.rows.map((row) => row.map((cell) => cellText(c, cell))),
   };
 }
 

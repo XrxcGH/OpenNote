@@ -12,6 +12,12 @@ export interface StatModelsToolMeta {
 }
 
 export const STATMODELS_TOOLS: readonly StatModelsToolMeta[] = [
+  {
+    id: 'regression',
+    title: 'kitStatModels.regression.title',
+    keywords: 'kitStatModels.regression.keywords',
+    icon: 'ChartLine',
+  },
   { id: 'glm', title: 'kitStatModels.glm.title', keywords: 'kitStatModels.glm.keywords', icon: 'Function' },
   {
     id: 'survival',
