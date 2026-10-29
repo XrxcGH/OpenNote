@@ -2,9 +2,10 @@
 // fill it, so an engine never needs t() and the window can say in words what to change.
 import type { DottedKeys } from '../../../../strings/t';
 import type { kitLifeSys } from '../../../../strings/en/kitLifeSys';
+import type { kitLifeSysTools } from '../../../../strings/en/kitLifeSysTools';
 
-/** A key in the kitLifeSys namespace, such as 'errors.positive'. */
-export type LsKey = DottedKeys<typeof kitLifeSys>;
+/** A key in the kitLifeSys strings or in a tool's own strings, such as 'errors.positive' or 'bench.c.mass'. */
+export type LsKey = DottedKeys<typeof kitLifeSys> | DottedKeys<typeof kitLifeSysTools>;
 
 /** Values for a message: numbers are shown rounded, strings as written (symbols such as V or Km). */
 export type LsVars = Readonly<Record<string, string | number>>;

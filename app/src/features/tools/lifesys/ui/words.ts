@@ -1,6 +1,8 @@
 // Turns an engine's string key and values into words: numbers are rounded to 6 significant figures, and an error
-// from an engine becomes its sentence.
-import { t } from '../../../../strings/t';
+// from an engine becomes its sentence. A tool's own words come from kitLifeSysTools, which loads with the window;
+// the shared ones (the window, errors, and tool names) are in the kitLifeSys namespace of t().
+import { kitLifeSysTools } from '../../../../strings/en/kitLifeSysTools';
+import { formatMessage, t } from '../../../../strings/t';
 import type { MessageKey } from '../../../../strings/t';
 import { LsError } from '../num/errors';
 import type { LsKey, LsVars } from '../num/errors';
@@ -13,6 +15,10 @@ export function word(key: LsKey, vars?: LsVars): string {
   const values = vars
     ? Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, typeof v === 'number' ? formatNumber(v) : v]))
     : undefined;
+  const own = key
+    .split('.')
+    .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], kitLifeSysTools);
+  if (typeof own === 'string') return formatMessage(own, values);
   return (t as unknown as Loose)(`kitLifeSys.${key}` as MessageKey, values);
 }
 
