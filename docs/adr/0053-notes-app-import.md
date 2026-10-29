@@ -17,17 +17,32 @@ People moving from handwriting apps on tablets and phones asked to bring their n
   - Notability: Julia Evans, "Reverse engineering the Notability file format" (jvns.ca, 2018), and trueskawka, "Retrieving drawings from Notability" (2019). They describe a ZIP package whose `Session.plist` holds the keys `curvespoints`, `curvesnumpoints`, `curveswidth`, and `curvescolors`. Only facts were used: the key names, and that the points pair up as x and y.
   - Goodnotes: a public discussion of the format (r/RELounge, "GoodNotes 5 files discussion", 2020 onward) and file-type references. They agree that a document is a ZIP package with page data in `notes/`, attachments in `attachments/`, and protobuf index files, and that nobody has decoded the page data.
   - Samsung Notes: file-type references (fileinfo.com, docs.fileformat.com) that describe `.sdocx` as a ZIP package holding the note's parts and a media folder.
-- **What comes over.** Notability's curves become strokes (spec 8.2) in a handwriting layer, with their color and width. Pressure comes from `curvesfractionalwidths`, where a factor of 1.0 is half pressure. See-through colors become highlighter strokes. Erasing is already applied in what the app saves. Typed text (archived `NSAttributedString` objects), pictures, recordings, and PDF files come over. Goodnotes and Samsung Notes pages come over in the order their index (`index.notes.pb`, `pageIdInfo.dat`) names them. Each page gets the attachments its data names by ID or file name, and the rest go on the first page. Samsung Notes text kept as XML comes over.
+- **What comes over.** Notability's curves become strokes (spec 8.2) in a handwriting layer, with their color and width. Pressure comes from `curvesfractionalwidths`, where a factor of 1.0 is half pressure. Curves that are clearly see-through become highlighter strokes, and other pens keep their alpha. Erasing is expected to be applied already in what the app saves, which a real file has yet to confirm. Typed text (archived `NSAttributedString` objects), pictures, recordings, and PDF files come over. Goodnotes and Samsung Notes pages come over in the order their index (`index.notes.pb`, `pageIdInfo.dat`) names them. Each page gets the attachments its data names by ID or file name, and the rest go on the first page. Samsung Notes text kept as XML comes over.
 - **What does not, and the route around it.** The import report lists these as not imported, each with how to export a PDF from that app: Goodnotes' and Samsung Notes' handwriting, Notability's shapes, and Goodnotes' bookmarks and outline. PDF backgrounds inside the packages come over as attached files. The import dialog lists the three apps with their file types and the PDF steps. It has an **Import a PDF…** button, and a PDF chosen in the dialog offers the same button.
-- **Hostile files.** Nothing is unpacked to disk. Entries are read into memory under these caps:
-  - each entry, 256 MiB;
-  - all entries together, 1 GiB;
-  - the number of entries, 20,000;
-  - expansion, 200 times the stored size, for entries over 1 MiB.
-
-  Names that are absolute, name a drive, or climb out with `..` are refused. Reading one file has a 120-second budget. The property list reader keeps a flat table of objects, with ranges into the input, so shared references are never copied. It checks every offset, width, count, and reference, and allows at most 2 million objects and 8 million references. The protobuf walker caps its depth at 12 and the total bytes it walks at 64 MiB. A UID lookup follows at most 8 references. A page takes at most 50,000 strokes and 2 million points, and a longer curve splits into joined strokes of at most 200,000 points. All arithmetic is checked and all parsing can fail without a panic. Tests cover it: a cargo-fuzz target (`notes_app`), the stable fuzz entry with synthetic seeds, a corpus of malformed packages (`tests/corpus/notes-apps`), and property tests.
-
+- **Hostile files.** Nothing is unpacked to disk, and every part of a file is read under a cap, listed in [Limits on hostile files](#limits-on-hostile-files).
 - **Behind a flag.** `interop.notesApps` is on in development, nightly, and Beta builds. It stays off in Stable until the owner has tried real files. Settings lists it with the other experimental switches.
+
+### Limits on hostile files
+
+Entries are read into memory under these caps:
+
+- each entry, 256 MiB;
+- all entries together, 1 GiB;
+- the number of entries, 20,000;
+- expansion, 200 times the stored size, for entries over 1 MiB.
+
+Names that are absolute, name a drive, or climb out with `..` are refused. Reading one file has a 120-second budget.
+
+The readers have their own caps:
+
+- The property list reader keeps a flat table of objects, with ranges into the input, so shared references are never copied. It checks every offset, width, count, and reference. It allows at most 2 million objects and 8 million references.
+- The protobuf walker caps its depth at 12 and the total bytes it walks at 64 MiB. A UID lookup follows at most 8 references.
+- A page takes at most 50,000 strokes and 2 million points. A longer curve splits into joined strokes of at most 200,000 points.
+- The Notability reader applies the page's caps while it reads. It decodes only the points of the curves it keeps, and it counts curves of no points as left out without keeping them. It reads at most 16 curve lists; a real note has one.
+- Samsung Notes' `pageIdInfo.dat` is read in one pass for all the pages, and only up to 4 MiB. A larger one leaves the pages in the package's order.
+- The loops over a property list's objects check the time budget and Cancel.
+
+All arithmetic is checked, and all parsing can fail without a panic. Tests cover it: a cargo-fuzz target (`notes_app`), the stable fuzz entry with synthetic seeds, and property tests. A corpus of malformed packages (`tests/corpus/notes-apps`) must import quickly, and `tests/notes_apps_memory.rs` measures the memory its hostile curve lists take.
 
 ## Options considered
 
