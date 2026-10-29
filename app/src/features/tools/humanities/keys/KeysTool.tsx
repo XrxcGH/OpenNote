@@ -24,6 +24,7 @@ import {
 import styles from '../ui/kit.module.css';
 import { buildKey, couplets, parseMatrix, remaining, walk } from './engine';
 import type { Answer, DichotomousKey, Lead, Matrix } from './engine';
+import { takeInputs } from '../open';
 import { keyLines, keySvg } from './print';
 
 type Tab = 'table' | 'key' | 'multi' | 'catalog';
@@ -127,7 +128,8 @@ function Runner({
   );
 }
 
-function KeyPanel({ matrix, onIdentified }: { matrix: Matrix; onIdentified(name: string): void }) {
+function KeyPanel(props: { matrix: Matrix; text: string; onIdentified(name: string): void }) {
+  const { matrix, text, onIdentified } = props;
   const keyed = useMemo(() => buildKey(matrix), [matrix]);
   const list = couplets(keyed.root);
   const or = t(`${k}.or`);
@@ -172,7 +174,13 @@ function KeyPanel({ matrix, onIdentified }: { matrix: Matrix; onIdentified(name:
           {t(`${k}.insertKey`)}
         </Button>
       </div>
-      <InsertBar payloads={{ steps, picture: { svg, name: 'identification-key', alt } }} />
+      <InsertBar
+        payloads={{
+          steps,
+          picture: { svg, name: 'identification-key', alt },
+          figure: { tool: 'keys', inputs: { text }, svg, alt, summary: lines.join('\n') },
+        }}
+      />
     </>
   );
 }
@@ -269,7 +277,10 @@ function CatalogPanel({ text, setText }: { text: string; setText(next: string): 
 
 export function KeysTool() {
   const [tab, setTab] = useState<Tab>('table');
-  const [text, setText] = useState(() => ht('keys.tables.letters'));
+  const [text, setText] = useState(() => {
+    const saved = takeInputs('keys') as { text?: unknown } | null;
+    return typeof saved?.text === 'string' ? saved.text : ht('keys.tables.letters');
+  });
   const [catalog, setCatalog] = useState('');
   const parsed = useMemo(() => attempt(() => parseMatrix(text)), [text]);
   const identified = (name: string) => {
@@ -288,7 +299,7 @@ export function KeysTool() {
       {tab === 'table' ? <TablePanel text={text} setText={setText} /> : null}
       {tab === 'catalog' ? <CatalogPanel text={catalog} setText={setCatalog} /> : null}
       {(tab === 'key' || tab === 'multi') && !parsed.ok ? <Problem text={errorText('keys', parsed.code)} /> : null}
-      {tab === 'key' && parsed.ok ? <KeyPanel matrix={parsed.value} onIdentified={identified} /> : null}
+      {tab === 'key' && parsed.ok ? <KeyPanel matrix={parsed.value} text={text} onIdentified={identified} /> : null}
       {tab === 'multi' && parsed.ok ? <MultiPanel matrix={parsed.value} /> : null}
     </Tool>
   );

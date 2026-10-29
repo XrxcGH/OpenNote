@@ -1,7 +1,8 @@
 // Which tool the kit window shows. A palette command sets it, then opens the window, so each tool has a command of
 // its own while the kit keeps one window.
 import { createStore } from '../../../state/store';
-import { HUMANITIES_TOOLS } from './meta';
+import { takeKitInputs } from '../kits/registry';
+import { HUMANITIES_TOOLS, KIT_ID } from './meta';
 import type { HumanitiesToolId } from './meta';
 
 const KEY = 'opennote.kits.humanities.tool';
@@ -36,3 +37,6 @@ export async function openHumanitiesTool(id: HumanitiesToolId): Promise<void> {
   showTool(id);
   (await import('../ui/host')).openTool('kit-humanities');
 }
+
+/** The inputs a figure block saved for this tool, taken once as the tool opens; null when none are waiting. */
+export const takeInputs = (id: HumanitiesToolId): unknown => takeKitInputs(KIT_ID, id);

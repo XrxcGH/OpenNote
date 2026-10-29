@@ -28,3 +28,11 @@ for (const tool of HUMANITIES_TOOLS) {
     run: async () => (await import('../../tools')).openHumanitiesTool(tool.id),
   });
 }
+
+// A figure block's Open in tool comes here through the shared kit registry.
+void import('../../tools').then((tools) =>
+  tools.registerKit('humanities', async (tool) => {
+    const found = HUMANITIES_TOOLS.find((item) => item.id === tool);
+    if (found) await tools.openHumanitiesTool(found.id);
+  }),
+);

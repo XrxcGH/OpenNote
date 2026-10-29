@@ -17,6 +17,7 @@ export const kitHumanities = {
     insertSteps: 'Insert steps',
     insertLatex: 'Insert LaTeX',
     insertPicture: 'Insert picture',
+    insertFigure: 'Insert editable figure',
     inserted: 'Added to the page.',
     noPage: 'Click in a page first, then insert.',
     source: 'Source: {source}',

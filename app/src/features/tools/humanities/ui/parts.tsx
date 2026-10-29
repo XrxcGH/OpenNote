@@ -5,6 +5,9 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import type { MessageKey } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
+import { insertFigure } from '../../subjects/ui/insertFigure';
+import { KIT_ID } from '../meta';
+import type { HumanitiesToolId } from '../meta';
 import { insertMath, insertPicture, insertSteps, insertTable, insertText } from './insert';
 import styles from './kit.module.css';
 
@@ -222,13 +225,15 @@ export interface Payloads {
   steps?: readonly string[];
   latex?: string;
   picture?: { svg: string; name: string; alt: string };
+  /** A figure block that keeps the inputs, so Open in tool reopens this drawing for editing. */
+  figure?: { tool: HumanitiesToolId; inputs: unknown; svg: string; alt: string; summary: string };
 }
 
 const done = (ok: boolean) => announce(t(ok ? 'kitHumanities.common.inserted' : 'kitHumanities.common.noPage'));
 
 /** One button for each form the result can go on the page in. */
 export function InsertBar({ payloads }: { payloads: Payloads }) {
-  const { answer, table, steps, latex, picture } = payloads;
+  const { answer, table, steps, latex, picture, figure } = payloads;
   return (
     <div className={styles.actions} role="group" aria-label={t('kitHumanities.common.insertGroup')}>
       {answer ? (
@@ -249,6 +254,11 @@ export function InsertBar({ payloads }: { payloads: Payloads }) {
       {latex ? (
         <Button variant="quiet" onClick={() => done(insertMath(latex))}>
           {t('kitHumanities.common.insertLatex')}
+        </Button>
+      ) : null}
+      {figure ? (
+        <Button variant="quiet" onClick={() => done(insertFigure({ kit: KIT_ID, ...figure }))}>
+          {t('kitHumanities.common.insertFigure')}
         </Button>
       ) : null}
       {picture ? (

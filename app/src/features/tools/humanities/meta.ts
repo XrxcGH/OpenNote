@@ -1,6 +1,9 @@
 // The tools of the history, places, languages, and texts kit: an id, an icon, and the order they are listed in.
 // Start-up code reads this list to register one palette command per tool, so it holds data only.
 
+/** The kit's id for figure blocks and the shared kit registry. */
+export const KIT_ID = 'humanities';
+
 export const HUMANITIES_TOOLS = [
   { id: 'frames', icon: 'Layout' },
   { id: 'coordinates', icon: 'Compass' },
