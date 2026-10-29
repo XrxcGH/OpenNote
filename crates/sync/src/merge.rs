@@ -70,12 +70,20 @@ fn split(path: &str) -> (&str, &str) {
     path.rsplit_once('/').unwrap_or(("", path))
 }
 
+pub use opennote_core::store::sealed::SEALED_CONFLICT;
+
+/// Whether a folder name holds a protected section's sealed files: `.sealed`, or a copy of another version of
+/// them that sync kept, `.sealed-conflict-<hash>`.
+pub fn is_sealed_name(name: &str) -> bool {
+    name == ".sealed" || name.starts_with(SEALED_CONFLICT)
+}
+
 /// The kind of a path.
 pub fn kind(path: &str) -> Kind {
     let (dir, name) = split(path);
     let (_, parent) = split(dir);
-    if dir.ends_with(".sealed") || dir.contains("/.sealed/") || dir == ".sealed" {
-        return if name == "manifest" {
+    if dir.split('/').any(is_sealed_name) {
+        return if name == "manifest" && is_sealed_name(parent) {
             Kind::SealedManifest
         } else {
             Kind::Immutable
@@ -113,16 +121,17 @@ fn conflicted_copy(path: &str, content: &Content) -> String {
     }
 }
 
-/// Where a sealed manifest's other version goes: the notebook's `.opennote/conflicts/`.
+/// Where a sealed manifest's other version goes: a folder beside `.sealed` in the same section,
+/// `.sealed-conflict-<hash>/manifest`. The blobs it needs are copied there too (see [`copy_sealed_sets`]), so the
+/// folder opens on its own with the section's password.
 fn sealed_copy(path: &str, content: &Content) -> String {
     let (sealed_dir, _) = split(path);
     let (section_dir, _) = split(sealed_dir);
-    let (notebook_dir, section) = split(section_dir);
-    let file = format!("sealed-{section}-{}.manifest", short(content));
-    if notebook_dir.is_empty() {
-        format!(".opennote/conflicts/{file}")
+    let folder = format!("{SEALED_CONFLICT}{}", short(content));
+    if section_dir.is_empty() {
+        format!("{folder}/manifest")
     } else {
-        format!("{notebook_dir}/.opennote/conflicts/{file}")
+        format!("{section_dir}/{folder}/manifest")
     }
 }
 
@@ -150,9 +159,27 @@ fn maximal(mut candidates: Vec<Entry>) -> Vec<Entry> {
     candidates
 }
 
-/// The merged version of one path, and any other versions kept at new paths.
-fn resolve(path: &str, candidates: Vec<Entry>, contents: &dyn Contents) -> Result<(Entry, Vec<(String, Entry)>)> {
+/// One path, resolved: its version, the other versions kept at new paths, and whether it came from more than one
+/// version that saw nothing of the others.
+struct Resolved {
+    entry: Entry,
+    others: Vec<(String, Entry)>,
+    concurrent: bool,
+}
+
+fn resolve(path: &str, candidates: Vec<Entry>, contents: &dyn Contents) -> Result<Resolved> {
     let top = maximal(candidates);
+    let concurrent = top.len() > 1;
+    let (entry, others) = resolve_top(path, top, contents)?;
+    Ok(Resolved {
+        entry,
+        others,
+        concurrent,
+    })
+}
+
+/// The merged version of one path from its maximal versions, and any other versions kept at new paths.
+fn resolve_top(path: &str, top: Vec<Entry>, contents: &dyn Contents) -> Result<(Entry, Vec<(String, Entry)>)> {
     if top.len() == 1 {
         return Ok((top.into_iter().next().expect("one"), Vec::new()));
     }
@@ -323,10 +350,22 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
     }
     let mut merged = Merged::default();
     let mut extras: Vec<(String, String, Entry)> = Vec::new();
+    let mut concurrent: BTreeSet<String> = BTreeSet::new();
+    let mut had_live: BTreeSet<String> = BTreeSet::new();
+    let mut sealed_sets: Vec<(String, String)> = Vec::new();
     for (path, candidates) in by_path {
-        let (entry, others) = resolve(path, candidates, contents)?;
-        merged.entries.insert(path.to_owned(), entry);
-        extras.extend(others.into_iter().map(|(at, e)| (path.to_owned(), at, e)));
+        if candidates.iter().any(Entry::live) {
+            had_live.insert(path.to_owned());
+        }
+        let resolved = resolve(path, candidates, contents)?;
+        if resolved.concurrent {
+            concurrent.insert(path.to_owned());
+        }
+        if kind(path) == Kind::SealedManifest {
+            sealed_sets.extend(resolved.others.iter().map(|(at, _)| (path.to_owned(), at.clone())));
+        }
+        merged.entries.insert(path.to_owned(), resolved.entry);
+        extras.extend(resolved.others.into_iter().map(|(at, e)| (path.to_owned(), at, e)));
     }
     // Other versions land at new paths. A path may already hold one (another device kept it there too), so they
     // merge like any other version. Each round moves names further from the original, and three rounds is plenty.
@@ -342,9 +381,12 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
             });
             let mut candidates = vec![entry];
             candidates.extend(merged.entries.get(&at).cloned());
-            let (entry, others) = resolve(&at, candidates, contents)?;
-            merged.entries.insert(at.clone(), entry);
-            next.extend(others.into_iter().map(|(to, e)| (at.clone(), to, e)));
+            let resolved = resolve(&at, candidates, contents)?;
+            if kind(&at) == Kind::SealedManifest {
+                sealed_sets.extend(resolved.others.iter().map(|(to, _)| (at.clone(), to.clone())));
+            }
+            merged.entries.insert(at.clone(), resolved.entry);
+            next.extend(resolved.others.into_iter().map(|(to, e)| (at.clone(), to, e)));
         }
         extras = next;
     }
@@ -352,14 +394,72 @@ pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -
         .conflicts
         .sort_by(|a, b| (&a.path, &a.kept_as).cmp(&(&b.path, &b.kept_as)));
     merged.conflicts.dedup();
-    revive_referenced(&mut merged.entries, before, contents)?;
+    let sealed = Sealed {
+        concurrent: &concurrent,
+        had_live: &had_live,
+    };
+    revive_referenced(&mut merged.entries, before, contents, &sealed)?;
+    copy_sealed_sets(&mut merged.entries, &sealed_sets, contents)?;
     Ok(merged)
+}
+
+/// What the merge knew of each path, for protected sections' folders, which sync can't read.
+struct Sealed<'a> {
+    /// The paths that resolved from versions that saw nothing of each other.
+    concurrent: &'a BTreeSet<String>,
+    /// The paths that some version had as a live file.
+    had_live: &'a BTreeSet<String>,
+}
+
+/// A protected section's sealed files are one unit: the manifest names the blobs it needs, and sync can't read
+/// it. When two devices changed the manifest, the other version went to a `.sealed-conflict-<hash>` folder. Every
+/// blob the section's sealed folder holds now (after the deleted ones that either version may still name came
+/// back) is copied there, so that folder is whole. Blobs never change once written and equal bytes are one chunk,
+/// so a copy costs no storage.
+fn copy_sealed_sets(entries: &mut Manifest, sets: &[(String, String)], contents: &dyn Contents) -> Result<()> {
+    for (manifest, copy) in sets {
+        let (from, _) = split(manifest);
+        let (to, _) = split(copy);
+        let Some(copy_vv) = entries.get(copy).map(|e| e.vv.clone()) else {
+            continue;
+        };
+        let prefix = format!("{from}/");
+        let blobs: Vec<(String, Entry)> = entries
+            .range(prefix.clone()..)
+            .take_while(|(p, _)| p.starts_with(&prefix))
+            .filter(|(p, e)| e.live() && *p != manifest && !p[prefix.len()..].contains('/'))
+            .map(|(p, e)| (format!("{to}/{}", &p[prefix.len()..]), e.clone()))
+            .collect();
+        for (at, blob) in blobs {
+            let entry = Entry {
+                vv: join(&blob.vv, &copy_vv),
+                content: blob.content,
+                deleted: false,
+            };
+            let mut candidates = vec![entry];
+            candidates.extend(entries.get(&at).cloned());
+            let resolved = resolve(&at, candidates, contents)?;
+            entries.insert(at, resolved.entry);
+            for (other, e) in resolved.others {
+                entries.entry(other).or_insert(e);
+            }
+        }
+    }
+    Ok(())
 }
 
 /// An edit beats a delete across files, too: an ink segment or asset that a live page (its `page.json`, a kept
 /// conflict, or a saved version) still points at comes back, so a merged page never misses ink. In a protected
-/// section, whose manifest sync can't read, a sealed blob comes back unless its delete saw the live manifest.
-fn revive_referenced(entries: &mut Manifest, before: &Manifest, contents: &dyn Contents) -> Result<()> {
+/// section, whose manifest sync can't read, the sealed blobs that some version in this merge still had come back
+/// only when the manifest itself resolved from concurrent versions, as either one may name them. A manifest that
+/// resolved cleanly came from a device that saw every version, so its deletes stand. (Each path has its own
+/// version vector, so a blob's and the manifest's can't be compared.)
+fn revive_referenced(
+    entries: &mut Manifest,
+    before: &Manifest,
+    contents: &dyn Contents,
+    sealed: &Sealed,
+) -> Result<()> {
     let changed = |path: &str| before.get(path) != entries.get(path);
     let mut folders: BTreeSet<String> = BTreeSet::new();
     for path in entries.keys() {
@@ -386,13 +486,17 @@ fn revive_referenced(entries: &mut Manifest, before: &Manifest, contents: &dyn C
             .take_while(|(p, _)| p.starts_with(&prefix))
             .map(|(p, _)| p.clone())
             .collect();
-        if folder.ends_with(".sealed") {
-            let Some(manifest) = entries.get(&format!("{prefix}manifest")).filter(|e| e.live()).cloned() else {
+        if is_sealed_name(split(&folder).1) {
+            let manifest_path = format!("{prefix}manifest");
+            let Some(manifest) = entries.get(&manifest_path).filter(|e| e.live()).cloned() else {
                 continue;
             };
+            if !sealed.concurrent.contains(&manifest_path) {
+                continue;
+            }
             for path in in_folder {
                 let entry = &entries[&path];
-                if entry.deleted && !path.ends_with("/manifest") && !dominates(&entry.vv, &manifest.vv) {
+                if entry.deleted && path != manifest_path && sealed.had_live.contains(&path) {
                     let vv = join(&entry.vv, &manifest.vv);
                     let content = entry.content.clone();
                     entries.insert(
@@ -465,6 +569,9 @@ mod tests {
         assert_eq!(kind("Bio/s1/p1/assets/01ab-leaf.png"), Kind::Immutable);
         assert_eq!(kind("Bio/s1/.sealed/manifest"), Kind::SealedManifest);
         assert_eq!(kind("Bio/s1/.sealed/4f2a"), Kind::Immutable);
+        assert_eq!(kind("Bio/s1/.sealed-conflict-1a2b/manifest"), Kind::SealedManifest);
+        assert_eq!(kind("Bio/s1/.sealed-conflict-1a2b/4f2a"), Kind::Immutable);
+        assert_eq!(kind("Bio/s1/.sealed-notes/manifest"), Kind::Other);
         assert_eq!(kind("Bio/s1/p1/page.md"), Kind::Derived);
         assert_eq!(kind("Bio/.opennote/FORMAT.md"), Kind::Derived);
         assert_eq!(kind("Bio/FORMAT.md"), Kind::Other);
@@ -490,7 +597,7 @@ mod tests {
         );
         assert_eq!(
             sealed_copy("Bio/s1/.sealed/manifest", &c),
-            "Bio/.opennote/conflicts/sealed-s1-1a2b3c4d.manifest"
+            "Bio/s1/.sealed-conflict-1a2b3c4d/manifest"
         );
     }
 }

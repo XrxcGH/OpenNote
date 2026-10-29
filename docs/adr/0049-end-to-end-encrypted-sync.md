@@ -55,10 +55,10 @@ Each file has a version vector. A device that changes a file increments its own 
 | `section.json`, `notebook.json`, `.history/versions.json` | The core's own commutative merges (spec 14.3 and 13): the union by ID, with the later change of each entry |
 | Ink segments and assets | Immutable, so they never conflict. Equal bytes are one chunk |
 | `page.md`, `ink.svg`, `index.md`, `README.md`, `.opennote/FORMAT.md` | Derived from the files above, so the copy whose bytes sort later wins and the app writes them again |
-| A protected section's `.sealed/manifest` | Never decrypted. The later-sorting copy stays, and the other is kept in `.opennote/conflicts/` so nothing sealed is lost |
+| A protected section's `.sealed/manifest` | Never decrypted. The `.sealed` folder is one unit: the later-sorting manifest stays, and the other version is kept whole beside it as `.sealed-conflict-<hash>/`, its manifest with a copy of every blob either version may name (blobs never change and equal bytes are one chunk, so copies cost no storage). The merge reports it as a conflict, the section shows "This protected section was changed on two devices" with Switch and Remove, and the core keeps these folders when it tidies a section on unlock |
 | Anything else | The later-sorting copy stays, and the other is kept beside it as `<name> (conflicted copy <hash>)<extension>` |
 
-An edit always beats a delete. When a page folder still has a live `page.json` (or a sealed folder a live manifest), an ink segment, asset, or sealed blob that another device deleted without having seen that version comes back, so a merged page never points at missing ink. Deleting a page moves it to the notebook's Trash, which is just more files, so Trash and its 30-day rule travel unchanged.
+An edit always beats a delete. When a page folder still has a live `page.json` an ink segment or asset that another device deleted without having seen that version comes back, so a merged page never points at missing ink. Sync can't read a sealed manifest, and each path has its own version vector, so a sealed blob's delete is never compared with the manifest's version: deleted blobs come back only when the manifest itself merged from concurrent versions, and otherwise the delete stands. Deleting a page moves it to the notebook's Trash, which is just more files, so Trash and its 30-day rule travel unchanged.
 
 ### Safety
 

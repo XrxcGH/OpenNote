@@ -350,3 +350,112 @@ fn deleted_files_keep_their_chunks_for_a_concurrent_edit() {
     );
     assert!(store.snapshot().keys().filter(|n| n.starts_with("c/")).count() >= 3);
 }
+
+const SEALED: &str = "Bio/s1/.sealed";
+
+/// The sealed folders of the section on a device: each folder's manifest bytes and the blob names beside it.
+fn sealed_sets(d: &Device) -> Vec<(Vec<u8>, std::collections::BTreeSet<String>)> {
+    let mut sets: std::collections::BTreeMap<String, (Vec<u8>, std::collections::BTreeSet<String>)> =
+        Default::default();
+    for (path, bytes) in d.files() {
+        let Some(rest) = path.strip_prefix("Bio/s1/") else {
+            continue;
+        };
+        let Some((folder, name)) = rest.split_once('/') else {
+            continue;
+        };
+        if !folder.starts_with(".sealed") {
+            continue;
+        }
+        let set = sets.entry(folder.to_owned()).or_default();
+        if name == "manifest" {
+            set.0 = bytes;
+        } else {
+            set.1.insert(name.to_owned());
+        }
+    }
+    sets.into_values().collect()
+}
+
+fn names(list: &[&str]) -> std::collections::BTreeSet<String> {
+    list.iter().map(|s| s.to_string()).collect()
+}
+
+#[test]
+fn sealed_blobs_deleted_by_a_second_reseal_do_not_come_back() {
+    let (_, d) = pair();
+    d[0].write(&format!("{SEALED}/manifest"), b"sealed manifest one");
+    d[0].write(&format!("{SEALED}/aaaa"), b"blob a");
+    settle(&d, 2);
+    // Each re-seal writes a new blob, a new manifest, and deletes the old blob, as the core does.
+    for (round, (manifest, new, old)) in [
+        (&b"sealed manifest two"[..], "bbbb", "aaaa"),
+        (b"sealed manifest three", "cccc", "bbbb"),
+        (b"sealed manifest four", "dddd", "cccc"),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        d[0].write(&format!("{SEALED}/{new}"), format!("blob {round}").as_bytes());
+        d[0].write(&format!("{SEALED}/manifest"), manifest);
+        d[0].remove(&format!("{SEALED}/{old}"));
+        settle(&d, 3);
+    }
+    for device in &d {
+        assert_eq!(
+            sealed_sets(device),
+            vec![(b"sealed manifest four".to_vec(), names(&["dddd"]))],
+            "{}: only the newest blob stays",
+            device.tag
+        );
+    }
+}
+
+#[test]
+fn a_protected_section_changed_on_two_devices_keeps_both_whole() {
+    let (_, d) = pair();
+    d[0].write(&format!("{SEALED}/manifest"), b"base manifest");
+    d[0].write(&format!("{SEALED}/aaaa"), b"blob a");
+    settle(&d, 2);
+    // The laptop re-seals the one file: a new blob, and the old one goes. The desktop adds a file and keeps it.
+    d[0].write(&format!("{SEALED}/bbbb"), b"blob b");
+    d[0].write(&format!("{SEALED}/manifest"), b"laptop manifest: bbbb");
+    d[0].remove(&format!("{SEALED}/aaaa"));
+    d[1].write(&format!("{SEALED}/cccc"), b"blob c");
+    d[1].write(&format!("{SEALED}/manifest"), b"desktop manifest: aaaa cccc");
+    d[0].engine.sync().expect("syncs");
+    let report = d[1].engine.sync().expect("syncs");
+    assert_eq!(report.summary.conflicts.len(), 1, "{:?}", report.summary);
+    let conflict = &report.summary.conflicts[0];
+    assert_eq!(conflict.path, format!("{SEALED}/manifest"));
+    assert!(
+        conflict.kept_as.starts_with("Bio/s1/.sealed-conflict-") && conflict.kept_as.ends_with("/manifest"),
+        "{conflict:?}"
+    );
+    settle(&d, 4);
+    assert_eq!(d[0].files(), d[1].files(), "the devices agree");
+    let needs = [
+        (b"laptop manifest: bbbb".to_vec(), names(&["bbbb"])),
+        (b"desktop manifest: aaaa cccc".to_vec(), names(&["aaaa", "cccc"])),
+    ];
+    let sets = sealed_sets(&d[0]);
+    assert_eq!(
+        sets.len(),
+        2,
+        "the section's sealed files and the other version: {sets:?}"
+    );
+    for (manifest, blobs) in &needs {
+        let (_, has) = sets
+            .iter()
+            .find(|(m, _)| m == manifest)
+            .expect("both versions are kept");
+        assert!(has.is_superset(blobs), "{}: {has:?}", String::from_utf8_lossy(manifest));
+    }
+    assert!(!d[0].files().keys().any(|k| k.contains(".opennote/conflicts")));
+    let quiet = d[0].engine.sync().expect("syncs");
+    assert!(
+        quiet.summary.is_empty() && quiet.generation.is_none(),
+        "{:?}",
+        quiet.summary
+    );
+}
