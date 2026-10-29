@@ -61,6 +61,7 @@ import { chem } from './chem';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kits } from './kits';
+import { kitSubjects } from './kitSubjects';
 
 export const en = {
   common,
@@ -124,4 +125,5 @@ export const en = {
   docStructure,
   codeCells,
   kits,
+  kitSubjects,
 } as const;
