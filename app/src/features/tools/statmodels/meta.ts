@@ -20,6 +20,12 @@ export const STATMODELS_TOOLS: readonly StatModelsToolMeta[] = [
   },
   { id: 'glm', title: 'kitStatModels.glm.title', keywords: 'kitStatModels.glm.keywords', icon: 'Function' },
   {
+    id: 'causal',
+    title: 'kitStatModels.causal.title',
+    keywords: 'kitStatModels.causal.keywords',
+    icon: 'TreeStructure',
+  },
+  {
     id: 'survival',
     title: 'kitStatModels.survival.title',
     keywords: 'kitStatModels.survival.keywords',

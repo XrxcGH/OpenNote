@@ -6,4 +6,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   glm: () => import('./glm/spec').then((m) => m.glmSpec),
   survival: () => import('./survival/spec').then((m) => m.survivalSpec),
   spatial: () => import('./spatial/spec').then((m) => m.spatialSpec),
+  causal: () => import('./causal/spec').then((m) => m.causalSpec),
 };
