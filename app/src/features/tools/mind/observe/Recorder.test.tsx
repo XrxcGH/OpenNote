@@ -1,9 +1,10 @@
 // The live session recorder: keys and buttons log behaviors against the running clock, a state's second press
 // stops it, and Finish sets the session length.
 import { screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
+import { loadToolWords } from '../ui/insert';
 import Recorder from './Recorder';
 
 const texts: Record<string, string> = { mode: 'session', ethogram: 'rest | state | a\nfeed | state | a\ncall | event' };
@@ -11,6 +12,7 @@ const set: Record<string, string> = {};
 const setText = (id: string, text: string) => {
   set[id] = text;
 };
+beforeAll(loadToolWords);
 afterEach(() => {
   for (const key of Object.keys(set)) delete set[key];
 });

@@ -1,10 +1,5 @@
 // The behavior observation and single-case data tool. Part of the kitMind namespace.
 export const observe = {
-  title: 'Behavior observation',
-  keywords:
-    'behavior observation ethogram time budget rate duration bout latency interval recording ' +
-    'partial whole momentary scan sampling observer agreement single-case ABAB baseline PND ' +
-    'NAP Tau',
   field: {
     mode: 'Work on',
     ethogram: 'Ethogram',

@@ -1,15 +1,6 @@
 // The psychology and behavior kit: perception, learning, decisions, response times, observation, agreement,
 // questionnaires, and qualitative coding. Tool titles, field labels, row labels, worked-step sentences, and the
-// problems an input can have. Each tool's words live in ./kitMind so no file grows too long.
-import { coding } from './kitMind/coding';
-import { observe } from './kitMind/observe';
-import { choice } from './kitMind/choice';
-import { rt } from './kitMind/rt';
-import { psychophysics } from './kitMind/psychophysics';
-import { learning } from './kitMind/learning';
-import { agreement } from './kitMind/agreement';
-import { scales } from './kitMind/scales';
-import { sdt } from './kitMind/sdt';
+// problems an input can have. Each tool's other words live in ./kitMind and load with the window (words.ts).
 
 export const kitMind = {
   window: 'Psychology and behavior',
@@ -148,13 +139,64 @@ export const kitMind = {
     bernoulliMeans: 'For win or lose rewards, each mean is a chance from 0 to 1.',
     powerTrials: 'The power law needs every trial above 0.',
   },
-  sdt,
-  agreement,
-  scales,
-  coding,
-  observe,
-  choice,
-  rt,
-  psychophysics,
-  learning,
+  sdt: {
+    title: 'Signal detection',
+    keywords:
+      'signal detection d prime sensitivity bias criterion beta ROC hit false alarm forced choice rating perception',
+  },
+  psychophysics: {
+    title: 'Psychophysics',
+    keywords:
+      'psychophysics psychometric function threshold slope PSE JND constant stimuli staircase ' +
+      'up-down reversals method of limits adjustment Weber Fechner Stevens power law visual ' +
+      'angle contrast Michelson logMAR Snellen acuity',
+  },
+  learning: {
+    title: 'Learning and reinforcement',
+    keywords:
+      'learning conditioning Rescorla-Wagner blocking overshadowing extinction inhibition ' +
+      'Pearce-Hall temporal difference TD prediction error reinforcement learning Q-learning ' +
+      'SARSA grid world value iteration policy iteration bandit epsilon greedy softmax UCB ' +
+      'Thompson regret schedules of reinforcement cumulative record learning curve power law of ' +
+      'practice',
+  },
+  choice: {
+    title: 'Decision and choice models',
+    keywords:
+      'decision choice drift diffusion model DDM evidence accumulation boundary response time ' +
+      'speed accuracy EZ diffusion prospect theory loss aversion probability weighting certainty ' +
+      'equivalent Allais framing',
+  },
+  rt: {
+    title: 'Response times and movement',
+    keywords:
+      'response time reaction time RT trimming outliers MAD condition means within-subject ' +
+      'confidence interval Cousineau Morey inverse efficiency ex-Gaussian vincentize quantile ' +
+      'delta plot Fitts law Hick-Hyman throughput',
+  },
+  observe: {
+    title: 'Behavior observation',
+    keywords:
+      'behavior observation ethogram time budget rate duration bout latency interval recording ' +
+      'partial whole momentary scan sampling observer agreement single-case ABAB baseline PND ' +
+      'NAP Tau',
+  },
+  agreement: {
+    title: 'Inter-rater agreement',
+    keywords:
+      'inter-rater interrater agreement reliability kappa cohen fleiss krippendorff alpha intraclass correlation ICC ' +
+      'bland altman coder rater content analysis',
+  },
+  scales: {
+    title: 'Scales and psychometrics',
+    keywords:
+      'psychometrics questionnaire survey scale Likert reliability cronbach alpha KR-20 split half spearman brown ' +
+      'item analysis difficulty discrimination test score z T stanine percentile IRT item response SUS usability',
+  },
+  coding: {
+    title: 'Qualitative coding',
+    keywords:
+      'qualitative coding codebook codes themes segments interview thematic analysis ' +
+      'co-occurrence Jaccard content analysis two coders kappa',
+  },
 } as const;

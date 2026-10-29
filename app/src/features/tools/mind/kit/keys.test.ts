@@ -2,6 +2,7 @@
 // those words must get a value. This runs each tool on its first texts and on each example, and checks them all.
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../../strings/en';
+import { kitMindWords } from '../../../../strings/en/kitMind/words';
 import { formatMessage } from '../../../../strings/t';
 import { MIND_TOOLS } from '../meta';
 import { SPECS } from '../specs';
@@ -9,8 +10,13 @@ import { wordVars } from './format';
 import { firstTexts, runTool, type Outcome } from './spec';
 import type { Vars } from './types';
 
+const at = (root: unknown, parts: readonly string[]): unknown =>
+  parts.reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], root);
+
+/** The words at a key: the start-up strings, else the tools' words that load with the window. */
 const words = (key: string): string | undefined => {
-  const value = key.split('.').reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], en);
+  const parts = key.split('.');
+  const value = at(en, parts) ?? (parts[0] === 'kitMind' ? at(kitMindWords, parts.slice(1)) : undefined);
   return typeof value === 'string' ? value : undefined;
 };
 

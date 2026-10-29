@@ -1,10 +1,5 @@
 // The response times and movement tool. Part of the kitMind namespace.
 export const rt = {
-  title: 'Response times and movement',
-  keywords:
-    'response time reaction time RT trimming outliers MAD condition means within-subject ' +
-    'confidence interval Cousineau Morey inverse efficiency ex-Gaussian vincentize quantile ' +
-    'delta plot Fitts law Hick-Hyman throughput',
   field: {
     mode: 'Work on',
     unit: 'Time unit',

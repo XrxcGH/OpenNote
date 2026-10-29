@@ -1,10 +1,5 @@
 // The decision and choice models tool. Part of the kitMind namespace.
 export const choice = {
-  title: 'Decision and choice models',
-  keywords:
-    'decision choice drift diffusion model DDM evidence accumulation boundary response time ' +
-    'speed accuracy EZ diffusion prospect theory loss aversion probability weighting certainty ' +
-    'equivalent Allais framing',
   field: {
     mode: 'Model',
     v: 'Drift rate v (per s)',

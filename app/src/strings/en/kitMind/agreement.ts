@@ -1,9 +1,5 @@
 // The inter-rater agreement tool. Part of the kitMind namespace.
 export const agreement = {
-  title: 'Inter-rater agreement',
-  keywords:
-    'inter-rater interrater agreement reliability kappa cohen fleiss krippendorff alpha intraclass correlation ICC ' +
-    'bland altman coder rater content analysis',
   field: {
     mode: 'Measure',
     codes: 'Codes from 2 coders',

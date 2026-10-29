@@ -7,7 +7,7 @@ import type { ToolSpec } from '../kit/spec';
 import { MIND_TOOLS } from '../meta';
 import { followTab, saveTab, savedTab } from '../open';
 import { EXTRAS } from './extras';
-import { say } from './insert';
+import { loadToolWords, say } from './insert';
 import { ToolPanel, type ExtraProps } from './ToolPanel';
 import styles from './mind.module.css';
 
@@ -27,7 +27,7 @@ function useTool(id: string): Loaded | null {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   useEffect(() => {
     let live = true;
-    void Promise.all([SPECS[id]?.(), EXTRAS[id]?.()]).then(([spec, extra]) => {
+    void Promise.all([SPECS[id]?.(), EXTRAS[id]?.(), loadToolWords()]).then(([spec, extra]) => {
       if (live && spec) setLoaded({ id, spec, ...(extra ? { extra } : {}) });
     });
     return () => {

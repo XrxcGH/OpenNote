@@ -1,8 +1,5 @@
 // The signal detection tool. Part of the kitMind namespace.
 export const sdt = {
-  title: 'Signal detection',
-  keywords:
-    'signal detection d prime sensitivity bias criterion beta ROC hit false alarm forced choice rating perception',
   field: {
     mode: 'Experiment',
     input: 'Enter',

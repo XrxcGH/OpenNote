@@ -2,15 +2,16 @@
 // and the equation it shows in LaTeX. Engines never write sentences: they return numbers, step keys, and error
 // codes, and the window turns them into words.
 import type { en } from '../../../../strings/en';
+import type { kitMindWords } from '../../../../strings/en/kitMind/words';
 
-type Kit = (typeof en)['kitMind'];
+type Kit = typeof kitMindWords;
 
 /** A step's key: the tool's name, then the step's name under kitMind.<tool>.step. */
 export type StepKey = {
   [T in keyof Kit & string]: Kit[T] extends { step: infer S } ? `${T}.${keyof S & string}` : never;
 }[keyof Kit & string];
 
-export type ErrorCode = keyof Kit['error'];
+export type ErrorCode = keyof (typeof en)['kitMind']['error'];
 
 export type StepValue = string | number;
 export type Vars = Readonly<Record<string, StepValue>>;

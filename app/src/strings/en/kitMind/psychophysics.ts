@@ -1,10 +1,5 @@
 // The psychophysics tool. Part of the kitMind namespace.
 export const psychophysics = {
-  title: 'Psychophysics',
-  keywords:
-    'psychophysics psychometric function threshold slope PSE JND constant stimuli staircase ' +
-    'up-down reversals method of limits adjustment Weber Fechner Stevens power law visual ' +
-    'angle contrast Michelson logMAR Snellen acuity',
   field: {
     mode: 'Work on',
     data: 'Levels, correct answers, and trials',

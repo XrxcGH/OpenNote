@@ -1,12 +1,5 @@
 // The learning and reinforcement models tool. Part of the kitMind namespace.
 export const learning = {
-  title: 'Learning and reinforcement',
-  keywords:
-    'learning conditioning Rescorla-Wagner blocking overshadowing extinction inhibition ' +
-    'Pearce-Hall temporal difference TD prediction error reinforcement learning Q-learning ' +
-    'SARSA grid world value iteration policy iteration bandit epsilon greedy softmax UCB ' +
-    'Thompson regret schedules of reinforcement cumulative record learning curve power law of ' +
-    'practice',
   field: {
     mode: 'Model',
     model: 'Learning rule',

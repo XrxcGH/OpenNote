@@ -1,7 +1,7 @@
 // What the kit puts into the open page: an answer line, the answer as an equation, the results as a table, the
 // worked steps as a numbered list with typeset math, further tables, and each picture as an SVG image. Each goes
 // through the tools' insert event, which the page answers; the window says in words what happened.
-import { t } from '../../../../strings/t';
+import { formatMessage, t } from '../../../../strings/t';
 import { INSERT_EVENT } from '../../flags';
 import { fillMath, valueLatex, valueText, wordVars } from '../kit/format';
 import { plotSvg } from '../kit/draw';
@@ -11,23 +11,38 @@ import type { Vars } from '../kit/types';
 
 export type Say = (key: string, vars?: Vars) => string;
 
-/** t for keys built at run time. Every key the kit builds exists in strings/en/kitMind (a test checks). */
-export const say: Say = (key, vars) => {
-  try {
-    return (t as unknown as (k: string, v?: Record<string, string>) => string)(key, wordVars(vars));
-  } catch {
-    return key.slice(key.lastIndexOf('.') + 1);
-  }
-};
+let toolWords: Readonly<Record<string, unknown>> | null = null;
 
-/** The words at a key, or null when the strings have none there, for optional words such as hints. */
+/** Loads every tool's words. The window waits for this before it shows a tool. */
+export async function loadToolWords(): Promise<void> {
+  toolWords ??= (await import('../../../../strings/en/kitMind/words')).kitMindWords;
+}
+
+/** A tool's words at kitMind.<tool>.<path>, from the words loaded with the window. */
+function wordsAt(key: string): string | undefined {
+  if (!toolWords || !key.startsWith('kitMind.')) return undefined;
+  const found = key
+    .split('.')
+    .slice(1)
+    .reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], toolWords);
+  return typeof found === 'string' ? found : undefined;
+}
+
+/** The words at a key, or null when there are none, for optional words such as hints. */
 export function maybeSay(key: string, vars?: Vars): string | null {
   try {
     return (t as unknown as (k: string, v?: Record<string, string>) => string)(key, wordVars(vars));
   } catch {
-    return null;
+    const found = wordsAt(key);
+    return found === undefined ? null : formatMessage(found, wordVars(vars));
   }
 }
+
+/**
+ * t for keys built at run time: the start-up strings first, then the tools' words. Every key the kit builds has
+ * words (a test checks).
+ */
+export const say: Say = (key, vars) => maybeSay(key, vars) ?? key.slice(key.lastIndexOf('.') + 1);
 
 export interface InsertContext {
   readonly tool: string;

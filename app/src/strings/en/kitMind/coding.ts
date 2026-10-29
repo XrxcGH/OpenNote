@@ -1,9 +1,5 @@
 // The qualitative coding tool. Part of the kitMind namespace.
 export const coding = {
-  title: 'Qualitative coding',
-  keywords:
-    'qualitative coding codebook codes themes segments interview thematic analysis ' +
-    'co-occurrence Jaccard content analysis two coders kappa',
   field: {
     mode: 'Work on',
     segments: 'Coded segments',

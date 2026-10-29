@@ -1,9 +1,5 @@
 // The scales, items, and psychometrics tool. Part of the kitMind namespace.
 export const scales = {
-  title: 'Scales and psychometrics',
-  keywords:
-    'psychometrics questionnaire survey scale Likert reliability cronbach alpha KR-20 split half spearman brown ' +
-    'item analysis difficulty discrimination test score z T stanine percentile IRT item response SUS usability',
   field: {
     mode: 'Task',
     data: 'Answers',
