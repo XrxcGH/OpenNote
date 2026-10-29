@@ -3,7 +3,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { loadMathKit, type MathKit } from './kit';
 import { equationSteps, numberText } from './equation';
-import { leaks, normalizeMath } from './guard';
+import { claimsAnswer, leaks, normalizeMath } from './guard';
 import { guardedRuleHint, planFor, ruleExplain, ruleHint, ruleSolution, secrets, type Plan } from './ladder';
 import { acceptable, buildPrompt, tutorReply, type TutorRequest } from './engine';
 
@@ -80,6 +80,55 @@ describe('answer guard', () => {
   });
 });
 
+describe('answer guard, written another way', () => {
+  it('catches a secret that starts with a sign, a bracket or a root', () => {
+    expect(leaks('The derivative is -sin(x).', ['-sin(x)'])).toBe(true);
+    expect(leaks('It comes to (x+1)^2 here.', ['(x + 1)^2'])).toBe(true);
+    expect(leaks('So the length is √2.', ['√2'])).toBe(true);
+  });
+
+  it('reads x^(2), superscripts and a times sign as plain powers and products', () => {
+    expect(leaks('Write 3x^(2) + 5 next.', ['3x^2 + 5'])).toBe(true);
+    expect(leaks('That gives 3x² + 5.', ['3x^2 + 5'])).toBe(true);
+    expect(leaks('Try 2·x = 4.', ['2x = 4'])).toBe(true);
+  });
+
+  it('catches terms in another order and sides swapped', () => {
+    expect(leaks('You get 5 + 3x^2.', ['3x^2 + 5'])).toBe(true);
+    expect(leaks('Now 4 = 2x.', ['2x = 4'])).toBe(true);
+  });
+
+  it('catches the value written as another number or in other words', () => {
+    // 7/2 is 3.5.
+    expect(leaks('So y = 3.5.', ['y = 7/2'])).toBe(true);
+    expect(leaks('Then y is 3.5.', ['y = 7/2'])).toBe(true);
+    for (const hint of [
+      'x = 2.0',
+      'x = 4/2',
+      'x should equal 2',
+      'x turns out to be 2',
+      'x equals two',
+      'The answer: 2',
+    ])
+      expect(leaks(hint, ['x = 2']), hint).toBe(true);
+    // 4/2 is 2, not 3, and line 2 is not a value of x.
+    expect(leaks('x = 4/2', ['x = 3'])).toBe(false);
+    expect(leaks('Look again at line 2, where x is.', ['x = 2'])).toBe(false);
+  });
+
+  it('catches an antiderivative without its constant', () => {
+    expect(leaks('It is x^(2).', ['x^2 + C'])).toBe(true);
+  });
+
+  it('flags a stated result when the answer is unknown, but not numbers the student gave', () => {
+    const given = 'F = m a, m = 2 kg, a = 3 m/s^2. F = ?';
+    expect(claimsAnswer('F = 6 N', given)).toBe(true);
+    expect(claimsAnswer('The answer is 36 g.', '2 H2 + O2 -> 2 H2O. 4 g of H2. mass = ?')).toBe(true);
+    expect(claimsAnswer('Start from m = 2 kg and a = 3 m/s^2.', given)).toBe(false);
+    expect(claimsAnswer('Which law links force, mass and acceleration?', given)).toBe(false);
+  });
+});
+
 describe('plan and ladder', () => {
   it('finds the broken step and climbs from where to look to the step', () => {
     const p = plan('2x + 3 = 7', '2x = 10', 'x = 5');
@@ -135,6 +184,25 @@ describe('plan and ladder', () => {
     // d/dx (x^3 + 5x) = 3x^2 + 5
     expect(normalizeMath(p.answer)).toBe('3x^2+5');
     expect(ruleHint(p, 1)).toMatch(/sum, a product/);
+  });
+
+  it('says a one-step derivative or integral is the answer instead of showing it', () => {
+    const stepIsAnswer = 'Fixing this step gets you to the answer. Try it, or ask for the full solution.';
+    // d/dx (x^3 + 5x) = 3x^2 + 5 in one step.
+    const derivative = plan('d/dx(x^3 + 5x)');
+    expect(guardedRuleHint(derivative, 4, 'd/dx(x^3 + 5x)')).toBe(stepIsAnswer);
+    // The integral of 2x is x^2 + C in one step.
+    const integral = plan('∫ 2x dx');
+    expect(guardedRuleHint(integral, 4, '∫ 2x dx')).toBe(stepIsAnswer);
+    for (const rung of [1, 2, 3] as const) {
+      expect(normalizeMath(guardedRuleHint(derivative, rung, ''))).not.toContain('3x^2');
+      expect(normalizeMath(guardedRuleHint(integral, rung, ''))).not.toContain('x^2');
+    }
+  });
+
+  it('lists a one-step solution once', () => {
+    expect(ruleSolution(plan('d/dx(x^3 + 5x)'))).toEqual(['d/dx [x^3 + 5x ] = 3x^2 + 5']);
+    expect(ruleSolution(plan('∫ 2x dx'))).toEqual(['∫ 2x dx = x^2 + C']);
   });
 
   it('asks guided questions for words', () => {
@@ -213,6 +281,25 @@ describe('engine', () => {
     expect(reply.text.split('\n').slice(1)).toEqual(['2x = 4', 'x = 2']);
     expect(acceptable(request(p(), { rung: 4 }), 'The step is 2x = 4.')).toBe(true);
     expect(acceptable(request(p(), { rung: 3 }), 'The step is 2x = 4.')).toBe(false);
+  });
+
+  it('refuses a model hint that gives the answer away', async () => {
+    // d/dx (cos x) = -sin x.
+    const cosine = plan('d/dx(cos x)');
+    const device = vi.fn().mockResolvedValue('The derivative is -sin(x).');
+    const reply = await tutorReply(request(cosine, { rung: 2, context: 'd/dx(cos x)' }), { device });
+    expect(reply).toMatchObject({ where: 'rules', fellBack: true });
+    const cubic = plan('d/dx(x^3 + 5x)');
+    expect(acceptable(request(cubic, { rung: 2, context: 'd/dx(x^3 + 5x)' }), 'You get 3x^(2) + 5.')).toBe(false);
+  });
+
+  it('refuses a stated result for a problem with no known answer, before the last rung', () => {
+    const context = 'F = m a, m = 2 kg, a = 3 m/s^2. What is F?';
+    const physics = planFor(lines(context), null);
+    expect(physics.kind).toBe('general');
+    expect(acceptable(request(physics, { rung: 1, context }), 'F = 6 N')).toBe(false);
+    expect(acceptable(request(physics, { rung: 1, context }), 'Which rule links F, m and a?')).toBe(true);
+    expect(acceptable(request(physics, { mode: 'ask', rung: 4, context }), 'The answer is 6 N.')).toBe(false);
   });
 
   it('puts the context and the task in the prompt', () => {

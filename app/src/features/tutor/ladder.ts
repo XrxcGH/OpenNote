@@ -8,7 +8,7 @@ import type { CalculusKind, ReasonCode, Step, StepLine, StepResult } from '../ma
 import type { MessageKey } from '../../strings/t';
 import { t } from '../../strings/t';
 import { equationSteps, type EquationSteps } from './equation';
-import { leaks } from './guard';
+import { leaks, normalizeMath } from './guard';
 import { mathKit } from './kit';
 
 export type Rung = 1 | 2 | 3 | 4;
@@ -82,20 +82,46 @@ function solve(line: StepLine) {
   }
 }
 
+/** A line as the student would write it: x^2, not x^(2). */
+const tidy = (line: string) => line.replace(/\^\((-?\w+)\)/g, '^$1');
+
+/** Whether two results are the same, however the powers are written, with or without "+ C". */
+function sameResult(a: string, b: string): boolean {
+  const plain = (text: string) => normalizeMath(text).replace(/\+c$/, '');
+  return plain(a) === plain(b);
+}
+
+/** The right-hand side of a step such as "d/dx [x^3] = 3x^2". */
+const resultOf = (line: string) => line.slice(line.lastIndexOf('=') + 1);
+
 function calculusPlan(line: StepLine, written: number): Plan | null {
   const kit = mathKit();
   const found = solve(line);
   if (!kit || !found?.solved.ok) return null;
   const { kind, steps, answer } = found.solved;
-  const step = steps[Math.min(written, steps.length)] ?? null;
-  const shown = (one: Step) => kit.latexToLine(one.latex);
+  const shown = steps.map((one) => tidy(kit.latexToLine(one.latex)));
+  const at = Math.min(written, steps.length);
+  const step = steps[at] ?? null;
+  const next = shown[at];
+  // A step that already reaches the answer is the answer: the last rung says so instead of showing it.
+  const reaches = (text: string) => sameResult(resultOf(text), answer.text);
+  // Working that reaches the answer is one line, written with the answer as the engine gives it.
+  const lines: string[] = [];
+  for (const text of shown) {
+    if (!reaches(text)) lines.push(text);
+    else {
+      lines.push(`${text.slice(0, text.lastIndexOf('=')).trimEnd()} = ${answer.text}`);
+      break;
+    }
+  }
+  if (lines.length === 0 || !reaches(lines[lines.length - 1] ?? '')) lines.push(answer.text);
   return {
     kind: 'calculus',
     calc: kind,
     step,
-    next: step ? shown(step) : answer.text,
+    next: next === undefined || reaches(next) ? answer.text : next,
     answer: answer.text,
-    lines: [...steps.map(shown), answer.text],
+    lines,
   };
 }
 

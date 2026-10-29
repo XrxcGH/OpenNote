@@ -4,7 +4,7 @@
 // it is shown: empty or overlong replies are refused, and a hint that gives away the answer or the next line is asked
 // for once more (on this device only), then replaced with the built-in hint. The full solution of math always comes
 // from the rules, which work it out exactly; a model writes one only for questions the rules cannot solve.
-import { leaks } from './guard';
+import { claimsAnswer, leaks } from './guard';
 import { LAST_RUNG, guardedRuleHint, ruleExplain, ruleSolution, secrets, type Plan, type Rung } from './ladder';
 import { t } from '../../strings/t';
 
@@ -112,9 +112,11 @@ export function acceptable(request: TutorRequest, reply: string): boolean {
   const most = request.mode === 'solution' ? MAX_SOLUTION_CHARS : MAX_REPLY_CHARS;
   if (reply === '' || reply.length > most) return false;
   if (request.mode === 'solution') return true;
+  const lastRung = request.mode === 'hint' && request.rung === LAST_RUNG;
+  // No known answer (chemistry, physics, word problems): before the last rung, a stated result is refused.
+  if (request.plan.kind === 'general' && !lastRung && claimsAnswer(reply, request.context)) return false;
   const { answer, next } = secrets(request.plan);
-  const hidden = request.mode === 'hint' && request.rung === LAST_RUNG ? [answer] : [answer, next];
-  return !leaks(reply, hidden, request.context);
+  return !leaks(reply, lastRung ? [answer] : [answer, next], request.context);
 }
 
 const STRICTER =
