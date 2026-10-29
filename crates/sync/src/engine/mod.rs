@@ -60,6 +60,9 @@ pub struct LocalState {
     pub published: String,
     /// Chunks that nothing referred to, waiting out the grace period.
     pub gc: Option<GcMark>,
+    /// The highest vault header generation this device saw, to notice an older header put back.
+    #[serde(default)]
+    pub vault: u64,
 }
 
 /// A path as this device last knew it.
@@ -138,6 +141,7 @@ pub struct Plan {
     merged: Manifest,
     seen: BTreeMap<String, u64>,
     own_max: u64,
+    vault: u64,
     pending: HashMap<String, Vec<u8>>,
     uploads: Vec<String>,
     actions: Vec<Action>,

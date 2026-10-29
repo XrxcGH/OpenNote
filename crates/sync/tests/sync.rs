@@ -307,6 +307,31 @@ fn a_rolled_back_head_is_noticed_and_can_be_trusted_on_purpose() {
 }
 
 #[test]
+fn an_older_vault_header_put_back_is_a_rollback_on_every_device_that_saw_the_newer() {
+    let (store, d) = pair();
+    d[0].write("Bio/todo.txt", b"one");
+    settle(&d, 2);
+    let old_header = store.get("vault").expect("get").expect("vault");
+    assert_eq!(
+        d[0].engine.state().expect("state").vault,
+        3,
+        "made, then d0 and d1 added"
+    );
+    // A third device joins and is removed again: two more header changes that everyone sees.
+    let late = join(Arc::new(store.clone()), "d2");
+    opennote_sync::vault::remove_device(&store, late.engine.keys(), "d2", 1).expect("removes");
+    settle(&d, 2);
+    assert_eq!(d[1].engine.state().expect("state").vault, 5);
+    // Storage puts the old header back, as an old copy of the folder or a hostile server would.
+    store.set_raw("vault", old_header);
+    for device in &d {
+        assert_eq!(device.engine.sync().unwrap_err(), SyncError::Rollback, "{}", device.tag);
+    }
+    d[0].engine.trust_storage().expect("trusts on purpose");
+    d[0].engine.sync().expect("syncs after trusting");
+}
+
+#[test]
 fn unused_chunks_go_only_after_the_grace_period_and_every_device_moved_on() {
     let (store, d) = pair();
     d[0].write("Bio/big.bin", &[1u8; 10]);

@@ -16,6 +16,7 @@ impl Engine {
         let mut state = self.state()?;
         let (newest, own) = self.heads()?;
         state.seen = newest.into_iter().filter(|(d, _)| *d != self.device).collect();
+        state.vault = vault::status(self.backend.as_ref(), &self.keys)?.generation;
         let generation = state.generation.max(own.last().copied().unwrap_or(0)) + 1;
         let mut entries: Manifest = state.files.iter().map(|(p, k)| (p.clone(), k.entry.clone())).collect();
         entries.extend(state.deferred.iter().map(|(p, e)| (p.clone(), e.clone())));
@@ -47,6 +48,7 @@ impl Engine {
     pub fn collect_garbage(&self, now: i64) -> Result<usize> {
         let mut state = self.state()?;
         let (newest, _) = self.heads()?;
+        let listed = vault::status(self.backend.as_ref(), &self.keys)?.devices;
         let mut used: BTreeSet<String> = BTreeSet::new();
         let mut add = |manifest: &Manifest| {
             for entry in manifest.values() {
@@ -74,6 +76,7 @@ impl Engine {
             now - mark.at >= GC_GRACE_MS
                 && mark.generations.iter().all(|(device, g)| {
                     newest.get(device).is_some_and(|n| *n >= g + 2)
+                        || !listed.contains(device)
                         || vault::is_removed(self.backend.as_ref(), &self.keys, device).unwrap_or(false)
                 })
         });

@@ -4,6 +4,13 @@
 //! and under the recovery key. Each device adds its own slot, `k/<tag>`, wrapped under a secret that only that
 //! device keeps, so background sync never needs the passphrase. A pairing slot, `j/<tag>`, wraps the key under a
 //! one-time code for a day, so a new device can join by QR code or by typing the code.
+//!
+//! After the slots, the header carries a generation and the list of device tags, under its MAC. Every change to
+//! the passphrase or to the devices counts the generation up, and each device remembers the highest it saw, so a
+//! storage writer who puts back an older `vault` (to bring an old passphrase back) or an old `k/<tag>` (to let a
+//! removed device in again) is noticed: the first shows as a rollback, the second as a removed device.
+
+use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
@@ -21,7 +28,18 @@ const SLOT: usize = 32 + OVERHEAD;
 /// The header ends with a BLAKE2b MAC of everything before it under a key derived from the vault key, so a change to
 /// any slot shows on every unlock, not only on the one that reads it.
 const SEAL_MAC: usize = 32;
-const HEADER: usize = PREFIX + 2 * SLOT + SEAL_MAC;
+/// The prefix and the two slots, which a change to the devices leaves as they are.
+const SLOTS: usize = PREFIX + 2 * SLOT;
+/// Then the generation (8 bytes) and the number of devices (2).
+const FIXED: usize = SLOTS + 8 + 2;
+/// The most devices a vault lists.
+pub const MAX_DEVICES: usize = 256;
+/// The longest device tag.
+const MAX_TAG: usize = 64;
+/// The largest header there can be, so storage can refuse a longer `vault` before reading it.
+pub const MAX_HEADER: usize = FIXED + MAX_DEVICES * (1 + MAX_TAG) + SEAL_MAC;
+/// How often a header change is tried again when another device rewrote the header at the same moment.
+const REWRITE_TRIES: usize = 4;
 /// The shortest passphrase accepted.
 pub const MIN_PASSPHRASE: usize = 10;
 /// How long a pairing code works.
@@ -38,12 +56,15 @@ pub struct VaultKeys {
     pub(crate) chunk: Key,
     /// Names whole files.
     pub(crate) content: Key,
+    /// The header's generation when it was unlocked.
+    generation: u64,
 }
 
 impl VaultKeys {
-    fn from_root(id: [u8; 16], root: Key) -> VaultKeys {
+    fn from_root(id: [u8; 16], root: Key, generation: u64) -> VaultKeys {
         VaultKeys {
             id,
+            generation,
             seal: derive(root.as_ref(), "seal", &id),
             chunk: derive(root.as_ref(), "chunk-name", &id),
             content: derive(root.as_ref(), "content-name", &id),
@@ -55,6 +76,20 @@ impl VaultKeys {
     pub fn fingerprint(&self) -> String {
         base32(&mac(self.root.as_ref(), &[b"fingerprint", &self.id])[..5], 4)
     }
+
+    /// The header's generation when these keys were unlocked.
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
+}
+
+/// The vault header as the keys see it now.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VaultStatus {
+    /// Counts up on every change to the passphrase or the devices.
+    pub generation: u64,
+    /// The tags of the devices that may sync.
+    pub devices: BTreeSet<String>,
 }
 
 impl std::fmt::Debug for VaultKeys {
@@ -129,8 +164,17 @@ struct Header {
     prefix: Vec<u8>,
     pass_slot: Vec<u8>,
     recovery_slot: Vec<u8>,
+    /// The prefix and both slots.
+    slots: Vec<u8>,
+    generation: u64,
+    devices: BTreeSet<String>,
     body: Vec<u8>,
     tag: Vec<u8>,
+}
+
+/// Whether `tag` can name a device: 1 to 64 lower-case letters and digits, as storage names allow.
+fn valid_tag(tag: &str) -> bool {
+    (1..=MAX_TAG).contains(&tag.len()) && tag.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
 }
 
 fn header_mac(root: &Key, body: &[u8]) -> [u8; 32] {
@@ -145,8 +189,27 @@ impl Header {
         if !same(&header_mac(&root, &self.body), &self.tag) {
             return Err(wrong);
         }
-        Ok(VaultKeys::from_root(self.id, root))
+        Ok(VaultKeys::from_root(self.id, root, self.generation))
     }
+
+    /// Whether the header is this vault's and carries a MAC under its key.
+    fn genuine(&self, keys: &VaultKeys) -> bool {
+        self.id == keys.id && same(&header_mac(&keys.root, &self.body), &self.tag)
+    }
+}
+
+/// The header's tail after the slots: the generation, the device list, and the MAC over everything.
+fn finish_header(root: &Key, slots: &[u8], generation: u64, devices: &BTreeSet<String>) -> Vec<u8> {
+    let mut body = Vec::with_capacity(FIXED + devices.len() * (1 + MAX_TAG));
+    body.extend_from_slice(slots);
+    body.extend_from_slice(&generation.to_be_bytes());
+    body.extend_from_slice(&(devices.len() as u16).to_be_bytes());
+    for tag in devices {
+        body.push(tag.len() as u8);
+        body.extend_from_slice(tag.as_bytes());
+    }
+    let tag = header_mac(root, &body);
+    [body, tag.to_vec()].concat()
 }
 
 fn prefix(id: &[u8; 16], cost: Cost, salt: &[u8; 16]) -> Vec<u8> {
@@ -172,7 +235,7 @@ fn read_header(bytes: &[u8]) -> Result<Header> {
     if word(8) != 1 {
         return Err(SyncError::Newer);
     }
-    if bytes.len() != HEADER {
+    if bytes.len() < FIXED + SEAL_MAC || bytes.len() > MAX_HEADER {
         return Err(SyncError::WrongSecret);
     }
     let id: [u8; 16] = bytes[12..28].try_into().expect("16 bytes");
@@ -185,15 +248,37 @@ fn read_header(bytes: &[u8]) -> Result<Header> {
         return Err(SyncError::WrongSecret);
     }
     let salt: [u8; 16] = bytes[40..56].try_into().expect("16 bytes");
+    let generation = u64::from_be_bytes(bytes[SLOTS..SLOTS + 8].try_into().expect("8 bytes"));
+    let count = usize::from(u16::from_be_bytes([bytes[SLOTS + 8], bytes[SLOTS + 9]]));
+    let end = bytes.len() - SEAL_MAC;
+    let mut at = FIXED;
+    let mut devices = BTreeSet::new();
+    for _ in 0..count {
+        let len = usize::from(*bytes.get(at).filter(|_| at < end).ok_or(SyncError::WrongSecret)?);
+        let tag = bytes
+            .get(at + 1..at + 1 + len)
+            .filter(|_| at + 1 + len <= end)
+            .and_then(|b| std::str::from_utf8(b).ok())
+            .filter(|t| valid_tag(t))
+            .ok_or(SyncError::WrongSecret)?;
+        devices.insert(tag.to_owned());
+        at += 1 + len;
+    }
+    if at != end || devices.len() != count {
+        return Err(SyncError::WrongSecret);
+    }
     Ok(Header {
         id,
         cost,
         salt,
         prefix: bytes[..PREFIX].to_vec(),
         pass_slot: bytes[PREFIX..PREFIX + SLOT].to_vec(),
-        recovery_slot: bytes[PREFIX + SLOT..PREFIX + 2 * SLOT].to_vec(),
-        body: bytes[..HEADER - SEAL_MAC].to_vec(),
-        tag: bytes[HEADER - SEAL_MAC..].to_vec(),
+        recovery_slot: bytes[PREFIX + SLOT..SLOTS].to_vec(),
+        slots: bytes[..SLOTS].to_vec(),
+        generation,
+        devices,
+        body: bytes[..end].to_vec(),
+        tag: bytes[end..].to_vec(),
     })
 }
 
@@ -228,13 +313,14 @@ pub fn create_with(backend: &dyn Backend, passphrase: &str, cost: Cost) -> Resul
     let id = random::<16>()?;
     let root = random_key()?;
     let recovery = Zeroizing::new(random::<32>()?);
-    let bytes = header_bytes(&id, &root, passphrase, cost, &recovery)?;
-    backend.put("vault", &bytes)?;
+    let slots = slot_bytes(&id, &root, passphrase, cost, &recovery)?;
+    backend.put("vault", &finish_header(&root, &slots, 1, &BTreeSet::new()))?;
     let text = Zeroizing::new(base32(recovery.as_ref(), 4));
-    Ok((VaultKeys::from_root(id, root), RecoveryKey(text)))
+    Ok((VaultKeys::from_root(id, root, 1), RecoveryKey(text)))
 }
 
-fn header_bytes(id: &[u8; 16], root: &Key, passphrase: &str, cost: Cost, recovery: &[u8; 32]) -> Result<Vec<u8>> {
+/// The prefix and both slots, under a new salt.
+fn slot_bytes(id: &[u8; 16], root: &Key, passphrase: &str, cost: Cost, recovery: &[u8; 32]) -> Result<Vec<u8>> {
     let salt = random::<16>()?;
     let head = prefix(id, cost, &salt);
     let name = slot_name(&head);
@@ -246,9 +332,57 @@ fn header_bytes(id: &[u8; 16], root: &Key, passphrase: &str, cost: Cost, recover
         root.as_ref(),
     )?;
     let rec = seal(&kek_recovery(recovery, id), id, "recovery-slot", &name, root.as_ref())?;
-    let body = [head, pass, rec].concat();
-    let tag = header_mac(root, &body);
-    Ok([body, tag.to_vec()].concat())
+    Ok([head, pass, rec].concat())
+}
+
+/// The header as `keys` see it: `Tampered` if it isn't this vault's or its MAC doesn't hold.
+fn genuine_header(backend: &dyn Backend, keys: &VaultKeys) -> Result<Header> {
+    let header = read_vault(backend).map_err(|error| match error {
+        SyncError::WrongSecret => tampered_header(),
+        other => other,
+    })?;
+    if !header.genuine(keys) {
+        return Err(tampered_header());
+    }
+    Ok(header)
+}
+
+/// The vault's generation and devices now, checked under its key.
+pub fn status(backend: &dyn Backend, keys: &VaultKeys) -> Result<VaultStatus> {
+    let header = genuine_header(backend, keys)?;
+    Ok(VaultStatus {
+        generation: header.generation,
+        devices: header.devices,
+    })
+}
+
+/// Rewrites the header with the next generation. Storage has no compare-and-swap, so another device may rewrite it
+/// at the same moment; the header is read back, and the change made again until `held` says it stayed.
+fn rewrite(
+    backend: &dyn Backend,
+    keys: &VaultKeys,
+    build: impl Fn(&Header) -> Result<Vec<u8>>,
+    held: impl Fn(&Header, &Header) -> bool,
+) -> Result<()> {
+    for _ in 0..REWRITE_TRIES {
+        let header = genuine_header(backend, keys)?;
+        let bytes = build(&header)?;
+        let written = read_header(&bytes)?;
+        backend.put("vault", &bytes)?;
+        if held(&written, &genuine_header(backend, keys)?) {
+            return Ok(());
+        }
+    }
+    Err(SyncError::Storage(
+        "the vault kept changing while this device updated it".into(),
+    ))
+}
+
+/// The header with the same slots, the next generation, and the devices `change` leaves.
+fn next_devices(keys: &VaultKeys, header: &Header, change: impl Fn(&mut BTreeSet<String>)) -> Vec<u8> {
+    let mut devices = header.devices.clone();
+    change(&mut devices);
+    finish_header(&keys.root, &header.slots, header.generation + 1, &devices)
 }
 
 /// Unlocks with the passphrase. A wrong passphrase and a damaged vault give the same error.
@@ -289,7 +423,8 @@ pub fn unlock_recovery(backend: &dyn Backend, recovery: &str) -> Result<VaultKey
     header.verified(root, SyncError::WrongSecret)
 }
 
-/// Sets a new passphrase. The recovery key stays the same.
+/// Sets a new passphrase. The recovery key stays the same. The generation counts up, so a device that sees the old
+/// header again reports a rollback.
 pub fn change_passphrase(backend: &dyn Backend, keys: &VaultKeys, recovery: &str, new: &str) -> Result<()> {
     if new.chars().count() < MIN_PASSPHRASE {
         return Err(SyncError::WeakPassphrase(MIN_PASSPHRASE));
@@ -308,7 +443,15 @@ pub fn change_passphrase(backend: &dyn Backend, keys: &VaultKeys, recovery: &str
         return Err(SyncError::WrongSecret);
     }
     let rec: &[u8; 32] = rec.as_slice().try_into().map_err(|_| SyncError::WrongSecret)?;
-    backend.put("vault", &header_bytes(&header.id, &keys.root, new, header.cost, rec)?)
+    rewrite(
+        backend,
+        keys,
+        |now| {
+            let slots = slot_bytes(&now.id, &keys.root, new, now.cost, rec)?;
+            Ok(finish_header(&keys.root, &slots, now.generation + 1, &now.devices))
+        },
+        |written, now| written.slots == now.slots,
+    )
 }
 
 #[derive(Serialize, Deserialize)]
@@ -341,6 +484,11 @@ pub fn add_device(
     name: &str,
     now: i64,
 ) -> Result<()> {
+    if !valid_tag(tag) {
+        return Err(SyncError::Local(
+            "a device tag must be lower-case letters and digits".into(),
+        ));
+    }
     let slot = format!("k/{tag}");
     let wrapped = seal(
         &kek_device(&secret.0, &keys.id, tag),
@@ -361,7 +509,24 @@ pub fn add_device(
         key: hex(&wrapped),
         info: hex(&info),
     };
+    let header = genuine_header(backend, keys)?;
+    if !header.devices.contains(tag) && header.devices.len() >= MAX_DEVICES {
+        return Err(SyncError::Local(format!(
+            "this sync already has {MAX_DEVICES} devices; remove one first"
+        )));
+    }
+    // The slot first, so the list never names a slot that isn't there.
     backend.put(&slot, &serde_json::to_vec(&file).expect("plain strings"))?;
+    rewrite(
+        backend,
+        keys,
+        |now| {
+            Ok(next_devices(keys, now, |d| {
+                d.insert(tag.to_owned());
+            }))
+        },
+        |_, now| now.devices.contains(tag),
+    )?;
     backend.delete(&format!("x/{tag}"))
 }
 
@@ -390,7 +555,13 @@ pub fn unlock_device(backend: &dyn Backend, tag: &str, secret: &DeviceSecret) ->
         &format!("k/{tag}"),
         &wrapped,
     )?;
-    header.verified(root, tampered_header())
+    let listed = header.devices.contains(tag);
+    let keys = header.verified(root, tampered_header())?;
+    // A slot the header doesn't list was put back after its device was removed.
+    if !listed {
+        return Err(SyncError::Removed);
+    }
+    Ok(keys)
 }
 
 fn tampered_header() -> SyncError {
@@ -399,9 +570,13 @@ fn tampered_header() -> SyncError {
 
 /// Every device with a slot, oldest first. Entries that don't open are skipped.
 pub fn list_devices(backend: &dyn Backend, keys: &VaultKeys) -> Result<Vec<DeviceInfo>> {
+    let listed = status(backend, keys)?.devices;
     let mut out = Vec::new();
     for name in backend.list("k/")? {
-        let Some(tag) = name.strip_prefix("k/").filter(|t| !t.contains('/')) else {
+        let Some(tag) = name
+            .strip_prefix("k/")
+            .filter(|t| !t.contains('/') && listed.contains(*t))
+        else {
             continue;
         };
         let Ok(Some((_, info))) = read_slot(backend, tag) else {
@@ -420,11 +595,24 @@ pub fn list_devices(backend: &dyn Backend, keys: &VaultKeys) -> Result<Vec<Devic
     Ok(out)
 }
 
-/// Removes a device: its slot goes, and a sealed note says it was removed.
+/// Removes a device: it leaves the header's list, its slot goes, and a sealed note says it was removed.
+///
+/// Against a storage writer who keeps old copies this is advisory until a re-key exists (ADR 0049): putting back
+/// an old header lets the device in again, which every other device then reports as a rollback.
 pub fn remove_device(backend: &dyn Backend, keys: &VaultKeys, tag: &str, now: i64) -> Result<()> {
     let name = format!("x/{tag}");
     let note = seal(&keys.seal, &keys.id, "revoked", &name, &now.to_le_bytes())?;
     backend.put(&name, &note)?;
+    rewrite(
+        backend,
+        keys,
+        |header| {
+            Ok(next_devices(keys, header, |d| {
+                d.remove(tag);
+            }))
+        },
+        |_, now| !now.devices.contains(tag),
+    )?;
     backend.delete(&format!("k/{tag}"))
 }
 
@@ -560,7 +748,7 @@ mod tests {
         let store = MemoryBackend::new();
         create_with(&store, PASS, QUICK).expect("creates");
         let good = store.get("vault").expect("get").expect("vault");
-        assert_eq!(good.len(), HEADER);
+        assert_eq!(good.len(), FIXED + SEAL_MAC, "a new vault lists no devices");
         for at in 0..good.len() {
             let mut bad = good.clone();
             bad[at] ^= 0x01;
@@ -568,7 +756,7 @@ mod tests {
             let result = unlock_passphrase(&store, PASS);
             assert!(result.is_err(), "byte {at} was not covered");
         }
-        store.set_raw("vault", good[..HEADER - 1].to_vec());
+        store.set_raw("vault", good[..good.len() - 1].to_vec());
         assert_eq!(unlock_passphrase(&store, PASS).unwrap_err(), SyncError::WrongSecret);
         let mut newer = good.clone();
         newer[8..12].copy_from_slice(&2u32.to_be_bytes());
@@ -699,6 +887,84 @@ mod tests {
             SyncError::PairingExpired,
             "a wrong code finds no slot"
         );
+    }
+
+    #[test]
+    fn every_change_counts_the_generation_up_and_the_list_decides_who_unlocks() {
+        let store = MemoryBackend::new();
+        let (keys, recovery) = create_with(&store, PASS, QUICK).expect("creates");
+        let gen = |s: &MemoryBackend| status(s, &keys).expect("status").generation;
+        assert_eq!(gen(&store), 1);
+        let (a, a_secret) = new_device().expect("device");
+        let (b, b_secret) = new_device().expect("device");
+        add_device(&store, &keys, &a, &a_secret, "A", 1).expect("adds");
+        add_device(&store, &keys, &b, &b_secret, "B", 2).expect("adds");
+        assert_eq!(gen(&store), 3);
+        assert_eq!(unlock_device(&store, &a, &a_secret).expect("unlocks").generation(), 3);
+        let before_removal = store.snapshot();
+        remove_device(&store, &keys, &b, 3).expect("removes");
+        assert_eq!(gen(&store), 4);
+        // Storage puts the removed device's slot back and takes the note away: the list still leaves it out.
+        let slot = format!("k/{b}");
+        store.set_raw(&slot, before_removal[&slot].clone());
+        store.remove_raw(&format!("x/{b}"));
+        assert_eq!(unlock_device(&store, &b, &b_secret).unwrap_err(), SyncError::Removed);
+        assert_eq!(list_devices(&store, &keys).expect("lists").len(), 1);
+        change_passphrase(&store, &keys, recovery.text(), "a new passphrase").expect("changes");
+        assert_eq!(gen(&store), 5);
+        // An old header opens with the old passphrase, but shows its lower generation.
+        store.set_raw("vault", before_removal["vault"].clone());
+        assert_eq!(unlock_passphrase(&store, PASS).expect("opens").generation(), 3);
+        assert_eq!(gen(&store), 3);
+        // A device tag storage can't name is refused.
+        assert!(matches!(
+            add_device(&store, &keys, "Laptop", &a_secret, "x", 4),
+            Err(SyncError::Local(_))
+        ));
+    }
+
+    #[test]
+    fn a_header_change_lost_to_another_writer_is_made_again() {
+        // Storage that, once, puts back the header it held before a write, as a racing device's write would.
+        struct Racing {
+            inner: MemoryBackend,
+            lose: std::sync::atomic::AtomicBool,
+        }
+        impl Backend for Racing {
+            fn get(&self, name: &str) -> Result<Option<Vec<u8>>> {
+                self.inner.get(name)
+            }
+            fn put(&self, name: &str, bytes: &[u8]) -> Result<()> {
+                let old = self.inner.get(name)?;
+                self.inner.put(name, bytes)?;
+                if name == "vault" && self.lose.swap(false, std::sync::atomic::Ordering::SeqCst) {
+                    self.inner.put(name, &old.expect("a header"))?;
+                }
+                Ok(())
+            }
+            fn exists(&self, name: &str) -> Result<bool> {
+                self.inner.exists(name)
+            }
+            fn list(&self, prefix: &str) -> Result<Vec<String>> {
+                self.inner.list(prefix)
+            }
+            fn delete(&self, name: &str) -> Result<()> {
+                self.inner.delete(name)
+            }
+        }
+        let store = Racing {
+            inner: MemoryBackend::new(),
+            lose: false.into(),
+        };
+        let (keys, _) = create_with(&store, PASS, QUICK).expect("creates");
+        let (tag, secret) = new_device().expect("device");
+        store.lose.store(true, std::sync::atomic::Ordering::SeqCst);
+        add_device(&store, &keys, &tag, &secret, "A", 1).expect("adds");
+        assert!(
+            !store.lose.load(std::sync::atomic::Ordering::SeqCst),
+            "the race happened"
+        );
+        assert!(unlock_device(&store, &tag, &secret).is_ok());
     }
 
     #[test]

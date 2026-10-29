@@ -21,10 +21,16 @@ struct Incoming {
 impl Engine {
     /// Plans a round without changing anything: the preview.
     pub fn plan(&self) -> Result<Plan> {
-        if vault::is_removed(self.backend.as_ref(), &self.keys, &self.device)? {
+        let state = self.state()?;
+        let vault = vault::status(self.backend.as_ref(), &self.keys)?;
+        // An older header than this device saw was put back: an old passphrase, or a removed device, may work again.
+        if vault.generation < state.vault {
+            return Err(SyncError::Rollback);
+        }
+        if !vault.devices.contains(&self.device) || vault::is_removed(self.backend.as_ref(), &self.keys, &self.device)?
+        {
             return Err(SyncError::Removed);
         }
-        let state = self.state()?;
         let incoming = self.incoming(&state)?;
         let floor = self.floor(&state, &incoming.heads);
         let (local_manifest, prints) = self.scan_local(&state, &floor)?;
@@ -59,6 +65,7 @@ impl Engine {
             merged: merged.entries,
             seen: incoming.seen,
             own_max: incoming.own_max,
+            vault: vault.generation,
             pending,
             uploads,
             actions,

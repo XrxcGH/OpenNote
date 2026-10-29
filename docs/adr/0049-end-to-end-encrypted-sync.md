@@ -41,6 +41,7 @@ Sealing is XChaCha20-Poly1305 with a random 192 bit nonce, from RustCrypto's aud
 - The **recovery key** is 256 random bits, shown once as 13 groups of 4 characters, and confirmed by typing two groups back. It unlocks the vault when the passphrase is forgotten. OpenNote never stores it.
 - Each **device** has its own random secret, kept in the operating system's credential store (Windows Credential Manager), and its own slot. Background sync uses the device slot, so the passphrase is typed only when a device joins.
 - **Adding a device**: an existing device makes a one-time pairing code (120 bits, shown as a QR code and as text) and a pairing slot that expires in 24 hours. The new device types or scans the code, unwraps the vault key, writes its own slot, and deletes the pairing slot. The passphrase also works.
+- **The header's generation and device list.** After the slots, the `vault` header carries a generation and the tags of the devices that may sync, under its MAC. Changing the passphrase, adding a device, and removing one each count the generation up; storage has no compare-and-swap, so the writer reads the header back and makes its change again if another device's write replaced it. Each device keeps the highest generation it saw in its state file, and a lower one is reported as a rollback. A device slot the list leaves out does not unlock, so putting back an old `k/<tag>` and deleting `x/<tag>` does not let a removed device in.
 - **Removing a device** deletes its slot and writes a revocation. A removed device that is honest stops syncing and forgets its keys. A device that was stolen and kept a copy of the vault key can still read what it already had; locking it out of future changes needs a full re-key, which is a follow-up listed below.
 
 Keys stay in `zeroize` buffers. No key, passphrase, or recovery key is ever logged, put in a crash report, or sent anywhere.
@@ -64,7 +65,7 @@ An edit always beats a delete. When a page folder still has a live `page.json` a
 
 - **Crash safety and resumable transfers.** Chunks are written first, then the head, then the local state. Folder writes go to a temporary name and are renamed. WebDAV writes go to `tmp/` and are moved. A transfer that stops is repeated from the first missing chunk, and a half-written blob fails its tag and is ignored.
 - **Local changes are never overwritten.** Before a downloaded file replaces a local one, the engine checks that the local file still has the bytes it planned against. A file changed in the meantime waits for the next sync.
-- **Tamper and rollback detection.** Every blob is authenticated. Each device remembers the newest generation it has seen from every device. A head older than that is reported as a rollback. A changed blob is reported and skipped. Sync then pauses with a calm message instead of guessing.
+- **Tamper and rollback detection.** Every blob is authenticated. Each device remembers the newest generation it has seen from every device, and of the vault header. A head or header older than that is reported as a rollback. A changed blob is reported and skipped. Sync then pauses with a calm message instead of guessing.
 - **Vault checks.** Every unlock, including a device's background unlock and a pairing, checks the header's MAC, in constant time, so a changed slot or cost shows. A passphrase is never checked at less than the 64 MiB, three-pass cost, whatever a header asks.
 - **Bounded memory.** Files stream through one 1 MiB chunk at a time. The manifest is about 150 bytes a file.
 - **Preview.** Every sync first builds a plan of uploads, downloads, deletions, and conflicts. "Preview changes" shows it without changing anything.
@@ -90,6 +91,7 @@ An edit always beats a delete. When a page folder still has a live `page.json` a
 | Someone who changes or deletes blobs | Stop sync, or withhold the newest changes from a device that never saw them | Make a device accept changed content, or roll back a device that already saw newer changes without a warning |
 | Someone with the passphrase or recovery key and the storage | Read everything | Nothing; these are the keys |
 | A removed device that kept the vault key | Read what it had and new blobs, until a re-key | Join again once its slot is gone, unless it kept the key |
+| A storage writer who keeps old copies of the folder | Put back an older `vault` header, so an old passphrase or a removed device's slot works again. Until a re-key exists, changing the passphrase and removing a device are advisory against this writer | Do it without a warning on every device that saw the newer header: each reports a rollback and stops |
 | Malware on a device | Everything that device can read | This is out of scope, as it is for the notes on that disk |
 
 ## Consequences
