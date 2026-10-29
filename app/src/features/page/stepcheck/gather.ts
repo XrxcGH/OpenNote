@@ -129,12 +129,18 @@ export async function inkLines(ids: readonly string[] | null): Promise<InkReadin
   return { ok: true, lines };
 }
 
-/** The selected typed lines, or every line on the page that looks like working when nothing is selected. */
-export function typedSelection(mounted: MountedPage): GatheredLine[] {
+/** The selected typed text on the page: the window's selection, or else the text editor's. Null when none. */
+export function typedRange(mounted: MountedPage): Range | null {
   const selection = mounted.viewport.world.ownerDocument.getSelection();
   const range = selection && selection.rangeCount > 0 && !selection.isCollapsed ? selection.getRangeAt(0) : null;
-  const inWorld =
-    (range && mounted.viewport.world.contains(range.commonAncestorContainer) ? range : null) ?? editorRange();
+  return (range && mounted.viewport.world.contains(range.commonAncestorContainer) ? range : null) ?? editorRange();
+}
+
+/**
+ * The typed lines in `inWorld` (the selection, by default), or every line on the page that looks like working when
+ * there is none.
+ */
+export function typedSelection(mounted: MountedPage, inWorld: Range | null = typedRange(mounted)): GatheredLine[] {
   const lines = typedLines(mounted, inWorld);
   if (inWorld) return lines;
   // A whole page: the lines that look like working, and an expression line just before a line starting with "=".
