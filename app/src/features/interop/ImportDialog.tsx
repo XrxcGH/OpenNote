@@ -301,7 +301,9 @@ function doneActions(state: DoneState, { flow, interop, onClose }: ActionContext
 /** For a PDF the import cannot read, the way it does come in: Import PDF. */
 function pdfAction(path: string | undefined, onClose: () => void): DialogAction[] {
   if (!path || !isPdf(path) || !isEnabled('interop.pdfImport')) return [];
-  return [{ id: 'importPdf', label: t('notesApps.importPdf'), variant: 'secondary', onPress: () => importPdf(onClose) }];
+  return [
+    { id: 'importPdf', label: t('notesApps.importPdf'), variant: 'secondary', onPress: () => importPdf(onClose) },
+  ];
 }
 
 function dialogActions(ctx: ActionContext): DialogAction[] {
