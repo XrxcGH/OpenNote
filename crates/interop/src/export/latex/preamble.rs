@@ -42,7 +42,8 @@ const PREAMBLE: &str = r"\usepackage{iftex}
 \makeatother
 \setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
 \newcounter{opnfn}
-\newcommand{\opnhl}[2]{{\markoverwith{\textcolor{#1}{\rule[-.55ex]{2pt}{2.4ex}}}\ULon{#2}}}
+% \ULon closes the group that \bgroup opens, so the group has no braces of its own here.
+\newcommand{\opnhl}[2]{\bgroup\markoverwith{\textcolor{#1}{\rule[-.55ex]{2pt}{2.4ex}}}\ULon{#2}}
 \newenvironment{opncode}
   {\par\medskip\begingroup\ttfamily\small\setlength{\parskip}{0pt}\raggedright}
   {\endgroup\par\medskip}
