@@ -1,0 +1,135 @@
+/*
+ * The subject kits' input fields and figures, on the kit look (kits/ui/kit.module.css). The paste box grows. The
+ * matrix grid scrolls inside itself on a narrow window. Role pickers sit in wrapping rows. A figure is an image that
+ * never overflows its column.
+ */
+@layer components {
+  .data,
+  .group {
+    display: grid;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .legend {
+    padding: 0;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+  }
+
+  .choice {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-block-size: var(--size-target-pointer);
+    font-size: var(--type-small-size);
+    cursor: pointer;
+  }
+
+  .text {
+    inline-size: 100%;
+    min-block-size: 7rem;
+    padding: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+
+  .text:focus-visible,
+  .cell:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-2);
+  }
+
+  .status {
+    margin: 0;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .warning {
+    margin: 0;
+    font-size: var(--type-small-size);
+    color: var(--color-status-warning);
+  }
+
+  .hiddenFile {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .gridScroll {
+    max-inline-size: 100%;
+    overflow-x: auto;
+  }
+
+  .grid {
+    border-collapse: collapse;
+  }
+
+  .grid th,
+  .grid td {
+    padding: var(--space-1);
+  }
+
+  .cell {
+    inline-size: 5.5rem;
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-1);
+    font: inherit;
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .labelCell {
+    font-weight: var(--font-weight-semibold);
+    background: var(--color-surface-raised);
+  }
+
+  .figure {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    min-inline-size: 0;
+  }
+
+  .figure img,
+  .figureImage {
+    max-inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--radius-sm);
+  }
+
+  .caption {
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+}
