@@ -129,16 +129,16 @@ export function UpcomingCalendar({ mode, items, selected, onSelect, onCheck, onO
   return (
     <div className={grid.views}>
       <div className={grid.bar}>
-        <Button variant="quiet" onClick={() => step(-1)}>
+        <Button variant="quiet" className={grid.previous} onClick={() => step(-1)}>
           {t(mode === 'week' ? 'study.views.previousWeek' : 'study.views.previousMonth')}
         </Button>
         <h3 className={grid.range} aria-live="polite">
           {range}
         </h3>
-        <Button variant="quiet" onClick={() => step(1)}>
+        <Button variant="quiet" className={grid.next} onClick={() => step(1)}>
           {t(mode === 'week' ? 'study.views.nextWeek' : 'study.views.nextMonth')}
         </Button>
-        <Button variant="quiet" onClick={() => onSelect(today)}>
+        <Button variant="quiet" className={grid.today} onClick={() => onSelect(today)}>
           {t('study.views.goToToday')}
         </Button>
       </div>

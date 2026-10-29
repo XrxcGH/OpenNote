@@ -41,6 +41,10 @@ async function dragMouse(page: Page, separator: Locator, dx: number) {
   await page.mouse.up();
 }
 
+/** A pane's width now: the automatic one follows the window, so tests move from it and do not assume a number. */
+const widthOf = async (page: Page, pane: 'notebooks' | 'pages') =>
+  Number(await splitter(page, pane).getAttribute('aria-valuenow'));
+
 /** What scrolls sideways: the document, and the page's own viewport. */
 const sideways = (page: Page) =>
   page.evaluate(() => {
@@ -55,14 +59,16 @@ const sideways = (page: Page) =>
 test.describe('the splitters', () => {
   test('a mouse drag resizes the pane, and the page takes the rest with no overlap', async ({ page }) => {
     await openPage(page);
+    const notebooks = await widthOf(page, 'notebooks');
+    const pages = await widthOf(page, 'pages');
     await dragMouse(page, splitter(page, 'notebooks'), 60);
-    await expect(splitter(page, 'notebooks')).toHaveAttribute('aria-valuenow', '332');
+    await expect(splitter(page, 'notebooks')).toHaveAttribute('aria-valuenow', String(notebooks + 60));
     let now = await columns(page);
-    expect(now.notebooks).toBe(332);
+    expect(now.notebooks).toBe(notebooks + 60);
     expect(now.notebooks + now.pages + now.main).toBe(now.window);
-    await dragMouse(page, splitter(page, 'pages'), -50);
+    await dragMouse(page, splitter(page, 'pages'), 50);
     now = await columns(page);
-    expect(now.pages).toBe(250);
+    expect(now.pages).toBe(pages + 50);
     expect(now.notebooks + now.pages + now.main).toBe(now.window);
     expect((await sideways(page)).page).toBeLessThanOrEqual(0);
   });
@@ -70,6 +76,7 @@ test.describe('the splitters', () => {
   test('a touch drag resizes the pane', async ({ page }) => {
     await openPage(page);
     const separator = splitter(page, 'notebooks');
+    const before = await widthOf(page, 'notebooks');
     const box = (await separator.boundingBox())!;
     const x = box.x + box.width / 2;
     const y = box.y + 200;
@@ -88,7 +95,7 @@ test.describe('the splitters', () => {
     await touch('pointermove', x + 30);
     await touch('pointermove', x + 70);
     await touch('pointerup', x + 70);
-    await expect(separator).toHaveAttribute('aria-valuenow', '342');
+    await expect(separator).toHaveAttribute('aria-valuenow', String(before + 70));
   });
 
   test('the limits hold: the widest pane leaves the page its minimum, and a long drag past the narrowest collapses it', async ({
@@ -128,10 +135,14 @@ test.describe('the splitters', () => {
 
   test('the sizes are saved with the device state and come back on the next start', async ({ page }) => {
     await openPage(page);
-    await dragMouse(page, splitter(page, 'notebooks'), -20);
+    const notebooks = (await widthOf(page, 'notebooks')) + 20;
+    const pages = (await widthOf(page, 'pages')) + 30;
+    await dragMouse(page, splitter(page, 'notebooks'), 20);
     await dragMouse(page, splitter(page, 'pages'), 30);
     const saved = await page.evaluate(() => window.__OPENNOTE_TEST__!.deviceState!());
-    expect(saved).toMatchObject({ panes: { notebooks: { width: 252, collapsed: false }, pages: { width: 330 } } });
+    expect(saved).toMatchObject({
+      panes: { notebooks: { width: notebooks, collapsed: false }, pages: { width: pages } },
+    });
     const next = await page.context().newPage();
     await next.addInitScript((state) => {
       window.__OPENNOTE_DEV__ = { fixture: 'sample', pseudo: false };
@@ -139,8 +150,8 @@ test.describe('the splitters', () => {
     }, saved);
     await next.setViewportSize(VIEWPORTS.wide);
     await next.goto('/');
-    await expect(splitter(next, 'notebooks')).toHaveAttribute('aria-valuenow', '252');
-    await expect(splitter(next, 'pages')).toHaveAttribute('aria-valuenow', '330');
+    await expect(splitter(next, 'notebooks')).toHaveAttribute('aria-valuenow', String(notebooks));
+    await expect(splitter(next, 'pages')).toHaveAttribute('aria-valuenow', String(pages));
     const now = await columns(next);
     expect(now.notebooks + now.pages + now.main).toBe(now.window);
   });
@@ -222,6 +233,16 @@ test.describe('text boxes', () => {
   test('on ruled paper a moved box lands on a rule', async ({ page }) => {
     await openPage(page, 'freeform8');
     await page.getByRole('tab', { name: 'View' }).click();
+    // The free canvas has no paper, so the background menu is off until the page is in the document flow.
+    const flow = page.getByRole('toolbar').getByRole('button', { name: 'Document flow', exact: true });
+    if (await flow.isVisible()) await flow.click();
+    else {
+      await page.getByRole('toolbar').getByRole('button', { name: 'More' }).click();
+      await page
+        .getByRole('menuitemcheckbox', { name: 'Document flow' })
+        .or(page.getByRole('menuitem', { name: 'Document flow' }))
+        .click();
+    }
     await page.getByRole('toolbar').getByRole('button', { name: 'Background' }).click();
     await page.getByRole('menuitemradio', { name: 'Lined, college' }).click();
     const box = await select(page, 'q3c1');

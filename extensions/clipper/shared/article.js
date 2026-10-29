@@ -11,7 +11,7 @@ const UNLIKELY = new RegExp(
   [
     'banner|breadcrumb|combx|comment|community|cookie|disqus|footer|header|menu|modal|nav',
     'newsletter|outbrain|popup|promo|related|remark|replies|rss|share|shoutbox|sidebar',
-    'skyscraper|social|sponsor|subscribe|taboola|tool|widget|\bad-|\bads\b',
+    'skyscraper|social|sponsor|subscribe|taboola|tool|widget|\\bad-|\\bads\\b',
   ].join('|'),
   'i',
 );

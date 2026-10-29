@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { t } from '../../../strings/t';
-import { announce, Button, Dialog, RadioCard, RadioGroup, TextField } from '../../../ui';
+import { Button, Dialog, RadioCard, RadioGroup, TextField } from '../../../ui';
+import { say } from './say';
 import { maybeSearchClient, openPage } from '../../search';
 import type { InkHost } from './host';
 import { inkLinks, isWebAddress, linkSelection, liveLinks } from './inkLinks';
 import type { InkLink, LinkTarget } from './inkLinks';
 import type { InkSurface } from './surface';
+import styles from './view.module.css';
 
 type Kind = 'page' | 'url' | 'recording';
 
@@ -97,7 +99,7 @@ function MakeLinkDialog(props: { canRecord: boolean; initialLabel: string; done:
             error={error ?? undefined}
           />
           {!chosen && (
-            <ul aria-label={t('ink.links.pageResults')}>
+            <ul aria-label={t('ink.links.pageResults')} className={styles.layers}>
               {suggestions.map((s) => (
                 <li key={s.page}>
                   <Button variant="quiet" onClick={() => setChosen(s)}>
@@ -127,7 +129,7 @@ function MakeLinkDialog(props: { canRecord: boolean; initialLabel: string; done:
           onCommit={submit}
         />
       )}
-      {kind === 'recording' && <p>{t('ink.links.recordingHelp')}</p>}
+      {kind === 'recording' && <p className={styles.note}>{t('ink.links.recordingHelp')}</p>}
     </Dialog>
   );
 }
@@ -192,11 +194,11 @@ function LinkList(props: { host: InkHost; surface: InkSurface; done: () => void 
       actions={[{ id: 'close', label: t('ink.links.close'), variant: 'primary', onPress: done }]}
     >
       {links.length === 0 ? (
-        <p>{t('ink.links.empty')}</p>
+        <p className={styles.note}>{t('ink.links.empty')}</p>
       ) : (
-        <ul aria-label={t('ink.links.list')}>
+        <ul aria-label={t('ink.links.list')} className={styles.layers}>
           {links.map(([id, link]) => (
-            <li key={id}>
+            <li key={id} className={styles.layerActions}>
               <span>
                 {link.label || t('ink.links.unnamed')} <small>{kindText(link)}</small>
               </span>{' '}
@@ -225,7 +227,7 @@ export function showLinkList(host: InkHost, surface: InkSurface): Promise<void> 
 /** Make link: asks where the selected writing should go, then links it. */
 export async function makeLinkFromSelection(host: InkHost, surface: InkSurface): Promise<void> {
   const selection = host.selection.get();
-  if (selection.strokes.length === 0) return announce(t('ink.links.selectFirst'));
+  if (selection.strokes.length === 0) return say(t('ink.links.selectFirst'));
   const answer = await askLinkTarget(host, '');
   if (answer) await linkSelection(surface, selection, answer.target, answer.label);
 }

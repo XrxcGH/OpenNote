@@ -237,6 +237,7 @@ function MemberLine({ member, model, force, selected, onSelect, onRemove }: Memb
   const b = model.joints.find((one) => one.id === member.b);
   if (!a || !b) return null;
   const [x1, y1, x2, y2] = [view.sx(a.x), view.sy(a.y), view.sx(b.x), view.sy(b.y)];
+  const labelAt = memberLabelAt(x1, y1, x2, y2);
   const tone = force === undefined || Math.abs(force) < 1e-9 ? '' : force > 0 ? styles.tension : styles.compression;
   return (
     <g
@@ -260,7 +261,7 @@ function MemberLine({ member, model, force, selected, onSelect, onRemove }: Memb
       <line className={styles.halo} x1={x1} y1={y1} x2={x2} y2={y2} />
       <line className={`${styles.ink} ${tone}`} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={3} />
       {force !== undefined ? (
-        <text className={styles.muted} x={(x1 + x2) / 2 + 4} y={(y1 + y2) / 2 - 4}>
+        <text className={styles.muted} x={labelAt.x} y={labelAt.y} textAnchor={labelAt.anchor}>
           {Math.abs(force) < 1e-9
             ? fmt(0)
             : t(force > 0 ? 'engineering.truss.shortTension' : 'engineering.truss.shortCompression', {
@@ -270,6 +271,56 @@ function MemberLine({ member, model, force, selected, onSelect, onRemove }: Memb
       ) : null}
     </g>
   );
+}
+
+/** A member's force label: centered beside the middle of the member, on its upper side, clear of the line. */
+function memberLabelAt(x1: number, y1: number, x2: number, y2: number) {
+  const [dx, dy] = [x2 - x1, y2 - y1];
+  const length = Math.hypot(dx, dy) || 1;
+  let [nx, ny] = [dy / length, -dx / length];
+  if (ny > 0 || (ny === 0 && nx < 0)) [nx, ny] = [-nx, -ny];
+  const gap = 11;
+  const side = Math.abs(nx) > 0.8;
+  return {
+    x: (x1 + x2) / 2 + nx * gap * (side ? 1.2 : 1),
+    y: (y1 + y2) / 2 + ny * gap + (side ? 4 : 3),
+    anchor: side ? ('start' as const) : ('middle' as const),
+  };
+}
+
+/** The load's label, past the tail of its arrow and away from the joint. */
+function loadLabelAt(px: number, py: number, lx: number, ly: number, length: number) {
+  const [ux, uy] = [-lx / (length || 1), -ly / (length || 1)];
+  return {
+    x: px + ux * length + ux * 6,
+    y: py + uy * length + (Math.abs(uy) < 0.3 ? 4 : uy < 0 ? -6 : 14),
+    anchor: ux > 0.3 ? ('start' as const) : ux < -0.3 ? ('end' as const) : ('middle' as const),
+  };
+}
+
+/** A joint's name sits on the side away from its members, its support, and its load. */
+function jointLabelAt(
+  model: TrussModel,
+  joint: TrussModel['joints'][number],
+  view: ReturnType<typeof useView>,
+  load: [number, number] | null,
+) {
+  let [sx, sy] = [0, 0];
+  const add = (dx: number, dy: number) => {
+    const d = Math.hypot(dx, dy) || 1;
+    sx += dx / d;
+    sy += dy / d;
+  };
+  for (const member of model.members) {
+    const other = member.a === joint.id ? member.b : member.b === joint.id ? member.a : null;
+    const to = other ? model.joints.find((one) => one.id === other) : null;
+    if (to) add(view.sx(to.x) - view.sx(joint.x), view.sy(to.y) - view.sy(joint.y));
+  }
+  if (joint.support) add(0, 1.5);
+  if (load) add(load[0], load[1]);
+  const d = Math.hypot(sx, sy);
+  const [ux, uy] = d < 0.2 ? [0.7, -0.7] : [-sx / d, -sy / d];
+  return { x: view.sx(joint.x) + ux * 17, y: view.sy(joint.y) + uy * 17 + 4 };
 }
 
 function PullLine({ model, pull }: { model: TrussModel; pull: { from: string; to: Point } }) {
@@ -354,6 +405,8 @@ function JointDot({
   const length = 1.3 * view.scale;
   const lx = load > 0 ? ((joint.fx ?? 0) / load) * length : 0;
   const ly = load > 0 ? (-(joint.fy ?? 0) / load) * length : 0;
+  const loadAt = loadLabelAt(px, py, lx, ly, length);
+  const jointAt = jointLabelAt(model, joint, view, load > 0 ? [-lx, -ly] : null);
   return (
     <g
       className={`${styles.part} ${selected ? styles.selected : ''}`}
@@ -394,14 +447,14 @@ function JointDot({
       {load > 0 ? (
         <>
           <path className={styles.load} d={arrowPath(px - lx, py - ly, px - lx * 0.12, py - ly * 0.12, 9)} />
-          <text className={styles.label} x={px - lx + 4} y={py - ly - 4}>
+          <text className={styles.label} x={loadAt.x} y={loadAt.y} textAnchor={loadAt.anchor}>
             {`${fmt(load)} ${model.forceUnit}`}
           </text>
         </>
       ) : null}
       <circle className={styles.halo} cx={px} cy={py} r={10} />
       <circle className={styles.body} cx={px} cy={py} r={5} />
-      <text className={styles.label} x={px + 8} y={py + 16}>
+      <text className={styles.label} x={jointAt.x} y={jointAt.y} textAnchor="middle">
         {joint.label}
       </text>
     </g>

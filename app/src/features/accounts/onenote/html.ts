@@ -212,7 +212,7 @@ function tableMarkdown(table: El, cx: Context): string {
             .filter((cell): cell is El => typeof cell !== 'string' && (cell.tag === 'td' || cell.tag === 'th'))
             .map((cell) =>
               clean(cell.children.map((one) => inline(one, cx)).join(''))
-                .replace(/\|/g, '\\|')
+                .replace(/[\\|]/g, '\\$&')
                 .replace(/\n/g, ' '),
             ),
         );

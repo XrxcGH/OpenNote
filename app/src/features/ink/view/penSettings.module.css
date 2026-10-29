@@ -1,0 +1,33 @@
+/* The Pen and touch section of Settings: its controls stack with a gap, so no two targets touch. */
+@layer components {
+  .section,
+  .section > div[role='group'] {
+    display: grid;
+    gap: var(--space-3);
+    /* One column width with the other panels, so a switch stays next to its label. */
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .section > div[role='group'] {
+    margin-block-end: var(--space-4);
+  }
+
+  .section h2,
+  .section h3,
+  .section p {
+    margin: 0;
+  }
+
+  .slider {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .slider input {
+    min-block-size: var(--size-target-pointer);
+  }
+
+  :global(:root[data-density='touch']) .slider input {
+    min-block-size: var(--size-target-touch);
+  }
+}

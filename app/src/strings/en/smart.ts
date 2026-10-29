@@ -45,7 +45,9 @@ export const smart = {
     keywords: 'timer stopwatch pomodoro focus calculator scientific graphing upcoming due tasks study tool window',
     window: {
       close: 'Close {title}',
+      failed: '{title} couldn’t open. Close it and try again.',
       keepOnTop: 'Keep on top',
+      loading: 'Opening {title}…',
       popOut: 'Open in its own window',
       resize: 'Resize {title}. Use the left and right arrow keys, or drag.',
     },

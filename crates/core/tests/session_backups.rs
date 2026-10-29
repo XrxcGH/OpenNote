@@ -43,6 +43,9 @@ fn a_backup_copies_what_is_on_screen_and_then_only_what_changed() {
     let first = real.notebook.backup_to(&dest, &policy, 0).unwrap();
     assert!(first.copied_files > 3, "the page was saved first and copied: {first:?}");
     assert!(real.core.last_backup(real.notebook.path(), &dest).is_some());
+    // The backup saved the page first, and the journal thread writes behind that save too: let it finish, or the
+    // second backup finds the file it touched and counts it as changed.
+    real.core.flush_journals(Duration::from_secs(5)).unwrap();
     let again = real.notebook.backup_to(&dest, &policy, 0).unwrap();
     assert_eq!((again.copied_files, again.removed_files), (0, 0), "nothing changed");
 
