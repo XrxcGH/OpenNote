@@ -3,6 +3,7 @@ import type { IconName } from '../../../ui/icons';
 
 export const MOLBIO_TOOLS = [
   { id: 'sequence', icon: 'Dna' },
+  { id: 'cloning', icon: 'Scissors' },
   { id: 'protein', icon: 'Atom' },
   { id: 'align', icon: 'Rows' },
   { id: 'crosses', icon: 'GridFour' },

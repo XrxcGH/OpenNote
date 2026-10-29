@@ -1,5 +1,6 @@
 // The molecular biology, genetics, and evolution kit: the window, what every tool shares, and one part per tool.
 import { align } from './kitMolBio/align';
+import { cloning } from './kitMolBio/cloning';
 import { crosses } from './kitMolBio/crosses';
 import { protein } from './kitMolBio/protein';
 import { sequence } from './kitMolBio/sequence';
@@ -49,6 +50,7 @@ export const kitMolBio = {
     probabilityRange: '{field} must be from 0 to 1.',
   },
   sequence,
+  cloning,
   protein,
   align,
   crosses,

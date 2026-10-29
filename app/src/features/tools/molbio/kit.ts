@@ -4,6 +4,7 @@ import type { ToolSpec } from './spec';
 
 export const LOADERS: Record<MolToolId, () => Promise<{ spec: ToolSpec }>> = {
   sequence: () => import('./sequence/tool'),
+  cloning: () => import('./cloning/tool'),
   protein: () => import('./protein/tool'),
   align: () => import('./align/tool'),
   crosses: () => import('./crosses/tool'),
