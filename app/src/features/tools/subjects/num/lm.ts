@@ -34,7 +34,10 @@ export interface LmFit {
   /** The residual variance ssr / dof (NaN with no degrees of freedom left). */
   s2: number;
   covariance: Matrix;
+  /** Standard errors; NaN for a parameter at a bound, where the unconstrained error does not apply. */
   se: number[];
+  /** True for each parameter that ended on its lower or upper bound. */
+  atBound: boolean[];
   iterations: number;
   converged: boolean;
   stop: LmStop;
@@ -50,6 +53,15 @@ export function numericGradient<X>(model: Model<X>, x: X, p: readonly number[]):
     down[j] = pj - h;
     return (model(x, up) - model(x, down)) / (2 * h);
   });
+}
+
+/** For each parameter, whether it sits on its lower or upper bound (within the tolerance, scaled to the bound). */
+function boundsHit(p: readonly number[], lo: readonly number[], hi: readonly number[], tol: number): boolean[] {
+  const on = (v: number, bound: number | undefined) =>
+    bound !== undefined &&
+    Number.isFinite(bound) &&
+    Math.abs(v - bound) <= Math.max(tol, 1e-12) * Math.max(1, Math.abs(bound));
+  return p.map((v, j) => on(v, lo[j]) || on(v, hi[j]));
 }
 
 const clamp = (v: number, lo = -Infinity, hi = Infinity): number => Math.min(Math.max(v, lo), hi);
@@ -77,6 +89,29 @@ function invertSpd(a: Matrix): Matrix {
   return choleskySolve(f, identity(a.length));
 }
 
+/** Refuses empty, mismatched, too short or non-finite input, and returns the sizes and the weights. */
+function checkInputs(
+  xs: readonly unknown[],
+  ys: readonly number[],
+  start: readonly number[],
+  weights?: readonly number[],
+) {
+  const n = xs.length;
+  const k = start.length;
+  ensure(n > 0 && k > 0, 'empty');
+  ensure(ys.length === n, 'shape', 'ys');
+  ensure(n >= k, 'tooFew', 'points');
+  ensure(ys.every(Number.isFinite) && start.every(Number.isFinite), 'notFinite');
+  const w = weights ?? new Array<number>(n).fill(1);
+  ensure(w.length === n, 'shape', 'weights');
+  ensure(
+    w.every((v) => Number.isFinite(v) && v >= 0),
+    'domain',
+    'weights',
+  );
+  return { n, k, w };
+}
+
 /** Fits `model` to the points (xs, ys) from `start`. Throws a SubjectError on bad input or a singular fit. */
 export function levenbergMarquardt<X>(
   model: Model<X>,
@@ -85,19 +120,7 @@ export function levenbergMarquardt<X>(
   start: readonly number[],
   options: LmOptions<X> = {},
 ): LmFit {
-  const n = xs.length;
-  const k = start.length;
-  ensure(n > 0 && k > 0, 'empty');
-  ensure(ys.length === n, 'shape', 'ys');
-  ensure(n >= k, 'tooFew', 'points');
-  ensure(ys.every(Number.isFinite) && start.every(Number.isFinite), 'notFinite');
-  const w = options.weights ?? new Array<number>(n).fill(1);
-  ensure(w.length === n, 'shape', 'weights');
-  ensure(
-    w.every((v) => Number.isFinite(v) && v >= 0),
-    'domain',
-    'weights',
-  );
+  const { n, k, w } = checkInputs(xs, ys, start, options.weights);
   const lo = options.lower ?? [];
   const hi = options.upper ?? [];
   const maxIterations = options.maxIterations ?? 200;
@@ -170,6 +193,7 @@ export function levenbergMarquardt<X>(
   const dof = n - k;
   const s2 = dof > 0 ? f / dof : Number.NaN;
   const covariance = invertSpd(a).map((row) => row.map((v) => v * s2));
+  const atBound = boundsHit(p, lo, hi, tol);
   return {
     params: p,
     residuals: r.map((v) => -v),
@@ -177,7 +201,8 @@ export function levenbergMarquardt<X>(
     dof,
     s2,
     covariance,
-    se: covariance.map((row, j) => Math.sqrt(row[j])),
+    se: covariance.map((row, j) => (atBound[j] ? Number.NaN : Math.sqrt(row[j]))),
+    atBound,
     iterations,
     converged: stop !== 'maxIterations',
     stop,

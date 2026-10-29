@@ -53,6 +53,7 @@ describe('Levenberg-Marquardt', () => {
     const fit = levenbergMarquardt(michaelis, S, exactV, [5, 3], { lower: [0, 2.5] });
     expect(fit.params[1]).toBeCloseTo(2.5, 10);
     expect(fit.params[0]).toBeGreaterThan(0);
+    expect(fit.atBound).toEqual([false, true]);
   });
 
   it('weights the points: a weight of zero ignores an outlier', () => {
@@ -93,5 +94,21 @@ describe('Levenberg-Marquardt', () => {
     // The two parameters only appear as a sum, so no data can tell them apart.
     const sum: Model<number> = (x, [a, b]) => (a + b) * x;
     expect(code(() => levenbergMarquardt(sum, [1, 2, 3], [2, 4, 6], [0, 0]))).toBe('singular');
+  });
+});
+
+describe('Levenberg-Marquardt at a bound', () => {
+  it('marks a parameter that ends on its bound and gives it no standard error', () => {
+    // y = a·x with a >= 0 on falling data: the least-squares slope is Σxy / Σx² = -15.5 / 14 < 0, so a stops at 0.
+    const line: Model<number> = (x, [a]) => a * x;
+    const fit = levenbergMarquardt(line, [1, 2, 3], [-1, -2, -3.5], [1], { lower: [0] });
+    expect(fit.params[0]).toBe(0);
+    expect(fit.converged).toBe(true);
+    expect(fit.atBound).toEqual([true]);
+    expect(fit.se[0]).toBeNaN();
+    const free = levenbergMarquardt(line, [1, 2, 3], [-1, -2, -3.5], [1]);
+    expect(free.params[0]).toBeCloseTo(-15.5 / 14, 8);
+    expect(free.atBound).toEqual([false]);
+    expect(free.se[0]).toBeGreaterThan(0);
   });
 });
