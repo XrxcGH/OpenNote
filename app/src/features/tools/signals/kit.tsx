@@ -10,6 +10,7 @@ const TOOL_BODIES: Record<SignalToolId, LazyExoticComponent<ComponentType>> = {
   spectrum: lazy(() => import('./spectrum/SpectrumTool').then((m) => ({ default: m.SpectrumTool }))),
   systems: lazy(() => import('./systems/SystemsTool').then((m) => ({ default: m.SystemsTool }))),
   comms: lazy(() => import('./comms/CommsTool').then((m) => ({ default: m.CommsTool }))),
+  rf: lazy(() => import('./rf/RfTool').then((m) => ({ default: m.RfTool }))),
 };
 
 function firstTool(): SignalToolId {

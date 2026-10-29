@@ -15,4 +15,6 @@ Each result has buttons to put part of it on the page at the caret: **Insert ans
 
 - **Information, coding, and modulation.** Find entropy, shared information, and the capacity of a channel. Build Huffman and Shannon-Fano codes with the tree drawn, and parse text the way the LZ78 compressor does. Encode and decode Hamming codes and other small block codes. Find standard checksums (cyclic redundancy checks, or CRCs) and work their long division. Decode a convolutional code with the Viterbi method. Compare ways to send bits over radio, such as phase shift keying (PSK) and quadrature amplitude modulation (QAM). Each has a constellation plot, an error-rate curve, and an eye diagram.
 
-The CRC presets use the parameters in the CRC catalog by Greg Cook (reveng.sourceforge.io).
+- **Transmission lines and radio frequency (RF).** See how a load reflects, and move along the line on a Smith chart to read the input impedance. Design L-section, stub, and quarter-wave matches. Find the impedance of coax, two-wire, and microstrip lines. Convert two-port matrices, check stability, and cascade stages. Add up noise through a chain of amplifiers, and work antenna links, radar range, and decibel units.
+
+The CRC presets use the parameters in the CRC catalog by Greg Cook (reveng.sourceforge.io). The microstrip formulas are the Hammerstad-Jensen closed forms, and the matching formulas follow Pozar's Microwave Engineering.

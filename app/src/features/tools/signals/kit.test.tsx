@@ -77,4 +77,13 @@ describe('signals and sound kit', () => {
     expect(inserted[0]?.text).toContain('1.5');
     await walkModes(container);
   });
+
+  it('reads the reflection example, inserts it, and walks every RF mode', async () => {
+    const { container } = await openAt('rf');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('VSWR 2.618');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('50 − j50');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Insert answer' })[0]!);
+    expect(inserted[0]?.text).toContain('0.4 + j0.2');
+    await walkModes(container);
+  });
 });
