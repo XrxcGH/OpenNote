@@ -9,6 +9,7 @@ export const KIT_WINDOW = 'kit-statinfer';
 export const STAT_TOOLS = [
   ['describe', 'ChartBar'],
   ['tables', 'Table'],
+  ['epi', 'FirstAidKit'],
 ] as const;
 
 export type StatTool = (typeof STAT_TOOLS)[number][0];

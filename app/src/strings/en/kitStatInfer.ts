@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { epi } from './kitStatInfer/epi';
 import { tables } from './kitStatInfer/tables';
 
 export const kitStatInfer = {
@@ -12,14 +13,17 @@ export const kitStatInfer = {
   tools: {
     describe: describe.tab,
     tables: tables.tab,
+    epi: epi.tab,
   },
   open: {
     describe: describe.open,
     tables: tables.open,
+    epi: epi.open,
   },
   keywords: {
     describe: describe.keywords,
     tables: tables.keywords,
+    epi: epi.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -46,14 +50,17 @@ export const kitStatInfer = {
     cellNumber: 'The cell in row {row}, column {column} is not a number.',
     ...describe.err,
     ...tables.err,
+    ...epi.err,
   },
   answer: {
     ...describe.answer,
     ...tables.answer,
+    ...epi.answer,
   },
   note: {
     ...describe.note,
     ...tables.note,
+    ...epi.note,
   },
   col: {
     summary: 'Summary',
@@ -85,6 +92,7 @@ export const kitStatInfer = {
     p: 'p',
     ...describe.col,
     ...tables.col,
+    ...epi.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -93,11 +101,14 @@ export const kitStatInfer = {
     category: 'Category',
     ...describe.axis,
     ...tables.axis,
+    ...epi.axis,
   },
   step: {
     ...describe.step,
     ...tables.step,
+    ...epi.step,
   },
   describe: describe.fields,
+  epi: epi.fields,
   tables: tables.fields,
 };

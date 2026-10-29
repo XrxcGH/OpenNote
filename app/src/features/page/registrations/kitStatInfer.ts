@@ -10,6 +10,7 @@ type Key = Parameters<typeof addCommand>[0]['title'];
 export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [
   ['describe', 'ChartBar'],
   ['tables', 'Table'],
+  ['epi', 'FirstAidKit'],
 ];
 
 async function open(tool?: string): Promise<void> {
