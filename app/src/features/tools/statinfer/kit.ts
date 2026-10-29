@@ -5,6 +5,7 @@ import { STAT_KIT_ID, STAT_TOOLS, type StatTool } from './meta';
 
 const BODIES: Record<StatTool, KitToolDef['Component']> = {
   describe: lazy(() => import('./describe/Tool')),
+  ranks: lazy(() => import('./ranks/Tool')),
   correlation: lazy(() => import('./correlation/Tool')),
   epi: lazy(() => import('./epi/Tool')),
   tables: lazy(() => import('./tables/Tool')),

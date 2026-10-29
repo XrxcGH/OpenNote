@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { ranks } from './kitStatInfer/ranks';
 import { correlation } from './kitStatInfer/correlation';
 import { epi } from './kitStatInfer/epi';
 import { tables } from './kitStatInfer/tables';
@@ -16,18 +17,21 @@ export const kitStatInfer = {
     tables: tables.tab,
     epi: epi.tab,
     correlation: correlation.tab,
+    ranks: ranks.tab,
   },
   open: {
     describe: describe.open,
     tables: tables.open,
     epi: epi.open,
     correlation: correlation.open,
+    ranks: ranks.open,
   },
   keywords: {
     describe: describe.keywords,
     tables: tables.keywords,
     epi: epi.keywords,
     correlation: correlation.keywords,
+    ranks: ranks.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -70,18 +74,21 @@ export const kitStatInfer = {
     ...tables.err,
     ...epi.err,
     ...correlation.err,
+    ...ranks.err,
   },
   answer: {
     ...describe.answer,
     ...tables.answer,
     ...epi.answer,
     ...correlation.answer,
+    ...ranks.answer,
   },
   note: {
     ...describe.note,
     ...tables.note,
     ...epi.note,
     ...correlation.note,
+    ...ranks.note,
   },
   col: {
     summary: 'Summary',
@@ -115,6 +122,7 @@ export const kitStatInfer = {
     ...tables.col,
     ...epi.col,
     ...correlation.col,
+    ...ranks.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -125,14 +133,17 @@ export const kitStatInfer = {
     ...tables.axis,
     ...epi.axis,
     ...correlation.axis,
+    ...ranks.axis,
   },
   step: {
     ...describe.step,
     ...tables.step,
     ...epi.step,
     ...correlation.step,
+    ...ranks.step,
   },
   describe: describe.fields,
+  ranks: ranks.fields,
   correlation: correlation.fields,
   epi: epi.fields,
   tables: tables.fields,

@@ -12,6 +12,7 @@ export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [
   ['tables', 'Table'],
   ['epi', 'FirstAidKit'],
   ['correlation', 'ChartScatter'],
+  ['ranks', 'Ranking'],
 ];
 
 async function open(tool?: string): Promise<void> {
