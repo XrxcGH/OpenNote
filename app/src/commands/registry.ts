@@ -65,7 +65,7 @@ export function commandContext(source: CommandContext['source'], target?: Comman
 /** True when a command exists, its flag is on, and it is available and enabled now: for a button that runs it. */
 export function commandAvailable(id: CommandId, source: CommandContext['source'] = 'menu'): boolean {
   const def = commands.get(id);
-  if (!def || (def.flag && !isEnabled(def.flag))) return false;
+  if (!def || (def.flag && !isEnabled(def.flag)) || !services) return false;
   const ctx = commandContext(source);
   return !(def.when && !def.when(ctx)) && !(def.enabled && !def.enabled(ctx));
 }
