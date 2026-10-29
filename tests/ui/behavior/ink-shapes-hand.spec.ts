@@ -37,7 +37,7 @@ function channelsOf(): Record<string, number> {
 
 /**
  * Draws one drawing with the pen at its own pace, centered at `at` (window pixels), holds still, and lifts; or lifts at
- * once when `hold` is false.
+ * once when `hold` is false, with every sample sent on its own timer.
  */
 async function drawHeld(
   client: CDPSession,
@@ -61,6 +61,19 @@ async function drawHeld(
       pointerType: 'pen',
       force: buttons ? 0.5 : 0,
     });
+  const last = d.points[d.points.length - 1];
+  if (!hold) {
+    // Each sample is sent on its own timer, so a slow runner's delay in one command can't push the next ones later
+    // and stretch a quick stroke past the limit for note-size writing.
+    const at60 = (time: number, send: () => Promise<unknown>) =>
+      new Promise<void>((resolve) => setTimeout(resolve, time)).then(send);
+    await Promise.all([
+      at60(0, () => send('mousePressed', d.points[0], 1)),
+      ...d.points.slice(1).map((p) => at60(p.time, () => send('mouseMoved', p, 1))),
+      at60(last.time, () => send('mouseReleased', last, 0)),
+    ]);
+    return { box: d.points.map(toWindow) };
+  }
   const start = Date.now();
   await send('mousePressed', d.points[0], 1);
   for (const p of d.points.slice(1)) {
@@ -68,8 +81,8 @@ async function drawHeld(
     if (wait > 1) await page.waitForTimeout(wait);
     await send('mouseMoved', p, 1);
   }
-  if (hold) await page.waitForTimeout(HOLD_MS + 300);
-  await send('mouseReleased', d.points[d.points.length - 1], 0);
+  await page.waitForTimeout(HOLD_MS + 300);
+  await send('mouseReleased', last, 0);
   return { box: d.points.map(toWindow) };
 }
 
