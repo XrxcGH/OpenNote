@@ -7,6 +7,7 @@ export const MOLBIO_TOOLS = [
   { id: 'protein', icon: 'Atom' },
   { id: 'align', icon: 'Rows' },
   { id: 'crosses', icon: 'GridFour' },
+  { id: 'popgen', icon: 'ChartLine' },
 ] as const satisfies readonly {
   id: string;
   icon: IconName;

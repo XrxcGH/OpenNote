@@ -2,6 +2,7 @@
 import { align } from './kitMolBio/align';
 import { cloning } from './kitMolBio/cloning';
 import { crosses } from './kitMolBio/crosses';
+import { popgen } from './kitMolBio/popgen';
 import { protein } from './kitMolBio/protein';
 import { sequence } from './kitMolBio/sequence';
 
@@ -54,4 +55,5 @@ export const kitMolBio = {
   protein,
   align,
   crosses,
+  popgen,
 } as const;

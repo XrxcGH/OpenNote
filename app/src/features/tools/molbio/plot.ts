@@ -19,6 +19,8 @@ export interface PlotSpec {
   yRange?: [number, number];
   /** Horizontal reference lines, such as zero charge or LOD = 3. */
   marks?: number[];
+  /** False hides the legend, as for many replicate runs drawn alike. */
+  legend?: boolean;
   width?: number;
   height?: number;
 }
@@ -168,7 +170,7 @@ export function linePlot(spec: PlotSpec): Figure {
       });
     }
   });
-  if (spec.series.length > 1) {
+  if (spec.series.length > 1 && spec.legend !== false) {
     spec.series.forEach((series, i) => {
       const y = PAD.top + 12 + i * 16;
       const x = box.w - PAD.right - 150;

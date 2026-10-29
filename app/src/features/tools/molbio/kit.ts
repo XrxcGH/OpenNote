@@ -8,4 +8,5 @@ export const LOADERS: Record<MolToolId, () => Promise<{ spec: ToolSpec }>> = {
   protein: () => import('./protein/tool'),
   align: () => import('./align/tool'),
   crosses: () => import('./crosses/tool'),
+  popgen: () => import('./popgen/tool'),
 };
