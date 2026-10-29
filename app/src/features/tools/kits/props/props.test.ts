@@ -67,13 +67,19 @@ describe('liquid water', () => {
     relative(w25.Pr, (w25.cp * w25.mu) / w25.k, 1e-15);
   });
 
-  it('gives saturated liquid at 300 °C (Python evaluation of the same formulations)', () => {
-    const w = liquidWater(573.15);
-    relative(w.p, 8.587708329557264e6, 1e-9);
-    relative(w.rho, 712.137621099571, 1e-9);
-    relative(w.cp, 5751.523265645137, 1e-8);
-    relative(w.mu, 8.585569839970075e-5, 1e-9);
-    relative(w.k, 0.5460293064357427, 1e-9);
+  // NIST Chemistry WebBook saturated liquid, which uses IAPWS-95 with R12-08 and R15-11 (critical enhancement included).
+  // IF97 sits within about 1e-4 of IAPWS-95 here. Before λ₂ was added, k at 300 °C came out 1.2% low (0.54603).
+  it.each([
+    [373.15, 101418, 958.34905, 4215.6736, 281.58201e-6, 0.67721051],
+    [473.15, 1554927.9, 864.6581, 4495.8426, 134.58413e-6, 0.6600148],
+    [573.15, 8587904.9, 712.13564, 5750.4003, 85.855388e-6, 0.55264602],
+  ])('gives saturated liquid at %d K as published from IAPWS-95', (T, p, rho, cp, mu, k) => {
+    const w = liquidWater(T);
+    relative(w.p, p, 2e-4);
+    relative(w.rho, rho, 5e-5);
+    relative(w.cp, cp, 5e-4);
+    relative(w.mu, mu, 2e-4);
+    relative(w.k, k, 1e-4);
   });
 
   it('refuses steam, ice, and pressures past the formulation', () => {

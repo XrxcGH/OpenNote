@@ -1,13 +1,16 @@
 // The kit window with the example tool: ARIA tabs, typed inputs that work the problem, words for a bad value, the SI
 // and US switch, the Insert menu's choices, and the live calculation block reopening the tool with its inputs.
+import { Editor } from '@tiptap/core';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations, renderUi } from '../../../test';
+import { textExtensions } from '../../../editor/schema/schema';
 import { INSERT_EVENT } from '../flags';
 import { KitCalcView } from './block/KitCalcBlock';
 import { EXAMPLE_KIT } from './example/kit';
 import { openKitTool, registerKit, resetKits } from './registry';
 import type { KitDef } from './types';
+import { insertSteps } from './ui/insert';
 import { insertActions } from './ui/InsertMenu';
 import { KitWindow } from './ui/KitWindow';
 
@@ -133,5 +136,42 @@ describe('insert menu and live block', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open in tool' }));
     await waitFor(() => expect(opened).toEqual(['idealGas']));
     await expectNoAxeViolations(view.container);
+  });
+});
+
+describe('worked steps on a page', () => {
+  it('go in as a numbered list whose math renders as math blocks, not raw LaTeX', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const editor = new Editor({ element: host, extensions: textExtensions, content: '<p></p>' });
+    // The page's listener (page/registrations/smart.ts) inserts a text request at the caret the same way.
+    const listen = (event: Event) => {
+      const detail = (event as CustomEvent<{ text?: string; handled: boolean }>).detail;
+      if (detail.text !== undefined) detail.handled = editor.chain().focus().insertContent(detail.text).run();
+    };
+    window.addEventListener(INSERT_EVENT, listen);
+    try {
+      expect(
+        insertSteps([
+          { key: 'kits.example.step.law', math: 'pV = nRT' },
+          { key: 'kits.example.step.result', vars: { value: 'V' }, math: 'V = 0.022414\\,\\mathrm{m^3}' },
+        ]),
+      ).toBe(true);
+      const kinds: string[] = [];
+      const sources: string[] = [];
+      editor.state.doc.descendants((node) => {
+        kinds.push(node.type.name);
+        if (node.type.name === 'mathBlock') sources.push(node.attrs.source as string);
+      });
+      expect(kinds).toContain('orderedList');
+      expect(kinds.filter((kind) => kind === 'listItem')).toHaveLength(2);
+      expect(sources).toEqual(['pV = nRT', 'V = 0.022414\\,\\mathrm{m^3}']);
+      expect(editor.state.doc.textContent).not.toContain('\\');
+      expect(host.querySelectorAll('ol li [data-math-block]')).toHaveLength(2);
+    } finally {
+      window.removeEventListener(INSERT_EVENT, listen);
+      editor.destroy();
+      host.remove();
+    }
   });
 });

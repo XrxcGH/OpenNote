@@ -131,7 +131,9 @@ export interface PolyRoot {
 
 /**
  * Every root of p, from the eigenvalues of its companion matrix, each polished by Newton's method on p (a step is
- * kept only when it makes |p| smaller). Roots that agree to about eps^(1/m) are gathered into one of multiplicity m.
+ * kept only when it makes |p| smaller). Roots that agree to about eps^(1/m) are gathered into one of multiplicity m,
+ * but only when p and its first m-1 derivatives all vanish there to rounding; distinct roots that are merely close,
+ * such as 1 and 1.000001, stay separate.
  */
 export function polyRoots(input: Poly): PolyRoot[] {
   if (!input.every(Number.isFinite)) throw new NumError('notFinite');
@@ -153,7 +155,11 @@ export function polyRoots(input: Poly): PolyRoot[] {
     );
     raw.push(...eig(companion).values.map((z) => polish(q, z)));
   }
-  const found = gather(raw).map((root) => (root.times > 1 ? { ...root, z: sharpen(q, root) } : root));
+  const found = gather(raw).flatMap(({ z, times, members }): PolyRoot[] => {
+    if (times === 1) return [{ z, times }];
+    const sharp = sharpen(q, { z, times });
+    return isRepeatedRoot(q, sharp, times) ? [{ z: sharp, times }] : members.map((w) => ({ z: w, times: 1 }));
+  });
   if (zerosAtOrigin > 0) found.push({ z: ZERO, times: zerosAtOrigin });
   return found.sort((a, b) => b.z.re - a.z.re || b.z.im - a.z.im);
 }
@@ -178,7 +184,7 @@ function polish(p: Poly, start: Complex): Complex {
  * Gathers roots into repeated roots at their mean: a root repeated m times comes out of the eigenvalues spread by
  * about eps^(1/m), so a group is kept only when its spread is within 100 eps^(1/m) of the roots' size.
  */
-function gather(raw: readonly Complex[]): PolyRoot[] {
+function gather(raw: readonly Complex[]): (PolyRoot & { members: Complex[] })[] {
   const scale = Math.max(1, ...raw.map(cabs));
   const groups: Complex[][] = [];
   for (const z of raw) {
@@ -191,11 +197,29 @@ function gather(raw: readonly Complex[]): PolyRoot[] {
     const re = g.reduce((s, w) => s + w.re, 0) / g.length;
     const im = g.reduce((s, w) => s + w.im, 0) / g.length;
     const spread = Math.max(...g.map((w) => cabs(csub(w, cx(re, im)))));
+    const members = g.map((w) => cx(tidy(w.re), tidy(w.im)));
     if (g.length > 1 && spread > 100 * EPS ** (1 / g.length) * scale) {
-      return g.map((w) => ({ z: cx(tidy(w.re), tidy(w.im)), times: 1 }));
+      return members.map((w) => ({ z: w, times: 1, members: [w] }));
     }
-    return [{ z: cx(tidy(re), tidy(im)), times: g.length }];
+    return [{ z: cx(tidy(re), tidy(im)), times: g.length, members }];
   });
+}
+
+/**
+ * Whether z is a root of multiplicity m: p, p′, …, p^(m-1) must each vanish at z to within the rounding error of
+ * evaluating them, 4·n·eps·Σ|aᵢ||z|ⁱ. Two distinct roots δ apart leave p ≈ -(δ/2)² at their mean, which is far above
+ * that bound unless δ is near the √eps limit where double precision cannot tell them apart.
+ */
+function isRepeatedRoot(p: Poly, z: Complex, m: number): boolean {
+  const n = p.length - 1;
+  const size = cabs(z);
+  let d = p;
+  for (let j = 0; j < m; j += 1) {
+    const bound = 4 * n * EPS * d.reduce((sum, a, i) => sum + Math.abs(a) * size ** i, 0);
+    if (cabs(pevalC(d, z)) > bound) return false;
+    d = pderiv(d);
+  }
+  return true;
 }
 
 /** A root repeated m times is a simple root of the (m-1)th derivative: Newton's method there sharpens it. */

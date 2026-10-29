@@ -85,6 +85,33 @@ describe('Bessel functions', () => {
     absolute(j1.im, -8.279192203270284, 1e-12);
   });
 
+  // Reference values below come from the defining series (A&S 9.1.10, 9.6.10) summed in 80-digit decimal arithmetic,
+  // where no cancellation is possible; they agree with scipy.special.jv and ive.
+  it('give J0 and J1 of a complex argument far from the origin, where the series alone cancels', () => {
+    relative(besselJComplex(0, cx(30)).re, -0.08636798358104021, 1e-12);
+    relative(besselJComplex(0, cx(50)).re, 0.05581232766925182, 1e-11);
+    relative(besselJComplex(0, cx(60)).re, -0.09147180408906187, 1e-11);
+    relative(besselJComplex(1, cx(60)).re, 0.04659838375816631, 1e-11);
+    const near = besselJComplex(1, cx(30, 5));
+    relative(near.re, -9.215403902912666, 1e-12);
+    relative(near.im, -5.470114328372871, 1e-12);
+    const diagonal = besselJComplex(0, cx(60 * Math.SQRT1_2, 60 * Math.SQRT1_2));
+    relative(diagonal.re, -5.087796085784348e16, 1e-12);
+    relative(diagonal.im, 1.276472707406138e17, 1e-12);
+    const kelvinSide = besselJComplex(1, cx(-25 * Math.SQRT1_2, 25 * Math.SQRT1_2));
+    relative(kelvinSide.re, 3754808.4731430076, 1e-12);
+    relative(kelvinSide.im, 64306.814393046458, 1e-11);
+  });
+
+  it('give I_n with e^-x scaling to full precision at large x and high order', () => {
+    const ive = (n: number, x: number) => besselI(n, x) * Math.exp(-x);
+    relative(ive(50, 31), 3.412294957711185e-17, 1e-12);
+    relative(ive(50, 50), 3.404398250333589e-12, 1e-12);
+    relative(ive(20, 40), 0.0004437815269118243, 1e-12);
+    relative(ive(3, 100), 0.03817817317558649, 1e-12);
+    relative(ive(0, 700), 0.01508129565153136, 1e-12);
+  });
+
   it('refuse x ≤ 0 for Y and K, a fractional order, and a huge complex argument', () => {
     expect(() => besselY0(0)).toThrow(/domain/);
     expect(() => besselK(0, -1)).toThrow(/domain/);

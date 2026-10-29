@@ -5,7 +5,7 @@ import { NumError } from './errors';
 import { dopri45, rk4 } from './ode';
 import { compose, fromDescending, partialFractions, polyRoots, toDescending } from './poly';
 import { gaussIntegrate, gaussLegendre, integrate } from './quad';
-import { bracketScan, brent, newtonSystem } from './roots';
+import { bracketScan, brent, newtonSystem, scanRoots } from './roots';
 
 describe('complex numbers', () => {
   it('take principal branches', () => {
@@ -69,6 +69,28 @@ describe('polynomials', () => {
     expect(improper.direct.map((c) => Math.round(c * 1e12) / 1e12)).toEqual([-1, 1]);
     expect(improper.terms[0].residue.re).toBeCloseTo(2, 12);
   });
+
+  it('keeps poles 1e-6 apart separate: 1/((s-1)(s-1.000001)) = -1e6/(s-1) + 1e6/(s-1.000001)', () => {
+    // The residues are ±1/(1.000001 - 1) = ±1e6 by hand; merging the poles gave 1/(s-1.0000005)² instead. Rounding
+    // 2.000001 to binary moves the poles by about eps/1e-6 = 2e-10, the conditioning limit.
+    const { terms } = partialFractions([1], fromDescending([1, -2.000001, 1.000001]));
+    expect(terms.map((t) => t.power)).toEqual([1, 1]);
+    const [upper, lower] = [...terms].sort((a, b) => b.pole.re - a.pole.re);
+    expect(upper.pole.re).toBeCloseTo(1.000001, 9);
+    expect(lower.pole.re).toBeCloseTo(1, 9);
+    expect(Math.abs(upper.residue.re / 1e6 - 1)).toBeLessThan(1e-3);
+    expect(Math.abs(lower.residue.re / -1e6 - 1)).toBeLessThan(1e-3);
+  });
+
+  it('still gathers genuine repeated roots, even from rounded decimal coefficients', () => {
+    // (s + 0.1)³ = s³ + 0.3s² + 0.03s + 0.001, whose coefficients are not exact in binary; (s - 2)⁴ is exact.
+    const cube = polyRoots(fromDescending([1, 0.3, 0.03, 0.001]));
+    expect(cube.map((r) => r.times)).toEqual([3]);
+    expect(cube[0].z.re).toBeCloseTo(-0.1, 6);
+    const fourth = polyRoots(fromDescending([1, -8, 24, -32, 16]));
+    expect(fourth.map((r) => r.times)).toEqual([4]);
+    expect(fourth[0].z.re).toBeCloseTo(2, 10);
+  });
 });
 
 describe('roots', () => {
@@ -82,6 +104,21 @@ describe('roots', () => {
     const roots = bracketScan(Math.sin, 0.5, 10);
     expect(roots.map((r) => r / Math.PI)).toEqual([1, 2, 3].map((k) => expect.closeTo(k, 10)));
     expect(bracketScan(Math.tan, 1, 2)).toEqual([]);
+  });
+
+  it('misses a touching root in bracketScan, and reports it flagged in scanRoots', () => {
+    const square = (x: number) => (x - 1) ** 2;
+    expect(bracketScan(square, 0, 3)).toEqual([]);
+    const touching = scanRoots(square, 0, 3);
+    expect(touching).toHaveLength(1);
+    expect(touching[0].touching).toBe(true);
+    expect(touching[0].x).toBeCloseTo(1, 6);
+    // (x - 2)²(x - 0.5) crosses at 0.5 and touches at 2; x² + 0.01 never reaches zero.
+    const mixed = scanRoots((x) => (x - 2) ** 2 * (x - 0.5), 0, 3);
+    expect(mixed.map((r) => r.touching)).toEqual([false, true]);
+    expect(mixed[0].x).toBeCloseTo(0.5, 10);
+    expect(mixed[1].x).toBeCloseTo(2, 6);
+    expect(scanRoots((x) => x * x + 0.01, -1, 1)).toEqual([]);
   });
 
   it('solves a nonlinear system and reports its steps', () => {

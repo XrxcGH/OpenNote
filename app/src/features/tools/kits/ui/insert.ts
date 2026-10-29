@@ -5,7 +5,7 @@ import { INSERT_EVENT } from '../../flags';
 import type { KitCalcData } from '../block/model';
 import { kitCalcFallback, kitCalcData } from '../block/model';
 import type { KitResultRow, KitStep } from '../types';
-import { say, stepsText } from './words';
+import { say, stepsHtml } from './words';
 
 interface InsertRequest {
   text?: string;
@@ -35,7 +35,8 @@ export function insertTable(rows: readonly KitResultRow[]): boolean {
   });
 }
 
-export const insertSteps = (steps: readonly KitStep[]): boolean => send({ text: stepsText(steps) });
+/** The worked steps as a numbered list with each step's math as a math block (the page parses the HTML). */
+export const insertSteps = (steps: readonly KitStep[]): boolean => send({ text: stepsHtml(steps) });
 
 /** An SVG picture as an image block. WebView2 shows SVG images, and the page takes image/svg+xml. */
 export function insertPicture(svg: string, alt: string, name = 'kit-plot.svg'): boolean {

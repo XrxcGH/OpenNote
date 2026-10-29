@@ -19,6 +19,22 @@ export function stepsText(steps: readonly KitStep[], title = say('kits.steps.tit
   return [title, ...lines].join('\n');
 }
 
+const escapeHtml = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/**
+ * The steps as page content: the title, then a numbered list whose items hold the step's words and, under them, its
+ * math as a display math block. The page reads it as HTML into its own list and math nodes, so the steps keep their
+ * numbers and render as equations instead of raw LaTeX.
+ */
+export function stepsHtml(steps: readonly KitStep[], title = say('kits.steps.title')): string {
+  const items = steps.map((step) => {
+    const math = step.math ? `<div data-math-block="${escapeHtml(step.math)}"></div>` : '';
+    return `<li><p>${escapeHtml(stepWords(step))}</p>${math}</li>`;
+  });
+  return `<p>${escapeHtml(title)}</p><ol>${items.join('')}</ol>`;
+}
+
 /** What went wrong, in words: a NumError's code, a tool's own message key, or the general words. */
 export function problemWords(error: unknown): string {
   if (error instanceof NumError) return say(`kits.error.${error.code}`);

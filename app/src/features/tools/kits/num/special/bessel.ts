@@ -1,13 +1,15 @@
 // Bessel functions of whole order for real x, and J₀ and J₁ of a complex argument. They are written from their
 // definitions in Abramowitz and Stegun (a US Government publication, chapter 9):
+//
 // - J₀, J₁, Y₀, Y₁: the power series (9.1.10, 9.1.11) for |x| ≤ 12.5 and Hankel's asymptotic expansion (9.2.5 to
 //   9.2.10) beyond, which meet with an absolute error below about 1e-11.
 // - Jₙ: the series for small |x|, else Bessel's integral (9.1.21) by the trapezoidal rule over a full period, which
 //   converges geometrically for this periodic integrand. Yₙ by upward recurrence from Y₀ and Y₁ (stable).
-// - Iₙ: the series (9.6.10) for |x| ≤ 30, else the integral 9.6.19 by the trapezoidal rule.
+// - Iₙ: the series (9.6.10) up to x = 700 or while n² > x, else the integral 9.6.19 (see besselI).
 // - Kₙ: the integral K_ν(x) = ∫₀^∞ e^(-x cosh t) cosh(νt) dt (9.6.24) by the trapezoidal rule, whose error falls
 //   like e^(-2πd/h) for this doubly decaying integrand; then upward recurrence (stable).
-import { cabs, cadd, cmul, cx, ONE, ZERO } from '../complex';
+// - J₀(z), J₁(z) for complex z: the series for |z| ≤ 17, else Hankel's expansion 9.2.5 (see besselJComplex).
+import { cabs, cadd, ccos, cdiv, cmul, cneg, csin, csqrt, csub, cx, ONE, ZERO } from '../complex';
 import type { Complex } from '../complex';
 import { NumError } from '../errors';
 
@@ -25,7 +27,8 @@ function series(n: number, x: number, sign: 1 | -1): number {
   let term = 1;
   for (let k = 1; k <= n; k += 1) term *= x / 2 / k;
   let sum = term;
-  for (let k = 1; k < 500; k += 1) {
+  // The terms peak near k = x/2, so the I series at x = 700 needs about 500 terms.
+  for (let k = 1; k < 2000; k += 1) {
     term *= q / (k * (k + n));
     sum += term;
     if (Math.abs(term) <= 1e-17 * Math.abs(sum) && k * k > Math.abs(q)) break;
@@ -138,12 +141,16 @@ export function besselY(n: number, x: number): number {
   return y1;
 }
 
-/** I_n(x) for a whole n and real x. */
+/**
+ * I_n(x) for a whole n and real x. The series has only positive terms, so it cannot cancel; it is used wherever it
+ * cannot overflow (x ≤ 700) or the order dominates (n² > x). The integral resolves only values above about 1e-16·eˣ,
+ * so it is kept for small n at large x, where Iₙ is near eˣ/√(2πx).
+ */
 export function besselI(n: number, x: number): number {
   wholeOrder(n);
   const m = Math.abs(n);
   if (x < 0) return (m % 2 === 0 ? 1 : -1) * besselI(m, -x);
-  if (x <= 30) return series(m, x, 1);
+  if (x <= 700 || m * m > x) return series(m, x, 1);
   // I_n(x) = (1/2π) ∫₀^2π e^(x cos τ) cos(nτ) dτ, with e^x taken out so the sum cannot overflow early.
   const points = 2 * Math.ceil((m + 12 * Math.sqrt(x) + 40) / 2);
   let sum = 0;
@@ -187,9 +194,11 @@ export function besselK(n: number, x: number): number {
 export const besselK0 = (x: number): number => besselK(0, x);
 export const besselK1 = (x: number): number => besselK(1, x);
 
-/** J₀(z) or J₁(z) for complex z with |z| ≤ 60, by the power series. */
-export function besselJComplex(n: 0 | 1, z: Complex): Complex {
-  if (cabs(z) > 60) throw new NumError('domain', 'complex J needs |z| ≤ 60');
+const COMPLEX_SWITCH = 17;
+const COMPLEX_LIMIT = 60 * (1 + 1e-12);
+
+/** Σ_k (-z²/4)^k / (k!(k+n)!) · (z/2)^n for complex z. */
+function seriesComplex(n: 0 | 1, z: Complex): Complex {
   const half = cx(z.re / 2, z.im / 2);
   const q = cmul(half, half);
   let term = n === 0 ? ONE : half;
@@ -200,6 +209,43 @@ export function besselJComplex(n: 0 | 1, z: Complex): Complex {
     if (cabs(term) <= 1e-17 * cabs(sum) && k * k > cabs(q)) break;
   }
   return cabs(sum) === 0 ? ZERO : sum;
+}
+
+/** J_ν(z) = √(2/(πz)) (P cos χ − Q sin χ), χ = z − (ν/2 + 1/4)π, for Re z ≥ 0 and large |z| (A&S 9.2.5). */
+function hankelComplex(nu: 0 | 1, z: Complex): Complex {
+  const mu = 4 * nu * nu;
+  let p = ONE;
+  let q = ZERO;
+  let term = ONE;
+  let last = Infinity;
+  for (let k = 1; k < 80; k += 1) {
+    term = cdiv(cmul(term, cx(mu - (2 * k - 1) ** 2)), cx(8 * k * z.re, 8 * k * z.im));
+    const size = cabs(term);
+    if (size > last || size === 0) break;
+    last = size;
+    const signed = Math.floor(k / 2) % 2 === 0 ? term : cneg(term);
+    if (k % 2 === 0) p = cadd(p, signed);
+    else q = cadd(q, signed);
+  }
+  const chi = cx(z.re - (nu / 2 + 0.25) * Math.PI, z.im);
+  const amp = csqrt(cdiv(cx(2 / Math.PI), z));
+  return cmul(amp, csub(cmul(p, ccos(chi)), cmul(q, csin(chi))));
+}
+
+/**
+ * J₀(z) or J₁(z) for complex z with |z| ≤ 60. Near the real axis the series cancels: its terms reach about I₀(|z|)
+ * while J stays near 1. So past |z| = 17 Hankel's expansion takes over on Re z ≥ 0, and J_n(-z) = (-1)ⁿ J_n(z)
+ * covers the rest. Real z goes to besselJ0 and besselJ1.
+ */
+export function besselJComplex(n: 0 | 1, z: Complex): Complex {
+  if (cabs(z) > COMPLEX_LIMIT) throw new NumError('domain', 'complex J needs |z| ≤ 60');
+  if (z.im === 0) return cx(n === 0 ? besselJ0(z.re) : besselJ1(z.re));
+  if (cabs(z) <= COMPLEX_SWITCH) return seriesComplex(n, z);
+  if (z.re < 0) {
+    const value = hankelComplex(n, cneg(z));
+    return n === 0 ? value : cneg(value);
+  }
+  return hankelComplex(n, z);
 }
 
 /** The Kelvin functions ber x and bei x: J₀(x e^(3πi/4)) = ber x + i bei x. */
