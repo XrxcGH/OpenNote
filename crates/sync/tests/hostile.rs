@@ -85,19 +85,56 @@ fn a_pairing_code_past_its_day_by_the_storage_clock_is_refused_even_on_a_slow_cl
     let store = MemoryBackend::new();
     let backend: Arc<dyn Backend> = Arc::new(store.clone());
     let d = devices(backend.clone(), 1);
+    let real = now();
+    // Made before any head, at the real time; then a head is written two days later.
+    let old = vault::create_pairing(backend.as_ref(), d[0].engine.keys(), real).expect("pairs");
+    d[0].engine.set_clock_offset(2 * PAIRING_MS);
     d[0].write("Bio/todo.txt", b"a head carries the time it was written");
     settle(&d, 2);
-    let now = opennote_sync::last_published(backend.as_ref(), d[0].engine.keys()).expect("lists")[&d[0].tag];
-    // Made two days before the newest head; the joining device's clock is behind and says a minute later.
-    let made = now - 2 * PAIRING_MS;
-    let old = vault::create_pairing(backend.as_ref(), d[0].engine.keys(), made).expect("pairs");
+    // The joining device's clock is behind and says a minute after the code was made: refused, and the reason is
+    // the clocks, not a typo.
     assert_eq!(
-        vault::join_with_code(backend.as_ref(), old.text(), made + 60_000).unwrap_err(),
+        vault::join_with_code(backend.as_ref(), old.text(), real + 60_000).unwrap_err(),
+        SyncError::ClockAhead
+    );
+    // Right at the end of its day by both clocks, it's an ordinary expired code.
+    let edge = vault::create_pairing(backend.as_ref(), d[0].engine.keys(), real).expect("pairs");
+    let head_at = newest_head_at(backend.as_ref(), &d);
+    assert_eq!(
+        vault::join_with_code(backend.as_ref(), edge.text(), head_at + PAIRING_MS + 1).unwrap_err(),
         SyncError::PairingExpired
     );
-    let fresh = vault::create_pairing(backend.as_ref(), d[0].engine.keys(), now).expect("pairs");
-    let keys = vault::join_with_code(backend.as_ref(), fresh.text(), now + 60_000).expect("joins");
-    assert_eq!(keys.fingerprint(), d[0].engine.keys().fingerprint());
+}
+
+/// A device whose clock is two days ahead wrote the newest head. A code made on a device with the right clock still
+/// works for a day from when it was made, on a joining device with the right clock.
+#[test]
+fn a_device_clock_days_ahead_does_not_expire_new_pairing_codes() {
+    let store = MemoryBackend::new();
+    let backend: Arc<dyn Backend> = Arc::new(store.clone());
+    let d = devices(backend.clone(), 2);
+    d[0].engine.set_clock_offset(2 * PAIRING_MS);
+    d[0].write("Bio/todo.txt", b"written on the fast clock");
+    settle(&d, 2);
+    let real = now();
+    assert!(newest_head_at(backend.as_ref(), &d) >= real + 2 * PAIRING_MS - 60_000);
+    let code = vault::create_pairing(backend.as_ref(), d[1].engine.keys(), real).expect("pairs");
+    let keys = vault::join_with_code(backend.as_ref(), code.text(), real + 60_000).expect("joins");
+    assert_eq!(keys.fingerprint(), d[1].engine.keys().fingerprint());
+}
+
+fn now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as i64)
+}
+
+fn newest_head_at(backend: &dyn Backend, d: &[Device]) -> i64 {
+    opennote_sync::last_published(backend, d[0].engine.keys())
+        .expect("lists")
+        .into_values()
+        .max()
+        .expect("a head")
 }
 
 #[test]

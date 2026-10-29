@@ -33,7 +33,7 @@ impl Engine {
             device: self.device.clone(),
             generation,
             seen: state.seen.clone(),
-            at: super::now_ms(),
+            at: self.now(),
             entries,
         };
         let name = head_name(&self.device, generation);

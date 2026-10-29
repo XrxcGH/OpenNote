@@ -40,7 +40,7 @@ impl Engine {
             if matches!(result, Err(SyncError::Incomplete)) {
                 let _ = self.ask_for_missing();
             }
-            let now = super::now_ms();
+            let now = self.now();
             let _ = self.repair(now);
             let _ = crate::vault::clear_stale_pairings(self.backend.as_ref(), &self.keys, now);
         }
@@ -102,7 +102,7 @@ impl Engine {
             device: self.device.clone(),
             generation,
             seen: plan.seen.clone(),
-            at: super::now_ms(),
+            at: self.now(),
             entries: plan.merged.clone(),
         };
         let name = head_name(&self.device, generation);

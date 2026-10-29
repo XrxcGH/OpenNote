@@ -199,6 +199,9 @@ export const sync = {
     removed:
       'This device was removed from sync. Your notes here are kept. To sync again, turn sync off here and join again.',
     pairingExpired: 'That pairing code didn\u2019t work. Check it for typos, or make a new code on your other device.',
+    clockAhead:
+      'That pairing code has expired by another device’s clock, which is ahead of this one. Check the date and ' +
+      'time on each device, then make a new code.',
     storage: 'The sync storage couldn\u2019t be reached. Check the folder or server, then choose Sync now.',
     local: 'A file in your notes folder couldn\u2019t be read or written. Close other apps using it, then try again.',
     weakPassphrase: 'Choose a passphrase of at least 10 characters. A few unrelated words work well.',

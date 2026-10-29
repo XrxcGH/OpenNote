@@ -604,6 +604,7 @@ fn known_code(code: &str) -> Option<&'static str> {
         "incomplete",
         "removed",
         "pairingExpired",
+        "clockAhead",
         "storage",
         "local",
         "weakPassphrase",

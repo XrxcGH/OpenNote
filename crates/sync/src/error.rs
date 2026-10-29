@@ -36,6 +36,12 @@ pub enum SyncError {
     /// The pairing code is unknown, used, or expired.
     #[error("That pairing code didn't work. Check it for typos, or make a new code on your other device.")]
     PairingExpired,
+    /// The pairing code is past its day only by the time on another device's newest change, which is well ahead
+    /// of this device's clock: one of the two clocks is wrong.
+    #[error(
+        "That pairing code has expired by another device's clock, which is ahead of this one. Check the date and          time on each device, then make a new code."
+    )]
+    ClockAhead,
     /// The storage couldn't be reached or refused a request.
     #[error("The sync storage couldn't be reached: {0}. Check the folder or server, then choose Sync now.")]
     Storage(String),
@@ -70,6 +76,7 @@ impl SyncError {
             SyncError::Incomplete => "incomplete",
             SyncError::Removed => "removed",
             SyncError::PairingExpired => "pairingExpired",
+            SyncError::ClockAhead => "clockAhead",
             SyncError::Storage(_) => "storage",
             SyncError::Local(_) => "local",
             SyncError::WeakPassphrase(_) => "weakPassphrase",

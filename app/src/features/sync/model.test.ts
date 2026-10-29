@@ -4,6 +4,7 @@ import {
   checkGroups,
   chipText,
   deviceLines,
+  errorText,
   groupMatches,
   isQuiet,
   passphraseProblem,
@@ -11,7 +12,7 @@ import {
   qrPath,
   summaryLines,
 } from './model';
-import { SyncFailure } from './types';
+import { ERROR_CODES, SyncFailure } from './types';
 import type { Summary, SyncStatus } from './types';
 
 const EMPTY: Summary = { upload: [], download: [], delete: [], conflicts: [], bytesUp: 0, bytesDown: 0 };
@@ -158,5 +159,17 @@ describe('the in-memory host', () => {
     await expect(host.preview()).rejects.toEqual(new SyncFailure('offline'));
     offline = false;
     expect((await host.preview()).summary.download).toHaveLength(1);
+  });
+});
+
+describe('error text', () => {
+  it('gives every code its own sentence from the strings file', () => {
+    const texts = ERROR_CODES.map(errorText);
+    expect(new Set(texts).size).toBe(ERROR_CODES.length);
+    for (const [index, text] of texts.entries()) expect(text).not.toContain(`sync.errors.${ERROR_CODES[index]}`);
+    expect(errorText('clockAhead')).toBe(
+      'That pairing code has expired by another device’s clock, which is ahead of this one. Check the date and ' +
+        'time on each device, then make a new code.',
+    );
   });
 });

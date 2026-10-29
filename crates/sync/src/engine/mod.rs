@@ -188,6 +188,9 @@ pub struct Engine {
     missing: std::sync::Mutex<BTreeSet<String>>,
     #[cfg(feature = "testing")]
     faults: std::sync::Mutex<Option<usize>>,
+    /// How far this device's clock is set ahead (or behind) in tests.
+    #[cfg(feature = "testing")]
+    clock_offset: std::sync::atomic::AtomicI64,
 }
 
 /// Now, in Unix milliseconds.
@@ -266,6 +269,8 @@ impl Engine {
             missing: std::sync::Mutex::new(BTreeSet::new()),
             #[cfg(feature = "testing")]
             faults: std::sync::Mutex::new(None),
+            #[cfg(feature = "testing")]
+            clock_offset: std::sync::atomic::AtomicI64::new(0),
         }
     }
 
@@ -283,6 +288,24 @@ impl Engine {
     #[cfg(feature = "testing")]
     pub fn fail_after(&self, points: Option<usize>) {
         *self.faults.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = points;
+    }
+
+    /// Sets this device's clock `ms` ahead of the real one (behind when negative), as a wrong system clock would.
+    #[cfg(feature = "testing")]
+    pub fn set_clock_offset(&self, ms: i64) {
+        self.clock_offset.store(ms, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    /// Now by this device's clock, in Unix milliseconds: the time its heads carry.
+    fn now(&self) -> i64 {
+        #[cfg(feature = "testing")]
+        {
+            now_ms().saturating_add(self.clock_offset.load(std::sync::atomic::Ordering::Relaxed))
+        }
+        #[cfg(not(feature = "testing"))]
+        {
+            now_ms()
+        }
     }
 
     fn point(&self) -> Result<()> {

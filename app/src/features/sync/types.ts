@@ -12,6 +12,7 @@ export type SyncErrorCode =
   | 'incomplete'
   | 'removed'
   | 'pairingExpired'
+  | 'clockAhead'
   | 'storage'
   | 'local'
   | 'weakPassphrase'
@@ -123,6 +124,7 @@ export const ERROR_CODES: readonly SyncErrorCode[] = [
   'incomplete',
   'removed',
   'pairingExpired',
+  'clockAhead',
   'storage',
   'local',
   'weakPassphrase',

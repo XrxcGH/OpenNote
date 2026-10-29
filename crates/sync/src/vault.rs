@@ -675,8 +675,22 @@ fn slot_made(keys: &VaultKeys, name: &str, bytes: &[u8]) -> Option<i64> {
     same(&made_mac(keys, name, made), bytes.get(8..MADE)?).then_some(made)
 }
 
-/// Makes a pairing code that works once, for a day.
+/// The time on the newest head in storage, or `i64::MIN` when there is none or it can't be read. Best effort:
+/// storage that doesn't read here stops the first round instead.
+fn storage_clock(backend: &dyn Backend, keys: &VaultKeys) -> i64 {
+    crate::engine::last_published(backend, keys)
+        .map(|at| at.into_values().max().unwrap_or(i64::MIN))
+        .unwrap_or(i64::MIN)
+}
+
+/// How far the newest head may be ahead of the joining device's clock before a refused code is put down to a
+/// clock that is wrong rather than to an old code.
+const CLOCK_SLACK_MS: i64 = 60 * 60 * 1000;
+
+/// Makes a pairing code that works once, for a day. Its day starts at `now` or at the time on the newest head in
+/// storage, whichever is later, so a device whose clock is ahead can't make a new code look a day old.
 pub fn create_pairing(backend: &dyn Backend, keys: &VaultKeys, now: i64) -> Result<PairingCode> {
+    let now = now.max(storage_clock(backend, keys));
     let code = Zeroizing::new(random::<15>()?);
     let name = format!("j/{}", pairing_tag(code.as_ref(), &keys.id));
     let sealed = seal(
@@ -717,25 +731,36 @@ pub fn join_with_code(backend: &dyn Backend, code: &str, now: i64) -> Result<Vau
     let keys = header.verified(Zeroizing::new(root), tampered_header())?;
     let made = slot_made(&keys, &name, &slot).ok_or_else(tampered_header)?;
     let until = made.saturating_add(PAIRING_MS);
-    // Best effort: storage that doesn't read here stops the first round instead.
-    let newest = crate::engine::last_published(backend, &keys)
-        .map(|at| at.into_values().max().unwrap_or(i64::MIN))
-        .unwrap_or(i64::MIN);
-    if now > until || newest > until {
+    let newest = storage_clock(backend, &keys);
+    if now > until {
         return Err(SyncError::PairingExpired);
+    }
+    if newest > until {
+        // Expired only by the storage's clock, which is well ahead of this one: a device's clock is wrong,
+        // here or there, and the person needs to know that rather than look for a typo.
+        return Err(if newest > now.saturating_add(CLOCK_SLACK_MS) {
+            SyncError::ClockAhead
+        } else {
+            SyncError::PairingExpired
+        });
     }
     Ok(keys)
 }
 
-/// Deletes the pairing slots more than a day old by `now`, as a round does, so a code that was shown and never
-/// used or withdrawn doesn't stay in storage. A slot that isn't this vault's stays. Returns how many went.
+/// How long past its day a pairing slot stays before a round deletes it. The day itself is enforced when a code is
+/// used; the wait only keeps a device whose clock is days ahead from deleting codes the others just made.
+const CLEAR_AFTER_MS: i64 = 7 * PAIRING_MS;
+
+/// Deletes the pairing slots more than a day and [`CLEAR_AFTER_MS`] old by `now`, as a round does, so a code that
+/// was shown and never used or withdrawn doesn't stay in storage. A slot that isn't this vault's stays. Returns how
+/// many went.
 pub fn clear_stale_pairings(backend: &dyn Backend, keys: &VaultKeys, now: i64) -> Result<usize> {
     let mut cleared = 0;
     for name in backend.list("j/")? {
         let stale = backend
             .get(&name)?
             .and_then(|slot| slot_made(keys, &name, &slot))
-            .is_some_and(|made| now > made.saturating_add(PAIRING_MS));
+            .is_some_and(|made| now > made.saturating_add(PAIRING_MS + CLEAR_AFTER_MS));
         if stale {
             backend.delete(&name)?;
             cleared += 1;
