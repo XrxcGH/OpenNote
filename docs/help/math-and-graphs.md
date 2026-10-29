@@ -15,6 +15,18 @@ Write equations, work out sums in your text, and plot functions on a page.
 - If an action cannot read your LaTeX, it says so and leaves the equation alone.
 - To turn handwriting into an equation, lasso the writing, and choose Convert handwriting to math. The equation is added below the page and the ink stays. Or open an equation, choose Write with pen, write it, and choose Use writing. It needs handwriting recognition turned on, and Windows must have a handwriting recognizer for your language.
 
+## Check my work
+
+Check my work looks at your own working, one line at a time, and marks each step beside the line: a check when it follows from the line before, an exclamation mark when it needs a look, and a question mark when it could not be checked. It runs on this device, and nothing is sent anywhere.
+
+- Select the lines you want checked and choose Check my work from the command palette (Ctrl+K), the slash menu, or the text menu. With nothing selected, it checks every line on the page that looks like working.
+- For handwriting, lasso the rows of working and choose Check my work on the lasso toolbar. Each row is read as math. If some of it was hard to read, you see the lines as read first, and can fix any of them before they are checked. The ink is never changed.
+- Write one step per line. A line can start with "=" to carry on from the line above, as in `(x + 1)^2` then `= x^2 + 2x + 1`. Use `d/dx(...)`, `f'(x)` after `f(x) = ...`, `∫ ... dx` (or `int`), `∫_0^1 ... dx`, `[F]_a^b`, `lim_(x->0)`, and `Σ_(n=1)^(10)`. Write `let u = x^2` before a substitution. Put a system on one line with commas, such as `x + y = 5, x - y = 1`. Matrices are `[[1, 2], [3, 4]]` and vectors `[1, 2, 3]`, with `·` for the dot product and `×` for the cross product. Units such as `km/h` and `m/s` are converted.
+- The first step that goes wrong says why in plain words, such as "The sign of 3 should change when it moves across the equals sign", and suggests a corrected line. Steps after it that follow correctly say "This follows from your previous line".
+- When a step cannot be decided, it says "I could not check this step" rather than calling it wrong. A step that is true only for some values, or that drops a solution, says so.
+- Steps it could not prove symbolically are checked at sample points, and the card says so.
+- Choose Check again after you change the working, or Dismiss to take the marks away. Escape on the card dismisses it too. Turn the feature off in Settings, then Editing.
+
 ## Insert LaTeX
 
 Press Ctrl+Alt+X, or open Insert and choose Insert LaTeX. Type LaTeX and the equation is drawn as you type. Choose In the line or On its own line, then Insert equation. The snippet tabs (Basics, Calculus, Matrices, Greek, Symbols) put a fraction, a sum, a matrix, or a Greek letter into the field, with the first blank selected so you can type over it.
