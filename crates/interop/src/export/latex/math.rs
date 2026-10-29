@@ -1,121 +1,96 @@
 //! Math for LaTeX: the page's TeX, checked so it cannot break the document or reach outside it.
 //!
 //! Page math is TeX (spec 7.6). A hostile page could put anything in it, so every equation is read once, token by
-//! token. It is kept only when its braces and environments are balanced, it has no unescaped `$`, and it uses no
-//! command that reads or writes files, defines commands, or changes how TeX reads the rest of the file. Math that
+//! token. It is kept only when its braces and environments are balanced, it has no unescaped `$`, and it uses only
+//! control words from a list of math commands (an allowlist, so a command nobody thought of is refused). Math that
 //! fails the check is written as plain text instead, and the report says so.
 
 use super::escape::{math_command, Missing};
 use super::scan::check;
 use super::Engine;
 
-/// Commands that read or write files, define or redefine commands, or change how TeX reads. None has a use in
-/// an equation, so any of them rejects it. Names starting with `pdf`, `lua`, `directlua`, `latelua`, or `if` (but not
-/// `iff`) are rejected too.
-const DENIED: &[&str] = &[
-    "input",
-    "include",
-    "includeonly",
-    "import",
-    "subimport",
-    "write",
-    "immediate",
-    "openin",
-    "openout",
-    "closein",
-    "closeout",
-    "read",
-    "readline",
-    "catcode",
-    "def",
-    "gdef",
-    "edef",
-    "xdef",
-    "let",
-    "futurelet",
-    "csname",
-    "endcsname",
-    "expandafter",
-    "noexpand",
-    "unexpanded",
-    "scantokens",
-    "detokenize",
-    "string",
-    "meaning",
-    "the",
-    "number",
-    "romannumeral",
-    "afterassignment",
-    "aftergroup",
-    "uppercase",
-    "lowercase",
-    "newcommand",
-    "renewcommand",
-    "providecommand",
-    "declaremathoperator",
-    "newenvironment",
-    "renewenvironment",
-    "newcounter",
-    "usepackage",
-    "requirepackage",
-    "documentclass",
-    "makeatletter",
-    "makeatother",
-    "special",
-    "shipout",
-    "batchmode",
-    "nonstopmode",
-    "scrollmode",
-    "errorstopmode",
-    "verb",
-    "url",
-    "href",
-    "nolinkurl",
-    "hyperlink",
-    "hypertarget",
-    "includegraphics",
-    "lstinputlisting",
-    "verbatiminput",
-    "inputminted",
-    "bibliography",
-    "bibliographystyle",
-    "nocite",
-    "cite",
-    "footnote",
-    "section",
-    "subsection",
-    "subsubsection",
-    "chapter",
-    "part",
-    "newpage",
-    "clearpage",
-    "par",
-    "loop",
-    "repeat",
-    "iterate",
-    "else",
-    "fi",
-    "or",
-    "endinput",
-    "end@document",
-    "begingroup",
-    "endgroup",
-    "bgroup",
-    "egroup",
-    "global",
-    "long",
-    "outer",
-    "protected",
-    "errmessage",
-    "message",
-    "show",
-    "showthe",
-    "typeout",
-    "pagestyle",
-    "thispagestyle",
-    "setlength",
-    "addtolength",
+/// The control words an equation may use. Everything else is refused: a list of what is known to be harmful always
+/// misses a command (`\InputIfFileExists`, `\file_input:n` after `\ExplSyntaxOn`, `\AtBeginDocument`), while a
+/// list of what math needs fails closed. Every word here draws or arranges a symbol and none of them reads a
+/// file, defines a command, or changes how TeX reads. `begin`, `end`, `label`, `ref`, `eqref`, `left`, and `right`
+/// are handled by the scan itself. The words are matched exactly, with their case, as TeX does.
+#[rustfmt::skip]
+const MATH: &[&str] = &[
+    // Greek and other letters.
+    "alpha", "beta", "gamma", "delta", "epsilon", "varepsilon", "zeta", "eta", "theta", "vartheta", "iota", "kappa",
+    "varkappa", "lambda", "mu", "nu", "xi", "pi", "varpi", "rho", "varrho", "sigma", "varsigma", "tau", "upsilon",
+    "phi", "varphi", "chi", "psi", "omega", "Gamma", "Delta", "Theta", "Lambda", "Xi", "Pi", "Sigma", "Upsilon",
+    "Phi", "Psi", "Omega", "digamma", "aleph", "beth", "gimel", "daleth",
+    // Binary operators and relations.
+    "pm", "mp", "times", "div", "cdot", "ast", "star", "circ", "bullet", "cap", "cup", "uplus", "sqcap", "sqcup",
+    "vee", "wedge", "setminus", "wr", "diamond", "bigtriangleup", "bigtriangledown", "triangleleft", "triangleright",
+    "oplus", "ominus", "otimes", "oslash", "odot", "bigcirc", "dagger", "ddagger", "amalg", "leq", "le", "geq", "ge",
+    "neq", "ne", "equiv", "sim", "simeq", "approx", "cong", "propto", "ll", "gg", "prec", "succ", "preceq", "succeq",
+    "subset", "supset", "subseteq", "supseteq", "subsetneq", "supsetneq", "nsubseteq", "in", "ni", "notin", "vdash",
+    "dashv", "models", "perp", "parallel", "mid", "nmid", "asymp", "doteq", "bowtie", "smile", "frown", "sqsubset",
+    "sqsupset", "sqsubseteq", "sqsupseteq", "lesssim", "gtrsim", "leqslant", "geqslant", "nleq", "ngeq", "nless",
+    "ngtr", "lneq", "gneq", "ncong", "nsim", "not", "coloneqq", "eqqcolon", "mathbin", "mathrel", "mathop", "mathord",
+    "mathopen", "mathclose", "mathpunct", "mathinner",
+    // Arrows.
+    "leftarrow", "rightarrow", "leftrightarrow", "Leftarrow", "Rightarrow", "Leftrightarrow", "to", "gets", "mapsto",
+    "longmapsto", "longrightarrow", "longleftarrow", "longleftrightarrow", "Longrightarrow", "Longleftarrow",
+    "Longleftrightarrow", "iff", "implies", "impliedby", "uparrow", "downarrow", "updownarrow", "Uparrow",
+    "Downarrow", "Updownarrow", "nearrow", "searrow", "swarrow", "nwarrow", "hookrightarrow", "hookleftarrow",
+    "rightleftharpoons", "leftrightharpoons", "rightharpoonup", "rightharpoondown", "leftharpoonup",
+    "leftharpoondown", "xrightarrow", "xleftarrow", "rightsquigarrow", "twoheadrightarrow", "rightrightarrows",
+    "leftleftarrows",
+    // Symbols.
+    "infty", "partial", "nabla", "forall", "exists", "nexists", "neg", "lnot", "emptyset", "varnothing", "hbar",
+    "ell", "Re", "Im", "wp", "prime", "backprime", "angle", "measuredangle", "triangle", "top", "bot", "surd",
+    "sharp", "flat", "natural", "clubsuit", "diamondsuit", "heartsuit", "spadesuit", "imath", "jmath", "ldots",
+    "cdots", "vdots", "ddots", "dots", "dotsb", "dotsc", "dotsi", "dotsm", "dotso", "therefore", "because", "square",
+    "blacksquare", "checkmark", "complement", "mho",
+    // Large operators and functions.
+    "sum", "prod", "coprod", "int", "iint", "iiint", "oint", "bigcup", "bigcap", "bigvee", "bigwedge", "bigoplus",
+    "bigotimes", "bigodot", "biguplus", "bigsqcup", "lim", "limsup", "liminf", "max", "min", "sup", "inf", "arg",
+    "det", "dim", "gcd", "hom", "ker", "deg", "exp", "log", "ln", "lg", "sin", "cos", "tan", "cot", "sec", "csc",
+    "sinh", "cosh", "tanh", "coth", "arcsin", "arccos", "arctan", "Pr", "mod", "bmod", "pmod", "pod", "operatorname",
+    "injlim", "projlim", "varinjlim", "varprojlim", "varlimsup", "varliminf", "limits", "nolimits",
+    // Structure, delimiters, and size.
+    "frac", "dfrac", "tfrac", "cfrac", "binom", "dbinom", "tbinom", "sqrt", "overline", "underline", "overbrace",
+    "underbrace", "overset", "underset", "stackrel", "substack", "sideset", "boxed", "over", "atop", "choose", "big",
+    "Big", "bigg", "Bigg", "bigl", "bigr", "Bigl", "Bigr", "biggl", "biggr", "Biggl", "Biggr", "middle", "langle",
+    "rangle", "lceil", "rceil", "lfloor", "rfloor", "lbrace", "rbrace", "lbrack", "rbrack", "vert", "Vert", "lvert",
+    "rvert", "lVert", "rVert", "backslash", "hline", "cline", "multicolumn", "hdotsfor",
+    // Accents.
+    "hat", "widehat", "check", "tilde", "widetilde", "acute", "grave", "dot", "ddot", "dddot", "breve", "bar", "vec",
+    "overrightarrow", "overleftarrow", "overleftrightarrow", "underrightarrow", "underleftarrow", "mathring",
+    // Fonts and styles.
+    "mathrm", "mathbf", "mathit", "mathsf", "mathtt", "mathcal", "mathbb", "mathfrak", "boldsymbol", "mathnormal",
+    "text", "textrm", "textbf", "textit", "textsf", "texttt", "textnormal", "emph", "mbox", "displaystyle",
+    "textstyle", "scriptstyle", "scriptscriptstyle", "color", "textcolor",
+    // Spacing, numbering, and boxes.
+    "quad", "qquad", "hspace", "hfill", "phantom", "hphantom", "vphantom", "smash", "mathstrut", "enspace",
+    "thinspace", "medspace", "thickspace", "negthinspace", "negmedspace", "negthickspace", "tag", "notag", "nonumber",
+    "intertext", "shortintertext",
 ];
+
+/// The control words text may use besides [`MATH`]: BibTeX entries hold titles and names, so they need font
+/// commands, accents, and the letters and signs of other languages. None reads a file or changes how TeX reads.
+#[rustfmt::skip]
+const TEXT: &[&str] = &[
+    "textsc", "textsl", "textup", "textmd", "textsuperscript", "textsubscript", "textbackslash", "textasciitilde",
+    "textasciicircum", "textbar", "textless", "textgreater", "textunderscore", "textbraceleft", "textbraceright",
+    "textquotedbl", "textquoteleft", "textquoteright", "textquotedblleft", "textquotedblright", "textendash",
+    "textemdash", "textellipsis", "textdegree", "textregistered", "texttrademark", "textcopyright", "ldots", "ss",
+    "ae", "AE", "oe", "OE", "aa", "AA", "o", "O", "l", "L", "i", "j", "c", "d", "b", "k", "r", "t", "u", "v", "H",
+    "copyright", "pounds", "S", "P", "dag", "ddag", "LaTeX", "TeX", "relax",
+];
+
+/// Whether an equation may use this control word.
+pub(super) fn allowed_math(word: &str) -> bool {
+    MATH.contains(&word)
+}
+
+/// Whether the text of a BibTeX entry may use this control word.
+pub(super) fn allowed_text(word: &str) -> bool {
+    TEXT.contains(&word) || MATH.contains(&word)
+}
 
 /// Environments an equation may open. `document`, `verbatim`, and the other text environments are not here.
 pub(super) const ENVIRONMENTS: &[&str] = &[
@@ -160,15 +135,6 @@ pub(super) const DISPLAY_ENVIRONMENTS: &[&str] = &[
     "equation",
     "equation*",
 ];
-
-pub(super) fn denied(word: &str) -> bool {
-    let lower = word.to_ascii_lowercase();
-    DENIED.contains(&lower.as_str())
-        || ["pdf", "lua", "directlua", "latelua"]
-            .iter()
-            .any(|p| lower.starts_with(p))
-        || (lower.starts_with("if") && lower != "iff")
-}
 
 /// Replaces Unicode math characters with commands for pdfLaTeX. The Unicode engines read them as they are.
 fn for_engine(tex: &str, engine: Engine, missing: &mut Missing) -> String {
@@ -225,9 +191,12 @@ pub fn display(source: &str, engine: Engine, missing: &mut Missing) -> Option<St
 }
 
 /// Whether a BibTeX entry holds nothing that could harm the document that prints it: balanced braces and dollar
-/// signs, no comment character, and none of the commands that [`check`] refuses. BibTeX copies the text of an entry
+/// signs, no comment character, and only the commands of [`allowed_text`]. BibTeX copies the text of an entry
 /// into the document, where TeX reads it.
 pub fn bib_safe(entry: &str) -> bool {
+    if entry.contains("^^") {
+        return false;
+    }
     let chars: Vec<char> = entry.chars().collect();
     let (mut depth, mut dollars, mut i) = (0i64, 0usize, 0usize);
     while i < chars.len() {
@@ -252,7 +221,7 @@ pub fn bib_safe(entry: &str) -> bool {
                         .position(|c| !c.is_ascii_alphabetic())
                         .map_or(chars.len(), |p| i + 1 + p);
                     let word: String = chars[i + 1..end].iter().collect();
-                    if denied(&word) {
+                    if !allowed_text(&word) {
                         return false;
                     }
                     i = end;
@@ -328,6 +297,128 @@ mod tests {
         ] {
             assert_eq!(keep(bad), None, "{bad}");
         }
+    }
+
+    /// Commands that read files, define commands, or hook into the document, none of them on the denylist the first
+    /// version had. Each is refused because it is not a math command.
+    #[test]
+    fn commands_that_are_not_math_are_refused_even_when_nobody_listed_them() {
+        for bad in [
+            r"\InputIfFileExists{/etc/passwd}{}{}",
+            r"\AtBeginDocument{\InputIfFileExists{x}{}{}}",
+            r"\AtEndDocument{x}",
+            r"\ExplSyntaxOn \file_input:n{/etc/passwd} \ExplSyntaxOff",
+            r"\ExplSyntaxOn x",
+            r"\DeclareRobustCommand\textbf[1]{#1}",
+            r"\DeclareMathOperator{\foo}{foo}",
+            r"\NewDocumentCommand\x{}{y}",
+            r"\RenewDocumentCommand\x{}{y}",
+            r"\ProvideDocumentCommand\x{}{y}",
+            r"\NewCommandCopy\x\y",
+            r"\newlength\x",
+            r"\renewcommand{\x}{y}",
+            r"\providecommand{\x}{y}",
+            r"\setcounter{page}{3}",
+            r"\addtocounter{page}{3}",
+            r"\ProcessOptions",
+            r"\PassOptionsToPackage{a}{b}",
+            r"\Input{x}",
+            r"\INPUT{x}",
+            r"\openin1=x",
+            r"\lstinputlisting{x}",
+            r"\@@input x",
+            r"\x",
+            r"\alphaX",
+        ] {
+            assert_eq!(keep(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
+    fn characters_that_change_how_tex_reads_are_refused() {
+        for bad in ["a ^^5c b", r"\^^5cinput", "x ^^M", "#1", "\\u{e9}", "\\u{3b1}"] {
+            assert_eq!(keep(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
+    fn the_allowlists_hold_only_plain_names_and_none_of_the_dangerous_ones() {
+        // Written apart from the lists, from what TeX and LaTeX do, so the check does not agree with itself.
+        let dangerous = [
+            "input",
+            "include",
+            "write",
+            "immediate",
+            "openin",
+            "openout",
+            "read",
+            "readline",
+            "def",
+            "gdef",
+            "edef",
+            "xdef",
+            "let",
+            "csname",
+            "expandafter",
+            "scantokens",
+            "catcode",
+            "newcommand",
+            "renewcommand",
+            "providecommand",
+            "usepackage",
+            "documentclass",
+            "verb",
+            "url",
+            "href",
+            "special",
+            "shipout",
+            "loop",
+            "else",
+            "fi",
+            "jobname",
+            "string",
+            "meaning",
+            "the",
+            "makeatletter",
+            "begingroup",
+            "endgroup",
+            "global",
+            "ExplSyntaxOn",
+            "InputIfFileExists",
+            "AtBeginDocument",
+            "directlua",
+            "includegraphics",
+        ];
+        let prefixes = [
+            "pdf", "lua", "if", "new", "renew", "provide", "declare", "set", "add", "process", "pass",
+        ];
+        for word in MATH.iter().chain(TEXT) {
+            assert!(word.bytes().all(|b| b.is_ascii_alphabetic()), "{word}");
+            assert!(!dangerous.contains(word), "{word}");
+            let lower = word.to_ascii_lowercase();
+            assert!(
+                !prefixes.iter().any(|p| lower.starts_with(p)) || matches!(*word, "iff" | "setminus"),
+                "{word}"
+            );
+        }
+        assert!(allowed_math("alpha") && !allowed_math("Alpha") && !allowed_math("input"));
+        assert!(allowed_text("textbf") && allowed_text("alpha") && !allowed_text("url"));
+    }
+
+    #[test]
+    fn bibtex_refuses_what_math_refuses() {
+        for bad in [
+            r"@book{a, title = {\InputIfFileExists{x}{}{}}}",
+            r"@book{a, title = {\ExplSyntaxOn}}",
+            r"@book{a, title = {\DeclareRobustCommand\x{y}}}",
+            r"@book{a, title = {^^5cinput}}",
+            r"@book{a, title = {\url{https://example.org}}}",
+        ] {
+            assert!(!bib_safe(bad), "{bad}");
+        }
+        assert!(bib_safe(
+            r#"@book{a, author = {M{\"u}ller, J\'{e}r\^ome and \c{C}elik}, title = {\textit{On} $\alpha$}}"#
+        ));
     }
 
     #[test]

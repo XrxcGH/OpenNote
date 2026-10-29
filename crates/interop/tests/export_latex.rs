@@ -19,6 +19,28 @@ use opennote_interop::{
     LatexEngine, LatexOptions, MemorySource, NoteSource, Scope,
 };
 
+/// Every control word the exporter writes into the body, listed here by hand. A word outside this list and
+/// [`MATH_COMMANDS`] fails `check_tex`, so a command that slips through from a page (a file read, a definition, a hook)
+/// is caught however unusual its name.
+const BODY_COMMANDS: &[&str] = &[
+    "begin", "end", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "texorpdfstring", "textbf",
+    "emph", "texttt", "uline", "sout", "textsuperscript", "textsubscript", "opnhl", "href", "hyperref", "ref", "label",
+    "eqref", "cite", "footnote", "item", "noindent", "par", "newline", "relax", "medskip", "bigskip", "midrule",
+    "toprule", "bottomrule", "endhead", "endfirsthead", "captionof", "includegraphics", "maketitle", "tableofcontents",
+    "textbackslash", "textasciitilde", "textasciicircum", "textasciigrave", "textless", "textgreater", "textbar",
+    "textquotedbl", "textquotesingle", "textunderscore", "allowbreak", "opncodeline", "ensuremath", "boxtimes",
+    "square", "centering", "raggedright", "small", "bibliography", "bibliographystyle", "nocite", "hline",
+    "hrulefill", "rule", "linewidth", "textwidth", "today", "ldots", "textcolor", "multicolumn", "cline", "quad",
+    "qquad", "hspace", "phantom",
+];
+
+/// Math commands the tests put in equations; the exporter keeps only the ones it knows (see `export::latex::math`).
+const MATH_COMMANDS: &[&str] = &[
+    "alpha", "beta", "gamma", "Omega", "sum", "frac", "sqrt", "leq", "rightarrow", "pmatrix", "left", "right", "cdot",
+    "times", "mathbb", "mathrm", "text", "partial", "infty", "in", "pm", "sin", "cos", "log", "int", "prod", "lim",
+    "xi", "zeta", "circ", "iff",
+];
+
 /// Reads a `.tex` file the way TeX would at the level of braces and environments, and panics at the first thing that
 /// would stop a compile or reach outside the document. Returns the text after `\begin{document}`.
 fn check_tex(tex: &str) -> String {
@@ -63,11 +85,12 @@ fn check_tex(tex: &str) -> String {
                             assert_eq!(stack.pop(), Some(name.clone()), "\\end{{{name}}} does not match");
                         }
                     }
-                    "input" | "include" | "write" | "openout" | "immediate" | "def" | "gdef" | "edef" | "catcode"
-                    | "usepackage" | "newcommand" | "csname" | "read" | "openin" | "directlua" | "documentclass" => {
-                        panic!("the body uses \\{word}");
+                    other => {
+                        assert!(
+                            BODY_COMMANDS.contains(&other) || MATH_COMMANDS.contains(&other),
+                            "the body uses \\{other}, which the exporter does not emit and math may not use"
+                        );
                     }
-                    _ => {}
                 }
             }
             _ => {}

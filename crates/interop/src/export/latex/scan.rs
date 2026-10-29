@@ -1,8 +1,8 @@
 //! The token scan that checks one equation: balanced braces and environments, no unescaped `$`, and none of the
-//! commands in `math::DENIED`. The scan also cleans the text (comments and blank lines go) and notes what a display
+//! control words outside `math::MATH`. The scan also cleans the text (comments and blank lines go) and notes what a display
 //! needs: a label, a row break, or an environment that is the whole equation.
 
-use super::math::{denied, DISPLAY_ENVIRONMENTS, ENVIRONMENTS};
+use super::math::{allowed_math, DISPLAY_ENVIRONMENTS, ENVIRONMENTS};
 
 /// The longest equation that is kept.
 const MAX_CHARS: usize = 20_000;
@@ -89,6 +89,9 @@ pub fn check(source: &str, inline: bool) -> Option<Checked> {
         .chars()
         .filter(|c| *c != '\r' && (*c == '\n' || *c == '\t' || !c.is_control()))
         .collect();
+    if source.contains("^^") {
+        return None;
+    }
     Scan {
         out: String::with_capacity(chars.len()),
         chars,
@@ -127,7 +130,7 @@ impl Scan {
             let c = self.chars[self.at];
             match c {
                 '%' => self.comment(),
-                '$' => return None,
+                '$' | '#' => return None,
                 '^' if self.chars.get(self.at + 1) == Some(&'^') => return None,
                 '{' => {
                     self.depth += 1;
@@ -173,6 +176,9 @@ impl Scan {
 
     fn backslash(&mut self) -> Option<()> {
         let next = *self.chars.get(self.at + 1)?;
+        if !next.is_ascii() {
+            return None;
+        }
         if next.is_ascii_alphabetic() {
             return self.word();
         }
@@ -206,7 +212,7 @@ impl Scan {
                 self.rights += 1;
                 Some(())
             }
-            _ => (!denied(&word)).then_some(()),
+            _ => allowed_math(&word).then_some(()),
         }
     }
 
