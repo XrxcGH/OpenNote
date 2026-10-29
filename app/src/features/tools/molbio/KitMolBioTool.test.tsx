@@ -48,4 +48,28 @@ describe('the molecular biology window', () => {
     expect(inserted.at(-1)?.table).toMatchObject({ header: expect.arrayContaining(['AB (1/4)']) });
     await expectNoAxeViolations(container);
   });
+
+  it('draws a pedigree with its pattern check and a tree, each with no accessibility problems', async () => {
+    const { container } = renderUi(<KitMolBioTool />);
+    await userEvent.click(await screen.findByRole('tab', { name: 'Pedigrees' }));
+    expect(await screen.findByText(/autosomal recessive fits/)).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Family chart' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Insert Family chart' }));
+    expect(inserted.at(-1)?.picture).toMatchObject({ mime: 'image/svg+xml', alt: 'Family chart' });
+    await expectNoAxeViolations(container);
+    await userEvent.click(screen.getByRole('tab', { name: 'Trees' }));
+    expect(await screen.findByRole('img', { name: 'Tree' })).toBeTruthy();
+    await expectNoAxeViolations(container);
+  });
+
+  it('shows the cloning and population examples with no accessibility problems', async () => {
+    const { container } = renderUi(<KitMolBioTool />);
+    await userEvent.click(await screen.findByRole('tab', { name: 'Cloning' }));
+    expect(await screen.findByText('3 fragments: 3, 8, 7 bp.')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Virtual gel' })).toBeTruthy();
+    await expectNoAxeViolations(container);
+    await userEvent.click(screen.getByRole('tab', { name: 'Populations' }));
+    expect(await screen.findByText(/p\(A\) = 0\.5425/)).toBeTruthy();
+    await expectNoAxeViolations(container);
+  });
 });
