@@ -94,9 +94,10 @@ describe('the Authenticode requirement', () => {
     expect(release('v1.0.0').check({ authenticode: false })).toEqual([]);
   });
 
-  it('catches an exe with no Authenticode signature', () => {
+  it('catches an exe with no Authenticode signature, and asks none of the Mac and Linux files', () => {
     const problems = release('v1.0.0').check({ authenticode: true });
-    expect(problems).toHaveLength(RELEASE_FILES.length);
+    expect(problems).toHaveLength(RELEASE_FILES.filter(({ file }) => file.endsWith('.exe')).length);
+    expect(problems.join(' ')).not.toMatch(/dmg|AppImage/);
     expect(problems[0]).toContain('has no Authenticode signature');
   });
 
@@ -113,7 +114,7 @@ describe('the Authenticode requirement', () => {
   it('refuses them when Windows does not trust the certificate', () => {
     const signed = (file: string) => Buffer.concat([fakePe({ signed: true }), Buffer.from(file)]);
     const problems = release('v1.0.0', { exe: signed }).check({ authenticode: true, windows: 'NotTrusted' });
-    expect(problems).toHaveLength(RELEASE_FILES.length);
+    expect(problems).toHaveLength(RELEASE_FILES.filter(({ file }) => file.endsWith('.exe')).length);
     expect(problems[0]).toBe('Windows says the Authenticode signature of OpenNote_Windows64.exe is NotTrusted.');
   });
 });
@@ -142,7 +143,9 @@ describe('a manifest the updater would refuse', () => {
     expect(problems).toContain('has channel beta, but 1.0.0 is stable');
     expect(problems).toContain('no valid pub_date');
     expect(problems).toContain('no release notes');
-    expect(problems).toContain('lists windows-aarch64, windows-x86_64, but a release has');
+    expect(problems).toContain(
+      'lists darwin-universal, linux-x86_64, windows-aarch64, windows-x86_64, but a release has',
+    );
     expect(problems).toContain('The manifest has no entry for windows-i686');
   });
 
