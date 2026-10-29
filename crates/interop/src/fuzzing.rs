@@ -15,8 +15,8 @@ use std::path::Path;
 use crate::archive::{ArchiveLimits, ZipArchive};
 use crate::error::Result;
 use crate::import::{
-    import_csv, import_docx, import_enex, import_html_folder, import_markdown_folder, import_mht, import_onenote,
-    import_pptx, import_xlsx,
+    import_csv, import_docx, import_enex, import_html_folder, import_markdown_folder, import_mht, import_notes_apps,
+    import_onenote, import_pptx, import_xlsx,
 };
 use crate::report::Report;
 use crate::sink::{ImportEnv, ImportSink, MemorySink};
@@ -174,6 +174,46 @@ pub fn onenote(data: &[u8]) {
     } else {
         run_file(import_onenote, "notes.one", data);
     }
+}
+
+/// A Goodnotes, Notability, or Samsung Notes file (ADR 0053). The bytes go to the property list and protobuf
+/// readers by themselves, then to each importer: as the package when they are a ZIP file, or else as each app's
+/// main parts, so the readers inside get fuzzed through the importers too.
+pub fn notes_app(data: &[u8]) {
+    use crate::import::notes_apps_fuzzing::{protobuf_strings, Keyed, Plist};
+    if let Ok(list) = Plist::parse(data) {
+        if let Some(archive) = Keyed::new(&list) {
+            for object in archive.objects() {
+                let _ = archive.string(*object);
+                let _ = archive.data(*object);
+                let _ = archive.array(*object);
+                let _ = archive.class_name(*object);
+            }
+        }
+    }
+    let _ = protobuf_strings(data, 1_000);
+    if data.starts_with(b"PK") {
+        for name in ["a.note", "a.goodnotes", "a.sdocx"] {
+            run_file(import_notes_apps, name, data);
+        }
+        return;
+    }
+    run_file(import_notes_apps, "a.note", &zip_bytes(&[("a/Session.plist", data)]));
+    run_file(
+        import_notes_apps,
+        "a.goodnotes",
+        &zip_bytes(&[("index.notes.pb", data), ("notes/p1", data), ("attachments/x", data)]),
+    );
+    run_file(
+        import_notes_apps,
+        "a.sdocx",
+        &zip_bytes(&[
+            ("pageIdInfo.dat", data),
+            ("p1.page", data),
+            ("note.xml", data),
+            ("media/m", data),
+        ]),
+    );
 }
 
 // The older binary formats (.doc, .rtf, .xls, and zipped sheets), whose readers keep their own entry points.
