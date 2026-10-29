@@ -315,8 +315,8 @@ fn a_chunk_lost_after_its_head_was_written_is_sent_again() {
     assert_eq!(d[0].engine.repair(later + 1).expect("repairs"), 0, "checked once a day");
 }
 
-/// A chunk that is there but damaged (a flipped byte from a bad disk, a half-copied file, one too long to be
-/// OpenNote's): the other device asks for it, the device that has the file replaces it on its next round, and the
+/// A chunk that is there but damaged: a flipped byte from a bad disk, a half-copied file, or one too long to be
+/// OpenNote's. The other device asks for it. The device that has the file replaces it on its next round, and the
 /// other device then gets the file. The expected bytes are the ones written, not anything read back from storage.
 #[test]
 fn a_damaged_chunk_is_sent_again_by_the_device_that_has_the_file() {

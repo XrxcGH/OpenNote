@@ -367,9 +367,9 @@ impl Engine {
         local::write_atomic(&self.state_path, &bytes)
     }
 
-    /// A chunk's bytes. A chunk that is gone, longer than OpenNote writes, doesn't open, or doesn't match its name
-    /// counts as missing, not as tampering: a bad disk or a half-copied file in a synced folder damages one, and
-    /// the device that has the file sends it again when asked (see `repair`). Its bytes are never used either way.
+    /// A chunk's bytes. A chunk that is gone, too long, unopenable, or not matching its name counts as missing, not
+    /// as tampering. A bad disk or a half-copied file in a synced folder can damage one. The device that has the
+    /// file then sends it again when asked (see `repair`). Its bytes are never used either way.
     fn fetch_chunk(&self, id: &str) -> Result<Vec<u8>> {
         let name = chunk_name(id);
         let found = match self.backend.get(&name) {

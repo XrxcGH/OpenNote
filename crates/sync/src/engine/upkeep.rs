@@ -99,55 +99,21 @@ impl Engine {
         let mut damaged: BTreeSet<String> = requests.keys().cloned().collect();
         let daily = now - state.checked >= CHECK_MS;
         if daily && state.generation > 0 {
-            let stored: HashMap<String, Option<u64>> = match self.backend.sizes("c/")? {
-                Some(sizes) => sizes.into_iter().map(|(name, size)| (name, Some(size))).collect(),
-                None => self.backend.list("c/")?.into_iter().map(|name| (name, None)).collect(),
-            };
-            let stored: HashMap<&str, Option<u64>> = stored
-                .iter()
-                .filter_map(|(name, size)| Some((name.rsplit('/').next()?, *size)))
-                .collect();
-            // Only what this device's newest head names: other versions it knows may have been collected on purpose.
-            match self.read_head(&self.device, state.generation) {
-                Ok(head) => {
-                    for entry in head.entries.values().filter(|e| e.live()) {
-                        for (index, id) in entry.content.chunks.iter().enumerate() {
-                            match stored.get(id.as_str()) {
-                                None => {
-                                    wanted.insert(id.clone());
-                                }
-                                Some(Some(size)) if *size != sealed_chunk_size(entry.content.size, index) => {
-                                    wanted.insert(id.clone());
-                                    damaged.insert(id.clone());
-                                }
-                                Some(_) => {}
-                            }
-                        }
-                    }
-                }
-                Err(SyncError::Incomplete) => {}
-                Err(error) => return Err(error),
-            }
+            self.check_stored(&state, &mut wanted, &mut damaged)?;
         }
         let mut sent = 0;
         let mut buf = Vec::with_capacity(local::CHUNK);
         for id in &wanted {
             let again = damaged.contains(id);
-            let mut back = !again && self.backend.exists(&chunk_name(id))?;
-            if !back {
-                if let Some((path, index)) = held.get(id.as_str()) {
-                    // The file may have changed since: send only bytes that still have this chunk's name.
-                    if self.read_held(path, *index, &mut buf)? && hex(&mac(self.keys.chunk.as_ref(), &[&buf])) == *id {
-                        if again {
-                            self.replace_chunk(id, &buf)?;
-                            sent += 1;
-                        } else {
-                            sent += usize::from(self.put_chunk(id, &buf)?);
-                        }
-                        back = true;
+            let back = (!again && self.backend.exists(&chunk_name(id))?)
+                || match held.get(id.as_str()) {
+                    Some((path, index)) => {
+                        let resent = self.send_held(id, path, *index, again, &mut buf)?;
+                        sent += usize::from(resent == Some(true));
+                        resent.is_some()
                     }
-                }
-            }
+                    None => false,
+                };
             // A device that doesn't hold the chunk leaves the request for one that does.
             if let Some(name) = requests.get(id).filter(|_| back) {
                 self.backend.delete(name)?;
@@ -158,6 +124,56 @@ impl Engine {
             self.save_state(&state)?;
         }
         Ok(sent)
+    }
+
+    /// Adds to `wanted` the chunks of this device's newest head that storage doesn't list, and to `damaged` too
+    /// those it lists at a size other than the one OpenNote seals them to, where storage reports sizes. Only what
+    /// the newest head names: other versions this device knows may have been collected on purpose.
+    fn check_stored(
+        &self,
+        state: &LocalState,
+        wanted: &mut BTreeSet<String>,
+        damaged: &mut BTreeSet<String>,
+    ) -> Result<()> {
+        let listed: Vec<(String, Option<u64>)> = match self.backend.sizes("c/")? {
+            Some(sizes) => sizes.into_iter().map(|(name, size)| (name, Some(size))).collect(),
+            None => self.backend.list("c/")?.into_iter().map(|name| (name, None)).collect(),
+        };
+        let stored: HashMap<&str, Option<u64>> = listed
+            .iter()
+            .filter_map(|(name, size)| Some((name.rsplit('/').next()?, *size)))
+            .collect();
+        let head = match self.read_head(&self.device, state.generation) {
+            Ok(head) => head,
+            Err(SyncError::Incomplete) => return Ok(()),
+            Err(error) => return Err(error),
+        };
+        for entry in head.entries.values().filter(|e| e.live()) {
+            for (index, id) in entry.content.chunks.iter().enumerate() {
+                let size = stored.get(id.as_str());
+                let wrong = matches!(size, Some(Some(n)) if *n != sealed_chunk_size(entry.content.size, index));
+                if size.is_none() || wrong {
+                    wanted.insert(id.clone());
+                }
+                if wrong {
+                    damaged.insert(id.clone());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Sends chunk `index` of the local file `path` as chunk `id`, replacing what storage has under the name when
+    /// `again`. `None` when the file changed since and no longer has that chunk; otherwise whether it sent bytes.
+    fn send_held(&self, id: &str, path: &str, index: usize, again: bool, buf: &mut Vec<u8>) -> Result<Option<bool>> {
+        if !self.read_held(path, index, buf)? || hex(&mac(self.keys.chunk.as_ref(), &[buf])) != id {
+            return Ok(None);
+        }
+        if again {
+            self.replace_chunk(id, buf)?;
+            return Ok(Some(true));
+        }
+        self.put_chunk(id, buf).map(Some)
     }
 
     /// Reads chunk `index` of a local file into `buf`. `false` when the file is gone or shorter.
