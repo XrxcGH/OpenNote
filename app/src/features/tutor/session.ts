@@ -104,20 +104,28 @@ export function answerConsentCard(yes: boolean): void {
   answer?.(yes);
 }
 
-function askConsent(context: string, host: string, prompt: Prompt): Promise<boolean> {
-  if (granted.has(context)) return Promise.resolve(true);
-  if (declined.has(context)) return Promise.resolve(false);
+/**
+ * Asks before text leaves the device. A yes or no holds for one context; a question the person typed is new text of
+ * theirs, so it asks again with the question in the text shown, and that answer holds for that question only.
+ */
+function askConsent(context: string, question: string | undefined, host: string, prompt: Prompt): Promise<boolean> {
+  const key = question === undefined ? context : `${context}\u0000${question}`;
+  if (granted.has(key)) return Promise.resolve(true);
+  if (declined.has(key)) return Promise.resolve(false);
   answerConsent?.(false);
   return new Promise((resolve) => {
     answerConsent = (yes) => {
-      (yes ? granted : declined).add(context);
+      (yes ? granted : declined).add(key);
       resolve(yes);
     };
     tutorState.set((state) => ({ ...state, consent: { text: `${prompt.system}\n\n${prompt.prompt}`, host } }));
   });
 }
 
-async function writers(context: string): Promise<{ writers: Writers; offlineNote: boolean; host?: string }> {
+async function writers(
+  context: string,
+  question?: string,
+): Promise<{ writers: Writers; offlineNote: boolean; host?: string }> {
   const found: Writers = {};
   let offlineNote = false;
   let host: string | undefined;
@@ -133,7 +141,7 @@ async function writers(context: string): Promise<{ writers: Writers; offlineNote
           const to = cloud.hostOf('tutor', state);
           host = to;
           found.cloud = {
-            consent: (prompt) => askConsent(context, to, prompt),
+            consent: (prompt) => askConsent(context, question, to, prompt),
             send: (prompt) => ext.cloud.tutor(prompt.system, prompt.prompt),
           };
         }
@@ -170,7 +178,7 @@ async function run(mode: Mode, rung: Rung, label: string | undefined, question?:
   tutorState.set((one) => ({ ...one, busy: true }));
   try {
     const plan = currentPlan(state);
-    const { writers: found, offlineNote, host } = await writers(state.context);
+    const { writers: found, offlineNote, host } = await writers(state.context, question);
     const reply = await tutorReply(
       { mode, rung, plan, context: state.context, question, history: state.turns.slice(-4) },
       found,

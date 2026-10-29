@@ -8,7 +8,7 @@ import type { CalculusKind, ReasonCode, Step, StepLine, StepResult } from '../ma
 import type { MessageKey } from '../../strings/t';
 import { t } from '../../strings/t';
 import { equationSteps, type EquationSteps } from './equation';
-import { leaks, normalizeMath } from './guard';
+import { leaks, normalizeMath, sameValues } from './guard';
 import { mathKit } from './kit';
 
 export type Rung = 1 | 2 | 3 | 4;
@@ -85,10 +85,15 @@ function solve(line: StepLine) {
 /** A line as the student would write it: x^2, not x^(2). */
 const tidy = (line: string) => line.replace(/\^\((-?\w+)\)/g, '^$1');
 
-/** Whether two results are the same, however the powers are written, with or without "+ C". */
+/**
+ * Whether two results are the same, however they are written, with or without "+ C": as text first, then by their
+ * values, so ((x^3)/(3)) is x^3/3.
+ */
 function sameResult(a: string, b: string): boolean {
   const plain = (text: string) => normalizeMath(text).replace(/\+c$/, '');
-  return plain(a) === plain(b);
+  if (plain(a) === plain(b)) return true;
+  const bare = (text: string) => text.replace(/\+\s*C\s*$/, '').trim();
+  return /[=≈]/.test(plain(a) + plain(b)) ? false : sameValues(bare(a), bare(b));
 }
 
 /** The right-hand side of a step such as "d/dx [x^3] = 3x^2". */
@@ -190,7 +195,7 @@ function familyText(kind: 'ideas' | 'questions', plan: Extract<Plan, { kind: 'mi
   const values = { ...plan.params, number: plan.index + 1, previous: Math.max(1, plan.index) };
   let family: string = plan.family;
   if (kind === 'questions' && family === 'value') family = plan.params.at ? 'valueAt' : 'value';
-  const needs: Record<string, string> = { sign: 'term', factor: 'factor', constant: 'offset', matrixEntry: 'row' };
+  const needs: Record<string, string> = { sign: 'term', factor: 'factor', matrixEntry: 'row' };
   const need = needs[family];
   if (kind === 'questions' && need && !plan.params[need]) family = 'general';
   return say(`tutor.${kind}.${family}` as MessageKey, values);
@@ -254,8 +259,10 @@ export function ruleHint(plan: Plan, rung: Rung): string {
  * step is the answer itself it says so instead; an earlier rung that would leak falls back to the general idea.
  */
 export function guardedRuleHint(plan: Plan, rung: Rung, given: string): string {
-  const hint = ruleHint(plan, rung);
   const { answer, next } = secrets(plan);
+  // The next step is the answer itself (a limit that comes to 1, say): never show it, whatever the guard reads.
+  if (rung === LAST_RUNG && answer && next && sameResult(next, answer)) return t('tutor.mistake.stepIsAnswer');
+  const hint = ruleHint(plan, rung);
   const hidden = rung === LAST_RUNG ? [answer] : [answer, next];
   if (!leaks(hint, hidden, given)) return hint;
   return rung === LAST_RUNG ? t('tutor.mistake.stepIsAnswer') : t('tutor.ideas.general');

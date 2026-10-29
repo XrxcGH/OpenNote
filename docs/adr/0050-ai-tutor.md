@@ -30,7 +30,12 @@ DeriveNotes has an AI tutor. The owner asked for one in OpenNote (the dn-tutor l
   - With a language model downloaded (`crates/llm-host`, through `intel/localModels`), the model writes the wording on this device. Its prompt carries the built-in hint as a base.
   - With the person's own key, a cloud service may write it, as below.
   - The full solution of math always comes from the rules, which work it out exactly. A model writes one only where the rules cannot.
-- **The person's own key.** The tutor is its own cloud feature (`tutor`), with its own key in Windows Credential Manager, its own choice in Settings, and its own line in Privacy. Before the first request of a session, the panel shows the exact text to be sent (the instructions and the prompt) and the host, with Send for this session and Keep it on this device. A yes covers the rest of the session for that same context, and the card says so. Each later request sends the same context with the next rung's task, the last four turns on screen, and anything the person types in Ask the tutor. Those are not shown again before they go. New or edited context asks again, and a no keeps that context on the device for the session. The shell's `Cloud::tutor` sends only that text, capped, to the one pinned host.
+- **The person's own key.** The tutor is its own cloud feature (`tutor`). It has its own key in Windows Credential Manager, its own choice in Settings, and its own line in Privacy.
+  - Before the first request of a session, the panel shows the exact text to be sent (the instructions and the prompt) and the host. It offers Send for this session and Keep it on this device.
+  - A yes covers the rest of the session for that same context, and the card says so. Each later hint sends that context with the next rung's task and the last four turns on screen. Those are not shown again before they go.
+  - A question the person types in Ask the tutor is new text of theirs. The card shows again with the question in the text to send, and that answer holds for that question only.
+  - New or edited context asks again, and a no keeps that context on the device for the session.
+  - The shell's `Cloud::tutor` sends only that text, capped, to the one pinned host.
 - **Work offline.** While it is on, the interface never asks to send and never calls the cloud. The shell refuses `cloud.tutor` with `offline` too, as it does in safe mode. The panel says the tutor stays on this device, and the on-device model or the rules answer.
 
 ### The answer-leak guard
@@ -41,8 +46,23 @@ DeriveNotes has an AI tutor. The owner asked for one in OpenNote (the dn-tutor l
 
   Both sides are compared in one written form, with spacing, minus signs, and LaTeX wrapping evened out. The guard also catches the value said in words, such as "x is 2" or "the answer is 2". Text the person already wrote is not secret.
 
-- **Written another way.** The guard compares the secret written several ways: x^(2) and x² as x^2, 2·x as 2x, terms in any order, sides swapped, "+ C" left off, and a value such as 7/2 written as 3.5 or said in words.
-- **No known answer.** For subjects whose answer the rules cannot work out (chemistry, physics, word problems), the guard is a heuristic. Before the last rung, it refuses a reply that states a result with a number the student's text does not hold, such as "the answer is 36 g" or "F = 6 N".
+- **Written another way.** The guard compares the secret written several ways:
+  - x^(2) and x² as x^2, 2·x as 2x, full-width signs as plain ones, and cos x as cos(x).
+  - Brackets around one term dropped, terms in any order, sides swapped, and "+ C" left off.
+  - A value such as 7/2 written as 3.5, 3 1/2, or 3,5, or said in words ("three and a half", "seven halves"). A value within rounding (2.000000001) counts.
+  - A link between a name and its value made with a sign (=, ≈, ~, →, ∈ {…}) or with words ("must equal", "ends up as", "comes to").
+  - With the math kit loaded, a formula with the secret's values: "(1/3)x^3 + C" gives away x^3/3 + C, and "x^2 * 3" gives away 3x^2.
+- **A bare number.** The answer may be a number: a limit of 1, a sum of 2, a derivative at a point.
+  - The guard refuses it after a link ("the limit is 1", "it comes to one", "= 1") and as a sentence of its own.
+  - It allows the number as a piece of the question the student wrote (the n = 1 of a sum).
+  - For a next line such as 2x = 4, it refuses "2x is 4", "the right side becomes 4", and "7 - 3 = 4".
+  - When the next step is the answer itself, the last rung says so instead of showing it.
+- **No known answer.** For subjects whose answer the rules cannot work out (chemistry, physics, word problems), the guard is a heuristic. Before the last rung, it refuses a reply that states a result with a number the student's text does not hold.
+  - It catches "the answer is 36 g", "so F = 6 N", and "F = 6".
+  - It catches a number after is, get, gives, yields, produces, makes, forms, equals, or comes to ("you get 36 grams of water", "F is 6 N"), and "so 36 g forms".
+  - It catches a number with a unit as a sentence of its own ("40 mph"), in digits or words ("thirty-six grams").
+  - A unit must be a known one (g, mol, N, m/s, mph, %, and their names), so "n = 1 or n = 2" is not read as a result.
+  - A result put any other way can get through.
 - **When a hint leaks.** The on-device model is asked once more with a stricter instruction, then the built-in hint is shown. A cloud reply that leaks is not retried with a stricter text the person never saw: the built-in hint shows instead. The rules' own hints pass the same guard. A last rung whose next step is the answer says so and leaves the step to the person.
 - **Tone.** Short, kind, plain words for students, no jargon. Replies longer than 700 characters, or empty, are refused.
 

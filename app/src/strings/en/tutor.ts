@@ -68,10 +68,10 @@ export const tutor = {
   },
   consent: {
     title: 'Send this to {host}?',
-    body: 'This text goes to {host} with your key. New text asks again.',
+    body: 'This text goes to {host} with your key.',
     covers:
-      'If you agree, your next hints on this text go there too, with what you type in Ask the tutor, ' +
-      'until you close the panel.',
+      'If you agree, your next hints on this text go there too, with the last few turns of this conversation, ' +
+      'until you close the panel. New text in What the tutor sees, or a question you type in Ask the tutor, asks again.',
     sent: 'Text to send',
     send: 'Send for this session',
     keep: 'Keep it on this device',
@@ -116,7 +116,7 @@ export const tutor = {
     signFlip: 'Where could a minus sign have been dropped between these two lines?',
     inequality: 'Did you multiply or divide by a negative number here? What happens to the sign then?',
     factor: 'This line is {factor} times the one before. Which term was multiplied, and which was not?',
-    constant: 'This line is off by {offset}. Which number was added or taken away on one side only?',
+    constant: 'A number was added or taken away here that the line before does not account for. Which one, and where?',
     valueAt: 'Try {at} in both lines. Do they give the same result? Which move changed it?',
     value: 'Work out both lines for one easy value. Do they match? Which move changed it?',
     derivative: 'Which rule fits the outside of the expression, and what does it give for the first piece?',

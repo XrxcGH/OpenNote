@@ -84,11 +84,66 @@ test('explains a step Check my work flagged, without the corrected line', async 
   await expect(log).not.toContainText('2x = 4');
 });
 
+// Built from pieces, so the source holds nothing shaped like a key. The web build's fake shell keeps it in memory.
+const TEST_KEY = ['test', 'only', '0123456789', 'abcdef'].join('-');
+
+test('asks before text goes to the cloud key, keeps it local on a no, and asks again for a question', async ({
+  page,
+}) => {
+  await openSmart(page);
+  await page.keyboard.press('Control+Comma');
+  await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Editing' }).click();
+  await page.getByRole('switch', { name: 'Tutor' }).click();
+  await page.getByRole('radio', { name: /With my own key/ }).check();
+  await page.getByRole('textbox', { name: 'Key for the tutor' }).fill(TEST_KEY);
+  await page.getByRole('button', { name: 'Save key' }).click();
+  await page
+    .getByRole('dialog', { name: 'Send this to a cloud service?' })
+    .getByRole('button', { name: 'Save key and use it' })
+    .click();
+  await expect(page.getByRole('button', { name: /Forget/ })).toBeVisible();
+
+  await page.keyboard.press('Control+KeyK');
+  await page.getByRole('combobox', { name: 'Search commands and pages' }).fill('Open the tutor');
+  await page
+    .getByRole('option', { name: /^Open the tutor/ })
+    .first()
+    .click();
+  const panel = page.locator('[data-tutor-panel]');
+  await panel.getByRole('textbox', { name: 'What the tutor sees' }).fill('2x + 3 = 7\n2x = 10\nx = 5');
+  await panel.getByRole('button', { name: 'Give me a hint' }).click();
+
+  // The card names the host, shows the exact text, and takes the keyboard focus.
+  const card = panel.locator('[data-tutor-consent]');
+  await expect(card).toBeFocused();
+  await expect(card.getByRole('heading')).toContainText(/^Send this to \S+\?$/);
+  await expect(card.getByLabel('Text to send')).toContainText('2x + 3 = 7');
+  await card.getByRole('button', { name: 'Keep it on this device' }).click();
+  await expect(card).toHaveCount(0);
+  const log = panel.getByRole('log', { name: 'Conversation with the tutor' });
+  await expect(log).toContainText('Look at line 2. Compare it with line 1');
+  await expect(log).toContainText('Built-in hints, on this device.');
+  await expect(log).not.toContainText('Written with your key');
+
+  // A typed question is new text: the card shows again, with the question in it.
+  const question = 'Why did the 3 change sides?';
+  await panel.getByRole('textbox', { name: 'Ask the tutor' }).fill(question);
+  await panel.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(card.getByLabel('Text to send')).toContainText(question);
+  await card.getByRole('button', { name: 'Send for this session' }).click();
+  await expect(log).toContainText(question);
+  await expect(log).toContainText('Look again at the line the hint points to.');
+  await expect(log).toContainText(/Written with your key by \S+\./);
+});
+
 test('asks guiding questions about words, and keeps the solution until the student tries', async ({ page }) => {
   await openSmart(page);
   await page.keyboard.press('Control+KeyK');
   await page.getByRole('combobox', { name: 'Search commands and pages' }).fill('Open the tutor');
-  await page.getByRole('option', { name: /^Open the tutor/ }).first().click();
+  await page
+    .getByRole('option', { name: /^Open the tutor/ })
+    .first()
+    .click();
   await turnOn(page);
 
   const panel = page.locator('[data-tutor-panel]');

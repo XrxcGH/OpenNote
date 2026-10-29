@@ -308,3 +308,127 @@ describe('engine', () => {
     expect(prompt.prompt).toContain('The student asks: Why is line 2 wrong?');
   });
 });
+
+describe('answer guard, numbers and plain words', () => {
+  const stepIsAnswer = 'Fixing this step gets you to the answer. Try it, or ask for the full solution.';
+  const before = [1, 2, 3] as const;
+
+  it('keeps back a limit that comes to a bare number', () => {
+    // lim x->0 sin(x)/x = 1.
+    const context = 'lim x->0 sin(x)/x';
+    const limit = plan(context);
+    expect(limit.kind).toBe('calculus');
+    expect(guardedRuleHint(limit, 4, context)).toBe(stepIsAnswer);
+    for (const rung of before) {
+      for (const reply of ['The limit is 1.', 'It equals 1.', 'The answer is 1', 'One.', 'it comes to one'])
+        expect(acceptable(request(limit, { rung, context }), reply), reply).toBe(false);
+      expect(acceptable(request(limit, { rung, context }), 'Put x = 0 in. What form do you get?')).toBe(true);
+    }
+  });
+
+  it('keeps back a geometric sum, but not the n = 1 the student wrote', () => {
+    // 1/2 + 1/4 + 1/8 + ... = (1/2) / (1 - 1/2) = 1.
+    const context = 'Σ_(n=1)^∞ 1/2^n';
+    const sum = plan(context);
+    expect(sum.kind).toBe('calculus');
+    expect(guardedRuleHint(sum, 4, context)).toBe(stepIsAnswer);
+    for (const reply of ['The sum comes to 1.', 'It adds up to one.', 'So the series = 1'])
+      expect(acceptable(request(sum, { rung: 2, context }), reply), reply).toBe(false);
+    expect(acceptable(request(sum, { rung: 2, context }), 'Start at n = 1 and write out three terms.')).toBe(true);
+  });
+
+  it('keeps back a derivative at a point', () => {
+    // f(x) = x^2 has f'(x) = 2x, so f'(3) = 6.
+    const given = "f(x) = x^2. Find f'(3).";
+    for (const reply of ['The slope there is 6.', "f'(3) = 6", 'It works out to six.', '6'])
+      expect(leaks(reply, ['6'], given), reply).toBe(true);
+    expect(leaks("Find f'(x) first, then put in x = 3.", ['6'], given)).toBe(false);
+    // The rules cannot work this one out, so the general heuristic guards it.
+    expect(claimsAnswer('The slope there is 6.', given)).toBe(true);
+  });
+});
+
+describe('answer guard, other notations', () => {
+  const stepIsAnswer = 'Fixing this step gets you to the answer. Try it, or ask for the full solution.';
+
+  it('says an integral is the answer, not its antiderivative without + C', () => {
+    // ∫ x^2 dx = x^3/3 + C.
+    const context = '∫ x^2 dx';
+    const integral = plan(context);
+    expect(guardedRuleHint(integral, 4, context)).toBe(stepIsAnswer);
+    expect(ruleSolution(integral)).toEqual(['∫ x^2 dx = x^3/3 + C']);
+    for (const reply of ['(1/3)x^3 + C', 'It is x³/3.', 'You get x^3 over 3 plus C.'])
+      expect(acceptable(request(integral, { rung: 2, context }), reply), reply).toBe(false);
+    expect(acceptable(request(integral, { rung: 2, context }), 'Raise the power by one, then divide by it.')).toBe(
+      true,
+    );
+  });
+
+  it('catches a value said with other words, signs or notations', () => {
+    for (const hint of [
+      'x must equal 2',
+      'x will equal 2',
+      'x should come to 2',
+      'x ends up as 2',
+      'so x → 2',
+      'x ≈ 2',
+      'x ~ 2',
+      'x ∈ {2}',
+      'ｘ＝２',
+      'x = ２',
+      'x = 2.000000001',
+    ])
+      expect(leaks(hint, ['x = 2']), hint).toBe(true);
+    // 7/2 is 3.5.
+    for (const hint of ['y is three and a half', 'y is seven halves', 'y = 3 1/2', 'y = 3,5'])
+      expect(leaks(hint, ['y = 7/2']), hint).toBe(true);
+    for (const hint of ['three x squared', 'x^2 * 3', '(3)(x^2)']) expect(leaks(hint, ['3x^2']), hint).toBe(true);
+    expect(leaks('That gives cos x.', ['cos(x)'])).toBe(true);
+    // 2.1 is not 2, and x squared is not 3x^2.
+    expect(leaks('x ≈ 2.1', ['x = 2'])).toBe(false);
+    expect(leaks('Think about x squared.', ['3x^2'])).toBe(false);
+  });
+});
+
+describe('answer guard, results said in words', () => {
+  it('catches the value of a next line said in words', () => {
+    // 2x + 3 = 7: take 3 from both sides, 2x = 4.
+    const given = '2x + 3 = 7';
+    for (const hint of ['2x is 4', '2x should be 4', 'the right side becomes 4', '7 - 3 = 4'])
+      expect(leaks(hint, ['2x = 4'], given), hint).toBe(true);
+    // 15 / 3 is 5: 3x = 15, x = 5.
+    expect(leaks('so 3x is 15', ['3x = 15'], '3x - 2 = 13')).toBe(true);
+    expect(leaks('Take 3 from both sides.', ['2x = 4'], given)).toBe(false);
+  });
+
+  it('flags plain-English results with no known answer', () => {
+    const chemistry = '2 H2 + O2 -> 2 H2O. 4 g of H2. mass of water = ?';
+    for (const reply of [
+      'You get 36 grams of water.',
+      'so 36 g of water forms',
+      'Yields 36 grams.',
+      'it produces 36 grams',
+      'thirty-six grams',
+    ])
+      expect(claimsAnswer(reply, chemistry), reply).toBe(true);
+    const physics = 'F = m a, m = 2 kg, a = 3 m/s^2. F = ?';
+    for (const reply of ['The force is 6 newtons', 'so F equals 6', 'F is 6 N', 'F = 6', 'six newtons'])
+      expect(claimsAnswer(reply, physics), reply).toBe(true);
+    const trip = 'A car goes 120 miles in 3 hours. How fast is it?';
+    for (const reply of ['40 mph', 'The speed is 40 mph']) expect(claimsAnswer(reply, trip), reply).toBe(true);
+  });
+
+  it('reads only real units after a stated number', () => {
+    const given = 'Find n so that 3n + 1 is even.';
+    expect(claimsAnswer('Pick n = 1 or n = 2 and test it.', given)).toBe(false);
+    expect(claimsAnswer('Try n = 5 in the formula.', given)).toBe(false);
+    expect(claimsAnswer('That makes n = 5 m.', given)).toBe(true);
+  });
+
+  it('asks about a constant slip without giving the number', () => {
+    // (x + 1)^2 = x^2 + 2x + 1, so x^2 + 2x + 2 is off by 1.
+    const p = plan('(x + 1)^2', 'x^2 + 2x + 2');
+    expect(p).toMatchObject({ kind: 'mistake', family: 'constant' });
+    expect(ruleHint(p, 3)).not.toMatch(/\d/);
+  });
+});
