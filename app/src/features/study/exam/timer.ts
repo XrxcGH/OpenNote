@@ -29,6 +29,17 @@ export function timeLeft(timer: ExamTimer, now: number): number {
 export const isPaused = (timer: ExamTimer): boolean => timer.since === null;
 export const isOver = (timer: ExamTimer, now: number): boolean => timeLeft(timer, now) === 0;
 
+/**
+ * How long past zero the paper was handed in, in milliseconds, or null for an untimed exam or one handed in with time
+ * left. A running timer keeps counting past zero on the wall clock, also while the app was closed. The clock offers no
+ * pause once time is up, so a timer paused at zero was paused as it ran out and counts as just over.
+ */
+export function lateBy(timer: ExamTimer | null, now: number): number | null {
+  if (!timer || timeLeft(timer, now) > 0) return null;
+  if (timer.since === null) return 0;
+  return Math.max(0, now - timer.since - timer.left);
+}
+
 export function pauseTimer(timer: ExamTimer, now: number): ExamTimer {
   if (timer.since === null) return timer;
   return { ...timer, left: timeLeft(timer, now), since: null };

@@ -7,6 +7,7 @@ import {
   clockText,
   dueReminders,
   isOver,
+  lateBy,
   pauseTimer,
   parseReminders,
   resumeTimer,
@@ -222,6 +223,17 @@ describe('timer', () => {
     expect(step.due).toEqual([]);
     expect(isOver(step.timer, 600_000 + 29 * 60_000)).toBe(true);
     expect(clockText(5_400_000)).toBe('1:30:00');
+  });
+
+  it('says how late a paper was handed in, from the wall clock', () => {
+    expect(lateBy(null, 5_000)).toBeNull();
+    // 10 minutes allowed: it starts at 1000, pauses 2 minutes in, and resumes at 300000 with 8 minutes left.
+    const timer = resumeTimer(pauseTimer(startTimer(10, 1000), 121_000), 300_000);
+    expect(lateBy(timer, 300_000 + 8 * 60_000 - 1)).toBeNull();
+    expect(lateBy(timer, 300_000 + 8 * 60_000)).toBe(0);
+    // Handed in 3 minutes 20 seconds after zero, as after closing the app with the clock running.
+    expect(lateBy(timer, 300_000 + 8 * 60_000 + 200_000)).toBe(200_000);
+    expect(lateBy(pauseTimer(timer, 300_000 + 9 * 60_000), 999_999_999)).toBe(0);
   });
 
   it('reads reminder minutes and drops the rest', () => {
