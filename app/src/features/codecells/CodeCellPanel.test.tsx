@@ -34,7 +34,8 @@ describe('CodeCellPanel', () => {
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Code' }), { key: 'Enter', ctrlKey: true });
     const log = await screen.findByRole('log', { name: 'Output' }, LONG);
     await waitFor(() => expect(log.textContent).toContain('RangeError: too far'), LONG);
-    expect(screen.getByRole('status').textContent).toBe('The cell stopped with an error.');
+    // The status follows the output by a tick, which a slow runner shows.
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('The cell stopped with an error.'), LONG);
   });
 
   it('stops a run with Stop', async () => {

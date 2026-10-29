@@ -56,7 +56,7 @@ export default function RecordingSettings() {
         </select>
       </div>
       {system && (
-        <>
+        <div className={styles.field}>
           <Switch
             label={t('audioMore.settings.systemAudio')}
             checked={choices.systemAudio}
@@ -66,7 +66,7 @@ export default function RecordingSettings() {
           <p id={systemHelp} className={styles.help}>
             {t('audioMore.settings.systemAudioHelp')} {t('audio.options.consent')}
           </p>
-        </>
+        </div>
       )}
       <div className={styles.field}>
         <label htmlFor={qualityId}>{t('audioMore.settings.quality')}</label>
@@ -82,7 +82,7 @@ export default function RecordingSettings() {
         <p className={styles.help}>{t('audioMore.settings.qualityHelp')}</p>
       </div>
       {meeting && (
-        <>
+        <div className={styles.field}>
           <Switch
             label={t('audioMore.settings.meeting')}
             checked={choices.meetingPrompt}
@@ -92,12 +92,12 @@ export default function RecordingSettings() {
           <p id={meetingHelp} className={styles.help}>
             {t('audioMore.settings.meetingHelp')} {t('audio.options.consent')}
           </p>
-        </>
+        </div>
       )}
       <AutoTranscriptsSwitch />
       <CaptionsSwitch />
       {storage && (
-        <div className={styles.field}>
+        <div className={`${styles.field} ${styles.apart}`}>
           <div className={styles.actions}>
             <Button
               variant="secondary"

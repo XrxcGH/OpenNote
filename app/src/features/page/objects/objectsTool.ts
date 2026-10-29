@@ -72,8 +72,12 @@ class ObjectsTool implements PointerToolDef {
   constructor(private readonly parts: ObjectsToolParts) {}
 
   accepts(event: PointerEvent, ctx: RouterContext): boolean {
-    if (ctx.activeTool !== 'select' || event.button !== 0 || readingLock.get()) return false;
-    if (handleOf(event) || bodyOf(event)) return true;
+    if (event.button !== 0 || readingLock.get()) return false;
+    // A grip or width handle moves or resizes its block in every tool: the ink tools leave the handles of a selected or
+    // edited block to this tool, so a text box can be moved and resized without leaving a draw tool.
+    if (handleOf(event)) return true;
+    if (ctx.activeTool !== 'select') return false;
+    if (bodyOf(event)) return true;
     return event.pointerType !== 'touch' && emptyPage(event, this.parts.viewport.world);
   }
 

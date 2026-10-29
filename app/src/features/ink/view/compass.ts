@@ -316,7 +316,7 @@ export function installCompass(host: InkHost, surfaces: Store<InkSurface | null>
   let drag: Drag | null = null;
   const tool: InkPointerTool = {
     id: 'ink.compass',
-    // Above the selection (95) and the palm filter (100), below the snap widgets (105), so the ruler still moves.
+    // Above the selection (101) and the palm filter (100), below the snap widgets (105), so the ruler still moves.
     priority: 104,
     accepts: (event) =>
       geometryTool.get() === 'compass' && geometryOn() && surfaces.get() !== null && rule.takes(event),

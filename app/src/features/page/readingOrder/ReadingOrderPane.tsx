@@ -116,7 +116,7 @@ export function ReadingOrderPane({ mounted, onClose }: { mounted: MountedPage; o
   };
 
   return (
-    <aside className={styles.pane} aria-label={t('page.order.title')}>
+    <aside className={styles.pane} aria-label={t('page.order.title')} data-page-pane="" data-toast-avoid="">
       <h2 className={styles.title}>{t('page.order.title')}</h2>
       <ul
         role="listbox"
@@ -146,10 +146,12 @@ export function ReadingOrderPane({ mounted, onClose }: { mounted: MountedPage; o
         <Button onClick={() => move(1)} disabled={!current?.block || active >= items.length - 1}>
           {t('page.order.moveDown')}
         </Button>
-        <Button variant="quiet" onClick={reset}>
+      </div>
+      <div className={styles.links}>
+        <Button variant="quiet" className={styles.link} onClick={reset}>
           {t('page.order.reset')}
         </Button>
-        <Button variant="quiet" onClick={onClose}>
+        <Button variant="quiet" className={styles.link} onClick={onClose}>
           {t('page.order.close')}
         </Button>
       </div>

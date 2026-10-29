@@ -49,6 +49,36 @@ test('keeps the selection bar inside the page view next to its right edge', asyn
   expect(sideways).toBeLessThanOrEqual(1);
 });
 
+// The selection bar flips below a selection at the top of the view, stays above one at the bottom, and, with a
+// selection as tall as the view, stays inside the view rather than leaving it.
+for (const [name, from, to] of [
+  ['near the top', 6, 30],
+  ['near the bottom', -40, -16],
+  ['as tall as the view', 4, -4],
+] as const) {
+  test(`keeps the selection bar fully inside the page view for a selection ${name}`, async ({ page }) => {
+    await openPage(page);
+    await choose(page, 'Pen, Ink, 0.5 mm');
+    const view = (await page.locator('[data-ink-overlay]').boundingBox())!;
+    const at = (offset: number) => (offset < 0 ? view.height + offset : offset);
+    const top = at(from);
+    const bottom = at(to);
+    await draw(page, line([300, top], [330, bottom]));
+    await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
+    await choose(page, 'Lasso select');
+    await draw(page, ellipse(315, (top + bottom) / 2, 120, Math.max(30, (bottom - top) / 2 + 12)));
+    const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+    await expect(bar).toBeVisible();
+    const box = (await bar.boundingBox())!;
+    const inside = await page.evaluate(() => {
+      const viewport = document.querySelector('[data-ink-overlay]')!.getBoundingClientRect();
+      return { top: viewport.top, bottom: viewport.bottom };
+    });
+    expect(box.y, 'the bar is cut off at the top').toBeGreaterThanOrEqual(inside.top - 1);
+    expect(box.y + box.height, 'the bar is cut off at the bottom').toBeLessThanOrEqual(inside.bottom + 1);
+  });
+}
+
 test('moves a text box with the ink the lasso takes', async ({ page }) => {
   await openPage(page);
   const view = (await page.locator('[data-ink-overlay]').boundingBox())!;

@@ -29,7 +29,10 @@ const frames = (n = 3) =>
   });
 
 async function ruled(fixture: PageFixture, grid: RuleGrid | null = GRID): Promise<PageHarness> {
-  const harness = await renderPage({ fixture });
+  // The pages feature's view attaches once its chunk has loaded and sets the paper's own rules (none, for plain
+  // paper). On a cold, loaded runner that lands after this test's rules and clears them, so the view stays off: this
+  // test is about the rules, which it sets itself.
+  const harness = await renderPage({ fixture, flags: { 'pages.view': false } });
   harness.mounted.flow.setRules(grid);
   await document.fonts?.ready;
   await frames();

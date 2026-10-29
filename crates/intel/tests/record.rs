@@ -66,7 +66,11 @@ fn the_ink_recordings_match_the_live_recognizer() {
         if live.text().to_uppercase() != case.text && !recording_requested() {
             // Hosted runners ship a different handwriting model than the computer that made the recordings, so
             // there is nothing to compare; the replay engines still run from the recordings on every platform.
-            eprintln!("skipped: this computer reads the strokes of {} as {:?}", case.name, live.text());
+            eprintln!(
+                "skipped: this computer reads the strokes of {} as {:?}",
+                case.name,
+                live.text()
+            );
             return;
         }
         assert_eq!(live.text().to_uppercase(), case.text, "{}", case.name);

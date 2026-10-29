@@ -8,12 +8,14 @@ import { createStore, useStore } from '../../../state/store';
 import { CalculatorTool } from './CalculatorTool';
 import { TimersTool } from './TimersTool';
 import { ExtraToolBody } from './extraTools';
-import { setDockInset } from '../../../shell/layout/dock';
+import { dockInsetOf, setDockInset } from '../../../shell/layout/dock';
 import { MIN_PANEL, ToolWindow } from './ToolWindow';
+import styles from './tools.module.css';
 import { UpcomingTool } from './UpcomingTool';
 import { forgetStored, loadStored, saveStored } from './storage';
 import { TOOLS } from './tools';
 import type { ToolId } from './tools';
+import { FLOAT_GAP, placeWindows } from './windowPlacement';
 
 interface Layer {
   open: readonly ToolId[];
@@ -23,9 +25,11 @@ interface Layer {
   epoch: number;
   /** The widths the person dragged panels to this session. */
   widths: Readonly<Partial<Record<ToolId, number>>>;
+  /** The windows in the order they were last used, the most recent last. Floating windows that overlap stack in it. */
+  used: readonly ToolId[];
 }
 
-const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0, widths: {} }, 'tool windows');
+const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0, widths: {}, used: [] }, 'tool windows');
 let root: Root | null = null;
 
 export function ToolBody({ tool }: { tool: ToolId }) {
@@ -54,43 +58,97 @@ export const MIN_PAGE = 480;
 const widthOf = (state: Layer, id: ToolId): number =>
   state.widths[id] ?? loadStored<number>(`width.${id}`, TOOLS.find((one) => one.id === id)!.width);
 
-function Windows() {
-  const state = useStore(layer, (current) => current);
+const pageViewport = () => document.querySelector<HTMLElement>('[data-scope=page][class*=viewport]');
+
+/** The width of the page's scroll bar (a styled one differs from the browser's own), 0 where bars float over the content. */
+function scrollbarSize(): number {
+  const page = pageViewport();
+  if (page && page.offsetWidth > page.clientWidth) return page.offsetWidth - page.clientWidth;
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;inline-size:100px;block-size:100px;overflow:scroll';
+  document.body.append(probe);
+  const size = probe.offsetWidth - probe.clientWidth;
+  probe.remove();
+  return size;
+}
+
+/** Puts a window above the others it overlaps. */
+function raise(id: ToolId): void {
+  layer.set((current) =>
+    current.used.at(-1) === id ? current : { ...current, used: [...current.used.filter((one) => one !== id), id] },
+  );
+}
+
+/** Re-renders when the window or the page region changes size, so the windows follow the panes. */
+function useLayoutSize(): number {
   const [viewport, setViewport] = useState(window.innerWidth);
+  const [, setTick] = useState(0);
   useEffect(() => {
     const onResize = () => setViewport(window.innerWidth);
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const main = document.querySelector('main');
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => setTick((n) => n + 1));
+    if (main) observer?.observe(main);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      observer?.disconnect();
+    };
   }, []);
+  return viewport;
+}
+
+function Windows() {
+  const state = useStore(layer, (current) => current);
+  const viewport = useLayoutSize();
   const widths = state.open.map((id) => widthOf(state, id));
-  const total = widths.reduce((sum, one) => sum + one, 0);
   // The page region's left edge does not move when panels dock, so it says how much room the panels may take.
-  const pageLeft = document.querySelector('main')?.getBoundingClientRect().left ?? 0;
-  const room = viewport - pageLeft - MIN_PAGE;
-  const overlay = total > Math.max(room, 0);
+  // A hidden page region (the compact layout showing a pane) has no box: the windows then go by the window alone.
+  const region = document.querySelector('main')?.getBoundingClientRect();
+  const main = region && region.width > 0 ? region : undefined;
+  const pageLeft = main?.left ?? 0;
+  // Floating windows keep clear of the page's scroll bar and of anything at the page region's right edge, such as a
+  // sheet. The bar is where the page's scroller has it, which a pane beside the page moves in from the edge.
+  let track = (main?.right ?? viewport) + dockInsetOf('tools') - scrollbarSize();
+  const scroller = pageViewport();
+  const box = scroller?.getBoundingClientRect();
+  if (scroller && box && box.width > 0) track = Math.min(track, box.left + scroller.clientLeft + scroller.clientWidth);
+  const edge = Math.max(0, viewport - track);
+  const placement = placeWindows({ widths, viewport, room: viewport - pageLeft - MIN_PAGE, edge });
+  const { overlay, docked } = placement;
   useLayoutEffect(() => {
-    setDockInset(overlay ? 0 : total);
+    document.documentElement.style.setProperty('--scrollbar-size', `${scrollbarSize()}px`);
+  });
+  useLayoutEffect(() => {
+    setDockInset(docked);
     return () => setDockInset(0);
-  }, [overlay, total]);
+  }, [docked]);
+  const stack = (id: ToolId) => {
+    const used = state.used.indexOf(id);
+    return 1 + (used < 0 ? 0 : used) + (state.pinned.includes(id) ? state.open.length : 0);
+  };
   return (
     <>
       {state.open.map((id, index) => {
         const tool = TOOLS.find((one) => one.id === id)!;
         const pinned = state.pinned.includes(id);
-        const right = widths.slice(index + 1).reduce((sum, one) => sum + one, 0);
-        const others = total - widths[index]!;
+        const placed = placement.windows[index]!;
+        const others = docked - widths[index]!;
         return (
           <ToolWindow
             key={`${id}-${state.epoch}`}
             tool={tool}
-            width={Math.min(widths[index]!, overlay ? viewport : widths[index]!)}
-            right={overlay ? Math.min(right, Math.max(0, viewport - MIN_PANEL)) : right}
+            width={placed.width}
+            right={placed.right}
             overlay={overlay}
-            maxWidth={overlay ? viewport : Math.max(MIN_PANEL, room - others)}
+            stack={stack(id)}
+            maxWidth={
+              overlay ? viewport - edge - 2 * FLOAT_GAP : Math.max(MIN_PANEL, viewport - pageLeft - MIN_PAGE - others)
+            }
             onResize={(width) => {
               saveStored(`width.${id}`, width);
               layer.set((current) => ({ ...current, widths: { ...current.widths, [id]: width } }));
             }}
+            onRaise={() => raise(id)}
             pinned={pinned}
             onPin={() =>
               layer.set((current) => ({
@@ -132,11 +190,14 @@ function dock(id: ToolId): void {
   if (!root) {
     const host = document.createElement('div');
     host.id = 'tool-windows';
+    // One stacking context for the windows, so their order among themselves never lifts one above a dialog.
+    host.className = styles.layer ?? '';
     document.body.append(host);
     root = createRoot(host);
     root.render(<Windows />);
   }
   if (!layer.get().open.includes(id)) layer.set((current) => ({ ...current, open: [...current.open, id] }));
+  raise(id);
   requestAnimationFrame(() =>
     document
       .querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`)
@@ -149,6 +210,7 @@ export function closeTool(id: ToolId): void {
     ...current,
     open: current.open.filter((one) => one !== id),
     pinned: current.pinned.filter((one) => one !== id),
+    used: current.used.filter((one) => one !== id),
   }));
 }
 

@@ -5,7 +5,7 @@
 import { newId } from '../../../editor/ids';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { strokeBounds, union } from '../geometry/bounds';
 import { libraryShape } from '../geometry/shapes';
 import type { Bounds } from '../geometry/types';
@@ -53,7 +53,7 @@ export async function insertLibraryShape(host: InkHost, surface: InkSurface, id:
   if (await surface.add(strokes)) {
     if (placed.marks.length > 0) showSnapMarks(surface, placed.marks, true);
     host.select({ strokes: strokes.map((s) => s.id), blocks: [] });
-    announce(t('ink.library.inserted', { shape: itemLabel(id) }));
+    say(t('ink.library.inserted', { shape: itemLabel(id) }));
   }
 }
 
@@ -91,7 +91,7 @@ export async function addTextToShape(host: InkHost, surface: InkSurface): Promis
   const stroke = surface.strokes(ids)[0];
   const shape = ids.length === 1 && stroke ? shapeOfStroke(stroke) : null;
   if (!box || !queue || !shape || surface.readOnly) {
-    announce(t('ink.library.selectShape'));
+    say(t('ink.library.selectShape'));
     return;
   }
   const pad = 8;
@@ -104,12 +104,12 @@ export async function addTextToShape(host: InkHost, surface: InkSurface): Promis
   };
   try {
     await queue.send({ edits: [{ edit: 'insertBlock', block: { id, type: 'text', frame, data: { markdown: '' } } }] });
-    announce(t('ink.library.textAdded'));
+    say(t('ink.library.textAdded'));
     // The new box takes the keyboard, so typing starts the label.
     requestAnimationFrame(() => {
       host.layer.get()?.view(id)?.element.querySelector<HTMLElement>('[contenteditable="true"]')?.focus();
     });
   } catch {
-    announce(t('ink.errors.notSaved'));
+    say(t('ink.errors.notSaved'));
   }
 }

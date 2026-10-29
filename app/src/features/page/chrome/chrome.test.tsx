@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanupPages, renderPage } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
+import { inkFrameShown } from '../seams/selectionStore';
 
 afterEach(cleanupPages);
 
@@ -18,6 +19,21 @@ describe('the grip of a text box', () => {
     await frame();
     const grip = harness.mounted.chrome.element.querySelector<HTMLElement>('[data-handle="grip"]');
     expect(grip?.title).toBe('Move Opened and typed');
+  });
+});
+
+describe('the grip of a text box in the selection frame', () => {
+  it('is left off while the ink frame shows the selection, and comes back after', async () => {
+    const fixture = textPageFixture('Framed');
+    const harness = await renderPage({ fixture });
+    const id = fixture.page.blocks[0].id;
+    harness.mounted.objects.select([id]);
+    const handles = () => harness.mounted.chrome.element.querySelectorAll('[data-handle]').length;
+    await vi.waitFor(() => expect(handles()).toBeGreaterThan(0));
+    inkFrameShown.set(true);
+    await vi.waitFor(() => expect(handles()).toBe(0));
+    inkFrameShown.set(false);
+    await vi.waitFor(() => expect(handles()).toBeGreaterThan(0));
   });
 });
 
