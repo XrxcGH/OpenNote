@@ -6,6 +6,7 @@ import { observe } from './kitMind/observe';
 import { choice } from './kitMind/choice';
 import { rt } from './kitMind/rt';
 import { psychophysics } from './kitMind/psychophysics';
+import { learning } from './kitMind/learning';
 import { agreement } from './kitMind/agreement';
 import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
@@ -133,6 +134,18 @@ export const kitMind = {
     stevensRow: 'Line {line} needs a stimulus and a judgment above 0.',
     lumOrder: 'The lower luminance must not be above the higher one.',
     snellenForm: 'Enter a Snellen fraction such as 20/40 or 6/12.',
+    trialType: 'Line {line} has "{type}", which is not a trial type such as A+ or AB-.',
+    phaseTrials: 'Line {line} needs at least one trial type.',
+    tooManyTrials: 'A phase can have at most {max} trials.',
+    alphaPart: '"{part}" is not a cue and a salience, such as A 0.3.',
+    tdOrder: 'The cue must come before the reward, and the reward before the last step.',
+    gridRagged: 'Every row of the grid needs the same number of cells.',
+    gridCell: '"{cell}" is not a grid cell. Use . # S G X or a number.',
+    gridStart: 'The grid has no open cell to start from.',
+    gridGoal: 'The grid needs a terminal cell: G, X, or a number.',
+    fewArms: 'A bandit needs at least 2 arms.',
+    bernoulliMeans: 'For win or lose rewards, each mean is a chance from 0 to 1.',
+    powerTrials: 'The power law needs every trial above 0.',
   },
   sdt,
   agreement,
@@ -142,4 +155,5 @@ export const kitMind = {
   choice,
   rt,
   psychophysics,
+  learning,
 } as const;

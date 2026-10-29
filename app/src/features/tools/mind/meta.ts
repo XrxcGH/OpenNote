@@ -25,4 +25,5 @@ export const MIND_TOOLS: readonly MindToolMeta[] = [
     keywords: 'kitMind.psychophysics.keywords',
     icon: 'Waveform',
   },
+  { id: 'learning', title: 'kitMind.learning.title', keywords: 'kitMind.learning.keywords', icon: 'Brain' },
 ];
