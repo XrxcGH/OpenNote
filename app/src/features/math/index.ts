@@ -37,7 +37,10 @@ export type { KnownFunction } from './calculus';
 export const loadCalculus = () => import('./calculus');
 /** Check my work (step checking), loaded on first use. The AI tutor imports the same module. */
 export const loadStepCheck = () => import('./stepcheck');
-export type { StepLine, StepResult } from './stepcheck';
+export type { ReasonCode, StepLine, StepResult } from './stepcheck';
+/** What the tutor uses from math (ADR 0050), loaded on first use. */
+export const loadTutorMath = () => import('./tutorMath');
+export type { CalculusKind, Step } from './calculus/types';
 
 /** The Math solvers window, loaded the first time it opens. */
 export const loadSolversTool = () => import('./solvers/ui/SolversTool');
