@@ -31,5 +31,11 @@ export const STATMODELS_TOOLS: readonly StatModelsToolMeta[] = [
     keywords: 'kitStatModels.survival.keywords',
     icon: 'HourglassMedium',
   },
+  {
+    id: 'timeseries',
+    title: 'kitStatModels.timeseries.title',
+    keywords: 'kitStatModels.timeseries.keywords',
+    icon: 'ChartLineUp',
+  },
   { id: 'spatial', title: 'kitStatModels.spatial.title', keywords: 'kitStatModels.spatial.keywords', icon: 'MapPin' },
 ];

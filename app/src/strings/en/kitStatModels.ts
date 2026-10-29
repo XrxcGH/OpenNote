@@ -6,6 +6,7 @@ import { survival, survivalSteps } from './kitStatModels/survival';
 import { regression, regressionSteps } from './kitStatModels/regression';
 import { spatial, spatialSteps } from './kitStatModels/spatial';
 import { causal, causalSteps } from './kitStatModels/causal';
+import { timeseries, timeseriesSteps } from './kitStatModels/timeseries';
 
 export const kitStatModels = {
   title: 'Statistical models',
@@ -134,6 +135,14 @@ export const kitStatModels = {
     dagCycle: 'The arrows make a cycle: {detail}. A causal diagram cannot have one.',
     dagNode: '{detail} is not in the diagram.',
     dagTooLarge: 'More than {detail} variables could be adjusted for, too many to list every set.',
+    shortSeries: 'This needs at least {detail} values in the series.',
+    constantSeries: 'Every value in the series is the same, so it has no autocorrelation.',
+    periodTooSmall: 'The season length must be at least 2.',
+    smoothingRange: 'Smoothing parameters must be between 0 and 1.',
+    arOnly: 'Yule-Walker and least squares fit only AR models. Set q to 0, or choose conditional sum of squares.',
+    lagsTooFew: 'Use more lags than the model has coefficients.',
+    timeOrder: 'The time column must increase from each row to the next.',
+    holdoutTooLong: 'Hold out at most {detail} values, so enough are left to fit the model.',
     unknown: 'That could not be worked out.',
   },
   glm,
@@ -141,11 +150,13 @@ export const kitStatModels = {
   regression,
   spatial,
   causal,
+  timeseries,
   step: {
     glm: glmSteps,
     survival: survivalSteps,
     regression: regressionSteps,
     spatial: spatialSteps,
     causal: causalSteps,
+    timeseries: timeseriesSteps,
   },
 };
