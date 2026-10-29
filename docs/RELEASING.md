@@ -101,7 +101,7 @@ This is separate from the update key. The update key convinces the app, and the 
 When you add it:
 
 1. Add the signing credentials as secrets of the `release` environment, such as the Azure Trusted Signing account, profile, and client credentials. Never add them as repository secrets.
-2. Add a signing step to the package job in `.github/workflows/release.yml`, where a comment marks the spot, before "Sign the updates". Use the provider's official action, pinned to a full commit SHA with a version comment, and pass the secrets only to that step. It signs the three exes in `dist-release` in place. Give it the condition `github.event_name == 'push'`, so a dry run skips it.
+2. Add a signing step to the package job in `.github/workflows/release.yml`, where a comment marks the spot, before "Sign the updates". Use the provider's official action, pinned to a full commit SHA with a version comment, and pass the secrets only to that step. It signs the three Windows exes in `dist-release` in place; the dmg and the AppImage are signed when they are built, as [Sign the Mac and Linux files](#sign-the-mac-and-linux-files) describes. Give it the condition `github.event_name == 'push'`, so a dry run skips it.
 3. Add the step only once the certificate exists, and make it fail the release if signing fails. Don't add a placeholder or a condition that skips it for a release: a release must never look signed when it isn't. GitHub also doesn't allow the `secrets` context in a step's `if:` condition. The check at the end of the package job fails the release if an exe has no Authenticode signature, or if Windows doesn't accept the certificate.
 
 Keep every existing hardening property of release.yml: least permissions, `persist-credentials: false`, and secrets only in the step that needs them. Code signing changes the files, so the update signatures and hashes must be made afterward (they already are, in "Sign the updates").
@@ -235,7 +235,7 @@ The table lives in [app/release-files.json](../app/release-files.json). [write-m
 
 ## What the release workflow does
 
-Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). Running it by hand is a [dry run](#trying-a-release-with-a-dry-run). The workflow has seven jobs: `version`, `checklist`, `ci`, `build`, `sbom`, `package`, and `publish`. The build job runs three times side by side, once for each exe. Each job starts only when the ones it needs succeed, and nothing is published until the last step of the publish job.
+Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). Running it by hand is a [dry run](#trying-a-release-with-a-dry-run). The workflow has seven jobs: `version`, `checklist`, `ci`, `build`, `sbom`, `package`, and `publish`. The build job runs five times side by side, once for each release file: the three exes, the dmg, and the AppImage. Each job starts only when the ones it needs succeed, and nothing is published until the last step of the publish job.
 
 Each job gets only the permissions it needs, and no checkout keeps a GitHub token on disk. Every action is pinned to a full commit SHA, with the version in a comment. That includes the actions in `ci.yml`, because the release run runs its jobs too, and any job of a run can upload artifacts to it. Change the SHA and its comment together when you update an action. A test, [workflow.test.ts](../app/scripts/release/workflow.test.ts), fails if a secret, a permission, or a pin moves where it shouldn't.
 
