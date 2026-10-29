@@ -34,13 +34,19 @@
     position: sticky;
     inset-block-start: 0;
     align-self: start;
+    max-block-size: calc(100dvh - var(--size-title-bar) - var(--space-10) - var(--space-3));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    /* A link scrolled into view keeps its focus ring inside the list, not on its edge. */
+    scroll-padding-block: var(--space-3);
   }
 
   /* The list's block padding is room inside the scroller for the first link's focus ring. The header and the
      main column give up and take back the same 4 px, so nothing moves. */
   .nav ul {
     display: grid;
-    gap: var(--space-1);
+    gap: var(--space-2);
     margin: 0;
     padding: var(--space-2) var(--space-3);
     list-style: none;
@@ -82,6 +88,7 @@
     padding: var(--space-3) var(--space-7) var(--space-8);
   }
 
+  /* Room inside the focus ring that Tab and a section change put on the heading, so the ring clears the glyphs. */
   .heading,
   .listHeading {
     inline-size: fit-content;
@@ -97,7 +104,8 @@
   .heading:focus-visible,
   .listHeading:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
-    outline-offset: var(--size-focus-ring-offset);
+    outline-offset: var(--space-2);
+    border-radius: var(--radius-md);
   }
 
   /* One setting: a label, what it says, and the control. */
@@ -113,6 +121,18 @@
     line-height: var(--type-subtitle-line);
   }
 
+  /* A block of several controls: groups sit a clear step apart, a label stays tight to its own control. */
+  .spaced {
+    gap: var(--space-4);
+  }
+
+  /* Short number fields side by side, never one stretched across the column. */
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-4);
+  }
+
   .block p {
     margin: 0;
   }
@@ -124,6 +144,21 @@
     line-height: var(--type-small-line);
   }
 
+  /* A plain select in any section looks like the app's other fields, and is a touch target in touch density. */
+  .main select:not([class]) {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  :global(:root[data-density='touch']) .main select:not([class]) {
+    min-block-size: var(--size-target-touch);
+  }
+
   .notices {
     max-inline-size: var(--size-reading-measure);
     font-size: var(--type-small-size);
@@ -132,9 +167,30 @@
 
   .notices summary {
     cursor: pointer;
-    min-block-size: var(--size-target-min, 44px);
+    min-block-size: var(--size-target-pointer);
     display: flex;
     align-items: center;
+    gap: var(--space-2);
+    color: var(--color-accent-primary);
+    list-style: none;
+  }
+
+  :global(:root[data-density='touch']) .notices summary {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .notices summary::before {
+    content: '';
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform var(--motion-duration-base) var(--motion-easing-standard);
+  }
+
+  .notices[open] summary::before {
+    transform: rotate(45deg);
   }
 
   .noticesText {
@@ -179,7 +235,7 @@
 
   .facts {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: minmax(max-content, 10rem) minmax(0, 1fr);
     gap: var(--space-2) var(--space-6);
     margin: 0;
   }

@@ -6,7 +6,8 @@ import { isEnabled } from '../../../app/flags';
 import { InkReplay } from '../../../core/audio/replay';
 import type { ReplayStroke } from '../../../core/audio/replay';
 import { t } from '../../../strings/t';
-import { announce, buttonClass } from '../../../ui';
+import { announce, buttonClass, showToast } from '../../../ui';
+import type { InkPoint } from '../geometry/types';
 import type { InkStroke } from '../model/types';
 import type { InkHost, InkPointerTool } from './host';
 import { paintStrokes } from './paint';
@@ -15,22 +16,65 @@ import type { Store } from '../../../state/store';
 
 export const SPEEDS = [0.5, 1, 2, 4] as const;
 
-/** A stroke as replay times it: when it began and how long it took. */
+/** A stroke that remembers when each point was written: replay can play it at the speed it was drawn. */
+const isTimed = (stroke: InkStroke): boolean =>
+  !stroke.startUnknown && stroke.points.length > 0 && stroke.points.some((p) => p.time !== undefined);
+
+/** A very quick stroke still takes this long to show, so replay never flashes past it. */
+export const MIN_STROKE_MS = 300;
+/** A stroke with no clock (a shape, a snapped line, imported ink) takes this long to draw in. */
+export const UNTIMED_STROKE_MS = 600;
+const UNTIMED_GAP_MS = 150;
+
+/**
+ * Strokes as replay times them: when each began and how long it took. Ink with no clock, such as shapes, snapped
+ * lines and imported ink, plays after the timed ink in the order the page holds it, so replay always has something to show.
+ */
 export function replayEntries(strokes: readonly InkStroke[]): ReplayStroke[] {
-  return strokes
-    .filter((stroke) => !stroke.startUnknown && stroke.points.length > 0)
-    .map((stroke) => ({
-      id: stroke.id,
-      startMs: stroke.startTime,
-      durationMs: stroke.points[stroke.points.length - 1].time ?? 0,
-    }));
+  const entries: ReplayStroke[] = [];
+  let end = Number.NEGATIVE_INFINITY;
+  for (const stroke of strokes) {
+    if (!isTimed(stroke)) continue;
+    const durationMs = Math.max(stroke.points[stroke.points.length - 1].time ?? 0, MIN_STROKE_MS);
+    entries.push({ id: stroke.id, startMs: stroke.startTime, durationMs });
+    end = Math.max(end, stroke.startTime + durationMs);
+  }
+  let cursor = Number.isFinite(end) ? end + UNTIMED_GAP_MS : 0;
+  for (const stroke of strokes) {
+    if (isTimed(stroke) || stroke.points.length === 0) continue;
+    entries.push({ id: stroke.id, startMs: cursor, durationMs: UNTIMED_STROKE_MS });
+    cursor += UNTIMED_STROKE_MS + UNTIMED_GAP_MS;
+  }
+  return entries;
 }
 
 /** The stroke as far as it has been drawn at `progress` (0 to 1) of its time. */
 export function partialStroke(stroke: InkStroke, progress: number): InkStroke {
-  const end = (stroke.points[stroke.points.length - 1]?.time ?? 0) * Math.min(1, Math.max(0, progress));
+  const share = Math.min(1, Math.max(0, progress));
+  if (!isTimed(stroke)) return { ...stroke, id: `${stroke.id}:part`, points: untimedPrefix(stroke.points, share) };
+  const end = (stroke.points[stroke.points.length - 1]?.time ?? 0) * share;
   const kept = stroke.points.filter((p) => (p.time ?? 0) <= end);
   return { ...stroke, id: `${stroke.id}:part`, points: kept.length > 0 ? kept : stroke.points.slice(0, 1) };
+}
+
+/** The first `share` of a path by length, ending on a point between two when it falls there. */
+function untimedPrefix(points: readonly InkPoint[], share: number): InkPoint[] {
+  if (points.length < 2 || share >= 1 || share <= 0) return share >= 1 ? [...points] : points.slice(0, 1);
+  const lengths = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.y - points[i].y));
+  const target = lengths.reduce((a, b) => a + b, 0) * share;
+  const out: InkPoint[] = [points[0]];
+  let walked = 0;
+  for (let i = 0; i < lengths.length; i++) {
+    if (walked + lengths[i] > target) {
+      const f = lengths[i] > 0 ? (target - walked) / lengths[i] : 0;
+      const [a, b] = [points[i], points[i + 1]];
+      out.push({ ...b, x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+      return out;
+    }
+    walked += lengths[i];
+    out.push(points[i + 1]);
+  }
+  return out;
 }
 
 class ReplayBar {
@@ -269,7 +313,8 @@ export function startReplay(host: InkHost, surface: InkSurface): void {
   const selected = host.selection.get().strokes;
   const strokes = (selected.length > 0 ? surface.strokes(selected) : [...surface.index.all()]) as InkStroke[];
   if (replayEntries(strokes).length === 0) {
-    announce(t('ink.replay.none'));
+    // A toast, not only an announcement: a button that shows nothing looks broken.
+    showToast({ message: t('ink.replay.none') });
     return;
   }
   open = new ReplayBar(host, surface, strokes, () => (open = null));

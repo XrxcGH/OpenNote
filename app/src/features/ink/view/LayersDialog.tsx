@@ -19,6 +19,7 @@ import {
   setLayerPatch,
 } from './layers';
 import type { InkSurface } from './surface';
+import styles from './view.module.css';
 
 function useStoreValue<T>(store: { get(): T; subscribe(l: () => void): () => void }): T {
   const [value, setValue] = useState(store.get());
@@ -58,53 +59,55 @@ function LayerRow(props: { id: string; surface: InkSurface; first: boolean; last
     if (next) void sendLayers(surface, next);
   };
   return (
-    <li data-ink-layer={id}>
+    <li data-ink-layer={id} className={styles.layer}>
       <Rename key={name} id={id} surface={surface} />
-      <Button
-        variant="quiet"
-        aria-pressed={active === id}
-        onClick={() => {
-          activeLayer.set(id);
-          announce(t('ink.layers.nowActive', { layer: name }));
-        }}
-      >
-        {active === id ? t('ink.layers.active') : t('ink.layers.makeActive')}
-      </Button>
-      <Button variant="quiet" aria-pressed={def.hidden} onClick={() => change({ hidden: !def.hidden })}>
-        {def.hidden ? t('ink.layers.show') : t('ink.layers.hide')}
-      </Button>
-      <Button variant="quiet" aria-pressed={def.locked} onClick={() => change({ locked: !def.locked })}>
-        {def.locked ? t('ink.layers.unlock') : t('ink.layers.lock')}
-      </Button>
-      <Button variant="quiet" disabled={props.last} onClick={() => move('up')}>
-        {t('ink.layers.moveUp')}
-      </Button>
-      <Button variant="quiet" disabled={props.first} onClick={() => move('down')}>
-        {t('ink.layers.moveDown')}
-      </Button>
-      <Button
-        variant="quiet"
-        onClick={() => {
-          exportOnlyLayer(id);
-          void Promise.resolve(executeCommand('pages.exportPdf', undefined, 'menu')).finally(() =>
-            exportOnlyLayer(undefined),
-          );
-        }}
-      >
-        {t('ink.layers.export')}
-      </Button>
-      {id !== BASE_LAYER && (
+      <div className={styles.layerActions}>
+        <Button
+          variant="quiet"
+          aria-pressed={active === id}
+          onClick={() => {
+            activeLayer.set(id);
+            announce(t('ink.layers.nowActive', { layer: name }));
+          }}
+        >
+          {active === id ? t('ink.layers.active') : t('ink.layers.makeActive')}
+        </Button>
+        <Button variant="quiet" aria-pressed={def.hidden} onClick={() => change({ hidden: !def.hidden })}>
+          {def.hidden ? t('ink.layers.show') : t('ink.layers.hide')}
+        </Button>
+        <Button variant="quiet" aria-pressed={def.locked} onClick={() => change({ locked: !def.locked })}>
+          {def.locked ? t('ink.layers.unlock') : t('ink.layers.lock')}
+        </Button>
+        <Button variant="quiet" disabled={props.last} onClick={() => move('up')}>
+          {t('ink.layers.moveUp')}
+        </Button>
+        <Button variant="quiet" disabled={props.first} onClick={() => move('down')}>
+          {t('ink.layers.moveDown')}
+        </Button>
         <Button
           variant="quiet"
           onClick={() => {
-            const patch = deletePatch(layers, id);
-            if (patch) void sendLayers(surface, patch);
-            if (active === id) activeLayer.set(BASE_LAYER);
+            exportOnlyLayer(id);
+            void Promise.resolve(executeCommand('pages.exportPdf', undefined, 'menu')).finally(() =>
+              exportOnlyLayer(undefined),
+            );
           }}
         >
-          {t('ink.layers.delete')}
+          {t('ink.layers.export')}
         </Button>
-      )}
+        {id !== BASE_LAYER && (
+          <Button
+            variant="quiet"
+            onClick={() => {
+              const patch = deletePatch(layers, id);
+              if (patch) void sendLayers(surface, patch);
+              if (active === id) activeLayer.set(BASE_LAYER);
+            }}
+          >
+            {t('ink.layers.delete')}
+          </Button>
+        )}
+      </div>
     </li>
   );
 }
@@ -135,7 +138,7 @@ function LayersPanel(props: { surface: InkSurface; done: () => void }) {
         { id: 'close', label: t('ink.layers.close'), variant: 'primary', onPress: done },
       ]}
     >
-      <ul aria-label={t('ink.layers.title')}>
+      <ul aria-label={t('ink.layers.title')} className={styles.layers}>
         {top.map((id, i) => (
           <LayerRow key={id} id={id} surface={surface} first={i === top.length - 1} last={i === 0} />
         ))}

@@ -6,6 +6,8 @@
     inline-size: calc(100% - 2 * var(--space-6));
     margin: var(--space-6) auto;
     padding: var(--space-6);
+    /* Room under the drawing, so the window's edge never cuts it. */
+    padding-block-end: var(--space-8);
     border-radius: var(--radius-lg);
     background: var(--color-surface-page);
     color: var(--color-text-primary);
@@ -39,7 +41,8 @@
   .list {
     display: grid;
     gap: var(--space-1);
-    margin: var(--space-2) 0 0;
+    /* The links' own padding hangs out to the side, so their text starts where the heading above it does. */
+    margin: var(--space-2) calc(-1 * var(--space-3)) 0;
     padding: 0;
     list-style: none;
   }
@@ -72,6 +75,12 @@
   .path,
   .empty {
     color: var(--color-text-secondary);
+  }
+
+  /* A page's place is set off from its title by a dash, so the two don't read as one long title. */
+  .path::before {
+    content: '\2014\00a0' / '';
+    color: var(--color-text-muted);
   }
 
   .empty {

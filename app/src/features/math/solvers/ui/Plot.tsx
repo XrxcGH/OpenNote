@@ -1,9 +1,10 @@
 // The solvers' plot: a quiet SVG on the page color with the grapher's grid, axes, and tick labels, and layers on
 // top: lines, shaded areas, line segments, dots, field arrows, and bars. Curves use the brand's pens, every color is
 // a token, and the picture always has a name; the worked steps beside it carry the same facts in words.
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import { computeGrid, toPixel, type Viewport } from '../../grapher';
 import type { XY } from '../steps';
+import { useSvgScale } from '../../svgScale';
 import styles from './solvers.module.css';
 
 export const PENS = [
@@ -102,6 +103,8 @@ function pathOf(points: readonly XY[], view: Viewport, close = false): string {
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function Plot({ layers, label, view: given, equal = false, include = [], marker = null }: PlotProps) {
   const clip = useId();
+  const svg = useRef<SVGSVGElement>(null);
+  useSvgScale(svg, SIZE.width);
   const view = given ?? fitView([...layers.flatMap(pointsOf), ...include], equal);
   const grid = computeGrid(view, SIZE);
   const color = (layer: PlotLayer) => `var(${PENS[(layer.tone ?? 0) % PENS.length]})`;
@@ -110,7 +113,7 @@ export function Plot({ layers, label, view: given, equal = false, include = [], 
     marker && Number.isFinite(marker.x) && Number.isFinite(marker.y) ? toPixel(view, SIZE, marker) : null;
   return (
     <figure className={styles.figure}>
-      <svg className={styles.plot} viewBox={`0 0 ${SIZE.width} ${SIZE.height}`} role="img" aria-label={label}>
+      <svg ref={svg} className={styles.plot} viewBox={`0 0 ${SIZE.width} ${SIZE.height}`} role="img" aria-label={label}>
         <defs>
           <clipPath id={clip}>
             <rect width={SIZE.width} height={SIZE.height} />
@@ -144,31 +147,6 @@ export function Plot({ layers, label, view: given, equal = false, include = [], 
             ))}
           <line className={styles.axis} x1={0} x2={SIZE.width} y1={grid.xAxis.pixel} y2={grid.xAxis.pixel} />
           <line className={styles.axis} y1={0} y2={SIZE.height} x1={grid.yAxis.pixel} x2={grid.yAxis.pixel} />
-          {grid.x
-            .filter((tick) => tick.major && tick.label && tick.value !== 0)
-            .map((tick) => (
-              <text
-                key={`lx${tick.value}`}
-                className={styles.tick}
-                x={tick.position}
-                y={Math.min(SIZE.height - 4, Math.max(12, grid.xAxis.pixel + 14))}
-                textAnchor="middle"
-              >
-                {tick.label}
-              </text>
-            ))}
-          {grid.y
-            .filter((tick) => tick.major && tick.label && tick.value !== 0)
-            .map((tick) => (
-              <text
-                key={`ly${tick.value}`}
-                className={styles.tick}
-                y={tick.position + 4}
-                x={Math.min(SIZE.width - 4, Math.max(4, grid.yAxis.pixel + 6))}
-              >
-                {tick.label}
-              </text>
-            ))}
         </g>
         <g clipPath={`url(#${clip})`} aria-hidden="true">
           {layers.map((layer, i) => {
@@ -250,6 +228,40 @@ export function Plot({ layers, label, view: given, equal = false, include = [], 
             );
           })}
           {markerAt && <circle className={styles.marker} cx={markerAt.x} cy={markerAt.y} r={5} />}
+        </g>
+        <g aria-hidden="true">
+          {grid.x
+            .filter((tick) => tick.major && tick.label && tick.value !== 0)
+            .map((tick) => {
+              // A label near either edge hangs inward, so its first and last characters are never cut off.
+              const half = (tick.label?.length ?? 1) * 3.2;
+              const anchor =
+                tick.position < half + 2 ? 'start' : tick.position > SIZE.width - half - 2 ? 'end' : 'middle';
+              const x = anchor === 'start' ? 3 : anchor === 'end' ? SIZE.width - 3 : tick.position;
+              return (
+                <text
+                  key={`lx${tick.value}`}
+                  className={styles.tick}
+                  x={x}
+                  y={Math.min(SIZE.height - 5, Math.max(12, grid.xAxis.pixel + 15))}
+                  textAnchor={anchor}
+                >
+                  {tick.label}
+                </text>
+              );
+            })}
+          {grid.y
+            .filter((tick) => tick.major && tick.label && tick.value !== 0)
+            .map((tick) => (
+              <text
+                key={`ly${tick.value}`}
+                className={styles.tick}
+                y={Math.min(SIZE.height - 4, Math.max(11, tick.position + 4))}
+                x={Math.min(SIZE.width - 22, Math.max(4, grid.yAxis.pixel + 6))}
+              >
+                {tick.label}
+              </text>
+            ))}
         </g>
       </svg>
       {legend.length > 0 && (
