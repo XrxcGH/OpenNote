@@ -8,6 +8,7 @@ export const CIVIL_TOOL_IDS = [
   'hydraulics',
   'groundwater',
   'water',
+  'transport',
   'process',
   'reactors',
 ] as const;
@@ -22,6 +23,7 @@ export const CIVIL_ICONS: Readonly<Record<CivilToolId, string>> = {
   hydraulics: 'Waves',
   groundwater: 'Drop',
   water: 'Funnel',
+  transport: 'TrafficSignal',
   process: 'Factory',
   reactors: 'Flask',
 };

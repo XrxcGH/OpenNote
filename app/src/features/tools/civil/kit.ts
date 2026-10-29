@@ -9,6 +9,7 @@ export const CIVIL_KIT: Readonly<Record<CivilToolId, () => Promise<readonly Calc
   hydraulics: () => import('./hydraulics/calcs').then((module) => module.CALCS),
   groundwater: () => import('./groundwater/calcs').then((module) => module.CALCS),
   water: () => import('./water/calcs').then((module) => module.CALCS),
+  transport: () => import('./transport/calcs').then((module) => module.CALCS),
   process: () => import('./process/calcs').then((module) => module.CALCS),
   reactors: () => import('./reactors/calcs').then((module) => module.CALCS),
 };

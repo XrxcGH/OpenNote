@@ -7,6 +7,7 @@ import { processTool } from './kitCivil/process';
 import { reactors } from './kitCivil/reactors';
 import { soils } from './kitCivil/soils';
 import { structures } from './kitCivil/structures';
+import { transport } from './kitCivil/transport';
 import { water } from './kitCivil/water';
 
 export const kitCivil = {
@@ -53,6 +54,16 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    transport: {
+      title: 'Traffic, highways, surveying, and site planning',
+      open: 'Open traffic, highways, surveying, and site planning',
+      keywords:
+        'transportation traffic flow greenshields greenberg underwood capacity shockwave queue bottleneck ' +
+        'incident delay toll plaza m/m/1 m/m/c signal timing webster cycle green split stopping sight distance ' +
+        'horizontal curve superelevation vertical curve crest sag travel demand gravity model logit mode share ' +
+        'transit headway fleet surveying traverse compass rule misclosure leveling area by coordinates earthwork ' +
+        'average end area prismoidal mass diagram site zoning floor area ratio coverage density parking setback',
+    },
     indeterminate: {
       title: 'Indeterminate structures and influence lines',
       open: 'Open indeterminate structures and influence lines',
@@ -129,6 +140,7 @@ export const kitCivil = {
   hydraulics,
   groundwater,
   water,
+  transport,
   process: processTool,
   reactors,
 } as const;
