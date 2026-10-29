@@ -504,3 +504,57 @@ fn reading_curves_stops_when_cancel_is_pressed() {
     ));
     assert_eq!(read.dropped, 0);
 }
+
+fn ordered(note: &[u8], env: &crate::sink::ImportEnv<'_>) -> (Vec<String>, PageReport) {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("a.sdocx");
+    std::fs::write(&file, note).unwrap();
+    let mut package = Package::open(&file).unwrap();
+    let mut pages: Vec<_> = package
+        .members
+        .iter()
+        .filter(|m| m.extension() == "page")
+        .cloned()
+        .collect();
+    let mut report = PageReport::default();
+    samsung::order_pages(&mut package, &mut pages, env, &mut report).unwrap();
+    let ids = pages
+        .iter()
+        .map(|p| p.file_name().trim_end_matches(".page").to_owned())
+        .collect();
+    (ids, report)
+}
+
+#[test]
+fn many_pages_are_ordered_from_a_large_page_index_in_one_pass() {
+    let world = TestEnv::new();
+    let note = fixtures::samsung_many_pages(2_000, 3 << 20);
+    let started = std::time::Instant::now();
+    let (ids, report) = ordered(&note, &world.env());
+    let took = started.elapsed();
+    assert_eq!(ids, fixtures::samsung_many_page_ids(2_000));
+    assert!(report.entries.is_empty());
+    assert!(took < Duration::from_secs(5), "took {took:?}");
+}
+
+#[test]
+fn a_page_index_larger_than_any_note_keeps_leaves_the_package_order() {
+    let world = TestEnv::new();
+    let note = fixtures::samsung_many_pages(3, 5 << 20);
+    let (ids, report) = ordered(&note, &world.env());
+    assert_eq!(ids, ["p00000", "p00001", "p00002"]);
+    assert_eq!(report.entries[0].what, "page order");
+}
+
+#[test]
+fn a_page_id_inside_a_longer_one_is_not_taken_for_it() {
+    let world = TestEnv::new();
+    let info: Vec<u8> = "page10;page1".encode_utf16().flat_map(u16::to_le_bytes).collect();
+    let note = zip_bytes(&[
+        ("pageIdInfo.dat", &info),
+        ("page1.page", b"\x01"),
+        ("page10.page", b"\x01"),
+    ]);
+    let (ids, _) = ordered(&note, &world.env());
+    assert_eq!(ids, ["page10", "page1"]);
+}

@@ -199,3 +199,24 @@ pub fn notability_shared_blob(holders: usize, points: usize, per_curve: usize) -
     objects.push(Value::Data(le_i32(&[count]).repeat(points / per_curve)));
     note_with_curves(objects, points / 20)
 }
+
+/// The page IDs of [`samsung_many_pages`], in the order its `pageIdInfo.dat` lists them.
+pub fn samsung_many_page_ids(pages: usize) -> Vec<String> {
+    (0..pages).rev().map(|n| format!("p{n:05}")).collect()
+}
+
+/// A Samsung note of `pages` pages stored as `p00000.page` onward, whose `pageIdInfo.dat` lists them last first,
+/// in UTF-16, followed by `filler` bytes that are no character of an ID.
+pub fn samsung_many_pages(pages: usize, filler: usize) -> Vec<u8> {
+    let mut info: Vec<u8> = samsung_many_page_ids(pages)
+        .join(";")
+        .encode_utf16()
+        .flat_map(u16::to_le_bytes)
+        .collect();
+    info.resize(info.len() + filler - filler / 100, 0xff);
+    info.extend(noise(filler / 100).iter().map(|b| b | 0x80));
+    let names: Vec<String> = (0..pages).map(|n| format!("p{n:05}.page")).collect();
+    let mut files: Vec<(&str, &[u8])> = vec![("pageIdInfo.dat", &info)];
+    files.extend(names.iter().map(|n| (n.as_str(), b"\x01\x02".as_slice())));
+    zip_bytes(&files)
+}

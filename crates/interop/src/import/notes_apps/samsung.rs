@@ -53,7 +53,7 @@ pub(super) fn convert(path: &Path, stem: &str, env: &ImportEnv<'_>) -> Result<Co
             format!("it holds no pages that OpenNote can read. {}", APP.pdf_route()),
         ));
     }
-    order_pages(&mut package, &mut pages)?;
+    order_pages(&mut package, &mut pages, env, &mut general)?;
     let text = xml_text(&mut package, &xml)?;
     let files = read_attachments(&mut package, &media_members, env, &mut general)?;
     let placed = place(&mut package, &pages, files, 5, env)?;
@@ -88,9 +88,40 @@ fn xml_text(package: &mut Package, xml: &[Member]) -> Result<Vec<String>> {
     Ok(text)
 }
 
+/// The largest `pageIdInfo.dat` read for the page order. A real one is a few kilobytes.
+pub(super) const MAX_PAGE_INFO_BYTES: u64 = 4 << 20;
+
+/// The most page IDs that are not whole words looked for one by one in `pageIdInfo.dat`.
+const MAX_ODD_IDS: usize = 32;
+
+/// Whether a character can be part of a page ID in `pageIdInfo.dat`.
+fn id_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || c == '-' || c == '_'
+}
+
+/// The words of `text` made of [`id_char`] characters, each with the byte where it starts.
+fn words(text: &str) -> impl Iterator<Item = (usize, &str)> + '_ {
+    let mut chars = text.char_indices().peekable();
+    std::iter::from_fn(move || {
+        while chars.next_if(|(_, c)| !id_char(*c)).is_some() {}
+        let (start, _) = *chars.peek()?;
+        let mut end = start;
+        while let Some((at, c)) = chars.next_if(|(_, c)| id_char(*c)) {
+            end = at + c.len_utf8();
+        }
+        Some((start, text.get(start..end).unwrap_or_default()))
+    })
+}
+
 /// Orders the page files by where `pageIdInfo.dat` names them. Without it, or for pages it does not name, the
-/// package's order stays.
-fn order_pages(package: &mut Package, pages: &mut [Member]) -> Result<()> {
+/// package's order stays. A page is named where its ID stands as a whole word, first in the file read as UTF-8
+/// and then in the file read as UTF-16. So `page1` is not found inside `page10`. The file is read once, whatever the number of pages.
+pub(super) fn order_pages(
+    package: &mut Package,
+    pages: &mut [Member],
+    env: &ImportEnv<'_>,
+    general: &mut PageReport,
+) -> Result<()> {
     let Some(info) = package
         .members
         .iter()
@@ -99,29 +130,64 @@ fn order_pages(package: &mut Package, pages: &mut [Member]) -> Result<()> {
     else {
         return Ok(());
     };
+    if info.size > MAX_PAGE_INFO_BYTES {
+        general.simplified(
+            "page order",
+            "The list of the pages' order is larger than any note keeps, so the pages come in the order the \
+             file holds them.",
+        );
+        return Ok(());
+    }
     let Ok(bytes) = package.read(&info)? else {
         return Ok(());
     };
-    let text = String::from_utf8_lossy(&bytes).into_owned();
+    let text = String::from_utf8_lossy(&bytes);
     let utf16: String = bytes
         .as_chunks::<2>()
         .0
         .iter()
         .map(|c| char::from_u32(u32::from(u16::from_le_bytes(*c))).unwrap_or('\u{fffd}'))
         .collect();
-    let mut rank: HashMap<String, usize> = HashMap::new();
-    for page in pages.iter() {
-        let id = page.file_name().trim_end_matches(".page").to_owned();
-        if id.is_empty() {
-            continue;
-        }
-        if let Some(at) = text
-            .find(&id)
-            .or_else(|| utf16.find(&id).map(|a| text.len().saturating_add(a)))
-        {
-            rank.insert(page.name.clone(), at);
+    let mut found: HashMap<&str, Option<usize>> = pages
+        .iter()
+        .map(|p| p.file_name().trim_end_matches(".page"))
+        .filter(|id| !id.is_empty())
+        .map(|id| (id, None))
+        .collect();
+    let mut seen = 0usize;
+    for (offset, source) in [(0, text.as_ref()), (text.len(), utf16.as_str())] {
+        for (at, word) in words(source) {
+            seen += 1;
+            if seen.is_multiple_of(4096) {
+                package.check_time()?;
+                env.control.checkpoint()?;
+            }
+            if let Some(slot @ None) = found.get_mut(word) {
+                *slot = Some(offset.saturating_add(at));
+            }
         }
     }
+    // An ID that is not a whole word is looked for as it is, for a few pages only.
+    let odd: Vec<&str> = found
+        .keys()
+        .filter(|id| !id.chars().all(id_char))
+        .take(MAX_ODD_IDS)
+        .copied()
+        .collect();
+    for id in odd {
+        package.check_time()?;
+        let at = text
+            .find(id)
+            .or_else(|| utf16.find(id).map(|a| text.len().saturating_add(a)));
+        found.insert(id, at);
+    }
+    let rank: HashMap<String, usize> = pages
+        .iter()
+        .filter_map(|p| {
+            let at = (*found.get(p.file_name().trim_end_matches(".page"))?)?;
+            Some((p.name.clone(), at))
+        })
+        .collect();
     pages.sort_by_key(|p| rank.get(&p.name).copied().unwrap_or(usize::MAX));
     Ok(())
 }
