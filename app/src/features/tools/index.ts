@@ -36,3 +36,5 @@ export {
 export type { KitId, KitOpener } from './kits/registry';
 export type { KitDef, KitInsertContent, KitResultRow, KitStep, KitToolDef, KitToolProps } from './kits/types';
 export const loadKits = () => import('./kits');
+// The subject kits' shared library (features/tools/subjects/README.md), loaded inside a kit's window or a figure block.
+export const loadSubjects = () => import('./subjects');
