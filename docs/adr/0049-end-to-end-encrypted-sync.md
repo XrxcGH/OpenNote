@@ -41,7 +41,7 @@ Every name in storage is random or a keyed hash. Nothing in storage names a note
 | Revocation | `x/<device tag>` | A sealed note that a device was removed |
 | Chunk request | `m/<64 hex>` | A sealed, empty note that a device found this chunk missing, so a device that holds the file sends it again |
 
-Sealing is XChaCha20-Poly1305 with a random 192 bit nonce, from RustCrypto's audited `chacha20poly1305`, as `crates/interop/src/lock.rs` does. The associated data binds each object to the vault ID, its kind, and its name, so objects can't be swapped, renamed, or moved between vaults. The storage backend sees only opaque blobs, their padded sizes, how many there are, and when they change. It sees how many devices sync and how often, but not their names.
+Sealing is XChaCha20-Poly1305 with a random 192 bit nonce, from RustCrypto's audited `chacha20poly1305`, as `crates/interop/src/lock.rs` does. The associated data binds each object to the vault ID, its kind, and its name, so objects can't be swapped, renamed, or moved between vaults. The storage backend sees only opaque blobs, their padded sizes, how many there are, and when they change. It sees how many devices sync and how often, but not their names. In detail, it sees each device's random tag in the names under `h/`, `k/`, and `x/`, so it can tell which device wrote a head, how many rounds each device has published (the generation in its head names), and which device was removed and when (`x/<tag>`), and it sees the plaintext time each pairing slot under `j/` was made, which any device needs to expire it. None of these include a device's chosen name.
 
 ### Keys
 
