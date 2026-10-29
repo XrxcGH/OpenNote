@@ -146,15 +146,15 @@ test.describe('with ink-to-shape on', () => {
     await choose(page, 'Pen, Ink, 0.5 mm');
     const overlay = (await page.locator('[data-ink-overlay]').boundingBox())!;
     const at = (dx: number, dy: number) => ({ x: overlay.x + overlay.width / 2 + dx, y: overlay.y + 200 + dy });
-    const exact = async () => {
-      const channels = await page.evaluate(channelsOf);
-      return (await page.evaluate(storedStrokes)).map((s) => (channels[s.id] & CHANNEL_TIME) === 0);
-    };
+    // Strokes come back in no set order (their ids are random), so the new one is found by its id.
     const add = async (d: { points: { x: number; y: number; time: number }[] }, where: { x: number; y: number }) => {
-      const count = (await page.evaluate(storedStrokes)).length;
+      const before = new Set((await page.evaluate(storedStrokes)).map((s) => s.id));
       await drawHeld(client, page, d, where, 1, false);
-      await expect.poll(async () => (await page.evaluate(storedStrokes)).length, { timeout: 30_000 }).toBe(count + 1);
-      return (await exact())[count];
+      await expect
+        .poll(async () => (await page.evaluate(storedStrokes)).length, { timeout: 30_000 })
+        .toBe(before.size + 1);
+      const added = (await page.evaluate(storedStrokes)).find((s) => !before.has(s.id))!;
+      return ((await page.evaluate(channelsOf))[added.id] & CHANNEL_TIME) === 0;
     };
     // An o 26 units tall and an l 36 tall, written quickly: small and quick, so ink.
     const o = written('letter o', 26, 3);
