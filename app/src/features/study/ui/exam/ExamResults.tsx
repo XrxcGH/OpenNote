@@ -1,13 +1,15 @@
-// Marking a practice exam: the app's marks where it can give them, and for the rest the key and the marking guide
-// beside the person's answer, with a mark to choose. Then the totals, the weak topics with a way back to their notes,
-// missed questions to flashcards, and the results saved as a page.
-import { useEffect, useMemo, useState } from 'react';
+// Marking a practice exam. The app marks what it can, and the person marks the rest with the key and the marking
+// guide beside their answer. Any mark the app gave can be changed, since blanks in words are matched as spelled.
+// Then come the totals, the weak topics with a way back to their notes, missed questions to flashcards, and the
+// results saved as a page.
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { commandContext } from '../../../../commands/registry';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
 import type { MathKit } from '../../exam/equivalence';
 import { markExam, missedQuestions, selfMark, totals, weakTopics } from '../../exam/mark';
 import type { WeakTopic } from '../../exam/mark';
+import { clockText } from '../../exam/timer';
 import { answerText, keyMarkdown, letterOf, paperMarkdown, resultsMarkdown } from '../../exam/paper';
 import { sendToDeck } from '../../exam/toDeck';
 import type { Answers, Exam, Question, QuestionMark } from '../../exam/types';
@@ -55,16 +57,12 @@ function Row(props: {
   number: number;
   answers: Answers;
   mark: QuestionMark;
+  /** The mark the app gave, kept when the person changes it. */
+  byApp: QuestionMark | undefined;
   onMark(got: number): void;
 }) {
-  const { question, number, answers, mark, onMark } = props;
+  const { question, number, answers, mark, byApp, onMark } = props;
   const answer = answers[question.id];
-  const notes = {
-    unit: 'exams.results.noteUnit',
-    close: 'exams.results.noteClose',
-    blank: 'exams.results.noteBlank',
-    unreadable: 'exams.results.noteUnreadable',
-  } as const;
   return (
     <li className={own.question} data-status={mark.status}>
       <div className={styles.bar}>
@@ -95,15 +93,51 @@ function Row(props: {
           </ul>
         </>
       ) : null}
-      {mark.auto ? (
-        <p className={styles.note}>
-          {t('exams.results.byApp')}
-          {mark.note ? ` ${t(notes[mark.note])}` : ''}
-        </p>
-      ) : (
-        <MarkPicker question={question} mark={mark} onMark={onMark} />
-      )}
+      <MarkArea question={question} mark={mark} byApp={byApp} onMark={onMark} />
     </li>
+  );
+}
+
+const NOTES = {
+  unit: 'exams.results.noteUnit',
+  close: 'exams.results.noteClose',
+  blank: 'exams.results.noteBlank',
+  unreadable: 'exams.results.noteUnreadable',
+} as const;
+
+/** The app's mark with a way to change it, or the marks to choose from, with the app's mark once it was changed. */
+function MarkArea(props: {
+  question: Question;
+  mark: QuestionMark;
+  byApp: QuestionMark | undefined;
+  onMark(got: number): void;
+}) {
+  const { question, mark, byApp, onMark } = props;
+  const [changing, setChanging] = useState(false);
+  const picker = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // The button that opened the picker is gone, so the focus goes to the mark it starts on.
+    if (changing) picker.current?.querySelector<HTMLInputElement>('input:checked, input')?.focus();
+  }, [changing]);
+  if (mark.auto && !changing)
+    return (
+      <div className={styles.row}>
+        <p className={`${styles.note} ${styles.grow}`}>
+          {t('exams.results.byApp')}
+          {mark.note ? ` ${t(NOTES[mark.note])}` : ''}
+        </p>
+        <Button variant="quiet" onClick={() => setChanging(true)}>
+          {t('exams.results.change')}
+        </Button>
+      </div>
+    );
+  return (
+    <div ref={picker}>
+      <MarkPicker question={question} mark={mark} onMark={onMark} />
+      {byApp?.auto && !mark.auto ? (
+        <p className={styles.note}>{t('exams.results.changed', { got: byApp.got, of: byApp.of })}</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -138,12 +172,14 @@ function WeakList(props: { weak: readonly WeakTopic[]; waiting: boolean; onOpen(
 /** The marks the app can give, worked out once the math engine has loaded. */
 function useMarks(exam: Exam, answers: Answers) {
   const [marks, setMarks] = useState<Record<string, QuestionMark> | null>(null);
+  const [byApp, setByApp] = useState<Record<string, QuestionMark>>({});
   useEffect(() => {
     let live = true;
     void loadKit().then((kit) => {
       if (!live) return;
       const marked = markExam(exam, answers, kit);
       setMarks(marked);
+      setByApp(marked);
       const total = totals(exam, marked);
       announce(t('exams.results.markedSummary', { got: total.got, of: total.of, count: total.unmarked }));
     });
@@ -151,7 +187,7 @@ function useMarks(exam: Exam, answers: Answers) {
       live = false;
     };
   }, [exam, answers]);
-  return [marks, setMarks] as const;
+  return [marks, setMarks, byApp] as const;
 }
 
 /** Saves the results page with the answer key, and the paper first when it is not saved yet. Returns what to tell. */
@@ -159,22 +195,30 @@ async function saveResults(
   exam: Exam,
   answers: Answers,
   marks: Record<string, QuestionMark>,
+  late: number | null,
   notebookId: string | null,
 ) {
   const paper = savedPapers.has(exam.id) ? [] : [{ title: exam.title, markdown: paperMarkdown(exam) }];
   const count = await savePages(notebookId, [
     ...paper,
     { title: t('exams.key.title', { title: exam.title }), markdown: keyMarkdown(exam) },
-    { title: t('exams.results.title', { title: exam.title }), markdown: resultsMarkdown(exam, answers, marks) },
+    { title: t('exams.results.title', { title: exam.title }), markdown: resultsMarkdown(exam, answers, marks, late) },
   ]);
   if (count === null) return { saved: false, text: t('exams.save.noNotebook') };
   savedPapers.add(exam.id);
   return { saved: true, text: t('exams.save.resultsSaved') };
 }
 
-export function ExamResults(props: { exam: Exam; answers: Answers; notebookId: string | null; onAgain(): void }) {
-  const { exam, answers, notebookId, onAgain } = props;
-  const [marks, setMarks] = useMarks(exam, answers);
+export function ExamResults(props: {
+  exam: Exam;
+  answers: Answers;
+  /** How long after the time ran out the paper was handed in, or null when in time or untimed. */
+  late?: number | null;
+  notebookId: string | null;
+  onAgain(): void;
+}) {
+  const { exam, answers, late = null, notebookId, onAgain } = props;
+  const [marks, setMarks, byApp] = useMarks(exam, answers);
   const [message, setMessage] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const total = useMemo(() => (marks ? totals(exam, marks) : null), [exam, marks]);
@@ -191,7 +235,7 @@ export function ExamResults(props: { exam: Exam; answers: Answers; notebookId: s
     tell(t('exams.results.sent', { count: added, deck: deck.name }));
   };
   const save = () =>
-    saveResults(exam, answers, marks, notebookId).then(
+    saveResults(exam, answers, marks, late, notebookId).then(
       (done) => {
         setSaved(done.saved);
         tell(done.text);
@@ -207,6 +251,7 @@ export function ExamResults(props: { exam: Exam; answers: Answers; notebookId: s
       <h3 className={styles.title}>
         {t('exams.results.score', { got: total.got, of: total.of, percent: total.percent })}
       </h3>
+      {late !== null ? <p className={styles.note}>{t('exams.results.late', { time: clockText(late) })}</p> : null}
       {total.unmarked > 0 ? (
         <p className={styles.note}>{t('exams.results.unmarked', { count: total.unmarked })}</p>
       ) : null}
@@ -218,6 +263,7 @@ export function ExamResults(props: { exam: Exam; answers: Answers; notebookId: s
             number={at + 1}
             answers={answers}
             mark={marks[question.id] ?? selfMark(question, 0)}
+            byApp={byApp[question.id]}
             onMark={(got) => setMarks((now) => ({ ...now, [question.id]: selfMark(question, got) }))}
           />
         ))}

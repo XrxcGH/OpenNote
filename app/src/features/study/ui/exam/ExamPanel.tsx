@@ -26,7 +26,7 @@ type Stage =
   | { name: 'making' }
   | { name: 'ready'; exam: Exam }
   | { name: 'taking'; exam: Exam; attempt: Attempt | null }
-  | { name: 'marking'; exam: Exam; answers: Answers };
+  | { name: 'marking'; exam: Exam; answers: Answers; late: number | null };
 
 /** What a kept attempt says about itself: how far along it is and the time it has left. */
 function attemptState(attempt: Attempt): string {
@@ -231,7 +231,7 @@ function ExamFlow({ request }: { request: ExamRequest | null }) {
           exam={stage.exam}
           attempt={stage.attempt}
           notebookId={notebookId}
-          onSubmit={(answers) => setStage({ name: 'marking', exam: stage.exam, answers })}
+          onSubmit={(answers, late) => setStage({ name: 'marking', exam: stage.exam, answers, late })}
         />
       ) : null}
       {stage.name === 'marking' ? (
@@ -239,6 +239,7 @@ function ExamFlow({ request }: { request: ExamRequest | null }) {
           <ExamResults
             exam={stage.exam}
             answers={stage.answers}
+            late={stage.late}
             notebookId={notebookId}
             onAgain={() => setStage({ name: 'setup' })}
           />

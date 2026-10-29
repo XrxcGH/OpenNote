@@ -5,6 +5,7 @@ import { hideBlanks } from '../deck/cloze';
 import { t } from '../../../strings/t';
 import { keyHasUnit, letterOf } from './basics';
 import { totals, weakTopics } from './mark';
+import { clockText } from './timer';
 import type { Answer, Answers, Exam, Question, QuestionMark } from './types';
 
 /** Text from notes or a model, made safe to put in a Markdown line: no line breaks, no stray link, or table marks. */
@@ -95,9 +96,15 @@ export function answerText(question: Question, answer: Answer | undefined): stri
 }
 
 /** The results: the score, each question's marks and answer, and the weak topics with links to their notes. */
-export function resultsMarkdown(exam: Exam, answers: Answers, marks: Readonly<Record<string, QuestionMark>>): string {
+export function resultsMarkdown(
+  exam: Exam,
+  answers: Answers,
+  marks: Readonly<Record<string, QuestionMark>>,
+  late: number | null = null,
+): string {
   const total = totals(exam, marks);
   const lines = [t('exams.results.score', { got: total.got, of: total.of, percent: total.percent }), ''];
+  if (late !== null) lines.push(t('exams.results.late', { time: clockText(late) }), '');
   if (total.unmarked > 0) lines.push(t('exams.results.unmarked', { count: total.unmarked }), '');
   lines.push(`| ${t('exams.results.question')} | ${t('exams.results.marks')} | ${t('exams.results.yourAnswer')} |`);
   lines.push('| --- | --- | --- |');

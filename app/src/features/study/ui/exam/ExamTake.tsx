@@ -14,6 +14,7 @@ import {
   dueReminders,
   isOver,
   isPaused,
+  lateBy,
   pauseTimer,
   resumeTimer,
   startTimer,
@@ -355,7 +356,8 @@ export interface ExamTakeProps {
   /** The attempt to carry on with, or null to start the exam afresh. */
   attempt: Attempt | null;
   notebookId: string | null;
-  onSubmit(answers: Answers): void;
+  /** The answers, and how long after the time ran out they were handed in (null when in time or untimed). */
+  onSubmit(answers: Answers, late: number | null): void;
 }
 
 export function ExamTake({ exam, attempt, notebookId, onSubmit }: ExamTakeProps) {
@@ -393,7 +395,7 @@ export function ExamTake({ exam, attempt, notebookId, onSubmit }: ExamTakeProps)
     done.current = true;
     if (pending.current !== null) window.clearTimeout(pending.current);
     dropAttempt(exam.id);
-    onSubmit(given);
+    onSubmit(given, lateBy(timer, Date.now()));
   };
   const total = exam.questions.length;
   const shown = all ? exam.questions : exam.questions.slice(at, at + 1);
