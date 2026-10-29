@@ -75,3 +75,6 @@ export const ZOTERO_EVENT = 'opennote:zotero-command';
 export { EARTH_FLAGS } from './earth/flags';
 export type { EarthFlagId } from './earth/flags';
 export { EARTH_TOOLS } from './earth/meta';
+// The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
+export { KIT_FLAGS } from './kits/flags';
+export type { KitFlagId } from './kits/flags';
