@@ -99,7 +99,8 @@ function runAssociative(values: Values): Outcome {
       step(
         ph ? 'learning.ph' : 'learning.rw',
         ph
-          ? '\\Delta V_X = \\alpha_X\\,\\beta\\,a_X(\\lambda - \\textstyle\\sum V),\\quad a_X \\leftarrow g\\,|\\lambda - \\sum V| + (1 - g)\\,a_X'
+          ? '\\Delta V_X = \\alpha_X\\,\\beta\\,a_X(\\lambda - \\textstyle\\sum V),\\quad a_X ' +
+              '\\leftarrow g\\,|\\lambda - \\sum V| + (1 - g)\\,a_X'
           : '\\Delta V_X = \\alpha_X\\,\\beta\\,(\\lambda - \\textstyle\\sum V)',
       ),
       step(
@@ -278,7 +279,8 @@ function runGrid(values: Values): Outcome {
       step('learning.bellman', "V(s) = R + \\gamma \\max_a \\sum_{s'} p(s' \\mid s, a)\\, V(s')"),
       step(
         'learning.backup',
-        'Q(\\uparrow) = [[up]],\\ Q(\\rightarrow) = [[right]],\\ Q(\\downarrow) = [[down]],\\ Q(\\leftarrow) = [[left]] \\Rightarrow V(s_0) = [[v]]',
+        'Q(\\uparrow) = [[up]],\\ Q(\\rightarrow) = [[right]],\\ Q(\\downarrow) = [[down]],\\ ' +
+          'Q(\\leftarrow) = [[left]] \\Rightarrow V(s_0) = [[v]]',
         vars,
       ),
       step(

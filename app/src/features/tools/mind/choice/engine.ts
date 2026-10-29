@@ -1,8 +1,8 @@
-// Decision and choice models. The drift-diffusion model: choice probability and mean decision time in closed form
-// (with a biased start), the first-passage time density by the Navarro and Fuss (2009) series, a seeded
-// Euler-Maruyama simulation, and EZ-diffusion (Wagenmakers, van der Maas, and Grasman 2007) from accuracy and the
-// mean and variance of correct response times. Prospect theory (Tversky and Kahneman 1992): the value function,
-// probability weighting (Tversky-Kahneman and Prelec), and a gamble's value and certainty equivalent.
+// Decision and choice models. The drift-diffusion part gives choice probability and mean decision time in closed
+// form, also with a biased start. It gives the first-passage time density by the Navarro and Fuss (2009) series and
+// runs a seeded Euler-Maruyama simulation. EZ-diffusion (Wagenmakers, van der Maas, and Grasman 2007) works from
+// accuracy and the mean and variance of correct response times. The prospect-theory part (Tversky and Kahneman
+// 1992) gives the value function, probability weights, and a gamble's value and certainty equivalent.
 import { logit, quantile } from '../kit/num';
 import type { Rng } from '../kit/rng';
 import { fail } from '../kit/types';

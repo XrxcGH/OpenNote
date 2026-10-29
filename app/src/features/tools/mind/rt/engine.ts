@@ -70,7 +70,7 @@ function groupBy<T>(items: readonly T[], key: (item: T) => string): Map<string, 
   return out;
 }
 
-/** Keeps the RTs within k of the centre of each cell, by the chosen rule. */
+/** Keeps the RTs within k of the center of each cell, by the chosen rule. */
 function trimCell(rts: number[], rule: TrimRule, k: number): number[] {
   if (rule === 'none' || rts.length < 3) return rts;
   if (rule === 'mad') {

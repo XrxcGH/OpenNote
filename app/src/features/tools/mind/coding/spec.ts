@@ -91,7 +91,8 @@ function runSegments(values: Values): Outcome {
       step('coding.together', 'n_{\\text{[[a]]},\\text{[[b]]}} = [[both]]', vars),
       step(
         'coding.jaccard',
-        'J = \\frac{|S_\\text{[[a]]} \\cap S_\\text{[[b]]}|}{|S_\\text{[[a]]} \\cup S_\\text{[[b]]}|} = \\frac{[[both]]}{[[fa]] + [[fb]] - [[both]]} = [[j]]',
+        'J = \\frac{|S_\\text{[[a]]} \\cap S_\\text{[[b]]}|}{|S_\\text{[[a]]} \\cup ' +
+          'S_\\text{[[b]]}|} = \\frac{[[both]]}{[[fa]] + [[fb]] - [[both]]} = [[j]]',
         vars,
       ),
     ],

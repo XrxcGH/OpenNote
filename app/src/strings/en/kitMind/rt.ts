@@ -2,7 +2,9 @@
 export const rt = {
   title: 'Response times and movement',
   keywords:
-    'response time reaction time RT trimming outliers MAD condition means within-subject confidence interval Cousineau Morey inverse efficiency ex-Gaussian vincentize quantile delta plot Fitts law Hick-Hyman throughput',
+    'response time reaction time RT trimming outliers MAD condition means within-subject ' +
+    'confidence interval Cousineau Morey inverse efficiency ex-Gaussian vincentize quantile ' +
+    'delta plot Fitts law Hick-Hyman throughput',
   field: {
     mode: 'Work on',
     unit: 'Time unit',
@@ -41,7 +43,8 @@ export const rt = {
   },
   hint: {
     trials:
-      'A table with the columns subject, condition, rt, and optionally correct (1 or 0). Paste from a spreadsheet or a CSV file.',
+      'A table with the columns subject, condition, rt, and optionally correct (1 or 0). Paste ' +
+      'from a spreadsheet or a CSV file.',
     k: 'Trimming works within each subject and condition. 2.5 or 3 are common.',
     compare: 'Two condition names from the trials, separated by a comma. The delta is the second minus the first.',
     rts: 'At least 10 correct response times from one condition, separated by commas or spaces.',
@@ -110,7 +113,8 @@ export const rt = {
   },
   step: {
     order:
-      'Leave out trials with no RT and error trials, then the RTs outside the absolute cut-offs. The rule below then works within each subject and condition.',
+      'Leave out trials with no RT and error trials, then the RTs outside the absolute cut-offs. ' +
+      'The rule below then works within each subject and condition.',
     none: 'No further trimming.',
     sd: 'Remove RTs more than {k} SDs from the mean of their subject and condition.',
     mad: 'Remove RTs more than {k} MADs from the median of their subject and condition (MAD scaled by 1.4826).',

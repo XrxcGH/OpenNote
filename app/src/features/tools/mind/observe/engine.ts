@@ -1,7 +1,7 @@
 // Behavior observation and single-case data. A session log of timed events and states gives counts, rates,
-// durations, time budgets, bouts, latencies, and transitions; the same log scored by interval gives partial-
-// interval, whole-interval, and momentary (scan) records; 2 observers' interval records give agreement; and a
-// single-case series by phase gives level, trend, variability, and the overlap measures PND, NAP, and Tau.
+// durations, time budgets, bouts, latencies, and transitions. The same log can be scored by interval: partial,
+// whole, or momentary (scan). Two observers' interval records give agreement. A single-case series by phase gives
+// level, trend, variability, and the overlap measures PND, NAP, and Tau.
 import { presenceKappa } from '../agreement/kappa';
 import { lineFit, mean, median, sd } from '../kit/num';
 import { lines, readNumber } from '../kit/parse';
@@ -213,7 +213,7 @@ export interface ObserverAgreement {
   readonly kappa: number;
 }
 
-/** A record of 1s and 0s, separated by spaces or commas or run together. */
+/** A record of 1s and 0s. Spaces and commas between them are ignored. */
 export function readRecord(text: string, field: string): number[] {
   const clean = text.replace(/[\s,;|]+/g, '');
   if (clean === '') fail('empty', {}, field);

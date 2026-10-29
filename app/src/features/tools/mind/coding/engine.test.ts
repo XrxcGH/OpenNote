@@ -23,7 +23,7 @@ describe('coded segments', () => {
   const coded = analyse(readSegments(SEGMENTS.join('\n')));
 
   it('counts each code and the codes used together', () => {
-    // A is on s1, s2, s4; B on s1, s3, s4; C on s3. A and B share s1 and s4; B and C share s3.
+    // Code A is on s1, s2, s4; code B on s1, s3, s4; code C on s3. A-B share s1 and s4; B-C share s3.
     expect(coded.codes).toEqual(['A', 'B', 'C']);
     expect(coded.frequency).toEqual([3, 3, 1]);
     expect(coded.together[0][1]).toBe(2);

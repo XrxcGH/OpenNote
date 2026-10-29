@@ -30,7 +30,8 @@ function rateSteps(values: Values, H: number, F: number): KitStep[] {
     return [
       step(
         'sdt.loglinear',
-        'H = \\frac{[[hits]] + 0.5}{[[hits]] + [[misses]] + 1} = [[H]],\\quad F = \\frac{[[fas]] + 0.5}{[[fas]] + [[crs]] + 1} = [[F]]',
+        'H = \\frac{[[hits]] + 0.5}{[[hits]] + [[misses]] + 1} = [[H]],\\quad F = \\frac{[[fas]] + ' +
+          '0.5}{[[fas]] + [[crs]] + 1} = [[F]]',
         vars,
       ),
     ];

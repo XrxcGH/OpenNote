@@ -2,7 +2,9 @@
 export const psychophysics = {
   title: 'Psychophysics',
   keywords:
-    'psychophysics psychometric function threshold slope PSE JND constant stimuli staircase up-down reversals method of limits adjustment Weber Fechner Stevens power law visual angle contrast Michelson logMAR Snellen acuity',
+    'psychophysics psychometric function threshold slope PSE JND constant stimuli staircase ' +
+    'up-down reversals method of limits adjustment Weber Fechner Stevens power law visual ' +
+    'angle contrast Michelson logMAR Snellen acuity',
   field: {
     mode: 'Work on',
     data: 'Levels, correct answers, and trials',
@@ -66,7 +68,9 @@ export const psychophysics = {
     acuity: 'Acuity',
   },
   hint: {
-    data: 'One line per level: stimulus level | correct (or yes) answers | trials. This is the method of constant stimuli.',
+    data:
+      'One line per level: stimulus level | correct (or yes) answers | trials. This is the ' +
+      'method of constant stimuli.',
     level: 'For yes-no data, 0.5 gives the PSE. For 2-alternative forced choice, 0.75 is common.',
     boot: 'Draws new data from the fitted function and refits each, with the seed, for 95% intervals.',
     track: 'The level on each trial, in order, separated by spaces or commas.',
@@ -127,7 +131,7 @@ export const psychophysics = {
     reversal: 'Reversal',
     trial: 'Trial',
     intensity: 'Intensity I',
-    jnd: 'JND ΔI',
+    jnd: 'Just-noticeable difference ΔI',
     fraction: 'ΔI / I',
   },
   table: {

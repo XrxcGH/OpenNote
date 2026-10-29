@@ -12,24 +12,24 @@ The psychology and behavior kit is a tool window for perception, learning, decis
 
 ## Perception and decision
 
-- **Signal detection** gives d′, the criterion c, β, A′, and B″ from counts or rates, d′ for m-alternative forced choice, and ROC and z-ROC fits from rating data.
-- **Psychophysics** fits psychometric functions (logistic, cumulative Gaussian, Weibull) with guess and lapse rates by maximum likelihood, with thresholds, PSE, JND, and bootstrap intervals; analyzes and simulates up-down staircases; and covers the methods of limits and adjustment, Weber's and Fechner's laws, Stevens' power law, visual angle, contrast, and Snellen to logMAR acuity.
-- **Decision and choice models** gives drift-diffusion accuracy, decision times, first-passage densities, and seeded simulations, a speed-accuracy curve, EZ-diffusion from accuracy and response times, and prospect-theory values, probability weights, and gamble values with certainty equivalents.
+- **Signal detection** measures how well someone tells a signal from noise. It gives d′ and the response bias from hit and false-alarm counts or rates. It also handles forced-choice tasks and fits ROC curves to rating data.
+- **Psychophysics** fits a psychometric function to the share of correct answers at each stimulus level. It reads the threshold, the point of subjective equality (PSE), and the just-noticeable difference (JND), with bootstrap intervals. It also runs up-down staircases, the methods of limits and adjustment, Weber's, Fechner's, and Stevens' laws, visual angle, contrast, and Snellen acuity.
+- **Decision and choice models** covers the drift-diffusion model of quick choices. It gives accuracy, decision times, and simulated response times, and EZ-diffusion works back from data to the model. Prospect theory gives the value of gains and losses, probability weights, and the worth of a gamble.
 
 ## Learning
 
-- **Learning and reinforcement** runs the Rescorla-Wagner model and a Pearce-Hall variant over phases of trials (blocking, inhibition, overexpectation), TD prediction errors, value and policy iteration, Q-learning and SARSA on a grid world you type, bandit strategies compared by regret, schedules of reinforcement with a cumulative record, and exponential and power-law learning curves.
+- **Learning and reinforcement** shows how learning changes over trials. The Rescorla-Wagner model covers blocking, inhibition, and extinction. Temporal difference (TD) learning shows the prediction error move from the reward to the cue. A grid world you type is solved by planning and learned by trial and error. Bandits compare ways to balance exploring and exploiting. Schedules of reinforcement draw a cumulative record, and learning curves fit practice data.
 
 ## Behavior and timing
 
-- **Response times and movement** trims trials by cut-offs, SDs, MADs, or recursively, gives condition means with within-subject intervals, accuracy, and inverse efficiency, fits the ex-Gaussian, draws quantile and delta plots, and fits Fitts' and the Hick-Hyman laws.
-- **Behavior observation** turns a timed session log, typed or recorded live with a keyboard clock, into counts, rates, durations, time budgets, bouts, latencies, and transitions; scores partial-interval, whole-interval, and momentary records; compares 2 observers; and graphs single-case phases with PND, NAP, and Tau.
+- **Response times and movement** cleans and summarizes reaction times. It trims outliers and says how many each rule removed. It gives condition means with within-subject intervals and accuracy. It also fits the ex-Gaussian, draws quantile and delta plots, and fits Fitts' and the Hick-Hyman laws.
+- **Behavior observation** codes what a person or animal does over time. Type a timed log, or record it live with a keyboard clock. It gives rates, durations, time budgets, bouts, and transitions, and scores interval records. It compares 2 observers and graphs single-case phases with overlap measures.
 
 ## Measurement and coding
 
-- **Inter-rater agreement** gives Cohen's and weighted kappa, Scott's pi, Fleiss' kappa, Krippendorff's alpha with a bootstrap interval, intraclass correlations, and Bland-Altman limits.
-- **Scales and psychometrics** scores questionnaires with reverse-coded items and subscales, and gives Cronbach's alpha, KR-20, split-half reliability, item analysis, score transforms, System Usability Scale scores, and IRT curves.
-- **Qualitative coding** builds code frequencies, a code-by-case matrix, co-occurrence with Jaccard similarity, and the passages for a code from coded segments, compares 2 coders with percent agreement and kappa, lays out a codebook with parent codes, and tallies content-analysis categories.
+- **Inter-rater agreement** checks how well raters agree. It gives Cohen's and weighted kappa, Fleiss' kappa, Krippendorff's alpha, intraclass correlations, and Bland-Altman limits.
+- **Scales and psychometrics** scores questionnaires and checks how reliable they are. It handles reverse-coded items and subscales, Cronbach's alpha, item analysis, and score transforms. It also scores the System Usability Scale and draws item response curves.
+- **Qualitative coding** counts the codes on passages of text. It builds code frequencies, a code-by-case table, and which codes appear together. It compares 2 coders, lays out a codebook with parent codes, and tallies content-analysis categories.
 
 ## Good to know
 

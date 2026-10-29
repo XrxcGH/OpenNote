@@ -42,7 +42,8 @@ export const agreement = {
   hint: {
     codes: 'One unit on each line: the first coder’s code, a comma, then the second coder’s code.',
     order:
-      'Separate categories with commas. Weights follow this order; without it, numbers sort and words keep their order.',
+      'Separate categories with commas. Weights follow this order; without it, numbers sort and ' +
+      'words keep their order.',
     matrix: 'Rows are the first coder’s categories and columns the second’s. A first line of names is allowed.',
     counts:
       'One subject on each line, one category in each column. Every line must add up to the same number of raters.',

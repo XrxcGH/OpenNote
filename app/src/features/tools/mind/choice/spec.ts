@@ -205,7 +205,8 @@ function runEz(values: Values): Outcome {
       ),
       step(
         'choice.ezTer',
-        'MDT = \\frac{a}{2v}\\cdot\\frac{1 - e^{-va/s^2}}{1 + e^{-va/s^2}} = [[mdt]],\\quad T_{er} = MRT - MDT = [[ter]]',
+        'MDT = \\frac{a}{2v}\\cdot\\frac{1 - e^{-va/s^2}}{1 + e^{-va/s^2}} = [[mdt]],\\quad T_{er} ' +
+          '= MRT - MDT = [[ter]]',
         vars,
       ),
     ],

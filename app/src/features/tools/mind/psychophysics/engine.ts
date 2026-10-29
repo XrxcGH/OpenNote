@@ -1,6 +1,6 @@
 // Psychophysics. Psychometric functions (logistic, cumulative Gaussian, Weibull) with a guess rate and a fixed or
 // free lapse rate, fitted by maximum likelihood, with thresholds, slopes, PSE and JND, and seeded parametric-
-// bootstrap intervals. Transformed and weighted up-down staircases, simulated or typed. The methods of limits and
+// bootstrap intervals. Up-down staircases (transformed and weighted) that are typed or simulated. The methods of limits and
 // adjustment, Weber's and Fechner's laws, Stevens' power law, and the visual measures: visual angle, spatial
 // frequency, Michelson, Weber, and RMS contrast, and Snellen to logMAR and decimal acuity.
 import { lineFit, mean, nelderMead, normCdf, normPdf, normQuantile, quantile, sd } from '../kit/num';

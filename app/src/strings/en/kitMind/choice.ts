@@ -2,7 +2,9 @@
 export const choice = {
   title: 'Decision and choice models',
   keywords:
-    'decision choice drift diffusion model DDM evidence accumulation boundary response time speed accuracy EZ diffusion prospect theory loss aversion probability weighting certainty equivalent Allais framing',
+    'decision choice drift diffusion model DDM evidence accumulation boundary response time ' +
+    'speed accuracy EZ diffusion prospect theory loss aversion probability weighting certainty ' +
+    'equivalent Allais framing',
   field: {
     mode: 'Model',
     v: 'Drift rate v (per s)',
@@ -97,7 +99,8 @@ export const choice = {
     dtBias: 'The mean decision time over both boundaries:',
     rt: 'Add the non-decision time for the mean response time.',
     tradeoff:
-      'Each point solves the model for another boundary separation: wider boundaries give slower, more accurate answers.',
+      'Each point solves the model for another boundary separation: wider boundaries give ' +
+      'slower, more accurate answers.',
     ezLogit: 'Step 1: take the logit of accuracy and combine it with the RT variance.',
     ezDrift: 'Step 2: the fourth root gives the drift rate, and the logit gives the boundary separation.',
     ezTer: 'Step 3: subtract the predicted mean decision time from the mean RT for the non-decision time.',
@@ -106,7 +109,9 @@ export const choice = {
     tk: 'The Tversky-Kahneman weighting function:',
     prelec: 'The Prelec weighting function:',
     linear: 'With no weighting, the decision weight is the probability.',
-    rank: 'Rank gains and losses from the most extreme. Each decision weight is w(chance of an outcome at least that extreme) minus w(chance of a more extreme one).',
+    rank:
+      'Rank gains and losses from the most extreme. Each decision weight is w(chance of an ' +
+      'outcome at least that extreme) minus w(chance of a more extreme one).',
     worth: 'The prospect value adds weight times value over the outcomes of gamble A:',
     ceGain: 'The certainty equivalent is the sure amount with the same value:',
     ceLoss: 'The certainty equivalent is the sure loss with the same value:',

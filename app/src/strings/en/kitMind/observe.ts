@@ -2,7 +2,9 @@
 export const observe = {
   title: 'Behavior observation',
   keywords:
-    'behavior observation ethogram time budget rate duration bout latency interval recording partial whole momentary scan sampling observer agreement single-case ABAB baseline PND NAP Tau',
+    'behavior observation ethogram time budget rate duration bout latency interval recording ' +
+    'partial whole momentary scan sampling observer agreement single-case ABAB baseline PND ' +
+    'NAP Tau',
   field: {
     mode: 'Work on',
     ethogram: 'Ethogram',
@@ -33,8 +35,11 @@ export const observe = {
   },
   hint: {
     ethogram:
-      'One behavior a line: name | event or state | group. States in the same group exclude each other, so starting one ends the others.',
-    log: 'One mark a line, in time order: seconds from the start | behavior | start or stop. Events need only the time and the name.',
+      'One behavior a line: name | event or state | group. States in the same group exclude each ' +
+      'other, so starting one ends the others.',
+    log:
+      'One mark a line, in time order: seconds from the start | behavior | start or stop. Events ' +
+      'need only the time and the name.',
     first: '1 for each interval the behavior was scored, 0 for each it was not.',
     second: 'The same intervals, in the same order.',
     phases: 'One phase a line, in order: name | values in session order, such as A | 3, 4, 5.',
@@ -95,11 +100,12 @@ export const observe = {
     wholeBias:
       'Whole-interval recording tends to underestimate how long a behavior lasts and suits behaviors to increase.',
     momentaryBias: 'Momentary time sampling estimates the share of time a state runs, without a bias either way.',
-    firstTwo: 'PND, NAP, and Tau compare the first 2 phases, {a} and {b}.',
+    firstTwo: 'The overlap measures compare the first 2 phases: {a} against {b}.',
   },
   step: {
     bouts:
-      'A state runs from its start to its stop, to the start of another state in its group, or to the end of the session.',
+      'A state runs from its start to its stop, to the start of another state in its group, or ' +
+      'to the end of the session.',
     budget: 'A state’s time budget is its total time over the session length. For {name}:',
     meanBout: 'Its mean bout is the total time over its {count} bouts.',
     rate: 'An event’s rate is its count over the session in minutes. For {ename}:',
@@ -110,10 +116,12 @@ export const observe = {
     share: 'The record is the share of intervals scored.',
     total: 'Interval-by-interval agreement counts the intervals both observers scored the same way.',
     occurrence:
-      'Occurrence agreement uses only the intervals either observer scored, and nonoccurrence agreement only those either left blank.',
+      'Occurrence agreement uses only the intervals either observer scored, and nonoccurrence ' +
+      'agreement only those either left blank.',
     kappa: 'Kappa corrects the agreement for chance, from how often each observer scored the behavior.',
     level:
-      'For each phase, the mean gives the level, the slope gives the trend, and the SD gives the variability. The split-middle line joins the medians of each half of the phase.',
+      'For each phase, the mean gives the level, the slope gives the trend, and the SD gives the ' +
+      'variability. The split-middle line joins the medians of each half of the phase.',
     pndUp: 'PND is the share of {b} points above the highest {a} point, {edge}.',
     pndDown: 'PND is the share of {b} points below the lowest {a} point, {edge}.',
     nap: 'NAP compares every {a} point with every {b} point: improvements count 1 and ties count one half.',
@@ -127,7 +135,9 @@ export const observe = {
   picture: { graph: 'Single-case graph by phase' },
   live: {
     title: 'Record a session',
-    help: 'Start the clock, then press a behavior’s button or its number key to log it. Press a running state again to stop it. Finish sets the session length.',
+    help:
+      'Start the clock, then press a behavior’s button or its number key to log it. Press a ' +
+      'running state again to stop it. Finish sets the session length.',
     clock: '{t} s',
     start: 'Start',
     pause: 'Pause',

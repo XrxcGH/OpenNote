@@ -125,7 +125,8 @@ function runTrials(values: Values): Outcome {
       step('rt.subjectMeans'),
       step(
         'rt.morey',
-        'z_{ij} = y_{ij} - \\bar y_i + \\bar y,\\quad h_j = t_{.975,\\,n-1}\\,\\frac{s_j(z)}{\\sqrt n}\\sqrt{\\frac{k}{k-1}}',
+        'z_{ij} = y_{ij} - \\bar y_i + \\bar y,\\quad h_j = ' +
+          't_{.975,\\,n-1}\\,\\frac{s_j(z)}{\\sqrt n}\\sqrt{\\frac{k}{k-1}}',
       ),
       ...(hasAccuracy ? [step('rt.ies', '\\text{IES} = \\frac{\\overline{RT}}{\\text{accuracy}}')] : []),
     ],
@@ -160,7 +161,9 @@ function runExGauss(values: Values): Outcome {
       steps: [
         step(
           'rt.exPdf',
-          'f(x) = \\frac{1}{\\tau}\\exp\\!\\left(\\frac{\\mu}{\\tau} + \\frac{\\sigma^2}{2\\tau^2} - \\frac{x}{\\tau}\\right)\\Phi\\!\\left(\\frac{x - \\mu}{\\sigma} - \\frac{\\sigma}{\\tau}\\right) = [[d]]',
+          'f(x) = \\frac{1}{\\tau}\\exp\\!\\left(\\frac{\\mu}{\\tau} + \\frac{\\sigma^2}{2\\tau^2} - ' +
+            '\\frac{x}{\\tau}\\right)\\Phi\\!\\left(\\frac{x - \\mu}{\\sigma} - ' +
+            '\\frac{\\sigma}{\\tau}\\right) = [[d]]',
           vars,
         ),
         step('rt.exMoments', '\\text{mean} = [[mean]],\\quad \\text{SD} = [[sd]]', vars),
@@ -327,7 +330,8 @@ function runFitts(values: Values): Outcome {
     steps: [
       step(
         'rt.fittsId',
-        'ID = \\log_2\\!\\left(\\frac{D}{W} + 1\\right) = \\log_2\\!\\left(\\frac{[[d]]}{[[w]]} + 1\\right) = [[id]]\\ \\text{bits}',
+        'ID = \\log_2\\!\\left(\\frac{D}{W} + 1\\right) = \\log_2\\!\\left(\\frac{[[d]]}{[[w]]} + ' +
+          '1\\right) = [[id]]\\ \\text{bits}',
         vars,
       ),
       step('rt.fittsLine', 'MT = a + b\\,ID = [[a]] + [[b]]\\,ID,\\quad r^2 = [[r2]]', vars),

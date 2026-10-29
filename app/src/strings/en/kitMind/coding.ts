@@ -2,7 +2,8 @@
 export const coding = {
   title: 'Qualitative coding',
   keywords:
-    'qualitative coding codebook codes themes segments interview thematic analysis co-occurrence Jaccard content analysis two coders kappa',
+    'qualitative coding codebook codes themes segments interview thematic analysis ' +
+    'co-occurrence Jaccard content analysis two coders kappa',
   field: {
     mode: 'Work on',
     segments: 'Coded segments',
@@ -21,7 +22,8 @@ export const coding = {
   },
   hint: {
     segments:
-      'One segment a line: segment | case | codes separated by commas | the quoted passage. Paste passages from a page or a transcript.',
+      'One segment a line: segment | case | codes separated by commas | the quoted passage. ' +
+      'Paste passages from a page or a transcript.',
     order: 'Codes from the codebook, separated by commas, so codes no segment uses still get a row.',
     retrieve: 'Leave empty to skip the passages table.',
     pairs: 'One segment a line: segment | coder 1’s codes | coder 2’s codes. Leave a side empty for no code.',

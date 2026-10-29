@@ -1,12 +1,12 @@
-// Qualitative coding: a codebook with parent codes, coded segments of text, and the tables built from them (code
-// frequencies by segment and by case, a code-by-case matrix, co-occurrence with Jaccard similarity, and the
-// passages for one code), two coders' codes on the same segments with percent agreement and kappa, and
-// content-analysis tallies. A segment keeps its quoted text, so an edit to the source does not lose the excerpt.
+// Qualitative coding. A codebook lists codes under parent codes. Coded segments of text give code frequencies by
+// segment and by case, a code-by-case matrix, co-occurrence with Jaccard similarity, and the passages for one code.
+// Two coders' codes on the same segments give percent agreement and kappa. Content-analysis tallies count units by
+// category. A segment keeps its quoted text, so an edit to the source does not lose the excerpt.
 import { presenceKappa } from '../agreement/kappa';
 import { lines } from '../kit/parse';
 import { fail } from '../kit/types';
 
-/** A line's parts, split on bars or tabs, so a quoted passage can hold commas. */
+/** Splits a line into cells at each bar or tab. A quoted passage may hold commas. */
 const parts = (text: string): string[] => text.split(/\t|\|/).map((part) => part.trim());
 
 /** Codes in a cell, split on commas or semicolons. */

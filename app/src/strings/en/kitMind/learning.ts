@@ -2,7 +2,11 @@
 export const learning = {
   title: 'Learning and reinforcement',
   keywords:
-    'learning conditioning Rescorla-Wagner blocking overshadowing extinction inhibition Pearce-Hall temporal difference TD prediction error reinforcement learning Q-learning SARSA grid world value iteration policy iteration bandit epsilon greedy softmax UCB Thompson regret schedules of reinforcement cumulative record learning curve power law of practice',
+    'learning conditioning Rescorla-Wagner blocking overshadowing extinction inhibition ' +
+    'Pearce-Hall temporal difference TD prediction error reinforcement learning Q-learning ' +
+    'SARSA grid world value iteration policy iteration bandit epsilon greedy softmax UCB ' +
+    'Thompson regret schedules of reinforcement cumulative record learning curve power law of ' +
+    'practice',
   field: {
     mode: 'Model',
     model: 'Learning rule',
@@ -68,9 +72,12 @@ export const learning = {
   },
   hint: {
     phases:
-      'One phase a line: name | trial types with counts, such as A+ x10, AB- x5. Letters are cues; + means the US follows, - means it does not. Types in a phase alternate.',
+      'One phase a line: name | trial types with counts, such as A+ x10, AB- x5. Letters are ' +
+      'cues; + means the US follows, - means it does not. Types in a phase alternate.',
     alphas: 'Such as A 0.3, B 0.1. Cues not listed use the learning rate α below as their salience.',
-    grid: 'One row a line: . open, # wall, S start, G goal, X pit, or a number for a terminal reward. Separate cells with spaces or write them together.',
+    grid:
+      'One row a line: . open, # wall, S start, G goal, X pit, or a number for a terminal ' +
+      'reward. Separate cells with spaces or write them together.',
     slip: 'The chance a move goes to one side instead, split between the 2 sides.',
     means: 'One mean per arm, separated by commas. For win or lose, each is a chance from 0 to 1.',
     rate: 'Leave empty to use sample averages, 1/n.',
@@ -166,7 +173,9 @@ export const learning = {
     sarsa: 'SARSA learns from the next action the agent actually takes:',
     regret: 'Regret adds up how much each pull fell short of the best arm’s mean:',
     strategies:
-      'ε-greedy explores at random with chance ε; softmax picks by exp(Q/temperature); UCB1 adds a bonus that shrinks with pulls; Thompson sampling picks the best of a draw from each arm’s posterior.',
+      'ε-greedy explores at random with chance ε; softmax picks by exp(Q/temperature); UCB1 adds ' +
+      'a bonus that shrinks with pulls; Thompson sampling picks the best of a draw from each ' +
+      'arm’s posterior.',
     FR: 'Fixed ratio {n}: every {n}th response is reinforced.',
     VR: 'Variable ratio {n}: the number of responses needed varies at random around {n}.',
     FI: 'Fixed interval {n} s: the first response {n} s or more after the last reinforcer is reinforced.',
