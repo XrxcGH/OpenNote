@@ -18,9 +18,10 @@ const u = (sym: string, factor = 1, offset = 0): UnitDef => ({ sym, factor, offs
 export const QUANTITIES = {
   length: [u('m'), u('cm', 0.01), u('mm', 0.001), u('ft', FT), u('in', IN)],
   grain: [u('mm'), u('µm', 0.001), u('in', 25.4)],
+  dial: [u('mm'), u('in', 25.4), u('µm', 0.001)],
   area: [u('m²'), u('cm²', 1e-4), u('ft²', FT * FT), u('in²', IN * IN)],
   catchment: [u('km²'), u('ha', 0.01), u('acre', 4046.8564224e-6), u('mi²', 2.589988110336)],
-  volume: [u('m³'), u('L', 0.001), u('ft³', FT ** 3), u('yd³', (3 * FT) ** 3)],
+  volume: [u('m³'), u('L', 0.001), u('cm³', 1e-6), u('ft³', FT ** 3), u('yd³', (3 * FT) ** 3)],
   force: [u('kN'), u('N', 0.001), u('kip', LBF), u('lbf', LBF / 1000)],
   forcePerLength: [u('kN/m'), u('N/m', 0.001), u('kip/ft', LBF / FT), u('lbf/ft', LBF / FT / 1000)],
   moment: [u('kN·m'), u('kip·ft', LBF * FT)],

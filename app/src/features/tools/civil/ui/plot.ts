@@ -170,7 +170,19 @@ export function plotSvg(plot: Plot, text: PlotText, palette: Palette = THEME_PAL
     if (series.style === 'points') {
       for (const p of points) out.push(mark(index, px(p[0]), py(p[1]), color));
     } else if (points.length > 1) {
-      const d = points.map((p, i) => `${i ? 'L' : 'M'}${px(p[0]).toFixed(2)} ${py(p[1]).toFixed(2)}`).join('');
+      // A point that cannot be drawn, such as NaN, lifts the pen, so one series can hold several pieces.
+      let up = true;
+      const d = series.points
+        .map((p) => {
+          if (!inside(p)) {
+            up = true;
+            return '';
+          }
+          const move = up ? 'M' : 'L';
+          up = false;
+          return `${move}${px(p[0]).toFixed(2)} ${py(p[1]).toFixed(2)}`;
+        })
+        .join('');
       const dash = series.style === 'dashed' ? '7 4' : DASHES[index % DASHES.length];
       out.push(
         `<path d="${d}" style="fill:none;stroke:${color}" stroke-width="2"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`,

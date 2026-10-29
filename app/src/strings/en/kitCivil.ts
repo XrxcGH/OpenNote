@@ -1,6 +1,7 @@
 // The civil, environmental, and chemical engineering kit (owner: the civil lane). The window's own words are here;
 // each tool's labels, results, and worked steps are in a file of their own under ./kitCivil, all in this namespace.
 import { groundwater } from './kitCivil/groundwater';
+import { soils } from './kitCivil/soils';
 import { water } from './kitCivil/water';
 
 export const kitCivil = {
@@ -47,6 +48,15 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    soils: {
+      title: 'Soil properties, consolidation, and strength',
+      open: 'Open soil properties, consolidation, and strength',
+      keywords:
+        'soil mechanics geotechnical phase relations void ratio porosity water content unit weight sieve ' +
+        'hydrometer grain size atterberg limits plasticity uscs aashto classification proctor compaction ' +
+        'permeability falling head effective stress boussinesq newmark consolidation settlement time factor ' +
+        'casagrande taylor preconsolidation mohr circle triaxial direct shear skempton',
+    },
     water: {
       title: 'Water quality and treatment',
       open: 'Open water quality and treatment',
@@ -64,6 +74,7 @@ export const kitCivil = {
         'transport ogata banks retardation dispersion',
     },
   },
+  soils,
   groundwater,
   water,
 } as const;

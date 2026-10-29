@@ -3,6 +3,7 @@ import type { Calc } from './core/types';
 import type { CivilToolId } from './meta';
 
 export const CIVIL_KIT: Readonly<Record<CivilToolId, () => Promise<readonly Calc[]>>> = {
+  soils: () => import('./soils/calcs').then((module) => module.CALCS),
   groundwater: () => import('./groundwater/calcs').then((module) => module.CALCS),
   water: () => import('./water/calcs').then((module) => module.CALCS),
 };
