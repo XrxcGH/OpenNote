@@ -64,7 +64,8 @@ export interface ChiSquare {
 
 /** Goodness of fit of counts to a ratio; df = classes - 1 - `fitted` parameters. */
 export function chiSquareFit(observed: number[], ratio: number[], fitted = 0): ChiSquare {
-  if (observed.length !== ratio.length) return fail('e.ratioLength', { classes: String(observed.length), ratio: String(ratio.length) });
+  if (observed.length !== ratio.length)
+    return fail('e.ratioLength', { classes: String(observed.length), ratio: String(ratio.length) });
   if (observed.length < 2) return fail('e.fewClasses');
   if (observed.some((o) => o < 0) || ratio.some((r) => r <= 0)) return fail('e.ratioPositive');
   const total = observed.reduce((s, o) => s + o, 0);

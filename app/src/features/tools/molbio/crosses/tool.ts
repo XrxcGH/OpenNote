@@ -25,31 +25,121 @@ const THREE_POINT = '+ + + 400\na c b 390\n+ c b 55\na + + 50\na + b 50\n+ c + 4
 
 const fields: Field[] = [
   { id: 'mode', label: 'crosses.f.mode', kind: 'select', initial: 'punnett', options: choices('crosses.m.', MODES) },
-  { id: 'p1', label: 'crosses.f.p1', kind: 'text', initial: 'AaBb', hint: 'crosses.f.genotypeHint', when: is('punnett') },
+  {
+    id: 'p1',
+    label: 'crosses.f.p1',
+    kind: 'text',
+    initial: 'AaBb',
+    hint: 'crosses.f.genotypeHint',
+    when: is('punnett'),
+  },
   { id: 'p2', label: 'crosses.f.p2', kind: 'text', initial: 'AaBb', when: is('punnett') },
-  { id: 'dominance', label: 'crosses.f.dominance', kind: 'select', initial: 'complete', options: choices('crosses.dom.', DOMINANCE), when: is('punnett') },
-  { id: 'hierarchy', label: 'crosses.f.hierarchy', kind: 'text', initial: '', hint: 'crosses.f.hierarchyHint', when: (v) => is('punnett')(v) && v.dominance === 'complete' },
-  { id: 'rules', label: 'crosses.f.rules', kind: 'area', initial: 'A_B_ = purple\nelse = white', hint: 'crosses.f.rulesHint', when: (v) => is('punnett')(v) && v.dominance === 'custom' },
-  { id: 'lethal', label: 'crosses.f.lethal', kind: 'text', initial: '', hint: 'crosses.f.lethalHint', when: is('punnett') },
-  { id: 'query', label: 'crosses.f.query', kind: 'text', initial: 'aabb', hint: 'crosses.f.queryHint', when: is('punnett') },
+  {
+    id: 'dominance',
+    label: 'crosses.f.dominance',
+    kind: 'select',
+    initial: 'complete',
+    options: choices('crosses.dom.', DOMINANCE),
+    when: is('punnett'),
+  },
+  {
+    id: 'hierarchy',
+    label: 'crosses.f.hierarchy',
+    kind: 'text',
+    initial: '',
+    hint: 'crosses.f.hierarchyHint',
+    when: (v) => is('punnett')(v) && v.dominance === 'complete',
+  },
+  {
+    id: 'rules',
+    label: 'crosses.f.rules',
+    kind: 'area',
+    initial: 'A_B_ = purple\nelse = white',
+    hint: 'crosses.f.rulesHint',
+    when: (v) => is('punnett')(v) && v.dominance === 'custom',
+  },
+  {
+    id: 'lethal',
+    label: 'crosses.f.lethal',
+    kind: 'text',
+    initial: '',
+    hint: 'crosses.f.lethalHint',
+    when: is('punnett'),
+  },
+  {
+    id: 'query',
+    label: 'crosses.f.query',
+    kind: 'text',
+    initial: 'aabb',
+    hint: 'crosses.f.queryHint',
+    when: is('punnett'),
+  },
   { id: 'observed', label: 'crosses.f.observed', kind: 'text', initial: '315, 108, 101, 32', when: is('chisq') },
   { id: 'ratio', label: 'crosses.f.ratio', kind: 'text', initial: '9:3:3:1', when: is('chisq') },
   { id: 'recombinants', label: 'crosses.f.recombinants', kind: 'number', initial: '20', when: is('twopoint') },
   { id: 'total', label: 'crosses.f.total', kind: 'number', initial: '100', when: is('twopoint') },
-  { id: 'classes', label: 'crosses.f.classes', kind: 'area', initial: THREE_POINT, hint: 'crosses.f.classesHint', when: is('threepoint') },
-  { id: 'families', label: 'crosses.f.families', kind: 'area', initial: '2 10', hint: 'crosses.f.familiesHint', when: is('lod') },
-  { id: 'phase', label: 'crosses.f.phase', kind: 'select', initial: 'known', options: choices('crosses.phase.', ['known', 'unknown']), when: is('lod') },
-  { id: 'scenario', label: 'crosses.f.scenario', kind: 'select', initial: 'xlinked', options: choices('crosses.scenario.', ['xlinked', 'custom']), when: is('bayes') },
+  {
+    id: 'classes',
+    label: 'crosses.f.classes',
+    kind: 'area',
+    initial: THREE_POINT,
+    hint: 'crosses.f.classesHint',
+    when: is('threepoint'),
+  },
+  {
+    id: 'families',
+    label: 'crosses.f.families',
+    kind: 'area',
+    initial: '2 10',
+    hint: 'crosses.f.familiesHint',
+    when: is('lod'),
+  },
+  {
+    id: 'phase',
+    label: 'crosses.f.phase',
+    kind: 'select',
+    initial: 'known',
+    options: choices('crosses.phase.', ['known', 'unknown']),
+    when: is('lod'),
+  },
+  {
+    id: 'scenario',
+    label: 'crosses.f.scenario',
+    kind: 'select',
+    initial: 'xlinked',
+    options: choices('crosses.scenario.', ['xlinked', 'custom']),
+    when: is('bayes'),
+  },
   { id: 'prior', label: 'crosses.f.prior', kind: 'text', initial: '1/2', when: is('bayes') },
-  { id: 'sons', label: 'crosses.f.sons', kind: 'number', initial: '2', when: (v) => is('bayes')(v) && v.scenario !== 'custom' },
-  { id: 'likeCarrier', label: 'crosses.f.likeCarrier', kind: 'text', initial: '1/4', when: (v) => is('bayes')(v) && v.scenario === 'custom' },
-  { id: 'likeNon', label: 'crosses.f.likeNon', kind: 'text', initial: '1', when: (v) => is('bayes')(v) && v.scenario === 'custom' },
+  {
+    id: 'sons',
+    label: 'crosses.f.sons',
+    kind: 'number',
+    initial: '2',
+    when: (v) => is('bayes')(v) && v.scenario !== 'custom',
+  },
+  {
+    id: 'likeCarrier',
+    label: 'crosses.f.likeCarrier',
+    kind: 'text',
+    initial: '1/4',
+    when: (v) => is('bayes')(v) && v.scenario === 'custom',
+  },
+  {
+    id: 'likeNon',
+    label: 'crosses.f.likeNon',
+    kind: 'text',
+    initial: '1',
+    when: (v) => is('bayes')(v) && v.scenario === 'custom',
+  },
 ];
 
 const sexWord = (sex: Child['sex']): Cell => ({ word: `crosses.sex.${sex}` as MolKey });
 
 function phenoOptions(values: Values, genes: number): PhenoOptions {
-  const dominance = (DOMINANCE as readonly string[]).includes(values.dominance ?? '') ? (values.dominance as Dominance) : 'complete';
+  const dominance = (DOMINANCE as readonly string[]).includes(values.dominance ?? '')
+    ? (values.dominance as Dominance)
+    : 'complete';
   const custom = dominance === 'custom' ? readRules(values.rules ?? '', genes) : { rules: [], elseName: null };
   return { dominance, hierarchy: dominance === 'complete' ? readHierarchy(values.hierarchy ?? '') : null, ...custom };
 }
@@ -66,7 +156,12 @@ function grid(p1: Genotype, p2: Genotype): KitTable | null {
     headText: ['', ...g2.map((g) => `${label(g.alleles, p2)} (${fText(g.p)})`)],
     rows: g1.map((a) => [
       `${label(a.alleles, p1)} (${fText(a.p)})`,
-      ...g2.map((b) => genotypeText(a.alleles.map((x, i) => order(x, b.alleles[i]!, p1[i]!.x)), p1)),
+      ...g2.map((b) =>
+        genotypeText(
+          a.alleles.map((x, i) => order(x, b.alleles[i]!, p1[i]!.x)),
+          p1,
+        ),
+      ),
     ]),
   };
 }
@@ -104,7 +199,9 @@ function ruleSteps(p1: Genotype, p2: Genotype, q: Query | null, independent: boo
   const steps: KitStep[] = [];
   if (independent) {
     q.patterns.forEach((pattern, k) => {
-      const parts = pattern.map((gene, i) => `P(${patternText(gene)}) = ${fText(chance(offspring([p1[i]!], [p2[i]!]), [gene]))}`);
+      const parts = pattern.map(
+        (gene, i) => `P(${patternText(gene)}) = ${fText(chance(offspring([p1[i]!], [p2[i]!]), [gene]))}`,
+      );
       steps.push({
         key: 'crosses.s.product',
         vars: { pattern: pattern.map(patternText).join(' '), parts: parts.join(' × '), p: fText(q.each[k]!) },
@@ -142,13 +239,20 @@ function punnett(values: Values): KitOk {
       { key: 'crosses.r.ratio', value: r.join(':') },
       { key: 'crosses.r.classes', value: String(shares.length) },
       { key: 'crosses.r.genotypes', value: String(children.length) },
-      ...(q ? [{ key: 'crosses.r.query' as MolKey, vars: { query: q.text }, value: `${fText(q.p)} = ${fmt(fNum(q.p), 6)}` }] : []),
+      ...(q
+        ? [{ key: 'crosses.r.query' as MolKey, vars: { query: q.text }, value: `${fText(q.p)} = ${fmt(fNum(q.p), 6)}` }]
+        : []),
     ],
     tables: [
       ...(table ? [table] : []),
       {
         title: 'crosses.h.phenotypes',
-        head: [...(bySex ? ['crosses.h.sex' as MolKey] : []), 'crosses.h.phenotype', 'crosses.h.probability', 'crosses.h.ratio'],
+        head: [
+          ...(bySex ? ['crosses.h.sex' as MolKey] : []),
+          'crosses.h.phenotype',
+          'crosses.h.probability',
+          'crosses.h.ratio',
+        ],
         rows: shares.map((s, i) => [...(bySex ? [sexWord(s.sex)] : []), s.label, fText(s.p), String(r[i])]),
       },
       {
@@ -194,7 +298,10 @@ function chisq(values: Values): KitOk {
     latex: `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${fmt(test.chi2, 5)},\\ \\mathrm{df} = ${test.df},\\ p = ${fmt(test.p, 4)}`,
     steps: [
       { key: 'crosses.s.expected', vars: { total: fmt(observed.reduce((s, o) => s + o, 0)), ratio: r.join(':') } },
-      { key: 'crosses.s.chi2', math: `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${test.terms.map((t) => fmt(t, 4)).join(' + ')} = ${fmt(test.chi2, 5)}` },
+      {
+        key: 'crosses.s.chi2',
+        math: `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${test.terms.map((t) => fmt(t, 4)).join(' + ')} = ${fmt(test.chi2, 5)}`,
+      },
       { key: 'crosses.s.df', vars: { classes: String(observed.length), df: String(test.df), p: fmt(test.p, 4) } },
     ],
     notes: ['crosses.n.expectedFive'],
@@ -209,7 +316,10 @@ function twopoint(values: Values): KitOk {
   const h = haldane(r);
   const k = kosambi(r);
   return ok({
-    answer: { key: 'crosses.a.twopoint', vars: { r: fmt(r, 5), cm: fmt(r * 100, 5), haldane: fmt(h, 5), kosambi: fmt(k, 5) } },
+    answer: {
+      key: 'crosses.a.twopoint',
+      vars: { r: fmt(r, 5), cm: fmt(r * 100, 5), haldane: fmt(h, 5), kosambi: fmt(k, 5) },
+    },
     rows: [
       { key: 'crosses.r.rf', value: fmt(r, 6) },
       { key: 'crosses.r.cm', value: `${fmt(r * 100, 6)} cM` },
@@ -228,9 +338,18 @@ function twopoint(values: Values): KitOk {
 function threepointMode(values: Values): KitOk {
   const t = threePoint(readClasses(values.classes ?? ''));
   const [l, m, rt] = t.order.map((i) => t.genes[i]!);
-  const line = (list: { alleles: string[]; count: number }[]) => list.map((c) => `${c.alleles.join(' ')} (${c.count})`).join(', ');
+  const line = (list: { alleles: string[]; count: number }[]) =>
+    list.map((c) => `${c.alleles.join(' ')} (${c.count})`).join(', ');
   return ok({
-    answer: { key: 'crosses.a.threepoint', vars: { order: `${l} – ${m} – ${rt}`, d1: fmt(t.rLeft * 100, 5), d2: fmt(t.rRight * 100, 5), i: fmt(t.interference, 4) } },
+    answer: {
+      key: 'crosses.a.threepoint',
+      vars: {
+        order: `${l} – ${m} – ${rt}`,
+        d1: fmt(t.rLeft * 100, 5),
+        d2: fmt(t.rRight * 100, 5),
+        i: fmt(t.interference, 4),
+      },
+    },
     rows: [
       { key: 'crosses.r.order', value: `${l} – ${m} – ${rt}` },
       { key: 'crosses.r.distance', vars: { a: l!, b: m! }, value: `${fmt(t.rLeft * 100, 6)} cM` },
@@ -244,7 +363,10 @@ function threepointMode(values: Values): KitOk {
       { key: 'crosses.s.doubles', vars: { classes: line(t.double), middle: m! } },
       { key: 'crosses.s.singles', vars: { a: l!, b: m!, classes: line(t.singleLeft), r: fmt(t.rLeft, 5) } },
       { key: 'crosses.s.singles', vars: { a: m!, b: rt!, classes: line(t.singleRight), r: fmt(t.rRight, 5) } },
-      { key: 'crosses.s.coincidence', math: `c = \\frac{${t.double.reduce((s, c) => s + c.count, 0)}}{${fmt(t.rLeft, 5)} \\times ${fmt(t.rRight, 5)} \\times ${t.total}} = ${fmt(t.coincidence, 4)},\\ I = 1 - c = ${fmt(t.interference, 4)}` },
+      {
+        key: 'crosses.s.coincidence',
+        math: `c = \\frac{${t.double.reduce((s, c) => s + c.count, 0)}}{${fmt(t.rLeft, 5)} \\times ${fmt(t.rRight, 5)} \\times ${t.total}} = ${fmt(t.coincidence, 4)},\\ I = 1 - c = ${fmt(t.interference, 4)}`,
+      },
     ],
     notes: ['crosses.n.testCross'],
   });
@@ -273,7 +395,13 @@ function lodMode(values: Values): KitOk {
     figures: [
       {
         title: 'crosses.h.lodCurve',
-        figure: linePlot({ xLabel: 'θ', yLabel: { word: 'crosses.h.lodScore' }, series: [{ name: 'LOD', x: xs, y: xs.map((x) => lod(families, x, known)) }], marks: [3, 0, -2], xRange: [0, 0.5] }),
+        figure: linePlot({
+          xLabel: 'θ',
+          yLabel: { word: 'crosses.h.lodScore' },
+          series: [{ name: 'LOD', x: xs, y: xs.map((x) => lod(families, x, known)) }],
+          marks: [3, 0, -2],
+          xRange: [0, 0.5],
+        }),
       },
     ],
     steps: [
@@ -303,12 +431,23 @@ function bayes(values: Values): KitOk {
     answer: { key: 'crosses.a.bayes', vars: { p: fmt(post, 6) } },
     rows: [
       { key: 'crosses.r.posterior', value: fmt(post, 6) },
-      ...(custom ? [] : [{ key: 'crosses.r.nextSon' as MolKey, value: fmt(post / 2, 6) }, { key: 'crosses.r.nextChild' as MolKey, value: fmt(post / 4, 6) }]),
+      ...(custom
+        ? []
+        : [
+            { key: 'crosses.r.nextSon' as MolKey, value: fmt(post / 2, 6) },
+            { key: 'crosses.r.nextChild' as MolKey, value: fmt(post / 4, 6) },
+          ]),
     ],
     tables: [
       {
         title: 'crosses.h.bayes',
-        head: ['crosses.h.hypothesis', 'crosses.h.prior', 'crosses.h.conditional', 'crosses.h.joint', 'crosses.h.posterior'],
+        head: [
+          'crosses.h.hypothesis',
+          'crosses.h.prior',
+          'crosses.h.conditional',
+          'crosses.h.joint',
+          'crosses.h.posterior',
+        ],
         rows: [
           [{ word: 'crosses.w.carrier' }, fmt(prior, 6), fmt(likeCarrier, 6), fmt(jointC, 6), fmt(post, 6)],
           [{ word: 'crosses.w.notCarrier' }, fmt(1 - prior, 6), fmt(likeNon, 6), fmt(jointN, 6), fmt(1 - post, 6)],
@@ -317,7 +456,10 @@ function bayes(values: Values): KitOk {
     ],
     steps: [
       ...(custom ? [] : [{ key: 'crosses.s.sons' as MolKey, vars: { n: String(sons), like: fmt(likeCarrier, 6) } }]),
-      { key: 'crosses.s.bayes', math: `P(\\text{carrier} \\mid \\text{data}) = \\frac{${fmt(prior, 4)} \\times ${fmt(likeCarrier, 4)}}{${fmt(jointC, 4)} + ${fmt(jointN, 4)}} = ${fmt(post, 6)}` },
+      {
+        key: 'crosses.s.bayes',
+        math: `P(\\text{carrier} \\mid \\text{data}) = \\frac{${fmt(prior, 4)} \\times ${fmt(likeCarrier, 4)}}{${fmt(jointC, 4)} + ${fmt(jointN, 4)}} = ${fmt(post, 6)}`,
+      },
     ],
     notes: ['crosses.n.bayes'],
   });

@@ -119,7 +119,12 @@ describe('Punnett squares', () => {
     const p1 = parseGenotype('Aa', 'crosses.f.p1');
     const kids = survivors(offspring(p1, p1), p1, 'aa');
     expect(kids.map((k) => fText(k.p)).sort()).toEqual(['1/3', '2/3']);
-    expect(ratio([{ n: 1, d: 3 }, { n: 2, d: 3 }])).toEqual([1, 2]);
+    expect(
+      ratio([
+        { n: 1, d: 3 },
+        { n: 2, d: 3 },
+      ]),
+    ).toEqual([1, 2]);
   });
 });
 
@@ -158,9 +163,7 @@ describe('mapping', () => {
   });
 
   it('orders a three-point cross from the doubles: 11.5 and 10.5 cM, coincidence 0.828, interference 0.172', () => {
-    const t = threePoint(
-      readClasses('+ + + 400\na c b 390\n+ c b 55\na + + 50\na + b 50\n+ c + 45\n+ + b 5\na c + 5'),
-    );
+    const t = threePoint(readClasses('+ + + 400\na c b 390\n+ c b 55\na + + 50\na + b 50\n+ c + 45\n+ + b 5\na c + 5'));
     expect(t.order.map((i) => t.genes[i])).toEqual(['a', 'b', 'c']);
     expect(t.rLeft * 100).toBeCloseTo(11.5, 9);
     expect(t.rRight * 100).toBeCloseTo(10.5, 9);
