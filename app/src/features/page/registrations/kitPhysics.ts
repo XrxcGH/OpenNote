@@ -19,7 +19,7 @@ export const PHYSICS_COMMAND_TOOLS: readonly (readonly [id: string, icon: string
 const open = async (tool: string | null) => (await import('../../tools')).openPhysicsTool(tool);
 
 commands.register({
-  id: 'tools.kitPhysics',
+  id: 'tools.kit-physics',
   title: 'kitPhysics.open',
   keywords: 'kitPhysics.keywords',
   category: 'general',
@@ -29,10 +29,10 @@ commands.register({
   run: () => open(null),
 });
 commandBar.register({
-  id: 'tools.kitPhysics',
+  id: 'tools.kit-physics',
   tab: 'insert',
   group: 'math',
-  command: 'tools.kitPhysics',
+  command: 'tools.kit-physics',
   flag: 'kits.physics',
   priority: 20,
 });

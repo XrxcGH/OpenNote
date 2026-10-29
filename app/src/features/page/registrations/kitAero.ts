@@ -3,7 +3,7 @@ import { AERO_TOOLS, openAeroKit } from '../../engineering';
 import { addCommand } from './qolStudy';
 
 addCommand({
-  id: 'kits.aero',
+  id: 'tools.kitaero',
   title: 'kitAero.open',
   keywords: 'kitAero.openKeywords',
   category: 'general',

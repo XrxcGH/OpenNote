@@ -7,7 +7,7 @@ import { addCommand } from './qolStudy';
 const open = async (tool?: string) => (await import('../../engineering')).openFluidHeatKit(tool);
 
 addCommand({
-  id: 'tools.kitFluidHeat',
+  id: 'tools.kit-fluidheat',
   title: 'kitFluidHeat.open',
   keywords: 'kitFluidHeat.keywords',
   category: 'general',

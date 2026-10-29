@@ -21,7 +21,7 @@ async function open(tool?: string): Promise<void> {
 }
 
 addCommand({
-  id: 'tools.kitThermo',
+  id: 'tools.kit-thermo',
   title: 'kitThermo.open.window',
   keywords: 'kitThermo.keywords.window',
   category: 'general',
