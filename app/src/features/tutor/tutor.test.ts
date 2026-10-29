@@ -8,9 +8,10 @@ import { guardedRuleHint, planFor, ruleExplain, ruleHint, ruleSolution, secrets,
 import { acceptable, buildPrompt, tutorReply, type TutorRequest } from './engine';
 
 let kit: MathKit;
+// Math's door loads the grapher and the equation editor too, which takes a while on a busy machine.
 beforeAll(async () => {
   kit = await loadMathKit();
-});
+}, 120_000);
 
 const lines = (...texts: string[]) => texts.map((text) => ({ text }));
 const plan = (...texts: string[]): Plan => planFor(lines(...texts), kit.checkSteps(lines(...texts)));
