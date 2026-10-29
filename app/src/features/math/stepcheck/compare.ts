@@ -76,6 +76,9 @@ export function symbolicSame(a: Node, b: Node): boolean {
 
 const fn = (node: Node): Fn => evaluator(node);
 
+/** The letters people write for a constant of integration. */
+const CONSTANT_NAMES = new Set(['C', 'c', 'K', 'k']);
+
 // Values ------------------------------------------------------------------------------------------------------------
 
 /** The slope of a line in x, with each integral's slope its body times d(variable)/dx. */
@@ -107,7 +110,14 @@ function compareAntiderivatives(a: Scalar, b: Scalar, x: string, seed: number): 
   }
   const names = [...new Set([...variables(da), ...variables(db)])];
   const found = compareAt(fn(da), fn(db), names, seed);
-  if (found.result === 'same') return outcome('ok', 'antiderivative', 'derivative', symbolicSame(da, db) ? 1 : 0.97);
+  if (found.result === 'same') {
+    const confidence = symbolicSame(da, db) ? 1 : 0.97;
+    // The integral sign is gone and no + C came with it: right, but the constant belongs there.
+    const done = (a.integrals.length > 0 || a.origin === 'integral') && b.integrals.length === 0;
+    const constant = variables(b.node).some((name) => CONSTANT_NAMES.has(name));
+    if (done && !constant) return outcome('ok', 'missingConstant', 'derivative', confidence, {}, `= ${b.text} + C`);
+    return outcome('ok', 'antiderivative', 'derivative', confidence);
+  }
   if (found.result === 'different') {
     return outcome('broken', 'antiderivativeOff', 'derivative', 0.97, { slope: nodeText(db) }, antiderivativeAnswer(a));
   }
@@ -130,10 +140,44 @@ function scalarSuggestion(a: Scalar): string | undefined {
   }
 }
 
+/** The decimal places a side is written to, as in 1.414 (3), or null when it is not a decimal. */
+function placesOf(text: string): number | null {
+  const found = /^[+-]?\d*\.(\d+)$/.exec(text.replace(/\s+/g, ''));
+  return found ? found[1].length : null;
+}
+
+/** True when `shown` is `exact` rounded, or cut short, to the places it is written to. */
+function roundsTo(exact: number, shown: number, places: number): boolean {
+  if (!Number.isFinite(exact) || !Number.isFinite(shown)) return false;
+  const unit = 10 ** -places;
+  const slack = 1e-9 * Math.max(1, Math.abs(exact));
+  if (Math.abs(exact - shown) <= unit / 2 + slack) return true;
+  return Math.abs(exact - shown) < unit && Math.abs(Math.trunc(exact / unit) * unit - shown) <= slack + unit * 1e-6;
+}
+
+/** sqrt(2) = 1.414: the same value, rounded to the places shown. Null when neither side is a decimal that fits. */
+function rounded(a: Scalar, b: Scalar): Outcome | null {
+  const [va, vb] = [fn(a.node)({}), fn(b.node)({})];
+  for (const [exact, shown, text] of [
+    [va, vb, b.text],
+    [vb, va, a.text],
+  ] as const) {
+    const places = placesOf(text);
+    if (places !== null && roundsTo(exact, shown, places)) {
+      return outcome('ok', 'rounded', 'evaluation', 0.99, { places: String(places) });
+    }
+  }
+  return null;
+}
+
 function compareScalars(a: Scalar, b: Scalar, seed: number): Outcome {
   const names = [...new Set([...variables(a.node), ...variables(b.node)])];
   const plain = names.length === 0;
   const found = compareAt(fn(a.node), fn(b.node), names, seed);
+  if (plain && found.result !== 'same') {
+    const near = rounded(a, b);
+    if (near) return near;
+  }
   // The numbers decide first: the tidy forms take sqrt(x^2) as x, which is only so for x >= 0.
   if (found.result === 'same') {
     if (plain) return outcome('ok', 'sameValue', 'evaluation', 0.995);
@@ -303,6 +347,12 @@ const sumOf = (list: { node: Node; sign: number }[]): Node =>
           next.type === 'unary' && next.op === '-' ? build.sub(total, next.arg) : build.add(total, next),
         );
 
+/** The sign slip of moving a term, as a broken outcome with the corrected line, or null when there is none. */
+export function signSlipOutcome(prev: Equation, atom: Atom, seed: number): Outcome | null {
+  const slip = signSlip(prev, atom, seed);
+  return slip ? outcome('broken', 'signMoved', 'solutions', 0.97, { term: slip.term }, slip.line) : null;
+}
+
 /** A term whose sign, turned around, makes the new equation match the old one: the sign slip of moving a term. */
 function signSlip(prev: Equation, atom: Atom, seed: number): { term: string; line: string } | null {
   const sides = [terms(atom.left.node), terms(atom.right.node)];
@@ -341,6 +391,31 @@ function equationSuggestion(prev: Equation, groups: Atom[][], seed: number): str
   return undefined;
 }
 
+/**
+ * x = 7/3, then x = 2.33: every solution of the line before, rounded to the places shown, and as many of them. Null
+ * when the line is not answers written as decimals.
+ */
+function roundedSolutions(prev: Equation, groups: Atom[][], seed: number): Outcome | null {
+  if (prev.names.length !== 1) return null;
+  const [x] = prev.names;
+  const shown: { value: number; places: number }[] = [];
+  for (const g of groups) {
+    if (g.length !== 1 || g[0].rel !== '=') return null;
+    const [atom] = g;
+    const [name, value] =
+      atom.left.node.type === 'name' ? [atom.left.node.name, atom.right] : [nameOf(atom.right.node), atom.left];
+    const places = placesOf(value.text);
+    if (name !== x || places === null || variables(value.node).length > 0) return null;
+    shown.push({ value: fn(value.node)({}), places });
+  }
+  const roots = zeros(prev.f, prev.names, seed).map((p) => p[x]);
+  if (roots.length === 0 || roots.length !== shown.length) return null;
+  const all = roots.every((root) => shown.some((s) => roundsTo(root, s.value, s.places)));
+  return all ? outcome('ok', 'rounded', 'solutions', 0.95, { places: String(shown[0].places) }) : null;
+}
+
+const nameOf = (node: Node): string | null => (node.type === 'name' ? node.name : null);
+
 /** Compares two equations by their solutions. */
 export function compareEquations(prev: Equation, cur: Equation, groups: Atom[][], seed: number): Outcome {
   const names = [...new Set([...prev.names, ...cur.names])];
@@ -351,6 +426,8 @@ export function compareEquations(prev: Equation, cur: Equation, groups: Atom[][]
     const symbolic = exact !== null && symbolicSame(prev.node, build.mul(exact, cur.node));
     return outcome('ok', 'sameSolutions', symbolic ? 'symbolic' : 'numeric', symbolic ? 1 : 0.97);
   }
+  const near = roundedSolutions(prev, groups, seed);
+  if (near) return near;
   const s0 = zeros(prev.f, names, seed);
   const s1 = zeros(cur.f, names, seed + 1);
   if (s0.length === 0 && s1.length === 0) return cannot('noRealSolutions');
@@ -446,11 +523,17 @@ function atomsLinear(atoms: Atom[], names: string[], seed: number): Linear[] | n
   return out;
 }
 
-/** True when the equations have a solution together. */
-export function consistent(atoms: Atom[], seed: number): boolean {
+/** Whether linear equations have a solution together; null when one of them is not linear. */
+export function systemState(atoms: Atom[], seed: number): 'consistent' | 'inconsistent' | null {
   const names = [...new Set(atoms.flatMap((atom) => variables(difference(atom))))];
   const rows = atomsLinear(atoms, names, seed);
-  return rows !== null && solveLinear(rows, names.length) !== null;
+  if (!rows) return null;
+  return solveLinear(rows, names.length) ? 'consistent' : 'inconsistent';
+}
+
+/** True when the equations have a solution together. */
+export function consistent(atoms: Atom[], seed: number): boolean {
+  return systemState(atoms, seed) === 'consistent';
 }
 
 /**

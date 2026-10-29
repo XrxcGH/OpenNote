@@ -198,3 +198,106 @@ describe('checkSteps on any input', () => {
     ).toBe('tooLong');
   });
 });
+
+// Shapes from real homework pages. The expected verdicts are worked out by hand: each problem below is solved in the
+// comment beside it, independently of the checker.
+describe('checkSteps on a page of homework', () => {
+  it('checks each problem on its own, after a blank line, a number, or a title', () => {
+    // 2x + 3 = 7 gives x = 2; 3x - 1 = 8 gives x = 3. Both are right.
+    const second = ['3x - 1 = 8', '3x = 9', 'x = 3'];
+    const first = ['2x + 3 = 7', '2x = 4', 'x = 2'];
+    for (const between of ['', 'Problem 2']) {
+      expect(verdicts(checkSteps([...first, between, ...second]))).toEqual(Array(7).fill('ok'));
+    }
+    expect(verdicts(checkSteps(['1) 2x + 3 = 7', 'x = 2', '2) 3x - 1 = 8', 'x = 3']))).toEqual(Array(4).fill('ok'));
+    expect(verdicts(checkSteps(['2x + 3 = 7', 'x = 2', '3y = 9']))).toEqual(['ok', 'ok', 'ok']);
+    // A slip in the second problem is still found: 3x = 9 gives x = 3, not 4.
+    expect(checkSteps([...first, '', '3x - 1 = 8', '3x = 9', 'x = 4'])[6].verdict).toBe('broken');
+  });
+
+  it('reads a title with digits as words, not as letters multiplied together', () => {
+    expect(at(['x = 2', 'Problem 2'], 1)).toMatchObject({ verdict: 'ok', method: 'given' });
+    expect(at(['x = 2', 'Now try problem 2'], 1)).toMatchObject({ verdict: 'unchecked', reason: 'notMath' });
+  });
+
+  it('checks a system written one equation to a line against all of them', () => {
+    // y = 3x and x + y = 8 give x = 2, y = 6.
+    expect(verdicts(checkSteps(['y = 3x', 'x + y = 8', 'x + 3x = 8', '4x = 8', 'x = 2', 'y = 6']))).toEqual(
+      Array(6).fill('ok'),
+    );
+    // 2x + y = 7 and x - y = 2 add to 3x = 9: x = 3, y = 1.
+    const elimination = checkSteps(['2x + y = 7', 'x - y = 2', '3x = 9', 'x = 3', 'y = 1']);
+    expect(verdicts(elimination)).toEqual(Array(5).fill('ok'));
+    expect(elimination[1].reason).toBe('systemEquation');
+    expect(verdicts(checkSteps(['x = 2', 'y = x + 1', 'y = 3']))).toEqual(['ok', 'ok', 'ok']);
+    // y = 7 is wrong: x = 3 and 2x + y = 7 give y = 1.
+    expect(at(['2x + y = 7', 'x - y = 2', '3x = 9', 'x = 3', 'y = 7'], 4)).toMatchObject({
+      verdict: 'broken',
+      suggestion: 'y = 1',
+    });
+    // Moving y across the equals sign without changing its sign is still a slip.
+    expect(at(['2x + y = 7', '2x = 7 + y'], 1)).toMatchObject({ verdict: 'broken', reason: 'signMoved' });
+  });
+
+  it('works out dy/dx and y′ from y = ... on the line before', () => {
+    // y = x^2 gives dy/dx = 2x; y = x^3 gives y' = 3x^2.
+    expect(at(['y = x^2', 'dy/dx = 2x'], 1).verdict).toBe('ok');
+    expect(at(['y = x^3', "y' = 3x^2"], 1).verdict).toBe('ok');
+    expect(at(['y = x^2', latexToLine('\\frac{dy}{dx} = 2x')], 1).verdict).toBe('ok');
+    expect(at(['y = x^2', 'dy/dx = 3x'], 1)).toMatchObject({ verdict: 'broken', suggestion: '= 2x' });
+    expect(at(['dy/dx = 2x'], 0)).toMatchObject({ verdict: 'unchecked' });
+  });
+
+  it('takes a rounded decimal as the value it rounds', () => {
+    // sqrt(2) = 1.41421..., 2 pi = 6.28318..., 1/3 = 0.333..., 7/3 = 2.333...
+    expect(at(['sqrt(2)', '= 1.414'], 1)).toMatchObject({ verdict: 'ok', reason: 'rounded', params: { places: '3' } });
+    expect(at(['2 pi', '= 6.28'], 1)).toMatchObject({ verdict: 'ok', reason: 'rounded' });
+    expect(at(['x = 1/3 = 0.33'], 0)).toMatchObject({ verdict: 'ok', reason: 'rounded' });
+    expect(at(['x = 7/3', 'x ≈ 2.33'], 1)).toMatchObject({ verdict: 'ok', reason: 'rounded' });
+    // 1.42 is not sqrt(2) to two places (that is 1.41).
+    expect(at(['sqrt(2)', '= 1.42'], 1).verdict).toBe('broken');
+  });
+
+  it('drops notes in brackets and reads "at x = 2" as the point', () => {
+    expect(verdicts(checkSteps(['2x = 6 (divide by 2)', 'x = 3']))).toEqual(['ok', 'ok']);
+    // d/dx(x^3) = 3x^2, which is 12 at x = 2.
+    expect(verdicts(checkSteps(['d/dx(x^3) at x = 2', '= 12']))).toEqual(['ok', 'ok']);
+    expect(at(['d/dx(x^3) at x = 2', '= 4'], 1)).toMatchObject({ verdict: 'broken', suggestion: '= 12' });
+  });
+
+  it('notes a missing + C without calling the step wrong, unless a later line adds it', () => {
+    expect(at(['∫ 2x dx', '= x^2'], 1)).toMatchObject({
+      verdict: 'ok',
+      reason: 'missingConstant',
+      suggestion: '= x^2 + C',
+    });
+    expect(at(['∫ 3x^2 dx = x^3'], 0)).toMatchObject({ verdict: 'ok', reason: 'missingConstant' });
+    expect(at(['∫ 2x dx', '= x^2', '= x^2 + C'], 1).reason).toBe('antiderivative');
+    expect(at(['∫ 2x dx', '= x^2 + C'], 1).reason).toBe('antiderivative');
+  });
+
+  it('reads \\sin^{2} x and \\sin x as handwriting and MathLive write them', () => {
+    expect(latexToLine('\\sin^{2}x+\\cos^{2}x=1')).toBe('sin(x)^(2) + cos(x)^(2) =1');
+    expect(latexToLine('\\sin x')).toBe('sin(x)');
+    expect(latexToLine('\\ln x^{2}')).toBe('ln(x^(2))');
+    expect(checkSteps([{ text: '\\sin^{2}x+\\cos^{2}x=1', format: 'latex' }])[0].verdict).toBe('ok');
+  });
+
+  it('reads one-letter units after a number and a space', () => {
+    expect(at(['5 m + 3 s = 8 m'], 0)).toMatchObject({ verdict: 'broken', reason: 'unitsAdd' });
+    expect(at(['2 m * 3 m = 6 m'], 0)).toMatchObject({ verdict: 'broken', reason: 'unitKind' });
+    // 5m = 20 is algebra: m = 4.
+    expect(verdicts(checkSteps(['5m = 20', 'm = 4']))).toEqual(['ok', 'ok']);
+  });
+
+  it('reads a mixed number as one number', () => {
+    expect(at(['1 1/2 + 1/2 = 2'], 0).verdict).toBe('ok');
+  });
+
+  it('never throws for a lone string or nothing, and gives no verdict on overflow', () => {
+    expect(checkSteps('x = 1' as never)).toHaveLength(1);
+    expect(checkSteps(null as never)).toEqual([]);
+    expect(at(['0^0 = 1', 'x^99999999'], 1).verdict).not.toBe('broken');
+    expect(at(['0^0 = 1', '= x^99999999'], 1).verdict).toBe('unchecked');
+  });
+});

@@ -78,6 +78,51 @@ function matrix(body: string): string {
   return rows.length === 1 ? rows[0] : `[${rows.join(', ')}]`;
 }
 
+/** The bracket group starting at `at`, matched: its inside and where it ends, or null. */
+function parenAt(source: string, at: number): [string, number] | null {
+  if (source[at] !== '(') return null;
+  let depth = 0;
+  for (let j = at; j < source.length; j += 1) {
+    if (source[j] === '(') depth += 1;
+    else if (source[j] === ')' && --depth === 0) return [source.slice(at + 1, j), j + 1];
+  }
+  return null;
+}
+
+/**
+ * \sin^{2} x, \sin x and \sin(2x) as sin(x)^(2), sin(x) and sin(2x), as handwriting and MathLive write them. A
+ * bare argument is a number and one letter, with its power: \ln x^2 is ln(x^2). Anything else stays as it was.
+ */
+function functionCall(latex: string, at: number, name: string): [string, number] {
+  let j = at;
+  const skip = () => {
+    while (latex[j] === ' ') j += 1;
+  };
+  skip();
+  let power: string | null = null;
+  if (latex[j] === '^') {
+    const [inner, after] = group(latex, j + 1);
+    power = convert(inner);
+    j = after;
+    skip();
+  }
+  let arg: string | null = null;
+  const paren = parenAt(latex, j);
+  if (paren) [arg, j] = paren;
+  else if (latex[j] === '{') [arg, j] = group(latex, j);
+  else {
+    const bare = /^\d*(?:\.\d+)?(?:[a-zA-Z]|\\(?:theta|alpha|beta|pi))(?![a-zA-Z])(?:\^(?:\{[^{}]*\}|\d))?/.exec(
+      latex.slice(j),
+    );
+    if (bare) {
+      arg = bare[0];
+      j += bare[0].length;
+    }
+  }
+  if (arg === null || arg.trim() === '') return [` ${name} `, at];
+  return [` ${name}(${convert(arg)})${power ? `^(${power})` : ''} `, j];
+}
+
 function convert(latex: string): string {
   let out = '';
   let i = 0;
@@ -112,7 +157,10 @@ function convert(latex: string): string {
       const b = bottom.replace(/\\mathrm\{d\}/g, 'd').trim();
       const order = /^d\s*\^\s*\{?(\d)\}?$/.exec(t);
       const by = /^d\s*([a-zA-Z])(?:\s*\^\s*\{?\d\}?)?$/.exec(b);
+      // \frac{dy}{dx} and \frac{d^2y}{dx^2}: Leibniz notation, read in read.ts.
+      const leibniz = /^d\s*(?:\^\s*\{?(\d)\}?)?\s*([a-zA-Z])$/.exec(t);
       if ((t === 'd' || order) && by) out += order ? `d^${order[1]}/d${by[1]}^${order[1]} ` : `d/d${by[1]} `;
+      else if (leibniz && by) out += ` d${leibniz[1] ? `^${leibniz[1]}` : ''}${leibniz[2]}/d${by[1]} `;
       else if (/^\\partial$/.test(t) && /^\\partial\s*[a-zA-Z]$/.test(b)) out += `∂/∂${b.slice(-1)} `;
       else out += `((${convert(top)})/(${convert(bottom)}))`;
       i = afterBottom;
@@ -133,8 +181,11 @@ function convert(latex: string): string {
       out += name === 'text' ? ` ${inner} ` : inner;
       i = after;
     } else if (Object.hasOwn(WORDS, name)) out += ` ${WORDS[name]} `;
-    else if (PASS.has(name)) out += ` ${name} `;
-    else if (DROP.has(name) || /^[,;:! ]$/.test(name)) out += ' ';
+    else if (PASS.has(name)) {
+      const [text, after] = functionCall(latex, i, name);
+      out += text;
+      i = after;
+    } else if (DROP.has(name) || /^[,;:! ]$/.test(name)) out += ' ';
     else if (name === '|') out += '|';
     else out += `\\${name}`;
   }

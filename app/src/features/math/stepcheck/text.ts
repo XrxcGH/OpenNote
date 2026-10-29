@@ -22,22 +22,120 @@ const CLOSE = ')]}';
 
 /** Plain marks for the symbols people type or paste. */
 export function normalize(text: string): string {
-  return text
-    .replace(/[−–—]/g, '-')
-    .replace(/[·⋅∙]/g, '*')
-    .replace(/÷/g, '/')
-    .replace(/≤|⩽/g, '<=')
-    .replace(/≥|⩾/g, '>=')
-    .replace(/≠/g, '!=')
-    .replace(/->/g, '→')
-    .replace(/∑/g, 'Σ')
-    .replace(/²/g, '^2')
-    .replace(/³/g, '^3')
-    .replace(/′/g, "'")
-    .replace(/\b(?:infinity|inf|oo)\b/g, '∞')
-    .replace(/\blog_\(?(\d+)\)?\s*\(([^()]*)\)/g, '(ln($2)/ln($1))')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    text
+      .replace(/[−–—]/g, '-')
+      .replace(/[·⋅∙]/g, '*')
+      .replace(/÷/g, '/')
+      .replace(/≤|⩽/g, '<=')
+      .replace(/≥|⩾/g, '>=')
+      .replace(/≠/g, '!=')
+      // ≈ is checked as =: a side written as a decimal is then compared to the places it shows (see compare.ts).
+      .replace(/≈|~=/g, '=')
+      .replace(/->/g, '→')
+      .replace(/∑/g, 'Σ')
+      .replace(/²/g, '^2')
+      .replace(/³/g, '^3')
+      .replace(/′/g, "'")
+      .replace(/\b(?:infinity|inf|oo)\b/g, '∞')
+      .replace(/\blog_\(?(\d+)\)?\s*\(([^()]*)\)/g, '(ln($2)/ln($1))')
+      .replace(/\s+/g, ' ')
+      // A mixed number, 1 1/2, is one and a half, not one times a half.
+      .replace(/(^|[\s(=+\-<>])(\d+) (\d+)\/(\d+)(?![\d.(\w^])/g, '$1($2 + $3/$4)')
+      .trim()
+  );
+}
+
+/** The names a line may spell out: functions, constants, Greek letters, and the words that set up a substitution. */
+const KNOWN = [
+  'sqrt',
+  'asin',
+  'acos',
+  'atan',
+  'sinh',
+  'cosh',
+  'tanh',
+  'sin',
+  'cos',
+  'tan',
+  'sec',
+  'csc',
+  'cot',
+  'ln',
+  'log',
+  'exp',
+  'abs',
+  'det',
+  'lim',
+  'pi',
+  'tau',
+  'phi',
+  'theta',
+  'alpha',
+  'beta',
+  'gamma',
+  'delta',
+  'lambda',
+  'sigma',
+  'omega',
+  'mu',
+  'where',
+  'with',
+].sort((a, b) => b.length - a.length);
+
+/** True when a run of letters is a word, such as Problem or divide: four or more letters left after the known names. */
+function isWord(run: string): boolean {
+  const lower = run.toLowerCase();
+  let singles = 0;
+  for (let i = 0; i < lower.length;) {
+    const known = KNOWN.find((name) => lower.startsWith(name, i));
+    if (known) i += known.length;
+    else {
+      singles += 1;
+      i += 1;
+    }
+  }
+  return singles >= 4;
+}
+
+/** True when the text has a word in it, not just letters multiplied together. */
+export function hasWords(text: string): boolean {
+  return (text.match(/[a-zA-Z]+/g) ?? []).some(isWord);
+}
+
+/** Notes in brackets at the end of a line, such as (divide by 2) or [add 3 to both sides]: they are dropped. */
+export function dropNotes(text: string): string {
+  let out = text;
+  for (let guard = 0; guard < 4; guard += 1) {
+    const note = /\s*[([]([^()[\]]*)[)\]]\s*$/.exec(out);
+    if (!note || !hasWords(note[1]) || note.index === 0) break;
+    out = out.slice(0, note.index).trim();
+  }
+  return out;
+}
+
+/** A problem's number or title at the start of a line: 1), 2., (a), Q3, Problem 2, Exercise 4b. */
+const PROBLEM = new RegExp(
+  [
+    String.raw`^(?:(?:problem|question|exercise|example|ex|q|part|#)\s*\.?\s*\d+[a-z]?\s*[.):]?`,
+    String.raw`\(?\d+[a-z]?\)`,
+    String.raw`\d+[a-z]?\.`,
+    String.raw`\(?[a-h]\))(?=\s|$)\s*[:.-]?\s*`,
+  ].join('|'),
+  'i',
+);
+/** A step's label at the start of a line, Step 2:, which belongs to the same problem. */
+const STEP = /^step\s*\d+\s*[:.)-]?\s*/i;
+
+/**
+ * The rest of the line when it starts with a new problem's number or title, so the checker starts again there; or
+ * null when it does not. A step label is dropped without starting again.
+ */
+export function problemLead(text: string): { rest: string; starts: boolean } {
+  const step = STEP.exec(text);
+  if (step) return { rest: text.slice(step[0].length), starts: false };
+  const lead = PROBLEM.exec(text);
+  return lead ? { rest: text.slice(lead[0].length), starts: true } : { rest: text, starts: false };
 }
 
 /** Words and marks at the start of a line that only say "so": they are dropped. */

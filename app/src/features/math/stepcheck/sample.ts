@@ -69,10 +69,15 @@ export function compareAt(fa: Fn, fb: Fn, names: readonly string[], seed: number
   let values: [number, number] | undefined;
   const ratios: number[] = [];
   const offsets: number[] = [];
+  // Points where a value is too big to hold, as x^99999999 is: when most are, the rest say nothing.
+  let overflow = 0;
   for (let tries = 0; tries < points * 4 && agree + differ + unsure + tiny < points; tries += 1) {
     const point = samplePoint(names, next, tries >= points * 2);
     const [a, b] = [fa(point), fb(point)];
-    if (!usable(a) || !usable(b)) continue;
+    if (!usable(a) || !usable(b)) {
+      if (Math.abs(a) >= 1e12 || Math.abs(b) >= 1e12) overflow += 1;
+      continue;
+    }
     const how = numbersCompare(a, b);
     if (names.length > 0 && Math.max(Math.abs(a), Math.abs(b)) < 1e-6) tiny += 1;
     else if (how === 'same') agree += 1;
@@ -87,6 +92,7 @@ export function compareAt(fa: Fn, fb: Fn, names: readonly string[], seed: number
   }
   if (agree + differ + unsure < 6) agree += tiny;
   const total = agree + differ + unsure;
+  if (overflow > total + tiny) return { result: 'unknown' };
   if (names.length === 0 && total === 1) {
     if (agree) return { result: 'same' };
     if (differ) return { result: 'different', at: {}, values, offset: offsets[0], ratio: ratios[0] };

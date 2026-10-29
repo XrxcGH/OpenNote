@@ -47,8 +47,14 @@ export type ReasonCode =
   | 'sameSolutions'
   | 'addsSolutions'
   | 'followsSystem'
+  /** Another equation of a system, written on its own line: the lines after are checked against all of them. */
+  | 'systemEquation'
   | 'antiderivative'
+  /** Right, but the + C of an indefinite integral is missing: a note, not a slip. */
+  | 'missingConstant'
   | 'sameValue'
+  /** A decimal that is the value before it, rounded (or cut short) to the places shown. */
+  | 'rounded'
   | 'sameQuantity'
   | 'sameMatrix'
   | 'sameInequality'
