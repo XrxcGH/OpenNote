@@ -7,7 +7,11 @@ import { formatNumber } from './text';
 import { word } from './words';
 
 export const rowValue = (row: ResultRow): string =>
-  row.word ? word(row.word) : typeof row.value === 'number' ? formatNumber(row.value, row.digits ?? 6) : row.value;
+  row.word
+    ? word(row.word, row.wordVars)
+    : typeof row.value === 'number'
+      ? formatNumber(row.value, row.digits ?? 6)
+      : row.value;
 
 export const rowText = (row: ResultRow): string =>
   `${word(row.label, row.vars)}: ${rowValue(row)}${row.unit ? ` ${row.unit}` : ''}`;
@@ -33,7 +37,11 @@ export function resultTable(result: CalcResult): { header: string[]; rows: strin
   if (result.table) {
     return {
       header: result.table.header.map((h) => word(h.key, h.vars)),
-      rows: result.table.rows.map((row) => row.map((cell) => (typeof cell === 'number' ? formatNumber(cell) : cell))),
+      rows: result.table.rows.map((row) =>
+        row.map((cell) =>
+          typeof cell === 'number' ? formatNumber(cell) : typeof cell === 'string' ? cell : word(cell.key, cell.vars),
+        ),
+      ),
     };
   }
   return {

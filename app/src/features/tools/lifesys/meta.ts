@@ -3,7 +3,7 @@
 // names only; each tool's forms and engines load when its tab is first opened (kit.ts).
 import type { MessageKey } from '../../../strings/t';
 
-export type LifeSysToolId = 'diversity' | 'bench' | 'demography' | 'population' | 'pharmacology';
+export type LifeSysToolId = 'diversity' | 'bench' | 'demography' | 'population' | 'pharmacology' | 'curves';
 
 export interface LifeSysMeta {
   id: LifeSysToolId;
@@ -14,6 +14,12 @@ export interface LifeSysMeta {
 }
 
 export const LIFESYS_TOOLS: readonly LifeSysMeta[] = [
+  {
+    id: 'curves',
+    title: 'kitLifeSys.tools.curves.open',
+    keywords: 'kitLifeSys.tools.curves.keywords',
+    icon: 'ChartLine',
+  },
   {
     id: 'pharmacology',
     title: 'kitLifeSys.tools.pharmacology.open',

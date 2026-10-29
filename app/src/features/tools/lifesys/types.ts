@@ -19,6 +19,8 @@ export interface ResultRow {
   value: number | string;
   /** A word for the value, such as a stability class, shown in place of `value`. */
   word?: LsKey;
+  /** Values for `word`, such as the two ends of a range. */
+  wordVars?: LsVars;
   unit?: string;
   /** Significant figures to show (default 6). */
   digits?: number;
@@ -52,9 +54,12 @@ export interface PlotData {
   series: Series[];
 }
 
+/** A table cell: a number, text as written (a formula or a symbol), or a message such as a model's name. */
+export type TableCell = number | string | { key: LsKey; vars?: LsVars };
+
 export interface TableData {
   header: { key: LsKey; vars?: LsVars }[];
-  rows: (number | string)[][];
+  rows: TableCell[][];
 }
 
 export interface CalcResult {
