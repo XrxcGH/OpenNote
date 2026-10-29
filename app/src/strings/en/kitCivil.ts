@@ -1,5 +1,6 @@
 // The civil, environmental, and chemical engineering kit (owner: the civil lane). The window's own words are here;
 // each tool's labels, results, and worked steps are in a file of their own under ./kitCivil, all in this namespace.
+import { foundations } from './kitCivil/foundations';
 import { groundwater } from './kitCivil/groundwater';
 import { soils } from './kitCivil/soils';
 import { water } from './kitCivil/water';
@@ -65,6 +66,15 @@ export const kitCivil = {
         'alkalinity ph langelier ryznar hardness softening lime soda stokes settling sedimentation filter headloss ' +
         'carman kozeny ergun disinfection chick watson ct membrane osmotic pressure flux rejection',
     },
+    foundations: {
+      title: 'Earth pressure, foundations, and slopes',
+      open: 'Open earth pressure, foundations, and slopes',
+      keywords:
+        'geotechnical foundation engineering lateral earth pressure rankine coulomb retaining wall cantilever ' +
+        'gravity overturning sliding bearing capacity terzaghi meyerhof hansen vesic footing slope stability ' +
+        'infinite slope culmann method of slices bishop fellenius pile skin friction alpha beta end bearing ' +
+        'group efficiency converse labarre',
+    },
     groundwater: {
       title: 'Groundwater and wells',
       open: 'Open groundwater and wells',
@@ -75,6 +85,7 @@ export const kitCivil = {
     },
   },
   soils,
+  foundations,
   groundwater,
   water,
 } as const;
