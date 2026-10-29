@@ -603,3 +603,21 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Plots and coefficient tables | Histograms, densities, ECDF, Q-Q, box, fit-band, step, forest, and ROC plots, and a coefficient table that states each verdict in words.                                                     | Built, untested by hand |
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
+
+## Statistics kit
+
+(Beta 6. On in Beta and off in Stable, with the kits.statinfer flag. Help: [Statistics kit](help/statistics-kit.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Describe data | Summary statistics with bias-adjusted skewness and kurtosis, trimmed and other means, outlier screens with Grubbs' test, stem-and-leaf displays, frequency tables, grouped data, and category counts. | Built, untested by hand |
+| ANOVA | One-way and Welch ANOVA with assumption checks, Tukey, Games-Howell, and adjusted pairwise tests, contrasts, two-way (Type II and III), repeated-measures, and mixed designs, and effect sizes with exact intervals. | Built, untested by hand |
+| Rank tests | Mann-Whitney, Wilcoxon signed-rank, sign, Kruskal-Wallis with Dunn, Friedman with Conover and Nemenyi, Hodges-Lehmann, and Kolmogorov-Smirnov tests, exact for small samples. | Built, untested by hand |
+| Contingency tables | Chi-square and G tests with residuals, Fisher's exact test, McNemar, Cochran's Q, association measures, the trend test, and forecast skill scores. | Built, untested by hand |
+| Epidemiology | Risk and odds ratios with intervals, Mantel-Haenszel strata with Breslow-Day, diagnostic accuracy, rates, and direct (US 2000 standard, NCHS) and indirect standardization. | Built, untested by hand |
+| Correlation | Pearson, Spearman, Kendall, point-biserial, and partial correlations, matrices with adjusted p-values, and comparisons of 2 correlations. | Built, untested by hand |
+| Power and sample size | Solves for n, power, the detectable effect, or alpha from exact noncentral distributions for the common tests, with a power curve. | Built, untested by hand |
+| Multiple testing and meta-analysis | p-value adjustments and q-values, Fisher and Stouffer, fixed- and random-effects meta-analysis with forest and funnel plots, volcano and Manhattan plots, and printed critical-value tables. | Built, untested by hand |
+| Simulation and resampling | Seeded bootstrap intervals (percentile, basic, BCa), exact or Monte Carlo permutation tests, a sampling-distribution lab, and simulations. | Built, untested by hand |
+| Bayesian updating | Conjugate updates with credible and highest-density intervals, Savage-Dickey and JZS Bayes factors, grid posteriors, a Metropolis sampler, and Bayes tables. | Built, untested by hand |
+| Sampling and randomization | Assignment lists, Latin and Williams squares, factorial layouts, samples from a frame, allocation, stratified estimates, design effects, and margins of error. | Built, untested by hand |
