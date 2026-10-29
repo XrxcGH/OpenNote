@@ -5,7 +5,6 @@
 use std::sync::Mutex;
 
 use serde_json::{json, Map, Value};
-#[cfg_attr(not(windows), allow(unused_imports))]
 use tauri::{AppHandle, Manager};
 
 use super::{arg, opt, prefs};

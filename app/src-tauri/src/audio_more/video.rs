@@ -5,7 +5,6 @@
 
 use std::path::Path;
 
-#[cfg_attr(not(windows), allow(unused_imports))]
 use opennote_media::{
     transcribe::PcmSource,
     video::{self, Scene},
