@@ -5,7 +5,21 @@ import { t } from '../../../../strings/t';
 import { fft } from '../shared/fft';
 import { fmt, readNumbers } from '../shared/num';
 import { Plot, type PlotHandle } from '../shared/Plot';
-import { Answer, Check, Choice, Field, Fields, InsertMenu, Note, Problem, Results, StepList, attempt, num, useStored } from '../shared/ui';
+import {
+  Answer,
+  Check,
+  Choice,
+  Field,
+  Fields,
+  InsertMenu,
+  Note,
+  Problem,
+  Results,
+  StepList,
+  attempt,
+  num,
+  useStored,
+} from '../shared/ui';
 import { aliased, changeRate, convolveContinuous, pieceAt, quantize, sampleAndRebuild, type PieceKind } from './engine';
 
 export function SamplingMode() {
@@ -24,10 +38,21 @@ export function SamplingMode() {
     <Fields>
       <Field label={t('kitSignals.systems.toneFrequency')} value={state.f} onChange={(f) => set({ f })} unit="Hz" />
       <Field label={t('kitSignals.systems.sampleRate')} value={state.fs} onChange={(fs) => set({ fs })} unit="Hz" />
-      <Field label={t('kitSignals.systems.duration')} value={state.duration} onChange={(duration) => set({ duration })} unit="s" />
+      <Field
+        label={t('kitSignals.systems.duration')}
+        value={state.duration}
+        onChange={(duration) => set({ duration })}
+        unit="s"
+      />
     </Fields>
   );
-  if (!outcome.ok) return <>{fields}<Problem text={outcome.problem} /></>;
+  if (!outcome.ok)
+    return (
+      <>
+        {fields}
+        <Problem text={outcome.problem} />
+      </>
+    );
   const { alias, rebuilt } = outcome.value;
   const answer = t('kitSignals.systems.aliasAnswer', { f: state.f, fs: state.fs, fa: fmt(alias.apparent) });
   return (
@@ -76,11 +101,21 @@ export function QuantizationMode() {
   const fields = (
     <Fields>
       <Field label={t('kitSignals.systems.bits')} value={state.bits} onChange={(bits) => set({ bits })} />
-      <Field label={t('kitSignals.systems.fullScale')} value={state.fullScale} onChange={(fullScale) => set({ fullScale })} />
+      <Field
+        label={t('kitSignals.systems.fullScale')}
+        value={state.fullScale}
+        onChange={(fullScale) => set({ fullScale })}
+      />
       <Check label={t('kitSignals.systems.dither')} checked={state.dither} onChange={(dither) => set({ dither })} />
     </Fields>
   );
-  if (!outcome.ok) return <>{fields}<Problem text={outcome.problem} /></>;
+  if (!outcome.ok)
+    return (
+      <>
+        {fields}
+        <Problem text={outcome.problem} />
+      </>
+    );
   const result = outcome.value;
   const shown = Array.from({ length: 1366 }, (_, n) => n);
   const answer = t('kitSignals.systems.quantAnswer', {
@@ -98,7 +133,13 @@ export function QuantizationMode() {
         spec={{
           series: [
             { label: t('kitSignals.systems.original'), x: shown, y: result.input.slice(0, shown.length) },
-            { label: t('kitSignals.systems.quantized'), x: shown, y: result.output.slice(0, shown.length), kind: 'steps', tone: 1 },
+            {
+              label: t('kitSignals.systems.quantized'),
+              x: shown,
+              y: result.output.slice(0, shown.length),
+              kind: 'steps',
+              tone: 1,
+            },
           ],
           xLabel: t('kitSignals.systems.nAxis'),
           yLabel: t('kitSignals.systems.valueAxis'),
@@ -136,13 +177,16 @@ function magnitudes(x: readonly number[]): { f: number[]; m: number[] } {
   return { f, m };
 }
 
-const EXAMPLE_RATE = Array.from({ length: 24 }, (_, n) => Number(Math.cos((2 * Math.PI * 0.1 * n)).toFixed(4))).join(', ');
+const EXAMPLE_RATE = Array.from({ length: 24 }, (_, n) => Number(Math.cos(2 * Math.PI * 0.1 * n).toFixed(4))).join(
+  ', ',
+);
 
 export function RateMode() {
   const [state, set] = useStored('systems.rate', { x: EXAMPLE_RATE, up: '2', down: '1' });
   const plot = useRef<PlotHandle>(null);
   const outcome = useMemo(
-    () => attempt(() => ({ x: readNumbers(state.x), ...changeRate(readNumbers(state.x), num(state.up), num(state.down)) })),
+    () =>
+      attempt(() => ({ x: readNumbers(state.x), ...changeRate(readNumbers(state.x), num(state.up), num(state.down)) })),
     [state],
   );
   const fields = (
@@ -152,7 +196,13 @@ export function RateMode() {
       <Field label={t('kitSignals.systems.down')} value={state.down} onChange={(down) => set({ down })} />
     </Fields>
   );
-  if (!outcome.ok) return <>{fields}<Problem text={outcome.problem} /></>;
+  if (!outcome.ok)
+    return (
+      <>
+        {fields}
+        <Problem text={outcome.problem} />
+      </>
+    );
   const { x, y, steps } = outcome.value;
   const before = magnitudes(x);
   const after = magnitudes(y);
@@ -182,7 +232,11 @@ export function RateMode() {
         }}
       />
       <StepList steps={steps} />
-      <InsertMenu answer={answer} steps={steps} picture={() => plot.current?.picture('rate-change') ?? Promise.resolve(null)} />
+      <InsertMenu
+        answer={answer}
+        steps={steps}
+        picture={() => plot.current?.picture('rate-change') ?? Promise.resolve(null)}
+      />
     </>
   );
 }
@@ -190,7 +244,15 @@ export function RateMode() {
 const KINDS: readonly PieceKind[] = ['rect', 'triangle', 'exponential', 'step'];
 const PIECE = { kind: 'rect' as PieceKind, at: '0', size: '1', height: '1' };
 
-function PieceFields({ which, piece, onPiece }: { which: 'f' | 'g'; piece: typeof PIECE; onPiece(next: typeof PIECE): void }) {
+function PieceFields({
+  which,
+  piece,
+  onPiece,
+}: {
+  which: 'f' | 'g';
+  piece: typeof PIECE;
+  onPiece(next: typeof PIECE): void;
+}) {
   return (
     <Fields>
       <Choice
@@ -200,9 +262,18 @@ function PieceFields({ which, piece, onPiece }: { which: 'f' | 'g'; piece: typeo
         name={(kind) => t(`kitSignals.systems.kinds.${kind}`)}
         onChange={(kind) => onPiece({ ...piece, kind })}
       />
-      <Field label={t('kitSignals.systems.at')} value={piece.at} onChange={(at) => onPiece({ ...piece, at })} unit="s" />
+      <Field
+        label={t('kitSignals.systems.at')}
+        value={piece.at}
+        onChange={(at) => onPiece({ ...piece, at })}
+        unit="s"
+      />
       <Field label={t('kitSignals.systems.size')} value={piece.size} onChange={(size) => onPiece({ ...piece, size })} />
-      <Field label={t('kitSignals.systems.height')} value={piece.height} onChange={(height) => onPiece({ ...piece, height })} />
+      <Field
+        label={t('kitSignals.systems.height')}
+        value={piece.height}
+        onChange={(height) => onPiece({ ...piece, height })}
+      />
     </Fields>
   );
 }
@@ -219,7 +290,13 @@ export function ContinuousMode() {
       <PieceFields which="g" piece={state.g} onPiece={(g) => set({ g })} />
     </>
   );
-  if (!outcome.ok) return <>{fields}<Problem text={outcome.problem} /></>;
+  if (!outcome.ok)
+    return (
+      <>
+        {fields}
+        <Problem text={outcome.problem} />
+      </>
+    );
   const result = outcome.value;
   const top = result.y.indexOf(Math.max(...result.y));
   const answer = t('kitSignals.systems.continuousAnswer', { peak: fmt(result.y[top]!, 4), at: fmt(result.t[top]!, 4) });

@@ -26,7 +26,15 @@ import { convolve, crossCorrelate, impulse, rowText, runDifference, unitStep } f
 import { ContinuousMode, QuantizationMode, RateMode, SamplingMode } from './SamplingModes';
 
 type Mode = 'convolution' | 'correlation' | 'difference' | 'sampling' | 'quantization' | 'rate' | 'continuous';
-const MODES: readonly Mode[] = ['convolution', 'correlation', 'difference', 'sampling', 'quantization', 'rate', 'continuous'];
+const MODES: readonly Mode[] = [
+  'convolution',
+  'correlation',
+  'difference',
+  'sampling',
+  'quantization',
+  'rate',
+  'continuous',
+];
 
 const range = (start: number, count: number) => Array.from({ length: count }, (_, i) => start + i);
 
@@ -35,18 +43,32 @@ function ConvolutionMode() {
   const [shift, setShift] = useState<number | null>(null);
   const plot = useRef<PlotHandle>(null);
   const outcome = useMemo(
-    () => attempt(() => convolve(readNumbers(state.x), readNumbers(state.h), num(state.xStart) || 0, num(state.hStart) || 0)),
+    () =>
+      attempt(() =>
+        convolve(readNumbers(state.x), readNumbers(state.h), num(state.xStart) || 0, num(state.hStart) || 0),
+      ),
     [state],
   );
   const fields = (
     <Fields>
-      <Field label={t('kitSignals.systems.x')} value={state.x} onChange={(x) => set({ x })} hint={t('kitSignals.systems.sequenceHint')} />
+      <Field
+        label={t('kitSignals.systems.x')}
+        value={state.x}
+        onChange={(x) => set({ x })}
+        hint={t('kitSignals.systems.sequenceHint')}
+      />
       <Field label={t('kitSignals.systems.h')} value={state.h} onChange={(h) => set({ h })} />
       <Field label={t('kitSignals.systems.xStart')} value={state.xStart} onChange={(xStart) => set({ xStart })} />
       <Field label={t('kitSignals.systems.hStart')} value={state.hStart} onChange={(hStart) => set({ hStart })} />
     </Fields>
   );
-  if (!outcome.ok) return <>{fields}<Problem text={outcome.problem} /></>;
+  if (!outcome.ok)
+    return (
+      <>
+        {fields}
+        <Problem text={outcome.problem} />
+      </>
+    );
   const result = outcome.value;
   const x = readNumbers(state.x);
   const h = readNumbers(state.h);
@@ -58,7 +80,10 @@ function ConvolutionMode() {
     header: [t('kitSignals.systems.nHeader'), t('kitSignals.systems.termsHeader'), t('kitSignals.systems.sumHeader')],
     rows: result.rows.map((row) => [String(row.n), rowText(row).split(' = ')[1] ?? '', fmt(row.sum)]),
   };
-  const answer = t('kitSignals.systems.answer', { values: result.y.map((v) => fmt(v)).join(', '), start: result.start });
+  const answer = t('kitSignals.systems.answer', {
+    values: result.y.map((v) => fmt(v)).join(', '),
+    start: result.start,
+  });
   return (
     <>
       {fields}
@@ -110,7 +135,10 @@ function ConvolutionMode() {
 }
 
 function CorrelationMode() {
-  const [state, set] = useStored('systems.correlation', { x: '0.2, 1, -0.5, 0.8, 0.1', y: '0, 0, 0, 0.2, 1, -0.5, 0.8, 0.1' });
+  const [state, set] = useStored('systems.correlation', {
+    x: '0.2, 1, -0.5, 0.8, 0.1',
+    y: '0, 0, 0, 0.2, 1, -0.5, 0.8, 0.1',
+  });
   const plot = useRef<PlotHandle>(null);
   const outcome = useMemo(() => attempt(() => crossCorrelate(readNumbers(state.x), readNumbers(state.y))), [state]);
   return (
@@ -148,31 +176,18 @@ function CorrelationMode() {
 }
 
 type InputKind = 'impulse' | 'step' | 'custom';
+const DIFFERENCE = { b: '1', a: '1, -0.5', input: 'impulse' as InputKind, custom: '1, 0, 0, 1', length: '16' };
+type DifferenceState = typeof DIFFERENCE;
 
-function DifferenceMode() {
-  const [state, set] = useStored('systems.difference', {
-    b: '1',
-    a: '1, -0.5',
-    input: 'impulse' as InputKind,
-    custom: '1, 0, 0, 1',
-    length: '16',
-  });
-  const plot = useRef<PlotHandle>(null);
-  const outcome = useMemo(
-    () =>
-      attempt(() => {
-        const length = Math.min(512, Math.max(1, Math.round(num(state.length)) || 16));
-        const x =
-          state.input === 'impulse' ? impulse(length)
-          : state.input === 'step' ? unitStep(length)
-          : readNumbers(state.custom);
-        return runDifference(readNumbers(state.b), readNumbers(state.a), x);
-      }),
-    [state],
-  );
-  const fields = (
+function DifferenceFields({ state, set }: { state: DifferenceState; set(patch: Partial<DifferenceState>): void }) {
+  return (
     <Fields>
-      <Field label={t('kitSignals.systems.b')} value={state.b} onChange={(b) => set({ b })} hint={t('kitSignals.systems.abHint')} />
+      <Field
+        label={t('kitSignals.systems.b')}
+        value={state.b}
+        onChange={(b) => set({ b })}
+        hint={t('kitSignals.systems.abHint')}
+      />
       <Field label={t('kitSignals.systems.a')} value={state.a} onChange={(a) => set({ a })} />
       <Choice
         label={t('kitSignals.systems.input')}
@@ -188,7 +203,62 @@ function DifferenceMode() {
       )}
     </Fields>
   );
-  if (!outcome.ok) return <>{fields}<Problem text={outcome.problem} /></>;
+}
+
+function PoleZeroPlot({ result }: { result: ReturnType<typeof runDifference> }) {
+  return (
+    <Plot
+      title={t('kitSignals.systems.polesTitle')}
+      spec={{
+        series: [
+          {
+            label: t('kitSignals.systems.zeros'),
+            x: result.zeros.map((z) => z.re),
+            y: result.zeros.map((z) => z.im),
+            kind: 'dots',
+          },
+          {
+            label: t('kitSignals.systems.poles'),
+            x: result.poles.map((p) => p.re),
+            y: result.poles.map((p) => p.im),
+            kind: 'dots',
+            tone: 1,
+          },
+        ],
+        xLabel: t('kitSignals.systems.realAxis'),
+        yLabel: t('kitSignals.systems.imagAxis'),
+        square: true,
+        circle: 1,
+      }}
+    />
+  );
+}
+
+function DifferenceMode() {
+  const [state, set] = useStored('systems.difference', DIFFERENCE);
+  const plot = useRef<PlotHandle>(null);
+  const outcome = useMemo(
+    () =>
+      attempt(() => {
+        const length = Math.min(512, Math.max(1, Math.round(num(state.length)) || 16));
+        const x =
+          state.input === 'impulse'
+            ? impulse(length)
+            : state.input === 'step'
+              ? unitStep(length)
+              : readNumbers(state.custom);
+        return runDifference(readNumbers(state.b), readNumbers(state.a), x);
+      }),
+    [state],
+  );
+  const fields = <DifferenceFields state={state} set={set} />;
+  if (!outcome.ok)
+    return (
+      <>
+        {fields}
+        <Problem text={outcome.problem} />
+      </>
+    );
   const result = outcome.value;
   const answer = t(result.stable ? 'kitSignals.systems.stableAnswer' : 'kitSignals.systems.unstableAnswer');
   const table: TableData = { header: ['n', 'y[n]'], rows: result.y.map((v, n) => [String(n), fmt(v)]) };
@@ -211,19 +281,7 @@ function DifferenceMode() {
           [t('kitSignals.systems.zeros'), result.zeros.map((z) => fmtComplex(z, 5)).join(', ') || '—'],
         ]}
       />
-      <Plot
-        title={t('kitSignals.systems.polesTitle')}
-        spec={{
-          series: [
-            { label: t('kitSignals.systems.zeros'), x: result.zeros.map((z) => z.re), y: result.zeros.map((z) => z.im), kind: 'dots' },
-            { label: t('kitSignals.systems.poles'), x: result.poles.map((p) => p.re), y: result.poles.map((p) => p.im), kind: 'dots', tone: 1 },
-          ],
-          xLabel: t('kitSignals.systems.realAxis'),
-          yLabel: t('kitSignals.systems.imagAxis'),
-          square: true,
-          circle: 1,
-        }}
-      />
+      <PoleZeroPlot result={result} />
       <StepList steps={result.steps} />
       <InsertMenu
         answer={answer}

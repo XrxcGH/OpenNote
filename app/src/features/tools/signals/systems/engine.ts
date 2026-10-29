@@ -50,7 +50,10 @@ export const rowText = (row: ConvolutionRow): string =>
   `y[${row.n}] = ${row.terms.map((term) => `${fmt(term.x)}·${fmt(term.h)}`).join(' + ') || '0'} = ${fmt(row.sum)}`;
 
 /** Cross-correlation r[l] = Σ y[n] x[n − l]: how far y lags x. Lags run from −(Lx − 1) to Ly − 1. */
-export function crossCorrelate(x: readonly number[], y: readonly number[]): {
+export function crossCorrelate(
+  x: readonly number[],
+  y: readonly number[],
+): {
   lags: number[];
   r: number[];
   peakLag: number;
@@ -121,8 +124,17 @@ export function runDifference(b: readonly number[], a: readonly number[], x: rea
     zeros,
     stable,
     steps: [
-      step('differenceRecursion', `y[n] = (${b.map((v, k) => `${fmt(v)}·x[n−${k}]`).join(' + ')} − Σₖ₌₁ aₖ y[n−k]) / ${fmt(a0)}`),
-      step('differenceFirst', y.slice(0, 4).map((v, n) => `y[${n}] = ${fmt(v)}`).join(', ')),
+      step(
+        'differenceRecursion',
+        `y[n] = (${b.map((v, k) => `${fmt(v)}·x[n−${k}]`).join(' + ')} − Σₖ₌₁ aₖ y[n−k]) / ${fmt(a0)}`,
+      ),
+      step(
+        'differenceFirst',
+        y
+          .slice(0, 4)
+          .map((v, n) => `y[${n}] = ${fmt(v)}`)
+          .join(', '),
+      ),
       step('differencePoles', poles.map((p) => `|p| = ${fmt(cabs(p))}`).join(', ') || '—'),
       step(stable ? 'differenceStable' : 'differenceUnstable'),
     ],
@@ -144,7 +156,10 @@ export function aliased(f: number, fs: number): { apparent: number; nyquist: num
     aliases: f > nyquist,
     steps: [
       step('samplingNyquist', `fs / 2 = ${fmt(nyquist)} Hz`),
-      step('samplingFold', `f_a = |f − fs · round(f / fs)| = |${fmt(f)} − ${fmt(fs)} · ${Math.round(f / fs)}| = ${fmt(apparent)} Hz`),
+      step(
+        'samplingFold',
+        `f_a = |f − fs · round(f / fs)| = |${fmt(f)} − ${fmt(fs)} · ${Math.round(f / fs)}| = ${fmt(apparent)} Hz`,
+      ),
     ],
   };
 }
@@ -157,7 +172,7 @@ export function sampleAndRebuild(f: number, fs: number, duration: number, fine =
   const times = Array.from({ length: count }, (_, n) => n / fs);
   const samples = times.map((time) => Math.cos(2 * Math.PI * f * time));
   const gridCount = (count - 1) * fine + 1;
-  const grid = Array.from({ length: gridCount }, (_, i) => (i / fine) / fs);
+  const grid = Array.from({ length: gridCount }, (_, i) => i / fine / fs);
   const original = grid.map((time) => Math.cos(2 * Math.PI * f * time));
   const hold = grid.map((_, i) => samples[Math.floor(i / fine)]!);
   const sinc = grid.map((time) => {
@@ -185,7 +200,14 @@ export interface Quantized {
 export const sqnrTheory = (bits: number): number => 6.02 * bits + 1.76;
 
 /** A full-scale sine through an N-bit quantizer (mid-rise, clipped to the range), with optional uniform dither. */
-export function quantize(bits: number, fullScale: number, cycles = 3, count = 4096, dither = false, seed = 1): Quantized {
+export function quantize(
+  bits: number,
+  fullScale: number,
+  cycles = 3,
+  count = 4096,
+  dither = false,
+  seed = 1,
+): Quantized {
   if (!Number.isInteger(bits) || bits < 1 || bits > 24) throw new SignalError('bits');
   if (!(fullScale > 0)) throw new SignalError('fullScale');
   const levels = 2 ** bits;
@@ -255,7 +277,8 @@ export interface Piece {
 export function pieceAt(piece: Piece, time: number): number {
   const u = time - piece.at;
   if (piece.kind === 'rect') return u >= 0 && u < piece.size ? piece.height : 0;
-  if (piece.kind === 'triangle') return Math.abs(u) < piece.size / 2 ? piece.height * (1 - Math.abs(u) / (piece.size / 2)) : 0;
+  if (piece.kind === 'triangle')
+    return Math.abs(u) < piece.size / 2 ? piece.height * (1 - Math.abs(u) / (piece.size / 2)) : 0;
   if (piece.kind === 'exponential') return u >= 0 ? piece.height * Math.exp(-piece.size * u) : 0;
   return u >= 0 ? piece.height : 0;
 }
@@ -270,7 +293,8 @@ function support(piece: Piece, horizon: number): [number, number] {
 /** (f * g)(t) = ∫ f(τ) g(t − τ) dτ on a fine grid (the midpoint rule), over where both pieces are not zero. */
 export function convolveContinuous(f: Piece, g: Piece, points = 400): { t: number[]; y: number[]; steps: Step[] } {
   for (const piece of [f, g]) {
-    if (!(piece.size > 0) || !Number.isFinite(piece.at) || !Number.isFinite(piece.height)) throw new SignalError('pieceSize');
+    if (!(piece.size > 0) || !Number.isFinite(piece.at) || !Number.isFinite(piece.height))
+      throw new SignalError('pieceSize');
   }
   const [f0, f1] = support(f, 10);
   const [g0, g1] = support(g, 10);
