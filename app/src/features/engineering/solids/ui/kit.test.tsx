@@ -11,8 +11,7 @@ import { expectNoAxeViolations, renderApp, renderUi } from '../../../../test';
 import { INSERT_EVENT } from '../../../tools/flags';
 import { closeTool, openTools } from '../../../tools/ui/host';
 import { SOLIDS_TOOLS } from '../meta';
-import { CALC_EVENT, saveTab, type KitCalcRequest } from '../open';
-import { KitCalcPanel } from './KitCalcPanel';
+import { CALC_EVENT, readCalc, reopenCalc, saveTab, type KitCalcRequest } from '../open';
 import { SolidsKit } from './SolidsKit';
 
 type Detail = { text?: string; math?: { source: string }; table?: { rows: string[][] }; picture?: object };
@@ -111,8 +110,10 @@ describe('the solid mechanics kit window', () => {
       // The student changes the length, then opens the calculation from the page: the length comes back.
       const length = screen.getAllByRole('textbox', { name: 'Length, L' })[0];
       await userEvent.fill(length, '5 m');
-      renderUi(<KitCalcPanel data={{ ...data }} readOnly={false} patch={() => {}} announce={() => {}} />);
-      await userEvent.click(screen.getByRole('button', { name: 'Open in the tool' }));
+      // The kits' block keeps { texts, system } as its inputs; its Open in tool hands them back to the solids kit.
+      const calc = readCalc({ tool: data.tool, texts: data.texts, system: data.system });
+      expect(calc).not.toBeNull();
+      await reopenCalc(calc!);
       await waitFor(() =>
         expect((screen.getAllByRole('textbox', { name: 'Length, L' })[0] as HTMLInputElement).value).toBe('3 m'),
       );

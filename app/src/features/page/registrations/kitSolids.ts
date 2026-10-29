@@ -4,9 +4,7 @@
 import { CALC_EVENT, SOLIDS_TOOLS, type KitCalcRequest } from '../../engineering/flags';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
-import { blockRenderers } from '../registries';
-import { lazyHandle } from './engineering';
+import { PANEL_TYPES } from '../panels/kinds';
 import { addCommand } from './qolStudy';
 
 const open = async (tool?: string) => (await import('../../engineering')).openSolidsKit(tool);
@@ -22,26 +20,26 @@ addCommand({
   run: () => open(),
 });
 
-// A live calculation: the tool, its typed values, and its answer, kept in the page so it can be opened again.
-blockRenderers.register(
-  panelRenderer({
-    type: PANEL_TYPES.kitCalc,
-    label: 'kitSolids.calc.block',
-    flag: 'kits.solids',
-    load: async () => {
-      const { mountKitCalc } = await import('../../engineering');
-      return { mount: (container, props) => lazyHandle(mountKitCalc(container, props)) };
-    },
-  }),
-);
+// A live calculation goes in the kits' shared block (registrations/kits.ts): the tool, its typed values and unit
+// system as the inputs, and its answer. The block's Open in tool comes back here through the kit registry.
+const reopen = async (tool: string) => {
+  const engineering = await import('../../engineering');
+  const inputs = (await import('../../tools')).takeKitInputs('solids', tool);
+  const calc = inputs && typeof inputs === 'object' ? engineering.readSolidsCalc({ ...inputs, tool }) : null;
+  await (calc ? engineering.reopenSolidsCalc(calc) : engineering.openSolidsKit(tool));
+};
 
 if (typeof window !== 'undefined') {
+  void import('../../tools').then((tools) => tools.registerKit('solids', reopen));
   window.addEventListener(CALC_EVENT, (event) => {
     const request = (event as CustomEvent<KitCalcRequest>).detail;
     request.handled = true;
+    const { tool, texts, system, summary, latex } = request.data;
+    const title = SOLIDS_TOOLS.find((one) => one.id === tool)?.title;
+    const data = { kit: 'solids', tool, title: title ? t(title) : tool, summary, inputs: { texts, system }, latex };
     void (async () => {
       const { insertPanelBlock } = await import('../panels/insertPanel');
-      const id = await insertPanelBlock(PANEL_TYPES.kitCalc, { ...request.data }, request.fallback);
+      const id = await insertPanelBlock(PANEL_TYPES.kitCalc, data, request.fallback);
       announce(t(id ? 'kitSolids.ui.inserted' : 'kitSolids.ui.noPage'));
     })();
   });

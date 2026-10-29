@@ -20,12 +20,6 @@ export const kitSolids = {
     'solid mechanics materials strength stress strain beam column section structures composites finite element fatigue',
   tabs: 'Solid mechanics tools',
   loading: 'Loading the tool…',
-  calc: {
-    block: 'Live calculation',
-    open: 'Open in the tool',
-    inputs: 'Values typed ({count})',
-    unreadable: 'This live calculation could not be read.',
-  },
   ui: {
     units: 'Units',
     si: 'SI (N, mm, MPa)',
