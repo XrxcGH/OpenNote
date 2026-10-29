@@ -7,6 +7,7 @@ export * from './upcoming';
 export { closeTool, openTool, openTools, resetToolWindows } from './ui/host';
 export { openMathKit } from './mathkit/open';
 export { CALCULATOR_MODES, openCalculator } from './ui/calculatorMode';
+export { openPhysicsTool } from './physics/open';
 export type { CalculatorMode } from './ui/calculatorMode';
 export { PoppedTool } from './ui/PoppedTool';
 export { countFigures } from './science/sigfigs';

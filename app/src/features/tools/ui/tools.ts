@@ -33,7 +33,8 @@ export type ToolId =
   | 'kit-control'
   | 'kit-design'
   | 'kit-math'
-  | 'kit-mechdyn';
+  | 'kit-mechdyn'
+  | 'kit-physics';
 
 export interface ToolDef {
   id: ToolId;
@@ -74,6 +75,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'kit-design', title: 'kitDesign.title', width: 560 },
   { id: 'kit-math', title: 'kitMath.title', width: 560 },
   { id: 'kit-mechdyn', title: 'kitMechDyn.title', width: 560 },
+  { id: 'kit-physics', title: 'kitPhysics.title', width: 560 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);
