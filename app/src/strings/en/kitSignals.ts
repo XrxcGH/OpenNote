@@ -1,18 +1,22 @@
 // The signals kit: spectra, filters, discrete systems, biosignals, images, medical imaging physics, sound,
 // communications, and RF (owner: the signals lane). Each namespace file has one owner, so
 // parallel work never edits the same file.
+//
+// Only the words the palette and every tool share load at start-up. Each tool's own words are in
+// kitSignals/<tool>.ts and load with the tool (features/tools/signals/shared/words.ts), so the start-up bundle
+// stays small; the type below still names every key.
 
-import { spectrum } from './kitSignals/spectrum';
-import { systems } from './kitSignals/systems';
-import { comms } from './kitSignals/comms';
-import { rf } from './kitSignals/rf';
-import { filters } from './kitSignals/filters';
-import { medimaging } from './kitSignals/medimaging';
-import { audio } from './kitSignals/audio';
-import { images } from './kitSignals/images';
-import { neurodata } from './kitSignals/neurodata';
+import type { spectrum } from './kitSignals/spectrum';
+import type { systems } from './kitSignals/systems';
+import type { comms } from './kitSignals/comms';
+import type { rf } from './kitSignals/rf';
+import type { filters } from './kitSignals/filters';
+import type { medimaging } from './kitSignals/medimaging';
+import type { audio } from './kitSignals/audio';
+import type { images } from './kitSignals/images';
+import type { neurodata } from './kitSignals/neurodata';
 
-export const kitSignals = {
+const shared = {
   kit: {
     title: 'Signals and sound',
     tool: 'Tool',
@@ -387,13 +391,19 @@ export const kitSignals = {
     neuroSdnn: 'SDNN is the standard deviation of the RR intervals.',
     neuroRmssd: 'RMSSD is the root mean square of successive differences; pNN50 counts differences over 50 ms.',
   },
-  spectrum,
-  systems,
-  comms,
-  rf,
-  filters,
-  medimaging,
-  audio,
-  images,
-  neurodata,
 } as const;
+
+/** Each tool's words, present once the tool has loaded. */
+export interface SignalToolWords {
+  readonly spectrum: typeof spectrum;
+  readonly systems: typeof systems;
+  readonly comms: typeof comms;
+  readonly rf: typeof rf;
+  readonly filters: typeof filters;
+  readonly medimaging: typeof medimaging;
+  readonly audio: typeof audio;
+  readonly images: typeof images;
+  readonly neurodata: typeof neurodata;
+}
+
+export const kitSignals = shared as typeof shared & SignalToolWords;

@@ -5,17 +5,38 @@ import { t } from '../../../strings/t';
 import { CHOSEN_KEY, CHOOSE_EVENT, SIGNAL_TOOLS, isSignalToolId, type SignalToolId } from './meta';
 import { Choice } from './shared/ui';
 import styles from './shared/kit.module.css';
+import { loadWords } from './shared/words';
 
 const TOOL_BODIES: Record<SignalToolId, LazyExoticComponent<ComponentType>> = {
-  spectrum: lazy(() => import('./spectrum/SpectrumTool').then((m) => ({ default: m.SpectrumTool }))),
-  filters: lazy(() => import('./filters/FiltersTool').then((m) => ({ default: m.FiltersTool }))),
-  systems: lazy(() => import('./systems/SystemsTool').then((m) => ({ default: m.SystemsTool }))),
-  neurodata: lazy(() => import('./neurodata/NeuroTool').then((m) => ({ default: m.NeuroTool }))),
-  images: lazy(() => import('./images/ImagesTool').then((m) => ({ default: m.ImagesTool }))),
-  medimaging: lazy(() => import('./medimaging/MedImagingTool').then((m) => ({ default: m.MedImagingTool }))),
-  audio: lazy(() => import('./audio/AudioTool').then((m) => ({ default: m.AudioTool }))),
-  comms: lazy(() => import('./comms/CommsTool').then((m) => ({ default: m.CommsTool }))),
-  rf: lazy(() => import('./rf/RfTool').then((m) => ({ default: m.RfTool }))),
+  spectrum: lazy(() =>
+    Promise.all([import('./spectrum/SpectrumTool'), loadWords('spectrum')]).then(([m]) => ({
+      default: m.SpectrumTool,
+    })),
+  ),
+  filters: lazy(() =>
+    Promise.all([import('./filters/FiltersTool'), loadWords('filters')]).then(([m]) => ({ default: m.FiltersTool })),
+  ),
+  systems: lazy(() =>
+    Promise.all([import('./systems/SystemsTool'), loadWords('systems')]).then(([m]) => ({ default: m.SystemsTool })),
+  ),
+  neurodata: lazy(() =>
+    Promise.all([import('./neurodata/NeuroTool'), loadWords('neurodata')]).then(([m]) => ({ default: m.NeuroTool })),
+  ),
+  images: lazy(() =>
+    Promise.all([import('./images/ImagesTool'), loadWords('images')]).then(([m]) => ({ default: m.ImagesTool })),
+  ),
+  medimaging: lazy(() =>
+    Promise.all([import('./medimaging/MedImagingTool'), loadWords('medimaging')]).then(([m]) => ({
+      default: m.MedImagingTool,
+    })),
+  ),
+  audio: lazy(() =>
+    Promise.all([import('./audio/AudioTool'), loadWords('audio')]).then(([m]) => ({ default: m.AudioTool })),
+  ),
+  comms: lazy(() =>
+    Promise.all([import('./comms/CommsTool'), loadWords('comms')]).then(([m]) => ({ default: m.CommsTool })),
+  ),
+  rf: lazy(() => Promise.all([import('./rf/RfTool'), loadWords('rf')]).then(([m]) => ({ default: m.RfTool }))),
 };
 
 function firstTool(): SignalToolId {
