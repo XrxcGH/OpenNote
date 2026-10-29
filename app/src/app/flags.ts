@@ -57,6 +57,8 @@ export type FlagId =
   | 'interop.export'
   | 'interop.exportPdf'
   | 'interop.oneNoteFiles'
+  /** Goodnotes, Notability, and Samsung Notes files (ADR 0053). */
+  | 'interop.notesApps'
   /** Import of older and binary office files: .doc, .rtf, .xls, .xlsb, and .ods. */
   | 'interop.legacyFormats'
   | Phase4FlagId

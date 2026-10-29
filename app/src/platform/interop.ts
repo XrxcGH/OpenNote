@@ -22,7 +22,8 @@ export type SourceKind =
   | 'presentation'
   | 'email'
   | 'highlights'
-  | 'oneNoteFile';
+  | 'oneNoteFile'
+  | 'notesApp';
 
 /** What a file, folder, or archive is. */
 export interface DetectedSource {

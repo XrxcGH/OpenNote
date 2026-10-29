@@ -68,6 +68,29 @@ describe('checking a source', () => {
     beta.detach();
   });
 
+  it('checks a Goodnotes, Notability, or Samsung Notes file only while its flag is on', async () => {
+    initFlags('stable');
+    const off = setup();
+    off.interop.pick = () => Promise.resolve('C:\\Notes\\Physics.goodnotes');
+    await off.flow.chooseFile();
+    const state = off.flow.state.get();
+    expect(state.step).toBe('unsupported');
+    if (state.step === 'unsupported') expect(state.detected.advice).toContain('Import PDF');
+    expect(off.interop.log.previews).toEqual([]);
+    off.detach();
+    initFlags('beta');
+    for (const name of ['Physics.goodnotes', 'Biology.note', 'Trip.sdocx']) {
+      const on = setup();
+      on.interop.pick = () => Promise.resolve(`C:\\Notes\\${name}`);
+      await on.flow.chooseFile();
+      await until(on.flow, 'review');
+      const review = on.flow.state.get();
+      if (review.step === 'review') expect(review.preview.detected.kind).toBe('notesApp');
+      on.detach();
+    }
+    initFlags('dev');
+  });
+
   it('stops at a source it cannot import and shows what to do instead', async () => {
     const { flow, interop, detach } = setup();
     interop.pick = () => Promise.resolve('C:\\Notes\\Notebook.onetoc2');

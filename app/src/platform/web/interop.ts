@@ -51,9 +51,34 @@ const ONENOTE_LOSSES: LossGroup[] = [
   },
 ];
 
+// What the real Goodnotes reader reports for a document, in its words (ADR 0053).
+const NOTES_APP_LOSSES: LossGroup[] = [
+  {
+    outcome: 'skipped',
+    why:
+      'Goodnotes keeps them in a private format that OpenNote cannot read yet. To keep it, export the notebook as a ' +
+      'PDF in Goodnotes (Share, then Export, then PDF) and import that PDF.',
+    examples: ['handwriting and typed text'],
+    pages: 5,
+  },
+  {
+    outcome: 'simplified',
+    why: 'It is attached to the page as a file. To write on its pages, import the PDF that Goodnotes exports.',
+    examples: ['1 PDF background'],
+    pages: 1,
+  },
+];
+
+/** What the desktop reader says about a PDF, which Import PDF brings in instead. */
+const PDF_ADVICE =
+  'A PDF comes in through Import PDF, which turns each of its pages into a page you can write on. This is also the ' +
+  'dependable way to bring notes from Goodnotes, Notability, or Samsung Notes: export them as a PDF in the app, ' +
+  'then import that PDF.';
+
 function lossesOf(kind: DetectedSource['kind']): { losses: LossGroup[]; lostPages: number; skipped: number } {
   if (kind === 'evernote') return { losses: EVERNOTE_LOSSES, lostPages: 3, skipped: 2 };
   if (kind === 'oneNoteFile') return { losses: ONENOTE_LOSSES, lostPages: 2, skipped: 1 };
+  if (kind === 'notesApp') return { losses: NOTES_APP_LOSSES, lostPages: 5, skipped: 1 };
   return { losses: [], lostPages: 0, skipped: 0 };
 }
 
@@ -81,6 +106,10 @@ function detectPath(path: string): DetectedSource {
   if (lower.endsWith('.txt')) return found('text', 'Text files');
   if (lower.endsWith('.one')) return found('oneNoteFile', 'OneNote section');
   if (lower.endsWith('.onepkg')) return found('oneNoteFile', 'OneNote notebook package');
+  if (lower.endsWith('.goodnotes')) return found('notesApp', 'Goodnotes document');
+  if (lower.endsWith('.note')) return found('notesApp', 'Notability note');
+  if (lower.endsWith('.sdocx')) return found('notesApp', 'Samsung Notes note');
+  if (lower.endsWith('.pdf')) return { ...found('markdown', 'PDF file'), supported: false, advice: PDF_ADVICE };
   if (lower.endsWith('.onetoc2')) {
     return {
       kind: 'word',
