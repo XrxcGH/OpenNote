@@ -359,8 +359,8 @@ jobs:
           name: sbom
           path: dist-release
       - name: Check the downloads before signing
-        # Stops unless dist-release holds only the five release files and the bill of materials, each with the hash its job
-        # reported. It also checks each exe again for test endpoints and update keys that aren't committed.
+        # Stops unless dist-release holds only the five release files and the bill of materials, each with the hash its
+        # job reported. It also checks each exe again for test endpoints and update keys that aren't committed.
         env:
           BUILD_SHA256: ${{ toJSON(needs.build.outputs) }}
           SBOM_SHA256: ${{ needs.sbom.outputs.sha256 }}
