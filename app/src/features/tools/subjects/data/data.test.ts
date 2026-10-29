@@ -72,6 +72,21 @@ describe('reading units and dates', () => {
   });
 });
 
+describe('a stray token in a number column', () => {
+  it('keeps the numbers and reports the stray cell by column and row', () => {
+    const data = parseDataText('1, 2, three, 4');
+    expect(data.columns[0].kind).toBe('number');
+    expect(data.columns[0].values).toEqual([1, 2, null, 4]);
+    expect(data.problems).toEqual([{ column: 'A', row: 3, text: 'three' }]);
+  });
+
+  it('still reads a column of mostly words as labels', () => {
+    const data = parseDataText('low, high, 3, mid');
+    expect(data.columns[0].kind).not.toBe('number');
+    expect(data.problems).toEqual([]);
+  });
+});
+
 describe('data set shape', () => {
   it('caps the rows and says so', () => {
     expect(MAX_ROWS).toBe(100_000);

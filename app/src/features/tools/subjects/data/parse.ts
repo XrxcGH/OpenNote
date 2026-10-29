@@ -180,7 +180,10 @@ export function readColumn(name: string, cells: readonly string[], convention: C
   const present = cells.filter((cell) => !isMissingText(cell));
   const numbers = cells.map((cell) => (isMissingText(cell) ? null : readNumber(cell, convention)));
   const numeric = numbers.filter((n) => n !== null).length;
-  if (present.length === 0 || numeric >= KIND_SHARE * present.length) {
+  // One stray token in a short number column ("1, 2, three, 4" is only 75% numbers) is a typo to report, not a
+  // reason to lose the whole column as text.
+  const oneStray = numeric >= 2 && present.length - numeric === 1;
+  if (present.length === 0 || numeric >= KIND_SHARE * present.length || oneStray) {
     const units = new Set(numbers.filter((n): n is Reading => n !== null).map((n) => n.unit));
     const unit = units.size === 1 ? [...units][0] : null;
     const column: DataColumn = { name, kind: 'number', values: numbers.map((n) => n?.value ?? null), unit };
