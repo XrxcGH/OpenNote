@@ -1,4 +1,4 @@
-// Trees for the phylogenetics tool: a plain node model, Newick reading and writing, rerooting on an outgroup,
+// Trees for the phylogenetics tool: a plain node model, Newick reading, and writing, rerooting on an outgroup,
 // ladderizing, and the questions a student asks of a tree (common ancestors, monophyly, sister groups).
 import { fail } from '../shared';
 

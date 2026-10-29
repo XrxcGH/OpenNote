@@ -1,4 +1,4 @@
-// Genotypes, gametes and offspring of a cross. A genotype is written gene by gene: single-letter pairs run together
+// Genotypes, gametes, and offspring of a cross. A genotype is written gene by gene: single-letter pairs run together
 // (AaBb, YyRr), or alleles joined by a slash for longer names and sex-linked genes (IA/i, XA/Xa, Xa/Y). Genes pair up
 // across the parents by position and assort independently; X-linked genes follow the sex of each child.
 import { fail } from '../shared';
@@ -144,7 +144,7 @@ export function offspring(p1: Genotype, p2: Genotype): Child[] {
   return [...merged.values()];
 }
 
-/** A genotype for display: single-letter genes run together, others joined by slashes and spaces. */
+/** A genotype for display: single-letter genes run together; longer alleles take a slash, with a space between genes. */
 export function genotypeText(genes: readonly (readonly [string, string])[], template: Genotype): string {
   const parts = genes.map((pair, i) => (template[i]?.short ? pair.join('') : pair.join('/')));
   return template.every((gene) => gene.short) ? parts.join('') : parts.join(' ');

@@ -192,7 +192,7 @@ export function mutationBalance(mu: number, s: number, h: number): number {
   return h === 0 ? Math.sqrt(mu / s) : mu / (h * s);
 }
 
-/** A under forward mutation µ (A to a) and back mutation ν: its equilibrium and its value after t generations. */
+/** Allele A with forward mutation µ (A to a) and back mutation ν: its equilibrium and its value after t generations. */
 export function mutationPressure(p0: number, mu: number, nu: number, t: number) {
   const total = mu + nu;
   const pHat = total > 0 ? nu / total : p0;

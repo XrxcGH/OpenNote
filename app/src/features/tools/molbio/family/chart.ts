@@ -1,9 +1,8 @@
-// Laying out and drawing family charts. People go in rows by generation (married-in partners join their partner's
-// row); founders' couples sit side by side, each sibship stays together in birth order with each person's married-in
-// partner beside them, and sibships are ordered under their parents. Symbols follow the published NSGC pedigree
-// recommendations: squares for males, circles for females, diamonds when sex is not given, filled when affected, a dot
-// for a carrier, a slash when deceased, an arrow for the proband, brackets for adoption, and a double line between
-// related partners.
+// Laying out and drawing family charts. People go in rows by generation, and married-in partners join their
+// partner's row. Founding couples sit side by side, and each sibship stays together in birth order under its parents.
+// Symbols follow the published NSGC pedigree recommendations. Squares are males, circles females, and diamonds people
+// of unstated sex. A filled symbol is affected, a dot marks a carrier, and a slash a deceased person. An arrow marks
+// the proband, brackets an adoption, and a double line related partners.
 import type { Figure, Shape } from '../figure';
 import { depthOf, kinship } from './kin';
 import { byBirth } from './people';
@@ -71,95 +70,90 @@ function generations(family: Family): Map<string, number> {
   return gen;
 }
 
-export function layout(family: Family): Layout {
-  const gen = generations(family);
-  const depth = Math.max(...gen.values());
-  const placed = new Set<string>();
-  const at = new Map<string, { x: number; y: number }>();
-  const rows: string[][] = [];
-  let founders: string[][] = [];
-  const marriedIn = (p: Person, g: number) =>
-    p.partners
-      .map((q) => family.byId.get(q)!)
-      .filter((q) => !q.father && !q.mother && gen.get(q.id) === g && !placed.has(q.id));
-  for (let g = 0; g <= depth; g++) {
-    const y = TOP + g * ROW;
-    const blocks: { ids: string[]; center: number }[] = [];
-    if (g === 0) {
-      for (const p of family.people) {
-        if (gen.get(p.id) !== 0 || placed.has(p.id)) continue;
-        const ids = [p.id];
-        placed.add(p.id);
-        for (const q of p.partners.map((id) => family.byId.get(id)!)) {
-          if (gen.get(q.id) === 0 && !placed.has(q.id)) {
-            ids.push(q.id);
-            placed.add(q.id);
-          }
-        }
-        blocks.push({ ids, center: -Infinity });
-      }
-      founders = blocks.map((b) => b.ids);
-    } else {
-      const sibships = new Map<string, Person[]>();
-      for (const p of family.people) {
-        if (gen.get(p.id) !== g || (!p.father && !p.mother)) continue;
-        const key = `${p.father ?? ''}|${p.mother ?? ''}`;
-        sibships.set(key, [...(sibships.get(key) ?? []), p]);
-      }
-      const groups = [...sibships.values()].map((kids) => {
-        const parents = [kids[0]!.father, kids[0]!.mother].filter((x): x is string => x !== null);
-        const xs = parents.map((id) => at.get(id)?.x ?? 0);
-        return { kids: kids.sort(byBirth), center: xs.reduce((a, b) => a + b, 0) / xs.length };
-      });
-      groups.sort((a, b) => a.center - b.center);
-      for (const group of groups) {
-        const ids: string[] = [];
-        for (const kid of group.kids) {
-          ids.push(kid.id);
-          placed.add(kid.id);
-          for (const q of marriedIn(kid, g)) {
-            ids.push(q.id);
-            placed.add(q.id);
-          }
-        }
-        blocks.push({ ids, center: group.center });
-      }
-      for (const p of family.people) {
-        if (gen.get(p.id) === g && !placed.has(p.id)) {
-          placed.add(p.id);
-          blocks.push({ ids: [p.id], center: Infinity });
-        }
-      }
-    }
-    let cursor = LEFT;
-    const row: string[] = [];
-    for (const block of blocks) {
-      // Center the sibship's own members (not their married-in partners) under the parents.
-      const sibs = block.ids.filter((id) => {
-        const p = family.byId.get(id)!;
-        return p.father !== null || p.mother !== null;
-      });
-      const first = block.ids.indexOf(sibs[0] ?? block.ids[0]!);
-      const last = block.ids.indexOf(sibs.at(-1) ?? block.ids[0]!);
-      const want = Number.isFinite(block.center) ? block.center - ((first + last) / 2) * SPACING : cursor;
-      let x = Math.max(cursor, want);
-      for (const id of block.ids) {
-        at.set(id, { x, y });
-        row.push(id);
-        x += SPACING;
-      }
-      cursor = x;
-    }
-    rows.push(row);
+type Block = { ids: string[]; center: number };
+type Points = Map<string, { x: number; y: number }>;
+
+const sibshipKey = (p: Person): string => `${p.father ?? ''}|${p.mother ?? ''}`;
+
+/** People with parents grouped by their parents, in list order. */
+function sibshipsOf(people: readonly Person[]): Person[][] {
+  const groups = new Map<string, Person[]>();
+  for (const p of people) {
+    if (!p.father && !p.mother) continue;
+    groups.set(sibshipKey(p), [...(groups.get(sibshipKey(p)) ?? []), p]);
   }
-  // Center each founding couple over its children, keeping the row's order and spacing.
+  return [...groups.values()];
+}
+
+const parentIds = (p: Person): string[] => [p.father, p.mother].filter((x): x is string => x !== null);
+
+/** The founders' row: each founder followed by their founding partners. */
+function founderBlocks(family: Family, gen: Map<string, number>, placed: Set<string>): Block[] {
+  const blocks: Block[] = [];
+  for (const p of family.people) {
+    if (gen.get(p.id) !== 0 || placed.has(p.id)) continue;
+    const ids = [p.id, ...p.partners.filter((q) => gen.get(q) === 0 && !placed.has(q))];
+    ids.forEach((id) => placed.add(id));
+    blocks.push({ ids, center: -Infinity });
+  }
+  return blocks;
+}
+
+/** A later row: sibships under their parents in birth order, each person followed by married-in partners. */
+function rowBlocks(family: Family, gen: Map<string, number>, g: number, placed: Set<string>, at: Points): Block[] {
+  const groups = sibshipsOf(family.people.filter((p) => gen.get(p.id) === g)).map((kids) => {
+    const xs = parentIds(kids[0]!).map((id) => at.get(id)?.x ?? 0);
+    return { kids: kids.sort(byBirth), center: xs.reduce((a, b) => a + b, 0) / xs.length };
+  });
+  groups.sort((a, b) => a.center - b.center);
+  const blocks: Block[] = groups.map((group) => {
+    const ids: string[] = [];
+    for (const kid of group.kids) {
+      const partners = kid.partners
+        .map((q) => family.byId.get(q)!)
+        .filter((q) => !q.father && !q.mother && gen.get(q.id) === g && !placed.has(q.id));
+      for (const id of [kid.id, ...partners.map((q) => q.id)]) {
+        ids.push(id);
+        placed.add(id);
+      }
+    }
+    return { ids, center: group.center };
+  });
+  for (const p of family.people) {
+    if (gen.get(p.id) !== g || placed.has(p.id)) continue;
+    placed.add(p.id);
+    blocks.push({ ids: [p.id], center: Infinity });
+  }
+  return blocks;
+}
+
+/** Places a row left to right, centering each sibship's own members (not married-in partners) under its parents. */
+function placeRow(family: Family, blocks: readonly Block[], y: number, at: Points): string[] {
+  let cursor = LEFT;
+  const row: string[] = [];
+  for (const block of blocks) {
+    const sibs = block.ids.filter((id) => parentIds(family.byId.get(id)!).length > 0);
+    const first = block.ids.indexOf(sibs[0] ?? block.ids[0]!);
+    const last = block.ids.indexOf(sibs.at(-1) ?? block.ids[0]!);
+    const want = Number.isFinite(block.center) ? block.center - ((first + last) / 2) * SPACING : cursor;
+    let x = Math.max(cursor, want);
+    for (const id of block.ids) {
+      at.set(id, { x, y });
+      row.push(id);
+      x += SPACING;
+    }
+    cursor = x;
+  }
+  return row;
+}
+
+/** Moves each founding couple over its children while keeping the row in order with its spacing. */
+function centerFounders(family: Family, founders: readonly string[][], at: Points): void {
   let cursor = LEFT;
   for (const ids of founders) {
     const kids = family.people.filter((c) => ids.includes(c.father ?? '') || ids.includes(c.mother ?? ''));
-    const want =
-      kids.length > 0
-        ? kids.reduce((s, c) => s + at.get(c.id)!.x, 0) / kids.length - ((ids.length - 1) / 2) * SPACING
-        : cursor;
+    const mean = kids.reduce((s, c) => s + at.get(c.id)!.x, 0) / (kids.length || 1);
+    const want = kids.length > 0 ? mean - ((ids.length - 1) / 2) * SPACING : cursor;
     let x = Math.max(cursor, want);
     for (const id of ids) {
       at.get(id)!.x = x;
@@ -167,53 +161,71 @@ export function layout(family: Family): Layout {
     }
     cursor = x;
   }
+}
+
+function couplesOf(family: Family): [string, string][] {
   const couples: [string, string][] = [];
   const seen = new Set<string>();
   for (const p of family.people) {
     for (const q of p.partners) {
       const key = p.id < q ? `${p.id}|${q}` : `${q}|${p.id}`;
-      if (seen.has(key)) continue;
+      if (!seen.has(key)) couples.push([p.id, q]);
       seen.add(key);
-      couples.push([p.id, q]);
     }
   }
-  const lines: Segment[] = [];
-  for (const [a, b] of couples) {
-    const A = at.get(a)!;
-    const B = at.get(b)!;
-    const [l, r] = A.x <= B.x ? [A, B] : [B, A];
-    lines.push({ x1: l.x + HALF, y1: l.y, x2: r.x - HALF, y2: r.y });
-  }
-  const sibships = new Map<string, Person[]>();
-  for (const p of family.people) {
-    if (!p.father && !p.mother) continue;
-    const key = `${p.father ?? ''}|${p.mother ?? ''}`;
-    sibships.set(key, [...(sibships.get(key) ?? []), p]);
-  }
-  for (const kids of sibships.values()) {
-    const parents = [kids[0]!.father, kids[0]!.mother].filter((x): x is string => x !== null).map((id) => at.get(id)!);
-    const mx = parents.reduce((s, p) => s + p.x, 0) / parents.length;
-    const py = Math.max(...parents.map((p) => p.y));
-    const cy = at.get(kids[0]!.id)!.y;
-    const bar = cy - HALF - 22;
-    const xs = kids.map((k) => at.get(k.id)!.x);
-    lines.push({ x1: mx, y1: parents.length === 2 ? py : py + HALF, x2: mx, y2: bar });
-    lines.push({ x1: Math.min(mx, ...xs), y1: bar, x2: Math.max(mx, ...xs), y2: bar });
-    const twinned = new Set<string>();
-    for (const k of kids) {
-      const twin = k.twin ? kids.find((o) => o.id === k.twin) : undefined;
-      if (twin && !twinned.has(k.id)) {
-        const a = at.get(k.id)!;
-        const b = at.get(twin.id)!;
-        const apex = (a.x + b.x) / 2;
-        lines.push({ x1: apex, y1: bar, x2: a.x, y2: a.y - HALF }, { x1: apex, y1: bar, x2: b.x, y2: b.y - HALF });
-        twinned.add(k.id).add(twin.id);
-      } else if (!twinned.has(k.id)) {
-        const c = at.get(k.id)!;
-        lines.push({ x1: c.x, y1: bar, x2: c.x, y2: c.y - HALF });
-      }
+  return couples;
+}
+
+/** The descent line, the sibship bar, and a line to each child (twins share one point on the bar). */
+function descentLines(kids: readonly Person[], at: Points): Segment[] {
+  const parents = parentIds(kids[0]!).map((id) => at.get(id)!);
+  const mx = parents.reduce((s, p) => s + p.x, 0) / parents.length;
+  const py = Math.max(...parents.map((p) => p.y));
+  const bar = at.get(kids[0]!.id)!.y - HALF - 22;
+  const xs = kids.map((k) => at.get(k.id)!.x);
+  const lines: Segment[] = [
+    { x1: mx, y1: parents.length === 2 ? py : py + HALF, x2: mx, y2: bar },
+    { x1: Math.min(mx, ...xs), y1: bar, x2: Math.max(mx, ...xs), y2: bar },
+  ];
+  const twinned = new Set<string>();
+  for (const k of kids) {
+    if (twinned.has(k.id)) continue;
+    const twin = k.twin ? kids.find((o) => o.id === k.twin) : undefined;
+    const pair = twin ? [k, twin] : [k];
+    const apex = pair.reduce((s, p) => s + at.get(p.id)!.x, 0) / pair.length;
+    for (const p of pair) {
+      const c = at.get(p.id)!;
+      lines.push({ x1: apex, y1: bar, x2: c.x, y2: c.y - HALF });
+      twinned.add(p.id);
     }
   }
+  return lines;
+}
+
+export function layout(family: Family): Layout {
+  const gen = generations(family);
+  const depth = Math.max(...gen.values());
+  const placed = new Set<string>();
+  const at: Points = new Map();
+  const rows: string[][] = [];
+  const founders = founderBlocks(family, gen, placed);
+  rows.push(placeRow(family, founders, TOP, at));
+  for (let g = 1; g <= depth; g++)
+    rows.push(placeRow(family, rowBlocks(family, gen, g, placed, at), TOP + g * ROW, at));
+  centerFounders(
+    family,
+    founders.map((b) => b.ids),
+    at,
+  );
+  const couples = couplesOf(family);
+  const lines: Segment[] = couples.map(([a, b]) => {
+    const [l, r] = [at.get(a)!, at.get(b)!].sort((p, q) => p.x - q.x) as [
+      { x: number; y: number },
+      { x: number; y: number },
+    ];
+    return { x1: l.x + HALF, y1: l.y, x2: r.x - HALF, y2: r.y };
+  });
+  for (const kids of sibshipsOf(family.people)) lines.push(...descentLines(kids, at));
   return { rows, at, generation: gen, lines, couples };
 }
 

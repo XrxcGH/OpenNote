@@ -1,6 +1,6 @@
-// Relatedness and kin terms: kinship and inbreeding coefficients by the recursive method, the paths through common
-// ancestors that a student sums by hand, kin-type notation (F, M, B, Z, S, D, H, W) between two people, and
-// genealogy lists (ancestors, descendants, and an order of succession).
+// Relatedness and kin terms. Kinship and inbreeding coefficients come from the recursive method, with the paths
+// through common ancestors that a student sums by hand. Kin types (F, M, B, Z, S, D, H, W) link two people, and the
+// genealogy lists give ancestors, descendants, and an order of succession.
 import { fail } from '../shared';
 import { byBirth, childrenOf } from './people';
 import type { Family, Person } from './people';
@@ -204,7 +204,7 @@ export function descendants(family: Family, id: string): { id: string; generatio
 
 /**
  * The line of succession after a holder: each child's line in birth order, depth first (primogeniture). With male
- * preference, sons and their lines come before daughters. Deceased people are skipped but their lines are kept.
+ * preference, sons, and their lines come before daughters. Deceased people are skipped but their lines are kept.
  */
 export function succession(family: Family, holder: string, malePreference: boolean): string[] {
   const out: string[] = [];

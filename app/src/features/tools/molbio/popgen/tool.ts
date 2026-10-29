@@ -240,7 +240,9 @@ function inbreeding(values: Values): KitOk {
   if (paths.length > 0) {
     steps.push({
       key: 'popgen.s.fPath',
-      math: `F = \\sum \\left(\\tfrac{1}{2}\\right)^{n}(1 + F_A) = ${paths.map((p) => `(\\tfrac{1}{2})^{${p.n}}(1 + ${fmt(p.fa)})`).join(' + ')} = ${fmt(fPath)}`,
+      math:
+        `F = \\sum \\left(\\tfrac{1}{2}\\right)^{n}(1 + F_A) = ` +
+        `${paths.map((p) => `(\\tfrac{1}{2})^{${p.n}}(1 + ${fmt(p.fa)})`).join(' + ')} = ${fmt(fPath)}`,
     });
   }
   return ok({
@@ -447,7 +449,9 @@ function drift(values: Values): KitOk {
     steps: [
       {
         key: 'popgen.s.het',
-        math: `H_t = H_0\\left(1 - \\frac{1}{2N}\\right)^t = ${fmt(h0)}\\left(1 - \\frac{1}{${2 * n}}\\right)^{${generations}} = ${fmt(ht)}`,
+        math:
+          `H_t = H_0\\left(1 - \\frac{1}{2N}\\right)^t = ${fmt(h0)}\\left(1 - \\frac{1}{${2 * n}}\\right)^{${generations}} ` +
+          `= ${fmt(ht)}`,
       },
       { key: 'popgen.s.wf', vars: { copies: String(2 * n), seed: String(seed) } },
       { key: 'popgen.s.fix', vars: { p: fmt(p0) } },
@@ -476,7 +480,9 @@ function ne(values: Values): KitOk {
       },
       {
         key: 'popgen.s.sexNe',
-        math: `N_e = \\frac{4 N_m N_f}{N_m + N_f} = \\frac{4 \\times ${fmt(males)} \\times ${fmt(females)}}{${fmt(males + females)}} = ${fmt(bySex)}`,
+        math:
+          `N_e = \\frac{4 N_m N_f}{N_m + N_f} = \\frac{4 \\times ${fmt(males)} \\times ` +
+          `${fmt(females)}}{${fmt(males + females)}} = ${fmt(bySex)}`,
       },
     ],
     notes: ['popgen.n.ne'],

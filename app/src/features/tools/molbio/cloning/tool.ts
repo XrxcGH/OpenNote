@@ -370,7 +370,8 @@ function primer(values: Values): KitOk {
   if (stem >= 4) notes.push('cloning.n.hairpin');
   const tmMath =
     `T_m = \\frac{1000\\,\\Delta H}{\\Delta S + R\\ln(C_T/${nn.selfComplementary ? 1 : 4})} - 273.15 = ` +
-    `\\frac{1000(${fmt(nn.dH)})}{${fmt(nn.dS)} + ${fmt(nn.concTerm)}} - 273.15 = ${fmt(nn.tm, 5)}\\,^{\\circ}\\mathrm{C}`;
+    `\\frac{1000(${fmt(nn.dH)})}{${fmt(nn.dS)} + ${fmt(nn.concTerm)}} - 273.15 = ` +
+    `${fmt(nn.tm, 5)}\\,^{\\circ}\\mathrm{C}`;
   return ok({
     answer: { key: 'cloning.a.primer', vars: { tm: fmt(nn.tm, 4), wallace: fmt(wallace(seq)), gc: pct(gc, 5) } },
     rows: [
@@ -394,7 +395,9 @@ function primer(values: Values): KitOk {
       {
         key: 'cloning.s.salt',
         vars: { n: String(seq.length), sodium: fmt(sodium), term: fmt(nn.saltTerm), dS: fmt(nn.dS) },
-        math: `\\Delta S_{Na} = ${fmt(nn.dS1M)} + 0.368 \\times ${seq.length - 1} \\times \\ln ${fmt(sodium)} = ${fmt(nn.dS)}`,
+        math:
+          `\\Delta S_{Na} = ${fmt(nn.dS1M)} + 0.368 \\times ${seq.length - 1} \\times \\ln ` +
+          `${fmt(sodium)} = ${fmt(nn.dS)}`,
       },
       { key: 'cloning.s.tm', math: tmMath },
       { key: 'cloning.s.dimers', vars: { run: String(self.run), end: String(self.threeEnd), stem: String(stem) } },
@@ -438,7 +441,8 @@ function pcr(values: Values): KitOk {
       {
         key: 'cloning.s.anneal',
         math:
-          `T_a = 0.3\\,T_m^{\\text{primer}} + 0.7\\,T_m^{\\text{product}} - 14.9 = 0.3(${fmt(Math.min(tf, tr), 4)}) + ` +
+          `T_a = 0.3\\,T_m^{\\text{primer}} + 0.7\\,T_m^{\\text{product}} - 14.9 = 0.3(${fmt(Math.min(tf, tr), 4)}) ` +
+          `+ ` +
           `0.7(${fmt(productTm, 4)}) - 14.9 = ${fmt(ta, 4)}\\,^{\\circ}\\mathrm{C}`,
       },
     ],
@@ -463,7 +467,9 @@ function oligo(values: Values): KitOk {
       { key: 'cloning.r.molar', value: `${fmt(molar * 1e6, 5)} µM` },
       { key: 'cloning.r.massConc', value: `${fmt(ngPerUl, 5)} ng/µL` },
     ],
-    latex: `c = \\frac{A_{260}}{\\varepsilon\\,\\ell} = \\frac{${fmt(absorbance)}}{${fmt(eps)} \\times ${fmt(path)}} = ${fmt(molar * 1e6, 5)}\\ \\mu\\text{M}`,
+    latex:
+      `c = \\frac{A_{260}}{\\varepsilon\\,\\ell} = \\frac{${fmt(absorbance)}}{${fmt(eps)} ` +
+      `\\times ${fmt(path)}} = ${fmt(molar * 1e6, 5)}\\ \\mu\\text{M}`,
     steps: [
       {
         key: 'cloning.s.mass',
@@ -472,7 +478,9 @@ function oligo(values: Values): KitOk {
       { key: 'cloning.s.eps', vars: { eps: fmt(eps) } },
       {
         key: 'cloning.s.beer',
-        math: `c = \\frac{A_{260}}{\\varepsilon\\,\\ell} = \\frac{${fmt(absorbance)}}{${fmt(eps)} \\times ${fmt(path)}} = ${fmt(molar * 1e6, 5)}\\ \\mu\\text{M}`,
+        math:
+          `c = \\frac{A_{260}}{\\varepsilon\\,\\ell} = \\frac{${fmt(absorbance)}}{${fmt(eps)} ` +
+          `\\times ${fmt(path)}} = ${fmt(molar * 1e6, 5)}\\ \\mu\\text{M}`,
       },
     ],
     notes: ['cloning.n.oligo'],
@@ -488,7 +496,10 @@ function ligation(values: Values): KitOk {
   const ng = insertMass(ratio, vectorNg, insertBp, vectorBp);
   const pmolVector = moles(vectorNg, vectorBp) * 1e12;
   const pmolInsert = moles(ng, insertBp) * 1e12;
-  const math = `m_{\\text{insert}} = r \\times m_{\\text{vector}} \\times \\frac{L_{\\text{insert}}}{L_{\\text{vector}}} = ${fmt(ratio)} \\times ${fmt(vectorNg)} \\times \\frac{${fmt(insertBp)}}{${fmt(vectorBp)}} = ${fmt(ng)}\\ \\text{ng}`;
+  const math =
+    `m_{\\text{insert}} = r \\times m_{\\text{vector}} \\times \\frac{L_{\\text{insert}}}{L_{\\text{vector}}} ` +
+    `= ${fmt(ratio)} \\times ${fmt(vectorNg)} \\times \\frac{${fmt(insertBp)}}{${fmt(vectorBp)}} ` +
+    `= ${fmt(ng)}\\ \\text{ng}`;
   return ok({
     answer: { key: 'cloning.a.ligation', vars: { ng: fmt(ng), ratio: fmt(ratio) } },
     rows: [
@@ -516,7 +527,9 @@ function copyNumber(values: Values): KitOk {
   const n = copies(ng, bp);
   const mol = moles(ng, bp);
   const nanomolar = (mol / (volume * 1e-6)) * 1e9;
-  const math = `N = \\frac{m}{L \\times ${BP_MASS}} N_A = \\frac{${fmt(ng)} \\times 10^{-9}}{${fmt(bp)} \\times ${BP_MASS}} \\times 6.02214076 \\times 10^{23} = ${fmt(n, 5)}`;
+  const math =
+    `N = \\frac{m}{L \\times ${BP_MASS}} N_A = \\frac{${fmt(ng)} \\times 10^{-9}}{${fmt(bp)} ` +
+    `\\times ${BP_MASS}} \\times 6.02214076 \\times 10^{23} = ${fmt(n, 5)}`;
   return ok({
     answer: { key: 'cloning.a.copies', vars: { copies: fmt(n, 5), ng: fmt(ng), bp: fmt(bp) } },
     rows: [

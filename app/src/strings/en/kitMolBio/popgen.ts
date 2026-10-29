@@ -3,9 +3,14 @@ export const popgen = {
   title: 'Population genetics',
   short: 'Populations',
   about:
-    'Allele frequencies, Hardy-Weinberg tests, selection, mutation, migration, drift, linkage disequilibrium, and heritability.',
+    'Allele frequencies, Hardy-Weinberg tests, selection, mutation, migration, drift, ' +
+    'linkage disequilibrium, and heritability.',
   keywords:
-    'population genetics allele frequency genotype hardy weinberg equilibrium chi square exact test inbreeding coefficient heterozygosity selection fitness heterozygote advantage mutation selection balance migration island model genetic drift wright fisher fixation effective population size linkage disequilibrium heritability breeder equation',
+    'population genetics allele frequency genotype hardy weinberg equilibrium chi ' +
+    'square exact test inbreeding coefficient heterozygosity selection fitness heterozygote ' +
+    'advantage mutation selection balance migration island model genetic drift wright ' +
+    'fisher fixation effective population size linkage disequilibrium heritability ' +
+    'breeder equation',
   f: {
     mode: 'What to work out',
     genotypes: 'Genotype counts',
@@ -20,7 +25,9 @@ export const popgen = {
     hExp: 'Expected heterozygosity',
     paths: 'Paths through common ancestors',
     pathsHint:
-      'Optional. One path per line: the number of people on the loop (both parents and the ancestor), then the ancestor’s own F. First cousins have 2 paths of 5.',
+      'Optional. One path per line: the number of people on the loop (both parents ' +
+      'and the ancestor), then the ancestor’s own F. First cousins have 2 paths of ' +
+      '5.',
     wAA: 'Fitness of AA',
     wAa: 'Fitness of Aa',
     waa: 'Fitness of aa',
@@ -67,7 +74,7 @@ export const popgen = {
   },
   parent: { mid: 'Midparent', one: 'One parent' },
   a: {
-    hwe: 'p({allele}) = {p}; χ² = {chi2}, P = {p_value}.',
+    hwe: 'The frequency of {allele} is {p}; the chi-square test gives {chi2} with a p-value of {p_value}.',
     xlinked: 'p = {p} and q = {q} over all X chromosomes.',
     inbreeding: 'F = {f}.',
     selection: 'After one generation q goes from {q0} to {q}.',
@@ -170,7 +177,9 @@ export const popgen = {
     mutationT: 'The distance to the balance shrinks by 1 − µ − ν each generation.',
     migration: 'Each generation the difference from the mainland shrinks by 1 − m.',
     het: 'Drift removes a fraction 1/(2N) of the heterozygosity each generation.',
-    wf: 'Each generation, {copies} gene copies are drawn at random from the last generation (Wright-Fisher). Seed {seed}.',
+    wf:
+      'Each generation, {copies} gene copies are drawn at random from the last generation ' +
+      '(Wright-Fisher). Seed {seed}.',
     fix: 'A neutral allele fixes with a chance equal to its starting frequency, {p}.',
     harmonic: 'The harmonic mean is pulled down by the smallest generation.',
     sexNe: 'With unequal sexes, the rarer sex limits the effective size.',

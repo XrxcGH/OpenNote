@@ -1,4 +1,4 @@
-// Genetic crosses and linkage: Punnett squares with dominance, sex linkage, multiple alleles, epistasis and lethals;
+// Genetic crosses and linkage: Punnett squares with dominance, sex linkage, multiple alleles, epistasis, and lethals;
 // probabilities by the product rule; chi-square tests of ratios; two- and three-point mapping; LOD scores; and
 // Bayesian carrier risk.
 import { linePlot } from '../plot';
@@ -295,12 +295,16 @@ function chisq(values: Values): KitOk {
         rows: observed.map((o, i) => [String(i + 1), fmt(o), fmt(test.expected[i]!, 6), fmt(test.terms[i]!, 5)]),
       },
     ],
-    latex: `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${fmt(test.chi2, 5)},\\ \\mathrm{df} = ${test.df},\\ p = ${fmt(test.p, 4)}`,
+    latex:
+      `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${fmt(test.chi2, 5)},\\ \\mathrm{df} ` +
+      `= ${test.df},\\ p = ${fmt(test.p, 4)}`,
     steps: [
       { key: 'crosses.s.expected', vars: { total: fmt(observed.reduce((s, o) => s + o, 0)), ratio: r.join(':') } },
       {
         key: 'crosses.s.chi2',
-        math: `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${test.terms.map((t) => fmt(t, 4)).join(' + ')} = ${fmt(test.chi2, 5)}`,
+        math:
+          `\\chi^2 = \\sum \\frac{(O - E)^2}{E} = ${test.terms.map((t) => fmt(t, 4)).join(' + ')} ` +
+          `= ${fmt(test.chi2, 5)}`,
       },
       { key: 'crosses.s.df', vars: { classes: String(observed.length), df: String(test.df), p: fmt(test.p, 4) } },
     ],
@@ -365,7 +369,10 @@ function threepointMode(values: Values): KitOk {
       { key: 'crosses.s.singles', vars: { a: m!, b: rt!, classes: line(t.singleRight), r: fmt(t.rRight, 5) } },
       {
         key: 'crosses.s.coincidence',
-        math: `c = \\frac{${t.double.reduce((s, c) => s + c.count, 0)}}{${fmt(t.rLeft, 5)} \\times ${fmt(t.rRight, 5)} \\times ${t.total}} = ${fmt(t.coincidence, 4)},\\ I = 1 - c = ${fmt(t.interference, 4)}`,
+        math:
+          `c = \\frac{${t.double.reduce((s, c) => s + c.count, 0)}}{${fmt(t.rLeft, 5)} ` +
+          `\\times ${fmt(t.rRight, 5)} \\times ${t.total}} = ${fmt(t.coincidence, 4)},\\ ` +
+          `I = 1 - c = ${fmt(t.interference, 4)}`,
       },
     ],
     notes: ['crosses.n.testCross'],
@@ -409,7 +416,8 @@ function lodMode(values: Values): KitOk {
         key: known ? 'crosses.s.lodKnown' : 'crosses.s.lodUnknown',
         math: known
           ? '\\mathrm{LOD}(\\theta) = \\log_{10} \\frac{\\theta^R (1 - \\theta)^{N-R}}{0.5^N}'
-          : '\\mathrm{LOD}(\\theta) = \\log_{10} \\frac{\\tfrac12[\\theta^R (1 - \\theta)^{N-R} + \\theta^{N-R} (1 - \\theta)^R]}{0.5^N}',
+          : '\\mathrm{LOD}(\\theta) = \\log_{10} \\frac{\\tfrac12[\\theta^R (1 - \\theta)^{N-R} ' +
+            '+ \\theta^{N-R} (1 - \\theta)^R]}{0.5^N}',
       },
       { key: 'crosses.s.lodSum', vars: { families: String(families.length) } },
     ],
@@ -458,7 +466,9 @@ function bayes(values: Values): KitOk {
       ...(custom ? [] : [{ key: 'crosses.s.sons' as MolKey, vars: { n: String(sons), like: fmt(likeCarrier, 6) } }]),
       {
         key: 'crosses.s.bayes',
-        math: `P(\\text{carrier} \\mid \\text{data}) = \\frac{${fmt(prior, 4)} \\times ${fmt(likeCarrier, 4)}}{${fmt(jointC, 4)} + ${fmt(jointN, 4)}} = ${fmt(post, 6)}`,
+        math:
+          `P(\\text{carrier} \\mid \\text{data}) = \\frac{${fmt(prior, 4)} \\times ${fmt(likeCarrier, 4)}}{${fmt(jointC, 4)} ` +
+          `+ ${fmt(jointN, 4)}} = ${fmt(post, 6)}`,
       },
     ],
     notes: ['crosses.n.bayes'],

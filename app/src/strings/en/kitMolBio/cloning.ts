@@ -2,10 +2,12 @@
 export const cloning = {
   title: 'Cloning, PCR, and gels',
   short: 'Cloning',
-  about:
-    'Restriction digests and maps, virtual gels and band sizes, primer melting temperatures, PCR products, and ligation amounts.',
+  about: 'Restriction digests and maps, gels and band sizes, primer melting temperatures, PCR, and ligation.',
   keywords:
-    'cloning restriction enzyme digest site map plasmid vector gel electrophoresis ladder band size primer melting temperature tm wallace nearest neighbor santalucia pcr annealing oligo extinction coefficient a260 ligation insert ratio copy number molarity',
+    'cloning restriction enzyme digest site map plasmid vector gel electrophoresis ' +
+    'ladder band size primer melting temperature tm wallace nearest neighbor santalucia ' +
+    'pcr annealing oligo extinction coefficient a260 ligation insert ratio copy number ' +
+    'molarity',
   f: {
     mode: 'What to work out',
     seq: 'DNA sequence',
@@ -14,7 +16,8 @@ export const cloning = {
     topology: 'Topology',
     enzymes: 'Enzymes',
     enzymesHint:
-      'Names separated by commas, such as EcoRI, BamHI. Add your own on a line as a name and a site with a caret: MyEnz GG^CC.',
+      'Names separated by commas, such as EcoRI, BamHI. Add your own on a line as a ' +
+      'name and a site with a caret: MyEnz GG^CC.',
     features: 'Features for the map',
     featuresHint: 'Optional. One per line: a name, then the first and last base, such as lacZ 120 480.',
     ladder: 'Ladder sizes for the drawn gel (bp)',
@@ -128,29 +131,42 @@ export const cloning = {
     blunt: 'Blunt',
   },
   s: {
-    site: '{enzyme} cuts {site}, after base {cut} of its site. Sites start at {starts}, so the top strand is cut after base {cuts}. It leaves {end, select, five {a 5′ overhang of {overhang}} three {a 3′ overhang of {overhang}} other {blunt ends}}.',
+    site:
+      '{enzyme} cuts {site}, after base {cut} of its site. Sites start at {starts}, ' +
+      'so the top strand is cut after base {cuts}. It leaves {end, select, five {a ' +
+      '5′ overhang of {overhang}} three {a 3′ overhang of {overhang}} other {blunt ' +
+      'ends}}.',
     noSite: '{enzyme} ({site}) has no site in this sequence.',
     lineFragments:
-      'A linear molecule of {length} bp cut after bases {cuts} gives fragments of each cut minus the one before: {sums}.',
+      'A linear molecule of {length} bp cut after bases {cuts} gives fragments of each ' +
+      'cut minus the one before: {sums}.',
     circleFragments:
-      'A circle of {length} bp cut after bases {cuts} gives one fragment per cut, the last one running across the origin: {sums}.',
+      'A circle of {length} bp cut after bases {cuts} gives one fragment per cut, the ' +
+      'last one running across the origin: {sums}.',
     fitLine: 'Fit log10 of the size against the distance for the {count} ladder bands by least squares (R² = {r2}).',
     fitCubic:
       'Fit a cubic in the distance to log10 of the size for the {count} ladder bands by least squares (R² = {r2}).',
     band: 'At {distance} mm the fit gives log10(size) = {log}, so the size is {size} bp.',
     wallace: 'The Wallace rule counts 2 °C for each A or T and 4 °C for each G or C.',
     nnSum:
-      'Add ΔH° and ΔS° of each nearest-neighbor pair and the two end terms: ΔH° = {dH} kcal/mol and ΔS° = {dS} cal/(mol·K) in 1 M NaCl. Self-complementary: {self, select, yes {yes, so a symmetry term of −1.4 is added} other {no}}.',
+      'Add ΔH° and ΔS° of each nearest-neighbor pair and the two end terms: ΔH° = {dH} ' +
+      'kcal/mol and ΔS° = {dS} cal/(mol·K) in 1 M NaCl. Self-complementary: {self, ' +
+      'select, yes {yes, so a symmetry term of −1.4 is added} other {no}}.',
     salt: 'Correct the entropy for {sodium} M Na+ over the {n} bases: 0.368 (N − 1) ln[Na+] = {term}, so ΔS° = {dS}.',
     tm: 'Put ΔH°, ΔS°, and the strand concentration into the two-state equation.',
     dimers:
-      'Line the primer up against itself: the longest run of pairs is {run} bases, {end} at a 3′ end. The longest hairpin stem with a loop of 3 or more is {stem} bases.',
+      'Line the primer up against itself: the longest run of pairs is {run} bases, ' +
+      '{end} at a 3′ end. The longest hairpin stem with a loop of 3 or more is {stem} ' +
+      'bases.',
     forward: 'The forward primer matches the top strand starting at base {from}.',
     reverse:
-      'The reverse complement of the reverse primer ends at base {to}, so the product is {length} bp including both primers.',
+      'The reverse complement of the reverse primer ends at base {to}, so the product ' +
+      'is {length} bp including both primers.',
     anneal: 'Rychlik’s rule uses the less stable primer’s Tm and the product’s Tm.',
     mass: 'Add the anhydrous mass of each nucleotide and take off 61.96 for the 5′ hydroxyl end.',
-    eps: 'Add the extinction coefficient of each neighboring pair and take off each inner base once: ε = {eps} L/(mol·cm).',
+    eps:
+      'Add the extinction coefficient of each neighboring pair and take off each inner ' +
+      'base once: ε = {eps} L/(mol·cm).',
     beer: 'Beer-Lambert law: concentration is absorbance over ε times the path length.',
     ligation: 'Scale the vector mass by the ratio and by the length of the insert over the length of the vector.',
     pmol: 'An amount in moles is the mass over the length times {bp} g/mol per base pair.',
@@ -164,7 +180,8 @@ export const cloning = {
       'Log-linear sizing holds best in the middle of the ladder; bands near the well or the dye front are less exact.',
     extrapolate: 'At least one band lies outside the ladder, so its size is extrapolated and less certain.',
     tmModels:
-      'The Wallace rule suits primers under about 14 bases; the nearest-neighbor value assumes two-state melting and no Mg2+ or dNTPs.',
+      'The Wallace rule suits primers under about 14 bases; the nearest-neighbor value ' +
+      'assumes two-state melting and no Mg2+ or dNTPs.',
     length: 'Primers usually have 18 to 30 bases.',
     gc: 'A GC content between 40% and 60% is usual for primers.',
     clamp: 'More than 3 G or C in the last 5 bases can make the primer bind where it should not.',

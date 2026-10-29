@@ -55,7 +55,7 @@ function geneNames(classes: ClassCount[]): string[] {
   return [0, 1, 2].map((i) => classes.map((c) => c.alleles[i]!).find((a) => a !== '+') ?? `gene ${i + 1}`);
 }
 
-/** Gene order, distances, coincidence and interference from the 8 classes of a three-point test cross. */
+/** Gene order, distances, coincidence, and interference from the 8 classes of a three-point test cross. */
 export function threePoint(classes: ClassCount[]): ThreePoint {
   const sorted = [...classes].sort((a, b) => b.count - a.count);
   const total = classes.reduce((s, c) => s + c.count, 0);

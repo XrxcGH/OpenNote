@@ -88,7 +88,7 @@ export interface JoinStep {
   a: string;
   b: string;
   node: string;
-  /** Branch lengths from a and b to the new node (NJ), or the new node's height (UPGMA). */
+  /** Branch lengths from the 2 joined nodes to the new node (NJ), or the new node's height (UPGMA). */
   la: number;
   lb: number;
   q?: number;

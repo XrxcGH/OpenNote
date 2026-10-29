@@ -1,5 +1,5 @@
 // Family, pedigree, and kinship charts: genetic pedigrees with an inheritance-pattern check and Mendelian
-// probabilities, relationship and inbreeding coefficients by path counting, kin types from Ego with a terminology
+// probabilities, relationship, and inbreeding coefficients by path counting, kin types from Ego with a terminology
 // table, genealogy lists with an order of succession, and genograms with relationship lines and households.
 import { fail, fmt, lines, ok, within } from '../shared';
 import type { Cell, KitOk, KitStep, KitTable, MolKey, Values } from '../shared';
@@ -234,7 +234,8 @@ function related(values: Values): KitOk {
   const phi = kinship(family)(a, b);
   const math =
     list.length > 0
-      ? `r = \\sum \\left(\\tfrac{1}{2}\\right)^{n}(1 + F_A) = ${list.map((p) => `(\\tfrac{1}{2})^{${p.steps}}`).join(' + ')} = ${fraction(r)}`
+      ? `r = \\sum \\left(\\tfrac{1}{2}\\right)^{n}(1 + F_A) = ` +
+        `${list.map((p) => `(\\tfrac{1}{2})^{${p.steps}}`).join(' + ')} = ${fraction(r)}`
       : 'r = 0';
   return ok({
     answer: { key: 'family.a.relationship', vars: { a, b, r: fraction(r), f: fraction(phi) } },

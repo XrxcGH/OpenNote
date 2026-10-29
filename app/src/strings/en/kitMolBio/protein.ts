@@ -5,7 +5,8 @@ export const protein = {
   about:
     'Masses, extinction coefficient, charge and pI, hydropathy, helical wheels, and fragment ions from a sequence.',
   keywords:
-    'protein peptide amino acid mass monoisotopic isoelectric point pi pka charge extinction a280 hydropathy gravy helix',
+    'protein peptide amino acid mass monoisotopic isoelectric point pi pka charge ' +
+    'extinction a280 hydropathy gravy helix',
   f: {
     mode: 'What to do',
     seq: 'Protein sequence',

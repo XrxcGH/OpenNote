@@ -69,7 +69,7 @@ describe('the molecular biology window', () => {
     expect(screen.getByRole('img', { name: 'Virtual gel' })).toBeTruthy();
     await expectNoAxeViolations(container);
     await userEvent.click(screen.getByRole('tab', { name: 'Populations' }));
-    expect(await screen.findByText(/p\(A\) = 0\.5425/)).toBeTruthy();
+    expect(await screen.findByText(/frequency of A is 0\.5425/)).toBeTruthy();
     await expectNoAxeViolations(container);
   });
 });

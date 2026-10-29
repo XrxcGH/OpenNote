@@ -169,7 +169,8 @@ export const sequence = {
     windows: 'Slide a window of {window} bases along the sequence, {step} at a time, and count G and C in each.',
     cpg: 'CpG observed over expected compares the CG pairs with what the C and G counts predict.',
     motifSets:
-      'Each letter of {motif} stands for a set of bases (R means A or G; N means any base); a site matches when each base fits.',
+      'Each letter of {motif} stands for a set of bases (R means A or G; N means any ' +
+      'base); a site matches when each base fits.',
     motifMinus: 'Minus-strand sites are found by searching the plus strand for the reverse complement, {rc}.',
     motifPalindrome: 'The motif reads {rc} on the other strand too, so each site lies on both strands.',
     kmers: 'Slide a window of {k} bases along the sequence and count each word: {total} words in all.',

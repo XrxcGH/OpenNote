@@ -5,12 +5,17 @@ export const family = {
   about:
     'Draw pedigrees, genealogies, kinship charts, and genograms; check inheritance patterns and work out relatedness.',
   keywords:
-    'pedigree family tree chart inheritance pattern autosomal dominant recessive x-linked y-linked mitochondrial carrier proband consanguinity coefficient of relationship kinship inbreeding genealogy ancestors descendants succession kin type cousin parallel cross genogram ecomap household',
+    'pedigree family tree chart inheritance pattern autosomal dominant recessive ' +
+    'x-linked y-linked mitochondrial carrier proband consanguinity coefficient of ' +
+    'relationship kinship inbreeding genealogy ancestors descendants succession kin ' +
+    'type cousin parallel cross genogram ecomap household',
   f: {
     mode: 'What to work out',
     people: 'People',
     peopleHint:
-      'One person per line: id, sex (M, F, or U), father, mother, marks, label. Marks: affected, carrier, proband, deceased, adopted, unknown, partner:ID, twin:ID, mz:ID, born:YEAR.',
+      'One person per line: id, sex (M, F, or U), father, mother, marks, label. Marks: ' +
+      'affected, carrier, proband, deceased, adopted, unknown, partner:ID, twin:ID, ' +
+      'mz:ID, born:YEAR.',
     penetrance: 'Penetrance',
     rare: 'Treat the trait as rare',
     pattern: 'Inheritance pattern',
@@ -74,7 +79,11 @@ export const family = {
   },
   a: {
     patterns:
-      'Autosomal dominant {ad, select, yes {fits} other {excluded}}; autosomal recessive {ar, select, yes {fits} other {excluded}}; X-linked dominant {xd, select, yes {fits} other {excluded}}; X-linked recessive {xr, select, yes {fits} other {excluded}}; Y-linked {y, select, yes {fits} other {excluded}}; mitochondrial {mt, select, yes {fits} other {excluded}}.',
+      'Autosomal dominant {ad, select, yes {fits} other {excluded}}; autosomal recessive ' +
+      '{ar, select, yes {fits} other {excluded}}; X-linked dominant {xd, select, yes ' +
+      '{fits} other {excluded}}; X-linked recessive {xr, select, yes {fits} other {excluded}}; ' +
+      'Y-linked {y, select, yes {fits} other {excluded}}; mitochondrial {mt, select, ' +
+      'yes {fits} other {excluded}}.',
     noPattern: 'No single-gene pattern fits these statuses.',
     probability: 'P({id} is a carrier) = {p} ({fraction}).',
     probabilityMale: 'P({id} has the allele) = {p} ({fraction}).',
@@ -145,21 +154,27 @@ export const family = {
   },
   rule: {
     adParents:
-      '{child} is affected but both parents, {father} and {mother}, are not. A dominant allele must come from an affected parent.',
+      '{child} is affected but both parents, {father} and {mother}, are not. A dominant ' +
+      'allele must come from an affected parent.',
     arBoth:
-      '{child} is unaffected although both parents, {father} and {mother}, are affected. Two affected parents can only pass the recessive allele.',
+      '{child} is unaffected although both parents, {father} and {mother}, are affected. ' +
+      'Two affected parents can only pass the recessive allele.',
     arRare:
-      '{child} is affected with one affected and one unaffected parent ({father} and {mother}). For a rare recessive trait the unaffected parent is not expected to be a carrier.',
+      '{child} is affected with one affected and one unaffected parent ({father} and ' +
+      '{mother}). For a rare recessive trait the unaffected parent is not expected ' +
+      'to be a carrier.',
     xdFather:
       '{child} is an unaffected daughter of an affected father, {father}. A father passes his X to every daughter.',
     xdSon: '{child} is an affected son of an unaffected mother, {mother}. A son’s X comes from his mother.',
-    xdDaughter: '{child} is an affected daughter of 2 unaffected parents, {father} and {mother}.',
+    xdDaughter: '{child} is an affected daughter, and neither parent ({father} or {mother}) is affected.',
     xrDaughter:
-      '{child} is an affected daughter of an unaffected father, {father}. An affected daughter needs an affected father.',
+      '{child} is an affected daughter of an unaffected father, {father}. An affected ' +
+      'daughter needs an affected father.',
     xrMother:
       '{child} is an unaffected son of an affected mother, {mother}. Her sons all get one of her X chromosomes.',
     xrRare:
-      '{child} is affected and the mother, {mother}, is not. For a rare recessive trait she is not expected to be a carrier, and a father’s X does not explain it.',
+      '{child} is affected and the mother, {mother}, is not. For a rare recessive trait ' +
+      'she is not expected to be a carrier, and a father’s X does not explain it.',
     yFemale: '{child} is an affected female. A Y-linked trait affects only males.',
     yFather: '{child} is an unaffected son of an affected father, {father}. Every son gets his father’s Y.',
     ySon: '{child} is an affected son of an unaffected father, {father}.',
@@ -170,20 +185,24 @@ export const family = {
     fits: 'No one in the chart contradicts this pattern.',
     priors: 'People without parents in the chart get Hardy-Weinberg chances with q = {q}.',
     transmission:
-      'Each parent passes the allele with chance 1/2 per copy; under X-linkage a father passes his X only to daughters.',
+      'Each parent passes the allele with chance 1/2 per copy; under X-linkage a father ' +
+      'passes his X only to daughters.',
     evidence: 'Each person’s status rules out the genotypes that do not match it; a carrier mark fixes one copy.',
     peel: 'Sum out {count} people one at a time, smallest table first. The chance of everything seen is {likelihood}.',
     posterior: 'Divide by that chance: P({id} has one copy) = {p}.',
     paths:
-      'List every path from one person up to a common ancestor and down to the other that meets no one twice ({count} paths).',
+      'List every path from one person up to a common ancestor and down to the other ' +
+      'that meets no one twice ({count} paths).',
     sum: 'Each path with n steps adds (1/2)^n, times 1 + F of the ancestor if that ancestor is inbred.',
     kinship:
       'The inbreeding coefficient of their child equals the kinship of the parents, half of r when neither is inbred.',
     kinLetters: 'Kin types chain one letter per link: F, M, B, Z, S, D, H, and W.',
     kinPath:
-      'Each kin type follows the shortest chain of parents, children, and partners from {ego}; a parent’s other child is a sibling.',
+      'Each kin type follows the shortest chain of parents, children, and partners ' +
+      'from {ego}; a parent’s other child is a sibling.',
     cousin:
-      'In {type} the parent and the parent’s sibling are the same sex for a parallel cousin and opposite sexes for a cross cousin.',
+      'In {type} the parent and the parent’s sibling are the same sex for a parallel ' +
+      'cousin and opposite sexes for a cross cousin.',
     absolute: 'Children follow in birth order, each followed by their own line, whatever their sex.',
     male: 'Sons and their lines come before daughters; within each, birth order.',
     deceased: 'A deceased person is passed over, but their line keeps its place.',
@@ -194,8 +213,11 @@ export const family = {
     incomplete:
       'With incomplete penetrance, rules that rest on an unaffected person carrying a dominant allele are skipped.',
     symbols:
-      'A filled symbol is affected, a dot marks a carrier, a slash a deceased person, and an arrow the proband. Related partners have a double line.',
-    peel: 'Probabilities assume the pattern chosen, full penetrance, and Hardy-Weinberg chances for people marrying in.',
+      'A filled symbol is affected, a dot marks a carrier, a slash a deceased person, ' +
+      'and an arrow the proband. Related partners have a double line.',
+    peel:
+      'Probabilities assume the pattern chosen, full penetrance, and Hardy-Weinberg ' +
+      'chances for people marrying in.',
     coursework: 'For coursework, not for genetic counseling.',
     paths: 'A common ancestor who is inbred adds 1 + F to each path through them.',
     kin: 'Kin types are relative to Ego. Terms come from the table you fill in.',
@@ -229,6 +251,8 @@ export const family = {
     impossible: 'These statuses cannot happen under this pattern. Check the pattern in the pedigree mode.',
   },
   src: {
-    nsgc: 'Symbols after the National Society of Genetic Counselors pedigree recommendations (Bennett et al. 2008, 2022).',
+    nsgc:
+      'Symbols after the National Society of Genetic Counselors pedigree recommendations ' +
+      '(Bennett et al. 2008, 2022).',
   },
 } as const;

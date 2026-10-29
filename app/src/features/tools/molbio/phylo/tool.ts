@@ -127,7 +127,7 @@ const fields: Field[] = [
   },
 ];
 
-/** Aligned records: at least 3, unique names, the same length, letters and gaps only. */
+/** Aligned records: at least 3, unique names, the same length, letters, and gaps only. */
 function readAlignment(text: string): Taxon[] {
   const records = readFasta(text);
   if (records.length < 3) return fail('phylo.e.fewSequences');
@@ -236,13 +236,18 @@ function joinSteps(
       steps.push({
         key: 'phylo.s.njCenter',
         vars: { a: s.a, b: s.b, c: s.c, node: s.node, la: fmt(s.la), lb: fmt(s.lb), lc: fmt(s.lc ?? 0) },
-        math: `d_{${s.a}${s.node}} = \\tfrac{1}{2}(d_{${s.a}${s.b}} + d_{${s.a}${s.c}} - d_{${s.b}${s.c}}) = ${fmt(s.la)}`,
+        math:
+          `d_{${s.a}${s.node}} = \\tfrac{1}{2}(d_{${s.a}${s.b}} + d_{${s.a}${s.c}} - d_{${s.b}${s.c}}) ` +
+          `= ${fmt(s.la)}`,
       });
     } else {
       steps.push({
         key: 'phylo.s.njJoin',
         vars: { step: String(k + 1), a: s.a, b: s.b, node: s.node, q: fmt(s.q ?? 0), la: fmt(s.la), lb: fmt(s.lb) },
-        math: `Q_{${s.a}${s.b}} = (n-2)d_{${s.a}${s.b}} - R_{${s.a}} - R_{${s.b}} = ${fmt(s.q ?? 0)},\\ d_{${s.a}${s.node}} = \\frac{d_{${s.a}${s.b}}}{2} + \\frac{R_{${s.a}} - R_{${s.b}}}{2(n-2)} = ${fmt(s.la)}`,
+        math:
+          `Q_{${s.a}${s.b}} = (n-2)d_{${s.a}${s.b}} - R_{${s.a}} - R_{${s.b}} = ${fmt(s.q ?? 0)},\\ ` +
+          `d_{${s.a}${s.node}} = \\frac{d_{${s.a}${s.b}}}{2} + \\frac{R_{${s.a}} - R_{${s.b}}}{2(n-2)} ` +
+          `= ${fmt(s.la)}`,
       });
     }
   });

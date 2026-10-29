@@ -4,7 +4,10 @@ export const phylo = {
   short: 'Trees',
   about: 'Distances, UPGMA and neighbor-joining, parsimony, bootstrap support, and Newick trees to draw and read.',
   keywords:
-    'phylogeny phylogenetic tree evolution distance jukes cantor kimura p-distance upgma neighbor joining parsimony fitch bootstrap consensus newick reroot outgroup ladderize cladogram phylogram radial common ancestor monophyletic clade sister group',
+    'phylogeny phylogenetic tree evolution distance jukes cantor kimura p-distance ' +
+    'upgma neighbor joining parsimony fitch bootstrap consensus newick reroot outgroup ' +
+    'ladderize cladogram phylogram radial common ancestor monophyletic clade sister ' +
+    'group',
   f: {
     mode: 'What to work out',
     alignment: 'Aligned sequences',
@@ -89,9 +92,12 @@ export const phylo = {
     },
     deletion: 'Each pair is compared only at the sites where both have a plain letter.',
     upgmaJoin:
-      'Join {step}: {a} and {b} are the closest, so they meet at {node} at height {height}. Distances to {node} are averages weighted by cluster size.',
+      'Join {step}: {a} and {b} are the closest, so they meet at {node} at height {height}. ' +
+      'Distances to {node} are averages weighted by cluster size.',
     njJoin:
-      'Join {step}: {a} and {b} have the smallest Q ({q}), so they meet at {node} with branches {la} and {lb}. The distance from {node} to each other node is half of d(a, k) + d(b, k) − d(a, b).',
+      'Join {step}: {a} and {b} have the smallest Q ({q}), so they meet at {node} with ' +
+      'branches {la} and {lb}. The distance from {node} to each other node is half ' +
+      'of d(a, k) + d(b, k) − d(a, b).',
     njCenter: 'The last 3 nodes, {a}, {b}, and {c}, meet at {node} with branches {la}, {lb}, and {lc}.',
     fitchRule:
       'Fitch’s rule: at each node, keep the states most of its children share; every child left out costs 1 change.',
@@ -102,7 +108,8 @@ export const phylo = {
       'A partial tree that already costs more than the best full tree is dropped, so {scored} full trees were scored.',
     best: 'The best score is {score}, reached by {tied} trees.',
     resample:
-      'Each replicate draws {sites} columns with replacement and builds a tree; {replicates} replicates from seed {seed}.',
+      'Each replicate draws {sites} columns with replacement and builds a tree; {replicates} ' +
+      'replicates from seed {seed}.',
     splits: 'Every branch of a tree splits the taxa in 2; each split is counted over the replicates.',
     majority: 'Splits found in more than half the replicates make the majority-rule consensus.',
     read: 'Read {taxa} taxa from the Newick text.',

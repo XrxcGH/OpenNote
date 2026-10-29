@@ -4,7 +4,8 @@ export const align = {
   short: 'Alignment',
   about: 'Align 2 DNA or protein sequences globally, locally, or with free end gaps, and see the score matrix.',
   keywords:
-    'alignment needleman wunsch smith waterman global local semi-global gap affine gotoh blosum pam dot plot dynamic programming',
+    'alignment needleman wunsch smith waterman global local semi-global gap affine ' +
+    'gotoh blosum pam dot plot dynamic programming',
   f: {
     mode: 'Kind of alignment',
     a: 'First sequence',
@@ -65,7 +66,8 @@ export const align = {
       semi: 'Fill row 0 and column 0 with zeros, since gaps before either sequence starts are free.',
     },
     recurrence:
-      'Each cell takes the best of 3 moves: diagonal to pair 2 letters, down for a gap in the second sequence, or right.',
+      'Each cell takes the best of 3 moves: diagonal to pair 2 letters, down for a ' +
+      'gap in the second sequence, or right.',
     cell: 'Cell ({i}, {j}), {x} against {y}: diagonal {d}, from above {u}, from the left {l}. The best is {v}.',
     gotoh: 'With affine gaps, 3 matrices track whether a cell ends in a pair (M) or a gap in either sequence (X, Y).',
     end: {

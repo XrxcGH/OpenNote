@@ -4,19 +4,24 @@ export const crosses = {
   short: 'Crosses',
   about: 'Punnett squares, ratios and probabilities, chi-square tests, gene mapping, LOD scores, and carrier risk.',
   keywords:
-    'punnett square mendel cross dihybrid trihybrid ratio epistasis lethal sex linked x-linked abo multiple alleles chi square recombination map distance centimorgan haldane kosambi three point test cross interference coincidence lod linkage bayes carrier risk',
+    'punnett square mendel cross dihybrid trihybrid ratio epistasis lethal sex linked ' +
+    'x-linked abo multiple alleles chi square recombination map distance centimorgan ' +
+    'haldane kosambi three point test cross interference coincidence lod linkage ' +
+    'bayes carrier risk',
   f: {
     mode: 'What to work out',
     p1: 'Parent 1 genotype',
     p2: 'Parent 2 genotype',
     genotypeHint:
-      'Pairs such as AaBb, or alleles joined by a slash for longer names: IA/i Bb. X-linked: XA/Xa for a female, XA/Y for a male.',
+      'Pairs such as AaBb, or alleles joined by a slash for longer names: IA/i Bb. ' +
+      'X-linked: XA/Xa for a female, XA/Y for a male.',
     dominance: 'Dominance',
     hierarchy: 'Dominance order for multiple alleles',
     hierarchyHint: 'Optional, such as IA = IB > i for the ABO blood groups.',
     rules: 'Phenotype map',
     rulesHint:
-      'One rule per line, and the first match wins: a pattern where _ is any allele, then = and a name. End with else = name.',
+      'One rule per line, and the first match wins: a pattern where _ is any allele, ' +
+      'then = and a name. End with else = name.',
     lethal: 'Lethal genotypes',
     lethalHint: 'Optional, such as YY or AY/AY. Children with these die before they are counted.',
     query: 'Offspring to find the chance of',
@@ -64,7 +69,7 @@ export const crosses = {
     chisq: 'χ² = {chi2} with {df} df, p = {p}',
     twopoint: 'r = {r}, {cm} cM; Haldane {haldane} cM, Kosambi {kosambi} cM',
     threepoint: 'Gene order {order}: {d1} cM and {d2} cM, interference {i}',
-    lod: 'Maximum LOD {lod} at θ = {theta}',
+    lod: 'The LOD score peaks at {lod} when θ is {theta}.',
     bayes: 'Carrier probability given the information: {p}',
   },
   r: {
@@ -126,7 +131,8 @@ export const crosses = {
   },
   s: {
     gametes:
-      'List the gametes: parent 1 makes {a} kinds and parent 2 makes {b}, each gene giving either allele with chance 1/2.',
+      'List the gametes: parent 1 makes {a} kinds and parent 2 makes {b}, each gene ' +
+      'giving either allele with chance 1/2.',
     grid: 'Fill the square with every pair of gametes. A cell’s chance is the product of its 2 gametes’ chances.',
     lethal: 'Remove the lethal genotypes and divide the rest by the share that survives, so the shares add to 1.',
     classes: 'Group the genotypes by phenotype and add their chances: {ratio}.',
@@ -141,7 +147,8 @@ export const crosses = {
     kosambi: 'Kosambi’s map function allows for interference.',
     parentals: 'The 2 largest classes are the parentals: {classes}.',
     doubles:
-      'The 2 smallest classes are the double crossovers: {classes}. The gene they swap against a parental is in the middle: {middle}.',
+      'The 2 smallest classes are the double crossovers: {classes}. The gene they swap ' +
+      'against a parental is in the middle: {middle}.',
     singles: 'Single crossovers between {a} and {b}: {classes}. Add the doubles and divide by the total: r = {r}.',
     coincidence: 'Coincidence is observed over expected double crossovers, and interference is 1 − coincidence.',
     lodKnown: 'Phase known: each meiosis is scored recombinant or not.',
@@ -157,7 +164,7 @@ export const crosses = {
     mapFunctions:
       '1 cM is 1% recombination for close genes. Map functions correct for multiple crossovers over longer distances.',
     testCross: 'The tester parent is homozygous recessive, so each class shows the gamete from the other parent.',
-    lod: 'A maximum LOD of 3 or more supports linkage, and θ values with a LOD of −2 or less are excluded.',
+    lod: 'LOD scores of 3 or more support linkage, and θ values scoring −2 or less are excluded.',
     bayes: 'Assumes full penetrance and no new mutations.',
   },
   e: {
