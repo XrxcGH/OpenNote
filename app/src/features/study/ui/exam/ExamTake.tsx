@@ -21,7 +21,7 @@ import {
   timeLeft,
 } from '../../exam/timer';
 import type { ExamTimer } from '../../exam/timer';
-import { dropAttempt, saveAttempt } from '../../exam/attempt';
+import { dropAttempt, joinKey, saveAttempt } from '../../exam/attempt';
 import type { Attempt } from '../../exam/attempt';
 import type { Answer, Answers, Exam, InkPoint, Question } from '../../exam/types';
 import styles from '../study.module.css';
@@ -155,7 +155,9 @@ function TypedFields({ question, answer, onChange }: FieldProps) {
         )}
       </label>
       {question.math ? <p className={styles.note}>{t('exams.take.mathHint')}</p> : null}
-      {question.math && keyHasUnit(question.answer) ? <p className={styles.note}>{t('exams.take.unitHint')}</p> : null}
+      {question.math && (question.unit ?? keyHasUnit(question.answer)) ? (
+        <p className={styles.note}>{t('exams.take.unitHint')}</p>
+      ) : null}
     </>
   );
 }
@@ -357,7 +359,8 @@ export interface ExamTakeProps {
   attempt: Attempt | null;
   notebookId: string | null;
   /** The answers, and how long after the time ran out they were handed in (null when in time or untimed). */
-  onSubmit(answers: Answers, late: number | null): void;
+  /** `exam` is the exam with its key, or null when a resumed paper's key could not be read back. */
+  onSubmit(answers: Answers, late: number | null, exam: Exam | null): void;
 }
 
 export function ExamTake({ exam, attempt, notebookId, onSubmit }: ExamTakeProps) {
@@ -394,8 +397,10 @@ export function ExamTake({ exam, attempt, notebookId, onSubmit }: ExamTakeProps)
   const submit = (given: Answers) => {
     done.current = true;
     if (pending.current !== null) window.clearTimeout(pending.current);
+    // A resumed paper has no key: it is read back from where it was kept, before the attempt and its key are dropped.
+    const whole = joinKey(exam);
     dropAttempt(exam.id);
-    onSubmit(given, lateBy(timer, Date.now()));
+    onSubmit(given, lateBy(timer, Date.now()), whole);
   };
   const total = exam.questions.length;
   const shown = all ? exam.questions : exam.questions.slice(at, at + 1);

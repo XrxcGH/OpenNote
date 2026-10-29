@@ -231,7 +231,11 @@ function ExamFlow({ request }: { request: ExamRequest | null }) {
           exam={stage.exam}
           attempt={stage.attempt}
           notebookId={notebookId}
-          onSubmit={(answers, late) => setStage({ name: 'marking', exam: stage.exam, answers, late })}
+          onSubmit={(answers, late, whole) => {
+            if (whole) return setStage({ name: 'marking', exam: whole, answers, late });
+            setProblem(t('exams.resume.keyLost'));
+            setStage({ name: 'setup' });
+          }}
         />
       ) : null}
       {stage.name === 'marking' ? (

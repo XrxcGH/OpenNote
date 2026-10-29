@@ -36,6 +36,11 @@ export interface Question {
   math?: boolean;
   /** How far a numeric answer may be from the model answer, as a share of it (0.01 is 1 percent). */
   tolerance?: number;
+  /**
+   * Set on a paper kept without its key (an exam in progress, attempt.ts): whether the key is a number with a unit,
+   * so the answer field can still say the unit is marked.
+   */
+  unit?: boolean;
   source: SourceRef;
 }
 
@@ -59,6 +64,8 @@ export interface Exam {
   questions: Question[];
   /** Who wrote the questions: the rules, or the language model on this device. */
   engine: 'rules' | 'model';
+  /** True for a paper kept without its key (attempt.ts): the answers and guides are kept apart until it is handed in. */
+  keyApart?: boolean;
 }
 
 /** One point of a stroke written in an answer area, in the area's own pixels. */

@@ -133,6 +133,12 @@ export const exams = {
     drop: 'Discard {title}',
     dropped: 'Discarded {title}.',
     resumed: 'Carrying on with {title}. Your answers are back.',
+    keyLost:
+      "This exam's answer key couldn't be read back from this device, so it can't be marked. Make the exam again " +
+      'from your notes.',
+  },
+  retake: {
+    ready: 'A fresh copy of {title}, with the same questions. Your earlier answers are not on it.',
   },
   take: {
     counter: 'Question {number} of {total}',
