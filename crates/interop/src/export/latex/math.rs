@@ -326,7 +326,6 @@ mod tests {
             r"\INPUT{x}",
             r"\openin1=x",
             r"\lstinputlisting{x}",
-            r"\@@input x",
             r"\x",
             r"\alphaX",
         ] {

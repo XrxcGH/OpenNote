@@ -35,6 +35,61 @@ const EVERYTHING: &str = "# Title with **bold**, `code`, and $x^2$\n\n\
     Unicode: caf\u{e9}, na\u{ef}ve, \u{3a9}mega \u{2192} \u{3b1}, 100\u{b0}.\n\n\
     $$\n\\input{/etc/passwd}\n$$\n\n\\input{/etc/passwd} \\write18{ls} {{{ \\\\ \\end{document}";
 
+/// What the canary file holds. A compile that reads the file puts this text in the PDF or the log, and the CI job
+/// fails when it finds it there.
+const CANARY: &str = "CANARY-7f3a91-must-not-appear";
+
+/// Equations that read a file or change commands, none of which a list of "bad commands" would have named. The
+/// first form of each reads the canary file by an absolute path, the second by a relative one.
+fn hostile_math(root: &Path) -> String {
+    let absolute = root.join("canary-secret.txt");
+    let absolute = absolute.to_string_lossy().replace('\\', "/");
+    format!(
+        r"Hostile equations follow.
+
+$$
+\InputIfFileExists{{{absolute}}}{{}}{{}}
+$$
+
+$$
+\AtBeginDocument{{\InputIfFileExists{{../canary-secret.txt}}{{}}{{}}}}
+$$
+
+$$
+\ExplSyntaxOn \file_input:n{{{absolute}}} \ExplSyntaxOff
+$$
+
+$$
+\ExplSyntaxOn \file_input:n{{../canary-secret.txt}} \ExplSyntaxOff
+$$
+
+$$
+\DeclareRobustCommand\textbf[1]{{#1}}
+$$
+
+Inline $\input{{../canary-secret.txt}}$ and $\openin1=../canary-secret.txt \read1 to \x$ and a real one: $\alpha+\beta$.
+"
+    )
+}
+
+/// A document written by hand with the same equations in it, as a TeX engine would meet them if the exporter let
+/// them through. The job compiles it with file access restricted and expects the canary to stay unread.
+fn hostile_raw_tex(root: &Path) -> String {
+    let math = hostile_math(root)
+        .replace("$$", "")
+        .replace("Hostile equations follow.", "");
+    let mut out = String::from("\\documentclass{article}\n\\usepackage{amsmath}\n\\begin{document}\n");
+    for block in math
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|b| !b.is_empty() && !b.starts_with("Inline"))
+    {
+        out.push_str(&format!("\\[\n{block}\n\\]\n"));
+    }
+    out.push_str("\\end{document}\n");
+    out
+}
+
 /// Gives the first text block of the page this Markdown.
 fn set_markdown(page: &mut Page, markdown: &str) {
     let first = page
@@ -153,6 +208,8 @@ fn fixtures_for_the_ci_compile_job() {
             .to_owned(),
     };
     let sample = sample_notebook(&world.env());
+    let hostile = notebook_with(&world.env(), &hostile_math(root));
+    let hostile_page = Scope::Page(hostile.pages()[0].id);
     let cases: Vec<(&str, &MemorySource, Scope, LatexOptions)> = vec![
         (
             "unicode",
@@ -174,6 +231,7 @@ fn fixtures_for_the_ci_compile_job() {
                 ..LatexOptions::default()
             },
         ),
+        ("hostile", &hostile, hostile_page, LatexOptions::default()),
         ("notebook", &sample.source, Scope::Notebook, LatexOptions::default()),
         (
             "bare",
@@ -188,6 +246,10 @@ fn fixtures_for_the_ci_compile_job() {
             },
         ),
     ];
+    fs::write(root.join("canary-secret.txt"), CANARY).expect("writes the canary");
+    let raw = root.join("hostile-raw");
+    fs::create_dir_all(&raw).expect("a fixture folder");
+    fs::write(raw.join("main.tex"), hostile_raw_tex(root)).expect("writes");
     for (name, notebook, scope, options) in cases {
         let out = tempfile::tempdir().expect("a temp folder");
         let exported = export_latex(notebook, scope, &options, out.path()).expect("exports");

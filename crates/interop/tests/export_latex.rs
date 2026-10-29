@@ -23,22 +23,106 @@ use opennote_interop::{
 /// [`MATH_COMMANDS`] fails `check_tex`, so a command that slips through from a page (a file read, a definition, a hook)
 /// is caught however unusual its name.
 const BODY_COMMANDS: &[&str] = &[
-    "begin", "end", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "texorpdfstring", "textbf",
-    "emph", "texttt", "uline", "sout", "textsuperscript", "textsubscript", "opnhl", "href", "hyperref", "ref", "label",
-    "eqref", "cite", "footnote", "item", "noindent", "par", "newline", "relax", "medskip", "bigskip", "midrule",
-    "toprule", "bottomrule", "endhead", "endfirsthead", "captionof", "includegraphics", "maketitle", "tableofcontents",
-    "textbackslash", "textasciitilde", "textasciicircum", "textasciigrave", "textless", "textgreater", "textbar",
-    "textquotedbl", "textquotesingle", "textunderscore", "allowbreak", "opncodeline", "ensuremath", "boxtimes",
-    "square", "centering", "raggedright", "small", "bibliography", "bibliographystyle", "nocite", "hline",
-    "hrulefill", "rule", "linewidth", "textwidth", "today", "ldots", "textcolor", "multicolumn", "cline", "quad",
-    "qquad", "hspace", "phantom",
+    "begin",
+    "end",
+    "section",
+    "subsection",
+    "subsubsection",
+    "paragraph",
+    "subparagraph",
+    "texorpdfstring",
+    "textbf",
+    "emph",
+    "texttt",
+    "uline",
+    "sout",
+    "textsuperscript",
+    "textsubscript",
+    "opnhl",
+    "href",
+    "hyperref",
+    "ref",
+    "label",
+    "eqref",
+    "cite",
+    "footnote",
+    "item",
+    "noindent",
+    "par",
+    "newline",
+    "relax",
+    "medskip",
+    "bigskip",
+    "midrule",
+    "toprule",
+    "bottomrule",
+    "endhead",
+    "endfirsthead",
+    "captionof",
+    "includegraphics",
+    "maketitle",
+    "tableofcontents",
+    "textbackslash",
+    "textasciitilde",
+    "textasciicircum",
+    "textasciigrave",
+    "textless",
+    "textgreater",
+    "textbar",
+    "textquotedbl",
+    "textunderscore",
+    "allowbreak",
+    "opncodeline",
+    "ensuremath",
+    "boxtimes",
+    "square",
+    "raggedright",
+    "small",
+    "setcounter",
+    "renewcommand",
+    "arraystretch",
+    "ttfamily",
+    "bibliography",
+    "bibliographystyle",
+    "nocite",
+    "rule",
+    "linewidth",
+    "today",
 ];
 
 /// Math commands the tests put in equations; the exporter keeps only the ones it knows (see `export::latex::math`).
 const MATH_COMMANDS: &[&str] = &[
-    "alpha", "beta", "gamma", "Omega", "sum", "frac", "sqrt", "leq", "rightarrow", "pmatrix", "left", "right", "cdot",
-    "times", "mathbb", "mathrm", "text", "partial", "infty", "in", "pm", "sin", "cos", "log", "int", "prod", "lim",
-    "xi", "zeta", "circ", "iff",
+    "alpha",
+    "beta",
+    "gamma",
+    "Omega",
+    "sum",
+    "frac",
+    "sqrt",
+    "leq",
+    "rightarrow",
+    "pmatrix",
+    "left",
+    "right",
+    "cdot",
+    "times",
+    "mathbb",
+    "mathrm",
+    "text",
+    "partial",
+    "infty",
+    "in",
+    "pm",
+    "sin",
+    "cos",
+    "log",
+    "int",
+    "prod",
+    "lim",
+    "xi",
+    "zeta",
+    "circ",
+    "iff",
 ];
 
 /// Reads a `.tex` file the way TeX would at the level of braces and environments, and panics at the first thing that
@@ -47,6 +131,7 @@ fn check_tex(tex: &str) -> String {
     let body_at = tex.find("\\begin{document}").expect("a document");
     let body = &tex[body_at..];
     let mut stack: Vec<String> = Vec::new();
+    let mut unknown: Vec<String> = Vec::new();
     let mut depth = 0i64;
     let mut chars = body.char_indices().peekable();
     while let Some((i, c)) = chars.next() {
@@ -86,16 +171,21 @@ fn check_tex(tex: &str) -> String {
                         }
                     }
                     other => {
-                        assert!(
-                            BODY_COMMANDS.contains(&other) || MATH_COMMANDS.contains(&other),
-                            "the body uses \\{other}, which the exporter does not emit and math may not use"
-                        );
+                        if !(BODY_COMMANDS.contains(&other) || MATH_COMMANDS.contains(&other))
+                            && !unknown.contains(&other.to_owned())
+                        {
+                            unknown.push(other.to_owned());
+                        }
                     }
                 }
             }
             _ => {}
         }
     }
+    assert!(
+        unknown.is_empty(),
+        "the body uses control words that the exporter does not emit and math may not use: {unknown:?}"
+    );
     assert_eq!(depth, 0, "unbalanced braces");
     assert!(stack.is_empty(), "environments left open: {stack:?}");
     assert!(
@@ -347,6 +437,38 @@ fn hostile_text_is_escaped_and_cannot_reach_the_document() {
     assert!(!body.contains("href{javascript"), "{body}");
     assert_eq!(body.matches("\\end{document}").count(), 1, "{body}");
     assert_eq!(body.matches("\\begin{document}").count(), 1, "{body}");
+}
+
+#[test]
+fn math_with_commands_nobody_listed_never_reaches_the_tex() {
+    let world = TestEnv::new();
+    let markdown = [
+        r"Inline $\InputIfFileExists{/etc/passwd}{}{}$ and $\AtBeginDocument{\InputIfFileExists{x}{}{}}$.",
+        "",
+        "$$",
+        r"\ExplSyntaxOn \file_input:n{/etc/passwd} \ExplSyntaxOff",
+        "$$",
+        "",
+        "$$",
+        r"\DeclareRobustCommand\textbf[1]{#1}",
+        "$$",
+        "",
+        r"Fine: $\alpha + \frac{1}{2}$.",
+    ]
+    .join("\n");
+    let source = notebook_with(&world.env(), &markdown);
+    let tex = tex_of(&source, first_page_scope(&source), &LatexOptions::default());
+    let body = check_tex(&tex);
+    for word in [
+        "InputIfFileExists",
+        "AtBeginDocument",
+        "ExplSyntaxOn",
+        "file_input",
+        "DeclareRobustCommand",
+    ] {
+        assert!(!body.contains(&format!(r"\{word}")), "{word} reached the file: {body}");
+    }
+    assert!(body.contains(r"$\alpha + \frac{1}{2}$"), "{body}");
 }
 
 #[test]

@@ -462,7 +462,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             texlive-xetex texlive-luatex texlive-latex-recommended texlive-latex-extra \
-            texlive-fonts-recommended texlive-science lmodern fonts-lmodern
+            texlive-fonts-recommended texlive-science lmodern fonts-lmodern poppler-utils
       - name: Write the export fixtures
         env:
           OPENNOTE_LATEX_FIXTURES: ${{ runner.temp }}/latex
@@ -508,6 +508,40 @@ jobs:
             run pdflatex
             clean
           )
+      - name: Check that hostile math reads no file
+        # "hostile" is an export of a page whose equations try to read a canary file; the exporter must write them as
+        # text, so it compiles like any other and the canary text appears nowhere. "hostile-raw" holds the same
+        # equations in a hand-written document, as an engine would meet them if the exporter missed one. It is
+        # compiled with shell escape off and file access restricted to the folder (openin_any=p), where the canary,
+        # one folder up, must stay unread. Errors in that document are expected and ignored.
+        working-directory: ${{ runner.temp }}/latex
+        run: |
+          set -uo pipefail
+          export openin_any=p openout_any=p
+          canary=$(cat canary-secret.txt)
+          for engine in xelatex lualatex pdflatex; do
+            (
+              cd hostile
+              file=$(ls ./*.tex | head -n 1 | sed 's|^\./||')
+              "$engine" -no-shell-escape -interaction=nonstopmode -halt-on-error "$file"
+            ) || { echo "The hostile export did not compile with $engine."; exit 1; }
+            (cd hostile-raw && "$engine" -no-shell-escape -interaction=nonstopmode main.tex || true)
+            for pdf in hostile/*.pdf hostile-raw/main.pdf; do
+              [ -f "$pdf" ] || continue
+              if pdftotext "$pdf" - | grep -F "$canary"; then
+                echo "$pdf shows the canary after $engine: a file was read."
+                exit 1
+              fi
+            done
+            if grep -F "$canary" hostile/*.log hostile-raw/*.log; then
+              echo "A log shows the canary after $engine: a file was read."
+              exit 1
+            fi
+            if grep -E "^\((\.\./|/).*canary-secret" hostile/*.log hostile-raw/*.log; then
+              echo "A log shows the canary file being opened after $engine."
+              exit 1
+            fi
+          done
 
   format-fixtures:
     # Every implementation of the note format reads the same fixtures in docs/format/fixtures.
