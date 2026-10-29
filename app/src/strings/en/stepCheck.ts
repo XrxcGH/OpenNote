@@ -57,6 +57,8 @@ export const stepCheck = {
     addsSolutions: 'This follows, but it can add solutions, such as {at}. Check your answers in the first line.',
     followsSystem: 'This holds at the solution of the equations above.',
     systemEquation: 'Another equation of the system. The lines below are checked against all of them.',
+    oneRoot: 'This is one of the solutions of the equation above.',
+    knownValue: 'With {at} from above, both sides work out to the same value.',
     antiderivative: 'Differentiating this gives back the line before it.',
     missingConstant: 'Differentiating this gives back the line before it. Add + C: any constant works here too.',
     sameValue: 'Both sides work out to the same value.',

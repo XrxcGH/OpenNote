@@ -74,7 +74,7 @@ export function symbolicSame(a: Node, b: Node): boolean {
   }
 }
 
-const fn = (node: Node): Fn => evaluator(node);
+export const fn = (node: Node): Fn => evaluator(node);
 
 /** The letters people write for a constant of integration. */
 const CONSTANT_NAMES = new Set(['C', 'c', 'K', 'k']);
@@ -97,7 +97,10 @@ function antiderivativeAnswer(a: Scalar): string | undefined {
   const [integral] = a.integrals;
   if (integral.inner.type !== 'name') return undefined;
   const solved = solveQuestion({ kind: 'integral', body: integral.body, x: integral.inner.name });
-  return solved.ok ? `= ${solved.answer.text} + C` : undefined;
+  if (!solved.ok) return undefined;
+  // The solver's answer may already end in + C.
+  const { text } = solved.answer;
+  return /\bC\b/.test(text) ? `= ${text}` : `= ${text} + C`;
 }
 
 function compareAntiderivatives(a: Scalar, b: Scalar, x: string, seed: number): Outcome {
@@ -415,6 +418,24 @@ function roundedSolutions(prev: Equation, groups: Atom[][], seed: number): Outco
 }
 
 const nameOf = (node: Node): string | null => (node.type === 'name' ? node.name : null);
+
+/** x = 3 on a line of its own: the letter and its value, else null. */
+export function rootOf(groups: Atom[][]): { name: string; value: Node } | null {
+  if (groups.length !== 1 || groups[0].length !== 1 || groups[0][0].rel !== '=') return null;
+  const [{ left, right }] = groups[0];
+  const [name, side] = left.node.type === 'name' ? [left.node.name, right] : [nameOf(right.node), left];
+  if (name === null || variables(side.node).length > 0 || !Number.isFinite(fn(side.node)({}))) return null;
+  return { name, value: side.node };
+}
+
+/** The real solutions of an equation in one unknown, at most ten. */
+export function solutionsOf(eq: Equation, seed: number): number[] {
+  return eq.names.length === 1 ? zeros(eq.f, eq.names, seed).map((p) => p[eq.names[0]]) : [];
+}
+
+/** True when the value is a solution of the equation. */
+export const solves = (eq: Equation, name: string, value: number): boolean =>
+  zeroAt(eq.f, eq.scale, { [name]: value }) === 'yes';
 
 /** Compares two equations by their solutions. */
 export function compareEquations(prev: Equation, cur: Equation, groups: Atom[][], seed: number): Outcome {

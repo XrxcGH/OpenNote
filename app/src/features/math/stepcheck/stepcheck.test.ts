@@ -301,3 +301,94 @@ describe('checkSteps on a page of homework', () => {
     expect(at(['0^0 = 1', '= x^99999999'], 1).verdict).toBe('unchecked');
   });
 });
+
+describe('checkSteps on how students finish and check an answer', () => {
+  const reasons = (results: StepResult[]) => results.map((r) => `${r.verdict} ${r.reason}`);
+
+  it('takes roots listed one to a line as the solutions of the equation above them', () => {
+    // x^2 - 5x + 6 = (x - 2)(x - 3), so the solutions are 2 and 3; x^2 = 16 has 4 and -4; x^2 + 2x - 3 = 0 has 1, -3.
+    expect(reasons(checkSteps(['x^2 - 5x + 6 = 0', '(x-2)(x-3) = 0', 'x = 2', 'x = 3']))).toEqual([
+      'ok start',
+      'ok sameSolutions',
+      'ok oneRoot',
+      'ok oneRoot',
+    ]);
+    expect(verdicts(checkSteps(['x^2 = 16', 'x = 4', 'x = -4']))).toEqual(['ok', 'ok', 'ok']);
+    expect(verdicts(checkSteps(['x^2 + 2x - 3 = 0', 'x = (-2 ± 4)/2', 'x = 1', 'x = -3']))).toEqual([
+      'ok',
+      'ok',
+      'ok',
+      'ok',
+    ]);
+    const latex = ['x^2=9', 'x=3', 'x=-3'].map((text) => ({ text, format: 'latex' as const }));
+    expect(verdicts(checkSteps(latex))).toEqual(['ok', 'ok', 'ok']);
+  });
+
+  it('leaves a partial list unchecked and calls a value that solves nothing broken', () => {
+    // Only x = 4 of x^2 = 16: the line lost x = -4, which is not a slip on its own.
+    expect(reasons(checkSteps(['x^2 = 16', 'x = 4']))[1]).toBe('unchecked lostSolutions');
+    // 4 solves neither x^2 - 5x + 6 = 0 (16 - 20 + 6 = 2) nor x = 2.
+    const r = at(['x^2 - 5x + 6 = 0', 'x = 2', 'x = 4'], 2);
+    expect(r.verdict).toBe('broken');
+    expect(r.suggestion).toBe('x = 2 or x = 3');
+  });
+
+  it('checks the answer put back in as a new chain of numbers', () => {
+    // 3(5) - 4 = 15 - 4 = 11, after x = 5: not a step on from 5.
+    expect(verdicts(checkSteps(['x = 5', '3(5) - 4', '= 15 - 4', '= 11']))).toEqual(['ok', 'ok', 'ok', 'ok']);
+    expect(verdicts(checkSteps(['2x = 6', 'x = 3', '2(3)']))).toEqual(['ok', 'ok', 'ok']);
+    expect(verdicts(checkSteps(['x = 5', '(2+3)(4+5)', '= 45']))).toEqual(['ok', 'ok', 'ok']);
+  });
+
+  it('puts in a letter fixed above when a chain uses it', () => {
+    // With x = 3: 2x is 6, x + 2 is 5, and 7 is not 2x.
+    const r = at(['x = 3', '2x', '= 6'], 2);
+    expect([r.verdict, r.reason, r.params.at]).toEqual(['ok', 'knownValue', 'x = 3']);
+    expect(at(['x = 3', 'y = 2x = 6'], 1).verdict).toBe('ok');
+    expect(at(['x = 3', 'x + 2', '= 5'], 2).verdict).toBe('ok');
+    const wrong = at(['x = 3', '2x', '= 7'], 2);
+    expect([wrong.verdict, wrong.suggestion]).toEqual(['broken', '= 6']);
+    // A new problem forgets the letter: x^2 - 1 against (x - 1)^2 differs at x = 3 too, and as expressions.
+    expect(at(['x = 3', '', 'x^2 - 1', '= (x - 1)^2'], 3).verdict).toBe('broken');
+  });
+
+  it('reads LHS and RHS, let, and letters named equal as labels, not letters multiplied', () => {
+    // 3(5) - 4 = 11.
+    expect(reasons(checkSteps(['LHS = 3(5) - 4 = 11 = RHS']))).toEqual(['ok sameValue']);
+    expect(verdicts(checkSteps(['3x - 4 = 11', 'x = 5', 'LHS = 3(5) - 4 = 11 = RHS']))).toEqual(['ok', 'ok', 'ok']);
+    expect(at(['LHS = 3(5) - 4 = 12 = RHS'], 0).verdict).toBe('broken');
+    expect(at(['let a = b = c'], 0).verdict).toBe('ok');
+    expect(at(['x = y = z = w'], 0).verdict).toBe('ok');
+    expect(at(['LHS = RHS'], 0).verdict).toBe('ok');
+  });
+
+  it('suggests one + C for a wrong antiderivative', () => {
+    // The antiderivative of x^3 is x^4/4 + C.
+    expect(at(['∫ x^3 dx = x^4 + C'], 0).suggestion).toBe('= x^4/4 + C');
+    expect(at(['∫ x^3 dx = x^4'], 0).suggestion).toBe('= x^4/4 + C');
+  });
+
+  it('does not say "follows from your previous line" for an ordinary right step', () => {
+    expect(at(['x = 5', 'x = 5.0'], 1).reason).toBe('sameSolutions');
+    expect(at(['x^2 - 1', '= (x-1)(x+1)'], 1).reason).toBe('equivalent');
+  });
+
+  it('reads answer marks, vulgar fractions, percent, and listed answers', () => {
+    expect(verdicts(checkSteps(['½x = 4', 'x = 8']))).toEqual(['ok', 'ok']);
+    expect(at(['½x = 4', 'x = 2'], 1).verdict).toBe('broken');
+    expect(at(['2x = 10', 'x = 5 ✓'], 1).reason).toBe('sameSolutions');
+    expect(at(['2x = 10', 'ans: x = 5'], 1).reason).toBe('sameSolutions');
+    expect(at(['x^2 - 5x + 6 = 0', 'x = 2, 3'], 1).reason).toBe('sameSolutions');
+    expect(at(['x^2 - 5x + 6 = 0', 'x ∈ {2, 3}'], 1).reason).toBe('sameSolutions');
+    // 25% of 80 is 20, not 25.
+    expect(at(['25% of 80 = 20'], 0).verdict).toBe('ok');
+    expect(at(['25% of 80 = 25'], 0).verdict).toBe('broken');
+  });
+
+  it('uses the default limits when the options are not positive numbers', () => {
+    for (const options of [{ maxLines: -1 }, { maxLines: Number.NaN }, { budgetMs: 'x' as never }, { maxLines: 0 }]) {
+      expect(verdicts(checkSteps(['2x = 4', 'x = 2'], options))).toEqual(['ok', 'ok']);
+    }
+    expect(checkSteps(['2x = 4', 'x = 2'], { maxLines: 1 })[1].reason).toBe('tooLong');
+  });
+});

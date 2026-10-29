@@ -49,6 +49,8 @@ export type ReasonCode =
   | 'followsSystem'
   /** Another equation of a system, written on its own line: the lines after are checked against all of them. */
   | 'systemEquation'
+  | 'oneRoot'
+  | 'knownValue'
   | 'antiderivative'
   /** Right, but the + C of an indefinite integral is missing: a note, not a slip. */
   | 'missingConstant'
