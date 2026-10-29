@@ -62,6 +62,7 @@ import { codeCells } from './codeCells';
 import { kits } from './kits';
 import { kitElectrical } from './kitElectrical';
 import { kitFluidHeat } from './kitFluidHeat';
+import { kitSolids } from './kitSolids';
 
 export const en = {
   common,
@@ -126,4 +127,5 @@ export const en = {
   kits,
   kitElectrical,
   kitFluidHeat,
+  kitSolids,
 } as const;

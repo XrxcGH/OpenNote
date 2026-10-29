@@ -1,9 +1,12 @@
 // Flags for the engineering tools: on through Beta while they are new, off in Stable until people have tried them.
 import type { FlagDef } from '../../app/flags';
 import { FLUIDHEAT_KIT_FLAGS, type FluidHeatKitFlagId } from './fluidheat/flags';
+import { SOLIDS_KIT_FLAGS, type SolidsKitFlagId } from './solids/flags';
 
-// The fluid and heat transfer kit's tool list is plain data the command palette reads at start-up.
+// The kits' tool lists are plain data the command palette reads at start-up, so they are public here.
 export { FLUIDHEAT_TOOLS } from './fluidheat/meta';
+export { SOLIDS_TOOLS } from './solids/meta';
+export { CALC_EVENT, type KitCalcRequest } from './solids/open';
 
 export type EngineeringFlagId =
   | 'engineering.fbd'
@@ -11,7 +14,8 @@ export type EngineeringFlagId =
   | 'engineering.circuit'
   | 'tables.units'
   | 'kits.electrical'
-  | FluidHeatKitFlagId;
+  | FluidHeatKitFlagId
+  | SolidsKitFlagId;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
@@ -39,4 +43,5 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
     'The circuits, electronics, power, instrument, data-fitting, and energy tools in one window, with worked steps.',
   ),
   flag('tables.units', 'Units and engineering notation in smart table columns, with totals that convert units.'),
+  ...SOLIDS_KIT_FLAGS,
 ];

@@ -23,6 +23,17 @@ export { openFluidHeatKit } from './fluidheat/open';
 /** The fluid and heat transfer kit window, loaded the first time it opens. */
 export const loadFluidHeatKit = () => import('./fluidheat/ui/FluidHeatKit');
 
+export { openSolidsKit } from './solids/open';
+
+/** A live calculation block of the solid mechanics kit. */
+export async function mountKitCalc(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
+  const [{ mountPanel }, { KitCalcPanel }] = await Promise.all([import('./mount'), import('./solids/ui/KitCalcPanel')]);
+  return mountPanel(KitCalcPanel)(container, props);
+}
+
+/** The solid mechanics kit window, loaded the first time it opens. */
+export const loadSolidsKit = () => import('./solids/ui/SolidsKit');
+
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
   return mountPanel(FbdPanel)(container, props);

@@ -145,7 +145,7 @@ for (const [id, title, command] of [
 }
 
 /** A block handle for a mount that finishes later: updates before then are kept and passed on. */
-function lazyHandle<P>(pending: Promise<{ update(props: P): void; destroy(): void }>) {
+export function lazyHandle<P>(pending: Promise<{ update(props: P): void; destroy(): void }>) {
   let handle: { update(props: P): void; destroy(): void } | null = null;
   let latest: P | null = null;
   let gone = false;
