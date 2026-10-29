@@ -590,3 +590,16 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
 | Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
 | Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |
+## Subject kit foundations
+
+(Beta 6. On in Beta and off in Stable, with the kit flags. Help: [Data, seeds, and figures in the subject kits](help/subject-kit-data-and-figures.md).)
+
+| Feature                      | What it does                                                                                                                                                                                 | Status                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Data input                   | A data field reads pasted text, a CSV or TSV file, or a table on the open page, with missing values, decimal commas, role pickers, a long and wide reshape, a matrix grid, and a value list. | Built, untested by hand |
+| Distributions                | Exact and noncentral distributions, the studentized range, exact proportion and count intervals, and exact null distributions for rank tests, for every subject kit to use.                  | Built, untested by hand |
+| Curve fitting and likelihood | Weighted Levenberg-Marquardt fitting with standard errors and bands, and maximum likelihood with standard errors and profile intervals.                                                      | Built, untested by hand |
+| Repeatable random results    | A seeded generator that gives the same results on every computer, with a seed field that shows, takes, and renews the seed.                                                                  | Built, untested by hand |
+| Plots and coefficient tables | Histograms, densities, ECDF, Q-Q, box, fit-band, step, forest, and ROC plots, and a coefficient table that states each verdict in words.                                                     | Built, untested by hand |
+| Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
+| Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
