@@ -2,6 +2,7 @@
 // questionnaires, and qualitative coding. Tool titles, field labels, row labels, worked-step sentences, and the
 // problems an input can have. Each tool's words live in ./kitMind so no file grows too long.
 import { coding } from './kitMind/coding';
+import { observe } from './kitMind/observe';
 import { agreement } from './kitMind/agreement';
 import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
@@ -89,9 +90,21 @@ export const kitMind = {
     tallyLine: 'Line {line} needs a unit and a category separated by a bar: ad 1 | humor | 2.',
     tallyCount: 'The count on line {line} must be a whole number of at least 0.',
     noTally: 'Every count is 0, so there is nothing to tally.',
+    ethogramLine: 'Line {line} needs a behavior name, then event or state: rest | state.',
+    sameBehavior: 'The behavior "{name}" is in the ethogram twice.',
+    logLine: 'Line {line} needs a time in seconds, a behavior, and start or stop for a state: 30 | feed | start.',
+    logTime: 'The time on line {line} must be from 0 to the session length, {session} s.',
+    logOrder: 'Line {line} is earlier than the line before it. Keep the log in time order.',
+    unknownBehavior: '"{name}" is not in the ethogram.',
+    intervalLong: 'The interval is longer than the session, so there is no whole interval to score.',
+    record: 'Use only 1 and 0, one for each interval.',
+    sameIntervals: 'Observer 1 has {a} intervals and observer 2 has {b}. They need the same number.',
+    fewPhases: 'This needs at least 2 phases, such as a baseline A and an intervention B.',
+    phaseLine: 'Line {line} needs a phase name, a bar, then its values: A | 3, 4, 5.',
   },
   sdt,
   agreement,
   scales,
   coding,
+  observe,
 } as const;

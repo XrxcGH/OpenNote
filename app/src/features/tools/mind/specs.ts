@@ -6,4 +6,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   scales: () => import('./scales/spec').then((m) => m.spec),
   agreement: () => import('./agreement/spec').then((m) => m.spec),
   coding: () => import('./coding/spec').then((m) => m.spec),
+  observe: () => import('./observe/spec').then((m) => m.spec),
 };
