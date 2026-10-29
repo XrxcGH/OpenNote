@@ -23,6 +23,21 @@ import {
   type ChainState,
   type Outcome,
 } from './compare';
+import {
+  COEFFICIENTS,
+  DERIVATIVE_LABEL,
+  type Formula,
+  HAS_DERIVATIVE,
+  boundText,
+  derivativeChain,
+  factoringSlip,
+  fitsLine,
+  isFormula,
+  limitBodies,
+  putInAll,
+  sameNumber,
+  spreadOver,
+} from './forms';
 import { latexToLine } from './latex';
 import { newContext, readLine, variables, type Atom, type Scalar, type Statement, type Value } from './read';
 import { normalize, problemLead, splitSteps } from './text';
@@ -69,6 +84,15 @@ class Checker {
   /** Lines whose missing + C a later line added. */
   readonly constantAdded = new Set<number>();
 
+  /**
+   * A = πr^2, then r = 2: the formula, and the values given for some of its letters on the lines after it. The next
+   * line in the formula's letters is checked against the formula with those values put in.
+   */
+  private formula: Formula | null = null;
+
+  /** y' = 2x: the derivative's name and what it was worked out to, for a y' = 0 on the line after. */
+  private label: { name: string; right: string } | null = null;
+
   /** Where earlier lines of this problem have no value: denominators, and what ln and sqrt are taken of. */
   private guards: Guard[] = [];
 
@@ -99,24 +123,85 @@ class Checker {
     this.facts = null;
     this.noConstant = null;
     this.guards = [];
+    this.formula = null;
+    this.label = null;
+  }
+
+  /**
+   * A = πr^2, then r = 2 (or u = 0, a = 2, t = 5 after v = u + at): values for some of the formula's letters, given
+   * rather than worked out. Null when the line is not that, or gives every letter the formula has left: the answer.
+   */
+  private givenValues(statement: Relations, roots: { name: string; value: Node }[]): Outcome | null {
+    const prev = this.prev;
+    if (!prev || this.facts) return null;
+    // v = 0 + 2 × 5 after v = u + at puts values in; it gives none.
+    if (isFormula(prev) && fitsLine(prev, statement, new Map())) return null;
+    const formula = this.formula ?? (isFormula(prev) ? { statement: prev, values: new Map<string, Node>() } : null);
+    if (!formula || formula.statement !== prev) return null;
+    const open = [...namesOfGroups(prev.groups)].filter((name) => !formula.values.has(name));
+    if (!roots.every((root) => open.includes(root.name)) || roots.length >= open.length) return null;
+    for (const root of roots) formula.values.set(root.name, root.value);
+    this.formula = formula;
+    this.lastValue = null;
+    this.fromRelation = true;
+    return outcome('ok', 'givenValue', 'given', 1, { at: boundText(new Map(roots.map((r) => [r.name, r.value]))) });
+  }
+
+  /** The line after A = πr^2 and r = 2, checked against A = π(2)^2. Null when it is not an equation in those letters. */
+  private withValues(formula: Formula, statement: Relations, seed: number): Outcome | null {
+    const values = [...formula.values];
+    const put = (side: Scalar): Scalar => ({
+      ...side,
+      node: values.reduce((n, [name, value]) => substitute(n, name, value), side.node),
+      alt: undefined,
+    });
+    const [atom] = formula.statement.groups[0];
+    const a = equationOf([[{ ...atom, left: put(atom.left), right: put(atom.right) }]]);
+    const b = equationOf(statement.groups);
+    if (!a || !b || !b.names.every((name) => a.names.includes(name))) return null;
+    const found = compareEquations(a, b, statement.groups, seed);
+    if (found.verdict !== 'ok') return found;
+    return outcome('ok', 'knownValue', found.method, found.confidence, { at: boundText(formula.values) });
+  }
+
+  /**
+   * v = 0 + 2 × 5 after v = u + at: the line before with numbers put in for some of its letters. Nothing to check
+   * yet, and the values are kept for the lines after. Null when the line is not that.
+   */
+  private valuesPutIn(prev: Relations, statement: Relations, cur: Set<string>): Outcome | null {
+    if (!isFormula(prev) || statement.groups.length !== 1 || statement.groups[0].length !== 1) return null;
+    const had = namesOfGroups(prev.groups);
+    if (cur.size === 0 || cur.size >= had.size || ![...cur].every((name) => had.has(name))) return null;
+    const bound = new Map<string, Node>();
+    if (!fitsLine(prev, statement, bound) || bound.size === 0) return null;
+    const clash = [...bound].some(([name, value]) => {
+      const known = this.known.get(name);
+      return known !== undefined && !sameNumber(fn(known)({}), fn(value)({}));
+    });
+    if (clash) return null;
+    for (const [name, value] of bound) this.known.set(name, value);
+    return outcome('ok', 'valuesPutIn', 'given', 1, { at: boundText(bound) });
   }
 
   step(text: string, index: number): Outcome {
     const lead = problemLead(normalize(text));
     if (lead.starts) this.reset();
     // 2x + 3 = 7 → 2x = 4 → x = 2: each part a step after the one before, and the line's mark the first slip in it.
-    const parts = splitSteps(lead.rest);
+    const parts = splitSteps(lead.rest).flatMap(derivativeChain);
     if (parts.length === 1) return this.part(lead.rest, this.seed + index * 101, index);
     return combine(parts.map((part, k) => this.part(part, this.seed + index * 101 + k * 13, index)));
   }
 
   private part(text: string, seed: number, index: number): Outcome {
+    const set = this.setToValue(text);
+    if (set) return this.relations(set, seed, index);
     const statement = readLine(text, this.ctx);
     switch (statement.kind) {
       case 'blank':
         this.reset();
         return outcome('ok', 'note', 'given', 1);
       case 'given':
+        for (const [name, value] of statement.values ?? []) this.known.set(name, value);
         return outcome('ok', statement.reason, 'given', 1);
       case 'unreadable':
         this.reset();
@@ -126,6 +211,30 @@ class Checker {
       case 'relations':
         return this.relations(statement, seed, index);
     }
+  }
+
+  /**
+   * y' = 0 after y' = 2x: the derivative set to a value, so the line is the equation 2x = 0 to solve, and a new chain
+   * starts from it. Null for any other line; a derivative label is kept for the line after.
+   */
+  private setToValue(text: string): Relations | null {
+    const before = this.label;
+    this.label = null;
+    const found = DERIVATIVE_LABEL.exec(text.trim());
+    if (!found || /[=<>≤≥≠]/.test(found[2])) return null;
+    const [name, right] = [found[1].replace(/\s+/g, ''), found[2].trim()];
+    this.label = { name, right };
+    if (!before || before.name !== name || HAS_DERIVATIVE.test(right)) return null;
+    const statement = readLine(`${before.right} = ${right}`, this.ctx);
+    if (statement.kind !== 'relations') return null;
+    this.label = before;
+    this.prev = null;
+    this.lastValue = null;
+    this.fromRelation = false;
+    this.roots = null;
+    this.facts = null;
+    this.formula = null;
+    return statement;
   }
 
   private noteIntegrals(parts: Value[]) {
@@ -154,6 +263,8 @@ class Checker {
    * they are compared again with those values put in.
    */
   private link(a: Value, b: Value, seed: number): Outcome {
+    const inside = limitBodies(a, b, this.chain, seed);
+    if (inside) return inside;
     const found = compareValues(a, b, this.chain, seed);
     if (found.verdict === 'ok' || this.chain.anti) return found;
     if (a.kind !== 'scalar' || b.kind !== 'scalar' || a.integrals.length + b.integrals.length > 0) return found;
@@ -167,9 +278,12 @@ class Checker {
       const at = used.map((name) => `${name} = ${numberText(fn(known(name))({}))}`).join(', ');
       return outcome('ok', 'knownValue', 'evaluation', again.confidence, { at });
     }
-    // 2x + 3, then = 7, with no x given: true for some x, so not a slip that can be shown.
-    if (found.verdict === 'broken' && variables(nb).length === 0 && variables(na).length > 0) {
-      return someValues({ ...a, node: na }, { ...b, node: nb }, seed) ?? found;
+    if (variables(nb).length === 0 && variables(na).length > 0) {
+      // 3x^2 + 2x, then = 3(2)^2 + 2(2): a number put in for each letter, so the lines after work out its value.
+      const bound = putInAll(na, nb);
+      if (bound) return outcome('ok', 'valuesPutIn', 'given', 1, { at: boundText(bound) });
+      // y = 2x + 3, then = 7, with no x given: true for some x, so not a slip that can be shown.
+      if (found.verdict === 'broken') return someValues({ ...a, node: na }, { ...b, node: nb }, seed) ?? found;
     }
     return found;
   }
@@ -207,16 +321,25 @@ class Checker {
     return links.length > 0 ? combine(links) : start();
   }
 
-  private relations(statement: Relations, seed: number, index: number): Outcome {
+  private relations(read: Relations, seed: number, index: number): Outcome {
+    let statement = read;
     const cur = namesOfGroups(statement.groups);
     const before = new Set([...(this.prev ? namesOfGroups(this.prev.groups) : []), ...namesOf(this.facts ?? [])]);
     const roots = rootsOf(statement.groups);
+    const formula = this.quadraticFormula(statement, cur, roots);
+    if (formula && 'verdict' in formula) return formula;
+    if (formula) statement = formula;
     // 3y = 9 after x = 2: none of the same letters, so a new problem. But y = 3 after x = 2 gives another value for
     // the check below them (x + y = 5), so the values given so far are kept.
     if (this.prev && cur.size > 0 && before.size > 0 && ![...cur].some((name) => before.has(name))) {
       const kept = roots ? new Map(this.known) : null;
       this.reset();
       for (const [name, value] of kept ?? []) this.known.set(name, value);
+    }
+    const given = roots ? this.givenValues(statement, roots) : null;
+    if (given) {
+      for (const root of roots ?? []) this.known.set(root.name, root.value);
+      return given;
     }
     const prev = this.prev;
     const step = this.relationStep(statement, cur, seed, index);
@@ -237,6 +360,8 @@ class Checker {
 
   private relationStep(statement: Relations, cur: Set<string>, seed: number, index: number): Outcome {
     const prev = this.prev;
+    const formula = this.formula;
+    this.formula = null;
     this.prev = statement;
     const single = statement.groups.length === 1 && statement.groups[0].length === 1;
     this.lastValue = single ? statement.groups[0][0].right : null;
@@ -248,7 +373,7 @@ class Checker {
     const isSystem = equations && statement.groups.length === 1 && statement.groups[0].length > 1;
     if (!prev) {
       if (isSystem && cur.size > 1) this.facts = [...statement.groups[0]];
-      return start();
+      return this.firstClaim(statement, seed) ?? start();
     }
     if (equations && allEquations(prev)) {
       const known = this.facts ? namesOf(this.facts) : null;
@@ -259,6 +384,10 @@ class Checker {
           return found;
         }
       }
+      const withValues = formula && formula.statement === prev ? this.withValues(formula, statement, seed) : null;
+      if (withValues) return withValues;
+      const putIn = this.valuesPutIn(prev, statement, cur);
+      if (putIn) return putIn;
       const [a, b] = [equationOf(prev.groups), equationOf(statement.groups)];
       const listed = roots && b ? this.nextRoot(roots, statement, b, seed) : null;
       if (listed) return listed;
@@ -266,6 +395,8 @@ class Checker {
       const oneUnknown = cur.size === 1 && prevNames.size === 1 && [...cur][0] === [...prevNames][0];
       if (a && b && (oneUnknown || sameEquation(a, b, seed))) {
         const found = compareEquations(a, b, statement.groups, seed);
+        const slip = found.verdict === 'ok' ? null : factoringSlip(prev, statement, a, seed);
+        if (slip) return slip;
         if (found.reason === 'lostSolutions') this.startRoots(a, statement, index, seed);
         return found;
       }
@@ -275,6 +406,59 @@ class Checker {
     if (!equations && !allEquations(prev)) return compareInequalities(prev.groups, statement.groups, seed);
     if (!equations && allEquations(prev)) return start();
     return outcome('unchecked', 'unrelated', 'none', 0);
+  }
+
+  /**
+   * sin(a + b) = sin(a) + sin(b) or (x + y)^2 = x^2 + y^2 on a first line: a function or power spread over a sum,
+   * a claim that holds for every value or not at all. 2(x - 3) = 2x - 3: sides a fixed amount apart, never equal.
+   * Null for a line that may be an equation to solve, such as x^2 = 2x.
+   */
+  private firstClaim(statement: Relations, seed: number): Outcome | null {
+    if (statement.groups.length !== 1 || statement.groups[0].length !== 1) return null;
+    const [{ left, rel, right }] = statement.groups[0];
+    if (rel !== '=' || left.integrals.length + right.integrals.length > 0) return null;
+    if (variables(left.node).length === 0 || variables(right.node).length === 0) return null;
+    const found = compareValues(left, right, this.chain, seed);
+    if (found.reason === 'constantOff')
+      return outcome('unchecked', 'neverEqual', 'numeric', 0.9, {
+        offset: String(found.params.offset).replace(/^-/, ''),
+      });
+    if (!spreadOver(left.node, right.node) && !spreadOver(right.node, left.node)) return null;
+    if (found.verdict === 'broken') return { ...found, suggestion: undefined };
+    return found.verdict === 'unchecked' ? outcome('unchecked', 'cannotDecide', 'none', 0) : null;
+  }
+
+  /**
+   * The quadratic formula's letters after x^2 - 3x + 2 = 0. A line such as a = 1, b = -3, c = 2 gives them, and the
+   * equation stays the one later lines are checked against. The formula with letters is a note until all three are
+   * given, and after that the line with them put in. Null for other lines.
+   */
+  private quadraticFormula(
+    statement: Relations,
+    cur: Set<string>,
+    roots: { name: string; value: Node }[] | null,
+  ): Outcome | Relations | null {
+    const prev = this.prev;
+    const names = prev ? [...namesOfGroups(prev.groups)] : [];
+    if (!prev || names.length !== 1 || COEFFICIENTS.has(names[0]) || !equationOf(prev.groups)) return null;
+    const x = names[0];
+    const letters = [...cur].filter((name) => COEFFICIENTS.has(name));
+    if (![...cur].every((name) => name === x || COEFFICIENTS.has(name))) return null;
+    if (roots && !cur.has(x) && letters.length >= 2) {
+      for (const root of roots) this.known.set(root.name, root.value);
+      return outcome('ok', 'coefficients', 'given', 1, { at: boundText(new Map(roots.map((r) => [r.name, r.value]))) });
+    }
+    if (!cur.has(x) || letters.length < 3) return null;
+    if (!letters.every((name) => this.known.has(name))) return outcome('ok', 'note', 'given', 1);
+    const put = (side: Scalar): Scalar => ({
+      ...side,
+      node: letters.reduce((n, name) => substitute(n, name, this.known.get(name) ?? build.num(0)), side.node),
+      alt: undefined,
+    });
+    const groups = statement.groups.map((g) =>
+      g.map((atom) => ({ ...atom, left: put(atom.left), right: put(atom.right) })),
+    );
+    return { ...statement, groups };
   }
 
   /** x = 2 after (x - 2)(x - 3) = 0: one solution, and the next lines may list the others. */

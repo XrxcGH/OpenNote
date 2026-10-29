@@ -43,7 +43,12 @@ const VULGAR: Record<string, string> = {
 
 /** Plain marks for the symbols people type or paste. */
 export function normalize(text: string): string {
-  return tupleVectors(detCall(groupDivision(normalizeMarks(text))));
+  return tupleVectors(detCall(groupDivision(normalizeMarks(degrees(text)))));
+}
+
+/** cos(60°) is cos(60 pi/180): degrees as radians. Not °C or °F, temperatures. */
+function degrees(text: string): string {
+  return text.replace(/(\d+(?:\.\d+)?)\s*°(?!\s*[CF]\b)/g, '($1*pi/180)');
 }
 
 function normalizeMarks(text: string): string {
@@ -123,16 +128,24 @@ const NUM = String.raw`-?\d+(?:\.\d+)?`;
 const TUPLE = new RegExp(String.raw`(?<![\w)\]])\(\s*${NUM}(?:\s*,\s*${NUM}){1,3}\s*\)`, 'g');
 const VECTOR = String.raw`(?:\(\s*${NUM}(?:\s*,\s*${NUM}){1,3}\s*\)|\[[^[\]]*\])`;
 const JOINED = new RegExp(String.raw`${VECTOR}\s*[*×+-]\s*${VECTOR}`);
+/** 3(1, 2, 3) or 3 × (1, 2, 3): a number times a tuple, a vector scaled. Not C(5, 2), whose letter is a name. */
+const SCALED = new RegExp(
+  String.raw`(?<![\w.])(\d+(?:\.\d+)?)\s*[*×·]?\s*\(\s*(${NUM}(?:\s*,\s*${NUM}){1,3})\s*\)`,
+  'g',
+);
 
 /**
  * (1, 2, 3) · (4, -5, 6) and ⟨1, 2⟩ + ⟨3, 4⟩ (whose brackets are square by now): vectors, written as [1, 2, 3]. Only
- * when two of them are joined by a product, a sum or a difference, or a line is "= (0, 0, 1)" after such a line: a
+ * when two of them are joined by a product, a sum or a difference, one is scaled by a number (3(1, 2, 3)), or a
+ * line is "= (0, 0, 1)" after such a line: a
  * lone (1, 2) may be a point or an interval.
  */
 function tupleVectors(text: string): string {
   const answer = new RegExp(String.raw`^=\s*\(\s*${NUM}(?:\s*,\s*${NUM}){1,3}\s*\)$`).test(text);
-  if (!answer && !JOINED.test(text)) return text;
-  return text.replace(TUPLE, (tuple) => `[${tuple.slice(1, -1)}]`);
+  const scaled = new RegExp(SCALED.source).test(text);
+  if (!answer && !scaled && !JOINED.test(text)) return text;
+  const vectors = text.replace(SCALED, (_, k: string, entries: string) => `${k}[${entries}]`);
+  return vectors.replace(TUPLE, (tuple) => `[${tuple.slice(1, -1)}]`);
 }
 
 /** det [[2, 1], [5, 3]] is det([[2, 1], [5, 3]]). */
@@ -202,6 +215,17 @@ function isWord(run: string): boolean {
 }
 
 /** True when the text has a word in it, not just letters multiplied together. */
+/**
+ * slope = (5 - 1)/(3 - 1) or Area = πr^2: a word naming the value, like LHS, dropped so the rest is checked. Only
+ * when one word stands before the first = and nothing after it is a word.
+ */
+export function dropWordLabel(text: string): string {
+  const found = /^([a-zA-Z]+)\s*=\s*(?!=)/.exec(text);
+  if (!found || !isWord(found[1])) return text;
+  const rest = text.slice(found[0].length);
+  return hasWords(rest) ? text : rest;
+}
+
 export function hasWords(text: string): boolean {
   return (text.match(/[a-zA-Z]+/g) ?? []).some(isWord);
 }
@@ -299,6 +323,12 @@ export function dropSideLabels(text: string): string | null {
 
 /** Answers listed after one letter, such as x ∈ {2, 3}, written out as x = 2 or x = 3. The braces may be left out. */
 export function listedAnswers(text: string): string {
+  // x = 2 or -2: the letter is meant on each value, x = 2 or x = -2.
+  const either = /^([a-zA-Z])\s*=\s*(-?[\d./]+)((?:\s+or\s+-?[\d./]+)+)$/.exec(text);
+  if (either) {
+    const values = [either[2], ...either[3].split(/\s+or\s+/).filter(Boolean)];
+    return values.map((value) => `${either[1]} = ${value.trim()}`).join(' or ');
+  }
   const found = /^([a-zA-Z])\s*(?:=|∈)\s*\{?\s*(-?[\d./]+(?:\s*,\s*-?[\d./]+)+)\s*\}?$/.exec(text);
   if (!found) return text;
   return found[2]

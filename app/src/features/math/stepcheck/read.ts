@@ -22,6 +22,7 @@ import {
   dropMarks,
   dropNotes,
   dropSideLabels,
+  dropWordLabel,
   hasWords,
   listedAnswers,
   normalize,
@@ -50,6 +51,8 @@ export interface Scalar {
   /** The other reading of a slash before a product: 1/2x read as 1/(2x), for a line that is right only that way. */
   alt?: Node;
   text: string;
+  /** lim_(h→0) of a body with other letters in it: the limit's letter, point, and body, to compare with the next. */
+  limit?: { x: string; to: number; body: Node };
 }
 
 export type Value =
@@ -70,7 +73,8 @@ export interface Atom {
 
 export type Statement =
   | { kind: 'blank' }
-  | { kind: 'given'; reason: 'definition' | 'substitution' | 'note' }
+  /** values: a = b = c = 2 gives each letter the number at its end. */
+  | { kind: 'given'; reason: 'definition' | 'substitution' | 'note'; values?: [string, Node][] }
   | { kind: 'values'; parts: Value[]; continues: boolean }
   /** Equations and inequalities: any of the groups (or), each group all of its atoms (and). */
   | {
@@ -231,7 +235,31 @@ type Worked = { node: Node; answer?: string } | { integral: Omit<Integral, 'name
 function limitValue(q: Extract<Question, { kind: 'limit' }>): Worked {
   const found = limitOf(q);
   if (found.ok) return 'infinite' in found.value ? { infinite: found.value.infinite } : { node: found.value.node };
-  if (variables(q.body).some((name) => name !== q.x)) throw new Unreadable('cannotEvaluate');
+  const free = variables(q.body).filter((name) => name !== q.x);
+  if (free.length === 1) return { node: limitIn(q, free[0]) };
+  if (free.length > 0) throw new Unreadable('cannotEvaluate');
+  return { node: nodeOf(numericLimit(q)) };
+}
+
+/**
+ * lim_(h→0) ((x + h)^2 - x^2)/h, with x left free: the limit at x = -3 to 6, each worked out on its own, and the
+ * polynomial in x through those values (2x here). Throws when they fit no polynomial, as for sin(x + h).
+ */
+function limitIn(q: Extract<Question, { kind: 'limit' }>, p: string): Node {
+  const values: number[] = [];
+  for (let k = -3; k <= 6; k += 1) {
+    const at = { ...q, body: substitute(q.body, p, nodeOf(k)) };
+    const found = limitOf(at);
+    const value = found.ok && 'node' in found.value ? valueOf(found.value.node) : numericLimit(at);
+    values.push(Math.round(value * 1e6) / 1e6);
+  }
+  const node = newtonPolynomial(values, p, -3);
+  if (!node) throw new Unreadable('cannotEvaluate');
+  return node;
+}
+
+/** A limit in one letter by values ever closer to the point, when they settle. */
+function numericLimit(q: Extract<Question, { kind: 'limit' }>): number {
   const f = evaluator(q.body);
   const to = boundValue(q.to);
   const at = (h: number, side: 1 | -1) =>
@@ -242,7 +270,7 @@ function limitValue(q: Extract<Question, { kind: 'limit' }>): Worked {
   if (!settled) throw new Unreadable('cannotEvaluate');
   const values = estimates.map((row) => row[2]);
   if (values.length === 2 && Math.abs(values[0] - values[1]) > 1e-5) throw new Unreadable('cannotEvaluate');
-  return { node: nodeOf(Math.round(values[0] * 1e6) / 1e6) };
+  return Math.round(values[0] * 1e6) / 1e6;
 }
 
 function definiteValue(q: Extract<Question, { kind: 'integral' }>, from: Bound, to: Bound): Worked {
@@ -296,7 +324,16 @@ function polynomialSum(q: Extract<Question, { kind: 'sum' }>): Node | null {
   const term = evaluator(q.body);
   const sums = [0];
   for (let k = a; sums.length < 10; k += 1) sums.push(sums[sums.length - 1] + term({ [q.x]: k }));
-  if (!sums.every(Number.isFinite)) return null;
+  return newtonPolynomial(sums, n, a - 1);
+}
+
+/**
+ * The polynomial in `n` through values[i] at n = start + i (ten of them), by Newton's forward differences, so its
+ * degree is checked past itself. Null when nothing up to degree 7 fits.
+ */
+function newtonPolynomial(values: number[], n: string, start: number): Node | null {
+  if (!values.every(Number.isFinite)) return null;
+  const sums = values;
   const leading: number[] = [];
   let row = sums;
   while (row.length > 0) {
@@ -308,6 +345,7 @@ function polynomialSum(q: Extract<Question, { kind: 'sum' }>): Node | null {
   const size = Math.max(1, ...sums.map(Math.abs));
   const degree = leading.reduce((d, v, j) => (Math.abs(v) > 1e-9 * size ? j : d), 0);
   if (degree > 7) return null;
+  const a = start + 1;
   // S(n) = Σ_j Δ^j S(a - 1) · C(n - a + 1, j).
   let out: Node = build.num(0);
   let choose: Node = build.num(1);
@@ -343,6 +381,10 @@ interface Holder {
   worked: Worked;
 }
 
+/** _0^2 or _0^π after [F]: a bound may be a letter such as π, which \w does not match. */
+const BOUND = String.raw`(\([^()]*\)|-?[\p{L}\p{N}_.]+)`;
+const BOUNDS = new RegExp(String.raw`^\]\s*_\s*${BOUND}\s*\^\s*${BOUND}`, 'u');
+
 /** Replaces each calculus part with a letter, worked out. Returns the text with letters, and the letters. */
 function takeCalculus(text: string, ctx: Context): { text: string; holders: Holder[]; whole?: Question } {
   const holders: Holder[] = [];
@@ -364,7 +406,7 @@ function takeCalculus(text: string, ctx: Context): { text: string; holders: Hold
         else if (out[from] === '[' && --depth === 0) break;
       }
       if (from < 0) throw new Unreadable();
-      const bounds = /^\]\s*_\s*(\([^()]*\)|-?[\w.]+)\s*\^\s*(\([^()]*\)|-?[\w.]+)/.exec(out.slice(start));
+      const bounds = BOUNDS.exec(out.slice(start));
       if (!bounds) throw new Unreadable();
       end = start + bounds[0].length;
       const body = parse(out.slice(from + 1, start));
@@ -497,6 +539,10 @@ export function readValue(raw: string, ctx: Context, units: boolean, at?: [strin
       : whole.kind
     : undefined;
   let answer = holders.length === 1 && 'node' in holders[0].worked ? holders[0].worked.answer : undefined;
+  const limit =
+    whole?.kind === 'limit' && variables(whole.body).length > 1 && !('infinite' in whole.to)
+      ? { x: whole.x, to: valueOf(whole.to.node), body: applySubstitutions(whole.body, ctx) }
+      : undefined;
   if (leibniz.answer) [origin, answer] = ['derivative', leibniz.answer];
   if (at) {
     // d/dx(x^3) at x = 2: the value there.
@@ -514,6 +560,7 @@ export function readValue(raw: string, ctx: Context, units: boolean, at?: [strin
     ...(origin ? { origin } : {}),
     ...(answer ? { answer } : {}),
     ...(alt ? { alt } : {}),
+    ...(limit ? { limit } : {}),
   };
 }
 
@@ -560,11 +607,11 @@ function scalarOf(value: Value): Scalar {
 
 /** Reads one line. Definitions and substitutions are added to the context for the lines after it. */
 export function readLine(raw: string, ctx: Context): Statement {
-  const plain = dropMarks(dropNotes(dropLead(normalize(raw))));
+  const plain = dropWordLead(dropMarks(dropNotes(dropLead(normalize(raw)))));
   if (plain === '') return { kind: 'blank' };
   const labelled = dropSideLabels(plain);
   if (labelled === null) return { kind: 'given', reason: 'note' };
-  const text = listedAnswers(labelled);
+  const text = listedAnswers(dropWordLabel(labelled));
   if (text.length > 2000) return { kind: 'unreadable', reason: 'tooLong' };
   // Problem 2, or 2x = 6 divide by 2: words, not letters multiplied together.
   if (hasWords(text)) return { kind: 'unreadable', reason: 'notMath' };
@@ -575,6 +622,17 @@ export function readLine(raw: string, ctx: Context): Statement {
     if (error instanceof RangeError) return { kind: 'unreadable', reason: 'tooLong' };
     return { kind: 'unreadable', reason: 'unreadable' };
   }
+}
+
+/**
+ * let x = y = z = 1, set y' = 0, ans x = 2: the word before the working is dropped, so it is never read as letters
+ * multiplied together. let u = x^2 keeps its word: it names a substitution.
+ */
+function dropWordLead(text: string): string {
+  const lead = /^(?:let|set|put|ans|answer|check)\s+/i.exec(text);
+  if (!lead) return text;
+  const rest = text.slice(lead[0].length);
+  return /^(?:let|set|put)\s/i.test(lead[0]) && /^[a-zA-Z]\s*=[^=]*$/.test(rest) ? text : rest;
 }
 
 /** d/dx(x^3) at x = 2, or |_(x=2): the point, and the line without it. */
@@ -598,11 +656,15 @@ function readStatement(line: string, ctx: Context): Statement {
   const split = splitLine(text);
   const { clauses } = split;
   const unitLine = singleLetterUnits(text);
-  // x = y = z, or let a = b = c: letters named equal, a note rather than a step to check.
+  // x = y = z, or a = b = c = 2: letters named equal (and given the number at the end), a note, not a step to check.
   const [only] = clauses;
-  const bare = (side: string) => /^(?:let\s+)?[a-zA-Z]$/i.test(side);
-  if (clauses.length === 1 && only.sides.length > 2 && only.rels.every((r) => r === '=') && only.sides.every(bare)) {
-    return { kind: 'given', reason: 'note' };
+  if (clauses.length === 1 && only.sides.length > 2 && only.rels.every((r) => r === '=')) {
+    const letters = only.sides.slice(0, -1);
+    const end = only.sides[only.sides.length - 1].trim();
+    if (letters.every((side) => /^[a-zA-Z]$/.test(side.trim())) && /^(?:[a-zA-Z]|-?\d+(?:\.\d+)?)$/.test(end)) {
+      if (!/^-?\d/.test(end)) return { kind: 'given', reason: 'note' };
+      return { kind: 'given', reason: 'note', values: letters.map((side) => [side.trim(), parse(end)]) };
+    }
   }
   const valueAt = (side: string, i: number, units: boolean) =>
     readValue(side, ctx, units, point && point.side === i ? point.at : undefined);

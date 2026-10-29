@@ -103,4 +103,65 @@ export function notationFamilies(ok: Add, bad: AddBroken): void {
   ok('arrows', ['3x - 1 = 8 ⇒ 3x = 9 ⇒ x = 3']);
   ok('arrows', ['2x + 3 = 7', '∴ x = 2']);
   bad('arrows', ['2x + 3 = 7', '2x = 4 → x = 3'], 1);
+
+  namedFamilies(ok, bad);
+  formulaFamilies(ok, bad);
+}
+
+/** Letters named equal, and a derivative set to zero. */
+function namedFamilies(ok: Add, bad: AddBroken): void {
+  // Letters named equal to a number: a = b = c = k, so a + b + c = 3k.
+  for (const k of [1, 2, 5]) {
+    ok('named-equal', [`a = b = c = ${k}`, 'a + b + c', `= ${3 * k}`]);
+    ok('named-equal', [`let x = y = z = ${k}`]);
+    bad('named-equal', [`a = b = c = ${k}`, 'a + b + c', `= ${3 * k + 1}`], 2);
+  }
+
+  // A derivative set to zero: y = x^2 - 2px has y' = 2x - 2p, zero at x = p.
+  for (const p of [1, 2, 3, 5]) {
+    ok('set-to-zero', [`y = x^2 - ${2 * p}x`, `y' = 2x - ${2 * p}`, "y' = 0", `x = ${p}`]);
+    ok('set-to-zero', [`f(x) = x^2 - ${2 * p}x`, `f'(x) = 2x - ${2 * p}`, "f'(x) = 0", `2x = ${2 * p}`, `x = ${p}`]);
+    ok('set-to-zero', [`y = x^2 - ${2 * p}x`, `dy/dx = 2x - ${2 * p}`, 'dy/dx = 0', `x = ${p}`]);
+    ok('set-to-zero', [`y = x^2 - ${2 * p}x`, `y' = 2x - ${2 * p} = 0`, `x = ${p}`]);
+    ok('set-to-zero', [`y = x^2 - ${2 * p}x`, `y' = 2x - ${2 * p}`, "set y' = 0", `x = ${p}`]);
+    bad('set-to-zero', [`y = x^2 - ${2 * p}x`, `y' = 2x - ${2 * p}`, "y' = 0", `x = ${p + 1}`], 3);
+  }
+}
+
+/** The quadratic formula, factoring, first principles, and a function spread over a sum. */
+function formulaFamilies(ok: Add, bad: AddBroken): void {
+  // The quadratic formula for (x - r)(x - s) = x^2 - (r + s)x + rs: roots r and s.
+  for (const [r, s] of [
+    [1, 2],
+    [2, 3],
+    [-1, 4],
+  ]) {
+    const [b, c] = [-(r + s), r * s];
+    const eq = `x^2 ${b < 0 ? '-' : '+'} ${Math.abs(b)}x ${c < 0 ? '-' : '+'} ${Math.abs(c)} = 0`;
+    const d = b * b - 4 * c;
+    ok('quadratic-formula', [eq, `a = 1, b = ${b}, c = ${c}`, `x = (${-b} ± sqrt(${d}))/2`, `x = ${r} or x = ${s}`]);
+    bad('quadratic-formula', [eq, `a = 1, b = ${b}, c = ${c}`, `x = (${b} ± sqrt(${d}))/2`], 2);
+  }
+
+  // Factoring x^2 - k^2 as (x - k)(x + k), not (x - k)(x - k).
+  for (const k of [2, 3, 5]) {
+    ok('factoring', [`x^2 - ${k * k} = 0`, `(x - ${k})(x + ${k}) = 0`]);
+    bad('factoring', [`x^2 - ${k * k} = 0`, `(x - ${k})(x - ${k}) = 0`], 1);
+  }
+
+  // The derivative of x^n from first principles is n x^(n - 1).
+  ok('first-principles', [
+    'lim_(h->0) ((x+h)^2 - x^2)/h',
+    '= lim_(h->0) (2xh + h^2)/h',
+    '= lim_(h->0) (2x + h)',
+    '= 2x',
+  ]);
+  ok('first-principles', ['lim_(h->0) ((x+h)^3 - x^3)/h', '= 3x^2']);
+  bad('first-principles', ['lim_(h->0) ((x+h)^2 - x^2)/h', '= lim_(h->0) (2x + h^2)'], 1);
+  bad('first-principles', ['lim_(h->0) ((x+h)^3 - x^3)/h', '= 3x'], 1);
+
+  // A function spread over a sum on one line.
+  bad('spread', ['(x + y)^2 = x^2 + y^2'], 0);
+  bad('spread', ['sin(a + b) = sin(a) + sin(b)'], 0);
+  ok('spread', ['(x + y)^2 = x^2 + 2xy + y^2']);
 }

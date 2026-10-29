@@ -3405,6 +3405,333 @@
     "2x + 3 = 7",
     "∴ x = 2"
    ]
+  },
+  {
+   "id": "named-equal-390",
+   "topic": "named-equal",
+   "lines": [
+    "a = b = c = 1",
+    "a + b + c",
+    "= 3"
+   ]
+  },
+  {
+   "id": "named-equal-391",
+   "topic": "named-equal",
+   "lines": [
+    "let x = y = z = 1"
+   ]
+  },
+  {
+   "id": "named-equal-392",
+   "topic": "named-equal",
+   "lines": [
+    "a = b = c = 2",
+    "a + b + c",
+    "= 6"
+   ]
+  },
+  {
+   "id": "named-equal-393",
+   "topic": "named-equal",
+   "lines": [
+    "let x = y = z = 2"
+   ]
+  },
+  {
+   "id": "named-equal-394",
+   "topic": "named-equal",
+   "lines": [
+    "a = b = c = 5",
+    "a + b + c",
+    "= 15"
+   ]
+  },
+  {
+   "id": "named-equal-395",
+   "topic": "named-equal",
+   "lines": [
+    "let x = y = z = 5"
+   ]
+  },
+  {
+   "id": "set-to-zero-396",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 2x",
+    "y' = 2x - 2",
+    "y' = 0",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "set-to-zero-397",
+   "topic": "set-to-zero",
+   "lines": [
+    "f(x) = x^2 - 2x",
+    "f'(x) = 2x - 2",
+    "f'(x) = 0",
+    "2x = 2",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "set-to-zero-398",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 2x",
+    "dy/dx = 2x - 2",
+    "dy/dx = 0",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "set-to-zero-399",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 2x",
+    "y' = 2x - 2 = 0",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "set-to-zero-400",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 2x",
+    "y' = 2x - 2",
+    "set y' = 0",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "set-to-zero-401",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 4x",
+    "y' = 2x - 4",
+    "y' = 0",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "set-to-zero-402",
+   "topic": "set-to-zero",
+   "lines": [
+    "f(x) = x^2 - 4x",
+    "f'(x) = 2x - 4",
+    "f'(x) = 0",
+    "2x = 4",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "set-to-zero-403",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 4x",
+    "dy/dx = 2x - 4",
+    "dy/dx = 0",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "set-to-zero-404",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 4x",
+    "y' = 2x - 4 = 0",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "set-to-zero-405",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 4x",
+    "y' = 2x - 4",
+    "set y' = 0",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "set-to-zero-406",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 6x",
+    "y' = 2x - 6",
+    "y' = 0",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "set-to-zero-407",
+   "topic": "set-to-zero",
+   "lines": [
+    "f(x) = x^2 - 6x",
+    "f'(x) = 2x - 6",
+    "f'(x) = 0",
+    "2x = 6",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "set-to-zero-408",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 6x",
+    "dy/dx = 2x - 6",
+    "dy/dx = 0",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "set-to-zero-409",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 6x",
+    "y' = 2x - 6 = 0",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "set-to-zero-410",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 6x",
+    "y' = 2x - 6",
+    "set y' = 0",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "set-to-zero-411",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 10x",
+    "y' = 2x - 10",
+    "y' = 0",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "set-to-zero-412",
+   "topic": "set-to-zero",
+   "lines": [
+    "f(x) = x^2 - 10x",
+    "f'(x) = 2x - 10",
+    "f'(x) = 0",
+    "2x = 10",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "set-to-zero-413",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 10x",
+    "dy/dx = 2x - 10",
+    "dy/dx = 0",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "set-to-zero-414",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 10x",
+    "y' = 2x - 10 = 0",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "set-to-zero-415",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 10x",
+    "y' = 2x - 10",
+    "set y' = 0",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "quadratic-formula-416",
+   "topic": "quadratic-formula",
+   "lines": [
+    "x^2 - 3x + 2 = 0",
+    "a = 1, b = -3, c = 2",
+    "x = (3 ± sqrt(1))/2",
+    "x = 1 or x = 2"
+   ]
+  },
+  {
+   "id": "quadratic-formula-417",
+   "topic": "quadratic-formula",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "a = 1, b = -5, c = 6",
+    "x = (5 ± sqrt(1))/2",
+    "x = 2 or x = 3"
+   ]
+  },
+  {
+   "id": "quadratic-formula-418",
+   "topic": "quadratic-formula",
+   "lines": [
+    "x^2 - 3x - 4 = 0",
+    "a = 1, b = -3, c = -4",
+    "x = (3 ± sqrt(25))/2",
+    "x = -1 or x = 4"
+   ]
+  },
+  {
+   "id": "factoring-419",
+   "topic": "factoring",
+   "lines": [
+    "x^2 - 4 = 0",
+    "(x - 2)(x + 2) = 0"
+   ]
+  },
+  {
+   "id": "factoring-420",
+   "topic": "factoring",
+   "lines": [
+    "x^2 - 9 = 0",
+    "(x - 3)(x + 3) = 0"
+   ]
+  },
+  {
+   "id": "factoring-421",
+   "topic": "factoring",
+   "lines": [
+    "x^2 - 25 = 0",
+    "(x - 5)(x + 5) = 0"
+   ]
+  },
+  {
+   "id": "first-principles-422",
+   "topic": "first-principles",
+   "lines": [
+    "lim_(h->0) ((x+h)^2 - x^2)/h",
+    "= lim_(h->0) (2xh + h^2)/h",
+    "= lim_(h->0) (2x + h)",
+    "= 2x"
+   ]
+  },
+  {
+   "id": "first-principles-423",
+   "topic": "first-principles",
+   "lines": [
+    "lim_(h->0) ((x+h)^3 - x^3)/h",
+    "= 3x^2"
+   ]
+  },
+  {
+   "id": "spread-424",
+   "topic": "spread",
+   "lines": [
+    "(x + y)^2 = x^2 + 2xy + y^2"
+   ]
   }
  ],
  "broken": [
@@ -6258,6 +6585,171 @@
     "2x = 4 → x = 3"
    ],
    "broken": 1
+  },
+  {
+   "id": "named-equal-b292",
+   "topic": "named-equal",
+   "lines": [
+    "a = b = c = 1",
+    "a + b + c",
+    "= 4"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "named-equal-b293",
+   "topic": "named-equal",
+   "lines": [
+    "a = b = c = 2",
+    "a + b + c",
+    "= 7"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "named-equal-b294",
+   "topic": "named-equal",
+   "lines": [
+    "a = b = c = 5",
+    "a + b + c",
+    "= 16"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "set-to-zero-b295",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 2x",
+    "y' = 2x - 2",
+    "y' = 0",
+    "x = 2"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "set-to-zero-b296",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 4x",
+    "y' = 2x - 4",
+    "y' = 0",
+    "x = 3"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "set-to-zero-b297",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 6x",
+    "y' = 2x - 6",
+    "y' = 0",
+    "x = 4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "set-to-zero-b298",
+   "topic": "set-to-zero",
+   "lines": [
+    "y = x^2 - 10x",
+    "y' = 2x - 10",
+    "y' = 0",
+    "x = 6"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "quadratic-formula-b299",
+   "topic": "quadratic-formula",
+   "lines": [
+    "x^2 - 3x + 2 = 0",
+    "a = 1, b = -3, c = 2",
+    "x = (-3 ± sqrt(1))/2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "quadratic-formula-b300",
+   "topic": "quadratic-formula",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "a = 1, b = -5, c = 6",
+    "x = (-5 ± sqrt(1))/2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "quadratic-formula-b301",
+   "topic": "quadratic-formula",
+   "lines": [
+    "x^2 - 3x - 4 = 0",
+    "a = 1, b = -3, c = -4",
+    "x = (-3 ± sqrt(25))/2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factoring-b302",
+   "topic": "factoring",
+   "lines": [
+    "x^2 - 4 = 0",
+    "(x - 2)(x - 2) = 0"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factoring-b303",
+   "topic": "factoring",
+   "lines": [
+    "x^2 - 9 = 0",
+    "(x - 3)(x - 3) = 0"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factoring-b304",
+   "topic": "factoring",
+   "lines": [
+    "x^2 - 25 = 0",
+    "(x - 5)(x - 5) = 0"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "first-principles-b305",
+   "topic": "first-principles",
+   "lines": [
+    "lim_(h->0) ((x+h)^2 - x^2)/h",
+    "= lim_(h->0) (2x + h^2)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "first-principles-b306",
+   "topic": "first-principles",
+   "lines": [
+    "lim_(h->0) ((x+h)^3 - x^3)/h",
+    "= 3x"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "spread-b307",
+   "topic": "spread",
+   "lines": [
+    "(x + y)^2 = x^2 + y^2"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "spread-b308",
+   "topic": "spread",
+   "lines": [
+    "sin(a + b) = sin(a) + sin(b)"
+   ],
+   "broken": 0
   }
  ]
 }

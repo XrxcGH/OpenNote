@@ -51,6 +51,12 @@ export type ReasonCode =
   | 'systemEquation'
   | 'oneRoot'
   | 'knownValue'
+  /** r = 2 after A = πr^2: values given for some of the formula's letters. */
+  | 'givenValue'
+  /** a = 1, b = -3, c = 2 after x^2 - 3x + 2 = 0: the quadratic formula's numbers. */
+  | 'coefficients'
+  /** v = 0 + 2 × 5 after v = u + at: the line before with numbers put in for its letters. */
+  | 'valuesPutIn'
   | 'antiderivative'
   /** Right, but the + C of an indefinite integral is missing: a note, not a slip. */
   | 'missingConstant'
@@ -66,6 +72,10 @@ export type ReasonCode =
   | 'signFlipped'
   | 'inequalityFlip'
   | 'factorOff'
+  /** (x - 3)(x - 3) = 0 after x^2 - 9 = 0: a factoring that does not multiply out to the line before. */
+  | 'factoringOff'
+  /** lim (2xh + h^2)/h, then lim (2x + h^2): the bodies inside the same limit are not the same. */
+  | 'limitBody'
   | 'constantOff'
   | 'notEqual'
   | 'differentSolutions'
@@ -83,6 +93,8 @@ export type ReasonCode =
   | 'unreadable'
   | 'notMath'
   | 'someValues'
+  /** 2(x - 3) = 2x - 3: the sides are the same amount apart for every value. */
+  | 'neverEqual'
   | 'lostSolutions'
   | 'noRealSolutions'
   | 'cannotDecide'

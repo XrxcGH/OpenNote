@@ -549,3 +549,129 @@ describe('notation as students write it, part 4', () => {
     expect(checkSteps(['lim_(x→0) sin(x)/x = 1'])[0].verdict).not.toBe('broken');
   });
 });
+
+describe('values given for a formula, and solutions that are not real', () => {
+  const last = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
+
+  it('checks the answer with the values given for the formula above', () => {
+    // A = π(2)^2 = 4π; v = 0 + 2(5) = 10.
+    expect(last(['A = πr^2', 'r = 2', 'A = 4π'])).toBe('ok/knownValue');
+    expect(last(['A = πr^2', 'r = 2', 'A = 5π'])).toBe('broken/differentSolutions');
+    expect(last(['v = u + at', 'u = 0, a = 2, t = 5', 'v = 10'])).toBe('ok/knownValue');
+    expect(last(['v = u + at', 'u = 0, a = 2, t = 5', 'v = 7'])).toBe('broken/differentSolutions');
+    expect(last(['v = u + at', 'v = 0 + 2 × 5'])).toBe('ok/valuesPutIn');
+    expect(last(['v = u + at', 'v = 0 + 2 × 5', 'v = 10'])).toBe('ok/sameSolutions');
+  });
+
+  it('finds a formula with no real value and a solution where the line before has none', () => {
+    // x^2 - 2x - 8 = 0 has x = -2 and x = 4; sqrt(4 - 32) has no real value. ln(2x) = 0 gives 2x = 1, not 0.
+    expect(last(['x^2 - 2x - 8 = 0', 'x = (2 ± sqrt(4 - 32))/2'])).toBe('broken/notAtSolution');
+    expect(last(['x^2 - 2x - 8 = 0', 'x = (2 ± sqrt(4 + 32))/2'])).toBe('ok/sameSolutions');
+    expect(last(['ln(2x) = 0', '2x = 0'])).toBe('broken/differentSolutions');
+    expect(last(['ln(2x) = 0', '2x = 1'])).toBe('ok/sameSolutions');
+  });
+
+  it('reads a bracket bound such as π, and a number times a tuple as a vector', () => {
+    // [x^2] from 0 to π is π^2; [cos x] from 0 to π is -1 - 1 = -2; 3(1, 2, 3) = (3, 6, 9).
+    expect(last(['[x^2]_0^π = π^2'])).toBe('ok/sameValue');
+    expect(last(['[cos x]_0^π = 2'])).toBe('broken/valueOff');
+    expect(last(['3(1, 2, 3) = (3, 6, 9)'])).toBe('ok/sameMatrix');
+    expect(last(['3(1, 2, 3) = (3, 6, 8)'])).toBe('broken/matrixEntry');
+  });
+});
+
+describe('working that sets things equal, and slips a single line shows', () => {
+  const marks = (lines: string[]) => checkSteps(lines).map((r) => `${r.verdict}/${r.reason}`);
+  const last = (lines: string[]) => marks(lines)[lines.length - 1];
+
+  it('reads letters named equal to a number as a note, and keeps their value', () => {
+    expect(last(['a = b = c = 2'])).toBe('ok/note');
+    expect(last(['let x = y = z = 1'])).toBe('ok/note');
+    expect(last(['x = y = z = w = 1'])).toBe('ok/note');
+    // a = b = c = 2 gives a + b + c = 6; 7 is a slip.
+    expect(last(['a = b = c = 2', 'a + b + c', '= 6'])).toBe('ok/knownValue');
+    expect(last(['a = b = c = 2', 'a + b + c', '= 7'])).toBe('broken/valueOff');
+    // let u = x^2 still names a substitution.
+    expect(last(['let u = x^2'])).toBe('ok/substitution');
+  });
+
+  it('reads a derivative set to zero as the equation to solve', () => {
+    // y = x^2: y' = 2x, and 2x = 0 gives x = 0, not 1.
+    expect(marks(['y = x^2', "y' = 2x", "y' = 0", 'x = 0'])).toEqual([
+      'ok/start',
+      'ok/equivalent',
+      'ok/start',
+      'ok/sameSolutions',
+    ]);
+    expect(last(['y = x^2', "y' = 2x", "y' = 0", 'x = 1'])).toBe('broken/differentSolutions');
+    // f'(x) = 2x - 4 = 0 gives x = 2; dy/dx = 2x - 6 = 0 gives x = 3; y'' = 6x = 0 gives x = 0.
+    expect(last(['f(x) = x^2 - 4x', "f'(x) = 2x - 4", "f'(x) = 0", '2x = 4', 'x = 2'])).toBe('ok/sameSolutions');
+    expect(last(['y = x^2 - 6x', 'dy/dx = 2x - 6', 'dy/dx = 0', 'x = 3'])).toBe('ok/sameSolutions');
+    expect(last(['y = x^2', "y' = 2x", "set y' = 0", 'x = 0'])).toBe('ok/sameSolutions');
+    expect(marks(['y = x^2', "y' = 2x = 0", 'x = 0']).slice(1)).toEqual(['ok/start', 'ok/sameSolutions']);
+    expect(last(['y = x^3 - 3x', "y' = 3x^2 - 3", "y'' = 6x", "y'' = 0", 'x = 0'])).toBe('ok/sameSolutions');
+    // A chain that ends in an expression is still a chain.
+    expect(last(['f(x) = x^2 - 4x', "f'(x) = 2x - 4 = 2(x - 2)"])).toBe('ok/equivalent');
+  });
+
+  it('shows a function or power spread over a sum on a first line, and leaves equations to solve alone', () => {
+    // At x = 1, y = 1: (1 + 1)^2 = 4 but 1 + 1 = 2.
+    expect(last(['(x + y)^2 = x^2 + y^2'])).toBe('broken/notEqual');
+    expect(last(['sin(a + b) = sin(a) + sin(b)'])).toBe('broken/notEqual');
+    expect(last(['ln(a + b) = ln(a) + ln(b)'])).toBe('broken/notEqual');
+    // 2x - 6 and 2x - 3 are 3 apart for every x.
+    const never = checkSteps(['2(x - 3) = 2x - 3'])[0];
+    expect([never.verdict, never.reason, never.params.offset]).toEqual(['unchecked', 'neverEqual', '3']);
+    expect(last(['(x + y)^2 = x^2 + 2xy + y^2'])).toBe('ok/sampleConsistent');
+    for (const equation of ['x^2 = 2x', 'x^2 + y^2 = 25', '(x + 3)^2 = x^2 + 15', 'x^(1/2) = x/2']) {
+      expect(last([equation])).toBe('ok/start');
+    }
+  });
+
+  it('checks the quadratic formula against the equation above it', () => {
+    // x^2 - 3x + 2 = 0 has x = 1 and x = 2; (-3 ± 1)/2 gives -1 and -2.
+    const lines = ['x^2 - 3x + 2 = 0', 'a = 1, b = -3, c = 2', 'x = (-3 ± sqrt(9 - 8))/2', 'x = -1 or x = -2'];
+    expect(marks(lines).slice(1, 3)).toEqual(['ok/coefficients', 'broken/differentSolutions']);
+    expect(checkSteps(lines)[2].suggestion).toBe('x = 1 or x = 2');
+    expect(last(['x^2 - 3x + 2 = 0', 'a = 1, b = -3, c = 2', 'x = (3 ± sqrt(9 - 8))/2', 'x = 1 or x = 2'])).toBe(
+      'ok/sameSolutions',
+    );
+    const formula = ['x^2 - 3x + 2 = 0', 'x = (-b ± sqrt(b^2 - 4ac))/(2a)', 'a = 1, b = -3, c = 2'];
+    expect(last([...formula, 'x = 1 or x = 2'])).toBe('ok/sameSolutions');
+    expect(last([...formula, 'x = -1 or x = -2'])).toBe('broken/differentSolutions');
+  });
+
+  it('finds a factoring that does not multiply out, and keeps a dropped solution a finding', () => {
+    // (x - 3)(x - 3) = x^2 - 6x + 9, not x^2 - 9 = (x + 3)(x - 3).
+    const slip = checkSteps(['x^2 - 9 = 0', '(x - 3)(x - 3) = 0'])[1];
+    expect([slip.verdict, slip.reason, slip.suggestion]).toEqual(['broken', 'factoringOff', '(x + 3)(x - 3) = 0']);
+    expect(last(['x^2 - 5x + 6 = 0', '2(x - 2)(x - 3) = 0'])).toBe('ok/sameSolutions');
+    expect(last(['x^2 = 2x', 'x = 2'])).toBe('unchecked/lostSolutions');
+    expect(last(['(x - 3)^2 = 16', 'x - 3 = 4'])).toBe('unchecked/lostSolutions');
+  });
+
+  it('checks a limit with a letter left free, and the body inside it', () => {
+    // From first principles, d/dx x^2 = 2x and d/dx x^3 = 3x^2.
+    const lines = ['lim_(h->0) ((x+h)^2 - x^2)/h', '= lim_(h->0) (2xh + h^2)/h', '= lim_(h->0) (2x + h)', '= 2x'];
+    expect(marks(lines).every((m) => m.startsWith('ok/'))).toBe(true);
+    expect(last(['lim_(h->0) ((x+h)^3 - x^3)/h', '= 3x^2'])).toBe('ok/equivalent');
+    expect(last(['lim_(h->0) ((x+h)^3 - x^3)/h', '= 3x'])).toBe('broken/notEqual');
+    // (2xh + h^2)/h is 2x + h, not 2x + h^2, though both limits are 2x.
+    expect(marks(['lim_(h->0) ((x+h)^2 - x^2)/h', '= lim_(h->0) (2x + h^2)'])[1]).toBe('broken/limitBody');
+    // sin(x + h) gives no polynomial: left unchecked.
+    expect(marks(['lim_(h->0) (sin(x + h) - sin(x))/h', '= cos(x)'])[0]).toBe('unchecked/cannotEvaluate');
+  });
+
+  it('reads degrees, a value list with or, and a word naming the value', () => {
+    expect(last(['cos(60°) = 1/2'])).toBe('ok/sameValue');
+    expect(last(['cos(60°) = 1'])).toBe('broken/valueOff');
+    expect(last(['x^2 = 4', 'x = 2 or -2'])).toBe('ok/sameSolutions');
+    expect(last(['x^2 = 4', 'x = 2 or -3'])).toBe('broken/differentSolutions');
+    expect(last(['slope = (5 - 1)/(3 - 1)', '= 2'])).toBe('ok/sameValue');
+    expect(last(['Area = 3 × 4', '= 13'])).toBe('broken/valueOff');
+    expect(last(['total cost = 5'])).toBe('unchecked/notMath');
+  });
+});

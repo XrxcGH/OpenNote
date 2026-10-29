@@ -514,6 +514,32 @@ export function compareEquations(prev: Equation, cur: Equation, groups: Atom[][]
     return outcome('ok', 'addsSolutions', 'solutions', 0.9, { at: pointText(s1[adds]) });
   }
   if (loses >= 0 && comesBack && s1.length > 0) return cannot('lostSolutions', { at: pointText(s0[loses]) });
+  // x = (2 ± sqrt(4 - 32))/2 after x^2 - 2x - 8 = 0: the line before has real solutions and this one has no real
+  // value anywhere, so no solution at all.
+  if (s0.length > 0 && s1.length === 0 && nowhereReal(cur.f, names, seed)) {
+    return outcome(
+      'broken',
+      'notAtSolution',
+      'solutions',
+      0.95,
+      { at: pointText(s0[0]) },
+      equationSuggestion(prev, groups, seed),
+    );
+  }
+  // 2x = 0 after ln(2x) = 0: this line's solutions are where the line before has no value, and it lost the real one.
+  const outside = (p: Values) => !Number.isFinite(prev.f(p));
+  const undefinedThere = s1.length > 0 && backward.every((z, i) => z === 'no' || outside(s1[i]));
+  if (loses >= 0 && undefinedThere && s1.some(outside)) {
+    const suggestion = equationSuggestion(prev, groups, seed);
+    return outcome(
+      'broken',
+      'differentSolutions',
+      'solutions',
+      0.95,
+      { at: pointText(s1.find(outside) ?? s1[0]) },
+      suggestion,
+    );
+  }
   if (loses >= 0 && (adds >= 0 || s1.length === 0)) {
     const groupsAtom = groups[0]?.[0];
     const slip = groups.length === 1 && groups[0].length === 1 && groupsAtom ? signSlip(prev, groupsAtom, seed) : null;
@@ -526,6 +552,13 @@ export function compareEquations(prev: Equation, cur: Equation, groups: Atom[][]
   }
   if (s0.length === 0 && adds >= 0) return cannot('addsSolutions', { at: pointText(s1[adds]) });
   return cannot();
+}
+
+/** True when f has no real value at any of many sample points, as x - (2 ± sqrt(-28))/2 has none. */
+function nowhereReal(f: Fn, names: readonly string[], seed: number): boolean {
+  const next = rng(seed + 29);
+  for (let k = 0; k < 40; k += 1) if (Number.isFinite(f(samplePoint(names, next, k % 2 === 0)))) return false;
+  return true;
 }
 
 // Systems -----------------------------------------------------------------------------------------------------------
