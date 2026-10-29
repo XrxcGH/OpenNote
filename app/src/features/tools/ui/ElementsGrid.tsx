@@ -8,7 +8,7 @@ import { ELEMENTS } from '../reference/data';
 import type { Element } from '../reference/data';
 import { cellOf, neighborOf } from '../reference/gridLayout';
 import type { NavKey } from '../reference/gridLayout';
-import { ElementCard } from './ElementCard';
+import { ElementCard, ElementFacts } from './ElementCard';
 import grid from './elements.module.css';
 
 const NAV_KEYS = new Set<string>(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
@@ -31,6 +31,7 @@ export function ElementsGrid({ elements }: { elements: readonly Element[] }) {
 
   return (
     <div className={grid.wrap}>
+      {current ? <ElementCard element={current} /> : <p className={grid.hint}>{t('study.reference.pickElement')}</p>}
       <div className={grid.scroll}>
         <div className={grid.table} role="group" aria-label={t('study.reference.gridLabel')}>
           {ELEMENTS.map((element) => {
@@ -80,7 +81,7 @@ export function ElementsGrid({ elements }: { elements: readonly Element[] }) {
         </div>
       </div>
       <p className={grid.hint}>{t('study.reference.gridHint')}</p>
-      {current ? <ElementCard element={current} /> : <p className={grid.hint}>{t('study.reference.pickElement')}</p>}
+      {current ? <ElementFacts element={current} /> : null}
     </div>
   );
 }

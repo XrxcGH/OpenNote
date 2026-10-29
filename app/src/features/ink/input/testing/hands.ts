@@ -9,7 +9,7 @@ import { palmThresholds } from '../palm/index';
 import type { Grip } from './session';
 import type { SimProfile } from './profiles';
 import type { Rand, SessionWriter, Vec2 } from './writer';
-import { between } from './writer';
+import { between, JITTER_MM } from './writer';
 
 /**
  * The generators' ranges, each across the thresholds it meets, as a test checks. Drift crosses slop and a settling
@@ -68,7 +68,8 @@ export function palmLimit(p: SimProfile, s: PalmShape, scale: number, ms: number
   const size = quantized ? Math.round(actual / RADIUS_STEP_MM) * RADIUS_STEP_MM : actual;
   const palmAt = quantized ? PALM_MAJOR_MM + RADIUS_STEP_MM : PALM_MAJOR_MM;
   if (!sizeless(p) && size >= palmAt) return undefined;
-  if (s.drift >= SETTLE_TRAVEL_MM) return 'slides-like-a-stroke';
+  // The noise is on both ends of the travel the filter sees, up to a diagonal each way, so a drift that near the bound can read as past it.
+  if (s.drift + JITTER_MM * Math.SQRT2 >= SETTLE_TRAVEL_MM) return 'slides-like-a-stroke';
   if (ms < BOUNCE_MS) return 'bounce';
   return !sizeless(p) && size <= FINGERTIP_MAJOR_MM ? 'fingertip-sized' : undefined;
 }

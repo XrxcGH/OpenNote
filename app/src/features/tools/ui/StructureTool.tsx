@@ -10,6 +10,7 @@ import { sig } from '../chem/calc/stoich';
 import { drawSmiles, toSvg } from '../chem/structure/render';
 import type { Drawing } from '../chem/structure/render';
 import { TEMPLATES } from '../chem/structure/templates';
+import { prettyFormula } from '../reference/chemistry';
 import { insertIntoPage } from './CalculatorTool';
 import styles from './chem.module.css';
 import extra from './extra.module.css';
@@ -23,14 +24,14 @@ const GROUPS = ['rings', 'chains', 'groups', 'small'] as const;
 
 function Preview({ drawing, label }: { drawing: Drawing; label: string }) {
   const { minX, minY, maxX, maxY } = drawing.bounds;
-  const u = 40;
+  const u = 56;
   const w = (maxX - minX) * u;
   const h = (maxY - minY) * u;
   const X = (v: number) => (v - minX) * u;
   const Y = (v: number) => (v - minY) * u;
   return (
     <figure className={styles.figure}>
-      <svg viewBox={`0 0 ${w} ${h}`} width={Math.min(w, 320)} role="img" aria-label={label}>
+      <svg viewBox={`0 0 ${w} ${h}`} width={Math.min(w, 360)} role="img" aria-label={label}>
         <g stroke="currentColor" strokeWidth={2} strokeLinecap="round">
           {drawing.segments.map((s, i) => (
             <line key={i} x1={X(s.from.x)} y1={Y(s.from.y)} x2={X(s.to.x)} y2={Y(s.to.y)} />
@@ -146,7 +147,7 @@ export function StructureTool() {
           <>
             <Preview drawing={result.drawing} label={t('chem.structure.pictureOf', { name: title })} />
             <p className={styles.headline}>
-              {info}
+              {prettyFormula(info ?? '')}
               {mass ? ` · ${sig(mass, 5)} g/mol` : ''}
             </p>
           </>
