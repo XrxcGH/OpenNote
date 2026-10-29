@@ -29,6 +29,8 @@ import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { KIT_FLAGS } from '../features/tools/flags';
+import type { KitFlagId } from '../features/tools/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -74,6 +76,8 @@ export type FlagId =
   | ProtectFlagId
   | EngineeringFlagId
   | MindFlagId
+  /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
+  | KitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
@@ -348,6 +352,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
   ...MIND_FLAGS,
+  ...KIT_FLAGS,
 ];
 
 interface FlagState {
