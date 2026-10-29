@@ -28,6 +28,12 @@ export const PANEL_TYPES = {
   kitCalc: 'ext:org.opennote/kitcalc',
   /** Reserved for the drafting sheet of the drafting and design kit, which registers its renderer. */
   drafting: 'ext:org.opennote/drafting',
+  /** A subject kit's diagram as a stored SVG that reopens its tool (features/tools/subjects/figure). */
+  kitFigure: 'ext:org.opennote/kitfigure',
+  /** Reserved for the music kit's notation score, which registers its renderer. */
+  score: 'ext:org.opennote/score',
+  /** Reserved for the music kit's script block, which registers its renderer. */
+  script: 'ext:org.opennote/script',
 } as const;
 
 export type PanelType = (typeof PANEL_TYPES)[keyof typeof PANEL_TYPES];
