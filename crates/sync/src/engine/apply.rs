@@ -186,7 +186,10 @@ impl Engine {
                     },
                 );
             }
-            deferred.insert(path.clone(), entry.clone());
+            // A path this device can't write would wait, and be published again, forever.
+            if local::valid_path(path) {
+                deferred.insert(path.clone(), entry.clone());
+            }
         }
         state.files = files;
         state.deferred = deferred;

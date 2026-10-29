@@ -296,7 +296,7 @@ impl Engine {
     pub fn state(&self) -> Result<LocalState> {
         match fs::read(&self.state_path) {
             Ok(bytes) => {
-                let state: LocalState = serde_json::from_slice(&bytes)
+                let mut state: LocalState = serde_json::from_slice(&bytes)
                     .map_err(|_| SyncError::Local("this device's sync state doesn't read".into()))?;
                 if state.v != 1 {
                     return Err(SyncError::Newer);
@@ -306,6 +306,9 @@ impl Engine {
                         "this device's sync state belongs to another device".into(),
                     ));
                 }
+                // A path no device may write (from an older version, or a state put back) would wait forever.
+                state.files.retain(|path, _| local::valid_path(path));
+                state.deferred.retain(|path, _| local::valid_path(path));
                 Ok(state)
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(LocalState {
@@ -352,6 +355,14 @@ impl Engine {
         let sealed = seal(&self.keys.seal, &self.keys.id, "chunk", &name, &pad(bytes))?;
         self.backend.put(&name, &sealed)?;
         Ok(true)
+    }
+
+    /// A head's entries, without the paths no device may write: an older or hostile device's `../x` or `CON.txt`
+    /// would otherwise be skipped on disk, wait as deferred, and be published again by every device every round.
+    fn read_entries(&self, device: &str, generation: u64) -> Result<Manifest> {
+        let mut entries = self.read_head(device, generation)?.entries;
+        entries.retain(|path, _| local::valid_path(path));
+        Ok(entries)
     }
 
     fn read_head(&self, device: &str, generation: u64) -> Result<Head> {
@@ -430,4 +441,78 @@ pub fn last_published(backend: &dyn Backend, keys: &VaultKeys) -> Result<BTreeMa
 fn digest(entries: &Manifest) -> String {
     let json = serde_json::to_vec(entries).unwrap_or_default();
     hex(&mac(b"opennote-sync manifest digest", &[&json]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::MemoryBackend;
+    use crate::crypto::QUICK;
+    use crate::vault;
+
+    #[test]
+    fn paths_no_device_may_write_are_dropped_from_heads_and_never_wait() {
+        let store = Arc::new(MemoryBackend::new());
+        let (keys, _) = vault::create_with(store.as_ref(), "correct horse battery", QUICK).expect("creates");
+        for tag in ["d0", "ev"] {
+            let (_, secret) = vault::new_device().expect("device");
+            vault::add_device(store.as_ref(), &keys, tag, &secret, tag, 0).expect("adds");
+        }
+        // A head from an older or hostile device that names paths Windows can't hold, or that climb out.
+        let content = Content {
+            id: "ab".repeat(32),
+            size: 3,
+            chunks: vec!["cd".repeat(32)],
+        };
+        let live = |n: u64| Entry {
+            vv: [("ev".to_owned(), n)].into(),
+            content: content.clone(),
+            deleted: false,
+        };
+        let entries: Manifest = [
+            ("Bio/CON.txt".to_owned(), live(1)),
+            ("../escape.txt".to_owned(), live(2)),
+            ("Bio/a:b.txt".to_owned(), live(3)),
+        ]
+        .into();
+        let head = Head {
+            v: 1,
+            device: "ev".into(),
+            generation: 1,
+            seen: BTreeMap::new(),
+            at: 0,
+            entries,
+        };
+        let name = head_name("ev", 1);
+        let sealed = seal(
+            &keys.seal,
+            &keys.id,
+            "head",
+            &name,
+            &pad(&manifest::encode(&head).expect("encodes")),
+        )
+        .expect("seals");
+        store.put(&name, &sealed).expect("puts");
+
+        let dir = tempfile::tempdir().expect("temp");
+        fs::create_dir_all(dir.path().join("notes")).expect("notes");
+        let engine = Engine::new(
+            dir.path().join("notes"),
+            store.clone(),
+            keys,
+            "d0",
+            dir.path().join("state.json"),
+        );
+        let plan = engine.plan().expect("plans");
+        assert!(plan.summary.download.is_empty(), "{:?}", plan.summary);
+        assert!(plan.merged.is_empty(), "{:?}", plan.merged.keys().collect::<Vec<_>>());
+        engine.apply(plan).expect("applies");
+        let state = engine.state().expect("state");
+        assert!(
+            state.deferred.is_empty() && state.files.is_empty(),
+            "nothing waits: {state:?}"
+        );
+        let own = engine.read_head("d0", state.generation).expect("own head");
+        assert!(own.entries.is_empty(), "nothing is published again");
+    }
 }

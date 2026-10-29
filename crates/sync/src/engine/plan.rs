@@ -175,10 +175,10 @@ impl Engine {
             if *device == self.device {
                 // A head of this device's own that its state doesn't know: a round stopped after writing it.
                 if *generation > state.generation {
-                    incoming.heads.push(self.read_head(device, *generation)?.entries);
+                    incoming.heads.push(self.read_entries(device, *generation)?);
                 }
             } else if *generation > state.seen.get(device).copied().unwrap_or(0) {
-                incoming.heads.push(self.read_head(device, *generation)?.entries);
+                incoming.heads.push(self.read_entries(device, *generation)?);
                 incoming.seen.insert(device.clone(), *generation);
             }
         }
