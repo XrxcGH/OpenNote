@@ -5,6 +5,7 @@ export * from './timers';
 export * from './calculator';
 export * from './upcoming';
 export { closeTool, openTool, openTools, resetToolWindows } from './ui/host';
+export { openMathKit } from './mathkit/open';
 export { CALCULATOR_MODES, openCalculator } from './ui/calculatorMode';
 export type { CalculatorMode } from './ui/calculatorMode';
 export { PoppedTool } from './ui/PoppedTool';

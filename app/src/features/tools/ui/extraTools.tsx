@@ -71,6 +71,9 @@ const ControlKit = lazy(() =>
 // The design kit loads the first time its window opens.
 const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ default: m.DesignKit })));
 
+// The engineering mathematics kit loads the first time its window opens.
+const MathKit = lazy(() => import('../mathkit/ui/MathKitTool'));
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -153,6 +156,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     return (
       <Suspense fallback={null}>
         <DesignKit />
+      </Suspense>
+    );
+  if (tool === 'kit-math')
+    return (
+      <Suspense fallback={null}>
+        <MathKit />
       </Suspense>
     );
   return null;

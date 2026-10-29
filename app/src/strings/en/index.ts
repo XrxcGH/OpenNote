@@ -62,6 +62,7 @@ import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kitControl } from './kitControl';
 import { kitDesign } from './kitDesign';
+import { kitMath } from './kitMath';
 import { kits } from './kits';
 import { kitElectrical } from './kitElectrical';
 import { kitFluidHeat } from './kitFluidHeat';
@@ -132,6 +133,7 @@ export const en = {
   codeCells,
   kitControl,
   kitDesign,
+  kitMath,
   kits,
   kitElectrical,
   kitFluidHeat,
