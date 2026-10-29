@@ -1,6 +1,7 @@
 // The molecular biology, genetics, and evolution kit: the window, what every tool shares, and one part per tool.
 import { align } from './kitMolBio/align';
 import { cloning } from './kitMolBio/cloning';
+import { family } from './kitMolBio/family';
 import { crosses } from './kitMolBio/crosses';
 import { phylo } from './kitMolBio/phylo';
 import { popgen } from './kitMolBio/popgen';
@@ -58,4 +59,5 @@ export const kitMolBio = {
   phylo,
   crosses,
   popgen,
+  family,
 } as const;
