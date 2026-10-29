@@ -62,8 +62,9 @@ async function drawHeld(
       force: buttons ? 0.5 : 0,
     });
   const last = d.points[d.points.length - 1];
-  if (!hold) {
-    // Each sample is sent on its own timer, so a slow runner's delay in one command can't push the next ones later
+  if (!hold && d.points.length <= 12) {
+    // A letter's few samples are each sent on its own timer (a long stroke is sent in turn, so the browser keeps every
+    // sample), so a slow runner's delay in one command can't push the next ones later
     // and stretch a quick stroke past the limit for note-size writing.
     const at60 = (time: number, send: () => Promise<unknown>) =>
       new Promise<void>((resolve) => setTimeout(resolve, time)).then(send);
@@ -81,7 +82,7 @@ async function drawHeld(
     if (wait > 1) await page.waitForTimeout(wait);
     await send('mouseMoved', p, 1);
   }
-  await page.waitForTimeout(HOLD_MS + 300);
+  if (hold) await page.waitForTimeout(HOLD_MS + 300);
   await send('mouseReleased', last, 0);
   return { box: d.points.map(toWindow) };
 }
