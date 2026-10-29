@@ -94,4 +94,10 @@ describe('signals and sound kit', () => {
     expect(inserted[0]?.table).toBeTruthy();
     await walkModes(container);
   });
+
+  it('reads the spin-echo example and walks every medical imaging mode', async () => {
+    const { container } = await openAt('medimaging');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('0.348981');
+    await walkModes(container);
+  });
 });

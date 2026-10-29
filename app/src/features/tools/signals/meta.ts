@@ -2,7 +2,7 @@
 // commands and the kit's tool list are both made from this list. Loads at start-up, so it holds no tool code.
 import type { MessageKey } from '../../../strings/t';
 
-export type SignalToolId = 'spectrum' | 'filters' | 'systems' | 'comms' | 'rf';
+export type SignalToolId = 'spectrum' | 'filters' | 'systems' | 'medimaging' | 'comms' | 'rf';
 
 export interface SignalToolMeta {
   readonly id: SignalToolId;
@@ -26,6 +26,7 @@ export const SIGNAL_TOOLS: readonly SignalToolMeta[] = [
   meta('spectrum', 'WaveSine'),
   meta('filters', 'Funnel'),
   meta('systems', 'Sigma'),
+  meta('medimaging', 'Scan'),
   meta('comms', 'Binary'),
   meta('rf', 'Broadcast'),
 ];
