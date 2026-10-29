@@ -4,9 +4,11 @@
 // reaches it, by keys, the palette, and the tree's menu, so a screen that cannot be reached fails here first.
 // Baselines come only from the update-screenshots workflow.
 
+import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { defineScreens } from '../screens';
 import { loose as n } from '../pseudoName';
+import { openSettingsSection } from '../settingsOpen';
 
 /** Waits for the shell, so the shortcut listeners are installed before a key is pressed. */
 async function ready(page: Page): Promise<void> {
@@ -45,11 +47,7 @@ async function runCommand(page: Page, search: string, name: RegExp): Promise<voi
 
 async function openSettings(page: Page, section: string): Promise<void> {
   await ready(page);
-  await page.keyboard.press('Control+Comma');
-  await page.getByRole('heading', { level: 1 }).first().waitFor();
-  const link = page.getByRole('navigation', { name: n('Settings sections') }).getByRole('link', { name: n(section) });
-  if (await link.isVisible()) await link.click();
-  await page.getByRole('heading', { level: 1, name: n(section) }).waitFor();
+  await openSettingsSection(page, n(section), n('Settings sections'));
 }
 
 async function openExport(page: Page): Promise<void> {
@@ -166,7 +164,19 @@ export default defineScreens([
     prepare: async (page) => {
       await ready(page);
       await runCommand(page, 'upcoming', n('Open upcoming', { contains: true }));
-      await page.getByRole('dialog', { name: n('Upcoming') }).waitFor();
+      const dialog = page.getByRole('dialog', { name: n('Upcoming') });
+      await dialog.waitFor();
+      // The window slides in: take the picture once its box is the same on two frames in a row.
+      let last = '';
+      await expect
+        .poll(async () => {
+          const now = JSON.stringify(await dialog.boundingBox());
+          await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+          const same = now === last;
+          last = now;
+          return same;
+        })
+        .toBe(true);
     },
   },
   {
@@ -185,7 +195,7 @@ export default defineScreens([
     description: 'Home, with its recent pages and notebooks',
     prepare: async (page) => {
       await ready(page);
-      await runCommand(page, 'home', n('Home', { prefix: true }));
+      await runCommand(page, 'home', n('Go home', { prefix: true }));
       await page.getByRole('heading', { level: 1 }).first().waitFor();
     },
   },

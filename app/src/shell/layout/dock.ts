@@ -17,3 +17,8 @@ export function setDockInset(width: number, owner = 'tools'): void {
   else owners.delete(owner);
   apply();
 }
+
+/** The width one owner takes at the right edge now, 0 when it takes none. */
+export function dockInsetOf(owner: string): number {
+  return owners.get(owner) ?? 0;
+}

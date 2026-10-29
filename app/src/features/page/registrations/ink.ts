@@ -1,7 +1,8 @@
 // Phase 5's ink (the ink lane): the pens, the erasers, the lasso, shapes, palm rejection, and the Draw tab. The ink
 // view lives in features/ink and can't import the page view, so this file hands it the page view's seams. The ink
 // chunk and the seams it needs load with the first page shown, so only these few lines count against start-up.
-import { loadInkView } from '../../ink/flags';
+import { settingsSections } from '../../../registries';
+import { loadInkView, loadMyHandSection, loadPenSettings } from '../../ink/flags';
 import { shownMedia } from '../images/shown';
 import { setInkStrokeReader } from '../seams/inkStrokes';
 import { shownPaper } from '../seams/paper';
@@ -13,6 +14,24 @@ const part = <T>(pick: (page: NonNullable<ReturnType<typeof shownMedia.get>>) =>
     return page ? pick(page) : null;
   },
   subscribe: shownMedia.subscribe,
+});
+
+// The Settings sections are listed from start-up, so they show before a page has been opened (their panels load later).
+settingsSections.register({
+  id: 'penAndTouch',
+  title: 'ink.settings.title',
+  icon: 'Hand',
+  order: 26,
+  flag: 'ink.palm',
+  load: loadPenSettings,
+});
+settingsSections.register({
+  id: 'myHandwriting',
+  title: 'myHand.section',
+  icon: 'PenNib',
+  order: 27,
+  flag: 'ink.myHandwriting',
+  load: loadMyHandSection,
 });
 
 let started = false;
@@ -35,6 +54,7 @@ function start(): void {
         layer: part((page) => page.layer),
         selection: selection.pageSelection,
         select: selection.selectOnPage,
+        frameShown: (shown) => selection.inkFrameShown.set(shown),
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
         paper: shownPaper,
         handwriting: {

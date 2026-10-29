@@ -8,6 +8,7 @@ import type { MathSymbol, SymbolGroup } from '../symbols/data';
 import { pushRecent, readRecent, resetRecent } from '../symbols/recent';
 import { insertIntoPage } from './CalculatorTool';
 import extra from './extra.module.css';
+import sym from './symbols.module.css';
 import styles from './tools.module.css';
 
 const BY_CHAR = new Map(SYMBOLS.map((symbol) => [symbol.char, symbol]));
@@ -38,16 +39,16 @@ export function SymbolsTool() {
   );
 
   return (
-    <div className={styles.tool}>
+    <div className={styles.toolFill}>
       <TextField label={t('study.symbols.search')} value={query} onChange={setQuery} />
       <p className={styles.empty}>{t('study.symbols.searchHelp')}</p>
-      <div className={styles.tabs} role="group" aria-label={t('study.symbols.groups')}>
+      <div className={sym.categories} role="group" aria-label={t('study.symbols.groups')}>
         {[null, ...SYMBOL_GROUPS].map((one) => (
           <button
             key={one ?? 'all'}
             type="button"
             aria-pressed={group === one}
-            className={styles.tab}
+            className={sym.category}
             onClick={() => setGroup(one)}
           >
             {one ? t(`study.symbols.group.${one}`) : t('study.symbols.all')}
@@ -81,7 +82,7 @@ export function SymbolsTool() {
           ? t('study.symbols.noMatch', { query: query.trim() })
           : t('study.symbols.count', { count: shown.length })}
       </p>
-      <div className={`${styles.keys} ${extra.scroll}`} role="group" aria-label={t('study.symbols.grid')}>
+      <div className={`${styles.keys} ${extra.scroll} ${sym.grid}`} role="group" aria-label={t('study.symbols.grid')}>
         {shown.map((symbol) => cell(symbol))}
       </div>
     </div>

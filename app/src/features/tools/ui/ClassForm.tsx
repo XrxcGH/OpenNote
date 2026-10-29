@@ -105,6 +105,7 @@ export function ClassForm() {
             <span className={styles.itemTitle}>{slot.name}</span>
             <span className={styles.itemDue}>
               {slot.days.map(weekday).join(' ')} {clockText(minutesOfText(slot.start))}
+              {slot.room ? `, ${slot.room}` : ''}
             </span>
             {slot.section ? (
               <span className={styles.note}>{t('study.timetable.inSection', { section: slot.section.label })}</span>

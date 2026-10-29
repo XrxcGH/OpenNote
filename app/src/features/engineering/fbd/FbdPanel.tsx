@@ -346,7 +346,7 @@ function glyph(
           <g transform={`translate(${px} ${py}) rotate(${90 - part.angle})`}>
             <SupportSymbol kind={part.support} />
           </g>
-          <text className={styles.label} x={px - 22} y={py + 4}>
+          <text className={styles.label} x={px - 20} y={py - 12} textAnchor="end">
             {part.label}
           </text>
         </>
@@ -382,7 +382,7 @@ function ForceGlyph({ part, model, px, py, scale, onHead }: ForceGlyphProps) {
       <path className={styles.load} d={arrowPath(px, py, hx, hy, 10)} />
       <circle className={styles.dot} cx={px} cy={py} r={3} />
       <circle data-head="" className={styles.halo} cx={hx} cy={hy} r={9} onPointerDown={onHead} />
-      <text className={styles.label} x={hx + 6} y={hy - 6}>
+      <text className={styles.label} x={hx + 10} y={hy - 9}>
         {`${part.label} = ${q(part.magnitude, model.forceUnit)}`}
       </text>
     </>
@@ -403,7 +403,7 @@ function MomentGlyph({ part, model, px, py, r }: MomentGlyphProps) {
       <circle className={styles.halo} cx={px} cy={py} r={r + 4} />
       <path className={styles.load} d={momentPath(px, py, r, part.magnitude >= 0)} />
       <circle className={styles.dot} cx={px} cy={py} r={3} />
-      <text className={styles.label} x={px + r + 4} y={py - r}>
+      <text className={styles.label} x={px + r + 8} y={py - r - 4}>
         {`${part.label} = ${q(Math.abs(part.magnitude), `${model.forceUnit}·${model.lengthUnit}`)}`}
       </text>
     </>
@@ -527,7 +527,7 @@ function Origin({ model, readOnly, onDraft, onCommit }: OriginProps) {
       <circle className={styles.halo} cx={px} cy={py} r={9} />
       <circle className={styles.origin} cx={px} cy={py} r={6} />
       <path className={styles.origin} d={`M${px - 9} ${py}H${px + 9}M${px} ${py - 9}V${py + 9}`} />
-      <text className={styles.muted} x={px + 8} y={py + 14}>
+      <text className={styles.muted} x={px + 12} y={py - 12}>
         {t('engineering.fbd.originMark')}
       </text>
     </g>

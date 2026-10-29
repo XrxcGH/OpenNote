@@ -1,7 +1,8 @@
 // checks-disable-file brand-consistency: the test data holds color values to check how they are written
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { CHANNEL_PRESSURE, encodePoints, type InkRecord, type Stroke } from '../../../core/ink/codec';
+import { CHANNEL_PRESSURE, CHANNEL_TIME, encodePoints, type InkRecord, type Stroke } from '../../../core/ink/codec';
+import { turnAt } from '../../../core/ink/path';
 import { strokesByBlock } from './blocks';
 import { drawingOrder, inkExtent, inkShapes, inkSvg, shapesInBand, strokeShape, type InkShape } from './ink';
 import { exportStrokes, liveStrokes, toExportStroke } from './inkSource';
@@ -214,5 +215,95 @@ describe('the strokes of a page from its ink records', () => {
   it('leaves out a stroke whose points cannot be read', () => {
     const broken = record('x', { points: new Uint8Array([1, 2, 3]) });
     expect(exportStrokes([broken, record('ok')]).map((s) => s.id)).toEqual(['ok']);
+  });
+});
+
+/** The rings of a path made of M, L, and Z. */
+function rings(d: string): { x: number; y: number }[][] {
+  return d
+    .split('M')
+    .filter(Boolean)
+    .map((part) =>
+      part
+        .replace('Z', '')
+        .split('L')
+        .map((pair) => {
+          const [x, y] = pair.trim().split(' ').map(Number);
+          return { x, y };
+        }),
+    );
+}
+
+describe('smooth ink and exact shapes in export, as on the page', () => {
+  it('draws a fast circle sampled at 60 Hz as a curve, not as corners', () => {
+    // 17 samples a turn: straight lines between them turn 21 degrees at each sample.
+    const turn = Array.from({ length: 20 }, (_, i) => (2 * Math.PI * i) / 17);
+    const shape = strokeShape(
+      stroke('c', {
+        x: turn.map((a) => 300 + 40 * Math.cos(a)),
+        y: turn.map((a) => 300 + 40 * Math.sin(a)),
+        pressure: turn.map(() => 0.5),
+      }),
+    )!;
+    const [ring] = rings(shape.d);
+    const ends = [
+      { x: 340, y: 300 },
+      { x: 300 + 40 * Math.cos(turn[19]), y: 300 + 40 * Math.sin(turn[19]) },
+    ];
+    let sharpest = 0;
+    for (let i = 0; i < ring.length; i++) {
+      const b = ring[i];
+      if (ends.some((e) => Math.hypot(b.x - e.x, b.y - e.y) < 4)) continue;
+      const a = ring[(i + ring.length - 1) % ring.length];
+      const c = ring[(i + 1) % ring.length];
+      if (Math.hypot(b.x - a.x, b.y - a.y) < 0.05 || Math.hypot(c.x - b.x, c.y - b.y) < 0.05) continue;
+      sharpest = Math.max(sharpest, (turnAt(a, b, c) * 180) / Math.PI);
+    }
+    expect(sharpest).toBeLessThan(12);
+  });
+
+  it('draws a shape at one even width with mitered corners', () => {
+    const shape = strokeShape(
+      stroke('r', { x: [0, 100, 100, 0, 0], y: [0, 0, 60, 60, 0], width: 4, pressure: null, exact: true }),
+    )!;
+    // Mitered corners reach exactly half the width past each corner, in both directions.
+    expect(shape.bbox).toEqual({ x: -2, y: -2, w: 104, h: 64 });
+    // Four sides and four corners, every side a band 4 wide from end to end.
+    const parts = rings(shape.d);
+    expect(parts).toHaveLength(8);
+    const bands = parts.filter(
+      (ring) => ring.length === 4 && Math.max(...ring.map((p) => p.x)) - Math.min(...ring.map((p) => p.x)) > 50,
+    );
+    for (const band of bands) expect(Math.max(...band.map((p) => p.y)) - Math.min(...band.map((p) => p.y))).toBe(4);
+    expect(bands).toHaveLength(2);
+  });
+
+  it('marks strokes with no time and no pressure as exact, and pen samples and imported ink as not', () => {
+    const exactRecord = (channels: number, startUnknown = false): Stroke => {
+      const { bytes, bbox } = encodePoints(
+        [
+          { x: 0, y: 0, pressure: 30000, tiltX: 0, tiltY: 0, t: 0 },
+          { x: 640, y: 0, pressure: 30000, tiltX: 0, tiltY: 0, t: 80 },
+        ],
+        channels,
+      );
+      return {
+        id: 'e',
+        block: 'blk',
+        start: 1000,
+        startUnknown,
+        style: { tool: 0, palette: 1, color: [1, 2, 3, 255], width: 2 },
+        bbox,
+        channels,
+        pointCount: 2,
+        transform: null,
+        origin: null,
+        points: bytes,
+      };
+    };
+    expect(toExportStroke(exactRecord(0))?.exact).toBe(true);
+    expect(toExportStroke(exactRecord(CHANNEL_TIME))?.exact).toBe(false);
+    expect(toExportStroke(exactRecord(CHANNEL_PRESSURE))?.exact).toBe(false);
+    expect(toExportStroke(exactRecord(0, true))?.exact).toBe(false);
   });
 });

@@ -25,6 +25,16 @@ use opennote_core::testing::sample::test_clock;
 use opennote_core::{CoreError, Limits, Timings};
 use serde_json::json;
 
+/// A passphrase made fresh for each run, so no passphrase is written into the tests.
+fn pw() -> &'static str {
+    static PW: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    PW.get_or_init(|| {
+        let mut raw = [0u8; 12];
+        getrandom::fill(&mut raw).expect("random");
+        raw.iter().map(|b| format!("{b:02x}")).collect()
+    })
+}
+
 const SECRET: &str = "Launch codes 7741";
 const LATER: &str = "Second secret 9093";
 
@@ -211,7 +221,7 @@ fn check_locked(f: &Fixture) {
 #[test]
 fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_password() {
     let f = fixture();
-    f.core.protect_section(&f.root, f.section, "correct horse").unwrap();
+    f.core.protect_section(&f.root, f.section, pw()).unwrap();
     assert_eq!(
         f.core.section_protection(&f.root, f.section).unwrap(),
         Protection::Unlocked
@@ -224,7 +234,7 @@ fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_pass
         .unlock_section(&f.root, f.section, Secret::Password("battery staple"));
     assert!(matches!(wrong, Err(ProtectError::Wrong)));
     f.core
-        .unlock_section(&f.root, f.section, Secret::Password("correct horse"))
+        .unlock_section(&f.root, f.section, Secret::Password(pw()))
         .unwrap();
     let notebook = f.core.find_open(&f.root).unwrap();
     let handle = notebook.open_page(f.page, f.client.clone()).unwrap();
