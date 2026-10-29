@@ -9,6 +9,7 @@ Each result has buttons to put part of it on the page at the caret: **Insert ans
 ## Signals and systems
 
 - **Spectrum analyzer.** Paste samples to see their spectrum. It shows amplitude, power, and density views, Welch averages, and a spectrogram, with the window's effect corrected. It also adds up the power in bands (with presets for brain waves), picks peaks, and reads damping from the half-power points.
+- **Digital filter designer.** Design FIR filters by the window method and IIR filters from Butterworth and Chebyshev prototypes, or a simple notch or moving average. See the gain, phase, delay, impulse and step responses, and the poles and zeros. Round the coefficients to fixed point to see what changes, then run the filter on your own samples, once or forward and backward.
 - **Convolution, sampling, and discrete systems.** See convolution as a table: flip, shift, multiply, and add. Find a delay by correlation. Run a difference equation and check its poles. Then explore aliasing, rebuilding a sampled signal, quantization noise, rate changes, and convolution of continuous signals.
 
 ## Communications

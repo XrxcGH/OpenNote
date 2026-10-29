@@ -86,4 +86,12 @@ describe('signals and sound kit', () => {
     expect(inserted[0]?.text).toContain('0.4 + j0.2');
     await walkModes(container);
   });
+
+  it('designs the Butterworth example, inserts its coefficients, and walks every filter mode', async () => {
+    const { container } = await openAt('filters');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('order-2');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Insert table' })[0]!);
+    expect(inserted[0]?.table).toBeTruthy();
+    await walkModes(container);
+  });
 });
