@@ -137,7 +137,7 @@ fn user_folders() -> io::Result<(PathBuf, PathBuf, PathBuf)> {
     Ok(unix_folders(
         cfg!(target_os = "macos"),
         &home,
-        std::env::var_os,
+        |name: &str| std::env::var_os(name),
         &user_dirs,
     ))
 }
