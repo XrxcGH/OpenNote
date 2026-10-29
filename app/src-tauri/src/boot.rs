@@ -27,6 +27,8 @@ pub struct BootData {
     pub version: String,
     pub channel: Channel,
     pub architecture: Architecture,
+    /// The operating system, so the interface can use its conventions and say what it lacks (ADR 0055).
+    pub system: HostSystem,
     /// `settings.json` didn't exist.
     pub first_run: bool,
     pub settings: Settings,
@@ -74,6 +76,29 @@ impl Architecture {
             Self::Arm64
         } else {
             Self::X64
+        }
+    }
+}
+
+/// The operating system this build runs on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum HostSystem {
+    Windows,
+    Macos,
+    Linux,
+}
+
+impl HostSystem {
+    /// The system this build was compiled for. Every Unix but macOS counts as Linux, whose conventions it shares.
+    pub const fn current() -> HostSystem {
+        if cfg!(windows) {
+            Self::Windows
+        } else if cfg!(target_os = "macos") {
+            Self::Macos
+        } else {
+            Self::Linux
         }
     }
 }
@@ -178,6 +203,7 @@ pub fn payload(
         version: version.to_owned(),
         channel,
         architecture: Architecture::current(),
+        system: HostSystem::current(),
         first_run: startup.first_run,
         settings: settings.clone(),
         settings_read_only: startup.settings_read_only,

@@ -47,7 +47,8 @@ pub fn at_start(
     boot_overrides: &BTreeMap<String, bool>,
     settings_flags: &BTreeMap<String, bool>,
 ) -> bool {
-    is_enabled(channel, &[boot_overrides, settings_flags])
+    // macOS and Linux keep their own title bars: the traffic lights, and the window manager's frame (ADR 0055).
+    cfg!(windows) && is_enabled(channel, &[boot_overrides, settings_flags])
 }
 
 /// Applies a caption layout on the main thread, which owns the window: the native frame for `None`, the custom

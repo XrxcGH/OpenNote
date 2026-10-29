@@ -14,7 +14,12 @@
 //   so Ctrl+- on a German keyboard can't match Ctrl+/ through its Slash code.
 // - AltGr types text. While it's down, only a Ctrl+Alt chord whose key is the typed character matches.
 // - Nothing matches during input method composition.
+// - On macOS the chord's "Ctrl" is Command (ADR 0055): Command+S saves. The Control key there belongs to text
+//   editing (Control+A goes to the line's start), so a press with it matches nothing. Chords read the Mac way,
+//   such as "⇧⌘D", and aria-keyshortcuts names Meta.
 
+import { hostSystem, usesCommandKey } from '../platform/system';
+import type { HostSystem } from '../platform/types';
 import { t } from '../strings/t';
 import type { MessageKey } from '../strings/t';
 import type { Chord } from './types';
@@ -161,10 +166,13 @@ function byPhysicalKey(event: KeyInput, mods: Modifiers): Chord | null {
  * Every chord a key press matches, best first: the match by the typed character, then the one by the physical
  * key. Empty for modifiers alone, the Windows key, input method composition, and AltGr text.
  */
-export function chordMatches(event: KeyInput): ChordMatch[] {
-  if (event.isComposing || event.key === 'Process' || event.metaKey) return [];
-  const altGraph = event.getModifierState?.('AltGraph') ?? false;
-  const mods = { ctrl: event.ctrlKey || altGraph, alt: event.altKey || altGraph, shift: event.shiftKey };
+export function chordMatches(event: KeyInput, system: HostSystem = hostSystem()): ChordMatch[] {
+  const command = usesCommandKey(system);
+  // The Windows key, or the Control key on a Mac, is never part of a chord.
+  if (event.isComposing || event.key === 'Process' || (command ? event.ctrlKey : event.metaKey)) return [];
+  const altGraph = !command && (event.getModifierState?.('AltGraph') ?? false);
+  const primary = command ? event.metaKey : event.ctrlKey;
+  const mods = { ctrl: primary || altGraph, alt: event.altKey || altGraph, shift: event.shiftKey };
   const typed = byTypedKey(event.key, mods);
   const matches: ChordMatch[] = typed ? [{ chord: typed, by: 'key' }] : [];
   if (altGraph) return matches;
@@ -177,8 +185,8 @@ export function chordMatches(event: KeyInput): ChordMatch[] {
  * The one chord that names a key press, as the shortcut editor stores it. A digit key gives its digit, so
  * Ctrl+Shift+1 stays Ctrl+Shift+1 on every layout. Other keys give the best match, or null.
  */
-export function primaryChord(event: KeyInput): Chord | null {
-  const matches = chordMatches(event);
+export function primaryChord(event: KeyInput, system: HostSystem = hostSystem()): Chord | null {
+  const matches = chordMatches(event, system);
   const isDigit = (match: ChordMatch) => keyKind(split(match.chord).key) === 'digit';
   const digit = /^Digit\d$/.test(event.code) ? matches.find(isDigit) : undefined;
   return (digit ?? matches[0])?.chord ?? null;
@@ -256,23 +264,39 @@ function names(parts: ChordParts, key: string): string[] {
   );
 }
 
-/** "Ctrl+Shift+D", with translated key names and the key as printed on this keyboard. */
-export function formatChord(text: Chord): string {
+/** The Mac's modifier symbols, in the order macOS prints them: Option, Shift, then Command. */
+const MAC_SYMBOLS = [
+  ['alt', 'keys.macOption'],
+  ['shift', 'keys.macShift'],
+  ['ctrl', 'keys.macCommand'],
+] as const;
+
+/**
+ * "Ctrl+Shift+D", with translated key names and the key as printed on this keyboard. On macOS it reads "⇧⌘D",
+ * the way the menus there print it.
+ */
+export function formatChord(text: Chord, system: HostSystem = hostSystem()): string {
   const parts = parseChord(text);
   if (!parts) return text;
+  if (usesCommandKey(system)) {
+    const key = printedKey(parts);
+    const symbols = MAC_SYMBOLS.filter(([mod]) => parts[mod]).map(([, name]) => t(name));
+    return [...symbols, KEY_NAMES[key] ? t(KEY_NAMES[key] as 'keys.ctrl') : key].join('');
+  }
   return names(parts, printedKey(parts))
     .map((name) => (KEY_NAMES[name] ? t(KEY_NAMES[name] as 'keys.ctrl') : name))
     .join('+');
 }
 
 /** "Control+Shift+D", for aria-keyshortcuts. Several chords are separated by spaces. */
-export function ariaKeyShortcuts(chords: readonly Chord[]): string {
+export function ariaKeyShortcuts(chords: readonly Chord[], system: HostSystem = hostSystem()): string {
+  const aria = usesCommandKey(system) ? { ...ARIA_NAMES, Ctrl: 'Meta' } : ARIA_NAMES;
   return chords
     .map((text) => {
       const parts = parseChord(text);
       return parts
         ? names(parts, parts.key)
-            .map((name) => ARIA_NAMES[name] ?? name)
+            .map((name) => aria[name] ?? name)
             .join('+')
         : text;
     })

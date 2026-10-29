@@ -18,6 +18,7 @@ import type { NotesService } from '../services/notes';
 import { installLayerEscape } from '../state/layers';
 import { initLayout } from '../state/layout';
 import { initOs } from '../state/os';
+import { setHostSystem } from '../platform/system';
 import { initSession } from '../state/session';
 import { initSettings } from '../state/settings';
 import { initUpdater } from '../state/updater';
@@ -33,6 +34,7 @@ export function initFlagsFrom(boot: BootData): void {
 
 /** Fills every shared store from the boot payload and follows the platform's change events. */
 export function initStores(boot: BootData, platform: Platform): void {
+  setHostSystem(boot.system);
   initSettings(boot, platform);
   initOs(boot, platform);
   initSession(boot, platform);

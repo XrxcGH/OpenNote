@@ -30,6 +30,7 @@ import type { ThemeName } from './bindings/ThemeName';
 import type { UpdaterStatus } from './bindings/UpdaterStatus';
 
 export type { Architecture } from './bindings/Architecture';
+export type { HostSystem } from './bindings/HostSystem';
 export type { BootData } from './bindings/BootData';
 export type { CaptionLayout } from './bindings/CaptionLayout';
 export type { CaptionState } from './bindings/CaptionState';
