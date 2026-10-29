@@ -8,6 +8,7 @@ import { shellCall } from '../../../platform/shellqol';
 import { commands, contextMenus } from '../../../registries';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
+import { say } from './say';
 import { shownMounted } from '../pagesApi';
 
 /** The shown page, when the command acts on it: no row, or the shown page's own row. */
@@ -42,7 +43,7 @@ commands.register(
     async run(ctx) {
       const page = shownPageFor(ctx);
       if (page) await openInAnotherEditor(page);
-      else announce(t('storage.source.noPage'));
+      else say(t('storage.source.noPage'));
     },
   }),
 );

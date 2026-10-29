@@ -10,10 +10,20 @@ import styles from './Diagnostics.module.css';
 import { changePrivacy, diagnostics, useOffline, useSafeMode } from './runtime';
 import { safeModeNotice } from './safeStart';
 
-function Chip(props: { label: string; title: string; children: ReactNode }) {
+function Chip(props: { label: string; title: string; children: ReactNode; inline?: boolean }) {
   const [open, setOpen] = useState(false);
   const anchor = useRef<HTMLButtonElement>(null);
   const titleId = useId();
+  // In the More menu the notice is the item itself, drawn open: the menu closes when its button is used, which would
+  // take a popover opened from it away at once.
+  if (props.inline) {
+    return (
+      <section className={styles.body} aria-labelledby={titleId}>
+        <h2 id={titleId}>{props.title}</h2>
+        {props.children}
+      </section>
+    );
+  }
   return (
     <>
       <button
@@ -37,7 +47,7 @@ function Chip(props: { label: string; title: string; children: ReactNode }) {
 }
 
 /** "Working offline", while Work offline is on. */
-export function OfflineChip() {
+export function OfflineChip({ inline = false }: { inline?: boolean }) {
   const offline = useOffline();
   if (!offline) return null;
   const goOnline = () => {
@@ -50,7 +60,7 @@ export function OfflineChip() {
       .catch(() => showToast({ message: t('diagnostics.privacy.offlineFailed'), tone: 'danger' }));
   };
   return (
-    <Chip label={t('diagnostics.privacy.chip')} title={t('diagnostics.privacy.chipTitle')}>
+    <Chip label={t('diagnostics.privacy.chip')} title={t('diagnostics.privacy.chipTitle')} inline={inline}>
       <p>{t('diagnostics.privacy.chipBody')}</p>
       <div className={styles.actions}>
         <Button onClick={() => navigate({ view: 'settings', section: 'privacy' })}>
@@ -65,7 +75,7 @@ export function OfflineChip() {
 }
 
 /** "Safe mode", for the rest of a session that started in safe mode. */
-export function SafeModeChip() {
+export function SafeModeChip({ inline = false }: { inline?: boolean }) {
   const safe = useSafeMode();
   const notice = safeModeNotice(safe);
   if (!notice) return null;
@@ -75,7 +85,7 @@ export function SafeModeChip() {
       .catch(() => showToast({ message: t('diagnostics.privacy.offlineFailed'), tone: 'danger' }));
   };
   return (
-    <Chip label={notice.title} title={notice.title}>
+    <Chip label={notice.title} title={notice.title} inline={inline}>
       <p>{notice.body}</p>
       <h3>{notice.offHeading}</h3>
       <ul>

@@ -159,6 +159,7 @@ class PagesView {
       watch.observe(mounted.flow.element);
       this.stops.push(() => watch.disconnect());
     }
+    this.keepClearOfScrollBars();
     this.apply();
     if (isEnabled('pages.layouts')) {
       applyNotebookDefault(
@@ -167,6 +168,31 @@ class PagesView {
         (next) => this.change(next),
       );
     }
+  }
+
+  /**
+   * The sheet strip and the sheet counter float over the viewport's box, which includes its scroll bars. They sit
+   * beside the bars, never on them: the viewport's bar sizes go to its parent as --scrollbar-inline and --scrollbar-block.
+   */
+  private keepClearOfScrollBars(): void {
+    const { viewport, world } = this.mounted.viewport;
+    const host = viewport.parentElement;
+    if (!host) return;
+    const measure = () => {
+      host.style.setProperty('--scrollbar-inline', `${Math.max(0, viewport.offsetWidth - viewport.clientWidth)}px`);
+      host.style.setProperty('--scrollbar-block', `${Math.max(0, viewport.offsetHeight - viewport.clientHeight)}px`);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    // The bars appear and go as the world grows past the window or shrinks inside it, not only as the window resizes.
+    const watch = new ResizeObserver(measure);
+    watch.observe(viewport);
+    watch.observe(world);
+    this.stops.push(() => {
+      watch.disconnect();
+      host.style.removeProperty('--scrollbar-inline');
+      host.style.removeProperty('--scrollbar-block');
+    });
   }
 
   stop(): void {

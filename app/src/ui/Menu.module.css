@@ -1,5 +1,6 @@
 /* Menus (ARCHITECTURE.md section 15.3) are raised surfaces in the top layer. Each sits at a point, below its anchor,
-   or beside the item that opened it, and flips to stay on screen. They open with a 150 ms fade and 4 px rise and
+   or beside the item that opened it, and flips to stay on screen, 8 px clear of the window's edges. A menu taller than
+   the room scrolls, with a soft shade at the edge that has more. They open with a 150 ms fade and 4 px rise and
    close with a 100 ms fade (BRAND.md section 9). */
 @layer components {
   .menu {
@@ -17,9 +18,17 @@
     overflow-y: auto;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
-    background: var(--color-surface-raised);
+    /* The shades at the top and bottom edges show only while there is more to scroll to that way: the covers in the
+       window's color scroll with the items and hide each shade at its end. */
+    background:
+      linear-gradient(var(--color-surface-raised) 30%, transparent) top / 100% var(--space-8) no-repeat local,
+      linear-gradient(transparent, var(--color-surface-raised) 70%) bottom / 100% var(--space-8) no-repeat local,
+      radial-gradient(farthest-side at 50% 0, var(--menu-shade), transparent) top / 100% var(--space-4) no-repeat,
+      radial-gradient(farthest-side at 50% 100%, var(--menu-shade), transparent) bottom / 100% var(--space-4) no-repeat,
+      var(--color-surface-raised);
     color: var(--color-text-primary);
     box-shadow: var(--elevation-2);
+    --menu-shade: color-mix(in srgb, var(--color-text-primary) 16%, transparent);
     transition:
       opacity var(--motion-duration-fast) var(--motion-easing-enter),
       translate var(--motion-duration-fast) var(--motion-easing-enter);
@@ -36,22 +45,32 @@
     }
   }
 
+  /* An anchored menu keeps 8 px from the window's edge on the side it opens toward (the margin flips with it). When
+     it fits on neither side, it takes the room below (or above) and scrolls, instead of running to the edge. */
   .menu[data-anchored='below'] {
     inset: auto;
+    margin-block-end: var(--space-3);
+    margin-inline-end: var(--space-3);
     position-area: block-end span-inline-end;
     position-try-fallbacks:
       flip-block,
       flip-inline,
-      flip-block flip-inline;
+      flip-block flip-inline,
+      --menu-below-capped,
+      --menu-above-capped;
   }
 
   .menu[data-anchored='beside'] {
     inset: auto;
+    margin-block-end: var(--space-3);
+    margin-inline-end: var(--space-3);
     position-area: inline-end span-block-end;
     position-try-fallbacks:
       flip-inline,
       flip-block,
-      flip-block flip-inline;
+      flip-block flip-inline,
+      --menu-beside-capped,
+      --menu-beside-start-capped;
   }
 
   .item {
@@ -140,6 +159,7 @@
   @media (forced-colors: active) {
     .menu {
       border-color: ButtonBorder;
+      background: Canvas;
     }
 
     .item:focus {
@@ -152,4 +172,27 @@
       color: GrayText;
     }
   }
+}
+
+/* The last resorts of an anchored menu (position-try-fallbacks above): as tall as the room it has, and scrolling. */
+@position-try --menu-below-capped {
+  position-area: block-end span-inline-end;
+  max-block-size: calc(100% - var(--space-3));
+}
+
+@position-try --menu-above-capped {
+  position-area: block-start span-inline-end;
+  margin-block: var(--space-3) 0;
+  max-block-size: calc(100% - var(--space-3));
+}
+
+@position-try --menu-beside-capped {
+  position-area: inline-end span-block-end;
+  max-block-size: calc(100% - var(--space-3));
+}
+
+@position-try --menu-beside-start-capped {
+  position-area: inline-start span-block-end;
+  margin-inline: var(--space-3) 0;
+  max-block-size: calc(100% - var(--space-3));
 }

@@ -7,6 +7,7 @@ import { announcements, expectNoAxeViolations, renderUi } from '../test';
 import { Announcer } from './announce';
 import { showToast, Toaster } from './toast';
 import type { ToastSpec } from './toast';
+import { toastLane } from './toastHooks';
 
 function Page() {
   return (
@@ -272,4 +273,33 @@ describe('toast rendering', () => {
       await expectNoAxeViolations(document.body);
     });
   }
+});
+
+describe('where a toast goes', () => {
+  afterEach(() => document.querySelector('[data-workspace]')?.remove());
+
+  function workspace(pane: boolean) {
+    const root = document.createElement('div');
+    root.dataset.workspace = '';
+    root.innerHTML = `<main style="position:fixed;left:100px;right:0;top:0;bottom:0"></main>${
+      pane ? '<aside data-toast-avoid style="position:fixed;right:0;width:300px;top:0;bottom:0"></aside>' : ''
+    }`;
+    document.body.append(root);
+  }
+
+  it('centers over the page column, clear of a pane at its end', () => {
+    workspace(true);
+    expect(toastLane(false)).toEqual({ start: 100, end: 300 });
+  });
+
+  it('spans the window while a dialog is open', () => {
+    workspace(true);
+    expect(toastLane(true)).toEqual({ start: 0, end: 0 });
+  });
+
+  it('spans the window when the page column is too narrow for a toast', () => {
+    workspace(true);
+    document.querySelector<HTMLElement>('main')!.style.left = `${window.innerWidth - 500}px`;
+    expect(toastLane(false)).toEqual({ start: 0, end: 0 });
+  });
 });

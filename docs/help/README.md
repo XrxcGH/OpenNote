@@ -1,6 +1,6 @@
 # OpenNote help
 
-Short guides for using OpenNote, one for each area of the app. They describe beta 5 (0.1.0-beta.5). Nobody has tried most of these features by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
+Short guides for using OpenNote, one for each area of the app. They describe beta 5 (0.1.0-beta.6). Nobody has tried most of these features by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
 
 Every picture is a real screenshot. [The screens folder](../screens/README.md) has all of them, in light and dark.
 

@@ -3,26 +3,44 @@
 // of ordinary writing, where a curve is a letter and not an arc.
 
 import { distance, polylineLength, segmentsIntersect } from '../primitives';
-import { resample, simplify } from '../simplify';
+import { resample } from '../simplify';
 import type { Vec } from '../types';
-import { arrowCandidate, headBarbs } from './arrow';
+import {
+  afterLanding,
+  endTips,
+  fitHead,
+  headBarbs,
+  headLength,
+  landed,
+  onlyLanding,
+  shaftLine,
+  sharpTurns,
+} from './arrow';
+import { snapSegment } from './lines';
 import { fitPolygon, pickCorners, polygonArea } from './corners';
 import { ELLIPSE_TOLERANCE, fitEllipse } from './ellipse';
-import { POLYGON_TOLERANCE } from './polygons';
+import { POLYGON_TOLERANCE, tapers } from './polygons';
 import type { Candidate } from './types';
 
 const DEGREES = Math.PI / 180;
 /** A regular polygon's sides may differ from their mean by this share. */
 const SIDE_SPREAD = 0.28;
-/** A star's inner corners and its outer corners may each differ from their mean by this share. */
+/** A star's tips may differ from their mean distance from the center by this share of it. */
 const RADIUS_SPREAD = 0.22;
+/** Its notches, nearer the center, by this share of the tips' distance. */
+const NOTCH_SPREAD = 0.12;
+/**
+ * A regular polygon's corners all turn the path by the same angle, within this on average (root mean square). A hand
+ * turns one corner a good way off, but a house turns all five off at once. A pentagon, the house's lookalike, is held
+ * tighter: hand-drawn ones spread under 7 degrees nine times in ten, and a flat-roofed house that read as one spread
+ * 11 to 16.
+ */
+const TURN_SPREAD = 16 * DEGREES;
+const PENTAGON_TURN_SPREAD = 13 * DEGREES;
 /** An arc is accepted when its points stray from the circle by less than this share of the radius. */
 const ARC_TOLERANCE = 0.05;
 const MIN_ARC_SWEEP = 40 * DEGREES;
 const MAX_ARC_SWEEP = 335 * DEGREES;
-const SIMPLIFY_SHARE = 0.03;
-const MIN_BARB_ANGLE = 15 * DEGREES;
-const MAX_BARB_ANGLE = 60 * DEGREES;
 
 const mean = (values: readonly number[]) => values.reduce((s, v) => s + v, 0) / values.length;
 const centerOf = (points: readonly Vec[]): Vec => ({
@@ -49,6 +67,11 @@ function regularPolygon(corners: readonly Vec[], error: number): Candidate | nul
   const side = mean(sides);
   if (sides.some((s) => Math.abs(s - side) > SIDE_SPREAD * side)) return null;
   if (radii.some((r) => Math.abs(r - radius) > SIDE_SPREAD * radius)) return null;
+  const heading = (i: number) =>
+    Math.atan2(corners[(i + 1) % n].y - corners[i].y, corners[(i + 1) % n].x - corners[i].x);
+  const turns = corners.map((_, i) => Math.abs(turn(heading((i + n - 1) % n), heading(i))));
+  const spread = n === 5 ? PENTAGON_TURN_SPREAD : TURN_SPREAD;
+  if (Math.sqrt(mean(turns.map((t) => (t - (2 * Math.PI) / n) ** 2))) > spread) return null;
   const rotation = Math.atan2(corners[0].y - center.y, corners[0].x - center.x);
   return { shape: { kind: 'polygon', sides: n, center, radius, rotation }, ratio: error / POLYGON_TOLERANCE };
 }
@@ -77,9 +100,9 @@ function starFrom(corners: readonly Vec[], error: number): Candidate | null {
   const oddR = mean(odd.map((c) => distance(c, center)));
   const [tips, notches, tipR, notchR, first] =
     evenR >= oddR ? [even, odd, evenR, oddR, 0] : [odd, even, oddR, evenR, 1];
-  const spread = (list: readonly Vec[], r: number) =>
-    list.every((c) => Math.abs(distance(c, center) - r) <= RADIUS_SPREAD * r);
-  if (!spread(tips, tipR) || !spread(notches, notchR)) return null;
+  const spread = (list: readonly Vec[], r: number, reach: number) =>
+    list.every((c) => Math.abs(distance(c, center) - r) <= reach);
+  if (!spread(tips, tipR, RADIUS_SPREAD * tipR) || !spread(notches, notchR, NOTCH_SPREAD * tipR)) return null;
   const ratio = notchR / tipR;
   if (ratio < 0.25 || ratio > 0.7) return null;
   return {
@@ -92,8 +115,11 @@ function starFrom(corners: readonly Vec[], error: number): Candidate | null {
 const MAX_FREEFORM_CORNERS = 7;
 /** An irregular polygon's corners each turn the path by at least this much, or they are no corner. */
 const MIN_CORNER_TURN = 30 * DEGREES;
-/** Its sides are each at least this share of its perimeter, so a crowded pair of corners is no polygon. */
-const MIN_SIDE_SHARE = 0.07;
+/**
+ * Its sides are each at least this share of its perimeter, so a crowded pair of corners is no polygon. An L's foot is
+ * 7 to 11% of its outline as meant, and less once the hand's corners wander; pickCorners already keeps sides over 3%.
+ */
+const MIN_SIDE_SHARE = 0.04;
 /** One more corner is taken only when it cuts the fit error below this share of the fewer-cornered fit's. */
 const EXTRA_CORNER_GAIN = 0.4;
 /**
@@ -106,17 +132,20 @@ const GOOD_FIT = 0.2;
 /** A four-cornered outline whose corners all turn within this of a right angle is a sloppy rectangle, not a new shape. */
 const NEAR_RIGHT_ANGLE = 22 * DEGREES;
 /**
- * ...unless a corner is past the rectangle's own tolerance and two opposite sides are parallel within this: a narrow
- * trapezoid or a slightly slanted parallelogram, drawn on purpose, which the rectangle turns down.
+ * ...unless it is a narrow trapezoid or a slightly slanted parallelogram, drawn on purpose, which the rectangle turns
+ * down. Its legs splay while its bases stay parallel (TAPER_PARALLEL), or a corner is past the rectangle's own
+ * tolerance while two opposite sides are parallel within PARALLEL.
  */
 const RECTANGLE_TOLERANCE = 15 * DEGREES;
 const PARALLEL = 4 * DEGREES;
+/** A trapezoid's bases run within this of each other, as the hand draws them. */
+const TAPER_PARALLEL = 6 * DEGREES;
 
 /** Whether two opposite sides of a four-cornered outline run within `PARALLEL` of each other. */
-function parallelPair(corners: readonly Vec[]): boolean {
+function parallelPair(corners: readonly Vec[], within = PARALLEL): boolean {
   const heading = (i: number) =>
     Math.atan2(corners[(i + 1) % 4].y - corners[i].y, corners[(i + 1) % 4].x - corners[i].x);
-  return [0, 1].some((i) => Math.abs(Math.abs(turn(heading(i), heading(i + 2))) - Math.PI) < PARALLEL);
+  return [0, 1].some((i) => Math.abs(Math.abs(turn(heading(i), heading(i + 2))) - Math.PI) < within);
 }
 
 /** Whether the corners make a simple polygon: no side crosses another, every corner is sharp, no side is tiny. */
@@ -140,7 +169,8 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
       if (segmentsIntersect(corners[i], corners[(i + 1) % n], corners[j], corners[(j + 1) % n])) return false;
     }
   }
-  return !(n === 4 && nearRight === 4) || (pastRectangle && parallelPair(corners));
+  if (n !== 4 || nearRight < 4) return true;
+  return (tapers(corners) && parallelPair(corners, TAPER_PARALLEL)) || (pastRectangle && parallelPair(corners));
 }
 
 /**
@@ -263,77 +293,81 @@ export function arcCandidate(points: readonly Vec[]): Candidate | null {
   };
 }
 
-/** Whether a head's barbs sit at a believable angle off the way back along the shaft, one on each side. */
-function headFits(tip: Vec, barbs: readonly [Vec, Vec], back: Vec): boolean {
-  const sides: number[] = [];
-  for (const barb of barbs) {
-    const length = distance(tip, barb);
-    if (length === 0) return false;
-    const cos = ((barb.x - tip.x) * back.x + (barb.y - tip.y) * back.y) / length;
-    const angle = Math.acos(Math.max(-1, Math.min(1, cos)));
-    if (angle < MIN_BARB_ANGLE || angle > MAX_BARB_ANGLE) return false;
-    sides.push(Math.sign(back.x * (barb.y - tip.y) - back.y * (barb.x - tip.x)));
-  }
-  return sides[0] * sides[1] < 0;
-}
-
 const unit = (from: Vec, to: Vec): Vec => {
   const length = distance(from, to) || 1;
   return { x: (to.x - from.x) / length, y: (to.y - from.y) / length };
 };
 
-/** An arc that ends in an arrow head: the head is the last four corners, as for a straight arrow. */
-export function curvedArrowCandidate(points: readonly Vec[], size: number, width: number): Candidate | null {
-  const vertices = simplify(points, SIMPLIFY_SHARE * size);
-  if (vertices.length < 6) return null;
-  const [tip, barbA, , barbB] = vertices.slice(-4);
-  const at = points.findIndex((p) => p === tip);
-  const body = at > 8 ? points.slice(0, at + 1) : null;
-  if (!body) return null;
-  const arc = arcOf(resample(body, 48));
-  if (!arc) return null;
-  const tail = body.slice(-Math.max(3, Math.floor(body.length * 0.08)));
-  const back = unit(tip, tail[0]);
-  if (!headFits(tip, [barbA, barbB], back)) return null;
-  const direction = unit(tail[0], tip);
-  const armLength = Math.max(10, 4 * width, distance(tip, barbA));
-  const barbs = headBarbs(tip, direction, Math.min(armLength, polylineLength(body) * 0.4));
-  return {
-    shape: {
-      kind: 'curvedArrow',
-      center: arc.fit.center,
-      radius: arc.fit.radius,
-      start: arc.start,
-      sweep: arc.sweep,
-      barbs,
-    },
-    ratio: arc.fit.error / ARC_TOLERANCE,
-  };
+/** An arc that ends in an arrow head, drawn as for a straight arrow. */
+export function curvedArrowCandidate(points: readonly Vec[], _size: number, width: number): Candidate | null {
+  const { path, at } = sharpTurns(points);
+  let best: Candidate | null = null;
+  for (const { tipAt, before } of endTips(path, at)) {
+    if (!onlyLanding(path, at, before)) continue;
+    const body = path.slice(afterLanding(at, before, tipAt), tipAt + 1);
+    if (body.length < 8) continue;
+    const arc = arcOf(resample(body, 48));
+    if (!arc) continue;
+    // The arc runs back to where the pen landed, past the stretch left out of the fit.
+    const { center, radius } = arc.fit;
+    const landing = path[landed(at, before)];
+    const start = Math.atan2(landing.y - center.y, landing.x - center.x);
+    const sweep = arc.sweep + turn(start, arc.start);
+    // The arc's end, and the way it runs there: along the circle, turning the way the arc sweeps.
+    const endAngle = arc.start + arc.sweep;
+    const tip = { x: center.x + radius * Math.cos(endAngle), y: center.y + radius * Math.sin(endAngle) };
+    const way = Math.sign(arc.sweep);
+    const direction = { x: -Math.sin(endAngle) * way, y: Math.cos(endAngle) * way };
+    const length = polylineLength(body);
+    const fit = fitHead(path, tipAt, direction, length);
+    if (!fit) continue;
+    const { head } = fit;
+    const ratio = Math.max(arc.fit.error / ARC_TOLERANCE, fit.ratio);
+    if (best && best.ratio <= ratio) continue;
+    const barbs = headBarbs(tip, direction, headLength(head, width, length));
+    best = { shape: { kind: 'curvedArrow', center, radius, start, sweep, barbs }, ratio };
+  }
+  return best;
 }
 
 // ---- double arrows ----
 
-/** A shaft with a head at each end, drawn as head, shaft, head without lifting. */
-export function doubleArrowCandidate(points: readonly Vec[], size: number, width: number): Candidate | null {
-  const vertices = simplify(points, SIMPLIFY_SHARE * size);
-  if (vertices.length < 8) return null;
-  const [barbA, tipA, barbB, tipAgain] = vertices;
-  const start = points.findIndex((p) => p === tipAgain);
-  if (start < 0 || start > points.length / 2) return null;
-  const tail = arrowCandidate(points.slice(start), size, width);
-  if (!tail || tail.shape.kind !== 'arrow') return null;
-  const { from, tip, barbs } = tail.shape;
-  const forward = unit(from, tip);
-  if (!headFits(tipA, [barbA, barbB], forward)) return null;
-  const length = Math.max(distance(tip, barbs[0]), distance(tipA, barbA) * 0.5);
-  return {
-    shape: {
-      kind: 'doubleArrow',
-      from,
-      to: tip,
-      barbsFrom: headBarbs(from, unit(tip, from), length),
-      barbsTo: barbs,
-    },
-    ratio: tail.ratio,
-  };
+/**
+ * A shaft with a head at each end, drawn head, shaft, head in one stroke: each end holds a straight arrow's head, and
+ * the first is drawn backwards from the shaft. The shaft runs between two sharp turns in a row, the heads' tips: the
+ * last turn of the first head and the first of the second, so no sharp turn lies on it.
+ */
+export function doubleArrowCandidate(points: readonly Vec[], _size: number, width: number): Candidate | null {
+  const { path, at } = sharpTurns(points);
+  const n = path.length;
+  // The first head, drawn barb, tip, barb, tip, is a straight arrow's head drawn backwards from the shaft.
+  const reversed = [...path].reverse();
+  const starts = endTips(reversed, at.map((i) => n - 1 - i).reverse()).map(({ tipAt }) => n - 1 - tipAt);
+  let best: Candidate | null = null;
+  for (const { tipAt } of endTips(path, at)) {
+    const k = at.indexOf(tipAt);
+    const fromAt = k > 0 ? at[k - 1] : -1;
+    if (!starts.includes(fromAt)) continue;
+    const shaft = shaftLine(path, fromAt, tipAt, fromAt, true);
+    if (!(shaft && shaft.ratio < 1)) continue;
+    const forward = unit(shaft.from, shaft.to);
+    const end = fitHead(path, tipAt, forward, shaft.length);
+    const start = end && fitHead(reversed, n - 1 - fromAt, { x: -forward.x, y: -forward.y }, shaft.length);
+    if (!end || !start) continue;
+    const ratio = Math.max(shaft.ratio, end.ratio, start.ratio);
+    if (best && best.ratio <= ratio) continue;
+    const [from, to] = snapSegment(shaft.from, shaft.to);
+    const length = Math.max(headLength(end.head, width, shaft.length), headLength(start.head, width, shaft.length));
+    best = {
+      shape: {
+        kind: 'doubleArrow',
+        from,
+        to,
+        barbsFrom: headBarbs(from, unit(to, from), length),
+        barbsTo: headBarbs(to, unit(from, to), length),
+      },
+      ratio,
+    };
+  }
+  return best;
 }

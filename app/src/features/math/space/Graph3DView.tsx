@@ -9,6 +9,7 @@ import { createElement } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce, showToast } from '../../../ui';
 import { Sliders } from '../graph/parts';
+import { useSvgScale } from '../svgScale';
 import { multiParameters } from './multivar';
 import { screenPaint, exportPaint } from './paint';
 import { drawnToSvg } from './project';
@@ -232,6 +233,8 @@ function ViewButtons(props: { camera: Camera; space: SpaceSource; commit(next: C
 }
 
 export function Graph3DView({ source, editable, onSource }: Graph3DViewProps) {
+  const svg = useRef<SVGSVGElement>(null);
+  useSvgScale(svg, SIZE_3D.width);
   const space = useMemo(() => readSpace(source), [source]);
   const { names, values } = useParams(space);
   const withValues = useMemo(() => ({ ...space, params: values }), [space, values]);
@@ -250,6 +253,7 @@ export function Graph3DView({ source, editable, onSource }: Graph3DViewProps) {
       <ItemBoxes space={space} world={world} editable={editable} onItems={(items) => send({ items })} />
       <ShowButtons show={space.show} editable={editable} onShow={(show) => send({ show })} />
       <svg
+        ref={svg}
         className={styles.plot}
         viewBox={`0 0 ${SIZE_3D.width} ${SIZE_3D.height}`}
         role="application"

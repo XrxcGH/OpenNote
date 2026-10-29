@@ -94,6 +94,8 @@ export function plotShape(line: string): PlotShape | null {
     const surface = tuple.some((part) => usesLetter(part, 'u') || usesLetter(part, 'v'));
     return { kind: surface ? 'parametricSurface' : 'curve', parts: tuple };
   }
+  // A bare expression in x and y, with or without spaces, is the surface z = that expression.
+  if (!line.includes('=') && !tuple && usesXandY(line)) return { kind: 'surface', parts: [line.trim()] };
   return null;
 }
 

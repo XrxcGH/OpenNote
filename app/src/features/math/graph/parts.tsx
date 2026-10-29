@@ -136,11 +136,6 @@ export function PlotLayers({ scene, trace }: { scene: GraphScene; trace: Trace |
       <path className={styles.gridMinor} d={gridPath(scene, false)} />
       <path className={styles.gridMajor} d={gridPath(scene, true)} />
       <path className={styles.axis} d={`M0 ${grid.xAxis.pixel}H${SIZE.width}M${grid.yAxis.pixel} 0V${SIZE.height}`} />
-      {tickLabels(scene).map((label) => (
-        <text key={label.key} className={styles.label} x={label.x} y={label.y}>
-          {label.text}
-        </text>
-      ))}
       {scene.curves.map((curve, index) => (
         <path
           key={index}
@@ -148,6 +143,11 @@ export function PlotLayers({ scene, trace }: { scene: GraphScene; trace: Trace |
           className={curve.kind === 'field' || curve.kind === 'slope' ? styles.field : styles.curve}
           style={{ stroke: `var(${PENS[index % PENS.length]})` }}
         />
+      ))}
+      {tickLabels(scene).map((label) => (
+        <text key={label.key} className={styles.label} x={label.x} y={label.y}>
+          {label.text}
+        </text>
       ))}
       {dot ? <circle className={styles.dot} cx={dot.x} cy={dot.y} r={5} /> : null}
     </>

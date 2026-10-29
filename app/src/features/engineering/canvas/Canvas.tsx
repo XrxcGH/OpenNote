@@ -4,6 +4,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef } from 'react';
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import type { Point } from './geometry';
+import { useSvgScale } from './svgScale';
 import styles from './canvas.module.css';
 
 export interface View {
@@ -81,6 +82,7 @@ export function Canvas({ label, columns, rows, scale = 40, onBackground, childre
 
   const width = columns * scale + PAD * 2;
   const height = rows * scale + PAD * 2;
+  useSvgScale(svg, width);
   const lines: ReactNode[] = [];
   for (let c = 0; c <= columns; c++) {
     const x = PAD + c * scale;
