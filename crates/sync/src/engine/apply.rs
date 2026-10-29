@@ -38,7 +38,17 @@ impl Engine {
         let prepared = self
             .stage_all(&plan, &mut staged)
             .and_then(|()| self.upload_all(&plan))
-            .and_then(|sent| self.publish(&plan, &state).map(|generation| (sent, generation)));
+            .and_then(|(sent, reused)| {
+                let generation = self.publish(&plan, &state)?;
+                // A chunk this round found already in storage may have been removed by another device's garbage
+                // collection before the head that needs it was written. Once the head is there, no collection
+                // removes it, so checking now and sending what went missing closes that gap.
+                let mut resent = 0;
+                if plan.publish && self.any_missing(&reused)? {
+                    resent = self.upload_all(&plan)?.0;
+                }
+                Ok((sent + resent, generation))
+            });
         let (chunks_sent, generation) = match prepared {
             Ok(done) => done,
             Err(error) => {
@@ -75,6 +85,7 @@ impl Engine {
             device: self.device.clone(),
             generation,
             seen: plan.seen.clone(),
+            at: super::now_ms(),
             entries: plan.merged.clone(),
         };
         let name = head_name(&self.device, generation);
@@ -219,11 +230,10 @@ impl Engine {
             return file.write(bytes);
         }
         if let Some(rel) = local_by_id.get(content.id.as_str()) {
-            if let Ok(bytes) = fs::read(local::join(&self.root, rel)) {
-                if bytes.len() as u64 == content.size && self.hash(&bytes).id == content.id {
-                    return file.write(&bytes);
-                }
+            if self.copy_local(file, rel, content)? {
+                return Ok(());
             }
+            file.rewind()?;
         }
         let mut hasher = local::Hasher::new(&self.keys.chunk, &self.keys.content);
         for id in &content.chunks {
@@ -237,8 +247,39 @@ impl Engine {
         Ok(())
     }
 
-    fn upload_all(&self, plan: &Plan) -> Result<usize> {
+    /// Copies a local file that has the same content (a moved or renamed asset) into the staged file one chunk at
+    /// a time, so memory stays bounded however large it is. `false` if it changed or went away meanwhile.
+    fn copy_local(&self, file: &mut Staged, rel: &str, content: &Content) -> Result<bool> {
+        let Ok(mut source) = fs::File::open(local::join(&self.root, rel)) else {
+            return Ok(false);
+        };
+        let mut buf = Vec::with_capacity(local::CHUNK);
+        let mut hasher = local::Hasher::new(&self.keys.chunk, &self.keys.content);
+        let mut size = 0u64;
+        while local::read_chunk(&mut source, &mut buf)? > 0 {
+            size += buf.len() as u64;
+            if size > content.size {
+                return Ok(false);
+            }
+            hasher.chunk(&buf);
+            file.write(&buf)?;
+        }
+        Ok(hasher.finish() == *content)
+    }
+
+    fn any_missing(&self, ids: &[String]) -> Result<bool> {
+        for id in ids {
+            if !self.backend.exists(&super::chunk_name(id))? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    /// Sends the chunks storage lacks. Returns how many it sent, and the ones storage already had.
+    fn upload_all(&self, plan: &Plan) -> Result<(usize, Vec<String>)> {
         let mut sent = 0;
+        let mut reused = Vec::new();
         let mut buf = Vec::with_capacity(local::CHUNK);
         for path in &plan.uploads {
             let entry = &plan.local[path];
@@ -250,7 +291,11 @@ impl Engine {
                     // The file changed since the scan: try again next round with what is there then.
                     return Err(SyncError::Interrupted);
                 }
-                sent += usize::from(self.put_chunk(&id, &buf)?);
+                if self.put_chunk(&id, &buf)? {
+                    sent += 1;
+                } else {
+                    reused.push(id);
+                }
             }
             if hasher.finish() != entry.content {
                 return Err(SyncError::Interrupted);
@@ -259,10 +304,14 @@ impl Engine {
         for bytes in plan.pending.values() {
             for part in bytes.chunks(local::CHUNK) {
                 let id = hex(&mac(self.keys.chunk.as_ref(), &[part]));
-                sent += usize::from(self.put_chunk(&id, part)?);
+                if self.put_chunk(&id, part)? {
+                    sent += 1;
+                } else {
+                    reused.push(id);
+                }
             }
         }
-        Ok(sent)
+        Ok((sent, reused))
     }
 
     /// Moves a staged file into place or deletes one. `None` when the local file changed since the plan.

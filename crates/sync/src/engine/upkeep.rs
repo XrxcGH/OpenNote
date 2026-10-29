@@ -24,6 +24,7 @@ impl Engine {
             device: self.device.clone(),
             generation,
             seen: state.seen.clone(),
+            at: super::now_ms(),
             entries,
         };
         let name = head_name(&self.device, generation);
@@ -67,13 +68,17 @@ impl Engine {
             .collect();
         let unused: BTreeSet<String> = stored.difference(&used).cloned().collect();
         let mut removed = BTreeSet::new();
+        // Two newer heads of every device, not one: a round that was already under way when the chunks were marked
+        // may have found one in storage and still be about to write the head that needs it.
         let ready = state.gc.as_ref().is_some_and(|mark| {
             now - mark.at >= GC_GRACE_MS
                 && mark.generations.iter().all(|(device, g)| {
-                    newest.get(device).is_some_and(|n| n > g)
+                    newest.get(device).is_some_and(|n| *n >= g + 2)
                         || vault::is_removed(self.backend.as_ref(), &self.keys, device).unwrap_or(false)
                 })
         });
+        // A head written since this run listed them may need a chunk it found unused: then wait for the next run.
+        let ready = ready && self.heads()?.0 == newest;
         if ready {
             let mark = state.gc.take().expect("ready");
             for id in mark.chunks.intersection(&unused) {

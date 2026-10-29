@@ -80,6 +80,9 @@ pub struct Head {
     /// The newest generation of each other device that this one had merged.
     #[serde(default)]
     pub seen: BTreeMap<String, u64>,
+    /// When the device wrote it, in Unix milliseconds; 0 in heads written before this was kept.
+    #[serde(default)]
+    pub at: i64,
     /// Every path.
     pub entries: Manifest,
 }
@@ -100,7 +103,17 @@ pub fn decode(bytes: &[u8]) -> Option<Head> {
     let mut json = Vec::new();
     DeflateDecoder::new(bytes).take(MAX_HEAD).read_to_end(&mut json).ok()?;
     let head: Head = serde_json::from_slice(&json).ok()?;
-    (head.v == 1).then_some(head)
+    let ids_ok = head
+        .entries
+        .values()
+        .all(|e| is_id(&e.content.id) && e.content.chunks.iter().all(|c| is_id(c)));
+    (head.v == 1 && ids_ok).then_some(head)
+}
+
+/// Whether a content or chunk ID is what this crate writes: 64 lowercase hex characters, a 32-byte keyed hash.
+/// Anything else came from a buggy or hostile device, and names a blob it shouldn't.
+pub fn is_id(id: &str) -> bool {
+    id.len() == 64 && id.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
 
 #[cfg(test)]
@@ -132,9 +145,9 @@ mod tests {
             Entry {
                 vv: vv(&[("a", 1)]),
                 content: Content {
-                    id: "ab".into(),
+                    id: "ab".repeat(32),
                     size: 3,
-                    chunks: vec!["cd".into()],
+                    chunks: vec!["cd".repeat(32)],
                 },
                 deleted: false,
             },
@@ -144,11 +157,26 @@ mod tests {
             device: "a".into(),
             generation: 4,
             seen: BTreeMap::new(),
+            at: 1_800_000_000_000,
             entries,
         };
         assert_eq!(decode(&encode(&head).expect("encodes")).expect("decodes"), head);
         assert!(decode(b"not deflate").is_none());
-        let newer = Head { v: 2, ..head };
+        let newer = Head { v: 2, ..head.clone() };
         assert!(decode(&encode(&newer).expect("encodes")).is_none());
+        // A chunk ID that isn't 64 hex characters, such as one that starts with a character of several bytes, would
+        // name a blob outside `c/`, or split a character when it is cut for the folder name.
+        for bad in ["é".repeat(32), "AB".repeat(32), "ab".into(), "../".repeat(21) + "a"] {
+            let mut odd = head.clone();
+            for entry in odd.entries.values_mut() {
+                entry.content.chunks = vec![bad.clone()];
+            }
+            assert!(decode(&encode(&odd).expect("encodes")).is_none(), "{bad}");
+            let mut odd = head.clone();
+            for entry in odd.entries.values_mut() {
+                entry.content.id = bad.clone();
+            }
+            assert!(decode(&encode(&odd).expect("encodes")).is_none(), "{bad}");
+        }
     }
 }

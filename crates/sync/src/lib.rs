@@ -21,7 +21,7 @@ pub mod merge;
 pub mod vault;
 
 pub use backend::{Backend, FolderBackend, MemoryBackend, WebDavBackend, WebDavConfig};
-pub use engine::{Engine, LocalState, Plan, Report, Summary};
+pub use engine::{last_published, Engine, LocalState, Plan, Report, Summary};
 pub use error::{Result, SyncError};
 pub use merge::Conflict;
 pub use vault::{DeviceInfo, DeviceSecret, PairingCode, RecoveryKey, VaultKeys};

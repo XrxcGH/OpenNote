@@ -37,7 +37,8 @@ mod upkeep;
 
 /// How long a chunk that nothing refers to waits before it is removed: a week.
 pub const GC_GRACE_MS: i64 = 7 * 24 * 60 * 60 * 1000;
-/// The biggest small file the merge rules read.
+/// The biggest file the merge rules read whole: the core's own limit on a `page.json` (`Limits.page_json_bytes`),
+/// as no larger page opens. Large files (assets, recordings) never reach the rules; they stream in chunks.
 const MAX_RULE_FILE: u64 = 64 * 1024 * 1024;
 
 /// What this device remembers between rounds. It lives in the app's local data, never in the notes folder.
@@ -168,12 +169,19 @@ pub struct Engine {
     faults: std::sync::Mutex<Option<usize>>,
 }
 
+/// Now, in Unix milliseconds.
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
+}
+
 fn head_name(device: &str, generation: u64) -> String {
     format!("h/{device}/{generation}")
 }
 
 fn chunk_name(id: &str) -> String {
-    format!("c/{}/{id}", &id[..2.min(id.len())])
+    format!("c/{}/{id}", id.get(..2).unwrap_or(""))
 }
 
 struct Store<'a> {
@@ -324,42 +332,75 @@ impl Engine {
     }
 
     fn read_head(&self, device: &str, generation: u64) -> Result<Head> {
-        let name = head_name(device, generation);
-        let sealed = self.backend.get(&name)?.ok_or(SyncError::Incomplete)?;
-        let plain = open(&self.keys.seal, &self.keys.id, "head", &name, &sealed)
-            .ok_or_else(|| SyncError::Tampered("A device's list of changes doesn't open.".into()))?;
-        let head = unpad(&plain)
-            .and_then(manifest::decode)
-            .ok_or_else(|| SyncError::Tampered("A device's list of changes doesn't read.".into()))?;
-        if head.device != device || head.generation != generation {
-            return Err(SyncError::Tampered(
-                "A device's list of changes is under the wrong name.".into(),
-            ));
-        }
-        Ok(head)
+        read_head(self.backend.as_ref(), &self.keys, device, generation)
     }
 
     /// The newest generation of every device's heads, and every generation of this device's.
     fn heads(&self) -> Result<(BTreeMap<String, u64>, Vec<u64>)> {
-        let mut newest: BTreeMap<String, u64> = BTreeMap::new();
-        let mut own = Vec::new();
-        for name in self.backend.list("h/")? {
-            let mut parts = name.split('/').skip(1);
-            let (Some(device), Some(generation), None) = (parts.next(), parts.next(), parts.next()) else {
-                continue;
-            };
-            let Ok(generation) = generation.parse::<u64>() else {
-                continue;
-            };
-            if device == self.device {
-                own.push(generation);
+        let (newest, mut own) = list_heads(self.backend.as_ref(), &self.device)?;
+        own.sort_unstable();
+        Ok((newest, own))
+    }
+}
+
+fn parse_head_name(name: &str) -> Option<(&str, u64)> {
+    let mut parts = name.split('/');
+    let (Some("h"), Some(device), Some(generation), None) = (parts.next(), parts.next(), parts.next(), parts.next())
+    else {
+        return None;
+    };
+    Some((device, generation.parse::<u64>().ok()?))
+}
+
+/// The newest generation of every device's heads, and every generation of `own`'s, from one listing.
+fn list_heads(backend: &dyn Backend, own: &str) -> Result<(BTreeMap<String, u64>, Vec<u64>)> {
+    let mut newest: BTreeMap<String, u64> = BTreeMap::new();
+    let mut mine = Vec::new();
+    for name in backend.list("h/")? {
+        if let Some((device, generation)) = parse_head_name(&name) {
+            if device == own {
+                mine.push(generation);
             }
             let slot = newest.entry(device.to_owned()).or_insert(0);
             *slot = (*slot).max(generation);
         }
-        own.sort_unstable();
-        Ok((newest, own))
     }
+    Ok((newest, mine))
+}
+
+fn read_head(backend: &dyn Backend, keys: &VaultKeys, device: &str, generation: u64) -> Result<Head> {
+    let name = head_name(device, generation);
+    let sealed = backend.get(&name)?.ok_or(SyncError::Incomplete)?;
+    let plain = open(&keys.seal, &keys.id, "head", &name, &sealed)
+        .ok_or_else(|| SyncError::Tampered("A device's list of changes doesn't open.".into()))?;
+    let head = unpad(&plain)
+        .and_then(manifest::decode)
+        .ok_or_else(|| SyncError::Tampered("A device's list of changes doesn't read.".into()))?;
+    if head.device != device || head.generation != generation {
+        return Err(SyncError::Tampered(
+            "A device's list of changes is under the wrong name.".into(),
+        ));
+    }
+    Ok(head)
+}
+
+/// When each device last wrote a head, in Unix milliseconds, for the device list: 0 when its newest head is
+/// older than this was kept. A device with no head yet isn't listed.
+pub fn last_published(backend: &dyn Backend, keys: &VaultKeys) -> Result<BTreeMap<String, i64>> {
+    let mut out = BTreeMap::new();
+    for (device, generation) in list_heads(backend, "")?.0 {
+        match read_head(backend, keys, &device, generation) {
+            Ok(head) => {
+                out.insert(device, head.at);
+            }
+            // Pruned between the listing and the read: the device just wrote a newer one.
+            Err(SyncError::Incomplete) => {
+                out.insert(device, now_ms());
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(out)
 }
 
 /// A hash of a manifest's paths and versions.

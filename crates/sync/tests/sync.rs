@@ -325,8 +325,15 @@ fn unused_chunks_go_only_after_the_grace_period_and_every_device_moved_on() {
     );
     d[1].write("Bio/other.txt", b"x");
     settle(&d, 2);
+    assert_eq!(
+        d[0].engine.collect_garbage(8 * day).expect("waits"),
+        0,
+        "one newer head isn't enough: a round may have been under way at the mark"
+    );
+    d[1].write("Bio/third.txt", b"y");
+    settle(&d, 2);
     assert_eq!(d[0].engine.collect_garbage(8 * day).expect("collects"), 1);
-    assert_eq!(chunks(), 2, "the old chunk went, the new file's chunk came");
+    assert_eq!(chunks(), 3, "the old chunk went, and the two new files' chunks came");
     settle(&d, 2);
     assert_eq!(d[1].read("Bio/big.bin"), Some(vec![2u8; 10]));
 }
@@ -458,4 +465,82 @@ fn a_protected_section_changed_on_two_devices_keeps_both_whole() {
         "{:?}",
         quiet.summary
     );
+}
+
+/// Storage where another device's garbage collection removes `victim` just before this device writes its head.
+struct CollectedMeanwhile {
+    inner: MemoryBackend,
+    victim: std::sync::Mutex<Option<String>>,
+}
+
+impl Backend for CollectedMeanwhile {
+    fn get(&self, name: &str) -> opennote_sync::Result<Option<Vec<u8>>> {
+        self.inner.get(name)
+    }
+    fn put(&self, name: &str, bytes: &[u8]) -> opennote_sync::Result<()> {
+        if name.starts_with("h/") {
+            if let Some(victim) = self.victim.lock().expect("lock").take() {
+                self.inner.delete(&victim)?;
+            }
+        }
+        self.inner.put(name, bytes)
+    }
+    fn exists(&self, name: &str) -> opennote_sync::Result<bool> {
+        self.inner.exists(name)
+    }
+    fn list(&self, prefix: &str) -> opennote_sync::Result<Vec<String>> {
+        self.inner.list(prefix)
+    }
+    fn delete(&self, name: &str) -> opennote_sync::Result<()> {
+        self.inner.delete(name)
+    }
+}
+
+#[test]
+fn a_chunk_collected_while_a_round_reused_it_is_sent_again() {
+    let store = MemoryBackend::new();
+    let shared = Arc::new(CollectedMeanwhile {
+        inner: store.clone(),
+        victim: std::sync::Mutex::new(None),
+    });
+    let mut d = devices(shared.clone(), 2);
+    d[0].write("Bio/old.txt", b"bytes that come back");
+    settle(&d, 2);
+    let chunk = store
+        .snapshot()
+        .keys()
+        .find(|n| n.starts_with("c/"))
+        .expect("the old file's chunk")
+        .clone();
+    // Changed, so no head refers to the first bytes any more, and garbage collection may take their chunk.
+    d[0].write("Bio/old.txt", b"something else");
+    settle(&d, 2);
+    // The same bytes come back under a new name: storage still has the chunk, so the round reuses it, and then
+    // another device collects it just before this round writes its head.
+    d[0].write("Bio/new.txt", b"bytes that come back");
+    *shared.victim.lock().expect("lock") = Some(chunk.clone());
+    d[0].engine.sync().expect("syncs");
+    assert!(store.exists(&chunk).expect("exists"), "the round sent the chunk again");
+    d[1].restart(Arc::new(store.clone()));
+    d[1].engine.sync().expect("the other device finds everything");
+    assert_eq!(d[1].read("Bio/new.txt").as_deref(), Some(&b"bytes that come back"[..]));
+}
+
+#[test]
+fn a_moved_file_is_copied_from_its_old_place_without_storage() {
+    let (store, mut d) = pair();
+    let big = vec![9u8; 3 * 1024 * 1024 + 11];
+    d[0].write("Bio/assets/recording.webm", &big);
+    settle(&d, 2);
+    d[0].write("Bio/moved/recording.webm", &big);
+    d[0].remove("Bio/assets/recording.webm");
+    d[0].engine.sync().expect("syncs");
+    // Without the chunks in storage, the only way to the moved file is the copy already on this device.
+    for name in store.snapshot().keys().filter(|n| n.starts_with("c/")) {
+        store.remove_raw(name);
+    }
+    d[1].restart(Arc::new(store.clone()));
+    d[1].engine.sync().expect("syncs from the local copy");
+    assert_eq!(d[1].read("Bio/moved/recording.webm"), Some(big));
+    assert_eq!(d[1].read("Bio/assets/recording.webm"), None);
 }

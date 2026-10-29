@@ -278,6 +278,14 @@ impl Staged {
             .map_err(SyncError::local)
     }
 
+    /// Empties the file, to start it again.
+    pub fn rewind(&mut self) -> Result<()> {
+        use std::io::Seek;
+        let file = self.file.as_mut().expect("open until finished");
+        file.set_len(0).map_err(SyncError::local)?;
+        file.rewind().map_err(SyncError::local)
+    }
+
     /// Flushes the file to disk.
     pub fn finish(&mut self) -> Result<()> {
         if let Some(file) = self.file.take() {
