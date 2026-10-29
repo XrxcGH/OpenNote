@@ -105,17 +105,6 @@ describe('the mechanisms and dynamics kit window', () => {
     expect(inserted[4].picture).toBeTruthy();
   });
 
-  it('opens on the tool a palette command names', async () => {
-    await renderApp();
-    await commands.get('tools.kitMechDyn.sdof')!.run({} as never, undefined as never);
-    await waitFor(() => expect(openTools()).toContain('kit-mechdyn'));
-    const dialog = await screen.findByRole('dialog', { name: 'Mechanisms and dynamics' });
-    const tab = await within(dialog).findByRole('tab', { name: words.sdof.short }, { timeout: 15_000 });
-    expect(tab.getAttribute('aria-selected')).toBe('true');
-  });
-});
-
-describe('the kit window and the page', () => {
   it('inserts a live calculation block that reopens the tool with its inputs', async () => {
     saveTab('sdof');
     const kit = renderUi(<MechDynKit />);
@@ -156,5 +145,14 @@ describe('the kit window and the page', () => {
     expect(inserted[0].picture).toBeTruthy();
     await userEvent.click(within(motion).getByRole('button', { name: 'Play' }));
     expect(within(motion).getByRole('button', { name: 'Pause' })).toBeTruthy();
+  });
+
+  it('opens on the tool a palette command names', async () => {
+    await renderApp();
+    await commands.get('tools.kitMechDyn.sdof')!.run({} as never, undefined as never);
+    await waitFor(() => expect(openTools()).toContain('kit-mechdyn'));
+    const dialog = await screen.findByRole('dialog', { name: 'Mechanisms and dynamics' });
+    const tab = await within(dialog).findByRole('tab', { name: words.sdof.short }, { timeout: 15_000 });
+    expect(tab.getAttribute('aria-selected')).toBe('true');
   });
 });

@@ -31,6 +31,12 @@ describe('worked steps in US units', () => {
     const table = cellText(row.value!, 'us');
     expect(table).toBe('2.1281 in');
     const step = run.outcome.steps.find((s) => s.key === 'sdofAmplitude')!;
-    expect(stepMath(step.math!, 'us', run.outcome.rows.map((r) => r.value))).toContain(String.raw`(2.1281\,\mathrm{in})`);
+    expect(
+      stepMath(
+        step.math!,
+        'us',
+        run.outcome.rows.map((r) => r.value),
+      ),
+    ).toContain(String.raw`(2.1281\,\mathrm{in})`);
   });
 });

@@ -24,7 +24,9 @@
   "tool.reference | target-gap | div.scroll > div[role=group].table > button.cell x div[role=group].table > button.cell": "The periodic table is 118 buttons in one grid; at 44 px and no gap it would not fit the panel. Cells are 32 px with a 2 px gap, are reached by arrow keys, and the table scrolls.",
   "tool.reference | target-small | div.scroll > div[role=group].table > button.cell": "The periodic table is 118 buttons in one grid; at 44 px and no gap it would not fit the panel. Cells are 32 px with a 2 px gap, are reached by arrow keys, and the table scrolls.",
   "tools.two-docked | target-gap | div.scroll > div[role=group].table > button.cell x div[role=group].table > button.cell": "The periodic table is 118 buttons in one grid; at 44 px and no gap it would not fit the panel. Cells are 32 px with a 2 px gap, are reached by arrow keys, and the table scrolls.",
-  "tools.two-docked | target-small | div.scroll > div[role=group].table > button.cell": "The periodic table is 118 buttons in one grid; at 44 px and no gap it would not fit the panel. Cells are 32 px with a 2 px gap, are reached by arrow keys, and the table scrolls."
+  "tools.two-docked | target-small | div.scroll > div[role=group].table > button.cell": "The periodic table is 118 buttons in one grid; at 44 px and no gap it would not fit the panel. Cells are 32 px with a 2 px gap, are reached by arrow keys, and the table scrolls.",
+  "command | dead-space | span.col-align-c > span.vlist-t > span.vlist-r (empty box)": "The empty box is KaTeX's column-alignment spacer in a matrix of the worked steps; it carries no content and no space can be removed.",
+  "tool.kit-mechdyn | dead-space | span.col-align-c > span.vlist-t > span.vlist-r (empty box)": "The empty box is KaTeX's column-alignment spacer in a matrix of the worked steps; it carries no content and no space can be removed."
  },
  "intermittent": [
   "command | document-scroll | ",

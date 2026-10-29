@@ -23,7 +23,7 @@ blockRenderers.register(
 const open = async (tool?: string) => (await import('../../engineering')).openMechDynKit(tool);
 
 addCommand({
-  id: 'tools.kitMechDyn',
+  id: 'tools.kit-mechdyn',
   title: 'kitMechDyn.open',
   keywords: 'kitMechDyn.keywords',
   category: 'general',

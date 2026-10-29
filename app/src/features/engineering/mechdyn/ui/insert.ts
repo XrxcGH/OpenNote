@@ -1,7 +1,8 @@
 // What the kit puts into the open page: an answer line, the answer as an equation, the results as a table, the
 // worked steps as a numbered list with typeset math, and each plot as an SVG picture. Each goes through the tools'
 // insert event, which the page answers; the window says in words what happened.
-import { INSERT_EVENT, type InsertDetail } from '../../../tools';
+import { INSERT_EVENT } from '../../../tools/flags';
+import type { InsertDetail } from '../../../tools';
 import { cellLatex, cellText, type Cell } from '../kit/format';
 import { escapeXml, plotSvg, type Palette, type PlotWords } from '../kit/picture';
 import type { Outcome, ResultRow } from '../kit/spec';

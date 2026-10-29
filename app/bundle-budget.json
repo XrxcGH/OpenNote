@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 462,
+    "jsKb": 468,
     "cssKb": 27
   },
   "after": {
@@ -75,7 +75,9 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
-    "features/tools": 260
+    "features/tools": 260,
+    "features/engineering/index.ts": 43,
+    "features/engineering/mechdyn": 120
   },
   "lazyDefaultKb": 40
 }
