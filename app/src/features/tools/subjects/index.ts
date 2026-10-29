@@ -17,6 +17,8 @@ export * from './num/rng';
 export * from './num/worker';
 export * from './layout/tree';
 export * from './layout/graph';
+export * from './layout/layered';
+export * from './layout/force';
 export * from './layout/svg';
 export * from './figure/model';
 export { mountKitFigure } from './figure/block';
