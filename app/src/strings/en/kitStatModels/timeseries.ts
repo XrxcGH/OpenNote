@@ -1,10 +1,6 @@
 // The timeseries tool's words in the statistical models kit, and its worked steps (kitStatModels.step.timeseries).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const timeseries = {
-  title: 'Time series and forecasting',
-  keywords:
-    'time series forecasting autocorrelation acf pacf correlogram ljung box decomposition seasonal trend moving ' +
-    'average exponential smoothing holt winters arima ar yule walker forecast interval mann kendall sen slope ' +
-    'dickey fuller unit root stationarity mae rmse mape mase',
   field: {
     data: 'Data',
     analysis: 'Analysis',

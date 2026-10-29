@@ -1,10 +1,6 @@
 // The causal tool's words in the statistical models kit, and its worked steps (kitStatModels.step.causal).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const causal = {
-  title: 'Econometrics and causal inference',
-  keywords:
-    'econometrics causal inference fixed effects panel within first differences instrumental variables two-stage ' +
-    'least squares 2sls weak instrument hausman difference in differences parallel trends regression ' +
-    'discontinuity propensity score matching inverse probability weighting ate att dag back door confounder',
   field: {
     data: 'Data',
     analysis: 'Analysis',

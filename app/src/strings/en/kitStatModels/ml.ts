@@ -1,10 +1,6 @@
 // The ml tool's words in the statistical models kit, and its worked steps (kitStatModels.step.ml).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const ml = {
-  title: 'Machine learning lab',
-  keywords:
-    'machine learning classification regression k nearest neighbors decision tree cart gini naive bayes logistic ' +
-    'gradient descent perceptron neural network multilayer backpropagation ridge lasso regularization cross ' +
-    'validation confusion matrix precision recall f1 roc auc decision curve train test split',
   field: {
     source: 'Learn from',
     toy: 'Toy data',

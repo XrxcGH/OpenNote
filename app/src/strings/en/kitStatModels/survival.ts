@@ -1,9 +1,6 @@
 // The survival tool's words in the statistical models kit, and its worked steps (kitStatModels.step.survival).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const survival = {
-  title: 'Survival analysis',
-  keywords:
-    'survival analysis time to event kaplan meier log rank peto cox proportional hazards hazard ratio censoring ' +
-    'life table actuarial nelson aalen median survival greenwood',
   field: {
     data: 'Data',
     analysis: 'Analysis',

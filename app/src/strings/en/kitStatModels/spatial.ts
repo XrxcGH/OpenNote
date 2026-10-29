@@ -1,9 +1,6 @@
 // The spatial tool's words in the statistical models kit, and its worked steps (kitStatModels.step.spatial).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const spatial = {
-  title: 'Spatial statistics',
-  keywords:
-    'spatial statistics point pattern nearest neighbor clark evans quadrat ripley k function moran geary ' +
-    'autocorrelation lisa local moran hot spot weights semivariogram variogram kriging inverse distance geography',
   field: {
     data: 'Data',
     analysis: 'Analysis',

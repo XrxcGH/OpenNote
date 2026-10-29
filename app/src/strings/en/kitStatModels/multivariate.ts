@@ -1,10 +1,6 @@
 // The multivariate tool's words in the statistical models kit, and its worked steps (kitStatModels.step.multivariate).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const multivariate = {
-  title: 'PCA, factors, and clusters',
-  keywords:
-    'multivariate principal components pca eigenvalue scree biplot loadings exploratory factor analysis principal ' +
-    'axis varimax promax parallel analysis k means elbow silhouette hierarchical clustering dendrogram ward ' +
-    'linkage multidimensional scaling mds perceptual map',
   field: {
     data: 'Data',
     analysis: 'Analysis',

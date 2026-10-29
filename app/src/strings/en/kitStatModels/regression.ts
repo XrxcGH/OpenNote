@@ -1,10 +1,6 @@
 // The regression tool's words in the statistical models kit, and its worked steps (kitStatModels.step.regression).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const regression = {
-  title: 'Linear regression',
-  keywords:
-    'linear regression ols least squares multiple regression anova coefficients r2 dummy categorical interaction ' +
-    'diagnostics residuals cook leverage vif robust standard errors hc3 cluster prediction interval nested f test ' +
-    'moderation simple slopes johnson neyman mediation sobel bootstrap mixed model random intercept icc reml',
   field: {
     data: 'Data',
     analysis: 'Analysis',

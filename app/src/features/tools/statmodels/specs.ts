@@ -1,13 +1,68 @@
-// Each tool's spec, loaded when its tab first opens, so the window's own code stays small.
+// Each tool's spec and words, loaded when its tab first opens, so neither is in the app's start-up code. The words
+// are added to kitStatModels.<tool> and kitStatModels.step.<tool>, where only the title and keywords wait before.
+import { en } from '../../../strings/en';
 import type { ToolSpec } from './kit/spec';
 
+type Words = Readonly<Record<string, unknown>>;
+
+/** Adds a tool's words to the kit's strings, once. */
+export function addWords(tool: string, words: Words, steps: Words): void {
+  const kit = en.kitStatModels as unknown as Record<string, Record<string, unknown>> & {
+    step: Record<string, Record<string, unknown>>;
+  };
+  Object.assign(kit[tool], words);
+  Object.assign(kit.step[tool], steps);
+}
+
+const load = async <T>(
+  tool: string,
+  spec: Promise<T>,
+  words: Promise<Record<string, unknown>>,
+  pick: (m: T) => ToolSpec,
+): Promise<ToolSpec> => {
+  const [m, w] = await Promise.all([spec, words]);
+  addWords(tool, w[tool] as Words, w[`${tool}Steps`] as Words);
+  return pick(m);
+};
+
 export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
-  regression: () => import('./regression/spec').then((m) => m.regressionSpec),
-  glm: () => import('./glm/spec').then((m) => m.glmSpec),
-  survival: () => import('./survival/spec').then((m) => m.survivalSpec),
-  spatial: () => import('./spatial/spec').then((m) => m.spatialSpec),
-  causal: () => import('./causal/spec').then((m) => m.causalSpec),
-  timeseries: () => import('./timeseries/spec').then((m) => m.timeseriesSpec),
-  multivariate: () => import('./multivariate/spec').then((m) => m.multivariateSpec),
-  ml: () => import('./ml/spec').then((m) => m.mlSpec),
+  regression: () =>
+    load(
+      'regression',
+      import('./regression/spec'),
+      import('../../../strings/en/kitStatModels/regression'),
+      (m) => m.regressionSpec,
+    ),
+  glm: () => load('glm', import('./glm/spec'), import('../../../strings/en/kitStatModels/glm'), (m) => m.glmSpec),
+  survival: () =>
+    load(
+      'survival',
+      import('./survival/spec'),
+      import('../../../strings/en/kitStatModels/survival'),
+      (m) => m.survivalSpec,
+    ),
+  causal: () =>
+    load('causal', import('./causal/spec'), import('../../../strings/en/kitStatModels/causal'), (m) => m.causalSpec),
+  timeseries: () =>
+    load(
+      'timeseries',
+      import('./timeseries/spec'),
+      import('../../../strings/en/kitStatModels/timeseries'),
+      (m) => m.timeseriesSpec,
+    ),
+  multivariate: () =>
+    load(
+      'multivariate',
+      import('./multivariate/spec'),
+      import('../../../strings/en/kitStatModels/multivariate'),
+      (m) => m.multivariateSpec,
+    ),
+  ml: () => load('ml', import('./ml/spec'), import('../../../strings/en/kitStatModels/ml'), (m) => m.mlSpec),
+  spatial: () =>
+    load(
+      'spatial',
+      import('./spatial/spec'),
+      import('../../../strings/en/kitStatModels/spatial'),
+      (m) => m.spatialSpec,
+    ),
 };

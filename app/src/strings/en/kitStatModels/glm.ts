@@ -1,9 +1,6 @@
 // The glm tool's words in the statistical models kit, and its worked steps (kitStatModels.step.glm).
+// They load with the tool; its title and keywords stay in kitStatModels.ts for the command palette.
 export const glm = {
-  title: 'Logistic and Poisson regression',
-  keywords:
-    'logistic regression poisson glm generalized linear model odds ratio rate ratio binary count offset deviance ' +
-    'roc auc hosmer lemeshow pseudo r2 classification',
   field: {
     data: 'Data',
     family: 'Model',
