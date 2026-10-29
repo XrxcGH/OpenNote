@@ -119,7 +119,7 @@ describe('nuclear science: decay chains', () => {
 
 describe('nuclear science: masses', () => {
   it('He-4 from atomic masses: B = 28.2957 MeV, 7.0739 MeV per nucleon', () => {
-    const out = binding(2, 4, 4.00260325413, 1.00782503223, 1.00866491595, U_MEV);
+    const out = binding(2, 4, 4.00260325413, 1.007825031898, 1.00866491595, U_MEV);
     expect(rel(out.energy, 28.2957)).toBeLessThan(1e-5);
     expect(rel(out.perNucleon, 7.0739)).toBeLessThan(1e-5);
     expect(value(runMode(NUCLEAR, 'binding', {}), `${R}binding`)).toBeCloseTo(out.energy, 10);
@@ -155,6 +155,23 @@ describe('nuclear science: masses', () => {
     expect(word(runMode(NUCLEAR, 'qvalue', { reactants: 'He-4 + N-14', products: 'O-17 p' }))).toBe(
       'kitPhysics.nuclear.kind.endoergic',
     );
+  });
+
+  it('decay Q values match the evaluated ones (AME2020 Q column, keV) to within 0.1 keV', () => {
+    // Beta minus and alpha with neutral-atom masses: Q = (M parent - M daughter products) c². The expected values are
+    // the evaluation's own Q values, not differences of this table's masses.
+    const cases: [string, string[], number][] = [
+      ['Co-60', ['Ni-60'], 2822.8058],
+      ['I-131', ['Xe-131'], 970.8477],
+      ['Cs-137', ['Ba-137'], 1175.6285],
+      ['Po-210', ['Pb-206', 'He-4'], 5407.5307],
+      ['Am-241', ['Np-237', 'He-4'], 5637.8203],
+    ];
+    for (const [parent, products, keV] of cases) {
+      const at = (id: string) => ({ Z: 0, A: 0, mass: mass(id) });
+      const out = qValue([at(parent)], products.map(at), U_MEV);
+      expect(Math.abs(out.q * 1000 - keV), parent).toBeLessThan(0.1);
+    }
   });
 
   it('a positron counts as 2 electron masses', () => {
