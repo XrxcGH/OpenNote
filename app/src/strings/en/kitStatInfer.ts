@@ -1,0 +1,91 @@
+// The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
+// words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
+import { describe } from './kitStatInfer/describe';
+
+export const kitStatInfer = {
+  window: {
+    title: 'Statistics: inference and design',
+    open: 'Open the statistics kit',
+    keywords: 'statistics stats inference hypothesis test p-value study design epidemiology',
+  },
+  tools: {
+    describe: describe.tab,
+  },
+  open: {
+    describe: describe.open,
+  },
+  keywords: {
+    describe: describe.keywords,
+  },
+  ui: {
+    openFile: 'Open a file',
+    insertTable: 'Insert the table “{name}” into the page',
+    insertTableShort: 'Insert table',
+    inserted: 'Added to the page.',
+    noPage: 'Open a page to insert into.',
+    results: 'Results',
+  },
+  err: {
+    unknown: 'Something in the input could not be worked out. Check the values and try again.',
+    empty: 'Enter some data first.',
+    notNumber: '“{text}” is not a number.',
+    fieldNumber: 'Enter a number for {name}.',
+    probabilityRange: '{name} must be between 0 and 1.',
+    tooMany: 'Paste at most {max} values.',
+    tooFew: 'Enter at least {min} values.',
+    ragged: 'Every row needs the same number of counts.',
+    negativeCount: 'Counts can’t be negative: “{text}”.',
+    noRoot: 'The calculation did not settle on an answer for these values.',
+    alphaRange: 'The significance level must be between 0 and 1.',
+    constant: 'Every value is the same, so there is no spread to work with.',
+    seedNumber: 'The seed must be a whole number from 0 to 4294967295.',
+    ...describe.err,
+  },
+  answer: {
+    ...describe.answer,
+  },
+  note: {
+    ...describe.note,
+  },
+  col: {
+    summary: 'Summary',
+    statistic: 'Statistic',
+    value: 'Value',
+    unit: 'Unit',
+    n: 'n',
+    mean: 'Mean',
+    median: 'Median',
+    mode: 'Mode',
+    sd: 'Standard deviation',
+    variance: 'Variance',
+    min: 'Least value',
+    max: 'Greatest value',
+    range: 'Range',
+    q1: 'First quartile',
+    q3: 'Third quartile',
+    iqr: 'Interquartile range',
+    se: 'Standard error of the mean',
+    none: 'None',
+    z: 'z',
+    count: 'Count',
+    category: 'Category',
+    proportion: 'Proportion',
+    measure: 'Measure',
+    tests: 'Tests',
+    test: 'Test',
+    df: 'df',
+    p: 'p',
+    ...describe.col,
+  },
+  axis: {
+    outliers: 'Outliers',
+    value: 'Value',
+    count: 'Count',
+    category: 'Category',
+    ...describe.axis,
+  },
+  step: {
+    ...describe.step,
+  },
+  describe: describe.fields,
+};

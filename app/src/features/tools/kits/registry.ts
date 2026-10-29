@@ -15,7 +15,8 @@ export type KitId =
   | 'physics'
   | 'math'
   | 'chemmat'
-  | 'design';
+  | 'design'
+  | 'statinfer';
 
 /** Opens a kit's window on one of its tools. */
 export type KitOpener = (tool: string) => void | Promise<void>;

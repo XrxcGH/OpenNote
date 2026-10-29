@@ -16,6 +16,9 @@ import { StructureTool } from './StructureTool';
 import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
+// The statistics kit loads the first time its window opens.
+const StatInferKit = lazy(() => import('../statinfer').then((kit) => ({ default: kit.StatInferTool })));
+
 // The solvers are a large window of their own, so they load the first time it opens.
 const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
@@ -64,5 +67,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-statinfer')
+    return (
+      <Suspense fallback={null}>
+        <StatInferKit />
+      </Suspense>
+    );
   return null;
 }
