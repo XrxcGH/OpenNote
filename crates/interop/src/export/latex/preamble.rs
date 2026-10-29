@@ -20,6 +20,7 @@ const PREAMBLE: &str = r"\usepackage{iftex}
   \usepackage{amssymb}
 \else
   \usepackage{unicode-math}
+  \providecommand{\square}{\mdlgwhtsquare}
 \fi
 \usepackage{graphicx}
 \usepackage{adjustbox}

@@ -469,7 +469,39 @@ jobs:
         run: |
           mkdir -p "$OPENNOTE_LATEX_FIXTURES"
           cargo test -p opennote-interop --test export_latex_fixtures
+      - name: Check that every math command the exporter allows exists in each engine
+        # A command that the allowlist names but an engine lacks (unicode-math has no \square, for one) would stop the
+        # compile at the equation that uses it. All the missing names are listed in one run.
+        working-directory: ${{ runner.temp }}/latex
+        run: |
+          set -uo pipefail
+          src="$GITHUB_WORKSPACE/crates/interop/src/export/latex/math.rs"
+          names=$(sed -n '/^const MATH:/,/^];/p' "$src" | grep -o '"[A-Za-z]*"' | tr -d '"')
+          [ -n "$names" ] || { echo "No math names found in math.rs."; exit 1; }
+          mkdir -p math-names
+          missing=0
+          for pair in xelatex:unicode lualatex:unicode pdflatex:pdflatex; do
+            engine=${pair%%:*}
+            main=$(ls "${pair##*:}"/*.tex | head -n 1)
+            file="math-names/names-$engine.tex"
+            {
+              sed '/\\begin{document}/,$d' "$main"
+              echo '\begin{document}'
+              for n in $names; do
+                printf '\\ifdefined\\%s\\else\\typeout{UNDEFINED-NAME %s}\\fi\n' "$n" "$n"
+              done
+              echo '\end{document}'
+            } > "$file"
+            (cd math-names && "$engine" -interaction=nonstopmode "names-$engine.tex" > /dev/null || true)
+            found=$(grep -h "^UNDEFINED-NAME" "math-names/names-$engine.log" | sort -u || true)
+            if [ -n "$found" ]; then
+              echo "$engine lacks: $(echo "$found" | cut -d' ' -f2 | tr '\n' ' ')"
+              missing=1
+            fi
+          done
+          exit $missing
       - name: Compile them with XeLaTeX, LuaLaTeX, and pdfLaTeX
+        if: ${{ !cancelled() }}
         working-directory: ${{ runner.temp }}/latex
         run: |
           set -euo pipefail
@@ -509,6 +541,7 @@ jobs:
             clean
           )
       - name: Check that hostile math reads no file
+        if: ${{ !cancelled() }}
         # "hostile" is an export of a page whose equations try to read a canary file.
         # The exporter must write them as text, so it compiles like any other and the canary text appears nowhere.
         # "hostile-raw" holds the same equations in a hand-written document, as an engine would meet them
