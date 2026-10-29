@@ -3,18 +3,30 @@
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
+/** Applies a cleanup again until it changes nothing, so removing one tag can't leave pieces that join into another. */
+function untilSteady(text: string, clean: (text: string) => string): string {
+  let current = text;
+  for (let pass = 0; pass < 20; pass += 1) {
+    const next = clean(current);
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+}
+
 /** Text from HTML: line breaks and paragraphs become new lines, tags go, and the common entities are decoded. */
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
-    .replace(/<br\s*\/?>|<\/(p|div|li|tr|h[1-6])>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '- ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, name: string) => {
-      if (name.startsWith('#x')) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
-      if (name.startsWith('#')) return String.fromCodePoint(Number(name.slice(1)));
-      return ENTITIES[name.toLowerCase()] ?? whole;
-    });
+  return untilSteady(html, (text) =>
+    text
+      .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+      .replace(/<br\s*\/?>|<\/(p|div|li|tr|h[1-6])>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '- ')
+      .replace(/<[^>]+>/g, ''),
+  ).replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, name: string) => {
+    if (name.startsWith('#x')) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
+    if (name.startsWith('#')) return String.fromCodePoint(Number(name.slice(1)));
+    return ENTITIES[name.toLowerCase()] ?? whole;
+  });
 }
 
 /** The lines where a conferencing service begins its own text. Everything after the first of them is dropped. */

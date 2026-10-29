@@ -200,7 +200,7 @@ function nullSpace(rows: readonly (readonly number[])[], columns: number): Fract
   });
 }
 
-const ARROW = /\s*(?:<?[-=]+>|→|⟶|⇌|⇒|=)\s*/;
+const ARROW = /\s*(?:\u003c?[-=]+>|→|⟶|⇌|⇒|=)\s*/;
 
 /** Splits "2H2 + O2" into species, ignoring any coefficient typed in front of one. */
 function species(side: string): string[] {
