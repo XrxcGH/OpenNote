@@ -3,6 +3,7 @@
 // arithmetic (not by the checker). A broken solution has its slip at `broken` and carries on correctly from it, as a
 // student would. Run: node tests/fixtures/stepcheck/generate.ts (the JSON is committed; the test reads it).
 import { writeFileSync } from 'node:fs';
+import { answerFamilies } from './answers.ts';
 
 interface Case {
   id: string;
@@ -757,6 +758,8 @@ ok('precision', ['the answer is below']);
 ok('precision', ['d/dx(x^x) = x^x (ln(x) + 1)']);
 ok('precision', ['cos(x)^2', '= (1 + cos(2x))/2']);
 ok('precision', ['tan(2x)', '= 2tan(x)/(1 - tan(x)^2)']);
+
+answerFamilies(ok, bad);
 
 writeFileSync(new URL('./corpus.json', import.meta.url), `${JSON.stringify({ correct, broken }, null, 1)}\n`);
 console.log(`correct ${correct.length}, broken ${broken.length}`);
