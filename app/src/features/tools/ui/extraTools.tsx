@@ -1,6 +1,6 @@
 // The tool windows added after the first three (Phase 10 and the study tools): each body is another feature's panel
 // or a small tool of this one. They share the window, the storage, and the pop-out of the first three.
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from 'react';
 
 // The fluid and heat transfer kit loads with its engineering feature the first time its window opens.
 const FluidHeatKit = lazy(() =>
@@ -84,7 +84,29 @@ const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ def
 // The engineering mathematics kit loads the first time its window opens.
 const MathKit = lazy(() => import('../mathkit/ui/MathKitTool'));
 
+/** The subject kits' windows (docs/help/subject-tool-kits.md), each loaded the first time it opens. */
+const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> = {
+  kitelectrical: KitElectrical,
+  kitaero: KitAero,
+  'kit-fluidheat': FluidHeatKit,
+  'kit-solids': SolidsKit,
+  'kit-chemmat': ChemMatKit,
+  'kit-thermo': ThermoKit,
+  'kit-control': ControlKit,
+  'kit-design': DesignKit,
+  'kit-math': MathKit,
+  'kit-mechdyn': KitMechDyn,
+  'kit-physics': PhysicsKit,
+};
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
+  const Kit = KIT_WINDOWS[tool];
+  if (Kit)
+    return (
+      <Suspense fallback={null}>
+        <Kit />
+      </Suspense>
+    );
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
     return (
@@ -93,18 +115,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
-  if (tool === 'kitelectrical')
-    return (
-      <Suspense fallback={null}>
-        <KitElectrical />
-      </Suspense>
-    );
-  if (tool === 'kitaero')
-    return (
-      <Suspense fallback={null}>
-        <KitAero />
-      </Suspense>
-    );
   if (tool === 'flashcards') return <DeckPanel />;
   if (tool === 'converter') return <ConverterTool />;
   if (tool === 'reference') return <ReferenceTool />;
@@ -131,60 +141,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
-  if (tool === 'kit-fluidheat')
-    return (
-      <Suspense fallback={null}>
-        <FluidHeatKit />
-      </Suspense>
-    );
   if (tool === 'symbols') return <SymbolsTool />;
-  if (tool === 'kit-solids')
-    return (
-      <Suspense fallback={null}>
-        <SolidsKit />
-      </Suspense>
-    );
-  if (tool === 'kit-chemmat')
-    return (
-      <Suspense fallback={null}>
-        <ChemMatKit />
-      </Suspense>
-    );
-  if (tool === 'kit-thermo')
-    return (
-      <Suspense fallback={null}>
-        <ThermoKit />
-      </Suspense>
-    );
-  if (tool === 'kit-control')
-    return (
-      <Suspense fallback={null}>
-        <ControlKit />
-      </Suspense>
-    );
-  if (tool === 'kit-design')
-    return (
-      <Suspense fallback={null}>
-        <DesignKit />
-      </Suspense>
-    );
-  if (tool === 'kit-math')
-    return (
-      <Suspense fallback={null}>
-        <MathKit />
-      </Suspense>
-    );
-  if (tool === 'kit-mechdyn')
-    return (
-      <Suspense fallback={null}>
-        <KitMechDyn />
-      </Suspense>
-    );
-  if (tool === 'kit-physics')
-    return (
-      <Suspense fallback={null}>
-        <PhysicsKit />
-      </Suspense>
-    );
   return null;
 }

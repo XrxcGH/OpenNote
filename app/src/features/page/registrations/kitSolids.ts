@@ -20,8 +20,8 @@ addCommand({
   run: () => open(),
 });
 
-// A live calculation goes in the kits' shared block (registrations/kits.ts): the tool, its typed values and unit
-// system as the inputs, and its answer. The block's Open in tool comes back here through the kit registry.
+// A live calculation goes in the kits' shared block (registrations/kits.ts). It keeps the tool and its answer. Its
+// inputs are the typed values and the unit system. The block's Open in tool comes back here through the kit registry.
 const reopen = async (tool: string) => {
   const engineering = await import('../../engineering');
   const inputs = (await import('../../tools')).takeKitInputs('solids', tool);
