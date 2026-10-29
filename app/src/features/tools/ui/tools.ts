@@ -24,7 +24,8 @@ export type ToolId =
   | 'practice'
   | 'figure'
   | 'symbols'
-  | 'kitelectrical';
+  | 'kitelectrical'
+  | 'kit-fluidheat';
 
 export interface ToolDef {
   id: ToolId;
@@ -41,6 +42,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'reference', title: 'study.reference.title', width: 640 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },
   { id: 'symbols', title: 'study.symbols.title', width: 420 },
+  { id: 'kit-fluidheat', title: 'kitFluidHeat.title', width: 560 },
   { id: 'citations', title: 'study.citations.title', width: 440 },
   { id: 'constants', title: 'science.constants.title', width: 520 },
   { id: 'sigfigs', title: 'science.sigfigs.title', width: 420 },

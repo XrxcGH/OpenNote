@@ -18,6 +18,10 @@ export const loadElectricalKit = () => import('./electrical/KitElectricalTool');
 export { ELECTRICAL_TOOLS } from './electrical/meta';
 export type { ElectricalToolId } from './electrical/meta';
 export { openKit as openElectricalKit } from './electrical/open';
+export { openFluidHeatKit } from './fluidheat/open';
+
+/** The fluid and heat transfer kit window, loaded the first time it opens. */
+export const loadFluidHeatKit = () => import('./fluidheat/ui/FluidHeatKit');
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
