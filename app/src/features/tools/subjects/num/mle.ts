@@ -1,6 +1,6 @@
-// Maximum likelihood for the subject tools: a Nelder-Mead search finds the neighborhood of the maximum, BFGS with
-// central-difference gradients and a backtracking line search polishes it, the observed information (a numeric
-// Hessian of the negative log-likelihood) gives standard errors, and a profile likelihood gives an interval for one
+// Maximum likelihood for the subject tools. A Nelder-Mead search finds the neighborhood of the maximum. BFGS, with
+// central-difference gradients and a backtracking line search, polishes it. The observed information (a numeric
+// Hessian of the negative log-likelihood) gives standard errors. A profile likelihood gives an interval for one
 // parameter. A log-likelihood may return -Infinity or NaN outside its domain (a negative scale, say); every search
 // here treats that as a very poor point and steps back. Pure: no DOM.
 import { brent } from '../../kits/num/roots';

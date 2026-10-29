@@ -1,7 +1,7 @@
 /*
- * The subject kits' input fields and figures, on the kit look (kits/ui/kit.module.css): a paste box that grows, a
- * small grid for matrices that scrolls inside itself on a narrow window, role pickers in wrapping rows, and a figure
- * shown as an image that never overflows its column.
+ * The subject kits' input fields and figures, on the kit look (kits/ui/kit.module.css). The paste box grows. The
+ * matrix grid scrolls inside itself on a narrow window. Role pickers sit in wrapping rows. A figure is an image that
+ * never overflows its column.
  */
 @layer components {
   .data,

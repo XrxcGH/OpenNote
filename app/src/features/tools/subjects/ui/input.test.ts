@@ -54,7 +54,9 @@ describe('subject input helpers', () => {
     expect(grown.rowLabels).toEqual(['a', 'b', 'R3']);
     expect(emptyMatrix(2, 2).colLabels).toEqual(['C1', 'C2']);
   });
+});
 
+describe('data, roles, and reshape helpers', () => {
   it('turns a page table into text a data field reads back the same', () => {
     const text = tableText({
       id: 't',
@@ -99,7 +101,9 @@ describe('subject input helpers', () => {
     expect(applyLongWide(wide, { mode: 'asIs' })).toBe(wide);
     expect(() => applyLongWide(wide, { mode: 'unstack', ids: [], key: 'gone', value: 'pre' })).toThrow(SubjectError);
   });
+});
 
+describe('figure and output helpers', () => {
   it('keeps only a real SVG of reasonable size in a figure', () => {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>';
     expect(isSvg(svg)).toBe(true);

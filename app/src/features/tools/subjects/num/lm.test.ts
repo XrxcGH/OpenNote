@@ -90,7 +90,7 @@ describe('Levenberg-Marquardt', () => {
     expect(code(() => levenbergMarquardt(line, [1], [1], [0, 0]))).toBe('tooFew');
     expect(code(() => levenbergMarquardt(line, [1, 2], [1, Number.NaN], [0, 0]))).toBe('notFinite');
     expect(code(() => levenbergMarquardt(line, [1, 2], [1, 2], [0, 0], { weights: [1, -1] }))).toBe('domain');
-    // a and b only appear as a sum, so no data can tell them apart.
+    // The two parameters only appear as a sum, so no data can tell them apart.
     const sum: Model<number> = (x, [a, b]) => (a + b) * x;
     expect(code(() => levenbergMarquardt(sum, [1, 2, 3], [2, 4, 6], [0, 0]))).toBe('singular');
   });

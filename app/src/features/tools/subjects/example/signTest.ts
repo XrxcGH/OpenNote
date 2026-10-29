@@ -1,6 +1,6 @@
 // The example subject tool's engine (README.md walks through it): the one-sample sign test. Each value above the
 // hypothesized median is a plus, each below a minus, and values equal to it are dropped. Under the null hypothesis
-// the number of pluses is binomial with p = 1/2, so the p-value is exact. Pure: numbers in, numbers and steps out.
+// the number of pluses is binomial with p = 1/2, so the p-value is exact. Pure: it takes numbers and returns numbers with steps.
 import type { KitStep } from '../../kits/types';
 import { binomialCdf, binomialSf } from '../stats/dist';
 import type { Alternative } from '../stats/dist';

@@ -1,6 +1,6 @@
-// The subject input fields and outputs: a data field that reads a table from the page, column roles, a matrix with
-// words for a bad cell, the seed field, the coefficient table's verdicts in words, and a figure inserted as a block
-// that reopens its tool. Each passes an accessibility scan.
+// The subject input fields and outputs, each with an accessibility scan. A data field reads a table from the page.
+// A matrix names a bad cell, and the seed field refuses a bad seed. The coefficient table gives verdicts in words.
+// A figure goes on the page as a block that reopens its tool.
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';

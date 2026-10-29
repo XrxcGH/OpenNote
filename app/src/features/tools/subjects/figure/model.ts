@@ -43,7 +43,7 @@ export function kitFigureData(figure: KitFigureData): KitFigureData {
   };
 }
 
-/** Reads a block's stored data, whatever a newer version or a hand-edited file left in it. */
+/** Reads a block's stored data, even data a newer version or a hand edit left in it. */
 export function readKitFigure(data: Record<string, unknown>): KitFigureData {
   return kitFigureData({
     kit: text(data.kit),
