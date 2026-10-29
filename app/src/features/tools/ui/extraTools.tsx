@@ -35,6 +35,13 @@ const KitElectrical = lazy(() =>
     .then((loaded) => ({ default: loaded.KitElectricalTool })),
 );
 
+// The aerospace kit loads on first open.
+const KitAero = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadAeroKit())
+    .then((loaded) => ({ default: loaded.KitAeroTool })),
+);
+
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
   vectors: lazy(() => import('../../math').then((math) => ({ default: math.VectorsTool }))),
@@ -62,6 +69,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     return (
       <Suspense fallback={null}>
         <KitElectrical />
+      </Suspense>
+    );
+  if (tool === 'kitaero')
+    return (
+      <Suspense fallback={null}>
+        <KitAero />
       </Suspense>
     );
   if (tool === 'flashcards') return <DeckPanel />;

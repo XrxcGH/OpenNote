@@ -28,6 +28,11 @@ export { openSolidsKit, readCalc as readSolidsCalc, reopenCalc as reopenSolidsCa
 /** The solid mechanics kit window, loaded the first time it opens. */
 export const loadSolidsKit = () => import('./solids/ui/SolidsKit');
 
+export const loadAeroKit = () => import('./aero/ui/KitAeroTool');
+export { AERO_TOOLS } from './aero/meta';
+export type { AeroToolId } from './aero/meta';
+export { openAeroKit } from './aero/open';
+
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
   return mountPanel(FbdPanel)(container, props);

@@ -15,6 +15,7 @@ export type EngineeringFlagId =
   | 'tables.units'
   | 'kits.electrical'
   | FluidHeatKitFlagId
+  | 'kits.aero'
   | SolidsKitFlagId;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
@@ -41,6 +42,10 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
   flag(
     'kits.electrical',
     'The circuits, electronics, power, instrument, data-fitting, and energy tools in one window, with worked steps.',
+  ),
+  flag(
+    'kits.aero',
+    'The aerospace tools in one window: atmosphere, gas dynamics, aerodynamics, performance and propulsion.',
   ),
   flag('tables.units', 'Units and engineering notation in smart table columns, with totals that convert units.'),
   ...SOLIDS_KIT_FLAGS,
