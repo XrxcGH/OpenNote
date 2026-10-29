@@ -41,7 +41,9 @@ Blanks in words must match the key's words as spelled, so a typo or a plural get
 
 Topics to review lists the topics with less than 60 percent of their marks, each with a button that opens its page. Add missed questions to flashcards puts them in a deck named for the exam.
 
-Before you start, Save the blank paper as a page saves the paper without the answers in the notebook's Practice exams section, so you can print or export it. The answer key is saved only after you submit: Save results as a page adds the answer key and the results. Exams are never made from that section, and pages in protected sections are left out.
+Before you start, Save the blank paper as a page saves the paper without the answers in the notebook's Practice exams section, so you can print or export it. The answer key is saved only after you submit: Save results as a page adds the answer key and the results.
+
+To take the same exam again, open its paper, answer key, or results page, press Ctrl+K, and choose "Retake this practice exam". You can also press Take this exam again on the results. You get the same questions with no answers. Handwritten answers are on the results page as pictures. Exams are never made from that section, and pages in protected sections are left out.
 
 ## Upcoming
 
