@@ -390,3 +390,21 @@
     border-radius: var(--radius-sm);
   }
 }
+
+/* Images drawn pixel for pixel, scaled up without blur, side by side where there is room. */
+.pixels {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  image-rendering: pixelated;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}

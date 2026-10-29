@@ -9,6 +9,7 @@ import { rf } from './kitSignals/rf';
 import { filters } from './kitSignals/filters';
 import { medimaging } from './kitSignals/medimaging';
 import { audio } from './kitSignals/audio';
+import { images } from './kitSignals/images';
 
 export const kitSignals = {
   kit: {
@@ -69,6 +70,14 @@ export const kitSignals = {
         'audio pitch yin formant lpc vowel spectrogram phonetics tuner cents tone chao audiogram decibel a-weighting',
       about:
         'Waveform, spectrogram, pitch, intensity, formants, vowel space, a tuner, tones, audiograms, and decibels.',
+    },
+    images: {
+      title: 'Image lab',
+      open: 'Open image lab',
+      keywords:
+        'image histogram threshold otsu count cells kernel sobel canny morphology fft ndvi band math ct radon back projection',
+      about:
+        'Adjust, threshold and count, filter, measure, and transform images; band math; and CT by filtered back-projection.',
     },
   },
   ui: {
@@ -193,6 +202,18 @@ export const kitSignals = {
     toneDuration: 'The tone can last from just above 0 to 10 seconds.',
     harmonics: 'The number of harmonics must be a whole number from 1 to 40.',
     labelLine: 'Label line “{text}” needs a start, an end after it, and a label.',
+    percentiles: 'The low percentile must be below the high one, both from 0 to 100.',
+    flatImage: 'The image has only one value, so there is nothing to separate.',
+    sigma: 'The Gaussian σ must be above 0 and at most 5 pixels.',
+    kernelShape: 'A custom kernel needs 3 rows of 3 numbers or 5 rows of 5.',
+    cannyThresholds: 'The high Canny threshold must be above the low one, and the low one 0 or more.',
+    radius: 'The radius must be a whole number of pixels from 1 to 5.',
+    calibration: 'The two calibration points must differ, and the known length must be above 0.',
+    roi: 'The rectangle does not cover any pixels of the image.',
+    expression: '“{text}” is not an expression of the bands. Use b1 to b4, numbers, and + − × ÷ ( ).',
+    bandSize: 'The bands must all be the same size.',
+    training: 'Each training line needs a class number and a rectangle x0 y0 x1 y1 inside the image.',
+    angles: 'Use from 2 to 360 projection angles.',
   },
   step: {
     spectrumRecord: 'The record has N samples at the sample rate, so the bins are fs/N apart.',
@@ -335,6 +356,7 @@ export const kitSignals = {
     audioSemitones: 'Count semitones from A4 on the equal-tempered scale.',
     audioCents: 'The nearest note is {note}; the rest is the deviation in cents.',
     audioSum: 'Add the levels as powers, then turn the total back into decibels.',
+    imageOtsu: 'Otsu’s method tries every threshold and keeps the one that best separates the two classes.',
   },
   spectrum,
   systems,
@@ -343,4 +365,5 @@ export const kitSignals = {
   filters,
   medimaging,
   audio,
+  images,
 } as const;

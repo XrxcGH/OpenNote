@@ -16,6 +16,10 @@ Each result has buttons to put part of it on the page at the caret: **Insert ans
 
 - **Sound analysis and acoustics.** Open a sound file or record from the microphone; the app asks first, and the sound stays on this computer. See the waveform and a wide- or narrow-band spectrogram, and track pitch, intensity, and formants at a cursor. Label stretches of time and get their durations, and read jitter and shimmer for voice work. A tuner names the nearest note in cents, tone practice lays your pitch over Chao tone numbers, and a vowel chart plots F1 against F2. It also draws audiograms with the pure-tone average, adds and subtracts decibels with A-weighting, and makes tones to play.
 
+## Images
+
+- **Image lab.** Open a PNG or JPEG image, or use the example cells. Adjust its window, level, contrast, and gamma with the histogram beside it. Threshold it by hand or by Otsu's method and count the objects, with each one's area and center. Blur, sharpen, or find edges with standard kernels, your own kernel, or the Canny method, and erode, dilate, open, or close it. See its 2D spectrum and mask it, calibrate a scale and measure distances and rectangles, and work band math such as NDVI, false-color composites, and simple classes. A CT tab turns the Shepp-Logan phantom into a sinogram and back by filtered back-projection.
+
 ## Medical imaging
 
 - **Medical imaging physics.** Work the physics of MRI: the Larmor frequency, the spin-echo, gradient-echo, and inversion-recovery signals, and how two tissues contrast as TR changes. Watch the magnetization move after RF pulses, and see what an image loses when part of k-space is dropped. It also works CT numbers and windows, ultrasound echoes and Doppler shifts, X-ray attenuation, and the standardized uptake value in PET.

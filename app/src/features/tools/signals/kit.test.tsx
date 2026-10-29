@@ -106,4 +106,10 @@ describe('signals and sound kit', () => {
     expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/f0 12\d/);
     await walkModes(container);
   });
+
+  it('counts the example cells and walks every image mode', async () => {
+    const { container } = await openAt('images');
+    expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/\d+ objects/);
+    await walkModes(container);
+  });
 });
