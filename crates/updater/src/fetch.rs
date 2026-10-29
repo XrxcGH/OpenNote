@@ -129,9 +129,74 @@ impl From<std::io::Error> for FetchError {
     }
 }
 
+/// Where a ranged request starts, and the validator that ties it to the bytes already on disk.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RangeStart {
+    /// The first byte wanted.
+    pub from: u64,
+    /// The `ETag` of the first response, sent as `If-Range`, so a changed file comes back whole.
+    pub etag: Option<String>,
+}
+
+/// A finished ranged download.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RangeOutcome {
+    /// How many bytes went to the sink.
+    pub bytes: u64,
+    /// The server sent only the bytes from `from` on (status 206). When false, the sink got the whole file from
+    /// its first byte, because the server ignored the range or the file changed.
+    pub resumed: bool,
+    /// The response's `ETag`, for the next resume.
+    pub etag: Option<String>,
+}
+
+/// Where a ranged download goes. [`RangeSink::begin`] hears, before any byte, whether the response continues the
+/// bytes already there or starts the file again, so the sink can keep or drop what it has.
+pub trait RangeSink: Write {
+    /// `resumed` is true when the bytes that follow continue from [`RangeStart::from`]. `etag` is the response's.
+    /// An error stops the download before its body is read.
+    fn begin(&mut self, resumed: bool, etag: Option<&str>) -> std::io::Result<()>;
+}
+
 /// Reads one URL into a sink, stopping as soon as more than `max_bytes` arrive.
 pub trait Fetch: Send + Sync {
     fn get(&self, url: &Url, max_bytes: u64, sink: &mut dyn Write) -> Result<FetchOutcome, FetchError>;
+
+    /// Reads from `start.from` on when the server allows it, or the whole file when it doesn't. `max_total` is the
+    /// limit for the whole file, so a response that continues may send `max_total - from` bytes. The default asks
+    /// for the whole file, which is always correct, only slower.
+    fn get_range(
+        &self,
+        url: &Url,
+        start: &RangeStart,
+        max_total: u64,
+        sink: &mut dyn RangeSink,
+    ) -> Result<RangeOutcome, FetchError> {
+        let _ = start;
+        sink.begin(false, None)?;
+        let outcome = self.get(url, max_total, sink)?;
+        Ok(RangeOutcome {
+            bytes: outcome.bytes,
+            resumed: false,
+            etag: None,
+        })
+    }
+}
+
+/// Only a strong `ETag` may go in `If-Range` (RFC 9110 section 13.1.5).
+pub fn strong_etag(etag: Option<&str>) -> Option<&str> {
+    etag.map(str::trim)
+        .filter(|etag| etag.starts_with('"') && etag.ends_with('"') && etag.len() >= 2)
+}
+
+/// Whether a `Content-Range` header (`bytes 100-999/1000`) starts at `from`.
+pub fn content_range_starts_at(header: &str, from: u64) -> bool {
+    header
+        .trim()
+        .strip_prefix("bytes ")
+        .and_then(|rest| rest.split('-').next())
+        .and_then(|first| first.trim().parse::<u64>().ok())
+        == Some(from)
 }
 
 /// The most redirects one download follows. GitHub's release downloads take two.
@@ -148,10 +213,19 @@ pub struct UreqFetch {
 
 impl Default for UreqFetch {
     fn default() -> Self {
-        use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
+        Self::trusting(ureq::tls::RootCerts::PlatformVerifier)
+    }
+}
+
+impl UreqFetch {
+    /// A fetcher that trusts `roots`: the Windows certificate store, or in tests a local server's own certificate.
+    fn trusting(roots: ureq::tls::RootCerts) -> Self {
+        use ureq::tls::{TlsConfig, TlsProvider};
+        // The provider's own feature must be on: ureq panics on an https address otherwise, and a release build
+        // aborts on a panic (T1-1). The https tests below fail the same way if it is ever turned off.
         let tls = TlsConfig::builder()
             .provider(TlsProvider::NativeTls)
-            .root_certs(RootCerts::PlatformVerifier)
+            .root_certs(roots)
             .build();
         let config = ureq::Agent::config_builder()
             .tls_config(tls)
@@ -193,6 +267,68 @@ impl Fetch for UreqFetch {
             }
             let reader = response.into_body().into_reader();
             return copy_limited(reader, max_bytes, sink);
+        }
+        Err(FetchError::Unreachable(format!("more than {MAX_REDIRECTS} redirects")))
+    }
+
+    fn get_range(
+        &self,
+        url: &Url,
+        start: &RangeStart,
+        max_total: u64,
+        sink: &mut dyn RangeSink,
+    ) -> Result<RangeOutcome, FetchError> {
+        let mut current = url.clone();
+        for _ in 0..=MAX_REDIRECTS {
+            let mut request = self.agent.get(current.as_str());
+            if start.from > 0 {
+                request = request.header("Range", &format!("bytes={}-", start.from));
+                if let Some(etag) = strong_etag(start.etag.as_deref()) {
+                    request = request.header("If-Range", etag);
+                }
+            }
+            let response = request.call().map_err(from_ureq)?;
+            let status = response.status().as_u16();
+            if (300..400).contains(&status) {
+                let location = response
+                    .headers()
+                    .get("location")
+                    .and_then(|value| value.to_str().ok())
+                    .ok_or(FetchError::Status(status))?;
+                current = redirect_target(&current, location)?;
+                continue;
+            }
+            let header = |name: &str| {
+                response
+                    .headers()
+                    .get(name)
+                    .and_then(|value| value.to_str().ok())
+                    .map(str::to_owned)
+            };
+            let etag = header("etag");
+            let resumed = status == 206
+                && start.from > 0
+                && header("content-range").is_some_and(|range| content_range_starts_at(&range, start.from));
+            if status != 200 && !resumed {
+                return Err(FetchError::Status(status));
+            }
+            let limit = if resumed {
+                max_total.saturating_sub(start.from)
+            } else {
+                max_total
+            };
+            let length = response.body().content_length();
+            if length.is_some_and(|length| length > limit) {
+                return Err(FetchError::TooLarge { limit: max_total });
+            }
+            sink.begin(resumed, etag.as_deref())?;
+            let reader = response.into_body().into_reader();
+            let outcome = copy_limited(reader, limit, sink)?;
+            return Ok(RangeOutcome {
+                bytes: outcome.bytes,
+                resumed,
+                etag,
+            });
         }
         Err(FetchError::Unreachable(format!("more than {MAX_REDIRECTS} redirects")))
     }
@@ -251,6 +387,78 @@ fn from_ureq(error: ureq::Error) -> FetchError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_https_download_from_a_server_without_tls_fails_cleanly() {
+        // ureq panics on every https address unless its `native-tls` feature is on, and a release build aborts on a
+        // panic (T1-1). A server that answers in plain HTTP must give an error, not a panic.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a local port");
+        let port = listener.local_addr().expect("an address").port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { break };
+                let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+            }
+        });
+        let url = Url::parse(&format!("https://127.0.0.1:{port}/latest.json")).expect("https");
+        let mut sink = Vec::new();
+        let result = UreqFetch::default().get(&url, 1024, &mut sink);
+        assert!(matches!(result, Err(FetchError::Unreachable(_))), "{result:?}");
+    }
+
+    #[test]
+    fn an_https_download_succeeds() {
+        // T1-1: the TLS stack the app ships, end to end, against a local server with its own certificate.
+        let (port, cert) = serve_tls(b"{\"version\":\"1.0.0\"}");
+        let roots = ureq::tls::RootCerts::Specific(std::sync::Arc::new(vec![
+            ureq::tls::Certificate::from_der(&cert).to_owned()
+        ]));
+        let url = Url::parse(&format!("https://127.0.0.1:{port}/latest.json")).expect("https");
+        let mut sink = Vec::new();
+        let result = UreqFetch::trusting(roots).get(&url, 1024, &mut sink);
+        assert!(result.is_ok(), "{result:?}");
+        assert_eq!(sink, b"{\"version\":\"1.0.0\"}");
+    }
+
+    /// A local HTTPS server with a new self-signed certificate for 127.0.0.1, which answers every request with `body`.
+    /// Returns its port and the certificate.
+    fn serve_tls(body: &'static [u8]) -> (u16, Vec<u8>) {
+        use std::io::{BufRead, BufReader};
+        let key = rcgen::generate_simple_self_signed(vec!["127.0.0.1".to_owned()]).expect("a certificate");
+        let cert = key.cert.der().to_vec();
+        let config = rustls::ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(
+                vec![key.cert.der().clone()],
+                rustls::pki_types::PrivatePkcs8KeyDer::from(key.key_pair.serialize_der()).into(),
+            )
+            .expect("a server configuration");
+        let config = std::sync::Arc::new(config);
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a local port");
+        let port = listener.local_addr().expect("an address").port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { break };
+                let Ok(connection) = rustls::ServerConnection::new(config.clone()) else {
+                    break;
+                };
+                let mut tls = rustls::StreamOwned::new(connection, stream);
+                let mut reader = BufReader::new(&mut tls);
+                let mut line = String::new();
+                while reader.read_line(&mut line).unwrap_or(0) > 0 && line != "\r\n" {
+                    line.clear();
+                }
+                let head = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                let _ = tls.write_all(head.as_bytes()).and_then(|()| tls.write_all(body));
+                tls.conn.send_close_notify();
+                let _ = tls.flush();
+            }
+        });
+        (port, cert)
+    }
 
     #[test]
     fn accepts_https_urls_with_a_host() {
@@ -353,6 +561,23 @@ mod tests {
             copy_limited(&[1u8; 11][..], 10, &mut sink),
             Err(FetchError::TooLarge { limit: 10 })
         ));
+    }
+
+    #[test]
+    fn sends_only_strong_etags_in_if_range() {
+        assert_eq!(strong_etag(Some("\"abc\"")), Some("\"abc\""));
+        assert_eq!(strong_etag(Some("W/\"abc\"")), None);
+        assert_eq!(strong_etag(Some("abc")), None);
+        assert_eq!(strong_etag(None), None);
+    }
+
+    #[test]
+    fn reads_where_a_content_range_starts() {
+        assert!(content_range_starts_at("bytes 100-999/1000", 100));
+        assert!(content_range_starts_at(" bytes 0-9/*", 0));
+        assert!(!content_range_starts_at("bytes 0-999/1000", 100));
+        assert!(!content_range_starts_at("items 100-200/300", 100));
+        assert!(!content_range_starts_at("bytes x-1/2", 100));
     }
 
     #[test]

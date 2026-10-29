@@ -6,8 +6,10 @@ import type { Location } from '../app/location';
 import type { CommandId } from '../commands/types';
 import type { BootData, DeviceStatePatch, PanePref, Platform, StoredLocation } from '../platform/types';
 import type { NodeId } from '../services/notes/types';
-import { tokens } from '../theme/tokens';
 import { createStore } from './store';
+
+/** The stored width of a pane nobody has resized: the layout then gives it a width that follows the window. */
+export const AUTO_PANE_WIDTH = 0;
 
 export interface SessionState {
   location: Location;
@@ -31,8 +33,8 @@ export const sessionStore = createStore<SessionState>(
     back: [],
     forward: [],
     panes: {
-      notebooks: { width: tokens.size.sidebar, collapsed: false },
-      pages: { width: tokens.size.pageList, collapsed: false },
+      notebooks: { width: AUTO_PANE_WIDTH, collapsed: false },
+      pages: { width: AUTO_PANE_WIDTH, collapsed: false },
     },
     expanded: [],
     lastPageBySection: {},

@@ -155,7 +155,7 @@ pub fn read_raw() -> RawAppearance {
 
 /// A `REG_DWORD` under `HKEY_CURRENT_USER`, or `None` when it isn't there.
 #[cfg(windows)]
-fn registry_dword(subkey: &str, value: &str) -> Option<u32> {
+pub(crate) fn registry_dword(subkey: &str, value: &str) -> Option<u32> {
     use windows::{
         core::PCWSTR,
         Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_DWORD},

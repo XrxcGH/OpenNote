@@ -267,7 +267,11 @@ fn closing_after_edits_keeps_a_version_and_restoring_as_a_copy_adds_a_page() {
     handle.clone().close(&c).unwrap();
     let again = s.notebook.open_page(s.page, c.clone()).unwrap();
     let history = again.history().unwrap();
-    assert_eq!(history.len(), 1);
+    assert_eq!(
+        history.len(),
+        2,
+        "the first edit keeps the page as it was, and the close keeps the result"
+    );
     assert_eq!(history[0].reason, crate::model::Named::Known(VersionReason::Closed));
     again
         .name_version(history[0].revision, Some("Final".into()), true)
@@ -299,6 +303,46 @@ fn restoring_a_version_in_place_saves_the_current_state_first() {
     assert_eq!(on_disk(&s).title, "Photosynthesis");
     let reasons: Vec<_> = handle.history().unwrap().into_iter().map(|v| v.reason).collect();
     assert!(reasons.contains(&crate::model::Named::Known(VersionReason::BeforeRestore)));
+}
+
+#[test]
+fn a_locked_entry_refuses_a_version_restored_in_place_but_not_a_copy() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let first = handle.save_now().unwrap().revision;
+    let lock = TxnRequest {
+        page: s.page,
+        client: c.clone(),
+        client_seq: 1,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::SetPage {
+            title: None,
+            tags: None,
+            view: Some(
+                serde_json::json!({"entryLock": {"lockedAt": "2026-10-01T10:00:00Z", "by": "Ada", "hash": "sha256:00"}}),
+            ),
+        }],
+    };
+    handle.apply(lock).unwrap();
+    handle.save_now().unwrap();
+    let refused = handle.restore_version(first, false);
+    assert!(
+        matches!(
+            refused,
+            Err(CoreError::Edit(EditError::ReadOnly(ReadOnlyReason::LockedEntry)))
+        ),
+        "{refused:?}"
+    );
+    assert!(
+        crate::ops::resolve::entry_lock::is_locked(&on_disk(&s)),
+        "the lock stays"
+    );
+    assert!(matches!(
+        handle.restore_version(first, true).unwrap(),
+        RestoreResult::Copied { .. }
+    ));
 }
 
 #[test]

@@ -84,7 +84,7 @@ export async function renameNode(notes: NotesService, id: NodeId, title: string,
 
 export async function colorNode(notes: NotesService, id: NodeId, color: ChipColor | null, options: ActionOptions = {}) {
   const node = getNode(id);
-  if (!node || node.kind === 'page' || node.color === color) return;
+  if (!node || node.color === color) return;
   const saved = await optimistic({ parents: [], nodes: [id] }, withNode(id, { color }), () =>
     notes.setColor(id, color),
   );

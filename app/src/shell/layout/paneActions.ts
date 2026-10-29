@@ -4,10 +4,10 @@
 
 import { layoutStore, updateLayout } from '../../state/layout';
 import type { CompactScreen } from '../../state/layout';
-import { sessionStore, setPanePref } from '../../state/session';
+import { AUTO_PANE_WIDTH, sessionStore, setPanePref } from '../../state/session';
 import { focusRegion, focusRegionSoon, regionOf, repairFocus } from '../regions';
 import { finishSlides, slide } from './motion';
-import { clampPaneWidth, PANE_LIMITS, paneBounds } from './solvePanes';
+import { chosenWidth, clampPaneWidth, paneBounds } from './solvePanes';
 import type { PaneId, PanePrefs } from './solvePanes';
 
 /** The resize step for Wider and Narrower, and for Shift+Arrow on a splitter. */
@@ -94,7 +94,7 @@ async function setMediumPages(show: boolean, moveFocus: boolean): Promise<void> 
 export function setPaneWidth(pane: PaneId, width: number): void {
   const { width: windowWidth, sizeClass } = layoutStore.get();
   const bounds = paneBounds(pane, windowWidth, sizeClass, panePrefs());
-  setPanePref(pane, { width: Math.round(Math.min(bounds.max, Math.max(bounds.min, width))) });
+  setPanePref(pane, { width: chosenWidth(pane, Math.round(Math.min(bounds.max, Math.max(bounds.min, width)))) });
 }
 
 /** The width the pane shows now, or would show if it were expanded. */
@@ -102,7 +102,7 @@ export function paneWidth(pane: PaneId): number {
   const { width: windowWidth, sizeClass } = layoutStore.get();
   const prefs = panePrefs();
   const bounds = paneBounds(pane, windowWidth, sizeClass, prefs);
-  return Math.min(bounds.max, clampPaneWidth(pane, prefs[pane].width));
+  return Math.min(bounds.max, clampPaneWidth(pane, prefs[pane].width, windowWidth));
 }
 
 export function resizePane(pane: PaneId, delta: number): void {
@@ -110,7 +110,7 @@ export function resizePane(pane: PaneId, delta: number): void {
 }
 
 export function resetPane(pane: PaneId): void {
-  setPanePref(pane, { width: PANE_LIMITS[pane].default });
+  setPanePref(pane, { width: AUTO_PANE_WIDTH });
 }
 
 /** Opens or closes the medium notebooks drawer. The drawer moves focus in and back itself. */

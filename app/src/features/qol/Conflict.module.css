@@ -1,0 +1,31 @@
+/* The two versions of a page, side by side; stacked on a narrow window. */
+@layer components {
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    max-block-size: 60vh;
+    overflow: auto;
+  }
+
+  :global(:root[data-size-class='compact']) .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .columns h3 {
+    margin: 0 0 var(--space-2);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .text {
+    margin: 0;
+    padding: var(--space-3);
+    overflow: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    font-family: var(--font-reading);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

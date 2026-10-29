@@ -104,6 +104,8 @@ function correctionAt(state: EditorState, pos: number, list: readonly Replacemen
     const piece = token.text.slice(start);
     const to = correctionFor(piece, list);
     if (to === null || (start > 0 && /\w/.test(token.text[start - 1]) && /^\w/.test(piece))) continue;
+    // Arrows and dashes extend what was typed before them: "-->" and "---" stay, not "-→" and "-–".
+    if (start > 0 && /^[-=<>]/.test(piece) && /[-=<>]/.test(token.text[start - 1])) continue;
     const from = token.from + start;
     const tr = state.tr.insertText(to, from, pos);
     return { tr, meta: { from, to: pos, text: to } };

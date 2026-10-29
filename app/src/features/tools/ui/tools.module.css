@@ -1,0 +1,423 @@
+/*
+ * The tool windows (Phase 10): timers, the calculator, and Upcoming. Calm and quiet, on tokens, with every control
+ * at least the target size, which grows with touch density (--target-size). Windows float over the page and never
+ * dim it.
+ */
+@layer components {
+  /* The windows share one stacking context: they order among themselves (the host's stack) and never rise above a dialog. */
+  .layer {
+    position: relative;
+    z-index: var(--layer-overlay);
+  }
+
+  .window {
+    position: fixed;
+    z-index: var(--layer-base);
+    display: flex;
+    flex-direction: column;
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    box-sizing: border-box;
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-lg);
+    /* Over the page (too narrow to dock), the panel casts a shadow from its left edge so it reads as above the text.
+       The shadow stops at the right edge, so none of it falls on the page's scroll bar beside the window. */
+    box-shadow: -8px 0 24px color-mix(in srgb, var(--color-text-primary) 22%, transparent);
+    clip-path: inset(-48px 0 -48px -48px);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+  }
+
+  /* Docked: a column at the right edge, flush with the command bar's line above and the status line below. */
+  .window[data-docked] {
+    border-block: 0;
+    border-inline-end: 0;
+    border-radius: 0;
+    box-shadow: none;
+    clip-path: none;
+  }
+
+  /* The edge that resizes the panel. It is a 12 px strip over the panel's left border. */
+  .edge {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -6px;
+    inline-size: 12px;
+    z-index: var(--layer-sticky);
+    cursor: ew-resize;
+    touch-action: none;
+  }
+
+  .edge:hover,
+  .edge:focus-visible {
+    background: color-mix(in srgb, var(--color-accent-primary) 35%, transparent);
+    outline: none;
+  }
+
+  .window[data-pinned] {
+    border-color: var(--color-accent-primary);
+  }
+
+  .header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    /* The title lines up with the body's text; the close button sits a small gap from the window's edge. */
+    padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-4) + var(--space-1));
+    border-block-end: 1px solid var(--color-border-subtle);
+    user-select: none;
+  }
+
+  .header:focus {
+    outline: none;
+  }
+
+  .title {
+    flex: 1;
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* The body scrolls, and its padding scrolls with it, so the last row ends above real space, never on a cut line.
+     A soft shade at the top or bottom edge says there is more to scroll to (the shades hide at either end). */
+  .body,
+  .toolFill > :last-child {
+    --scroll-fill: var(--color-surface-raised);
+    --scroll-shade: color-mix(in srgb, var(--color-text-primary) 16%, transparent);
+
+    background:
+      linear-gradient(var(--scroll-fill) 30%, transparent) top / 100% var(--space-8) no-repeat local,
+      linear-gradient(transparent, var(--scroll-fill) 70%) bottom / 100% var(--space-8) no-repeat local,
+      radial-gradient(farthest-side at 50% 0, var(--scroll-shade), transparent) top / 100% var(--space-4) no-repeat,
+      radial-gradient(farthest-side at 50% 100%, var(--scroll-shade), transparent) bottom / 100% var(--space-4)
+        no-repeat,
+      var(--scroll-fill);
+  }
+
+  .body {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow: auto;
+    padding: var(--space-4);
+    /* A switch reaches out past the content edge by more than the padding, so its focus ring would be cut. */
+    padding-inline: calc(var(--space-4) + var(--space-1));
+    scroll-padding: var(--space-3);
+  }
+
+  /* While a tool's code loads, the body says so instead of standing empty. */
+  .body:empty::before {
+    content: attr(data-loading);
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  /* A tool with a part that scrolls on its own (toolFill) fills the body. The part reaches the window's bottom edge
+     and holds the bottom padding inside its scroll, so no band of the body's padding cuts its last row. */
+  .body:has(> .toolFill) {
+    display: flex;
+    flex-direction: column;
+    padding-block-end: 0;
+  }
+
+  .toolFill > :last-child {
+    padding-block-end: var(--space-4);
+  }
+
+  .popped {
+    box-sizing: border-box;
+    min-block-size: 100vh;
+    padding: var(--space-4);
+    color: var(--color-text-primary);
+    background: var(--color-surface-app);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+  }
+
+  .tool {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  /* A tool whose long part scrolls on its own: the part takes what the window leaves, so the window never holds an
+     empty box under a cut-off table. Without a height to fill (a window of its own) it is as tall as its content. */
+  .toolFill {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-block-size: 0;
+  }
+
+  .empty,
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .cards,
+  .items {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .card[data-status='running'] {
+    border-color: var(--color-accent-primary);
+  }
+
+  .cardHead {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .cardName {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .status,
+  .phase {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .time {
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .laps {
+    margin: 0;
+    padding-inline-start: var(--space-6);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .form {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  /* Short fields side by side, sharing the width equally, and stacking only when the window is too narrow for two. */
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: var(--space-3);
+  }
+
+  .pair > * {
+    min-inline-size: 0;
+  }
+
+  .pair input {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  /* Fields look like every text field (TextField.module.css): the sunken fill, the control outline, the same corners. */
+  .field select,
+  .expression {
+    box-sizing: border-box;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+  }
+
+  .entry {
+    display: flex;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .entry .field {
+    flex: 1;
+  }
+
+  .expression {
+    font-family: var(--font-mono);
+  }
+
+  /* The example is longer than the field at the body size, so it would be cut off. The color is the theme's, not the
+     browser's gray, which falls under 4.5:1 on the dark page. */
+  .expression::placeholder {
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    opacity: 1;
+  }
+
+  .expression[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .result {
+    min-block-size: var(--type-subtitle-line);
+    font-size: var(--type-subtitle-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The answer line stays in the page for a screen reader. With nothing in it, it takes no room: no reserved line, and
+     the grid gap it would add is taken back. */
+  .result:empty {
+    min-block-size: 0;
+    margin-block-end: calc(-1 * var(--space-4));
+  }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-2);
+  }
+
+  /* One row that scrolls sideways when the tabs do not fit, with a soft fade at each end to say there is more. A tab
+     never wraps, so every underline sits on the same line. */
+  .tabs {
+    display: flex;
+    flex: none;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-block-end: 1px solid var(--color-border-subtle);
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-text-primary) var(--space-3),
+      var(--color-text-primary) calc(100% - var(--space-3)),
+      transparent
+    );
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    flex: none;
+    white-space: nowrap;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-4);
+    font: inherit;
+    color: var(--color-text-secondary);
+    background: none;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .tab:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  /* A disclosure heading is a target like any other. */
+  .group > summary {
+    min-block-size: var(--target-size);
+    padding-block: var(--space-1);
+    box-sizing: border-box;
+  }
+
+  /* A disclosure's triangle takes the accent, like the window's other controls. */
+  .body summary::marker {
+    color: var(--color-accent-primary);
+  }
+
+  .groupTitle {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  .item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .itemTitle {
+    flex: 1 1 14ch;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .itemDue {
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .link {
+    flex: 1;
+    min-block-size: var(--target-size);
+    padding: 0;
+    font: inherit;
+    font-family: var(--font-mono);
+    text-align: start;
+    color: var(--color-text-link);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+}
+
+/* A Windows contrast theme gets a flat window: the scroll shades are drawn in the window's own color. */
+@layer forced {
+  @media (forced-colors: active) {
+    .body,
+    .toolFill > :last-child {
+      background: Canvas;
+    }
+  }
+}

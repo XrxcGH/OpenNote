@@ -3,6 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { textWidth } from './metrics.ts';
 
 export type ThemeName = 'light' | 'dark';
 
@@ -96,6 +97,35 @@ const FONTS = {
 };
 
 export function text(x: number, y: number, content: string, s: TextStyle = {}): string {
+  return `<text ${textAttrs(x, y, s)}>${escapeXml(content)}</text>`;
+}
+
+/** A run of words inside a line of text, in its own color, weight, or slant. */
+export interface Run {
+  text: string;
+  fill?: string;
+  weight?: number;
+  italic?: boolean;
+}
+
+/**
+ * One line of text made of runs in different styles. The browser sets each run right after the one before, so a
+ * link, a bold word, or an equation sits one space from the words around it whatever font the viewer has.
+ */
+export function textRuns(x: number, y: number, runs: (string | Run)[], s: TextStyle = {}): string {
+  const inner = runs.map((run) => {
+    if (typeof run === 'string') return escapeXml(run);
+    const attrs = [
+      run.fill ? `fill="${run.fill}"` : '',
+      run.weight ? `font-weight="${run.weight}"` : '',
+      run.italic ? 'font-style="italic"' : '',
+    ];
+    return `<tspan ${attrs.filter(Boolean).join(' ')}>${escapeXml(run.text)}</tspan>`;
+  });
+  return `<text ${textAttrs(x, y, s)}>${inner.join('')}</text>`;
+}
+
+function textAttrs(x: number, y: number, s: TextStyle): string {
   const attrs = [
     `x="${x}" y="${y}"`,
     `font-size="${s.size ?? 13}"`,
@@ -105,7 +135,7 @@ export function text(x: number, y: number, content: string, s: TextStyle = {}): 
     `font-family="${FONTS[s.font ?? 'ui']}"`,
     s.italic ? 'font-style="italic"' : '',
   ];
-  return `<text ${attrs.filter(Boolean).join(' ')}>${escapeXml(content)}</text>`;
+  return attrs.filter(Boolean).join(' ');
 }
 
 function escapeXml(value: string): string {
@@ -117,10 +147,52 @@ export function line(from: [number, number], to: [number, number], stroke: strin
   return `<line x1="${from[0]}" y1="${from[1]}" x2="${to[0]}" y2="${to[1]}" stroke="${stroke}"${dashAttr}/>`;
 }
 
-/** A hand-drawn ink stroke. */
-export function ink(d: string, color: string, width = 3): string {
+/** A hand-drawn ink stroke. A `part` name lets the geometry tests find it. */
+export function ink(d: string, color: string, width = 3, part?: string): string {
   const style = 'fill="none" stroke-linecap="round" stroke-linejoin="round"';
-  return `<path d="${d}" ${style} stroke="${color}" stroke-width="${width}"/>`;
+  const name = part ? ` data-part="${part}"` : '';
+  return `<path${name} d="${d}" ${style} stroke="${color}" stroke-width="${width}"/>`;
+}
+
+export type Point = [number, number];
+
+const round = (n: number) => Math.round(n * 100) / 100;
+const spot = ([x, y]: Point) => `${round(x)} ${round(y)}`;
+
+/** The point at an angle (in degrees, clockwise from the right) on the edge of an ellipse. */
+export function onEllipse(cx: number, cy: number, rx: number, ry: number, degrees: number): Point {
+  const a = (degrees * Math.PI) / 180;
+  return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+}
+
+/** How far each stroke of an arrowhead leans away from the line it ends. */
+export const HEAD_SPREAD = (28 * Math.PI) / 180;
+
+/** The two short strokes of an arrowhead, as the points where they end: a tip's strokes lean back from its path. */
+export function barbs(c2: Point, tip: Point, length = 11): [Point, Point] {
+  const heading = Math.atan2(tip[1] - c2[1], tip[0] - c2[0]);
+  const lean = (side: number, size: number): Point => [
+    tip[0] - size * Math.cos(heading + side * HEAD_SPREAD),
+    tip[1] - size * Math.sin(heading + side * HEAD_SPREAD),
+  ];
+  return [lean(1, length), lean(-1, length - 1)];
+}
+
+/** A straight ink arrow from `from` to `tip`, with a head. */
+export function straightArrow(from: Point, tip: Point, color: string, width = 2.2): string {
+  const at = (k: number): Point => [from[0] + (tip[0] - from[0]) * k, from[1] + (tip[1] - from[1]) * k];
+  return arrow(from, at(1 / 3), at(2 / 3), tip, color, width);
+}
+
+/**
+ * A hand-drawn ink arrow: a curved shaft from `from` to `tip`, bent by c1 and c2. Two short strokes start at the
+ * tip and lean back along the shaft, in the same pen. The shaft ends at the tip, so the arrow's point is the end of
+ * its line, and the head is always drawn the right way round.
+ */
+export function arrow(from: Point, c1: Point, c2: Point, tip: Point, color: string, width = 2.2): string {
+  const [left, right] = barbs(c2, tip);
+  const d = `M${spot(from)}C${spot(c1)} ${spot(c2)} ${spot(tip)}M${spot(tip)}L${spot(left)}M${spot(tip)}L${spot(right)}`;
+  return ink(d, color, width, 'arrow');
 }
 
 export function circle(cx: number, cy: number, r: number, fill: string, stroke?: string): string {
@@ -153,7 +225,8 @@ export function region(b: Box, label: string): string {
 
 /** A small annotation label on a white pill, readable over any background. */
 export function tag(x: number, y: number, label: string, color: string): string {
-  const width = Math.ceil(label.length * 7.4 + 16);
+  // The pill is 6 px wider than its words at each end.
+  const width = Math.ceil(textWidth(label, 11, 600) + 12);
   return [
     '<g data-fit="4" pointer-events="none">',
     rect({ x, y: y - 12, w: width, h: 17 }, { fill: NOTE.paper, stroke: color, r: 8.5 }),

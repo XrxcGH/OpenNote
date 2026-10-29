@@ -1,0 +1,107 @@
+[
+  {
+    "kind": "chunk",
+    "index": 0,
+    "total": 2,
+    "span": {
+      "start": 0,
+      "end": 20
+    },
+    "info": {
+      "durationMs": 1100,
+      "boundaries": [
+        {
+          "kind": "sentence",
+          "startMs": 0,
+          "endMs": 1100,
+          "text": {
+            "start": 0,
+            "end": 20
+          }
+        },
+        {
+          "kind": "word",
+          "startMs": 0,
+          "endMs": 300,
+          "text": {
+            "start": 0,
+            "end": 5
+          }
+        },
+        {
+          "kind": "word",
+          "startMs": 300,
+          "endMs": 600,
+          "text": {
+            "start": 6,
+            "end": 14
+          }
+        },
+        {
+          "kind": "word",
+          "startMs": 600,
+          "endMs": 1100,
+          "text": {
+            "start": 15,
+            "end": 19
+          }
+        }
+      ]
+    },
+    "clipId": "clip-0"
+  },
+  {
+    "kind": "chunk",
+    "index": 1,
+    "total": 2,
+    "span": {
+      "start": 21,
+      "end": 45
+    },
+    "info": {
+      "durationMs": 1100,
+      "boundaries": [
+        {
+          "kind": "sentence",
+          "startMs": 0,
+          "endMs": 1100,
+          "text": {
+            "start": 0,
+            "end": 24
+          }
+        },
+        {
+          "kind": "word",
+          "startMs": 0,
+          "endMs": 300,
+          "text": {
+            "start": 0,
+            "end": 6
+          }
+        },
+        {
+          "kind": "word",
+          "startMs": 300,
+          "endMs": 600,
+          "text": {
+            "start": 7,
+            "end": 15
+          }
+        },
+        {
+          "kind": "word",
+          "startMs": 600,
+          "endMs": 1100,
+          "text": {
+            "start": 16,
+            "end": 23
+          }
+        }
+      ]
+    },
+    "clipId": "clip-1"
+  },
+  {
+    "kind": "finished"
+  }
+]

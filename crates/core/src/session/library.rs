@@ -59,6 +59,17 @@ pub struct RemovedEntry {
     pub removed_at: Timestamp,
 }
 
+/// A notebook folder being renamed (A4-4). It is written before the folder is renamed and cleared once the library
+/// names the new folder, so a crash between the two is settled at the next start by looking at which folder exists.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FolderRename {
+    /// The folder as it was.
+    pub from: PathBuf,
+    /// The folder it is renamed to.
+    pub to: PathBuf,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct LibraryFile {
@@ -69,6 +80,8 @@ struct LibraryFile {
     notebooks: Vec<LibraryEntry>,
     #[serde(default)]
     removed: Vec<RemovedEntry>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    renaming: Option<FolderRename>,
 }
 
 impl Default for LibraryFile {
@@ -78,6 +91,7 @@ impl Default for LibraryFile {
             folder: None,
             notebooks: Vec::new(),
             removed: Vec::new(),
+            renaming: None,
         }
     }
 }
@@ -104,7 +118,57 @@ impl Library {
             },
             Err(_) => LibraryFile::default(),
         };
-        Library { path, file }
+        let mut library = Library { path, file };
+        library.settle_rename(fs);
+        library
+    }
+
+    /// Settles a folder rename that a crash interrupted: the library names whichever folder holds the notebook.
+    fn settle_rename(&mut self, fs: &dyn Fs) {
+        let Some(rename) = self.file.renaming.take() else {
+            return;
+        };
+        let is_notebook = |dir: &Path| fs.metadata(&dir.join(crate::store::layout::NOTEBOOK_JSON)).is_ok();
+        if !is_notebook(&rename.from) && is_notebook(&rename.to) {
+            self.point_to(&rename.from, &rename.to);
+        }
+        let _ = self.save(fs);
+    }
+
+    /// Makes the entry for `from` name `to`.
+    fn point_to(&mut self, from: &Path, to: &Path) {
+        if let Some(entry) = self.position(from).and_then(|i| self.file.notebooks.get_mut(i)) {
+            entry.path = to.to_path_buf();
+        }
+    }
+
+    /// The folder rename under way, if a crash left one.
+    pub fn renaming(&self) -> Option<&FolderRename> {
+        self.file.renaming.as_ref()
+    }
+
+    /// Records, durably, that the folder `from` is about to be renamed to `to`.
+    pub fn begin_rename(&mut self, fs: &dyn Fs, from: &Path, to: &Path) -> Result<(), CoreError> {
+        self.position(from).ok_or_else(|| not_in_library(from))?;
+        self.file.renaming = Some(FolderRename {
+            from: from.to_path_buf(),
+            to: to.to_path_buf(),
+        });
+        self.save(fs)
+    }
+
+    /// The folder was renamed: the library names the new folder, and the record of the rename goes.
+    pub fn finish_rename(&mut self, fs: &dyn Fs) -> Result<(), CoreError> {
+        if let Some(rename) = self.file.renaming.take() {
+            self.point_to(&rename.from, &rename.to);
+        }
+        self.save(fs)
+    }
+
+    /// The folder couldn't be renamed: the record of the rename goes, and the library still names the old folder.
+    pub fn abandon_rename(&mut self, fs: &dyn Fs) -> Result<(), CoreError> {
+        self.file.renaming = None;
+        self.save(fs)
     }
 
     /// The notebooks, in display order.
@@ -178,6 +242,15 @@ impl Library {
         self.save(fs)
     }
 
+    /// Points a notebook's entry at its folder's new place, keeping its position.
+    pub fn repath(&mut self, fs: &dyn Fs, from: &Path, to: &Path) -> Result<(), CoreError> {
+        let Some(entry) = self.position(from).and_then(|i| self.file.notebooks.get_mut(i)) else {
+            return Ok(());
+        };
+        to.clone_into(&mut entry.path);
+        self.save(fs)
+    }
+
     /// Updates the ID and title the library shows for a notebook, if it is in the library.
     pub fn update(&mut self, fs: &dyn Fs, path: &Path, notebook: NotebookId, title: &str) -> Result<(), CoreError> {
         let Some(entry) = self.position(path).and_then(|i| self.file.notebooks.get_mut(i)) else {
@@ -206,7 +279,7 @@ impl Library {
     }
 
     /// Puts a removed notebook back where it was, or at the end if the list is now shorter.
-    pub fn restore(&mut self, fs: &dyn Fs, path: &Path) -> Result<LibraryEntry, CoreError> {
+    pub fn restore(&mut self, fs: &dyn Fs, path: &Path) -> Result<RemovedEntry, CoreError> {
         let i = self
             .file
             .removed
@@ -219,7 +292,14 @@ impl Library {
             self.file.notebooks.insert(at, removed.entry.clone());
         }
         self.save(fs)?;
-        Ok(removed.entry)
+        Ok(removed)
+    }
+
+    /// Undoes [`Library::restore`] when the notebook couldn't open, so it stays in Trash.
+    pub fn unrestore(&mut self, fs: &dyn Fs, removed: RemovedEntry) -> Result<(), CoreError> {
+        self.file.notebooks.retain(|n| !same_path(&n.path, &removed.entry.path));
+        self.file.removed.push(removed);
+        self.save(fs)
     }
 
     /// Forgets a removed notebook, after the app deleted its folder or the person chose to forget it.

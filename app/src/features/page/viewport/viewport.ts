@@ -38,7 +38,8 @@ export interface PageViewport extends PageViewportApi {
    * The content's extent in page units; the world grows to fit it and never shrinks. Floating content gets room to
    * its right; a page of flowing text gets none, so it never scrolls sideways.
    */
-  setContent(size: { w: number; h: number; floating?: boolean }): void;
+  /** The content's extent. It only grows, unless `narrower`: the content got narrower (the window did), so the width goes back. */
+  setContent(size: { w: number; h: number; floating?: boolean; narrower?: boolean }): void;
   beginGesture(kind: GestureKind): void;
   endGesture(kind: GestureKind): void;
   /** Scrolls by CSS px. */
@@ -46,19 +47,30 @@ export interface PageViewport extends PageViewportApi {
   /** Zooms keeping `focus` (a client point) still, as part of `kind`. */
   zoomAt(zoom: number, focus: Point, kind: GestureKind): void;
   scrollTo(x: number, y: number): void;
+  /** Gives back room that a restored place made but the content does not fill: the world is `h` tall again. */
+  trimRoom(h: number): void;
 }
 
 export { shownViewport, usePageViewport } from './shown';
+
+/** The sizer's width: a world under a pixel wider than the viewport's inside is rounding, not content, so it fits. */
+export function sizerWidth(wide: number, inner: number): number {
+  return wide > inner && wide - inner < 1 ? inner : wide;
+}
 
 /** A zoom gesture settles this long after its last input. */
 export const SETTLE_MS = 150;
 /** Ctrl+wheel and touchpad pinches zoom by e^(-deltaY x this). One mouse notch is about 22%. */
 const WHEEL_ZOOM_RATE = 0.0025;
 
-/** Calls `listener` when `element` resizes. Does nothing where ResizeObserver is missing (jsdom). */
-export function observeResize(element: HTMLElement, listener: () => void): () => void {
+/**
+ * Calls `listener` when `element` resizes, with the width of its content box in CSS px (a scroll bar's width is not
+ * in it), which is exact where `clientWidth` is rounded to a whole pixel. Does nothing where ResizeObserver is
+ * missing (jsdom).
+ */
+export function observeResize(element: HTMLElement, listener: (inlineSize?: number) => void): () => void {
   if (typeof ResizeObserver === 'undefined') return () => undefined;
-  const observer = new ResizeObserver(listener);
+  const observer = new ResizeObserver((entries) => listener(entries.at(-1)?.contentBoxSize[0]?.inlineSize));
   observer.observe(element);
   return () => observer.disconnect();
 }
@@ -97,6 +109,8 @@ class Viewport implements PageViewport {
   private readonly gestures = new Set<GestureKind>();
   private readonly stopObserving: () => void;
   private rect: DOMRect;
+  /** The viewport's inside width, exact: 0 until the first observation. */
+  private inline = 0;
   private zoom = 1;
   private scroll = { x: 0, y: 0 };
   private seq = 0;
@@ -181,8 +195,21 @@ class Viewport implements PageViewport {
     this.scrollTo(x, y);
   }
 
-  setContent(next: { w: number; h: number; floating?: boolean }): void {
+  trimRoom(h: number): void {
+    if (h >= this.content.h) return;
+    this.content = { w: this.content.w, h };
+    this.size = null;
+    this.resize();
+    this.scroll = { x: this.viewport.scrollLeft, y: this.viewport.scrollTop };
+  }
+
+  setContent(next: { w: number; h: number; floating?: boolean; narrower?: boolean }): void {
     const w = next.w + (next.floating === false ? 0 : ROOM_RIGHT);
+    // A narrower window leaves no dead strip to scroll into: the width follows the content back down.
+    if (next.narrower && w < this.content.w) {
+      this.content = { w, h: Math.max(next.h, this.content.h) };
+      return this.resize();
+    }
     if (w <= this.content.w && next.h <= this.content.h) return;
     this.content = { w: Math.max(w, this.content.w), h: Math.max(next.h, this.content.h) };
     this.resize();
@@ -268,13 +295,19 @@ class Viewport implements PageViewport {
 
   private resize(): void {
     const { rect, zoom } = this;
-    // The viewport's inside, without its scroll bar gutter, so a page that fits never scrolls sideways.
-    const inner = { w: this.viewport.clientWidth || rect.width, h: this.viewport.clientHeight || rect.height };
+    // The viewport's inside, without its scroll bar gutter, so a page that fits never scrolls sideways. clientWidth
+    // rounds to a whole pixel, and on a 150 percent display it rounds up (692.67 shows as 693). A world as wide as
+    // that overflows by a third of a pixel, and the bar for it shows under the page.
+    const inner = {
+      w: this.inline || this.viewport.clientWidth || rect.width,
+      h: this.viewport.clientHeight || rect.height,
+    };
     const size = worldSize(this.content, inner, zoom, this.size);
     this.size = size;
     this.world.style.inlineSize = `${size.w}px`;
     this.world.style.blockSize = `${size.h}px`;
-    this.sizer.style.inlineSize = `${size.w * zoom}px`;
+    // Under a pixel past the viewport is rounding, not content: it would show a bar to scroll a fraction into.
+    this.sizer.style.inlineSize = `${sizerWidth(size.w * zoom, inner.w)}px`;
     this.sizer.style.blockSize = `${size.h * zoom}px`;
   }
 
@@ -291,7 +324,8 @@ class Viewport implements PageViewport {
   }
 
   /** In the next frame: resizing the sizer from the observer would make the observer loop. */
-  private readonly onResize = () => {
+  private readonly onResize = (inlineSize?: number) => {
+    if (inlineSize) this.inline = inlineSize;
     if (this.resizeFrame) return;
     this.resizeFrame = requestAnimationFrame(() => {
       this.resizeFrame = 0;

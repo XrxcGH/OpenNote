@@ -1,0 +1,106 @@
+/* The caption buttons (ARCHITECTURE.md section 10.3). Each is 46 DIPs wide at every text size: the CSS width is
+   divided by the zoom, as native caption buttons ignore the Windows text size. Glyphs come from Segoe Fluent
+   Icons, with Segoe MDL2 Assets on Windows 10. */
+
+@layer components {
+  .captionButtons {
+    display: flex;
+    align-self: stretch;
+    flex: none;
+    app-region: no-drag;
+    -webkit-app-region: no-drag;
+  }
+
+  .button {
+    display: grid;
+    place-items: center;
+    inline-size: calc(var(--size-caption-button) / var(--zoom, 1));
+    block-size: 100%;
+    min-block-size: var(--size-target-pointer);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-family: var(--font-symbol);
+    app-region: no-drag;
+    -webkit-app-region: no-drag;
+  }
+
+  :global(:root[data-density='touch']) .button {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .glyph {
+    font-size: calc(var(--size-caption-glyph) / var(--zoom, 1));
+    line-height: 1;
+  }
+
+  .glyph[data-glyph='minimize']::before {
+    content: '\E921';
+  }
+
+  .glyph[data-glyph='maximize']::before {
+    content: '\E922';
+  }
+
+  .glyph[data-glyph='restore']::before {
+    content: '\E923';
+  }
+
+  .glyph[data-glyph='close']::before {
+    content: '\E8BB';
+  }
+
+  [data-inactive] .button {
+    color: var(--color-text-muted);
+  }
+
+  .button:hover,
+  .button[data-hovered] {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+
+  .button:active,
+  .button[data-pressed] {
+    background: var(--color-surface-selected);
+  }
+
+  .button[data-caption='close']:hover,
+  .button[data-caption='close']:active {
+    background: var(--color-caption-close-hover);
+    color: var(--color-caption-close-hover-text);
+  }
+
+  .button:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  @media (forced-colors: active) {
+    .button {
+      forced-color-adjust: none;
+      background: Canvas;
+      color: ButtonText;
+    }
+
+    [data-inactive] .button {
+      color: GrayText;
+    }
+
+    .button:hover,
+    .button[data-hovered],
+    .button:active,
+    .button[data-pressed],
+    .button[data-caption='close']:hover,
+    .button[data-caption='close']:active {
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    .button:focus-visible {
+      outline-color: Highlight;
+    }
+  }
+}

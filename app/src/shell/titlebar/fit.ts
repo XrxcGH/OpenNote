@@ -6,6 +6,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
+/** Sub-pixel layout rounding the bar tolerates before it steps to the next level, in pixels. */
+export const OVERFLOW_TOLERANCE = 0.5;
+
 export interface Fit {
   /** Changes when the bar's content changes, which starts fitting again from the lowest level. */
   key: string;
@@ -24,7 +27,7 @@ export function nextFit(fit: Fit, measured: { width: number; overflow: number },
   const { level, needs } = fit;
   if (level < range.min) return { ...fit, level: range.min };
   if (level > range.max) return { ...fit, level: range.max };
-  const overflows = measured.overflow > 0.5;
+  const overflows = measured.overflow > OVERFLOW_TOLERANCE;
   if (overflows && level < range.max) {
     const next = [...needs];
     next[level] = measured.width + measured.overflow;
@@ -72,9 +75,20 @@ export function useFit(
       const measured = { width: element.clientWidth, overflow: overflowOf(element) };
       setFit((current) => nextFit(current, measured, { min, max }));
     };
-    const observer = new ResizeObserver(() => measure.current());
+    // Measuring inside the callback changes the sizes it watches in the same frame, which the browser reports as
+    // "ResizeObserver loop completed with undelivered notifications". The next animation frame is still before paint.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        measure.current();
+      });
+    });
     [element, ...(watched.current ?? [])].forEach((target) => target && observer.observe(target));
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [bar, watched, min, max, fit.key]);
   // A level change can shrink the overflow without resizing anything observed, so measure after each one.
   useLayoutEffect(() => measure.current(), [fit.level, fit.key]);

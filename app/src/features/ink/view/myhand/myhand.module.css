@@ -1,0 +1,217 @@
+@layer components {
+  /* My handwriting: calm ruled paper, a box for each sample, and quiet controls around it. */
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-inline-size: 100%;
+  }
+
+  .lead {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .steps [aria-current='step'] {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-block-size: min(60vh, 640px);
+    overflow-y: auto;
+    padding: var(--space-1);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .char {
+    inline-size: var(--space-7);
+    text-align: center;
+    font-size: var(--type-title2-size);
+    line-height: var(--type-title2-line);
+    color: var(--color-text-primary);
+  }
+
+  /* A writing box: paper with its baseline and a faint middle line. */
+  .box {
+    position: relative;
+    flex: none;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .box:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .box[data-written='true'] {
+    border-color: var(--color-border-control);
+  }
+
+  .box svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    pointer-events: none;
+  }
+
+  .baseline {
+    stroke: var(--color-border-control);
+    stroke-width: 1;
+  }
+
+  .guide {
+    stroke: var(--color-border-subtle);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+  }
+
+  .ink {
+    fill: var(--ink-ink);
+  }
+
+  .redo {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-end: var(--space-1);
+    opacity: 0;
+    transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+
+  .box:hover .redo,
+  .box:focus-within .redo {
+    opacity: 1;
+  }
+
+  .sentence {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .sentence p {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  .preview {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+    padding: var(--space-3);
+  }
+
+  .preview svg {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+  }
+
+  .facts dt {
+    color: var(--color-text-secondary);
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .locked {
+    border-inline-start: 3px solid var(--color-border-control);
+    padding-inline-start: var(--space-3);
+    color: var(--color-text-secondary);
+  }
+
+  .symbols {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-3);
+    max-block-size: min(55vh, 600px);
+    overflow-y: auto;
+    padding: var(--space-1);
+    margin: 0;
+    list-style: none;
+  }
+
+  .symbol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+  }
+
+  .symbol[data-skipped='true'] {
+    opacity: 0.55;
+  }
+
+  .symbol svg {
+    block-size: 64px;
+    inline-size: 100%;
+  }
+
+  /* The field is 20 characters wide by itself; in a card one column wide it shrinks to the card instead of spilling. */
+  .symbol > div {
+    grid-template-columns: minmax(0, 1fr);
+    min-inline-size: 0;
+  }
+
+  .symbol input {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .missing {
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  /* The caret of Type as handwriting: where the next letter goes. It stays still, as calm motion asks. */
+  :global(.myhand-caret) {
+    position: absolute;
+    inline-size: 2px;
+    background: var(--color-accent-primary);
+    pointer-events: none;
+  }
+}

@@ -22,6 +22,10 @@
 
   /* The active tab's indicator is a 3 px bottom border, which forced colors keep. */
   .tab {
+    /* The 4 px above keeps a tab off the title bar's buttons, and a pixel below balances it with the 3 px
+       indicator, so a tab's label sits level with the tools' labels. */
+    margin-block-start: var(--space-2);
+    padding-block: 0 1px;
     padding-inline: var(--space-4);
     border: none;
     border-block-end: 3px solid transparent;
@@ -37,10 +41,14 @@
     font-weight: var(--font-weight-semibold);
   }
 
+  /* A divider and a wider gap keep the tools from reading as more tabs. */
   .panel {
     display: flex;
     flex: 1;
+    align-items: center;
     min-inline-size: 0;
+    padding-inline-start: var(--space-5);
+    border-inline-start: 1px solid var(--color-border-subtle);
   }
 
   .toolbar {
@@ -160,6 +168,13 @@
     font: inherit;
     text-align: start;
     cursor: pointer;
+  }
+
+  .moreHeading {
+    padding-inline: var(--space-4);
+    padding-block-start: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
   }
 
   .moreItem:hover,

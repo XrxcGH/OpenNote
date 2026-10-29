@@ -59,6 +59,8 @@ pub struct JournalThread {
     commands: Sender<Command>,
     codec: Arc<dyn Codec>,
     thread: Option<JoinHandle<()>>,
+    /// How long an open waits for the thread's answer: [`OPEN_TIMEOUT`], shorter in tests.
+    open_wait: Duration,
 }
 
 /// A page's journal, held by its page session.
@@ -197,6 +199,13 @@ pub enum TreeOp {
     },
 }
 
+/// How long opening a journal waits for the journal thread. The thread answers in milliseconds; a longer wait
+/// means it is stuck, and the page then runs without a journal (spec 20.12) instead of holding its lock, and
+/// every command behind it, forever. It is shorter than the app's `COMMAND_WAIT` (15 s in core_bridge.rs): an
+/// open stuck here holds the core, and it must give up before the commands queued behind it do, so they run
+/// instead of failing as busy.
+const OPEN_TIMEOUT: Duration = Duration::from_secs(10);
+
 impl JournalThread {
     /// Starts the thread.
     pub fn start(config: JournalConfig) -> Result<JournalThread, CoreError> {
@@ -212,6 +221,7 @@ impl JournalThread {
             commands,
             codec,
             thread: Some(thread),
+            open_wait: OPEN_TIMEOUT,
         })
     }
 
@@ -233,7 +243,9 @@ impl JournalThread {
             reply,
         };
         self.commands.send(command).map_err(|_| JournalError::Closed)?;
-        let (id, shared) = answer.recv().map_err(|_| JournalError::Closed)??;
+        let (id, shared) = answer
+            .recv_timeout(self.open_wait)
+            .map_err(|_| JournalError::Timeout)??;
         Ok(JournalHandle {
             id,
             commands: self.commands.clone(),
@@ -252,7 +264,9 @@ impl JournalThread {
             reply,
         };
         self.commands.send(command).map_err(|_| JournalError::Closed)?;
-        let shared = answer.recv().map_err(|_| JournalError::Closed)??;
+        let shared = answer
+            .recv_timeout(self.open_wait)
+            .map_err(|_| JournalError::Timeout)??;
         Ok(TreeJournal {
             key: key.clone(),
             commands: self.commands.clone(),

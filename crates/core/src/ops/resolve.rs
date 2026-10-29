@@ -5,6 +5,7 @@
 //! a request is resolved against the page as the edits before it left it.
 
 mod blocks;
+pub mod entry_lock;
 mod page;
 mod place;
 mod restore;
@@ -268,7 +269,14 @@ fn find_block(page: &Page, id: BlockId) -> Result<&Arc<Block>, EditError> {
 }
 
 /// Fails when the page is read-only or the request names another page.
+/// The page can take changes: it isn't read-only or a locked entry, and it is the page the request names.
 fn check_page(page: &Page, id: PageId) -> Result<(), EditError> {
+    check_access(page, id)?;
+    entry_lock::check(page, &[])
+}
+
+/// The page isn't read-only, and it is the page the request names.
+fn check_access(page: &Page, id: PageId) -> Result<(), EditError> {
     if let Access::ReadOnly(reason) = &page.format.access {
         return Err(EditError::ReadOnly(reason.clone()));
     }
@@ -293,9 +301,13 @@ fn local_txn(ctx: &ResolveCtx, at: Timestamp, (client, coalesce): (&ClientId, &O
 /// Resolves a request against the current page into a transaction. A request that changes nothing, such as
 /// text set to what it already is, gives a transaction without operations.
 pub fn resolve(page: &Page, req: &TxnRequest, ctx: &ResolveCtx) -> Result<Txn, EditError> {
-    check_page(page, req.page)?;
+    check_access(page, req.page)?;
+    // A locked entry takes only the edit that removes its lock (ADR 0041).
+    entry_lock::check(page, &req.edits)?;
     let at = ctx.clock.now();
-    let (ops, _) = resolve_edits(page, &req.edits, (ctx, at), false)?;
+    let stamped = entry_lock::stamp(page, &req.edits, at);
+    let edits = stamped.as_deref().unwrap_or(&req.edits);
+    let (ops, _) = resolve_edits(page, edits, (ctx, at), false)?;
     Ok(Txn {
         ui: req.ui.clone(),
         ops,

@@ -47,6 +47,8 @@ export interface SyncRig {
   syncs: Map<string, TextSyncHandle>;
   /** What the frame context was asked to do. */
   calls: string[];
+  /** The order keys the frame context gave blocks. */
+  orders: Record<string, string>;
   announced: string[];
   focused: { block: string | null };
   sent(): readonly EditBatch[];
@@ -58,7 +60,7 @@ export interface SyncRig {
   type(block: string, text: string): void;
 }
 
-function frameContext(rig: Pick<SyncRig, 'editors' | 'syncs' | 'calls' | 'focused'>): FrameContext {
+function frameContext(rig: Pick<SyncRig, 'editors' | 'syncs' | 'calls' | 'orders' | 'focused'>): FrameContext {
   return {
     textState(block) {
       const editor = rig.editors.get(block);
@@ -77,6 +79,7 @@ function frameContext(rig: Pick<SyncRig, 'editors' | 'syncs' | 'calls' | 'focuse
       rig.calls.push(`text ${block}`);
     },
     upsertBlock: (block) => void rig.calls.push(`upsert ${block.id}`),
+    reorder: (block, order) => void (rig.orders[block] = order),
     removeBlock: (block) => void rig.calls.push(`remove ${block}`),
     setPageFields: (fields) => void rig.calls.push(`fields ${JSON.stringify(fields)}`),
     restoreSelection: (selection) => void rig.calls.push(`select ${JSON.stringify(selection)}`),
@@ -92,6 +95,7 @@ export async function syncRig(page: PageJson, options: { supportsSplice?: boolea
     editors: new Map<string, Editor>(),
     syncs: new Map<string, TextSyncHandle>(),
     calls: [],
+    orders: {},
     focused: { block: null },
   };
   const announced: string[] = [];

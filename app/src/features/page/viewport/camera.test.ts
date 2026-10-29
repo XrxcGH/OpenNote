@@ -67,7 +67,9 @@ describe('the camera', () => {
   it('grows the world past the content and never shrinks it', () => {
     const first = worldSize({ w: 1480, h: 3000 }, { w: 800, h: 600 }, 1, null);
     expect(first).toEqual({ w: 1480, h: 3300 });
-    expect(worldSize({ w: 10, h: 10 }, { w: 800, h: 600 }, 1, first)).toEqual(first);
+    expect(worldSize({ w: 10, h: 10 }, { w: 800, h: 600 }, 1, first)).toEqual({ w: 800, h: 3300 });
+    // A page that fits never scrolls sideways, even when the viewport's width doesn't divide by the zoom.
+    expect(worldSize({ w: 700, h: 10 }, { w: 1001, h: 600 }, 1.25, null).w * 1.25).toBeLessThanOrEqual(1001);
     expect(worldSize({ w: 0, h: 0 }, { w: 800, h: 600 }, 0.5, null)).toEqual({ w: 1600, h: 1200 });
   });
 

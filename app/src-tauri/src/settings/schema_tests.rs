@@ -17,7 +17,8 @@ fn defaults_match_schema_version_1() {
         "keymap": { "preset": "default" },
         "updates": { "install": "auto", "channel": "stable", "skippedVersion": null },
         "setup": { "completedSteps": [] },
-        "experimental": { "flags": {} }
+        "experimental": { "flags": {} },
+        "language": { "locale": "en-US" }
     });
     expected["editing"] = serde_json::to_value(EditingSettings::default()).expect("serializes");
     expected["ink"] = serde_json::to_value(InkSettings::default()).expect("serializes");
@@ -102,4 +103,20 @@ fn names_the_onenote_shortcut_set() {
         serde_json::to_value(keymap).expect("serializes"),
         json!({ "preset": "onenote" })
     );
+}
+
+#[test]
+fn the_default_language_is_american_english() {
+    assert_eq!(Settings::default().language.locale, "en-US");
+    let parsed: Settings = serde_json::from_value(json!({ "language": {} })).expect("parses");
+    assert_eq!(parsed.language.locale, "en-US");
+}
+
+#[test]
+fn rejects_a_language_that_is_not_a_tag() {
+    let mut settings = Settings::default();
+    settings.language.locale = "en_US".into();
+    assert_eq!(failed_field(&settings).as_deref(), Some("language.locale"));
+    settings.language.locale = "en-GB".into();
+    assert_eq!(failed_field(&settings), None);
 }

@@ -47,6 +47,10 @@ pub trait Fs: Send + Sync + 'static {
     fn folder_identity(&self, path: &Path) -> Result<FolderIdentity, FsError>;
     /// An identifier of the current boot of the operating system (spec 20.9).
     fn boot_id(&self) -> Result<String, FsError>;
+    /// The file system that seals protected sections, when this is it (ADR 0042).
+    fn sealed(&self) -> Option<&crate::store::sealed::SealedFs> {
+        None
+    }
 }
 
 /// A file open for appending, such as a journal generation.

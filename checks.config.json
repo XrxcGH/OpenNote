@@ -8,7 +8,17 @@
     "app/src/platform/bindings/*.ts",
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",
-    "target/**"
+    "crates/interop/tests/corpus/*/**",
+    "THIRD_PARTY_NOTICES.md",
+    "target/**",
+    "crates/interop/tests/data/legacy/**",
+    "extensions/clipper/shared/vendor/**",
+    "app/src-tauri/src/intel/catalog.rs",
+    "app/src/services/intel/packs.ts",
+    "crates/intel-engines/tests/fixtures/**",
+    "app/src/features/ink/pens/golden/*.txt",
+    "crates/third_party/**",
+    "app/src/theme/fonts/**"
   ],
   "rules": {
     "spelling": {

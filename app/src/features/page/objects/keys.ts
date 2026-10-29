@@ -20,6 +20,14 @@ function wrapperBlock(event: KeyboardEvent, layer: PageBlockLayer): BlockId | nu
   return block && layer.view(block)?.element === target ? block : null;
 }
 
+/** The block whose body control (a study tape) has focus: arrows move it as they move a focused wrapper. */
+function bodyBlock(event: KeyboardEvent, layer: PageBlockLayer): BlockId | null {
+  const target = event.target instanceof HTMLElement ? event.target : null;
+  if (!target?.hasAttribute('data-block-drag') || !(event.key in ARROWS)) return null;
+  const block = target.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+  return block && layer.view(block) ? block : null;
+}
+
 /** Tab and Shift+Tab in object mode: the next or previous wrapper in reading order, or out of the page. */
 function rove(objects: Objects, layer: PageBlockLayer, block: BlockId, back: boolean): boolean {
   const order = layer.blocks().map((other) => other.id);
@@ -86,7 +94,11 @@ export function installObjectKeys(container: HTMLElement, objects: Objects, laye
   const onKey = (event: KeyboardEvent) => {
     if (event.defaultPrevented || event.isComposing) return;
     const block = wrapperBlock(event, layer);
-    if (block && wrapperKey(objects, layer, block, event)) event.preventDefault();
+    if (block && wrapperKey(objects, layer, block, event)) return event.preventDefault();
+    const body = bodyBlock(event, layer);
+    if (!body || event.altKey || event.metaKey) return;
+    if (!objects.selected().includes(body)) objects.select([body]);
+    if (arrow(objects, body, event)) event.preventDefault();
   };
   const onFocus = (event: FocusEvent) => {
     const target = event.target instanceof HTMLElement ? event.target : null;

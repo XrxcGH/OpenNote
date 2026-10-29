@@ -4,6 +4,7 @@
 
 import type { PanePref } from '../../platform/types';
 import type { SizeClass } from '../../state/layout';
+import { AUTO_PANE_WIDTH } from '../../state/session';
 import { tokens } from '../../theme/tokens';
 
 export type PaneId = 'notebooks' | 'pages';
@@ -28,11 +29,38 @@ export interface PaneLayout {
 
 const SIZE = tokens.size;
 
-/** The limits of each resizable pane, from the design tokens. */
-export const PANE_LIMITS: Readonly<Record<PaneId, { min: number; max: number; default: number }>> = {
-  notebooks: { min: SIZE.sidebarMin, max: SIZE.sidebarMax, default: SIZE.sidebar },
-  pages: { min: SIZE.pageListMin, max: SIZE.pageListMax, default: SIZE.pageList },
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/**
+ * The limits of each resizable pane, from the design tokens. `default` is the widest the automatic width gets;
+ * `share` is the part of the window it takes until then, never below `min`.
+ */
+export const PANE_LIMITS: Readonly<Record<PaneId, { min: number; max: number; default: number; share: number }>> = {
+  notebooks: { min: SIZE.sidebarMin, max: SIZE.sidebarMax, default: SIZE.sidebar, share: 0.14 },
+  pages: { min: SIZE.pageListMin, max: SIZE.pageListMax, default: SIZE.pageList, share: 0.16 },
 };
+
+/** The fixed defaults earlier versions stored for every pane, before the default followed the window. */
+const LEGACY_DEFAULTS: Readonly<Record<PaneId, number>> = { notebooks: 272, pages: 300 };
+
+/** Whether a stored width is the automatic one rather than a width the person chose by resizing. */
+export function isAutoWidth(pane: PaneId, width: number): boolean {
+  return !Number.isFinite(width) || width <= AUTO_PANE_WIDTH || width === LEGACY_DEFAULTS[pane];
+}
+
+/**
+ * How to store a width the person chose. A chosen width that happens to equal a legacy default is kept a quarter
+ * pixel off it, so it still reads as chosen and still rounds to the same pixel.
+ */
+export function chosenWidth(pane: PaneId, width: number): number {
+  return width === LEGACY_DEFAULTS[pane] ? width - 0.25 : width;
+}
+
+/** The automatic width: a share of the window, between the pane's minimum and its default. */
+export function defaultPaneWidth(pane: PaneId, windowWidth: number): number {
+  const { min, default: widest, share } = PANE_LIMITS[pane];
+  return Math.round(clamp(windowWidth * share, min, widest));
+}
 
 /** The medium drawer's widest size and its share of the window. */
 const DRAWER_MAX = 320;
@@ -40,12 +68,10 @@ const DRAWER_SHARE = 0.85;
 /** The medium pages pane's share of the window. */
 const MEDIUM_PAGES_SHARE = 0.4;
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-/** A stored width, clamped to the pane's limits. Anything that isn't a finite number becomes the default. */
-export function clampPaneWidth(pane: PaneId, width: number): number {
+/** A stored width, clamped to the pane's limits. The automatic width, or anything not a number, follows the window. */
+export function clampPaneWidth(pane: PaneId, width: number, windowWidth: number): number {
   const { min, max } = PANE_LIMITS[pane];
-  return Number.isFinite(width) ? Math.round(clamp(width, min, max)) : PANE_LIMITS[pane].default;
+  return isAutoWidth(pane, width) ? defaultPaneWidth(pane, windowWidth) : Math.round(clamp(width, min, max));
 }
 
 /** How wide a pane's grid column is: its width as a pane, else the rail. Screens take the whole row. */
@@ -76,8 +102,8 @@ function expanded(width: number, prefs: PanePrefs): PaneLayout {
   const room = width - SIZE.rail - SIZE.editorMin;
   const notebooks = prefs.notebooks.collapsed
     ? SIZE.rail
-    : Math.max(SIZE.sidebarMin, Math.min(clampPaneWidth('notebooks', prefs.notebooks.width), room));
-  const overlay = Math.max(0, Math.min(clampPaneWidth('pages', prefs.pages.width), width - notebooks));
+    : Math.max(SIZE.sidebarMin, Math.min(clampPaneWidth('notebooks', prefs.notebooks.width, width), room));
+  const overlay = Math.max(0, Math.min(clampPaneWidth('pages', prefs.pages.width, width), width - notebooks));
   return {
     notebooks: prefs.notebooks.collapsed ? { mode: 'rail', width: SIZE.rail } : { mode: 'pane', width: notebooks },
     pages: { mode: 'overlay', width: overlay },
@@ -106,8 +132,8 @@ function fitWide(width: number, notebooks: number | null, pages: number | null) 
 function wide(width: number, prefs: PanePrefs): PaneLayout {
   const fitted = fitWide(
     width,
-    prefs.notebooks.collapsed ? null : clampPaneWidth('notebooks', prefs.notebooks.width),
-    prefs.pages.collapsed ? null : clampPaneWidth('pages', prefs.pages.width),
+    prefs.notebooks.collapsed ? null : clampPaneWidth('notebooks', prefs.notebooks.width, width),
+    prefs.pages.collapsed ? null : clampPaneWidth('pages', prefs.pages.width, width),
   );
   const notebooks = fitted.notebooks ?? SIZE.rail;
   const pages = fitted.pages ?? SIZE.rail;
@@ -127,15 +153,15 @@ export function solvePanes(windowWidth: number, sizeClass: SizeClass, prefs: Pan
 }
 
 /** How much room the other column takes while this pane grows, as the solver would give it. */
-function otherColumn(pane: PaneId, sizeClass: SizeClass, prefs: PanePrefs): number {
+function otherColumn(pane: PaneId, sizeClass: SizeClass, prefs: PanePrefs, width: number): number {
   if (sizeClass === 'expanded') {
     return pane === 'notebooks' || prefs.notebooks.collapsed
       ? SIZE.rail
-      : clampPaneWidth('notebooks', prefs.notebooks.width);
+      : clampPaneWidth('notebooks', prefs.notebooks.width, width);
   }
   // In the wide layout the pages pane gives way first, down to its minimum.
   if (pane === 'notebooks') return prefs.pages.collapsed ? SIZE.rail : SIZE.pageListMin;
-  return prefs.notebooks.collapsed ? SIZE.rail : clampPaneWidth('notebooks', prefs.notebooks.width);
+  return prefs.notebooks.collapsed ? SIZE.rail : clampPaneWidth('notebooks', prefs.notebooks.width, width);
 }
 
 /**
@@ -151,7 +177,7 @@ export function paneBounds(
 ): { min: number; max: number } {
   const { min, max } = PANE_LIMITS[pane];
   if (sizeClass !== 'wide' && sizeClass !== 'expanded') return { min, max };
-  const other = otherColumn(pane, sizeClass, prefs);
+  const other = otherColumn(pane, sizeClass, prefs, windowWidth);
   const overlay = sizeClass === 'expanded' && pane === 'pages';
   const room = overlay ? windowWidth - other : windowWidth - other - SIZE.editorMin;
   return { min, max: Math.max(min, Math.min(max, room)) };

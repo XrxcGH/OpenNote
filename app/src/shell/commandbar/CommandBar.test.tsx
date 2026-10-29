@@ -5,8 +5,10 @@ import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
 import { commandBar, commands, contextMenus, titleBarItems } from '../../registries';
 import type { CommandBarItem } from '../../registries/types';
+import type { NodeId } from '../../services/notes/types';
 import type { MessageKey } from '../../strings/t';
 import { expectFocus, expectNoAxeViolations, renderApp, setViewport } from '../../test';
+import { recordRecentPage } from '../../state/session';
 import { registerRegionMain } from '../regions';
 
 const stops: (() => void)[] = [];
@@ -37,7 +39,7 @@ describe('the command bar tabs', () => {
     command('fern', 'commands.colors.fern', { keys: [chord('Ctrl+Alt+F')] });
     tool('ink');
     tool('fern', { tab: 'view' });
-    tool('hidden', { tab: 'draw', flag: 'commandBar.draw' });
+    tool('hidden', { tab: 'insert', flag: 'commandBar.insert' });
     await renderApp({ boot: { channel: 'stable' } });
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Home', 'View']);
@@ -134,6 +136,35 @@ describe('the command bar overflow', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Walnut' }));
     await vi.waitFor(() => expect(ran).toHaveBeenCalledWith('walnut'));
   });
+  it('lists each available switch of a component tool that moved into More', async () => {
+    const ran = vi.fn();
+    command('indigo', 'commands.colors.indigo', { run: () => ran('indigo'), checked: () => true });
+    command('brick', 'commands.colors.brick', { when: () => false });
+    command('fern', 'commands.colors.fern', { run: () => ran('fern') });
+    COLORS.slice(4).forEach((color) => {
+      command(color, `commands.colors.${color}`);
+      tool(color, { priority: 100 });
+    });
+    tool('group', {
+      command: 'test.indigo',
+      priority: 1,
+      presentation: 'component',
+      Component: () => <div style={{ width: 2000 }}>wide group</div>,
+      overflow: ['test.indigo', 'test.brick', 'test.fern'],
+    });
+    await setViewport(640, 800);
+    await renderApp({ sizeClass: 'medium' });
+    const toolbar = screen.getByRole('toolbar', { name: 'Home' });
+    const more = await within(toolbar).findByRole('button', { name: 'More commands' });
+    await vi.waitFor(() => expect(within(toolbar).queryByText('wide group')).toBeNull());
+    await userEvent.click(more);
+    const indigo = await screen.findByRole('menuitemcheckbox', { name: 'Indigo' });
+    expect(indigo.getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByRole('menuitem', { name: 'Brick' })).toBeNull();
+    expect(screen.queryByRole('menuitemcheckbox', { name: 'Brick' })).toBeNull();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Fern' }));
+    await vi.waitFor(() => expect(ran).toHaveBeenCalledWith('fern'));
+  });
 });
 
 describe('the bottom bar', () => {
@@ -167,5 +198,37 @@ describe('the bottom bar', () => {
     await userEvent.keyboard('{Escape}');
     await expectFocus(more);
     await expectNoAxeViolations(document.body);
+  });
+
+  it('lists the recent pages in More', async () => {
+    const open = async (channel: 'beta' | 'stable') => {
+      const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel } });
+      const pages = await notes.listChildren('s-lectures' as NodeId);
+      recordRecentPage(pages[1].id);
+      recordRecentPage(pages[0].id);
+      const bar = screen.getByRole('navigation', { name: 'Quick actions' });
+      await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));
+      return { pages, panel: await screen.findByRole('dialog', { name: 'More commands' }) };
+    };
+    const { pages, panel } = await open('beta');
+    const list = await within(panel).findByRole('list', { name: 'Recent pages' });
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual([pages[0].title, pages[1].title]);
+    await expectNoAxeViolations(document.body);
+    await userEvent.click(within(list).getAllByRole('button')[1]);
+    expect(screen.queryByRole('dialog', { name: 'More commands' })).toBeNull();
+  });
+
+  it('lists the recent pages in More in Stable too', async () => {
+    const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel: 'stable' } });
+    const pages = await notes.listChildren('s-lectures' as NodeId);
+    recordRecentPage(pages[0].id);
+    const bar = screen.getByRole('navigation', { name: 'Quick actions' });
+    await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));
+    const panel = await screen.findByRole('dialog', { name: 'More commands' });
+    expect(within(panel).getByRole('list', { name: 'Recent pages' })).toBeTruthy();
   });
 });

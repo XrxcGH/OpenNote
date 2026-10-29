@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   experimental: { flags: {} },
   editing: RUST_SETTINGS_DEFAULTS.editing,
   ink: RUST_SETTINGS_DEFAULTS.ink,
+  language: { locale: 'en-US' },
 };
 
 export const settingsStore = createStore<{ settings: Settings; readOnly: boolean }>(

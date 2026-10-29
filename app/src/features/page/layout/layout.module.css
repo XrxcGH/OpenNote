@@ -3,13 +3,18 @@
      page's content width, and never wider than the viewport, so nothing scrolls sideways at 320 CSS px. The flow
      isn't positioned, so floating blocks inside it sit at their frames in the world. */
   .flow {
-    --flow-margin: min(var(--size-flow-margin), calc(5cqi / var(--page-zoom, 1)));
-
-    margin-inline-start: var(--flow-margin);
+    /* --flow-start and --flow-margin come from the world (viewport.module.css), which the title band shares. */
+    margin-inline-start: var(--flow-start);
     padding-block: var(--space-4) var(--space-8);
     inline-size: min(var(--flow-width, 72ch), calc(100cqi / var(--page-zoom, 1) - 2 * var(--flow-margin)));
     font-family: var(--font-reading);
     font-size: var(--type-note-size);
+  }
+
+  /* Ruled paper (rules.ts): the flow's first line goes to a rule, below whatever is above it. A padding, so the lead
+     never collapses into the margin above the flow. */
+  :global([data-ruled]) .flow {
+    padding-block-start: var(--rule-lead, 0px);
   }
 
   /* The compact size class's switch between the Reading view and the canvas, above the blocks. */

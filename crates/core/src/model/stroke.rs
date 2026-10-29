@@ -23,6 +23,14 @@ pub mod tool {
     pub const MARKER: u8 = 3;
     /// Brush.
     pub const BRUSH: u8 = 4;
+    /// Fountain pen.
+    pub const FOUNTAIN: u8 = 5;
+    /// Calligraphy nib at a fixed angle.
+    pub const CALLIGRAPHY: u8 = 6;
+    /// Dashed line.
+    pub const DASHED: u8 = 7;
+    /// Dotted line.
+    pub const DOTTED: u8 = 8;
 }
 
 /// The name of a palette slot: 1 to 7 are pens, 32 to 36 highlighters, and anything else custom.

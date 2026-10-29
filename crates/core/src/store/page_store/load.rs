@@ -158,7 +158,8 @@ fn count(n: usize) -> u32 {
     u32::try_from(n).unwrap_or(u32::MAX)
 }
 
-/// Assets in the table whose file is missing, has another size, or has a name that fails its check.
+/// Assets in the table whose file is missing, has another size, or has a name that fails its check. A
+/// recording that is still being written grows past its size, so only its name is checked.
 pub fn missing_assets(fs: &dyn Fs, dir: &Path, page: &Page) -> Vec<PathBuf> {
     if page.assets.is_empty() {
         return Vec::new();
@@ -174,6 +175,7 @@ pub fn missing_assets(fs: &dyn Fs, dir: &Path, page: &Page) -> Vec<PathBuf> {
     page.assets
         .values()
         .filter_map(|asset| match NotebookLayout::asset_path(dir, asset) {
+            Ok(_) if asset.is_recording() => None,
             Ok(path) => (listing.get(&asset.file) != Some(&asset.bytes)).then_some(path),
             Err(_) => Some(assets_dir.join(asset.id.to_string())),
         })

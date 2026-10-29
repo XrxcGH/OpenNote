@@ -89,6 +89,9 @@ describe('the Updates section', () => {
     expect(screen.getByText(/built without an update key/)).toBeTruthy();
     expect(screen.queryByRole('radiogroup')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Check for updates' })).toBeNull();
+    // How downloads resume and wait for an unmetered network is listed either way.
+    expect(screen.getByRole('heading', { name: 'Resume downloads' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Metered connection' })).toBeTruthy();
     await expectNoAxeViolations(container);
   });
 

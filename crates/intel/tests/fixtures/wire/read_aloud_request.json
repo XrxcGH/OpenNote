@@ -1,0 +1,10 @@
+{
+  "text": "First sentence here. Second sentence follows.",
+  "speak": {
+    "voice": null,
+    "rate": 1.25,
+    "pitch": 1.0,
+    "volume": 1.0
+  },
+  "maxChunkChars": 40
+}

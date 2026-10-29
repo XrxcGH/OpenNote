@@ -3,11 +3,13 @@
 // What the step chose stays in the draft, so Back and closing the app never lose it.
 
 import { useEffect, useId, useState } from 'react';
+import { isEnabled } from '../../../app/flags';
 import type { FolderCheck, InstallStatus } from '../../../platform/types';
 import type { SetupStepProps } from '../../../registries';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
-import { Button, RadioCard, RadioGroup, TextField, announce } from '../../../ui';
+import { Button, RadioCard, RadioGroup, Switch, TextField, announce } from '../../../ui';
+import { CloudNotice, useCloud } from '../../qol';
 import { getHost } from '../runtime';
 import styles from '../SetupView.module.css';
 import { StepHeader } from '../StepHeader';
@@ -107,6 +109,7 @@ function NotesFolder({ props, message }: { props: SetupStepProps; message: strin
 
 function AppChoice({ props, install }: { props: SetupStepProps; install: InstallStatus | null }) {
   const { draft, setDraft } = props;
+  const cliNoteId = useId();
   const storage = draft.storage;
   if (!storage || !install) return null;
   const label = t('setup.storage.app.label');
@@ -135,6 +138,19 @@ function AppChoice({ props, install }: { props: SetupStepProps; install: Install
           description={t(keepDetail, { path: install.exePath })}
         />
       </RadioGroup>
+      {storage.moveApp && isEnabled('api.local') && (
+        <>
+          <Switch
+            label={t('platformApi.setupCliPath')}
+            checked={storage.cliOnPath ?? false}
+            describedBy={cliNoteId}
+            onChange={(next) => setDraft({ storage: { ...storage, cliOnPath: next } })}
+          />
+          <p id={cliNoteId} className={styles.note}>
+            {t('platformApi.setupCliPathNote')}
+          </p>
+        </>
+      )}
     </section>
   );
 }
@@ -164,6 +180,12 @@ function FirstNotebook({ props }: { props: SetupStepProps }) {
   );
 }
 
+/** A notice when the chosen folder is in a sync service, with the offer to keep it on this device. */
+function CloudFolder({ folder }: { folder: string }) {
+  const info = useCloud(folder);
+  return info ? <CloudNotice folder={folder} info={info} /> : null;
+}
+
 export default function StorageStep(props: SetupStepProps) {
   const install = useStorageDefaults(props);
   const message = useFolderCheck(props);
@@ -171,6 +193,7 @@ export default function StorageStep(props: SetupStepProps) {
     <div className={styles.step}>
       <StepHeader {...props} title={t('setup.steps.storage')} subtitle={t('setup.storage.subtitle')} />
       <NotesFolder props={props} message={message} />
+      {props.draft.storage && <CloudFolder folder={props.draft.storage.notesFolder} />}
       <AppChoice props={props} install={install} />
       <FirstNotebook props={props} />
     </div>

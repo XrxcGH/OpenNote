@@ -1,0 +1,35 @@
+{
+  "clipId": "clip-1",
+  "info": {
+    "durationMs": 800,
+    "boundaries": [
+      {
+        "kind": "sentence",
+        "startMs": 0,
+        "endMs": 800,
+        "text": {
+          "start": 0,
+          "end": 12
+        }
+      },
+      {
+        "kind": "word",
+        "startMs": 0,
+        "endMs": 300,
+        "text": {
+          "start": 0,
+          "end": 5
+        }
+      },
+      {
+        "kind": "word",
+        "startMs": 300,
+        "endMs": 800,
+        "text": {
+          "start": 6,
+          "end": 11
+        }
+      }
+    ]
+  }
+}

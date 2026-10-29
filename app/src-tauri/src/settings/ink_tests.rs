@@ -16,7 +16,7 @@ fn settings_defaults_match_phase_5s_schema() {
         ],
         "penSelectsAndTypes": false,
         "handedness": "right",
-        "touch": { "draws": false, "palmGraceMs": 500, "twoFingerScrollNearPen": true },
+        "touch": { "draws": false, "finger": "auto", "palmGraceMs": 500, "twoFingerScrollNearPen": true },
         "eraser": { "mode": "stroke", "size": 4, "erases": "all", "returnToLastTool": false, "showTarget": true },
         "lasso": { "shape": "free", "picks": ["ink", "highlighter", "text", "images", "shapes"], "inside": "mostly" },
         "shapes": { "hold": true, "holdMs": 500, "inkToShape": false },
@@ -108,4 +108,44 @@ fn a_custom_curve_never_goes_down() {
         pen.custom_curve = Some([0.2, 0.9, 0.8, -0.4]);
     }
     assert_eq!(failed_field(|c| device.check(c)).as_deref(), Some("ink.pens"));
+}
+
+#[test]
+fn pen_sets_are_optional_and_checked() {
+    let mut ink = InkSettings::default();
+    assert!(serde_json::to_value(&ink).expect("serializes").get("penSets").is_none());
+    let set = PenSet {
+        id: "s1".into(),
+        name: "Drawing".into(),
+        pens: vec![
+            PenSlot {
+                id: "f1".into(),
+                tool: PenTool::Fountain,
+                color: "ink".into(),
+                width: 0.7,
+                pressure: Some(true),
+            },
+            PenSlot {
+                id: "c1".into(),
+                tool: PenTool::Calligraphy,
+                color: "indigo".into(),
+                width: 2.0,
+                pressure: None,
+            },
+        ],
+    };
+    ink.pen_sets = Some(vec![set.clone()]);
+    assert_eq!(failed_field(|c| ink.check(c)), None);
+    let json = serde_json::to_value(&ink).expect("serializes");
+    assert_eq!(json["penSets"][0]["pens"][1]["tool"], "calligraphy");
+    let back: InkSettings = serde_json::from_value(json).expect("reads back");
+    assert_eq!(back, ink);
+    ink.pen_sets = Some(vec![set.clone(), set]);
+    assert_eq!(failed_field(|c| ink.check(c)).as_deref(), Some("ink.penSets"));
+    ink.pen_sets = Some(vec![PenSet {
+        id: "s2".into(),
+        name: String::new(),
+        pens: vec![],
+    }]);
+    assert_eq!(failed_field(|c| ink.check(c)).as_deref(), Some("ink.penSets"));
 }

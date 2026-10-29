@@ -10,6 +10,9 @@ CHECKS is the quality gate for OpenNote. Every file change must pass it before i
 - [Suppressing a finding](#suppressing-a-finding)
 - [Configuration](#configuration)
 - [Where it runs](#where-it-runs)
+- [Asset attribution](#asset-attribution)
+- [Clippy ratchet](#clippy-ratchet)
+- [Cross-checks](#cross-checks)
 - [Adding or changing a rule](#adding-or-changing-a-rule)
 
 ## Quick start
@@ -31,7 +34,7 @@ Other options: `--staged`, `--base <ref>`, `--rules spelling,grammar`, `--strict
 | Rule | Covers | Applies to |
 |---|---|---|
 | `hygiene` | Trailing spaces, Windows line endings, missing final newline, invisible characters, merge markers, leaked keys, files over 1 MB | All text files |
-| `spelling` | British and other non-American spellings, such as `colour` or `organise` | Docs and code comments |
+| `spelling` | British and other non-American spellings, such as `colour` or `organise`. OpenNote's default language is American English, so the docs, the help pages, and the text people read in the app all use it | Docs, code comments, and the text in the string literals of UI code and Rust (the `strings` setting) |
 | `grammar` | Missing serial (Oxford) comma, wrong article (`a`/`an`), repeated words, `could of`, `then`/`than`, spacing and bracket slips | Docs and code comments |
 | `ai-markers` | Chatbot leftovers, stock AI phrases such as `delve`, heavy em dash use, emoji headings, formulaic bold-label lists | Docs and code comments |
 | `redundancy` | Wordy phrases such as `in order to`, repeated sentences and paragraphs, paragraphs copied between documents | Docs and code comments |
@@ -76,6 +79,7 @@ A suppression without a reason, or with an unknown rule, is itself an error and 
 - `severity`: `"error"`, `"warning"`, or `"off"` to override every finding of that rule
 - `exclude`: glob patterns of files the rule skips
 - rule-specific limits, such as `length.sentenceWords` or `modifiability.functionLines`
+- `spelling.allow`: words to let through, such as a proper name. `spelling.strings`: the globs of source files whose string literals are read; the default is `app/src/**/*.tsx`, `app/src-tauri/src/**/*.rs`, and `crates/*/src/**/*.rs` (the strings in `app/src/strings/en` are read by `ui-voice`). A literal that must keep a British spelling, such as a file format's keyword, takes a `checks-disable-next-line spelling: <reason>` comment
 
 Top-level `ignore` patterns skip files entirely. Change a limit only with a reason in the pull request, because loosening limits is how quality slips.
 
@@ -84,6 +88,33 @@ Top-level `ignore` patterns skip files entirely. Change a limit only with a reas
 - **Pre-commit hook:** `.githooks/pre-commit` checks staged files. Enable it with `npm run setup-hooks`.
 - **CI:** `.github/workflows/ci.yml` type-checks, lints, and tests everything, then runs CHECKS on changed files for pull requests and on all files for pushes. It runs on Ubuntu and Windows.
 - **Releases:** the [release checklist](DEVELOPMENT.md#10-release-checklist) requires a clean `npm run checks:all`.
+
+## Asset attribution
+
+Every picture, font, sound, model, and other non-code file needs a row in [ATTRIBUTION.md](ATTRIBUTION.md) with its author, source, and license. So does every crate copied into `crates/third_party/`, which must also keep its license files. Fonts reach the app through npm, so each `@fontsource` package in `package.json` needs an `npm:` row too, and its copyright line must appear in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), which the app shows under Settings, then About. `npm run checks:assets` lists the gaps, and `npm test` runs the same check. A row that matches no file fails too, so the table cannot go stale.
+
+## Clippy ratchet
+
+New Rust code in `crates/` and `app/src-tauri` must not call `unwrap`, `expect`, or `panic!`. Old code is not rewritten. Instead, `checks/data/clippy-ratchet.json` counts the existing uses in each file, and `npm run checks:clippy` fails when a count goes up or a file with none gets one. It lints library and binary targets only, so tests, benches, and examples may still unwrap.
+
+When you remove a use, run `node checks/clippy-ratchet.ts --update` to lower the count and commit the file. CI runs the ratchet after Clippy on Windows.
+
+## Cross-checks
+
+Another program reading OpenNote's files catches mistakes that our own tests share. `npm run crosscheck` builds a small corpus of exports and runs it through four open-source tools, each built from a revision pinned in `tests/crosscheck/pins.json`:
+
+| Export | Reader | What it checks |
+|---|---|---|
+| Word (`.docx`) | `wordcraft-cli` | The file opens, has pages and text, and has a structure |
+| Excel (`.xlsx`) | `gridcraft-cli` | Package parts, content types, relationships, and recalculated values |
+| PowerPoint (`.pptx`) | `deckcraft-cli` | The deck opens |
+| PDF | `pdfcraft-cli` | The 32-rule accessibility check, and PDF/A-2b preflight as notes |
+
+`npm run crosscheck:formulas` also runs about 200 table formulas through OpenNote's engine and through `gridcraft-cli eval`, and fails on a result that differs and is not listed in `KNOWN` of `app/src/features/tables/engine/gridcraftDiff.test.ts` with its reason. Dates there are compared after the gap between the 1900 and 1970 epochs.
+
+Three formula differences are decided and stay in `KNOWN`: `2^3^2` and `-2^2` follow mathematics, `ROUND(7)` accepts one argument, and `COUNTA` of an empty text does not count it, because an empty table cell holds empty text. `POWER(0,0)` was changed to `#NUM!` to match Excel.
+
+These tools are alpha software, so a difference means "look", not "bug". The `crosscheck` workflow (`.github/workflows/crosscheck.yml`) runs weekly and on pull requests that touch exports, and it never blocks a merge. Use `npm run crosscheck:install` once to build the tools locally. It needs Rust and several minutes. Nothing from them ships with OpenNote.
 
 ## Adding or changing a rule
 

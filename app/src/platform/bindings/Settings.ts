@@ -25,4 +25,8 @@ notesFolder: string | null, }, startup: { openLastPage: boolean, },
 /**
  * Command id to its chords, for overridden shortcuts only. An empty list unbinds the command.
  */
-shortcuts: { [key in string]: Array<string> }, keymap: { preset: KeymapPreset, }, updates: { install: "auto" | "ask" | "manual", channel: "stable" | "beta", skippedVersion: string | null, }, setup: { completedSteps: Array<string>, }, experimental: { flags: { [key in string]: boolean }, }, editing: EditingSettings, ink: InkSettings, };
+shortcuts: { [key in string]: Array<string> }, keymap: { preset: KeymapPreset, }, updates: { install: "auto" | "ask" | "manual", channel: "stable" | "beta", skippedVersion: string | null, }, setup: { completedSteps: Array<string>, }, experimental: { flags: { [key in string]: boolean }, }, editing: EditingSettings, ink: InkSettings, language: { 
+/**
+ * A BCP 47 tag, such as `en-US`. The default is American English, whatever language Windows uses.
+ */
+locale: string, }, };

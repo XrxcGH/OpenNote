@@ -12,13 +12,16 @@ use std::{
     time::{Duration, Instant},
 };
 
+pub mod cli;
+pub mod path_entry;
 mod shortcut;
+pub mod uninstall;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Manager, State, WebviewWindow};
 
-pub use shortcut::create_shortcut;
+pub use shortcut::{create_link, create_shortcut, set_jump_list};
 
 use crate::{
     ipc::{IpcError, IpcResult},
@@ -87,29 +90,23 @@ pub fn shortcut_path(paths: &Paths) -> PathBuf {
 
 /// Whether two paths name the same folder. Case and trailing separators don't matter, as on Windows.
 pub fn same_folder(a: &Path, b: &Path) -> bool {
-    let norm = |path: &Path| {
-        path.to_string_lossy()
-            .trim_start_matches(r"\\?\")
-            .trim_end_matches(['\\', '/'])
-            .to_lowercase()
-    };
-    norm(a) == norm(b)
+    normalized(a) == normalized(b)
+}
+
+/// A path as Windows compares it: no `\\?\` prefix, backslashes only (a profile folder given as `C:/x/profile`
+/// yields `C:/x/profile\Programs`), no trailing separator, any case.
+fn normalized(path: &Path) -> String {
+    path.to_string_lossy()
+        .trim_start_matches(r"\\?\")
+        .replace('/', "\\")
+        .trim_end_matches('\\')
+        .to_lowercase()
 }
 
 /// Whether `path` is `folder` or lies inside it.
 pub fn is_inside(path: &Path, folder: &Path) -> bool {
-    let (path, folder) = (
-        path.to_string_lossy().trim_start_matches(r"\\?\").to_lowercase(),
-        folder
-            .to_string_lossy()
-            .trim_start_matches(r"\\?\")
-            .trim_end_matches(['\\', '/'])
-            .to_lowercase(),
-    );
-    path == folder
-        || path
-            .strip_prefix(&folder)
-            .is_some_and(|rest| rest.starts_with(['\\', '/']))
+    let (path, folder) = (normalized(path), normalized(folder));
+    path == folder || path.strip_prefix(&folder).is_some_and(|rest| rest.starts_with('\\'))
 }
 
 /// Whether the app can create a file in `dir`, checked by creating and deleting a probe file.
@@ -150,7 +147,7 @@ pub async fn install_pick_folder(window: WebviewWindow, initial: Option<String>)
 }
 
 #[cfg(windows)]
-fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String>> {
+pub(crate) fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String>> {
     use windows::{
         core::HSTRING,
         Win32::{
@@ -199,7 +196,7 @@ fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String
 }
 
 #[cfg(not(windows))]
-fn pick_folder(_owner: isize, _initial: Option<String>) -> IpcResult<Option<String>> {
+pub(crate) fn pick_folder(_owner: isize, _initial: Option<String>) -> IpcResult<Option<String>> {
     Err(IpcError::not_implemented("install_pick_folder"))
 }
 
@@ -248,8 +245,19 @@ pub fn check_folder_with(path: &Path, app_folders: &[&Path]) -> FolderCheck {
 pub fn install_check_folder(paths: State<'_, Paths>, path: String) -> IpcResult<FolderCheck> {
     let exe = std::env::current_exe().unwrap_or_default();
     let exe_folder = exe.parent().unwrap_or(Path::new(""));
-    let programs = programs_dir(&paths);
-    Ok(check_folder_with(Path::new(&path), &[exe_folder, &programs]))
+    Ok(check_notes_folder(Path::new(&path), exe_folder, &programs_dir(&paths)))
+}
+
+/// Checks a proposed notes folder against where the app lives. Anything inside the Programs folder is refused,
+/// since updating or uninstalling OpenNote replaces that folder. Where a download sits is only the exe's own folder:
+/// an update swaps the exe file, never the folder around it, and setup usually moves the exe away. So only
+/// that folder itself is refused, and a folder beside or below the exe (`Downloads\OpenNote notes`, or a test
+/// profile next to the exe) is fine.
+pub fn check_notes_folder(path: &Path, exe_folder: &Path, programs: &Path) -> FolderCheck {
+    if is_local_path(path) && !exe_folder.as_os_str().is_empty() && same_folder(path, exe_folder) {
+        return FolderCheck::InsideAppFolder;
+    }
+    check_folder_with(path, &[programs])
 }
 
 /// The SHA-256 of a file.
@@ -312,6 +320,7 @@ pub fn prepare_move(paths: &Paths) -> IpcResult<(PathBuf, PathBuf)> {
         ));
     }
     let target = copy_exe(&current, &dir)?;
+    cli::install(&dir);
     if let Err(error) = create_shortcut(&shortcut_path(paths), &target) {
         // The move still works without the shortcut, and Settings offers it again.
         log::warn!("Couldn't create the Start menu shortcut: {error}");
@@ -324,9 +333,22 @@ pub fn prepare_move(paths: &Paths) -> IpcResult<(PathBuf, PathBuf)> {
 #[tauri::command]
 pub async fn install_move_to_user_programs(app: AppHandle) -> IpcResult<()> {
     let paths = app.state::<Paths>().inner().clone();
-    let (current, target) = tauri::async_runtime::spawn_blocking(move || prepare_move(&paths))
-        .await
-        .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))??;
+    let entry = crate::platform_flags::is_on_for(&app, crate::platform_flags::UNINSTALL_ENTRY);
+    let (current, target) = tauri::async_runtime::spawn_blocking(move || {
+        let moved = prepare_move(&paths)?;
+        // The Installed apps entry (install.uninstallEntry). The new copy refreshes it at each start too.
+        if entry {
+            let dir = programs_dir(&paths);
+            if let Err(error) =
+                uninstall::write_entry(uninstall::user_registry().as_ref(), &dir, env!("CARGO_PKG_VERSION"))
+            {
+                log::warn!("Couldn't write the Installed apps entry: {error}");
+            }
+        }
+        Ok::<_, IpcError>(moved)
+    })
+    .await
+    .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))??;
     app.state::<ExitState>().plan_relaunch(Relaunch {
         exe: target,
         args: vec!["--moved-from".into(), current.display().to_string()],

@@ -1,11 +1,13 @@
-/* Toasts sit at the bottom center, 24 px above the bottom edge, or above the bottom bar in compact. They rise
-   12 px and fade in over 250 ms (BRAND.md section 9); with reduced motion they only fade. The region ignores the
-   pointer, so only the toast itself takes clicks. */
+/* Toasts sit at the bottom center of the page column, 24 px above the status line, or above the bottom bar in
+   compact. The column is what is left between the panes and anything at the page's end, such as the Reading order
+   pane or a tool window (--toast-start and --toast-end, toastHooks.ts), so a toast never covers their buttons. They
+   rise 12 px and fade in over 250 ms (BRAND.md section 9); with reduced motion they only fade. The region ignores
+   the pointer, so only the toast itself takes clicks. */
 @layer components {
   .region {
     position: fixed;
-    inset-block-end: var(--bottom-bar-height, 0px);
-    inset-inline: 0;
+    inset-block-end: var(--panel-inset-bottom, 0px);
+    inset-inline: var(--toast-start, 0px) var(--toast-end, 0px);
     z-index: var(--layer-toast);
     display: grid;
     justify-items: center;

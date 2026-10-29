@@ -126,6 +126,18 @@ function SkipAndGoBack({ status }: { status: UpdaterStatus }) {
   );
 }
 
+/** How downloads behave on a stopped or metered connection. They need no choice, so they are listed, not set. */
+function DownloadNotes() {
+  return (
+    <>
+      <h3>{t('updates.section.resumeLabel')}</h3>
+      <p>{t('updates.section.resumeHelp')}</p>
+      <h3>{t('updates.section.meteredLabel')}</h3>
+      <p>{t('updates.section.meteredHelp')}</p>
+    </>
+  );
+}
+
 /** Off in this copy for good: a development build, a build without a key, or a folder it can't write to. */
 const isOff = (status: UpdaterStatus) => status.phase.kind === 'disabled' && status.phase.reason !== 'manualMode';
 
@@ -136,6 +148,7 @@ export default function UpdatesSection() {
     <section className={styles.section} aria-labelledby={titleId}>
       <h2 id={titleId}>{t('updates.section.heading')}</h2>
       <StatusCard status={status} />
+      <DownloadNotes />
       {!isOff(status) && <Choices />}
       <SkipAndGoBack status={status} />
       <p>{t('updates.section.safety')}</p>

@@ -10,6 +10,18 @@ export type DeviceSetup = DeviceState['setup'];
 /** The draft key a step's commit sets to where the first page opens, for the finishing step. */
 export const OPEN_AFTER_SETUP = 'openAfterSetup';
 
+/**
+ * The draft key a step's commit adds command ids to, for commands that run once setup is over (such as the import
+ * window). When setup moves the app, the list waits in state.json and the new process runs it.
+ */
+export const RUN_AFTER_SETUP = 'runAfterSetup';
+
+/** The command ids a draft asks to run after setup. */
+export const afterSetupCommands = (draft: SetupDraft | null | undefined): string[] => {
+  const list = (draft as Record<string, unknown> | null | undefined)?.[RUN_AFTER_SETUP];
+  return Array.isArray(list) ? list.filter((id): id is string => typeof id === 'string') : [];
+};
+
 const byOrder = (a: SetupStepDef, b: SetupStepDef) => a.order - b.order;
 
 /** The ids recorded as done in a step's scope. */

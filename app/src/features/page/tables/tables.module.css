@@ -8,11 +8,49 @@
     position: relative;
   }
 
+  /* A table wider than its column scrolls sideways. A soft edge on each side that has more to see says so (the
+     table view sets data-more-start and data-more-end on its wrapper as it scrolls). */
+  .wrapper::before,
+  .wrapper::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--space-4);
+    z-index: var(--layer-page-chrome);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--motion-duration-fast);
+  }
+
+  .wrapper::before {
+    inset-inline-start: 0;
+    background: linear-gradient(to right, var(--table-edge), transparent);
+  }
+
+  .wrapper::after {
+    inset-inline-end: 0;
+    background: linear-gradient(to left, var(--table-edge), transparent);
+  }
+
+  .wrapper {
+    --table-edge: color-mix(in srgb, var(--color-text-primary) 14%, transparent);
+  }
+
+  .wrapper[data-more-start]::before,
+  .wrapper[data-more-end]::after {
+    opacity: 1;
+  }
+
   .scroller {
     position: relative;
     overflow-x: auto;
     overflow-y: hidden;
     padding-block: 1px;
+  }
+
+  /* The cell editor, like the text editor, keeps spaces as typed; ProseMirror warns when it is left to wrap normally. */
+  .scroller > :global(.ProseMirror) {
+    white-space: pre-wrap;
   }
 
   .table :global(table) {
@@ -23,7 +61,7 @@
 
   .table :global(td),
   .table :global(th) {
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-2) var(--space-3);
     box-shadow: inset -1px -1px 0 var(--color-border-control);
     vertical-align: top;
     text-align: start;
@@ -44,10 +82,26 @@
     background: var(--color-surface-selected);
   }
 
+  /* Ruled paper (blocks.module.css): each row is whole rules, its text on the rule its row line is drawn on. */
+  :global([data-ruled]) .scroller {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .table :is(:global(td), :global(th)) {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .table :is(:global(td > p), :global(th > p)) {
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
+  }
+
   .toolbarWrap {
     position: absolute;
     inset-block-end: 100%;
     inset-inline-start: 0;
+    max-inline-size: 100%;
     z-index: var(--layer-page-chrome);
     display: none;
     flex-direction: column;
@@ -55,19 +109,31 @@
     padding-block-end: var(--space-1);
   }
 
+  /* A table at the very top of the flow has the page title above it, so its tools go below it instead of over the
+     title and the date. */
+  :global([data-layout]) > .wrapper:first-child .toolbarWrap {
+    inset-block-end: auto;
+    inset-block-start: 100%;
+    padding-block: var(--space-1) 0;
+  }
+
   .wrapper[data-current] .toolbarWrap {
     display: flex;
   }
 
+  /* As wide as its buttons, but never wider than the column: in a narrow column its groups wrap to a second row, so no
+     button is cut off by the page's edge. */
   .toolbar {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-2);
     padding: var(--space-1);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background: var(--color-surface-raised);
     box-shadow: var(--elevation-2);
-    inline-size: max-content;
+    inline-size: fit-content;
+    max-inline-size: 100%;
   }
 
   .group {

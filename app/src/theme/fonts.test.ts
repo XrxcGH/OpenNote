@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 // The package fonts.ts imports for each font token. CSS matches @font-face rules by exact family name,
 // so a token that starts with any other name falls back to a system font and the bundled files never load.
 const PACKAGES = {
-  ui: '@fontsource-variable/atkinson-hyperlegible-next',
+  ui: './fonts/opennote-sans.css',
   reading: '@fontsource-variable/literata',
   mono: '@fontsource/atkinson-hyperlegible-mono',
 } as const;

@@ -9,7 +9,13 @@ import type { RenderAppOptions } from '../../test/render';
 beforeEach(() => localStorage.clear());
 
 const firstRun = (boot: NonNullable<RenderAppOptions['boot']> = {}): RenderAppOptions => ({
-  boot: { firstRun: true, ...boot, state: { setup: { status: 'notStarted' }, ...boot.state } },
+  boot: {
+    firstRun: true,
+    // The smart features and import steps have their own tests; these keep the four steps of welcome, look, keys, storage.
+    flagOverrides: { 'setup.smartFeatures': false, 'setup.import': false, 'setup.language': false },
+    ...boot,
+    state: { setup: { status: 'notStarted' }, ...boot.state },
+  },
 });
 const button = (name: string) => screen.getByRole('button', { name });
 const card = (name: string) => screen.getByRole('radio', { name });
@@ -41,7 +47,7 @@ function fakeCreate(notes: NotesService) {
 describe('the first step', () => {
   it('opens on a first run, names the form with its progress, and focuses Get started', async () => {
     const { container } = await renderApp(firstRun());
-    expect(await form(/Welcome to OpenNote\s+Step 1 of 3/)).toBeTruthy();
+    expect(await form(/Welcome to OpenNote\s+Step 1 of 4/)).toBeTruthy();
     expect(getLocation()).toEqual({ view: 'setup', step: 'welcome' });
     await expectFocus(button('Get started'));
     expect(announcements()).toEqual([]);
@@ -83,7 +89,7 @@ describe('Choose your look', () => {
     const save = vi.spyOn(platform.settings, 'update');
     fireEvent.click(button('Get started'));
     await screen.findByRole('heading', { name: 'Choose your look' });
-    expect(announcements()).toEqual(['Step 2 of 3, Choose your look.']);
+    expect(announcements()).toEqual(['Step 2 of 4, Choose your look.']);
     await expectFocus(card('Match Windows'));
     expect(card('Match Windows').getAttribute('aria-checked')).toBe('true');
     expect(card('Match Windows').textContent).toContain('Preselected because Windows is set to Dark.');
@@ -112,9 +118,55 @@ describe('Choose your look', () => {
   });
 });
 
+describe('Language and spelling', () => {
+  const withLanguage = firstRun({
+    flagOverrides: { 'setup.smartFeatures': false, 'setup.import': false, 'setup.language': true },
+  });
+  const toLanguage = async (options: RenderAppOptions = withLanguage) => {
+    const app = await renderApp(options);
+    fireEvent.click(button('Get started'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+    await screen.findByRole('heading', { name: 'Language and spelling' });
+    return app;
+  };
+
+  it('preselects English (United States) even when Windows uses another language', async () => {
+    vi.spyOn(navigator, 'language', 'get').mockReturnValue('de-DE');
+    await toLanguage();
+    expect(announcements()).toContain('Step 3 of 5, Language and spelling.');
+    expect(card('English (United States)').getAttribute('aria-checked')).toBe('true');
+    expect(card('English (United Kingdom)')).toBeTruthy();
+    expect(screen.getByText(/stays in American English for now/)).toBeTruthy();
+    expect(
+      screen.getByText(/The dictionary and thesaurus use English, with English \(United States\) spelling first/),
+    ).toBeTruthy();
+    expect(getSettings().language.locale).toBe('en-US');
+  });
+
+  it('saves a chosen dialect at once, keeps it on Back, and records the step', async () => {
+    const { platform } = await toLanguage();
+    const save = vi.spyOn(platform.settings, 'update');
+    fireEvent.click(card('English (United Kingdom)'));
+    await expect.poll(() => getSettings().language.locale).toBe('en-GB');
+    expect(save).toHaveBeenLastCalledWith({ language: { locale: 'en-GB' } });
+    fireEvent.click(button('Back'));
+    await screen.findByRole('heading', { name: 'Choose your look' });
+    fireEvent.click(button('Continue'));
+    await screen.findByRole('heading', { name: 'Language and spelling' });
+    expect(card('English (United Kingdom)').getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('passes axe', async () => {
+    const { container } = await toLanguage();
+    await expectNoAxeViolations(container);
+  });
+});
+
 async function toStorage(options: RenderAppOptions = firstRun()) {
   const app = await renderApp(options);
   fireEvent.click(button('Get started'));
+  fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
+  await screen.findByRole('heading', { name: 'Keys and pen' });
   fireEvent.click(await screen.findByRole('button', { name: 'Continue' }));
   await screen.findByRole('heading', { name: 'Where to keep things' });
   await screen.findByText('OpenNote will create this folder.');
@@ -124,7 +176,7 @@ async function toStorage(options: RenderAppOptions = firstRun()) {
 describe('Where to keep things', () => {
   it('proposes the folder, a first notebook, and names the last button', async () => {
     const { container } = await toStorage();
-    expect(announcements()).toContain('Step 3 of 3, Where to keep things.');
+    expect(announcements()).toContain('Step 4 of 4, Where to keep things.');
     expect(screen.getByText('C:\\Users\\Ada\\Documents\\OpenNote')).toBeTruthy();
     expect((screen.getByLabelText('Notebook name') as HTMLInputElement).value).toBe('My notebook');
     expect(card('Fern').getAttribute('aria-checked')).toBe('true');
@@ -182,7 +234,7 @@ describe('finishing setup', () => {
       ['page', undefined, undefined],
     ]);
     expect(getSettings().storage.notesFolder).toBe('C:\\Users\\Ada\\Documents\\OpenNote');
-    expect(getSettings().setup.completedSteps).toEqual(['welcome', 'look']);
+    expect(getSettings().setup.completedSteps).toEqual(['welcome', 'look', 'habits']);
     expect(record).toHaveBeenCalledWith({
       setup: { status: 'done', step: null, completedSteps: ['storage'], draft: null },
     });
@@ -202,7 +254,7 @@ describe('finishing setup', () => {
 
 describe('resuming and new devices', () => {
   it('shows only the device step on a new device with a roaming profile', async () => {
-    await renderApp({ ...firstRun(), settings: { setup: { completedSteps: ['welcome', 'look'] } } });
+    await renderApp({ ...firstRun(), settings: { setup: { completedSteps: ['welcome', 'look', 'habits'] } } });
     expect(await form(/Where to keep things\s+Step 1 of 1/)).toBeTruthy();
     expect(button('Start taking notes')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
@@ -212,7 +264,7 @@ describe('resuming and new devices', () => {
     const saved = { status: 'inProgress', step: 'look', draft: { look: { theme: 'dark' } } } as const;
     await renderApp({ ...firstRun({ state: { setup: saved } }), theme: 'dark' });
     expect(getLocation()).toEqual({ view: 'setup', step: 'look' });
-    expect(await form(/Choose your look\s+Step 2 of 3/)).toBeTruthy();
+    expect(await form(/Choose your look\s+Step 2 of 4/)).toBeTruthy();
     expect(card('Dark').getAttribute('aria-checked')).toBe('true');
   });
 });

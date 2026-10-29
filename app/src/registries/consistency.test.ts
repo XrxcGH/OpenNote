@@ -70,7 +70,12 @@ describe('registrations', () => {
 describe('default shortcuts', () => {
   it('uses canonical chords, and keeps Ctrl+1 to Ctrl+9 free', () => {
     expect(allDefaults().filter((chord) => !isChordText(chord))).toEqual([]);
-    expect(allDefaults().filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
+    // The line tag commands (search.tag.*) are the ones Phase 8 reserved these chords for, in the OneNote set.
+    const others = commands
+      .list()
+      .filter((def) => !def.id.startsWith('search.tag.'))
+      .flatMap((def) => [...(def.keys ?? []), ...Object.values(def.presetKeys ?? {}).flat()]);
+    expect(others.filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
   });
 
   it('never gives a changeable command a reserved chord', () => {

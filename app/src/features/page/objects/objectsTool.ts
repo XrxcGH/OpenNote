@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { isFloating } from '../blocks/textBlock';
+import { readingLock } from '../qol/stores';
 import type { Chrome } from '../chrome/chrome';
 import type { Point } from '../viewport/camera';
 import type { PointerToolDef, RouterContext } from '../viewport/router';
@@ -31,6 +32,8 @@ interface Press {
   kind: Kind;
   start: Point;
   block: BlockId | null;
+  /** The press began on a block's body, not its grip: a press that doesn't move is the control's own click. */
+  body: boolean;
   shift: boolean;
   slop: number;
   started: boolean;
@@ -44,6 +47,12 @@ const client = (event: PointerEvent): Point => ({ x: event.clientX, y: event.cli
 
 function handleOf(event: PointerEvent): HTMLElement | null {
   return event.target instanceof Element ? event.target.closest<HTMLElement>('[data-handle]') : null;
+}
+
+/** A control that is the body of a block and moves it when dragged (a study tape): its block, or null. */
+function bodyOf(event: PointerEvent): HTMLElement | null {
+  const body = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-block-drag]') : null;
+  return body?.closest<HTMLElement>('[data-block-id]') ?? null;
 }
 
 function emptyPage(event: PointerEvent, world: HTMLElement): boolean {
@@ -63,20 +72,26 @@ class ObjectsTool implements PointerToolDef {
   constructor(private readonly parts: ObjectsToolParts) {}
 
   accepts(event: PointerEvent, ctx: RouterContext): boolean {
-    if (ctx.activeTool !== 'select' || event.button !== 0) return false;
+    if (event.button !== 0 || readingLock.get()) return false;
+    // A grip or width handle moves or resizes its block in every tool: the ink tools leave the handles of a selected or
+    // edited block to this tool, so a text box can be moved and resized without leaving a draw tool.
     if (handleOf(event)) return true;
+    if (ctx.activeTool !== 'select') return false;
+    if (bodyOf(event)) return true;
     return event.pointerType !== 'touch' && emptyPage(event, this.parts.viewport.world);
   }
 
   down(event: PointerEvent, ctx: RouterContext): 'claim' | 'watch' {
     const handle = handleOf(event);
-    const kind: Kind = handle ? (handle.dataset.handle === 'width' ? 'width' : 'move') : 'marquee';
+    const body = handle ? null : bodyOf(event);
+    const kind: Kind = handle ? (handle.dataset.handle === 'width' ? 'width' : 'move') : body ? 'move' : 'marquee';
     const slop = event.pointerType === 'touch' ? 8 : 4;
-    const block = handle?.dataset.block ?? null;
+    const block = handle?.dataset.block ?? body?.dataset.blockId ?? null;
     this.press = {
       kind,
       start: client(event),
       block,
+      body: body !== null,
       shift: event.shiftKey,
       slop,
       started: false,
@@ -108,7 +123,7 @@ class ObjectsTool implements PointerToolDef {
     this.end();
     if (!press) return;
     if (!press.started) {
-      if (press.block) this.selectFromGrip(press);
+      if (press.block && !press.body) this.selectFromGrip(press);
       return;
     }
     const zoom = ctx.camera.zoom;
@@ -171,9 +186,11 @@ class ObjectsTool implements PointerToolDef {
       return this.parts.chrome.update();
     }
     const floating = press.blocks.some(isFloating);
-    for (const { id } of press.blocks) {
-      const element = this.parts.layer.view(id)?.element;
-      if (element) element.style.transform = floating ? `translate(${dx}px, ${dy}px)` : `translateY(${dy}px)`;
+    for (const block of press.blocks) {
+      const element = this.parts.layer.view(block.id)?.element;
+      // A text box on ruled paper moves from rule to rule while it is dragged.
+      const down = floating ? this.parts.objects.snapDelta(block, dy) : dy;
+      if (element) element.style.transform = floating ? `translate(${dx}px, ${down}px)` : `translateY(${dy}px)`;
     }
     if (!floating) this.parts.chrome.setDropLine(this.dropTarget(press)?.y ?? null);
     this.parts.chrome.update();

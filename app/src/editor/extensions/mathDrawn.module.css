@@ -1,0 +1,303 @@
+/*
+ * Drawn equations and the live preview in the source field (Phase 10). KaTeX's own style sheet sizes and spaces the
+ * drawing; these rules only place it in the text and in the editing field, on tokens.
+ */
+@layer components {
+  .drawn {
+    font-family: var(--font-reading);
+    color: var(--color-text-primary);
+  }
+
+  /* The live answer after an equation, such as "x = 4": the color of an answer on a page line. */
+  .answer {
+    margin-inline-start: var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-accent-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .answer::before {
+    content: '\21D2\00A0';
+    color: var(--color-text-secondary);
+  }
+
+  /* The steps of a derivative or an integral, under the equation panel's buttons. */
+  .steps {
+    flex-basis: 100%;
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+  }
+
+  .steps h4 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .steps ol {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+  }
+
+  .stepRule {
+    display: block;
+    color: var(--color-text-secondary);
+  }
+
+  .steps ol ol {
+    margin-block-start: var(--space-2);
+    padding-inline-start: var(--space-4);
+    border-inline-start: 1px solid var(--color-border-subtle);
+  }
+
+  .steps summary {
+    cursor: pointer;
+  }
+
+  /* The rule's name and the math sit on one line in a folded step's summary, after its marker. */
+  .steps summary .stepRule {
+    display: inline;
+    margin-inline-end: var(--space-2);
+  }
+
+  .stepMath {
+    display: inline-block;
+    max-inline-size: 100%;
+    vertical-align: middle;
+  }
+
+  .stepNote {
+    display: block;
+    color: var(--color-text-secondary);
+  }
+
+  .stepResult {
+    margin: var(--space-2) 0;
+    font-weight: 600;
+  }
+
+  /* The answer offered after an equation that ends in "=": gray like a page line's suggestion, and pressed to add it. */
+  .suggestion {
+    display: inline-block;
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-1);
+    font: inherit;
+    color: var(--color-text-secondary);
+    vertical-align: baseline;
+    background: transparent;
+    border: 1px dashed var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .suggestion[hidden] {
+    display: none;
+  }
+
+  .suggestionBlock {
+    display: table;
+    margin-inline: auto;
+    margin-block-end: var(--space-2);
+  }
+
+  .suggestion:hover {
+    color: var(--color-text-primary);
+    background: var(--color-surface-hover);
+  }
+
+  .suggestion:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  /* The same answer in the open field's preview, with the Tab key that adds it. */
+  .ghost {
+    margin-inline-start: var(--space-2);
+    color: var(--color-text-secondary);
+    user-select: none;
+  }
+
+  .ghostKey {
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-1);
+    font-family: var(--font-ui);
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  /* The Graph button beside a selected equation. */
+  .graphButton {
+    display: inline-block;
+    margin-inline-start: var(--space-2);
+    vertical-align: middle;
+    min-block-size: var(--size-target-min);
+    padding: 0 var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+  }
+
+  .graphButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .graphButton:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .invalid {
+    outline: 1px dashed var(--color-status-danger);
+    outline-offset: 2px;
+  }
+
+  /* One style for every button in the panel: the interface font, a hairline border, the target height. */
+  .toggle,
+  .actions button {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .toggle:hover,
+  .actions button:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .toggle:focus-visible,
+  .actions button:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  /* The panel under an equation: its preview and message take a row each, and its buttons share rows that wrap, with
+     the same gap between them in both directions. */
+  .holderBlock,
+  .holderInline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .holderBlock {
+    margin-block-start: var(--space-3);
+  }
+
+  .holderInline {
+    position: absolute;
+    z-index: var(--layer-dropdown);
+    margin-block-start: var(--space-2);
+    min-inline-size: 16rem;
+    max-inline-size: min(28rem, 90vw);
+    padding: var(--space-3);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    box-shadow: var(--elevation-2);
+  }
+
+  /* With the writing area open, the holder takes its place in the text, so the block grows to hold the area and
+     nothing clips it or lies over it. */
+  .holderPadOpen {
+    position: static;
+    inline-size: min(100%, 42rem);
+    max-inline-size: none;
+    box-shadow: none;
+  }
+
+  .preview {
+    flex: 1 1 100%;
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  .problem {
+    flex: 1 1 100%;
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+  }
+
+  .problem:empty {
+    display: none;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}
+
+@layer components {
+  .pad {
+    flex: 1 1 100%;
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+    color: var(--color-text-primary);
+  }
+
+  .padCanvas {
+    inline-size: 100%;
+    max-inline-size: 40rem;
+    aspect-ratio: 640 / 220;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Equation numbers (flag doc.equationNumbers): the number sits at the right of a numbered display equation, and a
+     reference shows the number it names in place of its source. */
+  :global([data-eq-number])::after {
+    content: '(' attr(data-eq-number) ')';
+    float: inline-end;
+    font-family: var(--font-reading);
+    color: var(--color-text-secondary);
+  }
+
+  :global([data-eq-duplicate])::after {
+    content: '(??)';
+    float: inline-end;
+    color: var(--color-status-danger);
+  }
+
+  :global([data-eq-ref]) {
+    font-size: 0;
+    cursor: pointer;
+  }
+
+  :global([data-eq-ref])::after {
+    content: attr(data-eq-ref);
+    font-size: var(--type-body-size);
+    font-family: var(--font-reading);
+    color: var(--color-text-link, var(--color-accent-primary));
+    text-decoration: underline;
+  }
+
+  :global([data-eq-ref][data-eq-missing])::after {
+    color: var(--color-status-danger);
+  }
+}

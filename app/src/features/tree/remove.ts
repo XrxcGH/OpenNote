@@ -7,12 +7,13 @@ import type { Location } from '../../app/location';
 import { shortcutHint } from '../../commands/keymap';
 import type { NodeId, NodeSummary, NotesService } from '../../services/notes';
 import { t } from '../../strings/t';
-import { confirm, showToast } from '../../ui';
+import { shellCall } from '../../platform/shellqol';
+import { announce, confirm, showToast } from '../../ui';
 import { blockOf, titleOf, trashNodes } from './actions';
 import { toastError } from './errors';
 import { focusTargetAfterRemoval } from './focus';
 import type { FocusTarget } from './focus';
-import { ensureChildren } from './load';
+import { ensureChildren, relist } from './load';
 import { revealNode } from './navigation';
 import { showLocation } from './selection';
 import { ancestors, getNode, requestFocus, treeOf, treeStore } from './store';
@@ -63,6 +64,7 @@ function trashedToast(notes: NotesService, title: string): void {
       ? t('tree.trash.movedAnnounce', { title, shortcut })
       : t('tree.trash.movedAnnounceNoShortcut', { title }),
     action: { label: t('tree.trash.undo'), run: () => void (entry && undoEntry(notes, entry)) },
+    keepOnPageChange: true,
   });
 }
 
@@ -87,10 +89,42 @@ function showRestored(restored: readonly NodeSummary[], before: Workspace | null
   if (visible) requestFocus(treeOf(first), first.id);
 }
 
+/**
+ * Deletes a page of a protected section for good, after asking: Trash is plain, so it can't hold the page
+ * (ADR 0042). Resolves true when it went.
+ */
+async function deleteProtectedPage(node: NodeSummary): Promise<boolean> {
+  const title = titleOf(node);
+  const sure = await confirm({
+    title: t('storage.sections.deleteTitle', { title }),
+    body: t('storage.sections.deleteBody'),
+    confirmLabel: t('storage.sections.deleteAction'),
+    danger: true,
+  });
+  if (!sure) {
+    requestFocus('pages', node.id);
+    return false;
+  }
+  const target = focusTargetAfterRemoval(treeStore.get(), node);
+  const open = locationInside(node);
+  try {
+    await shellCall('protect.deletePages', { ids: [node.id] });
+  } catch (error) {
+    toastError(error, title);
+    return false;
+  }
+  await relist(node.parentId);
+  if (target) requestFocus(target.tree, target.id);
+  if (open) moveOpenLocation(node, open, target);
+  announce(t('storage.sections.deleted', { title }));
+  return true;
+}
+
 /** Moves a node to Trash. Resolves true when it moved. */
 export async function deleteNode(notes: NotesService, id: NodeId): Promise<boolean> {
   const node = getNode(id);
   if (!node) return false;
+  if (node.kind === 'page' && node.protected) return deleteProtectedPage(node);
   const tree = treeOf(node);
   if (node.kind === 'notebook' && !(await confirmNotebook(node))) {
     requestFocus(tree, id);

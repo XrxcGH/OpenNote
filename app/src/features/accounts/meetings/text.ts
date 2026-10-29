@@ -1,0 +1,42 @@
+// Plain text from the parts of an invitation: HTML turned into lines, and the boilerplate that Teams, Meet, and Zoom
+// add after the real agenda taken off.
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Replaces every match, and again until none is left, so removing one tag can't leave pieces that join into another. */
+function replaceUntilNone(text: string, pattern: RegExp, replacement: string): string {
+  let current = text;
+  for (let pass = 0; pass < 20; pass += 1) {
+    const next = current.replace(pattern, replacement);
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+}
+
+/** Text from HTML: line breaks and paragraphs become new lines, tags go, and the common entities are decoded. */
+export function htmlToText(html: string): string {
+  const noScripts = replaceUntilNone(html, /<(script|style)[\s\S]*?<\/\1>/gi, '');
+  const broken = replaceUntilNone(noScripts, /<br\s*\/?>|<\/(p|div|li|tr|h[1-6])>/gi, '\n');
+  const bulleted = replaceUntilNone(broken, /<li[^>]*>/gi, '- ');
+  return replaceUntilNone(bulleted, /<[^>]+>/g, '').replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (whole, name: string) => {
+    if (name.startsWith('#x')) return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
+    if (name.startsWith('#')) return String.fromCodePoint(Number(name.slice(1)));
+    return ENTITIES[name.toLowerCase()] ?? whole;
+  });
+}
+
+/** The lines where a conferencing service begins its own text. Everything after the first of them is dropped. */
+const BOILERPLATE = [/^_{8,}\s*$/, /^-{8,}\s*$/, /^Microsoft Teams (meeting|Need help)/i, /^Join (Zoom|Google Meet)/i];
+
+/** The agenda in an invitation: plain text, trimmed, with the conferencing boilerplate cut and long text shortened. */
+export function agendaText(body: string, isHtml: boolean, limit = 2000): string {
+  const lines = (isHtml ? htmlToText(body) : body).replace(/\r\n?/g, '\n').split('\n');
+  const cut = lines.findIndex((line) => BOILERPLATE.some((pattern) => pattern.test(line.trim())));
+  const kept = (cut < 0 ? lines : lines.slice(0, cut)).map((line) => line.replace(/[ \t]+$/g, ''));
+  const text = kept
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  return text.length > limit ? `${text.slice(0, limit).trimEnd()}…` : text;
+}

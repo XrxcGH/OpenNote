@@ -41,12 +41,13 @@ test.describe('what each size class shows', () => {
     await expect(page.getByRole('navigation', { name: 'Pages' })).toBeVisible();
   });
 
-  test('compact: one screen at a time, with the app bar and no title bar', async ({ page }) => {
+  test('compact: one screen at a time, with the app bar and only a thin caption bar', async ({ page }) => {
     await open(page, 'compact');
     await expect(page.getByRole('main')).toHaveCount(1);
     await expect(page.getByRole('navigation', { name: 'Notebooks' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Pages' })).toHaveCount(0);
-    await expect(page.getByRole('banner')).toHaveCount(0);
+    // Only a thin bar of the caption buttons stays above the app bar: no name and no breadcrumb.
+    await expect(page.getByRole('banner')).not.toContainText('OpenNote');
   });
 });
 
@@ -77,8 +78,8 @@ test.describe('geometry', () => {
       const width = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().width ?? 0;
       return [width('[data-region="notebooks"]'), width('[data-region="pages"]'), width('main')];
     });
-    expect(widths[0]).toBe(272);
-    expect(widths[1]).toBe(300);
+    expect(widths[0]).toBe(220);
+    expect(widths[1]).toBe(240);
     expect(widths[0] + widths[1] + widths[2]).toBeCloseTo(VIEWPORTS.wide.width, 0);
     expect(widths[2]).toBeGreaterThanOrEqual(480);
   });
@@ -110,11 +111,14 @@ test.describe('without a pointer', () => {
   test('a splitter resizes with the arrow keys and collapses with Enter', async ({ page }) => {
     await open(page, 'wide');
     const splitter = page.getByRole('separator', { name: 'Resize the notebooks pane' });
+    const start = Number(await splitter.getAttribute('aria-valuenow'));
     await splitter.focus();
     await page.keyboard.press('ArrowRight');
-    await expect(splitter).toHaveAttribute('aria-valuenow', '280');
+    await expect(splitter).toHaveAttribute('aria-valuenow', String(start + 8));
     await page.keyboard.press('Shift+ArrowLeft');
-    await expect(splitter).toHaveAttribute('aria-valuenow', '240');
+    // Shift+Arrow moves by 40, and the pane stops at its narrowest.
+    const min = Number(await splitter.getAttribute('aria-valuemin'));
+    await expect(splitter).toHaveAttribute('aria-valuenow', String(Math.max(min, start + 8 - 40)));
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'Show notebooks' })).toBeVisible();
     await expect(splitter).toBeFocused();

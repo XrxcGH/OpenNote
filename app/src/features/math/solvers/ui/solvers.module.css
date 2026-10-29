@@ -1,0 +1,354 @@
+/*
+ * The Math solvers window (beta 5), calm and quiet, on tokens. Fields sit in rows that wrap, and the answer sits in
+ * a raised line. Plots use the page color with the brand's pens. Worked steps are a numbered list with mono math.
+ * Every control is at least the target size, and nothing moves for a person who asks for reduced motion.
+ */
+@layer components {
+  .tool {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .tabs {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tab {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .tab:hover {
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .tab:focus-visible,
+  .linkButton:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .body,
+  .panel,
+  .section {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .section + .section {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    flex: 1 1 5.5rem;
+    min-inline-size: 5rem;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .wide {
+    flex-basis: 100%;
+  }
+
+  .input {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-body-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    min-inline-size: 0;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .textarea {
+    padding-block: var(--space-2);
+    resize: vertical;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+  }
+
+  .cell {
+    inline-size: 100%;
+    box-sizing: border-box;
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-size);
+  }
+
+  .check input {
+    inline-size: 18px;
+    block-size: 18px;
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+  }
+
+  .problem:empty {
+    display: none;
+  }
+
+  .result {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-body-size);
+    overflow-wrap: anywhere;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--ink-indigo);
+    border-radius: var(--radius-sm);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .steps {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .stepList {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    padding-block-end: var(--space-3);
+    display: grid;
+    gap: var(--space-4);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .stepList li {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .math {
+    font-family: var(--font-mono);
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+  }
+
+  .table thead th {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .caption {
+    caption-side: top;
+    text-align: start;
+    padding-block-end: var(--space-1);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .scroll {
+    overflow: auto;
+    max-block-size: 16rem;
+  }
+
+  .tables {
+    display: grid;
+    gap: var(--space-3);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .matrix {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .shares,
+  .problems {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    font-size: var(--type-small-size);
+  }
+
+  .linkButton {
+    padding: 0;
+    min-block-size: var(--target-size);
+    font: inherit;
+    text-align: start;
+    color: var(--color-text-primary);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    text-decoration-color: var(--color-status-danger);
+    cursor: pointer;
+  }
+
+  .underline mark {
+    color: inherit;
+    background: none;
+    text-decoration: underline wavy var(--color-status-danger);
+  }
+
+  .figure {
+    margin: 0 0 var(--space-4);
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .plot {
+    inline-size: 100%;
+    block-size: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .paper {
+    fill: var(--color-surface-page);
+  }
+
+  .gridLine {
+    stroke: var(--color-border-subtle);
+    stroke-width: 1;
+  }
+
+  .axis {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1;
+  }
+
+  .tick {
+    fill: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: calc(11px * var(--svg-k, 1));
+    paint-order: stroke;
+    stroke: var(--color-surface-page);
+    stroke-width: calc(3px * var(--svg-k, 1));
+    stroke-linejoin: round;
+  }
+
+  .curve,
+  .segment {
+    fill: none;
+    stroke-width: 2.25;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .segment {
+    stroke-width: 1.5;
+  }
+
+  .area {
+    fill-opacity: 0.18;
+    stroke: none;
+  }
+
+  .arrow line {
+    stroke-width: 1.25;
+    opacity: 0.7;
+  }
+
+  .barOn {
+    fill-opacity: 0.85;
+  }
+
+  .barOff {
+    fill: var(--color-border-control);
+  }
+
+  .marker {
+    fill: var(--ink-brick);
+    stroke: var(--color-surface-page);
+    stroke-width: 2;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .legendItem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .swatch {
+    inline-size: 12px;
+    block-size: 3px;
+    border-radius: 2px;
+  }
+}

@@ -16,6 +16,7 @@ export const tree = {
     kind: '{kind, select, notebook {Notebook} sectionGroup {Section group} section {Section} other {Page}}',
     colored: '{kind, select, notebook {Notebook} sectionGroup {Section group} other {Section}}, color {color}',
     page: '{level, select, 0 {Page} other {Subpage}}, {date}',
+    pageColored: '{level, select, 0 {Page} other {Subpage}}, {date}, color {color}',
   },
   colors: {
     ink: 'Ink',
@@ -46,7 +47,10 @@ export const tree = {
     redo: 'Redo',
     openTrash: 'Open Trash',
     restore: 'Restore',
+    emptyTrash: 'Empty Trash',
+    deleteForever: 'Delete forever',
     keywords: {
+      emptyTrash: 'Delete forever purge clear Trash',
       trash: 'Move to Trash remove',
       newPage: 'Add page create',
       indent: 'Indent subpage level',
@@ -122,6 +126,30 @@ export const tree = {
       'It moves to Trash with {count, plural, one {its # page} other {its # pages}}. You can restore it for 30 days.',
     confirmBodyEmpty: 'It moves to Trash, and you can restore it for 30 days.',
     confirm: 'Delete notebook',
+    emptyTrash: 'Empty Trash',
+    emptyTitle: 'Empty Trash?',
+    emptyBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
+      "{count, plural, one {# item is} other {# items are}} deleted for good, with page history, search entries, and transcripts. This can't be undone.",
+    emptyBodyNotebooks:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
+      "{count, plural, one {# item is} other {# items are}} deleted for good, with page history, search entries, and transcripts. This can't be undone. Notebooks stay in Trash until you choose Delete folder.",
+    emptied: 'Trash is emptied.',
+    deleteForever: 'Delete forever',
+    deleteForeverLabel: 'Delete {title} forever',
+    deleteForeverTitle: 'Delete "{title}" forever?',
+    deleteForeverBody:
+      "It's deleted for good, with its page history, search entries, and transcripts. This can't be undone.",
+    deletedForever: 'Deleted "{title}" for good.',
+    purgeFailed: "Couldn't delete that. Try again.",
+    deleteFolder: 'Delete folder',
+    deleteFolderLabel: 'Delete the folder of {title}',
+    deleteFolderTitle: 'Delete the folder of "{title}"?',
+    deleteFolderBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
+      'The notebook folder moves to the Recycle Bin with everything in it. You can get it back from there until the Recycle Bin is emptied.',
+    folderDeleted: 'Moved the folder of "{title}" to the Recycle Bin.',
+    folderFailed: "Couldn't delete that folder. Try again, or delete it in File Explorer.",
   },
   undo: {
     nothing: 'Nothing to undo.',
@@ -140,6 +168,7 @@ export const tree = {
   errors: {
     invalidMove: '"{title}" can\'t go there, so it stayed where it was.',
     readOnly: '"{title}" is read-only, so nothing changed.',
+    protectedMove: 'Pages can’t move into or out of a password-protected section, so "{title}" stayed where it was.',
     unavailable: "The notes folder isn't available, so nothing changed. Check the drive and try again.",
     notFound: '"{title}" is gone, so nothing changed.',
     other: 'Couldn\'t change "{title}". Try again.',
@@ -161,6 +190,9 @@ export const tree = {
     offline: 'Offline',
     error: "Couldn't save",
     errorAnnounce: "Couldn't save your notes. OpenNote keeps the changes and tries again.",
+    stalled: 'Not responding',
+    stalledAnnounce:
+      "OpenNote's core isn't responding. Your changes are kept in its journal, and come back when you open OpenNote again.",
   },
   exit: {
     unsaved: "Some notes aren't saved yet. Try closing again in a moment.",

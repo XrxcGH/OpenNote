@@ -1,27 +1,28 @@
 // First-run setup: "Choose your look" (step 2) and "Where should OpenNote keep things?" (step 3).
 
 import { type Box, type Palette, captionKeepOut, circle, palette, rect, region, tag, text, NOTE } from '../lib/svg.ts';
-import { WIDE, miniApp, titleBar } from '../lib/chrome.ts';
+import { WIDE, ambientCanvas, miniApp, titleBar } from '../lib/chrome.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
-const CARD: Box = { x: 360, y: 114, w: 720, h: 672 };
+export const CARD: Box = { x: 360, y: 114, w: 720, h: 672 };
 
-function setupCard(p: Palette, step: number, title: string, subtitle: string): string[] {
+export function setupCard(p: Palette, step: number, title: string, subtitle: string): string[] {
   const center = CARD.x + CARD.w / 2;
-  const dots = [1, 2, 3, 4, 5].map((n) =>
-    circle(center - 48 + (n - 1) * 24, CARD.y + 40, 5, p.c(n <= step ? 'accent.primary' : 'border.subtle')),
+  const dots = [1, 2, 3, 4, 5, 6].map((n) =>
+    circle(center - 60 + (n - 1) * 24, CARD.y + 40, 5, p.c(n <= step ? 'accent.primary' : 'border.subtle')),
   );
   return [
     titleBar(p, { minimal: true }),
+    ambientCanvas(p, { x: 0, y: WIDE.title, w: WIDE.width, h: WIDE.height - WIDE.title }, true),
     rect(CARD, { fill: p.c('surface.raised'), r: 16, shadow: true }),
     ...dots,
-    text(center, CARD.y + 70, `Step ${step} of 5`, { size: 13, fill: p.c('text.muted'), anchor: 'middle' }),
+    text(center, CARD.y + 70, `Step ${step} of 6`, { size: 13, fill: p.c('text.muted'), anchor: 'middle' }),
     text(center, CARD.y + 116, title, { size: 30, weight: 600, fill: p.c('text.primary'), anchor: 'middle' }),
     text(center, CARD.y + 146, subtitle, { size: 15, fill: p.c('text.secondary'), anchor: 'middle' }),
   ];
 }
 
-function buttons(p: Palette, primary: string): string[] {
+export function buttons(p: Palette, primary: string): string[] {
   const y = CARD.y + CARD.h - 72;
   const right = CARD.x + CARD.w - 36;
   return [
@@ -75,7 +76,12 @@ export function firstRunLook(): Screen {
   ];
   const cardsY = CARD.y + 190;
   const body = [
-    ...setupCard(p, 2, 'Choose your look', 'Change it any time with the ☾ button or Ctrl+Shift+D.'),
+    ...setupCard(
+      p,
+      2,
+      'Choose your look',
+      'Change it any time with the moon button in the title bar, or press Ctrl+Shift+D.',
+    ),
     ...cards.map((card, i) => themeCard(p, CARD.x + 36 + i * 224, cardsY, card)),
     text(CARD.x + CARD.w / 2, cardsY + 240, 'Preselected because Windows is set to Light.', {
       size: 13,
@@ -125,12 +131,7 @@ export function firstRunStorage(): Screen {
     circle(x + 12 + i * 34, CARD.y + 500, 11, p.pen(pen), i === 0 ? p.c('text.primary') : undefined),
   );
   const body = [
-    ...setupCard(
-      p,
-      3,
-      'Where should OpenNote keep things?',
-      'Your notes are plain files you own. Updates never touch them.',
-    ),
+    ...setupCard(p, 5, 'Where to keep things', 'Your notes are plain files you own. Updates never touch them.'),
     ...field(p, CARD.y + 196, 'Your notes', 'C:\\Users\\you\\Documents\\OpenNote', 'mono'),
     rect({ x: x + 512, y: CARD.y + 206, w: 112, h: 38 }, { stroke: p.c('border.control'), r: 8 }),
     text(x + 568, CARD.y + 230, 'Change…', { size: 14, fill: p.c('text.primary'), anchor: 'middle' }),
@@ -149,11 +150,11 @@ export function firstRunStorage(): Screen {
     region({ x: x - 8, y: CARD.y + 180, w: 648, h: 76 }, ''),
     tag(CARD.x + CARD.w + 16, CARD.y + 230, 'Full path, wraps instead of cutting', NOTE.region),
     captionKeepOut(WIDE.width),
-    tag(CARD.x + CARD.w + 16, CARD.y + 330, 'Step 4 (optional): import from OneNote or Evernote', NOTE.region),
+    tag(CARD.x + CARD.w + 16, CARD.y + 330, 'Step 6 (optional): bring in notes from another app', NOTE.region),
   ];
   return makeScreen({
     file: '02-first-run-storage.svg',
-    title: 'First run, step 3: where to keep things',
+    title: 'First run, step 5: where to keep things',
     background: p.c('surface.app'),
     body,
   });
@@ -168,11 +169,11 @@ interface SmartOption {
 const SMART_OPTIONS: SmartOption[] = [
   {
     label: 'Recommended',
-    detail: 'Transcription, handwriting, text in images, and summaries. About 600 MB.',
-    on: true,
+    detail: 'Transcription, handwriting, text in images, and summaries. The speech model is 148 MB.',
+    on: false,
   },
-  { label: 'Custom', detail: 'Choose each feature, and a local model or your own cloud key.', on: false },
-  { label: 'Not now', detail: 'Everything stays off. Turn features on later in Settings.', on: false },
+  { label: 'Custom', detail: 'Pick each feature yourself. Each one runs on this device.', on: false },
+  { label: 'Not now', detail: 'Everything stays off. You can turn features on later in Settings.', on: true },
 ];
 
 function smartOption(p: Palette, y: number, option: SmartOption): string[] {
@@ -187,9 +188,14 @@ function smartOption(p: Palette, y: number, option: SmartOption): string[] {
 export function firstRunSmart(): Screen {
   const p = palette('light');
   const body = [
-    ...setupCard(p, 4, 'Smart features', 'Everything runs on this device. Nothing leaves it.'),
+    ...setupCard(
+      p,
+      3,
+      'On-device intelligence',
+      'Smart features read your notes on this computer. Nothing leaves the device.',
+    ),
     ...SMART_OPTIONS.flatMap((option, i) => smartOption(p, CARD.y + 180 + i * 100, option)),
-    text(CARD.x + 48, CARD.y + 500, 'Models download in the background. You can start taking notes right away.', {
+    text(CARD.x + 48, CARD.y + 500, 'Nothing downloads unless you choose to, and only after you finish setup.', {
       size: 13,
       fill: p.c('text.muted'),
     }),
@@ -201,7 +207,7 @@ export function firstRunSmart(): Screen {
   ];
   return makeScreen({
     file: '02b-first-run-smart.svg',
-    title: 'First run, step 4: smart features',
+    title: 'First run, step 3: on-device intelligence',
     background: p.c('surface.app'),
     body,
   });

@@ -166,6 +166,58 @@ pub fn configure(window: &WebviewWindow) {
 #[cfg(not(windows))]
 pub fn configure(_window: &WebviewWindow) {}
 
+/// Calls `run` when WebView2 reports that the page is gone: its render process or the browser process exited,
+/// or the page stopped responding. A failed helper process, such as the GPU process, leaves the page in place.
+#[cfg(windows)]
+pub fn on_page_lost(window: &WebviewWindow, run: impl Fn() + Send + 'static) {
+    use webview2_com::{
+        Microsoft::Web::WebView2::Win32::{
+            COREWEBVIEW2_PROCESS_FAILED_KIND, COREWEBVIEW2_PROCESS_FAILED_KIND_BROWSER_PROCESS_EXITED,
+            COREWEBVIEW2_PROCESS_FAILED_KIND_RENDER_PROCESS_EXITED,
+            COREWEBVIEW2_PROCESS_FAILED_KIND_RENDER_PROCESS_UNRESPONSIVE,
+        },
+        ProcessFailedEventHandler,
+    };
+
+    let lost = [
+        COREWEBVIEW2_PROCESS_FAILED_KIND_BROWSER_PROCESS_EXITED,
+        COREWEBVIEW2_PROCESS_FAILED_KIND_RENDER_PROCESS_EXITED,
+        COREWEBVIEW2_PROCESS_FAILED_KIND_RENDER_PROCESS_UNRESPONSIVE,
+    ];
+    let result = window.with_webview(move |webview| {
+        let handler = ProcessFailedEventHandler::create(Box::new(move |_, args| {
+            let mut kind = COREWEBVIEW2_PROCESS_FAILED_KIND::default();
+            if let Some(args) = args {
+                // SAFETY: the event's arguments are a live COM object for the length of this call.
+                unsafe { args.ProcessFailedKind(&mut kind)? };
+                if lost.contains(&kind) {
+                    log::warn!("The page's WebView2 process failed (kind {}).", kind.0);
+                    run();
+                }
+            }
+            Ok(())
+        }));
+        let mut token = 0i64;
+        // SAFETY: the controller is a live COM object owned by the window, and this closure runs on the main thread
+        // that created it. WebView2 keeps the handler for as long as the page lives.
+        let outcome = unsafe {
+            webview
+                .controller()
+                .CoreWebView2()
+                .and_then(|core| core.add_ProcessFailed(&handler, &mut token))
+        };
+        if let Err(error) = outcome {
+            log::warn!("Couldn't listen for WebView2 process failures: {error}");
+        }
+    });
+    if let Err(error) = result {
+        log::warn!("Couldn't reach WebView2 to listen for process failures: {error}");
+    }
+}
+
+#[cfg(not(windows))]
+pub fn on_page_lost(_window: &WebviewWindow, _run: impl Fn() + Send + 'static) {}
+
 /// What wry gives WebView2 when an app gives it no arguments: the ones that turn off the "mini menu" and Smart
 /// Screen, and the autoplay policy. Arguments passed through Tauri replace these, so a build that passes some
 /// starts from the same ones.

@@ -42,6 +42,8 @@ export interface BlockLayer {
   /** First render, viewport first. */
   apply(page: PageJson): void;
   upsert(block: BlockJson): void;
+  /** Gives a block the order key the core chose for it, without rendering it again. */
+  reorder(id: BlockId, order: string): void;
   remove(id: BlockId): void;
   /** A pinned reorder: never moves the focused wrapper. */
   setOrder(order: readonly BlockId[]): void;

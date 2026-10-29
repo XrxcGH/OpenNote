@@ -3,7 +3,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreClient, DecodedEnvelope } from '../../core/client';
 import type { ImagesClient } from '../../platform/types';
-import { createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
+import { resetStores } from '../../state/store';
+import { coreStalled, saveHealthStore } from './saveHealth';
+import { clientPrefix, createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
 
 const AT = '2026-10-01T09:00:00.000Z';
 const block = (id: string, markdown: string) => ({
@@ -112,6 +114,17 @@ describe('the Tauri page service’s requests', () => {
     expect(seqs).toEqual([4, 4, 5]);
   });
 
+  it('says the core is stalled when an edit gives up waiting for it, before the watchdog has', async () => {
+    resetStores();
+    const { core, calls } = fakeCore([envelope([])]);
+    calls.pageApply.mockImplementationOnce(() =>
+      Promise.reject({ code: 'coreBusy', message: 'The core is busy (page_open has held it for 15 s).' }),
+    );
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'coreBusy', resync: false });
+    expect(coreStalled(saveHealthStore.get())).toBe(true);
+  });
+
   it('builds asset addresses that WebView2 routes, with each ID kept to one path segment', async () => {
     const { core } = fakeCore([envelope([])]);
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });
@@ -169,5 +182,79 @@ describe('the Tauri page service’s events', () => {
     });
     expect(external).toHaveBeenCalledWith({ action: 'conflict' });
     expect(readOnly).toHaveBeenCalledWith({ reason: 'readOnlyFile', action: 'makeEditable' });
+  });
+});
+
+describe('ink through the Tauri page service', () => {
+  it('sends new strokes with page_add_strokes and tells listeners what undo did to the ink', async () => {
+    const opened = envelope([block('b1', 'x')]);
+    const { core, calls } = fakeCore([{ ...opened, ink: new Uint8Array([1, 2, 3]), moreInk: true }]);
+    const extra = core as unknown as Record<string, unknown>;
+    const added = vi.fn(() => Promise.resolve({ seq: 4, orderKeys: {}, canUndo: true, canRedo: false }));
+    const records = new Uint8Array([9, 9]);
+    extra.pageAddStrokes = added;
+    extra.pageReadStrokes = vi.fn(() => Promise.resolve(records));
+    extra.pageUndo = vi.fn(() =>
+      Promise.resolve({
+        seq: 5,
+        changes: { pageFields: false, blocksChanged: [], blocksRemoved: [], assetsChanged: [], strokesRemoved: ['s1'] },
+        ui: null,
+        texts: {},
+        blocks: [],
+        title: null,
+        tags: null,
+        view: null,
+        assets: [],
+        canUndo: false,
+        canRedo: true,
+        strokes: 0,
+        records: new Uint8Array(),
+      }),
+    );
+    const page = await createTauriPageService(core, {} as ImagesClient).open('p1', { viewport: null });
+    expect([...page.ink!.records]).toEqual([1, 2, 3]);
+    expect(page.ink!.more).toBe(true);
+    expect(await page.ink!.readAll()).toBe(records);
+
+    await page.send({ edits: [{ edit: 'removeStrokes', strokes: ['s0'] }], strokes: records });
+    expect(added).toHaveBeenCalledWith(
+      expect.objectContaining({ clientSeq: 4, edits: [{ edit: 'removeStrokes', strokes: ['s0'] }] }),
+      records,
+    );
+    expect(calls.pageApply).not.toHaveBeenCalled();
+
+    const heard = vi.fn();
+    page.ink!.onChange(heard);
+    const frame = await page.undo();
+    expect(frame?.ink?.removed).toEqual(['s1']);
+    expect(heard).toHaveBeenCalledWith(expect.objectContaining({ removed: ['s1'] }));
+  });
+});
+
+describe('the Tauri page service’s client names', () => {
+  const CLIENT_ID = /^[a-z0-9-]{1,32}$/;
+
+  it('gives each window clients of its own, so two windows on one page never share a core session', async () => {
+    const main = fakeCore([envelope([])]);
+    const popped = fakeCore([envelope([])]);
+    const capture = fakeCore([envelope([])]);
+    const inMain = await createTauriPageService(main.core, images, clientPrefix('main')).open('p1', { viewport: null });
+    const inWindow = await createTauriPageService(popped.core, images, clientPrefix('page-01k6f0000000')).open('p1', {
+      viewport: null,
+    });
+    const inCapture = await createTauriPageService(capture.core, images, clientPrefix('capture')).open('p1', {
+      viewport: null,
+    });
+    expect(inMain.client).toBe('main-1');
+    expect(new Set([inMain.client, inWindow.client, inCapture.client]).size).toBe(3);
+    expect(popped.calls.pageOpen).toHaveBeenCalledWith('p1', inWindow.client, null);
+    for (const name of [inMain.client, inWindow.client, inCapture.client]) expect(name).toMatch(CLIENT_ID);
+  });
+
+  it('names a window opened again differently from the last one, and within what the core accepts', () => {
+    const names = new Set(Array.from({ length: 50 }, () => clientPrefix('page-01k6f00000000000000000p001')));
+    expect(names.size).toBe(50);
+    for (const name of names) expect(`${name}-9999`).toMatch(CLIENT_ID);
+    expect(clientPrefix('capture', (bytes) => bytes.fill(35))).toBe('wzzzzzzzz');
   });
 });

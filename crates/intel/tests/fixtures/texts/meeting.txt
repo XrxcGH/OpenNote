@@ -1,0 +1,18 @@
+Project kickoff, Tuesday
+
+Attendees: Maria, Dev, Chen, Priya.
+
+We agreed the first release will cover note taking, search, and export. Sync is out of scope for the first release. Maria will own the search work, and Dev will own export.
+
+The team reviewed the schedule. The beta starts in March, and the public release follows in May. Chen raised a concern that the export work may slip because the PDF library needs a security review.
+
+Action items.
+
+- Maria to draft the search design by Friday.
+- Dev to ask the security team about the PDF library.
+- Priya to book the beta testers.
+- Chen to update the schedule after the review.
+
+Decision: the beta will go ahead even if export is not finished, because search is what testers asked for most.
+
+Next meeting is Tuesday at ten.

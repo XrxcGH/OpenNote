@@ -4,6 +4,8 @@
 
 import { useCallback } from 'react';
 import type { RefCallback } from 'react';
+import { chromeEdge } from './layout/chromeInsets';
+import type { ChromeEdge } from './layout/chromeInsets';
 
 export type RegionId = 'titleBar' | 'commandBar' | 'notebooks' | 'pages' | 'page' | 'notifications';
 
@@ -33,19 +35,24 @@ function remember(id: RegionId, element: HTMLElement) {
   return () => element.removeEventListener('focusin', onFocusIn);
 }
 
-/** Marks an element as a region and remembers focus inside it. */
-export function useRegion(id: RegionId): { ref: RefCallback<HTMLElement>; 'data-region': RegionId } {
+/**
+ * Marks an element as a region and remembers focus inside it. With `edge`, the region is also window chrome along
+ * that edge, which floating panels stay clear of (layout/chromeInsets.ts).
+ */
+export function useRegion(id: RegionId, edge?: ChromeEdge): { ref: RefCallback<HTMLElement>; 'data-region': RegionId } {
   const ref = useCallback(
     (element: HTMLElement | null) => {
       if (!element) return;
       elements.set(id, element);
       const stop = remember(id, element);
+      const untrack = edge ? chromeEdge(edge)(element) : undefined;
       return () => {
         stop();
+        untrack?.();
         if (elements.get(id) === element) elements.delete(id);
       };
     },
-    [id],
+    [id, edge],
   );
   return { ref, 'data-region': id };
 }

@@ -18,7 +18,8 @@ import { parseHtml } from './dom';
 export const PAYLOAD_ATTRIBUTE = 'data-opennote-blocks';
 
 export interface CopiedBlock {
-  type: string;
+  /** Copying writes text and images only: any other block is copied as its text. */
+  type: 'text' | 'image';
   frame: Frame | null;
   data: Record<string, unknown>;
   /** For an image: where its bytes can be read while the page is open. */
@@ -108,7 +109,8 @@ export function readBlockPayload(html: string | null): BlockPayload | null {
     const payload = JSON.parse(holder?.getAttribute(PAYLOAD_ATTRIBUTE) ?? '') as BlockPayload;
     if (payload?.v !== 1 || !Array.isArray(payload.blocks)) return null;
     const valid = payload.blocks.every(
-      (block) => typeof block?.type === 'string' && block.data !== null && typeof block.data === 'object',
+      (block) =>
+        (block?.type === 'text' || block?.type === 'image') && block.data !== null && typeof block.data === 'object',
     );
     return valid ? payload : null;
   } catch {

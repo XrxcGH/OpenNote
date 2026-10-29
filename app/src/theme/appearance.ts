@@ -9,6 +9,7 @@
 
 import './appearance.css';
 import type { OsAppearance, Settings } from '../platform/types';
+import { qolStore } from '../state/qol';
 
 /** The interface sizes offered in Settings (FEATURES.md, Interface size). Rust accepts 90 to 150. */
 export const UI_SCALES = [90, 100, 110, 125, 150] as const;
@@ -21,7 +22,8 @@ function setAttribute(root: HTMLElement, name: string, value: string | null): vo
 export function applyAppearance(root: HTMLElement, settings: Settings, os: OsAppearance): void {
   const { appearance } = settings;
   setAttribute(root, 'data-contrast', os.contrast ? 'on' : null);
-  setAttribute(root, 'data-motion', appearance.motion === 'reduce' || !os.animations ? 'reduce' : null);
+  const reduce = appearance.motion === 'reduce' || !os.animations || qolStore.get().lowPower;
+  setAttribute(root, 'data-motion', reduce ? 'reduce' : null);
   setAttribute(root, 'data-page-color', appearance.pageColor === 'paper' ? 'paper' : null);
   root.style.setProperty('--zoom', String(os.zoom));
   root.style.setProperty('--ui-scale', String(appearance.uiScale / 100));

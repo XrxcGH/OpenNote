@@ -32,6 +32,13 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
+  /* On ruled paper the line's baseline is one line less the lift below the item's top (blocks.module.css): the box is centered on
+     the capitals above it. Its own line height is 0 there, so it is sized in ems. */
+  :global([data-ruled]) .taskBox {
+    inset-block-start: calc(var(--rule-line) - var(--rule-lift) - 0.5cap - 0.5em);
+    block-size: 1em;
+  }
+
   .taskBody > p {
     margin-block: var(--space-1);
   }
@@ -55,19 +62,20 @@
 
   .calloutControls {
     position: absolute;
-    inset-block-start: var(--space-1);
-    inset-inline-end: var(--space-1);
+    /* On the title's line: the callout's top padding, and half of what its line leaves over the button. */
+    inset-block-start: calc(var(--space-3) + (1lh - var(--target-size)) / 2);
+    inset-inline-end: var(--space-2);
     display: flex;
     gap: var(--space-1);
     user-select: none;
   }
 
   .calloutType,
-  .foldButton {
+  .calloutFold {
     display: inline-grid;
     place-items: center;
-    min-inline-size: var(--size-chrome-hit);
-    min-block-size: var(--size-chrome-hit);
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
     padding: 0;
     border: 0;
     border-radius: var(--radius-sm);
@@ -75,6 +83,12 @@
     background: transparent;
     font: inherit;
     cursor: pointer;
+  }
+
+  /* display above would show a button the callout hides (a callout that cannot fold has no fold button). */
+  .calloutType[hidden],
+  .foldButton[hidden] {
+    display: none;
   }
 
   .calloutType::before {
@@ -85,22 +99,26 @@
     background: var(--callout, var(--color-border-control));
   }
 
-  .foldButton::before {
+  .calloutFold::before {
     content: '\25BE';
     transition: rotate var(--motion-duration-fast) var(--motion-easing-standard);
   }
 
-  .foldButton[aria-expanded='false']::before {
+  .calloutFold[aria-expanded='false']::before {
     rotate: -90deg;
   }
 
+  .calloutFold[hidden] {
+    display: none;
+  }
+
   .calloutType:hover,
-  .foldButton:hover {
+  .calloutFold:hover {
     background: var(--color-surface-hover);
   }
 
   .calloutType:focus-visible,
-  .foldButton:focus-visible {
+  .calloutFold:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: calc(-1 * var(--size-focus-ring-width));
   }
@@ -118,6 +136,7 @@
   }
 
   .mathField {
+    min-block-size: var(--target-size);
     font: inherit;
     color: var(--color-text-primary);
     background: var(--color-surface-raised);

@@ -4,6 +4,8 @@
 import { readBoot } from '../../boot/read';
 import type { PageViewState } from '../../platform/bindings/PageViewState';
 import type { DeviceStateClient, PagesClient, Platform } from '../../platform/types';
+import { notebookOf, treeStore } from '../tree';
+import { installHistoryAdmin } from './history/admin';
 
 /** Device state keeps the views of this many pages, dropping the least recently shown. */
 export const MAX_PAGE_VIEWS = 200;
@@ -16,7 +18,18 @@ export function installPages(platform: Pick<Platform, 'pages'> & Partial<Pick<Pl
   pages = platform.pages;
   state = platform.state ?? null;
   views = new Map(Object.entries(state ? (readBoot().state.pageViews ?? {}) : {}));
+  // Delete history for pages, sections, and notebooks (A2-3, A4-12), where the page service can.
+  const admin = platform.pages.admin;
+  const stopAdmin = installHistoryAdmin(
+    admin
+      ? {
+          deleteHistory: (notebook, scope, keepNamed) => admin.deleteHistory(notebook, scope, keepNamed),
+          notebookOf: (page) => notebookOf(treeStore.get(), page),
+        }
+      : null,
+  );
   return () => {
+    stopAdmin();
     pages = null;
     state = null;
     views = new Map();

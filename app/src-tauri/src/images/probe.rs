@@ -16,6 +16,8 @@ pub enum ImageFormat {
     Svg,
     Heic,
     Tiff,
+    /// A Windows metafile (WMF, EMF, or EMF+). WebView2 cannot show it, so an import draws it into an SVG.
+    Metafile,
     Other,
 }
 
@@ -32,6 +34,7 @@ impl ImageFormat {
             ImageFormat::Svg => "image/svg+xml",
             ImageFormat::Heic => "image/heic",
             ImageFormat::Tiff => "image/tiff",
+            ImageFormat::Metafile => "image/emf",
             ImageFormat::Other => "application/octet-stream",
         }
     }
@@ -48,6 +51,7 @@ impl ImageFormat {
             ImageFormat::Svg => "svg",
             ImageFormat::Heic => "heic",
             ImageFormat::Tiff => "tif",
+            ImageFormat::Metafile => "emf",
             ImageFormat::Other => "bin",
         }
     }
@@ -65,6 +69,9 @@ impl ImageFormat {
             "image/svg+xml" => ImageFormat::Svg,
             "image/heic" | "image/heif" | "image/heic-sequence" | "image/heif-sequence" => ImageFormat::Heic,
             "image/tiff" | "image/tif" => ImageFormat::Tiff,
+            "image/emf" | "image/x-emf" | "image/wmf" | "image/x-wmf" | "application/x-msmetafile" => {
+                ImageFormat::Metafile
+            }
             _ => return None,
         })
     }
@@ -119,6 +126,15 @@ pub fn probe(bytes: &[u8]) -> Result<Probe, ProbeError> {
                 orientation: 1,
             })
         }
+        ImageFormat::Metafile => {
+            let (width, height) = metafile_size(bytes).ok_or(ProbeError::Malformed(format))?;
+            Ok(Probe {
+                format,
+                width,
+                height,
+                orientation: 1,
+            })
+        }
         _ => {
             let raw = header::read(format, bytes);
             let checked = confirm(bytes, raw.map(|raw| (raw.width, raw.height)));
@@ -133,6 +149,16 @@ pub fn probe(bytes: &[u8]) -> Result<Probe, ProbeError> {
             })
         }
     }
+}
+
+/// The size of a metafile's drawing in CSS pixels (its points at 96 per inch), as the SVG made from it states.
+pub fn metafile_size(bytes: &[u8]) -> Option<(u32, u32)> {
+    let picture = opennote_metafile::parse(bytes).ok()?;
+    let px = |points: f32| {
+        let px = (points * 96.0 / 72.0).round();
+        (px.is_finite() && (1.0..=100_000.0).contains(&px)).then_some(px as u32)
+    };
+    Some((px(picture.width)?, px(picture.height)?))
 }
 
 /// The stored size as WIC reads it, when a codec is installed for the format, else the header's.
@@ -228,7 +254,8 @@ mod tests {
             ImageFormat::from_mime("image/svg+xml; charset=utf-8"),
             Some(ImageFormat::Svg)
         );
-        assert_eq!(ImageFormat::from_mime("image/x-emf"), None);
+        assert_eq!(ImageFormat::from_mime("image/x-emf"), Some(ImageFormat::Metafile));
+        assert!(!ImageFormat::Metafile.displayable());
         assert!(ImageFormat::Avif.displayable());
         assert!(!ImageFormat::Heic.displayable() && !ImageFormat::Tiff.displayable());
     }

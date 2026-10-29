@@ -1,0 +1,28 @@
+{
+  "note": "Cases for PositionMap, shared by the Rust tests (tests/shared_fixtures.rs) and the TypeScript ones (app/src/core/audio/positions.test.ts). Times are nanoseconds.",
+  "ranges": [
+    [10000000000, 14000000000],
+    [30000000000, 33000000000]
+  ],
+  "durationNs": 7000000000,
+  "spans": [
+    { "captureStartNs": 10000000000, "captureEndNs": 14000000000, "positionStartNs": 0 },
+    { "captureStartNs": 30000000000, "captureEndNs": 33000000000, "positionStartNs": 4000000000 }
+  ],
+  "locate": [
+    { "captureNs": 12000000000, "positionNs": 2000000000, "exact": true },
+    { "captureNs": 10000000000, "positionNs": 0, "exact": true },
+    { "captureNs": 14000000000, "positionNs": 4000000000, "exact": false },
+    { "captureNs": 20000000000, "positionNs": 4000000000, "exact": false },
+    { "captureNs": 31000000000, "positionNs": 5000000000, "exact": true },
+    { "captureNs": 5000000000, "positionNs": 0, "exact": false },
+    { "captureNs": 40000000000, "positionNs": 7000000000, "exact": false }
+  ],
+  "captureAt": [
+    { "positionNs": 0, "captureNs": 10000000000 },
+    { "positionNs": 3999999999, "captureNs": 13999999999 },
+    { "positionNs": 4000000000, "captureNs": 30000000000 },
+    { "positionNs": 6999999999, "captureNs": 32999999999 },
+    { "positionNs": 7000000000, "captureNs": null }
+  ]
+}

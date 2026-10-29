@@ -4,6 +4,8 @@
 // rows it windows its rows, keeping the focused, selected, and renaming rows mounted.
 
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { isEnabled } from '../../app/flags';
+import { executeCommand } from '../../commands/registry';
 import type { KeyboardEvent, MouseEvent, ReactNode, RefObject } from 'react';
 import type { NodeId } from '../../services/notes';
 import { useStore } from '../../state/store';
@@ -11,6 +13,7 @@ import { ProgressBar, typeaheadMatch, useDelayedFlag, useTypeahead } from '../..
 import type { MenuAnchor } from '../../ui';
 import { titleOf } from './actions';
 import { dragStore } from './dragState';
+import { clearMulti, extendFrom, multiStore, rangeTo, toggleRow } from './multi';
 import { treeKeyAction } from './keys';
 import type { TreeKeyAction } from './keys';
 import { openRow, setOpen } from './navigation';
@@ -49,6 +52,7 @@ function follow(row: Row): void {
 }
 
 function applyKey(tree: TreeId, action: TreeKeyAction, rows: readonly Row[]): void {
+  clearMulti();
   switch (action.type) {
     case 'focus': {
       const { id } = rows[action.index];
@@ -120,6 +124,23 @@ function useTreeKeys(props: TreeViewProps, focusIndex: number) {
       props.openMenu(row, element, element);
       return;
     }
+    if (isEnabled('qol.multiSelect')) {
+      if (event.shiftKey && !event.ctrlKey && !event.altKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        event.preventDefault();
+        const target = extendFrom(tree, rows, focusIndex, event.key === 'ArrowDown' ? 1 : -1, props.selectedId);
+        if (target) {
+          setFocus(tree, target.id);
+          if (rowElement(tree, target.id)) focusRowElement(tree, target.id);
+          else requestFocus(tree, target.id);
+        }
+        return;
+      }
+      if (event.key === 'Escape' && multiStore.get().ids.length > 0) {
+        event.preventDefault();
+        clearMulti();
+        return;
+      }
+    }
     if (event.ctrlKey || event.altKey || event.metaKey) return;
     const action = treeKeyAction(event.key, rows, focusIndex);
     if (action) {
@@ -133,19 +154,41 @@ function useTreeKeys(props: TreeViewProps, focusIndex: number) {
 
 function useRowHandlers(props: TreeViewProps) {
   const { tree, openMenu } = props;
+  // The press handler reads the rows and the open row from here, so it stays the same function and rows don't redraw.
+  const latest = useRef({ rows: props.rows, selectedId: props.selectedId });
+  useLayoutEffect(() => {
+    latest.current = { rows: props.rows, selectedId: props.selectedId };
+  });
   const onPress = useCallback(
     (row: Row, event: MouseEvent) => {
       if ((event.target as Element).closest('button, input')) return;
       setFocus(tree, row.id);
+      if (isEnabled('qol.multiSelect') && (event.ctrlKey || event.metaKey)) {
+        toggleRow(tree, row, latest.current.selectedId);
+        return;
+      }
+      if (isEnabled('qol.multiSelect') && event.shiftKey) {
+        rangeTo(tree, latest.current.rows, row, latest.current.selectedId);
+        return;
+      }
+      clearMulti();
       if (row.node.kind === 'section' || row.node.kind === 'page') select(row.id, 'now');
       else if (row.expanded !== undefined) setOpen(tree, [row.id], !row.expanded);
     },
     [tree],
   );
+  const onAux = useCallback((row: Row, event: MouseEvent) => {
+    if (event.button !== 1 || row.node.kind !== 'page') return;
+    event.preventDefault();
+    void executeCommand('tabs.openInNewTab', undefined, 'menu', { kind: 'node', id: row.id });
+  }, []);
   const onToggle = useCallback((row: Row) => setOpen(tree, [row.id], !row.expanded), [tree]);
   const onRename = useCallback((row: Row) => startRename(row.id), []);
-  const onMore = useCallback((row: Row, anchor: HTMLElement) => openMenu(row, anchor, anchor), [openMenu]);
-  return { onPress, onToggle, onRename, onMore };
+  const onMore = useCallback(
+    (row: Row, anchor: HTMLElement, back: HTMLElement) => openMenu(row, anchor, back),
+    [openMenu],
+  );
+  return { onPress, onAux, onToggle, onRename, onMore };
 }
 
 /** Right-click, the Menu key, Shift+F10, and a long press without a drag all open the row's menu. */
@@ -177,6 +220,7 @@ function useRowIndexes(props: TreeViewProps, container: RefObject<HTMLDivElement
   const focusId = useStore(treeStore, (state) => state.focus[tree]);
   const renaming = useStore(treeStore, pickRenaming);
   const dragging = useStore(dragStore, (state) => state.id);
+  const multiIds = useStore(multiStore, (state) => state.ids);
   const indexOf = useMemo(() => new Map(rows.map((row, i) => [row.id as string, i])), [rows]);
   const focusIndex = indexOf.get(focusId ?? '') ?? indexOf.get(selectedId ?? '') ?? 0;
   const windowed = rows.length > WINDOW_THRESHOLD;
@@ -187,6 +231,7 @@ function useRowIndexes(props: TreeViewProps, container: RefObject<HTMLDivElement
     focusIndex,
     windowed,
     renaming,
+    multiIds,
     indexes: renderedIndexes(rows.length, rowHeight, viewport, pinned),
   };
 }
@@ -194,7 +239,7 @@ function useRowIndexes(props: TreeViewProps, container: RefObject<HTMLDivElement
 export function TreeView(props: TreeViewProps) {
   const { tree, label, rows, selectedId, loading, rowHeight } = props;
   const container = useRef<HTMLDivElement>(null);
-  const { indexOf, focusIndex, windowed, renaming, indexes } = useRowIndexes(props, container);
+  const { indexOf, focusIndex, windowed, renaming, indexes, multiIds } = useRowIndexes(props, container);
   const showProgress = useDelayedFlag(loading);
   const emptyRef = useEmptyFocus(rows.length);
   const handlers = useRowHandlers(props);
@@ -232,7 +277,8 @@ export function TreeView(props: TreeViewProps) {
                 key={rowKey(rows[index].id)}
                 tree={tree}
                 row={rows[index]}
-                selected={rows[index].id === selectedId}
+                selected={rows[index].id === selectedId || multiIds.includes(rows[index].id)}
+                multi={multiIds.includes(rows[index].id)}
                 focused={index === focusIndex}
                 renaming={renaming?.id === rows[index].id ? renaming : null}
                 top={windowed ? index * rowHeight : undefined}

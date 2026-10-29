@@ -9,6 +9,10 @@
     z-index: var(--layer-dialog);
     display: grid;
     padding: var(--space-5);
+    /* A toast shown over a dialog sits at the window's bottom: the dialog rises above it, so the toast never hides
+       its buttons or the text over them (--toast-height is set while a toast shows, toastHooks.ts). */
+    padding-block-end: max(var(--space-5), calc(var(--toast-height, -100vh) + var(--panel-inset-bottom, 0px)));
+    transition: padding-block-end var(--motion-duration-base) var(--motion-easing-standard);
   }
 
   .scrim {
@@ -26,11 +30,13 @@
     max-block-size: 100%;
     margin: 0;
     padding: var(--space-7);
-    overflow: auto;
+    overflow: hidden;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-xl);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
+    /* A long link or folder path wraps instead of widening the dialog past its edge. */
+    overflow-wrap: anywhere;
     box-shadow: var(--elevation-3);
     transition:
       opacity var(--motion-duration-slow) var(--motion-easing-enter),
@@ -39,9 +45,28 @@
   }
 
   .dialog[open] {
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-5);
+  }
+
+  .dialog[open] > * {
+    flex: none;
+  }
+
+  /* The body scrolls on its own when the window is short, so the title and the buttons stay in view. The small
+     padding and matching negative margin keep a focus ring, or a hover area that hangs out, from being cut. */
+  .dialog[open] > .content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    flex: 0 1 auto;
+    gap: var(--space-5);
+    min-block-size: 0;
+    margin: calc(-1 * var(--space-5));
+    padding: var(--space-5);
+    scroll-padding: var(--space-5);
+    overflow: auto;
   }
 
   .dialog:focus-visible {
@@ -79,10 +104,18 @@
     place-self: center;
   }
 
+  /* The palette sits at the top and has no buttons at its foot, so a toast below it takes no room from it. */
+  .layer[data-placement='top'] {
+    padding-block-end: var(--space-5);
+  }
+
   .layer[data-placement='top'] .dialog {
     align-self: start;
     justify-self: center;
     margin-block-start: max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar))));
+    max-block-size: calc(
+      100% - max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar))))
+    );
   }
 
   .layer[data-placement='start'] {

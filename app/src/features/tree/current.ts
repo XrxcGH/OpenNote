@@ -17,7 +17,7 @@ function focusedTree(ctx: CommandContext): TreeId | null {
 function openNode(): NodeSummary | undefined {
   const location = getLocation();
   if (location.view !== 'workspace') return undefined;
-  return getNode(location.pageId) ?? getNode(location.sectionId);
+  return getNode(location.pageId) ?? getNode(location.sectionId) ?? getNode(location.notebookId);
 }
 
 export function currentNode(ctx: CommandContext): NodeSummary | undefined {

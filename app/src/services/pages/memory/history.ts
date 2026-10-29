@@ -1,6 +1,7 @@
 // Undo and redo in memory (owner: WP2), with Phase 3's grouping rules (crates/core/src/ops/undo/group.rs). Each
 // client has its own stacks. A step remembers the blocks and page fields it changed, before and after, so undoing
 // it puts back only those, and fails when another client has changed them since, as the core's checks do.
+import { inkChanges, revertInk } from './ink';
 import type { AppliedFrame, AssetId, AssetJson, BlockId, BlockJson, CoalesceKind, EditBatch, PageJson } from '../types';
 import { sortBlocks } from './apply';
 import type { ByteSplice } from './apply';
@@ -214,6 +215,7 @@ export function revert(current: PageJson, from: PageJson, to: PageJson): PageJso
     if (to.assets[id]) next.assets[id] = structuredClone(to.assets[id]);
     else delete next.assets[id];
   }
+  revertInk(next, from, to);
   return next;
 }
 
@@ -237,5 +239,6 @@ export function diffFrame(
     assets,
     ui,
     ...state,
+    ink: inkChanges(from, to),
   };
 }

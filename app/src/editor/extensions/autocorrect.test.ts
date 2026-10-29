@@ -44,6 +44,12 @@ describe('AutoCorrect', () => {
     expect(auto.filter(Boolean)).toHaveLength(3);
   });
 
+  it('leaves "-->" and "---" alone so diagram source survives', () => {
+    const page = mount('[]');
+    typeInto(page.editor, 'A[Start] --> B[Finish] --- C ');
+    expect(page.editor.state.doc.textContent).toBe('A[Start] --> B[Finish] --- C ');
+  });
+
   it('reverts on Backspace right after', () => {
     const page = mount('[]');
     typeInto(page.editor, 'teh ');

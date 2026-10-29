@@ -2,6 +2,7 @@
 // names. It checks the theme that is stored before any page opens. It also checks the footer in compact.
 
 import { expect, test } from '../fixtures';
+import { walkToStorage } from '../setupWalk';
 
 test.use({ boot: { firstRun: true, state: { setup: { status: 'notStarted' } }, os: { dark: true } } });
 
@@ -25,9 +26,10 @@ test('walks through the first steps with Match Windows preselected', async ({ pa
   await page.getByRole('button', { name: 'Get started' }).click();
   await expect(page.getByRole('radio', { name: 'Light' })).toBeChecked();
 
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await walkToStorage(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Where to keep things' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start taking notes' })).toBeVisible();
+  // Other steps can follow it, so the last button's name is not fixed.
+  await expect(page.getByRole('button', { name: 'Change folder' })).toBeVisible();
 });
 
 test('keeps Back and Continue in view at the compact size', async ({ page }) => {
@@ -45,4 +47,25 @@ test('keeps Back and Continue in view at the compact size', async ({ page }) => 
   }));
   expect(overflow.x).toBeLessThanOrEqual(0);
   expect(overflow.y).toBeLessThanOrEqual(0);
+});
+
+test('shows the language step with English (United States) preselected and lets UK English replace it', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Get started' }).click();
+  const heading = page.getByRole('heading', { level: 1 });
+  for (let step = 0; step < 8; step += 1) {
+    await heading.first().waitFor();
+    if (((await heading.first().textContent()) ?? '').trim() === 'Language and spelling') break;
+    const before = await heading.first().textContent();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(heading.first()).not.toHaveText(before ?? '');
+  }
+  await expect(heading.first()).toHaveText('Language and spelling');
+  await expect(page.getByRole('radio', { name: /English \(United States\)/ })).toBeChecked();
+  await expect(page.getByText(/American English/)).toBeVisible();
+  await page.getByRole('radio', { name: /English \(United Kingdom\)/ }).click();
+  await expect(page.getByRole('radio', { name: /English \(United Kingdom\)/ })).toBeChecked();
+  await expect(page.getByRole('radio', { name: /English \(United States\)/ })).not.toBeChecked();
 });

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
 import { expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 import { sessionStore } from '../../state/session';
+import { qolStore } from '../../state/qol';
 
 const notebooksTree = () => screen.getByRole('tree', { name: 'Notebooks' });
 const pagesTree = () => screen.getByRole('tree', { name: 'Pages' });
@@ -26,6 +27,12 @@ async function focusRow(tree: () => HTMLElement, name: string) {
 }
 
 describe('the tree pattern', () => {
+  it('lists the sections of a group that was open at the last start, inside an open notebook', async () => {
+    await renderTree({ boot: { state: { expanded: ['n-biology', 'g-exam-prep'] } } });
+    await findRow(notebooksTree, 'Midterm');
+    expect(row(notebooksTree(), 'Exam prep').getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('gives rows their level, position, set size, and expanded state', async () => {
     await renderTree();
     const biology = row(notebooksTree(), 'Biology 101');
@@ -159,6 +166,27 @@ describe('pages', () => {
   });
 });
 
+describe('the middle button', () => {
+  it('opens a page in a new tab, and stops autoscroll on the press, but leaves a section alone', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Lectures');
+    await pressChord('Space');
+    await findRow(pagesTree, 'Membranes');
+    const press = (el: HTMLElement, type: 'mousedown' | 'auxclick') =>
+      el.dispatchEvent(new MouseEvent(type, { button: 1, bubbles: true, cancelable: true }));
+    const tabs = () => qolStore.get().tabs.length;
+    const before = tabs();
+    const section = row(notebooksTree(), 'Labs');
+    expect(press(section, 'mousedown')).toBe(true);
+    press(section, 'auxclick');
+    expect(tabs()).toBe(before);
+    const page = row(pagesTree(), 'Membranes');
+    expect(press(page, 'mousedown')).toBe(false);
+    press(page, 'auxclick');
+    await expect.poll(tabs).toBeGreaterThan(before);
+  });
+});
+
 describe('long trees', () => {
   it('windows past 300 rows and keeps the focused row mounted', async () => {
     const location = { view: 'workspace', notebookId: 'lg-n-1', sectionId: 'lg-s-1-1', pageId: null } as const;
@@ -182,7 +210,7 @@ describe('empty states and accessibility', () => {
   it('puts a bookshelf above the no-notebooks sentence, hidden from screen readers', async () => {
     const { container } = await renderApp({ fixture: 'empty' });
     const sentence = await screen.findByText('No notebooks yet. Choose New notebook to start one.');
-    const art = container.querySelector('svg[viewBox="0 0 110 52"]');
+    const art = container.querySelector('svg[viewBox="0 0 110 51.875"]');
     expect(art?.getAttribute('aria-hidden')).toBe('true');
     expect((art as Node).compareDocumentPosition(sentence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The empty pane has its own drawing, so the footer's plant leaves it alone.

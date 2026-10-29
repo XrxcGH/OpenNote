@@ -87,7 +87,7 @@ function TabList(props: { tabs: TabDef[]; active: BarTab; ids: string; onSelect(
 export function CommandBar() {
   const sizeClass = useSizeClass();
   const tabs = useTabs();
-  const region = useRegion('commandBar');
+  const region = useRegion('commandBar', 'top');
   const ids = useId().replace(/:/g, '');
   const [chosen, setChosen] = useState<BarTab>('home');
   if (sizeClass === 'compact' || tabs.length === 0) return null;

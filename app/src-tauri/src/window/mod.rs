@@ -6,8 +6,18 @@
 //! placement, and the WebView2 settings.
 
 pub mod caption;
+pub mod custom_frame;
 pub mod frame;
 pub mod placement;
+#[cfg(windows)]
+pub mod resize_border;
+#[cfg(windows)]
+pub mod snap_overlay;
+#[cfg(windows)]
+pub mod subclass;
+pub mod system_menu;
+#[cfg(all(test, windows))]
+mod test_windows;
 pub mod webview;
 
 use std::{
@@ -52,11 +62,29 @@ pub struct Point {
 /// The color the window was created with, for the perf log's `windowShown` mark.
 struct Background(Rgb);
 
+/// Whether a webview may load `url`. Every OpenNote window stays on the app's own pages: a dropped file, a
+/// link, or a script that would load anything else is refused, so nothing else runs with the boot data.
+pub fn is_app_url(url: &tauri::Url) -> bool {
+    match url.scheme() {
+        "tauri" => url.host_str() == Some("localhost"),
+        "http" | "https" => {
+            url.host_str() == Some("tauri.localhost")
+                || (cfg!(debug_assertions) && url.host_str() == Some("localhost") && url.port() == Some(1420))
+        }
+        "about" => matches!(url.as_str(), "about:blank" | "about:srcdoc"),
+        // A blob address made by the app's own page, as for a download.
+        "blob" => tauri::Url::parse(url.path()).is_ok_and(|inner| is_app_url(&inner)),
+        _ => false,
+    }
+}
+
 /// Builds the main window from its config, with its placement, colors, boot script, zoom, and WebView2 settings,
 /// and shows it (section 8.5).
 ///
-/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Until those land,
-/// this keeps the native frame, so the window can still be moved, resized from the title bar, and closed.
+/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Those are behind the
+/// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
+/// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
+/// when the page reports no caption buttons in time or its process fails.
 pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let windows = &app.config().app.windows;
     let config = windows
@@ -81,12 +109,14 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     app.manage(Current::new(os));
     app.manage(Background(color));
 
+    let undecorated = custom_frame::at_start(data.channel, &data.flag_overrides, &settings.experimental.flags);
     let builder = WebviewWindowBuilder::from_config(app, config)?
-        .decorations(true)
+        .decorations(!undecorated)
         .background_color(Color(r, g, b, 255))
         .initialization_script(boot::initialization_script(&data))
         .data_directory(paths.webview.clone())
         .disable_drag_drop_handler()
+        .on_navigation(is_app_url)
         .zoom_hotkeys_enabled(false);
     #[cfg(all(windows, feature = "test-endpoints"))]
     let builder =
@@ -97,6 +127,11 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let window = builder.build()?;
     perf::mark("windowCreated", None);
     webview::configure(&window);
+    let lost = window.clone();
+    webview::on_page_lost(&window, move || custom_frame::fall_back(&lost, true));
+    if undecorated {
+        custom_frame::await_first_report(&window);
+    }
     zoom::apply(&window, settings.appearance.text_size.percent(), os.text_scale);
     if let Err(error) = frame::set_theme(&window, data.resolved_theme) {
         log::warn!("Couldn't color the window frame: {error}");
@@ -174,11 +209,23 @@ pub fn show(app: &AppHandle) {
 /// Brings the main window forward for a second launch, and passes its arguments to the interface as
 /// `window://forwarded-args`.
 pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
+    // The jump list's "New quick note" opens the capture window and leaves the main window where it is.
+    if args.iter().any(|arg| arg == crate::shellqol::QUICK_NOTE_ARG) {
+        if let Err(error) = crate::shellqol::windows_ops::open_capture(app) {
+            log::warn!("Couldn't open quick capture: {error}");
+        }
+        return;
+    }
+    // A file opened from Explorer while the app runs: the person chose it, so the interface may open it.
+    crate::interop::open_files::grant_forwarded(&args);
     if let Some(window) = app.get_webview_window(MAIN) {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     }
+    // The interface may not be listening yet, or may miss the event: it takes the link from here as well.
+    crate::deeplink::remember_launch(&args);
+    log::info!("Passing {} argument(s) from a second launch to the window.", args.len());
     if let Err(error) = app.emit_to(MAIN, events::WINDOW_FORWARDED_ARGS, args) {
         log::warn!("Couldn't pass a second launch's arguments on: {error}");
     }
@@ -206,10 +253,15 @@ pub fn window_toggle_maximize(window: WebviewWindow) -> IpcResult<()> {
     }
 }
 
-/// Closes the app through the exit handshake, as the caption button, Alt+F4, and the taskbar do.
+/// Closes the window it is called from through the exit handshake, as the caption button, Alt+F4, and the taskbar
+/// do: the main window closes the app, and a window beside it closes on its own after it saves.
 #[tauri::command]
-pub fn window_close(app: AppHandle) -> IpcResult<()> {
-    lifecycle::request_exit(&app, ExitReason::Close);
+pub fn window_close(app: AppHandle, window: WebviewWindow) -> IpcResult<()> {
+    if window.label() == MAIN {
+        lifecycle::request_exit(&app, ExitReason::Close);
+    } else {
+        window.close()?;
+    }
     Ok(())
 }
 
@@ -224,14 +276,50 @@ pub fn window_set_title(window: WebviewWindow, title: String) -> IpcResult<()> {
     Ok(window.set_title(&title)?)
 }
 
-/// Opens the real system menu at `at`, or at the title bar's start corner when `at` is `None` (section 10.7).
+/// Opens the real system menu at `at`, in physical pixels relative to the client area, or at the title bar's start
+/// corner when `at` is `None` (section 10.7).
 #[tauri::command]
 pub fn window_show_system_menu(window: WebviewWindow, at: Option<Point>) -> IpcResult<()> {
-    frame::show_system_menu(&window, at)
+    let usable = |value: f64| value.is_finite() && value.abs() <= 100_000.0;
+    if at.is_some_and(|at| !usable(at.x) || !usable(at.y)) {
+        return Err(IpcError::invalid("at", "The menu's position isn't a usable point."));
+    }
+    system_menu::show(&window, at)
 }
 
 /// Sets the frame colors for the theme the page shows.
 #[tauri::command]
 pub fn window_set_frame_theme(window: WebviewWindow, theme: ThemeName) -> IpcResult<()> {
     frame::set_theme(&window, theme)
+}
+
+#[cfg(test)]
+mod navigation_tests {
+    use super::is_app_url;
+
+    fn allowed(url: &str) -> bool {
+        is_app_url(&tauri::Url::parse(url).expect("a URL"))
+    }
+
+    #[test]
+    fn windows_stay_on_the_apps_own_pages() {
+        assert!(allowed("http://tauri.localhost/index.html?tool=timers"));
+        assert!(allowed("https://tauri.localhost/print.html"));
+        assert!(allowed("tauri://localhost/index.html"));
+        assert!(allowed("about:blank"));
+        assert!(allowed("about:srcdoc"));
+        assert!(allowed(
+            "blob:http://tauri.localhost/0b6a7c1e-1111-2222-3333-444455556666"
+        ));
+    }
+
+    #[test]
+    fn a_dropped_file_or_another_site_is_refused() {
+        assert!(!allowed("file:///C:/Users/sam/Downloads/notes.html"));
+        assert!(!allowed("https://example.com/"));
+        assert!(!allowed("http://opennote-asset.localhost/page/asset"));
+        assert!(!allowed("http://tauri.localhost.example.com/"));
+        assert!(!allowed("blob:https://example.com/0b6a7c1e"));
+        assert!(!allowed("data:text/html,hi"));
+    }
 }

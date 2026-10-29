@@ -7,7 +7,7 @@ import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import { PaletteSearch, RESULT_LIMIT, providersFor } from './search';
 import type { Ranked } from './search';
-import { CREATE_RESULT_ID, switcherProvider, withCreate } from './switcher';
+import { CREATE_RESULT_ID, switcherProviders, withCreate } from './switcher';
 
 export type PaletteMode = 'palette' | 'switcher';
 
@@ -19,7 +19,7 @@ export function usePaletteResults(mode: PaletteMode, query: string, filter: Pale
   const [search] = useState(() => new PaletteSearch(mode === 'switcher' ? withCreate : undefined));
   const providers = useRegistry(paletteProviders);
   useEffect(() => {
-    search.run(deferred, mode === 'switcher' ? [switcherProvider] : providersFor(providers, filter));
+    search.run(deferred, mode === 'switcher' ? switcherProviders() : providersFor(providers, filter));
   }, [search, deferred, mode, filter, providers]);
   useEffect(() => () => search.dispose(), [search]);
   const ranked = useSyncExternalStore(search.subscribe, search.get);

@@ -26,6 +26,8 @@ fn section(n: u64, group: Option<u64>, order: &str) -> SectionNode {
         pages: Vec::new(),
         access: Access::ReadWrite,
         encrypted: false,
+        archived: false,
+        pinned: false,
     }
 }
 
@@ -41,6 +43,7 @@ fn tree(groups: Vec<Group>, sections: Vec<SectionNode>) -> NotebookTree {
         sections,
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }
 
@@ -95,6 +98,7 @@ fn finds_sections_and_pages() {
         order: OrderKey::parse("a0").unwrap(),
         level: 0,
         pinned: false,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,
@@ -120,6 +124,7 @@ fn serializes_for_the_interface() {
         order: OrderKey::parse("a0").unwrap(),
         level: 1,
         pinned: true,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,
@@ -134,4 +139,42 @@ fn serializes_for_the_interface() {
     );
     assert_eq!(json["sections"][0]["color"], "fern");
     assert_eq!(json["access"], serde_json::json!({"access": "readWrite"}));
+}
+
+#[test]
+fn nodes_of_an_encrypted_section_say_so_so_nothing_indexes_them() {
+    let page = |n: u64| PageNode {
+        id: PageId(Id::from_parts(n, 4)),
+        title: format!("page {n}"),
+        parent: None,
+        order: OrderKey::parse("a0").unwrap(),
+        level: 0,
+        pinned: false,
+        archived: false,
+        color: None,
+        created: Timestamp::EPOCH,
+        modified: None,
+        state: PageNodeState::Normal,
+    };
+    let mut diary = section(10, None, "a0");
+    diary.encrypted = true;
+    diary.pages.push(page(20));
+    let mut open = section(11, None, "a1");
+    open.pages.push(page(21));
+    let t = tree(Vec::new(), vec![diary, open]);
+    let flags = |nodes: Vec<crate::session::notes::NodeInfo>| {
+        nodes.into_iter().map(|n| (n.title, n.encrypted)).collect::<Vec<_>>()
+    };
+    assert_eq!(
+        flags(crate::session::notes::children_of(&t, t.notebook.0).unwrap()),
+        [("section 10".to_owned(), true), ("section 11".to_owned(), false)]
+    );
+    assert_eq!(
+        flags(crate::session::notes::children_of(&t, Id::from_parts(10, 2)).unwrap()),
+        [("page 20".to_owned(), true)]
+    );
+    assert_eq!(
+        flags(crate::session::notes::children_of(&t, Id::from_parts(11, 2)).unwrap()),
+        [("page 21".to_owned(), false)]
+    );
 }

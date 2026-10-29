@@ -2,6 +2,8 @@
 // text, Copy as Markdown, the image's context menu, the slash item, and the Paste settings part.
 // registrations/images.ts loads this module right after start-up, so none of it counts against the start-up
 // bundle. The commands only apply once a page is shown, and their work loads on first use.
+import { isEnabled } from '../../../app/flags';
+import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import { registerAppMenu } from '../../../ui';
 import { registerPageCommand } from '../keys';
@@ -82,6 +84,16 @@ registerAppMenu('page.image', ({ host }) => {
       { id: 'altText', label: t('images.altText'), onSelect: run('altText') },
       { id: 'copy', label: t('common.copy'), separatorBefore: true, onSelect: () => document.execCommand('copy') },
       { id: 'copyAsMarkdown', label: t('paste.copyAsMarkdown'), onSelect: run('copyAsMarkdown') },
+      // Phase 12: text recognition runs on this device, and offers to turn itself on the first time.
+      ...(isEnabled('intel.ocr')
+        ? [
+            {
+              id: 'copyText',
+              label: t('intel.commands.copyImageText'),
+              onSelect: () => void executeCommand('intel.copyImageText', undefined, 'menu'),
+            },
+          ]
+        : []),
     ],
   };
 });

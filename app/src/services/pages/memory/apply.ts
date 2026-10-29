@@ -1,11 +1,36 @@
 // Applying edits to a page in memory (owner: WP2). The checks follow Phase 3's (crates/core/src/ops/resolve): a
 // splice must find its deleted text at its UTF-8 offset, blocks must exist, locked blocks refuse what their lock
 // forbids, and new blocks get order keys between their neighbors.
+import { applyStrokeEdit, dropStrokesOf } from './ink';
 import { applyMergePatch } from '../../../platform/mergePatch';
 import { PageServiceError } from '../types';
 import type { BlockId, BlockJson, Edit, PageJson } from '../types';
 
 const DIGITS = '0123456789abcdefghijklmnopqrstuvwxyz';
+
+/** The block types of version 1 (spec 6.3), and the names reserved for later versions (spec 6.4). */
+const V1_TYPES = ['text', 'ink', 'image', 'file', 'table'];
+const RESERVED_TYPES = ['chart', 'math', 'graph', 'embed', 'audio', 'pdf', 'card', 'break', 'shape', 'group'];
+/** OpenNote's own extension types, which it may edit (crates/core/src/ops/merge_patch/view.rs). */
+export const OWN_EXTENSION_PREFIX = 'ext:org.opennote/';
+
+/** A new block's type must be a version 1 type or an extension type, and an extension block needs a fallback. */
+function checkNewType(block: { type: string; fallback?: unknown }): void {
+  if (V1_TYPES.includes(block.type)) return;
+  if (!block.type.startsWith('ext:')) {
+    const why = RESERVED_TYPES.includes(block.type) ? 'reserved' : 'unknown';
+    throw new PageServiceError('invalid', `invalid edit: the block type "${block.type}" is ${why}`);
+  }
+  if (!block.fallback || typeof block.fallback !== 'object') {
+    throw new PageServiceError('invalid', `invalid edit: a block of type "${block.type}" needs a fallback`);
+  }
+}
+
+/** Data and fallback edits need a type this writer knows: version 1 or OpenNote's own (spec 6.5). */
+function knownType(block: BlockJson): void {
+  if (V1_TYPES.includes(block.type) || block.type.startsWith(OWN_EXTENSION_PREFIX)) return;
+  throw new PageServiceError('invalid', "invalid edit: blocks of unknown types can't be edited");
+}
 
 /** A key that sorts after `a` and before `b`, where null is the start or the end. */
 export function keyBetween(a: string | null, b: string | null): string {
@@ -136,6 +161,7 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
       if (page.blocks.some((block) => block.id === edit.block.id)) {
         throw new PageServiceError('invalid', `The page already has a block ${edit.block.id}.`);
       }
+      checkNewType(edit.block);
       const order = orderFor(page, null, edit.after, edit.before);
       const { frame, ...rest } = structuredClone(edit.block);
       const block: BlockJson = { ...rest, order, created: now, modified: now };
@@ -157,7 +183,18 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
       return null;
     }
     case 'patchBlock': {
-      if (edit.data || edit.fallback !== undefined) editable(blockOf(page, edit.block));
+      if (edit.data || edit.fallback !== undefined) {
+        editable(blockOf(page, edit.block));
+        knownType(blockOf(page, edit.block));
+        const current = blockOf(page, edit.block);
+        if (edit.fallback === null && current.fallback && !V1_TYPES.includes(current.type)) {
+          // A block newer than version 1 needs its readable copy (spec 6.5): it can be replaced, not removed.
+          throw new PageServiceError(
+            'invalid',
+            'invalid edit: a block of a type newer than version 1 needs a fallback',
+          );
+        }
+      }
       const block = ownBlock(page, edit.block);
       if (edit.data) block.data = applyMergePatch(block.data, edit.data);
       if (edit.lock === null) delete block.lock;
@@ -170,16 +207,26 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
     case 'deleteBlocks': {
       edit.blocks.forEach((id) => editable(blockOf(page, id)));
       page.blocks = page.blocks.filter((block) => !edit.blocks.includes(block.id));
+      dropStrokesOf(page, edit.blocks);
       const order = page.view.readingOrder;
       if (order) page.view = { ...page.view, readingOrder: order.filter((id) => !edit.blocks.includes(id)) };
       return null;
     }
     case 'setPage':
       if (edit.title !== undefined) page.title = edit.title;
+      if (edit.tags !== undefined) page.tags = [...edit.tags];
       if (edit.view) page.view = applyMergePatch(page.view, edit.view);
       return null;
     case 'addAsset':
       if (!page.assets[edit.asset]) throw new PageServiceError('notFound', `The page has no asset ${edit.asset}.`);
+      return null;
+    case 'removeStrokes':
+    case 'transformStrokes':
+    case 'restyleStrokes':
+    case 'moveStrokesToBlock':
+      return applyStrokeEdit(page, edit);
+    case 'removeAsset':
+      delete page.assets[edit.asset];
       return null;
   }
 }

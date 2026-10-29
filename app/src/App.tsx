@@ -8,6 +8,7 @@ import { NotebooksPane, PagesPane } from './features/tree';
 import { PageView } from './features/page';
 import { SettingsView } from './features/settings';
 import { SetupView } from './features/setup';
+import { QolPage } from './features/qol';
 import { TrashView } from './features/trash';
 import { BottomBar, CommandBar } from './shell/commandbar';
 import { useHistoryMouseButtons, useWindowTitle } from './shell/layout/history';
@@ -34,7 +35,7 @@ function View() {
       commandBar={<CommandBar />}
       notebooks={<NotebooksPane />}
       pages={<PagesPane />}
-      page={location.view === 'trash' ? <TrashView /> : <PageView />}
+      page={<QolPage>{location.view === 'trash' ? <TrashView /> : <PageView />}</QolPage>}
       bottomBar={<BottomBar />}
     />
   );

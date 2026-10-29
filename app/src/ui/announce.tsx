@@ -9,6 +9,8 @@ import { useSyncExternalStore } from 'react';
 import { visuallyHiddenClass } from './VisuallyHidden';
 
 const DUPLICATE_MS = 500;
+/** An announcement leaves the page after this long, so a screen reader browsing it does not read a stale error. */
+const LINGER_MS = 8000;
 
 type Regions = Record<'polite' | 'assertive', { text: string; count: number }>;
 const empty = (): Regions => ({ polite: { text: '', count: 0 }, assertive: { text: '', count: 0 } });
@@ -29,8 +31,15 @@ function record(text: string): boolean {
 
 export function announce(text: string, politeness: 'polite' | 'assertive' = 'polite'): void {
   if (!text || !record(text)) return;
-  regions = { ...regions, [politeness]: { text, count: regions[politeness].count + 1 } };
+  const count = regions[politeness].count + 1;
+  regions = { ...regions, [politeness]: { text, count } };
   listeners.forEach((listener) => listener());
+  // The log stays for tests; only the region on the page is emptied, and only if nothing newer replaced the text.
+  setTimeout(() => {
+    if (regions[politeness].count !== count) return;
+    regions = { ...regions, [politeness]: { text: '', count } };
+    listeners.forEach((listener) => listener());
+  }, LINGER_MS);
 }
 
 /**

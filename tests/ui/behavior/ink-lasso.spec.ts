@@ -1,0 +1,194 @@
+// The lasso on the web platform: it selects ink, the frame moves with the arrow keys, recolors, and deletes.
+import { expect, test } from '../fixtures';
+import { choose, draw, ellipse, heldStrokes, line, openPage } from '../ink';
+
+test('lassos ink, moves it from the keyboard, recolors it, and deletes it', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [400, 380]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(275, 365, 220, 90));
+  const frame = page.getByRole('group', { name: 'Selected ink and text' });
+  await expect(frame).toBeVisible();
+  const move = page.getByRole('button', { name: 'Move the selection' });
+  await expect(move).toBeFocused();
+  const before = (await frame.boundingBox())!;
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect.poll(async () => (await frame.boundingBox())!.x).toBeGreaterThan(before.x + 5);
+
+  await page.getByRole('button', { name: 'Recolor the selection' }).click();
+  await page.getByRole('menuitem', { name: 'Brick' }).click();
+  await expect.poll(async () => (await heldStrokes(page))[0]?.palette).toBe(3);
+
+  await page.getByRole('button', { name: 'Delete the selection' }).click();
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(0);
+  await expect(frame).toBeHidden();
+});
+
+test('keeps the selection bar inside the page view next to its right edge', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  const view = (await page.locator('[data-ink-overlay]').boundingBox())!;
+  const right = view.width - 60;
+  await draw(page, line([right - 120, 380], [right, 400]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(right - 60, 390, 90, 60));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  await expect(bar).toBeVisible();
+  const box = (await bar.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(view.x);
+  expect(box.x + box.width).toBeLessThanOrEqual(view.x + view.width + 1);
+  const sideways = await page.evaluate(() => {
+    const chrome = document.querySelector('[data-ink-chrome]')!.parentElement!;
+    return chrome.scrollWidth - chrome.clientWidth;
+  });
+  expect(sideways).toBeLessThanOrEqual(1);
+});
+
+// The selection bar flips below a selection at the top of the view, stays above one at the bottom, and, with a
+// selection as tall as the view, stays inside the view rather than leaving it.
+for (const [name, from, to] of [
+  ['near the top', 6, 30],
+  ['near the bottom', -40, -16],
+  ['as tall as the view', 4, -4],
+] as const) {
+  test(`keeps the selection bar fully inside the page view for a selection ${name}`, async ({ page }) => {
+    await openPage(page);
+    await choose(page, 'Pen, Ink, 0.5 mm');
+    const view = (await page.locator('[data-ink-overlay]').boundingBox())!;
+    const at = (offset: number) => (offset < 0 ? view.height + offset : offset);
+    const top = at(from);
+    const bottom = at(to);
+    await draw(page, line([300, top], [330, bottom]));
+    await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
+    await choose(page, 'Lasso select');
+    await draw(page, ellipse(315, (top + bottom) / 2, 120, Math.max(30, (bottom - top) / 2 + 12)));
+    const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+    await expect(bar).toBeVisible();
+    const box = (await bar.boundingBox())!;
+    const inside = await page.evaluate(() => {
+      const viewport = document.querySelector('[data-ink-overlay]')!.getBoundingClientRect();
+      return { top: viewport.top, bottom: viewport.bottom };
+    });
+    expect(box.y, 'the bar is cut off at the top').toBeGreaterThanOrEqual(inside.top - 1);
+    expect(box.y + box.height, 'the bar is cut off at the bottom').toBeLessThanOrEqual(inside.bottom + 1);
+  });
+}
+
+test('moves a text box with the ink the lasso takes', async ({ page }) => {
+  await openPage(page);
+  const view = (await page.locator('[data-ink-overlay]').boundingBox())!;
+  await choose(page, 'Select and type');
+  await page.mouse.click(view.x + 150, view.y + 520);
+  await page.keyboard.type('Spindle fibers');
+  await page.mouse.click(view.x + 600, view.y + 680);
+  const text = page.locator('[role="textbox"]', { hasText: 'Spindle fibers' });
+  await expect(text).toBeVisible();
+  const before = (await text.boundingBox())!;
+  const under = before.y - view.y + before.height + 16;
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, under], [330, under + 4]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(240, (before.y - view.y + under) / 2, 190, (under - (before.y - view.y)) / 2 + 40));
+  const move = page.getByRole('button', { name: 'Move the selection' });
+  await expect(move).toBeFocused();
+  await page.keyboard.press('Shift+ArrowRight');
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect.poll(async () => (await text.boundingBox())!.x).toBeGreaterThan(before.x + 5);
+  expect((await text.boundingBox())!.y).toBeGreaterThan(before.y + 5);
+});
+
+test('exports the lasso selection from its bar and menu, with a crop preview and a remembered smart or exact area', async ({
+  page,
+}) => {
+  test.slow();
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [400, 380]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(275, 365, 220, 90));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  const exportButton = bar.getByRole('button', { name: 'Export selection' });
+  await expect(exportButton).toBeVisible();
+  await expect(bar.getByRole('button', { name: 'Copy as image' })).toBeVisible();
+
+  // Pointing at Export selection shows the dashed area it will crop to, around the ink.
+  const crop = page.locator('[data-ink-crop]');
+  await expect(crop).toBeHidden();
+  await exportButton.hover();
+  await expect(crop).toBeVisible();
+  const frame = (await page.getByRole('group', { name: 'Selected ink and text' }).boundingBox())!;
+  const area = (await crop.boundingBox())!;
+  expect(area.x).toBeLessThan(frame.x);
+  expect(area.x + area.width).toBeGreaterThan(frame.x + frame.width);
+
+  await exportButton.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const areaGroup = dialog.getByRole('radiogroup', { name: 'Area' });
+  await expect(areaGroup.getByRole('radio', { name: /Smart/ })).toBeChecked();
+  const preview = dialog.getByRole('img', { name: /preview/i });
+  await expect(preview).toHaveAttribute('data-crop-mode', 'smart');
+  await areaGroup.getByRole('radio', { name: /Exact/ }).click();
+  await expect(preview).toHaveAttribute('data-crop-mode', 'exact');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+
+  // The menu on the selection has the same actions, and the dialog remembers Exact.
+  await page.getByRole('button', { name: 'Move the selection' }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Export selection' }).click();
+  await expect(page.getByRole('dialog').getByRole('radio', { name: /Exact/ })).toBeChecked();
+});
+
+test('groups two drawings, selects both from either, and deletes and restores them as one step', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [260, 360]));
+  await draw(page, line([420, 350], [530, 360]));
+  // The lasso needs both strokes in the page's index, which the core confirms a moment after each is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(2);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(340, 355, 240, 70));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  await bar.getByRole('button', { name: 'Group', exact: true }).click();
+  await expect(bar.getByRole('button', { name: 'Ungroup' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  const frame = page.getByRole('group', { name: 'Selected ink and text' });
+  await expect(frame).toBeHidden();
+
+  // Lassoing one of them takes the whole group.
+  await expect(page.getByRole('button', { name: 'Lasso select' })).toHaveAttribute('aria-pressed', 'true');
+  await draw(page, ellipse(205, 355, 75, 40));
+  await expect(frame).toBeVisible();
+  await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(300);
+
+  await page.getByRole('button', { name: 'Delete the selection' }).click();
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(0);
+  await page.keyboard.press('Control+z');
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(2);
+});
+
+test('lassoed handwriting offers Graph in its bar, which reads it as math and opens a graph', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [220, 420]));
+  await draw(page, line([220, 350], [150, 420]));
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(1);
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(185, 385, 120, 90));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  await bar.getByRole('button', { name: 'Graph' }).click();
+  await page
+    .getByRole('dialog', { name: /Turn on/ })
+    .getByRole('button', { name: 'Turn on' })
+    .click();
+  await expect(page.locator('[data-graph-popup]').getByRole('application')).toBeVisible();
+});

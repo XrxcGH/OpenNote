@@ -23,9 +23,13 @@ function wordScore(word: string, text: string): number {
   if (inside !== -1) return 200 - Math.min(inside, 99);
   let bonus = 0;
   let from = 0;
+  let first = -1;
   for (const letter of word) {
     const at = text.indexOf(letter, from);
     if (at === -1) return 0;
+    if (first === -1) first = at;
+    // Letters scattered across a long title are not a match: they must sit close together.
+    if (!atWordStart(text, at) && at - first > word.length * 2 + 2) return 0;
     if (atWordStart(text, at)) bonus += 3;
     else if (at === from && from > 0) bonus += 1;
     from = at + letter.length;

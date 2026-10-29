@@ -1,0 +1,66 @@
+name: crosscheck
+
+# A second opinion on OpenNote's exports and table formulas, from independent readers. They are built from pinned
+# revisions of open-source projects (tests/crosscheck/pins.json).
+#   - wordcraft-cli reads DOCX.
+#   - gridcraft-cli reads XLSX and evaluates formulas.
+#   - deckcraft-cli reads PPTX.
+#   - pdfcraft-cli reads PDF, with its accessibility check and PDF/A preflight.
+#
+# This job never blocks a merge. Those projects are alpha software and not ground truth, so a difference means
+# "look" and shows up as a warning. Nothing from them ships with OpenNote. See docs/CHECKS.md, "Cross-checks".
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 3 * * 1'
+  pull_request:
+    paths:
+      - 'crates/interop/src/export/**'
+      - 'crates/interop/src/docx/**'
+      - 'app/src/features/pages/pdf/**'
+      - 'app/src/features/tables/engine/**'
+      - 'tests/crosscheck/**'
+      - '.github/workflows/crosscheck.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  crosscheck:
+    runs-on: ubuntu-latest
+    # A failure of the job itself (a tool that did not build) must not turn a pull request red.
+    continue-on-error: true
+    # The first build of the four tools takes about 25 minutes. A run that passes the limit is stuck.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install tools
+        run: npm ci
+      - name: Build the cross-check tools from their pinned revisions
+        run: npm run crosscheck:install
+      - name: Make the corpus of exports
+        run: node tests/crosscheck/corpus.ts
+      - name: Check the exports with the other readers
+        run: node tests/crosscheck/run.ts --json crosscheck.json
+      - name: Compare table formulas with gridcraft-cli
+        run: npm run crosscheck:formulas
+      - name: Keep the corpus and the report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: crosscheck
+          path: |
+            tests/crosscheck/.corpus
+            crosscheck.json
+          if-no-files-found: ignore
+          retention-days: 14

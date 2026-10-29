@@ -40,6 +40,65 @@ test('spelling only reads comments in code', async () => {
   assert.equal(found.length, 1);
 });
 
+test('spelling knows the British forms of the words people write most', async () => {
+  const pairs: Record<string, string> = {
+    colour: 'color',
+    grey: 'gray',
+    centre: 'center',
+    behaviour: 'behavior',
+    favourite: 'favorite',
+    organise: 'organize',
+    recognise: 'recognize',
+    analyse: 'analyze',
+    licence: 'license',
+    catalogue: 'catalog',
+    cancelled: 'canceled',
+    labelled: 'labeled',
+    travelling: 'traveling',
+    metre: 'meter',
+    judgement: 'judgment',
+    speciality: 'specialty',
+    organisational: 'organizational',
+    cosiness: 'coziness',
+  };
+  const text = `# T\n\n${Object.keys(pairs).join(' ')}.\n`;
+  const found = await run({ rule: spelling, path: 'a.md', text });
+  assert.deepEqual(
+    found.map((f) => f.fix?.to),
+    Object.values(pairs),
+  );
+});
+
+test('spelling reads the text in the string literals of UI code and Rust', async () => {
+  const ui = await run({
+    rule: spelling,
+    path: 'app/src/features/a/B.tsx',
+    text: `const label = t('Choose a colour'); const key = 'colourKey';\n`,
+  });
+  assert.deepEqual(
+    ui.map((f) => f.fix?.to),
+    ['color'],
+  );
+  const rust = await run({
+    rule: spelling,
+    path: 'app/src-tauri/src/a.rs',
+    text: 'let message = "The folder is empty, so organise it first.";\nlet tag = "colour";\n',
+  });
+  assert.deepEqual(
+    rust.map((f) => f.fix?.to),
+    ['organize'],
+  );
+});
+
+test('spelling lets a proper name through, and skips tests', async () => {
+  const text = 'const label = "Visit Colour House today";\n';
+  const settings = { allow: ['colour'] };
+  assert.equal((await run({ rule: spelling, path: 'app/src/a/B.tsx', text, settings })).length, 0);
+  const plain = `const label = t('A colour for you');\n`;
+  assert.equal((await run({ rule: spelling, path: 'app/src/a/B.test.tsx', text: plain })).length, 0);
+  assert.equal((await run({ rule: spelling, path: 'app/src/a/B.tsx', text: plain })).length, 1);
+});
+
 test('spelling fixes are applied as whole words', () => {
   const result = applyFixes('The colour and colours.\n', [{ line: 1, from: 'colour', to: 'color' }]);
   assert.equal(result.text, 'The color and colours.\n');
@@ -56,6 +115,9 @@ test('articles follow sound, including acronyms', () => {
   assert.equal(expectedArticle('URL'), 'a');
   assert.equal(expectedArticle('OneNote'), 'a');
   assert.equal(expectedArticle('x-axis'), 'an');
+  assert.equal(expectedArticle('usable'), 'a');
+  assert.equal(expectedArticle('https'), 'an');
+  assert.equal(expectedArticle('NAS'), 'a');
 });
 
 test('grammar catches articles, repeats and confusions', async () => {

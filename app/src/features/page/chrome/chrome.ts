@@ -6,9 +6,9 @@ import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { getDensity } from '../../../state/layout';
 import { t } from '../../../strings/t';
 import type { PageBlockLayer } from '../blocks/blockLayer';
-import { isFloating } from '../blocks/textBlock';
+import { hasGrip, isFloating, liveBlock } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
-import { pageSelection } from '../seams/selectionStore';
+import { inkFrameShown, pageSelection } from '../seams/selectionStore';
 import type { PageViewport } from '../viewport/viewport';
 import styles from './chrome.module.css';
 
@@ -33,6 +33,10 @@ export interface Chrome {
 /** Handles' hit areas at mouse and touch density (BRAND.md section 6). */
 const MOUSE_HIT = 32;
 const TOUCH_HIT = 44;
+/** The least a grip shows when other blocks crowd the strip above its box. */
+const GRIP_MIN = 8;
+/** How far a text box's ring stands out from each side, beyond its outline offset. */
+const RING_SIDE = 4;
 
 function div(parent: HTMLElement, className: string): HTMLElement {
   const element = parent.ownerDocument.createElement('div');
@@ -60,6 +64,9 @@ class ChromeLayer implements Chrome {
   private readonly marks = new Map<string, HTMLElement>();
   private hovered: BlockId | null = null;
   private frame = 0;
+  /** The block elements with chrome, watched so a box that grows or shrinks (typing, a pasted block) is redrawn. */
+  private readonly watched = new Set<Element>();
+  private readonly sizes: ResizeObserver | null;
   private readonly stops: (() => void)[] = [];
 
   constructor(private readonly parts: ChromeParts) {
@@ -69,6 +76,7 @@ class ChromeLayer implements Chrome {
     this.dropLine = div(this.element, styles.dropLine);
     this.badge = div(this.element, styles.badge);
     this.marquee.hidden = this.dropLine.hidden = this.badge.hidden = true;
+    this.sizes = typeof ResizeObserver === 'function' ? new ResizeObserver(() => this.update()) : null;
     const world = parts.viewport.world;
     world.addEventListener('pointerover', this.onOver);
     world.addEventListener('pointerleave', this.onLeave);
@@ -76,6 +84,7 @@ class ChromeLayer implements Chrome {
       () => world.removeEventListener('pointerover', this.onOver),
       () => world.removeEventListener('pointerleave', this.onLeave),
       pageSelection.subscribe(() => this.update()),
+      inkFrameShown.subscribe(() => this.update()),
       parts.pool.onActiveChange(() => this.update()),
       parts.viewport.onCamera(() => this.update()),
       parts.layer.onChange(() => this.update()),
@@ -108,6 +117,7 @@ class ChromeLayer implements Chrome {
 
   destroy(): void {
     cancelAnimationFrame(this.frame);
+    this.sizes?.disconnect();
     this.stops.forEach((stop) => stop());
     this.element.remove();
   }
@@ -127,19 +137,36 @@ class ChromeLayer implements Chrome {
     this.element.dataset.density = getDensity();
     const used = new Set<string>();
     const origin = this.element.getBoundingClientRect();
+    const seen = new Set<Element>();
+    // Phase 5's selection frame moves and resizes what it frames, so a selected block shows no grip of its own then.
+    const framed = inkFrameShown.get();
     for (const { block, selected, editing } of this.shown()) {
       const element = this.parts.layer.view(block.id)?.element;
       if (!element) continue;
+      seen.add(element);
+      if (this.sizes && !this.watched.has(element)) {
+        this.watched.add(element);
+        this.sizes.observe(element);
+      }
       const rect = element.getBoundingClientRect();
       const box = new DOMRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height);
-      this.mark(used, `outline:${block.id}`, styles.outline!, box).classList.toggle(styles.selected!, selected);
-      if (block.type !== 'text') continue;
+      // A text box's ring stands a little out from its sides too, so the first letter never touches the line.
+      const ring =
+        block.type === 'text' ? new DOMRect(box.x - RING_SIDE, box.y, box.width + 2 * RING_SIDE, box.height) : box;
+      this.mark(used, `outline:${block.id}`, styles.outline!, ring).classList.toggle(styles.selected!, selected);
+      if (!hasGrip(block)) continue;
       if (block.lock) {
         this.mark(used, `lock:${block.id}`, styles.lock!, box);
         continue;
       }
-      this.handle(used, block, 'grip', box);
-      if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box);
+      if (selected && framed) continue;
+      this.handle(used, block, 'grip', box, origin);
+      if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box, origin);
+    }
+    for (const element of this.watched) {
+      if (seen.has(element)) continue;
+      this.watched.delete(element);
+      this.sizes?.unobserve(element);
     }
     for (const [key, element] of this.marks) {
       if (used.has(key)) continue;
@@ -152,16 +179,61 @@ class ChromeLayer implements Chrome {
   }
 
   /** A grip bar along the top of a text box, or a width handle on its right edge, with a full-size hit area. */
-  private handle(used: Set<string>, block: BlockJson, kind: 'grip' | 'width', box: DOMRect): void {
+  private handle(used: Set<string>, block: BlockJson, kind: 'grip' | 'width', box: DOMRect, origin: DOMRect): void {
     const hit = getDensity() === 'touch' ? TOUCH_HIT : MOUSE_HIT;
     const area =
       kind === 'grip'
-        ? new DOMRect(box.x, box.y - hit, Math.max(box.width, hit), hit)
+        ? this.gripArea(block, box, origin, hit)
         : new DOMRect(box.right - hit / 2, box.y, hit, Math.max(box.height, hit));
     const element = this.mark(used, `${kind}:${block.id}`, kind === 'grip' ? styles.grip! : styles.width!, area);
     element.dataset.handle = kind;
     element.dataset.block = block.id;
-    element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', { name: name(block) });
+    element.style.clipPath = kind === 'grip' ? this.gripHoles(block, area, origin) : '';
+    element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', {
+      name: name(liveBlock(this.parts.layer, block)),
+    });
+  }
+
+  /**
+   * The grip's hit area lies above its box. Where a floating panel or picture sits wholly in that strip (a study tape just
+   * above a text box), the grip stops short of it, so that block can still be pressed; it never gets thinner than a bar.
+   */
+  private gripArea(block: BlockJson, box: DOMRect, origin: DOMRect, hit: number): DOMRect {
+    const width = Math.max(box.width, hit);
+    let top = box.y - hit;
+    for (const other of this.parts.layer.blocks()) {
+      if (other.id === block.id || other.type === 'text' || !isFloating(other)) continue;
+      const rect = this.parts.layer.view(other.id)?.element.getBoundingClientRect();
+      if (!rect) continue;
+      const bottom = rect.bottom - origin.top;
+      const across = rect.left - origin.left < box.x + width && rect.right - origin.left > box.x;
+      if (across && bottom <= box.y + 1 && bottom > top) top = Math.min(bottom, box.y - GRIP_MIN);
+    }
+    return new DOMRect(box.x, top, width, box.y - top);
+  }
+
+  /**
+   * A floating panel or picture that reaches into the grip's strip (a study tape laid over the top of a text box) must
+   * still take its presses, so the grip is cut around it: its center is never under the grip.
+   */
+  private gripHoles(block: BlockJson, area: DOMRect, origin: DOMRect): string {
+    const holes: string[] = [];
+    for (const other of this.parts.layer.blocks()) {
+      if (other.id === block.id || other.type === 'text' || !isFloating(other)) continue;
+      const rect = this.parts.layer.view(other.id)?.element.getBoundingClientRect();
+      if (!rect) continue;
+      const left = Math.max(rect.left - origin.left - area.x, 0);
+      const right = Math.min(rect.right - origin.left - area.x, area.width);
+      const top = Math.max(rect.top - origin.top - area.y, 0);
+      const bottom = Math.min(rect.bottom - origin.top - area.y, area.height);
+      if (right <= left || bottom <= top) continue;
+      holes.push(
+        `${left}px ${top}px, ${right}px ${top}px, ${right}px ${bottom}px, ${left}px ${bottom}px, ${left}px ${top}px, 0 0`,
+      );
+    }
+    if (holes.length === 0) return '';
+    const outer = `0 0, ${area.width}px 0, ${area.width}px ${area.height}px, 0 ${area.height}px, 0 0`;
+    return `polygon(evenodd, ${outer}, ${holes.join(', ')})`;
   }
 
   private mark(used: Set<string>, key: string, className: string, box: DOMRect): HTMLElement {

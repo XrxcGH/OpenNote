@@ -65,7 +65,14 @@ export function PageView() {
         <>
           <TitleSlot band={band} title={title} changed={changed} />
           <Suspense fallback={null}>
-            <PageBody key={page.id} pageId={page.id} title={title} changed={changed} band={band} />
+            <PageBody
+              key={page.id}
+              pageId={page.id}
+              title={title}
+              treeTitle={page.title}
+              changed={changed}
+              band={band}
+            />
           </Suspense>
         </>
       ) : (

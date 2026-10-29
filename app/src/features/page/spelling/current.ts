@@ -4,6 +4,7 @@ import { isEnabled } from '../../../app/flags';
 import { commandContext } from '../../../commands/registry';
 import type { SpellingService } from '../../../editor/host';
 import type { SpellingClient } from '../../../platform/types';
+import { spellingLanguages } from '../../../state/language';
 import { getSettings, settingsStore } from '../../../state/settings';
 import { createSpellingEngine } from './engine';
 import type { SpellingEngine, SpellingRules } from './engine';
@@ -16,7 +17,7 @@ function rules(): SpellingRules {
   const spelling = getSettings().editing.spelling;
   return {
     enabled: spelling.enabled,
-    languages: spelling.languages,
+    languages: spellingLanguages(),
     personalWords: spelling.personalWords,
     ignoreUppercase: spelling.ignoreUppercase,
     ignoreWithDigits: spelling.ignoreWithDigits,
@@ -39,10 +40,13 @@ export function spellingEngine(): SpellingEngine | null {
   if (!source) return null;
   const started = createSpellingEngine(source, rules());
   let last = getSettings().editing.spelling;
+  let lastLocale = getSettings().language.locale;
   stopSettings = settingsStore.subscribe(() => {
     const next = getSettings().editing.spelling;
-    if (next === last) return;
+    const locale = getSettings().language.locale;
+    if (next === last && locale === lastLocale) return;
     last = next;
+    lastLocale = locale;
     started.setRules(rules());
   });
   engine = started;

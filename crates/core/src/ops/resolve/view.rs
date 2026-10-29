@@ -75,7 +75,7 @@ pub fn view_from_json(value: &Value, limits: &Limits) -> Result<PageView, String
         .object("background")?
         .map(|b| background_from_json(b, limits))
         .transpose()?;
-    let content_width = f.number("contentWidth")?;
+    let content_width = f.geometry("contentWidth")?;
     if content_width.is_some_and(|w| !size_ok(w, limits)) {
         return Err("view.contentWidth must be positive and within the limit".to_owned());
     }
@@ -102,15 +102,19 @@ fn size_ok(value: f64, limits: &Limits) -> bool {
 fn paper_from_json(map: &JsonMap, limits: &Limits) -> Result<Paper, String> {
     let f = Fields::new(map, "paper", PAPER_KEYS);
     let defaults = Paper::default();
-    let width = f.number("width")?.unwrap_or(defaults.width);
-    let height = f.number("height")?.unwrap_or(defaults.height);
+    let width = f.geometry("width")?.unwrap_or(defaults.width);
+    let height = f.geometry("height")?.unwrap_or(defaults.height);
     if !size_ok(width, limits) || !size_ok(height, limits) {
         return Err("the paper size must be positive and within the limit".to_owned());
     }
     let margins = match f.array("margins")? {
         [] if !map.contains_key("margins") => defaults.margins,
         [top, right, bottom, left] => {
-            let read = |v: &Value| v.as_f64().filter(|m| m.is_finite() && m.abs() <= limits.geometry_abs);
+            let read = |v: &Value| {
+                v.as_f64()
+                    .filter(|m| m.is_finite() && m.abs() <= limits.geometry_abs)
+                    .map(crate::format::json::geometry)
+            };
             let all = [top, right, bottom, left].map(read);
             match all {
                 [Some(t), Some(r), Some(b), Some(l)] => [t, r, b, l],
@@ -132,7 +136,7 @@ fn paper_from_json(map: &JsonMap, limits: &Limits) -> Result<Paper, String> {
 fn background_from_json(map: &JsonMap, limits: &Limits) -> Result<Background, String> {
     let f = Fields::new(map, "background", BACKGROUND_KEYS);
     let defaults = Background::default();
-    let spacing = f.number("spacing")?.unwrap_or(defaults.spacing);
+    let spacing = f.geometry("spacing")?.unwrap_or(defaults.spacing);
     if !size_ok(spacing, limits) {
         return Err("background.spacing must be positive and within the limit".to_owned());
     }

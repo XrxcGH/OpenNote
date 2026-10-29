@@ -41,7 +41,8 @@ pub fn read_section(bytes: &[u8], limits: &Limits) -> Result<SectionFile, Format
         extra: fields.rest(),
         format: Default::default(),
     };
-    if file.encryption.is_some() {
+    // A protected section opened in memory (ADR 0042) may change; a locked one may not.
+    if file.encryption.is_some() && !crate::store::sealed::is_unlocked(file.encryption.as_ref()) {
         restrict(&mut format, ReadOnlyReason::Encrypted);
     }
     Ok(SectionFile { format, ..file })

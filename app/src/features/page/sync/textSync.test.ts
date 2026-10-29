@@ -4,6 +4,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { META_AUTO_CHANGE, META_COMMAND } from '../../../editor/meta';
 import { PageServiceError } from '../../../services/pages/types';
+import { t } from '../../../strings/t';
+import { showToast } from '../../../ui/toast';
+import { setPrefs } from '../qol/prefs';
 import { exitHook } from './queue';
 import { blockId, caretAtEnd, syncPage, syncRig } from './testSync';
 import type { SyncRig } from './testSync';
@@ -166,6 +169,20 @@ describe('the edits a flush sends', () => {
   });
 });
 
+describe('a new text box', () => {
+  it('takes the order key the core chose, so a block inserted after it shows below it', async () => {
+    const rig = await syncRig(syncPage(['Oct 3, 2026']));
+    const draft = blockId(9);
+    rig.mount(draft, '', { block: { id: draft, type: 'text' } });
+    rig.type(draft, 'Typed');
+    await tick(150);
+    const held = (await rig.held()).blocks.find((block) => block.id === draft);
+    expect(held?.data.markdown).toBe('Typed');
+    expect(rig.orders[draft]).toBe(held?.order);
+    expect(rig.orders[draft] > 'a0').toBe(true);
+  });
+});
+
 describe('a change the core refuses', () => {
   const refuseOnce = (rig: SyncRig) => {
     const send = rig.page.send.bind(rig.page);
@@ -215,6 +232,32 @@ describe('a change the core refuses', () => {
     expect(held.blocks.map((block) => [block.id, block.data.markdown])).toEqual([[A, 'Onex']]);
   });
 
+  it('keeps the text and its riders when the core is busy, says so, and sends them with the next flush', async () => {
+    // A command that gave up waiting for the core (`coreBusy`) is not a resync: nothing typed is lost, the person
+    // hears that the change wasn't kept (the title bar says the core isn't responding), and the next flush sends it.
+    const rig = await syncRig(syncPage(['One', 'Two']));
+    caretAtEnd(rig.editors.get(A)!);
+    vi.mocked(showToast).mockClear();
+    const send = rig.page.send.bind(rig.page);
+    let refused = false;
+    vi.spyOn(rig.page, 'send').mockImplementation((batch) => {
+      if (refused) return send(batch);
+      refused = true;
+      return Promise.reject(new PageServiceError('coreBusy', 'The core is busy (page_open has held it for 15 s).'));
+    });
+    rig.type(A, 'x');
+    rig.queue.appendToNextBatch(A, [{ edit: 'deleteBlocks', blocks: [B] }]);
+    await tick(150);
+    expect(rig.queue.hasUnsent()).toBe(true);
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'page-sync-not-kept', message: t('pageSync.notKept.other'), tone: 'danger' }),
+    );
+    await rig.queue.flushAll('exit');
+    const held = await rig.held();
+    expect(held.blocks.map((block) => [block.id, block.data.markdown])).toEqual([[A, 'Onex']]);
+    expect(rig.queue.hasUnsent()).toBe(false);
+  });
+
   it('keeps the window open on exit while a refused change is unsent, until Close anyway', async () => {
     const rig = await syncRig(syncPage(['Hello']));
     caretAtEnd(rig.editors.get(A)!);
@@ -226,5 +269,28 @@ describe('a change the core refuses', () => {
     if (refused.ok) return;
     refused.closeAnyway?.();
     expect(await exit()).toEqual({ ok: true });
+  });
+});
+
+describe('typed hashtags', () => {
+  afterEach(() => setPrefs({ hashtags: true }));
+
+  it('sends the tag as its own step after the text, so one Undo leaves the plain #word', async () => {
+    const rig = await syncRig(syncPage(['']));
+    caretAtEnd(rig.editors.get(A)!);
+    rig.type(A, '#todo ');
+    await tick(300);
+    const kinds = rig.sent().map((batch) => batch.edits.map((edit) => edit.edit));
+    expect(kinds).toEqual([['spliceText'], ['setPage']]);
+    expect(rig.sent()[1]).toEqual({ edits: [{ edit: 'setPage', tags: ['todo'] }] });
+  });
+
+  it('adds no tag while the setting is off', async () => {
+    setPrefs({ hashtags: false });
+    const rig = await syncRig(syncPage(['']));
+    caretAtEnd(rig.editors.get(A)!);
+    rig.type(A, '#todo ');
+    await tick(300);
+    expect(rig.sent().flatMap((batch) => batch.edits.map((edit) => edit.edit))).toEqual(['spliceText']);
   });
 });

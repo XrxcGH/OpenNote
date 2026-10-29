@@ -1,0 +1,127 @@
+/*
+ * The science helpers' windows (constants, Insert LaTeX, significant figures). Plain controls on tokens. A pressed
+ * toggle is told by its fill and by aria-pressed, never by color alone.
+ */
+@layer components {
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .choiceLabel {
+    color: var(--color-text-secondary);
+  }
+
+  .toggle {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .toggle[aria-pressed='true'] {
+    background: var(--color-accent-primary-subtle);
+    border-color: var(--color-accent-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .name {
+    font-weight: var(--font-weight-regular);
+  }
+
+  .sub {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .symbol {
+    white-space: nowrap;
+  }
+
+  .value {
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .area {
+    min-block-size: 6rem;
+    padding: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+
+  .preview {
+    min-block-size: 4rem;
+    padding: var(--space-3);
+    overflow: auto;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .snippets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  /* A snippet's face is a short piece of math. It is set at a reading size in the page's serif, with a border that shows
+     in the dark theme too, in a square of at least 36 px. */
+  .snippet {
+    min-block-size: max(var(--target-size), 36px);
+    min-inline-size: max(var(--target-size), 36px);
+    padding-inline: var(--space-2);
+    font: inherit;
+    font-family: var(--font-reading);
+    font-size: var(--type-subtitle-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .snippet:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .result {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .big {
+    font-size: var(--type-subtitle-size);
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
+  }
+}

@@ -12,9 +12,10 @@
     background: var(--color-surface-sunken);
   }
 
+  /* The viewport takes focus only from a click or a script (tabindex -1), never from Tab, and the focus that matters
+     is in the page's text. A ring on it wrapped the scroll bar and read as a red line down its edge. */
   .viewport:focus-visible {
-    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
-    outline-offset: calc(-1 * var(--size-focus-ring-width));
+    outline: none;
   }
 
   .sizer {
@@ -24,6 +25,12 @@
 
   /* The world is the paper, in page units: one unit is one CSS pixel at 100% page zoom. */
   .world {
+    /* Where the page's text starts, shared by the title band and the flow, so the title lines up with the text on
+       every paper and at every zoom: 48 units in, 5% of a narrow page, never less than a fold button's width. A page
+       with sheets sets --flow-start to its column (pages/live/paginate.ts). */
+    --flow-margin: max(var(--size-chrome-hit), min(var(--size-flow-margin), calc(5cqi / var(--page-zoom, 1))));
+    --flow-start: var(--flow-margin);
+
     position: absolute;
     inset-block-start: 0;
     inset-inline-start: 0;

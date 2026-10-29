@@ -1,0 +1,18 @@
+{
+  "appVersion": "1.0.0-beta.2",
+  "channel": "beta",
+  "density": "touch",
+  "displayScalePercent": 150,
+  "enabledFlags": [
+    "shell.customFrame"
+  ],
+  "locale": "en-US",
+  "notebooks": {
+    "notebooks": 2,
+    "pages": 90,
+    "sections": 5
+  },
+  "textSizePercent": 100,
+  "theme": "dark",
+  "webview2Version": "154.0.3512.22"
+}

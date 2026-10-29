@@ -21,7 +21,7 @@ pub fn read_view(value: Value) -> Result<PageView, FormatError> {
     Ok(PageView {
         layout: fields.named("layout")?.unwrap_or(defaults.layout),
         mode: fields.named("mode")?.unwrap_or(defaults.mode),
-        content_width: fields.opt_f64("contentWidth")?,
+        content_width: fields.opt_geometry("contentWidth")?,
         reading_order: fields.ids("readingOrder")?,
         paper,
         background,
@@ -37,7 +37,7 @@ fn read_paper(value: Value) -> Result<Paper, FormatError> {
         Some(Value::Array(items)) if items.len() == 4 => {
             let mut margins = [0.0; 4];
             for (slot, item) in margins.iter_mut().zip(&items) {
-                *slot = fields.as_f64("margins", item)?;
+                *slot = fields.as_geometry("margins", item)?;
             }
             margins
         }
@@ -46,8 +46,8 @@ fn read_paper(value: Value) -> Result<Paper, FormatError> {
     Ok(Paper {
         size: fields.named("size")?.unwrap_or(defaults.size),
         orientation: fields.named("orientation")?.unwrap_or(defaults.orientation),
-        width: fields.opt_f64("width")?.unwrap_or(defaults.width),
-        height: fields.opt_f64("height")?.unwrap_or(defaults.height),
+        width: fields.opt_geometry("width")?.unwrap_or(defaults.width),
+        height: fields.opt_geometry("height")?.unwrap_or(defaults.height),
         margins,
         extra: fields.rest(),
     })
@@ -58,7 +58,7 @@ fn read_background(value: Value) -> Result<Background, FormatError> {
     let defaults = Background::default();
     Ok(Background {
         pattern: fields.named("pattern")?.unwrap_or(defaults.pattern),
-        spacing: fields.opt_f64("spacing")?.unwrap_or(defaults.spacing),
+        spacing: fields.opt_geometry("spacing")?.unwrap_or(defaults.spacing),
         color: fields.color("color")?.unwrap_or(defaults.color),
         margin_line: fields.bool_or("marginLine", defaults.margin_line)?,
         template: fields.opt_id("template")?,

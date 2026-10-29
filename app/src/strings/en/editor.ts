@@ -37,6 +37,11 @@ export const editor = {
     inline: 'Math: {source}',
     block: 'Display math: {source}',
     field: 'Math source',
+    visualField: 'Equation editor',
+    useVisual: 'Edit visually',
+    useLatex: 'Edit as LaTeX',
+    visualFailed: 'The visual editor could not load. The LaTeX field stays.',
+    spoken: 'Equation: {text}',
   },
   image: {
     chip: 'Image: {alt}',
@@ -221,6 +226,7 @@ export const editor = {
     to: 'With',
     add: 'Add replacement',
     remove: 'Remove {from}',
+    removeShort: 'Remove',
     empty: 'No replacements yet.',
     duplicate: 'There’s already a replacement for {from}.',
     reset: 'Restore the default replacements',
@@ -235,7 +241,6 @@ export const editor = {
     formattingBarTouch: 'For touch and pen',
     formattingBarAlways: 'Always',
     formattingBarNever: 'Never',
-    dateLine: 'Add the date and time under the title of a new page',
   },
   styles: {
     title: 'Text styles',

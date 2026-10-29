@@ -7,6 +7,7 @@ import { useUpdaterStatus } from '../../state/updater';
 import { t } from '../../strings/t';
 import { useResolvedTheme } from '../../theme/theme';
 import { Button, InkStroke, Window, confirm, showToast } from '../../ui';
+import notices from '../../../../THIRD_PARTY_NOTICES.md?raw';
 import { ExperimentalFlags } from './AboutFlags';
 import { host } from './host';
 import styles from './SettingsView.module.css';
@@ -17,7 +18,7 @@ function Facts() {
     [t('settings.about.version'), version],
     [t('settings.about.architecture'), t(`settings.about.architectures.${architecture}`)],
     [t('settings.about.channel'), t(`settings.about.channels.${channel}`)],
-    [t('settings.about.webview'), webview2Version],
+    [t('settings.about.webview'), webview2Version || t('settings.about.notReported')],
     [t('settings.about.license'), t('settings.about.licenseValue')],
   ];
   return (
@@ -81,6 +82,18 @@ function Mark() {
   );
 }
 
+/** The copyright lines and license text of the bundled fonts, from THIRD_PARTY_NOTICES.md. */
+function Notices() {
+  return (
+    <details className={styles.notices}>
+      <summary>{t('settings.about.notices')}</summary>
+      <pre className={styles.noticesText} tabIndex={0} aria-label={t('settings.about.noticesLabel')}>
+        {notices}
+      </pre>
+    </details>
+  );
+}
+
 export default function About() {
   const { channel } = host().boot;
   return (
@@ -88,6 +101,7 @@ export default function About() {
       <Mark />
       <Facts />
       <Actions />
+      <Notices />
       {isEnabled('notes.memorySnapshot') && <p className={styles.help}>{t('settings.about.snapshot')}</p>}
       {(channel === 'dev' || channel === 'nightly') && <ExperimentalFlags />}
     </>

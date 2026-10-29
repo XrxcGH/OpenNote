@@ -96,12 +96,20 @@ describe('Switch accessibility', () => {
     it(`passes axe in the ${theme} theme, on and off, with and without an icon`, async () => {
       renderUi(
         <main>
-          <Switch label="Show the pages list" checked onChange={() => {}} />
-          <Switch label="Show the notebooks" checked={false} onChange={() => {}} />
-          <Switch label="Dark mode" checked onChange={() => {}}>
-            <svg aria-hidden="true" width="20" height="20" />
-          </Switch>
-          <Switch label="Match Windows" checked={false} disabled="aria" onChange={() => {}} />
+          <div>
+            <Switch label="Show the pages list" checked onChange={() => {}} />
+          </div>
+          <div>
+            <Switch label="Show the notebooks" checked={false} onChange={() => {}} />
+          </div>
+          <div>
+            <Switch label="Dark mode" checked onChange={() => {}}>
+              <svg aria-hidden="true" width="20" height="20" />
+            </Switch>
+          </div>
+          <div>
+            <Switch label="Match Windows" checked={false} disabled="aria" onChange={() => {}} />
+          </div>
         </main>,
         { theme },
       );

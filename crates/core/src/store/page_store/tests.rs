@@ -8,10 +8,12 @@
 
 use super::*;
 use crate::format::ReadableState;
-use crate::id::{Id, PageId, StrokeId};
-use crate::model::{Access, InkRecord, ReadOnlyReason};
+use crate::id::{BlockId, Id, PageId, StrokeId};
+use crate::model::{Access, Asset, Block, BlockData, InkRecord, ReadOnlyReason};
 use crate::store::compact::plan_compaction;
-use crate::testing::sample::{sample_asset_id, sample_device, sample_page, sample_stroke, test_clock};
+use crate::testing::sample::{
+    sample_asset_id, sample_device, sample_ink_block, sample_page, sample_stroke, test_clock,
+};
 use crate::testing::{MemFs, NoLinks};
 use crate::time::TestClock;
 
@@ -178,6 +180,44 @@ fn a_missing_asset_stops_the_save_before_anything_is_replaced() {
     assert_eq!(h.store.fingerprint(&h.dir).unwrap(), None);
 }
 
+/// The sample page with a second asset: an audio file in the `recording` state, as a recording saves it
+/// before it begins (spec 10.2).
+fn with_growing_audio(page: &mut Page) -> Asset {
+    let mut audio = page.assets.values().next().unwrap().clone();
+    audio.id = "01m3sa43z1tp9rdr5e8df2jbxz".parse().unwrap();
+    audio.file = format!("{}-mic.ogg", audio.id);
+    audio.mime = "audio/ogg".into();
+    audio.bytes = 0;
+    audio.extra.insert("state".into(), "recording".into());
+    assert!(audio.is_recording());
+    page.assets.insert(audio.id, audio.clone());
+    audio
+}
+
+#[test]
+fn a_recording_that_is_still_growing_does_not_stop_a_save_or_make_the_page_read_only() {
+    let h = Harness::new();
+    let mut page = sample_page();
+    h.put_assets(&page);
+    let audio = with_growing_audio(&mut page);
+    let path = NotebookLayout::asset_path(&h.dir, &audio).unwrap();
+    // Before the recording begins its file doesn't exist, and while it runs the file grows.
+    let (saved, first) = h.save(&page, None, CompactionPlan::None);
+    h.fs.put(&path, &[1u8; 300]);
+    let (saved, _) = h.save(&saved, Some(first.stamp), CompactionPlan::None);
+    let loaded = h.store.load(&h.dir).unwrap();
+    assert!(loaded.missing.is_empty(), "{:?}", loaded.missing);
+    assert!(!loaded.page.format.access.is_read_only());
+    assert_eq!(loaded.page.assets[&audio.id].extra["state"], "recording");
+    // A finished asset is checked as always.
+    let mut finished = saved.clone();
+    let entry = finished.assets.get_mut(&audio.id).unwrap();
+    entry.extra.clear();
+    entry.bytes = 299;
+    let err = h.store.save(&h.dir, request(&finished, None)).unwrap_err();
+    assert_eq!(err, SaveError::MissingAsset(audio.id));
+}
+
 #[test]
 fn a_change_on_disk_stops_the_save_unless_the_revision_is_the_same() {
     let h = Harness::new();
@@ -243,6 +283,15 @@ fn a_page_that_reads_back_differently_is_not_saved() {
         "{err:?}"
     );
     assert_eq!(h.store.fingerprint(&h.dir).unwrap(), None);
+    // The segment written for the pending stroke went with the failed save: a retry writes its own, and a save
+    // that fails every time (beta 4's T2-1 did, every 30 seconds) must not fill `ink/` with orphans.
+    let orphans: Vec<_> =
+        h.fs.files()
+            .into_iter()
+            .filter(|p| p.extension().is_some_and(|e| e == "onk"))
+            .collect();
+    assert!(orphans.is_empty(), "{orphans:?}");
+    assert!(h.store.written.lock().unwrap().is_empty());
 }
 
 #[test]
@@ -344,4 +393,42 @@ fn unconfirmed_durability_is_reported() {
         h.save(&page, None, CompactionPlan::None).1.durability,
         Durability::Unconfirmed
     );
+}
+
+#[test]
+fn ink_anchored_at_a_fractional_offset_saves() {
+    use crate::model::{AnchorQuote, InkAnchor, InkBlockData, InkRole, JsonMap, Named};
+    let h = Harness::new();
+    let mut page = sample_page();
+    h.put_assets(&page);
+    let text = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Text(_)))
+        .unwrap()
+        .id;
+    let mut anchored = Block::clone(page.blocks.get(sample_ink_block()).unwrap());
+    anchored.id = BlockId(Id::parse("01m3sa1242ayy4avvsz3yx5gxk").unwrap());
+    anchored.data = BlockData::Ink(InkBlockData {
+        role: Named::Known(InkRole::Anchored),
+        stroke_count: 0,
+        anchor: Some(InkAnchor {
+            block: text,
+            para: None,
+            at: Some(0),
+            quote: Some(AnchorQuote {
+                prefix: String::new(),
+                exact: String::new(),
+                suffix: String::new(),
+                extra: JsonMap::new(),
+            }),
+            dx: 12.345_678,
+            dy: -0.001,
+            extra: JsonMap::new(),
+        }),
+        ..InkBlockData::default()
+    });
+    page.blocks.insert(Arc::new(anchored)).unwrap();
+    let (saved, _) = h.save(&page, None, CompactionPlan::None);
+    assert_eq!(h.store.load(&h.dir).unwrap().page, saved);
 }

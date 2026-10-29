@@ -1,0 +1,22 @@
+{
+  "language": "en",
+  "sentences": [
+    {
+      "text": "Photosynthesis is the process plants use to turn light energy into chemical energy.",
+      "span": {
+        "start": 0,
+        "end": 83
+      },
+      "score": 0.96005803
+    },
+    {
+      "text": "Plants need sunlight, water, and carbon dioxide for photosynthesis.",
+      "span": {
+        "start": 134,
+        "end": 201
+      },
+      "score": 1.0
+    }
+  ],
+  "inputSentences": 4
+}

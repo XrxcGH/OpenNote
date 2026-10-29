@@ -15,7 +15,34 @@
       'title title title'
       'commands commands commands'
       'notebooks pages page';
-    overflow: hidden;
+    overflow: clip;
+  }
+
+  /* Both panes collapsed: their rails share one column, the notebooks rail above the pages rail, so two rails don't
+     take 96 px for five buttons. */
+  .workspace[data-rails] {
+    grid-template-columns: var(--size-rail) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'title title'
+      'commands commands'
+      'notebooks page'
+      'pages page';
+  }
+
+  .workspace[data-rails] .pages > [data-rail] {
+    padding-block-start: 0;
+  }
+
+  /* Focus mode: only the title bar and the page. */
+  .workspace[data-focus] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'title' 'page';
+  }
+
+  .workspace[data-focus] :is(.commandBar, .notebooks, .pages, .appBar, .bottomBar) {
+    display: none;
   }
 
   :global(:root[data-size-class='compact']) .workspace {
@@ -70,16 +97,18 @@
     grid-area: pages;
   }
 
+  /* --pane-padding lets a pane's footer reach the pane's bottom edge (Tree.module.css). */
   .paneBody {
+    --pane-padding: var(--space-4);
     flex: 1;
     min-block-size: 0;
     overflow: auto;
-    padding: var(--space-4);
+    padding: var(--pane-padding);
   }
 
   /* The 24 px touch hit area of a splitter reaches 12 px into the pane, so rows start clear of it. */
   :global(:root[data-density='touch']) .paneBody {
-    padding: var(--space-5);
+    --pane-padding: var(--space-5);
   }
 
   /* The desk the page lies on. By day, warm window light pools from the top corner, and a soft patch of it falls on
@@ -89,9 +118,13 @@
      text. */
   .page {
     grid-area: page;
+    /* Docked panels take the right edge (dock.ts), so the page, its scroll bar, and its chips end beside them. */
+    margin-inline-end: var(--dock-inset-right, 0px);
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
+    /* The panes inside the page (Reading order, Contents) give way to the page by this width (pane.module.css). */
+    container: page-region / inline-size;
     background:
       /* The patch of window light on the desk, wider than it is tall, as light falls on a flat surface. */
       radial-gradient(closest-side, var(--color-ambient-glow) 40%, transparent) 95.5% 84.5% / min(56%, 420px)
@@ -99,6 +132,11 @@
       /* The pool of light from the window at the top corner. */
         radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-sunken);
+  }
+
+  /* The linked pages pane (search/backlinks) is a sheet at the window's end: the page leaves room for it. */
+  :global(body[data-linked-pages]) .page {
+    margin-inline-end: calc(var(--dock-inset-right, 0px) + min(24rem, 90vw) + var(--space-4));
   }
 
   :global(:root[data-theme='dark']) .page {

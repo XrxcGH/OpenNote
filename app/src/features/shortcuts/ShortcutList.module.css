@@ -10,7 +10,12 @@
   .section > [role='radiogroup'] {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-inline-size: 44rem;
+    /* The same width as the list below, so the cards, the filter row, and the table end on one edge. */
+    max-inline-size: 56rem;
+  }
+
+  .section > [role='radiogroup'] > [role='radio'] {
+    align-content: start;
   }
 
   :global(:root[data-size-class='compact']) .section > [role='radiogroup'] {
@@ -35,12 +40,6 @@
      text below it. */
   .toolbar > :not(:first-child) {
     margin-block-start: calc(var(--type-small-line) + var(--space-2));
-  }
-
-  /* The switch's hover area pads it by 8 px and a 1 px border. When the switch ends the row, the area hangs out
-     past the end, so its track lines up with the tables' end edge, as Settings does at the start edge. */
-  .toolbar > [role='switch']:last-child {
-    margin-inline-end: calc(-1 * (var(--space-3) + 1px));
   }
 
   /* On the Settings page the tables don't scroll on their own, but keep the dialog's space between them. Positioned,
@@ -94,7 +93,7 @@
      names wrap more gracefully than the keys, so the keys get the room: two chords fit on one line, and no key cap
      runs into the Change button. The actions column holds Change and Reset side by side. */
   .nameColumn {
-    inline-size: 33%;
+    inline-size: 42%;
   }
 
   .actionsColumn {
@@ -107,6 +106,12 @@
     border-block-end: 1px solid var(--color-border-subtle);
     text-align: start;
     vertical-align: middle;
+  }
+
+  /* The first column's text lines up with the group title and the filter above it. */
+  .table th:first-child,
+  .table td:first-child {
+    padding-inline-start: 0;
   }
 
   .name {
@@ -146,7 +151,7 @@
   }
 
   .kbd {
-    padding: var(--space-0) var(--space-2);
+    padding: var(--space-1) var(--space-3);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
     background: var(--color-surface-sunken);

@@ -5,6 +5,7 @@ import { useId } from 'react';
 import { Art } from './Art';
 import type { ArtProps } from './Art';
 import styles from './illustrations.module.css';
+import { CANDLE } from './shapes';
 
 export function CandleArt() {
   const glow = useId();
@@ -17,21 +18,31 @@ export function CandleArt() {
           <stop offset="1" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle className={styles.halo} cx="14" cy="12" r="16" fill={`url(#${glow})`} />
-      <path className={styles.sun} d="M14 4.6C17.8 9.6 18.2 14.6 14.2 17.8 10.2 14.8 10.4 9.8 14 4.6Z" />
-      <path d="M14 18.4V22" />
-      <path d="M9 22.6C12 21.8 16 22 19 22.5L19.2 54.2C16 54.9 12 54.8 8.8 54.1Z" />
-      <path d="M16.2 22.8C16.4 26.4 16 28.2 14.8 28.6" />
-      <path className={styles.fillClay} d="M3 51C8 56.2 20 56.4 25 51.2" />
-      <path d="M8 56H20" />
+      <circle className={styles.halo} {...CANDLE.halo} fill={`url(#${glow})`} />
+      <path className={styles.sun} d={CANDLE.flame} />
+      <path d={CANDLE.wick} />
+      <path d={CANDLE.body} />
+      <path d={CANDLE.shine} />
+      <path className={styles.fillClay} d={CANDLE.dish} />
+      <path d={CANDLE.base} />
     </>
   );
 }
 
+/**
+ * The glow reaches past the candle's own box on three sides (above the flame and on its left and right), so the
+ * candle on its own gets a margin as wide as the glow overhangs. Without it the glow would end in a hard edge at the top and sides.
+ */
+const GLOW_X = CANDLE.halo.r - CANDLE.halo.cx;
+const GLOW_Y = CANDLE.halo.r - CANDLE.halo.cy;
+
 export function Candle({ className }: ArtProps) {
+  const [width, height] = [CANDLE.box[0] + 2 * GLOW_X, CANDLE.box[1] + GLOW_Y];
   return (
-    <Art width={28} height={58} className={className}>
-      <CandleArt />
+    <Art width={width} height={height} className={className}>
+      <g transform={`translate(${GLOW_X} ${GLOW_Y})`}>
+        <CandleArt />
+      </g>
     </Art>
   );
 }

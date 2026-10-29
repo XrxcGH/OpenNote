@@ -1,0 +1,121 @@
+/*
+ * The document-structure tool windows: practice mode, the formula sheet builder, and the figure exporter. Calm and
+ * quiet, on tokens. A hidden step is shown as a quiet dashed line in words, never by color alone.
+ */
+@layer components {
+  .tool {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .field select {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .area {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .area:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .problem {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .problem p,
+  .step p,
+  .answer p {
+    margin: 0;
+  }
+
+  .steps {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .step,
+  .answer {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+  }
+
+  .step[data-hidden] {
+    border-style: dashed;
+  }
+
+  .stepLabel {
+    font-size: var(--type-small-size);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .hidden {
+    font-size: var(--type-small-size);
+    color: var(--color-text-muted);
+  }
+
+  .preview {
+    margin: 0;
+    padding: var(--space-2);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .preview img {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+
+  .status {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  /* An empty status line holds no room: no reserved line and no grid gap above it. */
+  .status:empty {
+    margin-block-end: calc(-1 * var(--space-4));
+  }
+}

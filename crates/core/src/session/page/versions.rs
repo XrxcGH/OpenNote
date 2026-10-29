@@ -65,6 +65,10 @@ impl PageSession {
             let page = notebook.add_page_copy(self.id, version)?;
             return Ok(RestoreResult::Copied { page });
         }
+        // A locked entry keeps its content; only a copy of an older version may come back (ADR 0041).
+        if crate::ops::resolve::entry_lock::is_locked(&self.state().page) {
+            return Err(CoreError::Edit(EditError::ReadOnly(ReadOnlyReason::LockedEntry)));
+        }
         let revision = self.replace_content(version, VersionReason::BeforeRestore)?;
         Ok(RestoreResult::Restored { revision })
     }
@@ -194,13 +198,18 @@ impl PageSession {
         Ok(found)
     }
 
-    fn conflict_page(&self, rev: RevisionId) -> Result<(PathBuf, Vec<u8>, Page), CoreError> {
+    pub(crate) fn conflict_page(&self, rev: RevisionId) -> Result<(PathBuf, Vec<u8>, Page), CoreError> {
         let dir = self.dir();
         let path = NotebookLayout::conflict_path(&dir, rev);
         let bytes = self.ctx.fs.read(&path, self.ctx.limits.page_json_bytes)?;
         let read = self.ctx.codec.read_page(&bytes, &self.ctx.limits)?;
         let page = self.with_ink(&dir, read.page)?;
         Ok((path, bytes, page))
+    }
+
+    /// The page as it is now, as plain text.
+    pub(crate) fn current_text(&self) -> String {
+        self.state().page.plain_text()
     }
 
     /// The other version of a conflict, read-only.
@@ -302,6 +311,13 @@ impl PageSession {
         let asset = self.ctx.backend.import_asset(&dir, source, &ctx)?;
         self.state().imported.insert(asset.id, asset.clone());
         Ok(asset)
+    }
+
+    /// Takes an asset whose file another part of the app wrote in the page's `assets` folder, such as an audio
+    /// recording, so a following `addAsset` edit can put it in the table. A recording that is still growing
+    /// comes with `state` set to `recording` (spec 10.2).
+    pub(crate) fn adopt_asset(&self, asset: Asset) {
+        self.state().imported.insert(asset.id, asset);
     }
 
     /// Reads an asset, or a range of it, and closes the file at once.

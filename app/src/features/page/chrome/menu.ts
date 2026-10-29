@@ -1,10 +1,14 @@
 // The object menu (ARCHITECTURE.md sections 11.3, 11.6, and 11.7; owner WP3): right-click, a long press, the
 // barrel button, Shift+F10, or the Menu key on a selected block. Every drag on the page has a menu or field
 // alternative here, and z-order items at an end say why they are off ("Already in front").
+import { menuItemsFor } from '../../../commands/menus';
+import { commandContext, executeCommand } from '../../../commands/registry';
 import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
+import { isEnabled } from '../../../app/flags';
 import { openMenu } from '../../../ui';
 import type { MenuAnchor, MenuItemSpec } from '../../../ui';
+import { oneImageSelected } from '../images/shown';
 import type { ObjectCommand, Objects } from '../objects/objects';
 
 const ITEMS: readonly { id: ObjectCommand; label: MessageKey; off?: MessageKey; separatorBefore?: boolean }[] = [
@@ -24,17 +28,45 @@ const ITEMS: readonly { id: ObjectCommand; label: MessageKey; off?: MessageKey; 
 
 /** The menu's items for the current selection; items that don't apply are left out or say why they are off. */
 export function objectMenuItems(objects: Objects): MenuItemSpec[] {
-  return ITEMS.flatMap(({ id, label, off, separatorBefore }) => {
+  const shown = new Set<string>();
+  const items = ITEMS.flatMap(({ id, label, off, separatorBefore }) => {
     const enabled = objects.enabled(id);
     if (!enabled && !off) return [];
     const item: MenuItemSpec = { id, label: t(enabled || !off ? label : off), disabled: !enabled };
+    // "Already in front" says it once, not for each of the two front items.
+    if (!enabled) {
+      if (shown.has(item.label)) return [];
+      shown.add(item.label);
+    }
     if (separatorBefore) item.separatorBefore = true;
     if (id === 'delete') item.danger = true;
     return [item];
   });
+  if (oneImageSelected()) {
+    const image: MenuItemSpec[] = [{ id: 'altText', label: t('images.altText'), separatorBefore: true }];
+    if (isEnabled('intel.ocr')) image.push({ id: 'copyText', label: t('intel.commands.copyImageText') });
+    items.splice(1, 0, ...image);
+  }
+  return items;
+}
+
+/** Items other features add to the object menu (contextMenus with menu 'page.object'), such as Export selection. */
+function registeredItems(): MenuItemSpec[] {
+  try {
+    const items = menuItemsFor('page.object', commandContext('menu'));
+    return items.map((item, i) => (i === 0 ? { ...item, separatorBefore: true } : item));
+  } catch {
+    // Commands aren't configured, as in a bare page test: the menu has only its own items.
+    return [];
+  }
 }
 
 export async function openObjectMenu(objects: Objects, anchor: MenuAnchor): Promise<void> {
-  const chosen = await openMenu({ label: t('page.object.menuLabel'), items: objectMenuItems(objects), anchor });
-  if (chosen) objects.command(chosen as ObjectCommand);
+  const own = objectMenuItems(objects);
+  const extra = registeredItems();
+  const chosen = await openMenu({ label: t('page.object.menuLabel'), items: [...own, ...extra], anchor });
+  // A registered item runs its own command through onSelect.
+  if (chosen === 'altText') void executeCommand('object.altText', undefined, 'menu');
+  else if (chosen === 'copyText') void executeCommand('intel.copyImageText', undefined, 'menu');
+  else if (chosen && own.some((item) => item.id === chosen)) objects.command(chosen as ObjectCommand);
 }

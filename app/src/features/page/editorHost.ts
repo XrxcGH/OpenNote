@@ -28,6 +28,8 @@ export function createEditorHost(overrides: Partial<EditorHost> = {}): EditorHos
     screenReader: () => osStore.get().screenReader,
     spelling: pageSpelling,
     selectBlocks: (blocks) => selectOnPage({ blocks, strokes: [] }, { announce: true }),
+    graph: () => (isEnabled('math.grapher') ? import('../math').then((loaded) => loaded.graphRenderer) : null),
+    math: () => (isEnabled('math.latex') ? import('../math').then((loaded) => loaded.mathRenderer) : null),
     ...overrides,
   };
 }

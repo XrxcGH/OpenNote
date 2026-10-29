@@ -1,0 +1,53 @@
+/* The live caption strip. Colors come from Windows' caption settings when it has them, and from the theme otherwise. */
+@layer components {
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .strip {
+    position: fixed;
+    inset-inline: var(--space-4);
+    z-index: var(--layer-overlay);
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .bottom {
+    inset-block-end: calc(var(--panel-bottom) + var(--space-5));
+  }
+
+  .top {
+    inset-block-start: calc(var(--panel-top) + var(--space-5));
+  }
+
+  .box {
+    display: grid;
+    gap: var(--space-1);
+    max-inline-size: min(48rem, 100%);
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    pointer-events: auto;
+  }
+
+  .line {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .partial {
+    opacity: 0.8;
+  }
+
+  .late {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+}
