@@ -103,8 +103,10 @@ fn now_ms() -> i64 {
         .unwrap_or(0)
 }
 
+/// The code and the detail, never the crate's English: the interface's words for each code live in
+/// `app/src/strings/en/sync.ts`.
 fn fail(error: SyncError) -> IpcError {
-    IpcError::new(error.code(), error.to_string())
+    IpcError::new(error.code(), error.detail())
 }
 
 fn bad(message: &str) -> IpcError {

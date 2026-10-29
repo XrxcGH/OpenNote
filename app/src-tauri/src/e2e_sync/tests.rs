@@ -222,3 +222,36 @@ fn secrets_leave_the_call_arguments_before_anything_else_runs() {
     assert_eq!(args["backend"]["kind"], "nowhere", "the rest stays");
     assert!(service.take_recovery().is_err(), "joining shows no recovery key");
 }
+
+#[test]
+fn errors_reach_the_interface_as_a_code_and_a_detail_never_as_english() {
+    let every = [
+        SyncError::WrongSecret,
+        SyncError::NoVault,
+        SyncError::VaultExists,
+        SyncError::Tampered("a head doesn't open".into()),
+        SyncError::Rollback,
+        SyncError::Incomplete,
+        SyncError::Removed,
+        SyncError::PairingExpired,
+        SyncError::ClockAhead,
+        SyncError::Storage("timed out".into()),
+        SyncError::Local("permission denied".into()),
+        SyncError::WeakPassphrase(10),
+        SyncError::Newer,
+        SyncError::Interrupted,
+    ];
+    for error in every {
+        let sent = fail(error.clone());
+        assert_eq!(
+            known_code(&sent.code),
+            Some(error.code()),
+            "the status knows {}",
+            sent.code
+        );
+        assert!(!error.to_string().is_empty() && !sent.message.contains(&error.to_string()));
+    }
+    assert_eq!(fail(SyncError::Rollback).message, "");
+    assert_eq!(fail(SyncError::Storage("timed out".into())).message, "timed out");
+    assert_eq!(fail(SyncError::WeakPassphrase(10)).message, "10");
+}

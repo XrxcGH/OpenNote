@@ -1,7 +1,9 @@
-//! What can go wrong while syncing, in words a person can act on.
+//! What can go wrong while syncing.
 //!
-//! Every message says what happened and what to do, calmly. None of them holds a key, a passphrase, a note's
-//! text, or a file name from inside a notebook, so they are safe to show and to log.
+//! The interface matches on [`SyncError::code`] and shows the words for it from `app/src/strings/en/sync.ts`, so
+//! they are reviewed and translated with the rest; it gets [`SyncError::detail`] only for diagnostics. The
+//! messages here are for logs and tests. None of them holds a key, a passphrase, a note's text, or a file name from
+//! inside a notebook, so they are safe to log.
 
 use thiserror::Error;
 
@@ -39,7 +41,8 @@ pub enum SyncError {
     /// The pairing code is past its day only by the time on another device's newest change, which is well ahead
     /// of this device's clock: one of the two clocks is wrong.
     #[error(
-        "That pairing code has expired by another device's clock, which is ahead of this one. Check the date and          time on each device, then make a new code."
+        "That pairing code has expired by another device's clock, which is ahead of this one. Check the date and \
+         time on each device, then make a new code."
     )]
     ClockAhead,
     /// The storage couldn't be reached or refused a request.
@@ -82,6 +85,16 @@ impl SyncError {
             SyncError::WeakPassphrase(_) => "weakPassphrase",
             SyncError::Newer => "newer",
             SyncError::Interrupted => "interrupted",
+        }
+    }
+
+    /// What the variant carries, for diagnostics: the storage's or the system's reason, which part of storage
+    /// failed its check, or the shortest passphrase. Empty for the rest. Never words to show a person.
+    pub fn detail(&self) -> String {
+        match self {
+            SyncError::Tampered(detail) | SyncError::Storage(detail) | SyncError::Local(detail) => detail.clone(),
+            SyncError::WeakPassphrase(least) => least.to_string(),
+            _ => String::new(),
         }
     }
 
