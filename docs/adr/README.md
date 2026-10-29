@@ -76,6 +76,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0046](0046-one-command-registry.md) | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history | Accepted | 2026-10-15 |
 | [0047](0047-typed-hashtags-become-tags.md) | Typed #words become page tags | Proposed | 2026-10-21 |
 | [0048](0048-choice-columns.md) | Choice columns keep their options in the column schema and their values as plain text | Proposed | 2026-10-21 |
+| [0055](0055-macos-and-linux.md) | macOS and Linux builds degrade feature by feature and say what they lack | Proposed | 2026-10-29 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 

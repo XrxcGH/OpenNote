@@ -24,6 +24,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Math solvers](#math-solvers)
 
 - [Document structure](#document-structure)
+- [macOS and Linux](#macos-and-linux)
 
 ## How to read the status
 
@@ -590,3 +591,11 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
 | Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
 | Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |
+
+## macOS and Linux
+
+(DeriveNotes lane "platforms", [ADR 0055](adr/0055-macos-and-linux.md). Help: [OpenNote on macOS and Linux](help/install-macos-linux.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| macOS and Linux builds | `OpenNote_macOS.dmg` (one universal app for macOS 11 and later) and `OpenNote_Linux.AppImage` (64-bit, glibc 2.35 or later), unsigned until the owner adds the signing secrets. File dialogs, Open with the default app, recording, and the folders follow each system. Command replaces Ctrl in shortcuts on a Mac. Settings, then About, and Show what works on this computer list what still needs Windows. The AppImage updates itself; a Mac installs each new dmg by hand. | Built, untested by hand on a Mac or Linux PC; checked in CI on macOS and Ubuntu |
