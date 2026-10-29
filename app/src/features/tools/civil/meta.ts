@@ -1,7 +1,7 @@
 // The tools in the civil, environmental, and chemical engineering kit, in the order the window lists them. This
 // module is read at start-up by the palette commands, so it holds names and icons only, never an engine.
 
-export const CIVIL_TOOL_IDS = ['soils', 'foundations', 'groundwater', 'water'] as const;
+export const CIVIL_TOOL_IDS = ['soils', 'foundations', 'groundwater', 'water', 'reactors'] as const;
 
 export type CivilToolId = (typeof CIVIL_TOOL_IDS)[number];
 
@@ -11,6 +11,7 @@ export const CIVIL_ICONS: Readonly<Record<CivilToolId, string>> = {
   foundations: 'Wall',
   groundwater: 'Drop',
   water: 'Funnel',
+  reactors: 'Flask',
 };
 
 export const isCivilToolId = (value: unknown): value is CivilToolId =>

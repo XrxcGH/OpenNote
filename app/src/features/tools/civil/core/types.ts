@@ -111,7 +111,13 @@ export interface TableField extends FieldBase {
   minRows?: number;
 }
 
-export type Field = NumberField | SelectField | TableField;
+/** A short formula, such as a rate law in C. The calculation reads it with core/expr; it is never run as code. */
+export interface TextField extends FieldBase {
+  kind: 'text';
+  initial: string;
+}
+
+export type Field = NumberField | SelectField | TableField | TextField;
 
 /** What the window read from the fields: numbers in the base unit of their quantity. */
 export interface Input {

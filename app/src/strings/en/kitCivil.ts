@@ -2,6 +2,7 @@
 // each tool's labels, results, and worked steps are in a file of their own under ./kitCivil, all in this namespace.
 import { foundations } from './kitCivil/foundations';
 import { groundwater } from './kitCivil/groundwater';
+import { reactors } from './kitCivil/reactors';
 import { soils } from './kitCivil/soils';
 import { water } from './kitCivil/water';
 
@@ -49,6 +50,15 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    reactors: {
+      title: 'Chemical and biological reactors',
+      open: 'Open chemical and biological reactors',
+      keywords:
+        'reaction engineering reactor design cstr pfr plug flow batch conversion space time levenspiel ' +
+        'tanks in series recycle series parallel reactions selectivity yield adiabatic arrhenius activation ' +
+        'energy steady states residence time distribution tracer dispersion segregation monod chemostat ' +
+        'washout fed batch oxygen transfer kla activated sludge srt f/m',
+    },
     soils: {
       title: 'Soil properties, consolidation, and strength',
       open: 'Open soil properties, consolidation, and strength',
@@ -88,4 +98,5 @@ export const kitCivil = {
   foundations,
   groundwater,
   water,
+  reactors,
 } as const;

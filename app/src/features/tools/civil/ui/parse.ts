@@ -41,7 +41,8 @@ export function initialState(calc: Calc): FieldState {
       if (!(field.id in text)) text[field.id] = field.initial;
       if (field.kind === 'table')
         field.columns.forEach((c, i) => c.quantity && (unit[`${field.id}.${i}`] ??= unitsOf(c.quantity)[0]!));
-      else if (field.kind !== 'select' && field.quantity) unit[field.id] ??= field.unit ?? unitsOf(field.quantity)[0]!;
+      else if ((field.kind === undefined || field.kind === 'number') && field.quantity)
+        unit[field.id] ??= field.unit ?? unitsOf(field.quantity)[0]!;
     }
   };
   add(fieldsOf(calc, { text, unit }));
@@ -83,6 +84,12 @@ export function parseFields(fields: readonly Field[], state: FieldState): Parsed
   for (const field of fields) {
     if (field.kind === 'select') {
       s[field.id] = state.text[field.id] ?? field.initial;
+      continue;
+    }
+    if (field.kind === 'text') {
+      const typed = (state.text[field.id] ?? field.initial).trim();
+      if (!typed) return bad(field, 'errors.empty');
+      s[field.id] = typed;
       continue;
     }
     if (field.kind === 'table') {

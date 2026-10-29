@@ -39,11 +39,15 @@ function checkOutcome(outcome: Outcome): void {
   if (outcome.source) text(outcome.source);
 }
 
-function checkCalc(calc: Calc): void {
+function checkCalc(calc: Calc, choices: Readonly<Record<string, string>> = {}): void {
   text(calc.title);
   if (calc.intro) text(calc.intro);
-  const state = initialState(calc);
+  const first = initialState(calc);
+  const state = { text: { ...first.text, ...choices }, unit: { ...first.unit } as Record<string, string> };
   const fields = fieldsOf(calc, state);
+  const late = initialState({ ...calc, fields: fields });
+  for (const [id, value] of Object.entries(late.text)) if (!(id in state.text)) state.text[id] = value;
+  for (const [id, value] of Object.entries(late.unit)) if (!(id in state.unit)) state.unit[id] = value;
   for (const field of fields) {
     text(field.label);
     if (field.help) text(field.help);
@@ -51,14 +55,14 @@ function checkCalc(calc: Calc): void {
     if (field.kind === 'table') field.columns.forEach((column) => text(column.label));
   }
   const parsed = parseFields(fields, state);
-  expect(parsed.ok, `${calc.id} reads its first values`).toBe(true);
+  expect(parsed.ok, `${calc.id} reads its first values ${JSON.stringify(choices)}`).toBe(true);
   if (!parsed.ok) return;
   let outcome: Outcome;
   try {
     outcome = calc.solve(parsed.input);
   } catch (error) {
     throw new Error(
-      `${calc.id} fails on its first values: ${error instanceof CivilError ? error.key : String(error)}`,
+      `${calc.id} ${JSON.stringify(choices)} fails on its first values: ${error instanceof CivilError ? error.key : String(error)}`,
       {
         cause: error,
       },
@@ -73,7 +77,12 @@ describe('civil engineering kit', () => {
     text(`tools.${tool}.open`);
     const calcs = await CIVIL_KIT[tool]();
     expect(new Set(calcs.map((calc) => calc.id)).size).toBe(calcs.length);
-    for (const calc of calcs) checkCalc(calc);
+    for (const calc of calcs) {
+      checkCalc(calc);
+      // Every choice of every list, one at a time, so the words of each mode are checked too.
+      for (const field of fieldsOf(calc, initialState(calc)))
+        if (field.kind === 'select') for (const option of field.options) checkCalc(calc, { [field.id]: option.value });
+    }
   });
 
   it('words every error key the core can raise', () => {

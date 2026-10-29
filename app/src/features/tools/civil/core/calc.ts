@@ -1,5 +1,5 @@
 // Small builders for calculation definitions, so each tool's list of calculations reads as a list of fields.
-import type { KitStep, NumberField, Row, SelectField, TableField, Vars } from './types';
+import type { KitStep, NumberField, Row, SelectField, TableField, TextField, Vars } from './types';
 import type { Quantity } from './units';
 
 export const num = (
@@ -24,6 +24,14 @@ export const pick = (
   kind: 'select',
   options: options.map(([value, key]) => ({ value, label: key })),
   initial: initial ?? options[0]![0],
+});
+
+export const formula = (id: string, label: string, initial: string, help?: string): TextField => ({
+  id,
+  label,
+  kind: 'text',
+  initial,
+  ...(help ? { help } : {}),
 });
 
 export const grid = (

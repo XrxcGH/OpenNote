@@ -174,6 +174,24 @@ function FieldControl(props: ControlProps) {
         {help}
       </div>
     );
+  if (field.kind === 'text')
+    return (
+      <div className={`${extra.field} ${chem.wide}`}>
+        <label htmlFor={id}>{label(field.label)}</label>
+        <input
+          id={id}
+          type="text"
+          className={extra.input}
+          value={value}
+          spellCheck={false}
+          autoComplete="off"
+          aria-invalid={invalid || undefined}
+          aria-describedby={field.help ? `${id}-help` : undefined}
+          onChange={(e) => setText(field.id, e.target.value)}
+        />
+        {help}
+      </div>
+    );
   const units = field.quantity ? unitsOf(field.quantity) : [];
   return (
     <div>
