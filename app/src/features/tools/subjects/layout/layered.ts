@@ -1,6 +1,6 @@
 // Layered drawings of directed acyclic graphs, such as Harris matrices, project networks, and causal graphs. The
 // method is Sugiyama's: longest-path layers, dummy nodes on edges that span layers, and barycenter sweeps to remove
-// crossings. Priority placement then lets long edges run straight.
+// crossings, each followed by a transpose pass. Priority placement then lets long edges run straight.
 import { boundsOf, checkGraph, clipEnds } from './graph';
 import type { GraphInput, GraphLayout, PlacedNode, RoutedEdge } from './graph';
 
@@ -129,8 +129,11 @@ function positionsOf(rows: readonly number[][], n: number): number[] {
   return pos;
 }
 
-/** One barycenter pass: each layer is sorted by the mean position of its neighbors in the layer before it. */
-function sweep(rows: number[][], vertices: readonly Vertex[], downward: boolean): void {
+/**
+ * One barycenter pass: each layer is sorted by the mean position of its neighbors in the layer before it. Ties keep
+ * the old order, or reverse it when `flipTies` is set, so alternate sweeps can leave a tie the other way round.
+ */
+function sweep(rows: number[][], vertices: readonly Vertex[], downward: boolean, flipTies: boolean): void {
   const pos = positionsOf(rows, vertices.length);
   const order = downward
     ? rows.map((_, i) => i).slice(1)
@@ -143,8 +146,39 @@ function sweep(rows: number[][], vertices: readonly Vertex[], downward: boolean)
       const near = downward ? vertices[v].up : vertices[v].down;
       return near.length === 0 ? pos[v] : near.reduce((s, w) => s + pos[w], 0) / near.length;
     };
-    rows[l].sort((a, b) => key(a) - key(b) || pos[a] - pos[b]);
+    rows[l].sort((a, b) => key(a) - key(b) || (flipTies ? pos[b] - pos[a] : pos[a] - pos[b]));
     rows[l].forEach((v, i) => (pos[v] = i));
+  }
+}
+
+/** Crossings on the edges that touch layer l, from the layers on either side. */
+function crossingsAround(rows: readonly number[][], vertices: readonly Vertex[], pos: readonly number[], l: number) {
+  return (
+    (l > 0 ? crossingsBetween(rows[l - 1], vertices, pos) : 0) +
+    (l + 1 < rows.length ? crossingsBetween(rows[l], vertices, pos) : 0)
+  );
+}
+
+/**
+ * The transpose pass of Gansner et al. (1993): swaps neighboring nodes of a layer while a swap lowers the crossings,
+ * which frees orderings that the barycenter sweeps leave at a local optimum.
+ */
+function transpose(rows: number[][], vertices: readonly Vertex[]): void {
+  const pos = positionsOf(rows, vertices.length);
+  for (let improved = true, rounds = 0; improved && rounds < 100; rounds += 1) {
+    improved = false;
+    rows.forEach((row, l) => {
+      for (let k = 0; k + 1 < row.length; k += 1) {
+        const before = crossingsAround(rows, vertices, pos, l);
+        [row[k], row[k + 1]] = [row[k + 1], row[k]];
+        [pos[row[k]], pos[row[k + 1]]] = [k, k + 1];
+        if (crossingsAround(rows, vertices, pos, l) < before) improved = true;
+        else {
+          [row[k], row[k + 1]] = [row[k + 1], row[k]];
+          [pos[row[k]], pos[row[k + 1]]] = [k, k + 1];
+        }
+      }
+    });
   }
 }
 
@@ -156,7 +190,8 @@ function orderLayers(vertices: readonly Vertex[], sweeps: number): { rows: numbe
   let bestCount = totalCrossings(rows, vertices);
   for (let s = 0; s < sweeps && bestCount > 0; s += 1) {
     for (const downward of [true, false]) {
-      sweep(rows, vertices, downward);
+      sweep(rows, vertices, downward, s % 2 === 1);
+      transpose(rows, vertices);
       const count = totalCrossings(rows, vertices);
       if (count < bestCount) [best, bestCount] = [rows.map((r) => r.slice()), count];
     }

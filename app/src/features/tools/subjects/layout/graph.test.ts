@@ -47,6 +47,28 @@ describe('layered graph layout', () => {
     expect(Math.sign(x('x') - x('y'))).toBe(Math.sign(x('p') - x('q')));
   });
 
+  it('leaves the barycenter local optimum through the transpose pass', () => {
+    // a, b, c over d, e, f with a -> e, b -> d, c -> f, a -> f: the order a, c, b over e, f, d has no crossing.
+    const laid = layoutLayered({
+      nodes: ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id })),
+      edges: [
+        { from: 'a', to: 'e' },
+        { from: 'b', to: 'd' },
+        { from: 'c', to: 'f' },
+        { from: 'a', to: 'f' },
+      ],
+    });
+    expect(laid.crossings).toBe(0);
+    // Count the crossings again from the drawn x positions, independently of the layout's own count.
+    const x = Object.fromEntries(laid.nodes.map((n) => [n.id, n.x]));
+    const ends = laid.edges.map((e) => [x[e.from], x[e.to]]);
+    let drawn = 0;
+    for (let i = 0; i < ends.length; i += 1)
+      for (let j = i + 1; j < ends.length; j += 1)
+        if ((ends[i][0] - ends[j][0]) * (ends[i][1] - ends[j][1]) < 0) drawn += 1;
+    expect(drawn).toBe(0);
+  });
+
   it('turns an edge around to break a cycle and reports it', () => {
     const laid = layoutLayered(graphOf('a -> b, b -> c, c -> a'));
     expect(laid.reversed).toEqual([['c', 'a']]);
