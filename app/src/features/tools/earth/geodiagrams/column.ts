@@ -248,7 +248,7 @@ export interface ColumnText {
 /** Draws the columns side by side, scaled to the thickest, with correlation lines between same-named units. */
 const HEIGHT = 320;
 const COLUMN = 90;
-const GAP = 120;
+const GAP = 150;
 const LEFT = 50;
 const TOP = 20;
 
@@ -305,10 +305,10 @@ function scaleMarks(tallest: number, count: number, words: ColumnText): Mark[] {
   }
   out.push({ ...label(10, TOP + HEIGHT / 2, words.unit, 'text', 10, 'middle'), rotate: -90 } as Mark);
   for (let ci = 0; ci < count; ci++) {
-    for (const g of ['clay', 'silt', 'm', 'pebble'] as const) {
+    for (const g of ['clay', 'm', 'pebble'] as const) {
       const gx = LEFT + ci * (COLUMN + GAP) + GRAIN_WIDTH[g] * COLUMN;
       out.push({ kind: 'line', x1: gx, y1: TOP + HEIGHT + 2, x2: gx, y2: TOP + HEIGHT + 6, role: 'axis' });
-      out.push(label(gx, TOP + HEIGHT + 16, words.grainLabels[g], 'muted', 8, 'middle'));
+      out.push({ ...label(gx + 3, TOP + HEIGHT + 12, words.grainLabels[g], 'muted', 8, 'end'), rotate: -40 } as Mark);
     }
   }
   return out;
@@ -320,27 +320,29 @@ export function drawColumns(columns: readonly Unit[][], words: ColumnText): Figu
   const tallest = Math.max(...totals);
   const scale = HEIGHT / tallest;
   const marks: Mark[] = scaleMarks(tallest, columns.length, words);
-  const tops = new Map<string, { column: number; x: number; y: number }[]>();
+  const tops = new Map<string, { column: number; x: number; y: number; name: string }[]>();
   columns.forEach((column, ci) => {
     const x0 = LEFT + ci * (COLUMN + GAP);
     let y = TOP + (tallest - totals[ci]) * scale;
     for (const unit of column) {
       const h = unit.thickness * scale;
       marks.push(...unitMarks(unit, x0, y, h));
-      tops.set(unit.name, [...(tops.get(unit.name) ?? []), { column: ci, x: x0, y }]);
+      tops.set(unit.name, [...(tops.get(unit.name) ?? []), { column: ci, x: x0, y, name: unit.name }]);
       y += h;
     }
   });
   for (const list of tops.values()) {
     for (let k = 1; k < list.length; k++) {
       const [a, b] = [list[k - 1], list[k]];
+      // Starts past the unit's name, which sits to the right of its column.
+      const start = Math.min(a.x + COLUMN + 12 + 5.6 * a.name.length, b.x - 12);
       if (b.column === a.column + 1)
-        marks.push({ kind: 'line', x1: a.x + COLUMN, y1: a.y, x2: b.x, y2: b.y, role: 's0', dash: true });
+        marks.push({ kind: 'line', x1: start, y1: a.y, x2: b.x, y2: b.y, role: 's0', dash: true });
     }
   }
   return {
     width: LEFT + columns.length * (COLUMN + GAP) - GAP + 100,
-    height: TOP + HEIGHT + 24,
+    height: TOP + HEIGHT + 44,
     title: words.title,
     description: words.description,
     marks,
