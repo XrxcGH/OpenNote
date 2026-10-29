@@ -62,11 +62,18 @@ impl Cost {
             && (1..=MAX_LANES).contains(&self.lanes)
     }
 
-    /// Whether a passphrase may be checked at this cost: never cheaper than [`COST`] in memory or passes, so a
-    /// tampered header or a weaker client can't make the passphrase quicker to guess. `quick` allows [`QUICK`], in
-    /// tests.
-    pub fn strong_enough(self, quick: bool) -> bool {
-        quick || (self.memory_kib >= COST.memory_kib && self.passes >= COST.passes)
+    /// Whether a passphrase may be checked at this cost: exactly [`COST`], the only one this app writes. A cheaper
+    /// one would make the passphrase quicker to guess; a dearer one is a tampered header making every unlock burn
+    /// seconds of CPU and up to 256 MiB before its MAC says so. [`Cost::allowed`]'s wider range stays for reading,
+    /// for when a header version says a newer app wrote another cost. `quick` allows the cheaper [`QUICK`] too, in
+    /// tests, but nothing dearer than [`COST`].
+    pub fn checkable(self, quick: bool) -> bool {
+        self == COST
+            || (quick
+                && self.allowed()
+                && self.memory_kib <= COST.memory_kib
+                && self.passes <= COST.passes
+                && self.lanes <= COST.lanes)
     }
 }
 

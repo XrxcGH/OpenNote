@@ -392,9 +392,9 @@ pub fn unlock_passphrase(backend: &dyn Backend, passphrase: &str) -> Result<Vaul
 
 fn unlock_passphrase_at(backend: &dyn Backend, passphrase: &str, quick: bool) -> Result<VaultKeys> {
     let header = read_vault(backend)?;
-    if !header.cost.strong_enough(quick) {
+    if !header.cost.checkable(quick) {
         return Err(SyncError::Tampered(
-            "The vault asks for a weaker passphrase check than this app uses.".into(),
+            "The vault asks for a different passphrase check than this app uses.".into(),
         ));
     }
     let kek = passphrase_key(passphrase, &header.salt, header.cost)?;

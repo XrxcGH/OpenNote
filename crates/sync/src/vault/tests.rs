@@ -95,10 +95,10 @@ fn a_changed_slot_shows_on_a_device_or_pairing_unlock_too() {
 
 #[test]
 fn a_vault_that_asks_for_a_cheaper_passphrase_check_is_refused() {
-    assert!(COST.strong_enough(false));
-    assert!(!QUICK.strong_enough(false) && QUICK.strong_enough(true));
-    assert!(!Cost { passes: 1, ..COST }.strong_enough(false));
-    assert!(Cost { lanes: 4, ..COST }.strong_enough(false));
+    assert!(COST.checkable(false) && COST.checkable(true));
+    assert!(!QUICK.checkable(false) && QUICK.checkable(true));
+    assert!(!Cost { passes: 1, ..COST }.checkable(false));
+    assert!(!Cost { lanes: 4, ..COST }.checkable(false));
     let store = MemoryBackend::new();
     create_with(&store, PASS, QUICK).expect("creates");
     assert!(matches!(
@@ -106,6 +106,30 @@ fn a_vault_that_asks_for_a_cheaper_passphrase_check_is_refused() {
         Err(SyncError::Tampered(_))
     ));
     assert!(unlock_passphrase_at(&store, PASS, true).is_ok());
+}
+
+#[test]
+fn a_vault_that_asks_for_a_dearer_passphrase_check_is_refused_before_deriving() {
+    let store = MemoryBackend::new();
+    create_with(&store, PASS, QUICK).expect("creates");
+    let mut bytes = store.get("vault").expect("get").expect("vault");
+    // The cost sits after the magic, version, and ID: memory, passes, lanes, big-endian. The most allowed() takes.
+    for (at, value) in [(28, 256 * 1024u32), (32, 10), (36, 4)] {
+        bytes[at..at + 4].copy_from_slice(&value.to_be_bytes());
+    }
+    store.set_raw("vault", bytes);
+    for quick in [false, true] {
+        let started = std::time::Instant::now();
+        assert!(matches!(
+            unlock_passphrase_at(&store, PASS, quick),
+            Err(SyncError::Tampered(_))
+        ));
+        // 256 MiB over 10 passes takes seconds; a refusal before deriving takes none.
+        assert!(
+            started.elapsed() < std::time::Duration::from_millis(500),
+            "refused at once"
+        );
+    }
 }
 
 #[test]
