@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     # Ubuntu takes 3 to 6 minutes. Windows takes about twice that on a pull request that changes most of the files
     # (about 4 minutes of unit tests, then the changed-file checks). A run that passes its limit is stuck.
@@ -401,6 +401,45 @@ jobs:
           name: e2e-logs
           path: tests/e2e/logs
           retention-days: 7
+
+  desktop-unix:
+    # The desktop app on macOS and Linux (ADR 0055): Rust lints and tests for the whole workspace, then a build of
+    # the app without a bundle. The release workflow makes the dmg and the AppImage.
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22.04 rather than latest: an AppImage runs on systems with this glibc or newer, so the checks build where
+        # the release builds.
+        os: [ubuntu-22.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    # About 15 minutes with a warm cache. A cold build of the app's whole dependency tree takes about 35.
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: WebKitGTK and the other system libraries the app links (Linux)
+        if: runner.os == 'Linux'
+        run: bash packaging/linux/install-build-deps.sh
+      - name: Install tools
+        run: npm ci
+      - name: Build the interface (the Rust app embeds it)
+        run: npm run app:build
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Rust tests
+        run: cargo test --workspace
+      - name: Build of the app, without a bundle
+        run: npx tauri build --no-bundle -- --profile ci
 
   core-linux:
     # The core has no platform UI, so it also runs on Linux, where the Unix file system code is tested.
