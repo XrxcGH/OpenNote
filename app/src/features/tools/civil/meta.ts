@@ -2,6 +2,7 @@
 // module is read at start-up by the palette commands, so it holds names and icons only, never an engine.
 
 export const CIVIL_TOOL_IDS = [
+  'indeterminate',
   'soils',
   'foundations',
   'hydraulics',
@@ -15,6 +16,7 @@ export type CivilToolId = (typeof CIVIL_TOOL_IDS)[number];
 
 /** Phosphor icon names for the palette. */
 export const CIVIL_ICONS: Readonly<Record<CivilToolId, string>> = {
+  indeterminate: 'Bridge',
   soils: 'Mountains',
   foundations: 'Wall',
   hydraulics: 'Waves',

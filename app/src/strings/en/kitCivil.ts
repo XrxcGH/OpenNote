@@ -6,6 +6,7 @@ import { groundwater } from './kitCivil/groundwater';
 import { processTool } from './kitCivil/process';
 import { reactors } from './kitCivil/reactors';
 import { soils } from './kitCivil/soils';
+import { structures } from './kitCivil/structures';
 import { water } from './kitCivil/water';
 
 export const kitCivil = {
@@ -52,6 +53,14 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    indeterminate: {
+      title: 'Indeterminate structures and influence lines',
+      open: 'Open indeterminate structures and influence lines',
+      keywords:
+        'structural analysis indeterminate continuous beam moment distribution hardy cross slope deflection ' +
+        'fixed end moments influence line muller breslau moving loads axle train absolute maximum moment truss ' +
+        'portal method cantilever method lateral loads response spectrum newmark earthquake srss cqc',
+    },
     hydraulics: {
       title: 'Hydrology and open channels',
       open: 'Open hydrology and open channels',
@@ -114,6 +123,7 @@ export const kitCivil = {
         'transport ogata banks retardation dispersion',
     },
   },
+  structures,
   soils,
   foundations,
   hydraulics,
