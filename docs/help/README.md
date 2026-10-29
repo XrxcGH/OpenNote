@@ -38,6 +38,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 
 - [Search and links](search-and-links.md): search, page links, backlinks, tags, and daily notes.
 - [Study tools](study-tools.md): flashcards, Upcoming, timers, the calculator, and citations.
+- [Tutor](tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
 - [Chemistry and property tables](chemistry-and-data.md): balancing, stoichiometry, gas laws, titration, structure drawing, and steam, gas, and materials tables.
 
 ## Record
