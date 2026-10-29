@@ -4,6 +4,7 @@
 // student would. Run: node tests/fixtures/stepcheck/generate.ts (the JSON is committed; the test reads it).
 import { writeFileSync } from 'node:fs';
 import { answerFamilies } from './answers.ts';
+import { notationFamilies } from './notation.ts';
 
 interface Case {
   id: string;
@@ -760,6 +761,7 @@ ok('precision', ['cos(x)^2', '= (1 + cos(2x))/2']);
 ok('precision', ['tan(2x)', '= 2tan(x)/(1 - tan(x)^2)']);
 
 answerFamilies(ok, bad);
+notationFamilies(ok, bad);
 
 writeFileSync(new URL('./corpus.json', import.meta.url), `${JSON.stringify({ correct, broken }, null, 1)}\n`);
 console.log(`correct ${correct.length}, broken ${broken.length}`);

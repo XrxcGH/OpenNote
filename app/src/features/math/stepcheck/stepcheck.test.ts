@@ -392,3 +392,363 @@ describe('checkSteps on how students finish and check an answer', () => {
     expect(checkSteps(['2x = 4', 'x = 2'], { maxLines: 1 })[1].reason).toBe('tooLong');
   });
 });
+
+describe('notation as students write it', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
+
+  it("works y' out by x, not by a parameter letter that sorts first", () => {
+    // d/dx(kx^2) = 2kx, d/dx(mx + c) = m, d/dx(e^(kx)) = k e^(kx).
+    expect(pair(['y = kx^2', "y' = 2kx"])).toBe('ok/equivalent');
+    expect(pair(['y = mx + c', "y' = m"])).toBe('ok/equivalent');
+    expect(pair(['y = ax^2 + bx + c', "y' = 2ax + b"])).toBe('ok/equivalent');
+    expect(pair(['y = e^(kx)', "y' = k e^(kx)"])).toBe('ok/equivalent');
+    expect(pair(['y = kx^2', "y' = 3kx"])).toBe('broken/derivativeOff');
+    // In t when there is no x; with two letters and neither x nor t, there is nothing to go by.
+    expect(pair(['s = ut + a t^2/2', "s' = u + a t"])).toBe('ok/equivalent');
+    expect(pair(['y = ab^2', "y' = 2ab"])).toBe('unchecked/cannotDecide');
+  });
+
+  it('divides by the whole fraction after ÷', () => {
+    // 2/3 ÷ 4/5 = 10/12 = 5/6; 1/2 ÷ 1/4 = 2; 6 ÷ 2/3 = 9; x/2 ÷ x/4 = 2.
+    expect(pair(['2/3 ÷ 4/5', '= 2/3 × 5/4'])).toBe('ok/sameValue');
+    expect(pair(['2/3 ÷ 4/5', '= 5/6'])).toBe('ok/sameValue');
+    expect(pair(['1/2 ÷ 1/4', '= 2'])).toBe('ok/sameValue');
+    expect(pair(['6 ÷ 2/3', '= 9'])).toBe('ok/sameValue');
+    expect(pair(['x/2 ÷ x/4', '= 2'])).toBe('ok/equivalent');
+    // 12 ÷ 3 × 2 is still (12 ÷ 3) × 2 = 8.
+    expect(pair(['12 ÷ 3 × 2', '= 8'])).toBe('ok/sameValue');
+    const wrong = checkSteps(['1/2 ÷ 1/4', '= 3'])[1];
+    expect([wrong.verdict, wrong.suggestion]).toEqual(['broken', '= 2']);
+  });
+
+  it('keeps values given together or on lines of their own for the check below them', () => {
+    // x = 2, y = 3 gives x + y = 5 and xy = 6.
+    expect(pair(['x = 2, y = 3', 'x + y', '= 5'])).toBe('ok/knownValue');
+    expect(pair(['x = 2; y = 3', 'x + y', '= 5'])).toBe('ok/knownValue');
+    expect(pair(['x = 2 and y = 3', 'x + y', '= 5'])).toBe('ok/knownValue');
+    expect(pair(['x = 2', 'y = 3', 'x y', '= 6'])).toBe('ok/knownValue');
+    expect(pair(['x = 2', 'y = 3', 'x + y', '= 6'])).toBe('broken/valueOff');
+    // No x given: 2x + 3 = 7 holds at x = 2, so it is not shown as a slip.
+    const open = checkSteps(['2x + 3', '= 7'])[1];
+    expect([open.verdict, open.reason, open.params.at]).toEqual(['unchecked', 'someValues', 'x = 2']);
+  });
+});
+
+describe('notation as students write it, part 2', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
+
+  it('reads a slash before a product either way, and marks it broken only when both readings are wrong', () => {
+    expect(pair(['1/2x', '= 1/(2x)'])).toBe('ok/equivalent');
+    expect(pair(['1/2x', '= x/2'])).toBe('ok/equivalent');
+    expect(pair(['2x/3y', '= 2x/(3y)'])).toBe('ok/equivalent');
+    // x/2 and 1/(2x) are both not 2/x: wrong however it is read.
+    expect(pair(['1/2x', '= 2/x'])).toMatch(/^broken\//);
+    expect(pair(['1/2x = 3', 'x = 1/6'])).toBe('ok/sameSolutions');
+    expect(pair(['1/2x = 3', 'x = 6'])).toBe('ok/sameSolutions');
+    // x = 6 or x = 1/6, never 5.
+    expect(pair(['1/2x = 3', 'x = 5'])).toBe('broken/differentSolutions');
+    // 4x/2x is 2x^2 or 2: 12 = 2 has no solution, so the second reading cannot rule the line out.
+    expect(pair(['12 = 4x/2x', '4x = 24'])).toBe('unchecked/ambiguous');
+  });
+
+  it('leaves the imaginary unit unchecked rather than trying numbers for i', () => {
+    expect(pair(['i^2', '= -1'])).toMatch(/^unchecked\//);
+    expect(checkSteps(['(1 + i)^2', '= 2i']).map((r) => r.reason)).toEqual(['complexNumbers', 'complexNumbers']);
+    // i as a sum's index is still a number: 1 + 2 + 3 = 6.
+    expect(pair(['Σ_{i=1}^{3} i', '= 6'])).toBe('ok/sameValue');
+  });
+
+  it('checks a formula in two letters rearranged for one, not as a second equation', () => {
+    // y - 3 = 2x gives x = (y - 3)/2; x = y - 3/2 differs at y = 5 (x = 1 against 3.5).
+    expect(pair(['y - 3 = 2x', 'x = (y - 3)/2'])).toBe('ok/sameSolutions');
+    expect(checkSteps(['y - 3 = 2x', 'x = y - 3/2'])[1].verdict).toBe('broken');
+    // A second equation with numbers of its own is not shown as a slip: x + y = 10 and x = y + 2.
+    expect(checkSteps(['x + y = 10', 'x = y + 2'])[1].verdict).toBe('unchecked');
+    expect(pair(['y = 3x', 'x + y = 8'])).toBe('ok/systemEquation');
+  });
+});
+
+describe('notation as students write it, part 3', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
+
+  it('checks f(x + h) against the definition', () => {
+    // (x + h)^2 = x^2 + 2xh + h^2.
+    expect(pair(['f(x) = x^2', 'f(x + h) = x^2 + 2xh + h^2'])).toMatch(/^ok\//);
+    const wrong = checkSteps(['f(x) = x^2', 'f(x + h) = x^2 + h^2'])[1];
+    expect([wrong.verdict, wrong.reason]).toEqual(['broken', 'notEqual']);
+    // f(x) = 4 is still an equation to solve: x^2 = 4 gives x = ±2.
+    expect(pair(['f(x) = x^2', 'f(x) = 4', 'x = ±2'])).toBe('ok/sameSolutions');
+  });
+
+  it('does not tick a solution that an earlier line divides by zero at', () => {
+    // (x^2 - 1)/(x - 1) has no value at x = 1, so x = 1 is no solution.
+    const results = checkSteps(['(x^2 - 1)/(x - 1) = 2', 'x + 1 = 2', 'x = 1']);
+    expect(results.map((r) => r.reason)).toEqual(['start', 'outsideDomain', 'outsideDomain']);
+    expect(results[2].params.at).toBe('x = 1');
+    // (x^2 - 4)/(x - 2) = 5 gives x = 3, which the first line allows.
+    expect(checkSteps(['(x^2 - 4)/(x - 2) = 5', 'x + 2 = 5', 'x = 3']).map((r) => r.verdict)).toEqual([
+      'ok',
+      'ok',
+      'ok',
+    ]);
+    // x/(x - 2) = 2/(x - 2) has no solution: x = 2 divides by zero there.
+    expect(pair(['x/(x - 2) = 2/(x - 2)', 'x = 2'])).toMatch(/^unchecked\//);
+  });
+
+  it('accepts decimal working rounded to a whole number, and suggests a decimal', () => {
+    // 9.81 × 2 = 19.62.
+    expect(pair(['9.81 × 2', '= 20'])).toBe('ok/rounded');
+    expect(pair(['19.62', '≈ 20'])).toBe('ok/rounded');
+    const wrong = checkSteps(['9.81 × 2', '= 30'])[1];
+    expect([wrong.verdict, wrong.suggestion]).toEqual(['broken', '= 19.62']);
+    // 7/2 = 3.5: no decimals in the working, so 3 is a slip.
+    expect(pair(['7/2', '= 3'])).toBe('broken/valueOff');
+  });
+});
+
+describe('notation as students write it, part 4', () => {
+  const pair = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
+
+  it('reads vectors as (a, b, c) and ⟨a, b⟩, det without brackets, and unicode fractions', () => {
+    // 1·4 + 2·(-5) + 3·6 = 12; i × j = k; ⟨1, 2⟩ + ⟨3, 4⟩ = ⟨4, 6⟩; 2·3 - 1·5 = 1; 1/2 + 1/3 = 5/6.
+    expect(pair(['(1, 2, 3) · (4, -5, 6)', '= 12'])).toBe('ok/sameValue');
+    expect(pair(['(1, 2, 3) · (4, -5, 6)', '= 32'])).toBe('broken/valueOff');
+    expect(pair(['(1, 0, 0) × (0, 1, 0)', '= (0, 0, 1)'])).toBe('ok/sameMatrix');
+    expect(pair(['⟨1,2⟩ + ⟨3,4⟩', '= ⟨4,6⟩'])).toBe('ok/sameMatrix');
+    expect(pair(['⟨1, 2⟩ + ⟨3, 4⟩', '= ⟨4, 6⟩'])).toBe('ok/sameMatrix');
+    expect(pair(['det [[2, 1], [5, 3]]', '= 1'])).toBe('ok/sameValue');
+    expect(pair(['½ + ⅓', '= ⅚'])).toBe('ok/sameValue');
+    // A lone pair stays a point or an interval: nothing is read as a vector.
+    expect(checkSteps(['C(5, 2) = 10'])[0].verdict).not.toBe('broken');
+  });
+
+  it('checks a sum to a letter against a formula', () => {
+    // 1 + 2 + ... + n = n(n + 1)/2; 1 + 4 + ... + n^2 = n(n + 1)(2n + 1)/6; at n = 3, 14, not 3^3 = 27.
+    expect(checkSteps(['Σ_{k=1}^{n} k = n(n+1)/2'])[0].verdict).toBe('ok');
+    expect(checkSteps(['Σ_(k=1)^(n) k^2 = n(n + 1)(2n + 1)/6'])[0].verdict).toBe('ok');
+    expect(checkSteps(['Σ_(k=1)^(n) k^2 = n^3'])[0].verdict).toBe('broken');
+    // 2^k is no polynomial: left unchecked.
+    expect(checkSteps(['Σ_(k=0)^(n) 2^k = 2^(n+1) - 1'])[0].verdict).toBe('unchecked');
+  });
+
+  it('checks steps joined by arrows on one line', () => {
+    expect(checkSteps(['2x + 3 = 7 → 2x = 4 → x = 2'])[0].verdict).toBe('ok');
+    expect(checkSteps(['3x - 1 = 8 ⇒ 3x = 9 ⇒ x = 3'])[0].verdict).toBe('ok');
+    expect(checkSteps(['2x + 3 = 7 -> 2x = 4 so x = 2'])[0].verdict).toBe('ok');
+    const wrong = checkSteps(['2x + 3 = 7 → 2x = 5'])[0];
+    expect([wrong.verdict, wrong.suggestion]).toEqual(['broken', '2x = 4']);
+    // A limit keeps its arrow: lim x→0 of sin(x)/x is 1.
+    expect(checkSteps(['lim_(x→0) sin(x)/x = 1'])[0].verdict).not.toBe('broken');
+  });
+});
+
+describe('values given for a formula, and solutions that are not real', () => {
+  const last = (lines: string[]) => {
+    const r = checkSteps(lines)[lines.length - 1];
+    return `${r.verdict}/${r.reason}`;
+  };
+
+  it('checks the answer with the values given for the formula above', () => {
+    // A = π(2)^2 = 4π; v = 0 + 2(5) = 10.
+    expect(last(['A = πr^2', 'r = 2', 'A = 4π'])).toBe('ok/knownValue');
+    expect(last(['A = πr^2', 'r = 2', 'A = 5π'])).toBe('broken/differentSolutions');
+    expect(last(['v = u + at', 'u = 0, a = 2, t = 5', 'v = 10'])).toBe('ok/knownValue');
+    expect(last(['v = u + at', 'u = 0, a = 2, t = 5', 'v = 7'])).toBe('broken/differentSolutions');
+    expect(last(['v = u + at', 'v = 0 + 2 × 5'])).toBe('ok/valuesPutIn');
+    expect(last(['v = u + at', 'v = 0 + 2 × 5', 'v = 10'])).toBe('ok/sameSolutions');
+  });
+
+  it('finds a formula with no real value and a solution where the line before has none', () => {
+    // x^2 - 2x - 8 = 0 has x = -2 and x = 4; sqrt(4 - 32) has no real value. ln(2x) = 0 gives 2x = 1, not 0.
+    expect(last(['x^2 - 2x - 8 = 0', 'x = (2 ± sqrt(4 - 32))/2'])).toBe('broken/notAtSolution');
+    expect(last(['x^2 - 2x - 8 = 0', 'x = (2 ± sqrt(4 + 32))/2'])).toBe('ok/sameSolutions');
+    expect(last(['ln(2x) = 0', '2x = 0'])).toBe('broken/differentSolutions');
+    expect(last(['ln(2x) = 0', '2x = 1'])).toBe('ok/sameSolutions');
+  });
+
+  it('reads a bracket bound such as π, and a number times a tuple as a vector', () => {
+    // [x^2] from 0 to π is π^2; [cos x] from 0 to π is -1 - 1 = -2; 3(1, 2, 3) = (3, 6, 9).
+    expect(last(['[x^2]_0^π = π^2'])).toBe('ok/sameValue');
+    expect(last(['[cos x]_0^π = 2'])).toBe('broken/valueOff');
+    expect(last(['3(1, 2, 3) = (3, 6, 9)'])).toBe('ok/sameMatrix');
+    expect(last(['3(1, 2, 3) = (3, 6, 8)'])).toBe('broken/matrixEntry');
+  });
+});
+
+describe('working that sets things equal, and slips a single line shows', () => {
+  const marks = (lines: string[]) => checkSteps(lines).map((r) => `${r.verdict}/${r.reason}`);
+  const last = (lines: string[]) => marks(lines)[lines.length - 1];
+
+  it('reads letters named equal to a number as a note, and keeps their value', () => {
+    expect(last(['a = b = c = 2'])).toBe('ok/note');
+    expect(last(['let x = y = z = 1'])).toBe('ok/note');
+    expect(last(['x = y = z = w = 1'])).toBe('ok/note');
+    // a = b = c = 2 gives a + b + c = 6; 7 is a slip.
+    expect(last(['a = b = c = 2', 'a + b + c', '= 6'])).toBe('ok/knownValue');
+    expect(last(['a = b = c = 2', 'a + b + c', '= 7'])).toBe('broken/valueOff');
+    // let u = x^2 still names a substitution.
+    expect(last(['let u = x^2'])).toBe('ok/substitution');
+  });
+
+  it('reads a derivative set to zero as the equation to solve', () => {
+    // y = x^2: y' = 2x, and 2x = 0 gives x = 0, not 1.
+    expect(marks(['y = x^2', "y' = 2x", "y' = 0", 'x = 0'])).toEqual([
+      'ok/start',
+      'ok/equivalent',
+      'ok/start',
+      'ok/sameSolutions',
+    ]);
+    expect(last(['y = x^2', "y' = 2x", "y' = 0", 'x = 1'])).toBe('broken/differentSolutions');
+    // f'(x) = 2x - 4 = 0 gives x = 2; dy/dx = 2x - 6 = 0 gives x = 3; y'' = 6x = 0 gives x = 0.
+    expect(last(['f(x) = x^2 - 4x', "f'(x) = 2x - 4", "f'(x) = 0", '2x = 4', 'x = 2'])).toBe('ok/sameSolutions');
+    expect(last(['y = x^2 - 6x', 'dy/dx = 2x - 6', 'dy/dx = 0', 'x = 3'])).toBe('ok/sameSolutions');
+    expect(last(['y = x^2', "y' = 2x", "set y' = 0", 'x = 0'])).toBe('ok/sameSolutions');
+    expect(marks(['y = x^2', "y' = 2x = 0", 'x = 0']).slice(1)).toEqual(['ok/start', 'ok/sameSolutions']);
+    expect(last(['y = x^3 - 3x', "y' = 3x^2 - 3", "y'' = 6x", "y'' = 0", 'x = 0'])).toBe('ok/sameSolutions');
+    // A chain that ends in an expression is still a chain.
+    expect(last(['f(x) = x^2 - 4x', "f'(x) = 2x - 4 = 2(x - 2)"])).toBe('ok/equivalent');
+  });
+
+  it('shows a function or power spread over a sum on a first line, and leaves equations to solve alone', () => {
+    // At x = 1, y = 1: (1 + 1)^2 = 4 but 1 + 1 = 2.
+    expect(last(['(x + y)^2 = x^2 + y^2'])).toBe('broken/notEqual');
+    expect(last(['sin(a + b) = sin(a) + sin(b)'])).toBe('broken/notEqual');
+    expect(last(['ln(a + b) = ln(a) + ln(b)'])).toBe('broken/notEqual');
+    // 2x - 6 and 2x - 3 are 3 apart for every x.
+    const never = checkSteps(['2(x - 3) = 2x - 3'])[0];
+    expect([never.verdict, never.reason, never.params.offset]).toEqual(['unchecked', 'neverEqual', '3']);
+    expect(last(['(x + y)^2 = x^2 + 2xy + y^2'])).toBe('ok/sampleConsistent');
+    for (const equation of ['x^2 = 2x', 'x^2 + y^2 = 25', '(x + 3)^2 = x^2 + 15', 'x^(1/2) = x/2']) {
+      expect(last([equation])).toBe('ok/start');
+    }
+  });
+
+  it('checks the quadratic formula against the equation above it', () => {
+    // x^2 - 3x + 2 = 0 has x = 1 and x = 2; (-3 ± 1)/2 gives -1 and -2.
+    const lines = ['x^2 - 3x + 2 = 0', 'a = 1, b = -3, c = 2', 'x = (-3 ± sqrt(9 - 8))/2', 'x = -1 or x = -2'];
+    expect(marks(lines).slice(1, 3)).toEqual(['ok/coefficients', 'broken/differentSolutions']);
+    expect(checkSteps(lines)[2].suggestion).toBe('x = 1 or x = 2');
+    expect(last(['x^2 - 3x + 2 = 0', 'a = 1, b = -3, c = 2', 'x = (3 ± sqrt(9 - 8))/2', 'x = 1 or x = 2'])).toBe(
+      'ok/sameSolutions',
+    );
+    const formula = ['x^2 - 3x + 2 = 0', 'x = (-b ± sqrt(b^2 - 4ac))/(2a)', 'a = 1, b = -3, c = 2'];
+    expect(last([...formula, 'x = 1 or x = 2'])).toBe('ok/sameSolutions');
+    expect(last([...formula, 'x = -1 or x = -2'])).toBe('broken/differentSolutions');
+  });
+
+  it('finds a factoring that does not multiply out, and keeps a dropped solution a finding', () => {
+    // (x - 3)(x - 3) = x^2 - 6x + 9, not x^2 - 9 = (x + 3)(x - 3).
+    const slip = checkSteps(['x^2 - 9 = 0', '(x - 3)(x - 3) = 0'])[1];
+    expect([slip.verdict, slip.reason, slip.suggestion]).toEqual(['broken', 'factoringOff', '(x + 3)(x - 3) = 0']);
+    expect(last(['x^2 - 5x + 6 = 0', '2(x - 2)(x - 3) = 0'])).toBe('ok/sameSolutions');
+    expect(last(['x^2 = 2x', 'x = 2'])).toBe('unchecked/lostSolutions');
+    expect(last(['(x - 3)^2 = 16', 'x - 3 = 4'])).toBe('unchecked/lostSolutions');
+  });
+
+  it('checks a limit with a letter left free, and the body inside it', () => {
+    // From first principles, d/dx x^2 = 2x and d/dx x^3 = 3x^2.
+    const lines = ['lim_(h->0) ((x+h)^2 - x^2)/h', '= lim_(h->0) (2xh + h^2)/h', '= lim_(h->0) (2x + h)', '= 2x'];
+    expect(marks(lines).every((m) => m.startsWith('ok/'))).toBe(true);
+    expect(last(['lim_(h->0) ((x+h)^3 - x^3)/h', '= 3x^2'])).toBe('ok/equivalent');
+    expect(last(['lim_(h->0) ((x+h)^3 - x^3)/h', '= 3x'])).toBe('broken/notEqual');
+    // (2xh + h^2)/h is 2x + h, not 2x + h^2, though both limits are 2x.
+    expect(marks(['lim_(h->0) ((x+h)^2 - x^2)/h', '= lim_(h->0) (2x + h^2)'])[1]).toBe('broken/limitBody');
+    // sin(x + h) gives no polynomial: left unchecked.
+    expect(marks(['lim_(h->0) (sin(x + h) - sin(x))/h', '= cos(x)'])[0]).toBe('unchecked/cannotEvaluate');
+  });
+
+  it('reads degrees, a value list with or, and a word naming the value', () => {
+    expect(last(['cos(60°) = 1/2'])).toBe('ok/sameValue');
+    expect(last(['cos(60°) = 1'])).toBe('broken/valueOff');
+    expect(last(['x^2 = 4', 'x = 2 or -2'])).toBe('ok/sameSolutions');
+    expect(last(['x^2 = 4', 'x = 2 or -3'])).toBe('broken/differentSolutions');
+    expect(last(['slope = (5 - 1)/(3 - 1)', '= 2'])).toBe('ok/sameValue');
+    expect(last(['Area = 3 × 4', '= 13'])).toBe('broken/valueOff');
+    expect(last(['total cost = 5'])).toBe('unchecked/notMath');
+  });
+});
+
+describe('verification gaps, round 6', () => {
+  const marks = (lines: string[]) => checkSteps(lines).map((r) => `${r.verdict}/${r.reason}`);
+  const last = (lines: string[]) => checkSteps(lines)[lines.length - 1];
+
+  it('asks about a ragged matrix instead of marking it, and keeps size slips between two lines', () => {
+    expect(marks(['[[1,2],[3]]'])).toEqual(['unchecked/unreadable']);
+    expect(marks(['[[1,2],[3,4]]', '= [[1,2],[3]]'])[1]).toBe('unchecked/unreadable');
+    expect(marks(['[[1,2],[3,4]] + [[1,2,3]]'])).toEqual(['unchecked/unreadable']);
+    // A 2 by 2 matrix, then a row of three: the sizes differ.
+    expect(marks(['[[1,2],[3,4]]', '= [[1,2,3]]'])[1]).toBe('broken/matrixShape');
+  });
+
+  it('reads in as inches after a number, not as the imaginary unit', () => {
+    // 3 ft is 36 in, so 3 ft + 2 in is 38 in, or 38/12 = 3.1667 ft.
+    expect(marks(['3 ft + 2 in', '= 38 in'])[1]).toBe('ok/sameQuantity');
+    expect(marks(['2 in + 3 in', '= 5 in'])).toEqual(['ok/start', 'ok/sameQuantity']);
+    expect(last(['3 ft + 2 in', '= 5 ft'])).toMatchObject({ verdict: 'broken', suggestion: '= 3.1667 ft' });
+    expect(marks(['3 ft + 2 in', '= 3.17 ft'])[1]).toBe('ok/rounded');
+  });
+
+  it('marks a slip wrong under both slash readings as broken, with the fix from the 1/(ab) reading', () => {
+    // (12x^3/4)x = 3x^4 and 12x^3/(4x) = 3x^2; neither is 3x^3.
+    expect(last(['12x^3 / 4x', '= 3x^3'])).toMatchObject({
+      verdict: 'broken',
+      reason: 'notEqual',
+      suggestion: '= 3x^2',
+    });
+  });
+
+  it('writes a fix the way the line was written', () => {
+    // [[1, 2], [3, 4]] times the column [2, 1] is the column [4, 10].
+    expect(last(['[[1, 2], [3, 4]] * [[2], [1]]', '= [[4], [11]]']).suggestion).toBe('= [[4], [10]]');
+    // (1, 2) + (6, 8) = (7, 10).
+    expect(last(['(1, 2) + 2(3, 4)', '= (7, 11)']).suggestion).toBe('= (7, 10)');
+    expect(last(['⟨1, 2⟩ + ⟨3, 4⟩', '= ⟨4, 5⟩']).suggestion).toBe('= ⟨4, 6⟩');
+    // e^(2x) = 7 gives 2x = ln 7, and e^x = 5 gives x = ln(5).
+    expect(last(['e^(2x) = 7', '2x = 7']).suggestion).toBe('2x = ln 7');
+    expect(last(['e^x = 5', 'x = 2']).suggestion).toBe('x = ln(5)');
+    // The suggested lines check as right.
+    expect(marks(['e^(2x) = 7', '2x = ln 7', 'x = ln(7)/2'])).toEqual([
+      'ok/start',
+      'ok/sameSolutions',
+      'ok/sameSolutions',
+    ]);
+  });
+
+  it('never shows a malformed number or a lone differential with a check mark', () => {
+    expect(marks(['x = 0.1.2', 'x = 0.1.2'])).toEqual(['unchecked/unreadable', 'unchecked/unreadable']);
+    expect(marks(['dx', '= dx'])).toEqual(['unchecked/unreadable', 'unchecked/unreadable']);
+    expect(marks(['2x dx'])).toEqual(['unchecked/unreadable']);
+    // Still read: a derivative written with spaces, an integral, and a differential line.
+    expect(marks(['y = x^2', 'dy / dx = 2x'])[1]).toBe('ok/equivalent');
+    expect(marks(['∫ 2x dx', '= x^2 + C'])[1]).toBe('ok/antiderivative');
+    expect(marks(['u = x^2', 'du = 2x dx'])[1]).toBe('ok/note');
+  });
+
+  it('reads log bases, binomials and mod', () => {
+    // 2^3 = 8, C(5, 2) = 5·4/2 = 10, 7 = 2·3 + 1, and -7 = -3·3 + 2.
+    expect(marks(['log_2 8', '= 3'])).toEqual(['ok/start', 'ok/sameValue']);
+    expect(last(['log_2 8 = 4'])).toMatchObject({ verdict: 'broken', suggestion: '= 3' });
+    expect(marks(['log_2 x = 3', 'x = 8'])[1]).toBe('ok/sameSolutions');
+    expect(marks(['C(5, 2)', '= 10'])[1]).toBe('ok/sameValue');
+    expect(last(['5C2 = 11'])).toMatchObject({ verdict: 'broken', suggestion: '= 10' });
+    expect(marks(['7 mod 3', '= 1'])[1]).toBe('ok/sameValue');
+    expect(marks(['-7 mod 3 = 2'])).toEqual(['ok/sameValue']);
+    expect(last(['7 mod 3 = 2']).verdict).toBe('broken');
+    // The minus of x - 7 is subtraction: 5 - (7 mod 3) = 4. After * the reading is unsure, so it is not read.
+    expect(marks(['x = 5', 'x - 7 mod 3', '= 4'])[2]).toBe('ok/knownValue');
+    expect(marks(['2 * 7 mod 3 = 2'])).toEqual(['unchecked/unreadable']);
+    expect(marks(['log_2 x^3 = 6'])).toEqual(['unchecked/unreadable']);
+  });
+});

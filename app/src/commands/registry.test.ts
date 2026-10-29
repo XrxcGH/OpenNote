@@ -8,7 +8,7 @@ import type { Platform } from '../platform/types';
 import { commands } from '../registries';
 import type { NotesService } from '../services/notes/types';
 import { t } from '../strings/t';
-import { configureCommands, executeCommand } from './registry';
+import { commandAvailable, configureCommands, executeCommand } from './registry';
 import type { CommandDef, CommandId } from './types';
 
 describe('executeCommand', () => {
@@ -25,6 +25,24 @@ describe('executeCommand', () => {
     expect(await executeCommand(id)).toBe(false);
     expect(toasts).toEqual([{ message: t('errors.commandFailed'), tone: 'danger' }]);
     expect(log).toHaveBeenCalledWith('error', expect.stringContaining('is unknown'));
+    stop();
+  });
+});
+
+describe('commandAvailable', () => {
+  it("answers as running the command would: the lasso toolbar's Check my work follows its Settings switch", () => {
+    let on = true;
+    const id = 'test.switchable' as CommandId;
+    const stop = commands.register({
+      id,
+      title: 'errors.commandFailed',
+      when: () => on,
+      run: () => {},
+    } as unknown as CommandDef);
+    expect(commandAvailable(id)).toBe(true);
+    on = false;
+    expect(commandAvailable(id)).toBe(false);
+    expect(commandAvailable('test.missing' as CommandId)).toBe(false);
     stop();
   });
 });

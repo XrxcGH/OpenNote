@@ -5,7 +5,7 @@
 // pen and a finger then move, resize, and delete it, and a tap inside it puts the caret in its text.
 import type { BlockJson, Edit } from '../../../services/pages/types';
 import { isEnabled } from '../../../app/flags';
-import { executeCommand } from '../../../commands/registry';
+import { commandAvailable, executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { tokens } from '../../../theme/tokens';
@@ -151,14 +151,14 @@ function buildFrame(doc: Document, actions: readonly [MessageKey, string, () => 
   return { frame, mover, bar };
 }
 
-/** Graph (a graph beside the selection) and Check my work (marks on each row), for handwriting read as math. */
+/** Graph (a graph beside the selection) and Check my work (marks on each row), for handwriting read as math. Check my
+ * work asks its command each time the toolbar is built, so the switch in Settings, then Editing, counts too. */
 function graphAction(): [MessageKey, string, () => void][] {
   const run = (id: `${string}.${string}`) => () => void executeCommand(id, undefined, 'menu');
-  const graph = isEnabled('math.graphPopup')
-    ? [['mathTools.graphPopup.graph', 'graph', run('math.graphHandwriting')]]
-    : [];
-  const check = isEnabled('math.checkWork') ? [['stepCheck.lassoAction', 'checkWork', run('math.checkWork')]] : [];
-  return isEnabled('intel.mathInk') ? ([...graph, ...check] as [MessageKey, string, () => void][]) : [];
+  const items: [MessageKey, string, () => void][] = [];
+  if (isEnabled('math.graphPopup')) items.push(['mathTools.graphPopup.graph', 'graph', run('math.graphHandwriting')]);
+  if (commandAvailable('math.checkWork')) items.push(['stepCheck.lassoAction', 'checkWork', run('math.checkWork')]);
+  return isEnabled('intel.mathInk') ? items : [];
 }
 
 class FrameView implements SelectionFrame {
