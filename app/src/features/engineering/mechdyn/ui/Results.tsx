@@ -29,34 +29,37 @@ function Math({ latex }: { latex: string }) {
   return <div className={styles.math} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-export function Results({ tool, outcome, system, say }: { tool: string; outcome: Outcome; system: System; say: Say }) {
-  const c: InsertContext = { tool, outcome, system, say };
-  const results = outcome.rows.map((row) => row.value);
-  const pictures = useMemo(
-    () => (outcome.plots ?? []).map((plot) => ({ title: plotTitle(say, plot), svg: plotPicture(say, plot, SCREEN) })),
-    [outcome, say],
+type Part = { c: InsertContext };
+
+function ResultTable({ c }: Part) {
+  const { outcome, say } = c;
+  return (
+    <section className={styles.section} aria-label={say('kitMechDyn.ui.results')}>
+      <h3 className={styles.heading}>{say('kitMechDyn.ui.results')}</h3>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">{say('kitMechDyn.ui.quantity')}</th>
+            <th scope="col">{say('kitMechDyn.ui.value')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {outcome.rows.map((row, i) => (
+            <tr key={`${row.id}-${i}`} className={row.answer ? styles.answer : undefined}>
+              <th scope="row">{rowLabel(c, row)}</th>
+              <td className={styles.number}>{rowText(c, row)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
+}
+
+function DataTables({ c }: Part) {
+  const { tool, outcome, say } = c;
   return (
     <>
-      <section className={styles.section} aria-label={say('kitMechDyn.ui.results')}>
-        <h3 className={styles.heading}>{say('kitMechDyn.ui.results')}</h3>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">{say('kitMechDyn.ui.quantity')}</th>
-              <th scope="col">{say('kitMechDyn.ui.value')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {outcome.rows.map((row, i) => (
-              <tr key={`${row.id}-${i}`} className={row.answer ? styles.answer : undefined}>
-                <th scope="row">{rowLabel(c, row)}</th>
-                <td className={styles.number}>{rowText(c, row)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
       {outcome.tables?.map((table) => {
         const name = say(`kitMechDyn.${tool}.table.${table.id}`);
         return (
@@ -89,6 +92,40 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
           </div>
         );
       })}
+    </>
+  );
+}
+
+function StepList({ c }: Part) {
+  const { outcome, system, say } = c;
+  const results = outcome.rows.map((row) => row.value);
+  if (outcome.steps.length === 0) return null;
+  return (
+    <section className={styles.section} aria-label={say('kitMechDyn.ui.steps')}>
+      <h3 className={styles.heading}>{say('kitMechDyn.ui.steps')}</h3>
+      {system === 'us' && <p className={styles.quiet}>{say('kitMechDyn.ui.stepsInSi')}</p>}
+      <ol className={styles.stepList}>
+        {outcome.steps.map((one, i) => (
+          <li key={i}>
+            <span>{stepWords(c, one)}</span>
+            {one.math && <Math latex={stepMath(one.math, system, results)} />}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+export function Results({ tool, outcome, system, say }: { tool: string; outcome: Outcome; system: System; say: Say }) {
+  const c: InsertContext = { tool, outcome, system, say };
+  const pictures = useMemo(
+    () => (outcome.plots ?? []).map((plot) => ({ title: plotTitle(say, plot), svg: plotPicture(say, plot, SCREEN) })),
+    [outcome, say],
+  );
+  return (
+    <>
+      <ResultTable c={c} />
+      <DataTables c={c} />
       {pictures.map((picture, i) => (
         <figure key={i} className={styles.figure}>
           <div role="img" aria-label={picture.title} dangerouslySetInnerHTML={{ __html: picture.svg }} />
@@ -108,20 +145,7 @@ export function Results({ tool, outcome, system, say }: { tool: string; outcome:
           </ul>
         </section>
       )}
-      {outcome.steps.length > 0 && (
-        <section className={styles.section} aria-label={say('kitMechDyn.ui.steps')}>
-          <h3 className={styles.heading}>{say('kitMechDyn.ui.steps')}</h3>
-          {system === 'us' && <p className={styles.quiet}>{say('kitMechDyn.ui.stepsInSi')}</p>}
-          <ol className={styles.stepList}>
-            {outcome.steps.map((one, i) => (
-              <li key={i}>
-                <span>{stepWords(c, one)}</span>
-                {one.math && <Math latex={stepMath(one.math, system, results)} />}
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+      <StepList c={c} />
       {outcome.sources?.map((source) => (
         <p key={source} className={styles.quiet}>
           {say('kitMechDyn.ui.source', { source })}
