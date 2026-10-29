@@ -1,6 +1,6 @@
 //! The cryptography of sync, built only from audited RustCrypto crates, with the patterns of
 //! `crates/interop/src/lock.rs`: Argon2id turns a passphrase into a key, XChaCha20-Poly1305 seals every object under
-//! a random 192 bit nonce, and keys live in `zeroize` buffers. BLAKE2b, keyed, derives subkeys and names chunks.
+//! a random 192 bit nonce, and keys live in `zeroize` buffers. Keyed BLAKE2b derives subkeys and names chunks.
 //!
 //! Every sealed object carries associated data that names the vault, the object's kind, and its name in storage,
 //! so a blob can't be moved to another name, another kind, or another vault without failing its tag.
@@ -277,7 +277,8 @@ mod tests {
 
     #[test]
     fn base32_codes_survive_how_people_type_them() {
-        // RFC 4648's test bytes "f" and "fo", in Crockford's alphabet: 0x66 = 01100 110(00), 0x666f = 01100 11001 10111 1(0000).
+        // RFC 4648's test bytes "f" and "fo", in Crockford's alphabet:
+        // 0x66 = 01100 110(00), and 0x666f = 01100 11001 10111 1(0000).
         assert_eq!(base32(b"f", 4), "CR");
         assert_eq!(base32(b"fo", 4), "CSQG");
         let bytes: Vec<u8> = (0..32).map(|i| (i * 37 + 11) as u8).collect();

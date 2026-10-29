@@ -1,5 +1,5 @@
 //! Dumb storage: anything that can store, read, list, and delete named blobs. The engine never needs more, so the
-//! same sync runs over a synced folder, a WebDAV server, and (later) an S3-compatible bucket.
+//! same sync runs over a synced folder, a WebDAV server, and (later) a bucket in S3-compatible storage.
 //!
 //! Names are short paths of lower-case letters, digits, and slashes, such as `c/ab/ab12...` or `h/0f3a.../7`.
 //! Anything else a listing returns, such as a sync tool's conflict copy or a stray file, is skipped, so hostile

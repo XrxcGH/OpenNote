@@ -17,7 +17,7 @@ use crate::error::{Result, SyncError};
 const MAGIC: &[u8; 8] = b"ONSYNC01";
 const PREFIX: usize = 8 + 4 + 16 + 12 + 16;
 const SLOT: usize = 32 + OVERHEAD;
-/// The header ends with a MAC of everything before it under a key derived from the vault key, so a change to
+/// The header ends with a BLAKE2b MAC of everything before it under a key derived from the vault key, so a change to
 /// any slot shows on every unlock, not only on the one that reads it.
 const SEAL_MAC: usize = 32;
 const HEADER: usize = PREFIX + 2 * SLOT + SEAL_MAC;

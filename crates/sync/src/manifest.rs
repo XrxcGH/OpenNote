@@ -1,5 +1,5 @@
 //! What a device knows: every path in the notes folder with its content, its version vector, and whether it was
-//! deleted. A head is one device's whole manifest, compressed and sealed.
+//! deleted. A head is one device's whole manifest, which is compressed and then sealed.
 
 use std::collections::BTreeMap;
 use std::io::{Read, Write};

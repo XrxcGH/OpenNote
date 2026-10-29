@@ -161,7 +161,7 @@ pub fn page_dir(page: u128) -> String {
     format!("Bio/{}/{}", SectionId(id(1)), PageId(id(page)))
 }
 
-/// A real `section.json` listing pages, each with its title and change time.
+/// A real `section.json` that lists pages by ID, title, and change time.
 pub fn section(pages: &[(u128, &str, i64)], changed_ms: i64) -> Vec<u8> {
     let mut order = None;
     let entries = pages

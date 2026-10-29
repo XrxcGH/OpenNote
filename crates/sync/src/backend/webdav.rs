@@ -390,8 +390,10 @@ mod tests {
         assert_eq!(percent_decode("/dav/a%20b/c"), "/dav/a b/c");
         assert_eq!(percent_decode("100%"), "100%");
         let xml = br#"<?xml version="1.0"?><d:multistatus xmlns:d="DAV:">
-            <d:response><d:href>/dav/h/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response>
-            <d:response><d:href>https://x.example/dav/h/ab/1</d:href><d:propstat><d:prop><d:resourcetype/></d:prop></d:propstat></d:response>
+            <d:response><d:href>/dav/h/</d:href><d:propstat><d:prop>
+              <d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response>
+            <d:response><d:href>https://x.example/dav/h/ab/1</d:href>
+              <d:propstat><d:prop><d:resourcetype/></d:prop></d:propstat></d:response>
             </d:multistatus>"#;
         assert_eq!(
             read_multistatus(xml),

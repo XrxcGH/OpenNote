@@ -150,7 +150,8 @@ fn handle(
             let mut xml = String::from(r#"<?xml version="1.0"?><D:multistatus xmlns:D="DAV:">"#);
             let entry = |href: &str, folder: bool| {
                 let kind = if folder { "<D:collection/>" } else { "" };
-                format!("<D:response><D:href>{href}</D:href><D:propstat><D:prop><D:resourcetype>{kind}</D:resourcetype></D:prop></D:propstat></D:response>")
+                let prop = format!("<D:propstat><D:prop><D:resourcetype>{kind}</D:resourcetype></D:prop></D:propstat>");
+                format!("<D:response><D:href>{href}</D:href>{prop}</D:response>")
             };
             xml.push_str(&entry(&path, true));
             for dir in dav.dirs.iter().filter(|d| parent(d) == path && **d != path) {
