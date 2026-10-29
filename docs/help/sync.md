@@ -51,9 +51,9 @@ Sync never throws away text.
 
 | What you see | What to do |
 |---|---|
-| A file in the sync storage was changed outside OpenNote | Something changed an encrypted file. Sync pauses so nothing wrong is written to your notes. Check the folder or server, restore it from its own history if you can, then choose Sync now |
+| A file in the sync storage was changed outside OpenNote | Something changed a device's encrypted list of changes or the vault file. Sync pauses so nothing wrong is written to your notes. Check the folder or server, restore it from its own history if you can, then choose Sync now |
 | The storage holds older changes than this device has already seen | The folder or server went back in time, for example after a restore. If you restored it on purpose, choose **Trust the storage as it is** |
-| Some changes from another device haven't arrived yet | The service that syncs the folder is still copying files. OpenNote tries again |
+| Some changes from another device haven't arrived yet | The service that syncs the folder is still copying files, or a piece of a file in the storage is missing or damaged. OpenNote tries again, and the device that has the file sends that piece again on its next sync |
 | This device was removed from sync | Another device removed this one. Your notes here are kept. Turn sync off here, then join again |
 | The sync storage couldn't be reached | Check that the folder exists, or that the server is up and the password is right |
 

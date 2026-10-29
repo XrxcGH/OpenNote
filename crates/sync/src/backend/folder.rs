@@ -151,6 +151,17 @@ impl Backend for FolderBackend {
         Ok(out)
     }
 
+    fn sizes(&self, prefix: &str) -> Result<Option<Vec<(String, u64)>>> {
+        let mut out = Vec::new();
+        for name in self.list(prefix)? {
+            // One gone since the listing is simply not there any more.
+            if let Ok(meta) = fs::symlink_metadata(self.path(&name)) {
+                out.push((name, meta.len()));
+            }
+        }
+        Ok(Some(out))
+    }
+
     fn delete(&self, name: &str) -> Result<()> {
         check(name)?;
         match fs::remove_file(self.path(name)) {
@@ -181,6 +192,11 @@ mod tests {
         assert_eq!(store.get("h/0f/2").expect("get"), None);
         assert_eq!(store.list("h/").expect("list"), ["h/0f/1"]);
         assert_eq!(store.list("").expect("list all"), ["c/ab/ab01", "h/0f/1", "vault"]);
+        assert_eq!(
+            store.sizes("h/").expect("sizes"),
+            Some(vec![("h/0f/1".to_owned(), 10)]),
+            "\"head again\" is ten bytes"
+        );
         assert!(store.exists("vault").expect("exists"));
         store.delete("vault").expect("delete");
         store.delete("vault").expect("delete again");

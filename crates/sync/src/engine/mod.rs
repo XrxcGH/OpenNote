@@ -337,34 +337,43 @@ impl Engine {
         local::write_atomic(&self.state_path, &bytes)
     }
 
+    /// A chunk's bytes. A chunk that is gone, longer than OpenNote writes, doesn't open, or doesn't match its name
+    /// counts as missing, not as tampering: a bad disk or a half-copied file in a synced folder damages one, and
+    /// the device that has the file sends it again when asked (see `repair`). Its bytes are never used either way.
     fn fetch_chunk(&self, id: &str) -> Result<Vec<u8>> {
         let name = chunk_name(id);
-        let Some(sealed) = self.backend.get(&name)? else {
+        let found = match self.backend.get(&name) {
+            Err(SyncError::Tampered(_)) => None,
+            other => other?,
+        };
+        let bytes = found
+            .and_then(|sealed| open(&self.keys.seal, &self.keys.id, "chunk", &name, &sealed))
+            .and_then(|plain| unpad(&plain).map(<[u8]>::to_vec))
+            .filter(|bytes| hex(&mac(self.keys.chunk.as_ref(), &[bytes])) == id);
+        let Some(bytes) = bytes else {
             self.missing
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .insert(id.to_owned());
             return Err(SyncError::Incomplete);
         };
-        let plain = open(&self.keys.seal, &self.keys.id, "chunk", &name, &sealed)
-            .ok_or_else(|| SyncError::Tampered("A piece of a file doesn't open.".into()))?;
-        let bytes = unpad(&plain)
-            .ok_or_else(|| SyncError::Tampered("A piece of a file doesn't read.".into()))?
-            .to_vec();
-        if hex(&mac(self.keys.chunk.as_ref(), &[&bytes])) != id {
-            return Err(SyncError::Tampered("A piece of a file doesn't match its name.".into()));
-        }
         Ok(bytes)
     }
 
+    /// Seals and stores a chunk unless storage already has one under its name. Whether it sent it.
     fn put_chunk(&self, id: &str, bytes: &[u8]) -> Result<bool> {
-        let name = chunk_name(id);
-        if self.backend.exists(&name)? {
+        if self.backend.exists(&chunk_name(id))? {
             return Ok(false);
         }
-        let sealed = seal(&self.keys.seal, &self.keys.id, "chunk", &name, &pad(bytes))?;
-        self.backend.put(&name, &sealed)?;
+        self.replace_chunk(id, bytes)?;
         Ok(true)
+    }
+
+    /// Seals and stores a chunk, replacing one under its name that another device found damaged.
+    fn replace_chunk(&self, id: &str, bytes: &[u8]) -> Result<()> {
+        let name = chunk_name(id);
+        let sealed = seal(&self.keys.seal, &self.keys.id, "chunk", &name, &pad(bytes))?;
+        self.backend.put(&name, &sealed)
     }
 
     /// A head's entries, without the paths no device may write: an older or hostile device's `../x` or `CON.txt`

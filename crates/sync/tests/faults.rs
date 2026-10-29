@@ -150,9 +150,17 @@ fn a_changed_byte_in_any_blob_stops_sync_and_writes_nothing() {
             store.set_raw(name, bad);
             let fresh = join(backend.clone(), &format!("t{checked}"));
             let error = fresh.engine.sync().expect_err("a changed blob is refused");
-            assert!(matches!(error, SyncError::Tampered(_)), "{name} byte {at}: {error:?}");
+            // A damaged chunk is one to ask for again; a damaged head stops sync.
+            if name.starts_with("c/") {
+                assert_eq!(error, SyncError::Incomplete, "{name} byte {at}");
+            } else {
+                assert!(matches!(error, SyncError::Tampered(_)), "{name} byte {at}: {error:?}");
+            }
             assert!(fresh.files().is_empty(), "nothing was written from {name}");
             store.set_raw(name, bytes.clone());
+            for request in store.snapshot().into_keys().filter(|n| n.starts_with("m/")) {
+                store.remove_raw(&request);
+            }
             vault::remove_device(backend.as_ref(), d[0].engine.keys(), &fresh.tag, 0).expect("tidies");
             store.remove_raw(&format!("x/{}", fresh.tag));
             checked += 1;
@@ -164,7 +172,8 @@ fn a_changed_byte_in_any_blob_stops_sync_and_writes_nothing() {
     let chunks: Vec<_> = good.keys().filter(|n| n.starts_with("c/")).cloned().collect();
     store.set_raw(&chunks[0], good[&chunks[1]].clone());
     let fresh = join(backend.clone(), "swap");
-    assert!(matches!(fresh.engine.sync().unwrap_err(), SyncError::Tampered(_)));
+    assert_eq!(fresh.engine.sync().unwrap_err(), SyncError::Incomplete);
+    assert!(fresh.files().is_empty(), "the moved chunk's bytes were not used");
     store.set_raw(&chunks[0], good[&chunks[0]].clone());
     let head = good.keys().find(|n| n.starts_with("h/")).expect("head").clone();
     store.set_raw("h/ffffffffffffffff/1", good[&head].clone());
@@ -304,4 +313,61 @@ fn a_chunk_lost_after_its_head_was_written_is_sent_again() {
     assert_eq!(d[0].engine.repair(later).expect("repairs"), 1);
     assert!(store.snapshot().contains_key(&lost));
     assert_eq!(d[0].engine.repair(later + 1).expect("repairs"), 0, "checked once a day");
+}
+
+/// A chunk that is there but damaged (a flipped byte from a bad disk, a half-copied file, one too long to be
+/// OpenNote's): the other device asks for it, the device that has the file replaces it on its next round, and the
+/// other device then gets the file. The expected bytes are the ones written, not anything read back from storage.
+#[test]
+fn a_damaged_chunk_is_sent_again_by_the_device_that_has_the_file() {
+    let store = MemoryBackend::new();
+    let backend: Arc<dyn Backend> = Arc::new(store.clone());
+    let d = devices(backend.clone(), 1);
+    let big: Vec<u8> = (0..(2 * 1024 * 1024 + 11)).map(|i| (i % 241) as u8).collect();
+    d[0].write("Bio/scan.bin", &big);
+    d[0].engine.sync().expect("syncs");
+    let chunks: Vec<String> = store.snapshot().into_keys().filter(|n| n.starts_with("c/")).collect();
+    assert_eq!(chunks.len(), 3, "two whole chunks and the rest");
+    let good = store.snapshot()[&chunks[0]].clone();
+    let flipped = |b: &[u8]| {
+        let mut bad = b.to_vec();
+        bad[b.len() / 3] ^= 0x01;
+        bad
+    };
+    let too_long = |b: &[u8]| [b, &vec![0u8; 8 * 1024 * 1024][..]].concat();
+    for (round, (what, bad)) in [
+        ("a flipped byte", flipped(&good)),
+        ("half a file", good[..good.len() / 2].to_vec()),
+        ("too long", too_long(&good)),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let other = join(backend.clone(), &format!("o{round}"));
+        store.set_raw(&chunks[0], bad.clone());
+        assert_eq!(other.engine.sync().unwrap_err(), SyncError::Incomplete, "{what}");
+        assert_eq!(
+            other.read("Bio/scan.bin"),
+            None,
+            "{what}: no damaged bytes reach the file"
+        );
+        let requests: Vec<_> = store.snapshot().into_keys().filter(|n| n.starts_with("m/")).collect();
+        assert_eq!(requests.len(), 1, "{what}: {requests:?}");
+        d[0].engine.sync().expect("the holder's round syncs");
+        assert_ne!(store.snapshot()[&chunks[0]], bad, "{what}: the holder replaced it");
+        assert!(
+            !store.snapshot().keys().any(|n| n.starts_with("m/")),
+            "{what}: the request went"
+        );
+        other.engine.sync().expect("the other device recovers");
+        assert_eq!(other.read("Bio/scan.bin").as_deref(), Some(&big[..]), "{what}");
+    }
+
+    // With no one asking, the holder's daily check finds a chunk of the wrong size and replaces it.
+    store.set_raw(&chunks[1], store.snapshot()[&chunks[1]][..100].to_vec());
+    let later = 2 * opennote_sync::engine::CHECK_MS + 1_900_000_000_000;
+    assert_eq!(d[0].engine.repair(later).expect("repairs"), 1);
+    let fresh = join(backend.clone(), "late");
+    fresh.engine.sync().expect("a new device gets every piece");
+    assert_eq!(fresh.read("Bio/scan.bin").as_deref(), Some(&big[..]));
 }

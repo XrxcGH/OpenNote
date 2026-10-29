@@ -111,6 +111,17 @@ impl Backend for MemoryBackend {
             .collect())
     }
 
+    fn sizes(&self, prefix: &str) -> Result<Option<Vec<(String, u64)>>> {
+        Ok(Some(
+            self.lock()
+                .blobs
+                .iter()
+                .filter(|(name, _)| name.starts_with(prefix) && valid_name(name))
+                .map(|(name, bytes)| (name.clone(), bytes.len() as u64))
+                .collect(),
+        ))
+    }
+
     fn delete(&self, name: &str) -> Result<()> {
         check(name)?;
         let mut inner = self.lock();

@@ -6,7 +6,7 @@ use std::fs;
 use std::io::{Seek, SeekFrom};
 
 use super::{chunk_name, digest, head_name, request_name, Engine, GcMark, LocalState, GC_GRACE_MS};
-use crate::crypto::{hex, mac, open, pad, seal};
+use crate::crypto::{hex, mac, open, pad, padded_len, seal, OVERHEAD};
 use crate::error::{Result, SyncError};
 use crate::local;
 use crate::manifest::{self, Head, Manifest};
@@ -94,20 +94,35 @@ impl Engine {
                 }
             }
         }
+        // Chunks to send even though storage has one under the name: another device found it damaged, or its size
+        // is not the size OpenNote writes for it (a half-copied file).
+        let mut damaged: BTreeSet<String> = requests.keys().cloned().collect();
         let daily = now - state.checked >= CHECK_MS;
         if daily && state.generation > 0 {
-            let stored: BTreeSet<String> = self
-                .backend
-                .list("c/")?
-                .into_iter()
-                .filter_map(|name| name.rsplit('/').next().map(str::to_owned))
+            let stored: HashMap<String, Option<u64>> = match self.backend.sizes("c/")? {
+                Some(sizes) => sizes.into_iter().map(|(name, size)| (name, Some(size))).collect(),
+                None => self.backend.list("c/")?.into_iter().map(|name| (name, None)).collect(),
+            };
+            let stored: HashMap<&str, Option<u64>> = stored
+                .iter()
+                .filter_map(|(name, size)| Some((name.rsplit('/').next()?, *size)))
                 .collect();
             // Only what this device's newest head names: other versions it knows may have been collected on purpose.
             match self.read_head(&self.device, state.generation) {
                 Ok(head) => {
                     for entry in head.entries.values().filter(|e| e.live()) {
-                        let lost = entry.content.chunks.iter().filter(|id| !stored.contains(*id));
-                        wanted.extend(lost.cloned());
+                        for (index, id) in entry.content.chunks.iter().enumerate() {
+                            match stored.get(id.as_str()) {
+                                None => {
+                                    wanted.insert(id.clone());
+                                }
+                                Some(Some(size)) if *size != sealed_chunk_size(entry.content.size, index) => {
+                                    wanted.insert(id.clone());
+                                    damaged.insert(id.clone());
+                                }
+                                Some(_) => {}
+                            }
+                        }
                     }
                 }
                 Err(SyncError::Incomplete) => {}
@@ -117,16 +132,23 @@ impl Engine {
         let mut sent = 0;
         let mut buf = Vec::with_capacity(local::CHUNK);
         for id in &wanted {
-            let mut back = self.backend.exists(&chunk_name(id))?;
+            let again = damaged.contains(id);
+            let mut back = !again && self.backend.exists(&chunk_name(id))?;
             if !back {
                 if let Some((path, index)) = held.get(id.as_str()) {
                     // The file may have changed since: send only bytes that still have this chunk's name.
                     if self.read_held(path, *index, &mut buf)? && hex(&mac(self.keys.chunk.as_ref(), &[&buf])) == *id {
-                        sent += usize::from(self.put_chunk(id, &buf)?);
+                        if again {
+                            self.replace_chunk(id, &buf)?;
+                            sent += 1;
+                        } else {
+                            sent += usize::from(self.put_chunk(id, &buf)?);
+                        }
                         back = true;
                     }
                 }
             }
+            // A device that doesn't hold the chunk leaves the request for one that does.
             if let Some(name) = requests.get(id).filter(|_| back) {
                 self.backend.delete(name)?;
             }
@@ -178,6 +200,13 @@ impl Engine {
             .filter_map(|name| name.rsplit('/').next().map(str::to_owned))
             .collect();
         let unused: BTreeSet<String> = stored.difference(&used).cloned().collect();
+        // A request for a chunk no head names any more can't be answered and isn't needed: a device that still
+        // wants it asks again.
+        for name in self.backend.list("m/")? {
+            if name.strip_prefix("m/").is_some_and(|id| !used.contains(id)) {
+                self.backend.delete(&name)?;
+            }
+        }
         let mut removed = BTreeSet::new();
         // Two newer heads of every device, not one: a round that was already under way when the chunks were marked
         // may have found one in storage and still be about to write the head that needs it.
@@ -255,4 +284,11 @@ impl Engine {
             }
         }
     }
+}
+
+/// The size in storage of chunk `index` of a file of `size` bytes, as OpenNote seals it.
+fn sealed_chunk_size(size: u64, index: usize) -> u64 {
+    let start = (index as u64).saturating_mul(local::CHUNK as u64);
+    let len = size.saturating_sub(start).min(local::CHUNK as u64);
+    (padded_len(len as usize) + OVERHEAD) as u64
 }

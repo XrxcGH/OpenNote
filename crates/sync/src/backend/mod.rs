@@ -32,6 +32,12 @@ pub trait Backend: Send + Sync {
     fn list(&self, prefix: &str) -> Result<Vec<String>>;
     /// Removes the blob. Removing one that is gone is not an error.
     fn delete(&self, name: &str) -> Result<()>;
+    /// Every valid name under `prefix` with its size in bytes, when storage can tell them without reading each
+    /// blob; `None` when it can't. The daily check uses it to find a half-copied chunk.
+    fn sizes(&self, prefix: &str) -> Result<Option<Vec<(String, u64)>>> {
+        let _ = prefix;
+        Ok(None)
+    }
 }
 
 /// Whether `name` is a name the engine writes: 1 to 160 characters of `a-z`, `0-9`, and single slashes, not
