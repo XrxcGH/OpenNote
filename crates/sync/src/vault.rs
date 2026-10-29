@@ -651,8 +651,8 @@ impl PairingCode {
     }
 }
 
-/// The plain start of a pairing slot: when it was made, and a MAC of that under the vault key, so any device can
-/// tell when a slot it can't open is past its day, and a joining device can't be told the code is newer.
+/// The plain start of a pairing slot: when it was made, then a keyed hash of that under the vault key. Any device
+/// can tell when a slot it can't open is past its day. A joining device can't be told the code is newer.
 const MADE: usize = 8 + 32;
 
 fn made_mac(keys: &VaultKeys, name: &str, made: i64) -> [u8; 32] {

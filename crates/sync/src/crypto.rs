@@ -63,10 +63,10 @@ impl Cost {
     }
 
     /// Whether a passphrase may be checked at this cost: exactly [`COST`], the only one this app writes. A cheaper
-    /// one would make the passphrase quicker to guess; a dearer one is a tampered header making every unlock burn
-    /// seconds of CPU and up to 256 MiB before its MAC says so. [`Cost::allowed`]'s wider range stays for reading,
-    /// for when a header version says a newer app wrote another cost. `quick` allows the cheaper [`QUICK`] too, in
-    /// tests, but nothing dearer than [`COST`].
+    /// one would make the passphrase quicker to guess. A dearer one is a tampered header: each unlock would burn
+    /// seconds of CPU and up to 256 MiB before its MAC says so. [`Cost::allowed`] keeps a wider range for reading,
+    /// for when a header version says a newer app wrote another cost. In tests, `quick` also allows cheaper costs
+    /// such as [`QUICK`], but nothing dearer than [`COST`].
     pub fn checkable(self, quick: bool) -> bool {
         self == COST
             || (quick

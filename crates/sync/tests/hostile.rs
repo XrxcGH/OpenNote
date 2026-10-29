@@ -74,7 +74,7 @@ fn a_head_name_with_an_impossible_number_stops_sync_without_writing_a_head() {
     assert!(matches!(d[0].engine.sync(), Err(SyncError::Tampered(_))));
     fs::remove_file(&top).expect("removes");
     assert_eq!(heads_of(backend.as_ref(), &d[0].tag), before);
-    // Cleaned up by hand, sync carries on and the desktop gets the laptop's next edit.
+    // Cleaned up by hand, sync carries on, and the desktop gets the laptop's next edit.
     d[0].write("Bio/todo.txt", b"after the cleanup");
     settle(&d, 3);
     assert_eq!(d[1].read("Bio/todo.txt").as_deref(), Some(&b"after the cleanup"[..]));
