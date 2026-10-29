@@ -19,9 +19,10 @@ addCommand({
 
 // A live calculation block's Open in tool puts the block's texts and units back, then opens the tool.
 if (typeof window !== 'undefined') {
-  void import('../../tools').then((tools) =>
-    tools.registerFormKit('fluidheat', 'opennote.tools.kitFluidHeat.', (tool) => open(tool)),
-  );
+  // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
+  void import('../../tools')
+    .then((tools) => tools.registerFormKit('fluidheat', 'opennote.tools.kitFluidHeat.', (tool) => open(tool)))
+    .catch(() => undefined);
 }
 
 for (const tool of FLUIDHEAT_TOOLS) {

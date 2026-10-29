@@ -30,7 +30,8 @@ const reopen = async (tool: string) => {
 };
 
 if (typeof window !== 'undefined') {
-  void import('../../tools').then((tools) => tools.registerKit('solids', reopen));
+  // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
+  void import('../../tools').then((tools) => tools.registerKit('solids', reopen)).catch(() => undefined);
   window.addEventListener(CALC_EVENT, (event) => {
     const request = (event as CustomEvent<KitCalcRequest>).detail;
     request.handled = true;
