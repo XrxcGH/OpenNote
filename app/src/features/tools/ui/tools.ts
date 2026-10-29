@@ -55,7 +55,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'formulasheet', title: 'docStructure.sheet.title', width: 400 },
   { id: 'practice', title: 'docStructure.practice.title', width: 440 },
   { id: 'figure', title: 'docStructure.figure.title', width: 420 },
-  { id: 'kit-signals', title: 'kitSignals.kit.title', width: 600 },
+  { id: 'kit-signals', title: 'kitSignals.kit.title', width: 560 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

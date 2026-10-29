@@ -123,8 +123,8 @@ pub const TOOLS: &[Tool] = &[
     Tool {
         id: "kit-signals",
         title: "Signals and sound",
-        width: 640.0,
-        height: 760.0,
+        width: 560.0,
+        height: 720.0,
     },
 ];
 
