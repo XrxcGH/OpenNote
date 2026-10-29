@@ -39,4 +39,13 @@ describe('the molecular biology window', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Insert ORF map' }));
     expect(inserted.at(-1)?.picture).toMatchObject({ mime: 'image/svg+xml', alt: 'ORF map' });
   });
+
+  it('works a dihybrid cross and inserts its Punnett square as a table', async () => {
+    const { container } = renderUi(<KitMolBioTool />);
+    await userEvent.click(await screen.findByRole('tab', { name: 'Crosses' }));
+    expect(await screen.findByText('P(aabb) = 1/16; phenotype ratio 9:3:3:1')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Insert Punnett square' }));
+    expect(inserted.at(-1)?.table).toMatchObject({ header: expect.arrayContaining(['AB (1/4)']) });
+    await expectNoAxeViolations(container);
+  });
 });

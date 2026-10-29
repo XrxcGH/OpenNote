@@ -1,5 +1,6 @@
 // The molecular biology, genetics, and evolution kit: the window, what every tool shares, and one part per tool.
 import { align } from './kitMolBio/align';
+import { crosses } from './kitMolBio/crosses';
 import { protein } from './kitMolBio/protein';
 import { sequence } from './kitMolBio/sequence';
 
@@ -37,8 +38,18 @@ export const kitMolBio = {
     badBase: '“{char}” at position {position} is not a base or an IUPAC code.',
     noMotif: 'Type a motif.',
     badMotif: '“{char}” at position {position} of the motif is not an IUPAC code.',
+    ratioLength:
+      'There {classes, plural, one {is # count} other {are # counts}} but {ratio, plural, one {# ratio part} other {# ratio parts}}.',
+    fewClasses: 'A test needs at least 2 classes.',
+    ratioPositive: 'Counts cannot be negative, and every ratio part must be more than zero.',
+    noCounts: 'The counts add up to zero.',
+    noDf: 'No degrees of freedom are left. Add classes or fit fewer parameters.',
+    zeroDenominator: 'A fraction cannot have a zero denominator.',
+    probability: '{field} needs a probability, such as 1/4, 0.25, or 25%.',
+    probabilityRange: '{field} must be from 0 to 1.',
   },
   sequence,
   protein,
   align,
+  crosses,
 } as const;
