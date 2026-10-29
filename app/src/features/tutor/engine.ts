@@ -1,6 +1,6 @@
 // Who writes the tutor's reply (ADR 0050). The rules tutor (ladder.ts) always can. A language model on this device
 // writes its own wording when one is downloaded, and the person's own key for a cloud service may be used when they
-// chose it, said yes to the exact text for this session, and Work offline is off. A model's reply is checked before
+// chose it, said yes to the exact text of that request, and Work offline is off. A model's reply is checked before
 // it is shown: empty or overlong replies are refused, and a hint that gives away the answer or the next line is asked
 // for once more (on this device only), then replaced with the built-in hint. The full solution of math always comes
 // from the rules, which work it out exactly; a model writes one only for questions the rules cannot solve.
@@ -57,7 +57,8 @@ const HISTORY_TURNS = 4;
 
 const SYSTEM =
   'You are a patient, encouraging tutor for a student. Use short, plain words and no jargon. ' +
-  'Reply in at most three short sentences. Never give the final answer unless asked for the full solution.';
+  'Reply in at most three short sentences. Write math in plain text, such as x^3/3 or sqrt(x), with no LaTeX. ' +
+  'Never give the final answer unless asked for the full solution.';
 
 const TASK: Record<Mode | `hint${Rung}`, string> = {
   hint1: 'Give hint 1 of 4: say only where to look. Do not say what is wrong or how to fix it.',
@@ -113,9 +114,10 @@ export function acceptable(request: TutorRequest, reply: string): boolean {
   if (reply === '' || reply.length > most) return false;
   if (request.mode === 'solution') return true;
   const lastRung = request.mode === 'hint' && request.rung === LAST_RUNG;
-  // No known answer (chemistry, physics, word problems): before the last rung, a stated result is refused.
-  if (request.plan.kind === 'general' && !lastRung && claimsAnswer(reply, request.context)) return false;
   const { answer, next } = secrets(request.plan);
+  // No known answer (chemistry, physics, word problems, or a slip in math the rules cannot finish, such as a
+  // quadratic): before the last rung, a stated result is refused, even when the corrected line is known.
+  if (answer === null && !lastRung && claimsAnswer(reply, request.context)) return false;
   return !leaks(reply, lastRung ? [answer] : [answer, next], request.context);
 }
 
