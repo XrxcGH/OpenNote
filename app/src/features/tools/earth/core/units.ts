@@ -52,6 +52,7 @@ export const QUANTITIES = {
   energy: [u('J', 1), u('kWh', 3.6e6), u('MJ', 1e6)],
   mixing: [u('g/kg', 1e-3), u('kg/kg', 1)],
   precipitation: [u('mm', 1e-3), u('in', 0.0254)],
+  loss: [u('1/h', 1 / 3600), u('1/s', 1), u('1/day', 1 / 86400)],
 } as const satisfies Record<string, readonly UnitDef[]>;
 
 export type QuantityId = keyof typeof QUANTITIES;
