@@ -26,11 +26,13 @@ impl Writer<'_> {
                     && crate::doc::plain_text(cell).chars().count() <= SHORT_CELL
             });
         let was = std::mem::replace(&mut self.allow_notes, false);
+        self.table_notes = was.then(Vec::new);
         let lines: Vec<String> = rows
             .iter()
             .enumerate()
             .map(|(index, row)| self.row(row, columns, header && index == 0))
             .collect();
+        let notes = self.table_notes.take().unwrap_or_default();
         self.allow_notes = was;
         let size = match columns {
             0..=6 => "\\small",
@@ -81,11 +83,27 @@ impl Writer<'_> {
         }
         out.push_str(&lines[head..].join("\n"));
         out.push_str(&format!("\n{}\n{close}}}", rule("bottom")));
-        if short {
+        let table = if short {
             format!("\\begin{{center}}\n{out}\n\\end{{center}}")
         } else {
             out
+        };
+        if notes.is_empty() {
+            return table;
         }
+        // The marks in the cells carry their numbers (the counter before the table, plus the note's place), so the
+        // cells can be set twice, as `tabularx` and a repeated `longtable` header do, without a note shifting.
+        let mut text = format!(
+            "\\setcounter{{opnfn}}{{\\value{{footnote}}}}\\addtocounter{{footnote}}{{{}}}\n{table}",
+            notes.len()
+        );
+        for (index, body) in notes.iter().enumerate() {
+            text.push_str(&format!(
+                "\n\\footnotetext[\\numexpr\\value{{opnfn}}+{}\\relax]{{{body}}}",
+                index + 1
+            ));
+        }
+        text
     }
 
     /// One row: the cells joined by tabs, padded to the width, and ended. The first cell starts with `\relax`, so a

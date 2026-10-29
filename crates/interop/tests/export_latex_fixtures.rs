@@ -24,8 +24,9 @@ const EVERYTHING: &str = "# Title with **bold**, `code`, and $x^2$\n\n\
     Plain, *italic*, ==highlight==, ~~strike~~, <u>under</u>, H<sub>2</sub>O, and 5 \\% of $\\alpha + \\beta \\leq \\sum_{i=1}^{n} x_i$. \
     A link to [the site](https://example.org/a_b?c=1&d=2#top)[^n] and a note[^m].\n\n\
     [^n]: The *first* note, with `code` and a [link](https://example.org).\n\
-    [^m]: The second note.\n\n\
-    ## Lists\n\n- one\n  - nested **two**\n    1. deeper\n    2. deeper still\n- [x] done\n- [ ] to do\n\n\
+    [^m]: The second note.\n[^t]: A note in a table cell.\n\n\
+    | Item[^t] | Value |\n|---|---|\n| one | $x_1$ |\n\n\
+    ## Lists[^m] and $y^2$\n\n- one\n  - nested **two**\n    1. deeper\n    2. deeper still\n- [x] done\n- [ ] to do\n\n\
     3. third\n4. fourth\n\n> A quote\n>\n> > nested\n\n> [!warning] Careful\n> Watch the units.\n\n\
     ```python\ndef f(x):\n    return {'a': x} # \\end{opncode} & % $ #\n```\n\n\
     ---\n\nSee equation $\\eqref{energy}$ and $\\eqref{sum}$.\n\n\

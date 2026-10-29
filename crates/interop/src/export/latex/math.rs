@@ -454,6 +454,21 @@ mod tests {
     }
 
     #[test]
+    fn row_breaks_that_end_an_equation_are_dropped_and_the_others_are_not() {
+        let mut missing = Missing::default();
+        assert_eq!(inline("a \\\\ ", Engine::Unicode, &mut missing).as_deref(), Some("$a$"));
+        assert_eq!(
+            inline("a \\\\\\\\", Engine::Unicode, &mut missing).as_deref(),
+            Some("$a$")
+        );
+        assert_eq!(inline("a \\\\ b", Engine::Unicode, &mut missing), None);
+        assert_eq!(
+            display("a &= b \\\\ c &= d \\\\", Engine::Unicode, &mut missing).as_deref(),
+            Some("\\[\n\\begin{aligned}\na &= b \\\\ c &= d\n\\end{aligned}\n\\]")
+        );
+    }
+
+    #[test]
     fn pdflatex_gets_commands_for_unicode_math() {
         let mut missing = Missing::default();
         assert_eq!(

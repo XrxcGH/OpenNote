@@ -20,14 +20,32 @@ impl Writer<'_> {
     /// A heading at the given level: `\section{...}` and so on, with a plain version for the outline.
     pub(super) fn heading(&mut self, level: usize, content: &[Inline]) -> String {
         let was = std::mem::replace(&mut self.simple, true);
+        let noted = self.stats.footnotes;
         let shown = self.inlines(content);
+        // A footnote does not belong in the table of contents or the outline, so a heading that holds one gets a
+        // short title without it, and the footnote stays in the heading itself.
+        let short = if self.stats.footnotes > noted {
+            let saved = self.stats.clone();
+            let notes = std::mem::replace(&mut self.allow_notes, false);
+            let short = self.inlines(content);
+            self.allow_notes = notes;
+            self.stats = saved;
+            Some(short)
+        } else {
+            None
+        };
         self.simple = was;
         let plain = self.heading_pdf_text(content);
         if shown.is_empty() {
             return String::new();
         }
         match section_command(level) {
-            Some(command) => format!("\\{command}{{\\texorpdfstring{{{shown}}}{{{plain}}}}}"),
+            Some(command) => match short {
+                Some(short) => format!(
+                    "\\{command}[\\texorpdfstring{{{short}}}{{{plain}}}]{{\\texorpdfstring{{{shown}}}{{{plain}}}}}"
+                ),
+                None => format!("\\{command}{{\\texorpdfstring{{{shown}}}{{{plain}}}}}"),
+            },
             None => format!("\\medskip\\noindent\\textbf{{{shown}}}\\par\\nopagebreak"),
         }
     }

@@ -46,6 +46,11 @@ const BODY_COMMANDS: &[&str] = &[
     "eqref",
     "cite",
     "footnote",
+    "footnotemark",
+    "footnotetext",
+    "numexpr",
+    "value",
+    "addtocounter",
     "item",
     "noindent",
     "par",
@@ -654,4 +659,92 @@ mod hostile {
             }
         }
     }
+}
+
+/// The body of a one-page notebook holding `markdown`.
+fn body_of(markdown: &str) -> String {
+    let world = TestEnv::new();
+    let source = notebook_with(&world.env(), markdown);
+    let tex = tex_of(&source, first_page_scope(&source), &LatexOptions::default());
+    check_tex(&tex)
+}
+
+#[test]
+fn a_footnote_in_a_table_cell_is_a_mark_with_its_text_after_the_table() {
+    let body = body_of("| x[^1] | y |\n|---|---|\n| a[^2] | b |\n\n[^1]: Cell note.\n[^2]: Second *note*.");
+    assert!(!body.contains("x0") && !body.contains("a1"), "{body}");
+    assert!(
+        body.contains(r"\textbf{x\footnotemark[\numexpr\value{opnfn}+1\relax]}"),
+        "{body}"
+    );
+    assert!(
+        body.contains(r"a\footnotemark[\numexpr\value{opnfn}+2\relax]"),
+        "{body}"
+    );
+    let counters = r"\setcounter{opnfn}{\value{footnote}}\addtocounter{footnote}{2}";
+    let (before, after) = body.split_once(r"\end{tabular}").expect("a table");
+    assert!(before.contains(counters), "{body}");
+    assert!(
+        after.contains(r"\footnotetext[\numexpr\value{opnfn}+1\relax]{Cell note.}"),
+        "{body}"
+    );
+    assert!(
+        after.contains(r"\footnotetext[\numexpr\value{opnfn}+2\relax]{Second \emph{note}.}"),
+        "{body}"
+    );
+}
+
+#[test]
+fn a_footnote_in_a_wide_table_still_names_its_note_once() {
+    let long = "a considerably longer cell that does not fit a plain column";
+    let body = body_of(&format!(
+        "| h[^1] | {long} |\n|---|---|\n| a | b |\n\n[^1]: Header note."
+    ));
+    assert!(body.contains("tabularx"), "{body}");
+    assert_eq!(body.matches(r"\footnotetext").count(), 1, "{body}");
+    assert!(
+        body.contains(r"\textbf{h\footnotemark[\numexpr\value{opnfn}+1\relax]}"),
+        "{body}"
+    );
+}
+
+#[test]
+fn a_footnote_in_a_heading_stays_out_of_the_contents_and_the_outline() {
+    let body = body_of("# Head[^1] and *more*\n\nText.\n\n[^1]: The note.");
+    assert!(
+        body.contains(
+            r"\section[\texorpdfstring{Head and \emph{more}}{Head and more}]{\texorpdfstring{Head\footnote{The note.} and \emph{more}}{Head and more}}"
+        ),
+        "{body}"
+    );
+    assert!(!body.contains("Head 0"), "{body}");
+}
+
+#[test]
+fn a_note_cited_twice_is_written_each_time_and_leaves_no_digit_behind() {
+    let body = body_of("# Head[^a]\n\nOne[^a] and two[^a].\n\n| c[^a] |\n|---|\n| d |\n\n[^a]: Shared.");
+    assert_eq!(body.matches("Shared.").count(), 4, "{body}");
+    assert!(
+        !body.contains("Head 0") && !body.contains("c0") && !body.contains("two0"),
+        "{body}"
+    );
+}
+
+#[test]
+fn math_that_fails_the_check_is_written_as_typed() {
+    let body = body_of(r"Row break $a\\b$ and trailing $c\\$ and $x^2$.");
+    assert!(
+        body.contains(r"\texttt{\$a\textbackslash{}\textbackslash{}b\$}"),
+        "{body}"
+    );
+    assert!(body.contains("and trailing $c$ and $x^2$."), "{body}");
+}
+
+#[test]
+fn a_formula_in_a_heading_keeps_its_signs_in_the_outline() {
+    let body = body_of("# Math $x^2$ and $x_1 + y$ here");
+    assert!(
+        body.contains(r"{Math x\textasciicircum{}2 and x\textunderscore{}1 + y here}"),
+        "{body}"
+    );
 }

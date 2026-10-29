@@ -86,18 +86,31 @@ pub fn comment(input: &str) -> String {
 pub fn pdf_info(input: &str, engine: Engine) -> String {
     let kept: String = input
         .chars()
-        .map(|c| {
-            let fine = c.is_ascii_alphanumeric()
-                || matches!(c, ' ' | '.' | ',' | ':' | ';' | '-' | '\'' | '(' | ')' | '!' | '?')
-                || (c.is_alphanumeric() && (engine == Engine::Unicode || pdftex_passes(c)));
-            if fine {
-                c
-            } else {
-                ' '
-            }
-        })
+        .map(|c| if pdf_fine(c, engine) { c } else { ' ' })
         .collect();
     kept.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Whether a PDF title, author, or outline entry may hold the character as it is.
+fn pdf_fine(c: char, engine: Engine) -> bool {
+    c.is_ascii_alphanumeric()
+        || matches!(c, ' ' | '.' | ',' | ':' | ';' | '-' | '\'' | '(' | ')' | '!' | '?')
+        || (c.is_alphanumeric() && (engine == Engine::Unicode || pdftex_passes(c)))
+}
+
+/// Text for a PDF outline entry: what [`pdf_info`] keeps, and the signs a formula needs to stay readable, with `^`
+/// and `_` written as the commands that the PDF string can hold.
+pub fn pdf_outline(input: &str, engine: Engine) -> String {
+    let mut out = String::with_capacity(input.len());
+    for c in input.chars() {
+        match c {
+            '^' => out.push_str("\\textasciicircum{}"),
+            '_' => out.push_str("\\textunderscore{}"),
+            '+' | '=' | '/' | '*' => out.push(c),
+            _ => out.push(if pdf_fine(c, engine) { c } else { ' ' }),
+        }
+    }
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Latin-1 and Latin Extended-A letters, and the punctuation that `inputenc` with `utf8` and the T1 font encoding
@@ -298,6 +311,14 @@ mod tests {
         assert_eq!(
             href_target("https://a.org/{b}\\c d").as_deref(),
             Some("https://a.org/\\%7Bb\\%7D\\%5Cc\\%20d")
+        );
+    }
+
+    #[test]
+    fn an_outline_entry_keeps_the_signs_of_a_formula() {
+        assert_eq!(
+            pdf_outline("Area x^2 + y_1 = 3/4 \\alpha{}", Engine::Unicode),
+            "Area x\\textasciicircum{}2 + y\\textunderscore{}1 = 3/4 alpha"
         );
     }
 

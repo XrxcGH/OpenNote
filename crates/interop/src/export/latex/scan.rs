@@ -80,6 +80,19 @@ fn word_end(chars: &[char], from: usize) -> usize {
         .map_or(chars.len(), |p| from + p)
 }
 
+/// The equation without the row breaks (`\\`) that end it, which break no row and only trip a check. A run of an
+/// odd number of backslashes ends in a lone `\`, which is left alone.
+fn without_closing_breaks(mut chars: Vec<char>) -> Vec<char> {
+    loop {
+        let end = chars.iter().rposition(|c| !c.is_whitespace()).map_or(0, |at| at + 1);
+        let run = chars[..end].iter().rev().take_while(|c| **c == '\\').count();
+        if run < 2 || run % 2 == 1 {
+            return chars;
+        }
+        chars.truncate(end - run);
+    }
+}
+
 /// Checks the TeX of one equation and cleans it. `None` when it cannot be kept.
 pub fn check(source: &str, inline: bool) -> Option<Checked> {
     if source.chars().count() > MAX_CHARS {
@@ -92,6 +105,7 @@ pub fn check(source: &str, inline: bool) -> Option<Checked> {
     if source.contains("^^") {
         return None;
     }
+    let chars = without_closing_breaks(chars);
     Scan {
         out: String::with_capacity(chars.len()),
         chars,

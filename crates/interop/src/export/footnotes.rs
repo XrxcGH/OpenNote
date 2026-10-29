@@ -193,6 +193,29 @@ pub enum Piece<'a> {
     Note(usize),
 }
 
+/// The text without its note markers, digits included. Text that cannot hold a note (a heading's outline entry, a
+/// table cell's width, an alt text) is written through this, so a marker never leaves its number behind.
+pub fn strip_markers(text: &str) -> String {
+    if !text.contains([OPEN, CLOSE]) {
+        return text.to_owned();
+    }
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(open) = rest.find(OPEN) {
+        out.push_str(&rest[..open]);
+        let after = &rest[open + OPEN.len_utf8()..];
+        let digits = after.bytes().take_while(u8::is_ascii_digit).count();
+        rest = if after[digits..].starts_with(CLOSE) {
+            &after[digits + CLOSE.len_utf8()..]
+        } else {
+            after
+        };
+    }
+    out.push_str(rest);
+    out.retain(|c| c != CLOSE);
+    out
+}
+
 /// A run of text cut at its note markers. A marker whose number is not below `count` stays in the text.
 pub fn split_markers(text: &str, count: usize) -> Vec<Piece<'_>> {
     let mut pieces = Vec::new();
@@ -229,6 +252,13 @@ mod tests {
 
     fn marker(n: usize) -> String {
         format!("{OPEN}{n}{CLOSE}")
+    }
+
+    #[test]
+    fn stripping_markers_takes_their_digits_too() {
+        let text = format!("a{}b{} 12 {OPEN}x{CLOSE}c{OPEN}7", marker(0), marker(12));
+        assert_eq!(strip_markers(&text), "ab 12 xc7");
+        assert_eq!(strip_markers("plain 3"), "plain 3");
     }
 
     #[test]

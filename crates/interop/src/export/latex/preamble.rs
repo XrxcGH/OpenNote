@@ -40,6 +40,7 @@ const PREAMBLE: &str = r"\usepackage{iftex}
 \def\maxheight{\ifdim\Gin@nat@height>0.55\textheight 0.55\textheight\else\Gin@nat@height\fi}
 \makeatother
 \setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\newcounter{opnfn}
 \newcommand{\opnhl}[2]{{\markoverwith{\textcolor{#1}{\rule[-.55ex]{2pt}{2.4ex}}}\ULon{#2}}}
 \newenvironment{opncode}
   {\par\medskip\begingroup\ttfamily\small\setlength{\parskip}{0pt}\raggedright}

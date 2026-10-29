@@ -61,8 +61,8 @@ impl Writer<'_> {
 
     /// The inlines as one line of plain text, with nothing that could break a PDF outline or a contents entry.
     pub(super) fn heading_pdf_text(&mut self, inlines: &[Inline]) -> String {
-        let plain = crate::doc::plain_text(inlines);
-        super::escape::pdf_info(&plain, self.engine)
+        let plain = crate::export::footnotes::strip_markers(&crate::doc::plain_text(inlines));
+        super::escape::pdf_outline(&plain, self.engine)
     }
 
     fn picture(&mut self, dest: &str, alt: &str) -> String {
@@ -82,7 +82,8 @@ impl Writer<'_> {
                 Some(tex) => tex,
                 None => {
                     self.stats.math_as_text += 1;
-                    format!("\\texttt{{{}}}", self.esc(text))
+                    // The source as typed, dollar signs and backslashes included.
+                    format!("\\texttt{{{}}}", self.esc(&format!("${text}$")))
                 }
             }
         } else if marks.code {
@@ -98,24 +99,40 @@ impl Writer<'_> {
 
     /// Text with its footnote markers turned into footnotes where one may stand.
     fn plain_run(&mut self, text: &str) -> String {
-        if !self.allow_notes || self.notes.is_empty() || !text.contains(crate::export::footnotes::OPEN) {
+        if self.notes.is_empty() || !text.contains(crate::export::footnotes::OPEN) {
             return self.esc(text);
         }
         let mut out = String::new();
         for piece in split_markers(text, self.notes.len()) {
             match piece {
                 Piece::Text(part) => out.push_str(&self.esc(part)),
-                Piece::Note(index) => {
-                    let note = self.notes[index].clone();
-                    self.allow_notes = false;
-                    let body = self.inlines(&note);
-                    self.allow_notes = true;
-                    self.stats.footnotes += 1;
-                    out.push_str(&format!("\\footnote{{{body}}}"));
-                }
+                Piece::Note(index) => out.push_str(&self.note(index)),
             }
         }
         out
+    }
+
+    /// The note at a marker: `\footnote` where text may hold one, a `\footnotemark` in a table cell (the text follows
+    /// the table), and nothing where no note may stand. A note cited twice is written twice, each time whole.
+    fn note(&mut self, index: usize) -> String {
+        if !self.allow_notes && self.table_notes.is_none() {
+            return String::new();
+        }
+        let note = self.notes[index].clone();
+        let table = self.table_notes.take();
+        let was = std::mem::replace(&mut self.allow_notes, false);
+        let body = self.inlines(&note);
+        self.allow_notes = was;
+        self.stats.footnotes += 1;
+        match table {
+            None => format!("\\footnote{{{body}}}"),
+            Some(mut list) => {
+                list.push(body);
+                let number = list.len();
+                self.table_notes = Some(list);
+                format!("\\footnotemark[\\numexpr\\value{{opnfn}}+{number}\\relax]")
+            }
+        }
     }
 
     /// Wraps the text in its marks, innermost first, in the order of spec 7.7.
@@ -242,7 +259,7 @@ mod tests {
         };
         assert_eq!(
             render(&[marked("\\input{x}", math)]),
-            "\\texttt{\\textbackslash{}input\\{x\\}}"
+            "\\texttt{\\$\\textbackslash{}input\\{x\\}\\$}"
         );
         let link = Marks::link("javascript:alert(1)");
         assert_eq!(render(&[marked("click", link)]), "click");

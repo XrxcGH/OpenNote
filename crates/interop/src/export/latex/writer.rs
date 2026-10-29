@@ -15,7 +15,7 @@ pub(super) const MAX_LISTS: usize = 5;
 pub(super) const MAX_COLUMNS: usize = 60;
 
 /// What the writer changed or left out on one page, for its report.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(super) struct Stats {
     pub equations: usize,
     pub math_as_text: usize,
@@ -94,6 +94,9 @@ pub(super) struct Writer<'a> {
     pub notes: Vec<Vec<Inline>>,
     /// Whether a footnote may be written here, which it may not in headings, tables, and other footnotes.
     pub allow_notes: bool,
+    /// The notes met so far in the cells of the table being written, as LaTeX; `None` outside a table that may carry
+    /// notes. A cell cannot hold `\footnote`, so the cell gets a `\footnotemark` and the table is followed by the text.
+    pub table_notes: Option<Vec<String>>,
     /// Whether the text is for a heading, which keeps only what a table of contents and a PDF outline can hold.
     pub simple: bool,
     /// The pages of the document, by their number, that a link can jump to.
@@ -117,6 +120,7 @@ impl<'a> Writer<'a> {
             library,
             notes: Vec::new(),
             allow_notes: true,
+            table_notes: None,
             simple: false,
             pages,
             base: 0,
@@ -128,6 +132,10 @@ impl<'a> Writer<'a> {
 
     /// Escaped text.
     pub(super) fn esc(&mut self, text: &str) -> String {
-        escape::text(text, self.engine, &mut self.missing)
+        escape::text(
+            &crate::export::footnotes::strip_markers(text),
+            self.engine,
+            &mut self.missing,
+        )
     }
 }
