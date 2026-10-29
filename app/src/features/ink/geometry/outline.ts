@@ -1,7 +1,11 @@
-// Stroke shaping: raw points with pressure and tilt become the outline polygon a canvas fills (design 6.3). The
-// shaping itself is perfect-freehand's (MIT, steveruizok/perfect-freehand); this file picks its options for each tool.
+// Stroke shaping: raw points with pressure and tilt become the outline polygon a canvas fills (design 6.3). A pen's
+// samples first become the smooth curve they stand for (core/ink/path), so a fast hand's sparse samples draw no
+// corners. The shaping itself is perfect-freehand's (MIT, steveruizok/perfect-freehand); this file picks its options
+// for each tool. Exact geometry (a recognized shape) skips both: it draws at one even width with crisp corners.
 
 import { getStroke } from 'perfect-freehand';
+import { exactOutline, smoothPath } from '../../../core/ink/path';
+import type { Mix } from '../../../core/ink/path';
 import type { InkPoint, InkTool, Vec } from './types';
 
 export interface OutlineOptions {
@@ -12,6 +16,42 @@ export interface OutlineOptions {
   readonly scale?: number;
   /** True for a finished stroke, false while the pen is still down. Defaults to true. */
   readonly complete?: boolean;
+  /**
+   * True for exact geometry, such as a recognized shape: one even width, crisp corners, closed when it ends where it
+   * starts. False for a pen's samples, drawn as a smooth curve. Defaults to `isExactLine` of the points.
+   */
+  readonly exact?: boolean;
+}
+
+/** True when points are exact geometry rather than a pen's samples: none has a time or a pressure. */
+export function isExactLine(points: readonly InkPoint[]): boolean {
+  return points.length > 1 && points.every((p) => p.time === undefined && p.pressure === undefined);
+}
+
+/** True for a stroke of exact geometry: a shape, not imported ink whose sample times were lost. */
+export function isExactStroke(stroke: {
+  readonly points: readonly InkPoint[];
+  readonly startUnknown?: boolean;
+}): boolean {
+  return stroke.startUnknown !== true && isExactLine(stroke.points);
+}
+
+type Mutable = { -readonly [K in keyof InkPoint]: InkPoint[K] };
+
+/** A point `t` of the way between two samples, at (x, y): pressure, tilt, and time are interpolated. */
+const mixInk: Mix<InkPoint> = (a, b, t, x, y) => {
+  const out: Mutable = { ...a, x, y };
+  if (t === 0) return out;
+  if (a.pressure !== undefined && b.pressure !== undefined) out.pressure = a.pressure + (b.pressure - a.pressure) * t;
+  if (a.tiltX !== undefined && b.tiltX !== undefined) out.tiltX = a.tiltX + (b.tiltX - a.tiltX) * t;
+  if (a.tiltY !== undefined && b.tiltY !== undefined) out.tiltY = a.tiltY + (b.tiltY - a.tiltY) * t;
+  if (a.time !== undefined && b.time !== undefined) out.time = a.time + (b.time - a.time) * t;
+  return out;
+};
+
+/** The smooth curve a pen's samples stand for, as points (core/ink/path's `smoothPath`). */
+export function smoothInk(points: readonly InkPoint[]): InkPoint[] {
+  return smoothPath(points, mixInk);
 }
 
 interface Preset {
@@ -34,6 +74,9 @@ const PRESETS: Record<InkTool, Preset> = {
   dashed: { thinning: 0, smoothing: 0.5, streamline: 0 },
   dotted: { thinning: 0, smoothing: 0.5, streamline: 0 },
 };
+
+/** The farthest apart, in page units, two points of a pen's outline may be dropped to; at most half the width. */
+const MAX_OUTLINE_GAP = 0.5;
 
 /** The calligraphy nib's angle: a flat nib held at 45 degrees, rising to the right (page y points down). */
 export const NIB_ANGLE = -Math.PI / 4;
@@ -117,8 +160,16 @@ function nibOutline(points: readonly InkPoint[], width: number): Vec[] {
   return [...near, ...far.reverse()];
 }
 
-/** The polygon a stroke fills, in the points' own space. Strokes without pressure get a uniform width. */
+/**
+ * The polygon a pen's stroke fills, in the points' own space: the smooth curve through its samples, shaped by the
+ * tool. Strokes without pressure get a uniform width. `strokeShapes` is what a renderer fills, exact geometry included.
+ */
 export function strokeOutline(points: readonly InkPoint[], options: OutlineOptions): Vec[] {
+  return curveOutline(smoothInk(points), options);
+}
+
+/** The outline of points that are already a smooth curve. */
+function curveOutline(points: readonly InkPoint[], options: OutlineOptions): Vec[] {
   const preset = PRESETS[options.tool] ?? PRESETS.pen;
   if (options.tool === 'calligraphy' && points.length > 0) {
     return nibOutline(points, options.width * (options.scale ?? 1));
@@ -133,10 +184,13 @@ export function strokeOutline(points: readonly InkPoint[], options: OutlineOptio
     y: p.y,
     pressure: pressureWithTilt(speeds ? { ...p, pressure: speeds[i] } : p, thinning, tilted),
   }));
+  const size = options.width * (options.scale ?? 1);
   const outline = getStroke(input, {
-    size: options.width * (options.scale ?? 1),
+    size,
     thinning,
-    smoothing: preset.smoothing,
+    // perfect-freehand drops outline points closer than size times smoothing to the last; capping that gap at
+    // MAX_OUTLINE_GAP keeps a wide pen's curves from showing as straight edges.
+    smoothing: Math.min(preset.smoothing, MAX_OUTLINE_GAP / Math.max(size, 1e-6)),
     streamline: preset.streamline,
     simulatePressure: false,
     last: options.complete ?? true,
@@ -183,31 +237,35 @@ function dotAt(x: number, y: number, radius: number): Vec[] {
 }
 
 /**
- * Every polygon a stroke fills. Most tools fill one outline. The dashed pen fills one for each dash and the dotted pen
- * one for each dot, so the line breaks where the gaps are. The full outline (`strokeOutline`) still bounds them all.
+ * Every polygon a stroke fills, filled together with the nonzero rule. A pen's stroke fills one outline around the
+ * smooth curve through its samples. Exact geometry fills the pieces of an even-width line with crisp corners. The
+ * dashed pen fills one polygon for each dash and the dotted pen one for each dot, so the line breaks at the gaps.
  */
 export function strokeShapes(points: readonly InkPoint[], options: OutlineOptions): Vec[][] {
   const width = options.width * (options.scale ?? 1);
-  if ((options.tool !== 'dashed' && options.tool !== 'dotted') || points.length < 2) {
-    return [strokeOutline(points, options)];
-  }
-  const total = lineLength(points);
+  const exact = options.tool !== 'calligraphy' && (options.exact ?? isExactLine(points));
+  const broken = options.tool === 'dashed' || options.tool === 'dotted';
+  if (exact && !broken) return exactOutline(points, width);
+  const line = exact ? points : smoothInk(points);
+  const whole = (): Vec[][] => (exact ? exactOutline(line, width) : [curveOutline(line, options)]);
+  if (!broken || line.length < 2) return whole();
+  const total = lineLength(line);
   const shapes: Vec[][] = [];
   if (options.tool === 'dotted') {
     const step = width * DOT_SPACING;
     for (let d = 0; d <= total + 1e-9; d += step) {
-      const [p] = slice(points, d, d);
+      const [p] = slice(line, d, d);
       if (p) shapes.push(dotAt(p.x, p.y, width / 2));
     }
   } else {
     const dash = width * DASH_LENGTH;
     const period = dash + width * DASH_GAP;
     for (let d = 0; d < total; d += period) {
-      const part = slice(points, d, Math.min(total, d + dash));
-      if (part.length > 1) shapes.push(strokeOutline(part, options));
+      const part = slice(line, d, Math.min(total, d + dash));
+      if (part.length > 1) shapes.push(...(exact ? exactOutline(part, width) : [curveOutline(part, options)]));
     }
   }
-  return shapes.length > 0 ? shapes : [strokeOutline(points, options)];
+  return shapes.length > 0 ? shapes : whole();
 }
 
 /** An SVG or Path2D path through an outline, smoothed with quadratic curves between midpoints. */

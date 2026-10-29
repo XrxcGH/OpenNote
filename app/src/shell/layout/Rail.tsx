@@ -27,6 +27,8 @@ export interface RailProps {
   expanded?: boolean;
   onShow?(): void;
   buttonRef?: Ref<HTMLSpanElement>;
+  /** False to leave out the New page button, when another rail in the same column has it. */
+  newPage?: boolean;
 }
 
 function NotebookChip({ id }: { id: NodeId | null }) {
@@ -45,7 +47,7 @@ function NotebookChip({ id }: { id: NodeId | null }) {
   );
 }
 
-export function Rail({ pane, opens, expanded, onShow, buttonRef }: RailProps) {
+export function Rail({ pane, opens, expanded, onShow, buttonRef, newPage = true }: RailProps) {
   const location = useLocation();
   const canCreate = useRegistry(commands).some((def) => def.id === NEW_PAGE);
   const notebookId = location.view === 'workspace' ? location.notebookId : null;
@@ -62,7 +64,7 @@ export function Rail({ pane, opens, expanded, onShow, buttonRef }: RailProps) {
           onPress={show}
         />
       </span>
-      {canCreate && (
+      {canCreate && newPage && (
         <IconButton
           label={t('layout.rail.newPage')}
           icon={FilePlusIcon}

@@ -29,6 +29,8 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 
 installDropGuard();
+// The layout audit lists its surfaces from the registries; only `vite build --mode test` has this hook.
+if (import.meta.env.MODE === 'test') await import('./app/auditHooks');
 
 const kind = tool ? 'tool' : extra === 'page' || extra === 'capture' ? extra : 'main';
 // Only the main window asks the start-up questions (safe start, consent); a window beside it never repeats them.

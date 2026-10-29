@@ -136,6 +136,8 @@ fn a_sign_in_nobody_finishes_times_out_and_frees_the_connector() {
     rig.visit(Visit::Silent);
     assert_eq!(connect(&rig), Err(Failure::TimedOut));
     assert!(!rig.connectors.view("example").expect("a view").pending);
+    // The second try gets time to finish: 200 ms was only to make the first one give up, and a loaded runner needs more.
+    rig.restart(Duration::from_secs(30));
     rig.visit(Visit::Approve("late"));
     assert_eq!(
         connect(&rig),

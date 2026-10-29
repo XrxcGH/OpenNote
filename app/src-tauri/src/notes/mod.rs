@@ -18,7 +18,7 @@ pub mod tree;
 mod tests;
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -162,6 +162,9 @@ pub struct NotesState {
     pub(crate) seen: Option<events::Seen>,
     /// Trash items of this session's trash calls, by item key.
     pub(crate) pending: HashMap<String, Pending>,
+    /// Receipts that restored something. A notebook's receipt names its folder, so without this a receipt
+    /// would restore the notebook again after the notebook went to Trash a second time.
+    pub(crate) used_receipts: HashSet<String>,
 }
 
 pub(crate) fn error(code: &str, message: impl Into<String>) -> IpcError {

@@ -65,11 +65,13 @@ for (const target of [0.5, 2]) {
     const cols = inView(world, overlay, columns, 40);
     const cA = cols[Math.floor(cols.length / 3)];
     const off = 0.22 * s;
+    // Long enough to be drawn, not written: at 50% a shorter line or box, as fast as this pen draws it, is the size of
+    // a letter or a dash, which ink-to-shape leaves as ink (handwriting.ts).
     const [line] = await ctx.draw([
       { x: cA + off, y: rows[1] + off },
-      { x: cA + 4 * s - off, y: rows[1] - off * 0.5 },
+      { x: cA + 6 * s - off, y: rows[1] - off * 0.5 },
     ]);
-    const [rect] = await ctx.draw(roughBox(cA, rows[3], 3, 2, s));
+    const [rect] = await ctx.draw(roughBox(cA, rows[3], 5, 3, s));
     log(`zoom-${target}`, { zoom: world.zoom, s, line, rect: rect.slice(0, 4) });
     expect(line).toHaveLength(2);
     for (const p of line) expect(onCrossing(drawn, p), `line end ${p.x},${p.y}`).toBe(true);
