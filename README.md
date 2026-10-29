@@ -37,7 +37,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [Search and links](docs/help/search-and-links.md)                 | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
 | [Study tools](docs/help/study-tools.md)                           | Flashcards, Anki, study tape, Upcoming, timers, a calculator, and citations                                    |
 | [Recording](docs/help/recording.md)                               | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |
-| [Import and export](docs/help/import-and-export.md)               | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, and more out                    |
+| [Import and export](docs/help/import-and-export.md)               | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, LaTeX, and more out              |
 | [On-device intelligence](docs/help/on-device-intelligence.md)     | Text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on           |
 | [Privacy and Work offline](docs/help/privacy-and-work-offline.md) | Crash reports with consent, a self-check, a feedback file, safe start, and a switch that stops all network use |
 | [Connectors](docs/help/connectors.md)                             | Signing in to other services; no feature uses a connection yet                                                 |

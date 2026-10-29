@@ -97,3 +97,4 @@ Most records are still Proposed, because each waits on a check by a person. Agen
 | 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
 | 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |
 | 0042 | The owner's review of protected sections, a Windows Hello unlock on real hardware, and the `protected` field of the notes contract |
+| 0054 | The owner compiles LaTeX exports of real notes with the TeX engine they use, since the build machine has none |

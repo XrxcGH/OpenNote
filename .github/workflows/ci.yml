@@ -443,6 +443,72 @@ jobs:
             exit 1
           fi
 
+  latex-export:
+    # The LaTeX exports are compiled with real TeX engines, so a change to the preamble or the writer that breaks a
+    # document fails here and not on a reader's machine (ADR 0054).
+    runs-on: ubuntu-latest
+    # Normally about 6 minutes with a cold cache: 2 for the TeX packages, 3 for the Rust test build, 1 to compile.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install a small TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-xetex texlive-luatex texlive-latex-recommended texlive-latex-extra \
+            texlive-fonts-recommended texlive-science lmodern fonts-lmodern
+      - name: Write the export fixtures
+        env:
+          OPENNOTE_LATEX_FIXTURES: ${{ runner.temp }}/latex
+        run: |
+          mkdir -p "$OPENNOTE_LATEX_FIXTURES"
+          cargo test -p opennote-interop --test export_latex_fixtures
+      - name: Compile them with XeLaTeX, LuaLaTeX, and pdfLaTeX
+        working-directory: ${{ runner.temp }}/latex
+        run: |
+          set -euo pipefail
+          # No run may end in an error or leave a reference or a citation undefined.
+          run() {
+            "$@" -interaction=nonstopmode -halt-on-error "$file"
+          }
+          clean() {
+            if grep -E "undefined references|Citation .* undefined|Reference .* undefined" "$name.log"; then
+              echo "A reference was left undefined in $dir."
+              exit 1
+            fi
+          }
+          for dir in unicode notebook bare; do
+            (
+              cd "$dir"
+              file=$(ls ./*.tex | head -n 1 | sed 's|^\./||')
+              name=${file%.tex}
+              run xelatex
+              if [ -f references.bib ]; then bibtex "$name"; fi
+              run xelatex
+              run xelatex
+              clean
+              run lualatex
+              run lualatex
+              run lualatex
+              clean
+            )
+          done
+          (
+            cd pdflatex
+            dir=pdflatex
+            file=$(ls ./*.tex | head -n 1 | sed 's|^\./||')
+            name=${file%.tex}
+            run pdflatex
+            run pdflatex
+            clean
+          )
+
   format-fixtures:
     # Every implementation of the note format reads the same fixtures in docs/format/fixtures.
     runs-on: ubuntu-latest
