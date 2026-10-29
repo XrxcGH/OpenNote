@@ -200,6 +200,13 @@ fn now_ms() -> i64 {
         .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
 }
 
+/// Whether a content's size is no more than its chunks can hold, each at most [`local::CHUNK`] bytes.
+fn fits_chunks(content: &manifest::Content) -> bool {
+    (content.chunks.len() as u64)
+        .checked_mul(local::CHUNK as u64)
+        .is_some_and(|most| content.size <= most)
+}
+
 fn head_name(device: &str, generation: u64) -> String {
     format!("h/{device}/{generation}")
 }
@@ -401,9 +408,11 @@ impl Engine {
 
     /// A head's entries, without the paths no device may write: an older or hostile device's `../x` or `CON.txt`
     /// would otherwise be skipped on disk, wait as deferred, and be published again by every device every round.
+    /// Entries whose size is more than their chunks can hold are dropped too: only a damaged or hostile head has
+    /// them, and their sizes would otherwise reach the totals a preview adds up.
     fn read_entries(&self, device: &str, generation: u64) -> Result<Manifest> {
         let mut entries = self.read_head(device, generation)?.entries;
-        entries.retain(|path, _| local::valid_path(path));
+        entries.retain(|path, entry| local::valid_path(path) && fits_chunks(&entry.content));
         Ok(entries)
     }
 
@@ -518,31 +527,14 @@ mod tests {
     use crate::crypto::QUICK;
     use crate::vault;
 
-    #[test]
-    fn paths_no_device_may_write_are_dropped_from_heads_and_never_wait() {
+    /// An engine for device `d0` in a vault where device `ev` wrote one head with `entries`.
+    fn engine_after_head(entries: Manifest) -> (tempfile::TempDir, Engine) {
         let store = Arc::new(MemoryBackend::new());
         let (keys, _) = vault::create_with(store.as_ref(), "correct horse battery", QUICK).expect("creates");
         for tag in ["d0", "ev"] {
             let (_, secret) = vault::new_device().expect("device");
             vault::add_device(store.as_ref(), &keys, tag, &secret, tag, 0).expect("adds");
         }
-        // A head from an older or hostile device that names paths Windows can't hold, or that climb out.
-        let content = Content {
-            id: "ab".repeat(32),
-            size: 3,
-            chunks: vec!["cd".repeat(32)],
-        };
-        let live = |n: u64| Entry {
-            vv: [("ev".to_owned(), n)].into(),
-            content: content.clone(),
-            deleted: false,
-        };
-        let entries: Manifest = [
-            ("Bio/CON.txt".to_owned(), live(1)),
-            ("../escape.txt".to_owned(), live(2)),
-            ("Bio/a:b.txt".to_owned(), live(3)),
-        ]
-        .into();
         let head = Head {
             v: 1,
             device: "ev".into(),
@@ -561,15 +553,64 @@ mod tests {
         )
         .expect("seals");
         store.put(&name, &sealed).expect("puts");
-
         let dir = tempfile::tempdir().expect("temp");
         fs::create_dir_all(dir.path().join("notes")).expect("notes");
         let engine = Engine::new(
             dir.path().join("notes"),
-            store.clone(),
+            store,
             keys,
             "d0",
             dir.path().join("state.json"),
+        );
+        (dir, engine)
+    }
+
+    #[test]
+    fn an_entry_larger_than_its_chunks_can_hold_is_dropped_and_totals_never_overflow() {
+        let entry = |size: u64, chunks: usize, n: u64| Entry {
+            vv: [("ev".to_owned(), n)].into(),
+            content: Content {
+                id: format!("{n:02}").repeat(32),
+                size,
+                chunks: vec!["cd".repeat(32); chunks],
+            },
+            deleted: false,
+        };
+        let (_dir, engine) = engine_after_head(
+            [
+                ("Bio/huge.bin".to_owned(), entry(u64::MAX, 1, 1)),
+                ("Bio/also.bin".to_owned(), entry(u64::MAX / 2 + 1, 2, 2)),
+                ("Bio/over.bin".to_owned(), entry(2 * local::CHUNK as u64 + 1, 2, 3)),
+                ("Bio/full.bin".to_owned(), entry(2 * local::CHUNK as u64, 2, 4)),
+                ("Bio/note.txt".to_owned(), entry(3, 1, 5)),
+            ]
+            .into(),
+        );
+        let plan = engine.plan().expect("plans without overflowing");
+        assert_eq!(plan.summary.download, ["Bio/full.bin", "Bio/note.txt"]);
+        assert_eq!(plan.summary.bytes_down, 2 * 1024 * 1024 + 3);
+    }
+
+    #[test]
+    fn paths_no_device_may_write_are_dropped_from_heads_and_never_wait() {
+        let content = Content {
+            id: "ab".repeat(32),
+            size: 3,
+            chunks: vec!["cd".repeat(32)],
+        };
+        let live = |n: u64| Entry {
+            vv: [("ev".to_owned(), n)].into(),
+            content: content.clone(),
+            deleted: false,
+        };
+        // A head from an older or hostile device that names paths Windows can't hold, or that climb out.
+        let (_dir, engine) = engine_after_head(
+            [
+                ("Bio/CON.txt".to_owned(), live(1)),
+                ("../escape.txt".to_owned(), live(2)),
+                ("Bio/a:b.txt".to_owned(), live(3)),
+            ]
+            .into(),
         );
         let plan = engine.plan().expect("plans");
         assert!(plan.summary.download.is_empty(), "{:?}", plan.summary);

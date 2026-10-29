@@ -218,14 +218,14 @@ fn uploads(
     let mut out = Vec::new();
     for (path, entry) in local_manifest {
         if entry.live() && known.insert(entry.content.id.as_str()) {
-            summary.bytes_up += entry.content.size;
+            summary.bytes_up = summary.bytes_up.saturating_add(entry.content.size);
             summary.upload.push(path.clone());
             out.push(path.clone());
         }
     }
     for (id, bytes) in pending {
         if !known.contains(id.as_str()) {
-            summary.bytes_up += bytes.len() as u64;
+            summary.bytes_up = summary.bytes_up.saturating_add(bytes.len() as u64);
         }
     }
     out
@@ -252,7 +252,7 @@ fn actions(merged: &Merged, local_manifest: &Manifest, summary: &mut Summary) ->
             continue;
         }
         if here.is_none_or(|h| h.content.id != entry.content.id) {
-            summary.bytes_down += entry.content.size;
+            summary.bytes_down = summary.bytes_down.saturating_add(entry.content.size);
             summary.download.push(path.clone());
             let expect = here.map(|h| h.content.id.clone());
             actions.push(Action::Write {
