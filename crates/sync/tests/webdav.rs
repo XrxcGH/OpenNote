@@ -18,6 +18,8 @@ struct Dav {
     files: BTreeMap<String, Vec<u8>>,
     dirs: BTreeSet<String>,
     requests: Vec<String>,
+    /// Answers HEAD with 405, as some small servers and proxies do.
+    no_head: bool,
 }
 
 /// "Basic " and the base64 of `sam:test-only`.
@@ -116,6 +118,7 @@ fn handle(
             dav.files.insert(path, body);
             (201, Vec::new())
         }
+        "HEAD" if dav.no_head => (405, Vec::new()),
         "GET" | "HEAD" => match dav.files.get(&path) {
             Some(bytes) => (200, bytes.clone()),
             None => (404, Vec::new()),
@@ -142,6 +145,12 @@ fn handle(
                 }
                 _ => (404, Vec::new()),
             }
+        }
+        "PROPFIND" if headers.get("depth").map(String::as_str) == Some("0") && dav.files.contains_key(&path) => {
+            let xml = format!(
+                r#"<?xml version="1.0"?><D:multistatus xmlns:D="DAV:"><D:response><D:href>{path}</D:href></D:response></D:multistatus>"#
+            );
+            (207, xml.into_bytes())
         }
         "PROPFIND" => {
             if !dav.dirs.contains(&path) && path != "/dav/" {
@@ -242,4 +251,30 @@ fn a_server_that_is_not_there_is_an_error_not_a_hang() {
     drop(listener);
     let store = backend(&format!("http://127.0.0.1:{port}/dav/"), "test-only");
     assert!(matches!(store.get("vault"), Err(SyncError::Storage(_))));
+}
+
+#[test]
+fn a_server_that_refuses_head_is_asked_for_properties_instead() {
+    let (url, dav) = server(false);
+    dav.lock().expect("lock").no_head = true;
+    let store = backend(&url, "test-only");
+    let d = devices(store.clone(), 2);
+    d[0].write("Bio/big.bin", &vec![3u8; 1024 * 1024 + 5]);
+    settle(&d, 3);
+    assert_eq!(
+        d[1].read("Bio/big.bin").as_deref(),
+        Some(&vec![3u8; 1024 * 1024 + 5][..])
+    );
+    store.put("m/probe", b"x").expect("puts");
+    assert!(store.exists("m/probe").expect("asks"));
+    assert!(!store.exists("m/absent").expect("asks"));
+    let dav = dav.lock().expect("lock");
+    assert!(
+        dav.requests.iter().any(|r| r.starts_with("HEAD ")),
+        "it tried HEAD first"
+    );
+    assert!(dav
+        .requests
+        .iter()
+        .any(|r| r.starts_with("PROPFIND ") && r.ends_with("/dav/m/probe")));
 }

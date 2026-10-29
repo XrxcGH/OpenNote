@@ -365,6 +365,16 @@ impl Backend for WebDavBackend {
         match self.request("HEAD", name, Vec::new(), &[])? {
             (200..=299, _) => Ok(true),
             (404 | 410, _) => Ok(false),
+            // Some small servers and proxies don't take HEAD: ask for the name's properties instead.
+            (405 | 501, _) => {
+                let body = br#"<?xml version="1.0" encoding="utf-8"?><propfind xmlns="DAV:"><prop><resourcetype/></prop></propfind>"#;
+                let headers = [("Depth", "0".into()), ("Content-Type", "application/xml".into())];
+                match self.request("PROPFIND", name, body.to_vec(), &headers)? {
+                    (207, _) => Ok(true),
+                    (404 | 410, _) => Ok(false),
+                    (status, _) => Err(status_error(status)),
+                }
+            }
             (status, _) => Err(status_error(status)),
         }
     }
