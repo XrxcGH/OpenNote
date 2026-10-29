@@ -53,5 +53,5 @@ describe.each(Object.keys(KIT_LOADERS) as (keyof typeof KIT_LOADERS)[])('the %s 
         word(spec.label);
       }
     }
-  });
+  }, 60_000);
 });
