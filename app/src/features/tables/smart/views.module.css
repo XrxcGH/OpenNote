@@ -26,7 +26,7 @@
 
   .field select,
   .move {
-    min-block-size: var(--size-target-min);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     font: inherit;
     color: var(--color-text-primary);

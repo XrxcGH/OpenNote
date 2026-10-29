@@ -7,6 +7,7 @@ import { commandBar, commands, contextMenus } from '../../../registries';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce } from '../../../ui';
+import { say } from './say';
 import type { IconName } from '../../../ui/icons';
 import { targetEditor } from '../formattingBar/target';
 import { slashItems } from '../registries';
@@ -146,7 +147,7 @@ add({
   when: () => hasPage() && looksNumeric(),
   run: async () => {
     const text = await selectedNumber();
-    if (text === null) return void announce(t('science.sigfigs.selectFirst'));
+    if (text === null) return void say(t('science.sigfigs.selectFirst'));
     const { countFigures } = await import('../../tools');
     const counted = countFigures(text);
     if (counted) announce(t('science.sigfigs.selectionCount', { text, count: counted.figures }));
@@ -163,7 +164,7 @@ add({
   when: () => hasPage() && looksNumeric(),
   run: async () => {
     const number = await selectedNumber();
-    if (number === null) return void announce(t('science.sigfigs.selectFirst'));
+    if (number === null) return void say(t('science.sigfigs.selectFirst'));
     (await import('../../tools')).seedSigFigs(number);
     await openTool('sigfigs');
   },

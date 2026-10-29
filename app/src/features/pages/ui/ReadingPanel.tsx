@@ -41,51 +41,71 @@ export function ReadingPanel({ close }: { close(): void }) {
       ]}
     >
       <div className={styles.form}>
-        <RadioGroup<`${FocusLines}`>
-          label={t('pageViews.reading.focus')}
-          value={`${aids.focus}`}
-          onChange={(value) => change({ focus: Number(value) as FocusLines })}
-        >
-          {FOCUS_SIZES.map((size) => (
-            <RadioCard key={size} value={`${size}`} label={t(`pageViews.reading.focusSizes.${FOCUS_KEYS[size]}`)} />
-          ))}
-        </RadioGroup>
-        <RadioGroup<Tint>
-          label={t('pageViews.reading.tint')}
-          value={aids.tint}
-          onChange={(value) => change({ tint: value })}
-        >
-          {TINTS.map((tint) => (
-            <RadioCard key={tint} value={tint} label={t(`pageViews.reading.tints.${tint}`)} />
-          ))}
-        </RadioGroup>
-        <RadioGroup<`${Step}`>
-          label={t('pageViews.reading.wordSpace')}
-          value={`${aids.wordSpace}`}
-          onChange={(value) => change({ wordSpace: Number(value) as Step })}
-        >
-          {STEPS.map((step) => (
-            <RadioCard key={step} value={`${step}`} label={t(`pageViews.reading.steps.${STEP_KEYS[step]}`)} />
-          ))}
-        </RadioGroup>
-        <RadioGroup<`${Step}`>
-          label={t('pageViews.reading.paragraphSpace')}
-          value={`${aids.paragraphSpace}`}
-          onChange={(value) => change({ paragraphSpace: Number(value) as Step })}
-        >
-          {STEPS.map((step) => (
-            <RadioCard key={step} value={`${step}`} label={t(`pageViews.reading.steps.${STEP_KEYS[step]}`)} />
-          ))}
-        </RadioGroup>
-        <RadioGroup<Width>
-          label={t('pageViews.reading.lineWidth')}
-          value={widthOf(aids)}
-          onChange={(value) => change({ maxLine: WIDTH_CHARS[value] })}
-        >
-          {WIDTHS.map((width) => (
-            <RadioCard key={width} value={width} label={t(`pageViews.reading.lineWidths.${width}`)} />
-          ))}
-        </RadioGroup>
+        <fieldset className={styles.group}>
+          <legend className={styles.legend}>{t('pageViews.reading.focus')}</legend>
+          <RadioGroup<`${FocusLines}`>
+            columns={4}
+            label={t('pageViews.reading.focus')}
+            value={`${aids.focus}`}
+            onChange={(value) => change({ focus: Number(value) as FocusLines })}
+          >
+            {FOCUS_SIZES.map((size) => (
+              <RadioCard key={size} value={`${size}`} label={t(`pageViews.reading.focusSizes.${FOCUS_KEYS[size]}`)} />
+            ))}
+          </RadioGroup>
+        </fieldset>
+        <fieldset className={styles.group}>
+          <legend className={styles.legend}>{t('pageViews.reading.tint')}</legend>
+          <RadioGroup<Tint>
+            columns={4}
+            label={t('pageViews.reading.tint')}
+            value={aids.tint}
+            onChange={(value) => change({ tint: value })}
+          >
+            {TINTS.map((tint) => (
+              <RadioCard key={tint} value={tint} label={t(`pageViews.reading.tints.${tint}`)} />
+            ))}
+          </RadioGroup>
+        </fieldset>
+        <fieldset className={styles.group}>
+          <legend className={styles.legend}>{t('pageViews.reading.wordSpace')}</legend>
+          <RadioGroup<`${Step}`>
+            columns={4}
+            label={t('pageViews.reading.wordSpace')}
+            value={`${aids.wordSpace}`}
+            onChange={(value) => change({ wordSpace: Number(value) as Step })}
+          >
+            {STEPS.map((step) => (
+              <RadioCard key={step} value={`${step}`} label={t(`pageViews.reading.steps.${STEP_KEYS[step]}`)} />
+            ))}
+          </RadioGroup>
+        </fieldset>
+        <fieldset className={styles.group}>
+          <legend className={styles.legend}>{t('pageViews.reading.paragraphSpace')}</legend>
+          <RadioGroup<`${Step}`>
+            columns={4}
+            label={t('pageViews.reading.paragraphSpace')}
+            value={`${aids.paragraphSpace}`}
+            onChange={(value) => change({ paragraphSpace: Number(value) as Step })}
+          >
+            {STEPS.map((step) => (
+              <RadioCard key={step} value={`${step}`} label={t(`pageViews.reading.steps.${STEP_KEYS[step]}`)} />
+            ))}
+          </RadioGroup>
+        </fieldset>
+        <fieldset className={styles.group}>
+          <legend className={styles.legend}>{t('pageViews.reading.lineWidth')}</legend>
+          <RadioGroup<Width>
+            columns={4}
+            label={t('pageViews.reading.lineWidth')}
+            value={widthOf(aids)}
+            onChange={(value) => change({ maxLine: WIDTH_CHARS[value] })}
+          >
+            {WIDTHS.map((width) => (
+              <RadioCard key={width} value={width} label={t(`pageViews.reading.lineWidths.${width}`)} />
+            ))}
+          </RadioGroup>
+        </fieldset>
         {isEnabled('pages.syllables') ? (
           <>
             <Switch

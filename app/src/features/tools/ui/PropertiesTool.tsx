@@ -14,6 +14,7 @@ import type { Material, MaterialGroup } from '../chem/data/materials';
 import { insertIntoPage } from './CalculatorTool';
 import styles from './chem.module.css';
 import extra from './extra.module.css';
+import ref from './reference.module.css';
 import { loadStored, saveStored } from './storage';
 import tools from './tools.module.css';
 
@@ -34,6 +35,8 @@ interface Column<R> {
   head: string;
   text(row: R): string;
   numeric?: boolean;
+  /** Keeps the cell on one line. */
+  nowrap?: boolean;
 }
 
 function Table<R>({
@@ -48,12 +51,12 @@ function Table<R>({
   label: string;
 }) {
   return (
-    <div className={styles.tableWrap} tabIndex={0} role="region" aria-label={label}>
-      <table className={extra.table}>
+    <div className={`${styles.tableWrap} ${ref.wrap}`} tabIndex={0} role="region" aria-label={label}>
+      <table className={`${ref.table} ${ref.withActions} ${ref.sticky}`}>
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.key} scope="col" className={c.numeric ? styles.numeric : undefined}>
+              <th key={c.key} scope="col" className={c.numeric ? styles.numeric : c.nowrap ? ref.num : undefined}>
                 {c.head}
               </th>
             ))}
@@ -67,11 +70,11 @@ function Table<R>({
             <tr key={rowKey(row)}>
               {columns.map((c, i) =>
                 i === 0 ? (
-                  <th key={c.key} scope="row" className={c.numeric ? styles.numeric : undefined}>
+                  <th key={c.key} scope="row" className={c.numeric ? styles.numeric : c.nowrap ? ref.num : undefined}>
                     {c.text(row)}
                   </th>
                 ) : (
-                  <td key={c.key} className={c.numeric ? styles.numeric : undefined}>
+                  <td key={c.key} className={c.numeric ? styles.numeric : c.nowrap ? ref.num : undefined}>
                     {c.text(row)}
                   </td>
                 ),
@@ -125,7 +128,7 @@ function SteamTab() {
         <label className={extra.field}>
           {t('chem.data.orderedBy')}
           <select
-            className={extra.input}
+            className={`${extra.input} ${ref.control}`}
             value={by}
             onChange={(e) => {
               setBy(e.target.value as 'T' | 'P');
@@ -141,7 +144,7 @@ function SteamTab() {
           <input
             type="text"
             inputMode="decimal"
-            className={extra.input}
+            className={`${extra.input} ${ref.control}`}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             aria-invalid={value.trim() !== '' && !lookup ? true : undefined}
@@ -154,14 +157,17 @@ function SteamTab() {
             <p className={styles.headline}>
               {fmt(lookup.T)} {t('chem.data.celsius')} · {fmt(lookup.P)} {t('chem.data.kpa')}
             </p>
-            <p className={tools.note}>
-              {STEAM_COLUMNS.slice(2)
-                .map((c) => `${steamHead(c)} ${fmt(lookup[c])}`)
-                .join(' · ')}
-            </p>
+            <dl className={ref.facts}>
+              {STEAM_COLUMNS.slice(2).map((c) => (
+                <div key={c} className={ref.fact}>
+                  <dt className={ref.num}>{steamHead(c)}</dt>
+                  <dd className={ref.num}>{fmt(lookup[c])}</dd>
+                </div>
+              ))}
+            </dl>
             {lookup.interpolated ? <p className={tools.note}>{t('chem.data.interpolated')}</p> : null}
             <div className={tools.buttons}>
-              <Button variant="quiet" onClick={() => insertRow(line(lookup))}>
+              <Button variant="quiet" className={ref.flush} onClick={() => insertRow(line(lookup))}>
                 {t('chem.data.insertValues')}
               </Button>
             </div>
@@ -174,6 +180,7 @@ function SteamTab() {
       <div className={tools.buttons}>
         <Button
           variant="quiet"
+          className={ref.flush}
           disabled={rows.length === 0}
           onClick={() =>
             insertTableOf(
@@ -211,9 +218,9 @@ function GasTab() {
     { key: 'formula', head: t('chem.data.gasCols.formula'), text: (r) => r.gas.formula },
     { key: 'M', head: 'M', text: (r) => fmt(r.gas.molarMass), numeric: true },
     { key: 'R', head: 'R', text: (r) => fmt(r.gas.R), numeric: true },
-    { key: 'cp', head: 'cp', text: (r) => (r.p ? fmt(r.p.cp) : '—'), numeric: true },
+    { key: 'cp', head: 'cp (J/kg·K)', text: (r) => (r.p ? fmt(r.p.cp) : '—'), numeric: true },
     { key: 'cv', head: 'cv', text: (r) => (r.p ? fmt(r.p.cv) : '—'), numeric: true },
-    { key: 'k', head: 'k', text: (r) => (r.p ? fmt(r.p.k) : '—'), numeric: true },
+    { key: 'k', head: 'k (W/m·K)', text: (r) => (r.p ? fmt(r.p.k) : '—'), numeric: true },
   ];
   return (
     <>
@@ -222,7 +229,7 @@ function GasTab() {
         <input
           type="text"
           inputMode="decimal"
-          className={extra.input}
+          className={`${extra.input} ${ref.control}`}
           value={temp}
           aria-invalid={!valid ? true : undefined}
           onChange={(e) => setTemp(e.target.value)}
@@ -267,12 +274,12 @@ function MaterialsTab() {
   );
   const columns: Column<Material>[] = [
     { key: 'name', head: t('chem.data.matCols.name'), text: (m) => `${m.name} (${m.condition})` },
-    { key: 'rho', head: 'ρ', text: (m) => String(m.density), numeric: true },
-    { key: 'E', head: 'E', text: (m) => String(m.modulus), numeric: true },
-    { key: 'sy', head: 'σy', text: (m) => (m.yield === null ? '—' : String(m.yield)), numeric: true },
-    { key: 'k', head: 'k', text: (m) => String(m.conductivity), numeric: true },
-    { key: 'cp', head: 'cp', text: (m) => String(m.specificHeat), numeric: true },
-    { key: 'src', head: t('chem.data.matCols.source'), text: (m) => m.sources.join(', ') },
+    { key: 'rho', head: 'ρ (kg/m³)', text: (m) => String(m.density), numeric: true },
+    { key: 'E', head: 'E (GPa)', text: (m) => String(m.modulus), numeric: true },
+    { key: 'sy', head: 'σy (MPa)', text: (m) => (m.yield === null ? '—' : String(m.yield)), numeric: true },
+    { key: 'k', head: 'k (W/m·K)', text: (m) => String(m.conductivity), numeric: true },
+    { key: 'cp', head: 'cp (J/kg·K)', text: (m) => String(m.specificHeat), numeric: true },
+    { key: 'src', head: t('chem.data.matCols.source'), text: (m) => m.sources.join(', '), nowrap: true },
   ];
   const used = [...new Set(rows.flatMap((m) => m.sources))];
   let legend: ReactNode = null;
@@ -296,7 +303,7 @@ function MaterialsTab() {
         <label className={extra.field}>
           {t('chem.data.group')}
           <select
-            className={extra.input}
+            className={`${extra.input} ${ref.control}`}
             value={group}
             onChange={(e) => setGroup(e.target.value as 'all' | MaterialGroup)}
           >
@@ -312,6 +319,7 @@ function MaterialsTab() {
       <div className={tools.buttons}>
         <Button
           variant="quiet"
+          className={ref.flush}
           disabled={rows.length === 0}
           onClick={() =>
             insertTableOf(

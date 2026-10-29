@@ -54,7 +54,7 @@ describe('the structure window', () => {
   it('draws a structure with a name, a formula, and an error in words', () => {
     renderUi(<StructureTool />);
     expect(screen.getByRole('img', { name: /Skeletal formula/ })).toBeTruthy();
-    expect(screen.getByText(/C9H8O4 · 180\.16 g\/mol/)).toBeTruthy();
+    expect(screen.getByText(/C₉H₈O₄ · 180\.16 g\/mol/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Structure as SMILES text'), { target: { value: 'C(C' } });
     expect(screen.getByText('A bracket ( ) does not match.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Put on page as ink' }).hasAttribute('disabled')).toBe(true);

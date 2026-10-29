@@ -20,6 +20,7 @@ import {
 } from '../projectile';
 import { readNumber } from '../vec';
 import { InsertResult, NumberField } from './common';
+import { useSvgScale } from '../../svgScale';
 import styles from './lab.module.css';
 
 const MAX_PLAY_MS = 4000;
@@ -81,6 +82,8 @@ function LaunchFields({ fields, onField }: { fields: Fields; onField(name: keyof
 
 /** The path on the grapher's grid and axes, with the ball where it is at `time`. */
 function FlightPlot({ graph, launch, time }: { graph: string; launch: Launch; time: number | null }) {
+  const svg = useRef<SVGSVGElement>(null);
+  useSvgScale(svg, SIZE.width);
   const parsed = useMemo(() => readGraph(graph), [graph]);
   const scene = useMemo(
     () => (parsed.view ? buildScene(parsed.view, SIZE, [{ source: parsed.functions[0], t: parsed.t! }]) : null),
@@ -90,6 +93,7 @@ function FlightPlot({ graph, launch, time }: { graph: string; launch: Launch; ti
   const ball = time === null ? null : toPixel(parsed.view, SIZE, positionAt(launch, time));
   return (
     <svg
+      ref={svg}
       className={styles.plot}
       viewBox={`0 0 ${SIZE.width} ${SIZE.height}`}
       role="img"

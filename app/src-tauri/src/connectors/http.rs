@@ -326,6 +326,11 @@ mod tests {
                 let _ = stream.write_all(answer.as_bytes());
                 let _ = stream.flush();
                 let _ = stream.shutdown(std::net::Shutdown::Write);
+                // The socket stays open until the client has read the answer and closed its side. Dropping it at once
+                // can reset the connection on Windows while the answer is still in flight, and the client then sees
+                // a network error, not the answer.
+                let _ = stream.set_read_timeout(Some(std::time::Duration::from_secs(5)));
+                while matches!(stream.read(&mut buffer), Ok(count) if count > 0) {}
             }
         });
         address

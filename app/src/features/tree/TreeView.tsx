@@ -184,7 +184,10 @@ function useRowHandlers(props: TreeViewProps) {
   }, []);
   const onToggle = useCallback((row: Row) => setOpen(tree, [row.id], !row.expanded), [tree]);
   const onRename = useCallback((row: Row) => startRename(row.id), []);
-  const onMore = useCallback((row: Row, anchor: HTMLElement) => openMenu(row, anchor, anchor), [openMenu]);
+  const onMore = useCallback(
+    (row: Row, anchor: HTMLElement, back: HTMLElement) => openMenu(row, anchor, back),
+    [openMenu],
+  );
   return { onPress, onAux, onToggle, onRename, onMore };
 }
 

@@ -4,10 +4,13 @@
 // same profile brings that account's notebook in beside the first one, without mixing the two.
 
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { Key } from 'webdriverio';
-import { addOneNote } from '../../mock-servers/onenote';
-import { MockServer } from '../../mock-servers/server';
+import { addOneNote } from '../../mock-servers/onenote.ts';
+import { MockServer } from '../../mock-servers/server.ts';
 import { launchApp, skipReason } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
 import { startMockBridge } from '../mockBridge.ts';
@@ -29,10 +32,10 @@ function graph(notebook: string, section: string, title: string, text: string) {
   return server;
 }
 
-async function importFrom(account: string, server: MockServer, profileDir?: string) {
+async function importFrom(account: string, server: MockServer, profileDir: string) {
   const bridge: MockBridge = await startMockBridge(server);
   const session: AppSession = await launchApp({
-    ...(profileDir ? { profileDir } : {}),
+    profileDir,
     env: { OPENNOTE_TEST_CONNECTOR_BASE: bridge.base, OPENNOTE_TEST_CONNECTED: `microsoft:${account}` },
   });
   const { browser } = session;
@@ -51,16 +54,22 @@ async function importFrom(account: string, server: MockServer, profileDir?: stri
 
 describe('OneNote import in the real app', { skip: skipReason() }, () => {
   let first: Awaited<ReturnType<typeof importFrom>> | undefined;
-  let profileDir = '';
+  // Both launches use this folder. A session that wasn't given a profile deletes its own when it closes, which would
+  // leave the second account nothing to share with the first.
+  const profileDir = mkdtempSync(join(tmpdir(), 'opennote-e2e-onenote-'));
 
   before(async () => {
-    first = await importFrom('alice@example.com', graph('Biology', 'Cells', 'Mitosis', 'Alice wrote this.'));
-    profileDir = first.session.profileDir;
+    first = await importFrom(
+      'alice@example.com',
+      graph('Biology', 'Cells', 'Mitosis', 'Alice wrote this.'),
+      profileDir,
+    );
   });
 
   after(async () => {
     await first?.session.close();
     await first?.bridge.close();
+    rmSync(profileDir, { recursive: true, force: true });
   });
 
   it('brings the notebook in and shows it in the tree', async () => {
