@@ -104,7 +104,9 @@ describe('the mechanisms and dynamics kit window', () => {
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].picture).toBeTruthy();
   });
+});
 
+describe('the kit window and the page', () => {
   it('inserts a live calculation block that reopens the tool with its inputs', async () => {
     saveTab('sdof');
     const kit = renderUi(<MechDynKit />);
@@ -146,7 +148,9 @@ describe('the mechanisms and dynamics kit window', () => {
     await userEvent.click(within(motion).getByRole('button', { name: 'Play' }));
     expect(within(motion).getByRole('button', { name: 'Pause' })).toBeTruthy();
   });
+});
 
+describe('the kit window opened by a command', () => {
   it('opens on the tool a palette command names', async () => {
     await renderApp();
     await commands.get('tools.kitMechDyn.sdof')!.run({} as never, undefined as never);
