@@ -91,3 +91,42 @@ test('the palette opens Change passphrase, which needs the recovery key', async 
   await expect(page.getByRole('heading', { name: 'Change passphrase', level: 2 })).toHaveCount(0);
   await expect(page.getByLabel('Recovery key')).toHaveCount(0);
 });
+
+/** Elements that reach past the right edge of a phone-width window, and the page if it scrolls sideways. */
+async function spills(page: import('@playwright/test').Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    const width = document.documentElement.clientWidth;
+    if (document.documentElement.scrollWidth > width + 1) out.push(`page: ${document.documentElement.scrollWidth}px`);
+    // Every element, the dialogs too; one clipped by an ancestor still counts, as its text is cut off.
+    for (const el of document.body.querySelectorAll('*')) {
+      const box = el.getBoundingClientRect();
+      if (box.width > 0 && box.right > width + 1) out.push(`${el.tagName.toLowerCase()}: ${Math.round(box.right)}px`);
+    }
+    return out;
+  });
+}
+
+test('at phone width, setup, the device list, and a pairing code fit without scrolling sideways', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await openSync(page, '');
+  await page.getByRole('button', { name: 'Set up sync' }).click();
+  await page.getByLabel('Folder', { exact: true }).fill('C:\\Users\\Sam\\OneDrive\\A folder with a long name\\Sync');
+  expect(await spills(page)).toEqual([]);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Passphrase', { exact: true }).fill('correct horse battery');
+  await page.getByLabel('Type the passphrase again').fill('correct horse battery');
+  expect(await spills(page)).toEqual([]);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByRole('heading', { name: 'Save your recovery key' })).toBeFocused();
+  expect(await spills(page)).toEqual([]);
+
+  await openSync(page, '?sync=on');
+  await expect(page.getByText('Surface Laptop (this device)')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove Desktop' })).toBeVisible();
+  expect(await spills(page)).toEqual([]);
+  await page.getByRole('button', { name: 'Add a device' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add a device' });
+  await expect(dialog.getByRole('img', { name: 'QR code of the pairing code' })).toBeVisible();
+  expect(await spills(page)).toEqual([]);
+});
