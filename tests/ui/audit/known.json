@@ -96,6 +96,10 @@
   "block | document-scroll | ",
   "block | box-overlap | div[role=group].block > div > button.tape x div > p.muted",
   "block | text-overlap | div[role=group].block > div > p.muted x button.tape > span",
-  "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option"
+  "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option",
+  "tool.kit-solids | target-small | div.field > div.entry > input.input",
+  "tool.kit-solids | target-small | div.field > div.entry > textarea.input",
+  "tool.kit-solids | target-small | div.row > label.field > select.input",
+  "tool.kit-solids | target-small | div.tool > div[role=tablist].tabs > button[role=tab].tab"
  ]
 }
