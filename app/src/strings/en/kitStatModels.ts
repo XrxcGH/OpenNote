@@ -7,6 +7,7 @@ import { regression, regressionSteps } from './kitStatModels/regression';
 import { spatial, spatialSteps } from './kitStatModels/spatial';
 import { causal, causalSteps } from './kitStatModels/causal';
 import { timeseries, timeseriesSteps } from './kitStatModels/timeseries';
+import { multivariate, multivariateSteps } from './kitStatModels/multivariate';
 
 export const kitStatModels = {
   title: 'Statistical models',
@@ -143,6 +144,15 @@ export const kitStatModels = {
     lagsTooFew: 'Use more lags than the model has coefficients.',
     timeOrder: 'The time column must increase from each row to the next.',
     holdoutTooLong: 'Hold out at most {detail} values, so enough are left to fit the model.',
+    fewColumns: 'Choose at least 2 numeric columns.',
+    constantColumn: 'Column {detail} has the same value in every row, so it cannot be scaled.',
+    factorCount: 'The number of factors must be from 1 to {detail}.',
+    heywood:
+      'A communality went above 1 (a Heywood case), so this many factors does not fit. Try fewer factors or more rows.',
+    clusterCount: 'The number of clusters must be from 1 to {detail}.',
+    flatProfile: 'A row has the same value in every column, so its correlation distance is not defined.',
+    notSquare: 'A distance table needs as many rows as columns.',
+    badDistances: 'Distances must be 0 or more, 0 from each item to itself, and the same in both directions.',
     unknown: 'That could not be worked out.',
   },
   glm,
@@ -151,6 +161,7 @@ export const kitStatModels = {
   spatial,
   causal,
   timeseries,
+  multivariate,
   step: {
     glm: glmSteps,
     survival: survivalSteps,
@@ -158,5 +169,6 @@ export const kitStatModels = {
     spatial: spatialSteps,
     causal: causalSteps,
     timeseries: timeseriesSteps,
+    multivariate: multivariateSteps,
   },
 };

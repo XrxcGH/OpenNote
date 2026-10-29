@@ -37,5 +37,11 @@ export const STATMODELS_TOOLS: readonly StatModelsToolMeta[] = [
     keywords: 'kitStatModels.timeseries.keywords',
     icon: 'ChartLineUp',
   },
+  {
+    id: 'multivariate',
+    title: 'kitStatModels.multivariate.title',
+    keywords: 'kitStatModels.multivariate.keywords',
+    icon: 'Graph',
+  },
   { id: 'spatial', title: 'kitStatModels.spatial.title', keywords: 'kitStatModels.spatial.keywords', icon: 'MapPin' },
 ];
