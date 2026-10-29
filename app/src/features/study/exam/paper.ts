@@ -106,15 +106,15 @@ export function resultsMarkdown(
   const lines = [t('exams.results.score', { got: total.got, of: total.of, percent: total.percent }), ''];
   if (late !== null) lines.push(t('exams.results.late', { time: clockText(late) }), '');
   if (total.unmarked > 0) lines.push(t('exams.results.unmarked', { count: total.unmarked }), '');
-  lines.push(`| ${t('exams.results.question')} | ${t('exams.results.marks')} | ${t('exams.results.yourAnswer')} |`);
-  lines.push('| --- | --- | --- |');
+  // A list, not a table: a page's text block shows Markdown tables as plain text.
   exam.questions.forEach((question, at) => {
     const one = marks[question.id];
-    const got =
+    const answer = inline(answerText(question, answers[question.id]));
+    lines.push(
       one && one.status !== 'unmarked'
-        ? t('exams.results.got', { got: one.got, of: one.of })
-        : t('exams.results.notMarked');
-    lines.push(`| ${at + 1} | ${got} | ${answerText(question, answers[question.id])} |`);
+        ? `- ${t('exams.results.rowMarked', { number: at + 1, got: one.got, of: one.of, answer })}`
+        : `- ${t('exams.results.rowUnmarked', { number: at + 1, answer })}`,
+    );
   });
   const weak = weakTopics(exam, marks);
   if (weak.length > 0) {

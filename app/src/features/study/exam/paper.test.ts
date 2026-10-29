@@ -106,9 +106,10 @@ describe('paper and key', () => {
     };
     const results = resultsMarkdown(exam, { q1: { picked: 0 }, q2: { picked: 0 }, q4: { ink: [[[1, 1]]] } }, marks);
     expect(results).toContain('Score: 1 of 6 marks (17 percent)');
-    expect(results).toContain('| 2 | 0 of 1 | A. Nucleus |');
-    expect(results).toContain('| 3 | 0 of 1 | No answer |');
-    expect(results).toContain('| 4 | Not marked | A handwritten answer, kept in the exam window. |');
+    expect(results).toContain('- Question 2: 0 of 1 marks. Your answer: A. Nucleus');
+    expect(results).toContain('- Question 3: 0 of 1 marks. Your answer: No answer');
+    expect(results).toContain('- Question 4: not marked yet. Your answer: A handwritten answer, shown below.');
+    expect(results).not.toContain('| --- |');
     expect(results).toContain('- Organelles: 1 of 3 marks [Cells](opennote://page/p%201)');
   });
 

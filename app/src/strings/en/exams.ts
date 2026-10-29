@@ -111,7 +111,7 @@ export const exams = {
     true: 'True',
     false: 'False',
     none: 'No answer',
-    ink: 'A handwritten answer, kept in the exam window.',
+    ink: 'A handwritten answer, shown below.',
     typedAndInk: '{text} (and a handwritten answer)',
   },
   ready: {
@@ -201,13 +201,12 @@ export const exams = {
     unmarked:
       // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       '{count, plural, one {# question is yours to mark. Compare your answer with the key, then choose a mark.} other {# questions are yours to mark. Compare each answer with the key, then choose a mark.}}',
-    question: 'Question',
-    marks: 'Marks',
     yourAnswer: 'Your answer',
     key: 'Answer key',
     yourMark: 'Your mark',
     got: '{got} of {of}',
-    notMarked: 'Not marked',
+    rowMarked: 'Question {number}: {got} of {of} marks. Your answer: {answer}',
+    rowUnmarked: 'Question {number}: not marked yet. Your answer: {answer}',
     toMark: 'To mark',
     byApp: 'Marked by OpenNote.',
     change: 'Change this mark',
