@@ -1158,7 +1158,7 @@ export const kitLifeSys = {
       slab: 'The exponent bands are for a thin film or slab: 0.5 or less Fickian, up to 1 anomalous, 1 case II.',
       fickian: 'n of 0.5 or less points to Fickian diffusion.',
       anomalous: 'n between 0.5 and 1 points to anomalous transport: diffusion and swelling together.',
-      caseII: 'n near 1 points to case II transport, release set by swelling or erosion, close to zero order.',
+      caseII: 'n near 1 points to case II transport: polymer relaxation sets the release, close to zero order.',
       hysteresis: 'The loop turns counterclockwise because the effect site lags behind the plasma.',
     },
     e: {
@@ -1335,7 +1335,7 @@ export const kitLifeSys = {
     s: {
       mmFit: 'Nonlinear least squares on the {n} points gives Vmax = {v} and Km = {k} (sum of squared errors {sse}).',
       mmWeighted:
-        'Weighted nonlinear least squares (weights 1/SD²) on the {n} points gives Vmax = {v} and Km = {k} (weighted sum of squares {sse}).',
+        'Weighted least squares (weights 1/SD²) on the {n} points gives Vmax = {v} and Km = {k} (weighted SSE {sse}).',
       lineweaver: 'For comparison, a straight line through 1/v against 1/S gives Vmax = {v} and Km = {k}.',
       lineweaverBad: 'The Lineweaver-Burk line has a negative intercept here, so it gives no usable estimate.',
       kcat: 'kcat = Vmax / [E] = {v} / {e} = {kcat}, and kcat/Km = {kcat} / {k} = {eff}.',
@@ -1347,7 +1347,8 @@ export const kitLifeSys = {
         noncompetitive:
           'A noncompetitive inhibitor divides Vmax by 1 + [I]/Ki = 1 + {i}/{ki}: Vmax = {v}, and Km stays {km}.',
         mixed:
-          'A mixed inhibitor with α = {a} scales Km by (1 + [I]/Ki) / (1 + [I]/(αKi)) and divides Vmax by 1 + [I]/(αKi): Km = {km}, Vmax = {v}.',
+          'A mixed inhibitor with α = {a} scales Km by (1 + [I]/Ki) / (1 + [I]/(αKi)) ' +
+          'and divides Vmax by 1 + [I]/(αKi): Km = {km}, Vmax = {v}.',
       },
       inhibitionFit: 'Each model is fitted to all {n} readings at once; {m} of the 4 fits converged.',
       fTest: {
@@ -1463,7 +1464,8 @@ export const kitLifeSys = {
     },
     n: {
       linearBias:
-        'Linear plots distort the errors: Lineweaver-Burk gives the most weight to the least certain low-[S] rates, so the nonlinear fit is the estimate to report.',
+        'Linear plots distort the errors. Lineweaver-Burk gives the most weight to the least certain low-[S] rates, ' +
+        'so report the nonlinear fit.',
       inhibition:
         'Noncompetitive is mixed inhibition with α = 1. Compare models by AIC and F only when the data cover several [I] levels.',
       hill: 'n above 1 means positive cooperativity, below 1 negative cooperativity; n = 1 is a plain hyperbola.',
@@ -1487,7 +1489,7 @@ export const kitLifeSys = {
       binding: 'The binding model gave a negative value. Try another model or add points across the Kd.',
       betRange: 'Enter at least 3 points with P/P₀ between 0.05 and 0.35.',
       bet: 'The BET line gives a negative vm or c here. Check the data range.',
-      flat: 'a and d must differ, or the curve is flat.',
+      flat: 'The plateaus d and a must differ, or the curve is flat.',
       outside: 'That response is outside the curve, which runs between {low} and {high}.',
       xOrY: 'Enter x, a response y, or both.',
       asymmetry: 'The 5PL fit gave a negative asymmetry. Use the 4PL curve.',
