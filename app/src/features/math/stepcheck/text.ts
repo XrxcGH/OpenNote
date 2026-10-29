@@ -20,6 +20,17 @@ export interface SplitLine {
 const OPEN = '([{';
 const CLOSE = ')]}';
 
+const VULGAR: Record<string, string> = {
+  '½': '1/2',
+  '⅓': '1/3',
+  '⅔': '2/3',
+  '¼': '1/4',
+  '¾': '3/4',
+  '⅕': '1/5',
+  '⅙': '1/6',
+  '⅛': '1/8',
+};
+
 /** Plain marks for the symbols people type or paste. */
 export function normalize(text: string): string {
   return (
@@ -37,6 +48,10 @@ export function normalize(text: string): string {
       .replace(/²/g, '^2')
       .replace(/³/g, '^3')
       .replace(/′/g, "'")
+      // Vulgar fractions, and percent as a fraction of 100: 25% of 80 is 25/100 * 80.
+      .replace(/[½⅓⅔¼¾⅕⅙⅛]/g, (c) => `(${VULGAR[c]})`)
+      .replace(/(\d+(?:\.\d+)?)\s*%\s*of\b/g, '($1/100) *')
+      .replace(/(\d+(?:\.\d+)?)\s*%/g, '($1/100)')
       .replace(/\b(?:infinity|inf|oo)\b/g, '∞')
       .replace(/\blog_\(?(\d+)\)?\s*\(([^()]*)\)/g, '(ln($2)/ln($1))')
       .replace(/\s+/g, ' ')
@@ -140,7 +155,38 @@ export function problemLead(text: string): { rest: string; starts: boolean } {
 
 /** Words and marks at the start of a line that only say "so": they are dropped. */
 export function dropLead(text: string): string {
-  return text.replace(/^(?:(?:so|then|thus|hence|therefore|which gives|gives)\b[:,]?|⇒|=>|∴|→)\s*/i, '').trim();
+  return text
+    .replace(/^(?:(?:so|then|thus|hence|therefore|which gives|gives)\b[:,]?|(?:ans|answer|check)\s*:|⇒|=>|∴|→)\s*/i, '')
+    .trim();
+}
+
+/** Marks at the end of an answer, such as a tick, (ans) or QED: they are dropped. */
+export function dropMarks(text: string): string {
+  return text.replace(/\s*(?:[✓✔☑∎□■]|\((?:ans|answer)\)|\bQ\.?E\.?D\.?)\s*$/i, '').trim();
+}
+
+const SIDE_LABEL = String.raw`(?:L\.?H\.?S\.?|R\.?H\.?S\.?)`;
+
+/**
+ * LHS = 3(5) - 4 = 11 = RHS: the side labels of a check are dropped, leaving the values. Null for LHS = RHS alone,
+ * which is a note.
+ */
+export function dropSideLabels(text: string): string | null {
+  if (new RegExp(`^${SIDE_LABEL}\\s*=\\s*${SIDE_LABEL}$`, 'i').test(text)) return null;
+  return text
+    .replace(new RegExp(`^${SIDE_LABEL}\\s*=\\s*`, 'i'), '')
+    .replace(new RegExp(`\\s*=\\s*${SIDE_LABEL}$`, 'i'), '')
+    .trim();
+}
+
+/** Answers listed after one letter, such as x ∈ {2, 3}, written out as x = 2 or x = 3. The braces may be left out. */
+export function listedAnswers(text: string): string {
+  const found = /^([a-zA-Z])\s*(?:=|∈)\s*\{?\s*(-?[\d./]+(?:\s*,\s*-?[\d./]+)+)\s*\}?$/.exec(text);
+  if (!found) return text;
+  return found[2]
+    .split(',')
+    .map((value) => `${found[1]} = ${value.trim()}`)
+    .join(' or ');
 }
 
 /** Splits at a separator found outside every bracket. */

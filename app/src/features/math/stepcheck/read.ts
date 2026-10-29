@@ -17,7 +17,17 @@ import { sumOf } from '../calculus/series';
 import { evaluateNotes } from '../../tools/calculator/notes';
 import { compareAt } from './sample';
 import { evaluateMatrix, looksLikeMatrix, MatrixShape, type Matrix } from './matrix';
-import { dropLead, dropNotes, hasWords, normalize, splitLine, type Rel } from './text';
+import {
+  dropLead,
+  dropMarks,
+  dropNotes,
+  dropSideLabels,
+  hasWords,
+  listedAnswers,
+  normalize,
+  splitLine,
+  type Rel,
+} from './text';
 import type { ReasonCode } from './types';
 
 /** An indefinite integral inside a line, kept as a name. Its slope is its body, times d(variable)/dx. */
@@ -463,8 +473,11 @@ function scalarOf(value: Value): Scalar {
 
 /** Reads one line. Definitions and substitutions are added to the context for the lines after it. */
 export function readLine(raw: string, ctx: Context): Statement {
-  const text = dropNotes(dropLead(normalize(raw)));
-  if (text === '') return { kind: 'blank' };
+  const plain = dropMarks(dropNotes(dropLead(normalize(raw))));
+  if (plain === '') return { kind: 'blank' };
+  const labelled = dropSideLabels(plain);
+  if (labelled === null) return { kind: 'given', reason: 'note' };
+  const text = listedAnswers(labelled);
   if (text.length > 2000) return { kind: 'unreadable', reason: 'tooLong' };
   // Problem 2, or 2x = 6 divide by 2: words, not letters multiplied together.
   if (hasWords(text)) return { kind: 'unreadable', reason: 'notMath' };
@@ -498,6 +511,12 @@ function readStatement(line: string, ctx: Context): Statement {
   const split = splitLine(text);
   const { clauses } = split;
   const unitLine = singleLetterUnits(text);
+  // x = y = z, or let a = b = c: letters named equal, a note rather than a step to check.
+  const [only] = clauses;
+  const bare = (side: string) => /^(?:let\s+)?[a-zA-Z]$/i.test(side);
+  if (clauses.length === 1 && only.sides.length > 2 && only.rels.every((r) => r === '=') && only.sides.every(bare)) {
+    return { kind: 'given', reason: 'note' };
+  }
   const valueAt = (side: string, i: number, units: boolean) =>
     readValue(side, ctx, units, point && point.side === i ? point.at : undefined);
 
