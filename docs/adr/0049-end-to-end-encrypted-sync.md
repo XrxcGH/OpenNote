@@ -53,7 +53,7 @@ Each file has a version vector. A device that changes a file increments its own 
 
 | File | Rule |
 |---|---|
-| `page.json` | If one revision lists the other in its `ancestors`, the newer one wins. Otherwise the copy saved later (then the one whose bytes sort later) stays as `page.json`, and the other goes to `.conflicts/<its revision ID>.json`, which the app already shows as "This page was also changed on another device. Compare the versions." The person keeps one, the other, or both as separate pages (spec 14.1). No text is dropped |
+| `page.json` | If one revision lists the other in its `ancestors`, the newer one wins. Otherwise the copy whose `saved_at` is later (then the one whose bytes sort later) stays as `page.json`; `saved_at` comes from the saving device's clock, so a device whose clock runs ahead keeps its copy as the page even when the other edit was made later, and every device still picks the same one, and the other goes to `.conflicts/<its revision ID>.json`, which the app already shows as "This page was also changed on another device. Compare the versions." The person keeps one, the other, or both as separate pages (spec 14.1). No text is dropped |
 | `section.json`, `notebook.json`, `.history/versions.json` | The core's own commutative merges (spec 14.3 and 13): the union by ID, with the later change of each entry |
 | Ink segments and assets | Immutable, so they never conflict. Equal bytes are one chunk |
 | `page.md`, `ink.svg`, `index.md`, `README.md`, `.opennote/FORMAT.md` | Derived from the files above, so the copy whose bytes sort later wins and the app writes them again |
