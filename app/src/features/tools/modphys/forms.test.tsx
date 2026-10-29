@@ -7,9 +7,10 @@ import { KitForm } from './shared/KitForm';
 import type { FormDef } from './shared/ToolForms';
 import { FORMS as plasma } from './plasma/Tool';
 import { FORMS as stars } from './stars/Tool';
+import { FORMS as cosmos } from './cosmos/Tool';
 import ModPhysWindow from './Window';
 
-const TOOLS: Record<string, readonly FormDef[]> = { plasma, stars };
+const TOOLS: Record<string, readonly FormDef[]> = { plasma, stars, cosmos };
 
 const cases = Object.entries(TOOLS).flatMap(([tool, forms]) =>
   forms.map((form) => [`${tool} ${form.id}`, tool, form] as const),

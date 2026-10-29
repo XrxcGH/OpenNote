@@ -1,7 +1,7 @@
 // The modern physics and astronomy tools: their ids, palette strings, and icons. Start-up code reads this list to
 // register one command per tool, so it imports nothing.
 
-export type ModPhysToolId = 'plasma' | 'stars';
+export type ModPhysToolId = 'plasma' | 'stars' | 'cosmos';
 
 export interface ModPhysMeta {
   id: ModPhysToolId;
@@ -11,6 +11,7 @@ export interface ModPhysMeta {
 export const MODPHYS_TOOLS: readonly ModPhysMeta[] = [
   { id: 'stars', icon: 'Star' },
   { id: 'plasma', icon: 'Lightning' },
+  { id: 'cosmos', icon: 'Planet' },
 ];
 
 export const isModPhysTool = (value: unknown): value is ModPhysToolId =>

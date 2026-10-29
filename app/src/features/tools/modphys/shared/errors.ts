@@ -31,7 +31,9 @@ export type Problem =
   | 'belowSurface'
   | 'noTransit'
   | 'outsideFit'
-  | 'badBand';
+  | 'badBand'
+  | 'noComponent'
+  | 'badMagnitude';
 
 export class PhysicsError extends Error {
   constructor(
