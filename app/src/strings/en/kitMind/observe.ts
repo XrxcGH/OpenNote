@@ -125,6 +125,16 @@ export const observe = {
     trend: 'Trend in {phase}',
   },
   picture: { graph: 'Single-case graph by phase' },
+  live: {
+    title: 'Record a session',
+    help: 'Start the clock, then press a behavior’s button or its number key to log it. Press a running state again to stop it. Finish sets the session length.',
+    clock: '{t} s',
+    start: 'Start',
+    pause: 'Pause',
+    resume: 'Resume',
+    finish: 'Finish',
+    behavior: '{name} ({key})',
+  },
   example: {
     budget: 'Rest and feed states in a 2-minute session',
     rate: '5 calls in 2 minutes',

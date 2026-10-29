@@ -2,4 +2,6 @@
 import type { ComponentType } from 'react';
 import type { ExtraProps } from './ToolPanel';
 
-export const EXTRAS: Readonly<Record<string, () => Promise<ComponentType<ExtraProps>>>> = {};
+export const EXTRAS: Readonly<Record<string, () => Promise<ComponentType<ExtraProps>>>> = {
+  observe: () => import('../observe/Recorder').then((m) => m.default),
+};
