@@ -40,7 +40,7 @@ Sealing is XChaCha20-Poly1305 with a random 192 bit nonce, from RustCrypto's aud
 - The **passphrase** unlocks it through Argon2id with lock.rs's cost (64 MiB, 3 passes, 1 lane), and the same bounds check refuses a hostile header before any work.
 - The **recovery key** is 256 random bits, shown once as 13 groups of 4 characters, and confirmed by typing two groups back. It unlocks the vault when the passphrase is forgotten. OpenNote never stores it.
 - Each **device** has its own random secret, kept in the operating system's credential store (Windows Credential Manager), and its own slot. Background sync uses the device slot, so the passphrase is typed only when a device joins.
-- **Adding a device**: an existing device makes a one-time pairing code (130 bits, shown as a QR code and as text) and a pairing slot that expires in 24 hours. The new device types or scans the code, unwraps the vault key, writes its own slot, and deletes the pairing slot. The passphrase also works.
+- **Adding a device**: an existing device makes a one-time pairing code (120 bits, shown as a QR code and as text) and a pairing slot that expires in 24 hours. The new device types or scans the code, unwraps the vault key, writes its own slot, and deletes the pairing slot. The passphrase also works.
 - **Removing a device** deletes its slot and writes a revocation. A removed device that is honest stops syncing and forgets its keys. A device that was stolen and kept a copy of the vault key can still read what it already had; locking it out of future changes needs a full re-key, which is a follow-up listed below.
 
 Keys stay in `zeroize` buffers. No key, passphrase, or recovery key is ever logged, put in a crash report, or sent anywhere.
