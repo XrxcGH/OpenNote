@@ -1,5 +1,6 @@
 // The rotating-flow calculations as forms: Coriolis, geostrophic, gradient, and thermal winds, Ekman layers,
 // pumping and Sverdrup transport, the deformation radius, and Rossby waves. Seawater and waves are in their own files.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
 import { fieldsFor, when } from '../ui/fields';

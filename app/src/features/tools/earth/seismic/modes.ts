@@ -1,5 +1,6 @@
 // The seismology calculations as forms: S-P distance, the Wadati diagram, an epicenter from arrivals, magnitude
 // and energy, the b-value, refraction from a model or from picks, reflection moveout, Dix speeds, and wave speeds.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
 import type { Mark } from '../core/figure';

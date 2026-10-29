@@ -1,5 +1,6 @@
 // The gravity, magnetics, heat flow, and plates calculations as forms. The methods live in ./engine; this file
 // reads the fields, words the results, and builds the steps and pictures.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
 import { linePlot } from '../core/plot';

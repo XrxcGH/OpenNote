@@ -1,5 +1,6 @@
 // The air quality and weather observation calculations as forms: the AQI, a Gaussian plume, ppm conversions, a
 // box model, METAR and TAF reports in words with a station-model picture, and radar rain rates.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
 import type { Figure, Mark } from '../core/figure';

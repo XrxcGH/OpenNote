@@ -1,6 +1,7 @@
 // The geochronology and isotope calculations as forms. They give ages from ratios, isochrons, U-Pb, potassium-argon
 // methods with a plateau check, and radiocarbon with calibration; then stable isotopes, mineral formulas, and the
 // geologic time scale.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
 import type { Figure, Mark } from '../core/figure';

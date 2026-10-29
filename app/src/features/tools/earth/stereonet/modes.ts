@@ -1,6 +1,7 @@
 // The stereonet and structural geology calculations as forms. They plot orientations, find poles, rakes,
 // intersections, angles, apparent dips, three-point solutions, true thicknesses, rotations, and fold axes, and give
 // Fisher statistics and rose diagrams.
+import '../text';
 import { t } from '../../../../strings/t';
 import { azimuth, fmt, tex } from '../core/format';
 import { check, Problem } from '../core/problem';

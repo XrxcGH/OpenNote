@@ -1,5 +1,6 @@
 // Where each earth kit tool's calculations load from. The window and the tests both read this list, and each
 // entry is a dynamic import, so a tool's code loads only when its topic is first picked.
+import './text';
 import type { Mode } from './ui/form';
 import type { EarthToolId } from './meta';
 

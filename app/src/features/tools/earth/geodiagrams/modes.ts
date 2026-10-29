@@ -1,5 +1,6 @@
 // The stratigraphy and classification diagrams as forms: a stratigraphic column, a Harris matrix, ternary plots
 // of pasted compositions, and the class of one composition on the USDA soil texture or QAPF diagram.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt } from '../core/format';
 import { pathOf } from '../core/figure';
