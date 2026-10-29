@@ -242,11 +242,18 @@ mod tests {
     use super::*;
     use crate::connectors::MemoryStore;
 
+    /// A fresh random key, so no key value is written into the tests.
+    fn random_key() -> [u8; 32] {
+        let mut key = [0u8; 32];
+        getrandom::fill(&mut key).expect("random");
+        key
+    }
+
     const STYLE: &[u8] = br#"{"version":1,"style":{"glyphs":{"a":[{"strokes":[[0.1,0.2,0.5,0]]}]}}}"#;
 
     #[test]
     fn a_style_seals_and_opens_with_its_key() {
-        let key = [7u8; 32];
+        let key = random_key();
         let sealed = seal(&key, STYLE).expect("sealed");
         assert!(sealed.starts_with(MAGIC));
         assert_eq!(&open(&key, &sealed).expect("opened")[..], STYLE);
@@ -256,15 +263,16 @@ mod tests {
 
     #[test]
     fn a_wrong_key_and_damage_both_fail_the_same_way() {
-        let sealed = seal(&[1u8; 32], STYLE).expect("sealed");
-        assert_eq!(open(&[2u8; 32], &sealed).unwrap_err(), StyleError::Unreadable);
+        let (right, wrong) = (random_key(), random_key());
+        let sealed = seal(&right, STYLE).expect("sealed");
+        assert_eq!(open(&wrong, &sealed).unwrap_err(), StyleError::Unreadable);
         for at in [0, MAGIC.len(), HEADER, sealed.len() - 1] {
             let mut damaged = sealed.clone();
             damaged[at] ^= 1;
-            assert_eq!(open(&[1u8; 32], &damaged).unwrap_err(), StyleError::Unreadable);
+            assert_eq!(open(&right, &damaged).unwrap_err(), StyleError::Unreadable);
         }
-        assert_eq!(open(&[1u8; 32], &sealed[..HEADER]).unwrap_err(), StyleError::Unreadable);
-        assert_eq!(open(&[1u8; 32], b"").unwrap_err(), StyleError::Unreadable);
+        assert_eq!(open(&right, &sealed[..HEADER]).unwrap_err(), StyleError::Unreadable);
+        assert_eq!(open(&right, b"").unwrap_err(), StyleError::Unreadable);
     }
 
     #[test]

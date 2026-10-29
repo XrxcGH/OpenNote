@@ -40,6 +40,7 @@ export function TabStrip() {
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               className={styles.title}
+              title={title}
               onClick={() => activateTab(tab.id)}
             >
               {title}

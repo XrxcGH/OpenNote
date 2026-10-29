@@ -3,8 +3,10 @@
 // first run. The new-page chooser's built-in templates are in templates/apply.ts.
 import type { Editor } from '@tiptap/core';
 import { loadEquationCommands } from '../../docstructure';
+import { t } from '../../../strings/t';
 import { targetEditor } from '../formattingBar/target';
 import { addCommand } from './qolStudy';
+import { say } from './say';
 
 // The palette takes focus before these commands run, so the editor that had focus last is remembered here: the target
 // editor knows it only once it is watching, and this does not depend on when that starts.
@@ -22,7 +24,9 @@ if (typeof document !== 'undefined') {
 
 const withEditor = async (run: (editor: Editor) => unknown): Promise<void> => {
   const editor = targetEditor() ?? (lastEditor && !lastEditor.isDestroyed && lastEditor.isEditable ? lastEditor : null);
+  // Without a text block to work in, say so: a button that does nothing looks broken.
   if (editor) await run(editor);
+  else say(t('docStructure.eq.needsText'));
 };
 
 addCommand({

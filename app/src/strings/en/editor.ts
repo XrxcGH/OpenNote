@@ -226,6 +226,7 @@ export const editor = {
     to: 'With',
     add: 'Add replacement',
     remove: 'Remove {from}',
+    removeShort: 'Remove',
     empty: 'No replacements yet.',
     duplicate: 'There’s already a replacement for {from}.',
     reset: 'Restore the default replacements',

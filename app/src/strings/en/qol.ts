@@ -30,7 +30,7 @@ export const qol = {
     dockLeft: 'Dock to the left edge',
     dockRight: 'Dock to the right edge',
     quickNote: 'Quick note',
-    home: 'Home',
+    home: 'Go home',
     openFolder: 'Open a notebook from a folder',
     checkNotebook: 'Check notebook',
     backupNow: 'Back up now',

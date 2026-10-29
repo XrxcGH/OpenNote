@@ -43,16 +43,16 @@
     display: inline-block;
     inline-size: var(--space-5);
     block-size: var(--space-5);
-    border: 1px solid var(--color-border-subtle);
+    /* A ring in the text color's secondary shade keeps a dark ink visible on the dark bar. */
+    border: 1.5px solid var(--color-text-secondary);
     border-radius: 50%;
+    box-sizing: border-box;
   }
 
-  .swatch[data-tool='highlighter'] {
-    border-radius: var(--radius-sm);
-  }
-
-  .swatch[data-tool='pencil'] {
-    border-style: dashed;
+  /* A pen slot's button is as wide as a touch target, so a finger lands on one swatch. */
+  :global(:root[data-density='touch']) .tool:has(.swatch) {
+    justify-content: center;
+    min-inline-size: var(--size-target-touch);
   }
 
   /* The lasso's frame and its bar, over the page in screen space. */
@@ -150,5 +150,72 @@
 
   :global(.ink-selection-frame) [data-ink-side]:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  }
+
+  /*
+   * On a touch screen a handle takes a press about 40 px across, so a finger a little off the small circle resizes
+   * rather than landing on the mover beneath. The area reaches further out of the frame than into it, so the mover of
+   * a small selection still has room.
+   */
+  @media (any-pointer: coarse) {
+    :global(.ink-selection-frame) [data-ink-corner]::before,
+    :global(.ink-selection-frame) [data-ink-side]::before {
+      position: absolute;
+      content: '';
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='nw']::before {
+      inset-block: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+      inset-inline: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='ne']::before {
+      inset-block: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='se']::before {
+      inset-block: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+    }
+
+    :global(.ink-selection-frame) [data-ink-corner='sw']::before {
+      inset-block: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+      inset-inline: calc(-1 * var(--space-5)) calc(-1 * var(--space-3));
+    }
+
+    :global(.ink-selection-frame) [data-ink-side]::before {
+      inset-block: calc(-1 * var(--space-4));
+      inset-inline: calc(-1 * var(--space-3)) calc(-1 * var(--space-5));
+    }
+  }
+}
+
+@layer components {
+  /* The Layers dialog: one row per layer, a name field above a wrapping row of actions. */
+  .layers {
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .layer {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .layerActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+}
+
+@layer components {
+  .note {
+    margin: 0;
   }
 }

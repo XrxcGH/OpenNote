@@ -1,5 +1,5 @@
 // Code cells' registrations (features/codecells; flag math.codeCells): the block, and Insert code cell in the
-// Insert tab, the slash menu, the command palette, and Ctrl+Alt+Shift+C. This file loads at start-up, so it holds
+// Insert tab, the slash menu, the command palette, and Ctrl+Alt+Shift+K. This file loads at start-up, so it holds
 // only definitions; the cell and its sandbox load on first use.
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
@@ -25,7 +25,7 @@ addCommand({
   keywords: 'codeCells.insertKeywords',
   icon: 'Terminal',
   flag: 'math.codeCells',
-  keys: ['Ctrl+Alt+Shift+C'],
+  keys: ['Ctrl+Alt+Shift+K'],
   slash: { group: 'advanced', order: 34 },
   bar: { group: 'math', priority: 35 },
   run: async () => {

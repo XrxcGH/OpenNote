@@ -111,11 +111,14 @@ test.describe('without a pointer', () => {
   test('a splitter resizes with the arrow keys and collapses with Enter', async ({ page }) => {
     await open(page, 'wide');
     const splitter = page.getByRole('separator', { name: 'Resize the notebooks pane' });
+    const start = Number(await splitter.getAttribute('aria-valuenow'));
     await splitter.focus();
     await page.keyboard.press('ArrowRight');
-    await expect(splitter).toHaveAttribute('aria-valuenow', '280');
+    await expect(splitter).toHaveAttribute('aria-valuenow', String(start + 8));
     await page.keyboard.press('Shift+ArrowLeft');
-    await expect(splitter).toHaveAttribute('aria-valuenow', '240');
+    // Shift+Arrow moves by 40, and the pane stops at its narrowest.
+    const min = Number(await splitter.getAttribute('aria-valuemin'));
+    await expect(splitter).toHaveAttribute('aria-valuenow', String(Math.max(min, start + 8 - 40)));
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'Show notebooks' })).toBeVisible();
     await expect(splitter).toBeFocused();

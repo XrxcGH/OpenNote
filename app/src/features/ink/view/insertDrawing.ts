@@ -3,7 +3,7 @@
 // edited. The parts arrive in page units around the origin and land at the middle of the view, selected.
 import { newId } from '../../../editor/ids';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import type { InkStroke } from '../model/types';
 import { viewContext } from './context';
 import { activeSlot, styleOf } from './state';
@@ -24,7 +24,7 @@ export async function insertDrawing(parts: DrawingParts): Promise<boolean> {
   const context = viewContext();
   const surface = context?.surface();
   if (!context || !surface || surface.readOnly) {
-    announce(t('chem.structure.noInk'));
+    say(t('chem.structure.noInk'));
     return false;
   }
   const camera = surface.cameraNow();
@@ -63,9 +63,9 @@ export async function insertDrawing(parts: DrawingParts): Promise<boolean> {
         }),
       });
     } catch {
-      announce(t('ink.errors.notSaved'));
+      say(t('ink.errors.notSaved'));
     }
   }
-  announce(t('chem.structure.drawn', { bonds: strokes.length, labels: parts.labels.length }));
+  say(t('chem.structure.drawn', { bonds: strokes.length, labels: parts.labels.length }));
   return true;
 }

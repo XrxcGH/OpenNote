@@ -22,8 +22,11 @@ async function problems(page: Page): Promise<string[]> {
     if (root.scrollWidth > root.clientWidth + 1)
       found.push(`The page scrolls sideways (${root.scrollWidth} > ${root.clientWidth}).`);
     // Weekday and month names come from the date formatter, in the person's language, and are not t() strings.
-    const dates =
-      /^(?:(?:mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[.,]?\s*|\d+\s*)+$/i;
+    const dateWord = /^(?:(?:mon|tue|wed|thu|fri|sat|sun|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*|\d+)$/i;
+    const isDate = (text: string) => {
+      const words = text.split(/[\s.,]+/).filter((word) => word !== '');
+      return words.length > 0 && words.every((word) => dateWord.test(word));
+    };
     const surface = [...document.querySelectorAll('[role="dialog"], [data-workspace] main, main')];
     const visible = (el: Element) => {
       const rect = (el as HTMLElement).getBoundingClientRect();
@@ -40,7 +43,7 @@ async function problems(page: Page): Promise<string[]> {
         if (parent.closest(dataSelector) || parent.closest('[aria-hidden="true"], script, style')) continue;
         // Math keys and a microphone's own name are not interface strings: they are marked translate="no".
         if (parent.closest('[translate="no"]')) continue;
-        if (dates.test(text)) continue;
+        if (isDate(text)) continue;
         if (!text.includes('⟦') && !text.includes('⟧')) found.push(`No pseudo-locale markers: "${text.slice(0, 60)}"`);
       }
       for (const el of area.querySelectorAll<HTMLElement>('*')) {

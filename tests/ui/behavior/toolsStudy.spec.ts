@@ -78,7 +78,7 @@ test('completes a backslash name in page text', async ({ page }) => {
 
 test('lists Upcoming on Home', async ({ page }) => {
   await openSmart(page);
-  await page.getByRole('toolbar', { name: 'Home' }).getByRole('button', { name: 'Home', exact: true }).click();
+  await page.getByRole('toolbar', { name: 'Home' }).getByRole('button', { name: 'Go home' }).click();
   await expect(page.getByRole('button', { name: 'Open Upcoming' })).toBeVisible();
 });
 

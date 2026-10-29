@@ -70,3 +70,7 @@ export const INK_FLAGS: readonly FlagDef[] = [
 
 /** The ink view: the pointer tools, the Draw tab, and the ink over the shown page. It loads with the first page. */
 export const loadInkView = () => import('./view/install');
+
+/** The Settings sections for pen and touch and My handwriting: listed from start-up, loaded when opened. */
+export const loadPenSettings = () => import('./view/PenSettings');
+export const loadMyHandSection = () => import('./view/myhand/MyHandSection');
