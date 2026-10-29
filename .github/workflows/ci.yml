@@ -509,11 +509,12 @@ jobs:
             clean
           )
       - name: Check that hostile math reads no file
-        # "hostile" is an export of a page whose equations try to read a canary file; the exporter must write them as
-        # text, so it compiles like any other and the canary text appears nowhere. "hostile-raw" holds the same
-        # equations in a hand-written document, as an engine would meet them if the exporter missed one. It is
-        # compiled with shell escape off and file access restricted to the folder (openin_any=p), where the canary,
-        # one folder up, must stay unread. Errors in that document are expected and ignored.
+        # "hostile" is an export of a page whose equations try to read a canary file.
+        # The exporter must write them as text, so it compiles like any other and the canary text appears nowhere.
+        # "hostile-raw" holds the same equations in a hand-written document, as an engine would meet them
+        # if the exporter missed one. It is compiled with shell escape off and file access restricted
+        # to the folder (openin_any=p), where the canary, one folder up, must stay unread.
+        # Errors in that document are expected and ignored.
         working-directory: ${{ runner.temp }}/latex
         run: |
           set -uo pipefail

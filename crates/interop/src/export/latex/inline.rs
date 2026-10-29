@@ -82,7 +82,7 @@ impl Writer<'_> {
                 Some(tex) => tex,
                 None => {
                     self.stats.math_as_text += 1;
-                    // The source as typed, dollar signs and backslashes included.
+                    // The source as typed, with its dollar signs and backslashes.
                     format!("\\texttt{{{}}}", self.esc(&format!("${text}$")))
                 }
             }

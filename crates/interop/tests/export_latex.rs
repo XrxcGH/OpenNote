@@ -712,9 +712,10 @@ fn a_footnote_in_a_wide_table_still_names_its_note_once() {
 fn a_footnote_in_a_heading_stays_out_of_the_contents_and_the_outline() {
     let body = body_of("# Head[^1] and *more*\n\nText.\n\n[^1]: The note.");
     assert!(
-        body.contains(
-            r"\section[\texorpdfstring{Head and \emph{more}}{Head and more}]{\texorpdfstring{Head\footnote{The note.} and \emph{more}}{Head and more}}"
-        ),
+        body.contains(concat!(
+            r"\section[\texorpdfstring{Head and \emph{more}}{Head and more}]",
+            r"{\texorpdfstring{Head\footnote{The note.} and \emph{more}}{Head and more}}"
+        )),
         "{body}"
     );
     assert!(!body.contains("Head 0"), "{body}");
