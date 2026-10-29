@@ -32,12 +32,15 @@ pub const RATIO_FLOOR: u64 = 1 << 20;
 impl Default for PackageLimits {
     fn default() -> PackageLimits {
         PackageLimits {
+            // A page picture or a recording is far smaller than these. Every entry read is held in memory until
+            // the page is built (attachments move into the page builder, so each lives once), so the total is
+            // what one notes file may cost in memory.
             archive: ArchiveLimits {
-                entry_bytes: 256 << 20,
-                total_bytes: 1 << 30,
+                entry_bytes: 128 << 20,
+                total_bytes: 512 << 20,
                 entries: 20_000,
             },
-            total_bytes: 1 << 30,
+            total_bytes: 512 << 20,
             max_ratio: 200,
             budget: Duration::from_secs(120),
         }

@@ -690,3 +690,33 @@ fn notability_recordings_the_sniffer_cannot_place_keep_their_own_type() {
         assert_eq!(asset_mimes(pages(&sink)[0]), [mime], "{name}");
     }
 }
+
+#[test]
+fn the_default_package_limits_hold_one_notes_file_to_half_a_gibibyte() {
+    let limits = PackageLimits::default();
+    assert_eq!(limits.total_bytes, 536_870_912);
+    assert_eq!(limits.archive.total_bytes, 536_870_912);
+    assert_eq!(limits.archive.entry_bytes, 134_217_728);
+}
+
+#[test]
+fn entries_past_the_total_cap_are_left_out_and_the_earlier_ones_read() {
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("Cap.note");
+    let chunk = vec![7u8; 1000];
+    std::fs::write(
+        &file,
+        zip_bytes(&[("a.png", &chunk), ("b.png", &chunk), ("c.png", &chunk)]),
+    )
+    .unwrap();
+    let limits = PackageLimits {
+        total_bytes: 2500,
+        ..PackageLimits::default()
+    };
+    let mut package = Package::open_with(&file, limits).unwrap();
+    let members = package.members.clone();
+    let read: Vec<bool> = members.iter().map(|m| package.read(m).unwrap().is_ok()).collect();
+    assert_eq!(read, [true, true, false]);
+    let why = package.read(&members[2]).unwrap().unwrap_err();
+    assert_eq!(why, "The file holds more than OpenNote reads from one file.");
+}
