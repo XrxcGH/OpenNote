@@ -1,6 +1,6 @@
-// Linear regression against values worked out independently (NumPy and SciPy from first principles): the fit and
-// its standard errors, robust and clustered errors, Cook's distance, VIF, intervals for a new case, the F tests,
-// the diagnostics, moderation, the Sobel test, the random-intercept model, and the formula parser.
+// Linear regression against values worked out independently, with NumPy and SciPy from first principles. The
+// cases cover the fit, classical, robust and clustered errors, Cook's distance, VIF, and intervals for a new case.
+// They also cover the F tests, the diagnostics, moderation, the Sobel test, the random intercept, and formulas.
 import { describe, expect, it } from 'vitest';
 import { parseTable } from '../kit/data';
 import { buildDesign, designRow } from '../kit/design';

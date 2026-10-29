@@ -1,5 +1,5 @@
 // A linear mixed model with one random intercept, y = Xβ + u_g + e, fitted by REML. For a variance ratio
-// λ = σ²_u / σ²_e, each group's covariance is I + λJ, whose inverse and determinant have closed forms, so β and σ²_e
+// λ = σ²_u / σ²_e, each group's covariance is I + λJ, with a closed-form inverse and determinant, so β and σ²_e
 // follow by generalized least squares. The restricted log likelihood is then maximized over λ by golden-section
 // search on a log scale, with λ = 0 checked at the boundary.
 import { tQuantile, tTwoSided } from '../kit/dist';

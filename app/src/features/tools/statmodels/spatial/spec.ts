@@ -2,7 +2,7 @@
 // interpolation. It describes a point pattern (centrography, Clark-Evans, quadrats, Ripley's L), tests spatial
 // autocorrelation (Moran's I, Geary's C, local Moran), or interpolates (semivariogram, ordinary kriging, IDW).
 import { completeRows, numbersAt, parseTable } from '../kit/data';
-import type { Outcome, ToolSpec, Values } from '../kit/spec';
+import type { Outcome, Picture, ToolSpec, Values } from '../kit/spec';
 import { fail, step } from '../kit/types';
 import {
   autocorrelation,
@@ -18,8 +18,14 @@ import {
   spatialWeights,
   variogram,
   windowArea,
+  type Autocorrelation,
+  type Centrography,
+  type Kriged,
+  type Lag,
   type Point,
+  type Ripley,
   type VariogramModel,
+  type VariogramParams,
   type WeightKind,
   type Window,
 } from './engine';
@@ -39,6 +45,12 @@ interface Read {
   readonly points: Point[];
   readonly values: number[];
   readonly names: { x: string; y: string; value: string };
+}
+
+interface Prediction {
+  readonly t: Point;
+  readonly k: Kriged;
+  readonly d: number;
 }
 
 function read(values: Values, withValue: boolean): Read {
@@ -95,12 +107,6 @@ function pointsOutcome(values: Values): Outcome {
   const sims = Number(values.sims);
   const rip = ripley(points, w, sims, Number(values.seed));
   const word = c.p >= 0.05 ? 'random' : c.r < 1 ? 'clustered' : 'dispersed';
-  const circle = Array.from({ length: 49 }, (_, k): [number, number] => {
-    const t = (2 * Math.PI * k) / 48;
-    return [c.meanX + c.standardDistance * Math.cos(t), c.meanY + c.standardDistance * Math.sin(t)];
-  });
-  const finite = (i: number) => Number.isFinite(rip.l[i]) && Number.isFinite(rip.low[i]);
-  const keep = rip.radii.map((_, i) => i).filter(finite);
   return {
     rows: [
       { id: 'r', value: c.r, answer: true, sym: 'R' },
@@ -157,39 +163,49 @@ function pointsOutcome(values: Values): Outcome {
       undefined,
       { r: c.r, z: c.z, p: c.p },
     ),
-    pictures: [
-      {
-        id: 'map',
-        type: 'plot',
-        plot: {
-          x: { label: 'x' },
-          y: { label: 'y' },
-          series: [
-            { id: 'points', points: points.map((p) => [p.x, p.y] as [number, number]), style: 'points' },
-            { id: 'center', points: [[c.meanX, c.meanY]], style: 'points' },
-            { id: 'standardDistance', points: circle, style: 'dashed' },
-          ],
-          xRange: [w[0], w[1]],
-          yRange: [w[2], w[3]],
-          legend: true,
-        },
-      },
-      {
-        id: 'ripley',
-        type: 'plot',
-        plot: {
-          x: { label: 'radius' },
-          y: { label: 'lMinusR' },
-          series: [{ id: 'lMinusR', points: keep.map((i) => [rip.radii[i], rip.l[i]] as [number, number]) }],
-          bands: [
-            { points: keep.map((i) => [rip.radii[i], rip.low[i], rip.high[i]] as [number, number, number]), pen: 1 },
-          ],
-          hlines: [0],
-        },
-      },
-    ],
+    pictures: pointsPictures(points, c, w, rip),
     notes: ['csrWindow', 'edgeEffects'],
   };
+}
+
+function pointsPictures(points: readonly Point[], c: Centrography, w: Window, rip: Ripley): Picture[] {
+  const circle = Array.from({ length: 49 }, (_, k): [number, number] => {
+    const t = (2 * Math.PI * k) / 48;
+    return [c.meanX + c.standardDistance * Math.cos(t), c.meanY + c.standardDistance * Math.sin(t)];
+  });
+  const finite = (i: number) => Number.isFinite(rip.l[i]) && Number.isFinite(rip.low[i]);
+  const keep = rip.radii.map((_, i) => i).filter(finite);
+  return [
+    {
+      id: 'map',
+      type: 'plot',
+      plot: {
+        x: { label: 'x' },
+        y: { label: 'y' },
+        series: [
+          { id: 'points', points: points.map((p) => [p.x, p.y] as [number, number]), style: 'points' },
+          { id: 'center', points: [[c.meanX, c.meanY]], style: 'points' },
+          { id: 'standardDistance', points: circle, style: 'dashed' },
+        ],
+        xRange: [w[0], w[1]],
+        yRange: [w[2], w[3]],
+        legend: true,
+      },
+    },
+    {
+      id: 'ripley',
+      type: 'plot',
+      plot: {
+        x: { label: 'radius' },
+        y: { label: 'lMinusR' },
+        series: [{ id: 'lMinusR', points: keep.map((i) => [rip.radii[i], rip.l[i]] as [number, number]) }],
+        bands: [
+          { points: keep.map((i) => [rip.radii[i], rip.low[i], rip.high[i]] as [number, number, number]), pen: 1 },
+        ],
+        hlines: [0],
+      },
+    },
+  ];
 }
 
 const KIND_WORDS: Record<WeightKind, string> = {
@@ -215,23 +231,6 @@ function autocorrelationOutcome(values: Values): Outcome {
   const perms = Number(values.permutations);
   const a = autocorrelation(x, w, perms, Number(values.seed));
   const mean = x.reduce((s, v) => s + v, 0) / x.length;
-  const sig = (l: (typeof a.local)[number]) => l.p < 0.05;
-  const groups = ['hh', 'll', 'hl', 'lh'] as const;
-  const series = groups
-    .map((g, k) => ({
-      id: g,
-      pen: k,
-      style: 'points' as const,
-      points: points
-        .filter((_, i) => sig(a.local[i]) && a.local[i].quadrant === g)
-        .map((p) => [p.x, p.y] as [number, number]),
-    }))
-    .filter((s) => s.points.length > 0);
-  const quiet = points.filter((_, i) => !sig(a.local[i])).map((p) => [p.x, p.y] as [number, number]);
-  const slope = a.moran.value;
-  const zs = a.local.map((l) => l.z);
-  const lo = Math.min(...zs);
-  const hi = Math.max(...zs);
   const word = a.moran.permP >= 0.05 ? 'noPattern' : a.moran.value > a.moran.expected ? 'alike' : 'unlike';
   return {
     rows: [
@@ -287,40 +286,61 @@ function autocorrelationOutcome(values: Values): Outcome {
       undefined,
       { value: names.value, i: a.moran.value, p: a.moran.permP },
     ),
-    pictures: [
-      {
-        id: 'scatter',
-        type: 'plot',
-        plot: {
-          x: { label: 'z' },
-          y: { label: 'lag' },
-          series: [
-            { id: 'cases', points: a.local.map((l) => [l.z, l.lag] as [number, number]), style: 'points' },
-            {
-              id: 'slope',
-              points: [
-                [lo, slope * lo],
-                [hi, slope * hi],
-              ],
-            },
-          ],
-          hlines: [0],
-          vlines: [0],
-        },
-      },
-      {
-        id: 'lisa',
-        type: 'plot',
-        plot: {
-          x: { label: 'x' },
-          y: { label: 'y' },
-          series: [...series, ...(quiet.length ? [{ id: 'ns', pen: 4, style: 'points' as const, points: quiet }] : [])],
-          legend: true,
-        },
-      },
-    ],
+    pictures: autocorrelationPictures(points, a),
     notes: ['weightsChoice', 'permutation'],
   };
+}
+
+function autocorrelationPictures(points: readonly Point[], a: Autocorrelation): Picture[] {
+  const sig = (l: (typeof a.local)[number]) => l.p < 0.05;
+  const groups = ['hh', 'll', 'hl', 'lh'] as const;
+  const series = groups
+    .map((g, k) => ({
+      id: g,
+      pen: k,
+      style: 'points' as const,
+      points: points
+        .filter((_, i) => sig(a.local[i]) && a.local[i].quadrant === g)
+        .map((p) => [p.x, p.y] as [number, number]),
+    }))
+    .filter((s) => s.points.length > 0);
+  const quiet = points.filter((_, i) => !sig(a.local[i])).map((p) => [p.x, p.y] as [number, number]);
+  const slope = a.moran.value;
+  const zs = a.local.map((l) => l.z);
+  const lo = Math.min(...zs);
+  const hi = Math.max(...zs);
+  return [
+    {
+      id: 'scatter',
+      type: 'plot',
+      plot: {
+        x: { label: 'z' },
+        y: { label: 'lag' },
+        series: [
+          { id: 'cases', points: a.local.map((l) => [l.z, l.lag] as [number, number]), style: 'points' },
+          {
+            id: 'slope',
+            points: [
+              [lo, slope * lo],
+              [hi, slope * hi],
+            ],
+          },
+        ],
+        hlines: [0],
+        vlines: [0],
+      },
+    },
+    {
+      id: 'lisa',
+      type: 'plot',
+      plot: {
+        x: { label: 'x' },
+        y: { label: 'y' },
+        series: [...series, ...(quiet.length ? [{ id: 'ns', pen: 4, style: 'points' as const, points: quiet }] : [])],
+        legend: true,
+      },
+    },
+  ];
 }
 
 function interpolationOutcome(values: Values): Outcome {
@@ -339,11 +359,6 @@ function interpolationOutcome(values: Values): Outcome {
   if (targets.length === 0) fail('targetLine', '1');
   const preds = targets.map((t) => ({ t, k: krige(points, z, t, model, params), d: idw(points, z, t, power) }));
   const first = preds[0];
-  const hMax = Math.max(...lags.map((l) => l.h)) * 1.1;
-  const curve = Array.from({ length: 41 }, (_, i): [number, number] => {
-    const h = (hMax * i) / 40;
-    return [h, variogram(model, params, h)];
-  });
   return {
     rows: [
       { id: 'kriged', value: first.k.value, answer: true, sym: '\\hat z_0' },
@@ -375,7 +390,8 @@ function interpolationOutcome(values: Values): Outcome {
       step('spatial.modelFit', undefined, { nugget: params.nugget, sill: params.sill, range: params.range }),
       step(
         'spatial.kriging',
-        '\\begin{bmatrix}\\Gamma & 1\\\\ 1^\\top & 0\\end{bmatrix}\\begin{bmatrix}\\lambda\\\\ \\mu\\end{bmatrix} = \\begin{bmatrix}\\gamma_0\\\\ 1\\end{bmatrix},\\quad \\hat z_0 = \\lambda^\\top z = [[v]]',
+        '\\begin{bmatrix}\\Gamma & 1\\\\ 1^\\top & 0\\end{bmatrix}\\begin{bmatrix}\\lambda\\\\ \\mu\\end{bmatrix} = ' +
+          '\\begin{bmatrix}\\gamma_0\\\\ 1\\end{bmatrix},\\quad \\hat z_0 = \\lambda^\\top z = [[v]]',
         { v: first.k.value },
       ),
       step('spatial.krigingVariance', '\\sigma_K^2 = \\lambda^\\top\\gamma_0 + \\mu = [[s2]]', {
@@ -393,37 +409,52 @@ function interpolationOutcome(values: Values): Outcome {
       lo: first.k.value - 1.96 * Math.sqrt(first.k.variance),
       hi: first.k.value + 1.96 * Math.sqrt(first.k.variance),
     }),
-    pictures: [
-      {
-        id: 'variogram',
-        type: 'plot',
-        plot: {
-          x: { label: 'h' },
-          y: { label: 'gamma' },
-          series: [
-            { id: 'empirical', points: lags.map((l) => [l.h, l.gamma] as [number, number]), style: 'points' },
-            { id: 'fitted', points: curve },
-          ],
-          legend: true,
-        },
-      },
-      {
-        id: 'targets',
-        type: 'plot',
-        plot: {
-          x: { label: 'x' },
-          y: { label: 'y' },
-          series: [
-            { id: 'data', points: points.map((p) => [p.x, p.y] as [number, number]), style: 'points' },
-            { id: 'target', points: targets.map((t) => [t.x, t.y] as [number, number]), style: 'points' },
-          ],
-          marks: preds.map((p) => ({ x: p.t.x, y: p.t.y, text: p.k.value.toPrecision(4) })),
-          legend: true,
-        },
-      },
-    ],
+    pictures: interpolationPictures(points, lags, model, params, preds),
     notes: ['stationary', 'level95'],
   };
+}
+
+function interpolationPictures(
+  points: readonly Point[],
+  lags: readonly Lag[],
+  model: VariogramModel,
+  params: VariogramParams,
+  preds: readonly Prediction[],
+): Picture[] {
+  const hMax = Math.max(...lags.map((l) => l.h)) * 1.1;
+  const curve = Array.from({ length: 41 }, (_, i): [number, number] => {
+    const h = (hMax * i) / 40;
+    return [h, variogram(model, params, h)];
+  });
+  return [
+    {
+      id: 'variogram',
+      type: 'plot',
+      plot: {
+        x: { label: 'h' },
+        y: { label: 'gamma' },
+        series: [
+          { id: 'empirical', points: lags.map((l) => [l.h, l.gamma] as [number, number]), style: 'points' },
+          { id: 'fitted', points: curve },
+        ],
+        legend: true,
+      },
+    },
+    {
+      id: 'targets',
+      type: 'plot',
+      plot: {
+        x: { label: 'x' },
+        y: { label: 'y' },
+        series: [
+          { id: 'data', points: points.map((p) => [p.x, p.y] as [number, number]), style: 'points' },
+          { id: 'target', points: preds.map(({ t }) => [t.x, t.y] as [number, number]), style: 'points' },
+        ],
+        marks: preds.map((p) => ({ x: p.t.x, y: p.t.y, text: p.k.value.toPrecision(4) })),
+        legend: true,
+      },
+    },
+  ];
 }
 
 function run(values: Values): Outcome {

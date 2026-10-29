@@ -1,4 +1,4 @@
-// The linear regression tool's other views: comparing nested models, moderation with simple slopes and the
+// The linear regression tool's other views: comparing nested models, moderation with simple slopes, and the
 // Johnson-Neyman values, mediation with the Sobel test and a bootstrap interval, and the random-intercept model.
 import { completeRows, numbersAt, parseNumbers, parseTable, wordsAt } from '../kit/data';
 import { buildDesign } from '../kit/design';
@@ -43,7 +43,8 @@ export function compareOutcome(values: Values): Outcome {
     steps: [
       step(
         'regression.nested',
-        'F = \\frac{(\\mathrm{RSS}_r - \\mathrm{RSS}_f) / [[df1]]}{\\mathrm{RSS}_f / [[df2]]} = \\frac{([[rssR]] - [[rssF]]) / [[df1]]}{[[rssF]] / [[df2]]} = [[f]]',
+        'F = \\frac{(\\mathrm{RSS}_r - \\mathrm{RSS}_f) / [[df1]]}{\\mathrm{RSS}_f / [[df2]]} = ' +
+          '\\frac{([[rssR]] - [[rssF]]) / [[df1]]}{[[rssF]] / [[df2]]} = [[f]]',
         { rssR: reducedFit.rss, rssF: fullFit.rss, df1: test.df1, df2: test.df2, f: test.f, p: test.p },
       ),
       step('regression.ic', '\\mathrm{AIC} = -2\\ell + 2k,\\quad \\mathrm{BIC} = -2\\ell + k \\ln n'),

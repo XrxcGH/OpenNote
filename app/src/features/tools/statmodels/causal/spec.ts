@@ -6,7 +6,7 @@ import { completeRows, numbersAt, parseTable, wordsAt } from '../kit/data';
 import { buildDesign, mainTerms } from '../kit/design';
 import { percent } from '../kit/format';
 import { svg, text, line, W, type DrawContext } from '../kit/picture';
-import { columnList, type Outcome, type ResultTable, type ToolSpec, type Values } from '../kit/spec';
+import { columnList, type Outcome, type Picture, type ResultTable, type ToolSpec, type Values } from '../kit/spec';
 import { fail, step } from '../kit/types';
 import { adjustmentSets, isBackdoorSet, layers, parseDag, type Dag } from './dag';
 import {
@@ -18,6 +18,8 @@ import {
   type Estimate,
   type Kernel,
   type PanelKind,
+  type RdFit,
+  type TwoByTwo,
 } from './engine';
 
 const PANEL =
@@ -269,45 +271,49 @@ function didOutcome(values: Values): Outcome {
       step('causal.parallelTrends'),
     ],
     words: step('causal.wordsDid', undefined, { y: yName, d: m.did, se: inter.se, p: inter.p }),
-    pictures: [
-      {
-        id: 'did',
-        type: 'plot',
-        plot: {
-          x: { label: 'period' },
-          y: { label: 'mean' },
-          series: [
-            {
-              id: 'treatedGroup',
-              points: [
-                [0, m.treatedPre],
-                [1, m.treatedPost],
-              ],
-            },
-            {
-              id: 'controlGroup',
-              points: [
-                [0, m.controlPre],
-                [1, m.controlPost],
-              ],
-            },
-            {
-              id: 'counterfactual',
-              pen: 0,
-              style: 'dashed',
-              points: [
-                [0, m.treatedPre],
-                [1, m.treatedPre + m.controlPost - m.controlPre],
-              ],
-            },
-          ],
-          xRange: [-0.1, 1.1],
-          legend: true,
-        },
-      },
-    ],
+    pictures: didPictures(m),
     notes: ['parallelTrends', 'noAnticipation'],
   };
+}
+
+function didPictures(m: TwoByTwo): Picture[] {
+  return [
+    {
+      id: 'did',
+      type: 'plot',
+      plot: {
+        x: { label: 'period' },
+        y: { label: 'mean' },
+        series: [
+          {
+            id: 'treatedGroup',
+            points: [
+              [0, m.treatedPre],
+              [1, m.treatedPost],
+            ],
+          },
+          {
+            id: 'controlGroup',
+            points: [
+              [0, m.controlPre],
+              [1, m.controlPost],
+            ],
+          },
+          {
+            id: 'counterfactual',
+            pen: 0,
+            style: 'dashed',
+            points: [
+              [0, m.treatedPre],
+              [1, m.treatedPre + m.controlPost - m.controlPre],
+            ],
+          },
+        ],
+        xRange: [-0.1, 1.1],
+        legend: true,
+      },
+    },
+  ];
 }
 
 function rdOutcome(values: Values): Outcome {
@@ -332,25 +338,8 @@ function rdOutcome(values: Values): Outcome {
       // Too few points at this bandwidth; the plot leaves it out.
     }
   }
-  const sideLine = (s: typeof rd.left, from: number, to: number): [number, number][] => [
-    [from, s.intercept + s.slope * (from - c)],
-    [to, s.intercept + s.slope * (to - c)],
-  ];
-  const binned: [number, number][] = [];
-  const lo = Math.min(...x);
-  const hi = Math.max(...x);
-  for (const right of [false, true]) {
-    const [a, b] = right ? [c, hi] : [lo, c];
-    const side = x.map((_, i) => i).filter((i) => (right ? x[i] >= c : x[i] < c));
-    for (let k = 0; k < 5; k++) {
-      const s = a + ((b - a) * k) / 5;
-      const e = a + ((b - a) * (k + 1)) / 5;
-      const inBin = side.filter((i) => x[i] >= s && (x[i] < e || (k === 4 && x[i] <= e)));
-      if (inBin.length === 0) continue;
-      const avg = (v: readonly number[]) => inBin.reduce((t, i) => t + v[i], 0) / inBin.length;
-      binned.push([avg(x), avg(y)]);
-    }
-  }
+  const binned = binnedMeans(x, y, c);
+  const [lo, hi] = [Math.min(...x), Math.max(...x)];
   return {
     rows: [
       { id: 'rdEffect', value: rd.effect, answer: true, sym: '\\hat\\tau' },
@@ -392,36 +381,70 @@ function rdOutcome(values: Values): Outcome {
       hi: rd.high,
       level: percent(level),
     }),
-    pictures: [
-      {
-        id: 'rd',
-        type: 'plot',
-        plot: {
-          x: { label: 'running' },
-          y: { label: 'outcome' },
-          series: [
-            { id: 'bins', points: binned, style: 'points' },
-            { id: 'leftLine', pen: 1, points: sideLine(rd.left, Math.max(lo, c - h), c) },
-            { id: 'rightLine', pen: 2, points: sideLine(rd.right, c, Math.min(hi, c + h)) },
-          ],
-          vlines: [c],
-          legend: true,
-        },
-      },
-      {
-        id: 'sensitivity',
-        type: 'plot',
-        plot: {
-          x: { label: 'bandwidth' },
-          y: { label: 'estimate' },
-          series: [{ id: 'estimate', points: sens.map((s) => [s[0], s[1]] as [number, number]) }],
-          bands: [{ points: sens.map((s) => [s[0], s[2], s[3]] as [number, number, number]), pen: 0 }],
-          vlines: [h],
-        },
-      },
-    ],
+    pictures: rdPictures(rd, sens, binned, { c, h, lo, hi }),
     notes: ['continuity', 'noSorting'],
   };
+}
+
+function rdPictures(
+  rd: RdFit,
+  sens: readonly (readonly number[])[],
+  binned: [number, number][],
+  ctx: { c: number; h: number; lo: number; hi: number },
+): Picture[] {
+  const { c, h, lo, hi } = ctx;
+  const sideLine = (s: typeof rd.left, from: number, to: number): [number, number][] => [
+    [from, s.intercept + s.slope * (from - c)],
+    [to, s.intercept + s.slope * (to - c)],
+  ];
+  return [
+    {
+      id: 'rd',
+      type: 'plot',
+      plot: {
+        x: { label: 'running' },
+        y: { label: 'outcome' },
+        series: [
+          { id: 'bins', points: binned, style: 'points' },
+          { id: 'leftLine', pen: 1, points: sideLine(rd.left, Math.max(lo, c - h), c) },
+          { id: 'rightLine', pen: 2, points: sideLine(rd.right, c, Math.min(hi, c + h)) },
+        ],
+        vlines: [c],
+        legend: true,
+      },
+    },
+    {
+      id: 'sensitivity',
+      type: 'plot',
+      plot: {
+        x: { label: 'bandwidth' },
+        y: { label: 'estimate' },
+        series: [{ id: 'estimate', points: sens.map((s) => [s[0], s[1]] as [number, number]) }],
+        bands: [{ points: sens.map((s) => [s[0], s[2], s[3]] as [number, number, number]), pen: 0 }],
+        vlines: [h],
+      },
+    },
+  ];
+}
+
+/** Means of x and y in 5 equal bins on each side of the cutoff, for the binned scatter. */
+function binnedMeans(x: readonly number[], y: readonly number[], c: number): [number, number][] {
+  const lo = Math.min(...x);
+  const hi = Math.max(...x);
+  const binned: [number, number][] = [];
+  for (const right of [false, true]) {
+    const [a, b] = right ? [c, hi] : [lo, c];
+    const side = x.map((_, i) => i).filter((i) => (right ? x[i] >= c : x[i] < c));
+    for (let k = 0; k < 5; k++) {
+      const s = a + ((b - a) * k) / 5;
+      const e = a + ((b - a) * (k + 1)) / 5;
+      const inBin = side.filter((i) => x[i] >= s && (x[i] < e || (k === 4 && x[i] <= e)));
+      if (inBin.length === 0) continue;
+      const avg = (v: readonly number[]) => inBin.reduce((t, i) => t + v[i], 0) / inBin.length;
+      binned.push([avg(x), avg(y)]);
+    }
+  }
+  return binned;
 }
 
 function propensityOutcome(values: Values): Outcome {
@@ -526,7 +549,12 @@ function dagPicture(dag: Dag, x: string, y: string, adjust: readonly string[]) {
       const [ux, uy] = [(x2 - x1) / len, (y2 - y1) / len];
       const [sx, sy, ex, ey] = [x1 + ux * 22, y1 + uy * 16, x2 - ux * 24, y2 - uy * 18];
       parts.push(line(sx, sy, ex, ey, p.text, false, 1.5));
-      const head = `${ex.toFixed(1)},${ey.toFixed(1)} ${(ex - ux * 9 - uy * 4).toFixed(1)},${(ey - uy * 9 + ux * 4).toFixed(1)} ${(ex - ux * 9 + uy * 4).toFixed(1)},${(ey - uy * 9 - ux * 4).toFixed(1)}`;
+      const pt = (a: number, b: number) => `${a.toFixed(1)},${b.toFixed(1)}`;
+      const head = [
+        pt(ex, ey),
+        pt(ex - ux * 9 - uy * 4, ey - uy * 9 + ux * 4),
+        pt(ex - ux * 9 + uy * 4, ey - uy * 9 - ux * 4),
+      ].join(' ');
       parts.push(`<polygon points="${head}" fill="${p.text}"/>`);
     }
     for (const n of dag.nodes) {

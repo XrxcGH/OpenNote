@@ -1,7 +1,8 @@
-// Causal diagrams. A diagram is a list of arrows such as "Z -> X". d-separation is tested by the reachability
-// ("Bayes ball") algorithm: a trail stays open through a chain or fork whose middle is not conditioned on, and
-// through a collider only when the collider or one of its descendants is. A set S satisfies the back-door criterion
-// for X on Y when no member descends from X and S d-separates X from Y once the arrows out of X are removed.
+// Causal diagrams. A diagram is a list of arrows such as "Z -> X". The reachability ("Bayes ball") algorithm
+// tests d-separation. A trail stays open through a chain or fork whose middle is not conditioned on. It stays
+// open through a collider only when the collider or one of its descendants is conditioned on. A set S meets the
+// back-door criterion for X on Y when no member descends from X and S d-separates X from Y without the arrows
+// out of X.
 import { fail } from '../kit/types';
 
 export interface Dag {

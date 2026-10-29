@@ -1,6 +1,6 @@
-// Spatial statistics against values worked out by hand or separately: Moran's I and Geary's C on a 3 x 3 grid with
-// rook weights, the Clark-Evans ratio, inverse-distance weighting, Ripley's K and quadrat counts on small patterns,
-// ordinary kriging where the answer is known, and the minimizer the variogram fit uses.
+// Spatial statistics against values worked out by hand or separately. Moran's I and Geary's C use a 3 x 3 grid
+// with rook weights. Other cases check the Clark-Evans ratio, inverse-distance weighting, and Ripley's K. The
+// rest check quadrat counts, kriging where the answer is known, and the minimizer the variogram fit uses.
 import { describe, expect, it } from 'vitest';
 import { nelderMead } from '../kit/optimize';
 import { StatError } from '../kit/types';

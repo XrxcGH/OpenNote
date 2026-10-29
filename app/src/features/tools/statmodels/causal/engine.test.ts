@@ -1,6 +1,6 @@
-// Causal estimators against values worked out separately: the within slope of a 3 x 3 panel, two-stage least
-// squares with its first-stage F, a 2 x 2 difference-in-differences, a regression discontinuity with exact lines on
-// each side, inverse-probability weights with known scores, and back-door sets of small diagrams by hand.
+// Causal estimators against values worked out separately. The cases are the within slope of a 3 x 3 panel and
+// two-stage least squares with its first-stage F. Then come a 2 x 2 difference-in-differences, a discontinuity
+// with exact lines on each side, weights from known scores, and back-door sets of small diagrams found by hand.
 import { describe, expect, it } from 'vitest';
 import { leastSquares } from '../kit/linalg';
 import { StatError } from '../kit/types';

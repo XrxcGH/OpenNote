@@ -1,5 +1,5 @@
 // Ordinary least squares with the numbers a methods course reads off: coefficients with standard errors, t tests,
-// intervals and standardized betas; R², adjusted R², the F test, AIC and BIC; and the case diagnostics (leverage,
+// intervals and standardized betas; R², adjusted R², the F test, AIC, and BIC; and the case diagnostics (leverage,
 // studentized residuals, Cook's distance). Robust standard errors use the sandwich (X'X)^-1 X' Ω X (X'X)^-1, with Ω
 // from HC0 to HC3 or from clusters (CR1).
 import { chiSquareUpper, fUpper, tQuantile, tTwoSided } from '../kit/dist';
