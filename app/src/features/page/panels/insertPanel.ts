@@ -4,6 +4,7 @@
 import { newId } from '../../../editor/ids';
 import type { BlockId, BlockJson, Edit, Frame, NewBlock } from '../../../services/pages/types';
 import type { PanelType } from './kinds';
+import { PageServiceError } from '../../../services/pages/types';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
@@ -21,8 +22,17 @@ export async function insertPanelBlock(
   const id = newId();
   const after = shownPool.get()?.active()?.block;
   const block: NewBlock = { id, type, data, fallback: { markdown: fallback }, ...(frame ? { frame } : {}) };
-  const edits: Edit[] = [{ edit: 'insertBlock', block, ...(after ? { after } : {}) }];
-  const ack = await queue.send({ edits });
+  const place = (anchor: BlockId | undefined): Edit[] => [
+    { edit: 'insertBlock', block, ...(anchor ? { after: anchor } : {}) },
+  ];
+  let ack;
+  try {
+    ack = await queue.send({ edits: place(after) });
+  } catch (error) {
+    // The block with the caret may not exist in the core yet (a page just started): the new block goes last instead.
+    if (!after || !(error instanceof PageServiceError) || error.code !== 'notFound') throw error;
+    ack = await queue.send({ edits: place(undefined) });
+  }
   const now = new Date().toISOString();
   const made: BlockJson = {
     id,

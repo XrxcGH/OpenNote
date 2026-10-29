@@ -4,6 +4,7 @@
 
 import type { BootOverrides } from '../../../app/src/boot/defaults';
 import { defineScreens } from '../screens';
+import { openSettingsSection } from '../settingsOpen';
 import { walkToStorage } from '../setupWalk';
 
 const firstRun = { firstRun: true, state: { setup: { status: 'notStarted' } } } as BootOverrides;
@@ -52,11 +53,7 @@ export default defineScreens([
     id: 'settings.appearance',
     description: 'Settings, Appearance, with the three theme cards in a row',
     prepare: async (page) => {
-      await page.keyboard.press('Control+Comma');
-      await page.getByRole('heading', { level: 1 }).first().waitFor();
-      const link = page.getByRole('link', { name: 'Appearance', exact: true });
-      if (await link.isVisible()) await link.click();
-      await page.getByRole('heading', { level: 1, name: 'Appearance', exact: true }).waitFor();
+      await openSettingsSection(page, 'Appearance');
       await page.getByRole('radiogroup', { name: 'Theme' }).waitFor();
     },
   },

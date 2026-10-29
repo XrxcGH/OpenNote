@@ -183,7 +183,7 @@ function Backups() {
   const number = (value: string, fallback: number) =>
     Number.isFinite(Number(value)) && value !== '' ? Number(value) : fallback;
   return (
-    <section className={styles.block} aria-labelledby="qol-backup">
+    <section className={`${styles.block} ${styles.spaced}`} aria-labelledby="qol-backup">
       <h2 id="qol-backup">{t('qol.backup.title')}</h2>
       <p>{t('qol.backup.body')}</p>
       <Switch
@@ -206,24 +206,31 @@ function Backups() {
         onChange={(value) => void save({ everyHours: Number(value) })}
       >
         {SCHEDULES.map((hours) => (
-          <RadioCard key={hours} value={String(hours)} label={t(`qol.backup.schedule.h${hours}`)} />
+          <RadioCard
+            key={hours}
+            value={String(hours)}
+            label={t(`qol.backup.schedule.h${hours}`)}
+            disabled={!config.destination}
+          />
         ))}
       </RadioGroup>
-      <TextField
-        label={t('qol.backup.daily')}
-        value={String(config.daily)}
-        onChange={(value) => void save({ daily: number(value, config.daily) })}
-      />
-      <TextField
-        label={t('qol.backup.weekly')}
-        value={String(config.weekly)}
-        onChange={(value) => void save({ weekly: number(value, config.weekly) })}
-      />
-      <TextField
-        label={t('qol.backup.monthly')}
-        value={String(config.monthly)}
-        onChange={(value) => void save({ monthly: number(value, config.monthly) })}
-      />
+      <div className={styles.fields}>
+        <TextField
+          label={t('qol.backup.daily')}
+          value={String(config.daily)}
+          onChange={(value) => void save({ daily: number(value, config.daily) })}
+        />
+        <TextField
+          label={t('qol.backup.weekly')}
+          value={String(config.weekly)}
+          onChange={(value) => void save({ weekly: number(value, config.weekly) })}
+        />
+        <TextField
+          label={t('qol.backup.monthly')}
+          value={String(config.monthly)}
+          onChange={(value) => void save({ monthly: number(value, config.monthly) })}
+        />
+      </div>
       <p className={styles.help} role="status">
         {lastText}
       </p>

@@ -26,6 +26,8 @@ test('numbers an equation and shows a reference to it', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Text' }).first().click();
   await page.keyboard.press('Control+End');
   await page.keyboard.type('See ');
+  // The command inserts at the caret, so it waits until the typed text has reached the page.
+  await expect(page.getByRole('textbox', { name: 'Text' }).first()).toContainText('See');
   await runCommand(page, 'Insert equation reference');
   const ref = page.locator('[data-eq-ref]').last();
   await expect(ref).toHaveAttribute('data-eq-ref', /^\(\d+\)$/);

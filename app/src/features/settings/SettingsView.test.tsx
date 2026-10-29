@@ -29,6 +29,8 @@ describe('the Settings page', () => {
       'Language',
       'Editing',
       'Recording',
+      'Pen and touch',
+      'My handwriting',
       'On-device intelligence',
       'Storage and backups',
       'Updates',

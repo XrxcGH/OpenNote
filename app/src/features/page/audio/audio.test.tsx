@@ -79,7 +79,7 @@ describe('recording on a page', () => {
     await waitFor(() => expect(state()).toBe('complete'));
     await waitFor(() => expect(screen.queryByTestId('recording-indicator')).toBeNull(), SLOW);
     const block = await screen.findByRole('group', { name: /^Recording, \d+:\d\d$/ });
-    expect(within(block).getByRole('button', { name: 'Play' })).toBeTruthy();
+    expect(await within(block).findByRole('button', { name: 'Play' })).toBeTruthy();
     await expectNoAxeViolations(block);
   });
 

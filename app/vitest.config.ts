@@ -31,6 +31,9 @@ export default defineConfig((env) =>
           test: {
             name: 'components',
             include: ['src/**/*.test.tsx'],
+            // A test of timing in a real browser can miss its wait on a 2-core runner, a different one each run: try a
+            // failing test once more there, as the Playwright suite does.
+            retry: process.env.CI ? 1 : 0,
             setupFiles: ['src/test/setup.ts'],
             // The browser project's server port, so parallel runs (agents on one machine) each take their own:
             // Vitest's own default when unset, and the CLI's --api doesn't reach an inline project.
@@ -39,7 +42,11 @@ export default defineConfig((env) =>
               enabled: true,
               headless: true,
               // Uses the installed Edge or Chrome, never a downloaded browser.
-              provider: playwright({ launchOptions: { channel: browserChannel() } }),
+              // On CI the browser keeps its shared memory in ordinary files, not in /dev/shm: on Ubuntu's runner
+              // Chrome closed its connection partway through a long run of component tests.
+              provider: playwright({
+                launchOptions: { channel: browserChannel(), args: process.env.CI ? ['--disable-dev-shm-usage'] : [] },
+              }),
               instances: [{ browser: 'chromium' }],
               viewport: { width: 1280, height: 800 },
             },

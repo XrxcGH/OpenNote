@@ -12,9 +12,19 @@ export function clockMs(text: string): number | null {
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
+/** The text without tags. It repeats until nothing is left to remove, so pieces can't join into a new tag. */
+const withoutTags = (text: string): string => {
+  let current = text;
+  for (let pass = 0; pass < 20; pass += 1) {
+    const next = current.replace(/<[^>]*>/g, '');
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+};
+
 const plain = (text: string): string =>
-  text
-    .replace(/<[^>]*>/g, '')
+  withoutTags(text)
     .replace(/\{\[^}]*\}/g, '')
     .replace(/&(#\d+|[a-z]+);/gi, (whole, name: string) =>
       name.startsWith('#') ? String.fromCodePoint(Number(name.slice(1))) : (ENTITIES[name.toLowerCase()] ?? whole),

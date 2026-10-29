@@ -1,19 +1,17 @@
 // Phase 13's screens, for the focus walk, axe, and the screenshot matrix. They are Privacy, Help with the
 // self-check, the consent screen, a crash report under review, the feedback file under review, and safe start.
 
+import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { defineScreens } from '../screens';
+import { defineScreens, settle } from '../screens';
+import { openSettingsSection } from '../settingsOpen';
 
 const PICKED = '/?consent=accepted';
 
 /** Waits for the workspace, then opens a section of Settings by its link. */
 async function openSection(page: Page, name: string): Promise<void> {
   await page.locator('[data-workspace]').waitFor();
-  await page.keyboard.press('Control+Comma');
-  await page.getByRole('heading', { level: 1 }).first().waitFor();
-  const link = page.getByRole('link', { name, exact: true });
-  if (await link.isVisible()) await link.click();
-  await page.getByRole('heading', { level: 1, name, exact: true }).waitFor();
+  await openSettingsSection(page, name);
 }
 
 async function runCommand(page: Page, search: string, name: RegExp): Promise<void> {
@@ -101,7 +99,18 @@ export default defineScreens([
     path: '/?crashes=2',
     prepare: async (page) => {
       await page.getByRole('button', { name: 'Start in safe mode' }).click();
-      await page.getByRole('button', { name: 'OpenNote is in safe mode' }).click();
+      // Late chunks change what fits in the title bar, which would close a menu opened before they arrive.
+      await settle(page);
+      // Where the title bar has no room the notice moves into its More menu, drawn open there.
+      const notice = page.getByRole('button', { name: 'OpenNote is in safe mode' });
+      const more = page.locator('[data-title-bar]').getByRole('button', { name: 'More', exact: true });
+      const text = page.getByText('Embeds, which show their saved preview instead');
+      await expect(async () => {
+        if (await text.isVisible()) return;
+        if (await notice.isVisible()) await notice.click({ timeout: 2_000 });
+        else if (await more.isVisible()) await more.click({ timeout: 2_000 });
+        await text.waitFor({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
       await page.getByText('Embeds, which show their saved preview instead').waitFor();
     },
   },
