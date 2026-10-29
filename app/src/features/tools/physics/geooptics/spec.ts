@@ -199,7 +199,16 @@ const lensmakerMode: ModeDef = {
       optional: true,
       help: `${K}.help.radius`,
     },
-    { id: 'd', label: `${K}.f.thickness`, dim: 'length', unit: 'mm', usUnit: 'in', initial: '', optional: true },
+    {
+      id: 'd',
+      label: `${K}.f.thickness`,
+      dim: 'length',
+      unit: 'mm',
+      usUnit: 'in',
+      initial: '',
+      optional: true,
+      help: `${K}.help.thickness`,
+    },
   ],
   solve(read): Outcome {
     const n = read.num('n', 'positive');

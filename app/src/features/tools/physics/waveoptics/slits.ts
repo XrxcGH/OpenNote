@@ -53,7 +53,16 @@ export const doubleMode: ModeDef = {
     { ...lambdaField, initial: '600' },
     { id: 'd', label: 'kitPhysics.waveoptics.f.d', dim: 'length', unit: 'mm', usUnit: 'mm', initial: '0.1' },
     screenField,
-    { id: 'a', label: 'kitPhysics.waveoptics.f.width', dim: 'length', unit: 'mm', usUnit: 'mm', initial: '' },
+    {
+      id: 'a',
+      label: 'kitPhysics.waveoptics.f.width',
+      dim: 'length',
+      unit: 'mm',
+      usUnit: 'mm',
+      initial: '',
+      optional: true,
+      help: 'kitPhysics.waveoptics.help.width',
+    },
     { id: 'orders', label: 'kitPhysics.waveoptics.f.orders', initial: '3' },
   ],
   solve(read): Outcome {

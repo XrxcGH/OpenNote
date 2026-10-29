@@ -19,13 +19,13 @@ export const waveoptics = {
     lambda: 'Wavelength in vacuum',
     d: 'Slit spacing',
     a: 'Slit width',
-    width: 'Slit width (optional, for the envelope)',
+    width: 'Slit width',
     L: 'Screen distance',
     orders: 'Number of bright fringes',
     lines: 'Lines per millimeter',
-    illuminated: 'Lines illuminated (optional)',
+    illuminated: 'Lines illuminated',
     D: 'Aperture diameter',
-    distance: 'Distance to the objects (optional)',
+    distance: 'Distance to the objects',
     nFilm: 'Film index',
     nAbove: 'Index above the film',
     nBelow: 'Index below the film',
@@ -62,6 +62,7 @@ export const waveoptics = {
     custom: 'Custom',
   },
   help: {
+    width: 'Give it to add the single-slit envelope.',
     elements:
       'Write polarizer, quarter, half, or retarder, then the axis angle in degrees; a retarder also takes its ' +
       'retardance. For example: polarizer 0, quarter 45, retarder 30 60.',

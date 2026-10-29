@@ -28,7 +28,7 @@ export const geooptics = {
     mediumIndex: 'Index around the lens',
     R1: 'First face radius',
     R2: 'Second face radius',
-    thickness: 'Center thickness (optional, for a thick lens)',
+    thickness: 'Center thickness',
     scale: 'Lengths in the list are in',
     elements: 'Elements, in the order the light meets them',
     elementKind: 'Element',
@@ -53,6 +53,7 @@ export const geooptics = {
     in: 'in',
   },
   help: {
+    thickness: 'Give it to treat the lens as a thick lens.',
     focal: 'Positive for a converging lens, negative for a diverging one.',
     mirror: 'Positive for a concave mirror, negative for a convex one.',
     radius: 'Positive when the center of curvature is after the face; leave empty for a flat face.',

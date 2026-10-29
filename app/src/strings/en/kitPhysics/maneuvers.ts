@@ -19,7 +19,7 @@ export const maneuvers = {
     rb: 'Intermediate apoapsis',
     di: 'Plane change',
     r: 'Circular orbit',
-    v2: 'Speed after the burn (optional, to combine)',
+    v2: 'Speed after the burn',
     phase: 'Target ahead of the chaser by',
     revs: 'Phasing orbits before the rendezvous',
     r1Vec: 'Departure position (x y z)',

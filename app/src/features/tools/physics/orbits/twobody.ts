@@ -289,7 +289,11 @@ export const keplerMode: ModeDef = {
     },
     { id: 'nu', label: `${K}.f.nu`, dim: 'angle', initial: '90', when: (ch) => ch('given') === 'true' },
     bodyField,
-    altField('a', `${K}.f.aOptional`, '', (ch) => ch('given') !== 'time'),
+    {
+      ...altField('a', `${K}.f.aOptional`, '', (ch) => ch('given') !== 'time'),
+      optional: true,
+      help: `${K}.help.aOptional` as MessageKey,
+    },
     altField('aTime', `${K}.f.a`, '7000', (ch) => ch('given') === 'time'),
     {
       id: 't',

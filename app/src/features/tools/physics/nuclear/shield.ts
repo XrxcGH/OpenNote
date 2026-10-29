@@ -123,7 +123,7 @@ export const attenuationMode: ModeDef = {
   fields: [
     ...muFields,
     { id: 'x', label: `${K}.f.thickness`, dim: 'length', unit: 'cm', usUnit: 'in', initial: '2' },
-    { id: 'I0', label: `${K}.f.I0`, initial: '', optional: true },
+    { id: 'I0', label: `${K}.f.I0`, initial: '', optional: true, help: `${K}.help.I0` },
   ],
   solve(read): Outcome {
     const { mu, step, macro } = readMu(read);

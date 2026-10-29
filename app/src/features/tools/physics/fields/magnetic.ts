@@ -162,6 +162,7 @@ export const sourcesMode: ModeDef = {
       usUnit: 'in',
       initial: '',
       optional: true,
+      help: `${K}.help.wireRadius`,
       when: (ch) => ch('source') === 'wire',
     },
     { id: 'N', label: `${K}.f.turns`, initial: '1', when: (ch) => ch('source') !== 'wire' },
@@ -294,6 +295,7 @@ export const forceMode: ModeDef = {
       usUnit: 'u',
       initial: '1.007276',
       optional: true,
+      help: `${K}.help.mass`,
       when: (ch) => ch('on') === 'charge',
     },
     {

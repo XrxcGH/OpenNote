@@ -29,7 +29,7 @@ export const orbits = {
     hp: 'Periapsis altitude',
     ha: 'Apoapsis altitude',
     a: 'Semi-major axis',
-    aOptional: 'Semi-major axis (optional, for time and radius)',
+    aOptional: 'Semi-major axis',
     e: 'Eccentricity',
     T: 'Period',
     r: 'Position r (x y z)',
@@ -58,6 +58,7 @@ export const orbits = {
     no: 'No',
   },
   help: {
+    aOptional: 'Give it to find the time since periapsis and the radius.',
     sidereal: 'One sidereal day, 23.9344696 h, gives the geostationary radius.',
     elements: 'For a hyperbola, give a negative semi-major axis.',
     greenwich: 'The angle from the vernal equinox to Greenwich at the start; 0 lines the two up.',
