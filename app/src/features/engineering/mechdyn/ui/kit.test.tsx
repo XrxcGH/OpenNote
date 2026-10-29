@@ -123,7 +123,7 @@ describe('the kit window and the page', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
     await userEvent.click((await screen.findAllByRole('menuitem', { name: 'Live calculation block' }))[0]);
     const panel = inserted[0].panel!;
-    expect(panel.type).toBe(PANEL_TYPES.kitCalc);
+    expect(panel.type).toBe(PANEL_TYPES.mechDynCalc);
     expect(panel.fallback).toContain('Single-degree-of-freedom vibration');
     // The page keeps the data as JSON; change the field in the window, then reopen from the block.
     const data = JSON.parse(JSON.stringify(panel.data)) as Record<string, unknown>;

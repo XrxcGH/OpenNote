@@ -10,7 +10,7 @@ import { addCommand } from './qolStudy';
 // A calculation block from the kit's Insert menu: the answer on the page, and a button that reopens the tool.
 blockRenderers.register(
   panelRenderer({
-    type: PANEL_TYPES.kitCalc,
+    type: PANEL_TYPES.mechDynCalc,
     label: 'kitMechDyn.ui.calcBlock',
     flag: 'kits.mechdyn',
     load: async () => {

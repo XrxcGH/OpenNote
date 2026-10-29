@@ -30,8 +30,8 @@ import styles from './mechdyn.module.css';
 export const say = t as unknown as Say;
 
 const PREFIX = 'opennote.tools.kitMechDyn.';
-/** The page's panel type for a calculation block (PANEL_TYPES.kitCalc); the page checks it before it inserts. */
-const KIT_CALC_TYPE = 'ext:org.opennote/kitcalc';
+/** The page's panel type for a calculation block (PANEL_TYPES.mechDynCalc); the page checks it before it inserts. */
+const KIT_CALC_TYPE = 'ext:org.opennote/kitcalc-mechdyn';
 
 function load<T>(name: string, fallback: T): T {
   try {
