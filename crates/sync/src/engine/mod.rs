@@ -200,11 +200,16 @@ fn now_ms() -> i64 {
         .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
 }
 
-/// Whether a content's size is no more than its chunks can hold, each at most [`local::CHUNK`] bytes.
+/// Whether a content has exactly the chunks its size needs: OpenNote cuts every file into full
+/// [`local::CHUNK`] pieces and one shorter last piece (none for an empty file). A list longer than that would
+/// make every other device fetch pieces it can't use; one shorter can't hold the size.
 fn fits_chunks(content: &manifest::Content) -> bool {
-    (content.chunks.len() as u64)
-        .checked_mul(local::CHUNK as u64)
-        .is_some_and(|most| content.size <= most)
+    content.chunks.len() as u64 == content.size.div_ceil(local::CHUNK as u64)
+}
+
+/// The error for pieces that hold more, or other, bytes than their file says.
+fn pieces_dont_add_up() -> SyncError {
+    SyncError::Tampered("A file's pieces don't add up.".into())
 }
 
 fn head_name(device: &str, generation: u64) -> String {
@@ -244,9 +249,13 @@ impl Contents for Store<'_> {
         let mut out = Vec::with_capacity(content.size as usize);
         for id in &content.chunks {
             out.extend_from_slice(&self.engine.fetch_chunk(id)?);
+            // Stop as soon as the pieces outgrow the size, so a file costs at most its size and one piece.
+            if out.len() as u64 > content.size {
+                return Err(pieces_dont_add_up());
+            }
         }
         if self.engine.hash(&out) != *content {
-            return Err(SyncError::Tampered("A file's pieces don't add up.".into()));
+            return Err(pieces_dont_add_up());
         }
         Ok(out)
     }
@@ -529,12 +538,70 @@ mod tests {
 
     /// An engine for device `d0` in a vault where device `ev` wrote one head with `entries`.
     fn engine_after_head(entries: Manifest) -> (tempfile::TempDir, Engine) {
-        let store = Arc::new(MemoryBackend::new());
+        engine_after_head_on(Arc::new(MemoryBackend::new()), entries)
+    }
+
+    /// Storage that counts the chunks it hands out.
+    struct Counting {
+        inner: MemoryBackend,
+        chunk_gets: std::sync::atomic::AtomicUsize,
+    }
+
+    impl Counting {
+        fn chunk_gets(&self) -> usize {
+            self.chunk_gets.load(std::sync::atomic::Ordering::SeqCst)
+        }
+    }
+
+    impl Backend for Counting {
+        fn get(&self, name: &str) -> Result<Option<Vec<u8>>> {
+            if name.starts_with("c/") {
+                self.chunk_gets.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+            self.inner.get(name)
+        }
+        fn put(&self, name: &str, bytes: &[u8]) -> Result<()> {
+            self.inner.put(name, bytes)
+        }
+        fn exists(&self, name: &str) -> Result<bool> {
+            self.inner.exists(name)
+        }
+        fn list(&self, prefix: &str) -> Result<Vec<String>> {
+            self.inner.list(prefix)
+        }
+        fn delete(&self, name: &str) -> Result<()> {
+            self.inner.delete(name)
+        }
+    }
+
+    fn counting() -> Arc<Counting> {
+        Arc::new(Counting {
+            inner: MemoryBackend::new(),
+            chunk_gets: 0.into(),
+        })
+    }
+
+    fn engine_after_head_on(store: Arc<dyn Backend>, entries: Manifest) -> (tempfile::TempDir, Engine) {
         let (keys, _) = vault::create_with(store.as_ref(), "correct horse battery", QUICK).expect("creates");
         for tag in ["d0", "ev"] {
             let (_, secret) = vault::new_device().expect("device");
             vault::add_device(store.as_ref(), &keys, tag, &secret, tag, 0).expect("adds");
         }
+        put_head(store.as_ref(), &keys, entries);
+        let dir = tempfile::tempdir().expect("temp");
+        fs::create_dir_all(dir.path().join("notes")).expect("notes");
+        let engine = Engine::new(
+            dir.path().join("notes"),
+            store,
+            keys,
+            "d0",
+            dir.path().join("state.json"),
+        );
+        (dir, engine)
+    }
+
+    /// Writes device `ev`'s first head with `entries`, replacing any.
+    fn put_head(store: &dyn Backend, keys: &VaultKeys, entries: Manifest) {
         let head = Head {
             v: 1,
             device: "ev".into(),
@@ -553,16 +620,6 @@ mod tests {
         )
         .expect("seals");
         store.put(&name, &sealed).expect("puts");
-        let dir = tempfile::tempdir().expect("temp");
-        fs::create_dir_all(dir.path().join("notes")).expect("notes");
-        let engine = Engine::new(
-            dir.path().join("notes"),
-            store,
-            keys,
-            "d0",
-            dir.path().join("state.json"),
-        );
-        (dir, engine)
     }
 
     #[test]
@@ -589,6 +646,78 @@ mod tests {
         let plan = engine.plan().expect("plans without overflowing");
         assert_eq!(plan.summary.download, ["Bio/full.bin", "Bio/note.txt"]);
         assert_eq!(plan.summary.bytes_down, 2 * 1024 * 1024 + 3);
+    }
+
+    #[test]
+    fn an_entry_with_more_chunks_than_its_size_needs_is_dropped_before_any_fetch() {
+        let store = counting();
+        let wasteful = Entry {
+            vv: [("ev".to_owned(), 1)].into(),
+            content: Content {
+                id: "ab".repeat(32),
+                size: 10,
+                chunks: (0..40).map(|n| format!("{n:064x}")).collect(),
+            },
+            deleted: false,
+        };
+        let (_dir, engine) = engine_after_head_on(store.clone(), [("Bio/note.txt".to_owned(), wasteful)].into());
+        let plan = engine.plan().expect("plans");
+        assert!(plan.summary.download.is_empty(), "{:?}", plan.summary);
+        assert_eq!(plan.summary.bytes_down, 0);
+        engine.apply(plan).expect("applies");
+        assert!(
+            store.chunk_gets() <= 1,
+            "{} chunk gets for a 10 byte file",
+            store.chunk_gets()
+        );
+        assert!(!engine.root.join("Bio/note.txt").exists());
+    }
+
+    #[test]
+    fn pieces_that_outgrow_their_size_stop_after_one_fetch_on_both_paths() {
+        let store = counting();
+        // An authentic but oversized first piece: a device holding the key wrote 1 MiB + 1000 bytes where the
+        // size leaves room for 1 MiB + 1. Real storage limits allow it, since pieces are padded to 64 KiB.
+        let first = vec![7u8; local::CHUNK + 1000];
+        let size = local::CHUNK as u64 + 1;
+        let content = |engine: &Engine| Content {
+            id: "ab".repeat(32),
+            size,
+            chunks: vec![hex(&mac(engine.keys.chunk.as_ref(), &[&first])), "cd".repeat(32)],
+        };
+        let (_dir, engine) = engine_after_head_on(store.clone(), Manifest::new());
+        engine
+            .replace_chunk(&content(&engine).chunks[0], &first)
+            .expect("stores the piece");
+
+        let merged = Store {
+            engine: &engine,
+            local_paths: HashMap::new(),
+            pending: RefCell::new(HashMap::new()),
+        }
+        .bytes(&content(&engine));
+        assert!(matches!(merged, Err(SyncError::Tampered(_))), "{merged:?}");
+        assert_eq!(store.chunk_gets(), 1, "the merge path stops at the first piece");
+
+        let entry = Entry {
+            vv: [("ev".to_owned(), 2)].into(),
+            content: content(&engine),
+            deleted: false,
+        };
+        put_head(
+            engine.backend.as_ref(),
+            &engine.keys,
+            [("Bio/big.bin".to_owned(), entry)].into(),
+        );
+        let plan = engine.plan().expect("plans");
+        assert_eq!(plan.summary.download, ["Bio/big.bin"]);
+        let applied = engine.apply(plan);
+        assert_eq!(
+            store.chunk_gets(),
+            2,
+            "the disk path stops at the first piece too: {applied:?}"
+        );
+        assert!(!engine.root.join("Bio/big.bin").exists());
     }
 
     #[test]

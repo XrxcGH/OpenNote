@@ -260,13 +260,19 @@ impl Engine {
             file.rewind()?;
         }
         let mut hasher = local::Hasher::new(&self.keys.chunk, &self.keys.content);
+        let mut written = 0u64;
         for id in &content.chunks {
             let bytes = self.fetch_chunk(id)?;
+            written += bytes.len() as u64;
+            // Stop as soon as the pieces outgrow the size, so a file costs at most its size and one piece.
+            if written > content.size {
+                return Err(super::pieces_dont_add_up());
+            }
             hasher.chunk(&bytes);
             file.write(&bytes)?;
         }
         if hasher.finish() != *content {
-            return Err(SyncError::Tampered("A file's pieces don't add up.".into()));
+            return Err(super::pieces_dont_add_up());
         }
         Ok(())
     }
