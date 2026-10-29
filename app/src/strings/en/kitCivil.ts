@@ -2,6 +2,7 @@
 // each tool's labels, results, and worked steps are in a file of their own under ./kitCivil, all in this namespace.
 import { foundations } from './kitCivil/foundations';
 import { groundwater } from './kitCivil/groundwater';
+import { processTool } from './kitCivil/process';
 import { reactors } from './kitCivil/reactors';
 import { soils } from './kitCivil/soils';
 import { water } from './kitCivil/water';
@@ -50,6 +51,15 @@ export const kitCivil = {
     sameX: 'The points all have the same x value, so no line fits them.',
   },
   tools: {
+    process: {
+      title: 'Material balances and separations',
+      open: 'Open material balances and separations',
+      keywords:
+        'chemical engineering process material balance mass balance mixer splitter separator recycle purge ' +
+        'bypass degrees of freedom energy balance heat of reaction vapor liquid equilibrium raoult antoine ' +
+        'bubble point dew point margules van laar wilson flash rachford rice distillation mccabe thiele ' +
+        'fenske underwood gilliland absorption stripping kremser',
+    },
     reactors: {
       title: 'Chemical and biological reactors',
       open: 'Open chemical and biological reactors',
@@ -98,5 +108,6 @@ export const kitCivil = {
   foundations,
   groundwater,
   water,
+  process: processTool,
   reactors,
 } as const;

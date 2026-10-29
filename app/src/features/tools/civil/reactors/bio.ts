@@ -55,7 +55,8 @@ const rtdCalc: Calc = {
               step(
                 'reactors.rtd.s5',
                 { D: r.Dnum },
-                `\\frac{\\sigma^2}{t_m^2} = 2\\frac{D}{uL} - 2\\left(\\frac{D}{uL}\\right)^2\\left(1 - e^{-uL/D}\\right)`,
+                `\\frac{\\sigma^2}{t_m^2}` +
+                  ` = 2\\frac{D}{uL} - 2\\left(\\frac{D}{uL}\\right)^2\\left(1 - e^{-uL/D}\\right)`,
               ),
             ]
           : []),
