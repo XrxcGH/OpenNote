@@ -27,7 +27,7 @@ DeriveNotes checks worked math line by line. OpenNote could solve an equation, s
 - **Checking an answer.** A line without a leading `=` after an equation starts a new chain, so `3(5) - 4` after `x = 5` is not compared with 5. A chain that differs as expressions but uses a letter fixed above by `x = 3` is compared again with that value put in (reason `knownValue`). `LHS =` and `= RHS`, `ans:`, `check:`, a tick, `(ans)` and QED are dropped; `x = y = z` and `let a = b = c` are notes. `x = 2, 3` and `x ∈ {2, 3}` read as `x = 2 or x = 3`; ½, ⅚ and the other fraction characters, and 25%, read as fractions. Values given together (`x = 2, y = 3`) or one to a line are all kept for the check below them. A chain from an expression to a number with letters no line gave (`2x + 3` then `= 7`) is `someValues`, not a slip.
 - **Notation.** These rules read the forms students write:
   - `÷` takes the whole run on each side, so `2/3 ÷ 4/5` is (2/3)/(4/5).
-  - A slash before a product (`1/2x`, `2x/3y`) is read both ways. It is right if either reading is, else `ambiguous`, never broken.
+  - A slash before a product (`1/2x`, `2x/3y`) is read both ways. It is right if either reading is, broken if every reading is broken (the fix follows the 1/(ab) reading), else `ambiguous`.
   - `y'` with no base letter is taken by x, then t, then the only letter; else `cannotDecide`.
   - `f(x + h) = ...` after `f(x) = ...` is a claim to check when the right side uses the argument's letters.
   - A formula in two letters rearranged for one (`x = ...`) is compared as a rearrangement. It is broken only when it uses the same numbers; else it is unchecked.
@@ -38,6 +38,12 @@ DeriveNotes checks worked math line by line. OpenNote could solve an equation, s
   - A sum to a letter of a polynomial, `Σ_(k=1)^n k^2`, becomes a formula in n by forward differences, checked past its degree.
 - **Rounding.** `≈` is read as `=`. A decimal is right when it is the other side rounded, or cut short, to the places shown (reason `rounded`). This holds in chains (`sqrt(2) = 1.414`) and for answers (`x = 7/3`, then `x ≈ 2.33`). In `x = 1/3 = 0.33`, the `x =` names the chain and is not one of its values.
 - **Other shapes.** `dy/dx`, `d^2y/dx^2`, and `y'` are worked out from an earlier `y = ...` line, and left unchecked without one. Notes in brackets at the end of a line, such as `(divide by 2)`, are dropped. `at x = 2` or `|_(x=2)` is the point a derivative is taken at. A mixed number `1 1/2` is one and a half. A one-letter unit, such as `m`, `s`, `g`, `h`, `L`, or `N`, counts after a number and a space when every side has one. So `5m = 20` stays algebra.
+
+### Reading failures and fixes
+
+- `log_b x` is ln x / ln b. `C(n, k)` and `nCk` with numbers are the binomial, and `a mod b` with whole numbers is the remainder. `in` after a number is inches.
+- These are `unreadable`, so the ink path asks to confirm them: a ragged matrix, a matrix size clash on a line compared with nothing, `0.1.2`, and a lone differential (`dx`, or `2x dx` with no `∫`). `matrixShape` is broken only between two lines.
+- A fix keeps the line's notation. A column vector stays a column, and `(a, b)` and `⟨a, b⟩` keep their brackets. An exact value built from a number of the line before (`ln 7`, `sqrt(5)`) comes before its decimal. A quantity is rounded to the places written, or to the fewest up to 4 that make it exact.
 
 ### Checking a step
 
