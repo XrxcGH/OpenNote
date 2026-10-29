@@ -364,7 +364,7 @@ pub async fn diagnostics_save_feedback(
     if review.digest() != digest {
         return Err(failure(errors::NOT_REVIEWED));
     }
-    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let owner = crate::desktop::dialog_owner(&window);
     let folder = blocking(move || crate::install::pick_folder(owner, None)).await?;
     let Some(folder) = folder else {
         return Err(failure(errors::CANCELED));

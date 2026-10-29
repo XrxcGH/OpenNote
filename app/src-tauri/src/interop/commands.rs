@@ -117,8 +117,7 @@ async fn blocking<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) 
 /// Opens the file or folder picker. Returns `None` when the person cancels.
 #[tauri::command]
 pub async fn interop_pick(window: WebviewWindow, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
-    // A window handle isn't `Send`, so it crosses to the dialog's thread as a number.
-    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let owner = crate::desktop::dialog_owner(&window);
     let picked = blocking(move || pick::pick(owner, kind, initial)).await??;
     if let Some(path) = &picked {
         grants::grant(path);
@@ -429,8 +428,8 @@ pub(crate) fn reveal(target: &Path) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-pub(crate) fn reveal(_target: &Path) -> IpcResult<()> {
-    Err(IpcError::not_implemented("interop_reveal"))
+pub(crate) fn reveal(target: &Path) -> IpcResult<()> {
+    crate::desktop::open_with_default(target.as_os_str(), target.is_file())
 }
 
 #[cfg(test)]

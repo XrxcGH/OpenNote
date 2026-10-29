@@ -14,6 +14,7 @@ pub mod command_list;
 pub mod connectors;
 pub mod core_bridge;
 pub mod deeplink;
+pub mod desktop;
 pub mod dictionary;
 pub mod early;
 pub mod events;
@@ -118,6 +119,9 @@ pub fn run(context: EarlyContext) {
         inbox: share::inbox(&paths),
     };
     let builder = images::register_renditions(tauri::Builder::default());
+    // The file dialogs on macOS and Linux (desktop.rs). Only Rust calls it: no capability lets the page reach it.
+    #[cfg(not(windows))]
+    let builder = builder.plugin(tauri_plugin_dialog::init());
     let app = builder
         .manage(loaded.store)
         .manage(state)

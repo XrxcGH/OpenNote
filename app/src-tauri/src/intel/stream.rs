@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex, PoisonError};
 
+#[cfg_attr(not(windows), allow(unused_imports))]
 use opennote_intel::wire::{StreamEvent, StreamOptions};
 use opennote_intel::{Feature, IntelError};
 use serde::{Deserialize, Serialize};

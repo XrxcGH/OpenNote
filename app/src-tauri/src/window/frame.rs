@@ -3,6 +3,7 @@
 //! the app's theme through `DWMWA_USE_IMMERSIVE_DARK_MODE` and the border color, never through Tauri's
 //! `setTheme`, which would also change WebView2's `prefers-color-scheme`.
 
+#[cfg_attr(not(windows), allow(unused_imports))]
 use tauri::{Manager, WebviewWindow};
 
 use crate::{

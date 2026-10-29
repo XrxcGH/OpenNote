@@ -179,8 +179,8 @@ pub(crate) fn open(target: &str) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-pub(crate) fn open(_target: &str) -> IpcResult<()> {
-    Err(IpcError::not_implemented("shell_open_external"))
+pub(crate) fn open(target: &str) -> IpcResult<()> {
+    crate::desktop::open_with_default(std::ffi::OsStr::new(target), false)
 }
 
 #[tauri::command]

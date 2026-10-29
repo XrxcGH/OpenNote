@@ -1,4 +1,4 @@
-//! The Windows pickers for a source to import and a folder to export into.
+//! The pickers for a source to import and a folder to export into.
 
 use serde::Deserialize;
 
@@ -15,7 +15,6 @@ pub enum PickKind {
 }
 
 /// The file types the picker lists first, as one filter. The interop crate decides what each file really is.
-#[cfg(windows)]
 const SOURCE_TYPES: &str = concat!(
     "*.enex;*.docx;*.odt;*.xlsx;*.xlsm;*.pptx;*.eml;*.opennote;*.md;*.markdown;*.txt;",
     "*.html;*.htm;*.mht;*.mhtml;*.csv;*.tsv;*.zip;*.sqlite;*.one;*.onepkg;",
@@ -24,7 +23,7 @@ const SOURCE_TYPES: &str = concat!(
 
 /// Shows the picker and returns the chosen path, or `None` when the person cancels.
 #[cfg(windows)]
-pub fn pick(owner: isize, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
+pub fn pick(owner: crate::desktop::DialogOwner, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
     use std::path::Path;
 
     use windows::{
@@ -94,6 +93,17 @@ pub fn pick(owner: isize, kind: PickKind, initial: Option<String>) -> IpcResult<
 }
 
 #[cfg(not(windows))]
-pub fn pick(_owner: isize, _kind: PickKind, _initial: Option<String>) -> IpcResult<Option<String>> {
-    Err(crate::ipc::IpcError::not_implemented("interop_pick"))
+pub fn pick(owner: crate::desktop::DialogOwner, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
+    let initial = initial.as_deref();
+    let picked = match kind {
+        PickKind::Folder => crate::desktop::pick_folder(&owner, initial)?,
+        PickKind::File => {
+            let extensions: Vec<&str> = SOURCE_TYPES
+                .split(';')
+                .filter_map(|glob| glob.strip_prefix("*."))
+                .collect();
+            crate::desktop::pick_file(&owner, initial, "Notes and documents", &extensions)?
+        }
+    };
+    Ok(picked.map(|path| path.display().to_string()))
 }
