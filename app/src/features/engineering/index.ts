@@ -54,6 +54,15 @@ export { openControlKit } from './control/open';
 /** The dynamics and control kit window, loaded the first time it opens. */
 export const loadControlKit = () => import('./control/ui/ControlKit');
 
+export const loadMechDynKit = () => import('./mechdyn/ui/MechDynKit');
+export { openMechDynKit } from './mechdyn/open';
+
+/** Draws a mechanisms kit calculation block: its answer, and a button that reopens the tool with its inputs. */
+export async function mountMechDynCalc(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
+  const [{ mountPanel }, { CalcBlock }] = await Promise.all([import('./mount'), import('./mechdyn/ui/CalcBlock')]);
+  return mountPanel(CalcBlock)(container, props);
+}
+
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
   return mountPanel(FbdPanel)(container, props);

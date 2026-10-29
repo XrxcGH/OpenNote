@@ -8,6 +8,7 @@ import { CONTROL_KIT_FLAGS, type ControlKitFlagId } from './control/flags';
 export { FLUIDHEAT_TOOLS } from './fluidheat/meta';
 export { SOLIDS_TOOLS } from './solids/meta';
 export { CONTROL_TOOLS } from './control/meta';
+export { MECHDYN_TOOLS } from './mechdyn/meta';
 export { CALC_EVENT, type KitCalcRequest } from './solids/open';
 
 export type EngineeringFlagId =
@@ -20,7 +21,8 @@ export type EngineeringFlagId =
   | 'kits.aero'
   | SolidsKitFlagId
   | 'kits.thermo'
-  | ControlKitFlagId;
+  | ControlKitFlagId
+  | 'kits.mechdyn';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
@@ -51,6 +53,7 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
     'kits.aero',
     'The aerospace tools in one window: atmosphere, gas dynamics, aerodynamics, performance and propulsion.',
   ),
+  flag('kits.mechdyn', 'The mechanisms, dynamics, vibrations, and robotics tools in one window, with worked steps.'),
   flag('tables.units', 'Units and engineering notation in smart table columns, with totals that convert units.'),
   ...SOLIDS_KIT_FLAGS,
   flag(

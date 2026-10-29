@@ -168,6 +168,12 @@ pub const TOOLS: &[Tool] = &[
         width: 560.0,
         height: 720.0,
     },
+    Tool {
+        id: "kit-mechdyn",
+        title: "Mechanisms and dynamics",
+        width: 560.0,
+        height: 720.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it
