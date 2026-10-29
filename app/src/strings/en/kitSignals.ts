@@ -10,6 +10,7 @@ import { filters } from './kitSignals/filters';
 import { medimaging } from './kitSignals/medimaging';
 import { audio } from './kitSignals/audio';
 import { images } from './kitSignals/images';
+import { neurodata } from './kitSignals/neurodata';
 
 export const kitSignals = {
   kit: {
@@ -78,6 +79,14 @@ export const kitSignals = {
         'image histogram threshold otsu count cells kernel sobel canny morphology fft ndvi band math ct radon back projection',
       about:
         'Adjust, threshold and count, filter, measure, and transform images; band math; and CT by filtered back-projection.',
+    },
+    neurodata: {
+      title: 'Neural and physiological time series',
+      open: 'Open neural and physiological time series',
+      keywords:
+        'erp epoch average eeg fmri hrf glm design matrix spike raster psth isi fano ecg heart rate hrv rmssd 10-20',
+      about:
+        'Event-related averages, fMRI regressors and fits, spike-train statistics, ECG heart-rate variability, and 10-20 maps.',
     },
   },
   ui: {
@@ -214,6 +223,19 @@ export const kitSignals = {
     bandSize: 'The bands must all be the same size.',
     training: 'Each training line needs a class number and a rectangle x0 y0 x1 y1 inside the image.',
     angles: 'Use from 2 to 360 projection angles.',
+    epochWindow: 'The window needs a time before the event of 0 or more and a time after it above 0.',
+    fewEpochs: 'At least 2 epochs must fit inside the record and pass the rejection threshold.',
+    emptyWindow: 'The peak window holds no samples. Choose times inside the epoch.',
+    trials: 'The number of trials must be a whole number of 1 or more.',
+    scans: 'Give a TR above 0 and from 2 to 2000 scans.',
+    collinear: 'The design columns are collinear, so the fit has no single answer. Remove a column.',
+    designShape: 'Each regressor needs one value per scan, with more scans than regressors.',
+    contrast: 'The contrast needs {count} weights, one per regressor.',
+    noSpikes: 'There are no spikes yet. Type spike times, one trial per line.',
+    bins: 'The window and the bin width must be above 0, with the bin no wider than the window.',
+    spikeOrder: 'Spike times in each trial must increase.',
+    rrIntervals: 'Fewer than 3 heartbeats were found, or an interval is outside 200 to 3000 ms.',
+    ecgRate: 'An ECG needs a sample rate of 100 Hz or more.',
   },
   step: {
     spectrumRecord: 'The record has N samples at the sample rate, so the bins are fs/N apart.',
@@ -357,6 +379,13 @@ export const kitSignals = {
     audioCents: 'The nearest note is {note}; the rest is the deviation in cents.',
     audioSum: 'Add the levels as powers, then turn the total back into decibels.',
     imageOtsu: 'Otsu’s method tries every threshold and keeps the one that best separates the two classes.',
+    neuroGlmBeta: 'Fit the design by ordinary least squares.',
+    neuroGlmT: 'Divide the contrast by its standard error for t.',
+    neuroIsi: 'The firing rate is one over the mean interspike interval.',
+    neuroCv: 'The coefficient of variation is the SD of the intervals over their mean (1 for a Poisson train).',
+    neuroHr: 'Heart rate is 60000 ms over the mean RR interval.',
+    neuroSdnn: 'SDNN is the standard deviation of the RR intervals.',
+    neuroRmssd: 'RMSSD is the root mean square of successive differences; pNN50 counts differences over 50 ms.',
   },
   spectrum,
   systems,
@@ -366,4 +395,5 @@ export const kitSignals = {
   medimaging,
   audio,
   images,
+  neurodata,
 } as const;

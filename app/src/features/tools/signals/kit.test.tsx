@@ -112,4 +112,10 @@ describe('signals and sound kit', () => {
     expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/\d+ objects/);
     await walkModes(container);
   });
+
+  it('averages the example epochs and walks every time-series mode', async () => {
+    const { container } = await openAt('neurodata');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('40 epochs averaged');
+    await walkModes(container);
+  });
 });

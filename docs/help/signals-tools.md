@@ -12,6 +12,10 @@ Each result has buttons to put part of it on the page at the caret: **Insert ans
 - **Digital filter designer.** Design FIR filters by the window method and IIR filters from Butterworth and Chebyshev prototypes, or a simple notch or moving average. See the gain, phase, delay, impulse and step responses, and the poles and zeros. Round the coefficients to fixed point to see what changes, then run the filter on your own samples, once or forward and backward.
 - **Convolution, sampling, and discrete systems.** See convolution as a table: flip, shift, multiply, and add. Find a delay by correlation. Run a difference equation and check its poles. Then explore aliasing, rebuilding a sampled signal, quantization noise, rate changes, and convolution of continuous signals.
 
+## Brain and body signals
+
+- **Neural and physiological time series.** Cut epochs around events, remove the baseline, reject noisy trials, and average them with a standard-error band, then read peaks and mean amplitudes. Build fMRI regressors from the canonical response, fit a voxel by least squares, and read t for a contrast. Draw spike rasters and firing rates, with interval statistics. Find R peaks in an ECG and work out heart rate and its variability, and map a value per electrode on the 10-20 layout.
+
 ## Sound
 
 - **Sound analysis and acoustics.** Open a sound file or record from the microphone; the app asks first, and the sound stays on this computer. See the waveform and a wide- or narrow-band spectrogram, and track pitch, intensity, and formants at a cursor. Label stretches of time and get their durations, and read jitter and shimmer for voice work. A tuner names the nearest note in cents, tone practice lays your pitch over Chao tone numbers, and a vowel chart plots F1 against F2. It also draws audiograms with the pure-tone average, adds and subtracts decibels with A-weighting, and makes tones to play.
