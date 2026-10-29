@@ -4,7 +4,15 @@
 import type { MessageKey } from '../../../strings/t';
 
 export type LifeSysToolId =
-  'diversity' | 'bench' | 'demography' | 'population' | 'pharmacology' | 'curves' | 'neuron' | 'physiology';
+  | 'physiology'
+  | 'neuron'
+  | 'pharmacology'
+  | 'curves'
+  | 'bench'
+  | 'population'
+  | 'demography'
+  | 'networks'
+  | 'diversity';
 
 export interface LifeSysMeta {
   id: LifeSysToolId;
@@ -28,16 +36,22 @@ export const LIFESYS_TOOLS: readonly LifeSysMeta[] = [
     icon: 'Lightning',
   },
   {
+    id: 'pharmacology',
+    title: 'kitLifeSys.tools.pharmacology.open',
+    keywords: 'kitLifeSys.tools.pharmacology.keywords',
+    icon: 'Pill',
+  },
+  {
     id: 'curves',
     title: 'kitLifeSys.tools.curves.open',
     keywords: 'kitLifeSys.tools.curves.keywords',
     icon: 'ChartLine',
   },
   {
-    id: 'pharmacology',
-    title: 'kitLifeSys.tools.pharmacology.open',
-    keywords: 'kitLifeSys.tools.pharmacology.keywords',
-    icon: 'Pill',
+    id: 'bench',
+    title: 'kitLifeSys.tools.bench.open',
+    keywords: 'kitLifeSys.tools.bench.keywords',
+    icon: 'TestTube',
   },
   {
     id: 'population',
@@ -52,10 +66,10 @@ export const LIFESYS_TOOLS: readonly LifeSysMeta[] = [
     icon: 'UsersThree',
   },
   {
-    id: 'bench',
-    title: 'kitLifeSys.tools.bench.open',
-    keywords: 'kitLifeSys.tools.bench.keywords',
-    icon: 'TestTube',
+    id: 'networks',
+    title: 'kitLifeSys.tools.networks.open',
+    keywords: 'kitLifeSys.tools.networks.keywords',
+    icon: 'Graph',
   },
   {
     id: 'diversity',
