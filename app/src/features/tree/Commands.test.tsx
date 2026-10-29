@@ -344,6 +344,7 @@ describe('context menu contents', () => {
       'Delete section history',
       'Protect with password…',
       'Make flashcards from this section',
+      'Make a practice exam from this section',
       'Export…',
       'Share as a file…',
       'Delete',
