@@ -637,6 +637,95 @@ for (const [a, b] of [
   bad('inequality', [`abs(x ${sg(-a)}) <= ${b}`, `-${b} <= x ${sg(-a)} <= ${b}`, `${-b - a} <= x <= ${b - a}`], 2);
 }
 
+// Homework pages: several problems one after another, set apart by a blank line, a number, or a title. Each problem
+// is checked on its own; a slip in the second is still found. --------------------------------------------------------
+for (const [a, b, x, c, d, y] of [
+  [2, 3, 2, 3, -1, 3],
+  [5, -4, 1, 2, 7, -2],
+  [4, 1, 3, 3, 5, 4],
+  [3, 6, -1, 7, -2, 1],
+]) {
+  const [r1, r2] = [a * x + b, c * y + d];
+  const first = [`${co(a)} ${sg(b)} = ${r1}`, `${co(a)} = ${r1 - b}`, `x = ${x}`];
+  const second = (v: string, answer: number) => [
+    `${co(c, v)} ${sg(d)} = ${r2}`,
+    `${co(c, v)} = ${r2 - d}`,
+    `${v} = ${answer}`,
+  ];
+  ok('page', [...first, '', ...second('x', y)]);
+  ok('page', [...first, `Problem 2`, ...second('x', y)]);
+  ok('page', [`1) ${first[0]}`, ...first.slice(1), `2) ${second('x', y)[0]}`, ...second('x', y).slice(1)]);
+  ok('page', [`Q1: ${first[0]}`, ...first.slice(1), `Q2: ${second('x', y)[0]}`, ...second('x', y).slice(1)]);
+  ok('page', [...first, ...second('y', y)]);
+  bad('page', [...first, '', ...second('x', y + 1)], 6);
+  bad('page', [...first, `2. ${second('x', y)[0]}`, `${co(c)} = ${r2 + d}`, `x = ${frac(r2 + d, c)}`], 4);
+}
+
+// Systems written one equation to a line: substitution and elimination. --------------------------------------------
+for (const [x, y, k] of [
+  [2, 6, 3],
+  [1, 4, 4],
+  [3, -6, -2],
+  [-2, -10, 5],
+]) {
+  // y = k x and x + y = s: substitute, solve for x, then back for y.
+  const s = x + y;
+  ok('stacked', [`y = ${co(k)}`, `x + y = ${s}`, `x + ${co(k)} = ${s}`, `${co(1 + k)} = ${s}`, `x = ${x}`, `y = ${y}`]);
+  bad(
+    'stacked',
+    [`y = ${co(k)}`, `x + y = ${s}`, `x + ${co(k)} = ${s}`, `${co(1 + k)} = ${s}`, `x = ${x}`, `y = ${y + 2}`],
+    5,
+  );
+  bad('stacked', [`y = ${co(k)}`, `x + y = ${s}`, `x + ${co(k)} = ${s + 1}`, `x = ${frac(s + 1, 1 + k)}`], 2);
+}
+for (const [x, y] of [
+  [3, 1],
+  [2, -1],
+  [5, 2],
+  [-1, 4],
+]) {
+  const [s, d] = [2 * x + y, x - y];
+  ok('stacked', [`2x + y = ${s}`, `x - y = ${d}`, `3x = ${s + d}`, `x = ${x}`, `y = ${y}`]);
+  ok('stacked', [`x = ${x}`, `y = x ${sg(y - x)}`, `y = ${y}`]);
+  bad('stacked', [`2x + y = ${s}`, `x - y = ${d}`, `3x = ${s - d}`, `x = ${frac(s - d, 3)}`], 2);
+  bad('stacked', [`2x + y = ${s}`, `x - y = ${d}`, `3x = ${s + d}`, `x = ${x}`, `y = ${y + 1}`], 4);
+}
+
+// Derivatives in Leibniz notation, after y = ... ---------------------------------------------------------------------
+for (const [a, n] of [
+  [3, 2],
+  [2, 3],
+  [5, 4],
+  [4, 5],
+]) {
+  ok('leibniz', [`y = ${a}x^${n}`, `dy/dx = ${a * n}x^${n - 1}`]);
+  ok('leibniz', [`y = ${a}x^${n}`, `y' = ${a * n}x^${n - 1}`]);
+  bad('leibniz', [`y = ${a}x^${n}`, `dy/dx = ${a * n}x^${n}`], 1);
+}
+
+// Answers rounded at the last step, and notes in brackets. ----------------------------------------------------------
+ok('rounding', ['sqrt(2)', '= 1.414']);
+ok('rounding', ['2 pi', '= 6.28']);
+ok('rounding', ['x = 1/3 = 0.33']);
+ok('rounding', ['3x = 7', 'x = 7/3', 'x ≈ 2.33']);
+ok('rounding', ['3x = 2', 'x = 0.67']);
+ok('rounding', ['x^2 = 2', 'x = 1.41 or x = -1.41']);
+bad('rounding', ['sqrt(2)', '= 1.42', '= 1.420'], 1);
+bad('rounding', ['3x = 7', 'x = 2.5'], 1);
+ok('notes', ['2x = 6 (divide by 2)', 'x = 3']);
+ok('notes', ['2x + 3 = 7 [subtract 3]', '2x = 4 (divide both sides by 2)', 'x = 2']);
+ok('notes', ['d/dx(x^3) at x = 2', '= 12']);
+bad('notes', ['2x = 6 (divide by 2)', 'x = 4'], 1);
+bad('notes', ['d/dx(x^3) at x = 2', '= 4'], 1);
+
+// Units with one-letter names, and mixed numbers. --------------------------------------------------------------------
+ok('units', ['10 m / 2 s', '= 5 m/s']);
+bad('units', ['5 m + 3 s = 8 m'], 0);
+bad('units', ['2 m * 3 m = 6 m'], 0);
+ok('mixed', ['1 1/2 + 1/2 = 2']);
+ok('mixed', ['2 1/4 + 1 3/4', '= 4']);
+bad('mixed', ['1 1/2 + 1/2', '= 3'], 1);
+
 // Correct steps that are easy to mistake for slips: squaring both sides, a lost solution, an extra solution, absolute
 // values, partial fractions, and forms that only agree where both have a value. None of them may be called broken.
 ok('precision', ['sqrt(x + 3) = x - 3', 'x + 3 = (x - 3)^2', 'x^2 - 7x + 6 = 0', 'x = 1 or x = 6']);
