@@ -24,6 +24,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Math solvers](#math-solvers)
 
 - [Document structure](#document-structure)
+- [Molecular biology, genetics, and evolution](#molecular-biology-genetics-and-evolution)
 
 ## How to read the status
 
@@ -603,3 +604,18 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Plots and coefficient tables | Histograms, densities, ECDF, Q-Q, box, fit-band, step, forest, and ROC plots, and a coefficient table that states each verdict in words.                                                     | Built, untested by hand |
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
+
+## Molecular biology, genetics, and evolution
+
+(Beta 6. Behind the `kits.molbio` flag, on in Beta and off in Stable. Help: [Biology tools](help/biology-tools.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| DNA and RNA sequences | Cleans, complements, translates, and counts a sequence and finds open reading frames, motifs, GC windows, CRISPR guides, and the effect of a mutation. | Built, untested by hand |
+| Cloning, PCR, and gels | Digests linear or circular DNA with 56 built-in enzymes or your own, draws a virtual gel and a plasmid map, sizes bands from a ladder, reports primer melting temperatures (Wallace, salt-adjusted, SantaLucia nearest-neighbor), finds PCR products, and works out oligo concentrations, ligation amounts, and copy numbers. | Built, untested by hand |
+| Proteins and peptides | Gives a protein's mass, isoelectric point, charge curve, extinction coefficient, and hydropathy plot. | Built, untested by hand |
+| Sequence alignment | Aligns 2 DNA or protein sequences globally, locally, or semi-globally with the score matrix shown, and draws dot plots. | Built, untested by hand |
+| Phylogenetic trees | Builds trees from alignments or distance matrices by UPGMA or neighbor-joining with each matrix shown, scores and searches trees by parsimony, adds seeded bootstrap support, and reads, reroots, draws, and answers questions about Newick trees. | Built, untested by hand |
+| Genetic crosses and linkage | Works Punnett squares for up to 3 genes, chi-square tests, 2- and 3-point gene maps, LOD scores, and carrier risk. | Built, untested by hand |
+| Population genetics | Tests Hardy-Weinberg (chi-square and exact), and models selection, mutation, migration, seeded drift, effective size, linkage disequilibrium, and heritability. | Built, untested by hand |
+| Family, pedigree, and kinship charts | Draws pedigrees in NSGC symbols from a typed list, checks 6 inheritance patterns, works genotype probabilities by peeling, sums relationship and inbreeding coefficients, reads kin types from Ego, orders succession, and draws genograms. | Built, untested by hand |
