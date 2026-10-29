@@ -3,6 +3,7 @@
 // Every interface string is a full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19).
 import { digital } from './kitReasoning/digital';
 import { games } from './kitReasoning/games';
+import { optimize } from './kitReasoning/optimize';
 
 export const kitReasoning = {
   title: 'Reasoning kit',
@@ -18,6 +19,16 @@ export const kitReasoning = {
         'digital logic boolean algebra karnaugh map k-map quine mccluskey minimize sop pos nand nor gates ' +
         'flip-flop state machine mealy moore counter elmore logical effort',
       summary: 'From truth tables to minimal circuits: maps, gates, timing, flip-flops, and state machines.',
+    },
+    optimize: {
+      tab: 'Optimization',
+      open: 'Open optimization, projects, and decisions',
+      keywords:
+        'linear programming simplex tableau shadow price sensitivity dual integer branch and bound transportation ' +
+        'vogel modi assignment hungarian cpm pert critical path gantt earned value decision tree evpi evsi ' +
+        'utility queue erlang little newsvendor operations research',
+      summary:
+        'Linear and integer programs, shipping and assignment, project schedules, decisions, and queues, with every step.',
     },
     games: {
       tab: 'Games and voting',
@@ -46,5 +57,6 @@ export const kitReasoning = {
     insertPicture: 'Insert picture',
   },
   digital,
+  optimize,
   games,
 } as const;

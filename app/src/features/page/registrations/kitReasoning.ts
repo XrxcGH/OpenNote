@@ -7,6 +7,7 @@ import { addCommand } from './qolStudy';
 
 const TOOLS: readonly (readonly [ReasoningToolId, IconName])[] = [
   ['digital', 'Circuitry'],
+  ['optimize', 'ChartLineUp'],
   ['games', 'ChartBar'],
 ];
 
