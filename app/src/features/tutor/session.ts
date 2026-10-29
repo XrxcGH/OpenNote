@@ -16,6 +16,8 @@ export interface ShownTurn extends Turn {
   /** Such as "Hint 2 of 4: The idea". */
   label?: string;
   where?: Where;
+  /** The service a cloud reply came from. */
+  host?: string;
   fellBack?: boolean;
 }
 
@@ -115,9 +117,10 @@ function askConsent(context: string, host: string, prompt: Prompt): Promise<bool
   });
 }
 
-async function writers(context: string): Promise<{ writers: Writers; offlineNote: boolean }> {
+async function writers(context: string): Promise<{ writers: Writers; offlineNote: boolean; host?: string }> {
   const found: Writers = {};
   let offlineNote = false;
+  let host: string | undefined;
   try {
     const cloud = await (await import('../intel')).loadApi();
     const ext = await cloud.intelExt();
@@ -127,9 +130,10 @@ async function writers(context: string): Promise<{ writers: Writers; offlineNote
         // Work offline wins: nothing is sent, and nothing is asked.
         if (isOffline()) offlineNote = true;
         else {
-          const host = cloud.hostOf('tutor', state);
+          const to = cloud.hostOf('tutor', state);
+          host = to;
           found.cloud = {
-            consent: (prompt) => askConsent(context, host, prompt),
+            consent: (prompt) => askConsent(context, to, prompt),
             send: (prompt) => ext.cloud.tutor(prompt.system, prompt.prompt),
           };
         }
@@ -143,7 +147,7 @@ async function writers(context: string): Promise<{ writers: Writers; offlineNote
   } catch {
     // No shell to ask: the built-in tutor answers.
   }
-  return { writers: found, offlineNote };
+  return { writers: found, offlineNote, host };
 }
 
 function push(turn: ShownTurn): void {
@@ -166,12 +170,13 @@ async function run(mode: Mode, rung: Rung, label: string | undefined, question?:
   tutorState.set((one) => ({ ...one, busy: true }));
   try {
     const plan = currentPlan(state);
-    const { writers: found, offlineNote } = await writers(state.context);
+    const { writers: found, offlineNote, host } = await writers(state.context);
     const reply = await tutorReply(
       { mode, rung, plan, context: state.context, question, history: state.turns.slice(-4) },
       found,
     );
-    push({ who: 'tutor', text: reply.text, label, where: reply.where, fellBack: reply.fellBack });
+    const from = reply.where === 'cloud' ? { host } : {};
+    push({ who: 'tutor', text: reply.text, label, where: reply.where, fellBack: reply.fellBack, ...from });
     tutorState.set((one) => ({ ...one, offlineNote }));
     announce(label ? `${label}. ${reply.text}` : reply.text);
   } finally {

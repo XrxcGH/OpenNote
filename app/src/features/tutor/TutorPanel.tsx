@@ -30,11 +30,13 @@ export interface TutorPanelProps {
   onUseSelection: () => void;
 }
 
-function whereText(turn: ShownTurn, host: string): string | null {
+function whereText(turn: ShownTurn): string | null {
   if (!turn.where) return null;
   const where =
     turn.where === 'cloud'
-      ? t('tutor.panel.where.cloud', { host })
+      ? turn.host
+        ? t('tutor.panel.where.cloud', { host: turn.host })
+        : t('tutor.panel.where.cloudKey')
       : t(turn.where === 'device' ? 'tutor.panel.where.device' : 'tutor.panel.where.rules');
   return turn.fellBack ? `${t('tutor.panel.fellBack')} ${where}` : where;
 }
@@ -77,7 +79,9 @@ function ConsentCard({ consent }: { consent: NonNullable<TutorState['consent']> 
       <h3 id={id} className={styles.subtitle}>
         {t('tutor.consent.title', { host: consent.host })}
       </h3>
-      <p className={styles.help}>{t('tutor.consent.body', { host: consent.host })}</p>
+      <p className={styles.help}>
+        {t('tutor.consent.body', { host: consent.host })} {t('tutor.consent.covers')}
+      </p>
       <pre className={styles.sent} tabIndex={0} aria-label={t('tutor.consent.sent')}>
         {consent.text}
       </pre>
@@ -91,7 +95,7 @@ function ConsentCard({ consent }: { consent: NonNullable<TutorState['consent']> 
   );
 }
 
-function Conversation({ turns, host }: { turns: readonly ShownTurn[]; host: string }) {
+function Conversation({ turns }: { turns: readonly ShownTurn[] }) {
   const ref = useRef<HTMLOListElement>(null);
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -100,7 +104,7 @@ function Conversation({ turns, host }: { turns: readonly ShownTurn[]; host: stri
   return (
     <ol ref={ref} className={styles.log} role="log" aria-label={t('tutor.panel.log')}>
       {turns.map((turn, i) => {
-        const where = whereText(turn, host);
+        const where = whereText(turn);
         return (
           <li key={i} className={styles.turn} data-who={turn.who}>
             <span className={styles.who}>
@@ -159,7 +163,6 @@ export function TutorPanel({ onClose, onUseSelection }: TutorPanelProps) {
   const titleId = useId();
   const { context, seed } = state;
   const plan = useMemo(() => currentPlan({ context, seed }), [context, seed]);
-  const host = state.consent?.host ?? 'api.openai.com';
   return (
     <section
       className={styles.panel}
@@ -180,7 +183,7 @@ export function TutorPanel({ onClose, onUseSelection }: TutorPanelProps) {
       <div className={styles.body}>
         <ContextBox context={context} onUseSelection={onUseSelection} />
         {state.consent && <ConsentCard consent={state.consent} />}
-        <Conversation turns={state.turns} host={host} />
+        <Conversation turns={state.turns} />
         {state.busy && (
           <p role="status" className={styles.help}>
             {t('tutor.panel.thinking')}

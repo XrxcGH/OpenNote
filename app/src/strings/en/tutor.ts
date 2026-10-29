@@ -55,6 +55,7 @@ export const tutor = {
       rules: 'Built-in hints, on this device.',
       device: 'Written by the language model on this device.',
       cloud: 'Written with your key by {host}.',
+      cloudKey: 'Written with your key by your cloud service.',
       offline: 'Work offline is on, so the tutor stays on this device.',
     },
     fellBack: 'The other engine could not help this time, so this hint is built in.',
@@ -67,7 +68,10 @@ export const tutor = {
   },
   consent: {
     title: 'Send this to {host}?',
-    body: 'This exact text goes to {host} with your key. Nothing else is sent, and new text asks again.',
+    body: 'This text goes to {host} with your key. New text asks again.',
+    covers:
+      'If you agree, your next hints on this text go there too, with what you type in Ask the tutor, ' +
+      'until you close the panel.',
     sent: 'Text to send',
     send: 'Send for this session',
     keep: 'Keep it on this device',
