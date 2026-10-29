@@ -3,6 +3,7 @@ import type { LifeSysToolId } from './meta';
 import type { ToolSpec } from './types';
 
 export const KIT_LOADERS: Record<LifeSysToolId, () => Promise<ToolSpec>> = {
+  neuron: () => import('./neuron/tool').then((m) => m.tool),
   curves: () => import('./curves/tool').then((m) => m.tool),
   pharmacology: () => import('./pharmacology/tool').then((m) => m.tool),
   population: () => import('./population/tool').then((m) => m.tool),
