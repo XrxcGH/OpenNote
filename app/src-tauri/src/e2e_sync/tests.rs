@@ -7,13 +7,13 @@ fn service(dir: &Path) -> SyncService {
     SyncService::with_store(dir.join("sync"), Arc::new(MemoryStore::default()))
 }
 
-fn ok(service: &SyncService, notes: Option<&Path>, name: &str, args: Value) -> Value {
-    service.call(notes.map(Path::to_path_buf), name, &args).expect(name)
+fn ok(service: &SyncService, notes: Option<&Path>, name: &str, mut args: Value) -> Value {
+    service.call(notes.map(Path::to_path_buf), name, &mut args).expect(name)
 }
 
-fn code(service: &SyncService, notes: Option<&Path>, name: &str, args: Value) -> String {
+fn code(service: &SyncService, notes: Option<&Path>, name: &str, mut args: Value) -> String {
     service
-        .call(notes.map(Path::to_path_buf), name, &args)
+        .call(notes.map(Path::to_path_buf), name, &mut args)
         .unwrap_err()
         .code
 }
@@ -46,8 +46,16 @@ fn pair() -> Pair {
     let weak = json!({ "backend": backend, "passphrase": "short" });
     assert_eq!(code(&laptop, None, "setUp", weak), "weakPassphrase");
     let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Laptop" });
-    let made = ok(&laptop, None, "setUp", setup);
-    assert_eq!(made["recoveryKey"].as_str().expect("key").split('-').count(), 13);
+    let mut made = ok(&laptop, None, "setUp", setup);
+    assert!(made.get("recoveryKey").is_none(), "the key isn't in the view");
+    let key = serde_json::to_value(Reply::Secret(laptop.take_recovery().expect("key"))).expect("serializes");
+    assert_eq!(key.as_str().expect("text").split('-').count(), 13);
+    assert_eq!(
+        laptop.take_recovery().err().map(|e| e.code),
+        Some(codes::INVALID.to_owned()),
+        "the key is given once"
+    );
+    made["recoveryKey"] = key;
     assert_eq!(made["unfinished"], true);
     assert_eq!(
         code(&laptop, Some(&dir.path().join("notes-a")), "syncNow", Value::Null),
@@ -192,4 +200,25 @@ fn devices_are_listed_and_removed_and_pause_and_turn_off_keep_the_notes() {
         fs::read(notes_b.join("Bio/todo.txt")).is_ok(),
         "turning off keeps the notes"
     );
+}
+
+#[test]
+fn secrets_leave_the_call_arguments_before_anything_else_runs() {
+    let dir = tempfile::tempdir().expect("temp");
+    let service = service(dir.path());
+    let mut args = json!({
+        "backend": { "kind": "nowhere" },
+        "passphrase": "correct horse battery",
+        "recoveryKey": "AAAA-BBBB",
+        "code": "CCCC-DDDD",
+        "password": "server password",
+    });
+    // Refused for the backend, after the secrets were already moved out.
+    let refused = service.call(None, "join", &mut args).unwrap_err();
+    assert_eq!(refused.code, codes::INVALID);
+    for key in ["passphrase", "recoveryKey", "code", "password"] {
+        assert_eq!(args[key], Value::Null, "{key} is no longer in the arguments");
+    }
+    assert_eq!(args["backend"]["kind"], "nowhere", "the rest stays");
+    assert!(service.take_recovery().is_err(), "joining shows no recovery key");
 }

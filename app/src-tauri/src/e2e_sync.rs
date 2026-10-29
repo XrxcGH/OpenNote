@@ -4,8 +4,11 @@
 //!
 //! Nothing runs until the person sets sync up. The device's own secret, and a WebDAV password, live in Windows
 //! Credential Manager (`OpenNote/sync/device` and `OpenNote/sync/webdav`), never in a file, a log, or the
-//! interface. The passphrase and the recovery key are used once, in memory, and never kept. Work offline and Pause
-//! stop every round. The interface calls one command, `sync_call`, with an operation name.
+//! interface. The passphrase, the recovery key, and a pairing code are taken out of the call's arguments into
+//! `Zeroizing` buffers before anything else runs, used once, and never kept. A new vault's recovery key is not in
+//! the setup reply: the interface asks for it once, with `recoveryKey`, and the reply's buffer is cleared after it
+//! is serialized. Work offline and Pause stop every round. The interface calls one command, `sync_call`, with an
+//! operation name.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -83,6 +86,8 @@ struct Inner {
     started: AtomicBool,
     /// When a round last ran garbage collection, in Unix milliseconds.
     collected: Mutex<i64>,
+    /// A new vault's recovery key, until the interface takes it once.
+    recovery: Mutex<Option<Zeroizing<String>>>,
 }
 
 /// The shell's sync state.
@@ -110,6 +115,32 @@ fn arg<'a>(args: &'a Value, key: &str) -> &'a str {
     args.get(key).and_then(Value::as_str).unwrap_or("")
 }
 
+/// Moves a secret out of the call's arguments into a buffer that is cleared when dropped, so no copy stays in the
+/// `Value`. A missing or non-text field is empty.
+fn take_secret(args: &mut Value, key: &str) -> Zeroizing<String> {
+    match args.get_mut(key).map(Value::take) {
+        Some(Value::String(text)) => Zeroizing::new(text),
+        _ => Zeroizing::new(String::new()),
+    }
+}
+
+/// A secret for the interface, cleared once the reply is serialized and dropped.
+pub struct SecretText(Zeroizing<String>);
+
+impl Serialize for SecretText {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.0)
+    }
+}
+
+/// What `sync_call` returns: a view or result, or the one-time recovery key.
+#[derive(Serialize)]
+#[serde(untagged)]
+pub enum Reply {
+    Value(Value),
+    Secret(SecretText),
+}
+
 impl SyncService {
     /// The service for this profile. Nothing is read until the first call.
     pub fn new(paths: &Paths) -> SyncService {
@@ -129,6 +160,7 @@ impl SyncService {
                 app: Mutex::new(None),
                 started: AtomicBool::new(false),
                 collected: Mutex::new(0),
+                recovery: Mutex::new(None),
             }),
         }
     }
@@ -243,7 +275,11 @@ impl SyncService {
     }
 
     /// Sets up a new sync, or joins one, and saves this device's slot and settings.
-    fn begin(&self, args: &Value, create: bool) -> IpcResult<Value> {
+    fn begin(&self, args: &mut Value, create: bool) -> IpcResult<Value> {
+        let password = take_secret(args, "password");
+        let passphrase = take_secret(args, "passphrase");
+        let code = take_secret(args, "code");
+        let recovery_key = take_secret(args, "recoveryKey");
         if self.config().is_some() {
             return Err(bad(
                 "Sync is already set up on this device. Turn it off first to choose another place.",
@@ -251,19 +287,18 @@ impl SyncService {
         }
         let backend: BackendConfig = serde_json::from_value(args.get("backend").cloned().unwrap_or(Value::Null))
             .map_err(|_| bad("Choose where to sync."))?;
-        let password = Zeroizing::new(arg(args, "password").to_owned());
         let store = self.open_backend(&backend, Some(password.clone()))?;
         let mut recovery = None;
         let keys = if create {
-            let (keys, key) = vault::create(store.as_ref(), arg(args, "passphrase")).map_err(fail)?;
-            recovery = Some(key.text().to_owned());
+            let (keys, key) = vault::create(store.as_ref(), &passphrase).map_err(fail)?;
+            recovery = Some(Zeroizing::new(key.text().to_owned()));
             keys
-        } else if !arg(args, "code").is_empty() {
-            vault::join_with_code(store.as_ref(), arg(args, "code"), now_ms()).map_err(fail)?
-        } else if !arg(args, "recoveryKey").is_empty() {
-            vault::unlock_recovery(store.as_ref(), arg(args, "recoveryKey")).map_err(fail)?
+        } else if !code.is_empty() {
+            vault::join_with_code(store.as_ref(), &code, now_ms()).map_err(fail)?
+        } else if !recovery_key.is_empty() {
+            vault::unlock_recovery(store.as_ref(), &recovery_key).map_err(fail)?
         } else {
-            vault::unlock_passphrase(store.as_ref(), arg(args, "passphrase")).map_err(fail)?
+            vault::unlock_passphrase(store.as_ref(), &passphrase).map_err(fail)?
         };
         let (tag, secret) = vault::new_device().map_err(fail)?;
         let name = arg(args, "deviceName").trim();
@@ -305,11 +340,20 @@ impl SyncService {
                 ..Status::default()
             }
         });
-        let mut view = self.view();
-        if let Some(key) = recovery {
-            view["recoveryKey"] = Value::String(key);
-        }
-        Ok(view)
+        *self.inner.recovery.lock().unwrap_or_else(PoisonError::into_inner) = recovery;
+        Ok(self.view())
+    }
+
+    /// The new vault's recovery key, once: a second call, or one after setup ended, is refused.
+    fn take_recovery(&self) -> IpcResult<SecretText> {
+        let key = self
+            .inner
+            .recovery
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
+        key.map(SecretText)
+            .ok_or_else(|| bad("The recovery key was already shown. To see a new one, set sync up again."))
     }
 
     /// One round, unless one is running, sync is paused, or Work offline is on.
@@ -387,16 +431,18 @@ impl SyncService {
 
     /// A new passphrase, checked against the recovery key so a typo can't leave the vault without one. The other
     /// devices keep syncing with their own keys; a device that joins later uses the new passphrase.
-    fn change_passphrase(&self, args: &Value) -> IpcResult<Value> {
+    fn change_passphrase(&self, args: &mut Value) -> IpcResult<Value> {
+        let recovery_key = take_secret(args, "recoveryKey");
+        let passphrase = take_secret(args, "passphrase");
         let config = self.config().ok_or_else(|| fail(SyncError::NoVault))?;
         let backend = self.open_backend(&config.backend, None)?;
         let store = backend.as_ref();
         let keys = vault::unlock_device(store, &config.device, &self.device_secret()?).map_err(fail)?;
-        vault::change_passphrase(store, &keys, arg(args, "recoveryKey"), arg(args, "passphrase")).map_err(fail)?;
+        vault::change_passphrase(store, &keys, &recovery_key, &passphrase).map_err(fail)?;
         Ok(self.view())
     }
 
-    fn call(&self, notes: Option<PathBuf>, name: &str, args: &Value) -> IpcResult<Value> {
+    fn call(&self, notes: Option<PathBuf>, name: &str, args: &mut Value) -> IpcResult<Value> {
         match name {
             "status" => Ok(self.view()),
             "setUp" => self.begin(args, true),
@@ -437,6 +483,11 @@ impl SyncService {
                 Ok(self.forget_here())
             }
             "finishSetUp" => {
+                self.inner
+                    .recovery
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .take();
                 let mut config = self.config().ok_or_else(|| fail(SyncError::NoVault))?;
                 config.unfinished = false;
                 config.paused = false;
@@ -480,6 +531,11 @@ impl SyncService {
 
     /// Forgets sync on this device: its key, the server password, the settings, and the state. Notes stay.
     fn forget_here(&self) -> Value {
+        self.inner
+            .recovery
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take();
         let _ = self.inner.secrets.delete(DEVICE_SECRET);
         let _ = self.inner.secrets.delete(WEBDAV_PASSWORD);
         let _ = fs::remove_file(self.config_path());
@@ -604,10 +660,19 @@ pub fn start(app: &AppHandle) {
 
 /// The interface's one sync command.
 #[tauri::command]
-pub async fn sync_call(app: AppHandle, service: State<'_, SyncService>, name: String, args: Value) -> IpcResult<Value> {
+pub async fn sync_call(app: AppHandle, service: State<'_, SyncService>, name: String, args: Value) -> IpcResult<Reply> {
     let service = service.inner().clone();
     let notes = crate::core_bridge::notes_folder(&app);
-    match spawn_blocking(move || service.call(notes, &name, &args)).await {
+    let mut args = args;
+    let run = move || {
+        if name == "recoveryKey" {
+            return service.take_recovery().map(Reply::Secret);
+        }
+        let reply = service.call(notes, &name, &mut args).map(Reply::Value);
+        drop(args);
+        reply
+    };
+    match spawn_blocking(run).await {
         Ok(result) => result,
         Err(_) => Err(IpcError::new(codes::INTERNAL, "The sync call stopped.")),
     }

@@ -4,7 +4,7 @@
 
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { ERROR_CODES, SyncFailure } from '../../features/sync';
-import type { SyncClient } from '../../features/sync';
+import type { SyncClient, SyncView } from '../../features/sync';
 import { toIpcError } from './invoke';
 
 async function call<T>(name: string, args: unknown = null): Promise<T> {
@@ -19,7 +19,11 @@ async function call<T>(name: string, args: unknown = null): Promise<T> {
 export function createTauriSync(): SyncClient {
   return {
     status: () => call('status'),
-    setUp: (input) => call('setUp', input),
+    // The recovery key isn't in the setup reply: the shell gives it once, from a buffer it clears afterwards.
+    setUp: async (input) => {
+      const view = await call<SyncView>('setUp', input);
+      return { ...view, recoveryKey: await call<string>('recoveryKey') };
+    },
     join: (input) => call('join', input),
     syncNow: () => call('syncNow'),
     preview: () => call('preview'),
