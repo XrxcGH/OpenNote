@@ -47,6 +47,8 @@ export interface Scalar {
   origin?: 'derivative' | 'integral' | 'definite' | 'limit' | 'sum';
   /** The worked-out answer for that question, as text, when the tools found one. */
   answer?: string;
+  /** The other reading of a slash before a product: 1/2x read as 1/(2x), for a line that is right only that way. */
+  alt?: Node;
   text: string;
 }
 
@@ -156,6 +158,18 @@ const LEIBNIZ = /(?<![a-zA-Z])d(?:\^\(?(\d)\)?)?\s*([a-zA-Z])\s*\/\s*d\s*([a-zA-
 const PRIME = /(?<![a-zA-Z])([a-zA-Z])('+)(?![a-zA-Z(']|\s*\()/g;
 
 /**
+ * The letter y' is worked out by, when the line does not say: x, else t, else the only letter. y = kx^2 has k as a
+ * parameter, so the alphabet does not decide; with several letters and neither x nor t, nothing does.
+ */
+function baseOf(body: Node): string {
+  const names = variables(body);
+  if (names.length === 0 || names.includes('x')) return 'x';
+  if (names.includes('t')) return 't';
+  if (names.length === 1) return names[0];
+  throw new Unreadable('cannotDecide');
+}
+
+/**
  * dy/dx and y' for a letter an earlier line gave, such as y = x^2, worked out as the derivative. A dy/dx with no such
  * line cannot be checked: d, y, and x are not letters multiplied together.
  */
@@ -164,7 +178,7 @@ function expandLeibniz(text: string, ctx: Context): { text: string; answer?: str
   const worked = (letter: string, x: string | undefined, order: number, match: string) => {
     const body = ctx.explicit.get(letter);
     if (!body) throw new Unreadable('cannotDecide');
-    const by = x ?? variables(body)[0] ?? 'x';
+    const by = x ?? baseOf(body);
     const d = textOf(derivativeOf(body, by, order));
     if (match.trim() === text.trim()) whole = d;
     return `(${d})`;
@@ -261,10 +275,48 @@ function work(q: Question, ctx: Context): Worked {
       return limitValue({ ...q, body: sub(q.body) });
     case 'sum': {
       const found = sumOf({ ...q, body: sub(q.body) });
-      if (!found.ok || found.approximate) throw new Unreadable('cannotEvaluate');
-      return { node: found.value };
+      if (found.ok && !found.approximate) return { node: found.value };
+      const closed = polynomialSum({ ...q, body: sub(q.body) });
+      if (!closed) throw new Unreadable('cannotEvaluate');
+      return { node: closed };
     }
   }
+}
+
+/**
+ * Σ_(k=1)^n k as a formula in n, for a sum to a letter of a polynomial in k: the sums for n = a - 1, a, ..., a + 8
+ * are worked out, and their differences give the polynomial in n (Newton's forward differences), checked on the
+ * points beyond its degree. Null for anything else, such as 2^k, which is left unchecked.
+ */
+function polynomialSum(q: Extract<Question, { kind: 'sum' }>): Node | null {
+  if (!('node' in q.from) || !('node' in q.to) || q.to.node.type !== 'name') return null;
+  const n = q.to.node.name;
+  const a = valueOf(q.from.node);
+  if (!Number.isInteger(a) || n === q.x || variables(q.body).some((name) => name !== q.x)) return null;
+  const term = evaluator(q.body);
+  const sums = [0];
+  for (let k = a; sums.length < 10; k += 1) sums.push(sums[sums.length - 1] + term({ [q.x]: k }));
+  if (!sums.every(Number.isFinite)) return null;
+  const leading: number[] = [];
+  let row = sums;
+  while (row.length > 0) {
+    leading.push(row[0]);
+    const next: number[] = [];
+    for (let i = 1; i < row.length; i += 1) next.push(row[i] - row[i - 1]);
+    row = next;
+  }
+  const size = Math.max(1, ...sums.map(Math.abs));
+  const degree = leading.reduce((d, v, j) => (Math.abs(v) > 1e-9 * size ? j : d), 0);
+  if (degree > 7) return null;
+  // S(n) = Σ_j Δ^j S(a - 1) · C(n - a + 1, j).
+  let out: Node = build.num(0);
+  let choose: Node = build.num(1);
+  for (let j = 0; j <= degree; j += 1) {
+    if (j > 0) choose = build.div(build.mul(choose, build.sub(build.name(n), build.num(a - 1 + j - 1))), build.num(j));
+    const c = Math.round(leading[j] * 1e9) / 1e9;
+    if (c !== 0) out = build.add(out, build.mul(build.num(c), choose));
+  }
+  return out;
 }
 
 function applySubstitutions(node: Node, ctx: Context): Node {
@@ -451,7 +503,42 @@ export function readValue(raw: string, ctx: Context, units: boolean, at?: [strin
     node = substitute(node, at[0], applySubstitutions(parse(at[1]), ctx));
     answer = undefined;
   }
-  return { kind: 'scalar', node, integrals, text, ...(origin ? { origin } : {}), ...(answer ? { answer } : {}) };
+  // i^2 = -1: i is the imaginary unit, not a letter to try numbers in.
+  if (variables(node).some((name) => name === 'i' || name === 'j')) throw new Unreadable('complexNumbers');
+  const alt = integrals.length === 0 ? otherReading(text, ctx, at) : undefined;
+  return {
+    kind: 'scalar',
+    node,
+    integrals,
+    text,
+    ...(origin ? { origin } : {}),
+    ...(answer ? { answer } : {}),
+    ...(alt ? { alt } : {}),
+  };
+}
+
+/**
+ * A slash right before a product with no mark between, as in 1/2x or 2x/3y: handwriting and typed notes often mean
+ * 1/(2x), and the strict reading is (1/2)x. Not 1/x, 1/2 x, 1/2x^2 or 1/sin(x), which read one way.
+ */
+const SLASH_PRODUCT = /\/\s*(\d+(?:\.\d+)?[a-zA-Z]+|[a-zA-Z]{2,})(?![\w('^])/g;
+const FUNCTION_START = /^(?:sin|cos|tan|sec|csc|cot|ln|log|exp|sqrt|abs|det|pi)/;
+
+function otherReading(text: string, ctx: Context, at?: [string, string]): Node | undefined {
+  let changed = false;
+  const grouped = text.replace(SLASH_PRODUCT, (whole, run: string) => {
+    // dy/dx is a derivative, not d times y over d times x.
+    if (FUNCTION_START.test(run.replace(/^[\d.]+/, '')) || /^d[a-zA-Z]$/.test(run)) return whole;
+    changed = true;
+    return `/(${run})`;
+  });
+  if (!changed) return undefined;
+  try {
+    const value = readValue(grouped, ctx, false, at);
+    return value.kind === 'scalar' ? value.node : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const DEFINITION = /^([a-zA-Z])\s*\(\s*([a-zA-Z])\s*\)$/;
@@ -560,7 +647,9 @@ function readStatement(line: string, ctx: Context): Statement {
       const names = variables(build.sub(left.node, right.node));
       const identity =
         names.length > 0 && compareAt(evaluator(left.node), evaluator(right.node), names, 97).result === 'same';
-      if (names.length === 0 || identity) return { kind: 'values', parts: [left, right], continues: false };
+      if (names.length === 0 || identity || callClaim(sides[0], right, ctx)) {
+        return { kind: 'values', parts: [left, right], continues: false };
+      }
     }
   }
 
@@ -584,6 +673,21 @@ function readStatement(line: string, ctx: Context): Statement {
   const statement: Statement = { kind: 'relations', groups: join === 'or' ? all : [all.flat()], text };
   remember(statement, ctx);
   return statement;
+}
+
+/**
+ * f(x + h) = x^2 + 2xh + h^2 after f(x) = x^2: the function worked out at a new argument, a claim to check rather than
+ * an equation to solve. Only when the right side uses every letter of the argument; f(2x) = 8 is still solved, and so
+ * is f(x) = 4 with the function's own letter.
+ */
+function callClaim(side: string, right: Scalar, ctx: Context): boolean {
+  const call = /^([a-zA-Z])\((.+)\)$/.exec(side.trim());
+  const known = call ? ctx.functions.get(call[1]) : undefined;
+  if (!call || !known || groupAt(side.trim(), 1)?.[1] !== side.trim().length) return false;
+  if (call[2].trim() === known.param) return false;
+  const inArg = variables(parse(call[2]));
+  const onRight = variables(right.node);
+  return inArg.length > 0 && inArg.every((name) => onRight.includes(name));
 }
 
 /** y = x^2 gives y for a dy/dx on a later line. */

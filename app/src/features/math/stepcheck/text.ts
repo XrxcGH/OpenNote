@@ -29,15 +29,30 @@ const VULGAR: Record<string, string> = {
   '⅕': '1/5',
   '⅙': '1/6',
   '⅛': '1/8',
+  '⅜': '3/8',
+  '⅝': '5/8',
+  '⅞': '7/8',
+  '⅖': '2/5',
+  '⅗': '3/5',
+  '⅘': '4/5',
+  '⅚': '5/6',
+  '⅐': '1/7',
+  '⅑': '1/9',
+  '⅒': '1/10',
 };
 
 /** Plain marks for the symbols people type or paste. */
 export function normalize(text: string): string {
+  return tupleVectors(detCall(groupDivision(normalizeMarks(text))));
+}
+
+function normalizeMarks(text: string): string {
   return (
     text
       .replace(/[−–—]/g, '-')
       .replace(/[·⋅∙]/g, '*')
-      .replace(/÷/g, '/')
+      .replace(/⟨/g, '[')
+      .replace(/⟩/g, ']')
       .replace(/≤|⩽/g, '<=')
       .replace(/≥|⩾/g, '>=')
       .replace(/≠/g, '!=')
@@ -49,16 +64,89 @@ export function normalize(text: string): string {
       .replace(/³/g, '^3')
       .replace(/′/g, "'")
       // Vulgar fractions, and percent as a fraction of 100: 25% of 80 is 25/100 * 80.
-      .replace(/[½⅓⅔¼¾⅕⅙⅛]/g, (c) => `(${VULGAR[c]})`)
+      .replace(/[½⅓⅔¼¾⅕⅙⅛⅜⅝⅞⅖⅗⅘⅚⅐⅑⅒]/g, (c) => `(${VULGAR[c]})`)
       .replace(/(\d+(?:\.\d+)?)\s*%\s*of\b/g, '($1/100) *')
       .replace(/(\d+(?:\.\d+)?)\s*%/g, '($1/100)')
       .replace(/\b(?:infinity|inf|oo)\b/g, '∞')
       .replace(/\blog_\(?(\d+)\)?\s*\(([^()]*)\)/g, '(ln($2)/ln($1))')
       .replace(/\s+/g, ' ')
+      .replace(/\bdet\s+\[/g, 'det[')
       // A mixed number, 1 1/2, is one and a half, not one times a half.
       .replace(/(^|[\s(=+\-<>])(\d+) (\d+)\/(\d+)(?![\d.(\w^])/g, '$1($2 + $3/$4)')
       .trim()
   );
+}
+
+const STOPS = '+-=<>,;!';
+
+/**
+ * a ÷ b, with each side the whole run of marks next to it: 2/3 ÷ 4/5 is (2/3)/(4/5), as every student means it, not
+ * ((2/3)/4)/5. A run stops at a space, at + - = < > , ; and at a bracket it did not open; on the right it also stops
+ * at × and *, so 12 ÷ 3 × 2 is still (12/3) × 2.
+ */
+function groupDivision(text: string): string {
+  let out = text;
+  for (let at = out.indexOf('÷'), guard = 0; at >= 0 && guard < 50; at = out.indexOf('÷'), guard += 1) {
+    let l = at;
+    while (l > 0 && out[l - 1] === ' ') l -= 1;
+    let from = l;
+    for (let depth = 0; from > 0; from -= 1) {
+      const c = out[from - 1];
+      if (CLOSE.includes(c)) depth += 1;
+      else if (OPEN.includes(c)) {
+        if (depth === 0) break;
+        depth -= 1;
+      } else if (depth === 0 && (c === ' ' || STOPS.includes(c))) break;
+    }
+    let r = at + 1;
+    while (r < out.length && out[r] === ' ') r += 1;
+    let to = r;
+    if (out[to] === '-' || out[to] === '+') to += 1;
+    for (let depth = 0; to < out.length; to += 1) {
+      const c = out[to];
+      if (OPEN.includes(c)) depth += 1;
+      else if (CLOSE.includes(c)) {
+        if (depth === 0) break;
+        depth -= 1;
+      } else if (depth === 0 && (c === ' ' || c === '×' || c === '*' || c === '÷' || STOPS.includes(c))) break;
+    }
+    const [left, right] = [out.slice(from, l), out.slice(r, to)];
+    // Nothing on one side: an unreadable line, left for the reader to say so.
+    const middle = left && right ? `(${left})/(${right})` : `${left}/${right}`;
+    out = out.slice(0, from) + middle + out.slice(to);
+  }
+  return out;
+}
+
+const NUM = String.raw`-?\d+(?:\.\d+)?`;
+/** (1, 2, 3): two to four numbers in round brackets, not the arguments of a function such as C(5, 2). */
+const TUPLE = new RegExp(String.raw`(?<![\w)\]])\(\s*${NUM}(?:\s*,\s*${NUM}){1,3}\s*\)`, 'g');
+const VECTOR = String.raw`(?:\(\s*${NUM}(?:\s*,\s*${NUM}){1,3}\s*\)|\[[^[\]]*\])`;
+const JOINED = new RegExp(String.raw`${VECTOR}\s*[*×+-]\s*${VECTOR}`);
+
+/**
+ * (1, 2, 3) · (4, -5, 6) and ⟨1, 2⟩ + ⟨3, 4⟩ (whose brackets are square by now): vectors, written as [1, 2, 3]. Only
+ * when two of them are joined by a product, a sum or a difference, or a line is "= (0, 0, 1)" after such a line: a
+ * lone (1, 2) may be a point or an interval.
+ */
+function tupleVectors(text: string): string {
+  const answer = new RegExp(String.raw`^=\s*\(\s*${NUM}(?:\s*,\s*${NUM}){1,3}\s*\)$`).test(text);
+  if (!answer && !JOINED.test(text)) return text;
+  return text.replace(TUPLE, (tuple) => `[${tuple.slice(1, -1)}]`);
+}
+
+/** det [[2, 1], [5, 3]] is det([[2, 1], [5, 3]]). */
+function detCall(text: string): string {
+  const at = text.indexOf('det[');
+  if (at < 0) return text;
+  let depth = 0;
+  for (let i = at + 3; i < text.length; i += 1) {
+    if (text[i] === '[') depth += 1;
+    else if (text[i] === ']' && --depth === 0) {
+      return `${text.slice(0, at)}det(${text.slice(at + 3, i + 1)})${detCall(text.slice(i + 1))}`;
+    }
+  }
+  return text;
 }
 
 /** The names a line may spell out: functions, constants, Greek letters, and the words that set up a substitution. */
@@ -151,6 +239,36 @@ export function problemLead(text: string): { rest: string; starts: boolean } {
   if (step) return { rest: text.slice(step[0].length), starts: false };
   const lead = PROBLEM.exec(text);
   return lead ? { rest: text.slice(lead[0].length), starts: true } : { rest: text, starts: false };
+}
+
+const STEP_MARK = /^(?:→|⇒|=>|∴|(?:so|then|therefore|thus|hence)(?![a-zA-Z]))/i;
+
+/**
+ * 2x + 3 = 7 → 2x = 4 → x = 2: the steps of one line, split at →, ⇒, ∴, so and therefore outside every bracket. A
+ * line with a limit keeps its arrows, since x → 0 there is not a step.
+ */
+export function splitSteps(text: string): string[] {
+  if (/(?<![a-zA-Z])lim(?![a-zA-Z])/.test(text)) return [text];
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (OPEN.includes(c)) depth += 1;
+    else if (CLOSE.includes(c)) depth = Math.max(0, depth - 1);
+    else if (depth === 0) {
+      const mark = STEP_MARK.exec(text.slice(i));
+      const word = mark && /^[a-z]/i.test(mark[0]);
+      if (mark && (!word || (i > 0 && text[i - 1] === ' '))) {
+        parts.push(text.slice(start, i));
+        start = i + mark[0].length;
+        i = start - 1;
+      }
+    }
+  }
+  parts.push(text.slice(start));
+  const steps = parts.map((part) => part.trim()).filter((part) => part !== '');
+  return steps.length > 0 ? steps : [text];
 }
 
 /** Words and marks at the start of a line that only say "so": they are dropped. */

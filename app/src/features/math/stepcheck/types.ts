@@ -88,6 +88,12 @@ export type ReasonCode =
   | 'cannotDecide'
   | 'cannotEvaluate'
   | 'unrelated'
+  /** 1/2x: a slash before a product, which reads as (1/2)x or 1/(2x), and the line is right in neither. */
+  | 'ambiguous'
+  /** i^2 = -1: complex numbers, not checked yet. */
+  | 'complexNumbers'
+  /** A solution that an earlier line does not allow, as x = 1 after dividing by x - 1. */
+  | 'outsideDomain'
   | 'tooLong';
 
 /** One step's result. `index` is the line's place in the list given to checkSteps. */

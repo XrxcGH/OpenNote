@@ -16,14 +16,16 @@ import {
   numberText,
   outcome,
   rootOf,
+  rootsOf,
   solutionsOf,
   solves,
+  someValues,
   type ChainState,
   type Outcome,
 } from './compare';
 import { latexToLine } from './latex';
-import { newContext, readLine, variables, type Atom, type Statement, type Value } from './read';
-import { normalize, problemLead } from './text';
+import { newContext, readLine, variables, type Atom, type Scalar, type Statement, type Value } from './read';
+import { normalize, problemLead, splitSteps } from './text';
 import type { CheckOptions, StepLine, StepResult } from './types';
 import { build, type Node } from '../../../core/expr';
 import { substitute } from '../calculus/algebra';
@@ -67,7 +69,24 @@ class Checker {
   /** Lines whose missing + C a later line added. */
   readonly constantAdded = new Set<number>();
 
+  /** Where earlier lines of this problem have no value: denominators, and what ln and sqrt are taken of. */
+  private guards: Guard[] = [];
+
   constructor(private readonly seed: number) {}
+
+  /**
+   * x = 1 after (x^2 - 1)/(x - 1) = 2 and x + 1 = 2: the step follows, but its solution is one the first line does not
+   * allow. Unchecked, with that value, rather than a tick on an answer that is not one.
+   */
+  private outside(statement: Relations, seed: number): Outcome | null {
+    if (this.guards.length === 0) return null;
+    const eq = equationOf(statement.groups);
+    if (!eq || eq.names.length !== 1) return null;
+    const [name] = eq.names;
+    const bad = solutionsOf(eq, seed).find((v) => this.guards.some((g) => undefinedAt(g, name, v)));
+    if (bad === undefined) return null;
+    return outcome('unchecked', 'outsideDomain', 'solutions', 0.9, { at: `${name} = ${numberText(tidy(bad))}` });
+  }
 
   /** A new problem: nothing above it is compared with what comes next. */
   private reset() {
@@ -79,13 +98,20 @@ class Checker {
     this.chain = { anti: false, base: 'x' };
     this.facts = null;
     this.noConstant = null;
+    this.guards = [];
   }
 
   step(text: string, index: number): Outcome {
     const lead = problemLead(normalize(text));
     if (lead.starts) this.reset();
-    const statement = readLine(lead.rest, this.ctx);
-    const seed = this.seed + index * 101;
+    // 2x + 3 = 7 → 2x = 4 → x = 2: each part a step after the one before, and the line's mark the first slip in it.
+    const parts = splitSteps(lead.rest);
+    if (parts.length === 1) return this.part(lead.rest, this.seed + index * 101, index);
+    return combine(parts.map((part, k) => this.part(part, this.seed + index * 101 + k * 13, index)));
+  }
+
+  private part(text: string, seed: number, index: number): Outcome {
+    const statement = readLine(text, this.ctx);
     switch (statement.kind) {
       case 'blank':
         this.reset();
@@ -129,18 +155,23 @@ class Checker {
    */
   private link(a: Value, b: Value, seed: number): Outcome {
     const found = compareValues(a, b, this.chain, seed);
-    if (found.verdict === 'ok' || this.known.size === 0 || this.chain.anti) return found;
+    if (found.verdict === 'ok' || this.chain.anti) return found;
     if (a.kind !== 'scalar' || b.kind !== 'scalar' || a.integrals.length + b.integrals.length > 0) return found;
     const used = [...new Set([...variables(a.node), ...variables(b.node)])].filter((name) => this.known.has(name));
-    if (used.length === 0) return found;
     const known = (name: string) => this.known.get(name) ?? build.num(0);
     const put = (node: Node) => used.reduce((n, name) => substitute(n, name, known(name)), node);
     const [na, nb] = [put(a.node), put(b.node)];
-    if (variables(na).length + variables(nb).length > 0) return found;
-    const again = compareValues({ ...a, node: na }, { ...b, node: nb }, this.chain, seed);
-    if (again.verdict !== 'ok') return again;
-    const at = used.map((name) => `${name} = ${numberText(fn(known(name))({}))}`).join(', ');
-    return outcome('ok', 'knownValue', 'evaluation', again.confidence, { at });
+    if (used.length > 0 && variables(na).length + variables(nb).length === 0) {
+      const again = compareValues({ ...a, node: na }, { ...b, node: nb }, this.chain, seed);
+      if (again.verdict !== 'ok') return again;
+      const at = used.map((name) => `${name} = ${numberText(fn(known(name))({}))}`).join(', ');
+      return outcome('ok', 'knownValue', 'evaluation', again.confidence, { at });
+    }
+    // 2x + 3, then = 7, with no x given: true for some x, so not a slip that can be shown.
+    if (found.verdict === 'broken' && variables(nb).length === 0 && variables(na).length > 0) {
+      return someValues({ ...a, node: na }, { ...b, node: nb }, seed) ?? found;
+    }
+    return found;
   }
 
   private values(statement: Extract<Statement, { kind: 'values' }>, seed: number, index: number): Outcome {
@@ -179,11 +210,22 @@ class Checker {
   private relations(statement: Relations, seed: number, index: number): Outcome {
     const cur = namesOfGroups(statement.groups);
     const before = new Set([...(this.prev ? namesOfGroups(this.prev.groups) : []), ...namesOf(this.facts ?? [])]);
-    // 3y = 9 after x = 2: none of the same letters, so a new problem.
-    if (this.prev && cur.size > 0 && before.size > 0 && ![...cur].some((name) => before.has(name))) this.reset();
-    const found = this.relationStep(statement, cur, seed, index);
-    const root = rootOf(statement.groups);
-    if (root) this.known.set(root.name, root.value);
+    const roots = rootsOf(statement.groups);
+    // 3y = 9 after x = 2: none of the same letters, so a new problem. But y = 3 after x = 2 gives another value for
+    // the check below them (x + y = 5), so the values given so far are kept.
+    if (this.prev && cur.size > 0 && before.size > 0 && ![...cur].some((name) => before.has(name))) {
+      const kept = roots ? new Map(this.known) : null;
+      this.reset();
+      for (const [name, value] of kept ?? []) this.known.set(name, value);
+    }
+    const prev = this.prev;
+    const step = this.relationStep(statement, cur, seed, index);
+    const found = step.verdict === 'broken' ? otherWay(prev, statement, step, seed) : step;
+    for (const root of roots ?? []) this.known.set(root.name, root.value);
+    const outside = found.verdict === 'ok' && found.method !== 'given' ? this.outside(statement, seed) : null;
+    for (const atom of statement.groups.flat())
+      this.guards.push(...guardsOf(atom.left.node), ...guardsOf(atom.right.node));
+    if (outside) return outside;
     const { tail } = statement;
     if (!tail) return found;
     this.chain = { anti: false, base: 'x' };
@@ -283,8 +325,21 @@ class Checker {
       const slip = signSlipOutcome(a, atoms[0], seed);
       if (slip) return slip;
     }
+    // y - 3 = 2x, then x = y - 3/2: one equation rearranged for x, not a second equation of a system. Checked as a
+    // rearrangement, and only shown as a slip when it uses the same numbers; else unchecked, though it still joins.
+    const isolated = isolates(atoms[0]);
+    const rearranged = !this.facts && base.length === 1 && atoms.length === 1 && !adds && !drops && isolated;
+    if (rearranged && a && b) {
+      const found = compareEquations(a, b, statement.groups, seed);
+      if (found.verdict === 'ok') return found;
+      if (found.verdict === 'broken' && sameNumbers(base[0], atoms[0])) return found;
+    }
     const all = [...base, ...atoms];
     const state = systemState(all, this.seed);
+    if (rearranged && state === 'consistent') {
+      this.facts = all;
+      return outcome('unchecked', 'cannotDecide', 'none', 0);
+    }
     if (state === 'consistent' && (adds || !drops)) {
       this.facts = all;
       return outcome('ok', 'systemEquation', 'given', 1);
@@ -322,6 +377,94 @@ interface Roots {
 }
 
 const namesOfGroups = (groups: Atom[][]) => namesOf(groups.flat());
+
+interface Guard {
+  node: Node;
+  /** Zero is not allowed (a denominator), or below zero (sqrt), or zero and below (ln, log). */
+  kind: 'zero' | 'negative' | 'notPositive';
+}
+
+/** The parts of a node that must keep away from zero or stay positive for it to have a value. */
+function guardsOf(node: Node, out: Guard[] = []): Guard[] {
+  if (node.type === 'binary') {
+    if (node.op === '/' && variables(node.right).length > 0) out.push({ node: node.right, kind: 'zero' });
+    guardsOf(node.left, out);
+    guardsOf(node.right, out);
+  } else if (node.type === 'unary' || node.type === 'postfix') guardsOf(node.arg, out);
+  else if (node.type === 'call') {
+    const [arg] = node.args;
+    if (arg && variables(arg).length > 0 && (node.name === 'ln' || node.name === 'log')) {
+      out.push({ node: arg, kind: 'notPositive' });
+    } else if (arg && variables(arg).length > 0 && node.name === 'sqrt') out.push({ node: arg, kind: 'negative' });
+    for (const a of node.args) guardsOf(a, out);
+  }
+  return out;
+}
+
+function undefinedAt(guard: Guard, name: string, value: number): boolean {
+  if (variables(guard.node).some((n) => n !== name)) return false;
+  const v = fn(guard.node)({ [name]: value });
+  if (!Number.isFinite(v)) return true;
+  const near = Math.abs(v) <= 1e-7 * Math.max(1, Math.abs(value));
+  return guard.kind === 'zero' ? near : guard.kind === 'negative' ? v < 0 && !near : v <= 0 || near;
+}
+
+/** A solution found numerically, without the last digits of noise: 0.9999999999 is 1. */
+const tidy = (v: number) => (Math.abs(v - Math.round(v)) < 1e-7 ? Math.round(v) : v);
+
+/** x = y - 3/2: one side is a letter the other side does not use. */
+function isolates(atom: Atom): boolean {
+  if (atom.rel !== '=') return false;
+  const alone = (side: Node, other: Node) => side.type === 'name' && !variables(other).includes(side.name);
+  return alone(atom.left.node, atom.right.node) || alone(atom.right.node, atom.left.node);
+}
+
+/** The numbers written in a node, without 0 and 1, which rearranging adds and drops freely. */
+function numbersIn(node: Node, out = new Set<number>()): Set<number> {
+  if (node.type === 'num') {
+    const v = Math.abs(node.value);
+    if (v !== 0 && v !== 1) out.add(v);
+  } else if (node.type === 'unary' || node.type === 'postfix') numbersIn(node.arg, out);
+  else if (node.type === 'binary') {
+    numbersIn(node.left, out);
+    numbersIn(node.right, out);
+  } else if (node.type === 'call') for (const arg of node.args) numbersIn(arg, out);
+  return out;
+}
+
+/** True when the new line uses only numbers the line before it has: a rearrangement, not a new equation. */
+function sameNumbers(before: Atom, after: Atom): boolean {
+  const had = numbersIn(build.sub(before.left.node, before.right.node));
+  const has = numbersIn(build.sub(after.left.node, after.right.node));
+  return [...has].every((n) => had.has(n));
+}
+
+const alternative = (s: Scalar): Scalar => (s.alt ? { ...s, node: s.alt } : s);
+const otherGroups = (groups: Atom[][]): Atom[][] =>
+  groups.map((g) => g.map((atom) => ({ ...atom, left: alternative(atom.left), right: alternative(atom.right) })));
+const hasAlt = (groups: Atom[][]) => groups.some((g) => g.some((atom) => atom.left.alt || atom.right.alt));
+
+/**
+ * A broken step where a line has a slash before a product (1/2x): checked again with the other reading, and right if
+ * either reading is; else unchecked, since the slip may be only in how the line was read.
+ */
+function otherWay(prev: Relations | null, cur: Relations, found: Outcome, seed: number): Outcome {
+  const [inPrev, inCur] = [prev !== null && hasAlt(prev.groups), hasAlt(cur.groups)];
+  if (!inPrev && !inCur) return found;
+  if (prev) {
+    const readings: [Atom[][], Atom[][]][] = [
+      [otherGroups(prev.groups), cur.groups],
+      [prev.groups, otherGroups(cur.groups)],
+      [otherGroups(prev.groups), otherGroups(cur.groups)],
+    ];
+    for (const [p, c] of readings) {
+      const [a, b] = [equationOf(p), equationOf(c)];
+      const again = a && b ? compareEquations(a, b, c, seed) : null;
+      if (again?.verdict === 'ok') return again;
+    }
+  }
+  return outcome('unchecked', 'ambiguous', 'none', 0, { text: inCur ? cur.text : (prev?.text ?? cur.text) });
+}
 
 const CONSTANT_NAMES = new Set(['C', 'c', 'K', 'k']);
 

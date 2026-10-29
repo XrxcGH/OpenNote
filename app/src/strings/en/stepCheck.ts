@@ -93,6 +93,10 @@ export const stepCheck = {
     cannotDecide: 'I could not decide whether this follows.',
     cannotEvaluate: 'I could not work out a value for this.',
     unrelated: 'I could not see how this line connects to the one before it.',
+    ambiguous: '{text} can be read two ways, as in 1/2x: (1/2)x or 1/(2x). Add brackets to say which.',
+    complexNumbers: 'This uses the imaginary number i, which I cannot check yet.',
+    outsideDomain:
+      'This follows, but an earlier line has no value at {at}, as when it divides by zero, so it is not a solution.',
     tooLong: 'This was more than I could check at once.',
   },
 } as const;

@@ -3024,6 +3024,387 @@
    "lines": [
     "25% of 80 = 20"
    ]
+  },
+  {
+   "id": "parameters-344",
+   "topic": "parameters",
+   "lines": [
+    "y = kx^2",
+    "y' = 2kx^1"
+   ]
+  },
+  {
+   "id": "parameters-345",
+   "topic": "parameters",
+   "lines": [
+    "y = ax^3",
+    "y' = 3ax^2"
+   ]
+  },
+  {
+   "id": "parameters-346",
+   "topic": "parameters",
+   "lines": [
+    "y = mx^2",
+    "y' = 2mx^1"
+   ]
+  },
+  {
+   "id": "parameters-347",
+   "topic": "parameters",
+   "lines": [
+    "y = bx^4",
+    "y' = 4bx^3"
+   ]
+  },
+  {
+   "id": "parameters-348",
+   "topic": "parameters",
+   "lines": [
+    "y = mx + c",
+    "y' = m"
+   ]
+  },
+  {
+   "id": "parameters-349",
+   "topic": "parameters",
+   "lines": [
+    "y = ax^2 + bx + c",
+    "y' = 2ax + b"
+   ]
+  },
+  {
+   "id": "parameters-350",
+   "topic": "parameters",
+   "lines": [
+    "y = e^(kx)",
+    "y' = k e^(kx)"
+   ]
+  },
+  {
+   "id": "parameters-351",
+   "topic": "parameters",
+   "lines": [
+    "s = ut + a t^2/2",
+    "s' = u + a t"
+   ]
+  },
+  {
+   "id": "fraction-division-352",
+   "topic": "fraction-division",
+   "lines": [
+    "2/3 ÷ 4/5",
+    "= 2/3 × 5/4",
+    "= 5/6"
+   ]
+  },
+  {
+   "id": "fraction-division-353",
+   "topic": "fraction-division",
+   "lines": [
+    "1/2 ÷ 1/4",
+    "= 1/2 × 4/1",
+    "= 2"
+   ]
+  },
+  {
+   "id": "fraction-division-354",
+   "topic": "fraction-division",
+   "lines": [
+    "3/4 ÷ 2/3",
+    "= 3/4 × 3/2",
+    "= 9/8"
+   ]
+  },
+  {
+   "id": "fraction-division-355",
+   "topic": "fraction-division",
+   "lines": [
+    "5/6 ÷ 5/9",
+    "= 5/6 × 9/5",
+    "= 3/2"
+   ]
+  },
+  {
+   "id": "fraction-division-356",
+   "topic": "fraction-division",
+   "lines": [
+    "6 ÷ 2/3",
+    "= 9"
+   ]
+  },
+  {
+   "id": "fraction-division-357",
+   "topic": "fraction-division",
+   "lines": [
+    "x/2 ÷ x/4",
+    "= 2"
+   ]
+  },
+  {
+   "id": "fraction-division-358",
+   "topic": "fraction-division",
+   "lines": [
+    "12 ÷ 3 × 2",
+    "= 8"
+   ]
+  },
+  {
+   "id": "given-values-359",
+   "topic": "given-values",
+   "lines": [
+    "x = 2, y = 3",
+    "x + y",
+    "= 5"
+   ]
+  },
+  {
+   "id": "given-values-360",
+   "topic": "given-values",
+   "lines": [
+    "x = 2 and y = 3",
+    "2x + y",
+    "= 7"
+   ]
+  },
+  {
+   "id": "given-values-361",
+   "topic": "given-values",
+   "lines": [
+    "x = 2",
+    "y = 3",
+    "x y",
+    "= 6"
+   ]
+  },
+  {
+   "id": "given-values-362",
+   "topic": "given-values",
+   "lines": [
+    "x = 4, y = -1",
+    "x + y",
+    "= 3"
+   ]
+  },
+  {
+   "id": "given-values-363",
+   "topic": "given-values",
+   "lines": [
+    "x = 4 and y = -1",
+    "2x + y",
+    "= 7"
+   ]
+  },
+  {
+   "id": "given-values-364",
+   "topic": "given-values",
+   "lines": [
+    "x = 4",
+    "y = -1",
+    "x y",
+    "= -4"
+   ]
+  },
+  {
+   "id": "given-values-365",
+   "topic": "given-values",
+   "lines": [
+    "x = -2, y = 5",
+    "x + y",
+    "= 3"
+   ]
+  },
+  {
+   "id": "given-values-366",
+   "topic": "given-values",
+   "lines": [
+    "x = -2 and y = 5",
+    "2x + y",
+    "= 1"
+   ]
+  },
+  {
+   "id": "given-values-367",
+   "topic": "given-values",
+   "lines": [
+    "x = -2",
+    "y = 5",
+    "x y",
+    "= -10"
+   ]
+  },
+  {
+   "id": "given-values-368",
+   "topic": "given-values",
+   "lines": [
+    "2x + 3",
+    "= 7"
+   ]
+  },
+  {
+   "id": "slash-369",
+   "topic": "slash",
+   "lines": [
+    "1/2x",
+    "= 1/(2x)"
+   ]
+  },
+  {
+   "id": "slash-370",
+   "topic": "slash",
+   "lines": [
+    "1/2x",
+    "= x/2"
+   ]
+  },
+  {
+   "id": "slash-371",
+   "topic": "slash",
+   "lines": [
+    "2x/3y",
+    "= 2x/(3y)"
+   ]
+  },
+  {
+   "id": "function-values-372",
+   "topic": "function-values",
+   "lines": [
+    "f(x) = x^2",
+    "f(x + h) = x^2 + 2xh + h^2"
+   ]
+  },
+  {
+   "id": "function-values-373",
+   "topic": "function-values",
+   "lines": [
+    "f(x) = 3x + 1",
+    "f(x + h) = 3x + 3h + 1"
+   ]
+  },
+  {
+   "id": "rearrange-374",
+   "topic": "rearrange",
+   "lines": [
+    "y - 3 = 2x",
+    "x = (y - 3)/2"
+   ]
+  },
+  {
+   "id": "rearrange-375",
+   "topic": "rearrange",
+   "lines": [
+    "y - 5 = 4x",
+    "x = (y - 5)/4"
+   ]
+  },
+  {
+   "id": "rounding-376",
+   "topic": "rounding",
+   "lines": [
+    "9.81 × 2",
+    "= 20"
+   ]
+  },
+  {
+   "id": "rounding-377",
+   "topic": "rounding",
+   "lines": [
+    "19.62",
+    "≈ 20"
+   ]
+  },
+  {
+   "id": "rounding-378",
+   "topic": "rounding",
+   "lines": [
+    "2.5 × 3.1",
+    "= 7.75",
+    "≈ 8"
+   ]
+  },
+  {
+   "id": "vectors-379",
+   "topic": "vectors",
+   "lines": [
+    "(1, 2, 3) · (4, -5, 6)",
+    "= 12"
+   ]
+  },
+  {
+   "id": "vectors-380",
+   "topic": "vectors",
+   "lines": [
+    "(1, 0, 0) × (0, 1, 0)",
+    "= (0, 0, 1)"
+   ]
+  },
+  {
+   "id": "vectors-381",
+   "topic": "vectors",
+   "lines": [
+    "⟨1,2⟩ + ⟨3,4⟩",
+    "= ⟨4,6⟩"
+   ]
+  },
+  {
+   "id": "vectors-382",
+   "topic": "vectors",
+   "lines": [
+    "det [[2, 1], [5, 3]]",
+    "= 1"
+   ]
+  },
+  {
+   "id": "unicode-383",
+   "topic": "unicode",
+   "lines": [
+    "½ + ⅓",
+    "= ⅚"
+   ]
+  },
+  {
+   "id": "unicode-384",
+   "topic": "unicode",
+   "lines": [
+    "¾ - ⅝",
+    "= ⅛"
+   ]
+  },
+  {
+   "id": "sums-385",
+   "topic": "sums",
+   "lines": [
+    "Σ_(k=1)^(n) k = n(n + 1)/2"
+   ]
+  },
+  {
+   "id": "sums-386",
+   "topic": "sums",
+   "lines": [
+    "Σ_(k=1)^(n) k^2 = n(n + 1)(2n + 1)/6"
+   ]
+  },
+  {
+   "id": "arrows-387",
+   "topic": "arrows",
+   "lines": [
+    "2x + 3 = 7 → 2x = 4 → x = 2"
+   ]
+  },
+  {
+   "id": "arrows-388",
+   "topic": "arrows",
+   "lines": [
+    "3x - 1 = 8 ⇒ 3x = 9 ⇒ x = 3"
+   ]
+  },
+  {
+   "id": "arrows-389",
+   "topic": "arrows",
+   "lines": [
+    "2x + 3 = 7",
+    "∴ x = 2"
+   ]
   }
  ],
  "broken": [
@@ -5683,6 +6064,200 @@
     "= -9"
    ],
    "broken": 2
+  },
+  {
+   "id": "parameters-b271",
+   "topic": "parameters",
+   "lines": [
+    "y = kx^2",
+    "y' = 3kx^1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "parameters-b272",
+   "topic": "parameters",
+   "lines": [
+    "y = ax^3",
+    "y' = 4ax^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "parameters-b273",
+   "topic": "parameters",
+   "lines": [
+    "y = mx^2",
+    "y' = 3mx^1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "parameters-b274",
+   "topic": "parameters",
+   "lines": [
+    "y = bx^4",
+    "y' = 5bx^3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fraction-division-b275",
+   "topic": "fraction-division",
+   "lines": [
+    "2/3 ÷ 4/5",
+    "= 2/3 × 4/5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fraction-division-b276",
+   "topic": "fraction-division",
+   "lines": [
+    "1/2 ÷ 1/4",
+    "= 1/2 × 1/4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fraction-division-b277",
+   "topic": "fraction-division",
+   "lines": [
+    "3/4 ÷ 2/3",
+    "= 3/4 × 2/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fraction-division-b278",
+   "topic": "fraction-division",
+   "lines": [
+    "5/6 ÷ 5/9",
+    "= 5/6 × 5/9"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "given-values-b279",
+   "topic": "given-values",
+   "lines": [
+    "x = 2",
+    "y = 3",
+    "x + y",
+    "= 6"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "given-values-b280",
+   "topic": "given-values",
+   "lines": [
+    "x = 4",
+    "y = -1",
+    "x + y",
+    "= 4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "given-values-b281",
+   "topic": "given-values",
+   "lines": [
+    "x = -2",
+    "y = 5",
+    "x + y",
+    "= 4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "function-values-b282",
+   "topic": "function-values",
+   "lines": [
+    "f(x) = x^2",
+    "f(x + h) = x^2 + h^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "function-values-b283",
+   "topic": "function-values",
+   "lines": [
+    "f(x) = 3x + 1",
+    "f(x + h) = 3x + h + 1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "rearrange-b284",
+   "topic": "rearrange",
+   "lines": [
+    "y - 3 = 2x",
+    "x = y - 3/2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "rearrange-b285",
+   "topic": "rearrange",
+   "lines": [
+    "y - 5 = 4x",
+    "x = y - 5/4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "rounding-b286",
+   "topic": "rounding",
+   "lines": [
+    "9.81 × 2",
+    "= 30"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "rounding-b287",
+   "topic": "rounding",
+   "lines": [
+    "7/2",
+    "= 3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "vectors-b288",
+   "topic": "vectors",
+   "lines": [
+    "(1, 2, 3) · (4, -5, 6)",
+    "= 32"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "vectors-b289",
+   "topic": "vectors",
+   "lines": [
+    "det [[2, 1], [5, 3]]",
+    "= 11"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "sums-b290",
+   "topic": "sums",
+   "lines": [
+    "Σ_(k=1)^(n) k = n^2/2"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "arrows-b291",
+   "topic": "arrows",
+   "lines": [
+    "2x + 3 = 7",
+    "2x = 4 → x = 3"
+   ],
+   "broken": 1
   }
  ]
 }

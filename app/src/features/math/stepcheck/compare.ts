@@ -158,6 +158,9 @@ function roundsTo(exact: number, shown: number, places: number): boolean {
   return Math.abs(exact - shown) < unit && Math.abs(Math.trunc(exact / unit) * unit - shown) <= slack + unit * 1e-6;
 }
 
+/** True when a side is written with a decimal number in it, such as 9.81 × 2. */
+const hasDecimal = (text: string) => /\d\.\d/.test(text);
+
 /** sqrt(2) = 1.414: the same value, rounded to the places shown. Null when neither side is a decimal that fits. */
 function rounded(a: Scalar, b: Scalar): Outcome | null {
   const [va, vb] = [fn(a.node)({}), fn(b.node)({})];
@@ -168,6 +171,17 @@ function rounded(a: Scalar, b: Scalar): Outcome | null {
     const places = placesOf(text);
     if (places !== null && roundsTo(exact, shown, places)) {
       return outcome('ok', 'rounded', 'evaluation', 0.99, { places: String(places) });
+    }
+  }
+  // 9.81 × 2 = 20: decimal working rounded to a whole number. Only when the other side has decimals, so 7/2 = 3 is
+  // still a slip, and only rounded, never cut short.
+  for (const [exact, shown, text, other] of [
+    [va, vb, b.text, a.text],
+    [vb, va, a.text, b.text],
+  ] as const) {
+    const whole = /^[+-]?\d+$/.test(text.replace(/\s+/g, '')) && hasDecimal(other);
+    if (whole && Number.isFinite(exact) && Math.abs(exact - shown) <= 0.5 + 1e-9 * Math.max(1, Math.abs(exact))) {
+      return outcome('ok', 'rounded', 'evaluation', 0.95, { places: '0' });
     }
   }
   return null;
@@ -195,7 +209,10 @@ function compareScalars(a: Scalar, b: Scalar, seed: number): Outcome {
   if (a.origin === 'derivative') return outcome('broken', 'derivativeOff', method, 0.97, {}, suggestion);
   if (plain) {
     const value = fn(a.node)({});
-    return outcome('broken', 'valueOff', method, 0.99, { value: numberText(value) }, suggestion);
+    // 9.81 × 2 works out to 19.62, not 981/50: decimal working gets a decimal answer.
+    const text = hasDecimal(a.text) || hasDecimal(b.text) ? decimalText(value) : numberText(value);
+    const decimal = !a.answer && text !== numberText(value) ? `= ${text}` : suggestion;
+    return outcome('broken', 'valueOff', method, 0.99, { value: text }, decimal);
   }
   if (found.ratio !== undefined && numbersCompare(found.ratio, -1) === 'same') {
     return outcome('broken', 'signFlipped', method, 0.97, {}, suggestion);
@@ -283,7 +300,19 @@ export function compareValues(a: Value, b: Value, chain: ChainState, seed: numbe
     const base = a.integrals[0]?.base ?? b.integrals[0]?.base ?? chain.base;
     return compareAntiderivatives(a, b, base, seed);
   }
-  return compareScalars(a, b, seed);
+  const found = compareScalars(a, b, seed);
+  if (found.verdict !== 'broken' || (!a.alt && !b.alt)) return found;
+  // 1/2x, then = 1/(2x): right when the slash is read the other way, so the line is not shown as a slip.
+  const readings: [Node, Node][] = [
+    [a.alt ?? a.node, b.node],
+    [a.node, b.alt ?? b.node],
+    [a.alt ?? a.node, b.alt ?? b.node],
+  ];
+  for (const [x, y] of readings) {
+    const again = compareScalars({ ...a, node: x }, { ...b, node: y }, seed);
+    if (again.verdict === 'ok') return again;
+  }
+  return cannot('ambiguous', { text: a.alt ? a.text : b.text });
 }
 
 // Equations ---------------------------------------------------------------------------------------------------------
@@ -421,11 +450,22 @@ const nameOf = (node: Node): string | null => (node.type === 'name' ? node.name 
 
 /** x = 3 on a line of its own: the letter and its value, else null. */
 export function rootOf(groups: Atom[][]): { name: string; value: Node } | null {
-  if (groups.length !== 1 || groups[0].length !== 1 || groups[0][0].rel !== '=') return null;
-  const [{ left, right }] = groups[0];
+  if (groups.length !== 1 || groups[0].length !== 1) return null;
+  return atomRoot(groups[0][0]);
+}
+
+function atomRoot({ left, rel, right }: Atom): { name: string; value: Node } | null {
+  if (rel !== '=') return null;
   const [name, side] = left.node.type === 'name' ? [left.node.name, right] : [nameOf(right.node), left];
   if (name === null || variables(side.node).length > 0 || !Number.isFinite(fn(side.node)({}))) return null;
   return { name, value: side.node };
+}
+
+/** x = 2, y = 3 (or x = 2 and y = 3): every letter the line gives a value, or null when it does anything else. */
+export function rootsOf(groups: Atom[][]): { name: string; value: Node }[] | null {
+  if (groups.length !== 1 || groups[0].length === 0) return null;
+  const roots = groups[0].map(atomRoot);
+  return roots.every((root) => root !== null) ? (roots as { name: string; value: Node }[]) : null;
 }
 
 /** The real solutions of an equation in one unknown, at most ten. */
@@ -436,6 +476,17 @@ export function solutionsOf(eq: Equation, seed: number): number[] {
 /** True when the value is a solution of the equation. */
 export const solves = (eq: Equation, name: string, value: number): boolean =>
   zeroAt(eq.f, eq.scale, { [name]: value }) === 'yes';
+
+/**
+ * 2x + 3, then = 7: an expression in letters no line gave, then a number. Unchecked with a value that makes it true
+ * (x = 2), since the line may be the start of solving it; null when no value does, as for x^2 + 1 then = 0.
+ */
+export function someValues(a: Scalar, b: Scalar, seed: number): Outcome | null {
+  const eq = equationOf([[{ left: a, rel: '=', right: b }]]);
+  if (!eq || eq.names.length === 0) return null;
+  const [point] = zeros(eq.f, eq.names, seed);
+  return point ? cannot('someValues', { at: pointText(point) }) : null;
+}
 
 /** Compares two equations by their solutions. */
 export function compareEquations(prev: Equation, cur: Equation, groups: Atom[][], seed: number): Outcome {
