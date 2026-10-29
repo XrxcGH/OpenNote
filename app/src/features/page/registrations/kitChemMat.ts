@@ -1,7 +1,7 @@
 // The palette commands of the Chemistry and materials window: one to open the window, and one per tool that opens it
 // on that tool. This file loads at start-up, so it holds only definitions; the window loads on first use.
 import { addCommand } from './qolStudy';
-import { CHEMMAT_META } from '../../tools';
+import { CHEMMAT_META } from '../../tools/flags';
 
 addCommand({
   id: 'tools.kit-chemmat',

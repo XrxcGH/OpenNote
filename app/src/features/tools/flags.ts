@@ -3,6 +3,7 @@
 import type { FlagDef, FlagId } from '../../app/flags';
 import { MATH_KIT_FLAGS } from './mathkit/flags';
 import { CHEMMAT_FLAGS } from './chemmat/flags';
+export { CHEMMAT_META } from './chemmat/meta';
 export type { ChemMatFlagId } from './chemmat/flags';
 export { CHEMMAT_FLAGS };
 

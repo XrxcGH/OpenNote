@@ -9,6 +9,7 @@ export { FLUIDHEAT_TOOLS } from './fluidheat/meta';
 export { SOLIDS_TOOLS } from './solids/meta';
 export { CONTROL_TOOLS } from './control/meta';
 export { MECHDYN_TOOLS } from './mechdyn/meta';
+export { AERO_TOOLS, type AeroToolId } from './aero/meta';
 export { CALC_EVENT, type KitCalcRequest } from './solids/open';
 
 export type EngineeringFlagId =
