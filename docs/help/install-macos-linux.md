@@ -22,7 +22,7 @@ Your settings live in `~/.config/OpenNote`, this computer's files in `~/.local/s
 ## Updates
 
 - **Linux.** OpenNote updates the AppImage itself, the same way as on Windows, as long as it can write to the AppImage's folder. Every update is checked against its signature first.
-- **Mac.** OpenNote doesn't install updates itself on a Mac yet. When a new version is out, download the new dmg and drag OpenNote to Applications again. Your notes and settings stay as they are.
+- **Mac.** OpenNote doesn't install updates itself on a Mac yet. When a new version is out, download its dmg. Then drag OpenNote to Applications again. Your notes and settings stay as they are.
 
 ## Shortcuts on a Mac
 

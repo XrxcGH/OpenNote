@@ -127,8 +127,8 @@ jobs:
   build:
     # Builds every release file with a read-only token and no secrets: one exe per Windows architecture, one
     # universal dmg for macOS, and one AppImage for Linux (ADR 0055). The x64 Windows runner cross-compiles the 32-bit
-    # and ARM64 exes with the MSVC tools it has for those architectures. The Mac and Linux files are unsigned until
-    # the owner adds the signing secrets (docs/RELEASING.md, Sign the Mac and Linux files).
+    # and ARM64 exes with the MSVC tools it has for those architectures. The Mac and Linux files stay unsigned until
+    # the owner adds the signing secrets that docs/RELEASING.md lists.
     needs: [ci, checklist]
     runs-on: ${{ matrix.os }}
     permissions:
