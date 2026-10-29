@@ -28,6 +28,19 @@ async function openAt(tool: SignalToolId) {
   return view;
 }
 
+/** Walks every mode with the arrow key, checking each one shows a result and has no accessibility violations. */
+async function walkModes(container: HTMLElement) {
+  const tabs = screen.getAllByRole('tab');
+  for (let i = 0; i < tabs.length; i += 1) {
+    const current = screen.getAllByRole('tab')[i]!;
+    expect(current.getAttribute('aria-selected')).toBe('true');
+    await screen.findAllByRole('button', { name: /^Insert/ }, { timeout: 10_000 });
+    await expectNoAxeViolations(container);
+    fireEvent.keyDown(current, { key: 'ArrowRight' });
+  }
+  expect(screen.getAllByRole('tab')[0]!.getAttribute('aria-selected')).toBe('true');
+}
+
 describe('signals and sound kit', () => {
   it('opens the spectrum analyzer at its example and reads the 10 Hz peak', async () => {
     const { container } = await openAt('spectrum');
@@ -44,5 +57,16 @@ describe('signals and sound kit', () => {
     expect(picker.value).toBe('spectrum');
     act(() => chooseSignalTool('spectrum'));
     expect(picker.value).toBe('spectrum');
+  });
+
+  it('convolves the example, finds the correlation lag, and walks every systems mode', async () => {
+    const { container } = await openAt('systems');
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('y = [0, 1, 2.5, 4, 1.5]');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Insert table' })[0]!);
+    expect(inserted[0]?.table).toBeTruthy();
+    fireEvent.keyDown(screen.getAllByRole('tab')[0]!, { key: 'ArrowRight' });
+    expect((await screen.findAllByRole('status'))[0]!.textContent).toMatch(/lag 3/);
+    fireEvent.keyDown(screen.getAllByRole('tab')[1]!, { key: 'ArrowLeft' });
+    await walkModes(container);
   });
 });

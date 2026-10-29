@@ -42,7 +42,10 @@ function extent(values: ArrayLike<number>[], log: boolean): [number, number] {
 /** At most MAX_POINTS points per series. Each bucket keeps its extremes, so peaks survive. */
 function thin(series: Series): { x: number[]; y: number[] } {
   const n = series.x.length;
-  if (n <= MAX_POINTS) return { x: Array.from(series.x), y: Array.from(series.y) };
+  // A series with gaps (several traces in one, as in an eye diagram) is drawn whole, so the gaps stay.
+  if (n <= MAX_POINTS || Array.prototype.some.call(series.y, Number.isNaN)) {
+    return { x: Array.from(series.x), y: Array.from(series.y) };
+  }
   const x: number[] = [];
   const y: number[] = [];
   const bucket = Math.ceil(n / (MAX_POINTS / 2));

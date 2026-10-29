@@ -2,7 +2,7 @@
 // commands and the kit's tool list are both made from this list. Loads at start-up, so it holds no tool code.
 import type { MessageKey } from '../../../strings/t';
 
-export type SignalToolId = 'spectrum';
+export type SignalToolId = 'spectrum' | 'systems';
 
 export interface SignalToolMeta {
   readonly id: SignalToolId;
@@ -22,7 +22,7 @@ const meta = (id: SignalToolId, icon: string): SignalToolMeta => ({
   icon,
 });
 
-export const SIGNAL_TOOLS: readonly SignalToolMeta[] = [meta('spectrum', 'WaveSine')];
+export const SIGNAL_TOOLS: readonly SignalToolMeta[] = [meta('spectrum', 'WaveSine'), meta('systems', 'Sigma')];
 
 export const isSignalToolId = (value: unknown): value is SignalToolId => SIGNAL_TOOLS.some((tool) => tool.id === value);
 
