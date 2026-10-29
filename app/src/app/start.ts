@@ -2,6 +2,7 @@
 // platform, creates the stores, loads the features, and starts the notes service.
 
 import { hasInjectedBoot, readBoot, readDevOptions } from '../boot/read';
+import { installAppMenu } from '../commands/appMenu';
 import { installDispatcher } from '../commands/dispatcher';
 import { configureCommands } from '../commands/registry';
 import '../features';
@@ -43,9 +44,9 @@ export function initStores(boot: BootData, platform: Platform): void {
 
 /**
  * Wires the window-wide listeners: shortcuts, Escape for the layer stack, the size class, the theme, the
- * appearance controls (density and Ctrl+wheel text size), Ctrl+wheel page zoom, and the app's context menu in
- * editors. It also opens first-run setup when steps are pending. `main` is false in a window beside the main one,
- * which leaves the start-up questions (consent, safe start) to the main window.
+ * appearance controls (density and Ctrl+wheel text size), Ctrl+wheel page zoom, the app's context menu in
+ * editors, and the menu bar on macOS. It also opens first-run setup when steps are pending. `main` is false in a
+ * window beside the main one, which leaves the start-up questions (consent, safe start) to the main window.
  */
 export function installApp(
   platform: Platform,
@@ -66,6 +67,8 @@ export function installApp(
     installAppContextMenu(),
     installSetup(platform, notes),
     installDiagnostics(platform, { askConsent: options.main ?? true }),
+    // The macOS menu bar belongs to the app, so only the main window fills it and answers it.
+    (options.main ?? true) ? installAppMenu() : () => {},
   ];
   return () => stops.forEach((stop) => stop());
 }
