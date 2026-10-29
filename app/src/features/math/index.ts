@@ -35,6 +35,9 @@ export type { KnownFunction } from './calculus';
 
 /** The calculus tools: derivatives, integrals, limits, and sums. Their code loads on first use. */
 export const loadCalculus = () => import('./calculus');
+/** Check my work (step checking), loaded on first use. The AI tutor imports the same module. */
+export const loadStepCheck = () => import('./stepcheck');
+export type { StepLine, StepResult } from './stepcheck';
 
 /** The Math solvers window, loaded the first time it opens. */
 export const loadSolversTool = () => import('./solvers/ui/SolversTool');
