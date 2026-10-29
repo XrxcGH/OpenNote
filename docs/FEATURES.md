@@ -22,6 +22,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Further features by phase](#further-features-by-phase)
 - [Productivity and study tools](#productivity-and-study-tools)
 - [Math solvers](#math-solvers)
+- [Statistical models kit](#statistical-models-kit)
 
 - [Document structure](#document-structure)
 
@@ -578,6 +579,21 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Beam and truss solver | A beam block with pin, roller, and fixed supports, point loads, linearly varying distributed loads, and moments that slide along the beam. Reactions, the largest shear and moment, and zero-shear points show beside it, with shear and bending moment diagrams below. Internal hinges carry no moment, and EI segments change the stiffness over part of the beam. Indeterminate beams are solved by the stiffness method. A truss block takes joints, members, pin and roller supports, and joint loads, and gives each member's force as tension or compression, with determinacy in words. Tests check twelve beam and five truss textbook cases, including a Gerber beam and a two-span beam with unequal EI. | Built, untested by hand |
 | Circuit symbols and DC solver | A circuit block with resistors, voltage and current sources, grounds, and wires on a grid. Values take SI prefixes, such as 4.7k. Modified nodal analysis gives every node's voltage, every part's current and direction, and the power it delivers or takes, and says when a ground is missing, names the parts of a floating subcircuit, or says the circuit cannot be solved. Wires join at their ends and at T junctions, not where they only cross. The Draw tab's shapes gain a Circuit symbols group. Tests check five textbook circuits, including Alexander and Sadiku's Example 3.1. | Built, untested by hand |
 | Units and engineering notation in tables | A smart table column can carry a unit, such as kN, MPa, or N·m. Cells typed in another unit of the same kind convert to it, and a unit of the wrong kind is flagged. Totals and formulas add the converted values. The column can write values in engineering notation (12.5×10³) or with SI prefixes (12.5 kN). SI units with prefixes, US customary units, and compound units are known. | Built, untested by hand |
+
+## Statistical models kit
+
+(Beta 6. On in Beta and off in Stable, with the `kits.statmodels` flag. Help: [Statistical models](help/statistical-models.md).)
+
+| Feature | What it does | Status |
+|---|---|---|
+| Linear regression | Fits a model formula with categorical predictors and interactions, with robust and clustered errors, diagnostics, prediction intervals, nested-model tests, moderation, mediation, and a random intercept. | Built, untested by hand |
+| Logistic and Poisson regression | Fits 0/1, grouped, and count outcomes with odds or rate ratios, likelihood-ratio tests, the ROC curve, and the IRLS steps. | Built, untested by hand |
+| Econometrics and causal inference | Panel fixed effects, two-stage least squares, difference-in-differences, regression discontinuity, propensity-score weighting and matching, and back-door sets from causal diagrams. | Built, untested by hand |
+| Survival analysis | Kaplan-Meier curves with log-rank tests, Cox proportional hazards, and life tables. | Built, untested by hand |
+| Time series and forecasting | Correlograms and Ljung-Box, decomposition, exponential smoothing, AR and ARIMA forecasts with intervals, hold-out accuracy, Mann-Kendall with Sen's slope, and Dickey-Fuller with simulated quantiles. | Built, untested by hand |
+| PCA, factors, and clusters | Principal components, factor analysis with rotation and parallel analysis, k-means, hierarchical clustering with a dendrogram, and multidimensional scaling. | Built, untested by hand |
+| Machine learning lab | Nearest neighbors, trees, naive Bayes, logistic regression, the perceptron, a small neural network, ridge, and the lasso on toy sets or your data, with seeded splits, cross-validation, and the usual scores and curves. | Built, untested by hand |
+| Spatial statistics | Point-pattern statistics, Moran's I and Geary's C with local clusters, semivariograms, ordinary kriging, and inverse-distance weighting. | Built, untested by hand |
 
 ## Document structure
 
