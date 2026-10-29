@@ -27,6 +27,7 @@ use crate::{
     paths::Paths,
     settings::schema::Settings,
 };
+pub use exit::relaunch_this_app;
 use service::{Message, Service};
 
 // UPDATE_PUBLIC_KEYS, TEST_UPDATE_PUBLIC_KEY, and TEST_ENDPOINTS_MARKER, written by build.rs from keys/*.pub
