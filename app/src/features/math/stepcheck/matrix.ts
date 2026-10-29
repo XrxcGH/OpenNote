@@ -300,8 +300,9 @@ class Reader {
         if (!row.endsWith(']')) throw new MatrixUnreadable();
         return splitTopCommas(row.slice(1, -1)).map(entry);
       });
+      // [[1, 2], [3]]: a row short, most often an entry missed in reading the line, so not a size slip.
       if (rows.length === 0 || rows.some((row) => row.length !== rows[0].length || row.length === 0)) {
-        throw new MatrixShape();
+        throw new MatrixUnreadable();
       }
       return mat(rows);
     }

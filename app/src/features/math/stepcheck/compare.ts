@@ -10,12 +10,15 @@ import { recognize } from '../calculus/exact';
 import { decimalText, evaluator } from '../calculus/numeric';
 import { textOf } from '../calculus/print';
 import { solveQuestion } from '../calculus/solve';
+import { amount } from '../../../core/expr';
 import { matrixText, type Matrix } from './matrix';
+import { exactText, numberText, numbersIn, quantityText } from './suggest';
+
+export { numberText, numbersIn };
 import { variables, type Atom, type Scalar, type Value } from './read';
 import { compareAt, numbersCompare, rng, samplePoint, zeroAt, zeros, type Fn, type Values } from './sample';
 import { flip, type Rel } from './text';
 import type { Method, ReasonCode, Verdict } from './types';
-import { amount, formatQuantity } from '../../../core/expr';
 
 export interface Outcome {
   verdict: Verdict;
@@ -39,13 +42,6 @@ const cannot = (reason: ReasonCode = 'cannotDecide', params: Record<string, stri
   outcome('unchecked', reason, 'none', 0, params);
 
 // Text for the explanations ---------------------------------------------------------------------------------------
-
-/** A number as a familiar exact value when there is one (1/3, 2pi, sqrt(2)), or else six figures. */
-export function numberText(value: number): string {
-  if (Number.isInteger(value) && Math.abs(value) < 1e12) return String(value);
-  const exact = recognize(value);
-  return exact ? textOf(exact) : decimalText(value);
-}
 
 function pointText(point: Values | undefined): string {
   if (!point) return '';
@@ -245,7 +241,16 @@ function compareMatrices(a: Matrix, b: Matrix): Outcome {
       if (how === 'unsure') return cannot('cannotDecide');
       if (how === 'different') {
         const params = { row: String(i + 1), column: String(j + 1), value: numberText(x[i][j]) };
-        return outcome('broken', 'matrixEntry', 'matrix', 0.99, params, `= ${matrixText(x)}`);
+        // The fix keeps the way the line wrote it: a column stays a column.
+        const column = b.length > 1 && b[0].length === 1 && x.length === 1;
+        return outcome(
+          'broken',
+          'matrixEntry',
+          'matrix',
+          0.99,
+          params,
+          `= ${matrixText(column ? x[0].map((n) => [n]) : x)}`,
+        );
       }
     }
   }
@@ -281,9 +286,14 @@ export function compareValues(a: Value, b: Value, chain: ChainState, seed: numbe
     if (a.q.dim.some((d, i) => d !== b.q.dim[i])) return outcome('broken', 'unitKind', 'units', 0.99);
     const how = numbersCompare(a.q.si, b.q.si);
     if (how === 'same') return outcome('ok', 'sameQuantity', 'units', 0.99);
-    if (how === 'unsure') return cannot();
     const shown = b.q.display ? { ...a.q, display: b.q.display } : a.q;
-    const value = formatQuantity(shown);
+    // = 3.17 ft after 3 ft + 2 in: the amount rounded to the places written, in the unit written.
+    const places = placesOf(b.text.replace(/[^\d.+-]+$/, ''));
+    if (places !== null && roundsTo(amount(shown), amount(b.q), places)) {
+      return outcome('ok', 'rounded', 'units', 0.95, { places: String(places) });
+    }
+    if (how === 'unsure') return cannot();
+    const value = quantityText(shown, b.text);
     return outcome('broken', 'unitValue', 'units', 0.99, { value }, `= ${value}`);
   }
   if (a.kind === 'quantity' || b.kind === 'quantity') {
@@ -308,10 +318,11 @@ export function compareValues(a: Value, b: Value, chain: ChainState, seed: numbe
     [a.node, b.alt ?? b.node],
     [a.alt ?? a.node, b.alt ?? b.node],
   ];
-  for (const [x, y] of readings) {
-    const again = compareScalars({ ...a, node: x }, { ...b, node: y }, seed);
-    if (again.verdict === 'ok') return again;
-  }
+  const tried = readings.map(([x, y]) => compareScalars({ ...a, node: x }, { ...b, node: y }, seed));
+  const right = tried.find((again) => again.verdict === 'ok');
+  if (right) return right;
+  // 12x^3 / 4x, then = 3x^3: wrong however the slash is read, so a slip. The fix follows the 1/(ab) reading.
+  if (tried.every((again) => again.verdict === 'broken')) return tried[2];
   return cannot('ambiguous', { text: a.alt ? a.text : b.text });
 }
 
@@ -411,14 +422,14 @@ function equationSuggestion(prev: Equation, groups: Atom[][], seed: number): str
   if (roots.length === 0 || roots.length > 4) return undefined;
   const atom = groups[0][0];
   const isBare = atom.left.node.type === 'name' && atom.left.node.name === x;
-  if (isBare) return roots.map((r) => `${x} = ${numberText(r)}`).join(' or ');
+  if (isBare) return roots.map((r) => `${x} = ${exactText(r, prev.node)}`).join(' or ');
   if (roots.length !== 1 || groups.length !== 1) return undefined;
   const at = { [x]: roots[0] };
   if (variables(atom.right.node).length === 0) {
-    return `${nodeText(atom.left.node)} = ${numberText(fn(atom.left.node)(at))}`;
+    return `${nodeText(atom.left.node)} = ${exactText(fn(atom.left.node)(at), prev.node)}`;
   }
   if (variables(atom.left.node).length === 0) {
-    return `${numberText(fn(atom.right.node)(at))} = ${nodeText(atom.right.node)}`;
+    return `${exactText(fn(atom.right.node)(at), prev.node)} = ${nodeText(atom.right.node)}`;
   }
   return undefined;
 }

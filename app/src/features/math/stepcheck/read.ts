@@ -26,6 +26,7 @@ import {
   hasWords,
   listedAnswers,
   normalize,
+  notation,
   splitLine,
   type Rel,
 } from './text';
@@ -437,7 +438,7 @@ function takeCalculus(text: string, ctx: Context): { text: string; holders: Hold
   return { text: out, holders, ...(whole ? { whole } : {}) };
 }
 
-const UNITS = 'km|cm|mm|nm|kg|mg|mph|kph|min|hr|ms|ft|mi|yd|lb|oz|mL|ml|kWh|kW|kJ|Hz|Pa|kPa|GB|MB|KB|N|J|W';
+const UNITS = 'km|cm|mm|nm|kg|mg|mph|kph|min|hr|ms|ft|in|mi|yd|lb|oz|mL|ml|kWh|kW|kJ|Hz|Pa|kPa|GB|MB|KB|N|J|W';
 /** A number with a unit of two letters or more (or N, J, W), a rate such as 5 m/s, or a conversion "in km". */
 const UNIT_WORDS = new RegExp(
   [
@@ -504,6 +505,7 @@ function readMatrix(text: string): Value {
 export function readValue(raw: string, ctx: Context, units: boolean, at?: [string, string]): Value {
   const text = raw.trim();
   if (text === '') throw new Unreadable();
+  if (!text.includes('∫') && /(?:^|\s)d[a-zA-Z]$/.test(text.replace(/\s*\/\s*/g, '/'))) throw new Unreadable();
   if (/^[+]?∞$/.test(text)) return { kind: 'infinite', sign: 1, text };
   if (/^-∞$/.test(text)) return { kind: 'infinite', sign: -1, text };
   if (units) return readQuantity(text);
@@ -607,8 +609,10 @@ function scalarOf(value: Value): Scalar {
 
 /** Reads one line. Definitions and substitutions are added to the context for the lines after it. */
 export function readLine(raw: string, ctx: Context): Statement {
-  const plain = dropWordLead(dropMarks(dropNotes(dropLead(normalize(raw)))));
+  const plain = notation(dropWordLead(dropMarks(dropNotes(dropLead(normalize(raw))))));
   if (plain === '') return { kind: 'blank' };
+  // x = 0.1.2 is no number, and dx alone is a differential with no integral: never shown with a check mark.
+  if (/\d\.\d+\.\d/.test(plain)) return { kind: 'unreadable', reason: 'unreadable' };
   const labelled = dropSideLabels(plain);
   if (labelled === null) return { kind: 'given', reason: 'note' };
   const text = listedAnswers(dropWordLabel(labelled));

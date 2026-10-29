@@ -408,3 +408,32 @@ export function splitLine(text: string): SplitLine {
 export function flip(rel: Rel): Rel {
   return rel === '<' ? '>' : rel === '>' ? '<' : rel === '<=' ? '>=' : rel === '>=' ? '<=' : rel;
 }
+
+const binomial = (n: number, k: number): number => {
+  let out = 1;
+  for (let i = 1; i <= k; i += 1) out = (out * (n - k + i)) / i;
+  return Math.round(out);
+};
+
+/**
+ * Notation with its own way of writing, put as plain math: log_2 8 is ln(8)/ln(2), C(5, 2) and 5C2 are the binomial
+ * 10, and 7 mod 3 is 1. Only numbers for C and mod, so C(x) stays a function. log_2 x^3 is left unread.
+ */
+export function notation(text: string): string {
+  return (
+    text
+      .replace(
+        /\blog_\{?(\d+(?:\.\d+)?|e)\}?\s*(\([^()]*\)|\d+(?:\.\d+)?(?![\d.^])|[a-zA-Z](?![a-zA-Z(^]))/g,
+        (_, base: string, arg: string) => `(ln(${arg.replace(/^\((.*)\)$/, '$1')})/ln(${base}))`,
+      )
+      .replace(/\b(?:C\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)|(\d{1,3})C(\d{1,3})\b)/g, (whole, a, b, c, d) => {
+        const [n, k] = [Number(a ?? c), Number(b ?? d)];
+        return k <= n ? `(${binomial(n, k)})` : whole;
+      })
+      // Not after * or ^, where mod would take more than the number before it; a minus only as a sign.
+      .replace(/(?<![*/×·^]\s*)((?:(?<![\w).]\s*)-)?\d+)\s*mod\s*(\d+)\b/g, (whole, a: string, b: string) => {
+        const [x, m] = [Number(a), Number(b)];
+        return m > 0 ? `(${((x % m) + m) % m})` : whole;
+      })
+  );
+}

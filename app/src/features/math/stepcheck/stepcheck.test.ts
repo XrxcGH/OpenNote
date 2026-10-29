@@ -443,14 +443,18 @@ describe('notation as students write it, part 2', () => {
     return `${r.verdict}/${r.reason}`;
   };
 
-  it('reads a slash before a product either way, and never marks it broken on one reading alone', () => {
+  it('reads a slash before a product either way, and marks it broken only when both readings are wrong', () => {
     expect(pair(['1/2x', '= 1/(2x)'])).toBe('ok/equivalent');
     expect(pair(['1/2x', '= x/2'])).toBe('ok/equivalent');
     expect(pair(['2x/3y', '= 2x/(3y)'])).toBe('ok/equivalent');
-    expect(pair(['1/2x', '= 2/x'])).toBe('unchecked/ambiguous');
+    // x/2 and 1/(2x) are both not 2/x: wrong however it is read.
+    expect(pair(['1/2x', '= 2/x'])).toMatch(/^broken\//);
     expect(pair(['1/2x = 3', 'x = 1/6'])).toBe('ok/sameSolutions');
     expect(pair(['1/2x = 3', 'x = 6'])).toBe('ok/sameSolutions');
-    expect(pair(['1/2x = 3', 'x = 5'])).toBe('unchecked/ambiguous');
+    // x = 6 or x = 1/6, never 5.
+    expect(pair(['1/2x = 3', 'x = 5'])).toBe('broken/differentSolutions');
+    // 4x/2x is 2x^2 or 2: 12 = 2 has no solution, so the second reading cannot rule the line out.
+    expect(pair(['12 = 4x/2x', '4x = 24'])).toBe('unchecked/ambiguous');
   });
 
   it('leaves the imaginary unit unchecked rather than trying numbers for i', () => {
@@ -673,5 +677,78 @@ describe('working that sets things equal, and slips a single line shows', () => 
     expect(last(['slope = (5 - 1)/(3 - 1)', '= 2'])).toBe('ok/sameValue');
     expect(last(['Area = 3 × 4', '= 13'])).toBe('broken/valueOff');
     expect(last(['total cost = 5'])).toBe('unchecked/notMath');
+  });
+});
+
+describe('verification gaps, round 6', () => {
+  const marks = (lines: string[]) => checkSteps(lines).map((r) => `${r.verdict}/${r.reason}`);
+  const last = (lines: string[]) => checkSteps(lines)[lines.length - 1];
+
+  it('asks about a ragged matrix instead of marking it, and keeps size slips between two lines', () => {
+    expect(marks(['[[1,2],[3]]'])).toEqual(['unchecked/unreadable']);
+    expect(marks(['[[1,2],[3,4]]', '= [[1,2],[3]]'])[1]).toBe('unchecked/unreadable');
+    expect(marks(['[[1,2],[3,4]] + [[1,2,3]]'])).toEqual(['unchecked/unreadable']);
+    // A 2 by 2 matrix, then a row of three: the sizes differ.
+    expect(marks(['[[1,2],[3,4]]', '= [[1,2,3]]'])[1]).toBe('broken/matrixShape');
+  });
+
+  it('reads in as inches after a number, not as the imaginary unit', () => {
+    // 3 ft is 36 in, so 3 ft + 2 in is 38 in, or 38/12 = 3.1667 ft.
+    expect(marks(['3 ft + 2 in', '= 38 in'])[1]).toBe('ok/sameQuantity');
+    expect(marks(['2 in + 3 in', '= 5 in'])).toEqual(['ok/start', 'ok/sameQuantity']);
+    expect(last(['3 ft + 2 in', '= 5 ft'])).toMatchObject({ verdict: 'broken', suggestion: '= 3.1667 ft' });
+    expect(marks(['3 ft + 2 in', '= 3.17 ft'])[1]).toBe('ok/rounded');
+  });
+
+  it('marks a slip wrong under both slash readings as broken, with the fix from the 1/(ab) reading', () => {
+    // (12x^3/4)x = 3x^4 and 12x^3/(4x) = 3x^2; neither is 3x^3.
+    expect(last(['12x^3 / 4x', '= 3x^3'])).toMatchObject({
+      verdict: 'broken',
+      reason: 'notEqual',
+      suggestion: '= 3x^2',
+    });
+  });
+
+  it('writes a fix the way the line was written', () => {
+    // [[1, 2], [3, 4]] times the column [2, 1] is the column [4, 10].
+    expect(last(['[[1, 2], [3, 4]] * [[2], [1]]', '= [[4], [11]]']).suggestion).toBe('= [[4], [10]]');
+    // (1, 2) + (6, 8) = (7, 10).
+    expect(last(['(1, 2) + 2(3, 4)', '= (7, 11)']).suggestion).toBe('= (7, 10)');
+    expect(last(['⟨1, 2⟩ + ⟨3, 4⟩', '= ⟨4, 5⟩']).suggestion).toBe('= ⟨4, 6⟩');
+    // e^(2x) = 7 gives 2x = ln 7, and e^x = 5 gives x = ln(5).
+    expect(last(['e^(2x) = 7', '2x = 7']).suggestion).toBe('2x = ln 7');
+    expect(last(['e^x = 5', 'x = 2']).suggestion).toBe('x = ln(5)');
+    // The suggested lines check as right.
+    expect(marks(['e^(2x) = 7', '2x = ln 7', 'x = ln(7)/2'])).toEqual([
+      'ok/start',
+      'ok/sameSolutions',
+      'ok/sameSolutions',
+    ]);
+  });
+
+  it('never shows a malformed number or a lone differential with a check mark', () => {
+    expect(marks(['x = 0.1.2', 'x = 0.1.2'])).toEqual(['unchecked/unreadable', 'unchecked/unreadable']);
+    expect(marks(['dx', '= dx'])).toEqual(['unchecked/unreadable', 'unchecked/unreadable']);
+    expect(marks(['2x dx'])).toEqual(['unchecked/unreadable']);
+    // Still read: a derivative written with spaces, an integral, and a differential line.
+    expect(marks(['y = x^2', 'dy / dx = 2x'])[1]).toBe('ok/equivalent');
+    expect(marks(['∫ 2x dx', '= x^2 + C'])[1]).toBe('ok/antiderivative');
+    expect(marks(['u = x^2', 'du = 2x dx'])[1]).toBe('ok/note');
+  });
+
+  it('reads log bases, binomials and mod', () => {
+    // 2^3 = 8, C(5, 2) = 5·4/2 = 10, 7 = 2·3 + 1, and -7 = -3·3 + 2.
+    expect(marks(['log_2 8', '= 3'])).toEqual(['ok/start', 'ok/sameValue']);
+    expect(last(['log_2 8 = 4'])).toMatchObject({ verdict: 'broken', suggestion: '= 3' });
+    expect(marks(['log_2 x = 3', 'x = 8'])[1]).toBe('ok/sameSolutions');
+    expect(marks(['C(5, 2)', '= 10'])[1]).toBe('ok/sameValue');
+    expect(last(['5C2 = 11'])).toMatchObject({ verdict: 'broken', suggestion: '= 10' });
+    expect(marks(['7 mod 3', '= 1'])[1]).toBe('ok/sameValue');
+    expect(marks(['-7 mod 3 = 2'])).toEqual(['ok/sameValue']);
+    expect(last(['7 mod 3 = 2']).verdict).toBe('broken');
+    // The minus of x - 7 is subtraction: 5 - (7 mod 3) = 4. After * the reading is unsure, so it is not read.
+    expect(marks(['x = 5', 'x - 7 mod 3', '= 4'])[2]).toBe('ok/knownValue');
+    expect(marks(['2 * 7 mod 3 = 2'])).toEqual(['unchecked/unreadable']);
+    expect(marks(['log_2 x^3 = 6'])).toEqual(['unchecked/unreadable']);
   });
 });

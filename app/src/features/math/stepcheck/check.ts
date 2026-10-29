@@ -14,6 +14,7 @@ import {
   equationOf,
   fn,
   numberText,
+  numbersIn,
   outcome,
   rootOf,
   rootsOf,
@@ -23,6 +24,7 @@ import {
   type ChainState,
   type Outcome,
 } from './compare';
+import { keepBrackets } from './suggest';
 import {
   COEFFICIENTS,
   DERIVATIVE_LABEL,
@@ -316,6 +318,8 @@ class Checker {
     // Meters plus kilograms, or matrices whose sizes do not fit, are wrong wherever they are in the line.
     const invalid = parts.find((part) => part.kind === 'invalid');
     if (invalid && invalid.kind === 'invalid') {
+      // Matrices whose sizes do not fit on a line compared with nothing: likely misread, so asked about, not marked.
+      if (invalid.reason === 'matrixShape' && links.length === 0) return outcome('unchecked', 'unreadable', 'none', 0);
       return outcome('broken', invalid.reason, invalid.reason === 'matrixShape' ? 'matrix' : 'units', 0.99);
     }
     return links.length > 0 ? combine(links) : start();
@@ -603,19 +607,6 @@ function isolates(atom: Atom): boolean {
   return alone(atom.left.node, atom.right.node) || alone(atom.right.node, atom.left.node);
 }
 
-/** The numbers written in a node, without 0 and 1, which rearranging adds and drops freely. */
-function numbersIn(node: Node, out = new Set<number>()): Set<number> {
-  if (node.type === 'num') {
-    const v = Math.abs(node.value);
-    if (v !== 0 && v !== 1) out.add(v);
-  } else if (node.type === 'unary' || node.type === 'postfix') numbersIn(node.arg, out);
-  else if (node.type === 'binary') {
-    numbersIn(node.left, out);
-    numbersIn(node.right, out);
-  } else if (node.type === 'call') for (const arg of node.args) numbersIn(arg, out);
-  return out;
-}
-
 /** True when the new line uses only numbers the line before it has: a rearrangement, not a new equation. */
 function sameNumbers(before: Atom, after: Atom): boolean {
   const had = numbersIn(build.sub(before.left.node, before.right.node));
@@ -641,11 +632,15 @@ function otherWay(prev: Relations | null, cur: Relations, found: Outcome, seed: 
       [prev.groups, otherGroups(cur.groups)],
       [otherGroups(prev.groups), otherGroups(cur.groups)],
     ];
-    for (const [p, c] of readings) {
+    const tried = readings.map(([p, c]) => {
       const [a, b] = [equationOf(p), equationOf(c)];
-      const again = a && b ? compareEquations(a, b, c, seed) : null;
-      if (again?.verdict === 'ok') return again;
-    }
+      return a && b ? compareEquations(a, b, c, seed) : null;
+    });
+    const right = tried.find((again) => again?.verdict === 'ok');
+    if (right) return right;
+    // Wrong however the slash is read: a slip, with the fix from the 1/(ab) reading.
+    const last = tried[2];
+    if (last && tried.every((again) => again?.verdict === 'broken')) return last;
   }
   return outcome('unchecked', 'ambiguous', 'none', 0, { text: inCur ? cur.text : (prev?.text ?? cur.text) });
 }
@@ -703,7 +698,8 @@ export function checkSteps(input: readonly (StepLine | string)[], options: Check
     else if (broken && found.verdict === 'ok' && found.method !== 'given') {
       found = { ...found, reason: 'followsPrevious' };
     }
-    results.push({ index, ...found, params: { ...found.params } });
+    const suggestion = found.suggestion && keepBrackets(found.suggestion, lineText(line as StepLine | string));
+    results.push({ index, ...found, params: { ...found.params }, ...(suggestion ? { suggestion } : {}) });
   });
   // An antiderivative with no + C is fine when a later line adds it; the first of a list of solutions, when the lines
   // after it list the rest.
