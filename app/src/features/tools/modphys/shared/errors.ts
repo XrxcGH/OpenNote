@@ -36,7 +36,12 @@ export type Problem =
   | 'badMagnitude'
   | 'badAnalyzers'
   | 'tooManyQubits'
-  | 'tableTooLarge';
+  | 'tableTooLarge'
+  | 'badLevels'
+  | 'overScreened'
+  | 'noBragg'
+  | 'tooManyMicrostates'
+  | 'badLevel';
 
 export class PhysicsError extends Error {
   constructor(
