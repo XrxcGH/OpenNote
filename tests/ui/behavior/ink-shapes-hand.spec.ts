@@ -63,9 +63,8 @@ async function drawHeld(
     });
   const last = d.points[d.points.length - 1];
   if (!hold && d.points.length <= 12) {
-    // A letter's few samples are each sent on its own timer (a long stroke is sent in turn, so the browser keeps every
-    // sample), so a slow runner's delay in one command can't push the next ones later
-    // and stretch a quick stroke past the limit for note-size writing.
+    // A letter's few samples each go on their own timer. A slow runner then cannot push later samples back.
+    // A long stroke goes in turn instead, so the browser keeps every sample.
     const at60 = (time: number, send: () => Promise<unknown>) =>
       new Promise<void>((resolve) => setTimeout(resolve, time)).then(send);
     await Promise.all([
