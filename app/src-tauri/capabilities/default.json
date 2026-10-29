@@ -158,6 +158,7 @@
     "allow-interop-import",
     "allow-interop-cancel",
     "allow-interop-export",
+    "allow-interop-latex-preview",
     "allow-interop-reveal",
     "allow-interop-more",
     "allow-intel-settings-get",
