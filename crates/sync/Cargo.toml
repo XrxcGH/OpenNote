@@ -26,6 +26,7 @@ qrcodegen = "1.8"
 quick-xml = "0.42.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+subtle = "2.6.1"
 thiserror = "2.0.21"
 ureq = { version = "3.4.2", default-features = false, features = ["native-tls"] }
 zeroize = "1.9.0"

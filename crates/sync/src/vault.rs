@@ -10,7 +10,8 @@ use zeroize::Zeroizing;
 
 use crate::backend::Backend;
 use crate::crypto::{
-    base32, derive, from_base32, hex, mac, open, passphrase_key, random, random_key, seal, Cost, Key, COST, OVERHEAD,
+    base32, derive, from_base32, hex, mac, open, passphrase_key, random, random_key, same, seal, Cost, Key, COST,
+    OVERHEAD,
 };
 use crate::error::{Result, SyncError};
 
@@ -137,10 +138,12 @@ fn header_mac(root: &Key, body: &[u8]) -> [u8; 32] {
 }
 
 impl Header {
-    /// Checks the whole header under the key a slot gave.
-    fn verified(&self, root: Key) -> Result<VaultKeys> {
-        if header_mac(&root, &self.body)[..] != self.tag[..] {
-            return Err(SyncError::WrongSecret);
+    /// Checks the whole header under the key a slot gave, so a change to any slot or to the cost shows on every
+    /// unlock. `wrong` is the error when it doesn't match. For a passphrase, a wrong one and a damaged vault look
+    /// the same. A device or pairing slot that opened proves the key, so there a mismatch is a changed header.
+    fn verified(&self, root: Key, wrong: SyncError) -> Result<VaultKeys> {
+        if !same(&header_mac(&root, &self.body), &self.tag) {
+            return Err(wrong);
         }
         Ok(VaultKeys::from_root(self.id, root))
     }
@@ -250,7 +253,16 @@ fn header_bytes(id: &[u8; 16], root: &Key, passphrase: &str, cost: Cost, recover
 
 /// Unlocks with the passphrase. A wrong passphrase and a damaged vault give the same error.
 pub fn unlock_passphrase(backend: &dyn Backend, passphrase: &str) -> Result<VaultKeys> {
+    unlock_passphrase_at(backend, passphrase, cfg!(any(test, feature = "testing")))
+}
+
+fn unlock_passphrase_at(backend: &dyn Backend, passphrase: &str, quick: bool) -> Result<VaultKeys> {
     let header = read_vault(backend)?;
+    if !header.cost.strong_enough(quick) {
+        return Err(SyncError::Tampered(
+            "The vault asks for a weaker passphrase check than this app uses.".into(),
+        ));
+    }
     let kek = passphrase_key(passphrase, &header.salt, header.cost)?;
     let root = unwrap_key(
         &kek,
@@ -259,7 +271,7 @@ pub fn unlock_passphrase(backend: &dyn Backend, passphrase: &str) -> Result<Vaul
         &slot_name(&header.prefix),
         &header.pass_slot,
     )?;
-    header.verified(root)
+    header.verified(root, SyncError::WrongSecret)
 }
 
 /// Unlocks with the recovery key, typed in any case, with or without hyphens.
@@ -274,7 +286,7 @@ pub fn unlock_recovery(backend: &dyn Backend, recovery: &str) -> Result<VaultKey
         &slot_name(&header.prefix),
         &header.recovery_slot,
     )?;
-    header.verified(root)
+    header.verified(root, SyncError::WrongSecret)
 }
 
 /// Sets a new passphrase. The recovery key stays the same.
@@ -292,7 +304,7 @@ pub fn change_passphrase(backend: &dyn Backend, keys: &VaultKeys, recovery: &str
         &slot_name(&header.prefix),
         &header.recovery_slot,
     )?;
-    if *check != *keys.root {
+    if !same(check.as_ref(), keys.root.as_ref()) {
         return Err(SyncError::WrongSecret);
     }
     let rec: &[u8; 32] = rec.as_slice().try_into().map_err(|_| SyncError::WrongSecret)?;
@@ -378,7 +390,11 @@ pub fn unlock_device(backend: &dyn Backend, tag: &str, secret: &DeviceSecret) ->
         &format!("k/{tag}"),
         &wrapped,
     )?;
-    Ok(VaultKeys::from_root(header.id, root))
+    header.verified(root, tampered_header())
+}
+
+fn tampered_header() -> SyncError {
+    SyncError::Tampered("The vault's settings were changed by someone without its key.".into())
 }
 
 /// Every device with a slot, oldest first. Entries that don't open are skipped.
@@ -488,7 +504,7 @@ pub fn join_with_code(backend: &dyn Backend, code: &str, now: i64) -> Result<Vau
         return Err(SyncError::PairingExpired);
     }
     let root: [u8; 32] = plain[8..].try_into().expect("32 bytes");
-    Ok(VaultKeys::from_root(header.id, Zeroizing::new(root)))
+    header.verified(Zeroizing::new(root), tampered_header())
 }
 
 /// Withdraws a pairing code that wasn't used.
@@ -558,6 +574,52 @@ mod tests {
         newer[8..12].copy_from_slice(&2u32.to_be_bytes());
         store.set_raw("vault", newer);
         assert_eq!(unlock_passphrase(&store, PASS).unwrap_err(), SyncError::Newer);
+    }
+
+    #[test]
+    fn a_changed_slot_shows_on_a_device_or_pairing_unlock_too() {
+        let store = MemoryBackend::new();
+        let (keys, _) = create_with(&store, PASS, QUICK).expect("creates");
+        let (tag, secret) = new_device().expect("device");
+        add_device(&store, &keys, &tag, &secret, "Laptop", 1).expect("adds");
+        let good = store.get("vault").expect("get").expect("vault");
+        // Someone without the key swaps in their own recovery slot, or a cheaper cost.
+        let mut slot = good.clone();
+        slot[PREFIX + SLOT + 3] ^= 0x10;
+        let mut cost = good.clone();
+        cost[32..36].copy_from_slice(&2u32.to_be_bytes());
+        for bad in [slot, cost] {
+            let code = create_pairing(&store, &keys, 1).expect("pairs");
+            store.set_raw("vault", bad);
+            assert!(
+                matches!(unlock_device(&store, &tag, &secret), Err(SyncError::Tampered(_))),
+                "the background unlock notices"
+            );
+            assert!(matches!(
+                join_with_code(&store, code.text(), 2),
+                Err(SyncError::Tampered(_))
+            ));
+        }
+        store.set_raw("vault", good);
+        assert_eq!(
+            unlock_device(&store, &tag, &secret).expect("unlocks").fingerprint(),
+            keys.fingerprint()
+        );
+    }
+
+    #[test]
+    fn a_vault_that_asks_for_a_cheaper_passphrase_check_is_refused() {
+        assert!(COST.strong_enough(false));
+        assert!(!QUICK.strong_enough(false) && QUICK.strong_enough(true));
+        assert!(!Cost { passes: 1, ..COST }.strong_enough(false));
+        assert!(Cost { lanes: 4, ..COST }.strong_enough(false));
+        let store = MemoryBackend::new();
+        create_with(&store, PASS, QUICK).expect("creates");
+        assert!(matches!(
+            unlock_passphrase_at(&store, PASS, false),
+            Err(SyncError::Tampered(_))
+        ));
+        assert!(unlock_passphrase_at(&store, PASS, true).is_ok());
     }
 
     #[test]

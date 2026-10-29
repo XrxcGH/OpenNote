@@ -66,10 +66,11 @@ impl Engine {
         })
     }
 
-    /// The highest count of this device's own changes that anything it will merge already used, per path. A round
-    /// that published a head and stopped before saving its state, or a state restored from a backup, knows a lower
-    /// count than its own head does; counting up from there would give a new edit the same version vector the head
-    /// already used for other bytes, and a later version from another device would then hide it.
+    /// The highest count of this device's own changes that anything it will merge already used, per path.
+    ///
+    /// Say a round published a head and stopped before saving its state, or the state came back from a backup. The
+    /// state then knows a lower count than the head. Counting up from there would give a new edit the version
+    /// vector the head already used for other bytes. A later version from another device would then hide it.
     fn floor(&self, state: &LocalState, heads: &[Manifest]) -> HashMap<String, u64> {
         let mut floor: HashMap<String, u64> = HashMap::new();
         for manifest in heads.iter().chain(std::iter::once(&state.deferred)) {

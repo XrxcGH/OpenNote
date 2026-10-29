@@ -61,6 +61,19 @@ impl Cost {
             && (1..=MAX_PASSES).contains(&self.passes)
             && (1..=MAX_LANES).contains(&self.lanes)
     }
+
+    /// Whether a passphrase may be checked at this cost: never cheaper than [`COST`] in memory or passes, so a
+    /// tampered header or a weaker client can't make the passphrase quicker to guess. `quick` allows [`QUICK`], in
+    /// tests.
+    pub fn strong_enough(self, quick: bool) -> bool {
+        quick || (self.memory_kib >= COST.memory_kib && self.passes >= COST.passes)
+    }
+}
+
+/// Whether two MACs, tags, or keys are equal, in time that doesn't depend on where they differ.
+pub fn same(a: &[u8], b: &[u8]) -> bool {
+    use subtle::ConstantTimeEq;
+    a.ct_eq(b).into()
 }
 
 /// Fills a buffer from the operating system's random source.
@@ -232,6 +245,15 @@ mod tests {
     use super::*;
 
     const VAULT: [u8; 16] = [7; 16];
+
+    #[test]
+    fn equal_bytes_compare_equal_and_others_do_not() {
+        assert!(same(b"tag of sixteen b", b"tag of sixteen b"));
+        assert!(!same(b"tag of sixteen b", b"tag of sixteen c"));
+        assert!(!same(b"Tag of sixteen b", b"tag of sixteen b"));
+        assert!(!same(b"short", b"shorter"));
+        assert!(same(b"", b""));
+    }
 
     #[test]
     fn sealed_objects_open_only_whole_and_under_their_own_name() {
