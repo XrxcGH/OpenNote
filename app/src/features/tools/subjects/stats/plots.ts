@@ -1,21 +1,19 @@
 // Plot data for the subject tools: histogram bins by the Freedman-Diaconis or Sturges rule, a Gaussian kernel
 // density with Silverman's bandwidth, the empirical distribution function, normal Q-Q points at Blom's positions, box
-// plots and step curves. Descriptive summaries come from tables/analysis/stats, which stays their one source. Pure:
+// plots and step curves. Quantiles, bins, and whiskers come from describe.ts, by the table Statistics tool's methods. Pure:
 // numbers in, points out; kit-core's plot turns the points into SVG.
-import { boxPlot, histogram, quantile, summarize } from '../../../tables';
-import type { Bin, BoxPlot } from '../../../tables';
+import { boxWhiskers, equalBins, finiteSorted, quantile, sampleSd } from './describe';
+import type { Bin, BoxPlot } from './describe';
 import { normalQuantile } from './dist';
 import { ensure } from '../errors';
 
 export type { Bin, BoxPlot };
+export { boxWhiskers, quantile };
 export type Point = [number, number];
 export type BinRule = 'freedman-diaconis' | 'sturges';
 
 /** The most bins any rule gives, as the table Statistics tool also caps them. */
 export const MAX_BINS = 60;
-
-const finiteSorted = (values: readonly number[]): number[] =>
-  values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
 
 /**
  * How many equal-width bins a rule gives. Freedman-Diaconis uses a width of 2·IQR·n^(-1/3) and falls back to
@@ -35,14 +33,14 @@ export function binCount(values: readonly number[], rule: BinRule = 'freedman-di
 
 /** Histogram bins by `rule`; empty for no finite values. */
 export const histogramBins = (values: readonly number[], rule: BinRule = 'freedman-diaconis'): Bin[] =>
-  histogram(values, binCount(values, rule));
+  equalBins(values, binCount(values, rule));
 
 /** Silverman's rule of thumb: 0.9·min(s, IQR/1.34)·n^(-1/5), or s alone when the quartiles coincide. */
 export function silvermanBandwidth(values: readonly number[]): number {
   const sorted = finiteSorted(values);
   const n = sorted.length;
   ensure(n >= 2, 'tooFew', 'values');
-  const s = summarize(sorted)?.stdev ?? 0;
+  const s = sampleSd(sorted);
   const iqr = (quantile(sorted, 0.75) - quantile(sorted, 0.25)) / 1.34;
   const spread = iqr > 0 ? Math.min(s, iqr) : s;
   ensure(spread > 0, 'domain', 'spread');
@@ -105,9 +103,6 @@ export function normalQQ(values: readonly number[]): QQ {
   const slope = (q3 - q1) / (2 * z);
   return { points, line: { intercept: (q1 + q3) / 2, slope } };
 }
-
-/** Box-plot numbers with whiskers at the most extreme values within 1.5 IQR; null for no finite values. */
-export const boxWhiskers = (values: readonly number[]): BoxPlot | null => boxPlot(values);
 
 /**
  * A right-continuous step curve through (x, y) points sorted by x: flat to the next x, then a jump. `from` starts it

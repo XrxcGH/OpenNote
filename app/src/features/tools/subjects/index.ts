@@ -1,7 +1,7 @@
-// The subject kits' shared library in one import (subjects/README.md): data sets and their parsers, distributions,
-// rank helpers, plot data, least squares, maximum likelihood, the seeded generator, the worker runner, tree and graph
-// layouts, and the input fields, plots, coefficient table, and figures. A subject kit's tools import from here;
-// code outside the tools feature reaches it with loadSubjects() from features/tools/index.ts.
+// The subject kits' shared library in one import (subjects/README.md). It holds data sets and their parsers, the
+// distributions, rank helpers, plot data, least squares, maximum likelihood, the seeded generator, and the worker
+// runner. It also holds the tree layout, the graph layouts, the input fields, the plots, the coefficient table, and
+// figures. A kit's tools import from here; a kit's own lazy window loads it with them.
 export * from './errors';
 export * from './data/model';
 export * from './data/parse';

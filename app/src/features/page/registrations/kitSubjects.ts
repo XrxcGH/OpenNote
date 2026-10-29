@@ -12,7 +12,7 @@ blockRenderers.register(
     label: 'kitSubjects.figure.label',
     flag: 'kits.calc',
     load: async () => {
-      const { mountKitFigure } = await (await import('../../tools')).loadSubjects();
+      const { mountKitFigure } = await (await import('../../tools')).loadKitFigure();
       return { mount: (container, props) => mountKitFigure(container, props) };
     },
   }),
