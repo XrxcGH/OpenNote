@@ -3,9 +3,19 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
-import { fillMath, valueText } from '../kit/format';
+import { fillMath } from '../kit/format';
 import type { Outcome } from '../kit/spec';
-import { columnLabel, pictureSvg, rowLabel, rowText, say, stepWords, toolKey, type InsertContext } from './insert';
+import {
+  cellText,
+  columnLabel,
+  pictureSvg,
+  rowLabel,
+  rowText,
+  say,
+  stepWords,
+  toolKey,
+  type InsertContext,
+} from './insert';
 import styles from './mind.module.css';
 
 function Math({ latex }: { latex: string }) {
@@ -42,11 +52,11 @@ function Tables({ c }: { c: InsertContext }) {
                       {cells.map((cell, i) =>
                         i === 0 ? (
                           <th key={i} scope="row" className={styles.number}>
-                            {valueText(cell)}
+                            {cellText(c, cell)}
                           </th>
                         ) : (
                           <td key={i} className={styles.number}>
-                            {valueText(cell)}
+                            {cellText(c, cell)}
                           </td>
                         ),
                       )}

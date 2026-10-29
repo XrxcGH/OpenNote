@@ -6,7 +6,7 @@ import { INSERT_EVENT } from '../../flags';
 import { fillMath, valueLatex, valueText, wordVars } from '../kit/format';
 import { plotSvg } from '../kit/draw';
 import { escapeXml, SCREEN, type Palette } from '../kit/plot';
-import type { Column, Outcome, Picture, ResultRow } from '../kit/spec';
+import type { Cell, Column, Outcome, Picture, ResultRow } from '../kit/spec';
 import type { Vars } from '../kit/types';
 
 export type Say = (key: string, vars?: Vars) => string;
@@ -44,6 +44,10 @@ export function rowText(row: ResultRow): string {
   return text === '' ? say('kitMind.ui.notDefined') : text;
 }
 
+/** A table cell as text. */
+export const cellText = (c: InsertContext, cell: Cell): string =>
+  typeof cell === 'object' ? say(toolKey(c, `word.${cell.word}`)) : valueText(cell);
+
 export const columnLabel = (c: InsertContext, column: Column): string =>
   typeof column === 'string' ? say(toolKey(c, `col.${column}`)) : column.raw;
 
@@ -75,7 +79,7 @@ export function extraTable(c: InsertContext, index: number): { header: string[];
   if (!table) return null;
   return {
     header: table.columns.map((column) => columnLabel(c, column)),
-    rows: table.rows.map((row) => row.map((cell) => valueText(cell))),
+    rows: table.rows.map((row) => row.map((cell) => cellText(c, cell))),
   };
 }
 
@@ -97,7 +101,7 @@ export function stepsHtml(c: InsertContext): string {
 
 /** A picture's SVG text in a palette. */
 export function pictureSvg(c: InsertContext, picture: Picture, palette: Palette = SCREEN): string {
-  const label = (id: string) => say(toolKey(c, `plot.${id}`));
+  const label = (id: string, vars?: Vars) => say(toolKey(c, `plot.${id}`), vars);
   const title = say(toolKey(c, `picture.${picture.id}`));
   if (picture.draw) return picture.draw(palette, label);
   return picture.plot ? plotSvg(picture.plot, palette, label, title) : '';

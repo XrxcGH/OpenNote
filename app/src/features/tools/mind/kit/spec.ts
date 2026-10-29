@@ -2,7 +2,7 @@
 // window draws every tool from this, so each tool is an engine and a spec, and the form, the results, the steps,
 // the pictures, and the Insert menu work the same everywhere. Words come from kitMind.<tool> in the strings:
 // field.<id>, option.<value>, hint.<id>, row.<id>, col.<id>, table.<id>, note.<id>, plot.<id>, picture.<id>.
-import type { PlotSpec, Palette } from './plot';
+import type { Label, PlotSpec, Palette } from './plot';
 import { readNumber } from './parse';
 import { MindError, type KitStep, type StepValue, type Vars } from './types';
 
@@ -56,10 +56,13 @@ export interface ResultRow {
 /** A column's name: a key under col.<id>, or text the person typed, such as a category. */
 export type Column = string | { readonly raw: string };
 
+/** A table cell: a number, text as typed, or a word under the tool's word strings. */
+export type Cell = StepValue | { readonly word: string };
+
 export interface ResultTable {
   readonly id: string;
   readonly columns: readonly Column[];
-  readonly rows: readonly (readonly StepValue[])[];
+  readonly rows: readonly (readonly Cell[])[];
 }
 
 export interface Note {
@@ -71,7 +74,7 @@ export interface Picture {
   readonly id: string;
   readonly plot?: PlotSpec;
   /** A drawing of its own, as SVG text, for pictures that are not plots. */
-  readonly draw?: (palette: Palette, label: (id: string) => string) => string;
+  readonly draw?: (palette: Palette, label: Label) => string;
 }
 
 export interface Outcome {

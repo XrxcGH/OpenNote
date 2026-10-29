@@ -33,6 +33,8 @@ function outcomeKeys(tool: string, outcome: Outcome): string[] {
   for (const table of outcome.tables ?? []) {
     problems.push(...check(k(`table.${table.id}`)));
     for (const column of table.columns) if (typeof column === 'string') problems.push(...check(k(`col.${column}`)));
+    for (const row of table.rows)
+      for (const cell of row) if (typeof cell === 'object') problems.push(...check(k(`word.${cell.word}`)));
   }
   for (const picture of outcome.pictures ?? []) {
     problems.push(...check(k(`picture.${picture.id}`)));
@@ -40,7 +42,7 @@ function outcomeKeys(tool: string, outcome: Outcome): string[] {
     if (!plot) continue;
     problems.push(...check(k(`plot.${plot.x.id}`)), ...check(k(`plot.${plot.y.id}`)));
     for (const series of plot.series)
-      if (series.label === undefined && series.id) problems.push(...check(k(`plot.${series.id}`)));
+      if (series.label === undefined && series.id) problems.push(...check(k(`plot.${series.id}`), series.vars));
   }
   return problems;
 }

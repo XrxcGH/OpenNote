@@ -33,12 +33,17 @@ export const PAGE: Palette = {
   pens: ['Indigo', 'Brick', 'Fern', 'Plum', 'Amber'].map(pen),
 };
 
+/** Turns a plot key, with values for its placeholders, into words. */
+export type Label = (id: string, vars?: Readonly<Record<string, string | number>>) => string;
+
 export type SeriesKind = 'line' | 'points' | 'steps' | 'bars';
 
 export interface PlotSeries {
   /** The series' name: a key under the tool's plot strings, unless `label` gives the text. */
   readonly id: string;
   readonly label?: string;
+  /** Values for the series' name, such as its item number. */
+  readonly vars?: Readonly<Record<string, string | number>>;
   /** A NaN y breaks a line. */
   readonly points: readonly (readonly [number, number])[];
   readonly kind?: SeriesKind;

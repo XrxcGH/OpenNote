@@ -2,6 +2,7 @@
 // questionnaires, and qualitative coding. Tool titles, field labels, row labels, worked-step sentences, and the
 // problems an input can have. Each tool's words live in ./kitMind so no file grows too long.
 import { agreement } from './kitMind/agreement';
+import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
 
 export const kitMind = {
@@ -63,7 +64,20 @@ export const kitMind = {
     fewPairs: 'This needs at least 3 pairs.',
     twoCodes: 'Line {line} needs 2 codes separated by a comma.',
     twoColumns: 'Each line needs 2 measurements.',
+    fewRespondents: 'This needs more respondents.',
+    fewItems: 'This needs at least {low} items.',
+    binary: 'KR-20 needs every answer scored 0 or 1.',
+    noItem: 'There is no item {item} in the answers.',
+    keyLength: 'A line has {got} answers, but the key has {want}.',
+    tenItems: 'The System Usability Scale has 10 items, but a line has {got}.',
+    likert5: 'The System Usability Scale takes whole answers from 1 to 5, not {value}.',
+    slope: 'The item on line {line} needs a discrimination (a) above 0.',
+    guess: 'The item on line {line} needs a guessing value c from 0 up to but not including 1.',
+    thresholds: 'The item on line {line} needs thresholds in increasing order.',
+    subscaleLine: 'Subscale line {line} needs a name, a colon, then item numbers.',
+    lowHigh: 'The highest answer must be above the lowest.',
   },
   sdt,
   agreement,
+  scales,
 } as const;

@@ -9,6 +9,7 @@ import {
   marker,
   ticks,
   type Attrs,
+  type Label,
   type Palette,
   type PlotSeries,
   type PlotSpec,
@@ -95,7 +96,7 @@ function marksSvg(spec: PlotSpec, f: Frame, palette: Palette, small: Attrs): str
   return parts.join('');
 }
 
-function legendSvg(spec: PlotSpec, f: Frame, palette: Palette, label: (id: string) => string, big: Attrs): string {
+function legendSvg(spec: PlotSpec, f: Frame, palette: Palette, label: Label, big: Attrs): string {
   return named(spec)
     .map((series, i) => {
       const x = f.left + (i % 2) * (f.plotW / 2);
@@ -113,7 +114,7 @@ function legendSvg(spec: PlotSpec, f: Frame, palette: Palette, label: (id: strin
         'stroke-dasharray': dash,
       };
       const swatch = series.kind === 'points' ? marker(index, x + 10, y - 4, color) : el('line', line);
-      return swatch + el('text', { x: x + 26, y, ...big }, escapeXml(series.label ?? label(series.id)));
+      return swatch + el('text', { x: x + 26, y, ...big }, escapeXml(series.label ?? label(series.id, series.vars)));
     })
     .join('');
 }
@@ -166,7 +167,7 @@ function seriesSvg(series: PlotSeries, index: number, palette: Palette, f: Frame
 }
 
 /** The plot as SVG text. `label` turns a plot key into words; `title` names the picture for screen readers. */
-export function plotSvg(spec: PlotSpec, palette: Palette, label: (id: string) => string, title: string): string {
+export function plotSvg(spec: PlotSpec, palette: Palette, label: Label, title: string): string {
   const f = frameOf(spec);
   const small = { 'font-family': palette.font, 'font-size': 11, fill: palette.muted };
   const big = { 'font-family': palette.font, 'font-size': 12, fill: palette.text };

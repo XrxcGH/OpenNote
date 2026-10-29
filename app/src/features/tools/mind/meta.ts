@@ -13,5 +13,6 @@ export interface MindToolMeta {
 
 export const MIND_TOOLS: readonly MindToolMeta[] = [
   { id: 'sdt', title: 'kitMind.sdt.title', keywords: 'kitMind.sdt.keywords', icon: 'Eye' },
+  { id: 'scales', title: 'kitMind.scales.title', keywords: 'kitMind.scales.keywords', icon: 'ListNumbers' },
   { id: 'agreement', title: 'kitMind.agreement.title', keywords: 'kitMind.agreement.keywords', icon: 'Handshake' },
 ];
