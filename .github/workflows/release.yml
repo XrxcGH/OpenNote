@@ -110,7 +110,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           ENFORCE: ${{ needs.version.outputs.enforce }}
         run: |
-          $extra = if ($env:ENFORCE -eq 'true') { @() } else { @('--report') }
+          [string[]]$extra = if ($env:ENFORCE -eq 'true') { @() } else { @('--report') }
           $version = $env:TAG -replace '^v', ''
           node app/scripts/release/checklist.ts --version $version --tag $env:TAG --markdown checklist.md @extra
       - name: Show the checklist in the run summary
@@ -393,7 +393,7 @@ jobs:
         # Uses the update keys committed in app/src-tauri/keys, which are the keys built into the exe. A release
         # also needs an Authenticode signature, unless it is a test build.
         run: |
-          $extra = if ($env:ENFORCE -eq 'true') { @('--require-authenticode') } else { @() }
+          [string[]]$extra = if ($env:ENFORCE -eq 'true') { @('--require-authenticode') } else { @() }
           node app/scripts/release/verify.ts dist-release $env:TAG @extra
       - name: Check the dry run the way the app will
         if: github.event_name == 'workflow_dispatch'
