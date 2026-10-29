@@ -1,0 +1,5688 @@
+{
+ "correct": [
+  {
+   "id": "linear-1",
+   "topic": "linear",
+   "lines": [
+    "2x + 3 = 11",
+    "2x = 8",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "linear-2",
+   "topic": "linear",
+   "lines": [
+    "3x - 4 = 8",
+    "3x = 12",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "linear-3",
+   "topic": "linear",
+   "lines": [
+    "5x + 7 = -8",
+    "5x = -15",
+    "x = -3"
+   ]
+  },
+  {
+   "id": "linear-4",
+   "topic": "linear",
+   "lines": [
+    "4x + 1 = 21",
+    "4x = 20",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "linear-5",
+   "topic": "linear",
+   "lines": [
+    "7x - 2 = 12",
+    "7x = 14",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "linear-6",
+   "topic": "linear",
+   "lines": [
+    "6x + 5 = 5",
+    "6x = 0",
+    "x = 0"
+   ]
+  },
+  {
+   "id": "linear-7",
+   "topic": "linear",
+   "lines": [
+    "9x + 4 = -14",
+    "9x = -18",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "linear-8",
+   "topic": "linear",
+   "lines": [
+    "2x - 9 = 3",
+    "2x = 12",
+    "x = 6"
+   ]
+  },
+  {
+   "id": "linear2-9",
+   "topic": "linear2",
+   "lines": [
+    "5x + 3 = 2x + 12",
+    "3x + 3 = 12",
+    "3x = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "linear2-10",
+   "topic": "linear2",
+   "lines": [
+    "7x - 1 = 3x + 11",
+    "4x - 1 = 11",
+    "4x = 12",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "linear2-11",
+   "topic": "linear2",
+   "lines": [
+    "4x + 9 = -2x - 3",
+    "6x + 9 = -3",
+    "6x = -12",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "linear2-12",
+   "topic": "linear2",
+   "lines": [
+    "6x + 2 = x + 22",
+    "5x + 2 = 22",
+    "5x = 20",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "linear2-13",
+   "topic": "linear2",
+   "lines": [
+    "3x - 8 = 5x + 4",
+    "-2x - 8 = 4",
+    "-2x = 12",
+    "x = -6"
+   ]
+  },
+  {
+   "id": "linear2-14",
+   "topic": "linear2",
+   "lines": [
+    "8x + 1 = 3x + 26",
+    "5x + 1 = 26",
+    "5x = 25",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "brackets-15",
+   "topic": "brackets",
+   "lines": [
+    "3(x + 2) - 4 = 11",
+    "3x + 6 - 4 = 11",
+    "3x = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "brackets-16",
+   "topic": "brackets",
+   "lines": [
+    "2(x - 5) - 1 = 7",
+    "2x - 10 - 1 = 7",
+    "2x = 18",
+    "x = 9"
+   ]
+  },
+  {
+   "id": "brackets-17",
+   "topic": "brackets",
+   "lines": [
+    "4(x + 3) + 2 = 30",
+    "4x + 12 + 2 = 30",
+    "4x = 16",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "brackets-18",
+   "topic": "brackets",
+   "lines": [
+    "5(x + 1) - 6 = 9",
+    "5x + 5 - 6 = 9",
+    "5x = 10",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "brackets-19",
+   "topic": "brackets",
+   "lines": [
+    "6(x - 2) - 3 = 15",
+    "6x - 12 - 3 = 15",
+    "6x = 30",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "factor-20",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 5x + 6 = 0",
+    "(x + 2)(x + 3) = 0",
+    "x = -2 or x = -3"
+   ]
+  },
+  {
+   "id": "factor-21",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 3x - 4 = 0",
+    "(x - 1)(x + 4) = 0",
+    "x = 1 or x = -4"
+   ]
+  },
+  {
+   "id": "factor-22",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 3x - 10 = 0",
+    "(x + 5)(x - 2) = 0",
+    "x = -5 or x = 2"
+   ]
+  },
+  {
+   "id": "factor-23",
+   "topic": "factor",
+   "lines": [
+    "x^2 - 7x + 12 = 0",
+    "(x - 3)(x - 4) = 0",
+    "x = 3 or x = 4"
+   ]
+  },
+  {
+   "id": "factor-24",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 7x + 6 = 0",
+    "(x + 1)(x + 6) = 0",
+    "x = -1 or x = -6"
+   ]
+  },
+  {
+   "id": "factor-25",
+   "topic": "factor",
+   "lines": [
+    "x^2 - 4x - 12 = 0",
+    "(x - 6)(x + 2) = 0",
+    "x = 6 or x = -2"
+   ]
+  },
+  {
+   "id": "factor-26",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 8x + 7 = 0",
+    "(x + 7)(x + 1) = 0",
+    "x = -7 or x = -1"
+   ]
+  },
+  {
+   "id": "expand-27",
+   "topic": "expand",
+   "lines": [
+    "(x + 1)^2",
+    "= (x + 1)(x + 1)",
+    "= x^2 + 2x + 1"
+   ]
+  },
+  {
+   "id": "expand-28",
+   "topic": "expand",
+   "lines": [
+    "(x + 2)^2",
+    "= (x + 2)(x + 2)",
+    "= x^2 + 4x + 4"
+   ]
+  },
+  {
+   "id": "expand-29",
+   "topic": "expand",
+   "lines": [
+    "(x + 3)^2",
+    "= (x + 3)(x + 3)",
+    "= x^2 + 6x + 9"
+   ]
+  },
+  {
+   "id": "expand-30",
+   "topic": "expand",
+   "lines": [
+    "(x - 4)^2",
+    "= (x - 4)(x - 4)",
+    "= x^2 - 8x + 16"
+   ]
+  },
+  {
+   "id": "expand-31",
+   "topic": "expand",
+   "lines": [
+    "(x + 5)^2",
+    "= (x + 5)(x + 5)",
+    "= x^2 + 10x + 25"
+   ]
+  },
+  {
+   "id": "expand-32",
+   "topic": "expand",
+   "lines": [
+    "(x - 6)^2",
+    "= (x - 6)(x - 6)",
+    "= x^2 - 12x + 36"
+   ]
+  },
+  {
+   "id": "expand-33",
+   "topic": "expand",
+   "lines": [
+    "(x + 7)^2",
+    "= (x + 7)(x + 7)",
+    "= x^2 + 14x + 49"
+   ]
+  },
+  {
+   "id": "expand-34",
+   "topic": "expand",
+   "lines": [
+    "(x + 2)(x + 5)",
+    "= x^2 + 5x + 2x + 10",
+    "= x^2 + 7x + 10"
+   ]
+  },
+  {
+   "id": "expand-35",
+   "topic": "expand",
+   "lines": [
+    "(x - 3)(x + 4)",
+    "= x^2 + 4x - 3x - 12",
+    "= x^2 + 1x - 12"
+   ]
+  },
+  {
+   "id": "expand-36",
+   "topic": "expand",
+   "lines": [
+    "(x + 6)(x - 1)",
+    "= x^2 - 1x + 6x - 6",
+    "= x^2 + 5x - 6"
+   ]
+  },
+  {
+   "id": "expand-37",
+   "topic": "expand",
+   "lines": [
+    "(x - 2)(x - 7)",
+    "= x^2 - 7x - 2x + 14",
+    "= x^2 - 9x + 14"
+   ]
+  },
+  {
+   "id": "expand-38",
+   "topic": "expand",
+   "lines": [
+    "(x + 3)(x + 3)",
+    "= x^2 + 3x + 3x + 9",
+    "= x^2 + 6x + 9"
+   ]
+  },
+  {
+   "id": "rational-39",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 4)/(x - 2)",
+    "= (x - 2)(x + 2)/(x - 2)",
+    "= x + 2"
+   ]
+  },
+  {
+   "id": "rational-40",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 9)/(x - 3)",
+    "= (x - 3)(x + 3)/(x - 3)",
+    "= x + 3"
+   ]
+  },
+  {
+   "id": "rational-41",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 25)/(x - 5)",
+    "= (x - 5)(x + 5)/(x - 5)",
+    "= x + 5"
+   ]
+  },
+  {
+   "id": "rational-42",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 49)/(x - 7)",
+    "= (x - 7)(x + 7)/(x - 7)",
+    "= x + 7"
+   ]
+  },
+  {
+   "id": "powers-43",
+   "topic": "powers",
+   "lines": [
+    "x^2 * x^3",
+    "= x^5"
+   ]
+  },
+  {
+   "id": "powers-44",
+   "topic": "powers",
+   "lines": [
+    "(x^2)^3",
+    "= x^6"
+   ]
+  },
+  {
+   "id": "powers-45",
+   "topic": "powers",
+   "lines": [
+    "x^4 * x^5",
+    "= x^9"
+   ]
+  },
+  {
+   "id": "powers-46",
+   "topic": "powers",
+   "lines": [
+    "(x^4)^5",
+    "= x^20"
+   ]
+  },
+  {
+   "id": "powers-47",
+   "topic": "powers",
+   "lines": [
+    "x^3 * x^7",
+    "= x^10"
+   ]
+  },
+  {
+   "id": "powers-48",
+   "topic": "powers",
+   "lines": [
+    "(x^3)^7",
+    "= x^21"
+   ]
+  },
+  {
+   "id": "fractions-49",
+   "topic": "fractions",
+   "lines": [
+    "x/1 + x/2 = 1",
+    "2x + 1x = 2",
+    "3x = 2",
+    "x = 2/3"
+   ]
+  },
+  {
+   "id": "fractions-50",
+   "topic": "fractions",
+   "lines": [
+    "x/2 + x/3 = 1",
+    "3x + 2x = 6",
+    "5x = 6",
+    "x = 6/5"
+   ]
+  },
+  {
+   "id": "fractions-51",
+   "topic": "fractions",
+   "lines": [
+    "x/3 + x/5 = 1",
+    "5x + 3x = 15",
+    "8x = 15",
+    "x = 15/8"
+   ]
+  },
+  {
+   "id": "quadratic-52",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "x = (5 ± sqrt(1))/2",
+    "x = 3 or x = 2"
+   ]
+  },
+  {
+   "id": "quadratic-53",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 + 2x - 8 = 0",
+    "x = (-2 ± sqrt(36))/2",
+    "x = 2 or x = -4"
+   ]
+  },
+  {
+   "id": "quadratic-54",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 - 1x - 12 = 0",
+    "x = (1 ± sqrt(49))/2",
+    "x = 4 or x = -3"
+   ]
+  },
+  {
+   "id": "quadratic-55",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 + 6x + 5 = 0",
+    "x = (-6 ± sqrt(16))/2",
+    "x = -1 or x = -5"
+   ]
+  },
+  {
+   "id": "trig-56",
+   "topic": "trig",
+   "lines": [
+    "(1 - cos(x)^2)/sin(x)",
+    "= sin(x)^2/sin(x)",
+    "= sin(x)"
+   ]
+  },
+  {
+   "id": "trig-57",
+   "topic": "trig",
+   "lines": [
+    "sin(2x)/(2cos(x))",
+    "= 2 sin(x) cos(x)/(2 cos(x))",
+    "= sin(x)"
+   ]
+  },
+  {
+   "id": "trig-58",
+   "topic": "trig",
+   "lines": [
+    "tan(x) cos(x)",
+    "= sin(x)/cos(x) * cos(x)",
+    "= sin(x)"
+   ]
+  },
+  {
+   "id": "trig-59",
+   "topic": "trig",
+   "lines": [
+    "cos(2x) + 2 sin(x)^2",
+    "= 1 - 2 sin(x)^2 + 2 sin(x)^2",
+    "= 1"
+   ]
+  },
+  {
+   "id": "trig-60",
+   "topic": "trig",
+   "lines": [
+    "sin(x)^4 - cos(x)^4",
+    "= (sin(x)^2 - cos(x)^2)(sin(x)^2 + cos(x)^2)",
+    "= sin(x)^2 - cos(x)^2",
+    "= -cos(2x)"
+   ]
+  },
+  {
+   "id": "trig-61",
+   "topic": "trig",
+   "lines": [
+    "1 + tan(x)^2",
+    "= 1 + sin(x)^2/cos(x)^2",
+    "= (cos(x)^2 + sin(x)^2)/cos(x)^2",
+    "= 1/cos(x)^2"
+   ]
+  },
+  {
+   "id": "trig-62",
+   "topic": "trig",
+   "lines": [
+    "sin(x + pi/2)",
+    "= sin(x) cos(pi/2) + cos(x) sin(pi/2)",
+    "= cos(x)"
+   ]
+  },
+  {
+   "id": "trig-63",
+   "topic": "trig",
+   "lines": [
+    "2 sin(2x) cos(2x)",
+    "= sin(4x)"
+   ]
+  },
+  {
+   "id": "trig-64",
+   "topic": "trig",
+   "lines": [
+    "cos(2x)^2 - sin(2x)^2",
+    "= cos(4x)"
+   ]
+  },
+  {
+   "id": "trig-65",
+   "topic": "trig",
+   "lines": [
+    "2 sin(3x) cos(3x)",
+    "= sin(6x)"
+   ]
+  },
+  {
+   "id": "trig-66",
+   "topic": "trig",
+   "lines": [
+    "cos(3x)^2 - sin(3x)^2",
+    "= cos(6x)"
+   ]
+  },
+  {
+   "id": "trig-67",
+   "topic": "trig",
+   "lines": [
+    "2 sin(4x) cos(4x)",
+    "= sin(8x)"
+   ]
+  },
+  {
+   "id": "trig-68",
+   "topic": "trig",
+   "lines": [
+    "cos(4x)^2 - sin(4x)^2",
+    "= cos(8x)"
+   ]
+  },
+  {
+   "id": "trig-69",
+   "topic": "trig",
+   "lines": [
+    "2 sin(5x) cos(5x)",
+    "= sin(10x)"
+   ]
+  },
+  {
+   "id": "trig-70",
+   "topic": "trig",
+   "lines": [
+    "cos(5x)^2 - sin(5x)^2",
+    "= cos(10x)"
+   ]
+  },
+  {
+   "id": "trig-71",
+   "topic": "trig",
+   "lines": [
+    "sin(x)^2 + cos(x)^2 = 1"
+   ]
+  },
+  {
+   "id": "trig-72",
+   "topic": "trig",
+   "lines": [
+    "2 sin(x) = 1",
+    "sin(x) = 1/2"
+   ]
+  },
+  {
+   "id": "exp-73",
+   "topic": "exp",
+   "lines": [
+    "3 e^(2x) = 12",
+    "e^(2x) = 4",
+    "2x = ln(4)",
+    "x = ln(4)/2"
+   ]
+  },
+  {
+   "id": "exp-74",
+   "topic": "exp",
+   "lines": [
+    "2 e^(5x) = 14",
+    "e^(5x) = 7",
+    "5x = ln(7)",
+    "x = ln(7)/5"
+   ]
+  },
+  {
+   "id": "exp-75",
+   "topic": "exp",
+   "lines": [
+    "4 e^(3x) = 20",
+    "e^(3x) = 5",
+    "3x = ln(5)",
+    "x = ln(5)/3"
+   ]
+  },
+  {
+   "id": "exp-76",
+   "topic": "exp",
+   "lines": [
+    "5 e^(1x) = 35",
+    "e^(1x) = 7",
+    "1x = ln(7)",
+    "x = ln(7)/1"
+   ]
+  },
+  {
+   "id": "exp-77",
+   "topic": "exp",
+   "lines": [
+    "2^(x + 1) = 16",
+    "x + 1 = 4",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "exp-78",
+   "topic": "exp",
+   "lines": [
+    "3^(x + 1) = 27",
+    "x + 1 = 3",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "exp-79",
+   "topic": "exp",
+   "lines": [
+    "5^(x + 1) = 25",
+    "x + 1 = 2",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "exp-80",
+   "topic": "exp",
+   "lines": [
+    "2^(x + 1) = 64",
+    "x + 1 = 6",
+    "x = 5"
+   ]
+  },
+  {
+   "id": "logs-81",
+   "topic": "logs",
+   "lines": [
+    "ln(2x) - ln(2)",
+    "= ln(2x/2)",
+    "= ln(x)"
+   ]
+  },
+  {
+   "id": "logs-82",
+   "topic": "logs",
+   "lines": [
+    "ln(x^2)",
+    "= 2 ln(x)"
+   ]
+  },
+  {
+   "id": "logs-83",
+   "topic": "logs",
+   "lines": [
+    "ln(3x) - ln(3)",
+    "= ln(3x/3)",
+    "= ln(x)"
+   ]
+  },
+  {
+   "id": "logs-84",
+   "topic": "logs",
+   "lines": [
+    "ln(x^3)",
+    "= 3 ln(x)"
+   ]
+  },
+  {
+   "id": "logs-85",
+   "topic": "logs",
+   "lines": [
+    "ln(7x) - ln(7)",
+    "= ln(7x/7)",
+    "= ln(x)"
+   ]
+  },
+  {
+   "id": "logs-86",
+   "topic": "logs",
+   "lines": [
+    "ln(x^7)",
+    "= 7 ln(x)"
+   ]
+  },
+  {
+   "id": "logs-87",
+   "topic": "logs",
+   "lines": [
+    "ln(x) + ln(x + 1)",
+    "= ln(x(x + 1))",
+    "= ln(x^2 + x)"
+   ]
+  },
+  {
+   "id": "logs-88",
+   "topic": "logs",
+   "lines": [
+    "log(1000)",
+    "= 3"
+   ]
+  },
+  {
+   "id": "logs-89",
+   "topic": "logs",
+   "lines": [
+    "e^(ln(5) + ln(2))",
+    "= e^(ln(10))",
+    "= 10"
+   ]
+  },
+  {
+   "id": "derivative-90",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(3x^4) = 12x^3"
+   ]
+  },
+  {
+   "id": "derivative-91",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(5x^2) = 10x^1"
+   ]
+  },
+  {
+   "id": "derivative-92",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(2x^7) = 14x^6"
+   ]
+  },
+  {
+   "id": "derivative-93",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(-4x^3) = -12x^2"
+   ]
+  },
+  {
+   "id": "derivative-94",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(6x^5) = 30x^4"
+   ]
+  },
+  {
+   "id": "derivative-95",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x^2 sin(x))",
+    "= 2x^1 sin(x) + x^2 cos(x)"
+   ]
+  },
+  {
+   "id": "derivative-96",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x^3 sin(x))",
+    "= 3x^2 sin(x) + x^3 cos(x)"
+   ]
+  },
+  {
+   "id": "derivative-97",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x^4 sin(x))",
+    "= 4x^3 sin(x) + x^4 cos(x)"
+   ]
+  },
+  {
+   "id": "derivative-98",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sin(2x^2)) = 4x cos(2x^2)"
+   ]
+  },
+  {
+   "id": "derivative-99",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x/(x + 2))",
+    "= ((x + 2) - x)/(x + 2)^2",
+    "= 2/(x + 2)^2"
+   ]
+  },
+  {
+   "id": "derivative-100",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(ln(2x + 1)) = 2/(2x + 1)"
+   ]
+  },
+  {
+   "id": "derivative-101",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sin(3x^2)) = 6x cos(3x^2)"
+   ]
+  },
+  {
+   "id": "derivative-102",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x/(x + 3))",
+    "= ((x + 3) - x)/(x + 3)^2",
+    "= 3/(x + 3)^2"
+   ]
+  },
+  {
+   "id": "derivative-103",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(ln(3x + 1)) = 3/(3x + 1)"
+   ]
+  },
+  {
+   "id": "derivative-104",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sin(5x^2)) = 10x cos(5x^2)"
+   ]
+  },
+  {
+   "id": "derivative-105",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x/(x + 5))",
+    "= ((x + 5) - x)/(x + 5)^2",
+    "= 5/(x + 5)^2"
+   ]
+  },
+  {
+   "id": "derivative-106",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(ln(5x + 1)) = 5/(5x + 1)"
+   ]
+  },
+  {
+   "id": "derivative-107",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x e^(2x)",
+    "f'(x) = e^(2x) + 2x e^(2x)"
+   ]
+  },
+  {
+   "id": "derivative-108",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x e^(3x)",
+    "f'(x) = e^(3x) + 3x e^(3x)"
+   ]
+  },
+  {
+   "id": "derivative-109",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x e^(-1x)",
+    "f'(x) = e^(-1x) + -1x e^(-1x)"
+   ]
+  },
+  {
+   "id": "derivative-110",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x^3 - 2x",
+    "f'(x) = 3x^2 - 2",
+    "f'(2) = 10"
+   ]
+  },
+  {
+   "id": "derivative-111",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(e^x cos(x)) = e^x cos(x) - e^x sin(x)"
+   ]
+  },
+  {
+   "id": "derivative-112",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sqrt(x^2 + 1)) = x/sqrt(x^2 + 1)"
+   ]
+  },
+  {
+   "id": "integral-113",
+   "topic": "integral",
+   "lines": [
+    "∫ 3x^2 dx",
+    "= 1 x^3 + C"
+   ]
+  },
+  {
+   "id": "integral-114",
+   "topic": "integral",
+   "lines": [
+    "∫ 4x^3 dx",
+    "= 1 x^4 + C"
+   ]
+  },
+  {
+   "id": "integral-115",
+   "topic": "integral",
+   "lines": [
+    "∫ 5x^4 dx",
+    "= 1 x^5 + C"
+   ]
+  },
+  {
+   "id": "integral-116",
+   "topic": "integral",
+   "lines": [
+    "∫ 6x^1 dx",
+    "= 3 x^2 + C"
+   ]
+  },
+  {
+   "id": "integral-117",
+   "topic": "integral",
+   "lines": [
+    "∫ 2x^5 dx",
+    "= 1/3 x^6 + C"
+   ]
+  },
+  {
+   "id": "byparts-118",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(2x) dx",
+    "= x e^(2x)/2 - ∫ e^(2x)/2 dx",
+    "= x e^(2x)/2 - e^(2x)/4 + C"
+   ]
+  },
+  {
+   "id": "byparts-119",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(3x) dx",
+    "= x e^(3x)/3 - ∫ e^(3x)/3 dx",
+    "= x e^(3x)/3 - e^(3x)/9 + C"
+   ]
+  },
+  {
+   "id": "byparts-120",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(4x) dx",
+    "= x e^(4x)/4 - ∫ e^(4x)/4 dx",
+    "= x e^(4x)/4 - e^(4x)/16 + C"
+   ]
+  },
+  {
+   "id": "byparts-121",
+   "topic": "byparts",
+   "lines": [
+    "∫ x cos(x) dx",
+    "u = x, du = dx, dv = cos(x) dx, v = sin(x)",
+    "= x sin(x) - ∫ sin(x) dx",
+    "= x sin(x) + cos(x) + C"
+   ]
+  },
+  {
+   "id": "byparts-122",
+   "topic": "byparts",
+   "lines": [
+    "∫ x sin(x) dx",
+    "= -x cos(x) + ∫ cos(x) dx",
+    "= -x cos(x) + sin(x) + C"
+   ]
+  },
+  {
+   "id": "byparts-123",
+   "topic": "byparts",
+   "lines": [
+    "∫ ln(x) dx",
+    "= x ln(x) - ∫ x * 1/x dx",
+    "= x ln(x) - x + C"
+   ]
+  },
+  {
+   "id": "substitution-124",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x (x^2 + 1)^2 dx",
+    "let u = x^2 + 1",
+    "= ∫ u^2 du",
+    "= u^3/3 + C",
+    "= (x^2 + 1)^3/3 + C"
+   ]
+  },
+  {
+   "id": "substitution-125",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x (x^2 + 3)^3 dx",
+    "let u = x^2 + 3",
+    "= ∫ u^3 du",
+    "= u^4/4 + C",
+    "= (x^2 + 3)^4/4 + C"
+   ]
+  },
+  {
+   "id": "substitution-126",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x (x^2 + 2)^4 dx",
+    "let u = x^2 + 2",
+    "= ∫ u^4 du",
+    "= u^5/5 + C",
+    "= (x^2 + 2)^5/5 + C"
+   ]
+  },
+  {
+   "id": "substitution-127",
+   "topic": "substitution",
+   "lines": [
+    "∫ cos(2x) dx",
+    "let u = 2x",
+    "= ∫ cos(u)/2 du",
+    "= sin(u)/2 + C",
+    "= sin(2x)/2 + C"
+   ]
+  },
+  {
+   "id": "substitution-128",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2 e^(2x) dx = e^(2x) + C"
+   ]
+  },
+  {
+   "id": "substitution-129",
+   "topic": "substitution",
+   "lines": [
+    "∫ cos(3x) dx",
+    "let u = 3x",
+    "= ∫ cos(u)/3 du",
+    "= sin(u)/3 + C",
+    "= sin(3x)/3 + C"
+   ]
+  },
+  {
+   "id": "substitution-130",
+   "topic": "substitution",
+   "lines": [
+    "∫ 3 e^(3x) dx = e^(3x) + C"
+   ]
+  },
+  {
+   "id": "substitution-131",
+   "topic": "substitution",
+   "lines": [
+    "∫ cos(5x) dx",
+    "let u = 5x",
+    "= ∫ cos(u)/5 du",
+    "= sin(u)/5 + C",
+    "= sin(5x)/5 + C"
+   ]
+  },
+  {
+   "id": "substitution-132",
+   "topic": "substitution",
+   "lines": [
+    "∫ 5 e^(5x) dx = e^(5x) + C"
+   ]
+  },
+  {
+   "id": "substitution-133",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x cos(x^2) dx",
+    "let u = x^2",
+    "= ∫ cos(u) du",
+    "= sin(u) + C",
+    "= sin(x^2) + C"
+   ]
+  },
+  {
+   "id": "definite-134",
+   "topic": "definite",
+   "lines": [
+    "∫_0^1 x^2 dx = [x^3/3]_0^1 = 1/3"
+   ]
+  },
+  {
+   "id": "definite-135",
+   "topic": "definite",
+   "lines": [
+    "∫_0^2 x^3 dx = [x^4/4]_0^2 = 4"
+   ]
+  },
+  {
+   "id": "definite-136",
+   "topic": "definite",
+   "lines": [
+    "∫_0^3 x^1 dx = [x^2/2]_0^3 = 9/2"
+   ]
+  },
+  {
+   "id": "definite-137",
+   "topic": "definite",
+   "lines": [
+    "∫_0^2 x^2 dx = [x^3/3]_0^2 = 8/3"
+   ]
+  },
+  {
+   "id": "definite-138",
+   "topic": "definite",
+   "lines": [
+    "∫_0^pi sin(x) dx",
+    "= [-cos(x)]_0^pi",
+    "= 2"
+   ]
+  },
+  {
+   "id": "definite-139",
+   "topic": "definite",
+   "lines": [
+    "∫_1^e 1/x dx",
+    "= [ln(x)]_1^e",
+    "= 1"
+   ]
+  },
+  {
+   "id": "limit-140",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->1) (x^2 - 1)/(x - 1)",
+    "= lim_(x->1) (x + 1)",
+    "= 2"
+   ]
+  },
+  {
+   "id": "limit-141",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->2) (x^2 - 4)/(x - 2)",
+    "= lim_(x->2) (x + 2)",
+    "= 4"
+   ]
+  },
+  {
+   "id": "limit-142",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->3) (x^2 - 9)/(x - 3)",
+    "= lim_(x->3) (x + 3)",
+    "= 6"
+   ]
+  },
+  {
+   "id": "limit-143",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->4) (x^2 - 16)/(x - 4)",
+    "= lim_(x->4) (x + 4)",
+    "= 8"
+   ]
+  },
+  {
+   "id": "limit-144",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) sin(2x)/x = 2"
+   ]
+  },
+  {
+   "id": "limit-145",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) sin(3x)/x = 3"
+   ]
+  },
+  {
+   "id": "limit-146",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) sin(5x)/x = 5"
+   ]
+  },
+  {
+   "id": "limit-147",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->∞) (3x^2 + 1)/(2x^2 + x)",
+    "= lim_(x->∞) (3 + 1/x^2)/(2 + 1/x)",
+    "= 3/2"
+   ]
+  },
+  {
+   "id": "limit-148",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->∞) (5x^2 + 1)/(4x^2 + x)",
+    "= lim_(x->∞) (5 + 1/x^2)/(4 + 1/x)",
+    "= 5/4"
+   ]
+  },
+  {
+   "id": "limit-149",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->∞) (1x^2 + 1)/(7x^2 + x)",
+    "= lim_(x->∞) (1 + 1/x^2)/(7 + 1/x)",
+    "= 1/7"
+   ]
+  },
+  {
+   "id": "limit-150",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) (1 - cos(x))/x^2 = 1/2"
+   ]
+  },
+  {
+   "id": "limit-151",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) (e^x - 1)/x",
+    "= lim_(x->0) e^x/1",
+    "= 1"
+   ]
+  },
+  {
+   "id": "series-152",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(10) n = 55"
+   ]
+  },
+  {
+   "id": "series-153",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(20) n = 210"
+   ]
+  },
+  {
+   "id": "series-154",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(100) n = 5050"
+   ]
+  },
+  {
+   "id": "series-155",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=0)^(∞) (1/2)^n = 2"
+   ]
+  },
+  {
+   "id": "series-156",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(5) n^2 = 1 + 4 + 9 + 16 + 25 = 55"
+   ]
+  },
+  {
+   "id": "system-157",
+   "topic": "system",
+   "lines": [
+    "x + y = 5, x - y = 1",
+    "2x = 6",
+    "x = 3",
+    "y = 2"
+   ]
+  },
+  {
+   "id": "system-158",
+   "topic": "system",
+   "lines": [
+    "x + y = 4, x - y = 6",
+    "2x = 10",
+    "x = 5",
+    "y = -1"
+   ]
+  },
+  {
+   "id": "system-159",
+   "topic": "system",
+   "lines": [
+    "x + y = 2, x - y = -6",
+    "2x = -4",
+    "x = -2",
+    "y = 4"
+   ]
+  },
+  {
+   "id": "system-160",
+   "topic": "system",
+   "lines": [
+    "x + y = 10, x - y = 4",
+    "2x = 14",
+    "x = 7",
+    "y = 3"
+   ]
+  },
+  {
+   "id": "system-161",
+   "topic": "system",
+   "lines": [
+    "x + y = 3, x - y = -1",
+    "2x = 2",
+    "x = 1",
+    "y = 2"
+   ]
+  },
+  {
+   "id": "system-162",
+   "topic": "system",
+   "lines": [
+    "x + y = -8, x - y = 2",
+    "2x = -6",
+    "x = -3",
+    "y = -5"
+   ]
+  },
+  {
+   "id": "system-163",
+   "topic": "system",
+   "lines": [
+    "2x + 3y = 7, x - 1y = 1",
+    "2x + 3y = 7, 2x - 2y = 2",
+    "5y = 5",
+    "y = 1",
+    "x = 2",
+    "x = 2, y = 1"
+   ]
+  },
+  {
+   "id": "system-164",
+   "topic": "system",
+   "lines": [
+    "3x + 1y = 7, 2x + 5y = 22",
+    "6x + 2y = 14, 6x + 15y = 66",
+    "-13y = -52",
+    "y = 4",
+    "x = 1",
+    "x = 1, y = 4"
+   ]
+  },
+  {
+   "id": "system-165",
+   "topic": "system",
+   "lines": [
+    "4x - 1y = -6, x + 2y = 3",
+    "4x - 1y = -6, 4x + 8y = 12",
+    "-9y = -18",
+    "y = 2",
+    "x = -1",
+    "x = -1, y = 2"
+   ]
+  },
+  {
+   "id": "system-166",
+   "topic": "system",
+   "lines": [
+    "x + 2y = -1, 3x + 1y = 7",
+    "3x + 6y = -3, 3x + 1y = 7",
+    "5y = -10",
+    "y = -2",
+    "x = 3",
+    "x = 3, y = -2"
+   ]
+  },
+  {
+   "id": "matrix-167",
+   "topic": "matrix",
+   "lines": [
+    "[[1, 2], [3, 4]] * [[0, 1], [1, 0]] = [[2, 1], [4, 3]]"
+   ]
+  },
+  {
+   "id": "matrix-168",
+   "topic": "matrix",
+   "lines": [
+    "det([[1, 2], [3, 4]]) = 1*4 - 2*3 = -2"
+   ]
+  },
+  {
+   "id": "matrix-169",
+   "topic": "matrix",
+   "lines": [
+    "2 * [[1, 2], [3, 4]] - [[0, 1], [1, 0]] = [[2, 3], [5, 8]]"
+   ]
+  },
+  {
+   "id": "matrix-170",
+   "topic": "matrix",
+   "lines": [
+    "[[2, 0], [1, 3]] * [[1, 4], [2, 5]] = [[2, 8], [7, 19]]"
+   ]
+  },
+  {
+   "id": "matrix-171",
+   "topic": "matrix",
+   "lines": [
+    "det([[2, 0], [1, 3]]) = 2*3 - 0*1 = 6"
+   ]
+  },
+  {
+   "id": "matrix-172",
+   "topic": "matrix",
+   "lines": [
+    "2 * [[2, 0], [1, 3]] - [[1, 4], [2, 5]] = [[3, -4], [0, 1]]"
+   ]
+  },
+  {
+   "id": "matrix-173",
+   "topic": "matrix",
+   "lines": [
+    "[[1, -1], [2, 1]] * [[3, 1], [0, 2]] = [[3, -1], [6, 4]]"
+   ]
+  },
+  {
+   "id": "matrix-174",
+   "topic": "matrix",
+   "lines": [
+    "det([[1, -1], [2, 1]]) = 1*1 - -1*2 = 3"
+   ]
+  },
+  {
+   "id": "matrix-175",
+   "topic": "matrix",
+   "lines": [
+    "2 * [[1, -1], [2, 1]] - [[3, 1], [0, 2]] = [[-1, -3], [4, 0]]"
+   ]
+  },
+  {
+   "id": "matrix-176",
+   "topic": "matrix",
+   "lines": [
+    "[[4, 1], [0, -2]] * [[1, 1], [1, -1]] = [[5, 3], [-2, 2]]"
+   ]
+  },
+  {
+   "id": "matrix-177",
+   "topic": "matrix",
+   "lines": [
+    "det([[4, 1], [0, -2]]) = 4*-2 - 1*0 = -8"
+   ]
+  },
+  {
+   "id": "matrix-178",
+   "topic": "matrix",
+   "lines": [
+    "2 * [[4, 1], [0, -2]] - [[1, 1], [1, -1]] = [[7, 1], [-1, -3]]"
+   ]
+  },
+  {
+   "id": "matrix-179",
+   "topic": "matrix",
+   "lines": [
+    "[[2, 1], [1, 1]]^-1",
+    "= 1/1 * [[1, -1], [-1, 2]]"
+   ]
+  },
+  {
+   "id": "matrix-180",
+   "topic": "matrix",
+   "lines": [
+    "[[3, 1], [5, 2]]^-1",
+    "= 1/1 * [[2, -1], [-5, 3]]"
+   ]
+  },
+  {
+   "id": "matrix-181",
+   "topic": "matrix",
+   "lines": [
+    "[[4, 3], [1, 1]]^-1",
+    "= 1/1 * [[1, -3], [-1, 4]]"
+   ]
+  },
+  {
+   "id": "vector-182",
+   "topic": "vector",
+   "lines": [
+    "[1, 2, 3] · [4, 5, 6] = 1*4 + 2*5 + 3*6 = 32"
+   ]
+  },
+  {
+   "id": "vector-183",
+   "topic": "vector",
+   "lines": [
+    "[1, 2, 3] × [4, 5, 6] = [-3, 6, -3]"
+   ]
+  },
+  {
+   "id": "vector-184",
+   "topic": "vector",
+   "lines": [
+    "[2, -1, 0] · [3, 3, 1] = 2*3 + -1*3 + 0*1 = 3"
+   ]
+  },
+  {
+   "id": "vector-185",
+   "topic": "vector",
+   "lines": [
+    "[2, -1, 0] × [3, 3, 1] = [-1, -2, 9]"
+   ]
+  },
+  {
+   "id": "vector-186",
+   "topic": "vector",
+   "lines": [
+    "[1, 0, 2] · [-2, 4, 1] = 1*-2 + 0*4 + 2*1 = 0"
+   ]
+  },
+  {
+   "id": "vector-187",
+   "topic": "vector",
+   "lines": [
+    "[1, 0, 2] × [-2, 4, 1] = [-8, -5, 4]"
+   ]
+  },
+  {
+   "id": "vector-188",
+   "topic": "vector",
+   "lines": [
+    "[3, 1, -2] · [1, 1, 1] = 3*1 + 1*1 + -2*1 = 2"
+   ]
+  },
+  {
+   "id": "vector-189",
+   "topic": "vector",
+   "lines": [
+    "[3, 1, -2] × [1, 1, 1] = [3, -5, 2]"
+   ]
+  },
+  {
+   "id": "vector-190",
+   "topic": "vector",
+   "lines": [
+    "|[3, 4]| = sqrt(9 + 16) = 5"
+   ]
+  },
+  {
+   "id": "units-191",
+   "topic": "units",
+   "lines": [
+    "150 km / (2 h) = 75 km/h",
+    "= 20.833333333333332 m/s"
+   ]
+  },
+  {
+   "id": "units-192",
+   "topic": "units",
+   "lines": [
+    "90 km / (3 h) = 30 km/h",
+    "= 8.333333333333334 m/s"
+   ]
+  },
+  {
+   "id": "units-193",
+   "topic": "units",
+   "lines": [
+    "36 km / (1 h) = 36 km/h",
+    "= 10 m/s"
+   ]
+  },
+  {
+   "id": "units-194",
+   "topic": "units",
+   "lines": [
+    "240 km / (4 h) = 60 km/h",
+    "= 16.666666666666668 m/s"
+   ]
+  },
+  {
+   "id": "units-195",
+   "topic": "units",
+   "lines": [
+    "2 km + 300 m = 2300 m"
+   ]
+  },
+  {
+   "id": "units-196",
+   "topic": "units",
+   "lines": [
+    "1 km + 450 m = 1450 m"
+   ]
+  },
+  {
+   "id": "units-197",
+   "topic": "units",
+   "lines": [
+    "3 km + 75 m = 3075 m"
+   ]
+  },
+  {
+   "id": "units-198",
+   "topic": "units",
+   "lines": [
+    "5 kg * 2 m/s^2 = 10 N"
+   ]
+  },
+  {
+   "id": "units-199",
+   "topic": "units",
+   "lines": [
+    "3 m * 4 m = 12 m^2"
+   ]
+  },
+  {
+   "id": "units-200",
+   "topic": "units",
+   "lines": [
+    "60 min = 3600 s"
+   ]
+  },
+  {
+   "id": "inequality-201",
+   "topic": "inequality",
+   "lines": [
+    "-2x + 1 > 5",
+    "-2x > 4",
+    "x < -2"
+   ]
+  },
+  {
+   "id": "inequality-202",
+   "topic": "inequality",
+   "lines": [
+    "-3x + 4 > -2",
+    "-3x > -6",
+    "x < 2"
+   ]
+  },
+  {
+   "id": "inequality-203",
+   "topic": "inequality",
+   "lines": [
+    "-5x - 1 > 9",
+    "-5x > 10",
+    "x < -2"
+   ]
+  },
+  {
+   "id": "inequality-204",
+   "topic": "inequality",
+   "lines": [
+    "-4x + 2 > 10",
+    "-4x > 8",
+    "x < -2"
+   ]
+  },
+  {
+   "id": "inequality-205",
+   "topic": "inequality",
+   "lines": [
+    "2x + 1 <= 5",
+    "2x <= 4",
+    "x <= 2"
+   ]
+  },
+  {
+   "id": "inequality-206",
+   "topic": "inequality",
+   "lines": [
+    "3x - 4 <= 8",
+    "3x <= 12",
+    "x <= 4"
+   ]
+  },
+  {
+   "id": "inequality-207",
+   "topic": "inequality",
+   "lines": [
+    "x^2 < 4",
+    "-2 < x < 2"
+   ]
+  },
+  {
+   "id": "inequality-208",
+   "topic": "inequality",
+   "lines": [
+    "x^2 > 4",
+    "x < -2 or x > 2"
+   ]
+  },
+  {
+   "id": "inequality-209",
+   "topic": "inequality",
+   "lines": [
+    "x^2 < 9",
+    "-3 < x < 3"
+   ]
+  },
+  {
+   "id": "inequality-210",
+   "topic": "inequality",
+   "lines": [
+    "x^2 > 9",
+    "x < -3 or x > 3"
+   ]
+  },
+  {
+   "id": "inequality-211",
+   "topic": "inequality",
+   "lines": [
+    "x^2 < 25",
+    "-5 < x < 5"
+   ]
+  },
+  {
+   "id": "inequality-212",
+   "topic": "inequality",
+   "lines": [
+    "x^2 > 25",
+    "x < -5 or x > 5"
+   ]
+  },
+  {
+   "id": "inequality-213",
+   "topic": "inequality",
+   "lines": [
+    "abs(x - 1) <= 3",
+    "-3 <= x - 1 <= 3",
+    "-2 <= x <= 4"
+   ]
+  },
+  {
+   "id": "inequality-214",
+   "topic": "inequality",
+   "lines": [
+    "abs(x - 2) <= 5",
+    "-5 <= x - 2 <= 5",
+    "-3 <= x <= 7"
+   ]
+  },
+  {
+   "id": "inequality-215",
+   "topic": "inequality",
+   "lines": [
+    "abs(x + 1) <= 4",
+    "-4 <= x + 1 <= 4",
+    "-5 <= x <= 3"
+   ]
+  },
+  {
+   "id": "page-216",
+   "topic": "page",
+   "lines": [
+    "2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "",
+    "3x - 1 = 8",
+    "3x = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "page-217",
+   "topic": "page",
+   "lines": [
+    "2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "Problem 2",
+    "3x - 1 = 8",
+    "3x = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "page-218",
+   "topic": "page",
+   "lines": [
+    "1) 2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "2) 3x - 1 = 8",
+    "3x = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "page-219",
+   "topic": "page",
+   "lines": [
+    "Q1: 2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "Q2: 3x - 1 = 8",
+    "3x = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "page-220",
+   "topic": "page",
+   "lines": [
+    "2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "3y - 1 = 8",
+    "3y = 9",
+    "y = 3"
+   ]
+  },
+  {
+   "id": "page-221",
+   "topic": "page",
+   "lines": [
+    "5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "",
+    "2x + 7 = 3",
+    "2x = -4",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "page-222",
+   "topic": "page",
+   "lines": [
+    "5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "Problem 2",
+    "2x + 7 = 3",
+    "2x = -4",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "page-223",
+   "topic": "page",
+   "lines": [
+    "1) 5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "2) 2x + 7 = 3",
+    "2x = -4",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "page-224",
+   "topic": "page",
+   "lines": [
+    "Q1: 5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "Q2: 2x + 7 = 3",
+    "2x = -4",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "page-225",
+   "topic": "page",
+   "lines": [
+    "5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "2y + 7 = 3",
+    "2y = -4",
+    "y = -2"
+   ]
+  },
+  {
+   "id": "page-226",
+   "topic": "page",
+   "lines": [
+    "4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "",
+    "3x + 5 = 17",
+    "3x = 12",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "page-227",
+   "topic": "page",
+   "lines": [
+    "4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "Problem 2",
+    "3x + 5 = 17",
+    "3x = 12",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "page-228",
+   "topic": "page",
+   "lines": [
+    "1) 4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "2) 3x + 5 = 17",
+    "3x = 12",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "page-229",
+   "topic": "page",
+   "lines": [
+    "Q1: 4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "Q2: 3x + 5 = 17",
+    "3x = 12",
+    "x = 4"
+   ]
+  },
+  {
+   "id": "page-230",
+   "topic": "page",
+   "lines": [
+    "4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "3y + 5 = 17",
+    "3y = 12",
+    "y = 4"
+   ]
+  },
+  {
+   "id": "page-231",
+   "topic": "page",
+   "lines": [
+    "3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "",
+    "7x - 2 = 5",
+    "7x = 7",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "page-232",
+   "topic": "page",
+   "lines": [
+    "3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "Problem 2",
+    "7x - 2 = 5",
+    "7x = 7",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "page-233",
+   "topic": "page",
+   "lines": [
+    "1) 3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "2) 7x - 2 = 5",
+    "7x = 7",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "page-234",
+   "topic": "page",
+   "lines": [
+    "Q1: 3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "Q2: 7x - 2 = 5",
+    "7x = 7",
+    "x = 1"
+   ]
+  },
+  {
+   "id": "page-235",
+   "topic": "page",
+   "lines": [
+    "3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "7y - 2 = 5",
+    "7y = 7",
+    "y = 1"
+   ]
+  },
+  {
+   "id": "stacked-236",
+   "topic": "stacked",
+   "lines": [
+    "y = 3x",
+    "x + y = 8",
+    "x + 3x = 8",
+    "4x = 8",
+    "x = 2",
+    "y = 6"
+   ]
+  },
+  {
+   "id": "stacked-237",
+   "topic": "stacked",
+   "lines": [
+    "y = 4x",
+    "x + y = 5",
+    "x + 4x = 5",
+    "5x = 5",
+    "x = 1",
+    "y = 4"
+   ]
+  },
+  {
+   "id": "stacked-238",
+   "topic": "stacked",
+   "lines": [
+    "y = -2x",
+    "x + y = -3",
+    "x + -2x = -3",
+    "-x = -3",
+    "x = 3",
+    "y = -6"
+   ]
+  },
+  {
+   "id": "stacked-239",
+   "topic": "stacked",
+   "lines": [
+    "y = 5x",
+    "x + y = -12",
+    "x + 5x = -12",
+    "6x = -12",
+    "x = -2",
+    "y = -10"
+   ]
+  },
+  {
+   "id": "stacked-240",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 7",
+    "x - y = 2",
+    "3x = 9",
+    "x = 3",
+    "y = 1"
+   ]
+  },
+  {
+   "id": "stacked-241",
+   "topic": "stacked",
+   "lines": [
+    "x = 3",
+    "y = x - 2",
+    "y = 1"
+   ]
+  },
+  {
+   "id": "stacked-242",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 3",
+    "x - y = 3",
+    "3x = 6",
+    "x = 2",
+    "y = -1"
+   ]
+  },
+  {
+   "id": "stacked-243",
+   "topic": "stacked",
+   "lines": [
+    "x = 2",
+    "y = x - 3",
+    "y = -1"
+   ]
+  },
+  {
+   "id": "stacked-244",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 12",
+    "x - y = 3",
+    "3x = 15",
+    "x = 5",
+    "y = 2"
+   ]
+  },
+  {
+   "id": "stacked-245",
+   "topic": "stacked",
+   "lines": [
+    "x = 5",
+    "y = x - 3",
+    "y = 2"
+   ]
+  },
+  {
+   "id": "stacked-246",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 2",
+    "x - y = -5",
+    "3x = -3",
+    "x = -1",
+    "y = 4"
+   ]
+  },
+  {
+   "id": "stacked-247",
+   "topic": "stacked",
+   "lines": [
+    "x = -1",
+    "y = x + 5",
+    "y = 4"
+   ]
+  },
+  {
+   "id": "leibniz-248",
+   "topic": "leibniz",
+   "lines": [
+    "y = 3x^2",
+    "dy/dx = 6x^1"
+   ]
+  },
+  {
+   "id": "leibniz-249",
+   "topic": "leibniz",
+   "lines": [
+    "y = 3x^2",
+    "y' = 6x^1"
+   ]
+  },
+  {
+   "id": "leibniz-250",
+   "topic": "leibniz",
+   "lines": [
+    "y = 2x^3",
+    "dy/dx = 6x^2"
+   ]
+  },
+  {
+   "id": "leibniz-251",
+   "topic": "leibniz",
+   "lines": [
+    "y = 2x^3",
+    "y' = 6x^2"
+   ]
+  },
+  {
+   "id": "leibniz-252",
+   "topic": "leibniz",
+   "lines": [
+    "y = 5x^4",
+    "dy/dx = 20x^3"
+   ]
+  },
+  {
+   "id": "leibniz-253",
+   "topic": "leibniz",
+   "lines": [
+    "y = 5x^4",
+    "y' = 20x^3"
+   ]
+  },
+  {
+   "id": "leibniz-254",
+   "topic": "leibniz",
+   "lines": [
+    "y = 4x^5",
+    "dy/dx = 20x^4"
+   ]
+  },
+  {
+   "id": "leibniz-255",
+   "topic": "leibniz",
+   "lines": [
+    "y = 4x^5",
+    "y' = 20x^4"
+   ]
+  },
+  {
+   "id": "rounding-256",
+   "topic": "rounding",
+   "lines": [
+    "sqrt(2)",
+    "= 1.414"
+   ]
+  },
+  {
+   "id": "rounding-257",
+   "topic": "rounding",
+   "lines": [
+    "2 pi",
+    "= 6.28"
+   ]
+  },
+  {
+   "id": "rounding-258",
+   "topic": "rounding",
+   "lines": [
+    "x = 1/3 = 0.33"
+   ]
+  },
+  {
+   "id": "rounding-259",
+   "topic": "rounding",
+   "lines": [
+    "3x = 7",
+    "x = 7/3",
+    "x ≈ 2.33"
+   ]
+  },
+  {
+   "id": "rounding-260",
+   "topic": "rounding",
+   "lines": [
+    "3x = 2",
+    "x = 0.67"
+   ]
+  },
+  {
+   "id": "rounding-261",
+   "topic": "rounding",
+   "lines": [
+    "x^2 = 2",
+    "x = 1.41 or x = -1.41"
+   ]
+  },
+  {
+   "id": "notes-262",
+   "topic": "notes",
+   "lines": [
+    "2x = 6 (divide by 2)",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "notes-263",
+   "topic": "notes",
+   "lines": [
+    "2x + 3 = 7 [subtract 3]",
+    "2x = 4 (divide both sides by 2)",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "notes-264",
+   "topic": "notes",
+   "lines": [
+    "d/dx(x^3) at x = 2",
+    "= 12"
+   ]
+  },
+  {
+   "id": "units-265",
+   "topic": "units",
+   "lines": [
+    "10 m / 2 s",
+    "= 5 m/s"
+   ]
+  },
+  {
+   "id": "mixed-266",
+   "topic": "mixed",
+   "lines": [
+    "1 1/2 + 1/2 = 2"
+   ]
+  },
+  {
+   "id": "mixed-267",
+   "topic": "mixed",
+   "lines": [
+    "2 1/4 + 1 3/4",
+    "= 4"
+   ]
+  },
+  {
+   "id": "precision-268",
+   "topic": "precision",
+   "lines": [
+    "sqrt(x + 3) = x - 3",
+    "x + 3 = (x - 3)^2",
+    "x^2 - 7x + 6 = 0",
+    "x = 1 or x = 6"
+   ]
+  },
+  {
+   "id": "precision-269",
+   "topic": "precision",
+   "lines": [
+    "x^2 = 9",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "precision-270",
+   "topic": "precision",
+   "lines": [
+    "x(x - 2) = 0",
+    "x = 0 or x = 2"
+   ]
+  },
+  {
+   "id": "precision-271",
+   "topic": "precision",
+   "lines": [
+    "e^x = e^(2x - 3)",
+    "x = 2x - 3",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "precision-272",
+   "topic": "precision",
+   "lines": [
+    "abs(x) = 5",
+    "x = 5 or x = -5"
+   ]
+  },
+  {
+   "id": "precision-273",
+   "topic": "precision",
+   "lines": [
+    "(x + 1)/(x - 1) = 2",
+    "x + 1 = 2(x - 1)",
+    "x + 1 = 2x - 2",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "precision-274",
+   "topic": "precision",
+   "lines": [
+    "x^3 - x = 0",
+    "x(x - 1)(x + 1) = 0",
+    "x = 0 or x = 1 or x = -1"
+   ]
+  },
+  {
+   "id": "precision-275",
+   "topic": "precision",
+   "lines": [
+    "sin(x)/cos(x)",
+    "= tan(x)"
+   ]
+  },
+  {
+   "id": "precision-276",
+   "topic": "precision",
+   "lines": [
+    "sqrt(x^2)",
+    "= abs(x)"
+   ]
+  },
+  {
+   "id": "precision-277",
+   "topic": "precision",
+   "lines": [
+    "sqrt(x^2)",
+    "= x"
+   ]
+  },
+  {
+   "id": "precision-278",
+   "topic": "precision",
+   "lines": [
+    "1/(x(x + 1))",
+    "= 1/x - 1/(x + 1)"
+   ]
+  },
+  {
+   "id": "precision-279",
+   "topic": "precision",
+   "lines": [
+    "(x^3 - 8)/(x - 2)",
+    "= x^2 + 2x + 4"
+   ]
+  },
+  {
+   "id": "precision-280",
+   "topic": "precision",
+   "lines": [
+    "ln(x^2)",
+    "= 2 ln(x)"
+   ]
+  },
+  {
+   "id": "precision-281",
+   "topic": "precision",
+   "lines": [
+    "x^2 = 2x",
+    "x = 2"
+   ]
+  },
+  {
+   "id": "precision-282",
+   "topic": "precision",
+   "lines": [
+    "2^x = 8",
+    "x ln(2) = ln(8)",
+    "x = ln(8)/ln(2)",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "precision-283",
+   "topic": "precision",
+   "lines": [
+    "y = 2x + 3",
+    "y - 3 = 2x",
+    "x = (y - 3)/2"
+   ]
+  },
+  {
+   "id": "precision-284",
+   "topic": "precision",
+   "lines": [
+    "∫ 1/x dx = ln(abs(x)) + C"
+   ]
+  },
+  {
+   "id": "precision-285",
+   "topic": "precision",
+   "lines": [
+    "∫ sin(x) cos(x) dx = sin(x)^2/2 + C"
+   ]
+  },
+  {
+   "id": "precision-286",
+   "topic": "precision",
+   "lines": [
+    "∫ sin(x) cos(x) dx = -cos(x)^2/2 + C"
+   ]
+  },
+  {
+   "id": "precision-287",
+   "topic": "precision",
+   "lines": [
+    "∫ 2x dx",
+    "= x^2 + 5"
+   ]
+  },
+  {
+   "id": "precision-288",
+   "topic": "precision",
+   "lines": [
+    "so 2x = 4",
+    "therefore x = 2"
+   ]
+  },
+  {
+   "id": "precision-289",
+   "topic": "precision",
+   "lines": [
+    "x^2 + 1 = 0",
+    "x^2 = -1"
+   ]
+  },
+  {
+   "id": "precision-290",
+   "topic": "precision",
+   "lines": [
+    "1/x > 2",
+    "0 < x < 1/2"
+   ]
+  },
+  {
+   "id": "precision-291",
+   "topic": "precision",
+   "lines": [
+    "x/(x - 1) >= 0",
+    "x <= 0 or x > 1"
+   ]
+  },
+  {
+   "id": "precision-292",
+   "topic": "precision",
+   "lines": [
+    "3 + 4 * 2 = 3 + 8 = 11"
+   ]
+  },
+  {
+   "id": "precision-293",
+   "topic": "precision",
+   "lines": [
+    "the answer is below"
+   ]
+  },
+  {
+   "id": "precision-294",
+   "topic": "precision",
+   "lines": [
+    "d/dx(x^x) = x^x (ln(x) + 1)"
+   ]
+  },
+  {
+   "id": "precision-295",
+   "topic": "precision",
+   "lines": [
+    "cos(x)^2",
+    "= (1 + cos(2x))/2"
+   ]
+  },
+  {
+   "id": "precision-296",
+   "topic": "precision",
+   "lines": [
+    "tan(2x)",
+    "= 2tan(x)/(1 - tan(x)^2)"
+   ]
+  },
+  {
+   "id": "roots-297",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "(x - 2)(x - 3) = 0",
+    "x = 2",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "roots-298",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "x = 2",
+    "x = 3"
+   ]
+  },
+  {
+   "id": "roots-299",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 3x - 4 = 0",
+    "(x - 1)(x + 4) = 0",
+    "x = 1",
+    "x = -4"
+   ]
+  },
+  {
+   "id": "roots-300",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 3x - 4 = 0",
+    "x = 1",
+    "x = -4"
+   ]
+  },
+  {
+   "id": "roots-301",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 7x + 10 = 0",
+    "(x + 2)(x + 5) = 0",
+    "x = -2",
+    "x = -5"
+   ]
+  },
+  {
+   "id": "roots-302",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 7x + 10 = 0",
+    "x = -2",
+    "x = -5"
+   ]
+  },
+  {
+   "id": "roots-303",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 10x + 21 = 0",
+    "(x - 3)(x - 7) = 0",
+    "x = 3",
+    "x = 7"
+   ]
+  },
+  {
+   "id": "roots-304",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 10x + 21 = 0",
+    "x = 3",
+    "x = 7"
+   ]
+  },
+  {
+   "id": "roots-305",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 5x - 6 = 0",
+    "(x + 1)(x - 6) = 0",
+    "x = -1",
+    "x = 6"
+   ]
+  },
+  {
+   "id": "roots-306",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 5x - 6 = 0",
+    "x = -1",
+    "x = 6"
+   ]
+  },
+  {
+   "id": "roots-307",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 4",
+    "x = 2",
+    "x = -2"
+   ]
+  },
+  {
+   "id": "roots-308",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 9",
+    "x = 3",
+    "x = -3"
+   ]
+  },
+  {
+   "id": "roots-309",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 16",
+    "x = 4",
+    "x = -4"
+   ]
+  },
+  {
+   "id": "roots-310",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 25",
+    "x = 5",
+    "x = -5"
+   ]
+  },
+  {
+   "id": "roots-311",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 81",
+    "x = 9",
+    "x = -9"
+   ]
+  },
+  {
+   "id": "roots-312",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 2x - 3 = 0",
+    "x = (-2 ± 4)/2",
+    "x = 1",
+    "x = -3"
+   ]
+  },
+  {
+   "id": "roots-313",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 2x - 8 = 0",
+    "x = (-2 ± 6)/2",
+    "x = 2",
+    "x = -4"
+   ]
+  },
+  {
+   "id": "roots-314",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 4x - 5 = 0",
+    "x = (4 ± 6)/2",
+    "x = 5",
+    "x = -1"
+   ]
+  },
+  {
+   "id": "answer-check-315",
+   "topic": "answer-check",
+   "lines": [
+    "3x - 4 = 11",
+    "x = 5",
+    "3(5) - 4",
+    "= 15 - 4",
+    "= 11"
+   ]
+  },
+  {
+   "id": "answer-check-316",
+   "topic": "answer-check",
+   "lines": [
+    "3x - 4 = 11",
+    "x = 5",
+    "LHS = 3(5) - 4 = 11 = RHS"
+   ]
+  },
+  {
+   "id": "answer-check-317",
+   "topic": "answer-check",
+   "lines": [
+    "x = 5",
+    "3x",
+    "= 15"
+   ]
+  },
+  {
+   "id": "answer-check-318",
+   "topic": "answer-check",
+   "lines": [
+    "x = 5",
+    "y = 3x = 15"
+   ]
+  },
+  {
+   "id": "answer-check-319",
+   "topic": "answer-check",
+   "lines": [
+    "2x + 7 = 13",
+    "x = 3",
+    "2(3) + 7",
+    "= 6 + 7",
+    "= 13"
+   ]
+  },
+  {
+   "id": "answer-check-320",
+   "topic": "answer-check",
+   "lines": [
+    "2x + 7 = 13",
+    "x = 3",
+    "LHS = 2(3) + 7 = 13 = RHS"
+   ]
+  },
+  {
+   "id": "answer-check-321",
+   "topic": "answer-check",
+   "lines": [
+    "x = 3",
+    "2x",
+    "= 6"
+   ]
+  },
+  {
+   "id": "answer-check-322",
+   "topic": "answer-check",
+   "lines": [
+    "x = 3",
+    "y = 2x = 6"
+   ]
+  },
+  {
+   "id": "answer-check-323",
+   "topic": "answer-check",
+   "lines": [
+    "4x - 1 = 7",
+    "x = 2",
+    "4(2) - 1",
+    "= 8 - 1",
+    "= 7"
+   ]
+  },
+  {
+   "id": "answer-check-324",
+   "topic": "answer-check",
+   "lines": [
+    "4x - 1 = 7",
+    "x = 2",
+    "LHS = 4(2) - 1 = 7 = RHS"
+   ]
+  },
+  {
+   "id": "answer-check-325",
+   "topic": "answer-check",
+   "lines": [
+    "x = 2",
+    "4x",
+    "= 8"
+   ]
+  },
+  {
+   "id": "answer-check-326",
+   "topic": "answer-check",
+   "lines": [
+    "x = 2",
+    "y = 4x = 8"
+   ]
+  },
+  {
+   "id": "answer-check-327",
+   "topic": "answer-check",
+   "lines": [
+    "5x + 3 = -7",
+    "x = -2",
+    "5(-2) + 3",
+    "= -10 + 3",
+    "= -7"
+   ]
+  },
+  {
+   "id": "answer-check-328",
+   "topic": "answer-check",
+   "lines": [
+    "5x + 3 = -7",
+    "x = -2",
+    "LHS = 5(-2) + 3 = -7 = RHS"
+   ]
+  },
+  {
+   "id": "answer-check-329",
+   "topic": "answer-check",
+   "lines": [
+    "x = -2",
+    "5x",
+    "= -10"
+   ]
+  },
+  {
+   "id": "answer-check-330",
+   "topic": "answer-check",
+   "lines": [
+    "x = -2",
+    "y = 5x = -10"
+   ]
+  },
+  {
+   "id": "answer-check-331",
+   "topic": "answer-check",
+   "lines": [
+    "x = 5",
+    "3(5) - 4",
+    "= 15 - 4",
+    "= 11"
+   ]
+  },
+  {
+   "id": "answer-check-332",
+   "topic": "answer-check",
+   "lines": [
+    "x = 3",
+    "2x",
+    "= 6"
+   ]
+  },
+  {
+   "id": "answer-check-333",
+   "topic": "answer-check",
+   "lines": [
+    "x = 5",
+    "x^2",
+    "= 25"
+   ]
+  },
+  {
+   "id": "answer-check-334",
+   "topic": "answer-check",
+   "lines": [
+    "x = 5",
+    "(2+3)(4+5)",
+    "= 45"
+   ]
+  },
+  {
+   "id": "labels-335",
+   "topic": "labels",
+   "lines": [
+    "LHS = 3(5) - 4 = 11 = RHS"
+   ]
+  },
+  {
+   "id": "labels-336",
+   "topic": "labels",
+   "lines": [
+    "let a = b = c"
+   ]
+  },
+  {
+   "id": "labels-337",
+   "topic": "labels",
+   "lines": [
+    "x = y = z = w"
+   ]
+  },
+  {
+   "id": "labels-338",
+   "topic": "labels",
+   "lines": [
+    "2x = 10",
+    "x = 5 ✓"
+   ]
+  },
+  {
+   "id": "labels-339",
+   "topic": "labels",
+   "lines": [
+    "2x = 10",
+    "ans: x = 5"
+   ]
+  },
+  {
+   "id": "labels-340",
+   "topic": "labels",
+   "lines": [
+    "½x = 4",
+    "x = 8"
+   ]
+  },
+  {
+   "id": "labels-341",
+   "topic": "labels",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "x = 2, 3"
+   ]
+  },
+  {
+   "id": "labels-342",
+   "topic": "labels",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "x ∈ {2, 3}"
+   ]
+  },
+  {
+   "id": "labels-343",
+   "topic": "labels",
+   "lines": [
+    "25% of 80 = 20"
+   ]
+  }
+ ],
+ "broken": [
+  {
+   "id": "linear-b1",
+   "topic": "linear",
+   "lines": [
+    "2x + 3 = 11",
+    "2x = 14",
+    "x = 7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b2",
+   "topic": "linear",
+   "lines": [
+    "2x + 3 = 11",
+    "2x = 8",
+    "x = 16"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear-b3",
+   "topic": "linear",
+   "lines": [
+    "3x - 4 = 8",
+    "3x = 4",
+    "x = 4/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b4",
+   "topic": "linear",
+   "lines": [
+    "3x - 4 = 8",
+    "3x = 12",
+    "x = 36"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear-b5",
+   "topic": "linear",
+   "lines": [
+    "5x + 7 = -8",
+    "5x = -1",
+    "x = -1/5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b6",
+   "topic": "linear",
+   "lines": [
+    "5x + 7 = -8",
+    "5x = -15",
+    "x = -75"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear-b7",
+   "topic": "linear",
+   "lines": [
+    "4x + 1 = 21",
+    "4x = 22",
+    "x = 11/2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b8",
+   "topic": "linear",
+   "lines": [
+    "4x + 1 = 21",
+    "4x = 20",
+    "x = 80"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear-b9",
+   "topic": "linear",
+   "lines": [
+    "7x - 2 = 12",
+    "7x = 10",
+    "x = 10/7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b10",
+   "topic": "linear",
+   "lines": [
+    "7x - 2 = 12",
+    "7x = 14",
+    "x = 98"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear-b11",
+   "topic": "linear",
+   "lines": [
+    "6x + 5 = 5",
+    "6x = 10",
+    "x = 5/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b12",
+   "topic": "linear",
+   "lines": [
+    "9x + 4 = -14",
+    "9x = -10",
+    "x = -10/9"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b13",
+   "topic": "linear",
+   "lines": [
+    "9x + 4 = -14",
+    "9x = -18",
+    "x = -162"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear-b14",
+   "topic": "linear",
+   "lines": [
+    "2x - 9 = 3",
+    "2x = -6",
+    "x = -3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear-b15",
+   "topic": "linear",
+   "lines": [
+    "2x - 9 = 3",
+    "2x = 12",
+    "x = 24"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "linear2-b16",
+   "topic": "linear2",
+   "lines": [
+    "5x + 3 = 2x + 12",
+    "7x + 3 = 12",
+    "7x = 9",
+    "x = 9/7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear2-b17",
+   "topic": "linear2",
+   "lines": [
+    "7x - 1 = 3x + 11",
+    "10x - 1 = 11",
+    "10x = 12",
+    "x = 6/5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear2-b18",
+   "topic": "linear2",
+   "lines": [
+    "4x + 9 = -2x - 3",
+    "2x + 9 = -3",
+    "2x = -12",
+    "x = -6"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear2-b19",
+   "topic": "linear2",
+   "lines": [
+    "6x + 2 = x + 22",
+    "7x + 2 = 22",
+    "7x = 20",
+    "x = 20/7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear2-b20",
+   "topic": "linear2",
+   "lines": [
+    "3x - 8 = 5x + 4",
+    "8x - 8 = 4",
+    "8x = 12",
+    "x = 3/2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "linear2-b21",
+   "topic": "linear2",
+   "lines": [
+    "8x + 1 = 3x + 26",
+    "11x + 1 = 26",
+    "11x = 25",
+    "x = 25/11"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "brackets-b22",
+   "topic": "brackets",
+   "lines": [
+    "3(x + 2) - 4 = 11",
+    "3x + 2 - 4 = 11",
+    "3x = 13",
+    "x = 13/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "brackets-b23",
+   "topic": "brackets",
+   "lines": [
+    "2(x - 5) - 1 = 7",
+    "2x - 5 - 1 = 7",
+    "2x = 13",
+    "x = 13/2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "brackets-b24",
+   "topic": "brackets",
+   "lines": [
+    "4(x + 3) + 2 = 30",
+    "4x + 3 + 2 = 30",
+    "4x = 25",
+    "x = 25/4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "brackets-b25",
+   "topic": "brackets",
+   "lines": [
+    "5(x + 1) - 6 = 9",
+    "5x + 1 - 6 = 9",
+    "5x = 14",
+    "x = 14/5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "brackets-b26",
+   "topic": "brackets",
+   "lines": [
+    "6(x - 2) - 3 = 15",
+    "6x - 2 - 3 = 15",
+    "6x = 20",
+    "x = 10/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b27",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 5x + 6 = 0",
+    "(x - 2)(x + 3) = 0",
+    "x = 2 or x = -3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b28",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 5x + 6 = 0",
+    "(x + 2)(x + 3) = 0",
+    "x = 2 or x = 3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factor-b29",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 3x - 4 = 0",
+    "(x + 1)(x + 4) = 0",
+    "x = -1 or x = -4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b30",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 3x - 4 = 0",
+    "(x - 1)(x + 4) = 0",
+    "x = -1 or x = 4"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factor-b31",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 3x - 10 = 0",
+    "(x - 5)(x - 2) = 0",
+    "x = 5 or x = 2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b32",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 3x - 10 = 0",
+    "(x + 5)(x - 2) = 0",
+    "x = 5 or x = -2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factor-b33",
+   "topic": "factor",
+   "lines": [
+    "x^2 - 7x + 12 = 0",
+    "(x + 3)(x - 4) = 0",
+    "x = -3 or x = 4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b34",
+   "topic": "factor",
+   "lines": [
+    "x^2 - 7x + 12 = 0",
+    "(x - 3)(x - 4) = 0",
+    "x = -3 or x = -4"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factor-b35",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 7x + 6 = 0",
+    "(x - 1)(x + 6) = 0",
+    "x = 1 or x = -6"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b36",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 7x + 6 = 0",
+    "(x + 1)(x + 6) = 0",
+    "x = 1 or x = 6"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factor-b37",
+   "topic": "factor",
+   "lines": [
+    "x^2 - 4x - 12 = 0",
+    "(x + 6)(x + 2) = 0",
+    "x = -6 or x = -2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b38",
+   "topic": "factor",
+   "lines": [
+    "x^2 - 4x - 12 = 0",
+    "(x - 6)(x + 2) = 0",
+    "x = -6 or x = 2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "factor-b39",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 8x + 7 = 0",
+    "(x - 7)(x + 1) = 0",
+    "x = 7 or x = -1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "factor-b40",
+   "topic": "factor",
+   "lines": [
+    "x^2 + 8x + 7 = 0",
+    "(x + 7)(x + 1) = 0",
+    "x = 7 or x = 1"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "expand-b41",
+   "topic": "expand",
+   "lines": [
+    "(x + 1)^2",
+    "= x^2 + 1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b42",
+   "topic": "expand",
+   "lines": [
+    "(x + 2)^2",
+    "= x^2 + 4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b43",
+   "topic": "expand",
+   "lines": [
+    "(x + 3)^2",
+    "= x^2 + 9"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b44",
+   "topic": "expand",
+   "lines": [
+    "(x - 4)^2",
+    "= x^2 + 16"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b45",
+   "topic": "expand",
+   "lines": [
+    "(x + 5)^2",
+    "= x^2 + 25"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b46",
+   "topic": "expand",
+   "lines": [
+    "(x - 6)^2",
+    "= x^2 + 36"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b47",
+   "topic": "expand",
+   "lines": [
+    "(x + 7)^2",
+    "= x^2 + 49"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "expand-b48",
+   "topic": "expand",
+   "lines": [
+    "(x + 2)(x + 5)",
+    "= x^2 + 5x + 2x + 10",
+    "= x^2 + 10x + 7"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "expand-b49",
+   "topic": "expand",
+   "lines": [
+    "(x - 3)(x + 4)",
+    "= x^2 + 4x - 3x - 12",
+    "= x^2 - 12x + 1"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "expand-b50",
+   "topic": "expand",
+   "lines": [
+    "(x + 6)(x - 1)",
+    "= x^2 - 1x + 6x - 6",
+    "= x^2 - 6x + 5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "expand-b51",
+   "topic": "expand",
+   "lines": [
+    "(x - 2)(x - 7)",
+    "= x^2 - 7x - 2x + 14",
+    "= x^2 + 14x - 9"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "expand-b52",
+   "topic": "expand",
+   "lines": [
+    "(x + 3)(x + 3)",
+    "= x^2 + 3x + 3x + 9",
+    "= x^2 + 9x + 6"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "rational-b53",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 4)/(x - 2)",
+    "= (x - 2)(x + 2)/(x - 2)",
+    "= x - 2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "rational-b54",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 9)/(x - 3)",
+    "= (x - 3)(x + 3)/(x - 3)",
+    "= x - 3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "rational-b55",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 25)/(x - 5)",
+    "= (x - 5)(x + 5)/(x - 5)",
+    "= x - 5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "rational-b56",
+   "topic": "rational",
+   "lines": [
+    "(x^2 - 49)/(x - 7)",
+    "= (x - 7)(x + 7)/(x - 7)",
+    "= x - 7"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "powers-b57",
+   "topic": "powers",
+   "lines": [
+    "x^2 * x^3",
+    "= x^6"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "powers-b58",
+   "topic": "powers",
+   "lines": [
+    "x^4 * x^5",
+    "= x^20"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "powers-b59",
+   "topic": "powers",
+   "lines": [
+    "x^3 * x^7",
+    "= x^21"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fractions-b60",
+   "topic": "fractions",
+   "lines": [
+    "x/1 + x/2 = 1",
+    "2x + 1x = 1",
+    "3x = 1",
+    "x = 1/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fractions-b61",
+   "topic": "fractions",
+   "lines": [
+    "x/2 + x/3 = 1",
+    "3x + 2x = 1",
+    "5x = 1",
+    "x = 1/5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "fractions-b62",
+   "topic": "fractions",
+   "lines": [
+    "x/3 + x/5 = 1",
+    "5x + 3x = 1",
+    "8x = 1",
+    "x = 1/8"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "quadratic-b63",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "x = (-5 ± sqrt(1))/2",
+    "x = -2 or x = -3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "quadratic-b64",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 + 2x - 8 = 0",
+    "x = (2 ± sqrt(36))/2",
+    "x = 4 or x = -2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "quadratic-b65",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 - 1x - 12 = 0",
+    "x = (-1 ± sqrt(49))/2",
+    "x = 3 or x = -4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "quadratic-b66",
+   "topic": "quadratic",
+   "lines": [
+    "x^2 + 6x + 5 = 0",
+    "x = (6 ± sqrt(16))/2",
+    "x = 5 or x = 1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b67",
+   "topic": "trig",
+   "lines": [
+    "(1 - cos(x)^2)/sin(x)",
+    "= sin(x)^2/sin(x)",
+    "= cos(x)"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "trig-b68",
+   "topic": "trig",
+   "lines": [
+    "sin(2x)/(2cos(x))",
+    "= sin(x) cos(x)/(2 cos(x))",
+    "= sin(x)/2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b69",
+   "topic": "trig",
+   "lines": [
+    "tan(x) cos(x)",
+    "= cos(x)/sin(x) * cos(x)",
+    "= cos(x)^2/sin(x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b70",
+   "topic": "trig",
+   "lines": [
+    "cos(2x) + 2 sin(x)^2",
+    "= 1 - sin(x)^2 + 2 sin(x)^2",
+    "= 1 + sin(x)^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b71",
+   "topic": "trig",
+   "lines": [
+    "sin(x)^4 - cos(x)^4",
+    "= (sin(x)^2 - cos(x)^2)(sin(x)^2 + cos(x)^2)",
+    "= sin(x)^2 - cos(x)^2",
+    "= cos(2x)"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "trig-b72",
+   "topic": "trig",
+   "lines": [
+    "1 + tan(x)^2",
+    "= 1 + sin(x)^2/cos(x)^2",
+    "= (cos(x)^2 + sin(x)^2)/cos(x)^2",
+    "= 1/sin(x)^2"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "trig-b73",
+   "topic": "trig",
+   "lines": [
+    "sin(x + pi/2)",
+    "= sin(x) cos(pi/2) - cos(x) sin(pi/2)",
+    "= -cos(x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b74",
+   "topic": "trig",
+   "lines": [
+    "2 sin(2x) cos(2x)",
+    "= sin(2x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b75",
+   "topic": "trig",
+   "lines": [
+    "2 sin(3x) cos(3x)",
+    "= sin(3x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b76",
+   "topic": "trig",
+   "lines": [
+    "2 sin(4x) cos(4x)",
+    "= sin(4x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b77",
+   "topic": "trig",
+   "lines": [
+    "2 sin(5x) cos(5x)",
+    "= sin(5x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "trig-b78",
+   "topic": "trig",
+   "lines": [
+    "2 sin(x) = 1",
+    "sin(x) = 2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b79",
+   "topic": "exp",
+   "lines": [
+    "3 e^(2x) = 12",
+    "e^(2x) = 9",
+    "2x = ln(9)",
+    "x = ln(9)/2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b80",
+   "topic": "exp",
+   "lines": [
+    "2 e^(5x) = 14",
+    "e^(5x) = 12",
+    "5x = ln(12)",
+    "x = ln(12)/5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b81",
+   "topic": "exp",
+   "lines": [
+    "4 e^(3x) = 20",
+    "e^(3x) = 16",
+    "3x = ln(16)",
+    "x = ln(16)/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b82",
+   "topic": "exp",
+   "lines": [
+    "5 e^(1x) = 35",
+    "e^(1x) = 30",
+    "1x = ln(30)",
+    "x = ln(30)/1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b83",
+   "topic": "exp",
+   "lines": [
+    "2^(x + 1) = 16",
+    "x + 1 = 8",
+    "x = 7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b84",
+   "topic": "exp",
+   "lines": [
+    "3^(x + 1) = 27",
+    "x + 1 = 9",
+    "x = 8"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b85",
+   "topic": "exp",
+   "lines": [
+    "5^(x + 1) = 25",
+    "x + 1 = 5",
+    "x = 4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "exp-b86",
+   "topic": "exp",
+   "lines": [
+    "2^(x + 1) = 64",
+    "x + 1 = 32",
+    "x = 31"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b87",
+   "topic": "logs",
+   "lines": [
+    "ln(2x) - ln(2)",
+    "= ln(2x - 2)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b88",
+   "topic": "logs",
+   "lines": [
+    "ln(x^2)",
+    "= ln(x)^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b89",
+   "topic": "logs",
+   "lines": [
+    "ln(3x) - ln(3)",
+    "= ln(3x - 3)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b90",
+   "topic": "logs",
+   "lines": [
+    "ln(x^3)",
+    "= ln(x)^3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b91",
+   "topic": "logs",
+   "lines": [
+    "ln(7x) - ln(7)",
+    "= ln(7x - 7)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b92",
+   "topic": "logs",
+   "lines": [
+    "ln(x^7)",
+    "= ln(x)^7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b93",
+   "topic": "logs",
+   "lines": [
+    "ln(x) + ln(x + 1)",
+    "= ln(x + x + 1)",
+    "= ln(2x + 1)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b94",
+   "topic": "logs",
+   "lines": [
+    "log(1000)",
+    "= 4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "logs-b95",
+   "topic": "logs",
+   "lines": [
+    "e^(ln(5) + ln(2))",
+    "= e^(ln(7))",
+    "= 7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b96",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(3x^4) = 3x^3"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b97",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(5x^2) = 5x^1"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b98",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(2x^7) = 2x^6"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b99",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(-4x^3) = -4x^2"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b100",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(6x^5) = 6x^4"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b101",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x^2 sin(x))",
+    "= 2x^1 cos(x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b102",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x^3 sin(x))",
+    "= 3x^2 cos(x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b103",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x^4 sin(x))",
+    "= 4x^3 cos(x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b104",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sin(2x^2)) = cos(2x^2)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b105",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x/(x + 2))",
+    "= (x - (x + 2))/(x + 2)^2",
+    "= -2/(x + 2)^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b106",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(ln(2x + 1)) = 1/(2x + 1)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b107",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sin(3x^2)) = cos(3x^2)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b108",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x/(x + 3))",
+    "= (x - (x + 3))/(x + 3)^2",
+    "= -3/(x + 3)^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b109",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(ln(3x + 1)) = 1/(3x + 1)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b110",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sin(5x^2)) = cos(5x^2)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b111",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(x/(x + 5))",
+    "= (x - (x + 5))/(x + 5)^2",
+    "= -5/(x + 5)^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b112",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(ln(5x + 1)) = 1/(5x + 1)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b113",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x e^(2x)",
+    "f'(x) = 2 e^(2x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b114",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x e^(3x)",
+    "f'(x) = 3 e^(3x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b115",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x e^(-1x)",
+    "f'(x) = -1 e^(-1x)"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "derivative-b116",
+   "topic": "derivative",
+   "lines": [
+    "f(x) = x^3 - 2x",
+    "f'(x) = 3x^2 - 2",
+    "f'(2) = 12"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "derivative-b117",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(e^x cos(x)) = e^x cos(x) + e^x sin(x)"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "derivative-b118",
+   "topic": "derivative",
+   "lines": [
+    "d/dx(sqrt(x^2 + 1)) = 1/(2 sqrt(x^2 + 1))"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "integral-b119",
+   "topic": "integral",
+   "lines": [
+    "∫ 3x^2 dx",
+    "= 3x^3 + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "integral-b120",
+   "topic": "integral",
+   "lines": [
+    "∫ 4x^3 dx",
+    "= 4x^4 + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "integral-b121",
+   "topic": "integral",
+   "lines": [
+    "∫ 5x^4 dx",
+    "= 5x^5 + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "integral-b122",
+   "topic": "integral",
+   "lines": [
+    "∫ 6x^1 dx",
+    "= 6x^2 + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "integral-b123",
+   "topic": "integral",
+   "lines": [
+    "∫ 2x^5 dx",
+    "= 2x^6 + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "byparts-b124",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(2x) dx",
+    "= x e^(2x)/2 - ∫ e^(2x)/2 dx",
+    "= x e^(2x)/2 + e^(2x)/4 + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "byparts-b125",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(2x) dx",
+    "= x e^(2x) - ∫ e^(2x) dx",
+    "= x e^(2x) - e^(2x) + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "byparts-b126",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(3x) dx",
+    "= x e^(3x)/3 - ∫ e^(3x)/3 dx",
+    "= x e^(3x)/3 + e^(3x)/9 + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "byparts-b127",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(3x) dx",
+    "= x e^(3x) - ∫ e^(3x) dx",
+    "= x e^(3x) - e^(3x) + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "byparts-b128",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(4x) dx",
+    "= x e^(4x)/4 - ∫ e^(4x)/4 dx",
+    "= x e^(4x)/4 + e^(4x)/16 + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "byparts-b129",
+   "topic": "byparts",
+   "lines": [
+    "∫ x e^(4x) dx",
+    "= x e^(4x) - ∫ e^(4x) dx",
+    "= x e^(4x) - e^(4x) + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "byparts-b130",
+   "topic": "byparts",
+   "lines": [
+    "∫ x cos(x) dx",
+    "u = x, du = dx, dv = cos(x) dx, v = sin(x)",
+    "= x sin(x) - ∫ sin(x) dx",
+    "= x sin(x) - cos(x) + C"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "byparts-b131",
+   "topic": "byparts",
+   "lines": [
+    "∫ x sin(x) dx",
+    "= x cos(x) - ∫ cos(x) dx",
+    "= x cos(x) - sin(x) + C"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "byparts-b132",
+   "topic": "byparts",
+   "lines": [
+    "∫ ln(x) dx",
+    "= x ln(x) - ∫ x * 1/x dx",
+    "= x ln(x) + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "substitution-b133",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x (x^2 + 1)^2 dx",
+    "let u = x^2 + 1",
+    "= ∫ u^2 du",
+    "= u^3 + C",
+    "= (x^2 + 1)^3 + C"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "substitution-b134",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x (x^2 + 3)^3 dx",
+    "let u = x^2 + 3",
+    "= ∫ u^3 du",
+    "= u^4 + C",
+    "= (x^2 + 3)^4 + C"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "substitution-b135",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x (x^2 + 2)^4 dx",
+    "let u = x^2 + 2",
+    "= ∫ u^4 du",
+    "= u^5 + C",
+    "= (x^2 + 2)^5 + C"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "substitution-b136",
+   "topic": "substitution",
+   "lines": [
+    "∫ cos(2x) dx",
+    "let u = 2x",
+    "= ∫ cos(u) du",
+    "= sin(u) + C",
+    "= sin(2x) + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "substitution-b137",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2 e^(2x) dx = 4 e^(2x) + C"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "substitution-b138",
+   "topic": "substitution",
+   "lines": [
+    "∫ cos(3x) dx",
+    "let u = 3x",
+    "= ∫ cos(u) du",
+    "= sin(u) + C",
+    "= sin(3x) + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "substitution-b139",
+   "topic": "substitution",
+   "lines": [
+    "∫ 3 e^(3x) dx = 9 e^(3x) + C"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "substitution-b140",
+   "topic": "substitution",
+   "lines": [
+    "∫ cos(5x) dx",
+    "let u = 5x",
+    "= ∫ cos(u) du",
+    "= sin(u) + C",
+    "= sin(5x) + C"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "substitution-b141",
+   "topic": "substitution",
+   "lines": [
+    "∫ 5 e^(5x) dx = 25 e^(5x) + C"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "substitution-b142",
+   "topic": "substitution",
+   "lines": [
+    "∫ 2x cos(x^2) dx",
+    "let u = x^2",
+    "= ∫ cos(u) du",
+    "= -sin(u) + C",
+    "= -sin(x^2) + C"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "definite-b143",
+   "topic": "definite",
+   "lines": [
+    "∫_0^1 x^2 dx = [x^3/3]_0^1 = 1/2"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "definite-b144",
+   "topic": "definite",
+   "lines": [
+    "∫_0^2 x^3 dx = [x^4/4]_0^2 = 16/3"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "definite-b145",
+   "topic": "definite",
+   "lines": [
+    "∫_0^3 x^1 dx = [x^2/2]_0^3 = 9"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "definite-b146",
+   "topic": "definite",
+   "lines": [
+    "∫_0^2 x^2 dx = [x^3/3]_0^2 = 4"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "definite-b147",
+   "topic": "definite",
+   "lines": [
+    "∫_0^pi sin(x) dx",
+    "= [cos(x)]_0^pi",
+    "= -2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "definite-b148",
+   "topic": "definite",
+   "lines": [
+    "∫_1^e 1/x dx",
+    "= [ln(x)]_1^e",
+    "= e"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b149",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->1) (x^2 - 1)/(x - 1)",
+    "= lim_(x->1) (x + 1)",
+    "= 1"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b150",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->2) (x^2 - 4)/(x - 2)",
+    "= lim_(x->2) (x + 2)",
+    "= 2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b151",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->3) (x^2 - 9)/(x - 3)",
+    "= lim_(x->3) (x + 3)",
+    "= 3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b152",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->4) (x^2 - 16)/(x - 4)",
+    "= lim_(x->4) (x + 4)",
+    "= 4"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b153",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) sin(2x)/x = 1"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "limit-b154",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) sin(3x)/x = 1"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "limit-b155",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) sin(5x)/x = 1"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "limit-b156",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->∞) (3x^2 + 1)/(2x^2 + x)",
+    "= lim_(x->∞) (3 + 1/x^2)/(2 + 1/x)",
+    "= 2/3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b157",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->∞) (5x^2 + 1)/(4x^2 + x)",
+    "= lim_(x->∞) (5 + 1/x^2)/(4 + 1/x)",
+    "= 4/5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b158",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->∞) (1x^2 + 1)/(7x^2 + x)",
+    "= lim_(x->∞) (1 + 1/x^2)/(7 + 1/x)",
+    "= 7"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "limit-b159",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) (1 - cos(x))/x^2 = 0"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "limit-b160",
+   "topic": "limit",
+   "lines": [
+    "lim_(x->0) (e^x - 1)/x",
+    "= lim_(x->0) e^x/1",
+    "= 0"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "series-b161",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(10) n = 100"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "series-b162",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(20) n = 400"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "series-b163",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(100) n = 10000"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "series-b164",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=0)^(∞) (1/2)^n = 1"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "series-b165",
+   "topic": "series",
+   "lines": [
+    "Σ_(n=1)^(5) n^2 = 1 + 4 + 9 + 16 + 25 = 45"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "system-b166",
+   "topic": "system",
+   "lines": [
+    "x + y = 5, x - y = 1",
+    "2x = 4",
+    "x = 2",
+    "y = 3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "system-b167",
+   "topic": "system",
+   "lines": [
+    "x + y = 5, x - y = 1",
+    "2x = 6",
+    "x = 3",
+    "y = 3"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "system-b168",
+   "topic": "system",
+   "lines": [
+    "x + y = 4, x - y = 6",
+    "2x = -2",
+    "x = -1",
+    "y = 5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "system-b169",
+   "topic": "system",
+   "lines": [
+    "x + y = 4, x - y = 6",
+    "2x = 10",
+    "x = 5",
+    "y = 0"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "system-b170",
+   "topic": "system",
+   "lines": [
+    "x + y = 2, x - y = -6",
+    "2x = 8",
+    "x = 4",
+    "y = -2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "system-b171",
+   "topic": "system",
+   "lines": [
+    "x + y = 2, x - y = -6",
+    "2x = -4",
+    "x = -2",
+    "y = 5"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "system-b172",
+   "topic": "system",
+   "lines": [
+    "x + y = 10, x - y = 4",
+    "2x = 6",
+    "x = 3",
+    "y = 7"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "system-b173",
+   "topic": "system",
+   "lines": [
+    "x + y = 10, x - y = 4",
+    "2x = 14",
+    "x = 7",
+    "y = 4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "system-b174",
+   "topic": "system",
+   "lines": [
+    "x + y = 3, x - y = -1",
+    "2x = 4",
+    "x = 2",
+    "y = 1"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "system-b175",
+   "topic": "system",
+   "lines": [
+    "x + y = 3, x - y = -1",
+    "2x = 2",
+    "x = 1",
+    "y = 3"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "system-b176",
+   "topic": "system",
+   "lines": [
+    "x + y = -8, x - y = 2",
+    "2x = -10",
+    "x = -5",
+    "y = -3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "system-b177",
+   "topic": "system",
+   "lines": [
+    "x + y = -8, x - y = 2",
+    "2x = -6",
+    "x = -3",
+    "y = -4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "system-b178",
+   "topic": "system",
+   "lines": [
+    "2x + 3y = 7, x - 1y = 1",
+    "2x + 3y = 7, 2x - 2y = 2",
+    "5y = 7",
+    "y = 7/5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "system-b179",
+   "topic": "system",
+   "lines": [
+    "3x + 1y = 7, 2x + 5y = 22",
+    "6x + 2y = 14, 6x + 15y = 66",
+    "-13y = -50",
+    "y = 50/13"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "system-b180",
+   "topic": "system",
+   "lines": [
+    "4x - 1y = -6, x + 2y = 3",
+    "4x - 1y = -6, 4x + 8y = 12",
+    "-9y = -16",
+    "y = 16/9"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "system-b181",
+   "topic": "system",
+   "lines": [
+    "x + 2y = -1, 3x + 1y = 7",
+    "3x + 6y = -3, 3x + 1y = 7",
+    "5y = -8",
+    "y = -8/5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "matrix-b182",
+   "topic": "matrix",
+   "lines": [
+    "[[1, 2], [3, 4]] * [[0, 1], [1, 0]] = [[2, 1], [5, 3]]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "matrix-b183",
+   "topic": "matrix",
+   "lines": [
+    "det([[1, 2], [3, 4]]) = 1*4 + 2*3 = 10"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "matrix-b184",
+   "topic": "matrix",
+   "lines": [
+    "[[2, 0], [1, 3]] * [[1, 4], [2, 5]] = [[2, 8], [8, 19]]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "matrix-b185",
+   "topic": "matrix",
+   "lines": [
+    "[[1, -1], [2, 1]] * [[3, 1], [0, 2]] = [[3, -1], [7, 4]]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "matrix-b186",
+   "topic": "matrix",
+   "lines": [
+    "det([[1, -1], [2, 1]]) = 1*1 + -1*2 = -1"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "matrix-b187",
+   "topic": "matrix",
+   "lines": [
+    "[[4, 1], [0, -2]] * [[1, 1], [1, -1]] = [[5, 3], [-1, 2]]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "matrix-b188",
+   "topic": "matrix",
+   "lines": [
+    "[[2, 1], [1, 1]]^-1",
+    "= 1/1 * [[1, 1], [1, 2]]"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "matrix-b189",
+   "topic": "matrix",
+   "lines": [
+    "[[3, 1], [5, 2]]^-1",
+    "= 1/1 * [[2, 1], [5, 3]]"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "matrix-b190",
+   "topic": "matrix",
+   "lines": [
+    "[[4, 3], [1, 1]]^-1",
+    "= 1/1 * [[1, 3], [1, 4]]"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "vector-b191",
+   "topic": "vector",
+   "lines": [
+    "[1, 2, 3] · [4, 5, 6] = 34"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b192",
+   "topic": "vector",
+   "lines": [
+    "[1, 2, 3] × [4, 5, 6] = [-3, -6, -3]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b193",
+   "topic": "vector",
+   "lines": [
+    "[2, -1, 0] · [3, 3, 1] = 5"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b194",
+   "topic": "vector",
+   "lines": [
+    "[2, -1, 0] × [3, 3, 1] = [-1, 2, 9]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b195",
+   "topic": "vector",
+   "lines": [
+    "[1, 0, 2] · [-2, 4, 1] = 2"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b196",
+   "topic": "vector",
+   "lines": [
+    "[1, 0, 2] × [-2, 4, 1] = [-8, 5, 4]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b197",
+   "topic": "vector",
+   "lines": [
+    "[3, 1, -2] · [1, 1, 1] = 4"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b198",
+   "topic": "vector",
+   "lines": [
+    "[3, 1, -2] × [1, 1, 1] = [3, 5, 2]"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "vector-b199",
+   "topic": "vector",
+   "lines": [
+    "|[3, 4]| = sqrt(9 + 16) = 7"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b200",
+   "topic": "units",
+   "lines": [
+    "150 km / (2 h) = 75 km/h",
+    "= 270 m/s"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "units-b201",
+   "topic": "units",
+   "lines": [
+    "90 km / (3 h) = 30 km/h",
+    "= 108 m/s"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "units-b202",
+   "topic": "units",
+   "lines": [
+    "36 km / (1 h) = 36 km/h",
+    "= 129.6 m/s"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "units-b203",
+   "topic": "units",
+   "lines": [
+    "240 km / (4 h) = 60 km/h",
+    "= 216 m/s"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "units-b204",
+   "topic": "units",
+   "lines": [
+    "2 km + 300 m = 302 m"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b205",
+   "topic": "units",
+   "lines": [
+    "1 km + 450 m = 451 m"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b206",
+   "topic": "units",
+   "lines": [
+    "3 km + 75 m = 78 m"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b207",
+   "topic": "units",
+   "lines": [
+    "5 kg * 2 m/s^2 = 10 J"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b208",
+   "topic": "units",
+   "lines": [
+    "3 m * 4 m = 12 km"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b209",
+   "topic": "units",
+   "lines": [
+    "60 min = 600 s"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "inequality-b210",
+   "topic": "inequality",
+   "lines": [
+    "-2x + 1 > 5",
+    "-2x > 4",
+    "x > -2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "inequality-b211",
+   "topic": "inequality",
+   "lines": [
+    "-3x + 4 > -2",
+    "-3x > -6",
+    "x > 2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "inequality-b212",
+   "topic": "inequality",
+   "lines": [
+    "-5x - 1 > 9",
+    "-5x > 10",
+    "x > -2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "inequality-b213",
+   "topic": "inequality",
+   "lines": [
+    "-4x + 2 > 10",
+    "-4x > 8",
+    "x > -2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "inequality-b214",
+   "topic": "inequality",
+   "lines": [
+    "2x + 1 <= 5",
+    "2x <= 6",
+    "x <= 3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "inequality-b215",
+   "topic": "inequality",
+   "lines": [
+    "3x - 4 <= 8",
+    "3x <= 4",
+    "x <= 4/3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "inequality-b216",
+   "topic": "inequality",
+   "lines": [
+    "x^2 < 4",
+    "x < 2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "inequality-b217",
+   "topic": "inequality",
+   "lines": [
+    "x^2 < 9",
+    "x < 3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "inequality-b218",
+   "topic": "inequality",
+   "lines": [
+    "x^2 < 25",
+    "x < 5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "inequality-b219",
+   "topic": "inequality",
+   "lines": [
+    "abs(x - 1) <= 3",
+    "-3 <= x - 1 <= 3",
+    "-4 <= x <= 2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "inequality-b220",
+   "topic": "inequality",
+   "lines": [
+    "abs(x - 2) <= 5",
+    "-5 <= x - 2 <= 5",
+    "-7 <= x <= 3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "inequality-b221",
+   "topic": "inequality",
+   "lines": [
+    "abs(x + 1) <= 4",
+    "-4 <= x + 1 <= 4",
+    "-3 <= x <= 5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "page-b222",
+   "topic": "page",
+   "lines": [
+    "2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "",
+    "3x - 1 = 8",
+    "3x = 9",
+    "x = 4"
+   ],
+   "broken": 6
+  },
+  {
+   "id": "page-b223",
+   "topic": "page",
+   "lines": [
+    "2x + 3 = 7",
+    "2x = 4",
+    "x = 2",
+    "2. 3x - 1 = 8",
+    "3x = 7",
+    "x = 7/3"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "page-b224",
+   "topic": "page",
+   "lines": [
+    "5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "",
+    "2x + 7 = 3",
+    "2x = -4",
+    "x = -1"
+   ],
+   "broken": 6
+  },
+  {
+   "id": "page-b225",
+   "topic": "page",
+   "lines": [
+    "5x - 4 = 1",
+    "5x = 5",
+    "x = 1",
+    "2. 2x + 7 = 3",
+    "2x = 10",
+    "x = 5"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "page-b226",
+   "topic": "page",
+   "lines": [
+    "4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "",
+    "3x + 5 = 17",
+    "3x = 12",
+    "x = 5"
+   ],
+   "broken": 6
+  },
+  {
+   "id": "page-b227",
+   "topic": "page",
+   "lines": [
+    "4x + 1 = 13",
+    "4x = 12",
+    "x = 3",
+    "2. 3x + 5 = 17",
+    "3x = 22",
+    "x = 22/3"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "page-b228",
+   "topic": "page",
+   "lines": [
+    "3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "",
+    "7x - 2 = 5",
+    "7x = 7",
+    "x = 2"
+   ],
+   "broken": 6
+  },
+  {
+   "id": "page-b229",
+   "topic": "page",
+   "lines": [
+    "3x + 6 = 3",
+    "3x = -3",
+    "x = -1",
+    "2. 7x - 2 = 5",
+    "7x = 3",
+    "x = 3/7"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "stacked-b230",
+   "topic": "stacked",
+   "lines": [
+    "y = 3x",
+    "x + y = 8",
+    "x + 3x = 8",
+    "4x = 8",
+    "x = 2",
+    "y = 8"
+   ],
+   "broken": 5
+  },
+  {
+   "id": "stacked-b231",
+   "topic": "stacked",
+   "lines": [
+    "y = 3x",
+    "x + y = 8",
+    "x + 3x = 9",
+    "x = 9/4"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b232",
+   "topic": "stacked",
+   "lines": [
+    "y = 4x",
+    "x + y = 5",
+    "x + 4x = 5",
+    "5x = 5",
+    "x = 1",
+    "y = 6"
+   ],
+   "broken": 5
+  },
+  {
+   "id": "stacked-b233",
+   "topic": "stacked",
+   "lines": [
+    "y = 4x",
+    "x + y = 5",
+    "x + 4x = 6",
+    "x = 6/5"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b234",
+   "topic": "stacked",
+   "lines": [
+    "y = -2x",
+    "x + y = -3",
+    "x + -2x = -3",
+    "-x = -3",
+    "x = 3",
+    "y = -4"
+   ],
+   "broken": 5
+  },
+  {
+   "id": "stacked-b235",
+   "topic": "stacked",
+   "lines": [
+    "y = -2x",
+    "x + y = -3",
+    "x + -2x = -2",
+    "x = 2"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b236",
+   "topic": "stacked",
+   "lines": [
+    "y = 5x",
+    "x + y = -12",
+    "x + 5x = -12",
+    "6x = -12",
+    "x = -2",
+    "y = -8"
+   ],
+   "broken": 5
+  },
+  {
+   "id": "stacked-b237",
+   "topic": "stacked",
+   "lines": [
+    "y = 5x",
+    "x + y = -12",
+    "x + 5x = -11",
+    "x = -11/6"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b238",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 7",
+    "x - y = 2",
+    "3x = 5",
+    "x = 5/3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b239",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 7",
+    "x - y = 2",
+    "3x = 9",
+    "x = 3",
+    "y = 2"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "stacked-b240",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 3",
+    "x - y = 3",
+    "3x = 0",
+    "x = 0"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b241",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 3",
+    "x - y = 3",
+    "3x = 6",
+    "x = 2",
+    "y = 0"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "stacked-b242",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 12",
+    "x - y = 3",
+    "3x = 9",
+    "x = 3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b243",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 12",
+    "x - y = 3",
+    "3x = 15",
+    "x = 5",
+    "y = 3"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "stacked-b244",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 2",
+    "x - y = -5",
+    "3x = 7",
+    "x = 7/3"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "stacked-b245",
+   "topic": "stacked",
+   "lines": [
+    "2x + y = 2",
+    "x - y = -5",
+    "3x = -3",
+    "x = -1",
+    "y = 5"
+   ],
+   "broken": 4
+  },
+  {
+   "id": "leibniz-b246",
+   "topic": "leibniz",
+   "lines": [
+    "y = 3x^2",
+    "dy/dx = 6x^2"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "leibniz-b247",
+   "topic": "leibniz",
+   "lines": [
+    "y = 2x^3",
+    "dy/dx = 6x^3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "leibniz-b248",
+   "topic": "leibniz",
+   "lines": [
+    "y = 5x^4",
+    "dy/dx = 20x^4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "leibniz-b249",
+   "topic": "leibniz",
+   "lines": [
+    "y = 4x^5",
+    "dy/dx = 20x^5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "rounding-b250",
+   "topic": "rounding",
+   "lines": [
+    "sqrt(2)",
+    "= 1.42",
+    "= 1.420"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "rounding-b251",
+   "topic": "rounding",
+   "lines": [
+    "3x = 7",
+    "x = 2.5"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "notes-b252",
+   "topic": "notes",
+   "lines": [
+    "2x = 6 (divide by 2)",
+    "x = 4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "notes-b253",
+   "topic": "notes",
+   "lines": [
+    "d/dx(x^3) at x = 2",
+    "= 4"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "units-b254",
+   "topic": "units",
+   "lines": [
+    "5 m + 3 s = 8 m"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "units-b255",
+   "topic": "units",
+   "lines": [
+    "2 m * 3 m = 6 m"
+   ],
+   "broken": 0
+  },
+  {
+   "id": "mixed-b256",
+   "topic": "mixed",
+   "lines": [
+    "1 1/2 + 1/2",
+    "= 3"
+   ],
+   "broken": 1
+  },
+  {
+   "id": "roots-b257",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 5x + 6 = 0",
+    "(x - 2)(x - 3) = 0",
+    "x = 2",
+    "x = 4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "roots-b258",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 3x - 4 = 0",
+    "(x - 1)(x + 4) = 0",
+    "x = 1",
+    "x = -3"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "roots-b259",
+   "topic": "roots",
+   "lines": [
+    "x^2 + 7x + 10 = 0",
+    "(x + 2)(x + 5) = 0",
+    "x = -2",
+    "x = -4"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "roots-b260",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 10x + 21 = 0",
+    "(x - 3)(x - 7) = 0",
+    "x = 3",
+    "x = 8"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "roots-b261",
+   "topic": "roots",
+   "lines": [
+    "x^2 - 5x - 6 = 0",
+    "(x + 1)(x - 6) = 0",
+    "x = -1",
+    "x = 7"
+   ],
+   "broken": 3
+  },
+  {
+   "id": "roots-b262",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 4",
+    "x = 2",
+    "x = 4"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "roots-b263",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 9",
+    "x = 3",
+    "x = 9"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "roots-b264",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 16",
+    "x = 4",
+    "x = 16"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "roots-b265",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 25",
+    "x = 5",
+    "x = 25"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "roots-b266",
+   "topic": "roots",
+   "lines": [
+    "x^2 = 81",
+    "x = 9",
+    "x = 81"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "answer-check-b267",
+   "topic": "answer-check",
+   "lines": [
+    "x = 5",
+    "3x",
+    "= 16"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "answer-check-b268",
+   "topic": "answer-check",
+   "lines": [
+    "x = 3",
+    "2x",
+    "= 7"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "answer-check-b269",
+   "topic": "answer-check",
+   "lines": [
+    "x = 2",
+    "4x",
+    "= 9"
+   ],
+   "broken": 2
+  },
+  {
+   "id": "answer-check-b270",
+   "topic": "answer-check",
+   "lines": [
+    "x = -2",
+    "5x",
+    "= -9"
+   ],
+   "broken": 2
+  }
+ ]
+}

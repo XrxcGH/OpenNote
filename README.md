@@ -32,7 +32,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [Ink and palm rejection](docs/help/ink-and-palm-rejection.md)     | Pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen            |
 | [Paper and page views](docs/help/paper-and-page-views.md)         | Flow, paginated, and canvas pages, with lined, grid, and dot paper that text sits on; slides, print, and PDF   |
 | [Tables and charts](docs/help/tables-and-charts.md)               | Smart tables with views and formulas, and charts that update with them                                         |
-| [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, the grapher, Mermaid diagrams, and mind maps                                            |
+| [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, Check my work on your steps, the grapher, Mermaid diagrams, and mind maps               |
 | [Engineering tools](docs/help/engineering-tools.md)               | Free-body diagrams, beam and truss solvers, DC circuits, and units in tables                                   |
 | [Search and links](docs/help/search-and-links.md)                 | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
 | [Study tools](docs/help/study-tools.md)                           | Flashcards, Anki, study tape, Upcoming, timers, a calculator, and citations                                    |

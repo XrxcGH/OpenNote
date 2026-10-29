@@ -151,12 +151,14 @@ function buildFrame(doc: Document, actions: readonly [MessageKey, string, () => 
   return { frame, mover, bar };
 }
 
-/** Graph, for handwriting read as an equation: it opens a graph beside the selection. */
+/** Graph (a graph beside the selection) and Check my work (marks on each row), for handwriting read as math. */
 function graphAction(): [MessageKey, string, () => void][] {
-  if (!isEnabled('math.graphPopup') || !isEnabled('intel.mathInk')) return [];
-  return [
-    ['mathTools.graphPopup.graph', 'graph', () => void executeCommand('math.graphHandwriting', undefined, 'menu')],
-  ];
+  const run = (id: `${string}.${string}`) => () => void executeCommand(id, undefined, 'menu');
+  const graph = isEnabled('math.graphPopup')
+    ? [['mathTools.graphPopup.graph', 'graph', run('math.graphHandwriting')]]
+    : [];
+  const check = isEnabled('math.checkWork') ? [['stepCheck.lassoAction', 'checkWork', run('math.checkWork')]] : [];
+  return isEnabled('intel.mathInk') ? ([...graph, ...check] as [MessageKey, string, () => void][]) : [];
 }
 
 class FrameView implements SelectionFrame {
