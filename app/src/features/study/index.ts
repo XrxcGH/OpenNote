@@ -23,3 +23,11 @@ export { saveBytes } from './io/save';
 export { ANSWER_KEY_ID, blankTape, blankText, tapeIds } from './tape/blanks';
 export type { TapeLabels } from './tape/blanks';
 export { measureTape, shareInside } from './tape/coverage';
+export { examModelOn, examRequest, examsOn, requestExam, setExamModelOn, setExamsOn } from './exam/request';
+export type { ExamScope } from './exam/request';
+export { pagesUnder, readPages } from './exam/sources';
+export { examSectionTitle } from './exam/save';
+/** The Practice exams window, loaded the first time it opens. */
+export const loadExamPanel = () => import('./ui/exam/ExamPanel');
+/** The Practice exams switches in Settings, then Editing. */
+export const loadExamSettings = () => import('./ui/exam/ExamSettings');

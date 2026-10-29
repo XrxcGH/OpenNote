@@ -8,6 +8,7 @@ export { mathRenderer } from './mathHost';
 export { exportGraph, exportMath } from './exportRenderers';
 export { insertMath } from './insert';
 export { graphOfLatex, liveAnswer } from './actions/actions';
+export { latexToText } from './actions/convert';
 export type { EquationGraph } from './actions/actions';
 import type { GraphPopupOptions } from './graph/GraphPopup';
 
