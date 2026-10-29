@@ -4,6 +4,7 @@ import type { Mode } from './ui/form';
 import type { EarthToolId } from './meta';
 
 export const MODE_LOADERS: Record<EarthToolId, () => Promise<readonly Mode[]>> = {
+  dating: () => import('./dating/modes').then((m) => m.DATING_MODES),
   stereonet: () => import('./stereonet/modes').then((m) => m.STEREONET_MODES),
   geodiagrams: () => import('./geodiagrams/modes').then((m) => m.GEODIAGRAMS_MODES),
   air: () => import('./air/modes').then((m) => m.AIR_MODES),
