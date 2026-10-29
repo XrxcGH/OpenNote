@@ -7,6 +7,7 @@ import { expectNoAxeViolations, renderUi } from '../../../test';
 import { textExtensions } from '../../../editor/schema/schema';
 import { INSERT_EVENT } from '../flags';
 import { KitCalcView } from './block/KitCalcBlock';
+import { KIT_CALC_TYPE } from './block/model';
 import { EXAMPLE_KIT } from './example/kit';
 import { openKitTool, registerKit, resetKits } from './registry';
 import type { KitDef } from './types';
@@ -96,9 +97,10 @@ describe('kit window', () => {
 
 describe('insert menu and live block', () => {
   it('offers only what a result has, and the live block carries the inputs', () => {
-    const sent: { block?: { data: Record<string, unknown> } }[] = [];
+    type Sent = { panel?: { type: string; data: Record<string, unknown> }; handled: boolean };
+    const sent: Sent[] = [];
     const listen = (event: Event) => {
-      const detail = (event as CustomEvent<{ block?: { data: Record<string, unknown> }; handled: boolean }>).detail;
+      const detail = (event as CustomEvent<Sent>).detail;
       sent.push(detail);
       detail.handled = true;
     };
@@ -114,7 +116,9 @@ describe('insert menu and live block', () => {
     } finally {
       window.removeEventListener(INSERT_EVENT, listen);
     }
-    expect(sent[0].block?.data).toMatchObject({ kit: 'example', tool: 'idealGas', inputs: { unknown: 'V' } });
+    // The page inserts a panel block by its full type (features/page/registrations/smart.ts).
+    expect(sent[0].panel?.type).toBe(KIT_CALC_TYPE);
+    expect(sent[0].panel?.data).toMatchObject({ kit: 'example', tool: 'idealGas', inputs: { unknown: 'V' } });
   });
 
   it('shows the block’s results and reopens its tool, or says the tool is missing', async () => {
