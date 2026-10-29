@@ -24,7 +24,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::backend::Backend;
-use crate::crypto::{hex, mac, open, pad, seal, unpad};
+use crate::crypto::{self, hex, mac, open, pad, seal, unpad};
 use crate::error::{Result, SyncError};
 use crate::local::{self, Fingerprint};
 use crate::manifest::{self, Content, Entry, Head, Manifest};
@@ -476,7 +476,7 @@ pub fn last_published(backend: &dyn Backend, keys: &VaultKeys) -> Result<BTreeMa
 /// A hash of a manifest's paths and versions.
 fn digest(entries: &Manifest) -> String {
     let json = serde_json::to_vec(entries).unwrap_or_default();
-    hex(&mac(b"opennote-sync manifest digest", &[&json]))
+    hex(&crypto::digest(&[b"opennote-sync manifest digest", &json]))
 }
 
 #[cfg(test)]

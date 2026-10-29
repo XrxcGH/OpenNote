@@ -108,6 +108,17 @@ pub fn passphrase_key(passphrase: &str, salt: &[u8], cost: Cost) -> Result<Key> 
     Ok(key)
 }
 
+/// Plain BLAKE2b-256 of the parts, length-prefixed like [`mac`]: for digests that hold no secret.
+pub fn digest(parts: &[&[u8]]) -> [u8; 32] {
+    use blake2::digest::Digest;
+    let mut state = blake2::Blake2b::<U32>::new();
+    for part in parts {
+        Digest::update(&mut state, (part.len() as u64).to_le_bytes());
+        Digest::update(&mut state, part);
+    }
+    Digest::finalize(state).into()
+}
+
 /// Keyed BLAKE2b-256 of the parts, each prefixed with its length so parts can't run together.
 #[allow(clippy::expect_used)] // Every key in this crate is a 32-byte key or a fixed label of under 64 bytes.
 pub fn mac(key: &[u8], parts: &[&[u8]]) -> [u8; 32] {

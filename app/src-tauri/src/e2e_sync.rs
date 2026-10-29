@@ -620,11 +620,11 @@ fn unhex(text: &str) -> Option<[u8; 32]> {
     if text.len() != 64 {
         return None;
     }
-    let mut out = [0u8; 32];
-    for (i, slot) in out.iter_mut().enumerate() {
-        *slot = u8::from_str_radix(text.get(i * 2..i * 2 + 2)?, 16).ok()?;
-    }
-    Some(out)
+    let bytes: Option<Vec<u8>> = (0..32)
+        .map(|i| u8::from_str_radix(text.get(i * 2..i * 2 + 2)?, 16).ok())
+        .collect();
+    let bytes = zeroize::Zeroizing::new(bytes?);
+    <[u8; 32]>::try_from(bytes.as_slice()).ok()
 }
 
 /// Registers the service and starts the background rounds. They run only while the `sync.e2ee` flag is on, sync is
