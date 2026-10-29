@@ -59,6 +59,7 @@ import { engineering } from './engineering';
 import { chem } from './chem';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
+import { exams } from './exams';
 
 export const en = {
   common,
@@ -120,4 +121,5 @@ export const en = {
   chem,
   docStructure,
   codeCells,
+  exams,
 } as const;
