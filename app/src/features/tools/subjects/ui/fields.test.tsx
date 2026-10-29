@@ -12,8 +12,25 @@ import { ColumnPicker, DataField, MatrixField, SeedField } from './fields';
 import type { DataInput, MatrixInputValue, RoleValue } from './input';
 import { emptyMatrix, readDataInput } from './input';
 import { CoefficientTable, SvgDiagram } from './output';
+import SignTestTool from '../example/SignTestTool';
 
 afterEach(() => resetKits());
+
+describe('the example sign test tool', () => {
+  it('works the first values, then names a line that is not a number', async () => {
+    function Harness() {
+      const [inputs, setInputs] = useState<unknown>(null);
+      return <SignTestTool inputs={inputs} setInputs={setInputs} system="SI" />;
+    }
+    const { container } = renderUi(<Harness />);
+    // 9 of 10 above zero: two-sided p = 22/1024 = 0.02148.
+    expect(screen.getByText('0.02148')).toBeTruthy();
+    expect(screen.getByText('At the 5% level the data are unlikely if the median were the one given.')).toBeTruthy();
+    await expectNoAxeViolations(container);
+    fireEvent.change(screen.getByLabelText('Values'), { target: { value: '1\nabc' } });
+    expect(screen.getAllByText('Line 2 is not a number: "abc".').length).toBeGreaterThan(0);
+  });
+});
 
 function DataHarness() {
   const [value, setValue] = useState<DataInput>({ text: '' });
