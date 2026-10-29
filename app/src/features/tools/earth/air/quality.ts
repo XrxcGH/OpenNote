@@ -5,8 +5,7 @@ import { check } from '../core/problem';
 
 export const SOURCES = {
   aqi: 'US EPA, Technical Assistance Document for the Reporting of Daily Air Quality (AQI), 2024 revision (public domain)',
-  plume:
-    'Turner (1970), Workbook of Atmospheric Dispersion Estimates, and the Briggs (1973) sigma formulas, as published by the US EPA (public domain)',
+  plume: 'Turner (1970) dispersion workbook and the Briggs (1973) sigmas, as published by the US EPA (public domain)',
   radar: 'Marshall and Palmer (1948) Z = 200 R^1.6; other Z-R pairs as published by the US National Weather Service',
 } as const;
 
@@ -173,7 +172,7 @@ export type Sky = 'strong' | 'moderate' | 'slight' | 'overcast' | 'nightCloudy' 
 
 /**
  * The Pasquill-Gifford stability class from the surface wind and the sky (Turner 1970, table 1). Where the table
- * gives two classes (such as A-B) the more unstable one is used; overcast skies, day or night, are neutral (D).
+ * gives two classes (such as A-B) the more unstable one is used; overcast skies are neutral (D) by day and by night.
  */
 export function stabilityClass(wind: number, sky: Sky): Stability {
   check(wind >= 0, 'wind');

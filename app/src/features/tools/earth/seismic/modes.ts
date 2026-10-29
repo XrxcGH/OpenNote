@@ -470,7 +470,10 @@ const dixMode: Mode = {
         [r('interval'), `${fmt(d.speed)} m/s`],
         [r('thickness'), `${fmt(d.thickness)} m`],
       ],
-      steps: [t('kitEarth.seismic.s.dix', { t1: fmt(t1), t2: fmt(t2), v1: fmt(v1), v2: fmt(v2), ...vars })],
+      steps: [
+        t('kitEarth.seismic.s.dix', { t1: fmt(t1), t2: fmt(t2), v1: fmt(v1), v2: fmt(v2), ...vars }),
+        t('kitEarth.seismic.s.dixThickness', vars),
+      ],
     };
   },
 };

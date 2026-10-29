@@ -156,7 +156,8 @@ describe('weather reports', () => {
 
   it('splits a TAF into its periods', () => {
     const taf = decodeTaf(
-      'TAF KJFK 251130Z 2512/2618 31010KT P6SM SCT035 FM251800 33015G25KT P6SM BKN040 TEMPO 2520/2524 3SM -SHRA BKN025 PROB30 2602/2606 1SM BR',
+      'TAF KJFK 251130Z 2512/2618 31010KT P6SM SCT035 FM251800 33015G25KT P6SM BKN040 ' +
+        'TEMPO 2520/2524 3SM -SHRA BKN025 PROB30 2602/2606 1SM BR',
     );
     expect(taf.station).toBe('KJFK');
     expect([taf.validFrom, taf.validTo]).toEqual(['2512', '2618']);

@@ -1,5 +1,5 @@
 // The weather-report form in words: the planning report must read back each value the plan lists, and a TAF and
-// odd reports must give words, not codes or gaps.
+// odd reports must read as plain words with no codes left over.
 import { describe, expect, it } from 'vitest';
 import { run } from '../ui/form';
 import { AIR_MODES } from './modes';

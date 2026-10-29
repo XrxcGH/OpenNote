@@ -204,7 +204,8 @@ const plumeMode: Mode = {
       ...(rise
         ? [t('kitEarth.air.s.rise', { flux: fmt(flux, 4), rise: fmt(rise.rise, 4), final: fmt(rise.finalDistance, 4) })]
         : []),
-      t('kitEarth.air.s.plume', { q: fmt(q * 1000), u: fmt(u), sy: fmt(s.sy, 6), sz: fmt(s.sz, 6), ...vars }),
+      t('kitEarth.air.s.plumeValues', { q: fmt(q * 1000), u: fmt(u), sy: fmt(s.sy, 6), sz: fmt(s.sz, 6), h: vars.h }),
+      t('kitEarth.air.s.plume', vars),
     ];
     const figures: Figure[] = [];
     if (stability) {
@@ -233,7 +234,9 @@ const plumeMode: Mode = {
     }
     return {
       answer: t('kitEarth.air.a.plume', vars),
-      latex: `C = \\frac{Q}{2\\pi u \\sigma_y \\sigma_z} e^{-y^2/2\\sigma_y^2}\\left[e^{-(z-H)^2/2\\sigma_z^2} + e^{-(z+H)^2/2\\sigma_z^2}\\right] = ${tex(ug)}\\ \\mathrm{\\mu g/m^3}`,
+      latex:
+        `C = \\frac{Q}{2\\pi u \\sigma_y \\sigma_z} e^{-y^2/2\\sigma_y^2}` +
+        `\\left[e^{-(z-H)^2/2\\sigma_z^2} + e^{-(z+H)^2/2\\sigma_z^2}\\right] = ${tex(ug)}\\ \\mathrm{\\mu g/m^3}`,
       rows,
       steps,
       figures,
@@ -352,9 +355,9 @@ function windText(w: Wind | undefined): string | null {
   const unit = word(`w.${w.unit}`);
   const base =
     w.direction === null
-      ? word('w.variable', { speed: w.speed, unit })
-      : word('w.from', { direction: String(w.direction).padStart(3, '0'), speed: w.speed, unit });
-  const gust = w.gust !== null ? word('w.gust', { gust: w.gust, unit }) : '';
+      ? word('w.variable', { speed: `${w.speed} ${unit}` })
+      : word('w.from', { direction: String(w.direction).padStart(3, '0'), speed: `${w.speed} ${unit}` });
+  const gust = w.gust !== null ? word('w.gust', { gust: `${w.gust} ${unit}` }) : '';
   const varying = w.from !== undefined ? word('w.varying', { from: w.from, to: w.to ?? 0 }) : '';
   return `${base}${gust}${varying}`;
 }
@@ -462,7 +465,7 @@ function metarRows(m: Metar): [string, string][] {
 const knots = (w: Wind): number =>
   w.unit === 'KT' ? w.speed : w.unit === 'MPS' ? w.speed * 1.943844 : w.speed / 1.852;
 
-/** A station model: sky cover in the circle, a wind barb, temperature and dew point on the left, pressure on the right. */
+/** A station model: sky cover in the circle, a wind barb, and the temperature, dew point, and pressure around it. */
 export function stationModel(m: Metar): Figure {
   const cx = 110;
   const cy = 100;
@@ -496,12 +499,9 @@ export function stationModel(m: Metar): Figure {
     while (left >= 50) {
       const [px, py] = at(d);
       const [qx, qy] = at(d - 8);
-      marks.push({
-        kind: 'path',
-        d: `M${px.toFixed(2)} ${py.toFixed(2)}L${(px + side[0] * 16).toFixed(2)} ${(py + side[1] * 16).toFixed(2)}L${qx.toFixed(2)} ${qy.toFixed(2)}Z`,
-        role: 'text',
-        fill: true,
-      });
+      const tip = `${(px + side[0] * 16).toFixed(2)} ${(py + side[1] * 16).toFixed(2)}`;
+      const d0 = `M${px.toFixed(2)} ${py.toFixed(2)}L${tip}L${qx.toFixed(2)} ${qy.toFixed(2)}Z`;
+      marks.push({ kind: 'path', d: d0, role: 'text', fill: true });
       left -= 50;
       d -= 10;
     }
