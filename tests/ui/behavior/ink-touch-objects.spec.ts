@@ -313,10 +313,21 @@ test('a device that has used a pen starts the next launch with fingers navigatin
   const client = await freeformWithPen(page);
   const box = (await page.getByRole('textbox', { name: /^Text box 2 / }).boundingBox())!;
   const empty = { x: box.x + box.width + 20, y: box.y + box.height + 60 };
-  // The pen hovers, and the app is opened again.
-  await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...empty, buttons: 0, pointerType: 'pen' });
+  // The pen hovers, and the app is opened again. A hover sent while the page is still settling can be lost, so it is
+  // sent again, a pixel apart, until the page has recorded the pen.
+  let nudge = 0;
   await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('opennote.ink.palmLearned') ?? '{}').penSeen))
+    .poll(async () => {
+      nudge += 1;
+      await client.send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved',
+        x: empty.x + (nudge % 3),
+        y: empty.y,
+        buttons: 0,
+        pointerType: 'pen',
+      });
+      return page.evaluate(() => JSON.parse(localStorage.getItem('opennote.ink.palmLearned') ?? '{}').penSeen);
+    })
     .toBe(true);
   const again = await freeformWithPen(page);
   await finger(again, empty, { x: empty.x + 80, y: empty.y + 10 });
