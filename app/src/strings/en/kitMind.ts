@@ -29,6 +29,7 @@ export const kitMind = {
     insertSteps: 'Worked steps',
     insertExtra: 'Table: {name}',
     insertPicture: 'Picture: {name}',
+    insertLive: 'Live calculation block',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',
     results: 'Results',

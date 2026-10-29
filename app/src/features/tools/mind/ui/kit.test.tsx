@@ -8,12 +8,19 @@ import { commands } from '../../../../registries';
 import { en } from '../../../../strings/en';
 import { expectNoAxeViolations, renderApp, renderUi } from '../../../../test';
 import { INSERT_EVENT } from '../../flags';
+import { openKitTool } from '../../kits/registry';
 import { closeTool, openTools } from '../../ui/host';
 import { MIND_TOOLS } from '../meta';
 import { saveTab } from '../open';
 import { MindKit } from './MindKit';
 
-type Detail = { text?: string; math?: { source: string }; table?: { rows: string[][] }; picture?: object };
+type Detail = {
+  text?: string;
+  math?: { source: string };
+  table?: { rows: string[][] };
+  picture?: object;
+  block?: { type: string; data: { kit: string; tool: string; inputs: Record<string, string> } };
+};
 const inserted: Detail[] = [];
 const listen = (event: Event) => {
   const detail = (event as CustomEvent<Detail & { handled: boolean }>).detail;
@@ -81,6 +88,25 @@ describe('the psychology and behavior kit window', () => {
     expect(inserted[3].text).toMatch(/^<p>Signal detection<\/p><ol><li>/);
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].picture).toBeTruthy();
+  });
+
+  it('inserts a live calculation block that reopens the tool with its texts', async () => {
+    saveTab('rt');
+    renderUi(<MindKit />);
+    await userEvent.selectOptions(await screen.findByRole('combobox', { name: 'Example' }), 'fitts');
+    await waitFor(() => expect(screen.getAllByText('200').length).toBeGreaterThan(0));
+    await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Live calculation block' }));
+    const block = inserted[0].block!;
+    expect(block.type).toBe('kitcalc');
+    expect(block.data.kit).toBe('mind');
+    expect(block.data.tool).toBe('rt');
+    expect(block.data.inputs.mode).toBe('fitts');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Work on' }), 'hick');
+    await openKitTool('mind', 'rt', block.data.inputs);
+    await waitFor(() =>
+      expect((screen.getByRole('combobox', { name: 'Work on' }) as HTMLSelectElement).value).toBe('fitts'),
+    );
   });
 
   it('opens on the tool a palette command names', async () => {

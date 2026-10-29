@@ -13,12 +13,6 @@ export interface MindToolMeta {
 
 export const MIND_TOOLS: readonly MindToolMeta[] = [
   { id: 'sdt', title: 'kitMind.sdt.title', keywords: 'kitMind.sdt.keywords', icon: 'Eye' },
-  { id: 'scales', title: 'kitMind.scales.title', keywords: 'kitMind.scales.keywords', icon: 'ListNumbers' },
-  { id: 'agreement', title: 'kitMind.agreement.title', keywords: 'kitMind.agreement.keywords', icon: 'Handshake' },
-  { id: 'coding', title: 'kitMind.coding.title', keywords: 'kitMind.coding.keywords', icon: 'Tag' },
-  { id: 'observe', title: 'kitMind.observe.title', keywords: 'kitMind.observe.keywords', icon: 'Binoculars' },
-  { id: 'choice', title: 'kitMind.choice.title', keywords: 'kitMind.choice.keywords', icon: 'Scales' },
-  { id: 'rt', title: 'kitMind.rt.title', keywords: 'kitMind.rt.keywords', icon: 'Timer' },
   {
     id: 'psychophysics',
     title: 'kitMind.psychophysics.title',
@@ -26,4 +20,10 @@ export const MIND_TOOLS: readonly MindToolMeta[] = [
     icon: 'Waveform',
   },
   { id: 'learning', title: 'kitMind.learning.title', keywords: 'kitMind.learning.keywords', icon: 'Brain' },
+  { id: 'choice', title: 'kitMind.choice.title', keywords: 'kitMind.choice.keywords', icon: 'Scales' },
+  { id: 'rt', title: 'kitMind.rt.title', keywords: 'kitMind.rt.keywords', icon: 'Timer' },
+  { id: 'observe', title: 'kitMind.observe.title', keywords: 'kitMind.observe.keywords', icon: 'Binoculars' },
+  { id: 'agreement', title: 'kitMind.agreement.title', keywords: 'kitMind.agreement.keywords', icon: 'Handshake' },
+  { id: 'scales', title: 'kitMind.scales.title', keywords: 'kitMind.scales.keywords', icon: 'ListNumbers' },
+  { id: 'coding', title: 'kitMind.coding.title', keywords: 'kitMind.coding.keywords', icon: 'Tag' },
 ];

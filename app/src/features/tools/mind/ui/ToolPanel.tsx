@@ -4,6 +4,8 @@
 import { useEffect, useId, useMemo, useState, type ComponentType } from 'react';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
+import { onKitInputs, takeKitInputs } from '../../kits/registry';
+import { insertLiveBlock } from '../../kits/ui/insert';
 import { PAGE } from '../kit/plot';
 import { firstTexts, runTool, shownFields, type Field, type ToolSpec } from '../kit/spec';
 import type { MindError } from '../kit/types';
@@ -15,6 +17,8 @@ import {
   pictureRequest,
   pictureSvg,
   resultTable,
+  rowLabel,
+  rowText,
   say,
   sendToPage,
   stepsHtml,
@@ -114,7 +118,7 @@ function FieldInput(props: {
   );
 }
 
-function insertItems(c: InsertContext): MenuItemSpec[] {
+function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>): MenuItemSpec[] {
   const done = (ok: boolean) => announce(say(ok ? 'kitMind.ui.inserted' : 'kitMind.ui.noPage'));
   const items: MenuItemSpec[] = [
     {
@@ -154,7 +158,36 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
         done(sendToPage({ picture: pictureRequest(pictureSvg(c, picture, PAGE), `${c.tool}-${picture.id}.svg`, alt) })),
     });
   });
+  items.push({
+    id: 'live',
+    label: say('kitMind.ui.insertLive'),
+    onSelect: () =>
+      done(
+        insertLiveBlock({
+          kit: MIND_KIT,
+          tool: c.tool,
+          title: say(toolKey(c, 'title')),
+          summary: answerText(c),
+          inputs: { ...texts },
+          rows: c.outcome.rows.map((row) => ({ label: rowLabel(c, row), value: rowText(row), unit: '' })),
+          latex: answerLatex(c),
+        }),
+      ),
+  });
   return items;
+}
+
+/** The kit's id for live calculation blocks: Open in tool comes back here with the texts the block kept. */
+export const MIND_KIT = 'mind';
+
+/** Texts a live block sent back, when they are a record of strings. */
+function pendingTexts(tool: string): Record<string, string> | null {
+  const inputs = takeKitInputs(MIND_KIT, tool);
+  if (!inputs || typeof inputs !== 'object') return null;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(inputs as Record<string, unknown>))
+    if (typeof value === 'string') out[key] = value;
+  return out;
 }
 
 /** The texts a moment after they stop changing. */
@@ -176,8 +209,20 @@ export function ToolPanel({
   spec: ToolSpec;
   extra?: ComponentType<ExtraProps>;
 }) {
-  const [texts, setTexts] = useState<Record<string, string>>(() => ({ ...firstTexts(spec), ...load(tool, {}) }));
+  const [texts, setTexts] = useState<Record<string, string>>(() => ({
+    ...firstTexts(spec),
+    ...load(tool, {}),
+    ...pendingTexts(tool),
+  }));
   useEffect(() => save(tool, texts), [tool, texts]);
+  useEffect(
+    () =>
+      onKitInputs(MIND_KIT, (to) => {
+        const back = to === tool ? pendingTexts(tool) : null;
+        if (back) setTexts({ ...firstTexts(spec), ...back });
+      }),
+    [tool, spec],
+  );
   const settled = useSettled(texts);
   const run = useMemo(() => runTool(spec, settled), [spec, settled]);
   const now = useMemo(() => ({ ...firstTexts(spec), ...texts }), [spec, texts]);
@@ -189,7 +234,11 @@ export function ToolPanel({
   };
   const openInsert = (anchor: HTMLElement) => {
     if (!run.ok) return;
-    void openMenu({ label: say('kitMind.ui.insertMenu'), items: insertItems({ tool, outcome: run.outcome }), anchor });
+    void openMenu({
+      label: say('kitMind.ui.insertMenu'),
+      items: insertItems({ tool, outcome: run.outcome }, now),
+      anchor,
+    });
   };
   return (
     <div className={styles.panel}>

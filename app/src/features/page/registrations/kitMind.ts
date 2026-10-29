@@ -6,6 +6,9 @@ import { addCommand } from './qolStudy';
 
 const open = async (tool?: string) => (await import('../../tools')).openMindKit(tool);
 
+// A live calculation block's Open in tool comes back through the kits' registry.
+void import('../../tools').then((tools) => tools.registerKit('mind', (tool) => open(tool)));
+
 addCommand({
   id: 'tools.kitMind',
   title: 'kitMind.open',
