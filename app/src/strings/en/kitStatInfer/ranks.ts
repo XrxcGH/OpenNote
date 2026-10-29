@@ -1,10 +1,5 @@
 // The rank-test tool of the statistics kit. Part of the kitStatInfer namespace.
 export const ranks = {
-  tab: 'Rank tests',
-  open: 'Rank-based tests',
-  keywords:
-    'nonparametric rank mann-whitney wilcoxon signed-rank sign test kruskal-wallis dunn ' +
-    'friedman conover nemenyi hodges-lehmann kolmogorov-smirnov',
   fields: {
     mode: 'What to compare',
     modes: {

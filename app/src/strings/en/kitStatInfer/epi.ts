@@ -1,10 +1,5 @@
 // The epidemiology and diagnostic-test tool of the statistics kit. Part of the kitStatInfer namespace.
 export const epi = {
-  tab: 'Epidemiology',
-  open: 'Epidemiology and diagnostic tests',
-  keywords:
-    'epidemiology risk ratio relative risk odds ratio attributable fraction number needed to treat mantel haenszel ' +
-    'sensitivity specificity predictive value likelihood ratio incidence rate standardization smr prevalence',
   fields: {
     mode: 'What to work out',
     modes: {

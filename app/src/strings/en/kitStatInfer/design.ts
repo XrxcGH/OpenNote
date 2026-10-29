@@ -1,10 +1,5 @@
 // The sampling and randomization tool of the statistics kit. Part of the kitStatInfer namespace.
 export const design = {
-  tab: 'Design',
-  open: 'Sampling and randomization',
-  keywords:
-    'random assignment randomization permuted blocks stratified latin square williams counterbalancing factorial ' +
-    'sampling systematic cluster pps neyman allocation survey design effect margin of error sample size',
   fields: {
     mode: 'What to make',
     modes: {

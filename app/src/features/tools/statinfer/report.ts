@@ -1,12 +1,12 @@
 // What an engine of the statistics kit gives back: worked steps, result tables, a one-line answer, and plots, all
 // as message keys and numbers. The engines never write sentences, so every word reads in the interface's language.
-import type { en } from '../../../strings/en';
 import type { KitStep } from '../kits/types';
 import type { PlotSpec } from './plot';
+import type { StatInferMessages } from './strings';
 
 export type { KitStep };
 
-type Messages = (typeof en)['kitStatInfer'];
+type Messages = StatInferMessages;
 
 /** A key under kitStatInfer.step. */
 export type StepKey = keyof Messages['step'];

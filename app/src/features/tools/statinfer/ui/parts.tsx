@@ -6,6 +6,7 @@ import { Button } from '../../../../ui';
 import { KitError, type Report } from '../report';
 import type { KitToolProps } from '../../kits/types';
 import { subjectProblem } from '../../subjects/ui/words';
+import '../strings';
 import styles from './kit.module.css';
 
 /** t for keys built at run time, such as a step's key. Each key exists in strings/en/kitStatInfer.ts. */

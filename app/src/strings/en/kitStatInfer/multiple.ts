@@ -1,10 +1,5 @@
 // The multiple-testing and meta-analysis tool of the statistics kit. Part of the kitStatInfer namespace.
 export const multiple = {
-  tab: 'Many tests',
-  open: 'Multiple testing and meta-analysis',
-  keywords:
-    'multiple comparisons bonferroni holm hochberg hommel false discovery rate q-value fisher stouffer meta-analysis ' +
-    'forest funnel egger heterogeneity volcano manhattan critical value table',
   fields: {
     mode: 'What to do',
     modes: {

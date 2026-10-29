@@ -1,10 +1,5 @@
 // The simulation and resampling tool of the statistics kit. Part of the kitStatInfer namespace.
 export const resample = {
-  tab: 'Resampling',
-  open: 'Simulation and resampling',
-  keywords:
-    'bootstrap permutation test randomization resampling bca interval sampling distribution central limit theorem ' +
-    'simulation coin dice urn random walk brownian law of large numbers seed',
   fields: {
     mode: 'What to do',
     modes: {

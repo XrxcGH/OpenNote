@@ -1,9 +1,5 @@
 // The contingency-table tool of the statistics kit. Part of the kitStatInfer namespace.
 export const tables = {
-  tab: 'Tables',
-  open: 'Contingency tables',
-  keywords:
-    'contingency table chi-square crosstab independence fisher exact mcnemar cochran cramer phi odds forecast skill score',
   fields: {
     mode: 'What to test',
     modes: {

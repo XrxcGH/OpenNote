@@ -1,10 +1,5 @@
 // The compare-groups (ANOVA) tool of the statistics kit. Part of the kitStatInfer namespace.
 export const groups = {
-  tab: 'ANOVA',
-  open: 'Compare groups (ANOVA)',
-  keywords:
-    'anova analysis of variance one-way two-way factorial welch repeated measures sphericity greenhouse-geisser ' +
-    'mixed design tukey games-howell bonferroni contrast eta squared omega squared cohen d hedges g levene shapiro',
   fields: {
     mode: 'Design',
     modes: {

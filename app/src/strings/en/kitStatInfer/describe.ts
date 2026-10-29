@@ -1,9 +1,5 @@
 // The describe-data tool of the statistics kit. Part of the kitStatInfer namespace.
 export const describe = {
-  tab: 'Describe',
-  open: 'Describe data',
-  keywords:
-    'descriptive statistics mean median mode standard deviation skewness kurtosis outlier stem leaf frequency z-score',
   fields: {
     mode: 'What to describe',
     modes: {

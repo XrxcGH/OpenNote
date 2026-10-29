@@ -1,10 +1,5 @@
 // The power and sample-size tool of the statistics kit. Part of the kitStatInfer namespace.
 export const power = {
-  tab: 'Power',
-  open: 'Power and sample size',
-  keywords:
-    'power analysis sample size noncentral t test anova chi-square correlation proportions equivalence tost ' +
-    'regression survival schoenfeld effect size cohen d f w design effect',
   fields: {
     test: 'Test',
     tests: {

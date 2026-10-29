@@ -1,10 +1,5 @@
 // The Bayesian updating tool of the statistics kit. Part of the kitStatInfer namespace.
 export const bayes = {
-  tab: 'Bayes',
-  open: 'Bayesian updating',
-  keywords:
-    'bayes bayesian prior posterior conjugate beta binomial gamma poisson dirichlet credible interval hdi ' +
-    'bayes factor savage-dickey jzs grid metropolis mcmc bayes table',
   fields: {
     mode: 'Model',
     modes: {

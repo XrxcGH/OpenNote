@@ -1,9 +1,5 @@
 // The correlation tool of the statistics kit. Part of the kitStatInfer namespace.
 export const correlation = {
-  tab: 'Correlation',
-  open: 'Correlation',
-  keywords:
-    'correlation pearson spearman kendall tau rho partial semipartial point-biserial correlation matrix fisher z steiger',
   fields: {
     mode: 'What to work out',
     modes: {
