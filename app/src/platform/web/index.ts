@@ -9,6 +9,7 @@ import type { Platform } from '../types';
 import { createWebAccounts } from './accounts';
 import { createWebAudio } from './audio';
 import { createWebConnectors } from './connectors';
+import { createWebSync } from './sync';
 import { createWebDiagnostics } from './diagnostics';
 import { createWebInstall } from './install';
 import { createWebInterop } from './interop';
@@ -79,6 +80,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     diagnostics: createWebDiagnostics(),
     connectors,
     accounts: createWebAccounts(connectors),
+    sync: createWebSync(),
     spelling: createWebSpelling(),
     clipboard: createWebClipboard(),
     images: createWebImages(),
