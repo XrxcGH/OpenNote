@@ -61,6 +61,13 @@ const SolidsKit = lazy(() =>
 // The Chemistry and materials window loads the first time it opens: it carries the engines and the species data.
 const ChemMatKit = lazy(() => import('../chemmat/ui/KitWindow').then((loaded) => ({ default: loaded.KitWindow })));
 
+// The dynamics and control kit loads with its engineering feature the first time its window opens.
+const ControlKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadControlKit())
+    .then((m) => ({ default: m.ControlKit })),
+);
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
@@ -131,6 +138,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     return (
       <Suspense fallback={null}>
         <ThermoKit />
+      </Suspense>
+    );
+  if (tool === 'kit-control')
+    return (
+      <Suspense fallback={null}>
+        <ControlKit />
       </Suspense>
     );
   return null;

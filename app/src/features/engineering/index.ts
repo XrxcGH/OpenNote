@@ -49,6 +49,11 @@ export async function openThermoTool(tool?: string): Promise<void> {
   (await import('../tools')).openTool('kit-thermo');
 }
 
+export { openControlKit } from './control/open';
+
+/** The dynamics and control kit window, loaded the first time it opens. */
+export const loadControlKit = () => import('./control/ui/ControlKit');
+
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
   return mountPanel(FbdPanel)(container, props);

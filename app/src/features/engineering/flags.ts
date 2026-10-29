@@ -2,10 +2,12 @@
 import type { FlagDef } from '../../app/flags';
 import { FLUIDHEAT_KIT_FLAGS, type FluidHeatKitFlagId } from './fluidheat/flags';
 import { SOLIDS_KIT_FLAGS, type SolidsKitFlagId } from './solids/flags';
+import { CONTROL_KIT_FLAGS, type ControlKitFlagId } from './control/flags';
 
 // The kits' tool lists are plain data the command palette reads at start-up, so they are public here.
 export { FLUIDHEAT_TOOLS } from './fluidheat/meta';
 export { SOLIDS_TOOLS } from './solids/meta';
+export { CONTROL_TOOLS } from './control/meta';
 export { CALC_EVENT, type KitCalcRequest } from './solids/open';
 
 export type EngineeringFlagId =
@@ -17,7 +19,8 @@ export type EngineeringFlagId =
   | FluidHeatKitFlagId
   | 'kits.aero'
   | SolidsKitFlagId
-  | 'kits.thermo';
+  | 'kits.thermo'
+  | ControlKitFlagId;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
@@ -54,4 +57,5 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
     'kits.thermo',
     'The thermodynamics kit: steam, refrigerant, and gas properties, devices, cycles, psychrometrics, and combustion.',
   ),
+  ...CONTROL_KIT_FLAGS,
 ];

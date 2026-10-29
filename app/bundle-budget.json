@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 462,
+    "jsKb": 470,
     "cssKb": 27
   },
   "after": {
@@ -48,6 +48,8 @@
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 64,
     "features/tools/index.ts": 349,
+    "features/engineering/control/ui/ControlKit.tsx": 125,
+    "features/engineering/index.ts": 45,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
     "@mermaid-js/parser": 130,
