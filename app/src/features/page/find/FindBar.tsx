@@ -128,6 +128,8 @@ function FindRow(props: RowProps) {
         <span className={styles.findCount} role="status">
           {status}
         </span>
+      </div>
+      <div className={styles.findOptions}>
         <Switch
           label={t('pageExtras.find.matchCase')}
           checked={options.caseSensitive}

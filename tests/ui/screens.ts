@@ -63,7 +63,10 @@ export async function loadScreens(): Promise<ScreenState[]> {
 /** Opens a screen state at a size and theme, starting the app as Rust would, with a boot payload. */
 export async function openScreen(page: Page, screen: ScreenState, where: { size: SizeClass; theme: Theme }) {
   await page.setViewportSize(VIEWPORTS[where.size]);
-  const boot = { ...screen.boot, settings: { ...screen.boot?.settings, appearance: { theme: where.theme } } };
+  const boot = {
+    ...screen.boot,
+    settings: { ...screen.boot?.settings, appearance: { ...screen.boot?.settings?.appearance, theme: where.theme } },
+  };
   await page.addInitScript(
     (options) => {
       window.__OPENNOTE_DEV__ = { ...window.__OPENNOTE_DEV__, fixture: options.fixture };

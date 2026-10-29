@@ -1,12 +1,12 @@
-// Toasts (ARCHITECTURE.md section 15.5): bottom center, one at a time, in an always-present "Notifications"
-// status region, so a screen reader reads each toast politely and F6 reaches it. Toasts close after 6 seconds (12 with
-// an action such as Undo), and the timer waits while the pointer or focus is
+// Toasts (ARCHITECTURE.md section 15.5): bottom center of the page column, one at a time. They show in an
+// always-present "Notifications" status region, so a screen reader reads each toast politely and F6 reaches it.
+// Toasts close after 6 seconds (12 with an action such as Undo), and the timer waits while the pointer or focus is
 // on the toast. Escape on a focused toast dismisses it. Toasts never take focus: a press on one doesn't move it.
 //
 // A toast with an id replaces the toast with the same id, so a repeated gesture updates one toast.
 
 import { useRef } from 'react';
-import type { KeyboardEvent, RefCallback } from 'react';
+import type { CSSProperties, KeyboardEvent, RefCallback } from 'react';
 import { hasModalLayer } from '../state/layers';
 import { dismissToast, enqueueToast, toastStore } from '../state/toasts';
 import type { ToastItem } from '../state/toasts';
@@ -15,7 +15,7 @@ import { t } from '../strings/t';
 import { announce, recordAnnouncement } from './announce';
 import { Button } from './Button';
 import styles from './Toast.module.css';
-import { useAutoDismiss, usePause, useReturnFocus, useToastClearance } from './toastHooks';
+import { useAutoDismiss, usePause, useReturnFocus, useToastClearance, useToastLane } from './toastHooks';
 import { VisuallyHidden } from './VisuallyHidden';
 
 export interface ToastSpec {
@@ -94,6 +94,8 @@ export interface ToasterProps {
 /** The Notifications region with the current toast. The app renders it once. */
 export function Toaster({ region }: ToasterProps) {
   const current = useStore(toastStore, (state) => state.current);
+  const lane = useToastLane(current?.key, hasModalLayer);
+  const style = { '--toast-start': `${lane.start}px`, '--toast-end': `${lane.end}px` } as CSSProperties;
   return (
     <div
       ref={region?.ref}
@@ -102,6 +104,7 @@ export function Toaster({ region }: ToasterProps) {
       aria-atomic="false"
       data-region={region?.['data-region'] ?? 'notifications'}
       className={styles.region}
+      style={style}
     >
       {current && <ToastCard key={current.key} item={current} />}
     </div>

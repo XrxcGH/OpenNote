@@ -1,12 +1,14 @@
 // The frame around lassoed ink (design 7.3): drag inside it to move, drag a corner to resize, and the bar above it
 // deletes, recolors, and makes the ink thicker or thinner. Text and images the lasso held move with the ink. The
 // frame is a group of real buttons, so a keyboard reaches each part: arrow keys move, Delete deletes, and Escape
-// lets go of the selection.
+// lets go of the selection. A text box or picture selected alone gets the frame too while a draw tool is active. The
+// pen and a finger then move, resize, and delete it, and a tap inside it puts the caret in its text.
 import type { BlockJson, Edit } from '../../../services/pages/types';
 import { isEnabled } from '../../../app/flags';
 import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
+import { tokens } from '../../../theme/tokens';
 import { announce, buttonClass, openMenu } from '../../../ui';
 import { compose, IDENTITY, scaling, translation } from '../geometry/matrix';
 import type { Bounds, Matrix } from '../geometry/types';
@@ -40,6 +42,10 @@ import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
 import { followersForMatrix, shapeOfStroke } from './shapeEdit';
 import { labelsIn } from './shapeLibrary';
 import type { InkSurface } from './surface';
+import { drawState } from './state';
+import { palmSized } from './touch';
+import { editTextAt, TAP_SLOP_PX } from './objectTaps';
+import { showInkOnlyActions } from './inkOnlyActions';
 
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
 const CORNERS: readonly Corner[] = ['nw', 'ne', 'se', 'sw'];
@@ -53,6 +59,8 @@ const CROP_PADDING = 12;
 /** A selection of more strokes than this is not checked for a grid, so the bar stays quick. */
 const GRID_MOST = 300;
 const CROP_MIN = 96;
+/** The parts of the frame a drag moves or resizes by. */
+const DRAG_PARTS = '[data-ink-move], [data-ink-corner], [data-ink-side]';
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -66,6 +74,9 @@ interface Drag {
   width?: number;
   pointerId: number;
   start: { x: number; y: number };
+  /** Where the press landed, client px, and how far it has gone: a press that stays put is a tap. */
+  client: { x: number; y: number };
+  travel: number;
   corner: Corner | null;
   box: Bounds;
   matrix: Matrix;
@@ -79,7 +90,8 @@ interface Drag {
 
 /** What the frame's pointer tool drives: the page view's router hands it every pointer pressed on the frame. */
 export interface SelectionFrame {
-  down(event: PointerEvent): void;
+  /** True when the press starts a move or a resize, which keeps the pointer until it lifts. */
+  down(event: PointerEvent): boolean;
   move(event: PointerEvent): void;
   up(event: PointerEvent): void;
   cancel(pointerId?: number): void;
@@ -250,12 +262,11 @@ class FrameView implements SelectionFrame {
       this.frame.append(this.side);
     }
     surface.chrome.append(this.crop, this.frame);
-    this.offerTable();
-    this.offerGroups();
-    this.offerLinks();
-    this.offerCurves();
+    this.offerAll();
     this.stops = [
       host.selection.subscribe(() => this.selectionChanged()),
+      // A text box selected alone gets the frame only while a draw tool is active.
+      drawState.subscribe(() => this.selectionChanged()),
       surface.onChange(() => this.place()),
       objectGroups.subscribe(() => this.offerGroups()),
       inkLinks.subscribe(() => this.offerLinks()),
@@ -263,18 +274,20 @@ class FrameView implements SelectionFrame {
     this.place();
   }
 
-  down(event: PointerEvent): void {
+  down(event: PointerEvent): boolean {
     // One drag at a time: a second contact, such as the heel of the hand, leaves the drag in progress alone.
-    if (this.drag) return;
+    if (this.drag) return false;
     const target = event.target as HTMLElement;
     const box = this.box();
     const side = target === this.side && this.side !== null;
-    if (!box || event.button !== 0 || !(target === this.mover || target.dataset.inkCorner || side)) return;
+    if (!box || event.button !== 0 || !(target === this.mover || target.dataset.inkCorner || side)) return false;
     const start = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? { x: 0, y: 0 };
     const corner = (target.dataset.inkCorner as Corner | undefined) ?? null;
     this.drag = {
       pointerId: event.pointerId,
       start,
+      client: { x: event.clientX, y: event.clientY },
+      travel: 0,
       corner,
       box,
       matrix: IDENTITY,
@@ -283,12 +296,14 @@ class FrameView implements SelectionFrame {
       alt: event.altKey,
       marks: [],
     };
+    return true;
   }
 
   move(event: PointerEvent): void {
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointerId) return;
     const at = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? drag.start;
+    drag.travel = Math.max(drag.travel, Math.hypot(event.clientX - drag.client.x, event.clientY - drag.client.y));
     if (drag.side) {
       drag.width = Math.max(MIN_SIZE, at.x - drag.box.minX);
       this.frame.style.width = `${drag.width * this.surface.cameraNow().zoom + 8}px`;
@@ -321,6 +336,13 @@ class FrameView implements SelectionFrame {
       if (drag.width) void tidySelection(this.host, this.surface, { kind: 'reflow', width: drag.width });
       return;
     }
+    const sel = this.selection();
+    if (!drag.corner && drag.travel <= TAP_SLOP_PX && sel.strokes.length === 0) {
+      // A tap inside a text box selected alone puts the caret there, and the frame lets go.
+      this.cancel();
+      void editTextAt(this.host, event.clientX, event.clientY, sel.blocks);
+      return;
+    }
     showSnapMarks(this.surface, drag.marks, true);
     if (drag.matrix.some((v, i) => v !== IDENTITY[i])) void this.apply(drag.matrix);
   }
@@ -337,6 +359,7 @@ class FrameView implements SelectionFrame {
 
   stop(): void {
     this.stops.forEach((stop) => stop());
+    this.host.frameShown?.(false);
     this.frame.remove();
     this.crop.remove();
   }
@@ -381,26 +404,44 @@ class FrameView implements SelectionFrame {
     return translation(first.x + arrow[0] * more, first.y + arrow[1] * more);
   }
 
+  /**
+   * The selection's box. Ink always has one; text boxes and pictures selected alone have one when the lasso took them or
+   * a draw tool is active, so Select and type keeps Phase 4's own chrome for them.
+   */
   private box(): Bounds | null {
     const sel = this.selection();
-    if (sel.strokes.length === 0) return null;
+    if (sel.strokes.length === 0 && (sel.blocks.length === 0 || (!sel.lasso && drawState.get().tool === 'select'))) {
+      return null;
+    }
     const blocks = blockItems(this.host).filter((item) => sel.blocks.includes(item.id));
     return selectionFrame(this.selected(), blocks);
   }
 
-  private selectionChanged(): void {
+  /** Shows the bar's actions that fit what is selected. */
+  private offerAll(): void {
+    this.offerInk();
     this.offerCurves();
     this.offerTable();
     this.offerGroups();
     this.offerLinks();
+  }
+
+  private selectionChanged(): void {
+    this.offerAll();
     this.place();
-    const now = this.selection().strokes.length;
+    const now = this.box() ? 1 : 0;
     if (now > 0 && this.had === 0) this.mover.focus({ preventScroll: true });
     this.had = now;
   }
 
+  /** The ink's own actions show only while ink is selected. */
+  private offerInk(): void {
+    showInkOnlyActions(this.bar, this.selection().strokes.length > 0);
+  }
+
   private place(): void {
     const box = this.box();
+    this.host.frameShown?.(box !== null);
     if (!box) {
       this.frame.style.display = 'none';
       this.crop.style.display = 'none';
@@ -417,9 +458,33 @@ class FrameView implements SelectionFrame {
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
     this.fitBar(left);
-    const top = shown.minY * zoom - scrollY - 4;
-    this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN + this.titleRoom());
+    this.placeBar(shown.minY * zoom - scrollY - 4, Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8);
     this.placeCrop(shown);
+  }
+
+  /**
+   * Puts the bar above the frame, or below it when there is no room above. When neither side has room, as with a
+   * selection as tall as the view, it stays inside the visible part of the view, beside the frame's visible edge.
+   * `top` is the frame's top in the view, `height` its height.
+   */
+  private placeBar(top: number, height: number): void {
+    const bar = this.bar;
+    const barHeight = bar.offsetHeight;
+    const minY = this.titleRoom() + BAR_MARGIN;
+    const viewHeight = this.surface.parts.viewport.viewport.clientHeight;
+    const known = viewHeight > 0;
+    const roomAbove = top >= barHeight + minY;
+    const roomBelow = !known || top + height + tokens.space[3] + barHeight <= viewHeight - BAR_MARGIN;
+    bar.toggleAttribute('data-below', !roomAbove);
+    bar.toggleAttribute('data-pinned', false);
+    bar.style.removeProperty('inset-block-start');
+    bar.style.removeProperty('inset-block-end');
+    if (roomAbove || roomBelow) return;
+    // No room on either side: keep the bar inside the view, as near the frame as that allows.
+    const wanted = Math.min(Math.max(top, minY), viewHeight - barHeight - BAR_MARGIN);
+    bar.toggleAttribute('data-pinned', true);
+    bar.style.insetBlockStart = `${wanted - top}px`;
+    bar.style.insetBlockEnd = 'auto';
   }
 
   /** Make link shows for writing that is selected; Remove link for writing that is a link. */
@@ -518,7 +583,9 @@ class FrameView implements SelectionFrame {
       const f = block?.frame;
       if (!block || f?.x === undefined || f.y === undefined || block.lock) return [];
       const [a, , , d, e, fy] = matrix;
-      const next = { ...f, x: a * f.x + e, y: d * f.y + fy, ...(f.w !== undefined ? { w: f.w * a } : {}) };
+      // A text box that takes its width from its text gets one when it is resized.
+      const w = f.w ?? (a !== 1 && block.type === 'text' ? layer?.view(id)?.measure().w : undefined);
+      const next = { ...f, x: a * f.x + e, y: d * f.y + fy, ...(w !== undefined ? { w: w * a } : {}) };
       return [{ edit: 'moveBlock', block: id, frame: next }];
     });
   }
@@ -655,7 +722,7 @@ class FrameView implements SelectionFrame {
   };
 
   private readonly onKey = (event: KeyboardEvent) => {
-    if (this.selection().strokes.length === 0) return;
+    if (!this.box()) return;
     const arrow = ARROWS[event.key];
     let run: (() => unknown) | null = null;
     if (arrow && event.target === this.mover) run = () => this.apply(this.nudgeBy(arrow, event.shiftKey));
@@ -679,10 +746,17 @@ export function attachSelectionFrame(host: InkHost, surface: InkSurface): Select
 export function createFrameTool(frameOf: () => SelectionFrame | null): InkPointerTool {
   return {
     id: 'ink.frame',
-    priority: 95,
-    accepts: (event) => event.target instanceof Element && event.target.closest('[data-ink-chrome]') !== null,
-    down(event) {
-      frameOf()?.down(event);
+    // Above the palm filter (100), so a finger drags the frame rather than the page. A palm, and a finger's tap on the
+    // bar, stay the filter's: it drops the palm and presses the button.
+    priority: 101,
+    accepts(event) {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target?.closest('[data-ink-chrome]')) return false;
+      return event.pointerType !== 'touch' || (!palmSized(event) && target.closest(DRAG_PARTS) !== null);
+    },
+    down(event, ctx) {
+      // A move or resize keeps its pointer when it outruns the frame or leaves the page view.
+      if (frameOf()?.down(event)) ctx.capture(event.pointerId);
       return 'claim';
     },
     move(events) {

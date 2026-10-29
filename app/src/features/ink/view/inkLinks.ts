@@ -7,7 +7,7 @@ import { newId } from '../../../editor/ids';
 import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { say } from './say';
 import { followView } from './host';
 import type { InkHost, InkQueue, InkSelection } from './host';
 import type { InkSurface } from './surface';
@@ -175,15 +175,15 @@ export async function linkSelection(
   const changes = makeLinkChange(inkLinks.get(), selection.strokes, first.block, target, label);
   if (!changes) return false;
   const ok = await sendLinks(surface, changes);
-  if (ok) announce(t('ink.links.made', { label }));
+  if (ok) say(t('ink.links.made', { label }));
   return ok;
 }
 
 /** Takes the links off the selected strokes. */
 export async function unlinkSelection(host: InkHost, surface: InkSurface): Promise<void> {
   const changes = removeLinkChange(inkLinks.get(), host.selection.get().strokes);
-  if (!changes) return announce(t('ink.links.none'));
-  if (await sendLinks(surface, changes)) announce(t('ink.links.removed'));
+  if (!changes) return say(t('ink.links.none'));
+  if (await sendLinks(surface, changes)) say(t('ink.links.removed'));
 }
 
 /** Whether the selection holds writing that is a link, for Remove link's enabled state. */

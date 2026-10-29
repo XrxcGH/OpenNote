@@ -8,23 +8,24 @@
     gap: var(--space-3);
   }
 
+  /* The table fits the window; only a window narrower than 18 whole cells scrolls it sideways. The padding leaves room
+     for the selection ring, which is drawn outside the cell. */
   .scroll {
     overflow-x: auto;
-    padding-block-end: var(--space-2);
+    padding: var(--space-1);
   }
 
   .table {
     display: grid;
-    grid-template-columns: repeat(18, minmax(2.1rem, 1fr));
+    grid-template-columns: repeat(18, minmax(1.5rem, 1fr));
     grid-template-rows: repeat(7, auto) var(--space-2) repeat(2, auto);
     gap: 2px;
-    min-inline-size: 40rem;
   }
 
   .cell,
   .ghost {
     aspect-ratio: 1;
-    min-block-size: 2.1rem;
+    min-block-size: 2rem;
     border-radius: var(--radius-sm);
   }
 
@@ -35,9 +36,12 @@
 
   .cell {
     position: relative;
+    /* The number takes the top row and the symbol the rest, so the two never share a line. */
     display: grid;
-    place-items: center;
-    padding: 0;
+    grid-template-rows: auto 1fr;
+    justify-items: center;
+    align-items: center;
+    padding: var(--space-1) 0;
     font: inherit;
     color: var(--color-text-primary);
     background: var(--color-surface-raised);
@@ -49,8 +53,8 @@
   .cell[aria-pressed='true'] {
     background: var(--color-surface-page);
     border-color: var(--color-text-primary);
-    outline: 2px solid var(--color-text-primary);
-    outline-offset: -3px;
+    /* The ring is drawn inside the cell's padding, so it covers neither the number nor the family bar. */
+    box-shadow: inset 0 0 0 2px var(--color-text-primary);
   }
 
   .cell:focus-visible {
@@ -60,14 +64,15 @@
   }
 
   .number {
-    position: absolute;
-    inset-block-start: 1px;
-    inset-inline-start: 3px;
-    font-size: 0.6rem;
+    justify-self: start;
+    padding-inline-start: 3px;
+    line-height: 1;
+    font-size: 0.625rem;
     color: var(--color-text-secondary);
   }
 
   .symbol {
+    line-height: 1;
     font-weight: var(--font-weight-semibold);
     font-size: var(--type-small-size);
   }
@@ -159,9 +164,10 @@
     font-weight: var(--font-weight-semibold);
   }
 
+  .summary,
   .facts {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
     gap: var(--space-2) var(--space-4);
     margin: 0;
   }
@@ -186,16 +192,14 @@
     gap: var(--space-2);
   }
 
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: var(--space-3);
+  .card {
+    gap: var(--space-2);
   }
 
   @media (forced-colors: active) {
     .cell[aria-pressed='true'] {
-      outline-color: Highlight;
+      outline: 2px solid Highlight;
+      outline-offset: -3px;
     }
   }
 }

@@ -74,8 +74,12 @@ export default function EditingAutoCorrect() {
               <td>{entry.from}</td>
               <td>{entry.to}</td>
               <td>
-                <Button variant="quiet" onClick={() => save(list.filter((other) => other.from !== entry.from))}>
-                  {t('editor.autocorrect.remove', { from: entry.from })}
+                <Button
+                  variant="quiet"
+                  aria-label={t('editor.autocorrect.remove', { from: entry.from })}
+                  onClick={() => save(list.filter((other) => other.from !== entry.from))}
+                >
+                  {t('editor.autocorrect.removeShort')}
                 </Button>
               </td>
             </tr>

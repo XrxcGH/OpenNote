@@ -5,11 +5,13 @@ import { t } from '../../../strings/t';
 import { constantLine } from '../reference/unitsSheet';
 import type { Formula, SheetConstant, SheetResult, SheetSection, SheetUnit } from '../reference/unitsSheet';
 import extra from './extra.module.css';
+import ref from './reference.module.css';
+import { keepTogether } from '../reference/format';
 import { InsertButton } from './InsertButton';
 
 function UnitRows({ rows }: { rows: readonly SheetUnit[] }) {
   return (
-    <table className={extra.table}>
+    <table className={`${ref.table} ${ref.withActions}`}>
       <thead>
         <tr>
           <th scope="col">{t('study.reference.name')}</th>
@@ -27,7 +29,7 @@ function UnitRows({ rows }: { rows: readonly SheetUnit[] }) {
             <th scope="row">{one.name}</th>
             <td>{one.symbol}</td>
             <td>{one.measures}</td>
-            <td>{one.definition}</td>
+            <td>{keepTogether(one.definition)}</td>
             <td>
               <InsertButton text={one.symbol} label={t('study.reference.insertNamed', { name: one.name })} />
             </td>
@@ -40,7 +42,7 @@ function UnitRows({ rows }: { rows: readonly SheetUnit[] }) {
 
 function ConstantRows({ rows }: { rows: readonly SheetConstant[] }) {
   return (
-    <table className={extra.table}>
+    <table className={`${ref.table} ${ref.withActions}`}>
       <thead>
         <tr>
           <th scope="col">{t('study.reference.name')}</th>
@@ -59,7 +61,7 @@ function ConstantRows({ rows }: { rows: readonly SheetConstant[] }) {
             <tr key={one.symbol}>
               <th scope="row">{one.name}</th>
               <td>{one.symbol}</td>
-              <td>{line.slice(one.symbol.length + 3)}</td>
+              <td className={ref.num}>{keepTogether(line.slice(one.symbol.length + 3))}</td>
               <td>{one.exact ? t('study.reference.units.exact') : t('study.reference.units.measured')}</td>
               <td>
                 <InsertButton text={line} label={t('study.reference.insertNamed', { name: one.name })} />
@@ -74,7 +76,7 @@ function ConstantRows({ rows }: { rows: readonly SheetConstant[] }) {
 
 function FormulaRows({ rows }: { rows: readonly Formula[] }) {
   return (
-    <table className={extra.table}>
+    <table className={`${ref.table} ${ref.withActions}`}>
       <thead>
         <tr>
           <th scope="col">{t('study.reference.name')}</th>
@@ -89,8 +91,8 @@ function FormulaRows({ rows }: { rows: readonly Formula[] }) {
         {rows.map((one) => (
           <tr key={one.name}>
             <th scope="row">{one.name}</th>
-            <td>{one.text}</td>
-            <td>{one.where}</td>
+            <td>{keepTogether(one.text)}</td>
+            <td>{keepTogether(one.where)}</td>
             <td>
               <InsertButton text={one.text} label={t('study.reference.insertNamed', { name: one.name })} />
             </td>

@@ -105,6 +105,7 @@ export function ReadAloudBar({
         <>
           <p className={styles.message}>{t('readAloud.noVoices')}</p>
           <Button onClick={onOpenSpeechSettings}>{t('readAloud.openSpeechSettings')}</Button>
+          <Button onClick={onStop}>{t('readAloud.stop')}</Button>
         </>
       ) : (
         <>
@@ -122,7 +123,7 @@ export function ReadAloudBar({
           <VoiceAndSpeed voices={voices ?? []} idPrefix="read-aloud-bar" />
         </>
       )}
-      <IconButton label={t('readAloud.stop')} icon={Stop} onPress={onStop} />
+      {!noVoices && <IconButton label={t('readAloud.stop')} icon={Stop} onPress={onStop} />}
     </div>
   );
 }

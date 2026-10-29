@@ -16,6 +16,7 @@ import type {
 import type { Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
+import { say } from './say';
 import { strokeBounds, union } from '../geometry/bounds';
 import { pagePoints } from '../geometry/strokeIndex';
 import type { Bounds } from '../geometry/types';
@@ -135,11 +136,37 @@ function unsureMarks(
   return marksFor(words, block, markdown, ids, helpers);
 }
 
+/**
+ * Whether reading handwriting can go ahead. When the feature is only switched off, this is the moment to offer to turn it
+ * on, so Convert to text asks rather than doing nothing.
+ */
+async function offerHandwriting(host: InkHost): Promise<boolean> {
+  if (handwritingAvailable(host)) return true;
+  if (!host.handwriting?.ensure || !isEnabled('ink.handwriting')) return false;
+  return (await host.handwriting.ensure()) && handwritingAvailable(host);
+}
+
+/** Why Convert, Straighten, or Even spacing cannot run, said out loud so the button never looks dead. True when it said. */
+function refuse(host: InkHost, surface: InkSurface, count: number, noQueue: boolean): boolean {
+  const why = !handwritingAvailable(host)
+    ? 'ink.handwriting.unavailable'
+    : count === 0
+      ? 'ink.handwriting.selectFirst'
+      : surface.readOnly
+        ? 'ink.handwriting.readOnly'
+        : noQueue
+          ? 'ink.errors.notSaved'
+          : null;
+  if (why) say(t(why));
+  return why !== null;
+}
+
 /** Reads the selected handwriting and adds the words as text below it, or inside the shape it was written in. */
 export async function convertSelection(host: InkHost, surface: InkSurface): Promise<void> {
   const strokes = surface.strokes(host.selection.get().strokes);
   const queue = host.queue.get();
-  if (!handwritingAvailable(host) || !queue || strokes.length === 0 || surface.readOnly) return;
+  if (strokes.length > 0 && !surface.readOnly) await offerHandwriting(host);
+  if (refuse(host, surface, strokes.length, !queue) || !queue) return;
   announce(t('ink.handwriting.working'));
   const recognition = await host.handwriting!.recognize(toIntel(strokes));
   if (!recognition) return;
@@ -177,14 +204,15 @@ export async function convertSelection(host: InkHost, surface: InkSurface): Prom
     });
   } catch {
     surface.hide(amber.map((stroke) => stroke.id));
-    announce(t('ink.errors.notSaved'));
+    say(t('ink.errors.notSaved'));
   }
 }
 
 /** Levels the lines, evens the spacing, or wraps the selected handwriting to a width, as one undo step. */
 export async function tidySelection(host: InkHost, surface: InkSurface, operation: TidyOperation): Promise<boolean> {
   const strokes = surface.strokes(host.selection.get().strokes);
-  if (!handwritingAvailable(host) || strokes.length === 0 || surface.readOnly) return false;
+  if (strokes.length > 0 && !surface.readOnly) await offerHandwriting(host);
+  if (refuse(host, surface, strokes.length, false)) return false;
   const intel = toIntel(strokes);
   announce(t('ink.handwriting.working'));
   const recognition = await host.handwriting!.recognize(intel);
@@ -194,7 +222,7 @@ export async function tidySelection(host: InkHost, surface: InkSurface, operatio
   }
   const plan = await host.handwriting!.tidy(intel, recognition, operation);
   if (!plan || plan.moves.length === 0) {
-    if (plan) announce(t('ink.handwriting.tidyNothing'));
+    if (plan) say(t('ink.handwriting.tidyNothing'));
     return false;
   }
   const saved = await surface.transformEach(plan.moves.map((move) => ({ id: move.key, matrix: move.transform })));
@@ -312,7 +340,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     // The question was asked when the pen was chosen; strokes that came before the answer wait for it.
     if (!ready && !declined) await ask();
     if (!ready) {
-      announce(t('ink.handwriting.off'));
+      say(t('ink.handwriting.off'));
       return;
     }
     const recognition = await host.handwriting!.recognize(toIntel(strokes), false);
@@ -361,7 +389,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     /** Shows or fades again the ink this pen turned into text. */
     toggleInk(): void {
       const surface = surfaceOf();
-      if (!surface || faded.size === 0) return announce(t('ink.handwriting.noWritten'));
+      if (!surface || faded.size === 0) return say(t('ink.handwriting.noWritten'));
       const strokes = surface.strokes([...faded.keys()]);
       const showing = strokes.every((s) => s.color[3] > FADED_ALPHA);
       for (const stroke of strokes) {
@@ -371,7 +399,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
           : original.color;
         void surface.restyle([stroke.id], [{ ...stroke, color }], { color: [...color] });
       }
-      announce(t(showing ? 'ink.handwriting.inkHidden' : 'ink.handwriting.inkShown'));
+      say(t(showing ? 'ink.handwriting.inkHidden' : 'ink.handwriting.inkShown'));
     },
     destroy(): void {
       if (timer) clearTimeout(timer);

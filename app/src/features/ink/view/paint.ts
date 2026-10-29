@@ -2,7 +2,7 @@
 // as long as the stroke object lives; strokes never change, so a new object means new ink. Highlighters go below the
 // other strokes, as the format says, and carry their 40 percent alpha in their color.
 import { applyToPoint, widthScale } from '../geometry/matrix';
-import { pencilOpacity, strokeShapes } from '../geometry/outline';
+import { isExactStroke, pencilOpacity, strokeShapes } from '../geometry/outline';
 import type { InkPoint, InkTool } from '../geometry/types';
 import type { InkStroke } from '../model/types';
 import { paletteByName, resolveColor, toCss } from '../pens/palette';
@@ -20,11 +20,18 @@ export function pagePointsOf(stroke: InkStroke): readonly InkPoint[] {
 /**
  * The filled outline of points as a Path2D, built point by point: a string path would be built and parsed again for
  * every stroke, which dominated opening a page of 10,000 strokes. The outline is dense enough that straight edges
- * between its points look as smooth as the curves of `outlinePath` at any zoom the page has.
+ * between its points look as smooth as the curves of `outlinePath` at any zoom the page has. `exact` says whether the
+ * points are exact geometry (a shape) or a pen's samples; left out, the points decide (`isExactLine`).
  */
-export function outlineOf(points: readonly InkPoint[], tool: InkTool, width: number, complete = true): Path2D {
+export function outlineOf(
+  points: readonly InkPoint[],
+  tool: InkTool,
+  width: number,
+  complete = true,
+  exact?: boolean,
+): Path2D {
   const path = new Path2D();
-  for (const outline of strokeShapes(points, { tool, width, complete })) {
+  for (const outline of strokeShapes(points, { tool, width, complete, exact })) {
     if (outline.length < 2) continue;
     path.moveTo(outline[0].x, outline[0].y);
     for (let i = 1; i < outline.length; i++) path.lineTo(outline[i].x, outline[i].y);
@@ -37,7 +44,7 @@ export function strokePath(stroke: InkStroke): Path2D {
   let path = paths.get(stroke);
   if (!path) {
     const scale = stroke.transform ? widthScale(stroke.transform) : 1;
-    path = outlineOf(pagePointsOf(stroke), stroke.tool, stroke.width * scale);
+    path = outlineOf(pagePointsOf(stroke), stroke.tool, stroke.width * scale, true, isExactStroke(stroke));
     paths.set(stroke, path);
   }
   return path;

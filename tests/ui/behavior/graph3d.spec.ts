@@ -9,8 +9,8 @@ test('draws a 3D graph from the slash menu and keeps a turn in its text', async 
   await openSmart(page);
   await newLine(page);
   await page.keyboard.type('/3d graph');
-  await expect(page.getByRole('option', { name: 'Insert 3D graph' })).toBeVisible();
-  await page.keyboard.press('Enter');
+  // Pick the item itself: the list sorts as the typed words arrive, and Enter takes whichever is first by then.
+  await page.getByRole('option', { name: 'Insert 3D graph' }).click();
   const plot = page.getByRole('application', { name: '3D graph of 1 item' });
   await expect(plot).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/^Tangent plane at \(1, 0\.5, 0\.75\)/)).toBeVisible();
