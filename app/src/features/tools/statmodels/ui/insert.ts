@@ -60,7 +60,9 @@ export function resultTable(c: InsertContext): { header: string[]; rows: string[
 
 /** A table cell as text: a number, a name from the data, or @id for a word under word.<id> in the tool's strings. */
 export const cellText = (c: InsertContext, cell: StepValue): string =>
-  typeof cell === 'string' && cell.startsWith('@') ? c.say(`${PREFIX}.${c.tool}.word.${cell.slice(1)}`) : valueText(cell);
+  typeof cell === 'string' && cell.startsWith('@')
+    ? c.say(`${PREFIX}.${c.tool}.word.${cell.slice(1)}`)
+    : valueText(cell);
 
 /** A column's name: its words under col.<id>, or the text after = for a name from the data, such as a group. */
 export const columnName = (c: InsertContext, id: string): string =>

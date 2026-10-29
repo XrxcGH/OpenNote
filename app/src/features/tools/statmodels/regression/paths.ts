@@ -52,7 +52,10 @@ export function moderation(
   const qb = 2 * (b1 * b3 - t2 * v[1][3]);
   const qc = b1 * b1 - t2 * v[1][1];
   const disc = qb * qb - 4 * qa * qc;
-  const jn = disc < 0 || qa === 0 ? [] : [(-qb - Math.sqrt(disc)) / (2 * qa), (-qb + Math.sqrt(disc)) / (2 * qa)].sort((a, b) => a - b);
+  const jn =
+    disc < 0 || qa === 0
+      ? []
+      : [(-qb - Math.sqrt(disc)) / (2 * qa), (-qb + Math.sqrt(disc)) / (2 * qa)].sort((a, b) => a - b);
   return { fit, slopes, jn, jnInside: qa < 0 };
 }
 
@@ -86,11 +89,22 @@ const quantileSorted = (s: readonly number[], q: number) => {
   return s[lo] + (h - lo) * ((s[lo + 1] ?? s[lo]) - s[lo]);
 };
 
-function pathFits(rows: readonly number[], data: { x: readonly number[]; m: readonly number[]; y: readonly number[]; cov: readonly (readonly number[])[] }) {
+function pathFits(
+  rows: readonly number[],
+  data: { x: readonly number[]; m: readonly number[]; y: readonly number[]; cov: readonly (readonly number[])[] },
+) {
   const covAt = (i: number) => data.cov.map((c) => c[i]);
   const names = data.cov.map((_, k) => `cov${k + 1}`);
-  const aFit = fitOls(rows.map((i) => [1, data.x[i], ...covAt(i)]), rows.map((i) => data.m[i]), ['(Intercept)', 'x', ...names]);
-  const bFit = fitOls(rows.map((i) => [1, data.x[i], data.m[i], ...covAt(i)]), rows.map((i) => data.y[i]), ['(Intercept)', 'x', 'm', ...names]);
+  const aFit = fitOls(
+    rows.map((i) => [1, data.x[i], ...covAt(i)]),
+    rows.map((i) => data.m[i]),
+    ['(Intercept)', 'x', ...names],
+  );
+  const bFit = fitOls(
+    rows.map((i) => [1, data.x[i], data.m[i], ...covAt(i)]),
+    rows.map((i) => data.y[i]),
+    ['(Intercept)', 'x', 'm', ...names],
+  );
   return { aFit, bFit };
 }
 
@@ -107,7 +121,11 @@ export function mediation(
   if (n < 5) fail('tooFewRows', `${n}|4`);
   const all = y.map((_, i) => i);
   const { aFit, bFit } = pathFits(all, { x, m, y, cov });
-  const cFit = fitOls(all.map((i) => [1, x[i], ...cov.map((c) => c[i])]), y, ['(Intercept)', 'x', ...cov.map((_, k) => `cov${k + 1}`)]);
+  const cFit = fitOls(
+    all.map((i) => [1, x[i], ...cov.map((c) => c[i])]),
+    y,
+    ['(Intercept)', 'x', ...cov.map((_, k) => `cov${k + 1}`)],
+  );
   const s = sobel(aFit.coef[1], aFit.se[1], bFit.coef[2], bFit.se[2]);
   const rng = makeRng(seed);
   const draws: number[] = [];

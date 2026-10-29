@@ -43,7 +43,12 @@ function gls(x: Matrix, y: readonly number[], groups: readonly number[][], lambd
       for (let a = 0; a < p; a += 1) sumX[a] += x[i][a];
       sumY += y[i];
     }
-    for (const i of rows) accumulate(x[i].map((v, a) => v - c * sumX[a]), y[i] - c * sumY, i);
+    for (const i of rows)
+      accumulate(
+        x[i].map((v, a) => v - c * sumX[a]),
+        y[i] - c * sumY,
+        i,
+      );
   };
   for (const rows of groups) {
     const c = lambda / (1 + lambda * rows.length);
@@ -112,7 +117,12 @@ export function fitMixed(x: Matrix, y: readonly number[], group: readonly string
   }
   const best = gls(x, y, groups, Math.exp((lo + hi) / 2));
   const zero = gls(x, y, groups, 0);
-  const fit = zero && (!best || zero.reml >= best.reml) ? { ...zero, lambda: 0 } : best ? { ...best, lambda: Math.exp((lo + hi) / 2) } : null;
+  const fit =
+    zero && (!best || zero.reml >= best.reml)
+      ? { ...zero, lambda: 0 }
+      : best
+        ? { ...best, lambda: Math.exp((lo + hi) / 2) }
+        : null;
   if (!fit) fail('singularDesign');
   const se = fit.coef.map((_, a) => Math.sqrt(fit.cov[a][a]));
   const tCrit = tQuantile(1 - (1 - level) / 2, n - p);

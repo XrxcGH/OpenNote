@@ -18,7 +18,9 @@ export function compareOutcome(values: Values): Outcome {
   const fullFormula = parseFormula(String(values.formula), table.names);
   const reducedFormula = parseFormula(String(values.reduced), table.names);
   if (fullFormula.response !== reducedFormula.response) fail('sameResponse');
-  const need = [...new Set([...fullFormula.terms, ...reducedFormula.terms].flatMap((t) => t.factors.map((f) => f.name)))];
+  const need = [
+    ...new Set([...fullFormula.terms, ...reducedFormula.terms].flatMap((t) => t.factors.map((f) => f.name))),
+  ];
   const full = readModel(table, String(values.formula), values, need);
   const reduced = readModel(table, String(values.reduced), values, need);
   const fullFit = fitOls(full.design.x, full.y, full.design.columns);
@@ -95,7 +97,15 @@ export function moderationOutcome(values: Values): Outcome {
       {
         id: 'coef',
         columns: ['term', 'estimate', 'se', 't', 'p', 'low', 'high'],
-        rows: f.names.map((_, j) => [j === 0 ? '(Intercept)' : names[j - 1], f.coef[j], f.se[j], f.t[j], f.pValue[j], f.low[j], f.high[j]]),
+        rows: f.names.map((_, j) => [
+          j === 0 ? '(Intercept)' : names[j - 1],
+          f.coef[j],
+          f.se[j],
+          f.t[j],
+          f.pValue[j],
+          f.low[j],
+          f.high[j],
+        ]),
       },
       {
         id: 'slopes',
@@ -119,7 +129,10 @@ export function moderationOutcome(values: Values): Outcome {
     ],
     steps: [
       step('regression.moderationModel', '\\hat y = b_0 + b_1 x + b_2 m + b_3 x m'),
-      step('regression.simpleSlope', '\\frac{\\partial \\hat y}{\\partial x} = b_1 + b_3 m,\\quad \\operatorname{SE}^2 = V_{11} + 2 m V_{13} + m^2 V_{33}'),
+      step(
+        'regression.simpleSlope',
+        '\\frac{\\partial \\hat y}{\\partial x} = b_1 + b_3 m,\\quad \\operatorname{SE}^2 = V_{11} + 2 m V_{13} + m^2 V_{33}',
+      ),
       step('regression.jn', '(b_1 + b_3 m)^2 = t_{crit}^2 (V_{11} + 2 m V_{13} + m^2 V_{33})', {
         lo: result.jn[0] ?? NaN,
         hi: result.jn[1] ?? NaN,
@@ -172,9 +185,20 @@ export function mediationOutcome(values: Values): Outcome {
   const rows = completeRows(table, [xName, mName, yName, ...covs]);
   const at = (name: string) => numbersAt(table, name, rows);
   const level = Number(values.level);
-  const r = mediation(at(xName), at(mName), at(yName), covs.map(at), Number(values.resamples), Number(values.seed), level);
-  const path = (name: string, fit: { coef: readonly number[]; se: readonly number[]; t: readonly number[]; pValue: readonly number[] }, j: number) =>
-    [name, fit.coef[j], fit.se[j], fit.t[j], fit.pValue[j]];
+  const r = mediation(
+    at(xName),
+    at(mName),
+    at(yName),
+    covs.map(at),
+    Number(values.resamples),
+    Number(values.seed),
+    level,
+  );
+  const path = (
+    name: string,
+    fit: { coef: readonly number[]; se: readonly number[]; t: readonly number[]; pValue: readonly number[] },
+    j: number,
+  ) => [name, fit.coef[j], fit.se[j], fit.t[j], fit.pValue[j]];
   return {
     rows: [
       { id: 'indirect', value: r.indirect, answer: true, sym: 'ab' },
@@ -196,7 +220,7 @@ export function mediationOutcome(values: Values): Outcome {
     ],
     pictures: [{ id: 'paths', type: 'draw', draw: pathDiagram(r, { x: xName, m: mName, y: yName }) }],
     steps: [
-      step('regression.paths', 'm = i_1 + a x,\\quad y = i_2 + c\' x + b m,\\quad y = i_3 + c x'),
+      step('regression.paths', "m = i_1 + a x,\\quad y = i_2 + c' x + b m,\\quad y = i_3 + c x"),
       step('regression.sobel', 'z = \\frac{ab}{\\sqrt{b^2 s_a^2 + a^2 s_b^2}} = \\frac{[[ab]]}{[[se]]} = [[z]]', {
         ab: r.indirect,
         se: r.sobelSe,
@@ -244,19 +268,38 @@ export function mixedOutcome(values: Values): Outcome {
       {
         id: 'coef',
         columns: ['term', 'estimate', 'se', 't', 'p', 'low', 'high'],
-        rows: design.columns.map((name, j) => [name, fit.coef[j], fit.se[j], fit.t[j], fit.p[j], fit.low[j], fit.high[j]]),
+        rows: design.columns.map((name, j) => [
+          name,
+          fit.coef[j],
+          fit.se[j],
+          fit.t[j],
+          fit.p[j],
+          fit.low[j],
+          fit.high[j],
+        ]),
       },
     ],
     steps: [
-      step('regression.mixedModel', 'y_{ij} = x_{ij}^\\top \\beta + u_j + e_{ij},\\quad u_j \\sim N(0, \\sigma^2_u),\\ e_{ij} \\sim N(0, \\sigma^2_e)'),
-      step('regression.reml', '\\ell_R(\\lambda) = -\\tfrac12\\left[(n-p)\\ln \\hat\\sigma^2_e + \\ln|H| + \\ln|X^\\top H^{-1} X|\\right]', {
-        lambda: fit.lambda,
-      }),
-      step('regression.icc', '\\rho = \\frac{\\sigma^2_u}{\\sigma^2_u + \\sigma^2_e} = \\frac{[[tau2]]}{[[tau2]] + [[sigma2]]} = [[icc]]', {
-        tau2: fit.tau2,
-        sigma2: fit.sigma2,
-        icc: fit.icc,
-      }),
+      step(
+        'regression.mixedModel',
+        'y_{ij} = x_{ij}^\\top \\beta + u_j + e_{ij},\\quad u_j \\sim N(0, \\sigma^2_u),\\ e_{ij} \\sim N(0, \\sigma^2_e)',
+      ),
+      step(
+        'regression.reml',
+        '\\ell_R(\\lambda) = -\\tfrac12\\left[(n-p)\\ln \\hat\\sigma^2_e + \\ln|H| + \\ln|X^\\top H^{-1} X|\\right]',
+        {
+          lambda: fit.lambda,
+        },
+      ),
+      step(
+        'regression.icc',
+        '\\rho = \\frac{\\sigma^2_u}{\\sigma^2_u + \\sigma^2_e} = \\frac{[[tau2]]}{[[tau2]] + [[sigma2]]} = [[icc]]',
+        {
+          tau2: fit.tau2,
+          sigma2: fit.sigma2,
+          icc: fit.icc,
+        },
+      ),
     ],
     notes: ['mixedDf', 'linear'],
     equation: `\\hat{y} = ${linearLatex(fit.coef, design.columns)} + \\hat u_j`,

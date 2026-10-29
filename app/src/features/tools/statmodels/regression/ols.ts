@@ -50,7 +50,13 @@ export interface OlsOptions {
 export const leverage = (x: Matrix, xtxInv: Matrix): number[] => x.map((row) => dot(row, matVec(xtxInv, row)));
 
 /** The sandwich covariance for the chosen kind of robust standard error. */
-export function sandwich(x: Matrix, resid: readonly number[], xtxInv: Matrix, kind: Robust, cluster?: readonly string[]): Matrix {
+export function sandwich(
+  x: Matrix,
+  resid: readonly number[],
+  xtxInv: Matrix,
+  kind: Robust,
+  cluster?: readonly string[],
+): Matrix {
   const n = x.length;
   const p = x[0].length;
   if (kind === 'cluster') {

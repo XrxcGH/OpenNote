@@ -140,7 +140,9 @@ function term(r: Reader): Term[] {
 
 const sameTerm = (a: Term, b: Term) =>
   a.factors.length === b.factors.length &&
-  a.factors.every((f) => b.factors.some((g) => g.name === f.name && (g.power ?? 1) === (f.power ?? 1) && !!g.log === !!f.log));
+  a.factors.every((f) =>
+    b.factors.some((g) => g.name === f.name && (g.power ?? 1) === (f.power ?? 1) && !!g.log === !!f.log),
+  );
 
 /** Reads a formula against the data's column names. */
 export function parseFormula(text: string, names: readonly string[]): Formula {

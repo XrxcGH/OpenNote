@@ -37,7 +37,11 @@ export function anova(design: Design, y: readonly number[], fit: OlsFit): (strin
   for (const term of design.terms) {
     used.push(...term.columns);
     const x = design.x.map((row) => used.map((j) => row[j]));
-    const rss = leastSquares(x, y, used.map((j) => design.columns[j])).rss;
+    const rss = leastSquares(
+      x,
+      y,
+      used.map((j) => design.columns[j]),
+    ).rss;
     const ss = before - rss;
     const df = term.columns.length;
     rows.push([term.label, df, ss, ss / df, ss / df / ms, fUpper(ss / df / ms, df, fit.df)]);
@@ -68,7 +72,10 @@ function diagnosticPictures(fit: OlsFit, d: CaseDiagnostics): Picture[] {
   const n = fit.n;
   const order = d.standardized.map((_, i) => i).sort((a, b) => d.standardized[a] - d.standardized[b]);
   const qq = order.map((i, k) => [normalQuantile((k + 0.625) / (n + 0.25)), d.standardized[i]] as [number, number]);
-  const top = d.cook.map((c, i) => ({ c, i })).sort((a, b) => b.c - a.c).slice(0, 3);
+  const top = d.cook
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => b.c - a.c)
+    .slice(0, 3);
   const pts = (xs: readonly number[], ys: readonly number[]) => xs.map((x, i) => [x, ys[i]] as [number, number]);
   return [
     {
@@ -90,7 +97,14 @@ function diagnosticPictures(fit: OlsFit, d: CaseDiagnostics): Picture[] {
         y: { label: 'standardized' },
         series: [
           { id: 'cases', points: qq, style: 'points' },
-          { id: 'reference', points: [[qq[0][0], qq[0][0]], [qq[n - 1][0], qq[n - 1][0]]], style: 'dashed' },
+          {
+            id: 'reference',
+            points: [
+              [qq[0][0], qq[0][0]],
+              [qq[n - 1][0], qq[n - 1][0]],
+            ],
+            style: 'dashed',
+          },
         ],
         legend: false,
       },
@@ -101,7 +115,16 @@ function diagnosticPictures(fit: OlsFit, d: CaseDiagnostics): Picture[] {
       plot: {
         x: { label: 'fitted' },
         y: { label: 'rootStandardized' },
-        series: [{ id: 'cases', points: pts(fit.fitted, d.standardized.map((r) => Math.sqrt(Math.abs(r)))), style: 'points' }],
+        series: [
+          {
+            id: 'cases',
+            points: pts(
+              fit.fitted,
+              d.standardized.map((r) => Math.sqrt(Math.abs(r))),
+            ),
+            style: 'points',
+          },
+        ],
       },
     },
     {
@@ -136,7 +159,13 @@ function linePicture(design: Design, y: readonly number[], fit: OlsFit): Picture
         { id: 'cases', points: xs.map((x, i) => [x, y[i]] as [number, number]), style: 'points' },
         { id: 'fitted', points: at.map((p) => [p.x, p.value] as [number, number]) },
         { id: 'prediction', points: at.map((p) => [p.x, p.predLow] as [number, number]), style: 'dashed', pen: 2 },
-        { id: 'prediction', points: at.map((p) => [p.x, p.predHigh] as [number, number]), style: 'dashed', pen: 2, legend: false },
+        {
+          id: 'prediction',
+          points: at.map((p) => [p.x, p.predHigh] as [number, number]),
+          style: 'dashed',
+          pen: 2,
+          legend: false,
+        },
       ],
       bands: [{ points: at.map((p) => [p.x, p.low, p.high] as [number, number, number]), pen: 1 }],
     },
@@ -163,7 +192,12 @@ function fitSteps(design: Design, fit: OlsFit, d: CaseDiagnostics, robust: Robus
         p: fit.pValue[j],
       }),
     );
-  if (robust !== 'classical') out.push(step('regression.robust', '(X^\\top X)^{-1} X^\\top \\hat\\Omega X (X^\\top X)^{-1}', { kind: robust === 'cluster' ? 'CR1' : robust.toUpperCase() }));
+  if (robust !== 'classical')
+    out.push(
+      step('regression.robust', '(X^\\top X)^{-1} X^\\top \\hat\\Omega X (X^\\top X)^{-1}', {
+        kind: robust === 'cluster' ? 'CR1' : robust.toUpperCase(),
+      }),
+    );
   if (fit.fDf1 > 0)
     out.push(
       step('regression.f', 'F = \\frac{(\\mathrm{TSS} - \\mathrm{RSS}) / [[df1]]}{\\mathrm{RSS} / [[df2]]} = [[f]]', {
@@ -173,9 +207,19 @@ function fitSteps(design: Design, fit: OlsFit, d: CaseDiagnostics, robust: Robus
         p: fit.fP,
       }),
     );
-  out.push(step('regression.r2', 'R^2 = 1 - \\frac{\\mathrm{RSS}}{\\mathrm{TSS}} = 1 - \\frac{[[rss]]}{[[tss]]} = [[r2]]', { rss: fit.rss, tss: fit.tss, r2: fit.r2 }));
+  out.push(
+    step('regression.r2', 'R^2 = 1 - \\frac{\\mathrm{RSS}}{\\mathrm{TSS}} = 1 - \\frac{[[rss]]}{[[tss]]} = [[r2]]', {
+      rss: fit.rss,
+      tss: fit.tss,
+      r2: fit.r2,
+    }),
+  );
   const flagged = (test: (i: number) => boolean) =>
-    fit.resid.map((_, i) => i).filter(test).map((i) => String(i + 1)).join(', ') || '—';
+    fit.resid
+      .map((_, i) => i)
+      .filter(test)
+      .map((i) => String(i + 1))
+      .join(', ') || '—';
   out.push(
     step('regression.flags', undefined, {
       cook: flagged((i) => d.cook[i] > 4 / fit.n),
@@ -188,7 +232,13 @@ function fitSteps(design: Design, fit: OlsFit, d: CaseDiagnostics, robust: Robus
   return out;
 }
 
-function predictions(values: Values, table: DataTable, formula: Formula, design: Design, fit: OlsFit): ResultTable | null {
+function predictions(
+  values: Values,
+  table: DataTable,
+  formula: Formula,
+  design: Design,
+  fit: OlsFit,
+): ResultTable | null {
   const text = String(values.predict ?? '').trim();
   if (text === '') return null;
   const rows = parseCases(text).map((given, k) => {
@@ -233,14 +283,34 @@ export function fitOutcome(values: Values): Outcome {
     {
       id: 'coef',
       columns: ['term', 'estimate', 'se', 't', 'p', 'low', 'high', 'beta'],
-      rows: fit.names.map((name, j) => [name, fit.coef[j], fit.se[j], fit.t[j], fit.pValue[j], fit.low[j], fit.high[j], fit.beta[j]]),
+      rows: fit.names.map((name, j) => [
+        name,
+        fit.coef[j],
+        fit.se[j],
+        fit.t[j],
+        fit.pValue[j],
+        fit.low[j],
+        fit.high[j],
+        fit.beta[j],
+      ]),
     },
     { id: 'anova', columns: ['term', 'df', 'ss', 'ms', 'f', 'p'], rows: anova(design, y, classical) },
-    { id: 'vif', columns: ['term', 'vif'], rows: fit.names.slice(fit.intercept ? 1 : 0).map((name) => [name, d.vif[fit.names.indexOf(name)]]) },
+    {
+      id: 'vif',
+      columns: ['term', 'vif'],
+      rows: fit.names.slice(fit.intercept ? 1 : 0).map((name) => [name, d.vif[fit.names.indexOf(name)]]),
+    },
     {
       id: 'cases',
       columns: ['case', 'fit', 'residual', 'leverage', 'studentized', 'cook'],
-      rows: fit.resid.map((e, i) => [`${design.rows[i] + 1}`, fit.fitted[i], e, d.leverage[i], d.studentized[i], d.cook[i]]),
+      rows: fit.resid.map((e, i) => [
+        `${design.rows[i] + 1}`,
+        fit.fitted[i],
+        e,
+        d.leverage[i],
+        d.studentized[i],
+        d.cook[i],
+      ]),
     },
   ];
   const predicted = predictions(values, table, formula, design, classical);

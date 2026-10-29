@@ -56,7 +56,11 @@ describe('least squares with 2 predictors', () => {
   });
 
   it('tests a nested model and splits the sums of squares in order', () => {
-    const reduced = fitOls(X.map((r) => r.slice(0, 2)), y, names.slice(0, 2));
+    const reduced = fitOls(
+      X.map((r) => r.slice(0, 2)),
+      y,
+      names.slice(0, 2),
+    );
     const test = nestedF(fit, reduced);
     close(test.f, 215.16885130373478, 1e-7);
     close(test.p, 1.635976632550474e-6, 1e-12);
@@ -71,7 +75,11 @@ describe('least squares with 2 predictors', () => {
 describe('intervals for a new case', () => {
   it('gives the confidence and prediction half-widths', () => {
     const xs = [1, 2, 3, 4, 5];
-    const fit = fitOls(xs.map((v) => [1, v]), [2.2, 2.8, 4.5, 3.7, 5.5], ['(Intercept)', 'x']);
+    const fit = fitOls(
+      xs.map((v) => [1, v]),
+      [2.2, 2.8, 4.5, 3.7, 5.5],
+      ['(Intercept)', 'x'],
+    );
     const p = predictAt(fit, [1, 6]);
     close(p.value, 5.99, 1e-9);
     close(p.high - p.value, 2.2031, 1e-4);
@@ -113,7 +121,11 @@ describe('the random-intercept model', () => {
   it('matches the ANOVA estimators for balanced groups', () => {
     const yy = [10, 12, 11, 13, 15, 14, 16, 17, 9, 8, 10, 11, 13, 15, 14, 12];
     const g = yy.map((_, i) => 'abcd'[Math.floor(i / 4)]);
-    const fit = fitMixed(yy.map(() => [1]), yy, g);
+    const fit = fitMixed(
+      yy.map(() => [1]),
+      yy,
+      g,
+    );
     close(fit.sigma2, 1.6666666666666667, 1e-6);
     close(fit.tau2, 6.25, 1e-5);
     close(fit.icc, 0.7894736842105263, 1e-6);
@@ -127,7 +139,9 @@ describe('model formulas', () => {
   it('expands stars, powers, logs and backticks, and drops the intercept', () => {
     const f = parseFormula('y ~ x*g + x^2 + log(z) + `my col` - 1', cols);
     expect(f.intercept).toBe(false);
-    const labels = f.terms.map((t) => t.factors.map((x) => x.name + (x.power ? `^${x.power}` : '') + (x.log ? '(log)' : '')).join(':'));
+    const labels = f.terms.map((t) =>
+      t.factors.map((x) => x.name + (x.power ? `^${x.power}` : '') + (x.log ? '(log)' : '')).join(':'),
+    );
     expect(labels).toEqual(['x', 'g', 'x:g', 'x^2', 'z(log)', 'my col']);
   });
 
@@ -152,9 +166,25 @@ describe('impossible regression input', () => {
   it('says why a model cannot be fitted or compared', () => {
     const fit = fitOls(X, y, names);
     expect(code(() => nestedF(fit, fit))).toBe('notNested');
-    expect(code(() => fitMixed(y.map(() => [1]), y, y.map(() => 'one')))).toBe('mixedGroups');
+    expect(
+      code(() =>
+        fitMixed(
+          y.map(() => [1]),
+          y,
+          y.map(() => 'one'),
+        ),
+      ),
+    ).toBe('mixedGroups');
     expect(code(() => fitOls(X, y, names, { robust: 'cluster', cluster: y.map(() => 'one') }))).toBe('oneCluster');
-    expect(code(() => fitOls(X.map((r) => [...r, r[1] * 2]), y, [...names, 'twice']))).toBe('collinear');
+    expect(
+      code(() =>
+        fitOls(
+          X.map((r) => [...r, r[1] * 2]),
+          y,
+          [...names, 'twice'],
+        ),
+      ),
+    ).toBe('collinear');
     expect(code(() => fitOls(X.slice(0, 3), y.slice(0, 3), names))).toBe('tooFewRows');
   });
 
@@ -164,7 +194,31 @@ describe('impossible regression input', () => {
     const design = buildDesign(table, formula.terms);
     const opts = { coding: 'reference', center: false, intercept: true } as const;
     expect(code(() => designRow(table, design, formula.terms, new Map([['x', '2']]), opts))).toBe('caseMissing');
-    expect(code(() => designRow(table, design, formula.terms, new Map([['x', '2'], ['g', 'c']]), opts))).toBe('caseLevel');
-    expect(designRow(table, design, formula.terms, new Map([['x', '2'], ['g', 'b']]), opts)).toEqual([1, 2, 1]);
+    expect(
+      code(() =>
+        designRow(
+          table,
+          design,
+          formula.terms,
+          new Map([
+            ['x', '2'],
+            ['g', 'c'],
+          ]),
+          opts,
+        ),
+      ),
+    ).toBe('caseLevel');
+    expect(
+      designRow(
+        table,
+        design,
+        formula.terms,
+        new Map([
+          ['x', '2'],
+          ['g', 'b'],
+        ]),
+        opts,
+      ),
+    ).toEqual([1, 2, 1]);
   });
 });

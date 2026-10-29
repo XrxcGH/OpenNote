@@ -5,7 +5,8 @@ import type { Outcome, ToolSpec, Values } from '../kit/spec';
 import { fitOutcome } from './fitview';
 import { compareOutcome, mediationOutcome, mixedOutcome, moderationOutcome } from './views';
 
-const TWO_PREDICTORS = 'x1,x2,y\n1,2,3.1\n2,1,3.9\n3,4,6.8\n4,3,7.2\n5,6,10.1\n6,5,10.8\n7,8,13.9\n8,7,14.2\n9,10,17.1\n10,9,17.8';
+const TWO_PREDICTORS =
+  'x1,x2,y\n1,2,3.1\n2,1,3.9\n3,4,6.8\n4,3,7.2\n5,6,10.1\n6,5,10.8\n7,8,13.9\n8,7,14.2\n9,10,17.1\n10,9,17.8';
 const GROUPS =
   'hours,method,score,class\n2,lecture,61,A\n4,lecture,66,A\n6,lecture,70,B\n8,lecture,77,B\n3,studio,68,C\n' +
   '5,studio,75,C\n7,studio,83,D\n9,studio,90,D\n1,lecture,58,A\n10,studio,94,D\n6,studio,79,C\n5,lecture,69,B';
@@ -19,7 +20,10 @@ const NESTED =
   'school,hours,score\nA,1,62\nA,3,66\nA,5,71\nA,7,75\nB,2,70\nB,4,74\nB,6,77\nB,8,83\nC,1,55\nC,3,60\nC,5,63\n' +
   'C,7,69\nD,2,66\nD,4,69\nD,6,75\nD,8,79';
 
-const is = (...modes: string[]) => (v: Values) => modes.includes(String(v.analysis));
+const is =
+  (...modes: string[]) =>
+  (v: Values) =>
+    modes.includes(String(v.analysis));
 
 function run(values: Values): Outcome {
   if (values.analysis === 'compare') return compareOutcome(values);
@@ -35,16 +39,49 @@ export const regressionSpec: ToolSpec = {
     { id: 'analysis', type: 'choice', options: ['fit', 'compare', 'moderation', 'mediation', 'mixed'], first: 'fit' },
     { id: 'formula', type: 'text', first: 'y ~ x1 + x2', rows: 2, when: is('fit', 'compare', 'mixed') },
     { id: 'reduced', type: 'text', first: 'y ~ x1', rows: 2, when: is('compare') },
-    { id: 'coding', type: 'choice', options: ['reference', 'effect'], first: 'reference', when: is('fit', 'compare', 'mixed') },
-    { id: 'center', type: 'choice', options: ['none', 'mean'], first: 'none', when: is('fit', 'compare', 'mixed', 'moderation') },
-    { id: 'se', type: 'choice', options: ['classical', 'hc0', 'hc1', 'hc2', 'hc3', 'cluster'], first: 'classical', when: is('fit') },
-    { id: 'cluster', type: 'column', data: 'data', first: '', optional: true, when: (v) => is('fit')(v) && v.se === 'cluster' },
+    {
+      id: 'coding',
+      type: 'choice',
+      options: ['reference', 'effect'],
+      first: 'reference',
+      when: is('fit', 'compare', 'mixed'),
+    },
+    {
+      id: 'center',
+      type: 'choice',
+      options: ['none', 'mean'],
+      first: 'none',
+      when: is('fit', 'compare', 'mixed', 'moderation'),
+    },
+    {
+      id: 'se',
+      type: 'choice',
+      options: ['classical', 'hc0', 'hc1', 'hc2', 'hc3', 'cluster'],
+      first: 'classical',
+      when: is('fit'),
+    },
+    {
+      id: 'cluster',
+      type: 'column',
+      data: 'data',
+      first: '',
+      optional: true,
+      when: (v) => is('fit')(v) && v.se === 'cluster',
+    },
     { id: 'predict', type: 'text', first: '', rows: 2, when: is('fit') },
     { id: 'outcome', type: 'column', data: 'data', first: 'y', when: is('moderation', 'mediation') },
     { id: 'x', type: 'column', data: 'data', first: 'x1', when: is('moderation', 'mediation') },
     { id: 'moderator', type: 'column', data: 'data', first: 'x2', when: is('moderation') },
     { id: 'mediator', type: 'column', data: 'data', first: 'x2', when: is('mediation') },
-    { id: 'covariates', type: 'column', data: 'data', first: '', optional: true, multi: true, when: is('moderation', 'mediation') },
+    {
+      id: 'covariates',
+      type: 'column',
+      data: 'data',
+      first: '',
+      optional: true,
+      multi: true,
+      when: is('moderation', 'mediation'),
+    },
     { id: 'probe', type: 'text', first: '', rows: 1, when: is('moderation') },
     { id: 'resamples', type: 'number', first: '2000', integer: true, min: 100, max: 20000, when: is('mediation') },
     { id: 'seed', type: 'number', first: '1', integer: true, min: 0, when: is('mediation') },
@@ -53,17 +90,40 @@ export const regressionSpec: ToolSpec = {
   ],
   run,
   examples: [
-    { id: 'twoPredictors', values: { data: TWO_PREDICTORS, analysis: 'fit', formula: 'y ~ x1 + x2', predict: 'x1 = 11, x2 = 10' } },
+    {
+      id: 'twoPredictors',
+      values: { data: TWO_PREDICTORS, analysis: 'fit', formula: 'y ~ x1 + x2', predict: 'x1 = 11, x2 = 10' },
+    },
     { id: 'categorical', values: { data: GROUPS, analysis: 'fit', formula: 'score ~ hours * method', se: 'hc3' } },
-    { id: 'cluster', values: { data: GROUPS, analysis: 'fit', formula: 'score ~ hours + method', se: 'cluster', cluster: 'class' } },
-    { id: 'compare', values: { data: GROUPS, analysis: 'compare', formula: 'score ~ hours * method', reduced: 'score ~ hours' } },
+    {
+      id: 'cluster',
+      values: { data: GROUPS, analysis: 'fit', formula: 'score ~ hours + method', se: 'cluster', cluster: 'class' },
+    },
+    {
+      id: 'compare',
+      values: { data: GROUPS, analysis: 'compare', formula: 'score ~ hours * method', reduced: 'score ~ hours' },
+    },
     {
       id: 'moderation',
-      values: { data: MODERATION, analysis: 'moderation', outcome: 'wellbeing', x: 'stress', moderator: 'support', center: 'mean' },
+      values: {
+        data: MODERATION,
+        analysis: 'moderation',
+        outcome: 'wellbeing',
+        x: 'stress',
+        moderator: 'support',
+        center: 'mean',
+      },
     },
     {
       id: 'mediation',
-      values: { data: MEDIATION, analysis: 'mediation', x: 'practice', mediator: 'confidence', outcome: 'score', resamples: '1000' },
+      values: {
+        data: MEDIATION,
+        analysis: 'mediation',
+        x: 'practice',
+        mediator: 'confidence',
+        outcome: 'score',
+        resamples: '1000',
+      },
     },
     { id: 'mixed', values: { data: NESTED, analysis: 'mixed', formula: 'score ~ hours', group: 'school' } },
   ],
