@@ -1,6 +1,7 @@
 // The statistics kit (inference, epidemiology, and study design): the window, its shared words, and each tool's
 // words from ./kitStatInfer, so no file grows too long. Every string is a full sentence or a label.
 import { describe } from './kitStatInfer/describe';
+import { tables } from './kitStatInfer/tables';
 
 export const kitStatInfer = {
   window: {
@@ -10,12 +11,15 @@ export const kitStatInfer = {
   },
   tools: {
     describe: describe.tab,
+    tables: tables.tab,
   },
   open: {
     describe: describe.open,
+    tables: tables.open,
   },
   keywords: {
     describe: describe.keywords,
+    tables: tables.keywords,
   },
   ui: {
     openFile: 'Open a file',
@@ -38,14 +42,18 @@ export const kitStatInfer = {
     noRoot: 'The calculation did not settle on an answer for these values.',
     alphaRange: 'The significance level must be between 0 and 1.',
     constant: 'Every value is the same, so there is no spread to work with.',
-    seedNumber: 'The seed must be a whole number from 0 to 4294967295.',
+    seedNumber: 'The seed must be a whole number of 0 or more, at most 20 digits.',
+    cellNumber: 'The cell in row {row}, column {column} is not a number.',
     ...describe.err,
+    ...tables.err,
   },
   answer: {
     ...describe.answer,
+    ...tables.answer,
   },
   note: {
     ...describe.note,
+    ...tables.note,
   },
   col: {
     summary: 'Summary',
@@ -76,6 +84,7 @@ export const kitStatInfer = {
     df: 'df',
     p: 'p',
     ...describe.col,
+    ...tables.col,
   },
   axis: {
     outliers: 'Outliers',
@@ -83,9 +92,12 @@ export const kitStatInfer = {
     count: 'Count',
     category: 'Category',
     ...describe.axis,
+    ...tables.axis,
   },
   step: {
     ...describe.step,
+    ...tables.step,
   },
   describe: describe.fields,
+  tables: tables.fields,
 };

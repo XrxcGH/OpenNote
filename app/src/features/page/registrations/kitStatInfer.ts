@@ -7,7 +7,10 @@ import { addCommand } from './qolStudy';
 
 type Key = Parameters<typeof addCommand>[0]['title'];
 
-export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [['describe', 'ChartBar']];
+export const STAT_COMMANDS: readonly (readonly [string, IconName])[] = [
+  ['describe', 'ChartBar'],
+  ['tables', 'Table'],
+];
 
 async function open(tool?: string): Promise<void> {
   const tools = await import('../../tools');
