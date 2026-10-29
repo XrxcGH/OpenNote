@@ -19,4 +19,10 @@ export const MIND_TOOLS: readonly MindToolMeta[] = [
   { id: 'observe', title: 'kitMind.observe.title', keywords: 'kitMind.observe.keywords', icon: 'Binoculars' },
   { id: 'choice', title: 'kitMind.choice.title', keywords: 'kitMind.choice.keywords', icon: 'Scales' },
   { id: 'rt', title: 'kitMind.rt.title', keywords: 'kitMind.rt.keywords', icon: 'Timer' },
+  {
+    id: 'psychophysics',
+    title: 'kitMind.psychophysics.title',
+    keywords: 'kitMind.psychophysics.keywords',
+    icon: 'Waveform',
+  },
 ];

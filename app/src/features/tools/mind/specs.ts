@@ -9,4 +9,5 @@ export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
   observe: () => import('./observe/spec').then((m) => m.spec),
   choice: () => import('./choice/spec').then((m) => m.spec),
   rt: () => import('./rt/spec').then((m) => m.spec),
+  psychophysics: () => import('./psychophysics/spec').then((m) => m.spec),
 };

@@ -5,6 +5,7 @@ import { coding } from './kitMind/coding';
 import { observe } from './kitMind/observe';
 import { choice } from './kitMind/choice';
 import { rt } from './kitMind/rt';
+import { psychophysics } from './kitMind/psychophysics';
 import { agreement } from './kitMind/agreement';
 import { scales } from './kitMind/scales';
 import { sdt } from './kitMind/sdt';
@@ -122,6 +123,16 @@ export const kitMind = {
     sameId: 'Every line has the same difficulty, so no slope can be fitted.',
     hickRow: 'Line {line} needs a whole number of alternatives of at least 1.',
     twoConditions: 'Name exactly 2 conditions, separated by a comma.',
+    fewLevels: 'This needs at least 2 different stimulus levels.',
+    trialsPositive: 'Line {line} needs more than 0 trials.',
+    correctTrials: 'Line {line} has more correct answers than trials, or fewer than 0.',
+    weibullLevel: 'The Weibull needs levels above 0, but line {line} has one at or below 0.',
+    levelOutside: 'The fitted function runs from {low} to {high}, so it never reaches that proportion.',
+    noReversals: 'The track has no reversals yet, so there is no threshold to average.',
+    weberRow: 'Line {line} needs an intensity and a JND above 0.',
+    stevensRow: 'Line {line} needs a stimulus and a judgment above 0.',
+    lumOrder: 'The lower luminance must not be above the higher one.',
+    snellenForm: 'Enter a Snellen fraction such as 20/40 or 6/12.',
   },
   sdt,
   agreement,
@@ -130,4 +141,5 @@ export const kitMind = {
   observe,
   choice,
   rt,
+  psychophysics,
 } as const;
