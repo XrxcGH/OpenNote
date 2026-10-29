@@ -1,11 +1,11 @@
 //! Recovery and housekeeping: trusting storage after a rollback warning, and garbage collection that is safe
 //! across devices (ADR 0049, "Safety").
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::io::{Seek, SeekFrom};
 
-use super::{chunk_name, digest, head_name, request_name, Engine, GcMark, GC_GRACE_MS};
+use super::{chunk_name, digest, head_name, request_name, Engine, GcMark, LocalState, GC_GRACE_MS};
 use crate::crypto::{hex, mac, open, pad, seal};
 use crate::error::{Result, SyncError};
 use crate::local;
@@ -161,8 +161,11 @@ impl Engine {
                 used.extend(entry.content.chunks.iter().cloned());
             }
         };
+        let mut heads: BTreeMap<String, Head> = BTreeMap::new();
         for (device, generation) in &newest {
-            add(&self.read_head(device, *generation)?.entries);
+            let head = self.read_head(device, *generation)?;
+            add(&head.entries);
+            heads.insert(device.clone(), head);
         }
         add(&state.deferred);
         for known in state.files.values() {
@@ -194,16 +197,63 @@ impl Engine {
                 self.backend.delete(&chunk_name(id))?;
                 removed.insert(id.clone());
             }
+            self.prune_tombstones(&mut state, &mark, &heads, &listed);
         }
+        // A pruned path that no head names any more can't come back from one, so it needn't be remembered.
+        state
+            .pruned
+            .retain(|path, _| heads.values().any(|head| head.entries.contains_key(path)));
         let left: BTreeSet<String> = unused.difference(&removed).cloned().collect();
-        if state.gc.is_none() && !left.is_empty() {
+        let tombstones: BTreeSet<String> = state
+            .files
+            .iter()
+            .filter(|(_, known)| !known.entry.live())
+            .map(|(path, _)| path.clone())
+            .collect();
+        if state.gc.is_none() && (!left.is_empty() || !tombstones.is_empty()) {
             state.gc = Some(GcMark {
                 at: now,
                 generations: newest,
                 chunks: left,
+                tombstones,
+                own: state.generation,
             });
         }
         self.save_state(&state)?;
         Ok(removed.len())
+    }
+
+    /// Drops the tombstones marked a grace period ago that every other device has taken in: its newest head merged
+    /// this device's head from the mark or later, and either holds the delete too or dropped it already. A device
+    /// that might still hold the file live, having not seen the delete, keeps the tombstone here. Without this,
+    /// every deleted path stays in every head forever.
+    fn prune_tombstones(
+        &self,
+        state: &mut LocalState,
+        mark: &GcMark,
+        heads: &BTreeMap<String, Head>,
+        listed: &BTreeSet<String>,
+    ) {
+        for path in &mark.tombstones {
+            let Some(known) = state.files.get(path).filter(|k| !k.entry.live()) else {
+                continue;
+            };
+            let everyone = heads
+                .iter()
+                .filter(|(device, _)| **device != self.device && listed.contains(*device))
+                .all(|(_, head)| {
+                    head.seen.get(&self.device).is_some_and(|g| *g >= mark.own)
+                        && head
+                            .entries
+                            .get(path)
+                            .is_none_or(|e| e.deleted && manifest::dominates(&e.vv, &known.entry.vv))
+                });
+            if everyone {
+                let vv = known.entry.vv.clone();
+                state.files.remove(path);
+                state.deferred.remove(path);
+                state.pruned.insert(path.clone(), vv);
+            }
+        }
     }
 }

@@ -590,3 +590,54 @@ fn paths_that_differ_only_in_case_end_up_the_same_on_every_device() {
         .keys()
         .any(|p| p.starts_with("Bio/todo (conflicted copy ") && p.ends_with(").txt")));
 }
+
+#[test]
+fn a_tombstone_every_device_took_in_leaves_the_heads_after_the_grace_period() {
+    let (store, d) = pair();
+    d[0].write("Bio/a.txt", b"gone soon");
+    settle(&d, 2);
+    d[0].remove("Bio/a.txt");
+    settle(&d, 2);
+    let has = |dev: &Device| dev.engine.state().expect("state").files.contains_key("Bio/a.txt");
+    assert!(has(&d[0]) && has(&d[1]), "both keep the delete");
+    let day = 24 * 60 * 60 * 1000;
+    for dev in &d {
+        dev.engine.collect_garbage(0).expect("marks");
+    }
+    for n in 0..2 {
+        d[0].write(&format!("Bio/x{n}.txt"), b"x");
+        d[1].write(&format!("Bio/y{n}.txt"), b"y");
+        settle(&d, 2);
+    }
+    for dev in &d {
+        dev.engine.collect_garbage(8 * day).expect("collects");
+    }
+    settle(&d, 3);
+    assert!(!has(&d[0]) && !has(&d[1]), "the delete left both devices");
+    // No head names the path any more: a device joining now never hears of it.
+    let late = join(Arc::new(store.clone()), "d2");
+    late.engine.sync().expect("syncs");
+    assert!(!has(&late));
+    assert_eq!(late.files().len(), 4);
+}
+
+#[test]
+fn a_tombstone_stays_while_a_device_has_not_taken_it_in() {
+    let (_, d) = pair();
+    d[0].write("Bio/a.txt", b"x");
+    settle(&d, 2);
+    d[0].remove("Bio/a.txt");
+    d[0].engine.sync().expect("syncs");
+    let day = 24 * 60 * 60 * 1000;
+    d[0].engine.collect_garbage(0).expect("marks");
+    // The other device is away: it still has the file and hasn't seen the delete.
+    for n in 0..3 {
+        d[0].write(&format!("Bio/x{n}.txt"), b"x");
+        d[0].engine.sync().expect("syncs");
+    }
+    d[0].engine.collect_garbage(8 * day).expect("collects");
+    assert!(d[0].engine.state().expect("state").files.contains_key("Bio/a.txt"));
+    settle(&d, 3);
+    assert_eq!(d[1].read("Bio/a.txt"), None, "the delete still reaches it");
+    assert_eq!(d[0].read("Bio/a.txt"), None, "and the file doesn't come back");
+}

@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use super::{digest, Action, Engine, LocalState, Plan, Store, Summary};
 use crate::error::{Result, SyncError};
 use crate::local::{self, Fingerprint};
-use crate::manifest::{Entry, Manifest, Vv};
+use crate::manifest::{self, Entry, Manifest, Vv};
 use crate::merge::{self, Merged};
 use crate::vault;
 
@@ -152,6 +152,18 @@ impl Engine {
         Ok((manifest, prints))
     }
 
+    /// A head's entries without the tombstones this device already dropped (see `prune_tombstones`).
+    fn unpruned(&self, state: &LocalState, mut entries: Manifest) -> Manifest {
+        entries.retain(|path, entry| {
+            !(entry.deleted
+                && state
+                    .pruned
+                    .get(path)
+                    .is_some_and(|vv| manifest::dominates(vv, &entry.vv)))
+        });
+        entries
+    }
+
     /// The other devices' new heads. A device that shows less than this one already saw was rolled back.
     fn incoming(&self, state: &LocalState) -> Result<Incoming> {
         let (newest, own) = self.heads()?;
@@ -175,10 +187,14 @@ impl Engine {
             if *device == self.device {
                 // A head of this device's own that its state doesn't know: a round stopped after writing it.
                 if *generation > state.generation {
-                    incoming.heads.push(self.read_entries(device, *generation)?);
+                    incoming
+                        .heads
+                        .push(self.unpruned(state, self.read_entries(device, *generation)?));
                 }
             } else if *generation > state.seen.get(device).copied().unwrap_or(0) {
-                incoming.heads.push(self.read_entries(device, *generation)?);
+                incoming
+                    .heads
+                    .push(self.unpruned(state, self.read_entries(device, *generation)?));
                 incoming.seen.insert(device.clone(), *generation);
             }
         }

@@ -68,6 +68,10 @@ pub struct LocalState {
     /// When this device last checked that storage still holds the chunks of its own files, in Unix milliseconds.
     #[serde(default)]
     pub checked: i64,
+    /// Tombstones this device dropped, with their version, so an older head that still names one doesn't bring it
+    /// back. An entry goes once no head names the path.
+    #[serde(default)]
+    pub pruned: BTreeMap<String, crate::manifest::Vv>,
 }
 
 /// A path as this device last knew it.
@@ -88,6 +92,12 @@ pub struct GcMark {
     pub generations: BTreeMap<String, u64>,
     /// The chunk names.
     pub chunks: BTreeSet<String>,
+    /// The paths this device held as tombstones then.
+    #[serde(default)]
+    pub tombstones: BTreeSet<String>,
+    /// This device's own generation then: its head from then on held those tombstones.
+    #[serde(default)]
+    pub own: u64,
 }
 
 /// A change to this device's notes folder.
