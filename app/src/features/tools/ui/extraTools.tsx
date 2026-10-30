@@ -30,6 +30,7 @@ const SolversTool = lazy(() =>
 
 // The civil and chemical engineering kit loads its window, then each tool's calculations, on first use.
 const CivilTool = lazy(() => import('../civil/ui/CivilTool').then((module) => ({ default: module.CivilTool })));
+
 // The circuits and energy kit loads on first open.
 const KitElectrical = lazy(() =>
   import('../../engineering')
@@ -39,14 +40,21 @@ const KitElectrical = lazy(() =>
 
 // The aerospace kit loads on first open.
 const KitAero = lazy(() =>
+  import('../../engineering')
     .then((engineering) => engineering.loadAeroKit())
     .then((loaded) => ({ default: loaded.KitAeroTool })),
+);
+
 // The thermodynamics kit loads with its engines' forms on first open, so the tool windows' own code stays small.
 const ThermoKit = lazy(() => import('../../engineering').then((engineering) => engineering.loadThermoKit()));
+
 // The mechanisms and dynamics kit loads on first open.
 const KitMechDyn = lazy(() =>
+  import('../../engineering')
     .then((engineering) => engineering.loadMechDynKit())
     .then((loaded) => ({ default: loaded.MechDynKit })),
+);
+
 // The physics tools are a kit window whose tools each load the first time their tab opens.
 const PhysicsKit = lazy(() => import('../physics/ui/PhysicsKit').then((kit) => ({ default: kit.PhysicsKit })));
 
