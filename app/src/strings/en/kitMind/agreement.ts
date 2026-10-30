@@ -134,6 +134,9 @@ export const agreement = {
     pe: 'Chance agreement multiplies each category’s row and column shares and adds them up.',
     kappa: 'Kappa is the agreement beyond chance as a share of the most there could be.',
     se: 'The 95% interval uses the large-sample standard error.',
+    seTruncated:
+      'The 95% interval uses the large-sample standard error. Kappa cannot go past 1 or below −1, so the ' +
+      'interval is truncated there.',
     linear: 'Linear weights give partial credit that falls evenly with the distance between categories.',
     quadratic: 'Quadratic weights give partial credit that falls with the squared distance between categories.',
     weighted: 'Weighted kappa repeats the calculation with the weighted agreement.',

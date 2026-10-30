@@ -52,7 +52,7 @@ function kappaOutcome(
     step('agreement.pe', 'p_e = \\sum_i p_{i\\cdot}\\, p_{\\cdot i} = [[pe]]', vars),
     step('agreement.kappa', '\\kappa = \\frac{p_o - p_e}{1 - p_e} = \\frac{[[po]] - [[pe]]}{1 - [[pe]]} = [[k]]', vars),
     step(
-      'agreement.se',
+      r.low === -1 || r.high === 1 ? 'agreement.seTruncated' : 'agreement.se',
       '\\kappa \\pm 1.96\\,\\mathrm{SE} = [[k]] \\pm 1.96 \\times [[se]] = [[[low]],\\ [[high]]]',
       vars,
     ),

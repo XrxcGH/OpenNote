@@ -100,8 +100,9 @@ export function cohen(counts: readonly (readonly number[])[]): Kappa {
     pe,
     kappa,
     se,
-    low: kappa - 1.959963984540054 * se,
-    high: kappa + 1.959963984540054 * se,
+    // Kappa lies in [-1, 1], so the normal interval is truncated at those bounds.
+    low: Math.max(-1, kappa - 1.959963984540054 * se),
+    high: Math.min(1, kappa + 1.959963984540054 * se),
     se0,
     z,
     p: 2 * (1 - normCdf(Math.abs(z))),
