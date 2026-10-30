@@ -143,7 +143,6 @@ export const en = {
   kitMath,
   kitMechDyn,
   kitPhysics,
-  kits,
   kitElectrical,
   kitFluidHeat,
   kitSolids,
