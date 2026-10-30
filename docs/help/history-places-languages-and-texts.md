@@ -9,6 +9,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - **Timeline builder**: draw events and periods on tracks, with BCE dates, uncertain dates, and deep time. Insert it as a figure you can edit.
 - **Calendars and eras**: convert a date between thirteen calendars, such as Hebrew, Islamic, Chinese, and Maya. List the festivals of a year.
 - **Text analysis and verse**: measure readability, list words and n-grams, build a concordance, test keyness, and compare versions. Scan English and Latin verse.
+- **Linguistic structures**: draw syntax and dependency trees, check interlinear glosses, find natural classes, run ordered rules, split syllables, and plot vowels.
 - **Identification keys**: build a numbered key from a table of characters. Run it step by step, or filter with a multi-access key.
 
 ## Timeline builder
@@ -44,6 +45,15 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - Compare versions lines up two texts word by word and lists each variant, as in a critical apparatus.
 - Language sample takes one utterance a line, with morphemes marked by hyphens, and gives the MLU and the number of different words.
 - Scansion fits English lines to iambic, trochaic, anapestic, or dactylic meter and finds the rhyme scheme. Latin lines are fitted to the hexameter and the pentameter; mark long vowels with macrons when more than one pattern fits.
+
+## Linguistic structures
+
+- Trees draws a syntax tree from labeled brackets, such as [S [NP the cat] [VP sat]]. End a label with ^ to draw a triangle over its words. A dependency tree takes one word a line with the number of its head and the relation, and says whether any arcs cross.
+- Glosses lines up an example with its gloss, morpheme by morpheme, as the Leipzig Glossing Rules describe. It names the word and position of any missing gloss and gives the meaning of each standard label.
+- Features lists the segments with a feature bundle, says whether a set of segments is a natural class, and gives the features on which 2 segments differ. The chart was written for OpenNote; change or add segments to match your course's chart.
+- Rules applies ordered rules, written A -> B / C _ D, to underlying forms and shows the derivation table. It names feeding, bleeding, counterfeeding, and counterbleeding orders. Sound changes in order work the same way.
+- Syllables splits a word by sonority with the onset as long as a legal onset allows. Type the legal onsets, or leave the field empty to allow any onset that rises in sonority.
+- Vowel chart plots typed F1 and F2 values in hertz, as Lobanov z-scores for each speaker, or in Bark.
 
 ## Identification keys
 

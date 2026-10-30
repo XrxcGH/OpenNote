@@ -9,6 +9,7 @@ export const HUMANITIES_TOOLS = [
   { id: 'coordinates', icon: 'Compass' },
   { id: 'timeline', icon: 'ClockCounterClockwise' },
   { id: 'calendars', icon: 'CalendarBlank' },
+  { id: 'linguistics', icon: 'TreeStructure' },
   { id: 'textlab', icon: 'TextAa' },
   { id: 'keys', icon: 'Key' },
 ] as const;
