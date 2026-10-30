@@ -57,11 +57,22 @@ import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
 import { chem } from './chem';
+import { kitChemMat } from './kitChemMat';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kitSignals } from './kitSignals';
 import { kits } from './kits';
 import { kitSubjects } from './kitSubjects';
+import { kitControl } from './kitControl';
+import { kitDesign } from './kitDesign';
+import { kitMath } from './kitMath';
+import { kitMechDyn } from './kitMechDyn';
+import { kitPhysics } from './kitPhysics';
+import { kitElectrical } from './kitElectrical';
+import { kitFluidHeat } from './kitFluidHeat';
+import { kitSolids } from './kitSolids';
+import { kitAero } from './kitAero';
+import { kitThermo } from './kitThermo';
 
 export const en = {
   common,
@@ -121,9 +132,20 @@ export const en = {
   graph3d,
   engineering,
   chem,
+  kitChemMat,
   docStructure,
   codeCells,
   kitSignals,
   kits,
   kitSubjects,
+  kitControl,
+  kitDesign,
+  kitMath,
+  kitMechDyn,
+  kitPhysics,
+  kitElectrical,
+  kitFluidHeat,
+  kitSolids,
+  kitAero,
+  kitThermo,
 } as const;

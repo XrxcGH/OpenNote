@@ -1,8 +1,16 @@
 // Flags for smart tables, charts, math, and the study tool windows (Phases 7 and 10). Each is on in every channel
 // once its feature works end to end in the app; turning one off hides its commands, menu items, and blocks.
 import type { FlagDef, FlagId } from '../../app/flags';
+import { MATH_KIT_FLAGS } from './mathkit/flags';
+import { CHEMMAT_FLAGS } from './chemmat/flags';
+export { CHEMMAT_META } from './chemmat/meta';
+export type { ChemMatFlagId } from './chemmat/flags';
+export { CHEMMAT_FLAGS };
 
-export type ExprFlagId = Extract<FlagId, `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}`>;
+export type ExprFlagId = Extract<
+  FlagId,
+  `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}` | 'kits.math'
+>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
@@ -56,7 +64,10 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.chemCalc', 'Chemistry calculators: balancing, stoichiometry, gas laws, dilution, pH, and titration.'),
   flag('tools.structure', 'Chemical structure drawing: skeletal formulas as editable ink, with SVG export.'),
   flag('tools.properties', 'Steam, ideal-gas, and materials property tables with sources.'),
+  ...MATH_KIT_FLAGS,
 ];
+
+export { MATH_TOOLS } from './mathkit/meta';
 
 /**
  * What a tool window asks of the page that is open: text for the caret or a graph for a code block. The page
@@ -81,6 +92,8 @@ export { SIGNAL_TOOLS, chooseSignalTool } from './signals/meta';
  */
 export const SUBJECT_TABLES_EVENT = 'opennote:subject-page-tables';
 
+export { DESIGN_KIT_FLAGS } from './design/flags';
+export type { DesignKitFlagId } from './design/flags';
 // The tool kits' flags live with the kits; they are public here, like every flag of the tools feature.
 export { KIT_FLAGS } from './kits/flags';
 export type { KitFlagId } from './kits/flags';
