@@ -7,7 +7,8 @@ import { addCommand } from './qolStudy';
 const open = async (tool?: string) => (await import('../../tools')).openStatModelsKit(tool);
 
 addCommand({
-  id: 'tools.kitStatModels',
+  // The window's command follows the tools.<window id> rule, so the shortcut editor lists it with the other windows.
+  id: 'tools.kit-statmodels',
   title: 'kitStatModels.open',
   keywords: 'kitStatModels.keywords',
   category: 'general',
