@@ -6,6 +6,7 @@ import type { MessageKey } from '../../../strings/t';
 import { addCommand } from './qolStudy';
 
 const TOOLS: readonly (readonly [ReasoningToolId, IconName])[] = [
+  ['discrete', 'Hash'],
   ['digital', 'Circuitry'],
   ['optimize', 'ChartLineUp'],
   ['games', 'ChartBar'],

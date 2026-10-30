@@ -2,6 +2,7 @@
 // modes, fields, steps, and errors. Each tool's strings are in kitReasoning/, joined here into one namespace.
 // Every interface string is a full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19).
 import { digital } from './kitReasoning/digital';
+import { discrete } from './kitReasoning/discrete';
 import { games } from './kitReasoning/games';
 import { optimize } from './kitReasoning/optimize';
 
@@ -12,6 +13,17 @@ export const kitReasoning = {
     'logic truth table proof automata grammar discrete number theory digital karnaugh computer systems ' +
     'cache scheduling algorithms graphs optimization simplex game theory voting',
   tools: {
+    discrete: {
+      tab: 'Numbers and groups',
+      open: 'Open numbers, counting, and groups',
+      keywords:
+        'number theory gcd euclid modular inverse power chinese remainder prime factor miller rabin pollard phi ' +
+        'primitive root discrete log continued fraction cipher caesar vigenere hill rsa diffie hellman elgamal ' +
+        'combinations permutations stirling bell catalan partitions recurrence master theorem group cayley ' +
+        'subgroup coset lattice dihedral symmetric quaternion finite field galois',
+      summary:
+        'Number theory with every step, classical ciphers and toy public keys, exact counting, and finite groups and fields.',
+    },
     digital: {
       tab: 'Digital logic',
       open: 'Open digital logic design',
@@ -56,6 +68,7 @@ export const kitReasoning = {
     insertTable: 'Insert table',
     insertPicture: 'Insert picture',
   },
+  discrete,
   digital,
   optimize,
   games,
