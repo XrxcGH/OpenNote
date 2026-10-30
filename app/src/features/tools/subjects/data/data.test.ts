@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DE_DE } from '../../../tables';
+import { DE_DE, EN_US } from '../../../tables';
 import { SubjectError } from '../errors';
 import { stack, unstack } from './longWide';
 import { MAX_ROWS, completeRows, levelsOf, numbersOf } from './model';
@@ -69,6 +69,52 @@ describe('reading units and dates', () => {
       { column: 'mass', row: 3, text: 'lost' },
       { column: 'day', row: 4, text: 'x' },
     ]);
+  });
+});
+
+describe('cells that only start with digits', () => {
+  const days = (y: number, m: number, d: number) => Date.UTC(y, m - 1, d) / 86_400_000;
+
+  it('reads a column of slash dates as dates, month first or day first', () => {
+    const text = ['when', '03/04/2024', '05/06/2024', '07/08/2024'].join('\n');
+    const mdy = named(parseDataText(text).columns, 'when');
+    expect(mdy.kind).toBe('date');
+    expect(mdy.values).toEqual([days(2024, 3, 4), days(2024, 5, 6), days(2024, 7, 8)]);
+    const dmy = named(parseDataText(text, { locale: { ...EN_US, dateOrder: 'dmy' } }).columns, 'when');
+    expect(dmy.kind).toBe('date');
+    expect(dmy.values).toEqual([days(2024, 4, 3), days(2024, 6, 5), days(2024, 8, 7)]);
+  });
+
+  it('does not read times, fractions, products or ranges as their leading digits', () => {
+    const dot = { decimal: '.', group: ',' } as const;
+    for (const cell of ['3:45', '1/2', '2*3', '5–6', '03/04/2024']) expect(readNumber(cell, dot)).toBeNull();
+    expect(readNumber('12.5 kg', dot)).toEqual({ value: 12.5, unit: 'kg' });
+    expect(readNumber('3 °C', dot)).toEqual({ value: 3, unit: '°C' });
+    expect(readNumber('4µm', dot)).toEqual({ value: 4, unit: 'µm' });
+  });
+
+  it('reads a column of codes such as 1A, 2B, 3C as labels, not as numbers', () => {
+    const data = parseDataText(['code', '1A', '2B', '3C', '4D'].join('\n'));
+    expect(named(data.columns, 'code').kind).toBe('text');
+    expect(data.problems).toEqual([]);
+  });
+});
+
+describe('a number column in more than one unit', () => {
+  it('keeps the most common unit and reports the cells in another', () => {
+    const data = parseDataText(['mass', '10 kg', '20 g', '5 kg'].join('\n'));
+    const mass = named(data.columns, 'mass');
+    expect(mass.kind === 'number' && mass.unit).toBe('kg');
+    expect(mass.values).toEqual([10, null, 5]);
+    expect(data.problems).toEqual([{ column: 'mass', row: 2, text: '20 g' }]);
+  });
+
+  it('reports a cell without a unit among cells with one', () => {
+    const data = parseDataText(['mass', '10 kg', '20', '5 kg', '7 kg'].join('\n'));
+    const mass = named(data.columns, 'mass');
+    expect(mass.kind === 'number' && mass.unit).toBe('kg');
+    expect(mass.values).toEqual([10, null, 5, 7]);
+    expect(data.problems).toEqual([{ column: 'mass', row: 2, text: '20' }]);
   });
 });
 

@@ -31,8 +31,12 @@ const DOT: Convention = { decimal: '.', group: ',' };
 const COMMA: Convention = { decimal: ',', group: '.' };
 const PLAIN_DOT = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
 const PLAIN_COMMA = /^[+-]?(?:\d+,?\d*|,\d+)(?:[eE][+-]?\d+)?$/;
-/** A number followed by a unit, such as "12.5 kg" or "3,2 °C". The unit may not start with a digit or sign. */
-const WITH_UNIT = /^(.*?\d)\s*([^\d\s.,+\-−()%$€£¥].*)$/;
+/**
+ * A number followed by a unit, such as "12.5 kg" or "3,2 °C". The unit starts with a letter or a unit sign, so a
+ * date "03/04/2024", a time "3:45", a fraction "1/2" or a range "5–6" is not read as its leading digits. Percent and
+ * currency signs are read by parseLocaleNumber.
+ */
+const WITH_UNIT = /^(.*?\d)\s*([\p{L}°µ].*)$/u;
 /** How much of a column must read as numbers (or dates) for the column to be that kind. */
 const KIND_SHARE = 0.8;
 /** The decimal-mark vote reads this many rows; that is plenty and keeps a large paste quick. */
@@ -184,10 +188,15 @@ export function readColumn(name: string, cells: readonly string[], convention: C
   // reason to lose the whole column as text.
   const oneStray = numeric >= 2 && present.length - numeric === 1;
   if (present.length === 0 || numeric >= KIND_SHARE * present.length || oneStray) {
-    const units = new Set(numbers.filter((n): n is Reading => n !== null).map((n) => n.unit));
-    const unit = units.size === 1 ? [...units][0] : null;
-    const column: DataColumn = { name, kind: 'number', values: numbers.map((n) => n?.value ?? null), unit };
-    return { column, problems: problemsOf(name, cells, column.values) };
+    // Cells in different units cannot be averaged together: the column takes its most common unit (no unit counts
+    // as one), and a cell in any other unit is left out and reported.
+    const unit = mostCommonUnit(numbers);
+    const values = numbers.map((n) => (n !== null && n.unit === unit ? n.value : null));
+    const kept = values.filter((v) => v !== null).length;
+    if (kept === numeric || kept >= KIND_SHARE * present.length || (kept >= 2 && present.length - kept === 1)) {
+      const column: DataColumn = { name, kind: 'number', values, unit };
+      return { column, problems: problemsOf(name, cells, values) };
+    }
   }
   const dates = cells.map((cell) => (isMissingText(cell) ? null : parseDate(cell, locale.dateOrder)));
   if (dates.filter((d) => d !== null).length >= KIND_SHARE * present.length) {
@@ -197,6 +206,21 @@ export function readColumn(name: string, cells: readonly string[], convention: C
   const labels = cells.map((cell) => (isMissingText(cell) ? null : cell));
   const kind = guessLabelKind(present);
   return { column: { name, kind, values: labels }, problems: [] };
+}
+
+/** The unit most cells carry, the first seen winning a tie; null when no cell carries one or none reads. */
+function mostCommonUnit(numbers: readonly (Reading | null)[]): string | null {
+  const counts = new Map<string | null, number>();
+  for (const n of numbers) if (n !== null) counts.set(n.unit, (counts.get(n.unit) ?? 0) + 1);
+  let best: string | null = null;
+  let most = 0;
+  for (const [unit, count] of counts) {
+    if (count > most) {
+      best = unit;
+      most = count;
+    }
+  }
+  return best;
 }
 
 function guessLabelKind(present: readonly string[]): 'category' | 'text' {
