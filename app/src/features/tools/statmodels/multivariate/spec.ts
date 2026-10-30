@@ -1,9 +1,10 @@
 // The PCA, factors, and clusters tool. It takes several numeric columns, with an optional column of row names. It
 // finds principal components, fits factors with rotation and parallel analysis, and clusters rows by k-means or by
-// joining the closest pairs. It also draws a map from a table of distances by classical scaling.
-import { completeRows, numbersAt, parseTable, wordsAt, type DataTable } from '../kit/data';
+// joining the closest pairs, and draws a clustered heat map. It also draws a map from a table of distances by
+// classical scaling.
+import { parseTable, type DataTable } from '../kit/data';
 import { text as svgText, line, svg, W, type DrawContext } from '../kit/picture';
-import { columnList, type Outcome, type Picture, type ToolSpec, type Values } from '../kit/spec';
+import type { Outcome, ToolSpec, Values } from '../kit/spec';
 import { fail, step } from '../kit/types';
 import {
   agglomerate,
@@ -17,7 +18,9 @@ import {
   type Merge,
   type Metric,
 } from './cluster';
-import { covariance, factorAnalysis, parallelAnalysis, pca, type Rotation } from './engine';
+import { factorAnalysis, parallelAnalysis, pca, type Rotation } from './engine';
+import { literal, readColumns } from './read';
+import { clusterScatter, heatmapOutcome } from './views';
 
 const SCORES =
   'student,reading,writing,math,science\nAva,78,82,65,70\nBen,62,60,88,85\nCal,90,91,72,75\nDee,55,58,60,62\n' +
@@ -39,30 +42,6 @@ const is =
   (v: Values) =>
     modes.includes(String(v.analysis));
 
-interface Read {
-  readonly x: number[][];
-  readonly names: string[];
-  readonly labels: string[];
-}
-
-function readColumns(values: Values, standardize: boolean): Read {
-  const table = parseTable(String(values.data));
-  const names = columnList(values.columns);
-  const labelName = String(values.label);
-  if (names.length < 2) fail('fewColumns');
-  if (names.includes(labelName)) fail('sameColumn');
-  const rows = completeRows(table, labelName ? [...names, labelName] : names);
-  const cols = names.map((n) => numbersAt(table, n, rows));
-  let x = rows.map((_, i) => cols.map((c) => c[i]));
-  if (standardize && x.length > 1) {
-    const { means, sds } = covariance(x, false);
-    x = x.map((row) => row.map((v, j) => (v - means[j]) / sds[j]));
-  }
-  const labels = labelName ? wordsAt(table, labelName, rows) : rows.map((r) => String(r + 1));
-  return { x, names, labels };
-}
-
-const literal = (names: readonly string[]) => names.map((n) => `=${n}`);
 const shown = (k: number) => Array.from({ length: k }, (_, i) => `PC${i + 1}`);
 
 function pcaOutcome(values: Values): Outcome {
@@ -208,38 +187,6 @@ function efaOutcome(values: Values): Outcome {
       },
     ],
     notes: ['commonFactors', 'sampleSize'],
-  };
-}
-
-function clusterScatter(x: readonly number[][], cluster: readonly number[], centers?: readonly number[][]): Picture {
-  const k = Math.max(...cluster) + 1;
-  return {
-    id: 'clusters',
-    type: 'plot',
-    plot: {
-      x: { label: 'first' },
-      y: { label: 'second' },
-      series: [
-        ...Array.from({ length: k }, (_, c) => ({
-          id: `c${c}`,
-          name: `${c + 1}`,
-          style: 'points' as const,
-          pen: c,
-          points: x.filter((_, i) => cluster[i] === c).map((r) => [r[0], r[1]] as [number, number]),
-        })),
-        ...(centers
-          ? [
-              {
-                id: 'centers',
-                pen: 4,
-                style: 'points' as const,
-                points: centers.map((c) => [c[0], c[1]] as [number, number]),
-              },
-            ]
-          : []),
-      ],
-      legend: true,
-    },
   };
 }
 
@@ -457,6 +404,8 @@ function run(values: Values): Outcome {
       return hierarchicalOutcome(values);
     case 'mds':
       return mdsOutcome(values);
+    case 'heatmap':
+      return heatmapOutcome(values);
     default:
       return pcaOutcome(values);
   }
@@ -467,7 +416,12 @@ const usesColumns = (v: Values) => v.analysis !== 'mds' || v.input === 'columns'
 export const multivariateSpec: ToolSpec = {
   fields: [
     { id: 'data', type: 'data', first: SCORES, rows: 6 },
-    { id: 'analysis', type: 'choice', options: ['pca', 'efa', 'kmeans', 'hierarchical', 'mds'], first: 'pca' },
+    {
+      id: 'analysis',
+      type: 'choice',
+      options: ['pca', 'efa', 'kmeans', 'hierarchical', 'heatmap', 'mds'],
+      first: 'pca',
+    },
     { id: 'input', type: 'choice', options: ['matrix', 'columns'], first: 'matrix', when: is('mds') },
     {
       id: 'columns',
@@ -484,7 +438,7 @@ export const multivariateSpec: ToolSpec = {
       type: 'choice',
       options: ['z', 'raw'],
       first: 'z',
-      when: (v) => is('kmeans', 'hierarchical')(v) || (is('mds')(v) && v.input === 'columns'),
+      when: (v) => is('kmeans', 'hierarchical', 'heatmap')(v) || (is('mds')(v) && v.input === 'columns'),
     },
     { id: 'factors', type: 'number', first: '2', integer: true, min: 1, max: 10, when: is('efa') },
     { id: 'rotation', type: 'choice', options: ['varimax', 'promax', 'none'], first: 'varimax', when: is('efa') },
@@ -497,14 +451,14 @@ export const multivariateSpec: ToolSpec = {
       type: 'choice',
       options: ['ward', 'average', 'complete', 'single'],
       first: 'ward',
-      when: is('hierarchical'),
+      when: is('hierarchical', 'heatmap'),
     },
     {
       id: 'metric',
       type: 'choice',
       options: ['euclidean', 'manhattan', 'pearson'],
       first: 'euclidean',
-      when: is('hierarchical'),
+      when: is('hierarchical', 'heatmap'),
     },
     { id: 'seed', type: 'number', first: '1', integer: true, min: 0, when: is('efa', 'kmeans') },
   ],
@@ -544,6 +498,18 @@ export const multivariateSpec: ToolSpec = {
         label: 'student',
         linkage: 'ward',
         k: '3',
+      },
+    },
+    {
+      id: 'heatmap',
+      values: {
+        data: SCORES,
+        analysis: 'heatmap',
+        columns: 'reading\nwriting\nmath\nscience',
+        label: 'student',
+        standardize: 'z',
+        linkage: 'average',
+        metric: 'euclidean',
       },
     },
     { id: 'mds', values: { data: CITIES, analysis: 'mds', input: 'matrix' } },

@@ -24,6 +24,7 @@ export const multivariate = {
     efa: 'Exploratory factor analysis',
     kmeans: 'K-means clustering',
     hierarchical: 'Hierarchical clustering',
+    heatmap: 'Clustered heat map',
     mds: 'Multidimensional scaling',
     matrix: 'A table of distances',
     columns: 'Columns to measure distances from',
@@ -59,6 +60,10 @@ export const multivariate = {
     lastHeight: 'Height of the last merge',
     clusters: 'Clusters cut',
     mdsFit: 'Share of the scaling kept in 2 dimensions (%)',
+    rowOrder: 'Rows in tree order',
+    colOrder: 'Columns in tree order',
+    heatLow: 'Value at the low end of the key',
+    heatHigh: 'Value at the high end of the key',
   },
   col: {
     component: 'Component',
@@ -96,6 +101,7 @@ export const multivariate = {
     elbow: 'Within-cluster sum of squares by k',
     merges: 'Merges',
     coords: 'Coordinates',
+    heat: 'Cells in tree order',
   },
   note: {
     linear: 'The components are linear combinations; they capture straight-line patterns only.',
@@ -108,6 +114,9 @@ export const multivariate = {
     roundClusters: 'K-means finds round clusters of similar size; other shapes can be split or joined.',
     wardEuclidean: 'Ward linkage assumes Euclidean distances; with another distance, read its heights with care.',
     treeShape: 'The tree depends on the linkage and the distance; try more than one.',
+    heatKey:
+      'Darker cells are farther from the middle of the key, in one color above it and another below. Each cell ' +
+      'also shows its value when there is room, and the table lists every cell.',
     euclideanMds: 'Negative eigenvalues mean the distances cannot be drawn exactly in any number of dimensions.',
   },
   plot: {
@@ -126,6 +135,8 @@ export const multivariate = {
     within: 'Within-cluster sum of squares',
     dim1: 'Dimension 1',
     dim2: 'Dimension 2',
+    low: 'Low',
+    high: 'High',
   },
   picture: {
     scree: 'Scree plot',
@@ -135,12 +146,14 @@ export const multivariate = {
     elbowPlot: 'Elbow plot',
     dendrogram: 'Dendrogram',
     map: 'Map from classical scaling',
+    heatmap: 'Clustered heat map',
   },
   example: {
     pca: 'Components of 4 test scores',
     efa: '2 factors behind 4 test scores',
     kmeans: 'K-means on 7 points',
     tree: 'Ward clustering of students',
+    heatmap: 'Heat map of 4 test scores',
     mds: 'Map of 4 places from their distances',
   },
 };
@@ -175,6 +188,10 @@ export const multivariateSteps = {
   wardLink: 'Join the pair that adds least to the within-cluster sum of squares, updating by:',
   firstMerge: 'The first merge joins {a} and {b} at height {h}.',
   cut: 'Cut the tree where it has {k} branches to get {k} clusters.',
+  heatRaw: 'Use the values as measured.',
+  heatTrees: 'Build a tree of the rows with {linkage} linkage, and another of the columns.',
+  heatOrder: 'Put the rows and the columns in the order their trees draw their leaves, so alike ones sit together.',
+  heatColor: 'Color each cell by how far it is from the middle of the key, on a scale from −1 to 1:',
   doubleCenter: 'Square the distances and double-center them:',
   mdsEigen: 'The 2 largest eigenvalues of B are:',
   mdsCoords: 'The coordinates are the eigenvectors scaled by the square roots of their eigenvalues:',
@@ -182,5 +199,6 @@ export const multivariateSteps = {
   wordsEfa: 'Parallel analysis suggests {suggested} factors; with {k}, the first has variance {v}.',
   wordsKmeans: 'The {k} clusters hold {share}% of the variation between them, with mean silhouette {s}.',
   wordsTree: 'Cutting the tree into {k} clusters happens below height {h}.',
+  wordsHeat: 'In tree order the rows run from {first} to {last}, and the columns are {cols}.',
   wordsMds: 'The 2-dimensional map keeps {fit}% of the scaling.',
 };
