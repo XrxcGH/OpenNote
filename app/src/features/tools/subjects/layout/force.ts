@@ -1,8 +1,9 @@
 // Force-directed drawings of any graph, such as automata and social networks, after Fruchterman and Reingold
 // (1991). The starting positions come from the seeded generator, so one seed always gives the same drawing.
 import { Rng } from '../num/rng';
-import { boundsOf, checkGraph, clipEnds } from './graph';
+import { boundsOf, checkGraph, clipEnds, loopRoute } from './graph';
 import type { GraphInput, GraphLayout, PlacedNode, RoutedEdge } from './graph';
+import { nodeSize } from './svg';
 
 export interface ForceOptions {
   /** The seed of the starting positions; the same seed gives the same drawing. */
@@ -34,8 +35,7 @@ export function layoutForce(graph: GraphInput, options: ForceOptions = {}): Grap
     label: node.label ?? node.id,
     x: px[i] - cx,
     y: py[i] - cy,
-    width: node.width ?? 1,
-    height: node.height ?? 1,
+    ...nodeSize(node),
   }));
   return { nodes, edges: routeStraight(graph, index, nodes, k), bounds: boundsOf(nodes) };
 }
@@ -91,17 +91,7 @@ function routeStraight(
   return graph.edges.map((e) => {
     const a = nodes[index.get(e.from) ?? 0];
     const b = nodes[index.get(e.to) ?? 0];
-    if (a === b) {
-      const top = a.y - a.height / 2;
-      const r = Math.max(a.width, a.height) * 0.4;
-      const points: [number, number][] = [
-        [a.x - r, top],
-        [a.x - r, top - 2 * r],
-        [a.x + r, top - 2 * r],
-        [a.x + r, top],
-      ];
-      return { from: e.from, to: e.to, label: e.label, points };
-    }
+    if (a === b) return { from: e.from, to: e.to, label: e.label, points: loopRoute(a) };
     let points: [number, number][] = [
       [a.x, a.y],
       [b.x, b.y],

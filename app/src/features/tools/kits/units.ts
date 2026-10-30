@@ -207,4 +207,4 @@ export const formatQuantity = (value: number, unit: UnitChoice, digits = 4): str
 
 /** A unit label in LaTeX upright text. */
 export const latexUnit = (label: string): string =>
-  label === '' ? '' : `\\,\\mathrm{${label.replace(/([%#&_{}])/g, '\\$1')}}`;
+  label === '' ? '' : `\\,\\mathrm{${label.replace(/([\\%#&_{}])/g, '\\$1')}}`;
