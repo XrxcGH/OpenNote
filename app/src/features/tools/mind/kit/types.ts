@@ -1,7 +1,6 @@
 // What every psychology tool shares. A worked step is a message key in the kit's strings, the values it names,
 // and the equation it shows in LaTeX. Engines never write sentences: they return numbers, step keys, and error
 // codes, and the window turns them into words.
-import type { en } from '../../../../strings/en';
 import type { kitMindWords } from '../../../../strings/en/kitMind/words';
 
 type Kit = typeof kitMindWords;
@@ -11,7 +10,7 @@ export type StepKey = {
   [T in keyof Kit & string]: Kit[T] extends { step: infer S } ? `${T}.${keyof S & string}` : never;
 }[keyof Kit & string];
 
-export type ErrorCode = keyof (typeof en)['kitMind']['error'];
+export type ErrorCode = keyof Kit['error'];
 
 export type StepValue = string | number;
 export type Vars = Readonly<Record<string, StepValue>>;
