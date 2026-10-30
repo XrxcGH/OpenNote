@@ -43,9 +43,10 @@ pub use detect::{detect, Detected, SourceKind};
 pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};
 pub use export::{
-    export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_pdf_bundle, export_pptx,
-    export_share, export_share_with, export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, PreparedPdfRenderer,
-    Scope, TableFormat,
+    export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_latex,
+    export_latex_with, export_pdf_bundle, export_pptx, export_share, export_share_with, export_tables, latex_preview,
+    Exported, Format, LatexCitation, LatexDate, LatexEngine, LatexMargin, LatexOptions, LatexPaper, NoPdfRenderer,
+    PdfRenderer, PreparedPdfRenderer, Scope, TableFormat,
 };
 pub use import::{
     import_csv, import_docx, import_docx_with, import_eml, import_enex, import_enex_reader, import_highlights,

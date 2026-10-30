@@ -171,6 +171,42 @@ describe('Export', () => {
   });
 });
 
+describe('Export as LaTeX', () => {
+  it('exports a page as LaTeX with options and a preview of the .tex text that follows them', async () => {
+    const { platform } = await renderApp();
+    const tree = screen.getByRole('tree', { name: 'Notebooks' });
+    (await within(tree).findByRole('treeitem', { name: 'Lectures' })).focus();
+    await pressChord('Space');
+    await userEvent.click(await screen.findByRole('treeitem', { name: 'Mitosis' }));
+    // The command waits for the page to be open; it does nothing before that.
+    const dialog = await waitFor(async () => {
+      await executeCommand('interop.exportLatex');
+      return screen.getByRole('dialog', { name: 'Export "Mitosis"' });
+    });
+    const latex = within(dialog).getByRole('radio', { name: /^LaTeX/ });
+    expect(latex.getAttribute('aria-checked')).toBe('true');
+    const preview = await within(dialog).findByRole('region', { name: 'Preview of the .tex file' });
+    await waitFor(() => expect(preview.textContent).toContain('\\documentclass[11pt,letterpaper]{article}'));
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'A4' }));
+    await waitFor(() => expect(preview.textContent).toContain('\\documentclass[11pt,a4paper]{article}'));
+    await userEvent.type(within(dialog).getByLabelText('Author'), 'Ada Lovelace');
+    await userEvent.click(within(dialog).getByRole('switch', { name: 'Add a table of contents' }));
+    await waitFor(() => expect(preview.textContent).toContain('\\author{Ada Lovelace}'));
+    expect(preview.textContent).toContain('\\tableofcontents');
+    expect(preview.tabIndex).toBe(0);
+    await expectNoAxeViolations(dialog);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
+    await within(dialog).findByText('C:\\Users\\Sample\\Documents');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
+    await within(dialog).findByRole('heading', { name: 'Export finished' });
+    expect(platform.interop.log.exports[0]).toMatchObject({
+      format: 'latex',
+      scope: 'page',
+      latex: { paper: 'a4', author: 'Ada Lovelace', toc: true, engine: 'unicode' },
+    });
+  });
+});
+
 describe('Share as a file', () => {
   it('shares a section with a password typed twice and page history, from the tree menu', async () => {
     const { platform } = await renderApp();

@@ -35,6 +35,7 @@ import { search } from './search';
 import { audio } from './audio';
 import { audioMore } from './audioMore';
 import { interop } from './interop';
+import { interopLatex } from './interopLatex';
 import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
@@ -100,6 +101,7 @@ export const en = {
   audio,
   audioMore,
   interop,
+  interopLatex,
   moreInterop,
   intel,
   pageExtras,

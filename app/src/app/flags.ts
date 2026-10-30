@@ -58,6 +58,7 @@ export type FlagId =
   | 'interop.import'
   | 'interop.export'
   | 'interop.exportPdf'
+  | 'interop.latexExport'
   | 'interop.oneNoteFiles'
   /** Goodnotes, Notability, and Samsung Notes files (ADR 0053). */
   | 'interop.notesApps'

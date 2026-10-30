@@ -20,6 +20,11 @@ export const INTEROP_FLAGS: readonly FlagDef[] = [
   flag('interop.import', 'Import notes from other apps, with a check of what will and will not come over.'),
   flag('interop.export', 'Export a page, section, or notebook to Markdown, web pages, or Word.'),
   flag(
+    'interop.latexExport',
+    'The LaTeX choice in Export: a .tex file, with pictures and a BibTeX file in a .zip.',
+    betaBuilds,
+  ),
+  flag(
     'interop.exportPdf',
     'The PDF choice in Export: each page printed through the Phase 6 print window, in folders with an index.',
     on,
