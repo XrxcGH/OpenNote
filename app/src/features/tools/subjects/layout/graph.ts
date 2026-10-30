@@ -78,6 +78,18 @@ export function clipEnds(points: [number, number][], from: PlacedNode, to: Place
   return out;
 }
 
+/** A self-loop's route: a small rectangle standing on the top edge of the node's box. */
+export function loopRoute(a: PlacedNode): [number, number][] {
+  const top = a.y - a.height / 2;
+  const r = Math.max(a.width, a.height) * 0.4;
+  return [
+    [a.x - r, top],
+    [a.x - r, top - 2 * r],
+    [a.x + r, top - 2 * r],
+    [a.x + r, top],
+  ];
+}
+
 export function boundsOf(nodes: readonly PlacedNode[]): GraphLayout['bounds'] {
   return {
     minX: Math.min(...nodes.map((n) => n.x - n.width / 2)),

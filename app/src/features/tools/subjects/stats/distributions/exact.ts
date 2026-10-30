@@ -64,7 +64,10 @@ export function signedRankDistribution(n: number): Float64Array {
   });
 }
 
-/** P(I = i) for the number of inversions i = 0..n(n−1)/2 of a random order of n items. */
+/**
+ * P(I = i) for the number of inversions i = 0..n(n−1)/2 of a random order of n items. The table runs against tau:
+ * tau = 1 − 4I / (n(n−1)), so few inversions mean tau > 0. Take one-sided p-values from kendallExactP, not exactP.
+ */
 export function kendallDistribution(n: number): Float64Array {
   ensure(Number.isInteger(n) && n >= 2, 'domain', 'n');
   ensure(n <= MAX_EXACT_KENDALL, 'tooLarge', String(MAX_EXACT_KENDALL));
@@ -79,7 +82,11 @@ export function kendallDistribution(n: number): Float64Array {
   });
 }
 
-/** P(D = d) for D = Σ (rank difference)², d = 0..n(n²−1)/3, by enumerating every order (Heap's algorithm). */
+/**
+ * P(D = d) for D = Σ (rank difference)², d = 0..n(n²−1)/3, by enumerating every order (Heap's algorithm). The table
+ * runs against rho: rho = 1 − 6D / (n(n²−1)), so a small D means rho > 0. Take one-sided p-values from
+ * spearmanExactP, not exactP.
+ */
 export function spearmanDistribution(n: number): Float64Array {
   ensure(Number.isInteger(n) && n >= 2, 'domain', 'n');
   ensure(n <= MAX_EXACT_SPEARMAN, 'tooLarge', String(MAX_EXACT_SPEARMAN));
@@ -125,4 +132,23 @@ export function exactP(dist: Float64Array, s: number, alternative: Alternative):
   if (alternative === 'less') return lower;
   if (alternative === 'greater') return upper;
   return Math.min(1, 2 * Math.min(lower, upper));
+}
+
+/** The statistic runs against the association, so 'greater' (a positive association) is its lower tail. */
+const AGAINST: Record<Alternative, Alternative> = { 'two-sided': 'two-sided', less: 'greater', greater: 'less' };
+
+/**
+ * The exact p-value of Kendall's tau from the number of inversions (discordant pairs) among n untied pairs:
+ * 'greater' tests tau > 0, the lower tail of the inversions, and 'less' tests tau < 0.
+ */
+export function kendallExactP(n: number, inversions: number, alternative: Alternative): number {
+  return exactP(kendallDistribution(n), inversions, AGAINST[alternative]);
+}
+
+/**
+ * The exact p-value of Spearman's rho from D = Σ (rank difference)² among n untied pairs: 'greater' tests rho > 0,
+ * the lower tail of D, and 'less' tests rho < 0.
+ */
+export function spearmanExactP(n: number, d: number, alternative: Alternative): number {
+  return exactP(spearmanDistribution(n), d, AGAINST[alternative]);
 }
