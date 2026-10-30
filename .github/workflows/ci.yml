@@ -47,6 +47,9 @@ jobs:
       - name: Design tokens are up to date
         run: npm run tokens:check
       - name: Type-check, lint, and format-check
+        # The macOS runner ran the type-check out of memory at the default heap size.
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: npm run typecheck && npm run lint && npm run format:check
       - name: Unit tests
         run: npm test
