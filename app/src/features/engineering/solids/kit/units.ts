@@ -1,0 +1,194 @@
+// The kinds of quantity the solid mechanics tools read and show, each with the unit it shows in SI and in US
+// customary units. The engines work in base SI (m, N, Pa, kg, s, rad, K); these units are only for people. The SI
+// set is N, mm, and MPa, and the US set is kip, in, and ksi, so the numbers in a worked step agree with each other.
+import { evaluate } from '../../../../core/expr';
+import { parseUnit, sameDim, type Dim } from '../../../../core/units';
+import { SolidsError } from './types';
+
+export type System = 'si' | 'us';
+
+interface Shown {
+  /** The unit as people read it. */
+  readonly label: string;
+  /** SI base units in one of this unit. */
+  readonly factor: number;
+  /** How the unit is typed, when its label cannot be read back. */
+  readonly typed?: string;
+  /** SI base units at zero of this unit, for an absolute temperature. */
+  readonly offset?: number;
+}
+
+interface KindDef {
+  readonly dim: Dim;
+  readonly si: Shown;
+  readonly us: Shown;
+}
+
+const D = (m = 0, kg = 0, s = 0, K = 0): Dim => [m, kg, s, K, 0, 0, 0];
+const IN = 0.0254;
+const KIP = 4448.2216152605;
+const LBF = 4.4482216152605;
+const KSI = KIP / IN ** 2;
+const BTU_H = 1055.05585262 / 3600;
+const FT = 0.3048;
+const shown = (label: string, factor: number, typed?: string, offset?: number): Shown => ({
+  label,
+  factor,
+  ...(typed ? { typed } : {}),
+  ...(offset ? { offset } : {}),
+});
+const MSI = 1000 * (KIP / IN ** 2);
+
+export const KINDS = {
+  length: { dim: D(1), si: shown('mm', 1e-3), us: shown('in', IN) },
+  span: { dim: D(1), si: shown('m', 1), us: shown('ft', 0.3048) },
+  area: { dim: D(2), si: shown('mm²', 1e-6), us: shown('in²', IN ** 2) },
+  volume: { dim: D(3), si: shown('mm³', 1e-9), us: shown('in³', IN ** 3) },
+  inertia: { dim: D(4), si: shown('mm⁴', 1e-12), us: shown('in⁴', IN ** 4) },
+  force: { dim: D(1, 1, -2), si: shown('N', 1), us: shown('kip', KIP) },
+  bigForce: { dim: D(1, 1, -2), si: shown('kN', 1e3), us: shown('kip', KIP) },
+  smallForce: { dim: D(1, 1, -2), si: shown('N', 1), us: shown('lbf', LBF) },
+  moment: { dim: D(2, 1, -2), si: shown('N·mm', 1e-3), us: shown('kip·in', KIP * IN) },
+  bigMoment: { dim: D(2, 1, -2), si: shown('kN·m', 1e3), us: shown('kip·ft', KIP * 0.3048) },
+  smallMoment: { dim: D(2, 1, -2), si: shown('N·m', 1), us: shown('lbf·in', LBF * IN) },
+  stress: { dim: D(-1, 1, -2), si: shown('MPa', 1e6), us: shown('ksi', KSI) },
+  stress2: { dim: D(-2, 2, -4), si: shown('MPa²', 1e12, 'MPa^2'), us: shown('ksi²', KSI ** 2, 'ksi^2') },
+  stress3: { dim: D(-3, 3, -6), si: shown('MPa³', 1e18, 'MPa^3'), us: shown('ksi³', KSI ** 3, 'ksi^3') },
+  modulus: { dim: D(-1, 1, -2), si: shown('GPa', 1e9), us: shown('Msi', MSI) },
+  lineLoad: { dim: D(0, 1, -2), si: shown('N/mm', 1e3), us: shown('lbf/in', LBF / IN) },
+  spanLoad: { dim: D(0, 1, -2), si: shown('kN/m', 1e3), us: shown('kip/ft', KIP / 0.3048) },
+  stiffness: { dim: D(0, 1, -2), si: shown('N/mm', 1e3), us: shown('lbf/in', LBF / IN) },
+  deflection: { dim: D(1), si: shown('mm', 1e-3), us: shown('in', IN) },
+  curvature: { dim: D(-1), si: shown('1/mm', 1e3, 'mm^-1'), us: shown('1/in', 1 / IN, 'in^-1') },
+  twistRate: { dim: D(-1), si: shown('rad/m', 1), us: shown('rad/in', 1 / IN) },
+  stressPerLength: { dim: D(-2, 1, -2), si: shown('N/mm³', 1e9), us: shown('kip/in³', KIP / IN ** 3) },
+  mass: { dim: D(0, 1), si: shown('kg', 1), us: shown('lb', 0.45359237) },
+  density: { dim: D(-3, 1), si: shown('kg/m³', 1), us: shown('lb/ft³', 0.45359237 / 0.3048 ** 3) },
+  power: { dim: D(2, 1, -3), si: shown('kW', 1e3), us: shown('hp', 745.69987158227) },
+  speed: { dim: D(0, 0, -1), si: shown('rpm', 1 / 60), us: shown('rpm', 1 / 60) },
+  angularSpeed: { dim: D(0, 0, -1), si: shown('rad/s', 1), us: shown('rad/s', 1) },
+  frequency: { dim: D(0, 0, -1), si: shown('Hz', 1), us: shown('Hz', 1) },
+  time: { dim: D(0, 0, 1), si: shown('s', 1), us: shown('s', 1) },
+  viscosity: { dim: D(-1, 1, -1), si: shown('MPa·s', 1e6), us: shown('ksi·s', KSI) },
+  expansion: { dim: D(0, 0, 0, -1), si: shown('1/K', 1, 'K^-1'), us: shown('1/°F', 9 / 5, 'degF^-1') },
+  tempChange: { dim: D(0, 0, 0, 1), si: shown('K', 1), us: shown('°F', 5 / 9, 'degF') },
+  /** An absolute temperature, such as a wall held at 100 °C; tempChange is a difference of two. */
+  temperature: {
+    dim: D(0, 0, 0, 1),
+    si: shown('°C', 1, 'degC', 273.15),
+    us: shown('°F', 5 / 9, 'degF', 273.15 - 32 * (5 / 9)),
+  },
+  conductivity: {
+    dim: D(1, 1, -3, -1),
+    si: shown('W/(m·K)', 1, 'W/(m*K)'),
+    us: shown('Btu/(h·ft·°F)', BTU_H / (FT * (5 / 9)), 'Btu/(hr*ft*degF)'),
+  },
+  heat: { dim: D(2, 1, -3), si: shown('W', 1), us: shown('Btu/h', BTU_H, 'Btu/hr') },
+  heatGen: {
+    dim: D(-1, 1, -3),
+    si: shown('W/m³', 1, 'W/m^3'),
+    us: shown('Btu/(h·ft³)', BTU_H / FT ** 3, 'Btu/(hr*ft^3)'),
+  },
+  heatFlux: {
+    dim: D(0, 1, -3),
+    si: shown('W/m²', 1, 'W/m^2'),
+    us: shown('Btu/(h·ft²)', BTU_H / FT ** 2, 'Btu/(hr*ft^2)'),
+  },
+  angle: { dim: D(), si: shown('°', Math.PI / 180, 'deg'), us: shown('°', Math.PI / 180, 'deg') },
+  radians: { dim: D(), si: shown('rad', 1), us: shown('rad', 1) },
+  strain: { dim: D(), si: shown('µε', 1e-6), us: shown('µε', 1e-6) },
+  percent: { dim: D(), si: shown('%', 0.01), us: shown('%', 0.01) },
+  count: { dim: D(), si: shown('', 1), us: shown('', 1) },
+  ratio: { dim: D(), si: shown('', 1), us: shown('', 1) },
+} as const satisfies Record<string, KindDef>;
+
+export type Kind = keyof typeof KINDS;
+
+/** The unit a kind shows in. */
+export const unitOf = (kind: Kind, system: System): string => KINDS[kind][system].label;
+
+/** The unit as it is typed after a number, so a bare number can keep its meaning when the system changes. */
+export const typedUnit = (kind: Kind, system: System): string => {
+  const one: Shown = KINDS[kind][system];
+  return one.typed ?? one.label;
+};
+
+/** A value in base SI, in the units a kind shows in. */
+export const toShown = (value: number, kind: Kind, system: System): number => {
+  const one: Shown = KINDS[kind][system];
+  return (value - (one.offset ?? 0)) / one.factor;
+};
+
+/** A value in the units a kind shows in, in base SI. */
+export const fromShown = (value: number, kind: Kind, system: System): number => {
+  const one: Shown = KINDS[kind][system];
+  return value * one.factor + (one.offset ?? 0);
+};
+
+const STRAIN = /^(µε|με|ue)$/;
+/** Units the kit reads that core/units does not know. */
+const EXTRA: Readonly<Record<string, number>> = { Msi: MSI };
+const ROTATING = new Set<Kind>(['speed', 'frequency']);
+
+/** True when a typed text ends in a degree or percent sign, which the expression reader has already applied. */
+export const endsInSign = (text: string): boolean => /[°%]\s*$/.test(text.trim());
+
+/** A typed unit, with "1/K" read as "K^-1" and the kit's extra units. */
+function unitOfText(text: string): { factor: number; dim: Dim; offset?: number } | null {
+  const extra = EXTRA[text];
+  if (extra !== undefined) return { factor: extra, dim: KINDS.stress.dim };
+  const inverse = /^1\s*\/\s*(.+)$/.exec(text);
+  if (inverse) {
+    const under = parseUnit(/^[^*·/^()\s]+$/.test(inverse[1]) ? inverse[1] : `(${inverse[1]})`);
+    return under ? { factor: 1 / under.factor, dim: under.dim.map((d) => -d) as unknown as Dim } : null;
+  }
+  return parseUnit(text);
+}
+
+/** What a person typed, as a number and the unit after it ('' when none, 'SI' when the number is already in SI). */
+function splitTyped(text: string): { number: number; unit: string } | null {
+  const whole = evaluate(text);
+  if (whole.ok) return { number: whole.value, unit: endsInSign(text) ? 'SI' : '' };
+  for (let i = 1; i < text.length; i += 1) {
+    const inverse = text.startsWith('1/', i) && /\s/.test(text[i - 1]);
+    if (!inverse && (!/[A-Za-zµμΩ°%]/.test(text[i]) || !/[\s\d).]/.test(text[i - 1]))) continue;
+    const unit = text.slice(i).trim();
+    if (!unitOfText(unit) && !STRAIN.test(unit)) continue;
+    const number = evaluate(text.slice(0, i).trim());
+    if (number.ok) return { number: number.value, unit };
+  }
+  return null;
+}
+
+const TURN = 2 * Math.PI;
+
+/**
+ * Reads a typed quantity, such as "25", "25 mm", "1 kN·m", "30°", or "2*pi rad/s", into base SI. A bare number is
+ * in the unit the kind shows in for the chosen system. A unit that measures something else is an error that names
+ * both. Speeds in rpm and frequencies in Hz count turns, so a typed rad/s is turned into turns, and the other way
+ * round for an angular speed.
+ */
+export function readQuantity(text: string, kind: Kind, system: System): number {
+  const trimmed = text.trim();
+  if (trimmed === '') throw new SolidsError('empty');
+  const typed = splitTyped(trimmed);
+  if (!typed || !Number.isFinite(typed.number)) throw new SolidsError('unreadable', trimmed);
+  const def: KindDef = KINDS[kind];
+  if (typed.unit === '') return fromShown(typed.number, kind, system);
+  if (typed.unit === 'SI') {
+    if (def.dim.some((d) => d !== 0))
+      throw new SolidsError('unitMismatch', `${trimmed.slice(-1)}|${def[system].label}`);
+    return typed.number;
+  }
+  if (kind === 'strain' && STRAIN.test(typed.unit)) return typed.number * 1e-6;
+  const unit = unitOfText(typed.unit);
+  if (!unit) throw new SolidsError('unreadable', trimmed);
+  if (!sameDim(unit, { factor: 1, dim: def.dim })) {
+    throw new SolidsError('unitMismatch', `${typed.unit}|${def[system].label || '1'}`);
+  }
+  const value = typed.number * unit.factor + (kind === 'temperature' ? (unit.offset ?? 0) : 0);
+  const radians = /rad/.test(typed.unit);
+  if (ROTATING.has(kind) && radians) return value / TURN;
+  if (kind === 'angularSpeed' && !radians && /rpm|Hz/.test(typed.unit)) return value * TURN;
+  return value;
+}
