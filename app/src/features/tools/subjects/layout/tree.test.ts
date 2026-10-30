@@ -105,4 +105,22 @@ describe('tree orientations and drawing', () => {
     expect(escapeXml("'")).toBe('&#39;');
     expect(labelSize('abcd', 10, 0)).toEqual({ width: 24, height: 12.5 });
   });
+
+  it('sizes a node to its label, so the picture is wide enough for the longest one', () => {
+    const label = 'A quite long label here';
+    const laid = layoutTree({ id: 'r', label, children: [leaf('k')] });
+    const svg = drawingToSvg(laid);
+    const width = Number(/^<svg[^>]* width="([\d.]+)"/.exec(svg)?.[1]);
+    // 23 characters at 0.6 em of a 14 px font is 193.2 px of text, before any padding.
+    expect(width).toBeGreaterThanOrEqual(23 * 0.6 * 14);
+    const root = laid.nodes.find((n) => n.id === 'r');
+    expect((root?.width ?? 0) * 40).toBeGreaterThanOrEqual(23 * 0.6 * 14);
+    // A label drawn on a node given a small width still fits inside the picture.
+    const tight = drawingToSvg({
+      nodes: [{ id: 'r', label, x: 0, y: 0, width: 1, height: 1 }],
+      edges: [],
+      bounds: { minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 },
+    });
+    expect(Number(/^<svg[^>]* width="([\d.]+)"/.exec(tight)?.[1])).toBeGreaterThanOrEqual(23 * 0.6 * 14);
+  });
 });
