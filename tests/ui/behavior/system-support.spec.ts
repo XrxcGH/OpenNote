@@ -32,8 +32,9 @@ test.describe('on a Mac', () => {
     await expect(facts.getByText('macOS', { exact: true })).toBeVisible();
     await expect(facts.getByText('WebKit (WKWebView)')).toBeVisible();
     const limits = page.getByRole('region', { name: 'What works differently on macOS' });
-    await expect(limits.getByRole('listitem')).toHaveCount(10);
+    await expect(limits.getByRole('listitem')).toHaveCount(11);
     await expect(limits.getByText(/Saving a page as PDF and printing aren't here yet/)).toBeVisible();
+    await expect(limits.getByText(/Sync can't be set up here yet/)).toBeVisible();
     await expect(limits.getByText(/Download the new dmg/)).toBeVisible();
   });
 
