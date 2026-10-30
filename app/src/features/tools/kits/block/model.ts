@@ -5,6 +5,9 @@
 
 export const INPUT_LIMIT = 64 * 1024;
 
+/** The block's type in page.json, the same as PANEL_TYPES.kitCalc. */
+export const KIT_CALC_TYPE = 'ext:org.opennote/kitcalc';
+
 export interface KitCalcRow {
   label: string;
   value: string;
