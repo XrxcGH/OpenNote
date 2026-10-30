@@ -20,7 +20,7 @@ import {
 } from './cluster';
 import { factorAnalysis, parallelAnalysis, pca, type Rotation } from './engine';
 import { literal, readColumns } from './read';
-import { clusterScatter, heatmapOutcome } from './views';
+import { clusterScatter, gmmOutcome, heatmapOutcome } from './views';
 
 const SCORES =
   'student,reading,writing,math,science\nAva,78,82,65,70\nBen,62,60,88,85\nCal,90,91,72,75\nDee,55,58,60,62\n' +
@@ -35,6 +35,10 @@ const ABILITIES =
   '47,63,59,48,50,38\n51,49,62,67,61,55\n56,45,43,31,45,39\n26,42,44,38,45,35\n' +
   '46,32,36,43,41,23';
 const POINTS = 'x,y\n1,1\n1.5,2\n3,4\n5,7\n3.5,5\n4.5,5\n3.5,4.5';
+// 2 groups of 8 points: a tight round one near (2, 2) and a wider, tilted one near (7, 6).
+const BLOBS =
+  'x,y\n1.6,2.1\n2.3,1.8\n2.0,2.5\n1.8,1.6\n2.4,2.2\n1.5,1.9\n2.1,2.0\n2.2,2.6\n5.6,4.9\n6.4,5.3\n7.1,6.2\n' +
+  '7.8,6.6\n8.3,7.4\n6.9,5.5\n7.4,6.9\n6.1,5.8';
 const CITIES = 'A,B,C,D\n0,3,4,6\n3,0,5,4\n4,5,0,3\n6,4,3,0';
 
 const is =
@@ -404,6 +408,8 @@ function run(values: Values): Outcome {
       return hierarchicalOutcome(values);
     case 'mds':
       return mdsOutcome(values);
+    case 'gmm':
+      return gmmOutcome(values);
     case 'heatmap':
       return heatmapOutcome(values);
     default:
@@ -419,7 +425,7 @@ export const multivariateSpec: ToolSpec = {
     {
       id: 'analysis',
       type: 'choice',
-      options: ['pca', 'efa', 'kmeans', 'hierarchical', 'heatmap', 'mds'],
+      options: ['pca', 'efa', 'kmeans', 'gmm', 'hierarchical', 'heatmap', 'mds'],
       first: 'pca',
     },
     { id: 'input', type: 'choice', options: ['matrix', 'columns'], first: 'matrix', when: is('mds') },
@@ -438,13 +444,13 @@ export const multivariateSpec: ToolSpec = {
       type: 'choice',
       options: ['z', 'raw'],
       first: 'z',
-      when: (v) => is('kmeans', 'hierarchical', 'heatmap')(v) || (is('mds')(v) && v.input === 'columns'),
+      when: (v) => is('kmeans', 'gmm', 'hierarchical', 'heatmap')(v) || (is('mds')(v) && v.input === 'columns'),
     },
     { id: 'factors', type: 'number', first: '2', integer: true, min: 1, max: 10, when: is('efa') },
     { id: 'rotation', type: 'choice', options: ['varimax', 'promax', 'none'], first: 'varimax', when: is('efa') },
     { id: 'sims', type: 'number', first: '200', integer: true, min: 20, max: 2000, when: is('efa') },
-    { id: 'k', type: 'number', first: '2', integer: true, min: 1, max: 20, when: is('kmeans', 'hierarchical') },
-    { id: 'kmax', type: 'number', first: '6', integer: true, min: 2, max: 20, when: is('kmeans') },
+    { id: 'k', type: 'number', first: '2', integer: true, min: 1, max: 20, when: is('kmeans', 'gmm', 'hierarchical') },
+    { id: 'kmax', type: 'number', first: '6', integer: true, min: 2, max: 20, when: is('kmeans', 'gmm') },
     { id: 'starts', type: 'number', first: '10', integer: true, min: 1, max: 100, when: is('kmeans') },
     {
       id: 'linkage',
@@ -460,7 +466,7 @@ export const multivariateSpec: ToolSpec = {
       first: 'euclidean',
       when: is('hierarchical', 'heatmap'),
     },
-    { id: 'seed', type: 'number', first: '1', integer: true, min: 0, when: is('efa', 'kmeans') },
+    { id: 'seed', type: 'number', first: '1', integer: true, min: 0, when: is('efa', 'kmeans', 'gmm') },
   ],
   run,
   examples: [
@@ -488,6 +494,10 @@ export const multivariateSpec: ToolSpec = {
     {
       id: 'kmeans',
       values: { data: POINTS, analysis: 'kmeans', columns: 'x\ny', label: '', k: '2', standardize: 'raw' },
+    },
+    {
+      id: 'gmm',
+      values: { data: BLOBS, analysis: 'gmm', columns: 'x\ny', label: '', k: '2', kmax: '4', standardize: 'raw' },
     },
     {
       id: 'tree',

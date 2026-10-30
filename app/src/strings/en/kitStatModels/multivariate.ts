@@ -23,6 +23,7 @@ export const multivariate = {
     pca: 'Principal components',
     efa: 'Exploratory factor analysis',
     kmeans: 'K-means clustering',
+    gmm: 'Gaussian mixture by EM',
     hierarchical: 'Hierarchical clustering',
     heatmap: 'Clustered heat map',
     mds: 'Multidimensional scaling',
@@ -64,6 +65,10 @@ export const multivariate = {
     colOrder: 'Columns in tree order',
     heatLow: 'Value at the low end of the key',
     heatHigh: 'Value at the high end of the key',
+    logLik: 'Log-likelihood',
+    bic: 'Bayesian information criterion (BIC)',
+    aic: 'Akaike information criterion (AIC)',
+    bestK: 'Components with the lowest BIC',
   },
   col: {
     component: 'Component',
@@ -88,6 +93,9 @@ export const multivariate = {
     height: 'Height',
     dim1: 'Dimension 1',
     dim2: 'Dimension 2',
+    weight: 'Weight',
+    probability: 'Chance of that cluster',
+    bic: 'BIC',
   },
   table: {
     eigen: 'Eigenvalues',
@@ -102,6 +110,8 @@ export const multivariate = {
     merges: 'Merges',
     coords: 'Coordinates',
     heat: 'Cells in tree order',
+    components: 'Component weights and means',
+    bicByK: 'BIC by number of components',
   },
   note: {
     linear: 'The components are linear combinations; they capture straight-line patterns only.',
@@ -114,6 +124,9 @@ export const multivariate = {
     roundClusters: 'K-means finds round clusters of similar size; other shapes can be split or joined.',
     wardEuclidean: 'Ward linkage assumes Euclidean distances; with another distance, read its heights with care.',
     treeShape: 'The tree depends on the linkage and the distance; try more than one.',
+    gmmLocal:
+      'EM finds a local best fit from its start; another seed can give another answer. Compare their ' +
+      'log-likelihoods.',
     heatKey:
       'Darker cells are farther from the middle of the key, in one color above it and another below. Each cell ' +
       'also shows its value when there is room, and the table lists every cell.',
@@ -136,6 +149,9 @@ export const multivariate = {
     dim1: 'Dimension 1',
     dim2: 'Dimension 2',
     low: 'Low',
+    bic: 'BIC',
+    round: 'EM round',
+    logLik: 'Log-likelihood',
     high: 'High',
   },
   picture: {
@@ -147,6 +163,8 @@ export const multivariate = {
     dendrogram: 'Dendrogram',
     map: 'Map from classical scaling',
     heatmap: 'Clustered heat map',
+    bicPlot: 'BIC by number of components',
+    logLikPlot: 'Log-likelihood by EM round',
   },
   example: {
     pca: 'Components of 4 test scores',
@@ -154,6 +172,7 @@ export const multivariate = {
     kmeans: 'K-means on 7 points',
     tree: 'Ward clustering of students',
     heatmap: 'Heat map of 4 test scores',
+    gmm: 'Mixture of 2 groups of points',
     mds: 'Map of 4 places from their distances',
   },
 };
@@ -188,6 +207,13 @@ export const multivariateSteps = {
   wardLink: 'Join the pair that adds least to the within-cluster sum of squares, updating by:',
   firstMerge: 'The first merge joins {a} and {b} at height {h}.',
   cut: 'Cut the tree where it has {k} branches to get {k} clusters.',
+  gmmStart:
+    'Start {k} components at k-means centers (seed {seed}), each with the covariance of all the rows and a weight ' +
+    'from its cluster size.',
+  gmmE: 'E-step: find the chance r that each row came from each component:',
+  gmmM: 'M-step: refit each component’s weight, mean, and covariance, weighting each row by its chance r:',
+  gmmConverge: 'Repeat both steps until the log-likelihood settles, after {iterations} rounds:',
+  gmmBic: 'With {p} free parameters, the Bayesian information criterion is:',
   heatRaw: 'Use the values as measured.',
   heatTrees: 'Build a tree of the rows with {linkage} linkage, and another of the columns.',
   heatOrder: 'Put the rows and the columns in the order their trees draw their leaves, so alike ones sit together.',
@@ -200,5 +226,6 @@ export const multivariateSteps = {
   wordsKmeans: 'The {k} clusters hold {share}% of the variation between them, with mean silhouette {s}.',
   wordsTree: 'Cutting the tree into {k} clusters happens below height {h}.',
   wordsHeat: 'In tree order the rows run from {first} to {last}, and the columns are {cols}.',
+  wordsGmm: 'With {k} components the BIC is {bic}; the lowest BIC comes with {best}.',
   wordsMds: 'The 2-dimensional map keeps {fit}% of the scaling.',
 };

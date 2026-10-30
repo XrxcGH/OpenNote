@@ -135,6 +135,9 @@ export const shared = {
     heywood:
       'A communality went above 1 (a Heywood case), so this many factors does not fit. Try fewer factors or more rows.',
     clusterCount: 'The number of clusters must be from 1 to {detail}.',
+    mixtureCollapse:
+      'A component shrank onto too few distinct rows, so its spread went to 0. Try fewer components, another ' +
+      'seed, or standardized columns.',
     flatProfile: 'A row has the same value in every column, so its correlation distance is not defined.',
     notSquare: 'A distance table needs as many rows as columns.',
     badDistances: 'Distances must be 0 or more, 0 from each item to itself, and the same in both directions.',

@@ -41,6 +41,7 @@ Fit models to data and see each answer worked out, step by step. These tools are
 - **Principal components** of the covariance or correlation matrix, with a scree plot, loadings, scores, and a biplot.
 - **Exploratory factor analysis** by principal axis factoring with varimax or promax rotation, and parallel analysis to choose how many factors to keep.
 - **K-means** clustering from seeded k-means++ starts, with an elbow plot and silhouette widths.
+- **Gaussian mixture** fits soft clusters by expectation-maximization from seeded k-means starts, with each row's chance of its cluster, the log-likelihood by round, and BIC to compare numbers of components.
 - **Hierarchical clustering** with Ward, average, complete, or single linkage on Euclidean, Manhattan, or correlation distance, drawn as a dendrogram.
 - **Clustered heat map** draws the data as shaded cells with the rows and the columns each in their tree's order, so alike rows and alike columns sit together; each cell shows its value too.
 - **Multidimensional scaling** draws a map from a table of distances.
