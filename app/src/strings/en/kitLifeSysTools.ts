@@ -44,7 +44,8 @@ export const kitLifeSysTools = {
       distances: 'One row per point: the distances to the nearest plant in each of the 4 quarters.',
       quadratCounts: 'The number of individuals in each quadrat.',
       samples:
-        'One row per sample in order: the number caught, then how many were already marked. Unmarked animals are marked and released.',
+        'One row per sample in order: the number caught, then how many were already marked. Unmarked animals are ' +
+        'marked and released.',
     },
     o: {
       ln: 'Natural log (ln)',
@@ -101,12 +102,17 @@ export const kitLifeSysTools = {
       hill: 'Hill numbers: q = 0 gives S = {h0}, q = 1 gives exp(H′) = {h1}, and q = 2 gives 1/λ = {h2}.',
       chao1: 'With {F1} singletons and {F2} doubletons, Chao1 = {S} + {F1}² / (2 × {F2}) = {est}.',
       chao1bc:
-        'With {F1} singletons and no doubletons, the bias-corrected Chao1 = {S} + ((N − 1)/N) {F1}({F1} − 1)/2 = {est}.',
-      ace: 'Species with 10 or fewer individuals are rare. Their coverage is {C} and the variation γ² is {g}, so ACE = {est}.',
+        'With {F1} singletons and no doubletons, the bias-corrected Chao1 = {S} + ((N − 1)/N) {F1}({F1} − 1)/2 = ' +
+        '{est}.',
+      ace:
+        'Species with 10 or fewer individuals are rare. Their coverage is {C} and the variation γ² is {g}, so ACE ' +
+        '= {est}.',
       rarefy:
-        'For each species, 1 − C(N − Nᵢ, {n}) / C({N}, {n}) is the chance it appears in {n} of {N} individuals. Their sum is {E}.',
+        'For each species, 1 − C(N − Nᵢ, {n}) / C({N}, {n}) is the chance it appears in {n} of {N} individuals. ' +
+        'Their sum is {E}.',
       accumulation:
-        'The {sites} sites were added in {runs} random orders from seed {seed}; the curve is the mean, with the middle 95% of orders.',
+        'The {sites} sites were added in {runs} random orders from seed {seed}; the curve is the mean, with the ' +
+        'middle 95% of orders.',
       jaccard: 'Jaccard = a / (a + b + c), where a counts shared species and b and c those found at only 1 site.',
       sorensen: 'Sørensen = 2a / (2a + b + c), where a counts shared species and b and c those found at only 1 site.',
       brayCurtis:
@@ -115,7 +121,8 @@ export const kitLifeSysTools = {
         'Morisita-Horn = 2 Σ xᵢyᵢ / ((dₓ + d_y) X Y), where dₓ = Σ xᵢ² / X²; it depends little on sample size.',
       quadrat: 'Density = count / ({q} × {A}); frequency = quadrats occupied / {q}; cover = total cover / {q}.',
       importance:
-        'Each relative value is the species’ share of the total, in percent. The importance value is their sum, out of 300.',
+        'Each relative value is the species’ share of the total, in percent. The importance value is their sum, ' +
+        'out of 300.',
       pointQuarter:
         'The mean of the {n} distances is d̄ = {d} (in {unit}), so density = 1 / d̄² = {D} per square {unit}.',
       vmr: 'For {n} quadrats the mean is {m} and the variance is {v}, so the variance-to-mean ratio is {vmr}.',
@@ -383,7 +390,8 @@ export const kitLifeSysTools = {
       hh: 'Henderson-Hasselbalch: [A⁻]/[HA] = 10^(pH − pKa) = 10^({pH} − {pKa}) = {r}.',
       split: 'Of {n} mmol in total, the acid form is 1/(1 + ratio) = {f}: {a} mmol HA and {b} mmol A⁻.',
       stocks:
-        'Volumes: {a} mmol / {ca} M = {va} mL of acid stock, {b} mmol / {cb} M = {vb} mL of base stock, and {w} mL of water.',
+        'Volumes: {a} mmol / {ca} M = {va} mL of acid stock, {b} mmol / {cb} M = {vb} mL of base stock, and {w} mL ' +
+        'of water.',
       rcf: 'RCF = 1.118 × 10⁻⁵ × r × rpm² = 1.118 × 10⁻⁵ × {r} cm × ({v})² = {out} × g.',
       rpm: 'rpm = √(RCF / (1.118 × 10⁻⁵ × r)) = √({v} / (1.118 × 10⁻⁵ × {r} cm)) = {out}.',
       hemo: 'Cells per mL = ({n} / {q} squares) × {d} × 10⁴ = {c}, since each large square holds 0.1 µL.',
@@ -547,7 +555,8 @@ export const kitLifeSysTools = {
       Lcohort: 'Person-years lived in each interval, Lx = n (lx + lx+n) / 2, assume deaths spread evenly.',
       Tx: 'Tx adds Lx from age x to the end, and ex = Tx / lx: at the first age, {T} / {l} = {e}.',
       qFromM:
-        'Each death rate becomes a probability of dying, nqx = n nMx / (1 + (n − nax) nMx), with nax = n/2 unless given.',
+        'Each death rate becomes a probability of dying, nqx = n nMx / (1 + (n − nax) nMx), with nax = n/2 unless ' +
+        'given.',
       Lperiod: 'Person-years lived, nLx = n lx+n + nax ndx, from a radix of 100 000 at the first age.',
       open: 'The last, open interval has q = 1 and L = l / M.',
       R0: 'R₀ = Σ lx mx = {R0}, the daughters each female leaves in a lifetime.',
@@ -555,7 +564,9 @@ export const kitLifeSysTools = {
       lotka: 'The Euler-Lotka equation Σ e^(−rx) lx mx = 1, solved by Brent’s method, gives r = {r}.',
       TFR: 'TFR = {n} × Σ ASFR = {n} × {s} = {TFR} children per woman.',
       GRR: 'GRR = TFR × {f} = {GRR} daughters per woman, with no deaths.',
-      NRR: 'NRR = Σ ASFR × share of girls × nLx/l₀ = {NRR}, which allows for deaths up to and through the childbearing years.',
+      NRR:
+        'NRR = Σ ASFR × share of girls × nLx/l₀ = {NRR}, which allows for deaths up to and through the ' +
+        'childbearing years.',
       crude: 'CBR = 1000 × {B} / {P} = {b}; CDR = 1000 × {D} / {P} = {d}.',
       growth: 'Growth = (births − deaths + net migrants) / population = {r}% per year.',
       doubling: 'Doubling time = ln 2 / r = 0.693147 / {r} = {t} years; the rule of 70 gives {t70}.',
@@ -967,28 +978,35 @@ export const kitLifeSysTools = {
       derived: 'From k = {k} /h and V = {V} L: t½ = ln 2 / k = {h} h and CL = k V = {CL} L/h.',
       bolus: 'C({t}) = (D / V) e^(−k t) = ({D} / {V}) e^(−{k} × {t}) = {C} mg/L. AUC = D / CL = {auc} mg·h/L.',
       infusion:
-        'The rate is R₀ = D / T = {D} / {T} = {R} mg/h. If it ran on, the level would settle at R₀ / CL = {R} / {CL} = {css} mg/L.',
+        'The rate is R₀ = D / T = {D} / {T} = {R} mg/h. If it ran on, the level would settle at R₀ / CL = {R} / ' +
+        '{CL} = {css} mg/L.',
       infusionAt:
-        'During the infusion C = (R₀ / CL)(1 − e^(−k t)); after it, the level falls by e^(−k t). At {t} h, C = {C} mg/L.',
+        'During the infusion C = (R₀ / CL)(1 − e^(−k t)); after it, the level falls by e^(−k t). At {t} h, C = {C} ' +
+        'mg/L.',
       oral: 'By the Bateman function, C({t}) = {C} mg/L.',
-      tmax: 'The peak comes at tmax = ln(kₐ / k) / (kₐ − k) with kₐ = {ka} and k = {k}: tmax = {tmax} h, where C = {cmax} mg/L.',
+      tmax:
+        'The peak comes at tmax = ln(kₐ / k) / (kₐ − k) with kₐ = {ka} and k = {k}: tmax = {tmax} h, where C = ' +
+        '{cmax} mg/L.',
       accumulation: 'R = 1 / (1 − e^(−k τ)) with k = {k} /h and τ = {tau} h gives R = {R}.',
       cssAvg: 'Average level = F D / (CL τ) = {F} × {D} / ({CL} × {tau}) = {c} mg/L.',
       peakBolus: 'For bolus doses the peak is the first dose’s C₀ times R: {max} mg/L, and the trough is {min} mg/L.',
       peakOral:
-        'At steady state the peak comes {t} h after each dose at {max} mg/L; the trough just before a dose is {min} mg/L.',
+        'At steady state the peak comes {t} h after each dose at {max} mg/L; the trough just before a dose is ' +
+        '{min} mg/L.',
       loading: 'A loading dose reaches the average level at once: average × V / F = {c} × {V} / {F} = {L} mg.',
       tss: 'Each dose adds to what is left, so 90% of steady state takes ln 10 / k = ln 10 / {k} = {t} h.',
       hybrid: 'α and β are the roots of s² − {s} s + {p} = 0: α = {a} /h and β = {b} /h.',
       coefficients: 'After the bolus, A = {A} mg/L and B = {B} mg/L, so C₀ = A + B.',
       vss: 'Vss = V₁ (1 + k₁₂ / k₂₁) = {V} × (1 + {k12} / {k21}) = {vss} L.',
       strip:
-        'Curve stripping: a line through the later half of the log data gives β ≈ {b} /h and B ≈ {B} mg/L as starting values.',
+        'Curve stripping: a line through the later half of the log data gives β ≈ {b} /h and B ≈ {B} mg/L as ' +
+        'starting values.',
       biFit: 'Least squares on the {n} points then refines A, α, B, and β (sum of squared errors {sse}).',
       micro: 'From the fit: k₂₁ = {k21} /h, k₁₀ = {k10} /h, and k₁₂ = {k12} /h.',
       trapezoid: 'Linear trapezoids between the samples give AUC to the last sample = {auc} mg·h/L.',
       logDown:
-        'Linear trapezoids where the level rises and log trapezoids where it falls give AUC to the last sample = {auc} mg·h/L.',
+        'Linear trapezoids where the level rises and log trapezoids where it falls give AUC to the last sample = ' +
+        '{auc} mg·h/L.',
       lambdaZ: 'A straight line through ln C of the last {n} points has slope −λz: λz = {l} /h, so t½ = {h} h.',
       aucInf: 'The tail adds C_last / λz: {auc} + {c} / {l} = {inf} mg·h/L.',
       mrt: 'MRT = AUMC / AUC = {aumc} / {auc} = {mrt} h.',
@@ -1001,7 +1019,9 @@ export const kitLifeSysTools = {
       byArea: '{d} mg/m² × {b} m² = {D} mg.',
       release: 'Each model is fitted to the {n} points by least squares; the table compares them by R² and AIC.',
       peppas: 'The Korsmeyer-Peppas exponent from the first {m} points is n = {n}.',
-      emax: 'E = E₀ + Emax Cⁿ / (EC50ⁿ + Cⁿ) with C = {c}, E₀ = {e0}, Emax = {em}, EC50 = {ec}, and n = {n} gives E = {E}.',
+      emax:
+        'E = E₀ + Emax Cⁿ / (EC50ⁿ + Cⁿ) with C = {c}, E₀ = {e0}, Emax = {em}, EC50 = {ec}, and n = {n} gives E = ' +
+        '{E}.',
       occupancy: 'Occupancy = C / (C + Kd) = {c} / ({c} + {kd}) = {f}.',
       ti: 'TI = TD50 / ED50 = {t} / {e} = {ti}.',
       plasma: 'The plasma level after the bolus is Cp = ({D} / {V}) e^(−{k} t).',
@@ -1266,14 +1286,17 @@ export const kitLifeSysTools = {
       langmuir: 'Langmuir fit: qmax = {q} and K = {k}, R² = {r}.',
       freundlich: 'Freundlich fit: K = {k} and n = {n}, R² = {r}.',
       betRange: '{n} of the {m} points lie in the usual linear range, P/P₀ from 0.05 to 0.35.',
-      bet: 'The line has slope {s} and intercept {i}, so vm = 1/(slope + intercept) = {vm} and c = slope/intercept + 1 = {c}.',
+      bet:
+        'The line has slope {s} and intercept {i}, so vm = 1/(slope + intercept) = {vm} and c = slope/intercept + ' +
+        '1 = {c}.',
       plY: 'At x = {x} the curve gives y = {y}.',
       plX: 'Solving the curve for x at y = {y} gives x = {x}.',
       fit4: 'The 4 parameters are fitted to the {n} standards by least squares; the residual SD is {s}.',
       fit5: 'The 5 parameters are fitted to the {n} standards by least squares; the residual SD is {s}.',
       backCalc: 'Each unknown is read back through the inverse curve; its range uses the response ± {t} × {s}.',
       doseFit:
-        'A 4-parameter log-logistic curve fitted to the {n} points gives log₁₀ EC50 = {l} (SE {se}) and a Hill slope of {h}.',
+        'A 4-parameter log-logistic curve fitted to the {n} points gives log₁₀ EC50 = {l} (SE {se}) and a Hill ' +
+        'slope of {h}.',
       doseCi: 'The 95% interval is 10^({l} ± {w}): from {low} to {high}.',
       schild: 'A line through log(DR − 1) against log[B] for the {n} levels has slope {m} and intercept {c}.',
       pA2: 'pA₂ is where the line crosses 0: intercept / slope = {c} / {m} = {p}.',
@@ -1358,7 +1381,8 @@ export const kitLifeSysTools = {
         'Linear plots distort the errors. Lineweaver-Burk gives the most weight to the least certain low-[S] rates, ' +
         'so report the nonlinear fit.',
       inhibition:
-        'Noncompetitive is mixed inhibition with α = 1. Compare models by AIC and F only when the data cover several [I] levels.',
+        'Noncompetitive is mixed inhibition with α = 1. Compare models by AIC and F only when the data cover ' +
+        'several [I] levels.',
       hill: 'n above 1 means positive cooperativity, below 1 negative cooperativity; n = 1 is a plain hyperbola.',
       scatchard: 'The Scatchard line is shown for teaching: it distorts the errors, so report the nonlinear estimates.',
       chengPrusoff: 'This assumes competitive binding at equilibrium with a single site.',
@@ -1369,7 +1393,8 @@ export const kitLifeSysTools = {
       schildOne: 'The slope is close to 1, as competitive antagonism predicts, so pA₂ estimates pK_B.',
       schildNot: 'The slope differs from 1, so the antagonism may not be simple and competitive; pA₂ is not pK_B.',
       probit:
-        'Probit analysis after Finney; a χ² much larger than its degrees of freedom means the groups vary more than binomial.',
+        'Probit analysis after Finney; a χ² much larger than its degrees of freedom means the groups vary more ' +
+        'than binomial.',
       lq: 'For coursework only. This is not treatment planning.',
     },
     e: {
@@ -1467,7 +1492,9 @@ export const kitLifeSysTools = {
     h: {
       testInterval:
         'Leave empty for the threshold from rest. With a value, a first spike comes first, then the test pulse.',
-      gInh: 'An inhibitory synapse that starts with the first event. Set its reversal to the resting potential for shunting.',
+      gInh:
+        'An inhibitory synapse that starts with the first event. Set its reversal to the resting potential for ' +
+        'shunting.',
     },
     o: {
       K: 'Potassium, K⁺',
@@ -1547,7 +1574,9 @@ export const kitLifeSysTools = {
       rin: 'R_in = Rm / A = {rm} / {A} = {r} MΩ, and C = Cm A = {C} pF.',
       tau: 'τ = Rm Cm = {rm} Ω·cm² × {cm} µF/cm² = {tau} ms.',
       charge: 'A step of {I} pA charges toward I R_in = {dv} mV, reaching 63% of it after 1 τ.',
-      hh: 'The 1952 model with gNa = {gNa}, gK = {gK}, and gL = {gL} mS/cm², integrated by Dormand-Prince in steps of 0.025 ms or less.',
+      hh:
+        'The 1952 model with gNa = {gNa}, gK = {gK}, and gL = {gL} mS/cm², integrated by Dormand-Prince in steps ' +
+        'of 0.025 ms or less.',
       protocol: {
         step: 'A step of {I} µA/cm² from {t0} ms.',
         pulse: 'A pulse of {I} µA/cm² for {w} ms from {t0} ms.',
@@ -1565,7 +1594,9 @@ export const kitLifeSysTools = {
       relative: '{d} ms after a spike the threshold is {i} µA/cm², {r} times the resting value: relative refractory.',
       absolute: '{d} ms after a spike no pulse up to {max} µA/cm² fires: absolute refractory.',
       vInf: 'With no threshold the voltage would settle at V∞ = E_L + R I = {el} + {r} × {i} = {v} mV.',
-      isi: 'T = t_ref + τ ln((V∞ − V_reset) / (V∞ − V_th)) = {ref} + {tau} ln(({v} − {reset}) / ({v} − {th})) = {isi} ms.',
+      isi:
+        'T = t_ref + τ ln((V∞ − V_reset) / (V∞ − V_th)) = {ref} + {tau} ln(({v} − {reset}) / ({v} − {th})) = {isi} ' +
+        'ms.',
       noFire: 'V∞ = {v} mV does not reach the threshold of {th} mV, so the cell never fires. Rheobase is {rh} nA.',
       lambda: 'λ = √(Rm d / (4 Ri)) = √({rm} × {d} µm / (4 × {ri})) = {l} mm.',
       decay: 'A steady voltage falls as e^(−x/λ): at {x} mm it is e^(−{x}/{l}) = {r} of V₀.',
@@ -1578,9 +1609,11 @@ export const kitLifeSysTools = {
       single: '1 event at 1 synapse moves the membrane {v} mV, against a driving force of {e} mV.',
       temporal: '{n} events summate to {v} mV, {r} times 1 event, because each starts before the last has decayed.',
       spatial:
-        '{m} synapses together give {v} mV, {r} times 1 synapse: less than the linear {lin} mV because the driving force shrinks.',
+        '{m} synapses together give {v} mV, {r} times 1 synapse: less than the linear {lin} mV because the driving ' +
+        'force shrinks.',
       shunt:
-        'An inhibitory conductance of {g} nS reversing at {e} mV, near rest, cuts the response from {a} to {b} mV ({d}%) by shunting.',
+        'An inhibitory conductance of {g} nS reversing at {e} mV, near rest, cuts the response from {a} to {b} mV ' +
+        '({d}%) by shunting.',
       inhibit: 'An inhibitory conductance of {g} nS reversing at {e} mV cuts the response from {a} to {b} mV ({d}%).',
     },
     p: {
@@ -1633,7 +1666,9 @@ export const kitLifeSysTools = {
       tea: 'With TEA there is no potassium current, so the voltage stays depolarized after the spike.',
       clamp: 'Outward currents are positive. Step near E_Na to see the sodium current vanish.',
       threshold: 'Threshold depends on the pulse width: shorter pulses need more current for the same charge.',
-      lif: 'The integrate-and-fire model has no spike shape: a spike is drawn as a line to 0 mV, then the voltage resets.',
+      lif:
+        'The integrate-and-fire model has no spike shape: a spike is drawn as a line to 0 mV, then the voltage ' +
+        'resets.',
       cable: 'This is the steady state of an infinite passive cable; real dendrites end and branch.',
       velocity: 'These are rules of thumb for teaching; real fibers vary with temperature and species.',
       synapse: 'A single passive compartment: no dendrites, no spikes, no voltage-gated channels.',
@@ -1679,10 +1714,13 @@ export const kitLifeSysTools = {
       krogh: 'Krogh cylinder oxygen profile',
     },
     i: {
-      lms: 'Look up L, M, and S for the age and sex in the CDC 2000 growth-chart tables (public domain), then enter them here.',
+      lms:
+        'Look up L, M, and S for the age and sex in the CDC 2000 growth-chart tables (public domain), then enter ' +
+        'them here.',
       pvLoop: 'A model ventricle beats against a model aorta until it settles. Press Run to see the last beat.',
       krogh:
-        'One capillary feeds a cylinder of tissue around it. Add hemoglobin, speed, and length to follow the blood along it.',
+        'One capillary feeds a cylinder of tissue around it. Add hemoglobin, speed, and length to follow the blood ' +
+        'along it.',
     },
     f: {
       coMode: 'Method',
@@ -1948,7 +1986,8 @@ export const kitLifeSysTools = {
       series: 'In series the {n} resistances add: R = {r}.',
       parallel: 'In parallel the reciprocals of the {n} resistances add: R = {r}.',
       poiseuille:
-        'R = 8ηL / (πr⁴) with η = {eta} cP, L = {L} cm, and r = {r} cm gives {R} mmHg·min/mL. Halving r multiplies R by {x}.',
+        'R = 8ηL / (πr⁴) with η = {eta} cP, L = {L} cm, and r = {r} cm gives {R} mmHg·min/mL. Halving r multiplies ' +
+        'R by {x}.',
       flow: 'Q = ΔP / R = {dp} / {R} = {q} mL/min.',
       laplace: {
         sphere: 'For a sphere, T = P r / 2 = {p} mmHg × {r} cm / 2 = {T} dyn/cm.',
@@ -1969,7 +2008,9 @@ export const kitLifeSysTools = {
       bohr: 'Bohr: VD/VT = (PaCO₂ − PECO₂) / PaCO₂ = ({a} − {e}) / {a} = {r}, so VD = {vd} mL.',
       va: 'Alveolar ventilation = (VT − VD) × rate = ({vt} − {vd}) × {rr} = {va} L/min.',
       clearance: 'C = U V / P = {u} × {v} / {p} = {c} mL/min.',
-      rpf: 'PAH clearance = {u} × {v} / {p} = {rpf} mL/min estimates renal plasma flow; filtration fraction = {gfr} / {rpf} = {ff}%.',
+      rpf:
+        'PAH clearance = {u} × {v} / {p} = {rpf} mL/min estimates renal plasma flow; filtration fraction = {gfr} / ' +
+        '{rpf} = {ff}%.',
       rbf: 'Renal blood flow = RPF / (1 − Hct) = {rpf} / (1 − {h}) = {rbf} mL/min.',
       fena: 'FENa = (U_Na × P_Cr) / (P_Na × U_Cr) × 100 = ({un} × {pc}) / ({pn} × {uc}) × 100 = {f}%.',
       freeWater: 'C_osm = {u} × {v} / {p} = {c} mL/min, so C_H₂O = V − C_osm = {w} mL/min: dilute urine, water lost.',
@@ -2005,9 +2046,11 @@ export const kitLifeSysTools = {
       tbw: 'Body water = {w} kg × {f} = {t} L: {i} L inside cells and {e} L outside.',
       solute: 'The solute ({t} L × {o} + {v} L × {f}) spreads through all the water, giving {n} mOsm/L.',
       shift:
-        'Cell solute stays put, so water moves until the intracellular volume is {i} L; the extracellular volume is {e} L.',
+        'Cell solute stays put, so water moves until the intracellular volume is {i} L; the extracellular volume ' +
+        'is {e} L.',
       starling:
-        'Net pressure = (Pc − Pi) − σ(πc − πi) = ({pc} − {pi}) − {s} × ({oc} − {oi}) = {n} mmHg, so Jv = {k} × {n} = {j}.',
+        'Net pressure = (Pc − Pi) − σ(πc − πi) = ({pc} − {pi}) − {s} × ({oc} − {oi}) = {n} mmHg, so Jv = {k} × {n} ' +
+        '= {j}.',
       mifflin: {
         male: 'BMR = 10 × {w} + 6.25 × {h} − 5 × {a} + 5 = {b} kcal/day.',
         female: 'BMR = 10 × {w} + 6.25 × {h} − 5 × {a} − 161 = {b} kcal/day.',
@@ -2024,22 +2067,26 @@ export const kitLifeSysTools = {
       psiS: 'Ψs = −i C R T = −{i} × {c} mol/L × 0.008314 L·MPa/(mol·K) × {T} K = {p} MPa.',
       psi: 'Ψ = Ψs + Ψp = {s} + {p} = {t} MPa.',
       elastance:
-        'The ventricle’s pressure is P = E(t)(V − V₀). E rises from Emin = {emin} to Emax = {emax} mmHg/mL as a half sine over systole ({ts} s) and stays at Emin for the rest of each {T} s beat; V₀ = {v0} mL.',
+        'The ventricle’s pressure is P = E(t)(V − V₀). E rises from Emin = {emin} to Emax = {emax} mmHg/mL as a ' +
+        'half sine over systole ({ts} s) and stays at Emin for the rest of each {T} s beat; V₀ = {v0} mL.',
       pvBeats:
         'The valves open only forward. The model ran {n} beats so the loop settles; the results are the last beat.',
       pvVolumes: 'EDV = {edv} mL and ESV = {esv} mL, so SV = {sv} mL and EF = SV / EDV = {ef}%.',
       pvWork: 'Stroke work is the area inside the loop: {w} mmHg·mL, or {j} J (1 mmHg·mL = 1.333 × 10⁻⁴ J).',
       pvEa: 'Ea = ESP / SV = {esp} / {sv} = {ea} mmHg/mL, so Ees/Ea = {ees} / {ea} = {ratio}.',
       coupling:
-        'The end-systolic point lies on both lines: SV = Ees (EDV − V₀) / (Ees + Ea) = {ees} × ({edv} − {v0}) / ({ees} + {ea}) = {sv} mL.',
+        'The end-systolic point lies on both lines: SV = Ees (EDV − V₀) / (Ees + Ea) = {ees} × ({edv} − {v0}) / ' +
+        '({ees} + {ea}) = {sv} mL.',
       couplingEnd: 'ESV = {edv} − {sv} = {esv} mL, ESP = Ea × SV = {ea} × {sv} = {esp} mmHg, and EF = {ef}%.',
       pe: 'Potential energy PE = ESP (ESV − V₀) / 2 = {esp} × ({esv} − {v0}) / 2 = {pe} mmHg·mL.',
       kroghUnits: 'M = {m100} / 6000 = {m} mL O₂ per mL per s, and K = Dα = {d} × {alpha} = {k} mL O₂/(cm·s·mmHg).',
       krogh:
-        'P(r) = Pc + M/(4K)(r² − rc²) − M R²/(2K) ln(r/rc), with Pc = {pc} mmHg, M/(4K) = {a} mmHg/cm², and M R²/(2K) = {b} mmHg. From rc = {rc} µm to R = {R} µm, the edge reaches {p} mmHg.',
+        'P(r) = Pc + M/(4K)(r² − rc²) − M R²/(2K) ln(r/rc), with Pc = {pc} mmHg, M/(4K) = {a} mmHg/cm², and M ' +
+        'R²/(2K) = {b} mmHg. From rc = {rc} µm to R = {R} µm, the edge reaches {p} mmHg.',
       kroghCritical: 'At Pc = {pc} mmHg the edge stays above 0 for any cylinder up to {r} µm in radius.',
       kroghAxial:
-        'The blood gives the tissue {k} mL O₂/dL per cm of capillary, so over {L} mm the content falls from {c0} to {c1} mL/dL.',
+        'The blood gives the tissue {k} mL O₂/dL per cm of capillary, so over {L} mm the content falls from {c0} ' +
+        'to {c1} mL/dL.',
       kroghVenous:
         'That content means a venous-end PO₂ of {p} mmHg, and the edge there, the lethal corner, is at {e} mmHg.',
       kroghEmpty: 'The tissue takes more oxygen than the blood carries, so the blood is empty before the venous end.',
@@ -2096,7 +2143,8 @@ export const kitLifeSysTools = {
       splay: 'Splay comes from nephrons with different thresholds; θ sets how sharply reabsorption saturates.',
       acidBase: 'These rules are for study. Mixed disorders and lab error can mislead any single rule.',
       darrow:
-        'This assumes the infused solute stays outside cells and the starting compartments are 2/3 and 1/3 of body water.',
+        'This assumes the infused solute stays outside cells and the starting compartments are 2/3 and 1/3 of body ' +
+        'water.',
       atwater: 'Atwater factors: 4 kcal/g for carbohydrate and protein, 9 for fat, 7 for alcohol.',
       lms: 'The z-score is how many standard deviations the measurement lies from the median for that age and sex.',
       water: 'Water moves from higher to lower water potential. Pure water at atmospheric pressure is 0 MPa.',
@@ -2104,11 +2152,14 @@ export const kitLifeSysTools = {
       right: 'The curve shifts right: hemoglobin gives up oxygen more easily, as with acid, CO₂, or heat.',
       left: 'The curve shifts left: hemoglobin holds oxygen more tightly, as with alkalosis, low CO₂, or cold.',
       pvLoop:
-        'A teaching model: one ventricle, ideal valves, and a two-element Windkessel. Real loops also depend on the atrium, inertia, and the shape of activation.',
+        'A teaching model: one ventricle, ideal valves, and a two-element Windkessel. Real loops also depend on ' +
+        'the atrium, inertia, and the shape of activation.',
       coupling:
-        'Ees/Ea near 1 is often taught as where stroke work is near its largest, and a ratio near 2 as where the heart is most efficient.',
+        'Ees/Ea near 1 is often taught as where stroke work is near its largest, and a ratio near 2 as where the ' +
+        'heart is most efficient.',
       krogh:
-        'Krogh’s model assumes uniform use, no diffusion along the axis, and evenly spaced capillaries. Typical D is about 1.5 × 10⁻⁵ cm²/s and α about 3 × 10⁻⁵ mL O₂/(mL·mmHg).',
+        'Krogh’s model assumes uniform use, no diffusion along the axis, and evenly spaced capillaries. Typical D ' +
+        'is about 1.5 × 10⁻⁵ cm²/s and α about 3 × 10⁻⁵ mL O₂/(mL·mmHg).',
     },
     e: {
       avDiff: 'The arterial content must be above the venous content.',
@@ -2305,23 +2356,30 @@ export const kitLifeSysTools = {
       coverage: 'With a vaccine {e}% effective, coverage must reach {h}% / {e}% = {c}%.',
       noCoverage: 'Even everyone vaccinated at {e}% efficacy falls short of the {h}% needed.',
       reedFrost:
-        'Each generation, every susceptible escapes each of the I infected with chance 1 − p = 1 − {p}, in a group of {n}.',
+        'Each generation, every susceptible escapes each of the I infected with chance 1 − p = 1 − {p}, in a group ' +
+        'of {n}.',
       reedFrostExpected: 'The expected course over {g} generations infects {f} people in total.',
       reedFrostRuns:
-        '{runs} seeded runs (seed {seed}) average {m} cases; {minor}% are minor outbreaks of under a tenth of the group.',
+        '{runs} seeded runs (seed {seed}) average {m} cases; {minor}% are minor outbreaks of under a tenth of the ' +
+        'group.',
       parsed: '{r} reactions among {s} species: {names}.',
       ode: 'The mass-action ODEs are solved by Dormand-Prince ({n} steps).',
-      ssa: 'Gillespie’s direct method: {runs} runs from seed {seed}, {e} reaction events in all; the band holds 90% of runs.',
+      ssa:
+        'Gillespie’s direct method: {runs} runs from seed {seed}, {e} reaction events in all; the band holds 90% ' +
+        'of runs.',
       schelling: 'A {n} × {n} grid that wraps at the edges, {e}% empty, with agents needing {t}% like neighbors.',
       settled: 'After {k} rounds every agent is satisfied. Like neighbors rose from {b}% to {a}%.',
       capped: 'The run stopped at the cap of {k} rounds. Like neighbors went from {b}% to {a}%.',
       lattice:
-        'A {n} × {n} grid, updated all at once: each infected neighbor infects with chance {b}; recovery has chance {g}.',
+        'A {n} × {n} grid, updated all at once: each infected neighbor infects with chance {b}; recovery has ' +
+        'chance {g}.',
       latticeEnd: 'The epidemic ends after {t} steps with {f}% ever infected.',
       voter: 'A {n} × {n} grid: at each update a random cell copies a random neighbor’s opinion.',
       consensus: 'The grid reached consensus after {k} sweeps.',
       noConsensus: 'After {k} sweeps there is no consensus yet; {f}% hold opinion 1.',
-      life: 'A {n} × {n} torus. A live cell with 2 or 3 live neighbors survives; a dead cell with exactly 3 comes alive.',
+      life:
+        'A {n} × {n} torus. A live cell with 2 or 3 live neighbors survives; a dead cell with exactly 3 comes ' +
+        'alive.',
       oscillator: 'The pattern repeats in place every {p} generations.',
       spaceship: 'The pattern repeats every {p} generations, moved by ({dr}, {dc}) cells.',
       noPeriod: 'The starting pattern does not repeat within 30 generations.',
@@ -2334,7 +2392,9 @@ export const kitLifeSysTools = {
       stall: 'Adoption stalls at {f}% after {k} rounds: no one left has a threshold that low.',
       gen: {
         er: 'Erdős-Rényi: {n} nodes, each pair linked with probability {p}.',
-        ws: 'Watts-Strogatz: a ring of {n} nodes, each linked to {k} neighbors, with each edge rewired with probability {p}.',
+        ws:
+          'Watts-Strogatz: a ring of {n} nodes, each linked to {k} neighbors, with each edge rewired with ' +
+          'probability {p}.',
         ba: 'Barabási-Albert: {n} nodes, each new one linking to {m} existing nodes in proportion to their degree.',
       },
       netStats: 'Mean degree {d}, clustering coefficient {c}, and mean shortest path {l} in the largest component.',
@@ -2343,14 +2403,18 @@ export const kitLifeSysTools = {
         '{f}% are infected over {t} steps.',
       fit: {
         prevalence:
-          'The SIR model with N = {N} and I₀ = {i} is solved for each trial β and γ, and I(t) is compared with the {n} counts.',
+          'The SIR model with N = {N} and I₀ = {i} is solved for each trial β and γ, and I(t) is compared with the ' +
+          '{n} counts.',
         cumulative:
-          'The SIR model with N = {N} and I₀ = {i} is solved for each trial β and γ, and N − S(t) is compared with the {n} counts.',
+          'The SIR model with N = {N} and I₀ = {i} is solved for each trial β and γ, and N − S(t) is compared with ' +
+          'the {n} counts.',
       },
       fitResult:
-        'Levenberg-Marquardt settled in {it} steps at β = {b} ± {sb} and γ = {g} ± {sg} (standard errors), with a sum of squared residuals of {sse}.',
+        'Levenberg-Marquardt settled in {it} steps at β = {b} ± {sb} and γ = {g} ± {sg} (standard errors), with a ' +
+        'sum of squared residuals of {sse}.',
       fitR0:
-        'R₀ = β / γ = {b} / {g} = {r}, the mean infectious period is 1/γ = {d}, and the final size for that R₀ is {z}%.',
+        'R₀ = β / γ = {b} / {g} = {r}, the mean infectious period is 1/γ = {d}, and the final size for that R₀ is ' +
+        '{z}%.',
     },
     t: {
       neighborhood: 'Neighborhood',
@@ -2433,7 +2497,9 @@ export const kitLifeSysTools = {
       ws: 'A little rewiring keeps high clustering but shortens paths sharply: a small world.',
       ba: 'Preferential attachment gives hubs and a degree distribution with a heavy tail.',
       netSir: 'Hubs spread infection early; the network’s shape changes both the speed and the final size.',
-      fit: 'A fit says which rates make this model match the counts, not that the model is right. Reporting delays and changing behavior bend real curves.',
+      fit:
+        'A fit says which rates make this model match the counts, not that the model is right. Reporting delays ' +
+        'and changing behavior bend real curves.',
     },
     e: {
       i0: 'The starting infected must be fewer than the population.',
