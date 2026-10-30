@@ -27,6 +27,7 @@ import { QOL_FLAGS } from '../features/qol/flags';
 import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
+import { SYNC_FLAGS } from '../features/sync/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
 import { TUTOR_FLAGS } from '../features/tutor/flags';
 import type { TutorFlagId } from '../features/tutor/flags';
@@ -79,6 +80,8 @@ export type FlagId =
   | EngineeringFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
+  /** Optional end-to-end-encrypted sync, Settings > Sync (features/sync/flags.ts). */
+  | 'sync.e2ee'
   /** The account and media features (features/accounts/flags.ts). */
   | AccountsFlagId
   /** The tutor (features/tutor/flags.ts). */
@@ -354,6 +357,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
   ...TUTOR_FLAGS,
+  ...SYNC_FLAGS,
 ];
 
 interface FlagState {

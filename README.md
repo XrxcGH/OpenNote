@@ -43,6 +43,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [On-device intelligence](docs/help/on-device-intelligence.md)     | Text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on           |
 | [Privacy and Work offline](docs/help/privacy-and-work-offline.md) | Crash reports with consent, a self-check, a feedback file, safe start, and a switch that stops all network use |
 | [Connectors](docs/help/connectors.md)                             | Signing in to other services; no feature uses a connection yet                                                 |
+| [Sync (Beta)](docs/help/sync.md)                                  | Optional end-to-end-encrypted sync through a folder or a WebDAV server you already have, off until set up      |
 
 ![A page of typed notes with a heading, a list, and a page link](docs/screens/workspace-light.png)
 

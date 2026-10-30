@@ -51,6 +51,7 @@ opennote-metafile = { path = "../../crates/third_party/metafile" }
 opennote-media = { path = "../../crates/media", features = ["opus"] }
 opennote-print = { path = "../../crates/print" }
 opennote-search = { path = "../../crates/search" }
+opennote-sync = { path = "../../crates/sync" }
 opennote-updater = { path = "../../crates/updater" }
 # Phase 10: Anki packages are zip files that hold a SQLite collection, with the same SQLite build as the search crate.
 rusqlite = { version = "0.40.2", features = ["bundled"] }

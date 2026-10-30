@@ -6,6 +6,7 @@ import { createTauriExports } from './exports';
 import { createTauriAudio } from './audio';
 import { createTauriAccounts } from './accounts';
 import { createTauriConnectors } from './connectors';
+import { createTauriSync } from './sync';
 import { createTauriDiagnostics } from './diagnostics';
 import { createTauriInstall } from './install';
 import { createTauriInterop } from './interop';
@@ -46,6 +47,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     search: createTauriSearch(),
     diagnostics: createTauriDiagnostics(),
     connectors: createTauriConnectors(),
+    sync: createTauriSync(),
     accounts: createTauriAccounts(),
     spelling: createTauriSpelling(),
     clipboard: createTauriClipboard(),

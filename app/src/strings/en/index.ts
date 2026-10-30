@@ -64,6 +64,7 @@ import { codeCells } from './codeCells';
 import { stepCheck } from './stepCheck';
 import { tutor } from './tutor';
 import { exams } from './exams';
+import { sync } from './sync';
 
 export const en = {
   common,
@@ -130,4 +131,5 @@ export const en = {
   stepCheck,
   tutor,
   exams,
+  sync,
 } as const;

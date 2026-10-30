@@ -38,6 +38,7 @@ describe('the Settings page', () => {
       'Windows and power',
       'App permissions',
       'Connectors',
+      'Sync',
       'Help',
       'Shortcuts',
       'About',

@@ -6,6 +6,7 @@ import type { NotesCoreClient } from '../services/notes/core/service';
 import type { AudioHost, RecordingEntry } from '../core/audio';
 import type { AccountsHost } from '../features/accounts';
 import type { ConnectorsClient } from '../features/connectors';
+import type { SyncClient } from '../features/sync';
 import type { DiagnosticsClient } from '../features/diagnostics';
 import type { ImportedAsset, PageService } from '../services/pages/types';
 import type { SearchClient } from '../services/search/types';
@@ -97,6 +98,8 @@ export interface Platform {
   readonly connectors: ConnectorsClient;
   /** Saved state, transfer files, and file transfers for the account features (features/accounts). */
   readonly accounts: AccountsHost;
+  /** Optional end-to-end-encrypted sync (features/sync, ADR 0049). */
+  readonly sync: SyncClient;
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;
