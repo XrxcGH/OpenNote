@@ -4,7 +4,18 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { INSERT_EVENT } from '../flags';
 import { INPUT_LIMIT, kitCalcData, kitCalcFallback, readKitCalc } from './block/model';
-import { openKitTool, onKitInputs, registerKit, resetKits, selectKitTab, savedKitTab, takeKitInputs } from './registry';
+import {
+  followKitForm,
+  openKitTool,
+  onKitInputs,
+  readFormInputs,
+  registerFormKit,
+  registerKit,
+  resetKits,
+  selectKitTab,
+  savedKitTab,
+  takeKitInputs,
+} from './registry';
 import { arrowHead, diagramSvg, dimension, label } from './ui/diagram';
 import { insertAnswer, insertEquation, insertLiveBlock, insertPicture, insertSteps, insertTable } from './ui/insert';
 import { PAPER } from './ui/palette';
@@ -203,7 +214,9 @@ describe('page inserts', () => {
     const picture = seen[4].picture as { bytes: ArrayBuffer; mime: string; alt: string };
     expect(picture.mime).toBe('image/svg+xml');
     expect(new TextDecoder().decode(picture.bytes)).toBe('<svg/>');
-    expect(seen[5]).toMatchObject({ block: { type: 'kitcalc', fallback: 'Ideal gas law\nV = 22.41 L' } });
+    expect(seen[5]).toMatchObject({
+      panel: { type: 'ext:org.opennote/kitcalc', fallback: 'Ideal gas law\nV = 22.41 L' },
+    });
   });
 
   it('writes steps as numbered lines', () => {
@@ -251,6 +264,22 @@ describe('live calculation blocks', () => {
     expect(takeKitInputs('thermo', 'other')).toBeNull();
     expect(takeKitInputs('thermo', 'cycle')).toEqual({ p: 2 });
     expect(takeKitInputs('thermo', 'cycle')).toBeNull();
+  });
+
+  it('puts a form kit block back into the stored texts and unit system before opening the tool', async () => {
+    const opened: string[] = [];
+    const restored: string[] = [];
+    registerFormKit('fluidheat', 'test.kit.', (tool) => void opened.push(tool));
+    const stop = followKitForm('fluidheat', 'pipes', () => restored.push('pipes'));
+    const inputs = { texts: { D: '0.1 m', n: 3 }, system: 'us' };
+    expect(await openKitTool('fluidheat', 'pipes', inputs)).toBe(true);
+    stop();
+    expect(opened).toEqual(['pipes']);
+    expect(restored).toEqual(['pipes']);
+    expect(JSON.parse(localStorage.getItem('test.kit.pipes') ?? 'null')).toEqual({ D: '0.1 m' });
+    expect(JSON.parse(localStorage.getItem('test.kit.system') ?? 'null')).toBe('us');
+    expect(readFormInputs({ texts: {}, system: 'metric' })).toBeNull();
+    expect(readFormInputs(null)).toBeNull();
   });
 
   it('remembers the tool a kit window shows', () => {
