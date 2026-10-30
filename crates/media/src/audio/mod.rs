@@ -19,13 +19,13 @@
 //! [`Recorder`] starts recordings, and a [`Recording`] can pause, resume, and stop.
 //!
 //! Sources implement [`AudioSource`]. The cpal microphone and loopback sources live in `device`, on
-//! Windows. The generated sources in [`synthetic`] let tests run without a microphone.
+//! Windows, macOS, and Linux. The generated sources in [`synthetic`] let tests run without a microphone.
 
 pub mod catalog;
 pub mod clock;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos", target_os = "linux"))]
 pub mod device;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos", target_os = "linux"))]
 pub mod device_catalog;
 pub mod encoder;
 pub mod environment;

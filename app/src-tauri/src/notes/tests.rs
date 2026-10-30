@@ -760,6 +760,8 @@ fn a_restored_notebook_goes_back_before_its_old_neighbor_or_to_the_end() {
     assert_eq!(lib.titles(None), ["Gamma", "Alpha"]);
 }
 
+// Beta 1 shipped only on Windows, so only Windows has its profiles to migrate.
+#[cfg(windows)]
 #[test]
 fn a_beta_one_migration_stopped_part_way_runs_again_from_the_backup() {
     let dir = tempfile::tempdir().expect("a temp folder");

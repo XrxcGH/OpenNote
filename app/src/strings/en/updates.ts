@@ -50,6 +50,9 @@ export const updates = {
       "OpenNote can't update itself in this folder. " +
       'Add it to the Start menu, which moves it to your user folder, or download the new version.',
     manualMode: 'OpenNote checks for updates only when you ask.',
+    byHand:
+      "On a Mac, OpenNote doesn't install updates itself yet. " +
+      'Download OpenNote_macOS.dmg from the download page, then drag OpenNote to Applications.',
     idle: 'OpenNote checks for updates in the background.',
     checking: 'Checking for updates…',
     upToDate: 'OpenNote is up to date.',

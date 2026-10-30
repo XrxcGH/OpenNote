@@ -80,6 +80,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0051](0051-step-checking.md) | Check my work checks each step on the device, and says "I could not check this step" before "wrong" | Proposed | 2026-10-29 |
 | [0052](0052-practice-exams.md) | Practice exams are made on the device, taken in a tool window, and saved as ordinary pages | Proposed | 2026-10-29 |
 | [0053](0053-notes-app-import.md) | Import from Goodnotes, Notability, and Samsung Notes reads what the packages show, and the PDF export is the dependable route | Proposed | 2026-10-29 |
+| [0055](0055-macos-and-linux.md) | macOS and Linux builds degrade feature by feature and say what they lack | Proposed | 2026-10-29 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 

@@ -266,7 +266,8 @@ fn create(parent: HWND, emit: Emit) -> Option<HWND> {
             }),
             tracking: Cell::new(false),
         });
-        SetWindowLongPtrW(hwnd, GWLP_USERDATA, Box::into_raw(overlay) as isize);
+        // `as _` is `isize` on 64-bit Windows and `i32` on 32-bit, where the windows crate maps this to SetWindowLongW.
+        SetWindowLongPtrW(hwnd, GWLP_USERDATA, Box::into_raw(overlay) as _);
         Some(hwnd)
     }
 }

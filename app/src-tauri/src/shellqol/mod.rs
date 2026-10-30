@@ -1,9 +1,10 @@
-//! Shell extras for the quality-of-life features: pins, archive, duplicate, Copy to, docking, the mini window,
-//! power status, backups on a schedule, edits from other programs, opening a notebook from any folder, the check,
-//! quick capture, and Windows shortcuts. One command, `shellqol_call`, carries each by name with JSON arguments,
-//! so the command list and the capability file stay short (like `search_call`). Events go out on one channel,
-//! `shellqol://event`, as `{ "kind": ..., ... }`.
+//! Shell extras for the quality-of-life features: pins, archive, duplicate, Copy to, docking, the mini window, power
+//! status, backups on a schedule, edits from other programs, opening a notebook from any folder, the check, quick
+//! capture, Windows shortcuts, and the macOS menu bar. One command, `shellqol_call`, carries each by name with JSON
+//! arguments, so the command list and the capability file stay short (like `search_call`). Events go out on one
+//! channel, `shellqol://event`, as `{ "kind": ..., ... }`.
 
+pub mod app_menu;
 pub mod backup;
 pub mod cloud;
 pub mod conflicts;
@@ -68,8 +69,10 @@ pub(crate) fn out<T: Serialize>(value: T) -> IpcResult<Value> {
 }
 
 /// Starts what runs on its own: the backup schedule, the folder watcher, the power watcher, and the quick capture
-/// shortcut, each only when the person has turned it on.
+/// shortcut, each only when the person has turned it on. It also listens to the macOS menu bar; elsewhere no menu
+/// item ever sends an event.
 pub fn start(app: &AppHandle) {
+    app.on_menu_event(app_menu::on_menu_event);
     // The jump list's "New quick note" starts the program with this argument.
     if std::env::args().any(|arg| arg == QUICK_NOTE_ARG) {
         let app = app.clone();
@@ -123,6 +126,7 @@ pub async fn shellqol_call(
                 "external" => external::call(&app, &name, &args),
                 "prefs" => prefs::call(&app, &name, &args),
                 "handstyle" => handstyle::call(&app, &name, &args),
+                "menu" => app_menu::call(&app, &name, &args),
                 "trash" | "history" | "edits" | "source" | "storage" | "check" | "lock" => {
                     storage::call(&app, bridge, &name, &args)
                 }

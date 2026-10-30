@@ -139,15 +139,14 @@ pub fn install_status(paths: State<'_, Paths>) -> IpcResult<InstallStatus> {
 /// Opens the Windows folder picker. Returns `None` when the person cancels.
 #[tauri::command]
 pub async fn install_pick_folder(window: WebviewWindow, initial: Option<String>) -> IpcResult<Option<String>> {
-    // A window handle isn't `Send`, so it crosses to the dialog's thread as a number.
-    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let owner = crate::desktop::dialog_owner(&window);
     tauri::async_runtime::spawn_blocking(move || pick_folder(owner, initial))
         .await
         .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))?
 }
 
 #[cfg(windows)]
-pub(crate) fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String>> {
+pub(crate) fn pick_folder(owner: crate::desktop::DialogOwner, initial: Option<String>) -> IpcResult<Option<String>> {
     use windows::{
         core::HSTRING,
         Win32::{
@@ -196,8 +195,9 @@ pub(crate) fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Op
 }
 
 #[cfg(not(windows))]
-pub(crate) fn pick_folder(_owner: isize, _initial: Option<String>) -> IpcResult<Option<String>> {
-    Err(IpcError::not_implemented("install_pick_folder"))
+pub(crate) fn pick_folder(owner: crate::desktop::DialogOwner, initial: Option<String>) -> IpcResult<Option<String>> {
+    let picked = crate::desktop::pick_folder(&owner, initial.as_deref())?;
+    Ok(picked.map(|path| path.display().to_string()))
 }
 
 /// How many direct subfolders of `dir` are notebooks.

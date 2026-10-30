@@ -8,6 +8,7 @@ export const commands = {
     shortcuts: 'Show keyboard shortcuts',
     settings: 'Open settings',
     settingsBack: 'Back to notes',
+    systemSupport: 'Show what works on this computer',
   },
   keywords: {
     palette: 'search find run commands',
@@ -15,6 +16,7 @@ export const commands = {
     shortcuts: 'keys keyboard hotkeys cheat sheet',
     settings: 'preferences options',
     settingsBack: 'close settings leave',
+    systemSupport: 'mac macos linux windows system platform differences missing features about',
   },
   bar: {
     label: 'Commands',

@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   RELEASE_FILES,
+  isWindowsExe,
+  rustTargets,
   checkSignedComment,
   manifestFile,
   manifestFor,
@@ -63,12 +65,21 @@ describe('RELEASE_FILES', () => {
     }
   });
 
-  it('names one exe per Windows architecture under its Tauri updater key', () => {
+  it('names one exe per Windows architecture, a Mac dmg, and a Linux AppImage under their updater keys', () => {
     expect(RELEASE_FILES.map(({ target, platform, file }) => [target, platform, file])).toEqual([
       ['x86_64-pc-windows-msvc', 'windows-x86_64', 'OpenNote_Windows64.exe'],
       ['i686-pc-windows-msvc', 'windows-i686', 'OpenNote_Windows32.exe'],
       ['aarch64-pc-windows-msvc', 'windows-aarch64', 'OpenNote_WindowsARM64.exe'],
+      ['universal-apple-darwin', 'darwin-universal', 'OpenNote_macOS.dmg'],
+      ['x86_64-unknown-linux-gnu', 'linux-x86_64', 'OpenNote_Linux.AppImage'],
     ]);
+  });
+
+  it('tells Windows exes from the other files, and the universal Mac target from its two Rust targets', () => {
+    expect(RELEASE_FILES.filter(({ file }) => isWindowsExe(file))).toHaveLength(3);
+    expect(isWindowsExe('OpenNote_macOS.dmg')).toBe(false);
+    expect(rustTargets('universal-apple-darwin')).toEqual(['aarch64-apple-darwin', 'x86_64-apple-darwin']);
+    expect(rustTargets('x86_64-unknown-linux-gnu')).toEqual(['x86_64-unknown-linux-gnu']);
   });
 
   it('matches the build matrix in the release workflow', () => {
@@ -181,7 +192,13 @@ describe('writeManifest', () => {
     const { name, manifest } = writeManifest(dir, 'v0.5.0', 'notes', date);
     expect(name).toBe('latest.json');
     expect(JSON.parse(readFileSync(join(dir, 'latest.json'), 'utf8'))).toEqual(manifest);
-    expect(Object.keys(manifest.platforms)).toEqual(['windows-x86_64', 'windows-i686', 'windows-aarch64']);
+    expect(Object.keys(manifest.platforms)).toEqual([
+      'windows-x86_64',
+      'windows-i686',
+      'windows-aarch64',
+      'darwin-universal',
+      'linux-x86_64',
+    ]);
     for (const { platform, file } of RELEASE_FILES) {
       const contents = readFileSync(join(dir, file));
       expect(manifest.platforms[platform]).toEqual(platformEntry('v0.5.0', file, contents, signedFor(file, '0.5.0')));

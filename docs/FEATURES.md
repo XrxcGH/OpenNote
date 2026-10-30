@@ -24,6 +24,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Math solvers](#math-solvers)
 
 - [Document structure](#document-structure)
+- [macOS and Linux](#macos-and-linux)
 
 ## How to read the status
 
@@ -244,7 +245,7 @@ More quality-of-life features:
 | Presentation mode | Full-screen pages with a laser pointer and ink that fades | Built, untested by hand |
 | Page title on printouts | Print and Export as PDF put the page title and its date at the top of the first sheet, on by default. An Include the page title switch in both dialogs (and in the PDF files export of a section or notebook, where each page starts with its title) turns it off and is remembered. The dialogs' sheet preview updates at once, so the page can be compared with and without the title before anything is saved or printed, including content that moves to the next sheet. Picture (PNG) export is unchanged. | Built, untested by hand. Checked by unit, browser, and dialog tests. |
 | Print preview | Shows exactly what prints, with page breaks | Built, untested by hand. Checked by tests and by reading the code, not by printing. |
-| Print to a printer | Print (Ctrl+P, the Export menu, or the palette) sends the page to a printer: printer, copies, collate, both sides, black and white, page range, and shrink to fit (the paper is the page layout's size). Windows prints inside OpenNote, and a CUPS path is ready for macOS and Linux and is checked against stand-in `lp` and `lpstat` scripts. | Built, untested by hand. Checked with a stand-in printer, never a real one. |
+| Print to a printer | Print (Ctrl+P, the Export menu, or the palette) sends the page to a printer: printer, copies, collate, both sides, black and white, page range, and shrink to fit (the paper is the page layout's size). Windows prints inside OpenNote. On macOS and Linux, printing waits for a PDF of the page, which needs `createPDF` in WKWebView and the print operation of WebKitGTK ([ADR 0055](adr/0055-macos-and-linux.md)); until then Settings > About lists it as unavailable there, and the CUPS path (checked against stand-in `lp` and `lpstat` scripts) has nothing to send. | Built, untested by hand. Checked with a stand-in printer, never a real one. |
 | Spell check | Several languages at once, and a personal dictionary | Built |
 | Pen settings sync | Pens, colors, and toolbars follow the person to every device | Built, untested by hand. Sync pen settings across my devices keeps the pens, their order, and the drawing bar's choices in a hidden app folder of the linked Google or Microsoft account, merged one item at a time with the newer change winning, and then syncs quietly. The settings of each physical pen stay on the device. It needs the owner's client IDs. |
 | Low-power mode | Reduces animations and background work on battery | Built, untested by hand |
@@ -595,3 +596,12 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
 | Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
 | Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |
+
+## macOS and Linux
+
+(DeriveNotes lane "platforms", [ADR 0055](adr/0055-macos-and-linux.md). Help: [OpenNote on macOS and Linux](help/install-macos-linux.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| macOS and Linux builds | `OpenNote_macOS.dmg` (one universal app for macOS 11 and later) and `OpenNote_Linux.AppImage` (64-bit, glibc 2.35 or later), unsigned until the owner adds the signing secrets. File dialogs, Open with the default app, recording, and the folders follow each system. Command replaces Ctrl in shortcuts on a Mac. Settings, then About, and Show what works on this computer list what still needs Windows. The AppImage updates itself; a Mac installs each new dmg by hand. | Built, untested by hand on a Mac or Linux PC; checked in CI on macOS and Ubuntu |
+| Menu bar on macOS | The Mac menu bar lists OpenNote's commands, one menu per category as in the shortcut list, with each command's key equivalent (`⇧⌘D`), next to the app menu (About, Settings, Hide, Quit), Edit (Undo, Cut, Copy, Paste), and Window. It follows rebinding and the shortcut set. | Built, untested by hand on a Mac; the menu is built from the registry in tests, and installed only on macOS |

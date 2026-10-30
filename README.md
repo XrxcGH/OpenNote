@@ -72,13 +72,17 @@ Test with a throwaway profile so your real notes stay safe. Set `OPENNOTE_PROFIL
 
 ## Downloads
 
-There is no release yet. When one ships, it will appear on the [GitHub Releases page](https://github.com/XrxcGH/OpenNote/releases) as three files:
+There is no release yet. When one ships, it will appear on the [GitHub Releases page](https://github.com/XrxcGH/OpenNote/releases) as five files:
 
 | File                        | For                                            |
 | --------------------------- | ---------------------------------------------- |
 | `OpenNote_Windows64.exe`    | 64-bit Windows, on most PCs                    |
 | `OpenNote_Windows32.exe`    | 32-bit Windows                                 |
 | `OpenNote_WindowsARM64.exe` | Windows on Arm PCs, such as Snapdragon laptops |
+| `OpenNote_macOS.dmg`        | macOS 11 or later, on Apple silicon and Intel  |
+| `OpenNote_Linux.AppImage`   | 64-bit Linux, such as Ubuntu 22.04 or later    |
+
+The Mac and Linux builds are new and unsigned. [OpenNote on macOS and Linux](docs/help/install-macos-linux.md) says how to open them and what still needs Windows ([ADR 0055](docs/adr/0055-macos-and-linux.md)).
 
 ## Quick start for contributors
 

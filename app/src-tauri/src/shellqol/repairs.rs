@@ -132,6 +132,8 @@ fn reopen(app: &AppHandle, pages: &[opennote_core::PageId]) {
 mod tests {
     use super::*;
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn report_paths_must_be_plain_and_relative() {
         assert!(relative(&json!({ "path": "01abc/01def/page.json" })).is_ok());

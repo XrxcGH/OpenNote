@@ -78,7 +78,7 @@ describe('wingetFiles', () => {
     expect(text).toContain('- Architecture: x64');
     expect(text).toContain('- Architecture: x86');
     expect(text).toContain('- Architecture: arm64');
-    for (const { platform, file } of RELEASE_FILES) {
+    for (const { platform, file } of RELEASE_FILES.filter(({ platform }) => platform.startsWith('windows-'))) {
       const entry = manifest.platforms[platform];
       expect(text).toContain(`InstallerUrl: https://github.com/XrxcGH/OpenNote/releases/download/v1.0.0/${file}`);
       expect(text).toContain(`InstallerSha256: ${entry.sha256.toUpperCase()}`);
