@@ -1,8 +1,8 @@
 // Weighted nonlinear least squares by Levenberg-Marquardt: Marquardt's scaled damping (the diagonal of JᵀWJ) with
 // Nielsen's update of the damping factor, a central-difference Jacobian unless the caller supplies one, and box
-// bounds kept by an active set: a parameter on a bound whose gradient points outward is held there for the iteration
-// and the step is solved over the others, then projected. At the answer it reports the parameter covariance s²(JᵀWJ)⁻¹ and gives
-// confidence and prediction bands by the delta method. Pure: no DOM.
+// bounds kept by an active set. A parameter on a bound whose gradient points outward is held there for the
+// iteration, and the step is solved over the others, then projected. At the answer it reports the parameter
+// covariance s²(JᵀWJ)⁻¹ and gives confidence and prediction bands by the delta method. Pure: no DOM.
 import { cholesky, choleskySolve, identity } from '../../kits/num/matrix';
 import type { Matrix } from '../../kits/num/matrix';
 import { tQuantile } from '../stats/dist';
@@ -90,6 +90,41 @@ function invertSpd(a: Matrix): Matrix {
   return choleskySolve(f, identity(a.length));
 }
 
+/**
+ * Which parameters to hold for an iteration: one on its lower bound whose gradient g (of half the cost) is positive,
+ * or on its upper bound with g negative, would leave the box along the steepest descent.
+ */
+function heldAtBounds(
+  p: readonly number[],
+  g: readonly number[],
+  lo: readonly number[],
+  hi: readonly number[],
+): boolean[] {
+  return p.map(
+    (v, j) => (lo[j] !== undefined && v <= lo[j] && g[j] > 0) || (hi[j] !== undefined && v >= hi[j] && g[j] < 0),
+  );
+}
+
+/**
+ * The damped Gauss-Newton step over the free parameters. The held parameters' rows and columns become the identity
+ * and their gradient entries are already zero, so their step is zero. Null when the damped matrix is not positive
+ * definite, which calls for more damping.
+ */
+function reducedStep(a: Matrix, gFree: readonly number[], active: readonly boolean[], mu: number): number[] | null {
+  const damped = a.map((row, u) =>
+    row.map((v, c) => {
+      if (active[u] || active[c]) return u === c ? 1 : 0;
+      return u === c ? v + mu * Math.max(row[u], 1e-300) : v;
+    }),
+  );
+  const fac = cholesky(damped);
+  if (!fac.spd) return null;
+  return choleskySolve(
+    fac,
+    gFree.map((v) => [-v]),
+  ).map((row) => row[0]);
+}
+
 /** Refuses empty, mismatched, too short or non-finite input, and returns the sizes and the weights. */
 function checkInputs(
   xs: readonly unknown[],
@@ -143,40 +178,20 @@ export function levenbergMarquardt<X>(
   let stop: LmStop = 'maxIterations';
   let iterations = 0;
 
-  // A parameter on its lower bound whose gradient g (of half the cost) is positive, or on its upper bound with g
-  // negative, would leave the box along the steepest descent: it is held fixed for the iteration.
-  const activeAt = (q: readonly number[], gq: readonly number[]): boolean[] =>
-    q.map(
-      (v, j) => (lo[j] !== undefined && v <= lo[j] && gq[j] > 0) || (hi[j] !== undefined && v >= hi[j] && gq[j] < 0),
-    );
-
   while (iterations < maxIterations) {
-    const active = activeAt(p, g);
+    const active = heldAtBounds(p, g, lo, hi);
     const gFree = g.map((v, j) => (active[j] ? 0 : v));
     if (Math.max(...gFree.map(Math.abs)) <= tol * Math.max(1, f)) {
       stop = 'gradient';
       break;
     }
     iterations += 1;
-    const diag = a.map((row, j) => Math.max(row[j], 1e-300));
-    // The held parameters' rows and columns become the identity, so their step is zero and the free parameters'
-    // step is the damped Gauss-Newton step of the reduced problem.
-    const damped = a.map((row, u) =>
-      row.map((v, c) => {
-        if (active[u] || active[c]) return u === c ? 1 : 0;
-        return u === c ? v + mu * diag[u] : v;
-      }),
-    );
-    const fac = cholesky(damped);
-    if (!fac.spd) {
+    const step = reducedStep(a, gFree, active, mu);
+    if (!step) {
       mu *= nu;
       nu *= 2;
       continue;
     }
-    const step = choleskySolve(
-      fac,
-      gFree.map((v) => [-v]),
-    ).map((row) => row[0]);
     const trial = project(p.map((v, j) => v + step[j]));
     const h = trial.map((v, j) => v - p[j]);
     if (Math.hypot(...h) <= tol * (Math.hypot(...p) + tol)) {

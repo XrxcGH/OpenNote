@@ -70,7 +70,7 @@ export const DEFAULT_FONT_SIZE = 14;
 
 /**
  * A node's size in layout units: the size it was given, or else one unit grown to fit its label at the default
- * scale and font size, so a long label is not clipped and its neighbours keep clear of it.
+ * scale and font size, so a long label is not clipped and its neighbors keep clear of it.
  */
 export function nodeSize(node: { id: string; label?: string; width?: number; height?: number }): {
   width: number;
