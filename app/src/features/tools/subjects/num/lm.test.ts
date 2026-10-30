@@ -56,6 +56,39 @@ describe('Levenberg-Marquardt', () => {
     expect(fit.atBound).toEqual([false, true]);
   });
 
+  it('with Km held at its bound 2.5, finds the Vmax of the one-parameter fit and converges', () => {
+    // With Km fixed the model is Vmax·g(s), g = s/(2.5 + s), so the least-squares Vmax is Σg·y / Σg² in closed form.
+    const gs = S.map((s) => s / (2.5 + s));
+    const vmax = gs.reduce((t, g, i) => t + g * exactV[i], 0) / gs.reduce((t, g) => t + g * g, 0);
+    const ssr = gs.reduce((t, g, i) => t + (exactV[i] - vmax * g) ** 2, 0);
+    const fit = levenbergMarquardt(michaelis, S, exactV, [5, 3], { lower: [0, 2.5] });
+    expect(fit.converged).toBe(true);
+    expect(fit.params[1]).toBe(2.5);
+    expect(Math.abs(fit.params[0] - vmax)).toBeLessThan(1e-8);
+    expect(Math.abs(fit.ssr - ssr)).toBeLessThan(1e-10);
+  });
+
+  it('a bounded asymptote gives the fit with that parameter fixed, from either bound', () => {
+    const decay: Model<number> = (x, [a, b, c]) => a * Math.exp(-b * x) + c;
+    const xs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const noise = [0.05, -0.04, 0.03, -0.02, 0.04, -0.05, 0.02, -0.03, 0.01, -0.01];
+    const ys = xs.map((x, i) => 8 * Math.exp(-0.4 * x) + 1 + noise[i]);
+    const fixed = (c: number) => levenbergMarquardt((x: number, [a, b]) => decay(x, [a, b, c]), xs, ys, [5, 0.2]);
+    for (const [c, bound] of [
+      [1.2, { lower: [-Infinity, -Infinity, 1.2] }],
+      [0.8, { upper: [Infinity, Infinity, 0.8] }],
+    ] as const) {
+      const fit = levenbergMarquardt(decay, xs, ys, [5, 0.2, 2 * c - 1], bound);
+      const ref = fixed(c);
+      expect(fit.converged).toBe(true);
+      expect(fit.params[2]).toBe(c);
+      expect(fit.atBound).toEqual([false, false, true]);
+      expect(Math.abs(fit.params[0] - ref.params[0])).toBeLessThan(1e-7);
+      expect(Math.abs(fit.params[1] - ref.params[1])).toBeLessThan(1e-9);
+      expect(Math.abs(fit.ssr - ref.ssr)).toBeLessThan(1e-12);
+    }
+  });
+
   it('weights the points: a weight of zero ignores an outlier', () => {
     const line: Model<number> = (x, [a, b]) => a + b * x;
     const fit = levenbergMarquardt(line, [0, 1, 2, 3], [1, 3, 5, 100], [0, 0], { weights: [1, 1, 1, 0] });

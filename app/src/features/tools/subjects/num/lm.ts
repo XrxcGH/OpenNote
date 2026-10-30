@@ -1,6 +1,7 @@
 // Weighted nonlinear least squares by Levenberg-Marquardt: Marquardt's scaled damping (the diagonal of JᵀWJ) with
 // Nielsen's update of the damping factor, a central-difference Jacobian unless the caller supplies one, and box
-// bounds kept by projecting each trial step. At the answer it reports the parameter covariance s²(JᵀWJ)⁻¹ and gives
+// bounds kept by an active set: a parameter on a bound whose gradient points outward is held there for the iteration
+// and the step is solved over the others, then projected. At the answer it reports the parameter covariance s²(JᵀWJ)⁻¹ and gives
 // confidence and prediction bands by the delta method. Pure: no DOM.
 import { cholesky, choleskySolve, identity } from '../../kits/num/matrix';
 import type { Matrix } from '../../kits/num/matrix';
@@ -142,14 +143,28 @@ export function levenbergMarquardt<X>(
   let stop: LmStop = 'maxIterations';
   let iterations = 0;
 
+  // A parameter on its lower bound whose gradient g (of half the cost) is positive, or on its upper bound with g
+  // negative, would leave the box along the steepest descent: it is held fixed for the iteration.
+  const activeAt = (q: readonly number[], gq: readonly number[]): boolean[] =>
+    q.map((v, j) => (lo[j] !== undefined && v <= lo[j] && gq[j] > 0) || (hi[j] !== undefined && v >= hi[j] && gq[j] < 0));
+
   while (iterations < maxIterations) {
-    if (Math.max(...g.map(Math.abs)) <= tol * Math.max(1, f)) {
+    const active = activeAt(p, g);
+    const gFree = g.map((v, j) => (active[j] ? 0 : v));
+    if (Math.max(...gFree.map(Math.abs)) <= tol * Math.max(1, f)) {
       stop = 'gradient';
       break;
     }
     iterations += 1;
     const diag = a.map((row, j) => Math.max(row[j], 1e-300));
-    const damped = a.map((row, u) => row.map((v, c) => (u === c ? v + mu * diag[u] : v)));
+    // The held parameters' rows and columns become the identity, so their step is zero and the free parameters'
+    // step is the damped Gauss-Newton step of the reduced problem.
+    const damped = a.map((row, u) =>
+      row.map((v, c) => {
+        if (active[u] || active[c]) return u === c ? 1 : 0;
+        return u === c ? v + mu * diag[u] : v;
+      }),
+    );
     const fac = cholesky(damped);
     if (!fac.spd) {
       mu *= nu;
@@ -158,7 +173,7 @@ export function levenbergMarquardt<X>(
     }
     const step = choleskySolve(
       fac,
-      g.map((v) => [-v]),
+      gFree.map((v) => [-v]),
     ).map((row) => row[0]);
     const trial = project(p.map((v, j) => v + step[j]));
     const h = trial.map((v, j) => v - p[j]);
