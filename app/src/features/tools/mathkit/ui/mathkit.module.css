@@ -1,0 +1,224 @@
+/*
+ * The engineering mathematics window: calm and quiet, on tokens. Fields sit in rows that wrap, the answer sits in a
+ * raised line, and worked steps are a numbered list. Every control is at least the target size.
+ */
+@layer components {
+  .tool {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding-block-end: var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tab {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .tab:hover {
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-control);
+    background: var(--color-surface-page);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .tab:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .panel,
+  .section {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .section > summary {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--target-size);
+    cursor: pointer;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: end;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    flex: 1 1 7rem;
+    min-inline-size: 6rem;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .wide {
+    flex-basis: 100%;
+  }
+
+  .input {
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-body-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    min-inline-size: 0;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .textarea {
+    padding-block: var(--space-2);
+    resize: vertical;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+  }
+
+  .problem:empty {
+    display: none;
+  }
+
+  .result {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-body-size);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--ink-indigo);
+    border-radius: var(--radius-sm);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .stepList {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .stepList li {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .math {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-inline-size: 100%;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .scroll {
+    overflow-x: auto;
+    max-inline-size: 100%;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .plot {
+    inline-size: 100%;
+    max-inline-size: 36rem;
+    block-size: auto;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .console {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    min-block-size: 10rem;
+    max-block-size: 24rem;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    white-space: pre-wrap;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .consoleError {
+    color: var(--color-status-danger);
+  }
+
+  .check {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-block-size: var(--target-size);
+    font-size: var(--type-small-size);
+  }
+}
