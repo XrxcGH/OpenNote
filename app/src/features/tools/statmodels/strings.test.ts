@@ -64,6 +64,7 @@ describe('the statistical models kit strings', () => {
         if (run.ok) missing.push(...outcomeKeys(tool.id, run.outcome).filter((key) => !has(key)));
       }
       expect([...new Set(missing)]).toEqual([]);
-    });
+      // The machine learning examples train a small network, which takes seconds on a busy machine.
+    }, 30_000);
   }
 });
