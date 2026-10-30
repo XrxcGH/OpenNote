@@ -3,6 +3,7 @@
 
 export const EARTH_TOOL_IDS = [
   'moist',
+  'climate',
   'dating',
   'stereonet',
   'geodiagrams',
@@ -16,6 +17,7 @@ export type EarthToolId = (typeof EARTH_TOOL_IDS)[number];
 
 const ICONS: Record<EarthToolId, string> = {
   moist: 'Thermometer',
+  climate: 'Sun',
   dating: 'Hourglass',
   stereonet: 'Compass',
   geodiagrams: 'Stack',

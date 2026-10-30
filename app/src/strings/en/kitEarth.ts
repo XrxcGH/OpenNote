@@ -38,6 +38,13 @@ const LIGHT = {
       keywords:
         'humidity dew point mixing ratio potential temperature theta-e LCL lapse rate thickness Skew-T CAPE CIN hodograph helicity',
     },
+    climate: {
+      title: 'Radiation, climate, and footprints',
+      open: 'Open radiation, climate, and footprints',
+      keywords:
+        'energy balance greenhouse radiative forcing climate sensitivity two-box ice-albedo Budyko-Sellers insolation ' +
+        'Milankovitch Koppen Walter-Lieth Holdridge Thornthwaite evapotranspiration degree days carbon footprint',
+    },
     dating: {
       title: 'Geochronology, isotopes, and the time scale',
       open: 'Open geochronology, isotopes, and the time scale',
