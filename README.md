@@ -8,7 +8,7 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 ## Status
 
-OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests.
+OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync.
 
 | Phase                                     | Focus                                                                                    | Status                                                                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -24,7 +24,7 @@ Agents compiled and unit-tested beta 6 and started the real app. Nobody has used
 
 ## What the app does today
 
-OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash. Each area below has a help page.
+OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash. Each area below has a help page.
 
 | Area                                                              | What you can do                                                                                                |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
