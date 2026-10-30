@@ -1,11 +1,21 @@
 // The earth, atmosphere, and ocean sciences kit's tools: their ids and palette icons. The palette reads this list
 // at start-up (through ../flags.ts), so it holds plain data only; each tool's code loads when its window opens.
 
-export const EARTH_TOOL_IDS = ['dating', 'stereonet', 'geodiagrams', 'air', 'seismic', 'geophysics', 'ocean'] as const;
+export const EARTH_TOOL_IDS = [
+  'moist',
+  'dating',
+  'stereonet',
+  'geodiagrams',
+  'air',
+  'seismic',
+  'geophysics',
+  'ocean',
+] as const;
 
 export type EarthToolId = (typeof EARTH_TOOL_IDS)[number];
 
 const ICONS: Record<EarthToolId, string> = {
+  moist: 'Thermometer',
   dating: 'Hourglass',
   stereonet: 'Compass',
   geodiagrams: 'Stack',

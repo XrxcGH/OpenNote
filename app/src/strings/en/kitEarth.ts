@@ -32,6 +32,12 @@ const LIGHT = {
     rowsNone: 'Paste at least 1 line of values.',
   },
   tools: {
+    moist: {
+      title: 'Atmospheric thermodynamics and soundings',
+      open: 'Open atmospheric thermodynamics and soundings',
+      keywords:
+        'humidity dew point mixing ratio potential temperature theta-e LCL lapse rate thickness Skew-T CAPE CIN hodograph helicity',
+    },
     dating: {
       title: 'Geochronology, isotopes, and the time scale',
       open: 'Open geochronology, isotopes, and the time scale',
