@@ -1,10 +1,11 @@
-// The molecular biology kit's commands: one to open the window, and one per tool that opens it on that tool.
+// The molecular biology kit's commands: one to open the window (tools.kitmolbio, the id every tool window's command
+// takes so the shortcut editor lists it), and one per tool that opens it on that tool.
 import { MOLBIO_TOOLS, openMolBio } from '../../tools';
 import type { MessageKey } from '../../../strings/t';
 import { addCommand } from './qolStudy';
 
 addCommand({
-  id: 'kits.molbio',
+  id: 'tools.kitmolbio',
   title: 'kitMolBio.open',
   keywords: 'kitMolBio.openKeywords',
   category: 'general',
