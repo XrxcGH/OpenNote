@@ -38,6 +38,16 @@ export const kitMusic = {
   f: { ...theory.f, ...score.f, ...ear.f, ...partwriting.f, ...script.f, ...camera.f, ...studio.f, ...rhythm.f },
   r: { ...theory.r, ...score.r, ...ear.r, ...partwriting.r, ...script.r, ...camera.r, ...studio.r, ...rhythm.r },
   s: { ...theory.s, ...score.s, ...ear.s, ...partwriting.s, ...script.s, ...camera.s, ...studio.s, ...rhythm.s },
-  e: { ...common.e, ...theory.e, ...score.e, ...ear.e, ...partwriting.e, ...script.e, ...camera.e, ...studio.e, ...rhythm.e },
+  e: {
+    ...common.e,
+    ...theory.e,
+    ...score.e,
+    ...ear.e,
+    ...partwriting.e,
+    ...script.e,
+    ...camera.e,
+    ...studio.e,
+    ...rhythm.e,
+  },
   n: { ...theory.n, ...score.n, ...ear.n, ...partwriting.n, ...script.n, ...camera.n, ...studio.n, ...rhythm.n },
 } as const;

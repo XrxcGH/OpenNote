@@ -46,7 +46,10 @@ describe('Fountain line classification', () => {
     expect(parsed.notes).toEqual([{ scene: 1, text: 'check the clock' }]);
   });
   it('reads a title page', () => {
-    expect(parseFountain('Title: A Play\nAuthor: Me\n\nINT. A - DAY\n').title).toEqual({ title: 'A Play', author: 'Me' });
+    expect(parseFountain('Title: A Play\nAuthor: Me\n\nINT. A - DAY\n').title).toEqual({
+      title: 'A Play',
+      author: 'Me',
+    });
   });
   it('gives characters with extensions the same name', () => {
     const result = run('characters', 'INT. A - DAY\n\nANNA\nOne.\n\nANNA (V.O.)\nTwo.\n\nBEN\nThree.\n');

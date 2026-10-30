@@ -1,9 +1,9 @@
 // The voice-leading checker's modes: four-part chorale writing, and two-voice species counterpoint.
-import { fail, ok } from '../shared';
+import { fail, ok, plural } from '../shared';
 import type { KitOk, KitRow, Values } from '../shared';
 import { parsePitchClass, pitchClassName } from '../theory/notes';
 import { VOICES, RULE_TEXT, checkChorale, readChords } from './chorale';
-import type { Strictness } from './chorale';
+import type { Issue, Strictness } from './chorale';
 import { chordPicture } from './picture';
 import { PER_MEASURE, SPECIES_TEXT, checkSpecies, expectedLength, readNotes } from './species';
 import type { Species } from './species';
@@ -19,6 +19,8 @@ const CADENCE_WORDS = {
 
 const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
+const issueText = (i: Issue): string => `chord ${i.chord} ${i.voices.join('–') || 'chord'} ${RULE_TEXT[i.rule]}`;
+
 export function choraleMode(v: Values): KitOk {
   const tonic = parsePitchClass(v.tonic ?? '') ?? fail('pwTonicFormat');
   const mode = v.keyMode === 'minor' ? 'minor' : 'major';
@@ -26,7 +28,8 @@ export function choraleMode(v: Values): KitOk {
   const text = v.chords ?? '';
   if (text.trim() === '') return fail('pwEmpty');
   const read = readChords(text);
-  if (!('chords' in read)) return fail(read.reason === 'count' ? 'pwChordCount' : 'pwChordNote', { line: String(read.line) });
+  if (!('chords' in read))
+    return fail(read.reason === 'count' ? 'pwChordCount' : 'pwChordNote', { line: String(read.line) });
   if (read.chords.length > 64) return fail('pwTooLong');
   const report = checkChorale(read.chords, tonic, mode, level);
   const rows: KitRow[] = [
@@ -41,7 +44,8 @@ export function choraleMode(v: Values): KitOk {
     rows.push({ key: 'issueRow', vars: { n: String(issue.chord) }, value: `${cap(who)}: ${RULE_TEXT[issue.rule]}` });
   }
   const bad = new Set(report.issues.map((i) => i.chord));
-  const label = `${read.chords.length} chords in ${pitchClassName(tonic)} ${mode}${bad.size > 0 ? `, problems in chords ${[...bad].join(', ')}` : ', no problems'}`;
+  const where = bad.size > 0 ? `problems in chords ${[...bad].join(', ')}` : 'no problems';
+  const label = `${read.chords.length} chords in ${pitchClassName(tonic)} ${mode}, ${where}`;
   return ok({
     rows,
     steps: [
@@ -52,7 +56,7 @@ export function choraleMode(v: Values): KitOk {
     answer:
       report.issues.length === 0
         ? `No problems found in ${read.chords.length} chords in ${pitchClassName(tonic)} ${mode}.`
-        : `${report.issues.length} problem${report.issues.length === 1 ? '' : 's'}: ${report.issues.map((i) => `chord ${i.chord} ${i.voices.join('–') || 'chord'} ${RULE_TEXT[i.rule]}`).join('; ')}`,
+        : `${plural(report.issues.length, 'problem')}: ${report.issues.map(issueText).join('; ')}`,
     svg: { markup: chordPicture(read.chords, bad, label), label },
     notes: ['pwNoteRules', 'pwNoteLevels'],
   });
@@ -91,7 +95,7 @@ export function speciesMode(v: Values): KitOk {
     answer:
       issues.length === 0
         ? `No problems found in the species ${species} line.`
-        : `${issues.length} problem${issues.length === 1 ? '' : 's'}: ${issues.map((i) => `measure ${i.measure}, ${SPECIES_TEXT[i.rule]}`).join('; ')}`,
+        : `${plural(issues.length, 'problem')}: ${issues.map((i) => `measure ${i.measure}, ${SPECIES_TEXT[i.rule]}`).join('; ')}`,
     notes: ['pwNoteSpecies'],
   });
 }

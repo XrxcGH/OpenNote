@@ -22,7 +22,8 @@ export const score = {
     scoreTab: 'Guitar tablature',
     scoreAbc: 'Music in ABC notation',
     scoreAbcHint:
-      'Start with X:1, then M: for the meter, L: for the shortest note, and K: for the key. Capital letters are the octave from middle C, lower case one octave up.',
+      'Start with X:1, then M: for the meter, L: for the shortest note, and K: for the key. ' +
+      'Capital letters are the octave from middle C, and lower case is one octave up.',
     scoreVoice: 'Voice',
     scoreVoiceHint: 'Leave empty for all voices, or write the voice name from a V: line.',
     scoreInterval: 'Interval to move by',
@@ -55,16 +56,23 @@ export const score = {
     scoreStepSound: 'Each note is played at its pitch and length with a built-in synthesizer. Nothing is downloaded.',
     scoreStepToKey: 'From {from}, the nearest way to the new key is {semis} semitones {dir}.',
     scoreStepInterval: 'Every note moves {semis} semitones {dir}, keeping the letter distance of the interval.',
-    scoreStepSpell: 'Each moved note is spelled by the interval, and accidentals are written against the new key signature.',
+    scoreStepSpell:
+      'Each moved note is spelled by the interval, and accidentals are written against the new key signature.',
     scoreStepInstrument: 'Every sounding note is moved to the note written for {inst}, which puts the part in {key}.',
     scoreStepJianpu:
-      'Each note is numbered by its step in the major scale of the key signature ({key}): 1 is the major tonic, 6 is the tonic of the relative minor.',
+      'Each note is numbered by its step in the major scale of the key signature ({key}). ' +
+      'The number 1 is the major tonic, and 6 is the tonic of the relative minor.',
     scoreStepJianpuMarks:
-      'A dot above a number is an octave higher, and a dot below is an octave lower. An underline halves the length, and each dash adds a beat.',
+      'A dot above a number is an octave higher, and a dot below is an octave lower. ' +
+      'An underline halves the length, and each dash adds a beat.',
     scoreStepSargam: 'Sa is the tonic ({tonic}). The other notes are named by their distance above it.',
-    scoreStepSargamMarks: 'Lower case is komal (flat), M♯ is the raised fourth, an apostrophe is the octave above, and a comma the octave below.',
-    scoreStepTab: 'Strings are numbered 6 (low E) to 1 (high E), tuned E2 A2 D3 G3 B3 E4, and the fret is the number of semitones above the open string.',
-    scoreStepTabSpan: 'Open strings are used when they fit; otherwise the lowest fret that keeps the hand within four frets of the last one.',
+    scoreStepSargamMarks:
+      'Lower case is komal (flat), M♯ is the raised fourth, an apostrophe is the octave above, and a comma the octave below.',
+    scoreStepTab:
+      'Strings are numbered 6 (low E) to 1 (high E), tuned E2 A2 D3 G3 B3 E4. ' +
+      'The fret is the number of semitones above the open string.',
+    scoreStepTabSpan:
+      'Open strings are used when they fit; otherwise the lowest fret that keeps the hand within four frets of the last one.',
   },
   e: {
     scoreEmpty: 'Write some music first. A tune starts with X:1 and a K: line for the key.',
@@ -79,15 +87,18 @@ export const score = {
     scoreVoiceUnknown: 'There is no voice named {id}. The voices are {ids}.',
     scoreToKeyFormat: 'Write the key as a tonic such as D, F#, or Bb.',
     scoreIntervalFormat: 'Write the interval as quality and size, such as M2, m3, P5, or P8.',
-    scoreKeyTooFar: 'That move needs a key with more than seven sharps or flats, or a double sharp past the notes. Try another interval.',
+    scoreKeyTooFar:
+      'That move needs a key with more than seven sharps or flats, or a double sharp past the notes. Try another interval.',
     scoreTabRange: 'The note {note} (MIDI {midi}) is outside the range of a guitar in standard tuning.',
   },
   n: {
-    scoreNoteSubset: 'This reads the common parts of ABC: notes, rests, chords, ties, tuplets, bars, and voices. Decorations and lyrics are skipped.',
-    scoreNoteMidi: 'Playback uses the built-in synthesizer. A MIDI file is not exported.',
+    scoreNoteSubset:
+      'This reads the common parts of ABC: notes, rests, chords, ties, tuplets, bars, and voices. Decorations and lyrics are skipped.',
+    scoreNoteMidi: 'Playback uses the built-in synthesizer. No MIDI file is exported.',
     scoreNoteInstrument: 'The part is written for the instrument, not limited to its range.',
     scoreNoteJianpu: 'For a chord, the lowest written note is numbered.',
     scoreNoteSargam: 'Western equal temperament is assumed, so the pitches are approximations of raga intonation.',
-    scoreNoteTab: 'Tablature is for the pitches as written. Guitar music is often written an octave above where it sounds.',
+    scoreNoteTab:
+      'Tablature is for the pitches as written. Guitar music is often written an octave above where it sounds.',
   },
 } as const;

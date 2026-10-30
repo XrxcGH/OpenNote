@@ -112,7 +112,10 @@ function transposed(tune: Tune, v: Values): { result: Tune; steps: KitStep[]; la
   if (toKey !== '') {
     const moved = transposeToKey(tune, toKey);
     if (!moved) return fail('scoreToKeyFormat');
-    steps.push({ key: 'scoreStepToKey', vars: { from: keyName(tune), semis: String(moved.interval.semitones), dir: moved.down ? 'down' : 'up' } });
+    steps.push({
+      key: 'scoreStepToKey',
+      vars: { from: keyName(tune), semis: String(moved.interval.semitones), dir: moved.down ? 'down' : 'up' },
+    });
     return { result: moved.tune, steps, label: `to ${toKey}` };
   }
   const interval = parseInterval(v.interval ?? '') ?? fail('scoreIntervalFormat');
@@ -195,7 +198,10 @@ export function indian(v: Values): KitOk {
   const lines = voices.map((voice) => ({ id: voice.id, text: sargam(voice, tune.key) }));
   return ok({
     rows: lines.map((l) => ({ key: 'sargamRow' as const, vars: { voice: l.id }, value: l.text })),
-    steps: [{ key: 'scoreStepSargam', vars: { tonic: pitchClassName(tune.key.tonic) } }, { key: 'scoreStepSargamMarks' }],
+    steps: [
+      { key: 'scoreStepSargam', vars: { tonic: pitchClassName(tune.key.tonic) } },
+      { key: 'scoreStepSargamMarks' },
+    ],
     answer: lines.map((l) => l.text).join(' / '),
     notes: ['scoreNoteSargam'],
   });
@@ -206,7 +212,8 @@ export function guitarTab(v: Values): KitOk {
   const voices = chosen(tune, v);
   const results = voices.map((voice) => ({ id: voice.id, ...tablature(voice) }));
   const bad = results.find((r) => r.bad);
-  if (bad?.bad) return fail('scoreTabRange', { note: noteName(bad.bad), hz: fmt(hzOf(bad.bad), 4), midi: String(midiOf(bad.bad)) });
+  if (bad?.bad)
+    return fail('scoreTabRange', { note: noteName(bad.bad), hz: fmt(hzOf(bad.bad), 4), midi: String(midiOf(bad.bad)) });
   return ok({
     rows: results.map((r) => ({ key: 'tabRow' as const, vars: { voice: r.id }, value: r.text })),
     steps: [{ key: 'scoreStepTab' }, { key: 'scoreStepTabSpan' }],

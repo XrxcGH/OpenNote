@@ -1,6 +1,6 @@
 // The script formatter's modes: the formatted pages, how each line was classified, the scene list, the character and
 // location lists, and breakdown sheets seeded from the text.
-import { fail, ok, textTable } from '../shared';
+import { fail, ok, plural, textTable } from '../shared';
 import type { KitOk, KitRow, Values } from '../shared';
 import {
   TYPE_LABELS,
@@ -48,7 +48,7 @@ export function formatMode(v: Values): KitOk {
       { key: 'scPagesSteps', vars: { lines: String(lineCount), pages: String(pages) } },
       { key: 'scTimeSteps', vars: { pages: String(pages) } },
     ],
-    answer: `${pages} page${pages === 1 ? '' : 's'} (about ${pages} minute${pages === 1 ? '' : 's'}), ${sceneList.length} scene${sceneList.length === 1 ? '' : 's'}`,
+    answer: `${plural(pages, 'page')} (about ${plural(pages, 'minute')}), ${plural(sceneList.length, 'scene')}`,
     code: withPageMarks(formatted.lines),
     notes: ['scNoteEstimate', 'scNoteLayout'],
   });
@@ -81,7 +81,10 @@ export function scenesMode(v: Values): KitOk {
   const sceneList = scenes(parsed, formatted);
   if (sceneList.length === 0) return fail('scNoScenes');
   const code = textTable(
-    [['Scene', 'Page', 'Length', 'Heading'], ...sceneList.map((s) => [String(s.number), String(s.page), eighthsText(s.eighths), s.heading])],
+    [
+      ['Scene', 'Page', 'Length', 'Heading'],
+      ...sceneList.map((s) => [String(s.number), String(s.page), eighthsText(s.eighths), s.heading]),
+    ],
     [8, 6, 8, 0],
   );
   return ok({
@@ -110,7 +113,10 @@ export function charactersMode(v: Values): KitOk {
     steps: [{ key: 'scCastCount' }, { key: 'scCastName' }],
     answer: cast.map((c) => `${c.name} ${c.speeches}`).join(', '),
     code: textTable(
-      [['Character', 'Speeches', 'Words', 'Scenes'], ...cast.map((c) => [c.name, String(c.speeches), String(c.words), list(c.scenes.map(String))])],
+      [
+        ['Character', 'Speeches', 'Words', 'Scenes'],
+        ...cast.map((c) => [c.name, String(c.speeches), String(c.words), list(c.scenes.map(String))]),
+      ],
       [18, 10, 8, 0],
     ),
   });

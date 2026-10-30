@@ -236,7 +236,8 @@ export function diatonicChords(tonic: Pc, mode: Mode): { numeral: string; symbol
   const scale = keyNotes(tonic, mode);
   const triads = diatonicTriads(mode);
   return scale.map((root, i) => {
-    const id = triads[i] === 'M' ? 'major' : triads[i] === 'm' ? 'minor' : triads[i] === 'd' ? 'diminished' : 'augmented';
+    const id =
+      triads[i] === 'M' ? 'major' : triads[i] === 'm' ? 'minor' : triads[i] === 'd' ? 'diminished' : 'augmented';
     const q = quality(id);
     return {
       numeral: numeralText(i, 0, id, 0),

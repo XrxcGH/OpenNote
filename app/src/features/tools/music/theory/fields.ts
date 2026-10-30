@@ -35,7 +35,13 @@ export function nameOf(id: string): string {
 export const mode = (v: Values): string => v.mode ?? 'interval';
 const on = (...modes: string[]) => only('mode', 'interval', ...modes);
 
-const text = (id: string, label: Field['label'], initial: string, when?: Field['when'], hint?: Field['hint']): Field => ({
+const text = (
+  id: string,
+  label: Field['label'],
+  initial: string,
+  when?: Field['when'],
+  hint?: Field['hint'],
+): Field => ({
   id,
   label,
   initial,
@@ -63,9 +69,21 @@ export const FIELDS: readonly Field[] = [
   text('pitch', 'thPitchIn', 'A4', on('pitch'), 'thPitchHint'),
   text('a4', 'thA4', '440', on('pitch')),
   text('tonic', 'thTonic', 'C', on('scale', 'melakarta', 'cents', 'key', 'roman', 'twofive'), 'thTonicHint'),
-  plainChoice('scaleId', 'thScaleId', 'ionian', SCALES.map((s) => [s.id, nameOf(s.id)] as const), on('scale')),
+  plainChoice(
+    'scaleId',
+    'thScaleId',
+    'ionian',
+    SCALES.map((s) => [s.id, nameOf(s.id)] as const),
+    on('scale'),
+  ),
   text('melaNumber', 'thMelaNumber', '15', on('melakarta'), 'thMelaHint'),
-  plainChoice('centsId', 'thCentsId', 'rast', CENTS_SCALES.map((s) => [s.id, nameOf(s.id)] as const), on('cents')),
+  plainChoice(
+    'centsId',
+    'thCentsId',
+    'rast',
+    CENTS_SCALES.map((s) => [s.id, nameOf(s.id)] as const),
+    on('cents'),
+  ),
   text('chord', 'thChordIn', 'Cmaj7', on('chord', 'jazz', 'guitar', 'roman'), 'thChordHint'),
   text('notes', 'thNotesIn', 'C3 E3 G3 B3', on('name'), 'thNotesHint'),
   text('romanNotes', 'thRomanNotesIn', '', on('roman'), 'thRomanNotesHint'),
@@ -79,7 +97,13 @@ export const FIELDS: readonly Field[] = [
     ],
     on('key', 'roman', 'twofive'),
   ),
-  plainChoice('instrumentId', 'thInstrumentId', 'clarinetBb', INSTRUMENTS.map((i) => [i.id, i.name] as const), on('instrument')),
+  plainChoice(
+    'instrumentId',
+    'thInstrumentId',
+    'clarinetBb',
+    INSTRUMENTS.map((i) => [i.id, i.name] as const),
+    on('instrument'),
+  ),
   choice(
     'transposeDir',
     'thTransposeDir',

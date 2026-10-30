@@ -65,7 +65,11 @@ export function spellChord(root: Note, q: ChordQuality): Note[] {
 }
 
 /** The symbol written for a root and quality, such as "Cmaj7" or "E♭m". */
-export function chordSymbol(root: Pick<Note, 'step' | 'alt'>, q: ChordQuality, bass?: Pick<Note, 'step' | 'alt'> | null) {
+export function chordSymbol(
+  root: Pick<Note, 'step' | 'alt'>,
+  q: ChordQuality,
+  bass?: Pick<Note, 'step' | 'alt'> | null,
+) {
   const slash = bass && (bass.step !== root.step || bass.alt !== root.alt) ? `/${pitchClassName(bass)}` : '';
   return `${pitchClassName(root)}${q.symbols[0]!}${slash}`;
 }
@@ -112,7 +116,7 @@ export interface ChordMatch {
 const toneSet = (q: ChordQuality, root: number): string =>
   [...new Set(q.degrees.split(' ').map((d) => (pitchSemis(d) + root) % 12))].sort((a, b) => a - b).join(',');
 
-const pitchSemis = (token: string): number => (((parseDegree(token)!.semis % 12) + 12) % 12);
+const pitchSemis = (token: string): number => ((parseDegree(token)!.semis % 12) + 12) % 12;
 
 /** Which chords the given notes could be, the lowest note first as the bass. Several answers are possible. */
 export function nameChord(notes: readonly Note[]): ChordMatch[] {

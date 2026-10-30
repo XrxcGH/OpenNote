@@ -368,7 +368,13 @@ export function splitHeading(text: string): { setting: string; location: string;
   const rest = (m ? m[2]! : text).replace(/#[^#]*#\s*$/, '').trim();
   const cut = rest.lastIndexOf(' - ');
   const location = (cut >= 0 ? rest.slice(0, cut) : rest).trim().toUpperCase();
-  const time = cut >= 0 ? rest.slice(cut + 3).trim().toUpperCase() : '';
+  const time =
+    cut >= 0
+      ? rest
+          .slice(cut + 3)
+          .trim()
+          .toUpperCase()
+      : '';
   const setting = m ? m[1]!.replace(/\s+/g, '').replace(/\./g, '').toUpperCase().replace('I/E', 'INT/EXT') : '';
   return { setting, location, time };
 }
@@ -420,9 +426,9 @@ export function breakdown(parsed: Parsed, list: readonly SceneEntry[]): Breakdow
   const names = new Set(characters(parsed).map((c) => c.name));
   return list.map((s) => {
     const inScene = parsed.elements.filter((e) => e.scene === s.number);
-    const cast = [
-      ...new Set(inScene.filter((e) => e.type === 'character').map((e) => characterName(e.text))),
-    ].filter((n) => n !== '');
+    const cast = [...new Set(inScene.filter((e) => e.type === 'character').map((e) => characterName(e.text)))].filter(
+      (n) => n !== '',
+    );
     const props = new Set<string>();
     for (const e of inScene) {
       if (e.type !== 'action') continue;

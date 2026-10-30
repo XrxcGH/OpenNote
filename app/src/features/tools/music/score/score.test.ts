@@ -34,10 +34,10 @@ describe('reading ABC', () => {
     expect(pitches('K:G\n=FF')).toEqual(['F4', 'F4']);
   });
   it('reads octave marks, rests, and lengths', () => {
-    const tune = parseAbc('M:4/4\nL:1/4\nK:C\nC, c\' z2 D/ E3/2 [CEG]2|');
+    const tune = parseAbc("M:4/4\nL:1/4\nK:C\nC, c' z2 D/ E3/2 [CEG]2|");
     const durs = tune.voices[0]!.items.filter((i) => i.kind !== 'bar').map((i) => (i as { dur: number }).dur);
     expect(durs).toEqual([0.25, 0.25, 0.5, 0.125, 0.375, 0.5]);
-    expect(pitches('K:C\nC, c\' C,, c\'\'')).toEqual(['C3', 'C6', 'C2', 'C7']);
+    expect(pitches("K:C\nC, c' C,, c''")).toEqual(['C3', 'C6', 'C2', 'C7']);
   });
   it('reads ties, chords, and triplets', () => {
     const tune = parseAbc('M:4/4\nL:1/8\nK:C\nC-C [CE]2 (3DEF|');
@@ -167,7 +167,7 @@ describe('the score form', () => {
     const unknown = run('sargam', { abc, voice: '9' });
     expect(!unknown.ok && unknown.error).toBe('scoreVoiceUnknown');
   });
-  it.each([
+  it.each<[Record<string, string>, string]>([
     [{ abc: '' }, 'scoreEmpty'],
     [{ abc: 'M:4/4\nCDE' }, 'scoreNoKey'],
     [{ abc: 'K:C\nC%D\nD#' }, 'scoreChar'],

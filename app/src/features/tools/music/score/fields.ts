@@ -39,7 +39,14 @@ export const FIELDS: readonly Field[] = [
     ],
     only('mode', 'engrave', 'transpose'),
   ),
-  { id: 'toKey', label: 'scoreToKey', initial: '', kind: 'text', hint: 'scoreToKeyHint', when: only('mode', 'engrave', 'transpose') },
+  {
+    id: 'toKey',
+    label: 'scoreToKey',
+    initial: '',
+    kind: 'text',
+    hint: 'scoreToKeyHint',
+    when: only('mode', 'engrave', 'transpose'),
+  },
   plainChoice(
     'instrumentId',
     'scoreInstrumentId',

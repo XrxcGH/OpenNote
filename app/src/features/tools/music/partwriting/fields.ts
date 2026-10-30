@@ -65,6 +65,13 @@ export const FIELDS: readonly Field[] = [
     ],
     on('species'),
   ),
-  { id: 'cantus', label: 'pwCantus', initial: 'C4 D4 E4 D4 C4', kind: 'text', hint: 'pwCantusHint', when: on('species') },
+  {
+    id: 'cantus',
+    label: 'pwCantus',
+    initial: 'C4 D4 E4 D4 C4',
+    kind: 'text',
+    hint: 'pwCantusHint',
+    when: on('species'),
+  },
   { id: 'line', label: 'pwLine', initial: 'G4 F4 G4 B4 C5', kind: 'text', hint: 'pwLineHint', when: on('species') },
 ];

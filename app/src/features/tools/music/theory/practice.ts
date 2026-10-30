@@ -16,7 +16,7 @@ export interface Instrument {
   /** How far above the sounding note the part is written, as a letter distance and a count of semitones. May be below
    * (negative) for an instrument that sounds higher than it is written. */
   up: { generic: number; semitones: number; down?: boolean };
-  /** The written range, lowest and highest note. The ranges are common orchestration ranges, rounded for teaching. */
+  /** The written range from the lowest note to the highest, in common orchestration ranges rounded for teaching. */
   low: string;
   high: string;
 }
@@ -41,9 +41,11 @@ export const instrument = (id: string): Instrument => INSTRUMENTS.find((i) => i.
 const shiftOf = (i: Instrument) => makeInterval(i.up.generic, i.up.semitones);
 
 /** The note to write for a sounding (concert) note. */
-export const writtenNote = (concert: Note, i: Instrument): Note => transposeNote(concert, shiftOf(i), i.up.down === true);
+export const writtenNote = (concert: Note, i: Instrument): Note =>
+  transposeNote(concert, shiftOf(i), i.up.down === true);
 /** The sounding note for a written one. */
-export const concertNote = (written: Note, i: Instrument): Note => transposeNote(written, shiftOf(i), i.up.down !== true);
+export const concertNote = (written: Note, i: Instrument): Note =>
+  transposeNote(written, shiftOf(i), i.up.down !== true);
 
 const nameToNote = (text: string): Note => parseNote(text.replace(/♯/g, '#').replace(/♭/g, 'b'))!;
 

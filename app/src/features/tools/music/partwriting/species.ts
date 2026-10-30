@@ -65,7 +65,12 @@ const isStep = (a: Note, b: Note): boolean => {
   return d >= 1 && d <= 2 && Math.abs(between(a, b).interval.generic) === 2;
 };
 
-export function checkSpecies(cantus: readonly Note[], line: readonly Note[], species: Species, above: boolean): SpeciesIssue[] {
+export function checkSpecies(
+  cantus: readonly Note[],
+  line: readonly Note[],
+  species: Species,
+  above: boolean,
+): SpeciesIssue[] {
   const issues: SpeciesIssue[] = [];
   const add = (measure: number, rule: SpeciesRule): void => {
     if (!issues.some((i) => i.measure === measure && i.rule === rule)) issues.push({ measure, rule });
@@ -132,7 +137,10 @@ export function checkSpecies(cantus: readonly Note[], line: readonly Note[], spe
         if (isConsonant(cantus[m]!, note)) continue;
         const prev = line[m * per + beat - 1]!;
         const next = line[m * per + beat + 1]!;
-        const passing = isStep(prev, note) && isStep(note, next) && Math.sign(sem(note) - sem(prev)) === Math.sign(sem(next) - sem(note));
+        const passing =
+          isStep(prev, note) &&
+          isStep(note, next) &&
+          Math.sign(sem(note) - sem(prev)) === Math.sign(sem(next) - sem(note));
         const neighbor = species === 3 && isStep(prev, note) && isStep(note, next) && sem(prev) === sem(next);
         if (!passing && !neighbor) add(m + 1, 'unprepared');
       }

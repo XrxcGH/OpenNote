@@ -12,7 +12,12 @@ const rowOf = (result: ReturnType<typeof run>, key: string): string | undefined 
 const wordOf = (result: ReturnType<typeof run>, key: string): string | undefined =>
   result.ok ? result.rows.find((r) => r.key === key)?.word : undefined;
 
-function chorale(text: string, level: 'relaxed' | 'standard' | 'strict' = 'standard', tonic = 'C', mode: 'major' | 'minor' = 'major') {
+function chorale(
+  text: string,
+  level: 'relaxed' | 'standard' | 'strict' = 'standard',
+  tonic = 'C',
+  mode: 'major' | 'minor' = 'major',
+) {
   const read = readChords(text);
   if (!('chords' in read)) throw new Error('bad chords');
   return checkChorale(read.chords, { step: 'CDEFGAB'.indexOf(tonic[0]!), alt: 0 }, mode, level);

@@ -1,4 +1,4 @@
-// Ear-training drills: seeded items for intervals, chord qualities, scales, melodic and rhythmic dictation, and
+// Ear-training drills: seeded items for intervals, chord qualities, scales, melodies, rhythms, and
 // sight-singing, with answer reading and grading. The same seed and settings always give the same items.
 import { Rng } from '../../subjects/num/rng';
 import type { PlayNote, PlayPlan } from '../audio';
@@ -52,12 +52,33 @@ const INTERVALS: Record<Level, string[]> = {
 const CHORDS: Record<Level, string[]> = {
   easy: ['major', 'minor'],
   medium: ['major', 'minor', 'diminished', 'augmented'],
-  hard: ['major', 'minor', 'diminished', 'augmented', 'dominant7', 'major7', 'minor7', 'halfDiminished7', 'diminished7'],
+  hard: [
+    'major',
+    'minor',
+    'diminished',
+    'augmented',
+    'dominant7',
+    'major7',
+    'minor7',
+    'halfDiminished7',
+    'diminished7',
+  ],
 };
 const SCALES: Record<Level, string[]> = {
   easy: ['ionian', 'aeolian'],
   medium: ['ionian', 'aeolian', 'dorian', 'mixolydian', 'lydian', 'phrygian'],
-  hard: ['ionian', 'aeolian', 'dorian', 'mixolydian', 'lydian', 'phrygian', 'locrian', 'harmonicMinor', 'melodicMinor', 'wholeTone'],
+  hard: [
+    'ionian',
+    'aeolian',
+    'dorian',
+    'mixolydian',
+    'lydian',
+    'phrygian',
+    'locrian',
+    'harmonicMinor',
+    'melodicMinor',
+    'wholeTone',
+  ],
 };
 const KEYS = [
   { step: 0, alt: 0 },
@@ -145,7 +166,12 @@ function makeItem(rng: Rng, kind: DrillKind, s: Settings, n: number): Item {
       const key = KEYS[rng.integer(KEYS.length)]!;
       const minor = kind === 'sing' && rng.integer(2) === 1;
       const tonic: Note = { ...key, octave: 4 };
-      const moves = s.level === 'easy' ? [-2, -1, 1, 2] : s.level === 'medium' ? [-3, -2, -1, 1, 2, 3] : [-4, -3, -2, -1, 1, 2, 3, 4];
+      const moves =
+        s.level === 'easy'
+          ? [-2, -1, 1, 2]
+          : s.level === 'medium'
+            ? [-3, -2, -1, 1, 2, 3]
+            : [-4, -3, -2, -1, 1, 2, 3, 4];
       const degrees = [0];
       while (degrees.length < s.length) {
         const prev = degrees[degrees.length - 1]!;
@@ -159,7 +185,12 @@ function makeItem(rng: Rng, kind: DrillKind, s: Settings, n: number): Item {
       const plan: PlayPlan =
         kind === 'sing'
           ? { notes: [reference], beats: 1, bpm: s.bpm, loop: false }
-          : { notes: [reference, ...notes.map((x, i) => tone(hzOf(x), i + 2, 1))], beats: notes.length + 2, bpm: s.bpm, loop: false };
+          : {
+              notes: [reference, ...notes.map((x, i) => tone(hzOf(x), i + 2, 1))],
+              beats: notes.length + 2,
+              bpm: s.bpm,
+              loop: false,
+            };
       return kind === 'melody'
         ? { kind, n, tonic, notes, degrees, plan }
         : { kind, n, tonic, minor, notes, degrees, plan };
@@ -171,7 +202,11 @@ function makeItem(rng: Rng, kind: DrillKind, s: Settings, n: number): Item {
         while (steps.length < length) steps += rng.integer(100) < 55 ? 'x' : '.';
         if ([...steps].filter((c) => c === 'x').length < 3) continue;
         const plan: PlayPlan = {
-          notes: [...steps].flatMap((c, i) => (c === 'x' ? [{ at: i / 2, dur: 0.4, hz: 1000, level: (i === 0 ? 2 : 1) as 1 | 2, voice: 'click' as const }] : [])),
+          notes: [...steps].flatMap((c, i) =>
+            c === 'x'
+              ? [{ at: i / 2, dur: 0.4, hz: 1000, level: (i === 0 ? 2 : 1) as 1 | 2, voice: 'click' as const }]
+              : [],
+          ),
           beats: length / 2,
           bpm: s.bpm,
           loop: false,
@@ -286,7 +321,8 @@ const SCALE_WORDS: Record<string, string> = {
   'whole-tone': 'wholeTone',
 };
 
-export const readScaleAnswer = (text: string): string | null => SCALE_WORDS[text.trim().toLowerCase().replace(/\s+/g, ' ')] ?? null;
+export const readScaleAnswer = (text: string): string | null =>
+  SCALE_WORDS[text.trim().toLowerCase().replace(/\s+/g, ' ')] ?? null;
 
 /** A melody answer such as "C D F" or "C4 D4 F4": pitch classes, with an octave only when typed. */
 export function readNoteList(text: string): { step: number; alt: number; octave?: number }[] | null {
@@ -306,7 +342,9 @@ export function readNoteList(text: string): { step: number; alt: number; octave?
 }
 
 export const noteMatches = (typed: { step: number; alt: number; octave?: number }, target: Note): boolean =>
-  typed.step === target.step && typed.alt === target.alt && (typed.octave === undefined || typed.octave === target.octave);
+  typed.step === target.step &&
+  typed.alt === target.alt &&
+  (typed.octave === undefined || typed.octave === target.octave);
 
 // --- solfege ------------------------------------------------------------------------------------------------------------------
 
@@ -324,6 +362,8 @@ export function syllable(degree: number, minor: boolean, base: 'la' | 'do'): str
 
 export const intervalName = (i: Interval): string => `${intervalWords(i)} (${intervalShort(i)})`;
 export const chordMembers = (root: Note, id: string): string =>
-  spellChord(root, quality(id)).map((n) => pitchClassName(n)).join(' ');
+  spellChord(root, quality(id))
+    .map((n) => pitchClassName(n))
+    .join(' ');
 export const scaleName = (id: string): string => scaleLabel(id);
 export const spelled = (notes: readonly Note[]): string => notes.map((n) => noteName(n)).join(' ');

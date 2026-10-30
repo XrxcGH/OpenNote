@@ -38,7 +38,11 @@ describe('seeded items', () => {
     }
   });
   it('builds rhythms of 4, 8, and 12 steps that start on a hit', () => {
-    for (const [level, length] of [['easy', 4], ['medium', 8], ['hard', 12]] as const) {
+    for (const [level, length] of [
+      ['easy', 4],
+      ['medium', 8],
+      ['hard', 12],
+    ] as const) {
       const item = itemAt('rhythm', 2n, { ...settings, level }, 1) as Extract<Item, { kind: 'rhythm' }>;
       expect(item.steps).toHaveLength(length);
       expect(item.steps[0]).toBe('x');
@@ -76,7 +80,11 @@ describe('reading answers', () => {
     expect(readScaleAnswer('harmonic minor')).toBe('harmonicMinor');
   });
   it('reads note lists with or without octaves', () => {
-    expect(readNoteList('C D F')).toEqual([{ step: 0, alt: 0 }, { step: 1, alt: 0 }, { step: 3, alt: 0 }]);
+    expect(readNoteList('C D F')).toEqual([
+      { step: 0, alt: 0 },
+      { step: 1, alt: 0 },
+      { step: 3, alt: 0 },
+    ]);
     expect(readNoteList('C4 Eb')?.[0]).toEqual({ step: 0, alt: 0, octave: 4 });
     expect(readNoteList('C X')).toBeNull();
   });
@@ -84,13 +92,27 @@ describe('reading answers', () => {
 
 describe('grading', () => {
   it('accepts major sixth for C4 up to A4', () => {
-    const item = { kind: 'interval', n: 1, root: note('C4'), interval: { generic: 6, quality: 'M', times: 0, semitones: 9 }, delivery: 'up', plan: {} } as unknown as Item;
+    const item = {
+      kind: 'interval',
+      n: 1,
+      root: note('C4'),
+      interval: { generic: 6, quality: 'M', times: 0, semitones: 9 },
+      delivery: 'up',
+      plan: {},
+    } as unknown as Item;
     expect(grade(item, 'major sixth').correct).toBe(true);
     expect(grade(item, 'minor sixth').correct).toBe(false);
     expect(intervalShort(item.kind === 'interval' ? item.interval : (null as never))).toBe('M6');
   });
   it('marks notes 1 and 2 right and note 3 wrong for C D F against C D E', () => {
-    const item = { kind: 'melody', n: 1, tonic: note('C4'), notes: [note('C4'), note('D4'), note('E4')], degrees: [0, 1, 2], plan: {} } as unknown as Item;
+    const item = {
+      kind: 'melody',
+      n: 1,
+      tonic: note('C4'),
+      notes: [note('C4'), note('D4'), note('E4')],
+      degrees: [0, 1, 2],
+      plan: {},
+    } as unknown as Item;
     const result = grade(item, 'C D F');
     expect(result.correct).toBe(false);
     expect(result.rows.map((r) => r.value)).toEqual(['correct', 'correct', 'wrong: F for E']);
@@ -134,8 +156,12 @@ describe('the ear form', () => {
     expect(rowOf(result, 'solfegeOut')?.split(' ')).toHaveLength(5);
   });
   it('grades a session and schedules the missed items for today', () => {
-    const items = [1, 2, 3].map((n) => itemAt('chord', 4n, { ...settings, level: 'easy' }, n) as Extract<Item, { kind: 'chord' }>);
-    const answers = items.map((it, i) => (i === 1 ? (it.qualityId === 'major' ? 'minor' : 'major') : it.qualityId)).join('\n');
+    const items = [1, 2, 3].map(
+      (n) => itemAt('chord', 4n, { ...settings, level: 'easy' }, n) as Extract<Item, { kind: 'chord' }>,
+    );
+    const answers = items
+      .map((it, i) => (i === 1 ? (it.qualityId === 'major' ? 'minor' : 'major') : it.qualityId))
+      .join('\n');
     const result = run({ mode: 'chord', run: 'session', seed: '4', answers });
     expect(rowOf(result, 'scoreOut')).toBe('2 of 3');
     expect(rowOf(result, 'weakOut')).toBe('2');

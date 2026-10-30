@@ -25,7 +25,8 @@ export const script = {
     scStage: 'Stage play',
     scScript: 'Script in Fountain',
     scScriptHint:
-      'Scene headings start with INT. or EXT. Character names are in capitals above their lines. Put ! before a line to force action, @ before a name, or . before a heading.',
+      'Scene headings start with INT. or EXT. Character names are in capitals above their lines. ' +
+      'To force a type, start the line with an exclamation mark for action, an at sign for a name, or a period for a heading.',
   },
   r: {
     pagesOut: 'Pages (estimate)',
@@ -41,13 +42,19 @@ export const script = {
   },
   s: {
     scLayoutSteps:
-      'Each element is placed in character cells for a {layout}: action across the page, dialogue in a narrower column, and character names indented.',
+      'Each element is placed in character cells for a {layout}: action across the page, ' +
+      'dialogue in a narrower column, and character names indented.',
     scPagesSteps: 'The script has {lines} typed lines. At 55 lines to a page that is {pages} pages, rounded up.',
     scTimeSteps: 'At about one minute for each page, the running time is about {pages} minutes.',
     scClassifyRules:
-      'A line is a scene heading when it starts with INT. or EXT. after a blank line, a transition when it is in capitals and ends in TO:, and a character name when it is in capitals above a line of dialogue.',
-    scClassifyForced: 'A leading ! . @ or > forces action, a scene heading, a character name, or a transition.',
-    scScenesEighths: 'A scene is measured in eighths of a page: its typed lines times eight, divided by 55, rounded up.',
+      'A line is a scene heading when it starts with INT. or EXT. after a blank line. ' +
+      'It is a transition when it is in capitals and ends in TO:, ' +
+      'and a character name when it is in capitals above a line of dialogue.',
+    scClassifyForced:
+      'A leading exclamation mark, period, at sign, or greater-than sign forces action, a scene heading, ' +
+      'a character name, or a transition.',
+    scScenesEighths:
+      'A scene is measured in eighths of a page: its typed lines times eight, divided by 55, rounded up.',
     scScenesPage: 'The page is the one where the scene heading falls.',
     scCastCount: 'A speech is one block of dialogue under a character name. Words are counted in the dialogue only.',
     scCastName: 'Extensions such as (V.O.) and (CONT’D) are ignored, so one character is counted once.',

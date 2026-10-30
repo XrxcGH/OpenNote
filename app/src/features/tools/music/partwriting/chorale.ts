@@ -56,7 +56,7 @@ export interface Issue {
   rule: RuleId;
 }
 
-/** Common textbook ranges, lowest and highest note, rounded for teaching. */
+/** Common textbook ranges from the lowest note to the highest, rounded for teaching. */
 export const RANGES: Record<Voice, [string, string]> = {
   soprano: ['C4', 'G5'],
   alto: ['G3', 'D5'],
@@ -116,134 +116,157 @@ export interface Report {
   cadence: 'authentic' | 'perfectAuthentic' | 'plagal' | 'deceptive' | 'half' | 'none';
 }
 
+interface Context {
+  chords: readonly Chord[];
+  tonic: Pc;
+  leadingPc: number;
+  standard: boolean;
+  strict: boolean;
+  add(chord: number, voices: Voice[], rule: RuleId): void;
+}
+
+const NAMES: Voice[] = [...VOICES];
+
+/** Problems inside one chord: crossing, spacing, range, doubling, and a missing third. */
+function checkWithin(c: Context, chord: Chord, n: number): void {
+  for (let v = 0; v < 3; v++) {
+    if (semis(chord[v]!) < semis(chord[v + 1]!)) c.add(n, [NAMES[v]!, NAMES[v + 1]!], 'crossing');
+  }
+  if (!c.standard) return;
+  for (let v = 0; v < 2; v++) {
+    if (semis(chord[v]!) - semis(chord[v + 1]!) > 12) c.add(n, [NAMES[v]!, NAMES[v + 1]!], 'spacing');
+  }
+  chord.forEach((note, v) => {
+    if (!inRange(NAMES[v]!, note)) c.add(n, [NAMES[v]!], 'range');
+  });
+  if (chord.filter((x) => pitchClass(x) === c.leadingPc).length > 1) {
+    c.add(
+      n,
+      NAMES.filter((_, v) => pitchClass(chord[v]!) === c.leadingPc),
+      'doubledLeadingTone',
+    );
+  }
+  const pcs = new Set(chord.map((x) => pitchClass(x)));
+  const [first, second] = [...pcs];
+  // Two pitch classes make a chord without a third when they are a unison, a fourth, or a fifth apart.
+  if (pcs.size === 1 || (pcs.size === 2 && [5, 7].includes(Math.abs((second! - first!) % 12))))
+    c.add(n, [], 'incomplete');
+}
+
+/** Parallel perfect intervals between every pair of voices, and direct fifths and octaves in the outer voices. */
+function checkPairs(c: Context, a: Chord, b: Chord, at: number): void {
+  for (const [hi, lo] of PAIRS) {
+    const before = perfectKind(a[hi]!, a[lo]!);
+    const after = perfectKind(b[hi]!, b[lo]!);
+    const movedHi = dir(a[hi]!, b[hi]!);
+    const movedLo = dir(a[lo]!, b[lo]!);
+    const voices = [NAMES[hi]!, NAMES[lo]!];
+    const together = movedHi !== 0 && movedHi === movedLo;
+    if (before && after && before === after && together) {
+      c.add(at, voices, before === 'P5' ? 'parallelFifths' : before === 'P8' ? 'parallelOctaves' : 'parallelUnisons');
+    }
+    // Direct (hidden) fifths and octaves: the outer voices arrive on a perfect interval by similar motion, with a leap
+    // in the soprano.
+    const leap = Math.abs(semis(b[0]!) - semis(a[0]!)) > 2;
+    if (c.standard && hi === 0 && lo === 3 && after && after !== 'P1' && before !== after && together && leap) {
+      c.add(at, voices, after === 'P5' ? 'directFifths' : 'directOctaves');
+    }
+  }
+}
+
+/** Problems in how one voice moves: augmented steps, big leaps, overlap, and leaps that are not recovered. */
+function checkVoice(c: Context, k: number, v: number): void {
+  const a = c.chords[k - 1]!;
+  const b = c.chords[k]!;
+  const at = k + 1;
+  const step = Math.abs(semis(b[v]!) - semis(a[v]!));
+  if (between(a[v]!, b[v]!).interval.quality === 'A' && step > 0) c.add(at, [NAMES[v]!], 'augmented');
+  const limit = v !== 3 && c.strict ? 8 : 12;
+  if (c.standard && step > limit) c.add(at, [NAMES[v]!], 'largeLeap');
+  // Overlap: a voice moves past where its neighbor just was.
+  if (c.standard && v > 0 && semis(b[v]!) > semis(a[v - 1]!)) c.add(at, [NAMES[v - 1]!, NAMES[v]!], 'overlap');
+  if (c.standard && v < 3 && semis(b[v]!) < semis(a[v + 1]!)) c.add(at, [NAMES[v]!, NAMES[v + 1]!], 'overlap');
+  if (c.strict && k >= 2 && v !== 3) {
+    const leap = semis(a[v]!) - semis(c.chords[k - 2]![v]!);
+    const next = semis(b[v]!) - semis(a[v]!);
+    const recovered = Math.abs(next) <= 2 && Math.sign(next) === -Math.sign(leap);
+    if (Math.abs(leap) > 5 && !recovered) c.add(at - 1, [NAMES[v]!], 'leapRecovery');
+  }
+}
+
+/** Chordal sevenths resolve down by step; the leading tone of a dominant chord rises to the tonic. */
+function checkResolutions(c: Context, k: number, numeral: string): void {
+  const chord = c.chords[k]!;
+  const next = c.chords[k + 1];
+  if (!next) return;
+  const reading = nameChord([chord[3], chord[2], chord[1], chord[0]])[0];
+  const seventh = reading?.quality.degrees.split(' ').find((d) => /^b*7$/.test(d));
+  if (reading && seventh) {
+    const seventhPc = (pitchClass(reading.root) + sevenSemis(seventh)) % 12;
+    chord.forEach((note, v) => {
+      const fell = semis(note) - semis(next[v]!);
+      if (pitchClass(note) === seventhPc && fell !== 1 && fell !== 2) c.add(k + 2, [NAMES[v]!], 'seventh');
+    });
+  }
+  if (!c.standard || !/^(V|vii)/.test(numeral)) return;
+  chord.forEach((note, v) => {
+    if (pitchClass(note) !== c.leadingPc) return;
+    const rises = semis(next[v]!) - semis(note);
+    // An inner voice may fall a third to the fifth of the tonic chord (the "frustrated" leading tone) unless strict.
+    const checked = v === 0 || (c.strict && (v === 1 || v === 2));
+    if (checked && rises !== 1 && rises !== 2) c.add(k + 2, [NAMES[v]!], 'leadingTone');
+  });
+}
+
+/** The cadence the last two chords make, from their Roman numerals. */
+function cadenceOf(chords: readonly Chord[], numerals: readonly string[], tonic: Pc): Report['cadence'] {
+  const last = chords.length - 1;
+  if (last < 1) return 'none';
+  const a = numerals[last - 1] ?? '';
+  const b = numerals[last] ?? '';
+  const tonicChord = /^(I|i)(?![iv])/.test(b);
+  const rootPosition = (i: number): boolean => /^[VvIi]+[^0-9/]*$/.test(numerals[i] ?? '') || numerals[i] === 'V7';
+  if (/^V/.test(a) && tonicChord) {
+    const tonicPc = pitchClass(tonic);
+    const ends = pitchClass(chords[last]![0]) === tonicPc && pitchClass(chords[last]![3]) === tonicPc;
+    return rootPosition(last - 1) && rootPosition(last) && ends ? 'perfectAuthentic' : 'authentic';
+  }
+  if (/^(IV|iv)/.test(a) && tonicChord) return 'plagal';
+  if (/^V/.test(a) && /^(vi|VI)/.test(b)) return 'deceptive';
+  return /^V/.test(b) ? 'half' : 'none';
+}
+
 export function checkChorale(chords: readonly Chord[], tonic: Pc, mode: Mode, level: Strictness): Report {
   const issues: Issue[] = [];
-  const add = (chord: number, voices: Voice[], rule: RuleId): void => {
-    if (!issues.some((i) => i.chord === chord && i.rule === rule && i.voices.join() === voices.join()))
-      issues.push({ chord, voices, rule });
+  const c: Context = {
+    chords,
+    tonic,
+    leadingPc: (((pitchClass(tonic) - 1) % 12) + 12) % 12,
+    standard: level !== 'relaxed',
+    strict: level === 'strict',
+    add(chord, voices, rule) {
+      if (!issues.some((i) => i.chord === chord && i.rule === rule && i.voices.join() === voices.join()))
+        issues.push({ chord, voices, rule });
+    },
   };
-  const standard = level !== 'relaxed';
-  const strict = level === 'strict';
-  const leadingPc = (((pitchClass(tonic) - 1) % 12) + 12) % 12;
-  const names: Voice[] = [...VOICES];
-
-  chords.forEach((chord, k) => {
-    const n = k + 1;
-    for (let v = 0; v < 3; v++) {
-      if (semis(chord[v]!) < semis(chord[v + 1]!)) add(n, [names[v]!, names[v + 1]!], 'crossing');
-    }
-    if (standard) {
-      for (let v = 0; v < 3; v++) {
-        if (v < 2 && semis(chord[v]!) - semis(chord[v + 1]!) > 12) add(n, [names[v]!, names[v + 1]!], 'spacing');
-      }
-      chord.forEach((note, v) => {
-        if (!inRange(names[v]!, note)) add(n, [names[v]!], 'range');
-      });
-      if (chord.filter((c) => pitchClass(c) === leadingPc).length > 1) {
-        add(n, names.filter((_, v) => pitchClass(chord[v]!) === leadingPc), 'doubledLeadingTone');
-      }
-      const pcs = new Set(chord.map((c) => pitchClass(c)));
-      const [first, second] = [...pcs];
-      // Two pitch classes make a chord without a third when they are a unison, a fourth, or a fifth apart.
-      if (pcs.size === 1 || (pcs.size === 2 && [5, 7].includes(Math.abs((second! - first!) % 12)))) add(n, [], 'incomplete');
-    }
-  });
-
+  chords.forEach((chord, k) => checkWithin(c, chord, k + 1));
   for (let k = 1; k < chords.length; k++) {
-    const a = chords[k - 1]!;
-    const b = chords[k]!;
-    const at = k + 1;
-    for (const [hi, lo] of PAIRS) {
-      const before = perfectKind(a[hi]!, a[lo]!);
-      const after = perfectKind(b[hi]!, b[lo]!);
-      const movedHi = dir(a[hi]!, b[hi]!);
-      const movedLo = dir(a[lo]!, b[lo]!);
-      const voices = [names[hi]!, names[lo]!];
-      if (before && after && before === after && movedHi !== 0 && movedLo !== 0 && movedHi === movedLo) {
-        add(at, voices, before === 'P5' ? 'parallelFifths' : before === 'P8' ? 'parallelOctaves' : 'parallelUnisons');
-      }
-      if (before === 'P1' && after === 'P1' && (movedHi !== 0 || movedLo !== 0) && movedHi === movedLo) {
-        add(at, voices, 'parallelUnisons');
-      }
-      // Direct (hidden) fifths and octaves: the outer voices arrive on a perfect interval by similar motion, with a leap
-      // in the soprano.
-      if (standard && hi === 0 && lo === 3 && after && after !== 'P1' && before !== after) {
-        const leap = Math.abs(semis(b[0]!) - semis(a[0]!)) > 2;
-        if (movedHi !== 0 && movedHi === movedLo && leap) add(at, voices, after === 'P5' ? 'directFifths' : 'directOctaves');
-      }
-    }
-    for (let v = 0; v < 4; v++) {
-      const step = Math.abs(semis(b[v]!) - semis(a[v]!));
-      const { interval } = between(a[v]!, b[v]!);
-      if (interval.quality === 'A' && step > 0) add(at, [names[v]!], 'augmented');
-      const limit = v === 3 ? 12 : strict ? 8 : 12;
-      if (standard && step > limit) add(at, [names[v]!], 'largeLeap');
-      // Overlap: a voice moves past where its neighbor just was.
-      if (standard && v > 0 && semis(b[v]!) > semis(a[v - 1]!)) add(at, [names[v - 1]!, names[v]!], 'overlap');
-      if (standard && v < 3 && semis(b[v]!) < semis(a[v + 1]!)) add(at, [names[v]!, names[v + 1]!], 'overlap');
-      if (strict && k >= 2) {
-        const before = chords[k - 2]![v]!;
-        const leap = semis(a[v]!) - semis(before);
-        if (Math.abs(leap) > 5 && v !== 3) {
-          const next = semis(b[v]!) - semis(a[v]!);
-          const recovered = Math.abs(next) <= 2 && Math.sign(next) === -Math.sign(leap);
-          if (!recovered) add(at - 1, [names[v]!], 'leapRecovery');
-        }
-      }
-    }
+    checkPairs(c, chords[k - 1]!, chords[k]!, k + 1);
+    for (let v = 0; v < 4; v++) checkVoice(c, k, v);
   }
-
-  // Chordal sevenths resolve down by step; the leading tone of a dominant chord rises to the tonic.
-  const read = chords.map((c) => analyze(tonic, mode, [c[3], c[2], c[1], c[0]]));
-  chords.forEach((chord, k) => {
-    const next = chords[k + 1];
-    const reading = nameChord([chord[3], chord[2], chord[1], chord[0]])[0];
-    if (!next) return;
-    const seventh = reading?.quality.degrees.split(' ').find((d) => /^b*7$/.test(d));
-    if (reading && seventh) {
-      const seventhPc = (pitchClass(reading.root) + sevenSemis(seventh)) % 12;
-      chord.forEach((note, v) => {
-        if (pitchClass(note) !== seventhPc) return;
-        const fell = semis(note) - semis(next[v]!);
-        const stepDown = fell === 1 || fell === 2;
-        if (!stepDown) add(k + 2, [names[v]!], 'seventh');
-      });
-    }
-    const numeral = read[k]?.numeral ?? '';
-    if (/^(V|vii)/.test(numeral)) {
-      chord.forEach((note, v) => {
-        if (pitchClass(note) !== leadingPc) return;
-        const rises = semis(next[v]!) - semis(note);
-        const inner = v === 1 || v === 2;
-        const checked = v === 0 || (strict && inner);
-        if (standard && checked && !(rises === 1 || rises === 2)) {
-          // The "frustrated" leading tone: an inner voice may fall a third to the fifth of the tonic chord, which
-          // standard rules allow.
-          add(k + 2, [names[v]!], 'leadingTone');
-        }
-      });
-    }
-  });
-
-  const last = chords.length - 1;
-  let cadence: Report['cadence'] = 'none';
-  if (last >= 1) {
-    const a = read[last - 1]?.numeral ?? '';
-    const b = read[last]?.numeral ?? '';
-    const bassPc = (c: Chord) => pitchClass(c[3]);
-    const tonicPc = pitchClass(tonic);
-    const rootPosition = (i: number) => /^[VvIi]+[^0-9/]*$/.test(read[i]?.numeral ?? '') || /^V7$/.test(read[i]?.numeral ?? '');
-    if (/^V/.test(a) && /^(I|i)(?![iv])/.test(b)) {
-      cadence =
-        rootPosition(last - 1) && rootPosition(last) && pitchClass(chords[last]![0]) === tonicPc && bassPc(chords[last]!) === tonicPc
-          ? 'perfectAuthentic'
-          : 'authentic';
-    } else if (/^(IV|iv)/.test(a) && /^(I|i)(?![iv])/.test(b)) cadence = 'plagal';
-    else if (/^V/.test(a) && /^(vi|VI)/.test(b)) cadence = 'deceptive';
-    else if (/^V/.test(b)) cadence = 'half';
-  }
+  const read = chords.map((x) => analyze(tonic, mode, [x[3], x[2], x[1], x[0]]));
+  const numerals = read.map((r) => r?.numeral ?? '?');
+  chords.forEach((_, k) => checkResolutions(c, k, read[k]?.numeral ?? ''));
   issues.sort((x, y) => x.chord - y.chord);
-  return { issues, numerals: read.map((r) => r?.numeral ?? '?'), cadence };
+  return {
+    issues,
+    numerals,
+    cadence: cadenceOf(
+      chords,
+      read.map((r) => r?.numeral ?? ''),
+      tonic,
+    ),
+  };
 }
 
 /** Semitones from the root to the seventh of a chord from its degree list. */

@@ -26,17 +26,24 @@ function noteHead(n: Note, x: number, bottom: number, base: number): string {
   const position = diatonic(n) - base;
   const y = bottom - (position * GAP) / 2;
   let ledger = '';
-  for (let p = -2; p >= position; p -= 2) ledger += `<line x1="${x - 8}" y1="${bottom - (p * GAP) / 2}" x2="${x + 8}" y2="${bottom - (p * GAP) / 2}"/>`;
-  for (let p = 10; p <= position; p += 2) ledger += `<line x1="${x - 8}" y1="${bottom - (p * GAP) / 2}" x2="${x + 8}" y2="${bottom - (p * GAP) / 2}"/>`;
-  const acc = n.alt === 0 ? '' : `<text x="${x - 17}" y="${y + 4}" font-size="11" stroke="none" fill="currentColor">${accidental(n.alt)}</text>`;
-  return `${ledger}<ellipse cx="${x}" cy="${y}" rx="5.2" ry="3.6" fill="currentColor" stroke="none" transform="rotate(-18 ${x} ${y})"/>${acc}`;
+  for (let p = -2; p >= position; p -= 2)
+    ledger += `<line x1="${x - 8}" y1="${bottom - (p * GAP) / 2}" x2="${x + 8}" y2="${bottom - (p * GAP) / 2}"/>`;
+  for (let p = 10; p <= position; p += 2)
+    ledger += `<line x1="${x - 8}" y1="${bottom - (p * GAP) / 2}" x2="${x + 8}" y2="${bottom - (p * GAP) / 2}"/>`;
+  const acc =
+    n.alt === 0
+      ? ''
+      : `<text x="${x - 17}" y="${y + 4}" font-size="11" stroke="none" fill="currentColor">${accidental(n.alt)}</text>`;
+  const head = `<ellipse cx="${x}" cy="${y}" rx="5.2" ry="3.6" fill="currentColor" stroke="none"`;
+  return `${ledger}${head} transform="rotate(-18 ${x} ${y})"/>${acc}`;
 }
 
 export function chordPicture(chords: readonly Chord[], bad: ReadonlySet<number>, label: string): string {
   const width = LEFT + chords.length * COLUMN + 16;
   const height = 196;
   let body = `<g fill="none" stroke="currentColor" stroke-width="1">${staff(TREBLE_BOTTOM, width)}${staff(BASS_BOTTOM, width)}</g>`;
-  body += `<text x="10" y="${TREBLE_BOTTOM - 3}" font-size="30" fill="currentColor">𝄞</text><text x="10" y="${BASS_BOTTOM - 8}" font-size="26" fill="currentColor">𝄢</text>`;
+  body += `<text x="10" y="${TREBLE_BOTTOM - 3}" font-size="30" fill="currentColor">𝄞</text>`;
+  body += `<text x="10" y="${BASS_BOTTOM - 8}" font-size="26" fill="currentColor">𝄢</text>`;
   chords.forEach((chord, k) => {
     const x = LEFT + 14 + k * COLUMN;
     body += `<g stroke="currentColor" stroke-width="1">`;
@@ -45,7 +52,8 @@ export function chordPicture(chords: readonly Chord[], bad: ReadonlySet<number>,
     body += `</g>`;
     body += `<text x="${x + 1}" y="${height - 6}" font-size="10" text-anchor="middle" fill="currentColor">${k + 1}</text>`;
     if (bad.has(k + 1)) {
-      body += `<rect x="${x - 26}" y="12" width="${COLUMN - 4}" height="${BASS_BOTTOM + 28 - 12}" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+      body += `<rect x="${x - 26}" y="12" width="${COLUMN - 4}" height="${BASS_BOTTOM + 16}" rx="4" fill="none"`;
+      body += ' stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>';
     }
   });
   const desc = chords.map((c, k) => `${k + 1}: ${c.map((n) => noteName(n)).join(' ')}`).join('; ');

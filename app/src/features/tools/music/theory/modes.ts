@@ -101,7 +101,8 @@ function readChord(v: Values) {
 function readNotes(text: string, minimum: number): Note[] {
   const tokens = text.split(/[\s,]+/).filter(Boolean);
   const notes = tokens.map((t) => parseNote(t, 4));
-  if (tokens.length < minimum || notes.some((n) => n === null)) return fail('thNotesFormat', { count: String(minimum) });
+  if (tokens.length < minimum || notes.some((n) => n === null))
+    return fail('thNotesFormat', { count: String(minimum) });
   return notes as Note[];
 }
 
@@ -289,7 +290,13 @@ export function cents(v: Values): KitOk {
     ],
     answer: `${def.id} on ${noteName(tonicNote(tonic))}: ${def.cents.join(', ')} cents`,
     play: {
-      notes: def.cents.map((c, i) => ({ at: i, dur: 1, hz: base * ratioOf(c), level: 1 as const, voice: 'tone' as const })),
+      notes: def.cents.map((c, i) => ({
+        at: i,
+        dur: 1,
+        hz: base * ratioOf(c),
+        level: 1 as const,
+        voice: 'tone' as const,
+      })),
       beats: def.cents.length,
       bpm: 120,
       loop: false,
@@ -343,7 +350,14 @@ export function nameMode(v: Values): KitOk {
     { key: 'positionOut', value: '', word: INVERSION_WORDS[best.inversion] ?? 'wordRoot' },
   ];
   if (best.quality.stack <= 4) rows.push({ key: 'figuresOut', value: figuredBass(best.quality, best.inversion) });
-  if (matches.length > 1) rows.push({ key: 'otherReadings', value: matches.slice(1, 4).map((m) => m.symbol).join(', ') });
+  if (matches.length > 1)
+    rows.push({
+      key: 'otherReadings',
+      value: matches
+        .slice(1, 4)
+        .map((m) => m.symbol)
+        .join(', '),
+    });
   return ok({
     rows,
     steps: [

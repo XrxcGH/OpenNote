@@ -126,6 +126,9 @@ export const nonNegative = (values: Values, id: string, label: FieldKey, unit = 
   return value >= 0 ? value : fail('nonNegative', { field: label });
 };
 
+/** A count with its noun, such as "1 page" or "3 pages". */
+export const plural = (n: number, one: string, many = `${one}s`): string => `${n} ${n === 1 ? one : many}`;
+
 export const ok = (result: Omit<KitOk, 'ok' | 'notes'> & { notes?: NoteKey[] }): KitOk => ({
   ok: true,
   notes: [],

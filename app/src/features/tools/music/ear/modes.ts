@@ -47,92 +47,119 @@ export interface Grade {
   yours: string;
 }
 
+type Of<K extends Item['kind']> = Extract<Item, { kind: K }>;
+
+function gradeInterval(item: Of<'interval'>, answer: string): Grade {
+  const semis = readIntervalAnswer(answer);
+  if (semis === null) return fail('earIntervalFormat');
+  const first = item.root;
+  const second = transposeNote(first, item.interval, item.delivery === 'down');
+  const vars = {
+    from: noteName(first),
+    to: noteName(second),
+    generic: String(item.interval.generic),
+    semis: String(item.interval.semitones),
+    name: intervalWords(item.interval),
+  };
+  return {
+    correct: semis === item.interval.semitones,
+    rightAnswer: intervalName(item.interval),
+    yours: answer,
+    rows: [],
+    steps: [{ key: 'earStepInterval', vars }],
+  };
+}
+
+const chordSymbol = (item: Of<'chord'>): string => `${pitchClassName(item.root)}${quality(item.qualityId).symbols[0]}`;
+
+function gradeChord(item: Of<'chord'>, answer: string): Grade {
+  const id = readChordAnswer(answer);
+  if (id === null) return fail('earChordFormat');
+  const members = chordMembers(item.root, item.qualityId);
+  return {
+    correct: id === item.qualityId,
+    rightAnswer: quality(item.qualityId).symbols[0] === '' ? 'major' : chordSymbol(item),
+    yours: answer,
+    rows: [],
+    steps: [{ key: 'earStepChord', vars: { chord: chordSymbol(item), members } }],
+  };
+}
+
+function gradeScale(item: Of<'scale'>, answer: string): Grade {
+  const id = readScaleAnswer(answer);
+  if (id === null) return fail('earScaleFormat');
+  const def = scaleDef(item.scaleId);
+  const vars = { name: scaleName(item.scaleId), degrees: def.degrees, steps: scaleSemitones(def.degrees).join(' ') };
+  return {
+    correct: id === item.scaleId,
+    rightAnswer: scaleName(item.scaleId),
+    yours: answer,
+    rows: [],
+    steps: [{ key: 'earStepScale', vars }],
+  };
+}
+
+function gradeMelody(item: Of<'melody'>, answer: string): Grade {
+  const typed = readNoteList(answer);
+  if (typed === null) return fail('earMelodyFormat');
+  const rows: KitRow[] = [];
+  let all = true;
+  item.notes.forEach((target, i) => {
+    const t = typed[i];
+    const right = t !== undefined && noteMatches(t, target);
+    if (!right) all = false;
+    let value = 'correct';
+    if (!right)
+      value =
+        t === undefined
+          ? `missing: the note is ${pitchClassName(target)}`
+          : `wrong: ${pitchClassName(t)} for ${pitchClassName(target)}`;
+    rows.push({ key: 'noteRow', vars: { n: String(i + 1) }, value });
+  });
+  const notes = item.notes.map(pitchClassName).join(' ');
+  return {
+    correct: all,
+    rightAnswer: notes,
+    yours: answer,
+    rows,
+    steps: [{ key: 'earStepMelody', vars: { notes, degrees: item.degrees.map((d) => d + 1).join(' ') } }],
+  };
+}
+
+function gradeRhythm(item: Of<'rhythm'>, answer: string): Grade {
+  const typed = answer
+    .trim()
+    .toLowerCase()
+    .replace(/[\s|]+/g, '')
+    .replace(/[-_]/g, '.');
+  if (!/^[x.]+$/.test(typed)) return fail('earRhythmFormat');
+  const rows: KitRow[] = [];
+  [...item.steps].forEach((c, i) => {
+    if (typed[i] !== c)
+      rows.push({ key: 'stepRow', vars: { n: String(i + 1) }, value: `wrong: ${typed[i] ?? 'missing'}, it is ${c}` });
+  });
+  return {
+    correct: typed.length === item.steps.length && rows.length === 0,
+    rightAnswer: item.steps,
+    yours: typed,
+    rows,
+    steps: [{ key: 'earStepRhythm', vars: { steps: item.steps } }],
+  };
+}
+
 /** Grades a typed answer to an item. A problem with the typed answer (not an unknown word) throws. */
 export function grade(item: Item, answer: string): Grade {
-  const rows: KitRow[] = [];
   switch (item.kind) {
-    case 'interval': {
-      const semis = readIntervalAnswer(answer);
-      if (semis === null) return fail('earIntervalFormat');
-      const first = item.root;
-      const second = item.delivery === 'down' ? transposeNote(first, item.interval, true) : transposeNote(first, item.interval);
-      return {
-        correct: semis === item.interval.semitones,
-        rightAnswer: intervalName(item.interval),
-        yours: answer,
-        rows,
-        steps: [
-          { key: 'earStepInterval', vars: { from: noteName(first), to: noteName(second), generic: String(item.interval.generic), semis: String(item.interval.semitones), name: intervalWords(item.interval) } },
-        ],
-      };
-    }
-    case 'chord': {
-      const id = readChordAnswer(answer);
-      if (id === null) return fail('earChordFormat');
-      return {
-        correct: id === item.qualityId,
-        rightAnswer: quality(item.qualityId).symbols[0] === '' ? 'major' : `${pitchClassName(item.root)}${quality(item.qualityId).symbols[0]}`,
-        yours: answer,
-        rows,
-        steps: [{ key: 'earStepChord', vars: { chord: `${pitchClassName(item.root)}${quality(item.qualityId).symbols[0]}`, members: chordMembers(item.root, item.qualityId) } }],
-      };
-    }
-    case 'scale': {
-      const id = readScaleAnswer(answer);
-      if (id === null) return fail('earScaleFormat');
-      return {
-        correct: id === item.scaleId,
-        rightAnswer: scaleName(item.scaleId),
-        yours: answer,
-        rows,
-        steps: [
-          { key: 'earStepScale', vars: { name: scaleName(item.scaleId), degrees: scaleDef(item.scaleId).degrees, steps: scaleSemitones(scaleDef(item.scaleId).degrees).join(' ') } },
-        ],
-      };
-    }
-    case 'melody': {
-      const typed = readNoteList(answer);
-      if (typed === null) return fail('earMelodyFormat');
-      let all = true;
-      item.notes.forEach((target, i) => {
-        const t = typed[i];
-        const right = t !== undefined && noteMatches(t, target);
-        if (!right) all = false;
-        rows.push({
-          key: 'noteRow',
-          vars: { n: String(i + 1) },
-          value: right
-            ? 'correct'
-            : t === undefined
-              ? `missing: the note is ${pitchClassName(target)}`
-              : `wrong: ${pitchClassName(t)} for ${pitchClassName(target)}`,
-        });
-      });
-      return {
-        correct: all,
-        rightAnswer: item.notes.map(pitchClassName).join(' '),
-        yours: answer,
-        rows,
-        steps: [{ key: 'earStepMelody', vars: { notes: item.notes.map(pitchClassName).join(' '), degrees: item.degrees.map((d) => d + 1).join(' ') } }],
-      };
-    }
-    case 'rhythm': {
-      const typed = answer.trim().toLowerCase().replace(/[\s|]+/g, '').replace(/[-_]/g, '.');
-      if (!/^[x.]+$/.test(typed)) return fail('earRhythmFormat');
-      let all = typed.length === item.steps.length;
-      [...item.steps].forEach((c, i) => {
-        const right = typed[i] === c;
-        if (!right) all = false;
-        if (!right) rows.push({ key: 'stepRow', vars: { n: String(i + 1) }, value: `wrong: ${typed[i] ?? 'missing'}, it is ${c}` });
-      });
-      return {
-        correct: all,
-        rightAnswer: item.steps,
-        yours: typed,
-        rows,
-        steps: [{ key: 'earStepRhythm', vars: { steps: item.steps } }],
-      };
-    }
+    case 'interval':
+      return gradeInterval(item, answer);
+    case 'chord':
+      return gradeChord(item, answer);
+    case 'scale':
+      return gradeScale(item, answer);
+    case 'melody':
+      return gradeMelody(item, answer);
+    case 'rhythm':
+      return gradeRhythm(item, answer);
     case 'sing':
       return fail('earNoGrade');
   }
@@ -159,7 +186,12 @@ export function drill(kind: DrillKind) {
           { key: 'solfegeOut', value: syllables.join(' ') },
           { key: 'referenceOut', value: `${noteName(item.tonic)} (${hzOf(item.tonic).toFixed(1)} Hz)` },
         ],
-        steps: [{ key: 'earStepSing', vars: { syllables: item.minor ? (base === 'la' ? 'la-based minor' : 'do-based minor') : 'movable do' } }],
+        steps: [
+          {
+            key: 'earStepSing',
+            vars: { syllables: item.minor ? (base === 'la' ? 'la-based minor' : 'do-based minor') : 'movable do' },
+          },
+        ],
         answer: `${syllables.join(' ')} in ${pitchClassName(item.tonic)} ${item.minor ? 'minor' : 'major'}`,
         play: item.plan,
         notes: ['earNoteSing'],
@@ -191,6 +223,9 @@ export function drill(kind: DrillKind) {
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const missText = (line: string, g: Grade | null): string =>
+  line === '' ? 'no answer' : g ? `wrong, you wrote ${line}` : `not understood: ${line}`;
 
 /** A session: the answers typed one to a line are graded against items 1 to k, and the weak items are scheduled. */
 export function session(kind: DrillKind) {
@@ -227,7 +262,7 @@ export function session(kind: DrillKind) {
         vars: { n: String(i + 1) },
         value: correct
           ? `correct; next review ${state.due}`
-          : `${line === '' ? 'no answer' : g ? `wrong, you wrote ${line}` : `not understood: ${line}`}; the answer is ${expected}; review ${state.due}`,
+          : `${missText(line, g)}; the answer is ${expected}; review ${state.due}`,
       });
     });
     return ok({

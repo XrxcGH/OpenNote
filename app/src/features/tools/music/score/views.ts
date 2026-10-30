@@ -119,7 +119,10 @@ export interface TabNote {
 
 /** Strings and frets for a chord or note: the assignment with the lowest frets, open strings preferred, that keeps the
  * hand within its span of the previous fretted note. */
-export function tabFor(midis: readonly number[], position: number | null): { notes: TabNote[]; position: number | null } | null {
+export function tabFor(
+  midis: readonly number[],
+  position: number | null,
+): { notes: TabNote[]; position: number | null } | null {
   const sorted = [...midis].sort((a, b) => a - b);
   let best: { notes: TabNote[]; cost: number } | null = null;
   const walk = (i: number, used: number, chosen: TabNote[]): void => {
@@ -226,7 +229,10 @@ export function transposeBy(tune: Tune, interval: Interval, down: boolean): Tune
 }
 
 /** The nearest way to the key of the given tonic (up or down, within a tritone) with the same mode. */
-export function transposeToKey(tune: Tune, tonicText: string): { tune: Tune; interval: Interval; down: boolean } | null {
+export function transposeToKey(
+  tune: Tune,
+  tonicText: string,
+): { tune: Tune; interval: Interval; down: boolean } | null {
   const target = parsePitchClass(tonicText);
   if (!target) return null;
   const from: Note = { ...tune.key.tonic, octave: 4 };

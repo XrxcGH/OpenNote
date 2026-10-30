@@ -90,7 +90,12 @@ export function parseKey(text: string): Key | null {
   const found = MODE_SHIFT[word] ?? MODE_SHIFT[word.slice(0, 3)];
   if (!found) return null;
   const fifths = fifthsOf(tonic, 'major') + found.shift;
-  return { tonic, mode: found.name, fifths, text: `${m[1]!.toUpperCase()}${m[2]}${found.name === 'major' ? '' : found.name === 'minor' ? 'm' : found.name.slice(0, 3)}` };
+  return {
+    tonic,
+    mode: found.name,
+    fifths,
+    text: `${m[1]!.toUpperCase()}${m[2]}${found.name === 'major' ? '' : found.name === 'minor' ? 'm' : found.name.slice(0, 3)}`,
+  };
 }
 
 /** The alteration the key signature gives each letter (0 = C), as -1, 0, or 1 (or 2 past seven accidentals). */
@@ -198,157 +203,150 @@ export function parseAbc(source: string): Tune {
   const all = [...voices.values()].filter((v) => v.items.some((i) => i.kind !== 'bar'));
   if (all.length === 0) throw new AbcError('empty');
   const chosenUnit = unit ?? (meter.num / meter.den < 0.75 ? 1 / 16 : 1 / 8);
-  // Lengths were read against the unit in force while parsing; rescale voices that were read before L: appeared.
   return { title, meter, unit: chosenUnit, bpm, key, voices: all };
+}
+
+interface Reader {
+  rest: string;
+  lineNo: number;
+  voice: Voice;
+  unit: number;
+  keyAlt: number[];
+  barAcc: Map<string, number>;
+  tuplet: { left: number; factor: number } | null;
+}
+
+const LENGTH = /^(\d*\/*\d*)/;
+
+const take = (r: Reader, count: number): void => {
+  r.rest = r.rest.slice(count);
+};
+
+/** Reads the length suffix at the front of the rest, as a multiple of the unit note length. */
+function takeLength(r: Reader): number {
+  const suffix = LENGTH.exec(r.rest)![1]!;
+  take(r, suffix.length);
+  return lengthFactor(suffix) ?? 1;
+}
+
+function push(r: Reader, item: Item): void {
+  if (item.kind !== 'bar' && r.tuplet) {
+    item.dur *= r.tuplet.factor;
+    if (--r.tuplet.left === 0) r.tuplet = null;
+  }
+  r.voice.items.push(item);
+}
+
+function readPitch(r: Reader, m: RegExpExecArray): Pitch {
+  const acc = m[1] ?? '';
+  const letter = m[2]!;
+  const step = 'CDEFGAB'.indexOf(letter.toUpperCase());
+  const up = m[3]!.match(/'/g)?.length ?? 0;
+  const down = m[3]!.match(/,/g)?.length ?? 0;
+  const octave = (letter === letter.toLowerCase() ? 5 : 4) + up - down;
+  const id = `${step}${octave}`;
+  let alt: number;
+  if (acc !== '') {
+    alt = acc === '^^' ? 2 : acc === '^' ? 1 : acc === '__' ? -2 : acc === '_' ? -1 : 0;
+    r.barAcc.set(id, alt);
+  } else alt = r.barAcc.get(id) ?? r.keyAlt[step] ?? 0;
+  return { step, alt, octave, written: acc };
+}
+
+/** A tuplet marker such as (3 or (3:2:3, which squeezes the next few notes. */
+function readTuplet(r: Reader): void {
+  const t = /^\((\d)(?::(\d*))?(?::(\d*))?/.exec(r.rest);
+  if (!t) return take(r, 1);
+  const p = Number(t[1]);
+  if (p < 2) throw new AbcError('tuplet', t[0], r.lineNo);
+  const q = t[2] ? Number(t[2]) : p === 2 || p === 4 || p === 8 ? 3 : 2;
+  r.tuplet = { left: t[3] ? Number(t[3]) : p, factor: q / p };
+  take(r, t[0].length);
+}
+
+/** A chord in square brackets with its length. Lengths inside the brackets multiply the one after. */
+function readChord(r: Reader): void {
+  const end = r.rest.indexOf(']');
+  if (end < 0) throw new AbcError('chord', r.rest, r.lineNo);
+  let inside = r.rest.slice(1, end);
+  const pitches: Pitch[] = [];
+  let inner = 1;
+  while (inside.length > 0) {
+    const m = NOTE.exec(inside);
+    const len = LENGTH.exec(inside)![1]!;
+    if (m) {
+      pitches.push(readPitch(r, m));
+      inside = inside.slice(m[0].length);
+    } else if (len !== '' && pitches.length > 0) {
+      inner = lengthFactor(len) ?? 1;
+      inside = inside.slice(len.length);
+    } else throw new AbcError('chord', inside, r.lineNo);
+  }
+  take(r, end + 1);
+  push(r, { kind: 'note', pitches, dur: r.unit * takeLength(r) * inner, tied: false });
+}
+
+/** Something in square brackets: an inline field, a volta number, or a chord. */
+function readBracket(r: Reader): void {
+  const skip = /^\[[A-Za-z]:[^\]]*\]/.exec(r.rest) ?? /^\[\d[\d,-]*/.exec(r.rest);
+  if (skip) take(r, skip[0].length);
+  else readChord(r);
+}
+
+/** Skips text between a pair of marks, such as a chord symbol in quotes or a decoration between exclamation marks. */
+function skipPair(r: Reader, close: string): void {
+  const end = r.rest.indexOf(close, 1);
+  take(r, end < 0 ? r.rest.length : end + 1);
+}
+
+function markTied(r: Reader): void {
+  const last = [...r.voice.items].reverse().find((i) => i.kind === 'note');
+  if (last?.kind === 'note') last.tied = true;
+  take(r, 1);
+}
+
+const IGNORED = '.~HLMOPSTuv)\\';
+
+/** Reads one thing from the front of the rest of the line. */
+function step(r: Reader): void {
+  const c = r.rest[0]!;
+  const bar = BAR.exec(r.rest);
+  const note = NOTE.exec(r.rest);
+  if (/\s/.test(c) || IGNORED.includes(c)) take(r, 1);
+  else if (bar) {
+    push(r, { kind: 'bar', style: bar[1]! });
+    r.barAcc.clear();
+    take(r, bar[1]!.length);
+  } else if (c === '"') skipPair(r, '"');
+  else if (c === '!' || c === '+') skipPair(r, c);
+  else if (c === '{') skipPair(r, '}');
+  else if (c === '-') markTied(r);
+  else if (c === '(') readTuplet(r);
+  else if (c === '[') readBracket(r);
+  else if (c === 'z' || c === 'x') {
+    take(r, 1);
+    push(r, { kind: 'rest', dur: r.unit * takeLength(r) });
+  } else if (c === 'Z') r.rest = r.rest.slice(1).replace(/^\d*/, '');
+  else if (note) {
+    take(r, note[0].length);
+    const pitch = readPitch(r, note);
+    push(r, { kind: 'note', pitches: [pitch], dur: r.unit * takeLength(r), tied: false });
+  } else if (c === ':' || c === ']') take(r, 1);
+  else throw new AbcError('char', c, r.lineNo);
 }
 
 function readBody(text: string, lineNo: number, voice: Voice, key: Key, meter: Meter, unitSet: number | null): void {
   const unit = unitSet ?? (meter.num / meter.den < 0.75 ? 1 / 16 : 1 / 8);
-  const keyAlt = keyAlterations(key.fifths);
-  const barAcc = new Map<string, number>();
-  let rest = text;
-  let tuplet: { left: number; factor: number } | null = null;
-  const push = (item: Item): void => {
-    if (item.kind !== 'bar' && tuplet) {
-      (item as NoteItem | RestItem).dur *= tuplet.factor;
-      if (--tuplet.left === 0) tuplet = null;
-    }
-    voice.items.push(item);
+  const r: Reader = {
+    rest: text,
+    lineNo,
+    voice,
+    unit,
+    keyAlt: keyAlterations(key.fifths),
+    barAcc: new Map(),
+    tuplet: null,
   };
-  const readPitch = (m: RegExpExecArray): Pitch => {
-    const acc = m[1] ?? '';
-    const letter = m[2]!;
-    const step = 'CDEFGAB'.indexOf(letter.toUpperCase());
-    const octave = (letter === letter.toLowerCase() ? 5 : 4) + (m[3]!.match(/'/g)?.length ?? 0) - (m[3]!.match(/,/g)?.length ?? 0);
-    const id = `${step}${octave}`;
-    let alt: number;
-    if (acc !== '') {
-      alt = acc === '^^' ? 2 : acc === '^' ? 1 : acc === '__' ? -2 : acc === '_' ? -1 : 0;
-      barAcc.set(id, alt);
-    } else alt = barAcc.get(id) ?? keyAlt[step] ?? 0;
-    return { step, alt, octave, written: acc };
-  };
-  while (rest.length > 0) {
-    const c = rest[0]!;
-    if (/\s/.test(c)) {
-      rest = rest.slice(1);
-      continue;
-    }
-    const bar = BAR.exec(rest);
-    if (bar) {
-      push({ kind: 'bar', style: bar[1]! });
-      barAcc.clear();
-      rest = rest.slice(bar[1]!.length);
-      continue;
-    }
-    if (c === '"') {
-      const end = rest.indexOf('"', 1);
-      rest = end < 0 ? '' : rest.slice(end + 1);
-      continue;
-    }
-    if (c === '!' || c === '+') {
-      const end = rest.indexOf(c, 1);
-      rest = end < 0 ? rest.slice(1) : rest.slice(end + 1);
-      continue;
-    }
-    if (c === '{') {
-      const end = rest.indexOf('}');
-      rest = end < 0 ? '' : rest.slice(end + 1);
-      continue;
-    }
-    if ('.~HLMOPSTuv()-\\'.includes(c) && c !== '(') {
-      if (c === '-') {
-        const last = [...voice.items].reverse().find((i) => i.kind === 'note') as NoteItem | undefined;
-        if (last) last.tied = true;
-      }
-      rest = rest.slice(1);
-      continue;
-    }
-    if (c === '(') {
-      const t = /^\((\d)(?::(\d*))?(?::(\d*))?/.exec(rest);
-      if (t) {
-        const p = Number(t[1]);
-        const q = t[2] ? Number(t[2]) : p === 2 || p === 4 ? 3 : p === 3 || p === 6 ? 2 : p === 8 ? 3 : 2;
-        const r = t[3] ? Number(t[3]) : p;
-        if (p < 2) throw new AbcError('tuplet', t[0], lineNo);
-        tuplet = { left: r, factor: q / p };
-        rest = rest.slice(t[0].length);
-      } else rest = rest.slice(1);
-      continue;
-    }
-    if (c === '[') {
-      const inline = /^\[[A-Za-z]:[^\]]*\]/.exec(rest);
-      if (inline) {
-        if (inline[0].startsWith('[V:')) {
-          /* voices inside a line are not split; the field is skipped */
-        }
-        rest = rest.slice(inline[0].length);
-        continue;
-      }
-      const volta = /^\[\d[\d,-]*/.exec(rest);
-      if (volta) {
-        rest = rest.slice(volta[0].length);
-        continue;
-      }
-      const end = rest.indexOf(']');
-      if (end < 0) throw new AbcError('chord', rest, lineNo);
-      let inside = rest.slice(1, end);
-      const pitches: Pitch[] = [];
-      let first = true;
-      let innerFactor = 1;
-      while (inside.length > 0) {
-        const m = NOTE.exec(inside);
-        if (!m) {
-          if (/^\d|^\//.test(inside) && !first) {
-            // a length inside the brackets belongs to the note before it
-            const len = /^(\d*\/*\d*)/.exec(inside)!;
-            innerFactor = lengthFactor(len[1]!) ?? 1;
-            inside = inside.slice(len[1]!.length);
-            continue;
-          }
-          throw new AbcError('chord', inside, lineNo);
-        }
-        pitches.push(readPitch(m));
-        first = false;
-        inside = inside.slice(m[0].length);
-        const len = /^(\d*\/*\d*)/.exec(inside)!;
-        if (len[1] !== '') {
-          innerFactor = lengthFactor(len[1]!) ?? 1;
-          inside = inside.slice(len[1]!.length);
-        }
-      }
-      rest = rest.slice(end + 1);
-      const suffix = /^(\d*\/*\d*)/.exec(rest)![1]!;
-      const factor = (lengthFactor(suffix) ?? 1) * innerFactor;
-      rest = rest.slice(suffix.length);
-      push({ kind: 'note', pitches, dur: unit * factor, tied: false });
-      continue;
-    }
-    if (c === 'z' || c === 'x') {
-      rest = rest.slice(1);
-      const suffix = /^(\d*\/*\d*)/.exec(rest)![1]!;
-      rest = rest.slice(suffix.length);
-      push({ kind: 'rest', dur: unit * (lengthFactor(suffix) ?? 1) });
-      continue;
-    }
-    if (c === 'Z') {
-      rest = rest.slice(1).replace(/^\d*/, '');
-      continue;
-    }
-    const m = NOTE.exec(rest);
-    if (m) {
-      rest = rest.slice(m[0].length);
-      const suffix = /^(\d*\/*\d*)/.exec(rest)![1]!;
-      rest = rest.slice(suffix.length);
-      push({ kind: 'note', pitches: [readPitch(m)], dur: unit * (lengthFactor(suffix) ?? 1), tied: false });
-      continue;
-    }
-    if (c === '|' || c === ':' || c === ']') {
-      rest = rest.slice(1);
-      continue;
-    }
-    throw new AbcError('char', c, lineNo);
-  }
+  while (r.rest.length > 0) step(r);
 }
 
 // --- measures, checking, playback --------------------------------------------------------------------------------------
@@ -377,7 +375,8 @@ export function checkBars(tune: Tune): BarCheck[] {
     const expected = barLength(tune.meter);
     bars.forEach((length, i) => {
       const edge = i === 0 || i === bars.length - 1;
-      if (!near(length, expected) && !(edge && length < expected)) issues.push({ voice: voice.id, bar: i + 1, length, expected });
+      if (!near(length, expected) && !(edge && length < expected))
+        issues.push({ voice: voice.id, bar: i + 1, length, expected });
     });
   }
   return issues;
@@ -457,7 +456,13 @@ export const keyHeader = (key: Key): string => key.text;
 /** Writes a tune back as ABC text. Accidentals are written against the key signature, repeated where a bar needs them. */
 export function writeAbc(tune: Tune, key: Key = tune.key): string {
   const keyAlt = keyAlterations(key.fifths);
-  const head = [`X:1`, tune.title ? `T:${tune.title}` : '', `M:${tune.meter.num}/${tune.meter.den}`, `L:1/${Math.round(1 / tune.unit)}`, `Q:1/4=${Math.round(tune.bpm)}`].filter(Boolean);
+  const head = [
+    `X:1`,
+    tune.title ? `T:${tune.title}` : '',
+    `M:${tune.meter.num}/${tune.meter.den}`,
+    `L:1/${Math.round(1 / tune.unit)}`,
+    `Q:1/4=${Math.round(tune.bpm)}`,
+  ].filter(Boolean);
   const body: string[] = [];
   const multi = tune.voices.length > 1;
   for (const voice of tune.voices) {
