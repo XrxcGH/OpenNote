@@ -8,7 +8,7 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 ## Status
 
-OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests.
+OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with eleven subject tool kits.
 
 | Phase                                     | Focus                                                                                    | Status                                                                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -34,6 +34,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [Tables and charts](docs/help/tables-and-charts.md)               | Smart tables with views and formulas, and charts that update with them                                         |
 | [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, the grapher, Mermaid diagrams, and mind maps                                            |
 | [Engineering tools](docs/help/engineering-tools.md)               | Free-body diagrams, beam and truss solvers, DC circuits, and units in tables                                   |
+| [Subject tool kits](docs/help/subject-tool-kits.md)               | Eleven tool windows for engineering, science, and math, with worked steps and live calculation blocks          |
 | [Search and links](docs/help/search-and-links.md)                 | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
 | [Study tools](docs/help/study-tools.md)                           | Flashcards, Anki, study tape, Upcoming, timers, a calculator, and citations                                    |
 | [Recording](docs/help/recording.md)                               | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |

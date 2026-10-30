@@ -1,0 +1,25 @@
+// Every tool of the kit with its engine. The window loads this file the first time it opens.
+import { atomsTool } from './atoms/tool';
+import { acidBaseTool } from './acidbase/tool';
+import { crystalsTool } from './crystals/tool';
+import { diffusionTool } from './diffusion/tool';
+import { electrochemTool } from './electrochem/tool';
+import { equilibriumTool } from './equilibrium/tool';
+import { kineticsTool } from './kinetics/tool';
+import { solutionsTool } from './solutions/tool';
+import { phasesTool } from './phases/tool';
+import { thermochemTool } from './thermochem/tool';
+import type { ToolSpec } from './spec';
+
+export const CHEMMAT_TOOLS: readonly ToolSpec[] = [
+  thermochemTool,
+  equilibriumTool,
+  acidBaseTool,
+  electrochemTool,
+  kineticsTool,
+  solutionsTool,
+  crystalsTool,
+  diffusionTool,
+  phasesTool,
+  atomsTool,
+];
