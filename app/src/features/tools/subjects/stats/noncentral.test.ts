@@ -5,6 +5,7 @@ import {
   exactP,
   fSf,
   kendallDistribution,
+  kendallExactP,
   mannWhitneyDistribution,
   noncentralChiSquareCdf,
   noncentralChiSquareQuantile,
@@ -15,6 +16,7 @@ import {
   normalRangeCdf,
   signedRankDistribution,
   spearmanDistribution,
+  spearmanExactP,
   studentizedRangeCdf,
   studentizedRangeQuantile,
   tCdf,
@@ -90,6 +92,20 @@ describe('exact rank distributions', () => {
     for (let i = 0; i < 6; i += 1) for (let j = i + 1; j < 6; j += 1) if (y[i] > y[j]) inversions += 1;
     expect(1 - (4 * inversions) / 30).toBeCloseTo(0.6, 12);
     expect(exactP(kendallDistribution(6), inversions, 'two-sided')).toBeCloseTo(0.136111111, 9);
+  });
+
+  it('takes the one-sided Kendall and Spearman p-values from the tail that matches the sign', () => {
+    const y = [3, 1, 4, 2, 7, 5, 8, 6];
+    let inversions = 0;
+    for (let i = 0; i < 8; i += 1) for (let j = i + 1; j < 8; j += 1) if (y[i] > y[j]) inversions += 1;
+    expect(inversions).toBe(6);
+    // Orders of 8 with at most 6 inversions, from the Mahonian numbers 1, 7, 27, 76, 174, 343, 602: 1230 of 8!.
+    expect(kendallExactP(8, inversions, 'greater')).toBeCloseTo(1230 / 40320, 12);
+    expect(kendallExactP(8, inversions, 'less')).toBeGreaterThan(0.96);
+    expect(kendallExactP(8, inversions, 'two-sided')).toBeCloseTo(2460 / 40320, 12);
+    // y = 1, 2, 4, 3 has D = 2; of the 24 orders of 4, one has D = 0 and three have D = 2.
+    expect(spearmanExactP(4, 2, 'greater')).toBeCloseTo(4 / 24, 14);
+    expect(spearmanExactP(4, 18, 'less')).toBeCloseTo(4 / 24, 14);
   });
 
   it('enumerates Spearman orders and refuses sizes past the exact limit', () => {
