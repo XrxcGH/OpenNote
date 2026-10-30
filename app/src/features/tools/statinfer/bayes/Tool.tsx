@@ -1,4 +1,5 @@
-// Bayesian updating: conjugate priors, Bayes factors, grid posteriors, Metropolis sampling, and Bayes tables.
+// Bayesian updating: conjugate priors, Bayes factors, grid posteriors, Metropolis sampling, Bayes tables, and small
+// Bayesian networks.
 import type { KitToolProps } from '../../kits/types';
 import { parseSeed } from '../../subjects/num/rng';
 import { SeedField } from '../../subjects/ui/fields';
@@ -17,12 +18,13 @@ import {
   normalReport,
   tableReport,
 } from './engine';
+import { networkReport } from './network';
 import { bayes as words } from '../../../../strings/en/kitStatInfer/bayes';
 import { installTool } from '../strings';
 
 installTool('bayes', words);
 
-const MODES = ['beta', 'normal', 'nig', 'gamma', 'dirichlet', 'jzs', 'grid', 'metropolis', 'table'] as const;
+const MODES = ['beta', 'normal', 'nig', 'gamma', 'dirichlet', 'jzs', 'grid', 'metropolis', 'table', 'network'] as const;
 type Mode = (typeof MODES)[number];
 
 const FIRST = {
@@ -63,6 +65,9 @@ const FIRST = {
   burn: '1000',
   seed: '20240611',
   hypotheses: 'Disease, 0.01, 0.95\nNo disease, 0.99, 0.10',
+  nodes: 'Cloudy: 0.5\nSprinkler | Cloudy: 0.5, 0.1\nRain | Cloudy: 0.2, 0.8\nWet | Sprinkler, Rain: 0, 0.9, 0.9, 0.99',
+  evidence: 'Wet = true',
+  query: 'Rain',
 };
 
 type State = typeof FIRST;
@@ -80,6 +85,7 @@ const FIELDS: Record<Mode, readonly Name[]> = {
   grid: ['prior', 'likelihood', 'lo', 'hi', 'points', 'level'],
   metropolis: ['logDensity', 'start', 'step', 'iterations', 'burn'],
   table: [],
+  network: ['evidence', 'query'],
 };
 
 function build(s: State) {
@@ -130,6 +136,8 @@ function build(s: State) {
       const names = start.length === 2 ? ['x', 'y'] : ['theta'];
       return metropolisReport(s.logDensity, names, start, parseNumbers(s.step), v('iterations'), v('burn'), seed);
     }
+    case 'network':
+      return networkReport(s.nodes, s.evidence, s.query);
     default:
       return tableReport(
         parseGrid(s.hypotheses).map((row) => {
@@ -143,7 +151,8 @@ function build(s: State) {
 export default function BayesTool(props: KitToolProps) {
   const [s, set] = useInputs(props, FIRST);
   const { report, problem } = useReport(s, build);
-  const wide = (name: Name) => name === 'likelihood' || name === 'logDensity' || name === 'prior';
+  const wide = (name: Name) =>
+    name === 'likelihood' || name === 'logDensity' || name === 'prior' || name === 'evidence';
   return (
     <Panel>
       <Choice
@@ -180,6 +189,9 @@ export default function BayesTool(props: KitToolProps) {
           value={s.hypotheses}
           onChange={(hypotheses) => set({ hypotheses })}
         />
+      )}
+      {s.mode === 'network' && (
+        <DataBox label={k('nodes')} hint={k('nodesHint')} value={s.nodes} onChange={(nodes) => set({ nodes })} />
       )}
       {s.mode === 'metropolis' && <SeedField value={s.seed} onChange={(seed) => set({ seed })} />}
       <Results report={report} problem={problem} title={say('kitStatInfer.open.bayes')} tool="bayes" inputs={s} />
