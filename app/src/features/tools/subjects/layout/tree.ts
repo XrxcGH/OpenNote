@@ -4,6 +4,7 @@
 // overlap. The tree is also laid out from the right and the two drawings averaged. That keeps every constraint, and
 // it makes a mirror-image tree give exactly the mirror-image drawing.
 import { ensure } from '../errors';
+import { nodeSize } from './svg';
 
 export interface TreeInput {
   id: string;
@@ -79,7 +80,7 @@ function build(input: TreeInput, parent: Work | null, index: number, level: numb
     children: [] as Work[],
     index,
     level,
-    size: input[along] ?? 1,
+    size: nodeSize(input)[along],
     prelim: 0,
     mod: 0,
     change: 0,
@@ -233,7 +234,7 @@ function place(input: TreeInput, breadth: Map<string, number>, options: Required
     const b = breadth.get(node.id) ?? 0;
     const [x, y] = options.orientation === 'right' ? [depth, b] : [b, depth];
     const label = node.label ?? node.id;
-    nodes.push({ id: node.id, label, x, y, width: node.width ?? 1, height: node.height ?? 1, level, parent });
+    nodes.push({ id: node.id, label, x, y, ...nodeSize(node), level, parent });
     for (const c of node.children ?? []) visit(c, node.id, level + 1);
   };
   visit(input, null, 0);
