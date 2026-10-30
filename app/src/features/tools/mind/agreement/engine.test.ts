@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { blandAltman, iccForms, meanSquares } from './icc';
 import { cohen, crossTab, fleiss, landisKoch, presenceKappa, weightedKappa } from './kappa';
 import { alphaInterval, krippendorff } from './kripp';
+import { readUnits } from './measures';
 
 const close = (got: number, want: number, tol: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(tol);
 
@@ -212,5 +213,33 @@ describe('intraclass correlation and Bland-Altman', () => {
       ]),
     ).toThrow('complete');
     expect(() => blandAltman([1, 2])).toThrow('fewPairs');
+  });
+});
+
+describe('bounds and missing marks', () => {
+  it('truncates the kappa interval at 1', () => {
+    // Coder 1 says yes to units 1-5 of 10, coder 2 to units 2-6: [[4, 1], [1, 4]], p_o 0.8, p_e 0.5, kappa 0.6.
+    // The variance is 0.064 (SE 0.252982), so kappa + 1.96 SE = 1.0958, which kappa cannot reach.
+    const r = cohen([
+      [4, 1],
+      [1, 4],
+    ]);
+    close(r.kappa, 0.6, 1e-12);
+    close(r.se, Math.sqrt(0.064), 1e-9);
+    close(r.low, 0.6 - 1.959963984540054 * Math.sqrt(0.064), 1e-9);
+    expect(r.high).toBe(1);
+  });
+
+  it("reads Krippendorff's star as missing and gives his 4-coder example alpha 0.743", () => {
+    // Krippendorff (2011), Computing Krippendorff's alpha-reliability: 40 pairable values, alpha 0.743.
+    const text = [
+      '1 2 3 3 2 1 4 1 2 * * *',
+      '1 2 3 3 2 2 4 1 2 5 * 3',
+      '* 3 3 3 2 3 4 2 2 5 1 *',
+      '1 2 3 3 2 4 4 1 2 5 1 *',
+    ].join('\n');
+    const units = readUnits(text, false);
+    expect(units[0]).toEqual(['1', '1', '', '1']);
+    close(krippendorff(units, 'nominal').alpha, 0.743421, 1e-6);
   });
 });

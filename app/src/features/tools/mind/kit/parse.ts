@@ -41,8 +41,8 @@ export function readList(text: string, field: string): number[] {
   });
 }
 
-/** A missing value: an empty cell, NA, a dot, or a dash. */
-export const isMissing = (cell: string): boolean => /^(|na|n\/a|\.|-|nan)$/i.test(cell.trim());
+/** A missing value: an empty cell, NA, N/A, NaN, a dot, a dash, a star (Krippendorff's mark), or a question mark. */
+export const isMissing = (cell: string): boolean => /^(|na|n\/a|\.|-|nan|\*|\?)$/i.test(cell.trim());
 
 export interface Table {
   /** The first line when any of its cells is not a number; otherwise null. */
