@@ -8,6 +8,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - **Coordinates and navigation**: convert between latitude and longitude, UTM, and MGRS. Measure distance and bearing, and work navigation problems.
 - **Timeline builder**: draw events and periods on tracks, with BCE dates, uncertain dates, and deep time. Insert it as a figure you can edit.
 - **Calendars and eras**: convert a date between thirteen calendars, such as Hebrew, Islamic, Chinese, and Maya. List the festivals of a year.
+- **Text analysis and verse**: measure readability, list words and n-grams, build a concordance, test keyness, and compare versions. Scan English and Latin verse.
 - **Identification keys**: build a numbered key from a table of characters. Run it step by step, or filter with a multi-access key.
 
 ## Timeline builder
@@ -31,6 +32,18 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - The Roman row names the Julian date by Kalends, Nones, and Ides, with the year from the founding of Rome.
 - Festivals in a year lists Easter (Western and Orthodox) and the movable feasts, the Hebrew and Islamic holy days, the Chinese festivals, and Nowruz.
 - Japanese eras from Meiji on are built in. Type other reign eras in the era table. Give each era a line with its first day, then its name.
+
+## Text analysis and verse
+
+- Paste a text once; Readability, Word lists, Concordance, Keyness, and Compare versions all use it.
+- Readability gives Flesch Reading Ease, the Flesch-Kincaid grade, the Gunning fog index, SMOG, Coleman-Liau, and the Automated Readability Index. Syllables are counted by spelling rules, so an unusual word can be off by one.
+- The flags for passive voice, nominalizations, and hedges are simple local rules. Treat them as hints, not verdicts.
+- Word lists show frequencies, n-grams, the type-token ratio, and a Zipf plot. You can leave out common function words.
+- The concordance shows every use of a word or phrase in context, sorted by the text order or by the words to its left or right. Collocates list the words found near it, with mutual information, the t-score, and log-likelihood.
+- Keyness tests a word in your text against a reference text with log-likelihood (G²) and gives the log ratio as the effect size.
+- Compare versions lines up two texts word by word and lists each variant, as in a critical apparatus.
+- Language sample takes one utterance a line, with morphemes marked by hyphens, and gives the MLU and the number of different words.
+- Scansion fits English lines to iambic, trochaic, anapestic, or dactylic meter and finds the rhyme scheme. Latin lines are fitted to the hexameter and the pentameter; mark long vowels with macrons when more than one pattern fits.
 
 ## Identification keys
 

@@ -1,0 +1,137 @@
+import { describe, expect, it } from 'vitest';
+import { flags, languageSample, readability, sentences, syllables, words } from './counts';
+import {
+  collocates,
+  frequencies,
+  gSquared,
+  keyness,
+  kwic,
+  movingTtr,
+  mutualInformation,
+  ngrams,
+  tokens,
+  typeTokenRatio,
+} from './corpus';
+import { diffWords, variants } from './diff';
+import { fitHexameter, fitPentameter, latinSyllables, rhymeScheme, scanEnglish } from './scansion';
+
+describe('counts and readability', () => {
+  it('score "The cat sat on the mat." as Flesch 116.145 and grade -1.45', () => {
+    const r = readability('The cat sat on the mat.');
+    expect([r.words, r.sentences, r.syllables]).toEqual([6, 1, 6]);
+    // 206.835 - 1.015 × 6 - 84.6 × 1 and 0.39 × 6 + 11.8 × 1 - 15.59, by hand.
+    expect(r.fleschEase).toBeCloseTo(116.145, 9);
+    expect(r.fleschKincaid).toBeCloseTo(-1.45, 9);
+  });
+
+  it('count syllables by rule', () => {
+    expect(['compare', "summer's", 'table', 'wanted', 'used', 'beautiful', 'the'].map(syllables)).toEqual([
+      2, 2, 2, 2, 1, 3, 1,
+    ]);
+  });
+
+  it('split sentences and refuse an empty text', () => {
+    expect(sentences('One. Two words! Three? ')).toHaveLength(3);
+    expect(words("Don't stop well-known")).toEqual(["Don't", 'stop', 'well-known']);
+    expect(() => readability('  ...  ')).toThrow('empty');
+  });
+
+  it('flag passive voice, nominalizations, and hedges', () => {
+    const found = flags('The report was written quickly. Perhaps the implementation was badly managed.');
+    expect(found.map((flag) => flag.kind)).toEqual(['passive', 'hedge', 'nominalization', 'passive']);
+  });
+
+  it('give an MLU of 3.0 morphemes for doggie go, mommy eat-ing, big dog-s run', () => {
+    const sample = languageSample('doggie go\nmommy eat-ing\nbig dog-s run');
+    expect(sample.perUtterance).toEqual([2, 3, 4]);
+    expect(sample.mluMorphemes).toBe(3);
+    expect(sample.mluWords).toBeCloseTo(7 / 3, 12);
+    expect(sample.differentWords).toBe(7);
+  });
+});
+
+describe('word lists and corpus measures', () => {
+  it('give a type-token ratio of 0.8 for "the cat and the hat"', () => {
+    expect(typeTokenRatio(tokens('the cat and the hat'))).toBe(0.8);
+    expect(movingTtr(tokens('the cat and the hat'), 50)).toBe(0.8);
+    expect(() => typeTokenRatio([])).toThrow('empty');
+  });
+
+  it('count frequencies and bigrams', () => {
+    const list = tokens('the cat and the hat and the bat');
+    expect(frequencies(list)[0]).toEqual(['the', 3]);
+    expect(frequencies(list, true).map(([word]) => word)).toEqual(['bat', 'cat', 'hat']);
+    expect(ngrams(list, 2)[0]).toEqual(['and the', 2]);
+    expect(() => ngrams(list, 0)).toThrow('ngram');
+  });
+
+  it('score MI 4.32193 for O 10, N 10 000, f1 100, f2 50, and keyness 19.3942', () => {
+    // log2(10 × 10 000 / (100 × 50)) = log2 20.
+    expect(mutualInformation(10, 10000, 100, 50)).toBeCloseTo(Math.log2(20), 12);
+    expect(mutualInformation(10, 10000, 100, 50)).toBeCloseTo(4.32193, 5);
+    expect(keyness(50, 10000, 20, 12000).g2).toBeCloseTo(19.3942, 3);
+    expect(gSquared(10, 10, 10, 10)).toBeCloseTo(0, 12);
+    expect(() => mutualInformation(0, 10, 1, 1)).toThrow('positive');
+  });
+
+  it('build a concordance sorted by the right context', () => {
+    const lines = kwic('a red fox ran. the red apple fell. one red bird sang', 'red', 2, 'right');
+    expect(lines.map((line) => line.right)).toEqual(['apple fell', 'bird sang', 'fox ran']);
+    expect(() => kwic('text', '  ')).toThrow('query');
+  });
+
+  it('find collocates of a node word', () => {
+    const list = tokens('strong tea strong tea strong coffee weak tea strong tea');
+    const found = collocates(list, 'strong', 1);
+    expect(found[0]!.word).toBe('tea');
+    expect(() => collocates(list, 'milk')).toThrow('notFound');
+  });
+});
+
+describe('comparing versions', () => {
+  it('list each variant between two readings', () => {
+    const a = 'arma virumque cano troiae qui primus ab oris'.split(' ');
+    const b = 'arma uirumque cano troiae qui primus ab oris italiam'.split(' ');
+    const ops = diffWords(a, b);
+    expect(ops.filter((op) => op.kind === 'same')).toHaveLength(7);
+    expect(variants(ops)).toEqual([
+      { at: 2, base: 'virumque', witness: 'uirumque' },
+      { at: 8, base: '', witness: 'italiam' },
+    ]);
+    expect(variants(diffWords(a, a))).toEqual([]);
+  });
+});
+
+describe('scansion', () => {
+  it('scan the first line of the Aeneid as DDSSDS', () => {
+    const { syllables: list } = latinSyllables('Arma virumque cano, Troiae qui primus ab oris');
+    expect(list).toHaveLength(15);
+    expect(fitHexameter(list.map((s) => s.weight))).toEqual(['DDSSDS']);
+  });
+
+  it('elide before a vowel and use macrons', () => {
+    const { syllables: list, elided } = latinSyllables('conticuere omnes intentique ora tenebant');
+    expect(elided).toEqual(['conticuere', 'intentique']);
+    // con-ti-cu-e-rom-nes-in-ten-ti-quo-ra-te-ne-bant: 14 syllables after two elisions, scanned DSSSDS.
+    expect(list).toHaveLength(14);
+    expect(fitHexameter(list.map((s) => s.weight))).toContain('DSSSDS');
+    expect(latinSyllables('rōmā').syllables[0]!.weight).toBe('long');
+  });
+
+  it('fit a pentameter', () => {
+    const { syllables: list } = latinSyllables('īnferior rapidō flūmine Thybris abit');
+    expect(fitPentameter(list.map((s) => s.weight)).length).toBeGreaterThan(0);
+  });
+
+  it('count 10 syllables in "Shall I compare thee to a summer\'s day?" and fit iambic pentameter', () => {
+    const scan = scanEnglish("Shall I compare thee to a summer's day?");
+    expect(scan.syllables).toBe(10);
+    expect(scan.meter).toBe('iambic');
+    expect(scan.feet).toBe(5);
+  });
+
+  it('find a rhyme scheme', () => {
+    expect(rhymeScheme(['The day', 'the night', 'away', 'the light'])).toBe('ABAB');
+    expect(() => scanEnglish('  ')).toThrow('empty');
+  });
+});
