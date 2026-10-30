@@ -1,6 +1,7 @@
-// Gaussian mixtures by EM against values worked out separately: 1 E- and M-step on 0, 1, 3 from means 0 and 3 (unit
-// variances, equal weights) by the normal density formula; 1 component, whose answer is the sample mean and the
-// maximum-likelihood covariance in closed form; and 2 groups far apart, where each component is one group.
+// Gaussian mixtures by EM against values worked out separately. One E-step and one M-step on the data 0, 1, and 3
+// are worked from the normal density formula, from a start with unit variances, equal weights, and means of 0 and
+// 3. With 1 component, the answer is the sample mean and covariance in closed form. With 2 groups far apart, each
+// component is one group.
 import { describe, expect, it } from 'vitest';
 import { StatError } from '../kit/types';
 import { expectation, gaussianMixture, maximization, mixtureParams } from './mixture';

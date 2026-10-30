@@ -1,5 +1,5 @@
-// The clustered heat map against cases whose order and scaling can be worked out by hand: 2 clear row groups and
-// 2 clear column groups, z-scores of a 3-row column, and the key's middle and ends.
+// The clustered heat map against cases worked out by hand: 2 clear row groups and 2 clear column groups, the
+// z-scores of a 3-row column, and the middle and ends of the key.
 import { describe, expect, it } from 'vitest';
 import { PAGE } from '../kit/picture';
 import { StatError } from '../kit/types';
@@ -35,7 +35,7 @@ describe('clustered heat map', () => {
   });
 
   it('standardizes each column to z-scores', () => {
-    // The column 1, 2, 3 has mean 2 and sample standard deviation 1, so its z-scores are −1, 0, 1.
+    // The first column has mean 2 and sample standard deviation 1, so its z-scores are −1, 0, and 1.
     const map = clusteredHeatMap(
       [
         [1, 5],
