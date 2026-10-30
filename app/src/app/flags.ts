@@ -19,7 +19,8 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { EXPR_FLAGS, HUMANITIES_FLAGS } from '../features/tools/flags';
+import { CHEMMAT_FLAGS, EXPR_FLAGS, HUMANITIES_FLAGS } from '../features/tools/flags';
+import type { ChemMatFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -29,6 +30,8 @@ import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
 import type { HumanitiesFlagId } from '../features/tools/flags';
+import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
+import type { DesignKitFlagId } from '../features/tools/flags';
 import { KIT_FLAGS } from '../features/tools/flags';
 import type { KitFlagId } from '../features/tools/flags';
 import { createStore, useStore } from '../state/store';
@@ -67,6 +70,7 @@ export type FlagId =
   | Phase5FlagId
   | Phase6FlagId
   | ExprFlagId
+  | 'kits.math'
   | DocFlagId
   | HumanitiesFlagId
   | Phase8FlagId
@@ -76,12 +80,15 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
-  | AccountsFlagId;
+  | AccountsFlagId
+  /** The physics tool kit window (features/tools/physics). */
+  | 'kits.physics';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -106,7 +113,8 @@ type Phase4FlagId =
   | 'editor.readAloud'
   | IntegrationsFlagId
   | PdfFlagId
-  | MathToolsFlagId;
+  | MathToolsFlagId
+  | ChemMatFlagId;
 
 /** Phase 6: page views and export (features/pages/flags.ts). */
 type Phase6FlagId =
@@ -333,10 +341,16 @@ export const FLAGS: readonly FlagDef[] = [
   flag('settings.recording', 'The Recording section of Settings.', on),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', on),
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
+  flag(
+    'kits.physics',
+    'The physics tools: fields, waves, optics, relativity, nuclear, orbits, and spacecraft.',
+    betaBuilds,
+  ),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,
   ...EXPR_FLAGS,
+  ...CHEMMAT_FLAGS,
   ...DOC_FLAGS,
   ...HUMANITIES_FLAGS,
   ...SEARCH_FLAGS,
@@ -352,6 +366,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...DESIGN_KIT_FLAGS,
   ...KIT_FLAGS,
 ];
 

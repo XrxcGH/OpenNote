@@ -3,7 +3,7 @@
 // an open page took it.
 import { INSERT_EVENT } from '../../flags';
 import type { KitCalcData } from '../block/model';
-import { kitCalcFallback, kitCalcData } from '../block/model';
+import { KIT_CALC_TYPE, kitCalcFallback, kitCalcData } from '../block/model';
 import type { KitResultRow, KitStep } from '../types';
 import { say, stepsHtml } from './words';
 
@@ -12,7 +12,7 @@ interface InsertRequest {
   math?: { source: string; display: boolean };
   table?: { header: string[]; rows: string[][] };
   picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
-  block?: { type: string; data: Record<string, unknown>; fallback: string };
+  panel?: { type: string; data: Record<string, unknown>; fallback: string };
   handled: boolean;
 }
 
@@ -48,5 +48,6 @@ export function insertPicture(svg: string, alt: string, name = 'kit-plot.svg'): 
 /** A live calculation block that keeps the inputs, so Open in tool reopens the calculation. */
 export function insertLiveBlock(block: KitCalcData): boolean {
   const data = kitCalcData(block);
-  return send({ block: { type: 'kitcalc', data: { ...data }, fallback: kitCalcFallback(data) } });
+  // The page takes a panel block by its full type (PANEL_TYPES.kitCalc in features/page/panels/kinds.ts).
+  return send({ panel: { type: KIT_CALC_TYPE, data: { ...data }, fallback: kitCalcFallback(data) } });
 }
