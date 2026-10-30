@@ -40,6 +40,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('study.import', 'Deck import and export for Anki packages, CSV, and text.'),
   flag('study.tape', 'Study tape that hides parts of a page until tapped.'),
   flag('study.tapeBlanks', 'Print and export can turn study tape into blanks, with an answer key at the end.'),
+  flag('study.exams', 'Practice exams from your own notes: a paper, the exam, marking, and an answer key.', beta),
   flag('tools.converter', 'The unit converter tool.'),
   flag('tools.reference', 'The reference tables tool.'),
   flag('tools.symbols', 'The symbol palette, with recent symbols and LaTeX-name autocompletion in page text.'),

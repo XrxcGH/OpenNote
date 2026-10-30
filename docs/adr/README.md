@@ -77,6 +77,8 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0047](0047-typed-hashtags-become-tags.md) | Typed #words become page tags | Proposed | 2026-10-21 |
 | [0048](0048-choice-columns.md) | Choice columns keep their options in the column schema and their values as plain text | Proposed | 2026-10-21 |
 | [0050](0050-ai-tutor.md) | The tutor gives graded hints from what the person shows it, on this device unless they agree to more | Proposed | 2026-10-29 |
+| [0051](0051-step-checking.md) | Check my work checks each step on the device, and says "I could not check this step" before "wrong" | Proposed | 2026-10-29 |
+| [0052](0052-practice-exams.md) | Practice exams are made on the device, taken in a tool window, and saved as ordinary pages | Proposed | 2026-10-29 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 

@@ -148,6 +148,7 @@ type ToolsQolFlagId =
   | 'study.import'
   | 'study.tape'
   | 'study.tapeBlanks'
+  | 'study.exams'
   | 'tools.converter'
   | 'tools.reference'
   | 'tools.dictionary'

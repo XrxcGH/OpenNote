@@ -61,6 +61,7 @@ import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { stepCheck } from './stepCheck';
 import { tutor } from './tutor';
+import { exams } from './exams';
 
 export const en = {
   common,
@@ -124,4 +125,5 @@ export const en = {
   codeCells,
   stepCheck,
   tutor,
+  exams,
 } as const;
