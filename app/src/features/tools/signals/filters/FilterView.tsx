@@ -19,6 +19,7 @@ import {
   type TableData,
 } from '../shared/ui';
 import type { WindowName } from '../shared/fft';
+import { SignalError } from '../shared/errors';
 import { frequencyResponse, impulseAndStep, polesZeros } from './apply';
 import {
   firWindow,
@@ -81,13 +82,8 @@ export function designFir(state: typeof FIR): { filter: Filter; taps: number; be
 export function designIir(state: typeof IIR): Filter {
   const order = num(state.order);
   if (state.method === 'impulse') {
-    return iirImpulseInvariant(
-      state.type === 'chebyshev1' ? 'chebyshev1' : 'butterworth',
-      order,
-      num(state.f1),
-      num(state.fs),
-      num(state.ripple),
-    );
+    if (state.type === 'chebyshev2' || state.type === 'elliptic') throw new SignalError('impulseAllPole');
+    return iirImpulseInvariant(state.type, order, num(state.f1), num(state.fs), num(state.ripple));
   }
   return iirBilinear(
     state.type,

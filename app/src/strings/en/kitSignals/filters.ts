@@ -25,7 +25,12 @@ export const filters = {
   widthHint: 'As a fraction of the Nyquist frequency, such as 0.05.',
   firAnswer: 'A {taps}-tap linear-phase filter, delaying every frequency by {delay} samples.',
   prototype: 'Prototype',
-  prototypes: { butterworth: 'Butterworth', chebyshev1: 'Chebyshev I', chebyshev2: 'Chebyshev II' },
+  prototypes: {
+    butterworth: 'Butterworth',
+    chebyshev1: 'Chebyshev I',
+    chebyshev2: 'Chebyshev II',
+    elliptic: 'Elliptic',
+  },
   method: 'Method',
   methods: { bilinear: 'Bilinear transform', impulse: 'Impulse invariance (lowpass)' },
   order: 'Order',

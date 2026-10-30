@@ -5,6 +5,7 @@ import { makeWindow, type WindowName } from '../shared/fft';
 import { SignalError } from '../shared/errors';
 import { cabs, cadd, cdiv, cexp, cmul, cpolar, cscale, csub, cx, fmt, type Complex } from '../shared/num';
 import { step, type Step } from '../shared/steps';
+import { ellipticPrototype } from './elliptic';
 
 export type Band = 'lowpass' | 'highpass' | 'bandpass' | 'bandstop';
 export type FirKind = Band | 'differentiator' | 'hilbert';
@@ -156,13 +157,15 @@ export function groupDelay(b: readonly number[], a: readonly number[], omega: nu
   return part(b) - part(a);
 }
 
-export type Prototype = 'butterworth' | 'chebyshev1' | 'chebyshev2';
-export const PROTOTYPES: readonly Prototype[] = ['butterworth', 'chebyshev1', 'chebyshev2'];
+export type Prototype = 'butterworth' | 'chebyshev1' | 'chebyshev2' | 'elliptic';
+export const PROTOTYPES: readonly Prototype[] = ['butterworth', 'chebyshev1', 'chebyshev2', 'elliptic'];
 
 interface Zpk {
   z: Complex[];
   p: Complex[];
   k: number;
+  /** An elliptic prototype's passband edge over its stopband edge. */
+  selectivity?: number;
 }
 
 /** The normalized analog lowpass prototype (edge at 1 rad/s) with its gain. */
@@ -185,6 +188,7 @@ function analogPrototype(type: Prototype, order: number, rippleDb: number, stopD
     if (order % 2 === 0) k /= Math.sqrt(1 + eps * eps);
     return { z, p, k };
   }
+  if (type === 'elliptic') return ellipticPrototype(order, rippleDb, stopDb);
   // Chebyshev II: equiripple stopband from the edge at 1 rad/s, with the poles of the type I filter inverted.
   const eps = 1 / Math.sqrt(10 ** (stopDb / 10) - 1);
   const mu = Math.asinh(1 / eps) / order;
@@ -304,11 +308,14 @@ export function iirBilinear(
 ): Filter {
   checkRate(fs);
   if (!Number.isInteger(order) || order < 1 || order > 12) throw new SignalError('order', { min: 1, max: 12 });
-  if (type === 'chebyshev1' && !(rippleDb > 0 && rippleDb < 10)) throw new SignalError('ripple');
-  if (type === 'chebyshev2' && !(stopDb > 0 && stopDb < 200)) throw new SignalError('attenuation');
+  const elliptic = type === 'elliptic';
+  if ((type === 'chebyshev1' || elliptic) && !(rippleDb > 0 && rippleDb < 10)) throw new SignalError('ripple');
+  if ((type === 'chebyshev2' || elliptic) && !(stopDb > 0 && stopDb < 200)) throw new SignalError('attenuation');
+  if (elliptic && !(stopDb > rippleDb)) throw new SignalError('ellipticSpec');
   edges(band, f1, f2, fs);
   const warp = (f: number) => 2 * fs * Math.tan((Math.PI * f) / fs);
-  const analog = transform(analogPrototype(type, order, rippleDb, stopDb), band, warp(f1), warp(f2));
+  const proto = analogPrototype(type, order, rippleDb, stopDb);
+  const analog = transform(proto, band, warp(f1), warp(f2));
   const c = cx(2 * fs);
   const map = (r: Complex) => cdiv(cadd(c, r), csub(c, r));
   const zd = [...analog.z.map(map), ...Array.from({ length: analog.p.length - analog.z.length }, () => cx(-1))];
@@ -330,6 +337,9 @@ export function iirBilinear(
         `Ω = 2fs·tan(πf/fs) = ${fmt(warp(f1))}${band === 'bandpass' || band === 'bandstop' ? `, ${fmt(warp(f2))}` : ''} rad/s`,
       ),
       step(`filterProto_${type}`, undefined, { order }),
+      ...(proto.selectivity
+        ? [step('filterEllipticEdge', `k = ${fmt(proto.selectivity)}, Ωs/Ωp = 1/k = ${fmt(1 / proto.selectivity)}`)]
+        : []),
       step('filterBilinear', `s = 2·${fmt(fs)}·(z − 1)/(z + 1)`),
       step('filterSos', undefined, { count: Math.ceil(pd.length / 2) }),
     ],

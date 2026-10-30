@@ -98,6 +98,9 @@ export const common = {
     taps: 'The number of taps must be a whole number from 3 to 4097 (from 1 to 1024 for an average).',
     oddTaps: 'A highpass or bandstop FIR filter needs an odd number of taps.',
     ripple: 'The passband ripple must be between 0 and 10 dB.',
+    ellipticSpec: 'The stopband attenuation must be larger than the passband ripple.',
+    impulseAllPole:
+      'Impulse invariance suits filters with poles only. Use the bilinear transform for Chebyshev II and elliptic filters.',
     notchWidth: 'The notch width must be above 0 and below the Nyquist frequency.',
     coefficientBits: 'The coefficient word length must be a whole number of bits from 2 to 32.',
     medianWindow: 'The median window must be an odd whole number, such as 3 or 5.',
@@ -264,6 +267,11 @@ export const common = {
     filterProto_butterworth: 'Place the {order} Butterworth poles evenly on a circle in the left half-plane.',
     filterProto_chebyshev1: 'Place the {order} Chebyshev I poles on an ellipse set by the ripple.',
     filterProto_chebyshev2: 'Place the {order} Chebyshev II poles and the stopband zeros on the imaginary axis.',
+    filterProto_elliptic:
+      'Solve the degree equation for the selectivity k, then place the {order} elliptic poles and the stopband ' +
+      'zeros with Jacobi’s elliptic functions.',
+    filterEllipticEdge:
+      'The stopband starts at 1/k times the passband edge, where the loss first reaches the attenuation asked for.',
     filterBilinear: 'Map each analog pole and zero to the z-plane by the bilinear transform.',
     filterSos: 'Pair conjugate poles and zeros into {count} second-order sections, the safe way to run it.',
     filterImpulseInvariance:

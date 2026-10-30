@@ -139,10 +139,10 @@ function IirMode() {
         {banded(state.band) && state.method === 'bilinear' ? (
           <Field label={w('f2')} value={state.f2} onChange={(f2) => set({ f2 })} unit="Hz" />
         ) : null}
-        {state.type === 'chebyshev1' ? (
+        {state.type === 'chebyshev1' || state.type === 'elliptic' ? (
           <Field label={w('ripple')} value={state.ripple} onChange={(ripple) => set({ ripple })} unit="dB" />
         ) : null}
-        {state.type === 'chebyshev2' ? (
+        {state.type === 'chebyshev2' || state.type === 'elliptic' ? (
           <Field label={w('stop')} value={state.stop} onChange={(stop) => set({ stop })} unit="dB" />
         ) : null}
       </Fields>
