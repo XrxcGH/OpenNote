@@ -80,6 +80,9 @@ pub struct Status {
 struct Inner {
     dir: PathBuf,
     secrets: Arc<dyn SecretStore>,
+    /// Whether `secrets` outlasts a restart. Off Windows the store is memory only (ADR 0055), so a device key put
+    /// there would be gone at the next start and the vault slot would be lost with it.
+    keeps_secrets: bool,
     running: Mutex<()>,
     status: Mutex<Status>,
     app: Mutex<Option<AppHandle>>,
@@ -146,14 +149,20 @@ pub enum Reply {
 impl SyncService {
     /// The service for this profile. Nothing is read until the first call.
     pub fn new(paths: &Paths) -> SyncService {
-        SyncService::with_store(paths.local.join("sync"), platform_store())
+        SyncService::build(paths.local.join("sync"), platform_store(), cfg!(windows))
     }
 
+    #[cfg(test)]
     fn with_store(dir: PathBuf, secrets: Arc<dyn SecretStore>) -> SyncService {
+        SyncService::build(dir, secrets, true)
+    }
+
+    fn build(dir: PathBuf, secrets: Arc<dyn SecretStore>, keeps_secrets: bool) -> SyncService {
         SyncService {
             inner: Arc::new(Inner {
                 dir,
                 secrets,
+                keeps_secrets,
                 running: Mutex::new(()),
                 status: Mutex::new(Status {
                     state: "off",
@@ -282,6 +291,11 @@ impl SyncService {
         let passphrase = take_secret(args, "passphrase");
         let code = take_secret(args, "code");
         let recovery_key = take_secret(args, "recoveryKey");
+        if !self.inner.keeps_secrets {
+            return Err(bad(
+                "Sync can't keep this computer's key between starts here yet. Set it up on a Windows PC for now.",
+            ));
+        }
         if self.config().is_some() {
             return Err(bad(
                 "Sync is already set up on this device. Turn it off first to choose another place.",

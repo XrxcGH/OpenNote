@@ -255,3 +255,18 @@ fn errors_reach_the_interface_as_a_code_and_a_detail_never_as_english() {
     assert_eq!(fail(SyncError::Storage("timed out".into())).message, "timed out");
     assert_eq!(fail(SyncError::WeakPassphrase(10)).message, "10");
 }
+
+#[test]
+fn a_system_that_cannot_keep_the_device_key_refuses_to_set_up_or_join() {
+    let dir = tempfile::tempdir().expect("temp");
+    let service = SyncService::build(dir.path().join("sync"), Arc::new(MemoryStore::default()), false);
+    let backend = json!({ "kind": "folder", "path": dir.path().join("storage").to_string_lossy() });
+    let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Mac" });
+    assert_eq!(code(&service, None, "setUp", setup.clone()), codes::INVALID);
+    assert_eq!(code(&service, None, "join", setup), codes::INVALID);
+    assert!(
+        !dir.path().join("storage").join("vault").exists(),
+        "nothing was written to storage"
+    );
+    assert_eq!(ok(&service, None, "status", Value::Null)["configured"], json!(false));
+}

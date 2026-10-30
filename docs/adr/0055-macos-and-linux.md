@@ -31,6 +31,7 @@ OpenNote was built for Windows first (ADR 0012 and DEVELOPMENT.md). The owner as
 | Share target, dock to an edge, Snap Layouts, pen settings, custom title bar | None | None | Windows shell features. |
 | Self-update | By hand (dmg) | Yes (AppImage) | See Updates above. |
 | The `opennote` command-line tool inside the app | None | None | Only the Windows build embeds it. Build it with `cargo build -p opennote-cli`. |
+| End-to-end-encrypted sync (ADR 0049) | Refused at setup | Refused at setup | The device key lives in Windows Credential Manager. Off Windows the secret store is memory only, so the key would be lost at the next start. The Keychain and the Secret Service are a follow-up. |
 | Native speech engines (whisper.cpp, ONNX Runtime) | None | None | Only the Windows x64 exe carries them. The pure Rust speech reader runs. |
 
 ## Web view differences

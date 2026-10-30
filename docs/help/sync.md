@@ -26,7 +26,7 @@ Both devices show the same **sync code**, such as `K7Q2-M9XA`, when they joined 
 - Every page, picture, recording, and file is encrypted with XChaCha20-Poly1305 before it is sent.
 - File names, notebook and page titles, and how your notebooks are organized are encrypted too. The folder or server sees only blobs with random names, their rough sizes, how many there are, and when they change. It can tell how many devices sync, but not which.
 - Your passphrase never leaves your device. It unlocks the key through Argon2id, which makes guessing it slow.
-- Each device keeps its own key in Windows Credential Manager, so background sync never asks for the passphrase. OpenNote has no copy of any key.
+- Each device keeps its own key in Windows Credential Manager, so background sync never asks for the passphrase. OpenNote has no copy of any key. Sync can't be set up on macOS or Linux yet, because those systems have no place for the key in OpenNote so far.
 - Password-protected sections stay sealed with their own password. Sync copies them as they are, and never opens them.
 - Nothing is sent anywhere else, and sync sends no usage data.
 

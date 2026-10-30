@@ -77,6 +77,7 @@ export const settings = {
         "OpenNote doesn't install updates itself on a Mac yet. Download the new dmg and drag OpenNote to Applications.",
       commandLine:
         "The opennote command-line tool isn't included yet. Build it from the source with cargo build -p opennote-cli.",
+      sync: "Sync can't be set up here yet, because each device keeps its key in Windows Credential Manager. Set it up on a Windows PC.",
       penPressure:
         'Pen pressure depends on the desktop: some Linux setups report none, and strokes then have one width.',
     },

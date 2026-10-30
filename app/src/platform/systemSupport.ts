@@ -16,6 +16,7 @@ export type SystemLimit =
   | 'windowTools'
   | 'updates'
   | 'commandLine'
+  | 'sync'
   | 'penPressure';
 
 const BOTH: readonly SystemLimit[] = [
@@ -27,6 +28,7 @@ const BOTH: readonly SystemLimit[] = [
   'shareTarget',
   'windowTools',
   'commandLine',
+  'sync',
 ];
 
 const LIMITS: Record<HostSystem, readonly SystemLimit[]> = {
