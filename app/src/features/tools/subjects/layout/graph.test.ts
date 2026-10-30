@@ -126,6 +126,22 @@ describe('force-directed layout', () => {
     expect(Math.min(...lengths)).toBeGreaterThan(1);
   });
 
+  it('draws the self-loops of an automaton as loops, not as reversed edges', () => {
+    const laid = layoutLayered(graphOf('q0 -> q0, q0 -> q1, q1 -> q1'));
+    expect(laid.reversed).toEqual([]);
+    expect(laid.edges.map((e) => `${e.from}>${e.to}`)).toEqual(['q0>q0', 'q0>q1', 'q1>q1']);
+    for (const i of [0, 2]) {
+      const node = laid.nodes.find((n) => n.id === laid.edges[i].from) as PlacedNode;
+      const points = laid.edges[i].points;
+      expect(points).toHaveLength(4);
+      // It starts and ends on the top edge of its own node's box and rises above it.
+      expect(points[0][1]).toBeCloseTo(node.y - node.height / 2, 12);
+      expect(points[3][1]).toBeCloseTo(node.y - node.height / 2, 12);
+      expect(Math.min(...points.map((p) => p[1]))).toBeLessThan(node.y - node.height / 2);
+    }
+    expect(laid.layers).toEqual({ q0: 0, q1: 1 });
+  });
+
   it('draws loops and two-way pairs apart', () => {
     const laid = layoutForce(graphOf('a -> a, a -> b, b -> a'), { seed: 1n });
     expect(laid.edges[0].points).toHaveLength(4);
