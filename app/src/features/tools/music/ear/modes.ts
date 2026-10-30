@@ -1,7 +1,7 @@
 // The ear-training modes: one drill item with its answer checked, or a session of answers graded together with the weak
 // items scheduled for review by the study deck's scheduler.
 import { parseSeed } from '../../subjects/num/rng';
-import { nextState } from '../../../study/deck/schedule';
+import { nextState } from '../../../study';
 import { fail, ok, readNumber } from '../shared';
 import type { KitOk, KitRow, KitStep, Values } from '../shared';
 import { hzOf, intervalWords, noteName, pitchClassName, transposeNote } from '../theory/notes';

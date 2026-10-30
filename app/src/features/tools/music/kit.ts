@@ -10,6 +10,7 @@ export interface LoadedTool {
 }
 
 export const LOADERS: Record<MusicToolId, () => Promise<LoadedTool>> = {
+  score: () => import('./score/tool'),
   theory: () => import('./theory/tool'),
   ear: () => import('./ear/tool'),
   partwriting: () => import('./partwriting/tool'),

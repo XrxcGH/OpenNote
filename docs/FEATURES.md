@@ -23,6 +23,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Productivity and study tools](#productivity-and-study-tools)
 - [Math solvers](#math-solvers)
 - [Engineering tools](#engineering-tools)
+- [Music, script, camera, and studio tools](#music-script-camera-and-studio-tools)
 - [Subject tool kits](#subject-tool-kits)
 
 - [Document structure](#document-structure)
@@ -580,6 +581,21 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Beam and truss solver | A beam block with pin, roller, and fixed supports, point loads, linearly varying distributed loads, and moments that slide along the beam. Reactions, the largest shear and moment, and zero-shear points show beside it, with shear and bending moment diagrams below. Internal hinges carry no moment, and EI segments change the stiffness over part of the beam. Indeterminate beams are solved by the stiffness method. A truss block takes joints, members, pin and roller supports, and joint loads, and gives each member's force as tension or compression, with determinacy in words. Tests check twelve beam and five truss textbook cases, including a Gerber beam and a two-span beam with unequal EI. | Built, untested by hand |
 | Circuit symbols and DC solver | A circuit block with resistors, voltage and current sources, grounds, and wires on a grid. Values take SI prefixes, such as 4.7k. Modified nodal analysis gives every node's voltage, every part's current and direction, and the power it delivers or takes, and says when a ground is missing, names the parts of a floating subcircuit, or says the circuit cannot be solved. Wires join at their ends and at T junctions, not where they only cross. The Draw tab's shapes gain a Circuit symbols group. Tests check five textbook circuits, including Alexander and Sadiku's Example 3.1. | Built, untested by hand |
 | Units and engineering notation in tables | A smart table column can carry a unit, such as kN, MPa, or N·m. Cells typed in another unit of the same kind convert to it, and a unit of the wrong kind is flagged. Totals and formulas add the converted values. The column can write values in engineering notation (12.5×10³) or with SI prefixes (12.5 kN). SI units with prefixes, US customary units, and compound units are known. | Built, untested by hand |
+
+## Music, script, camera, and studio tools
+
+On in Beta and off in Stable (flag `tools.music`). The [help page](help/music-script-camera-and-studio-tools.md) explains how to use them. One tool window with a tab for each tool; each takes typed values, works the problem, and shows results, worked steps, and assumptions, with Insert and, for the music tools, Play. Reference data is public domain, openly licensed, or rule-generated, and the source shows under the result.
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Score block | ABC notation read, engraved as a picture, played, transposed by interval, to a key, or for a transposing instrument, and shown as numbered notation, sargam, or guitar tablature. Bars are checked against the meter. | Built, untested by hand |
+| Music theory | Intervals, pitch and frequency, scales and modes from several traditions, melakarta by rule, maqam and gamelan in cents, chords, keys, Roman numerals, transposing instruments, pitch-class sets, twelve-tone matrices, jazz scales, and guitar shapes. | Built, untested by hand |
+| Voice-leading checker | Four-part chorale rules at three strictness levels and first to fourth species counterpoint, with each problem located. | Built, untested by hand |
+| Ear training | Seeded drills for intervals, chords, scales, melodic and rhythmic dictation, and sight-singing, graded sessions, and review dates from the flashcard schedule. | Built, untested by hand |
+| Tuning and rhythm | Cents and temperaments, beat rates, the harmonic series, a metronome, Euclidean rhythms, polyrhythms, and rhythmic cycles. | Built, untested by hand |
+| Script formatter | Fountain screenplays and stage plays laid out in script format, with page and time estimates and scene, character, location, and breakdown lists. | Built, untested by hand |
+| Camera, timing, and lighting | Exposure, depth of field, field of view, shutter angle, timecode, footage, animation planning, lighting, and media storage arithmetic. | Built, untested by hand |
+| Scale, color, and materials | Drawing scales, grid enlargement, color contrast and vision checks, color spaces, palettes, type scales, perspective grids, and material quantities. | Built, untested by hand |
 
 ## Subject tool kits
 

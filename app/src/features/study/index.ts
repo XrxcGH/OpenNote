@@ -1,6 +1,7 @@
 // The study feature's public face (Study tools): decks, the schedule, card making, import and export, and the panel
 // the Flashcards window and the flashcard block show. Heavy parts load on first use.
 export { dayKey, daysBetween, isDayKey } from './deck/dates';
+export { nextState } from './deck/schedule';
 export { requestCards } from './deck/request';
 export { cardRequest, importWanted } from './deck/request';
 export {

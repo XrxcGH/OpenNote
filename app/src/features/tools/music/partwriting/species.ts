@@ -60,7 +60,6 @@ const mod = (n: number): number => ((Math.abs(n) % 12) + 12) % 12;
 /** The size of the interval between the two voices in semitones, measured from whichever is lower. */
 const gap = (a: Note, b: Note): number => Math.abs(sem(a) - sem(b));
 const isConsonant = (a: Note, b: Note): boolean => CONSONANT.has(mod(gap(a, b)));
-const isPerfect = (a: Note, b: Note): boolean => PERFECT.has(mod(gap(a, b)));
 const isStep = (a: Note, b: Note): boolean => {
   const d = Math.abs(sem(a) - sem(b));
   return d >= 1 && d <= 2 && Math.abs(between(a, b).interval.generic) === 2;
