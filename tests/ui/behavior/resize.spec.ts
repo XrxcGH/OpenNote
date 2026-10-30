@@ -237,11 +237,17 @@ test.describe('text boxes', () => {
     const flow = page.getByRole('toolbar').getByRole('button', { name: 'Document flow', exact: true });
     if (await flow.isVisible()) await flow.click();
     else {
-      await page.getByRole('toolbar').getByRole('button', { name: 'More' }).click();
-      await page
+      // The menu reads each command's state as it opens, and the page's view registers its commands a moment after
+      // the page shows, so a menu opened too early lists them off. Open it again until the item is on.
+      const item = page
         .getByRole('menuitemcheckbox', { name: 'Document flow' })
-        .or(page.getByRole('menuitem', { name: 'Document flow' }))
-        .click();
+        .or(page.getByRole('menuitem', { name: 'Document flow' }));
+      await expect(async () => {
+        await page.keyboard.press('Escape');
+        await page.getByRole('toolbar').getByRole('button', { name: 'More' }).click();
+        await expect(item).toBeEnabled({ timeout: 1_000 });
+      }).toPass({ timeout: 20_000 });
+      await item.click();
     }
     await page.getByRole('toolbar').getByRole('button', { name: 'Background' }).click();
     await page.getByRole('menuitemradio', { name: 'Lined, college' }).click();
