@@ -7,7 +7,7 @@ import { SIGNAL_TOOLS, chooseSignalTool } from '../../tools/flags';
 const openKit = async () => (await import('../../tools')).openTool('kit-signals');
 
 commands.register({
-  id: 'tools.signals',
+  id: 'tools.kit-signals',
   title: 'kitSignals.kit.open',
   keywords: 'kitSignals.kit.keywords',
   category: 'general',
@@ -17,10 +17,10 @@ commands.register({
   run: openKit,
 });
 commandBar.register({
-  id: 'tools.signals',
+  id: 'tools.kit-signals',
   tab: 'insert',
   group: 'math',
-  command: 'tools.signals',
+  command: 'tools.kit-signals',
   flag: 'kits.signals',
   priority: 20,
 });
