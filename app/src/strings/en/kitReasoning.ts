@@ -2,6 +2,7 @@
 // modes, fields, steps, and errors. Each tool's strings are in kitReasoning/, joined here into one namespace.
 // Every interface string is a full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19).
 import { algorithms } from './kitReasoning/algorithms';
+import { logic } from './kitReasoning/logic';
 import { automata } from './kitReasoning/automata';
 import { digital } from './kitReasoning/digital';
 import { discrete } from './kitReasoning/discrete';
@@ -15,6 +16,15 @@ export const kitReasoning = {
     'logic truth table proof automata grammar discrete number theory digital karnaugh computer systems ' +
     'cache scheduling algorithms graphs optimization simplex game theory voting',
   tools: {
+    logic: {
+      tab: 'Logic',
+      open: 'Open the logic workbench',
+      keywords:
+        'logic truth table tautology cnf dnf natural deduction fitch proof checker syllogism venn first-order model ' +
+        'kripke modal resolution dpll sat lambda calculus church numeral argument map fault tree cut set',
+      summary:
+        'Truth tables, normal forms, proof checking, syllogisms, models, resolution, lambda terms, argument maps, and fault trees.',
+    },
     automata: {
       tab: 'Automata and grammars',
       open: 'Open automata and grammars',
@@ -89,6 +99,7 @@ export const kitReasoning = {
     insertTable: 'Insert table',
     insertPicture: 'Insert picture',
   },
+  logic,
   automata,
   discrete,
   digital,

@@ -3,6 +3,7 @@ import type { ReasoningToolId } from './meta';
 import type { ToolSpec } from './ui/types';
 
 const LOADERS: Record<ReasoningToolId, () => Promise<ToolSpec>> = {
+  logic: () => import('./logic/forms').then((m) => m.LOGIC),
   automata: () => import('./automata/forms').then((m) => m.AUTOMATA),
   discrete: () => import('./discrete/forms').then((m) => m.DISCRETE),
   digital: () => import('./digital/forms').then((m) => m.DIGITAL),
