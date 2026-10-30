@@ -1,6 +1,7 @@
 // The reasoning kit (flag kits.reasoning; owner: the reasoning lane): the window, its commands, and each tool's
 // modes, fields, steps, and errors. Each tool's strings are in kitReasoning/, joined here into one namespace.
 // Every interface string is a full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19).
+import { automata } from './kitReasoning/automata';
 import { digital } from './kitReasoning/digital';
 import { discrete } from './kitReasoning/discrete';
 import { games } from './kitReasoning/games';
@@ -13,6 +14,15 @@ export const kitReasoning = {
     'logic truth table proof automata grammar discrete number theory digital karnaugh computer systems ' +
     'cache scheduling algorithms graphs optimization simplex game theory voting',
   tools: {
+    automata: {
+      tab: 'Automata and grammars',
+      open: 'Open automata and grammars',
+      keywords:
+        'automata dfa nfa regular expression thompson subset construction minimization pumping lemma pushdown ' +
+        'context-free grammar parse tree ambiguity chomsky normal form cyk first follow ll1 lr0 slr turing transducer',
+      summary:
+        'Finite automata, regular expressions, pumping, pushdown automata, grammars and parsing tables, Turing machines, and transducers.',
+    },
     discrete: {
       tab: 'Numbers and groups',
       open: 'Open numbers, counting, and groups',
@@ -68,6 +78,7 @@ export const kitReasoning = {
     insertTable: 'Insert table',
     insertPicture: 'Insert picture',
   },
+  automata,
   discrete,
   digital,
   optimize,
