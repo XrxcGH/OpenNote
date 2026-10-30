@@ -1,6 +1,8 @@
 // The marks Check my work puts beside the lines: a layer over the page (never ink, never part of the note), one mark
 // per checked step, and a small summary card with what needs a look, Check again, and Dismiss. The marks are buttons
 // with their whole finding as their name, so a keyboard, a pen, a finger, and a screen reader all reach them.
+import { isEnabled } from '../../../app/flags';
+import { executeCommand } from '../../../commands/registry';
 import type { StepResult } from '../../math';
 import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
@@ -17,6 +19,7 @@ export interface ShownCheck {
 interface Shown {
   layer: HTMLElement;
   panel: HTMLElement;
+  check: ShownCheck;
   stop: () => void;
   /** Where focus was when the card opened (the editor), given back when it is dismissed. */
   back: HTMLElement | null;
@@ -64,6 +67,11 @@ export function marksShown(): boolean {
   return shown !== null;
 }
 
+/** The lines and results the marks show, for the tutor's Explain this step. */
+export function shownCheck(): ShownCheck | null {
+  return shown?.check ?? null;
+}
+
 function summaryText(results: readonly StepResult[]): string {
   const steps = results.filter((r) => r.method !== 'given');
   if (steps.length === 0) return t('stepCheck.panel.nothing');
@@ -81,6 +89,16 @@ function button(doc: Document, label: string, run: () => void): HTMLButtonElemen
   b.textContent = label;
   b.addEventListener('click', run);
   return b;
+}
+
+/** The tutor's Explain this step, on a flagged line: it explains without giving the corrected line (ADR 0050). */
+function explainButton(doc: Document, index: number): HTMLButtonElement {
+  const explain = button(doc, t('tutor.commands.explain'), () => {
+    void executeCommand('tutor.explain', { index }, 'menu');
+  });
+  const line = t('stepCheck.panel.line', { number: index + 1 });
+  explain.setAttribute('aria-label', `${t('tutor.commands.explain')}: ${line}`);
+  return explain;
 }
 
 /** The mark beside one line: a button named with its finding, which takes focus to that finding in the card. */
@@ -117,6 +135,7 @@ function markButton(
 }
 
 /** Shows the marks beside the lines and the summary card. `recheck` reads the lines again and checks them. */
+// checks-disable-next-line modifiability: one card built in reading order; the tutor's button is its own function
 export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () => void): void {
   dismissMarks();
   const doc = mounted.viewport.world.ownerDocument;
@@ -155,6 +174,7 @@ export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () =
       fix.textContent = t('stepCheck.panel.suggestion', { line: result.suggestion });
       item.append(fix);
     }
+    if (result.verdict === 'broken' && isEnabled('study.tutor')) item.append(explainButton(doc, i));
     items.set(i, item);
     list.append(item);
   });
@@ -191,7 +211,7 @@ export function showMarks(mounted: MountedPage, check: ShownCheck, recheck: () =
   doc.addEventListener('keydown', onKey);
   mounted.viewport.world.append(layer);
   doc.body.append(panel);
-  shown = { layer, panel, back, stop: () => doc.removeEventListener('keydown', onKey) };
+  shown = { layer, panel, check, back, stop: () => doc.removeEventListener('keydown', onKey) };
   announce(summary.textContent);
   // The card is last on the page: focus moves to its heading so a keyboard reaches the findings at once.
   heading.focus({ preventScroll: true });

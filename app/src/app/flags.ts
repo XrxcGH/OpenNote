@@ -28,6 +28,8 @@ import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { TUTOR_FLAGS } from '../features/tutor/flags';
+import type { TutorFlagId } from '../features/tutor/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -75,7 +77,9 @@ export type FlagId =
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
-  | AccountsFlagId;
+  | AccountsFlagId
+  /** The tutor (features/tutor/flags.ts). */
+  | TutorFlagId;
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -345,6 +349,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...TUTOR_FLAGS,
 ];
 
 interface FlagState {
