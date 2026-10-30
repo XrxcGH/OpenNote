@@ -107,7 +107,9 @@ export const observe = {
     transitions: 'Put every onset in time order and count each behavior that follows another.',
     partial: 'Partial interval: an interval scores 1 when the behavior happens at any time in it.',
     whole: 'Whole interval: an interval scores 1 only when the state lasts the whole interval.',
-    momentary: 'Momentary time sampling: an interval scores 1 when the state is running at its end.',
+    momentary:
+      'Momentary time sampling: an interval scores 1 when the state is running at its end. A state that ' +
+      'starts at that instant counts; one that stops at it does not, except at the end of the session.',
     share: 'The record is the share of intervals scored.',
     total: 'Interval-by-interval agreement counts the intervals both observers scored the same way.',
     occurrence:

@@ -77,8 +77,21 @@ describe('interval recording', () => {
 
   it('scores no interval as whole, and a momentary sample only when the state runs at its end', () => {
     expect(scoreIntervals('tap', session, [], 10, 40, 'whole')).toEqual([0, 0, 0, 0]);
-    // With 2 s intervals over 6 s, the samples fall at 2, 4, and 6 s; tap runs from 3 to 4 s, so only the 4 s one finds it.
-    expect(scoreIntervals('tap', session, [], 2, 6, 'momentary')).toEqual([0, 1, 0]);
+    // With 2 s intervals over 6 s, the samples fall at 2, 4, and 6 s; tap runs from 3 up to 4 s, so it has ended
+    // at the 4 s sample. With 3 s intervals over 6 s, the 3 s sample falls as tap starts and sees it.
+    expect(scoreIntervals('tap', session, [], 2, 6, 'momentary')).toEqual([0, 0, 0]);
+    expect(scoreIntervals('tap', session, [], 3, 6, 'momentary')).toEqual([1, 0]);
+  });
+
+  it('sees exactly one of 2 exclusive states at each scan, a new state at its first instant', () => {
+    // rest 0-30, feed 30-75, rest 75-120; scans at 30, 60, 90, 120 s. At 30 s feed has begun and rest has ended;
+    // at 120 s, the session's end, rest is still running.
+    const log = readLog('0 | rest\n30 | feed\n75 | rest', ETHOGRAM, 120);
+    const s = summarize(log, ETHOGRAM, 120);
+    const feed = scoreIntervals('feed', s, [], 30, 120, 'momentary');
+    const rest = scoreIntervals('rest', s, [], 30, 120, 'momentary');
+    expect(feed).toEqual([1, 1, 0, 0]);
+    expect(rest).toEqual([0, 0, 1, 1]);
   });
 
   it('counts an event at the start of an interval in that interval', () => {

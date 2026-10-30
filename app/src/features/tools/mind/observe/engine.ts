@@ -178,7 +178,9 @@ export type IntervalRule = 'partial' | 'whole' | 'momentary';
 /**
  * Each interval scored 1 or 0 for one behavior. Partial: the behavior happens at any time in the interval (an
  * event at its start counts, one at its end belongs to the next). Whole: a state lasts the whole interval.
- * Momentary: a state is running at the end of the interval, as a scan sample takes it.
+ * Momentary: a state is running at the end of the interval, as a scan sample takes it. A state runs from its
+ * start up to, not including, its end, as in partial scoring: at a change the new state is seen, the old one is
+ * not. At the session's last instant a state that runs to the end is still seen.
  */
 export function scoreIntervals(
   name: string,
@@ -198,7 +200,8 @@ export function scoreIntervals(
     if (rule === 'partial')
       return mine.some((one) => one.start < b && one.end > a) || events.some((t) => t >= a && t < b) ? 1 : 0;
     if (rule === 'whole') return mine.some((one) => one.start <= a && one.end >= b) ? 1 : 0;
-    return mine.some((one) => one.start < b && one.end >= b) ? 1 : 0;
+    const last = b >= total - 1e-9;
+    return mine.some((one) => one.start <= b && (one.end > b || (last && one.end >= b))) ? 1 : 0;
   });
 }
 
