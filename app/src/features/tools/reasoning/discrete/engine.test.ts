@@ -20,7 +20,7 @@ import {
 import { affine, caesar, diffieHellman, elGamal, hill, lfsr, rsa, substitution, vigenere } from './crypto';
 import { fieldInverse, fieldMul, makeField, parsePoly, polyText, powersOfX, ringZn } from './field';
 import {
-  centre,
+  center,
   classSize,
   cycleText,
   compose,
@@ -269,11 +269,11 @@ describe('groups', () => {
     expect(errorKey(() => parseCycles('(1 1)'))).toBe('cycleRepeat');
   });
 
-  it('gives 8 order 3 in Z_12 and the centre {e, r^2} of D_4', () => {
+  it('gives 8 order 3 in Z_12 and the center {e, r^2} of D_4', () => {
     const z = makeGroup('cyclic', 12);
     expect(elementOrder(z, z.names.indexOf('8'))).toBe(3);
     const d = makeGroup('dihedral', 4);
-    expect(centre(d).map((i) => d.names[i])).toEqual(['e', 'r^2']);
+    expect(center(d).map((i) => d.names[i])).toEqual(['e', 'r^2']);
   });
 
   it('counts subgroups of S_3, D_4, Q_8, and S_4 as published', () => {

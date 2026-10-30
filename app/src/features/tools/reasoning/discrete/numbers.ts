@@ -1,7 +1,7 @@
-// Number theory in BigInt: Euclid's algorithm with its table, inverses, powers by square and multiply, the Chinese
-// remainder theorem, primes (deterministic Miller-Rabin below 3.3e24), factors (trial division, then Pollard's rho
-// with Brent's cycle finding), Euler's phi and Carmichael's lambda, primitive roots, and discrete logarithms by baby
-// step, giant step. Also Jacobi symbols, continued fractions, linear Diophantine equations, and bases.
+// Number theory in BigInt. Euclid's algorithm comes with its table, and fast powers with their bits. Also here:
+// inverses, the Chinese remainder theorem, primes (deterministic Miller-Rabin below 3.3e24), and factors (trial
+// division, then Pollard's rho with Brent's cycle finding). Then Euler's phi, Carmichael's lambda, primitive roots,
+// discrete logarithms by baby step, giant step, Jacobi symbols, continued fractions, Diophantine equations, and bases.
 import { fail } from '../core/util';
 
 export const abs = (a: bigint): bigint => (a < 0n ? -a : a);
@@ -315,7 +315,7 @@ export function continuedFraction(p: bigint, q: bigint): { terms: bigint[]; conv
   return { terms, convergents };
 }
 
-/** All solutions of a x + b y = c: a particular one and the step, or null when gcd(a, b) does not divide c. */
+/** All solutions of ax + by = c: a particular one and the step, or null when gcd(a, b) does not divide c. */
 export function diophantine(
   a: bigint,
   b: bigint,

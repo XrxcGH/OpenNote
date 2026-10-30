@@ -17,7 +17,7 @@ import {
 } from './crypto';
 import { fieldInverse, fieldMul, fieldPow, makeField, parsePoly, polyAdd, polyText, powersOfX, ringZn } from './field';
 import {
-  centre,
+  center,
   classSize,
   compose,
   cycleText,
@@ -295,7 +295,7 @@ function groupOutcome(v: Values): Outcome {
       rows: cosets.map((c) => [`${g.names[c[0]]}H`, c.map((x) => g.names[x]).join(', ')]),
     });
   }
-  const z = centre(g);
+  const z = center(g);
   const figure =
     subs.length > 1 && subs.length <= 40
       ? {
@@ -316,7 +316,7 @@ function groupOutcome(v: Values): Outcome {
     answer: s('groupAnswer', {
       order,
       abelian: s(isAbelian(g) ? 'abelian' : 'nonabelian'),
-      centre: z.length <= 12 ? z.map((i) => g.names[i]).join(', ') : s('orderLabel', { k: z.length }),
+      center: z.length <= 12 ? z.map((i) => g.names[i]).join(', ') : s('orderLabel', { k: z.length }),
       subs: subs.length,
     }),
     note: notes.join('\n') || undefined,
