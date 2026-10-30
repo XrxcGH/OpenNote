@@ -34,4 +34,9 @@ export const INTEROP_FLAGS: readonly FlagDef[] = [
     'Import older Office files: Word 97-2003 (.doc), RTF, Excel 97-2003 (.xls), Excel binary (.xlsb), and .ods.',
     betaBuilds,
   ),
+  flag(
+    'interop.notesApps',
+    'Import Goodnotes (.goodnotes), Notability (.note), and Samsung Notes (.sdocx) files, with what cannot be read listed.',
+    betaBuilds,
+  ),
 ];

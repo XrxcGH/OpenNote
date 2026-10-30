@@ -48,6 +48,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Bring notes in and out
 
 - [Import and export](import-and-export.md): other apps' files in, and Markdown, Word, PDF, and more out.
+- [Goodnotes, Notability, and Samsung Notes](notes-apps.md): the handwriting apps' own files, and their PDF exports.
 
 ## Storage and history
 

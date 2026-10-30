@@ -77,6 +77,22 @@ describe('Import notes', () => {
     await within(dialog).findByRole('button', { name: 'Choose a folder…' });
   });
 
+  it('lists the handwriting apps, and offers Import PDF for a PDF it cannot read', async () => {
+    const { platform } = await renderApp({ fixture: 'empty' });
+    platform.interop.pick = () => Promise.resolve('C:\\Users\\Sample\\Lecture.pdf');
+    const dialog = await openImport();
+    const apps = within(dialog).getByRole('region', { name: 'Handwriting apps' });
+    expect(within(apps).getByText(/Notability notes \(\.note\)/)).toBeTruthy();
+    expect(within(apps).getByText(/built without the apps’ own files; if a note comes in wrong or empty/)).toBeTruthy();
+    expect(within(apps).getByText(/In Goodnotes, choose Share, then Export, then PDF/)).toBeTruthy();
+    expect(within(apps).getByRole('button', { name: 'Import a PDF…' })).toBeTruthy();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a file…' }));
+    await within(dialog).findByRole('heading', { name: "OpenNote can't import this yet" });
+    expect(within(dialog).getByText(/export them as a PDF in the app/)).toBeTruthy();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Import a PDF…' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Import notes' })).toBeNull());
+  });
+
   it('closes with Escape and adds nothing', async () => {
     const { notes } = await renderApp({ fixture: 'empty' });
     await openImport();

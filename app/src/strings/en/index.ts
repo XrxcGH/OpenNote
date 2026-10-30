@@ -48,6 +48,7 @@ import { storage } from './storage';
 import { accounts } from './accounts';
 import { connectors } from './connectors';
 import { platformApi } from './platformApi';
+import { notesApps } from './notesApps';
 import { pdf } from './pdf';
 import { intelSpeech } from './intelSpeech';
 import { intelMore } from './intelMore';
@@ -111,6 +112,7 @@ export const en = {
   connectors,
   platformApi,
   pdf,
+  notesApps,
   intelSpeech,
   intelMore,
   accounts,

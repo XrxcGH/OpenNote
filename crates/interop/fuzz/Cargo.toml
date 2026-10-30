@@ -143,3 +143,10 @@ path = "fuzz_targets/legacy_zipped_sheet.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "notes_app"
+path = "fuzz_targets/notes_app.rs"
+test = false
+doc = false
+bench = false

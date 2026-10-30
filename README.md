@@ -39,6 +39,7 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [Tutor](docs/help/tutor.md)                                       | Hints one step at a time and explanations of flagged steps, without giving the answer away                     |
 | [Recording](docs/help/recording.md)                               | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |
 | [Import and export](docs/help/import-and-export.md)               | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, and more out                    |
+| [Goodnotes, Notability, and Samsung Notes](docs/help/notes-apps.md) | The handwriting apps' own files in, with Notability's handwriting as strokes, and their PDF exports |
 | [On-device intelligence](docs/help/on-device-intelligence.md)     | Text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on           |
 | [Privacy and Work offline](docs/help/privacy-and-work-offline.md) | Crash reports with consent, a self-check, a feedback file, safe start, and a switch that stops all network use |
 | [Connectors](docs/help/connectors.md)                             | Signing in to other services; no feature uses a connection yet                                                 |
