@@ -17,6 +17,7 @@ import {
   gammaQuantile,
   garwood,
   hypergeometricPmf,
+  hypergeometricQuantile,
   hypergeometricSf,
   negativeBinomialCdf,
   negativeBinomialPmf,
@@ -79,6 +80,11 @@ describe('discrete distributions', () => {
     expect(binomialCdf(3, 10, 0.5)).toBeCloseTo(176 / 1024, 14);
     expect(binomialSf(3, 10, 0.5)).toBeCloseTo(1 - 176 / 1024, 14);
     expect(binomialQuantile(0.5, 10, 0.5)).toBe(5);
+    // 0 and 1 map to the ends of the support, though the cdf rounds to 1 near k = 29 here.
+    expect(binomialQuantile(1, 50, 0.1)).toBe(50);
+    expect(binomialQuantile(0, 50, 0.1)).toBe(0);
+    expect(hypergeometricQuantile(1, { total: 10, successes: 3, draws: 6 })).toBe(3);
+    expect(hypergeometricQuantile(0, { total: 10, successes: 7, draws: 6 })).toBe(3);
     expect(poissonCdf(2, 3)).toBeCloseTo(8.5 * Math.exp(-3), 14);
     expect(poissonSf(2, 3)).toBeCloseTo(1 - 8.5 * Math.exp(-3), 14);
     expect(poissonQuantile(0.4231, 3)).toBe(2);
