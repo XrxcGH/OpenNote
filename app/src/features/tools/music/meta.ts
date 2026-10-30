@@ -3,6 +3,9 @@ import type { IconName } from '../../../ui/icons';
 
 export const MUSIC_TOOLS = [
   { id: 'theory', icon: 'Music' },
+  { id: 'ear', icon: 'Ear' },
+  { id: 'partwriting', icon: 'Waveform' },
+  { id: 'script', icon: 'FilmSlate' },
   { id: 'camera', icon: 'Camera' },
   { id: 'studio', icon: 'Palette' },
   { id: 'rhythm', icon: 'Metronome' },

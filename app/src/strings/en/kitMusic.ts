@@ -3,6 +3,9 @@
 import { camera } from './kitMusic/camera';
 import { common } from './kitMusic/common';
 import { rhythm } from './kitMusic/rhythm';
+import { ear } from './kitMusic/ear';
+import { partwriting } from './kitMusic/partwriting';
+import { script } from './kitMusic/script';
 import { studio } from './kitMusic/studio';
 import { theory } from './kitMusic/theory';
 
@@ -30,10 +33,10 @@ export const kitMusic = {
   tap: 'Tap tempo',
   playing: 'Playing.',
   noAudio: 'This device cannot play sound here.',
-  t: { ...theory.t, ...camera.t, ...studio.t, ...rhythm.t },
-  f: { ...theory.f, ...camera.f, ...studio.f, ...rhythm.f },
-  r: { ...theory.r, ...camera.r, ...studio.r, ...rhythm.r },
-  s: { ...theory.s, ...camera.s, ...studio.s, ...rhythm.s },
-  e: { ...common.e, ...theory.e, ...camera.e, ...studio.e, ...rhythm.e },
-  n: { ...theory.n, ...camera.n, ...studio.n, ...rhythm.n },
+  t: { ...theory.t, ...ear.t, ...partwriting.t, ...script.t, ...camera.t, ...studio.t, ...rhythm.t },
+  f: { ...theory.f, ...ear.f, ...partwriting.f, ...script.f, ...camera.f, ...studio.f, ...rhythm.f },
+  r: { ...theory.r, ...ear.r, ...partwriting.r, ...script.r, ...camera.r, ...studio.r, ...rhythm.r },
+  s: { ...theory.s, ...ear.s, ...partwriting.s, ...script.s, ...camera.s, ...studio.s, ...rhythm.s },
+  e: { ...common.e, ...theory.e, ...ear.e, ...partwriting.e, ...script.e, ...camera.e, ...studio.e, ...rhythm.e },
+  n: { ...theory.n, ...ear.n, ...partwriting.n, ...script.n, ...camera.n, ...studio.n, ...rhythm.n },
 } as const;
