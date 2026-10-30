@@ -146,7 +146,9 @@ export function levenbergMarquardt<X>(
   // A parameter on its lower bound whose gradient g (of half the cost) is positive, or on its upper bound with g
   // negative, would leave the box along the steepest descent: it is held fixed for the iteration.
   const activeAt = (q: readonly number[], gq: readonly number[]): boolean[] =>
-    q.map((v, j) => (lo[j] !== undefined && v <= lo[j] && gq[j] > 0) || (hi[j] !== undefined && v >= hi[j] && gq[j] < 0));
+    q.map(
+      (v, j) => (lo[j] !== undefined && v <= lo[j] && gq[j] > 0) || (hi[j] !== undefined && v >= hi[j] && gq[j] < 0),
+    );
 
   while (iterations < maxIterations) {
     const active = activeAt(p, g);
