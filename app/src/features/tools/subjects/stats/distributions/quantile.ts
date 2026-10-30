@@ -61,6 +61,8 @@ function bracket(g: (x: number) => number, support: Support, guess: number): [nu
 export function discreteQuantile(cdf: (k: number) => number, p: number, lo: number, hi: number, guess: number): number {
   checkProbability(p);
   if (p === 0) return lo;
+  // The cdf can round to 1 well before the top of the support, so 1 maps to the end itself.
+  if (p === 1) return hi;
   let low = lo;
   let high = Math.min(hi, Math.max(lo, Math.round(guess)));
   for (let step = 1; cdf(high) < p; step *= 2) {
