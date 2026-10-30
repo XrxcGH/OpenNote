@@ -13,6 +13,8 @@ import { schrodinger } from './kitModPhys/schrodinger';
 export const kitModPhys = {
   window: {
     title: 'Modern physics and astronomy',
+    open: 'Open the modern physics and astronomy tools',
+    keywords: 'quantum atom spectra spin solid semiconductor plasma star sky cosmology telescope',
     tool: 'Tool',
     calculation: 'Calculation',
   },
