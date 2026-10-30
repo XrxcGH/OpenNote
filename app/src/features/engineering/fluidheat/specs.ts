@@ -1,0 +1,17 @@
+// Each tool's spec, loaded when its tab first opens, so the window's own code stays small.
+import type { ToolSpec } from './kit/spec';
+
+export const SPECS: Readonly<Record<string, () => Promise<ToolSpec>>> = {
+  statics: () => import('./statics/spec').then((m) => m.staticsSpec),
+  pipes: () => import('./pipes/spec').then((m) => m.pipesSpec),
+  dimensional: () => import('./dimensional/spec').then((m) => m.dimensionalSpec),
+  external: () => import('./external/spec').then((m) => m.externalSpec),
+  viscous: () => import('./viscous/spec').then((m) => m.viscousSpec),
+  conduction: () => import('./conduction/spec').then((m) => m.conductionSpec),
+  fins: () => import('./fins/spec').then((m) => m.finsSpec),
+  transient: () => import('./transient/spec').then((m) => m.transientSpec),
+  convection: () => import('./convection/spec').then((m) => m.convectionSpec),
+  hx: () => import('./hx/spec').then((m) => m.hxSpec),
+  radiation: () => import('./radiation/spec').then((m) => m.radiationSpec),
+  props: () => import('./props/spec').then((m) => m.propsSpec),
+};

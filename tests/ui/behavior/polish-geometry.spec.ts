@@ -15,6 +15,8 @@ async function openMembranes(page: Page, width: number, fixture = 'smart') {
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  // The page's commands are listed only once the page is shown and their chunks have loaded.
+  await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
 }
 
 /** The command bar's bottom edge (its divider line included) and the status line's top, in CSS px. */
@@ -140,8 +142,10 @@ test.describe('panels stay between the toolbar and the status line', () => {
         await openTool(page, `Open ${tool.toLowerCase()}`);
         const panel = page.getByRole('dialog', { name: tool });
         await expect(panel).toBeVisible();
+        await expect
+          .poll(async () => (await chrome(page)).bottom, { message: 'the status line shows' })
+          .toBeLessThan(height);
         const edges = await chrome(page);
-        expect(edges.bottom, 'the status line shows').toBeLessThan(height);
         const box = (await panel.boundingBox())!;
         expect(box.y, 'below the command bar and its line').toBeGreaterThanOrEqual(edges.top - 1);
         expect(box.y + box.height, 'above the status line').toBeLessThanOrEqual(edges.bottom + 1);

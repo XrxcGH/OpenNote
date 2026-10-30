@@ -70,9 +70,10 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await keyboard.type('# Membranes\nCells keep **apart** and water moves.');
   await expect.poll(() => held(page)).toEqual(['# Membranes\n\nCells keep **apart** and water moves.']);
 
-  // The formatting bar, set to show for every selection.
+  // Format the selection.
   for (let i = 0; i < 'moves.'.length; i += 1) await keyboard.press('Shift+ArrowLeft');
-  await page.getByRole('toolbar').getByRole('button', { name: 'Italic' }).click();
+  // The ribbon and the floating bar both carry Italic once a selection shows the bar; the ribbon's is always there.
+  await page.getByRole('toolbar', { name: 'Home' }).getByRole('button', { name: 'Italic' }).click();
   await expect.poll(() => held(page)).toEqual(['# Membranes\n\nCells keep **apart** and water *moves.*']);
 
   // Paste from a document: HTML becomes blocks and marks.
