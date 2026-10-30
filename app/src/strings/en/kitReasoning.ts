@@ -1,6 +1,7 @@
 // The reasoning kit (flag kits.reasoning; owner: the reasoning lane): the window, its commands, and each tool's
 // modes, fields, steps, and errors. Each tool's strings are in kitReasoning/, joined here into one namespace.
 // Every interface string is a full sentence or a label, never joined from pieces (ARCHITECTURE.md section 19).
+import { algorithms } from './kitReasoning/algorithms';
 import { automata } from './kitReasoning/automata';
 import { digital } from './kitReasoning/digital';
 import { discrete } from './kitReasoning/discrete';
@@ -42,6 +43,16 @@ export const kitReasoning = {
         'flip-flop state machine mealy moore counter elmore logical effort',
       summary: 'From truth tables to minimal circuits: maps, gates, timing, flip-flops, and state machines.',
     },
+    algorithms: {
+      tab: 'Algorithms',
+      open: 'Open algorithms, data structures, and networks',
+      keywords:
+        'sorting quicksort mergesort heapsort binary search stack queue bst avl heap b-tree hash bfs dfs dijkstra ' +
+        'bellman-ford floyd prim kruskal max flow matching euler hamilton coloring a-star minimax alpha-beta ' +
+        'dynamic programming edit distance lcs knapsack viterbi pagerank betweenness centrality louvain',
+      summary:
+        'Sorting and searching with counts, data structures, graph algorithms, search, dynamic programming, and network measures.',
+    },
     optimize: {
       tab: 'Optimization',
       open: 'Open optimization, projects, and decisions',
@@ -81,6 +92,7 @@ export const kitReasoning = {
   automata,
   discrete,
   digital,
+  algorithms,
   optimize,
   games,
 } as const;

@@ -6,6 +6,7 @@ const LOADERS: Record<ReasoningToolId, () => Promise<ToolSpec>> = {
   automata: () => import('./automata/forms').then((m) => m.AUTOMATA),
   discrete: () => import('./discrete/forms').then((m) => m.DISCRETE),
   digital: () => import('./digital/forms').then((m) => m.DIGITAL),
+  algorithms: () => import('./algorithms/forms').then((m) => m.ALGORITHMS),
   games: () => import('./games/forms').then((m) => m.GAMES),
   optimize: () => import('./optimize/forms').then((m) => m.OPTIMIZE),
 };

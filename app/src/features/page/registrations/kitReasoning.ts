@@ -9,6 +9,7 @@ const TOOLS: readonly (readonly [ReasoningToolId, IconName])[] = [
   ['automata', 'FlowArrow'],
   ['discrete', 'Hash'],
   ['digital', 'Circuitry'],
+  ['algorithms', 'Graph'],
   ['optimize', 'ChartLineUp'],
   ['games', 'ChartBar'],
 ];
