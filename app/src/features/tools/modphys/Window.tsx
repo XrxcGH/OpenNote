@@ -1,5 +1,6 @@
 // The modern physics and astronomy window: a tool picker, then the chosen tool's calculations.
 import { Suspense } from 'react';
+import './shared/strings';
 import { t } from '../../../strings/t';
 import { useStore } from '../../../state/store';
 import extra from '../ui/extra.module.css';
@@ -23,7 +24,7 @@ export default function ModPhysWindow() {
         >
           {MODPHYS_TOOLS.map((one) => (
             <option key={one.id} value={one.id}>
-              {t(`kitModPhys.tools.${one.id}.title`)}
+              {t(`kitModPhys.toolTitles.${one.id}`)}
             </option>
           ))}
         </select>

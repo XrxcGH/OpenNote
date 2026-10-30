@@ -1,5 +1,6 @@
 // Turns an engine's error into a sentence: a rule on a named quantity, or a problem with the inputs.
 import { kitModPhys } from '../../../../strings/en/kitModPhys';
+import './strings';
 import { t } from '../../../../strings/t';
 import { PhysicsError } from './errors';
 

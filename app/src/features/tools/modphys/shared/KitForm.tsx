@@ -3,6 +3,7 @@
 // region so a screen reader hears it. Insert writes the answer, the equation, the table, the steps, or the plot as
 // a picture at the page's caret.
 import { useMemo, useState } from 'react';
+import './strings';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import { insertIntoPage } from '../../ui/CalculatorTool';

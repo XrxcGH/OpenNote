@@ -1,5 +1,6 @@
 // One tool's calculations: a picker when there are several, then the chosen calculation's form. The choice is
 // remembered for the next time the tool opens.
+import './strings';
 import { t } from '../../../../strings/t';
 import type { MessageKey } from '../../../../strings/t';
 import extra from '../../ui/extra.module.css';

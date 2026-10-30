@@ -1,16 +1,9 @@
-// The modern physics and astronomy tools: shared window and form words, rules, errors, quantity names, and the
-// tool list. Each tool's own calculations, fields, results, and notes are in kitModPhys/<tool>.ts.
-import { atoms } from './kitModPhys/atoms';
-import { spin } from './kitModPhys/spin';
-import { molecules } from './kitModPhys/molecules';
-import { plasma } from './kitModPhys/plasma';
-import { stars } from './kitModPhys/stars';
-import { cosmos } from './kitModPhys/cosmos';
-import { sky } from './kitModPhys/sky';
-import { solids } from './kitModPhys/solids';
-import { schrodinger } from './kitModPhys/schrodinger';
+// The modern physics and astronomy tools: the window's name and the tool list, which the palette needs at start-up.
+// The rest of the namespace (kitModPhys/body.ts) joins this object when the window loads; its type is here already,
+// so every key type-checks.
+import type { kitModPhysBody } from './kitModPhys/body';
 
-export const kitModPhys = {
+const startUp = {
   window: {
     title: 'Modern physics and astronomy',
     open: 'Open the modern physics and astronomy tools',
@@ -18,292 +11,65 @@ export const kitModPhys = {
     tool: 'Tool',
     calculation: 'Calculation',
   },
-  form: {
-    quantity: 'Quantity',
-    value: 'Value',
-    unitFor: 'Unit for {name}',
-    steps: 'Worked steps',
-    values: 'Result values',
-    insertAnswer: 'Insert answer',
-    insertMore: 'More to insert',
-    insertMenu: 'Insert into the page',
-    insertEquation: 'Equation (LaTeX)',
-    insertTable: 'Result table',
-    insertSteps: 'Answer with worked steps',
-    insertPicture: 'Plot as a picture',
-    inserted: 'Inserted into the page.',
-    noPage: 'Click in a page first, then insert.',
-    source: 'Source: {name}',
-  },
-  rules: {
-    positive: '{what} must be greater than zero.',
-    nonNegative: '{what} can’t be negative.',
-    integer: '{what} must be a whole number.',
-    fraction: '{what} must be between 0 and 1.',
-    tooLarge: '{what} is too large for this tool.',
-    notNumber: '{what} must be a number, such as 2.5 or 1e18.',
-    empty: 'Type a value for {what}.',
-    atLeastOne: '{what} must be at least 1.',
-  },
-  errors: {
-    unexpected: 'These values can’t be worked out. Check each field.',
-    noBoundState: 'There is no bound state with these values. Make the well deeper or wider.',
-    noConvergence: 'The calculation didn’t settle on an answer. Try other values or a finer grid.',
-    aboveBarrier: 'The energy is above the barrier, so this formula doesn’t apply.',
-    belowBarrier: 'The energy is below the barrier, so this formula doesn’t apply.',
-    badPotential: 'The potential can’t be read. Use x, numbers, and functions such as exp or abs.',
-    badGrid: 'The grid needs at least 50 points and a range from a smaller to a larger x.',
-    badQuantumNumbers: 'Those quantum numbers don’t go together. Use n ≥ 1, 0 ≤ l < n, and −l ≤ m ≤ l.',
-    badSpin: 'Angular momenta must be whole or half-whole numbers, with each m between −j and j in whole steps.',
-    badConfiguration: 'Type one open shell, such as p2, d3, or 2p4.',
-    badFormula: 'The formula can’t be read. Write it as element symbols and counts, such as C6H12O6.',
-    unknownElement: 'One of the elements has no isotope data in this tool.',
-    badCouplings: 'Type couplings as a list such as 7 2 (Hz), with the number of nuclei for each.',
-    badCircuit: 'The circuit can’t be read. Use gates such as H 0, CNOT 0 1, or RX 0 0.5.',
-    badMatrix: 'Type a square matrix with rows on separate lines and numbers separated by spaces.',
-    badList: 'Type one item per line with the numbers separated by spaces or commas.',
-    badDate: 'Type the date as YYYY-MM-DD and the time as HH:MM.',
-    neverRises: 'It stays below the horizon all day at this latitude.',
-    neverSets: 'It stays above the horizon all day at this latitude.',
-    badCosmology: 'These density parameters give no expanding universe that reaches this redshift.',
-    notBound: 'The orbit isn’t bound with these values.',
-    saturated: 'The detector saturates with these values.',
-    belowSurface: 'That point of the field line is inside the planet. Use a smaller latitude.',
-    noTransit: 'The planet misses the star’s disk with this impact parameter, so there is no transit.',
-    outsideFit: 'The habitable-zone fit covers stars from 2600 K to 7200 K.',
-    badBand: 'The band’s upper wavelength must be larger than its lower one.',
-    noComponent: 'Give at least one part of the galaxy a mass or a density.',
-    badMagnitude: 'The magnitude must be a number between −100 and 100.',
-    badAnalyzers:
-      'Type analyzers such as x+ z+ y-: an axis (x, y, z, or an angle in degrees from z toward x) and the beam kept.',
-    tooManyQubits: 'Use from 1 to 5 qubits.',
-    tableTooLarge: 'Full tables go up to j = 4. Work out a single coefficient for larger values.',
-    badLevels: 'The upper level must have a larger n than the lower one.',
-    overScreened: 'The screening must be smaller than Z.',
-    noBragg: 'This wavelength is too long to diffract from that spacing in this order.',
-    tooManyMicrostates: 'That configuration has too many microstates for this tool. Use at most 20 000.',
-    badLevel: 'Type a level such as 2P3/2, 3P2, or 2P°3/2, with J between |L − S| and L + S.',
-    badIsotope: 'Type an isotope such as 12C, 35Cl, or D, or a mass in u.',
-    badAnharmonicity: 'The anharmonicity ωe xe must be less than half of ωe.',
-    badRotation: 'αe is too large: the rotational constant of v = 1 must stay above zero.',
-    fullConversion: 'At p = 1 the chain is infinitely long. Use a conversion below 1.',
-    pureComponent: 'The volume fraction must be between 0 and 1, not at either end.',
-    sunDown: 'The Sun is below the horizon at that time, so there is no shadow.',
-    badBands: 'Ask for 1 to 8 bands.',
-    noCarriers: 'There must be some electrons or holes.',
-    noJunction: 'The doping is too low for a junction: N_A N_D must be larger than n_i².',
-    pastBuiltIn: 'The forward bias must stay below the built-in potential for the depletion approximation.',
-    noPower: 'The cell gives no current at zero volts with these values.',
-    badLevelsCount: 'Ask for 1 to 12 levels.',
-  },
-  q: {
-    density: 'The density',
-    electronTemperature: 'The electron temperature',
-    ionTemperature: 'The ion temperature',
-    temperature: 'The temperature',
-    field: 'The magnetic field',
-    ionMass: 'The ion mass',
-    mass: 'The mass',
-    charge: 'The charge number',
-    lShell: 'The L-shell',
-    energy: 'The energy',
-    radius: 'The radius',
-    speed: 'The speed',
-    confinement: 'The confinement time',
-    sheathVoltage: 'The sheath voltage',
-    latitude: 'The latitude',
-    parallax: 'The parallax',
-    wavelength: 'The wavelength',
-    weights: 'The statistical weight ratio',
-    meanMass: 'The mean molecular weight',
-    planetRadius: 'The planet’s radius',
-    starRadius: 'The star’s radius',
-    period: 'The period',
-    impact: 'The impact parameter',
-    eccentricity: 'The eccentricity',
-    planetMass: 'The planet’s mass',
-    albedo: 'The albedo',
-    luminosity: 'The luminosity',
-    distance: 'The distance',
-    magnitude: 'The magnitude',
-    inclination: 'The inclination',
-    hubble: 'The Hubble constant',
-    omegaM: 'The matter density Ωm',
-    omegaR: 'The radiation density Ωr',
-    omegaL: 'The dark energy density ΩΛ',
-    redshift: 'The redshift',
-    size: 'The length',
-    pointMass: 'The central mass',
-    diskMass: 'The disk mass',
-    scaleLength: 'The disk scale length',
-    coreRadius: 'The core radius',
-    scaleRadius: 'The halo scale radius',
-    aperture: 'The aperture',
-    focalLength: 'The focal length',
-    pixel: 'The pixel size',
-    pixels: 'The number of pixels',
-    seeing: 'The seeing',
-    eyepiece: 'The eyepiece focal length',
-    sourceRate: 'The source count rate',
-    skyRate: 'The sky count rate',
-    darkRate: 'The dark current',
-    readNoise: 'The read noise',
-    exposure: 'The exposure time',
-    gain: 'The gain',
-    snr: 'The signal-to-noise ratio',
-    zeroPoint: 'The zero point',
-    bandwidth: 'The bandwidth',
-    obstruction: 'The central obstruction',
-    throughput: 'The throughput',
-    qubits: 'The number of qubits',
-    angle: 'The angle',
-    time: 'The time',
-    upper: 'The upper n',
-    lower: 'The lower n',
-    principal: 'The principal quantum number n',
-    orbital: 'The orbital quantum number l',
-    magnetic: 'The magnetic quantum number m',
-    spacing: 'The lattice spacing',
-    order: 'The diffraction order',
-    screening: 'The screening constant',
-    massA: 'The first atom’s mass',
-    massB: 'The second atom’s mass',
-    bondLength: 'The bond length',
-    distortion: 'The centrifugal distortion constant',
-    omegaE: 'The vibrational constant ωe',
-    anharmonicity: 'The anharmonicity ωe xe',
-    rotB: 'The rotational constant',
-    alpha: 'The vibration-rotation constant αe',
-    spectrometer: 'The spectrometer frequency',
-    shift: 'The chemical shift',
-    protons: 'The number of protons',
-    count: 'The number of chains',
-    molarMass: 'The molar mass',
-    conversion: 'The extent of reaction p',
-    segments: 'The number of segments',
-    segmentLength: 'The segment length',
-    persistence: 'The persistence length',
-    chainLength: 'The chain length',
-    chi: 'The interaction parameter χ',
-    volumeFraction: 'The volume fraction',
-    longitude: 'The longitude',
-    zone: 'The time zone offset',
-    rightAscension: 'The right ascension',
-    declination: 'The declination',
-    height: 'The height',
-    windowHeight: 'The window height',
-    azimuth: 'The azimuth',
-    massRatio: 'The effective mass ratio',
-    barrierStrength: 'The barrier strength P',
-    bands: 'The number of bands',
-    latticeConstant: 'The lattice constant',
-    hopping: 'The hopping energy',
-    spring: 'The spring constant',
-    donors: 'The donor density',
-    acceptors: 'The acceptor density',
-    ionization: 'The ionization energy',
-    gapEnergy: 'The band gap',
-    electrons: 'The electron density',
-    holes: 'The hole density',
-    mobility: 'The mobility',
-    gradient: 'The density gradient',
-    intrinsic: 'The intrinsic density',
-    permittivity: 'The relative permittivity',
-    bias: 'The bias voltage',
-    area: 'The area',
-    saturation: 'The saturation current',
-    ideality: 'The ideality factor',
-    oxide: 'The oxide thickness',
-    workFunction: 'The work-function difference',
-    oxideCharge: 'The oxide charge',
-    photocurrent: 'The photocurrent',
-    resistance: 'The resistance',
-    irradiance: 'The irradiance',
-    width: 'The width',
-    depth: 'The depth',
-    hw: 'The oscillator energy ħω',
-    force: 'The force',
-    strength: 'The delta strength',
-    domain: 'The domain edge',
-    points: 'The number of grid points',
-    levels: 'The number of levels',
-    center: 'The packet center',
-    mev: 'The energy',
-  },
   tools: {
     plasma: {
-      title: 'Plasmas and space physics',
       open: 'Open the plasma and space physics tool',
       keywords:
-        'plasma debye frequency gyroradius larmor alfven beta sheath bohm magnetosphere magnetopause dipole solar ' +
+        'debye frequency gyroradius larmor alfven beta sheath bohm magnetosphere magnetopause dipole solar ' +
         'wind fusion lawson',
     },
     stars: {
-      title: 'Stars, light, and exoplanets',
       open: 'Open the stars and exoplanets tool',
       keywords:
-        'star magnitude distance modulus parallax luminosity blackbody planck wien hr diagram saha jeans eddington ' +
-        'exoplanet transit',
+        'star magnitude distance modulus parallax luminosity blackbody planck wien hr diagram saha jeans ' +
+        'eddington exoplanet transit',
     },
     cosmos: {
-      title: 'Cosmology, galaxies, and telescopes',
       open: 'Open the cosmology and telescopes tool',
       keywords:
-        'cosmology hubble redshift friedmann lambda cdm age lookback comoving luminosity angular diameter distance ' +
-        'cmb rotation curve nfw dark matter telescope plate scale rayleigh dawes ccd signal noise exposure magnitude',
+        'hubble redshift friedmann lambda cdm age lookback comoving luminosity angular diameter distance cmb ' +
+        'rotation curve nfw dark matter telescope plate scale rayleigh dawes ccd signal noise exposure ' +
+        'magnitude',
     },
     spin: {
-      title: 'Angular momentum, spin, and qubits',
       open: 'Open the spin and qubits tool',
       keywords:
-        'clebsch gordan wigner 3j coupling angular momentum spin matrices pauli dirac gamma commutator ' +
-        'stern gerlach bloch larmor qubit circuit bell grover deutsch',
+        'clebsch gordan wigner 3j coupling angular momentum matrices pauli dirac gamma commutator stern ' +
+        'gerlach bloch larmor qubit circuit bell grover deutsch',
     },
     atoms: {
-      title: 'Atoms, spectra, and X-rays',
       open: 'Open the atoms and spectra tool',
       keywords:
         'hydrogen bohr rydberg balmer lyman spectrum wavelength orbital wavefunction laguerre fine structure ' +
         'term symbol hund microstate lande zeeman selection rule moseley x-ray bragg',
     },
     molecules: {
-      title: 'Molecular spectra, mass spectra, and polymers',
       open: 'Open the molecular spectra and polymers tool',
       keywords:
         'rotor rotational constant vibration anharmonic morse rovibrational branch isotope pattern exact mass ' +
-        'unsaturation nmr multiplet coupling polymer molar mass dispersity carothers flory huggins chain',
+        'unsaturation nmr multiplet coupling polymer molar dispersity carothers flory huggins chain',
     },
     sky: {
-      title: 'Sky positions and sun paths',
       open: 'Open the sky positions and sun paths tool',
       keywords:
-        'julian date sidereal time equation of time sun moon position right ascension declination altitude azimuth ' +
-        'ecliptic galactic precession sunrise sunset twilight day length sun path shadow overhang airmass',
+        'julian date sidereal time equation of moon position right ascension declination altitude azimuth ' +
+        'ecliptic galactic precession sunrise sunset twilight day length path shadow overhang airmass',
     },
     solids: {
-      title: 'Solids and semiconductor devices',
       open: 'Open the solids and semiconductors tool',
       keywords:
         'fermi energy free electron density of states kronig penney band gap tight binding phonon dispersion ' +
-        'semiconductor intrinsic doping fermi level mobility hall pn junction depletion diode mos capacitor ' +
+        'semiconductor intrinsic doping level mobility hall pn junction depletion diode mos capacitor ' +
         'threshold solar cell fill factor',
     },
     schrodinger: {
-      title: 'Quantum wells, barriers, and wave packets',
       open: 'Open the quantum wells and barriers tool',
       keywords:
-        'schrodinger equation infinite finite square well harmonic oscillator morse double well bound state ' +
+        'schrodinger equation infinite finite square well harmonic oscillator morse double bound state ' +
         'eigenvalue wavefunction uncertainty tunneling barrier step transmission reflection transfer matrix ' +
-        'resonant wave packet crank nicolson quantum dot gamow wkb',
+        'resonant wave packet crank nicolson dot gamow wkb',
     },
   },
-  plasma,
-  stars,
-  cosmos,
-  spin,
-  atoms,
-  molecules,
-  sky,
-  solids,
-  schrodinger,
 } as const;
+
+export const kitModPhys = startUp as typeof startUp & typeof kitModPhysBody;
