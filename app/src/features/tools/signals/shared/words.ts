@@ -20,11 +20,21 @@ const LOADERS: { [K in Section]: () => Promise<SignalToolWords[K]> } = {
 /** Which other tools' words a tool reads (the filter designer names the spectrum analyzer's windows). */
 const ALSO: Partial<Record<Section, readonly Section[]>> = { filters: ['spectrum'] };
 
+/** The insert menu, error, and step words every tool shares; loaded once, with the first tool. */
+let common: Promise<void> | undefined;
+function loadCommon(target: Record<string, unknown>): Promise<void> {
+  common ??= import('../../../../strings/en/kitSignals/common').then((m) => {
+    Object.assign(target, m.common);
+  });
+  return common;
+}
+
 export async function loadWords(section: Section): Promise<void> {
   const target = en.kitSignals as unknown as Record<string, unknown>;
-  await Promise.all(
-    [section, ...(ALSO[section] ?? [])].map(async (one) => {
+  await Promise.all([
+    loadCommon(target),
+    ...[section, ...(ALSO[section] ?? [])].map(async (one) => {
       if (!target[one]) target[one] = await LOADERS[one]();
     }),
-  );
+  ]);
 }
