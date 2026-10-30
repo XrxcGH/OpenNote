@@ -26,7 +26,9 @@ Each support carries 5 kN.
 
 function show(markdown: string | null): void {
   current = markdown ?? '';
-  shownMounted.set(markdown === null ? null : ({ page: { id: 'p1' } } as unknown as MountedPage));
+  shownMounted.set(
+    markdown === null ? null : ({ page: { id: 'p1', initial: { id: 'p1' } } } as unknown as MountedPage),
+  );
 }
 
 beforeEach(() => show(PAGE));

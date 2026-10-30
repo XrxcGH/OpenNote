@@ -43,6 +43,22 @@ export type { ReasonCode, StepLine, StepResult } from './stepcheck';
 export const loadTutorMath = () => import('./tutorMath');
 export type { CalculusKind, Step } from './calculus/types';
 
+/** The symbolic algebra other features differentiate and print with (the mechanisms and dynamics kit). It loads on
+ * first use. */
+export async function loadSymbolic() {
+  const [algebra, derivative, print] = await Promise.all([
+    import('./calculus/algebra'),
+    import('./calculus/derivative'),
+    import('./calculus/print'),
+  ]);
+  return {
+    derivativeOf: derivative.derivativeOf,
+    latexOf: print.latexOf,
+    simplest: algebra.simplest,
+    substitute: algebra.substitute,
+  };
+}
+
 /** The Math solvers window, loaded the first time it opens. */
 export const loadSolversTool = () => import('./solvers/ui/SolversTool');
 
