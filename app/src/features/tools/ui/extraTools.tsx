@@ -75,8 +75,10 @@ const ChemMatKit = lazy(() => import('../chemmat/ui/KitWindow').then((loaded) =>
 
 // The dynamics and control kit loads with its engineering feature the first time its window opens.
 const ControlKit = lazy(() =>
+  import('../../engineering')
     .then((engineering) => engineering.loadControlKit())
     .then((m) => ({ default: m.ControlKit })),
+);
 
 // The design kit loads the first time its window opens.
 const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ default: m.DesignKit })));
@@ -97,6 +99,7 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-math': MathKit,
   'kit-mechdyn': KitMechDyn,
   'kit-physics': PhysicsKit,
+  'kit-mind': MindKit,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
@@ -142,11 +145,5 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
-  if (tool === 'kit-mind')
-    return (
-      <Suspense fallback={null}>
-        <MindKit />
-      </Suspense>
-    );
   return null;
 }
