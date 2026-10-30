@@ -1,0 +1,118 @@
+// checks-disable-file length: messages are full sentences kept on one line
+
+// The words of the design kit's machining tool: its form, results, notes, the wording of its worked steps, and the
+// error messages its engine gives.
+export const machining = {
+  title: 'Machining speeds, feeds, and tool life',
+  keywords:
+    'machining turning drilling milling spindle speed feed rate material removal rate cutting time taylor tool life economics merchant shear angle cutting force chip manufacturing lathe mill',
+  about:
+    'Work out spindle speed, feed rate, material removal rate and cutting time for a cut, find tool life or the speed for a wanted life, and read the forces on the tool from the chip. Typed lengths use the unit beside each field.',
+  field: {
+    mode: 'What to work out',
+    d: 'Diameter (work for turning, drill, or cutter otherwise)',
+    v: 'Cutting speed',
+    f: 'Feed per revolution',
+    fz: 'Feed per tooth',
+    teeth: 'Number of teeth on the cutter',
+    kind: 'Kind of milling cut',
+    depth: 'Depth of cut (hole depth for drilling)',
+    width: 'Width of cut',
+    length: 'Length of cut',
+    pointAngle: 'Included point angle of the drill',
+    find: 'Find',
+    n: 'Taylor exponent n',
+    c: 'Taylor constant C (the speed for a life of 1 minute)',
+    life: 'Wanted tool life',
+    changeTime: 'Tool change time',
+    edgeCost: 'Cost of one cutting edge',
+    rate: 'Machine and operator cost per minute',
+    from: 'Find the shear angle from',
+    rake: 'Rake angle',
+    friction: 'Friction angle on the tool face',
+    ratio: 'Chip thickness ratio, uncut thickness over chip thickness',
+    fc: 'Cutting force',
+    ft: 'Thrust force',
+    phi: 'Shear angle',
+    t0: 'Uncut chip thickness',
+    w: 'Width of the chip',
+  },
+  option: {
+    turning: 'Turning a diameter',
+    drilling: 'Drilling a hole',
+    milling: 'Milling',
+    life: 'Tool life, Taylor equation',
+    economics: 'Tool life for least cost and for most parts',
+    shear: 'Shear angle of the chip',
+    forces: 'Forces on the tool, Merchant circle',
+    slot: 'Slot: the cutter is as wide as the cut',
+    peripheral: 'Peripheral: the cutter side cuts a narrower width',
+    speed: 'Cutting speed for a wanted life',
+    merchant: 'Rake and friction angles (Merchant)',
+    ratio: 'The chip thickness ratio',
+  },
+  example: {
+    turn: 'Turning a 50 mm bar at 150 m/min',
+    drill: 'Drilling a 10 mm hole 20 mm deep',
+    mill: 'Slot milling with a 20 mm four-tooth cutter',
+    taylor: 'Tool life at 150 m/min, n 0.25, C 400',
+    cost: 'Economic tool life with a 2 minute tool change',
+    chip: 'Shear angle for a 10 degree rake',
+  },
+  row: {
+    rpm: 'Spindle speed',
+    feedRate: 'Feed rate',
+    mrr: 'Material removal rate',
+    time: 'Cutting time',
+    life: 'Tool life',
+    speed: 'Cutting speed',
+    costLife: 'Tool life for least cost per part',
+    costSpeed: 'Cutting speed for least cost per part',
+    rateLife: 'Tool life for the highest production rate',
+    rateSpeed: 'Cutting speed for the highest production rate',
+    phi: 'Shear angle',
+    friction: 'Friction force on the tool face',
+    normal: 'Normal force on the tool face',
+    shearForce: 'Shear force on the shear plane',
+    shearNormal: 'Normal force on the shear plane',
+    mu: 'Friction coefficient on the tool face',
+    beta: 'Friction angle',
+    shearStress: 'Shear stress on the shear plane',
+    power: 'Cutting power',
+    specificEnergy: 'Specific cutting energy',
+  },
+  word: { notDefined: 'not defined' },
+  note: {
+    noChangeTime:
+      'With no time lost to a tool change there is no limit to how fast production can go, so the highest-rate life and speed are not defined. The least-cost answer still holds.',
+    slotWidth:
+      'A slot is as wide as the cutter. The width you typed differs from the cutter diameter, so the removal rate is for a cut of that width.',
+    cut: 'Cutting speed is the surface speed at the cutter diameter. Milling and drilling times include the cutter approach or the drill point, as the steps show.',
+    taylor:
+      'The Taylor equation V T^n = C comes from tests on one tool and work material at one set of conditions. Take n and C from the tool maker or your own tests; this tool has no table of them.',
+    economics:
+      'Both answers come from the Taylor equation and need n below 1. Cost is counted per cutting edge, and the machine rate is per minute of cutting.',
+    shear:
+      'Merchant’s result assumes the shear plane takes the least work. Real chips often differ by several degrees, so use a measured chip thickness ratio when you have one.',
+    circle:
+      'The forces come from the Merchant circle: the cutting and thrust forces you measured are resolved along the tool face and along the shear plane.',
+  },
+};
+
+export const machiningSteps = {
+  rpm: 'Spindle speed from the cutting speed and the diameter.',
+  feedRate: 'Feed rate from the feed and the spindle speed.',
+  tip: 'The extra drill travel for the point.',
+  mrr: 'Material removal rate from the speed, feed and depth.',
+  life: 'Tool life from the Taylor equation.',
+  costLife: 'Tool life that gives the least cost per part.',
+  costSpeed: 'Cutting speed for that tool life.',
+  rateLife: 'Tool life that gives the highest production rate.',
+  rateSpeed: 'Cutting speed for that tool life.',
+  shearAngle: 'Shear angle of the chip.',
+  friction: 'Friction force on the tool face from the cutting and thrust forces.',
+  normal: 'Normal force on the tool face from the cutting and thrust forces.',
+  shear: 'Forces on the shear plane.',
+  mu: 'Friction coefficient and friction angle on the tool face.',
+  power: 'Cutting power and specific cutting energy.',
+};

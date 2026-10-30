@@ -23,6 +23,8 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Productivity and study tools](#productivity-and-study-tools)
 - [Math solvers](#math-solvers)
 - [Statistical models kit](#statistical-models-kit)
+- [Engineering tools](#engineering-tools)
+- [Subject tool kits](#subject-tool-kits)
 
 - [Document structure](#document-structure)
 
@@ -594,6 +596,25 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | PCA, factors, and clusters | Principal components, factor analysis with rotation and parallel analysis, k-means, hierarchical clustering with a dendrogram, and multidimensional scaling. | Built, untested by hand |
 | Machine learning lab | Nearest neighbors, trees, naive Bayes, logistic regression, the perceptron, a small neural network, ridge, and the lasso on toy sets or your data, with seeded splits, cross-validation, and the usual scores and curves. | Built, untested by hand |
 | Spatial statistics | Point-pattern statistics, Moran's I and Geary's C with local clusters, semivariograms, ordinary kriging, and inverse-distance weighting. | Built, untested by hand |
+## Subject tool kits
+
+On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explains how to use them. Each kit is one tool window with a tab per tool. Every tool takes typed values with units (SI or US), works the problem, and shows results, worked steps, and assumptions, with an Insert menu for the page. Each lane's engines are checked by unit tests against published values or independent hand calculations.
+
+| Feature | What it does | Status |
+|---|---|---|
+| Kit foundation | Shared numerics (matrices, polynomial roots, quadrature, ODE solvers, special functions), air and water properties, 38 unit kinds, and the kit window parts. Flag `kits.calc` for the block below. | Built, untested by hand |
+| Live calculation block | A block that keeps a tool's answer, key results, and inputs on the page. Open in tool reopens the tool with those inputs. The solid mechanics, fluids and heat transfer, and dynamics and control kits insert it; the mechanisms kit has its own calculation block. The other kits do not insert one yet. | Built, untested by hand |
+| Circuits and energy | Transients, a circuit simulator (DC, AC sweep, transient), op-amps and filters, semiconductors, instruments, AC power, power flow, data fitting, and energy. Flag `kits.electrical`. | Built, untested by hand |
+| Fluids and heat transfer | Fluid statics and Bernoulli, pipe flow and pumps, dimensional analysis, viscous and external flow, conduction, fins, transient conduction, convection, heat exchangers, radiation, and water and air properties. Flag `kits.fluidheat`. | Built, untested by hand |
+| Solid mechanics | Columns, stress and strain, sections, members, deflection, pressure vessels, thin-walled structures, composite laminates, tissues and joints, fatigue and machine elements, and a finite element workbench. Flag `kits.solids`. | Built, untested by hand |
+| Aerospace | Standard atmosphere, compressible flow, nozzles, rocket nozzles, finite wings, performance and stability, potential flow, dynamic modes, jet engine cycles, and airfoils. Flag `kits.aero`. | Built, untested by hand |
+| Chemistry and materials | Thermochemistry, equilibrium, acids and bases, electrochemistry, kinetics, solutions, crystals and diffraction, defects and diffusion, phase diagrams, and atoms and bonding. Flag `kits.chemmat`. | Built, untested by hand |
+| Thermodynamics | Statistical thermodynamics, ideal gases, steam (IAPWS-IF97), psychrometrics, R-134a, steady-flow devices, cycles, real gases and mixtures, and combustion. Flag `kits.thermo`. | Built, untested by hand |
+| Dynamics and control | System models, root locus, Bode and Nyquist, compensators and PID, state space, digital control, probability, Markov chains and queues, reliability, and Kalman filtering. Flag `kits.control`. | Built, untested by hand |
+| Design tools | Tolerances and fits, machining, forming and joining, micro and nano fabrication, number representation, programming references, orthographic views, a memory tracer, and a drafting sheet. Flag `kits.design`. | Built, untested by hand |
+| Engineering mathematics | Series, complex analysis, systems of ODEs, Fourier series and boundary value problems, numerical methods, a matrix console, a linear algebra workbench, and vector calculus. Flag `kits.math`. | Built, untested by hand |
+| Mechanisms and dynamics | Linkages, cams, gears, compliant mechanisms, rigid-body dynamics, Lagrangian mechanics, 3D rotations, vibration, and robot arms. Flag `kits.mechdyn`. | Built, untested by hand |
+| Physics tools | Waves and sound, relativity, wave and geometric optics, nuclear science, spacecraft sizing, fields, and orbits and maneuvers. Flag `kits.physics`. | Built, untested by hand |
 
 ## Document structure
 
