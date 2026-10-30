@@ -1,0 +1,93 @@
+// The score block's text: field labels, result rows, worked steps, notes, and problems.
+export const score = {
+  t: {
+    score: {
+      title: 'Score block',
+      short: 'Score',
+      keywords:
+        'music notation score abc staff engrave sheet music transpose jianpu numbered sargam tablature tab guitar ' +
+        'melody playback transposing instrument',
+      about:
+        'Write music in ABC notation and see it engraved, hear it played, transpose it, and read it as numbered ' +
+        'notation, sargam, or guitar tablature.',
+    },
+  },
+  f: {
+    scoreMode: 'What to do',
+    scoreEngrave: 'Engrave and play',
+    scoreTranspose: 'Transpose',
+    scoreInstrument: 'Part for a transposing instrument',
+    scoreJianpu: 'Numbered notation (jianpu)',
+    scoreSargam: 'Sargam',
+    scoreTab: 'Guitar tablature',
+    scoreAbc: 'Music in ABC notation',
+    scoreAbcHint:
+      'Start with X:1, then M: for the meter, L: for the shortest note, and K: for the key. Capital letters are the octave from middle C, lower case one octave up.',
+    scoreVoice: 'Voice',
+    scoreVoiceHint: 'Leave empty for all voices, or write the voice name from a V: line.',
+    scoreInterval: 'Interval to move by',
+    scoreIntervalHint: 'Write M2, m3, P5, or P8. Leave the next box empty to use this.',
+    scoreDirection: 'Direction',
+    scoreUp: 'Up',
+    scoreDown: 'Down',
+    scoreToKey: 'Or move to the key of',
+    scoreToKeyHint: 'Write a tonic such as D or Bb. The nearest way there is used, and the mode stays the same.',
+    scoreInstrumentId: 'Instrument',
+  },
+  r: {
+    tuneKey: 'Key',
+    tuneMeter: 'Meter',
+    tuneTempo: 'Tempo (quarter notes a minute)',
+    tuneNotes: 'Notes and chords',
+    tuneBars: 'Bars',
+    tuneNoteNames: 'Notes of the first voice',
+    barWarn: 'Bar {n} length',
+    abcOut: 'Notes as ABC',
+    instOut: 'Instrument',
+    jianpuPlain: 'Voice {voice}: degrees',
+    jianpuTimed: 'Voice {voice}: with lengths',
+    sargamRow: 'Voice {voice}: sargam',
+    tabRow: 'Voice {voice}: string and fret',
+  },
+  s: {
+    scoreStepRead: 'The notes are read against the shortest note value {unit}, so a plain letter is that long.',
+    scoreStepBars: 'Each bar is added up and compared with the meter {meter}. A short first or last bar is allowed.',
+    scoreStepSound: 'Each note is played at its pitch and length with a built-in synthesizer. Nothing is downloaded.',
+    scoreStepToKey: 'From {from}, the nearest way to the new key is {semis} semitones {dir}.',
+    scoreStepInterval: 'Every note moves {semis} semitones {dir}, keeping the letter distance of the interval.',
+    scoreStepSpell: 'Each moved note is spelled by the interval, and accidentals are written against the new key signature.',
+    scoreStepInstrument: 'Every sounding note is moved to the note written for {inst}, which puts the part in {key}.',
+    scoreStepJianpu:
+      'Each note is numbered by its step in the major scale of the key signature ({key}): 1 is the major tonic, 6 is the tonic of the relative minor.',
+    scoreStepJianpuMarks:
+      'A dot above a number is an octave higher, and a dot below is an octave lower. An underline halves the length, and each dash adds a beat.',
+    scoreStepSargam: 'Sa is the tonic ({tonic}). The other notes are named by their distance above it.',
+    scoreStepSargamMarks: 'Lower case is komal (flat), M♯ is the raised fourth, an apostrophe is the octave above, and a comma the octave below.',
+    scoreStepTab: 'Strings are numbered 6 (low E) to 1 (high E), tuned E2 A2 D3 G3 B3 E4, and the fret is the number of semitones above the open string.',
+    scoreStepTabSpan: 'Open strings are used when they fit; otherwise the lowest fret that keeps the hand within four frets of the last one.',
+  },
+  e: {
+    scoreEmpty: 'Write some music first. A tune starts with X:1 and a K: line for the key.',
+    scoreTooLong: 'The music is too long for this block. Try a few lines at a time.',
+    scoreNoKey: 'The music needs a K: line for the key, such as K:G, before the notes.',
+    scoreChar: 'Line {line} has the character {char}, which this block does not read as music.',
+    scoreMeter: 'Line {line}: the meter {text} is not one this block reads. Write M:4/4 or M:6/8.',
+    scoreLength: 'Line {line}: the note length {text} is not a fraction. Write L:1/8.',
+    scoreKey: 'Line {line}: the key {text} is not one this block reads. Write K:G or K:Dm.',
+    scoreChord: 'Line {line}: a chord in square brackets is not closed or has something in it that is not a note.',
+    scoreTuplet: 'Line {line}: a tuplet needs a number of notes from 2 up, such as (3.',
+    scoreVoiceUnknown: 'There is no voice named {id}. The voices are {ids}.',
+    scoreToKeyFormat: 'Write the key as a tonic such as D, F#, or Bb.',
+    scoreIntervalFormat: 'Write the interval as quality and size, such as M2, m3, P5, or P8.',
+    scoreKeyTooFar: 'That move needs a key with more than seven sharps or flats, or a double sharp past the notes. Try another interval.',
+    scoreTabRange: 'The note {note} (MIDI {midi}) is outside the range of a guitar in standard tuning.',
+  },
+  n: {
+    scoreNoteSubset: 'This reads the common parts of ABC: notes, rests, chords, ties, tuplets, bars, and voices. Decorations and lyrics are skipped.',
+    scoreNoteMidi: 'Playback uses the built-in synthesizer. A MIDI file is not exported.',
+    scoreNoteInstrument: 'The part is written for the instrument, not limited to its range.',
+    scoreNoteJianpu: 'For a chord, the lowest written note is numbered.',
+    scoreNoteSargam: 'Western equal temperament is assumed, so the pitches are approximations of raga intonation.',
+    scoreNoteTab: 'Tablature is for the pitches as written. Guitar music is often written an octave above where it sounds.',
+  },
+} as const;
