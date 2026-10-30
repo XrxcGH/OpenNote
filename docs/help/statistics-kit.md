@@ -31,7 +31,7 @@ The kit is new in Beta, so check its answers against your own work while you lea
 
 - **Power**: find the sample size a study needs, or its power. It covers t tests, ANOVA, chi-square, regression, correlations, proportions, and time to event. A curve shows how power grows with the sample size.
 - **Resampling**: bootstrap intervals, permutation tests, a sampling-distribution lab, and coin, dice, urn, and random-walk simulations.
-- **Bayes**: conjugate updates with credible and highest-density intervals, Bayes factors, grid posteriors from a likelihood you type, a Metropolis sampler, Bayes tables, and Bayesian networks of up to 8 true-or-false nodes (type each node with its parents and P(true) for each parent combination, then the evidence).
+- **Bayes**: conjugate updates with credible and highest-density intervals, Bayes factors, grid posteriors from a likelihood you type, a Metropolis sampler, and Bayes tables. Its Bayesian network model solves up to 8 true-or-false nodes: type each node with its parents and P(true) for each parent combination, then the evidence.
 - **Design**: random assignment lists, Latin and Williams squares, factorial layouts, samples drawn from a list, stratified estimates, design effects, and margins of error.
 
 ## Data

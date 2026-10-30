@@ -54,7 +54,8 @@ export const bayes = {
     hypothesesHint: 'Priors are rescaled to add to 1.',
     nodes: 'Network, one node to a line: name | parents: P(true) for each parent combination',
     nodesHint:
-      'Up to 8 nodes. With no parents, write name: p. With parents, list P(true) counting false before true, the last parent changing fastest: (F, F), (F, T), (T, F), (T, T).',
+      'Up to 8 nodes. With no parents, write name: p. With parents, list P(true) for (F, F), (F, T), (T, F), ' +
+      '(T, T): false before true, the last parent changing fastest.',
     evidence: 'Evidence (such as Wet = true)',
     query: 'Node to ask about',
     priorCurve: 'Prior',

@@ -1,8 +1,8 @@
 // Small discrete Bayesian networks of true-or-false nodes, solved exactly by enumerating every joint state.
 //
 // A network is typed one node to a line: `Name: p` for a node with no parents, or `Name | A, B: p1, p2, p3, p4` for
-// a node with parents. The numbers are P(Name is true) for each combination of the parents, counted like binary
-// numbers with false before true and the last parent changing fastest: (F, F), (F, T), (T, F), (T, T).
+// a node with parents. The numbers are P(Name is true) for each combination of the parents. They are counted like
+// binary numbers: false before true, the last parent changing fastest, so (F, F), (F, T), (T, F), (T, T).
 import { toNumber } from '../num/data';
 import { check, num, step, tex, type Cell, type Report } from '../report';
 
@@ -154,11 +154,6 @@ export function networkReport(text: string, evidenceText: string, queryText: str
   const query = nodes[q];
   const given = [...evidence].map(([n, v]) => `${n} = ${truthWord(v)}`).join(', ');
   const condition = given === '' ? '' : ` \\mid \\text{${given}}`;
-  const factors = nodes
-    .map((n) =>
-      n.parents.length ? `P(\\text{${n.name}} \\mid \\text{${n.parents.join(', ')}})` : `P(\\text{${n.name}})`,
-    )
-    .join('\\,');
   return {
     answer: {
       key: 'network',
@@ -182,17 +177,25 @@ export function networkReport(text: string, evidenceText: string, queryText: str
         ),
       },
     ],
-    steps: [
-      step('yNetworkJoint', `P(\\text{all}) = ${factors}`),
-      step('yNetworkSum', `P(E) = ${tex(result.evidence)}`, {
-        states: String(result.states),
-        total: String(2 ** nodes.length),
-      }),
-      step(
-        'yNetworkQuery',
-        `P(\\text{${query.name}} = T${condition}) = \\frac{${tex(result.marginals[q] * result.evidence)}}{${tex(result.evidence)}} = ${tex(result.marginals[q], 5)}`,
-        { node: query.name },
-      ),
-    ],
+    steps: networkSteps(nodes, result, q, condition),
   };
+}
+
+function networkSteps(nodes: readonly NetNode[], result: NetworkResult, q: number, condition: string) {
+  const factors = nodes
+    .map((n) =>
+      n.parents.length ? `P(\\text{${n.name}} \\mid \\text{${n.parents.join(', ')}})` : `P(\\text{${n.name}})`,
+    )
+    .join('\\,');
+  const name = nodes[q].name;
+  const numerator = tex(result.marginals[q] * result.evidence);
+  const ratio = `\\frac{${numerator}}{${tex(result.evidence)}} = ${tex(result.marginals[q], 5)}`;
+  return [
+    step('yNetworkJoint', `P(\\text{all}) = ${factors}`),
+    step('yNetworkSum', `P(E) = ${tex(result.evidence)}`, {
+      states: String(result.states),
+      total: String(2 ** nodes.length),
+    }),
+    step('yNetworkQuery', `P(\\text{${name}} = T${condition}) = ${ratio}`, { node: name }),
+  ];
 }
