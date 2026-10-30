@@ -1,0 +1,69 @@
+// The physics tool kit (owner: the physics tools lane): fields, waves, optics, relativity, nuclear science, orbits,
+// maneuvers and spacecraft budgets. Each tool has its own group of messages; worked steps name their numbers in
+// braces, and the numbers arrive already written with their units. Each tool's group lives in kitPhysics/<tool>.ts.
+import { fields } from './kitPhysics/fields';
+import { geooptics } from './kitPhysics/geooptics';
+import { maneuvers } from './kitPhysics/maneuvers';
+import { nuclear } from './kitPhysics/nuclear';
+import { spacecraft } from './kitPhysics/spacecraft';
+import { orbits } from './kitPhysics/orbits';
+import { relativity } from './kitPhysics/relativity';
+import { waveoptics } from './kitPhysics/waveoptics';
+import { waves } from './kitPhysics/waves';
+
+export const kitPhysics = {
+  title: 'Physics tools',
+  open: 'Open physics tools',
+  keywords: 'physics fields waves optics relativity nuclear orbits spacecraft',
+  ui: {
+    tool: 'Tool',
+    units: 'Units',
+    si: 'SI',
+    us: 'US customary',
+    mode: 'Calculation',
+    results: 'Results',
+    steps: 'Worked steps',
+    stepsNote: 'Steps work in SI units.',
+    quantity: 'Quantity',
+    value: 'Value',
+    unit: 'Unit',
+    unitFor: 'Unit for {name}',
+    columnUnit: 'Unit for {name} in {list}',
+    optional: '{name} (optional)',
+    rowsHelp: 'One per line: {columns}.',
+    loading: 'Loading the tool…',
+    empty: 'No tools yet.',
+    assumptions: 'Assumptions and checks',
+    source: 'Source: {name}',
+    insertGroup: 'Insert into the page',
+    insertAnswer: 'Answer',
+    insertEquation: 'Equation',
+    insertTable: 'Table',
+    insertSteps: 'Steps',
+    insertPicture: 'Picture',
+    inserted: 'Inserted into the page.',
+    noPage: 'Click in a page first, then insert.',
+    answerLine: '{name}: {value}',
+  },
+  errors: {
+    missing: 'Enter {field}.',
+    notNumber: '{field} is not a number.',
+    positive: '{field} must be more than 0.',
+    nonNegative: '{field} can’t be negative.',
+    range: '{field} must be from {min} to {max}.',
+    count: '{field} needs {count} numbers.',
+    noRows: 'Add at least 1 line to {field}.',
+    rowCount: 'Line {line} of {field} needs {count} numbers.',
+    nonFinite: 'These numbers give a result that is too large or undefined. Check the inputs.',
+    failed: 'This calculation didn’t work with these numbers. Check the inputs.',
+  },
+  waves,
+  relativity,
+  waveoptics,
+  geooptics,
+  nuclear,
+  spacecraft,
+  fields,
+  orbits,
+  maneuvers,
+} as const;

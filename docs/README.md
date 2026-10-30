@@ -26,6 +26,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [tables-and-charts.md](help/tables-and-charts.md): smart tables, formulas, views, and charts.
 - [math-and-graphs.md](help/math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [engineering-tools.md](help/engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
+- [subject-tool-kits.md](help/subject-tool-kits.md): eleven tool windows for engineering, science, and math problems.
 - [search-and-links.md](help/search-and-links.md): search, page links, backlinks, tags, and daily notes.
 - [study-tools.md](help/study-tools.md): flashcards, Upcoming, timers, the calculator, and citations.
 - [recording.md](help/recording.md): recording with stamped notes, trimming, transcripts, and recaps.

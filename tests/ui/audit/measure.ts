@@ -344,7 +344,12 @@ export function measureLayout(options: MeasureOptions): RawFinding[] {
   };
   const sorted = items
     .filter(
-      (item) => item.el.getAttribute('role') !== 'separator' && !item.el.closest('[aria-hidden=true][data-decor]'),
+      (item) =>
+        item.el.getAttribute('role') !== 'separator' &&
+        !item.el.closest('[aria-hidden=true][data-decor]') &&
+        // KaTeX sets glyphs in boxes that overlap by design (scripts, accents, big operators), so the formula
+        // counts as one piece of text: its own box is measured, the parts inside it are not.
+        !(item.el.closest('.katex') && !item.el.classList.contains('katex')),
     )
     .sort((a, b) => a.box.left - b.box.left)
     .slice(0, 4000);
