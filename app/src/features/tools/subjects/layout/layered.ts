@@ -1,8 +1,9 @@
 // Layered drawings of directed acyclic graphs, such as Harris matrices, project networks, and causal graphs. The
 // method is Sugiyama's: longest-path layers, dummy nodes on edges that span layers, and barycenter sweeps to remove
 // crossings, each followed by a transpose pass. Priority placement then lets long edges run straight.
-import { boundsOf, checkGraph, clipEnds } from './graph';
+import { boundsOf, checkGraph, clipEnds, loopRoute } from './graph';
 import type { GraphInput, GraphLayout, PlacedNode, RoutedEdge } from './graph';
+import { nodeSize } from './svg';
 
 export interface LayeredLayout extends GraphLayout {
   /** Each real node's layer, by id; 0 is the top (or left). */
@@ -34,7 +35,10 @@ interface Vertex {
   down: number[];
 }
 
-/** Edges as index pairs with cycles broken: a depth-first search turns around every edge that closes a cycle. */
+/**
+ * Edges as index pairs with cycles broken: a depth-first search turns around every edge that closes a cycle. A
+ * self-loop is no cycle to break: it is left out here, drawn as a loop on its node, and never listed as reversed.
+ */
 function acyclicEdges(
   n: number,
   edges: readonly [number, number][],
@@ -47,6 +51,7 @@ function acyclicEdges(
     state[v] = 1;
     for (const i of out[v]) {
       const w = edges[i][1];
+      if (w === v) continue;
       if (state[w] === 1) reversed.push(i);
       else if (state[w] === 0) visit(w);
     }
@@ -84,7 +89,7 @@ function withDummies(graph: GraphInput, layer: number[], edges: [number, number]
   const vertices: Vertex[] = graph.nodes.map((node, i) => ({
     id: node.id,
     dummy: false,
-    size: node[along] ?? 1,
+    size: nodeSize(node)[along],
     layer: layer[i],
     up: [],
     down: [],
@@ -277,7 +282,7 @@ export function layoutLayered(graph: GraphInput, options: LayeredOptions = {}): 
     direction === 'down' ? [breadth[v], vertices[v].layer * layerGap] : [vertices[v].layer * layerGap, breadth[v]];
   const nodes = graph.nodes.map((n, i) => {
     const [x, y] = at(i);
-    return { id: n.id, label: n.label ?? n.id, x, y, width: n.width ?? 1, height: n.height ?? 1 };
+    return { id: n.id, label: n.label ?? n.id, x, y, ...nodeSize(n) };
   });
   const flipped = new Set(reversed);
   const routed = routeChains(graph, pairs, chains, at, flipped, nodes);
@@ -300,9 +305,13 @@ function routeChains(
   flipped: ReadonlySet<number>,
   nodes: readonly PlacedNode[],
 ): RoutedEdge[] {
-  // acyclicEdges drops self-loops, so chains line up with the input edges that are not loops.
-  const kept = graph.edges.map((e, i) => ({ e, i })).filter(({ i }) => pairs[i][0] !== pairs[i][1]);
-  return kept.map(({ e, i }, k) => {
+  // acyclicEdges drops self-loops, so chains line up with the input edges that are not loops; a loop is drawn on
+  // its node instead.
+  let k = -1;
+  return graph.edges.map((e, i) => {
+    if (pairs[i][0] === pairs[i][1])
+      return { from: e.from, to: e.to, label: e.label, points: loopRoute(nodes[pairs[i][0]]) };
+    k += 1;
     const chain = flipped.has(i) ? [...chains[k]].reverse() : chains[k];
     const points = chain.map(at);
     return { from: e.from, to: e.to, label: e.label, points: clipEnds(points, nodes[pairs[i][0]], nodes[pairs[i][1]]) };
