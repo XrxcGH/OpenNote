@@ -25,7 +25,7 @@ function FieldInput({ field, value, onChange }: { field: Field; value: string; o
       <select id={id} className={styles.input} value={value} onChange={(event) => onChange(event.target.value)}>
         {field.options?.map((option) => (
           <option key={option.value} value={option.value}>
-            {fieldLabel(option.label)}
+            {option.plain ?? fieldLabel(option.label)}
           </option>
         ))}
       </select>

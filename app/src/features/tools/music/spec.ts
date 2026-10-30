@@ -5,6 +5,8 @@ import type { FieldKey, KitResult, Values } from './shared';
 export interface FieldOption {
   value: string;
   label: FieldKey;
+  /** A name that is data (a scale or an instrument) shown as it is, instead of looking `label` up. */
+  plain?: string;
 }
 
 export interface Field {
@@ -64,3 +66,19 @@ export const only =
   (modeId: string, fallback: string, ...modes: string[]) =>
   (values: Values): boolean =>
     modes.includes(values[modeId] ?? fallback);
+
+/** A select field whose options are names kept in data, such as the scales of a tradition. */
+export const plainChoice = (
+  id: string,
+  label: FieldKey,
+  initial: string,
+  options: readonly (readonly [string, string])[],
+  when?: Field['when'],
+): Field => ({
+  id,
+  label,
+  initial,
+  kind: 'select',
+  options: options.map(([value, plain]) => ({ value, label, plain })),
+  ...(when ? { when } : {}),
+});

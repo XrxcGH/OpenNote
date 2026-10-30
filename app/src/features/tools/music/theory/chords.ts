@@ -74,7 +74,7 @@ export function chordSymbol(root: Pick<Note, 'step' | 'alt'>, q: ChordQuality, b
 export function parseChord(text: string, octave = 4): Chord | null {
   const [main, bassText] = text.trim().split('/');
   if (!main) return null;
-  const m = /^([A-Ga-g])([#♯b♭x𝄪]*)(.*)$/.exec(main);
+  const m = /^([A-Ga-g])([#♯b♭x𝄪]*)(.*)$/u.exec(main);
   if (!m) return null;
   const tail = m[3]!;
   // "Bb" is B flat; a "b" that starts the quality ("Bb5") is read as the flat sign first.

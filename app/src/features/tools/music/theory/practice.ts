@@ -185,7 +185,7 @@ export function guitarShapes(root: Pc, q: ChordQuality, bass?: Pc | null, limit 
     const frets = [0, 0, 0, 0, 0, 0];
     const walk = (s: number): void => {
       if (s === 6) {
-        evaluate(frets, position);
+        evaluate(frets);
         return;
       }
       for (const f of options) {
@@ -193,7 +193,7 @@ export function guitarShapes(root: Pc, q: ChordQuality, bass?: Pc | null, limit 
         walk(s + 1);
       }
     };
-    const evaluate = (fr: number[], pos: number): void => {
+    const evaluate = (fr: number[]): void => {
       const played = fr.map((f, i) => (f < 0 ? -1 : GUITAR_STRINGS[i]! + f));
       const first = played.findIndex((m) => m >= 0);
       if (first < 0) return;

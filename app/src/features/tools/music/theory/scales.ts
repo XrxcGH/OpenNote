@@ -84,7 +84,7 @@ export function sargam(degrees: string): string[] {
     const base = SARGAM_PLAIN[(d.generic - 1) % 7]!;
     const natural = [0, 2, 4, 5, 7, 9, 11][(d.generic - 1) % 7]!;
     const alt = d.semis - natural;
-    if (d.generic === 4) return alt > 0 ? 'M' : 'm';
+    if (d.generic === 4) return alt > 0 ? 'M♯' : 'M';
     if (d.generic === 1 || d.generic === 5) return base;
     return alt < 0 ? base.toLowerCase() : base;
   });

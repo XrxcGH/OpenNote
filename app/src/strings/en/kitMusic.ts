@@ -4,6 +4,7 @@ import { camera } from './kitMusic/camera';
 import { common } from './kitMusic/common';
 import { rhythm } from './kitMusic/rhythm';
 import { studio } from './kitMusic/studio';
+import { theory } from './kitMusic/theory';
 
 export const kitMusic = {
   window: 'Music, script, camera, and studio tools',
@@ -29,10 +30,10 @@ export const kitMusic = {
   tap: 'Tap tempo',
   playing: 'Playing.',
   noAudio: 'This device cannot play sound here.',
-  t: { ...camera.t, ...studio.t, ...rhythm.t },
-  f: { ...camera.f, ...studio.f, ...rhythm.f },
-  r: { ...camera.r, ...studio.r, ...rhythm.r },
-  s: { ...camera.s, ...studio.s, ...rhythm.s },
-  e: { ...common.e, ...camera.e, ...studio.e, ...rhythm.e },
-  n: { ...camera.n, ...studio.n, ...rhythm.n },
+  t: { ...theory.t, ...camera.t, ...studio.t, ...rhythm.t },
+  f: { ...theory.f, ...camera.f, ...studio.f, ...rhythm.f },
+  r: { ...theory.r, ...camera.r, ...studio.r, ...rhythm.r },
+  s: { ...theory.s, ...camera.s, ...studio.s, ...rhythm.s },
+  e: { ...common.e, ...theory.e, ...camera.e, ...studio.e, ...rhythm.e },
+  n: { ...theory.n, ...camera.n, ...studio.n, ...rhythm.n },
 } as const;
