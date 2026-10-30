@@ -70,7 +70,8 @@ export const learning = {
     alphas: 'Such as A 0.3, B 0.1. Cues not listed use the learning rate α below as their salience.',
     grid:
       'One row a line: . open, # wall, S start, G goal, X pit, or a number for a terminal ' +
-      'reward. Separate cells with spaces or write them together.',
+      'reward. Separate cells with spaces or write them together. Values follow the reward-of-a-state ' +
+      'convention: V(s) = R + γ Σ p V(s′), and a terminal cell is worth its reward.',
     slip: 'The chance a move goes to one side instead, split between the 2 sides.',
     means: 'One mean per arm, separated by commas. For win or lose, each is a chance from 0 to 1.',
     rate: 'Leave empty to use sample averages, 1/n.',
@@ -158,7 +159,9 @@ export const learning = {
     td: 'TD(0): the error compares what happened next with what was predicted, and each step learns from it.',
     tdShift:
       'Over trials the error at the reward shrinks and an error at the cue appears, since the cue comes unpredicted.',
-    bellman: 'The Bellman equation for the value of a cell:',
+    bellman:
+      'The Bellman equation for the value of a cell, with R the reward of each move and a terminal cell worth ' +
+      'its reward (so a cell 1 step from a goal of 10 is worth R + 10γ, not 10):',
     backup: 'One backup at the start cell, with the converged values:',
     valueIter: 'Value iteration repeats the backup in every cell until no value changes.',
     policyIter: 'Policy iteration evaluates a fixed policy, improves it greedily, and repeats until it stops changing.',

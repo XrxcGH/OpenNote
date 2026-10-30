@@ -89,6 +89,19 @@ describe('grid world', () => {
     expect(p.policy).toEqual(v.policy);
   });
 
+  it('reproduces the 4 x 3 textbook grid at gamma 1: R -0.04, slip 0.2', () => {
+    // Russell and Norvig, Artificial Intelligence: A Modern Approach, figure 17.3: the utilities to 3 places and
+    // the optimal policy, from U(s) = R + sum p U(s') with the terminal cells worth +1 and -1.
+    const g = readGrid('. . . G\n. # . X\nS . . .', 1, -1, -0.04, 0.2);
+    const want = [0.812, 0.868, 0.918, 1, 0.762, 0, 0.66, -1, 0.705, 0.655, 0.611, 0.388];
+    for (const solved of [valueIteration(g, 1), policyIteration(g, 1)]) {
+      want.forEach((u, s) => {
+        if (s !== 5) expect(Math.abs(solved.V[s] - u)).toBeLessThanOrEqual(5e-4);
+      });
+      expect(solved.policy).toEqual([1, 1, 1, -1, 0, -1, 0, -1, 0, 3, 3, 3]);
+    }
+  });
+
   it('learns the same policy with Q-learning and SARSA on a small grid', () => {
     const g = readGrid('S . . G\n. # . X\n. . . .', 10, -10, -0.1, 0);
     const best = valueIteration(g, 0.9).policy;

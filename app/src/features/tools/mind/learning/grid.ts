@@ -102,7 +102,8 @@ function greedy(g: Grid, V: readonly number[], gamma: number): number[] {
 }
 
 export function valueIteration(g: Grid, gamma: number, tol = 1e-10, maxSweeps = 10000): Solved {
-  if (!(gamma >= 0 && gamma < 1)) fail('range', { low: 0, high: 0.999 }, 'gamma');
+  // gamma = 1 is allowed: readGrid requires a terminal cell, so episodes end; the sweep cap guards the rest.
+  if (!(gamma >= 0 && gamma <= 1)) fail('range', { low: 0, high: 1 }, 'gamma');
   const live = open(g);
   const V = g.terminal.map((t) => (Number.isNaN(t) ? 0 : t));
   let sweeps = 0;
@@ -121,7 +122,8 @@ export function valueIteration(g: Grid, gamma: number, tol = 1e-10, maxSweeps = 
 
 /** Policy iteration: evaluate the policy (iteratively, to tol), then improve it greedily, until it is stable. */
 export function policyIteration(g: Grid, gamma: number, tol = 1e-10): Solved {
-  if (!(gamma >= 0 && gamma < 1)) fail('range', { low: 0, high: 0.999 }, 'gamma');
+  // gamma = 1 is allowed: readGrid requires a terminal cell, so episodes end; the sweep cap guards the rest.
+  if (!(gamma >= 0 && gamma <= 1)) fail('range', { low: 0, high: 1 }, 'gamma');
   const live = open(g);
   const V = g.terminal.map((t) => (Number.isNaN(t) ? 0 : t));
   let policy: number[] = V.map((_, s) => (live[s] ? 0 : -1));

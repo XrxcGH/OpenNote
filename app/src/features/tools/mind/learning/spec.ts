@@ -228,7 +228,7 @@ function runGrid(values: Values): Outcome {
     num(values, 'stepReward'),
     num(values, 'slip'),
   );
-  const gamma = within(num(values, 'gamma'), 0, 0.999, 'gamma');
+  const gamma = within(num(values, 'gamma'), 0, 1, 'gamma');
   const method = str(values, 'method');
   const solved = method === 'policy' ? policyIteration(g, gamma) : valueIteration(g, gamma);
   let V = solved.V;
