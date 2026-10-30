@@ -24,6 +24,12 @@ export const PANEL_TYPES = {
   beam: 'ext:org.opennote/beam',
   truss: 'ext:org.opennote/truss',
   circuit: 'ext:org.opennote/circuit',
+  /** A tool kit result that reopens its tool with the saved inputs (features/tools/kits/block). */
+  kitCalc: 'ext:org.opennote/kitcalc',
+  /** The mechanisms and dynamics kit's calculation block: its tool, inputs, and answer, reopened in its own window. */
+  mechDynCalc: 'ext:org.opennote/kitcalc-mechdyn',
+  /** Reserved for the drafting sheet of the drafting and design kit, which registers its renderer. */
+  drafting: 'ext:org.opennote/drafting',
 } as const;
 
 export type PanelType = (typeof PANEL_TYPES)[keyof typeof PANEL_TYPES];

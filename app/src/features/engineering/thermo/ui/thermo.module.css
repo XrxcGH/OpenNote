@@ -1,0 +1,228 @@
+/*
+ * The thermodynamics kit (beta), calm and quiet, on tokens: a row of tool tabs, fields that wrap at narrow widths,
+ * results in a plain table, a plot on the page color, and worked steps as a numbered list with rendered math.
+ * Every control is at least the target size, and nothing moves for a person who asks for reduced motion.
+ */
+@layer components {
+  .kit {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-2);
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding-block-end: var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tabGroup {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .tabRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .subject {
+    padding-inline-end: var(--space-1);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .tab {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .tab:hover {
+    color: var(--color-text-primary);
+    background: var(--color-surface-hover);
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-control);
+    background: var(--color-surface-page);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .tab:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .panel,
+  .section {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .section + .section {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    flex: 1 1 10rem;
+    min-inline-size: 8rem;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .wide {
+    flex-basis: 100%;
+  }
+
+  .withUnit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1);
+  }
+
+  .input {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-2);
+    font: inherit;
+    font-size: var(--type-body-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    min-inline-size: 0;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .input:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+    vertical-align: baseline;
+  }
+
+  .table thead th {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .number {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .steps li {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .math {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 2px;
+    color: var(--color-text-primary);
+  }
+
+  .notes {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+  }
+
+  .plot {
+    display: block;
+    inline-size: 100%;
+    max-inline-size: 36rem;
+  }
+
+  .plot svg {
+    inline-size: 100%;
+    block-size: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
