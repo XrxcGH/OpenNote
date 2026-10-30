@@ -19,7 +19,7 @@ type Detail = {
   math?: { source: string };
   table?: { rows: string[][] };
   picture?: object;
-  block?: { type: string; data: { kit: string; tool: string; inputs: Record<string, string> } };
+  panel?: { type: string; data: { kit: string; tool: string; inputs: Record<string, string> } };
 };
 const inserted: Detail[] = [];
 const listen = (event: Event) => {
@@ -97,8 +97,8 @@ describe('the psychology and behavior kit window', () => {
     await waitFor(() => expect(screen.getAllByText('200').length).toBeGreaterThan(0));
     await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Live calculation block' }));
-    const block = inserted[0].block!;
-    expect(block.type).toBe('kitcalc');
+    const block = inserted[0].panel!;
+    expect(block.type).toBe('ext:org.opennote/kitcalc');
     expect(block.data.kit).toBe('mind');
     expect(block.data.tool).toBe('rt');
     expect(block.data.inputs.mode).toBe('fitts');
