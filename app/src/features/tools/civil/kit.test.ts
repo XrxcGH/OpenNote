@@ -72,18 +72,24 @@ function checkCalc(calc: Calc, choices: Readonly<Record<string, string>> = {}): 
 }
 
 describe('civil engineering kit', () => {
-  it.each(CIVIL_TOOL_IDS)('runs every %s calculation from its first values', async (tool) => {
-    expect(text(`tools.${tool}.title`)).not.toBe('');
-    text(`tools.${tool}.open`);
-    const calcs = await CIVIL_KIT[tool]();
-    expect(new Set(calcs.map((calc) => calc.id)).size).toBe(calcs.length);
-    for (const calc of calcs) {
-      checkCalc(calc);
-      // Every choice of every list, one at a time, so the words of each mode are checked too.
-      for (const field of fieldsOf(calc, initialState(calc)))
-        if (field.kind === 'select') for (const option of field.options) checkCalc(calc, { [field.id]: option.value });
-    }
-  });
+  it.each(CIVIL_TOOL_IDS)(
+    'runs every %s calculation from its first values',
+    async (tool) => {
+      expect(text(`tools.${tool}.title`)).not.toBe('');
+      text(`tools.${tool}.open`);
+      const calcs = await CIVIL_KIT[tool]();
+      expect(new Set(calcs.map((calc) => calc.id)).size).toBe(calcs.length);
+      for (const calc of calcs) {
+        checkCalc(calc);
+        // Every choice of every list, one at a time, so the words of each mode are checked too.
+        for (const field of fieldsOf(calc, initialState(calc)))
+          if (field.kind === 'select')
+            for (const option of field.options) checkCalc(calc, { [field.id]: option.value });
+      }
+      // The first tool also pays for loading the kit's modules, which can take longer than the default on a busy runner.
+    },
+    30_000,
+  );
 
   it('words every error key the core can raise', () => {
     for (const key of Object.keys(en.kitCivil.errors)) text(`errors.${key}`);
