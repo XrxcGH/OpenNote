@@ -14,6 +14,54 @@ export type { CircuitModel, CircuitPart } from './circuit/model';
 export { solveCircuit } from './circuit/solve';
 export type { CircuitResult } from './circuit/solve';
 export { parsePrefixed, withPrefix } from '../../core/units';
+export const loadElectricalKit = () => import('./electrical/KitElectricalTool');
+export { ELECTRICAL_TOOLS } from './electrical/meta';
+export type { ElectricalToolId } from './electrical/meta';
+export { openKit as openElectricalKit } from './electrical/open';
+export { openFluidHeatKit } from './fluidheat/open';
+
+/** The fluid and heat transfer kit window, loaded the first time it opens. */
+export const loadFluidHeatKit = () => import('./fluidheat/ui/FluidHeatKit');
+
+export { openSolidsKit, readCalc as readSolidsCalc, reopenCalc as reopenSolidsCalc } from './solids/open';
+
+/** The solid mechanics kit window, loaded the first time it opens. */
+export const loadSolidsKit = () => import('./solids/ui/SolidsKit');
+
+export const loadAeroKit = () => import('./aero/ui/KitAeroTool');
+export { AERO_TOOLS } from './aero/meta';
+export type { AeroToolId } from './aero/meta';
+export { openAeroKit } from './aero/open';
+
+/** The thermodynamics kit window, which loads on first open. */
+export const loadThermoKit = () => import('./thermo/ui/ThermoKit');
+
+/** Opens the thermodynamics kit on a tool, such as 'steam', or where it was left. */
+export async function openThermoTool(tool?: string): Promise<void> {
+  if (tool) {
+    const [{ chooseTool }, { THERMO_TOOL_IDS }] = await Promise.all([
+      import('./thermo/ui/store'),
+      import('./thermo/meta'),
+    ]);
+    const known = THERMO_TOOL_IDS.find((id) => id === tool);
+    if (known) chooseTool(known);
+  }
+  (await import('../tools')).openTool('kit-thermo');
+}
+
+export { openControlKit } from './control/open';
+
+/** The dynamics and control kit window, loaded the first time it opens. */
+export const loadControlKit = () => import('./control/ui/ControlKit');
+
+export const loadMechDynKit = () => import('./mechdyn/ui/MechDynKit');
+export { openMechDynKit } from './mechdyn/open';
+
+/** Draws a mechanisms kit calculation block: its answer, and a button that reopens the tool with its inputs. */
+export async function mountMechDynCalc(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
+  const [{ mountPanel }, { CalcBlock }] = await Promise.all([import('./mount'), import('./mechdyn/ui/CalcBlock')]);
+  return mountPanel(CalcBlock)(container, props);
+}
 
 export async function mountFbd(container: HTMLElement, props: import('./canvas/shared').BlockProps) {
   const [{ mountPanel }, { FbdPanel }] = await Promise.all([import('./mount'), import('./fbd/FbdPanel')]);
