@@ -166,11 +166,24 @@ export async function walkTools(audit: Auditor, page: Page): Promise<void> {
     await audit.visit(`tool.${id}`);
     const tabs = page.locator(`${scope} [role=tablist] [role=tab]`);
     const n = await tabs.count();
-    for (let i = 0; i < n; i += 1) {
-      const tab = tabs.nth(i);
-      const name = await textOf(tab, `tab${i}`);
-      await tab.click();
-      await audit.visit(`tool.${id}.${name}`);
+    // A narrow window shows a menu in place of the tab strip, so the strip is hidden: step through the menu instead.
+    const menu = page.locator(`${scope} select[aria-label]`).first();
+    const stripHidden = n > 0 && !(await tabs.first().isVisible());
+    if (stripHidden && (await menu.count())) {
+      const options = menu.locator('option');
+      const count = await options.count();
+      for (let i = 0; i < count; i += 1) {
+        const name = await textOf(options.nth(i), `tab${i}`);
+        await menu.selectOption({ index: i });
+        await audit.visit(`tool.${id}.${name}`);
+      }
+    } else {
+      for (let i = 0; i < n; i += 1) {
+        const tab = tabs.nth(i);
+        const name = await textOf(tab, `tab${i}`);
+        await tab.click();
+        await audit.visit(`tool.${id}.${name}`);
+      }
     }
     if (id === 'reference') {
       const list = page.locator(scope).getByRole('button', { name: 'List', exact: true });

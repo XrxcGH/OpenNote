@@ -19,7 +19,8 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { EXPR_FLAGS } from '../features/tools/flags';
+import { CHEMMAT_FLAGS, EXPR_FLAGS } from '../features/tools/flags';
+import type { ChemMatFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -28,6 +29,8 @@ import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
+import type { DesignKitFlagId } from '../features/tools/flags';
 import { KIT_FLAGS } from '../features/tools/flags';
 import type { KitFlagId } from '../features/tools/flags';
 import { createStore, useStore } from '../state/store';
@@ -66,6 +69,7 @@ export type FlagId =
   | Phase5FlagId
   | Phase6FlagId
   | ExprFlagId
+  | 'kits.math'
   | DocFlagId
   | Phase8FlagId
   | Phase9FlagId
@@ -74,6 +78,7 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
@@ -106,7 +111,8 @@ type Phase4FlagId =
   | 'editor.readAloud'
   | IntegrationsFlagId
   | PdfFlagId
-  | MathToolsFlagId;
+  | MathToolsFlagId
+  | ChemMatFlagId;
 
 /** Phase 6: page views and export (features/pages/flags.ts). */
 type Phase6FlagId =
@@ -342,6 +348,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INK_FLAGS,
   ...PAGES_FLAGS,
   ...EXPR_FLAGS,
+  ...CHEMMAT_FLAGS,
   ...DOC_FLAGS,
   ...SEARCH_FLAGS,
   ...AUDIO_FLAGS,
@@ -356,6 +363,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...DESIGN_KIT_FLAGS,
   ...KIT_FLAGS,
 ];
 
