@@ -10,6 +10,7 @@ export const TOOL_BODIES: Record<HumanitiesToolId, LazyExoticComponent<Component
   ),
   timeline: lazy(() => import('./timeline/TimelineTool').then((module) => ({ default: module.TimelineTool }))),
   calendars: lazy(() => import('./calendars/CalendarsTool').then((module) => ({ default: module.CalendarsTool }))),
+  scripts: lazy(() => import('./scripts/ScriptsTool').then((module) => ({ default: module.ScriptsTool }))),
   linguistics: lazy(() =>
     import('./linguistics/LinguisticsTool').then((module) => ({ default: module.LinguisticsTool })),
   ),

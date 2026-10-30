@@ -2,6 +2,16 @@
 
 The history, places, languages, and texts kit is one tool window with a tab for each tool. Open it from the command palette: type the tool's name, such as Identification keys, or open the whole kit and pick a tab. Every tool shows its steps and puts its result on the page with the insert buttons under it. Click in a page first, then insert. The kit is new in Beta, so check the answers against your own work while you learn it.
 
+## Contents
+
+- [Tools](#tools)
+- [Timeline builder](#timeline-builder)
+- [Calendars and eras](#calendars-and-eras)
+- [Text analysis and verse](#text-analysis-and-verse)
+- [Linguistic structures](#linguistic-structures)
+- [Scripts, keyboards, and romanization](#scripts-keyboards-and-romanization)
+- [Identification keys](#identification-keys)
+
 ## Tools
 
 - **Note frames**: insert a note structure, such as a case brief or field notes. Find it by subject or by searching.
@@ -10,6 +20,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - **Calendars and eras**: convert a date between thirteen calendars, such as Hebrew, Islamic, Chinese, and Maya. List the festivals of a year.
 - **Text analysis and verse**: measure readability, list words and n-grams, build a concordance, test keyness, and compare versions. Scan English and Latin verse.
 - **Linguistic structures**: draw syntax and dependency trees, check interlinear glosses, find natural classes, run ordered rules, split syllables, and plot vowels.
+- **Scripts, keyboards, and romanization**: type IPA and other scripts with on-screen keyboards, romanize text by public tables, and work with Hangul, kana, pinyin, Thai tones, and Vietnamese input.
 - **Identification keys**: build a numbered key from a table of characters. Run it step by step, or filter with a multi-access key.
 
 ## Timeline builder
@@ -54,6 +65,16 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - Rules applies ordered rules, written A -> B / C _ D, to underlying forms and shows the derivation table. It names feeding, bleeding, counterfeeding, and counterbleeding orders. Sound changes in order work the same way.
 - Syllables splits a word by sonority with the onset as long as a legal onset allows. Type the legal onsets, or leave the field empty to allow any onset that rises in sonority.
 - Vowel chart plots typed F1 and F2 values in hertz, as Lobanov z-scores for each speaker, or in Bark.
+
+## Scripts, keyboards, and romanization
+
+- Keyboards types IPA, polytonic Greek, Latin with macrons, Old English, Cyrillic, Arabic and Persian, Hebrew with niqqud, Devanagari, Armenian, Georgian, runes, Linear B, cuneiform, hieroglyphs, and Jefferson transcription symbols. A mark on a dotted circle joins the letter before it.
+- Romanize uses the Library of Congress ALA-LC tables for Russian, modern Greek, Hindi and Sanskrit, Armenian, and Georgian, and BGN/PCGN for Russian. ALA-LC Russian also reads back to Cyrillic.
+- Korean builds Hangul from jamo, shows each syllable's jamo numbers, and gives Revised Romanization and McCune–Reischauer with the sound changes it applied.
+- Japanese turns kana into Hepburn, with macrons for long vowels, and romaji into hiragana and katakana. The kana chart is below.
+- Pinyin turns tone numbers into tone marks and shows the spoken tones after third-tone, yi, and bu sandhi.
+- Thai tones works out a syllable's tone from its consonant class, live or dead syllable, and tone mark.
+- Vietnamese turns Telex or VNI typing into letters with their marks.
 
 ## Identification keys
 
