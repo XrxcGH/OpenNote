@@ -12,7 +12,7 @@ These tools are new in Beta and are for coursework only: they never give clinica
 
 ## Body systems and drugs
 
-- **Physiology calculators**: heart and blood flow, breathing and oxygen, the kidney, and acid and base. It also covers body fluids, energy use, growth z-scores, and plant water potential.
+- **Physiology calculators**: heart and blood flow (including a beating pressure-volume loop and ventricular-arterial coupling), breathing and oxygen (including the oxygen profile around a capillary in a Krogh cylinder), the kidney, and acid and base. It also covers body fluids, energy use, growth z-scores, and plant water potential.
 - **Neurons and excitable cells**: resting and ion potentials, and how a cell charges. Run the classic squid axon model, find a threshold, and test synapses, cables, and nerve speed.
 - **Pharmacokinetics and drug response**: drug levels over time after one dose or many. It also finds the area under the curve, scales a dose, fits drug release, and models drug effect.
 - **Binding, enzyme, and dose-response fits**: fit enzyme rates, inhibitors, and binding data. Read unknowns off a standard curve, and find an EC50 or a lethal dose.
@@ -26,7 +26,7 @@ These tools are new in Beta and are for coursework only: they never give clinica
 
 - **Population dynamics**: growth models, harvesting, predator and prey, competition, metapopulations, island biogeography, and the logistic map.
 - **Life tables and demography**: life tables, fertility rates, Leslie matrices, projections, and population pyramids.
-- **Compartment, reaction, and agent models**: epidemic models (SIR and its relatives), reaction networks, and agent models on grids and networks. Reaction networks run as equations and as seeded random runs.
+- **Compartment, reaction, and agent models**: epidemic models (SIR and its relatives, and fitting β and γ to case counts), reaction networks, and agent models on grids and networks. Reaction networks run as equations and as seeded random runs.
 
 ## Sources and limits
 

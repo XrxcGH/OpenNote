@@ -2159,11 +2159,13 @@ export const kitLifeSysTools = {
       life: 'Conway’s Game of Life',
       eca: 'Elementary cellular automaton',
       network: 'Random network generator',
+      epiFit: 'Fit β and γ to case counts',
     },
     i: {
       reactions:
         'One reaction per line: reactants -> products, rate. A rate is a constant or mm(Vmax, Km). ' +
         'For production repressed or activated by X, use rep(X, V, K, n) or act(X, V, K, n).',
+      epiFit: 'Paste time and count pairs, then press Run to fit the SIR model to them by least squares.',
     },
     f: {
       model: 'Model',
@@ -2209,6 +2211,10 @@ export const kitLifeSysTools = {
       width: 'Cells in the row',
       ecaSteps: 'Steps',
       start: 'Starting row',
+      caseKind: 'The counts are',
+      cases: 'Case counts (time and count)',
+      beta0: 'Starting guess for β',
+      gamma0: 'Starting guess for γ',
     },
     h: {
       beta: 'Contacts per unit time that would infect a susceptible person.',
@@ -2216,6 +2222,7 @@ export const kitLifeSysTools = {
         'For example: E + S -> C, 0.01. Leave a side empty for a source or a sink. Lines starting with # are skipped.',
       initial: 'One species per line: its name, then its starting amount (a count).',
       tolerance: 'An agent moves when fewer than this share of its neighbors are like it.',
+      cases: 'One time and count per line, separated by a tab, comma, or space. Times start at 0 and increase.',
     },
     o: {
       sir: 'SIR',
@@ -2244,6 +2251,8 @@ export const kitLifeSysTools = {
       random: 'Random',
       single: '1 cell in the middle',
       randomRow: 'Random',
+      prevalence: 'People infectious now (prevalence)',
+      cumulative: 'People ever infected (cumulative)',
     },
     r: {
       r0: 'R₀',
@@ -2275,6 +2284,12 @@ export const kitLifeSysTools = {
       clustering: 'Clustering coefficient',
       meanPath: 'Mean shortest path',
       giant: 'Largest component',
+      beta: 'Transmission rate β',
+      betaCi: '95% interval for β',
+      gamma: 'Recovery rate γ',
+      gammaCi: '95% interval for γ',
+      infectious: 'Mean infectious period 1/γ',
+      rmse: 'Root-mean-square residual',
     },
     s: {
       r0: {
@@ -2326,6 +2341,16 @@ export const kitLifeSysTools = {
       netSir:
         'Each step an infected node infects each susceptible neighbor with chance {b} and recovers with chance {g}. ' +
         '{f}% are infected over {t} steps.',
+      fit: {
+        prevalence:
+          'The SIR model with N = {N} and I₀ = {i} is solved for each trial β and γ, and I(t) is compared with the {n} counts.',
+        cumulative:
+          'The SIR model with N = {N} and I₀ = {i} is solved for each trial β and γ, and N − S(t) is compared with the {n} counts.',
+      },
+      fitResult:
+        'Levenberg-Marquardt settled in {it} steps at β = {b} ± {sb} and γ = {g} ± {sg} (standard errors), with a sum of squared residuals of {sse}.',
+      fitR0:
+        'R₀ = β / γ = {b} / {g} = {r}, the mean infectious period is 1/γ = {d}, and the final size for that R₀ is {z}%.',
     },
     t: {
       neighborhood: 'Neighborhood',
@@ -2388,6 +2413,11 @@ export const kitLifeSysTools = {
       nodesSeries: 'Nodes',
       netEpidemic: 'infections on the network',
       infected: 'Infected nodes',
+      fit: 'the fitted SIR curve',
+      prevalence: 'Infectious',
+      cumulative: 'Ever infected',
+      observed: 'Counts',
+      fitted: 'Fitted SIR',
     },
     n: {
       compartment: 'Well-mixed populations: everyone is equally likely to meet everyone else.',
@@ -2403,6 +2433,7 @@ export const kitLifeSysTools = {
       ws: 'A little rewiring keeps high clustering but shortens paths sharply: a small world.',
       ba: 'Preferential attachment gives hubs and a degree distribution with a heavy tail.',
       netSir: 'Hubs spread infection early; the network’s shape changes both the speed and the final size.',
+      fit: 'A fit says which rates make this model match the counts, not that the model is right. Reporting delays and changing behavior bend real curves.',
     },
     e: {
       i0: 'The starting infected must be fewer than the population.',
@@ -2416,6 +2447,9 @@ export const kitLifeSysTools = {
       events: 'The runs took too many events. Use fewer runs or a shorter time.',
       wsK: 'k must be an even number smaller than the number of nodes.',
       baM: 'm must be smaller than the number of nodes.',
+      fitTime: 'Times must be 0 or more.',
+      fitOrder: 'Times must increase from one line to the next.',
+      fitCount: 'Each count must be between 0 and N ({n}).',
     },
   },
 } as const;

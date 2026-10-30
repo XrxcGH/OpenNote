@@ -4,6 +4,7 @@ import type { CalcSpec, FieldSpec, Reader, ToolSpec } from '../types';
 import {
   PRESETS,
   elementaryResult,
+  epiFitResult,
   epidemicResult,
   latticeSirResult,
   lifeResult,
@@ -15,6 +16,7 @@ import {
   schellingResult,
   thresholdModelResult,
   voterResult,
+  type CaseKind,
   type Compartment,
   type Generator,
   type Preset,
@@ -32,6 +34,27 @@ const select = (id: string, label: FieldSpec['label'], options: [string, FieldSp
   kind: 'select',
   options: options.map(([value, l]) => ({ value, label: l })),
 });
+// Prevalence every 4 days from an SIR epidemic with β 0.5 and γ 0.2 in 1000 people, rounded with a little noise.
+const CASES = [
+  [0, 1],
+  [4, 3],
+  [8, 11],
+  [12, 33],
+  [16, 93],
+  [20, 171],
+  [24, 234],
+  [28, 199],
+  [32, 152],
+  [36, 90],
+  [40, 55],
+  [44, 29],
+  [48, 17],
+  [52, 9],
+  [56, 6],
+  [60, 3],
+]
+  .map(([t, c]) => `${t}\t${c}`)
+  .join('\n');
 const SEED = num('seed', 'networks.f.seed', '1');
 
 const graphFields = (choice: (id: string) => string): FieldSpec[] => {
@@ -99,6 +122,38 @@ const calcs: CalcSpec[] = [
         t: read.num('t'),
       });
     },
+  },
+  {
+    id: 'epiFit',
+    label: 'networks.c.epiFit',
+    intro: 'networks.i.epiFit',
+    manual: true,
+    fields: [
+      select('kind', 'networks.f.caseKind', [
+        ['prevalence', 'networks.o.prevalence'],
+        ['cumulative', 'networks.o.cumulative'],
+      ]),
+      num('n', 'networks.f.population', '1000'),
+      num('i0', 'networks.f.i0', '1'),
+      {
+        id: 'data',
+        label: 'networks.f.cases',
+        kind: 'data',
+        initial: CASES,
+        help: 'networks.h.cases',
+      },
+      num('beta0', 'networks.f.beta0', '0.3'),
+      num('gamma0', 'networks.f.gamma0', '0.1'),
+    ],
+    solve: (read) =>
+      epiFitResult({
+        kind: (read.choice('kind') === 'cumulative' ? 'cumulative' : 'prevalence') as CaseKind,
+        n: read.num('n'),
+        i0: read.num('i0'),
+        data: read.rows('data'),
+        beta0: read.num('beta0'),
+        gamma0: read.num('gamma0'),
+      }),
   },
   {
     id: 'r0',
