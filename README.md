@@ -8,7 +8,7 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 ## Status
 
-OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with thirteen subject tool kits and eleven more subject tool windows for the sciences, statistics, economics, and the humanities. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync.
+OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with thirteen subject tool kits and eleven more subject tool windows for the sciences, statistics, economics, and the humanities. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync. Beta 7 adds ink fixes and smoother shapes, layout audit fixes, DeriveNotes parity features, 12 course tool kits and 13 more subject kits, and a start-up lock wait that fixes ink missing after a crash restart.
 
 | Phase                                     | Focus                                                                                    | Status                                                                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -17,10 +17,10 @@ OpenNote is in beta testing on Windows. Each phase of the [development plan](doc
 | 2                                         | [App shell and navigation](https://github.com/XrxcGH/OpenNote/pull/8)                    | Done and merged 2026-10-02                                                                                                 |
 | 3                                         | [Document model and storage](https://github.com/XrxcGH/OpenNote/pull/9)                  | Done and merged 2026-10-03                                                                                                 |
 | 4                                         | [Typed notes (text, Markdown, tables, code)](https://github.com/XrxcGH/OpenNote/pull/15) | Done and merged 2026-10-03                                                                                                 |
-| [5 to 12](docs/DEVELOPMENT.md#5-phases)   | Ink, page views and export, tables and charts, search, audio, math, import, intelligence | Built, and in beta testing on branch `beta` ([pull request #16](https://github.com/XrxcGH/OpenNote/pull/16), 0.1.0-beta.6) |
+| [5 to 12](docs/DEVELOPMENT.md#5-phases)   | Ink, page views and export, tables and charts, search, audio, math, import, intelligence | Built, and in beta testing on branch `beta` ([pull request #16](https://github.com/XrxcGH/OpenNote/pull/16), 0.1.0-beta.7) |
 | [13 and 14](docs/DEVELOPMENT.md#5-phases) | Hardening and privacy; the release pipeline                                              | Built, waiting on the beta period, code signing, and the update key, which are the owner's                                 |
 
-Agents compiled and unit-tested beta 6 and started the real app. Nobody has used most of it by hand yet. [docs/FEATURES.md](docs/FEATURES.md) marks every feature as built, built but untested by hand, not built yet, or needing the owner. The [changelog](CHANGELOG.md) lists what each beta added.
+Agents compiled and unit-tested beta 7 and started the real app. Nobody has used most of it by hand yet. [docs/FEATURES.md](docs/FEATURES.md) marks every feature as built, built but untested by hand, not built yet, or needing the owner. The [changelog](CHANGELOG.md) lists what each beta added.
 
 ## What the app does today
 

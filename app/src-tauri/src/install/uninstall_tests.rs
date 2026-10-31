@@ -11,12 +11,12 @@ fn writes_every_value_installed_apps_shows() {
     let dir = tempfile::tempdir().expect("a temp folder");
     fs::write(dir.path().join(INSTALLED_EXE_NAME), vec![0u8; 4096]).expect("an exe");
     let registry = MemoryRegistry::default();
-    write_entry(&registry, dir.path(), "0.1.0-beta.6").expect("written");
+    write_entry(&registry, dir.path(), "0.1.0-beta.7").expect("written");
 
     let text = |value: &str| Some(RegValue::Text(value.to_owned()));
     let exe = dir.path().join(INSTALLED_EXE_NAME);
     assert_eq!(entry(&registry, "DisplayName"), text("OpenNote"));
-    assert_eq!(entry(&registry, "DisplayVersion"), text("0.1.0-beta.6"));
+    assert_eq!(entry(&registry, "DisplayVersion"), text("0.1.0-beta.7"));
     assert_eq!(entry(&registry, "Publisher"), text(PUBLISHER));
     assert_eq!(
         entry(&registry, "InstallLocation"),
@@ -41,11 +41,11 @@ fn a_refresh_after_an_update_keeps_the_install_date_and_changes_the_version() {
     registry
         .write(&entry_key(), &[("InstallDate", RegValue::Text("20260102".into()))])
         .expect("an old entry");
-    write_entry(&registry, dir.path(), "0.1.0-beta.6").expect("written");
+    write_entry(&registry, dir.path(), "0.1.0-beta.7").expect("written");
     assert_eq!(entry(&registry, "InstallDate"), Some(RegValue::Text("20260102".into())));
     assert_eq!(
         entry(&registry, "DisplayVersion"),
-        Some(RegValue::Text("0.1.0-beta.6".into()))
+        Some(RegValue::Text("0.1.0-beta.7".into()))
     );
 }
 
