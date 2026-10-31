@@ -198,7 +198,15 @@ export function lmsX(z: number, l: number, m: number, s: number): number {
   return m * base ** (1 / l);
 }
 
-export function lmsResult(x: number, l: number, m: number, s: number, percentile: number | null): CalcResult {
+/** The z-score and percentile of a measurement; with lookup, L, M, and S came from the CDC tables at that age. */
+export function lmsResult(
+  x: number,
+  l: number,
+  m: number,
+  s: number,
+  percentile: number | null,
+  lookup?: { years: number },
+): CalcResult {
   const z = lmsZ(x, l, m, s);
   const rows: ResultRow[] = [
     { label: 'physiology.r.z', value: z },
@@ -206,6 +214,9 @@ export function lmsResult(x: number, l: number, m: number, s: number, percentile
   ];
   const latex = 'z = \\frac{(X/M)^L - 1}{L S}';
   const steps: Step[] = [
+    ...(lookup
+      ? [{ key: 'physiology.s.lmsLookup', vars: { age: lookup.years, months: lookup.years * 12, l, m, s } } as Step]
+      : []),
     { key: 'physiology.s.lms', vars: { x, l, m, s, z }, math: latex },
     { key: 'physiology.s.percentile', vars: { z, p: 100 * normalCdf(z) } },
   ];

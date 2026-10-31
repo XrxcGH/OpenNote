@@ -1715,8 +1715,8 @@ export const kitLifeSysTools = {
     },
     i: {
       lms:
-        'Look up L, M, and S for the age and sex in the CDC 2000 growth-chart tables (public domain), then enter ' +
-        'them here.',
+        'Choose the measure, sex, and age to take L, M, and S from the CDC 2000 growth charts for ages 2 to 20, ' +
+        'or enter L, M, and S yourself.',
       pvLoop: 'A model ventricle beats against a model aorta until it settles. Press Run to see the last beat.',
       krogh:
         'One capillary feeds a cylinder of tissue around it. Add hemoglobin, speed, and length to follow the blood ' +
@@ -1822,6 +1822,8 @@ export const kitLifeSysTools = {
       m: 'M (median)',
       s: 'S (coefficient of variation)',
       percentileOptional: 'Percentile to find (optional)',
+      lmsSource: 'L, M, and S from',
+      lmsMeasure: 'Measure',
       molarity: 'Solute concentration (mol/L)',
       vantHoff: 'Ionization constant i',
       psiP: 'Pressure potential Ψp (MPa)',
@@ -1876,6 +1878,11 @@ export const kitLifeSysTools = {
       balance: 'No net movement',
       male: 'Male',
       female: 'Female',
+      lmsTables: 'CDC 2000 growth charts',
+      lmsManual: 'Entered by hand',
+      lmsWeight: 'Weight-for-age (kg)',
+      lmsStature: 'Stature-for-age (cm)',
+      lmsBmi: 'BMI-for-age (kg/m²)',
       sedentary: 'Sedentary (× 1.2)',
       light: 'Light activity (× 1.375)',
       moderate: 'Moderate activity (× 1.55)',
@@ -2063,6 +2070,7 @@ export const kitLifeSysTools = {
       karvonen: 'HRmax ≈ 220 − {age} = {max}; Karvonen target = (HRmax − HRrest) × {p}% + HRrest = {t} beats/min.',
       lms: 'z = ((X / M)^L − 1) / (L S) = (({x} / {m})^{l} − 1) / ({l} × {s}) = {z}.',
       percentile: 'Φ({z}) = {p}th percentile.',
+      lmsLookup: 'At {age} years ({months} months), the CDC 2000 table gives L = {l}, M = {m}, S = {s}.',
       lmsInverse: 'The {p}th percentile is z = {z}, so X = M (1 + L S z)^(1/L) = {x}.',
       psiS: 'Ψs = −i C R T = −{i} × {c} mol/L × 0.008314 L·MPa/(mol·K) × {T} K = {p} MPa.',
       psi: 'Ψ = Ψs + Ψp = {s} + {p} = {t} MPa.',
@@ -2179,6 +2187,8 @@ export const kitLifeSysTools = {
       heartRate: 'The resting heart rate must be below the estimated maximum.',
       exerciseEmpty: 'Enter VO₂, or the age, resting heart rate, and intensity.',
       lmsRange: 'That percentile lies outside the range this LMS curve can describe.',
+      lmsAge: 'The CDC 2000 growth charts cover ages {low} to {high} years.',
+      lmsLoading: 'The growth chart tables are still loading. Try again in a moment.',
       beats: 'Run between 1 and {max} beats.',
       v0: 'The unstressed volume V₀ must be 0 or more.',
       elastance: 'Emax must be above Emin.',

@@ -28,6 +28,7 @@ import {
   waterPotentialResult,
   type Activity,
 } from './engine';
+import { growthLms, type GrowthMeasure, type GrowthSex } from './growth';
 
 const num = (id: string, label: FieldSpec['label'], initial: string, extra: Partial<FieldSpec> = {}): FieldSpec => ({
   id,
@@ -478,14 +479,43 @@ const body: CalcSpec[] = [
     id: 'lms',
     label: 'physiology.c.lms',
     intro: 'physiology.i.lms',
-    fields: [
-      num('x', 'physiology.f.x', '20'),
-      num('l', 'physiology.f.l', '-1.5'),
-      num('m', 'physiology.f.m', '17'),
-      num('s', 'physiology.f.s', '0.12'),
+    fields: (choice) => [
+      select('source', 'physiology.f.lmsSource', [
+        ['tables', 'physiology.o.lmsTables'],
+        ['manual', 'physiology.o.lmsManual'],
+      ]),
+      ...(choice('source') === 'manual'
+        ? [
+            num('x', 'physiology.f.x', '20'),
+            num('l', 'physiology.f.l', '-1.5'),
+            num('m', 'physiology.f.m', '17'),
+            num('s', 'physiology.f.s', '0.12'),
+          ]
+        : [
+            select('measure', 'physiology.f.lmsMeasure', [
+              ['bmi', 'physiology.o.lmsBmi'],
+              ['weight', 'physiology.o.lmsWeight'],
+              ['stature', 'physiology.o.lmsStature'],
+            ]),
+            select('sex', 'physiology.f.sex', [
+              ['female', 'physiology.o.female'],
+              ['male', 'physiology.o.male'],
+            ]),
+            num('age', 'physiology.f.age', '10'),
+            num('x', 'physiology.f.x', '20'),
+          ]),
       opt('p', 'physiology.f.percentileOptional'),
     ],
-    solve: (read) => lmsResult(read.num('x'), read.num('l'), read.num('m'), read.num('s'), read.opt('p')),
+    solve: (read) => {
+      if (read.choice('source') === 'manual') {
+        return lmsResult(read.num('x'), read.num('l'), read.num('m'), read.num('s'), read.opt('p'));
+      }
+      const years = read.num('age');
+      const measure = (read.choice('measure') || 'bmi') as GrowthMeasure;
+      const sex = (read.choice('sex') || 'female') as GrowthSex;
+      const { l, m, s } = growthLms(measure, sex, years * 12);
+      return lmsResult(read.num('x'), l, m, s, read.opt('p'), { years });
+    },
   },
   {
     id: 'water',
