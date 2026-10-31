@@ -21,6 +21,8 @@ const word = (key: string, vars?: Readonly<Record<string, string | number>>): st
 const NORMALS = '12, 100\n13, 90\n15, 70\n17, 40\n20, 15\n24, 3\n27, 1\n27, 2\n25, 10\n21, 40\n16, 70\n13, 90';
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 const month = (i: number) => word(`month.${MONTHS[i]}`);
+/** One tick per month, labelled with its initial, so a point on a monthly plot reads as its month. */
+const monthTicks = () => MONTHS.map((m, i) => ({ x: i + 1, label: word(`monthInitial.${m}`) }));
 
 /** Twelve lines of temperature (°C) and precipitation (mm), and the hemisphere. */
 function readNormals(read: Reader, south = read.pick('hemisphere') === 'south'): Normals {
@@ -46,6 +48,7 @@ function walterLieth(n: Normals, code: string) {
       { points: n.p.map((v, i) => [i + 1, v / 2] as const), label: word('plot.halfRain'), role: 's1' },
     ],
     x: [1, 12],
+    xTicks: monthTicks(),
   });
 }
 
@@ -187,6 +190,7 @@ const water: Mode = {
             { points: series('aet'), label: word('plot.aet') },
           ],
           x: [1, 12],
+          xTicks: monthTicks(),
         }),
       ],
       source: word('sources.thornthwaite'),

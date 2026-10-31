@@ -31,10 +31,10 @@ export function readActivities(text: string): Activity[] {
   if (rows.length > 0 && !isNumber(rows[0].cells[0])) rows.shift();
   check(rows.length > 0, 'rowsNone');
   return rows.map((row) => {
-    if (row.cells.length < 3) throw new Problem('rowShort', { line: row.line, count: 3 });
+    if (row.cells.length < 3) throw new Problem('activityShort', { line: row.line });
     const [amount, factor, scope] = row.cells.slice(0, 3).map((cell) => {
       const value = readNumber(cell);
-      if (value === null || Number.isNaN(value)) throw new Problem('rowNumber', { line: row.line, cell });
+      if (value === null || Number.isNaN(value)) throw new Problem('activityNumber', { line: row.line, cell });
       return value;
     });
     check(amount >= 0, 'amount', { line: row.line });

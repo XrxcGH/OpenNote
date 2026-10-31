@@ -128,6 +128,12 @@ describe('isostasy, heat, and plates', () => {
     const old = halfSpace(c, 100e6 * year);
     expect(rel(young.heatFlow / old.heatFlow, 2)).toBeLessThan(1e-12);
     expect(rel(old.depth - c.ridgeDepth, 2 * (young.depth - c.ridgeDepth))).toBeLessThan(1e-12);
+    // The ridge axis: t = 0 gives d = d_r exactly, no plate, and q = kΔT/√(πκ·0) without bound.
+    const axis = halfSpace(c, 0);
+    expect(axis.depth).toBe(2500);
+    expect(axis.thickness).toBe(0);
+    expect(axis.heatFlow).toBe(Number.POSITIVE_INFINITY);
+    expect(() => halfSpace(c, -1)).toThrow();
   });
 
   it('moves a site 90 degrees from a pole turning 1 degree per million years at 11.1195 cm/yr', () => {

@@ -234,7 +234,7 @@ export const kitEarthTools = {
       densities: 'The mantle must be denser than the crust, and the crust denser than the water.',
       compensation: 'The compensation depth must be greater than 0 and deeper than any ocean.',
       conductivity: 'The conductivity must be greater than 0.',
-      age: 'The age must be greater than 0.',
+      age: 'The age must be 0 (the ridge axis) or greater.',
       cooling: 'The mantle must be hotter than the surface and denser than the water, with a diffusivity above 0.',
       spreading: 'The distance and the age must both be greater than 0.',
       spacing: 'The spacings and thickness must be greater than 0.',
@@ -254,7 +254,7 @@ export const kitEarthTools = {
       pumping: 'Ekman pumping and Sverdrup transport',
       deformation: 'Deformation radius and Kelvin waves',
       rossby: 'Rossby wave',
-      seawater: 'Seawater properties (EOS-80)',
+      seawater: 'Seawater properties (EOS-80 only)',
       mackenzie: 'Sound speed (Mackenzie)',
       ts: 'Temperature–salinity diagram',
       waves: 'Surface wave dispersion',
@@ -1311,7 +1311,7 @@ export const kitEarthTools = {
       count: 'Count',
     },
     a: {
-      plot: '{planes} planes and {lines} lines on the net.',
+      plot: '{planes, plural, one {# plane} other {# planes}} and {lines, plural, one {# line} other {# lines}} on the net.',
       pole: 'The plane {plane} dips toward {direction}; its pole is {pole}.',
       intersect: 'The planes meet along {line}, and their poles are {angle}° apart.',
       through: 'The plane through both lines is {plane}; the lines are {angle}° apart.',
@@ -1359,7 +1359,8 @@ export const kitEarthTools = {
     plot: {
       north: 'N',
       netTitle: 'Stereonet',
-      netText: '{planes} great circles or poles and {lines} lines on the net.',
+      netText:
+        '{planes, plural, one {# great circle or pole} other {# great circles or poles}} and {lines, plural, one {# line} other {# lines}} on the net.',
       poleText: 'The plane {plane} as a great circle with its pole at {pole}.',
       pole: 'Pole',
       rake: 'Rake',
@@ -2239,6 +2240,20 @@ export const kitEarthTools = {
       veryDryForest: 'very dry forest',
       thornWoodland: 'thorn woodland',
     },
+    monthInitial: {
+      jan: 'J',
+      feb: 'F',
+      mar: 'M',
+      apr: 'A',
+      may: 'M',
+      jun: 'J',
+      jul: 'J',
+      aug: 'A',
+      sep: 'S',
+      oct: 'O',
+      nov: 'N',
+      dec: 'D',
+    },
     month: {
       jan: 'January',
       feb: 'February',
@@ -2316,7 +2331,7 @@ export const kitEarthTools = {
       myhre: 'Myhre et al. (1998), Geophys. Res. Lett. 25, 2715',
       tar: 'IPCC Third Assessment Report (2001), WG1 table 6.2',
       berger: 'Berger (1978), J. Atmos. Sci. 35, 2362',
-      peel: 'Peel, Finlayson, and McMahon (2007), Hydrol. Earth Syst. Sci. 11, 1633 (CC BY)',
+      peel: 'Peel, Finlayson, and McMahon (2007), Hydrol. Earth Syst. Sci. 11, 1633; only the paper’s published rule thresholds are used',
       holdridge: 'Holdridge (1967), Life Zone Ecology, as the hexagon chart’s log axes',
       thornthwaite: 'Thornthwaite (1948), Geogr. Rev. 38, 55; Thornthwaite and Mather (1955)',
       epa: 'US EPA GHG Emission Factors Hub (2024 edition, US government, public domain); electricity from eGRID2022',
@@ -2348,6 +2363,10 @@ export const kitEarthTools = {
       amount: 'Line {line} has a negative amount.',
       factor: 'Line {line} has a negative factor.',
       scope: 'Line {line} needs scope 1, 2, or 3.',
+      activityShort:
+        'Line {line} needs amount, factor, and scope, then an optional label, split by commas, tabs, or spaces.',
+      activityNumber:
+        'Line {line} has "{cell}", which is not a number. Each line is amount, factor, scope (1, 2, or 3), then an optional label.',
     },
   },
 } as const;

@@ -25,6 +25,8 @@ export interface PlotSpec {
   logY?: boolean;
   /** Larger values lower down, as depth is drawn. */
   flipY?: boolean;
+  /** Explicit x ticks with their labels, in place of the round-number ticks (months on a climate diagram). */
+  xTicks?: readonly { x: number; label: string }[];
   vlines?: readonly { x: number; label?: string }[];
   hlines?: readonly { y: number; label?: string }[];
   width?: number;
@@ -78,20 +80,21 @@ function axes(spec: PlotSpec, xr: readonly [number, number], yr: readonly [numbe
   const sx = scale(xr, PAD.l, w - PAD.r, !!spec.logX);
   const sy = spec.flipY ? scale(yr, PAD.t, h - PAD.b, !!spec.logY) : scale(yr, h - PAD.b, PAD.t, !!spec.logY);
   const marks: Mark[] = [];
-  const xt = spec.logX ? decades(xr) : niceTicks(xr[0], xr[1]);
+  const xt = spec.xTicks ? spec.xTicks.map((t) => t.x) : spec.logX ? decades(xr) : niceTicks(xr[0], xr[1]);
+  const xText = (v: number, i: number) => (spec.xTicks ? spec.xTicks[i].label : fmt(v, 4));
   const yt = spec.logY ? decades(yr) : niceTicks(yr[0], yr[1]);
-  for (const v of xt) {
+  xt.forEach((v, i) => {
     marks.push({ kind: 'line', x1: sx(v), y1: PAD.t, x2: sx(v), y2: h - PAD.b, role: 'grid', width: 1 });
     marks.push({
       kind: 'text',
       x: sx(v),
       y: h - PAD.b + 14,
-      text: fmt(v, 4),
+      text: xText(v, i),
       role: 'muted',
       anchor: 'middle',
       size: 10,
     });
-  }
+  });
   for (const v of yt) {
     marks.push({ kind: 'line', x1: PAD.l, y1: sy(v), x2: w - PAD.r, y2: sy(v), role: 'grid', width: 1 });
     marks.push({ kind: 'text', x: PAD.l - 5, y: sy(v) + 3, text: fmt(v, 4), role: 'muted', anchor: 'end', size: 10 });

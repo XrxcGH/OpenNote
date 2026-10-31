@@ -35,3 +35,27 @@ describe('earth kit forms', () => {
     });
   }
 });
+
+describe('earth kit wording and axes', () => {
+  async function outcome(tool: (typeof EARTH_TOOL_IDS)[number], id: string, text: Record<string, string> = {}) {
+    const mode = (await MODE_LOADERS[tool]()).find((m) => m.id === id)!;
+    const values = initialValues(mode);
+    const result = run(tool, mode, { ...values, text: { ...values.text, ...text } });
+    if (!result.ok) throw new Error(result.message);
+    return result.outcome;
+  }
+
+  it('agrees the stereonet count with one or many', async () => {
+    const one = await outcome('stereonet', 'plot', { data: 'plane, 030, 40\nline, 250, 30' });
+    expect(one.answer).toContain('1 plane and 1 line on');
+    const many = await outcome('stereonet', 'plot');
+    expect(many.answer).toContain('3 planes and 1 line on');
+    expect(many.figures![0].description).toContain('3 great circles or poles and 1 line on');
+  });
+
+  it('ticks the climate diagram once per month, J to D, with no fractional months', async () => {
+    const fig = (await outcome('climate', 'koppen')).figures![0];
+    const ticks = fig.marks.filter((m) => m.kind === 'text' && m.size === 10 && m.anchor === 'middle');
+    expect(ticks.map((m) => (m.kind === 'text' ? m.text : ''))).toEqual('JFMAMJJASOND'.split(''));
+  });
+});

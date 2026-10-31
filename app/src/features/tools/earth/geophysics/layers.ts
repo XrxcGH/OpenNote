@@ -51,7 +51,8 @@ export interface Cooling {
 
 /** Half-space cooling at age t (s): seafloor depth, surface heat flow, and the thermal thickness 2.32 √(κt). */
 export function halfSpace(c: Cooling, age: number): { depth: number; heatFlow: number; thickness: number } {
-  check(age > 0, 'age');
+  // Age 0 is the ridge axis: the ridge depth, no plate, and a heat flow without bound (q ∝ 1/√t).
+  check(age >= 0, 'age');
   check(c.diffusivity > 0 && c.mantleDensity > c.waterDensity && c.mantle > c.surface, 'cooling');
   const dT = c.mantle - c.surface;
   const kt = c.diffusivity * age;

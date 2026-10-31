@@ -280,6 +280,15 @@ describe('footprints', () => {
     expect(problem(() => readActivities('10, 1, 4'))).toBe('scope');
     expect(problem(() => readActivities('-1, 1, 1'))).toBe('amount');
     expect(problem(() => readActivities(''))).toBe('rowsNone');
-    expect(problem(() => readActivities('10, x, 1'))).toBe('rowNumber');
+    expect(problem(() => readActivities('10, x, 1'))).toBe('activityNumber');
+    expect(problem(() => readActivities('10, 1'))).toBe('activityShort');
+  });
+
+  it('reads each line on its own delimiter, so a sheet with mixed spacing still sums', () => {
+    // 10 × 8.78 + 5 × 53.06 = 87.8 + 265.3 = 353.1 kg, all scope 1.
+    const out = footprint(readActivities('10, 8.78, 1\n5 53.06 1 natural gas\n2\t1\t3'));
+    expect(out.scopes[0]).toBeCloseTo(353.1, 9);
+    expect(out.scopes[2]).toBe(2);
+    expect(out.lines[1].activity.label).toBe('natural gas');
   });
 });
