@@ -109,6 +109,10 @@ export { MODPHYS_FLAGS } from './modphys/flags';
 export type { ModPhysFlagId } from './modphys/flags';
 export { MODPHYS_TOOLS } from './modphys/meta';
 
+// The signals and sound kit's flag and tool list load at start-up with these, so the palette can name each tool.
+export { SIGNALS_FLAGS } from './signals/flags';
+export type { SignalsFlagId } from './signals/flags';
+export { SIGNAL_TOOLS, chooseSignalTool, restoreSignalInputs } from './signals/meta';
 /**
  * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
  * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.

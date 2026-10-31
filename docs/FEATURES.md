@@ -28,6 +28,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 
 - [Document structure](#document-structure)
 - [Molecular biology, genetics, and evolution](#molecular-biology-genetics-and-evolution)
+- [Signals, images, sound, and communications](#signals-images-sound-and-communications)
 - [macOS and Linux](#macos-and-linux)
 - [Life science tools](#life-science-tools)
 
@@ -675,6 +676,22 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Plots and coefficient tables | Histograms, densities, ECDF, Q-Q, box, fit-band, step, forest, and ROC plots, and a coefficient table that states each verdict in words.                                                     | Built, untested by hand |
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
+
+## Signals, images, sound, and communications
+
+(Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md). Every tool's insert buttons include a live calculation block (`ext:org.opennote/kitcalc`) that reopens the tool with its fields. Long work (spectra and spectrograms of long sounds, pitch tracks, formants, CT reconstruction, Canny edges on large images) runs in a worker with progress and Cancel; sounds are kept up to ten minutes.)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Spectrum analyzer | Amplitude, power, density, Welch, and spectrogram views of pasted samples, a sound file, or a value (and time) column of a table on the open page, with window corrections, a Parseval check, band powers, peaks, and damping from the half-power points. | Built, untested by hand |
+| Digital filter designer | FIR filters by the window method (with Kaiser's estimates), Butterworth, Chebyshev, and elliptic IIR filters by the bilinear transform or impulse invariance in second-order sections, notch and moving-average filters, every response and the pole-zero plot, fixed-point coefficients, and causal or zero-phase filtering of data. | Built, untested by hand |
+| Convolution, sampling, and discrete systems | Convolution as a flip, shift, multiply, and sum table, correlation lags, difference equations with their poles, aliasing and reconstruction, quantization noise, rate changes, and continuous convolution. | Built, untested by hand |
+| Sound analysis and acoustics | Opens or records sound (kept on the device) and shows its waveform, wide- and narrow-band spectrograms, a YIN pitch track, intensity, Burg LPC formants, labeled intervals, jitter, and shimmer; a tuner with an adjustable A4; tone practice against Chao tone numbers; Lobanov and Bark vowel charts; audiograms with the pure-tone average; decibel sums, distance changes, and IEC 61672 A-weighting; and a tone generator. | Built, untested by hand |
+| Neural and physiological time series | Epochs with baseline correction, amplitude rejection, averages with standard errors, peaks, and mean amplitudes; canonical double-gamma HRF regressors, collinearity, and a GLM with t for a contrast; spike rasters, PSTH and kernel rates, CV, and Fano factor; ECG R peaks by a simplified Pan-Tompkins with SDNN, RMSSD, pNN50, and Lomb-Scargle LF/HF; and 10-20 electrode dot maps. | Built, untested by hand |
+| Image lab | Window, level, stretch, and gamma with a histogram; manual and Otsu thresholds with connected-component counts, areas, and centroids; box, Gaussian, sharpen, Sobel, Prewitt, Laplacian, custom, and Canny filters; erosion, dilation, opening, and closing; 2D FFT masks; scale calibration, distances, and rectangle statistics; NDVI and typed band math, false color, and minimum-distance classes; and the Radon transform with filtered back-projection. | Built, untested by hand |
+| Medical imaging physics | Larmor frequency, spin-echo, gradient-echo, and inversion-recovery signals with contrast against TR, a Bloch simulator with spin echoes, a k-space masking demonstration on the Shepp-Logan phantom, Hounsfield units and windows, ultrasound reflection, depth, attenuation, and Doppler, X-ray half-value layers, and PET SUV with decay correction. | Built, untested by hand |
+| Information, coding, and modulation | Entropy, mutual information, and channel capacity; Huffman, Shannon-Fano, and LZ78 source codes; Hamming and linear block codes; standard CRCs; Viterbi decoding; and constellations, bit-error rates, and eye diagrams. | Built, untested by hand |
+| Transmission lines and RF | Reflection, VSWR, and input impedance (open and shorted loads included) on a Smith chart with the standing-wave pattern; L-section, single-stub, and quarter-wave matching; coax, two-wire, and microstrip impedance; S, Z, Y, and ABCD conversion with stability and cascades; Friis noise cascades; antenna links, radar range, and decibel units. | Built, untested by hand |
 
 ## Modern physics and astronomy tools
 

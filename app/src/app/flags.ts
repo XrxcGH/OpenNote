@@ -38,6 +38,8 @@ import { CIVIL_FLAGS } from '../features/tools/flags';
 import type { CivilFlagId } from '../features/tools/flags';
 import { MODPHYS_FLAGS } from '../features/tools/flags';
 import type { ModPhysFlagId } from '../features/tools/flags';
+import { SIGNALS_FLAGS } from '../features/tools/flags';
+import type { SignalsFlagId } from '../features/tools/flags';
 import { TUTOR_FLAGS } from '../features/tutor/flags';
 import type { TutorFlagId } from '../features/tutor/flags';
 import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
@@ -98,6 +100,7 @@ export type FlagId =
   | LifeSysFlagId
   | CivilFlagId
   | ModPhysFlagId
+  | SignalsFlagId
   | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
@@ -395,6 +398,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...LIFESYS_FLAGS,
   ...CIVIL_FLAGS,
   ...MODPHYS_FLAGS,
+  ...SIGNALS_FLAGS,
   ...TUTOR_FLAGS,
   ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,

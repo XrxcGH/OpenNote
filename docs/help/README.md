@@ -37,6 +37,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Biology tools](biology-tools.md): sequences, cloning, proteins, alignment, crosses, population genetics, pedigrees, and phylogenetic trees.
 - [Life science tools](life-science-tools.md): physiology, neurons, pharmacology, curve fits, bench math, populations, demography, models, and biodiversity.
 - [Modern physics and astronomy tools](modern-physics-and-astronomy.md): quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology.
+- [Signals and sound tools](signals-tools.md): spectra, filters, convolution and sampling, brain and body signals, sound, images, medical imaging, information and coding, modulation, and transmission lines.
 
 ## Draw and design pages
 

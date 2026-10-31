@@ -33,6 +33,7 @@ export type ToolId =
   | 'lifesys'
   | 'kit-civil'
   | 'kit-modphys'
+  | 'kit-signals'
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
@@ -84,6 +85,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'lifesys', title: 'kitLifeSys.ui.windowTitle', width: 480 },
   { id: 'kit-civil', title: 'kitCivil.title', width: 520 },
   { id: 'kit-modphys', title: 'kitModPhys.window.title', width: 520 },
+  { id: 'kit-signals', title: 'kitSignals.kit.title', width: 560 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },
