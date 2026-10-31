@@ -75,7 +75,10 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.constants', 'The scientific constants picker with CODATA 2022 values.'),
   flag('tools.sigfigs', 'The significant-figures helper and its mode in the calculator and on page lines.'),
   flag('math.latexInsert', 'The Insert LaTeX window with live preview, snippets, and paste conversion.'),
-  flag('tools.econ', 'Economics and finance calculators: time value, loans, markets, firms, macro models, valuation, and accounting.'),
+  flag(
+    'tools.econ',
+    'Economics and finance calculators: time value, loans, markets, firms, macro models, valuation, and accounting.',
+  ),
   flag('tools.chemCalc', 'Chemistry calculators: balancing, stoichiometry, gas laws, dilution, pH, and titration.'),
   flag('tools.structure', 'Chemical structure drawing: skeletal formulas as editable ink, with SVG export.'),
   flag('tools.properties', 'Steam, ideal-gas, and materials property tables with sources.'),

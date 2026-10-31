@@ -346,7 +346,9 @@ const taxForm = form(
     const kind = text(values, 'schedule');
     const year = Number(text(values, 'year')) || FEDERAL_YEARS.at(-1)!;
     const brackets =
-      kind === 'custom' ? parseBrackets(values.text.brackets ?? '') : FEDERAL_BY_YEAR[year]![kind as 'single' | 'joint'];
+      kind === 'custom'
+        ? parseBrackets(values.text.brackets ?? '')
+        : FEDERAL_BY_YEAR[year]![kind as 'single' | 'joint'];
     if (!brackets) return bad('measures.tax.parse');
     const r = taxOn(n[0], brackets);
     if (!r) return bad('measures.tax.invalid');

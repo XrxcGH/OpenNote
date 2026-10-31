@@ -121,7 +121,8 @@ export const firms = {
     hhi: 'HHI = sum of squared shares (in percent) = {hhi}.',
     cr4: 'Four-firm concentration ratio CR4 = {cr4}%.',
     high: 'Above 1,800 is highly concentrated under the 2023 US merger guidelines; the 2010 guidelines and many textbooks use 2,500.',
-    moderate: 'Between 1,000 and 1,800 was moderately concentrated under the 1982 US guidelines; the 2010 guidelines used 1,500 to 2,500.',
+    moderate:
+      'Between 1,000 and 1,800 was moderately concentrated under the 1982 US guidelines; the 2010 guidelines used 1,500 to 2,500.',
     low: 'Below 1,000 is often called unconcentrated.',
     badMerge: 'Pick two different firms from the list to merge.',
     merger: 'If firm {a} merges with firm {b}, HHI rises by twice the product of their shares: {delta}, to {after}.',
