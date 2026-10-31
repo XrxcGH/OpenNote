@@ -54,8 +54,8 @@ function lone(
   const t1 = 100 + between(r, ...ms);
   const shape = palmShape(r, false, drift);
   const parts = 1 + Math.round(r());
-  // A part the size of a fingertip beside the heel is a second finger by its size, and two fingers at that spacing are
-  // a pan or a pinch by every signal: the heel is then as uncertain as the part, whichever order their events arrive in.
+  // A fingertip-sized part beside the heel reads as a second finger. Two fingers at that spacing pan or pinch by every
+  // signal, so the heel is as uncertain as the part, whichever order their events arrive in.
   const pairedWith =
     parts > 1 && palmLimit(w.profile, shape, 0.6, t1 - 100) === 'fingertip-sized'
       ? ('fingertip-sized' as const)
