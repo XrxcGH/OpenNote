@@ -89,9 +89,11 @@ function cacheOutcome(v: Values): Outcome {
 
 function amatOutcome(v: Values): Outcome {
   const levels = lines(v.levels ?? '').map((l) => {
-    const n = l.split(/[\s,]+/).map(Number);
+    const words = l.split(/[\s,]+/).filter(Boolean);
+    const percent = words[1]?.endsWith('%') ?? false;
+    const n = words.map((w) => Number(w.replace(/%$/, '')));
     if (n.length !== 2 || n.some((x) => !Number.isFinite(x))) fail('levelLine', { line: l });
-    return { hit: n[0], missRate: n[1] > 1 ? n[1] / 100 : n[1] };
+    return { hit: n[0], missRate: percent || n[1] > 1 ? n[1] / 100 : n[1] };
   });
   const memory = one(v, 'memory');
   const r = amat(levels, memory);
@@ -380,7 +382,8 @@ function performanceOutcome(v: Values): Outcome {
   if (kind === 'cpi') {
     const mix = lines(v.mix ?? '').map((l) => {
       const n = l.split(/[\s,]+/).filter(Boolean);
-      const w = Number(n[n.length - 2]);
+      // A share may carry a %; shares are normalised, so 50% and 50 weigh the same.
+      const w = Number(n[n.length - 2]?.replace(/%$/, ''));
       const c = Number(n[n.length - 1]);
       if (n.length < 2 || !(w >= 0) || !(c > 0)) fail('mixLine', { line: l });
       return [w, c] as [number, number];
