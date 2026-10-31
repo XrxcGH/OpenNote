@@ -83,6 +83,11 @@ export { MATH_TOOLS } from './mathkit/meta';
  */
 export const INSERT_EVENT = 'opennote:insert-into-page';
 
+// The life science kit's flag and tool list load at start-up, for the flag list and the palette commands.
+export { LIFESYS_FLAGS } from './lifesys/flags';
+export type { LifeSysFlagId } from './lifesys/flags';
+export { LIFESYS_TOOLS } from './lifesys/meta';
+
 /**
  * What the Citations window asks of the page that is open: run a Zotero command on it. The page answers by setting
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.

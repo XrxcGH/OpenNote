@@ -34,6 +34,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
 - [Psychology and behavior tools](psychology-kit.md): signal detection, psychophysics, learning and choice models, response times, observation, agreement, scales, and qualitative coding.
 - [Biology tools](biology-tools.md): sequences, cloning, proteins, alignment, crosses, population genetics, pedigrees, and phylogenetic trees.
+- [Life science tools](life-science-tools.md): physiology, neurons, pharmacology, curve fits, bench math, populations, demography, models, and biodiversity.
 
 ## Draw and design pages
 

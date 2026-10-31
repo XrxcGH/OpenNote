@@ -34,6 +34,9 @@ const SolversTool = lazy(() =>
 
 // The molecular biology kit loads on first open.
 const KitMolBio = lazy(() => import('../molbio/KitMolBioTool').then((loaded) => ({ default: loaded.KitMolBioTool })));
+// The life science tools load on first open, each tool's forms and engines only when its tab opens.
+const LifeSysTool = lazy(() => import('../lifesys/ui/LifeSysTool').then((m) => ({ default: m.LifeSysTool })));
+
 // Practice exams load with their window, on first open.
 const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
 
@@ -113,6 +116,9 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   econ: EconTool,
   'kit-statinfer': StatInferKit,
   'kit-mind': MindKit,
+  'kit-statmodels': StatModelsKit,
+  kitmolbio: KitMolBio,
+  lifesys: LifeSysTool,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
@@ -131,12 +137,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
-  if (tool === 'kitmolbio')
-    return (
-      <Suspense fallback={null}>
-        <KitMolBio />
-      </Suspense>
-    );
   if (tool === 'flashcards') return <DeckPanel />;
   if (tool === 'exam')
     return (
@@ -170,11 +170,5 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
-  if (tool === 'kit-statmodels')
-    return (
-      <Suspense fallback={null}>
-        <StatModelsKit />
-      </Suspense>
-    );
   return null;
 }

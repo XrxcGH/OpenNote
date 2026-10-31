@@ -66,6 +66,7 @@ import { codeCells } from './codeCells';
 import { kitStatModels } from './kitStatModels';
 import { kitMind } from './kitMind';
 import { kitMolBio } from './kitMolBio';
+import { kitLifeSys } from './kitLifeSys';
 import { kits } from './kits';
 import { kitSubjects } from './kitSubjects';
 import { stepCheck } from './stepCheck';
@@ -151,6 +152,7 @@ export const en = {
   kitStatModels,
   kitMind,
   kitMolBio,
+  kitLifeSys,
   kits,
   kitSubjects,
   stepCheck,

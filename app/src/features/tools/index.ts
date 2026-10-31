@@ -24,6 +24,7 @@ export { TOOLS, isToolId } from './ui/tools';
 export { MOLBIO_TOOLS } from './molbio/meta';
 export type { MolToolId } from './molbio/meta';
 export { openMolBio } from './molbio/open';
+export { openLifeSys, reopenLifeSys } from './lifesys/open';
 export type { ToolId } from './ui/tools';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { forgetPageItems, setPageItems } from './ui/upcomingStores';

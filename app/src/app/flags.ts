@@ -19,8 +19,8 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { CHEMMAT_FLAGS, EXPR_FLAGS, MIND_FLAGS } from '../features/tools/flags';
-import type { ChemMatFlagId, MindFlagId } from '../features/tools/flags';
+import { CHEMMAT_FLAGS, EXPR_FLAGS, LIFESYS_FLAGS, MIND_FLAGS } from '../features/tools/flags';
+import type { ChemMatFlagId, LifeSysFlagId, MindFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -91,6 +91,7 @@ export type FlagId =
   | StatModelsFlagId
   | MindFlagId
   | MolBioFlagId
+  | LifeSysFlagId
   | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
@@ -385,6 +386,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...STATMODELS_FLAGS,
   ...MIND_FLAGS,
   ...MOLBIO_FLAGS,
+  ...LIFESYS_FLAGS,
   ...TUTOR_FLAGS,
   ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,

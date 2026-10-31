@@ -29,6 +29,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Document structure](#document-structure)
 - [Molecular biology, genetics, and evolution](#molecular-biology-genetics-and-evolution)
 - [macOS and Linux](#macos-and-linux)
+- [Life science tools](#life-science-tools)
 
 ## How to read the status
 
@@ -715,3 +716,19 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Inter-rater agreement       | Cohen's and weighted kappa, Scott's pi, Fleiss' kappa, Krippendorff's alpha, intraclass correlations, and Bland-Altman limits.                                                                            | Built, untested by hand |
 | Scales and psychometrics    | Questionnaire scoring with reverse items and subscales, alpha, KR-20, split-half, item analysis, score transforms, System Usability Scale, and IRT curves.                                                | Built, untested by hand |
 | Qualitative coding          | Code frequencies, code-by-case and co-occurrence matrices with Jaccard similarity, passages by code, two-coder agreement, a codebook with parent codes, and content-analysis tallies.                     | Built, untested by hand |
+
+## Life science tools
+
+(Beta 6. On in Beta and off in Stable, with the kits.lifesys flag. Coursework only: no clinical, dosing, or treatment advice. Help: [Life science tools](help/life-science-tools.md).)
+
+| Feature                                 | What it does                                                                                                                                                                                                                       | Status                  |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Physiology calculators                  | Cardiac output, MAP, resistance, Laplace tension, a beating P-V loop from a time-varying elastance, ventricular-arterial coupling, the alveolar gas equation, O₂ content, the Severinghaus curve, the Krogh cylinder, ventilation, clearance, FENa, glucose titration, acid-base, fluids, BMR, METs, LMS z-scores, and water potential. | Built, untested by hand |
+| Neurons and excitable cells             | Nernst and GHK potentials, Donnan equilibrium, RC charging, Hodgkin-Huxley current and voltage clamp with TTX and TEA, thresholds, integrate-and-fire, cables, conduction speed, and synaptic summation.                           | Built, untested by hand |
+| Pharmacokinetics and drug response      | One- and two-compartment models, multiple dosing, non-compartmental analysis, Michaelis-Menten elimination, BSA dose scaling, release kinetics, Emax, occupancy, therapeutic index, and linked PK-PD effect.                       | Built, untested by hand |
+| Binding, enzyme, and dose-response fits | Michaelis-Menten and inhibition fits beside the linear plots, Hill fits, binding with Scatchard, Cheng-Prusoff, isotherms, 4PL and 5PL standard curves, EC50, Schild pA₂, probit LD50 with Fieller limits, and LQ survival.        | Built, untested by hand |
+| Bench calculations                      | Molarity, dilutions, master mixes, buffers, centrifuge force, cell and plate counts, MOI, growth rates, qPCR, microscopy, and calibration curves.                                                                                  | Built, untested by hand |
+| Population dynamics                     | Growth models, harvesting, predator-prey, competition, metapopulations, island biogeography, species-area fits, and the logistic map.                                                                                              | Built, untested by hand |
+| Life tables and demography              | Life tables, fertility rates, R₀ and r, Leslie and Lefkovitch matrices with elasticities, cohort projections, and pyramids.                                                                                                        | Built, untested by hand |
+| Compartment, reaction, and agent models | SIR-type epidemics, fitting β and γ to case counts, final size, Reed-Frost, reaction networks by ODE and seeded Gillespie runs, Schelling, lattice and network SIR, thresholds, the voter model, Life, cellular automata, and random networks.                     | Built, untested by hand |
+| Biodiversity and field sampling         | Diversity and Hill numbers, Chao and ACE richness, rarefaction, similarity indices, quadrat and transect sampling, dispersion, and mark-recapture.                                                                                 | Built, untested by hand |
