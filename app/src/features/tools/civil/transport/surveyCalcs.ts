@@ -1,4 +1,4 @@
-// The transportation tool's trip generation, trigonometric levelling, and Helmert transformation calculations.
+// The transportation tool's trip generation, trigonometric leveling, and Helmert transformation calculations.
 import { grid, num, opt, pick, row, step } from '../core/calc';
 import { tex } from '../core/format';
 import type { Calc, Outcome } from '../core/types';

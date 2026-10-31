@@ -58,7 +58,7 @@ export const transport = {
     elevA: 'Instrument station elevation (optional)',
     cr: 'Curvature and refraction',
     kRefr: 'Refraction coefficient k',
-    control: 'Control points: local x, y and known X, Y',
+    control: 'Control points: local x and y, and known X and Y',
     toTransform: 'Points to transform (local x, y)',
     xCol: 'x',
     yCol: 'y',
@@ -288,7 +288,7 @@ export const transport = {
     s2: 'The directional split gives {inn} entering and {out} exiting.',
   },
   trig: {
-    title: 'Trigonometric levelling',
+    title: 'Trigonometric leveling',
     intro: 'A slope distance and zenith angle from the instrument to a target, with the instrument and target heights.',
     answer: 'The target point is {dH} m above the instrument station.',
     elevAnswer: 'The target point is {dH} m above the station, at elevation {elev} m.',

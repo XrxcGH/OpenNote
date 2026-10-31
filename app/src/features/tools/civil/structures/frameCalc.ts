@@ -1,4 +1,4 @@
-// The structures tool's frame moment distribution, held against sway or with the sidesway-shear correction.
+// The structures tool's frame moment distribution: braced, or free to sway with the sidesway-shear correction.
 import { grid, pick, row, step } from '../core/calc';
 import { tex } from '../core/format';
 import type { Calc, Outcome } from '../core/types';

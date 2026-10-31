@@ -1,5 +1,5 @@
 // Trip generation and the surveying methods behind ./surveyCalcs: double meridian distance areas, trigonometric
-// levelling, and the 2D Helmert (four-parameter) transformation. Lengths in meters, angles in degrees.
+// leveling, and the 2D Helmert (four-parameter) transformation. Lengths in meters, angles in degrees.
 import { need } from '../core/types';
 
 const rad = (deg: number): number => (deg * Math.PI) / 180;
@@ -36,7 +36,7 @@ export function dmdArea(courses: readonly { lat: number; dep: number }[]) {
 export const EARTH_R = 6_371_000;
 
 /**
- * Trigonometric levelling from a slope distance and zenith angle: ΔH = S cos z + hᵢ − hₜ + (1 − k) H² / 2R,
+ * Trigonometric leveling from a slope distance and zenith angle: ΔH = S cos z + hᵢ − hₜ + (1 − k) H² / 2R,
  * with H = S sin z the horizontal distance. Pass k = null to leave out curvature and refraction.
  */
 export function trigLevel(S: number, zenith: number, hi: number, ht: number, k: number | null) {
@@ -50,7 +50,7 @@ export function trigLevel(S: number, zenith: number, hi: number, ht: number, k: 
 }
 
 /**
- * Least-squares 2D Helmert fit, X = a x − b y + tx and Y = b x + a y + ty, from two or more control points given as
+ * Least-squares 2D Helmert fit, X = a·x − b·y + tx and Y = b·x + a·y + ty, from two or more control points given as
  * [x, y, X, Y]. Scale is √(a² + b²) and rotation atan2(b, a), counterclockwise positive.
  */
 export function helmert(points: readonly (readonly number[])[]) {

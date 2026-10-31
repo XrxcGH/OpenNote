@@ -10,7 +10,7 @@ export interface FrameJoint {
   support: number;
 }
 
-/** a and b number joints from 1; w is a uniform load across the member, kN/m. */
+/** Joints are numbered from 1; w is a uniform load across the member, kN/m. */
 export interface FrameMember {
   a: number;
   b: number;
