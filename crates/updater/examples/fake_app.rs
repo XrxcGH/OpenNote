@@ -5,10 +5,16 @@
 //! Its version is a trailer that the tests append to a copy of this exe, `#fake-app-version:<version>`, read at
 //! start. These variables set it up:
 //!
-//! - `FAKE_APP_DIR` holds its `updates\` and `previous\` folders, its instance lock, and its event log.
-//! - `FAKE_APP_PUBKEY` is the only minisign public key it trusts.
-//! - `FAKE_APP_FAIL_BEFORE_READY=<version>` makes that version exit before its start is healthy.
-//! - `FAKE_APP_FAIL_SWAP=after-rename` makes swaps fail after renaming the exe aside.
+//! - The `FAKE_APP_DIR` folder holds its `updates\` and `previous\` folders, its instance lock, and its event log.
+//!
+//! - The `FAKE_APP_PUBKEY` key is the only minisign public key it trusts.
+//!
+//! - Setting `FAKE_APP_FAIL_BEFORE_READY=<version>` makes that version exit before its start is healthy.
+//!
+//! - Setting `FAKE_APP_FAIL_SWAP=after-rename` makes swaps fail after renaming the exe aside.
+//!
+//! - Setting `FAKE_APP_CHANNEL=beta` makes it follow the beta channel, which takes prereleases.
+//!   It follows stable otherwise.
 //!
 //! Commands: `update <manifest-url>`, `check <manifest-url> [<skipped-version>]`, `go-back`, and
 //! `hold <milliseconds>`, which keeps the instance lock before the start is healthy.
@@ -95,7 +101,12 @@ fn config(dir: &Path, version: &Version, manifest: Option<&str>) -> Config {
     Config {
         current: version.clone(),
         platform: PlatformKey::current().expect("a Windows build"),
-        channel: Channel::Stable,
+        // The stable channel ignores a prerelease, so a beta release's update test asks for beta.
+        channel: if env::var("FAKE_APP_CHANNEL").is_ok_and(|value| value == "beta") {
+            Channel::Beta
+        } else {
+            Channel::Stable
+        },
         urls: ChannelUrls {
             stable: url.clone(),
             beta: url,

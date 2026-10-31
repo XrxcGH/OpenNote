@@ -224,59 +224,65 @@ const BIBTEX_ESCAPES: Record<string, string> = {
 const escapeBibtex = (text: string): string =>
   text.replace(/[\\{}~^&%$#_]/g, (char) => BIBTEX_ESCAPES[char] ?? `\\${char}`);
 
+/** One BibTeX entry, with the source it came from and the key that cites it. */
+export interface BibtexEntry {
+  id: string;
+  key: string;
+  entry: string;
+}
+
+/** The sources as BibTeX entries, each with its key, which is unique among them. */
+export function bibtexEntries(sources: readonly Source[]): BibtexEntry[] {
+  const used = new Set<string>();
+  return sources.map((source) => {
+    const base = `${(source.authors[0]?.family ?? 'source').replace(/[^A-Za-z0-9]/g, '')}${source.year}`;
+    let key = base;
+    for (let n = 2; used.has(key); n += 1) key = `${base}${String.fromCharCode(96 + n)}`;
+    used.add(key);
+    const paper = source.type === 'article' && source.proceedings === true;
+    const type = paper
+      ? 'inproceedings'
+      : source.type === 'article'
+        ? 'article'
+        : source.type === 'book'
+          ? 'book'
+          : 'misc';
+    const lines: [string, string][] = [
+      [
+        'author',
+        source.authors
+          .map((person) => (person.given ? `${person.family}, ${person.given}` : person.family))
+          .join(' and '),
+      ],
+      ['title', source.title],
+      [
+        paper ? 'booktitle' : source.type === 'article' ? 'journal' : source.type === 'web' ? 'howpublished' : 'series',
+        source.container,
+      ],
+      ['publisher', source.publisher],
+      ['address', source.place],
+      ['edition', source.edition],
+      ['year', source.year],
+      ['month', source.month],
+      ['volume', source.volume],
+      ['number', source.issue],
+      ['pages', source.pages.replace(/–/g, '--')],
+      ['url', source.url],
+      ['doi', source.doi],
+      ['urldate', source.accessed],
+      ['type', source.type === 'recording' ? 'Recording' : ''],
+    ];
+    const body = lines
+      .filter(([, value]) => value !== '')
+      .map(([name, value]) => `  ${name} = {${name === 'url' ? value : escapeBibtex(value)}}`);
+    return { id: source.id, key, entry: `@${type}{${key},\n${body.join(',\n')}\n}` };
+  });
+}
+
 /** The sources as BibTeX entries. */
 export function toBibtex(sources: readonly Source[]): string {
-  const used = new Set<string>();
-  return sources
-    .map((source) => {
-      const base = `${(source.authors[0]?.family ?? 'source').replace(/[^A-Za-z0-9]/g, '')}${source.year}`;
-      let key = base;
-      for (let n = 2; used.has(key); n += 1) key = `${base}${String.fromCharCode(96 + n)}`;
-      used.add(key);
-      const paper = source.type === 'article' && source.proceedings === true;
-      const type = paper
-        ? 'inproceedings'
-        : source.type === 'article'
-          ? 'article'
-          : source.type === 'book'
-            ? 'book'
-            : 'misc';
-      const lines: [string, string][] = [
-        [
-          'author',
-          source.authors
-            .map((person) => (person.given ? `${person.family}, ${person.given}` : person.family))
-            .join(' and '),
-        ],
-        ['title', source.title],
-        [
-          paper
-            ? 'booktitle'
-            : source.type === 'article'
-              ? 'journal'
-              : source.type === 'web'
-                ? 'howpublished'
-                : 'series',
-          source.container,
-        ],
-        ['publisher', source.publisher],
-        ['address', source.place],
-        ['edition', source.edition],
-        ['year', source.year],
-        ['month', source.month],
-        ['volume', source.volume],
-        ['number', source.issue],
-        ['pages', source.pages.replace(/–/g, '--')],
-        ['url', source.url],
-        ['doi', source.doi],
-        ['urldate', source.accessed],
-        ['type', source.type === 'recording' ? 'Recording' : ''],
-      ];
-      const body = lines
-        .filter(([, value]) => value !== '')
-        .map(([name, value]) => `  ${name} = {${name === 'url' ? value : escapeBibtex(value)}}`);
-      return `@${type}{${key},\n${body.join(',\n')}\n}`;
-    })
+  return bibtexEntries(sources)
+    .map((one) => one.entry)
     .join('\n\n');
 }
 

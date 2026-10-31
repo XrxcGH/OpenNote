@@ -35,6 +35,7 @@ import { search } from './search';
 import { audio } from './audio';
 import { audioMore } from './audioMore';
 import { interop } from './interop';
+import { interopLatex } from './interopLatex';
 import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
@@ -48,6 +49,7 @@ import { storage } from './storage';
 import { accounts } from './accounts';
 import { connectors } from './connectors';
 import { platformApi } from './platformApi';
+import { notesApps } from './notesApps';
 import { pdf } from './pdf';
 import { intelSpeech } from './intelSpeech';
 import { intelMore } from './intelMore';
@@ -63,6 +65,10 @@ import { codeCells } from './codeCells';
 import { kitLifeSys } from './kitLifeSys';
 import { kits } from './kits';
 import { kitSubjects } from './kitSubjects';
+import { stepCheck } from './stepCheck';
+import { tutor } from './tutor';
+import { exams } from './exams';
+import { sync } from './sync';
 import { kitControl } from './kitControl';
 import { kitDesign } from './kitDesign';
 import { kitMath } from './kitMath';
@@ -110,6 +116,7 @@ export const en = {
   audio,
   audioMore,
   interop,
+  interopLatex,
   moreInterop,
   intel,
   pageExtras,
@@ -122,6 +129,7 @@ export const en = {
   connectors,
   platformApi,
   pdf,
+  notesApps,
   intelSpeech,
   intelMore,
   accounts,
@@ -138,6 +146,10 @@ export const en = {
   kitLifeSys,
   kits,
   kitSubjects,
+  stepCheck,
+  tutor,
+  exams,
+  sync,
   kitControl,
   kitDesign,
   kitMath,

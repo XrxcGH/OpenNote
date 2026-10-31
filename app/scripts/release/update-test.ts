@@ -75,9 +75,11 @@ export function appliedIn(events: string, from: string, to: string): boolean {
 
 /** The reason the update failed, from the test app's event log, if it says. */
 export function failureIn(events: string): string | undefined {
-  return events
-    .split(/\r?\n/)
-    .find((line) => line.startsWith('update failure detail:') || line.startsWith('update failed'));
+  const lines = events.split(/\r?\n/);
+  return (
+    lines.find((line) => line.startsWith('update failure detail:')) ??
+    lines.find((line) => line.startsWith('update failed'))
+  );
 }
 
 /** Serves the manifest and the release's files, and nothing else, from 127.0.0.1. */
@@ -136,6 +138,8 @@ export async function runUpdateTest(options: RunOptions): Promise<Report> {
     ...process.env,
     FAKE_APP_DIR: work,
     FAKE_APP_PUBKEY: options.pubkeyText,
+    // A beta release is a prerelease, which the stable channel ignores.
+    ...(to.includes('-') ? { FAKE_APP_CHANNEL: 'beta' } : {}),
     // The new exe the test app starts keeps its files in the test folder, not the runner's profile.
     OPENNOTE_PROFILE_DIR: join(work, 'profile'),
   };
@@ -147,6 +151,11 @@ export async function runUpdateTest(options: RunOptions): Promise<Report> {
     log = existsSync(events) ? readFileSync(events, 'utf8') : '';
     if (appliedIn(log, options.from, to) || failureIn(log)) break;
     await new Promise((done) => setTimeout(done, 500));
+  }
+  if (failureIn(log) && !log.includes('update failure detail:')) {
+    // The test app writes the code first and the reason a moment later.
+    await new Promise((done) => setTimeout(done, 1000));
+    log = readFileSync(events, 'utf8');
   }
   server.close();
   spawnSync('taskkill', ['/F', '/T', '/IM', 'OpenNote-update-test.exe'], { stdio: 'ignore' });
