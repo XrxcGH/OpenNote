@@ -38,9 +38,9 @@ export interface PacketRun {
   meanX: number;
   k0: number;
   /**
-   * The probability current j = (ħ/m) Im(ψ* ∂ψ/∂x) through the barrier's right edge (x = width): its largest value
-   * over the run (fs⁻¹; in one dimension a current is probability per time) and its integral over time, which is the
-   * probability that has crossed the edge and so checks `transmitted`.
+   * The probability current j = (ħ/m) Im(ψ* ∂ψ/∂x) through the barrier's right edge (x = width). The peak is its
+   * largest value over the run, in fs⁻¹, since in one dimension a current is probability per time. Its integral over
+   * time is the probability that has crossed the edge, which checks `transmitted`.
    */
   peakCurrent: number;
   crossed: number;

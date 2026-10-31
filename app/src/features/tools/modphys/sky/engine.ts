@@ -534,8 +534,8 @@ export function planetsCalc(s: Site): Calc<SkyKey> {
 }
 
 /**
- * The stereographic place of an altitude and azimuth on a chart of the sky, north up and east LEFT: the chart is the
- * sky seen from below, as when you hold it overhead, so it is the mirror of a plan view such as the sun-path diagram.
+ * The stereographic place of an altitude and azimuth on a chart of the sky, north up and east on the left. The chart
+ * is the sky seen from below, as when you hold it overhead. So it is the mirror of a plan view like the sun paths.
  */
 const dome = (alt: number, az: number): [number, number] => {
   const r = tand((90 - alt) / 2);

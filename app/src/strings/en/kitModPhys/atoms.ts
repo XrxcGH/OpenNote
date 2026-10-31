@@ -60,7 +60,7 @@ export const atoms = {
     axisY: 'y',
     orbitalName: 'Real orbital',
     orbitalPeak: 'Largest |Y| in the section',
-    realPlot: 'The real orbital |Y| in a plane section, positive and negative lobes',
+    realPlot: 'The real orbital |Y| in a plane section, each lobe drawn by its sign',
     axisZ: 'z',
     jLow: 'Energy of the lower j level',
     jHigh: 'Energy of the upper j level',

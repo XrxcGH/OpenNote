@@ -305,8 +305,9 @@ const ORBITAL_NAMES: Record<string, string> = {
 };
 
 /**
- * The real orbital of l and m: √2 N P_l^|m|(cos θ) cos(mφ) for m > 0, √2 N P_l^|m|(cos θ) sin(|m|φ) for m < 0, and
- * N P_l^0(cos θ) for m = 0, with N² = ((2l+1)/4π)((l−|m|)!/(l+|m|)!) and no Condon-Shortley phase, so px points along +x.
+ * The real orbital of l and m. It is √2 N P_l^|m|(cos θ) cos(mφ) for m > 0 and √2 N P_l^|m|(cos θ) sin(|m|φ) for
+ * m < 0. For m = 0 it is N P_l^0(cos θ). Here N² = ((2l+1)/4π)((l−|m|)!/(l+|m|)!). There is no Condon-Shortley
+ * phase, so px points along +x.
  */
 export function realY(l: number, m: number, theta: number, phi: number): number {
   const am = Math.abs(m);
