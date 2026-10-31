@@ -70,9 +70,11 @@ export function RomanizePanel() {
 export function KoreanPanel() {
   const [text, setText] = useState('독립문');
   const [name, setName] = useState(true);
+  const [compound, setCompound] = useState(false);
+  const [noun, setNoun] = useState(true);
   const result = attempt(() => {
-    const rr = romanizeKorean(text, 'rr', name);
-    const mr = romanizeKorean(text, 'mr', name);
+    const rr = romanizeKorean(text, 'rr', name, { compound, noun });
+    const mr = romanizeKorean(text, 'mr', name, { compound, noun });
     const syllables = [...text].filter((c) => c >= '가' && c <= '힣');
     return { rr, mr, syllables };
   });
@@ -98,6 +100,8 @@ export function KoreanPanel() {
     <>
       <Field label={t(`${k}.hangul`)} value={text} onChange={setText} hint={t(`${k}.hangulHint`)} />
       <Check label={t(`${k}.asName`)} checked={name} onChange={setName} />
+      <Check label={t(`${k}.asNoun`)} checked={noun} onChange={setNoun} />
+      <Check label={t(`${k}.asCompound`)} checked={compound} onChange={setCompound} />
       <Results
         label={t('kitHumanities.common.results')}
         rows={[

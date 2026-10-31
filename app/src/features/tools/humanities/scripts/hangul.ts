@@ -2,7 +2,8 @@
 // two common romanizations. Revised Romanization (South Korea, 2000) and McCune–Reischauer both write the sounds,
 // so the sound changes at syllable joins come first. A final moves to an empty onset. Stops become nasals before
 // nasals. n and l meet as ll, and l after another consonant reads n. h aspirates a neighboring stop, and t or th
-// before i becomes j or ch.
+// before i becomes j or ch. Two choices are the writer's, as the standard leaves them to the word: in compounds an n
+// is inserted before i, ya, yeo, yo, and yu (hak-yeoul reads hangnyeoul), and in nouns h after k, t, or p is kept.
 
 export const LEADS = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
 export const VOWELS = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
@@ -42,8 +43,14 @@ export function composeJamo(text: string): string {
     i += 2;
     let t = 0;
     const tail = letters[i] ? TAILS.indexOf(letters[i]) : -1;
-    // A final is taken unless the letter after it is a vowel, which makes it the next onset.
-    if (tail > 0 && !(letters[i + 1] && VOWELS.includes(letters[i + 1]))) {
+    const isVowel = (k: number) => Boolean(letters[k] && VOWELS.includes(letters[k]));
+    // A final is taken unless the letter after it is a vowel, which makes it the next onset. Two consonants that
+    // make a double final (ㄹ and ㄱ make ㄺ) are joined unless a vowel follows the second.
+    const pair = letters[i + 1] ? JOIN[letters[i] + letters[i + 1]] : undefined;
+    if (tail > 0 && pair && !isVowel(i + 2)) {
+      t = TAILS.indexOf(pair);
+      i += 2;
+    } else if (tail > 0 && !isVowel(i + 1)) {
       t = tail;
       i++;
     }
@@ -109,10 +116,38 @@ const NEUTRAL: Record<string, string> = {
   ㄿ: 'ㅂ',
   ㅇ: 'ㅇ',
 };
+/** Two consonants and the double final they make. */
+const JOIN: Record<string, string> = Object.fromEntries(
+  Object.entries(SPLIT).map(([double, [first, second]]) => [first + second, double]),
+);
+/** Words where n and l meet as nn, not ll; this is lexical, so it is a list (Standard Pronunciation, article 20). */
+const N_BEFORE_L = new Set([
+  '신문로',
+  '의견란',
+  '생산량',
+  '결단력',
+  '공권력',
+  '동원령',
+  '상견례',
+  '횡단로',
+  '이원론',
+  '입원료',
+]);
+/** The vowels that take an inserted n after a final in a compound: i, ya, yeo, yo, yu. */
+const N_INSERT_VOWELS = 'ㅣㅑㅕㅛㅠ';
+
+export interface SoundOptions {
+  /** A compound or a word with a prefix: insert n before i, ya, yeo, yo, and yu after a final. */
+  compound?: boolean;
+  /** A noun or a place name: k, t, or p before h keeps the h (Mukho), as Revised Romanization asks. */
+  noun?: boolean;
+}
+
 const NASAL_OF: Record<string, string> = { ㄱ: 'ㅇ', ㄷ: 'ㄴ', ㅂ: 'ㅁ' };
 const ASPIRATE: Record<string, string> = { ㄱ: 'ㅋ', ㄷ: 'ㅌ', ㅂ: 'ㅍ', ㅈ: 'ㅊ' };
 
-export type SoundRule = 'liaison' | 'nasal' | 'lateral' | 'lToN' | 'aspiration' | 'palatal';
+export type SoundRule =
+  'liaison' | 'nasal' | 'lateral' | 'lToN' | 'aspiration' | 'palatal' | 'nInsertion' | 'nounH' | 'nn';
 
 export interface Sounded {
   units: { lead: string; vowel: string; tail: string }[];
@@ -120,18 +155,27 @@ export interface Sounded {
 }
 
 /** Applies the sound changes at each join between syllables of one word. */
-export function soundChanges(word: string): Sounded {
+export function soundChanges(word: string, options: SoundOptions = {}): Sounded {
   const u = units(word);
   const rules: Sounded['rules'] = [];
   for (let i = 0; i + 1 < u.length; i++) {
     const a = u[i];
     const b = u[i + 1];
     if (a.tail === '') continue;
+    if (options.compound && b.lead === 'ㅇ' && N_INSERT_VOWELS.includes(b.vowel) && a.tail !== 'ㅎ') {
+      b.lead = 'ㄴ';
+      rules.push({ at: i, rule: 'nInsertion' });
+    }
     // h meets a plain stop: the stop is aspirated and the h is lost.
     if ((a.tail === 'ㅎ' || a.tail === 'ㄶ' || a.tail === 'ㅀ') && ASPIRATE[b.lead]) {
       b.lead = ASPIRATE[b.lead];
       a.tail = a.tail === 'ㅎ' ? '' : SPLIT[a.tail][0];
       rules.push({ at: i, rule: 'aspiration' });
+      continue;
+    }
+    if (b.lead === 'ㅎ' && options.noun && ASPIRATE[NEUTRAL[a.tail]] && !SPLIT[a.tail]) {
+      a.tail = NEUTRAL[a.tail];
+      rules.push({ at: i, rule: 'nounH' });
       continue;
     }
     if (b.lead === 'ㅎ' && ASPIRATE[NEUTRAL[a.tail]] && !SPLIT[a.tail]) {
@@ -159,6 +203,10 @@ export function soundChanges(word: string): Sounded {
       continue;
     }
     let tail = NEUTRAL[a.tail] ?? a.tail;
+    if (tail === 'ㄴ' && b.lead === 'ㄹ' && N_BEFORE_L.has(word)) {
+      b.lead = 'ㄴ';
+      rules.push({ at: i, rule: 'nn' });
+    }
     if (b.lead === 'ㄹ' && tail !== 'ㄹ' && tail !== 'ㄴ') {
       b.lead = 'ㄴ';
       rules.push({ at: i, rule: 'lToN' });
@@ -229,11 +277,16 @@ const finalSound = (tail: string) => FINAL[NEUTRAL[tail] ?? tail] ?? '';
 export type Scheme = 'rr' | 'mr';
 
 /** Romanizes Hangul words; other characters pass through. */
-export function romanizeKorean(text: string, scheme: Scheme, capitalize = false): { text: string; rules: SoundRule[] } {
+export function romanizeKorean(
+  text: string,
+  scheme: Scheme,
+  capitalize = false,
+  options: SoundOptions = {},
+): { text: string; rules: SoundRule[] } {
   if (text.trim() === '') throw new Error('empty');
   const used: SoundRule[] = [];
   const out = text.replace(/[가-힣]+/g, (word) => {
-    const { units: u, rules } = soundChanges(word);
+    const { units: u, rules } = soundChanges(word, options);
     used.push(...rules.map((r) => r.rule));
     let s = '';
     u.forEach((unit, i) => {

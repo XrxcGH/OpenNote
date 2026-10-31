@@ -55,6 +55,24 @@ describe('Hangul', () => {
     expect(romanizeKorean('좋다', 'rr').text).toBe('jota');
     expect(romanizeKorean('굳이', 'rr').text).toBe('guji');
   });
+
+  it('follow the official Revised Romanization examples for n-insertion, nouns, and nn', () => {
+    const rr = (word: string, compound: boolean, noun = false) =>
+      romanizeKorean(word, 'rr', true, { compound, noun }).text;
+    expect(rr('학여울', true)).toBe('Hangnyeoul');
+    expect(rr('알약', true)).toBe('Allyak');
+    expect(rr('꽃잎', true)).toBe('Kkonnip');
+    expect(rr('신문로', false)).toBe('Sinmunno');
+    expect(rr('묵호', false, true)).toBe('Mukho');
+    expect(rr('집현전', false, true)).toBe('Jiphyeonjeon');
+    expect(rr('먹이', false)).toBe('Meogi');
+  });
+
+  it('type a double final from two consonant jamo', () => {
+    expect(composeJamo('ㅂㅏㄹㄱㄷㅏ')).toBe('밝다');
+    expect(composeJamo('ㅂㅏㄹㄱㅇㅡㅁ')).toBe('밝음');
+    expect(composeJamo('ㅇㅏㄹㄱㅗ')).toBe('알고');
+  });
 });
 
 describe('kana', () => {
