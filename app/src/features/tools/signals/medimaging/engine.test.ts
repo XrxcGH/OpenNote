@@ -52,6 +52,9 @@ describe('MRI', () => {
 
   it('follows 1 − e^(−t/T1) and e^(−t/T2) after a 90° pulse', () => {
     const run = bloch(900, 100, [{ at: 0, flip: 90 }], 400);
+    // The first sample is the vector just after the pulse: all of it tipped into the transverse plane.
+    close(run.mxy[0]!, 1, 1e-9);
+    close(run.mz[0]!, 0, 1e-9);
     for (const i of [100, 200, 400]) {
       close(run.mz[i]!, 1 - Math.exp(-run.t[i]! / 900), 1e-6);
       close(run.mxy[i]!, Math.exp(-run.t[i]! / 100), 1e-6);

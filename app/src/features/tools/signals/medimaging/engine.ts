@@ -154,8 +154,10 @@ export function bloch(
     const segments = [...sorted.map((p) => p.at), duration];
     for (let s = 0; s < segments.length; s += 1) {
       const end = segments[s]!;
-      // Integrate from grid point to grid point, so each sample is the solver's own value, not an interpolation.
-      while (gi < grid.length && grid[gi]! <= end + 1e-12) {
+      const last = s === segments.length - 1;
+      // Integrate from grid point to grid point, so each sample is the solver's own value, not an interpolation. A
+      // grid point that sits on a pulse belongs to the next segment, so it records the vector just after the pulse.
+      while (gi < grid.length && (last ? grid[gi]! <= end + 1e-12 : grid[gi]! < end - 1e-12)) {
         const target = grid[gi]!;
         if (target > time) {
           const run = dopri45(f, [time, target], m, { rtol: 1e-10, atol: 1e-12 });
