@@ -25,7 +25,7 @@ export { readUpcoming, setSourceItems, sourceItems, updateUpcomingItems } from '
 export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
 export { CIVIL_ICONS, CIVIL_TOOL_IDS } from './civil/meta';
-export { openCivilTool } from './civil/open';
+export { openCivilTool, reopenCivilCalc } from './civil/open';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
 export { openDesignKit } from './design/open';

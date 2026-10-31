@@ -13,7 +13,8 @@ import { CivilError } from '../core/types';
 import type { Calc, Field, Outcome } from '../core/types';
 import { unitsOf } from '../core/units';
 import styles from './civil.module.css';
-import { cell, insertResult, plotText } from './insert';
+import { CIVIL_RESTORE_EVENT, civilValuesStore } from '../open';
+import { cell, insertLive, insertResult, plotText } from './insert';
 import type { InsertKind } from './insert';
 import { fieldsOf, initialState, parseFields } from './parse';
 import type { FieldState } from './parse';
@@ -319,7 +320,7 @@ function Result({ outcome }: { outcome: Outcome }) {
   );
 }
 
-function InsertBar({ outcome }: { outcome: Outcome | null }) {
+function InsertBar({ outcome, live }: { outcome: Outcome | null; live: (outcome: Outcome) => void }) {
   const run = (kind: InsertKind) => outcome && void insertResult(outcome, kind);
   const openMore = (anchor: HTMLElement) => {
     if (!outcome) return;
@@ -338,6 +339,7 @@ function InsertBar({ outcome }: { outcome: Outcome | null }) {
         item('latex', 'kitCivil.common.insertLatex', !outcome.latex),
         item('grid', 'kitCivil.common.insertGrid', !outcome.grid),
         item('picture', 'kitCivil.common.insertPicture', !outcome.plot),
+        { id: 'live', label: t('kitCivil.common.insertLive'), onSelect: () => live(outcome) },
       ],
     });
   };
@@ -353,13 +355,23 @@ function InsertBar({ outcome }: { outcome: Outcome | null }) {
   );
 }
 
+function readState(calc: Calc, store: string): FieldState {
+  const first = initialState(calc);
+  const kept = loadStored<Partial<FieldState>>(store, {});
+  return { text: { ...first.text, ...kept.text }, unit: { ...first.unit, ...kept.unit } };
+}
+
 export function CalcForm({ tool, calc }: { tool: string; calc: Calc }) {
-  const store = `kit-civil.values.${tool}.${calc.id}`;
-  const [state, setState] = useState<FieldState>(() => {
-    const first = initialState(calc);
-    const kept = loadStored<Partial<FieldState>>(store, {});
-    return { text: { ...first.text, ...kept.text }, unit: { ...first.unit, ...kept.unit } };
-  });
+  const store = civilValuesStore(tool, calc.id);
+  const [state, setState] = useState<FieldState>(() => readState(calc, store));
+  // A live block's Open in tool saves its inputs and asks an open form on the same calculation to read them again.
+  useEffect(() => {
+    const restore = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === store) setState(readState(calc, store));
+    };
+    window.addEventListener(CIVIL_RESTORE_EVENT, restore);
+    return () => window.removeEventListener(CIVIL_RESTORE_EVENT, restore);
+  }, [calc, store]);
   const deferred = useDeferredValue(state);
   const fields = fieldsOf(calc, state);
   const solved = useMemo(() => solve(calc, fieldsOf(calc, deferred), deferred), [calc, deferred]);
@@ -392,7 +404,10 @@ export function CalcForm({ tool, calc }: { tool: string; calc: Calc }) {
         </p>
       </div>
       {solved.ok ? <Result outcome={solved.outcome} /> : null}
-      <InsertBar outcome={solved.ok ? solved.outcome : null} />
+      <InsertBar
+        outcome={solved.ok ? solved.outcome : null}
+        live={(outcome) => void insertLive(outcome, { tool, calc: calc.id, title: label(calc.title), state })}
+      />
     </div>
   );
 }

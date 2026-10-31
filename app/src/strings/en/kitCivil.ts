@@ -32,6 +32,7 @@ export const kitCivil = {
     insertLatex: 'Equation in LaTeX',
     insertGrid: 'Data table',
     insertPicture: 'Picture of the plot',
+    insertLive: 'Live calculation block (keeps the inputs)',
     inserted: 'Added to the page.',
     noPage: 'Click in a page first, then insert.',
     pictureFailed: 'The plot could not be made into a picture.',

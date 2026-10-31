@@ -16,3 +16,11 @@ for (const id of CIVIL_TOOL_IDS) {
     run: async () => (await import('../../tools')).openCivilTool(id),
   });
 }
+
+// A live calculation block's Open in tool comes back here through the kit registry (features/tools/civil/open.ts).
+if (typeof window !== 'undefined') {
+  // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
+  void import('../../tools')
+    .then((tools) => tools.registerKit('civil', (key) => tools.reopenCivilCalc(key)))
+    .catch(() => undefined);
+}

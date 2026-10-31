@@ -5,6 +5,8 @@ import { announce } from '../../../../ui';
 import { insertIntoPage } from '../../ui/CalculatorTool';
 import { fmt } from '../core/format';
 import type { Outcome, Plot } from '../core/types';
+import { CIVIL_KIT_ID } from '../open';
+import type { FieldState } from './parse';
 import { PICTURE_PALETTE, plotSvg } from './plot';
 import type { PlotText } from './plot';
 import { label, say } from './say';
@@ -59,6 +61,31 @@ async function picture(plot: Plot): Promise<{ bytes: ArrayBuffer; name: string; 
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * A live calculation block (ext:org.opennote/kitcalc) that keeps the typed inputs and units, so Open in tool puts
+ * them back into this calculation and solves it again.
+ */
+export async function insertLive(
+  outcome: Outcome,
+  from: { tool: string; calc: string; title: string; state: FieldState },
+): Promise<void> {
+  const { insertLiveBlock } = await import('../../kits/ui/insert');
+  const done = insertLiveBlock({
+    kit: CIVIL_KIT_ID,
+    tool: `${from.tool}.${from.calc}`,
+    title: from.title,
+    summary: say(outcome.answer),
+    inputs: { text: { ...from.state.text }, unit: { ...from.state.unit } },
+    rows: outcome.rows.map((row) => ({
+      label: label(row.label),
+      value: String(cell(row.value)),
+      unit: row.unit ?? '',
+    })),
+    ...(outcome.latex ? { latex: outcome.latex } : {}),
+  });
+  announce(t(done ? 'kitCivil.common.inserted' : 'kitCivil.common.noPage'));
 }
 
 /** Puts part of a result on the page at the caret, and announces what happened. */
