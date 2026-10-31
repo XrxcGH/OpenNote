@@ -7,6 +7,12 @@ export { CHEMMAT_META } from './chemmat/meta';
 export type { ChemMatFlagId } from './chemmat/flags';
 export { CHEMMAT_FLAGS };
 
+// The humanities kit's flag and tool list load at start-up with the other flags, before the kit's own code.
+export { HUMANITIES_FLAGS } from './humanities/flags';
+export type { HumanitiesFlagId } from './humanities/flags';
+export { HUMANITIES_TOOLS } from './humanities/meta';
+export type { HumanitiesToolId } from './humanities/meta';
+
 export type ExprFlagId = Extract<
   FlagId,
   `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}` | 'kits.math'

@@ -678,6 +678,22 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
 
+## History, places, languages, and texts kit
+
+(Beta 6. On in Beta and off in Stable, with the kits.humanities flag. Help: [History, places, languages, and texts](help/history-places-languages-and-texts.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Note frames | Note structures for writing, history, law, and field work, found by subject or by searching, inserted as headings, prompts, lists, and a table. | Built, untested by hand |
+| Coordinates and navigation | Converts between latitude and longitude, UTM, and MGRS, measures geodesic distance and bearing, and works grid zone, site grid, land, and marine navigation problems. | Built, untested by hand |
+| Timeline builder | Draws events and periods on parallel tracks with era bands, uncertainty bars, BCE dates without a year zero, and linear, deep-time logarithmic, or broken axes; compares two rows and inserts an editable figure. | Built, untested by hand |
+| Calendars and eras | Converts a date among thirteen calendars and counts (Gregorian, Julian, Hebrew, tabular Islamic, astronomical Solar Hijri and Chinese, Coptic, Ethiopian, French Republican, Saka, Maya, Roman, and Japanese eras) with the steps, lists a year's festivals, and reads a user era table. | Built, untested by hand |
+| Text analysis and verse | Readability formulas with heuristic flags, word lists and n-grams with a Zipf plot, a concordance with collocates, keyness by log-likelihood, word-level comparison of versions, MLU for language samples, and English and Latin scansion. | Built, untested by hand |
+| Linguistic structures | Syntax trees from labeled brackets and dependency trees with arcs, Leipzig-style interlinear gloss checks, a distinctive feature chart with natural classes, ordered rules with derivations and rule interactions, syllables by sonority, and vowel charts with Lobanov or Bark scaling. | Built, untested by hand |
+| Scripts, keyboards, and romanization | On-screen keyboards for IPA and many scripts, ALA-LC and BGN/PCGN romanization, Hangul composition with Revised Romanization and McCune–Reischauer, kana and Hepburn both ways, pinyin tone marks and sandhi, Thai tone rules, and Vietnamese Telex and VNI input. | Built, untested by hand |
+| Map maker | Twelve projections (Snyder's formulas and Equal Earth), the student's points, great-circle routes, and GeoJSON or TopoJSON layers with equal-interval, quantile, or Jenks choropleth classes, Tissot indicatrices, legend, scale bar, and north arrow; geodesic distance and spherical area. | Built, untested by hand |
+| Identification keys | Builds a numbered dichotomous key and its tree from a character table, runs it couplet by couplet, filters with a multi-access key, and keeps a catalog of identified specimens or objects. | Built, untested by hand |
+
 ## Signals, images, sound, and communications
 
 (Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md). Every tool's insert buttons include a live calculation block (`ext:org.opennote/kitcalc`) that reopens the tool with its fields. Long work (spectra and spectrograms of long sounds, pitch tracks, formants, CT reconstruction, Canny edges on large images) runs in a worker with progress and Cancel; sounds are kept up to ten minutes.)

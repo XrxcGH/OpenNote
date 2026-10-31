@@ -19,7 +19,7 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { CHEMMAT_FLAGS, EARTH_FLAGS, EXPR_FLAGS, LIFESYS_FLAGS, MIND_FLAGS } from '../features/tools/flags';
+import { CHEMMAT_FLAGS, EARTH_FLAGS, EXPR_FLAGS, HUMANITIES_FLAGS, LIFESYS_FLAGS, MIND_FLAGS } from '../features/tools/flags';
 import type { ChemMatFlagId, EarthFlagId, LifeSysFlagId, MindFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
@@ -40,6 +40,7 @@ import { MODPHYS_FLAGS } from '../features/tools/flags';
 import type { ModPhysFlagId } from '../features/tools/flags';
 import { SIGNALS_FLAGS } from '../features/tools/flags';
 import type { SignalsFlagId } from '../features/tools/flags';
+import type { HumanitiesFlagId } from '../features/tools/flags';
 import { TUTOR_FLAGS } from '../features/tutor/flags';
 import type { TutorFlagId } from '../features/tutor/flags';
 import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
@@ -87,6 +88,7 @@ export type FlagId =
   | ExprFlagId
   | 'kits.math'
   | DocFlagId
+  | HumanitiesFlagId
   | Phase8FlagId
   | Phase9FlagId
   | IntelFlagId
@@ -381,6 +383,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...EXPR_FLAGS,
   ...CHEMMAT_FLAGS,
   ...DOC_FLAGS,
+  ...HUMANITIES_FLAGS,
   ...SEARCH_FLAGS,
   ...AUDIO_FLAGS,
   ...INTEROP_FLAGS,

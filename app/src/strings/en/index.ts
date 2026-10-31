@@ -71,6 +71,7 @@ import { kitLifeSys } from './kitLifeSys';
 import { kitCivil } from './kitCivil';
 import { kitSignals } from './kitSignals';
 import { kitEarth } from './kitEarth';
+import { kitHumanities } from './kitHumanities';
 import { kits } from './kits';
 import { kitSubjects } from './kitSubjects';
 import { stepCheck } from './stepCheck';
@@ -161,6 +162,7 @@ export const en = {
   kitCivil,
   kitSignals,
   kitEarth,
+  kitHumanities,
   kits,
   kitSubjects,
   stepCheck,

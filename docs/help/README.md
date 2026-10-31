@@ -38,6 +38,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Life science tools](life-science-tools.md): physiology, neurons, pharmacology, curve fits, bench math, populations, demography, models, and biodiversity.
 - [Modern physics and astronomy tools](modern-physics-and-astronomy.md): quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology.
 - [Signals and sound tools](signals-tools.md): spectra, filters, convolution and sampling, brain and body signals, sound, images, medical imaging, information and coding, modulation, and transmission lines.
+- [History, places, languages, and texts](history-places-languages-and-texts.md): timelines, calendars, maps, coordinates, scripts, linguistics, text analysis, identification keys, and note frames.
 
 ## Draw and design pages
 

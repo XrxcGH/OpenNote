@@ -10,6 +10,7 @@ const FluidHeatKit = lazy(() =>
 );
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
+import { HumanitiesKit } from '../humanities';
 import { DeckPanel, loadExamPanel } from '../../study';
 import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
@@ -184,5 +185,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-humanities')
+    return (
+      <Suspense fallback={null}>
+        <HumanitiesKit />
+      </Suspense>
+    );
   return null;
 }

@@ -17,6 +17,7 @@ export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
 // Loads on first use, so the kit's opener stays out of every window that imports this file.
 export const openMindKit = async (tool?: string): Promise<void> => (await import('./mind/open')).openMindKit(tool);
+export { openHumanitiesTool } from './humanities/open';
 export { insertIntoPage } from './ui/CalculatorTool';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { loadStored, saveStored } from './ui/storage';
