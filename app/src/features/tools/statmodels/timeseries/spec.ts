@@ -589,6 +589,7 @@ export const timeseriesSpec: ToolSpec = {
     { id: 'level', type: 'number', first: '0.95', min: 0.5, max: 0.999, when: is('smoothing', 'arima') },
   ],
   run,
+  caution: true,
   examples: [
     { id: 'correlogram', values: { data: MONTHLY, analysis: 'explore', value: 'sales', time: 'month', lags: '6' } },
     { id: 'decompose', values: { data: MONTHLY, analysis: 'decompose', value: 'sales', time: 'month', period: '12' } },

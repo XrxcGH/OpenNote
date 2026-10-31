@@ -80,6 +80,14 @@ describe('the statistical models kit window', () => {
     }
   });
 
+  it('shows the coursework notice on the health, forecasting, and causal tools', async () => {
+    renderUi(<StatModelsKit />);
+    for (const id of ['survival', 'glm', 'timeseries', 'causal']) {
+      await userEvent.click(screen.getByRole('tab', { name: titleOf(id) }));
+      expect(await within(screen.getByRole('tabpanel')).findByText(en.kitStatModels.ui.caution), id).toBeTruthy();
+    }
+  });
+
   it('moves between tabs with the arrow keys', async () => {
     renderUi(<StatModelsKit />);
     const tabs = screen.getAllByRole('tab');

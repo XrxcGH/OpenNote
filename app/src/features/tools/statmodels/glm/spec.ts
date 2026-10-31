@@ -281,6 +281,7 @@ export const glmSpec: ToolSpec = {
     { id: 'threshold', type: 'number', first: '0.5', min: 0, max: 1, when: isLogistic },
   ],
   run,
+  caution: true,
   examples: [
     { id: 'logistic', values: { data: LOGISTIC, family: 'logistic', outcome: 'passed', predictors: 'hours' } },
     {

@@ -680,6 +680,7 @@ export const causalSpec: ToolSpec = {
     { id: 'level', type: 'number', first: '0.95', min: 0.5, max: 0.999, when: is('fe', 'iv', 'did', 'event', 'rd') },
   ],
   run,
+  caution: true,
   examples: [
     {
       id: 'panel',
