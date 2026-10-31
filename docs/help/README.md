@@ -28,6 +28,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Subject tool kits](subject-tool-kits.md): eleven tool windows for engineering, science, and math problems, with worked steps and live calculation blocks.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
 
 ## Draw and design pages
 

@@ -72,6 +72,7 @@ import { kitMath } from './kitMath';
 import { kitMechDyn } from './kitMechDyn';
 import { kitPhysics } from './kitPhysics';
 import { kits } from './kits';
+import { kitSubjects } from './kitSubjects';
 import { kitElectrical } from './kitElectrical';
 import { kitFluidHeat } from './kitFluidHeat';
 import { kitSolids } from './kitSolids';
@@ -151,6 +152,7 @@ export const en = {
   kitMechDyn,
   kitPhysics,
   kits,
+  kitSubjects,
   kitElectrical,
   kitFluidHeat,
   kitSolids,
