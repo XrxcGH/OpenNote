@@ -24,6 +24,11 @@ export interface DataSet {
   /** True when the input had more than MAX_ROWS rows and the rest were left out. */
   truncated: boolean;
   problems: DataProblem[];
+  /**
+   * Set when the decimal mark was guessed for a column whose every cell, such as "1,234", reads both ways: the
+   * column named, and the mark chosen ('.' means the commas were read as thousands separators).
+   */
+  decimalGuess?: { column: string; decimal: '.' | ',' };
 }
 
 /** The most rows a pasted or loaded data set keeps. */
