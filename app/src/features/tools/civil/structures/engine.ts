@@ -1,10 +1,5 @@
 // Indeterminate structures and influence lines: the methods behind the calculations in ./calcs. Forces in kN,
 // lengths in m, moments in kN·m. End moments follow the clockwise-positive sign convention of moment distribution.
-import { solveTruss } from '../../../engineering';
-import type { TrussModel } from '../../../engineering';
-
-type Joint = TrussModel['joints'][number];
-type Member = TrussModel['members'][number];
 import { solveLinear } from '../core/num';
 import { CivilError, need } from '../core/types';
 
@@ -318,36 +313,75 @@ export interface TrussInput {
   members: readonly { a: number; b: number }[];
 }
 
+/** A truss's joints: 1 is a pin, 2 a roller that pushes up, anything else free. */
+type TrussJoint = TrussInput['joints'][number];
+
+/**
+ * The member forces (tension positive) of a statically determinate truss by the method of joints: two equilibrium
+ * equations at each joint, with a member force and each support reaction as the unknowns. A count that differs from
+ * two per joint, or equations with no single answer, give the truss's status instead.
+ */
+function jointForces(
+  joints: readonly TrussJoint[],
+  members: readonly { a: number; b: number }[],
+  load: number,
+): number[] | 'none' | 'unstable' | 'indeterminate' {
+  const reactions = joints.flatMap((j, i) =>
+    j.support === 1
+      ? [
+          [i, 1, 0],
+          [i, 0, 1],
+        ]
+      : j.support === 2
+        ? [[i, 0, 1]]
+        : [],
+  );
+  if (!reactions.length || !joints.length) return 'none';
+  const unknowns = members.length + reactions.length;
+  if (unknowns < 2 * joints.length) return 'unstable';
+  if (unknowns > 2 * joints.length) return 'indeterminate';
+  const a = Array.from({ length: unknowns }, () => new Array<number>(unknowns).fill(0));
+  members.forEach((m, k) => {
+    const [p, q] = [joints[m.a - 1]!, joints[m.b - 1]!];
+    const l = Math.hypot(q.x - p.x, q.y - p.y);
+    if (l < 1e-9) return;
+    const [c, s] = [(q.x - p.x) / l, (q.y - p.y) / l];
+    // Tension pulls each end toward the other.
+    a[2 * (m.a - 1)]![k] = c;
+    a[2 * (m.a - 1) + 1]![k] = s;
+    a[2 * (m.b - 1)]![k] = -c;
+    a[2 * (m.b - 1) + 1]![k] = -s;
+  });
+  reactions.forEach(([joint, cx, cy], n) => {
+    a[2 * joint!]![members.length + n] = cx!;
+    a[2 * joint! + 1]![members.length + n] = cy!;
+  });
+  // The unit load acts downward at the load joint; equilibrium moves it to the right side as +1 upward.
+  const rhs = new Array<number>(unknowns).fill(0);
+  rhs[2 * (load - 1) + 1] = 1;
+  try {
+    return solveLinear(a, rhs).slice(0, members.length);
+  } catch (error) {
+    if (error instanceof CivilError) return 'unstable';
+    throw error;
+  }
+}
+
 /** The force in one member (tension positive) for a unit downward load at each of the deck joints. */
 export function trussInfluence(input: TrussInput, member: number, deck: readonly number[]): number[] {
   need(input.joints.length >= 3 && input.members.length >= 3, 'structures.errors.truss');
   need(Number.isInteger(member) && member >= 1 && member <= input.members.length, 'structures.errors.member');
-  const joints = (load: number): Joint[] =>
-    input.joints.map((j, i) => ({
-      id: String(i + 1),
-      label: String(i + 1),
-      x: j.x,
-      y: j.y,
-      ...(j.support === 1
-        ? { support: 'pin' as const }
-        : j.support === 2
-          ? { support: 'roller' as const, angle: 90 }
-          : {}),
-      ...(i + 1 === load ? { fy: -1 } : {}),
-    }));
-  const members: Member[] = input.members.map((m, i) => {
+  for (const m of input.members)
     need(
       m.a >= 1 && m.a <= input.joints.length && m.b >= 1 && m.b <= input.joints.length,
       'structures.errors.memberJoints',
     );
-    return { id: String(i + 1), a: String(m.a), b: String(m.b) };
-  });
   return deck.map((load) => {
     need(load >= 1 && load <= input.joints.length, 'structures.errors.memberJoints');
-    const r = solveTruss({ joints: joints(load), members, forceUnit: 'kN', lengthUnit: 'm' });
-    if (r.status !== 'determinate')
-      throw new CivilError('structures.errors.status', { status: `~structures.status.${r.status}` });
-    return r.forces.get(String(member)) ?? 0;
+    const forces = jointForces(input.joints, input.members, load);
+    if (!Array.isArray(forces))
+      throw new CivilError('structures.errors.status', { status: `~structures.status.${forces}` });
+    return Math.abs(forces[member - 1]!) < 1e-12 ? 0 : forces[member - 1]!;
   });
 }
 
