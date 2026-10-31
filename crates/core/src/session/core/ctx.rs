@@ -50,6 +50,12 @@ pub(crate) struct CoreCtx {
     pub(crate) serial: AtomicU64,
     /// How long versions are kept (spec 13.3), from the settings the shell passes in.
     pub(crate) retention: RwLock<Retention>,
+    /// Until when opens wait for locks a previous run of this profile still holds: the start plus
+    /// `Timings::lock_patience`, one budget for the whole launch (spec 20.3).
+    pub(crate) lock_deadline: std::time::Instant,
+    /// The keys whose tree journal this core has opened. The journal keeps each one open, with the lock of its
+    /// newest generation, until the core stops, so a later open of that notebook never waits for that lock.
+    pub(crate) tree_journals: Mutex<std::collections::HashSet<crate::store::layout::NotebookKey>>,
 }
 
 impl CoreCtx {

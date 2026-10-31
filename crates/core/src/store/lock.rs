@@ -7,6 +7,7 @@
 
 use std::fmt;
 use std::path::Path;
+use std::time::{Duration, Instant};
 
 use crate::error::{FsError, FsErrorKind};
 use crate::store::fs::{Fs, FsLock};
@@ -26,38 +27,76 @@ impl fmt::Debug for NotebookLock {
     }
 }
 
-/// Takes the locks of a notebook. `Ok(None)` means another process has it open, so it opens read-only with
-/// "This notebook is open in another OpenNote window."
+/// Why a notebook's locks couldn't be taken.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Held {
+    /// The device lock was held: a previous run of this profile is still ending (spec 20.3).
+    Ending,
+    /// Only the network lock was held: another computer's app has the notebook open.
+    Elsewhere,
+}
+
+/// Takes the locks of a notebook, trying a held one again until `deadline` (spec 20.3). A deadline that has
+/// passed means one try.
+///
+/// The device lock lives in this profile's data, and one process runs per profile, so its holder is a previous
+/// run that crashed or was killed and hasn't ended yet. The network lock is tried once, because its holder is
+/// normally another computer's app, unless the device lock was held too: then the ending run holds both, and the
+/// network lock waits until the same deadline.
 pub fn lock_notebook(
     fs: &dyn Fs,
     data: &DataLayout,
     key: &NotebookKey,
     notebook: &NotebookLayout,
-    remote: bool,
-) -> Result<Option<NotebookLock>, FsError> {
+    (remote, deadline): (bool, Instant),
+) -> Result<Result<NotebookLock, Held>, FsError> {
     let path = data.lock_file(key);
     if let Some(parent) = path.parent() {
         ensure_dir_all(fs, parent)?;
     }
-    let Some(device) = fs.try_lock(&path)? else {
-        return Ok(None);
+    let (device, contended) = match fs.try_lock(&path)? {
+        Some(lock) => (lock, false),
+        None => match lock_until(fs, &path, deadline)? {
+            Some(lock) => (lock, true),
+            None => return Ok(Err(Held::Ending)),
+        },
     };
     let network = if remote {
         let lock = notebook.network_lock();
         if let Some(parent) = lock.parent() {
             ensure_dir_all(fs, parent)?;
         }
-        match fs.try_lock(&lock)? {
+        let until = if contended { deadline } else { Instant::now() };
+        match lock_until(fs, &lock, until)? {
             Some(held) => Some(held),
-            None => return Ok(None),
+            None if contended => return Ok(Err(Held::Ending)),
+            None => return Ok(Err(Held::Elsewhere)),
         }
     } else {
         None
     };
-    Ok(Some(NotebookLock {
+    Ok(Ok(NotebookLock {
         _device: device,
         _network: network,
     }))
+}
+
+/// How often a held lock is tried again.
+const LOCK_RETRY: Duration = Duration::from_millis(50);
+
+/// Takes a lock, trying again every 50 ms while another process holds it, until `deadline`. A deadline that has
+/// passed means one try.
+pub(crate) fn lock_until(fs: &dyn Fs, path: &Path, deadline: Instant) -> Result<Option<Box<dyn FsLock>>, FsError> {
+    loop {
+        if let Some(lock) = fs.try_lock(path)? {
+            return Ok(Some(lock));
+        }
+        let left = deadline.saturating_duration_since(Instant::now());
+        if left.is_zero() {
+            return Ok(None);
+        }
+        std::thread::sleep(LOCK_RETRY.min(left));
+    }
 }
 
 /// Creates a folder and any missing parents, each durably. An existing folder is fine.
@@ -105,20 +144,63 @@ mod tests {
         )
     }
 
+    /// Takes the locks of `notebook` in `data`, waiting up to `wait` for a held one.
+    fn take(
+        fs: &MemFs,
+        (data, key, notebook): (&DataLayout, &NotebookKey, &NotebookLayout),
+        remote: bool,
+        wait: Duration,
+    ) -> Result<NotebookLock, Held> {
+        lock_notebook(
+            fs,
+            data,
+            key,
+            notebook,
+            (remote, Instant::now().checked_add(wait).unwrap()),
+        )
+        .unwrap()
+    }
+
     #[test]
     fn a_second_lock_of_the_same_notebook_fails_until_the_first_is_dropped() {
         let (fs, data, key, notebook) = setup();
-        let first = lock_notebook(&fs, &data, &key, &notebook, false).unwrap();
-        assert!(first.is_some());
-        assert!(lock_notebook(&fs, &data, &key, &notebook, false).unwrap().is_none());
+        let at = (&data, &key, &notebook);
+        let first = take(&fs, at, false, Duration::ZERO);
+        assert!(first.is_ok());
+        assert_eq!(take(&fs, at, false, Duration::ZERO).err(), Some(Held::Ending));
         drop(first);
-        assert!(lock_notebook(&fs, &data, &key, &notebook, false).unwrap().is_some());
+        assert!(take(&fs, at, false, Duration::ZERO).is_ok());
+    }
+
+    #[test]
+    fn a_held_lock_is_tried_again_until_the_ending_run_lets_go() {
+        let (fs, data, key, notebook) = setup();
+        let at = (&data, &key, &notebook);
+        let ending = take(&fs, at, false, Duration::ZERO).unwrap();
+        std::thread::scope(|scope| {
+            scope.spawn(move || {
+                std::thread::sleep(Duration::from_millis(150));
+                drop(ending);
+            });
+            assert!(take(&fs, at, false, Duration::from_secs(10)).is_ok());
+        });
+    }
+
+    #[test]
+    fn a_lock_held_past_the_deadline_is_given_up() {
+        let (fs, data, key, notebook) = setup();
+        let at = (&data, &key, &notebook);
+        let _held = take(&fs, at, false, Duration::ZERO).unwrap();
+        let started = Instant::now();
+        let patience = Duration::from_millis(150);
+        assert_eq!(take(&fs, at, false, patience).err(), Some(Held::Ending));
+        assert!(started.elapsed() >= patience);
     }
 
     #[test]
     fn local_notebooks_never_create_the_network_lock() {
         let (fs, data, key, notebook) = setup();
-        let _lock = lock_notebook(&fs, &data, &key, &notebook, false).unwrap().unwrap();
+        let _lock = take(&fs, (&data, &key, &notebook), false, Duration::ZERO).unwrap();
         assert!(!fs.exists(&notebook.network_lock()));
         assert!(fs.exists(&data.lock_file(&key)));
     }
@@ -126,11 +208,44 @@ mod tests {
     #[test]
     fn network_notebooks_also_lock_inside_the_notebook() {
         let (fs, data, key, notebook) = setup();
-        let _lock = lock_notebook(&fs, &data, &key, &notebook, true).unwrap().unwrap();
+        let _lock = take(&fs, (&data, &key, &notebook), true, Duration::ZERO).unwrap();
         assert!(fs.exists(&notebook.network_lock()));
         // Another computer has its own data folder, but the lock in the notebook still stops it.
         let other = DataLayout::new("/other-data");
-        assert!(lock_notebook(&fs, &other, &key, &notebook, true).unwrap().is_none());
+        let theirs = take(&fs, (&other, &key, &notebook), true, Duration::ZERO);
+        assert_eq!(theirs.err(), Some(Held::Elsewhere));
+    }
+
+    #[test]
+    fn a_network_lock_another_computer_holds_is_tried_once() {
+        let (fs, data, key, notebook) = setup();
+        let other = DataLayout::new("/other-data");
+        let _theirs = take(&fs, (&other, &key, &notebook), true, Duration::ZERO).unwrap();
+        let started = Instant::now();
+        let mine = take(&fs, (&data, &key, &notebook), true, Duration::from_secs(10));
+        assert_eq!(mine.err(), Some(Held::Elsewhere));
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn a_network_lock_waits_too_while_the_device_lock_was_held() {
+        let (fs, data, key, notebook) = setup();
+        let at = (&data, &key, &notebook);
+        let ending = take(&fs, at, true, Duration::ZERO).unwrap();
+        // The ending run lets go of the network lock after the device lock.
+        let network = fs.try_lock(&notebook.network_lock()).unwrap();
+        assert!(network.is_none(), "the ending run holds the network lock");
+        let ending_network = ending._network;
+        let ending_device = ending._device;
+        std::thread::scope(|scope| {
+            scope.spawn(move || {
+                std::thread::sleep(Duration::from_millis(100));
+                drop(ending_device);
+                std::thread::sleep(Duration::from_millis(150));
+                drop(ending_network);
+            });
+            assert!(take(&fs, at, true, Duration::from_secs(10)).is_ok());
+        });
     }
 
     #[test]

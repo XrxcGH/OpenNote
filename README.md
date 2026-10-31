@@ -24,7 +24,7 @@ Agents compiled and unit-tested beta 6 and started the real app. Nobody has used
 
 ## What the app does today
 
-OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash. Each area below has a help page.
+OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash, and a restart waits briefly for the last run to close so the ink in the journal shows. Each area below has a help page.
 
 | Area                                                                                     | What you can do                                                                                                |
 | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
