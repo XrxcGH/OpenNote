@@ -676,6 +676,22 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
 
+## Modern physics and astronomy tools
+
+(Beta 6. On in Beta and off in Stable, with the kits.modphys flag. Each tool has a palette command. Help: [Modern physics and astronomy tools](help/modern-physics-and-astronomy.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Quantum wells, barriers, and wave packets | Bound states of preset or typed potentials by finite differences beside the exact levels, with expectation values; transmission through steps, barriers, wells, and layered structures; a wave packet moved in time; quantum dots; and the Gamow factor. | Built, untested by hand |
+| Angular momentum, spin, and qubits | Exact Clebsch-Gordan coefficients, 3j symbols, and coupling tables; spin, Pauli, and Dirac matrices with commutators and eigenvalues; Stern-Gerlach analyzers on the Bloch sphere; Larmor precession; and circuits of up to five qubits with the state after each gate. | Built, untested by hand |
+| Atoms, spectra, and X-rays | Hydrogen-like lines with the reduced mass and air wavelengths, radial and angular wavefunctions, fine structure, term symbols with Hund's ground level and Landé g, Zeeman patterns, electric-dipole selection rules, and Moseley's law with a Bragg angle. | Built, untested by hand |
+| Molecular spectra, mass spectra, and polymers | Rotational, vibrational, and rovibrational spectra of diatomics; exact masses, isotope patterns, and unsaturation from a formula; first-order NMR multiplets and integration; and polymer molar masses, chain sizes, and Flory-Huggins mixing. | Built, untested by hand |
+| Solids and semiconductor devices | The free-electron gas, Kronig-Penney bands, tight-binding and phonon dispersion, carriers and the Fermi level with incomplete ionization, transport and the Hall effect, p-n junctions, MOS capacitors, and solar cells. | Built, untested by hand |
+| Plasmas and space physics | Debye length, plasma and gyro frequencies, collisions, Alfvén and sound speeds, sheaths, a planet's dipole field and drift periods, the magnetopause, and the fusion triple product. | Built, untested by hand |
+| Stars, light, and exoplanets | Distances and magnitudes, blackbody light, HR diagrams with mass and lifetime estimates, the Saha equation, compact objects, the Jeans mass, and transit, radial-velocity, equilibrium-temperature, and habitable-zone numbers for exoplanets. | Built, untested by hand |
+| Sky positions and sun paths | Julian Date and sidereal time, the Sun and Moon in the sky, coordinate conversions with precession, rise and set times with twilight, sun-path diagrams, and shadow and overhang sizes. | Built, untested by hand |
+| Cosmology, galaxies, and telescopes | Distances and ages in a Friedmann universe, the Hubble law, galaxy rotation curves, telescope and sensor numbers, the CCD equation, and photons from a magnitude. | Built, untested by hand |
+
 ## Molecular biology, genetics, and evolution
 
 (Beta 6. Behind the `kits.molbio` flag, on in Beta and off in Stable. Help: [Biology tools](help/biology-tools.md).)

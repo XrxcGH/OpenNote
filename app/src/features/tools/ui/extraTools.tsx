@@ -103,6 +103,9 @@ const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ def
 // The engineering mathematics kit loads the first time its window opens.
 const MathKit = lazy(() => import('../mathkit/ui/MathKitTool'));
 
+// The modern physics and astronomy tools load the first time their window opens.
+const ModPhysWindow = lazy(() => import('../modphys/Window'));
+
 /** The subject kits' windows (docs/help/subject-tool-kits.md), each loaded the first time it opens. */
 const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> = {
   kitelectrical: KitElectrical,
@@ -122,6 +125,7 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-statmodels': StatModelsKit,
   kitmolbio: KitMolBio,
   lifesys: LifeSysTool,
+  'kit-modphys': ModPhysWindow,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {

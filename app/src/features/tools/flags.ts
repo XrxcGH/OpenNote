@@ -104,6 +104,11 @@ export type { MolBioFlagId } from './molbio/flags';
 // The civil engineering kit keeps its flag beside its tools; start-up reads it through this public module.
 export { CIVIL_FLAGS } from './civil/flags';
 export type { CivilFlagId } from './civil/flags';
+// The modern physics and astronomy tools' flag and their list, which the palette registers at start-up.
+export { MODPHYS_FLAGS } from './modphys/flags';
+export type { ModPhysFlagId } from './modphys/flags';
+export { MODPHYS_TOOLS } from './modphys/meta';
+
 /**
  * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
  * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.

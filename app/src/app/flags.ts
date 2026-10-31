@@ -36,6 +36,8 @@ import { MOLBIO_FLAGS } from '../features/tools/flags';
 import type { MolBioFlagId } from '../features/tools/flags';
 import { CIVIL_FLAGS } from '../features/tools/flags';
 import type { CivilFlagId } from '../features/tools/flags';
+import { MODPHYS_FLAGS } from '../features/tools/flags';
+import type { ModPhysFlagId } from '../features/tools/flags';
 import { TUTOR_FLAGS } from '../features/tutor/flags';
 import type { TutorFlagId } from '../features/tutor/flags';
 import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
@@ -95,6 +97,7 @@ export type FlagId =
   | MolBioFlagId
   | LifeSysFlagId
   | CivilFlagId
+  | ModPhysFlagId
   | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
@@ -391,6 +394,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...MOLBIO_FLAGS,
   ...LIFESYS_FLAGS,
   ...CIVIL_FLAGS,
+  ...MODPHYS_FLAGS,
   ...TUTOR_FLAGS,
   ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,

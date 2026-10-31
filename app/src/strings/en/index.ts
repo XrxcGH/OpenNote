@@ -58,6 +58,7 @@ import { tableMath } from './tableMath';
 import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
+import { kitModPhys } from './kitModPhys';
 import { chem } from './chem';
 import { kitEcon } from './kitEcon';
 import { kitChemMat } from './kitChemMat';
@@ -145,6 +146,7 @@ export const en = {
   solvers,
   graph3d,
   engineering,
+  kitModPhys,
   chem,
   kitChemMat,
   docStructure,

@@ -36,6 +36,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Psychology and behavior tools](psychology-kit.md): signal detection, psychophysics, learning and choice models, response times, observation, agreement, scales, and qualitative coding.
 - [Biology tools](biology-tools.md): sequences, cloning, proteins, alignment, crosses, population genetics, pedigrees, and phylogenetic trees.
 - [Life science tools](life-science-tools.md): physiology, neurons, pharmacology, curve fits, bench math, populations, demography, models, and biodiversity.
+- [Modern physics and astronomy tools](modern-physics-and-astronomy.md): quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology.
 
 ## Draw and design pages
 

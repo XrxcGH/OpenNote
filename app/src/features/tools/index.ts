@@ -35,6 +35,7 @@ export { CIVIL_ICONS, CIVIL_TOOL_IDS } from './civil/meta';
 export { openCivilTool, reopenCivilCalc } from './civil/open';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
+export { openModPhys } from './modphys/open';
 export { openDesignKit } from './design/open';
 // The tool kits (features/tools/kits/README.md). Registering a kit and opening a tool are light enough for start-up;
 // the numerics, properties, units, and interface load with loadKits, inside a kit's own lazy window.
