@@ -365,6 +365,11 @@ impl Ext {
                 .summarize(text(params, "text")?, offline, safe_mode)
                 .map(|summary| json!({ "summary": summary }))
                 .map_err(|error| Ext::cloud_error(&error)),
+            "cloud.tutor" => self
+                .cloud
+                .tutor(text(params, "system")?, text(params, "prompt")?, offline, safe_mode)
+                .map(|reply| json!({ "reply": reply }))
+                .map_err(|error| Ext::cloud_error(&error)),
             other => Err(invalid(&format!("There is no method called {other}."), "method")),
         }
     }

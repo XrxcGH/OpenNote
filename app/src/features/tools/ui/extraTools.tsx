@@ -1,9 +1,16 @@
 // The tool windows added after the first three (Phase 10 and the study tools): each body is another feature's panel
 // or a small tool of this one. They share the window, the storage, and the pop-out of the first three.
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from 'react';
+
+// The fluid and heat transfer kit loads with its engineering feature the first time its window opens.
+const FluidHeatKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadFluidHeatKit())
+    .then((m) => ({ default: m.FluidHeatKit })),
+);
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
-import { DeckPanel } from '../../study';
+import { DeckPanel, loadExamPanel } from '../../study';
 import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
 import { ConverterTool } from './ConverterTool';
@@ -16,10 +23,54 @@ import { StructureTool } from './StructureTool';
 import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
+const EconTool = lazy(() => import('../econ/EconTool').then((m) => ({ default: m.EconTool })));
+// The statistics kit loads the first time its window opens.
+const StatInferKit = lazy(() => import('../statinfer').then((kit) => ({ default: kit.StatInferTool })));
+
 // The solvers are a large window of their own, so they load the first time it opens.
 const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
+
+// The molecular biology kit loads on first open.
+const KitMolBio = lazy(() => import('../molbio/KitMolBioTool').then((loaded) => ({ default: loaded.KitMolBioTool })));
+// The life science tools load on first open, each tool's forms and engines only when its tab opens.
+const LifeSysTool = lazy(() => import('../lifesys/ui/LifeSysTool').then((m) => ({ default: m.LifeSysTool })));
+
+// The civil and chemical engineering kit loads its window, then each tool's calculations, on first use.
+const CivilTool = lazy(() => import('../civil/ui/CivilTool').then((module) => ({ default: module.CivilTool })));
+
+// The earth sciences kit loads the first time its window opens.
+const EarthKit = lazy(() => import('../earth/ui/EarthKit').then((kit) => ({ default: kit.EarthKit })));
+// Practice exams load with their window, on first open.
+const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
+
+// The circuits and energy kit loads on first open.
+const KitElectrical = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadElectricalKit())
+    .then((loaded) => ({ default: loaded.KitElectricalTool })),
+);
+
+// The aerospace kit loads on first open.
+const KitAero = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadAeroKit())
+    .then((loaded) => ({ default: loaded.KitAeroTool })),
+);
+
+// The thermodynamics kit loads with its engines' forms on first open, so the tool windows' own code stays small.
+const ThermoKit = lazy(() => import('../../engineering').then((engineering) => engineering.loadThermoKit()));
+
+// The mechanisms and dynamics kit loads on first open.
+const KitMechDyn = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadMechDynKit())
+    .then((loaded) => ({ default: loaded.MechDynKit })),
+);
+
+// The physics tools are a kit window whose tools each load the first time their tab opens.
+const PhysicsKit = lazy(() => import('../physics/ui/PhysicsKit').then((kit) => ({ default: kit.PhysicsKit })));
 
 // The math labs load with the math feature, on first open, so the tool windows' own code stays small.
 const MathLab = {
@@ -28,7 +79,81 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The statistical models kit loads the first time its window opens.
+const StatModelsKit = lazy(() => import('../statmodels/ui/StatModelsKit').then((m) => ({ default: m.StatModelsKit })));
+// The psychology and behavior kit loads the first time its window opens.
+const MindKit = lazy(() => import('../mind').then((mind) => mind.loadMindKit()).then((m) => ({ default: m.MindKit })));
+// The signals and sound kit loads its tools on first open.
+const SignalsKit = lazy(() => import('../signals/kit').then((kit) => ({ default: kit.SignalsKit })));
+// The reasoning kit loads on first open, and each of its tools loads when its tab opens.
+const KitReasoning = lazy(() => import('../reasoning').then((kit) => ({ default: kit.KitReasoningWindow })));
+
+// The music, script, camera, and studio tools load on first open.
+const KitMusic = lazy(() => import('../music/KitMusicTool'));
+
+// The history, places, languages, and texts kit loads its window on first open, and each tool when its tab opens.
+const HumanitiesKit = lazy(() => import('../humanities/ui/KitWindow').then((m) => ({ default: m.HumanitiesKit })));
+// The solid mechanics kit loads with its engineering feature the first time its window opens.
+const SolidsKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadSolidsKit())
+    .then((m) => ({ default: m.SolidsKit })),
+);
+// The Chemistry and materials window loads the first time it opens: it carries the engines and the species data.
+const ChemMatKit = lazy(() => import('../chemmat/ui/KitWindow').then((loaded) => ({ default: loaded.KitWindow })));
+
+// The dynamics and control kit loads with its engineering feature the first time its window opens.
+const ControlKit = lazy(() =>
+  import('../../engineering')
+    .then((engineering) => engineering.loadControlKit())
+    .then((m) => ({ default: m.ControlKit })),
+);
+
+// The design kit loads the first time its window opens.
+const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ default: m.DesignKit })));
+
+// The engineering mathematics kit loads the first time its window opens.
+const MathKit = lazy(() => import('../mathkit/ui/MathKitTool'));
+
+// The modern physics and astronomy tools load the first time their window opens.
+const ModPhysWindow = lazy(() => import('../modphys/Window'));
+
+/** The subject kits' windows (docs/help/subject-tool-kits.md), each loaded the first time it opens. */
+const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> = {
+  kitelectrical: KitElectrical,
+  kitaero: KitAero,
+  'kit-fluidheat': FluidHeatKit,
+  'kit-solids': SolidsKit,
+  'kit-chemmat': ChemMatKit,
+  'kit-thermo': ThermoKit,
+  'kit-control': ControlKit,
+  'kit-design': DesignKit,
+  'kit-math': MathKit,
+  'kit-mechdyn': KitMechDyn,
+  'kit-physics': PhysicsKit,
+  econ: EconTool,
+  'kit-statinfer': StatInferKit,
+  'kit-mind': MindKit,
+  'kit-statmodels': StatModelsKit,
+  kitmolbio: KitMolBio,
+  lifesys: LifeSysTool,
+  'kit-modphys': ModPhysWindow,
+  'kit-civil': CivilTool,
+  'kit-earth': EarthKit,
+  'kit-signals': SignalsKit,
+  'kit-reasoning': KitReasoning,
+  'kit-humanities': HumanitiesKit,
+  kitmusic: KitMusic,
+};
+
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
+  const Kit = KIT_WINDOWS[tool];
+  if (Kit)
+    return (
+      <Suspense fallback={null}>
+        <Kit />
+      </Suspense>
+    );
   if (tool === 'vectors' || tool === 'solids' || tool === 'projectile') {
     const Body = MathLab[tool];
     return (
@@ -38,6 +163,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'flashcards') return <DeckPanel />;
+  if (tool === 'exam')
+    return (
+      <Suspense fallback={null}>
+        <ExamPanel />
+      </Suspense>
+    );
   if (tool === 'converter') return <ConverterTool />;
   if (tool === 'reference') return <ReferenceTool />;
   if (tool === 'citations') return <CitationsPanel />;

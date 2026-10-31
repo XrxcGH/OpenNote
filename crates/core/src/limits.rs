@@ -86,6 +86,10 @@ pub struct Timings {
     pub group_commit: Duration,
     /// Waits between retries of a busy file.
     pub busy_retries: Vec<Duration>,
+    /// How long, from the core's start, opens wait for locks that a previous run of this profile still holds
+    /// while it ends: the notebook lock, and its journal generations' locks. It is one budget for the launch,
+    /// shared by every notebook (spec 20.3).
+    pub lock_patience: Duration,
     /// Waits between autosave retries after a failed save. The last one repeats.
     pub save_backoff: Vec<Duration>,
     /// How often a blocked save tries again on its own.
@@ -134,6 +138,7 @@ impl Default for Timings {
             tree_rotate_bytes: 64 * KIB,
             group_commit: ms(200),
             busy_retries: [5, 10, 20, 40, 80, 160, 320, 640].map(ms).to_vec(),
+            lock_patience: secs(3),
             save_backoff: [1, 2, 5, 10, 30].map(secs).to_vec(),
             blocked_retry: secs(5 * 60),
             disk_full_check: secs(30),

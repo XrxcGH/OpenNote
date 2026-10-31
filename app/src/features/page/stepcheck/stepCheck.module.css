@@ -1,0 +1,145 @@
+/* Check my work: marks beside the lines, and the summary card. Colors come from the theme tokens, so light, dark,
+   and forced colors all follow. */
+
+.layer {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 0;
+  block-size: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: var(--layer-page-chrome);
+}
+
+.mark {
+  position: absolute;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.mark[data-step-mark='ok'] {
+  border-color: var(--color-status-success);
+  color: var(--color-status-success);
+}
+
+.mark[data-step-mark='broken'] {
+  border-color: var(--color-status-danger);
+  background: var(--color-status-danger);
+  color: var(--color-surface-page);
+}
+
+.mark[data-step-mark='unchecked'] {
+  border-color: var(--color-status-warning);
+  color: var(--color-text-secondary);
+}
+
+.mark[data-step-mark='given'] {
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-muted);
+}
+
+.mark:focus-visible,
+.action:focus-visible,
+.item:focus-visible {
+  outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--size-focus-ring-offset);
+}
+
+.panel {
+  position: fixed;
+  inset-inline-end: 16px;
+  inset-block-end: 16px;
+  z-index: var(--layer-overlay);
+  inline-size: min(360px, calc(100vw - 32px));
+  max-block-size: min(60vh, 480px);
+  overflow: auto;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  box-shadow: var(--elevation-2);
+}
+
+.title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--type-body-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.summary,
+.foot {
+  margin: 0 0 var(--space-2);
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+}
+
+.foot {
+  color: var(--color-text-secondary);
+}
+
+.list {
+  margin: 0 0 var(--space-2);
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.item {
+  margin-block-end: var(--space-2);
+  padding: var(--space-2);
+  border-inline-start: 3px solid var(--color-status-warning);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+  overflow-wrap: anywhere;
+}
+
+.item[data-verdict='broken'] {
+  border-inline-start-color: var(--color-status-danger);
+}
+
+.fix {
+  display: block;
+  margin-block-start: var(--space-1);
+  color: var(--color-text-primary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.action {
+  min-block-size: var(--size-target-min);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-page);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+@media (forced-colors: active) {
+  .mark,
+  .item {
+    forced-color-adjust: auto;
+    border-color: CanvasText;
+  }
+}

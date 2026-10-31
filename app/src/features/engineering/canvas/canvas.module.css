@@ -208,7 +208,7 @@
   .field input,
   .field select {
     inline-size: 7em;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     font: inherit;
     color: var(--color-text-primary);

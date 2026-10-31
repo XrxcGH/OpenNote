@@ -25,6 +25,16 @@ use opennote_core::testing::sample::test_clock;
 use opennote_core::{CoreError, Limits, Timings};
 use serde_json::json;
 
+/// A passphrase made fresh for each run, so no passphrase is written into the tests.
+fn pw() -> &'static str {
+    static PW: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    PW.get_or_init(|| {
+        let mut raw = [0u8; 12];
+        getrandom::fill(&mut raw).expect("random");
+        raw.iter().map(|b| format!("{b:02x}")).collect()
+    })
+}
+
 const SECRET: &str = "Launch codes 7741";
 const LATER: &str = "Second secret 9093";
 
@@ -211,7 +221,7 @@ fn check_locked(f: &Fixture) {
 #[test]
 fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_password() {
     let f = fixture();
-    f.core.protect_section(&f.root, f.section, "correct horse").unwrap();
+    f.core.protect_section(&f.root, f.section, pw()).unwrap();
     assert_eq!(
         f.core.section_protection(&f.root, f.section).unwrap(),
         Protection::Unlocked
@@ -224,7 +234,7 @@ fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_pass
         .unlock_section(&f.root, f.section, Secret::Password("battery staple"));
     assert!(matches!(wrong, Err(ProtectError::Wrong)));
     f.core
-        .unlock_section(&f.root, f.section, Secret::Password("correct horse"))
+        .unlock_section(&f.root, f.section, Secret::Password(pw()))
         .unwrap();
     let notebook = f.core.find_open(&f.root).unwrap();
     let handle = notebook.open_page(f.page, f.client.clone()).unwrap();
@@ -239,4 +249,72 @@ fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_pass
     f.core.unprotect_section(&f.root, f.section).unwrap();
     assert_eq!(f.core.section_protection(&f.root, f.section).unwrap(), Protection::None);
     assert!(!holding(&f.root, SECRET).is_empty(), "plain again");
+}
+
+/// The folder of the one protected section under `root`.
+fn sealed_section_dir(root: &Path) -> std::path::PathBuf {
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        if dir.join(".sealed").is_dir() {
+            return dir;
+        }
+        for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+            if entry.path().is_dir() {
+                stack.push(entry.path());
+            }
+        }
+    }
+    panic!("no protected section under {}", root.display());
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap().flatten() {
+        std::fs::copy(entry.path(), to.join(entry.file_name())).unwrap();
+    }
+}
+
+#[test]
+fn a_version_sync_kept_of_a_protected_section_can_be_switched_to_and_removed() {
+    let f = fixture();
+    f.core.protect_section(&f.root, f.section, pw()).unwrap();
+    assert!(f.core.lock_section(&f.root, f.section).unwrap());
+    // What sync does when two devices changed the section: the other version's sealed files go beside `.sealed`.
+    let dir = sealed_section_dir(&f.root);
+    copy_dir(&dir.join(".sealed"), &dir.join(".sealed-conflict-aa11"));
+    f.core
+        .unlock_section(&f.root, f.section, Secret::Password(pw()))
+        .unwrap();
+    edit_while_unlocked(&f);
+    assert_eq!(
+        f.core.sealed_conflicts(&f.root, f.section).unwrap(),
+        vec![".sealed-conflict-aa11".to_owned()],
+        "only the kept version's folder is listed"
+    );
+    assert!(f.core.switch_sealed_conflict(&f.root, f.section, "../escape").is_err());
+
+    // Switching locks the section, and the kept version, without the later edit, opens with the same password.
+    f.core
+        .switch_sealed_conflict(&f.root, f.section, ".sealed-conflict-aa11")
+        .unwrap();
+    assert_eq!(
+        f.core.section_protection(&f.root, f.section).unwrap(),
+        Protection::Locked
+    );
+    let kept = f.core.sealed_conflicts(&f.root, f.section).unwrap();
+    assert_eq!(kept.len(), 1, "the version that was current is kept in turn: {kept:?}");
+    assert_ne!(kept[0], ".sealed-conflict-aa11");
+    f.core
+        .unlock_section(&f.root, f.section, Secret::Password(pw()))
+        .unwrap();
+    let notebook = f.core.find_open(&f.root).unwrap();
+    let handle = notebook.open_page(f.page, f.client.clone()).unwrap();
+    let json = real_core::page_json(&handle).to_string();
+    assert!(json.contains(SECRET) && !json.contains(LATER), "{json}");
+    handle.close(&f.client).unwrap();
+    drop(notebook);
+
+    f.core.discard_sealed_conflict(&f.root, f.section, &kept[0]).unwrap();
+    assert!(f.core.sealed_conflicts(&f.root, f.section).unwrap().is_empty());
+    assert!(!dir.join(&kept[0]).exists());
 }

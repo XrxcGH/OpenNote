@@ -37,7 +37,7 @@ function channelsOf(): Record<string, number> {
 
 /**
  * Draws one drawing with the pen at its own pace, centered at `at` (window pixels), holds still, and lifts; or lifts at
- * once when `hold` is false.
+ * once when `hold` is false, with every sample sent on its own timer.
  */
 async function drawHeld(
   client: CDPSession,
@@ -61,6 +61,19 @@ async function drawHeld(
       pointerType: 'pen',
       force: buttons ? 0.5 : 0,
     });
+  const last = d.points[d.points.length - 1];
+  if (!hold && d.points.length <= 12) {
+    // A letter's few samples each go on their own timer. A slow runner then cannot push later samples back.
+    // A long stroke goes in turn instead, so the browser keeps every sample.
+    const at60 = (time: number, send: () => Promise<unknown>) =>
+      new Promise<void>((resolve) => setTimeout(resolve, time)).then(send);
+    await Promise.all([
+      at60(0, () => send('mousePressed', d.points[0], 1)),
+      ...d.points.slice(1).map((p) => at60(p.time, () => send('mouseMoved', p, 1))),
+      at60(last.time, () => send('mouseReleased', last, 0)),
+    ]);
+    return { box: d.points.map(toWindow) };
+  }
   const start = Date.now();
   await send('mousePressed', d.points[0], 1);
   for (const p of d.points.slice(1)) {
@@ -69,7 +82,7 @@ async function drawHeld(
     await send('mouseMoved', p, 1);
   }
   if (hold) await page.waitForTimeout(HOLD_MS + 300);
-  await send('mouseReleased', d.points[d.points.length - 1], 0);
+  await send('mouseReleased', last, 0);
   return { box: d.points.map(toWindow) };
 }
 
@@ -146,15 +159,15 @@ test.describe('with ink-to-shape on', () => {
     await choose(page, 'Pen, Ink, 0.5 mm');
     const overlay = (await page.locator('[data-ink-overlay]').boundingBox())!;
     const at = (dx: number, dy: number) => ({ x: overlay.x + overlay.width / 2 + dx, y: overlay.y + 200 + dy });
-    const exact = async () => {
-      const channels = await page.evaluate(channelsOf);
-      return (await page.evaluate(storedStrokes)).map((s) => (channels[s.id] & CHANNEL_TIME) === 0);
-    };
+    // Strokes come back in no set order (their ids are random), so the new one is found by its id.
     const add = async (d: { points: { x: number; y: number; time: number }[] }, where: { x: number; y: number }) => {
-      const count = (await page.evaluate(storedStrokes)).length;
+      const before = new Set((await page.evaluate(storedStrokes)).map((s) => s.id));
       await drawHeld(client, page, d, where, 1, false);
-      await expect.poll(async () => (await page.evaluate(storedStrokes)).length, { timeout: 30_000 }).toBe(count + 1);
-      return (await exact())[count];
+      await expect
+        .poll(async () => (await page.evaluate(storedStrokes)).length, { timeout: 30_000 })
+        .toBe(before.size + 1);
+      const added = (await page.evaluate(storedStrokes)).find((s) => !before.has(s.id))!;
+      return ((await page.evaluate(channelsOf))[added.id] & CHANNEL_TIME) === 0;
     };
     // An o 26 units tall and an l 36 tall, written quickly: small and quick, so ink.
     const o = written('letter o', 26, 3);

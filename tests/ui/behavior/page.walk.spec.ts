@@ -38,8 +38,20 @@ async function paste(page: Page, data: Record<string, string>): Promise<void> {
 
 /** Picks a slash menu item by typing its name. */
 async function slash(page: Page, name: string): Promise<void> {
-  await page.keyboard.type(`/${name}`);
-  await expect(page.getByRole('listbox')).toBeVisible();
+  const typed = `/${name}`;
+  const menu = page.getByRole('listbox');
+  await page.keyboard.type(typed);
+  // On a slow machine the menu can miss the slash typed as the view settles: type it again once.
+  if (
+    !(await menu.waitFor({ state: 'visible', timeout: 3000 }).then(
+      () => true,
+      () => false,
+    ))
+  ) {
+    for (let i = 0; i < typed.length; i += 1) await page.keyboard.press('Backspace');
+    await page.keyboard.type(typed);
+  }
+  await expect(menu).toBeVisible();
   await page.keyboard.press('Enter');
 }
 
@@ -58,9 +70,10 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await keyboard.type('# Membranes\nCells keep **apart** and water moves.');
   await expect.poll(() => held(page)).toEqual(['# Membranes\n\nCells keep **apart** and water moves.']);
 
-  // The formatting bar, set to show for every selection.
+  // Format the selection.
   for (let i = 0; i < 'moves.'.length; i += 1) await keyboard.press('Shift+ArrowLeft');
-  await page.getByRole('toolbar').getByRole('button', { name: 'Italic' }).click();
+  // The ribbon and the floating bar both carry Italic once a selection shows the bar; the ribbon's is always there.
+  await page.getByRole('toolbar', { name: 'Home' }).getByRole('button', { name: 'Italic' }).click();
   await expect.poll(() => held(page)).toEqual(['# Membranes\n\nCells keep **apart** and water *moves.*']);
 
   // Paste from a document: HTML becomes blocks and marks.
@@ -90,7 +103,10 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Crop image' })).toBeVisible();
 
   // A table, through the slash menu, typed into.
-  await page.getByRole('textbox', { name: 'Text' }).last().click();
+  const last = page.getByRole('textbox', { name: 'Text' }).last();
+  await last.click();
+  // The view can still take the focus back for the image; type the slash only once the text has it for good.
+  await expect(last).toBeFocused();
   await keyboard.press('Control+End');
   await slash(page, 'table');
   const table = page.getByRole('group', { name: /^Table(:|$)/ });

@@ -1,0 +1,20 @@
+/*
+ * The modern physics result at a narrow window: the label column shrinks and both columns wrap, so the table never
+ * needs a sideways scroll, and a plot stops shrinking where its axis labels would be too small to read.
+ */
+@layer components {
+  .rows th {
+    inline-size: 40%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .rows td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .plot svg {
+    min-inline-size: 360px;
+  }
+}

@@ -27,6 +27,10 @@ import { TreeView } from './TreeView';
 
 // A locked protected section's pages pane (ADR 0042) loads with the protection feature's dialogs.
 const LockedSectionPane = lazy(() => import('../protect').then((module) => ({ default: module.LockedSectionPane })));
+// The notice that sync kept two versions of a protected section (ADR 0049) loads with them, too.
+const SealedVersionsNotice = lazy(() =>
+  import('../protect').then((module) => ({ default: module.SealedVersionsNotice })),
+);
 
 /** The plant keeps the footer company only when the pane has notebooks, because the empty pane has its own drawing. */
 function TrashButton({ plant }: { plant: boolean }) {
@@ -107,7 +111,14 @@ export function PagesPane() {
   const selectedId = useSelected('pages');
   const rowHeight = useRowHeight('pages');
   const section = useStore(treeStore, (state) => (sectionId ? state.nodes[sectionId] : undefined));
-  const locked = useFlag('sections.protect') && section?.protected === 'locked';
+  const protectOn = useFlag('sections.protect');
+  const locked = protectOn && section?.protected === 'locked';
+  const notice =
+    protectOn && section?.protected ? (
+      <Suspense fallback={null}>
+        <SealedVersionsNotice section={section} />
+      </Suspense>
+    ) : null;
   useEffect(() => {
     if (sectionId && known && status === 'ready') void ensureChildren(sectionId);
   }, [sectionId, known, status]);
@@ -121,6 +132,7 @@ export function PagesPane() {
   if (locked && section) {
     return (
       <div className={styles.pane}>
+        {notice}
         <Suspense fallback={null}>
           <LockedSectionPane section={section} />
         </Suspense>
@@ -129,6 +141,7 @@ export function PagesPane() {
   }
   return (
     <div className={styles.pane}>
+      {notice}
       <TreeView
         tree="pages"
         label={t('tree.label.pages')}

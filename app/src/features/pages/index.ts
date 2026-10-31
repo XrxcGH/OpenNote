@@ -27,5 +27,7 @@ export type { PageRaster, RasterStroke } from './host/videoRaster';
 /** The shown page as pixels without its ink, for a narrated video. The code loads when it is first called. */
 export const rasterShownPage = (...args: Parameters<typeof import('./host/videoRaster').rasterShownPage>) =>
   import('./host/videoRaster').then((module) => module.rasterShownPage(...args));
+/** Puts engineering paper (computation, three views, title block) on the shown page. */
+export { applyDraftingPaper } from './ui/draftingPaper';
 export { exportPictureAsPdf } from './host/pictureToPdf';
 export type { ExportBlock, ExportPage, TextBlock } from './export';

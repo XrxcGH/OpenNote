@@ -107,6 +107,63 @@ describe('the label oracle', () => {
     );
   });
 
+  it("keeps the other hand's taps on a control clear of the writing hand's wider reach", () => {
+    // CI seed 1550817018 (case 5): a tap on a control 110 ms after the pen lifted landed where the pipeline's hand region
+    // still reaches, so it was refused as a palm's. About 3 percent of this scenario's seeds did the same; seed 6 is one.
+    const s = SCENARIOS.find((x) => x.name === 'otherHandChromeTap')!;
+    const p = PROFILES.find((x) => x.id === 'oem-mpp')!;
+    for (const seed of [6, 9, 13, 52, 63]) {
+      const session = generate(s, p, seed);
+      const result = replaySession(session);
+      expect(oracleHolds(session, result)).toEqual([]);
+      const g = gateValues(score(session, result, emptyTally(), emptyTally()));
+      expect(g.G8_tapsMissed).toBe(0);
+    }
+  });
+
+  it('labels a heel paired with a fingertip-sized part as uncertain as the part', () => {
+    // CI seed 9 (iPhone, one finger): the heel and a fingertip-sized part beside it read as two fingers panning, which the
+    // part's own label allowed but the heel's did not.
+    const s = SCENARIOS.find((x) => x.name === 'loneRest')!;
+    const p = PROFILES.find((x) => x.id === 'iphone-finger')!;
+    const session = generate(s, p, 9);
+    const shuffled = reorderWithinFrames(session, seeded(9));
+    expect(oracleHolds(shuffled, replaySession(shuffled))).toEqual([]);
+  });
+
+  it("keeps the other hand's taps off the place an overwriter's palm rested", () => {
+    // CI seed 1664849986 (case 5931): the model put an overwriter's heel below the pen, but the palm rests above it, so a tap
+    // 11 mm from where the palm had rested was labeled another hand's and the pipeline rightly refused it.
+    const s = SCENARIOS.find((x) => x.name === 'gestureAfterPen')!;
+    const p = PROFILES.find((x) => x.id === 'oem-mpp')!;
+    const session = generate(s, p, 5931);
+    const result = replaySession(session);
+    expect(oracleHolds(session, result)).toEqual([]);
+    const g = gateValues(score(session, result, emptyTally(), emptyTally()));
+    expect(g.G8_tapsMissed).toBe(0);
+  });
+
+  it("keeps a finger that writes after the pen out of the writing hand's reach", () => {
+    // CI run seed -898763053 (case 14): a finger wrote 45 mm below the pen's last point, inside the hooked grip's reach.
+    const s = SCENARIOS.find((x) => x.name === 'fingerAfterPen')!;
+    const p = PROFILES.find((x) => x.id === 'wacom-emr-mouse')!;
+    const session = generate(s, p, 14);
+    const result = replaySession(session);
+    expect(oracleHolds(session, result)).toEqual([]);
+    const g = gateValues(score(session, result, emptyTally(), emptyTally()));
+    expect(g.G7_inkDroppedRate).toBe(0);
+  });
+
+  it('labels a palm whose noisy travel reaches the settle bound as a slide, whichever way the noise points', () => {
+    // CI seed 99990: a lone rest drifting 9.4 mm read 10.07 mm to the filter once the noise of both ends was added.
+    const s = SCENARIOS.find((x) => x.name === 'loneRest')!;
+    const p = PROFILES.find((x) => x.id === 'phone-finger')!;
+    const session = generate(s, p, 99_990);
+    const result = replaySession(session);
+    expect(oracleHolds(session, result)).toEqual([]);
+    expect(session.labels.some((l) => l.limit === 'slides-like-a-stroke')).toBe(true);
+  });
+
   it('gives labeled palms the same outcome when events in a frame arrive in another order', () => {
     fc.assert(
       fc.property(fc.constantFrom(...pairs), fc.integer({ min: 1, max: 100_000 }), ({ s, p }, seed) => {

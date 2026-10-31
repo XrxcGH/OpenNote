@@ -128,9 +128,12 @@
     padding-block-end: var(--space-4);
   }
 
+  /* The page itself never scrolls (base.css), so a tool in a window of its own scrolls inside this box, as a floating
+     window's body does; otherwise a tall tool's results and Insert button sit out of reach below the fold. */
   .popped {
     box-sizing: border-box;
-    min-block-size: 100vh;
+    block-size: 100dvh;
+    overflow: auto;
     padding: var(--space-4);
     color: var(--color-text-primary);
     background: var(--color-surface-app);

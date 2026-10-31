@@ -9,7 +9,7 @@ import { palmThresholds } from '../palm/index';
 import type { Grip } from './session';
 import type { SimProfile } from './profiles';
 import type { Rand, SessionWriter, Vec2 } from './writer';
-import { between } from './writer';
+import { between, JITTER_MM } from './writer';
 
 /**
  * The generators' ranges, each across the thresholds it meets, as a test checks. Drift crosses slop and a settling
@@ -68,7 +68,8 @@ export function palmLimit(p: SimProfile, s: PalmShape, scale: number, ms: number
   const size = quantized ? Math.round(actual / RADIUS_STEP_MM) * RADIUS_STEP_MM : actual;
   const palmAt = quantized ? PALM_MAJOR_MM + RADIUS_STEP_MM : PALM_MAJOR_MM;
   if (!sizeless(p) && size >= palmAt) return undefined;
-  if (s.drift >= SETTLE_TRAVEL_MM) return 'slides-like-a-stroke';
+  // The noise is on both ends of the travel the filter sees, up to a diagonal each way, so a drift that near the bound can read as past it.
+  if (s.drift + JITTER_MM * Math.SQRT2 >= SETTLE_TRAVEL_MM) return 'slides-like-a-stroke';
   if (ms < BOUNCE_MS) return 'bounce';
   return !sizeless(p) && size <= FINGERTIP_MAJOR_MM ? 'fingertip-sized' : undefined;
 }
@@ -82,6 +83,8 @@ export interface PenPlan {
   readonly pos: (t: number) => Vec2;
   readonly start: number;
   readonly end: number;
+  /** Where the palm heel rested against the pen tip, when the scenario planted a palm. */
+  readonly heel?: Vec2;
 }
 
 interface Key {
@@ -298,9 +301,10 @@ export function handFollow(plan: PenPlan): (t: number) => Vec2 {
 
 /**
  * Whether the writing hand covers a point: its palm, 85 mm around the heel, its forearm (70 mm either side of the line
- * from the tip through the heel, as the pen's lean varies by 15 degrees), and 25 mm around the tip.
+ * from the tip through the heel, as the pen's lean varies by 15 degrees), and 25 mm around the tip. A margin widens all
+ * three: a finger that near the hand is ambiguous, because a palm learned from a few rests reaches past the model.
  */
-export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2): boolean {
+export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2, margin = 0): boolean {
   const sx = hand === 'left' ? -1 : 1;
   const heel: Vec2 = grip === 'hooked' ? [tip[0] + sx * 38, tip[1] - 36] : [tip[0] + sx * 42, tip[1] + 48];
   const ax = heel[0] - tip[0];
@@ -310,7 +314,11 @@ export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec
   const ey = p[1] - heel[1];
   const along = (ex * ax + ey * ay) / n;
   const across = Math.abs(ex * ay - ey * ax) / n;
-  return Math.hypot(ex, ey) < 85 || (along > 0 && across < 70) || Math.hypot(p[0] - tip[0], p[1] - tip[1]) < 25;
+  return (
+    Math.hypot(ex, ey) < 85 + margin ||
+    (along > 0 && across < 70 + margin) ||
+    Math.hypot(p[0] - tip[0], p[1] - tip[1]) < 25 + margin
+  );
 }
 
 /**

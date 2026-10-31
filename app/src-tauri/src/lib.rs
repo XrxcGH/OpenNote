@@ -1,6 +1,11 @@
 //! The OpenNote desktop shell: the app's managed state, its commands, and the run loop (ARCHITECTURE.md section
 //! 8.1). `main.rs` runs the early start-up steps, then calls [`run`].
 
+// Much of the shell talks to Windows, and its helpers are used only from `cfg(windows)` code. On macOS and Linux
+// those helpers would warn as unused, so the warnings are off there (ADR 0055). Windows builds still deny them, so
+// CI on Windows catches code that is truly dead.
+#![cfg_attr(not(windows), allow(dead_code, unused_imports, unused_variables, unused_mut))]
+
 pub mod api;
 pub mod appearance;
 pub mod args;
@@ -14,7 +19,9 @@ pub mod command_list;
 pub mod connectors;
 pub mod core_bridge;
 pub mod deeplink;
+pub mod desktop;
 pub mod dictionary;
+pub mod e2e_sync;
 pub mod early;
 pub mod events;
 pub mod export_replace;
@@ -117,7 +124,7 @@ pub fn run(context: EarlyContext) {
     let share = share::ShareState {
         inbox: share::inbox(&paths),
     };
-    let builder = images::register_renditions(tauri::Builder::default());
+    let builder = desktop::with_dialogs(images::register_renditions(tauri::Builder::default()));
     let app = builder
         .manage(loaded.store)
         .manage(state)
@@ -149,6 +156,7 @@ pub fn run(context: EarlyContext) {
             shellqol::start(app.handle());
             page_extras::attach::sweep_old_copies();
             api::start(app.handle());
+            e2e_sync::start(app.handle());
             Ok(())
         })
         .invoke_handler(commands())
@@ -333,6 +341,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         interop::commands::interop_import,
         interop::commands::interop_cancel,
         interop::commands::interop_export,
+        interop::commands::interop_latex_preview,
         interop::commands::interop_reveal,
         interop::more::interop_more,
         intel::intel_settings_get,
@@ -374,5 +383,6 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         api::api_call,
         share::share_take,
         connectors::accounts_call,
+        e2e_sync::sync_call,
     ]
 }

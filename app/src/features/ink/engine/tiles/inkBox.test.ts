@@ -73,7 +73,8 @@ describe('the box of a moved, turned, and scaled stroke', () => {
           const stroke: Stroke = { id: 's', tool, width, startTime: 0, points: points as InkPoint[], transform };
           const placed = strokeOutline(stroke.points, { tool, width }).map((p) => applyToPoint(transform, p));
           const box = inkBounds(stroke);
-          const slack = 0.02 * width * widthScale(transform) + 1e-6;
+          // The box is padded by this much itself, so an outline at its edge can sit one rounding step past it.
+          const slack = 0.02 * width * widthScale(transform) + 1e-5;
           const xs = placed.map((p) => p.x);
           const ys = placed.map((p) => p.y);
           expect(Math.min(...xs)).toBeGreaterThanOrEqual(box.minX - slack);

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError, RwLock};
+use std::time::Instant;
 
 use super::shared::{NotebookShared, TreeState};
 use super::undo::TreeUndo;
@@ -18,8 +19,9 @@ use crate::session::journal_thread::JournalMeta;
 use crate::session::page::save::Why;
 use crate::session::page::{Opening, PageHandle, PageSession};
 use crate::store::cache::PageCache;
+use crate::store::fs::FsLock;
 use crate::store::layout::{notebook_key, NotebookKey, NotebookLayout};
-use crate::store::lock::lock_notebook;
+use crate::store::lock::{lock_notebook, lock_until, Held, NotebookLock};
 use crate::store::notebook_store::{read_notebook_file, NotebookStore};
 use crate::store::page_store::LoadedPage;
 use crate::store::tree_log::{IntentLog, MemIntentLog};
@@ -43,15 +45,21 @@ pub(crate) fn open_notebook(ctx: &Arc<CoreCtx>, dir: &Path, how: &OpenAs) -> Res
     let remote = volume.as_ref().is_some_and(|v| v.remote);
     // A backup set opens read-only without a lock, so it can sit on a drive nobody may write to.
     let backup = crate::store::backup::is_backup(fs, dir);
-    let lock = if backup {
-        None
+    // A notebook this core already has open by another path holds its own lock, which is never worth waiting for.
+    let held_here = ctx.notebooks().iter().any(|n| n.key() == key);
+    let deadline = if held_here { Instant::now() } else { ctx.lock_deadline };
+    let (lock, held, tree_locks) = if backup {
+        (None, None, Vec::new())
     } else {
-        lock_notebook(fs, &ctx.data, &key, &layout, remote)?
+        take_locks(ctx, (&key, &layout), remote, deadline)?
     };
     let mut notices = Vec::new();
     let read_only = if backup {
         notices.push(Warning::new("notebook.backup", dir.display().to_string()));
         Some(ReadOnlyReason::Backup)
+    } else if held == Some(Held::Ending) && !held_here {
+        notices.push(Warning::new("notebook.stillClosing", dir.display().to_string()));
+        Some(ReadOnlyReason::StillClosing)
     } else if lock.is_none() {
         notices.push(Warning::new("notebook.lockedElsewhere", dir.display().to_string()));
         Some(ReadOnlyReason::LockedElsewhere)
@@ -67,11 +75,13 @@ pub(crate) fn open_notebook(ctx: &Arc<CoreCtx>, dir: &Path, how: &OpenAs) -> Res
         (&key, journal_meta(ctx, file.id, dir, identity, None)),
         read_only.is_none(),
     );
+    drop(tree_locks);
     let mut store = NotebookStore::open(env, dir, cache, log)?;
     store.sync_managed = volume.is_some_and(|v| v.sync_root.is_some());
     store.notices.extend(notices);
-    if let Some(reason) = read_only {
-        store.read_only = Some(reason);
+    // A reason of the notebook's own files, such as a newer format, stays: only a backup always says so.
+    if store.read_only.is_none() || read_only == Some(ReadOnlyReason::Backup) {
+        store.read_only = read_only;
     }
     let writable = store.check_writable().is_ok();
     if writable {
@@ -95,11 +105,54 @@ pub(crate) fn open_notebook(ctx: &Arc<CoreCtx>, dir: &Path, how: &OpenAs) -> Res
         me: me.clone(),
     });
     if writable {
-        shared.recover_pages();
+        shared.recover_pages(deadline);
         let _ = shared.tree().store.finish_pending();
     }
     shared.schedule_open_work();
     Ok(NotebookHandle { inner: shared })
+}
+
+/// Takes a notebook's lock, waiting until `deadline` for a previous run of this profile that is ending (spec
+/// 20.3). Then it waits the same way for the tree journal's generations, which that run may let go of later,
+/// unless this core opened that tree journal already. Their locks are kept while the tree journal reads them. A
+/// generation still held at the deadline means no lock, as the ending run still holds the notebook.
+#[allow(clippy::type_complexity)]
+fn take_locks(
+    ctx: &CoreCtx,
+    (key, layout): (&NotebookKey, &NotebookLayout),
+    remote: bool,
+    deadline: Instant,
+) -> Result<(Option<NotebookLock>, Option<Held>, Vec<Box<dyn FsLock>>), CoreError> {
+    let fs = ctx.fs.as_ref();
+    let lock = match lock_notebook(fs, &ctx.data, key, layout, (remote, deadline))? {
+        Ok(lock) => lock,
+        Err(held) => return Ok((None, Some(held), Vec::new())),
+    };
+    let opened_here = ctx
+        .tree_journals
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .contains(key);
+    let tree = (!opened_here)
+        .then(|| ctx.backend.journals().ok())
+        .flatten()
+        .unwrap_or_default()
+        .into_iter()
+        .find(|k| &k.key == key)
+        .map(|k| k.tree)
+        .unwrap_or_default();
+    let mut locks = Vec::new();
+    for generation in &tree {
+        // A generation gone since the listing holds nothing, and locking it would create it.
+        if fs.metadata(generation).is_err() {
+            continue;
+        }
+        match lock_until(fs, generation, deadline)? {
+            Some(held) => locks.push(held),
+            None => return Ok((None, Some(Held::Ending), Vec::new())),
+        }
+    }
+    Ok((Some(lock), None, locks))
 }
 
 /// The header metadata of a notebook's journals (spec 20.5). `section` is the page's section for a page
@@ -130,15 +183,20 @@ fn tree_log(ctx: &CoreCtx, (key, meta): (&NotebookKey, JournalMeta), writable: b
         return Box::new(MemIntentLog::new());
     }
     match ctx.backend.open_tree_journal(key, meta) {
-        Ok(log) => log,
+        Ok(log) => {
+            let mut opened = ctx.tree_journals.lock().unwrap_or_else(PoisonError::into_inner);
+            opened.insert(key.clone());
+            log
+        }
         Err(_) => Box::new(MemIntentLog::new()),
     }
 }
 
 impl NotebookShared {
-    /// Recovers every page of this notebook whose journal generations wait (spec 20.10). Pages whose recovery
-    /// has to wait open read-only.
-    fn recover_pages(&self) {
+    /// Recovers every page of this notebook whose journal generations wait (spec 20.10), waiting until
+    /// `deadline` for a generation that a previous run that is ending still holds (spec 20.3). Pages whose
+    /// recovery has to wait open read-only.
+    fn recover_pages(&self, deadline: Instant) {
         let Ok(journals) = self.ctx.backend.journals() else {
             return;
         };
@@ -157,20 +215,27 @@ impl NotebookShared {
                     locate: &locate,
                     page: *page,
                     generations,
+                    lock_until: deadline,
                 };
                 self.ctx.backend.recover_page(&input)
             };
             let outcome = outcome.unwrap_or(RecoveryOutcome::Deferred {
                 reason: crate::session::events::DeferReason::PageUnavailable,
             });
-            if matches!(outcome, RecoveryOutcome::Deferred { .. } | RecoveryOutcome::OwnerAlive) {
-                self.deferred().insert(*page, ());
-            }
+            let waits = match outcome {
+                RecoveryOutcome::OwnerAlive => Some(ReadOnlyReason::StillClosing),
+                RecoveryOutcome::Deferred { .. } => Some(ReadOnlyReason::PendingJournal),
+                _ => None,
+            };
+            match waits {
+                Some(reason) => self.deferred().insert(*page, reason),
+                None => self.deferred().remove(page),
+            };
             self.recovered().push((*page, outcome));
         }
     }
 
-    pub(crate) fn deferred(&self) -> std::sync::MutexGuard<'_, HashMap<PageId, ()>> {
+    pub(crate) fn deferred(&self) -> std::sync::MutexGuard<'_, HashMap<PageId, ReadOnlyReason>> {
         self.deferred.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
@@ -256,8 +321,8 @@ impl NotebookShared {
             .page_dir(page)
             .ok_or_else(|| CoreError::NotFound(format!("page {page}")))?;
         let mut read_only = store.read_only.clone();
-        if self.deferred().contains_key(&page) {
-            read_only.get_or_insert(ReadOnlyReason::PendingJournal);
+        if let Some(reason) = self.deferred().get(&page) {
+            read_only.get_or_insert(reason.clone());
         }
         Ok((dir, read_only, state.encrypted(), state.locked()))
     }
@@ -276,20 +341,44 @@ impl NotebookShared {
     }
 
     /// Gives a copied notebook a new notebook ID, so it no longer shares journals, locks, and caches with
-    /// the original (spec 20.2). Its pages must be closed.
+    /// the original (spec 20.2). Its pages must be closed, and it must hold its lock. A copy opens read-only, so
+    /// its journals from an earlier run are recovered first, and it refuses while any of them still waits: the
+    /// new key would leave them behind.
     pub(crate) fn make_separate(&self) -> Result<NotebookId, CoreError> {
         self.check_open()?;
         if !self.pages().is_empty() {
             return Err(CoreError::Conflict("close the notebook's pages first".into()));
         }
+        let reason = self.tree().store.read_only.clone();
+        let locked = self.lock.lock().unwrap_or_else(PoisonError::into_inner).is_some();
+        match reason {
+            Some(reason) if !locked || reason != ReadOnlyReason::LockedElsewhere => {
+                return Err(CoreError::ReadOnly(reason));
+            }
+            _ => {}
+        }
+        self.recover_pages(Instant::now());
         let mut tree = self.tree();
+        if !self.pages().is_empty() {
+            return Err(CoreError::Conflict("close the notebook's pages first".into()));
+        }
+        if self.journals_wait(&tree) {
+            return Err(CoreError::ReadOnly(ReadOnlyReason::PendingJournal));
+        }
         let id = NotebookId::generate(self.ctx.clock.as_ref());
         tree.store.notebook.id = id;
         tree.store.write_notebook()?;
         let key = notebook_key(id, &self.identity);
         let layout = NotebookLayout::new(&self.root);
         let remote = self.ctx.fs.volume(&self.root).is_ok_and(|v| v.remote);
-        let lock = lock_notebook(self.ctx.fs.as_ref(), &self.ctx.data, &key, &layout, remote)?;
+        let lock = lock_notebook(
+            self.ctx.fs.as_ref(),
+            &self.ctx.data,
+            &key,
+            &layout,
+            (remote, Instant::now()),
+        )?
+        .ok();
         tree.store.read_only = lock.is_none().then_some(ReadOnlyReason::LockedElsewhere);
         tree.store.notices.retain(|n| n.code != "notebook.sameId");
         tree.store.cache = PageCache::load(self.ctx.fs.as_ref(), &self.ctx.data, &key);
@@ -302,6 +391,26 @@ impl NotebookShared {
         drop(tree);
         self.tree_changed();
         Ok(id)
+    }
+
+    /// Whether this notebook's key still has page journal generations, or tree intents that aren't done.
+    fn journals_wait(&self, tree: &TreeState) -> bool {
+        let key = self.key();
+        let Ok(journals) = self.ctx.backend.journals() else {
+            return true;
+        };
+        if journals.iter().any(|k| k.key == key && !k.pages.is_empty()) {
+            return true;
+        }
+        if tree.store.read_only.is_none() {
+            return !tree.store.log.unfinished().is_empty();
+        }
+        // A copy that opened read-only kept its tree journal closed.
+        let meta = journal_meta(&self.ctx, self.id(), &self.root, self.identity, None);
+        self.ctx
+            .backend
+            .open_tree_journal(&key, meta)
+            .map_or(true, |log| !log.unfinished().is_empty())
     }
 
     /// Saves and closes every page, writes the cache, and releases the lock.

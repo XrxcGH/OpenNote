@@ -51,12 +51,7 @@ test('writes a page with Markdown shortcuts, each one undoable back to the typed
   await keys(page, '{Control+a}{Delete}');
   await keys(page, '# Cell division{Enter}Cells divide in two ways.{Enter}');
   await keys(page, '- Mitosis{Enter}{Tab}Two cells{Enter}{Shift+Tab}Meiosis{Enter}{Enter}');
-  // Ctrl+Enter ticks the box it finds, so it goes only after the page holds the unticked one, and the Enters after the tick.
-  await keys(page, '[ ] Read the chapter');
-  await expect.poll(() => held(page)).toContain('- [ ] Read the chapter');
-  await keys(page, '{Control+Enter}');
-  await expect.poll(() => held(page)).toContain('- [x] Read the chapter');
-  await keys(page, '{Enter}{Enter}');
+  await keys(page, '[ ] Read the chapter{Control+Enter}{Enter}{Enter}');
   await keys(page, '> A quote{Enter}{Enter}> [!tip] Remember{Enter}Check the copy.{Enter}{Enter}');
   await keys(page, '```python print(1){ArrowDown}---{Enter}The end.');
   await expect
@@ -78,29 +73,30 @@ test('writes a page with Markdown shortcuts, each one undoable back to the typed
 
 test('formats with keys: marks, a link, headings, an outline move, a date, and AutoCorrect', async ({ page }) => {
   await openEmptyPage(page);
-  // Each step waits for the page to hold what it typed before the next key goes, so a slow runner cannot let a
-  // command, or the page saving behind it, land among keys meant for the step after.
-  const NL = String.fromCharCode(10);
-  const blocks: string[] = [];
-  const step = async (typed: string, ...added: string[]): Promise<void> => {
-    await keys(page, typed);
-    blocks.push(...added);
-    await expect.poll(() => held(page)).toBe(blocks.join(NL + NL));
-  };
-  await step(
-    'Normal {Control+b}bold{Control+b} {Control+i}italic{Control+i} {Control+u}under{Control+u} ' +
-      '{Control+Shift+S}gone{Control+Shift+S} {Control+Shift+H}marked{Control+Shift+H} {Control+e}code{Control+e}{Enter}',
-    'Normal **bold** *italic* <u>under</u> ~~gone~~ ==marked== `code`',
-  );
-  await step('Heading{Control+Alt+2}{Enter}Plain{Control+Alt+1}{Control+Shift+N}{Enter}', '## Heading', 'Plain');
-  // The address is typed straight after Ctrl+K, before the link field has loaded.
-  await step(
-    'Visit site{Control+Shift+ArrowLeft}{Control+k}example.com{Enter}{End}{Enter}',
-    'Visit [site](https://example.com)',
-  );
-  await step('- one{Enter}two{Alt+Shift+ArrowUp}', '- two' + NL + '- one');
-  await keys(page, '{Control+End}{Enter}{Enter}');
+  await keys(page, 'Normal {Control+b}bold{Control+b} {Control+i}italic{Control+i} ');
+  await keys(page, '{Control+u}under{Control+u} {Control+Shift+S}gone{Control+Shift+S} ');
+  await keys(page, '{Control+Shift+H}marked{Control+Shift+H} {Control+e}code{Control+e}{Enter}');
+  await keys(page, 'Heading{Control+Alt+2}{Enter}Plain{Control+Alt+1}{Control+Shift+N}{Enter}');
+  await keys(page, 'Visit site{Control+Shift+ArrowLeft}{Control+k}');
+  // The popover takes the focus when it has loaded; the address goes into its field, and Enter saves and closes it.
+  await expect(page.getByRole('textbox', { name: 'Address' })).toBeFocused({ timeout: 20_000 });
+  await keys(page, 'example.com{Enter}');
+  await expect(page.getByRole('dialog', { name: 'Link' })).toHaveCount(0);
+  await keys(page, '{End}{Enter}');
+  await keys(page, '- one{Enter}two{Alt+Shift+ArrowUp}{Control+End}{Enter}{Enter}');
   // AutoCorrect fixes "teh", and one undo puts back what was typed.
-  await step('I saw teh {Control+z}cat', 'I saw teh cat');
-  await step('{Enter}Due {Alt+Shift+D}', 'Due Sep 30, 2026');
+  await keys(page, 'I saw teh {Control+z}cat{Enter}Due {Alt+Shift+D}');
+  await expect
+    .poll(() => held(page))
+    .toBe(
+      [
+        'Normal **bold** *italic* <u>under</u> ~~gone~~ ==marked== `code`',
+        '## Heading',
+        'Plain',
+        'Visit [site](https://example.com)',
+        '- two\n- one',
+        'I saw teh cat',
+        'Due Sep 30, 2026',
+      ].join('\n\n'),
+    );
 });

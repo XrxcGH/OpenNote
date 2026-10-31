@@ -76,6 +76,13 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0046](0046-one-command-registry.md) | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history | Accepted | 2026-10-15 |
 | [0047](0047-typed-hashtags-become-tags.md) | Typed #words become page tags | Proposed | 2026-10-21 |
 | [0048](0048-choice-columns.md) | Choice columns keep their options in the column schema and their values as plain text | Proposed | 2026-10-21 |
+| [0049](0049-end-to-end-encrypted-sync.md) | Optional end-to-end-encrypted sync over storage people already have | Proposed | 2026-10-28 |
+| [0050](0050-ai-tutor.md) | The tutor gives graded hints from what the person shows it, on this device unless they agree to more | Proposed | 2026-10-29 |
+| [0051](0051-step-checking.md) | Check my work checks each step on the device, and says "I could not check this step" before "wrong" | Proposed | 2026-10-29 |
+| [0052](0052-practice-exams.md) | Practice exams are made on the device, taken in a tool window, and saved as ordinary pages | Proposed | 2026-10-29 |
+| [0053](0053-notes-app-import.md) | Import from Goodnotes, Notability, and Samsung Notes reads what the packages show, and the PDF export is the dependable route | Proposed | 2026-10-29 |
+| [0054](0054-latex-export.md) | LaTeX export writes escaped text, checked math, and typeset code, and never compiles | Proposed | 2026-10-29 |
+| [0055](0055-macos-and-linux.md) | macOS and Linux builds degrade feature by feature and say what they lack | Proposed | 2026-10-29 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 
@@ -97,3 +104,5 @@ Most records are still Proposed, because each waits on a check by a person. Agen
 | 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
 | 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |
 | 0042 | The owner's review of protected sections, a Windows Hello unlock on real hardware, and the `protected` field of the notes contract |
+| 0049 | The owner's review of end-to-end-encrypted sync and its threat model, a pairing on two real devices, and the decision about a relay |
+| 0054 | The owner compiles LaTeX exports of real notes with the TeX engine they use, since the build machine has none |

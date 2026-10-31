@@ -298,7 +298,7 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
         id: pageId,
         client: name,
         initial: toPageJson(envelope.page, pageId),
-        readOnly: envelope.readOnly ? readOnlyInfo(envelope.session.readOnly ?? 'readOnly') : null,
+        readOnly: envelope.readOnly ? readOnlyInfo(kindOf(envelope.session.readOnly) || 'readOnly') : null,
         // Phase 3's core takes spliceText (P3-10); an older core would refuse it as invalid.
         supportsSplice: true,
         ink: {

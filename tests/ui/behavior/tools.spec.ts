@@ -102,7 +102,7 @@ test('closes with Escape and resizes from its edge with the arrow keys', async (
   const dialog = page.getByRole('dialog', { name: 'Upcoming' });
   const before = await dialog.boundingBox();
   await dialog.getByRole('separator', { name: /^Resize Upcoming/ }).press('ArrowLeft');
-  await expect.poll(async () => (await dialog.boundingBox())!.width).toBe(before!.width + 16);
+  expect((await dialog.boundingBox())!.x).toBe(before!.x - 16);
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
 });

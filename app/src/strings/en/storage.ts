@@ -171,6 +171,16 @@ export const storage = {
     lockedIdle: '“{title}” locked after a while without use.',
     lockedPane: 'This section is locked.',
     lockedPaneHelp: 'Unlock it to see its pages.',
+    twoVersions: 'This protected section was changed on two devices.',
+    twoVersionsHelp:
+      'Sync kept both versions. Switch to the other one to look at it. The one you see now is kept, so you can switch back.',
+    switchVersion: 'Switch to the other version',
+    removeVersion: 'Remove the other version',
+    removeVersionTitle: 'Remove the other version of “{title}”?',
+    removeVersionBody: "The version you aren't using is deleted here and on the devices this one syncs with.",
+    versionSwitched: '“{title}” now has the other version. Unlock it to see its pages.',
+    versionRemoved: 'The other version of “{title}” was removed.',
+    versionFailed: "Couldn't change the versions of “{title}”.",
     unprotectTitle: 'Remove protection from “{title}”?',
     unprotectBody:
       // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal

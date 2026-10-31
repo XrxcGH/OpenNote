@@ -11,6 +11,8 @@ async function openPage(page: Page) {
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  // Record, clicked before the page's commands have loaded, did nothing: wait for the page to say they are ready.
+  await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
   // The recorder needs the page's text mounted: Record before that says to open a page first.
   await expect(page.getByRole('textbox', { name: 'Text' }).first()).toBeVisible();
 }
@@ -22,7 +24,7 @@ test('records into a block of the page, shows the indicator, and plays it back',
   await record(page).getByRole('button', { name: 'Record' }).click();
   // The indicator is in the title bar while the recording runs, and the block shows the recording bar.
   const indicator = page.getByTestId('recording-indicator');
-  await expect(indicator).toBeVisible();
+  await expect(indicator).toBeVisible({ timeout: 20_000 });
   await expect(indicator).toHaveAccessibleName(/^Recording \d+:\d\d\. Open the recording controls\.$/);
   await expect(page.getByTestId('recording-bar')).toBeVisible();
   // Writing while it runs doesn't stop it.

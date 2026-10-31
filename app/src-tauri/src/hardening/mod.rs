@@ -30,12 +30,30 @@ use serde::{Deserialize, Serialize};
 
 use crate::{paths::Paths, settings::file::write_atomic};
 
+#[cfg(not(test))]
 static OFFLINE: AtomicBool = AtomicBool::new(false);
+
+// Under test the switch belongs to the test's own thread, so a test that turns Work offline on cannot make a
+// concurrent test (a sync round, say) see it.
+#[cfg(test)]
+thread_local! {
+    static OFFLINE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+fn set_offline(on: bool) {
+    #[cfg(not(test))]
+    OFFLINE.store(on, Ordering::Relaxed);
+    #[cfg(test)]
+    OFFLINE.with(|cell| cell.set(on));
+}
 static SAFE_MODE: AtomicBool = AtomicBool::new(false);
 
 /// Whether the person turned on Work offline. While it is on, the app makes no network request.
 pub fn offline() -> bool {
-    OFFLINE.load(Ordering::Relaxed)
+    #[cfg(not(test))]
+    return OFFLINE.load(Ordering::Relaxed);
+    #[cfg(test)]
+    OFFLINE.with(std::cell::Cell::get)
 }
 
 /// Whether this session runs in safe mode: no background work, embeds, or on-device models.
@@ -102,7 +120,7 @@ impl Hardening {
     fn open(paths: &Paths) -> Hardening {
         let file = paths.local.join(PRIVACY_FILE);
         let privacy = PrivacyFile::read(&file);
-        OFFLINE.store(privacy.work_offline, Ordering::Relaxed);
+        set_offline(privacy.work_offline);
         let session = SessionLog::new(&paths.local);
         let start = session.begin(now_unix());
         Hardening {
@@ -127,7 +145,7 @@ impl Hardening {
         // A yes counts only while the switch is on, and a no turns it off.
         privacy.crash_reports.enabled = privacy.crash_reports.consent.saving_allowed();
         opennote_crashreport::apply(&privacy.crash_reports);
-        OFFLINE.store(privacy.work_offline, Ordering::Relaxed);
+        set_offline(privacy.work_offline);
         let json = serde_json::to_vec_pretty(&*privacy).map_err(std::io::Error::other)?;
         write_atomic(&self.file, &json)?;
         Ok(privacy.clone())
