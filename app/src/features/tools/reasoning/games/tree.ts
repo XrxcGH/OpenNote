@@ -37,7 +37,11 @@ function parseContent(content: string, line: number): Pick<GameNode, 'player' | 
   return { player: null, payoff: parts as Frac[] };
 }
 
-export function parseTree(text: string): { root: GameNode; players: string[] } {
+/**
+ * Reads the tree. With `oneDecider`, a node typed as the word "decision" belongs to the root's decision maker, so a
+ * single-maker decision tree can write nested decisions as "name: decision".
+ */
+export function parseTree(text: string, oneDecider = false): { root: GameNode; players: string[] } {
   const raw = text
     .split(/\r?\n/)
     .map((l, i) => ({ l, i: i + 1 }))
@@ -65,6 +69,14 @@ export function parseTree(text: string): { root: GameNode; players: string[] } {
     const node: GameNode = { move: m[1].trim(), prob, ...parseContent(m[3], i), children: [] };
     parent.children.push(node);
     stack.push({ depth, node });
+  }
+  if (oneDecider) {
+    const maker = root!.player && !isChance(root!.player) ? root!.player : 'decision';
+    const rename = (n: GameNode) => {
+      if (n.player && n.player.toLowerCase() === 'decision') n.player = maker;
+      n.children.forEach(rename);
+    };
+    rename(root!);
   }
   const players: string[] = [];
   const visit = (n: GameNode) => {

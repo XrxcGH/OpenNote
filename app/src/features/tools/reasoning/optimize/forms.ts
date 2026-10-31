@@ -399,7 +399,6 @@ function decisionOutcome(v: Values): Outcome {
       laplace: pick(r.laplace),
     }),
   ];
-  if (r.certainty) notes.push(s('certaintyBest', { name: pick(r.certainty) }));
   if (r.sample) {
     const sm = r.sample;
     const signals = sm.pSignal.map((_, k) => s('signal', { k: k + 1 }));
@@ -426,7 +425,16 @@ function decisionOutcome(v: Values): Outcome {
   }
   return {
     ok: true,
-    answer: s('dcAnswer', { best: alts[r.best], emv: num(r.emv[r.best]), evpi: num(r.evpi) }),
+    // With a risk tolerance the student asked for the utility view: the certainty equivalent decides, EMV follows.
+    answer: r.certainty
+      ? s('dcAnswerCe', {
+          best: pick(r.certainty),
+          ce: num(Math.max(...r.certainty)),
+          emvBest: alts[r.best],
+          emv: num(r.emv[r.best]),
+          evpi: num(r.evpi),
+        })
+      : s('dcAnswer', { best: alts[r.best], emv: num(r.emv[r.best]), evpi: num(r.evpi) }),
     latex: `\\mathrm{EVPI} = ${num(r.evwpi)} - ${num(r.emv[r.best])} = ${num(r.evpi)}`,
     note: notes.join('\n'),
     steps,
@@ -448,7 +456,7 @@ function toTree(n: GameNode, choice: Map<GameNode, number>, onPath: boolean): Tr
 }
 
 function treeOutcome(v: Values): Outcome {
-  const { root, players } = parseTree(v.tree ?? '');
+  const { root, players } = parseTree(v.tree ?? '', true);
   if (players.length > 1) return fail('dtOnePlayer', { names: players.join(', ') });
   const check = (n: GameNode): void => {
     if (n.payoff && n.payoff.length !== 1) fail('dtOnePayoff');

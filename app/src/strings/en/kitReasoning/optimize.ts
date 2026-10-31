@@ -322,7 +322,8 @@ export const optimize = {
   dcAnswer: 'Choose {best} for an expected value of {emv}; perfect information is worth {evpi}',
   criteria:
     'Maximin picks {maximin}, maximax picks {maximax}, minimax regret picks {regret}, and equal likelihood picks {laplace}.',
-  certaintyBest: 'With exponential utility, {name} has the highest certainty equivalent.',
+  dcAnswerCe:
+    'Choose {best} for the highest certainty equivalent, {ce}; by expected value alone {emvBest} gives {emv}, and perfect information is worth {evpi}',
   signal: 'Signal {k}',
   dtAnswer: 'Best plan: {path}, with expected value {value}',
   dtAlt: 'Decision tree, with the chosen branches solid and the others struck out: {tree}',
