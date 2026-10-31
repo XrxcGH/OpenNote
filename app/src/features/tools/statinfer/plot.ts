@@ -1,7 +1,7 @@
 // The statistics kit's plots: axes named by message keys and marks (bars, dots, lines, rules, intervals, and box
 // plots), turned into the kit foundation's PlotSpec, so KitPlot draws them in the window and plotSvg draws the
 // picture that goes into a page. Pure apart from the words.
-import type { PlotNote, PlotRegion, PlotSeries, PlotSpec as KitPlotSpec, Point } from '../kits/ui/plot';
+import type { PlotRegion, PlotSeries, PlotSpec as KitPlotSpec, Point } from '../kits/ui/plot';
 import type { AxisKey } from './report';
 
 export interface XY {
@@ -133,12 +133,10 @@ export function toKitPlot(spec: PlotSpec, say: Say): KitPlotSpec {
     else if (mark.kind === 'hline') lines.push({ y: mark.y });
     else series.push(...markSeries(mark, pen, spec.legend?.[pen] ?? word(spec.title), regions, word('outliers')));
   });
-  const notes: PlotNote[] = [];
   const categoryAxis = (axis: Axis) => (axis.categories ? { min: -0.6, max: axis.categories.length - 0.4 } : {});
-  spec.x.categories?.forEach((text, i) => notes.push({ at: [i, spec.y.min ?? 0], text }));
-  spec.y.categories?.forEach((text, i) => notes.push({ at: [spec.x.min ?? 0, i], text }));
   const limits = (axis: Axis) => ({
     ...categoryAxis(axis),
+    ...(axis.categories ? { categories: axis.categories } : {}),
     ...(axis.min === undefined ? {} : { min: axis.min }),
     ...(axis.max === undefined ? {} : { max: axis.max }),
   });
@@ -148,7 +146,6 @@ export function toKitPlot(spec: PlotSpec, say: Say): KitPlotSpec {
     y: { label: spec.y.categories ? '' : word(spec.y.label), ...limits(spec.y) },
     series,
     ...(regions.length ? { regions } : {}),
-    ...(notes.length ? { notes } : {}),
     ...(lines.length ? { lines } : {}),
   };
 }
