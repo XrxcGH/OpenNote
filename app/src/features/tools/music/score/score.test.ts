@@ -167,6 +167,30 @@ describe('the score form', () => {
     const unknown = run('sargam', { abc, voice: '9' });
     expect(!unknown.ok && unknown.error).toBe('scoreVoiceUnknown');
   });
+  it('lines up every string in the tab when a fret has two digits', () => {
+    const result = run('tab', { abc: 'X:1\nM:4/4\nL:1/4\nK:C\nF,, G,, c e|g|' });
+    const lines = (result.ok ? (result.code ?? '') : '').split('\n');
+    expect(lines).toHaveLength(6);
+    expect(new Set(lines.map((l) => l.length)).size).toBe(1);
+    // c (MIDI 72) sits at fret 8 of the high E in the position the hand is in, g (79) at fret 15: both digits are used.
+    expect(lines.join('\n')).toMatch(/\d\d/);
+    expect(lines.every((l) => !l.endsWith('|-|'))).toBe(true);
+  });
+  it("words an overfull bar in the meter's own unit and writes no tempo it was not given", () => {
+    const six = run('engrave', { abc: 'X:1\nM:6/8\nL:1/8\nK:C\nCDEFGAB|' });
+    expect(six.ok && six.rows.find((r) => r.key === 'barWarn')?.value).toBe('7 of 6 eighth notes');
+    const four = run('engrave', { abc: 'X:1\nM:4/4\nL:1/4\nK:C\nCDEFG|' });
+    expect(four.ok && four.rows.find((r) => r.key === 'barWarn')?.value).toBe('5 of 4 beats');
+    const moved = run('transpose', { abc: 'X:1\nM:4/4\nL:1/4\nK:C\nCDEF|', interval: 'M2' });
+    expect(moved.ok && (moved.code ?? '')).not.toContain('Q:');
+    const tempo = run('transpose', { abc: 'X:1\nM:4/4\nL:1/4\nQ:1/4=90\nK:C\nCDEF|', interval: 'M2' });
+    expect(tempo.ok && (tempo.code ?? '')).toContain('Q:1/4=90');
+  });
+  it('names the line where the key is missing', () => {
+    const result = run('engrave', { abc: 'X:1\nM:4/4\nCDE' });
+    expect(!result.ok && result.error).toBe('scoreNoKey');
+    expect(!result.ok && result.vars?.line).toBe('3');
+  });
   it.each<[Record<string, string>, string]>([
     [{ abc: '' }, 'scoreEmpty'],
     [{ abc: 'M:4/4\nCDE' }, 'scoreNoKey'],

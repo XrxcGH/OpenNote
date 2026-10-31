@@ -77,7 +77,7 @@ export const score = {
   e: {
     scoreEmpty: 'Write some music first. A tune starts with X:1 and a K: line for the key.',
     scoreTooLong: 'The music is too long for this block. Try a few lines at a time.',
-    scoreNoKey: 'The music needs a K: line for the key, such as K:G, before the notes.',
+    scoreNoKey: 'Line {line}: the music needs a K: line for the key, such as K:G, before the notes.',
     scoreChar: 'Line {line} has the character {char}, which this block does not read as music.',
     scoreMeter: 'Line {line}: the meter {text} is not one this block reads. Write M:4/4 or M:6/8.',
     scoreLength: 'Line {line}: the note length {text} is not a fraction. Write L:1/8.',

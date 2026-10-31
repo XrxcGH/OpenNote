@@ -14,6 +14,16 @@ import { instrument } from '../theory/practice';
 const MAX_CHARS = 20_000;
 const MAX_NOTES = 2_000;
 
+/** What a bar of this meter counts in: beats for a quarter-note meter, else the note value of the denominator. */
+const beatUnit = (den: number): string => (den === 4 ? 'beats' : `${NOTE_VALUES[den] ?? `1/${den}`} notes`);
+const NOTE_VALUES: Record<number, string> = {
+  1: 'whole',
+  2: 'half',
+  8: 'eighth',
+  16: 'sixteenth',
+  32: 'thirty-second',
+};
+
 function readTune(v: Values): Tune {
   const text = v.abc ?? '';
   if (text.trim() === '') return fail('scoreEmpty');
@@ -28,7 +38,7 @@ function readTune(v: Values): Tune {
       case 'empty':
         return fail('scoreEmpty');
       case 'noKey':
-        return fail('scoreNoKey');
+        return fail('scoreNoKey', { line: String(error.line) });
       case 'char':
         return fail('scoreChar', { char: error.detail, line: String(error.line) });
       case 'meter':
@@ -84,10 +94,11 @@ export function engrave(v: Values): KitOk {
     { key: 'tuneNoteNames', value: noteList(voices[0]!) },
   ];
   for (const c of checks) {
+    const who = tune.voices.length > 1 ? `voice ${c.voice}: ` : '';
     rows.push({
       key: 'barWarn',
       vars: { n: String(c.bar) },
-      value: `${tune.voices.length > 1 ? `voice ${c.voice}: ` : ''}${fmt(c.length * tune.meter.den, 4)} of ${tune.meter.num} beats`,
+      value: `${who}${fmt(c.length * tune.meter.den, 4)} of ${tune.meter.num} ${beatUnit(tune.meter.den)}`,
     });
   }
   const label = `${tune.title || 'Tune'}: ${notes} notes in ${bars} bar${bars === 1 ? '' : 's'} in ${keyName(tune)}, ${meterText(tune)}`;

@@ -184,10 +184,13 @@ export function tablature(voice: Voice): TabResult {
     });
   }
   const names = ['e', 'B', 'G', 'D', 'A', 'E'];
+  const count = columns[0]!.length;
+  const widths = Array.from({ length: count }, (_, i) => Math.max(...columns.map((c) => c[i]!.length)));
+  const endsInBar = columns[0]![count - 1] === '|';
   const staff = columns
     .map((cells, row) => {
-      const width = Math.max(...cells.map((c) => c.length));
-      return `${names[row]}|${cells.map((c) => c.padEnd(width, '-')).join('--')}-|`;
+      const body = cells.map((c, i) => c.padEnd(widths[i]!, '-')).join('--');
+      return `${names[row]}|${body}${endsInBar ? '' : '-|'}`;
     })
     .join('\n');
   return { text: groups.join(' '), staff };

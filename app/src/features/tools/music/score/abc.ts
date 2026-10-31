@@ -51,6 +51,8 @@ export interface Tune {
   meter: Meter;
   unit: number;
   bpm: number;
+  /** Whether the source had a Q: line; a tune without one is written back without one. */
+  tempoWritten?: boolean;
   key: Key;
   voices: Voice[];
 }
@@ -134,6 +136,7 @@ export function parseAbc(source: string): Tune {
   let meter: Meter = { num: 4, den: 4 };
   let unit: number | null = null;
   let bpm = 120;
+  let tempoWritten = false;
   let key: Key | null = null;
   const voices = new Map<string, Voice>();
   let current: Voice | null = null;
@@ -175,6 +178,7 @@ export function parseAbc(source: string): Tune {
         }
         case 'Q': {
           const m = /(?:(\d+)\s*\/\s*(\d+)\s*=\s*)?(\d+)\s*$/.exec(rest.trim());
+          if (m) tempoWritten = true;
           if (m) bpm = m[1] ? Number(m[3]) * (Number(m[1]) / Number(m[2])) * 4 : Number(m[3]);
           return;
         }
@@ -199,11 +203,11 @@ export function parseAbc(source: string): Tune {
     current ??= voiceFor('1');
     readBody(line, lineNo, current, key!, meter, unit);
   });
-  if (!key) throw new AbcError('noKey');
+  if (!key) throw new AbcError('noKey', '', lines.length);
   const all = [...voices.values()].filter((v) => v.items.some((i) => i.kind !== 'bar'));
   if (all.length === 0) throw new AbcError('empty');
   const chosenUnit = unit ?? (meter.num / meter.den < 0.75 ? 1 / 16 : 1 / 8);
-  return { title, meter, unit: chosenUnit, bpm, key, voices: all };
+  return { title, meter, unit: chosenUnit, bpm, tempoWritten, key, voices: all };
 }
 
 interface Reader {
@@ -461,7 +465,7 @@ export function writeAbc(tune: Tune, key: Key = tune.key): string {
     tune.title ? `T:${tune.title}` : '',
     `M:${tune.meter.num}/${tune.meter.den}`,
     `L:1/${Math.round(1 / tune.unit)}`,
-    `Q:1/4=${Math.round(tune.bpm)}`,
+    tune.tempoWritten === false ? '' : `Q:1/4=${Math.round(tune.bpm)}`,
   ].filter(Boolean);
   const body: string[] = [];
   const multi = tune.voices.length > 1;
