@@ -147,8 +147,17 @@
     font-weight: var(--font-weight-semibold);
   }
 
+  /* A number never breaks across lines, where 0.2038 over 1 reads as two values; a wide table scrolls instead. */
   .number {
     font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+
+  /* Row labels in a scrolling table, such as a coefficient's term, stay whole for the same reason. */
+  .scroll .table th {
+    white-space: nowrap;
+    overflow-wrap: normal;
   }
 
   .scroll {

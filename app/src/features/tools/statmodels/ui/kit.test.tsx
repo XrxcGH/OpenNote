@@ -62,6 +62,24 @@ describe('the statistical models kit window', () => {
     expect(await within(coefficients).findByText('extra')).toBeTruthy();
   });
 
+  it('keeps every number and term of a result table on one line in a narrow window', async () => {
+    saveTab('glm');
+    renderUi(
+      <div style={{ inlineSize: '320px' }}>
+        <StatModelsKit />
+      </div>,
+    );
+    const coefficients = await screen.findByRole('region', { name: 'Coefficients on the link scale' }, { timeout: 15_000 });
+    const cells = [...coefficients.querySelectorAll('tbody th, tbody td')];
+    expect(cells.length).toBeGreaterThan(0);
+    for (const cell of cells) {
+      const text = document.createRange();
+      text.selectNodeContents(cell);
+      // One line box per cell: a value split over two lines gives two rectangles.
+      expect(text.getClientRects().length, cell.textContent ?? '').toBe(1);
+    }
+  });
+
   it('moves between tabs with the arrow keys', async () => {
     renderUi(<StatModelsKit />);
     const tabs = screen.getAllByRole('tab');
