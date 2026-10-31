@@ -176,7 +176,10 @@ export function mantelHaenszel(strata: readonly TwoByTwo[], confidence = 0.95): 
   check(r > 0 && s > 0, 'pooledUndefined');
   const orMh = r / s;
   const se = Math.sqrt(pr / (2 * r * r) + ps / (2 * r * s) + qs / (2 * s * s));
-  const cmh = (Math.abs(sumA - sumE) - 0.5) ** 2 / sumV;
+  // Yates' 0.5 applies only when |A - E| >= 0.5, as in R's mantelhaen.test;
+  // subtracting it from a smaller gap would square a negative and inflate the statistic.
+  const delta = Math.abs(sumA - sumE);
+  const cmh = (delta - (delta >= 0.5 ? 0.5 : 0)) ** 2 / sumV;
   let bd = 0;
   for (const t of strata) {
     const A = fittedA(t, orMh);

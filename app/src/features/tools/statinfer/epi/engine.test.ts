@@ -59,6 +59,25 @@ describe('measures of effect', () => {
     expect(p.breslowDay).toBeGreaterThanOrEqual(0);
   });
 
+  it('CMH skips the continuity term when observed equals expected', () => {
+    // E = 20*15/40 = 7.5 per stratum, so sum A = sum E = 15: R gives 0, p = 1.
+    const p = mantelHaenszel([
+      { a: 10, b: 10, c: 5, d: 15 },
+      { a: 5, b: 15, c: 10, d: 10 },
+    ]);
+    close(p.cmh, 0, 1e-12);
+    close(p.pCmh, 1, 1e-12);
+  });
+
+  it('CMH keeps a gap under 0.5 uncorrected', () => {
+    // A - E = (1 - 0.8) + (10 - 10) = 0.2; V = 0.36 + 160000/62400; CMH = 0.04 / V.
+    const p = mantelHaenszel([
+      { a: 1, b: 1, c: 1, d: 2 },
+      { a: 10, b: 10, c: 10, d: 10 },
+    ]);
+    close(p.cmh, 0.04 / (0.36 + 160000 / 62400), 1e-12);
+  });
+
   it('Breslow-Day is 0 when every stratum has the same odds ratio', () => {
     const p = mantelHaenszel([
       { a: 10, b: 10, c: 10, d: 10 },
