@@ -1,7 +1,9 @@
 // A small table of nuclides for the nuclear science tool. Atomic masses of neutral atoms, in u, are from the 2020
 // Atomic Mass Evaluation (AME2020, Wang et al., Chinese Physics C 45, 030003). Half-lives are from NUBASE2020 (Kondev
 // et al., Chinese Physics C 45, 030001). The Atomic Mass Data Center publishes both. Masses and half-lives are
-// measured facts; the table keeps the digits a course needs, not each value's uncertainty.
+// measured facts; the table keeps the digits a course needs, not each value's uncertainty. Both papers are published
+// open access under CC BY 3.0 (https://doi.org/10.1088/1674-1137/abddaf, https://doi.org/10.1088/1674-1137/abddae);
+// THIRD_PARTY_NOTICES.md credits them.
 
 const Y = 365.25 * 86_400;
 const D = 86_400;
