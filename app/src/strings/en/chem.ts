@@ -7,6 +7,7 @@ export const chem = {
   steps: 'Steps',
   insertAnswer: 'Insert answer',
   insertSteps: 'Insert with steps',
+  insertGraph: 'Insert graph',
   f: {
     equation: 'Equation',
     formula: 'Formula',

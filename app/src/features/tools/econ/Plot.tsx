@@ -2,6 +2,7 @@
 // Curves differ by dash and by a label at their end, never by color alone, and the graph has a text summary for a
 // screen reader (the steps beside it carry the numbers).
 import { fmt } from './num';
+import { H, PAD, W, layoutPlot } from './plotLayout';
 import styles from './plot.module.css';
 
 export interface Curve {
@@ -27,41 +28,9 @@ export interface PlotProps {
   marks?: readonly Mark[];
 }
 
-const W = 360;
-const H = 240;
-const PAD = { left: 44, right: 14, top: 12, bottom: 34 };
-
-function ticks(lo: number, hi: number, count = 4): number[] {
-  if (!(hi > lo)) return [lo];
-  const raw = (hi - lo) / count;
-  const mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw) ?? raw;
-  const out: number[] = [];
-  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step)
-    out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
-  return out;
-}
-
-export function Plot({ summary, xLabel, yLabel, curves, areas = [], marks = [] }: PlotProps) {
-  const all = [
-    ...curves.flatMap((c) => c.points),
-    ...areas.flatMap((a) => a.points),
-    ...marks.map((m) => [m.x, m.y] as const),
-  ];
-  const xLow = Math.min(0, ...all.map((p) => p[0]));
-  const yLow = Math.min(0, ...all.map((p) => p[1]));
-  const xHigh = Math.max(...all.map((p) => p[0]), xLow + 1e-9);
-  const yHigh = Math.max(...all.map((p) => p[1]), yLow + 1e-9);
-  const xt = ticks(xLow, xHigh);
-  const yt = ticks(yLow, yHigh);
-  const x0 = Math.min(xLow, xt[0]);
-  const y0 = Math.min(yLow, yt[0]);
-  const x1 = Math.max(xHigh, xt[xt.length - 1]);
-  const y1 = Math.max(yHigh, yt[yt.length - 1]);
-  const sx = (x: number) => PAD.left + ((x - x0) / (x1 - x0)) * (W - PAD.left - PAD.right);
-  const sy = (y: number) => H - PAD.bottom - ((y - y0) / (y1 - y0)) * (H - PAD.top - PAD.bottom);
-  const path = (pts: readonly (readonly [number, number])[]) =>
-    pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p[0]).toFixed(1)} ${sy(p[1]).toFixed(1)}`).join(' ');
+export function Plot(props: PlotProps) {
+  const { summary, xLabel, yLabel, curves, areas = [], marks = [] } = props;
+  const { xt, yt, sx, sy, path } = layoutPlot(props);
   return (
     <figure className={styles.figure}>
       <svg className={styles.svg} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary}>
