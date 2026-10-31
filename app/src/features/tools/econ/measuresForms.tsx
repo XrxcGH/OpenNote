@@ -4,8 +4,8 @@ import { Plot } from './Plot';
 import { bad, choice, failed, field, ok, optional, read, text, tx } from './forms';
 import type { EconForm, EconToolDef, Values } from './forms';
 import {
-  FEDERAL,
-  FEDERAL_YEAR,
+  FEDERAL_BY_YEAR,
+  FEDERAL_YEARS,
   adjust,
   cagr,
   chain,
@@ -337,14 +337,16 @@ const taxForm = form(
   [
     f('income', { initial: '50000' }),
     choice(T, 'schedule', ['custom', 'single', 'joint']),
+    choice(T, 'year', FEDERAL_YEARS.map(String), String(FEDERAL_YEARS.at(-1))),
     f('brackets', { kind: 'text', initial: '0:10, 10000:20, 40000:30' }),
   ],
   (values) => {
     const n = read(T, values, ['income']);
     if (failed(n)) return n;
     const kind = text(values, 'schedule');
+    const year = Number(text(values, 'year')) || FEDERAL_YEARS.at(-1)!;
     const brackets =
-      kind === 'custom' ? parseBrackets(values.text.brackets ?? '') : FEDERAL[kind as 'single' | 'joint'];
+      kind === 'custom' ? parseBrackets(values.text.brackets ?? '') : FEDERAL_BY_YEAR[year]![kind as 'single' | 'joint'];
     if (!brackets) return bad('measures.tax.parse');
     const r = taxOn(n[0], brackets);
     if (!r) return bad('measures.tax.invalid');
@@ -359,7 +361,7 @@ const taxForm = form(
         }),
       );
     steps.push(tx('measures.tax.rates', { avg: pct(r.average, 3), marginal: pct(r.marginal, 2) }));
-    if (kind !== 'custom') steps.push(tx('measures.tax.federalNote', { year: FEDERAL_YEAR }));
+    if (kind !== 'custom') steps.push(tx('measures.tax.federalNote', { year }));
     return ok(tx('measures.tax.headline', { tax: m(r.tax) }), steps);
   },
 );

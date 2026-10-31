@@ -240,29 +240,29 @@ export function taxOn(income: number, brackets: readonly Bracket[]): TaxResult |
     return { from: b.from, to, rate: b.rate, amount: Math.max(0, top - b.from) * b.rate };
   });
   const tax = sum(pieces.map((p) => p.amount));
-  const marginal = [...sorted].reverse().find((b) => income > b.from)?.rate ?? sorted[0].rate;
+  const marginal = [...sorted].reverse().find((b) => income >= b.from)?.rate ?? sorted[0].rate;
   return { tax, average: income > 0 ? tax / income : 0, marginal, pieces };
 }
 
-/** Federal income tax brackets for tax year 2024 (IRS Revenue Procedure 2023-34), taxable income. */
-export const FEDERAL_YEAR = 2024;
-export const FEDERAL: Record<'single' | 'joint', readonly Bracket[]> = {
-  single: [
-    { from: 0, rate: 0.1 },
-    { from: 11600, rate: 0.12 },
-    { from: 47150, rate: 0.22 },
-    { from: 100525, rate: 0.24 },
-    { from: 191950, rate: 0.32 },
-    { from: 243725, rate: 0.35 },
-    { from: 609350, rate: 0.37 },
-  ],
-  joint: [
-    { from: 0, rate: 0.1 },
-    { from: 23200, rate: 0.12 },
-    { from: 94300, rate: 0.22 },
-    { from: 201050, rate: 0.24 },
-    { from: 383900, rate: 0.32 },
-    { from: 487450, rate: 0.35 },
-    { from: 731200, rate: 0.37 },
-  ],
+/** Federal income tax brackets by tax year, taxable income: 2024 from IRS Revenue Procedure 2023-34, 2025 from
+ * 2024-40, 2026 from 2025-32. */
+type Schedules = Record<'single' | 'joint', readonly Bracket[]>;
+const RATES = [0.1, 0.12, 0.22, 0.24, 0.32, 0.35, 0.37];
+const ladder = (starts: readonly number[]): readonly Bracket[] => starts.map((from, i) => ({ from, rate: RATES[i]! }));
+export const FEDERAL_BY_YEAR: Record<number, Schedules> = {
+  2024: {
+    single: ladder([0, 11600, 47150, 100525, 191950, 243725, 609350]),
+    joint: ladder([0, 23200, 94300, 201050, 383900, 487450, 731200]),
+  },
+  2025: {
+    single: ladder([0, 11925, 48475, 103350, 197300, 250525, 626350]),
+    joint: ladder([0, 23850, 96950, 206700, 394600, 501050, 751600]),
+  },
+  2026: {
+    single: ladder([0, 12400, 50400, 105700, 201775, 256225, 640600]),
+    joint: ladder([0, 24800, 100800, 211400, 403550, 512450, 768700]),
+  },
 };
+export const FEDERAL_YEARS = Object.keys(FEDERAL_BY_YEAR).map(Number);
+export const FEDERAL_YEAR = 2024;
+export const FEDERAL: Schedules = FEDERAL_BY_YEAR[FEDERAL_YEAR]!;

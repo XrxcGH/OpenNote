@@ -83,9 +83,10 @@ export const measures = {
     gniMax: 'Income maximum',
     income: 'Taxable income',
     schedule: 'Schedule',
+    year: 'Tax year (federal schedules)',
     brackets: 'Brackets',
   },
-  o: { custom: 'Typed brackets', single: 'US federal, single', joint: 'US federal, married filing jointly' },
+  o: { 2024: '2024', 2025: '2025', 2026: '2026', custom: 'Typed brackets', single: 'US federal, single', joint: 'US federal, married filing jointly' },
   listsNeeded: 'Enter numbers separated by commas in every list.',
   index: {
     sameLength: 'All four lists need the same number of entries, one per good.',

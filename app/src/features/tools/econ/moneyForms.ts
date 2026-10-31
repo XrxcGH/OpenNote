@@ -17,6 +17,8 @@ import {
   periodsFor,
   perpetuity,
   profitabilityIndex,
+  equivalentAnnual,
+  benefitCost,
   property,
   rateFor,
   schedule,
@@ -206,6 +208,10 @@ const flows: EconForm = {
     steps.push(dback === null ? tx('money.flows.noDiscounted') : tx('money.flows.discounted', { n: fmt(dback, 2) }));
     const index = profitabilityIndex(r, list);
     if (index !== null) steps.push(tx('money.flows.index', { pi: fmt(index, 3) }));
+    const eaa = equivalentAnnual(r, list);
+    if (eaa !== null) steps.push(tx('money.flows.eaa', { eaa: m(eaa), n: list.length - 1 }));
+    const bcr = benefitCost(r, list);
+    if (bcr !== null) steps.push(tx('money.flows.bcr', { bcr: fmt(bcr, 3) }));
     steps.push(tx(value >= 0 ? 'money.flows.accept' : 'money.flows.reject'));
     return ok(tx('money.flows.headline', { npv: m(value) }), steps);
   },

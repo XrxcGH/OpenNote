@@ -3,6 +3,7 @@ import { CPI_FIRST_YEAR, CPI_U, cpiFor } from './cpi';
 import type { EconForm, Values } from './forms';
 import {
   FEDERAL,
+  FEDERAL_BY_YEAR,
   adjust,
   cagr,
   chain,
@@ -163,6 +164,16 @@ describe('HDI and taxes', () => {
     // 60 000 single, 2024: 1160 + 12% of 35 550 + 22% of 12 850
     const t = taxOn(60000, FEDERAL.single)!;
     expect(t.tax).toBeCloseTo(1160 + 4266 + 2827, 6);
+  });
+  it('taxes 60 000 single in 2025 and 2026 by hand', () => {
+    // 2025: 1192.50 + 12% of (48475-11925) + 22% of (60000-48475)
+    expect(taxOn(60000, FEDERAL_BY_YEAR[2025]!.single)!.tax).toBeCloseTo(1192.5 + 4386 + 2535.5, 6);
+    // 2026: 1240 + 12% of (50400-12400) + 22% of (60000-50400)
+    expect(taxOn(60000, FEDERAL_BY_YEAR[2026]!.single)!.tax).toBeCloseTo(1240 + 4560 + 2112, 6);
+  });
+  it('reports the next dollar rate on a bracket boundary', () => {
+    expect(taxOn(11600, FEDERAL.single)!.marginal).toBe(0.12);
+    expect(taxOn(0, FEDERAL.single)!.marginal).toBe(0.1);
   });
 });
 

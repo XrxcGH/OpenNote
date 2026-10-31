@@ -105,6 +105,21 @@ export function profitabilityIndex(rate: number, flows: readonly number[]): numb
   return flows[0] < 0 ? (npv(rate, flows) - flows[0]) / -flows[0] : null;
 }
 
+/** Equivalent annual annuity: the level yearly amount over n periods with the same present value as the project's NPV. */
+export function equivalentAnnual(rate: number, flows: readonly number[]): number | null {
+  const n = flows.length - 1;
+  if (n < 1) return null;
+  const value = npv(rate, flows);
+  return rate === 0 ? value / n : (value * rate) / (1 - (1 + rate) ** -n);
+}
+
+/** Benefit-cost ratio: the present value of the positive flows over the present value of the negative ones. */
+export function benefitCost(rate: number, flows: readonly number[]): number | null {
+  const pv = (sign: number) => flows.reduce((s, x, t) => (x * sign > 0 ? s + Math.abs(x) / (1 + rate) ** t : s), 0);
+  const cost = pv(-1);
+  return cost > 0 ? pv(1) / cost : null;
+}
+
 export type Method = 'straight' | 'declining' | 'double' | 'syd';
 
 /** Depreciation for each year of a life. `factor` is the declining-balance multiple of the straight-line rate. */
@@ -115,7 +130,7 @@ export function depreciation(method: Method, cost: number, salvage: number, life
     let d: number;
     if (method === 'straight') d = (cost - salvage) / life;
     else if (method === 'syd') d = ((cost - salvage) * (life - year + 1)) / ((life * (life + 1)) / 2);
-    else d = (book * (method === 'double' ? 2 : factor)) / life;
+    else d = Math.max((book * (method === 'double' ? 2 : factor)) / life, (book - salvage) / (life - year + 1));
     d = Math.max(0, Math.min(d, book - salvage));
     out.push(d);
     book -= d;

@@ -3,6 +3,8 @@ import {
   annuityFv,
   annuityPv,
   depreciation,
+  equivalentAnnual,
+  benefitCost,
   effectiveRate,
   fv,
   icer,
@@ -85,7 +87,27 @@ describe('project appraisal', () => {
   });
 });
 
+describe('equivalent annual annuity and benefit-cost ratio', () => {
+  const flows = [-1000, 500, 500, 500];
+  it('matches hand values at 10%', () => {
+    // NPV = 500 * 2.486852 - 1000 = 243.426; EAA = NPV * 0.1 / (1 - 1.1^-3) = 243.426 / 2.486852
+    expect(equivalentAnnual(0.1, flows)).toBeCloseTo(97.885, 2);
+    // PV benefits 1243.426 over 1000
+    expect(benefitCost(0.1, flows)).toBeCloseTo(1.2434, 3);
+    expect(benefitCost(0.1, [100, 200])).toBeNull();
+    expect(equivalentAnnual(0, flows)).toBeCloseTo(500 / 3, 9);
+  });
+});
+
 describe('depreciation', () => {
+  it('declining balance switches to straight line and reaches salvage', () => {
+    // 10000 cost, 0 salvage, 5 years, 200%: 4000, 2400, 1440, then SL on 2160 over 2 years = 1080 each.
+    const d = depreciation('double', 10000, 0, 5);
+    [4000, 2400, 1440, 1080, 1080].forEach((x, i) => expect(d[i]).toBeCloseTo(x, 9));
+    expect(d.reduce((a, b) => a + b, 0)).toBeCloseTo(10000, 9);
+    // 150% with salvage 1000: sum is cost - salvage.
+    expect(depreciation('declining', 10000, 1000, 5).reduce((a, b) => a + b, 0)).toBeCloseTo(9000, 9);
+  });
   it('gives the first-year amounts', () => {
     expect(depreciation('straight', 10000, 1000, 5)[0]).toBe(1800);
     expect(depreciation('double', 10000, 1000, 5)[0]).toBe(4000);

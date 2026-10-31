@@ -137,6 +137,8 @@ export const money = {
     noDiscounted: 'Discounted payback: not reached.',
     discounted: 'Discounted payback: {n} periods',
     index: 'Profitability index: {pi}',
+    eaa: 'Equivalent annual annuity over {n} periods: {eaa} a period.',
+    bcr: 'Benefit-cost ratio (present value of benefits over present value of costs): {bcr}',
     accept: 'NPV is zero or more, so the project earns at least the required rate.',
     reject: 'NPV is negative, so the project earns less than the required rate.',
   },
