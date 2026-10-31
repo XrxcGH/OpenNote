@@ -130,6 +130,8 @@ export function linePlot(spec: PlotSpec): Figure {
     p[1] >= Math.min(...yr) - 1e-12 &&
     p[1] <= Math.max(...yr) + 1e-12;
   spec.series.forEach((s, i) => {
+    // A series with no points is a legend entry only, for marks drawn by `extra`.
+    if (s.points.length === 0) return;
     const role = s.role ?? SERIES[i % SERIES.length];
     const shown = s.points.map((p) => (inside(p) && (!spec.logX || p[0] > 0) && (!spec.logY || p[1] > 0) ? p : null));
     if (s.dots) {

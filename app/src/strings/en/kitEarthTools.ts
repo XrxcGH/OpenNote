@@ -876,6 +876,11 @@ export const kitEarthTools = {
       plumeText: 'Concentration on the ground under the plume against distance downwind, class {stability}, H {h} m.',
       downwind: 'Distance downwind (m)',
       ground: 'Concentration (µg/m³)',
+      mapTitle: 'Ground-level concentration map',
+      mapText:
+        'Plan view of the ground-level concentration, class {stability}, as contours at 10, 30, 50, 70, and 90% of the peak, {peak} µg/m³ about {x} m downwind.',
+      crosswind: 'Distance crosswind (m)',
+      level: '{pct}% of peak, {value} µg/m³',
       boxTitle: 'Concentration in the box',
       boxText: 'Concentration over time, settling at {steady} µg/m³ with an e-folding time of {tau} h.',
       hours: 'Time (h)',

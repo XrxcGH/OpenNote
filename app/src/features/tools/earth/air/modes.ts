@@ -10,6 +10,7 @@ import { fieldsFor, when } from '../ui/fields';
 import type { Mode } from '../ui/form';
 import { looseT } from '../ui/form';
 import { decodeMetar, decodeTaf, skyEighths } from './metar';
+import { plumeMapFigure } from './plumeMap';
 import type { Cloud, Conditions, Metar, Weather, Wind } from './metar';
 import {
   MOLAR_MASS,
@@ -230,6 +231,14 @@ const plumeMode: Mode = {
           logX: true,
           series: [{ points, role: 's0' }],
           vlines: [{ x }],
+        }),
+        plumeMapFigure({
+          q,
+          u,
+          stability,
+          urban,
+          heightAt: hFor,
+          xMax: Math.max(2 * x, max ? 3 * max.x : 0, 1000),
         }),
       );
     }
