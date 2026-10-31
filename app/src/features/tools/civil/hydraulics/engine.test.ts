@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CivilError } from '../core/types';
 import {
-  G,
   classify,
   convolve,
   criticalDepth,

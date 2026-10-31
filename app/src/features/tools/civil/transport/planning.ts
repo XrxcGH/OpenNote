@@ -14,6 +14,7 @@ import {
   transit,
   traverse,
 } from './engine';
+import { dmdArea } from './survey';
 
 const demandCalc: Calc = {
   id: 'demand',
@@ -169,6 +170,7 @@ const surveyCalc: Calc = {
     }
     const legs = rows.legs!.map(([length, azimuth]) => ({ length: length!, azimuth: azimuth! }));
     const t = traverse(legs);
+    const dmd = dmdArea(t.adjusted);
     return {
       answer: {
         key: 'transport.survey.tAnswer',
@@ -180,6 +182,7 @@ const surveyCalc: Calc = {
         row('transport.r.linear', t.linear, 'm'),
         row('transport.r.precision', Math.round(t.precision)),
         row('transport.r.area', t.area, 'm²'),
+        row('transport.r.dmdArea', dmd.area, 'm²'),
       ],
       steps: [
         step('transport.survey.t1', undefined, '\\text{lat} = L\\cos\\alpha,\\quad \\text{dep} = L\\sin\\alpha'),
@@ -193,6 +196,12 @@ const surveyCalc: Calc = {
           'transport.survey.t4',
           { area: t.area },
           `A = \\tfrac12\\left|\\sum (x_i y_{i+1} - x_{i+1} y_i)\\right| = ${tex(t.area)}\\ \\mathrm{m^2}`,
+        ),
+        step(
+          'transport.survey.t5',
+          { area: dmd.area },
+          '\\mathrm{DMD}_i = \\mathrm{DMD}_{i-1} + \\text{dep}_{i-1} + \\text{dep}_i,\\quad ' +
+            '2A = \\left|\\sum \\text{lat}_i\\,\\mathrm{DMD}_i\\right|',
         ),
       ],
       latex: `e = ${tex(t.linear)}\\ \\mathrm{m},\\ 1{:}${Math.round(t.precision)}`,

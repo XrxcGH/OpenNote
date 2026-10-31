@@ -211,7 +211,8 @@ const gvfCalc: Calc = {
     const yn = n.S0! > 0 ? normalDepth(sec, Q, n.n!, n.S0!) : null;
     const type = classify(n.S0!, n.y1!, yn, yc);
     // Toward normal depth by default, stopping just short since the profile only approaches it.
-    const target = o.y2 ?? (yn !== null ? yn + (n.y1! > yn ? 0.01 : -0.01) * Math.abs(n.y1! - yn) : yc * (n.y1! > yc ? 1.01 : 0.99));
+    const target =
+      o.y2 ?? (yn !== null ? yn + (n.y1! > yn ? 0.01 : -0.01) * Math.abs(n.y1! - yn) : yc * (n.y1! > yc ? 1.01 : 0.99));
     const p = directStep(sec, Q, n.n!, n.S0!, n.y1!, target, Math.round(n.steps!));
     return {
       answer: {

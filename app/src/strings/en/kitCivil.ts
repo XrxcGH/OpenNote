@@ -61,7 +61,8 @@ export const kitCivil = {
         'transportation traffic flow greenshields greenberg underwood capacity shockwave queue bottleneck ' +
         'incident delay toll plaza m/m/1 m/m/c signal timing webster cycle green split stopping sight distance ' +
         'horizontal curve superelevation vertical curve crest sag travel demand gravity model logit mode share ' +
-        'transit headway fleet surveying traverse compass rule misclosure leveling area by coordinates earthwork ' +
+        'transit headway fleet surveying traverse compass rule misclosure leveling area by coordinates double meridian distance dmd trigonometric levelling zenith helmert ' +
+        'coordinate transformation trip generation rates earthwork ' +
         'average end area prismoidal mass diagram site zoning floor area ratio coverage density parking setback',
     },
     indeterminate: {
@@ -70,7 +71,7 @@ export const kitCivil = {
       keywords:
         'structural analysis indeterminate continuous beam moment distribution hardy cross slope deflection ' +
         'fixed end moments influence line muller breslau moving loads axle train absolute maximum moment truss ' +
-        'portal method cantilever method lateral loads response spectrum newmark earthquake srss cqc',
+        'frame sway sidesway non-sway braced portal method cantilever method lateral loads response spectrum newmark earthquake srss cqc',
     },
     hydraulics: {
       title: 'Hydrology and open channels',
