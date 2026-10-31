@@ -1,10 +1,21 @@
 // The pieces every signals tool shares. Fields keep their text on this device; modes are ARIA tabs. Results show as
 // a list or a table beside the worked steps. The insert buttons put an answer, an equation, a table, the steps, or a
-// picture into the page.
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+// picture into the page, or a live calculation block that reopens the tool with its fields.
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
+import { insertLiveBlock } from '../../kits/ui/insert';
 import { insertIntoPage } from '../../ui/CalculatorTool';
+import { SIGNALS_KIT, STORE_PREFIX, signalInputs, type SignalToolId } from '../meta';
 import { isSignalError } from './errors';
 import type { Step } from './steps';
 import styles from './kit.module.css';
@@ -12,7 +23,10 @@ import styles from './kit.module.css';
 /** t for keys built at run time, such as a step's or an error's key. Each key exists in strings/en/kitSignals.ts. */
 export const say = t as unknown as (key: string, params?: Readonly<Record<string, string | number>>) => string;
 
-const STORE = 'opennote.kitSignals.';
+const STORE = STORE_PREFIX;
+
+/** The tool shown in the kit's window, so the insert buttons can make a live block that reopens it. */
+export const SignalToolContext = createContext<{ id: SignalToolId; title: string } | null>(null);
 
 /** State kept on this device under the tool's name, merged over the first values so new fields appear. */
 export function useStored<T extends object>(name: string, first: T): [T, (patch: Partial<T>) => void] {
@@ -324,6 +338,7 @@ const copyTable = (table: TableData) => ({ header: [...table.header], rows: tabl
 
 /** The buttons that put a result into the page; each one is offered only when the result has that form. */
 export function InsertMenu({ answer, latex, table, steps, picture }: InsertOptions) {
+  const tool = useContext(SignalToolContext);
   return (
     <div className={styles.actions} role="group" aria-label={t('kitSignals.ui.insertGroup')}>
       {answer ? (
@@ -352,6 +367,25 @@ export function InsertMenu({ answer, latex, table, steps, picture }: InsertOptio
           onClick={() => void picture().then((made) => (made ? done(insertIntoPage({ picture: made })) : done(false)))}
         >
           {t('kitSignals.ui.insertPicture')}
+        </Button>
+      ) : null}
+      {tool ? (
+        <Button
+          variant="quiet"
+          onClick={() =>
+            done(
+              insertLiveBlock({
+                kit: SIGNALS_KIT,
+                tool: tool.id,
+                title: tool.title,
+                summary: answer ?? tool.title,
+                inputs: signalInputs(tool.id),
+                ...(latex ? { latex } : {}),
+              }),
+            )
+          }
+        >
+          {t('kitSignals.ui.insertLive')}
         </Button>
       ) : null}
     </div>

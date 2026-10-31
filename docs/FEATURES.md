@@ -636,7 +636,7 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 
 ## Signals, images, sound, and communications
 
-(Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md).)
+(Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md). Every tool's insert buttons include a live calculation block (`ext:org.opennote/kitcalc`) that reopens the tool with its fields.)
 
 | Feature | What it does | Status |
 | --- | --- | --- |
@@ -648,7 +648,7 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Image lab | Window, level, stretch, and gamma with a histogram; manual and Otsu thresholds with connected-component counts, areas, and centroids; box, Gaussian, sharpen, Sobel, Prewitt, Laplacian, custom, and Canny filters; erosion, dilation, opening, and closing; 2D FFT masks; scale calibration, distances, and rectangle statistics; NDVI and typed band math, false color, and minimum-distance classes; and the Radon transform with filtered back-projection. | Built, untested by hand |
 | Medical imaging physics | Larmor frequency, spin-echo, gradient-echo, and inversion-recovery signals with contrast against TR, a Bloch simulator with spin echoes, a k-space masking demonstration on the Shepp-Logan phantom, Hounsfield units and windows, ultrasound reflection, depth, attenuation, and Doppler, X-ray half-value layers, and PET SUV with decay correction. | Built, untested by hand |
 | Information, coding, and modulation | Entropy, mutual information, and channel capacity; Huffman, Shannon-Fano, and LZ78 source codes; Hamming and linear block codes; standard CRCs; Viterbi decoding; and constellations, bit-error rates, and eye diagrams. | Built, untested by hand |
-| Transmission lines and RF | Reflection, VSWR, and input impedance on a Smith chart with the standing-wave pattern; L-section, single-stub, and quarter-wave matching; coax, two-wire, and microstrip impedance; S, Z, Y, and ABCD conversion with stability and cascades; Friis noise cascades; antenna links, radar range, and decibel units. | Built, untested by hand |
+| Transmission lines and RF | Reflection, VSWR, and input impedance (open and shorted loads included) on a Smith chart with the standing-wave pattern; L-section, single-stub, and quarter-wave matching; coax, two-wire, and microstrip impedance; S, Z, Y, and ABCD conversion with stability and cascades; Friis noise cascades; antenna links, radar range, and decibel units. | Built, untested by hand |
 
 ## macOS and Linux
 

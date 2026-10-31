@@ -4,7 +4,7 @@ These tools work signal, sound, and radio problems. Each one shows its steps, pl
 
 To open the window, use the command palette: **Open signals and sound tools**. You can also open one tool by its name, such as **Open spectrum analyzer**. The **Tool** list at the top picks a tool. Tabs pick a mode, and the arrow keys move between tabs. Results update as you type.
 
-Each result has buttons to put part of it on the page at the caret: **Insert answer**, **Insert equation**, **Insert table**, **Insert steps**, and **Insert picture**.
+Each result has buttons to put part of it on the page at the caret: **Insert answer**, **Insert equation**, **Insert table**, **Insert steps**, and **Insert picture**. **Insert live block** puts a calculation block on the page that keeps the tool's fields; its **Open in tool** button opens the tool with them again.
 
 ## Signals and systems
 
@@ -16,7 +16,7 @@ Each result has buttons to put part of it on the page at the caret: **Insert ans
 
 The brain and body, medical imaging, and audiogram tools are for coursework only, not for clinical use or diagnosis.
 
-- **Neural and physiological time series.** Cut epochs around events, remove the baseline, reject noisy trials, and average them with a standard-error band, then read peaks and mean amplitudes. Build fMRI regressors from the canonical response, fit a voxel by least squares, and read t for a contrast. Draw spike rasters and firing rates, with interval statistics. Find R peaks in an ECG and work out heart rate and its variability, and map a value per electrode on the 10-20 layout.
+- **Neural and physiological time series.** Cut epochs around events, remove the baseline, reject noisy trials, and average them with a standard-error band, then read peaks and mean amplitudes. Build fMRI regressors from the canonical response, fit a voxel by least squares, and read t for a contrast. Draw spike rasters and firing rates, with interval statistics. Find R peaks in an ECG and work out heart rate and its variability, and map a value per electrode on the 10-20 layout (the older names T3 to T6 and the newer T7, T8, P7, and P8 both work).
 
 ## Sound
 
@@ -34,6 +34,6 @@ The brain and body, medical imaging, and audiogram tools are for coursework only
 
 - **Information, coding, and modulation.** Find entropy, shared information, and the capacity of a channel. Build Huffman and Shannon-Fano codes with the tree drawn, and parse text the way the LZ78 compressor does. Encode and decode Hamming codes and other small block codes. Find standard checksums (cyclic redundancy checks, or CRCs) and work their long division. Decode a convolutional code with the Viterbi method. Compare ways to send bits over radio, such as phase shift keying (PSK) and quadrature amplitude modulation (QAM). Each has a constellation plot, an error-rate curve, and an eye diagram.
 
-- **Transmission lines and radio frequency (RF).** See how a load reflects, and move along the line on a Smith chart to read the input impedance. Design L-section, stub, and quarter-wave matches. Find the impedance of coax, two-wire, and microstrip lines. Convert two-port matrices, check stability, and cascade stages. Add up noise through a chain of amplifiers, and work antenna links, radar range, and decibel units.
+- **Transmission lines and radio frequency (RF).** See how a load reflects (type **open**, or use the **Short** and **Open** buttons, for an open or shorted line), and move along the line on a Smith chart to read the input impedance. Design L-section, stub, and quarter-wave matches. Find the impedance of coax, two-wire, and microstrip lines. Convert two-port matrices, check stability, and cascade stages. Add up noise through a chain of amplifiers, and work antenna links, radar range, and decibel units.
 
 The CRC presets use the parameters in the CRC catalog by Greg Cook (reveng.sourceforge.io). The microstrip formulas are the Hammerstad-Jensen closed forms, and the matching formulas follow Pozar's Microwave Engineering.

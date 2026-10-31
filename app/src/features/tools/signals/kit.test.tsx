@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { INSERT_EVENT } from '../flags';
 import { SignalsKit } from './kit';
-import { chooseSignalTool, type SignalToolId } from './meta';
+import { chooseSignalTool, restoreSignalInputs, type SignalToolId } from './meta';
 
 const inserted: Record<string, unknown>[] = [];
 const listen = (event: Event) => {
@@ -120,6 +120,27 @@ describe('signals kit: systems, coding, RF, and filters', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Insert answer' })[0]!);
     expect(inserted[0]?.text).toContain('0.4 + j0.2');
     await walkModes(container);
+  });
+
+  it('takes an open load, inserts a live block with its fields, and puts them back from the block', async () => {
+    await openAt('rf');
+    fireEvent.click(screen.getByRole('button', { name: 'Open (∞)' }));
+    // An eighth wave of 50 Ω line ending in an open: Zin = −j Z0 cot 45° = −j50 Ω, and Γ = 1.
+    expect(screen.getAllByRole('status')[0]!.textContent).toContain('−j50');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Insert live block' })[0]!);
+    const panel = inserted[0]?.panel as {
+      type: string;
+      data: { kit: string; tool: string; inputs: Record<string, { zl?: string }> };
+    };
+    expect(panel.type).toBe('ext:org.opennote/kitcalc');
+    expect([panel.data.kit, panel.data.tool]).toEqual(['signals', 'rf']);
+    expect(panel.data.inputs['rf.load']?.zl).toBe('open');
+    // Another load typed since; the block's Open in tool puts the open load back into the open window.
+    fireEvent.click(screen.getByRole('button', { name: 'Short (0 Ω)' }));
+    act(() => void restoreSignalInputs('rf', { ...panel.data.inputs, 'spectrum.x': { a: 1 }, 'rf.bad': 'text' }));
+    expect(await screen.findByDisplayValue('open')).toBeTruthy();
+    expect(window.localStorage.getItem('opennote.kitSignals.spectrum.x')).toBeNull();
+    expect(restoreSignalInputs('nope', {})).toBe(false);
   });
 
   it('designs the Butterworth example, inserts its coefficients, and walks every filter mode', async () => {

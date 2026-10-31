@@ -2,8 +2,8 @@
 // tool loads the first time it is chosen, so the window stays small. A palette command can open the kit at a tool.
 import { lazy, Suspense, useEffect, useState, type ComponentType, type LazyExoticComponent } from 'react';
 import { t } from '../../../strings/t';
-import { CHOSEN_KEY, CHOOSE_EVENT, SIGNAL_TOOLS, isSignalToolId, type SignalToolId } from './meta';
-import { Choice } from './shared/ui';
+import { CHOSEN_KEY, CHOOSE_EVENT, RESTORE_EVENT, SIGNAL_TOOLS, isSignalToolId, type SignalToolId } from './meta';
+import { Choice, SignalToolContext } from './shared/ui';
 import styles from './shared/kit.module.css';
 import { loadWords } from './shared/words';
 
@@ -51,13 +51,20 @@ function firstTool(): SignalToolId {
 
 export function SignalsKit() {
   const [tool, setTool] = useState<SignalToolId>(firstTool);
+  // Bumped when a live calculation block puts a tool's fields back, so the tool mounts again and reads them.
+  const [restored, setRestored] = useState(0);
   useEffect(() => {
     const choose = (event: Event) => {
       const id = (event as CustomEvent<unknown>).detail;
       if (isSignalToolId(id)) setTool(id);
     };
+    const restore = () => setRestored((n) => n + 1);
     window.addEventListener(CHOOSE_EVENT, choose);
-    return () => window.removeEventListener(CHOOSE_EVENT, choose);
+    window.addEventListener(RESTORE_EVENT, restore);
+    return () => {
+      window.removeEventListener(CHOOSE_EVENT, choose);
+      window.removeEventListener(RESTORE_EVENT, restore);
+    };
   }, []);
   const pick = (id: SignalToolId) => {
     setTool(id);
@@ -81,9 +88,11 @@ export function SignalsKit() {
         />
         <p className={styles.about}>{t(meta.about)}</p>
       </div>
-      <Suspense fallback={null}>
-        <Body key={tool} />
-      </Suspense>
+      <SignalToolContext.Provider value={{ id: tool, title: t(meta.title) }}>
+        <Suspense fallback={null}>
+          <Body key={`${tool}.${restored}`} />
+        </Suspense>
+      </SignalToolContext.Provider>
     </div>
   );
 }

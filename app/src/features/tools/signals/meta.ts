@@ -51,3 +51,46 @@ export function chooseSignalTool(id: SignalToolId): void {
   }
   window.dispatchEvent(new CustomEvent(CHOOSE_EVENT, { detail: id }));
 }
+
+/** The kit's id in a live calculation block (KitCalcData.kit). */
+export const SIGNALS_KIT = 'signals';
+/** Where each tool keeps its fields on this device: STORE_PREFIX + '<tool>.<part>'. */
+export const STORE_PREFIX = 'opennote.kitSignals.';
+/** Sent in the window when a live calculation block has put a tool's fields back, so an open tool reads them. */
+export const RESTORE_EVENT = 'opennote:kit-signals-restore';
+
+/** A tool's saved fields, part by part ('rf.load' and so on): what a live calculation block keeps as its inputs. */
+export function signalInputs(tool: SignalToolId): Record<string, unknown> {
+  const parts: Record<string, unknown> = {};
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i);
+      if (!key?.startsWith(`${STORE_PREFIX}${tool}.`)) continue;
+      parts[key.slice(STORE_PREFIX.length)] = JSON.parse(window.localStorage.getItem(key) ?? 'null') as unknown;
+    }
+  } catch {
+    // Storage can be off; the block then keeps no inputs and reopens the tool as it is.
+  }
+  return parts;
+}
+
+/**
+ * Puts a live calculation block's inputs back into `tool`'s fields and shows that tool. Only the tool's own parts
+ * are written, and only objects, so a block cannot change another tool or any other setting.
+ */
+export function restoreSignalInputs(tool: string, inputs: unknown): boolean {
+  if (!isSignalToolId(tool)) return false;
+  if (inputs && typeof inputs === 'object') {
+    try {
+      for (const [part, value] of Object.entries(inputs as Record<string, unknown>)) {
+        if (!part.startsWith(`${tool}.`) || !value || typeof value !== 'object' || Array.isArray(value)) continue;
+        window.localStorage.setItem(STORE_PREFIX + part, JSON.stringify(value));
+      }
+    } catch {
+      // The tool still opens, on what it last had.
+    }
+  }
+  chooseSignalTool(tool);
+  window.dispatchEvent(new CustomEvent(RESTORE_EVENT, { detail: tool }));
+  return true;
+}

@@ -8,6 +8,7 @@ export const common = {
     insertTable: 'Insert table',
     insertSteps: 'Insert steps',
     insertPicture: 'Insert picture',
+    insertLive: 'Insert live block',
     inserted: 'Added to the page.',
     noPage: 'Open a page and click where the result should go, then try again.',
     steps: 'Steps',
