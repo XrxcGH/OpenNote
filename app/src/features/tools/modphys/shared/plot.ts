@@ -11,6 +11,9 @@ export interface Series {
   label?: string;
   /** Which of the four series colors: 0 to 3. */
   tone?: number;
+  /** For dots: a name written beside each point (empty for none) and each dot's radius in pixels. */
+  names?: readonly string[];
+  sizes?: readonly number[];
 }
 
 export interface Level {
@@ -35,6 +38,8 @@ export interface PlotSpec<L extends string = string> {
   logY?: boolean;
   /** Draws x from high to low, as a temperature axis on an HR diagram. */
   reverseX?: boolean;
+  /** Gives both axes the same scale, widening x, so a circle on the sky stays round. */
+  equal?: boolean;
 }
 
 export interface SvgNode {
@@ -131,6 +136,11 @@ function axes(spec: PlotSpec): Axes {
   const yr = spec.y ? ([fy(spec.y[0]), fy(spec.y[1])] as [number, number]) : extent(ys, [0, 1]);
   const pw = W - M.left - M.right;
   const ph = H - M.top - M.bottom;
+  if (spec.equal) {
+    const half = ((yr[1] - yr[0]) * pw) / ph / 2;
+    const mid = (xr[0] + xr[1]) / 2;
+    if (half > (xr[1] - xr[0]) / 2) [xr[0], xr[1]] = [mid - half, mid + half];
+  }
   return {
     xr,
     yr,
@@ -203,9 +213,13 @@ function seriesNodes(a: Axes, s: Series, p: Palette): SvgNode[] {
       }));
   }
   if (kind === 'dots') {
-    return pts
-      .filter(([x, y]) => inside(x, y))
-      .map(([x, y]) => ({ tag: 'circle', attrs: { cx: n(x), cy: n(y), r: 3, fill: colour } }));
+    return pts.flatMap(([x, y], i): SvgNode[] => {
+      if (!inside(x, y)) return [];
+      const r = s.sizes?.[i] ?? 3;
+      const dot: SvgNode = { tag: 'circle', attrs: { cx: n(x), cy: n(y), r: n(r), fill: colour } };
+      const name = s.names?.[i];
+      return name ? [dot, text(x + r + 2, y + 4, name, { fill: p.ink })] : [dot];
+    });
   }
   let d = '';
   let pen = false;
