@@ -49,8 +49,8 @@ Open it with Ctrl+K and "Open the earth sciences kit", or with "Open" and a tool
 - Geochronology, isotopes, and the time scale: radiometric ages, isochrons, U-Pb concordia, argon plateaus, radiocarbon calibration, stable isotopes, and mineral formulas.
 - Stereonets and structural geology: planes, lines, poles, rakes, intersections, apparent dip, three-point problems, fold axes, and Fisher statistics.
 - Stratigraphy and classification diagrams: stratigraphic columns with correlation, the Harris matrix, ternary plots, soil texture, and QAPF names.
-- Air quality and weather observations: the AQI, Gaussian plumes, ppm conversions, box models, METAR and TAF in words, and radar rain rates.
-- Seismology and seismic surveys: S-P distance, epicenters, magnitude and energy, b-values, refraction, NMO, and Dix velocities.
+- Air quality and weather observations: the AQI, Gaussian plumes with a ground-level concentration map, ppm conversions, box models, METAR and TAF in words, and radar rain rates.
+- Seismology and seismic surveys: S-P distance, epicenters, magnitude and energy, b-values, Omori-Utsu aftershock decay, flat and dipping-layer refraction, NMO, and Dix velocities.
 - Gravity, magnetics, heat flow, and plates: Bouguer and isostatic anomalies, magnetic fields, geotherms, plate motions, and resistivity.
 - Ocean, waves, and planetary flow: seawater density and sound speed, wave dispersion and shoaling, and Coriolis, geostrophic, Ekman, Rossby, and Kelvin flow.
 
