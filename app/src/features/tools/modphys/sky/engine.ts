@@ -130,7 +130,8 @@ export function timeCalc(s: Site): Calc<SkyKey> {
   const eot = sun(jd).eot;
   return {
     items: [
-      fixed('jd', jd, '', 13),
+      // A JD is read as a seven-digit day count with a decimal day, never with a power of ten.
+      { key: 'jd', value: jd, unit: '', text: jd.toFixed(5) },
       fixed('mjd', jd - 2400000.5, '', 11),
       { key: 'ut', value: wrap(s.time - s.zone, 24), unit: 'h', text: hms(s.time - s.zone) },
       { key: 'gmst', value: g, unit: 'h', text: `${fmt(g, 10)} h = ${hms(g)}` },
@@ -141,7 +142,7 @@ export function timeCalc(s: Site): Calc<SkyKey> {
     steps: [
       {
         key: 'jd',
-        text: `JD = JD(0h) + UT/24 with UT = local time − zone = ${fmt(wrap(s.time - s.zone, 24), 8)} h: JD = ${fmt(jd, 13)}`,
+        text: `JD = JD(0h) + UT/24 with UT = local time − zone = ${fmt(wrap(s.time - s.zone, 24), 8)} h: JD = ${jd.toFixed(5)}`,
       },
       {
         key: 'gmst',

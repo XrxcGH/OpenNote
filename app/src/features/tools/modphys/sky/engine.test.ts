@@ -26,6 +26,14 @@ describe('time', () => {
     expect(item(timeCalc(site), 'mjd')).toBe(51544.5);
   });
 
+  it('shows the Julian Date as a day count with a decimal day, not a power of ten', () => {
+    const text = (calc: { items: readonly { key: string; text?: string }[] }) =>
+      calc.items.find((one) => one.key === 'jd')!.text;
+    expect(text(timeCalc(site))).toBe('2451545.00000');
+    // Meeus example 7.a: 1957 October 4.81 is JD 2436116.31.
+    expect(text(timeCalc({ ...site, date: [1957, 10, 4], time: 0.81 * 24 }))).toBe('2436116.31000');
+  });
+
   it('matches Meeus for 1957 October 4.81 and 1987 June 19.5, and turns back into a date', () => {
     expect(julianDate(1957, 10, 4, 0.81 * 24)).toBeCloseTo(2436116.31, 6);
     expect(julianDate(1987, 6, 19, 12)).toBe(2446966);
