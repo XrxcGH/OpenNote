@@ -70,3 +70,12 @@ describe('typed inputs in the reasoning tools', () => {
     expect(note(run)).toContain('A, B, C tie in first choices, so the finalists A, B');
   });
 });
+
+describe('crash limits in the project network', () => {
+  it('crashes to a target and reports the cost', async () => {
+    // A-C-D 9 days; C at 30 a day comes off twice to 7, then both paths need D (40): 30 + 30 + 40 = 100.
+    const o = await solve('optimize', 'project', { crash: 'C 2 30\nD 1 40', target: '6' });
+    expect(note(o)).toContain('Crashed to 6 days for an extra 100.');
+    expect(note(await solve('optimize', 'project', { target: '6' }))).toMatch(/^error: /);
+  });
+});

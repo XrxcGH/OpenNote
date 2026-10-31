@@ -173,3 +173,110 @@ export function earnedValue(bac: number, pv: number, ev: number, ac: number): Ea
     tcpi: bac === ac ? Infinity : (bac - ev) / (bac - ac),
   };
 }
+
+/** A crash limit for an activity: the shortest it can take, and the cost of each unit of time taken off. */
+export interface CrashLimit {
+  min: number;
+  slope: number;
+}
+
+export interface CrashRound {
+  /** The activities shortened together, each by `by`. */
+  names: string[];
+  by: number;
+  length: number;
+  cost: number;
+  total: number;
+}
+
+export interface Crashed {
+  rounds: CrashRound[];
+  durations: Map<string, number>;
+  length: number;
+  cost: number;
+  /** True when every critical path ran out of crashable time before the target. */
+  stuck: boolean;
+}
+
+/** Lines such as "A 3 100": A can be crashed down to 3, at 100 per unit of time saved. */
+export function parseCrash(text: string, acts: readonly Activity[]): Map<string, CrashLimit> {
+  const out = new Map<string, CrashLimit>();
+  lines(text).forEach((raw, k) => {
+    const m = /^\s*([A-Za-z0-9_]+)\s*[:,]?\s*(.*)$/.exec(raw);
+    const values = m ? numbers(m[2].replace(/,/g, ' ')) : null;
+    if (!m || !values || values.length !== 2) return fail('crashLine', { line: k + 1 });
+    const act = acts.find((a) => a.name === m[1]);
+    if (!act) return fail('crashUnknown', { name: m[1] });
+    if (act.three) fail('crashPert', { name: m[1] });
+    const [min, slope] = values;
+    if (!(min >= 0 && min <= act.dur) || !(slope >= 0)) fail('crashValues', { name: m[1] });
+    out.set(m[1], { min, slope });
+  });
+  return out;
+}
+
+/**
+ * Crashing to a target length: each round shortens the cheapest set of activities that cuts every critical path,
+ * by as much as keeps the critical paths the same, until the target is met or no critical path can be shortened.
+ */
+export function crash(acts: readonly Activity[], limits: Map<string, CrashLimit>, target: number): Crashed {
+  const dur = new Map(acts.map((a) => [a.name, a.dur]));
+  const succs = acts.map((a) => acts.flatMap((b, j) => (b.preds.includes(a.name) ? [j] : [])));
+  const starts = acts.flatMap((a, i) => (a.preds.length === 0 ? [i] : []));
+  const allPaths: number[][] = [];
+  const walk = (i: number, path: number[]) => {
+    if (allPaths.length > 2000) fail('crashPaths', { max: 2000 });
+    if (succs[i].length === 0) allPaths.push(path);
+    for (const j of succs[i]) walk(j, [...path, j]);
+  };
+  starts.forEach((i) => walk(i, [i]));
+  const lengthOf = (p: number[]) => p.reduce((s, i) => s + dur.get(acts[i].name)!, 0);
+  const rounds: CrashRound[] = [];
+  let total = 0;
+  let stuck = false;
+  for (let guard = 0; guard < 1000; guard += 1) {
+    const lengths = allPaths.map(lengthOf);
+    const length = Math.max(...lengths);
+    if (length <= target + EPS) break;
+    const criticalPaths = allPaths.filter((_, k) => lengths[k] >= length - EPS);
+    const room = (i: number) => dur.get(acts[i].name)! - (limits.get(acts[i].name)?.min ?? dur.get(acts[i].name)!);
+    const candidates = [...new Set(criticalPaths.flat())].filter((i) => room(i) > EPS).sort((a, b) => a - b);
+    const slope = (i: number) => limits.get(acts[i].name)!.slope;
+    const cuts = (set: number[]) => criticalPaths.every((p) => p.some((i) => set.includes(i)));
+    let best: number[] | null = null;
+    let bestCost = Infinity;
+    if (candidates.length <= 14) {
+      for (let mask = 1; mask < 1 << candidates.length; mask += 1) {
+        const set = candidates.filter((_, k) => mask & (1 << k));
+        const cost = set.reduce((s, i) => s + slope(i), 0);
+        if (cost < bestCost - EPS && cuts(set)) [best, bestCost] = [set, cost];
+      }
+    } else {
+      // Too many to try every set: take the cheapest activity on each path not yet cut.
+      const set: number[] = [];
+      for (const p of criticalPaths)
+        if (!p.some((i) => set.includes(i))) {
+          const options = p.filter((i) => candidates.includes(i)).sort((a, b) => slope(a) - slope(b));
+          if (options.length) set.push(options[0]);
+        }
+      if (cuts(set)) [best, bestCost] = [set, set.reduce((s, i) => s + slope(i), 0)];
+    }
+    if (!best) {
+      stuck = true;
+      break;
+    }
+    // Shorten by whole units, or less when an activity runs out, the target is near, or another path catches up.
+    const next = Math.max(0, ...lengths.filter((l) => l < length - EPS));
+    const by = Math.min(1, ...best.map(room), length - target, length - next);
+    for (const i of best) dur.set(acts[i].name, dur.get(acts[i].name)! - by);
+    total += by * bestCost;
+    rounds.push({
+      names: best.map((i) => acts[i].name),
+      by,
+      length: Math.max(...allPaths.map(lengthOf)),
+      cost: by * bestCost,
+      total,
+    });
+  }
+  return { rounds, durations: dur, length: Math.max(...allPaths.map(lengthOf)), cost: total, stuck };
+}

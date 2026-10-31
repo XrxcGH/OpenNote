@@ -9,7 +9,7 @@ import { decide } from './decision';
 import { parseLp } from './linear';
 import { branchAndBound, costRanges, dual, objectiveAt, rhsRanges } from './lp';
 import { mmc, newsvendor } from './ops';
-import { cpm, earnedValue, normalCdf, parseActivities } from './project';
+import { cpm, crash, earnedValue, normalCdf, parseActivities, parseCrash } from './project';
 import { transport } from './transport';
 
 const errorKey = (run: () => unknown): string => {
@@ -338,5 +338,23 @@ describe('operations', () => {
     expect(r.z).toBeCloseTo(0.31864, 4);
     expect(r.q).toBeCloseTo(106.37, 2);
     expect(errorKey(() => newsvendor(0, 3, 100, 20))).toBe('nvCosts');
+  });
+});
+
+describe('crashing a project network', () => {
+  const acts = parseActivities('A 3\nB 2 | A\nC 4 | A\nD 2 | B, C');
+  it('shortens the cheapest cut of the critical paths each round', () => {
+    // A-C-D is 9 and A-B-D is 7. C (50) twice takes it to 7, where both paths are critical; then the cheapest cut
+    // of both, with C used up, is D (80) rather than A (100): 50 + 50 + 80 = 180 for a length of 6.
+    const r = crash(acts, parseCrash('A 2 100\nC 2 50\nD 1 80\nB 1 30', acts), 6);
+    expect(r.rounds.map((x) => x.names.join('+'))).toEqual(['C', 'C', 'D']);
+    expect([r.length, r.cost, r.stuck]).toEqual([6, 180, false]);
+  });
+  it('stops when the critical path cannot be shortened further', () => {
+    // Only C can move, from 4 to 3: 9 becomes 8, and nothing else can come off.
+    const r = crash(acts, parseCrash('C 3 10', acts), 5);
+    expect([r.length, r.cost, r.stuck]).toEqual([8, 10, true]);
+    expect(() => parseCrash('Z 1 5', acts)).toThrow();
+    expect(() => parseCrash('C 5 5', acts)).toThrow();
   });
 });

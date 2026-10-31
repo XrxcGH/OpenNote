@@ -19,7 +19,7 @@ import { branchAndBound, costRanges, dual, rhsRanges } from './lp';
 import type { BbNode, Range } from './lp';
 import { mmc, newsvendor } from './ops';
 import { planeFigure } from './plane';
-import { cpm, earnedValue, normalCdf, parseActivities } from './project';
+import { cpm, crash, earnedValue, normalCdf, parseActivities, parseCrash } from './project';
 import { transport } from './transport';
 
 const T = 'optimize';
@@ -259,6 +259,32 @@ function projectOutcome(v: Values): Outcome {
       latex = `P(T \\le ${num(deadline)}) = \\Phi\\left(${ratio}\\right) = ${num(p, 4)}`;
     }
   }
+  const tables: Table[] = [];
+  const target = optional(v, 'target');
+  if ((v.crash ?? '').trim() || target !== null) {
+    if (target === null || !(v.crash ?? '').trim()) return fail('crashTarget');
+    const r = crash(acts, parseCrash(v.crash ?? '', acts), target);
+    notes.push(s(r.stuck ? 'crashStuck' : 'crashDone', { length: withUnit(r.length), cost: num(r.cost) }));
+    tables.push({
+      caption: s('table.crash'),
+      header: [
+        s('table.round'),
+        s('table.shortened'),
+        s('table.by'),
+        s('table.newLength'),
+        s('table.roundCost'),
+        s('table.totalCost'),
+      ],
+      rows: r.rounds.map((x, i) => [
+        String(i + 1),
+        x.names.join(', '),
+        num(x.by, 4),
+        num(x.length, 4),
+        num(x.cost),
+        num(x.total),
+      ]),
+    });
+  }
   return {
     ok: true,
     answer: s('pmAnswer', { path: (sch.paths[0] ?? []).join('–'), length: withUnit(sch.length) }),
@@ -291,6 +317,7 @@ function projectOutcome(v: Values): Outcome {
           sch.critical[i] ? s('yes') : '',
         ]),
       },
+      ...tables,
     ],
     figure: {
       svg: ganttFigure(
@@ -555,6 +582,8 @@ const PROJECT: Mode = {
     { id: 'activities', kind: 'area', rows: 6, initial: 'A 3\nB 2 | A\nC 4 | A\nD 2 | B, C', help: true },
     { id: 'unit', initial: 'days' },
     { id: 'deadline', initial: '', help: true },
+    { id: 'crash', kind: 'area', rows: 3, initial: '', help: true },
+    { id: 'target', initial: '', help: true },
   ],
   solve: solveWith(projectOutcome),
 };
