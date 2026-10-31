@@ -6,9 +6,14 @@ import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import { INSERT_EVENT } from '../../flags';
 import type { InsertDetail } from '../../ui/CalculatorTool';
+import { reasoningTab } from '../tab';
 import { KitWindow } from './KitWindow';
 
-beforeEach(() => localStorage.clear());
+// Most cases open at the digital logic tool, as the palette's command for it would.
+beforeEach(() => {
+  localStorage.clear();
+  reasoningTab.set('digital');
+});
 afterEach(() => localStorage.clear());
 
 const answer = () => document.querySelector('[data-kit-answer]')!.textContent ?? '';
@@ -50,6 +55,16 @@ describe('the reasoning kit window', () => {
     tab.focus();
     await userEvent.keyboard('{End}');
     expect(document.activeElement?.getAttribute('role')).toBe('tab');
+  });
+
+  it('opens computer systems at its tab and splits a cache address', async () => {
+    reasoningTab.set('systems');
+    renderUi(<KitWindow />);
+    expect(screen.getByRole('tab', { name: 'Computer systems' }).getAttribute('aria-selected')).toBe('true');
+    await shown('Hits: 1. Misses: 6.');
+    expect(screen.getByRole('table', { name: 'Trace' })).toBeTruthy();
+    await userEvent.selectOptions(screen.getByLabelText('Mode'), 'subnet');
+    await shown('hosts 192.168.10.1 to 192.168.10.62 (62 usable), broadcast 192.168.10.63');
   });
 
   it('inserts the answer and the table into the page', async () => {
