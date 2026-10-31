@@ -8,6 +8,7 @@ export { mathRenderer } from './mathHost';
 export { exportGraph, exportMath } from './exportRenderers';
 export { insertMath } from './insert';
 export { graphOfLatex, liveAnswer } from './actions/actions';
+export { latexToText } from './actions/convert';
 export type { EquationGraph } from './actions/actions';
 import type { GraphPopupOptions } from './graph/GraphPopup';
 
@@ -35,6 +36,12 @@ export type { KnownFunction } from './calculus';
 
 /** The calculus tools: derivatives, integrals, limits, and sums. Their code loads on first use. */
 export const loadCalculus = () => import('./calculus');
+/** Check my work (step checking), loaded on first use. The AI tutor imports the same module. */
+export const loadStepCheck = () => import('./stepcheck');
+export type { ReasonCode, StepLine, StepResult } from './stepcheck';
+/** What the tutor uses from math (ADR 0050), loaded on first use. */
+export const loadTutorMath = () => import('./tutorMath');
+export type { CalculusKind, Step } from './calculus/types';
 
 /** The symbolic algebra other features differentiate and print with (the mechanisms and dynamics kit). It loads on
  * first use. */

@@ -1,3 +1,4 @@
+#[cfg(windows)]
 use std::sync::atomic::AtomicI32;
 use std::time::Instant;
 
@@ -185,9 +186,11 @@ fn dropping_the_queue_cancels_every_job() {
     assert_eq!(waiting.wait_timeout(PATIENCE), Some(Err(IntelError::Canceled)));
 }
 
-/// Records the priority of the thread that runs the job.
+/// Records the priority of the thread that runs the job. Only Windows has the priority to read.
+#[cfg(windows)]
 struct PriorityProbe(Arc<AtomicI32>);
 
+#[cfg(windows)]
 impl TranscriptionEngine for PriorityProbe {
     fn name(&self) -> String {
         "probe".to_owned()
@@ -201,13 +204,10 @@ impl TranscriptionEngine for PriorityProbe {
         settings: &EngineSettings,
         _: &JobControl,
     ) -> Result<Transcript, IntelError> {
-        #[cfg(windows)]
         // SAFETY: the pseudo handle is valid for the calling thread.
         let priority = unsafe {
             windows::Win32::System::Threading::GetThreadPriority(windows::Win32::System::Threading::GetCurrentThread())
         };
-        #[cfg(not(windows))]
-        let priority = 0;
         self.0.store(priority, Ordering::Relaxed);
         Ok(Transcript {
             language: None,

@@ -45,12 +45,18 @@ pub fn relaunch_after(applied: &Applied) -> Relaunch {
     }
 }
 
-/// Starts this exe again, for a restart whose swap couldn't happen.
+/// Starts this copy of the app again, unchanged. On Linux that is the AppImage, since the exe inside it sits in a
+/// mount that vanishes when this process exits; elsewhere it is the exe. Safe mode's restart uses it too.
+pub fn relaunch_this_app() -> Option<Relaunch> {
+    opennote_updater::swap::running_file()
+        .ok()
+        .map(|exe| Relaunch { exe, args: Vec::new() })
+}
+
+/// Starts this copy again, for a restart whose swap couldn't happen.
 fn restart_unchanged() -> ExitPlan {
     ExitPlan {
-        relaunch: std::env::current_exe()
-            .ok()
-            .map(|exe| Relaunch { exe, args: Vec::new() }),
+        relaunch: relaunch_this_app(),
     }
 }
 
@@ -183,5 +189,34 @@ mod tests {
                 args: vec!["--after-update".into(), "0.4.0".into()],
             }
         );
+    }
+
+    #[test]
+    fn a_restart_without_a_swap_starts_this_exe_off_an_appimage() {
+        let plan = restart_unchanged();
+        if std::env::var_os("APPIMAGE").is_none() {
+            let exe = std::env::current_exe().expect("the test binary");
+            assert_eq!(plan.relaunch, Some(Relaunch { exe, args: Vec::new() }));
+        }
+    }
+
+    /// Inside an AppImage, current_exe is /tmp/.mount_*/usr/bin/opennote, gone once the app exits; the restart
+    /// must start the AppImage file that APPIMAGE names.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn a_restart_without_a_swap_starts_the_appimage_on_linux() {
+        let folder = tempfile::tempdir().expect("a folder");
+        let appimage = folder.path().join("OpenNote_Linux.AppImage");
+        std::fs::write(&appimage, b"an AppImage").expect("the file");
+        std::env::set_var("APPIMAGE", &appimage);
+        let plan = restart_unchanged();
+        let this_app = relaunch_this_app();
+        std::env::remove_var("APPIMAGE");
+        let expected = Relaunch {
+            exe: appimage,
+            args: Vec::new(),
+        };
+        assert_eq!(plan.relaunch, Some(expected.clone()));
+        assert_eq!(this_app, Some(expected));
     }
 }

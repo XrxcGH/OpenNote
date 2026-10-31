@@ -145,4 +145,31 @@
     gap: var(--space-4);
     min-inline-size: 0;
   }
+
+  .previewBox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-inline-size: 0;
+  }
+
+  .preview {
+    margin: 0;
+    max-block-size: 14rem;
+    overflow: auto;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    white-space: pre;
+  }
+
+  .preview:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
 }

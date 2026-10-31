@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 662,
+    "jsKb": 690,
     "cssKb": 27
   },
   "after": {
@@ -25,18 +25,18 @@
     "node_modules/pdfjs-dist/build/pdf.mjs": 131,
     "core/audio/index.ts": 115,
     "features/accounts/googleOffice/commands.ts": 82,
-    "features/accounts/lms/commands.ts": 261,
-    "features/accounts/meetings/commands.ts": 187,
+    "features/accounts/lms/commands.ts": 264,
+    "features/accounts/meetings/commands.ts": 190,
     "features/accounts/onenote/commands.ts": 71,
     "features/accounts/penSync/auto.ts": 66,
     "features/accounts/penSync/commands.ts": 66,
     "features/accounts/sendto/commands.ts": 81,
     "features/accounts/share/commands.ts": 76,
-    "features/accounts/tasks/auto.ts": 186,
-    "features/accounts/tasks/commands.ts": 186,
+    "features/accounts/tasks/auto.ts": 189,
+    "features/accounts/tasks/commands.ts": 189,
     "features/ink/index.ts": 67,
     "features/math/index.ts": 224,
-    "features/math/solvers/ui/SolversTool.tsx": 224,
+    "features/math/solvers/ui/SolversTool.tsx": 227,
     "features/page/audio/exportVideo.ts": 85,
     "features/pages/host/shareRender.ts": 62,
     "features/pages/host/videoRaster.ts": 62,
@@ -47,9 +47,9 @@
     "features/pages/ui/presentCommands.tsx": 67,
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 64,
-    "features/tools/index.ts": 349,
-    "features/engineering/control/ui/ControlKit.tsx": 444,
-    "features/engineering/index.ts": 368,
+    "features/tools/index.ts": 352,
+    "features/engineering/control/ui/ControlKit.tsx": 447,
+    "features/engineering/index.ts": 371,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
     "@mermaid-js/parser": 130,
@@ -78,11 +78,11 @@
     "features/trash": 40,
     "features/updates": 40,
     "features/tools": 260,
-    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 441,
+    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 443,
     "features/engineering/mechdyn": 120,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 361,
+    "features/engineering/aero/ui/KitAeroTool.tsx": 364,
     "features/engineering/solids/ui/SolidsKit.tsx": 117,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 526
+    "features/engineering/thermo/ui/ThermoKit.tsx": 529
   },
   "lazyDefaultKb": 40
 }

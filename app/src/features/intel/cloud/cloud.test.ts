@@ -35,12 +35,13 @@ beforeEach(async () => {
 describe('the choice of where a feature runs', () => {
   it('starts on this device, and reads anything unknown as this device', async () => {
     const state = await loadCloud(true);
-    expect(state.where).toEqual({ transcription: 'device', summaries: 'device' });
+    expect(state.where).toEqual({ transcription: 'device', summaries: 'device', tutor: 'device' });
     expect(parseChoices('{"summaries":"cloud","transcription":"elsewhere"}')).toEqual({
       transcription: 'device',
       summaries: 'cloud',
+      tutor: 'device',
     });
-    expect(parseChoices('not json')).toEqual({ transcription: 'device', summaries: 'device' });
+    expect(parseChoices('not json')).toEqual({ transcription: 'device', summaries: 'device', tutor: 'device' });
   });
 
   it('needs both the choice and a saved key', async () => {

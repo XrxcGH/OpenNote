@@ -136,6 +136,11 @@ async function check(run: Run, path: string, reportPage: boolean, password?: str
       run.state.set({ step: 'unsupported', path, detected: off });
       return;
     }
+    if (detected.kind === 'notesApp' && !isEnabled('interop.notesApps')) {
+      const off = { ...detected, supported: false, advice: t('notesApps.off') };
+      run.state.set({ step: 'unsupported', path, detected: off });
+      return;
+    }
     if (detected.legacy && !isEnabled('interop.legacyFormats')) {
       const advice = t('interop.import.unsupported.legacy');
       run.state.set({ step: 'unsupported', path, detected: { ...detected, supported: false, advice } });

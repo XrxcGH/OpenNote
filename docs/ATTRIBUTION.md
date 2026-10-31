@@ -9,6 +9,7 @@ A check keeps the table honest. `node checks/attribution.ts` (and `npm test`) fa
 - [How to add a row](#how-to-add-a-row)
 - [Assets](#assets)
 - [Vendored code](#vendored-code)
+- [File format descriptions](#file-format-descriptions)
 
 ## How to add a row
 
@@ -48,6 +49,10 @@ A crate copied into `crates/third_party/<name>/` gets a row here with its upstre
 | Path                             | Author                                       | Source                                                                                                                | License                                  |
 | -------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | `crates/third_party/metafile/**` | ArtCraft Team and the DeckCraft contributors | https://github.com/storytold/deckcraft, `crates/metafile` at commit 9859da39255c0262cd592bb57101d7f2fa961f72 (v0.7.0) | MIT OR Apache-2.0, used under Apache-2.0 |
+
+## File format descriptions
+
+The Goodnotes, Notability, and Samsung Notes importers were written from public descriptions of those formats, and no code was read or copied. [ADR 0053](adr/0053-notes-app-import.md#decision) lists the sources, under "Clean-room", and says what each one gave.
 
 ## Tools that are built but not shipped
 

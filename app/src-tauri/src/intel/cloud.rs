@@ -38,21 +38,31 @@ const MAX_SUMMARY_CHARS: usize = 48_000;
 const SUMMARY_PROMPT: &str = "Summarize these notes in three to five short, plain sentences. \
     Keep names, numbers, and terms exactly as written. Answer with the summary only.";
 const LAST_USED_FILE: &str = "cloud-used.json";
+/// The most text a tutor request carries: the instructions, and the prompt the person saw before agreeing.
+const MAX_TUTOR_CHARS: usize = 16_000;
+/// The longest reply the tutor asks for.
+const MAX_TUTOR_TOKENS: u32 = 400;
 
 /// The features that can use a cloud key. The others always run on this device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CloudFeature {
     Transcription,
     Summaries,
+    Tutor,
 }
 
 impl CloudFeature {
-    pub const ALL: [CloudFeature; 2] = [CloudFeature::Transcription, CloudFeature::Summaries];
+    pub const ALL: [CloudFeature; 3] = [
+        CloudFeature::Transcription,
+        CloudFeature::Summaries,
+        CloudFeature::Tutor,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
             CloudFeature::Transcription => "transcription",
             CloudFeature::Summaries => "summaries",
+            CloudFeature::Tutor => "tutor",
         }
     }
 
@@ -236,6 +246,43 @@ impl Cloud {
             Err(CloudError::Offline)
         } else {
             Ok(())
+        }
+    }
+
+    /// The tutor's reply (ADR 0050): `system` and `prompt` are exactly the text the person agreed to send, cut to
+    /// the cap. The interface checks the reply for a leaked answer; this only carries it.
+    pub fn tutor(&self, system: &str, prompt: &str, offline: bool, safe_mode: bool) -> Result<String, CloudError> {
+        Cloud::check_allowed(offline, safe_mode)?;
+        let key = self.key(CloudFeature::Tutor)?;
+        let system: String = system.chars().take(MAX_TUTOR_CHARS / 4).collect();
+        let prompt: String = prompt.chars().take(MAX_TUTOR_CHARS).collect();
+        let body = json!({
+            "model": "gpt-4o-mini",
+            "temperature": 0.3,
+            "max_tokens": MAX_TUTOR_TOKENS,
+            "messages": [
+                { "role": "system", "content": system },
+                { "role": "user", "content": prompt },
+            ],
+        });
+        let answer = self.send(CloudFeature::Tutor, Cloud::chat_request(&key, &body))?;
+        answer["choices"][0]["message"]["content"]
+            .as_str()
+            .map(|reply| reply.trim().to_owned())
+            .filter(|reply| !reply.is_empty())
+            .ok_or(CloudError::Answer)
+    }
+
+    fn chat_request(key: &Secret, body: &Value) -> HttpRequest {
+        let request = HttpRequest::new(Method::Post, format!("{BASE}/chat/completions"))
+            .header("Authorization", format!("Bearer {}", key.expose()));
+        HttpRequest {
+            follow_redirects: true,
+            body: Some(Body::Bytes {
+                content_type: "application/json".to_owned(),
+                data: body.to_string().into_bytes(),
+            }),
+            ..request
         }
     }
 
@@ -498,6 +545,34 @@ mod tests {
         assert_eq!(cloud.summarize("notes", true, false), Err(CloudError::Offline));
         assert_eq!(cloud.summarize("notes", false, true), Err(CloudError::SafeMode));
         assert!(fake.sent.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn the_tutor_needs_its_own_key_and_never_sends_offline() {
+        let dir = tempfile::tempdir().unwrap();
+        let reply = json!({ "choices": [{ "message": { "content": " Look at line 2. " } }] });
+        let (cloud, fake) = cloud(dir.path(), 200, reply);
+        cloud.set_key(CloudFeature::Summaries, &key()).unwrap();
+        assert_eq!(cloud.tutor("Be kind.", "2x = 4", false, false), Err(CloudError::NoKey));
+        cloud.set_key(CloudFeature::Tutor, &key()).unwrap();
+        assert_eq!(cloud.tutor("Be kind.", "2x = 4", true, false), Err(CloudError::Offline));
+        assert_eq!(
+            cloud.tutor("Be kind.", "2x = 4", false, true),
+            Err(CloudError::SafeMode)
+        );
+        assert!(fake.sent.lock().unwrap().is_empty());
+        assert_eq!(
+            cloud.tutor("Be kind.", "2x = 4", false, false).unwrap(),
+            "Look at line 2."
+        );
+        let sent = fake.sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert_eq!(sent[0].0, "https://api.openai.com/v1/chat/completions");
+        drop(sent);
+        assert!(cloud
+            .status()
+            .iter()
+            .any(|s| s.feature == "tutor" && s.has_key && s.last_used_unix.is_some()));
     }
 
     #[test]
