@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { convert } from './colorModes';
+import { enlarge } from './sizeModes';
 import { collinear, perspectiveGrid, perspectiveSvg } from './perspective';
 import { areaFactor, cutList, drawn, enlargement, METERS, parseScale, readFraction, real, volumeFactor } from './scale';
 import { DENSITIES, glaze, lossOnIgnition, parseMaterial, scaleBatch, shapeVolume, yardage } from './materials';
@@ -44,6 +46,28 @@ describe('scales', () => {
     expect(readFraction('2.5')).toBe(2.5);
     expect(readFraction('1/0')).toBeNull();
     expect(readFraction('x')).toBeNull();
+  });
+});
+
+describe('studio readouts', () => {
+  it('shows no hue for a colour without chroma and a hue for one with it', () => {
+    const hex = (digits: string): string => `#${digits}`;
+    const hueOf = (digits: string): string[] => {
+      const out = convert({ color: hex(digits) });
+      return (out.ok ? (out.rows.find((r) => r.key === 'lchOut')?.value ?? '') : '').split(', ');
+    };
+    expect(hueOf('ffffff')[2]).toBe('0');
+    expect(hueOf('808080')[2]).toBe('0');
+    // Lab of pure red is a 80.09, b 67.20, so the hue is atan2(67.20, 80.09) = 40.0 degrees.
+    expect(Number(hueOf('ff0000')[2])).toBeCloseTo(40, 0);
+  });
+  it('says in the answer when the target has another shape', () => {
+    const shape = (w: string, h: string) => {
+      const out = enlarge({ skW: '8', skH: '10', tgW: w, tgH: h, cell: '1' });
+      return out.ok ? out.answer : '';
+    };
+    expect(shape('48', '50')).toContain('different shape');
+    expect(shape('48', '60')).not.toContain('different shape');
   });
 });
 

@@ -5,6 +5,8 @@
 export function bjorklund(onsets: number, steps: number): string {
   if (onsets <= 0) return '.'.repeat(steps);
   if (onsets >= steps) return 'x'.repeat(steps);
+  // One rest only: Toussaint's tables start "x." (E(3,4) = x.xx), the algorithm's raw output would end in the rest.
+  if (steps - onsets === 1) return `x.${'x'.repeat(onsets - 1)}`;
   let a: string[][] = Array.from({ length: onsets }, () => ['x']);
   let b: string[][] = Array.from({ length: steps - onsets }, () => ['.']);
   while (b.length > 1) {

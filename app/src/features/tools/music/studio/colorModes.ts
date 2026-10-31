@@ -62,7 +62,10 @@ export function convert(v: Values): KitOk {
     { key: 'cmykOut', value: cmyk.map(pct).join(', ') },
     { key: 'xyzOut', value: xyz.map((x) => fixed(x, 4)).join(', ') },
     { key: 'labOut', value: lab.map((x) => fixed(x, 2)).join(', ') },
-    { key: 'lchOut', value: lch.map((x) => fixed(x, 2)).join(', ') },
+    {
+      key: 'lchOut',
+      value: [fixed(lch[0]!, 2), fixed(lch[1]!, 2), lch[1]! < 0.5 ? '0' : fixed(lch[2]!, 2)].join(', '),
+    },
   ];
   const steps: KitStep[] = [
     { key: 'convGamma', vars: { rgb: rounded.join(', ') } },

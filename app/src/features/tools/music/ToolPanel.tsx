@@ -64,8 +64,19 @@ function FieldInput({ field, value, onChange }: { field: Field; value: string; o
 
 export const stepText = (step: KitOk['steps'][number]): string => say('s', step.key, step.vars);
 
-/** SVG markup as bytes for a file; strokes use the current color, which an image shows as black. */
-export const pictureFile = (markup: string): ArrayBuffer => new TextEncoder().encode(markup).buffer as ArrayBuffer;
+/** The ink of an inserted picture and its paper: a page image cannot follow the theme, so it is black on white. */
+const INK = 'black';
+const PAPER = 'white';
+
+/** SVG markup as bytes for a file. The current color (an image shows it as black) becomes black ink, on a white
+ * backing, so the picture reads in dark mode too. */
+export function pictureFile(markup: string): ArrayBuffer {
+  const view = /<svg[^>]*\sviewBox="\s*(-?[\d.]+)[\s,]+(-?[\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/.exec(markup);
+  const [x, y, w, h] = view ? view.slice(1, 5) : ['0', '0', '100%', '100%'];
+  const backing = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${PAPER}"/>`;
+  const inked = markup.replace(/currentColor/g, INK).replace(/(<svg[^>]*>)/, `$1${backing}`);
+  return new TextEncoder().encode(inked).buffer as ArrayBuffer;
+}
 
 function InsertBar({ result }: { result: KitOk }) {
   const done = (inserted: boolean) => announce(t(inserted ? 'kitMusic.inserted' : 'kitMusic.noPage'));

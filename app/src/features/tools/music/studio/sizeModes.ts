@@ -78,7 +78,11 @@ export function enlarge(v: Values): KitOk {
   return ok({
     rows,
     steps,
-    answer: `Enlarge by ${fmt(factor, 6)}: a ${fmt(cell)} unit grid square becomes ${fmt(cell * factor, 6)}`,
+    answer:
+      `Enlarge by ${fmt(factor, 6)}: a ${fmt(cell)} unit grid square becomes ${fmt(cell * factor, 6)}` +
+      (e.uniform
+        ? ''
+        : ` (the target has a different shape: ${fmt(e.widthFactor, 6)} across, ${fmt(e.heightFactor, 6)} up)`),
     notes: e.uniform ? [] : ['stuNoteShape'],
   });
 }

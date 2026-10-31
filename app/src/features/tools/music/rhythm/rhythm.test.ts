@@ -183,6 +183,13 @@ describe('Euclidean rhythms', () => {
     expect(bjorklund(5, 12)).toBe('x..x.x..x.x.');
     expect(bjorklund(4, 7)).toBe('x.x.x.x');
   });
+  it("starts at the same rotation as Toussaint's table when only one step is a rest", () => {
+    expect(bjorklund(2, 3)).toBe('x.x');
+    expect(bjorklund(3, 4)).toBe('x.xx');
+    expect(bjorklund(4, 5)).toBe('x.xxx');
+    expect(bjorklund(5, 6)).toBe('x.xxxx');
+    expect(bjorklund(7, 8)).toBe('x.xxxxxx');
+  });
   it('spreads onsets as evenly as possible for every pair up to 16', () => {
     for (let n = 1; n <= 16; n++) {
       for (let k = 1; k <= n; k++) {
