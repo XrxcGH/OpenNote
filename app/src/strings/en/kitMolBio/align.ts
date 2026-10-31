@@ -34,7 +34,12 @@ export const align = {
   scoring: {
     dna: 'Match and mismatch',
     transition: 'Transitions and transversions (DNA)',
+    blosum45: 'BLOSUM45 (distant proteins)',
     blosum62: 'BLOSUM62 (protein)',
+    blosum80: 'BLOSUM80 (close proteins)',
+    pam30: 'PAM30 (very close proteins)',
+    pam70: 'PAM70 (close proteins)',
+    pam250: 'PAM250 (distant proteins)',
     custom: 'Paste a matrix',
   },
   gaps: { linear: 'Linear', affine: 'Affine (open and extend)' },
@@ -84,7 +89,14 @@ export const align = {
     affine: 'A gap of length k scores open + (k − 1) × extend.',
     dots: 'Diagonal runs of dots show similar stretches; runs off the main diagonal show repeats.',
   },
-  src: { blosum: 'BLOSUM62 (Henikoff and Henikoff, 1992), from the NCBI matrix files' },
+  src: {
+    blosum45: 'BLOSUM45 (Henikoff and Henikoff, 1992), from the NCBI matrix file BLOSUM45',
+    blosum62: 'BLOSUM62 (Henikoff and Henikoff, 1992), from the NCBI matrix file BLOSUM62',
+    blosum80: 'BLOSUM80 (Henikoff and Henikoff, 1992), from the NCBI matrix file BLOSUM80',
+    pam30: 'PAM30 (Dayhoff and others, 1978), from the NCBI matrix file PAM30',
+    pam70: 'PAM70 (Dayhoff and others, 1978), from the NCBI matrix file PAM70',
+    pam250: 'PAM250 (Dayhoff and others, 1978), from the NCBI matrix file PAM250',
+  },
   e: {
     empty: 'Both sequences need at least 1 letter.',
     tooBig: 'The matrix would have more than {cells} cells. Align shorter stretches.',

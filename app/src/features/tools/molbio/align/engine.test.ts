@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { KitError } from '../shared';
 import { runTool } from '../spec';
 import { alignAffine, alignLinear, dnaScorer, dotPlot, matchLine, stats } from './engine';
-import { BLOSUM62, readMatrix } from './matrices';
+import { BLOSUM62, BUILT_IN, readMatrix } from './matrices';
 import { spec } from './tool';
 
 const errorKey = (run: () => unknown): string => {
@@ -81,6 +81,26 @@ describe('scores and statistics', () => {
       for (const y of BLOSUM62.letters) expect(BLOSUM62.score(x, y)).toBe(BLOSUM62.score(y, x));
   });
 
+  // Self-scores of W (and C) and the score range stated in each NCBI file's header, read off the published files.
+  const published = {
+    blosum45: { W: 15, C: 12, range: [-5, 15] },
+    blosum62: { W: 11, C: 9, range: [-4, 11] },
+    blosum80: { W: 16, C: 13, range: [-8, 16] },
+    pam30: { W: 13, C: 10, range: [-17, 13] },
+    pam70: { W: 13, C: 9, range: [-11, 13] },
+    pam250: { W: 17, C: 12, range: [-8, 17] },
+  } as const;
+  for (const [name, want] of Object.entries(published)) {
+    it(`holds ${name} as published: W-W ${want.W}, symmetric, scores ${want.range.join(' to ')}`, () => {
+      const m = BUILT_IN[name as keyof typeof BUILT_IN];
+      expect(m.letters).toHaveLength(24);
+      expect([m.score('W', 'W'), m.score('C', 'C')]).toEqual([want.W, want.C]);
+      const all = m.letters.flatMap((x) => m.letters.map((y) => m.score(x, y)!));
+      expect([Math.min(...all), Math.max(...all)]).toEqual([...want.range]);
+      for (const x of m.letters) for (const y of m.letters) expect(m.score(x, y), x + y).toBe(m.score(y, x));
+    });
+  }
+
   it('scores transitions apart from transversions', () => {
     const s = dnaScorer(2, -1, -2);
     expect([s('A', 'G'), s('C', 'T'), s('A', 'C')]).toEqual([-1, -1, -2]);
@@ -119,6 +139,12 @@ describe('the alignment tool', () => {
       expect(runTool(spec, { scoring, b: 'GCATGCT' }).ok, scoring).toBe(true);
     }
     expect(runTool(spec, { scoring: 'blosum62', a: 'HEAGAWGHEE', b: 'PAWHEAE' }).ok).toBe(true);
+    // W against W scores the matrix's own W-W, and the citation names the NCBI file.
+    expect(runTool(spec, { scoring: 'pam250', a: 'W', b: 'W' })).toMatchObject({
+      ok: true,
+      answer: { vars: { score: '17' } },
+      source: 'align.src.pam250',
+    });
     expect(runTool(spec, { gaps: 'affine' }).ok).toBe(true);
   });
 

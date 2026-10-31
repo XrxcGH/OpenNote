@@ -8,12 +8,19 @@ import { readFasta } from '../sequence/dna';
 import { dotFigure, matrixFigure } from './draw';
 import { DIAG, LEFT, UP, alignAffine, alignLinear, dnaScorer, dotPlot, matchLine, stats } from './engine';
 import type { AlignMode, Alignment, Scorer } from './engine';
-import { BLOSUM62, readMatrix } from './matrices';
-import type { Matrix } from './matrices';
+import { BUILT_IN, readMatrix } from './matrices';
+import type { BuiltIn, Matrix } from './matrices';
 
 const MODES = ['global', 'local', 'semi', 'dots'] as const;
 type Mode = (typeof MODES)[number];
-const SCORING = ['dna', 'transition', 'blosum62', 'custom'] as const;
+const SCORING = ['dna', 'transition', 'blosum45', 'blosum62', 'blosum80', 'pam30', 'pam70', 'pam250', 'custom'] as const;
+const builtIn = (v: Values): BuiltIn | undefined =>
+  v.scoring && v.scoring in BUILT_IN ? (v.scoring as BuiltIn) : undefined;
+/** The citation line for a built-in matrix, naming its NCBI file. */
+const matrixSource = (v: Values): MolKey | undefined => {
+  const named = builtIn(v);
+  return named ? (`align.src.${named}` as MolKey) : undefined;
+};
 const TEACHING = 25;
 const aligning = (v: Values) => v.mode !== 'dots';
 const scoring =
@@ -86,6 +93,8 @@ function checked(matrix: Matrix, a: string, b: string): Scorer {
 }
 
 function scorer(values: Values, a: string, b: string): Scorer {
+  const named = builtIn(values);
+  if (named) return checked(BUILT_IN[named], a, b);
   switch (values.scoring) {
     case 'transition':
       return dnaScorer(
@@ -93,8 +102,6 @@ function scorer(values: Values, a: string, b: string): Scorer {
         need(values, 'mismatch', 'align.f.mismatch'),
         need(values, 'transversion', 'align.f.transversion'),
       );
-    case 'blosum62':
-      return checked(BLOSUM62, a, b);
     case 'custom':
       return checked(readMatrix(values.matrix ?? ''), a, b);
     default:
@@ -227,7 +234,7 @@ function aligned(a: string, b: string, values: Values, mode: AlignMode): KitOk {
     tables: small ? [matrixTable(a, b, result)] : [],
     steps: steps(mode, affine, a, b, s, values, result),
     notes: [small ? 'align.n.ties' : 'align.n.long', ...(affine ? ['align.n.affine' as MolKey] : [])],
-    source: values.scoring === 'blosum62' ? 'align.src.blosum' : undefined,
+    source: matrixSource(values),
   });
 }
 
