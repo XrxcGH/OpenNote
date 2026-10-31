@@ -3,6 +3,7 @@
 // rest check quadrat counts, kriging where the answer is known, and the minimizer the variogram fit uses.
 import { describe, expect, it } from 'vitest';
 import { nelderMead } from '../kit/optimize';
+import { firstTexts, runTool } from '../kit/read';
 import { StatError } from '../kit/types';
 import {
   autocorrelation,
@@ -19,6 +20,7 @@ import {
   variogram,
   type Point,
 } from './engine';
+import { spatialSpec } from './spec';
 
 const close = (got: number, want: number, tol: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(tol);
 
@@ -167,6 +169,46 @@ describe('interpolation', () => {
     const fit = fitVariogram('gaussian', lags);
     expect(fit.range).toBeGreaterThan(0);
     close(variogram('spherical', { nugget: 1, sill: 2, range: 3 }, 6), 3, 1e-12);
+  });
+
+  it('bounds the range of a trending field and flags that no sill is reached', () => {
+    // z = (x + y)^2 on a 6 x 6 grid: the semivariance keeps growing with distance, so no sill exists.
+    const pts: Point[] = [];
+    const z: number[] = [];
+    for (let i = 0; i < 6; i++)
+      for (let j = 0; j < 6; j++) {
+        pts.push({ x: i, y: j });
+        z.push((i + j) ** 2);
+      }
+    const lags = empiricalVariogram(pts, z, 1, 6);
+    const maxH = Math.max(...lags.map((l) => l.h));
+    const maxG = Math.max(...lags.map((l) => l.gamma));
+    const fit = fitVariogram('spherical', lags);
+    expect(fit.range).toBeLessThanOrEqual(2 * maxH);
+    expect(fit.sill).toBeLessThanOrEqual(3 * maxG);
+    expect(fit.noSill).toBe(true);
+  });
+
+  it('fits a stationary field inside the bounds without the no-sill flag', () => {
+    // A spherical field sampled exactly: gamma(h) = 1 + 4 * sph(h / 3), so the fit recovers it.
+    const truth = { nugget: 1, sill: 4, range: 3 };
+    const lags = [0.5, 1, 1.5, 2, 2.5, 3.5, 4.5].map((h) => ({ h, pairs: 50, gamma: variogram('spherical', truth, h) }));
+    const fit = fitVariogram('spherical', lags);
+    close(fit.nugget, 1, 1e-3);
+    close(fit.sill, 4, 1e-3);
+    close(fit.range, 3, 1e-3);
+    expect(fit.noSill).toBe(false);
+  });
+
+  it('keeps the wells example inside the data and says its variogram has no sill', () => {
+    const wells = spatialSpec.examples!.find((e) => e.id === 'wells')!;
+    const run = runTool(spatialSpec, { ...firstTexts(spatialSpec), ...wells.values } as Record<string, string>);
+    if (!run.ok) throw new Error('the wells example failed');
+    const lagTable = run.outcome.tables!.find((t) => t.id === 'lags')!;
+    const maxH = Math.max(...lagTable.rows.map((r) => Number(r[0])));
+    const range = Number(run.outcome.rows.find((r) => r.id === 'range')!.value);
+    expect(range).toBeLessThanOrEqual(2 * maxH);
+    expect(run.outcome.steps.map((s) => s.key)).toContain('spatial.noSill');
   });
 
   it('minimizes the Rosenbrock function', () => {

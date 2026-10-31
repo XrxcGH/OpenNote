@@ -193,6 +193,10 @@ export const spatialSteps = {
   modelFit:
     'Fit the model by weighted least squares, weighting each bin by its pairs over the squared model value: ' +
     'nugget {nugget}, partial sill {sill}, range {range}.',
+  noSill:
+    'The range stops at its bound of {range}, twice the largest lag: the semivariance keeps rising and reaches no sill ' +
+    "within the data's extent. That is an unbounded, near-linear variogram, usually from a trend. Detrend the values " +
+    '(fit and subtract a plane) and krige the residuals.',
   kriging: 'Ordinary kriging solves for weights that add to 1 and make the error variance smallest:',
   krigingVariance: 'The kriging variance is:',
   idw: 'For comparison, inverse-distance weighting with power {p} gives:',

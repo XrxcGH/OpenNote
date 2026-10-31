@@ -421,14 +421,27 @@ export function empiricalVariogram(points: readonly Point[], z: readonly number[
   return lags;
 }
 
-/** The model's nugget, partial sill, and range by least squares on the bins, weighted by N(h) / gamma(h)^2. */
-export function fitVariogram(model: VariogramModel, lags: readonly Lag[]): VariogramParams {
+export interface FittedVariogram extends VariogramParams {
+  /** The range sits on its bound: no sill is reached within the data's extent (an unbounded variogram, likely a trend). */
+  readonly noSill: boolean;
+}
+
+/**
+ * The model's nugget, partial sill, and range by least squares on the bins, weighted by N(h) / gamma(h)^2. Each
+ * parameter is bounded by a smooth map b * v^2 / (1 + v^2): the nugget by the largest bin semivariance, the partial
+ * sill by 3 times it, and the range by 2 times the largest lag distance, so a trending field cannot run off to an
+ * unbounded linear variogram with a huge sill and range.
+ */
+export function fitVariogram(model: VariogramModel, lags: readonly Lag[]): FittedVariogram {
   const maxG = Math.max(...lags.map((l) => l.gamma));
   const maxH = Math.max(...lags.map((l) => l.h));
+  const bounds = [maxG, 3 * maxG, 2 * maxH];
+  const squash = (v: number, b: number) => (b * v * v) / (1 + v * v);
+  const open = (x: number, b: number) => Math.sqrt(x / (b - x));
   const unpack = (v: readonly number[]): VariogramParams => ({
-    nugget: v[0] ** 2,
-    sill: v[1] ** 2,
-    range: v[2] ** 2 + 1e-12,
+    nugget: squash(v[0], bounds[0]),
+    sill: squash(v[1], bounds[1]),
+    range: squash(v[2], bounds[2]) + 1e-12,
   });
   const loss = (v: readonly number[]) => {
     const p = unpack(v);
@@ -439,8 +452,9 @@ export function fitVariogram(model: VariogramModel, lags: readonly Lag[]): Vario
       }),
     );
   };
-  const best = nelderMead(loss, [Math.sqrt(0.1 * maxG), Math.sqrt(0.9 * maxG), Math.sqrt(0.6 * maxH)]);
-  return unpack(best.x);
+  const best = nelderMead(loss, [open(0.1 * maxG, bounds[0]), open(0.9 * maxG, bounds[1]), open(0.6 * maxH, bounds[2])]);
+  const p = unpack(best.x);
+  return { ...p, noSill: p.range >= 0.98 * bounds[2] };
 }
 
 export interface Kriged {

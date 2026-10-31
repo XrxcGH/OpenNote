@@ -397,6 +397,7 @@ function interpolationOutcome(values: Values): Outcome {
         { h: lags[0].h, g: lags[0].gamma, pairs: lags[0].pairs, width },
       ),
       step('spatial.modelFit', undefined, { nugget: params.nugget, sill: params.sill, range: params.range }),
+      ...(params.noSill ? [step('spatial.noSill', undefined, { range: params.range })] : []),
       step(
         'spatial.kriging',
         '\\begin{bmatrix}\\Gamma & 1\\\\ 1^\\top & 0\\end{bmatrix}\\begin{bmatrix}\\lambda\\\\ \\mu\\end{bmatrix} = ' +
