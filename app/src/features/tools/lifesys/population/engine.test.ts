@@ -4,6 +4,7 @@ import { LsError } from '../num/errors';
 import {
   classify,
   competition,
+  competitionResult,
   growthSeries,
   harvest,
   levinsResult,
@@ -92,6 +93,25 @@ describe('competition and metapopulations', () => {
     expect(c.coexist!.N1).toBeCloseTo(66.667, 3);
     expect(c.coexist!.N2).toBeCloseTo(66.667, 3);
     expect(c.outcome).toBe('coexist');
+  });
+
+  it('labels the bistable crossing as unstable, not coexistence', () => {
+    // K1 = K2 = 100 and α = 2: N* = (100 − 200) / (1 − 4) = 33.33, a saddle; the run from (60, 40) ends at (100, 0).
+    const r = competitionResult({ r1: 1, r2: 1, K1: 100, K2: 100, a12: 2, a21: 2, N1: 60, N2: 40, t: 50 });
+    const labels = r.rows.map((x) => x.label);
+    expect(labels).not.toContain('population.r.n1Eq');
+    expect(r.rows.find((x) => x.label === 'population.r.n1Saddle')!.value).toBeCloseTo(100 / 3, 9);
+    expect(r.rows.find((x) => x.label === 'population.r.end1')!.value).toBeCloseTo(100, 2);
+  });
+
+  it('follows the logistic solution of the Levins model at non-round times', () => {
+    // dp/dt = (c − e) p (1 − p / p*): p(t) = p* / (1 + (p* / p0 − 1) e^(−(c − e) t)) with p* = 0.6.
+    for (const t of [0.73, 3.14159, 7.77, 12.3456, 19.0001]) {
+      const exact = 0.6 / (1 + 5 * Math.exp(-0.3 * t));
+      const r = levinsResult(0.5, 0.2, 0.1, t);
+      const curve = r.plots![0].series[0].points;
+      expect(curve[curve.length - 1][1]).toBeCloseTo(exact, 4);
+    }
   });
 
   it('gives the Levins equilibrium p* = 0.6 for e 0.2 and c 0.5', () => {

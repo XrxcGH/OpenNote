@@ -356,8 +356,13 @@ export function competitionResult(c: Competition): CalcResult {
   const xMax = Math.max(c.K1, c.K2 / Math.max(c.a21, 1e-9), c.N1) * 1.1;
   const yMax = Math.max(c.K2, c.K1 / Math.max(c.a12, 1e-9), c.N2) * 1.1;
   const rows: CalcResult['rows'] = [];
+  // In the bistable case the interior crossing is a saddle the trajectory leaves, so it is not named coexistence.
+  const saddle = outcome === 'bistable';
   if (coexist && coexist.N1 > 0 && coexist.N2 > 0)
-    rows.push({ label: 'population.r.n1Eq', value: coexist.N1 }, { label: 'population.r.n2Eq', value: coexist.N2 });
+    rows.push(
+      { label: saddle ? 'population.r.n1Saddle' : 'population.r.n1Eq', value: coexist.N1 },
+      { label: saddle ? 'population.r.n2Saddle' : 'population.r.n2Eq', value: coexist.N2 },
+    );
   rows.push(
     { label: 'population.r.end1', vars: { t: c.t }, value: end[0] },
     { label: 'population.r.end2', vars: { t: c.t }, value: end[1] },

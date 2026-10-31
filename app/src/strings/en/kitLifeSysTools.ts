@@ -718,6 +718,8 @@ export const kitLifeSysTools = {
       maxRate: 'Maximum intake 1/h',
       n1Eq: 'Coexistence N₁*',
       n2Eq: 'Coexistence N₂*',
+      n1Saddle: 'Unstable crossing point N₁*',
+      n2Saddle: 'Unstable crossing point N₂*',
       end1: 'Species 1 at time {t}',
       end2: 'Species 2 at time {t}',
       pStar: 'Share of patches occupied, p*',
