@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import './strings';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import chem from '../../ui/chem.module.css';
 import extra from '../../ui/extra.module.css';
 import tools from '../../ui/tools.module.css';

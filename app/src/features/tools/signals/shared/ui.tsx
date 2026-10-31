@@ -14,7 +14,7 @@ import {
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
 import { insertLiveBlock } from '../../kits/ui/insert';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import { SIGNALS_KIT, STORE_PREFIX, signalInputs, type SignalToolId } from '../meta';
 import { isSignalError } from './errors';
 import type { Step } from './steps';

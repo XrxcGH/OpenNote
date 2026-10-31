@@ -2,7 +2,7 @@
 // as a table, or the plot as a picture (drawn from the SVG at twice its size as a PNG, as the grapher does).
 import { announce, showToast } from '../../../../ui';
 import { KIT_CALC_TYPE, kitCalcData, kitCalcFallback } from '../../kits/block/model';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import type { LifeSysInputs } from '../open';
 import type { CalcResult, CalcSpec, PlotData, ResultRow } from '../types';
 import { plotModel, plotSvg } from './plotModel';

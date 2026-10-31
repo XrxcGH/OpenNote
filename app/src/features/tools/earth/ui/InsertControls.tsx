@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import { figureSvg } from '../core/figure';
 import type { Outcome } from './form';
 import styles from './earth.module.css';

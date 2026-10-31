@@ -10,7 +10,6 @@ const FluidHeatKit = lazy(() =>
 );
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
-import { HumanitiesKit } from '../humanities';
 import { DeckPanel, loadExamPanel } from '../../study';
 import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
@@ -91,6 +90,9 @@ const KitReasoning = lazy(() => import('../reasoning').then((kit) => ({ default:
 
 // The music, script, camera, and studio tools load on first open.
 const KitMusic = lazy(() => import('../music/KitMusicTool'));
+
+// The history, places, languages, and texts kit loads its window on first open, and each tool when its tab opens.
+const HumanitiesKit = lazy(() => import('../humanities/ui/KitWindow').then((m) => ({ default: m.HumanitiesKit })));
 // The solid mechanics kit loads with its engineering feature the first time its window opens.
 const SolidsKit = lazy(() =>
   import('../../engineering')
@@ -140,6 +142,8 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-earth': EarthKit,
   'kit-signals': SignalsKit,
   'kit-reasoning': KitReasoning,
+  'kit-humanities': HumanitiesKit,
+  kitmusic: KitMusic,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
@@ -158,12 +162,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
-  if (tool === 'kitmusic')
-    return (
-      <Suspense fallback={null}>
-        <KitMusic />
-      </Suspense>
-    );
   if (tool === 'flashcards') return <DeckPanel />;
   if (tool === 'exam')
     return (
@@ -197,11 +195,5 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
-  if (tool === 'kit-humanities')
-    return (
-      <Suspense fallback={null}>
-        <HumanitiesKit />
-      </Suspense>
-    );
   return null;
 }

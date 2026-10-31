@@ -10,24 +10,19 @@ export { CALCULATOR_MODES, openCalculator } from './ui/calculatorMode';
 export { openPhysicsTool } from './physics/open';
 export type { CalculatorMode } from './ui/calculatorMode';
 export { PoppedTool } from './ui/PoppedTool';
-export { openStatModelsKit } from './statmodels/open';
 export { countFigures } from './science/sigfigs';
 export { seedSigFigs } from './ui/SigFigsTool';
 export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
 // Loads on first use, so the kit's opener stays out of every window that imports this file.
 export const openMindKit = async (tool?: string): Promise<void> => (await import('./mind/open')).openMindKit(tool);
-export { openHumanitiesTool } from './humanities/open';
-export { insertIntoPage } from './ui/CalculatorTool';
-export type { InsertDetail } from './ui/CalculatorTool';
+export { insertIntoPage } from './ui/insert';
+export type { InsertDetail } from './ui/insert';
 export { loadStored, saveStored } from './ui/storage';
 export { TOOLS, isToolId } from './ui/tools';
 export { MOLBIO_TOOLS } from './molbio/meta';
 export type { MolToolId } from './molbio/meta';
-export { openMolBio } from './molbio/open';
-export { openLifeSys, reopenLifeSys } from './lifesys/open';
 export type { ToolId } from './ui/tools';
-export { openReasoningKit } from './reasoning/open';
 export type { ReasoningToolId } from './reasoning/meta';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { forgetPageItems, setPageItems } from './ui/upcomingStores';
@@ -35,14 +30,10 @@ export { readUpcoming, setSourceItems, sourceItems, updateUpcomingItems } from '
 export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
 export { CIVIL_ICONS, CIVIL_TOOL_IDS } from './civil/meta';
-export { openCivilTool, reopenCivilCalc } from './civil/open';
 export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
 export { default as LiveMathSetting } from './ui/LiveMathSetting';
-export { openModPhys } from './modphys/open';
-export { openEarthKit } from './earth/open';
 export { MUSIC_TOOLS } from './music/meta';
 export type { MusicToolId } from './music/meta';
-export { openKit as openMusicKit } from './music/open';
 export { openDesignKit } from './design/open';
 // The tool kits (features/tools/kits/README.md). Registering a kit and opening a tool are light enough for start-up;
 // the numerics, properties, units, and interface load with loadKits, inside a kit's own lazy window.
@@ -65,3 +56,23 @@ export const loadKits = () => import('./kits');
 export const loadKitFigure = () => import('./subjects/figure/block');
 export { CHEMMAT_META } from './chemmat/meta';
 export { openChemMatTool } from './chemmat/open';
+
+/** A kit's opener that loads its module on first use, so the kits stay out of every window that imports this file. */
+function later<M, K extends keyof M>(load: () => Promise<M>, name: K) {
+  type Args = M[K] extends (...args: infer A) => unknown ? A : never;
+  return async (...args: Args): Promise<void> => {
+    await ((await load())[name] as (...args: Args) => unknown)(...args);
+  };
+}
+
+export const openStatModelsKit = later(() => import('./statmodels/open'), 'openStatModelsKit');
+export const openHumanitiesTool = later(() => import('./humanities/open'), 'openHumanitiesTool');
+export const openMolBio = later(() => import('./molbio/open'), 'openMolBio');
+export const openLifeSys = later(() => import('./lifesys/open'), 'openLifeSys');
+export const reopenLifeSys = later(() => import('./lifesys/open'), 'reopenLifeSys');
+export const openReasoningKit = later(() => import('./reasoning/open'), 'openReasoningKit');
+export const openCivilTool = later(() => import('./civil/open'), 'openCivilTool');
+export const reopenCivilCalc = later(() => import('./civil/open'), 'reopenCivilCalc');
+export const openModPhys = later(() => import('./modphys/open'), 'openModPhys');
+export const openEarthKit = later(() => import('./earth/open'), 'openEarthKit');
+export const openMusicKit = later(() => import('./music/open'), 'openKit');
