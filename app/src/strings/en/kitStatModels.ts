@@ -50,7 +50,8 @@ export const kitStatModels = {
     title: 'Spatial statistics',
     keywords:
       'spatial statistics point pattern nearest neighbor clark evans quadrat ripley k function moran geary ' +
-      'autocorrelation lisa local moran hot spot weights semivariogram variogram kriging inverse distance geography',
+      'autocorrelation lisa local moran hot spot weights semivariogram variogram kriging ' +
+      'contour map surface inverse distance geography',
   } as Eager & typeof SpatialWords,
   causal: {
     title: 'Econometrics and causal inference',

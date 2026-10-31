@@ -23,6 +23,7 @@ export const spatial = {
     lagWidth: 'Bin width (blank for automatic)',
     targets: 'Places to predict',
     power: 'Inverse-distance power',
+    gridSize: 'Map grid nodes on each side',
   },
   option: {
     points: 'Point pattern',
@@ -76,6 +77,9 @@ export const spatial = {
     nugget: 'Nugget',
     sill: 'Partial sill',
     range: 'Range',
+    gridLow: 'Lowest kriged value on the map',
+    gridHigh: 'Highest kriged value on the map',
+    gridSdHigh: 'Largest kriging SD on the map',
   },
   word: {
     clustered: 'Clustered',
@@ -152,6 +156,9 @@ export const spatial = {
     lisa: 'Local Moran clusters at p < 0.05',
     variogram: 'Semivariogram with the fitted model',
     targets: 'Data and kriged places',
+    krigedMap: 'Contour map of the kriged surface',
+    sdMap: 'Contour map of the kriging standard deviation',
+    idwMap: 'Contour map by inverse-distance weighting',
   },
   example: {
     pattern: 'Point pattern in a 4 by 4 window',
@@ -189,6 +196,9 @@ export const spatialSteps = {
   kriging: 'Ordinary kriging solves for weights that add to 1 and make the error variance smallest:',
   krigingVariance: 'The kriging variance is:',
   idw: 'For comparison, inverse-distance weighting with power {p} gives:',
+  surface:
+    'For the maps, krige every node of a {size} by {size} grid over the points. The kriging matrix is the same ' +
+    'at every node, so it is inverted once. Marching squares then draws {levels} contour lines, {step} apart.',
   wordsClustered: 'The points are clustered (Clark-Evans R = {r}, z = {z}, p = {p}).',
   wordsDispersed: 'The points are spread more evenly than at random (Clark-Evans R = {r}, z = {z}, p = {p}).',
   wordsRandom: 'The points are consistent with a random pattern (Clark-Evans R = {r}, z = {z}, p = {p}).',

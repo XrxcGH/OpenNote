@@ -104,6 +104,8 @@ export const shared = {
     fewLags: 'Fewer than 2 distance bins have pairs. Use a wider lag or more bins.',
     krigingSingular:
       'The kriging system has no unique solution. Two points may share a place, or the model may be flat.',
+    gridSize: 'The map grid must have from {detail} to {other} nodes on each side.',
+    flatWindow: 'The points must spread out in both x and y to draw a map over them.',
     targetLine: 'Line {detail} of the places to predict needs x and y, such as 2.5, 3.',
     oneEntity: 'Fixed effects need at least 2 entities.',
     needTime: 'Choose a time column for this kind of effect.',

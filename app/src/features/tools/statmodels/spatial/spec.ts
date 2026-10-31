@@ -29,6 +29,8 @@ import {
   type WeightKind,
   type Window,
 } from './engine';
+import { contourMap, mapLevels } from './contourMap';
+import { surfaceGrid, type SurfaceGrid } from './grid';
 
 const PATTERN = 'x,y\n1,1\n2,2\n3,1\n4,3\n2,4\n0.5,3.2\n3.4,3.8\n1.6,0.4\n3.7,0.8\n0.8,2.1\n2.9,2.6\n1.2,3.6';
 const GRID = 'x,y,value\n0,0,1\n1,0,2\n2,0,3\n0,1,2\n1,1,3\n2,1,4\n0,2,3\n1,2,4\n2,2,5';
@@ -359,6 +361,10 @@ function interpolationOutcome(values: Values): Outcome {
   if (targets.length === 0) fail('targetLine', '1');
   const preds = targets.map((t) => ({ t, k: krige(points, z, t, model, params), d: idw(points, z, t, power) }));
   const first = preds[0];
+  const size = Number(values.gridSize);
+  const surface = surfaceGrid(points, z, model, params, boundingBox(points), size, power);
+  const all = surface.kriged.flat();
+  const levels = mapLevels(surface.kriged);
   return {
     rows: [
       { id: 'kriged', value: first.k.value, answer: true, sym: '\\hat z_0' },
@@ -368,6 +374,9 @@ function interpolationOutcome(values: Values): Outcome {
       { id: 'sill', value: params.sill },
       { id: 'range', value: params.range },
       { id: 'n', value: points.length },
+      { id: 'gridLow', value: Math.min(...all) },
+      { id: 'gridHigh', value: Math.max(...all) },
+      { id: 'gridSdHigh', value: Math.max(...surface.sd.flat()) },
     ],
     tables: [
       {
@@ -401,6 +410,11 @@ function interpolationOutcome(values: Values): Outcome {
         v: first.d,
         p: power,
       }),
+      step('spatial.surface', undefined, {
+        size,
+        levels: levels.length,
+        step: levels.length > 1 ? levels[1] - levels[0] : 0,
+      }),
     ],
     words: step('spatial.wordsKriging', undefined, {
       x: first.t.x,
@@ -409,7 +423,7 @@ function interpolationOutcome(values: Values): Outcome {
       lo: first.k.value - 1.96 * Math.sqrt(first.k.variance),
       hi: first.k.value + 1.96 * Math.sqrt(first.k.variance),
     }),
-    pictures: interpolationPictures(points, lags, model, params, preds),
+    pictures: [...interpolationPictures(points, lags, model, params, preds), ...surfacePictures(surface, points)],
     notes: ['stationary', 'level95'],
   };
 }
@@ -454,6 +468,16 @@ function interpolationPictures(
         legend: true,
       },
     },
+  ];
+}
+
+function surfacePictures(surface: SurfaceGrid, points: readonly Point[]): Picture[] {
+  const axes = { x: 'x', y: 'y' };
+  const map = (z: SurfaceGrid['kriged']) => ({ xs: surface.xs, ys: surface.ys, z });
+  return [
+    { id: 'krigedMap', type: 'draw', draw: contourMap(map(surface.kriged), points, axes) },
+    { id: 'sdMap', type: 'draw', draw: contourMap(map(surface.sd), points, axes) },
+    { id: 'idwMap', type: 'draw', draw: contourMap(map(surface.idw), points, axes) },
   ];
 }
 
@@ -525,6 +549,7 @@ export const spatialSpec: ToolSpec = {
     { id: 'lagWidth', type: 'number', first: '', optional: true, min: 1e-12, when: is('interpolation') },
     { id: 'targets', type: 'text', first: '2.5, 2.5\n0.5, 4.5', rows: 2, when: is('interpolation') },
     { id: 'power', type: 'number', first: '2', min: 0.1, max: 10, when: is('interpolation') },
+    { id: 'gridSize', type: 'number', first: '21', integer: true, min: 2, max: 81, when: is('interpolation') },
   ],
   run,
   examples: [
