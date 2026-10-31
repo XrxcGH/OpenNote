@@ -30,6 +30,7 @@ export const intelSpeech = {
     cloudHelp: {
       transcription: 'Recordings are sent to {host} with your key, and their terms apply.',
       summaries: 'The text being summarized is sent to {host} with your key, and their terms apply.',
+      tutor: 'Only the text you show the tutor is sent to {host} with your key, after you agree each session.',
     },
     keyLabel: 'Key for {feature}',
     keyHelp: 'Your key is kept in Windows Credential Manager. OpenNote never shows it again.',
@@ -42,6 +43,8 @@ export const intelSpeech = {
         'The recording’s audio goes to {host} with your key. Nothing else is sent, and Work offline stops it.',
       summaries:
         'The text you summarize goes to {host} with your key. Nothing else is sent, and Work offline stops it.',
+      tutor:
+        'The text you show the tutor goes to {host} with your key, after you agree each session. Work offline stops it.',
     },
     confirm: 'Save key and use it',
     keepOnDevice: 'Keep it on this device',
@@ -56,6 +59,7 @@ export const intelSpeech = {
     privacyLine: {
       transcription: 'Transcription sends recordings to {host}.',
       summaries: 'Summaries send the text to {host}.',
+      tutor: 'The tutor sends the text you show it to {host}.',
     },
     privacyNever: 'Not used',
     recommendedNoSpeech: 'Handwriting recognition, text in images, and summaries, all running on this device.',

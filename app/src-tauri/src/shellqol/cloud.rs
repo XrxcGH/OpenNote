@@ -143,6 +143,8 @@ mod tests {
         detect_in(Path::new(path), &[]).map(|info| info.service)
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn finds_each_service_by_its_folder_name() {
         assert_eq!(name_of(r"C:\Users\ada\OneDrive\Notes"), Some("oneDrive"));
@@ -161,6 +163,8 @@ mod tests {
         assert!(detect_in(Path::new(r"C:\Users\ada\Other"), &roots).is_none());
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn only_onedrive_can_be_pinned_from_here() {
         let pinnable = |path: &str| detect_in(Path::new(path), &[]).is_some_and(|info| info.can_pin);

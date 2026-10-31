@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Merged into the Info.plist Tauri writes (ADR 0055). macOS shows each usage string when it first asks for that
+  permission, so each says what OpenNote does with it. Everything stays on this Mac unless the person turns on a
+  cloud feature.
+-->
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>OpenNote records audio notes and turns speech into text on this Mac when you ask it to.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>OpenNote receives photos from your phone over this network when you choose Insert, then From phone.</string>
+  <key>NSDocumentsFolderUsageDescription</key>
+  <string>OpenNote keeps your notebooks in the folder you choose, which is in Documents by default.</string>
+  <key>NSDesktopFolderUsageDescription</key>
+  <string>OpenNote opens and saves the files you choose on your desktop.</string>
+  <key>NSDownloadsFolderUsageDescription</key>
+  <string>OpenNote opens and saves the files you choose in Downloads.</string>
+  <key>NSRemovableVolumesUsageDescription</key>
+  <string>OpenNote opens and saves the notebooks and files you choose on a removable drive.</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>OpenNote contributors. Licensed under the Apache License 2.0.</string>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.productivity</string>
+  <key>NSSupportsAutomaticGraphicsSwitching</key>
+  <true/>
+</dict>
+</plist>
