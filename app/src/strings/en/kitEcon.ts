@@ -17,6 +17,7 @@ export const kitEcon = {
     tool: 'Subject',
     calculator: 'Calculator',
     missing: 'Enter a number for {name}.',
+    notice: 'For coursework only; not financial, tax, or medical advice.',
     notNumber: '{name} is not a number.',
   },
   money,

@@ -16,7 +16,7 @@ export const accounting = {
   },
   intro: {
     ledger:
-      'Each entry is debits, a semicolon, then credits, as in Cash 500 ; Service revenue 500. Separate entries with a bar.',
+      'Each entry is debits, a semicolon, then credits, as in Cash 500 ; Service revenue 500. Put each entry on its own line, or separate them with a bar.',
     inventory:
       'Periodic: layers as units@cost and the units sold. Perpetual: purchases as B units cost and sales as S units.',
     ratios: 'Enter the statement totals; each ratio shows below, and an empty denominator is marked undefined.',

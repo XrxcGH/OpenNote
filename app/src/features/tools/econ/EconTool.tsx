@@ -9,6 +9,8 @@ import { tx } from './forms';
 import { ECON_TOOLS } from './tools';
 
 const STORE = 'econ';
+/** Subjects whose answers could be mistaken for advice: loans, taxes, options, valuation, and cost-effectiveness. */
+const ADVICE_SUBJECTS = new Set(['money', 'invest', 'accounting']);
 
 export function EconTool() {
   const saved = loadStored<{ tool?: string; form?: Record<string, string> }>(STORE, {});
@@ -58,6 +60,9 @@ export function EconTool() {
           ))}
         </select>
       </label>
+      {ADVICE_SUBJECTS.has(tool.id) || (tool.id === 'measures' && current.id === 'tax') ? (
+        <p className={styles.note}>{tx('common.notice')}</p>
+      ) : null}
       <div className={extra.scroll}>
         <ChemForm key={`${tool.id}.${id}`} {...props} intro={intro ? tx(`${tool.id}.intro.${id}`) : undefined} />
       </div>

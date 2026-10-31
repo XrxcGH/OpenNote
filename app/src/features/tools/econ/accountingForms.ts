@@ -38,8 +38,9 @@ const ledger = form(
   [
     f('journal', {
       kind: 'text',
+      multiline: true,
       initial:
-        'Cash 10000 ; Capital 10000 | Equipment 4000 ; Cash 4000 | Cash 3000 ; Service revenue 3000 | Rent expense 1000 ; Cash 1000',
+        'Cash 10000 ; Capital 10000\nEquipment 4000 ; Cash 4000\nCash 3000 ; Service revenue 3000\nRent expense 1000 ; Cash 1000',
     }),
   ],
   (values) => {
