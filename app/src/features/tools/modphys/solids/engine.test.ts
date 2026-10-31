@@ -3,6 +3,7 @@ import { C } from '../shared/constants';
 import { PhysicsError } from '../shared/errors';
 import { chainDispersion, fermiEnergy, freeElectron, kpF, kronigPenney } from './bands';
 import {
+  DEVICE_SOURCES,
   MATERIALS,
   carriers,
   cellCurrent,
@@ -119,5 +120,15 @@ describe('devices', () => {
       expect(Math.abs(residual)).toBeLessThan(1e-9);
     }
     expect(() => solarCell({ ...cell, il: 0 })).toThrow(PhysicsError);
+  });
+});
+
+describe('device sources', () => {
+  it('cite a table that lists the permittivities the presets use', () => {
+    // Neamen, Appendix B: Si 11.7, Ge 16.0, GaAs 12.9 (Sze and Ng list 11.9 and 16.2, so they are not cited for these).
+    expect([MATERIALS.si.epsR, MATERIALS.ge.epsR, MATERIALS.gaas.epsR]).toEqual([11.7, 16.0, 12.9]);
+    const cited = DEVICE_SOURCES.find((one) => one.includes('permittivities'))!;
+    expect(cited).toContain('Neamen');
+    expect(cited).toContain('Si 11.7, Ge 16.0, GaAs 12.9');
   });
 });

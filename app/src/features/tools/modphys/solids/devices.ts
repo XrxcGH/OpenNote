@@ -29,7 +29,8 @@ export const MATERIALS: Record<'si' | 'ge' | 'gaas', Material> = {
 };
 
 export const DEVICE_SOURCES = [
-  'Sze and Ng (2007), Physics of Semiconductor Devices, Appendix G: densities of states, permittivities, mobilities.',
+  'Sze and Ng (2007), Physics of Semiconductor Devices, Appendix G: densities of states and mobilities.',
+  'Neamen (2012), Semiconductor Physics and Devices, 4th ed., Appendix B: relative permittivities (Si 11.7, Ge 16.0, GaAs 12.9).',
   'Thurmond (1975), J. Electrochem. Soc. 122, 1133: Varshni band-gap parameters.',
 ] as const;
 
