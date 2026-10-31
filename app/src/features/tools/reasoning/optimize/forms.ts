@@ -11,7 +11,7 @@ import { fail, matrix, num, numbers } from '../core/util';
 import { isChance, parseTree, playPath, solveTree } from '../games/tree';
 import type { GameNode } from '../games/tree';
 import { attempt, say, saySteps } from '../ui/say';
-import type { Mode, Outcome, Table, ToolSpec, Values } from '../ui/types';
+import type { Figure, Mode, Outcome, Table, ToolSpec, Values } from '../ui/types';
 import { hungarian } from './assign';
 import { decide, sensitivity } from './decision';
 import { linearText, parseLp } from './linear';
@@ -374,19 +374,10 @@ function earnedOutcome(v: Values): Outcome {
 
 // Decisions.
 
-function decisionOutcome(v: Values): Outcome {
-  const pay = matrix(v.payoffs ?? '');
-  if (!pay) return fail('matrix', { field: s('fields.payoffs') });
-  const probs = numbers(v.probs ?? '');
-  if (!probs) return fail('list');
-  const like = (v.likelihood ?? '').trim() ? matrix(v.likelihood ?? '') : null;
-  if ((v.likelihood ?? '').trim() && !like) return fail('matrix', { field: s('fields.likelihood') });
-  const r = decide(pay, probs, like, optional(v, 'tolerance'));
-  const alts = names(v.alternatives, pay.length, 'd');
-  const states = names(v.states, pay[0].length, 's');
-  const pick = (xs: number[], low = false) =>
-    alts[xs.reduce((b, x, i) => (low ? (x < xs[b] - 1e-9 ? i : b) : x > xs[b] + 1e-9 ? i : b), 0)];
-  const tables: Table[] = [
+type Decided = ReturnType<typeof decide>;
+
+function criteriaTables(r: Decided, alts: string[], states: string[]): Table[] {
+  return [
     {
       caption: s('table.criteria'),
       header: [
@@ -414,32 +405,15 @@ function decisionOutcome(v: Values): Outcome {
       rows: r.regret.map((row, i) => [alts[i], ...row.map((x) => num(x))]),
     },
   ];
-  const steps = [
-    s('steps.emv', { best: alts[r.best], emv: num(r.emv[r.best]) }),
-    s('steps.evpi', { evwpi: num(r.evwpi), emv: num(r.emv[r.best]), evpi: num(r.evpi) }),
-  ];
-  const notes = [
-    s('criteria', {
-      maximin: pick(r.maximin),
-      maximax: pick(r.maximax),
-      regret: pick(r.maxRegret, true),
-      laplace: pick(r.laplace),
-    }),
-  ];
-  const sens = sensitivity(pay, probs);
-  if (sens)
-    notes.push(
-      s('sensitivity', {
-        state: states[0],
-        list: sens.stretches
-          .map((x) => s('sensitivityItem', { name: alts[x.best], from: num(x.from, 4), to: num(x.to, 4) }))
-          .join(', '),
-      }),
-    );
-  if (r.sample) {
-    const sm = r.sample;
-    const signals = sm.pSignal.map((_, k) => s('signal', { k: k + 1 }));
-    tables.push({
+}
+
+/** The posterior table and the EVSI steps when a likelihood table was given. */
+function sampleParts(r: Decided, alts: string[], states: string[]): { table: Table; steps: string[] } | null {
+  const sm = r.sample;
+  if (!sm) return null;
+  const signals = sm.pSignal.map((_, k) => s('signal', { k: k + 1 }));
+  return {
+    table: {
       caption: s('table.posterior'),
       header: [s('table.signal'), 'P', ...states, s('table.bestThen'), s('table.value')],
       rows: sm.pSignal.map((p, k) => [
@@ -449,8 +423,8 @@ function decisionOutcome(v: Values): Outcome {
         alts[sm.bestBy[k]],
         num(sm.valueBy[k]),
       ]),
-    });
-    steps.push(
+    },
+    steps: [
       s('steps.bayes'),
       s('steps.evsi', {
         evwsi: num(sm.evwsi),
@@ -458,8 +432,59 @@ function decisionOutcome(v: Values): Outcome {
         evsi: num(sm.evsi),
         eff: num(sm.efficiency * 100, 4),
       }),
-    );
-  }
+    ],
+  };
+}
+
+/** EMV against P(first state): where each alternative is best, and the picture of the lines. */
+function sensitivityParts(
+  pay: number[][],
+  probs: number[],
+  alts: string[],
+  states: string[],
+): { note: string; figure: Figure } | null {
+  const sens = sensitivity(pay, probs);
+  if (!sens) return null;
+  const note = s('sensitivity', {
+    state: states[0],
+    list: sens.stretches
+      .map((x) => s('sensitivityItem', { name: alts[x.best], from: num(x.from, 4), to: num(x.to, 4) }))
+      .join(', '),
+  });
+  const svg = linesFigure(
+    alts.map((name, i) => ({ name, from: sens.ends[i][0], to: sens.ends[i][1] })),
+    s('sensitivityAxis', { state: states[0] }),
+  );
+  const list = alts
+    .map((name, i) => s('sensitivityLine', { name, from: num(sens.ends[i][0]), to: num(sens.ends[i][1]) }))
+    .join('; ');
+  return { note, figure: { svg, alt: s('sensitivityAlt', { state: states[0], list }) } };
+}
+
+function decisionOutcome(v: Values): Outcome {
+  const pay = matrix(v.payoffs ?? '');
+  if (!pay) return fail('matrix', { field: s('fields.payoffs') });
+  const probs = numbers(v.probs ?? '');
+  if (!probs) return fail('list');
+  const like = (v.likelihood ?? '').trim() ? matrix(v.likelihood ?? '') : null;
+  if ((v.likelihood ?? '').trim() && !like) return fail('matrix', { field: s('fields.likelihood') });
+  const r = decide(pay, probs, like, optional(v, 'tolerance'));
+  const alts = names(v.alternatives, pay.length, 'd');
+  const states = names(v.states, pay[0].length, 's');
+  const pick = (xs: number[], low = false) =>
+    alts[xs.reduce((b, x, i) => (low ? (x < xs[b] - 1e-9 ? i : b) : x > xs[b] + 1e-9 ? i : b), 0)];
+  const emv = num(r.emv[r.best]);
+  const sample = sampleParts(r, alts, states);
+  const sens = sensitivityParts(pay, probs, alts, states);
+  const notes = [
+    s('criteria', {
+      maximin: pick(r.maximin),
+      maximax: pick(r.maximax),
+      regret: pick(r.maxRegret, true),
+      laplace: pick(r.laplace),
+    }),
+    ...(sens ? [sens.note] : []),
+  ];
   return {
     ok: true,
     // With a risk tolerance the student asked for the utility view: the certainty equivalent decides, EMV follows.
@@ -468,30 +493,19 @@ function decisionOutcome(v: Values): Outcome {
           best: pick(r.certainty),
           ce: num(Math.max(...r.certainty)),
           emvBest: alts[r.best],
-          emv: num(r.emv[r.best]),
+          emv,
           evpi: num(r.evpi),
         })
-      : s('dcAnswer', { best: alts[r.best], emv: num(r.emv[r.best]), evpi: num(r.evpi) }),
-    latex: `\\mathrm{EVPI} = ${num(r.evwpi)} - ${num(r.emv[r.best])} = ${num(r.evpi)}`,
+      : s('dcAnswer', { best: alts[r.best], emv, evpi: num(r.evpi) }),
+    latex: `\\mathrm{EVPI} = ${num(r.evwpi)} - ${emv} = ${num(r.evpi)}`,
     note: notes.join('\n'),
-    steps,
-    tables,
-    ...(sens
-      ? {
-          figure: {
-            svg: linesFigure(
-              alts.map((name, i) => ({ name, from: sens.ends[i][0], to: sens.ends[i][1] })),
-              s('sensitivityAxis', { state: states[0] }),
-            ),
-            alt: s('sensitivityAlt', {
-              state: states[0],
-              list: alts
-                .map((name, i) => s('sensitivityLine', { name, from: num(sens.ends[i][0]), to: num(sens.ends[i][1]) }))
-                .join('; '),
-            }),
-          },
-        }
-      : {}),
+    steps: [
+      s('steps.emv', { best: alts[r.best], emv }),
+      s('steps.evpi', { evwpi: num(r.evwpi), emv, evpi: num(r.evpi) }),
+      ...(sample?.steps ?? []),
+    ],
+    tables: [...criteriaTables(r, alts, states), ...(sample ? [sample.table] : [])],
+    ...(sens ? { figure: sens.figure } : {}),
   };
 }
 

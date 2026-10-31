@@ -382,7 +382,7 @@ function performanceOutcome(v: Values): Outcome {
   if (kind === 'cpi') {
     const mix = lines(v.mix ?? '').map((l) => {
       const n = l.split(/[\s,]+/).filter(Boolean);
-      // A share may carry a %; shares are normalised, so 50% and 50 weigh the same.
+      // A share may carry a %; shares are normalized, so 50% and 50 weigh the same.
       const w = Number(n[n.length - 2]?.replace(/%$/, ''));
       const c = Number(n[n.length - 1]);
       if (n.length < 2 || !(w >= 0) || !(c > 0)) fail('mixLine', { line: l });

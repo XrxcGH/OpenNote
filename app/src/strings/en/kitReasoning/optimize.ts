@@ -342,7 +342,8 @@ export const optimize = {
   criteria:
     'Maximin picks {maximin}, maximax picks {maximax}, minimax regret picks {regret}, and equal likelihood picks {laplace}.',
   dcAnswerCe:
-    'Choose {best} for the highest certainty equivalent, {ce}; by expected value alone {emvBest} gives {emv}, and perfect information is worth {evpi}',
+    'Choose {best} for the highest certainty equivalent, {ce}; by expected value alone {emvBest} gives {emv}, ' +
+    'and perfect information is worth {evpi}',
   signal: 'Signal {k}',
   sensitivity:
     'As P({state}) runs from 0 to 1, with the other states keeping their proportions, the best by EMV is {list}.',

@@ -46,7 +46,7 @@ describe('typed inputs in the reasoning tools', () => {
   });
 
   it('says when apportionment breaks a tie for the last seat by order', async () => {
-    // Quotas 4/3 each: floors 1, 1, 1 and three equal remainders for the 1 seat left.
+    // Quotas 4/3 each: floors of 1 each and three equal remainders for the 1 seat left.
     const ham = await solve('games', 'apportion', { parties: 'A 1\nB 1\nC 1', seats: '4' });
     expect(answer(ham)).toContain('2, 1, 1');
     expect(note(ham)).toMatch(/Hamilton[^\n]*: A, B, C have equal claims[^\n]*to A/);
