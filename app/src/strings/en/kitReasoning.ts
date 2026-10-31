@@ -8,6 +8,7 @@ import { digital } from './kitReasoning/digital';
 import { discrete } from './kitReasoning/discrete';
 import { games } from './kitReasoning/games';
 import { optimize } from './kitReasoning/optimize';
+import { systems } from './kitReasoning/systems';
 
 export const kitReasoning = {
   title: 'Reasoning kit',
@@ -52,6 +53,18 @@ export const kitReasoning = {
         'digital logic boolean algebra karnaugh map k-map quine mccluskey minimize sop pos nand nor gates ' +
         'flip-flop state machine mealy moore counter elmore logical effort',
       summary: 'From truth tables to minimal circuits: maps, gates, timing, flip-flops, and state machines.',
+    },
+    systems: {
+      tab: 'Computer systems',
+      open: 'Open computer systems, networks, and databases',
+      keywords:
+        'cache tag index offset amat page replacement fifo lru belady tlb virtual memory cpu scheduling round robin ' +
+        'srtf gantt rate monotonic edf pipeline hazard forwarding branch prediction amdahl gustafson cpi mips ' +
+        'banker deadlock subnet cidr vlsm ipv6 delay bandwidth tcp mathis go-back-n selective repeat routing ' +
+        'dijkstra bellman-ford lamport vector clock functional dependency closure candidate key bcnf 3nf ' +
+        'normalization relational algebra sha-256 md5 crc checksum',
+      summary:
+        'Caches, paging, scheduling, pipelines, deadlock, subnets, delays, routing, clocks, normal forms, relational algebra, and digests.',
     },
     algorithms: {
       tab: 'Algorithms',
@@ -103,6 +116,7 @@ export const kitReasoning = {
   automata,
   discrete,
   digital,
+  systems,
   algorithms,
   optimize,
   games,
