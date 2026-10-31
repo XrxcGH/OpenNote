@@ -8,6 +8,8 @@ export const sky = {
     riseSet: 'Rise, transit, and set',
     sunPath: 'Sun-path diagram',
     shadow: 'Shadows and window overhangs',
+    planets: 'Positions of the planets',
+    chart: 'Sky chart of bright stars and planets',
   },
   f: {
     date: 'Date (YYYY-MM-DD)',
@@ -78,6 +80,20 @@ export const sky = {
     shadow: 'Shadow length',
     overhang: 'Overhang depth to shade the window',
     sunAlt: 'Solar altitude',
+    mercury: 'Mercury',
+    venus: 'Venus',
+    mars: 'Mars',
+    jupiter: 'Jupiter',
+    saturn: 'Saturn',
+    uranus: 'Uranus',
+    neptune: 'Neptune',
+    kepler: 'Orbital elements and Kepler’s equation',
+    geocentric: 'From the Sun to the Earth',
+    chartPlot: 'The sky above the site: bright stars, planets, Moon, and Sun',
+    starsUp: 'Bright stars above the horizon',
+    planetsUp: 'Planets above the horizon',
+    moonAlt: 'Altitude of the Moon',
+    brightest: 'Brightest star above the horizon',
   },
   notes: {
     universal: 'Universal time stands in for terrestrial time, which differs by about a minute.',
@@ -87,5 +103,12 @@ export const sky = {
     riseSet: 'Times are local for the zone offset you give. The Sun uses an altitude of −0.833° for rise and set.',
     sunPath: 'The paths use declinations of +23.44°, 0°, and −23.44°.',
     shadow: 'The overhang depth assumes it runs the full width of the window.',
+    planets:
+      'The JPL approximate elements are good to about 1′ for most planets and to about 10′ for Jupiter and ' +
+      'Saturn from 1800 to 2050. Places are geometric, without aberration or nutation.',
+    chart:
+      'The chart is drawn like a map of the sky: zenith at the center, north at the top, east to the right, ' +
+      'the horizon as the outer ring. It shows the stars brighter than about magnitude 2.5 and names those ' +
+      'brighter than 1.',
   },
 } as const;

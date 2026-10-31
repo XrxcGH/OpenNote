@@ -1,7 +1,7 @@
 // Sky positions and sun paths. It covers time systems, coordinate conversions, sun-path diagrams, shadows, and the
-// times of rising and setting with twilight. It also places the Sun and the Moon. Inputs are a local date and time
-// with a zone offset (hours east of Greenwich) and a site's latitude and longitude (east positive). Universal time
-// stands in for terrestrial time.
+// times of rising and setting with twilight. It also places the Sun, the Moon, and the planets, and charts the sky.
+// Inputs are a local date and time with a zone offset (hours east of Greenwich) and a site's latitude and longitude
+// (east positive). Universal time stands in for terrestrial time.
 import { fixed } from '../shared/calc';
 import type { Calc, Item, Step } from '../shared/calc';
 import { fail, need, positive } from '../shared/errors';
@@ -27,6 +27,9 @@ import {
   wrap,
 } from './astro';
 import type { Equatorial } from './astro';
+import { BRIGHT_STARS } from './bright';
+import { PLANETS, planet } from './planets';
+import type { PlanetName } from './planets';
 
 export type SkyKey =
   | 'jd'
@@ -74,12 +77,27 @@ export type SkyKey =
   | 'profile'
   | 'shadow'
   | 'overhang'
-  | 'sunAlt';
+  | 'sunAlt'
+  | PlanetName
+  | 'kepler'
+  | 'geocentric'
+  | 'chartPlot'
+  | 'starsUp'
+  | 'planetsUp'
+  | 'moonAlt'
+  | 'brightest';
 
 export const SKY_SOURCES = [
   'US Naval Observatory, approximate solar coordinates and sidereal time (public domain).',
   'Astronomical Almanac low-precision lunar formulas.',
   'Lieske et al. (1977) IAU 1976 precession angles; Hipparcos J2000 galactic pole.',
+] as const;
+
+export const PLANET_SOURCES = [
+  'JPL Solar System Dynamics, Approximate Positions of the Planets (Standish), Table 1: Keplerian elements for 1800–2050.',
+] as const;
+export const STAR_SOURCES = [
+  'Yale Bright Star Catalog, 5th revised edition (Hoffleit and Warren 1991; public domain): J2000 positions and V magnitudes.',
 ] as const;
 
 export interface Site {
@@ -471,6 +489,140 @@ export function shadow(alt: number, az: number, height: number, wallAzimuth: num
     });
   } else steps.push({ key: 'overhang', text: 'The Sun is behind the wall, so the window is already in shade.' });
   return { items, steps };
+}
+
+/** The seven planets' geocentric places from the JPL approximate elements, and where each stands in the sky. */
+export function planetsCalc(s: Site): Calc<SkyKey> {
+  checkSite(s);
+  const jd = jdOf(s);
+  const items: Item<SkyKey>[] = [];
+  const steps: Step<SkyKey>[] = [
+    {
+      key: 'kepler',
+      text:
+        `T = (JD − 2451545)/36525 = ${fmt((jd - J2000) / 36525, 8)}; each element is its J2000 value plus its rate × T; ` +
+        'M = L − ϖ, ω = ϖ − Ω, and Kepler’s equation M = E − e sin E is solved by Newton’s method',
+      tex: "M = E - e\\sin E,\\quad x' = a(\\cos E - e),\\quad y' = a\\sqrt{1 - e^2}\\sin E",
+    },
+  ];
+  for (const name of PLANETS) {
+    const p = planet(name, jd);
+    const h = position(precess(p, jd), s, jd);
+    items.push({
+      key: name,
+      value: h.alt,
+      unit: '°',
+      text:
+        `RA ${hms(p.ra)}, Dec ${dms(p.dec)} (J2000); altitude ${fmt(h.alt, 4)}°, azimuth ${fmt(h.az, 4)}°; ` +
+        `${fmt(p.delta, 5)} au from Earth, elongation ${fmt(p.elongation, 4)}°`,
+    });
+    steps.push({
+      key: name,
+      text:
+        `M = ${fmt(p.orbit.m, 6)}°, E = ${fmt(p.orbit.e, 6)}°, r = ${fmt(p.r, 6)} au; ` +
+        `geocentric Δ = ${fmt(p.delta, 6)} au after a light-time of ${fmt((p.delta * 499.005) / 60, 4)} min`,
+    });
+  }
+  steps.push({
+    key: 'geocentric',
+    text:
+      'The Earth-Moon barycentre from the same table is subtracted from the planet, the ecliptic is turned to the ' +
+      'equator by ε = 23.43928°, and the J2000 place is precessed to the date for the altitude and azimuth.',
+  });
+  return { items, steps };
+}
+
+/** The stereographic place of an altitude and azimuth on a chart of the sky, north up and east right. */
+const dome = (alt: number, az: number): [number, number] => {
+  const r = tand((90 - alt) / 2);
+  return [r * sind(az), r * cosd(az)];
+};
+
+/** A chart of the sky at a site: the bright stars, the planets, the Moon, and the Sun above the horizon. */
+export function skyChart(s: Site): Calc<SkyKey> {
+  checkSite(s);
+  const jd = jdOf(s);
+  const up = BRIGHT_STARS.map((star) => ({ star, h: position(precess(star, jd), s, jd) })).filter(
+    (one) => one.h.alt > 0,
+  );
+  const stars: Series = {
+    points: up.map((one) => dome(one.h.alt, one.h.az)),
+    kind: 'dots',
+    tone: 2,
+    label: 'stars',
+    sizes: up.map((one) => Math.max(1, 3.4 - 0.9 * one.star.mag)),
+    names: up.map((one) => (one.star.mag < 1 ? one.star.name : '')),
+  };
+  const planets = PLANETS.map((name) => ({ name, h: position(precess(planet(name, jd), jd), s, jd) })).filter(
+    (one) => one.h.alt > 0,
+  );
+  const series: Series[] = [0, 30, 60].map((ring) => {
+    const r = tand((90 - ring) / 2);
+    return {
+      points: Array.from({ length: 73 }, (_, i) => [r * sind(i * 5), r * cosd(i * 5)] as [number, number]),
+      kind: 'dash',
+      tone: 2,
+    };
+  });
+  series.push(stars, {
+    points: planets.map((one) => dome(one.h.alt, one.h.az)),
+    kind: 'dots',
+    tone: 1,
+    label: 'planets',
+    sizes: planets.map(() => 4),
+    names: planets.map((one) => one.name[0]!.toUpperCase() + one.name.slice(1)),
+  });
+  const m = position(moon(jd), s, jd);
+  const sn = position(sun(jd), s, jd);
+  const bodies = [
+    ['Moon', m, 3],
+    ['Sun', sn, 0],
+  ] as const;
+  for (const [name, h, tone] of bodies)
+    if (h.alt > 0)
+      series.push({ points: [dome(h.alt, h.az)], kind: 'dots', tone, label: name, sizes: [6], names: [name] });
+  const brightest = up[0];
+  const items: Item<SkyKey>[] = [
+    fixed('starsUp', up.length, '', 3),
+    {
+      key: 'planetsUp',
+      value: planets.length,
+      unit: '',
+      text: planets.length ? planets.map((one) => one.name[0]!.toUpperCase() + one.name.slice(1)).join(', ') : '—',
+    },
+    fixed('moonAlt', m.alt, '°', 4),
+    fixed('sunAlt', sn.alt, '°', 4),
+  ];
+  if (brightest)
+    items.push({
+      key: 'brightest',
+      value: brightest.star.mag,
+      unit: '',
+      text:
+        `${brightest.star.name} (V = ${fmt(brightest.star.mag, 3)}), ` +
+        `altitude ${fmt(brightest.h.alt, 4)}°, azimuth ${fmt(brightest.h.az, 4)}°`,
+    });
+  return {
+    items,
+    steps: [
+      {
+        key: 'alt',
+        text:
+          'Each J2000 place is precessed to the date; sin h = sin φ sin δ + cos φ cos δ cos H gives the altitude, and ' +
+          'the chart puts it at radius tan((90° − h)/2) from the zenith, rings at 0°, 30°, and 60°.',
+        tex: 'r = \\tan\\frac{90^\\circ - h}{2}',
+      },
+    ],
+    plot: {
+      title: 'chartPlot',
+      xLabel: 'eastAxis',
+      yLabel: 'northAxis',
+      series,
+      x: [-1.05, 1.05],
+      y: [-1.05, 1.05],
+      equal: true,
+    },
+  };
 }
 
 export { calendar };

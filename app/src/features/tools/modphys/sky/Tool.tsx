@@ -1,5 +1,6 @@
 // The sky positions and sun paths tool. Each calculation is a form over engine.ts. Together they cover time systems,
-// coordinate conversions, rise and set times, sun-path diagrams, and shadows, and they place the Sun and the Moon.
+// coordinate conversions, rise and set times, sun-path diagrams, and shadows; they place the Sun, the Moon, and the
+// planets, and they chart the bright stars.
 import type { kitModPhys } from '../../../../strings/en/kitModPhys';
 import { t } from '../../../../strings/t';
 import { present } from '../shared/calc';
@@ -9,7 +10,20 @@ import type { FieldSpec, Values } from '../shared/form';
 import { ToolForms } from '../shared/ToolForms';
 import type { FormDef } from '../shared/ToolForms';
 import { parseDate, parseTime } from './astro';
-import { SKY_SOURCES, convertCalc, moonCalc, riseSet, shadow, sunCalc, sunPath, timeCalc } from './engine';
+import {
+  PLANET_SOURCES,
+  SKY_SOURCES,
+  STAR_SOURCES,
+  convertCalc,
+  moonCalc,
+  planetsCalc,
+  riseSet,
+  shadow,
+  skyChart,
+  sunCalc,
+  sunPath,
+  timeCalc,
+} from './engine';
 import type { Site, SkyKey } from './engine';
 
 type Field = keyof typeof kitModPhys.sky.f;
@@ -19,11 +33,12 @@ const label = (key: SkyKey) => t(`kitModPhys.sky.out.${key}`);
 const f = (key: Field) => t(`kitModPhys.sky.f.${key}`);
 const num = (id: Field, initial: string): FieldSpec => ({ id, label: f(id), initial });
 const text = (id: Field, initial: string): FieldSpec => ({ id, label: f(id), kind: 'text', initial });
-const show = (calc: Calc<SkyKey>, ...notes: Note[]) =>
+const cite = (sources: readonly string[], calc: Calc<SkyKey>, ...notes: Note[]) =>
   present(calc, label, [
     ...notes.map((note) => t(`kitModPhys.sky.notes.${note}`)),
-    ...SKY_SOURCES.map((name) => t('kitModPhys.form.source', { name })),
+    ...sources.map((name) => t('kitModPhys.form.source', { name })),
   ]);
+const show = (calc: Calc<SkyKey>, ...notes: Note[]) => cite(SKY_SOURCES, calc, ...notes);
 
 const site = (withTime = true): FieldSpec[] => [
   text('date', '2000-01-01'),
@@ -59,6 +74,24 @@ export const FORMS: readonly FormDef[] = [
     label: 'kitModPhys.sky.calcs.moon',
     fields: () => site(),
     solve: (v) => show(moonCalc(siteOf(v)), 'moon'),
+  },
+  {
+    id: 'planets',
+    label: 'kitModPhys.sky.calcs.planets',
+    fields: () => site(),
+    solve: (v) => cite([...PLANET_SOURCES, ...SKY_SOURCES], planetsCalc(siteOf(v)), 'planets', 'universal'),
+  },
+  {
+    id: 'chart',
+    label: 'kitModPhys.sky.calcs.chart',
+    fields: () => [
+      text('date', '2000-01-01'),
+      text('time', '22:00'),
+      num('zone', '0'),
+      num('lat', '51.4769'),
+      num('lon', '-0.0005'),
+    ],
+    solve: (v) => cite([...STAR_SOURCES, ...PLANET_SOURCES, ...SKY_SOURCES], skyChart(siteOf(v)), 'chart'),
   },
   {
     id: 'convert',

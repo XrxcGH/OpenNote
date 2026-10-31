@@ -93,7 +93,9 @@ describe('inserting with no page', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Insert answer' }));
     });
-    expect(document.querySelector('[data-modphys-insert-note]')?.textContent).toBe('Click in a page first, then insert.');
+    expect(document.querySelector('[data-modphys-insert-note]')?.textContent).toBe(
+      'Click in a page first, then insert.',
+    );
   });
 });
 
