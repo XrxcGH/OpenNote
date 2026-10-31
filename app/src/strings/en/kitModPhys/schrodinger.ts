@@ -79,6 +79,8 @@ export const schrodinger = {
     norm: 'Norm (stays 1)',
     packetMean: 'Mean position at the end',
     k0: 'Mean wavenumber k₀',
+    current: 'Peak probability current through the barrier’s right edge',
+    crossed: 'Probability that crossed the right edge (∫ j dt)',
     packetPlot: 'Probability density at the start, halfway, and the end',
     densityAxis: '|ψ|² (nm⁻¹)',
     dotEnergy: 'Ground-state confinement energy',

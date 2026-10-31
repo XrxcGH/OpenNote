@@ -38,6 +38,8 @@ export type QKey =
   | 'norm'
   | 'packetMean'
   | 'k0'
+  | 'current'
+  | 'crossed'
   | 'packetPlot'
   | 'densityAxis'
   | 'dotEnergy'
@@ -348,6 +350,8 @@ export function packet(s: PacketSetup): Calc<QKey> {
       fixed('norm', run.norm, '', 8),
       fixed('packetMean', run.meanX, 'nm', 5),
       fixed('k0', run.k0, 'nm⁻¹', 5),
+      fixed('current', run.peakCurrent, 'fs⁻¹', 5),
+      fixed('crossed', run.crossed, '', 5),
     ],
     steps: [
       {
@@ -358,6 +362,13 @@ export function packet(s: PacketSetup): Calc<QKey> {
         tex:
           `\\left(1 + \\frac{iH\\Delta t}{2\\hbar}\\right)\\psi^{n+1} = \\left(1 - \\frac{iH\\Delta ` +
           `t}{2\\hbar}\\right)\\psi^n`,
+      },
+      {
+        key: 'current',
+        text:
+          `j = (ħ/m) Im(ψ* ∂ψ/∂x) at the barrier's right edge peaks at ${fmt(run.peakCurrent, 5)} fs⁻¹; ` +
+          `∫ j dt = ${fmt(run.crossed, 5)} has crossed it, beside the transmitted ${fmt(run.transmitted, 5)}`,
+        tex: 'j = \\frac{\\hbar}{m}\\,\\mathrm{Im}\\left(\\psi^*\\frac{\\partial\\psi}{\\partial x}\\right)',
       },
     ],
     plot: { title: 'packetPlot', xLabel: 'xAxis', yLabel: 'densityAxis', series },

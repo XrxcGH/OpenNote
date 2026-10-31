@@ -37,6 +37,13 @@ export interface PacketRun {
   norm: number;
   meanX: number;
   k0: number;
+  /**
+   * The probability current j = (ħ/m) Im(ψ* ∂ψ/∂x) through the barrier's right edge (x = width): its largest value
+   * over the run (fs⁻¹; in one dimension a current is probability per time) and its integral over time, which is the
+   * probability that has crossed the edge and so checks `transmitted`.
+   */
+  peakCurrent: number;
+  crossed: number;
 }
 
 export function runPacket(s: PacketSetup): PacketRun {
@@ -67,6 +74,24 @@ export function runPacket(s: PacketSetup): PacketRun {
   const bDiag = v.map((vi) => cx(1, -alpha * (2 * t + vi)));
   const bOff = cx(0, alpha * t);
   const snapshots: Float64Array[] = [Float64Array.from(psi, (a) => a.re * a.re + a.im * a.im)];
+  // The current between the grid points on either side of the right edge, with ħ/m = 2(ħ²/2m)/ħ in nm² fs⁻¹.
+  const edge = Math.min(
+    Math.max(
+      x.findIndex((xi) => xi > s.width),
+      1,
+    ),
+    s.n - 1,
+  );
+  const current = (p: readonly Complex[]) => {
+    const a = p[edge - 1]!;
+    const b = p[edge]!;
+    const mid = cx((a.re + b.re) / 2, (a.im + b.im) / 2);
+    const slope = cx((b.re - a.re) / h, (b.im - a.im) / h);
+    return ((2 * c) / HBAR_EV_FS) * (mid.re * slope.im - mid.im * slope.re);
+  };
+  let jLast = current(psi);
+  let peakCurrent = jLast;
+  let crossed = 0;
   // Factor A once: the Thomas forward sweep coefficients do not change between steps.
   const cPrime: Complex[] = new Array<Complex>(s.n);
   const denom: Complex[] = new Array<Complex>(s.n);
@@ -88,6 +113,10 @@ export function runPacket(s: PacketSetup): PacketRun {
     for (let i = 1; i < s.n; i += 1) y[i] = cdiv(csub(rhs[i]!, cmul(aOff, y[i - 1]!)), denom[i]!);
     for (let i = s.n - 2; i >= 0; i -= 1) y[i] = csub(y[i]!, cmul(cPrime[i]!, y[i + 1]!));
     psi = y;
+    const j = current(psi);
+    crossed += ((jLast + j) / 2) * dt;
+    peakCurrent = Math.max(peakCurrent, j);
+    jLast = j;
     if (step === Math.round(s.steps / 2) || step === s.steps)
       snapshots.push(Float64Array.from(psi, (a) => a.re * a.re + a.im * a.im));
   }
@@ -101,5 +130,5 @@ export function runPacket(s: PacketSetup): PacketRun {
     if (x[i]! < 0) reflected += w;
     meanX += x[i]! * w;
   }
-  return { x, snapshots, transmitted, reflected, norm: normOf(psi), meanX, k0 };
+  return { x, snapshots, transmitted, reflected, norm: normOf(psi), meanX, k0, peakCurrent, crossed };
 }

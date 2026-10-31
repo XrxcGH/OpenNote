@@ -131,6 +131,33 @@ describe('wave packets, dots, and Gamow', () => {
     expect(Math.abs(run.meanX - (-10 + speed * 20))).toBeLessThan(0.1);
     const calc = packet({ ...setup, v0: 0.6, width: 0.5, time: 40 });
     expect(item(calc, 'transmitted') + item(calc, 'reflected')).toBeCloseTo(1, 2);
+    // What has flowed through the right edge is what sits beyond it at the end.
+    expect(Math.abs(item(calc, 'crossed') - item(calc, 'transmitted'))).toBeLessThan(0.01);
+  });
+
+  it('gives the probability current of a free packet as v |ψ|² at its peak', () => {
+    const setup = {
+      lo: -40,
+      hi: 40,
+      n: 1600,
+      x0: -10,
+      sigma: 2,
+      energy: 0.5,
+      massRatio: 1,
+      v0: 0,
+      width: 0,
+      time: 40,
+      steps: 800,
+    };
+    const run = runPacket(setup);
+    // The packet's center reaches x = 0 after t = 10/v; by then σ has spread to σ√(1 + (ħt/2mσ²)²), and the current
+    // there is v times the Gaussian peak 1/(√(2π) σ(t)).
+    const v = (2 * HB2M * run.k0) / HBAR_EV_FS;
+    const t = 10 / v;
+    const spread = 2 * Math.sqrt(1 + (((HB2M / HBAR_EV_FS) * t) / 4) ** 2);
+    const want = v / (Math.sqrt(2 * Math.PI) * spread);
+    expect(Math.abs(run.peakCurrent / want - 1)).toBeLessThan(0.03);
+    expect(Math.abs(run.crossed - run.transmitted)).toBeLessThan(0.01);
   });
 
   it('gives π²ħ²/(2m*R²) for an infinite spherical dot and less for a finite one', () => {
