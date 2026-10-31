@@ -2,8 +2,8 @@
 // the ARIA pattern, a field with a problem says so, and the Insert menu puts the work into the page. The palette
 // opens a tool.
 import { screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
 import { commands } from '../../../../registries';
 import { en } from '../../../../strings/en';
 import { expectNoAxeViolations, renderApp, renderUi } from '../../../../test';
@@ -107,6 +107,46 @@ describe('the psychology and behavior kit window', () => {
     await waitFor(() =>
       expect((screen.getByRole('combobox', { name: 'Work on' }) as HTMLSelectElement).value).toBe('fitts'),
     );
+  });
+
+  it.each([
+    [1280, true],
+    [600, true],
+    [600, false],
+  ])('opens the Insert menu beside its button at %i px wide (anchor positioning: %s)', async (width, anchors) => {
+    // Without CSS anchor positioning (an older engine), the menu is placed from the button's rectangle instead.
+    const supports = CSS.supports.bind(CSS);
+    const stub = vi
+      .spyOn(CSS, 'supports')
+      .mockImplementation((...args: [string, string?]) =>
+        !anchors && args[0].startsWith('anchor-name') ? false : supports(...(args as [string])),
+      );
+    await page.viewport(width, 800);
+    await renderApp();
+    await commands.get('tools.kitMind.sdt')!.run({} as never, undefined as never);
+    const dialog = await screen.findByRole('dialog', { name: 'Psychology and behavior' });
+    const example = await within(dialog).findByRole('combobox', { name: 'Example' }, { timeout: 15_000 });
+    await userEvent.selectOptions(example, 'symmetric');
+    await waitFor(() => expect(within(dialog).getAllByText('1.68324').length).toBeGreaterThan(0));
+    const button = within(dialog).getByRole('button', { name: 'Insert' });
+    button.scrollIntoView({ block: 'center' });
+    await userEvent.click(button);
+    const item = (await screen.findAllByRole('menuitem'))[0];
+    const menu = item.closest('[role="menu"]')!.getBoundingClientRect();
+    const first = item.getBoundingClientRect();
+    const at = button.getBoundingClientRect();
+    // The menu touches its button (below or above it, to either side), and its first item is on screen.
+    expect(menu.top).toBeLessThanOrEqual(at.bottom + 16);
+    expect(menu.bottom).toBeGreaterThanOrEqual(at.top - 16);
+    expect(menu.left).toBeLessThanOrEqual(at.right + 16);
+    expect(menu.right).toBeGreaterThanOrEqual(at.left - 16);
+    expect(first.top).toBeGreaterThanOrEqual(0);
+    expect(first.left).toBeGreaterThanOrEqual(0);
+    expect(first.bottom).toBeLessThanOrEqual(window.innerHeight);
+    expect(first.right).toBeLessThanOrEqual(window.innerWidth);
+    await userEvent.keyboard('{Escape}');
+    await page.viewport(1280, 800);
+    stub.mockRestore();
   });
 
   it('opens on the tool a palette command names', async () => {
