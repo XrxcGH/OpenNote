@@ -130,6 +130,7 @@ export const sequence = {
     end: 'End',
     codons: 'Codons',
     nested: 'Nested',
+    partial: 'Partial (no stop)',
     protein: 'Protein',
     orfMap: 'ORF map',
     position: 'Position (bases)',
@@ -192,8 +193,8 @@ export const sequence = {
   n: {
     ambiguous: 'Ambiguous bases are counted apart and left out of the GC share.',
     stopStar: 'A codon with an ambiguous base gives X unless every reading of it gives the same amino acid.',
-    orfComplete:
-      'Only complete ORFs are listed, from a start codon to a stop in frame; frames that run off the end are left out.',
+    orfPartial:
+      'An ORF with no stop before the sequence ends is listed as partial, ending on its last whole codon.',
     cdna: 'c.1 is the first base of the sequence above, read as a coding sequence from its first codon.',
     offTarget:
       'Guides are found by sequence only, with no off-target search, so check them against the genome before use.',

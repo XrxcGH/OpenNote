@@ -236,6 +236,7 @@ function orfs(input: Cleaned, values: Values): KitOk {
           'sequence.h.end',
           'sequence.h.codons',
           'sequence.h.nested',
+          'sequence.h.partial',
           'sequence.h.protein',
         ],
         rows: found.map((o) => [
@@ -245,6 +246,7 @@ function orfs(input: Cleaned, values: Values): KitOk {
           String(o.end),
           String(o.codons),
           { word: o.nested ? 'w.yes' : 'w.no' },
+          { word: o.partial ? 'w.yes' : 'w.no' },
           o.protein,
         ]),
       },
@@ -268,7 +270,7 @@ function orfs(input: Cleaned, values: Values): KitOk {
           ]
         : []),
     ],
-    notes: ['sequence.n.orfComplete'],
+    notes: ['sequence.n.orfPartial'],
     source: 'sequence.src.ncbi',
   });
 }

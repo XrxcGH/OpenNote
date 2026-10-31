@@ -45,11 +45,13 @@ export interface Orf {
   frame: number;
   /** Plus-strand position of the start codon's first base. */
   start: number;
-  /** Plus-strand position of the stop codon's last base. */
+  /** Plus-strand position of the stop codon's last base, or of the last whole codon's when the ORF is partial. */
   end: number;
   codons: number;
   protein: string;
   nested: boolean;
+  /** No stop before the sequence ends: the ORF runs off the end, as in a pasted fragment. */
+  partial: boolean;
 }
 
 export interface OrfOptions {
@@ -64,21 +66,27 @@ function scanFrame(strandSeq: string, offset: number, code: GeneticCode, options
   const found: Orf[] = [];
   let open: number[] = [];
   const isStart = (codon: string) => (options.starts === 'atg' ? codon === 'ATG' : code.starts.includes(codon));
-  for (let i = offset; i + 3 <= strandSeq.length; i += 3) {
+  // Emits every open start as an ORF whose coding codons end before `until`, with `end` its last base.
+  const close = (until: number, end: number, partial: boolean) =>
+    open.forEach((at, k) => {
+      const codons = (until - at) / 3;
+      if (codons < options.minCodons) return;
+      const protein = translate(strandSeq.slice(at, until), code).replace(/^./, 'M');
+      found.push({ strand: '+', frame: offset + 1, start: at + 1, end, codons, protein, nested: k > 0, partial });
+    });
+  let i = offset;
+  for (; i + 3 <= strandSeq.length; i += 3) {
     const codon = strandSeq.slice(i, i + 3);
     const aa = codonAa(codon, code);
     if (aa === '*') {
-      open.forEach((at, k) => {
-        const codons = (i - at) / 3;
-        if (codons < options.minCodons) return;
-        const protein = translate(strandSeq.slice(at, i), code).replace(/^./, 'M');
-        found.push({ strand: '+', frame: offset + 1, start: at + 1, end: i + 3, codons, protein, nested: k > 0 });
-      });
+      close(i, i + 3, false);
       open = [];
     } else if (isStart(codon) && (open.length === 0 || options.nested)) {
       open.push(i);
     }
   }
+  // Starts still open at the end run off the sequence: report them partial, ending on the last whole codon.
+  close(i, i, true);
   return found;
 }
 

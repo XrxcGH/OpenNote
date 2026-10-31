@@ -80,8 +80,8 @@ describe('open reading frames', () => {
   it('finds the ATG at 1 to the TGA ending at 24, with the M at 13 nested', () => {
     const found = findOrfs(EXAMPLE, standard, { minCodons: 3, starts: 'atg', nested: true, strands: 'plus' });
     expect(found).toEqual([
-      { strand: '+', frame: 1, start: 1, end: 24, codons: 7, protein: 'MAIVMGR', nested: false },
-      { strand: '+', frame: 1, start: 13, end: 24, codons: 3, protein: 'MGR', nested: true },
+      { strand: '+', frame: 1, start: 1, end: 24, codons: 7, protein: 'MAIVMGR', nested: false, partial: false },
+      { strand: '+', frame: 1, start: 13, end: 24, codons: 3, protein: 'MGR', nested: true, partial: false },
     ]);
   });
 
@@ -92,10 +92,24 @@ describe('open reading frames', () => {
     expect(findOrfs(EXAMPLE, standard, { minCodons: 8, starts: 'atg', nested: true, strands: 'plus' })).toHaveLength(0);
   });
 
+  it('reports an ORF that runs off the end as partial, ending on its last whole codon', () => {
+    // ATG AAA CCC: three codons, no stop, so bases 1 to 9 read M K P.
+    const opts = { minCodons: 2, starts: 'atg', nested: false, strands: 'plus' } as const;
+    expect(findOrfs('ATGAAACCC', standard, opts)).toEqual([
+      { strand: '+', frame: 1, start: 1, end: 9, codons: 3, protein: 'MKP', nested: false, partial: true },
+    ]);
+    // A trailing half codon is not read: ATG AAA CC ends at base 6.
+    expect(findOrfs('ATGAAACC', standard, opts)).toMatchObject([{ end: 6, codons: 2, partial: true }]);
+    // On the minus strand it keeps plus positions, start after end.
+    expect(findOrfs(revComp('ATGAAACCC'), standard, { ...opts, strands: 'both' })).toContainEqual(
+      expect.objectContaining({ strand: '-', start: 9, end: 1, codons: 3, partial: true }),
+    );
+  });
+
   it('gives minus-strand ORFs in plus positions, start after end', () => {
     const plus = 'ATGAAATAG';
     const found = findOrfs(revComp(plus), standard, { minCodons: 2, starts: 'atg', nested: false, strands: 'both' });
-    expect(found).toContainEqual({ strand: '-', frame: 1, start: 9, end: 1, codons: 2, protein: 'MK', nested: false });
+    expect(found).toContainEqual({ strand: '-', frame: 1, start: 9, end: 1, codons: 2, protein: 'MK', nested: false, partial: false });
   });
 });
 
