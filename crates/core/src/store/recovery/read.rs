@@ -1,6 +1,7 @@
 //! Steps 1 to 4 of recovery: locking and reading the journal generations, and loading the page.
 
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use super::{defer, Read, RecoverCtx, Stop};
 use crate::error::FsErrorKind;
@@ -10,6 +11,7 @@ use crate::session::events::DeferReason;
 use crate::store::fs::FsLock;
 use crate::store::journal::format::HeaderMeta;
 use crate::store::journal::reader::read_generation;
+use crate::store::lock::lock_until;
 use crate::store::page_store::{LoadError, LoadedPage};
 
 /// The generations' locks, the generations as read, and the page as loaded from `located`, or `None` when
@@ -22,19 +24,19 @@ type Locked = Option<(
 
 /// Locks and reads every generation, while the page loads from `located` on another thread. Loading only reads
 /// files, so it starts before the locks: a virus scanner may hold a journal file that was just written for many
-/// milliseconds. [`still_current`] then checks what it loaded.
+/// milliseconds. [`still_current`] then checks what it loaded. A held generation is tried again until `deadline`.
 pub(super) fn lock_and_read(
     ctx: &RecoverCtx<'_>,
     page: PageId,
     generations: &[PathBuf],
-    located: Option<&Path>,
+    (located, deadline): (Option<&Path>, Instant),
 ) -> Result<Locked, Stop> {
     let store = ctx.store;
     std::thread::scope(|scope| {
         let load = located.map(|dir| std::thread::Builder::new().spawn_scoped(scope, move || store.load(dir)));
         let mut locks = Vec::new();
         for path in generations {
-            match ctx.fs.try_lock(path)? {
+            match lock_until(ctx.fs, path, deadline)? {
                 Some(lock) => locks.push(lock),
                 None => return Ok(None),
             }

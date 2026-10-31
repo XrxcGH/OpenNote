@@ -191,6 +191,9 @@ pub enum ReadOnlyReason {
     WaitingForSync,
     /// Another OpenNote process has the notebook open (spec 20.3).
     LockedElsewhere,
+    /// The previous run of OpenNote was still closing and held the notebook's or the page's locks past the wait at
+    /// open, so its journals weren't recovered yet. The next open that gets the locks recovers them (spec 20.3).
+    StillClosing,
     /// The notebook's drive is gone (spec 17.6).
     Offline,
     /// The file is marked read-only (spec 17.6).

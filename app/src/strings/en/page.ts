@@ -109,4 +109,7 @@ export const page = {
     resetDone: 'Reading order reset to the default.',
   },
   openFailed: 'This page couldn’t be opened. Try again, or choose another page.',
+  stillClosing:
+    'OpenNote was still closing from last time, so this page opened read-only. ' +
+    'Your newest ink is safe, and it shows after you restart OpenNote.',
 } as const;

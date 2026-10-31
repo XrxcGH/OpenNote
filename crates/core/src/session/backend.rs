@@ -31,7 +31,7 @@ use crate::store::layout::{DataLayout, NotebookKey, NotebookLayout};
 use crate::store::page_store::{
     LoadError, LoadedPage, PageStore, PageStoreConfig, SaveError, SaveOutcome, SaveRequest,
 };
-use crate::store::recovery::{recover_page, RecoverCtx};
+use crate::store::recovery::{recover_page_waiting, RecoverCtx};
 use crate::store::tree_log::IntentLog;
 use crate::store::verify::{verify_notebook, VerifyReport};
 use crate::store::PageFiles;
@@ -128,6 +128,9 @@ pub struct RecoverInput<'a> {
     pub page: PageId,
     /// Its journal generations, oldest first.
     pub generations: &'a [PathBuf],
+    /// Until when a generation another process holds is tried again (spec 20.3). A deadline that has passed
+    /// means one try.
+    pub lock_until: std::time::Instant,
 }
 
 /// The storage sessions work with.
@@ -340,7 +343,7 @@ impl Backend for StoreBackend {
             locate: input.locate,
             recovery_dir: &recovery_dir,
         };
-        recover_page(&ctx, input.page, input.generations)
+        recover_page_waiting(&ctx, input.page, input.generations, input.lock_until)
     }
 
     fn load(&self, dir: &Path) -> Result<LoadedPage, LoadError> {
