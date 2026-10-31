@@ -28,7 +28,7 @@ const startUp = {
       open: 'Open the cosmology and telescopes tool',
       keywords:
         'hubble redshift friedmann lambda cdm age lookback comoving luminosity angular diameter distance cmb ' +
-        'rotation curve nfw dark matter telescope plate scale rayleigh dawes ccd signal noise exposure ' +
+        'rotation curve nfw halo matter telescope plate scale rayleigh dawes ccd signal noise exposure ' +
         'magnitude',
     },
     spin: {
