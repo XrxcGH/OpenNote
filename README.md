@@ -8,7 +8,7 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 ## Status
 
-OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with eleven subject tool kits. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync.
+OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with thirteen subject tool kits and eleven more subject tool windows for the sciences, statistics, economics, and the humanities. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync.
 
 | Phase                                     | Focus                                                                                    | Status                                                                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -26,27 +26,36 @@ Agents compiled and unit-tested beta 6 and started the real app. Nobody has used
 
 OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash. Each area below has a help page.
 
-| Area                                                              | What you can do                                                                                                |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [Typed notes](docs/help/typed-notes.md)                           | Text boxes, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace     |
-| [Ink and palm rejection](docs/help/ink-and-palm-rejection.md)     | Pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen            |
-| [Paper and page views](docs/help/paper-and-page-views.md)         | Flow, paginated, and canvas pages, with lined, grid, and dot paper that text sits on; slides, print, and PDF   |
-| [Tables and charts](docs/help/tables-and-charts.md)               | Smart tables with views and formulas, and charts that update with them                                         |
-| [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, Check my work on your steps, the grapher, Mermaid diagrams, and mind maps               |
-| [Engineering tools](docs/help/engineering-tools.md)               | Free-body diagrams, beam and truss solvers, DC circuits, and units in tables                                   |
-| [Economics and finance](docs/help/economics-and-finance.md)         | 87 calculators: time value of money, markets, firms, macro, indexes, inequality, accounting, investments |
-| [Statistical models](docs/help/statistical-models.md)             | Regression, causal inference, survival, time series, clusters, machine learning, and spatial statistics        |
-| [Subject tool kits](docs/help/subject-tool-kits.md)               | Eleven tool windows for engineering, science, and math, with worked steps and live calculation blocks          |
-| [Search and links](docs/help/search-and-links.md)                 | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
-| [Study tools](docs/help/study-tools.md)                           | Flashcards, practice exams, Anki, study tape, Upcoming, timers, a calculator, and citations                    |
-| [Tutor](docs/help/tutor.md)                                       | Hints one step at a time and explanations of flagged steps, without giving the answer away                     |
-| [Recording](docs/help/recording.md)                               | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |
-| [Import and export](docs/help/import-and-export.md)               | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, LaTeX, and more out              |
-| [Goodnotes, Notability, and Samsung Notes](docs/help/notes-apps.md) | The handwriting apps' own files in, with Notability's handwriting as strokes, and their PDF exports |
-| [On-device intelligence](docs/help/on-device-intelligence.md)     | Text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on           |
-| [Privacy and Work offline](docs/help/privacy-and-work-offline.md) | Crash reports with consent, a self-check, a feedback file, safe start, and a switch that stops all network use |
-| [Connectors](docs/help/connectors.md)                             | Signing in to other services; no feature uses a connection yet                                                 |
-| [Sync (Beta)](docs/help/sync.md)                                  | Optional end-to-end-encrypted sync through a folder or a WebDAV server you already have, off until set up      |
+| Area                                                                                     | What you can do                                                                                                |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [Typed notes](docs/help/typed-notes.md)                                                  | Text boxes, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace     |
+| [Ink and palm rejection](docs/help/ink-and-palm-rejection.md)                            | Pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen            |
+| [Paper and page views](docs/help/paper-and-page-views.md)                                | Flow, paginated, and canvas pages, with lined, grid, and dot paper that text sits on; slides, print, and PDF   |
+| [Tables and charts](docs/help/tables-and-charts.md)                                      | Smart tables with views and formulas, and charts that update with them                                         |
+| [Math and graphs](docs/help/math-and-graphs.md)                                          | Equations, quick math, Check my work on your steps, the grapher, Mermaid diagrams, and mind maps               |
+| [Engineering tools](docs/help/engineering-tools.md)                                      | Free-body diagrams, beam and truss solvers, DC circuits, and units in tables                                   |
+| [Economics and finance](docs/help/economics-and-finance.md)                              | 87 calculators: time value of money, markets, firms, macro, indexes, inequality, accounting, investments       |
+| [Statistics kit](docs/help/statistics-kit.md)                                            | Describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design                     |
+| [Statistical models](docs/help/statistical-models.md)                                    | Regression, causal inference, survival, time series, clusters, machine learning, and spatial statistics        |
+| [Psychology and behavior](docs/help/psychology-kit.md)                                   | Signal detection, psychophysics, choice models, response times, observation, agreement, and scales             |
+| [Biology tools](docs/help/biology-tools.md)                                              | Sequences, cloning, proteins, alignment, crosses, population genetics, pedigrees, and trees                    |
+| [Life science tools](docs/help/life-science-tools.md)                                    | Physiology, neurons, pharmacology, curve fits, bench math, populations, and biodiversity                       |
+| [Civil and chemical engineering](docs/help/civil-and-chemical-engineering.md)            | Structures, soils, foundations, water, transportation, material balances, and reactors                         |
+| [Modern physics and astronomy](docs/help/modern-physics-and-astronomy.md)                | Quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology                          |
+| [Signals and sound](docs/help/signals-tools.md)                                          | Spectra, filters, sampling, body signals, sound, images, medical imaging, coding, and RF                       |
+| [History, places, languages, and texts](docs/help/history-places-languages-and-texts.md) | Timelines, calendars, maps, coordinates, scripts, linguistics, text analysis, and keys                         |
+| [Music, script, camera, and studio](docs/help/music-script-camera-and-studio-tools.md)   | Score notation, music theory, ear training, tuning, scripts, camera, and studio math                           |
+| [Subject tool kits](docs/help/subject-tool-kits.md)                                      | Thirteen tool windows for engineering, science, math, earth sciences, and reasoning, with worked steps         |
+| [Search and links](docs/help/search-and-links.md)                                        | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
+| [Study tools](docs/help/study-tools.md)                                                  | Flashcards, practice exams, Anki, study tape, Upcoming, timers, a calculator, and citations                    |
+| [Tutor](docs/help/tutor.md)                                                              | Hints one step at a time and explanations of flagged steps, without giving the answer away                     |
+| [Recording](docs/help/recording.md)                                                      | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |
+| [Import and export](docs/help/import-and-export.md)                                      | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, LaTeX, and more out             |
+| [Goodnotes, Notability, and Samsung Notes](docs/help/notes-apps.md)                      | The handwriting apps' own files in, with Notability's handwriting as strokes, and their PDF exports            |
+| [On-device intelligence](docs/help/on-device-intelligence.md)                            | Text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on           |
+| [Privacy and Work offline](docs/help/privacy-and-work-offline.md)                        | Crash reports with consent, a self-check, a feedback file, safe start, and a switch that stops all network use |
+| [Connectors](docs/help/connectors.md)                                                    | Signing in to other services; no feature uses a connection yet                                                 |
+| [Sync (Beta)](docs/help/sync.md)                                                         | Optional end-to-end-encrypted sync through a folder or a WebDAV server you already have, off until set up      |
 
 ![A page of typed notes with a heading, a list, and a page link](docs/screens/workspace-light.png)
 
@@ -162,27 +171,27 @@ The root also holds tool settings such as `package.json`, `Cargo.toml`, and `che
 
 The [documentation index](docs/README.md) lists everything in `docs/`. Start with the help pages to use the app, or pick a document below.
 
-| Document                                                             | What it covers                                                                         |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| [Help pages](docs/help/README.md)                                    | How to use each part of the app, with screenshots                                      |
-| [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)              | The user guide, development updates, and the developer guide                           |
-| [CHANGELOG.md](CHANGELOG.md)                                         | What each beta added, changed, and fixed                                               |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a beta 6 status under each phase |
-| [docs/FEATURES.md](docs/FEATURES.md)                                 | The feature spec, with what is built, untested, not built, or waiting on the owner     |
-| [docs/RESEARCH.md](docs/RESEARCH.md)                                 | Popular and rising note apps, the features people love, and the gaps OpenNote can fill |
-| [docs/BRAND.md](docs/BRAND.md)                                       | Colors, type, layout, motion, accessibility, and performance budgets                   |
-| [docs/design/SCREENS.md](docs/design/SCREENS.md)                     | Wireframes of each major screen, with sizes and keep-out zones                         |
-| [docs/screens/README.md](docs/screens/README.md)                     | Real screenshots of every screen, in light and dark                                    |
-| [docs/CHECKS.md](docs/CHECKS.md)                                     | The quality gate every file change must pass                                           |
-| [docs/format/README.md](docs/format/README.md)                       | The note file format specification and tools                                           |
-| [docs/adr/README.md](docs/adr/README.md)                             | Every architecture decision record (ADR), its status, and how to write one             |
-| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist for the beta (written at beta 4), starting with the safest way to run it             |
-| [docs/HARDENING.md](docs/HARDENING.md)                               | Crash reports, the self-check, the feedback file, and safe start                       |
-| [docs/RELEASING.md](docs/RELEASING.md)                               | The maintainer guide to cutting, checking, and rolling back a release                  |
-| [docs/CONNECTORS.md](docs/CONNECTORS.md)                             | Registering OpenNote with each connected service, and where the client IDs go          |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                                   | How to set up, make a change, and get it merged                                        |
-| [SECURITY.md](SECURITY.md)                                           | How to report a security problem privately                                             |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                             | How we treat each other                                                                |
+| Document                                                             | What it covers                                                                                   |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [Help pages](docs/help/README.md)                                    | How to use each part of the app, with screenshots                                                |
+| [Project wiki](https://github.com/XrxcGH/OpenNote/wiki)              | The user guide, development updates, and the developer guide                                     |
+| [CHANGELOG.md](CHANGELOG.md)                                         | What each beta added, changed, and fixed                                                         |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                           | The step-by-step plan for the Windows prototype, with a beta 6 status under each phase           |
+| [docs/FEATURES.md](docs/FEATURES.md)                                 | The feature spec, with what is built, untested, not built, or waiting on the owner               |
+| [docs/RESEARCH.md](docs/RESEARCH.md)                                 | Popular and rising note apps, the features people love, and the gaps OpenNote can fill           |
+| [docs/BRAND.md](docs/BRAND.md)                                       | Colors, type, layout, motion, accessibility, and performance budgets                             |
+| [docs/design/SCREENS.md](docs/design/SCREENS.md)                     | Wireframes of each major screen, with sizes and keep-out zones                                   |
+| [docs/screens/README.md](docs/screens/README.md)                     | Real screenshots of every screen, in light and dark                                              |
+| [docs/CHECKS.md](docs/CHECKS.md)                                     | The quality gate every file change must pass                                                     |
+| [docs/format/README.md](docs/format/README.md)                       | The note file format specification and tools                                                     |
+| [docs/adr/README.md](docs/adr/README.md)                             | Every architecture decision record (ADR), its status, and how to write one                       |
+| [docs/testing/beta-4-checklist.md](docs/testing/beta-4-checklist.md) | The hand test checklist for the beta (written at beta 4), starting with the safest way to run it |
+| [docs/HARDENING.md](docs/HARDENING.md)                               | Crash reports, the self-check, the feedback file, and safe start                                 |
+| [docs/RELEASING.md](docs/RELEASING.md)                               | The maintainer guide to cutting, checking, and rolling back a release                            |
+| [docs/CONNECTORS.md](docs/CONNECTORS.md)                             | Registering OpenNote with each connected service, and where the client IDs go                    |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                                   | How to set up, make a change, and get it merged                                                  |
+| [SECURITY.md](SECURITY.md)                                           | How to report a security problem privately                                                       |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                             | How we treat each other                                                                          |
 
 ## License
 

@@ -27,7 +27,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
 - [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.
 - [Civil, environmental, and chemical engineering tools](civil-and-chemical-engineering.md): structures, soils, foundations, hydrology, water, transportation, process balances, and reactors.
-- [Subject tool kits](subject-tool-kits.md): eleven tool windows for engineering, science, and math problems, with worked steps and live calculation blocks.
+- [Subject tool kits](subject-tool-kits.md): thirteen tool windows for engineering, science, math, earth science, and reasoning problems, with worked steps and live calculation blocks.
 - [Music, script, camera, and studio tools](music-script-camera-and-studio-tools.md): score notation, music theory, voice leading, ear training, tuning and rhythm, a script formatter, camera and lighting arithmetic, and scale, color, and materials.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.

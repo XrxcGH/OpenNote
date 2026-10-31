@@ -1,6 +1,6 @@
 # Subject tool kits
 
-Eleven tool windows work engineering, science, and math problems. Each window has a tab for each tool. A tool takes typed values with units, works the problem, and shows the results, the worked steps, and its assumptions. These kits are new in Beta and off in Stable. Check the answers against your own work while you learn them.
+Thirteen tool windows work engineering, science, math, earth science, and reasoning problems. Each window has a tab for each tool. A tool takes typed values with units, works the problem, and shows the results, the worked steps, and its assumptions. These kits are new in Beta and off in Stable. Check the answers against your own work while you learn them.
 
 ## Open a kit
 
