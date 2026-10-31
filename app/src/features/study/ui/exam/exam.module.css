@@ -1,0 +1,216 @@
+/*
+ * Practice exams (Study tools): the settings, the paper, the answer fields, and the marking. Calm and plain, on
+ * tokens, with every control at least the target size. It reflows to one column in a narrow window.
+ */
+@layer components {
+  .root {
+    container-type: inline-size;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .fieldset {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    min-inline-size: 0;
+  }
+
+  .fieldset legend {
+    padding-inline: var(--space-1);
+    font-size: var(--type-small-size);
+  }
+
+  .check,
+  .option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-size);
+    overflow-wrap: anywhere;
+  }
+
+  .option {
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+  }
+
+  .check input,
+  .option input {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    flex: none;
+  }
+
+  .hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .question {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    min-inline-size: 0;
+  }
+
+  .question[data-status='right'] {
+    border-inline-start: 4px solid var(--color-status-success);
+  }
+
+  .question[data-status='wrong'],
+  .question[data-status='partial'] {
+    border-inline-start: 4px solid var(--color-accent-clay);
+  }
+
+  .prompt {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+  }
+
+  .clock {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .time {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .unfinished {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .jumpButton {
+    min-inline-size: var(--target-size);
+    min-block-size: var(--target-size);
+    color: var(--color-text-primary);
+    font: inherit;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .jumpButton[data-answered] {
+    background: var(--color-surface-raised);
+  }
+
+  .jumpButton[data-flagged] {
+    border: 2px dashed var(--color-accent-clay);
+  }
+
+  .jumpButton[aria-current] {
+    border: 2px solid var(--color-accent-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .jumpButton:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .ink {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .inkArea {
+    inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: 16 / 5;
+    color: var(--color-text-primary);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    touch-action: none;
+  }
+
+  .inkArea[data-readonly] {
+    touch-action: auto;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .marks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .compare {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-2) var(--space-3);
+    margin: 0;
+  }
+
+  .compare dt {
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+  }
+
+  .compare dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .guide {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+  }
+
+  .results {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @container (max-width: 26rem) {
+    .compare {
+      grid-template-columns: 1fr;
+    }
+  }
+}

@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { committedKeys, problems as exeProblems } from '../check-release-exe.ts';
-import { RELEASE_FILES, type ReleaseFile } from '../write-manifest.ts';
+import { RELEASE_FILES, isWindowsExe, type ReleaseFile } from '../write-manifest.ts';
 
 /** The bill of materials that the sbom job writes. */
 export const SBOM_FILE = 'OpenNote.sbom.cdx.json';
@@ -51,7 +51,10 @@ export function downloadProblems(dir: string, expected: Expected, options: Check
   const files = options.files ?? RELEASE_FILES;
   const keys = options.keys ?? committedKeys();
   const wanted = new Map<string, { hash: unknown; exe: boolean }>([
-    ...files.map(({ target, file }) => [file, { hash: expected.build[hashOutput(target)], exe: true }] as const),
+    // A dmg and an AppImage are compressed, so their build jobs check the program inside before packing it.
+    ...files.map(
+      ({ target, file }) => [file, { hash: expected.build[hashOutput(target)], exe: isWindowsExe(file) }] as const,
+    ),
     [SBOM_FILE, { hash: expected.sbom, exe: false }],
   ]);
   const found = readdirSync(dir)
@@ -98,7 +101,7 @@ function main(): void {
   if (found.length > 0) process.exitCode = 1;
   else
     console.log(
-      `${dir} holds the ${RELEASE_FILES.length} exes and the bill of materials the jobs made, and nothing else.`,
+      `${dir} holds the ${RELEASE_FILES.length} release files and the bill of materials the jobs made, and nothing else.`,
     );
 }
 

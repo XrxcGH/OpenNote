@@ -12,7 +12,7 @@ import { intelExt } from '../runtime';
 
 export type EngineWhere = 'device' | 'cloud';
 
-export const CLOUD_FEATURES: readonly CloudFeature[] = ['transcription', 'summaries'];
+export const CLOUD_FEATURES: readonly CloudFeature[] = ['transcription', 'summaries', 'tutor'];
 
 export interface CloudState {
   where: Record<CloudFeature, EngineWhere>;
@@ -20,7 +20,11 @@ export interface CloudState {
   status: CloudStatus[] | null;
 }
 
-const DEVICE_ONLY: Record<CloudFeature, EngineWhere> = { transcription: 'device', summaries: 'device' };
+const DEVICE_ONLY: Record<CloudFeature, EngineWhere> = {
+  transcription: 'device',
+  summaries: 'device',
+  tutor: 'device',
+};
 export const CHOICES_FILE = 'cloud-choices.json';
 
 export const cloudState = createStore<CloudState>({ where: { ...DEVICE_ONLY }, status: null }, 'intel cloud');

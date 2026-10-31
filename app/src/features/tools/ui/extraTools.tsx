@@ -10,7 +10,7 @@ const FluidHeatKit = lazy(() =>
 );
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
-import { DeckPanel } from '../../study';
+import { DeckPanel, loadExamPanel } from '../../study';
 import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
 import { ConverterTool } from './ConverterTool';
@@ -30,6 +30,9 @@ const SolversTool = lazy(() =>
 
 // The earth sciences kit loads the first time its window opens.
 const EarthKit = lazy(() => import('../earth/ui/EarthKit').then((kit) => ({ default: kit.EarthKit })));
+// Practice exams load with their window, on first open.
+const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
+
 // The circuits and energy kit loads on first open.
 const KitElectrical = lazy(() =>
   import('../../engineering')
@@ -118,6 +121,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'flashcards') return <DeckPanel />;
+  if (tool === 'exam')
+    return (
+      <Suspense fallback={null}>
+        <ExamPanel />
+      </Suspense>
+    );
   if (tool === 'converter') return <ConverterTool />;
   if (tool === 'reference') return <ReferenceTool />;
   if (tool === 'citations') return <CitationsPanel />;
