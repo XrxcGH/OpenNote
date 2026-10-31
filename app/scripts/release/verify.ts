@@ -7,7 +7,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { REPO, RELEASE_FILES, versionOf, type Manifest, type ReleaseFile } from '../write-manifest.ts';
+import { REPO, RELEASE_FILES, isWindowsExe, versionOf, type Manifest, type ReleaseFile } from '../write-manifest.ts';
 import { onlyField, parsePublicKey, parseSignature, verifyWithAny, type PublicKey } from './minisign.ts';
 import { hasAuthenticode, windowsSignatureStatus } from './pe.ts';
 
@@ -92,7 +92,9 @@ function fileProblems(
   const entry = manifest?.platforms?.[platform];
   if (manifest && !entry) return [...problems, `The manifest has no entry for ${platform}.`];
   if (entry) problems.push(...entryProblems(options, file, exe, entry));
-  if (options.requireAuthenticode) problems.push(...authenticodeProblems(options, path, file, exe));
+  // Authenticode is Windows' signature. Mac and Linux files are signed by the owner's keys (docs/RELEASING.md).
+  if (options.requireAuthenticode && isWindowsExe(file))
+    problems.push(...authenticodeProblems(options, path, file, exe));
   return problems;
 }
 
@@ -172,7 +174,7 @@ function main(): void {
     return;
   }
   console.log(
-    `The release in ${dir} is what the app's updater accepts for ${tag}: ${RELEASE_FILES.length} signed exes.`,
+    `The release in ${dir} is what the app's updater accepts for ${tag}: ${RELEASE_FILES.length} signed files.`,
   );
 }
 

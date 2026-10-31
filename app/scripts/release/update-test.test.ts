@@ -60,7 +60,10 @@ describe('update-test.ts', () => {
     const log = 'started 0.1.0-beta.4\napplied 0.1.0-beta.4 0.2.0-beta.1\n';
     expect(appliedIn(log, '0.1.0-beta.4', '0.2.0-beta.1')).toBe(true);
     expect(appliedIn(log, '0.1.0-beta.3', '0.2.0-beta.1')).toBe(false);
-    expect(failureIn('update failed verifyFailed\nupdate failure detail: bad hash')).toBe('update failed verifyFailed');
+    expect(failureIn('update failed verifyFailed\nupdate failure detail: bad hash')).toBe(
+      'update failure detail: bad hash',
+    );
+    expect(failureIn('update failed verifyFailed')).toBe('update failed verifyFailed');
     expect(failureIn(log)).toBeUndefined();
   });
 });

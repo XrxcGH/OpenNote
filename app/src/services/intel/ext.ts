@@ -54,7 +54,7 @@ export interface VocabularyCorrection {
 }
 
 /** The features that can use the person's own cloud key instead of this device (A1-33). */
-export type CloudFeature = 'transcription' | 'summaries';
+export type CloudFeature = 'transcription' | 'summaries' | 'tutor';
 
 /** A feature's cloud key, as the interface may know it: whether there is one, never the key itself. */
 export interface CloudStatus {
@@ -132,6 +132,8 @@ export interface IntelExt {
     forget(feature: CloudFeature): Promise<void>;
     /** A summary from the service. Rejects with `offline` while Work offline is on. */
     summarize(text: string): Promise<string>;
+    /** The tutor's reply to exactly this text (ADR 0050). Rejects with `offline` while Work offline is on. */
+    tutor(system: string, prompt: string): Promise<string>;
   };
 }
 
@@ -203,6 +205,7 @@ export function createIntelExt(transport: IntelTransport): IntelExt {
       setKey: async (feature, key) => void (await call('cloud.setKey', { feature, key })),
       forget: async (feature) => void (await call('cloud.forget', { feature })),
       summarize: async (text) => (await call<{ summary: string }>('cloud.summarize', { text })).summary,
+      tutor: async (system, prompt) => (await call<{ reply: string }>('cloud.tutor', { system, prompt })).reply,
     },
   };
 }

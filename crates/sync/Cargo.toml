@@ -1,0 +1,37 @@
+[package]
+name = "opennote-sync"
+version = "0.1.0"
+description = "OpenNote's optional end-to-end-encrypted sync over folders and WebDAV (ADR 0049)"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_sync"
+
+[features]
+# Fault injection and the in-memory backend, for tests in this crate and the app shell.
+testing = []
+
+[dependencies]
+# Audited RustCrypto crates only, as crates/interop/src/lock.rs and protected sections (ADR 0042) use.
+argon2 = { version = "0.6.0", default-features = false, features = ["alloc", "zeroize"] }
+blake2 = "0.11.0"
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc", "zeroize"] }
+flate2 = "1.1.10"
+getrandom = "0.3.4"
+opennote-core = { path = "../core" }
+qrcodegen = "1.8"
+quick-xml = "0.42.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+subtle = "2.6.1"
+thiserror = "2.0.21"
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls"] }
+zeroize = "1.9.0"
+
+[dev-dependencies]
+opennote-sync = { path = ".", features = ["testing"] }
+proptest = "1.11.0"
+tempfile = "3.27.0"

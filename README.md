@@ -8,7 +8,7 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 ## Status
 
-OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with eleven subject tool kits.
+OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with eleven subject tool kits. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync.
 
 | Phase                                     | Focus                                                                                    | Status                                                                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -24,7 +24,7 @@ Agents compiled and unit-tested beta 6 and started the real app. Nobody has used
 
 ## What the app does today
 
-OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash. Each area below has a help page.
+OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux. You organize notebooks, sections, and pages in a notes folder you choose, as plain folders in OpenNote's open note format. Pages save on their own and recover after a crash. Each area below has a help page.
 
 | Area                                                              | What you can do                                                                                                |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -32,17 +32,20 @@ OpenNote runs as a Windows desktop app. You organize notebooks, sections, and pa
 | [Ink and palm rejection](docs/help/ink-and-palm-rejection.md)     | Pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen            |
 | [Paper and page views](docs/help/paper-and-page-views.md)         | Flow, paginated, and canvas pages, with lined, grid, and dot paper that text sits on; slides, print, and PDF   |
 | [Tables and charts](docs/help/tables-and-charts.md)               | Smart tables with views and formulas, and charts that update with them                                         |
-| [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, the grapher, Mermaid diagrams, and mind maps                                            |
+| [Math and graphs](docs/help/math-and-graphs.md)                   | Equations, quick math, Check my work on your steps, the grapher, Mermaid diagrams, and mind maps               |
 | [Engineering tools](docs/help/engineering-tools.md)               | Free-body diagrams, beam and truss solvers, DC circuits, and units in tables                                   |
 | [Economics and finance](docs/help/economics-and-finance.md)         | 87 calculators: time value of money, markets, firms, macro, indexes, inequality, accounting, investments |
 | [Subject tool kits](docs/help/subject-tool-kits.md)               | Eleven tool windows for engineering, science, and math, with worked steps and live calculation blocks          |
 | [Search and links](docs/help/search-and-links.md)                 | Search, page links, backlinks, tags, daily notes, and the graph view                                           |
-| [Study tools](docs/help/study-tools.md)                           | Flashcards, Anki, study tape, Upcoming, timers, a calculator, and citations                                    |
+| [Study tools](docs/help/study-tools.md)                           | Flashcards, practice exams, Anki, study tape, Upcoming, timers, a calculator, and citations                    |
+| [Tutor](docs/help/tutor.md)                                       | Hints one step at a time and explanations of flagged steps, without giving the answer away                     |
 | [Recording](docs/help/recording.md)                               | Recording with stamped notes, trim, transcript blocks, speakers, and meeting recaps                            |
-| [Import and export](docs/help/import-and-export.md)               | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, and more out                    |
+| [Import and export](docs/help/import-and-export.md)               | Obsidian, Markdown, Word, Excel, PowerPoint, and more in; Markdown, Word, PDF, LaTeX, and more out              |
+| [Goodnotes, Notability, and Samsung Notes](docs/help/notes-apps.md) | The handwriting apps' own files in, with Notability's handwriting as strokes, and their PDF exports |
 | [On-device intelligence](docs/help/on-device-intelligence.md)     | Text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on           |
 | [Privacy and Work offline](docs/help/privacy-and-work-offline.md) | Crash reports with consent, a self-check, a feedback file, safe start, and a switch that stops all network use |
 | [Connectors](docs/help/connectors.md)                             | Signing in to other services; no feature uses a connection yet                                                 |
+| [Sync (Beta)](docs/help/sync.md)                                  | Optional end-to-end-encrypted sync through a folder or a WebDAV server you already have, off until set up      |
 
 ![A page of typed notes with a heading, a list, and a page link](docs/screens/workspace-light.png)
 
@@ -72,13 +75,17 @@ Test with a throwaway profile so your real notes stay safe. Set `OPENNOTE_PROFIL
 
 ## Downloads
 
-There is no release yet. When one ships, it will appear on the [GitHub Releases page](https://github.com/XrxcGH/OpenNote/releases) as three files:
+There is no release yet. When one ships, it will appear on the [GitHub Releases page](https://github.com/XrxcGH/OpenNote/releases) as five files:
 
 | File                        | For                                            |
 | --------------------------- | ---------------------------------------------- |
 | `OpenNote_Windows64.exe`    | 64-bit Windows, on most PCs                    |
 | `OpenNote_Windows32.exe`    | 32-bit Windows                                 |
 | `OpenNote_WindowsARM64.exe` | Windows on Arm PCs, such as Snapdragon laptops |
+| `OpenNote_macOS.dmg`        | macOS 11 or later, on Apple silicon and Intel  |
+| `OpenNote_Linux.AppImage`   | 64-bit Linux, such as Ubuntu 22.04 or later    |
+
+The Mac and Linux builds are new and unsigned. [OpenNote on macOS and Linux](docs/help/install-macos-linux.md) says how to open them and what still needs Windows ([ADR 0055](docs/adr/0055-macos-and-linux.md)).
 
 ## Quick start for contributors
 
