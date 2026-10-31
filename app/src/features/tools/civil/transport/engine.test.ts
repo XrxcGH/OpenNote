@@ -80,7 +80,11 @@ describe('signals and geometry', () => {
   it('gives the plan Webster cycle', () => {
     within(webster([0.3, 0.3], 12).C, 57.5, 1e-9);
     const d = websterDelay(600, 1800, 25, 60);
-    expect(d.total).toBeGreaterThan(0);
+    // g/C = 0.4167 and x = 0.8: uniform 60 x 0.5833^2 / (2 x 0.6667) = 15.31 s,
+    // random 0.64 / (2 x 0.1667 x 0.2) = 9.60 s, total 0.9 x 24.91 = 22.42 s.
+    within(d.uniform, 15.31, 0.01);
+    within(d.random, 9.6, 0.01);
+    within(d.total, 22.42, 0.01);
     expect(key(() => webster([0.5, 0.6], 12))).toBe('transport.errors.oversaturated');
   });
 

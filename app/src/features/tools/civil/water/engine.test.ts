@@ -119,7 +119,8 @@ describe('water chemistry and treatment', () => {
   it('gives clean-bed headloss, with Ergun above Carman-Kozeny at higher rates', () => {
     const bed = { L: 0.6, d: 0.5e-3, eps: 0.4, phi: 0.85, v: 10 / 3600, rho: 998.2, mu: 1.002e-3 };
     const carman = headloss('carman', bed);
-    within(carman.h, (180 * 1.002e-3 * 0.36 * bed.v * 0.6) / (998.2 * 9.80665 * 0.064 * (0.85 * 0.5e-3) ** 2), 1e-12);
+    // Worked by hand: 180 mu (1 - e)^2 v L = 1.0822e-4 over rho g e^3 (phi d)^2 = 1.1316e-4, so h = 0.956 m.
+    within(carman.h, 0.9563, 0.001);
     expect(headloss('ergun', { ...bed, v: 0.01 }).h).toBeGreaterThan(0);
     expect(() => headloss('carman', { ...bed, eps: 1 })).toThrow(CivilError);
   });

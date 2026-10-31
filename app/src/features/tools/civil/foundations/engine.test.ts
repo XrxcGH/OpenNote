@@ -276,7 +276,9 @@ describe('piles', () => {
 
   it('gives the Converse-Labarre group efficiency', () => {
     const g = groupEfficiency(3, 4, 0.4, 1.2);
-    within(g.E, 1 - (Math.atan(1 / 3) * (180 / Math.PI) * 17) / 1080, 1e-12);
+    // theta = atan(0.4 / 1.2) = 18.43 deg; E = 1 - 18.43 x (3 x 3 + 2 x 4) / (90 x 12) = 0.710.
+    within(g.theta, 18.435, 0.001);
+    within(g.E, 0.7098, 0.0005);
     expect(key(() => groupEfficiency(3, 4, 0.4, 0.3))).toBe('foundations.errors.spacing');
   });
 });
