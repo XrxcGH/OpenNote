@@ -113,6 +113,18 @@ describe('Thai tones', () => {
     expect(thaiTone('หมา')).toMatchObject({ cls: 'high', led: 'ho', tone: 'rising' });
     expect(thaiTone('มาก')).toMatchObject({ live: false, long: true, tone: 'falling' });
     expect(thaiTone('นก')).toMatchObject({ live: false, tone: 'high' });
+    // เ-าะ and เ-อะ are short dead vowels, อ there is a vowel sign, and the ร of พร is a cluster, not a final.
+    expect(thaiTone('เกาะ')).toMatchObject({ cls: 'mid', live: false, long: false, tone: 'low' });
+    expect(['เพราะ', 'เยอะ', 'เลอะ'].map((s) => thaiTone(s))).toEqual(
+      ['พ', 'ย', 'ล'].map((initial) => expect.objectContaining({ initial, cls: 'low', live: false, tone: 'high' })),
+    );
+    expect(['ขอ', 'เธอ', 'เลือก', 'เพื่อน', 'เขา'].map((s) => thaiTone(s).tone)).toEqual([
+      'rising',
+      'mid',
+      'falling',
+      'falling',
+      'rising',
+    ]);
     expect(() => thaiTone('abc')).toThrow('notThai');
   });
 });

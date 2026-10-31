@@ -70,17 +70,27 @@ export function thaiTone(syllable: string): ThaiTone {
   if (led) cls = led === 'ho' ? 'high' : 'mid';
   const rest = chars.slice(i + 1);
   const mark = (rest.map((c) => MARKS[c]).find(Boolean) ?? 'none') as Mark;
-  const consonantsAfter = rest.filter(isConsonant);
-  // A cluster such as กร or ขว keeps its first consonant's class; the r, l, or w is not a final.
-  const clustered = consonantsAfter.length > 1 && 'รลว'.includes(rest[0]);
+  // After the initial, อ is a vowel sign (-อ, เ-อ, เ-อะ, เ-ือ), never a final.
+  const consonantsAfter = rest.filter((c) => isConsonant(c) && c !== 'อ');
+  // A cluster such as กร or ขว keeps its first consonant's class; the r, l, or w is not a final. It is a cluster when
+  // another consonant follows (พรม) or a vowel sign does (เพราะ, ครู).
+  const afterCluster = rest.slice(1).find((c) => !MARKS[c]);
+  const clustered =
+    rest.length > 0 &&
+    'รลว'.includes(rest[0]) &&
+    (consonantsAfter.length > 1 || (afterCluster !== undefined && (!isConsonant(afterCluster) || afterCluster === 'อ')));
   const finals = clustered ? consonantsAfter.slice(1) : consonantsAfter;
   const final = finals.length > 0 ? finals[finals.length - 1] : '';
-  const vowelSigns = rest.filter((c) => !isConsonant(c) && !MARKS[c]);
+  const vowelSigns = rest.filter((c) => (!isConsonant(c) || c === 'อ') && !MARKS[c]);
   const short = vowelSigns.some((c) => SHORT.includes(c)) || (leading !== '' && rest.includes('ะ'));
   // With no vowel written, a closed syllable has the short o that is read between its consonants, as in นก.
   const inherent = vowelSigns.length === 0 && leading === '' && consonantsAfter.length > 0;
   const alwaysLive =
-    leading === 'ใ' || leading === 'ไ' || rest.includes('ำ') || (leading === 'เ' && rest.includes('า'));
+    leading === 'ใ' ||
+    leading === 'ไ' ||
+    rest.includes('ำ') ||
+    // เ-า is live, but เ-าะ is short and dead.
+    (leading === 'เ' && rest.includes('า') && !rest.includes('ะ'));
   let live: boolean;
   if (final && STOP_FINALS.includes(final)) live = false;
   else if (final) live = true;
