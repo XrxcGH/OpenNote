@@ -78,7 +78,8 @@ export function thaiTone(syllable: string): ThaiTone {
   const clustered =
     rest.length > 0 &&
     'รลว'.includes(rest[0]) &&
-    (consonantsAfter.length > 1 || (afterCluster !== undefined && (!isConsonant(afterCluster) || afterCluster === 'อ')));
+    (consonantsAfter.length > 1 ||
+      (afterCluster !== undefined && (!isConsonant(afterCluster) || afterCluster === 'อ')));
   const finals = clustered ? consonantsAfter.slice(1) : consonantsAfter;
   const final = finals.length > 0 ? finals[finals.length - 1] : '';
   const vowelSigns = rest.filter((c) => (!isConsonant(c) || c === 'อ') && !MARKS[c]);

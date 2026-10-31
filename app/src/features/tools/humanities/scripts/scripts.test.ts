@@ -94,6 +94,12 @@ describe('kana', () => {
     expect(hepburn('ちゃ')).toBe('cha');
     expect(hepburn('マッチ')).toBe('matchi');
     expect(hepburn('コーヒー')).toBe('kōhī');
+    // Loanword sounds with a small vowel, and ヴ, then the long mark on them.
+    expect(
+      ['ティー', 'ファン', 'ウェブ', 'チェック', 'ジェット', 'パーティー', 'ヴァイオリン', 'シェフ', 'フォーク'].map(
+        hepburn,
+      ),
+    ).toEqual(['tī', 'fan', 'webu', 'chekku', 'jetto', 'pātī', 'vaiorin', 'shefu', 'fōku']);
     // Modified Hepburn writes ee as ē (onēsan), as it does oo and aa.
     expect(hepburn('おねえさん')).toBe('onēsan');
   });
@@ -103,6 +109,16 @@ describe('kana', () => {
     expect(toKana('kippu')).toBe('きっぷ');
     expect(toKana("kin'en")).toBe('きんえん');
     expect(toKana('kyouto')).toBe('きょうと');
+    // nn before a vowel is ん and the next n's syllable, as an IME reads it; elsewhere nn is ん.
+    expect(['konnichiwa', 'onna', 'kanna', 'annai', 'shinnen', 'konban', 'hon nn'].map(toKana)).toEqual([
+      'こんにちわ',
+      'おんな',
+      'かんな',
+      'あんない',
+      'しんねん',
+      'こんばん',
+      'ほん ん',
+    ]);
     expect(toKatakana('こーひー')).toBe('コーヒー');
   });
 });

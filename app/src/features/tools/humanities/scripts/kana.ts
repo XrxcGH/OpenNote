@@ -37,6 +37,33 @@ export const KANA_CHART: readonly { kana: string[]; romaji: string[] }[] = ROWS.
 
 const SMALL_Y: Record<string, string> = { ゃ: 'a', ゅ: 'u', ょ: 'o' };
 
+/** Loanword sounds written with a small vowel (katakana ティ, ファ, ウェ, read here as hiragana), and ヴ. */
+const SMALL_VOWEL: Record<string, string> = {
+  てぃ: 'ti',
+  でぃ: 'di',
+  とぅ: 'tu',
+  どぅ: 'du',
+  ふぁ: 'fa',
+  ふぃ: 'fi',
+  ふぇ: 'fe',
+  ふぉ: 'fo',
+  うぃ: 'wi',
+  うぇ: 'we',
+  うぉ: 'wo',
+  いぇ: 'ye',
+  ちぇ: 'che',
+  じぇ: 'je',
+  しぇ: 'she',
+  つぁ: 'tsa',
+  つぃ: 'tsi',
+  つぇ: 'tse',
+  つぉ: 'tso',
+  ゔぁ: 'va',
+  ゔぃ: 'vi',
+  ゔぇ: 've',
+  ゔぉ: 'vo',
+};
+
 const toHiragana = (text: string) =>
   [...text]
     .map((c) => {
@@ -56,7 +83,12 @@ export function hepburn(text: string): string {
     const c = chars[i];
     const next = chars[i + 1];
     const base = KANA.get(c);
-    if (base && next && SMALL_Y[next] && base.endsWith('i') && c !== 'い') {
+    const loan = next ? SMALL_VOWEL[c + next] : undefined;
+    if (loan) {
+      syl.push(loan);
+      i++;
+    } else if (c === 'ゔ') syl.push('vu');
+    else if (base && next && SMALL_Y[next] && base.endsWith('i') && c !== 'い') {
       const stem = base.slice(0, -1);
       // shi, chi, and ji take the vowel straight on: sha, cha, ja; the others add y: kya, nya.
       syl.push(/(sh|ch|j)$/.test(stem) ? stem + SMALL_Y[next] : `${stem}y${SMALL_Y[next]}`);
@@ -102,7 +134,7 @@ const ROMAJI: [string, string][] = (() => {
   return pairs.sort((a, b) => b[0].length - a[0].length);
 })();
 
-/** Romaji typed as hiragana: nn or n' is ん, a doubled consonant is っ, and n before a consonant is ん. */
+/** Romaji typed as hiragana: n' or nn not before a vowel is ん, a doubled consonant is っ, and n before a consonant is ん. */
 export function toKana(text: string): string {
   if (text.trim() === '') throw new Error('empty');
   const s = text
@@ -115,9 +147,10 @@ export function toKana(text: string): string {
   let out = '';
   let i = 0;
   while (i < s.length) {
+    // n' is ん; so is nn, except before a vowel or y, where the second n starts the next kana (konnichiwa).
     if (s[i] === 'n' && (s[i + 1] === "'" || s[i + 1] === 'n')) {
       out += 'ん';
-      i += 2;
+      i += s[i + 1] === 'n' && /[aiueoy]/.test(s[i + 2] ?? '') ? 1 : 2;
       continue;
     }
     if (s[i] === 'n' && (i + 1 >= s.length || !/[aiueoy]/.test(s[i + 1]))) {
