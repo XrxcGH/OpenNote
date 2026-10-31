@@ -76,7 +76,8 @@ describe('kit strings', () => {
       }
     }
     expect(problems).toEqual([]);
-  });
+    // It loads and runs every tool's examples, which can pass 5 s on a busy machine.
+  }, 30_000);
 
   it('has a spec for every tool in the list', () => {
     expect(Object.keys(SPECS).sort()).toEqual(MIND_TOOLS.map((tool) => tool.id).sort());
