@@ -162,13 +162,15 @@ export function adjustmentSets(dag: Dag, x: string, y: string): Adjustment {
   );
   const yAnc = ancestors(dag, y);
   const xAnc = ancestors(dag, x);
+  // A confounder reaches Y without passing through X: a pure cause of X is not one.
+  const yAncNotViaX = ancestors(cutOut(dag, x), y);
   return {
     minimal,
     candidates,
     mediators: dag.nodes.filter((n) => desc.has(n) && yAnc.has(n)),
     treatmentDescendants: dag.nodes.filter((n) => desc.has(n) && n !== y),
     colliders: dag.nodes.filter((n) => n !== y && (dag.parents.get(n)?.length ?? 0) >= 2),
-    confounders: dag.nodes.filter((n) => xAnc.has(n) && yAnc.has(n) && !desc.has(n)),
+    confounders: dag.nodes.filter((n) => xAnc.has(n) && yAncNotViaX.has(n) && !desc.has(n)),
     openPaths: dSeparated(cutOut(dag, x), x, y, []) ? 0 : 1,
   };
 }

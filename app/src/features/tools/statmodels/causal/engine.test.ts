@@ -200,6 +200,14 @@ describe('causal diagrams', () => {
     expect(layers(chain)).toEqual([['A'], ['B'], ['C']]);
   });
 
+  it('does not call a pure cause of the treatment a confounder', () => {
+    const m = adjustmentSets(parseDag('U1 -> X, U1 -> M, U2 -> M, U2 -> Y, X -> Y'), 'X', 'Y');
+    expect(m.minimal).toEqual([[]]);
+    expect(m.confounders).toEqual([]);
+    expect(adjustmentSets(parseDag('I -> X, X -> Y'), 'X', 'Y').confounders).toEqual([]);
+    expect(adjustmentSets(parseDag('Z -> X, Z -> Y, X -> Y'), 'X', 'Y').confounders).toEqual(['Z']);
+  });
+
   it('needs no adjustment when nothing confounds', () => {
     expect(adjustmentSets(parseDag('X -> Y, W -> Y'), 'X', 'Y').minimal).toEqual([[]]);
   });
