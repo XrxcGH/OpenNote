@@ -218,3 +218,39 @@ describe('long and wide form', () => {
     expect(() => unstack(doubled, ['id'], 'k', 'v')).toThrow(SubjectError);
   });
 });
+
+describe('numbers a double cannot hold, percents, and commas that read both ways', () => {
+  it('reports an overflow such as 1e400 instead of keeping an infinity or dropping it silently', () => {
+    const data = parseDataText('v\n-1e-3\n+2.5E2\n1e400\n-1e400\n4');
+    const v = named(data.columns, 'v');
+    expect(v.kind).toBe('number');
+    // 1e400 and -1e400 lie beyond Number.MAX_VALUE (about 1.8e308), so neither is a value.
+    expect(v.values).toEqual([-0.001, 250, null, null, 4]);
+    expect(data.problems).toEqual([
+      { column: 'v', row: 3, text: '1e400' },
+      { column: 'v', row: 4, text: '-1e400' },
+    ]);
+    expect(readNumber('1e400', { decimal: '.', group: ',' })).toBeNull();
+  });
+
+  it('keeps a percent cell as its written number and records % as the unit', () => {
+    const p = named(parseDataText('p\n5%\n10%\n15%').columns, 'p');
+    expect(p.kind === 'number' && p.unit).toBe('%');
+    expect(p.values).toEqual([5, 10, 15]);
+  });
+
+  it('reads 1,234 by the chosen decimal mark and says which one a guess used', () => {
+    const text = 'm\n1,234\n5,678\n9,012';
+    const guessed = parseDataText(text);
+    expect(named(guessed.columns, 'm').values).toEqual([1234, 5678, 9012]);
+    expect(guessed.decimalGuess).toEqual({ column: 'm', decimal: '.' });
+    const comma = parseDataText(text, { decimal: 'comma' });
+    expect(named(comma.columns, 'm').values).toEqual([1.234, 5.678, 9.012]);
+    expect(comma.decimalGuess).toBeUndefined();
+    const point = parseDataText(text, { decimal: 'point' });
+    expect(named(point.columns, 'm').values).toEqual([1234, 5678, 9012]);
+    expect(point.decimalGuess).toBeUndefined();
+    // "1,5" reads one way only, so nothing was guessed.
+    expect(parseDataText('m\n1,5\n2,25').decimalGuess).toBeUndefined();
+  });
+});
