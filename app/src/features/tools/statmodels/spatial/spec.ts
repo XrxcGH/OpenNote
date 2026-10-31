@@ -372,7 +372,8 @@ function interpolationOutcome(values: Values): Outcome {
       { id: 'idw', value: first.d },
       { id: 'nugget', value: params.nugget },
       { id: 'sill', value: params.sill },
-      { id: 'range', value: params.range },
+      // Exponential and Gaussian are written with the practical range (95% of the sill), not the parameter a = range/3.
+      { id: model === 'spherical' ? 'range' : 'practicalRange', value: params.range },
       { id: 'n', value: points.length },
       { id: 'gridLow', value: Math.min(...all) },
       { id: 'gridHigh', value: Math.max(...all) },
@@ -396,7 +397,11 @@ function interpolationOutcome(values: Values): Outcome {
         '\\hat\\gamma(h) = \\frac{1}{2N(h)}\\sum (z_i - z_j)^2,\\quad \\hat\\gamma([[h]]) = [[g]]',
         { h: lags[0].h, g: lags[0].gamma, pairs: lags[0].pairs, width },
       ),
-      step('spatial.modelFit', undefined, { nugget: params.nugget, sill: params.sill, range: params.range }),
+      step(model === 'spherical' ? 'spatial.modelFit' : 'spatial.modelFitPractical', undefined, {
+        nugget: params.nugget,
+        sill: params.sill,
+        range: params.range,
+      }),
       ...(params.noSill ? [step('spatial.noSill', undefined, { range: params.range })] : []),
       step(
         'spatial.kriging',

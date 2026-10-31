@@ -77,6 +77,7 @@ export const spatial = {
     nugget: 'Nugget',
     sill: 'Partial sill',
     range: 'Range',
+    practicalRange: 'Practical range (95% of the sill)',
     gridLow: 'Lowest kriged value on the map',
     gridHigh: 'Highest kriged value on the map',
     gridSdHigh: 'Largest kriging SD on the map',
@@ -193,6 +194,10 @@ export const spatialSteps = {
   modelFit:
     'Fit the model by weighted least squares, weighting each bin by its pairs over the squared model value: ' +
     'nugget {nugget}, partial sill {sill}, range {range}.',
+  modelFitPractical:
+    'Fit the model by weighted least squares, weighting each bin by its pairs over the squared model value: ' +
+    'nugget {nugget}, partial sill {sill}, practical range {range}. This model only nears its sill, so the range ' +
+    'here is the distance where it reaches 95% of the sill; a textbook range parameter, as in exp(-h/a), is a third of it.',
   noSill:
     'The range stops at its bound of {range}, twice the largest lag: the semivariance keeps rising and reaches no sill ' +
     "within the data's extent. That is an unbounded, near-linear variogram, usually from a trend. Detrend the values " +

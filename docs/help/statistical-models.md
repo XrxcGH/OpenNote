@@ -57,5 +57,5 @@ Fit models to data and see each answer worked out, step by step. These tools are
 
 - **Point patterns** give the mean center, the standard distance, the Clark-Evans ratio with its test, quadrat counts, and Ripley's L with an envelope from random patterns.
 - **Spatial autocorrelation** gives Moran's I and Geary's C with normal and permutation tests, and local Moran clusters, using rook, queen, distance-band, nearest-neighbor, inverse-distance, or typed neighbor weights.
-- **Interpolation** fits a spherical, exponential, or Gaussian semivariogram and predicts new places by ordinary kriging, with the kriging variance, and by inverse-distance weighting.
+- **Interpolation** fits a spherical, exponential, or Gaussian semivariogram and predicts new places by ordinary kriging, with the kriging variance, and by inverse-distance weighting. For the exponential and Gaussian models the reported range is the practical range: the distance where the model reaches 95% of the sill. A textbook range parameter, as in exp(-h/a), is a third of it for the exponential model and the practical range over the square root of 3 for the Gaussian model.
 - **Contour maps** show the kriged values, their spread, and the inverse-distance values over a grid around the points.

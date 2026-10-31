@@ -210,7 +210,7 @@ describe('interpolation', () => {
     if (!run.ok) throw new Error('the wells example failed');
     const lagTable = run.outcome.tables!.find((t) => t.id === 'lags')!;
     const maxH = Math.max(...lagTable.rows.map((r) => Number(r[0])));
-    const range = Number(run.outcome.rows.find((r) => r.id === 'range')!.value);
+    const range = Number(run.outcome.rows.find((r) => r.id === 'range' || r.id === 'practicalRange')!.value);
     expect(range).toBeLessThanOrEqual(2 * maxH);
     expect(run.outcome.steps.map((s) => s.key)).toContain('spatial.noSill');
   });
@@ -241,5 +241,17 @@ describe('impossible spatial input', () => {
     expect(code(() => krige(twice, [1, 2], { x: 1, y: 1 }, 'spherical', { nugget: 0, sill: 1, range: 1 }))).toBe(
       'krigingSingular',
     );
+  });
+});
+
+describe('variogram range', () => {
+  it('reads the range as the practical range for the exponential and Gaussian models', () => {
+    const p = { nugget: 1, sill: 4, range: 3 };
+    // 1 + 4 (1 - e^-3) = 4.80085: 95% of the sill at h = range; the spherical model reaches the full sill there.
+    close(variogram('exponential', p, 3), 1 + 4 * (1 - Math.exp(-3)), 1e-12);
+    close(variogram('gaussian', p, 3), 4.800852, 1e-6);
+    close(variogram('spherical', p, 3), 5, 1e-12);
+    // Range parameter a = 1 (textbook exp(-h/a)): at h = 1 the exponential model is at 1 - 1/e of the sill.
+    close(variogram('exponential', p, 1), 1 + 4 * (1 - 1 / Math.E), 1e-12);
   });
 });
