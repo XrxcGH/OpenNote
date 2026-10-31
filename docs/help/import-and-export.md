@@ -10,6 +10,7 @@ Bring notes in from other apps and take them out again. Your notes stay in plain
 - [PDF files](#pdf-files)
 - [Clean up a scan](#clean-up-a-scan)
 - [Export](#export)
+- [Export as LaTeX](#export-as-latex)
 - [Open a Markdown or text file](#open-a-markdown-or-text-file)
 - [Share as a file](#share-as-a-file)
 - [Screenshots and copies](#screenshots-and-copies)
@@ -85,11 +86,30 @@ Open Share, then Export, or press Ctrl+K and choose Export.
 ![The Export dialog with a section and the Word document format chosen](../screens/export-light.png)
 
 - Pages, sections, and whole notebooks export as Markdown, Word, or a single HTML file.
-- Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file.
+- Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file. [LaTeX](#export-as-latex) makes a `.tex` file.
 - Choose PDF files to export a section or a whole notebook as PDF. Each page is printed the same way as a page's own Export as PDF, into folders that follow your sections, with an `index.html` that links every file. A page that can't be printed is listed in the summary, and the rest still export. Cancel stops at once and keeps nothing.
 - A page's own Export and Print menu makes one PDF of that page. The first time you export a page's PDF, the Save window asks where. After that, the same dialog has an Update button that saves over that file without asking. The old file goes to the Recycle Bin first, and a Replaced notice with Undo puts it back. If the old file is on a network or removable drive, which has no Recycle Bin, OpenNote keeps a copy beside it as "Name (replaced).pdf" and tells you. Update remembers the file until you close OpenNote.
 - Include the page title is on by default for PDF and Print. It puts the page's title and date at the top of the first sheet, in the same fonts as the title on screen, so the text below it may move down to the next sheet. The preview in the Export as PDF and Print dialogs shows the page both ways the moment you turn it off or on, before anything is saved or printed. The same switch is in the PDF files export of a section or notebook, where each page starts with its title. OpenNote remembers your choice. Picture (PNG) export is unchanged.
 - Lasso an area to export just that part.
+
+## Export as LaTeX
+
+Open Share, then Export, and choose LaTeX. Or press Ctrl+K and choose Export as LaTeX. It is on in Beta builds.
+
+- A page, a section, or a notebook becomes a `.tex` file. When there are pictures, handwriting, or sources from the Citations window, you get a `.zip` instead. It holds the `.tex` file, an `images` folder, and `references.bib`. Upload the `.zip` to Overleaf as it is, or unzip it and compile it yourself.
+- Headings become `\section`, `\subsection`, and so on. A section or a notebook adds its own levels above the headings of each page.
+- Bold, italic, underline, strikethrough, highlight, color, size, subscripts, code, links, lists, checklists, quotes, callouts, tables, and rules all have a LaTeX form. Tables use the booktabs style, and a long table can run over a page break.
+- Footnotes work with `[^1]` in the text and `[^1]: The note.` on a line of its own. Each becomes a `\footnote`.
+- Equations keep their TeX. A display equation with `\label{key}` is numbered, and `$\eqref{key}$` becomes a reference to it, with the same numbers the page shows. Each page counts from 1.
+- A picture becomes a figure with its description as the caption, and its description is also kept in a comment in the file. Handwriting is one vector PDF in the `images` folder. PNG and JPEG pictures come over. Other picture types are listed in the summary as left out.
+- A citation block becomes `\cite{key}`, and a bibliography block becomes the bibliography. `references.bib` holds the sources the document cites or lists.
+- Options in the dialog set the paper size (Letter or A4), the margins, a title, author, and date block, and a table of contents. A preview shows the start of the `.tex` text, and it changes as you choose. The author you type stays on this device.
+
+Choose how characters are written. Any language keeps all text as it is and needs XeLaTeX or LuaLaTeX to compile. Latin letters only turns Greek letters and math signs into commands and replaces other characters with a question mark, so pdfLaTeX can compile it. The file starts with a comment that says how to compile it. When it cites sources, run BibTeX between the runs, or let `latexmk` do it.
+
+OpenNote only writes the files. It does not compile them, and nothing leaves your PC. Text from a page is always escaped, and an equation that would read a file or redefine a command is written as plain text instead and listed in the summary. Code is set line by line instead of in a `verbatim` block, so a page cannot end the block early.
+
+Not every part of a page has a LaTeX form. Merged table cells do not exist in OpenNote tables, so none are written. Pictures keep their whole area, because a crop is not written. Handwriting is one picture of the whole page, not placed beside the text.
 
 ## Open a Markdown or text file
 

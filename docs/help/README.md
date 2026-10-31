@@ -1,6 +1,6 @@
 # OpenNote help
 
-Short guides for using OpenNote, one for each area of the app. They describe beta 5 (0.1.0-beta.6). Nobody has tried most of these features by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
+Short guides for using OpenNote, one for each area of the app. They describe beta 7 (0.1.0-beta.7). Nobody has tried most of these features by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
 
 Every picture is a real screenshot. [The screens folder](../screens/README.md) has all of them, in light and dark.
 
@@ -25,8 +25,21 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
+- [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.
+- [Civil, environmental, and chemical engineering tools](civil-and-chemical-engineering.md): structures, soils, foundations, hydrology, water, transportation, process balances, and reactors.
+- [Subject tool kits](subject-tool-kits.md): thirteen tool windows for engineering, science, math, earth science, and reasoning problems, with worked steps and live calculation blocks.
+- [Music, script, camera, and studio tools](music-script-camera-and-studio-tools.md): score notation, music theory, voice leading, ear training, tuning and rhythm, a script formatter, camera and lighting arithmetic, and scale, color, and materials.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
+- [Statistics kit](statistics-kit.md): describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design.
+- [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
+- [Psychology and behavior tools](psychology-kit.md): signal detection, psychophysics, learning and choice models, response times, observation, agreement, scales, and qualitative coding.
+- [Biology tools](biology-tools.md): sequences, cloning, proteins, alignment, crosses, population genetics, pedigrees, and phylogenetic trees.
+- [Life science tools](life-science-tools.md): physiology, neurons, pharmacology, curve fits, bench math, populations, demography, models, and biodiversity.
+- [Modern physics and astronomy tools](modern-physics-and-astronomy.md): quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology.
+- [Signals and sound tools](signals-tools.md): spectra, filters, convolution and sampling, brain and body signals, sound, images, medical imaging, information and coding, modulation, and transmission lines.
+- [History, places, languages, and texts](history-places-languages-and-texts.md): timelines, calendars, maps, coordinates, scripts, linguistics, text analysis, identification keys, and note frames.
 
 ## Draw and design pages
 
@@ -38,6 +51,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 
 - [Search and links](search-and-links.md): search, page links, backlinks, tags, and daily notes.
 - [Study tools](study-tools.md): flashcards, Upcoming, timers, the calculator, and citations.
+- [Tutor](tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
 - [Chemistry and property tables](chemistry-and-data.md): balancing, stoichiometry, gas laws, titration, structure drawing, and steam, gas, and materials tables.
 
 ## Record
@@ -47,6 +61,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Bring notes in and out
 
 - [Import and export](import-and-export.md): other apps' files in, and Markdown, Word, PDF, and more out.
+- [Goodnotes, Notability, and Samsung Notes](notes-apps.md): the handwriting apps' own files, and their PDF exports.
 
 ## Storage and history
 
@@ -57,6 +72,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [On-device intelligence](on-device-intelligence.md): reading pictures, summaries, Ask your notes, and handwriting to text.
 - [Privacy and Work offline](privacy-and-work-offline.md): what uses the network, and how to stop it.
 - [Connectors](connectors.md): signing in to other services.
+- [Sync (Beta)](sync.md): optional end-to-end-encrypted sync through a folder or WebDAV server you already have.
 - [The local API and app permissions](local-api.md): which programs on your PC may read or add notes, and the access log.
 - [The opennote command](command-line.md): add to and search your notes from a terminal or script.
 - [The web clipper and mail add-ins](web-clipper.md): save web pages and emails into your notes.
@@ -65,6 +81,8 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Install, update, and remove
 
 OpenNote is one file, and it never needs administrator rights.
+
+- **On a Mac or Linux.** [OpenNote on macOS and Linux](install-macos-linux.md): the dmg and the AppImage, updates, Command shortcuts, and what works differently there.
 
 - **Install.** The first time it starts, setup offers to move OpenNote into your own Programs folder (`%LOCALAPPDATA%\Programs\OpenNote`) and add it to the Start menu. After the move, OpenNote also shows in Windows Settings, then **Apps**, then **Installed apps**, with its version.
 - **Updates.** OpenNote checks for updates in the background and installs them the way you chose in Settings, then **Updates**. A download that stops partway, because the PC slept or the network dropped, carries on from where it stopped the next time. If you are on a metered network, such as a phone hotspot, automatic updates wait until you are on a network without a data limit. Every update is checked against its signature before it is installed, whether it was downloaded in one go or in parts.

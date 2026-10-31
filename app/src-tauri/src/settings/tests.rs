@@ -230,6 +230,8 @@ fn exports_the_defaults_for_the_interface() {
     }
 }
 
+// Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+#[cfg(windows)]
 #[test]
 fn a_saved_version_1_file_loads() {
     let (_folder, paths) = profile();

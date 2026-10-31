@@ -16,6 +16,7 @@ import styles from './PageView.module.css';
 import { pagesClient, pageView } from './runtime';
 import paneStyles from './readingOrder/pane.module.css';
 import { ReadingOrderPane } from './readingOrder/ReadingOrderPane';
+import { StillClosingNotice } from './stillClosing';
 import { returnBand } from './title/TitleSlot';
 import { readingOrderOpen } from './viewport/shown';
 
@@ -99,6 +100,7 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
   return (
     <>
       {failed && <p role="alert">{t('page.openFailed')}</p>}
+      {mounted && <StillClosingNotice readOnly={mounted.page.readOnly} />}
       <div className={paneStyles.row}>
         <div className={extrasStyles.column}>
           {mounted && <Extras mounted={mounted} slot="top" />}

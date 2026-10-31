@@ -42,4 +42,11 @@ describe('placeWindows', () => {
     const placed = placeWindows({ widths: [640], viewport: 420, room: 0, edge: 0 });
     expect(placed.windows[0]).toEqual({ width: 420 - 2 * FLOAT_GAP, right: FLOAT_GAP });
   });
+
+  it('floats instead of docking when the page claims room the window does not have', () => {
+    const viewport = 375;
+    const placed = placeWindows({ widths: [388], viewport, room: 900, edge: 0 });
+    expect(placed.overlay).toBe(true);
+    expect(left(viewport, placed.windows[0]!)).toBeGreaterThanOrEqual(FLOAT_GAP);
+  });
 });

@@ -37,8 +37,8 @@ pub(crate) struct NotebookShared {
     pub(crate) pages: Mutex<HashMap<PageId, Arc<PageSession>>>,
     pub(crate) lock: Mutex<Option<NotebookLock>>,
     pub(crate) closed: AtomicBool,
-    /// Pages whose journals couldn't be recovered yet. They open read-only (spec 20.4).
-    pub(crate) deferred: Mutex<HashMap<PageId, ()>>,
+    /// Pages whose journals couldn't be recovered yet, and why. They open read-only (spec 20.4).
+    pub(crate) deferred: Mutex<HashMap<PageId, ReadOnlyReason>>,
     /// What recovery did when the notebook opened.
     pub(crate) recovered: Mutex<Vec<(PageId, crate::session::events::RecoveryOutcome)>>,
     pub(crate) me: Weak<NotebookShared>,

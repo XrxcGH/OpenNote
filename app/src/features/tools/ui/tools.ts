@@ -6,6 +6,7 @@ export type ToolId =
   | 'calculator'
   | 'upcoming'
   | 'flashcards'
+  | 'exam'
   | 'converter'
   | 'reference'
   | 'dictionary'
@@ -23,7 +24,31 @@ export type ToolId =
   | 'formulasheet'
   | 'practice'
   | 'figure'
-  | 'symbols';
+  | 'symbols'
+  | 'econ'
+  | 'kit-statinfer'
+  | 'kit-statmodels'
+  | 'kit-mind'
+  | 'kitmolbio'
+  | 'lifesys'
+  | 'kit-civil'
+  | 'kit-modphys'
+  | 'kit-signals'
+  | 'kit-earth'
+  | 'kit-humanities'
+  | 'kit-reasoning'
+  | 'kitelectrical'
+  | 'kit-fluidheat'
+  | 'kit-solids'
+  | 'kitaero'
+  | 'kit-chemmat'
+  | 'kit-thermo'
+  | 'kit-control'
+  | 'kit-design'
+  | 'kit-math'
+  | 'kit-mechdyn'
+  | 'kit-physics'
+  | 'kitmusic';
 
 export interface ToolDef {
   id: ToolId;
@@ -36,10 +61,12 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'calculator', title: 'smart.tools.calculator.title', width: 400 },
   { id: 'upcoming', title: 'smart.tools.upcoming.title', width: 380 },
   { id: 'flashcards', title: 'study.deck.tool', width: 420 },
+  { id: 'exam', title: 'exams.tool', width: 560 },
   { id: 'converter', title: 'study.converter.title', width: 380 },
   { id: 'reference', title: 'study.reference.title', width: 640 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },
   { id: 'symbols', title: 'study.symbols.title', width: 420 },
+  { id: 'kit-fluidheat', title: 'kitFluidHeat.title', width: 560 },
   { id: 'citations', title: 'study.citations.title', width: 440 },
   { id: 'constants', title: 'science.constants.title', width: 520 },
   { id: 'sigfigs', title: 'science.sigfigs.title', width: 420 },
@@ -54,6 +81,29 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'formulasheet', title: 'docStructure.sheet.title', width: 400 },
   { id: 'practice', title: 'docStructure.practice.title', width: 440 },
   { id: 'figure', title: 'docStructure.figure.title', width: 420 },
+  { id: 'econ', title: 'kitEcon.title', width: 520 },
+  { id: 'kit-statinfer', title: 'kitStatInfer.window.title', width: 560 },
+  { id: 'kit-statmodels', title: 'kitStatModels.title', width: 600 },
+  { id: 'kit-mind', title: 'kitMind.window', width: 560 },
+  { id: 'kitmolbio', title: 'kitMolBio.window', width: 600 },
+  { id: 'lifesys', title: 'kitLifeSys.ui.windowTitle', width: 480 },
+  { id: 'kit-civil', title: 'kitCivil.title', width: 520 },
+  { id: 'kit-modphys', title: 'kitModPhys.window.title', width: 520 },
+  { id: 'kit-signals', title: 'kitSignals.kit.title', width: 560 },
+  { id: 'kit-earth', title: 'kitEarth.title', width: 520 },
+  { id: 'kit-humanities', title: 'kitHumanities.title', width: 560 },
+  { id: 'kit-reasoning', title: 'kitReasoning.title', width: 560 },
+  { id: 'kitmusic', title: 'kitMusic.window', width: 560 },
+  { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
+  { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
+  { id: 'kitaero', title: 'kitAero.window', width: 560 },
+  { id: 'kit-chemmat', title: 'kitChemMat.title', width: 560 },
+  { id: 'kit-thermo', title: 'kitThermo.title', width: 560 },
+  { id: 'kit-control', title: 'kitControl.title', width: 560 },
+  { id: 'kit-design', title: 'kitDesign.title', width: 560 },
+  { id: 'kit-math', title: 'kitMath.title', width: 560 },
+  { id: 'kit-mechdyn', title: 'kitMechDyn.title', width: 560 },
+  { id: 'kit-physics', title: 'kitPhysics.title', width: 560 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

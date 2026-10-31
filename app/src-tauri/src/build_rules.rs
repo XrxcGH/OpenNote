@@ -38,8 +38,13 @@ mod tests {
 
     #[test]
     fn reads_the_profile_from_the_out_dir() {
-        let plain = Path::new(r"C:\repo\target\release\build\opennote-123\out");
-        assert_eq!(profile_from_out_dir(plain).as_deref(), Some("release"));
+        // A Windows path splits at its backslashes only on Windows.
+        if cfg!(windows) {
+            let plain = Path::new(r"C:\repo\target\release\build\opennote-123\out");
+            assert_eq!(profile_from_out_dir(plain).as_deref(), Some("release"));
+        }
+        let unix = Path::new("/repo/target/release/build/opennote-123/out");
+        assert_eq!(profile_from_out_dir(unix).as_deref(), Some("release"));
         let cross = Path::new("/repo/target/aarch64-pc-windows-msvc/ci/build/opennote-1/out");
         assert_eq!(profile_from_out_dir(cross).as_deref(), Some("ci"));
         assert_eq!(profile_from_out_dir(Path::new("/nowhere")), None);

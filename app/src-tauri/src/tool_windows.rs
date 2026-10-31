@@ -97,6 +97,12 @@ pub const TOOLS: &[Tool] = &[
         height: 640.0,
     },
     Tool {
+        id: "kit-chemmat",
+        title: "Chemistry and materials",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
         id: "solvers",
         title: "Math solvers",
         width: 600.0,
@@ -117,6 +123,132 @@ pub const TOOLS: &[Tool] = &[
     Tool {
         id: "projectile",
         title: "Projectile simulator",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-statmodels",
+        title: "Statistical models",
+        width: 600.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-signals",
+        title: "Signals and sound",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kitelectrical",
+        title: "Circuits and energy",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-reasoning",
+        title: "Logic and computing",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-fluidheat",
+        title: "Fluids and heat transfer",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kitmolbio",
+        title: "Biology tools",
+        width: 600.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-solids",
+        title: "Solid mechanics",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-thermo",
+        title: "Thermodynamics kit",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-control",
+        title: "Dynamics and control",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-design",
+        title: "Design tools",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-math",
+        title: "Engineering mathematics",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-mechdyn",
+        title: "Mechanisms and dynamics",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kitaero",
+        title: "Aerospace",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-mind",
+        title: "Psychology and behavior",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-physics",
+        title: "Physics tools",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-statinfer",
+        title: "Statistics: inference and study design",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-civil",
+        title: "Civil and chemical engineering",
+        width: 520.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-modphys",
+        title: "Modern physics and astronomy",
+        width: 520.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-earth",
+        title: "Earth sciences",
+        width: 520.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-humanities",
+        title: "History, places, languages, and texts",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kitmusic",
+        title: "Music, script, camera, and studio tools",
         width: 560.0,
         height: 720.0,
     },
@@ -321,9 +453,29 @@ mod tests {
     #[test]
     fn finds_only_the_tools_it_lists() {
         assert_eq!(find("timers").map(|tool| tool.title), Some("Timers"));
+        assert_eq!(
+            find("kitelectrical").map(|tool| tool.title),
+            Some("Circuits and energy")
+        );
         assert!(find("Timers").is_none());
         assert!(find("timers\"; alert(1); \"").is_none());
         assert!(find("").is_none());
+    }
+
+    #[test]
+    fn lists_every_kit_window_the_interface_offers() {
+        // Each kit's Open in its own window asks for its tool id; one missing here fails with "does not exist".
+        let ts = include_str!("../../src/features/tools/ui/tools.ts");
+        let kits: Vec<&str> = ts
+            .split("{ id: '")
+            .skip(1)
+            .filter_map(|rest| rest.split("'").next())
+            .filter(|id| id.starts_with("kit"))
+            .collect();
+        assert!(kits.len() >= 11, "found {kits:?}");
+        for id in kits {
+            assert!(find(id).is_some(), "{id} has no tool window");
+        }
     }
 
     #[test]

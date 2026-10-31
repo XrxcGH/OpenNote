@@ -1,0 +1,273 @@
+/*
+ * The life-systems window: tool tabs that wrap at narrow widths, labeled fields in a grid, a result card with a
+ * table, notes and steps, and plots on theme tokens. Series differ by dash pattern as well as color.
+ */
+@layer components {
+  .tool {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding-block-end: var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tab {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    cursor: pointer;
+  }
+
+  .tab:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .tab[aria-selected='true'] {
+    background: var(--color-surface-selected);
+    border-color: var(--color-border-subtle);
+    color: var(--color-text-on-selected);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .tab:focus-visible,
+  .input:focus-visible,
+  .fileButton:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-3);
+    overflow: auto;
+    min-inline-size: 0;
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .caution {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-inline-start: 3px solid var(--color-status-warning);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .withUnit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: end;
+  }
+
+  .input {
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-body-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  textarea.input {
+    min-block-size: 6rem;
+    resize: vertical;
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+  }
+
+  .fileButton {
+    justify-self: start;
+  }
+
+  .result {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+    min-inline-size: 0;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  .table th {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .number {
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .tableWrap {
+    overflow: auto;
+    max-block-size: 16rem;
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .steps li {
+    overflow-wrap: anywhere;
+  }
+
+  .subhead {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .figure {
+    margin: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .plot {
+    display: block;
+    inline-size: 100%;
+    max-inline-size: 36rem;
+    block-size: auto;
+  }
+
+  .axis {
+    fill: none;
+    stroke: var(--color-border-control);
+  }
+
+  .gridLine {
+    stroke: var(--color-border-subtle);
+    stroke-width: 0.5;
+  }
+
+  .tick {
+    fill: var(--color-text-secondary);
+    font-size: 10px;
+  }
+
+  .line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+  }
+
+  .marker {
+    fill: currentColor;
+  }
+
+  .bar {
+    fill: currentColor;
+    fill-opacity: 0.75;
+  }
+
+  .outline {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+  }
+
+  .series0 {
+    color: var(--color-accent-primary);
+  }
+
+  .series1 {
+    color: var(--color-accent-dusk);
+  }
+
+  .series2 {
+    color: var(--color-accent-candle);
+  }
+
+  .series3 {
+    color: var(--color-accent-night);
+  }
+
+  .series4 {
+    color: var(--color-text-secondary);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .legendItem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+}

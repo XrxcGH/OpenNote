@@ -63,7 +63,7 @@ enum Segment {
     },
 }
 
-fn fence_of(line: &str) -> Option<(char, usize)> {
+pub(super) fn fence_of(line: &str) -> Option<(char, usize)> {
     let trimmed = line.trim_start_matches(' ');
     if line.len() - trimmed.len() > 3 {
         return None;
@@ -128,6 +128,14 @@ fn segments(markdown: &str) -> Vec<Segment> {
 
 /// Replaces `$\eqref{key}$` outside inline code with its number.
 fn resolve_refs(text: &str, numbers: &HashMap<String, usize>) -> String {
+    replace_refs(text, &|key| match numbers.get(key) {
+        Some(n) => format!("({n})"),
+        None => UNRESOLVED.to_owned(),
+    })
+}
+
+/// Replaces `$\eqref{key}$` outside inline code with whatever `with` makes of the key.
+fn replace_refs(text: &str, with: &dyn Fn(&str) -> String) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
     while !rest.is_empty() {
@@ -160,10 +168,7 @@ fn resolve_refs(text: &str, numbers: &HashMap<String, usize>) -> String {
                 match hit {
                     Some((key, e)) => {
                         out.push_str(&rest[..r]);
-                        match numbers.get(&key) {
-                            Some(n) => out.push_str(&format!("({n})")),
-                            None => out.push_str(UNRESOLVED),
-                        }
+                        out.push_str(&with(&key));
                         rest = &after[e + 1..];
                     }
                     None => {
@@ -230,9 +235,100 @@ pub fn number_texts(texts: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// The source with its first valid label prefixed. Later labels in it are removed.
+fn relabel(source: &str, prefix: &str) -> String {
+    let mut out = String::with_capacity(source.len() + prefix.len() + 2);
+    let mut rest = source;
+    let mut first = true;
+    while let Some(at) = rest.find("\\label{") {
+        let after = &rest[at + 7..];
+        match after.find('}') {
+            Some(end) if valid_key(&after[..end]) => {
+                out.push_str(&rest[..at]);
+                if first {
+                    out.push_str(&format!("\\label{{{prefix}:{}}}", &after[..end]));
+                    first = false;
+                }
+                rest = &after[end + 1..];
+            }
+            _ => {
+                out.push_str(&rest[..at + 7]);
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// The texts (in reading order) for LaTeX. The first label of each display equation stays a `\label`, with the
+/// prefix added so labels stay unique across the pages of one document, and each reference becomes
+/// `$\eqref{prefix:key}$`. A reference to a label that no equation holds becomes "(??)". A label that an earlier
+/// equation already holds is dropped, as the numbered exports do.
+pub fn prefixed_texts(texts: &[&str], prefix: &str) -> Vec<String> {
+    if !texts.iter().any(|t| t.contains("\\label{") || t.contains("\\eqref{")) {
+        return texts.iter().map(|t| (*t).to_owned()).collect();
+    }
+    let parts: Vec<Vec<Segment>> = texts.iter().map(|t| segments(t)).collect();
+    let mut known: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut first: Vec<bool> = Vec::new();
+    for segment in parts.iter().flatten() {
+        if let Segment::Math { body, .. } = segment {
+            first.push(label_of(&body.join("\n")).is_some_and(|key| known.insert(key)));
+        }
+    }
+    let mut next = 0;
+    parts
+        .into_iter()
+        .map(|list| {
+            list.into_iter()
+                .map(|segment| match segment {
+                    Segment::Text(text) => replace_refs(&text, &|key| {
+                        if known.contains(key) {
+                            format!("$\\eqref{{{prefix}:{key}}}$")
+                        } else {
+                            UNRESOLVED.to_owned()
+                        }
+                    }),
+                    Segment::Math { open, body, close } => {
+                        let keep = first[next];
+                        next += 1;
+                        let joined = body.join("\n");
+                        let source = if keep {
+                            relabel(&joined, prefix)
+                        } else {
+                            strip_labels(&joined)
+                        };
+                        let mut lines = vec![open, source];
+                        lines.extend(close);
+                        lines.join("\n")
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn latex_labels_get_the_page_prefix_and_references_follow() {
+        let out = prefixed_texts(
+            &[
+                "See $\\eqref{b}$, $\\eqref{zz}$.",
+                "$$\na=1 \\label{a}\n$$\n\n$$\nb=2 \\label{b}\\label{c}\n$$\n\n$$\nd \\label{a}\n$$",
+            ],
+            "p2",
+        );
+        assert_eq!(out[0], "See $\\eqref{p2:b}$, (??).");
+        assert_eq!(
+            out[1],
+            "$$\na=1 \\label{p2:a}\n$$\n\n$$\nb=2 \\label{p2:b}\n$$\n\n$$\nd\n$$"
+        );
+    }
 
     #[test]
     fn tags_equations_and_resolves_references_across_blocks() {

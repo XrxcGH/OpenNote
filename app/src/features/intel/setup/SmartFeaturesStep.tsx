@@ -101,7 +101,8 @@ export default function SmartFeaturesStep(props: SetupStepProps) {
   const speechEngine = isEnabled('intel.transcription') && speech.length > 0;
   const cloudKeys = isEnabled('intel.cloudKeys');
   const cloud = useStore(cloudState, (state) => state);
-  const anyCloud = cloudKeys && CLOUD_FEATURES.some((feature) => on.has(feature) && usesCloud(feature, cloud));
+  const anyCloud =
+    cloudKeys && CLOUD_FEATURES.some((feature) => feature !== 'tutor' && on.has(feature) && usesCloud(feature, cloud));
   useEffect(() => {
     void refreshModels();
   }, []);

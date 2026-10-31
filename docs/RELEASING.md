@@ -28,6 +28,7 @@ Do these steps once per repository, before the first release that people will up
 | 5. [Get an Authenticode certificate and add its signing step](#add-code-signing-later) | Your certificate provider, then a pull request | A beta or stable release stops at its Authenticode check; a test build and a dry run don't need it |
 | 6. [Create the beta channel](#create-the-beta-channel) prerelease | `gh release create` | A beta's run stops before it publishes |
 | 7. For the share target, sign the sparse package in `packaging/msix` with the same certificate | `packaging/msix/README.md` | "Share to OpenNote" stays hidden; everything else works |
+| 8. [Sign the Mac and Linux files](#sign-the-mac-and-linux-files): an Apple Developer ID certificate, an App Store Connect API key for notarization, and a GPG key for the AppImage | Apple Developer, App Store Connect, and your PC, then a pull request | The dmg and the AppImage ship unsigned: macOS asks the person to allow the app once in Privacy & Security |
 
 ### Create the update signing key
 
@@ -100,10 +101,34 @@ This is separate from the update key. The update key convinces the app, and the 
 When you add it:
 
 1. Add the signing credentials as secrets of the `release` environment, such as the Azure Trusted Signing account, profile, and client credentials. Never add them as repository secrets.
-2. Add a signing step to the package job in `.github/workflows/release.yml`, where a comment marks the spot, before "Sign the updates". Use the provider's official action, pinned to a full commit SHA with a version comment, and pass the secrets only to that step. It signs the three exes in `dist-release` in place. Give it the condition `github.event_name == 'push'`, so a dry run skips it.
+2. Add a signing step to the package job in `.github/workflows/release.yml`, where a comment marks the spot, before "Sign the updates". Use the provider's official action, pinned to a full commit SHA with a version comment, and pass the secrets only to that step. It signs the three Windows exes in `dist-release` in place; the dmg and the AppImage are signed when they are built, as [Sign the Mac and Linux files](#sign-the-mac-and-linux-files) describes. Give it the condition `github.event_name == 'push'`, so a dry run skips it.
 3. Add the step only once the certificate exists, and make it fail the release if signing fails. Don't add a placeholder or a condition that skips it for a release: a release must never look signed when it isn't. GitHub also doesn't allow the `secrets` context in a step's `if:` condition. The check at the end of the package job fails the release if an exe has no Authenticode signature, or if Windows doesn't accept the certificate.
 
 Keep every existing hardening property of release.yml: least permissions, `persist-credentials: false`, and secrets only in the step that needs them. Code signing changes the files, so the update signatures and hashes must be made afterward (they already are, in "Sign the updates").
+
+### Sign the Mac and Linux files
+
+The dmg and the AppImage are built unsigned by default ([ADR 0055](adr/0055-macos-and-linux.md)). The update signature already covers them, so the app's own updater trusts them. What's missing is the operating system's trust. Without an Apple signature and notarization, macOS refuses to open the app until the person allows it in System Settings, then Privacy & Security. An unsigned AppImage runs, but nobody can check who made it.
+
+Nobody but the owner creates or holds these credentials. Add them as secrets of the `release` environment, never as repository secrets, and never in a file.
+
+| Secret | What it is | Where it comes from |
+|---|---|---|
+| `APPLE_CERTIFICATE` | The Developer ID Application certificate and its private key, exported as a `.p12` file and encoded in base64 | An Apple Developer Program membership: Certificates, Identifiers & Profiles, then a Developer ID Application certificate |
+| `APPLE_CERTIFICATE_PASSWORD` | The password of that `.p12` file | Chosen when you export it from Keychain Access |
+| `APPLE_SIGNING_IDENTITY` | The certificate's name, such as `Developer ID Application: Your Name (TEAMID1234)` | Keychain Access, or `security find-identity -v -p codesigning` |
+| `APPLE_API_ISSUER` | The issuer ID of an App Store Connect API key, for notarization | App Store Connect: Users and Access, then Integrations, then App Store Connect API |
+| `APPLE_API_KEY` | That key's ID | The same page |
+| `APPLE_API_KEY_P8` | The key's `.p8` file, encoded in base64 | Downloaded once when the key is made |
+| `LINUX_SIGNING_KEY` | An ASCII-armored GPG private key that signs the AppImage | `gpg --full-generate-key`, then `gpg --armor --export-secret-keys` |
+| `LINUX_SIGNING_KEY_PASSPHRASE` | Its passphrase | Chosen with the key |
+
+Then change the build job, in one pull request:
+
+1. In the macOS leg, add a step before the build that imports `APPLE_CERTIFICATE` into a temporary keychain, and writes `APPLE_API_KEY_P8` to a file in `$RUNNER_TEMP`. Pass `APPLE_SIGNING_IDENTITY`, `APPLE_API_ISSUER`, `APPLE_API_KEY`, and `APPLE_API_KEY_PATH` (that file) to the build step. Tauri then signs the app with the hardened runtime and the entitlements in `app/src-tauri/macos`, sends it to Apple's notary service, and staples the ticket to the dmg. Give both steps the condition `github.event_name == 'push'`, so a dry run stays unsigned.
+2. In the Linux leg, import `LINUX_SIGNING_KEY` with `gpg --batch --import`, and pass `SIGN=1`, `SIGN_KEY` (the key's ID), and `APPIMAGETOOL_SIGN_PASSPHRASE` to the build step, under the same condition. Publish the public half next to the release as `OpenNote_Linux.AppImage.pub.asc`, and add its name to the release files check.
+3. Secrets now reach the build job, so move the macOS and Linux legs into a job of their own that uses the `release` environment, and update the `secrets` tests in `app/scripts/release/workflow.test.ts`, which allow secrets only in the package job's signing step.
+4. Check a signed dmg on a Mac with `spctl --assess --type open --context context:primary-signature -v OpenNote_macOS.dmg` and `xcrun stapler validate OpenNote_macOS.dmg`, and an AppImage with `./OpenNote_Linux.AppImage --appimage-signature`.
 
 ## Versioning
 
@@ -174,7 +199,7 @@ A test build never updates the beta channel, so no copy is offered it. `0.5.0-te
 A dry run builds and packages everything and publishes nothing. Use it to test a change to the release workflow or the release scripts, or to see what a release would contain.
 
 1. On GitHub, open the Actions tab, choose the "release" workflow, and choose "Run workflow". Leave **dry_run** on; a run by hand with it off stops at once, because a release is published only from a pushed tag. The button appears once the workflow file is on the default branch. From the command line, run `gh workflow run release.yml --ref <branch> -f dry_run=true`.
-2. The run uses the version in the three version files as its tag, such as `v0.5.0`. It runs the checklist in report mode, CI, and the three builds.
+2. The run uses the version in the three version files as its tag, such as `v0.5.0`. It runs the checklist in report mode, CI, and the five builds.
 3. It signs the exes with a key made for that run, which is deleted at the end. The real signing secrets are never used, and the publish job doesn't run.
 4. It checks the result the way the app will, against the throwaway key. The run summary lists the files.
 5. The `update-test` job runs the update-from-earlier-beta test. It builds the updater's test app (`crates/updater/examples/fake_app.rs`) from the last `v*-beta.*` tag, serves this run's manifest and x64 exe from `127.0.0.1`, and lets the old app update itself, checking the hash, and the throwaway key's signature on the way. Without an earlier beta tag, it builds the test app from the same commit and says so in the summary. A pushed tag runs the same test against the committed key, and the publish job waits for it.
@@ -190,23 +215,27 @@ The throwaway signatures are valid only for that run's key, so no copy of the ap
 
 ## Release files
 
-Each release ships one exe for each Windows architecture: 64-bit x64, 32-bit x86, and 64-bit Arm (ARM64).
+Each release ships one exe for each Windows architecture (64-bit x64, 32-bit x86, and 64-bit Arm), one dmg for macOS, and one AppImage for Linux.
 
 | File | For | Rust target | Updater key |
 |---|---|---|---|
 | `OpenNote_Windows64.exe` | 64-bit Windows, on most PCs | `x86_64-pc-windows-msvc` | `windows-x86_64` |
 | `OpenNote_Windows32.exe` | 32-bit Windows | `i686-pc-windows-msvc` | `windows-i686` |
 | `OpenNote_WindowsARM64.exe` | Windows on ARM64 PCs, such as Snapdragon laptops | `aarch64-pc-windows-msvc` | `windows-aarch64` |
+| `OpenNote_macOS.dmg` | macOS 11 or later, one universal app for Apple silicon and Intel Macs | `universal-apple-darwin` (both `aarch64-apple-darwin` and `x86_64-apple-darwin`) | `darwin-universal` |
+| `OpenNote_Linux.AppImage` | 64-bit Linux with glibc 2.35 or later, such as Ubuntu 22.04 | `x86_64-unknown-linux-gnu` | `linux-x86_64` |
 
 Next to each exe is its update signature, with `.sig` added to the name, such as `OpenNote_Windows64.exe.sig`. The release also holds one manifest, `latest.json`, or `beta.json` for a prerelease. Two more files help people check what they downloaded: `SHA256SUMS.txt` lists the hash of every file, and `OpenNote.sbom.cdx.json` is the software bill of materials, a list of everything built into the exes.
 
-Each name starts with `OpenNote_`, followed by the operating system and, where needed, the architecture. Later, macOS and Linux builds will ship as `OpenNote_macOS.dmg` and `OpenNote_Linux.AppImage`.
+Each name starts with `OpenNote_`, followed by the operating system and, where needed, the architecture.
+
+The manifest lists all five. On Linux, the app updates itself by replacing the AppImage it runs from. On a Mac, the app is a signed bundle, so the updater says a new version is out and the person installs the new dmg; the `darwin-universal` entry is there for the day the app swaps its bundle itself.
 
 The table lives in [app/release-files.json](../app/release-files.json). [write-manifest.ts](../app/scripts/write-manifest.ts) reads it. The updater in `crates/updater` compiles in the same rows, so each build knows the one file it may update to. The build matrix in [release.yml](../.github/workflows/release.yml) lists the same targets and names. A unit test fails if the matrix differs from the table, and a Rust test fails if the updater's rows do. To add a file, change all three.
 
 ## What the release workflow does
 
-Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). Running it by hand is a [dry run](#trying-a-release-with-a-dry-run). The workflow has seven jobs: `version`, `checklist`, `ci`, `build`, `sbom`, `package`, and `publish`. The build job runs three times side by side, once for each exe. Each job starts only when the ones it needs succeed, and nothing is published until the last step of the publish job.
+Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). Running it by hand is a [dry run](#trying-a-release-with-a-dry-run). The workflow has seven jobs: `version`, `checklist`, `ci`, `build`, `sbom`, `package`, and `publish`. The build job runs five times side by side, once for each release file: the three exes, the dmg, and the AppImage. Each job starts only when the ones it needs succeed, and nothing is published until the last step of the publish job.
 
 Each job gets only the permissions it needs, and no checkout keeps a GitHub token on disk. Every action is pinned to a full commit SHA, with the version in a comment. That includes the actions in `ci.yml`, because the release run runs its jobs too, and any job of a run can upload artifacts to it. Change the SHA and its comment together when you update an action. A test, [workflow.test.ts](../app/scripts/release/workflow.test.ts), fails if a secret, a permission, or a pin moves where it shouldn't.
 
@@ -237,7 +266,9 @@ The job can only read the repository, and it gets no secrets.
 
 ### The build job
 
-This job runs three times on `windows-latest`, once for each row of the [release files](#release-files) table. It can only read the repository, and it gets no secrets. The x64 runner also builds the 32-bit and ARM64 exes, with the Microsoft Visual C++ tools it has for them.
+This job runs five times, once for each row of the [release files](#release-files) table: three times on `windows-latest`, once on `macos-latest`, and once on `ubuntu-22.04`, the oldest Ubuntu the AppImage supports. It can only read the repository, and it gets no secrets. The x64 runner also builds the 32-bit and ARM64 exes, with the Microsoft Visual C++ tools it has for them.
+
+On macOS and Linux, step 3 is `npx tauri build --target <target> --bundles dmg` or `--bundles appimage`, and step 4 is [collect-bundle.ts](../app/scripts/release/collect-bundle.ts), which copies the one bundle Tauri made to its release name. A dmg and an AppImage are compressed, so step 5 checks the program inside them, `target/<target>/release/opennote`. Linux first installs WebKitGTK and the other libraries in [packaging/linux/install-build-deps.sh](../packaging/linux/install-build-deps.sh). The Windows exe carries the `opennote` command-line tool and the native speech engines; the Mac and Linux files don't yet.
 
 1. Check out the full history, and set up Node.js 22. The job uses no npm or Rust cache, because the CI jobs of the same ref can write to those caches.
 2. Set up stable Rust with the Rust target for this exe, and install the project tools with `npm ci`. There is no Rust build cache, so every release builds from a clean start.
@@ -247,7 +278,7 @@ This job runs three times on `windows-latest`, once for each row of the [release
 6. Report the exe's SHA-256 as an output of the job, such as `sha256-x86_64-pc-windows-msvc`.
 7. Keep the exe as a workflow artifact for one day.
 
-If one exe fails to build, the other two still finish, so one run shows every failure. The package job starts only when all three succeed.
+If one file fails to build, the others still finish, so one run shows every failure. The package job starts only when all five succeed.
 
 ### The sbom job
 
@@ -258,8 +289,8 @@ This job lists everything that is built into the exes, as a [CycloneDX](https://
 This job runs on `windows-latest`. It builds nothing and runs no install scripts, so the Tauri command-line tool is the only project dependency that runs next to the signing key. It can only read the repository. It is the only job that gets the signing secrets, and only in the step that signs. For a pushed tag, it runs in the `release` environment, so it waits for a reviewer's approval first.
 
 1. Check out the full history, set up Node.js 22, and install the project tools with `npm ci --ignore-scripts`.
-2. Download the three exes and the bill of materials into `dist-release`, each artifact by its exact name.
-3. Check the downloads with [check-downloads.ts](../app/scripts/release/check-downloads.ts). This happens before anything is signed. `dist-release` must hold only the three exes and the bill of materials, and each must have the SHA-256 that the build or sbom job reported. Any other job of the run, such as a CI job with a tampered action, can upload an artifact, so this stops a swapped or added file. The step also runs the [check-release-exe.ts](../app/scripts/check-release-exe.ts) checks on each exe again.
+2. Download the three exes, the dmg, the AppImage, and the bill of materials into `dist-release`, each artifact by its exact name.
+3. Check the downloads with [check-downloads.ts](../app/scripts/release/check-downloads.ts). This happens before anything is signed. `dist-release` must hold only the five release files and the bill of materials, and each must have the SHA-256 that the build or sbom job reported. Any other job of the run, such as a CI job with a tampered action, can upload an artifact, so this stops a swapped or added file. The step also runs the [check-release-exe.ts](../app/scripts/check-release-exe.ts) checks on each exe again; the build job checked the program inside the dmg and the AppImage.
 4. Write the release notes with [notes.ts](../app/scripts/release/notes.ts). The page text goes in `release-notes.md`, and the short text for the update notice goes in `release-notes.txt`.
 5. Sign each exe with [sign.ts](../app/scripts/release/sign.ts), which runs `tauri signer sign --app-version` with the version of the tag. This writes a signature next to each exe, such as `OpenNote_Windows64.exe.sig`. The version goes into each signature's trusted comment, which the signature covers, so nobody can change it without the private key. If `TAURI_SIGNING_PRIVATE_KEY` isn't set, the step fails. A dry run makes a throwaway key here instead.
 6. Write the update manifest with [write-manifest.ts](../app/scripts/write-manifest.ts), using the short notes. It stops when an exe or its `.sig` file is missing or empty. It stops when a signed version differs from the tag. It also stops when a signature names another file than its exe.
@@ -306,7 +337,7 @@ Each entry in `platforms` holds these fields:
 
 The release and its manifest go live as soon as the publish job finishes, with no draft step. Approving the publish job is the last chance to stop it. Check the result right away, before you announce it:
 
-1. Open the [releases page](https://github.com/XrxcGH/OpenNote/releases). The new release should list the three exes from the [release files](#release-files) table, a `.sig` file for each, `latest.json` or `beta.json`, `SHA256SUMS.txt`, and `OpenNote.sbom.cdx.json`. A beta should carry the Pre-release label.
+1. Open the [releases page](https://github.com/XrxcGH/OpenNote/releases). The new release should list the five files from the [release files](#release-files) table, a `.sig` file for each, `latest.json` or `beta.json`, `SHA256SUMS.txt`, and `OpenNote.sbom.cdx.json`. A beta should carry the Pre-release label.
 2. Open the manifest. Its `version` should match the tag. Its `platforms` should list `windows-x86_64`, `windows-i686`, and `windows-aarch64`.
 3. Download the release files into an empty folder with `gh release download v0.5.0`, or from the release page. If you have the repository, run the same check that the workflow ran, with the update key committed in `app/src-tauri/keys`. It prints nothing but a summary line when the release is fine:
 

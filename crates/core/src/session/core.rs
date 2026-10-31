@@ -36,6 +36,8 @@ use crate::time::{Clock, SystemClock};
 pub(crate) mod ctx;
 pub(crate) mod device;
 mod library_api;
+#[cfg(test)]
+mod lock_wait_tests;
 mod protect_api;
 mod repair_api;
 #[cfg(test)]
@@ -218,6 +220,8 @@ impl Core {
         let data = DataLayout::new(&config.data_dir);
         let unclean_exit = device::mark_running(config.fs.as_ref(), &data, config.clock.now());
         let library = Library::load(config.fs.as_ref(), &data);
+        let started = std::time::Instant::now();
+        let lock_deadline = started.checked_add(config.timings.lock_patience).unwrap_or(started);
         let ctx = Arc::new(CoreCtx {
             boot: config.fs.boot_id().unwrap_or_default(),
             writer: writer(&config.app_version),
@@ -242,6 +246,8 @@ impl Core {
             undo_bytes: AtomicUsize::new(0),
             serial: AtomicU64::new(0),
             retention: RwLock::new(Retention::default()),
+            lock_deadline,
+            tree_journals: Mutex::new(std::collections::HashSet::new()),
         });
         if parts.mode == WorkMode::Threads {
             ctx.saver.start(ctx.clock.clone());

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
+import { insertFigure } from '../subjects/ui/insertFigure';
 import { insertIntoPage } from './CalculatorTool';
 import styles from './chem.module.css';
 import extra from './extra.module.css';
@@ -19,11 +20,22 @@ export interface FieldSpec {
   initial?: string;
   initialUnit?: string;
   wide?: boolean;
+  /** A text field that takes several lines. */
+  multiline?: boolean;
   help?: string;
 }
 
+/** A graph the form can put on the page as a picture: its standalone SVG, alternative text, and summary. */
+export interface Diagram {
+  tool: string;
+  svg: string;
+  alt: string;
+  summary: string;
+}
+
 export type Outcome =
-  { ok: true; headline: string; steps: readonly string[]; figure?: ReactNode } | { ok: false; message: string };
+  | { ok: true; headline: string; steps: readonly string[]; figure?: ReactNode; diagram?: Diagram }
+  | { ok: false; message: string };
 
 export interface Values {
   text: Record<string, string>;
@@ -62,10 +74,25 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
   const list = typeof fields === 'function' ? fields(values) : fields;
   const outcome = solve(values);
 
+  // The result shows beside the buttons as well as being announced: after the window opens from the palette the caret
+  // is no longer in the page, and the first Insert would otherwise seem to do nothing.
+  const [note, setNote] = useState('');
+  const say = (done: boolean) => {
+    const words = t(done ? 'chem.inserted' : 'chem.noPage');
+    setNote(words);
+    announce(words);
+  };
+
   const insert = (withSteps: boolean) => {
     if (!outcome.ok) return;
     const text = withSteps ? [outcome.headline, ...outcome.steps.map((s) => `- ${s}`)].join('\n') : outcome.headline;
-    announce(t(insertIntoPage({ text }) ? 'chem.inserted' : 'chem.noPage'));
+    say(insertIntoPage({ text }));
+  };
+
+  const insertGraph = () => {
+    if (!outcome.ok || !outcome.diagram) return;
+    const { tool, svg, alt, summary } = outcome.diagram;
+    say(insertFigure({ kit: 'econ', tool, inputs: null, svg, alt, summary }));
   };
 
   return (
@@ -90,6 +117,16 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
                   </option>
                 ))}
               </select>
+            ) : field.multiline ? (
+              <textarea
+                id={id}
+                className={extra.input}
+                rows={5}
+                value={value}
+                spellCheck={false}
+                aria-describedby={field.help ? `${id}-help` : undefined}
+                onChange={(e) => set(e.target.value)}
+              />
             ) : (
               <input
                 id={id}
@@ -159,7 +196,13 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
         <Button variant="quiet" disabled={!outcome.ok} onClick={() => insert(true)}>
           {t('chem.insertSteps')}
         </Button>
+        {outcome.ok && outcome.diagram ? (
+          <Button variant="quiet" onClick={insertGraph}>
+            {t('chem.insertGraph')}
+          </Button>
+        ) : null}
       </div>
+      {note ? <p className={tools.note}>{note}</p> : null}
     </div>
   );
 }

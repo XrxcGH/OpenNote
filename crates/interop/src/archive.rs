@@ -68,6 +68,14 @@ pub struct ZipEntry {
     encrypted: bool,
 }
 
+impl ZipEntry {
+    /// The size of the entry as stored in the archive, before unpacking. With [`ZipEntry::size`] it gives how far
+    /// the entry expands, which readers of small packages cap.
+    pub fn packed_size(&self) -> u64 {
+        self.packed
+    }
+}
+
 /// An open archive.
 pub struct ZipArchive<R> {
     reader: R,

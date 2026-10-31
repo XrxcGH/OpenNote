@@ -7,6 +7,7 @@
 //! crash during recovery simply repeats it.
 
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 use crate::error::{CoreError, FsError, FsErrorKind};
 use crate::fail_point;
@@ -114,17 +115,35 @@ impl Read {
     }
 }
 
-/// Recovers one page from its journal generations.
+/// Recovers one page from its journal generations. A generation another process holds means
+/// [`RecoveryOutcome::OwnerAlive`].
 pub fn recover_page(ctx: &RecoverCtx, page: PageId, generations: &[PathBuf]) -> Result<RecoveryOutcome, CoreError> {
-    match recover(ctx, page, generations) {
+    recover_page_waiting(ctx, page, generations, Instant::now())
+}
+
+/// Like [`recover_page`], but a held generation is tried again until `deadline` (spec 20.3). Only a caller that
+/// holds the notebook's lock waits: then no live writer appends to the notebook's journals, and the holder is a
+/// previous run that is ending, which may let go of the notebook's lock before its journals'.
+pub fn recover_page_waiting(
+    ctx: &RecoverCtx,
+    page: PageId,
+    generations: &[PathBuf],
+    deadline: Instant,
+) -> Result<RecoveryOutcome, CoreError> {
+    match recover(ctx, page, generations, deadline) {
         Ok(outcome) | Err(Stop::Outcome(outcome)) => Ok(outcome),
         Err(Stop::Error(err)) => Err(err),
     }
 }
 
-fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Result<RecoveryOutcome, Stop> {
+fn recover(
+    ctx: &RecoverCtx<'_>,
+    page: PageId,
+    generations: &[PathBuf],
+    deadline: Instant,
+) -> Result<RecoveryOutcome, Stop> {
     let early = (ctx.locate)(page);
-    let Some((locks, read, loaded)) = lock_and_read(ctx, page, generations, early.as_deref())? else {
+    let Some((locks, read, loaded)) = lock_and_read(ctx, page, generations, (early.as_deref(), deadline))? else {
         return Ok(RecoveryOutcome::OwnerAlive);
     };
     let (located, loaded) = still_current(ctx, page, early, loaded);

@@ -36,6 +36,43 @@ commands.register(
   }),
 );
 
+/** Opens the Export dialog on what the person is looking at, with a format chosen when the command names one. */
+async function openExport(ctx: CommandContext, format?: ExportFormat): Promise<void> {
+  const start = exportStart(ctx);
+  if (!start) return;
+  const { resolveTarget } = await import('./exportTarget');
+  const target = await resolveTarget(ctx.notes, start);
+  if (!target) return;
+  const { platform, notes } = ctx;
+  // A PDF export prints each page in the hidden print window first (features/pdf/bundle.ts).
+  const drawPdf: DrawPdf = async (job, request, signal, onPage) => {
+    const [{ drawBundle, collectSource }, { shownMounted }] = await Promise.all([
+      import('../pages'),
+      import('../page'),
+    ]);
+    const shown = async (pageId: string) => (shownMounted.get()?.page.id === pageId ? collectSource(notes) : null);
+    const { pages, exports, interop } = platform;
+    return drawBundle({
+      pages,
+      exports,
+      interop,
+      job,
+      notebook: request.title,
+      sections: request.sections,
+      shown,
+      signal,
+      onPage,
+    });
+  };
+  showOverlay('interop-export', LazyExport, {
+    interop: platform.interop,
+    notes,
+    target,
+    ...(platform.interop.more ? { drawPdf } : {}),
+    ...(format ? { format } : {}),
+  });
+}
+
 commands.register(
   defineCommand({
     id: 'interop.export',
@@ -44,41 +81,21 @@ commands.register(
     category: 'notebooks',
     flag: 'interop.export',
     when: (ctx) => exportStart(ctx) !== null,
-    async run(ctx, args?: { format?: ExportFormat }) {
-      const start = exportStart(ctx);
-      if (!start) return;
-      const { resolveTarget } = await import('./exportTarget');
-      const target = await resolveTarget(ctx.notes, start);
-      if (!target) return;
-      const { platform, notes } = ctx;
-      // A PDF export prints each page in the hidden print window first (features/pdf/bundle.ts).
-      const drawPdf: DrawPdf = async (job, request, signal, onPage) => {
-        const [{ drawBundle, collectSource }, { shownMounted }] = await Promise.all([
-          import('../pages'),
-          import('../page'),
-        ]);
-        const shown = async (pageId: string) => (shownMounted.get()?.page.id === pageId ? collectSource(notes) : null);
-        const { pages, exports, interop } = platform;
-        return drawBundle({
-          pages,
-          exports,
-          interop,
-          job,
-          notebook: request.title,
-          sections: request.sections,
-          shown,
-          signal,
-          onPage,
-        });
-      };
-      showOverlay('interop-export', LazyExport, {
-        interop: platform.interop,
-        notes,
-        target,
-        ...(platform.interop.more ? { drawPdf } : {}),
-        ...(args?.format ? { format: args.format } : {}),
-      });
-    },
+    run: (ctx, args?: { format?: ExportFormat }) => openExport(ctx, args?.format),
+  }),
+);
+
+// Export as LaTeX (ADR 0054): the Export dialog with the LaTeX choice selected, from the palette and the page's
+// Export menu.
+commands.register(
+  defineCommand({
+    id: 'interop.exportLatex',
+    title: 'interopLatex.command',
+    keywords: 'interopLatex.keywords',
+    category: 'notebooks',
+    flag: 'interop.latexExport',
+    when: (ctx) => exportStart(ctx) !== null,
+    run: (ctx) => openExport(ctx, 'latex'),
   }),
 );
 
@@ -195,6 +212,14 @@ queueMicrotask(() => {
     group: 'share',
     order: 90,
     flag: 'interop.share',
+  });
+  contextMenus.register({
+    id: 'pages.export.latex',
+    menu: 'pages.export',
+    command: 'interop.exportLatex',
+    group: 'share',
+    order: 89,
+    flag: 'interop.latexExport',
   });
   commandBar.register({
     id: 'home.interop.openFile',

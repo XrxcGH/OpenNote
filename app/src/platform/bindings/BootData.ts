@@ -2,6 +2,7 @@
 import type { Architecture } from "./Architecture";
 import type { Channel } from "./Channel";
 import type { DeviceState } from "./DeviceState";
+import type { HostSystem } from "./HostSystem";
 import type { InstallStatus } from "./InstallStatus";
 import type { Notice } from "./Notice";
 import type { OsAppearance } from "./OsAppearance";
@@ -13,6 +14,10 @@ import type { UpdaterStatus } from "./UpdaterStatus";
  * The boot payload, matching the interface's `BootData`.
  */
 export type BootData = { bootVersion: 1, version: string, channel: Channel, architecture: Architecture, 
+/**
+ * The operating system, so the interface can use its conventions and say what it lacks (ADR 0055).
+ */
+system: HostSystem, 
 /**
  * `settings.json` didn't exist.
  */

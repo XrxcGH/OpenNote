@@ -72,11 +72,18 @@ fn opening_twice_shares_the_notebook_and_another_process_gets_it_read_only() {
     let first = kit.notebook("Biology").unwrap();
     let again = kit.core.open_notebook(first.path()).unwrap();
     assert!(std::sync::Arc::ptr_eq(&first.inner, &again.inner));
-    let other = kit.beside();
+    let other = kit.beside_with(crate::limits::Timings {
+        lock_patience: std::time::Duration::from_millis(50),
+        ..crate::limits::Timings::default()
+    });
     let locked = other.core.open_notebook(first.path()).unwrap();
     assert_eq!(
         locked.tree().access,
-        crate::model::Access::ReadOnly(ReadOnlyReason::LockedElsewhere)
+        crate::model::Access::ReadOnly(ReadOnlyReason::StillClosing)
+    );
+    assert_eq!(
+        locked.make_separate().err(),
+        Some(CoreError::ReadOnly(ReadOnlyReason::StillClosing))
     );
     assert!(locked.create_section("No", top()).is_err());
     first.close().unwrap();

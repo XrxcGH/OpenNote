@@ -105,7 +105,7 @@ function Windows() {
   // A hidden page region (the compact layout showing a pane) has no box: the windows then go by the window alone.
   const region = document.querySelector('main')?.getBoundingClientRect();
   const main = region && region.width > 0 ? region : undefined;
-  const pageLeft = main?.left ?? 0;
+  const pageLeft = Math.max(0, main?.left ?? 0);
   // Floating windows keep clear of the page's scroll bar and of anything at the page region's right edge, such as a
   // sheet. The bar is where the page's scroller has it, which a pane beside the page moves in from the edge.
   let track = (main?.right ?? viewport) + dockInsetOf('tools') - scrollbarSize();

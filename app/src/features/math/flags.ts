@@ -14,7 +14,8 @@ export type MathToolsFlagId =
   | 'math.vectors'
   | 'math.geometry3d'
   | 'math.solids'
-  | 'math.projectile';
+  | 'math.projectile'
+  | 'math.checkWork';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const beta = { dev: true, nightly: true, beta: true, stable: false };
@@ -42,4 +43,8 @@ export const MATH_TOOLS_FLAGS: readonly FlagDef[] = [
   flag('math.geometry3d', 'Lines and planes in 3D: distances, intersections, and angles, with a plot.'),
   flag('math.solids', 'Solids of revolution: disk, washer, and shell volumes with steps and a 3D view.'),
   flag('math.projectile', 'The projectile simulator: speed, angle, height, gravity, and drag, with a trajectory.'),
+  flag(
+    'math.checkWork',
+    'Check my work: marks each line of worked math that follows, needs a look, or could not be checked.',
+  ),
 ];

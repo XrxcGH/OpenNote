@@ -16,6 +16,7 @@ import {
   lockIfIdle,
   lockLeft,
   protectSection,
+  SealedVersionsNotice,
   startSectionLocks,
   unlockSection,
   unlockedSections,
@@ -131,6 +132,48 @@ describe('protected sections', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Use Windows Hello' }));
     expect(await done).toBe(true);
     expect(calls.find(([name]) => name === 'protect.unlock')?.[1]).toEqual({ id: SECTION, hello: true });
+  });
+});
+
+describe('a protected section changed on two devices', () => {
+  it('says so, switches to the other version, and removes it only after asking', async () => {
+    await renderApp();
+    const section = seed('locked');
+    let kept = ['.sealed-conflict-1a2b3c4d'];
+    const calls = shell((name, args) => {
+      if (name === 'protect.conflicts') return { versions: kept };
+      if (name === 'protect.switchVersion') kept = ['.sealed-conflict-99aa'];
+      if (name === 'protect.removeVersion' && args.name === kept[0]) kept = [];
+      return ok(name);
+    });
+    render(<SealedVersionsNotice section={section} />);
+    expect(await screen.findByText('This protected section was changed on two devices.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Unlock section…' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Switch to the other version' }));
+    await expect
+      .poll(() => calls.filter(([name]) => name === 'protect.switchVersion').map(([, args]) => args))
+      .toEqual([{ id: SECTION, name: '.sealed-conflict-1a2b3c4d' }]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the other version' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Remove the other version of “Diary”?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(calls.some(([name]) => name === 'protect.removeVersion')).toBe(false);
+    await userEvent.click(screen.getByRole('button', { name: 'Remove the other version' }));
+    const again = await screen.findByRole('dialog', { name: 'Remove the other version of “Diary”?' });
+    await userEvent.click(within(again).getByRole('button', { name: 'Remove the other version' }));
+    await expect.poll(() => screen.queryByText('This protected section was changed on two devices.')).toBeNull();
+    expect(calls.filter(([name]) => name === 'protect.removeVersion').map(([, args]) => args)).toEqual([
+      { id: SECTION, name: '.sealed-conflict-99aa' },
+    ]);
+  });
+
+  it('shows nothing when sync kept no other version', async () => {
+    await renderApp();
+    const section = seed('unlocked');
+    const calls = shell((name) => (name === 'protect.conflicts' ? { versions: [] } : ok(name)));
+    const { container } = render(<SealedVersionsNotice section={section} />);
+    await expect.poll(() => calls.some(([name]) => name === 'protect.conflicts')).toBe(true);
+    expect(container.textContent).toBe('');
   });
 });
 
