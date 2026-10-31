@@ -57,7 +57,16 @@ describe('interference, diffraction, and polarization', () => {
     expect(orders[0].theta).toBeCloseTo(Math.asin(0.3), 14);
     expect(orders.map((o) => o.m)).toEqual([1, 2, 3]);
     const out = runMode(WAVE_OPTICS, 'grating', { N: '6000' });
-    expect(value(out, `${R}resolvable`)).toBeCloseTo(500e-9 / 6000, 18);
+    expect(value(out, `${R}resolvable`, 'Δλ₁')).toBeCloseTo(500e-9 / 6000, 18);
+  });
+
+  it('grating resolving power grows with the order: 600 lines/mm, N 5000, m 2 gives R = 10000', () => {
+    const out = runMode(WAVE_OPTICS, 'grating', { N: '5000' });
+    expect(value(out, `${R}resolving`, 'R₁')).toBe(5000);
+    expect(value(out, `${R}resolving`, 'R₂')).toBe(10000);
+    expect(value(out, `${R}resolving`, 'R₃')).toBe(15000);
+    // 500 nm / 10000 = 0.05 nm.
+    expect(value(out, `${R}resolvable`, 'Δλ₂')).toBeCloseTo(0.05e-9, 18);
   });
 
   it('soap film n 1.33 in air at 550 nm: thinnest bright reflection 103.38 nm', () => {

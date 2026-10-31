@@ -211,18 +211,25 @@ export const gratingMode: ModeDef = {
       { key: 'kitPhysics.waveoptics.r.maxOrder', symbol: 'm_max', value: orders.length },
     ];
     if (N !== null) {
-      rows.push(
-        { key: 'kitPhysics.waveoptics.r.resolving', symbol: 'R', value: N },
-        {
-          key: 'kitPhysics.waveoptics.r.resolvable',
-          symbol: 'Δλ',
-          value: lambda / N,
-          dim: 'length',
-          unit: 'nm',
-          usUnit: 'nm',
-        },
-      );
-      steps.push({ key: 'kitPhysics.waveoptics.s.resolving', vars: { R: fmt(N), dl: nm(lambda / N) } });
+      // R = m N grows with the order, so each order the grating shows gets its own resolving power.
+      for (const o of orders) {
+        rows.push(
+          { key: 'kitPhysics.waveoptics.r.resolving', symbol: `R${sub(o.m)}`, value: o.m * N },
+          {
+            key: 'kitPhysics.waveoptics.r.resolvable',
+            symbol: `Δλ${sub(o.m)}`,
+            value: lambda / (o.m * N),
+            dim: 'length',
+            unit: 'nm',
+            usUnit: 'nm',
+          },
+        );
+      }
+      const top = orders[orders.length - 1].m;
+      steps.push({
+        key: 'kitPhysics.waveoptics.s.resolving',
+        vars: { R: fmt(N), dl: nm(lambda / N), m: String(top), Rm: fmt(top * N), dlm: nm(lambda / (top * N)) },
+      });
     }
     return {
       ok: true,
