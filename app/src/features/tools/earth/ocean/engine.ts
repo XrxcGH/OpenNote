@@ -2,3 +2,4 @@
 export * from './rotating';
 export * from './seawater';
 export * from './waves';
+export * from './teos10';
