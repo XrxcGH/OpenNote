@@ -268,7 +268,7 @@ export const doseMode: ModeDef = {
       rows,
       latex: '\\dot D_2=\\dot D_1\\left(\\frac{r_1}{r_2}\\right)^2e^{-\\mu x}',
       steps,
-      notes: [{ key: `${K}.notes.dose` }],
+      notes: [{ key: `${K}.notes.dose` }, { key: `${K}.notes.coursework` }],
     };
   },
 };

@@ -216,6 +216,8 @@ describe('nuclear science: shielding and reactors', () => {
     const want = (2 / 9) * Math.exp(-1);
     expect(value(out, `${R}rate2`)).toBeCloseTo(want / 3.6e6, 16); // mSv/h to Sv/s
     expect(value(out, `${R}dose`)).toBeCloseTo(want * 3, 12);
+    // A dose to a person: the outcome says it is for coursework only.
+    expect(out.ok && out.notes?.map((note) => note.key)).toContain('kitPhysics.nuclear.notes.coursework');
   });
 
   it('reads a count before a particle: Li-7 + p -> 2 He-4 releases 17.346 MeV', () => {
