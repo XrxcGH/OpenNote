@@ -12,7 +12,7 @@ export function plotSvg(props: PlotProps): string {
   const { summary, xLabel, yLabel, curves, areas = [], marks = [] } = props;
   const { xt, yt, sx, sy, path } = layoutPlot(props);
   const text = (x: number, y: number, label: string, fill: string, anchor = 'start') =>
-    el('text', { x, y, fill, 'font-size': 10, 'font-family': 'sans-serif', 'text-anchor': anchor }, escape(label));
+    el('text', { x, y, fill, 'font-size': 10, 'text-anchor': anchor }, escape(label));
   const escape = (s: string) => s.replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[ch]!);
   const height = H + (areas.length ? 8 + areas.length * 13 : 0);
   const parts: string[] = [el('rect', { width: W, height, fill: c.surface.page })];
@@ -58,11 +58,7 @@ export function plotSvg(props: PlotProps): string {
   parts.push(text(10, PAD.top + 8, yLabel, c.text.secondary));
   // The shaded areas are named under the graph, as the on-screen caption does.
   const legend = areas.map((a, i) =>
-    el(
-      'text',
-      { x: 8, y: H + 12 + i * 13, fill: c.text.secondary, 'font-size': 10, 'font-family': 'sans-serif' },
-      escape(a.label),
-    ),
+    el('text', { x: 8, y: H + 12 + i * 13, fill: c.text.secondary, 'font-size': 10 }, escape(a.label)),
   );
   return el(
     'svg',
@@ -72,6 +68,7 @@ export function plotSvg(props: PlotProps): string {
       width: W,
       height,
       role: 'img',
+      'font-family': tokens.font.ui,
       'aria-label': summary,
     },
     [...parts, ...legend].join(''),
