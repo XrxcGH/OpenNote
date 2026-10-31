@@ -452,7 +452,11 @@ export function fitVariogram(model: VariogramModel, lags: readonly Lag[]): Fitte
       }),
     );
   };
-  const best = nelderMead(loss, [open(0.1 * maxG, bounds[0]), open(0.9 * maxG, bounds[1]), open(0.6 * maxH, bounds[2])]);
+  const best = nelderMead(loss, [
+    open(0.1 * maxG, bounds[0]),
+    open(0.9 * maxG, bounds[1]),
+    open(0.6 * maxH, bounds[2]),
+  ]);
   const p = unpack(best.x);
   return { ...p, noSill: p.range >= 0.98 * bounds[2] };
 }

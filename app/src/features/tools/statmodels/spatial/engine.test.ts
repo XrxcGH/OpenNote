@@ -192,7 +192,11 @@ describe('interpolation', () => {
   it('fits a stationary field inside the bounds without the no-sill flag', () => {
     // A spherical field sampled exactly: gamma(h) = 1 + 4 * sph(h / 3), so the fit recovers it.
     const truth = { nugget: 1, sill: 4, range: 3 };
-    const lags = [0.5, 1, 1.5, 2, 2.5, 3.5, 4.5].map((h) => ({ h, pairs: 50, gamma: variogram('spherical', truth, h) }));
+    const lags = [0.5, 1, 1.5, 2, 2.5, 3.5, 4.5].map((h) => ({
+      h,
+      pairs: 50,
+      gamma: variogram('spherical', truth, h),
+    }));
     const fit = fitVariogram('spherical', lags);
     close(fit.nugget, 1, 1e-3);
     close(fit.sill, 4, 1e-3);
