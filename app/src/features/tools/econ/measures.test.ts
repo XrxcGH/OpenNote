@@ -191,4 +191,12 @@ describe('measure forms', () => {
     expect(headline(run('real', { from: '1900' }))).toMatch(/1913/);
     expect(headline(run('inequality', { values: '' }))).toMatch(/incomes/i);
   });
+  it('cuts the Palma shares inside a person when n is not a multiple of 10', () => {
+    // 1..25 sum to 325. Poorest 40% = 10 people = 55. Poorest 90% = 22 people (253) + half of the 23rd (11.5).
+    const r = inequality(
+      Array.from({ length: 25 }, (_, i) => i + 1),
+      0.5,
+    )!;
+    expect(r.palma).toBeCloseTo(60.5 / 55, 12);
+  });
 });

@@ -93,8 +93,15 @@ export function inequality(values: readonly number[], epsilon: number): Inequali
     epsilon === 1
       ? 1 - Math.exp(sum(values.map(Math.log)) / n) / mean
       : 1 - (sum(values.map((x) => (x / mean) ** (1 - epsilon))) / n) ** (1 / (1 - epsilon));
-  const top = sum(sorted.slice(Math.ceil(n * 0.9)));
-  const bottom = sum(sorted.slice(0, Math.floor(n * 0.4)));
+  // Cumulative income of the poorest share p of people, interpolating inside the person the cut falls in, so the
+  // 40% and 90% cuts are right when n is not a multiple of 10 (the same piecewise-linear Lorenz curve).
+  const below = (p: number) => {
+    const k = n * p;
+    const whole = Math.min(n, Math.floor(k + 1e-9));
+    return sum(sorted.slice(0, whole)) + (whole < n ? (k - whole) * sorted[whole] : 0);
+  };
+  const top = sum(sorted) - below(0.9);
+  const bottom = below(0.4);
   return {
     theilT: sum(values.map((x) => (x / mean) * Math.log(x / mean))) / n,
     theilL: sum(values.map((x) => Math.log(mean / x))) / n,
