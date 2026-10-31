@@ -322,19 +322,27 @@ export const classOf = (value: number, breaks: readonly number[]) => {
   return i < 0 ? breaks.length - 1 : i;
 };
 
-/** The area of a ring on a sphere of this radius, from its spherical excess, in square meters. */
+/**
+ * The area of a ring on a sphere of this radius, from its spherical excess, in square meters. The trapezoid sum
+ * measures the area between the ring and the south pole. When the ring goes once around the Earth it encloses a pole,
+ * and either side could be meant, so the smaller of the two caps is returned.
+ */
 export function sphericalArea(ring: readonly Position[], radius = 6371007.2): number {
   if (ring.length < 3) throw new Error('ring');
   let sum = 0;
+  let turn = 0;
   for (let i = 0; i < ring.length; i++) {
     const [l1, p1] = ring[i];
     const [l2, p2] = ring[(i + 1) % ring.length];
     let dl = (l2 - l1) * RAD;
     if (dl > Math.PI) dl -= 2 * Math.PI;
     if (dl < -Math.PI) dl += 2 * Math.PI;
+    turn += dl;
     sum += dl * (2 + Math.sin(p1 * RAD) + Math.sin(p2 * RAD));
   }
-  return Math.abs((sum * radius * radius) / 2);
+  const southSide = Math.abs(sum / 2);
+  const area = Math.abs(turn) > Math.PI ? Math.min(southSide, 4 * Math.PI - southSide) : southSide;
+  return area * radius * radius;
 }
 
 /** A ring of points this many meters from a center along geodesics, for a Tissot indicatrix. */

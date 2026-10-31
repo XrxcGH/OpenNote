@@ -75,6 +75,17 @@ describe('measures and classes', () => {
     const r = 6371007.2;
     expect(sphericalArea(ring, r)).toBeCloseTo(2 * Math.PI * r * r, -3);
   });
+
+  it('give a cap around either pole its own area, 2π(1 − sin φ) R²', () => {
+    const cap = (lat: number): [number, number][] => [0, 60, 120, 180, 240, 300].map((lon) => [lon, lat]);
+    // A cap is bounded by a parallel, but the ring's edges are great circles; with 360 corners they nearly match.
+    const fine = (lat: number): [number, number][] => Array.from({ length: 360 }, (_, i) => [i, lat]);
+    const exact = 2 * Math.PI * (1 - Math.sin((60 * Math.PI) / 180));
+    expect(sphericalArea(fine(60), 1)).toBeCloseTo(exact, 4);
+    expect(sphericalArea(fine(-60), 1)).toBeCloseTo(exact, 4);
+    expect(sphericalArea([...fine(60)].reverse(), 1)).toBeCloseTo(exact, 4);
+    expect(sphericalArea(cap(60), 1)).toBeLessThan(1);
+  });
 });
 
 describe('lines', () => {

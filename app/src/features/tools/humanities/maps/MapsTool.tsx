@@ -3,7 +3,7 @@
 // measures and a single point worked through a projection's formula.
 import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
-import { haversine, inverse } from '../geo/ellipsoid';
+import { GeoError, haversine, inverse } from '../geo/ellipsoid';
 import { takeInputs } from '../open';
 import { attempt, errorText, fixed, num } from '../ui/attempt';
 import {
@@ -293,7 +293,14 @@ function MeasurePanel() {
   const distance = attempt(() => {
     const [a1, o1] = pair(from);
     const [a2, o2] = pair(to);
-    return { g: inverse(a1, o1, a2, o2), h: haversine(a1, o1, a2, o2) };
+    // Vincenty's iteration does not converge for nearly antipodal points; give the spherical answer there.
+    let g: ReturnType<typeof inverse> | null = null;
+    try {
+      g = inverse(a1, o1, a2, o2);
+    } catch (error) {
+      if (!(error instanceof GeoError && error.code === 'antipodal')) throw error;
+    }
+    return { g, h: haversine(a1, o1, a2, o2) };
   });
   const area = attempt(() => {
     if (ring.trim() === '') return null;
@@ -317,14 +324,25 @@ function MeasurePanel() {
         <>
           <Results
             label={t('kitHumanities.common.results')}
-            rows={[
-              [t(`${k}.geodesic`), `${fixed(distance.value.g.distance / 1000, 3)} km`],
-              [t(`${k}.azimuth`), `${fixed(distance.value.g.azimuth1, 4)}°`],
-              [t(`${k}.haversine`), `${fixed(distance.value.h / 1000, 2)} km`],
-            ]}
+            rows={
+              distance.value.g
+                ? [
+                    [t(`${k}.geodesic`), `${fixed(distance.value.g.distance / 1000, 3)} km`],
+                    [t(`${k}.azimuth`), `${fixed(distance.value.g.azimuth1, 4)}°`],
+                    [t(`${k}.haversine`), `${fixed(distance.value.h / 1000, 2)} km`],
+                  ]
+                : [[t(`${k}.haversine`), `${fixed(distance.value.h / 1000, 2)} km`]]
+            }
           />
+          {distance.value.g ? null : <Note>{t(`${k}.antipodalNote`)}</Note>}
           <Steps steps={[t(`${k}.geodesicStep`), t(`${k}.haversineStep`)]} />
-          <InsertBar payloads={{ answer: `${fixed(distance.value.g.distance / 1000, 3)} km` }} />
+          <InsertBar
+            payloads={{
+              answer: distance.value.g
+                ? `${fixed(distance.value.g.distance / 1000, 3)} km`
+                : `${fixed(distance.value.h / 1000, 2)} km`,
+            }}
+          />
         </>
       ) : (
         fail(distance.code)

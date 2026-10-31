@@ -18,4 +18,12 @@ describe('map maker', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Measure' }));
     expect(screen.getByText('5554.909 km')).toBeTruthy();
   });
+
+  it('falls back to the sphere for nearly antipodal points', () => {
+    renderUi(<MapsTool />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Measure' }));
+    fireEvent.change(screen.getByRole('textbox', { name: /^From/ }), { target: { value: '0, 0' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /^To/ }), { target: { value: '0.5, 179.7' } });
+    expect(screen.getByText(/only the distance on the sphere is shown/)).toBeTruthy();
+  });
 });
