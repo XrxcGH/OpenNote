@@ -1,6 +1,7 @@
 // The Bayesian updating tool of the statistics kit. Part of the kitStatInfer namespace.
 export const bayes = {
   fields: {
+    notice: 'For coursework only, not for clinical use; this tool gives no diagnostic or treatment advice.',
     mode: 'Model',
     modes: {
       beta: 'Beta-binomial (a proportion)',

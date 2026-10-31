@@ -5,7 +5,7 @@ import { MatrixField } from '../../subjects/ui/fields';
 import { readMatrix, type MatrixInputValue } from '../../subjects/ui/input';
 import { parseGrid, readField, readProbability, toNumber } from '../num/data';
 import { check } from '../report';
-import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '../ui/parts';
+import { Choice, DataBox, Field, Note, Panel, Row, say, useInputs, useReport } from '../ui/parts';
 import { Results } from '../ui/Results';
 import {
   cohortReport,
@@ -243,6 +243,7 @@ export default function EpiTool(props: KitToolProps) {
   const perUsed = s.mode === 'rates' || s.mode === 'direct';
   return (
     <Panel>
+      <Note>{k('notice')}</Note>
       <Row>
         <Choice
           label={k('mode')}

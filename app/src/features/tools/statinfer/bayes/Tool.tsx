@@ -5,7 +5,7 @@ import { parseSeed } from '../../subjects/num/rng';
 import { SeedField } from '../../subjects/ui/fields';
 import { parseGrid, parseNumbers, readField, readProbability, toNumber } from '../num/data';
 import { check } from '../report';
-import { Choice, DataBox, Field, Panel, Row, say, useInputs, useReport } from '../ui/parts';
+import { Choice, DataBox, Field, Note, Panel, Row, say, useInputs, useReport } from '../ui/parts';
 import { Results } from '../ui/Results';
 import {
   betaReport,
@@ -195,6 +195,7 @@ export default function BayesTool(props: KitToolProps) {
       )}
       {s.mode === 'metropolis' && <SeedField value={s.seed} onChange={(seed) => set({ seed })} />}
       <Results report={report} problem={problem} title={say('kitStatInfer.open.bayes')} tool="bayes" inputs={s} />
+      {s.mode === 'table' && <Note>{k('notice')}</Note>}
     </Panel>
   );
 }

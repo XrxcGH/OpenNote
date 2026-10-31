@@ -64,6 +64,19 @@ describe('the statistics kit window', () => {
     expect(screen.getAllByRole('tab').at(-1)?.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('says the epidemiology tool is for coursework, not clinical use', async () => {
+    selectKitTab(STAT_KIT_ID, 'epi');
+    renderUi(<StatInferTool />);
+    const panel = await screen.findByRole('tabpanel');
+    expect(
+      await within(panel).findByText(
+        'For coursework only, not for clinical use; this tool gives no diagnostic or treatment advice.',
+        undefined,
+        { timeout: 30_000 },
+      ),
+    ).toBeTruthy();
+  }, 60_000);
+
   it('has a palette command for every tool', () => {
     expect(STAT_COMMANDS).toEqual(STAT_TOOLS.map(([tool, icon]) => [tool, icon]));
   });

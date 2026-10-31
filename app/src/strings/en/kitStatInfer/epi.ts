@@ -1,6 +1,7 @@
 // The epidemiology and diagnostic-test tool of the statistics kit. Part of the kitStatInfer namespace.
 export const epi = {
   fields: {
+    notice: 'For coursework only, not for clinical use; this tool gives no diagnostic or treatment advice.',
     mode: 'What to work out',
     modes: {
       cohort: 'Risk and odds ratios (2 × 2)',
