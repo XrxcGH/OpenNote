@@ -1,7 +1,7 @@
 // Insert for an earth kit result: the answer line goes in with one press, and a menu offers the equation, the
 // result table, the answer with its worked steps, and each picture as an SVG image. What happened is announced,
 // and a miss (no caret in a page) also shows as a note under the buttons so a sighted user sees why nothing changed.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
@@ -62,11 +62,11 @@ function menuItems(outcome: Outcome, say: Say): MenuItemSpec[] {
 }
 
 export function InsertControls({ outcome }: { outcome: Outcome | null }) {
-  const [missed, setMissed] = useState(false);
-  // A new result clears the old note: it was about the last press.
-  useEffect(() => setMissed(false), [outcome]);
+  // The note belongs to the result it was pressed for, so a new result hides it without an effect.
+  const [missedFor, setMissedFor] = useState<Outcome | null>(null);
+  const missed = outcome !== null && missedFor === outcome;
   const say: Say = (handled) => {
-    setMissed(!handled);
+    setMissedFor(handled ? null : outcome);
     announce(t(handled ? 'kitEarth.inserted' : 'kitEarth.noPage'));
   };
   return (
