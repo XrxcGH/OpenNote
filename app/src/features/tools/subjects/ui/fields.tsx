@@ -9,6 +9,7 @@ import { announce } from '../../../../ui';
 import { SUBJECT_TABLES_EVENT } from '../../flags';
 import type { DataSet } from '../data/model';
 import { MAX_ROWS } from '../data/model';
+import type { DecimalChoice } from '../data/parse';
 import type { PageBlock, PageTable } from '../data/page';
 import { tablesOf } from '../data/page';
 import { newSeed, parseSeed } from '../num/rng';
@@ -54,6 +55,39 @@ export function DataSummary({ data }: { data: DataSet }) {
   );
 }
 
+const DECIMAL_CHOICES: readonly DecimalChoice[] = ['auto', 'point', 'comma'];
+
+/** The decimal-mark choice, and a line naming the mark a guess used when a column such as 1,234 reads both ways. */
+function DecimalPicker({ value, onChange, data }: Omit<DataFieldProps, 'label'>) {
+  return (
+    <>
+      <div className={styles.row}>
+        <label className={kitStyles.field}>
+          <span>{sayS('data.decimal')}</span>
+          <select
+            className={kitStyles.input}
+            value={value.decimal ?? 'auto'}
+            onChange={(event) => onChange({ ...value, decimal: event.target.value as DecimalChoice })}
+          >
+            {DECIMAL_CHOICES.map((choice) => (
+              <option key={choice} value={choice}>
+                {sayS(`data.decimalChoice.${choice}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {data.decimalGuess && (
+        <p className={kitStyles.hint} role="status">
+          {sayS(data.decimalGuess.decimal === '.' ? 'data.decimalGuessPoint' : 'data.decimalGuessComma', {
+            column: data.decimalGuess.column,
+          })}
+        </p>
+      )}
+    </>
+  );
+}
+
 export interface DataFieldProps {
   label: string;
   value: DataInput;
@@ -80,7 +114,7 @@ export function DataField({ label, value, onChange, data }: DataFieldProps) {
   const useTable = () => {
     const table = tables?.[chosen];
     if (!table) return;
-    onChange({ text: tableText(table), table: table.number });
+    onChange({ ...value, text: tableText(table), table: table.number });
     announce(sayS('data.tableUsed', { number: table.number }));
   };
   const readFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +122,7 @@ export function DataField({ label, value, onChange, data }: DataFieldProps) {
     event.target.value = '';
     if (!picked) return;
     try {
-      onChange({ text: await picked.text(), table: null });
+      onChange({ ...value, text: await picked.text(), table: null });
       announce(sayS('data.fileRead', { name: picked.name }));
     } catch {
       setNote(sayS('data.fileFailed'));
@@ -108,11 +142,12 @@ export function DataField({ label, value, onChange, data }: DataFieldProps) {
         autoComplete="off"
         value={value.text}
         aria-describedby={`${id}-hint`}
-        onChange={(event) => onChange({ text: event.target.value, table: null })}
+        onChange={(event) => onChange({ ...value, text: event.target.value, table: null })}
       />
       <span id={`${id}-hint`} className={kitStyles.hint}>
         {sayS('data.textHint')}
       </span>
+      <DecimalPicker value={value} onChange={onChange} data={data} />
       <div className={styles.row}>
         <Button onClick={() => file.current?.click()}>{sayS('data.file')}</Button>
         <input
