@@ -41,6 +41,14 @@ export const discrete = {
         'Arrangements and selections with and without repetition, Stirling, Bell, and Catalan numbers, ' +
         'partitions, derangements, and multinomials, all exact.',
     },
+    genfun: {
+      name: 'Generating functions',
+      intro: 'The first coefficients of a generating function typed in x, such as 1/((1 − x)(1 − x^5)), exactly.',
+    },
+    inclusion: {
+      name: 'Inclusion-exclusion',
+      intro: 'The size of a union from the sizes of the sets and of every intersection, and what lies outside it.',
+    },
     recurrence: {
       name: 'Linear recurrences',
       intro:
@@ -84,6 +92,10 @@ export const discrete = {
     from: 'From base',
     to: 'To base',
     parts: 'Multinomial parts (optional)',
+    gf: 'Generating function in x',
+    terms: 'Coefficients',
+    sizes: 'Sets and intersections, with sizes',
+    universe: 'Universe size (optional)',
     k: 'k',
     coefs: 'Coefficients c1, c2, …',
     start: 'Starting values a0, a1, …',
@@ -116,6 +128,8 @@ export const discrete = {
   help: {
     a: 'Also gives the order of a mod n and the Jacobi symbol (a / n).',
     parts: 'Sizes such as 2, 1, 1 for the multinomial coefficient.',
+    gf: 'Use + − * / ^ and brackets; a product may be written (1 − x)(1 − x^2). Division is of power series.',
+    sizes: 'One line each, such as A 12 for a set and A B 5 for the intersection of A and B; give every intersection.',
     coefs: 'For a_n = a_(n−1) + 2 a_(n−2), type 1, 2.',
     k: 'The growth n^k of the work outside the recursive calls.',
     alphabet: 'The cipher letter for A, then B, and so on: 26 different letters.',
@@ -157,6 +171,9 @@ export const discrete = {
     },
   },
   steps: {
+    gfSeries: 'Multiply and divide as power series cut off at the last coefficient asked for.',
+    ieAdd: 'Add the sizes of the intersections of {k} sets: {sum}.',
+    ieSubtract: 'Subtract the sizes of the intersections of {k} sets: {sum}.',
     euclid: 'Divide the last 2 remainders: r = r_prev − q r_last, and carry s and t the same way.',
     euclidBack: 'The last nonzero remainder is the gcd, and its s and t give Bézout’s identity.',
     squareMultiply:
@@ -200,6 +217,17 @@ export const discrete = {
     fieldReduce: 'Multiply as polynomials with coefficients mod p, then take the remainder on division by {f}.',
   },
   errors: {
+    gfEmpty: 'Type a generating function in x.',
+    gfSyntax: 'The generating function cannot be read at character {at}.',
+    gfPower: 'A power at character {at} needs a whole number up to 1000.',
+    gfDivide: 'A divisor needs a nonzero constant term to divide as a power series.',
+    gfTerms: 'Ask for at least 1 coefficient.',
+    ieLine: 'Line {line} needs set names and then a whole-number size.',
+    ieTwice: 'The size of {sets} is given twice.',
+    ieEmpty: 'Type at least 1 set and its size.',
+    ieMany: 'The tool takes up to {max} sets.',
+    ieMissing: 'Give the size of {sets} too.',
+    ieInconsistent: 'These sizes cannot all hold: the union comes out below 0 or above the universe.',
     list: 'Type {field} as whole numbers separated by commas.',
     whole: '{field} needs a whole number.',
     wholeField: '{field} needs a whole number.',
@@ -268,6 +296,8 @@ export const discrete = {
     ringN: 'n must be from 2 to 10000.',
   },
   table: {
+    coefficients: 'Coefficients',
+    coefficient: 'Coefficient of x^n',
     euclid: 'Extended Euclidean algorithm: each r = s a + t b',
     pow: 'Square and multiply',
     bit: 'Bit',
@@ -368,6 +398,9 @@ export const discrete = {
   baseAnswer: '{value} in base {from} is {out} in base {to}',
   cfAnswer: '{p}/{q} = {terms}',
   countAnswer: 'From {n}, {k} can be arranged {perm} ways and chosen {choose} ways',
+  gfAnswer: 'Coefficients from x^0: {list}',
+  ieAnswer: '|{sets}| = {union}',
+  ieAnswerNeither: '|{sets}| = {union}, and {neither} lie in none of them',
   recAnswer: 'a_n = {form}',
   recTerms: 'a_{n} = {value}',
   masterCase1: 'Case 1: the leaves dominate, T(n) = Θ(n^{crit})',

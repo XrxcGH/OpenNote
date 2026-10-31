@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { fracText } from '../core/frac';
 import { KitError } from '../core/util';
+import { expandSeries, inclusionExclusion } from './series';
 import {
   bell,
   catalan,
@@ -330,5 +331,32 @@ describe('rings and fields', () => {
     expect(r.zeroDivisors).toEqual([2, 3, 4, 6, 8, 9, 10]);
     expect(r.nilpotent).toEqual([0, 6]);
     expect(r.idempotent).toEqual([0, 1, 4, 9]);
+  });
+});
+
+describe('generating functions and inclusion-exclusion', () => {
+  const text = (xs: { n: bigint; d: bigint }[]) => xs.map((x) => (x.d === 1n ? `${x.n}` : `${x.n}/${x.d}`)).join(' ');
+
+  it('expands rational generating functions as power series', () => {
+    // Ways to pay n with coins of 1 and 5: floor(n / 5) + 1.
+    expect(text(expandSeries('1/((1 - x)(1 - x^5))', 11))).toBe('1 1 1 1 1 2 2 2 2 2 3');
+    // 1/(1 - x)^2 = sum (n + 1) x^n.
+    expect(text(expandSeries('1/(1-x)^2', 5))).toBe('1 2 3 4 5');
+    // (1 + x + x^2)/(1 - x): partial sums of 1, 1, 1.
+    expect(text(expandSeries('(1 + x + x^2) / (1 - x)', 5))).toBe('1 2 3 3 3');
+    // Fibonacci: x/(1 - x - x^2), and a fraction: 1/(2 - x) = sum x^n / 2^(n+1).
+    expect(text(expandSeries('x/(1 - x - x^2)', 8))).toBe('0 1 1 2 3 5 8 13');
+    expect(text(expandSeries('1/(2 - x)', 3))).toBe('1/2 1/4 1/8');
+    expect(() => expandSeries('1/x', 3)).toThrow();
+    expect(() => expandSeries('1 + * x', 3)).toThrow();
+  });
+
+  it('counts a union by inclusion-exclusion', () => {
+    // 12 + 15 + 9 - (5 + 3 + 4) + 2 = 26, so 40 - 26 = 14 lie outside.
+    const r = inclusionExclusion('A 12\nB 15\nC 9\nA B 5\nA C 3\nB C 4\nA B C 2', 40n);
+    expect([r.union, r.neither]).toEqual([26n, 14n]);
+    expect(r.levels).toEqual([36n, 12n, 2n]);
+    expect(() => inclusionExclusion('A 12\nB 15', null)).toThrow();
+    expect(() => inclusionExclusion('A 1\nB 1\nA B 5', null)).toThrow();
   });
 });

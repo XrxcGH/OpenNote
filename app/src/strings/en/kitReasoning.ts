@@ -41,7 +41,8 @@ export const kitReasoning = {
       keywords:
         'number theory gcd euclid modular inverse power chinese remainder prime factor miller rabin pollard phi ' +
         'primitive root discrete log continued fraction cipher caesar vigenere hill rsa diffie hellman elgamal ' +
-        'combinations permutations stirling bell catalan partitions recurrence master theorem group cayley ' +
+        'combinations permutations stirling bell catalan partitions generating function inclusion exclusion ' +
+        'recurrence master theorem group cayley ' +
         'subgroup coset lattice dihedral symmetric quaternion finite field galois',
       summary:
         'Number theory with every step, classical ciphers and toy public keys, exact counting, and finite groups and fields.',

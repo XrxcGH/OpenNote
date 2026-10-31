@@ -19,6 +19,7 @@ import {
   stirling2,
 } from './counting';
 import { bigOf, ds, smallOf, solveWith } from './common';
+import { expandSeries, inclusionExclusion } from './series';
 import { CIPHER, FIELD, GROUP, PERM, PUBLIC } from './formsAlgebra';
 import {
   big,
@@ -348,6 +349,58 @@ const COUNTING: Mode = {
   fields: [f('n', '10'), f('k', '3'), f('parts', '', { help: true })],
   solve: solveWith(countingOutcome),
 };
+function genfunOutcome(v: Values): Outcome {
+  const count = smallOf(v, 'terms', 200);
+  if (count < 1) return fail('gfTerms');
+  const c = expandSeries(v.gf ?? '', count);
+  const shown = c.map(fracText);
+  return {
+    ok: true,
+    answer: s('gfAnswer', { list: shown.join(', ') }),
+    latex: `${c
+      .slice(0, 8)
+      .map((x, i) => `${fracLatex(x)}${i === 0 ? '' : i === 1 ? 'x' : `x^{${i}}`}`)
+      .join(' + ')
+      .replace(/\+ -/g, '- ')} + \\dots`,
+    steps: [s('steps.gfSeries')],
+    tables: [
+      {
+        caption: s('table.coefficients'),
+        header: ['n', s('table.coefficient')],
+        rows: shown.map((x, i) => [String(i), x]),
+      },
+    ],
+  };
+}
+
+function inclusionOutcome(v: Values): Outcome {
+  const total = (v.universe ?? '').trim() ? bigOf(v, 'universe') : null;
+  const r = inclusionExclusion(v.sizes ?? '', total);
+  const signed = r.levels.map((x, k) => `${k === 0 ? '' : k % 2 === 1 ? ' − ' : ' + '}${x}`).join('');
+  return {
+    ok: true,
+    answer:
+      r.neither === null
+        ? s('ieAnswer', { sets: r.sets.join(' ∪ '), union: String(r.union) })
+        : s('ieAnswerNeither', { sets: r.sets.join(' ∪ '), union: String(r.union), neither: String(r.neither) }),
+    latex: `|${r.sets.join(' \\cup ')}| = ${signed.replace(/−/g, '-')} = ${r.union}`,
+    steps: r.levels.map((x, k) => s(k % 2 === 0 ? 'steps.ieAdd' : 'steps.ieSubtract', { k: k + 1, sum: String(x) })),
+  };
+}
+
+const GENFUN: Mode = {
+  id: 'genfun',
+  fields: [f('gf', '1/((1 - x)(1 - x^5))', { wide: true, help: true }), f('terms', '11')],
+  solve: solveWith(genfunOutcome),
+};
+const INCLUSION: Mode = {
+  id: 'inclusion',
+  fields: [
+    f('sizes', 'A 12\nB 15\nC 9\nA B 5\nA C 3\nB C 4\nA B C 2', { kind: 'area', help: true }),
+    f('universe', '40'),
+  ],
+  solve: solveWith(inclusionOutcome),
+};
 const RECURRENCE: Mode = {
   id: 'recurrence',
   fields: [f('coefs', '1, 2', { help: true }), f('start', '0, 1'), f('count', '11')],
@@ -361,5 +414,22 @@ const MASTER: Mode = {
 
 export const DISCRETE: ToolSpec = {
   id: 'discrete',
-  modes: [EUCLID, POW, CRT, NUMBER, DLOG, CONVERT, CIPHER, PUBLIC, COUNTING, RECURRENCE, MASTER, PERM, GROUP, FIELD],
+  modes: [
+    EUCLID,
+    POW,
+    CRT,
+    NUMBER,
+    DLOG,
+    CONVERT,
+    CIPHER,
+    PUBLIC,
+    COUNTING,
+    GENFUN,
+    INCLUSION,
+    RECURRENCE,
+    MASTER,
+    PERM,
+    GROUP,
+    FIELD,
+  ],
 };
