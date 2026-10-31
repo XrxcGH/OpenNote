@@ -24,7 +24,11 @@ export interface ParseOptions {
   /** Whether the first row names the columns; 'auto' guesses from the cells. */
   header?: 'auto' | 'yes' | 'no';
   maxRows?: number;
+  /** The decimal mark: 'auto' votes from the cells (the default), 'point' and 'comma' fix it. */
+  decimal?: DecimalChoice;
 }
+
+export type DecimalChoice = 'auto' | 'point' | 'comma';
 
 type Convention = Pick<Locale, 'decimal' | 'group'>;
 const DOT: Convention = { decimal: '.', group: ',' };
@@ -49,8 +53,27 @@ interface Reading {
   unit: string | null;
 }
 
-/** Reads one cell as a number in the given convention, with an optional unit after it. */
+/**
+ * A cell such as "1,234" that reads both as one thousand two hundred thirty-four (a grouping comma) and as 1.234 (a
+ * decimal comma): one to three digits, one comma, exactly three digits, and nothing more but a unit.
+ */
+const GROUP_OR_DECIMAL = /^[+\-−]?\d{1,3},\d{3}(?![\d.,])/;
+
+/**
+ * Reads one cell as a number in the given convention, with an optional unit after it. A number too large or too small
+ * for a double ("1e400") is not read, so the column reports it instead of holding an infinity.
+ */
 export function readNumber(text: string, convention: Convention): Reading | null {
+  const reading = readFinite(text, convention);
+  return reading && Number.isFinite(reading.value) ? reading : null;
+}
+
+function isOverflow(text: string, convention: Convention): boolean {
+  const reading = readFinite(text, convention);
+  return reading !== null && !Number.isFinite(reading.value);
+}
+
+function readFinite(text: string, convention: Convention): Reading | null {
   const cell = text.trim().replace('−', '-');
   if (convention.decimal === '.' ? PLAIN_DOT.test(cell) : PLAIN_COMMA.test(cell)) {
     return { value: Number(convention.decimal === '.' ? cell : cell.replace(',', '.')), unit: null };
@@ -125,7 +148,9 @@ export function dataFromGrid(grid: readonly (readonly string[])[], options: Pars
   const maxRows = options.maxRows ?? MAX_ROWS;
   const width = grid.reduce((w, r) => Math.max(w, r.length), 0);
   const rows = grid.map((r) => Array.from({ length: width }, (_, c) => (r[c] ?? '').trim()));
-  const convention = voteConvention(rows.slice(0, VOTE_ROWS).flat(), locale);
+  const choice = options.decimal ?? 'auto';
+  const convention =
+    choice === 'point' ? DOT : choice === 'comma' ? COMMA : voteConvention(rows.slice(0, VOTE_ROWS).flat(), locale);
   const header = options.header === 'yes' || (options.header !== 'no' && looksLikeHeader(rows, convention));
   const body = header ? rows.slice(1) : rows;
   const truncated = body.length > maxRows;
@@ -142,7 +167,19 @@ export function dataFromGrid(grid: readonly (readonly string[])[], options: Pars
     problems.push(...read.problems);
     return read.column;
   });
-  return { columns, rows: kept.length, truncated, problems };
+  const data: DataSet = { columns, rows: kept.length, truncated, problems };
+  if (choice === 'auto') {
+    const guessed = columns.find(
+      (column, c) =>
+        column.kind === 'number' &&
+        isGroupOrDecimal(
+          kept.map((r) => r[c]),
+          convention,
+        ),
+    );
+    if (guessed) data.decimalGuess = { column: guessed.name, decimal: convention.decimal };
+  }
+  return data;
 }
 
 function uniqueNames(names: readonly string[]): string[] {
@@ -152,6 +189,12 @@ function uniqueNames(names: readonly string[]): string[] {
     seen.set(name, count);
     return count === 1 ? name : `${name} (${count})`;
   });
+}
+
+/** True when every present cell of a column reads either as a grouped or as a decimal-comma number. */
+function isGroupOrDecimal(cells: readonly string[], convention: Convention): boolean {
+  const present = cells.filter((cell) => !isMissingText(cell) && readNumber(cell, convention) !== null);
+  return present.length > 0 && present.every((cell) => GROUP_OR_DECIMAL.test(cell));
 }
 
 const isNumberCell = (cell: string, convention: Convention) =>
@@ -183,7 +226,9 @@ interface ColumnRead {
 export function readColumn(name: string, cells: readonly string[], convention: Convention, locale: Locale): ColumnRead {
   const present = cells.filter((cell) => !isMissingText(cell));
   const numbers = cells.map((cell) => (isMissingText(cell) ? null : readNumber(cell, convention)));
-  const numeric = numbers.filter((n) => n !== null).length;
+  // A number too large for a double ("1e400") was meant as a number: it counts toward the kind and is reported.
+  const tooLarge = cells.filter((cell) => !isMissingText(cell) && isOverflow(cell, convention)).length;
+  const numeric = numbers.filter((n) => n !== null).length + tooLarge;
   // One stray token in a short number column ("1, 2, three, 4" is only 75% numbers) is a typo to report, not a
   // reason to lose the whole column as text.
   const oneStray = numeric >= 2 && present.length - numeric === 1;
@@ -193,7 +238,11 @@ export function readColumn(name: string, cells: readonly string[], convention: C
     const unit = mostCommonUnit(numbers);
     const values = numbers.map((n) => (n !== null && n.unit === unit ? n.value : null));
     const kept = values.filter((v) => v !== null).length;
-    if (kept === numeric || kept >= KIND_SHARE * present.length || (kept >= 2 && present.length - kept === 1)) {
+    if (
+      kept === numeric - tooLarge ||
+      kept >= KIND_SHARE * present.length ||
+      (kept >= 2 && present.length - kept === 1)
+    ) {
       const column: DataColumn = { name, kind: 'number', values, unit };
       return { column, problems: problemsOf(name, cells, values) };
     }
