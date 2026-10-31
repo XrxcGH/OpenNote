@@ -137,6 +137,8 @@ describe('classification', () => {
   });
 
   it('gives the AASHTO group and group index', () => {
+    // Das's worked example: (95-35)(0.2+0.005*20) + 0.01(95-15)(30) = 18 + 24 = 42, so A-7-6(42). The current
+    // M 145 sets no upper limit on the index; the 0-40 and 0-20 term caps belong to the superseded pre-1970s form.
     const a = aashto({ p10: 100, p40: 100, p200: 95, LL: 60, PI: 40 });
     expect(a.group).toBe('A-7-6');
     expect(a.GI).toBe(42);
