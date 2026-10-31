@@ -1,6 +1,7 @@
 // Seismology and seismic surveys: distance from the S-P time, the Wadati diagram, an epicenter by least squares,
-// moment magnitude and energy, the Gutenberg-Richter b-value, flat and dipping refraction, reflection travel times,
-// and wave speeds from elastic moduli. SI units (m, s, N·m, J) unless a name says otherwise.
+// moment magnitude and energy, the Gutenberg-Richter b-value, refraction and reflection travel times, and wave
+// speeds from elastic moduli. Refraction covers a dipping layer too. SI units (m, s, N·m, J) unless a name says
+// otherwise.
 import { check } from '../core/problem';
 
 const LOG10E = Math.LOG10E;

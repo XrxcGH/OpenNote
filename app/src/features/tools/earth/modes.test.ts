@@ -50,7 +50,7 @@ describe('earth kit wording and axes', () => {
     expect(one.answer).toContain('1 plane and 1 line on');
     const many = await outcome('stereonet', 'plot');
     expect(many.answer).toContain('3 planes and 1 line on');
-    expect(many.figures![0].description).toContain('3 great circles or poles and 1 line on');
+    expect(many.figures![0].description).toContain('3 planes as great circles or poles and 1 line on');
   });
 
   it('ticks the climate diagram once per month, J to D, with no fractional months', async () => {

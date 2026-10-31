@@ -21,7 +21,7 @@ describe('plume map', () => {
     for (let j = 0; j < 41; j++) expect(grid.z[j][10]).toBeCloseTo(grid.z[40 - j][10], 15);
   });
 
-  it('draws five labelled level curves', () => {
+  it('draws five labeled level curves', () => {
     const fig = plumeMapFigure(input);
     const paths = fig.marks.filter((m) => m.kind === 'path' && m.width === 1.5);
     expect(paths).toHaveLength(5);

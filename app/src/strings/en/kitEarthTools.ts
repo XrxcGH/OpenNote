@@ -651,7 +651,7 @@ export const kitEarthTools = {
       twoWay: 'Two-way time (s)',
       dipTitle: 'Dipping-layer travel times',
       dipText:
-        'First arrivals from both shots along the spread; down-dip apparent speed {down} m/s, up-dip {up} m/s, and a reciprocal time of {reciprocal} ms.',
+        'First arrivals from both shots: apparent speeds {down} m/s down-dip and {up} m/s up-dip, reciprocal time {reciprocal} ms.',
       alongSpread: 'Distance from the up-dip shot (m)',
       headDown: 'Head wave, shot down-dip',
       headUp: 'Head wave, shot up-dip',
@@ -878,7 +878,7 @@ export const kitEarthTools = {
       ground: 'Concentration (µg/m³)',
       mapTitle: 'Ground-level concentration map',
       mapText:
-        'Plan view of the ground-level concentration, class {stability}, as contours at 10, 30, 50, 70, and 90% of the peak, {peak} µg/m³ about {x} m downwind.',
+        'Ground-level contours, class {stability}, at 10 to 90% of the peak of {peak} µg/m³ about {x} m downwind.',
       crosswind: 'Distance crosswind (m)',
       level: '{pct}% of peak, {value} µg/m³',
       boxTitle: 'Concentration in the box',
@@ -1431,7 +1431,8 @@ export const kitEarthTools = {
       north: 'N',
       netTitle: 'Stereonet',
       netText:
-        '{planes, plural, one {# great circle or pole} other {# great circles or poles}} and {lines, plural, one {# line} other {# lines}} on the net.',
+        '{planes, plural, one {# plane} other {# planes}} as great circles or poles and ' +
+        '{lines, plural, one {# line} other {# lines}} on the net.',
       poleText: 'The plane {plane} as a great circle with its pole at {pole}.',
       pole: 'Pole',
       rake: 'Rake',

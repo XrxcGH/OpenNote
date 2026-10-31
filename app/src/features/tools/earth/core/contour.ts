@@ -33,7 +33,8 @@ export function contourSegments(grid: Grid, level: number): [number, number, num
       }
       if (hits.length === 2) out.push([...hits[0], ...hits[1]]);
       else if (hits.length === 4) {
-        // Hits run bottom, right, top, left. A center on corners 0 and 2's side cuts off corners 1 and 3, else 0 and 2.
+        // Hits run bottom, right, top, left. A center on the side of corners 0 and 2 cuts off corners 1 and 3;
+        // a center on the other side cuts off 0 and 2.
         const center = (c[0] + c[1] + c[2] + c[3]) / 4;
         const pairs = center < level === c[0] < level ? [0, 1, 2, 3] : [0, 3, 1, 2];
         out.push([...hits[pairs[0]], ...hits[pairs[1]]], [...hits[pairs[2]], ...hits[pairs[3]]]);
