@@ -271,7 +271,22 @@ export interface BearingFactors {
   Ng: number;
 }
 
-/** Nc, Nq, and Nγ. Terzaghi's Nγ has no closed form; the fit used is Coduto's (2001), which is stated with it. */
+/**
+ * Terzaghi's Nγ for φ = 0° to 50° in 1° steps, as computed by Kumbhojkar (1993) and tabulated by Das. Terzaghi gave
+ * Nγ only as a chart, and Coduto's closed-form fit runs up to about 20% high at 20° and 40°.
+ */
+const TERZAGHI_NG = [
+  0, 0.01, 0.04, 0.06, 0.1, 0.14, 0.2, 0.27, 0.35, 0.44, 0.56, 0.69, 0.85, 1.04, 1.26, 1.52, 1.82, 2.18, 2.59, 3.07,
+  3.64, 4.31, 5.09, 6.0, 7.08, 8.34, 9.84, 11.6, 13.7, 16.18, 19.13, 22.65, 26.87, 31.94, 38.04, 45.41, 54.36, 65.27,
+  78.61, 95.03, 115.31, 140.51, 171.99, 211.56, 261.6, 325.34, 407.11, 512.84, 650.67, 831.99, 1072.8,
+] as const;
+
+const terzaghiNg = (phi: number): number => {
+  const i = Math.min(Math.floor(phi), 49);
+  return TERZAGHI_NG[i]! + (phi - i) * (TERZAGHI_NG[i + 1]! - TERZAGHI_NG[i]!);
+};
+
+/** Nc, Nq, and Nγ. Terzaghi's Nγ comes from Kumbhojkar's table, read linearly between whole degrees. */
 export function bearingFactors(phi: number, method: BearingMethod): BearingFactors {
   checkPhi(phi, 50);
   const t = tanD(phi);
@@ -280,8 +295,7 @@ export function bearingFactors(phi: number, method: BearingMethod): BearingFacto
     const a = Math.exp((0.75 * Math.PI - rad(phi) / 2) * t);
     const Nq = (a * a) / (2 * cosD(45 + phi / 2) ** 2);
     const Nc = (Nq - 1) / t;
-    const Ng = (2 * (Nq + 1) * t) / (1 + 0.4 * sinD(4 * phi));
-    return { Nc, Nq, Ng };
+    return { Nc, Nq, Ng: terzaghiNg(phi) };
   }
   const Nq = Math.exp(Math.PI * t) * tanD(45 + phi / 2) ** 2;
   const Nc = phi === 0 ? Math.PI + 2 : (Nq - 1) / t;

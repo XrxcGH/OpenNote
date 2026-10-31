@@ -184,6 +184,11 @@ describe('bearing capacity', () => {
     within(t.Nc, 37.16, 0.01);
     within(t.Nq, 22.46, 0.01);
     within(bearingFactors(0, 'terzaghi').Nc, 5.7, 1e-12);
+    // Kumbhojkar's (1993) Terzaghi N-gamma as tabulated in Das, Table 3.1.
+    within(bearingFactors(20, 'terzaghi').Ng, 3.64, 0.005);
+    within(bearingFactors(35, 'terzaghi').Ng, 45.41, 0.005);
+    within(bearingFactors(40, 'terzaghi').Ng, 115.31, 0.005);
+    within(bearingFactors(30.5, 'terzaghi').Ng, (19.13 + 22.65) / 2, 0.005);
     within(bearingFactors(0, 'vesic').Nc, 5.14, 0.002);
     within(bearingFactors(30, 'meyerhof').Ng, 15.67, 0.01);
     within(bearingFactors(30, 'hansen').Ng, 15.07, 0.01);

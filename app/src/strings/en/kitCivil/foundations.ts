@@ -238,7 +238,7 @@ export const foundations = {
     terms: 'The three terms are {c}, {q}, and {g} kPa.',
     allow: 'Dividing by the factor of safety of {FS} gives {qall} kPa.',
     terzaghiNote:
-      'Terzaghi’s Nγ is the closed-form fit by Coduto (2001), within a few percent of his chart. Shape constants: ' +
+      'Terzaghi’s Nγ is read from Kumbhojkar’s (1993) table of his values, between whole degrees. Shape constants: ' +
       '1.3 for c and 0.4 (square) or 0.3 (circle) for γ.',
     generalNote: 'The factors each apply to their own term; leaving depth factors out is conservative.',
   },
