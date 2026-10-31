@@ -121,6 +121,16 @@ describe('the label oracle', () => {
     }
   });
 
+  it('labels a heel paired with a fingertip-sized part as uncertain as the part', () => {
+    // CI seed 9 (iPhone, one finger): the heel and a fingertip-sized part beside it read as two fingers panning, which the
+    // part's own label allowed but the heel's did not.
+    const s = SCENARIOS.find((x) => x.name === 'loneRest')!;
+    const p = PROFILES.find((x) => x.id === 'iphone-finger')!;
+    const session = generate(s, p, 9);
+    const shuffled = reorderWithinFrames(session, seeded(9));
+    expect(oracleHolds(shuffled, replaySession(shuffled))).toEqual([]);
+  });
+
   it("keeps the other hand's taps off the place an overwriter's palm rested", () => {
     // CI seed 1664849986 (case 5931): the model put an overwriter's heel below the pen, but the palm rests above it, so a tap
     // 11 mm from where the palm had rested was labeled another hand's and the pipeline rightly refused it.
