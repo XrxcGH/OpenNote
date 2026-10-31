@@ -642,6 +642,7 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Mechanisms and dynamics | Linkages, cams, gears, compliant mechanisms, rigid-body dynamics, Lagrangian mechanics, 3D rotations, vibration, and robot arms. Flag `kits.mechdyn`. | Built, untested by hand |
 | Physics tools | Waves and sound, relativity, wave and geometric optics, nuclear science, spacecraft sizing, fields, and orbits and maneuvers. Flag `kits.physics`. | Built, untested by hand |
 | Earth sciences | Atmospheric thermodynamics and soundings; radiation, climate, and footprints; geochronology, isotopes, and the time scale; stereonets and structural geology; stratigraphy and classification diagrams; air quality and weather observations; seismology and seismic surveys; gravity, magnetics, heat flow, and plates; and ocean, waves, and planetary flow, with seawater by EOS-80 and TEOS-10. Flag `kits.earth`. | Built, untested by hand |
+| Reasoning kit | Logic, automata and grammars, numbers and groups, digital logic, computer systems (caches, scheduling, pipelines, deadlock, networks, logical clocks, normal forms, relational algebra, and digests), algorithms, optimization, and games and voting, with worked steps. Flag `kits.reasoning`. | Built, untested by hand |
 
 ## Document structure
 

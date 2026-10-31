@@ -61,6 +61,7 @@ import { engineering } from './engineering';
 import { kitModPhys } from './kitModPhys';
 import { chem } from './chem';
 import { kitEcon } from './kitEcon';
+import { kitReasoning } from './kitReasoning';
 import { kitChemMat } from './kitChemMat';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
@@ -151,6 +152,7 @@ export const en = {
   engineering,
   kitModPhys,
   chem,
+  kitReasoning,
   kitChemMat,
   docStructure,
   codeCells,

@@ -19,8 +19,8 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { CHEMMAT_FLAGS, EARTH_FLAGS, EXPR_FLAGS, HUMANITIES_FLAGS, LIFESYS_FLAGS, MIND_FLAGS } from '../features/tools/flags';
-import type { ChemMatFlagId, EarthFlagId, LifeSysFlagId, MindFlagId } from '../features/tools/flags';
+import { CHEMMAT_FLAGS, EARTH_FLAGS, EXPR_FLAGS, HUMANITIES_FLAGS, LIFESYS_FLAGS, MIND_FLAGS, REASONING_FLAGS } from '../features/tools/flags';
+import type { ChemMatFlagId, EarthFlagId, LifeSysFlagId, MindFlagId, ReasoningFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -105,6 +105,7 @@ export type FlagId =
   | SignalsFlagId
   /** The earth sciences kit (features/tools/earth/flags.ts). */
   | EarthFlagId
+  | ReasoningFlagId
   | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
@@ -405,6 +406,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...MODPHYS_FLAGS,
   ...SIGNALS_FLAGS,
   ...EARTH_FLAGS,
+  ...REASONING_FLAGS,
   ...TUTOR_FLAGS,
   ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,

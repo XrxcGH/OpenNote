@@ -86,6 +86,9 @@ const StatModelsKit = lazy(() => import('../statmodels/ui/StatModelsKit').then((
 const MindKit = lazy(() => import('../mind').then((mind) => mind.loadMindKit()).then((m) => ({ default: m.MindKit })));
 // The signals and sound kit loads its tools on first open.
 const SignalsKit = lazy(() => import('../signals/kit').then((kit) => ({ default: kit.SignalsKit })));
+// The reasoning kit loads on first open, and each of its tools loads when its tab opens.
+const KitReasoning = lazy(() => import('../reasoning').then((kit) => ({ default: kit.KitReasoningWindow })));
+
 // The solid mechanics kit loads with its engineering feature the first time its window opens.
 const SolidsKit = lazy(() =>
   import('../../engineering')
@@ -134,6 +137,7 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-civil': CivilTool,
   'kit-earth': EarthKit,
   'kit-signals': SignalsKit,
+  'kit-reasoning': KitReasoning,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {

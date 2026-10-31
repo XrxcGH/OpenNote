@@ -145,6 +145,12 @@ pub const TOOLS: &[Tool] = &[
         height: 720.0,
     },
     Tool {
+        id: "kit-reasoning",
+        title: "Logic and computing",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
         id: "kit-fluidheat",
         title: "Fluids and heat transfer",
         width: 560.0,

@@ -12,6 +12,8 @@ export { HUMANITIES_FLAGS } from './humanities/flags';
 export type { HumanitiesFlagId } from './humanities/flags';
 export { HUMANITIES_TOOLS } from './humanities/meta';
 export type { HumanitiesToolId } from './humanities/meta';
+export { REASONING_FLAGS } from './reasoning/flags';
+export type { ReasoningFlagId } from './reasoning/flags';
 
 export type ExprFlagId = Extract<
   FlagId,

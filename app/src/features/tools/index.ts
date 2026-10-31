@@ -27,6 +27,8 @@ export type { MolToolId } from './molbio/meta';
 export { openMolBio } from './molbio/open';
 export { openLifeSys, reopenLifeSys } from './lifesys/open';
 export type { ToolId } from './ui/tools';
+export { openReasoningKit } from './reasoning/open';
+export type { ReasoningToolId } from './reasoning/meta';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { forgetPageItems, setPageItems } from './ui/upcomingStores';
 export { readUpcoming, setSourceItems, sourceItems, updateUpcomingItems } from './ui/upcomingMerge';
