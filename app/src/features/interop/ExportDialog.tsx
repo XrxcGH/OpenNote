@@ -12,6 +12,7 @@ import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
 import { CheckFirstSwitch } from '../a11yCheck';
 import { pageTitleOn, setPageTitle } from '../exportPrefs';
+import { LatexFields } from './LatexFields';
 import { SendExtras } from './SendExtras';
 import { NO_SHARE_CHOICES } from './exportFlow';
 import type { DrawPdf, ExportFlow, ExportState } from './exportFlow';
@@ -42,6 +43,7 @@ function exportFormats(canPrint: boolean): readonly ExportFormat[] {
   return [
     ...FORMATS,
     ...(isEnabled('interop.officeFormats') ? OFFICE_FORMATS : []),
+    ...(isEnabled('interop.latexExport') ? (['latex'] as const) : []),
     ...(canPrint && isEnabled('interop.exportPdf') ? (['pdf'] as const) : []),
   ];
 }
@@ -56,6 +58,7 @@ const formatLabel = (format: ExportFormat) =>
     pptx: t('interop.export.formats.pptx'),
     xlsx: t('interop.export.formats.xlsx'),
     csv: t('interop.export.formats.csv'),
+    latex: t('interopLatex.format'),
     share: t('interop.share.command'),
   })[format];
 
@@ -69,6 +72,7 @@ const formatHint = (format: ExportFormat) =>
     pptx: t('interop.export.formats.pptxHint'),
     xlsx: t('interop.export.formats.xlsxHint'),
     csv: t('interop.export.formats.csvHint'),
+    latex: t('interopLatex.formatHint'),
     share: t('interop.share.intro'),
   })[format];
 
@@ -129,6 +133,7 @@ function Options({
           ))}
         </RadioGroup>
       )}
+      {state.format === 'latex' && <LatexFields flow={flow} state={state} />}
       <div className={styles.folder}>
         <div>
           <h3 className={styles.subheading}>{t('interop.export.folderLabel')}</h3>

@@ -39,6 +39,8 @@ fn a_network_or_device_path_is_never_probed() {
     }
 }
 
+// Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+#[cfg(windows)]
 #[test]
 fn finds_programs_and_the_shortcut_inside_a_test_profile() {
     let paths = Paths::under_profile(Path::new("C:\\profile"));

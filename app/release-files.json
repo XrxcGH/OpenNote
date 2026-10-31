@@ -1,5 +1,7 @@
 [
   { "platform": "windows-x86_64", "target": "x86_64-pc-windows-msvc", "file": "OpenNote_Windows64.exe" },
   { "platform": "windows-i686", "target": "i686-pc-windows-msvc", "file": "OpenNote_Windows32.exe" },
-  { "platform": "windows-aarch64", "target": "aarch64-pc-windows-msvc", "file": "OpenNote_WindowsARM64.exe" }
+  { "platform": "windows-aarch64", "target": "aarch64-pc-windows-msvc", "file": "OpenNote_WindowsARM64.exe" },
+  { "platform": "darwin-universal", "target": "universal-apple-darwin", "file": "OpenNote_macOS.dmg" },
+  { "platform": "linux-x86_64", "target": "x86_64-unknown-linux-gnu", "file": "OpenNote_Linux.AppImage" }
 ]
