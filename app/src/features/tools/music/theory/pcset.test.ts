@@ -86,7 +86,8 @@ describe('twelve-tone rows', () => {
   it('builds a matrix with P0 on top and I0 down the side', () => {
     const m = rowMatrix(p0);
     expect(m[0]).toEqual(p0);
-    expect(m.map((r) => r[0])).toEqual(rowInversion(p0, 0));
+    // I0 of the Webern row, from the textbook rather than from rowInversion().
+    expect(m.map((r) => r[0])).toEqual([0, 1, 9, 8, 4, 5, 3, 7, 6, 11, 10, 2]);
     for (const r of m) expect(isRow(r)).toBe(true);
   });
   it('rejects a list that is not a row', () => {

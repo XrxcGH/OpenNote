@@ -142,3 +142,52 @@ describe('species counterpoint', () => {
     expect(wordOf(right, 'issuesOut')).toBe('cleanPass');
   });
 });
+
+describe('seventh chords and incomplete chords in the analysis', () => {
+  const numerals = (text: string, mode: 'major' | 'minor' = 'major') => chorale(text, 'standard', 'C', mode).numerals;
+  it('names the ii7 inversions as ii, never as IV with an added sixth', () => {
+    expect(numerals('A4 D4 C4 F3')).toEqual(['ii6/5']);
+    expect(numerals('D5 C5 F4 A3')).toEqual(['ii4/3']);
+    expect(numerals('D5 F4 A3 C3')).toEqual(['ii4/2']);
+    expect(numerals('A4 F4 C4 D3')).toEqual(['ii7']);
+  });
+  it('checks the chordal seventh of ii6/5', () => {
+    // F A C D over F: the seventh is C. A tenor C that leaps up to G is not a resolution.
+    expect(summary('A4 D4 C4 F3\nB4 D4 G4 G2')).toContain('2:tenor:seventh');
+    expect(summary('A4 D4 C4 F3\nB4 D4 B3 G2')).not.toContain('2:tenor:seventh');
+  });
+  it('gives an added ninth no seventh-chord figure', () => {
+    // G B D A over A is Gadd9, which is not V4/2.
+    expect(numerals('D5 B4 G4 A2')).toEqual(['Vadd9']);
+  });
+  it('reads a chord with its fifth left out', () => {
+    expect(numerals('E5 E4 C4 C3')).toEqual(['I']);
+    expect(numerals('C5 C4 A3 A2')).toEqual(['vi']);
+    expect(numerals('F5 B4 G4 G3')).toEqual(['V7']);
+  });
+  it('finds a perfect authentic cadence from V7 to an incomplete tonic', () => {
+    expect(chorale('B4 F4 G3 G2\nC5 E4 C4 C3').cadence).toBe('perfectAuthentic');
+    expect(chorale('B4 F4 G3 G2\nC5 E4 C4 C3').numerals).toEqual(['V7', 'I']);
+  });
+  it('does not call a chromatic semitone an augmented interval', () => {
+    // The tenor goes C to C-sharp (a V7/ii follows I); the augmented second G to A-flat to B is still flagged.
+    for (const level of ['relaxed', 'standard', 'strict'] as const)
+      expect(summary('E5 G4 C4 C3\nE5 G4 C#4 A2', level)).not.toContain('2:tenor:augmented');
+  });
+  it('does not ask a repeated seventh to resolve at the repeat', () => {
+    expect(summary('B4 D4 F3 G2\nB4 D4 F3 G2\nC5 E4 E3 C3').filter((s) => s.endsWith(':seventh'))).toEqual([]);
+    const unresolved = summary('B4 D4 F3 G2\nB4 D4 F3 G2\nC5 E4 G3 C3');
+    expect(unresolved).toContain('3:tenor:seventh');
+    expect(unresolved).not.toContain('2:tenor:seventh');
+  });
+});
+
+describe('a unison in the middle of a species line', () => {
+  it('is rejected on a strong beat except at the beginning and end', () => {
+    const cantus = readNotes('C4 D4 E4 D4 C4')!;
+    const found = checkSpecies(cantus, readNotes('G4 D4 G4 B4 C5')!, 1, true).map((i) => `${i.measure}:${i.rule}`);
+    expect(found).toContain('2:unison');
+    const ends = checkSpecies(cantus, readNotes('C4 F4 G4 B4 C5')!, 1, true).map((i) => i.rule);
+    expect(ends).not.toContain('unison');
+  });
+});

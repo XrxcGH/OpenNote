@@ -180,7 +180,9 @@ function checkVoice(c: Context, k: number, v: number): void {
   const b = c.chords[k]!;
   const at = k + 1;
   const step = Math.abs(semis(b[v]!) - semis(a[v]!));
-  if (between(a[v]!, b[v]!).interval.quality === 'A' && step > 0) c.add(at, [NAMES[v]!], 'augmented');
+  const moved = between(a[v]!, b[v]!).interval;
+  // A chromatic semitone (an augmented unison or octave) is not an augmented melodic interval in the textbook sense.
+  if (moved.quality === 'A' && step > 0 && (moved.generic - 1) % 7 !== 0) c.add(at, [NAMES[v]!], 'augmented');
   const limit = v !== 3 && c.strict ? 8 : 12;
   if (c.standard && step > limit) c.add(at, [NAMES[v]!], 'largeLeap');
   // Overlap: a voice moves past where its neighbor just was.
@@ -199,7 +201,15 @@ function checkResolutions(c: Context, k: number, numeral: string): void {
   const chord = c.chords[k]!;
   const next = c.chords[k + 1];
   if (!next) return;
-  const reading = nameChord([chord[3], chord[2], chord[1], chord[0]])[0];
+  // A repeated chord resolves nothing yet: the check moves on to the repeat, and so to the first different chord.
+  const same = new Set(chord.map((x) => pitchClass(x)));
+  if (
+    next.length === chord.length &&
+    next.every((x) => same.has(pitchClass(x))) &&
+    new Set(next.map((x) => pitchClass(x))).size === same.size
+  )
+    return;
+  const reading = nameChord([chord[3], chord[2], chord[1], chord[0]], { analysis: true })[0];
   const seventh = reading?.quality.degrees.split(' ').find((d) => /^b*7$/.test(d));
   if (reading && seventh) {
     const seventhPc = (pitchClass(reading.root) + sevenSemis(seventh)) % 12;

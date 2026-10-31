@@ -6,6 +6,7 @@ import type { Note } from '../theory/notes';
 export type SpeciesRule =
   | 'opening'
   | 'ending'
+  | 'unison'
   | 'penultimate'
   | 'dissonance'
   | 'unprepared'
@@ -20,6 +21,7 @@ export type SpeciesRule =
 export const SPECIES_TEXT: Record<SpeciesRule, string> = {
   opening: 'should begin on a perfect consonance',
   ending: 'should end on a unison or an octave',
+  unison: 'a unison is only allowed at the beginning and end',
   penultimate: 'should approach the last note by step, as a major sixth (above) or minor third (below) over the cantus',
   dissonance: 'dissonance on a strong beat',
   unprepared: 'dissonance on a weak beat must be passed through by step',
@@ -97,6 +99,7 @@ export function checkSpecies(
     const suspension = species === 4 && m > 0 && m < n - 1;
     for (const beat of species === 3 && m < n - 1 ? [0, 2] : [0]) {
       if (!suspension && !isConsonant(cantus[m]!, at(m, beat))) add(m + 1, 'dissonance');
+      if (m > 0 && m < n - 1 && gap(cantus[m]!, at(m, beat)) === 0) add(m + 1, 'unison');
     }
     const lower = above ? cantus[m]! : at(m);
     const upper = above ? at(m) : cantus[m]!;

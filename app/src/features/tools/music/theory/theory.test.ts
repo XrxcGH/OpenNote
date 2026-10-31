@@ -227,6 +227,13 @@ describe('jazz and guitar', () => {
   it('suggests Mixolydian first for a dominant seventh', () => {
     expect(rowOf(run('jazz', { chord: 'G7' }), 'scaleFirst')).toBe('Mixolydian: G A B C D E F G');
   });
+  it('suggests the altered scale for C7alt and Lydian dominant for C7#11', () => {
+    // Altered scale: 1 b2 b3 b4 b5 b6 b7 above C, spelled with one letter per degree.
+    expect(rowOf(run('jazz', { chord: 'C7alt' }), 'scaleFirst')).toBe('Altered scale: C D♭ E♭ F♭ G♭ A♭ B♭ C');
+    expect(rowOf(run('jazz', { chord: 'C7#11' }), 'scaleFirst')).toBe('Lydian dominant: C D E F♯ G A B♭ C');
+    expect(run('jazz', { chord: 'C7(#9)' }).ok).toBe(true);
+    expect(run('jazz', { chord: 'G7b13' }).ok).toBe(true);
+  });
   it('finds shapes for E minor whose strings sound E, G, or B', () => {
     const result = run('guitar', { chord: 'Em' });
     expect(result.ok && result.rows.length).toBeGreaterThan(0);

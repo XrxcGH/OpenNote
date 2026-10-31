@@ -78,8 +78,8 @@ const SEVENTH_SUFFIX: Record<string, string> = {
   diminished7: '°7',
   augmented7: '+7',
   dominant7flat5: '7♭5',
-  major6: '6',
-  minor6: '6',
+  major6: 'add6',
+  minor6: 'add6',
   dominant9: '9',
   major9: 'maj9',
   minor9: '9',
@@ -102,7 +102,8 @@ export function numeralText(generic: number, alt: number, q: string, inversion: 
   const letters = upper ? ROMAN[generic]! : ROMAN[generic]!.toLowerCase();
   const prefix = alt === 0 ? '' : (alt > 0 ? SHARP : FLAT).repeat(Math.abs(alt));
   const chord = quality(q);
-  const sevenths = chord.stack >= 4 && !['major6', 'minor6'].includes(q);
+  const sevenths = chord.stack >= 4;
+  const added = q === 'major6' || q === 'minor6' ? 'add6' : q === 'add9' ? 'add9' : '';
   let suffix: string;
   if (inversion > 0 && chord.stack <= 4) {
     suffix = figuredBass(chord, inversion).replace('5/3', '').replace('6/3', '6');
@@ -111,6 +112,7 @@ export function numeralText(generic: number, alt: number, q: string, inversion: 
     else if (q === 'diminished7') suffix = `°${suffix}`;
     else if (triad === 'A') suffix = `+${suffix}`;
     else if (q === 'major7' || q === 'minorMajor7') suffix = `maj${suffix}`;
+    else if (added) suffix = `${suffix}${added}`;
   } else if (SEVENTH_SUFFIX[q]) {
     suffix = SEVENTH_SUFFIX[q]!;
   } else if (triad === 'd') suffix = '°';
@@ -174,7 +176,7 @@ export function analyze(tonicPc: Pc, mode: Mode, notes: readonly Note[]): Roman 
       rootSemis: bassPc,
     };
   }
-  const named: ChordMatch | undefined = nameChord([...notes])[0];
+  const named: ChordMatch | undefined = nameChord([...notes], { analysis: true })[0];
   if (!named) return null;
   const rootPc = (pitchClass(named.root) - tonicPcNum + 12) % 12;
   const generic = (((named.root.step - tonic.step) % 7) + 7) % 7;
