@@ -8,14 +8,18 @@ import type { MenuItemSpec } from '../../../../ui';
 import { firstTexts, runTool } from '../kit/read';
 import { shownFields, type ToolSpec } from '../kit/spec';
 import type { StatError } from '../kit/types';
+import { onKitInputs, takeKitInputs } from '../../kits/registry';
 import { FieldInput } from './Fields';
 import {
   answerLatex,
   answerText,
   extraTable,
+  KIT_ID,
+  liveBlockRequest,
   pictureName,
   pictureRequest,
   resultTable,
+  savedTexts,
   sendToPage,
   stepWords,
   stepsHtml,
@@ -55,7 +59,7 @@ export function errorText(error: StatError): string {
   return say(`kitStatModels.error.${error.code}`, { detail, other });
 }
 
-function insertItems(c: InsertContext): MenuItemSpec[] {
+function insertItems(c: InsertContext, texts: Readonly<Record<string, string>>): MenuItemSpec[] {
   const done = (ok: boolean) => announce(say(ok ? 'kitStatModels.ui.inserted' : 'kitStatModels.ui.noPage'));
   const item = (id: string, label: string, send: () => boolean): MenuItemSpec => ({
     id,
@@ -89,12 +93,24 @@ function insertItems(c: InsertContext): MenuItemSpec[] {
         sendToPage({ picture: pictureRequest(c, picture) }),
       ),
     );
+  items.push(item('live', say('kitStatModels.ui.insertLive'), () => sendToPage({ panel: liveBlockRequest(c, texts) })));
   return items;
 }
 
 export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const [texts, setTexts] = useState<Record<string, string>>(() => ({ ...firstTexts(spec), ...load(tool, {}) }));
   useEffect(() => save(tool, texts), [tool, texts]);
+  // A live block's Open in tool: take the texts it saved, on opening or while this tool is already showing.
+  useEffect(() => {
+    const take = () => {
+      const saved = savedTexts(takeKitInputs(KIT_ID, tool));
+      if (saved) setTexts({ ...firstTexts(spec), ...saved });
+    };
+    take();
+    return onKitInputs(KIT_ID, (which) => {
+      if (which === tool) take();
+    });
+  }, [tool, spec]);
   const deferred = useDeferredValue(texts);
   const run = useMemo(() => runTool(spec, deferred), [spec, deferred]);
   const values = run.ok ? run.values : Object.fromEntries(spec.fields.map((f) => [f.id, texts[f.id] ?? f.first]));
@@ -106,7 +122,7 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
   const openInsert = (anchor: HTMLElement) => {
     if (!run.ok) return;
     const c: InsertContext = { tool, outcome: run.outcome, say };
-    void openMenu({ label: say('kitStatModels.ui.insertMenu'), items: insertItems(c), anchor });
+    void openMenu({ label: say('kitStatModels.ui.insertMenu'), items: insertItems(c, texts), anchor });
   };
   return (
     <div className={styles.panel}>

@@ -18,6 +18,13 @@ addCommand({
   run: () => open(),
 });
 
+// A live calculation block's Open in tool comes back here through the kits' registry; the tool takes the texts the
+// block saved when it shows (ui/ToolPanel.tsx). Best effort: a chunk that fails to load leaves Open in tool off.
+if (typeof window !== 'undefined')
+  void import('../../tools')
+    .then((tools) => tools.registerKit('statmodels', (tool) => open(tool)))
+    .catch(() => undefined);
+
 for (const tool of STATMODELS_TOOLS) {
   addCommand({
     id: `tools.kitStatModels.${tool.id}`,

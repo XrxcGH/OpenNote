@@ -2,6 +2,7 @@
 // worked steps as a numbered list with typeset math, the result in words, and each picture as an SVG image. Each
 // goes through the tools' insert event, which the page answers; the window says in words what happened.
 import { INSERT_EVENT } from '../../flags';
+import { KIT_CALC_TYPE, kitCalcData, kitCalcFallback } from '../../kits/block/model';
 import { fillMath, valueLatex, valueText, wordValues } from '../kit/format';
 import { escapeXml, PAGE, plotSvg, SCREEN, type Palette } from '../kit/picture';
 import type { Outcome, Picture, ResultRow } from '../kit/spec';
@@ -103,6 +104,7 @@ export interface InsertRequest {
   math?: { source: string; display: boolean };
   table?: { header: string[]; rows: string[][] };
   picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
+  panel?: { type: string; data: Record<string, unknown>; fallback: string };
   handled: boolean;
 }
 
@@ -111,6 +113,38 @@ export function sendToPage(detail: Omit<InsertRequest, 'handled'>): boolean {
   const request: InsertRequest = { ...detail, handled: false };
   window.dispatchEvent(new CustomEvent<InsertRequest>(INSERT_EVENT, { detail: request }));
   return request.handled;
+}
+
+/** The kit's id in the kits' registry, which a live calculation block's Open in tool comes back through. */
+export const KIT_ID = 'statmodels';
+
+/**
+ * A live calculation block (the kits' shared block): the tool, its answers, and the typed texts as its inputs, so
+ * Open in tool reopens the tool with them.
+ */
+export function liveBlockRequest(c: InsertContext, texts: Readonly<Record<string, string>>): InsertRequest['panel'] {
+  const data = kitCalcData({
+    kit: KIT_ID,
+    tool: c.tool,
+    title: c.say(`${PREFIX}.${c.tool}.title`),
+    summary: answerText(c),
+    inputs: { texts: { ...texts } },
+    rows: answers(c).map((row) => ({ label: rowLabel(c, row), value: rowText(c, row), unit: '' })),
+    latex: answerLatex(c),
+  });
+  return { type: KIT_CALC_TYPE, data: { ...data }, fallback: kitCalcFallback(data) };
+}
+
+/** The texts a live block saved, or null when its inputs are not a set of texts. */
+export function savedTexts(inputs: unknown): Record<string, string> | null {
+  if (!inputs || typeof inputs !== 'object') return null;
+  const texts = (inputs as { texts?: unknown }).texts;
+  if (!texts || typeof texts !== 'object') return null;
+  return Object.fromEntries(
+    Object.entries(texts as Record<string, unknown>).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
+  );
 }
 
 /** A picture for the page, in the light palette, as an SVG file. */

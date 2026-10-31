@@ -23,6 +23,7 @@ export const shared = {
     insertSteps: 'Worked steps',
     insertWords: 'Result in words',
     insertPicture: 'Picture: {name}',
+    insertLive: 'Live calculation block',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',
     fixFields: 'Fix the marked fields to see the results.',

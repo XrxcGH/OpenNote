@@ -11,6 +11,8 @@ import { INSERT_EVENT } from '../../flags';
 import { closeTool, openTools } from '../../ui/host';
 import { STATMODELS_TOOLS } from '../meta';
 import { saveTab } from '../open';
+import { openKitTool, registerKit } from '../../kits/registry';
+import { savedTexts } from './insert';
 import { StatModelsKit } from './StatModelsKit';
 
 type Detail = { text?: string; math?: { source: string }; table?: { rows: string[][] }; picture?: object };
@@ -69,7 +71,11 @@ describe('the statistical models kit window', () => {
         <StatModelsKit />
       </div>,
     );
-    const coefficients = await screen.findByRole('region', { name: 'Coefficients on the link scale' }, { timeout: 15_000 });
+    const coefficients = await screen.findByRole(
+      'region',
+      { name: 'Coefficients on the link scale' },
+      { timeout: 15_000 },
+    );
     const cells = [...coefficients.querySelectorAll('tbody th, tbody td')];
     expect(cells.length).toBeGreaterThan(0);
     for (const cell of cells) {
@@ -115,6 +121,31 @@ describe('the statistical models kit window', () => {
     expect(inserted[3].text).toContain('data-math=');
     expect(inserted[4].text).toContain('multiplies the odds of passed by 1.7224');
     expect(inserted[5].picture).toBeTruthy();
+  });
+
+  it('inserts a live block whose Open in tool brings its typed texts back', async () => {
+    saveTab('glm');
+    renderUi(<StatModelsKit />);
+    const data = await screen.findByRole('textbox', { name: 'Data' }, { timeout: 15_000 });
+    const typed = 'hours,passed\n0,0\n1,0\n2,1\n3,0\n4,1\n5,1';
+    await userEvent.fill(data, typed);
+    await screen.findByRole('region', { name: 'Results' }, { timeout: 15_000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Live calculation block' }));
+    const panel = (inserted[0] as { panel?: { data: { kit: string; tool: string; inputs: unknown } } }).panel;
+    expect(panel?.data.kit).toBe('statmodels');
+    expect(panel?.data.tool).toBe('glm');
+    expect(savedTexts(panel?.data.inputs)?.data).toBe(typed);
+    await userEvent.fill(data, 'hours,passed\n0,0\n1,1\n2,0\n3,1');
+    registerKit('statmodels', () => undefined);
+    await openKitTool('statmodels', 'glm', panel?.data.inputs);
+    await waitFor(() => expect((data as HTMLTextAreaElement).value).toBe(typed));
+  });
+
+  it('reads only string texts from a live block', () => {
+    expect(savedTexts(null)).toBeNull();
+    expect(savedTexts({ texts: 3 })).toBeNull();
+    expect(savedTexts({ texts: { a: '1', b: 2 } })).toEqual({ a: '1' });
   });
 
   it('opens on the tool a palette command names', async () => {
