@@ -180,7 +180,9 @@ export interface EnergyRow {
   nIn: number;
   nu: number;
   dHf: number;
+  /** Mean cp from 25 °C to the inlet temperature, J/(mol·K), and to the outlet when cpOut is not given. */
   cp: number;
+  cpOut?: number;
 }
 
 /**
@@ -198,7 +200,7 @@ export function reactionHeat(rows: readonly EnergyRow[], xi: number, Tin: number
   const dHr = rows.reduce((s, r) => s + r.nu * r.dHf, 0);
   const Href = 298.15;
   const sensibleIn = rows.reduce((s, r) => s + r.nIn * r.cp * (Tin - Href), 0) / 1000;
-  const sensibleOut = rows.reduce((s, r, i) => s + out[i]! * r.cp * (Tout - Href), 0) / 1000;
+  const sensibleOut = rows.reduce((s, r, i) => s + out[i]! * (r.cpOut ?? r.cp) * (Tout - Href), 0) / 1000;
   const Q = sensibleOut - sensibleIn + xi * dHr;
   return { out, dHr, sensibleIn, sensibleOut, Q };
 }
@@ -375,11 +377,31 @@ export interface McCabe {
   Rmin: number;
 }
 
+/** An x-y equilibrium curve for the light component, both ways. */
+export interface Equilibrium {
+  y: (x: number) => number;
+  x: (y: number) => number;
+}
+
 /** McCabe-Thiele stepping from the top for a total condenser, with the q-line and the best feed stage. */
 export function mccabeThiele(alpha: number, xD: number, xB: number, zF: number, q: number, R: number): McCabe {
   need(alpha > 1, 'process.errors.alpha');
   need(xB > 0 && xB < zF && zF < xD && xD < 1, 'process.errors.purities');
   const { Rmin } = underwood(alpha, xD, zF, q);
+  return mccabeStages({ y: (x) => yEq(alpha, x), x: (y) => xEq(alpha, y) }, Rmin, xD, xB, zF, q, R);
+}
+
+/** McCabe-Thiele stepping on any equilibrium curve, given its minimum reflux. */
+export function mccabeStages(
+  eq: Equilibrium,
+  Rmin: number,
+  xD: number,
+  xB: number,
+  zF: number,
+  q: number,
+  R: number,
+): McCabe {
+  need(xB > 0 && xB < zF && zF < xD && xD < 1, 'process.errors.purities');
   need(R > Rmin * (1 + 1e-9), 'process.errors.reflux');
   // Rectifying line y = R/(R+1) x + xD/(R+1); q-line y = q/(q−1) x − zF/(q−1) (vertical when q = 1).
   const m = R / (R + 1);
@@ -393,7 +415,7 @@ export function mccabeThiele(alpha: number, xD: number, xB: number, zF: number, 
   let rectifying = true;
   let feedStage = 0;
   for (let k = 0; k < 500; k++) {
-    const x = xEq(alpha, y);
+    const x = eq.x(y);
     stages.push({ x, y });
     if (x <= xB) break;
     if (rectifying && x < xi) {
@@ -401,7 +423,7 @@ export function mccabeThiele(alpha: number, xD: number, xB: number, zF: number, 
       feedStage = stages.length;
     }
     y = operating(x, rectifying);
-    need(k < 499, 'process.errors.pinch');
+    need(k < 499 && y > x, 'process.errors.pinch');
   }
   if (!feedStage) feedStage = stages.length;
   return { stages, feedStage, N: stages.length, xi, yi, Rmin };

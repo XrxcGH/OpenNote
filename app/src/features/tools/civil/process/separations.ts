@@ -3,8 +3,11 @@
 import { grid, num, opt, pick, row, step } from '../core/calc';
 import { tex } from '../core/format';
 import { linspace } from '../core/num';
+import { need } from '../core/types';
 import type { Calc, Field, Outcome } from '../core/types';
-import { fenske, flash, gilliland, kremser, mccabeThiele, minLiquid, underwood, vlePoint, yEq } from './engine';
+import { fenske, flash, gilliland, kremser, mccabeStages, minLiquid, underwood, vlePoint, xEq, yEq } from './engine';
+import { minReflux, tableEquilibrium } from './equilibrium';
+
 import type { ActivityModel, Antoine } from './engine';
 
 const NIST = 'process.source.nist';
@@ -156,6 +159,9 @@ const flashCalc: Calc = {
   },
 };
 
+// Benzene-toluene at 1 atm, as tabulated in McCabe, Smith, and Harriott.
+const BENZENE_TOLUENE = '0.1 0.21\n0.2 0.37\n0.3 0.51\n0.4 0.62\n0.5 0.71\n0.6 0.79\n0.7 0.86\n0.8 0.91\n0.9 0.96';
+
 const DIST_FIELDS = [
   num('alpha', 'process.f.alpha', '2.25'),
   num('xD', 'process.f.xD', '0.95'),
@@ -168,11 +174,24 @@ const mccabeCalc: Calc = {
   id: 'mccabe',
   title: 'process.mt.title',
   intro: 'process.mt.intro',
-  fields: [...DIST_FIELDS, num('Rfactor', 'process.f.Rfactor', '1.5')],
-  solve({ n }): Outcome {
-    const { Rmin } = underwood(n.alpha!, n.xD!, n.zF!, n.q!);
+  fields: (choices) => [
+    pick('eqFrom', 'process.f.eqFrom', [
+      ['alpha', 'process.o.eqAlpha'],
+      ['table', 'process.o.eqTable'],
+    ]),
+    ...(choices.eqFrom === 'table'
+      ? [grid('eq', 'process.f.eqTable', [['process.f.xCol'], ['process.f.yCol']], BENZENE_TOLUENE, 2)]
+      : [DIST_FIELDS[0]!]),
+    ...DIST_FIELDS.slice(1),
+    num('Rfactor', 'process.f.Rfactor', '1.5'),
+  ],
+  solve({ n, s, rows }): Outcome {
+    const table = s.eqFrom === 'table' ? tableEquilibrium(rows.eq!) : null;
+    if (!table) need(n.alpha! > 1, 'process.errors.alpha');
+    const eq = table ?? { y: (x: number) => yEq(n.alpha!, x), x: (y: number) => xEq(n.alpha!, y) };
+    const Rmin = table ? minReflux(table, n.xD!, n.zF!, n.q!) : underwood(n.alpha!, n.xD!, n.zF!, n.q!).Rmin;
     const R = n.Rfactor! * Rmin;
-    const m = mccabeThiele(n.alpha!, n.xD!, n.xB!, n.zF!, n.q!, R);
+    const m = mccabeStages(eq, Rmin, n.xD!, n.xB!, n.zF!, n.q!, R);
     const stairs: [number, number][] = [[n.xD!, n.xD!]];
     for (const st of m.stages) {
       stairs.push([st.x, st.y]);
@@ -192,7 +211,7 @@ const mccabeCalc: Calc = {
         row('process.r.Rmin', Rmin),
       ],
       steps: [
-        step('process.mt.s1', { R, Rmin }, `R = ${tex(n.Rfactor!)} R_{min} = ${tex(R)}`),
+        step(table ? 'process.mt.s1Table' : 'process.mt.s1', { R, Rmin }, `R = ${tex(n.Rfactor!)} R_{min} = ${tex(R)}`),
         step(
           'process.mt.s2',
           undefined,
@@ -210,7 +229,10 @@ const mccabeCalc: Calc = {
         y: 'process.p.y',
         equal: true,
         series: [
-          { name: 'process.p.equilibrium', points: linspace(0, 1, 60).map((x) => [x, yEq(n.alpha!, x)] as const) },
+          {
+            name: 'process.p.equilibrium',
+            points: table ? table.points : linspace(0, 1, 60).map((x) => [x, eq.y(x)] as const),
+          },
           { name: 'process.p.diagonal', points: [[0, 0] as const, [1, 1] as const], style: 'dashed' },
           {
             name: 'process.p.operating',

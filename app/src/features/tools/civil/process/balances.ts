@@ -1,9 +1,10 @@
 // The process tool's balance calculations: mixing, separation, recycle with purge, typed linear balances, and the
 // energy balance of a reaction.
-import { formula, grid, num, row, step } from '../core/calc';
+import { formula, grid, num, pick, row, step } from '../core/calc';
 import { fmt, tex } from '../core/format';
 import type { Calc, Outcome } from '../core/types';
 import { linearBalances, mix, reactionHeat, recycleLoop, separate } from './engine';
+import { GAS_LIST, meanGasCp } from './gasCp';
 
 const mixCalc: Calc = {
   id: 'mix',
@@ -144,24 +145,36 @@ const energyCalc: Calc = {
   id: 'energy',
   title: 'process.energy.title',
   intro: 'process.energy.intro',
-  fields: [
-    grid(
-      'species',
-      'process.f.species',
-      [['process.f.nInCol'], ['process.f.nuCol'], ['process.f.dHfCol'], ['process.f.cpCol']],
-      '1 -1 -110.52 30\n0.5 -0.5 0 30\n0 1 -393.51 40',
-    ),
+  fields: (choices) => [
+    pick('cpFrom', 'process.f.cpFrom', [
+      ['typed', 'process.o.cpTyped'],
+      ['table', 'process.o.cpTable'],
+    ]),
+    choices.cpFrom === 'table'
+      ? grid(
+          'gases',
+          'process.f.species',
+          [['process.f.nInCol'], ['process.f.nuCol'], ['process.f.dHfCol'], ['process.f.gasCol']],
+          '1 -1 -110.52 9\n0.5 -0.5 0 3\n0 1 -393.51 8',
+        )
+      : grid(
+          'species',
+          'process.f.species',
+          [['process.f.nInCol'], ['process.f.nuCol'], ['process.f.dHfCol'], ['process.f.cpCol']],
+          '1 -1 -110.52 30\n0.5 -0.5 0 30\n0 1 -393.51 40',
+        ),
     num('xi', 'process.f.xi', '1'),
     num('Tin', 'process.f.Tin', '298.15', 'kelvin'),
     num('Tout', 'process.f.Tout', '398.15', 'kelvin'),
   ],
-  solve({ n, rows }): Outcome {
-    const e = reactionHeat(
-      rows.species!.map(([nIn, nu, dHf, cp]) => ({ nIn: nIn!, nu: nu!, dHf: dHf!, cp: cp! })),
-      n.xi!,
-      n.Tin!,
-      n.Tout!,
+  solve({ n, s, rows }): Outcome {
+    const table = s.cpFrom === 'table';
+    const species = (table ? rows.gases! : rows.species!).map(([nIn, nu, dHf, c]) =>
+      table
+        ? { nIn: nIn!, nu: nu!, dHf: dHf!, cp: meanGasCp(c!, n.Tin!), cpOut: meanGasCp(c!, n.Tout!) }
+        : { nIn: nIn!, nu: nu!, dHf: dHf!, cp: c! },
     );
+    const e = reactionHeat(species, n.xi!, n.Tin!, n.Tout!);
     return {
       answer: { key: e.Q >= 0 ? 'process.energy.add' : 'process.energy.remove', vars: { Q: Math.abs(e.Q) } },
       rows: [
@@ -185,11 +198,12 @@ const energyCalc: Calc = {
             ` = ${tex(e.Q)}\\ \\mathrm{kJ}`,
         ),
       ],
+      ...(table ? { notes: [{ key: 'process.energy.gasNote', vars: { list: GAS_LIST } }] } : {}),
       latex: `Q = ${tex(e.Q)}\\ \\mathrm{kJ}`,
       grid: {
         caption: 'process.g.energy',
         header: ['process.g.component', 'process.g.nIn', 'process.g.nOut'],
-        rows: e.out.map((out, i) => [i + 1, rows.species![i]![0]!, out]),
+        rows: e.out.map((out, i) => [i + 1, species[i]!.nIn, out]),
       },
     };
   },

@@ -25,10 +25,18 @@ export const processTool = {
     purities: 'The compositions must run x_B < z_F < x_D. Each must lie between 0 and 1.',
     reflux: 'The reflux ratio must be greater than the minimum.',
     pinch: 'The steps do not reach the bottoms: the operating line touches the equilibrium curve.',
+    eqTable: 'The equilibrium table needs x and y between 0 and 1, both rising from row to row.',
+    azeotrope: 'The equilibrium curve meets the diagonal below x_D, so no reflux reaches this purity.',
+    gas: 'The gas number must be a whole number from 1 to {count}.',
+    gasRange: 'The gas table covers 250 to 1000 K. Keep both temperatures in that range.',
     kremser: 'The outlet must be cleaner than the inlet, and both above equilibrium with the other stream.',
     kremserLimit: 'This separation is beyond what any number of stages can reach at this flow ratio.',
   },
   o: {
+    eqAlpha: 'Constant relative volatility',
+    eqTable: 'Tabulated x-y data',
+    cpTyped: 'Typed mean heat capacities',
+    cpTable: 'Gas table heat capacities',
     ideal: 'Ideal liquid (Raoult)',
     margules: 'Margules',
     vanLaar: 'van Laar',
@@ -41,6 +49,12 @@ export const processTool = {
     strip: 'Stripper',
   },
   f: {
+    eqFrom: 'Equilibrium',
+    eqTable: 'Equilibrium data, light component',
+    xCol: 'x (liquid)',
+    yCol: 'y (vapor)',
+    cpFrom: 'Heat capacities',
+    gasCol: 'gas number (listed in the note)',
     streams: 'Streams',
     flowCol: 'flow',
     fracCol: 'fraction',
@@ -186,6 +200,9 @@ export const processTool = {
     s1: 'Hess’s law gives ΔH°r = {dHr} kJ/mol.',
     s2: 'The inlet holds {inS} kJ above 25 °C, and the outlet {outS} kJ.',
     s3: 'The heat to add is Q = {Q} kJ.',
+    gasNote:
+      'Mean c_p from 25 °C to each temperature comes from the ideal-gas table (CoolProp). The gases are numbered: ' +
+      '{list}.',
   },
   vle: {
     title: 'Vapor-liquid equilibrium of a binary',
@@ -216,9 +233,13 @@ export const processTool = {
   },
   mt: {
     title: 'McCabe-Thiele distillation',
-    intro: 'A binary at constant relative volatility, with a total condenser and constant molar overflow.',
+    intro:
+      'A binary at constant relative volatility or from tabulated x-y data, with a total condenser and constant ' +
+      'molar overflow.',
     answer: 'The column needs {N} stages, with the feed on stage {feed}, at R = {R}.',
     s1: 'The reflux ratio is R = {R}, with R_min = {Rmin} by Underwood.',
+    s1Table:
+      'The reflux ratio is R = {R}, with R_min = {Rmin} where the rectifying line first touches the tabulated curve.',
     s2: 'The rectifying line and the q-line:',
     s3: 'They cross at x = {xi}, y = {yi}, where the stripping line also starts.',
     stage: 'Stage {i}: x = {x}, y = {y}.',
