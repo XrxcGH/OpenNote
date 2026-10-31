@@ -234,6 +234,24 @@ pub const TOOLS: &[Tool] = &[
         width: 520.0,
         height: 720.0,
     },
+    Tool {
+        id: "kit-earth",
+        title: "Earth sciences",
+        width: 520.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kit-humanities",
+        title: "History, places, languages, and texts",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "kitmusic",
+        title: "Music, script, camera, and studio tools",
+        width: 560.0,
+        height: 720.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it
