@@ -41,6 +41,29 @@ async function walkModes(container: HTMLElement) {
   expect(screen.getAllByRole('tab')[0]!.getAttribute('aria-selected')).toBe('true');
 }
 
+/** A 0.5 s, 16-bit mono WAV of a sine at 16 kHz, built here so the expected peak is known independently. */
+function toneWav(freq: number): ArrayBuffer {
+  const rate = 16000;
+  const n = rate / 2;
+  const bytes = new DataView(new ArrayBuffer(44 + 2 * n));
+  const text = (at: number, s: string) => [...s].forEach((c, i) => bytes.setUint8(at + i, c.charCodeAt(0)));
+  text(0, 'RIFF');
+  bytes.setUint32(4, 36 + 2 * n, true);
+  text(8, 'WAVEfmt ');
+  bytes.setUint32(16, 16, true);
+  bytes.setUint16(20, 1, true);
+  bytes.setUint16(22, 1, true);
+  bytes.setUint32(24, rate, true);
+  bytes.setUint32(28, 2 * rate, true);
+  bytes.setUint16(32, 2, true);
+  bytes.setUint16(34, 16, true);
+  text(36, 'data');
+  bytes.setUint32(40, 2 * n, true);
+  for (let i = 0; i < n; i += 1)
+    bytes.setInt16(44 + 2 * i, Math.round(16000 * Math.sin((2 * Math.PI * freq * i) / rate)), true);
+  return bytes.buffer;
+}
+
 describe('signals and sound kit', () => {
   it('opens the spectrum analyzer at its example and reads the 10 Hz peak', async () => {
     const { container } = await openAt('spectrum');
@@ -52,26 +75,8 @@ describe('signals and sound kit', () => {
   });
 
   it('analyzes an opened sound file in place of the pasted samples', async () => {
-    // A 0.5 s, 16-bit mono WAV of a 440 Hz sine at 16 kHz, built here so the expected peak is known independently.
-    const rate = 16000;
-    const n = rate / 2;
-    const bytes = new DataView(new ArrayBuffer(44 + 2 * n));
-    const text = (at: number, s: string) => [...s].forEach((c, i) => bytes.setUint8(at + i, c.charCodeAt(0)));
-    text(0, 'RIFF');
-    bytes.setUint32(4, 36 + 2 * n, true);
-    text(8, 'WAVEfmt ');
-    bytes.setUint32(16, 16, true);
-    bytes.setUint16(20, 1, true);
-    bytes.setUint16(22, 1, true);
-    bytes.setUint32(24, rate, true);
-    bytes.setUint32(28, 2 * rate, true);
-    bytes.setUint16(32, 2, true);
-    bytes.setUint16(34, 16, true);
-    text(36, 'data');
-    bytes.setUint32(40, 2 * n, true);
-    for (let i = 0; i < n; i += 1) bytes.setInt16(44 + 2 * i, Math.round(16000 * Math.sin((2 * Math.PI * 440 * i) / rate)), true);
     await openAt('spectrum');
-    const file = new File([bytes.buffer], 'tone.wav', { type: 'audio/wav' });
+    const file = new File([toneWav(440)], 'tone.wav', { type: 'audio/wav' });
     fireEvent.change(screen.getByLabelText('Or open a sound file'), { target: { files: [file] } });
     expect(await screen.findByText(/Analyzing tone\.wav/, undefined, { timeout: 10_000 })).toBeTruthy();
     expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/at 4(39|40|41)(\.\d*)? Hz/);
@@ -86,7 +91,9 @@ describe('signals and sound kit', () => {
     act(() => chooseSignalTool('spectrum'));
     expect(picker.value).toBe('spectrum');
   });
+});
 
+describe('signals kit: systems, coding, RF, and filters', () => {
   it('convolves the example, finds the correlation lag, and walks every systems mode', async () => {
     const { container } = await openAt('systems');
     expect(screen.getAllByRole('status')[0]!.textContent).toContain('y = [0, 1, 2.5, 4, 1.5]');
@@ -122,7 +129,9 @@ describe('signals and sound kit', () => {
     expect(inserted[0]?.table).toBeTruthy();
     await walkModes(container);
   });
+});
 
+describe('signals kit: imaging, sound, and body signals', () => {
   it('reads the spin-echo example, shows the coursework notice, and walks every medical imaging mode', async () => {
     const { container } = await openAt('medimaging');
     expect(screen.getAllByRole('status')[0]!.textContent).toContain('0.348981');
