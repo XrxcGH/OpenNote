@@ -130,7 +130,7 @@ pub const TOOLS: &[Tool] = &[
         id: "kit-statmodels",
         title: "Statistical models",
         width: 600.0,
-        height: 760.0,
+        height: 720.0,
     },
     Tool {
         id: "kitelectrical",
