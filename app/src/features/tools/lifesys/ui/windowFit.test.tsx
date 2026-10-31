@@ -1,6 +1,5 @@
-// The life science window stays inside a narrow app window: at 600 px (opened there, or opened wide and then
-// narrowed, with a width dragged wider than the window) and at phone width, the window and its first tool tab are
-// wholly on screen after the palette command opens it.
+// The life science window stays inside a narrow app window. At 600 px and at phone width, the window and its first
+// tab are wholly on screen after the command opens it. The same holds when a wide window with a dragged width narrows.
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';

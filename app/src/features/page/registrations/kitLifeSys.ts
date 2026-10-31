@@ -3,6 +3,9 @@
 import { LIFESYS_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
 
+// One import site for the tools chunk, so start-up carries its preload list once.
+const tools = () => import('../../tools');
+
 addCommand({
   id: 'tools.lifesys',
   title: 'kitLifeSys.ui.open',
@@ -11,7 +14,7 @@ addCommand({
   icon: 'Leaf',
   flag: 'kits.lifesys',
   anywhere: true,
-  run: async () => (await import('../../tools')).openLifeSys(),
+  run: async () => (await tools()).openLifeSys(),
 });
 
 for (const tool of LIFESYS_TOOLS) {
@@ -23,7 +26,7 @@ for (const tool of LIFESYS_TOOLS) {
     icon: tool.icon,
     flag: 'kits.lifesys',
     anywhere: true,
-    run: async () => (await import('../../tools')).openLifeSys(tool.id),
+    run: async () => (await tools()).openLifeSys(tool.id),
   });
 }
 
@@ -31,7 +34,7 @@ for (const tool of LIFESYS_TOOLS) {
 // calculation, and the typed values; its Open in tool comes back here through the kit registry. Best effort: a chunk
 // that fails to load leaves Open in tool unavailable, and the commands still work.
 if (typeof window !== 'undefined') {
-  void import('../../tools')
-    .then((tools) => tools.registerKit('lifesys', (tool) => tools.reopenLifeSys(tool)))
+  void tools()
+    .then((chunk) => chunk.registerKit('lifesys', (tool) => chunk.reopenLifeSys(tool)))
     .catch(() => undefined);
 }

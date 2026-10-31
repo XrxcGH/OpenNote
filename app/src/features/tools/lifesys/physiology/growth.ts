@@ -4,7 +4,7 @@
 // Source: CDC / National Center for Health Statistics, "Percentile Data Files with LMS Values"
 // (https://www.cdc.gov/growthcharts/percentile_data_files.htm): wtage.csv (weight-for-age), statage.csv
 // (stature-for-age), and bmiagerev.csv (BMI-for-age), unchanged since the charts' release on 30 May 2000.
-// Licence: a work of the United States government, in the public domain (17 U.S.C. section 105).
+// License: public domain. It is a work of the United States government (17 U.S.C. section 105).
 // data/cdcLms.json keeps each file's Agemos, L, M, and S columns at their published precision, by sex. Every row was
 // checked against the file's own P3, P50, and P97 columns (M (1 + L S z)^(1/L) agrees to 1 part in 10^8).
 //
