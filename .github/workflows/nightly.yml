@@ -341,7 +341,7 @@ jobs:
 
   nvda:
     # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
-    # records what it said (A4-42). The Guidepup packages are installed here, not in package.json, so no other job
+    # records what it said (A4-42). The Guidepup packages are installed here, under tests/nvda, not in package.json, so no other job
     # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
     runs-on: windows-latest
     timeout-minutes: 45
@@ -358,7 +358,9 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Install Guidepup
-        run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+        # Into tests/nvda/node_modules, away from the repository's own tree: installing on top of it failed with
+        # "Cannot read properties of null (reading 'edgesOut')". The spec still finds the package from there.
+        run: npm install --prefix tests/nvda --no-save --no-package-lock --no-audit --no-fund @guidepup/guidepup@0.35.0
       - name: Set up NVDA
         run: npx --yes @guidepup/setup@0.29.1 setup --ci
       - name: Walk the checklist with NVDA
