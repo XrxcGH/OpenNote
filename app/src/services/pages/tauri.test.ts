@@ -17,7 +17,7 @@ const block = (id: string, markdown: string) => ({
   data: { markdown },
 });
 
-function envelope(blocks: object[], readOnly: string | null = null): DecodedEnvelope {
+function envelope(blocks: object[], readOnly: DecodedEnvelope['session']['readOnly'] = null): DecodedEnvelope {
   return {
     session: {
       page: 'core',
@@ -123,6 +123,12 @@ describe('the Tauri page service’s requests', () => {
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });
     await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'coreBusy', resync: false });
     expect(coreStalled(saveHealthStore.get())).toBe(true);
+  });
+
+  it('reads the read-only reason the core tags as { kind }, so a page opened after the wait can say why', async () => {
+    const { core } = fakeCore([envelope([], { kind: 'stillClosing' })]);
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    expect(page.readOnly).toEqual({ reason: 'stillClosing', action: null });
   });
 
   it('builds asset addresses that WebView2 routes, with each ID kept to one path segment', async () => {
