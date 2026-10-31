@@ -3,6 +3,7 @@
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import chem from '../../ui/chem.module.css';
+import result from './result.module.css';
 import { SCREEN, plotTree } from './plot';
 import type { PlotSpec, SvgNode } from './plot';
 
@@ -22,5 +23,5 @@ function toReact(node: SvgNode | string, key: number): ReactNode {
 }
 
 export function Plot({ spec }: { spec: PlotSpec }) {
-  return <figure className={chem.figure}>{toReact(plotTree(spec, SCREEN), 0)}</figure>;
+  return <figure className={`${chem.figure} ${result.plot}`}>{toReact(plotTree(spec, SCREEN), 0)}</figure>;
 }
