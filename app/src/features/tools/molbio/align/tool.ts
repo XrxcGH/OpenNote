@@ -13,7 +13,17 @@ import type { BuiltIn, Matrix } from './matrices';
 
 const MODES = ['global', 'local', 'semi', 'dots'] as const;
 type Mode = (typeof MODES)[number];
-const SCORING = ['dna', 'transition', 'blosum45', 'blosum62', 'blosum80', 'pam30', 'pam70', 'pam250', 'custom'] as const;
+const SCORING = [
+  'dna',
+  'transition',
+  'blosum45',
+  'blosum62',
+  'blosum80',
+  'pam30',
+  'pam70',
+  'pam250',
+  'custom',
+] as const;
 const builtIn = (v: Values): BuiltIn | undefined =>
   v.scoring && v.scoring in BUILT_IN ? (v.scoring as BuiltIn) : undefined;
 /** The citation line for a built-in matrix, naming its NCBI file. */

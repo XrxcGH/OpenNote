@@ -109,7 +109,16 @@ describe('open reading frames', () => {
   it('gives minus-strand ORFs in plus positions, start after end', () => {
     const plus = 'ATGAAATAG';
     const found = findOrfs(revComp(plus), standard, { minCodons: 2, starts: 'atg', nested: false, strands: 'both' });
-    expect(found).toContainEqual({ strand: '-', frame: 1, start: 9, end: 1, codons: 2, protein: 'MK', nested: false, partial: false });
+    expect(found).toContainEqual({
+      strand: '-',
+      frame: 1,
+      start: 9,
+      end: 1,
+      codons: 2,
+      protein: 'MK',
+      nested: false,
+      partial: false,
+    });
   });
 });
 
