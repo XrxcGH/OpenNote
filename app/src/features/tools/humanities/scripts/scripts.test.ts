@@ -135,7 +135,7 @@ describe('romanization tables', () => {
     expect(romanize('ντομάτα', 'el-alalc')).toBe('domata');
     expect(romanize('γκρίζος', 'el-alalc')).toBe('grizos');
     expect(romanize('λάμπα', 'el-alalc')).toBe('lampa');
-    // ALA-LC Hindi drops the final inherent a and maps nukta letters; ISO 15919 keeps every a.
+    // ALA-LC Hindi drops the word-final inherent vowel and maps nukta letters; ISO 15919 keeps every a.
     const nfc = (s: string) => s.normalize('NFC');
     expect(nfc(romanize('भारत', 'hi-alalc'))).toBe(nfc('bhārat'));
     expect(nfc(romanize('ज़रूर', 'hi-alalc'))).toBe(nfc('zarūr'));

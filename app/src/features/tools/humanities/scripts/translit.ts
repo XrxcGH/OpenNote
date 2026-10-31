@@ -187,7 +187,7 @@ type Deva = 'sanskrit' | 'hindi' | 'iso';
 
 /**
  * Devanagari. Sanskrit (ALA-LC) and ISO 15919 write every inherent a: संस्कृत is saṃskṛta. Hindi (ALA-LC) leaves
- * out the a at the end of a word after a single consonant: भारत is bhārat.
+ * out the inherent vowel at the end of a word after a single consonant: भारत is bhārat.
  */
 function devanagari(text: string, mode: Deva): string {
   const chars = [...text.normalize('NFC')];
@@ -213,7 +213,7 @@ function devanagari(text: string, mode: Deva): string {
         vowels++;
         i++;
       } else {
-        // Hindi: no a at the end of a word after a single consonant, if the word has a vowel before it.
+        // Hindi: no inherent vowel at the end of a word after a single consonant, if the word has a vowel before it.
         if (!(mode === 'hindi' && !isLetter(next) && !clustered && vowels > 0)) out += 'a';
         vowels++;
       }

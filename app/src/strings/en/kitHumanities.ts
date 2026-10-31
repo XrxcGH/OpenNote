@@ -1341,7 +1341,9 @@ export const kitHumanities = {
     elided: 'Elided: {words}',
     verseSteps: {
       english:
-        'Stress and rhyme are guessed from English spelling, not looked up in a pronouncing dictionary, so a word like move or love can come out wrong. Function words are light. ' +
+        'Stress and rhyme are guessed from English spelling, not looked up in a pronouncing dictionary, ' +
+        'so a word like move or love can ' +
+        'come out wrong. Function words are light. ' +
         'Words of 2 syllables with a prefix such as com- or re- stress the second syllable, and others stress the first. ' +
         'Suffixes such as -ful, -ness, and -ing keep the stem’s stress, and under- and over- compounds stress the second part. ' +
         'The meter whose pattern differs least wins.',
@@ -1617,7 +1619,7 @@ export const kitHumanities = {
         // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
         'Each consonant carries an a unless a vowel sign or a virama follows, but not at the end of a word: भारत is bhārat. A nukta gives q, k͟h, ġ, z, ṛ, ṛh, and f.',
       'sa-alalc': 'Each consonant carries an a unless a vowel sign or a virama follows; ं is ṃ and ः is ḥ.',
-      iso15919: 'As ALA-LC, but ं is ṁ, ऋ is r̥, and ए and ओ are ē and ō; every inherent a is written.',
+      iso15919: 'As ALA-LC, but ं is ṁ, ऋ is r̥, and ए and ओ are ē and ō; every inherent vowel is written.',
       'hy-alalc': 'Aspirated letters take ʻ, as in tʻ; ու is u and և is ew.',
       'ka-alalc': 'Aspirated letters take ʻ, as in tʻ and kʻ; ყ is q.',
     },

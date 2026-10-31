@@ -1,5 +1,6 @@
 // The arithmetic calendars and counts. Coptic and Ethiopian have twelve months of 30 days and a short thirteenth.
-// The French Republican calendar has the leap years it used in years I-XIV (III, VII, XI) and the Romme rule after; and the Indian national calendar starts in March.
+// The French Republican calendar has the leap years it used in years I-XIV (III, VII, and XI) and the Romme rule
+// after; and the Indian national calendar starts in March.
 // Egyptian and Armenian civil years have 365 days. Also here: the Maya Long Count and Calendar Round (GMT
 // correlation 584283), Roman Kalends, Nones, and Ides with years from the founding of Rome, Olympiads, and eras.
 import { gregorianToJdn, isGregorianLeap, isJulianLeap, jdnToGregorian, mod, monthLength } from './jdn';
@@ -29,7 +30,7 @@ export function jdnToNile(kind: Nile, jdn: number): Ymd {
 
 /** French Republican: 1 Vendémiaire year 1 was 22 September 1792. */
 const REPUBLICAN_EPOCH = 2375839;
-/** Years I-XIV, the only years the calendar was in use, followed the equinox: III, VII and XI were leap years. */
+/** Years I-XIV, the only years the calendar was in use, followed the equinox: III, VII, and XI were leap years. */
 const HISTORICAL_LEAPS = [3, 7, 11];
 const ROMME_FROM = 15;
 export const republicanLeap = (year: number): boolean =>
