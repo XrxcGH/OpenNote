@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { takeInputs } from '../open';
-import { Tabs, Tool, ht } from '../ui/parts';
+import { Source, Tabs, Tool, ht } from '../ui/parts';
 import { FeaturePanel, RulePanel, SyllablePanel, VowelPanel } from './SoundPanels';
 import { GlossPanel, TreePanel } from './TreePanels';
 import type { TreeInputs } from './TreePanels';
@@ -38,6 +38,7 @@ export function LinguisticsTool() {
       {tab === 'rules' ? <RulePanel /> : null}
       {tab === 'syllables' ? <SyllablePanel /> : null}
       {tab === 'vowels' ? <VowelPanel /> : null}
+      <Source of="linguistics" />
     </Tool>
   );
 }

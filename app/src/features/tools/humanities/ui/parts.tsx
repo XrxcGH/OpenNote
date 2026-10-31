@@ -8,6 +8,8 @@ import { Button, announce } from '../../../../ui';
 import { insertFigure } from '../../subjects/ui/insertFigure';
 import { KIT_ID } from '../meta';
 import type { HumanitiesToolId } from '../meta';
+import { SOURCES } from '../sources';
+import type { SourceId } from '../sources';
 import { insertMath, insertPicture, insertSteps, insertTable, insertText } from './insert';
 import styles from './kit.module.css';
 
@@ -180,6 +182,11 @@ export function Problem({ text }: { text: string | null }) {
 }
 
 export const Note = ({ children }: { children: ReactNode }) => <p className={styles.note}>{children}</p>;
+
+/** The 'Source: …' line under a tool's results (sources.ts). */
+export const Source = ({ of }: { of: SourceId }) => (
+  <Note>{t('kitHumanities.common.source', { source: SOURCES[of] })}</Note>
+);
 
 /** A table in the window, which scrolls sideways on a narrow window instead of squeezing. */
 export function DataTable({ caption, header, rows }: { caption: string; header: string[]; rows: string[][] }) {

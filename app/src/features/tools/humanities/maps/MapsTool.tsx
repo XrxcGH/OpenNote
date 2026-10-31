@@ -16,6 +16,7 @@ import {
   Picture,
   Problem,
   Results,
+  Source,
   Steps,
   Tabs,
   Tool,
@@ -423,6 +424,7 @@ export function MapsTool() {
       ) : null}
       {tab === 'measure' ? <MeasurePanel /> : null}
       {tab === 'point' ? <PointPanel /> : null}
+      <Source of="maps" />
     </Tool>
   );
 }

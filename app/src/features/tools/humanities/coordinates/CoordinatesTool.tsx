@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { WGS84, direct, haversine, inverse, midpoint, rhumb } from '../geo/ellipsoid';
 import { attempt, errorText, fixed, num } from '../ui/attempt';
-import { Choice, Field, Fields, Tabs, Tool, ht } from '../ui/parts';
+import { Choice, Field, Fields, Source, Tabs, Tool, ht } from '../ui/parts';
 import type { Outcome } from '../ui/parts';
 import { ResultView } from '../ui/ResultView';
 import { formatDm, formatDms, parseAngle } from './dms';
@@ -259,6 +259,7 @@ export function CoordinatesTool() {
       {tab === 'site' ? <SitePanel /> : null}
       {tab === 'land' ? <LandPanel /> : null}
       {tab === 'marine' ? <MarinePanel /> : null}
+      <Source of="coordinates" />
     </Tool>
   );
 }

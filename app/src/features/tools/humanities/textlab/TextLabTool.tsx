@@ -2,7 +2,7 @@
 // versions, plus a language sample and scansion with texts of their own.
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
-import { Tabs, Tool, ht } from '../ui/parts';
+import { Source, Tabs, Tool, ht } from '../ui/parts';
 import { KwicPanel, ReadPanel, TextField, WordsPanel } from './TextPanels';
 import { ComparePanel, KeynessPanel, SamplePanel, VersePanel } from './VersePanels';
 
@@ -29,6 +29,7 @@ export function TextLabTool() {
       {tab === 'compare' ? <ComparePanel text={text} /> : null}
       {tab === 'sample' ? <SamplePanel /> : null}
       {tab === 'verse' ? <VersePanel /> : null}
+      <Source of="textlab" />
     </Tool>
   );
 }

@@ -2,7 +2,7 @@
 // tables, Hangul and its romanizations, kana and Hepburn, pinyin tones and sandhi, Thai tones, and Vietnamese input.
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
-import { Tabs, Tool, ht } from '../ui/parts';
+import { Source, Tabs, Tool, ht } from '../ui/parts';
 import { ChinesePanel, JapanesePanel, KoreanPanel, RomanizePanel, ThaiPanel, VietnamesePanel } from './ConvertPanels';
 import { KeyboardPanel } from './KeyboardPanel';
 
@@ -26,6 +26,7 @@ export function ScriptsTool() {
       {tab === 'chinese' ? <ChinesePanel /> : null}
       {tab === 'thai' ? <ThaiPanel /> : null}
       {tab === 'vietnamese' ? <VietnamesePanel /> : null}
+      <Source of="scripts" />
     </Tool>
   );
 }

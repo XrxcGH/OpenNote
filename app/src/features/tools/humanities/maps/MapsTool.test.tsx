@@ -8,6 +8,7 @@ describe('map maker', () => {
   it('draws the starting map and explains a bad point', async () => {
     const { container } = renderUi(<MapsTool />);
     expect(screen.getByRole('img', { name: /Equal Earth projection with 5 features/ })).toBeTruthy();
+    expect(screen.getByText(/^Source: Snyder, Map Projections/)).toBeTruthy();
     await expectNoAxeViolations(container);
     fireEvent.change(screen.getByRole('textbox', { name: /^Points/ }), { target: { value: 'Nowhere, 95, 0' } });
     expect(screen.getByText('Use latitudes from −90 to 90 and longitudes in degrees.')).toBeTruthy();
