@@ -5,6 +5,8 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 ## Contents
 
 - [Tools](#tools)
+- [Note frames](#note-frames)
+- [Coordinates and navigation](#coordinates-and-navigation)
 - [Timeline builder](#timeline-builder)
 - [Calendars and eras](#calendars-and-eras)
 - [Text analysis and verse](#text-analysis-and-verse)
@@ -24,6 +26,21 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - **Scripts, keyboards, and romanization**: type IPA and other scripts with on-screen keyboards, romanize text by public tables, and work with Hangul, kana, pinyin, Thai tones, and Vietnamese input.
 - **Map maker**: draw maps on 12 projections from your own points, routes, and GeoJSON layers, with choropleth classes, and measure distances and areas.
 - **Identification keys**: build a numbered key from a table of characters. Run it step by step, or filter with a multi-access key.
+
+## Note frames
+
+- Pick a subject, or search, to find a frame such as a case brief, a memo, an essay planner, a lab report, or field notes. The preview shows its headings, prompts, and any table.
+- Click in a page first, then Insert frame. The headings and prompts go in at the caret and the table after them. If no page has the caret, the window says so and nothing is added.
+- A frame is a starting point: change, delete, or add headings on the page as your course asks.
+
+## Coordinates and navigation
+
+- Convert reads latitude and longitude in decimal degrees or in degrees, minutes, and seconds with N, S, E, or W, or a UTM or MGRS (US National Grid) reference, and gives the others with the grid convergence and scale factor. UTM zones follow the Norway and Svalbard exceptions; the polar UPS grids are not covered.
+- Distance gives the geodesic distance and azimuths on WGS84 by Vincenty's formulas, the great-circle distance on a sphere, the rhumb-line course and distance, and the midpoint, or the point at a distance and azimuth. Vincenty's method does not converge for points nearly opposite each other on the Earth; the tool says so instead of giving a wrong answer.
+- Grid zone converts to and from a Lambert conformal conic or transverse Mercator zone on GRS 80 or WGS 84, in meters, US survey feet, or international feet. Type the zone's parameters from its published sheet, such as an NGS State Plane zone; there is no built-in list of zones yet.
+- Site grid fits a local grid to map coordinates from 2 or more control points with a 2D Helmert transformation (one scale, one rotation, one shift) by least squares, and lists the residuals.
+- Land navigation converts between true, magnetic, and grid azimuths, gives back azimuths, pace counts, intersection, and resection. Declination and convergence are positive east: magnetic = true − declination, and grid = true − convergence.
+- Marine navigation works dead reckoning, the current triangle, and chart scale. Dead reckoning uses the mean latitude of the run (mid-latitude sailing) by default; choose the latitude of the fix to use the starting latitude instead, as some textbooks do.
 
 ## Timeline builder
 
@@ -50,7 +67,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 ## Text analysis and verse
 
 - Paste a text once; Readability, Word lists, Concordance, Keyness, and Compare versions all use it.
-- Readability gives Flesch Reading Ease, the Flesch-Kincaid grade, the Gunning fog index, SMOG, Coleman-Liau, and the Automated Readability Index. Syllables are counted by spelling rules, so an unusual word can be off by one.
+- Readability gives Flesch Reading Ease, the Flesch-Kincaid grade, the Gunning fog index, SMOG, Coleman-Liau, and the Automated Readability Index. Syllables are counted by spelling rules, so an unusual word can be off by one. A period after a title such as Dr., an initial, or e.g. does not end a sentence.
 - The flags for passive voice, nominalizations, and hedges are simple local rules. Treat them as hints, not verdicts.
 - Word lists show frequencies, n-grams, the type-token ratio, and a Zipf plot. You can leave out common function words.
 - The concordance shows every use of a word or phrase in context, sorted by the text order or by the words to its left or right. Collocates list the words found near it, with mutual information, the t-score, and log-likelihood.
@@ -84,7 +101,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - Pick a projection: equirectangular, Mercator, transverse Mercator, Lambert conformal conic, Albers, azimuthal equidistant, orthographic, stereographic, Mollweide, Robinson, Winkel tripel, or Equal Earth. Set the center and, for a conic, the standard parallels.
 - Tissot indicatrices show how the projection stretches circles of 500 km. The scale bar is true along the latitude you choose.
 - No base map is built in yet, so paste coastlines or borders as GeoJSON or TopoJSON, such as a Natural Earth file from the world-atlas package. Lines and polygons that cross the map's edge are cut there. The layers can be copied back out as GeoJSON.
-- Measure gives the geodesic distance and azimuth on WGS84, the great-circle distance on a sphere, and the area of a polygon.
+- Measure gives the geodesic distance and azimuth on WGS84, the great-circle distance on a sphere, and the spherical area of a polygon (not on WGS84). The area takes each edge as a great circle, so a long edge meant to follow a parallel should be split into shorter ones.
 - Project a point works one point through a projection's formula on the unit sphere.
 
 ## Identification keys
