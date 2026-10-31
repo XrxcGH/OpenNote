@@ -78,18 +78,40 @@ export const bindingMode: ModeDef = {
   },
 };
 
-/** The particles one side of a reaction names, with a message naming the first it does not know. */
+/** The particles one side of a reaction names, with a message naming the first it does not know. A count may lead a
+ * particle, as textbooks write it: '2 He-4', '2He-4' and '2 alpha' each name two alpha particles. A word the table
+ * already knows, such as 4He, is read as a nuclide first. */
 function readSide(read: Reader, id: string): { particles: Particle[]; words: string[] } {
-  const words = read
+  const raw = read
     .words(id)
     .flat()
     .filter((word) => word !== '+');
-  if (words.length === 0) fail('kitPhysics.errors.missing', undefined, { field: `${K}.f.${id}` as MessageKey });
-  const particles = words.map((word) => {
-    const found = findParticle(word, M_E_U);
-    if (!found) fail(`${K}.errors.particle`, { word });
-    return found;
-  });
+  if (raw.length === 0) fail('kitPhysics.errors.missing', undefined, { field: `${K}.f.${id}` as MessageKey });
+  const particles: Particle[] = [];
+  const words: string[] = [];
+  let count = 1;
+  for (const word of raw) {
+    if (/^\d+$/.test(word)) {
+      count *= Number(word);
+      if (count < 1 || count > 1000) fail(`${K}.errors.particle`, { word });
+      continue;
+    }
+    let name = word;
+    let found = findParticle(word, M_E_U);
+    const prefixed = found ? null : /^(\d+)(\D.*)$/.exec(word);
+    if (prefixed) {
+      found = findParticle(prefixed[2], M_E_U);
+      count *= Number(prefixed[1]);
+      name = prefixed[2];
+    }
+    if (!found || count < 1 || count > 1000) fail(`${K}.errors.particle`, { word });
+    for (let i = 0; i < count; i++) {
+      particles.push(found);
+      words.push(name);
+    }
+    count = 1;
+  }
+  if (count !== 1 || particles.length === 0) fail(`${K}.errors.particle`, { word: raw[raw.length - 1] });
   return { particles, words };
 }
 

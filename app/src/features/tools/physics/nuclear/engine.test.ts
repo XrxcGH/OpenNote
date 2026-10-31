@@ -216,6 +216,23 @@ describe('nuclear science: shielding and reactors', () => {
     const want = (2 / 9) * Math.exp(-1);
     expect(value(out, `${R}rate2`)).toBeCloseTo(want / 3.6e6, 16); // mSv/h to Sv/s
     expect(value(out, `${R}dose`)).toBeCloseTo(want * 3, 12);
+    // A dose to a person: the outcome says it is for coursework only.
+    expect(out.ok && out.notes?.map((note) => note.key)).toContain('kitPhysics.nuclear.notes.coursework');
+  });
+
+  it('reads a count before a particle: Li-7 + p -> 2 He-4 releases 17.346 MeV', () => {
+    // (7.01600343426 + 1.007825031898 - 2 x 4.00260325413) u x 931.49410242 MeV/u = 17.3463 MeV.
+    const want = (7.01600343426 + 1.007825031898 - 2 * 4.00260325413) * 931.49410242;
+    expect(want).toBeCloseTo(17.346, 3);
+    // 4He is one helium-4 nucleus, not four of something.
+    for (const products of ['2 He-4', '2He-4', '2 alpha', 'He-4 + He-4', '4He + 4He', '2 4He']) {
+      const out = runMode(NUCLEAR, 'qvalue', { reactants: 'Li-7 + p', products });
+      expect(rel(value(out, `${R}q`), want)).toBeLessThan(1e-6);
+    }
+    // A count with nothing after it names no particle.
+    expect(problem(runMode(NUCLEAR, 'qvalue', { reactants: 'Li-7 + p', products: '2' }))).toBe(
+      'kitPhysics.nuclear.errors.particle',
+    );
   });
 
   it('k_inf = 1.10792 and a bare sphere with M² = 300 cm² goes critical at R = 165.64 cm', () => {

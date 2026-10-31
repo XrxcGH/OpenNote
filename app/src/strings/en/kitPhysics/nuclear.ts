@@ -120,7 +120,7 @@ export const nuclear = {
     mass: 'The mass of the neutral atom, electrons included, as mass tables list it.',
     reaction:
       'Write nuclides like He-4 or 4He, and n, p, d, t, alpha, gamma, e- (beta minus), e+ (beta plus), or nu, ' +
-      'separated by spaces or +.',
+      'separated by spaces or +. A count may lead a particle: 2 He-4 or 2alpha is two alpha particles.',
     nonLeakage: 'From 0 to 1. Leave empty for an infinite core.',
     m2: 'L² + τ: the thermal diffusion area plus the Fermi age. Give it for the size results.',
     ratio: 'The smallest critical volume is at 0.924.',
@@ -243,6 +243,7 @@ export const nuclear = {
       'Narrow beam, no buildup: scattered radiation that still reaches the detector is not counted, so a broad ' +
       'beam gets through more.',
     dose: 'A point source with no buildup in the shield and no attenuation in the air.',
+    coursework: 'For coursework only: not for radiation-protection or medical decisions.',
     reactor:
       'One-group diffusion theory for a bare, homogeneous core; sizes are extrapolated dimensions, so the physical ' +
       'core is smaller by the extrapolation distance.',
