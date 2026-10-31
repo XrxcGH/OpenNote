@@ -7,12 +7,44 @@ export function words(text: string): string[] {
   return text.match(/[\p{L}\p{M}]+(?:['’-][\p{L}\p{M}]+)*/gu) ?? [];
 }
 
-/** Sentences end at ., !, or ? followed by a space or the end; a text with words and no end mark is one sentence. */
+/** Titles that are never the last word of a sentence. */
+const TITLES = new Set(['dr', 'mr', 'mrs', 'ms', 'mx', 'prof', 'st', 'mt', 'rev', 'gen', 'sgt', 'capt', 'lt', 'col']);
+/** Abbreviations that stay inside the sentence before any word. */
+const INNER = new Set(['e.g', 'i.e', 'vs', 'cf', 'viz', 'approx', 'fig', 'ca']);
+/** Abbreviations that can end a sentence, so they join only when the next word is lowercase or a number. */
+const ENDING = new Set(['etc', 'no', 'jr', 'sr', 'inc', 'ltd', 'co', 'al', 'p', 'pp', 'vol', 'ed']);
+
+/** Whether a period after the last word of this piece is an abbreviation's rather than the sentence's end. */
+function abbreviationEnd(piece: string, next: string): boolean {
+  const last = /([\p{L}.]+)\.["'”’)\]]*$/u.exec(piece)?.[1];
+  if (!last) return false;
+  const word = last.toLowerCase();
+  if (TITLES.has(word) || INNER.has(word)) return true;
+  // An initial: one capital letter, as in J. R. Tolkien.
+  if (/^\p{Lu}$/u.test(last)) return true;
+  const lowerNext = /^["'“‘(\[]*[\p{Ll}\d]/u.test(next);
+  // A dotted acronym (U.S., a.m.) or an abbreviation that may end a sentence.
+  return lowerNext && (ENDING.has(word) || /^(?:\p{L}\.)+\p{L}$/u.test(last));
+}
+
+/**
+ * Sentences end at ., !, or ? followed by a space or the end; a text with words and no end mark is one sentence. A
+ * period after a title (Dr.), an initial, or e.g. does not end one, nor after etc. or a dotted acronym (U.S.) when the
+ * next word is lowercase.
+ */
 export function sentences(text: string): string[] {
-  return text
-    .split(/(?<=[.!?…])["'”’)\]]*\s+/u)
-    .map((part) => part.trim())
-    .filter((part) => words(part).length > 0);
+  const pieces = text.split(/(?<=[.!?…])["'”’)\]]*\s+/u).map((part) => part.trim());
+  const out: string[] = [];
+  let carry = '';
+  pieces.forEach((piece, i) => {
+    const joined = carry === '' ? piece : `${carry} ${piece}`;
+    if (i < pieces.length - 1 && piece.endsWith('.') && abbreviationEnd(piece, pieces[i + 1]!)) carry = joined;
+    else {
+      out.push(joined);
+      carry = '';
+    }
+  });
+  return out.filter((part) => words(part).length > 0);
 }
 
 /** Words whose syllables the spelling rules get wrong: -ed adjectives and a few vowel pairs. */

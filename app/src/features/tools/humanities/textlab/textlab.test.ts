@@ -63,6 +63,14 @@ describe('counts and readability', () => {
 
   it('split sentences and refuse an empty text', () => {
     expect(sentences('One. Two words! Three? ')).toHaveLength(3);
+    // Two sentences each: abbreviations do not end one, but a sentence may still end on one.
+    expect(sentences('Dr. Smith met Mr. Jones yesterday. It rained all day.')).toEqual([
+      'Dr. Smith met Mr. Jones yesterday.',
+      'It rained all day.',
+    ]);
+    expect(sentences('Bring fruit, e.g. apples. The U.S. economy grew.')).toHaveLength(2);
+    expect(sentences('J. R. R. Tolkien wrote it. He lived in the U.S. Then he left.')).toHaveLength(3);
+    expect(sentences('Pens, ink, etc. are sold here. We close at five.')).toHaveLength(2);
     expect(words("Don't stop well-known")).toEqual(["Don't", 'stop', 'well-known']);
     expect(() => readability('  ...  ')).toThrow('empty');
   });
