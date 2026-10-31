@@ -22,7 +22,7 @@ function abbreviationEnd(piece: string, next: string): boolean {
   if (TITLES.has(word) || INNER.has(word)) return true;
   // An initial: one capital letter, as in J. R. Tolkien.
   if (/^\p{Lu}$/u.test(last)) return true;
-  const lowerNext = /^["'“‘(\[]*[\p{Ll}\d]/u.test(next);
+  const lowerNext = /^["'“‘([]*[\p{Ll}\d]/u.test(next);
   // A dotted acronym (U.S., a.m.) or an abbreviation that may end a sentence.
   return lowerNext && (ENDING.has(word) || /^(?:\p{L}\.)+\p{L}$/u.test(last));
 }
