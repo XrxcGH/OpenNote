@@ -4,6 +4,7 @@ import { tex } from '../core/format';
 import { logspace } from '../core/num';
 import { need } from '../core/types';
 import type { Calc, Outcome } from '../core/types';
+import { frameMdCalc } from './frameCalc';
 import { cantilever, modalCombination, portal, responseSpectrum, trussInfluence } from './engine';
 
 const PRATT_JOINTS = '0 0 1\n3 0 0\n6 0 0\n9 0 0\n12 0 2\n3 3 0\n6 3 0\n9 3 0';
@@ -256,4 +257,4 @@ const modalCalc: Calc = {
   },
 };
 
-export const FRAME_CALCS: readonly Calc[] = [trussCalc, lateralCalc, spectrumCalc, modalCalc];
+export const FRAME_CALCS: readonly Calc[] = [frameMdCalc, trussCalc, lateralCalc, spectrumCalc, modalCalc];

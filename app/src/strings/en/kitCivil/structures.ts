@@ -13,6 +13,11 @@ export const structures = {
     columns: 'The columns must not all stand at the same place.',
     zeta: 'The damping ratio must be at least 0 and less than 1.',
     step: 'The record’s times must be evenly spaced and increasing.',
+    frame: 'A frame needs at least 2 joints and 1 member.',
+    frameSupport: 'Each joint’s support is 0 (free), 1 (fixed), or 2 (pinned).',
+    swayShape:
+      'Sway needs a one-story frame: vertical columns from the supports to the free joints, and level beams ' +
+      'between the free joints.',
   },
   status: {
     determinate: 'determinate',
@@ -32,6 +37,8 @@ export const structures = {
     RB: 'Right reaction',
     portal: 'Portal method',
     cantilever: 'Cantilever method',
+    braced: 'Held against sway (braced)',
+    sway: 'Free to sway (one story)',
     g: 'In g',
     ms2: 'In m/s²',
   },
@@ -60,6 +67,11 @@ export const structures = {
     xCol: 'x',
     yCol: 'y',
     supportCol: 'support (0 none, 1 pin, 2 roller)',
+    frameSupportCol: 'support (0 free, 1 fixed, 2 pinned)',
+    frameMembers: 'Members (w acts on the right of a to b: down on a beam drawn left to right)',
+    sway: 'Sway',
+    hLoads: 'Horizontal joint loads',
+    HCol: 'H (to the right)',
     members: 'Members',
     aJoint: 'joint',
     bJoint: 'joint',
@@ -90,6 +102,10 @@ export const structures = {
   },
   r: {
     reaction: 'Support reaction',
+    MmaxEnd: 'Largest end moment',
+    swayFactor: 'Sway correction factor',
+    brace: 'Brace force to hold the sway',
+    cycles: 'Cycles',
     Mmax: 'Largest bending moment',
     femLeft: 'Fixed-end moment, left',
     femRight: 'Fixed-end moment, right',
@@ -159,6 +175,19 @@ export const structures = {
     s3: 'At the section x = {x} m, the largest moment is {M} kN·m, with axle {axle} over it.',
     s4: 'The largest end shear is {V} kN, with axle {axle} at the support.',
   },
+  fmd: {
+    title: 'Frames (moment distribution)',
+    intro:
+      'Plane frames by Hardy Cross. End moments are clockwise positive on the member. A free-to-sway frame must be ' +
+      'one story with vertical columns and level beams; it is corrected by the sidesway-shear method.',
+    answer: 'The largest end moment is {M} kN·m, in member {member}.',
+    s1: 'Each member end has stiffness 4EI/L, and each joint that can rotate shares its unbalanced moment by k/Σk.',
+    fem: 'Member {member}: fixed-end moments {a} and {b} kN·m.',
+    s2: 'With the joints held against sway, balancing settled after {cycles} cycles; a brace would carry {R} kN.',
+    s3: 'A trial sway with −100 kN·m fixed-end moments in the stiffest column needs a brace force of {R1} kN.',
+    s4: 'Scaling the trial by {c} cancels the brace, so the column shears balance the horizontal loads.',
+    final: 'Member {member}: final end moments {a} and {b} kN·m.',
+  },
   truss: {
     title: 'Truss influence lines',
     intro: 'A statically determinate truss. A unit downward load visits each deck joint in turn.',
@@ -216,6 +245,11 @@ export const structures = {
     design: 'This period',
   },
   g: {
+    frameMd: 'Frame moment distribution',
+    member: 'Member',
+    df: 'DF',
+    fem: 'Fixed-end (kN·m)',
+    final: 'Final (kN·m)',
     table: 'Moment distribution',
     cycle: 'Cycle',
     femRow: 'Fixed-end',
