@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
 import { insertHtml, insertTable } from '../ui/insert';
-import { Choice, Field, Fields, Note, Tool, announceInsert, ht } from '../ui/parts';
+import { Choice, Field, Fields, Note, Tool, ht, useInsertResult } from '../ui/parts';
 import styles from '../ui/kit.module.css';
 import { frameHtml, frameTable, parseOutline, searchFrames } from './engine';
 import type { FrameBlock, FrameEntry, FrameGroup } from './engine';
@@ -54,10 +54,11 @@ export function FramesTool() {
   const blocks = frame ? parseOutline(ht(`frames.f.${frame.id}.outline`), frame.rows) : [];
   const use = frame ? ht(`frames.f.${frame.id}.use`) : '';
 
+  const { notice, report } = useInsertResult();
   const insert = () => {
     const ok = insertHtml(frameHtml(blocks, use));
     const table = frameTable(blocks);
-    announceInsert(ok && (!table || insertTable(table.header, table.rows)));
+    report(ok && (!table || insertTable(table.header, table.rows)));
   };
 
   const groups: { value: FrameGroup | typeof ALL; label: string }[] = [
@@ -104,6 +105,7 @@ export function FramesTool() {
               {t('kitHumanities.frames.insert')}
             </Button>
           </div>
+          {notice}
         </>
       ) : null}
     </Tool>

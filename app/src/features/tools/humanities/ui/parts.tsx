@@ -1,6 +1,6 @@
 // The pieces every tool of the kit is built from: tabs, fields, results, steps, problems, a picture preview, and the
 // insert buttons. Each control has a visible label, works from the keyboard, and reads as text.
-import { useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import type { MessageKey } from '../../../../strings/t';
@@ -231,42 +231,63 @@ export interface Payloads {
 
 const done = (ok: boolean) => announce(t(ok ? 'kitHumanities.common.inserted' : 'kitHumanities.common.noPage'));
 
+/**
+ * Says whether an insert reached a page, aloud and in the window: with no page focused nothing changes on screen, so
+ * the window shows 'Click in a page first'. The note is plain text; the announcer already speaks it.
+ */
+export function useInsertResult(): { notice: ReactNode; report: (ok: boolean) => void } {
+  const [ok, setOk] = useState<boolean | null>(null);
+  const report = (result: boolean) => {
+    done(result);
+    setOk(result);
+  };
+  const notice =
+    ok === null ? null : (
+      <p className={styles.note}>{t(ok ? 'kitHumanities.common.inserted' : 'kitHumanities.common.noPage')}</p>
+    );
+  return { notice, report };
+}
+
 /** One button for each form the result can go on the page in. */
 export function InsertBar({ payloads }: { payloads: Payloads }) {
   const { answer, table, steps, latex, picture, figure } = payloads;
+  const { notice, report: done } = useInsertResult();
   return (
-    <div className={styles.actions} role="group" aria-label={t('kitHumanities.common.insertGroup')}>
-      {answer ? (
-        <Button variant="primary" onClick={() => done(insertText(answer))}>
-          {t('kitHumanities.common.insertAnswer')}
-        </Button>
-      ) : null}
-      {table && table.rows.length > 0 ? (
-        <Button variant="quiet" onClick={() => done(insertTable(table.header, table.rows))}>
-          {t('kitHumanities.common.insertTable')}
-        </Button>
-      ) : null}
-      {steps && steps.length > 0 ? (
-        <Button variant="quiet" onClick={() => done(insertSteps(steps))}>
-          {t('kitHumanities.common.insertSteps')}
-        </Button>
-      ) : null}
-      {latex ? (
-        <Button variant="quiet" onClick={() => done(insertMath(latex))}>
-          {t('kitHumanities.common.insertLatex')}
-        </Button>
-      ) : null}
-      {figure ? (
-        <Button variant="quiet" onClick={() => done(insertFigure({ kit: KIT_ID, ...figure }))}>
-          {t('kitHumanities.common.insertFigure')}
-        </Button>
-      ) : null}
-      {picture ? (
-        <Button variant="quiet" onClick={() => done(insertPicture(picture.svg, picture.name, picture.alt))}>
-          {t('kitHumanities.common.insertPicture')}
-        </Button>
-      ) : null}
-    </div>
+    <>
+      <div className={styles.actions} role="group" aria-label={t('kitHumanities.common.insertGroup')}>
+        {answer ? (
+          <Button variant="primary" onClick={() => done(insertText(answer))}>
+            {t('kitHumanities.common.insertAnswer')}
+          </Button>
+        ) : null}
+        {table && table.rows.length > 0 ? (
+          <Button variant="quiet" onClick={() => done(insertTable(table.header, table.rows))}>
+            {t('kitHumanities.common.insertTable')}
+          </Button>
+        ) : null}
+        {steps && steps.length > 0 ? (
+          <Button variant="quiet" onClick={() => done(insertSteps(steps))}>
+            {t('kitHumanities.common.insertSteps')}
+          </Button>
+        ) : null}
+        {latex ? (
+          <Button variant="quiet" onClick={() => done(insertMath(latex))}>
+            {t('kitHumanities.common.insertLatex')}
+          </Button>
+        ) : null}
+        {figure ? (
+          <Button variant="quiet" onClick={() => done(insertFigure({ kit: KIT_ID, ...figure }))}>
+            {t('kitHumanities.common.insertFigure')}
+          </Button>
+        ) : null}
+        {picture ? (
+          <Button variant="quiet" onClick={() => done(insertPicture(picture.svg, picture.name, picture.alt))}>
+            {t('kitHumanities.common.insertPicture')}
+          </Button>
+        ) : null}
+      </div>
+      {notice}
+    </>
   );
 }
 
