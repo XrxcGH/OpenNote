@@ -18,6 +18,16 @@ describe('two samples and pairs', () => {
     close(w.p, 20 / 512, 1e-12);
   });
 
+  it('exact signed-rank after dropping zeros', () => {
+    const w = signedRank([1.5, 0, 2, -1, 0, 3, 2.5, -0.5]);
+    expect(w.n).toBe(6);
+    expect(w.wMinus).toBe(3);
+    expect(w.exact).toBe(true);
+    // By hand: 5 of the 64 sign patterns on ranks 1..6 have W⁻ ≤ 3, doubled (SciPy gives 0.15625).
+    close(w.p, 10 / 64, 1e-12);
+    expect(signedRank([1.5, 0, 2, -1, 0, 3, 2.5, -0.5], 'pratt').exact).toBe(false);
+  });
+
   it('Mann-Whitney with ties by the normal form with continuity', () => {
     const a = [3.1, 2.2, 4.5, 2.2, 5.0, 3.8, 4.1, 2.9, 3.3, 4.7, 3.6, 2.8];
     const b = [5.6, 4.8, 6.0, 4.8, 5.9, 6.4, 5.1, 4.4, 5.5, 6.2];

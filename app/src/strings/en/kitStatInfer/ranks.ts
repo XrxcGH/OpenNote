@@ -72,7 +72,7 @@ export const ranks = {
     rNoDiffer: 'At the 5% level, the ranks don’t show {a} and {b} differ in location.',
     rDiffs: '{n} differences are ranked by size ({zeros} zeros; rule: {method}).',
     rW: 'Add the ranks of the positive and of the negative differences.',
-    rNormalW: 'With zeros or ties, use the normal form with the corrections.',
+    rNormalW: 'With ties, zeros kept by Pratt’s rule, or a large n, use the normal form with the corrections.',
     rSign: 'The sign test: {plus} of {n} differences are positive, against a binomial with p = ½.',
     rH: 'The Kruskal-Wallis statistic from each group’s rank sum.',
     rTies: 'Divide by the tie correction.',

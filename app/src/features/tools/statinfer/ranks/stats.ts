@@ -105,7 +105,8 @@ export interface SignedRank {
 
 /**
  * The Wilcoxon signed-rank test on differences. Zeros are dropped before ranking ('wilcox') or ranked and then
- * dropped ('pratt'). The exact p is used with no zeros or ties and n ≤ 60; otherwise the normal form.
+ * dropped ('pratt'). The exact p is used with no ties and n ≤ 60 (after the zeros are dropped, or with no zeros
+ * under Pratt); otherwise the normal form.
  */
 export function signedRank(
   diffs: readonly number[],
@@ -133,7 +134,7 @@ export function signedRank(
   const n = ranked.length;
   const nonzero = ranked.filter((v) => v !== 0).length;
   const rankBiserial = (wPlus - wMinus) / (wPlus + wMinus);
-  if (zeroCount === 0 && ties.length === 0 && n <= MAX_EXACT_GROUP) {
+  if ((zeros === 'wilcox' || zeroCount === 0) && ties.length === 0 && n <= MAX_EXACT_GROUP) {
     return {
       n,
       zeros: zeroCount,
