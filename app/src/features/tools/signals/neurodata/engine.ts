@@ -347,7 +347,10 @@ export function rPeaks(ecg: readonly number[], fs: number): number[] {
   return peaks;
 }
 
-/** 10-20 electrode positions on a flat head (nose up), radius 1 at the 10% ring, after Jasper (1958). */
+/**
+ * 10-20 electrode positions on a flat head (nose up), radius 1 at the 10% ring, after Jasper (1958). The modern
+ * (10-10) names T7, T8, P7 and P8 sit where the 1958 names T3, T4, T5 and T6 do, so both are accepted.
+ */
 export const ELECTRODES: Readonly<Record<string, readonly [number, number]>> = (() => {
   const polar = (r: number, deg: number): [number, number] => [
     r * Math.sin((deg * Math.PI) / 180),
@@ -362,6 +365,10 @@ export const ELECTRODES: Readonly<Record<string, readonly [number, number]>> = (
     T4: polar(0.8, 90),
     T5: polar(0.8, -126),
     T6: polar(0.8, 126),
+    T7: polar(0.8, -90),
+    T8: polar(0.8, 90),
+    P7: polar(0.8, -126),
+    P8: polar(0.8, 126),
     O1: polar(0.8, -162),
     O2: polar(0.8, 162),
     Fz: polar(0.4, 0),

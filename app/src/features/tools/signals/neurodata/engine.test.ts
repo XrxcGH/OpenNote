@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { gaussian, seededRandom } from '../shared/num';
 import { SignalError } from '../shared/errors';
 import {
+  ELECTRODES,
   correlations,
   epochAverage,
   glm,
@@ -118,5 +119,22 @@ describe('spikes and heart rate', () => {
     expect(peaks.length).toBeGreaterThanOrEqual(11);
     expect(peaks.length).toBeLessThanOrEqual(12);
     peaks.forEach((p) => expect(Math.abs((p % beat) - 20)).toBeLessThanOrEqual(2));
+  });
+});
+
+describe('10-20 names', () => {
+  it('places the modern names T7, T8, P7 and P8 where the 1958 names T3, T4, T5 and T6 sit', () => {
+    // On the 10% ring (radius 0.8), T7 is straight left and P7 is 126° round from the nose: 0.8·(sin, cos)(−126°).
+    expect(ELECTRODES.T7![0]).toBeCloseTo(-0.8, 12);
+    expect(ELECTRODES.T7![1]).toBeCloseTo(0, 12);
+    expect(ELECTRODES.P7![0]).toBeCloseTo(-0.6472135955, 9);
+    expect(ELECTRODES.P7![1]).toBeCloseTo(-0.4702282018, 9);
+    for (const [modern, old] of [
+      ['T7', 'T3'],
+      ['T8', 'T4'],
+      ['P7', 'T5'],
+      ['P8', 'T6'],
+    ] as const)
+      expect(ELECTRODES[modern]).toEqual(ELECTRODES[old]);
   });
 });
