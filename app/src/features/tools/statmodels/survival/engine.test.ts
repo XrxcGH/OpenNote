@@ -26,6 +26,19 @@ describe('Kaplan-Meier', () => {
     close(km.rows.find((r) => r.time === 23)!.se, 0.13459, 1e-5);
   });
 
+  it('takes the lower limit of the median from the lower band and the upper from the upper band', () => {
+    // Log-log bands worked by hand: at 13 the lower band is 0.4316; the upper band ends at 0.6801, never reaching 0.5.
+    expect(km.medianLow).toBe(13);
+    expect(km.medianHigh).toBeNaN();
+    // Gehan's placebo arm (no censoring): median 8, lower band 0.4254 at 4, upper band 0.4818 at 11.
+    const placebo = [1, 1, 2, 2, 3, 4, 4, 5, 5, 8, 8, 8, 8, 11, 11, 12, 12, 15, 17, 22, 23];
+    const p = kaplanMeier(
+      placebo,
+      placebo.map(() => 1),
+    );
+    expect([p.median, p.medianLow, p.medianHigh]).toEqual([8, 4, 11]);
+  });
+
   it('gives the median as the first time the curve is at or below 0.5', () => {
     expect(km.median).toBe(23);
     expect(

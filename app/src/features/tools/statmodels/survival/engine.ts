@@ -92,12 +92,13 @@ export function kaplanMeier(time: readonly number[], event: readonly number[], l
       at((r) => r.survival),
       0.5,
     ),
+    // The lower band reaches 0.5 first, so it marks the lower limit of the median.
     medianLow: firstAtOrBelow(
-      at((r) => r.high),
+      at((r) => r.low),
       0.5,
     ),
     medianHigh: firstAtOrBelow(
-      at((r) => r.low),
+      at((r) => r.high),
       0.5,
     ),
     q25: firstAtOrBelow(
