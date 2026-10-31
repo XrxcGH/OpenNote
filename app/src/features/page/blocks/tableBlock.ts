@@ -2,6 +2,7 @@
 // table editor through the pool. Cell typing syncs through attachTableSync as a patch of the rows, flushed like
 // text. A command that changes the table's shape changes its data first. It then sends its own patch and replaces
 // the editor's document, so IDs follow rows and columns. Arrow keys leave a flowing table at its edges.
+import { startUp } from '../../../boot/startUp';
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
@@ -350,7 +351,7 @@ class TableView implements InnerView {
     };
     for (const def of tableExtras.list()) {
       if (def.flag && !this.ctx.host.flag(def.flag)) continue;
-      void Promise.resolve(def.attach(host)).then(
+      void startUp(Promise.resolve(def.attach(host))).then(
         (handle) => {
           if (this.gone) handle.destroy();
           else {

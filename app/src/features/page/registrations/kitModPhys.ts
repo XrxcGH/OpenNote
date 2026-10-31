@@ -2,6 +2,7 @@
 // one per window) and one per tool, each opening the shared window on it.
 // Only the list of tools loads at start-up; the window and its engines load when a command runs. The kit registers
 // as 'modphys' so a live calculation block's Open in tool reopens its form with the inputs it kept.
+import { startUp } from '../../../boot/startUp';
 import { MODPHYS_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
 
@@ -32,7 +33,7 @@ for (const tool of MODPHYS_TOOLS) {
 if (typeof window !== 'undefined') {
   // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work. The
   // inputs wait in the kit registry; the tool's forms take them when they show (ToolForms).
-  void import('../../tools')
+  void startUp(import('../../tools'))
     .then((tools) =>
       tools.registerKit('modphys', (tool) => {
         const known = MODPHYS_TOOLS.find((one) => one.id === tool);

@@ -104,7 +104,13 @@ function MathView({ latex }: { latex: string }) {
   return html === null ? (
     <code>{latex}</code>
   ) : (
-    <span className={styles.math} dangerouslySetInnerHTML={{ __html: html }} />
+    <span
+      className={styles.math}
+      tabIndex={0}
+      role="group"
+      aria-label={t('kitMolBio.equation')}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 

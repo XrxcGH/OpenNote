@@ -1,6 +1,7 @@
 // The civil, environmental, and chemical engineering kit's palette commands: one per tool, each opening the kit
 // window on that tool. The list comes from the kit's meta module, which holds names and icons only, so nothing else
 // of the kit loads until a command runs.
+import { startUp } from '../../../boot/startUp';
 import { commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
 import { CIVIL_ICONS, CIVIL_TOOL_IDS } from '../../tools/flags';
@@ -30,7 +31,7 @@ for (const id of CIVIL_TOOL_IDS) {
 // A live calculation block's Open in tool comes back here through the kit registry (features/tools/civil/open.ts).
 if (typeof window !== 'undefined') {
   // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
-  void import('../../tools')
+  void startUp(import('../../tools'))
     .then((tools) => tools.registerKit('civil', (key) => tools.reopenCivilCalc(key)))
     .catch(() => undefined);
 }

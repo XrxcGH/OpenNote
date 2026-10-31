@@ -24,6 +24,7 @@ export default defineConfig((env) =>
             // load on Windows they can miss Vitest's fixed 60-second start timeout.
             pool: 'threads',
             include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+            setupFiles: ['src/test/settleStartUp.ts'],
           },
         },
         {

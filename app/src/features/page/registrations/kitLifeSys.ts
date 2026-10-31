@@ -1,5 +1,6 @@
 // The life science tools' registrations: a palette command that opens the window, and one per tool that opens it
 // at that tool, made in a loop from the tool list. The window and every tool load only when opened.
+import { startUp } from '../../../boot/startUp';
 import { LIFESYS_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
 
@@ -34,7 +35,7 @@ for (const tool of LIFESYS_TOOLS) {
 // calculation, and the typed values; its Open in tool comes back here through the kit registry. Best effort: a chunk
 // that fails to load leaves Open in tool unavailable, and the commands still work.
 if (typeof window !== 'undefined') {
-  void tools()
+  void startUp(tools())
     .then((chunk) => chunk.registerKit('lifesys', (tool) => chunk.reopenLifeSys(tool)))
     .catch(() => undefined);
 }

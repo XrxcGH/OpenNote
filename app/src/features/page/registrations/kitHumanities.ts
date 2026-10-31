@@ -1,6 +1,7 @@
 // The history, places, languages, and texts kit's palette commands: one that opens the kit, and one for each tool,
 // made in a loop from the kit's tool list. This file loads at start-up, so it holds only definitions; the kit's
 // code loads when a command first runs.
+import { startUp } from '../../../boot/startUp';
 import type { MessageKey } from '../../../strings/t';
 import { HUMANITIES_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
@@ -30,7 +31,7 @@ for (const tool of HUMANITIES_TOOLS) {
 }
 
 // A figure block's Open in tool comes here through the shared kit registry.
-void import('../../tools').then((tools) =>
+void startUp(import('../../tools')).then((tools) =>
   tools.registerKit('humanities', async (tool) => {
     const found = HUMANITIES_TOOLS.find((item) => item.id === tool);
     if (found) await tools.openHumanitiesTool(found.id);

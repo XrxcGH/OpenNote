@@ -17,6 +17,7 @@ export const kitMolBio = {
   loading: 'Loading the tool…',
   results: 'Results',
   steps: 'Worked steps',
+  equation: 'Equation',
   assumptions: 'Assumptions and notes',
   source: 'Source: {source}',
   insert: 'Insert into the page',

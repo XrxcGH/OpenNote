@@ -1,6 +1,7 @@
 // The statistical models kit's commands: one to open the window and one for each tool, so a tool is found by its
 // subject words in the command palette. This file loads at start-up, so it holds only definitions; the window and
 // its tools load on first use.
+import { startUp } from '../../../boot/startUp';
 import { STATMODELS_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
 
@@ -21,7 +22,7 @@ addCommand({
 // A live calculation block's Open in tool comes back here through the kits' registry; the tool takes the texts the
 // block saved when it shows (ui/ToolPanel.tsx). Best effort: a chunk that fails to load leaves Open in tool off.
 if (typeof window !== 'undefined')
-  void import('../../tools')
+  void startUp(import('../../tools'))
     .then((tools) => tools.registerKit('statmodels', (tool) => open(tool)))
     .catch(() => undefined);
 

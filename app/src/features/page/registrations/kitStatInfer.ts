@@ -2,6 +2,7 @@
 // registration so a live calculation block reopens its tool. Each command loads the kit the first time it runs. The
 // list matches STAT_TOOLS in tools/statinfer/meta.ts (the kit's window test checks) and is kept here so the palette
 // knows the commands without loading the tools.
+import { startUp } from '../../../boot/startUp';
 import type { IconName } from '../../../ui/icons';
 import { addCommand } from './qolStudy';
 
@@ -27,7 +28,7 @@ async function open(tool?: string): Promise<void> {
   tools.openTool('kit-statinfer');
 }
 
-void import('../../tools').then((tools) => tools.registerKit('statinfer', open));
+void startUp(import('../../tools')).then((tools) => tools.registerKit('statinfer', open));
 
 addCommand({
   id: 'tools.kit-statinfer',

@@ -1,6 +1,7 @@
 // The signals and sound kit's registrations: a command and an Insert tab button that open the kit, and one palette
 // command per tool, made in a loop from the kit's list, each opening the kit at that tool. This file loads at
 // start-up, so it holds only definitions; the kit and its tools load when the window first opens.
+import { startUp } from '../../../boot/startUp';
 import { commandBar, commands } from '../../../registries';
 import { SIGNAL_TOOLS, chooseSignalTool, restoreSignalInputs } from '../../tools/flags';
 
@@ -28,7 +29,7 @@ commandBar.register({
 // A live calculation block's Open in tool puts the tool's fields back, then opens the kit at that tool.
 if (typeof window !== 'undefined') {
   // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
-  void import('../../tools')
+  void startUp(import('../../tools'))
     .then((tools) =>
       tools.registerKit('signals', async (tool) => {
         if (restoreSignalInputs(tool, tools.takeKitInputs('signals', tool))) await openKit();
