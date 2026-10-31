@@ -25,6 +25,7 @@ export type ToolId =
   | 'practice'
   | 'figure'
   | 'symbols'
+  | 'econ'
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
@@ -68,6 +69,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'formulasheet', title: 'docStructure.sheet.title', width: 400 },
   { id: 'practice', title: 'docStructure.practice.title', width: 440 },
   { id: 'figure', title: 'docStructure.figure.title', width: 420 },
+  { id: 'econ', title: 'kitEcon.title', width: 520 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },

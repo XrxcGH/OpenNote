@@ -633,6 +633,11 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Tree and graph layouts       | Tidy tree layouts and layered and force-directed graph layouts, drawn as SVG for trees, networks, and diagrams.                                                                              | Built, untested by hand |
 | Figure blocks                | A tool's diagram on the page as a picture with its description and an Open in tool button that reopens the inputs that made it.                                                              | Built, untested by hand |
 
+## Economics and finance
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Economics and finance calculators | One window with 87 calculators in eight subjects (money over time, markets, firms, consumer choice, macroeconomics, measurement, accounting, investments). Each shows numbered worked steps, units, and a graph where useful, and can insert its answer or its steps into the page. The CPI-U table is public domain data from the U.S. Bureau of Labor Statistics. Opens from the command palette and the Insert tab. Behind the `tools.econ` flag, on in Beta. See the [help page](help/economics-and-finance.md). | Built, untested by hand |
 
 ## macOS and Linux
 

@@ -25,6 +25,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
+- [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.
 - [Subject tool kits](subject-tool-kits.md): eleven tool windows for engineering, science, and math problems, with worked steps and live calculation blocks.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
