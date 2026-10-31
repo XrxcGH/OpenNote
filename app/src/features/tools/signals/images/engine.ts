@@ -546,7 +546,7 @@ export function backProject(sino: Gray, size: number, filter: ReconFilter): Gray
     const f = fft(row);
     for (let k = 0; k < padded; k += 1) {
       const nu = Math.min(k, padded - k) / padded;
-      const ramp = 2 * nu;
+      const ramp = nu;
       const shape = filter === 'sheppLogan' && nu > 0 ? Math.sin(Math.PI * nu) / (Math.PI * nu) : 1;
       f.re[k] = f.re[k]! * ramp * shape;
       f.im[k] = f.im[k]! * ramp * shape;

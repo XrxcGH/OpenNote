@@ -1,6 +1,7 @@
 // The image lab. The plan's validation cases come first, with their independent expected values (by hand or by the
 // geometry of the test image); edge cases follow.
 import { describe, expect, it } from 'vitest';
+import { phantom } from '../medimaging/engine';
 import { SignalError } from '../shared/errors';
 import {
   adjust,
@@ -160,5 +161,28 @@ describe('CT reconstruction', () => {
       if (i !== centre) expect(v).toBeLessThan(0.2 * peak);
     });
     expect(errorKey(() => radon(point, 1))).toBe('angles');
+  });
+
+  // A uniform disk of value 1: the reconstruction's centre must come back as 1, not a scaled copy.
+  it('reconstructs a uniform disk to its own value with both ramp filters', () => {
+    const size = 64;
+    const c = (size - 1) / 2;
+    const disk = gray(size, size);
+    for (let y = 0; y < size; y += 1) for (let x = 0; x < size; x += 1) if (Math.hypot(x - c, y - c) <= 20) disk.data[y * size + x] = 1;
+    const { sinogram } = radon(disk, 180);
+    for (const filter of ['ramLak', 'sheppLogan'] as const) {
+      const image = backProject(sinogram, size, filter);
+      const centre = [31, 32].flatMap((y) => [31, 32].map((x) => image.data[y * size + x]!));
+      expect(Math.abs(centre.reduce((a, b) => a + b, 0) / 4 - 1)).toBeLessThan(0.05);
+    }
+  });
+
+  // The head phantom's centre is 1 - 0.8 = 0.2 by its ellipse table, which is HU 1000 (0.2 - 1) = -800.
+  it('reconstructs the head phantom centre to 0.2 (HU -800)', () => {
+    const size = 65;
+    const { sinogram } = radon(gray(size, size, phantom(size)), 180);
+    const v = backProject(sinogram, size, 'sheppLogan').data[32 * size + 32]!;
+    expect(Math.abs(v - 0.2)).toBeLessThan(0.05);
+    expect(Math.abs(1000 * (v - 1) + 800)).toBeLessThan(50);
   });
 });
