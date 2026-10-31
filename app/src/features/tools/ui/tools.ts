@@ -34,6 +34,7 @@ export type ToolId =
   | 'kit-civil'
   | 'kit-modphys'
   | 'kit-signals'
+  | 'kit-earth'
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
@@ -86,6 +87,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'kit-civil', title: 'kitCivil.title', width: 520 },
   { id: 'kit-modphys', title: 'kitModPhys.window.title', width: 520 },
   { id: 'kit-signals', title: 'kitSignals.kit.title', width: 560 },
+  { id: 'kit-earth', title: 'kitEarth.title', width: 520 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },

@@ -40,6 +40,8 @@ const LifeSysTool = lazy(() => import('../lifesys/ui/LifeSysTool').then((m) => (
 // The civil and chemical engineering kit loads its window, then each tool's calculations, on first use.
 const CivilTool = lazy(() => import('../civil/ui/CivilTool').then((module) => ({ default: module.CivilTool })));
 
+// The earth sciences kit loads the first time its window opens.
+const EarthKit = lazy(() => import('../earth/ui/EarthKit').then((kit) => ({ default: kit.EarthKit })));
 // Practice exams load with their window, on first open.
 const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
 
@@ -128,6 +130,8 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   kitmolbio: KitMolBio,
   lifesys: LifeSysTool,
   'kit-modphys': ModPhysWindow,
+  'kit-civil': CivilTool,
+  'kit-earth': EarthKit,
   'kit-signals': SignalsKit,
 };
 
@@ -180,11 +184,5 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
-  if (tool === 'kit-civil')
-    return (
-      <Suspense fallback={null}>
-        <CivilTool />
-      </Suspense>
-    );
   return null;
 }

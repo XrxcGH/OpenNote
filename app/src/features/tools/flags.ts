@@ -113,6 +113,10 @@ export { MODPHYS_TOOLS } from './modphys/meta';
 export { SIGNALS_FLAGS } from './signals/flags';
 export type { SignalsFlagId } from './signals/flags';
 export { SIGNAL_TOOLS, chooseSignalTool, restoreSignalInputs } from './signals/meta';
+// The earth sciences kit's flag and tool list, public here so start-up code reads them without the kit.
+export { EARTH_FLAGS } from './earth/flags';
+export type { EarthFlagId } from './earth/flags';
+export { EARTH_TOOLS } from './earth/meta';
 /**
  * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
  * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.

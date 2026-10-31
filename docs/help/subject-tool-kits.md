@@ -38,7 +38,22 @@ Eleven tool windows work engineering, science, and math problems. Each window ha
 | Engineering mathematics  | Series, complex analysis, systems of ODEs, Fourier series and boundary value problems, numerical methods, a matrix console, a linear algebra workbench, and vector calculus                                                                              |
 | Mechanisms and dynamics  | Linkages, cams, gears, compliant mechanisms, rigid-body dynamics, Lagrangian mechanics, 3D rotations, vibration, and robot arms                                                                                                                          |
 | Physics tools            | Waves and sound, special relativity, wave and geometric optics, nuclear science, spacecraft sizing, electric and magnetic fields, and orbits and maneuvers                                                                                               |
+| Earth sciences           | Atmospheric thermodynamics, radiation and climate, geochronology, stereonets, stratigraphy diagrams, air quality and weather, seismology, geophysics, and ocean and waves                                                                                |
+
+## Earth sciences
+
+Open it with Ctrl+K and "Open the earth sciences kit", or with "Open" and a tool's name. Pick a topic, then a calculation.
+
+- Atmospheric thermodynamics and soundings: humidity, the LCL, lapse rates, thickness, a Skew-T with parcel CAPE and storm winds, and room humidity.
+- Radiation, climate, and footprints: energy balance and greenhouse layers, radiative forcing, warming over time, ice-albedo tipping points, the Budyko-Sellers model, insolation by latitude and orbit, Köppen-Geiger and Holdridge classes, the Thornthwaite water balance, degree days, and carbon footprints with editable factors.
+- Geochronology, isotopes, and the time scale: radiometric ages, isochrons, U-Pb concordia, argon plateaus, radiocarbon calibration, stable isotopes, and mineral formulas.
+- Stereonets and structural geology: planes, lines, poles, rakes, intersections, apparent dip, three-point problems, fold axes, and Fisher statistics.
+- Stratigraphy and classification diagrams: stratigraphic columns with correlation, the Harris matrix, ternary plots, soil texture, and QAPF names.
+- Air quality and weather observations: the AQI, Gaussian plumes with a ground-level concentration map, ppm conversions, box models, METAR and TAF in words, and radar rain rates.
+- Seismology and seismic surveys: S-P distance, epicenters, magnitude and energy, b-values, Omori-Utsu aftershock decay, flat and dipping-layer refraction, NMO, and Dix velocities.
+- Gravity, magnetics, heat flow, and plates: Bouguer and isostatic anomalies, magnetic fields, geotherms, plate motions, and resistivity.
+- Ocean, waves, and planetary flow: seawater density and sound speed by EOS-80, TEOS-10 conservative temperature, density, potential density, and freezing point, wave dispersion and shoaling, and Coriolis, geostrophic, Ekman, Rossby, and Kelvin flow.
 
 ## Which builds have them
 
-The kits are on in Beta and off in Stable. Their feature flags are `kits.electrical`, `kits.fluidheat`, `kits.solids`, `kits.aero`, `kits.chemmat`, `kits.thermo`, `kits.control`, `kits.design`, `kits.math`, `kits.mechdyn`, and `kits.physics`. The live calculation block's flag is `kits.calc`.
+The kits are on in Beta and off in Stable. Their feature flags are `kits.electrical`, `kits.fluidheat`, `kits.solids`, `kits.aero`, `kits.chemmat`, `kits.thermo`, `kits.control`, `kits.design`, `kits.math`, `kits.mechdyn`, `kits.physics`, and `kits.earth`. The live calculation block's flag is `kits.calc`.
