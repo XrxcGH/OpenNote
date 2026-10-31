@@ -104,6 +104,15 @@ describe('renal and acid-base', () => {
     expect(c.expected![1]).toBeCloseTo(28, 12);
   });
 
+  it('calls a normal pH with low HCO3 and low PCO2 a mixed disorder', () => {
+    // HCO3 15 and PCO2 25: pH = 6.1 + log10(15 / 0.75) = 7.4010, a metabolic acidosis offset by a respiratory alkalosis.
+    expect(classify(phFrom(15, 25), 25, 15, false).disorder).toBe('mixed');
+    const r = acidBaseResult(15, 25, false, null, null, null);
+    expect(r.rows[1].word).toBe('physiology.o.mixed');
+    expect(r.notes!.map((n) => n.key)).toContain('physiology.n.mixed');
+    expect(classify(phFrom(24, 40), 40, 24, false).disorder).toBe('normal');
+  });
+
   it('classifies respiratory disorders and computes the anion gap', () => {
     expect(classify(phFrom(26, 60), 60, 26, false).disorder).toBe('respAcidosis');
     expect(classify(phFrom(22, 25), 25, 22, false).disorder).toBe('respAlkalosis');

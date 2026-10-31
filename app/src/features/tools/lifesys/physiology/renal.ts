@@ -141,7 +141,7 @@ export function titrationResult(gfr: number, plasma: number, tm: number, theta: 
 /** pH = 6.1 + log₁₀(HCO₃⁻ / (0.03 PCO₂)). */
 export const phFrom = (hco3: number, pco2: number): number => 6.1 + Math.log10(hco3 / (0.03 * pco2));
 
-export type Disorder = 'normal' | 'metAcidosis' | 'metAlkalosis' | 'respAcidosis' | 'respAlkalosis';
+export type Disorder = 'normal' | 'mixed' | 'metAcidosis' | 'metAlkalosis' | 'respAcidosis' | 'respAlkalosis';
 
 /** The primary disorder by the pH and which value moved it, with the expected compensation range. */
 export function classify(ph: number, pco2: number, hco3: number, chronic: boolean) {
@@ -151,6 +151,8 @@ export function classify(ph: number, pco2: number, hco3: number, chronic: boolea
   let disorder: Disorder = 'normal';
   if (ph < 7.35) disorder = metabolic > 0 && metabolic >= respiratory ? 'metAcidosis' : 'respAcidosis';
   else if (ph > 7.45) disorder = metabolic < 0 && -metabolic >= -respiratory ? 'metAlkalosis' : 'respAlkalosis';
+  // A normal pH with HCO₃⁻ or PCO₂ out of range means two primary disorders offsetting each other, not health.
+  else if (hco3 < 22 || hco3 > 26 || pco2 < 35 || pco2 > 45) disorder = 'mixed';
   let expected: [number, number] | null = null;
   let measure: 'pco2' | 'hco3' = 'pco2';
   if (disorder === 'metAcidosis') expected = [1.5 * hco3 + 8 - 2, 1.5 * hco3 + 8 + 2];
@@ -195,7 +197,7 @@ export function acidBaseResult(
     });
     const verdict = actual < low ? 'below' : actual > high ? 'above' : 'within';
     steps.push({
-      key: `physiology.s.comp.${c.disorder as Exclude<Disorder, 'normal'>}`,
+      key: `physiology.s.comp.${c.disorder as Exclude<Disorder, 'normal' | 'mixed'>}`,
       vars: { h: hco3, c: pco2, low, high },
     });
     steps.push({ key: `physiology.s.verdict.${c.measure}.${verdict}`, vars: { v: actual } });
@@ -216,5 +218,7 @@ export function acidBaseResult(
       steps.push({ key: 'physiology.s.delta', vars: { g: corrected, h: hco3, d: delta } });
     }
   }
-  return { rows, steps, latex, notes: [{ key: 'physiology.n.acidBase' }] };
+  const notes: CalcResult['notes'] = [{ key: 'physiology.n.acidBase' }];
+  if (c.disorder === 'mixed') notes.unshift({ key: 'physiology.n.mixed' });
+  return { rows, steps, latex, notes };
 }

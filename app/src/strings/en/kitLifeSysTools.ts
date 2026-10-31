@@ -1871,6 +1871,7 @@ export const kitLifeSysTools = {
       acute: 'Acute',
       chronic: 'Chronic',
       normal: 'No primary disorder',
+      mixed: 'Mixed disorder',
       metAcidosis: 'Metabolic acidosis',
       metAlkalosis: 'Metabolic alkalosis',
       respAcidosis: 'Respiratory acidosis',
@@ -2151,6 +2152,8 @@ export const kitLifeSysTools = {
     n: {
       inulin: 'Inulin clearance equals GFR because inulin is filtered but neither reabsorbed nor secreted.',
       splay: 'Splay comes from nephrons with different thresholds; θ sets how sharply reabsorption saturates.',
+      mixed:
+        'The pH is normal but HCO₃⁻ or PCO₂ is out of range (22 to 26 mEq/L, 35 to 45 mmHg): two primary disorders offset.',
       acidBase: 'These rules are for study. Mixed disorders and lab error can mislead any single rule.',
       darrow:
         'This assumes the infused solute stays outside cells and the starting compartments are 2/3 and 1/3 of body ' +
@@ -2324,12 +2327,12 @@ export const kitLifeSysTools = {
       peakTime: 'Time of the peak',
       rEnd: 'Effective R at t = {t}',
       finalSize: 'Share ever infected',
+      finalSizeUnvacc: 'Share of the unvaccinated ever infected',
       coverage: 'Coverage needed at {e}% efficacy',
       expectedFinal: 'Expected total cases',
       meanFinal: 'Mean total cases over {runs} runs',
       minor: 'Runs with a minor outbreak',
       seed: 'Seed',
-      finalSizeUnvacc: 'Share of the unvaccinated ever infected',
       odeAt: '{s} at t = {t} (ODE)',
       ssaAt: '{s} at t = {t} (mean of runs)',
       likeBefore: 'Like neighbors at the start',
@@ -2366,15 +2369,15 @@ export const kitLifeSysTools = {
       hit: 'Herd immunity needs 1 − 1/R₀ = 1 − 1/{r} = {h}% immune.',
       peak: 'Infections peak at {i} people at t = {t}.',
       finalSize: 'The final size solves z = 1 − e^(−R₀ z) with R₀ = {r}: z = {z}%.',
+      finalSizeUnvacc:
+        'Among the unvaccinated the final size solves z = 1 − e^(−R₀(1 − p) z) with R₀(1 − p) = {r}: z = {z}%.',
+      finalSizeVacc:
+        'The vaccinated {p}% never catch it, so with R₀ = {r} and the starting cases counted, {e}% of everyone is ever infected.',
       coverage: 'With a vaccine {e}% effective, coverage must reach {h}% / {e}% = {c}%.',
       noCoverage: 'Even everyone vaccinated at {e}% efficacy falls short of the {h}% needed.',
       reedFrost:
         'Each generation, every susceptible escapes each of the I infected with chance 1 − p = 1 − {p}, in a group ' +
         'of {n}.',
-      finalSizeUnvacc:
-        'Among the unvaccinated the final size solves z = 1 − e^(−R₀(1 − p) z) with R₀(1 − p) = {r}: z = {z}%.',
-      finalSizeVacc:
-        'The vaccinated {p}% never catch it, so with R₀ = {r} and the starting cases counted, {e}% of everyone is ever infected.',
       reedFrostExpected: 'The expected course over {g} generations infects {f} people in total.',
       reedFrostRuns:
         '{runs} seeded runs (seed {seed}) average {m} cases; {minor}% are minor outbreaks of under a tenth of the ' +
