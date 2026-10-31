@@ -10,6 +10,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - [Text analysis and verse](#text-analysis-and-verse)
 - [Linguistic structures](#linguistic-structures)
 - [Scripts, keyboards, and romanization](#scripts-keyboards-and-romanization)
+- [Map maker](#map-maker)
 - [Identification keys](#identification-keys)
 
 ## Tools
@@ -21,6 +22,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - **Text analysis and verse**: measure readability, list words and n-grams, build a concordance, test keyness, and compare versions. Scan English and Latin verse.
 - **Linguistic structures**: draw syntax and dependency trees, check interlinear glosses, find natural classes, run ordered rules, split syllables, and plot vowels.
 - **Scripts, keyboards, and romanization**: type IPA and other scripts with on-screen keyboards, romanize text by public tables, and work with Hangul, kana, pinyin, Thai tones, and Vietnamese input.
+- **Map maker**: draw maps on 12 projections from your own points, routes, and GeoJSON layers, with choropleth classes, and measure distances and areas.
 - **Identification keys**: build a numbered key from a table of characters. Run it step by step, or filter with a multi-access key.
 
 ## Timeline builder
@@ -75,6 +77,15 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 - Pinyin turns tone numbers into tone marks and shows the spoken tones after third-tone, yi, and bu sandhi.
 - Thai tones works out a syllable's tone from its consonant class, live or dead syllable, and tone mark.
 - Vietnamese turns Telex or VNI typing into letters with their marks.
+
+## Map maker
+
+- Map draws your points (with proportional symbols when they have values), routes as great circles or straight lines, and pasted GeoJSON layers. Polygons with a value field are shaded in equal-interval, quantile, or natural-breaks classes with a color-blind-safe palette.
+- Pick a projection: equirectangular, Mercator, transverse Mercator, Lambert conformal conic, Albers, azimuthal equidistant, orthographic, stereographic, Mollweide, Robinson, Winkel tripel, or Equal Earth. Set the center and, for a conic, the standard parallels.
+- Tissot indicatrices show how the projection stretches circles of 500 km. The scale bar is true along the latitude you choose.
+- No base map is built in yet, so paste coastlines or borders as GeoJSON or TopoJSON, such as a Natural Earth file from the world-atlas package. Lines and polygons that cross the map's edge are cut there. The layers can be copied back out as GeoJSON.
+- Measure gives the geodesic distance and azimuth on WGS84, the great-circle distance on a sphere, and the area of a polygon.
+- Project a point works one point through a projection's formula on the unit sphere.
 
 ## Identification keys
 
