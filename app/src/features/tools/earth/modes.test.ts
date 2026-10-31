@@ -50,7 +50,16 @@ describe('earth kit wording and axes', () => {
     expect(one.answer).toContain('1 plane and 1 line on');
     const many = await outcome('stereonet', 'plot');
     expect(many.answer).toContain('3 planes and 1 line on');
-    expect(many.figures![0].description).toContain('3 planes as great circles or poles and 1 line on');
+    expect(many.figures![0].description).toContain('3 planes and 1 line on the net');
+  });
+
+  it('gives TEOS-10 seawater at S 35, 5 °C, the surface a density that EOS-80 matches to 0.001 kg/m³', async () => {
+    // EOS-80 gives 1027.6753 kg/m³ for this sample.
+    const result = await outcome('ocean', 'teos10');
+    expect(result.answer).toMatch(/^Density: 1027\.67/);
+    expect(result.steps?.join(' ')).toContain('75-term polynomial');
+    expect(result.source).toContain('TEOS-10');
+    expect(result.rows).toHaveLength(8);
   });
 
   it('ticks the climate diagram once per month, J to D, with no fractional months', async () => {

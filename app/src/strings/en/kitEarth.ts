@@ -80,7 +80,7 @@ const LIGHT = {
       title: 'Ocean, waves, and planetary flow',
       open: 'Open ocean, waves, and planetary flow',
       keywords:
-        'Coriolis geostrophic Ekman Rossby Kelvin seawater density EOS-80 sound speed waves dispersion shoaling',
+        'Coriolis geostrophic Ekman Rossby Kelvin seawater density EOS-80 TEOS-10 freezing sound waves dispersion shoaling',
     },
     geophysics: {
       title: 'Gravity, magnetics, heat flow, and plates',

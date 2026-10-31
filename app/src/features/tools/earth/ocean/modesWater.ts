@@ -1,4 +1,4 @@
-// The seawater calculations: EOS-80 properties of one sample, Mackenzie's sound speed, and a T–S diagram with
+// The seawater calculations: EOS-80 and TEOS-10 properties of one sample, Mackenzie's sound speed, and a T–S diagram with
 // isopycnals for pasted samples.
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
@@ -18,6 +18,9 @@ import {
   potentialTemperature,
   sigmaTheta,
   soundSpeed,
+  SPECVOL_TERMS,
+  TEOS10_SOURCE,
+  teosSample,
   toT68,
 } from './engine';
 
@@ -65,6 +68,51 @@ const sample: Mode = {
         t('kitEarth.ocean.s.absolute'),
       ],
       source: SOURCES.eos80,
+    };
+  },
+};
+
+const teos: Mode = {
+  id: 'teos10',
+  label: 'kitEarth.ocean.modes.teos10',
+  intro: 'kitEarth.ocean.intro.teos10',
+  fields: [
+    num('salinity', '35'),
+    num('temperature', '5', 'temperature'),
+    num('pressure', '0', 'seaPressure', 'dbar'),
+    pick('air', ['airFree', 'saturated']),
+  ],
+  solve(read) {
+    const saturated = read.pick('air') === 'saturated';
+    const x = teosSample(
+      read.num('salinity'),
+      read.num('temperature') - 273.15,
+      read.num('pressure') / 1e4,
+      saturated ? 1 : 0,
+    );
+    const air = t(saturated ? 'kitEarth.ocean.o.saturated' : 'kitEarth.ocean.o.airFree');
+    return {
+      answer: t('kitEarth.ocean.a.teos10', { value: fmt(x.rho, 9), ct: fmt(x.ct, 7) }),
+      latex: `\\rho = \\frac{1}{v(S_A, \\Theta, p)} = ${tex(x.rho, 9)}\\ \\mathrm{kg/m^3}`,
+      rows: [
+        [r('absolute'), `${fmt(x.sa, 7)} g/kg`],
+        [r('theta'), `${fmt(x.pt, 7)} °C`],
+        [r('ct'), `${fmt(x.ct, 7)} °C`],
+        [r('specvol'), `${fmt(x.v, 9)} m³/kg`],
+        [r('density'), `${fmt(x.rho, 9)} kg/m³`],
+        [r('sigma0'), `${fmt(x.sigma0, 7)} kg/m³`],
+        [r('ctFreeze'), `${fmt(x.ctFreeze, 6)} °C`],
+        [r('ptFreeze'), `${fmt(x.ptFreeze, 6)} °C`],
+      ],
+      steps: [
+        t('kitEarth.ocean.s.teosSa', { value: fmt(x.sa, 7) }),
+        t('kitEarth.ocean.s.teosPt', { value: fmt(x.pt, 7) }),
+        t('kitEarth.ocean.s.teosCt', { value: fmt(x.ct, 7) }),
+        t('kitEarth.ocean.s.teosRho', { terms: SPECVOL_TERMS, v: fmt(x.v, 9), value: fmt(x.rho, 9) }),
+        t('kitEarth.ocean.s.teosSigma', { value: fmt(x.sigma0, 7) }),
+        t('kitEarth.ocean.s.teosFreeze', { air, ct: fmt(x.ctFreeze, 6), pt: fmt(x.ptFreeze, 6) }),
+      ],
+      source: TEOS10_SOURCE,
     };
   },
 };
@@ -161,4 +209,4 @@ const ts: Mode = {
   },
 };
 
-export const SEAWATER: readonly Mode[] = [sample, sound, ts];
+export const SEAWATER: readonly Mode[] = [sample, teos, sound, ts];

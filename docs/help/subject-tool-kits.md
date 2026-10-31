@@ -52,7 +52,7 @@ Open it with Ctrl+K and "Open the earth sciences kit", or with "Open" and a tool
 - Air quality and weather observations: the AQI, Gaussian plumes with a ground-level concentration map, ppm conversions, box models, METAR and TAF in words, and radar rain rates.
 - Seismology and seismic surveys: S-P distance, epicenters, magnitude and energy, b-values, Omori-Utsu aftershock decay, flat and dipping-layer refraction, NMO, and Dix velocities.
 - Gravity, magnetics, heat flow, and plates: Bouguer and isostatic anomalies, magnetic fields, geotherms, plate motions, and resistivity.
-- Ocean, waves, and planetary flow: seawater density and sound speed, wave dispersion and shoaling, and Coriolis, geostrophic, Ekman, Rossby, and Kelvin flow.
+- Ocean, waves, and planetary flow: seawater density and sound speed by EOS-80, TEOS-10 conservative temperature, density, potential density, and freezing point, wave dispersion and shoaling, and Coriolis, geostrophic, Ekman, Rossby, and Kelvin flow.
 
 ## Which builds have them
 

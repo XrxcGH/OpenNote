@@ -1,7 +1,7 @@
 // Seawater by TEOS-10: absolute salinity from practical salinity (reference composition, no regional anomaly),
 // conservative temperature from potential temperature, density from the 75-term polynomial for specific volume
 // (Roquet et al. 2015), potential density, and the freezing conservative temperature. The coefficients are the
-// published ones (IOC, SCOR and IAPSO 2010; Roquet et al. 2015; McDougall et al. 2014), checked against GSW-C 3.05.
+// published ones (IOC, SCOR, and IAPSO 2010; Roquet et al. 2015; McDougall et al. 2014), checked against GSW-C 3.05.
 // SA in g/kg, temperatures in °C (ITS-90), sea pressure in dbar.
 import { check } from '../core/problem';
 import { potentialTemperature, toT68 } from './seawater';
