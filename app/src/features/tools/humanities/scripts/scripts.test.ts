@@ -54,6 +54,16 @@ describe('Hangul', () => {
   it('aspirate with h and palatalize before i', () => {
     expect(romanizeKorean('좋다', 'rr').text).toBe('jota');
     expect(romanizeKorean('굳이', 'rr').text).toBe('guji');
+    // McCune–Reischauer keeps a stop before h and writes the h; h before a stop still aspirates it.
+    expect(['북한', '입학', '백화점', '낙하산'].map((w) => romanizeKorean(w, 'mr', true).text)).toEqual([
+      'Pukhan',
+      'Iphak',
+      'Paekhwajŏm',
+      'Nakhasan',
+    ]);
+    expect(romanizeKorean('북한', 'mr').rules).toEqual(['stopH']);
+    expect(romanizeKorean('좋다', 'mr').text).toBe("chot'a");
+    expect(romanizeKorean('북한', 'rr').text).toBe('bukan');
   });
 
   it('follow the official Revised Romanization examples for n-insertion, nouns, and nn', () => {

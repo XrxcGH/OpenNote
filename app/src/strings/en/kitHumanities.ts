@@ -1648,6 +1648,7 @@ export const kitHumanities = {
       palatal: 't or th before i is read j or ch.',
       nInsertion: 'In a compound, an n is inserted before i, ya, yeo, yo, or yu after a final.',
       nounH: 'In a noun, k, t, or p before h is written with the h kept, as Revised Romanization asks.',
+      stopH: 'McCune–Reischauer writes k, t, or p before h as the stop and h (Pukhan), in any word.',
       nn: 'In this word n and l meet as nn. Whether they read nn or ll depends on the word.',
     },
     direction: 'Direction',

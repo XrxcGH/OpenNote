@@ -141,13 +141,15 @@ export interface SoundOptions {
   compound?: boolean;
   /** A noun or a place name: k, t, or p before h keeps the h (Mukho), as Revised Romanization asks. */
   noun?: boolean;
+  /** McCune–Reischauer: k, t, or p before h is always the stop and h (Pukhan, iphak), noun or not. */
+  stopH?: boolean;
 }
 
 const NASAL_OF: Record<string, string> = { ㄱ: 'ㅇ', ㄷ: 'ㄴ', ㅂ: 'ㅁ' };
 const ASPIRATE: Record<string, string> = { ㄱ: 'ㅋ', ㄷ: 'ㅌ', ㅂ: 'ㅍ', ㅈ: 'ㅊ' };
 
 export type SoundRule =
-  'liaison' | 'nasal' | 'lateral' | 'lToN' | 'aspiration' | 'palatal' | 'nInsertion' | 'nounH' | 'nn';
+  'liaison' | 'nasal' | 'lateral' | 'lToN' | 'aspiration' | 'palatal' | 'nInsertion' | 'nounH' | 'stopH' | 'nn';
 
 export interface Sounded {
   units: { lead: string; vowel: string; tail: string }[];
@@ -173,9 +175,9 @@ export function soundChanges(word: string, options: SoundOptions = {}): Sounded 
       rules.push({ at: i, rule: 'aspiration' });
       continue;
     }
-    if (b.lead === 'ㅎ' && options.noun && ASPIRATE[NEUTRAL[a.tail]] && !SPLIT[a.tail]) {
+    if (b.lead === 'ㅎ' && (options.noun || options.stopH) && ASPIRATE[NEUTRAL[a.tail]] && !SPLIT[a.tail]) {
       a.tail = NEUTRAL[a.tail];
-      rules.push({ at: i, rule: 'nounH' });
+      rules.push({ at: i, rule: options.stopH ? 'stopH' : 'nounH' });
       continue;
     }
     if (b.lead === 'ㅎ' && ASPIRATE[NEUTRAL[a.tail]] && !SPLIT[a.tail]) {
@@ -286,7 +288,7 @@ export function romanizeKorean(
   if (text.trim() === '') throw new Error('empty');
   const used: SoundRule[] = [];
   const out = text.replace(/[가-힣]+/g, (word) => {
-    const { units: u, rules } = soundChanges(word, options);
+    const { units: u, rules } = soundChanges(word, scheme === 'mr' ? { ...options, stopH: true } : options);
     used.push(...rules.map((r) => r.rule));
     let s = '';
     u.forEach((unit, i) => {
