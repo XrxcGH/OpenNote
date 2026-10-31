@@ -27,6 +27,7 @@ export type ToolId =
   | 'symbols'
   | 'econ'
   | 'kit-statinfer'
+  | 'kit-statmodels'
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
@@ -72,6 +73,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'figure', title: 'docStructure.figure.title', width: 420 },
   { id: 'econ', title: 'kitEcon.title', width: 520 },
   { id: 'kit-statinfer', title: 'kitStatInfer.window.title', width: 560 },
+  { id: 'kit-statmodels', title: 'kitStatModels.title', width: 600 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },

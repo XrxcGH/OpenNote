@@ -31,6 +31,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
 - [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
 - [Statistics kit](statistics-kit.md): describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design.
+- [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
 
 ## Draw and design pages
 

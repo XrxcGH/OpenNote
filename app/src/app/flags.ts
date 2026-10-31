@@ -30,6 +30,8 @@ import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
 import { SYNC_FLAGS } from '../features/sync/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { STATMODELS_FLAGS } from '../features/tools/flags';
+import type { StatModelsFlagId } from '../features/tools/flags';
 import { TUTOR_FLAGS } from '../features/tutor/flags';
 import type { TutorFlagId } from '../features/tutor/flags';
 import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
@@ -84,6 +86,7 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  | StatModelsFlagId
   | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
@@ -375,6 +378,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...STATMODELS_FLAGS,
   ...TUTOR_FLAGS,
   ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,

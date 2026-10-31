@@ -22,6 +22,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Further features by phase](#further-features-by-phase)
 - [Productivity and study tools](#productivity-and-study-tools)
 - [Math solvers](#math-solvers)
+- [Statistical models kit](#statistical-models-kit)
 - [Engineering tools](#engineering-tools)
 - [Subject tool kits](#subject-tool-kits)
 
@@ -588,6 +589,22 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Circuit symbols and DC solver | A circuit block with resistors, voltage and current sources, grounds, and wires on a grid. Values take SI prefixes, such as 4.7k. Modified nodal analysis gives every node's voltage, every part's current and direction, and the power it delivers or takes, and says when a ground is missing, names the parts of a floating subcircuit, or says the circuit cannot be solved. Wires join at their ends and at T junctions, not where they only cross. The Draw tab's shapes gain a Circuit symbols group. Tests check five textbook circuits, including Alexander and Sadiku's Example 3.1. | Built, untested by hand |
 | Units and engineering notation in tables | A smart table column can carry a unit, such as kN, MPa, or N·m. Cells typed in another unit of the same kind convert to it, and a unit of the wrong kind is flagged. Totals and formulas add the converted values. The column can write values in engineering notation (12.5×10³) or with SI prefixes (12.5 kN). SI units with prefixes, US customary units, and compound units are known. | Built, untested by hand |
 
+## Statistical models kit
+
+(Beta 6. On in Beta and off in Stable, with the `kits.statmodels` flag. Help: [Statistical models](help/statistical-models.md).)
+
+| Feature | What it does | Status |
+|---|---|---|
+| Linear regression | Fits a model formula with categorical predictors and interactions, with robust and clustered errors, diagnostics, prediction intervals, nested-model tests, moderation, mediation, and a random intercept. | Built, untested by hand |
+| Logistic and Poisson regression | Fits 0/1, grouped, and count outcomes with odds or rate ratios, likelihood-ratio tests, the ROC curve, and the IRLS steps. | Built, untested by hand |
+| Econometrics and causal inference | Panel fixed effects, two-stage least squares, difference-in-differences with event-study plots, regression discontinuity, propensity-score weighting and matching, and back-door sets from causal diagrams. | Built, untested by hand |
+| Survival analysis | Kaplan-Meier curves with log-rank tests, Cox proportional hazards, and life tables. | Built, untested by hand |
+| Time series and forecasting | Correlograms and Ljung-Box, periodograms, decomposition, exponential smoothing, AR and ARIMA forecasts with intervals, hold-out accuracy, Mann-Kendall with Sen's slope, and Dickey-Fuller with simulated quantiles. | Built, untested by hand |
+| PCA, factors, and clusters | Principal components, factor analysis with rotation and parallel analysis, k-means, Gaussian mixtures by EM, hierarchical clustering with a dendrogram, a clustered heat map, and multidimensional scaling. | Built, untested by hand |
+| Machine learning lab | Nearest neighbors, trees, naive Bayes, logistic regression, the perceptron, a small neural network, ridge, and the lasso on toy sets or your data, with seeded splits, cross-validation, and the usual scores and curves. | Built, untested by hand |
+| Spatial statistics | Point-pattern statistics, Moran's I and Geary's C with local clusters, semivariograms, ordinary kriging with contour maps, and inverse-distance weighting. | Built, untested by hand |
+| Live calculation block from a model | The Insert menu's Live calculation block keeps the tool's answer with its key results on the page. Its Open in tool reopens the tool with the data and choices that were typed. | Built, untested by hand |
+
 ## Subject tool kits
 
 On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explains how to use them. Each kit is one tool window with a tab per tool. Every tool takes typed values with units (SI or US), works the problem, and shows results, worked steps, and assumptions, with an Insert menu for the page. Each lane's engines are checked by unit tests against published values or independent hand calculations.
@@ -595,7 +612,7 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Feature | What it does | Status |
 |---|---|---|
 | Kit foundation | Shared numerics (matrices, polynomial roots, quadrature, ODE solvers, special functions), air and water properties, 38 unit kinds, and the kit window parts. Flag `kits.calc` for the block below. | Built, untested by hand |
-| Live calculation block | A block that keeps a tool's answer, key results, and inputs on the page. Open in tool reopens the tool with those inputs. The solid mechanics, fluids and heat transfer, and dynamics and control kits insert it; the mechanisms kit has its own calculation block. The other kits do not insert one yet. | Built, untested by hand |
+| Live calculation block | A block that keeps a tool's answer, key results, and inputs on the page. Open in tool reopens the tool with those inputs. The solid mechanics, fluids and heat transfer, dynamics and control, and statistical models kits insert it; the mechanisms kit has its own calculation block. The other kits do not insert one yet. | Built, untested by hand |
 | Circuits and energy | Transients, a circuit simulator (DC, AC sweep, transient), op-amps and filters, semiconductors, instruments, AC power, power flow, data fitting, and energy. Flag `kits.electrical`. | Built, untested by hand |
 | Fluids and heat transfer | Fluid statics and Bernoulli, pipe flow and pumps, dimensional analysis, viscous and external flow, conduction, fins, transient conduction, convection, heat exchangers, radiation, and water and air properties. Flag `kits.fluidheat`. | Built, untested by hand |
 | Solid mechanics | Columns, stress and strain, sections, members, deflection, pressure vessels, thin-walled structures, composite laminates, tissues and joints, fatigue and machine elements, and a finite element workbench. Flag `kits.solids`. | Built, untested by hand |

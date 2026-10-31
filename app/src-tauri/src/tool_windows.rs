@@ -127,6 +127,12 @@ pub const TOOLS: &[Tool] = &[
         height: 720.0,
     },
     Tool {
+        id: "kit-statmodels",
+        title: "Statistical models",
+        width: 600.0,
+        height: 720.0,
+    },
+    Tool {
         id: "kitelectrical",
         title: "Circuits and energy",
         width: 560.0,

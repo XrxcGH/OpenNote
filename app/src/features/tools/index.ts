@@ -10,6 +10,7 @@ export { CALCULATOR_MODES, openCalculator } from './ui/calculatorMode';
 export { openPhysicsTool } from './physics/open';
 export type { CalculatorMode } from './ui/calculatorMode';
 export { PoppedTool } from './ui/PoppedTool';
+export { openStatModelsKit } from './statmodels/open';
 export { countFigures } from './science/sigfigs';
 export { seedSigFigs } from './ui/SigFigsTool';
 export { requestWord } from './dictionary/request';

@@ -63,6 +63,9 @@ import { kitEcon } from './kitEcon';
 import { kitChemMat } from './kitChemMat';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
+import { kitStatModels } from './kitStatModels';
+import { kits } from './kits';
+import { kitSubjects } from './kitSubjects';
 import { stepCheck } from './stepCheck';
 import { tutor } from './tutor';
 import { exams } from './exams';
@@ -72,8 +75,6 @@ import { kitDesign } from './kitDesign';
 import { kitMath } from './kitMath';
 import { kitMechDyn } from './kitMechDyn';
 import { kitPhysics } from './kitPhysics';
-import { kits } from './kits';
-import { kitSubjects } from './kitSubjects';
 import { kitStatInfer } from './kitStatInfer';
 import { kitElectrical } from './kitElectrical';
 import { kitFluidHeat } from './kitFluidHeat';
@@ -145,6 +146,7 @@ export const en = {
   docStructure,
   codeCells,
   kitEcon,
+  kitStatModels,
   kits,
   kitSubjects,
   stepCheck,
