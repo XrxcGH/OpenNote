@@ -211,4 +211,25 @@ describe('reading people and the tool', () => {
     expect(failed(runTool(spec, { mode: 'relationship', b: 'Gus' }))).toBe('family.e.samePerson');
     expect(failed(runTool(spec, { mode: 'genogram', relations: 'Carl Eve friends' }))).toBe('family.e.relationLine');
   });
+
+  it('prints an inbred common ancestor’s (1 + F_A) factor in the relatedness sum', () => {
+    // Father D is a child of full sibs X and Y, so F_D = 1/4. For his children S1 and S2:
+    // via D (1/2)^2 (1 + 1/4) = 5/16, via mother M (1/2)^2 = 4/16, total 9/16.
+    const people = [
+      'GA, M',
+      'GB, F',
+      'X, M, GA, GB',
+      'Y, F, GA, GB',
+      'D, M, X, Y',
+      'M, F',
+      'S1, M, D, M',
+      'S2, F, D, M',
+    ];
+    const result = runTool(spec, { mode: 'relationship', people: people.join('\n'), a: 'S1', b: 'S2' });
+    if (!result.ok) throw new Error(result.error);
+    const inbred = '(\\tfrac{1}{2})^{2}(1 + 1/4)';
+    const plain = '(\\tfrac{1}{2})^{2}';
+    expect([`${inbred} + ${plain}`, `${plain} + ${inbred}`]).toContain(result.latex?.split(' = ').at(-2));
+    expect(result.latex?.endsWith(' = 9/16')).toBe(true);
+  });
 });

@@ -224,6 +224,10 @@ function probability(values: Values): KitOk {
   });
 }
 
+/** One path's term, (1/2)^n, times (1 + F_A) when the common ancestor is inbred. */
+const pathTerm = (p: { steps: number; ancestorF: number }): string =>
+  `(\\tfrac{1}{2})^{${p.steps}}` + (p.ancestorF > 0 ? `(1 + ${fraction(p.ancestorF)})` : '');
+
 function related(values: Values): KitOk {
   const family = readFamily(values.people ?? '');
   const a = person(family, values, 'a', 'family.f.a');
@@ -234,8 +238,7 @@ function related(values: Values): KitOk {
   const phi = kinship(family)(a, b);
   const math =
     list.length > 0
-      ? `r = \\sum \\left(\\tfrac{1}{2}\\right)^{n}(1 + F_A) = ` +
-        `${list.map((p) => `(\\tfrac{1}{2})^{${p.steps}}`).join(' + ')} = ${fraction(r)}`
+      ? `r = \\sum \\left(\\tfrac{1}{2}\\right)^{n}(1 + F_A) = ` + `${list.map(pathTerm).join(' + ')} = ${fraction(r)}`
       : 'r = 0';
   return ok({
     answer: { key: 'family.a.relationship', vars: { a, b, r: fraction(r), f: fraction(phi) } },
