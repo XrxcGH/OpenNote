@@ -125,6 +125,9 @@ describe('flood frequency', () => {
     within(pearsonK(100, 0), 2.326347874, 1e-8);
     // The published Pearson III table gives 2.686 for skew 0.5 at 100 years; Wilson-Hilferty is within 0.003.
     within(pearsonK(100, 0.5), 2.686, 0.003);
+    // The same table at 100 years gives 3.022 for skew +1 and 1.588 for skew -1; the transform reads 3.030 and 1.601.
+    within(pearsonK(100, 1), 3.022, 0.015);
+    within(pearsonK(100, -1), 1.588, 0.015);
   });
 
   it('ranks peaks with Weibull positions', () => {

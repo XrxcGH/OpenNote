@@ -413,6 +413,7 @@ const frequencyCalc: Calc = {
       ],
       latex: `Q_{${tex(T)}} = ${tex(QT)}\\ \\mathrm{m^3/s}`,
       source: 'hydraulics.source.usgs',
+      ...(lp3 === null ? {} : { notes: [{ key: 'hydraulics.freq.lp3Note' }] }),
       plot: {
         title: 'hydraulics.p.frequency',
         x: 'hydraulics.p.T',

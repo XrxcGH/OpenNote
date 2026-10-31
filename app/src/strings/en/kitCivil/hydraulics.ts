@@ -229,6 +229,8 @@ export const hydraulics = {
     s2: 'The Gumbel flood is Q_T = {Q} m³/s.',
     lp3: 'Log-Pearson III, with skew {g} and the Wilson-Hilferty factor, gives Q_T = {Q} m³/s.',
     risk: 'The risk over the design life is {risk}.',
+    lp3Note:
+      'Wilson-Hilferty K is within about 0.015 of the Pearson III table for skews of -1 to 1; use the table beyond.',
   },
   usle: {
     title: 'Soil loss (USLE)',

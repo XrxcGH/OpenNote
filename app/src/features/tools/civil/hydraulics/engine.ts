@@ -236,7 +236,10 @@ export function normalQuantile(p: number): number {
   return x - u / (1 + (x * u) / 2);
 }
 
-/** The Pearson III frequency factor by the Wilson-Hilferty transformation of the normal quantile. */
+/**
+ * The Pearson III frequency factor by the Wilson-Hilferty transformation of the normal quantile. It reads high by
+ * up to about 0.015 against the published table for |skew| <= 1, and the error grows past that.
+ */
 export function pearsonK(T: number, skew: number): number {
   const z = normalQuantile(1 - 1 / T);
   if (Math.abs(skew) < 1e-9) return z;
