@@ -233,6 +233,7 @@ export const common = {
     rfMismatch: 'Mismatch loss is the power that does not reach the load.',
     rfElectrical: 'Find the electrical length and the loss along the line.',
     rfZin: 'Transform the load impedance along the line.',
+    rfZinOpen: 'Transform the open load along the line: Zin = Z0 / tanh γl.',
     rfLq: 'The network’s Q is set by the ratio of the resistances.',
     rfLValues: 'Turn each reactance into an inductor or capacitor at the frequency.',
     rfStubShunt: 'Move along the line until the conductance equals 1/Z0; a shunt stub cancels the susceptance there.',

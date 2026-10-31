@@ -3,6 +3,7 @@
 // decibel tabs are in RfModes.tsx.
 import { useMemo, useRef } from 'react';
 import { t } from '../../../../strings/t';
+import { Button } from '../../../../ui';
 import { SignalError } from '../shared/errors';
 import { cdiv, cx, fmt, fmtComplex } from '../shared/num';
 import { Plot, type PlotHandle } from '../shared/Plot';
@@ -25,8 +26,9 @@ import {
 } from '../shared/ui';
 import styles from '../shared/kit.module.css';
 import {
-  gammaOf,
   inputImpedance,
+  isOpenLoad,
+  readLoad,
   lSection,
   lineParameters,
   quarterWave,
@@ -51,10 +53,11 @@ const LOAD = { z0: '50', zl: '100+j50', length: '0.125', loss: '0' };
 
 function loadResult(state: typeof LOAD) {
   const z0 = num(state.z0);
-  const zl = readComplex(state.zl);
+  const zl = readLoad(state.zl, readComplex);
   const length = num(state.length);
   const line = inputImpedance(zl, z0, length, num(state.loss) || 0);
-  return { z0, zl, length, load: reflection(zl, z0), line, wave: standingWave(gammaOf(zl, z0), Math.max(0.5, length)) };
+  const load = reflection(zl, z0);
+  return { z0, zl, length, load, line, wave: standingWave(load.gamma, Math.max(0.5, length)) };
 }
 
 function LoadMode() {
@@ -64,7 +67,15 @@ function LoadMode() {
   const fields = (
     <Fields>
       <Field label={w('z0')} value={state.z0} onChange={(z0) => set({ z0 })} unit="Ω" />
-      <Field label={w('zl')} value={state.zl} onChange={(zl) => set({ zl })} unit="Ω" hint={w('complexHint')} />
+      <Field label={w('zl')} value={state.zl} onChange={(zl) => set({ zl })} unit="Ω" hint={w('loadHint')} />
+      <div className={styles.actions} role="group" aria-label={w('loadPresets')}>
+        <Button variant="quiet" onClick={() => set({ zl: '0' })}>
+          {w('shortLoad')}
+        </Button>
+        <Button variant="quiet" onClick={() => set({ zl: 'open' })}>
+          {w('openLoad')}
+        </Button>
+      </div>
       <Field label={w('length')} value={state.length} onChange={(length) => set({ length })} unit="λ" />
       <Field label={w('loss')} value={state.loss} onChange={(loss) => set({ loss })} unit={w('dbPerWavelength')} />
     </Fields>
@@ -77,7 +88,7 @@ function LoadMode() {
       </>
     );
   const { z0, load, line, wave } = outcome.value;
-  const yin = cdiv(cx(1), line.zin);
+  const yin = isOpenLoad(line.zin) ? cx(0) : cdiv(cx(1), line.zin);
   const answer = w('loadAnswer', {
     gamma: fmtComplex(load.gamma, 5),
     vswr: fmt(load.vswr, 5),

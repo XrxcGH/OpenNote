@@ -13,7 +13,17 @@ function checkZ0(z0: number): number {
   return z0;
 }
 
-function checkLoad(zl: Complex): Complex {
+/** An open-circuit load: an infinite impedance, written as an infinite real part. */
+export const OPEN_LOAD: Complex = cx(Infinity, 0);
+export const isOpenLoad = (zl: Complex): boolean => zl.re === Infinity;
+
+/** Reads a load impedance: a complex number as `read` takes it, or "open" (or ∞) for an open circuit. */
+export function readLoad(text: string, read: (text: string) => Complex): Complex {
+  return /^\s*(open|oc|∞|inf(inity)?)\s*$/i.test(text) ? OPEN_LOAD : read(text);
+}
+
+function checkLoad(zl: Complex, allowOpen = false): Complex {
+  if (allowOpen && isOpenLoad(zl)) return zl;
   if (!Number.isFinite(zl.re) || !Number.isFinite(zl.im)) throw new SignalError('loadImpedance');
   if (zl.re < 0) throw new SignalError('negativeResistance');
   return zl;
@@ -37,8 +47,9 @@ export interface Reflection {
 
 export function reflection(zl: Complex, z0: number): Reflection {
   checkZ0(z0);
-  checkLoad(zl);
-  const gamma = gammaOf(zl, z0);
+  checkLoad(zl, true);
+  // An open load is the limit ZL → ∞ of (ZL − Z0)/(ZL + Z0), which is 1.
+  const gamma = isOpenLoad(zl) ? ONE : gammaOf(zl, z0);
   const magnitude = cabs(gamma);
   const vswr = magnitude >= 1 ? Infinity : (1 + magnitude) / (1 - magnitude);
   const returnLossDb = magnitude === 0 ? Infinity : -20 * Math.log10(magnitude);
@@ -81,22 +92,30 @@ export function inputImpedance(
   steps: Step[];
 } {
   checkZ0(z0);
-  checkLoad(zl);
+  checkLoad(zl, true);
   if (!Number.isFinite(wavelengths) || wavelengths < 0) throw new SignalError('lineLength');
   if (!(lossDbPerWavelength >= 0) || !Number.isFinite(lossDbPerWavelength)) throw new SignalError('lineLoss');
   const betaL = 2 * Math.PI * wavelengths;
   const alphaL = (lossDbPerWavelength * wavelengths) / 8.685889638;
   const t = ctanh(cx(alphaL, betaL));
   const z0c = cx(z0);
-  // An open load (infinite impedance) is the limit Z0/tanh γl.
+  const electrical = step('rfElectrical', `βl = 2π·${fmt(wavelengths)} = ${fmt(betaL)} rad; αl = ${fmt(alphaL)} Np`);
+  if (isOpenLoad(zl)) {
+    // An open load is the limit ZL → ∞: Zin = Z0/tanh γl (−j Z0 cot βl without loss), and Γin = e^{−2γl}.
+    const open = cabs(t) === 0;
+    const zin = open ? OPEN_LOAD : cdiv(z0c, t);
+    const decay = Math.exp(-2 * alphaL);
+    return {
+      zin,
+      gammaIn: cx(decay * Math.cos(2 * betaL), -decay * Math.sin(2 * betaL)),
+      steps: [electrical, step('rfZinOpen', `Zin = Z0 / tanh γl = ${fmtComplex(zin)} Ω`)],
+    };
+  }
   const zin = cmul(z0c, cdiv(cadd(zl, cmul(z0c, t)), cadd(z0c, cmul(zl, t))));
   return {
     zin,
     gammaIn: gammaOf(zin, z0),
-    steps: [
-      step('rfElectrical', `βl = 2π·${fmt(wavelengths)} = ${fmt(betaL)} rad; αl = ${fmt(alphaL)} Np`),
-      step('rfZin', `Zin = Z0 (ZL + Z0 tanh γl)/(Z0 + ZL tanh γl) = ${fmtComplex(zin)} Ω`),
-    ],
+    steps: [electrical, step('rfZin', `Zin = Z0 (ZL + Z0 tanh γl)/(Z0 + ZL tanh γl) = ${fmtComplex(zin)} Ω`)],
   };
 }
 

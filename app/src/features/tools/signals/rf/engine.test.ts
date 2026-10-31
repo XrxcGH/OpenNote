@@ -3,7 +3,17 @@
 import { describe, expect, it } from 'vitest';
 import { SignalError } from '../shared/errors';
 import { cabs, cadd, cdiv, cx, type Complex } from '../shared/num';
-import { inputImpedance, lSection, lineParameters, quarterWave, reflection, singleStub, smithGrid } from './lines';
+import {
+  OPEN_LOAD,
+  inputImpedance,
+  lSection,
+  lineParameters,
+  quarterWave,
+  readLoad,
+  reflection,
+  singleStub,
+  smithGrid,
+} from './lines';
 import {
   cascade,
   convertDb,
@@ -59,6 +69,27 @@ describe('reflection and line impedance', () => {
     expect(errorKey(() => reflection(cx(-1, 0), 50))).toBe('negativeResistance');
     expect(errorKey(() => reflection(cx(10), 0))).toBe('impedance');
     expect(errorKey(() => inputImpedance(cx(10), 50, -1))).toBe('lineLength');
+  });
+
+  it('takes an open load: Γ = 1, Zin = −j Z0 cot βl without loss, and Z0 tanh αl at a lossy quarter wave', () => {
+    expect(readLoad(' Open ', () => cx(0))).toBe(OPEN_LOAD);
+    const open = reflection(OPEN_LOAD, 50);
+    nearZ(open.gamma, cx(1), 1e-15);
+    expect(open.vswr).toBe(Infinity);
+    expect(open.returnLossDb).toBeCloseTo(0, 12);
+    // cot(36°) = 1.37638192, so a 0.1 λ open stub on 50 Ω is −j68.8190960 Ω; an eighth wave is −j50 Ω.
+    nearZ(inputImpedance(OPEN_LOAD, 50, 0.1).zin, cx(0, -68.8190960236), 1e-8);
+    nearZ(inputImpedance(OPEN_LOAD, 50, 0.125).zin, cx(0, -50), 1e-9);
+    // A lossless quarter-wave open is a short; with 3 dB/λ it is Z0 tanh(0.75 dB → 0.0863469 Np) = 4.30665 Ω,
+    // and the round trip of 1.5 dB leaves |Γin| = 10^(−1.5/20) = 0.841395.
+    expect(cabs(inputImpedance(OPEN_LOAD, 50, 0.25).zin)).toBeLessThan(1e-9);
+    const lossy = inputImpedance(OPEN_LOAD, 50, 0.25, 3);
+    nearZ(lossy.zin, cx(4.306649202, 0), 1e-6);
+    near(cabs(lossy.gammaIn), 0.8413951416, 1e-9);
+    // A zero-length open stays open.
+    expect(inputImpedance(OPEN_LOAD, 50, 0).zin.re).toBe(Infinity);
+    // Matching networks still need a finite load.
+    expect(errorKey(() => lSection(OPEN_LOAD, 50, 1e8))).toBe('loadImpedance');
   });
 
   it('keeps every Smith chart grid point inside the unit circle', () => {
