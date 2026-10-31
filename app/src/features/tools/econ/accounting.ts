@@ -2,15 +2,19 @@
 
 export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
 
+// Order matters: the specific patterns (contra assets, "... expense", payables, prepaids) must run before the
+// broad revenue and expense words, or "Unearned revenue" reads as revenue and "Prepaid rent" as an expense.
 const TYPE_WORDS: [AccountType, RegExp][] = [
-  ['revenue', /revenue|sales|income|fees earned|interest earned|gain/i],
+  ['asset', /accumulated depreciation|accumulated amortization|allowance for|receivable|prepaid/i],
+  ['expense', /\bexpenses?\b|cost of (goods|sales|revenue)|\bloss\b/i],
+  ['liability', /payable|unearned|deferred revenue|\bloans?\b|\bdebt\b|notes? due|mortgage|accrued|\bbonds\b/i],
+  ['revenue', /revenue|\bsales\b|\bincome\b|fees earned|interest earned|\bgain\b/i],
   [
     'expense',
-    /expense|cost of|wages|salar|rent|utilit|supplies used|depreciation|insurance|interest paid|loss|advertising/i,
+    /\bcost of\b|\bwages\b|salar|\brent\b|utilit|supplies used|depreciation|insurance|interest paid|advertising/i,
   ],
-  ['liability', /payable|loan|debt|unearned|deferred revenue|notes? due|mortgage|accrued|bonds/i],
   ['equity', /capital|equity|retained|drawing|dividend|stock|owner/i],
-  ['asset', /cash|receivable|inventory|equipment|prepaid|supplies|land|building|vehicle|investment|furniture|asset/i],
+  ['asset', /cash|inventory|equipment|supplies|land|building|vehicle|investment|furniture|asset/i],
 ];
 
 /** The type named in parentheses after an account, such as "Fees (revenue)", or guessed from its name. */

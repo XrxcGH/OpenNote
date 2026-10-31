@@ -35,6 +35,51 @@ describe('ledger', () => {
     expect(accountType('Gizmo')).toBeNull();
     expect(accountType('Gizmo (asset)')).toBe('asset');
   });
+  it('types liabilities, prepaids and contra accounts before the broad revenue and expense words', () => {
+    for (const name of [
+      'Unearned revenue',
+      'Deferred revenue',
+      'Income tax payable',
+      'Sales tax payable',
+      'Wages payable',
+      'Salaries payable',
+      'Rent payable',
+      'Interest payable',
+    ])
+      expect(accountType(name), name).toBe('liability');
+    for (const name of [
+      'Prepaid rent',
+      'Prepaid insurance',
+      'Accumulated depreciation',
+      'Allowance for doubtful accounts',
+      'Interest receivable',
+    ])
+      expect(accountType(name), name).toBe('asset');
+    for (const name of [
+      'Income tax expense',
+      'Wages expense',
+      'Rent expense',
+      'Depreciation expense',
+      'Cost of goods sold',
+    ])
+      expect(accountType(name), name).toBe('expense');
+    for (const name of ['Sales revenue', 'Interest income', 'Rent revenue', 'Sales'])
+      expect(accountType(name), name).toBe('revenue');
+  });
+  it('reports unearned revenue as a liability, not income', () => {
+    const parsed = parseJournal('Cash 500 ; Unearned revenue 500');
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const s = statements(parsed.value);
+    expect([s.netIncome, s.liabilities, s.assets, s.balanced]).toEqual([0, 500, 500, true]);
+  });
+  it('nets accumulated depreciation against assets', () => {
+    const parsed = parseJournal('Cash 1000 ; Capital 1000\nDepreciation expense 100 ; Accumulated depreciation 100');
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const s = statements(parsed.value);
+    expect([s.assets, s.expenses, s.netIncome, s.balanced]).toEqual([900, 100, -100, true]);
+  });
   it('builds the trial balance and statements', () => {
     const parsed = parseJournal(JOURNAL);
     expect(parsed.ok).toBe(true);
