@@ -93,6 +93,9 @@ export const ZOTERO_EVENT = 'opennote:zotero-command';
 export { STATMODELS_TOOLS } from './statmodels/meta';
 export { STATMODELS_FLAGS } from './statmodels/flags';
 export type { StatModelsFlagId } from './statmodels/flags';
+export { MOLBIO_FLAGS } from './molbio/flags';
+export { MOLBIO_TOOLS } from './molbio/meta';
+export type { MolBioFlagId } from './molbio/flags';
 /**
  * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
  * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.

@@ -32,6 +32,8 @@ const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The molecular biology kit loads on first open.
+const KitMolBio = lazy(() => import('../molbio/KitMolBioTool').then((loaded) => ({ default: loaded.KitMolBioTool })));
 // Practice exams load with their window, on first open.
 const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
 
@@ -129,6 +131,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
+  if (tool === 'kitmolbio')
+    return (
+      <Suspense fallback={null}>
+        <KitMolBio />
+      </Suspense>
+    );
   if (tool === 'flashcards') return <DeckPanel />;
   if (tool === 'exam')
     return (

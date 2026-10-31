@@ -29,6 +29,7 @@ export type ToolId =
   | 'kit-statinfer'
   | 'kit-statmodels'
   | 'kit-mind'
+  | 'kitmolbio'
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
@@ -76,6 +77,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'kit-statinfer', title: 'kitStatInfer.window.title', width: 560 },
   { id: 'kit-statmodels', title: 'kitStatModels.title', width: 600 },
   { id: 'kit-mind', title: 'kitMind.window', width: 560 },
+  { id: 'kitmolbio', title: 'kitMolBio.window', width: 600 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },
