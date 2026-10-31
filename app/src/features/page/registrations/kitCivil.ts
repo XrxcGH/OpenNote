@@ -3,7 +3,7 @@
 // of the kit loads until a command runs.
 import { commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
-import { CIVIL_ICONS, CIVIL_TOOL_IDS } from '../../tools';
+import { CIVIL_ICONS, CIVIL_TOOL_IDS } from '../../tools/flags';
 
 commands.register({
   id: 'tools.kit-civil',

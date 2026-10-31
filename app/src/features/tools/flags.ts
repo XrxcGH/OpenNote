@@ -120,6 +120,7 @@ export { MOLBIO_TOOLS } from './molbio/meta';
 export type { MolBioFlagId } from './molbio/flags';
 // The civil engineering kit keeps its flag beside its tools; start-up reads it through this public module.
 export { CIVIL_FLAGS } from './civil/flags';
+export { CIVIL_ICONS, CIVIL_TOOL_IDS } from './civil/meta';
 export type { CivilFlagId } from './civil/flags';
 // The modern physics and astronomy tools' flag and their list, which the palette registers at start-up.
 export { MODPHYS_FLAGS } from './modphys/flags';
@@ -128,6 +129,8 @@ export { MODPHYS_TOOLS } from './modphys/meta';
 
 // The signals and sound kit's flag and tool list load at start-up with these, so the palette can name each tool.
 export { SIGNALS_FLAGS } from './signals/flags';
+// The music kit's tool list names its palette commands at start-up.
+export { MUSIC_TOOLS } from './music/meta';
 export type { SignalsFlagId } from './signals/flags';
 export { SIGNAL_TOOLS, chooseSignalTool, restoreSignalInputs } from './signals/meta';
 // The earth sciences kit's flag and tool list, public here so start-up code reads them without the kit.

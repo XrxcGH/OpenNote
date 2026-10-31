@@ -1,6 +1,10 @@
 // The music and studio kit's commands: one to open the window, and one per tool that opens it on that tool.
-import { MUSIC_TOOLS, openMusicKit } from '../../tools';
+import type { MusicToolId } from '../../tools';
+import { MUSIC_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
+
+// The kit's window and opener load on first use, so start-up holds only these definitions.
+const openMusicKit = async (tool?: MusicToolId) => (await import('../../tools')).openMusicKit(tool);
 
 addCommand({
   id: 'tools.kitmusic',
