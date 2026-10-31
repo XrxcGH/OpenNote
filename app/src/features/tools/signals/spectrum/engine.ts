@@ -216,7 +216,7 @@ export function bandPowers(
  * The tallest local maxima, largest first, with the peak's frequency refined by a parabola through the logarithms of
  * three bins. On a log scale a Gaussian-shaped peak is exactly a parabola, so the vertex lands far nearer the true
  * frequency than a parabola through linear values does (for a Hann window, a few thousandths of a bin rather than
- * about a twentieth). Where a neighbour is at the numerical floor the linear values are used.
+ * about a twentieth). Where a neighbor is at the numerical floor the linear values are used.
  */
 export function peaks(
   freq: ArrayLike<number>,

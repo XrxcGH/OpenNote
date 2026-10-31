@@ -1,6 +1,6 @@
-// The spectrum analyzer: paste samples (or time and value), or pick columns of a table on the open page, pick a window and a view, and read the spectrum, its
-// peaks, band powers, and the window's corrections, with the steps. A second part finds damping from half-power
-// points that are typed in or read from the spectrum.
+// The spectrum analyzer. Paste samples (or time and value), open a sound, or pick columns of a table on the open
+// page; pick a window and a view; and read the spectrum, its peaks, band powers, and the window's corrections, with
+// the steps. A second part finds damping from half-power points that are typed in or read from the spectrum.
 import { useMemo, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';

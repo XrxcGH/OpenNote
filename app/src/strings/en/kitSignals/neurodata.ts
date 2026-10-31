@@ -71,7 +71,7 @@ export const neurodata = {
   ecgNote:
     'R peaks come from a simplified Pan-Tompkins detector. Check them on the plot before trusting the variability.',
   topoValues: 'Values per electrode',
-  topoHint: 'One electrode per line: a 10-20 name, such as Cz (T7 or T3, P7 or T5 both work), then its value.',
+  topoHint: 'One electrode per line: a 10-20 name, such as Cz (the newer T7, T8, P7, and P8 work as well as T3 to T6), then its value.',
   topoAnswer: '{count} electrodes, from {low} to {high}.',
   topoTitle: 'Electrode map (nose at the top)',
   topoBin: 'Fifth {n} of the values',

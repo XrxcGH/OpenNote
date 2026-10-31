@@ -349,7 +349,7 @@ export function rPeaks(ecg: readonly number[], fs: number): number[] {
 
 /**
  * 10-20 electrode positions on a flat head (nose up), radius 1 at the 10% ring, after Jasper (1958). The modern
- * (10-10) names T7, T8, P7 and P8 sit where the 1958 names T3, T4, T5 and T6 do, so both are accepted.
+ * (10-10) names T7, T8, P7, and P8 sit where the 1958 names T3, T4, T5, and T6 do, so both are accepted.
  */
 export const ELECTRODES: Readonly<Record<string, readonly [number, number]>> = (() => {
   const polar = (r: number, deg: number): [number, number] => [
