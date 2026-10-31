@@ -17,7 +17,7 @@ const tripsCalc: Calc = {
     return {
       answer: { key: 'transport.trips.answer', vars: { total: t.total, inn: t.entering, out: t.exiting } },
       rows: [
-        row('transport.r.trips', t.total),
+        row('transport.r.tripsMade', t.total),
         row('transport.r.entering', t.entering),
         row('transport.r.exiting', t.exiting),
       ],
@@ -45,14 +45,17 @@ const trigCalc: Calc = {
       ['on', 'transport.o.crOn'],
       ['off', 'transport.o.crOff'],
     ]),
-    ...(choices.cr === 'off' ? [] : [num('k', 'transport.f.k', '0.13')]),
+    ...(choices.cr === 'off' ? [] : [num('k', 'transport.f.kRefr', '0.13')]),
   ],
   solve({ n, o, s }): Outcome {
     const r = trigLevel(n.S!, n.z!, n.hi!, n.ht!, s.cr === 'off' ? null : n.k!);
     const base = o.elev ?? null;
     const elev = base === null ? null : base + r.dH;
     return {
-      answer: { key: elev === null ? 'transport.trig.answer' : 'transport.trig.elevAnswer', vars: { dH: r.dH, elev } },
+      answer: {
+        key: elev === null ? 'transport.trig.answer' : 'transport.trig.elevAnswer',
+        vars: { dH: r.dH, elev: elev ?? 0 },
+      },
       rows: [
         row('transport.r.horizontal', r.H, 'm'),
         row('transport.r.vertical', r.V, 'm'),

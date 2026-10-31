@@ -57,7 +57,7 @@ export const transport = {
     ht: 'Target height',
     elevA: 'Instrument station elevation (optional)',
     cr: 'Curvature and refraction',
-    k: 'Refraction coefficient k',
+    kRefr: 'Refraction coefficient k',
     control: 'Control points: local x, y and known X, Y',
     toTransform: 'Points to transform (local x, y)',
     xCol: 'x',
@@ -145,7 +145,7 @@ export const transport = {
   },
   r: {
     dmdArea: 'Area by double meridian distances',
-    trips: 'Trips generated',
+    tripsMade: 'Trips generated',
     entering: 'Entering trips',
     exiting: 'Exiting trips',
     horizontal: 'Horizontal distance',
