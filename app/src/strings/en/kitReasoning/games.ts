@@ -3,6 +3,11 @@
 
 export const games = {
   modes: {
+    three: {
+      name: '3-player games',
+      intro:
+        'Pure equilibria and strictly dominated strategies of a small game of 3 players, 1 matrix per strategy of player 3.',
+    },
     normal: {
       name: 'Normal-form games',
       intro:
@@ -49,6 +54,8 @@ export const games = {
     payoffs: 'Payoffs, 1 row per line',
     rows: 'Row strategies',
     cols: 'Column strategies',
+    payoffs3: 'Payoffs, 1 block per strategy of player 3',
+    layers: 'Player 3 strategies',
     tree: 'Game tree',
     kind: 'Model',
     temptation: 'Temptation T',
@@ -78,6 +85,7 @@ export const games = {
   },
   help: {
     payoffs: 'Write each cell as row payoff, column payoff, such as 3,1. Separate cells with spaces.',
+    payoffs3: 'Write each cell as 3 payoffs, such as 1,0,2, and leave a blank line between the blocks.',
     tree: 'Indent each move under its node: move: next player, or move: payoffs. For chance, add a probability: up [1/2]: 4, 0.',
     ballots: 'One group per line: 4: A > B > C means 4 voters rank A first, then B, then C.',
     parties: 'One per line, such as A 53.',
@@ -128,6 +136,9 @@ export const games = {
     gameEmpty: 'Type the payoffs, 1 row of the game per line.',
     gameRagged: 'Every row needs the same number of cells.',
     gameSize: 'Use up to {max} strategies for each player.',
+    threeBlocks: 'Type at least 2 blocks, 1 per strategy of player 3, with a blank line between them.',
+    threeCell: 'Block {block}, row {row}, column {col} needs 3 payoffs such as 1,0,2.',
+    threeRagged: 'Every block needs the same number of rows and columns.',
     gameCell: 'Row {row}, column {col} is not a payoff. Write a cell as 3,1 or, for a zero-sum game, as 3.',
     gameMixedCells: 'Use 2 payoffs in every cell, or 1 in every cell for a zero-sum game.',
     gameNames: 'Give {n} names, or leave the names empty.',
@@ -179,6 +190,7 @@ export const games = {
   table: {
     payoffs: 'Payoffs, with each best response starred',
     equilibria: 'Pure and mixed equilibria',
+    layer: 'Payoffs when player 3 plays {name}, equilibria starred',
     rowMix: 'Row plays',
     colMix: 'Column plays',
     rowPays: 'Row gets',
@@ -228,6 +240,8 @@ export const games = {
   dominantCol: 'The column player has a strictly dominant strategy: {name}.',
   pureAnswer: 'Pure equilibria: {list}',
   noPure: 'No pure equilibrium; see the mixed ones below.',
+  noPure3: 'No pure equilibrium; mixed equilibria of 3-player games are not worked out here.',
+  dominated3: 'Player {player}: {name} is strictly dominated by {by}.',
   zeroSumAnswer: 'Value {value}. Row plays {row}; column plays {col}.',
   mixedCount: 'The game has {count} equilibria in all, counting mixed ones.',
   treeAnswer: 'Equilibrium play: {path}, with payoffs {payoffs}',

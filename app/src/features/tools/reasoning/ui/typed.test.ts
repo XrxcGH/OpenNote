@@ -107,3 +107,20 @@ describe('decision sensitivity in the decision mode', () => {
     expect(o.ok && o.figure?.alt).toContain('gamble from 0 at 0 to 120 at 1');
   });
 });
+
+describe('3-player normal-form games', () => {
+  it('finds the pure equilibrium and the dominated strategies', async () => {
+    // Each player gets 2 per other cooperator, plus 1 for defecting: D strictly dominates C for all 3, so the only
+    // pure equilibrium is (D, D, D).
+    const o = await solve('games', 'three', {
+      payoffs3: '4,4,4 2,5,2\n5,2,2 3,3,0\n\n2,2,5 0,3,3\n3,0,3 1,1,1',
+      rows: 'C D',
+      cols: 'C D',
+      layers: 'C D',
+    });
+    expect(answer(o)).toBe('Pure equilibria: (D, D, D)');
+    expect(note(o).split('\n')).toEqual([1, 2, 3].map((p) => `Player ${p}: C is strictly dominated by D.`));
+    // The coordination example has 2 pure equilibria.
+    expect(answer(await solve('games', 'three', {}))).toBe('Pure equilibria: (U, L, A), (D, R, B)');
+  });
+});

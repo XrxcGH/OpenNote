@@ -19,6 +19,7 @@ import {
   zeroSumValue,
 } from './normal';
 import type { Bimatrix } from './normal';
+import { parseThree, pureEquilibria3, strictlyDominated3 } from './three';
 import { isChance, parseTree, playPath, solveTree } from './tree';
 import type { GameNode } from './tree';
 
@@ -206,6 +207,46 @@ const NORMAL: Mode = {
   solve: solveWith(normalOutcome),
 };
 
+function threeOutcome(v: Values): Outcome {
+  const g = parseThree(v.payoffs3 ?? '', [v.rows ?? '', v.cols ?? '', v.layers ?? '']);
+  const pure = pureEquilibria3(g);
+  const name = (s3: readonly number[]) => `(${s3.map((x, p) => g.names[p][x]).join(', ')})`;
+  const notes = strictlyDominated3(g).map((d) =>
+    s('dominated3', { player: d.player + 1, name: g.names[d.player][d.strategy], by: g.names[d.player][d.by] }),
+  );
+  const isEq = (i: number, j: number, k: number) => pure.some((e) => e[0] === i && e[1] === j && e[2] === k);
+  return {
+    ok: true,
+    answer: pure.length ? s('pureAnswer', { list: pure.map(name).join(', ') }) : s('noPure3'),
+    note: notes.join('\n') || undefined,
+    tables: g.names[2].map((layer, k) => ({
+      caption: s('table.layer', { name: layer }),
+      header: ['', ...g.names[1]],
+      rows: g.names[0].map((r, i) => [
+        r,
+        ...g.names[1].map((_, j) => `${g.pay[i][j][k].map(fracText).join(', ')}${isEq(i, j, k) ? ' *' : ''}`),
+      ]),
+    })),
+  };
+}
+
+const THREE: Mode = {
+  id: 'three',
+  fields: [
+    {
+      id: 'payoffs3',
+      kind: 'area',
+      rows: 6,
+      initial: '1,1,1 0,0,0\n0,0,0 0,0,0\n\n0,0,0 0,0,0\n0,0,0 2,2,2',
+      help: true,
+    },
+    { id: 'rows', initial: 'U D' },
+    { id: 'cols', initial: 'L R' },
+    { id: 'layers', initial: 'A B' },
+  ],
+  solve: solveWith(threeOutcome),
+};
+
 const TREE: Mode = {
   id: 'tree',
   fields: [
@@ -231,5 +272,5 @@ const FORMULAS: Mode = {
 
 export const GAMES: ToolSpec = {
   id: 'games',
-  modes: [NORMAL, TREE, FORMULAS, VOTING, STV, APPORTION, POWER, DISTRICTS, COMPACT],
+  modes: [NORMAL, THREE, TREE, FORMULAS, VOTING, STV, APPORTION, POWER, DISTRICTS, COMPACT],
 };

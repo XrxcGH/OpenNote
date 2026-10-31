@@ -92,7 +92,8 @@ export const kitReasoning = {
       open: 'Open games, voting, and apportionment',
       keywords:
         'game theory nash equilibrium mixed strategy dominance zero-sum backward induction bargaining auction ' +
-        'voting borda condorcet instant runoff stv apportionment shapley banzhaf efficiency gap compactness',
+        'voting borda condorcet instant runoff stv apportionment shapley banzhaf efficiency gap compactness ' +
+        'three player arrow monotonicity population paradox',
       summary:
         'Solve games, tally elections under many rules, apportion seats, and measure voting power and districts.',
     },
