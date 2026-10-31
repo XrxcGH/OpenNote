@@ -83,13 +83,15 @@ export function instantRunoff(p: Profile): { winners: string[]; rounds: Map<stri
 }
 
 /** Top-2 runoff: more than half of the first choices wins outright; otherwise the top 2 meet head to head. */
-export function runoff(p: Profile): { winners: string[]; finalists: string[] } {
+export function runoff(p: Profile): { winners: string[]; finalists: string[]; tied: string[] } {
   const tally = firstChoices(p, p.candidates);
   const sorted = [...tally].sort((a, b) => b[1] - a[1]);
-  if (sorted[0][1] * 2 > p.voters) return { winners: [sorted[0][0]], finalists: [sorted[0][0]] };
+  if (sorted[0][1] * 2 > p.voters) return { winners: [sorted[0][0]], finalists: [sorted[0][0]], tied: [] };
   const finalists = sorted.slice(0, 2).map(([c]) => c);
+  // A tie for second place (or a wider tie for first) means the finalists were picked by ballot order.
+  const tied = sorted.length > 2 && sorted[2][1] === sorted[1][1] ? sorted.filter(([, v]) => v === sorted[1][1]) : [];
   const head = firstChoices(p, finalists);
-  return { winners: leaders(head), finalists };
+  return { winners: leaders(head), finalists, tied: tied.map(([c]) => c) };
 }
 
 /** Borda: with m candidates, a ballot gives m - 1 points to its first choice, down to 0; unranked candidates get 0. */

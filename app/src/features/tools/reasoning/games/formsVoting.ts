@@ -5,7 +5,7 @@ import { el, label, pathD, svgRoot } from '../core/svg';
 import { fail, integers, lines, num, numbers } from '../core/util';
 import { attempt, say, saySteps } from '../ui/say';
 import type { Mode, Outcome, Values } from '../ui/types';
-import { METHODS, alabama, apportion } from './apportion';
+import { METHODS, alabama, apportionFull } from './apportion';
 import type { Party } from './apportion';
 import { compactness, fairness } from './districts';
 import type { District, Point } from './districts';
@@ -62,6 +62,7 @@ function votingOutcome(v: Values): Outcome {
     note:
       [
         c.loser ? s('condorcetLoser', { name: c.loser }) : '',
+        run.tied.length ? s('runoffTie', { names: run.tied.join(', '), finalists: run.finalists.join(', ') }) : '',
         changed.length
           ? s('spoiler', {
               list: changed
@@ -116,6 +117,12 @@ export const STV: Mode = {
     return {
       ok: true,
       answer: s('stvAnswer', { names: r.elected.join(', ') }),
+      note:
+        r.ties
+          .map((t) =>
+            s(t.elect ? 'stvTieElect' : 'stvTieDrop', { round: t.round, names: t.names.join(', '), name: t.name }),
+          )
+          .join('\n') || undefined,
       steps: saySteps(T, r.steps),
       tables: [
         {
@@ -153,13 +160,28 @@ export const APPORTION: Mode = {
     const seats = integers(v.seats ?? '')?.[0];
     const threshold = numbers(v.threshold ?? '')?.[0] ?? 0;
     if (seats === undefined) fail('seatCount');
-    const all = METHODS.map((m) => apportion(m, list, seats!, threshold));
+    const full = METHODS.map((m) => apportionFull(m, list, seats!, threshold));
+    const all = full.map((r) => r.seats);
+    const ties = METHODS.flatMap((m, i) =>
+      full[i].tied.length
+        ? [
+            s('apportionTie', {
+              method: s(`apportion.${m}`),
+              names: full[i].tied.map((k) => list[k].name).join(', '),
+              name: list[full[i].tied[0]].name,
+            }),
+          ]
+        : [],
+    );
     const total = list.reduce((sum, p) => sum + p.size, 0);
     const paradox = alabama(list, seats!);
     return {
       ok: true,
       answer: METHODS.map((m, i) => `${s(`apportion.${m}`)}: ${all[i].join(', ')}`).join('; '),
-      note: paradox.length ? s('alabama', { names: paradox.join(', '), seats: seats!, more: seats! + 1 }) : undefined,
+      note:
+        [paradox.length ? s('alabama', { names: paradox.join(', '), seats: seats!, more: seats! + 1 }) : '', ...ties]
+          .filter(Boolean)
+          .join('\n') || undefined,
       steps: [s('steps.divisor', { total: num(total), seats: seats!, divisor: num(total / seats!) })],
       tables: [
         {

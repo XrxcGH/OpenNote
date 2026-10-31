@@ -241,6 +241,11 @@ export const games = {
   spoiler: 'Spoiler effect: the plurality winner changes when a losing candidate drops out. {list}.',
   spoilerItem: 'Without {removed}, {winners} wins',
   stvAnswer: 'Elected: {names}',
+  stvTieElect: 'Round {round}: {names} tie at the top; the tool elects {name}, listed first in the ballots.',
+  stvTieDrop: 'Round {round}: {names} tie for last; the tool drops {name}, listed first in the ballots.',
+  runoffTie:
+    'Top-2 runoff: {names} tie in first choices, so the finalists {finalists} are picked by the order of the ballots.',
+  apportionTie: '{method}: {names} have equal claims to the last seat; the tool gives it to {name}, listed first.',
   alabama: 'Alabama paradox: with {more} seats instead of {seats}, Hamilton gives {names} fewer seats.',
   dictator: '{name} is a dictator: their weight alone meets the quota.',
   vetoes: 'Veto players, without whom no coalition wins: {names}.',

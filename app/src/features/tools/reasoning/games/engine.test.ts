@@ -122,7 +122,7 @@ describe('voting', () => {
     // A loses to both B and C head to head, so plurality elects the Condorcet loser.
     expect(condorcet(p, d)).toEqual({ winner: 'B', loser: 'A' });
     expect(instantRunoff(p).winners).toEqual(['B']);
-    expect(runoff(p)).toEqual({ winners: ['B'], finalists: ['A', 'B'] });
+    expect(runoff(p)).toEqual({ winners: ['B'], finalists: ['A', 'B'], tied: [] });
     expect(copeland(p, d).get('B')).toBe(2);
     expect(schulze(p, d).winners).toEqual(['B']);
   });

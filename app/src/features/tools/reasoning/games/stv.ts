@@ -13,6 +13,8 @@ export interface StvResult {
   elected: string[];
   rounds: { tally: Map<string, Frac>; action: string }[];
   steps: Step[];
+  /** Rounds where the candidate elected or dropped was tied with others; the earlier-listed candidate goes first. */
+  ties: { round: number; names: string[]; name: string; elect: boolean }[];
 }
 
 export function stv(p: Profile, seats: number): StvResult {
@@ -25,6 +27,8 @@ export function stv(p: Profile, seats: number): StvResult {
   const elected: string[] = [];
   const rounds: StvResult['rounds'] = [];
   const steps: Step[] = [step('quota', { voters: p.voters, seats, quota })];
+  const ties: StvResult['ties'] = [];
+  const tiedWith = (tally: Map<string, Frac>, v: Frac) => [...tally].filter(([, x]) => cmp(x, v) === 0).map(([c]) => c);
   const topOf = (b: { ranking: string[] }) => b.ranking.find((c) => continuing.includes(c));
   for (let guard = 0; elected.length < seats && guard < 100; guard += 1) {
     if (continuing.length <= seats - elected.length) {
@@ -44,6 +48,8 @@ export function stv(p: Profile, seats: number): StvResult {
       const surplus = sub(votes, q);
       const ratio = div(surplus, votes);
       for (const b of ballots) if (topOf(b) === winner) b.weight = mul(b.weight, ratio);
+      const level = tiedWith(tally, votes);
+      if (level.length > 1) ties.push({ round: rounds.length + 1, names: level, name: winner, elect: true });
       elected.push(winner);
       continuing = continuing.filter((c) => c !== winner);
       rounds.push({ tally, action: winner });
@@ -54,13 +60,15 @@ export function stv(p: Profile, seats: number): StvResult {
           : step('stvElect', { ...at, surplus: fmt(surplus), ratio: fracText(ratio) }),
       );
     } else {
-      const low = [...tally].sort((a, b) => cmp(a[1], b[1]))[0][0];
+      const [low, lowVotes] = [...tally].sort((a, b) => cmp(a[1], b[1]))[0];
+      const level = tiedWith(tally, lowVotes);
+      if (level.length > 1) ties.push({ round: rounds.length + 1, names: level, name: low, elect: false });
       continuing = continuing.filter((c) => c !== low);
       rounds.push({ tally, action: low });
       steps.push(step('stvDrop', { round: rounds.length, tally: shown, name: low }));
     }
   }
-  return { quota, elected, rounds, steps };
+  return { quota, elected, rounds, steps, ties };
 }
 
 /** A weight as a decimal with up to 3 places. */
