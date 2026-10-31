@@ -67,6 +67,7 @@ import { kitStatModels } from './kitStatModels';
 import { kitMind } from './kitMind';
 import { kitMolBio } from './kitMolBio';
 import { kitLifeSys } from './kitLifeSys';
+import { kitCivil } from './kitCivil';
 import { kits } from './kits';
 import { kitSubjects } from './kitSubjects';
 import { stepCheck } from './stepCheck';
@@ -153,6 +154,7 @@ export const en = {
   kitMind,
   kitMolBio,
   kitLifeSys,
+  kitCivil,
   kits,
   kitSubjects,
   stepCheck,

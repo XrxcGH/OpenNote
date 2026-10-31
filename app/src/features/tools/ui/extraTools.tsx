@@ -37,6 +37,9 @@ const KitMolBio = lazy(() => import('../molbio/KitMolBioTool').then((loaded) => 
 // The life science tools load on first open, each tool's forms and engines only when its tab opens.
 const LifeSysTool = lazy(() => import('../lifesys/ui/LifeSysTool').then((m) => ({ default: m.LifeSysTool })));
 
+// The civil and chemical engineering kit loads its window, then each tool's calculations, on first use.
+const CivilTool = lazy(() => import('../civil/ui/CivilTool').then((module) => ({ default: module.CivilTool })));
+
 // Practice exams load with their window, on first open.
 const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
 
@@ -170,5 +173,11 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
+  if (tool === 'kit-civil')
+    return (
+      <Suspense fallback={null}>
+        <CivilTool />
+      </Suspense>
+    );
   return null;
 }

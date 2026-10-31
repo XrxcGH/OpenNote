@@ -101,6 +101,9 @@ export type { StatModelsFlagId } from './statmodels/flags';
 export { MOLBIO_FLAGS } from './molbio/flags';
 export { MOLBIO_TOOLS } from './molbio/meta';
 export type { MolBioFlagId } from './molbio/flags';
+// The civil engineering kit keeps its flag beside its tools; start-up reads it through this public module.
+export { CIVIL_FLAGS } from './civil/flags';
+export type { CivilFlagId } from './civil/flags';
 /**
  * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
  * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.
