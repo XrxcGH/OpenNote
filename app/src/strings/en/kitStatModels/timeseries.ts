@@ -18,6 +18,7 @@ export const timeseries = {
     p: 'AR order p',
     d: 'Differences d',
     q: 'MA order q',
+    drift: 'Drift',
     estimation: 'Estimation',
     horizon: 'Periods to forecast',
     holdout: 'Values held out to score forecasts',
@@ -50,6 +51,8 @@ export const timeseries = {
     constant: 'With a constant',
     constantTrend: 'With a constant and a trend',
     noConstant: 'With neither',
+    noDrift: 'No drift (forecasts level off)',
+    withDrift: 'With a drift (a constant in the differences)',
   },
   row: {
     r1: 'Autocorrelation at lag 1',
@@ -203,6 +206,10 @@ export const timeseriesSteps = {
   noInterval: 'The multiplicative model has no simple interval formula, so none is shown.',
   noDifference: 'The series is used as it is (d = 0), with a mean μ.',
   differenced: 'Difference the series {d} times so it has a steady mean:',
+  noDrift:
+    'The differenced model has no constant, so it has no drift: the forecasts level off rather than follow a ' +
+    'trend. With d = 1, choose a drift to keep a steady rise or fall.',
+  drift: 'The differenced model has a constant μ = {mu}: a drift that each forecast step adds.',
   model: 'The model, with B the backshift operator:',
   cssFit: 'Choose the coefficients that make the sum of squared 1-step errors smallest: {css}. σ² = {sigma2}.',
   ywFit: 'Solve the Yule-Walker equations, which match the model’s autocorrelations to the data’s. σ² = {sigma2}.',

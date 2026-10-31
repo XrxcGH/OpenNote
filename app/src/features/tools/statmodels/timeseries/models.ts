@@ -198,17 +198,22 @@ export function cssResiduals(
   return e;
 }
 
-/** ARIMA(p, d, q): difference d times, then fit by conditional sum of squares (or Yule-Walker or OLS for AR). */
+/**
+ * ARIMA(p, d, q): difference d times, then fit by conditional sum of squares (or Yule-Walker or OLS for AR). With
+ * d = 0 the model has a mean. With d = 1 it has one only when drift is asked for: the differences' mean is then a
+ * drift that the forecasts add each step. Without it, as in R's arima, the forecasts level off.
+ */
 export function fitArima(
   y: readonly number[],
   p: number,
   d: number,
   q: number,
   method: 'yw' | 'ols' | 'css',
+  drift = false,
 ): ArimaFit {
   const w = difference(y, 1, d);
   if (w.length < p + q + 5) fail('shortSeries', String(p + q + d + 5));
-  const withMean = d === 0;
+  const withMean = d === 0 || (drift && d === 1);
   const m0 = withMean ? mean(w) : 0;
   if ((method === 'yw' || method === 'ols') && q > 0) fail('arOnly');
   if (method === 'yw' && p > 0) {

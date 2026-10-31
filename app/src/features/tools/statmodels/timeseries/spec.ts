@@ -356,27 +356,29 @@ function arimaOutcome(values: Values): Outcome {
   const horizon = Number(values.horizon);
   const level = Number(values.level);
   const period = Number(values.period);
-  const fit = fitArima(y, p, d, q, estimation);
+  const drift = d === 1 && values.drift === 'withDrift';
+  const withMean = d === 0 || drift;
+  const fit = fitArima(y, p, d, q, estimation, drift);
   const f = arimaForecast(y, fit, horizon, level);
   const score = holdoutScore(
     y,
     Number(values.holdout),
     period,
-    (train, h) => arimaForecast(train, fitArima(train, p, d, q, estimation), h, level).forecast,
+    (train, h) => arimaForecast(train, fitArima(train, p, d, q, estimation, drift), h, level).forecast,
   );
   const lags = Math.min(10, fit.residuals.length - 2);
   const lb = ljungBox(fit.residuals, lags, Math.min(p + q, lags - 1));
   const names = [
-    ...(d === 0 ? ['mean'] : []),
+    ...(d === 0 ? ['mean'] : drift ? ['drift'] : []),
     ...fit.phi.map((_, i) => `φ${i + 1}`),
     ...fit.theta.map((_, j) => `θ${j + 1}`),
   ];
-  const coefs = [...(d === 0 ? [fit.mean] : []), ...fit.phi, ...fit.theta];
+  const coefs = [...(withMean ? [fit.mean] : []), ...fit.phi, ...fit.theta];
   const levelFitted =
     d === 0 ? fit.fitted : [...new Array<number>(d).fill(NaN), ...fit.fitted.map((v, i) => (d === 1 ? v + y[i] : NaN))];
   const model =
-    `w_t = ${d === 0 ? '\\mu + ' : ''}` +
-    fit.phi.map((_, i) => `\\phi_${i + 1}${d === 0 ? `(w_{t-${i + 1}} - \\mu)` : ` w_{t-${i + 1}}`} + `).join('') +
+    `w_t = ${withMean ? '\\mu + ' : ''}` +
+    fit.phi.map((_, i) => `\\phi_${i + 1}${withMean ? `(w_{t-${i + 1}} - \\mu)` : ` w_{t-${i + 1}}`} + `).join('') +
     fit.theta.map((_, j) => `\\theta_${j + 1} e_{t-${j + 1}} + `).join('') +
     'e_t';
   return {
@@ -403,6 +405,7 @@ function arimaOutcome(values: Values): Outcome {
     ],
     steps: [
       step(d === 0 ? 'timeseries.noDifference' : 'timeseries.differenced', 'w_t = (1 - B)^{[[d]]} y_t', { d }),
+      ...(d === 0 ? [] : [step(drift ? 'timeseries.drift' : 'timeseries.noDrift', undefined, { mu: fit.mean })]),
       step('timeseries.model', model),
       step(`timeseries.${fit.method}Fit` as 'timeseries.cssFit', undefined, { css: fit.css, sigma2: fit.sigma2 }),
       step('timeseries.arimaForecast', '\\hat y_{n+1} = [[f]]', { f: f.forecast[0] }),
@@ -563,6 +566,13 @@ export const timeseriesSpec: ToolSpec = {
     { id: 'p', type: 'number', first: '1', integer: true, min: 0, max: 5, when: is('arima') },
     { id: 'd', type: 'number', first: '0', integer: true, min: 0, max: 2, when: is('arima') },
     { id: 'q', type: 'number', first: '0', integer: true, min: 0, max: 5, when: is('arima') },
+    {
+      id: 'drift',
+      type: 'choice',
+      options: ['noDrift', 'withDrift'],
+      first: 'noDrift',
+      when: (v) => is('arima')(v) && Number(v.d) === 1,
+    },
     { id: 'estimation', type: 'choice', options: ['css', 'yw', 'ols'], first: 'css', when: is('arima') },
     { id: 'horizon', type: 'number', first: '6', integer: true, min: 1, max: 120, when: is('smoothing', 'arima') },
     { id: 'holdout', type: 'number', first: '0', integer: true, min: 0, when: is('smoothing', 'arima') },

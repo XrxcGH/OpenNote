@@ -3,10 +3,12 @@
 // differencing, decomposition, Holt's method, ψ weights, and the accuracy measures. Seeded simulations check that
 // the fitted ARIMA coefficients and the simulated Dickey-Fuller quantiles land near their known values.
 import { describe, expect, it } from 'vitest';
+import { firstTexts, runTool } from '../kit/read';
 import { makeRng } from '../kit/rng';
 import { StatError } from '../kit/types';
 import { acf, adf, decompose, difference, ljungBox, mannKendall, movingAverage, pacf, periodogram } from './engine';
 import { accuracy, arimaForecast, fitArima, psiWeights, smooth, yuleWalker } from './models';
+import { timeseriesSpec } from './spec';
 
 const close = (got: number, want: number, tol: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(tol);
 const code = (f: () => unknown): string => {
@@ -95,6 +97,35 @@ describe('exponential smoothing', () => {
 });
 
 describe('ARIMA', () => {
+  it('adds a drift to a once-differenced model only when asked', () => {
+    // A random walk with drift: with ARIMA(0, 1, 0) and a constant, the CSS drift is the mean difference,
+    // (y_n - y_1) / (n - 1), and the h-step forecast is y_n + h times it.
+    const rng = makeRng(7);
+    const y = [10];
+    for (let t = 1; t < 40; t++) y.push(y[t - 1] + 1.07 + (rng.next() - 0.5));
+    const n = y.length;
+    const slope = (y[n - 1] - y[0]) / (n - 1);
+    const withDrift = fitArima(y, 0, 1, 0, 'css', true);
+    close(withDrift.mean, slope, 1e-6);
+    const f = arimaForecast(y, withDrift, 3, 0.95).forecast;
+    [1, 2, 3].forEach((h) => close(f[h - 1], y[n - 1] + h * slope, 1e-5));
+    const flat = arimaForecast(y, fitArima(y, 0, 1, 0, 'css'), 3, 0.95).forecast;
+    flat.forEach((v) => close(v, y[n - 1], 1e-12));
+  });
+
+  it('says on screen whether a differenced model has a drift', () => {
+    const rows = Array.from({ length: 30 }, (_, t) => `${t},${(1.07 * t + Math.sin(t)).toFixed(3)}`);
+    const data = ['month,sales', ...rows].join('\n');
+    const texts = { ...firstTexts(timeseriesSpec), data, analysis: 'arima', p: '1', d: '1', q: '0' };
+    const keys = (drift: string) => {
+      const run = runTool(timeseriesSpec, { ...texts, drift });
+      if (!run.ok) throw new Error('the ARIMA run failed');
+      return run.outcome.steps.map((s) => s.key);
+    };
+    expect(keys('noDrift')).toContain('timeseries.noDrift');
+    expect(keys('withDrift')).toContain('timeseries.drift');
+  });
+
   it('fits AR(1) by Yule-Walker with φ = r1', () => {
     close(yuleWalker(monthly, 1).phi[0], 0.623679, 1e-6);
     close(fitArima(monthly, 1, 0, 0, 'yw').phi[0], 0.623679, 1e-6);
