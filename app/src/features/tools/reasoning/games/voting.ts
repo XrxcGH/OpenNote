@@ -164,3 +164,57 @@ export function spoilers(p: Profile): { removed: string; winners: string[] }[] {
 }
 
 export const winnersOf = (score: Map<string, number>): string[] => leaders(score);
+
+/** The ranked-ballot rules checked against the fairness criteria behind Arrow's theorem. */
+export const CRITERIA_RULES = ['plurality', 'runoff', 'irv', 'borda', 'copeland', 'schulze'] as const;
+export type CriteriaRule = (typeof CRITERIA_RULES)[number];
+
+const winnersBy = (rule: CriteriaRule, p: Profile): string[] => {
+  if (rule === 'plurality') return plurality(p).winners;
+  if (rule === 'runoff') return runoff(p).winners;
+  if (rule === 'irv') return instantRunoff(p).winners;
+  if (rule === 'borda') return leaders(borda(p));
+  const d = pairwise(p);
+  return rule === 'copeland' ? leaders(copeland(p, d)) : schulze(p, d).winners;
+};
+
+const without = (p: Profile, gone: string): Profile => ({
+  groups: p.groups.map((g) => ({ count: g.count, ranking: g.ranking.filter((c) => c !== gone) })),
+  candidates: p.candidates.filter((c) => c !== gone),
+  voters: p.voters,
+});
+
+export interface CriteriaBreak {
+  rule: CriteriaRule;
+  /** A losing candidate whose removal changes the winner: independence of irrelevant alternatives fails. */
+  iia: string | null;
+  /** A ballot group whose raising of the sole winner by 1 place makes them lose: monotonicity fails. */
+  monotone: number | null;
+}
+
+/** For each rule, a witness on these ballots that it breaks IIA or monotonicity, if there is one. */
+export function criteriaBreaks(p: Profile): CriteriaBreak[] {
+  return CRITERIA_RULES.map((rule) => {
+    const winners = winnersBy(rule, p);
+    const same = (w: string[]) => w.length === winners.length && w.every((c) => winners.includes(c));
+    const iia =
+      p.candidates.length > 2
+        ? (p.candidates.find((c) => !winners.includes(c) && !same(winnersBy(rule, without(p, c)))) ?? null)
+        : null;
+    let monotone: number | null = null;
+    if (winners.length === 1) {
+      const w = winners[0];
+      const k = p.groups.findIndex((g, i) => {
+        const at = g.ranking.indexOf(w);
+        if (at === 0) return false;
+        const ranking = at < 0 ? [...g.ranking, w] : [...g.ranking];
+        const from = at < 0 ? ranking.length - 1 : at;
+        [ranking[from - 1], ranking[from]] = [ranking[from], ranking[from - 1]];
+        const groups = p.groups.map((x, j) => (j === i ? { count: x.count, ranking } : x));
+        return !winnersBy(rule, { ...p, groups }).includes(w);
+      });
+      monotone = k < 0 ? null : k;
+    }
+    return { rule, iia, monotone };
+  });
+}

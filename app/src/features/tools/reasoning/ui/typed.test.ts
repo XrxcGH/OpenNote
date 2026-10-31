@@ -79,3 +79,23 @@ describe('crash limits in the project network', () => {
     expect(note(await solve('optimize', 'project', { target: '6' }))).toMatch(/^error: /);
   });
 });
+
+describe('fairness criteria and the population paradox', () => {
+  it('names the rules these ballots catch out', async () => {
+    // A 7, B 6, C 7: B drops and A beats C 13 to 7. Raising A over C on line 4 gives A 9, B 6, C 5: C drops and
+    // B beats A 11 to 9, so instant runoff (and the top-2 runoff) fail monotonicity on line 4.
+    const o = await solve('games', 'voting', { ballots: '7: A > B > C\n6: B > A > C\n5: C > B > A\n2: C > A > B' });
+    expect(note(o)).toContain('Instant runoff fails monotonicity (raising its winner 1 place on ballot line 4');
+  });
+
+  it('shows the population paradox between two censuses', async () => {
+    // 50, 30, 13 of 10 seats: quotas 5.376, 3.226, 1.398 give 5, 3, 2. Later 53, 30, 14: 5.464, 3.093, 1.443
+    // give 6, 3, 1, though C grew 7.7% and A only 6%.
+    const o = await solve('games', 'apportion', {
+      parties: 'A 50\nB 30\nC 13',
+      seats: '10',
+      later: 'A 53\nB 30\nC 14',
+    });
+    expect(note(o)).toContain('C grows faster than A yet loses a seat to it');
+  });
+});

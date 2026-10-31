@@ -5,7 +5,7 @@ import { el, label, pathD, svgRoot } from '../core/svg';
 import { fail, integers, lines, num, numbers } from '../core/util';
 import { attempt, say, saySteps } from '../ui/say';
 import type { Mode, Outcome, Values } from '../ui/types';
-import { METHODS, alabama, apportionFull } from './apportion';
+import { METHODS, alabama, apportionFull, populationParadox } from './apportion';
 import type { Party } from './apportion';
 import { compactness, fairness } from './districts';
 import type { District, Point } from './districts';
@@ -21,6 +21,7 @@ import {
   parseProfile,
   plurality,
   runoff,
+  criteriaBreaks,
   schulze,
   spoilers,
   winnersOf,
@@ -62,6 +63,7 @@ function votingOutcome(v: Values): Outcome {
     note:
       [
         c.loser ? s('condorcetLoser', { name: c.loser }) : '',
+        criteriaNote(p),
         run.tied.length ? s('runoffTie', { names: run.tied.join(', '), finalists: run.finalists.join(', ') }) : '',
         changed.length
           ? s('spoiler', {
@@ -92,6 +94,18 @@ function votingOutcome(v: Values): Outcome {
       },
     ],
   };
+}
+
+/** Which rules break independence of irrelevant alternatives or monotonicity on these very ballots. */
+function criteriaNote(p: ReturnType<typeof parseProfile>): string {
+  const items = criteriaBreaks(p).flatMap((b) => {
+    const rule = s(`methods.${b.rule}`);
+    const out: string[] = [];
+    if (b.iia) out.push(s('iiaBreak', { rule, name: b.iia }));
+    if (b.monotone !== null) out.push(s('monotoneBreak', { rule, line: b.monotone + 1 }));
+    return out;
+  });
+  return items.length ? s('fairness', { list: items.join('; ') }) : '';
 }
 
 export const VOTING: Mode = {
@@ -154,6 +168,7 @@ export const APPORTION: Mode = {
     { id: 'parties', kind: 'area', initial: 'A 53\nB 31\nC 16', help: true },
     { id: 'seats', initial: '10' },
     { id: 'threshold', initial: '0' },
+    { id: 'later', kind: 'area', initial: '', help: true },
   ],
   solve: solveWith((v) => {
     const list = parties(v.parties ?? '');
@@ -175,11 +190,20 @@ export const APPORTION: Mode = {
     );
     const total = list.reduce((sum, p) => sum + p.size, 0);
     const paradox = alabama(list, seats!);
+    const later = (v.later ?? '').trim() ? populationParadox(list, parties(v.later ?? ''), seats!) : [];
     return {
       ok: true,
       answer: METHODS.map((m, i) => `${s(`apportion.${m}`)}: ${all[i].join(', ')}`).join('; '),
       note:
-        [paradox.length ? s('alabama', { names: paradox.join(', '), seats: seats!, more: seats! + 1 }) : '', ...ties]
+        [
+          paradox.length ? s('alabama', { names: paradox.join(', '), seats: seats!, more: seats! + 1 }) : '',
+          ...ties,
+          later.length
+            ? s('population', {
+                list: later.map((x) => s('populationItem', { loser: x.loser, gainer: x.gainer })).join('; '),
+              })
+            : '',
+        ]
           .filter(Boolean)
           .join('\n') || undefined,
       steps: [s('steps.divisor', { total: num(total), seats: seats!, divisor: num(total / seats!) })],

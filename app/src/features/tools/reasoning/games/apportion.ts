@@ -114,3 +114,26 @@ export function alabama(parties: readonly Party[], seats: number): string[] {
   const more = hamilton(parties, seats + 1);
   return parties.filter((_, i) => more[i] < now[i]).map((p) => p.name);
 }
+
+/**
+ * The population paradox under Hamilton between two censuses of the same parties: a party that grew by a larger
+ * share loses a seat while one that grew by a smaller share (or shrank) gains one.
+ */
+export function populationParadox(
+  before: readonly Party[],
+  after: readonly Party[],
+  seats: number,
+): { loser: string; gainer: string }[] {
+  if (after.length !== before.length) fail('laterCount', { n: before.length });
+  const then = hamilton(before, seats);
+  const now = hamilton(after, seats);
+  const growth = before.map((p, i) => after[i].size / p.size);
+  const out: { loser: string; gainer: string }[] = [];
+  before.forEach((p, i) => {
+    if (now[i] >= then[i]) return;
+    before.forEach((q, j) => {
+      if (now[j] > then[j] && growth[i] > growth[j]) out.push({ loser: p.name, gainer: q.name });
+    });
+  });
+  return out;
+}
