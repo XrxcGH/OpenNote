@@ -12,6 +12,8 @@ import { water } from './kitCivil/water';
 
 export const kitCivil = {
   title: 'Civil and chemical engineering',
+  openKeywords:
+    'civil environmental chemical engineering structures soils hydraulics water reactors transport survey calculations',
   common: {
     tool: 'Tool',
     calculation: 'Calculation',

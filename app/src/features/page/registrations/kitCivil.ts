@@ -5,6 +5,16 @@ import { commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
 import { CIVIL_ICONS, CIVIL_TOOL_IDS } from '../../tools';
 
+commands.register({
+  id: 'tools.kit-civil',
+  title: 'kitCivil.title',
+  keywords: 'kitCivil.openKeywords',
+  category: 'general',
+  icon: 'Bridge',
+  flag: 'kits.civil',
+  run: async () => (await import('../../tools')).openTool('kit-civil'),
+});
+
 for (const id of CIVIL_TOOL_IDS) {
   commands.register({
     id: `kitCivil.${id}`,
