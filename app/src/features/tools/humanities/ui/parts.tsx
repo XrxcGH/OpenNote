@@ -239,8 +239,8 @@ export interface Payloads {
 const done = (ok: boolean) => announce(t(ok ? 'kitHumanities.common.inserted' : 'kitHumanities.common.noPage'));
 
 /**
- * Says whether an insert reached a page, aloud and in the window: with no page focused nothing changes on screen, so
- * the window shows 'Click in a page first'. The note is plain text; the announcer already speaks it.
+ * Says whether an insert reached a page. The announcer speaks it; with no page focused nothing changes on screen, so
+ * the window also shows the words 'Click in a page first' as a plain note.
  */
 export function useInsertResult(): { notice: ReactNode; report: (ok: boolean) => void } {
   const [ok, setOk] = useState<boolean | null>(null);

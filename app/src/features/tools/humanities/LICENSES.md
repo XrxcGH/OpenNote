@@ -1,4 +1,4 @@
-# Sources and licences for the history, places, languages, and texts kit
+# Sources and licenses for the history, places, languages, and texts kit
 
 Every formula and table in this kit is from a public-domain work, from a published standard whose facts are used
 without copying its text, or was written for this app. No third-party data file is bundled. Each tool names its

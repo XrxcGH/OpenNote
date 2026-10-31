@@ -30,7 +30,7 @@ The history, places, languages, and texts kit is one tool window with a tab for 
 ## Note frames
 
 - Pick a subject, or search, to find a frame such as a case brief, a memo, an essay planner, a lab report, or field notes. The preview shows its headings, prompts, and any table.
-- Click in a page first, then Insert frame. The headings and prompts go in at the caret and the table after them. If no page has the caret, the window says so and nothing is added.
+- Click in a page first, then Insert frame. The headings and prompts go in at the caret and the table after them. If no page has the caret, the window tells you to click in a page first.
 - A frame is a starting point: change, delete, or add headings on the page as your course asks.
 
 ## Coordinates and navigation
