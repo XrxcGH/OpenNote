@@ -9,8 +9,8 @@ use opennote_core::format::page_json::write_page;
 use opennote_core::limits::Limits;
 use opennote_core::model::validate::validate_page;
 use opennote_core::model::{
-    Asset, Block, BlockData, FileData, FileDisplay, Frame, ImageData, JsonMap, Lock, Named, Page, Revision, TableCell,
-    TableColumn, TableData, TableRow, TextData,
+    Asset, Block, BlockData, FileData, FileDisplay, Frame, ImageData, InkBlockData, InkRecord, InkRole, JsonMap, Lock,
+    Named, Page, Revision, Stroke, TableCell, TableColumn, TableData, TableRow, TextData,
 };
 use opennote_core::{AssetId, BlockId, ColumnId, OrderKey, PageId, RevisionId, RowId, Timestamp};
 
@@ -44,6 +44,9 @@ pub struct PageBuilder<'a> {
     text: Vec<DocBlock>,
     bytes: BTreeMap<AssetId, Vec<u8>>,
     by_hash: HashMap<[u8; 32], AssetId>,
+    /// The handwriting layer, once a stroke needs it, and the strokes that go in it.
+    ink: Option<BlockId>,
+    strokes: Vec<Arc<Stroke>>,
 }
 
 impl<'a> PageBuilder<'a> {
@@ -77,6 +80,8 @@ impl<'a> PageBuilder<'a> {
             text: Vec::new(),
             bytes: BTreeMap::new(),
             by_hash: HashMap::new(),
+            ink: None,
+            strokes: Vec::new(),
         }
     }
 
@@ -195,6 +200,23 @@ impl<'a> PageBuilder<'a> {
         self.page.view.extra.insert(INK_LAYERS.to_owned(), layers);
     }
 
+    /// The ID of the page's handwriting layer, made the first time it is asked for. Imported strokes name it as
+    /// their block, and [`finish`](Self::finish) adds the layer after the other blocks.
+    pub fn ink_layer(&mut self) -> BlockId {
+        *self.ink.get_or_insert_with(|| BlockId::generate(self.env.clock))
+    }
+
+    /// Adds a stroke to the handwriting layer. Its `block` is set to the layer.
+    pub fn add_stroke(&mut self, mut stroke: Stroke) {
+        stroke.block = self.ink_layer();
+        self.strokes.push(Arc::new(stroke));
+    }
+
+    /// How many strokes the page has.
+    pub fn stroke_count(&self) -> usize {
+        self.strokes.len()
+    }
+
     /// Adds a file block, shown as an icon.
     pub fn push_file(&mut self, asset: AssetId) {
         self.flush_text();
@@ -236,9 +258,42 @@ impl<'a> PageBuilder<'a> {
     /// importer then leaves it out and says so in the report, instead of writing it.
     pub fn finish(mut self) -> Result<ImportedPage> {
         self.flush_text();
-        let keys = OrderKey::spread(None, None, self.pieces.len())
+        let ink = self
+            .ink
+            .map(|id| (id, u32::try_from(self.strokes.len()).unwrap_or(u32::MAX)));
+        let mut keys = OrderKey::spread(None, None, self.pieces.len() + usize::from(ink.is_some()))
             .map_err(|e| InteropError::format("block order", e.to_string()))?;
+        let ink_order = if ink.is_some() { keys.pop() } else { None };
         let now = self.page.modified;
+        if let (Some((id, stroke_count)), Some(order)) = (ink, ink_order) {
+            let layer = Block {
+                id,
+                order,
+                frame: Some(Frame {
+                    x: Some(0.0),
+                    y: Some(0.0),
+                    ..Frame::default()
+                }),
+                lock: None,
+                created: self.page.created,
+                modified: now,
+                data: BlockData::Ink(InkBlockData {
+                    role: Named::Known(InkRole::Layer),
+                    stroke_count,
+                    ..InkBlockData::default()
+                }),
+                fallback: None,
+                extra: JsonMap::new(),
+            };
+            self.page
+                .blocks
+                .insert(Arc::new(layer))
+                .map_err(|e| InteropError::format("block IDs", e.to_string()))?;
+            for stroke in std::mem::take(&mut self.strokes) {
+                self.page.ink.insert(stroke.clone());
+                self.page.ink.push_pending(InkRecord::Stroke(stroke));
+            }
+        }
         for (index, (data, order)) in std::mem::take(&mut self.pieces).into_iter().zip(keys).enumerate() {
             let locked = self.locked.get(&index).map(|&(w, h)| Frame {
                 x: None,

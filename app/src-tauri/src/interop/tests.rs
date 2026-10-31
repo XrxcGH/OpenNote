@@ -226,6 +226,7 @@ fn request(format: ExportFormat, scope: ExportScope, folder: &Path, pages: &[Str
         replace: None,
         password: None,
         history: false,
+        latex: None,
     }
 }
 
@@ -306,6 +307,42 @@ fn a_section_export_and_a_word_export_each_write_their_files() {
         .files
         .iter()
         .any(|path| path.extension().is_some_and(|ext| ext == "html")));
+}
+
+#[test]
+fn a_latex_export_writes_a_tex_file_with_the_chosen_options_and_a_preview_shows_its_start() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let (bridge, imported) = imported_bridge(dir.path());
+    let pages = pages_of(&imported.tree);
+    let out = dir.path().join("out");
+    fs::create_dir_all(&out).expect("an output folder");
+    let mut request = request(ExportFormat::Latex, ExportScope::Notebook, &out, &pages);
+    request.latex = serde_json::from_str(r#"{"paper":"a4","margin":"wide","toc":true,"author":"Ada"}"#).ok();
+    let source = bridge
+        .with(|bridge| Ok(TreeSource::build(bridge, &request)))
+        .expect("the bridge")
+        .expect("the source");
+    let exported = export::run(&source, &request, &NoPdfRenderer, &Control::none()).expect("the export");
+    let options = request.latex.clone().unwrap_or_default();
+    let preview =
+        opennote_interop::latex_preview(&source, source.scope(request.scope), &options, 400).expect("a preview");
+    bridge.shutdown();
+    let tex = exported
+        .files
+        .iter()
+        .find(|path| path.extension().is_some_and(|ext| ext == "tex"))
+        .map(|path| fs::read_to_string(path).expect("the file"))
+        .expect("a .tex file");
+    assert!(tex.contains("\\documentclass[11pt,a4paper]{article}"), "{tex}");
+    assert!(tex.contains("margin=1.25in") && tex.contains("\\author{Ada}") && tex.contains("\\tableofcontents"));
+    assert!(
+        tex.contains("Fresh page"),
+        "a page the core does not know still has its heading: {tex}"
+    );
+    assert!(
+        preview.starts_with("% Made by OpenNote.") && preview.contains("a4paper"),
+        "{preview}"
+    );
 }
 
 #[test]

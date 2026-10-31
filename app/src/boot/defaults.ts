@@ -31,6 +31,7 @@ export function defaultBootData(os: OsAppearance = DEFAULT_OS): BootData {
     version: '0.0.0-dev',
     channel: 'dev',
     architecture: 'x64',
+    system: 'windows',
     firstRun: false,
     settings: DEFAULT_SETTINGS,
     settingsReadOnly: false,

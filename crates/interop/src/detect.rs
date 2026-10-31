@@ -53,6 +53,8 @@ pub enum SourceKind {
     Highlights,
     /// OneNote's own section files (`.one`), notebook packages (`.onepkg`), and notebook folders.
     OneNoteFile,
+    /// The files of handwriting apps: Goodnotes (`.goodnotes`), Notability (`.note`), and Samsung Notes (`.sdocx`).
+    NotesApp,
 }
 
 impl SourceKind {
@@ -75,6 +77,7 @@ impl SourceKind {
             SourceKind::Email => "Email files",
             SourceKind::Highlights => "Kindle and Readwise highlights",
             SourceKind::OneNoteFile => "OneNote files",
+            SourceKind::NotesApp => "Goodnotes, Notability, and Samsung Notes files",
         }
     }
 }
@@ -106,6 +109,27 @@ const TOC_ADVICE: &str = "This is the notebook's table of contents, which holds 
 const STICKY_ADVICE: &str = "This is the old Sticky Notes file. Open the Sticky Notes app from the Microsoft Store \
     once, so it moves the notes into its new database. Then import plum.sqlite from the app's LocalState folder.";
 
+/// What the dialog says about a PDF file, which the PDF import brings in instead.
+pub const PDF_ADVICE: &str = "A PDF comes in through Import PDF, which turns each of its pages into a page you can \
+    write on. This is also the dependable way to bring notes from Goodnotes, Notability, or Samsung Notes: export \
+    them as a PDF in the app, then import that PDF.";
+
+/// A notes app's file is a ZIP package. One that is not cannot be read, and the PDF export is the way instead.
+fn detect_notes_app(path: &Path, ext: &str) -> Result<Detected> {
+    let app = crate::import::NotesApp::from_extension(ext).unwrap_or(crate::import::NotesApp::Notability);
+    if !starts_with(path, b"PK") {
+        return Err(InteropError::unsupported(
+            file_name(path),
+            format!(
+                "This is not a file {} saves in a form OpenNote can read. {}",
+                app.name(),
+                app.pdf_route()
+            ),
+        ));
+    }
+    Ok(detected(SourceKind::NotesApp, app.label()))
+}
+
 /// Looks at a file, folder, or ZIP archive and says what it is.
 pub fn detect(path: &Path) -> Result<Detected> {
     let meta = fs::metadata(path).map_err(|e| InteropError::io(path, e))?;
@@ -117,6 +141,7 @@ pub fn detect(path: &Path) -> Result<Detected> {
         "zip" => detect_zip(path),
         "opennote" => detect_share(path),
         "one" => Ok(detected(SourceKind::OneNoteFile, "OneNote section")),
+        "goodnotes" | "note" | "sdocx" => detect_notes_app(path, &ext),
         "onepkg" => Ok(detected(SourceKind::OneNoteFile, "OneNote notebook package")),
         "onetoc2" => Err(InteropError::unsupported(file_name(path), TOC_ADVICE)),
         "sqlite" | "sqlite3" | "db" => detect_database(path),
@@ -130,7 +155,7 @@ pub fn detect(path: &Path) -> Result<Detected> {
         }
         _ => by_extension(&ext).ok_or_else(|| {
             let hint = if starts_with(path, b"%PDF") {
-                "PDF files are added to a page, not imported as notes."
+                PDF_ADVICE
             } else {
                 "OpenNote does not know this kind of file."
             };
@@ -312,6 +337,7 @@ impl Survey {
             ),
             (SourceKind::Presentation, self.count(&["pptx", "pptm"])),
             (SourceKind::Email, self.count(&["eml"])),
+            (SourceKind::NotesApp, self.count(&crate::import::NOTES_APP_EXTENSIONS)),
         ];
         let best = candidates.iter().map(|(_, n)| *n).max().unwrap_or(0);
         candidates.iter().find(|(_, n)| *n == best && best > 0).map(|(k, _)| *k)

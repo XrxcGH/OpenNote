@@ -68,7 +68,10 @@ pub fn manifest_urls() -> ChannelUrls {
 
 /// The folder of the running exe.
 pub fn exe_dir() -> Option<PathBuf> {
-    std::env::current_exe().ok()?.parent().map(Path::to_path_buf)
+    opennote_updater::swap::running_file()
+        .ok()?
+        .parent()
+        .map(Path::to_path_buf)
 }
 
 /// The updater's folders under the app's local folder, and the exe's own folder.
@@ -118,11 +121,18 @@ fn folder_writable(dir: &Path) -> bool {
     writable
 }
 
-/// Why this copy of the app never updates itself, if it doesn't: a development build, a build without a key, or a
-/// folder it can't write to.
-pub fn blocked_reason(dev_build: bool, has_keys: bool, writable: impl FnOnce() -> bool) -> Option<DisabledReason> {
-    if dev_build || PlatformKey::current().is_none() {
+/// Why this copy of the app never updates itself, if it doesn't: a development build, a Mac (which installs each
+/// dmg by hand), a build without a key, or a folder it can't write to.
+pub fn blocked_reason(
+    platform: Option<PlatformKey>,
+    dev_build: bool,
+    has_keys: bool,
+    writable: impl FnOnce() -> bool,
+) -> Option<DisabledReason> {
+    if dev_build || platform.is_none() {
         Some(DisabledReason::DevBuild)
+    } else if platform.is_some_and(|platform| !platform.replaces_itself()) {
+        Some(DisabledReason::ByHand)
     } else if !has_keys {
         Some(DisabledReason::NoKey)
     } else if !writable() {
@@ -135,7 +145,14 @@ pub fn blocked_reason(dev_build: bool, has_keys: bool, writable: impl FnOnce() -
 /// The reason for this build, computed once.
 pub fn this_build_blocked() -> Option<DisabledReason> {
     static BLOCKED: OnceLock<Option<DisabledReason>> = OnceLock::new();
-    *BLOCKED.get_or_init(|| blocked_reason(is_dev_build(), !trusted_keys().is_empty(), exe_folder_writable))
+    *BLOCKED.get_or_init(|| {
+        blocked_reason(
+            PlatformKey::current(),
+            is_dev_build(),
+            !trusted_keys().is_empty(),
+            exe_folder_writable,
+        )
+    })
 }
 
 /// In `test-endpoints` builds, `OPENNOTE_TEST_FAIL_BEFORE_READY=1` makes a counted start of a new version exit
@@ -168,10 +185,35 @@ mod tests {
     #[test]
     fn blocks_development_builds_then_keyless_builds_then_locked_folders() {
         let never = || panic!("the folder isn't checked");
-        assert_eq!(blocked_reason(true, true, never), Some(DisabledReason::DevBuild));
-        assert_eq!(blocked_reason(false, false, never), Some(DisabledReason::NoKey));
-        assert_eq!(blocked_reason(false, true, || false), Some(DisabledReason::NotWritable));
-        assert_eq!(blocked_reason(false, true, || true), None);
+        let windows = Some(PlatformKey::WindowsX86_64);
+        assert_eq!(
+            blocked_reason(windows, true, true, never),
+            Some(DisabledReason::DevBuild)
+        );
+        assert_eq!(
+            blocked_reason(windows, false, false, never),
+            Some(DisabledReason::NoKey)
+        );
+        assert_eq!(
+            blocked_reason(windows, false, true, || false),
+            Some(DisabledReason::NotWritable)
+        );
+        assert_eq!(blocked_reason(windows, false, true, || true), None);
+        assert_eq!(blocked_reason(None, false, true, never), Some(DisabledReason::DevBuild));
+    }
+
+    #[test]
+    fn a_mac_installs_by_hand_and_a_linux_appimage_updates_itself() {
+        let never = || panic!("the folder isn't checked");
+        let mac = Some(PlatformKey::MacosUniversal);
+        assert_eq!(blocked_reason(mac, false, true, never), Some(DisabledReason::ByHand));
+        assert_eq!(blocked_reason(mac, true, true, never), Some(DisabledReason::DevBuild));
+        let linux = Some(PlatformKey::LinuxX86_64);
+        assert_eq!(blocked_reason(linux, false, true, || true), None);
+        assert_eq!(
+            blocked_reason(linux, false, true, || false),
+            Some(DisabledReason::NotWritable)
+        );
     }
 
     #[test]

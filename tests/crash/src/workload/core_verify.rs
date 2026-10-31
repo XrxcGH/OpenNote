@@ -16,7 +16,7 @@ use opennote_core::store::layout::NotebookLayout;
 use opennote_core::store::std_fs::StdFs;
 use opennote_core::store::verify::verify_notebook;
 use opennote_core::testing::oracle::Oracle;
-use opennote_core::{Limits, SystemClock, Timings};
+use opennote_core::{Limits, Timings};
 
 use super::core::start_core;
 use super::core_script::{self as script, Action, Manifest, Model, CLIENT, STEP};
@@ -49,7 +49,7 @@ impl VerifyState {
     /// Checks the notebook after iteration `iteration`.
     pub fn verify(&mut self, iteration: u64, markers: &Markers) -> Result<Verified, String> {
         let manifest = Manifest::load(&self.paths.data)?;
-        let (core, notebook) = recover(&self.paths.data, &manifest)?;
+        let (core, notebook) = recover(&self.paths.data, &manifest, iteration)?;
         notebook.close().map_err(|e| format!("close: {e}"))?;
         drop(core);
         let fs = StdFs::new(&Timings::for_crash_tests());
@@ -68,7 +68,7 @@ impl VerifyState {
         let pages = load_pages(&manifest)?;
         self.check_pages(iteration, markers, &pages)?;
         let before = snapshot(&manifest.notebook);
-        let (core, notebook) = recover(&self.paths.data, &manifest)?;
+        let (core, notebook) = recover(&self.paths.data, &manifest, iteration)?;
         self.check_tree(&notebook, &manifest, (iteration, markers))?;
         notebook.close().map_err(|e| format!("close: {e}"))?;
         drop(core);
@@ -168,8 +168,10 @@ fn may_have_expired(deleted: u64, now: u64) -> bool {
 }
 
 /// Starts a core, recovers the notebook, and opens it.
-fn recover(data: &Path, manifest: &Manifest) -> Result<(Core, NotebookHandle), String> {
-    let core = start_core(data, Arc::new(SystemClock::new()))?;
+/// The core runs on the iteration's own clock, as the writers do: on the real one, the Trash would be long past its
+/// 30 days once the real date left the script's, and recovery would purge what the check expects to find.
+fn recover(data: &Path, manifest: &Manifest, iteration: u64) -> Result<(Core, NotebookHandle), String> {
+    let core = start_core(data, Arc::new(script::clock_for(iteration)))?;
     core.recover_pending(Some(&manifest.notebook))
         .map_err(|e| format!("recover_pending: {e}"))?;
     let notebook = core

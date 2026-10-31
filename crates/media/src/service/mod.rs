@@ -30,12 +30,12 @@ use crate::layout::{asset_entry, asset_json, RecordingEntry, RecordingPlan};
 use crate::playback::{AudioOutput, DecoderFactory};
 
 mod playback;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos", target_os = "linux"))]
 mod system;
 
 pub use crate::playback::session::Status as PlaybackStatus;
 pub use playback::PlaybackInfo;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos", target_os = "linux"))]
 pub use system::SystemDevices;
 
 /// Makes the sources and outputs for real or for test devices.

@@ -47,7 +47,8 @@ pub fn at_start(
     boot_overrides: &BTreeMap<String, bool>,
     settings_flags: &BTreeMap<String, bool>,
 ) -> bool {
-    is_enabled(channel, &[boot_overrides, settings_flags])
+    // macOS and Linux keep their own title bars: the traffic lights, and the window manager's frame (ADR 0055).
+    cfg!(windows) && is_enabled(channel, &[boot_overrides, settings_flags])
 }
 
 /// Applies a caption layout on the main thread, which owns the window: the native frame for `None`, the custom
@@ -162,6 +163,14 @@ mod tests {
         assert!(!is_enabled(Channel::Stable, &[&flags(true)]));
     }
 
+    #[test]
+    fn keeps_the_native_frame_on_macos_and_linux() {
+        let none = BTreeMap::new();
+        assert_eq!(at_start(Channel::Dev, &none, &flags(true)), cfg!(windows));
+    }
+
+    // The custom frame is a Windows feature (ADR 0055).
+    #[cfg(windows)]
     #[test]
     fn starts_undecorated_unless_stable_or_the_boot_overrides_or_settings_say_no() {
         let none = BTreeMap::new();

@@ -21,6 +21,7 @@ import { t } from '../../strings/t';
 import { CaptionButtons, DragRegion, titleBarDragProps, useCustomFrame } from '../frame';
 import { useRegion } from '../regions';
 import { useFit } from './fit';
+import { ItemSlot } from './ItemSlot';
 import { Logo } from './Logo';
 import styles from './TitleBar.module.css';
 import { TitleBarOverflow } from './TitleBarOverflow';
@@ -36,12 +37,16 @@ function Items(props: { items: readonly TitleBarItemDef[]; side: 'start' | 'end'
   return items
     .filter((item) => item.side === side && !moved.has(item.id))
     .sort((a, b) => a.order - b.order)
-    .map(({ id, Component }) => {
+    .map((item) => {
+      const { id } = item;
       const short = id === BREADCRUMB_ID ? level >= FIT_LEVEL.shortBreadcrumb : level >= FIT_LEVEL.icons;
       return (
-        <span key={id} className={id === BREADCRUMB_ID ? styles.breadcrumbItem : styles.item}>
-          <Component presentation={short ? 'icon' : 'full'} />
-        </span>
+        <ItemSlot
+          key={id}
+          item={item}
+          className={id === BREADCRUMB_ID ? styles.breadcrumbItem : styles.item}
+          presentation={short ? 'icon' : 'full'}
+        />
       );
     });
 }

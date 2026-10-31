@@ -51,6 +51,7 @@ opennote-metafile = { path = "../../crates/third_party/metafile" }
 opennote-media = { path = "../../crates/media", features = ["opus"] }
 opennote-print = { path = "../../crates/print" }
 opennote-search = { path = "../../crates/search" }
+opennote-sync = { path = "../../crates/sync" }
 opennote-updater = { path = "../../crates/updater" }
 # Phase 10: Anki packages are zip files that hold a SQLite collection, with the same SQLite build as the search crate.
 rusqlite = { version = "0.40.2", features = ["bundled"] }
@@ -70,6 +71,10 @@ tempfile.workspace = true
 url = "2.5.8"
 # Protected sections: passwords and Hello signatures sit in buffers that are wiped when dropped.
 zeroize = "1.9.0"
+
+# macOS and Linux file dialogs (src/desktop.rs, ADR 0055). Windows uses its own common item dialogs.
+[target.'cfg(not(windows))'.dependencies]
+tauri-plugin-dialog = "2"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
