@@ -1,9 +1,10 @@
 // The spectrum analyzer: paste samples (or time and value), pick a window and a view, and read the spectrum, its
 // peaks, band powers, and the window's corrections, with the steps. A second part finds damping from half-power
 // points that are typed in or read from the spectrum.
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
+import { decodeClip, MAX_SECONDS, type Clip } from '../audio/clip';
 import { WINDOWS, type WindowName } from '../shared/fft';
 import { fmt } from '../shared/num';
 import { HeatMap, Plot, type PlotHandle } from '../shared/Plot';
@@ -76,9 +77,10 @@ const FIRST = {
 };
 type State = typeof FIRST;
 
-function analyse(state: State) {
-  const signal = readSignal(state.samples);
-  const rate = signal.rate ?? num(state.rate);
+/** A sound file stands in for the pasted samples while it is loaded; it is held for this visit only, never saved. */
+function analyse(state: State, sound: Clip | null) {
+  const signal = sound ? { samples: Array.from(sound.samples) } : readSignal(state.samples);
+  const rate = sound ? sound.rate : (signal.rate ?? num(state.rate));
   const input = {
     samples: signal.samples,
     rate,
@@ -100,6 +102,49 @@ function analyse(state: State) {
 }
 
 type Analysis = ReturnType<typeof analyse>;
+
+/** Open a sound file to analyze instead of the pasted samples, decoded to one 16 kHz channel. */
+function SoundSource({ sound, setSound }: { sound: Clip | null; setSound(sound: Clip | null): void }) {
+  const [problem, setProblem] = useState('');
+  const load = async (file: File) => {
+    try {
+      const clip = await decodeClip(await file.arrayBuffer(), file.name);
+      setSound({ ...clip, samples: clip.samples.slice(0, MAX_SECONDS * clip.rate) });
+      setProblem('');
+    } catch {
+      setProblem(t('kitSignals.spectrum.soundProblem'));
+    }
+  };
+  return (
+    <>
+      <div className={styles.actions}>
+        <label className={styles.field}>
+          <span>{t('kitSignals.spectrum.soundFile')}</span>
+          <input
+            type="file"
+            accept="audio/*,.wav,.mp3,.ogg"
+            onChange={(e) => e.target.files?.[0] && void load(e.target.files[0])}
+          />
+        </label>
+        {sound ? (
+          <Button variant="quiet" onClick={() => setSound(null)}>
+            {t('kitSignals.spectrum.usePasted')}
+          </Button>
+        ) : null}
+      </div>
+      {sound ? (
+        <Note>
+          {t('kitSignals.spectrum.soundNote', {
+            name: sound.name,
+            seconds: fmt(sound.samples.length / sound.rate, 3),
+            rate: fmt(sound.rate),
+          })}
+        </Note>
+      ) : null}
+      {problem ? <Problem text={problem} /> : null}
+    </>
+  );
+}
 
 function SignalFields({ state, set }: { state: State; set(patch: Partial<State>): void }) {
   return (
@@ -307,12 +352,20 @@ function Damping({ state, set, result }: { state: State; set(patch: Partial<Stat
 
 export function SpectrumTool() {
   const [state, set] = useStored('spectrum', FIRST);
-  const outcome = useMemo(() => attempt(() => analyse(state)), [state]);
+  const [sound, setSound] = useState<Clip | null>(null);
+  const outcome = useMemo(() => attempt(() => analyse(state, sound)), [state, sound]);
   return (
     <div className={styles.tool}>
+      <SoundSource sound={sound} setSound={setSound} />
       <SignalFields state={state} set={set} />
       <div className={styles.actions}>
-        <Button variant="quiet" onClick={() => set({ samples: EXAMPLE, rate: '256', bands: BANDS })}>
+        <Button
+          variant="quiet"
+          onClick={() => {
+            setSound(null);
+            set({ samples: EXAMPLE, rate: '256', bands: BANDS });
+          }}
+        >
           {t('kitSignals.ui.useExample')}
         </Button>
       </div>

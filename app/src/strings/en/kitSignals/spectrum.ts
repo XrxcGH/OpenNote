@@ -2,7 +2,11 @@
 
 export const spectrum = {
   samples: 'Samples',
-  samplesHint: 'One value per line, or time and value on each line.',
+  samplesHint: 'One value per line, or time and value on each line. Cells copied from a table paste this way too.',
+  soundFile: 'Or open a sound file',
+  soundNote: 'Analyzing {name}: {seconds} s at {rate} Hz, in place of the pasted samples. Sound stays on this computer.',
+  soundProblem: 'This file could not be read as audio. Try a WAV, MP3, or OGG file.',
+  usePasted: 'Use the pasted samples',
   rate: 'Sample rate (Hz)',
   rateFromTimes: 'Sample rate from the times: {rate} Hz.',
   window: 'Window',

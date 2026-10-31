@@ -8,11 +8,13 @@ Each result has buttons to put part of it on the page at the caret: **Insert ans
 
 ## Signals and systems
 
-- **Spectrum analyzer.** Paste samples to see their spectrum. It shows amplitude, power, and density views, Welch averages, and a spectrogram, with the window's effect corrected. It also adds up the power in bands (with presets for brain waves), picks peaks, and reads damping from the half-power points.
+- **Spectrum analyzer.** Paste samples, or open a sound file, to see their spectrum. To use a table on the page, copy its cells and paste them: header rows are skipped, and a time column sets the sample rate. It shows amplitude, power, and density views, Welch averages, and a spectrogram, with the window's effect corrected. It also adds up the power in bands (with presets for brain waves), picks peaks, and reads damping from the half-power points.
 - **Digital filter designer.** Design FIR filters by the window method and IIR filters from Butterworth, Chebyshev, and elliptic prototypes, or a simple notch or moving average. See the gain, phase, delay, impulse and step responses, and the poles and zeros. Round the coefficients to fixed point to see what changes, then run the filter on your own samples, once or forward and backward.
 - **Convolution, sampling, and discrete systems.** See convolution as a table: flip, shift, multiply, and add. Find a delay by correlation. Run a difference equation and check its poles. Then explore aliasing, rebuilding a sampled signal, quantization noise, rate changes, and convolution of continuous signals.
 
 ## Brain and body signals
+
+The brain and body, medical imaging, and audiogram tools are for coursework only, not for clinical use or diagnosis.
 
 - **Neural and physiological time series.** Cut epochs around events, remove the baseline, reject noisy trials, and average them with a standard-error band, then read peaks and mean amplitudes. Build fMRI regressors from the canonical response, fit a voxel by least squares, and read t for a contrast. Draw spike rasters and firing rates, with interval statistics. Find R peaks in an ECG and work out heart rate and its variability, and map a value per electrode on the 10-20 layout.
 
