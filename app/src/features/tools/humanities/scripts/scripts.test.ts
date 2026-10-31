@@ -84,6 +84,8 @@ describe('kana', () => {
     expect(hepburn('ちゃ')).toBe('cha');
     expect(hepburn('マッチ')).toBe('matchi');
     expect(hepburn('コーヒー')).toBe('kōhī');
+    // Modified Hepburn writes ee as ē (onēsan), as it does oo and aa.
+    expect(hepburn('おねえさん')).toBe('onēsan');
   });
 
   it('type romaji as kana', () => {
@@ -119,7 +121,7 @@ describe('romanization tables', () => {
   it('give Chaĭkovskiĭ, Athēna, saṃskṛta, and Hayastan', () => {
     expect(romanize('Чайковский', 'ru-alalc').normalize('NFC')).toBe('Chaĭkovskiĭ'.normalize('NFC'));
     expect(romanize('Αθήνα', 'el-alalc').normalize('NFC')).toBe('Athēna'.normalize('NFC'));
-    expect(romanize('संस्कृत', 'hi-alalc').normalize('NFC')).toBe('saṃskṛta'.normalize('NFC'));
+    expect(romanize('संस्कृत', 'sa-alalc').normalize('NFC')).toBe('saṃskṛta'.normalize('NFC'));
     expect(romanize('Հայաստան', 'hy-alalc')).toBe('Hayastan');
   });
 
@@ -128,6 +130,19 @@ describe('romanization tables', () => {
     expect(romanize('Чайковский', 'ru-bgn')).toBe('Chaykovskiy');
     expect(romanize('თბილისი', 'ka-alalc')).toBe('tʻbilisi');
     expect(romanize('ὁδός', 'el-alalc')).toBe('hodos');
+    // ALA-LC Modern Greek: initial μπ, ντ, γκ are b, d, g; inside a word they stay mp, nt, nk.
+    expect(romanize('Μπαρ', 'el-alalc')).toBe('Bar');
+    expect(romanize('ντομάτα', 'el-alalc')).toBe('domata');
+    expect(romanize('γκρίζος', 'el-alalc')).toBe('grizos');
+    expect(romanize('λάμπα', 'el-alalc')).toBe('lampa');
+    // ALA-LC Hindi drops the final inherent a and maps nukta letters; ISO 15919 keeps every a.
+    const nfc = (s: string) => s.normalize('NFC');
+    expect(nfc(romanize('भारत', 'hi-alalc'))).toBe(nfc('bhārat'));
+    expect(nfc(romanize('ज़रूर', 'hi-alalc'))).toBe(nfc('zarūr'));
+    expect(nfc(romanize('मित्र', 'hi-alalc'))).toBe(nfc('mitra'));
+    expect(nfc(romanize('क़िला', 'hi-alalc'))).toBe(nfc('qilā'));
+    expect(nfc(romanize('संस्कृतम्', 'iso15919'))).toBe(nfc('saṁskr̥tam'));
+    expect(nfc(romanize('देव', 'iso15919'))).toBe(nfc('dēva'));
     expect(romanize('ῥήτωρ', 'el-alalc')).toBe('rhētōr');
     expect(cyrillicFromAlaLc('Chaĭkovskiĭ')).toBe('Чайковский');
   });

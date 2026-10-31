@@ -1,8 +1,9 @@
 // Romanization by published public schemes: the Library of Congress ALA-LC tables (a work of the US government, in
-// the public domain) for Russian, modern Greek, Hindi and Sanskrit in Devanagari, Armenian, and Georgian, and the
-// BGN/PCGN system for Russian. Each table maps letters by the longest match; capitals stay capitals.
+// the public domain) for Russian, modern Greek, Hindi and Sanskrit in Devanagari, Armenian, and Georgian, the
+// BGN/PCGN system for Russian, and ISO 15919 for Devanagari. Each table maps letters by the longest match; capitals stay capitals.
 
-export type Scheme = 'ru-alalc' | 'ru-bgn' | 'el-alalc' | 'hi-alalc' | 'hy-alalc' | 'ka-alalc';
+export type Scheme =
+  'ru-alalc' | 'ru-bgn' | 'el-alalc' | 'hi-alalc' | 'sa-alalc' | 'iso15919' | 'hy-alalc' | 'ka-alalc';
 
 const pairs = (keys: string, values: string): [string, string][] => {
   const k = [...keys];
@@ -100,6 +101,11 @@ const isMark = (c: string): boolean => {
   return code >= 0x300 && code <= 0x36f;
 };
 
+/** At the start of a word μπ, ντ, and γκ are said b, d, and g, and ALA-LC writes them so (Μπαρ is Bar). */
+const GREEK_INITIAL: Record<string, string> = { μπ: 'b', ντ: 'd', γκ: 'g' };
+const greekInitial = (prev: string, key: string): string | null =>
+  !/\p{Script=Greek}/u.test(prev) && GREEK_INITIAL[key] ? GREEK_INITIAL[key] : null;
+
 /** Modern Greek: accents are dropped, a rough breathing becomes h, and a diaeresis keeps two vowels apart. */
 function greek(text: string): string {
   const words = text.normalize('NFD');
@@ -111,12 +117,12 @@ function greek(text: string): string {
       .filter((c) => !isMark(c))
       .join('')
       .normalize('NFC');
-    let roman = mapLongest(bare.replace(/\|/g, ''), GREEK_LETTERS);
+    let roman = mapLongest(bare.replace(/\|/g, ''), GREEK_LETTERS, greekInitial);
     if (split.includes('|')) {
       // A diaeresis: map the vowels on each side separately.
       roman = bare
         .split('|')
-        .map((p) => mapLongest(p, GREEK_LETTERS))
+        .map((p, n) => mapLongest(p, GREEK_LETTERS, n === 0 ? greekInitial : undefined))
         .join('');
     }
     // A rough breathing is h before the word, or after an initial r, as in rhētōr.
@@ -164,31 +170,66 @@ const DEVA_CONS = new Map(
   ),
 );
 
-/** Devanagari with the inherent a written, as for Sanskrit: संस्कृत is saṃskṛta. */
-function devanagari(text: string): string {
+/** Consonants with a nukta, for sounds from Persian, Arabic, and English (NFC splits them into letter + ़). */
+const NUKTA: Record<string, Record<'alalc' | 'iso', string>> = {
+  क: { alalc: 'q', iso: 'q' },
+  ख: { alalc: 'k͟h', iso: 'ḵẖ' },
+  ग: { alalc: 'ġ', iso: 'ġ' },
+  ज: { alalc: 'z', iso: 'z' },
+  ड: { alalc: 'ṛ', iso: 'ṛ' },
+  ढ: { alalc: 'ṛh', iso: 'ṛh' },
+  फ: { alalc: 'f', iso: 'f' },
+};
+/** ISO 15919 writes these differently from ALA-LC. */
+const ISO_VOWELS: Record<string, string> = { ṛ: 'r̥', ṝ: 'r̥̄', e: 'ē', o: 'ō' };
+
+type Deva = 'sanskrit' | 'hindi' | 'iso';
+
+/**
+ * Devanagari. Sanskrit (ALA-LC) and ISO 15919 write every inherent a: संस्कृत is saṃskṛta. Hindi (ALA-LC) leaves
+ * out the a at the end of a word after a single consonant: भारत is bhārat.
+ */
+function devanagari(text: string, mode: Deva): string {
   const chars = [...text.normalize('NFC')];
+  const iso = mode === 'iso';
+  const vowel = (v: string) => (iso ? (ISO_VOWELS[v] ?? v) : v);
+  const isLetter = (c: string | undefined) => c !== undefined && /[\u0900-\u097f]/.test(c) && c !== '।';
   let out = '';
+  let vowels = 0;
   for (let i = 0; i < chars.length; i++) {
     const c = chars[i];
-    const cons = DEVA_CONS.get(c);
+    let cons = DEVA_CONS.get(c);
     if (cons !== undefined) {
+      const clustered = chars[i - 1] === '्';
+      if (chars[i + 1] === '़' && NUKTA[c]) {
+        cons = NUKTA[c][iso ? 'iso' : 'alalc'];
+        i++;
+      }
       out += cons;
       const next = chars[i + 1];
       if (next === '्') i++;
       else if (next && DEVA_SIGNS[next]) {
-        out += DEVA_SIGNS[next];
+        out += vowel(DEVA_SIGNS[next]);
+        vowels++;
         i++;
-      } else out += 'a';
+      } else {
+        // Hindi: no a at the end of a word after a single consonant, if the word has a vowel before it.
+        if (!(mode === 'hindi' && !isLetter(next) && !clustered && vowels > 0)) out += 'a';
+        vowels++;
+      }
       continue;
     }
-    if (DEVA_VOWELS[c]) out += DEVA_VOWELS[c];
-    else if (c === 'ं') out += 'ṃ';
+    if (DEVA_VOWELS[c]) {
+      out += vowel(DEVA_VOWELS[c]);
+      vowels++;
+    } else if (c === 'ं') out += iso ? 'ṁ' : 'ṃ';
     else if (c === 'ँ') out += 'm̐';
     else if (c === 'ः') out += 'ḥ';
     else if (c === 'ऽ') out += '’';
     else if (c === '।') out += '.';
     else if (c >= '०' && c <= '९') out += String(c.charCodeAt(0) - 0x966);
-    else out += c;
+    else if (c !== '़') out += c;
+    if (!isLetter(c)) vowels = 0;
   }
   return out;
 }
@@ -203,7 +244,11 @@ export function romanize(text: string, scheme: Scheme): string {
     case 'el-alalc':
       return greek(text);
     case 'hi-alalc':
-      return devanagari(text);
+      return devanagari(text, 'hindi');
+    case 'sa-alalc':
+      return devanagari(text, 'sanskrit');
+    case 'iso15919':
+      return devanagari(text, 'iso');
     case 'hy-alalc':
       return mapLongest(text, ARMENIAN);
     case 'ka-alalc':

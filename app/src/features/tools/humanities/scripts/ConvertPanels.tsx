@@ -33,6 +33,8 @@ const SCHEMES: readonly RomanScheme[] = [
   'ru-reverse',
   'el-alalc',
   'hi-alalc',
+  'sa-alalc',
+  'iso15919',
   'hy-alalc',
   'ka-alalc',
 ];

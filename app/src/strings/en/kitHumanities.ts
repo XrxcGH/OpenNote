@@ -1589,7 +1589,9 @@ export const kitHumanities = {
       'ru-bgn': 'Russian, BGN/PCGN',
       'ru-reverse': 'ALA-LC back to Russian Cyrillic',
       'el-alalc': 'Modern Greek, ALA-LC',
-      'hi-alalc': 'Devanagari, ALA-LC',
+      'hi-alalc': 'Hindi, ALA-LC',
+      'sa-alalc': 'Sanskrit, ALA-LC',
+      iso15919: 'Devanagari, ISO 15919',
       'hy-alalc': 'Armenian, ALA-LC',
       'ka-alalc': 'Georgian, ALA-LC',
     },
@@ -1598,7 +1600,9 @@ export const kitHumanities = {
       'ru-bgn': 'Ельцин',
       'ru-reverse': 'Chaĭkovskiĭ',
       'el-alalc': 'Αθήνα',
-      'hi-alalc': 'संस्कृत',
+      'hi-alalc': 'भारत',
+      'sa-alalc': 'संस्कृत',
+      iso15919: 'संस्कृत',
       'hy-alalc': 'Հայաստան',
       'ka-alalc': 'თბილისი',
     },
@@ -1606,8 +1610,14 @@ export const kitHumanities = {
       'ru-alalc': 'Each letter has its own spelling: й is ĭ, ы is y, э is ė, ю is i͡u, and я is i͡a.',
       'ru-bgn': 'е is ye at the start of a word and after a vowel, й, ъ, or ь; й is y; ь is ’.',
       'ru-reverse': 'ALA-LC gives each Russian letter its own spelling, so it reads back letter by letter.',
-      'el-alalc': 'η is ē and ω is ō; γγ is ng; αυ, ευ, and ου are au, eu, and ou; a rough breathing is h.',
-      'hi-alalc': 'Each consonant carries an a unless a vowel sign or a virama follows; ं is ṃ and ः is ḥ.',
+      'el-alalc':
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'η is ē and ω is ō; γγ is ng; αυ, ευ, and ου are au, eu, and ou; a rough breathing is h. μπ, ντ, and γκ at the start of a word are b, d, and g.',
+      'hi-alalc':
+        // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+        'Each consonant carries an a unless a vowel sign or a virama follows, but not at the end of a word: भारत is bhārat. A nukta gives q, k͟h, ġ, z, ṛ, ṛh, and f.',
+      'sa-alalc': 'Each consonant carries an a unless a vowel sign or a virama follows; ं is ṃ and ः is ḥ.',
+      iso15919: 'As ALA-LC, but ं is ṁ, ऋ is r̥, and ए and ओ are ē and ō; every inherent a is written.',
       'hy-alalc': 'Aspirated letters take ʻ, as in tʻ; ու is u and և is ew.',
       'ka-alalc': 'Aspirated letters take ʻ, as in tʻ and kʻ; ყ is q.',
     },

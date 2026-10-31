@@ -1,5 +1,5 @@
 // Japanese kana and Hepburn romanization. Katakana is read as hiragana first. Long vowels take a macron (ou and oo
-// as ō, uu as ū, aa as ā, and the katakana long mark ー on the vowel before it); a small tsu doubles the next
+// as ō, uu as ū, aa as ā, ee as ē, and the katakana long mark ー on the vowel before it); a small tsu doubles the next
 // consonant (tch before ch); n is written n' before a vowel or y. Typing romaji gives kana by the same table.
 
 const ROWS: [string, string][] = [
@@ -77,10 +77,10 @@ export function hepburn(text: string): string {
     else if (s === '-') out = out.replace(/([aiueo])$/, (v) => MACRON[v]);
     else {
       const last = out.slice(-1);
-      // ou and oo become ō, uu ū, aa ā; ei and ii stay as written.
+      // ou and oo become ō, uu ū, aa ā, ee ē (onēsan); ei and ii stay as written.
       if (s === 'u' && (last === 'o' || last === 'u') && /[^aiueo]?[ou]$/.test(out))
         out = out.slice(0, -1) + MACRON[last];
-      else if ((s === 'o' && last === 'o') || (s === 'a' && last === 'a')) out = out.slice(0, -1) + MACRON[last];
+      else if ((s === 'o' || s === 'a' || s === 'e') && last === s) out = out.slice(0, -1) + MACRON[last];
       else out += s;
     }
   }
