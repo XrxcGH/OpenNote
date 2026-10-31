@@ -619,6 +619,7 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
 | Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
 | Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |
+
 ## Subject kit foundations
 
 (Beta 6. On in Beta and off in Stable, with the kit flags. Help: [Data, seeds, and figures in the subject kits](help/subject-kit-data-and-figures.md).)
@@ -638,6 +639,22 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Feature | What it does | Status |
 | --- | --- | --- |
 | Economics and finance calculators | One window with 87 calculators in eight subjects (money over time, markets, firms, consumer choice, macroeconomics, measurement, accounting, investments). Each shows numbered worked steps, units, and a graph where useful, and can insert its answer or its steps into the page. The CPI-U table is public domain data from the U.S. Bureau of Labor Statistics. Opens from the command palette and the Insert tab. Behind the `tools.econ` flag, on in Beta. See the [help page](help/economics-and-finance.md). | Built, untested by hand |
+
+## Statistics kit
+
+(Beta 6. On in Beta and off in Stable, with the kits.statinfer flag. Help: [Statistics kit](help/statistics-kit.md).)
+
+| Describe data | Summary statistics with bias-adjusted skewness and kurtosis, trimmed and other means, outlier screens with Grubbs' test, stem-and-leaf displays, frequency tables, grouped data, and category counts. | Built, untested by hand |
+| ANOVA | One-way and Welch ANOVA with assumption checks, Tukey, Games-Howell, and adjusted pairwise tests, contrasts, two-way (Type II and III), repeated-measures, and mixed designs, and effect sizes with exact intervals. | Built, untested by hand |
+| Rank tests | Mann-Whitney, Wilcoxon signed-rank, sign, Kruskal-Wallis with Dunn, Friedman with Conover and Nemenyi, Hodges-Lehmann, and Kolmogorov-Smirnov tests, exact for small samples. | Built, untested by hand |
+| Contingency tables | Chi-square and G tests with residuals, Fisher's exact test, McNemar, Cochran's Q, association measures, the trend test, and forecast skill scores. | Built, untested by hand |
+| Epidemiology | Risk and odds ratios with intervals, Mantel-Haenszel strata with Breslow-Day, diagnostic accuracy, rates, and direct (US 2000 standard, NCHS) and indirect standardization. | Built, untested by hand |
+| Correlation | Pearson, Spearman, Kendall, point-biserial, and partial correlations, matrices with adjusted p-values, and comparisons of 2 correlations. | Built, untested by hand |
+| Power and sample size | Solves for n, power, the detectable effect, or alpha from exact noncentral distributions for the common tests, with a power curve. | Built, untested by hand |
+| Multiple testing and meta-analysis | p-value adjustments and q-values, Fisher and Stouffer, fixed- and random-effects meta-analysis with forest and funnel plots, volcano and Manhattan plots, and printed critical-value tables. | Built, untested by hand |
+| Simulation and resampling | Seeded bootstrap intervals (percentile, basic, BCa), exact or Monte Carlo permutation tests, a sampling-distribution lab, and simulations. | Built, untested by hand |
+| Bayesian updating | Conjugate updates with credible and highest-density intervals, Savage-Dickey and JZS Bayes factors, grid posteriors, a Metropolis sampler, Bayes tables, and exact inference in Bayesian networks of up to 8 true-or-false nodes. | Built, untested by hand |
+| Sampling and randomization | Assignment lists, Latin and Williams squares, factorial layouts, samples from a frame, allocation, stratified estimates, design effects, and margins of error. | Built, untested by hand |
 
 ## macOS and Linux
 

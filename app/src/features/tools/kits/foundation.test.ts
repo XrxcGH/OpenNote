@@ -156,6 +156,31 @@ describe('plots', () => {
     expect(screen).toContain('var(--ink-indigo)');
     expect(escapeXml('a & "b"')).toBe('a &amp; &quot;b&quot;');
   });
+
+  it('labels a category axis with its names and no numbers', () => {
+    const svg = plotSvg({
+      title: 'Means',
+      x: { label: '', categories: ['A', 'B', 'C'], min: -0.6, max: 2.4 },
+      y: { label: 'Mean', min: 10, max: 20 },
+      series: [
+        {
+          name: 'm',
+          style: 'markers',
+          points: [
+            [0, 12],
+            [1, 15],
+            [2, 18],
+          ],
+        },
+      ],
+    });
+    const texts = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+    for (const name of ['A', 'B', 'C']) expect(texts).toContain(name);
+    // The x ticks are only the names; the numbers left are the y ticks, all within 10 to 20.
+    const numbers = texts.filter((t) => /^-?[\d.]+$/.test(t)).map(Number);
+    expect(numbers.length).toBeGreaterThan(0);
+    expect(numbers.every((n) => n >= 10 && n <= 20)).toBe(true);
+  });
 });
 
 describe('sketches', () => {

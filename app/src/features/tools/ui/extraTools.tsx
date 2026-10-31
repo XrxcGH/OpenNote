@@ -24,6 +24,8 @@ import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
 const EconTool = lazy(() => import('../econ/EconTool').then((m) => ({ default: m.EconTool })));
+// The statistics kit loads the first time its window opens.
+const StatInferKit = lazy(() => import('../statinfer').then((kit) => ({ default: kit.StatInferTool })));
 
 // The solvers are a large window of their own, so they load the first time it opens.
 const SolversTool = lazy(() =>
@@ -102,6 +104,8 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-math': MathKit,
   'kit-mechdyn': KitMechDyn,
   'kit-physics': PhysicsKit,
+  econ: EconTool,
+  'kit-statinfer': StatInferKit,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
@@ -153,11 +157,5 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'symbols') return <SymbolsTool />;
-  if (tool === 'econ')
-    return (
-      <Suspense fallback={null}>
-        <EconTool />
-      </Suspense>
-    );
   return null;
 }

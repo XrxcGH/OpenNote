@@ -431,7 +431,8 @@ if (typeof window !== 'undefined') {
       });
       return;
     }
-    const editor = targetEditor();
+    // With no caret, text and equations go at the end of the last text block, as the Insert tab does, not nowhere.
+    const editor = insertTarget();
     if (!detail || !editor) return;
     if (detail.table !== undefined) {
       // Answered at once like a graph; the table is built and added when its code arrives.
