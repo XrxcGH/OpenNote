@@ -57,6 +57,8 @@ export const timeseries = {
     lbQ: 'Ljung-Box Q',
     lbDf: 'Ljung-Box degrees of freedom',
     lbP: 'Ljung-Box p-value',
+    peakFreq: 'Periodogram peak (cycles per step)',
+    peakPeriod: 'Cycle length at the peak (steps)',
     mean: 'Mean',
     sd: 'Standard deviation',
     n: 'Values used',
@@ -108,9 +110,13 @@ export const timeseries = {
     estimate: 'Estimate',
     se: 'Standard error',
     z: 'z',
+    freq: 'Frequency',
+    cycle: 'Cycle length',
+    power: 'Power',
   },
   table: {
     acf: 'Autocorrelations',
+    periodogram: 'Periodogram',
     indices: 'Seasonal indices',
     forecasts: 'Forecasts',
     recursion: 'Smoothing recursion, first rows',
@@ -119,6 +125,7 @@ export const timeseries = {
   note: {
     regular: 'The values are equally spaced in time, with none missing.',
     stationaryAcf: 'The correlogram describes a series whose mean and spread do not change over time.',
+    rawPeriodogram: 'The raw periodogram has no taper or smoothing, so single peaks are noisy; look for clear ones.',
     constantSeason: 'The seasonal pattern is the same every year.',
     endsLost: 'The moving average has no value for half a season at each end.',
     pastLikeFuture: 'The forecasts assume the pattern so far goes on.',
@@ -142,10 +149,13 @@ export const timeseries = {
     fitted: '1-step forecasts',
     forecastLine: 'Forecast',
     senFit: "Sen's line",
+    freq: 'Frequency (cycles per step)',
+    power: 'Periodogram',
   },
   picture: {
     series: 'The series after the transformation',
     correlogram: 'ACF and PACF with 95% bands',
+    periodogram: 'Periodogram with its peak marked',
     trend: 'Series and trend',
     seasonal: 'Seasonal indices',
     remainder: 'Remainder',
@@ -169,6 +179,9 @@ export const timeseriesSteps = {
   band: 'Autocorrelations inside these bands are consistent with no correlation at that lag:',
   pacf: 'The partial autocorrelation at lag k removes the lags in between; at lag 1 it equals r1 = {p1}.',
   ljungBox: 'The Ljung-Box test pools the first {h} autocorrelations: p = {p}.',
+  periodogram:
+    'The periodogram splits the variance over the Fourier frequencies. It peaks at {f} cycles per step, a cycle ' +
+    'of {cycle} steps, with power {power}:',
   maEven:
     'Estimate the trend with a centered moving average over {m} periods. For an even season, the 2 end values ' +
     'count half:',

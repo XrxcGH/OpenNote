@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeRng } from '../kit/rng';
 import { StatError } from '../kit/types';
-import { acf, adf, decompose, difference, ljungBox, mannKendall, movingAverage, pacf } from './engine';
+import { acf, adf, decompose, difference, ljungBox, mannKendall, movingAverage, pacf, periodogram } from './engine';
 import { accuracy, arimaForecast, fitArima, psiWeights, smooth, yuleWalker } from './models';
 
 const close = (got: number, want: number, tol: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(tol);
@@ -160,5 +160,32 @@ describe('impossible series input', () => {
     expect(code(() => fitArima(monthly, 1, 0, 1, 'yw'))).toBe('arOnly');
     expect(code(() => ljungBox(monthly, 2, 2))).toBe('lagsTooFew');
     expect(code(() => fitArima([1, 2, 3], 1, 0, 0, 'css'))).toBe('shortSeries');
+  });
+});
+
+describe('periodogram', () => {
+  it('peaks at the frequency of a cosine with power n / 4', () => {
+    // x_t = cos(2π 3 t / 24): the sum at j = 3 is n / 2, so I = (n / 2)^2 / n = n / 4 = 6; elsewhere it is 0.
+    const n = 24;
+    const x = Array.from({ length: n }, (_, t) => Math.cos((2 * Math.PI * 3 * t) / n));
+    const p = periodogram(x);
+    expect(p).toHaveLength(12);
+    close(p[2].freq, 3 / 24, 1e-15);
+    close(p[2].power, 6, 1e-9);
+    p.filter((_, i) => i !== 2).forEach((q) => close(q.power, 0, 1e-9));
+  });
+
+  it('adds up to the sum of squares (Parseval)', () => {
+    // Over j = 1 to n − 1, I(j / n) sums to sum (x − x̄)^2; with n odd the upper half mirrors the lower.
+    const x = [3, 1, 4, 1, 5, 9, 2];
+    const m = x.reduce((s, v) => s + v, 0) / x.length;
+    const ss = x.reduce((s, v) => s + (v - m) ** 2, 0);
+    const half = periodogram(x).reduce((s, q) => s + q.power, 0);
+    close(2 * half, ss, 1e-9);
+  });
+
+  it('is 0 for a constant series and refuses a short one', () => {
+    periodogram([2, 2, 2, 2, 2]).forEach((q) => expect(q.power).toBe(0));
+    expect(() => periodogram([1, 2, 3])).toThrow();
   });
 });

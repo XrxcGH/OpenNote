@@ -63,8 +63,8 @@ export const kitStatModels = {
   timeseries: {
     title: 'Time series and forecasting',
     keywords:
-      'time series forecasting autocorrelation acf pacf correlogram ljung box decomposition seasonal trend moving ' +
-      'average exponential smoothing holt winters arima ar yule walker forecast interval mann kendall sen slope ' +
+      'time series forecasting autocorrelation acf pacf correlogram ljung box periodogram spectrum ' +
+      'decomposition seasonal trend moving average exponential smoothing holt winters arima ar yule walker forecast interval mann kendall sen slope ' +
       'dickey fuller unit root stationarity mae rmse mape mase',
   } as Eager & typeof TimeseriesWords,
   multivariate: {

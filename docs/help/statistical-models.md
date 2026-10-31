@@ -31,7 +31,7 @@ Fit models to data and see each answer worked out, step by step. These tools are
 
 ## Time series
 
-- **Explore** a series with log, difference, seasonal-difference, or moving-average transformations, the ACF and PACF with 95% bands, and the Ljung-Box test.
+- **Explore** a series with log, difference, seasonal-difference, or moving-average transformations, the ACF and PACF with 95% bands, the Ljung-Box test, and a raw periodogram with its peak cycle length.
 - **Decompose** it into trend, season, and remainder, additively or multiplicatively.
 - **Exponential smoothing** forecasts by simple, Holt, or Holt-Winters smoothing. Leave a parameter blank to choose it by least squares, and hold out the last values to score the forecasts by MAE, RMSE, MAPE, and MASE.
 - **AR and ARIMA** models are fitted by conditional sum of squares, Yule-Walker, or least squares, with forecast intervals from the model's ψ weights.

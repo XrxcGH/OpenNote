@@ -5,7 +5,18 @@ import { completeRows, numbersAt, parseTable } from '../kit/data';
 import { mean, variance } from '../kit/linalg';
 import type { Outcome, Picture, ResultRow, ToolSpec, Values } from '../kit/spec';
 import { fail, step } from '../kit/types';
-import { acf, adf, decompose, difference, ljungBox, mannKendall, movingAverage, pacf, type AdfKind } from './engine';
+import {
+  acf,
+  adf,
+  decompose,
+  difference,
+  ljungBox,
+  mannKendall,
+  movingAverage,
+  pacf,
+  periodogram,
+  type AdfKind,
+} from './engine';
 import { accuracy, arimaForecast, fitArima, smooth, type Accuracy, type SmoothingMethod } from './models';
 
 const MONTHLY =
@@ -71,6 +82,8 @@ function exploreOutcome(values: Values): Outcome {
   const c0 = d.reduce((s, v) => s + v * v, 0);
   const c1 = d.slice(1).reduce((s, v, i) => s + v * d[i], 0);
   const lagIdx = r.map((_, k) => k + 1);
+  const spec = periodogram(used);
+  const peak = spec.reduce((best, q) => (q.power > best.power ? q : best), spec[0]);
   return {
     rows: [
       { id: 'r1', value: r[0], answer: true, sym: 'r_1' },
@@ -81,8 +94,13 @@ function exploreOutcome(values: Values): Outcome {
       { id: 'mean', value: m },
       { id: 'sd', value: Math.sqrt(variance(used)) },
       { id: 'n', value: used.length },
+      { id: 'peakFreq', value: peak.freq },
+      { id: 'peakPeriod', value: 1 / peak.freq },
     ],
-    tables: [{ id: 'acf', columns: ['lag', 'acf', 'pacf'], rows: r.map((v, k) => [k + 1, v, pr[k]]) }],
+    tables: [
+      { id: 'acf', columns: ['lag', 'acf', 'pacf'], rows: r.map((v, k) => [k + 1, v, pr[k]]) },
+      { id: 'periodogram', columns: ['freq', 'cycle', 'power'], rows: spec.map((q) => [q.freq, 1 / q.freq, q.power]) },
+    ],
     steps: [
       step(
         'timeseries.acf',
@@ -100,6 +118,11 @@ function exploreOutcome(values: Values): Outcome {
         q: lb.q,
         p: lb.p,
       }),
+      step(
+        'timeseries.periodogram',
+        'I(f_j) = \\frac{1}{n}\\left|\\sum_t (x_t - \\bar x)\\, e^{-2\\pi i f_j t}\\right|^2,\\quad f_j = \\frac{j}{n}',
+        { f: peak.freq, cycle: 1 / peak.freq, power: peak.power },
+      ),
     ],
     words: step(lb.p < 0.05 ? 'timeseries.wordsCorrelated' : 'timeseries.wordsWhite', undefined, {
       h: lb.df,
@@ -127,8 +150,18 @@ function exploreOutcome(values: Values): Outcome {
           legend: true,
         },
       },
+      {
+        id: 'periodogram',
+        type: 'plot',
+        plot: {
+          x: { label: 'freq' },
+          y: { label: 'power' },
+          series: [{ id: 'power', points: spec.map((q) => [q.freq, q.power] as [number, number]) }],
+          vlines: [peak.freq],
+        },
+      },
     ],
-    notes: ['regular', 'stationaryAcf'],
+    notes: ['regular', 'stationaryAcf', 'rawPeriodogram'],
   };
 }
 

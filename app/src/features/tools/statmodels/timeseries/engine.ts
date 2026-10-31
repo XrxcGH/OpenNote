@@ -202,3 +202,29 @@ export function adf(x: readonly number[], lags: number, kind: AdfKind, sims: num
     sims: taus.length,
   };
 }
+
+export interface PeriodogramPoint {
+  /** Cycles per time step, j / n. */
+  readonly freq: number;
+  /** I(f) = |sum (x_t − x̄) e^{−2πi f t}|^2 / n. */
+  readonly power: number;
+}
+
+/** The raw periodogram at the Fourier frequencies j / n for j = 1 to floor(n / 2), with no taper or smoothing. */
+export function periodogram(x: readonly number[]): PeriodogramPoint[] {
+  const n = x.length;
+  if (n < 4) fail('shortSeries', '4');
+  const m = mean(x);
+  const out: PeriodogramPoint[] = [];
+  for (let j = 1; j <= Math.floor(n / 2); j++) {
+    let re = 0;
+    let im = 0;
+    for (let t = 0; t < n; t++) {
+      const a = (2 * Math.PI * j * t) / n;
+      re += (x[t] - m) * Math.cos(a);
+      im -= (x[t] - m) * Math.sin(a);
+    }
+    out.push({ freq: j / n, power: (re * re + im * im) / n });
+  }
+  return out;
+}
