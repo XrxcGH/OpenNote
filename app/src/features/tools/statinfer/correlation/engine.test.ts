@@ -44,6 +44,14 @@ describe('correlation coefficients', () => {
   it('partial correlation from r_xy 0.5, r_xz 0.3, r_yz 0.4', () => {
     close(partial(0.5, 0.3, 0.4, null).partial, 0.434634, 1e-6);
   });
+
+  it('semipartials with z out of x and out of y (r_xy .6, r_xz .5, r_yz .2)', () => {
+    // By hand: (0.6 − 0.1)/√0.75 = 0.577350 and (0.6 − 0.1)/√0.96 = 0.510310.
+    const p = partial(0.6, 0.5, 0.2, null);
+    close(p.semipartialX, 0.5 / Math.sqrt(0.75), 1e-12);
+    close(p.semipartialX, 0.57735, 1e-5);
+    close(p.semipartialY, 0.51031, 1e-5);
+  });
 });
 
 describe('comparing correlations', () => {
@@ -94,7 +102,7 @@ describe('correlation reports', () => {
       'holm',
     );
     expect(m.answer.vars.count).toBe('3');
-    expect(partialReport(0.5, 0.3, 0.4, 50).tables[0].rows.length).toBe(2);
+    expect(partialReport(0.5, 0.3, 0.4, 50).tables[0].rows.length).toBe(3);
     expect(compareReport({ kind: 'independent', r1: 0.5, n1: 50, r2: 0.3, n2: 60 }).answer.vars.z).toBe('1.217');
   });
 

@@ -176,7 +176,10 @@ export function kendall(x: readonly number[], y: readonly number[], alternative:
 
 export interface Partial {
   readonly partial: number;
-  readonly semipartial: number;
+  /** The semipartial with z taken out of x only, (r_xy − r_xz r_yz)/√(1 − r_xz²): regression output's sr for x. */
+  readonly semipartialX: number;
+  /** The semipartial with z taken out of y only, (r_xy − r_xz r_yz)/√(1 − r_yz²). */
+  readonly semipartialY: number;
   readonly t: number;
   readonly df: number;
   readonly p: number;
@@ -184,7 +187,7 @@ export interface Partial {
 
 /**
  * The correlation of x and y with z held fixed, r = (r_xy − r_xz r_yz)/√((1 − r_xz²)(1 − r_yz²)), and the
- * semipartial (z taken out of y only), with the t test on n − 3 df when n is known.
+ * 2 semipartials (z taken out of x only, and out of y only), with the t test on n − 3 df when n is known.
  */
 export function partial(rxy: number, rxz: number, ryz: number, n: number | null): Partial {
   for (const r of [rxy, rxz, ryz]) check(Number.isFinite(r) && r >= -1 && r <= 1, 'correlationRange');
@@ -192,12 +195,13 @@ export function partial(rxy: number, rxz: number, ryz: number, n: number | null)
   const det = 1 - rxy * rxy - rxz * rxz - ryz * ryz + 2 * rxy * rxz * ryz;
   check(det >= -1e-12, 'notPositive');
   const value = (rxy - rxz * ryz) / Math.sqrt((1 - rxz * rxz) * (1 - ryz * ryz));
-  const semipartial = (rxy - rxz * ryz) / Math.sqrt(1 - ryz * ryz);
-  if (n === null) return { partial: value, semipartial, t: Number.NaN, df: Number.NaN, p: Number.NaN };
+  const semipartialX = (rxy - rxz * ryz) / Math.sqrt(1 - rxz * rxz);
+  const semipartialY = (rxy - rxz * ryz) / Math.sqrt(1 - ryz * ryz);
+  if (n === null) return { partial: value, semipartialX, semipartialY, t: Number.NaN, df: Number.NaN, p: Number.NaN };
   check(Number.isInteger(n) && n >= 4, 'tooFew', { min: '4' });
   const df = n - 3;
   const t = value * Math.sqrt(df / (1 - value * value));
-  return { partial: value, semipartial, t, df, p: tP(t, df, 'two-sided') };
+  return { partial: value, semipartialX, semipartialY, t, df, p: tP(t, df, 'two-sided') };
 }
 
 export interface Comparison {

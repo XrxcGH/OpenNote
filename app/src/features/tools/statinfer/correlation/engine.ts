@@ -121,7 +121,8 @@ export function partialReport(rxy: number, rxz: number, ryz: number, n: number |
       Number.isFinite(p.t) ? `t(${p.df}) = ${num(p.t, 5)}` : '',
       Number.isFinite(p.p) ? p.p : '',
     ],
-    [{ key: 'semipartialR' }, p.semipartial, '', ''],
+    [{ key: 'semipartialX' }, p.semipartialX, '', ''],
+    [{ key: 'semipartialY' }, p.semipartialY, '', ''],
   ];
   return {
     answer: { key: 'partial', vars: { r: num(p.partial) }, latex: `r_{xy\\cdot z} = ${tex(p.partial)}` },
@@ -134,8 +135,12 @@ export function partialReport(rxy: number, rxz: number, ryz: number, n: number |
           ` = ${tex(p.partial)}`,
       ),
       step(
-        'cSemipartial',
-        `r_{x(y\\cdot z)} = \\frac{r_{xy} - r_{xz}r_{yz}}{\\sqrt{1-r_{yz}^2}} = ${tex(p.semipartial)}`,
+        'cSemipartialX',
+        `r_{y(x\\cdot z)} = \\frac{r_{xy} - r_{xz}r_{yz}}{\\sqrt{1-r_{xz}^2}} = ${tex(p.semipartialX)}`,
+      ),
+      step(
+        'cSemipartialY',
+        `r_{x(y\\cdot z)} = \\frac{r_{xy} - r_{xz}r_{yz}}{\\sqrt{1-r_{yz}^2}} = ${tex(p.semipartialY)}`,
       ),
     ],
   };
