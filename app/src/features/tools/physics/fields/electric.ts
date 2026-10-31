@@ -98,7 +98,7 @@ export const chargesMode: ModeDef = {
         { label: `${K}.f.q`, dim: 'charge', unit: 'nC' },
       ],
     },
-    // The point starts in the table's length unit for each system, so one picture never mixes metres and feet.
+    // The point starts in the table's length unit for each system, so one picture never mixes meters and feet.
     { id: 'at', label: `${K}.f.at`, kind: 'vector', dim: 'length', unit: 'm', usUnit: 'ft', initial: '0 0' },
     { id: 'test', label: `${K}.f.test`, dim: 'charge', unit: 'nC', initial: '', optional: true },
   ],
