@@ -72,11 +72,15 @@ export function dopri(f: Rhs, y0: readonly number[], t0: number, t1: number, opt
   let h = Math.min(maxStep, span / 100);
   for (let steps = 0; t < t1; steps += 1) {
     if (steps > maxSteps) throw new LsError('errors.ode');
-    if (t + h > t1) h = t1 - t;
+    // The last step lands on t1 exactly: t + (t1 - t) can round one ulp short in floating point, which used to leave
+    // a remainder near 1e-16 that tripped the collapse guard below.
+    const last = t + h >= t1 || t1 - (t + h) <= span * 1e-12;
+    if (last) h = t1 - t;
     const { next, norm, kLast } = trial(f, t, y, k0, h, rtol, atol);
     if (!Number.isFinite(norm)) throw new LsError('errors.ode');
-    if (norm <= 1) {
-      t += h;
+    const accepted = norm <= 1;
+    if (accepted) {
+      t = last ? t1 : t + h;
       y = next;
       k0 = kLast;
       out.t.push(t);
@@ -84,7 +88,8 @@ export function dopri(f: Rhs, y0: readonly number[], t0: number, t1: number, opt
     }
     const factor = norm === 0 ? 5 : Math.min(5, Math.max(0.2, 0.9 * norm ** -0.2));
     h = Math.min(maxStep, h * factor);
-    if (h < span * 1e-14) throw new LsError('errors.ode');
+    // Only a rejected step means the accuracy cannot be held; a short accepted final step is fine.
+    if (!accepted && h < span * 1e-14) throw new LsError('errors.ode');
   }
   return out;
 }

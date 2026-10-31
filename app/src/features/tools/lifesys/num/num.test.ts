@@ -10,6 +10,18 @@ import { brent } from './roots';
 import { chiSquareCdf, lnGamma, normalCdf, normalQuantile, tCdf, tQuantile } from './special';
 
 describe('the ODE integrator', () => {
+  it('lands on any end time without collapsing its final step', () => {
+    // Spans whose last step used to stop one ulp short of t1 and then throw errors.ode.
+    const rng = createRng(20261030);
+    for (let i = 0; i < 300; i += 1) {
+      const t0 = 10 * rng.next();
+      const t1 = t0 + 0.01 + 30 * rng.next();
+      const solution = dopri((_, y) => [-y[0]], [1], t0, t1);
+      expect(solution.t[solution.t.length - 1]).toBe(t1);
+      expect(solution.y[solution.y.length - 1][0]).toBeCloseTo(Math.exp(-(t1 - t0)), 5);
+    }
+  });
+
   it('follows exponential decay to 1e-7', () => {
     const solution = dopri((_, y) => [-0.5 * y[0]], [100], 0, 2, { rtol: 1e-9, atol: 1e-12 });
     expect(solution.y[solution.y.length - 1][0]).toBeCloseTo(100 * Math.exp(-1), 6);

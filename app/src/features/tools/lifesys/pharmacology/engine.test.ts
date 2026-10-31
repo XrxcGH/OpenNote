@@ -215,6 +215,14 @@ describe('Michaelis-Menten elimination', () => {
     expect(row(r, 'timeTo')).toBeCloseTo(time, 12);
   });
 
+  it('reaches the integrated time at a non-round end time', () => {
+    // t = (Km ln(c0 / c) + c0 − c) / Vmax = (5 ln 10 + 90) / 20 = 5.07565 h to fall from 100 to 10 mg/L.
+    const time = (5 * Math.log(10) + 90) / 20;
+    expect(row(michaelisResult(100, 20, 5, null, time), 'conc')).toBeCloseTo(10, 4);
+    for (const t of [1.63076, 5.0838, 6.33912, 10.7548])
+      expect(() => michaelisResult(100, 20, 5, null, t)).not.toThrow();
+  });
+
   it('refuses a target above the start', () => {
     throwsKey(() => michaelisResult(5, 2, 4, 10, 12), 'pharmacology.e.c1');
   });
