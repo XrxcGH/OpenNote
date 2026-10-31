@@ -6,7 +6,7 @@ import { present } from '../shared/calc';
 import type { Calc } from '../shared/calc';
 import { CONSTANT_SOURCES } from '../shared/constants';
 import { optional, textOf, value } from '../shared/form';
-import type { FieldSpec } from '../shared/form';
+import type { FieldSpec, Values } from '../shared/form';
 import { ToolForms } from '../shared/ToolForms';
 import type { FormDef } from '../shared/ToolForms';
 import { parseRows } from '../molecules/nmrPolymer';
@@ -36,46 +36,72 @@ const SCATTERS = ['step', 'barrier', 'well'] as const;
 const isPreset = (x: string): x is Preset => (PRESETS as readonly string[]).includes(x);
 const isScatter = (x: string): x is Scatter => (SCATTERS as readonly string[]).includes(x);
 
+/** The inputs each bound-state preset reads, so the form shows only those. */
+type WellField = 'width' | 'depth' | 'hw' | 'alpha' | 'force' | 'strength' | 'typed' | 'lo' | 'hi';
+const WELL_FIELDS: Record<WellField, FieldSpec> = {
+  width: num('width', '1'),
+  depth: num('depth', '10'),
+  hw: num('hw', '1'),
+  alpha: num('alpha', '10'),
+  force: num('force', '1'),
+  strength: num('strength', '1'),
+  typed: { id: 'typed', label: f('typed'), kind: 'text', initial: '2*x^2' },
+  lo: num('lo', '-2'),
+  hi: num('hi', '2'),
+};
+const PRESET_FIELDS: Record<Preset, readonly WellField[]> = {
+  infinite: ['width'],
+  finite: ['width', 'depth'],
+  harmonic: ['hw'],
+  double: ['width', 'depth'],
+  morse: ['depth', 'alpha'],
+  linear: ['force'],
+  delta: ['strength'],
+  typed: ['typed', 'lo', 'hi'],
+};
+const presetOf = (v: Values): Preset => {
+  const preset = textOf(v, 'preset');
+  return isPreset(preset) ? preset : 'infinite';
+};
+
 export const FORMS: readonly FormDef[] = [
   {
     id: 'well',
     label: 'kitModPhys.schrodinger.calcs.well',
-    fields: () => [
-      {
-        id: 'preset',
-        label: f('preset'),
-        kind: 'select',
-        options: PRESETS.map((one) => ({ value: one, label: t(`kitModPhys.schrodinger.presets.${one}`) })),
-      },
-      num('width', '1'),
-      num('depth', '10'),
-      num('hw', '1'),
-      num('alpha', '10'),
-      num('force', '1'),
-      num('strength', '1'),
-      { id: 'typed', label: f('typed'), kind: 'text', initial: '2*x^2' },
-      num('lo', '-2'),
-      num('hi', '2'),
-      mass,
-      num('points', '2000'),
-      num('levels', '5'),
-      num('a', ''),
-      num('b', ''),
-    ],
+    fields: (v) => {
+      const preset = presetOf(v);
+      return [
+        {
+          id: 'preset',
+          label: f('preset'),
+          kind: 'select',
+          options: PRESETS.map((one) => ({ value: one, label: t(`kitModPhys.schrodinger.presets.${one}`) })),
+        },
+        ...PRESET_FIELDS[preset].map((id) => WELL_FIELDS[id]),
+        mass,
+        num('points', '2000'),
+        num('levels', '5'),
+        num('a', ''),
+        num('b', ''),
+      ];
+    },
     solve: (v) => {
-      const preset = textOf(v, 'preset');
+      const preset = presetOf(v);
+      const reads = PRESET_FIELDS[preset] as readonly WellField[];
+      // Only the chosen preset's own fields are read; the rest stay out of the form and out of the check.
+      const read = (id: WellField, quantity: string) => (reads.includes(id) ? value(v, id, quantity) : NaN);
       return show(
         wellStates({
-          preset: isPreset(preset) ? preset : 'infinite',
-          width: value(v, 'width', 'width'),
-          depth: value(v, 'depth', 'depth'),
-          hw: value(v, 'hw', 'hw'),
-          alpha: value(v, 'alpha', 'alpha'),
-          force: value(v, 'force', 'force'),
-          strength: value(v, 'strength', 'strength'),
-          typed: textOf(v, 'typed'),
-          lo: value(v, 'lo', 'domain'),
-          hi: value(v, 'hi', 'domain'),
+          preset,
+          width: read('width', 'width'),
+          depth: read('depth', 'depth'),
+          hw: read('hw', 'hw'),
+          alpha: read('alpha', 'alpha'),
+          force: read('force', 'force'),
+          strength: read('strength', 'strength'),
+          typed: reads.includes('typed') ? textOf(v, 'typed') : '',
+          lo: read('lo', 'domain'),
+          hi: read('hi', 'domain'),
           massRatio: value(v, 'massRatio', 'massRatio'),
           points: value(v, 'points', 'points'),
           levels: value(v, 'levels', 'levels'),
