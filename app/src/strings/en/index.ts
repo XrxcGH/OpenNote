@@ -59,6 +59,7 @@ import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
 import { kitModPhys } from './kitModPhys';
+import { kitMusic } from './kitMusic';
 import { chem } from './chem';
 import { kitEcon } from './kitEcon';
 import { kitReasoning } from './kitReasoning';
@@ -151,6 +152,7 @@ export const en = {
   graph3d,
   engineering,
   kitModPhys,
+  kitMusic,
   chem,
   kitReasoning,
   kitChemMat,

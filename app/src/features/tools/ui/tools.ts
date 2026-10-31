@@ -47,7 +47,8 @@ export type ToolId =
   | 'kit-design'
   | 'kit-math'
   | 'kit-mechdyn'
-  | 'kit-physics';
+  | 'kit-physics'
+  | 'kitmusic';
 
 export interface ToolDef {
   id: ToolId;
@@ -92,6 +93,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'kit-earth', title: 'kitEarth.title', width: 520 },
   { id: 'kit-humanities', title: 'kitHumanities.title', width: 560 },
   { id: 'kit-reasoning', title: 'kitReasoning.title', width: 560 },
+  { id: 'kitmusic', title: 'kitMusic.window', width: 560 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },

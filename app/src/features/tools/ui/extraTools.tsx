@@ -89,6 +89,8 @@ const SignalsKit = lazy(() => import('../signals/kit').then((kit) => ({ default:
 // The reasoning kit loads on first open, and each of its tools loads when its tab opens.
 const KitReasoning = lazy(() => import('../reasoning').then((kit) => ({ default: kit.KitReasoningWindow })));
 
+// The music, script, camera, and studio tools load on first open.
+const KitMusic = lazy(() => import('../music/KitMusicTool'));
 // The solid mechanics kit loads with its engineering feature the first time its window opens.
 const SolidsKit = lazy(() =>
   import('../../engineering')
@@ -156,6 +158,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
       </Suspense>
     );
   }
+  if (tool === 'kitmusic')
+    return (
+      <Suspense fallback={null}>
+        <KitMusic />
+      </Suspense>
+    );
   if (tool === 'flashcards') return <DeckPanel />;
   if (tool === 'exam')
     return (

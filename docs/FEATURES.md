@@ -24,6 +24,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Math solvers](#math-solvers)
 - [Statistical models kit](#statistical-models-kit)
 - [Engineering tools](#engineering-tools)
+- [Music, script, camera, and studio tools](#music-script-camera-and-studio-tools)
 - [Subject tool kits](#subject-tool-kits)
 
 - [Document structure](#document-structure)
@@ -621,6 +622,21 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Machine learning lab | Nearest neighbors, trees, naive Bayes, logistic regression, the perceptron, a small neural network, ridge, and the lasso on toy sets or your data, with seeded splits, cross-validation, and the usual scores and curves. | Built, untested by hand |
 | Spatial statistics | Point-pattern statistics, Moran's I and Geary's C with local clusters, semivariograms, ordinary kriging with contour maps, and inverse-distance weighting. | Built, untested by hand |
 | Live calculation block from a model | The Insert menu's Live calculation block keeps the tool's answer with its key results on the page. Its Open in tool reopens the tool with the data and choices that were typed. | Built, untested by hand |
+
+## Music, script, camera, and studio tools
+
+On in Beta and off in Stable (flag `tools.music`). The [help page](help/music-script-camera-and-studio-tools.md) explains how to use them. One tool window with a tab for each tool; each takes typed values, works the problem, and shows results, worked steps, and assumptions, with Insert and, for the music tools, Play. Reference data is public domain, openly licensed, or rule-generated, and the source shows under the result.
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Score block | ABC notation read, engraved as a picture, played, transposed by interval, to a key, or for a transposing instrument, and shown as numbered notation, sargam, or guitar tablature. Bars are checked against the meter. | Built, untested by hand |
+| Music theory | Intervals, pitch and frequency, scales and modes from several traditions, melakarta by rule, maqam and gamelan in cents, chords, keys, Roman numerals, transposing instruments, pitch-class sets, twelve-tone matrices, jazz scales, and guitar shapes. | Built, untested by hand |
+| Voice-leading checker | Four-part chorale rules at three strictness levels and first to fourth species counterpoint, with each problem located. | Built, untested by hand |
+| Ear training | Seeded drills for intervals, chords, scales, melodic and rhythmic dictation, and sight-singing, graded sessions, and review dates from the flashcard schedule. | Built, untested by hand |
+| Tuning and rhythm | Cents and temperaments, beat rates, the harmonic series, a metronome, Euclidean rhythms, polyrhythms, and rhythmic cycles. | Built, untested by hand |
+| Script formatter | Fountain screenplays and stage plays laid out in script format, with page and time estimates and scene, character, location, and breakdown lists. | Built, untested by hand |
+| Camera, timing, and lighting | Exposure, depth of field, field of view, shutter angle, timecode, footage, animation planning, lighting, and media storage arithmetic. | Built, untested by hand |
+| Scale, color, and materials | Drawing scales, grid enlargement, color contrast and vision checks, color spaces, palettes, type scales, perspective grids, and material quantities. | Built, untested by hand |
 
 ## Subject tool kits
 
