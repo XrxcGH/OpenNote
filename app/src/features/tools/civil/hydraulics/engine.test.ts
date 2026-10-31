@@ -13,6 +13,7 @@ import {
   geometry,
   gumbelK,
   hardyCross,
+  hazenK,
   jump,
   kirpich,
   manning,
@@ -50,7 +51,9 @@ describe('rainfall and runoff', () => {
   });
 
   it('gives Kirpich in minutes by hand', () => {
-    within(kirpich(1000, 0.01), 0.0195 * 1000 ** 0.77 * 0.01 ** -0.385, 1e-12);
+    // 1000^0.77 = 204.2 and 0.01^-0.385 = 5.888, so 0.0195 x 204.2 x 5.888 = 23.45 min; the US form
+    // 0.0078 x (3281 ft)^0.77 x 0.01^-0.385 gives the same 23.4 min.
+    within(kirpich(1000, 0.01), 23.45, 0.01);
   });
 
   it('convolves a unit hydrograph and keeps its volume through the S-curve', () => {
@@ -109,6 +112,15 @@ describe('routing', () => {
     );
     expect(d.peakO).toBeLessThan(d.peakI);
     expect(d.peakH).toBeGreaterThan(0);
+    // Mass balance: the 3600 m3 triangle of inflow leaves as outflow or is still stored at the end.
+    let out = 0;
+    for (let i = 1; i < d.points.length; i++) {
+      const [ta, , oa] = d.points[i - 1]!;
+      const [tb, , ob] = d.points[i]!;
+      out += ((oa + ob) / 2) * (tb - ta);
+    }
+    const stored = 2000 * d.points[d.points.length - 1]![3];
+    within((out + stored) / 3600, 1, 0.01);
   });
 });
 
@@ -176,11 +188,23 @@ describe('open channels', () => {
     const yn = normalDepth(rect, 4.5, 0.015, 0.001);
     const p = directStep(rect, 4.5, 0.015, 0.001, 2, yn * 1.01, 40);
     expect(p.length).toBeLessThan(0);
+    // yn = 1.0001 m here: stepping from 0.9 m (M2) to 1.2 m would cross Sf = S0 and give a false length.
+    expect(key(() => directStep(rect, 4.5, 0.015, 0.001, 0.9, 1.2, 40))).toBe('hydraulics.errors.profileRange');
+    // yc = 0.6121 m: an M3 control at 0.4 m cannot step past the critical depth either.
+    expect(key(() => directStep(rect, 4.5, 0.015, 0.001, 0.4, 0.8, 40))).toBe('hydraulics.errors.profileRange');
+    expect(key(() => directStep(rect, 4.5, 0.015, 0, 0.4, 0.8, 40))).toBe('hydraulics.errors.profileRange');
   });
 
   it('gives weirs and orifices by hand', () => {
-    within(weirFlow('rect', 0.62, 0.3, 2), 0.62 * (2 / 3) * Math.sqrt(2 * G) * 2 * 0.3 ** 1.5, 1e-12);
-    within(weirFlow('orifice', 0.6, 2, 0.1), 0.6 * 0.1 * Math.sqrt(2 * G * 2), 1e-12);
+    // Worked by hand with sqrt(2g) = 4.4287: 0.4133 x 4.4287 x 2 x 0.16432; 0.06 x 6.2631; 0.3093 x 4.4287 x 0.017889.
+    within(weirFlow('rect', 0.62, 0.3, 2), 0.6016, 2e-4);
+    within(weirFlow('orifice', 0.6, 2, 0.1), 0.3758, 2e-4);
+    within(weirFlow('vnotch', 0.58, 0.2, 90), 0.02451, 2e-4);
+  });
+
+  it('gives a Hazen-Williams head loss that matches the velocity form', () => {
+    // 1000 m of 0.3 m pipe, C 100, Q 0.1 m3/s: V = 0.849 C R^0.63 S^0.54 with R = 0.075 m gives S = 0.01046.
+    within(hazenK(1000, 0.3, 100) * 0.1 ** 1.852, 10.46, 0.05);
   });
 });
 

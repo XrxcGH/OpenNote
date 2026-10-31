@@ -26,6 +26,8 @@ export const hydraulics = {
     steps: 'Use 2 to 400 steps.',
     depths: 'The two depths must be positive and differ.',
     normal: 'A step reached normal depth, where the profile never arrives. End short of normal depth.',
+    profileRange:
+      'The profile cannot cross the normal or critical depth; choose a target depth on the same side as the control depth.',
     cd: 'The discharge coefficient must be more than 0 and at most 1.2.',
     notch: 'The notch angle must be less than 180°.',
     exponent: 'The head loss exponent must be between 1 and 3.',

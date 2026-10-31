@@ -414,6 +414,10 @@ export function directStep(s: Section, Q: number, n: number, S0: number, y1: num
   need(n > 0, 'errors.positive', { name: '~hydraulics.f.n' });
   need(N >= 2 && N <= 400, 'hydraulics.errors.steps');
   need(y1 > 0 && y2 > 0 && y1 !== y2, 'hydraulics.errors.depths');
+  // A gradually varied profile only approaches yn and yc, so both ends must lie in the same zone.
+  const yc = criticalDepth(s, Q);
+  const yn = S0 > 0 ? normalDepth(s, Q, n, S0) : null;
+  need((y1 - yc) * (y2 - yc) > 0 && (yn === null || (y1 - yn) * (y2 - yn) > 0), 'hydraulics.errors.profileRange');
   const Sf = (y: number) => {
     const g = geometry(s, y);
     return ((n * Q) / (g.A * g.R ** (2 / 3))) ** 2;
