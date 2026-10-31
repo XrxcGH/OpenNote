@@ -6,7 +6,7 @@ import { HUMANITIES_TOOLS } from '../../tools/flags';
 import { addCommand } from './qolStudy';
 
 addCommand({
-  id: 'kits.humanities',
+  id: 'tools.kit-humanities',
   title: 'kitHumanities.open',
   keywords: 'kitHumanities.keywords',
   category: 'general',

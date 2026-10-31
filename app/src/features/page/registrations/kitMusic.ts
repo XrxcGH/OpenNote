@@ -3,7 +3,7 @@ import { MUSIC_TOOLS, openMusicKit } from '../../tools';
 import { addCommand } from './qolStudy';
 
 addCommand({
-  id: 'tools.music',
+  id: 'tools.kitmusic',
   title: 'kitMusic.open',
   keywords: 'kitMusic.openKeywords',
   category: 'general',

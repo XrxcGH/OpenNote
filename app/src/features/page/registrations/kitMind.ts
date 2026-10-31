@@ -10,7 +10,7 @@ const open = async (tool?: string) => (await import('../../tools')).openMindKit(
 void import('../../tools').then((tools) => tools.registerKit('mind', (tool) => open(tool)));
 
 addCommand({
-  id: 'tools.kitMind',
+  id: 'tools.kit-mind',
   title: 'kitMind.open',
   keywords: 'kitMind.keywords',
   category: 'general',
