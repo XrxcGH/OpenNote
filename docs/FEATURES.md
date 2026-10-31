@@ -590,7 +590,7 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 |---|---|---|
 | Linear regression | Fits a model formula with categorical predictors and interactions, with robust and clustered errors, diagnostics, prediction intervals, nested-model tests, moderation, mediation, and a random intercept. | Built, untested by hand |
 | Logistic and Poisson regression | Fits 0/1, grouped, and count outcomes with odds or rate ratios, likelihood-ratio tests, the ROC curve, and the IRLS steps. | Built, untested by hand |
-| Econometrics and causal inference | Panel fixed effects, two-stage least squares, difference-in-differences, regression discontinuity, propensity-score weighting and matching, and back-door sets from causal diagrams. | Built, untested by hand |
+| Econometrics and causal inference | Panel fixed effects, two-stage least squares, difference-in-differences with event-study plots, regression discontinuity, propensity-score weighting and matching, and back-door sets from causal diagrams. | Built, untested by hand |
 | Survival analysis | Kaplan-Meier curves with log-rank tests, Cox proportional hazards, and life tables. | Built, untested by hand |
 | Time series and forecasting | Correlograms and Ljung-Box, decomposition, exponential smoothing, AR and ARIMA forecasts with intervals, hold-out accuracy, Mann-Kendall with Sen's slope, and Dickey-Fuller with simulated quantiles. | Built, untested by hand |
 | PCA, factors, and clusters | Principal components, factor analysis with rotation and parallel analysis, k-means, Gaussian mixtures by EM, hierarchical clustering with a dendrogram, a clustered heat map, and multidimensional scaling. | Built, untested by hand |

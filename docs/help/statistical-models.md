@@ -20,6 +20,7 @@ Fit models to data and see each answer worked out, step by step. These tools are
 - **Panel fixed effects** remove each entity's mean (or each entity's and each period's, or take first differences) and give the within slope with classical or clustered errors.
 - **Instrumental variables** run two-stage least squares with the first-stage F, the weak-instrument rule of thumb, and the Durbin-Wu-Hausman test.
 - **Difference-in-differences** shows the 2 × 2 table of means and the same effect as a regression interaction, with clustered errors.
+- **Event study** gives a coefficient for every period relative to the one before treatment began, with entity and period effects, the group gaps they come from, and a plot with the confidence band to check pre-trends.
 - **Regression discontinuity** fits a weighted line on each side of the cutoff, with a triangular or uniform kernel, a binned scatter, and the estimate at other bandwidths.
 - **Propensity scores** come from a logistic model and give weighted ATE and ATT, caliper matching, and a balance table of standardized mean differences.
 - **Causal diagrams** take arrows such as `Z -> X`, list every minimal back-door adjustment set, flag mediators and descendants that must not be adjusted for, and check a set you type.

@@ -15,6 +15,7 @@ export const causal = {
     exogenous: 'Exogenous controls',
     treated: 'Treated group (1 or 0)',
     post: 'After (1 or 0)',
+    adoption: 'First treated period',
     cluster: 'Cluster',
     running: 'Running variable',
     cutoff: 'Cutoff',
@@ -33,6 +34,7 @@ export const causal = {
     fe: 'Panel fixed effects',
     iv: 'Instrumental variables (2SLS)',
     did: 'Difference-in-differences',
+    event: 'Event study',
     rd: 'Regression discontinuity',
     propensity: 'Propensity scores',
     dag: 'Causal diagram',
@@ -49,6 +51,7 @@ export const causal = {
     exposure: 'The cause whose effect you want.',
     response: 'The effect.',
     adjust: 'Names separated by commas, to check whether they block every back-door path.',
+    adoption: 'The period in which every treated entity starts treatment. The period before it is the reference.',
   },
   row: {
     slope: 'Within slope, first predictor',
@@ -67,6 +70,8 @@ export const causal = {
     did: 'Difference-in-differences',
     low: 'Lower limit',
     high: 'Upper limit',
+    eventEffect: 'Effect in the first treated period',
+    reference: 'Reference period',
     rdEffect: 'Jump at the cutoff',
     leftIntercept: 'Left line at the cutoff',
     rightIntercept: 'Right line at the cutoff',
@@ -122,6 +127,11 @@ export const causal = {
     before: 'Before',
     after: 'After',
     change: 'Change',
+    k: 'Periods from the start',
+    period: 'Period',
+    treatedMean: 'Treated mean',
+    controlMean: 'Control mean',
+    gap: 'Treated minus control',
     bandwidth: 'Bandwidth',
     covariate: 'Covariate',
     raw: 'SMD before',
@@ -135,6 +145,8 @@ export const causal = {
     coefficients: 'Coefficients',
     firstStage: 'First stage',
     means: 'Means before and after',
+    eventCoefs: 'Event-study coefficients',
+    eventGaps: 'Group means in each period',
     sensitivity: 'Estimate at other bandwidths',
     balance: 'Covariate balance (standardized mean differences)',
     sets: 'Minimal back-door adjustment sets',
@@ -147,6 +159,8 @@ export const causal = {
     exclusion: 'The instruments affect the outcome only through the endogenous predictors.',
     parallelTrends: 'Without the treatment, both groups would have changed by the same amount.',
     noAnticipation: 'The treated group did not change before the treatment began.',
+    commonStart:
+      'Every treated entity starts in the same period. With starts at different times, these coefficients can mislead.',
     continuity: 'Without the treatment, the outcome would change smoothly across the cutoff.',
     noSorting: 'Units cannot place themselves just above or below the cutoff.',
     ignorability: 'Given the covariates, treatment is as good as random (no unmeasured confounders).',
@@ -166,6 +180,9 @@ export const causal = {
     treatedGroup: 'Treated',
     controlGroup: 'Control',
     counterfactual: 'Treated without the treatment',
+    eventTime: 'Periods since the treatment began',
+    eventEffect: 'Effect relative to the period before',
+    eventEstimate: 'Coefficient',
     running: 'Running variable',
     outcome: 'Outcome',
     bins: 'Bin means',
@@ -184,6 +201,7 @@ export const causal = {
     within: 'Within-entity relationship',
     firstStage: 'First stage',
     did: 'Group means before and after',
+    event: 'Event-study coefficients with their confidence band',
     rd: 'Binned scatter and local lines at the cutoff',
     sensitivity: 'Jump at other bandwidths',
     overlap: 'Propensity scores by group',
@@ -194,6 +212,7 @@ export const causal = {
     panel: 'Panel of 3 firms over 3 years',
     iv: 'One instrument, one endogenous predictor',
     did: 'Policy change in 3 of 6 states',
+    event: 'Policy start in 2 of 4 counties',
     rd: 'Scholarship at a test-score cutoff',
     propensity: 'Job training and earnings',
     dag: 'Confounder, mediator, and collider',
@@ -222,6 +241,21 @@ export const causalSteps = {
   didTable: 'The treated mean went from {tPre} to {tPost}; the control mean went from {cPre} to {cPost}.',
   did: 'The effect is the treated change minus the control change:',
   didRegression: 'The same number is δ in this regression; its {kind} standard error is {se}.',
+  eventSetup:
+    'Count periods from the first treated one, {adoption}, where k = 0. The period before, {reference}, is the ' +
+    'reference (k = −1), so it has no dummy and its coefficient is 0.',
+  eventModel: 'Fit entity and period effects with one treated-group dummy for every other period:',
+  eventGap:
+    'With every entity in every period, a coefficient is that period’s treated-minus-control gap minus the ' +
+    'reference gap. For period {period}:',
+  eventUnbalanced:
+    'Some entities miss periods, so each coefficient comes from the regression, not from the gaps alone.',
+  eventClassicalSe:
+    'The standard error, {se}, uses {df} degrees of freedom, after one for each entity and period mean removed.',
+  eventPre:
+    'Before the start, the coefficients should be near 0. The largest in size is {b} at k = {k} (p = {p}); large ' +
+    'ones suggest the trends were not parallel.',
+  eventNoPre: 'With only 1 period before the start, there is no earlier coefficient to check the trends against.',
   parallelTrends: 'This is causal if the groups would have changed alike without the treatment (parallel trends).',
   rdWindow:
     'Use the points within {h} of the cutoff {c}, with a {kernel} kernel: {left} on the left, {right} on the right.',
@@ -248,6 +282,9 @@ export const causalSteps = {
   wordsFe: 'Within entities, a 1-unit rise in {x} goes with a change of {b} in {y} (SE {se}, p = {p}).',
   wordsIv: 'By 2SLS, a 1-unit rise in {x} changes {y} by {b} (SE {se}; first-stage F = {f}).',
   wordsDid: 'The treatment changed {y} by {d} more than the control group changed (SE {se}, p = {p}).',
+  wordsEvent:
+    'In the first treated period, {y} rose by {b} more in the treated group than in the control group, relative ' +
+    'to the period before ({level}% CI {lo} to {hi}).',
   wordsRd: 'At the cutoff {c}, {y} jumps by {t} ({level}% CI {lo} to {hi}).',
   wordsPropensity:
     'Weighting by propensity scores, treatment changes {y} by {ate} on average (SE {se}); matching gives {att} ' +

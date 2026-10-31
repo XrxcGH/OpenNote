@@ -8,6 +8,7 @@ import { percent } from '../kit/format';
 import { svg, text, line, W, type DrawContext } from '../kit/picture';
 import { columnList, type Outcome, type Picture, type ResultTable, type ToolSpec, type Values } from '../kit/spec';
 import { fail, step } from '../kit/types';
+import { EVENT, eventOutcome } from './eventView';
 import { adjustmentSets, isBackdoorSet, layers, parseDag, type Dag } from './dag';
 import {
   differenceInDifferences,
@@ -633,6 +634,8 @@ function run(values: Values): Outcome {
       return ivOutcome(values);
     case 'did':
       return didOutcome(values);
+    case 'event':
+      return eventOutcome(values);
     case 'rd':
       return rdOutcome(values);
     case 'propensity':
@@ -649,17 +652,18 @@ const notDag = (v: Values) => v.analysis !== 'dag';
 export const causalSpec: ToolSpec = {
   fields: [
     { id: 'data', type: 'data', first: PANEL, rows: 6, when: notDag },
-    { id: 'analysis', type: 'choice', options: ['fe', 'iv', 'did', 'rd', 'propensity', 'dag'], first: 'fe' },
+    { id: 'analysis', type: 'choice', options: ['fe', 'iv', 'did', 'event', 'rd', 'propensity', 'dag'], first: 'fe' },
     { id: 'outcome', type: 'column', data: 'data', first: 'y', when: notDag },
     { id: 'regressors', type: 'column', data: 'data', first: 'x', multi: true, when: is('fe') },
-    { id: 'entity', type: 'column', data: 'data', first: 'firm', when: is('fe') },
-    { id: 'time', type: 'column', data: 'data', first: 'year', optional: true, when: is('fe') },
+    { id: 'entity', type: 'column', data: 'data', first: 'firm', when: is('fe', 'event') },
+    { id: 'time', type: 'column', data: 'data', first: 'year', optional: true, when: is('fe', 'event') },
     { id: 'effects', type: 'choice', options: ['entity', 'twoway', 'firstdiff'], first: 'entity', when: is('fe') },
-    { id: 'se', type: 'choice', options: ['classical', 'cluster'], first: 'classical', when: is('fe') },
+    { id: 'se', type: 'choice', options: ['classical', 'cluster'], first: 'classical', when: is('fe', 'event') },
     { id: 'endogenous', type: 'column', data: 'data', first: 'x', multi: true, when: is('iv') },
     { id: 'instruments', type: 'column', data: 'data', first: 'z', multi: true, when: is('iv') },
     { id: 'exogenous', type: 'column', data: 'data', first: '', optional: true, multi: true, when: is('iv') },
-    { id: 'treated', type: 'column', data: 'data', first: 'treated', when: is('did') },
+    { id: 'treated', type: 'column', data: 'data', first: 'treated', when: is('did', 'event') },
+    { id: 'adoption', type: 'number', first: '2021', when: is('event') },
     { id: 'post', type: 'column', data: 'data', first: 'post', when: is('did') },
     { id: 'cluster', type: 'column', data: 'data', first: '', optional: true, when: is('did') },
     { id: 'running', type: 'column', data: 'data', first: 'score', when: is('rd') },
@@ -673,7 +677,7 @@ export const causalSpec: ToolSpec = {
     { id: 'exposure', type: 'text', first: 'X', rows: 1, when: is('dag') },
     { id: 'response', type: 'text', first: 'Y', rows: 1, when: is('dag') },
     { id: 'adjust', type: 'text', first: '', rows: 1, when: is('dag') },
-    { id: 'level', type: 'number', first: '0.95', min: 0.5, max: 0.999, when: (v) => is('fe', 'iv', 'did', 'rd')(v) },
+    { id: 'level', type: 'number', first: '0.95', min: 0.5, max: 0.999, when: is('fe', 'iv', 'did', 'event', 'rd') },
   ],
   run,
   examples: [
@@ -696,6 +700,19 @@ export const causalSpec: ToolSpec = {
     {
       id: 'did',
       values: { data: DID, analysis: 'did', outcome: 'y', treated: 'treated', post: 'post', cluster: 'state' },
+    },
+    {
+      id: 'event',
+      values: {
+        data: EVENT,
+        analysis: 'event',
+        outcome: 'y',
+        entity: 'county',
+        time: 'year',
+        treated: 'treated',
+        adoption: '2021',
+        se: 'cluster',
+      },
     },
     {
       id: 'rd',
