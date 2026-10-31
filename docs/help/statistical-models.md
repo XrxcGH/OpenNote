@@ -7,7 +7,7 @@ Fit models to data and see each answer worked out, step by step. These tools are
 - Open the command palette (Ctrl+K) and type the tool's name, such as "Time series and forecasting", or type "Statistical models" to open the window on its first tab.
 - The window has a tab for each tool. Use the arrow keys to move between tabs.
 - Paste a table into Data, with the column names on the first line, or open a CSV or TSV file. Then pick the columns each role uses. Every tool has ready-made examples under Example.
-- Results, worked steps, assumptions, and pictures update as you type. Insert adds the answer line, the equation, a result table, the steps, the result in words, or a picture to the page you last clicked in.
+- Results, worked steps, assumptions, and pictures update as you type. Insert adds the answer line, the equation, a result table, the steps, the result in words, or a picture to the page you last clicked in. Live calculation block adds a block that keeps the answer and key results, and its Open in tool reopens the tool with the data you typed.
 - Tools that use random numbers have a seed, so the same inputs always give the same answer.
 
 ## Regression
