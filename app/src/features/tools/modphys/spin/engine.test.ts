@@ -83,6 +83,8 @@ describe('spin matrices', () => {
     );
     const values = hermitianEigenvalues(sx);
     [-1, 0, 1].forEach((v, k) => expect(Math.abs(values[k]! - v)).toBeLessThan(1e-12));
+    // The middle eigenvalue of spin-1 Sx is exactly 0 (m = 0), not rounding noise.
+    expect(values[1]).toBe(0);
   });
 
   it('obeys [Sx, Sy] = i Sz for spin 3/2', () => {

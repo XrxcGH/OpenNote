@@ -157,7 +157,10 @@ export function hermitianEigenvalues(a: CMatrix): number[] {
       return i < n ? -x.im : x.im;
     }),
   );
-  return eigSymmetric(big).values.filter((_, k) => k % 2 === 0);
+  const values = eigSymmetric(big).values.filter((_, k) => k % 2 === 0);
+  // An exact zero eigenvalue comes back as rounding noise (−4.4×10⁻¹⁶); snap it so it prints as 0.
+  const scale = Math.max(1, ...values.map(Math.abs));
+  return values.map((v) => (Math.abs(v) < 1e-12 * scale ? 0 : v));
 }
 
 export const matrixText = (a: CMatrix): string =>
