@@ -14,7 +14,8 @@ export { countFigures } from './science/sigfigs';
 export { seedSigFigs } from './ui/SigFigsTool';
 export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
-export { openMindKit } from './mind/open';
+// Loads on first use, so the kit's opener stays out of every window that imports this file.
+export const openMindKit = async (tool?: string): Promise<void> => (await import('./mind/open')).openMindKit(tool);
 export { insertIntoPage } from './ui/CalculatorTool';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { loadStored, saveStored } from './ui/storage';
