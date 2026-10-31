@@ -14,6 +14,10 @@ export interface Series {
   /** For dots: a name written beside each point (empty for none) and each dot's radius in pixels. */
   names?: readonly string[];
   sizes?: readonly number[];
+  /** For dots: a short muted tag under each point, dropped where it would cover another label. */
+  tags?: readonly string[];
+  /** The names may be dropped where they would cover another series' label (the bright stars under the planets). */
+  minorNames?: boolean;
 }
 
 export interface Level {
@@ -216,9 +220,7 @@ function seriesNodes(a: Axes, s: Series, p: Palette): SvgNode[] {
     return pts.flatMap(([x, y], i): SvgNode[] => {
       if (!inside(x, y)) return [];
       const r = s.sizes?.[i] ?? 3;
-      const dot: SvgNode = { tag: 'circle', attrs: { cx: n(x), cy: n(y), r: n(r), fill: colour } };
-      const name = s.names?.[i];
-      return name ? [dot, text(x + r + 2, y + 4, name, { fill: p.ink })] : [dot];
+      return [{ tag: 'circle', attrs: { cx: n(x), cy: n(y), r: n(r), fill: colour } }];
     });
   }
   let d = '';
@@ -234,6 +236,73 @@ function seriesNodes(a: Axes, s: Series, p: Palette): SvgNode[] {
   const attrs: Record<string, string | number> = { d, fill: 'none', stroke: colour, 'stroke-width': 2 };
   if (DASH[kind]) attrs['stroke-dasharray'] = DASH[kind];
   return d ? [{ tag: 'path', attrs }] : [];
+}
+
+interface Label {
+  x: number;
+  y: number;
+  r: number;
+  body: string;
+  /** 0: a name that is always drawn; 1: a name that may be dropped; 2: a muted tag that may be dropped. */
+  rank: number;
+}
+
+/** About the width of one 11 px character. */
+const CHAR = 6;
+
+/**
+ * Writes the dots' names and tags so none covers another: each tries beside, above, and below its dot. The names that
+ * must stay are placed first; a droppable label that finds no free place is left out.
+ */
+function labelNodes(a: Axes, series: readonly Series[], p: Palette): SvgNode[] {
+  const labels: Label[] = [];
+  for (const s of series) {
+    if ((s.kind ?? 'line') !== 'dots') continue;
+    s.points.forEach(([px, py], i) => {
+      const x = a.sx(px);
+      const y = a.sy(py);
+      if (!inside(x, y)) return;
+      const r = s.sizes?.[i] ?? 3;
+      const name = s.names?.[i];
+      const tag = s.tags?.[i];
+      if (name) labels.push({ x, y, r, body: name, rank: s.minorNames ? 1 : 0 });
+      if (tag) labels.push({ x, y, r, body: tag, rank: 2 });
+    });
+  }
+  labels.sort((l, m) => l.rank - m.rank);
+  // The legend's rows are taken first.
+  const placed: [number, number, number, number][] = series
+    .filter((s) => s.label)
+    .map((s, i) => [M.left + 8, M.top + 3 + i * 16, M.left + 34 + s.label!.length * CHAR, M.top + 16 + i * 16]);
+  const free = (b: [number, number, number, number]) =>
+    placed.every(([x1, y1, x2, y2]) => b[2] <= x1 || b[0] >= x2 || b[3] <= y1 || b[1] >= y2);
+  const out: SvgNode[] = [];
+  for (const l of labels) {
+    const w = l.body.length * CHAR;
+    // Baselines and left edges: beside, above, below (a tag starts below, centered).
+    const spots: [number, number][] =
+      l.rank === 2
+        ? [
+            [l.x - w / 2, l.y + l.r + 10],
+            [l.x - w / 2, l.y - l.r - 3],
+            [l.x + l.r + 2, l.y + 4],
+          ]
+        : [
+            [l.x + l.r + 2, l.y + 4],
+            [l.x - w / 2, l.y - l.r - 3],
+            [l.x - w / 2, l.y + l.r + 10],
+          ];
+    const boxes = spots.map(([x, y]): [number, number, number, number] => [x, y - 9, x + w, y + 2]);
+    let k = boxes.findIndex(free);
+    if (k < 0) {
+      if (l.rank > 0) continue;
+      k = 0;
+    }
+    placed.push(boxes[k]!);
+    const [x, y] = spots[k]!;
+    out.push(text(x, y, l.body, { fill: l.rank === 2 ? p.muted : p.ink }));
+  }
+  return out;
 }
 
 function levelNodes(a: Axes, level: Level, p: Palette): SvgNode[] {
@@ -295,6 +364,7 @@ export function plotTree(spec: PlotSpec, p: Palette): SvgNode {
       ...frame(a, spec, p),
       ...(spec.levels ?? []).flatMap((level) => levelNodes(a, level, p)),
       ...spec.series.flatMap((s) => seriesNodes(a, s, p)),
+      ...labelNodes(a, spec.series, p),
       ...legend(spec, p),
     ],
   };
