@@ -61,7 +61,18 @@ function InsertButtons(props: {
   insert: KitInsert;
 }) {
   const { outcome, shown, steps, insert } = props;
-  const done = (ok: boolean) => announce(t(ok ? 'kitPhysics.ui.inserted' : 'kitPhysics.ui.noPage'));
+  // With no page caret in a paragraph (a picture just inserted stays selected) the insert does nothing, so the
+  // reason shows beside the buttons for a few seconds as well as being announced.
+  const [missed, setMissed] = useState(0);
+  useEffect(() => {
+    if (!missed) return;
+    const timer = window.setTimeout(() => setMissed(0), 5000);
+    return () => window.clearTimeout(timer);
+  }, [missed]);
+  const done = (ok: boolean) => {
+    announce(t(ok ? 'kitPhysics.ui.inserted' : 'kitPhysics.ui.noPage'));
+    setMissed(ok ? 0 : (n) => n + 1);
+  };
   const primary = outcome.rows.flatMap((row, i) => (row.primary ? [shown[i]] : []));
   const answer = (primary.length ? primary : shown.slice(0, 1)).map(rowText).join('; ');
   const plot = outcome.plot;
@@ -105,6 +116,12 @@ function InsertButtons(props: {
         >
           {t('kitPhysics.ui.insertPicture')}
         </Button>
+      ) : null}
+      {missed ? (
+        // The live announcement already speaks this, so screen readers skip the visible copy.
+        <span className={styles.insertNotice} aria-hidden="true" data-testid="insert-notice">
+          {t('kitPhysics.ui.noPage')}
+        </span>
       ) : null}
     </div>
   );

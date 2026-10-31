@@ -105,4 +105,9 @@
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
   }
+
+  .insertNotice {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
 }
