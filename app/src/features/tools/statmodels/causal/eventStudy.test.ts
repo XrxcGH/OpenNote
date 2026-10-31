@@ -1,6 +1,6 @@
-// Event-study coefficients against values worked out separately: by hand from the group means of a balanced
-// 4 x 4 panel, and by least squares with a dummy column for every entity and period (the LSDV form), which must
-// give the same coefficients and classical standard errors as the within transformation.
+// Event-study coefficients against values worked out separately. The first check is by hand, from the group means
+// of a balanced 4 x 4 panel. The second is least squares with a dummy column for every entity and period (the LSDV
+// form). It must give the same coefficients and classical standard errors as the within transformation.
 import { describe, expect, it } from 'vitest';
 import { leastSquares } from '../kit/linalg';
 import { StatError } from '../kit/types';
@@ -16,7 +16,7 @@ const code = (f: () => unknown): string => {
   return 'none';
 };
 
-// A and B are treated from period 3; C and D never are.
+// Entities A and B are treated from period 3; C and D never are.
 const ent = ['A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'C', 'C', 'C', 'C', 'D', 'D', 'D', 'D'];
 const per = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
 const tr = [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0];

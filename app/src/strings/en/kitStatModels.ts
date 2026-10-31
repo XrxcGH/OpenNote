@@ -57,15 +57,16 @@ export const kitStatModels = {
     title: 'Econometrics and causal inference',
     keywords:
       'econometrics causal inference fixed effects panel within first differences instrumental variables two-stage ' +
-      'least squares 2sls weak instrument hausman difference in differences event study ' +
-      'leads lags pre-trends parallel trends regression discontinuity propensity score matching inverse probability weighting ate att dag back door confounder',
+      'least squares 2sls weak instrument hausman difference in differences event study pre-trends parallel trends ' +
+      'regression discontinuity propensity score matching inverse probability weighting ate att dag back door ' +
+      'confounder',
   } as Eager & typeof CausalWords,
   timeseries: {
     title: 'Time series and forecasting',
     keywords:
-      'time series forecasting autocorrelation acf pacf correlogram ljung box periodogram spectrum ' +
-      'decomposition seasonal trend moving average exponential smoothing holt winters arima ar yule walker forecast interval mann kendall sen slope ' +
-      'dickey fuller unit root stationarity mae rmse mape mase',
+      'time series forecasting autocorrelation acf pacf correlogram ljung box periodogram spectrum decomposition ' +
+      'seasonal trend moving average exponential smoothing holt winters arima ar yule walker forecast interval mann ' +
+      'kendall sen slope dickey fuller unit root stationarity mae rmse mape mase',
   } as Eager & typeof TimeseriesWords,
   multivariate: {
     title: 'PCA, factors, and clusters',

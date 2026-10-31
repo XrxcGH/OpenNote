@@ -1,8 +1,8 @@
-// Event-study coefficients: difference-in-differences one period at a time. Every entity starts treatment in the
-// same period (or never), the period just before it is the reference, and the model is
-// y_it = a_i + l_t + sum over k != -1 of b_k T_i 1[t is k periods from the start] + u_it,
-// fitted with entity and period effects. With every entity seen in every period, b_k is the treated-minus-control
-// gap in that period minus the same gap in the reference period. Coefficients before the start check the parallel
+// Event-study coefficients: difference-in-differences one period at a time. Every treated entity starts treatment
+// in the same period. The period just before it is the reference. The model has entity and period effects:
+// y_it = a_i + l_t + sum over k != -1 of b_k T_i 1[t is k periods from the start] + u_it.
+// With every entity seen in every period, b_k is the treated-minus-control gap in that period minus the same gap in
+// the reference period. Coefficients before the start check the parallel
 // trends assumption; those after it trace the effect over time.
 import { mean } from '../kit/linalg';
 import { fail } from '../kit/types';
