@@ -114,7 +114,9 @@ describe('the sky chart and the planets form', () => {
         return [x, y - 9, x + String(one.children![0]).length * 6, y + 2] as const;
       });
     boxes.forEach((b, i) =>
-      boxes.slice(i + 1).forEach((c) => expect(b[2] <= c[0] || c[2] <= b[0] || b[3] <= c[1] || c[3] <= b[1]).toBe(true)),
+      boxes
+        .slice(i + 1)
+        .forEach((c) => expect(b[2] <= c[0] || c[2] <= b[0] || b[3] <= c[1] || c[3] <= b[1]).toBe(true)),
     );
   });
 });
