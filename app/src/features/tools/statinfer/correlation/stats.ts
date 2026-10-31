@@ -186,8 +186,8 @@ export interface Partial {
 }
 
 /**
- * The correlation of x and y with z held fixed, r = (r_xy − r_xz r_yz)/√((1 − r_xz²)(1 − r_yz²)), and the
- * 2 semipartials (z taken out of x only, and out of y only), with the t test on n − 3 df when n is known.
+ * The correlation of x and y with z held fixed, r = (r_xy − r_xz r_yz)/√((1 − r_xz²)(1 − r_yz²)). Also gives
+ * the 2 semipartials (z taken out of x only, and out of y only), and the t test on n − 3 df when n is known.
  */
 export function partial(rxy: number, rxz: number, ryz: number, n: number | null): Partial {
   for (const r of [rxy, rxz, ryz]) check(Number.isFinite(r) && r >= -1 && r <= 1, 'correlationRange');
