@@ -57,12 +57,12 @@ impl CoreKit {
 
     /// A second core on the same files, codec, and clock, as another process of the app would be.
     pub fn beside(&self) -> CoreKit {
-        CoreKit::build(
-            self.fs.clone(),
-            self.codec.clone(),
-            self.clock.clone(),
-            Timings::default(),
-        )
+        self.beside_with(Timings::default())
+    }
+
+    /// [`CoreKit::beside`] with its own timings.
+    pub fn beside_with(&self, timings: Timings) -> CoreKit {
+        CoreKit::build(self.fs.clone(), self.codec.clone(), self.clock.clone(), timings)
     }
 
     fn build(fs: HeldFs, codec: RegistryCodec, clock: Arc<TestClock>, timings: Timings) -> CoreKit {
