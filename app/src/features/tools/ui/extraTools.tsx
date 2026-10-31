@@ -10,7 +10,7 @@ const FluidHeatKit = lazy(() =>
 );
 import { CitationsPanel } from '../../citations';
 import { FigureTool, FormulaSheetTool, PracticeTool } from '../../docstructure';
-import { DeckPanel } from '../../study';
+import { DeckPanel, loadExamPanel } from '../../study';
 import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
 import { ConverterTool } from './ConverterTool';
@@ -27,6 +27,9 @@ import type { ToolId } from './tools';
 const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
+
+// Practice exams load with their window, on first open.
+const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
 
 // The circuits and energy kit loads on first open.
 const KitElectrical = lazy(() =>
@@ -120,6 +123,12 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
     );
   }
   if (tool === 'flashcards') return <DeckPanel />;
+  if (tool === 'exam')
+    return (
+      <Suspense fallback={null}>
+        <ExamPanel />
+      </Suspense>
+    );
   if (tool === 'converter') return <ConverterTool />;
   if (tool === 'reference') return <ReferenceTool />;
   if (tool === 'citations') return <CitationsPanel />;

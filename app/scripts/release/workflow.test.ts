@@ -351,7 +351,7 @@ describe('the files that get signed', () => {
 
   it('are checked after every download and before anything is signed', () => {
     const downloads = order.flatMap((name, place) => (name.startsWith('Download') ? [place] : []));
-    expect(downloads).toHaveLength(4);
+    expect(downloads).toHaveLength(RELEASE_FILES.length + 1);
     expect(order.indexOf(check)).toBeGreaterThan(Math.max(...downloads));
     expect(order.indexOf(check)).toBeLessThan(order.indexOf('Sign the updates'));
     expect(order.indexOf(check)).toBeLessThan(order.indexOf('Sign with a throwaway key (dry run)'));

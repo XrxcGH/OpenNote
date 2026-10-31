@@ -28,7 +28,10 @@ import { QOL_FLAGS } from '../features/qol/flags';
 import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
+import { SYNC_FLAGS } from '../features/sync/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { TUTOR_FLAGS } from '../features/tutor/flags';
+import type { TutorFlagId } from '../features/tutor/flags';
 import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
 import type { DesignKitFlagId } from '../features/tools/flags';
 import { KIT_FLAGS } from '../features/tools/flags';
@@ -61,7 +64,10 @@ export type FlagId =
   | 'interop.import'
   | 'interop.export'
   | 'interop.exportPdf'
+  | 'interop.latexExport'
   | 'interop.oneNoteFiles'
+  /** Goodnotes, Notability, and Samsung Notes files (ADR 0053). */
+  | 'interop.notesApps'
   /** Import of older and binary office files: .doc, .rtf, .xls, .xlsb, and .ods. */
   | 'interop.legacyFormats'
   | Phase4FlagId
@@ -84,8 +90,12 @@ export type FlagId =
   | KitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
+  /** Optional end-to-end-encrypted sync, Settings > Sync (features/sync/flags.ts). */
+  | 'sync.e2ee'
   /** The account and media features (features/accounts/flags.ts). */
   | AccountsFlagId
+  /** The tutor (features/tutor/flags.ts). */
+  | TutorFlagId
   /** The physics tool kit window (features/tools/physics). */
   | 'kits.physics';
 
@@ -157,6 +167,7 @@ type ToolsQolFlagId =
   | 'study.import'
   | 'study.tape'
   | 'study.tapeBlanks'
+  | 'study.exams'
   | 'tools.converter'
   | 'tools.reference'
   | 'tools.dictionary'
@@ -365,6 +376,8 @@ export const FLAGS: readonly FlagDef[] = [
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
   ...REASONING_FLAGS,
+  ...TUTOR_FLAGS,
+  ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,
   ...KIT_FLAGS,
 ];

@@ -249,6 +249,14 @@
     overflow-wrap: anywhere;
   }
 
+  .limits {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: var(--space-6);
+    overflow-wrap: anywhere;
+  }
+
   .flags {
     display: grid;
     gap: var(--space-3);

@@ -1,7 +1,7 @@
 name: release
 
-# Pushing a tag such as v1.0.0 runs the release checklist and CI, builds one exe per Windows architecture, signs the
-# updates, and publishes a GitHub Release.
+# Pushing a tag such as v1.0.0 runs the release checklist and CI, builds one exe per Windows architecture, a macOS
+# dmg, and a Linux AppImage, signs the updates, and publishes a GitHub Release.
 #
 # Running the workflow by hand (workflow_dispatch) is a dry run. It does everything except publish, signs with a
 # key made for that run, tests an update from the last beta to the new build, and keeps the results as run
@@ -110,7 +110,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           ENFORCE: ${{ needs.version.outputs.enforce }}
         run: |
-          $extra = if ($env:ENFORCE -eq 'true') { @() } else { @('--report') }
+          [string[]]$extra = if ($env:ENFORCE -eq 'true') { @() } else { @('--report') }
           $version = $env:TAG -replace '^v', ''
           node app/scripts/release/checklist.ts --version $version --tag $env:TAG --markdown checklist.md @extra
       - name: Show the checklist in the run summary
@@ -125,20 +125,24 @@ jobs:
       contents: read
 
   build:
-    # Builds one exe per Windows architecture with a read-only token and no secrets. The x64 runner
-    # cross-compiles the 32-bit and ARM64 exes with the MSVC tools it has for those architectures.
+    # Builds every release file with a read-only token and no secrets: one exe per Windows architecture, one
+    # universal dmg for macOS, and one AppImage for Linux (ADR 0055). The x64 Windows runner cross-compiles the 32-bit
+    # and ARM64 exes with the MSVC tools it has for those architectures. The Mac and Linux files stay unsigned until
+    # the owner adds the signing secrets that docs/RELEASING.md lists.
     needs: [ci, checklist]
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     outputs:
-      # The SHA-256 of each exe, under a name for its Rust target. The package job signs an exe only if it still has
+      # The SHA-256 of each file, under a name for its target. The package job signs a file only if it still has
       # this hash. Each leg of the matrix sets only its own output, and GitHub keeps every output that is set.
       sha256-x86_64-pc-windows-msvc: ${{ steps.hash.outputs.sha256-x86_64-pc-windows-msvc }}
       sha256-i686-pc-windows-msvc: ${{ steps.hash.outputs.sha256-i686-pc-windows-msvc }}
       sha256-aarch64-pc-windows-msvc: ${{ steps.hash.outputs.sha256-aarch64-pc-windows-msvc }}
+      sha256-universal-apple-darwin: ${{ steps.hash.outputs.sha256-universal-apple-darwin }}
+      sha256-x86_64-unknown-linux-gnu: ${{ steps.hash.outputs.sha256-x86_64-unknown-linux-gnu }}
     strategy:
-      # Let every architecture finish, so one run shows every failure. The package job needs all three.
+      # Let every target finish, so one run shows every failure. The package job needs all five.
       fail-fast: false
       matrix:
         # The same targets and file names as app/release-files.json. The write-manifest.ts tests check this.
@@ -149,12 +153,30 @@ jobs:
           - target: x86_64-pc-windows-msvc
             file: OpenNote_Windows64.exe
             features: native-engines,embed-llm-host
+            os: windows-latest
+            rust: x86_64-pc-windows-msvc
           - target: i686-pc-windows-msvc
             file: OpenNote_Windows32.exe
             features: ''
+            os: windows-latest
+            rust: i686-pc-windows-msvc
           - target: aarch64-pc-windows-msvc
             file: OpenNote_WindowsARM64.exe
             features: ''
+            os: windows-latest
+            rust: aarch64-pc-windows-msvc
+          # One app for Apple silicon and Intel Macs: Tauri builds both and joins them with lipo.
+          - target: universal-apple-darwin
+            file: OpenNote_macOS.dmg
+            features: ''
+            os: macos-latest
+            rust: aarch64-apple-darwin,x86_64-apple-darwin
+          # Built on the oldest supported Ubuntu, so the AppImage runs on its glibc and every newer one.
+          - target: x86_64-unknown-linux-gnu
+            file: OpenNote_Linux.AppImage
+            features: ''
+            os: ubuntu-22.04
+            rust: x86_64-unknown-linux-gnu
     env:
       RELEASE_TARGET: ${{ matrix.target }}
       RELEASE_FILE: ${{ matrix.file }}
@@ -167,7 +189,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      # No npm or Rust build cache: the CI jobs of the same ref can write those caches, so each exe is always built
+      # No npm or Rust build cache: the CI jobs of the same ref can write those caches, so each file is always built
       # from a clean start.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -175,11 +197,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
           toolchain: stable
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.rust }}
+      - name: WebKitGTK and the other system libraries the app links (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash packaging/linux/install-build-deps.sh
       - name: Install tools
         run: npm ci
       - name: Build the opennote command
-        # The app carries the command-line tool inside it and installs it as bin\opennote.exe (install/cli.rs).
+        # The Windows app carries the command-line tool inside it and installs it as bin\opennote.exe (install/cli.rs).
+        if: runner.os == 'Windows'
         run: cargo build --release --locked -p opennote-cli --target $env:RELEASE_TARGET
       - name: Build the language model program
         # llama.cpp lives in a program of its own, which the exe carries inside it, because whisper.cpp and llama.cpp
@@ -189,6 +216,7 @@ jobs:
           LIBCLANG_PATH: C:\Program Files\LLVM\bin
         run: cargo build --release --locked -p opennote-llm --features llama --target $env:RELEASE_TARGET
       - name: Build ${{ matrix.file }}
+        if: runner.os == 'Windows'
         env:
           LIBCLANG_PATH: C:\Program Files\LLVM\bin
           OPENNOTE_LLM_HOST_BIN: ${{ github.workspace }}\target\${{ matrix.target }}\release\opennote-llm.exe
@@ -197,13 +225,28 @@ jobs:
           $build = @('tauri', 'build', '--no-bundle', '--target', $env:RELEASE_TARGET)
           if ($env:RELEASE_FEATURES) { $build += @('--features', $env:RELEASE_FEATURES) }
           npx @build
+      - name: Build ${{ matrix.file }} (macOS and Linux)
+        # Unsigned until the owner adds the signing secrets, so a Mac asks the person to allow it once
+        # (docs/help/install-macos-linux.md). The bundle step makes the dmg or the AppImage.
+        if: runner.os != 'Windows'
+        run: |
+          $bundle = if ($env:RUNNER_OS -eq 'macOS') { 'dmg' } else { 'appimage' }
+          npx tauri build --target $env:RELEASE_TARGET --bundles $bundle --ci
       - name: Collect the exe
+        if: runner.os == 'Windows'
         run: |
           New-Item -ItemType Directory -Force dist-release | Out-Null
           Copy-Item "target/$env:RELEASE_TARGET/release/opennote.exe" "dist-release/$env:RELEASE_FILE"
+      - name: Collect the dmg or the AppImage
+        if: runner.os != 'Windows'
+        run: node app/scripts/release/collect-bundle.ts $env:RELEASE_TARGET $env:RELEASE_FILE dist-release
       - name: Check that the exe may ship
-        # Fails for an exe built with the test-endpoints feature, or with an update key that is not committed.
-        run: node app/scripts/check-release-exe.ts "dist-release/$env:RELEASE_FILE"
+        # Fails for a program built with the test-endpoints feature, or with an update key that is not committed. A
+        # dmg and an AppImage are compressed, so the program inside them is checked instead.
+        run: |
+          $program = "dist-release/$env:RELEASE_FILE"
+          if ($env:RUNNER_OS -ne 'Windows') { $program = "target/$env:RELEASE_TARGET/release/opennote" }
+          node app/scripts/check-release-exe.ts $program
       - id: hash
         name: Report the hash of the exe
         run: |
@@ -300,14 +343,24 @@ jobs:
         with:
           name: exe-aarch64-pc-windows-msvc
           path: dist-release
+      - name: Download the macOS dmg
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: exe-universal-apple-darwin
+          path: dist-release
+      - name: Download the Linux AppImage
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: exe-x86_64-unknown-linux-gnu
+          path: dist-release
       - name: Download the bill of materials
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: sbom
           path: dist-release
       - name: Check the downloads before signing
-        # Stops unless dist-release holds only the three exes and the bill of materials, each with the hash its job
-        # reported. It also checks each exe again for test endpoints and update keys that aren't committed.
+        # Stops unless dist-release holds only the five release files and the bill of materials, each with the hash its
+        # job reported. It also checks each exe again for test endpoints and update keys that aren't committed.
         env:
           BUILD_SHA256: ${{ toJSON(needs.build.outputs) }}
           SBOM_SHA256: ${{ needs.sbom.outputs.sha256 }}
@@ -340,7 +393,7 @@ jobs:
         # Uses the update keys committed in app/src-tauri/keys, which are the keys built into the exe. A release
         # also needs an Authenticode signature, unless it is a test build.
         run: |
-          $extra = if ($env:ENFORCE -eq 'true') { @('--require-authenticode') } else { @() }
+          [string[]]$extra = if ($env:ENFORCE -eq 'true') { @('--require-authenticode') } else { @() }
           node app/scripts/release/verify.ts dist-release $env:TAG @extra
       - name: Check the dry run the way the app will
         if: github.event_name == 'workflow_dispatch'

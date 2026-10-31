@@ -34,7 +34,7 @@ function writeWithPalm(
     const t0 = start + Math.round(between(r, ...(o.palmAt ?? [-60, 200])));
     palm(w, r, { t0, t1: end, follow, offset, parts: o.parts, grows: o.grows, spread: 150 });
   });
-  return plan;
+  return { ...plan, heel: offset };
 }
 
 /** E8's hold: a touch this soon after the pen lifts is held where the hand may be [S16]. */
@@ -225,7 +225,12 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
     const leave = plan.leaves[plan.leaves.length - 1];
     const up = plan.strokes[plan.strokes.length - 1][1] + 1;
     const move = between(r, 30, 60);
-    const at = otherHand(r, side(w), w.options.grip, plan.pos(leave - 200), screen(w), 0);
+    // Clear of the hand where the pen lifted as well as where it was just before: the hand follows the pen.
+    const lastTip = plan.pos(up);
+    let at = otherHand(r, side(w), w.options.grip, plan.pos(leave - 200), screen(w), 0);
+    for (let k = 0; k < 200 && handCovers(side(w), w.options.grip, lastTip, at); k++) {
+      at = otherHand(r, side(w), w.options.grip, plan.pos(leave - 200), screen(w), 0);
+    }
     const from: Vec2 = [at[0], Math.max(at[1], 15 + move)];
     otherFinger(w, up + between(r, 0, 5000), from, [0, -move], 300, { intent: 'scroll' });
   }),
@@ -260,8 +265,16 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
     const gap = between(r, ...RANGES.tapSpacingMm);
     const tip = plan.pos(plan.end - 200);
     const next: Vec2 = [60, 70];
+    // 15 mm clear of the hand: the pipeline learns a wider hand than the model from three resting palms, and a tap
+    // within a few millimeters of the model's edge is ambiguous rather than plainly another hand's.
+    // The palm rests where `heelOffset` drew it, which the model of the grip can miss: keep clear of that place too.
+    const heel = plan.heel ?? [0, 0];
+    const nearHeel = (p: Vec2, at: Vec2) => Math.hypot(p[0] - at[0] - heel[0], p[1] - at[1] - heel[1]) < 60 + 15;
     const clear = (p: Vec2) =>
-      !handCovers(side(w), w.options.grip, tip, p) && !handCovers(side(w), w.options.grip, next, p);
+      !handCovers(side(w), w.options.grip, tip, p, 15) &&
+      !handCovers(side(w), w.options.grip, next, p, 15) &&
+      !nearHeel(p, tip) &&
+      !nearHeel(p, next);
     let at: Vec2 = [15, 15];
     for (let k = 0; k < 400; k++) {
       const p = otherHand(r, side(w), w.options.grip, tip, screen(w));
@@ -281,7 +294,7 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
   pen(
     'fingerAfterPen',
     (w, r) => {
-      // "Draw with finger: on": the pen writes, then a finger writes a word and a dot from half a second to 30 s later.
+      // "Draw with finger: on": the pen writes, then a finger writes a word and a dot from 5.6 s to 30 s later.
       const plan = planWriting(r, 500, { lines: 1, words: 2, lead: lead(w), lineGap: [0, 0] });
       writePlan(w, plan);
       const last = plan.pos(plan.strokes[plan.strokes.length - 1][1]);
@@ -290,12 +303,18 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
         [25, 45],
         [-50, -40],
       ];
-      const spot = spots[Math.floor(r() * spots.length)];
-      const at: Vec2 = [
+      const place = (spot: Vec2): Vec2 => [
         Math.max(15, Math.min(screen(w)[0] - 45, last[0] + spot[0])),
         Math.max(15, Math.min(screen(w)[1] - 15, last[1] + spot[1])),
       ];
-      const t0 = plan.end + between(r, 600, 30_000);
+      // A finger inside the reach of the writing hand, soon after the pen, is a palm as likely as a fingertip: the label
+      // cannot say which, so the finger writes where the hand does not reach.
+      const open = spots.filter((p) => !handCovers(side(w), w.options.grip, last, place(p)));
+      const choices = open.length > 0 ? open : spots.slice(2);
+      const at = place(choices[Math.floor(r() * choices.length)]);
+      // A pen that stopped without leaving still counts as near until its hover times out (2 s, 5 s in WebKit), and a
+      // finger beside a near pen navigates; so the finger writes once the pen has surely gone.
+      const t0 = plan.end + between(r, 5600, 30_000);
       tipStroke(w, r, t0, at);
       dot(w, r, t0 + 400 + between(r, 150, 400), [at[0] + 10, at[1] - 6]);
     },

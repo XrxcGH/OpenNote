@@ -317,13 +317,22 @@ fn start_devtools_print(
         .map_err(IpcError::from)
 }
 
+/// PDF and printing go through WebView2's PrintToPdf, which WKWebView and WebKitGTK don't have (ADR 0055).
+#[cfg(not(windows))]
+fn pdf_unavailable() -> IpcError {
+    IpcError::new(
+        codes::NOT_IMPLEMENTED,
+        "Saving as PDF and printing aren't available on this system yet. Export the page as Word or HTML instead.",
+    )
+}
+
 #[cfg(not(windows))]
 fn start_devtools_print(
     _window: &WebviewWindow,
     _params: String,
     _tx: mpsc::Sender<Result<String, String>>,
 ) -> IpcResult<()> {
-    Err(IpcError::not_implemented("print_render"))
+    Err(pdf_unavailable())
 }
 
 #[cfg(windows)]
@@ -393,7 +402,7 @@ fn start_print(
     _background: bool,
     _tx: mpsc::Sender<Result<bool, String>>,
 ) -> IpcResult<()> {
-    Err(IpcError::not_implemented("print_render"))
+    Err(pdf_unavailable())
 }
 
 /// Closes a job's print window. A window that is already gone is not an error.
@@ -415,7 +424,7 @@ pub async fn export_pick_save(
     if extension.is_empty() || !extension.chars().all(|c| c.is_ascii_alphanumeric()) || extension.len() > 12 {
         return Err(IpcError::invalid("extension", "The file type isn't valid."));
     }
-    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let owner = crate::desktop::dialog_owner(&window);
     let picked = tauri::async_runtime::spawn_blocking(move || save_dialog(owner, &suggested, &label, &extension))
         .await
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))??;
@@ -426,7 +435,12 @@ pub async fn export_pick_save(
 }
 
 #[cfg(windows)]
-fn save_dialog(owner: isize, suggested: &str, label: &str, extension: &str) -> IpcResult<Option<PathBuf>> {
+fn save_dialog(
+    owner: crate::desktop::DialogOwner,
+    suggested: &str,
+    label: &str,
+    extension: &str,
+) -> IpcResult<Option<PathBuf>> {
     use windows::{
         core::{HSTRING, PCWSTR},
         Win32::{
@@ -480,8 +494,13 @@ fn save_dialog(owner: isize, suggested: &str, label: &str, extension: &str) -> I
 }
 
 #[cfg(not(windows))]
-fn save_dialog(_owner: isize, _suggested: &str, _label: &str, _extension: &str) -> IpcResult<Option<PathBuf>> {
-    Err(IpcError::not_implemented("export_pick_save"))
+fn save_dialog(
+    owner: crate::desktop::DialogOwner,
+    suggested: &str,
+    label: &str,
+    extension: &str,
+) -> IpcResult<Option<PathBuf>> {
+    crate::desktop::save_file(&owner, suggested, label, extension)
 }
 
 /// The header of `export_write` (percent-encoded JSON). It holds the path the Save dialog returned, and the files in
@@ -613,8 +632,8 @@ fn open_file(file: &Path, reveal: bool) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-fn open_file(_file: &Path, _reveal: bool) -> IpcResult<()> {
-    Err(IpcError::not_implemented("export_open"))
+fn open_file(file: &Path, reveal: bool) -> IpcResult<()> {
+    crate::desktop::open_with_default(file.as_os_str(), reveal)
 }
 
 pub(crate) fn write_parts(main: &Path, parts: &[Part], body: &[u8]) -> IpcResult<()> {

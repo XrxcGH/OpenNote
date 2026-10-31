@@ -1,0 +1,182 @@
+/* Settings > Sync, its setup steps, and the title bar notice. Tokens only (BRAND.md section 11). */
+@layer components {
+  .page {
+    display: grid;
+    gap: var(--space-5);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .page p,
+  .page ul,
+  .page ol,
+  .page h2,
+  .page h3 {
+    margin: 0;
+  }
+
+  .page h2,
+  .page h3 {
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .help {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .notice {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .block {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .rowText {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .bullets {
+    display: grid;
+    gap: var(--space-2);
+    padding-inline-start: var(--space-5);
+  }
+
+  .key {
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+    font-size: var(--type-body-size);
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+
+  .qr {
+    inline-size: min(220px, 100%);
+    block-size: auto;
+    background: var(--color-surface-page);
+    border-radius: var(--radius-md);
+  }
+
+  .qrDark {
+    fill: var(--color-text-primary);
+  }
+
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .stepTitle:focus {
+    outline: none;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    cursor: pointer;
+  }
+
+  .chip:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .chip:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .dot {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background: var(--color-text-secondary);
+  }
+
+  .dot[data-state='synced'] {
+    background: var(--color-status-success);
+  }
+
+  .dot[data-state='error'] {
+    background: var(--color-status-danger);
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .dot,
+    .qrDark {
+      forced-color-adjust: none;
+      background: CanvasText;
+      fill: CanvasText;
+    }
+
+    .qr {
+      background: Canvas;
+    }
+  }
+}
