@@ -76,7 +76,7 @@ export const logic = {
     formula:
       'Type and, or, not, implies, iff (or &, |, ~, ->, <->); forall x and exists x; [] and <> for necessarily and possibly.',
     proof:
-      'One line each: number, a | for each subproof level, the formula, then the rule and cited lines, such as 3. ~p  MT 1, 2.',
+      'One line each: number, a | for each subproof level, the formula, then the rule and cited lines, such as 3. ~p  MT 1, 2. Quantifier rules: allE (UI), allI (UG), someI (EG), someE.',
     conclusion:
       'Write All, No, Some, or Some … are not; the conclusion’s subject and predicate name the minor and major terms.',
     formulas: 'One formula per line; they are turned into clauses.',

@@ -87,6 +87,17 @@ function splitLine(text: string): { formula: Formula; rule: string; refs: Ref[] 
     );
     return { formula, rule, refs };
   }
+  // A rule-shaped tail after a formula that reads, with a word the tool does not know.
+  for (const cut of words) {
+    const m = RULE_TAIL.exec(text.slice(cut).trim());
+    if (!m) continue;
+    try {
+      parseFormula(text.slice(0, cut));
+    } catch {
+      continue;
+    }
+    return fail('noRule', { rule: m[1] });
+  }
   // No rule name fits: report the rule word, or the formula problem.
   const parts = text.trim().split(/\s+/);
   try {

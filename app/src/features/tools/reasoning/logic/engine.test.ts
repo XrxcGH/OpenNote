@@ -143,6 +143,9 @@ describe('natural deduction', () => {
   it('words lines it cannot read', () => {
     expect(codeOf(() => checkProof(''))).toBe('emptyProof');
     expect(codeOf(() => checkProof('1. p  frobnicate'))).toBe('noRule');
+    // An unknown rule name with cited lines names the rule, not a formula error.
+    expect(codeOf(() => checkProof('1. ∀x Fx  premise\n2. Fa  AE 1'))).toBe('noRule');
+    expect(checkProof('1. ∀x Fx  premise\n2. Fa  UI 1').ok).toBe(true);
     expect(checkProof('1. | p  premise').ok).toBe(true);
     expect(checkProof('1. p  premise\n2. q  MP 1, 7').problems[1]?.key).toBe('noSuchLine');
   });
