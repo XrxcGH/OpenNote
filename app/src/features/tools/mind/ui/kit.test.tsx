@@ -109,6 +109,17 @@ describe('the psychology and behavior kit window', () => {
     );
   });
 
+  it('opens on the tool a palette command names', async () => {
+    await renderApp();
+    await commands.get('tools.kitMind.sdt')!.run({} as never, undefined as never);
+    await waitFor(() => expect(openTools()).toContain('kit-mind'));
+    const dialog = await screen.findByRole('dialog', { name: 'Psychology and behavior' });
+    const tab = await within(dialog).findByRole('tab', { name: titleOf('sdt') }, { timeout: 15_000 });
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+describe('the psychology kit Insert menu', () => {
   it.each([
     [1280, true],
     [600, true],
@@ -147,14 +158,5 @@ describe('the psychology and behavior kit window', () => {
     await userEvent.keyboard('{Escape}');
     await page.viewport(1280, 800);
     stub.mockRestore();
-  });
-
-  it('opens on the tool a palette command names', async () => {
-    await renderApp();
-    await commands.get('tools.kitMind.sdt')!.run({} as never, undefined as never);
-    await waitFor(() => expect(openTools()).toContain('kit-mind'));
-    const dialog = await screen.findByRole('dialog', { name: 'Psychology and behavior' });
-    const tab = await within(dialog).findByRole('tab', { name: titleOf('sdt') }, { timeout: 15_000 });
-    expect(tab.getAttribute('aria-selected')).toBe('true');
   });
 });
