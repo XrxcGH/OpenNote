@@ -25,6 +25,12 @@ export const atoms = {
     screening: 'Screening constant σ (1 for Kα)',
     spacing: 'Crystal plane spacing d, optional',
     order: 'Diffraction order',
+    shape: 'Draw',
+  },
+  shapes: {
+    density: 'Density |Y_lm|²',
+    xz: 'Real orbital, x-z section',
+    xy: 'Real orbital, x-y section',
   },
   out: {
     upper: 'Upper level energy',
@@ -51,6 +57,10 @@ export const atoms = {
     azimuthalNodes: 'Nodal planes through the z axis',
     angularPlot: '|Y_lm|² as a polar curve in the x-z plane',
     axisX: 'x',
+    axisY: 'y',
+    orbitalName: 'Real orbital',
+    orbitalPeak: 'Largest |Y| in the section',
+    realPlot: 'The real orbital |Y| in a plane section, positive and negative lobes',
     axisZ: 'z',
     jLow: 'Energy of the lower j level',
     jHigh: 'Energy of the upper j level',
@@ -93,6 +103,9 @@ export const atoms = {
   notes: {
     reduced: 'Wavelengths use the reduced mass. The air wavelength is given above 200 nm.',
     angular: 'The density is the same for every φ; the curve’s distance from the center is |Y_lm|².',
+    real:
+      'Real orbitals combine Y_l,m and Y_l,−m; m > 0 gives the cos mφ orbital and m < 0 the sin |m|φ one. The solid ' +
+      'curve is the positive lobe, the dashed curve the negative one.',
     lamb: 'The Dirac formula leaves out the Lamb shift and hyperfine structure.',
     hund:
       'Hund’s rules pick the ground level of one open subshell. With two open subshells only the terms are ' +

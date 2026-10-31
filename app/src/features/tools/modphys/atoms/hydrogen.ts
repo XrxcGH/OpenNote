@@ -33,7 +33,11 @@ export type AtomKey =
   | 'azimuthalNodes'
   | 'angularPlot'
   | 'axisX'
+  | 'axisY'
   | 'axisZ'
+  | 'orbitalName'
+  | 'orbitalPeak'
+  | 'realPlot'
   | 'jLow'
   | 'jHigh'
   | 'splitting'
@@ -277,6 +281,98 @@ export function angular(l: number, m: number): Calc<AtomKey> {
       series: [{ points, kind: 'line', tone: 0 }],
       x: [-span, span],
       y: [-span, span],
+    },
+  };
+}
+
+const ORBITAL_NAMES: Record<string, string> = {
+  '0,0': 's',
+  '1,0': 'pz',
+  '1,1': 'px',
+  '1,-1': 'py',
+  '2,0': 'dz²',
+  '2,1': 'dxz',
+  '2,-1': 'dyz',
+  '2,2': 'dx²−y²',
+  '2,-2': 'dxy',
+  '3,0': 'fz³',
+  '3,1': 'fxz²',
+  '3,-1': 'fyz²',
+  '3,2': 'fz(x²−y²)',
+  '3,-2': 'fxyz',
+  '3,3': 'fx(x²−3y²)',
+  '3,-3': 'fy(3x²−y²)',
+};
+
+/**
+ * The real orbital of l and m: √2 N P_l^|m|(cos θ) cos(mφ) for m > 0, √2 N P_l^|m|(cos θ) sin(|m|φ) for m < 0, and
+ * N P_l^0(cos θ) for m = 0, with N² = ((2l+1)/4π)((l−|m|)!/(l+|m|)!) and no Condon-Shortley phase, so px points along +x.
+ */
+export function realY(l: number, m: number, theta: number, phi: number): number {
+  const am = Math.abs(m);
+  const norm = Math.sqrt(((2 * l + 1) / (4 * Math.PI)) * (factorial(l - am) / factorial(l + am)));
+  const p = norm * legendre(l, am, Math.cos(theta));
+  if (m === 0) return p;
+  return Math.SQRT2 * p * (m > 0 ? Math.cos(m * phi) : Math.sin(am * phi));
+}
+
+/**
+ * A real orbital (px, dxy, …) drawn in a plane section as the polar curve r = |Y|: the x-z plane (φ = 0 to the right,
+ * φ = π to the left) or the x-y plane (θ = π/2). Positive lobes and negative lobes are separate series, told apart by tone.
+ */
+export function realOrbital(l: number, m: number, plane: 'xz' | 'xy'): Calc<AtomKey> {
+  whole(l, 'orbital', 0);
+  if (!Number.isInteger(m) || Math.abs(m) > l || l > 20) fail('badQuantumNumbers');
+  const plus: [number, number][] = [];
+  const minus: [number, number][] = [];
+  let peak = 0;
+  for (let i = 0; i <= 720; i += 1) {
+    // a runs once round the section: the angle from +x (x-y plane) or from +z towards +x (x-z plane).
+    const a = (i * Math.PI) / 360;
+    const y =
+      plane === 'xy'
+        ? realY(l, m, Math.PI / 2, a)
+        : realY(l, m, Math.acos(Math.cos(a)), Math.sin(a) >= 0 ? 0 : Math.PI);
+    const r = Math.abs(y);
+    peak = Math.max(peak, r);
+    const at: [number, number] =
+      plane === 'xy' ? [r * Math.cos(a), r * Math.sin(a)] : [r * Math.sin(a), r * Math.cos(a)];
+    // A break (NaN) lifts the pen where the sign changes, so each lobe is its own curve.
+    (y >= 0 ? plus : minus).push(at);
+    (y >= 0 ? minus : plus).push([Number.NaN, Number.NaN]);
+  }
+  const span = peak * 1.1 || 1;
+  const name = l <= 3 ? ORBITAL_NAMES[`${l},${m}`]! : `l = ${l}, m = ${m}`;
+  return {
+    items: [
+      { key: 'orbitalName', value: m, unit: '', text: name },
+      fixed('orbitalPeak', peak, '', 6),
+      fixed('angularNodes', l - Math.abs(m), '', 3),
+      fixed('azimuthalNodes', Math.abs(m), '', 3),
+    ],
+    steps: [
+      {
+        key: 'realPlot',
+        text:
+          `Y = √2 N P_l^|m|(cos θ) ${m > 0 ? `cos(${m}φ)` : m < 0 ? `sin(${-m}φ)` : ''}`.trim() +
+          ` with N² = ((2l+1)/4π)((l−|m|)!/(l+|m|)!); the curve is r = |Y|, positive and negative lobes in two tones`,
+        tex:
+          m === 0
+            ? 'Y_{l0} = N P_l(\\cos\\theta)'
+            : `Y = \\sqrt{2}\\,N P_l^{|m|}(\\cos\\theta)\\,\\${m > 0 ? 'cos' : 'sin'}(${Math.abs(m)}\\varphi)`,
+      },
+    ],
+    plot: {
+      title: 'realPlot',
+      xLabel: 'axisX',
+      yLabel: plane === 'xy' ? 'axisY' : 'axisZ',
+      series: [
+        { points: plus, kind: 'line', tone: 0, label: '+' },
+        { points: minus, kind: 'dash', tone: 1, label: '−' },
+      ],
+      x: [-span, span],
+      y: [-span, span],
+      equal: true,
     },
   };
 }

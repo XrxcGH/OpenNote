@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { C, RY_EV } from '../shared/constants';
 import { PhysicsError } from '../shared/errors';
-import { angular, fineStructure, laguerre, legendre, line, moseley, radial, radialCalc, ylm2 } from './hydrogen';
+import {
+  angular,
+  fineStructure,
+  laguerre,
+  legendre,
+  line,
+  moseley,
+  radial,
+  radialCalc,
+  realOrbital,
+  realY,
+  ylm2,
+} from './hydrogen';
 import {
   hundGround,
   landeG,
@@ -82,6 +94,42 @@ describe('wavefunctions', () => {
     expect(item(angular(2, 1), 'angularNodes')).toBe(1);
     expect(() => radialCalc(1, 2, 2)).toThrow(PhysicsError);
     expect(() => angular(1, 2)).toThrow(PhysicsError);
+  });
+});
+
+describe('real orbitals', () => {
+  // The Cartesian forms: px = √(3/4π) x/r, dz² = √(5/16π)(3z² − r²)/r², dxy = √(15/4π) xy/r².
+  it('matches the Cartesian real orbitals', () => {
+    const at = (x: number, y: number, z: number) => {
+      const r = Math.hypot(x, y, z);
+      return [Math.acos(z / r), Math.atan2(y, x)] as const;
+    };
+    const [t1, p1] = at(0.3, -0.5, 0.8);
+    const r1 = Math.hypot(0.3, -0.5, 0.8);
+    expect(realY(1, 1, t1, p1)).toBeCloseTo(Math.sqrt(3 / (4 * Math.PI)) * (0.3 / r1), 12);
+    expect(realY(1, -1, t1, p1)).toBeCloseTo(Math.sqrt(3 / (4 * Math.PI)) * (-0.5 / r1), 12);
+    expect(realY(2, 0, t1, p1)).toBeCloseTo(Math.sqrt(5 / (16 * Math.PI)) * ((3 * 0.64) / r1 ** 2 - 1), 12);
+    expect(realY(2, -2, t1, p1)).toBeCloseTo(Math.sqrt(15 / (4 * Math.PI)) * ((0.3 * -0.5) / r1 ** 2), 12);
+  });
+
+  it('draws dxy in the x-y plane with four lobes of alternating sign', () => {
+    const calc = realOrbital(2, -2, 'xy');
+    expect(calc.items[0]!.text).toBe('dxy');
+    // The largest value is at 45°: √(15/4π)/2.
+    expect(calc.items[1]!.value).toBeCloseTo(Math.sqrt(15 / (4 * Math.PI)) / 2, 6);
+    const [plus, minus] = calc.plot!.series;
+    // Positive lobes in the first and third quadrants (xy > 0), negative in the second and fourth.
+    for (const [x, y] of plus!.points)
+      if (Number.isFinite(x) && Math.abs(x * y) > 1e-3) expect(x * y).toBeGreaterThan(0);
+    for (const [x, y] of minus!.points) if (Number.isFinite(x) && Math.abs(x * y) > 1e-3) expect(x * y).toBeLessThan(0);
+  });
+
+  it('draws pz in the x-z plane, positive up and negative down', () => {
+    const calc = realOrbital(1, 0, 'xz');
+    const [plus, minus] = calc.plot!.series;
+    expect(plus!.points.filter(([x]) => Number.isFinite(x)).every(([, z]) => z >= -1e-12)).toBe(true);
+    expect(minus!.points.filter(([x]) => Number.isFinite(x)).every(([, z]) => z <= 1e-12)).toBe(true);
+    expect(calc.items[1]!.value).toBeCloseTo(Math.sqrt(3 / (4 * Math.PI)), 6);
   });
 });
 

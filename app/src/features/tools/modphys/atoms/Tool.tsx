@@ -9,7 +9,7 @@ import { optional, si, textOf, value } from '../shared/form';
 import type { FieldSpec } from '../shared/form';
 import { ToolForms } from '../shared/ToolForms';
 import type { FormDef } from '../shared/ToolForms';
-import { ATOM_SOURCES, angular, fineStructure, line, moseley, radialCalc } from './hydrogen';
+import { ATOM_SOURCES, angular, fineStructure, line, moseley, radialCalc, realOrbital } from './hydrogen';
 import type { AtomKey } from './hydrogen';
 import { levelText, parseConfiguration, parseLevel, selection, termCalc, zeeman } from './terms';
 
@@ -52,8 +52,27 @@ export const FORMS: readonly FormDef[] = [
   {
     id: 'angular',
     label: 'kitModPhys.atoms.calcs.angular',
-    fields: () => [num('l', '2'), num('m', '0')],
-    solve: (v) => show(angular(value(v, 'l', 'orbital'), value(v, 'm', 'magnetic')), ['angular'], []),
+    fields: () => [
+      num('l', '2'),
+      num('m', '0'),
+      {
+        id: 'shape',
+        label: f('shape'),
+        kind: 'select',
+        options: [
+          { value: 'density', label: t('kitModPhys.atoms.shapes.density') },
+          { value: 'xz', label: t('kitModPhys.atoms.shapes.xz') },
+          { value: 'xy', label: t('kitModPhys.atoms.shapes.xy') },
+        ],
+      },
+    ],
+    solve: (v) => {
+      const l = value(v, 'l', 'orbital');
+      const m = value(v, 'm', 'magnetic');
+      const shape = textOf(v, 'shape');
+      if (shape === 'xz' || shape === 'xy') return show(realOrbital(l, m, shape), ['real'], []);
+      return show(angular(l, m), ['angular'], []);
+    },
   },
   {
     id: 'fine',
