@@ -332,6 +332,13 @@ pub fn prune_dirs(root: &Path, rel_dir: &str) {
 
 #[cfg(test)]
 mod tests {
+    /// A key and salt for one test run, so no key or salt is written in the source.
+    fn fresh<const N: usize>() -> [u8; N] {
+        let mut bytes = [0u8; N];
+        getrandom::fill(&mut bytes).expect("a random source");
+        bytes
+    }
+
     use super::*;
 
     #[test]
@@ -396,12 +403,12 @@ mod tests {
 
     #[test]
     fn content_names_depend_on_every_byte_and_the_chunking() {
-        let (chunk, content) = ([1u8; 32], [2u8; 32]);
+        let (chunk, content, third): ([u8; 32], [u8; 32], [u8; 32]) = (fresh(), fresh(), fresh());
         let small = hash_bytes(b"hello", &chunk, &content);
         assert_eq!(small.size, 5);
         assert_eq!(small.chunks.len(), 1);
         assert_ne!(small.id, hash_bytes(b"hellp", &chunk, &content).id);
-        assert_ne!(small.id, hash_bytes(b"hello", &chunk, &[3; 32]).id, "keyed");
+        assert_ne!(small.id, hash_bytes(b"hello", &chunk, &third).id, "keyed");
         let big = vec![7u8; CHUNK * 2 + 10];
         let hashed = hash_bytes(&big, &chunk, &content);
         assert_eq!(hashed.chunks.len(), 3);

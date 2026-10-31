@@ -281,6 +281,13 @@ pub fn hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// A key and salt for one test run, so no key or salt is written in the source.
+    fn fresh<const N: usize>() -> [u8; N] {
+        let mut bytes = [0u8; N];
+        getrandom::fill(&mut bytes).expect("a random source");
+        bytes
+    }
+
     use super::*;
 
     const VAULT: [u8; 16] = [7; 16];
@@ -296,7 +303,8 @@ mod tests {
 
     #[test]
     fn sealed_objects_open_only_whole_and_under_their_own_name() {
-        let key = [3u8; 32];
+        let key: [u8; 32] = fresh();
+        let other_key: [u8; 32] = fresh();
         let sealed = seal(&key, &VAULT, "chunk", "c/ab/cd", b"a page of notes").expect("seals");
         assert_eq!(sealed.len(), 15 + OVERHEAD);
         assert_eq!(
@@ -310,7 +318,7 @@ mod tests {
             "other vault"
         );
         assert!(
-            open(&[4; 32], &VAULT, "chunk", "c/ab/cd", &sealed).is_none(),
+            open(&other_key, &VAULT, "chunk", "c/ab/cd", &sealed).is_none(),
             "other key"
         );
         for at in 0..sealed.len() {
@@ -361,9 +369,10 @@ mod tests {
 
     #[test]
     fn macs_and_subkeys_differ_by_key_label_and_part_boundaries() {
-        assert_ne!(mac(&[1; 32], &[b"ab", b"c"]), mac(&[1; 32], &[b"a", b"bc"]));
-        assert_ne!(mac(&[1; 32], &[b"x"]), mac(&[2; 32], &[b"x"]));
-        assert_ne!(*derive(&[1; 32], "chunk", b""), *derive(&[1; 32], "head", b""));
+        let (one, two): ([u8; 32], [u8; 32]) = (fresh(), fresh());
+        assert_ne!(mac(&one, &[b"ab", b"c"]), mac(&one, &[b"a", b"bc"]));
+        assert_ne!(mac(&one, &[b"x"]), mac(&two, &[b"x"]));
+        assert_ne!(*derive(&one, "chunk", b""), *derive(&one, "head", b""));
         assert_eq!(hex(&[0, 15, 255]), "000fff");
     }
 
@@ -389,10 +398,11 @@ mod tests {
                 ..COST
             },
         ] {
-            assert_eq!(passphrase_key("pw", &[0; 16], cost), Err(SyncError::WrongSecret));
+            assert_eq!(passphrase_key("pw", &fresh::<16>(), cost), Err(SyncError::WrongSecret));
         }
-        let a = passphrase_key("correct horse", &[1; 16], QUICK).expect("derives");
-        let b = passphrase_key("correct horse", &[2; 16], QUICK).expect("derives");
+        let (salt_a, salt_b): ([u8; 16], [u8; 16]) = (fresh(), fresh());
+        let a = passphrase_key("correct horse", &salt_a, QUICK).expect("derives");
+        let b = passphrase_key("correct horse", &salt_b, QUICK).expect("derives");
         assert_ne!(*a, *b, "the salt matters");
     }
 }

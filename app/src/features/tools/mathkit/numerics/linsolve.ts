@@ -194,7 +194,7 @@ export function newtonSolve(options: {
       : line('newtonFail'),
   ];
   const jacobianLatex = `J=\\begin{pmatrix}${partials
-    .map((row) => row.map((d) => show(d).replace(/\*/g, '\\cdot ').replace(/\^/g, '^')).join(' & '))
+    .map((row) => row.map((d) => show(d).replace(/\*/g, '\\cdot ')).join(' & '))
     .join(' \\\\ ')}\\end{pmatrix}`;
   const steps: KitStep[] = [
     step('numMethod', 'J(x^{(k)})\\,\\delta=-F(x^{(k)}),\\quad x^{(k+1)}=x^{(k)}+\\delta', {

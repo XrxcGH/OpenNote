@@ -66,7 +66,8 @@ export interface Checked {
   ok: boolean;
 }
 
-const RULE_TAIL = /^([^\s\d,]+(?:\s?[ie])?)\s*((?:\d+(?:\s*[-–]\s*\d+)?\s*,?\s*)*)$/i;
+const RULE_TAIL =
+  /^([^\s\d,]+(?:\s?[ie])?)\s*((?:\d+(?:\s*[-–]\s*\d+)?(?:(?:\s*,\s*|\s+)\d+(?:\s*[-–]\s*\d+)?)*\s*,?\s*)?)$/i;
 
 function splitLine(text: string): { formula: Formula; rule: string; refs: Ref[] } {
   const words = [...text.matchAll(/\s+/g)].map((m) => m.index!);

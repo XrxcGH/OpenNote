@@ -6,7 +6,8 @@ const PENS = ['#3b5b92', '#b7791f', '#4a7c59', '#a4403a', '#7a4f8a', '#6b5a43'];
 const W = 480;
 const H = 320;
 
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const tick = (v: number, log: boolean) => (log ? `1e${Math.round(v)}` : String(Number(v.toPrecision(3))));
 
 /** The figure as SVG text, with a title and a description for readers who cannot see it. */

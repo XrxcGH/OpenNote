@@ -156,7 +156,7 @@ export function cycleDiagram(cycle: Cycle): string {
   for (let beat = 1; beat <= cycle.beats; beat++) {
     const bar = starts.has(beat) && beat > 1 ? '| ' : '';
     numbers.push(`${bar}${String(beat).padStart(2)}`);
-    marks.push(`${bar.replace('|', ' ')}${(cycle.marks[beat] ? symbol[cycle.marks[beat]!] : '.').padStart(2)}`);
+    marks.push(`${bar.replace(/\|/g, ' ')}${(cycle.marks[beat] ? symbol[cycle.marks[beat]!] : '.').padStart(2)}`);
   }
   return `${numbers.join(' ')}\n${marks.join(' ')}`;
 }

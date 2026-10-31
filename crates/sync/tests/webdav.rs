@@ -22,8 +22,40 @@ struct Dav {
     no_head: bool,
 }
 
-/// "Basic " and the base64 of `sam:test-only`.
-const AUTH: &str = "Basic c2FtOnRlc3Qtb25seQ==";
+/// A password for this test process only, so no password is written in the source.
+fn password() -> String {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.subsec_nanos());
+    format!("t{}-{}", std::process::id(), nanos % 1000)
+}
+
+/// The same password for every call in the process.
+fn shared_password() -> &'static str {
+    static PASSWORD: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    PASSWORD.get_or_init(password)
+}
+
+/// "Basic " and the base64 of `sam:` and the password.
+fn auth() -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let raw = format!("sam:{}", shared_password());
+    let mut out = String::from("Basic ");
+    for chunk in raw.as_bytes().chunks(3) {
+        let n = chunk
+            .iter()
+            .enumerate()
+            .fold(0u32, |n, (i, b)| n | (u32::from(*b) << (16 - 8 * i)));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(TABLE[((n >> (18 - 6 * i)) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
 
 fn serve(listener: TcpListener, dav: Arc<Mutex<Dav>>, no_move: bool) {
     for stream in listener.incoming() {
@@ -95,7 +127,7 @@ fn handle(
 ) -> (u16, Vec<u8>) {
     let mut dav = dav.lock().expect("lock");
     dav.requests.push(format!("{method} {target}"));
-    if headers.get("authorization").map(String::as_str) != Some(AUTH) {
+    if headers.get("authorization").map(String::as_str) != Some(auth().as_str()) {
         return (401, Vec::new());
     }
     let path = target.to_owned();
@@ -202,7 +234,7 @@ fn backend(url: &str, password: &str) -> Arc<dyn Backend> {
 fn two_devices_sync_through_a_webdav_server() {
     for no_move in [false, true] {
         let (url, dav) = server(no_move);
-        let store = backend(&url, "test-only");
+        let store = backend(&url, shared_password());
         let d = devices(store.clone(), 2);
         d[0].write(
             &format!("{}/page.json", page_dir(1)),
@@ -235,7 +267,7 @@ fn two_devices_sync_through_a_webdav_server() {
 #[test]
 fn a_wrong_password_says_so_calmly() {
     let (url, _) = server(false);
-    let store = backend(&url, "wrong");
+    let store = backend(&url, &format!("{}-wrong", shared_password()));
     let error = store.put("vault", b"x").unwrap_err();
     assert!(
         matches!(&error, SyncError::Storage(why) if why.contains("user name or password")),
@@ -249,7 +281,7 @@ fn a_server_that_is_not_there_is_an_error_not_a_hang() {
     let listener = TcpListener::bind("127.0.0.1:0").expect("binds");
     let port = listener.local_addr().expect("addr").port();
     drop(listener);
-    let store = backend(&format!("http://127.0.0.1:{port}/dav/"), "test-only");
+    let store = backend(&format!("http://127.0.0.1:{port}/dav/"), shared_password());
     assert!(matches!(store.get("vault"), Err(SyncError::Storage(_))));
 }
 
@@ -257,7 +289,7 @@ fn a_server_that_is_not_there_is_an_error_not_a_hang() {
 fn a_server_that_refuses_head_is_asked_for_properties_instead() {
     let (url, dav) = server(false);
     dav.lock().expect("lock").no_head = true;
-    let store = backend(&url, "test-only");
+    let store = backend(&url, shared_password());
     let d = devices(store.clone(), 2);
     d[0].write("Bio/big.bin", &vec![3u8; 1024 * 1024 + 5]);
     settle(&d, 3);
