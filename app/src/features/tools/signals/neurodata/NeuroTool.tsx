@@ -132,12 +132,12 @@ function ErpMode() {
     <>
       <Fields>
         <TextBox label={w('samples')} value={state.data} onChange={(data) => set({ data })} rows={3} />
-        <Field
+        <TextBox
           label={w('events')}
           value={state.events}
           onChange={(events) => set({ events })}
           hint={w('eventsHint')}
-          wide
+          rows={2}
         />
         {(['fs', 'pre', 'post', 'reject', 'from', 'to'] as const).map((key) => (
           <Field
