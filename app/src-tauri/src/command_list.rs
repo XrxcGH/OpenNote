@@ -44,7 +44,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "tool_window_open", "tool_windows_reset", "study_anki_read", "study_anki_write", "study_zotero_items", "study_cite_lookup",
     "study_zotero_run", "study_zotero_reply", "study_zotero_cancel",
     "interop_pick", "interop_detect", "interop_local_sources", "interop_preview", "interop_import", "interop_cancel",
-    "interop_export", "interop_reveal", "interop_more",
+    "interop_export", "interop_latex_preview", "interop_reveal", "interop_more",
     "intel_settings_get", "intel_settings_set", "intel_status", "intel_ocr_languages",
     "intel_ocr_recognize", "intel_ink_recognize", "intel_ink_tidy", "intel_summarize",
     "intel_keywords", "intel_action_items", "intel_chapters", "intel_vocabulary_offer",
@@ -56,6 +56,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "connectors_list", "connectors_connect", "connectors_cancel", "connectors_disconnect", "connectors_request",
     "api_call", "share_take",
     "accounts_call",
+    "sync_call",
 ];
 
 #[cfg(test)]

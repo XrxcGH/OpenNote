@@ -19,8 +19,16 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
-import { CHEMMAT_FLAGS, EXPR_FLAGS } from '../features/tools/flags';
-import type { ChemMatFlagId } from '../features/tools/flags';
+import {
+  CHEMMAT_FLAGS,
+  EARTH_FLAGS,
+  EXPR_FLAGS,
+  HUMANITIES_FLAGS,
+  LIFESYS_FLAGS,
+  MIND_FLAGS,
+  REASONING_FLAGS,
+} from '../features/tools/flags';
+import type { ChemMatFlagId, EarthFlagId, LifeSysFlagId, MindFlagId, ReasoningFlagId } from '../features/tools/flags';
 import { DOC_FLAGS } from '../features/docstructure/flags';
 import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -28,7 +36,21 @@ import { QOL_FLAGS } from '../features/qol/flags';
 import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
 import { ENGINEERING_FLAGS } from '../features/engineering/flags';
+import { SYNC_FLAGS } from '../features/sync/flags';
 import type { EngineeringFlagId } from '../features/engineering/flags';
+import { STATMODELS_FLAGS } from '../features/tools/flags';
+import type { StatModelsFlagId } from '../features/tools/flags';
+import { MOLBIO_FLAGS } from '../features/tools/flags';
+import type { MolBioFlagId } from '../features/tools/flags';
+import { CIVIL_FLAGS } from '../features/tools/flags';
+import type { CivilFlagId } from '../features/tools/flags';
+import { MODPHYS_FLAGS } from '../features/tools/flags';
+import type { ModPhysFlagId } from '../features/tools/flags';
+import { SIGNALS_FLAGS } from '../features/tools/flags';
+import type { SignalsFlagId } from '../features/tools/flags';
+import type { HumanitiesFlagId } from '../features/tools/flags';
+import { TUTOR_FLAGS } from '../features/tutor/flags';
+import type { TutorFlagId } from '../features/tutor/flags';
 import { DESIGN_KIT_FLAGS } from '../features/tools/flags';
 import type { DesignKitFlagId } from '../features/tools/flags';
 import { KIT_FLAGS } from '../features/tools/flags';
@@ -61,7 +83,10 @@ export type FlagId =
   | 'interop.import'
   | 'interop.export'
   | 'interop.exportPdf'
+  | 'interop.latexExport'
   | 'interop.oneNoteFiles'
+  /** Goodnotes, Notability, and Samsung Notes files (ADR 0053). */
+  | 'interop.notesApps'
   /** Import of older and binary office files: .doc, .rtf, .xls, .xlsb, and .ods. */
   | 'interop.legacyFormats'
   | Phase4FlagId
@@ -71,6 +96,7 @@ export type FlagId =
   | ExprFlagId
   | 'kits.math'
   | DocFlagId
+  | HumanitiesFlagId
   | Phase8FlagId
   | Phase9FlagId
   | IntelFlagId
@@ -78,13 +104,27 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   | EngineeringFlagId
+  | StatModelsFlagId
+  | MindFlagId
+  | MolBioFlagId
+  | LifeSysFlagId
+  | CivilFlagId
+  | ModPhysFlagId
+  | SignalsFlagId
+  /** The earth sciences kit (features/tools/earth/flags.ts). */
+  | EarthFlagId
+  | ReasoningFlagId
   | DesignKitFlagId
   /** The tool kits' shared live calculation block (features/tools/kits/flags.ts). */
   | KitFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
+  /** Optional end-to-end-encrypted sync, Settings > Sync (features/sync/flags.ts). */
+  | 'sync.e2ee'
   /** The account and media features (features/accounts/flags.ts). */
   | AccountsFlagId
+  /** The tutor (features/tutor/flags.ts). */
+  | TutorFlagId
   /** The physics tool kit window (features/tools/physics). */
   | 'kits.physics';
 
@@ -156,6 +196,7 @@ type ToolsQolFlagId =
   | 'study.import'
   | 'study.tape'
   | 'study.tapeBlanks'
+  | 'study.exams'
   | 'tools.converter'
   | 'tools.reference'
   | 'tools.dictionary'
@@ -171,7 +212,9 @@ type ToolsQolFlagId =
   | 'math.latexInsert'
   | 'tools.chemCalc'
   | 'tools.structure'
-  | 'tools.properties';
+  | 'tools.properties'
+  | 'tools.econ'
+  | 'tools.music';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
 type Phase8FlagId =
   'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags' | QolSearchFlagId;
@@ -350,6 +393,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...EXPR_FLAGS,
   ...CHEMMAT_FLAGS,
   ...DOC_FLAGS,
+  ...HUMANITIES_FLAGS,
   ...SEARCH_FLAGS,
   ...AUDIO_FLAGS,
   ...INTEROP_FLAGS,
@@ -363,6 +407,17 @@ export const FLAGS: readonly FlagDef[] = [
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
   ...ENGINEERING_FLAGS,
+  ...STATMODELS_FLAGS,
+  ...MIND_FLAGS,
+  ...MOLBIO_FLAGS,
+  ...LIFESYS_FLAGS,
+  ...CIVIL_FLAGS,
+  ...MODPHYS_FLAGS,
+  ...SIGNALS_FLAGS,
+  ...EARTH_FLAGS,
+  ...REASONING_FLAGS,
+  ...TUTOR_FLAGS,
+  ...SYNC_FLAGS,
   ...DESIGN_KIT_FLAGS,
   ...KIT_FLAGS,
 ];

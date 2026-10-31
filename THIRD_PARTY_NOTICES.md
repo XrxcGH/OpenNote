@@ -46,6 +46,46 @@ PrintTicket and its driver-paper preference):
 
 That file also names craft-libs' other parts (color management, the PDF writer, the PDF reader with its vendored crates and fonts, and the icons). OpenNote depends on the `craft-print` crate only, so none of those is built into OpenNote.
 
+## Gibbs SeaWater (GSW) Oceanographic Toolbox
+
+The TEOS-10 coefficients above match those in the GSW Oceanographic Toolbox (GSW-C 3.05). Its notice, for attribution:
+
+```text
+Licence for the use of the Gibbs SeaWater (GSW) Oceanographic Toolbox
+
+Copyright (c) 2011, SCOR/IAPSO WG127 (Scientific Committee on Oceanic Research/
+International Association for the Physical Sciences of the Oceans, Working Group 127).
+
+All rights reserved.
+
+Redistribution and use, in source and binary forms, without modification, is permitted
+provided that the following conditions are met:
+
+• Redistributions of source code must retain the above copyright notice, this list
+  of conditions and the following disclaimer.
+
+• Redistributions in binary form must reproduce the above copyright notice, this
+  list of conditions and the following disclaimer in the documentation and/or other
+  materials provided with the distribution.
+
+• Neither the name of SCOR/IAPSO WG127 nor the names of its contributors may be used
+  to endorse or promote products derived from this software without specific prior
+  written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+The software is available from http://www.TEOS-10.org
+```
+
 ## winprint
 
 The fork's `LICENSE.md` is the upstream BSD-3-Clause text unchanged, with the one copyright line below. No source file in the fork has its own copyright or license header, and its README says it retains the upstream notices, so there are no other copyright holders to name. The `pdfium` feature of `winprint` (it downloads PDFium when the crate is built) is off: `craft-print` turns default features off, and nothing in OpenNote enables it. No PDFium is downloaded or bundled.
@@ -194,6 +234,7 @@ The Reference tables and the chemistry tools carry small tables of measured fact
 | Fundamental physical constants, 2022 CODATA recommended values (`app/src/features/tools/reference/unitsSheet.ts`) | The Units tab of the Reference tables | CODATA Task Group on Fundamental Constants, E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, "CODATA recommended values of the fundamental physical constants: 2022", published by the National Institute of Standards and Technology (`https://physics.nist.gov/cuu/Constants/`). NIST data is a work of the U.S. government and is in the public domain. Constants with exact values since the 2019 SI redefinition are marked exact. |
 | SI base and derived units, and their definitions | The Units tab | The International System of Units (SI), 9th edition, Bureau International des Poids et Mesures (BIPM), and NIST Special Publication 330. Names and definitions of units are facts. |
 | Atomic masses and half-lives of about 40 nuclides (`app/src/features/tools/physics/nuclear/data.ts`) | The nuclear science tool | Measured values transcribed from the 2020 Atomic Mass Evaluation, M. Wang et al., "The AME 2020 atomic mass evaluation (II)", Chinese Physics C 45, 030003 (`https://doi.org/10.1088/1674-1137/abddaf`), and NUBASE2020, F. G. Kondev et al., Chinese Physics C 45, 030001 (`https://doi.org/10.1088/1674-1137/abddae`). Both papers are published open access under the Creative Commons Attribution 3.0 licence (CC BY 3.0); the values are facts, rounded to the digits a course needs. |
+| TEOS-10 seawater coefficients: the 75-term specific volume polynomial, conservative temperature from potential temperature, and the freezing polynomial (`app/src/features/tools/earth/ocean/teos10.ts`) | The TEOS-10 mode of the earth sciences kit | IOC, SCOR and IAPSO (2010), The international thermodynamic equation of seawater 2010 (TEOS-10 manual); Roquet, F., et al. (2015), Ocean Modelling 90, 29-43; McDougall, T. J., et al. (2014), Ocean Science. Published numerical coefficients, written in OpenNote's own code; they were checked digit for digit against the Gibbs SeaWater (GSW) Oceanographic Toolbox, whose notice is below. No GSW source code is copied. |
 
 OpenNote's own wording for the formulas and unit descriptions is under the app's license.
 

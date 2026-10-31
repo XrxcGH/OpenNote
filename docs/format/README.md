@@ -1992,14 +1992,16 @@ A notebook's folder identity tells two folders apart even when they hold the sam
 
 - A copied notebook has the same ID but a different folder identity. It therefore gets its own key, and never shares a journal, lock, view state, or cache with the original.
 - Each journal header records the folder identity. Recovery replays a journal only into the folder whose identity matches.
-- If two open notebooks have the same notebook ID, the second one opens read-only. It offers "Make this a separate notebook", which gives it a new notebook ID. Page IDs stay the same, so links inside the copy keep working.
+- If two open notebooks have the same notebook ID, the second one opens read-only. It offers "Make this a separate notebook", which gives it a new notebook ID. Page IDs stay the same, so links inside the copy keep working. Making it separate needs the notebook's lock and closed pages. It first recovers the journals under the old key (section 20.10), trying each generation's lock once, and refuses while a page generation or an unfinished tree intent stays under the old key, so no journal is left behind.
 - A notebook moved to another drive gets a new folder identity. If journals exist under another key with the same notebook ID, and the folder they record no longer holds that notebook, the app asks before it recovers them. It never does so on its own.
 
 ### 20.3 Locks and liveness
 
-- Each open notebook holds an exclusive lock on `locks/<notebook key>.lock` (`LockFileEx` on Windows, `flock` elsewhere). The operating system releases it when the process ends, so a crash never leaves a stale lock. A second process opens the notebook read-only, with "This notebook is open in another OpenNote window."
-- For a notebook on a network drive, the writer also locks `.opennote/lock` inside the notebook, because network file systems enforce such locks across computers. It does not use this file on local drives, where sync tools would upload it and complain that it is in use.
-- A writer holds an exclusive lock on every journal generation it appends to. Recovery first tries to take that lock. If it can't, the owner is still running, and recovery leaves the journal alone. The `session.json` marker is never trusted for this.
+- Each open notebook holds an exclusive lock on `locks/<notebook key>.lock` (`LockFileEx` on Windows, `flock` elsewhere). The operating system releases it when the process ends, so a crash never leaves a stale lock. One process runs per profile, so another holder of this lock is a previous run that crashed or was killed and is still ending. Such a run lets go of its locks in no fixed order.
+- For a notebook on a network drive, the writer also locks `.opennote/lock` inside the notebook, because network file systems enforce such locks across computers. It does not use this file on local drives, where sync tools would upload it and complain that it is in use. Another computer's app normally holds it, so it is tried once, and the notebook opens read-only with "This notebook is open in another OpenNote window." Only when the notebook lock was held too does it wait, as below.
+- A writer holds an exclusive lock on every journal generation it appends to. Recovery first takes that lock. If it can't, the owner is still running, and recovery leaves the journal alone. The `session.json` marker is never trusted for this.
+- Opening a notebook waits for a previous run that is ending. A held notebook lock is tried again every 50 ms, and so is each of the notebook's tree journal generations and, during recovery, each page journal generation. All of them, for every notebook, wait until one deadline per launch: the core's start plus 3 seconds. After it, each lock is tried once. A notebook the app already has open by another path is tried once.
+- If the notebook lock, the network lock after a held notebook lock, or a tree journal generation is still held at the deadline, the notebook opens read-only without recovering its journals. If only a page's generation is still held, that page opens read-only. Either way the page says "OpenNote was still closing from last time, so this page opened read-only. Your newest ink is safe, and it shows after you restart OpenNote." The journals stay as they are, and the next open that gets the locks recovers them (section 20.10).
 
 ### 20.4 Journal files and generations
 
@@ -2156,7 +2158,7 @@ On a clean exit, every page closes as above, and `session.json` is marked stoppe
 
 Recovery runs before a notebook's first page opens. At start-up, the writer recovers the notebook that holds the start page first and the others in the background. It takes each notebook's lock first. For each page with journal generations:
 
-1. If another running process holds a generation's lock, skip the page.
+1. If another process still holds a generation's lock after the wait in section 20.3, skip the page. It opens read-only until an open of the notebook recovers it.
 2. If any generation has a journal version above the reader's, leave that page's files alone. Open the page read-only with "Unsaved changes from a newer version of OpenNote are waiting. Open that version to recover them."
 3. Read each generation's header and records, up to the end rule in section 20.6. A generation whose header fails its CRC-32 is kept in `recovery/` and skipped.
 4. Load `page.json`. The result is the page, missing, damaged, newer, or unavailable (offline or not downloaded).

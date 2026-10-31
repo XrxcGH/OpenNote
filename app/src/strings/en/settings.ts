@@ -53,5 +53,33 @@ export const settings = {
     experimentalHelp: "These features aren't finished. Turn one on to try it, and expect problems.",
     channels: { dev: 'Development', nightly: 'Nightly', beta: 'Beta', stable: 'Stable' },
     architectures: { x64: 'x64', x86: 'x86', arm64: 'ARM64' },
+    system: 'System',
+    systems: { windows: 'Windows', macos: 'macOS', linux: 'Linux' },
+    webviewOther: 'Web view',
+    webviews: { windows: 'WebView2', macos: 'WebKit (WKWebView)', linux: 'WebKitGTK' },
+    limitsTitle: 'What works differently on {system}',
+    limitsIntro: 'Everything else works as it does on Windows. Your notes stay on this computer either way.',
+    limits: {
+      textInPictures:
+        "Text in pictures and scanned pages isn't found by search yet, because it needs Windows' text recognition.",
+      handwriting:
+        "Handwriting doesn't turn into text yet, because it needs Windows Ink Analysis. Your ink is kept as drawn.",
+      readAloud:
+        "Read aloud has no voices yet, because it uses the voices Windows has. Copy the text to your system's reader instead.",
+      hello: 'Protected sections open with their password. Windows Hello is a Windows feature.',
+      pdf: "Saving a page as PDF and printing aren't here yet. Export the page as Word or HTML, then print that.",
+      systemAudio:
+        'Recording what the computer plays may not start, because the system has no loopback device. Record the microphone instead.',
+      shareTarget:
+        'Sharing to OpenNote from other apps is a Windows feature. Drag files or paste them into a page instead.',
+      windowTools: 'Docking to a screen edge, Snap Layouts, and the custom title bar are Windows features.',
+      updates:
+        "OpenNote doesn't install updates itself on a Mac yet. Download the new dmg and drag OpenNote to Applications.",
+      commandLine:
+        "The opennote command-line tool isn't included yet. Build it from the source with cargo build -p opennote-cli.",
+      sync: "Sync can't be set up here yet, because each device keeps its key in Windows Credential Manager. Set it up on a Windows PC.",
+      penPressure:
+        'Pen pressure depends on the desktop: some Linux setups report none, and strokes then have one width.',
+    },
   },
 } as const;

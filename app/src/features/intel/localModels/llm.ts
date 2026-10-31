@@ -129,6 +129,10 @@ export function createLanguageAnswerEngine(llm: Generator): AnswerEngine {
 }
 
 let release: (() => void) | null = null;
+let installed: Generator | null = null;
+
+/** The language model the engines use, or null when none is in place. Practice exams write questions with it. */
+export const installedGenerator = (): Generator | null => installed;
 
 /** Puts the language model engines in place, each behind its stand-in. Does nothing when they already are. */
 export function installLanguageEngines(llm: Generator): void {
@@ -137,9 +141,11 @@ export function installLanguageEngines(llm: Generator): void {
   const answering = withAnswerFallback(createLanguageAnswerEngine(llm), answerEngine());
   const undoWriting = putWritingEngine(writing);
   const undoAnswering = putAnswerEngine(answering);
+  installed = llm;
   release = () => {
     undoWriting();
     undoAnswering();
+    installed = null;
     release = null;
   };
 }

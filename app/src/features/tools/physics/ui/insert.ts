@@ -1,7 +1,7 @@
 // The physics tools' Insert actions, on the page insert the other tools use: an answer line, an equation, a table,
 // numbered steps, and the plot as a picture drawn in the theme's colors at the time of insert. The picture goes in
 // as a PNG at twice its size, so exports and other apps show it as it looks here; SVG is the fallback.
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import type { Palette } from '../kit/svg';
 import type { KitInsert } from '../kit/types';
 

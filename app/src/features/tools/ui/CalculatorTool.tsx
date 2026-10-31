@@ -28,7 +28,7 @@ import { isEnabled } from '../../../app/flags';
 import { ruleText } from '../science/explain';
 import { setSigFigMode, sigFigMode, watchSigFigMode } from '../science/mode';
 import { sigFigCalculate } from '../science/sigfigs';
-import { INSERT_EVENT } from '../flags';
+import { insertIntoPage } from './insert';
 import { AnswerActions, MatrixMode, Programmer, Statistics } from './CalculatorModes';
 import { CALCULATOR_MODES, followCalculatorMode, saveCalculatorMode, savedCalculatorMode } from './calculatorMode';
 import type { CalculatorMode } from './calculatorMode';
@@ -44,25 +44,8 @@ const FIRST_GRAPH = 'y = sin(x)';
 const GRAPH3D_STORE = 'calculator.graph3d';
 const FIRST_GRAPH3D = 'z = sin(x) cos(y)';
 
-/** What a tool asks the page to take: text for the caret, a graph for a code block, or a picture. */
-export interface InsertDetail {
-  text?: string;
-  graph?: string;
-  picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
-  /** An equation for the page: LaTeX source and whether it stands on its own line. */
-  math?: { source: string; display: boolean };
-  /** A table for the page: a header row, then rows of cell text. */
-  table?: { header: string[]; rows: string[][] };
-  /** A panel block for the page: its type, its data, and the text a reader without it shows. */
-  panel?: { type: string; data: Record<string, unknown>; fallback: string };
-  handled: boolean;
-}
-
-export function insertIntoPage(detail: Omit<InsertDetail, 'handled'>): boolean {
-  const request: InsertDetail = { ...detail, handled: false };
-  window.dispatchEvent(new CustomEvent<InsertDetail>(INSERT_EVENT, { detail: request }));
-  return request.handled;
-}
+export { insertIntoPage } from './insert';
+export type { InsertDetail } from './insert';
 
 const KEYS: readonly (readonly string[])[] = [
   ['sin(', 'cos(', 'tan(', 'ln(', 'log('],

@@ -1,0 +1,261 @@
+/*
+ * The history, places, languages, and texts kit: calm and quiet, on tokens, with every control at least the target
+ * size, and layouts that wrap at the narrowest panel width.
+ */
+@layer components {
+  .kit {
+    display: grid;
+    gap: var(--space-2);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    color: var(--color-text-primary);
+  }
+
+  .tool {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    min-inline-size: 0;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .kitTabs {
+    padding-inline: var(--space-3);
+  }
+
+  .tab {
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-1) var(--space-2);
+    font: inherit;
+    color: var(--color-text-secondary);
+    background: none;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .tab:focus-visible,
+  .key:focus-visible,
+  .tableWrap:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-1) var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .field textarea {
+    resize: vertical;
+  }
+
+  .field .mono {
+    font-family: var(--font-mono);
+  }
+
+  .field small {
+    color: var(--color-text-secondary);
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-pointer);
+  }
+
+  .results {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .result {
+    display: grid;
+    grid-template-columns: minmax(10ch, 1fr) 2fr;
+    gap: var(--space-3);
+  }
+
+  .result dt {
+    color: var(--color-text-secondary);
+  }
+
+  .result dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .answer {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .problem:empty {
+    display: none;
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .details summary {
+    min-block-size: var(--size-target-pointer);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-1);
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+    max-block-size: 320px;
+    overflow-y: auto;
+  }
+
+  .table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .caption {
+    text-align: start;
+    color: var(--color-text-secondary);
+    padding-block-end: var(--space-1);
+  }
+
+  .picture {
+    margin: 0;
+    overflow-x: auto;
+  }
+
+  .picture img {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .list {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .key {
+    min-inline-size: var(--size-target-pointer);
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-1);
+    font-size: var(--type-body-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .key:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .group legend {
+    padding: 0;
+    color: var(--color-text-secondary);
+  }
+
+  /* Lines that read as printed text, such as a key's couplets: one to a row, wrapping on a narrow panel. */
+  .lines {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-1);
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+}

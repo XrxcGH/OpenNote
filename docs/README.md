@@ -26,7 +26,19 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [tables-and-charts.md](help/tables-and-charts.md): smart tables, formulas, views, and charts.
 - [math-and-graphs.md](help/math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [engineering-tools.md](help/engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
-- [subject-tool-kits.md](help/subject-tool-kits.md): eleven tool windows for engineering, science, and math problems.
+- [subject-tool-kits.md](help/subject-tool-kits.md): thirteen tool windows for engineering, science, math, earth science, and reasoning problems.
+- [subject-kit-data-and-figures.md](help/subject-kit-data-and-figures.md): data input, page tables, seeds, and figure blocks in the subject kits.
+- [economics-and-finance.md](help/economics-and-finance.md): money over time, markets, firms, macroeconomics, accounting, and investments.
+- [statistics-kit.md](help/statistics-kit.md): describe data, tests, epidemiology, power, resampling, and Bayesian updating.
+- [statistical-models.md](help/statistical-models.md): regression, causal inference, survival, time series, clusters, and machine learning.
+- [psychology-kit.md](help/psychology-kit.md): signal detection, psychophysics, choice models, response times, and scales.
+- [biology-tools.md](help/biology-tools.md): sequences, cloning, proteins, alignment, crosses, and population genetics.
+- [life-science-tools.md](help/life-science-tools.md): physiology, neurons, pharmacology, bench math, and populations.
+- [civil-and-chemical-engineering.md](help/civil-and-chemical-engineering.md): structures, soils, water, transportation, and reactors.
+- [modern-physics-and-astronomy.md](help/modern-physics-and-astronomy.md): quantum wells, atoms, solids, plasmas, stars, and cosmology.
+- [signals-tools.md](help/signals-tools.md): spectra, filters, sampling, sound, images, and coding.
+- [history-places-languages-and-texts.md](help/history-places-languages-and-texts.md): timelines, calendars, maps, scripts, and text analysis.
+- [music-script-camera-and-studio-tools.md](help/music-script-camera-and-studio-tools.md): notation, music theory, ear training, scripts, and camera math.
 - [search-and-links.md](help/search-and-links.md): search, page links, backlinks, tags, and daily notes.
 - [study-tools.md](help/study-tools.md): flashcards, Upcoming, timers, the calculator, and citations.
 - [recording.md](help/recording.md): recording with stamped notes, trimming, transcripts, and recaps.

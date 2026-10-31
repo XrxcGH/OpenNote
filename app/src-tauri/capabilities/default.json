@@ -158,6 +158,7 @@
     "allow-interop-import",
     "allow-interop-cancel",
     "allow-interop-export",
+    "allow-interop-latex-preview",
     "allow-interop-reveal",
     "allow-interop-more",
     "allow-intel-settings-get",
@@ -198,6 +199,7 @@
     "allow-connectors-request",
     "allow-api-call",
     "allow-share-take",
-    "allow-accounts-call"
+    "allow-accounts-call",
+    "allow-sync-call"
   ]
 }

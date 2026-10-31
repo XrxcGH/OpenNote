@@ -7,10 +7,23 @@ export { CHEMMAT_META } from './chemmat/meta';
 export type { ChemMatFlagId } from './chemmat/flags';
 export { CHEMMAT_FLAGS };
 
+// The humanities kit's flag and tool list load at start-up with the other flags, before the kit's own code.
+export { HUMANITIES_FLAGS } from './humanities/flags';
+export type { HumanitiesFlagId } from './humanities/flags';
+export { HUMANITIES_TOOLS } from './humanities/meta';
+export type { HumanitiesToolId } from './humanities/meta';
+export { REASONING_FLAGS } from './reasoning/flags';
+export type { ReasoningFlagId } from './reasoning/flags';
+
 export type ExprFlagId = Extract<
   FlagId,
   `tables.${string}` | `math.${string}` | `study.${string}` | `tools.${string}` | 'kits.math'
 >;
+
+// The psychology and behavior kit's flag and tool list are plain data the start-up code reads, so they are public here.
+export { MIND_FLAGS } from './mind/flags';
+export type { MindFlagId } from './mind/flags';
+export { MIND_TOOLS } from './mind/meta';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
@@ -48,6 +61,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('study.import', 'Deck import and export for Anki packages, CSV, and text.'),
   flag('study.tape', 'Study tape that hides parts of a page until tapped.'),
   flag('study.tapeBlanks', 'Print and export can turn study tape into blanks, with an answer key at the end.'),
+  flag('study.exams', 'Practice exams from your own notes: a paper, the exam, marking, and an answer key.', beta),
   flag('tools.converter', 'The unit converter tool.'),
   flag('tools.reference', 'The reference tables tool.'),
   flag('tools.symbols', 'The symbol palette, with recent symbols and LaTeX-name autocompletion in page text.'),
@@ -61,9 +75,19 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.constants', 'The scientific constants picker with CODATA 2022 values.'),
   flag('tools.sigfigs', 'The significant-figures helper and its mode in the calculator and on page lines.'),
   flag('math.latexInsert', 'The Insert LaTeX window with live preview, snippets, and paste conversion.'),
+  flag(
+    'tools.econ',
+    'Economics and finance calculators: time value, loans, markets, firms, macro models, valuation, and accounting.',
+  ),
   flag('tools.chemCalc', 'Chemistry calculators: balancing, stoichiometry, gas laws, dilution, pH, and titration.'),
   flag('tools.structure', 'Chemical structure drawing: skeletal formulas as editable ink, with SVG export.'),
   flag('tools.properties', 'Steam, ideal-gas, and materials property tables with sources.'),
+  flag(
+    'tools.music',
+    'The music, script, camera, and studio tools in one window: notation, theory, tuning, rhythm, screenplays, ' +
+      'exposure and timecode, color, and scale.',
+    beta,
+  ),
   ...MATH_KIT_FLAGS,
 ];
 
@@ -76,11 +100,48 @@ export { MATH_TOOLS } from './mathkit/meta';
  */
 export const INSERT_EVENT = 'opennote:insert-into-page';
 
+// The life science kit's flag and tool list load at start-up, for the flag list and the palette commands.
+export { LIFESYS_FLAGS } from './lifesys/flags';
+export type { LifeSysFlagId } from './lifesys/flags';
+export { LIFESYS_TOOLS } from './lifesys/meta';
+
 /**
  * What the Citations window asks of the page that is open: run a Zotero command on it. The page answers by setting
  * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
  */
 export const ZOTERO_EVENT = 'opennote:zotero-command';
+
+// The statistical models kit's tool list is plain data the command palette reads at start-up, so it is public here.
+export { STATMODELS_TOOLS } from './statmodels/meta';
+export { STATMODELS_FLAGS } from './statmodels/flags';
+export type { StatModelsFlagId } from './statmodels/flags';
+export { MOLBIO_FLAGS } from './molbio/flags';
+export { MOLBIO_TOOLS } from './molbio/meta';
+export type { MolBioFlagId } from './molbio/flags';
+// The civil engineering kit keeps its flag beside its tools; start-up reads it through this public module.
+export { CIVIL_FLAGS } from './civil/flags';
+export { CIVIL_ICONS, CIVIL_TOOL_IDS } from './civil/meta';
+export type { CivilFlagId } from './civil/flags';
+// The modern physics and astronomy tools' flag and their list, which the palette registers at start-up.
+export { MODPHYS_FLAGS } from './modphys/flags';
+export type { ModPhysFlagId } from './modphys/flags';
+export { MODPHYS_TOOLS } from './modphys/meta';
+
+// The signals and sound kit's flag and tool list load at start-up with these, so the palette can name each tool.
+export { SIGNALS_FLAGS } from './signals/flags';
+// The music kit's tool list names its palette commands at start-up.
+export { MUSIC_TOOLS } from './music/meta';
+export type { SignalsFlagId } from './signals/flags';
+export { SIGNAL_TOOLS, chooseSignalTool, restoreSignalInputs } from './signals/meta';
+// The earth sciences kit's flag and tool list, public here so start-up code reads them without the kit.
+export { EARTH_FLAGS } from './earth/flags';
+export type { EarthFlagId } from './earth/flags';
+export { EARTH_TOOLS } from './earth/meta';
+/**
+ * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
+ * page answers by setting `blocks` (features/page/registrations/kitSubjects.ts); no answer means no page is open.
+ */
+export const SUBJECT_TABLES_EVENT = 'opennote:subject-page-tables';
 
 export { DESIGN_KIT_FLAGS } from './design/flags';
 export type { DesignKitFlagId } from './design/flags';

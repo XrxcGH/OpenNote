@@ -6,7 +6,8 @@ export interface SessionInfo {
   page: string;
   revision: string;
   clientSeq: number;
-  readOnly: string | null;
+  /** A ReadOnlyReason, which the core tags as { kind } (crates/core/src/model/page.rs). */
+  readOnly: { kind: string } | string | null;
   canUndo: boolean;
   canRedo: boolean;
   saved: boolean;

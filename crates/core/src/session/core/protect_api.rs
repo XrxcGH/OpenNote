@@ -10,7 +10,7 @@ use crate::error::CoreError;
 use crate::id::SectionId;
 use crate::store::fs::Fs;
 use crate::store::sealed::crypto::SALT;
-use crate::store::sealed::{crypto, ProtectError, Protection, Secret};
+use crate::store::sealed::{at_rest, crypto, ProtectError, Protection, Secret, SEALED_CONFLICT, SEALED_DIR};
 
 impl Core {
     fn sealed_fs(&self) -> Result<Arc<dyn Fs>, ProtectError> {
@@ -210,4 +210,62 @@ impl Core {
         let dir = self.section_dir(notebook, section)?;
         Ok(self.ctx().fs.sealed().and_then(|s| s.hello_challenge(&dir)))
     }
+
+    /// The other versions of a protected section's sealed files that sync kept when two devices changed the
+    /// section before syncing (ADR 0049): its `.sealed-conflict-<hash>` folders, by name.
+    pub fn sealed_conflicts(&self, notebook: &Path, section: SectionId) -> Result<Vec<String>, CoreError> {
+        let dir = self.section_dir(notebook, section)?;
+        let fs = self.ctx().fs.clone();
+        let disk = at_rest(fs.as_ref());
+        let mut names: Vec<String> = match disk.read_dir(&dir) {
+            Ok(entries) => entries
+                .into_iter()
+                .filter(|e| e.is_dir && is_conflict_name(&e.name))
+                .map(|e| e.name)
+                .collect(),
+            Err(_) => Vec::new(),
+        };
+        names.sort();
+        Ok(names)
+    }
+
+    /// Makes a kept version the section's own. The section locks first; its current sealed files become a kept
+    /// version in turn, so both stay and the person can switch back.
+    pub fn switch_sealed_conflict(&self, notebook: &Path, section: SectionId, name: &str) -> Result<(), ProtectError> {
+        let fs = self.sealed_fs()?;
+        let dir = self.section_dir(notebook, section)?;
+        if !self.sealed_conflicts(notebook, section)?.iter().any(|n| n == name) {
+            return Err(ProtectError::NotProtected);
+        }
+        self.lock_section(notebook, section)?;
+        let suffix: String = crypto::random::<4>()?.iter().map(|b| format!("{b:02x}")).collect();
+        let current = dir.join(SEALED_DIR);
+        let kept = dir.join(format!("{SEALED_CONFLICT}{suffix}"));
+        let disk = at_rest(fs.as_ref());
+        self.closed(notebook, || {
+            disk.rename_dir(&current, &kept)?;
+            if let Err(error) = disk.rename_dir(&dir.join(name), &current) {
+                let _ = disk.rename_dir(&kept, &current);
+                return Err(error.into());
+            }
+            Ok(())
+        })
+    }
+
+    /// Removes a kept version of a protected section's sealed files for good.
+    pub fn discard_sealed_conflict(&self, notebook: &Path, section: SectionId, name: &str) -> Result<(), ProtectError> {
+        let dir = self.section_dir(notebook, section)?;
+        if !self.sealed_conflicts(notebook, section)?.iter().any(|n| n == name) {
+            return Err(ProtectError::NotProtected);
+        }
+        let fs = self.ctx().fs.clone();
+        at_rest(fs.as_ref()).remove_dir_all(&dir.join(name))?;
+        Ok(())
+    }
+}
+
+/// Whether a folder name is a kept version of sealed files: the prefix and then letters and digits only.
+fn is_conflict_name(name: &str) -> bool {
+    name.strip_prefix(SEALED_CONFLICT)
+        .is_some_and(|rest| !rest.is_empty() && rest.chars().all(|c| c.is_ascii_alphanumeric()))
 }
