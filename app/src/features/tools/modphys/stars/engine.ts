@@ -57,7 +57,7 @@ export type StarKey =
   | 'velocity';
 
 export const STAR_SOURCES = [
-  'Kopparapu et al. (2013), ApJ 765, 131, Table 3 (arXiv:1301.6674v2): habitable-zone coefficients.',
+  'Kopparapu et al. (2013), ApJ 765, 131, with the erratum ApJ 770, 82 (arXiv:1301.6674v2 Table 3): habitable-zone coefficients.',
   'IAU 2015 Resolution B2: absolute bolometric magnitude of the Sun, 4.74.',
   'NIST Atomic Spectra Database: hydrogen ionization energy, 13.598434 eV.',
 ] as const;

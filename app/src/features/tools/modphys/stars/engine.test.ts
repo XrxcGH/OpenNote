@@ -129,7 +129,13 @@ describe('exoplanets', () => {
   });
 
   it('gives the habitable zone of the Sun and a cool star from the published fit', () => {
-    expect(item(habitableZone(5772, 1), 'hzMoist')).toBeCloseTo(0.99339, 4);
+    // The erratum's abstract quotes the Sun's limits: 0.75, 0.97, 0.99, 1.70 and 1.77 au.
+    const sun = habitableZone(5772, 1);
+    expect(Math.abs(item(sun, 'hzRecentVenus') - 0.75)).toBeLessThan(0.01);
+    expect(Math.abs(item(sun, 'hzRunaway') - 0.97)).toBeLessThan(0.01);
+    expect(Math.abs(item(sun, 'hzMoist') - 0.99)).toBeLessThan(0.01);
+    expect(Math.abs(item(sun, 'hzMaximum') - 1.7)).toBeLessThan(0.01);
+    expect(Math.abs(item(sun, 'hzEarlyMars') - 1.77)).toBeLessThan(0.01);
     expect(item(habitableZone(3800, 0.05), 'hzMoist')).toBeCloseTo(0.238078, 5);
     expect(() => habitableZone(9000, 10)).toThrow(PhysicsError);
   });
