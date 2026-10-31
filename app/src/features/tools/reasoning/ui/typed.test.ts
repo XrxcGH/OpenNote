@@ -99,3 +99,11 @@ describe('fairness criteria and the population paradox', () => {
     expect(note(o)).toContain('C grows faster than A yet loses a seat to it');
   });
 });
+
+describe('decision sensitivity in the decision mode', () => {
+  it('words the stretches and draws the lines', async () => {
+    const o = await solve('optimize', 'decision', {});
+    expect(note(o)).toContain('the best by EMV is sure from 0 to 0.4167, gamble from 0.4167 to 1.');
+    expect(o.ok && o.figure?.alt).toContain('gamble from 0 at 0 to 120 at 1');
+  });
+});

@@ -86,3 +86,41 @@ export function decide(
 }
 
 export { argmax };
+
+export interface Sensitivity {
+  /** Each alternative's EMV when P(first state) is 0 and when it is 1. */
+  ends: [number, number][];
+  /** The best alternative on each stretch of P(first state), in order. */
+  stretches: { best: number; from: number; to: number }[];
+}
+
+/**
+ * EMV against the probability p of the first state, with the other states sharing 1 - p in their given proportions
+ * (equally when they were all given 0). Each EMV is a straight line in p, so the best changes only where 2 cross.
+ */
+export function sensitivity(payoffs: number[][], probs: number[]): Sensitivity | null {
+  const states = payoffs[0]?.length ?? 0;
+  if (states < 2) return null;
+  const restTotal = probs.slice(1).reduce((s, x) => s + x, 0);
+  const share = probs.slice(1).map((x) => (restTotal > 0 ? x / restTotal : 1 / (states - 1)));
+  const ends = payoffs.map((r): [number, number] => [r.slice(1).reduce((s, x, j) => s + share[j] * x, 0), r[0]]);
+  const at = (i: number, p: number) => ends[i][0] + p * (ends[i][1] - ends[i][0]);
+  const bestAt = (p: number) => ends.reduce((b, _, i) => (at(i, p) > at(b, p) + 1e-9 ? i : b), 0);
+  const cuts = new Set<number>([0, 1]);
+  for (let i = 0; i < ends.length; i += 1)
+    for (let j = i + 1; j < ends.length; j += 1) {
+      const slope = ends[i][1] - ends[i][0] - (ends[j][1] - ends[j][0]);
+      if (Math.abs(slope) < 1e-12) continue;
+      const p = (ends[j][0] - ends[i][0]) / slope;
+      if (p > 1e-9 && p < 1 - 1e-9) cuts.add(p);
+    }
+  const points = [...cuts].sort((a, b) => a - b);
+  const stretches: Sensitivity['stretches'] = [];
+  for (let k = 0; k + 1 < points.length; k += 1) {
+    const best = bestAt((points[k] + points[k + 1]) / 2);
+    const last = stretches[stretches.length - 1];
+    if (last && last.best === best) last.to = points[k + 1];
+    else stretches.push({ best, from: points[k], to: points[k + 1] });
+  }
+  return { ends, stretches };
+}

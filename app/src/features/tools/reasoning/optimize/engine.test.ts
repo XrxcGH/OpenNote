@@ -5,7 +5,7 @@ import { fracText, toNumber } from '../core/frac';
 import { solveLp } from '../core/simplex';
 import { KitError } from '../core/util';
 import { hungarian } from './assign';
-import { decide } from './decision';
+import { decide, sensitivity } from './decision';
 import { parseLp } from './linear';
 import { branchAndBound, costRanges, dual, objectiveAt, rhsRanges } from './lp';
 import { mmc, newsvendor } from './ops';
@@ -356,5 +356,27 @@ describe('crashing a project network', () => {
     expect([r.length, r.cost, r.stuck]).toEqual([8, 10, true]);
     expect(() => parseCrash('Z 1 5', acts)).toThrow();
     expect(() => parseCrash('C 5 5', acts)).toThrow();
+  });
+});
+
+describe('decision sensitivity', () => {
+  it('finds where the best alternative changes with the first state probability', () => {
+    // EMV(sure) = 50 and EMV(gamble) = 120 p cross at p = 50 / 120 = 0.41667.
+    const r = sensitivity(
+      [
+        [50, 50],
+        [120, 0],
+      ],
+      [0.5, 0.5],
+    )!;
+    expect(r.ends).toEqual([
+      [50, 50],
+      [0, 120],
+    ]);
+    expect(r.stretches.map((x) => x.best)).toEqual([0, 1]);
+    expect(r.stretches[0].to).toBeCloseTo(5 / 12, 12);
+    // Three states: the last two share 1 - p as 1 : 3, so gamble's p = 0 end is (1 * 0 + 3 * 40) / 4 = 30.
+    const [zero, one] = sensitivity([[10, 0, 40]], [0.2, 0.2, 0.6])!.ends[0];
+    expect([zero, one]).toEqual([expect.closeTo(30, 12), 10]);
   });
 });

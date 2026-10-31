@@ -113,3 +113,54 @@ export function timingFigure(signals: readonly Signal[]): SvgNode {
   ]).flat();
   return svgRoot(left + steps * w + 20, height, ...grid, ...traces);
 }
+
+export interface Line {
+  name: string;
+  /** The value at x = 0 and at x = 1. */
+  from: number;
+  to: number;
+  tone?: Tone;
+}
+
+const LINE_TONES: Tone[] = ['accent', 'hi', 'warn', 'ink', 'muted'];
+
+/** Straight lines over 0 ≤ x ≤ 1, each named at its right end: a sensitivity picture. */
+export function linesFigure(lines: readonly Line[], xName: string): SvgNode {
+  const ys = lines.flatMap((l) => [l.from, l.to]);
+  let lo = Math.min(0, ...ys);
+  let hi = Math.max(...ys);
+  if (hi - lo < 1e-9) [lo, hi] = [lo - 1, hi + 1];
+  const left = 52;
+  const plotW = 360;
+  const plotH = 220;
+  const right = Math.max(40, ...lines.map((l) => textWidth(l.name) + 14));
+  const x = (t: number) => left + t * plotW;
+  const y = (v: number) => 14 + ((hi - v) / (hi - lo)) * plotH;
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
+  const yTicks = [lo, (lo + hi) / 2, hi];
+  return svgRoot(
+    left + plotW + right,
+    plotH + 56,
+    ...ticks.flatMap((t) => [
+      el('line', { x1: round(x(t)), y1: 14, x2: round(x(t)), y2: 14 + plotH, stroke: '@line', strokeDasharray: '2 3' }),
+      label(x(t), plotH + 28, String(t), { fontSize: 11, fill: '@muted' }),
+    ]),
+    ...yTicks.map((v) => label(left - 6, y(v), String(round(v)), { fontSize: 11, fill: '@muted', textAnchor: 'end' })),
+    el('line', { x1: left, y1: 14 + plotH, x2: left + plotW, y2: 14 + plotH, stroke: '@muted' }),
+    ...lines.flatMap((l, i) => {
+      const tone = l.tone ?? LINE_TONES[i % LINE_TONES.length];
+      return [
+        el('line', {
+          x1: x(0),
+          y1: round(y(l.from)),
+          x2: x(1),
+          y2: round(y(l.to)),
+          stroke: `@${tone}`,
+          strokeWidth: 2,
+        }),
+        label(x(1) + 6, y(l.to), l.name, { textAnchor: 'start', fill: `@${tone}` }),
+      ];
+    }),
+    label(left + plotW / 2, plotH + 48, xName, { fontSize: 11, fill: '@muted' }),
+  );
+}

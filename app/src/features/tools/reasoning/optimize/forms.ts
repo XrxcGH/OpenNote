@@ -1,6 +1,6 @@
 // The optimization tool's modes as forms: linear and integer programs, transportation, assignment, project networks,
 // earned value, decisions from a payoff table or a tree, and queues and the newsvendor.
-import { ganttFigure } from '../core/charts';
+import { ganttFigure, linesFigure } from '../core/charts';
 import { fracLatex, fracText, toNumber } from '../core/frac';
 import type { Frac } from '../core/frac';
 import { solveLp } from '../core/simplex';
@@ -13,7 +13,7 @@ import type { GameNode } from '../games/tree';
 import { attempt, say, saySteps } from '../ui/say';
 import type { Mode, Outcome, Table, ToolSpec, Values } from '../ui/types';
 import { hungarian } from './assign';
-import { decide } from './decision';
+import { decide, sensitivity } from './decision';
 import { linearText, parseLp } from './linear';
 import { branchAndBound, costRanges, dual, rhsRanges } from './lp';
 import type { BbNode, Range } from './lp';
@@ -426,6 +426,16 @@ function decisionOutcome(v: Values): Outcome {
       laplace: pick(r.laplace),
     }),
   ];
+  const sens = sensitivity(pay, probs);
+  if (sens)
+    notes.push(
+      s('sensitivity', {
+        state: states[0],
+        list: sens.stretches
+          .map((x) => s('sensitivityItem', { name: alts[x.best], from: num(x.from, 4), to: num(x.to, 4) }))
+          .join(', '),
+      }),
+    );
   if (r.sample) {
     const sm = r.sample;
     const signals = sm.pSignal.map((_, k) => s('signal', { k: k + 1 }));
@@ -466,6 +476,22 @@ function decisionOutcome(v: Values): Outcome {
     note: notes.join('\n'),
     steps,
     tables,
+    ...(sens
+      ? {
+          figure: {
+            svg: linesFigure(
+              alts.map((name, i) => ({ name, from: sens.ends[i][0], to: sens.ends[i][1] })),
+              s('sensitivityAxis', { state: states[0] }),
+            ),
+            alt: s('sensitivityAlt', {
+              state: states[0],
+              list: alts
+                .map((name, i) => s('sensitivityLine', { name, from: num(sens.ends[i][0]), to: num(sens.ends[i][1]) }))
+                .join('; '),
+            }),
+          },
+        }
+      : {}),
   };
 }
 

@@ -344,6 +344,12 @@ export const optimize = {
   dcAnswerCe:
     'Choose {best} for the highest certainty equivalent, {ce}; by expected value alone {emvBest} gives {emv}, and perfect information is worth {evpi}',
   signal: 'Signal {k}',
+  sensitivity:
+    'As P({state}) runs from 0 to 1, with the other states keeping their proportions, the best by EMV is {list}.',
+  sensitivityItem: '{name} from {from} to {to}',
+  sensitivityAxis: 'P({state})',
+  sensitivityAlt: 'EMV of each alternative against P({state}), as straight lines: {list}',
+  sensitivityLine: '{name} from {from} at 0 to {to} at 1',
   dtAnswer: 'Best plan: {path}, with expected value {value}',
   dtAlt: 'Decision tree, with the chosen branches solid and the others struck out: {tree}',
   nvAnswer: 'Order {q}: the critical ratio is {ratio}, so z = {z}',
