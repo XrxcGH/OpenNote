@@ -4,12 +4,11 @@
 import { useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { Button, announce, openMenu } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
 import { loadStored, saveStored } from '../../ui/storage';
 import type { CalcResult, CalcSpec, FieldSpec } from '../types';
 import { Field } from './fields';
 import type { Values } from './fields';
-import { answerText, plotPicture, resultTable, rowValue, stepsLatex, stepsText } from './insert';
+import { answerText, liveBlock, plotPicture, resultTable, rowValue, send, stepsLatex, stepsText } from './insert';
 import styles from './lifesys.module.css';
 import { Plot } from './Plot';
 import { initialValues, makeReader } from './reader';
@@ -37,10 +36,13 @@ function solve(spec: CalcSpec, fields: readonly FieldSpec[], values: Values): Ou
   }
 }
 
-const send = (detail: Parameters<typeof insertIntoPage>[0]) =>
-  announce(word(insertIntoPage(detail) ? 'ui.inserted' : 'ui.noPage'));
+interface InsertFrom {
+  tool: string;
+  spec: CalcSpec;
+  values: Values;
+}
 
-async function chooseInsert(event: MouseEvent<HTMLButtonElement>, result: CalcResult): Promise<void> {
+async function chooseInsert(event: MouseEvent<HTMLButtonElement>, result: CalcResult, from: InsertFrom): Promise<void> {
   const latex = stepsLatex(result);
   const plots = result.plots ?? [];
   const items = [
@@ -48,6 +50,7 @@ async function chooseInsert(event: MouseEvent<HTMLButtonElement>, result: CalcRe
     { id: 'steps', label: word('ui.insertSteps') },
     ...(latex ? [{ id: 'latex', label: word('ui.insertLatex') }] : []),
     { id: 'table', label: word('ui.insertTable') },
+    { id: 'live', label: word('ui.insertLive') },
     ...plots.map((plot, i) => ({
       id: `plot${i}`,
       label: word('ui.insertPlot', { title: word(plot.title, plot.vars) }),
@@ -58,6 +61,7 @@ async function chooseInsert(event: MouseEvent<HTMLButtonElement>, result: CalcRe
   else if (chosen === 'steps') send({ text: stepsText(result) });
   else if (chosen === 'latex' && latex) send({ math: { source: latex, display: true } });
   else if (chosen === 'table') send({ table: resultTable(result) });
+  else if (chosen === 'live') send({ panel: liveBlock(from.tool, from.spec, from.values, result) });
   else if (chosen?.startsWith('plot')) {
     const picture = await plotPicture(plots[Number(chosen.slice(4))]);
     if (picture) send({ picture });
@@ -136,7 +140,7 @@ function Answer({ result }: { result: CalcResult }) {
   );
 }
 
-export function CalcForm({ spec, store }: { spec: CalcSpec; store: string }) {
+export function CalcForm({ tool, spec, store }: { tool: string; spec: CalcSpec; store: string }) {
   const [typed, setValues] = useState<Values>(() => startValues(spec, store));
   const [ran, setRan] = useState<Values | null>(null);
   // Fields that appear after a choice changes start from their initial values.
@@ -189,7 +193,9 @@ export function CalcForm({ spec, store }: { spec: CalcSpec; store: string }) {
           variant={spec.manual ? 'secondary' : 'primary'}
           disabled={!outcome?.ok}
           aria-haspopup="menu"
-          onClick={(event) => outcome?.ok && void chooseInsert(event, outcome.result)}
+          onClick={(event) =>
+            outcome?.ok && void chooseInsert(event, outcome.result, { tool, spec, values: ran ?? values })
+          }
         >
           {word('ui.insert')}
         </Button>

@@ -18,7 +18,7 @@ export { insertIntoPage } from './ui/CalculatorTool';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { loadStored, saveStored } from './ui/storage';
 export { TOOLS, isToolId } from './ui/tools';
-export { openLifeSys } from './lifesys/open';
+export { openLifeSys, reopenLifeSys } from './lifesys/open';
 export type { ToolId } from './ui/tools';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { forgetPageItems, setPageItems } from './ui/upcomingStores';

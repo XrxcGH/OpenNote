@@ -26,3 +26,12 @@ for (const tool of LIFESYS_TOOLS) {
     run: async () => (await import('../../tools')).openLifeSys(tool.id),
   });
 }
+
+// A live calculation block (ext:org.opennote/kitcalc) made by the life science window keeps the tool, the
+// calculation, and the typed values; its Open in tool comes back here through the kit registry. Best effort: a chunk
+// that fails to load leaves Open in tool unavailable, and the commands still work.
+if (typeof window !== 'undefined') {
+  void import('../../tools')
+    .then((tools) => tools.registerKit('lifesys', (tool) => tools.reopenLifeSys(tool)))
+    .catch(() => undefined);
+}

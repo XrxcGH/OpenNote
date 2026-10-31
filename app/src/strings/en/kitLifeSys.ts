@@ -19,6 +19,7 @@ export const kitLifeSys = {
     insertSteps: 'Worked steps',
     insertLatex: 'Equation as LaTeX',
     insertTable: 'Result table',
+    insertLive: 'Live calculation that reopens with these values',
     insertPlot: 'Picture of {title}',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',

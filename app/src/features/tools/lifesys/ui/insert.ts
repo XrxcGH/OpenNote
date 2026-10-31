@@ -1,6 +1,10 @@
 // What Insert puts on the page for a result: an answer line, the worked steps, the equation as LaTeX, the results
 // as a table, or the plot as a picture (drawn from the SVG at twice its size as a PNG, as the grapher does).
-import type { CalcResult, PlotData, ResultRow } from '../types';
+import { announce, showToast } from '../../../../ui';
+import { KIT_CALC_TYPE, kitCalcData, kitCalcFallback } from '../../kits/block/model';
+import { insertIntoPage } from '../../ui/CalculatorTool';
+import type { LifeSysInputs } from '../open';
+import type { CalcResult, CalcSpec, PlotData, ResultRow } from '../types';
 import { plotModel, plotSvg } from './plotModel';
 import { plotLabels } from './Plot';
 import { formatNumber } from './text';
@@ -77,4 +81,28 @@ export async function plotPicture(
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/** Puts a result on the page. With no page caret to take it, a toast says so where the person is looking: a message
+ *  in the live region alone left the first Insert after opening the window looking as if it had failed. */
+export function send(detail: Parameters<typeof insertIntoPage>[0]): void {
+  if (insertIntoPage(detail)) announce(word('ui.inserted'));
+  else showToast({ id: 'lifesys-no-page', message: word('ui.noPage') });
+}
+
+/**
+ * A live calculation block (ext:org.opennote/kitcalc, the kits' shared block) for a result: the tool, the
+ * calculation, and the typed values to reopen it with, and the answer rows and equation shown on the page.
+ */
+export function liveBlock(tool: string, spec: CalcSpec, values: LifeSysInputs['values'], result: CalcResult) {
+  const data = kitCalcData({
+    kit: 'lifesys',
+    tool,
+    title: word(spec.label),
+    summary: answerText(result),
+    inputs: { calc: spec.id, values } satisfies LifeSysInputs,
+    rows: result.rows.map((row) => ({ label: word(row.label, row.vars), value: rowValue(row), unit: row.unit ?? '' })),
+    ...(result.latex ? { latex: result.latex } : {}),
+  });
+  return { type: KIT_CALC_TYPE, data: { ...data }, fallback: kitCalcFallback(data) };
 }

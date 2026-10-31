@@ -45,7 +45,7 @@ function ToolPage({ id, spec }: { id: LifeSysToolId; spec: ToolSpec }) {
           </select>
         </div>
       ) : null}
-      <CalcForm key={`${id}.${calc.id}`} spec={calc} store={`${STORE}.${id}.${calc.id}`} />
+      <CalcForm key={`${id}.${calc.id}`} tool={id} spec={calc} store={`${STORE}.${id}.${calc.id}`} />
     </div>
   );
 }
@@ -117,7 +117,12 @@ export function LifeSysTool() {
         ))}
       </div>
       <div id="ls-panel" role="tabpanel" aria-labelledby={`ls-tab-${tool}`} className={styles.panel}>
-        {spec ? <ToolPage key={tool} id={tool} spec={spec} /> : error ? <p className={styles.note}>{error}</p> : null}
+        {/* A new request (a palette command, or a live block's Open in tool) reads the saved values again. */}
+        {spec ? (
+          <ToolPage key={`${tool}.${seen}`} id={tool} spec={spec} />
+        ) : error ? (
+          <p className={styles.note}>{error}</p>
+        ) : null}
       </div>
     </div>
   );
