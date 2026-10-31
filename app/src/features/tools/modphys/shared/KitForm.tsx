@@ -2,7 +2,7 @@
 // updates as the person types: the answer, a table of values, a plot, and the worked steps. The result is a status
 // region so a screen reader hears it. Insert writes the answer, the equation, the table, the steps, or the plot as
 // a picture at the page's caret.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './strings';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
@@ -14,6 +14,7 @@ import { describeError } from './describe';
 import { parseNumber, unitsOf } from './form';
 import type { FieldSpec, Outcome, Values } from './form';
 import { Plot } from './PlotView';
+import result from './result.module.css';
 import { PRINT, plotTree, svgMarkup } from './plot';
 
 export interface KitFormProps {
@@ -24,15 +25,26 @@ export interface KitFormProps {
   intro?: string;
 }
 
+const initialText = (f: FieldSpec) => f.initial ?? (f.kind === 'select' ? (f.options?.[0]?.value ?? '') : '');
+
 function firstValues(fields: KitFormProps['fields']): Values {
   const list = typeof fields === 'function' ? fields({ text: {}, unit: {} }) : fields;
   return {
-    text: Object.fromEntries(
-      list.map((f) => [f.id, f.initial ?? (f.kind === 'select' ? (f.options?.[0]?.value ?? '') : '')]),
-    ),
+    text: Object.fromEntries(list.map((f) => [f.id, initialText(f)])),
     unit: Object.fromEntries(
       list.filter((f) => unitsOf(f).length > 0).map((f) => [f.id, f.initialUnit ?? unitsOf(f)[0]!]),
     ),
+  };
+}
+
+/** The values with a starting value for each field the list shows that has none yet, as when a choice adds fields. */
+function withInitials(values: Values, list: readonly FieldSpec[]): Values {
+  const missing = list.filter((f) => values.text[f.id] === undefined);
+  const noUnit = list.filter((f) => unitsOf(f).length > 0 && values.unit[f.id] === undefined);
+  if (missing.length === 0 && noUnit.length === 0) return values;
+  return {
+    text: { ...values.text, ...Object.fromEntries(missing.map((f) => [f.id, initialText(f)])) },
+    unit: { ...values.unit, ...Object.fromEntries(noUnit.map((f) => [f.id, f.initialUnit ?? unitsOf(f)[0]!])) },
   };
 }
 
@@ -44,8 +56,9 @@ function safeSolve(solve: KitFormProps['solve'], values: Values): Outcome {
   }
 }
 
-function insert(outcome: Outcome, part: string): void {
-  if (!outcome.ok) return;
+/** Inserts a part of the result at the page's caret; false when no page has a caret. */
+function insert(outcome: Outcome, part: string): boolean {
+  if (!outcome.ok) return false;
   const done = (() => {
     if (part === 'equation' && outcome.latex) return insertIntoPage({ math: { source: outcome.latex, display: true } });
     if (part === 'table' && outcome.rows)
@@ -66,6 +79,7 @@ function insert(outcome: Outcome, part: string): void {
     return insertIntoPage({ text: outcome.answer });
   })();
   announce(t(done ? 'kitModPhys.form.inserted' : 'kitModPhys.form.noPage'));
+  return done;
 }
 
 function Field({
@@ -160,7 +174,7 @@ function Result({ outcome }: { outcome: Outcome }) {
       <p className={chem.headline}>{outcome.answer}</p>
       {outcome.rows && outcome.rows.length > 0 ? (
         <div className={chem.tableWrap} tabIndex={0} role="region" aria-label={t('kitModPhys.form.values')}>
-          <table className={extra.table}>
+          <table className={`${extra.table} ${result.rows}`}>
             <tbody>
               {outcome.rows.map((row, i) => (
                 <tr key={i}>
@@ -192,9 +206,20 @@ function Result({ outcome }: { outcome: Outcome }) {
 }
 
 export function KitForm({ name, fields, solve, intro }: KitFormProps) {
-  const [values, setValues] = useState<Values>(() => firstValues(fields));
-  const list = typeof fields === 'function' ? fields(values) : fields;
+  const [typed, setValues] = useState<Values>(() => firstValues(fields));
+  const [list, values] = useMemo(() => {
+    const shown = typeof fields === 'function' ? fields(typed) : fields;
+    return [shown, withInitials(typed, shown)] as const;
+  }, [fields, typed]);
   const outcome = useMemo(() => safeSolve(solve, values), [solve, values]);
+  // A visible word when nothing was inserted, since the announcement alone reaches only screen readers.
+  const [missed, setMissed] = useState(false);
+  useEffect(() => {
+    if (!missed) return;
+    const timer = window.setTimeout(() => setMissed(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [missed]);
+  const put = (part: string) => setMissed(!insert(outcome, part));
   const openMore = (anchor: HTMLButtonElement) => {
     if (!outcome.ok) return;
     const items = [
@@ -205,7 +230,7 @@ export function KitForm({ name, fields, solve, intro }: KitFormProps) {
       ...(outcome.plot ? [{ id: 'picture', label: t('kitModPhys.form.insertPicture') }] : []),
     ];
     void openMenu({ label: t('kitModPhys.form.insertMenu'), items, anchor, returnFocus: anchor }).then(
-      (chosen) => chosen && insert(outcome, chosen),
+      (chosen) => chosen && put(chosen),
     );
   };
 
@@ -221,13 +246,18 @@ export function KitForm({ name, fields, solve, intro }: KitFormProps) {
         <Result outcome={outcome} />
       </div>
       <div className={tools.buttons}>
-        <Button variant="primary" disabled={!outcome.ok} onClick={() => insert(outcome, 'answer')}>
+        <Button variant="primary" disabled={!outcome.ok} onClick={() => put('answer')}>
           {t('kitModPhys.form.insertAnswer')}
         </Button>
         <Button variant="quiet" disabled={!outcome.ok} aria-haspopup="menu" onClick={(e) => openMore(e.currentTarget)}>
           {t('kitModPhys.form.insertMore')}
         </Button>
       </div>
+      {missed ? (
+        <p className={tools.note} data-modphys-insert-note="">
+          {t('kitModPhys.form.noPage')}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -66,3 +66,48 @@ describe('the modern physics forms', () => {
     expect(await screen.findByLabelText('Calculation')).toBeTruthy();
   });
 });
+
+describe('the bound-states form', () => {
+  const well = schrodinger.find((form) => form.id === 'well')!;
+  const shown = () =>
+    [...document.querySelectorAll('[data-modphys-form="q-well"] label')].map((one) => one.textContent ?? '');
+
+  it('shows only the inputs the chosen potential reads, and solves after a switch', async () => {
+    renderUi(<KitForm name="q-well" fields={well.fields} solve={well.solve} />);
+    expect(shown()).toContain('Width (nm)');
+    expect(shown().some((one) => one.startsWith('Depth'))).toBe(false);
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Potential'), { target: { value: 'harmonic' } });
+    });
+    expect(shown().some((one) => one.startsWith('Width'))).toBe(false);
+    // ħω = 1 eV gives E1 = ħω/2 = 0.5 eV exactly.
+    expect(shown()).toContain('Oscillator energy ħω (eV)');
+    expect(screen.getByRole('status').textContent).toContain('(exact 0.5,');
+  });
+});
+
+describe('inserting with no page', () => {
+  it('says so where a sighted student can see it', async () => {
+    renderUi(<KitForm name="plasma-insert" fields={plasma[0]!.fields} solve={plasma[0]!.solve} />);
+    expect(document.querySelector('[data-modphys-insert-note]')).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Insert answer' }));
+    });
+    expect(document.querySelector('[data-modphys-insert-note]')?.textContent).toBe('Click in a page first, then insert.');
+  });
+});
+
+describe('a narrow window', () => {
+  it('wraps the result table instead of scrolling it sideways and keeps the plot readable', () => {
+    const well = schrodinger.find((form) => form.id === 'well')!;
+    const { container } = renderUi(
+      <div style={{ inlineSize: '300px' }}>
+        <KitForm name="q-narrow" fields={well.fields} solve={well.solve} />
+      </div>,
+    );
+    const table = container.querySelector('[data-modphys-answer] [role="region"]')!;
+    expect(table.scrollWidth).toBeLessThanOrEqual(table.clientWidth + 1);
+    const svg = container.querySelector('[data-modphys-answer] figure svg')!;
+    expect(svg.getBoundingClientRect().width).toBeGreaterThanOrEqual(359);
+  });
+});
