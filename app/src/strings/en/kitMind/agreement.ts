@@ -170,7 +170,10 @@ export const agreement = {
     biasLine: 'Bias',
     limitLine: 'Limits of agreement',
   },
-  picture: { bland: 'Bland-Altman plot of differences against means' },
+  picture: {
+    bland: 'Bland-Altman plot of differences against means',
+    blandDiffs: 'Differences by pair number with bias and limits of agreement',
+  },
   example: {
     codes: 'Yes and no codes from 2 coders',
     kappa: 'A 2 by 2 cross-table',

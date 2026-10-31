@@ -174,7 +174,7 @@ export function runBland(values: Values): Outcome {
     ],
     pictures: [
       {
-        id: 'bland',
+        id: pairs ? 'bland' : 'blandDiffs',
         plot: {
           x: { id: pairs ? 'mean' : 'pair' },
           y: { id: 'difference' },

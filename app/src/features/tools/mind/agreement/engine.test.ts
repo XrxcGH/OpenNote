@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { blandAltman, iccForms, meanSquares } from './icc';
 import { cohen, crossTab, fleiss, landisKoch, presenceKappa, weightedKappa } from './kappa';
 import { alphaInterval, krippendorff } from './kripp';
-import { readUnits } from './measures';
+import { readUnits, runBland } from './measures';
 
 const close = (got: number, want: number, tol: number) => expect(Math.abs(got - want)).toBeLessThanOrEqual(tol);
 
@@ -241,5 +241,21 @@ describe('bounds and missing marks', () => {
     const units = readUnits(text, false);
     expect(units[0]).toEqual(['1', '1', '', '1']);
     close(krippendorff(units, 'nominal').alpha, 0.743421, 1e-6);
+  });
+});
+
+describe('Bland-Altman picture', () => {
+  it('captions pairs as a plot against means and differences as a plot by pair', () => {
+    const pairs = runBland({ input: 'pairs', pairs: '10 9\n12 12\n8 9' });
+    const diffs = runBland({ input: 'diffs', pairs: '1\n0\n-1' });
+    expect(pairs.pictures?.[0]?.id).toBe('bland');
+    expect(diffs.pictures?.[0]?.id).toBe('blandDiffs');
+    // Differences only: x is the pair number 1..3, y the given differences.
+    const pts = diffs.pictures?.[0]?.plot?.series[0]?.points;
+    expect(pts).toEqual([
+      [1, 1],
+      [2, 0],
+      [3, -1],
+    ]);
   });
 });
