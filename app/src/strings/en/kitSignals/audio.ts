@@ -86,6 +86,7 @@ export const audio = {
     leftBone: 'Left, bone (>)',
   },
   hearingLevel: 'Hearing level (dB HL, downward)',
+  courseworkNote: 'For coursework only, not for clinical use or diagnosis.',
   audiogramNote:
     'Thresholds go downward as on a clinical audiogram, so they show as negatives. Bone conduction is dashed.',
   levels: 'Levels to add',

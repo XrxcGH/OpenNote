@@ -565,6 +565,7 @@ export function NeuroTool() {
   const [state, set] = useStored('neurodata', { mode: 'erp' as Mode });
   return (
     <div className={styles.tool}>
+      <Note>{w('courseworkNote')}</Note>
       <Tabs
         label={t('kitSignals.ui.modes')}
         value={state.mode}

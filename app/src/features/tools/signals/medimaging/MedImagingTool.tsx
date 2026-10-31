@@ -551,6 +551,7 @@ export function MedImagingTool() {
   const [state, set] = useStored('medimaging', { mode: 'mri' as Mode });
   return (
     <div className={styles.tool}>
+      <Note>{w('courseworkNote')}</Note>
       <Tabs
         label={t('kitSignals.ui.modes')}
         value={state.mode}

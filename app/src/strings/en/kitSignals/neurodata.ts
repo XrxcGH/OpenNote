@@ -29,6 +29,7 @@ export const neurodata = {
   peak: 'Peak',
   meanAmplitude: 'Mean amplitude in the window',
   snrGain: 'Signal-to-noise gain (√N)',
+  courseworkNote: 'For coursework only, not for clinical use or diagnosis.',
   erpNote:
     'Each epoch has its pre-event mean removed. For a difference wave, subtract one condition’s average from the other’s.',
   fmriFields: {

@@ -66,6 +66,7 @@ export const medimaging = {
   blochTitle: 'Magnetization in the rotating frame',
   timeAxis: 'Time (ms)',
   magnetization: 'M / M0',
+  courseworkNote: 'For coursework only, not for clinical use or diagnosis.',
   blochNote:
     'Pulses are instant turns about x. A spin echo averages 41 spins off resonance; the echo comes at twice the spacing.',
   mask: 'k-space kept',

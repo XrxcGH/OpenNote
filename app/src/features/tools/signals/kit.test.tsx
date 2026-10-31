@@ -95,16 +95,19 @@ describe('signals and sound kit', () => {
     await walkModes(container);
   });
 
-  it('reads the spin-echo example and walks every medical imaging mode', async () => {
+  it('reads the spin-echo example, shows the coursework notice, and walks every medical imaging mode', async () => {
     const { container } = await openAt('medimaging');
     expect(screen.getAllByRole('status')[0]!.textContent).toContain('0.348981');
+    expect(screen.getByText('For coursework only, not for clinical use or diagnosis.')).toBeTruthy();
     await walkModes(container);
   });
 
-  it('analyzes the example vowel at 120 Hz and walks every sound mode', async () => {
+  it('analyzes the example vowel at 120 Hz, walks every sound mode, and marks the audiogram as coursework', async () => {
     const { container } = await openAt('audio');
     expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/f0 12\d/);
     await walkModes(container);
+    fireEvent.click(screen.getByRole('tab', { name: 'Audiogram' }));
+    expect(await screen.findByText('For coursework only, not for clinical use or diagnosis.')).toBeTruthy();
   });
 
   it('counts the example cells and walks every image mode', async () => {
@@ -113,9 +116,10 @@ describe('signals and sound kit', () => {
     await walkModes(container);
   });
 
-  it('averages the example epochs and walks every time-series mode', async () => {
+  it('averages the example epochs, shows the coursework notice, and walks every time-series mode', async () => {
     const { container } = await openAt('neurodata');
     expect(screen.getAllByRole('status')[0]!.textContent).toContain('40 epochs averaged');
+    expect(screen.getByText('For coursework only, not for clinical use or diagnosis.')).toBeTruthy();
     await walkModes(container);
   });
 });

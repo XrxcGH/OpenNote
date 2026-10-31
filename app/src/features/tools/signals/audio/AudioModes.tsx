@@ -138,6 +138,7 @@ export function AudiogramMode() {
   );
   return (
     <>
+      <Note>{w('courseworkNote')}</Note>
       <Fields>
         <TextBox
           label={w('audiogramTable')}
