@@ -43,7 +43,7 @@ export const agreement = {
     matrix: 'Rows are the first coder’s categories and columns the second’s. A first line of names is allowed.',
     counts:
       'One subject on each line, one category in each column. Every line must add up to the same number of raters.',
-    data: 'When a coder gave no value, leave the cell empty or write *, ?, a dot, a dash, NA, N/A, or NaN.',
+    data: 'When a coder gave no value, leave the cell empty. You can also write *, ?, a dot, a dash, NA, N/A, or NaN.',
     boot: 'Units are resampled with replacement. Use 0 for no interval.',
     ratings: 'One target on each line and one judge in each column, with no missing ratings.',
     pairs: 'One pair on each line, or one difference on each line. A first line of names is allowed.',
