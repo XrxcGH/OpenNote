@@ -6,6 +6,7 @@ export type ToolId =
   | 'calculator'
   | 'upcoming'
   | 'flashcards'
+  | 'exam'
   | 'converter'
   | 'reference'
   | 'dictionary'
@@ -47,6 +48,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'calculator', title: 'smart.tools.calculator.title', width: 400 },
   { id: 'upcoming', title: 'smart.tools.upcoming.title', width: 380 },
   { id: 'flashcards', title: 'study.deck.tool', width: 420 },
+  { id: 'exam', title: 'exams.tool', width: 560 },
   { id: 'converter', title: 'study.converter.title', width: 380 },
   { id: 'reference', title: 'study.reference.title', width: 640 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },

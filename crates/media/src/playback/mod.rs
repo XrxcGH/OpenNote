@@ -19,7 +19,7 @@ pub mod decoder;
 pub mod mixer;
 #[cfg(feature = "opus")]
 mod opus_decoder;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos", target_os = "linux"))]
 pub mod output;
 pub mod player;
 pub mod reader;

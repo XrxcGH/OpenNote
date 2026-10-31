@@ -19,7 +19,7 @@ use crate::{
     boot::channel_for,
     core_bridge::CoreBridge,
     ipc::{codes, IpcError, IpcResult},
-    lifecycle::{request_exit, ExitReason, ExitState, Relaunch},
+    lifecycle::{request_exit, ExitReason, ExitState},
     paths::Paths,
 };
 
@@ -364,7 +364,7 @@ pub async fn diagnostics_save_feedback(
     if review.digest() != digest {
         return Err(failure(errors::NOT_REVIEWED));
     }
-    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let owner = crate::desktop::dialog_owner(&window);
     let folder = blocking(move || crate::install::pick_folder(owner, None)).await?;
     let Some(folder) = folder else {
         return Err(failure(errors::CANCELED));
@@ -438,9 +438,10 @@ pub fn privacy_set_offline(hardening: State<'_, Hardening>, offline: bool) -> Ip
 /// Closes OpenNote and opens it again, normally, so safe mode ends. The exit goes through the usual handshake.
 #[tauri::command]
 pub fn diagnostics_restart(app: AppHandle) -> IpcResult<()> {
-    let exe = std::env::current_exe()?;
-    app.state::<ExitState>()
-        .plan_relaunch(Relaunch { exe, args: Vec::new() });
+    // The AppImage on Linux, not the exe in its mount, which is gone by the time the relaunch runs.
+    let relaunch = crate::updater::relaunch_this_app()
+        .ok_or_else(|| IpcError::new("io", "OpenNote couldn't find its own program file."))?;
+    app.state::<ExitState>().plan_relaunch(relaunch);
     request_exit(&app, ExitReason::Close);
     Ok(())
 }

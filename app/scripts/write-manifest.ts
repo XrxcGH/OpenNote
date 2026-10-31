@@ -18,12 +18,25 @@ export interface ReleaseFile {
 
 /**
  * Every file a release ships, from app/release-files.json. The updater crate embeds the same table, and the build
- * matrix in .github/workflows/release.yml builds the same files; tests check both. Later, macOS will ship
- * OpenNote_macOS.dmg, and Linux will ship OpenNote_Linux.AppImage.
+ * matrix in .github/workflows/release.yml builds the same files; tests check both. Windows ships three exes, macOS
+ * one universal OpenNote_macOS.dmg, and Linux one OpenNote_Linux.AppImage (ADR 0055).
  */
 export const RELEASE_FILES: readonly ReleaseFile[] = JSON.parse(
   readFileSync(join(import.meta.dirname, '..', 'release-files.json'), 'utf8'),
 );
+
+/** Whether a release file is a Windows exe, which carries an Authenticode signature and is scanned as it is. */
+export function isWindowsExe(file: string): boolean {
+  return file.endsWith('.exe');
+}
+
+/**
+ * The Rust targets a release target stands for. `universal-apple-darwin` is the Tauri command-line tool's name for
+ * one Mac app built for both Apple silicon and Intel, so it is two Rust targets.
+ */
+export function rustTargets(target: string): readonly string[] {
+  return target === 'universal-apple-darwin' ? ['aarch64-apple-darwin', 'x86_64-apple-darwin'] : [target];
+}
 
 /** One file in the manifest. The updater downloads `url`, then checks `size`, `sha256`, and `signature`. */
 export interface PlatformEntry {

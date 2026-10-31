@@ -50,3 +50,5 @@ export type { Cluster as MathCluster, MathStroke } from './math/group';
 export { listen } from './stream/listen';
 export type { Listening, ListenOptions } from './stream/listen';
 export { withAnswerFallback, withWritingFallback } from './localModels/fallback';
+export { hostOf, loadCloud, usesCloud } from './cloud/store';
+export { CloudChoice } from './cloud/CloudChoice';
