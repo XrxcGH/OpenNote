@@ -84,6 +84,7 @@ export const INSERT_EVENT = 'opennote:insert-into-page';
 export const ZOTERO_EVENT = 'opennote:zotero-command';
 
 export { MOLBIO_FLAGS } from './molbio/flags';
+export { MOLBIO_TOOLS } from './molbio/meta';
 export type { MolBioFlagId } from './molbio/flags';
 /**
  * What a subject kit's data field asks of the page that is open: its blocks, so the student can pick a table. The
