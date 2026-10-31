@@ -120,8 +120,39 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
         }
         "protect.hello" => hello_slot(app, bridge, args),
         "protect.deletePages" => delete_pages(app, bridge, args),
+        "protect.conflicts" => {
+            let id = node_id(args, "id")?;
+            let names = run_notes(app, bridge, |b| {
+                let (root, section) = section_of(b, &id)?;
+                b.core.sealed_conflicts(&root, section).map_err(from_core)
+            })?;
+            Ok(json!({ "versions": names }))
+        }
+        "protect.switchVersion" => {
+            let id = node_id(args, "id")?;
+            let name = version_name(args)?;
+            reopening(app, bridge, &id, |b, root, section| {
+                b.core.switch_sealed_conflict(root, section, &name)
+            })
+        }
+        "protect.removeVersion" => {
+            let id = node_id(args, "id")?;
+            let name = version_name(args)?;
+            on_section(app, bridge, &id, |b, root, section| {
+                b.core.discard_sealed_conflict(root, section, &name)
+            })
+        }
         _ => Err(IpcError::invalid("name", &format!("{name} isn't a protection call"))),
     }
+}
+
+/// The name of a kept version of a protected section's sealed files, as `protect.conflicts` listed it.
+fn version_name(args: &Value) -> IpcResult<String> {
+    let name = arg::<String>(args, "name")?;
+    if name.len() > 64 || name.contains(['/', '\\']) {
+        return Err(IpcError::invalid("name", "isn't a kept version"));
+    }
+    Ok(name)
 }
 
 /// A new password: at least 8 characters.

@@ -179,8 +179,8 @@ pub(crate) fn open(target: &str) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-pub(crate) fn open(_target: &str) -> IpcResult<()> {
-    Err(IpcError::not_implemented("shell_open_external"))
+pub(crate) fn open(target: &str) -> IpcResult<()> {
+    crate::desktop::open_with_default(std::ffi::OsStr::new(target), false)
 }
 
 #[tauri::command]
@@ -296,6 +296,8 @@ mod tests {
         assert!(check_link("ms-settings:speech").is_err());
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn maps_folders_to_the_apps_own_places() {
         let folder = |which| resolve_url(ExternalTarget::Folder { which });
@@ -319,6 +321,8 @@ mod tests {
         assert_eq!(chosen, Ok(Resolved::Folder(PathBuf::from("D:\\Notes"))));
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn will_not_open_a_network_path_as_the_notes_folder() {
         let open_notes = |folder: &str| {

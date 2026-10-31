@@ -141,6 +141,8 @@ export interface TitleBarItemDef {
   /** Where the item goes in the compact layout. */
   compact: 'hide' | 'appBar' | 'bottomMore';
   Component: ComponentType<{ presentation: 'full' | 'icon' | 'menuItem' }>;
+  /** A hook: false while the item draws nothing, so the bar leaves no gap for it. Default always shown. */
+  useVisible?: () => boolean;
 }
 
 export type PaletteFilterId = 'all' | 'pages' | 'commands';

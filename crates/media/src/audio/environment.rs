@@ -178,6 +178,8 @@ mod tests {
     }
 
     #[test]
+    // KeepAwake holds nothing to let go of off Windows, so dropping it there only ends its use.
+    #[cfg_attr(not(windows), allow(clippy::drop_non_drop))]
     fn keeping_awake_can_be_taken_and_given_back() {
         let awake = KeepAwake::new();
         let held = awake.is_held();

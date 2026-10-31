@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useFlag } from '../../app/flags';
 import { commandContext } from '../../commands/registry';
+import { hostSystem } from '../../platform/system';
 import type { CaptionState, WindowClient } from '../../platform/types';
 
 /** The window client from the platform the commands were given at start-up, or null before start-up. */
@@ -17,7 +18,8 @@ export function frameWindow(): WindowClient | null {
 
 /** Whether the page draws the title bar and caption buttons (the `shell.customFrame` flag). */
 export function useCustomFrame(): boolean {
-  return useFlag('shell.customFrame');
+  // macOS and Linux keep their own title bars (ADR 0055), so the flag only draws the caption on Windows.
+  return useFlag('shell.customFrame') && hostSystem() === 'windows';
 }
 
 /** Whether the native Snap Layouts overlay covers Maximize: the custom frame with `window.snapLayouts` on. */

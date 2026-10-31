@@ -13,6 +13,7 @@ import { t } from '../../strings/t';
 import { useRegion } from '../regions';
 import { useNodes } from '../layout/useNode';
 import { useFit } from './fit';
+import { ItemSlot } from './ItemSlot';
 import styles from './TitleBar.module.css';
 import { TitleBarOverflow } from './TitleBarOverflow';
 
@@ -99,10 +100,8 @@ export function AppBar() {
         {items
           .filter((item) => !moved.includes(item))
           .sort((a, b) => a.order - b.order)
-          .map(({ id, Component }) => (
-            <span key={id} className={styles.item}>
-              <Component presentation="icon" />
-            </span>
+          .map((item) => (
+            <ItemSlot key={item.id} item={item} className={styles.item} presentation="icon" />
           ))}
         {moved.length > 0 && <TitleBarOverflow items={moved} />}
       </div>

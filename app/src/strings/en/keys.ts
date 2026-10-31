@@ -22,4 +22,8 @@ export const keys = {
   insert: 'Insert',
   menu: 'Menu',
   plus: 'Plus',
+  // The macOS modifier symbols, as its menus print them.
+  macCommand: '⌘',
+  macOption: '⌥',
+  macShift: '⇧',
 } as const;

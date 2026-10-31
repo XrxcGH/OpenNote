@@ -4,6 +4,9 @@
 //!
 //! Usage: `opennote-spikes <ink|text|pdf|audio> [--auto] [--mode <name>] [--samples <n>] [--out <file>]`
 
+// Every spike measures Windows, so off Windows the helpers they share go unused (ADR 0055).
+#![cfg_attr(not(windows), allow(dead_code))]
+
 #[cfg(windows)]
 mod audio;
 // Each spike uses only some of the shared tools.
