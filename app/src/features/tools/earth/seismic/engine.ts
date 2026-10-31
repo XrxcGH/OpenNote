@@ -1,6 +1,6 @@
 // Seismology and seismic surveys: distance from the S-P time, the Wadati diagram, an epicenter by least squares,
-// moment magnitude and energy, the Gutenberg-Richter b-value, refraction and reflection travel times, and wave
-// speeds from elastic moduli. SI units (m, s, N·m, J) unless a name says otherwise.
+// moment magnitude and energy, the Gutenberg-Richter b-value, flat and dipping refraction, reflection travel times,
+// and wave speeds from elastic moduli. SI units (m, s, N·m, J) unless a name says otherwise.
 import { check } from '../core/problem';
 
 const LOG10E = Math.LOG10E;
@@ -242,6 +242,74 @@ export function depthFromIntercept(ti: number, v1: number, v2: number): number {
   check(v2 > v1 && v1 > 0, 'faster');
   check(ti > 0, 'interceptTime');
   return (ti * v1 * v2) / (2 * Math.sqrt(v2 * v2 - v1 * v1));
+}
+
+export interface Dipping {
+  /** Apparent speed from the shot at the up-dip end, shooting down-dip: V₁ / sin(θc + δ). */
+  down: number;
+  /** Apparent speed from the shot at the down-dip end, shooting up-dip: V₁ / sin(θc − δ). */
+  up: number;
+  /** Intercept time of the down-dip shot's head wave: 2 h_up cos θc / V₁. */
+  interceptDown: number;
+  /** Intercept time of the up-dip shot's head wave: 2 h_down cos θc / V₁. */
+  interceptUp: number;
+  /** Dip in degrees, positive when the interface deepens from the up-dip shot toward the other. */
+  dip: number;
+  /** Critical angle in degrees. */
+  critical: number;
+  v2: number;
+  /** Depths normal to the interface below the two shots. */
+  hUp: number;
+  hDown: number;
+  /** The common two-layer estimate V₂ ≈ 2 V_d V_u cos δ / (V_d + V_u), to compare. */
+  v2Approx: number;
+}
+
+const DEG = 180 / Math.PI;
+
+function dippingFrom(v1: number, theta: number, delta: number, hUp: number, hDown: number): Dipping {
+  check(theta + Math.abs(delta) < Math.PI / 2 && theta - Math.abs(delta) > 0, 'dipSteep');
+  const down = v1 / Math.sin(theta + delta);
+  const up = v1 / Math.sin(theta - delta);
+  return {
+    down,
+    up,
+    interceptDown: (2 * hUp * Math.cos(theta)) / v1,
+    interceptUp: (2 * hDown * Math.cos(theta)) / v1,
+    dip: delta * DEG,
+    critical: theta * DEG,
+    v2: v1 / Math.sin(theta),
+    hUp,
+    hDown,
+    v2Approx: (2 * down * up * Math.cos(delta)) / (down + up),
+  };
+}
+
+/**
+ * A dipping interface between V₁ above and V₂ below, shot from both ends of a spread of length L, with the
+ * interface h_up and h_down deep (normal to it) below the two shots, so sin δ = (h_down − h_up)/L.
+ */
+export function dippingRefraction(v1: number, v2: number, hUp: number, hDown: number, spread: number): Dipping {
+  check(v1 > 0 && v2 > 0, 'speed');
+  check(v2 > v1, 'faster');
+  check(hUp > 0 && hDown > 0, 'thickness');
+  check(spread > 0 && Math.abs(hDown - hUp) < spread, 'dipSpread');
+  return dippingFrom(v1, Math.asin(v1 / v2), Math.asin((hDown - hUp) / spread), hUp, hDown);
+}
+
+/**
+ * The inverse: V₁ and both shots' apparent speeds and intercept times give the critical angle, the dip, the true
+ * V₂, and the depths: θc + δ = arcsin(V₁/V_d), θc − δ = arcsin(V₁/V_u), h = tᵢ V₁ / (2 cos θc).
+ */
+export function dippingFromApparent(v1: number, down: number, up: number, tDown: number, tUp: number): Dipping {
+  check(v1 > 0, 'speed');
+  check(down > v1 && up > v1, 'apparent');
+  check(tDown > 0 && tUp > 0, 'interceptTime');
+  const a = Math.asin(v1 / down);
+  const b = Math.asin(v1 / up);
+  const theta = (a + b) / 2;
+  const cos = Math.cos(theta);
+  return dippingFrom(v1, theta, (a - b) / 2, (tDown * v1) / (2 * cos), (tUp * v1) / (2 * cos));
 }
 
 export interface Picks {

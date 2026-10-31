@@ -1,5 +1,6 @@
 // The seismology calculations as forms: S-P distance, the Wadati diagram, an epicenter from arrivals, magnitude
-// and energy, the b-value, refraction from a model or from picks, reflection moveout, Dix speeds, and wave speeds.
+// and energy, the b-value and Omori-Utsu decay, refraction (flat from a model or picks, or dipping), reflection
+// moveout, Dix speeds, and wave speeds.
 import '../text';
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
@@ -24,6 +25,7 @@ import {
   wadati,
   waveSpeeds,
 } from './engine';
+import { dippingMode, omoriMode } from './modesSequence';
 
 const { num, pick, text, r } = fieldsFor('seismic');
 
@@ -510,8 +512,10 @@ export const SEISMIC_MODES: readonly Mode[] = [
   locateMode,
   magnitudeMode,
   bMode,
+  omoriMode,
   refractionMode,
   picksMode,
+  dippingMode,
   nmoMode,
   dixMode,
   speeds,

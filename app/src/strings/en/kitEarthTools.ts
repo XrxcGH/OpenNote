@@ -455,6 +455,8 @@ export const kitEarthTools = {
       bvalue: 'Gutenberg-Richter b-value',
       refraction: 'Two-layer refraction',
       picks: 'Refraction from picked arrivals',
+      dipping: 'Dipping-layer refraction',
+      omori: 'Omori-Utsu aftershock decay',
       nmo: 'Reflection moveout',
       dix: 'Dix interval speed',
       speeds: 'Wave speeds from elastic moduli',
@@ -466,6 +468,10 @@ export const kitEarthTools = {
       bvalue: 'Type or paste magnitudes separated by commas, spaces, or new lines.',
       picks:
         'One line per pick: offset in m, time in s, then 1 for the direct wave or 2 for the head wave from the lower layer.',
+      dipping:
+        'Shots at both ends of one spread. The up-dip shot is at distance 0; depths are measured at right angles to the interface.',
+      omori:
+        'Type or paste the aftershock times after the mainshock, all in one unit such as days, separated by commas, spaces, or new lines.',
     },
     f: {
       dt: 'S-P time',
@@ -495,10 +501,21 @@ export const kitEarthTools = {
       bulk: 'Bulk modulus K',
       shear: 'Shear modulus μ',
       density: 'Density',
+      dipFrom: 'Start from',
+      hUp: 'Depth below the up-dip shot',
+      hDown: 'Depth below the down-dip shot',
+      vDown: 'Apparent speed shooting down-dip',
+      vUp: 'Apparent speed shooting up-dip',
+      tDown: 'Intercept time shooting down-dip',
+      tUp: 'Intercept time shooting up-dip',
+      spread: 'Spread length',
+      aftershocks: 'Aftershock times',
     },
     o: {
       moment: 'Seismic moment',
       fault: 'Fault size and slip',
+      layerModel: 'A layer model',
+      apparent: 'Apparent speeds and intercepts',
     },
     r: {
       distance: 'Distance',
@@ -536,6 +553,19 @@ export const kitEarthTools = {
       vp: 'P-wave speed',
       vs: 'S-wave speed',
       poisson: 'Poisson’s ratio',
+      vDown: 'Apparent speed down-dip V_d',
+      vUp: 'Apparent speed up-dip V_u',
+      tDown: 'Intercept time down-dip',
+      tUp: 'Intercept time up-dip',
+      dip: 'Dip δ',
+      v2Approx: 'V₂ from 2V_dV_u cos δ/(V_d + V_u)',
+      hUp: 'Depth below the up-dip shot',
+      hDown: 'Depth below the down-dip shot',
+      k: 'Productivity K',
+      c: 'Time offset c',
+      p: 'Decay exponent p',
+      rate1: 'Rate at t = 1 (per unit time)',
+      expected: 'Fitted count by the last aftershock',
     },
     a: {
       sp: 'The station is {value} km from the earthquake.',
@@ -548,6 +578,10 @@ export const kitEarthTools = {
       nmo: 'The reflection arrives at {t} s, a moveout of {moveout} s.',
       dix: 'The interval speed is {speed} m/s over {thickness} m.',
       speeds: 'Vp is {vp} km/s and Vs is {vs} km/s.',
+      dipModel: 'Shooting down-dip V_d = {down} m/s, up-dip V_u = {up} m/s, with a {dip}° dip.',
+      dipApparent:
+        'The interface dips {dip}°, V₂ = {v2} m/s, {hUp} m deep below the up-dip shot and {hDown} m below the other.',
+      omori: 'n(t) = {k} / (t + {c})^{p} from {count} aftershocks.',
     },
     s: {
       sp: 'd = Δt / (1/Vs − 1/Vp) = {dt} / (1/{vs} − 1/{vp}) = {value} km, with speeds in km/s.',
@@ -575,6 +609,18 @@ export const kitEarthTools = {
       dixThickness: 'The interval is V_int (t₂ − t₁)/2 = {thickness} m thick.',
       vp: 'Vp = √((K + 4μ/3)/ρ) = {value} km/s.',
       vs: 'Vs = √(μ/ρ) = {value} km/s.',
+      dipAngle:
+        'sin δ = (h_down − h_up)/L = ({hDown} − {hUp})/{spread}, so δ = {dip}°; θc = arcsin(V₁/V₂) = {critical}°.',
+      dipSpeeds: 'V_d = V₁/sin(θc + δ) = {down} m/s and V_u = V₁/sin(θc − δ) = {up} m/s.',
+      dipIntercepts: 'Each intercept is 2h cos θc / V₁ with the depth below its own shot: {tDown} ms and {tUp} ms.',
+      dipInvert:
+        'θc + δ = arcsin(V₁/V_d) and θc − δ = arcsin(V₁/V_u), so θc = {critical}°, δ = {dip}°, and V₂ = V₁/sin θc = {v2} m/s.',
+      dipDepths: 'h = tᵢ V₁ / (2 cos θc): {hUp} m below the up-dip shot and {hDown} m below the down-dip shot.',
+      dipApprox: 'For a gentle dip, V₂ ≈ 2V_dV_u cos δ/(V_d + V_u) = {approx} m/s.',
+      omoriCount:
+        'Sort the {count} times; the i-th aftershock has the cumulative count N = i, and N(t) = K[(t + c)^(1−p) − c^(1−p)]/(1 − p).',
+      omoriFit:
+        'Levenberg-Marquardt on the counts gives K = {k} ± {sk}, c = {c} ± {sc}, p = {p} ± {sp}; N({last}) = {expected}.',
     },
     plot: {
       wadatiTitle: 'Wadati diagram',
@@ -603,6 +649,18 @@ export const kitEarthTools = {
       nmoTitle: 'Reflection hyperbola',
       nmoText: 'Two-way time against offset for t₀ {t0} s and speed {v} m/s.',
       twoWay: 'Two-way time (s)',
+      dipTitle: 'Dipping-layer travel times',
+      dipText:
+        'First arrivals from both shots along the spread; down-dip apparent speed {down} m/s, up-dip {up} m/s, and a reciprocal time of {reciprocal} ms.',
+      alongSpread: 'Distance from the up-dip shot (m)',
+      headDown: 'Head wave, shot down-dip',
+      headUp: 'Head wave, shot up-dip',
+      omoriTitle: 'Aftershock rate',
+      omoriText: 'Binned aftershock rates on log axes with the fitted Omori-Utsu curve, p = {p}.',
+      sinceMain: 'Time since the mainshock',
+      rate: 'Aftershocks per unit time',
+      binned: 'Binned rate',
+      omoriFit: 'Omori-Utsu fit',
     },
     errors: {
       speed: 'Speeds must be greater than 0.',
@@ -625,6 +683,14 @@ export const kitEarthTools = {
       order: 'The lower reflector must have the later two-way time.',
       dix: 'These RMS speeds give no real interval speed. The deeper RMS speed is too slow.',
       moduli: 'The bulk modulus and density must be greater than 0, and the shear modulus cannot be negative.',
+      dipSpread: 'The spread must be longer than the depth difference between its two ends.',
+      dipSteep:
+        'This dip is too steep for a head wave to reach both shots: the dip must be smaller than the critical angle.',
+      apparent: 'Both apparent speeds must be faster than V₁.',
+      aftershocks: 'Enter at least 5 aftershock times.',
+      afterMain: 'Every aftershock time must be greater than 0, after the mainshock.',
+      aftershockNumber: 'Every aftershock time must be a number.',
+      omoriFit: 'These times do not settle on one Omori-Utsu curve. Check that they are times after the mainshock.',
     },
   },
   air: {
