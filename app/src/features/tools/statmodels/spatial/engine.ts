@@ -428,9 +428,9 @@ export interface FittedVariogram extends VariogramParams {
 
 /**
  * The model's nugget, partial sill, and range by least squares on the bins, weighted by N(h) / gamma(h)^2. Each
- * parameter is bounded by a smooth map b * v^2 / (1 + v^2): the nugget by the largest bin semivariance, the partial
- * sill by 3 times it, and the range by 2 times the largest lag distance, so a trending field cannot run off to an
- * unbounded linear variogram with a huge sill and range.
+ * parameter is bounded by a smooth map b * v^2 / (1 + v^2). The nugget's bound is the largest bin semivariance, the
+ * partial sill's is 3 times it, and the range's is 2 times the largest lag distance. So a trending field cannot run
+ * off to an unbounded linear variogram with a huge sill and range.
  */
 export function fitVariogram(model: VariogramModel, lags: readonly Lag[]): FittedVariogram {
   const maxG = Math.max(...lags.map((l) => l.gamma));

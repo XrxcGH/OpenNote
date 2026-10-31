@@ -105,6 +105,17 @@ describe('the statistical models kit window', () => {
     expect(tabs[0].getAttribute('aria-selected')).toBe('true');
   });
 
+  it('opens on the tool a palette command names', async () => {
+    await renderApp();
+    await commands.get('tools.kitStatModels.glm')!.run({} as never, undefined as never);
+    await waitFor(() => expect(openTools()).toContain('kit-statmodels'));
+    const dialog = await screen.findByRole('dialog', { name: 'Statistical models' });
+    const tab = await within(dialog).findByRole('tab', { name: titleOf('glm') }, { timeout: 15_000 });
+    expect(tab.getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+describe('inserting from the statistical models kit', () => {
   it('puts the answer, the equation, the table, the steps, the words, and a picture into the page', async () => {
     saveTab('glm');
     renderUi(<StatModelsKit />);
@@ -146,14 +157,5 @@ describe('the statistical models kit window', () => {
     expect(savedTexts(null)).toBeNull();
     expect(savedTexts({ texts: 3 })).toBeNull();
     expect(savedTexts({ texts: { a: '1', b: 2 } })).toEqual({ a: '1' });
-  });
-
-  it('opens on the tool a palette command names', async () => {
-    await renderApp();
-    await commands.get('tools.kitStatModels.glm')!.run({} as never, undefined as never);
-    await waitFor(() => expect(openTools()).toContain('kit-statmodels'));
-    const dialog = await screen.findByRole('dialog', { name: 'Statistical models' });
-    const tab = await within(dialog).findByRole('tab', { name: titleOf('glm') }, { timeout: 15_000 });
-    expect(tab.getAttribute('aria-selected')).toBe('true');
   });
 });

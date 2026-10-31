@@ -603,7 +603,7 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | PCA, factors, and clusters | Principal components, factor analysis with rotation and parallel analysis, k-means, Gaussian mixtures by EM, hierarchical clustering with a dendrogram, a clustered heat map, and multidimensional scaling. | Built, untested by hand |
 | Machine learning lab | Nearest neighbors, trees, naive Bayes, logistic regression, the perceptron, a small neural network, ridge, and the lasso on toy sets or your data, with seeded splits, cross-validation, and the usual scores and curves. | Built, untested by hand |
 | Spatial statistics | Point-pattern statistics, Moran's I and Geary's C with local clusters, semivariograms, ordinary kriging with contour maps, and inverse-distance weighting. | Built, untested by hand |
-| Live calculation block from a model | Insert, then Live calculation block, puts the tool's answer and key results on the page; its Open in tool reopens the tool with the data and choices that were typed. | Built, untested by hand |
+| Live calculation block from a model | The Insert menu's Live calculation block keeps the tool's answer with its key results on the page. Its Open in tool reopens the tool with the data and choices that were typed. | Built, untested by hand |
 ## Subject tool kits
 
 On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explains how to use them. Each kit is one tool window with a tab per tool. Every tool takes typed values with units (SI or US), works the problem, and shows results, worked steps, and assumptions, with an Insert menu for the page. Each lane's engines are checked by unit tests against published values or independent hand calculations.
