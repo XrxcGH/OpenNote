@@ -28,7 +28,25 @@ describe('measures of effect', () => {
   it('adds 0.5 to every cell when one is 0', () => {
     const e = effect({ a: 0, b: 10, c: 5, d: 5 });
     expect(e.corrected).toBe(true);
-    close(e.or.value, (0.5 * 5.5) / (10.5 * 5.5), 1e-12);
+    // The point estimates use the raw counts: R1 = 0/10, so RR = 0, OR = 0·5/(10·5) = 0, and AF_e = (0 − 1)/0.
+    expect(e.rr.value).toBe(0);
+    expect(e.or.value).toBe(0);
+    expect(e.afExposed).toBe(Number.NEGATIVE_INFINITY);
+    close(e.riskExposed, 0, 1e-12);
+    close(e.rd.value, -0.5, 1e-12);
+    // Only the log intervals use the corrected cells: centre (0.5/11)/(5.5/11) = 1/11, SE = √(2 − 1/11 + 1/5.5 − 1/11) = √2.
+    close(e.rrCentre, 1 / 11, 1e-12);
+    close(e.seLogRr, Math.SQRT2, 1e-12);
+    close(e.rr.lower, 0.00568626, 1e-7);
+    close(e.rr.upper, 1.45341, 1e-5);
+    close(e.orCentre, (0.5 * 5.5) / (10.5 * 5.5), 1e-12);
+  });
+
+  it('gives an infinite ratio when the unexposed have no cases', () => {
+    const e = effect({ a: 5, b: 5, c: 0, d: 10 });
+    expect(e.rr.value).toBe(Number.POSITIVE_INFINITY);
+    expect(e.or.value).toBe(Number.POSITIVE_INFINITY);
+    close(e.afExposed, 1, 1e-12);
   });
 
   it('Mantel-Haenszel odds ratio of 2 strata', () => {

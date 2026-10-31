@@ -64,7 +64,8 @@ export const epi = {
     smr: 'Standardized ratio {smr} ({level} exact interval {ci}).',
   },
   note: {
-    halfAdded: 'A cell is 0, so 0.5 was added to every cell for the ratios and their intervals.',
+    halfAdded:
+      'A cell is 0, so 0.5 was added to every cell for the log intervals; the point estimates use the raw counts.',
     perUnits: 'Rates are per {per} units of person-time.',
   },
   col: {
