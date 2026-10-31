@@ -38,7 +38,32 @@ Eleven tool windows work engineering, science, and math problems. Each window ha
 | Engineering mathematics  | Series, complex analysis, systems of ODEs, Fourier series and boundary value problems, numerical methods, a matrix console, a linear algebra workbench, and vector calculus                                                                              |
 | Mechanisms and dynamics  | Linkages, cams, gears, compliant mechanisms, rigid-body dynamics, Lagrangian mechanics, 3D rotations, vibration, and robot arms                                                                                                                          |
 | Physics tools            | Waves and sound, special relativity, wave and geometric optics, nuclear science, spacecraft sizing, electric and magnetic fields, and orbits and maneuvers                                                                                               |
+| Reasoning kit            | Logic, automata and grammars, numbers and groups, digital logic, computer systems, algorithms, optimization, and games and voting (see below)                                                                                                            |
+
+## The reasoning kit
+
+The reasoning kit has a tab per tool, and each tool has several modes. Every answer comes with the worked steps, and most with a table or a picture you can insert.
+
+Logic and proof:
+
+- **Logic**: truth tables, normal forms, a natural deduction checker, syllogisms, models, resolution, lambda terms, argument maps, and fault trees.
+- **Automata and grammars**: finite automata, regular expressions, the pumping lemma, pushdown automata, grammars and parsing tables, Turing machines, and transducers.
+
+Discrete mathematics:
+
+- **Numbers and groups**: number theory with every step, classical ciphers and small public-key examples, exact counting, and finite groups and fields.
+- **Algorithms**: sorting and searching with counts, data structures, graph algorithms, informed and game search, dynamic programming, and network measures.
+
+Computing:
+
+- **Digital logic**: Karnaugh maps and Quine-McCluskey minimization, gates, timing, flip-flops, and state machines.
+- **Computer systems**: caches, paging, CPU scheduling, real-time tests, pipeline hazards, branch prediction, speedup, and deadlock. It also does IPv4 and IPv6 subnets, network delays, sliding-window protocols, routing tables, and logical clocks. For databases it finds keys and normal forms and runs relational algebra, and it gives SHA-256, SHA-1, MD5, and CRC-32 digests. Quantities take units such as 10 Mbit/s, 20 ms, or 64 KiB.
+
+Decisions:
+
+- **Optimization**: linear and integer programs with sensitivity, transportation and assignment, project schedules, decision trees, and queues.
+- **Games and voting**: normal-form and game-tree equilibria, bargaining and auctions, voting rules, apportionment, voting power, and districting measures.
 
 ## Which builds have them
 
-The kits are on in Beta and off in Stable. Their feature flags are `kits.electrical`, `kits.fluidheat`, `kits.solids`, `kits.aero`, `kits.chemmat`, `kits.thermo`, `kits.control`, `kits.design`, `kits.math`, `kits.mechdyn`, and `kits.physics`. The live calculation block's flag is `kits.calc`.
+The kits are on in Beta and off in Stable. Their feature flags are `kits.electrical`, `kits.fluidheat`, `kits.solids`, `kits.aero`, `kits.chemmat`, `kits.thermo`, `kits.control`, `kits.design`, `kits.math`, `kits.mechdyn`, `kits.physics`, and `kits.reasoning`. The live calculation block's flag is `kits.calc`.
