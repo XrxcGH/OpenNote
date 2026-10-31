@@ -151,6 +151,24 @@ describe('bands, peaks, and damping', () => {
     expect(found[1]!.freq).toBeCloseTo(120, 6);
   });
 
+  it('places a Gaussian peak exactly and reads an off-bin Hann tone to within 2% of a bin', () => {
+    // A Gaussian is a parabola on a log scale, so three bins of exp(−(f − 10.37)²/2) put the vertex at 10.37.
+    const freq = Array.from({ length: 21 }, (_, k) => k);
+    const [gauss] = peaks(
+      freq,
+      freq.map((f) => Math.exp(-((f - 10.37) ** 2) / 2)),
+      1,
+    );
+    expect(gauss!.freq).toBeCloseTo(10.37, 12);
+    // 1024 samples at 1 kHz: bins 0.9765625 Hz apart, the tone 0.7072 of a bin past bin 102. A parabola through
+    // linear magnitudes reads 100.351 Hz here (about 5% of a bin high); the log-scale parabola is within 2%.
+    const samples = sine(1024, 100.3, 1000, 1);
+    const result = spectrum({ samples, rate: 1000, window: 'hann', detrend: 'none' });
+    const [top] = peaks(result.freq, result.amplitude, 1);
+    expect(result.freq[1]).toBeCloseTo(0.9765625, 12);
+    expect(Math.abs(top!.freq - 100.3)).toBeLessThan(0.02 * 0.9765625);
+  });
+
   it('gives a damping ratio of 0.02 from half-power points at 9.8 and 10.2 Hz around 10 Hz', () => {
     expect(halfPowerDamping(9.8, 10.2, 10).zeta).toBeCloseTo(0.02, 9);
     expect(() => halfPowerDamping(10.2, 9.8, 10)).toThrow(SignalError);

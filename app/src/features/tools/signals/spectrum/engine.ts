@@ -212,7 +212,12 @@ export function bandPowers(
   });
 }
 
-/** The tallest local maxima, largest first, with the peak's frequency refined by a parabola through three bins. */
+/**
+ * The tallest local maxima, largest first, with the peak's frequency refined by a parabola through the logarithms of
+ * three bins. On a log scale a Gaussian-shaped peak is exactly a parabola, so the vertex lands far nearer the true
+ * frequency than a parabola through linear values does (for a Hann window, a few thousandths of a bin rather than
+ * about a twentieth). Where a neighbour is at the numerical floor the linear values are used.
+ */
 export function peaks(
   freq: ArrayLike<number>,
   values: ArrayLike<number>,
@@ -223,8 +228,10 @@ export function peaks(
   for (let k = 1; k < values.length - 1; k += 1) {
     const [a, b, c] = [values[k - 1]!, values[k]!, values[k + 1]!];
     if (b > a && b >= c && b > 0) {
-      const curve = a - 2 * b + c;
-      const shift = curve === 0 ? 0 : (0.5 * (a - c)) / curve;
+      const logScale = a > b * 1e-9 && c > b * 1e-9;
+      const [la, lb, lc] = logScale ? [Math.log(a), Math.log(b), Math.log(c)] : [a, b, c];
+      const curve = la - 2 * lb + lc;
+      const shift = curve === 0 ? 0 : (0.5 * (la - lc)) / curve;
       found.push({ freq: freq[k]! + shift * df, value: b });
     }
   }
