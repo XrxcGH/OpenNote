@@ -7,7 +7,7 @@ import type { MessageKey } from '../../../../strings/t';
 import extra from '../../ui/extra.module.css';
 import { loadStored, saveStored } from '../../ui/storage';
 import tools from '../../ui/tools.module.css';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { insertLiveBlock } from '../../kits/ui/insert';
 import { onKitInputs, takeKitInputs } from '../../kits/registry';
 import { KitForm } from './KitForm';
@@ -53,19 +53,19 @@ export function ToolForms({ tool, forms }: { tool: string; forms: readonly FormD
   const [chosen, setChosen] = useState<string>(() => loadStored<string>(key, forms[0]!.id));
   // Values a live block brought back, and a count that remounts the form on them.
   const [restored, setRestored] = useState<{ form: string; values: Values; count: number } | null>(null);
-  const take = useCallback(() => {
-    const inputs = readModPhysInputs(takeKitInputs(MODPHYS_KIT, tool));
-    if (!inputs || !forms.some((form) => form.id === inputs.form)) return;
-    setChosen(inputs.form);
-    saveStored(key, inputs.form);
-    setRestored((last) => ({ form: inputs.form, values: inputs.values, count: (last?.count ?? 0) + 1 }));
-  }, [forms, key, tool]);
   useEffect(() => {
-    take();
-    return onKitInputs(MODPHYS_KIT, (arrived) => {
-      if (arrived === tool) take();
-    });
-  }, [take, tool]);
+    // Inputs waiting when the tool shows, then any that arrive while it is open.
+    const restore = (arrived: string) => {
+      if (arrived !== tool) return;
+      const inputs = readModPhysInputs(takeKitInputs(MODPHYS_KIT, tool));
+      if (!inputs || !forms.some((form) => form.id === inputs.form)) return;
+      setChosen(inputs.form);
+      saveStored(key, inputs.form);
+      setRestored((last) => ({ form: inputs.form, values: inputs.values, count: (last?.count ?? 0) + 1 }));
+    };
+    restore(tool);
+    return onKitInputs(MODPHYS_KIT, restore);
+  }, [forms, key, tool]);
   const current = forms.find((form) => form.id === chosen) ?? forms[0]!;
   const live = (
     values: Values,
