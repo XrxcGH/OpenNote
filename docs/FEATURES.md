@@ -619,7 +619,6 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
 | Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
 | Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |
-<<<<<<< HEAD
 ## Subject kit foundations
 
 (Beta 6. On in Beta and off in Stable, with the kit flags. Help: [Data, seeds, and figures in the subject kits](help/subject-kit-data-and-figures.md).)
@@ -639,7 +638,6 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Feature | What it does | Status |
 | --- | --- | --- |
 | Economics and finance calculators | One window with 87 calculators in eight subjects (money over time, markets, firms, consumer choice, macroeconomics, measurement, accounting, investments). Each shows numbered worked steps, units, and a graph where useful, and can insert its answer or its steps into the page. The CPI-U table is public domain data from the U.S. Bureau of Labor Statistics. Opens from the command palette and the Insert tab. Behind the `tools.econ` flag, on in Beta. See the [help page](help/economics-and-finance.md). | Built, untested by hand |
-=======
 
 ## macOS and Linux
 
@@ -649,4 +647,3 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | --- | --- | --- |
 | macOS and Linux builds | `OpenNote_macOS.dmg` (one universal app for macOS 11 and later) and `OpenNote_Linux.AppImage` (64-bit, glibc 2.35 or later), unsigned until the owner adds the signing secrets. File dialogs, Open with the default app, recording, and the folders follow each system. Command replaces Ctrl in shortcuts on a Mac. Settings, then About, and Show what works on this computer list what still needs Windows. The AppImage updates itself; a Mac installs each new dmg by hand. | Built, untested by hand on a Mac or Linux PC; checked in CI on macOS and Ubuntu |
 | Menu bar on macOS | The Mac menu bar lists OpenNote's commands, one menu per category as in the shortcut list, with each command's key equivalent (`⇧⌘D`), next to the app menu (About, Settings, Hide, Quit), Edit (Undo, Cut, Copy, Paste), and Window. It follows rebinding and the shortcut set. | Built, untested by hand on a Mac; the menu is built from the registry in tests, and installed only on macOS |
->>>>>>> origin/beta
