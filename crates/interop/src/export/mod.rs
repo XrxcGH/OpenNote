@@ -7,6 +7,8 @@
 mod convert;
 mod equations;
 mod files;
+mod footnotes;
+mod latex;
 mod names;
 mod pdf;
 mod plan;
@@ -19,6 +21,10 @@ mod word;
 
 pub use convert::Resolver;
 pub use files::{export_files, export_files_with, Exported, Format};
+pub use latex::{
+    export_latex, export_latex_with, latex_preview, Citation as LatexCitation, DateChoice as LatexDate,
+    Engine as LatexEngine, LatexOptions, Margin as LatexMargin, Paper as LatexPaper,
+};
 pub use pdf::{export_pdf_bundle, NoPdfRenderer, PdfRenderer, PreparedPdfRenderer};
 pub use plan::Scope;
 pub use pptx::export_pptx;

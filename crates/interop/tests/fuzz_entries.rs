@@ -14,7 +14,7 @@ mod search_entry;
 
 type Entry = fn(&[u8]);
 
-const ENTRIES: [(&str, Entry); 13] = [
+const ENTRIES: [(&str, Entry); 14] = [
     ("zip", fuzzing::zip),
     ("enex", fuzzing::enex),
     ("docx", fuzzing::docx),
@@ -27,6 +27,7 @@ const ENTRIES: [(&str, Entry); 13] = [
     ("csv", fuzzing::csv),
     ("sqlite", fuzzing::sqlite),
     ("onenote", fuzzing::onenote),
+    ("notes_app", fuzzing::notes_app),
     ("search_index", search_entry::search_index),
 ];
 
@@ -82,6 +83,15 @@ fn seeds(name: &str) -> Vec<Vec<u8>> {
             let section = opennote_interop::onenote::write::sample_section();
             let package = opennote_interop::onenote::write::package(&[("a.one", &section)]);
             vec![section, package, corpus("data/onenote/Trip.onepkg")]
+        }
+        "notes_app" => {
+            use opennote_interop::import::notes_apps_fuzzing::fixtures;
+            vec![
+                fixtures::notability_note(),
+                fixtures::goodnotes_document(),
+                fixtures::samsung_note(),
+                fixtures::session_plist(),
+            ]
         }
         _ => vec![b"title tag:one \"a phrase\" AND (b OR c) .*[x]".to_vec()],
     }

@@ -235,7 +235,8 @@ fn create_window(name: &HSTRING, sink: Arc<Sink>) -> Option<HWND> {
         )
         .ok()?;
         // The window keeps one reference to the sink, released in WM_NCDESTROY.
-        SetWindowLongPtrW(window, GWLP_USERDATA, Arc::into_raw(sink) as isize);
+        // `as _` is `isize` on 64-bit Windows and `i32` on 32-bit, where the windows crate maps this to SetWindowLongW.
+        SetWindowLongPtrW(window, GWLP_USERDATA, Arc::into_raw(sink) as _);
         Some(window)
     }
 }

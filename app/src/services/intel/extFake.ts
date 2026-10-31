@@ -235,13 +235,13 @@ function standInAnswer(system: string, prompt: string): string {
 }
 
 function cloudFeature(value: string | undefined): CloudFeature {
-  if (value === 'transcription' || value === 'summaries') return value;
+  if (value === 'transcription' || value === 'summaries' || value === 'tutor') return value;
   throw new ExtError('invalid', 'That feature can’t use a cloud key.');
 }
 
 function cloudCall(fake: FakeExt, used: Map<CloudFeature, number>, method: string, p: Params): unknown {
   if (method === 'cloud.status') {
-    return (['transcription', 'summaries'] as const).map((feature): CloudStatus => ({
+    return (['transcription', 'summaries', 'tutor'] as const).map((feature): CloudStatus => ({
       feature,
       provider: 'openai',
       host: 'api.openai.com',
@@ -265,6 +265,13 @@ function cloudCall(fake: FakeExt, used: Map<CloudFeature, number>, method: strin
     fake.cloudSent.push(p.text ?? '');
     used.set('summaries', Math.floor(Date.now() / 1000));
     return { summary: `Summary: ${(p.text ?? '').split(/(?<=[.!?])\s/)[0] ?? ''}` };
+  }
+  if (method === 'cloud.tutor') {
+    if (fake.offline) throw new ExtError('offline', 'Work offline is on.');
+    if (!fake.cloudKeys.has('tutor')) throw new ExtError('invalid', 'No key is saved for this feature.');
+    fake.cloudSent.push([p.system ?? '', p.prompt ?? ''].join(' | '));
+    used.set('tutor', Math.floor(Date.now() / 1000));
+    return { reply: 'Look again at the line the hint points to. What changed from the line before it?' };
   }
   return UNHANDLED;
 }
