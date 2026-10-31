@@ -117,8 +117,7 @@ async fn blocking<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) 
 /// Opens the file or folder picker. Returns `None` when the person cancels.
 #[tauri::command]
 pub async fn interop_pick(window: WebviewWindow, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
-    // A window handle isn't `Send`, so it crosses to the dialog's thread as a number.
-    let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
+    let owner = crate::desktop::dialog_owner(&window);
     let picked = blocking(move || pick::pick(owner, kind, initial)).await??;
     if let Some(path) = &picked {
         grants::grant(path);
@@ -395,6 +394,32 @@ pub async fn interop_export(
     })
 }
 
+/// The start of the `.tex` text of a LaTeX export, for the live preview in its options. It reads the pages the
+/// request names and writes nothing.
+#[tauri::command]
+pub async fn interop_latex_preview(
+    bridge: State<'_, CoreBridge>,
+    request: ExportRequest,
+    max_chars: usize,
+) -> IpcResult<String> {
+    let max = max_chars.clamp(200, 200_000);
+    let (source, request) = bridge
+        .run(move |bridge| {
+            bridge.with(|bridge| {
+                bridge.core.flush_all(SAVE_OPEN_PAGES).map_err(internal)?;
+                let source = TreeSource::build(bridge, &request).map_err(failure)?;
+                Ok((source, request))
+            })
+        })
+        .await?;
+    blocking(move || {
+        let scope = source.scope(request.scope);
+        let options = request.latex.clone().unwrap_or_default();
+        opennote_interop::latex_preview(&source, scope, &options, max).map_err(failure)
+    })
+    .await?
+}
+
 /// Shows a file or folder in Explorer.
 #[tauri::command]
 pub async fn interop_reveal(path: String) -> IpcResult<()> {
@@ -429,8 +454,8 @@ pub(crate) fn reveal(target: &Path) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-pub(crate) fn reveal(_target: &Path) -> IpcResult<()> {
-    Err(IpcError::not_implemented("interop_reveal"))
+pub(crate) fn reveal(target: &Path) -> IpcResult<()> {
+    crate::desktop::open_with_default(target.as_os_str(), target.is_file())
 }
 
 #[cfg(test)]

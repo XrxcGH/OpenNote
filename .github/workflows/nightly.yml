@@ -2,9 +2,9 @@ name: nightly
 
 # The long-running hardening tests of DEVELOPMENT.md section 8: fuzzing, the kill harness, property tests with
 # many cases, the performance budgets, a two-hour random-editing soak, and an NVDA run of the keyboard and screen
-# reader checklist. The e2e-full job runs every E2E spec in the full app on Windows. It is
-# the Phase 3 skeleton, which later phases grow with other architectures, 200% text, start-up baselines, and the
-# frame probe.
+# reader checklist. The e2e-full job runs every E2E spec in the full app on Windows. It is the Phase 3 skeleton,
+# which later phases grow with other architectures, 200% text, start-up baselines, and the frame probe. The bundles
+# job builds the macOS dmg and the Linux AppImage.
 #
 # The jobs run every night on the default branch and on demand. A failure opens an issue, or adds a comment to the
 # one that is already open. See docs/HARDENING.md.
@@ -378,10 +378,69 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  bundles:
+    # The full macOS dmg and Linux AppImage every night (ADR 0055), unsigned, so a packaging problem shows the day it
+    # lands and not on release day. The release workflow builds the same bundles from a clean start.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: universal-apple-darwin
+            rust: aarch64-apple-darwin,x86_64-apple-darwin
+            bundle: dmg
+            file: OpenNote_macOS.dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            rust: x86_64-unknown-linux-gnu
+            bundle: appimage
+            file: OpenNote_Linux.AppImage
+    runs-on: ${{ matrix.os }}
+    # About 25 minutes for the dmg, whose two architectures build one after the other, with a warm cache.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      OPENNOTE_DRY_RUN: '1'
+      BUNDLE_TARGET: ${{ matrix.target }}
+      BUNDLE_KIND: ${{ matrix.bundle }}
+      BUNDLE_FILE: ${{ matrix.file }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+          targets: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: nightly-bundles
+      - name: WebKitGTK and the other system libraries the app links (Linux)
+        if: runner.os == 'Linux'
+        run: bash packaging/linux/install-build-deps.sh
+      - name: Install tools
+        run: npm ci
+      - name: Build ${{ matrix.file }}
+        run: npx tauri build --target "$BUNDLE_TARGET" --bundles "$BUNDLE_KIND" --ci
+      - name: Collect ${{ matrix.file }}
+        run: node app/scripts/release/collect-bundle.ts "$BUNDLE_TARGET" "$BUNDLE_FILE" dist-nightly
+      - name: Keep ${{ matrix.file }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nightly-${{ matrix.bundle }}
+          path: dist-nightly/${{ matrix.file }}
+          if-no-files-found: error
+          retention-days: 7
+
   report:
     # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
     # job that can write, it can only write issues, and it never checks out the code.
-    needs: [plan, fuzz, kill, proptest, perf, e2e-full, soak, nvda]
+    needs: [plan, fuzz, kill, proptest, perf, e2e-full, bundles, soak, nvda]
     if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -398,6 +457,7 @@ jobs:
           PROPTEST_RESULT: ${{ needs.proptest.result }}
           PERF_RESULT: ${{ needs.perf.result }}
           E2E_RESULT: ${{ needs.e2e-full.result }}
+          BUNDLES_RESULT: ${{ needs.bundles.result }}
           SOAK_RESULT: ${{ needs.soak.result }}
           NVDA_RESULT: ${{ needs.nvda.result }}
         run: |
@@ -411,6 +471,7 @@ jobs:
             [ "$PROPTEST_RESULT" = failure ] && echo "- Property tests: the log has the failing case"
             [ "$PERF_RESULT" = failure ] && echo "- Performance: the results are in the run's artifacts"
             [ "$E2E_RESULT" = failure ] && echo "- E2E specs: the logs are in the run's artifacts"
+            [ "$BUNDLES_RESULT" = failure ] && echo "- The macOS dmg or the Linux AppImage didn't build"
             # checks-disable-next-line length: one shell line that writes one line of the run summary
             [ "$SOAK_RESULT" = failure ] && echo "- Random-editing soak: the samples are in the run's artifacts; replay with the run number as the seed"
             [ "$NVDA_RESULT" = failure ] && echo "- NVDA checklist: the spoken log is in the run's artifacts"

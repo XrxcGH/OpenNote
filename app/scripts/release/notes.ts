@@ -21,6 +21,8 @@ const FILE_LABELS: Record<string, string> = {
   'OpenNote_Windows64.exe': '64-bit Windows, on most PCs',
   'OpenNote_Windows32.exe': '32-bit Windows',
   'OpenNote_WindowsARM64.exe': 'Windows on Arm, such as Snapdragon laptops',
+  'OpenNote_macOS.dmg': 'macOS 11 or later, on Apple silicon and Intel Macs',
+  'OpenNote_Linux.AppImage': '64-bit Linux, such as Ubuntu 22.04 or later',
 };
 
 export interface Change {

@@ -27,8 +27,8 @@ use opennote_core::{
     Clock, Limits, NotebookId, OrderKey, PageId, SectionId, SystemClock, Timings,
 };
 use opennote_interop::{
-    page_builder::PageBuilder, Control, Exported, Format, ImportEnv, InteropError, NoteSource, PdfRenderer, Result,
-    Scope, TableFormat,
+    page_builder::PageBuilder, Control, Exported, Format, ImportEnv, InteropError, LatexOptions, NoteSource,
+    PdfRenderer, Result, Scope, TableFormat,
 };
 use serde::Deserialize;
 
@@ -54,6 +54,8 @@ pub enum ExportFormat {
     Xlsx,
     /// One CSV file for a table, or a folder of them.
     Csv,
+    /// One LaTeX file, or a zip with the LaTeX file, its pictures, and a BibTeX file (ADR 0054).
+    Latex,
     /// One `.opennote` file that opens in OpenNote as a new notebook (ADR 0035), with a password if one is given.
     Share,
 }
@@ -130,6 +132,9 @@ pub struct ExportRequest {
     /// Share as a file: put each page's earlier versions in the file, as pages of a "Page history" section.
     #[serde(default)]
     pub history: bool,
+    /// LaTeX: the options, and the citation library for `\cite` and the BibTeX file.
+    #[serde(default)]
+    pub latex: Option<LatexOptions>,
 }
 
 /// The notebook, sections, and pages of an export, read from the bridge's page files.
@@ -455,6 +460,10 @@ fn run_into(
         ExportFormat::Pptx => opennote_interop::export_pptx(source, scope, folder, control),
         ExportFormat::Xlsx => opennote_interop::export_tables(source, scope, TableFormat::Xlsx, folder, control),
         ExportFormat::Csv => opennote_interop::export_tables(source, scope, TableFormat::Csv, folder, control),
+        ExportFormat::Latex => {
+            let options = request.latex.clone().unwrap_or_default();
+            opennote_interop::export_latex_with(source, scope, &options, folder, control)
+        }
         ExportFormat::Share => {
             let password = request.password.as_ref().and_then(Secret::get);
             if password.is_some_and(|p| p.chars().count() > MAX_PASSWORD_CHARS) {

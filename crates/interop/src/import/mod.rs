@@ -1,5 +1,6 @@
 //! Importing notes from other apps: Markdown folders (Obsidian and Joplin), HTML folders, plain text, and
-//! Evernote export files, and OneNote's own section files and notebook packages.
+//! Evernote export files, OneNote's own section files and notebook packages, and the files of Goodnotes,
+//! Notability, and Samsung Notes.
 //!
 //! Every import writes a new notebook to an [`crate::ImportSink`], so the whole import can be undone by removing
 //! that notebook. Each import returns a [`crate::Report`] with an entry for each page.
@@ -23,6 +24,7 @@ mod logseq;
 mod markdown;
 mod mht;
 mod mime;
+mod notes_apps;
 mod notion;
 mod odt;
 mod onenote;
@@ -55,6 +57,9 @@ pub use legacy::fuzzing as legacy_fuzzing;
 pub use logseq::import_logseq_folder;
 pub use markdown::import_markdown_folder;
 pub use mht::import_mht;
+#[cfg(any(feature = "fuzzing", feature = "testing", test))]
+pub use notes_apps::fuzzing as notes_apps_fuzzing;
+pub use notes_apps::{import_notes_apps, NotesApp, EXTENSIONS as NOTES_APP_EXTENSIONS};
 pub use notion::import_notion_folder;
 pub use onenote::import_onenote;
 pub use plain::import_text_folder;

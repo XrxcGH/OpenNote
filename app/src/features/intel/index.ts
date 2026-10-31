@@ -27,3 +27,6 @@ export { useCloudKeyUse } from './cloud/lastRan';
 
 /** Test helpers (a host over the fake transport), for other features' tests. Loaded only when a test asks. */
 export const loadTesting = () => import('./testing');
+
+/** The language model on this device, when one is downloaded and running, for practice exams; null otherwise. */
+export const languageModel = () => import('./localModels/llm').then((module) => module.installedGenerator());
