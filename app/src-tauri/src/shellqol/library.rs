@@ -166,6 +166,8 @@ mod tests {
         assert_eq!(kind_of(&dir.path().join("nope")), Kind::Missing);
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn proposes_the_folder_name_as_the_title() {
         assert_eq!(title_for(Path::new(r"E:\Notes\Chemistry")), "Chemistry");

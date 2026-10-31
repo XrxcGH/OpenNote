@@ -83,6 +83,8 @@ export interface PenPlan {
   readonly pos: (t: number) => Vec2;
   readonly start: number;
   readonly end: number;
+  /** Where the palm heel rested against the pen tip, when the scenario planted a palm. */
+  readonly heel?: Vec2;
 }
 
 interface Key {
@@ -299,9 +301,10 @@ export function handFollow(plan: PenPlan): (t: number) => Vec2 {
 
 /**
  * Whether the writing hand covers a point: its palm, 85 mm around the heel, its forearm (70 mm either side of the line
- * from the tip through the heel, as the pen's lean varies by 15 degrees), and 25 mm around the tip.
+ * from the tip through the heel, as the pen's lean varies by 15 degrees), and 25 mm around the tip. A margin widens all
+ * three: a finger that near the hand is ambiguous, because a palm learned from a few rests reaches past the model.
  */
-export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2): boolean {
+export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2, margin = 0): boolean {
   const sx = hand === 'left' ? -1 : 1;
   const heel: Vec2 = grip === 'hooked' ? [tip[0] + sx * 38, tip[1] - 36] : [tip[0] + sx * 42, tip[1] + 48];
   const ax = heel[0] - tip[0];
@@ -311,7 +314,11 @@ export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec
   const ey = p[1] - heel[1];
   const along = (ex * ax + ey * ay) / n;
   const across = Math.abs(ex * ay - ey * ax) / n;
-  return Math.hypot(ex, ey) < 85 || (along > 0 && across < 70) || Math.hypot(p[0] - tip[0], p[1] - tip[1]) < 25;
+  return (
+    Math.hypot(ex, ey) < 85 + margin ||
+    (along > 0 && across < 70 + margin) ||
+    Math.hypot(p[0] - tip[0], p[1] - tip[1]) < 25 + margin
+  );
 }
 
 /**

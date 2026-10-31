@@ -22,9 +22,12 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10.9"
 
-# cpal opens the microphone and WASAPI loopback. Other platforms get their own adapters later.
-[target.'cfg(windows)'.dependencies]
+# cpal opens the microphone and the speakers: WASAPI (with loopback) on Windows, Core Audio on macOS, and ALSA on
+# Linux, where system audio has no loopback device and reports that it can't start (ADR 0055).
+[target.'cfg(any(windows, target_os = "macos", target_os = "linux"))'.dependencies]
 cpal = "0.18"
+
+[target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Storage_FileSystem",

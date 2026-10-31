@@ -25,12 +25,41 @@ pub struct SelfReplace;
 
 impl Replacer for SelfReplace {
     fn current_exe(&self) -> io::Result<PathBuf> {
-        std::env::current_exe()
+        running_file()
     }
 
     fn replace_running_exe(&self, staged_next_to_exe: &Path) -> io::Result<()> {
-        self_replace::self_replace(staged_next_to_exe)
+        match appimage(cfg!(target_os = "linux"), std::env::var_os("APPIMAGE")) {
+            // The AppImage is one file outside its mounted image, so the new one is renamed over it. Linux keeps the
+            // running copy readable until the app exits.
+            Some(file) => replace_appimage(staged_next_to_exe, &file),
+            None => self_replace::self_replace(staged_next_to_exe),
+        }
     }
+}
+
+/// The file that is this copy of the app: on Linux the AppImage it runs from, whose `APPIMAGE` variable names
+/// it, and otherwise the exe. Inside an AppImage the exe sits in a read-only mount that vanishes at exit.
+pub fn running_file() -> io::Result<PathBuf> {
+    match appimage(cfg!(target_os = "linux"), std::env::var_os("APPIMAGE")) {
+        Some(file) => Ok(file),
+        None => std::env::current_exe(),
+    }
+}
+
+/// The AppImage that `APPIMAGE` names, when this is Linux and it names an absolute path to a file.
+fn appimage(linux: bool, variable: Option<std::ffi::OsString>) -> Option<PathBuf> {
+    let file = PathBuf::from(variable.filter(|_| linux)?);
+    (file.is_absolute() && file.is_file()).then_some(file)
+}
+
+fn replace_appimage(staged: &Path, appimage: &Path) -> io::Result<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(staged, fs::Permissions::from_mode(0o755))?;
+    }
+    fs::rename(staged, appimage)
 }
 
 fn file_hash(path: &Path) -> io::Result<String> {
@@ -122,4 +151,46 @@ pub fn checked_previous(previous_dir: &Path, record: &PreviousRecord) -> Option<
 /// The SHA-256 of the file at a path, when it can be read.
 pub fn hash_of(path: &Path) -> Option<String> {
     file_hash(path).ok()
+}
+
+#[cfg(test)]
+mod appimage_tests {
+    use super::*;
+
+    #[test]
+    fn an_appimage_is_the_running_file_only_on_linux() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("OpenNote_Linux.AppImage");
+        fs::write(&file, b"image").unwrap();
+        assert_eq!(appimage(true, Some(file.clone().into())), Some(file.clone()));
+        assert_eq!(appimage(false, Some(file.into())), None);
+    }
+
+    #[test]
+    fn ignores_an_appimage_variable_that_names_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(appimage(true, None), None);
+        assert_eq!(appimage(true, Some("OpenNote_Linux.AppImage".into())), None);
+        assert_eq!(appimage(true, Some(dir.path().as_os_str().to_owned())), None);
+        assert_eq!(appimage(true, Some(dir.path().join("missing").into())), None);
+    }
+
+    #[test]
+    fn renames_the_new_appimage_over_the_old_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let (old, new) = (
+            dir.path().join("OpenNote.AppImage"),
+            dir.path().join("OpenNote.AppImage.new"),
+        );
+        fs::write(&old, b"old").unwrap();
+        fs::write(&new, b"new").unwrap();
+        replace_appimage(&new, &old).unwrap();
+        assert_eq!(fs::read(&old).unwrap(), b"new");
+        assert!(!new.exists());
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(fs::metadata(&old).unwrap().permissions().mode() & 0o777, 0o755);
+        }
+    }
 }

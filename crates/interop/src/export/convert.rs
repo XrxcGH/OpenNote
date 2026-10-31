@@ -106,6 +106,28 @@ pub fn page_to_blocks_traced(
     resolver: &mut dyn Resolver,
     report: &mut PageReport,
 ) -> (Vec<Block>, Vec<opennote_core::BlockId>) {
+    let converted = convert_page(page, resolver, report, None);
+    (converted.blocks, converted.origins)
+}
+
+/// A converted page, for the exports that keep more than the blocks.
+pub(super) struct Converted {
+    pub blocks: Vec<Block>,
+    /// The page block that each of `blocks` came from.
+    pub origins: Vec<opennote_core::BlockId>,
+    /// The footnotes of the page, as the inlines of each one. Only a LaTeX conversion has any.
+    pub notes: Vec<Vec<Inline>>,
+}
+
+/// Converts a page. A `label_prefix` is the LaTeX export's: with one, equation labels and references keep their
+/// `\label` and `\eqref` form under that prefix, and footnote definitions are taken out of the text (see
+/// `footnotes`). Without one, labeled equations get their numbers written in.
+pub(super) fn convert_page(
+    page: &Page,
+    resolver: &mut dyn Resolver,
+    report: &mut PageReport,
+    label_prefix: Option<&str>,
+) -> Converted {
     // Equation numbers run across the whole page, so the texts are numbered together, in reading order.
     let order = page.reading_order();
     let texts: Vec<(opennote_core::BlockId, &str)> = order
@@ -115,7 +137,16 @@ pub fn page_to_blocks_traced(
             _ => None,
         })
         .collect();
-    let numbered = super::equations::number_texts(&texts.iter().map(|(_, m)| *m).collect::<Vec<_>>());
+    let plain: Vec<&str> = texts.iter().map(|(_, m)| *m).collect();
+    let mut numbered = match label_prefix {
+        Some(prefix) => super::equations::prefixed_texts(&plain, prefix),
+        None => super::equations::number_texts(&plain),
+    };
+    let note_markdown = if label_prefix.is_some() {
+        super::footnotes::extract(&mut numbered)
+    } else {
+        Vec::new()
+    };
     let mut convert = Convert {
         page,
         resolver,
@@ -135,8 +166,13 @@ pub fn page_to_blocks_traced(
         convert.block(block, &mut out);
         origins.extend(std::iter::repeat_n(block.id, out.len() - before));
     }
+    let notes = note_markdown.iter().map(|markdown| convert.note(markdown)).collect();
     convert.tally.describe(report);
-    (out, origins)
+    Converted {
+        blocks: out,
+        origins,
+        notes,
+    }
 }
 
 struct Convert<'a> {
@@ -177,6 +213,20 @@ impl Convert<'_> {
                 None => self.tally.unknown.push(other.type_name.to_string()),
             },
         }
+    }
+
+    /// The inlines of a footnote: its paragraphs, joined by spaces.
+    fn note(&mut self, markdown: &str) -> Vec<Inline> {
+        let mut inlines = Vec::new();
+        for block in self.markdown(markdown) {
+            if let Block::Paragraph(content) = block {
+                if !inlines.is_empty() {
+                    inlines.push(Inline::text(" "));
+                }
+                inlines.extend(content);
+            }
+        }
+        inlines
     }
 
     fn markdown(&mut self, markdown: &str) -> Vec<Block> {

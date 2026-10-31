@@ -54,6 +54,7 @@ const DISABLED: Record<DisabledReason, () => string> = {
   noKey: () => t('updates.status.noKey'),
   manualMode: () => t('updates.status.manualMode'),
   notWritable: () => t('updates.status.notWritable'),
+  byHand: () => t('updates.status.byHand'),
 };
 
 /** The one-line status for the phases that have no details card. */
