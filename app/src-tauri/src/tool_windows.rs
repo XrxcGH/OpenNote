@@ -187,6 +187,12 @@ pub const TOOLS: &[Tool] = &[
         height: 720.0,
     },
     Tool {
+        id: "kit-mind",
+        title: "Psychology and behavior",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
         id: "kit-physics",
         title: "Physics tools",
         width: 560.0,

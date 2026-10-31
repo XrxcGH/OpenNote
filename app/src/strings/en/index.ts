@@ -64,6 +64,7 @@ import { kitChemMat } from './kitChemMat';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kitStatModels } from './kitStatModels';
+import { kitMind } from './kitMind';
 import { kits } from './kits';
 import { kitSubjects } from './kitSubjects';
 import { stepCheck } from './stepCheck';
@@ -147,6 +148,7 @@ export const en = {
   codeCells,
   kitEcon,
   kitStatModels,
+  kitMind,
   kits,
   kitSubjects,
   stepCheck,

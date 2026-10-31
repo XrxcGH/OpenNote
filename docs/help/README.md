@@ -32,6 +32,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
 - [Statistics kit](statistics-kit.md): describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design.
 - [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
+- [Psychology and behavior tools](psychology-kit.md): signal detection, psychophysics, learning and choice models, response times, observation, agreement, scales, and qualitative coding.
 
 ## Draw and design pages
 

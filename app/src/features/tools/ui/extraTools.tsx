@@ -71,6 +71,8 @@ const MathLab = {
 
 // The statistical models kit loads the first time its window opens.
 const StatModelsKit = lazy(() => import('../statmodels/ui/StatModelsKit').then((m) => ({ default: m.StatModelsKit })));
+// The psychology and behavior kit loads the first time its window opens.
+const MindKit = lazy(() => import('../mind').then((mind) => mind.loadMindKit()).then((m) => ({ default: m.MindKit })));
 // The solid mechanics kit loads with its engineering feature the first time its window opens.
 const SolidsKit = lazy(() =>
   import('../../engineering')
@@ -108,6 +110,7 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-physics': PhysicsKit,
   econ: EconTool,
   'kit-statinfer': StatInferKit,
+  'kit-mind': MindKit,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
