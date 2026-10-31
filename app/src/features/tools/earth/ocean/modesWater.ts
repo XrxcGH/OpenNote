@@ -1,5 +1,5 @@
-// The seawater calculations: EOS-80 and TEOS-10 properties of one sample, Mackenzie's sound speed, and a T–S diagram with
-// isopycnals for pasted samples.
+// The seawater calculations: EOS-80 and TEOS-10 properties of one sample, the TEOS-10 buoyancy frequency down a
+// pasted profile, Mackenzie's sound speed, and a T–S diagram with isopycnals for pasted samples.
 import { t } from '../../../../strings/t';
 import { fmt, tex } from '../core/format';
 import type { Mark } from '../core/figure';
@@ -11,11 +11,15 @@ import type { Mode } from '../ui/form';
 import {
   SOURCES,
   absoluteSalinity,
+  buoyancy,
+  conservativeFromInSitu,
   density,
   freezingPoint,
+  gravity,
   isopycnalTemperature,
   mackenzie,
   potentialTemperature,
+  referenceSalinity,
   sigmaTheta,
   soundSpeed,
   SPECVOL_TERMS,
@@ -103,6 +107,9 @@ const teos: Mode = {
         [r('sigma0'), `${fmt(x.sigma0, 7)} kg/m³`],
         [r('ctFreeze'), `${fmt(x.ctFreeze, 6)} °C`],
         [r('ptFreeze'), `${fmt(x.ptFreeze, 6)} °C`],
+        [r('tFreeze'), `${fmt(x.tFreeze, 6)} °C`],
+        [r('alpha'), `${fmt(x.alpha, 6)} 1/K`],
+        [r('betaHaline'), `${fmt(x.beta, 6)} kg/g`],
       ],
       steps: [
         t('kitEarth.ocean.s.teosSa', { value: fmt(x.sa, 7) }),
@@ -110,7 +117,56 @@ const teos: Mode = {
         t('kitEarth.ocean.s.teosCt', { value: fmt(x.ct, 7) }),
         t('kitEarth.ocean.s.teosRho', { terms: SPECVOL_TERMS, v: fmt(x.v, 9), value: fmt(x.rho, 9) }),
         t('kitEarth.ocean.s.teosSigma', { value: fmt(x.sigma0, 7) }),
-        t('kitEarth.ocean.s.teosFreeze', { air, ct: fmt(x.ctFreeze, 6), pt: fmt(x.ptFreeze, 6) }),
+        t('kitEarth.ocean.s.teosExpansion', { alpha: fmt(x.alpha, 6), beta: fmt(x.beta, 6) }),
+        t('kitEarth.ocean.s.teosFreeze', {
+          air,
+          ct: fmt(x.ctFreeze, 6),
+          pt: fmt(x.ptFreeze, 6),
+          t: fmt(x.tFreeze, 6),
+        }),
+      ],
+      source: TEOS10_SOURCE,
+    };
+  },
+};
+
+const teosN2: Mode = {
+  id: 'teosN2',
+  label: 'kitEarth.ocean.modes.teosN2',
+  intro: 'kitEarth.ocean.intro.teosN2',
+  fields: [
+    text('samples', 'SP, t (°C), p (dbar)\n35.2, 18, 10\n35.1, 15, 100\n34.9, 10, 300\n34.6, 6, 700\n34.7, 3, 1500'),
+    num('latitude', '30'),
+  ],
+  solve(read) {
+    const lat = read.num('latitude');
+    const rows = numberRows(read.raw('samples'), 3);
+    check(rows.length >= 2, 'teosPairs');
+    const samples = rows.map(([sp, tt, p]) => {
+      const sa = referenceSalinity(sp);
+      return { sa, ct: conservativeFromInSitu(sa, tt, p), p };
+    });
+    const layers = samples.slice(1).map((lower, i) => buoyancy(samples[i], lower, lat));
+    const n2s = layers.map((layer) => layer.n2);
+    const cell = (n2: number, f: (n: number) => string) => (n2 > 0 ? f(Math.sqrt(n2)) : '—');
+    return {
+      answer: t('kitEarth.ocean.a.teosN2', {
+        count: layers.length,
+        lo: fmt(Math.min(...n2s), 4),
+        hi: fmt(Math.max(...n2s), 4),
+      }),
+      table: {
+        header: [r('pMid'), r('n2'), r('nFreq'), r('nPeriod')],
+        rows: layers.map((layer) => [
+          `${fmt(layer.pMid)} dbar`,
+          `${fmt(layer.n2, 6)} 1/s²`,
+          cell(layer.n2, (n) => `${fmt(n, 6)} rad/s`),
+          cell(layer.n2, (n) => `${fmt((2 * Math.PI) / n / 60, 4)} min`),
+        ]),
+      },
+      steps: [
+        t('kitEarth.ocean.s.teosSa', { value: fmt(samples[0].sa, 7) }),
+        t('kitEarth.ocean.s.teosN2', { g: fmt(gravity(lat, layers[0].pMid), 6), lat: fmt(lat) }),
       ],
       source: TEOS10_SOURCE,
     };
@@ -209,4 +265,4 @@ const ts: Mode = {
   },
 };
 
-export const SEAWATER: readonly Mode[] = [sample, teos, sound, ts];
+export const SEAWATER: readonly Mode[] = [sample, teos, teosN2, sound, ts];

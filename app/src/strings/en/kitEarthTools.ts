@@ -256,6 +256,7 @@ export const kitEarthTools = {
       rossby: 'Rossby wave',
       seawater: 'Seawater properties (EOS-80)',
       teos10: 'Seawater properties (TEOS-10)',
+      teosN2: 'Buoyancy frequency N² (TEOS-10)',
       mackenzie: 'Sound speed (Mackenzie)',
       ts: 'Temperature–salinity diagram',
       waves: 'Surface wave dispersion',
@@ -267,6 +268,8 @@ export const kitEarthTools = {
       seawater:
         'Practical salinity, in-situ temperature, and sea pressure; EOS-80 works on the 1968 temperature scale.',
       teos10: 'Practical salinity, in-situ temperature, and sea pressure; SA assumes the reference composition.',
+      teosN2:
+        'One sample per line, shallowest first: practical salinity, in-situ temperature in °C, and sea pressure in dbar.',
       ts: 'One sample per line: practical salinity, then potential temperature in °C.',
       shoaling: 'A swell of height H₀ in deep water reaches the depth below, crossing straight, parallel contours.',
     },
@@ -354,6 +357,13 @@ export const kitEarthTools = {
       sigma0: 'Potential density σ₀',
       ctFreeze: 'Freezing conservative temperature',
       ptFreeze: 'Freezing potential temperature',
+      tFreeze: 'Freezing in-situ temperature',
+      alpha: 'Thermal expansion α',
+      betaHaline: 'Haline contraction β',
+      pMid: 'Mid-point pressure',
+      n2: 'N²',
+      nFreq: 'N',
+      nPeriod: 'Buoyancy period',
       salinity: 'Salinity',
       temperature: 'Potential temperature (°C)',
       length: 'Wavelength',
@@ -381,6 +391,7 @@ export const kitEarthTools = {
       density: 'Density: {value} kg/m³',
       sound: 'Sound speed: {value} m/s',
       teos10: 'Density: {value} kg/m³, with Θ = {ct} °C',
+      teosN2: 'N² across {count, plural, one {# layer} other {# layers}}: {lo} to {hi} 1/s²',
       ts: '{count, plural, one {# sample} other {# samples}} on the T–S diagram',
       length: 'Wavelength: {value} m ({regime})',
       shoaled: 'Height at this depth: {value} m',
@@ -413,12 +424,18 @@ export const kitEarthTools = {
       sound: 'Sound speed by Chen and Millero: {value} m/s.',
       absolute: 'Absolute salinity is estimated as 35.16504/35 × S, with no regional anomaly.',
       teosSa: 'Absolute salinity, SA = (35.16504/35) × SP = {value} g/kg, for reference-composition seawater.',
-      teosPt: 'Potential temperature from the EOS-80 lapse rate, back on the 1990 scale: θ = {value} °C.',
+      teosPt:
+        'With h = c⁰pΘ + ∫₀ᵖ v dP, in-situ (T₀ + t) = (T₀ + θ)(1 + ∫₀ᵖ ∂v/∂Θ dP / c⁰p), solved for Θ: θ = {value} °C.',
       teosCt: 'Conservative temperature, Θ = h⁰(SA, θ)/c⁰p with c⁰p = 3991.86795711963 J/(kg·K): Θ = {value} °C.',
       teosRho:
         'The {terms}-term polynomial in √(SA + 24 g/kg), Θ/40 °C, and p/10⁴ dbar gives v = {v} m³/kg, so ρ = 1/v = {value} kg/m³.',
       teosSigma: 'At the surface, σ₀ = 1/v(SA, Θ, 0) − 1000 = {value} kg/m³.',
-      teosFreeze: 'The TEOS-10 freezing polynomial, {air}: Θf = {ct} °C, which is θf = {pt} °C.',
+      teosFreeze:
+        'The TEOS-10 freezing polynomial, {air}: Θf = {ct} °C, which is θf = {pt} °C and in situ tf = {t} °C.',
+      teosExpansion:
+        'Differentiating the polynomial term by term: α = (1/v)∂v/∂Θ = {alpha} 1/K and β = −(1/v)∂v/∂SA = {beta} kg/g.',
+      teosN2:
+        'Each layer: N² = g²(β ΔSA − α ΔΘ)/(v ΔP), with α, β, and v at the mid-point, ΔP in Pa, and g = {g} m/s² at {lat}°.',
       mackenzie: 'c = 1448.96 + 4.591T − 0.05304T² + 0.0002374T³ + 1.340(S − 35) + 0.0163D + … = {value} m/s.',
       ts: 'Isopycnals are lines of equal σθ, found by solving ρ(S, θ, 0) − 1000 = σθ for θ at each salinity.',
       deep: 'Deep water: L₀ = gT²/2π = {length} m and c₀ = {speed} m/s.',
@@ -458,6 +475,8 @@ export const kitEarthTools = {
       pressure: 'EOS-80 covers sea pressures from 0 to 10 000 dbar.',
       teosSalinity: 'TEOS-10 here covers absolute salinities from 0 to 42 g/kg.',
       teosTemperature: 'TEOS-10 here covers conservative temperatures from −2.5 to 40 °C, and freezing down to −12 °C.',
+      teosOrder: 'List the samples shallowest first: each pressure must be greater than the one above it.',
+      teosPairs: 'Paste at least 2 samples to form a layer.',
       air: 'The dissolved air fraction runs from 0 (air-free) to 1 (saturated).',
       mackenzie: 'Mackenzie’s fit covers −2 to 30 °C, salinity 25 to 40, and depths down to 8000 m.',
       sample: 'Each sample needs a salinity from 0 to 42 and a temperature from −2 to 40 °C.',

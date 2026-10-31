@@ -1,10 +1,10 @@
 // Seawater by TEOS-10: absolute salinity from practical salinity (reference composition, no regional anomaly),
 // conservative temperature from potential temperature, density from the 75-term polynomial for specific volume
-// (Roquet et al. 2015), potential density, and the freezing conservative temperature. The coefficients are the
+// (Roquet et al. 2015), potential density, the freezing conservative temperature, and from the same polynomial,
+// differentiated by hand, α, β, N², and the in-situ temperature through the dynamic enthalpy. The coefficients are the
 // published ones (IOC, SCOR, and IAPSO 2010; Roquet et al. 2015; McDougall et al. 2014), checked against GSW-C 3.05.
 // SA in g/kg, temperatures in °C (ITS-90), sea pressure in dbar.
 import { check } from '../core/problem';
-import { potentialTemperature, toT68 } from './seawater';
 
 export const TEOS10_SOURCE =
   'IOC, SCOR and IAPSO (2010), The international thermodynamic equation of seawater, TEOS-10; Roquet et al. (2015), ' +
@@ -126,6 +126,119 @@ export function specificVolume(sa: number, ct: number, p: number): number {
   return v;
 }
 
+const T0 = 273.15;
+/** Pascals per decibar. */
+const DB2PA = 1e4;
+
+interface Partials {
+  readonly v: number;
+  /** ∂v/∂Θ (m³ kg⁻¹ K⁻¹). */
+  readonly vCt: number;
+  /** ∂v/∂SA (m³ kg⁻¹ per g/kg). */
+  readonly vSa: number;
+  /** ∂h/∂Θ − cp0: the Θ-derivative of dynamic enthalpy, ∫₀ᵖ ∂v/∂Θ dP (J kg⁻¹ K⁻¹). */
+  readonly hCt: number;
+}
+
+/**
+ * The polynomial and its derivatives, each term differentiated (or integrated in pressure) by hand:
+ * x = √(SFAC·SA + OFFSET) gives ∂x/∂SA = SFAC/(2x), y = Θ/40, z = p/10⁴ dbar so P = 10⁸·z Pa.
+ * Unchecked, for the freezing line, which reaches below the −2.5 °C floor at depth.
+ */
+function partials(sa: number, ct: number, p: number): Partials {
+  const x = Math.sqrt(SFAC * sa + OFFSET);
+  const y = ct / 40;
+  const z = p / 1e4;
+  let v = 0;
+  let vY = 0;
+  let vX = 0;
+  let hY = 0;
+  for (const [i, j, k, c] of TERMS) {
+    const xj = x ** j;
+    const zk = z ** k;
+    v += c * y ** i * xj * zk;
+    if (i > 0) {
+      vY += c * i * y ** (i - 1) * xj * zk;
+      hY += (c * i * y ** (i - 1) * xj * zk * z) / (k + 1);
+    }
+    if (j > 0) vX += c * j * y ** i * x ** (j - 1) * zk;
+  }
+  return { v, vCt: vY / 40, vSa: (vX * SFAC) / (2 * x), hCt: (hY / 40) * 1e4 * DB2PA };
+}
+
+/**
+ * Thermal expansion α = (1/v)∂v/∂Θ (1/K) and haline contraction β = −(1/v)∂v/∂SA (kg/g), both at constant
+ * pressure, from the 75-term polynomial differentiated analytically.
+ */
+export function expansion(sa: number, ct: number, p: number): { alpha: number; beta: number } {
+  inRange(sa, ct, p);
+  const d = partials(sa, ct, p);
+  return { alpha: d.vCt / d.v, beta: -d.vSa / d.v };
+}
+
+/**
+ * In-situ temperature (°C) from Θ. T = (∂h/∂η) at fixed SA and p, η depends on SA and Θ alone, and at the
+ * surface h = cp0·Θ, so (T0 + t) = (T0 + θ)(1 + (∂h/∂Θ − cp0)/cp0) with the enthalpy from the same polynomial.
+ */
+function inSituFrom(sa: number, ct: number, p: number): number {
+  const theta = potentialFromConservative(sa, ct);
+  return (T0 + theta) * (1 + partials(sa, ct, p).hCt / CP0) - T0;
+}
+
+/** Θ (°C) from in-situ temperature by fixed-point iteration on the relation above; the correction is tiny. */
+export function conservativeFromInSitu(sa: number, t: number, p: number): number {
+  check(Number.isFinite(t) && t >= -12 && t <= 40, 'teosTemperature');
+  check(Number.isFinite(p) && p >= 0 && p <= 10000, 'pressure');
+  let ct = conservativeTemperature(sa, t);
+  for (let n = 0; n < 50; n++) {
+    const theta = (T0 + t) / (1 + partials(sa, ct, p).hCt / CP0) - T0;
+    const next = conservativeTemperature(sa, theta);
+    const done = Math.abs(next - ct) < 1e-13;
+    ct = next;
+    if (done) break;
+  }
+  return ct;
+}
+
+/** Gravity (m/s²) at a latitude and sea pressure: the surface formula of Moritz (2000) with its depth term. */
+export function gravity(lat: number, p: number): number {
+  check(Number.isFinite(lat) && lat >= -90 && lat <= 90, 'latitude');
+  const s2 = Math.sin((lat * Math.PI) / 180) ** 2;
+  const gs = 9.780327 * (1 + (5.2792e-3 + 2.32e-5 * s2) * s2);
+  // Depth from the hydrostatic balance with a mean density; the term is a part in 10³ at 5000 m.
+  const depth = (p * DB2PA) / (1027 * gs);
+  return gs * (1 + 2.26e-7 * depth);
+}
+
+export interface Buoyancy {
+  readonly pMid: number;
+  /** N² (1/s²). */
+  readonly n2: number;
+}
+
+/**
+ * The buoyancy frequency squared between two samples, as GSW's Nsquared forms it:
+ * N² = g² (β ΔSA − α ΔΘ) / (v ΔP) with α, β, and v at the mid-point and ΔP in Pa, positive when stable.
+ */
+export function buoyancy(
+  upper: { sa: number; ct: number; p: number },
+  lower: { sa: number; ct: number; p: number },
+  lat: number,
+): Buoyancy {
+  check(lower.p > upper.p, 'teosOrder');
+  const sa = (upper.sa + lower.sa) / 2;
+  const ct = (upper.ct + lower.ct) / 2;
+  const pMid = (upper.p + lower.p) / 2;
+  inRange(sa, ct, pMid);
+  const d = partials(sa, ct, pMid);
+  const g = gravity(lat, pMid);
+  const alpha = d.vCt / d.v;
+  const beta = -d.vSa / d.v;
+  const n2 =
+    ((g * g) / (d.v * (lower.p - upper.p) * DB2PA)) * (beta * (lower.sa - upper.sa) - alpha * (lower.ct - upper.ct));
+  return { pMid, n2 };
+}
+
 /** In-situ density (kg/m³) from the 75-term specific volume. */
 export const teosDensity = (sa: number, ct: number, p: number): number => 1 / specificVolume(sa, ct, p);
 
@@ -228,19 +341,22 @@ export interface TeosSample {
   readonly sigma0: number;
   readonly ctFreeze: number;
   readonly ptFreeze: number;
+  readonly tFreeze: number;
+  readonly alpha: number;
+  readonly beta: number;
 }
 
 /**
  * Every TEOS-10 property of one sample from practical salinity, in-situ temperature (°C, ITS-90), and sea
- * pressure (dbar). Potential temperature comes from the EOS-80 adiabatic lapse rate, which agrees with TEOS-10 to
- * about a millikelvin in the ocean.
+ * pressure (dbar). Θ comes from the in-situ temperature through the polynomial's own enthalpy, then θ from Θ.
  */
 export function teosSample(sp: number, t90: number, p: number, air = 0): TeosSample {
   const sa = referenceSalinity(sp);
-  const pt = potentialTemperature(sp, toT68(t90), p) / 1.00024;
-  const ct = conservativeTemperature(sa, pt);
+  const ct = conservativeFromInSitu(sa, t90, p);
+  const pt = potentialFromConservative(sa, ct);
   const v = specificVolume(sa, ct, p);
   const ctFreeze = freezingConservative(sa, p, air);
+  const { alpha, beta } = expansion(sa, ct, p);
   return {
     sa,
     pt,
@@ -250,5 +366,8 @@ export function teosSample(sp: number, t90: number, p: number, air = 0): TeosSam
     sigma0: sigma0(sa, ct),
     ctFreeze,
     ptFreeze: potentialFromConservative(sa, ctFreeze),
+    tFreeze: inSituFrom(sa, ctFreeze, p),
+    alpha,
+    beta,
   };
 }

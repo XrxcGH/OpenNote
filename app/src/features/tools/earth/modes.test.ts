@@ -69,7 +69,20 @@ describe('earth kit wording and axes', () => {
     expect(result.answer).toMatch(/^Density: 1027\.67/);
     expect(result.steps?.join(' ')).toContain('75-term polynomial');
     expect(result.source).toContain('TEOS-10');
-    expect(result.rows).toHaveLength(8);
+    expect(result.rows).toHaveLength(11);
+  });
+
+  it('gives a stable N² for every layer of the default TEOS-10 profile', async () => {
+    const result = await outcome('ocean', 'teosN2');
+    expect(result.answer).toMatch(/^N² across 4 layers/);
+    // Thermocline N² is of order 10⁻⁵ to 10⁻⁴ 1/s², deep water nearer 10⁻⁶.
+    for (const row of tableOf(result)!.rows) {
+      const [, mantissa, power] = /^([\d.]+) × 10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)/.exec(row[1])!;
+      const exponent = Number([...power].map((c) => (c === '⁻' ? '-' : '⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(c))).join(''));
+      const n2 = Number(mantissa) * 10 ** exponent;
+      expect(n2).toBeGreaterThan(1e-6);
+      expect(n2).toBeLessThan(1e-3);
+    }
   });
 
   it('ticks the climate diagram once per month, J to D, with no fractional months', async () => {
