@@ -149,6 +149,18 @@ describe('scansion', () => {
     expect(latinSyllables('rōmā').syllables[0]!.weight).toBe('long');
   });
 
+  it('read a capital long vowel at the start of a line', () => {
+    // Aeneid 2.3: Īn-fan | dum rē | gī-na-iu | bēs re-no | vā-re-do | lō-rem, 15 syllables, SSDDDS.
+    const { syllables: list } = latinSyllables('Īnfandum, rēgīna, iubēs renovāre dolōrem');
+    expect(list).toHaveLength(15);
+    expect(list[0]).toMatchObject({ weight: 'long', reason: 'nature' });
+    expect(fitHexameter(list.map((s) => s.weight))).toEqual(['SSDDDS']);
+    // The same capital typed as O plus a combining macron.
+    const decomposed = latinSyllables('Ōra tenēbant').syllables;
+    expect(decomposed).toHaveLength(5);
+    expect(decomposed[0]!.weight).toBe('long');
+  });
+
   it('fit a pentameter', () => {
     const { syllables: list } = latinSyllables('īnferior rapidō flūmine Thybris abit');
     expect(fitPentameter(list.map((s) => s.weight)).length).toBeGreaterThan(0);

@@ -195,7 +195,8 @@ const endsElidable = (word: string) => /[aeiouyāēīōūȳăĕĭŏŭ]m?$/i.test
 
 /** Syllables and weights of a Latin line, with elided syllables left out (and listed). */
 export function latinSyllables(line: string): { syllables: LatinSyllable[]; elided: string[] } {
-  const list = line.match(/[a-zA-Zāēīōūȳăĕĭŏŭ]+/g) ?? [];
+  // NFC first, so a macron typed as a combining mark is one letter; capitals with marks count as letters too.
+  const list = line.normalize('NFC').match(/[a-zA-ZāēīōūȳăĕĭŏŭĀĒĪŌŪȲĂĔĬŎŬ]+/g) ?? [];
   if (list.length === 0) throw new Error('empty');
   const elided: string[] = [];
   const units: Unit[] = [];
