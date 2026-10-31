@@ -24,6 +24,16 @@ export const kitSubjects = {
     text: 'Data',
     textHint:
       'One row per line. Separate columns with tabs, commas, semicolons, or spaces. NA, N/A, a full stop, and blank cells are missing.',
+    decimal: 'Decimal mark',
+    decimalChoice: {
+      auto: 'Guess from the data',
+      point: 'Point (1.5)',
+      comma: 'Comma (1,5)',
+    },
+    decimalGuessPoint:
+      'In {column}, commas were read as thousands separators. Choose a comma decimal mark if 1,234 means 1.234.',
+    decimalGuessComma:
+      'In {column}, commas were read as decimal marks. Choose a point decimal mark if 1,234 means 1234.',
     file: 'Open a file',
     fileLabel: 'Choose a CSV, TSV, or text file',
     fileRead: 'Read {name}.',
