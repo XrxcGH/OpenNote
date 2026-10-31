@@ -26,6 +26,7 @@ export function createTauriInterop(): InteropClient {
     // The notes folder holds the imported notebook, so its pages are the tree's own: there is nothing to adopt.
     adopt: () => Promise.resolve(),
     exportTo: (job, request) => call('interop_export', { job, request }),
+    latexPreview: (request, maxChars) => call('interop_latex_preview', { request, maxChars }),
     cancel: (job) => void call('interop_cancel', { job }).catch(() => undefined),
     reveal: (path) => call('interop_reveal', { path }),
     more: <T>(op: string, args?: Record<string, unknown>) => call<T>('interop_more', { op, args: args ?? {} }),

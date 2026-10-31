@@ -3,13 +3,14 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { isEnabled } from '../../app/flags';
+import { executeCommand } from '../../commands/registry';
 import { navigate } from '../../app/location';
 import type { InteropClient } from '../../platform/interop';
 import type { NotesService } from '../../services/notes/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
 import { sessionStore, setExpanded } from '../../state/session';
 import { t } from '../../strings/t';
-import { Button, Dialog, Switch, TextField, announce } from '../../ui';
+import { Button, Dialog, Switch, TextField, announce, showToast } from '../../ui';
 import type { DialogAction } from '../../ui';
 import { createImportFlow } from './importFlow';
 import type { ImportFlow, ImportState } from './importFlow';
@@ -26,7 +27,14 @@ export interface ImportDialogProps {
   initialPath?: string;
 }
 
-function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boolean; refocus: boolean }) {
+interface ChooseProps {
+  flow: ImportFlow;
+  canceled: boolean;
+  refocus: boolean;
+  onPdf: () => void;
+}
+
+function Choose({ flow, canceled, refocus, onPdf }: ChooseProps) {
   const [sticky, setSticky] = useState<string | null>(null);
   useEffect(() => {
     let current = true;
@@ -62,9 +70,45 @@ function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boole
         <li>{t('interop.import.sources.highlights')}</li>
         <li>{t('interop.import.sources.other')}</li>
       </ul>
+      {isEnabled('interop.notesApps') && <NotesApps onPdf={onPdf} />}
     </div>
   );
 }
+
+/** Goodnotes, Notability, and Samsung Notes, with their file types and the PDF export that always works. */
+function NotesApps({ onPdf }: { onPdf: () => void }) {
+  return (
+    <section aria-labelledby="interop-notes-apps">
+      <h3 id="interop-notes-apps" className={styles.subheading}>
+        {t('notesApps.heading')}
+      </h3>
+      <p className={styles.note}>{t('notesApps.intro')}</p>
+      <ul className={styles.plain}>
+        <li>{t('notesApps.apps.goodnotes')}</li>
+        <li>{t('notesApps.apps.notability')}</li>
+        <li>{t('notesApps.apps.samsungNotes')}</li>
+      </ul>
+      <p id="interop-pdf-hint">{t('notesApps.pdfHint')}</p>
+      {isEnabled('interop.pdfImport') && (
+        <div className={styles.choices}>
+          <Button onClick={onPdf} aria-describedby="interop-pdf-hint">
+            {t('notesApps.importPdf')}
+          </Button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Closes the dialog and runs Import PDF, which needs an open section. */
+function importPdf(onClose: () => void): void {
+  onClose();
+  void executeCommand('pdf.import', undefined, 'menu').then((ran) => {
+    if (!ran) showToast({ message: t('pdf.needSection') });
+  });
+}
+
+const isPdf = (path: string) => /\.pdf$/i.test(path);
 
 function Review({ flow, state }: { flow: ImportFlow; state: Extract<ImportState, { step: 'review' }> }) {
   const { preview, reportPage, path } = state;
@@ -139,10 +183,10 @@ function Done({ state }: { state: Extract<ImportState, { step: 'done' }> }) {
   );
 }
 
-function body(flow: ImportFlow, state: ImportState, refocus: boolean) {
+function body(flow: ImportFlow, state: ImportState, refocus: boolean, onPdf: () => void) {
   switch (state.step) {
     case 'choose':
-      return <Choose flow={flow} canceled={Boolean(state.canceled)} refocus={refocus} />;
+      return <Choose flow={flow} canceled={Boolean(state.canceled)} refocus={refocus} onPdf={onPdf} />;
     case 'checking':
       return (
         <div className={styles.body}>
@@ -254,6 +298,14 @@ function doneActions(state: DoneState, { flow, interop, onClose }: ActionContext
   ];
 }
 
+/** For a PDF the import cannot read, the way it does come in: Import PDF. */
+function pdfAction(path: string | undefined, onClose: () => void): DialogAction[] {
+  if (!path || !isPdf(path) || !isEnabled('interop.pdfImport')) return [];
+  return [
+    { id: 'importPdf', label: t('notesApps.importPdf'), variant: 'secondary', onPress: () => importPdf(onClose) },
+  ];
+}
+
 function dialogActions(ctx: ActionContext): DialogAction[] {
   const { flow, state, close } = ctx;
   const cancel: DialogAction = { id: 'cancel', label: t('common.cancel'), variant: 'quiet', onPress: close };
@@ -274,6 +326,7 @@ function dialogActions(ctx: ActionContext): DialogAction[] {
       case 'unsupported':
         return [
           { ...cancel, id: 'close', label: t('common.close') },
+          ...pdfAction(state.path, ctx.onClose),
           { id: 'back', label: t('interop.import.review.back'), variant: 'primary', onPress: () => flow.back() },
         ];
       case 'review':
@@ -294,6 +347,7 @@ function dialogActions(ctx: ActionContext): DialogAction[] {
       case 'failed':
         return [
           { ...cancel, id: 'close', label: t('common.close') },
+          ...pdfAction(state.path, ctx.onClose),
           { id: 'retry', label: t('interop.import.failed.tryAgain'), variant: 'primary', onPress: () => flow.retry() },
         ];
       case 'done':
@@ -332,7 +386,7 @@ export default function ImportDialog({ interop, notes, path, initialPath, onClos
 
   return (
     <Dialog title={t('interop.import.title')} size="medium" actions={actions} onDismiss={close}>
-      {body(flow, state, left)}
+      {body(flow, state, left, () => importPdf(onClose))}
     </Dialog>
   );
 }

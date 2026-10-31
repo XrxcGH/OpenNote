@@ -41,6 +41,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 
 - [Search and links](search-and-links.md): search, page links, backlinks, tags, and daily notes.
 - [Study tools](study-tools.md): flashcards, Upcoming, timers, the calculator, and citations.
+- [Tutor](tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
 - [Chemistry and property tables](chemistry-and-data.md): balancing, stoichiometry, gas laws, titration, structure drawing, and steam, gas, and materials tables.
 
 ## Record
@@ -50,6 +51,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Bring notes in and out
 
 - [Import and export](import-and-export.md): other apps' files in, and Markdown, Word, PDF, and more out.
+- [Goodnotes, Notability, and Samsung Notes](notes-apps.md): the handwriting apps' own files, and their PDF exports.
 
 ## Storage and history
 
@@ -60,6 +62,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [On-device intelligence](on-device-intelligence.md): reading pictures, summaries, Ask your notes, and handwriting to text.
 - [Privacy and Work offline](privacy-and-work-offline.md): what uses the network, and how to stop it.
 - [Connectors](connectors.md): signing in to other services.
+- [Sync (Beta)](sync.md): optional end-to-end-encrypted sync through a folder or WebDAV server you already have.
 - [The local API and app permissions](local-api.md): which programs on your PC may read or add notes, and the access log.
 - [The opennote command](command-line.md): add to and search your notes from a terminal or script.
 - [The web clipper and mail add-ins](web-clipper.md): save web pages and emails into your notes.
@@ -68,6 +71,8 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Install, update, and remove
 
 OpenNote is one file, and it never needs administrator rights.
+
+- **On a Mac or Linux.** [OpenNote on macOS and Linux](install-macos-linux.md): the dmg and the AppImage, updates, Command shortcuts, and what works differently there.
 
 - **Install.** The first time it starts, setup offers to move OpenNote into your own Programs folder (`%LOCALAPPDATA%\Programs\OpenNote`) and add it to the Start menu. After the move, OpenNote also shows in Windows Settings, then **Apps**, then **Installed apps**, with its version.
 - **Updates.** OpenNote checks for updates in the background and installs them the way you chose in Settings, then **Updates**. A download that stops partway, because the PC slept or the network dropped, carries on from where it stopped the next time. If you are on a metered network, such as a phone hotspot, automatic updates wait until you are on a network without a data limit. Every update is checked against its signature before it is installed, whether it was downloaded in one go or in parts.

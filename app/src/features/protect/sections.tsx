@@ -476,6 +476,92 @@ export function LockedSectionPane({ section }: { section: NodeSummary }) {
   );
 }
 
+/** The other versions of a protected section's sealed files that sync kept (ADR 0049), by name. */
+export async function sealedVersions(section: NodeSummary): Promise<string[]> {
+  try {
+    const result = await shellCall<{ versions?: string[] }>('protect.conflicts', { id: section.id });
+    return result.versions ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Makes the other version the section's own. The section locks first, and the current version is kept. */
+export async function switchVersion(section: NodeSummary, name: string): Promise<boolean> {
+  const title = titleOf(section);
+  try {
+    await shellCall('protect.switchVersion', { id: section.id, name });
+  } catch {
+    showToast({ message: t('storage.sections.versionFailed', { title }), tone: 'danger' });
+    return false;
+  }
+  await refresh(section);
+  announce(t('storage.sections.versionSwitched', { title }));
+  return true;
+}
+
+/** Removes the version the section isn't using, after asking. */
+export async function removeVersion(section: NodeSummary, name: string): Promise<boolean> {
+  const title = titleOf(section);
+  const sure = await confirm({
+    title: t('storage.sections.removeVersionTitle', { title }),
+    body: t('storage.sections.removeVersionBody'),
+    confirmLabel: t('storage.sections.removeVersion'),
+    danger: true,
+  });
+  if (!sure) return false;
+  try {
+    await shellCall('protect.removeVersion', { id: section.id, name });
+  } catch {
+    showToast({ message: t('storage.sections.versionFailed', { title }), tone: 'danger' });
+    return false;
+  }
+  announce(t('storage.sections.versionRemoved', { title }));
+  return true;
+}
+
+/**
+ * A notice over a protected section's pages when sync kept two versions of it, because two devices changed it
+ * before syncing: like a page's conflict, the person looks at either one and keeps what they want.
+ */
+export function SealedVersionsNotice({ section }: { section: NodeSummary }) {
+  const [versions, setVersions] = useState<string[]>([]);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    let live = true;
+    void sealedVersions(section).then((found) => {
+      if (live) setVersions(found);
+    });
+    return () => {
+      live = false;
+    };
+  }, [section, tick]);
+  const name = versions[0];
+  if (!name) return null;
+  const again = (done: boolean) => {
+    if (done) setTick((n) => n + 1);
+  };
+  return (
+    <div className={styles.notice} role="status">
+      <p className={styles.lockedTitle}>{t('storage.sections.twoVersions')}</p>
+      <p className={styles.help}>{t('storage.sections.twoVersionsHelp')}</p>
+      <div className={styles.actions}>
+        {section.protected === 'locked' && (
+          <Button variant="primary" onClick={() => void unlockSection(section)}>
+            {t('storage.sections.unlock')}
+          </Button>
+        )}
+        <Button onClick={() => void switchVersion(section, name).then(again)}>
+          {t('storage.sections.switchVersion')}
+        </Button>
+        <Button onClick={() => void removeVersion(section, name).then(again)}>
+          {t('storage.sections.removeVersion')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Settings, then Storage: when protected sections lock again. */
 export function ProtectedSectionsSettings() {
   const enabled = useFlag('sections.protect');

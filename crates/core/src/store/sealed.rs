@@ -40,6 +40,9 @@ use section::{with_encryption, OpenState, Unlocked};
 
 /// The hidden folder of a protected section's sealed files.
 pub const SEALED_DIR: &str = ".sealed";
+/// The start of a folder's name beside [`SEALED_DIR`] that keeps another version of the section's sealed files,
+/// which sync wrote when two devices changed the section before syncing (ADR 0049).
+pub const SEALED_CONFLICT: &str = ".sealed-conflict-";
 pub(crate) const MANIFEST: &str = "manifest";
 /// The key in `section.json`'s `encryption` header that says the section is open in memory. It is never written.
 pub const UNLOCKED: &str = "unlocked";
@@ -206,14 +209,15 @@ impl SealedFs {
         Ok(())
     }
 
-    /// Removes everything in a protected section's folder but `section.json` and `.sealed`, and blobs the
-    /// manifest doesn't name.
+    /// Removes everything in a protected section's folder but `section.json`, `.sealed`, and the other versions of
+    /// `.sealed` that sync kept, and blobs the manifest doesn't name.
     fn remove_plain(&self, dir: &Path) {
         let Ok(entries) = self.inner.read_dir(dir) else {
             return;
         };
         for entry in entries {
-            if entry.name == SECTION_JSON || entry.name == SEALED_DIR {
+            let kept = entry.is_dir && entry.name.starts_with(SEALED_CONFLICT);
+            if entry.name == SECTION_JSON || entry.name == SEALED_DIR || kept {
                 continue;
             }
             let path = dir.join(&entry.name);
