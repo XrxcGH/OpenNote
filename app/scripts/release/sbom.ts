@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { RELEASE_FILES, REPO } from '../write-manifest.ts';
+import { RELEASE_FILES, REPO, rustTargets } from '../write-manifest.ts';
 import { lockChecksums, shippedCrates, type CargoMetadata, type Crate } from './sbom-cargo.ts';
 import { importedPackages } from './sbom-imports.ts';
 import { shippedPackages, type Lockfile, type NpmPackage } from './sbom-npm.ts';
@@ -162,17 +162,18 @@ export function buildSbom(input: SbomInput): Bom {
 export function readInput(version: string, serial: string, timestamp: string): SbomInput {
   const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8')) as Lockfile;
   const npm = shippedPackages(lock, importedPackages(join(ROOT, 'app', 'src', 'main.tsx')));
-  const results = RELEASE_FILES.map(({ target }) => {
-    const args = ['metadata', '--format-version', '1', '--locked', '--filter-platform', target];
+  const metadata = (target: string, rust: string) => {
+    const args = ['metadata', '--format-version', '1', '--locked', '--filter-platform', rust];
     if (target === NATIVE_TARGET) args.push('--features', NATIVE_FEATURES);
     return JSON.parse(
       execFileSync('cargo', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }),
     ) as CargoMetadata;
-  });
+  };
+  const results = RELEASE_FILES.flatMap(({ target }) => rustTargets(target).map((rust) => metadata(target, rust)));
   const checksums = lockChecksums(readFileSync(join(ROOT, 'Cargo.lock'), 'utf8'));
   const app = shippedCrates(results, APP_CRATE, checksums);
   // The language model program is inside the exe of the native target only, so only that target's list is read.
-  const nativeAt = RELEASE_FILES.findIndex(({ target }) => target === NATIVE_TARGET);
+  const nativeAt = RELEASE_FILES.flatMap(({ target }) => rustTargets(target).map(() => target)).indexOf(NATIVE_TARGET);
   const program = nativeAt === -1 ? [] : shippedCrates([results[nativeAt] as CargoMetadata], LLM_CRATE, checksums);
   return { version, npm, crates: mergeCrates(app, program), serial, timestamp };
 }

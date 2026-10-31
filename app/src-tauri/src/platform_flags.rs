@@ -20,15 +20,18 @@ pub const API_LOCAL: &str = "api.local";
 pub const SHARE_TARGET: &str = "integrations.shareTarget";
 /// Insert > From phone.
 pub const PHONE_SCAN: &str = "integrations.phoneScan";
+/// End-to-end-encrypted sync. Off means no background rounds, even for a sync set up in another build.
+pub const SYNC_E2EE: &str = "sync.e2ee";
 
 /// Every flag above. Each is on in development, nightly, and beta builds, and off in Stable.
-pub const BETA_BUILD_FLAGS: [&str; 6] = [
+pub const BETA_BUILD_FLAGS: [&str; 7] = [
     UNINSTALL_ENTRY,
     UPDATES_RESUME,
     UPDATES_METERED,
     API_LOCAL,
     SHARE_TARGET,
     PHONE_SCAN,
+    SYNC_E2EE,
 ];
 
 /// The channel of this exe, as the boot payload reports it.
@@ -104,6 +107,7 @@ mod tests {
         let registry = [
             include_str!("../../src/app/flags.ts"),
             include_str!("../../src/features/integrations/flags.ts"),
+            include_str!("../../src/features/sync/flags.ts"),
         ]
         .concat();
         for id in BETA_BUILD_FLAGS {

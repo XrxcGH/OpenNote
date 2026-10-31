@@ -75,7 +75,8 @@ function versionFile(config: WingetConfig, version: string): string {
 }
 
 function installerFile(config: WingetConfig, manifest: Manifest, tag: string): string {
-  const installers = RELEASE_FILES.flatMap(({ platform }) => {
+  // winget installs Windows apps only.
+  const installers = RELEASE_FILES.filter(({ platform }) => platform in ARCHITECTURES).flatMap(({ platform }) => {
     const entry = manifest.platforms[platform];
     if (!entry) throw new Error(`The manifest has no entry for ${platform}.`);
     return [

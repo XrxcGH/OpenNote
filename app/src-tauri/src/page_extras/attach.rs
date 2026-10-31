@@ -899,8 +899,8 @@ fn open_default(file: &Path) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-fn open_default(_file: &Path) -> IpcResult<()> {
-    Err(IpcError::not_implemented("attachment_open"))
+fn open_default(file: &Path) -> IpcResult<()> {
+    crate::desktop::open_with_default(file.as_os_str(), false)
 }
 
 #[cfg(test)]

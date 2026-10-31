@@ -489,6 +489,8 @@ mod tests {
         );
     }
 
+    // Windows paths: drive letters and backslashes mean nothing to macOS and Linux.
+    #[cfg(windows)]
     #[test]
     fn only_images_in_msohtmlclip_folders_of_the_temp_folder_pass() {
         let temp = tempfile::tempdir().unwrap();
