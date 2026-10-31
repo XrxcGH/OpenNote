@@ -84,6 +84,15 @@ describe('fields: point charges', () => {
     expect(problem(runMode(FIELDS, 'charges', { charges: '0 0 0' }))).toBe('kitPhysics.fields.errors.noCharge');
     expect(problem(runMode(FIELDS, 'charges', { at: '1' }))).toBe('kitPhysics.errors.count');
   });
+
+  it('reads the charges and the point in the same length unit in US customary units', () => {
+    const US = { system: 'US' as const };
+    // The table's (1 0) charge and a point at (1 0) are the same place in feet.
+    expect(problem(runMode(FIELDS, 'charges', { at: '1 0' }, US))).toBe('kitPhysics.fields.errors.onCharge');
+    // 1 nC at the origin, point 1 ft away: E = k q / r² = 8.9875517923e9 x 1e-9 / 0.3048² = 96.742 N/C.
+    const out = runMode(FIELDS, 'charges', { charges: '0 0 1', at: '1 0' }, US);
+    expect(value(out, 'kitPhysics.fields.r.E')).toBeCloseTo(8.9875517923 / 0.3048 ** 2, 6);
+  });
 });
 
 describe('fields: Gauss and capacitors', () => {
