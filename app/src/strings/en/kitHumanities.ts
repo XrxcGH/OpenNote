@@ -1785,7 +1785,7 @@ export const kitHumanities = {
     area: 'Area',
     areaNote:
       // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
-      'The area is on a sphere of the same surface area as WGS84 (radius 6,371,007.2 m), not yet on the ellipsoid. A ring that goes all the way around a pole gets the smaller of its two sides.',
+      'Spherical area with great-circle edges, on a sphere of the same surface area as WGS84 (radius 6,371,007.2 m), not on the ellipsoid. A ring that goes all the way around a pole gets the smaller of its two sides.',
     antipodalNote:
       // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
       'These points are nearly opposite each other, where Vincenty’s iteration on the ellipsoid does not converge, so only the distance on the sphere is shown. It can be off by up to about 0.5%.',

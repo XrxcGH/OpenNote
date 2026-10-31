@@ -76,6 +76,51 @@ describe('measures and classes', () => {
     expect(sphericalArea(ring, r)).toBeCloseTo(2 * Math.PI * r * r, -3);
   });
 
+  it('match the spherical excess of great-circle triangles by l’Huilier’s theorem', () => {
+    const r = 6371007.2;
+    const v = ([lon, lat]: [number, number]) => {
+      const [l, p] = [(lon * Math.PI) / 180, (lat * Math.PI) / 180];
+      return [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)];
+    };
+    const arc = (x: [number, number], y: [number, number]) => {
+      const [a, b] = [v(x), v(y)];
+      return Math.acos(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]);
+    };
+    const lhuilier = (A: [number, number], B: [number, number], C: [number, number]) => {
+      const [a, b, c] = [arc(B, C), arc(A, C), arc(A, B)];
+      const s = (a + b + c) / 2;
+      const q = Math.tan(s / 2) * Math.tan((s - a) / 2) * Math.tan((s - b) / 2) * Math.tan((s - c) / 2);
+      return 4 * Math.atan(Math.sqrt(q)) * r * r;
+    };
+    const triangles: [number, number][][] = [
+      [
+        [0, 0],
+        [20, 0],
+        [0, 20],
+      ],
+      [
+        [-74.006, 40.7128],
+        [-0.1278, 51.5074],
+        [-43.1729, -22.9068],
+      ],
+    ];
+    for (const [A, B, C] of triangles)
+      expect(sphericalArea([A, B, C], r) / 1e6).toBeCloseTo(lhuilier(A, B, C) / 1e6, 0);
+    // 2 523 154 km² for the first, against 2 422 954 from a sum that took the edges along parallels.
+    expect(sphericalArea(triangles[0], r) / 1e6).toBeCloseTo(2523154.5, 0);
+    // An octant is an eighth of the sphere.
+    expect(
+      sphericalArea(
+        [
+          [0, 0],
+          [90, 0],
+          [0, 90],
+        ],
+        r,
+      ),
+    ).toBeCloseTo((Math.PI * r * r) / 2, -3);
+  });
+
   it('give a cap around either pole its own area, 2π(1 − sin φ) R²', () => {
     const cap = (lat: number): [number, number][] => [0, 60, 120, 180, 240, 300].map((lon) => [lon, lat]);
     // A cap is bounded by a parallel, but the ring's edges are great circles; with 360 corners they nearly match.
