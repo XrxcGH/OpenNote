@@ -2327,6 +2327,7 @@ export const kitLifeSysTools = {
       meanFinal: 'Mean total cases over {runs} runs',
       minor: 'Runs with a minor outbreak',
       seed: 'Seed',
+      finalSizeUnvacc: 'Share of the unvaccinated ever infected',
       odeAt: '{s} at t = {t} (ODE)',
       ssaAt: '{s} at t = {t} (mean of runs)',
       likeBefore: 'Like neighbors at the start',
@@ -2368,6 +2369,10 @@ export const kitLifeSysTools = {
       reedFrost:
         'Each generation, every susceptible escapes each of the I infected with chance 1 − p = 1 − {p}, in a group ' +
         'of {n}.',
+      finalSizeUnvacc:
+        'Among the unvaccinated the final size solves z = 1 − e^(−R₀(1 − p) z) with R₀(1 − p) = {r}: z = {z}%.',
+      finalSizeVacc:
+        'The vaccinated {p}% never catch it, so with R₀ = {r} and the starting cases counted, {e}% of everyone is ever infected.',
       reedFrostExpected: 'The expected course over {g} generations infects {f} people in total.',
       reedFrostRuns:
         '{runs} seeded runs (seed {seed}) average {m} cases; {minor}% are minor outbreaks of under a tenth of the ' +

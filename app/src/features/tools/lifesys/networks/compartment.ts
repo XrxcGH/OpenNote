@@ -16,6 +16,17 @@ export function finalSize(r0: number): number {
   return brent((z) => z - (1 - Math.exp(-r0 * z)), 1e-9, 1);
 }
 
+/**
+ * The share of the whole population ever infected when a share `vacc` starts immune and a share `i0` starts
+ * infected: i0 + s0 − s∞, where s0 = (1 − vacc)(1 − i0) and s∞ solves ln(s0 / s∞) = R0 (s0 + i0 − s∞).
+ */
+export function populationFinalSize(r0: number, vacc: number, i0: number): number {
+  const s0 = (1 - vacc) * (1 - i0);
+  if (s0 <= 0) return i0;
+  const sEnd = brent((s) => Math.log(s0 / s) - r0 * (s0 + i0 - s), s0 * 1e-12, s0);
+  return i0 + s0 - sEnd;
+}
+
 export const herdImmunity = (r0: number): number => (r0 > 1 ? 1 - 1 / r0 : 0);
 
 export interface EpiParams {
@@ -111,8 +122,21 @@ export function epidemicResult(p: EpiParams): CalcResult {
   if ((p.model === 'sir' || p.model === 'seir') && p.mu === 0 && p.omega === 0) {
     const reff = r0 * (1 - p.vacc);
     const z = finalSize(reff);
-    rows.push({ label: 'networks.r.finalSize', value: 100 * z, unit: '%' });
-    steps.push({ key: 'networks.s.finalSize', vars: { r: reff, z: 100 * z }, math: 'z = 1 - e^{-R_0 z}' });
+    if (p.vacc > 0) {
+      // z is the share of the unvaccinated who catch it; the population share counts the vaccinated as never infected.
+      const ever = 100 * populationFinalSize(r0, p.vacc, p.i0 / p.n);
+      rows.push(
+        { label: 'networks.r.finalSizeUnvacc', value: 100 * z, unit: '%' },
+        { label: 'networks.r.finalSize', value: ever, unit: '%' },
+      );
+      steps.push(
+        { key: 'networks.s.finalSizeUnvacc', vars: { r: reff, z: 100 * z }, math: 'z = 1 - e^{-R_0 (1 - p) z}' },
+        { key: 'networks.s.finalSizeVacc', vars: { r: r0, p: 100 * p.vacc, e: ever } },
+      );
+    } else {
+      rows.push({ label: 'networks.r.finalSize', value: 100 * z, unit: '%' });
+      steps.push({ key: 'networks.s.finalSize', vars: { r: reff, z: 100 * z }, math: 'z = 1 - e^{-R_0 z}' });
+    }
   }
   const names = ['networks.p.S', 'networks.p.E', 'networks.p.I', 'networks.p.R'] as const;
   const styles = ['line', 'dashed', 'line', 'outline'] as const;

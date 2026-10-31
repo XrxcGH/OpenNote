@@ -63,6 +63,25 @@ describe('compartment models', () => {
     expect(value(r, 'finalSize')).toBeCloseTo(89.2645, 3);
   });
 
+  it('counts the vaccinated as never infected in the population final size', () => {
+    // N 1000, I0 1, R0 2.5, 40% vaccinated: solve_ivp (rtol 1e-10) gives 35.1416% of N ever infected, 58.28% of the unvaccinated.
+    const p = {
+      model: 'sir',
+      n: 1000,
+      i0: 1,
+      beta: 0.5,
+      gamma: 0.2,
+      sigma: 0,
+      omega: 0,
+      mu: 0,
+      vacc: 0.4,
+      t: 400,
+    } as const;
+    const r = epidemicResult(p);
+    expect(value(r, 'finalSize')).toBeCloseTo(35.1416, 3);
+    expect(value(r, 'finalSizeUnvacc')).toBeCloseTo(58.28, 1);
+  });
+
   it('settles an SIS model at 1 − 1/R0 infected', () => {
     const p: EpiParams = {
       model: 'sis',
