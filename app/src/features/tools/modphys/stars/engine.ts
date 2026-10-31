@@ -256,10 +256,15 @@ export function parseStars(text: string): StarRow[] {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line, index) => {
-      const parts = line
-        .split(/[,;\t]+|\s{2,}/)
-        .map((part) => part.trim())
-        .filter(Boolean);
+      const split = (by: RegExp) =>
+        line
+          .split(by)
+          .map((part) => part.trim())
+          .filter(Boolean);
+      const good = (list: string[]) => list.length >= 2 && list.slice(-2).every((part) => Number(part) > 0);
+      let parts = split(/[,;\t]+|\s{2,}/);
+      // A row typed with single spaces, such as "9940 25.4" or "Sirius A 9940 25.4": the last two words are numbers.
+      if (!good(parts) && !/[,;\t]/.test(line)) parts = split(/\s+/);
       const numbers = parts.slice(-2).map(Number);
       if (numbers.length < 2 || numbers.some((n) => !Number.isFinite(n) || n <= 0)) fail('badList');
       const name = parts.length > 2 ? parts.slice(0, -2).join(' ') : `${index + 1}`;

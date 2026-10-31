@@ -75,6 +75,14 @@ describe('HR diagrams', () => {
     expect(calc.plot?.reverseX).toBe(true);
     expect(() => parseStars('Sun, hot, bright')).toThrow(PhysicsError);
   });
+
+  it('reads rows typed with single spaces, with or without a name', () => {
+    expect(parseStars('9940 25.4\nSirius A 9940 25.4')).toEqual([
+      { name: '1', temperature: 9940, luminosity: 25.4 },
+      { name: 'Sirius A', temperature: 9940, luminosity: 25.4 },
+    ]);
+    expect(() => parseStars('Sirius 9940')).toThrow(PhysicsError);
+  });
 });
 
 describe('stellar atmospheres', () => {
