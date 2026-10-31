@@ -1,7 +1,7 @@
 // A calculator form for the modern physics tools: labeled fields in a grid with unit pickers, and a result that
 // updates as the person types: the answer, a table of values, a plot, and the worked steps. The result is a status
 // region so a screen reader hears it. Insert writes the answer, the equation, the table, the steps, or the plot as
-// a picture at the page's caret.
+// a picture at the page's caret, or a live calculation block that keeps the inputs.
 import { useEffect, useMemo, useState } from 'react';
 import './strings';
 import { t } from '../../../../strings/t';
@@ -23,6 +23,10 @@ export interface KitFormProps {
   fields: readonly FieldSpec[] | ((values: Values) => readonly FieldSpec[]);
   solve(values: Values): Outcome;
   intro?: string;
+  /** The values to start from, as when a live calculation block reopens the form. */
+  initial?: Values;
+  /** Inserts a live calculation block of these values; the menu offers it when given. */
+  live?: (values: Values, outcome: Outcome & { ok: true }) => boolean;
 }
 
 const initialText = (f: FieldSpec) => f.initial ?? (f.kind === 'select' ? (f.options?.[0]?.value ?? '') : '');
@@ -205,8 +209,8 @@ function Result({ outcome }: { outcome: Outcome }) {
   );
 }
 
-export function KitForm({ name, fields, solve, intro }: KitFormProps) {
-  const [typed, setValues] = useState<Values>(() => firstValues(fields));
+export function KitForm({ name, fields, solve, intro, initial, live }: KitFormProps) {
+  const [typed, setValues] = useState<Values>(() => initial ?? firstValues(fields));
   const [list, values] = useMemo(() => {
     const shown = typeof fields === 'function' ? fields(typed) : fields;
     return [shown, withInitials(typed, shown)] as const;
@@ -219,7 +223,15 @@ export function KitForm({ name, fields, solve, intro }: KitFormProps) {
     const timer = window.setTimeout(() => setMissed(false), 5000);
     return () => window.clearTimeout(timer);
   }, [missed]);
-  const put = (part: string) => setMissed(!insert(outcome, part));
+  const put = (part: string) => {
+    if (part === 'live' && live && outcome.ok) {
+      const done = live(values, outcome);
+      announce(t(done ? 'kitModPhys.form.inserted' : 'kitModPhys.form.noPage'));
+      setMissed(!done);
+      return;
+    }
+    setMissed(!insert(outcome, part));
+  };
   const openMore = (anchor: HTMLButtonElement) => {
     if (!outcome.ok) return;
     const items = [
@@ -228,6 +240,7 @@ export function KitForm({ name, fields, solve, intro }: KitFormProps) {
       ...(outcome.rows?.length ? [{ id: 'table', label: t('kitModPhys.form.insertTable') }] : []),
       ...(outcome.steps?.length ? [{ id: 'steps', label: t('kitModPhys.form.insertSteps') }] : []),
       ...(outcome.plot ? [{ id: 'picture', label: t('kitModPhys.form.insertPicture') }] : []),
+      ...(live ? [{ id: 'live', label: t('kitModPhys.form.insertLive') }] : []),
     ];
     void openMenu({ label: t('kitModPhys.form.insertMenu'), items, anchor, returnFocus: anchor }).then(
       (chosen) => chosen && put(chosen),

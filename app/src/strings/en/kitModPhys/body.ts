@@ -37,6 +37,7 @@ export const kitModPhysBody = {
     insertTable: 'Result table',
     insertSteps: 'Answer with worked steps',
     insertPicture: 'Plot as a picture',
+    insertLive: 'Live calculation (reopens with these inputs)',
     inserted: 'Inserted into the page.',
     noPage: 'Click in a page first, then insert.',
     source: 'Source: {name}',
