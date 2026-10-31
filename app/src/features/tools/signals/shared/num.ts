@@ -176,3 +176,9 @@ export function need(value: number, field: string, min = -Infinity, max = Infini
   if (!ok) throw new SignalError('outOfRange', { field });
   return value;
 }
+
+/** A typed number, or NaN when the text is not one plain number. */
+export function num(text: string): number {
+  const trimmed = text.trim().replace('−', '-');
+  return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+}

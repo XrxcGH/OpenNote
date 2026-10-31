@@ -70,10 +70,7 @@ export function attempt<T>(run: () => T): { ok: true; value: T } | { ok: false; 
 }
 
 /** A number typed in a field: plain decimal with an optional exponent; NaN otherwise. */
-export function num(text: string): number {
-  const trimmed = text.trim().replace('−', '-');
-  return /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(trimmed) ? Number(trimmed) : Number.NaN;
-}
+export { num } from './num';
 
 export function Field(props: {
   label: string;

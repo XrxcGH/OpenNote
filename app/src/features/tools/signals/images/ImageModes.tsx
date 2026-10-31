@@ -20,7 +20,8 @@ import {
 import styles from '../shared/kit.module.css';
 import type { PlotHandle } from '../shared/Plot';
 import { phantom } from '../medimaging/engine';
-import { backProject, bandMath, classify, gray, radon, type ReconFilter } from './engine';
+import { bandMath, classify, gray, type ReconFilter } from './engine';
+import { HEAVY_SIZE, TaskProgress, useTask } from '../shared/useTask';
 import { ImageView, type ImageContent } from './ImageView';
 import { PictureSource } from './PictureSource';
 import { usePicture } from './source';
@@ -136,20 +137,24 @@ export function CtMode() {
     filter: 'ramLak' as ReconFilter,
   });
   const view = useRef<PlotHandle>(null);
-  const outcome = useMemo(
-    () =>
-      attempt(() => {
-        const size = 64;
-        const object = state.source === 'phantom' ? gray(size, size, phantom(size)) : picture.image;
-        const { sinogram } = radon(object, num(state.angles));
-        const side = Math.max(object.width, object.height);
-        const image = backProject(sinogram, side, state.filter);
-        const centre = image.data[Math.floor(side / 2) * side + Math.floor(side / 2)]!;
-        // Treat the object's value 1 as water: HU = 1000 (v − 1)/1, with v the reconstructed value.
-        return { object, sinogram, image, hu: (1000 * (centre - 1)) / 1 };
-      }),
-    [picture, state],
+  const object = useMemo(
+    () => (state.source === 'phantom' ? gray(64, 64, phantom(64)) : picture.image),
+    [picture, state.source],
   );
+  const angles = num(state.angles);
+  const run = useTask(
+    'ct',
+    useMemo(() => ({ object, angles, filter: state.filter }), [object, angles, state.filter]),
+    object.width * object.height * (angles || 0) > 25 * HEAVY_SIZE,
+  );
+  const outcome = useMemo(() => {
+    if (!run.outcome?.ok) return run.outcome;
+    const { sinogram, image } = run.outcome.value;
+    const side = image.width;
+    const centre = image.data[Math.floor(side / 2) * side + Math.floor(side / 2)]!;
+    // Treat the object's value 1 as water: HU = 1000 (v − 1)/1, with v the reconstructed value.
+    return { ok: true as const, value: { object, sinogram, image, hu: (1000 * (centre - 1)) / 1 } };
+  }, [run.outcome, object]);
   return (
     <>
       <Fields>
@@ -169,7 +174,8 @@ export function CtMode() {
           onChange={(filter) => set({ filter })}
         />
       </Fields>
-      {outcome.ok ? (
+      <TaskProgress progress={run.progress} cancel={run.cancel} />
+      {outcome === null ? null : outcome.ok ? (
         <>
           <Answer text={w('ctAnswer', { angles: state.angles, filter: w(`reconFilters.${state.filter}`) })} />
           <div className={styles.pair}>

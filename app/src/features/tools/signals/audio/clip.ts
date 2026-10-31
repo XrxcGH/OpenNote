@@ -5,8 +5,11 @@ import { useSyncExternalStore } from 'react';
 import { generateTone } from './engine';
 
 export const CLIP_RATE = 16000;
-/** Longer clips are cut to this many seconds, so the analysis stays quick on the main thread. */
-export const MAX_SECONDS = 15;
+/**
+ * Longer clips are cut to this many seconds (about 38 MB of samples), so memory stays bounded. A long clip's
+ * analysis runs in the signals worker with progress and Cancel.
+ */
+export const MAX_SECONDS = 600;
 
 export interface Clip {
   samples: Float32Array;
@@ -43,6 +46,11 @@ export function setClip(clip: Clip): void {
   const limit = MAX_SECONDS * clip.rate;
   current = clip.samples.length > limit ? { ...clip, samples: clip.samples.slice(0, limit) } : clip;
   listeners.forEach((listen) => listen());
+}
+
+/** Puts the example back, as on a fresh start (for tests). */
+export function resetClip(): void {
+  setClip(exampleClip());
 }
 
 export const useClip = (): Clip =>

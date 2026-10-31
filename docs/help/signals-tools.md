@@ -20,7 +20,7 @@ The brain and body, medical imaging, and audiogram tools are for coursework only
 
 ## Sound
 
-- **Sound analysis and acoustics.** Open a sound file or record from the microphone; the app asks first, and the sound stays on this computer. See the waveform and a wide- or narrow-band spectrogram, and track pitch, intensity, and formants at a cursor. Label stretches of time and get their durations, and read jitter and shimmer for voice work. A tuner names the nearest note in cents, tone practice lays your pitch over Chao tone numbers, and a vowel chart plots F1 against F2. It also draws audiograms with the pure-tone average, adds and subtracts decibels with A-weighting, and makes tones to play.
+- **Sound analysis and acoustics.** Open a sound file or record from the microphone; the app asks first, and the sound stays on this computer. A sound can be up to ten minutes long. A long one is worked out in the background: a progress bar shows how far it has got, and **Cancel** stops it. See the waveform and a wide- or narrow-band spectrogram, and track pitch, intensity, and formants at a cursor. Label stretches of time and get their durations, and read jitter and shimmer for voice work. A tuner names the nearest note in cents, tone practice lays your pitch over Chao tone numbers, and a vowel chart plots F1 against F2. It also draws audiograms with the pure-tone average, adds and subtracts decibels with A-weighting, and makes tones to play.
 
 ## Images
 

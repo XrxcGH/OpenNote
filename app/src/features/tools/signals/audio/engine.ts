@@ -24,6 +24,8 @@ export interface YinOptions {
   hop?: number;
   /** Frames quieter than this (dB re full scale) are unvoiced. */
   silence?: number;
+  /** Told the share of frames done, now and then, for a long clip. */
+  progress?: (fraction: number) => void;
 }
 
 /** The YIN estimate for one frame: the period in samples (with parabolic interpolation) and its aperiodicity. */
@@ -106,7 +108,9 @@ export function pitchTrack(x: readonly number[], fs: number, options: YinOptions
   const silence = options.silence ?? -50;
   const track: PitchTrack = { times: [], f0: [], db: [], peaks: [] };
   let previous = Number.NaN;
+  const last = x.length - w - maxLag - 2;
   for (let start = 0; start + w + maxLag + 2 <= x.length; start += hop) {
+    if (options.progress && track.times.length % 64 === 0) options.progress(start / Math.max(1, last));
     let energy = 0;
     let peak = 0;
     for (let j = start; j < start + w; j += 1) {

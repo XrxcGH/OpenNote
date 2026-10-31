@@ -26,13 +26,11 @@ import {
 } from '../shared/ui';
 import { SignalError } from '../shared/errors';
 import styles from '../shared/kit.module.css';
-import { spectrogram, type Spectrogram } from '../spectrum/engine';
+import type { Spectrogram } from '../spectrum/engine';
 import { decodeClip, setClip, startRecording, useClip, type Clip } from './clip';
 import {
   chaoContour,
-  formants,
   jitterShimmer,
-  pitchTrack,
   rmsDifference,
   speakerContour,
   tuner,
@@ -40,6 +38,10 @@ import {
   type PitchTrack,
 } from './engine';
 import { AudiogramMode, DecibelMode, GeneratorMode, VowelMode } from './AudioModes';
+import { HEAVY_SIZE, TaskProgress, useTask, type TaskOutcome } from '../shared/useTask';
+
+/** Whether a stretch of this many samples should run in the worker. */
+const heavyClip = (clip: Clip, seconds = clip.samples.length / clip.rate) => seconds * clip.rate > HEAVY_SIZE;
 import { w } from './words';
 
 type Mode = 'analyze' | 'tuner' | 'tones' | 'vowels' | 'audiogram' | 'decibels' | 'generator';
@@ -104,42 +106,18 @@ const ANALYZE = {
   labels: '0.1 0.4 a\n0.5 0.9 a',
 };
 
-function analyze(clip: Clip, state: typeof ANALYZE) {
-  const rate = clip.rate;
-  const from = Math.max(0, Math.round(num(state.from) * rate) || 0);
-  const to = Math.min(clip.samples.length, Math.round(num(state.to) * rate) || clip.samples.length);
-  const x = Array.from(clip.samples.subarray(from, to));
-  const track = pitchTrack(x, rate);
-  const segment = rate * (state.preset === 'wide' ? 0.005 : 0.03);
-  const heat = spectrogram({
-    samples: x,
-    rate,
-    window: 'hann',
-    detrend: 'mean',
-    segment: 2 ** Math.round(Math.log2(segment)),
-    overlap: 0.5,
-  });
-  const at = Math.round((num(state.cursor) - from / rate) * rate);
-  const half = Math.round(0.0125 * rate);
-  const centre = Math.min(Math.max(half, at), x.length - half);
-  const found = formants(x.slice(centre - half, centre + half), rate);
-  const frame = track.times.findIndex((time) => time >= centre / rate);
-  return {
-    x,
-    from: from / rate,
-    track,
-    heat,
-    found,
-    frame: Math.max(0, frame),
-    voice: attempt(() => jitterShimmer(track)),
-  };
-}
-
 function AnalyzeMode() {
   const clip = useClip();
   const [state, set] = useStored('audio.analyze', ANALYZE);
   const pitch = useRef<PlotHandle>(null);
-  const outcome = useMemo(() => attempt(() => analyze(clip, state)), [clip, state]);
+  const span = Math.min(clip.samples.length / clip.rate, num(state.to) || Infinity) - (num(state.from) || 0);
+  const run = useTask(
+    'analyzeClip',
+    useMemo(() => ({ samples: clip.samples, rate: clip.rate, settings: state }), [clip, state]),
+    heavyClip(clip, span),
+  );
+  const outcome = run.outcome;
+  const voice = useMemo(() => (outcome?.ok ? attempt(() => jitterShimmer(outcome.value.track)) : null), [outcome]);
   const fields = (
     <Fields>
       <Field label={w('from')} value={state.from} onChange={(from) => set({ from })} unit="s" />
@@ -154,15 +132,16 @@ function AnalyzeMode() {
       <Field label={w('cursor')} value={state.cursor} onChange={(cursor) => set({ cursor })} unit="s" />
     </Fields>
   );
-  if (!outcome.ok)
+  if (!outcome?.ok || !voice)
     return (
       <>
         <ClipSource />
         {fields}
-        <Problem text={outcome.problem} />
+        <TaskProgress progress={run.progress} cancel={run.cancel} />
+        {outcome ? <Problem text={outcome.ok ? '' : outcome.problem} /> : null}
       </>
     );
-  const { x, from, track, heat, found, frame, voice } = outcome.value;
+  const { wave, step, from, track, heat, found, frame } = outcome.value;
   const times = track.times.map((time) => time + from);
   const f0 = track.f0[frame];
   const answer = w('analyzeAnswer', {
@@ -180,12 +159,11 @@ function AnalyzeMode() {
     ]),
   };
   const labels = labelTable(state.labels, times, track.f0);
-  const step = Math.max(1, Math.floor(x.length / 2000));
-  const wave = x.filter((_, i) => i % step === 0);
   return (
     <>
       <ClipSource />
       {fields}
+      <TaskProgress progress={run.progress} cancel={run.cancel} />
       <Answer text={answer} />
       <Results rows={voiceRows(found, voice)} />
       <SoundPictures wave={wave} step={step} from={from} rate={clip.rate} heat={heat} cursor={num(state.cursor)} />
@@ -316,22 +294,41 @@ function labelTable(text: string, times: number[], f0: number[]) {
   });
 }
 
+/** The clip's pitch track, in the worker for a long clip. */
+function useClipPitch(clip: Clip, wanted: boolean) {
+  return useTask(
+    'pitch',
+    useMemo(() => ({ samples: clip.samples, rate: clip.rate }), [clip]),
+    heavyClip(clip),
+    wanted,
+  );
+}
+
+const TYPED: TaskOutcome<{ f0: number[] }> = { ok: true, value: { f0: [] } };
+
+/** Works `then` on a finished pitch track: null while it runs, its problem if it failed. */
+function afterPitch<T>(pitch: TaskOutcome<{ f0: number[] }> | null, then: (f0: number[]) => T): TaskOutcome<T> | null {
+  if (!pitch) return null;
+  if (!pitch.ok) return pitch;
+  return attempt(() => then(pitch.value.f0));
+}
+
 function TunerMode() {
   const clip = useClip();
   const [state, set] = useStored('audio.tuner', { f: '445', a4: '440', source: 'typed' as 'typed' | 'clip' });
+  const fromClip = state.source === 'clip';
+  const pitch = useClipPitch(clip, fromClip);
   const outcome = useMemo(
     () =>
-      attempt(() => {
+      afterPitch(fromClip ? pitch.outcome : TYPED, (f0) => {
         const a4 = num(state.a4);
-        if (state.source === 'typed') return { reading: tuner(num(state.f), a4), range: null };
-        const voiced = pitchTrack(Array.from(clip.samples), clip.rate)
-          .f0.filter(Number.isFinite)
-          .sort((p, q) => p - q);
+        if (!fromClip) return { reading: tuner(num(state.f), a4), range: null };
+        const voiced = f0.filter(Number.isFinite).sort((p, q) => p - q);
         if (!voiced.length) return { reading: tuner(Number.NaN, a4), range: null };
         const median = voiced[Math.floor(voiced.length / 2)]!;
         return { reading: tuner(median, a4), range: [tuner(voiced[0]!, a4), tuner(voiced.at(-1)!, a4)] as const };
       }),
-    [state, clip],
+    [state, fromClip, pitch.outcome],
   );
   return (
     <>
@@ -348,7 +345,8 @@ function TunerMode() {
         ) : null}
         <Field label={w('a4')} value={state.a4} onChange={(a4) => set({ a4 })} unit="Hz" />
       </Fields>
-      {outcome.ok ? (
+      <TaskProgress progress={pitch.progress} cancel={pitch.cancel} />
+      {outcome === null ? null : outcome.ok ? (
         <>
           <Answer
             text={w('tunerAnswer', {
@@ -376,14 +374,15 @@ function TonesMode() {
   const clip = useClip();
   const [state, set] = useStored('audio.tones', { target: '35' });
   const plot = useRef<PlotHandle>(null);
+  const pitch = useClipPitch(clip, true);
   const outcome = useMemo(
     () =>
-      attempt(() => {
+      afterPitch(pitch.outcome, (f0) => {
         const target = chaoContour(state.target);
-        const speaker = speakerContour(pitchTrack(Array.from(clip.samples), clip.rate).f0);
+        const speaker = speakerContour(f0);
         return { target, speaker, rms: rmsDifference(speaker, target) };
       }),
-    [state, clip],
+    [state, pitch.outcome],
   );
   const grid = Array.from({ length: 50 }, (_, i) => i / 49);
   return (
@@ -392,7 +391,8 @@ function TonesMode() {
       <Fields>
         <Field label={w('chao')} value={state.target} onChange={(target) => set({ target })} hint={w('chaoHint')} />
       </Fields>
-      {outcome.ok ? (
+      <TaskProgress progress={pitch.progress} cancel={pitch.cancel} />
+      {outcome === null ? null : outcome.ok ? (
         <>
           <Answer text={w('tonesAnswer', { rms: fmt(outcome.value.rms, 3) })} />
           <Plot

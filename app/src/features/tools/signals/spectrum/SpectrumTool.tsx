@@ -5,13 +5,15 @@ import { useMemo, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
 import { decodeClip, MAX_SECONDS, type Clip } from '../audio/clip';
+import { HEAVY_SIZE, TaskProgress, useTask } from '../shared/useTask';
+import { type SpectrumAnalysis } from './analyse';
 import { WINDOWS, type WindowName } from '../shared/fft';
 import { fmt } from '../shared/num';
 import { HeatMap, Plot, type PlotHandle } from '../shared/Plot';
-import { exampleSignal, readSignal, samplesText, tableSignal } from '../shared/signalInput';
+import { exampleSignal, samplesText } from '../shared/signalInput';
+import { tableSignal } from '../shared/tableSignal';
 import { ColumnPicker, DataField } from '../../subjects/ui/fields';
 import { readDataInput, type DataInput, type RoleSpec, type RoleValue } from '../../subjects/ui/input';
-import { step } from '../shared/steps';
 import {
   Answer,
   Check,
@@ -31,17 +33,7 @@ import {
   type TableData,
 } from '../shared/ui';
 import styles from '../shared/kit.module.css';
-import {
-  bandPowers,
-  halfPowerDamping,
-  halfPowerPoints,
-  peaks,
-  readBands,
-  spectrogram,
-  spectrum,
-  welch,
-  type Detrend,
-} from './engine';
+import { halfPowerDamping, halfPowerPoints, type Detrend } from './engine';
 
 type View = 'amplitude' | 'power' | 'psd' | 'welch' | 'spectrogram';
 const VIEWS: readonly View[] = ['amplitude', 'power', 'psd', 'welch', 'spectrogram'];
@@ -87,33 +79,7 @@ const TABLE_ROLES: readonly RoleSpec[] = [
   { role: 'time', kinds: ['number', 'date'], optional: true },
 ];
 
-/** A sound file stands in for the pasted samples while it is loaded; it is held for this visit only, never saved. */
-function analyse(state: State, sound: Clip | null) {
-  const signal = sound
-    ? { samples: Array.from(sound.samples) }
-    : (tableSignal(state.table, state.columns) ?? readSignal(state.samples));
-  const rate = sound ? sound.rate : (signal.rate ?? num(state.rate));
-  const input = {
-    samples: signal.samples,
-    rate,
-    window: state.window,
-    detrend: state.detrend,
-    beta: num(state.beta),
-  };
-  const whole = spectrum(input);
-  const segment = { ...input, segment: num(state.segment), overlap: num(state.overlap) / 100 };
-  const averaged = state.view === 'welch' ? welch(segment) : null;
-  const heat = state.view === 'spectrogram' ? spectrogram(segment) : null;
-  const shown =
-    state.view === 'power' ? whole.power : state.view === 'psd' ? whole.psd : averaged ? averaged.psd : whole.amplitude;
-  const freq = averaged ? averaged.freq : whole.freq;
-  const found = peaks(freq, shown, 5);
-  const bands = bandPowers(freq, averaged ? averaged.psd : whole.psd, readBands(state.bands));
-  const steps = [...whole.steps, ...(averaged?.steps ?? []), step('peakRead'), step('bandPower', 'P = Σ PSD(f) Δf')];
-  return { signal, rate, whole, averaged, heat, shown, freq, found, bands, steps };
-}
-
-type Analysis = ReturnType<typeof analyse>;
+type Analysis = SpectrumAnalysis;
 
 /** Open a sound file to analyze instead of the pasted samples, decoded to one 16 kHz channel. */
 function SoundSource({ sound, setSound }: { sound: Clip | null; setSound(sound: Clip | null): void }) {
@@ -392,7 +358,22 @@ function Damping({ state, set, result }: { state: State; set(patch: Partial<Stat
 export function SpectrumTool() {
   const [state, set] = useStored('spectrum', FIRST);
   const [sound, setSound] = useState<Clip | null>(null);
-  const outcome = useMemo(() => attempt(() => analyse(state, sound)), [state, sound]);
+  const table = useMemo(() => attempt(() => tableSignal(state.table, state.columns)), [state.table, state.columns]);
+  const run = useTask(
+    'spectrum',
+    useMemo(
+      () => ({
+        settings: state,
+        sound: sound ? { samples: sound.samples, rate: sound.rate } : null,
+        table: table.ok ? table.value : null,
+      }),
+      [state, sound, table],
+    ),
+    (sound?.samples.length ?? 0) > HEAVY_SIZE,
+  );
+  const { progress, cancel } = run;
+  // A table that cannot be read says so, unless a sound stands in for it.
+  const outcome = !table.ok && !sound ? table : run.outcome;
   return (
     <div className={styles.tool}>
       <SoundSource sound={sound} setSound={setSound} />
@@ -409,7 +390,8 @@ export function SpectrumTool() {
           {t('kitSignals.ui.useExample')}
         </Button>
       </div>
-      {outcome.ok ? (
+      <TaskProgress progress={progress} cancel={cancel} />
+      {outcome === null ? null : outcome.ok ? (
         <>
           <SpectrumView state={state} result={outcome.value} />
           <BandTable result={outcome.value} />
@@ -417,7 +399,7 @@ export function SpectrumTool() {
       ) : (
         <Problem text={outcome.problem} />
       )}
-      <Damping state={state} set={set} result={outcome.ok ? outcome.value : null} />
+      <Damping state={state} set={set} result={outcome?.ok ? outcome.value : null} />
     </div>
   );
 }

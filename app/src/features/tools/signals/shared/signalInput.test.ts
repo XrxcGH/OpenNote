@@ -1,7 +1,8 @@
 // Reading a signal from a table: the value column alone, or with a time column whose even spacing sets the rate.
 import { describe, expect, it } from 'vitest';
 import { SignalError } from './errors';
-import { readSignal, tableSignal, timedSignal } from './signalInput';
+import { readSignal, timedSignal } from './signalInput';
+import { tableSignal } from './tableSignal';
 
 describe('signals from text and tables', () => {
   it('takes time and value lines, and refuses uneven times', () => {

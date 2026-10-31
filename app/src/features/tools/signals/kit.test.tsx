@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { INSERT_EVENT, SUBJECT_TABLES_EVENT } from '../flags';
 import { SignalsKit } from './kit';
+import { CLIP_RATE, resetClip, setClip } from './audio/clip';
 import { chooseSignalTool, restoreSignalInputs, type SignalToolId } from './meta';
 
 const inserted: Record<string, unknown>[] = [];
@@ -157,6 +158,24 @@ describe('signals kit: systems, coding, RF, and filters', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Insert answer' })[0]!);
     expect(inserted[0]?.text).toContain('0.4 + j0.2');
     await walkModes(container);
+  });
+
+  it('tunes a 20 s recording in the worker with progress, and stops a run on Cancel', async () => {
+    // 20 s at 16 kHz is past the old 15 s cut and big enough for the worker. 220 Hz is A3, 0 cents.
+    const tone = (f: number) =>
+      Float32Array.from({ length: 20 * CLIP_RATE }, (_, i) => 0.5 * Math.sin((2 * Math.PI * f * i) / CLIP_RATE));
+    act(() => setClip({ samples: tone(220), rate: CLIP_RATE, name: 'long' }));
+    window.localStorage.setItem('opennote.kitSignals.audio', JSON.stringify({ mode: 'tuner' }));
+    window.localStorage.setItem('opennote.kitSignals.audio.tuner', JSON.stringify({ source: 'clip' }));
+    chooseSignalTool('audio');
+    renderUi(<SignalsKit />);
+    expect(await screen.findByRole('progressbar', undefined, { timeout: 10_000 })).toBeTruthy();
+    expect(await screen.findByText(/^A3, [+−]0(\.\d+)? cents\.$/, undefined, { timeout: 30_000 })).toBeTruthy();
+    act(() => setClip({ samples: tone(330), rate: CLIP_RATE, name: 'long' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByText('Stopped. Change a field to run it again.')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    act(() => resetClip());
   });
 
   it('takes an open load, inserts a live block with its fields, and puts them back from the block', async () => {

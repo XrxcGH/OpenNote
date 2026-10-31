@@ -636,7 +636,7 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 
 ## Signals, images, sound, and communications
 
-(Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md). Every tool's insert buttons include a live calculation block (`ext:org.opennote/kitcalc`) that reopens the tool with its fields.)
+(Beta 6. Behind the `kits.signals` flag, on in Beta and off in Stable. Help: [Signals and sound tools](help/signals-tools.md). Every tool's insert buttons include a live calculation block (`ext:org.opennote/kitcalc`) that reopens the tool with its fields. Long work (spectra and spectrograms of long sounds, pitch tracks, formants, CT reconstruction, Canny edges on large images) runs in a worker with progress and Cancel; sounds are kept up to ten minutes.)
 
 | Feature | What it does | Status |
 | --- | --- | --- |

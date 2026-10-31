@@ -28,7 +28,6 @@ import {
   KERNELS,
   adjust,
   calibrate,
-  canny,
   components,
   convolve,
   edgeMagnitude,
@@ -46,6 +45,7 @@ import {
   type KernelName,
   type Morphology,
 } from './engine';
+import { HEAVY_SIZE, TaskProgress, useTask } from '../shared/useTask';
 import { ImageView, type ImageContent } from './ImageView';
 import { BandsMode, CtMode } from './ImageModes';
 import { PictureSource } from './PictureSource';
@@ -237,22 +237,38 @@ function FilterMode() {
     low: '0.1',
     high: '0.3',
   });
+  const isCanny = state.name === 'canny';
+  const edges = useTask(
+    'canny',
+    useMemo(
+      () => ({ image, sigma: num(state.sigma), low: num(state.low), high: num(state.high) }),
+      [image, state.sigma, state.low, state.high],
+    ),
+    image.width * image.height > HEAVY_SIZE,
+    isCanny,
+  );
   const outcome = useMemo(
     () =>
-      attempt((): ImageContent => {
-        if (state.name === 'edges') return { kind: 'gray', image: edgeMagnitude(image), stretch: true };
-        if (state.name === 'canny') {
-          const edges = canny(image, num(state.sigma), num(state.low), num(state.high));
-          return { kind: 'gray', image: gray(image.width, image.height, edges) };
-        }
-        const k = state.name === 'custom' ? readKernel(readRows(state.custom)) : kernel(state.name, num(state.sigma));
-        return {
-          kind: 'gray',
-          image: convolve(image, k),
-          stretch: state.name.startsWith('sobel') || state.name.startsWith('prewitt') || state.name === 'laplacian',
-        };
-      }),
-    [image, state],
+      isCanny
+        ? edges.outcome &&
+          (edges.outcome.ok
+            ? {
+                ok: true as const,
+                value: { kind: 'gray', image: gray(image.width, image.height, edges.outcome.value) } as ImageContent,
+              }
+            : edges.outcome)
+        : attempt((): ImageContent => {
+            if (state.name === 'edges') return { kind: 'gray', image: edgeMagnitude(image), stretch: true };
+            // Canny took the branch above, so the name here is a kernel's.
+            const name = state.name as Exclude<typeof state.name, 'canny'>;
+            const k = name === 'custom' ? readKernel(readRows(state.custom)) : kernel(name, num(state.sigma));
+            return {
+              kind: 'gray',
+              image: convolve(image, k),
+              stretch: state.name.startsWith('sobel') || state.name.startsWith('prewitt') || state.name === 'laplacian',
+            };
+          }),
+    [image, state, isCanny, edges.outcome],
   );
   const options = [...KERNELS, 'edges', 'canny'] as const;
   return (
@@ -285,7 +301,8 @@ function FilterMode() {
           </>
         ) : null}
       </Fields>
-      {outcome.ok ? (
+      <TaskProgress progress={edges.progress} cancel={edges.cancel} />
+      {outcome === null ? null : outcome.ok ? (
         <Shown
           before={{ kind: 'gray', image }}
           after={outcome.value}
