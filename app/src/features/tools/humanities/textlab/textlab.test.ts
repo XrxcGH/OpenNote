@@ -52,6 +52,20 @@ describe('counts and readability', () => {
       ['quiet', 2],
       ['great', 1],
       ['hopeful', 2],
+      ['reality', 4],
+      ['realize', 3],
+      ['museum', 3],
+      ['cruel', 2],
+      ['giant', 2],
+      ['rhythm', 2],
+      ['coexist', 3],
+      ['being', 2],
+      ['duet', 2],
+      ['league', 1],
+      ['tongue', 1],
+      ['argue', 2],
+      ['prism', 2],
+      ['really', 2],
     ];
     expect(cases.map(([word]) => syllables(word))).toEqual(cases.map(([, n]) => n));
     // 8 words, 2 sentences, 10 syllables: FRE = 206.835 − 1.015·4 − 84.6·1.25 = 97.025, FK = 0.39·4 + 11.8·1.25 − 15.59 = 0.72.
@@ -187,6 +201,16 @@ describe('scansion', () => {
       [0, 0, 1],
       [0, 0, 1, 0],
       [1, 0, 0],
+      [0, 1, 0],
+    ]);
+  });
+
+  it('stress common words on the penult where the rule would not', () => {
+    // CMU: banana B AH0 N AE1 N AH0, museum M Y UW0 Z IY1 AH0 M, tomorrow T AH0 M AA1 R OW2.
+    expect(['banana', 'museum', 'tomorrow', 'potatoes'].map(wordStress)).toEqual([
+      [0, 1, 0],
+      [0, 1, 0],
+      [0, 1, 0],
       [0, 1, 0],
     ]);
   });

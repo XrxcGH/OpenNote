@@ -56,10 +56,20 @@ function ruleStress(lower: string, count: number): number[] | null {
   return null;
 }
 
+// Common words stressed on the penult that the antepenult rule gets wrong, by the CMU Pronouncing Dictionary.
+const PENULT_WORDS = new Set(
+  (
+    'banana bananas tomato tomatoes potato potatoes vanilla umbrella important tomorrow together another ' +
+    'however already museum computer idea ideas enormous horizon eleven remainder espresso piano mosquito ' +
+    'arena aroma diploma volcano tobacco example sincerely forever whatever whoever'
+  ).split(' '),
+);
+
 /** Stress of each syllable of a word: 1 stressed, 0 not, 0.5 a monosyllable that can go either way. */
 export function wordStress(word: string): number[] {
   const lower = word.toLowerCase().replace(/[’']s$/, '');
   const count = syllables(word);
+  if (count >= 3 && PENULT_WORDS.has(lower)) return Array.from({ length: count }, (_, i) => (i === count - 2 ? 1 : 0));
   if (count === 1) return [FUNCTION_WORDS.has(lower) ? 0.25 : 0.75];
   return ruleStress(lower, count) ?? stemStress(lower, count);
 }

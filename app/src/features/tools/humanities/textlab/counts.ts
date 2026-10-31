@@ -61,6 +61,8 @@ const SYLLABLE_WORDS: Record<string, number> = {
   ideal: 3,
   plea: 1,
   people: 2,
+  business: 2,
+  evening: 2,
 };
 
 // Vowel pairs said as two syllables: li-on, tri-al, me-di-um, du-al, po-em, cre-ate, vi-de-o, are-a. Not after
@@ -69,7 +71,9 @@ const HIATUS = [
   /(?<![cgstxl])i[aou]|(?<!l)li[aou]|[cgstx]i(?:a(?![nl])|o(?![nu])|u(?!s))/g,
   /(?<![ct])ie(?=t|nc|nt)|scie(?=n)/g,
   /[^q]ua(?!y)|[^aeiouqg]uo/g,
-  /oe(?=[mt])|crea(?=t)(?!tu)|^rea(?=ct)|^geo|[^gcp]eo(?!u)|[^aeiou]ea$/g,
+  /oe(?=[mt])|^coe|crea(?=t)(?!tu)|^rea(?=ct|l[iy])|^geo|[^gcp]eo(?!u)|[^aeiou]ea$|eum$/g,
+  // gi-ant, cru-el, fu-el, du-et, be-ing, go-ing; rhy-thm, pri-sm, re-al-i-sm: a final m after th or s is a syllable.
+  /^gian|(?<![gq])ue(?=[lt])|thms?$|sms?$|[aeiouy]ing$/g,
 ];
 
 /** Syllables in an English word, by spelling rules. */
@@ -89,6 +93,8 @@ export function syllables(word: string): number {
   if (!/(?:[sxz]|ch|sh|[cg])es$/.test(w)) {
     w = w.replace(/(?:[^laeiouy]es|[^laeiouydt]ed|[^laeiouy]e)$/, (end) => end.slice(0, 1));
   }
+  // A silent -ue after g (league, tongue, vague), but not in argue.
+  w = w.replace(/(?<!r)gue$/, 'g');
   w = w.replace(/^y/, '');
   const groups = w.match(/[aeiouy]+/g)?.length ?? 0;
   const splits = HIATUS.reduce((sum, rule) => sum + (w.match(rule)?.length ?? 0), 0);
