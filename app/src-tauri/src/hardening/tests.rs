@@ -95,7 +95,7 @@ fn work_offline_is_kept_and_read_back_at_the_next_start() {
     let (_dir, hardening, paths) = hardening();
     hardening.update(|p| p.work_offline = true).unwrap();
     assert!(offline());
-    OFFLINE.store(false, Ordering::Relaxed);
+    super::set_offline(false);
     let again = Hardening::open(&paths);
     assert!(offline(), "the next start reads the switch from the file");
     again.update(|p| p.work_offline = false).unwrap();
@@ -189,9 +189,9 @@ fn work_offline_stops_a_send_before_anything_is_prepared() {
 #[test]
 fn the_real_transport_refuses_while_working_offline() {
     let _turn = turn();
-    OFFLINE.store(true, Ordering::Relaxed);
+    super::set_offline(true);
     let result = super::transport::HttpTransport.post("http://127.0.0.1:9/", b"{}");
-    OFFLINE.store(false, Ordering::Relaxed);
+    super::set_offline(false);
     assert!(result.is_err());
 }
 
