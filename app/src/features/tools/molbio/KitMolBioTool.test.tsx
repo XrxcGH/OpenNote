@@ -32,6 +32,17 @@ describe('the molecular biology window', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('shows beside the Insert buttons when no page took the insert, and clears once one does', async () => {
+    window.removeEventListener(INSERT_EVENT, listen);
+    renderUi(<KitMolBioTool />);
+    const message = 'Nothing was inserted: open a page and click where it should go, then insert again.';
+    await userEvent.click(await screen.findByRole('button', { name: 'Insert answer' }));
+    expect(await screen.findByText(message)).toBeTruthy();
+    window.addEventListener(INSERT_EVENT, listen);
+    await userEvent.click(screen.getByRole('button', { name: 'Insert answer' }));
+    expect(screen.queryByText(message)).toBeNull();
+  });
+
   it('draws the ORF map and inserts it as an SVG picture', async () => {
     renderUi(<KitMolBioTool />);
     await userEvent.selectOptions(await screen.findByLabelText('What to do'), 'orfs');

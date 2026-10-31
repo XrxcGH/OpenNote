@@ -2,6 +2,7 @@
 // A tool is only a ToolSpec; this draws it, so every tool behaves the same for the keyboard and a screen reader.
 import 'katex/dist/katex.min.css';
 import { useEffect, useId, useMemo, useState } from 'react';
+import { createStore, useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
 import { insertIntoPage } from '../ui/CalculatorTool';
@@ -62,7 +63,12 @@ function FieldInput({ field, value, onChange }: { field: Field; value: string; o
 const cellText = (cell: Cell): string => (typeof cell === 'string' ? cell : say(cell.word, cell.vars));
 const stepText = (step: KitStep): string => say(step.key, step.vars);
 const headerText = (table: KitTable): string[] => table.headText ?? table.head.map((key) => say(key));
-const done = (inserted: boolean) => announce(t(inserted ? 'kitMolBio.inserted' : 'kitMolBio.noPage'));
+/** True after an insert found no page to take it, so the Insert bar says so where the person is looking. */
+const missed = createStore(false, 'kit molbio insert missed');
+const done = (inserted: boolean) => {
+  missed.set(!inserted);
+  announce(t(inserted ? 'kitMolBio.inserted' : 'kitMolBio.noPage'));
+};
 
 function insertTable(table: KitTable): boolean {
   return insertIntoPage({
@@ -135,8 +141,15 @@ function InsertBar({ result }: { result: KitOk }) {
           {t('kitMolBio.insertSteps')}
         </Button>
       ) : null}
+      <MissedInsert />
     </div>
   );
+}
+
+/** The visible form of the "no page" announcement, under the Insert buttons until an insert lands. */
+function MissedInsert() {
+  const shown = useStore(missed, (value) => value);
+  return shown ? <p className={styles.missed}>{t('kitMolBio.noPage')}</p> : null;
 }
 
 function TableView({ table }: { table: KitTable }) {

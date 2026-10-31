@@ -28,7 +28,7 @@ export const kitMolBio = {
   insertPicture: 'Insert picture',
   insertThis: 'Insert {what}',
   inserted: 'Inserted into the page.',
-  noPage: 'Open a page to insert into.',
+  noPage: 'Nothing was inserted: open a page and click where it should go, then insert again.',
   example: 'Reset to the example',
   w: { yes: 'Yes', no: 'No' },
   e: {

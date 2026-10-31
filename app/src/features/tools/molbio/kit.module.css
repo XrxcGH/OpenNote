@@ -218,6 +218,15 @@
     gap: var(--space-2);
   }
 
+  /* Says, beside the Insert buttons, that an insert found no page to go into. */
+  .missed {
+    flex-basis: 100%;
+    margin: 0;
+    padding-inline-start: var(--space-2);
+    color: var(--color-text-primary);
+    border-inline-start: 4px solid var(--color-status-warning);
+  }
+
   .figure {
     inline-size: 100%;
     block-size: auto;
