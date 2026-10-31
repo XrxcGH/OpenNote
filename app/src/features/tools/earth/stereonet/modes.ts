@@ -90,7 +90,7 @@ const plot: Mode = {
   label: 'kitEarth.stereonet.modes.plot',
   intro: 'kitEarth.stereonet.intro.plot',
   fields: [
-    text('data', 'plane, 030, 40, S0\nplane, 210, 60, S1\nline, 250, 30, L1\ndd, 120, 40'),
+    text('data', 'plane, 030, 40, S0\nplane, 210, 60, S1\nline, 250, 30, L1\ndd, 300, 50, S2'),
     pick('show', ['both', 'circles', 'poles']),
     ...NET_FIELDS,
     pick('shade', ['no', 'yes']),

@@ -1,5 +1,7 @@
 // Insert for an earth kit result: the answer line goes in with one press, and a menu offers the equation, the
-// result table, the answer with its worked steps, and each picture as an SVG image. What happened is announced.
+// result table, the answer with its worked steps, and each picture as an SVG image. What happened is announced,
+// and a miss (no caret in a page) also shows as a note under the buttons so a sighted user sees why nothing changed.
+import { useEffect, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
@@ -23,9 +25,9 @@ export function tableOf(outcome: Outcome): { header: string[]; rows: string[][] 
   return { header: [t('kitEarth.quantity'), t('kitEarth.value')], rows: outcome.rows.map(([a, b]) => [a, b]) };
 }
 
-const say = (handled: boolean) => announce(t(handled ? 'kitEarth.inserted' : 'kitEarth.noPage'));
+type Say = (handled: boolean) => void;
 
-function menuItems(outcome: Outcome): MenuItemSpec[] {
+function menuItems(outcome: Outcome, say: Say): MenuItemSpec[] {
   const items: MenuItemSpec[] = [];
   if (outcome.latex) {
     const source = outcome.latex;
@@ -60,26 +62,36 @@ function menuItems(outcome: Outcome): MenuItemSpec[] {
 }
 
 export function InsertControls({ outcome }: { outcome: Outcome | null }) {
+  const [missed, setMissed] = useState(false);
+  // A new result clears the old note: it was about the last press.
+  useEffect(() => setMissed(false), [outcome]);
+  const say: Say = (handled) => {
+    setMissed(!handled);
+    announce(t(handled ? 'kitEarth.inserted' : 'kitEarth.noPage'));
+  };
   return (
-    <div className={styles.buttons}>
-      <Button
-        variant="primary"
-        disabled={!outcome}
-        onClick={() => outcome && say(insertIntoPage({ text: outcome.answer }))}
-      >
-        {t('kitEarth.insertAnswer')}
-      </Button>
-      <Button
-        variant="quiet"
-        disabled={!outcome}
-        aria-haspopup="menu"
-        onClick={(event) => {
-          const anchor = event.currentTarget;
-          if (outcome) void openMenu({ label: t('kitEarth.insertMenu'), items: menuItems(outcome), anchor });
-        }}
-      >
-        {t('kitEarth.insertMore')}
-      </Button>
-    </div>
+    <>
+      <div className={styles.buttons}>
+        <Button
+          variant="primary"
+          disabled={!outcome}
+          onClick={() => outcome && say(insertIntoPage({ text: outcome.answer }))}
+        >
+          {t('kitEarth.insertAnswer')}
+        </Button>
+        <Button
+          variant="quiet"
+          disabled={!outcome}
+          aria-haspopup="menu"
+          onClick={(event) => {
+            const anchor = event.currentTarget;
+            if (outcome) void openMenu({ label: t('kitEarth.insertMenu'), items: menuItems(outcome, say), anchor });
+          }}
+        >
+          {t('kitEarth.insertMore')}
+        </Button>
+      </div>
+      {missed ? <p className={styles.note}>{t('kitEarth.noPage')}</p> : null}
+    </>
   );
 }

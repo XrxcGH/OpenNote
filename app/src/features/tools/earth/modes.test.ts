@@ -53,6 +53,16 @@ describe('earth kit wording and axes', () => {
     expect(many.figures![0].description).toContain('3 planes and 1 line on the net');
   });
 
+  it('lists every default stereonet item once, the dip-direction one under its own label', async () => {
+    const table = tableOf(await outcome('stereonet', 'plot'))!;
+    const orient = table.rows.map((row) => row.slice(1).join(' '));
+    expect(new Set(orient).size).toBe(orient.length);
+    // Dip direction 300 under the right-hand rule is strike 300 - 90 = 210, dip 50.
+    const s2 = table.rows.find((row) => row[0] === 'S2')!;
+    expect(s2.join(' ')).toContain('210');
+    expect(s2.join(' ')).toContain('50');
+  });
+
   it('gives TEOS-10 seawater at S 35, 5 °C, the surface a density that EOS-80 matches to 0.001 kg/m³', async () => {
     // EOS-80 gives 1027.6753 kg/m³ for this sample.
     const result = await outcome('ocean', 'teos10');

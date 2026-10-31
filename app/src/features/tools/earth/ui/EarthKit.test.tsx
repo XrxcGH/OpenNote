@@ -51,4 +51,20 @@ describe('the earth sciences kit', () => {
     window.removeEventListener(INSERT_EVENT, listen);
     expect(inserted).toBe('Peak anomaly: 0.349466 mGal');
   });
+  it('shows why nothing was inserted when no page has the caret', async () => {
+    chooseMode('geophysics', 'bodies');
+    renderUi(<EarthKit />);
+    await screen.findByRole('img', { name: 'Gravity profile' });
+    expect(screen.queryByText('Click in a page first, then insert.')).toBeNull();
+    // No page editor listens for the insert event, so insertIntoPage reports it unhandled.
+    fireEvent.click(screen.getByRole('button', { name: 'Insert answer' }));
+    expect(screen.getByText('Click in a page first, then insert.', { selector: 'p' })).toBeTruthy();
+    const listen = (event: Event) => {
+      (event as CustomEvent<{ handled: boolean }>).detail.handled = true;
+    };
+    window.addEventListener(INSERT_EVENT, listen);
+    fireEvent.click(screen.getByRole('button', { name: 'Insert answer' }));
+    window.removeEventListener(INSERT_EVENT, listen);
+    expect(screen.queryByText('Click in a page first, then insert.', { selector: 'p' })).toBeNull();
+  });
 });
