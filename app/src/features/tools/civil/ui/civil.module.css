@@ -1,0 +1,79 @@
+/*
+ * The civil engineering kit window: two pickers, the fields, and a result with its table, plot, and steps. Built on
+ * the tool window's tokens; series in plots differ by dash and mark as well as color.
+ */
+@layer components {
+  .window {
+    min-block-size: 0;
+  }
+
+  .pickers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .unit {
+    align-self: end;
+    padding-block-end: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .table {
+    font-family: var(--font-mono);
+    resize: vertical;
+  }
+
+  .answer {
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+  }
+
+  .answer p {
+    margin: 0;
+  }
+
+  .result {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .heading {
+    margin: 0 0 var(--space-2);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  .caption {
+    caption-side: top;
+    text-align: start;
+    padding-block-end: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .math {
+    display: block;
+    margin-block: var(--space-1) var(--space-2);
+    color: var(--color-text-primary);
+    overflow-x: auto;
+  }
+
+  .notes {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+}

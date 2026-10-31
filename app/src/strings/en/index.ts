@@ -58,10 +58,24 @@ import { tableMath } from './tableMath';
 import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
+import { kitModPhys } from './kitModPhys';
+import { kitMusic } from './kitMusicStart';
 import { chem } from './chem';
+import { kitEcon } from './kitEconStart';
+import { kitReasoning } from './kitReasoningStart';
 import { kitChemMat } from './kitChemMat';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
+import { kitStatModels } from './kitStatModels';
+import { kitMind } from './kitMind';
+import { kitMolBio } from './kitMolBioStart';
+import { kitLifeSys } from './kitLifeSys';
+import { kitCivil } from './kitCivilStart';
+import { kitSignals } from './kitSignals';
+import { kitEarth } from './kitEarth';
+import { kitHumanities } from './kitHumanitiesStart';
+import { kits } from './kits';
+import { kitSubjects } from './kitSubjects';
 import { stepCheck } from './stepCheck';
 import { tutor } from './tutor';
 import { exams } from './exams';
@@ -71,7 +85,7 @@ import { kitDesign } from './kitDesign';
 import { kitMath } from './kitMath';
 import { kitMechDyn } from './kitMechDyn';
 import { kitPhysics } from './kitPhysics';
-import { kits } from './kits';
+import { kitStatInfer } from './kitStatInfer';
 import { kitElectrical } from './kitElectrical';
 import { kitFluidHeat } from './kitFluidHeat';
 import { kitSolids } from './kitSolids';
@@ -137,10 +151,24 @@ export const en = {
   solvers,
   graph3d,
   engineering,
+  kitModPhys,
+  kitMusic,
   chem,
+  kitReasoning,
   kitChemMat,
   docStructure,
   codeCells,
+  kitEcon,
+  kitStatModels,
+  kitMind,
+  kitMolBio,
+  kitLifeSys,
+  kitCivil,
+  kitSignals,
+  kitEarth,
+  kitHumanities,
+  kits,
+  kitSubjects,
   stepCheck,
   tutor,
   exams,
@@ -150,7 +178,7 @@ export const en = {
   kitMath,
   kitMechDyn,
   kitPhysics,
-  kits,
+  kitStatInfer,
   kitElectrical,
   kitFluidHeat,
   kitSolids,

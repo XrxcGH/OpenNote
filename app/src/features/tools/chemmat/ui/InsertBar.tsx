@@ -1,7 +1,7 @@
 // The Insert buttons of a tool: the answer as text, with its steps, as a table, the main equation, and the plot as a
 // picture. Each writes at the caret of the page that is open and says in words what happened.
 import { Button, announce } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import tools from '../../ui/tools.module.css';
 import { plotSvg } from '../plot';
 import type { Solved } from '../types';

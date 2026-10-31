@@ -23,11 +23,25 @@ import { StructureTool } from './StructureTool';
 import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
+const EconTool = lazy(() => import('../econ/EconTool').then((m) => ({ default: m.EconTool })));
+// The statistics kit loads the first time its window opens.
+const StatInferKit = lazy(() => import('../statinfer').then((kit) => ({ default: kit.StatInferTool })));
+
 // The solvers are a large window of their own, so they load the first time it opens.
 const SolversTool = lazy(() =>
   import('../../math').then((math) => math.loadSolversTool()).then((loaded) => ({ default: loaded.SolversTool })),
 );
 
+// The molecular biology kit loads on first open.
+const KitMolBio = lazy(() => import('../molbio/KitMolBioTool').then((loaded) => ({ default: loaded.KitMolBioTool })));
+// The life science tools load on first open, each tool's forms and engines only when its tab opens.
+const LifeSysTool = lazy(() => import('../lifesys/ui/LifeSysTool').then((m) => ({ default: m.LifeSysTool })));
+
+// The civil and chemical engineering kit loads its window, then each tool's calculations, on first use.
+const CivilTool = lazy(() => import('../civil/ui/CivilTool').then((module) => ({ default: module.CivilTool })));
+
+// The earth sciences kit loads the first time its window opens.
+const EarthKit = lazy(() => import('../earth/ui/EarthKit').then((kit) => ({ default: kit.EarthKit })));
 // Practice exams load with their window, on first open.
 const ExamPanel = lazy(() => loadExamPanel().then((loaded) => ({ default: loaded.ExamPanel })));
 
@@ -65,6 +79,20 @@ const MathLab = {
   projectile: lazy(() => import('../../math').then((math) => ({ default: math.ProjectileTool }))),
 };
 
+// The statistical models kit loads the first time its window opens.
+const StatModelsKit = lazy(() => import('../statmodels/ui/StatModelsKit').then((m) => ({ default: m.StatModelsKit })));
+// The psychology and behavior kit loads the first time its window opens.
+const MindKit = lazy(() => import('../mind').then((mind) => mind.loadMindKit()).then((m) => ({ default: m.MindKit })));
+// The signals and sound kit loads its tools on first open.
+const SignalsKit = lazy(() => import('../signals/kit').then((kit) => ({ default: kit.SignalsKit })));
+// The reasoning kit loads on first open, and each of its tools loads when its tab opens.
+const KitReasoning = lazy(() => import('../reasoning').then((kit) => ({ default: kit.KitReasoningWindow })));
+
+// The music, script, camera, and studio tools load on first open.
+const KitMusic = lazy(() => import('../music/KitMusicTool'));
+
+// The history, places, languages, and texts kit loads its window on first open, and each tool when its tab opens.
+const HumanitiesKit = lazy(() => import('../humanities/ui/KitWindow').then((m) => ({ default: m.HumanitiesKit })));
 // The solid mechanics kit loads with its engineering feature the first time its window opens.
 const SolidsKit = lazy(() =>
   import('../../engineering')
@@ -87,6 +115,9 @@ const DesignKit = lazy(() => import('../design/ui/DesignKit').then((m) => ({ def
 // The engineering mathematics kit loads the first time its window opens.
 const MathKit = lazy(() => import('../mathkit/ui/MathKitTool'));
 
+// The modern physics and astronomy tools load the first time their window opens.
+const ModPhysWindow = lazy(() => import('../modphys/Window'));
+
 /** The subject kits' windows (docs/help/subject-tool-kits.md), each loaded the first time it opens. */
 const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> = {
   kitelectrical: KitElectrical,
@@ -100,6 +131,19 @@ const KIT_WINDOWS: Partial<Record<ToolId, LazyExoticComponent<ComponentType>>> =
   'kit-math': MathKit,
   'kit-mechdyn': KitMechDyn,
   'kit-physics': PhysicsKit,
+  econ: EconTool,
+  'kit-statinfer': StatInferKit,
+  'kit-mind': MindKit,
+  'kit-statmodels': StatModelsKit,
+  kitmolbio: KitMolBio,
+  lifesys: LifeSysTool,
+  'kit-modphys': ModPhysWindow,
+  'kit-civil': CivilTool,
+  'kit-earth': EarthKit,
+  'kit-signals': SignalsKit,
+  'kit-reasoning': KitReasoning,
+  'kit-humanities': HumanitiesKit,
+  kitmusic: KitMusic,
 };
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {

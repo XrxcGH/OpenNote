@@ -1,6 +1,7 @@
 // The solid mechanics kit's commands: one to open the window and one for each tool, so a tool is found by its
 // subject words in the command palette. This file loads at start-up, so it holds only definitions; the window and
 // its tools load on first use.
+import { startUp } from '../../../boot/startUp';
 import { CALC_EVENT, SOLIDS_TOOLS, type KitCalcRequest } from '../../engineering/flags';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
@@ -31,7 +32,9 @@ const reopen = async (tool: string) => {
 
 if (typeof window !== 'undefined') {
   // Best effort: a chunk that fails to load leaves Open in tool unavailable, and the commands still work.
-  void import('../../tools').then((tools) => tools.registerKit('solids', reopen)).catch(() => undefined);
+  void startUp(import('../../tools'))
+    .then((tools) => tools.registerKit('solids', reopen))
+    .catch(() => undefined);
   window.addEventListener(CALC_EVENT, (event) => {
     const request = (event as CustomEvent<KitCalcRequest>).detail;
     request.handled = true;

@@ -13,6 +13,8 @@ export type Point = readonly [number, number];
 export interface PlotAxis {
   label: string;
   log?: boolean;
+  /** Names drawn as the ticks at 0, 1, 2, and so on, in place of numbers. */
+  categories?: readonly string[];
   /** Fixed limits; otherwise the axis fits the data. */
   min?: number;
   max?: number;
@@ -220,22 +222,31 @@ function seriesPath(f: Frame, points: readonly Point[]): string {
 
 const small = (f: Frame, color = f.ink.muted) => ({ 'font-size': 11, fill: color });
 
+/** The ticks of an axis in view and their labels: the category names at whole positions, or numbers. */
+function axisTicks(axis: PlotAxis, low: number, high: number, count: number): [number, string][] {
+  if (axis.categories) {
+    return axis.categories.flatMap((name, i): [number, string][] => (i >= low && i <= high ? [[i, name]] : []));
+  }
+  const ticks = axis.log ? logTicks(low, high) : niceTicks(low, high, count);
+  return ticks.map((tick) => [tick, tickText(tick, axis.log)]);
+}
+
 function axesSvg(f: Frame): string[] {
   const { spec, ink } = f;
   const out: string[] = [];
-  const xTicks = spec.x.log ? logTicks(f.view.x0, f.view.x1) : niceTicks(f.view.x0, f.view.x1);
-  const yTicks = spec.y.log ? logTicks(f.view.y0, f.view.y1) : niceTicks(f.view.y0, f.view.y1, 5);
+  const xTicks = axisTicks(spec.x, f.view.x0, f.view.x1, 6);
+  const yTicks = axisTicks(spec.y, f.view.y0, f.view.y1, 5);
   const bottom = f.top + f.h;
-  for (const tick of xTicks) {
+  for (const [tick, text] of xTicks) {
     const x = sx(f, tick);
     out.push(el('line', { x1: x, y1: f.top, x2: x, y2: bottom, stroke: ink.grid, 'stroke-width': 1 }));
-    out.push(el('text', { x, y: bottom + 16, 'text-anchor': 'middle', ...small(f) }, tickText(tick, spec.x.log)));
+    out.push(el('text', { x, y: bottom + 16, 'text-anchor': 'middle', ...small(f) }, text));
   }
-  for (const tick of yTicks) {
+  for (const [tick, text] of yTicks) {
     const y = sy(f, tick);
     out.push(el('line', { x1: f.left, y1: y, x2: f.left + f.w, y2: y, stroke: ink.grid, 'stroke-width': 1 }));
     const attrs = { x: f.left - 6, y, dy: '0.35em', 'text-anchor': 'end', ...small(f) };
-    out.push(el('text', attrs, tickText(tick, spec.y.log)));
+    out.push(el('text', attrs, text));
   }
   out.push(el('rect', { x: f.left, y: f.top, width: f.w, height: f.h, fill: 'none', stroke: ink.muted }));
   const xLabel = { x: f.left + f.w / 2, y: bottom + 34, 'text-anchor': 'middle', 'font-size': 12, fill: ink.text };

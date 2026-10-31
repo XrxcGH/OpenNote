@@ -39,6 +39,7 @@ function writeWithPalm(
 
 /** E8's hold: a touch this soon after the pen lifts is held where the hand may be [S16]. */
 const AFTER_PEN_HOLD_MS = 1000;
+const CHROME_TAP_MARGIN_MM = 45;
 
 /** A finger of the other hand that lands at t0 at `at`, and moves by (dx, dy) over `ms`. */
 function otherFinger(
@@ -326,7 +327,13 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
     const tip = plan.pos(t0);
     w.dropLast('pointerleave', 1);
     w.hover(plan.end, plan.end + 600, () => tip);
-    otherFinger(w, t0 + 50, otherHand(r, side(w), w.options.grip, tip, screen(w)), [0, 0], between(r, 80, 150), {
+    // A control the writing hand's wrist could reach is a palm's, by the pipeline's wider hand region: the other hand
+    // taps clear of it.
+    let at = otherHand(r, side(w), w.options.grip, tip, screen(w));
+    for (let k = 0; k < 200 && handCovers(side(w), w.options.grip, tip, at, CHROME_TAP_MARGIN_MM); k++) {
+      at = otherHand(r, side(w), w.options.grip, tip, screen(w));
+    }
+    otherFinger(w, t0 + 50, at, [0, 0], between(r, 80, 150), {
       intent: 'tap',
       surface: 'chrome',
     });

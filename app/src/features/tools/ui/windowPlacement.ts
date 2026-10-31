@@ -35,7 +35,8 @@ export const MIN_FLOAT = 280;
 
 export function placeWindows({ widths, viewport, room, edge }: PlacementInput): Placement {
   const total = widths.reduce((sum, one) => sum + one, 0);
-  if (total <= Math.max(room, 0)) {
+  // Docked windows must also fit inside the window itself, whatever room the page claims (a stale or off-screen page box).
+  if (total <= Math.max(Math.min(room, viewport - 2 * FLOAT_GAP), 0)) {
     let right = total;
     const windows = widths.map((width) => {
       right -= width;
@@ -48,7 +49,7 @@ export function placeWindows({ widths, viewport, room, edge }: PlacementInput): 
   const windows: Placed[] = new Array<Placed>(widths.length);
   let right = start;
   for (let index = widths.length - 1; index >= 0; index -= 1) {
-    const width = Math.min(widths[index]!, span);
+    const width = Math.min(widths[index]!, span, Math.max(0, viewport - 2 * FLOAT_GAP));
     // Past the left edge, the window stops at it and overlaps the windows to its right instead.
     const place = Math.max(start, Math.min(right, viewport - FLOAT_GAP - width));
     windows[index] = { width, right: place };

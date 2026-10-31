@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import { loadStored, saveStored } from '../../ui/storage';
 import { KitError, type KitStep } from '../types';
 import styles from './mathkit.module.css';

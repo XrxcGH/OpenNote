@@ -25,9 +25,21 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
 - [Language and spelling](language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
 - [Engineering tools](engineering-tools.md): free-body diagrams, beams, trusses, circuits, and units in tables.
-- [Subject tool kits](subject-tool-kits.md): eleven tool windows for engineering, science, and math problems, with worked steps and live calculation blocks.
+- [Economics and finance](economics-and-finance.md): money over time, markets, firms, macroeconomics, measurement, accounting, and investment calculators.
+- [Civil, environmental, and chemical engineering tools](civil-and-chemical-engineering.md): structures, soils, foundations, hydrology, water, transportation, process balances, and reactors.
+- [Subject tool kits](subject-tool-kits.md): thirteen tool windows for engineering, science, math, earth science, and reasoning problems, with worked steps and live calculation blocks.
+- [Music, script, camera, and studio tools](music-script-camera-and-studio-tools.md): score notation, music theory, voice leading, ear training, tuning and rhythm, a script formatter, camera and lighting arithmetic, and scale, color, and materials.
 - [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 - [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [Data, seeds, and figures in the subject kits](subject-kit-data-and-figures.md): data input, page tables, repeatable random results, coefficient tables, plots, and figure blocks.
+- [Statistics kit](statistics-kit.md): describe data, tests, epidemiology, power, resampling, Bayesian updating, and study design.
+- [Statistical models](statistical-models.md): regression, econometrics and causal inference, survival, time series, PCA and clusters, machine learning, and spatial statistics.
+- [Psychology and behavior tools](psychology-kit.md): signal detection, psychophysics, learning and choice models, response times, observation, agreement, scales, and qualitative coding.
+- [Biology tools](biology-tools.md): sequences, cloning, proteins, alignment, crosses, population genetics, pedigrees, and phylogenetic trees.
+- [Life science tools](life-science-tools.md): physiology, neurons, pharmacology, curve fits, bench math, populations, demography, models, and biodiversity.
+- [Modern physics and astronomy tools](modern-physics-and-astronomy.md): quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology.
+- [Signals and sound tools](signals-tools.md): spectra, filters, convolution and sampling, brain and body signals, sound, images, medical imaging, information and coding, modulation, and transmission lines.
+- [History, places, languages, and texts](history-places-languages-and-texts.md): timelines, calendars, maps, coordinates, scripts, linguistics, text analysis, identification keys, and note frames.
 
 ## Draw and design pages
 

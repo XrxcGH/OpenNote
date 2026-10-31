@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import { Choice, LinePlot, Note, say, useStored } from '../ui/parts';
 import styles from '../ui/mathkit.module.css';
 import type { Figure } from './ctx';

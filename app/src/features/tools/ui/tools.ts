@@ -25,6 +25,18 @@ export type ToolId =
   | 'practice'
   | 'figure'
   | 'symbols'
+  | 'econ'
+  | 'kit-statinfer'
+  | 'kit-statmodels'
+  | 'kit-mind'
+  | 'kitmolbio'
+  | 'lifesys'
+  | 'kit-civil'
+  | 'kit-modphys'
+  | 'kit-signals'
+  | 'kit-earth'
+  | 'kit-humanities'
+  | 'kit-reasoning'
   | 'kitelectrical'
   | 'kit-fluidheat'
   | 'kit-solids'
@@ -35,7 +47,8 @@ export type ToolId =
   | 'kit-design'
   | 'kit-math'
   | 'kit-mechdyn'
-  | 'kit-physics';
+  | 'kit-physics'
+  | 'kitmusic';
 
 export interface ToolDef {
   id: ToolId;
@@ -68,6 +81,19 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'formulasheet', title: 'docStructure.sheet.title', width: 400 },
   { id: 'practice', title: 'docStructure.practice.title', width: 440 },
   { id: 'figure', title: 'docStructure.figure.title', width: 420 },
+  { id: 'econ', title: 'kitEcon.title', width: 520 },
+  { id: 'kit-statinfer', title: 'kitStatInfer.window.title', width: 560 },
+  { id: 'kit-statmodels', title: 'kitStatModels.title', width: 600 },
+  { id: 'kit-mind', title: 'kitMind.window', width: 560 },
+  { id: 'kitmolbio', title: 'kitMolBio.window', width: 600 },
+  { id: 'lifesys', title: 'kitLifeSys.ui.windowTitle', width: 480 },
+  { id: 'kit-civil', title: 'kitCivil.title', width: 520 },
+  { id: 'kit-modphys', title: 'kitModPhys.window.title', width: 520 },
+  { id: 'kit-signals', title: 'kitSignals.kit.title', width: 560 },
+  { id: 'kit-earth', title: 'kitEarth.title', width: 520 },
+  { id: 'kit-humanities', title: 'kitHumanities.title', width: 560 },
+  { id: 'kit-reasoning', title: 'kitReasoning.title', width: 560 },
+  { id: 'kitmusic', title: 'kitMusic.window', width: 560 },
   { id: 'kitelectrical', title: 'kitElectrical.window', width: 560 },
   { id: 'kit-solids', title: 'kitSolids.title', width: 560 },
   { id: 'kitaero', title: 'kitAero.window', width: 560 },

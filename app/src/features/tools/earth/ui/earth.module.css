@@ -1,0 +1,138 @@
+/*
+ * The earth sciences kit: a topic and calculation picker, labeled fields in a grid, a result card with its table
+ * and steps, and pictures drawn on tokens. Nothing here depends on color alone.
+ */
+@layer components {
+  .kit {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .pickers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .withUnit {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2);
+    align-items: end;
+  }
+
+  .area {
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    min-block-size: 6rem;
+    resize: vertical;
+  }
+
+  .result {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+    min-inline-size: 0;
+  }
+
+  .answer {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .problem {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-status-warning);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .steps li {
+    overflow-wrap: anywhere;
+  }
+
+  .tableWrap {
+    overflow: auto;
+    max-block-size: 40vh;
+  }
+
+  .table {
+    border-collapse: collapse;
+    inline-size: 100%;
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .table th {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .figure {
+    margin: 0;
+    padding: var(--space-2);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    overflow: auto;
+  }
+
+  .figure svg {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+    margin-inline: auto;
+    font-family: var(--font-ui);
+  }
+
+  .caption,
+  .source,
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
