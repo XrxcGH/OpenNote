@@ -63,7 +63,10 @@ const PREFIXES: readonly [number, string, string][] = [
 function prefixFor(value: number, top: number): [number, string, string] {
   if (value === 0 || !Number.isFinite(value)) return [0, '', ''];
   const power = Math.floor(Math.log10(Math.abs(value)) / 3) * 3;
-  const clamped = Math.min(Math.max(power, -15), top);
+  // Beyond the SI prefixes (above tera, below femto) plain scientific notation in the base unit reads better
+  // than 3.828×10¹⁴ TW.
+  if (power > 12 || power < -15) return [0, '', ''];
+  const clamped = Math.min(power, top);
   return PREFIXES.find(([p]) => p === clamped) ?? [0, '', ''];
 }
 
