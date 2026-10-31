@@ -13,7 +13,7 @@ import {
   typeTokenRatio,
 } from './corpus';
 import { diffWords, variants } from './diff';
-import { fitHexameter, fitPentameter, latinSyllables, rhymeScheme, scanEnglish } from './scansion';
+import { fitHexameter, fitPentameter, latinSyllables, rhymeScheme, scanEnglish, wordStress } from './scansion';
 
 describe('counts and readability', () => {
   it('score "The cat sat on the mat." as Flesch 116.145 and grade -1.45', () => {
@@ -28,6 +28,37 @@ describe('counts and readability', () => {
     expect(['compare', "summer's", 'table', 'wanted', 'used', 'beautiful', 'the'].map(syllables)).toEqual([
       2, 2, 2, 2, 1, 3, 1,
     ]);
+  });
+
+  it('count the plural -es after a sibilant, -ed after t or d, and vowels said apart', () => {
+    // Syllable counts from the CMU Pronouncing Dictionary.
+    const cases: [string, number][] = [
+      ['sentences', 3],
+      ['horses', 2],
+      ['boxes', 2],
+      ['changes', 2],
+      ['wishes', 2],
+      ['churches', 2],
+      ['created', 3],
+      ['naked', 2],
+      ['ideal', 3],
+      ['area', 3],
+      ['poem', 2],
+      ['makes', 1],
+      ['jumped', 1],
+      ['nation', 2],
+      ['lion', 2],
+      ['million', 2],
+      ['quiet', 2],
+      ['great', 1],
+      ['hopeful', 2],
+    ];
+    expect(cases.map(([word]) => syllables(word))).toEqual(cases.map(([, n]) => n));
+    // 8 words, 2 sentences, 10 syllables: FRE = 206.835 − 1.015·4 − 84.6·1.25 = 97.025, FK = 0.39·4 + 11.8·1.25 − 15.59 = 0.72.
+    const r = readability('This is a test. It has two sentences.');
+    expect(r.syllables).toBe(10);
+    expect(r.fleschEase).toBeCloseTo(97.025, 3);
+    expect(r.fleschKincaid).toBeCloseTo(0.72, 3);
   });
 
   it('split sentences and refuse an empty text', () => {
@@ -128,6 +159,16 @@ describe('scansion', () => {
     expect(scan.syllables).toBe(10);
     expect(scan.meter).toBe('iambic');
     expect(scan.feet).toBe(5);
+  });
+
+  it('keep the stress of a stem before a neutral suffix and after under- or over-', () => {
+    expect(['delightful', 'understand', 'understanding', 'beautiful', 'remember'].map(wordStress)).toEqual([
+      [0, 1, 0],
+      [0, 0, 1],
+      [0, 0, 1, 0],
+      [1, 0, 0],
+      [0, 1, 0],
+    ]);
   });
 
   it('find a rhyme scheme', () => {

@@ -1341,8 +1341,9 @@ export const kitHumanities = {
     elided: 'Elided: {words}',
     verseSteps: {
       english:
-        'Stress comes from English spelling rules. Function words are light. ' +
+        'Stress and rhyme are guessed from English spelling, not looked up in a pronouncing dictionary, so a word like move or love can come out wrong. Function words are light. ' +
         'Words of 2 syllables with a prefix such as com- or re- stress the second syllable, and others stress the first. ' +
+        'Suffixes such as -ful, -ness, and -ing keep the stem’s stress, and under- and over- compounds stress the second part. ' +
         'The meter whose pattern differs least wins.',
       latin:
         'A Latin syllable is long by nature (a macron), as a diphthong (ae, au, oe), ' +

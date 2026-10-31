@@ -15,6 +15,31 @@ export function sentences(text: string): string[] {
     .filter((part) => words(part).length > 0);
 }
 
+/** Words whose syllables the spelling rules get wrong: -ed adjectives and a few vowel pairs. */
+const SYLLABLE_WORDS: Record<string, number> = {
+  naked: 2,
+  wicked: 2,
+  crooked: 2,
+  ragged: 2,
+  rugged: 2,
+  jagged: 2,
+  sacred: 2,
+  beloved: 3,
+  learned: 2,
+  ideal: 3,
+  plea: 1,
+  people: 2,
+};
+
+// Vowel pairs said as two syllables: li-on, tri-al, me-di-um, du-al, po-em, cre-ate, vi-de-o, are-a. Not after
+// c, s, t, or g before n, l, or u, or after ll, where the i is a glide (nation, social, religion, gracious, million).
+const HIATUS = [
+  /(?<![cgstxl])i[aou]|(?<!l)li[aou]|[cgstx]i(?:a(?![nl])|o(?![nu])|u(?!s))/g,
+  /(?<![ct])ie(?=t|nc|nt)|scie(?=n)/g,
+  /[^q]ua(?!y)|[^aeiouqg]uo/g,
+  /oe(?=[mt])|crea(?=t)(?!tu)|^rea(?=ct)|^geo|[^gcp]eo(?!u)|[^aeiou]ea$/g,
+];
+
 /** Syllables in an English word, by spelling rules. */
 export function syllables(word: string): number {
   let w = word
@@ -22,11 +47,20 @@ export function syllables(word: string): number {
     .replace(/[’']s$/, '')
     .replace(/[^a-z]/g, '');
   if (w === '') return 0;
+  const known = SYLLABLE_WORDS[w];
+  if (known !== undefined) return known;
   if (w.length <= 3) return 1;
-  // A final silent e, but not -le after a consonant (table) or -ee.
-  w = w.replace(/(?:[^laeiouy]es|[^laeiouydt]ed|[^laeiouy]e)$/, (end) => end.slice(0, 1)).replace(/^y/, '');
+  // A silent e before a suffix (hopeful, lovely, statement).
+  w = w.replace(/([^aeiouy])e(ful|fully|less|ness|ment|ments|ly)$/, '$1$2');
+  // A final silent e, but not -le after a consonant (table) or -ee. The -es of a plural is a syllable after s, x,
+  // z, ch, sh, ce, and ge (horses, boxes, churches, changes), and -ed after t or d (wanted, created).
+  if (!/(?:[sxz]|ch|sh|[cg])es$/.test(w)) {
+    w = w.replace(/(?:[^laeiouy]es|[^laeiouydt]ed|[^laeiouy]e)$/, (end) => end.slice(0, 1));
+  }
+  w = w.replace(/^y/, '');
   const groups = w.match(/[aeiouy]+/g)?.length ?? 0;
-  return Math.max(1, groups);
+  const splits = HIATUS.reduce((sum, rule) => sum + (w.match(rule)?.length ?? 0), 0);
+  return Math.max(1, groups + splits);
 }
 
 export interface Readability {

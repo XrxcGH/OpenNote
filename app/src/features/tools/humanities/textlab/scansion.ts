@@ -13,16 +13,55 @@ const FUNCTION_WORDS = new Set(
 );
 const PREFIXES = /^(a|be|com|con|de|dis|ex|for|in|mis|pre|pro|re|un|sur|per|sub|en|em|ob)/;
 
-/** Stress of each syllable of a word: 1 stressed, 0 not, 0.5 a monosyllable that can go either way. */
-export function wordStress(word: string): number[] {
-  const lower = word.toLowerCase().replace(/[’']s$/, '');
-  const count = syllables(word);
-  if (count === 1) return [FUNCTION_WORDS.has(lower) ? 0.25 : 0.75];
+// Suffixes that never take the stress: it stays where it was in the stem (de-LIGHT-ful, for-GIVE-ness).
+const NEUTRAL_SUFFIX = /(?:fully|ful|less|ness|ment|ly|ing|ings|er|ers)$/;
+// under- and over- compounds stress the word they are joined to (under-STAND, over-COME).
+const COMPOUND_PREFIX = /^(under|over)(?=[a-z]{3})/;
+
+function stemStress(lower: string, count: number): number[] {
   const pattern = new Array<number>(count).fill(0);
   if (count === 2) pattern[PREFIXES.test(lower) && lower.length > 4 ? 1 : 0] = 1;
   else if (/(tion|sion|ic|ian|ial|ious)s?$/.test(lower)) pattern[count - 2] = 1;
   else pattern[count - 3] = 1;
   return pattern;
+}
+
+/** Stress guessed from spelling, or null when the parts do not add up to the word's syllables. */
+function ruleStress(lower: string, count: number): number[] | null {
+  const compound = COMPOUND_PREFIX.exec(lower);
+  if (compound) {
+    const rest = lower.slice(compound[1]!.length);
+    const head = syllables(compound[1]!);
+    const tail = ruleStress(rest, syllables(rest)) ?? stemStress(rest, syllables(rest));
+    const parts = [...new Array<number>(head).fill(0), ...tail.map((n) => (n > 0.5 ? 1 : 0))];
+    if (tail.length === 1) parts[head] = 1;
+    return parts.length === count ? parts : null;
+  }
+  const suffix = NEUTRAL_SUFFIX.exec(lower);
+  if (suffix && count > 2) {
+    const stem = lower.slice(0, suffix.index);
+    const stemCount = syllables(stem);
+    const tail = count - stemCount;
+    if (stem.length > 2 && stemCount >= 1 && tail >= 1) {
+      // A stem whose y became i (beauty, plenty, happy) keeps its stress on the first syllable.
+      const head =
+        stemCount === 1
+          ? [1]
+          : /i$/.test(stem)
+            ? [1, ...new Array<number>(stemCount - 1).fill(0)]
+            : stemStress(stem, stemCount);
+      return [...head, ...new Array<number>(tail).fill(0)];
+    }
+  }
+  return null;
+}
+
+/** Stress of each syllable of a word: 1 stressed, 0 not, 0.5 a monosyllable that can go either way. */
+export function wordStress(word: string): number[] {
+  const lower = word.toLowerCase().replace(/[’']s$/, '');
+  const count = syllables(word);
+  if (count === 1) return [FUNCTION_WORDS.has(lower) ? 0.25 : 0.75];
+  return ruleStress(lower, count) ?? stemStress(lower, count);
 }
 
 export type Meter = 'iambic' | 'trochaic' | 'anapestic' | 'dactylic';
