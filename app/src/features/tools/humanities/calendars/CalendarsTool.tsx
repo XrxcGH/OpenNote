@@ -81,6 +81,7 @@ function ConvertPanel({ eras }: { eras: string }) {
         <>
           <Results label={t(`${c}.results`)} rows={result.value.rows} />
           {input.system.startsWith('islamic') ? <Note>{t(`${c}.islamicNote`)}</Note> : null}
+          {input.system === 'republican' ? <Note>{t(`${c}.republicanNote`)}</Note> : null}
           <Note>{t(`${c}.source`)}</Note>
           <Steps steps={result.value.steps} />
           <InsertBar

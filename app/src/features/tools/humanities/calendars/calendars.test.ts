@@ -203,6 +203,14 @@ describe('other calendars', () => {
   it('start the French Republic on 1792-09-22 and Saka 1946 on 2024-03-21', () => {
     expect(iso(republicanToJdn(1, 1, 1))).toBe('1792-09-22');
     expect(jdnToRepublican(g(1792, 9, 22))).toEqual({ year: 1, month: 1, day: 1 });
+    // Year III was leap, so year IV began on 23 September 1795; 18 Brumaire VIII, the coup, was 9 November 1799.
+    expect(iso(republicanToJdn(4, 1, 1))).toBe('1795-09-23');
+    expect(iso(republicanToJdn(8, 2, 18))).toBe('1799-11-09');
+    expect(() => republicanToJdn(3, 13, 6)).not.toThrow();
+    expect(() => republicanToJdn(4, 13, 6)).toThrow('day');
+    // 1 Vendémiaire XIV was 23 September 1805; the Romme rule then runs on without a jump.
+    expect(iso(republicanToJdn(14, 1, 1))).toBe('1805-09-23');
+    expect(republicanToJdn(16, 1, 1) - republicanToJdn(15, 1, 1)).toBe(365);
     expect(iso(sakaToJdn(1946, 1, 1))).toBe('2024-03-21');
     expect(jdnToSaka(g(2024, 10, 3))).toEqual({ year: 1946, month: 7, day: 11 });
   });

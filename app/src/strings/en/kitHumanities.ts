@@ -1152,6 +1152,9 @@ export const kitHumanities = {
     islamicNote:
       // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
       'Islamic dates here are tabular. Where the month begins with sighting of the moon, or by the Umm al-Qura calendar, the day can differ by one or two.',
+    republicanNote:
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      'French Republican years I to XIV, the years the calendar was in use, follow the leap years it actually had: III, VII, and XI. From year XV on, the Romme rule applies: leap years every four years from IV, with the Gregorian century exceptions.',
     erasLabel: 'Eras',
     erasHint:
       'One era a line: its first day as a Gregorian date (YYYY-MM-DD), then its name. The year it starts is year 1.',
@@ -1762,7 +1765,12 @@ export const kitHumanities = {
     ring: 'Polygon for area',
     ringHint: 'One corner a line: latitude, longitude.',
     area: 'Area',
-    areaNote: 'The area is on a sphere of the same surface area as WGS84 (radius 6,371,007.2 m).',
+    areaNote:
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      'The area is on a sphere of the same surface area as WGS84 (radius 6,371,007.2 m), not yet on the ellipsoid. A ring that goes all the way around a pole gets the smaller of its two sides.',
+    antipodalNote:
+      // checks-disable-next-line length: names, lists, and placeholder messages, kept whole so the key types read them
+      'These points are nearly opposite each other, where Vincenty’s iteration on the ellipsoid does not converge, so only the distance on the sphere is shown. It can be off by up to about 0.5%.',
     lat: 'Latitude (°)',
     lon: 'Longitude (°)',
     hidden: 'This point is on the far side of the map and is not shown.',
