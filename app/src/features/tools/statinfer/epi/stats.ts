@@ -22,11 +22,11 @@ function checkCounts(values: readonly number[]): void {
 }
 
 /** A log-scale interval: exp(ln value ± z · se). */
-/** A log-scale interval around `centre`, reported with `value` as the point estimate (they differ only after a 0.5 correction). */
-const logInterval = (value: number, se: number, zz: number, centre = value): Estimate => ({
+/** A log-scale interval around `center`, with `value` as the point estimate (they differ after a 0.5 correction). */
+const logInterval = (value: number, se: number, zz: number, center = value): Estimate => ({
   value,
-  lower: Math.exp(Math.log(centre) - zz * se),
-  upper: Math.exp(Math.log(centre) + zz * se),
+  lower: Math.exp(Math.log(center) - zz * se),
+  upper: Math.exp(Math.log(center) + zz * se),
 });
 
 export interface TwoByTwo {
@@ -50,9 +50,9 @@ export interface Effect {
   readonly paf: number;
   readonly seLogRr: number;
   readonly seLogOr: number;
-  /** The RR and OR the log intervals are centred on: the raw ones, or the 0.5-corrected ones when a cell is 0. */
-  readonly rrCentre: number;
-  readonly orCentre: number;
+  /** The RR and OR the log intervals are centered on: the raw ones, or the 0.5-corrected ones when a cell is 0. */
+  readonly rrCenter: number;
+  readonly orCenter: number;
   /** Whether 0.5 was added to every cell for the log intervals (not the point estimates) because a cell was 0. */
   readonly corrected: boolean;
 }
@@ -72,8 +72,8 @@ export function effect(t: TwoByTwo, confidence = 0.95): Effect {
   const [a, b, c, d] = [t.a + h, t.b + h, t.c + h, t.d + h];
   const seLogRr = Math.sqrt(1 / a - 1 / (a + b) + 1 / c - 1 / (c + d));
   const seLogOr = Math.sqrt(1 / a + 1 / b + 1 / c + 1 / d);
-  const rrCentre = a / (a + b) / (c / (c + d));
-  const orCentre = (a * d) / (b * c);
+  const rrCenter = a / (a + b) / (c / (c + d));
+  const orCenter = (a * d) / (b * c);
   const rawOr = t.a * t.d === 0 && t.b * t.c === 0 ? Number.NaN : (t.a * t.d) / (t.b * t.c);
   const rd = r1 - r0;
   const seRd = Math.sqrt((r1 * (1 - r1)) / n1 + (r0 * (1 - r0)) / n0);
@@ -84,8 +84,8 @@ export function effect(t: TwoByTwo, confidence = 0.95): Effect {
   return {
     riskExposed: r1,
     riskUnexposed: r0,
-    rr: logInterval(rr, seLogRr, zz, rrCentre),
-    or: logInterval(rawOr, seLogOr, zz, orCentre),
+    rr: logInterval(rr, seLogRr, zz, rrCenter),
+    or: logInterval(rawOr, seLogOr, zz, orCenter),
     rd: rdInterval,
     nn: rd === 0 ? Number.POSITIVE_INFINITY : 1 / Math.abs(rd),
     nnInterval: excludesZero
@@ -98,8 +98,8 @@ export function effect(t: TwoByTwo, confidence = 0.95): Effect {
     paf: total > 0 ? (total - r0) / total : Number.NaN,
     seLogRr,
     seLogOr,
-    rrCentre,
-    orCentre,
+    rrCenter,
+    orCenter,
     corrected,
   };
 }

@@ -34,12 +34,12 @@ describe('measures of effect', () => {
     expect(e.afExposed).toBe(Number.NEGATIVE_INFINITY);
     close(e.riskExposed, 0, 1e-12);
     close(e.rd.value, -0.5, 1e-12);
-    // Only the log intervals use the corrected cells: centre (0.5/11)/(5.5/11) = 1/11, SE = √(2 − 1/11 + 1/5.5 − 1/11) = √2.
-    close(e.rrCentre, 1 / 11, 1e-12);
+    // Only the log intervals use the corrected cells: center (0.5/11)/(5.5/11) = 1/11, SE = √(2 − 1/11 + 1/5.5 − 1/11) = √2.
+    close(e.rrCenter, 1 / 11, 1e-12);
     close(e.seLogRr, Math.SQRT2, 1e-12);
     close(e.rr.lower, 0.00568626, 1e-7);
     close(e.rr.upper, 1.45341, 1e-5);
-    close(e.orCentre, (0.5 * 5.5) / (10.5 * 5.5), 1e-12);
+    close(e.orCenter, (0.5 * 5.5) / (10.5 * 5.5), 1e-12);
   });
 
   it('gives an infinite ratio when the unexposed have no cases', () => {

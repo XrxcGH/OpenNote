@@ -70,7 +70,7 @@ export function cohortReport(t: TwoByTwo, confidence: number): Report {
       ),
       step(
         'eBack',
-        `\\exp\\!\\left(\\ln ${tex(e.rrCentre, 4)} \\pm z\\,${tex(e.seLogRr, 4)}\\right)` +
+        `\\exp\\!\\left(\\ln ${tex(e.rrCenter, 4)} \\pm z\\,${tex(e.seLogRr, 4)}\\right)` +
           ` = ${tex(e.rr.lower, 4)},\\ ${tex(e.rr.upper, 4)}`,
       ),
       step(
