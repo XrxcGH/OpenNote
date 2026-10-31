@@ -1,4 +1,5 @@
 // Grid zones typed from their published parameters, and site grids fitted to control points.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { GRS80, WGS84 } from '../geo/ellipsoid';

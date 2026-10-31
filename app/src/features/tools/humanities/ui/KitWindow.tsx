@@ -1,5 +1,6 @@
 // The kit window: a row of tabs, one for each tool, and the tool that is chosen. The palette's per-tool commands
 // choose the tab before they open the window.
+import '../text';
 import { Suspense, useEffect, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { useStore } from '../../../../state/store';

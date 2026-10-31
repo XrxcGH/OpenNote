@@ -1,4 +1,5 @@
 // The linguistics panels for structure: syntax and dependency trees, and interlinear glosses.
+import '../text';
 import { t } from '../../../../strings/t';
 import { attempt, errorText } from '../ui/attempt';
 import { Choice, DataTable, Field, InsertBar, Note, Picture, Problem, Results, Steps, ht } from '../ui/parts';

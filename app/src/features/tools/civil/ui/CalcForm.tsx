@@ -1,5 +1,6 @@
 // One calculation of the kit: labeled fields with units, and a result that updates as the person types. The answer
 // line is in a status region, so a screen reader hears it; the table, plot, and worked steps follow as text.
+import '../text';
 import 'katex/dist/katex.min.css';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';

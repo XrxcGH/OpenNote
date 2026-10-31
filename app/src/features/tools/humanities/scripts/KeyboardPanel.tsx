@@ -1,5 +1,6 @@
 // The on-screen keyboards: choose a script, press keys to build text in the compose field, and insert it. A
 // combining mark is shown on a dotted circle and joins the letter before it.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import styles from '../ui/kit.module.css';

@@ -1,5 +1,6 @@
 // Identification keys: type or pick a character table, then read the key it makes and run it couplet by couplet.
 // Filter with a multi-access key, and keep a catalog of what was identified.
+import '../text';
 import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';

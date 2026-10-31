@@ -1,11 +1,12 @@
 // The body every tool in the kit shares: its fields, the answer, tables, pictures, worked steps, notes, and Insert.
 // A tool is only a ToolSpec; this draws it, so every tool behaves the same for the keyboard and a screen reader.
+import './text';
 import 'katex/dist/katex.min.css';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { createStore, useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
-import { insertIntoPage } from '../ui/CalculatorTool';
+import { insertIntoPage } from '../ui/insert';
 import { figureSvg } from './figure';
 import { FigureView } from './FigureView';
 import { say, sayLabel } from './say';

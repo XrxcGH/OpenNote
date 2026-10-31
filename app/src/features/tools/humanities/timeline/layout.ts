@@ -2,6 +2,7 @@
 // The axis is linear, logarithmic in years before present for deep time, or linear with one break. Labels are packed
 // into sub-rows greedily: each item takes the first row where it clears the last item by a gap. Errors are codes
 // under kitHumanities.timeline.errors.
+import '../text';
 import { beforePresent, parseDate } from './dates';
 import type { TimeDate } from './dates';
 

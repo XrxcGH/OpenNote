@@ -1,5 +1,6 @@
 // Scripts, keyboards, and romanization: on-screen keyboards for IPA and many alphabets, romanization by public
 // tables, Hangul and its romanizations, kana and Hepburn, pinyin tones and sandhi, Thai tones, and Vietnamese input.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Source, Tabs, Tool, ht } from '../ui/parts';

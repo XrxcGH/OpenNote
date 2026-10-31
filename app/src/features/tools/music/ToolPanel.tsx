@@ -1,10 +1,11 @@
 // The body every form-based tool in the kit shares: its fields, the answer, the assumptions, worked steps, a picture,
 // and Insert. A tool is only a ToolSpec; this draws it, so every tool behaves the same for the keyboard and a screen
 // reader.
+import './text';
 import { useId, useMemo } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
-import { insertIntoPage } from '../ui/CalculatorTool';
+import { insertIntoPage } from '../ui/insert';
 import { PlayBar } from './PlayBar';
 import { runTool } from './spec';
 import type { Field, ToolSpec } from './spec';

@@ -1,5 +1,6 @@
 // From a date typed in one calendar to its Julian Day Number, and from a JDN to the date in every calendar, as
 // words. The tool shows the rows and steps this builds.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fixed, num } from '../ui/attempt';
 import { ht } from '../ui/parts';

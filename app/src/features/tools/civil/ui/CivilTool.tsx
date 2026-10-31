@@ -1,5 +1,6 @@
 // The civil, environmental, and chemical engineering kit window: pick a tool and one of its calculations, then type
 // the inputs. Each tool's calculations load the first time it is picked.
+import '../text';
 import { useEffect, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { useStore } from '../../../../state/store';

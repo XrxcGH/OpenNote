@@ -1,5 +1,6 @@
 // Note frames: pick a structure by subject or by searching, look at it, and insert it at the caret as headings,
 // prompts, lists, and a table.
+import '../text';
 import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';

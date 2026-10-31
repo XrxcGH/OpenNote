@@ -1,4 +1,5 @@
 // The text panels: readability with flags, word lists with a Zipf plot, and the concordance with collocates.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { PAPER, r2, svgDocument, svgText } from '../svg';

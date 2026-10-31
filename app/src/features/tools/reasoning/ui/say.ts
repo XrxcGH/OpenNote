@@ -1,4 +1,5 @@
 // The reasoning kit's strings by path: engines name a step or an error by key, and the window words it here.
+import '../text';
 import { t } from '../../../../strings/t';
 import type { MessageKey } from '../../../../strings/t';
 import type { Step } from '../core/step';

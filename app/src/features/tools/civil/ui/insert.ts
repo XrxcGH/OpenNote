@@ -1,8 +1,9 @@
 // What Insert puts on the page from a result: the answer line, the worked steps, the result table, the equation in
 // LaTeX, the data table, or a picture of the plot. Each says in words whether it worked.
+import '../text';
 import { t } from '../../../../strings/t';
 import { announce } from '../../../../ui';
-import { insertIntoPage } from '../../ui/CalculatorTool';
+import { insertIntoPage } from '../../ui/insert';
 import { fmt } from '../core/format';
 import type { Outcome, Plot } from '../core/types';
 import { CIVIL_KIT_ID } from '../open';

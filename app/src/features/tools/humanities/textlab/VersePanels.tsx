@@ -1,5 +1,6 @@
 // The comparing panels and verse: keyness of a study text against a reference, versions compared word by word,
 // a language sample's MLU, and scansion of English and Latin lines.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { attempt, errorText, fixed } from '../ui/attempt';

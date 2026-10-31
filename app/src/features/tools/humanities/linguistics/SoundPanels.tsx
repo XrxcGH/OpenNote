@@ -1,5 +1,6 @@
 // The linguistics panels for sound: the feature chart and natural classes, ordered rules with a derivation table,
 // syllables by sonority, and vowel charts from formants.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { attempt, errorText, fixed } from '../ui/attempt';

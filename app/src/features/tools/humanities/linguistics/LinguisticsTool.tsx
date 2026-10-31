@@ -1,5 +1,6 @@
 // Linguistic structures: syntax and dependency trees, interlinear glosses, distinctive features, and natural
 // classes, ordered rules and sound changes, syllables by sonority, and vowel charts.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { takeInputs } from '../open';

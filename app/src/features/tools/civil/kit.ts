@@ -1,4 +1,5 @@
 // Each tool's calculations, loaded the first time the tool is chosen, so the window opens without the engines.
+import './text';
 import type { Calc } from './core/types';
 import type { CivilToolId } from './meta';
 

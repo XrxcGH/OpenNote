@@ -1,6 +1,7 @@
 // The map maker: a projection, the student's own layers (typed points with values, routes, and GeoJSON polygons
 // as a choropleth), a graticule, Tissot indicatrices, a legend, a scale bar, and a north arrow; plus geodesic
 // measures and a single point worked through a projection's formula.
+import '../text';
 import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { GeoError, haversine, inverse } from '../geo/ellipsoid';

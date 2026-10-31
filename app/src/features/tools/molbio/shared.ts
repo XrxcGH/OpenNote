@@ -1,6 +1,7 @@
 // What the molecular biology tools share: the shape of an answer, input problems named by message key, and number
 // reading and showing. Everything here is pure; the interface text lives in strings/en/kitMolBio.ts and is looked up
 // by key, so an engine names a message and never builds a sentence.
+import './text';
 import { formatNumber } from '../../../core/expr';
 import type { DottedKeys } from '../../../strings/t';
 import type { kitMolBio } from '../../../strings/en/kitMolBio';

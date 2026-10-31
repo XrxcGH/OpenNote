@@ -1,5 +1,6 @@
 // The pieces every tool of the kit is built from: tabs, fields, results, steps, problems, a picture preview, and the
 // insert buttons. Each control has a visible label, works from the keyboard, and reads as text.
+import '../text';
 import { useId, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { t } from '../../../../strings/t';

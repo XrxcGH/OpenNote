@@ -1,5 +1,6 @@
 // Coordinates and navigation: convert between degrees, UTM, and MGRS; measure on the ellipsoid; work in grid zones
 // and site grids; and do land and marine navigation problems.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { WGS84, direct, haversine, inverse, midpoint, rhumb } from '../geo/ellipsoid';

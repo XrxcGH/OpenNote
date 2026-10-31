@@ -1,5 +1,6 @@
 // The body of the molecular biology window: tabs for the tools, and the chosen tool's form and answer. What was typed
 // in each tool is remembered on this device, so closing the window loses nothing.
+import './text';
 import { useCallback, useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';

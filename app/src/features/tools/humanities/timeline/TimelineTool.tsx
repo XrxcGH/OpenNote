@@ -1,5 +1,6 @@
 // The timeline builder: rows of events and periods become a drawing with tracks, era bands, and uncertainty bars.
 // Zoom and pan from the keyboard, compare two rows, and insert the picture, an editable figure, the table, or steps.
+import '../text';
 import { useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../../strings/t';

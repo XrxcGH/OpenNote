@@ -1,5 +1,6 @@
 // Play and Stop for the sound an answer carries, with Tap for tempo when the tool has a tempo field. The audio
 // starts only when the student presses Play, and stops when the answer changes or the window closes.
+import './text';
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';

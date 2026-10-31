@@ -1,5 +1,6 @@
 // Land navigation (azimuths, pace counts, intersection, and resection) and marine navigation (dead reckoning, the
 // current triangle, time, speed, and distance, and chart scale).
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { attempt, fixed, num } from '../ui/attempt';

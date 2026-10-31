@@ -1,5 +1,6 @@
 // Text analysis and verse: one text shared by readability, word lists, the concordance, keyness, and comparing
 // versions, plus a language sample and scansion with texts of their own.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Source, Tabs, Tool, ht } from '../ui/parts';

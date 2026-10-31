@@ -1,5 +1,6 @@
 // Looks up the kit's messages by the keys engines name. The keys are checked against the strings file by their
 // types; a `field` variable is itself a key, the label of the field a message is about.
+import './text';
 import { t } from '../../../strings/t';
 import type { Label } from './figure';
 import type { MolKey, Vars } from './shared';

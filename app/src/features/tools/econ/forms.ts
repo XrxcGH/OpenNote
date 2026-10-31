@@ -1,5 +1,6 @@
 // What every economics and finance form shares: words from the kitEcon strings, the answer shapes the chemistry
 // form already renders (a headline, steps, and an optional picture), and a reader for the numbers a form asks for.
+import './text';
 import { isValidElement } from 'react';
 import type { ReactNode } from 'react';
 import { t } from '../../../strings/t';

@@ -1,5 +1,6 @@
 // The converting panels: romanization tables, Korean, Japanese, Chinese pinyin, Thai tones, and Vietnamese input.
 // Each shows the result, the rules it used as steps, and the insert buttons.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { attempt, errorText } from '../ui/attempt';

@@ -1,5 +1,6 @@
 // Calendars and eras: type a date in any of thirteen calendars and see it in all of them with the steps, list the
 // festivals of a year, and keep an era table for reign eras.
+import '../text';
 import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { attempt, errorText, num } from '../ui/attempt';

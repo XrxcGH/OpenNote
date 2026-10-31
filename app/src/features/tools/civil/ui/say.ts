@@ -1,5 +1,6 @@
 // Words for the kit's message keys. Numbers are shown to 6 significant figures; a string value that starts with ~
 // is itself a key, such as the name of a soil group, and is worded too.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt } from '../core/format';
 import type { Msg, Vars } from '../core/types';
