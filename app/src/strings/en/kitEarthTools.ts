@@ -1431,8 +1431,7 @@ export const kitEarthTools = {
       north: 'N',
       netTitle: 'Stereonet',
       netText:
-        '{planes, plural, one {# plane} other {# planes}} as great circles or poles and ' +
-        '{lines, plural, one {# line} other {# lines}} on the net.',
+        '{planes, plural, one {# plane} other {# planes}} as great circles or poles and {lines, plural, one {# line} other {# lines}} on the net.',
       poleText: 'The plane {plane} as a great circle with its pole at {pole}.',
       pole: 'Pole',
       rake: 'Rake',
