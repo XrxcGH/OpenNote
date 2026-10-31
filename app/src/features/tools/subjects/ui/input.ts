@@ -2,6 +2,7 @@
 // each is read. A field saves plain text, so a live block or a figure keeps its data with it and reopens the same
 // numbers even when the page table it came from has changed or gone.
 import { readNumber, parseDataText } from '../data/parse';
+import type { DecimalChoice } from '../data/parse';
 import { stack, unstack } from '../data/longWide';
 import type { ColumnKind, DataSet } from '../data/model';
 import { columnNamed, emptyDataSet } from '../data/model';
@@ -14,13 +15,15 @@ export interface DataInput {
   text: string;
   /** The page table's number when the text came from one, so the field can say so. */
   table?: number | null;
+  /** The decimal mark the student chose; absent or 'auto' lets the reader vote from the cells. */
+  decimal?: DecimalChoice;
 }
 
 export const emptyDataInput = (): DataInput => ({ text: '', table: null });
 
 /** Reads a data field. Blank text is an empty data set. */
 export const readDataInput = (input: DataInput): DataSet =>
-  input.text.trim() === '' ? emptyDataSet() : parseDataText(input.text);
+  input.text.trim() === '' ? emptyDataSet() : parseDataText(input.text, { decimal: input.decimal ?? 'auto' });
 
 /** A page table as tab-separated text, the way a data field keeps it. Tabs and line breaks in cells become spaces. */
 export function tableText(table: PageTable): string {
