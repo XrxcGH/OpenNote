@@ -59,13 +59,16 @@ export const STORE_PREFIX = 'opennote.kitSignals.';
 /** Sent in the window when a live calculation block has put a tool's fields back, so an open tool reads them. */
 export const RESTORE_EVENT = 'opennote:kit-signals-restore';
 
+/** Whether a saved part ('rf.load', or 'spectrum' for a tool with one part) belongs to `tool`. */
+const partOf = (tool: string, part: string): boolean => part === tool || part.startsWith(`${tool}.`);
+
 /** A tool's saved fields, part by part ('rf.load' and so on): what a live calculation block keeps as its inputs. */
 export function signalInputs(tool: SignalToolId): Record<string, unknown> {
   const parts: Record<string, unknown> = {};
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i);
-      if (!key?.startsWith(`${STORE_PREFIX}${tool}.`)) continue;
+      if (!key?.startsWith(STORE_PREFIX) || !partOf(tool, key.slice(STORE_PREFIX.length))) continue;
       parts[key.slice(STORE_PREFIX.length)] = JSON.parse(window.localStorage.getItem(key) ?? 'null') as unknown;
     }
   } catch {
@@ -83,7 +86,7 @@ export function restoreSignalInputs(tool: string, inputs: unknown): boolean {
   if (inputs && typeof inputs === 'object') {
     try {
       for (const [part, value] of Object.entries(inputs as Record<string, unknown>)) {
-        if (!part.startsWith(`${tool}.`) || !value || typeof value !== 'object' || Array.isArray(value)) continue;
+        if (!partOf(tool, part) || !value || typeof value !== 'object' || Array.isArray(value)) continue;
         window.localStorage.setItem(STORE_PREFIX + part, JSON.stringify(value));
       }
     } catch {

@@ -1,5 +1,7 @@
 // Reading a pasted signal: one value per line (or a run of values), or time and value on each line, in which case
 // the sample rate comes from the evenly spaced times. Also the example signals the tools offer.
+import { columnNamed, completeRows } from '../../subjects/data/model';
+import { readDataInput, type DataInput, type RoleValue } from '../../subjects/ui/input';
 import { SignalError } from './errors';
 import { gaussian, readNumbers, readRows, seededRandom } from './num';
 
@@ -9,15 +11,23 @@ export interface SignalText {
   readonly rate?: number;
 }
 
+/** Values with their times, which must be evenly spaced and rising: the rate is one over the spacing. */
+export function timedSignal(times: readonly number[], values: readonly number[]): SignalText {
+  if (values.length === 0) throw new SignalError('empty');
+  if (times.length !== values.length || times.length < 2) throw new SignalError('unevenTimes');
+  const dt = (times[times.length - 1]! - times[0]!) / (times.length - 1);
+  const even = dt > 0 && times.every((time, i) => Math.abs(time - (times[0]! + i * dt)) <= Math.abs(dt) * 1e-6 + 1e-12);
+  if (!even) throw new SignalError('unevenTimes');
+  return { samples: [...values], rate: 1 / dt };
+}
+
 export function readSignal(text: string): SignalText {
   const rows = readRows(text);
   if (rows.length > 1 && rows.every((row) => row.length === 2)) {
-    const times = rows.map((row) => row[0]!);
-    const dt = (times[times.length - 1]! - times[0]!) / (times.length - 1);
-    const even =
-      dt > 0 && times.every((time, i) => Math.abs(time - (times[0]! + i * dt)) <= Math.abs(dt) * 1e-6 + 1e-12);
-    if (!even) throw new SignalError('unevenTimes');
-    return { samples: rows.map((row) => row[1]!), rate: 1 / dt };
+    return timedSignal(
+      rows.map((row) => row[0]!),
+      rows.map((row) => row[1]!),
+    );
   }
   const samples = readNumbers(text);
   if (samples.length === 0) throw new SignalError('empty');
@@ -43,3 +53,27 @@ export function exampleSignal(
 /** Samples as text, one per line, rounded to keep the field short. */
 export const samplesText = (samples: readonly number[], digits = 5): string =>
   samples.map((v) => Number(v.toFixed(digits)).toString()).join('\n');
+
+/** The value column (and time column, when chosen) of the table, or null while no table or value column is set. */
+export function tableSignal(table: DataInput, columns: RoleValue): SignalText | null {
+  const value = typeof columns.response === 'string' ? columns.response : '';
+  if (!table.text.trim() || !value) return null;
+  const data = readDataInput(table);
+  const time = typeof columns.time === 'string' && columns.time ? columns.time : '';
+  const values = columnNamed(data, value);
+  if (!values || (values.kind !== 'number' && values.kind !== 'date')) throw new SignalError('empty');
+  const { rows } = completeRows(data, time ? [value, time] : [value]);
+  const samples = rows.map((r) => values.values[r]!);
+  if (!time) {
+    if (samples.length === 0) throw new SignalError('empty');
+    return { samples };
+  }
+  const times = columnNamed(data, time)!;
+  if (times.kind !== 'number' && times.kind !== 'date') throw new SignalError('unevenTimes');
+  // A date column counts in days (fractional with a time of day); the rate is per second either way.
+  const scale = times.kind === 'date' ? 86_400 : 1;
+  return timedSignal(
+    rows.map((r) => times.values[r]! * scale),
+    samples,
+  );
+}

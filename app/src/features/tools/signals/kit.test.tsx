@@ -1,9 +1,9 @@
 // The signals and sound kit in a real browser: each tool opens from the picker, shows a result for its example,
 // works from the keyboard, puts its result in the page, and has no accessibility violations.
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { expectNoAxeViolations, renderUi } from '../../../test';
-import { INSERT_EVENT } from '../flags';
+import { INSERT_EVENT, SUBJECT_TABLES_EVENT } from '../flags';
 import { SignalsKit } from './kit';
 import { chooseSignalTool, restoreSignalInputs, type SignalToolId } from './meta';
 
@@ -64,10 +64,17 @@ function toneWav(freq: number): ArrayBuffer {
   return bytes.buffer;
 }
 
+/** The spectrum's answer line (the data field's summary is a status line too). */
+const peakLine = () =>
+  screen
+    .getAllByRole('status')
+    .map((line) => line.textContent ?? '')
+    .find((text) => text.startsWith('Largest peak')) ?? '';
+
 describe('signals and sound kit', () => {
   it('opens the spectrum analyzer at its example and reads the 10 Hz peak', async () => {
     const { container } = await openAt('spectrum');
-    expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/at (9\.9\d*|10(\.0\d*)?) Hz/);
+    expect(peakLine()).toMatch(/at (9\.9\d*|10(\.0\d*)?) Hz/);
     expect(screen.getByRole('table', { name: 'Bands' })).toBeTruthy();
     fireEvent.click(screen.getAllByRole('button', { name: 'Insert answer' })[0]!);
     expect(String(inserted[0]?.text)).toMatch(/Largest peak/);
@@ -79,9 +86,39 @@ describe('signals and sound kit', () => {
     const file = new File([toneWav(440)], 'tone.wav', { type: 'audio/wav' });
     fireEvent.change(screen.getByLabelText('Or open a sound file'), { target: { files: [file] } });
     expect(await screen.findByText(/Analyzing tone\.wav/, undefined, { timeout: 10_000 })).toBeTruthy();
-    expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/at 4(39|40|41)(\.\d*)? Hz/);
+    expect(peakLine()).toMatch(/at 4(39|40|41)(\.\d*)? Hz/);
     fireEvent.click(screen.getByRole('button', { name: 'Use the pasted samples' }));
-    expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/at (9\.9\d*|10(\.0\d*)?) Hz/);
+    expect(peakLine()).toMatch(/at (9\.9\d*|10(\.0\d*)?) Hz/);
+  });
+
+  it('reads a value and a time column from a table on the open page', async () => {
+    await openAt('spectrum');
+    // 200 rows at 5 ms of a 25 Hz sine: the peak is at 25 Hz and the times set the rate to 200 Hz.
+    const rows = Array.from({ length: 200 }, (_, i) => ({
+      cells: { c1: String(i / 200), c2: String(Math.sin((2 * Math.PI * 25 * i) / 200)) },
+    }));
+    const table = {
+      id: 't1',
+      type: 'table',
+      data: {
+        header: true,
+        columns: [{ id: 'c1' }, { id: 'c2' }],
+        rows: [{ cells: { c1: 't', c2: 'volts' } }, ...rows],
+      },
+    };
+    const answer = (event: Event) => {
+      (event as CustomEvent<{ blocks: unknown }>).detail.blocks = [table];
+    };
+    window.addEventListener(SUBJECT_TABLES_EVENT, answer);
+    fireEvent.click(screen.getByRole('button', { name: 'Find tables on the page' }));
+    window.removeEventListener(SUBJECT_TABLES_EVENT, answer);
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this table' }));
+    fireEvent.change(await screen.findByLabelText('Response'), { target: { value: 'volts' } });
+    fireEvent.change(screen.getByLabelText('Time'), { target: { value: 't' } });
+    await waitFor(() => expect(peakLine()).toMatch(/at 25(\.0\d*)? Hz/));
+    expect(screen.getByText(/Analyzing the volts column/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Use the pasted samples' }));
+    expect(peakLine()).toMatch(/at (9\.9\d*|10(\.0\d*)?) Hz/);
   });
 
   it('switches tools from the picker and from a palette command', async () => {

@@ -1,4 +1,4 @@
-// The spectrum analyzer: paste samples (or time and value), pick a window and a view, and read the spectrum, its
+// The spectrum analyzer: paste samples (or time and value), or pick columns of a table on the open page, pick a window and a view, and read the spectrum, its
 // peaks, band powers, and the window's corrections, with the steps. A second part finds damping from half-power
 // points that are typed in or read from the spectrum.
 import { useMemo, useRef, useState } from 'react';
@@ -8,7 +8,9 @@ import { decodeClip, MAX_SECONDS, type Clip } from '../audio/clip';
 import { WINDOWS, type WindowName } from '../shared/fft';
 import { fmt } from '../shared/num';
 import { HeatMap, Plot, type PlotHandle } from '../shared/Plot';
-import { exampleSignal, readSignal, samplesText } from '../shared/signalInput';
+import { exampleSignal, readSignal, samplesText, tableSignal } from '../shared/signalInput';
+import { ColumnPicker, DataField } from '../../subjects/ui/fields';
+import { readDataInput, type DataInput, type RoleSpec, type RoleValue } from '../../subjects/ui/input';
 import { step } from '../shared/steps';
 import {
   Answer,
@@ -74,12 +76,22 @@ const FIRST = {
   f1: '9.8',
   f2: '10.2',
   fn: '10',
+  /** A table read from the open page (or pasted into the data field), and which columns are the value and time. */
+  table: { text: '', table: null } as DataInput,
+  columns: {} as RoleValue,
 };
 type State = typeof FIRST;
 
+const TABLE_ROLES: readonly RoleSpec[] = [
+  { role: 'response', kinds: ['number'] },
+  { role: 'time', kinds: ['number', 'date'], optional: true },
+];
+
 /** A sound file stands in for the pasted samples while it is loaded; it is held for this visit only, never saved. */
 function analyse(state: State, sound: Clip | null) {
-  const signal = sound ? { samples: Array.from(sound.samples) } : readSignal(state.samples);
+  const signal = sound
+    ? { samples: Array.from(sound.samples) }
+    : (tableSignal(state.table, state.columns) ?? readSignal(state.samples));
   const rate = sound ? sound.rate : (signal.rate ?? num(state.rate));
   const input = {
     samples: signal.samples,
@@ -142,6 +154,33 @@ function SoundSource({ sound, setSound }: { sound: Clip | null; setSound(sound: 
         </Note>
       ) : null}
       {problem ? <Problem text={problem} /> : null}
+    </>
+  );
+}
+
+/** A table on the open page as the source: the value column, and a time column that sets the rate. */
+function TableSource({ state, set }: { state: State; set(patch: Partial<State>): void }) {
+  const data = useMemo(() => readDataInput(state.table), [state.table]);
+  const active = Boolean(state.table.text.trim() && typeof state.columns.response === 'string');
+  return (
+    <>
+      <DataField
+        label={t('kitSignals.spectrum.pageTable')}
+        value={state.table}
+        onChange={(table) => set({ table })}
+        data={data}
+      />
+      {data.columns.length ? (
+        <ColumnPicker data={data} roles={TABLE_ROLES} value={state.columns} onChange={(columns) => set({ columns })} />
+      ) : null}
+      {active ? (
+        <div className={styles.actions}>
+          <Note>{t('kitSignals.spectrum.tableNote', { column: String(state.columns.response) })}</Note>
+          <Button variant="quiet" onClick={() => set({ columns: {} })}>
+            {t('kitSignals.spectrum.usePasted')}
+          </Button>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -357,13 +396,14 @@ export function SpectrumTool() {
   return (
     <div className={styles.tool}>
       <SoundSource sound={sound} setSound={setSound} />
+      <TableSource state={state} set={set} />
       <SignalFields state={state} set={set} />
       <div className={styles.actions}>
         <Button
           variant="quiet"
           onClick={() => {
             setSound(null);
-            set({ samples: EXAMPLE, rate: '256', bands: BANDS });
+            set({ samples: EXAMPLE, rate: '256', bands: BANDS, columns: {} });
           }}
         >
           {t('kitSignals.ui.useExample')}

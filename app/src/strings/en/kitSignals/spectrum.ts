@@ -3,6 +3,8 @@
 export const spectrum = {
   samples: 'Samples',
   samplesHint: 'One value per line, or time and value on each line. Cells copied from a table paste this way too.',
+  pageTable: 'Table on the page',
+  tableNote: 'Analyzing the {column} column of the table; a time column, when chosen, sets the sample rate.',
   soundFile: 'Or open a sound file',
   soundNote:
     'Analyzing {name}: {seconds} s at {rate} Hz, in place of the pasted samples. Sound stays on this computer.',
