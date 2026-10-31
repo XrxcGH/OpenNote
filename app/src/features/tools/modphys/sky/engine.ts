@@ -70,6 +70,7 @@ export type SkyKey =
   | 'pathPlot'
   | 'azAxis'
   | 'eastAxis'
+  | 'westAxis'
   | 'northAxis'
   | 'noonJune'
   | 'noonEquinox'
@@ -532,10 +533,13 @@ export function planetsCalc(s: Site): Calc<SkyKey> {
   return { items, steps };
 }
 
-/** The stereographic place of an altitude and azimuth on a chart of the sky, north up and east right. */
+/**
+ * The stereographic place of an altitude and azimuth on a chart of the sky, north up and east LEFT: the chart is the
+ * sky seen from below, as when you hold it overhead, so it is the mirror of a plan view such as the sun-path diagram.
+ */
 const dome = (alt: number, az: number): [number, number] => {
   const r = tand((90 - alt) / 2);
-  return [r * sind(az), r * cosd(az)];
+  return [-r * sind(az), r * cosd(az)];
 };
 
 /** A chart of the sky at a site: the bright stars, the planets, the Moon, and the Sun above the horizon. */
@@ -552,6 +556,9 @@ export function skyChart(s: Site): Calc<SkyKey> {
     label: 'stars',
     sizes: up.map((one) => Math.max(1, 3.4 - 0.9 * one.star.mag)),
     names: up.map((one) => (one.star.mag < 1 ? one.star.name : '')),
+    // The constellation's abbreviation at its brightest star above the horizon (the list is brightest first).
+    tags: up.map((one, i) => (up.findIndex((other) => other.star.con === one.star.con) === i ? one.star.con : '')),
+    minorNames: true,
   };
   const planets = PLANETS.map((name) => ({ name, h: position(precess(planet(name, jd), jd), s, jd) })).filter(
     (one) => one.h.alt > 0,
@@ -615,7 +622,7 @@ export function skyChart(s: Site): Calc<SkyKey> {
     ],
     plot: {
       title: 'chartPlot',
-      xLabel: 'eastAxis',
+      xLabel: 'westAxis',
       yLabel: 'northAxis',
       series,
       x: [-1.05, 1.05],

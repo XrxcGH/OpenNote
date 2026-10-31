@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { julianDate, precess, sun } from './astro';
 import { BRIGHT_STARS } from './bright';
 import { planetsCalc, skyChart } from './engine';
+import { PRINT, plotTree, type SvgNode } from '../shared/plot';
 import { PLANETS, keplerE, orbit, planet } from './planets';
 
 describe('planets from the JPL approximate elements', () => {
@@ -73,5 +74,47 @@ describe('the sky chart and the planets form', () => {
     expect(chart.plot?.equal).toBe(true);
     const planets = chart.plot!.series.find((one) => one.label === 'planets')!;
     expect(planets.names?.length).toBe(planets.points.length);
+  });
+
+  it('puts east on the left, as the sky looks overhead', () => {
+    // At 22:00 UT on 2000-01-01 the sidereal time at Greenwich is about 4.72 h (GMST 6.664 h at 0 h plus 22 h × 1.0027),
+    // so Procyon (RA 7.66 h) is 2.9 h east of the meridian and Vega (RA 18.6 h) is 10.1 h west of it, 4° up in the north-west.
+    const stars = skyChart(at).plot!.series.find((one) => one.label === 'stars')!;
+    const at_ = (name: string) => stars.points[stars.names!.indexOf(name)]!;
+    expect(at_('Procyon')[0]).toBeLessThan(-0.2);
+    expect(at_('Vega')[0]).toBeGreaterThan(0.2);
+    expect(skyChart(at).plot!.xLabel).toBe('westAxis');
+  });
+
+  it('tags each constellation once and keeps the labels apart', () => {
+    const chart = skyChart(at);
+    const stars = chart.plot!.series.find((one) => one.label === 'stars')!;
+    const tags = stars.tags!.filter(Boolean);
+    expect(new Set(tags).size).toBe(tags.length);
+    // Orion's brightest star is Rigel (V 0.12), not Betelgeuse (V 0.50).
+    expect(stars.tags![stars.names!.indexOf('Rigel')]).toBe('Ori');
+    expect(stars.tags![stars.names!.indexOf('Betelgeuse')]).toBe('');
+    const texts: SvgNode[] = [];
+    const walk = (node: SvgNode | string) => {
+      if (typeof node === 'string') return;
+      if (node.tag === 'text') texts.push(node);
+      node.children?.forEach(walk);
+    };
+    walk(plotTree(chart.plot!, PRINT));
+    const bodies = texts.map((one) => String(one.children![0]));
+    // Every planet above the horizon keeps its name.
+    for (const name of chart.plot!.series.find((one) => one.label === 'planets')!.names!)
+      expect(bodies).toContain(name);
+    // No two labels on the chart overlap (11 px type, about 6 px a character).
+    const boxes = texts
+      .filter((one) => !one.attrs.transform && !one.attrs['text-anchor'])
+      .map((one) => {
+        const x = Number(one.attrs.x);
+        const y = Number(one.attrs.y);
+        return [x, y - 9, x + String(one.children![0]).length * 6, y + 2] as const;
+      });
+    boxes.forEach((b, i) =>
+      boxes.slice(i + 1).forEach((c) => expect(b[2] <= c[0] || c[2] <= b[0] || b[3] <= c[1] || c[3] <= b[1]).toBe(true)),
+    );
   });
 });

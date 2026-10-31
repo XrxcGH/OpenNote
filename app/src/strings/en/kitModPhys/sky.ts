@@ -72,6 +72,7 @@ export const sky = {
     pathPlot: 'Sun paths on the solstices and the equinox',
     azAxis: 'Azimuth (°)',
     eastAxis: 'East',
+    westAxis: '← East · West →',
     northAxis: 'North',
     noonJune: 'Noon altitude on the June solstice',
     noonEquinox: 'Noon altitude at an equinox',
@@ -107,8 +108,8 @@ export const sky = {
       'The JPL approximate elements are good to about 1′ for most planets and to about 10′ for Jupiter and ' +
       'Saturn from 1800 to 2050. Places are geometric, without aberration or nutation.',
     chart:
-      'The chart is drawn like a map of the sky: zenith at the center, north at the top, east to the right, ' +
-      'the horizon as the outer ring. It shows the stars brighter than about magnitude 2.5 and names those ' +
-      'brighter than 1.',
+      'The chart is drawn like a map of the sky: zenith at the center, north at the top, east to the left, as when ' +
+      'you look up, the horizon as the outer ring. It shows the stars brighter than about magnitude 2.5, names those ' +
+      'brighter than 1, and gives each constellation’s abbreviation at its brightest star.',
   },
 } as const;
