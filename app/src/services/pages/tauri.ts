@@ -190,6 +190,7 @@ function history(session: Session): PageHistory {
       const ack: TxnAck = await session
         .numbered((clientSeq) => core.historyRestoreBlocks({ page, client, clientSeq, revision, blocks: [...blocks] }))
         .catch(rejectAs);
+      if (ack.written === false) pageUnwritten(page, ack.seq);
       const { page: held } = await session.reread();
       const restored = held.blocks.filter((block) => blocks.includes(block.id));
       const present = new Set(restored.map((block) => block.id));
@@ -290,6 +291,8 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
       const heard = events(session, listeners<AppliedFrame>());
       const ink = inkListeners();
       const frame = (info: FrameInfo | null) => {
+        // An undo or redo is journaled like an edit: "Saving" until a save holds it, as for `send` below.
+        if (info?.written === false) pageUnwritten(pageId, info.seq);
         const made = info ? toFrame(info) : null;
         ink.emit(made?.ink);
         return made;

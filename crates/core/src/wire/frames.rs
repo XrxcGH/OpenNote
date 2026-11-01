@@ -28,6 +28,8 @@ pub struct AppliedFrame {
 pub struct FrameInfo {
     /// The journal sequence number of the change.
     pub seq: u64,
+    /// Whether the change is in the journal file, so an app crash no longer loses it (as `TxnAck.written`).
+    pub written: bool,
     /// What changed.
     pub changes: AppliedChanges,
     /// The selection to restore, opaque to the core.
@@ -90,6 +92,7 @@ mod tests {
         let block = BlockId(Id::from_parts(1, 2));
         let info = FrameInfo {
             seq: 9,
+            written: true,
             changes: AppliedChanges {
                 blocks_changed: vec![block],
                 ..AppliedChanges::default()
@@ -110,6 +113,7 @@ mod tests {
         assert_eq!(records, b"records");
         assert_eq!(json["seq"], 9);
         assert_eq!(json["canRedo"], true);
+        assert_eq!(json["written"], true);
         assert_eq!(json["texts"][block.to_string()], "Hello");
         assert_eq!(json["changes"]["blocksChanged"][0], block.to_string());
         assert_eq!(decode(&frame.bytes[..3]), Err(WireError::Truncated));

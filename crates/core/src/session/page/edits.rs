@@ -202,8 +202,11 @@ impl PageSession {
             .map(InkRecord::Stroke)
             .collect();
         let (can_undo, can_redo) = PageSession::undo_state(st, client);
+        // An undo or redo is journaled like any edit, so it says the same: "Saving" until a save holds it.
+        let written = self.journal().as_ref().is_some_and(|j| j.written(seq));
         let info = FrameInfo {
             seq,
+            written,
             changes: changes.clone(),
             ui,
             texts,

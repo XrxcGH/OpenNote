@@ -60,6 +60,21 @@ function fakeCore(pages: DecodedEnvelope[]) {
   };
 }
 
+const frameInfo = () => ({
+  seq: 1,
+  changes: { pageFields: false, blocksChanged: [], blocksRemoved: [], assetsChanged: [] },
+  ui: null,
+  texts: {},
+  blocks: [],
+  title: null,
+  tags: null,
+  view: null,
+  assets: [],
+  canUndo: true,
+  canRedo: false,
+  strokes: 0,
+});
+
 const images = {} as ImagesClient;
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -134,6 +149,20 @@ describe('the Tauri page service’s requests', () => {
     await page.send({ edits: [] });
     expect(pageWaiting(saveHealthStore.get())).toBe(true);
     emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+  });
+
+  it('keeps a page saving after a redo the core answers as not yet in its journal, until a save holds it', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    const redone = { ...frameInfo(), seq: 11, written: false };
+    Object.assign(calls, { pageRedo: vi.fn(() => Promise.resolve(redone)) });
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.redo();
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 10 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r3', at: AT, through: 11 });
     expect(pageWaiting(saveHealthStore.get())).toBe(false);
   });
 

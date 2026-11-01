@@ -6,11 +6,11 @@
 // says `core:stalled` while one command has held the core for too long, and `core:responsive` once it answers
 // again; the status says "Not responding" in between.
 //
-// A page's batch counts as sending from when its send queue takes it until the core answers. The core answers
-// once the edit is in its journal file, or, when the journal thread is slower than the core's wait or the journal
-// can't be written, with `written: false`: the page then counts as unwritten until a `core:saved` whose `through`
-// covers that edit. So "Saved" never shows over a stroke that only this process's memory holds, which a crash
-// would lose.
+// A page's batch counts as sending from when its send queue takes it until the core answers. An edit, an undo, a
+// redo, and a restore of blocks are each answered once the change is in the journal file. When the journal
+// thread is slower than the core's wait, or the journal can't be written, the answer says `written: false`. The
+// page then counts as unwritten until a `core:saved` whose `through` covers that change. So "Saved" never shows
+// over a stroke that only this process's memory holds, which a crash would lose.
 
 import { createStore } from '../../state/store';
 import type { SaveStatus } from '../notes';
