@@ -110,7 +110,7 @@ function TableControl({
   const id = `${base}-${field.id}`;
   const columns = field.columns.map((c) => label(c.label)).join(', ');
   return (
-    <div className={chem.wide}>
+    <div className={`${chem.wide} ${styles.tableBlock}`}>
       <div className={extra.field}>
         <label htmlFor={id}>{label(field.label)}</label>
         <textarea
