@@ -18,7 +18,8 @@
     "crates/intel-engines/tests/fixtures/**",
     "app/src/features/ink/pens/golden/*.txt",
     "crates/third_party/**",
-    "app/src/theme/fonts/**"
+    "app/src/theme/fonts/**",
+    "crates/*/fuzz/regressions/**"
   ],
   "rules": {
     "spelling": {
