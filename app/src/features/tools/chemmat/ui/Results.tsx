@@ -1,5 +1,6 @@
 // The answer of a tool: the result rows, the tables, the plot, the working with its equations, the assumptions, and
 // the sources. The rows are in a status region so a screen reader hears a changed answer.
+import '../text';
 import { useMemo } from 'react';
 import type { MessageKey } from '../../../../strings/t';
 import chem from '../../ui/chem.module.css';

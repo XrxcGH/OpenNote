@@ -1,5 +1,6 @@
 // The matrix console: type MATLAB-style commands or a short script and see the answers as MATLAB would print them.
 // Variables last for the session. Nothing is installed or sent anywhere: the commands run in this window.
+import '../text';
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';

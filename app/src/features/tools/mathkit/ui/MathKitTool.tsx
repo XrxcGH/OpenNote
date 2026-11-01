@@ -1,5 +1,6 @@
 // The engineering mathematics window: a tab for each tool, with arrow keys, Home and End to move between them. The
 // tab that was last open comes back, and a command from the palette can pick one.
+import '../text';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { followMathTab, savedMathTab, saveMathTab } from '../open';

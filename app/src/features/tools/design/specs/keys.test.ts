@@ -1,4 +1,5 @@
 // Every word a spec asks for exists in the strings: fields, choices, rows, tables, notes, plots, steps, and errors.
+import '../text';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

@@ -1,5 +1,6 @@
 // The body of the aerospace window: a tab for each tool, the unit system, and the chosen tool's panel. What was
 // typed in each tool and the unit system are remembered on this device, so closing the window loses nothing.
+import '../text';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../../strings/t';

@@ -1,5 +1,6 @@
 // The unit table is checked against the units reader in core/units: every shown unit, read back, has the
 // dimension and size the table says, so a US customary result is converted by a factor that is known to be right.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { parseUnit } from '../../../../core/units';
 import { KINDS, fromShown, readQuantity, toShown, typedUnit, unitOf, type Kind, type System } from './units';

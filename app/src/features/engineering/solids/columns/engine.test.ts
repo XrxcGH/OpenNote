@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { END_K, plateBuckling, secantStress, solveColumn } from './engine';
 

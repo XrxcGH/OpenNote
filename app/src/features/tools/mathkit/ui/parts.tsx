@@ -1,5 +1,6 @@
 // Pieces every tool of the kit shares: fields that keep their text between visits, an equation drawn by KaTeX, the
 // worked steps as a numbered list, a small line plot, and the buttons that put the work into the page.
+import '../text';
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';

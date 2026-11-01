@@ -1,5 +1,6 @@
 // Every tool of the kit solves from its own starting values, every message it can show exists in the strings with all
 // the variables it needs, and the meta list (read at start-up) matches the tools.
+import './text';
 import katex from 'katex';
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../strings/en';

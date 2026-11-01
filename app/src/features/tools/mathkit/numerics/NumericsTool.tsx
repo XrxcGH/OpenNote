@@ -1,6 +1,7 @@
 // Numerical methods: interpolation, differentiation, integration, differential equations, iterative solvers,
 // Newton's method, grids for Laplace, Poisson, and heat problems, curve fitting, and the fast Fourier transform. Each
 // shows the method, the first steps in full, a table, the error when the exact value is known, and a plot.
+import '../text';
 import { t } from '../../../../strings/t';
 import { Choice, Note, Problem, TextInput, say, useSolved, useStored } from '../ui/parts';
 import styles from '../ui/mathkit.module.css';

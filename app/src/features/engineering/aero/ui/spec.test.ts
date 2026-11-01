@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { kitAero } from '../../../../strings/en/kitAero';
 import { renderLatex } from '../../../math';

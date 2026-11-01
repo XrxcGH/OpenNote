@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { CalcError } from '../numeric';
 import { AIR_TABLE, WATER_TABLE, air, water, waterDensity } from './engine';

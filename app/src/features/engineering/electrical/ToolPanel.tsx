@@ -1,5 +1,6 @@
 // The body every tool in the kit shares: its fields, the answer, the assumptions, worked steps, a plot, and Insert.
 // A tool is only a ToolSpec; this draws it, so every tool behaves the same for the keyboard and a screen reader.
+import './text';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';

@@ -1,4 +1,5 @@
 // The fins form end to end, checked against the closed forms for a pin fin, an annular fin, and an array.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refusal, refuses, row, solver } from '../kit/testing';
 import { finsSpec } from './spec';

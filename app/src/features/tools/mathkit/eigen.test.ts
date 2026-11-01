@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { eigenvalues, realEigenvector, sortEigenvalues, spectralRadius, svd, symmetricEigen } from './eigen';
 

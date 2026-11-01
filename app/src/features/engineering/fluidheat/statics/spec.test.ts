@@ -1,4 +1,5 @@
 // The statics form end to end: typed text in, results out, checked against hand calculations.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { firstTexts, runTool } from '../kit/read';
 import { staticsSpec } from './spec';

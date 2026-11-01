@@ -1,3 +1,4 @@
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { HALF_REACTIONS, PRODUCTS } from '../data/halfReactions';
 import type { ToolSpec } from '../spec';

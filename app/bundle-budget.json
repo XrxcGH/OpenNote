@@ -1,25 +1,55 @@
 {
   "startup": {
-    "jsKb": 720,
+    "jsKb": 520,
     "cssKb": 27
   },
-  "after": {
-    "within": [
-      "features/page/",
-      "features/pages/",
-      "features/math/",
-      "features/tables/",
-      "editor/extensions/graphFence",
-      "@observablehq/plot",
-      "features/accounts/",
-      "core/audio",
-      "editor/",
-      "features/docstructure/",
-      "features/ink/",
-      "features/pdf/"
-    ],
-    "entry": "features/page/PageBody"
-  },
+  "after": [
+    {
+      "within": [
+        "features/page/",
+        "features/pages/",
+        "features/math/",
+        "features/tables/",
+        "editor/extensions/graphFence",
+        "@observablehq/plot",
+        "features/accounts/",
+        "core/audio",
+        "editor/",
+        "features/docstructure/",
+        "features/ink/",
+        "features/pdf/"
+      ],
+      "entry": "features/page/PageBody"
+    },
+    {
+      "within": "features/engineering/control/",
+      "entry": "features/engineering/control/ui/ControlKit"
+    },
+    {
+      "within": "features/engineering/aero/",
+      "entry": "features/engineering/aero/ui/KitAeroTool"
+    },
+    {
+      "within": "features/engineering/electrical/",
+      "entry": "features/engineering/electrical/KitElectricalTool"
+    },
+    {
+      "within": "features/engineering/fluidheat/",
+      "entry": "features/engineering/fluidheat/ui/FluidHeatKit"
+    },
+    {
+      "within": "features/engineering/mechdyn/",
+      "entry": "features/engineering/mechdyn/ui/MechDynKit"
+    },
+    {
+      "within": "features/engineering/solids/",
+      "entry": "features/engineering/solids/ui/SolidsKit"
+    },
+    {
+      "within": "features/engineering/thermo/",
+      "entry": "features/engineering/thermo/ui/ThermoKit"
+    }
+  ],
   "lazyKb": {
     "node_modules/mathlive/mathlive.min.mjs": 226,
     "node_modules/pdfjs-dist/build/pdf.mjs": 131,
@@ -48,7 +78,7 @@
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 73,
     "features/tools/index.ts": 359,
-    "features/engineering/control/ui/ControlKit.tsx": 454,
+    "features/engineering/control/ui/ControlKit.tsx": 480,
     "features/engineering/index.ts": 379,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
@@ -78,11 +108,13 @@
     "features/trash": 40,
     "features/updates": 40,
     "features/tools": 260,
-    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 451,
-    "features/engineering/mechdyn": 120,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 371,
-    "features/engineering/solids/ui/SolidsKit.tsx": 117,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 536
+    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 469,
+    "features/engineering/mechdyn/ui/MechDynKit.tsx": 142,
+    "features/engineering/electrical/KitElectricalTool.tsx": 48,
+    "features/engineering/mechdyn": 12,
+    "features/engineering/aero/ui/KitAeroTool.tsx": 387,
+    "features/engineering/solids/ui/SolidsKit.tsx": 138,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 553
   },
   "lazyDefaultKb": 40
 }

@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { expm } from '../dense';
 import { dopri45, fixedSteps } from '../integrators';

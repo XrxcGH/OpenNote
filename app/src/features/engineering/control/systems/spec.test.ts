@@ -1,4 +1,5 @@
 // The systems tool through the window's path: the plan's answers as shown, units, and problems on their fields.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { runTool } from '../ui/read';
 import { firstTexts } from '../ui/spec';

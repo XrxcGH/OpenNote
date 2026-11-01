@@ -1,4 +1,5 @@
 // The circuits and energy window: tabs, a live answer, a problem in words, and Insert into the page.
+import './text';
 import { screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

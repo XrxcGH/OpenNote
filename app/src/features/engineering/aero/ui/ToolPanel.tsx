@@ -1,6 +1,7 @@
 // One tool of the aerospace window: its form, the answer with units in the chosen system, plots, worked steps and
 // the Insert buttons. The tool's spec supplies the fields and the calculation; everything else is drawn here, so
 // every tool looks and behaves the same, with labeled fields and results readable as text.
+import '../text';
 import { createElement, useEffect, useId, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { t } from '../../../../strings/t';

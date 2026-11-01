@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: the sheet is one component that holds the drawing, its history, and the tool
+import '../text';
 
 // The drafting sheet: 2D engineering sketches with the usual line types, live dimensions that follow the geometry, a
 // scale, dual units, and a title block. It is drafting paper with tools, not a CAD program. The picture goes into the

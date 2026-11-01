@@ -1,5 +1,6 @@
 // Atoms and bonding: an element's configuration and trends (from the reference tables), formal charge, VSEPR shapes with
 // hybridization, and molecular-orbital filling for the homonuclear diatomics of the first two periods.
+import '../text';
 import { ELEMENTS } from '../../reference/data';
 import type { Element } from '../../reference/data';
 import { latexNumber } from '../chemText';

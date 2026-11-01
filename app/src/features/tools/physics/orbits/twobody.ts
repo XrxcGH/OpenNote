@@ -1,5 +1,6 @@
 // The orbital mechanics tool's two-body calculations: an orbit from its apses or period, state vector to elements
 // and back, Kepler's equation, and propagation by universal variables.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { fmt, q } from '../kit/format';
 import { fail } from '../kit/read';

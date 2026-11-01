@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { bearing, drawDoc, sheetSize, toSvg } from './draw';
 import type { PathPrim, TextPrim, TitleLabels } from './draw';

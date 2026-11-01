@@ -1,6 +1,7 @@
 // Probability distributions: the probability of a region, quantiles, the mean and variance, and the data to draw
 // the density with the region shaded, for four discrete and ten continuous distributions. Values come from the
 // special functions (computed here, never looked up in a printed table).
+import '../text';
 
 import { ControlError } from '../lib/errors';
 import { linspace } from '../lib/num';

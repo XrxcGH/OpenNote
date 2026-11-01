@@ -2,6 +2,7 @@
 // people. Every tool's spec runs on its first values and each example, in SI and US units. Every message it names
 // is in the strings, with every placeholder filled.
 /* eslint-disable opennote/feature-boundaries -- The tests hand the engines the math feature's algebra directly. */
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { t } from '../../../../strings/t';
 import { MECHDYN_TOOLS } from '../meta';

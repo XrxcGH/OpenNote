@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { CAM_DEFAULTS, camMotion, pressureAngleAt, solveCam, type CamInput, type CamLaw } from './engine';
 

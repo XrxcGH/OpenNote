@@ -1,6 +1,7 @@
 // Frequency response against the plan's cases and closed forms: crossovers solved by bisection on the polynomial
 // |L(jω)|² = 1, phase margins from arctangents, the second-order bandwidth and peak formulas, and Nyquist counts
 // checked against the closed loop's own roots.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ControlError } from '../lib/errors';
 import { readTF, rootsOf } from '../lib/tf';

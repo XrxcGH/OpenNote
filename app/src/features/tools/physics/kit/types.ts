@@ -2,6 +2,7 @@
 // steps and plot data, never text in a language. Steps and labels name a message key in the kitPhysics namespace and
 // the values to fill it with, so the window can say them and a test can check them. The shapes follow the tool-kit
 // contract (KitStep, KitToolProps, KitInsert), so the tools move into a shared kit window without changes.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import type { Reader } from './read';
 import type { DimId } from './units';

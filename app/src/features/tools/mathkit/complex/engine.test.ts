@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { c, formatC, readComplex, evaluateTree } from './cmath';
 import { contourIntegral, evaluateValue, findPoles, improperIntegral, mapGrid, nthRoots, trigIntegral } from './engine';

@@ -1,4 +1,5 @@
 // The heat exchanger form end to end, checked against energy balances, then the effectiveness-NTU relations.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refusal, refuses, row, solver } from '../kit/testing';
 import { valueLatex, valueText } from '../kit/format';

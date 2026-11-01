@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { PAGE } from './kit/plot';
 import type { Cube } from './views';

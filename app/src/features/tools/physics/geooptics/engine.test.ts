@@ -1,5 +1,6 @@
 // The geometric optics and Gaussian beams tool against its validation cases (first principles) and independent
 // working: Newton's form of the lens equation, a ray traced by hand, matrix determinants, and beam identities.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { specProblems } from '../kit/checkSpec';
 import { problem, runMode, value } from '../kit/run';

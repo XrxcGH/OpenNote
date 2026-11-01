@@ -1,4 +1,5 @@
 // The dimensional analysis form end to end.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refusal, refuses, row, solver } from '../kit/testing';
 import { dimensionalSpec } from './spec';
