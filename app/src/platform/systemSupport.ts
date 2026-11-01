@@ -16,11 +16,7 @@ export type SystemLimit =
   | 'syncKeyring'
   | 'penPressure';
 
-const BOTH: readonly SystemLimit[] = [
-  'hello',
-  'shareTarget',
-  'windowTools',
-];
+const BOTH: readonly SystemLimit[] = ['hello', 'shareTarget', 'windowTools'];
 
 const LIMITS: Record<HostSystem, readonly SystemLimit[]> = {
   windows: [],

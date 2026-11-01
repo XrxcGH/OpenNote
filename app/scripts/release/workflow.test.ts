@@ -364,7 +364,9 @@ describe('the files that get signed', () => {
   });
 
   it('carry the opennote command in the Mac and Linux bundles, each Mac processor with its own build', () => {
-    const step = stepsOf(jobs.build).find((text) => text.startsWith('name: Build the opennote command (macOS and Linux)'));
+    const step = stepsOf(jobs.build).find((text) =>
+      text.startsWith('name: Build the opennote command (macOS and Linux)'),
+    );
     expect(step).toBeDefined();
     expect(step).toContain("if: runner.os != 'Windows'");
     // The names build.rs reads: one tool for each processor of the universal app, one for the Linux build.

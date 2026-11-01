@@ -91,7 +91,11 @@ function changeNow(state: TextState, markdown: string, cache: MarkdownCache): Ex
   return ranged !== 'full' ? ranged : minimalReplacement(state.doc, parseTextBlock(markdown));
 }
 
-async function textChange(state: TextState, markdown: string, cache: MarkdownCache): Promise<Exclude<Reparse, 'full'> | null> {
+async function textChange(
+  state: TextState,
+  markdown: string,
+  cache: MarkdownCache,
+): Promise<Exclude<Reparse, 'full'> | null> {
   if (bytes(markdown) <= WORKER_PARSE_BYTES) return changeNow(state, markdown, cache);
   const ranged = reparseRange(state.doc, state.markdown, markdown, cache);
   if (ranged !== 'full') return ranged;
