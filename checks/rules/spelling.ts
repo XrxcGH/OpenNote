@@ -9,6 +9,34 @@ import { matchesAny } from '../glob.ts';
 import { matchCase, stripQuotes } from '../text.ts';
 import { loadData, reporter } from './helpers.ts';
 
+/** A path that names a whole directory or every file in one: never honored, so an exception stays narrow. */
+const WHOLE_DIRECTORY = /(^|\/)\*+(\.\w+)?$|\/$|\/\*\*$/;
+
+export interface AllowEntry {
+  word: string;
+  /** Optional exact path or glob; with no path the word is allowed everywhere (a proper noun). */
+  path?: string;
+  reason: string;
+}
+
+/** The entries of checks/american-allow.json that name a word and give a reason. An entry with no reason is ignored. */
+export function allowEntries(text: string | undefined): AllowEntry[] {
+  if (!text) return [];
+  try {
+    const list = (JSON.parse(text) as { allow?: AllowEntry[] }).allow ?? [];
+    return list.filter(
+      (e) =>
+        typeof e.word === 'string' &&
+        e.word &&
+        typeof e.reason === 'string' &&
+        e.reason.trim() &&
+        !WHOLE_DIRECTORY.test(e.path ?? ''),
+    );
+  } catch {
+    return [];
+  }
+}
+
 interface SpellingData {
   suffixSets: Record<string, [string, string][]>;
   stems: { set: string; pairs: Record<string, string> }[];
@@ -34,7 +62,13 @@ export function americanDictionary(): Map<string, string> {
 }
 
 // The interface strings in app/src/strings/en are read by the ui-voice rule, which runs this rule on each value.
-const DEFAULT_STRING_FILES = ['app/src/**/*.tsx', 'app/src-tauri/src/**/*.rs', 'crates/*/src/**/*.rs'];
+const DEFAULT_STRING_FILES = [
+  'app/src/**/*.ts',
+  'app/src/**/*.tsx',
+  'extensions/**/*.js',
+  'app/src-tauri/src/**/*.rs',
+  'crates/*/src/**/*.rs',
+];
 const SKIPPED_FILE = /(\.test\.|\/tests?\/|\/fixtures?\/|\/bindings\/|\/golden\/)/;
 const SKIPPED_LINE = /^\s*(\/\/|\/\*|\*|import\b|export\s+\*|use\s)|\bfrom\s+['"]/;
 const TS_STRING = /'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g;
@@ -68,6 +102,10 @@ export const spelling: Rule = {
     const report = reporter('spelling', file);
     const dict = americanDictionary();
     const allowed = new Set(stringList(ctx.settings, 'allow').map((w) => w.toLowerCase()));
+    const entries = allowEntries(ctx.readRepoFile('checks/american-allow.json'));
+    for (const e of entries) {
+      if (!e.path || matchesAny(file.path, [e.path])) allowed.add(e.word.toLowerCase());
+    }
     const findings: Finding[] = [];
     for (const prose of [...file.prose(), ...stringProse(file, stringList(ctx.settings, 'strings'))]) {
       for (const word of stripQuotes(prose.text).match(/[A-Za-z]+/g) ?? []) {
