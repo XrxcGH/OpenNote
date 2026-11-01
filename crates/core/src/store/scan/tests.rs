@@ -351,3 +351,43 @@ fn p11_a_renamed_folder_with_a_move_mark_finishes_its_move() {
     ])
     .unwrap();
 }
+
+/// The nightly fuzzer's notebook_tree crash: a page on its way back from one Trash item that a second item also
+/// holds. The first scan finished the restore, and only the second scan then finished the other deletion. Both
+/// now happen in the first scan, so the second one changes nothing and the page isn't lost.
+#[test]
+fn a_restore_and_a_second_deletion_of_one_page_settle_in_one_scan() {
+    let (kit, mut store, [s1, _], pages) = setup();
+    let page = pages[0];
+    let first = store.delete(&[NodeRef::Page(page)], TrashReason::Deleted).unwrap()[0];
+    let mut second = store.trash[&first].file.clone();
+    second.id = crate::id::TrashItemId::generate(kit.clock.as_ref());
+    let second_dir = store.layout.trash_item_dir(second.id);
+    kit.fs.inner.put(
+        &second_dir.join(crate::store::layout::ITEM_JSON),
+        &kit.codec.write_trash_item(&second),
+    );
+    let entries = match &second.origin {
+        crate::model::TrashOrigin::Pages { entries, .. } => entries.clone(),
+        _ => Vec::new(),
+    };
+    let mut entry = entries.first().cloned().expect("a page's Trash item");
+    entry.moving = Some(Moving::FromTrash(first));
+    store.sections.get_mut(&s1).unwrap().file.pages.push(entry);
+    store.write_section(s1).unwrap();
+
+    let mut fresh = kit.open().unwrap();
+    fresh.scan().unwrap();
+    let before = snapshot(&kit.fs.inner);
+    let again = fresh.scan().unwrap();
+    assert!(!again.changed_files(), "{again:?}");
+    assert!(snapshot(&kit.fs.inner) == before, "a second scan changed the notebook");
+    let in_trash = second_dir.join(page.to_string()).join(PAGE_JSON);
+    assert!(kit.fs.inner.get(&in_trash).is_some(), "the page is kept in Trash");
+    let shown = fresh
+        .sections
+        .values()
+        .flat_map(|s| s.file.pages.iter())
+        .filter(|e| e.id == page);
+    assert!(shown.count() <= 1, "the page is listed once at most");
+}

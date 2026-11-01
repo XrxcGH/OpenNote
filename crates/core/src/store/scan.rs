@@ -41,10 +41,17 @@ impl NotebookStore {
     /// deletions go into their Trash items, and folders of pages marked as moving go to their sections. A
     /// folder that can't move yet, because a file inside is held open, stays where it is. Its page is read and
     /// saved there until a retry succeeds.
+    ///
+    /// A finished move can bring a folder to where a pending deletion looks for it, such as a page restored
+    /// from one Trash item that another item also holds. The deletions then run once more, so one pass finishes
+    /// everything and a second scan finds nothing left to do (property P11).
     pub fn finish_pending(&mut self) -> Result<(), CoreError> {
         self.pending.clear();
         self.finish_deletions();
-        self.finish_moves()?;
+        if self.finish_moves()? {
+            self.mark_pending();
+            self.finish_deletions();
+        }
         self.mark_pending();
         Ok(())
     }
@@ -108,8 +115,8 @@ impl NotebookStore {
     /// A restore ends by deleting `item.json` before it clears its marks, the reverse of the order spec 12.3
     /// lists for step 5. A crash between the two then leaves marks whose folders already arrived, and the next
     /// run clears them. The other order could leave an `item.json` that makes the restored pages look like a
-    /// pending deletion.
-    fn finish_moves(&mut self) -> Result<(), CoreError> {
+    /// pending deletion. Returns whether any folder arrived.
+    fn finish_moves(&mut self) -> Result<bool, CoreError> {
         let marked: Vec<(SectionId, PageId, Moving, PathBuf)> = self
             .sections
             .values()
@@ -121,6 +128,7 @@ impl NotebookStore {
             })
             .collect();
         let arrived = self.move_marked(&marked)?;
+        let any_arrived = !arrived.is_empty();
         let trash = &self.trash;
         let clear = |moving: Option<Moving>, page: PageId| match moving {
             Some(Moving::From(_)) => arrived.contains(&page),
@@ -144,7 +152,7 @@ impl NotebookStore {
             }
             self.write_section(section)?;
         }
-        Ok(())
+        Ok(any_arrived)
     }
 
     /// Moves the folders of marked pages. Deletes each Trash item whose pages all came back. Returns the pages
@@ -200,6 +208,8 @@ impl NotebookStore {
                 true
             }
             Err(e) if e.kind == FsErrorKind::NotFound => false,
+            // A second pass of the same scan meets the same held folder: it is told and retried once.
+            Err(_) if self.pending.iter().any(|p| p.id == id && p.from == from) => false,
             Err(e) => {
                 self.notices
                     .push(Warning::new("tree.folderBusy", format!("{}: {e}", from.display())));
