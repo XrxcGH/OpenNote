@@ -44,6 +44,7 @@ pub mod paths;
 pub mod perf;
 pub mod platform_flags;
 pub mod print_job;
+pub mod print_native;
 pub mod settings;
 pub mod share;
 pub mod shell;

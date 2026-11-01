@@ -317,7 +317,8 @@ fn start_devtools_print(
         .map_err(IpcError::from)
 }
 
-/// PDF and printing go through WebView2's PrintToPdf, which WKWebView and WebKitGTK don't have (ADR 0055).
+/// Windows prints through WebView2's PrintToPdf; macOS and Linux through the web view's own print operation
+/// (print_native.rs). Only a system with neither answers like this.
 #[cfg(not(windows))]
 fn pdf_unavailable() -> IpcError {
     IpcError::new(
@@ -394,7 +395,10 @@ fn start_print(
         .map_err(IpcError::from)
 }
 
-#[cfg(not(windows))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+use crate::print_native::start_print;
+
+#[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
 fn start_print(
     _window: &WebviewWindow,
     _file: PathBuf,
