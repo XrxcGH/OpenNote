@@ -1,5 +1,6 @@
 // The linear algebra workbench: type a matrix (fractions allowed) and choose what to do with it. Every row operation,
 // cofactor, and projection is written out, with the answer in exact fractions where the method allows it.
+import '../text';
 import { t } from '../../../../strings/t';
 import { NumView, lineText } from '../numerics/NumView';
 import styles from '../ui/mathkit.module.css';

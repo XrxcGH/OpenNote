@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { kitThermo } from '../../../../strings/en/kitThermo';
 import type { ThermoResult } from '../common/types';

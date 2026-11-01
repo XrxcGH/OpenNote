@@ -2,6 +2,7 @@
 // goes back into the explicit pressure equation, and departures and fugacity are integrated numerically from
 // p(T, v). The critical point of each equation, the saturation pressure where the two roots' fugacities meet, and
 // mixtures worked from the NASA molar values are checked too.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { brent, cubicRoots, integrate } from '../common/num';
 import { ThermoError, type ThermoResult } from '../common/types';

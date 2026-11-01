@@ -1,4 +1,5 @@
 // The waves and sound tool against its validation cases (first principles) and an independent working of each.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { specProblems } from '../kit/checkSpec';
 import { problem, runMode, value } from '../kit/run';

@@ -1,6 +1,7 @@
 // A physics tool's answer: the main results in a status region a screen reader hears, a table of every result in
 // the window's unit system, the governing equation, the worked steps, the figure, the assumptions, and the Insert
 // buttons. A problem with the inputs shows instead, saying which field to fix.
+import '../text';
 import { useEffect, useState } from 'react';
 import 'katex/dist/katex.min.css';
 import { t } from '../../../../strings/t';

@@ -1,5 +1,6 @@
 // The finite wing tool's form: the planning cases through the fields, an angle typed in radians, 2*pi as a lift
 // slope, and forces only when an airspeed is given.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec, unitKey } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';

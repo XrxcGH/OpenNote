@@ -1,6 +1,7 @@
 // A table beside a tool's answer, such as an engine's stations. It has a caption, column headings with the unit of
 // the chosen system, row headings, and an Insert button that puts the same table on the page. It scrolls sideways on
 // its own at narrow widths, and the scroll area takes focus so the keyboard can move it.
+import '../text';
 import { useId } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';

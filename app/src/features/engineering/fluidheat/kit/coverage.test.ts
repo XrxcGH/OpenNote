@@ -1,5 +1,6 @@
 // Every tool works its examples and its first problem, and every word the window would look up exists in the
 // strings: the labels, choices, hints, result rows, notes, plot names, tables, and the worked steps.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../../strings/en';
 import { FLUIDHEAT_TOOLS } from '../meta';

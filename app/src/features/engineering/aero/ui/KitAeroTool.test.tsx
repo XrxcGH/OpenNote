@@ -1,4 +1,5 @@
 // The aerospace window: tabs by keyboard, a live answer, units that switch, a problem in words, and Insert.
+import '../text';
 import { screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

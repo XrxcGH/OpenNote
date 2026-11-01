@@ -1,5 +1,6 @@
 // The specs turn typed fields into engine calls and engine numbers into rows. These tests check the whole path against
 // a hand calculation, and that every example the window offers works.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { firstTexts, firstUnits, runTool } from '../kit/read';
 import type { Outcome, ToolSpec } from '../kit/spec';

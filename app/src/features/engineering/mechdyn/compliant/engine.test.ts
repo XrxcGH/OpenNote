@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { COMPLIANT_DEFAULTS, elastica, solveCompliant, type CompliantInput } from './engine';
 

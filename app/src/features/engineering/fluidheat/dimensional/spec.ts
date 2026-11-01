@@ -1,5 +1,6 @@
 // The dimensional analysis tool's form and results: the dimensionless groups of a list of variables, and the speed
 // and force that match a model to a prototype.
+import '../text';
 import { parseUnit } from '../../../../core/units';
 import { t, type MessageKey } from '../../../../strings/t';
 import { fail, q, type KitStep } from '../kit/types';

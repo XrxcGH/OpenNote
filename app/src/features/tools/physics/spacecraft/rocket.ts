@@ -1,5 +1,6 @@
 // The spacecraft sizing tool's propulsion calculations: the rocket equation, staging, optimal staging, and the
 // delta-v and mass budgets.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { G0 } from '../kit/constants';
 import { fmt, q, qIn } from '../kit/format';

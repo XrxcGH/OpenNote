@@ -1,5 +1,6 @@
 // The orbital maneuvers tool. Its calculations, in the order the window lists them: Hohmann transfer (with a plane
 // change at the second burn); bi-elliptic transfer; plane change; phasing orbit; Lambert's problem.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { fmt, q } from '../kit/format';
 import type { Reader } from '../kit/read';

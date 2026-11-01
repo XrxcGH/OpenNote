@@ -1,5 +1,6 @@
 // The jet engine tool's form: the ideal turbojet from typed ambient values, the atmosphere at altitude, a
 // non-ideal turbofan, the station table, the optional mass flow, and the US system.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { atmosphere } from '../atmosphere/engine';
 import { initialValues, runSpec, visibleFields } from '../ui/spec';

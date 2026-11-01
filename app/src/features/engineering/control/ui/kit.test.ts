@@ -1,5 +1,6 @@
 // Every tool of the kit, run through the window's own path: each example and the first texts give results, every
 // key the tool builds has words in the strings with the values they name, and every plot draws.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../../strings/en';
 import { CONTROL_TOOLS } from '../meta';

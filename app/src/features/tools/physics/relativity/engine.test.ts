@@ -1,4 +1,5 @@
 // The special relativity tool against its validation cases (first principles) and independent working.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { C, M_E, MEV } from '../kit/constants';
 import { specProblems } from '../kit/checkSpec';

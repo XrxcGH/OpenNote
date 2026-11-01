@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { frames, ik2R, jacobian, ROBOTKIN_DEFAULTS, solveRobotKin, SPATIAL_RRR, type DhRow } from './engine';
 

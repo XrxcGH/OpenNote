@@ -1,5 +1,6 @@
 // Fourier series and boundary value problems: the coefficients of a piecewise function with a partial-sum plot, and
 // the heat, wave, and Laplace equations solved by separation of variables.
+import '../text';
 import { t } from '../../../../strings/t';
 import { numberOf } from '../expr';
 import { fmt } from '../numeric';

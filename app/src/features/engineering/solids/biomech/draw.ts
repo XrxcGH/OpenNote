@@ -1,5 +1,6 @@
 // A free-body sketch of the segment: the joint, the segment at its angle, the muscle's pull, the weights, and the
 // joint's reaction, each arrow scaled by its force and labeled with it.
+import '../text';
 import { numberText } from '../kit/format';
 import { svg, text, W, H, type DrawContext } from '../kit/picture';
 import { toShown, unitOf } from '../kit/units';

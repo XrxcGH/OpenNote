@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { solveSdof, SDOF_DEFAULTS, type SdofInput } from './engine';
 

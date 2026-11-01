@@ -1,6 +1,7 @@
 // The thermodynamics kit window: every tool opens with an answer from its first values, the tabs follow the ARIA
 // pattern, a changed input works the problem again, the unit system switches the results, and Insert puts the answer
 // on the page. The window passes axe.
+import '../text';
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

@@ -1,5 +1,6 @@
 // R-134a against the reference values of the Tillner-Roth and Baehr equation, and against itself: thermodynamic
 // consistency of every derivative, and equal Gibbs energy at saturation.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { RHO_C, T_C, saturationP, saturationT, stateRhoT } from './eos';
 

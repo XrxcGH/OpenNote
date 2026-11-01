@@ -1,4 +1,5 @@
 // The conduction form end to end, checked against hand-built thermal circuits.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { conductionSpec } from './spec';

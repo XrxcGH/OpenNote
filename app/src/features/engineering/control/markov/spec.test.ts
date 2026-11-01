@@ -1,4 +1,5 @@
 // The Markov tool through the window's path: the answers it reports for the plan's cases.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { runTool } from '../ui/read';
 import { firstTexts } from '../ui/spec';

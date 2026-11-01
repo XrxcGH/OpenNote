@@ -1,6 +1,7 @@
 // Cycles against the published validation values, then against independent hand calculations: closed-form
 // air-standard efficiencies, the first law around every cycle, textbook Rankine plants, and the inputs no cycle
 // can have.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ThermoError, type ThermoResult } from '../common/types';
 import { fromPS, fromPX } from '../steam/water';

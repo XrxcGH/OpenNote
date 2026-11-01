@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { buffer, fractions, parseConstants, solution, speciesAtPh, titration, titrationPh } from './engine';
 import type { Outcome } from '../types';

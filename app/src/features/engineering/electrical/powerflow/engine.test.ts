@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { cAbs, cAdd, cConj, cMul, cPolar, toDegrees } from '../shared';
 import { initialValues, runTool } from '../spec';

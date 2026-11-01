@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { SolidsError } from '../kit/types';
 import { firstMoment, sectionProperties, shearCenter, type Placed } from './engine';

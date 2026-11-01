@@ -1,6 +1,7 @@
 // Pictures of finite element models: a truss or frame with its deformed shape drawn over it (frames bent with
 // their Hermite shape functions), and a meshed plate shaded by a value in each element, with the scale's ends
 // labeled. Deformations are magnified so the largest is a tenth of the model's size; the label says by how much.
+import '../text';
 import { numberText } from '../kit/format';
 import { svg, text, W, H, type DrawContext } from '../kit/picture';
 import { toShown, unitOf, type Kind } from '../kit/units';

@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { cell } from './engine';
 import { cellFromNotation } from './notation';

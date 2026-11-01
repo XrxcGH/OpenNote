@@ -1,0 +1,21 @@
+{
+  "spike": "S3 image memory",
+  "browser": "Microsoft Edge 156.0.4314.50",
+  "machine": "win32 x64",
+  "images": 24,
+  "megapixels": 12,
+  "displayWidthPx": 640,
+  "unit": "MB of working set added over the empty page, summed over every browser process",
+  "full": {
+    "baselineMb": 749.59765625,
+    "peakMb": 97.3984375,
+    "settledMb": 29.8828125,
+    "visibleMb": 3.5234375
+  },
+  "rendition": {
+    "baselineMb": 680.6875,
+    "peakMb": 108.47265625,
+    "settledMb": 25.328125,
+    "visibleMb": 17.7578125
+  }
+}

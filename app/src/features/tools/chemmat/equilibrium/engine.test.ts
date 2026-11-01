@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { iceTable, kcKp, parseEquilibrium, solubility } from './engine';
 import type { Outcome } from '../types';

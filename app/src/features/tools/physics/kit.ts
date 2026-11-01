@@ -1,4 +1,5 @@
 // The physics kit: each tool's tab title and its component, which loads the first time the tab opens.
+import './text';
 import { lazy } from 'react';
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { MessageKey } from '../../../strings/t';

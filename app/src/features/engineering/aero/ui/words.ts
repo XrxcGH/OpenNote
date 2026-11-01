@@ -1,5 +1,6 @@
 // Turns the keys that specs and engines name into words: a tool's section of the kitAero strings, values that point
 // at other keys ("@layer.troposphere"), problems, and numbers with units in the chosen system.
+import '../text';
 import { kitAero } from '../../../../strings/en/kitAero';
 import { t } from '../../../../strings/t';
 import { AeroError, num } from '../common';

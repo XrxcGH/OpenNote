@@ -1,6 +1,7 @@
 // The physics tools window: a tool picker, the unit system, and the tool that is shown. With 9 tools a list box
 // stays one row high at any width, where a row of tabs would fill a narrow window. The window remembers its tool, its
 // unit system, and what was typed in each tool.
+import '../text';
 import { Suspense, useEffect, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { PHYSICS_KIT } from '../kit';

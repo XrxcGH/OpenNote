@@ -1,4 +1,5 @@
 // The fields of each numerical method: what to ask for, in the order a student works.
+import '../text';
 import type { ReactNode } from 'react';
 import { Choice, say } from '../ui/parts';
 import type { State, Topic } from './numericsRun';

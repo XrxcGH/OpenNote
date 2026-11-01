@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: one describe block per feature
+import '../text';
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';

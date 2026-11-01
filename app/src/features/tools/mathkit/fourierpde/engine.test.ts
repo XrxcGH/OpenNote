@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { eigenpairs, fourierSeries, readPieces, recognizePattern, solveBvp, solveLaplace } from './engine';
 

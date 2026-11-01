@@ -1,6 +1,7 @@
 // The shapes every thermodynamics engine returns: worked steps, result rows with their kind of quantity, plots,
 // and errors in words a student can act on. Engines are pure: no DOM, no React, and no t(); the window turns the
 // keys into sentences.
+import '../text';
 import type { kitThermo } from '../../../../strings/en/kitThermo';
 import type { DottedKeys } from '../../../../strings/t';
 import type { Qty, System } from './units';

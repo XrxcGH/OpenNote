@@ -1,4 +1,5 @@
 // The convection form end to end, checked against the published correlations written out again.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { convectionSpec } from './spec';

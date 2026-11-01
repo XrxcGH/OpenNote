@@ -1,4 +1,5 @@
 // checks-disable-file modifiability, length: the tracer is one component that holds the run and the step
+import '../text';
 
 // The memory and pointer tracer: a short C++ snippet is run one statement at a time over a simulated memory, and each
 // step shows the stack, the heap and every pointer as boxes and arrows, the output, and any warning. The picture is

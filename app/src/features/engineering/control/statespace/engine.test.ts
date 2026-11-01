@@ -1,5 +1,6 @@
 // State-space design against the plan's cases and independent checks: closed-loop characteristic polynomials by
 // Leverrier, the Riccati residual, closed forms for scalar systems, and the separation principle.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { ControlError, readNumberMatrix } from '../lib/errors';
 import { add, leverrier, MatError, mul, type Mat } from '../lib/linalg';

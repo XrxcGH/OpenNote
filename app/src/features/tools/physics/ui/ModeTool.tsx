@@ -1,5 +1,6 @@
 // One physics tool: a choice of calculation when it has several, its fields, and the answer, which updates as the
 // person types. What was typed in each calculation is kept, so switching back finds it again.
+import '../text';
 import { useMemo } from 'react';
 import { t } from '../../../../strings/t';
 import { currentInputs, readState, solveMode } from '../kit/read';

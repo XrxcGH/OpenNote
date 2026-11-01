@@ -1,5 +1,6 @@
 // The nozzle tool's form: the planning cases through the fields, US units that give the same answer, the regime
 // as the headline, and the shock rows only when a shock stands in the nozzle.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec, unitKey } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';
