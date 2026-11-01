@@ -37,6 +37,10 @@ on:
         description: Minutes of random editing in the soak
         type: number
         default: 120
+      soak_seed:
+        description: Seed of the soak's random edits, to replay a night (empty uses the run number)
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -149,6 +153,8 @@ jobs:
     env:
       KILLS: ${{ inputs.kills || '1000' }}
       KILL_NOTEBOOK: ${{ github.workspace }}/kill-notebook
+      # The device-local data folder: the journal and the manifest the harness checks the notebook against.
+      KILL_DATA: ${{ github.workspace }}/kill-data
       # Optimized code runs more saves in the same time than debug code, and keeps debug assertions.
       CARGO_PROFILE_DEV_OPT_LEVEL: 2
     steps:
@@ -167,13 +173,15 @@ jobs:
         run: |
           mkdir -p "$KILL_NOTEBOOK"
           echo "Seed: $GITHUB_RUN_ID"
-          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
+          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --data "$KILL_DATA" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
       - name: Keep the notebook the harness checked
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: kill-notebook
-          path: kill-notebook
+          path: |
+            kill-notebook
+            kill-data
           if-no-files-found: ignore
           retention-days: 30
 
@@ -302,14 +310,14 @@ jobs:
   soak:
     # A scripted person edits one long note at random for two hours and the job holds memory, nodes, and typing
     # time flat from the first quarter to the last (A4-35, tests/soak). The seed is the run number, so a failure
-    # can be replayed with OPENNOTE_SOAK_SEED.
+    # can be replayed with OPENNOTE_SOAK_SEED, or on Actions with the soak_seed input.
     runs-on: ubuntu-latest
     timeout-minutes: 200
     permissions:
       contents: read
     env:
       OPENNOTE_SOAK_MINUTES: ${{ inputs.soak_minutes || '120' }}
-      OPENNOTE_SOAK_SEED: ${{ github.run_number }}
+      OPENNOTE_SOAK_SEED: ${{ inputs.soak_seed || github.run_number }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
