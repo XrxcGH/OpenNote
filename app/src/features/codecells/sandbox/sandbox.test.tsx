@@ -1,6 +1,8 @@
 // The code cell sandbox in a real browser: worked problems with known answers in both languages, and the ways out a
 // cell might try (network, files, the worker's globals, code from text), the time and memory limits, Stop, and the
 // output limit.
+
+// checks-disable-file modifiability: one describe block per feature
 import { describe, expect, it, vi } from 'vitest';
 import { LIMITS } from './protocol';
 import type { CodeLanguage, Limits } from './protocol';
