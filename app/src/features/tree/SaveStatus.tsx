@@ -45,7 +45,12 @@ export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | '
   const Icon = ICONS[status];
   const text = t(`tree.save.${status}`);
   return (
-    <span className={styles.saveStatus} data-status={status} title={presentation === 'icon' ? text : undefined}>
+    <span
+      className={styles.saveStatus}
+      data-save-status
+      data-status={status}
+      title={presentation === 'icon' ? text : undefined}
+    >
       <Icon aria-hidden />
       {presentation === 'icon' ? <span className={styles.visuallyHidden}>{text}</span> : <span>{text}</span>}
     </span>

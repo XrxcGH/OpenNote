@@ -127,7 +127,7 @@ async function drawLine(browser: Browser, y: number): Promise<void> {
 
 /** What the title bar's save status says, or null when it isn't on the bar. */
 function saveStatus(browser: Browser): Promise<string | null> {
-  return browser.execute(() => document.querySelector('[data-status]')?.getAttribute('data-status') ?? null);
+  return browser.execute(() => document.querySelector('[data-save-status]')?.getAttribute('data-status') ?? null);
 }
 
 /** How many added-strokes records the profile's journals hold. */
@@ -136,7 +136,8 @@ function journalStrokes(folder: string): number {
   let found = 0;
   for (const entry of readdirSync(folder, { withFileTypes: true })) {
     const path = join(folder, entry.name);
-    if (entry.isDirectory() && entry.name !== 'EBWebView') found += journalStrokes(path);
+    // The WebView2 profile (EBWebView, or the harness's own webview folder) holds no journals and many files.
+    if (entry.isDirectory() && !/webview/i.test(entry.name)) found += journalStrokes(path);
     else if (entry.name.endsWith('.wal')) {
       try {
         found += readFileSync(path).toString('latin1').split('"addStrokes"').length - 1;
@@ -155,7 +156,7 @@ function pageReport(browser: Browser): Promise<string> {
       .map((node) => `${node.getAttribute('role')}: ${(node.textContent ?? '').trim().slice(0, 160)}`)
       .filter((line) => !line.endsWith(': '));
     const tiles = document.querySelectorAll('[data-ink-tiles] canvas').length;
-    const status = document.querySelector('[data-status]')?.getAttribute('data-status') ?? 'none';
+    const status = document.querySelector('[data-save-status]')?.getAttribute('data-status') ?? 'none';
     return `save status ${status}; ${tiles} tiles; title "${document.title}"; ${said.join(' | ') || 'no notices'}`;
   });
 }
@@ -174,15 +175,14 @@ describe('ink survives a restart', { skip: skipReason() }, () => {
     await openMitosis(session.browser);
     await drawLine(session.browser, 300);
     await session.browser.waitUntil(async () => (await inkPixels(session!.browser)) > 100, { timeout: 5_000 });
-    await session.browser.waitUntil(async () => (await saveStatus(session!.browser)) !== 'saving', {
+    await session.browser.waitUntil(async () => (await saveStatus(session!.browser)) === 'saved', {
       timeout: 10_000,
-      timeoutMsg: 'the title bar said Saved after the stroke',
+      timeoutMsg: 'the title bar never said Saved after the stroke',
     });
-    // Saved means the core has it; a stroke that never reaches the journal is lost, which fails here as that.
-    await session.browser.waitUntil(async () => journalStrokes(profileDir) > 0, {
-      timeout: 10_000,
-      timeoutMsg: 'the stroke reached the journal before the app was closed',
-    });
+    // "Saved" means the stroke is in the journal file, so one read is enough, with no wait for the disk. A core that
+    // answered before the journal thread wrote the record (the gap this checks) fails here.
+    const before = journalStrokes(profileDir);
+    assert.ok(before > 0, 'the title bar said Saved before the stroke was in the journal');
     await session.close();
     const kept = journalStrokes(profileDir);
 
