@@ -295,11 +295,24 @@ jobs:
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
         # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
-        run: node --test --test-concurrency=1 "tests/e2e/**/*.spec.ts"
+        # Each spec file runs in a process of its own, and any app or driver it left behind is stopped before the
+        # next one starts, so one spec that dies cannot reset the connections of the 70 after it.
+        run: |
+          $failed = @()
+          foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
+            node --test --test-concurrency=1 --test-timeout=600000 $spec.FullName
+            if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
+            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue |
+              Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+          if ($failed.Count -gt 0) {
+            "Failed specs: $($failed -join ', ')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
       - name: Start-up baseline for main
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nightly-e2e-logs
@@ -349,7 +362,7 @@ jobs:
 
   nvda:
     # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
-    # records what it said (A4-42). The Guidepup packages are installed here, not in package.json, so no other job
+    # records what it said (A4-42). The Guidepup packages are installed here, under tests/nvda, not in package.json, so no other job
     # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
     runs-on: windows-latest
     timeout-minutes: 45
@@ -366,7 +379,9 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Install Guidepup
-        run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+        # Into tests/nvda/node_modules, away from the repository's own tree: installing on top of it failed with
+        # "Cannot read properties of null (reading 'edgesOut')". The spec still finds the package from there.
+        run: npm install --prefix tests/nvda --no-save --no-package-lock --no-audit --no-fund @guidepup/guidepup@0.35.0
       - name: Set up NVDA
         run: npx --yes @guidepup/setup@0.29.1 setup --ci
       - name: Walk the checklist with NVDA

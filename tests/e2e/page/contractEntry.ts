@@ -13,10 +13,26 @@ export interface CaseResult {
   error: string | null;
 }
 
+interface Node {
+  id: string;
+  kind: string;
+}
+
+/** A new page in the first section of the first notebook, because the core opens only pages that a notebook holds. */
+async function newPageId(invoke: CoreInvoke): Promise<string> {
+  const notebooks = (await invoke('notes_list_notebooks')) as Node[];
+  const sections = (await invoke('notes_list_children', { parentId: notebooks[0].id })) as Node[];
+  const section = sections.find((node) => node.kind === 'section') ?? sections[0];
+  const page = (await invoke('notes_create', {
+    input: { kind: 'page', placement: { parentId: section.id }, title: 'Contract' },
+  })) as Node;
+  return page.id;
+}
+
 /** A service where CONTRACT_PAGE's ID opens a fresh core page holding its title and blocks. */
-async function seededService(invoke: CoreInvoke, run: string): Promise<PageService> {
+async function seededService(invoke: CoreInvoke): Promise<PageService> {
   const service = createTauriPageService(createCoreClient({ invoke }), {} as ImagesClient);
-  const fresh = `${CONTRACT_PAGE.id}-${run}`;
+  const fresh = await newPageId(invoke);
   const seed = await service.open(fresh, { viewport: null });
   await seed.send({
     edits: [
@@ -34,10 +50,9 @@ async function seededService(invoke: CoreInvoke, run: string): Promise<PageServi
 
 export async function runContract(invoke: CoreInvoke): Promise<CaseResult[]> {
   const results: CaseResult[] = [];
-  const stamp = Date.now().toString(36);
-  for (const [index, contractCase] of CONTRACT_CASES.entries()) {
+  for (const contractCase of CONTRACT_CASES) {
     try {
-      await contractCase.run(() => seededService(invoke, `${stamp}-${index}`));
+      await contractCase.run(() => seededService(invoke));
       results.push({ name: contractCase.name, error: null });
     } catch (error) {
       results.push({ name: contractCase.name, error: error instanceof Error ? error.message : String(error) });
