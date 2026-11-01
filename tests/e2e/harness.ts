@@ -134,7 +134,7 @@ function keyboardOnly(browser: Browser): void {
   });
 }
 
-const LOGS = join(ROOT, 'tests', 'e2e', 'logs');
+export const LOGS = join(ROOT, 'tests', 'e2e', 'logs');
 
 /**
  * Makes a profile folder look like one where first-run setup is finished. A launch with no settings.json is the
@@ -207,7 +207,7 @@ function listFiles(folder: string, depth: number): string[] {
  * Keeps the test profile in the folder CI keeps, without the webview folder's browser cache: the app's logs, its
  * perf log and settings, and a listing of every file. Where the webview folder is empty, WebView2 never started.
  */
-function keepAppLogs(profileDir: string, stamp: number): void {
+export function keepAppLogs(profileDir: string, stamp: number): void {
   try {
     const kept = join(LOGS, `app-${stamp}`);
     mkdirSync(kept, { recursive: true });

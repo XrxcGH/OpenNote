@@ -1,13 +1,20 @@
 // Ink in the real app reaches Phase 3's core and survives a restart: open a page, choose a pen on the Draw tab, draw
 // a stroke, close the app, start it again on the same profile, and find the ink. Then undo takes it away, and that
 // survives a restart too. The stroke is pen pointer events sent to the page, which take the same path as a pen.
+//
+// The app is closed the way the harness closes it, which ends the process at once, so the stroke has to be in the
+// core's journal by then. The page draws a stroke before the core has it (the send queue flushes first), so the
+// spec waits for what a person would: the title bar saying Saved, which it says only once the core has the
+// stroke in its journal file. It then waits for the journal itself, so a stroke lost there fails as lost, not as
+// a stroke that didn't come back. When the stroke doesn't come back, the spec keeps a screenshot, what the page
+// says, and the profile with its journals, in tests/e2e/logs, which CI uploads.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { keepAppLogs, launchApp, LOGS, skipReason } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 
 /** Clicks the row of a tree whose label reads `name`, once it shows. */
@@ -118,6 +125,41 @@ async function drawLine(browser: Browser, y: number): Promise<void> {
   }, y);
 }
 
+/** What the title bar's save status says, or null when it isn't on the bar. */
+function saveStatus(browser: Browser): Promise<string | null> {
+  return browser.execute(() => document.querySelector('[data-status]')?.getAttribute('data-status') ?? null);
+}
+
+/** How many added-strokes records the profile's journals hold. */
+function journalStrokes(folder: string): number {
+  if (!existsSync(folder)) return 0;
+  let found = 0;
+  for (const entry of readdirSync(folder, { withFileTypes: true })) {
+    const path = join(folder, entry.name);
+    if (entry.isDirectory() && entry.name !== 'EBWebView') found += journalStrokes(path);
+    else if (entry.name.endsWith('.wal')) {
+      try {
+        found += readFileSync(path).toString('latin1').split('"addStrokes"').length - 1;
+      } catch {
+        // A generation that went between the listing and the read.
+      }
+    }
+  }
+  return found;
+}
+
+/** What the page shows besides the ink: the save status, its notices and dialogs, and the page's title. */
+function pageReport(browser: Browser): Promise<string> {
+  return browser.execute(() => {
+    const said = [...document.querySelectorAll('[role="status"],[role="alert"],[role="dialog"],[role="alertdialog"]')]
+      .map((node) => `${node.getAttribute('role')}: ${(node.textContent ?? '').trim().slice(0, 160)}`)
+      .filter((line) => !line.endsWith(': '));
+    const tiles = document.querySelectorAll('[data-ink-tiles] canvas').length;
+    const status = document.querySelector('[data-status]')?.getAttribute('data-status') ?? 'none';
+    return `save status ${status}; ${tiles} tiles; title "${document.title}"; ${said.join(' | ') || 'no notices'}`;
+  });
+}
+
 describe('ink survives a restart', { skip: skipReason() }, () => {
   const profileDir = mkdtempSync(join(tmpdir(), 'opennote-e2e-ink-'));
   let session: AppSession | undefined;
@@ -132,14 +174,33 @@ describe('ink survives a restart', { skip: skipReason() }, () => {
     await openMitosis(session.browser);
     await drawLine(session.browser, 300);
     await session.browser.waitUntil(async () => (await inkPixels(session!.browser)) > 100, { timeout: 5_000 });
+    await session.browser.waitUntil(async () => (await saveStatus(session!.browser)) !== 'saving', {
+      timeout: 10_000,
+      timeoutMsg: 'the title bar said Saved after the stroke',
+    });
+    // Saved means the core has it; a stroke that never reaches the journal is lost, which fails here as that.
+    await session.browser.waitUntil(async () => journalStrokes(profileDir) > 0, {
+      timeout: 10_000,
+      timeoutMsg: 'the stroke reached the journal before the app was closed',
+    });
     await session.close();
+    const kept = journalStrokes(profileDir);
 
     session = await launchApp({ profileDir });
     await openMitosis(session.browser);
-    await session.browser.waitUntil(async () => (await inkPixels(session!.browser)) > 100, {
-      timeout: 20_000,
-      timeoutMsg: 'the ink came back after the restart',
-    });
+    await session.browser
+      .waitUntil(async () => (await inkPixels(session!.browser)) > 100, { timeout: 20_000 })
+      .catch(async () => {
+        const stamp = Date.now();
+        mkdirSync(LOGS, { recursive: true });
+        await session!.browser.saveScreenshot(join(LOGS, `ink-restart-${stamp}.png`)).catch(() => undefined);
+        const report = await pageReport(session!.browser).catch((error: unknown) => String(error));
+        keepAppLogs(profileDir, stamp);
+        assert.fail(
+          `the ink came back after the restart (journal strokes after the close: ${kept}; ${report}; ` +
+            `evidence in tests/e2e/logs/app-${stamp})`,
+        );
+      });
     // The stroke drew on the previous run, so this run's undo has nothing of it; draw again and undo that.
     const once = await inkPixels(session.browser);
     await drawLine(session.browser, 420);
