@@ -92,7 +92,7 @@ impl PageJournal {
         })
     }
 
-    /// Appends a record at once, so it survives an app crash (plan 8.2).
+    /// Appends a record at once, so it survives an app crash (plan 8.2), and tells the handle waiting for it.
     pub fn append(&mut self, config: &JournalConfig, seq: u64, bytes: Vec<u8>, edit: bool) {
         if edit {
             self.last_edit = self.last_edit.max(seq);
@@ -100,6 +100,7 @@ impl PageJournal {
         self.keep(seq, edit, bytes);
         self.write_last(config);
         self.bound_kept(config);
+        self.shared.health.set_handled(seq);
     }
 
     fn keep(&mut self, seq: u64, edit: bool, bytes: Vec<u8>) {

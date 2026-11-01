@@ -17,6 +17,9 @@ fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 #[derive(Default)]
 struct Progress {
     durable: u64,
+    /// The highest sequence number the journal thread has dealt with: written to the file, which an app crash
+    /// doesn't undo, or known to be unwritable (then `error` says why, or the journal keeps it until a save).
+    handled: u64,
     error: Option<FsError>,
     closed: bool,
 }
@@ -36,6 +39,7 @@ impl Health {
         Health {
             progress: Mutex::new(Progress {
                 durable: seq,
+                handled: seq,
                 ..Progress::default()
             }),
             ..Health::default()
@@ -50,6 +54,11 @@ impl Health {
     /// Records that everything up to `seq` is on disk.
     pub fn set_durable(&self, seq: u64) {
         self.update(|p| p.durable = p.durable.max(seq));
+    }
+
+    /// Records that the journal thread has dealt with everything up to `seq` (see `Progress::handled`).
+    pub fn set_handled(&self, seq: u64) {
+        self.update(|p| p.handled = p.handled.max(seq));
     }
 
     /// The highest sequence number on disk.
@@ -92,10 +101,20 @@ impl Health {
 
     /// Waits until `seq` is on disk.
     pub fn wait(&self, seq: u64, timeout: Duration) -> Result<(), JournalError> {
+        self.wait_until(timeout, |p| p.durable >= seq)
+    }
+
+    /// Waits until the journal thread has dealt with `seq`: once it is written, an app crash no longer loses it,
+    /// though a power cut still can until the group commit flushes it.
+    pub fn wait_handled(&self, seq: u64, timeout: Duration) -> Result<(), JournalError> {
+        self.wait_until(timeout, |p| p.handled.max(p.durable) >= seq)
+    }
+
+    fn wait_until(&self, timeout: Duration, done: impl Fn(&Progress) -> bool) -> Result<(), JournalError> {
         let deadline = Instant::now().checked_add(timeout);
         let mut progress = lock(&self.progress);
         loop {
-            if progress.durable >= seq {
+            if done(&progress) {
                 return Ok(());
             }
             if let Some(err) = &progress.error {

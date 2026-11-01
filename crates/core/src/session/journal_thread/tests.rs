@@ -147,6 +147,29 @@ fn appends_create_the_generation_lazily_and_group_commit_flushes() {
     assert_eq!(header.notebook_identity, "07".repeat(24));
 }
 
+/// A transaction is in the journal file once `append_txn` returns, so an app killed right after the core
+/// acknowledged an edit (a stroke the page already shows) still has it. A slow first generation, as on a CI disk,
+/// used to leave it only in the thread's queue.
+#[test]
+fn an_appended_transaction_is_in_the_file_when_append_returns() {
+    let s = setup(slow());
+    let handle = s
+        .thread
+        .open_page(&key(), sample_page().id, meta("boot-1"), base(0))
+        .unwrap();
+    s.fs.slow_creates(300);
+    let seq = handle.append_txn(&txn(1));
+    assert!(
+        s.fs.inner.exists(&generation_path(1)),
+        "the generation that holds the transaction was not made yet"
+    );
+    let records = read(&s, 1).records;
+    assert!(matches!(&records[..], [JournalRecord::Txn { seq: found, .. }] if *found == seq));
+    s.fs.slow_creates(0);
+    let next = handle.append_txn(&txn(2));
+    assert!(matches!(read(&s, 1).records.last(), Some(JournalRecord::Txn { seq, .. }) if *seq == next));
+}
+
 #[test]
 fn save_begin_is_flushed_before_it_returns() {
     let s = setup(slow());

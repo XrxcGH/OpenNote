@@ -206,6 +206,11 @@ pub enum TreeOp {
 /// instead of failing as busy.
 const OPEN_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// How long an append waits for the journal thread to write it. The thread writes in well under a millisecond,
+/// or as long as making a generation takes; this only bounds a thread that is stuck, which the page's health
+/// and the core's watchdog report.
+const WRITE_WAIT: Duration = Duration::from_secs(2);
+
 impl JournalThread {
     /// Starts the thread.
     pub fn start(config: JournalConfig) -> Result<JournalThread, CoreError> {
@@ -296,10 +301,17 @@ impl JournalThread {
 }
 
 impl JournalHandle {
-    /// Appends a transaction and returns its sequence number. It survives an app crash from now on.
+    /// Appends a transaction and returns its sequence number. It survives an app crash from now on: this waits
+    /// until the journal thread has written it, so the edit the caller acknowledges is never only in this
+    /// process's memory. Before, it returned once the record was queued, and a kill while the thread was still
+    /// busy (making the page's first generation on a slow disk) lost a stroke the page already showed. A journal
+    /// that can't be written reports that through its health, and a thread stuck past [`WRITE_WAIT`] gives up
+    /// the wait, not the record.
     pub fn append_txn(&self, txn: &Txn) -> u64 {
         let (json, blob) = encode_txn(txn, &*self.codec);
-        self.append(RecordKind::Txn, &json, &blob)
+        let seq = self.append(RecordKind::Txn, &json, &blob);
+        let _ = self.shared.health.wait_handled(seq, WRITE_WAIT);
+        seq
     }
 
     /// Appends a progress copy of a stroke still being drawn.
