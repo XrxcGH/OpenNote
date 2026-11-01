@@ -1,6 +1,7 @@
 // What the chip, the popover, and the Updates section show for each updater status (ARCHITECTURE.md section
 // 18.11). Plain functions, so every phase is tested without rendering.
 
+import { hostSystem } from '../../platform/system';
 import type { Settings, UpdaterPhase, UpdaterStatus } from '../../platform/types';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
@@ -37,6 +38,7 @@ export function formatSize(bytes: number): string {
 
 /** What's said when an update becomes ready, once per version. */
 export function readyAnnouncement(install: InstallPolicy): string {
+  if (hostSystem() === 'macos') return t('updates.announce.readyMac');
   return install === 'auto' ? t('updates.announce.readyAuto') : t('updates.announce.readyAsk');
 }
 
