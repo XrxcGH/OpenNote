@@ -130,6 +130,8 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let lost = window.clone();
     webview::on_page_lost(&window, move || custom_frame::fall_back(&lost, true));
     if undecorated {
+        // Before the placement shows the window, which may not move or size it (custom_frame's module docs).
+        custom_frame::refresh_frame(&window);
         custom_frame::await_first_report(&window);
     }
     zoom::apply(&window, settings.appearance.text_size.percent(), os.text_scale);

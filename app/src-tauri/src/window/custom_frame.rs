@@ -10,6 +10,11 @@
 //! A page that never draws its title bar would leave a window that can't be moved or closed with the mouse. So
 //! the window gets the native frame back when no layout has arrived by [`REPORT_DEADLINE`], and when the page's
 //! process fails ([`fall_back`]). A later report switches to the custom frame again.
+//!
+//! On Windows, tao keeps the caption styles on a window without the native frame and answers `WM_NCCALCSIZE` for
+//! it. The first `WM_NCCALCSIZE` comes before tao's handler is ready, so the window starts with the native caption. Moving or resizing it recomputes the frame. A restored placement shows the window at the rectangle it
+//! already has, so nothing did, and both title bars showed. [`refresh_frame`] recomputes it at creation and on every
+//! switch of frame.
 
 use std::{collections::BTreeMap, thread, time::Duration};
 
@@ -52,11 +57,12 @@ pub fn at_start(
 }
 
 /// Applies a caption layout on the main thread, which owns the window: the native frame for `None`, the custom
-/// frame and the Snap Layouts overlay for `Some`.
-pub fn apply(window: &WebviewWindow, layout: Option<CaptionLayout>) -> IpcResult<()> {
+/// frame and the Snap Layouts overlay for `Some`. With `frame_changed`, the report switches the frame, or is the
+/// first, so the window's frame is recomputed too.
+pub fn apply(window: &WebviewWindow, layout: Option<CaptionLayout>, frame_changed: bool) -> IpcResult<()> {
     let target = window.clone();
     window.run_on_main_thread(move || {
-        if let Err(error) = apply_now(&target, layout.as_ref()) {
+        if let Err(error) = apply_now(&target, layout.as_ref(), frame_changed) {
             log::warn!("Couldn't apply the caption layout: {error}");
         }
     })?;
@@ -76,7 +82,7 @@ pub fn fall_back(window: &WebviewWindow, page_lost: bool) {
             return;
         }
         log::warn!("The page has no caption buttons, so the window has its native frame back.");
-        if let Err(error) = apply_now(&target, None) {
+        if let Err(error) = apply_now(&target, None, true) {
             log::warn!("Couldn't give the window its native frame back: {error}");
         }
     });
@@ -95,10 +101,21 @@ pub fn await_first_report(window: &WebviewWindow) {
     });
 }
 
-fn apply_now(window: &WebviewWindow, layout: Option<&CaptionLayout>) -> IpcResult<()> {
+/// Makes Windows recompute the window's frame, so the native caption goes or comes back to match the decorations.
+/// Tauri's `set_decorations` skips a window it already counts as undecorated, so this doesn't rely on it.
+pub fn refresh_frame(window: &WebviewWindow) {
+    if let Err(error) = platform::refresh_frame(window) {
+        log::warn!("Couldn't recompute the window frame: {error}");
+    }
+}
+
+fn apply_now(window: &WebviewWindow, layout: Option<&CaptionLayout>, frame_changed: bool) -> IpcResult<()> {
     let custom = layout.is_some();
     if window.is_decorated()? == custom {
         window.set_decorations(!custom)?;
+    }
+    if frame_changed {
+        platform::refresh_frame(window)?;
     }
     platform::apply(window, layout)
 }
@@ -106,9 +123,27 @@ fn apply_now(window: &WebviewWindow, layout: Option<&CaptionLayout>) -> IpcResul
 #[cfg(windows)]
 mod platform {
     use tauri::WebviewWindow;
+    use windows::Win32::{
+        Foundation::HWND,
+        UI::WindowsAndMessaging::{
+            SetWindowPos, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOOWNERZORDER, SWP_NOSIZE, SWP_NOZORDER,
+        },
+    };
 
     use super::super::{caption::CaptionLayout, resize_border, snap_overlay, subclass};
     use crate::ipc::IpcResult;
+
+    pub fn refresh_frame(window: &WebviewWindow) -> IpcResult<()> {
+        recompute_frame(window.hwnd()?);
+        Ok(())
+    }
+
+    /// Sends `WM_NCCALCSIZE` again without moving, sizing, activating, or reordering the window.
+    pub fn recompute_frame(hwnd: HWND) {
+        let flags = SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE;
+        // SAFETY: `hwnd` is a window of this process; the flags change nothing but the frame.
+        let _ = unsafe { SetWindowPos(hwnd, None, 0, 0, 0, 0, flags) };
+    }
 
     pub fn apply(window: &WebviewWindow, layout: Option<&CaptionLayout>) -> IpcResult<()> {
         let hwnd = window.hwnd()?;
@@ -130,6 +165,11 @@ mod platform {
 
     use super::super::caption::CaptionLayout;
     use crate::ipc::IpcResult;
+
+    /// Other systems keep their own title bars, and Tauri's `set_decorations` redraws them.
+    pub fn refresh_frame(_window: &WebviewWindow) -> IpcResult<()> {
+        Ok(())
+    }
 
     /// Other systems have no Snap Layouts flyout.
     pub fn apply(_window: &WebviewWindow, _layout: Option<&CaptionLayout>) -> IpcResult<()> {
@@ -188,5 +228,62 @@ mod tests {
         assert!(!is_enabled(Channel::Dev, &[&flags(true), &flags(false)]));
         assert!(is_enabled(Channel::Dev, &[&flags(false), &flags(true)]));
         assert!(is_enabled(Channel::Dev, &[&flags(true), &BTreeMap::new()]));
+    }
+
+    // tao's undecorated window, as section 10.1 describes: a stale native caption from creation.
+    #[cfg(windows)]
+    mod frame {
+        use std::cell::Cell;
+
+        use windows::{
+            core::w,
+            Win32::{
+                Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
+                Graphics::Gdi::ClientToScreen,
+                UI::WindowsAndMessaging::{DefWindowProcW, GetWindowRect, WM_NCCALCSIZE},
+            },
+        };
+
+        use super::super::{super::test_windows, platform::recompute_frame};
+
+        thread_local! {
+            /// Whether the procedure answers `WM_NCCALCSIZE`, as tao does once the window is created.
+            static FRAMELESS: Cell<bool> = const { Cell::new(false) };
+        }
+
+        /// Answers `WM_NCCALCSIZE` the way tao does for a window without the native frame: the client area fills
+        /// the window. During creation tao isn't ready yet, so the default handling gives the native caption.
+        unsafe extern "system" fn proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+            if msg == WM_NCCALCSIZE && wparam.0 != 0 && FRAMELESS.get() {
+                return LRESULT(0);
+            }
+            // SAFETY: Windows calls this with a live window of this class.
+            unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
+        }
+
+        /// How far the client area starts below the window's top edge: the native caption's height, or 0.
+        fn caption_height(hwnd: HWND) -> i32 {
+            let mut window = RECT::default();
+            let mut client = POINT::default();
+            // SAFETY: `hwnd` is live on this thread, and both outputs are locals.
+            unsafe {
+                GetWindowRect(hwnd, &mut window).expect("the window rectangle");
+                let _ = ClientToScreen(hwnd, &mut client);
+            }
+            client.y - window.top
+        }
+
+        #[test]
+        fn recomputing_drops_the_native_caption_left_from_creation() {
+            let class = w!("OpenNoteTestFrameless");
+            test_windows::register_with(class, proc);
+            FRAMELESS.set(false);
+            let window = test_windows::top_level(class);
+            FRAMELESS.set(true);
+            // Nothing has moved or sized the window since tao took over, so the caption from creation stays.
+            assert!(caption_height(window.0) > 0);
+            recompute_frame(window.0);
+            assert_eq!(caption_height(window.0), 0);
+        }
     }
 }
