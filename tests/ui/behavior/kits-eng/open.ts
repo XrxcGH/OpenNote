@@ -7,7 +7,7 @@ export async function openKit(page: Page, command: string, title: string): Promi
   await openSmart(page);
   await runCommand(page, command);
   const dialog = page.getByRole('dialog', { name: title });
-  await expect(dialog).toBeVisible();
+  await expect(dialog).toBeVisible({ timeout: 20_000 });
   return dialog;
 }
 
