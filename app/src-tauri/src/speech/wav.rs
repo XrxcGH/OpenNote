@@ -114,7 +114,7 @@ mod tests {
         wav.extend_from_slice(&[2, 0, 16, 0]);
         wav.extend_from_slice(b"data");
         wav.extend_from_slice(&data.to_le_bytes());
-        wav.extend(std::iter::repeat(0u8).take(data as usize));
+        wav.extend(std::iter::repeat_n(0u8, data as usize));
         wav
     }
 
