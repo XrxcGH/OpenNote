@@ -354,7 +354,8 @@ fn p11_a_renamed_folder_with_a_move_mark_finishes_its_move() {
 
 /// The nightly fuzzer's notebook_tree crash: a page on its way back from one Trash item that a second item also
 /// holds. The first scan finished the restore, and only the second scan then finished the other deletion. Both
-/// now happen in the first scan, so the second one changes nothing and the page isn't lost.
+/// now happen in the first scan, so the second one changes nothing. Deletion wins: the page is in the second
+/// item, and its section no longer lists it, so it shows only in Trash.
 #[test]
 fn a_restore_and_a_second_deletion_of_one_page_settle_in_one_scan() {
     let (kit, mut store, [s1, _], pages) = setup();
@@ -377,10 +378,12 @@ fn a_restore_and_a_second_deletion_of_one_page_settle_in_one_scan() {
     store.write_section(s1).unwrap();
 
     let mut fresh = kit.open().unwrap();
-    fresh.scan().unwrap();
+    let first_scan = fresh.scan().unwrap();
+    assert!(first_scan.unavailable.is_empty(), "{first_scan:?}");
     let before = snapshot(&kit.fs.inner);
     let again = fresh.scan().unwrap();
     assert!(!again.changed_files(), "{again:?}");
+    assert!(again.unavailable.is_empty(), "{again:?}");
     assert!(snapshot(&kit.fs.inner) == before, "a second scan changed the notebook");
     let in_trash = second_dir.join(page.to_string()).join(PAGE_JSON);
     assert!(kit.fs.inner.get(&in_trash).is_some(), "the page is kept in Trash");
@@ -389,5 +392,15 @@ fn a_restore_and_a_second_deletion_of_one_page_settle_in_one_scan() {
         .values()
         .flat_map(|s| s.file.pages.iter())
         .filter(|e| e.id == page);
-    assert!(shown.count() <= 1, "the page is listed once at most");
+    assert_eq!(shown.count(), 0, "no section lists the page");
+    let listed = kit
+        .fs
+        .inner
+        .get(&store.sections[&s1].dir.join(SECTION_JSON))
+        .unwrap_or_default();
+    let listed = kit.codec.read_section(&listed, &kit.env.limits).unwrap();
+    assert!(
+        listed.pages.iter().all(|e| e.id != page),
+        "the section file doesn't list the page"
+    );
 }

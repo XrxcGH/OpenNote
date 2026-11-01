@@ -31,6 +31,12 @@ impl NotebookStore {
         self.finish_pending()?;
         let found = self.list_page_folders()?;
         self.match_entries(&found, &mut report)?;
+        // Matching can bring a folder to where a pending deletion looks for it, such as a page renamed by hand
+        // on its way back from Trash while a second item also holds it. Deletion wins, in this pass, so a second
+        // scan finds nothing left to do (property P11).
+        if self.finish_deletions()? {
+            self.mark_pending();
+        }
         self.clean_partials(&found, &mut report);
         self.mark_pending();
         report.notices.clone_from(&self.notices);
@@ -47,17 +53,18 @@ impl NotebookStore {
     /// everything and a second scan finds nothing left to do (property P11).
     pub fn finish_pending(&mut self) -> Result<(), CoreError> {
         self.pending.clear();
-        self.finish_deletions();
+        self.finish_deletions()?;
         if self.finish_moves()? {
             self.mark_pending();
-            self.finish_deletions();
+            self.finish_deletions()?;
         }
         self.mark_pending();
         Ok(())
     }
 
-    /// Moves the folders of pending deletions into their Trash items.
-    fn finish_deletions(&mut self) {
+    /// Moves the folders of pending deletions into their Trash items, and drops the entries of pages that went,
+    /// so no section still lists a page that is now in Trash. Returns whether any folder went.
+    fn finish_deletions(&mut self) -> Result<bool, CoreError> {
         let restoring: HashSet<TrashItemId> = self
             .sections
             .values()
@@ -77,6 +84,7 @@ impl NotebookStore {
                 (t.file.id, sources)
             })
             .collect();
+        let mut gone: HashSet<PageId> = HashSet::new();
         for (item, sources) in items {
             let dir = self.layout.trash_item_dir(item);
             for (id, from) in sources {
@@ -87,9 +95,26 @@ impl NotebookStore {
                     }
                     self.sections.remove(&SectionId(id));
                     self.places.remove(&PageId(id));
+                    gone.insert(PageId(id));
                 }
             }
         }
+        // A deletion that stopped before its pages left their section's list, or a page that came back to a
+        // section while another item also held it, leaves entries behind.
+        let listing: Vec<SectionId> = self
+            .sections
+            .values()
+            .filter(|s| s.file.pages.iter().any(|e| gone.contains(&e.id)))
+            .map(|s| s.file.id)
+            .filter(|s| self.check_section_writable(*s).is_ok())
+            .collect();
+        for section in listing {
+            if let Some(state) = self.sections.get_mut(&section) {
+                state.file.pages.retain(|e| !gone.contains(&e.id));
+            }
+            self.write_section(section)?;
+        }
+        Ok(!gone.is_empty())
     }
 
     /// Where a folder of a pending deletion is: a page in its section, or a section in the notebook folder.
