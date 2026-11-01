@@ -12,9 +12,9 @@
 //! process fails ([`fall_back`]). A later report switches to the custom frame again.
 //!
 //! On Windows, tao keeps the caption styles on a window without the native frame and answers `WM_NCCALCSIZE` for
-//! it. The first `WM_NCCALCSIZE` comes before tao's handler is ready, so the window starts with the native caption. Moving or resizing it recomputes the frame. A restored placement shows the window at the rectangle it
-//! already has, so nothing did, and both title bars showed. [`refresh_frame`] recomputes it at creation and on every
-//! switch of frame.
+//! it. The first `WM_NCCALCSIZE` comes before tao's handler is ready, so the window starts with the native caption
+//! until something recomputes the frame. Showing the window through tao does, and so does every report that switches
+//! the frame ([`apply`]), so a native caption never stays over caption buttons the page draws.
 
 use std::{collections::BTreeMap, thread, time::Duration};
 
@@ -99,14 +99,6 @@ pub fn await_first_report(window: &WebviewWindow) {
         thread::sleep(REPORT_DEADLINE);
         fall_back(&window, false);
     });
-}
-
-/// Makes Windows recompute the window's frame, so the native caption goes or comes back to match the decorations.
-/// Tauri's `set_decorations` skips a window it already counts as undecorated, so this doesn't rely on it.
-pub fn refresh_frame(window: &WebviewWindow) {
-    if let Err(error) = platform::refresh_frame(window) {
-        log::warn!("Couldn't recompute the window frame: {error}");
-    }
 }
 
 fn apply_now(window: &WebviewWindow, layout: Option<&CaptionLayout>, frame_changed: bool) -> IpcResult<()> {

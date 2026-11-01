@@ -130,8 +130,6 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let lost = window.clone();
     webview::on_page_lost(&window, move || custom_frame::fall_back(&lost, true));
     if undecorated {
-        // Before the placement shows the window, which may not move or size it (custom_frame's module docs).
-        custom_frame::refresh_frame(&window);
         custom_frame::await_first_report(&window);
     }
     zoom::apply(&window, settings.appearance.text_size.percent(), os.text_scale);
@@ -149,7 +147,12 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
             .placement
             .as_ref()
             .is_some_and(|saved| placement::restore(&window, saved));
-        if !restored {
+        if restored {
+            // The placement showed the window behind tao's back, so tao still counts it as hidden. Tao then skips the
+            // frame refresh that showing does, which leaves the native caption over the page's title bar. Its next
+            // style change, such as the native frame coming back, would also hide the window.
+            let _ = window.show();
+        } else {
             let _ = window.center();
         }
         show(app);
