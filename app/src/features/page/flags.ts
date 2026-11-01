@@ -10,7 +10,7 @@ export type PageFlagId = Extract<FlagId, `page.${string}` | 'editor.spelling' | 
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 /** On in every build. */
-const off = { dev: false, nightly: false, beta: false, stable: false };
+const everywhere = { dev: true, nightly: true, beta: true, stable: true };
 
 const flag = (id: PageFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
   id,
