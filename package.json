@@ -42,6 +42,7 @@
     "format": "prettier --write \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"spikes/web/**/*.ts\" \"tests/**/*.ts\" \"eslint/*.{js,ts}\" eslint.config.js",
     "format:check": "prettier --check \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"spikes/web/**/*.ts\" \"tests/**/*.ts\" \"eslint/*.{js,ts}\" eslint.config.js",
     "design": "node docs/design/generate.ts",
+    "docs:features": "node docs/tools/featureList.ts",
     "spikes:web": "vite build --config spikes/web/vite.config.ts",
     "spikes": "npm run spikes:web && cargo run --profile spikes -p opennote-spikes --",
     "release:check": "node app/scripts/release/checklist.ts",

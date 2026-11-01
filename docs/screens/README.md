@@ -1,6 +1,6 @@
 # Screens
 
-Real pictures of OpenNote as built in beta 4, in the light and the dark theme. Use them in the README, the wiki, and the release notes. The wireframes that planned these screens are in [the design folder](../design/SCREENS.md).
+Real pictures of OpenNote, in the light and the dark theme. Use them in the README, the wiki, and the release notes. The wireframes that planned these screens are in [the design folder](../design/SCREENS.md).
 
 ## Contents
 
@@ -10,14 +10,19 @@ Real pictures of OpenNote as built in beta 4, in the light and the dark theme. U
 - [Writing and drawing](#writing-and-drawing)
 - [Find, link, and record](#find-link-and-record)
 - [Import and export](#import-and-export)
+- [Study](#study)
+- [Connectors and sync](#connectors-and-sync)
+- [Graphs, math, and tools](#graphs-math-and-tools)
 - [Settings](#settings)
 - [Trash, the palette, and tool windows](#trash-the-palette-and-tool-windows)
 
 ## How they were taken
 
+The list of pictures is `docs/tools/screens.json`, and `tests/ui/docscap/capture.spec.ts` takes them (see that file for the command). `npm run docs:features` puts them in [the feature list](../FEATURE-LIST.md).
+
 Each picture is a screenshot of the web build that the interface tests use, at 1280 by 800 pixels, with the clock set to September 30, 2026. The web build runs the same interface on a fake host. A few details differ from a Windows install. The About page says the channel is Development, and the recording options list one default microphone.
 
-Two pictures are wider. The Draw tab and the ink picture are 1600 by 900 pixels, because the pen slots only fit in the bar at that width. At 1280 pixels they sit under More.
+Some pictures are wider. The Draw tab and the ink pictures are 1600 by 900 pixels, because the pen slots only fit in the bar at that width. At 1280 pixels they sit under More.
 
 No picture was made while recording, and no microphone was used.
 
@@ -53,6 +58,11 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 | [lined-paper](lined-paper-light.png) ([dark](lined-paper-dark.png)) | Typed notes on lined paper, with the text sitting on the rules. |
 | [table-chart](table-chart-light.png) ([dark](table-chart-dark.png)) | A smart table with a formula cell and the bar chart made from it. |
 | [math-graph](math-graph-light.png) ([dark](math-graph-dark.png)) | An inline equation in a sentence and a graph block with its function. |
+| [insert-mind-map](insert-mind-map-light.png) ([dark](insert-mind-map-dark.png)) | A mind map on a page, with a main idea and branches added under and beside it. |
+| [insert-diagram](insert-diagram-light.png) ([dark](insert-diagram-dark.png)) | A flowchart written as text, drawn below its source. |
+| [ink-layers](ink-layers-light.png) ([dark](ink-layers-dark.png)) | The Layers window with three layers, each with Make active, Hide, Lock, Move, Export, and Delete. |
+| [ink-groups](ink-groups-light.png) ([dark](ink-groups-dark.png)) | Two pen strokes lassoed and grouped, with the Ungroup button on the selection bar. |
+| [ink-links](ink-links-light.png) ([dark](ink-links-dark.png)) | The list of links on a page after a lassoed stroke was linked to a web address. |
 
 ## Find, link, and record
 
@@ -61,6 +71,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 | [search](search-light.png) ([dark](search-dark.png)) | The search panel with a result, the matched word in bold, and a preview. |
 | [backlinks](backlinks-light.png) ([dark](backlinks-dark.png)) | The linked pages pane, listing the page that links here. |
 | [recording](recording-light.png) ([dark](recording-dark.png)) | The recording options under the Record button. Nothing is recording. |
+| [daily-calendar](daily-calendar-light.png) ([dark](daily-calendar-dark.png)) | The daily notes calendar, with today marked and buttons for the day, week, month, and year notes. |
 
 ## Import and export
 
@@ -69,6 +80,29 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 | [import](import-light.png) ([dark](import-dark.png)) | The Import notes dialog before a file is chosen, with the supported sources. |
 | [import-review](import-review-light.png) ([dark](import-review-dark.png)) | The review after choosing a file: what comes over and what does not. |
 | [export](export-light.png) ([dark](export-dark.png)) | The Export dialog with a section and the Word document format chosen. |
+| [pdf-import](pdf-import-light.png) ([dark](pdf-import-dark.png)) | A PDF inserted as locked page pictures to write on. |
+| [translate](translate-light.png) ([dark](translate-dark.png)) | The Translate window, with the language pack and its size shown before anything is downloaded. |
+
+## Study
+
+| Name | What it shows |
+|---|---|
+| [study-flashcards](study-flashcards-light.png) ([dark](study-flashcards-dark.png)) | The Flashcards window, with cards made from three typed lines. |
+| [study-tutor](study-tutor-light.png) ([dark](study-tutor-dark.png)) | The Tutor panel giving the first of four hints on a worked line, without the answer. |
+
+## Connectors and sync
+
+| Name | What it shows |
+|---|---|
+| [protected-section](protected-section-light.png) ([dark](protected-section-dark.png)) | A password-protected section after it locks, with the Unlock section button. |
+| [sync-settings](sync-settings-light.png) ([dark](sync-settings-dark.png)) | Settings, then Sync: step 1 of 4, choosing where sync keeps its encrypted data. |
+
+## Graphs, math, and tools
+
+| Name | What it shows |
+|---|---|
+| [engineering-beam](engineering-beam-light.png) ([dark](engineering-beam-dark.png)) | The beam deflection tool of the solid mechanics kit, with its supports and loads. |
+| [subject-statistics](subject-statistics-light.png) ([dark](subject-statistics-dark.png)) | The Statistics tab of the calculator after summarizing six numbers. |
 
 ## Settings
 

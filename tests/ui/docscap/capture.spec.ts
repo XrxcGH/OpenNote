@@ -1,9 +1,11 @@
-// Temporary: documentation screenshot capture. Not committed.
+// Documentation screenshot capture: every picture in docs/screens, in the light theme and the dark one. Run it with
+// `npx playwright test --config tests/ui/docscap/config.ts` against the web build served on port 4617, and list the
+// pictures in docs/tools/screens.json. CAP_ONLY=name,name takes some; CAP_OUT changes the folder.
 import { expect, test, type Page } from '@playwright/test';
 import { settle } from '../screens';
+import { scenes } from './more';
 
-const RAW =
-  'C:/Users/ericj/AppData/Local/Temp/claude/C--Users-ericj-GitHub-OpenNote/05b4a35e-76de-4076-bd7f-c37a5fb1fabe/scratchpad/raw';
+const RAW = process.env.CAP_OUT ?? 'docs/screens';
 const THEMES = ['light', 'dark'] as const;
 
 interface Shot {
@@ -12,6 +14,7 @@ interface Shot {
   path?: string;
   boot?: Record<string, unknown>;
   viewport?: { width: number; height: number };
+  quick?: boolean;
   run(page: Page): Promise<void>;
 }
 
@@ -433,6 +436,8 @@ const SHOTS: Shot[] = [
   },
 ];
 
+SHOTS.push(...scenes({ ready, command, settings, typeNotes }));
+
 const only = process.env.CAP_ONLY?.split(',');
 
 for (const shot of SHOTS) {
@@ -452,7 +457,8 @@ for (const shot of SHOTS) {
       );
       await page.goto(shot.path ?? '/');
       await shot.run(page);
-      await settle(page);
+      if (shot.quick) await page.waitForTimeout(1500);
+      else await settle(page);
       await page.waitForTimeout(250);
       await page.screenshot({ path: `${RAW}/${shot.name}-${theme}.png`, animations: 'disabled', caret: 'hide' });
     });

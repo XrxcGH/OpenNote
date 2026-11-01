@@ -228,7 +228,7 @@ export function powerLaw(inp: PowerLawInput): PipeFlowResult & { apparentViscosi
   positive(inp.radius, 'The radius');
   positive(inp.length, 'The length');
   positive(inp.k, 'The consistency index K');
-  positive(inp.n, 'The flow behaviour index n');
+  positive(inp.n, 'The flow behavior index n');
   need(Number.isFinite(inp.dp) && inp.dp >= 0, 'dp', 'The pressure drop must be zero or more.');
   const { radius: R, length: L, dp, k: K, n } = inp;
   const pts = inp.points ?? 41;

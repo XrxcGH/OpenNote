@@ -79,7 +79,8 @@ A suppression without a reason, or with an unknown rule, is itself an error and 
 - `severity`: `"error"`, `"warning"`, or `"off"` to override every finding of that rule
 - `exclude`: glob patterns of files the rule skips
 - rule-specific limits, such as `length.sentenceWords` or `modifiability.functionLines`
-- `spelling.allow`: words to let through, such as a proper name. `spelling.strings`: the globs of source files whose string literals are read; the default is `app/src/**/*.tsx`, `app/src-tauri/src/**/*.rs`, and `crates/*/src/**/*.rs` (the strings in `app/src/strings/en` are read by `ui-voice`). A literal that must keep a British spelling, such as a file format's keyword, takes a `checks-disable-next-line spelling: <reason>` comment
+- `spelling.allow`: words to let through, such as a proper name. `spelling.strings`: the globs of source files whose string literals are read; the default is `app/src/**/*.ts`, `app/src/**/*.tsx`, `extensions/**/*.js`, `app/src-tauri/src/**/*.rs`, and `crates/*/src/**/*.rs` (the strings in `app/src/strings/en` are read by `ui-voice`). A literal that must keep a British spelling, such as a file format's keyword, takes a `checks-disable-next-line spelling: <reason>` comment
+- American English is the default for every word people read in the app, the docs and the help pages. A word that must stay British (a quotation, a proper noun, a place name, a locale name such as `English (United Kingdom)`, or a test fixture that needs it) goes in `checks/american-allow.json` as `{ "word": "...", "path": "optional/exact/file.md", "reason": "..." }`. An entry with no reason, or with a path that names a whole directory, is ignored. The word list is `checks/data/american-spelling.json`.
 
 Top-level `ignore` patterns skip files entirely. Change a limit only with a reason in the pull request, because loosening limits is how quality slips.
 

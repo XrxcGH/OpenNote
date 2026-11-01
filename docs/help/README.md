@@ -2,6 +2,8 @@
 
 Short guides for using OpenNote, one for each area of the app. They describe beta 7 (0.1.0-beta.7). Nobody has tried most of these features by hand yet, so [tell us](../testing/beta-4-checklist.md#reporting-a-failure) if a step does not work as written.
 
+For one sentence on every tool and feature, with a picture of each major page, see the [feature list](../FEATURE-LIST.md).
+
 Every picture is a real screenshot. [The screens folder](../screens/README.md) has all of them, in light and dark.
 
 ## Contents

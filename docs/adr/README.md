@@ -24,7 +24,7 @@ If a proposal is turned down, close the pull request with a comment that explain
 
 ## Numbering
 
-Records are numbered in order with four digits, starting at 0001. Number 0000 is the template. A number is never reused, even if its record is later replaced. If two open pull requests pick the same number, the one that merges second takes the next free number.
+Records are numbered in order with four digits, starting at 0001. Number 0000 is the template. A number is never reused, even if its record is later replaced. If two open pull requests pick the same number, the one that merges second takes the next free number. Beta 7 renumbered two duplicates: iCloud is 0038 and PDF in the webview is 0040.
 
 File names join the number and a short lowercase title with hyphens, for example `0002-license.md`. The title at the top of the file repeats the number, for example "ADR 0002: License".
 
@@ -69,8 +69,11 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0026](0026-text-box-layout.md) | Size text boxes to their content, move boxes below an edited one to keep clear of it, and fix a page's reading order | Proposed, pending the Phase 3 owner's agreement to P3-1 and P3-11 | 2026-10-02 |
 | [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
 | [0030](0030-connectors-and-sign-in.md) | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager | Proposed, pending a sign-in with real client IDs | 2026-10-03 |
-| [0036](0036-icloud-is-folder-based.md) | iCloud stays folder-based, with no iCloud sign-in | Accepted | 2026-10-07 |
-| [0035](0035-share-as-a-file.md) | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password | Accepted. The back end is written, and no screen uses it yet | 2026-10-03 |
+| [0035](0035-share-as-a-file.md) | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password | Accepted | 2026-10-03 |
+| [0036](0036-object-groups.md) | Object groups live in the page view, so one drag moves them all | Proposed | 2026-10-07 |
+| [0037](0037-ink-layers.md) | Ink layers live in the page view and can be hidden, locked, renamed, and reordered | Proposed | 2026-10-14 |
+| [0038](0038-icloud-is-folder-based.md) | iCloud stays folder-based, with no iCloud sign-in | Accepted | 2026-10-07 |
+| [0040](0040-pdf-in-the-webview.md) | PDF files are read by pdf.js in the webview | Proposed | 2026-10-15 |
 | [0041](0041-stamped-entry-lock.md) | A stamped entry lock lives in the page view, and the core enforces it | Proposed | 2026-10-15 |
 | [0042](0042-protected-sections.md) | Protected sections are sealed file by file, and open only in memory | Proposed | 2026-10-15 |
 | [0046](0046-one-command-registry.md) | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history | Accepted | 2026-10-15 |
@@ -102,6 +105,7 @@ Most records are still Proposed, because each waits on a check by a person. Agen
 | 0025 | Real captures (spike S4) and the image memory measurement (spike S3) |
 | 0026 | The Phase 3 owner's agreement |
 | 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
+| 0036, 0037 and 0040 | The owner accepts or changes object groups, ink layers, and reading PDFs with pdf.js in the webview |
 | 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |
 | 0042 | The owner's review of protected sections, a Windows Hello unlock on real hardware, and the `protected` field of the notes contract |
 | 0049 | The owner's review of end-to-end-encrypted sync and its threat model, a pairing on two real devices, and the decision about a relay |

@@ -59,7 +59,7 @@ interface Job {
   reject(error: unknown): void;
 }
 
-const aborted = () => new DOMException('The import was cancelled.', 'AbortError');
+const aborted = () => new DOMException('The import was canceled.', 'AbortError');
 
 export function createImportQueue(options: ImportQueueOptions): ImportQueue {
   const maxActive = options.maxActive ?? MAX_ACTIVE;
