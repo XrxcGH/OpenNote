@@ -98,9 +98,7 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
         // A word typed the British way finds its American entry, whichever dialect is chosen.
         const result =
           (await lookupWord(word, loader, related)) ??
-          (toAmericanSpelling(word) !== word
-            ? await lookupWord(toAmericanSpelling(word), loader, related)
-            : null);
+          (toAmericanSpelling(word) !== word ? await lookupWord(toAmericanSpelling(word), loader, related) : null);
         if (!current) return;
         setFound(result);
         setSearched(word);
