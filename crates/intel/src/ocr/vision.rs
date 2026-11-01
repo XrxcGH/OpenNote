@@ -2,8 +2,8 @@
 //! accurate level, which also reads handwriting). Vision runs on the device and needs no language pack.
 
 use objc2::rc::{autoreleasepool, Retained};
-use objc2::runtime::AnyObject;
-use objc2::{msg_send, AnyThread};
+use objc2::runtime::{AnyObject, NSObjectProtocol};
+use objc2::{msg_send, sel, AnyThread};
 use objc2_core_foundation::{CFData, CGRect};
 use objc2_core_graphics::{
     CGBitmapInfo, CGColorRenderingIntent, CGColorSpace, CGDataProvider, CGImage, CGImageAlphaInfo,
@@ -45,13 +45,13 @@ impl OcrEngine for VisionOcr {
     fn available_languages(&self) -> Result<Vec<Language>, IntelError> {
         autoreleasepool(|_| {
             let request = text_request();
-            // SAFETY: the request is a live text request; the call only reads what this macOS supports.
-            let tags = unsafe { request.supportedRecognitionLanguagesAndReturnError() }.map_err(platform)?;
-            Ok(tags
-                .to_vec()
-                .into_iter()
-                .filter_map(|tag| Language::new(&tag.to_string()).ok())
-                .collect())
+            let tags = if request.respondsToSelector(sel!(supportedRecognitionLanguagesAndReturnError:)) {
+                // SAFETY: the request is a live text request that answers this selector (macOS 12 and later).
+                unsafe { request.supportedRecognitionLanguagesAndReturnError() }.map_err(platform)?
+            } else {
+                languages_before_monterey(&request)?
+            };
+            Ok(to_languages(&tags))
         })
     }
 
@@ -103,6 +103,28 @@ impl OcrEngine for VisionOcr {
             })
         })
     }
+}
+
+/// The languages for the request's level and revision on macOS 11, which lacks the instance method above. Sending
+/// that selector there would raise an Objective-C exception, which can't unwind through Rust and aborts the app.
+fn languages_before_monterey(request: &VNRecognizeTextRequest) -> Result<Retained<NSArray<NSString>>, IntelError> {
+    let base: &VNRequest = request;
+    // SAFETY: the class method has been on VNRecognizeTextRequest since macOS 10.15; the revision is the request's own.
+    #[allow(deprecated)]
+    unsafe {
+        VNRecognizeTextRequest::supportedRecognitionLanguagesForTextRecognitionLevel_revision_error(
+            VNRequestTextRecognitionLevel::Accurate,
+            base.revision(),
+        )
+    }
+    .map_err(platform)
+}
+
+fn to_languages(tags: &NSArray<NSString>) -> Vec<Language> {
+    tags.to_vec()
+        .into_iter()
+        .filter_map(|tag| Language::new(&tag.to_string()).ok())
+        .collect()
 }
 
 fn pixels(unit: CGRect, width: u32, height: u32) -> Rect {
@@ -167,4 +189,20 @@ fn to_cg_image(image: &OcrImage) -> Result<objc2_core_foundation::CFRetained<CGI
         )
     }
     .ok_or_else(failed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The macOS 11 path, run on whatever Mac the tests run on: the class method still answers there.
+    #[test]
+    fn the_big_sur_language_list_reads_without_the_instance_method() {
+        let languages = autoreleasepool(|_| languages_before_monterey(&text_request()).map(|tags| to_languages(&tags)))
+            .expect("the class method answers");
+        assert!(
+            languages.iter().any(|language| language.as_str().starts_with("en")),
+            "{languages:?}"
+        );
+    }
 }
