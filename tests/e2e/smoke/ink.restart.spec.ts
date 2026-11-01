@@ -125,9 +125,17 @@ async function drawLine(browser: Browser, y: number): Promise<void> {
   }, y);
 }
 
-/** What the title bar's save status says, or null when it isn't on the bar. */
+/**
+ * What the title bar's save status says, from the document root (features/tree/SaveStatus.tsx): the item itself
+ * moves into More when the bar is narrow, as on a runner's default 1024 by 768 screen. Null before the app sets it.
+ */
 function saveStatus(browser: Browser): Promise<string | null> {
-  return browser.execute(() => document.querySelector('[data-save-status]')?.getAttribute('data-status') ?? null);
+  return browser.execute(() => document.documentElement.getAttribute('data-save-state'));
+}
+
+/** What holds the status at Saving: the page batches on their way, and each unwritten page with its edit's number. */
+function saveWaiting(browser: Browser): Promise<string | null> {
+  return browser.execute(() => document.documentElement.getAttribute('data-save-waiting'));
 }
 
 /** How many added-strokes records the profile's journals hold. */
@@ -156,8 +164,9 @@ function pageReport(browser: Browser): Promise<string> {
       .map((node) => `${node.getAttribute('role')}: ${(node.textContent ?? '').trim().slice(0, 160)}`)
       .filter((line) => !line.endsWith(': '));
     const tiles = document.querySelectorAll('[data-ink-tiles] canvas').length;
-    const status = document.querySelector('[data-save-status]')?.getAttribute('data-status') ?? 'none';
-    return `save status ${status}; ${tiles} tiles; title "${document.title}"; ${said.join(' | ') || 'no notices'}`;
+    const status = document.documentElement.getAttribute('data-save-state') ?? 'none';
+    const waiting = document.documentElement.getAttribute('data-save-waiting') ?? 'none';
+    return `save status ${status} (waiting: ${waiting}); ${tiles} tiles; title "${document.title}"; ${said.join(' | ') || 'no notices'}`;
   });
 }
 
@@ -175,10 +184,13 @@ describe('ink survives a restart', { skip: skipReason() }, () => {
     await openMitosis(session.browser);
     await drawLine(session.browser, 300);
     await session.browser.waitUntil(async () => (await inkPixels(session!.browser)) > 100, { timeout: 5_000 });
-    await session.browser.waitUntil(async () => (await saveStatus(session!.browser)) === 'saved', {
-      timeout: 10_000,
-      timeoutMsg: 'the title bar never said Saved after the stroke',
-    });
+    await session.browser
+      .waitUntil(async () => (await saveStatus(session!.browser)) === 'saved', { timeout: 10_000 })
+      .catch(async () => {
+        const status = await saveStatus(session!.browser).catch(() => null);
+        const waiting = await saveWaiting(session!.browser).catch(() => null);
+        assert.fail(`the title bar never said Saved after the stroke (status ${status}; waiting: ${waiting})`);
+      });
     // "Saved" means the stroke is in the journal file, so one read is enough, with no wait for the disk. A core that
     // answered before the journal thread wrote the record (the gap this checks) fails here.
     const before = journalStrokes(profileDir);

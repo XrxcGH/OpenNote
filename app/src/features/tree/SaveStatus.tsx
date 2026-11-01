@@ -16,6 +16,7 @@ import {
   coreStalled,
   pageWaiting,
   saveHealthStore,
+  waitingDetail,
 } from '../../services/pages/saveHealth';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
@@ -31,6 +32,27 @@ const ICONS: Record<Status, ComponentType<IconProps>> = {
   error: CloudWarningIcon,
   stalled: CloudXIcon,
 };
+
+/** The status the title bar shows: the notes bridge's, with the pages' saves and the core's health. */
+export function currentSaveStatus(): Status {
+  const health = saveHealthStore.get();
+  return combinedStatus(treeStore.get().saveStatus, anySaveFailing(health), coreStalled(health), pageWaiting(health));
+}
+
+/**
+ * Keeps the status on `root` as `data-save-state`, and what holds it at "Saving" as `data-save-waiting`, even when
+ * the title bar has no room for the item (it moves into More). The e2e specs read them there.
+ * The returned function stops.
+ */
+export function markSaveStatus(root: HTMLElement): () => void {
+  const mark = () => {
+    root.dataset.saveState = currentSaveStatus();
+    root.dataset.saveWaiting = waitingDetail(saveHealthStore.get());
+  };
+  mark();
+  const stops = [treeStore.subscribe(mark), saveHealthStore.subscribe(mark)];
+  return () => stops.forEach((stop) => stop());
+}
 
 export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | 'menuItem' }) {
   const notes = useStore(treeStore, (state) => state.saveStatus);
