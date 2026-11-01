@@ -78,12 +78,16 @@ tauri-plugin-dialog = "2"
 
 # Save as PDF and Print on Linux go through WebKitGTK's print operation and GTK's "Print to File" printer; on macOS
 # through the web view's NSPrintOperation (src/print_native.rs). These are the versions Tauri already builds.
+# Connector tokens and sync keys on Linux: the Secret Service over D-Bus (GNOME Keyring, KWallet), in plain Rust.
 [target.'cfg(target_os = "linux")'.dependencies]
 gtk = "0.18"
 webkit2gtk = "2.0"
+secret-service = { version = "4.0.0", features = ["rt-async-io-crypto-rust"] }
 
+# Connector tokens and sync keys on a Mac: the login Keychain (src/connectors/store.rs). Already linked by native-tls.
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
+security-framework = "3.7.0"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"

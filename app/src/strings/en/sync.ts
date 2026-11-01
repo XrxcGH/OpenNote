@@ -127,6 +127,10 @@ export const sync = {
       'Your passphrase never leaves this device. It unlocks the key through Argon2id, which makes guessing it slow.',
     item4:
       'Each device keeps its own key in Windows Credential Manager. OpenNote has no server and no copy of any key.',
+    item4Macos: 'Each device keeps its own key in the Keychain. OpenNote has no server and no copy of any key.',
+    item4Linux:
+      'Each device keeps its own key in the system keyring (GNOME Keyring or KWallet). OpenNote has no server and ' +
+      'no copy of any key.',
     item5:
       'Password-protected sections stay sealed with their own password. Sync copies them as they are and never opens ' +
       'them.',
@@ -155,6 +159,8 @@ export const sync = {
     username: 'User name',
     password: 'Password or app password',
     passwordHelp: 'Kept in Windows Credential Manager on this device.',
+    passwordHelpMacos: 'Kept in the Keychain on this Mac.',
+    passwordHelpLinux: 'Kept in the system keyring (GNOME Keyring or KWallet) on this device.',
     deviceName: 'Name for this device',
     deviceNameDefault: 'This PC',
     passphrase: 'Passphrase',

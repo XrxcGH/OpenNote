@@ -39,11 +39,12 @@ Every shortcut that uses Ctrl on Windows uses Command (⌘) on a Mac: ⌘K opens
 
 Open Settings, then **About**, or press ⌘K (Ctrl+K on Linux) and choose **Show what works on this computer**. The list names each feature that still needs Windows, and what to do instead:
 
-- Text in pictures and scanned pages isn't searchable, and handwriting doesn't turn into text, because both use recognition that Windows provides. Your ink is kept as drawn.
+- Text in pictures and scanned pages is read on the device: by Apple's Vision on a Mac, and by Tesseract on Linux once you install the tesseract-ocr package and a language pack, such as tesseract-ocr-eng.
+- Handwriting turns into text on the device too. A Mac reads it with Vision. On Linux, Tesseract reads it, best when the letters are neat and printed. Your ink is kept as drawn either way.
 - On Linux, read aloud needs `espeak-ng` and spell check needs `hunspell` with a dictionary. Install them with your package manager, for example `sudo apt install espeak-ng hunspell hunspell-en-us`. A Mac has both built in.
 - Protected sections open with their password. Windows Hello, docking to a screen edge, Snap Layouts, and Share to OpenNote are Windows features.
 - Recording what the computer plays may not start, because the system has no loopback device. The microphone works.
-- Sync can't be set up yet, because each device keeps its key in Windows Credential Manager.
+- Sync keys and connector sign-ins are kept in the Keychain on a Mac. On Linux they are kept in the system keyring (GNOME Keyring or KWallet); without one running, sync can't be set up and sign-ins last until OpenNote closes.
 - On Linux, pen pressure depends on the desktop. Some setups report none, and strokes then have one width.
 
 Everything stays on your computer, as on Windows, unless you turn on a cloud feature.

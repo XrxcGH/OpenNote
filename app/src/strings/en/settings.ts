@@ -60,10 +60,10 @@ export const settings = {
     limitsTitle: 'What works differently on {system}',
     limitsIntro: 'Everything else works as it does on Windows. Your notes stay on this computer either way.',
     limits: {
-      textInPictures:
-        "Text in pictures and scanned pages isn't found by search yet, because it needs Windows' text recognition.",
-      handwriting:
-        "Handwriting doesn't turn into text yet, because it needs Windows Ink Analysis. Your ink is kept as drawn.",
+      textInPicturesTesseract:
+        'Text in pictures is read with Tesseract. Install tesseract-ocr and a language pack, like tesseract-ocr-eng.',
+      handwritingTesseract:
+        'Tesseract turns handwriting into text, and reads neat, printed letters best. It needs tesseract-ocr.',
       systemTools:
         'Read aloud and spell check use programs installed on this computer: espeak-ng for voices and ' +
         'hunspell for spelling. Install them with your package manager if they are missing.',
@@ -73,7 +73,8 @@ export const settings = {
       shareTarget:
         'Sharing to OpenNote from other apps is a Windows feature. Drag files or paste them into a page instead.',
       windowTools: 'Docking to a screen edge, Snap Layouts, and the custom title bar are Windows features.',
-      sync: "Sync can't be set up here yet, because each device keeps its key in Windows Credential Manager. Set it up on a Windows PC.",
+      syncKeyring:
+        "Sync keys and sign-ins are kept in GNOME Keyring or KWallet. Without one running, sync can't be set up.",
       penPressure:
         'Pen pressure depends on the desktop: some Linux setups report none, and strokes then have one width.',
     },

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { t } from '../../strings/t';
 import { Button, RadioCard, RadioGroup, TextField, announce, showToast } from '../../ui';
-import { checkGroups, codeOf, errorText, groupMatches, passphraseProblem, placeReady } from './model';
+import { checkGroups, codeOf, errorText, groupMatches, keyStoreText, passphraseProblem, placeReady } from './model';
 import { setView, syncClient } from './runtime';
 import styles from './sync.module.css';
 import type { BackendConfig, BeginInput, SyncView } from './types';
@@ -90,7 +90,7 @@ function PlaceStep({ f, set }: { f: Fields; set: Change }) {
             label={t('sync.wizard.password')}
             value={f.password}
             onChange={(password) => set({ password })}
-            help={t('sync.wizard.passwordHelp')}
+            help={keyStoreText('sync.wizard.passwordHelp')}
             secret
           />
         </>

@@ -18,7 +18,16 @@ use serde_json::Value;
 const LINKED_CRATES: &str = concat!(
     "itoa memchr opennote-intel proc-macro2 quote serde serde_core serde_derive serde_json syn thiserror ",
     "thiserror-impl unicode-ident windows windows-collections windows-core windows-future windows-implement ",
-    "windows-interface windows-link windows-numerics windows-result windows-strings windows-threading zmij"
+    "windows-interface windows-link windows-numerics windows-result windows-strings windows-threading zmij ",
+    // Apple's Vision framework on a Mac (src/ocr/vision.rs): the objc2 bindings of Foundation, Core Foundation, Core
+    // Graphics, and Vision, which call the system frameworks on the device. The rest come with the features other
+    // crates of the workspace turn on in objc2: cc and its helpers build objc2's exception shim, and the wasm and
+    // futures crates are dependencies of those build helpers for other targets. None of them opens a connection.
+    "bitflags block2 bumpalo cc cfg-if dispatch2 find-msvc-tools futures-core futures-io futures-macro futures-sink ",
+    "futures-task futures-util getrandom jobserver js-sys libc objc2 objc2-core-foundation objc2-core-graphics ",
+    "objc2-encode objc2-exception-helper objc2-foundation objc2-io-surface objc2-vision once_cell pin-project-lite ",
+    "r-efi rand_core rustversion shlex slab wasm-bindgen wasm-bindgen-macro wasm-bindgen-macro-support ",
+    "wasm-bindgen-shared"
 );
 
 /// The features of the `windows` crate that this crate turns on, exactly.

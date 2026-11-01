@@ -10,6 +10,7 @@ import { page } from './page';
 import { palette } from './palette';
 import { shortcuts } from './shortcuts';
 import { settings } from './settings';
+import { platformIntel } from './platformIntel';
 import { setup } from './setup';
 import { language } from './language';
 import { theme } from './theme';
@@ -103,6 +104,7 @@ export const en = {
   palette,
   shortcuts,
   settings,
+  platformIntel,
   setup,
   language,
   theme,
