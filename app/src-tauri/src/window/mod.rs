@@ -16,6 +16,7 @@ pub mod snap_overlay;
 #[cfg(windows)]
 pub mod subclass;
 pub mod system_menu;
+pub mod tao_window;
 #[cfg(all(test, windows))]
 mod test_windows;
 pub mod webview;
