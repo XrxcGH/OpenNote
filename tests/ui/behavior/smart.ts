@@ -4,8 +4,8 @@ import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 /** A page of text and a small table (?fixture=smart), open and ready. */
-export async function openSmart(page: Page): Promise<void> {
-  await page.goto('/?fixture=smart');
+export async function openSmart(page: Page, fixture = 'smart'): Promise<void> {
+  await page.goto(`/?fixture=${fixture}`);
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
