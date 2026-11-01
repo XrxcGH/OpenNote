@@ -611,9 +611,9 @@ label.second {{ background: #eae3d8; color: #2b2521; }}
 input {{ position: absolute; opacity: 0; width: 1px; height: 1px; }}
 label:focus-within {{ outline: 3px solid #2b2521; outline-offset: 2px; }}
 @media (prefers-color-scheme: dark) {{
-  body {{ background: #1f1c19; color: #efe8dd; }}
-  label.second {{ background: #35302b; color: #efe8dd; }}
-  label:focus-within {{ outline-color: #efe8dd; }}
+  body {{ background: #1e1e1c; color: #f2f1ec; }}
+  label.second {{ background: #383836; color: #f2f1ec; }}
+  label:focus-within {{ outline-color: #f2f1ec; }}
 }}
 </style></head>
 <body><main>
