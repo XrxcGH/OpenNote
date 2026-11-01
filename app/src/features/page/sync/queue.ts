@@ -196,6 +196,7 @@ class Queue implements SyncQueue, QueueInternals {
   private readonly waiting = new Map<BlockId, Edit[]>();
   private gate: (() => Promise<void>) | null = null;
   private chain: Promise<unknown> = Promise.resolve();
+  private steps: Promise<void> = Promise.resolve();
   private followerTimer: ReturnType<typeof setTimeout> | null = null;
   private state: UndoState = { canUndo: false, canRedo: false };
 
@@ -236,11 +237,21 @@ class Queue implements SyncQueue, QueueInternals {
   }
 
   undo(): Promise<void> {
-    return this.step('undo');
+    return this.queueStep('undo');
   }
 
   redo(): Promise<void> {
-    return this.step('redo');
+    return this.queueStep('redo');
+  }
+
+  /**
+   * Runs undos and redos one at a time. Ctrl+Z pressed quickly starts the next step before the last frame is
+   * applied, and a frame worked out against the older text lands at the wrong positions, which can throw.
+   */
+  private queueStep(direction: 'undo' | 'redo'): Promise<void> {
+    const run = this.steps.then(() => this.step(direction));
+    this.steps = run.catch(() => undefined);
+    return run;
   }
 
   canUndo(): boolean {
