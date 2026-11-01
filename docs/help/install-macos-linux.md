@@ -37,7 +37,7 @@ Open Settings, then **About**, or press ⌘K (Ctrl+K on Linux) and choose **Show
 - Saving a page as PDF and printing aren't here yet. Export as Word or HTML, then print that.
 - Protected sections open with their password. Windows Hello, docking to a screen edge, Snap Layouts, and Share to OpenNote are Windows features.
 - Recording what the computer plays may not start, because the system has no loopback device. The microphone works.
-- Sync can't be set up yet, because each device keeps its key in Windows Credential Manager.
+- Sync keys and connector sign-ins are kept in the Keychain on a Mac. On Linux they are kept in the system keyring (GNOME Keyring or KWallet); without one running, sync can't be set up and sign-ins last until OpenNote closes.
 - On Linux, pen pressure depends on the desktop. Some setups report none, and strokes then have one width.
 
 Everything stays on your computer, as on Windows, unless you turn on a cloud feature.

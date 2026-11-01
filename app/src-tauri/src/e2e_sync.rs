@@ -2,12 +2,15 @@
 //! and the status the title bar shows. The engine is `opennote-sync`; this module only decides when it runs and
 //! keeps its secrets.
 //!
-//! Nothing runs until the person sets sync up. The device's own secret, and a WebDAV password, live in Windows
-//! Credential Manager (`OpenNote/sync/device` and `OpenNote/sync/webdav`), never in a file, a log, or the
-//! interface. The passphrase, the recovery key, and a pairing code are taken out of the call's arguments into
-//! `Zeroizing` buffers before anything else runs, used once, and never kept. A new vault's recovery key is not in
-//! the setup reply: the interface asks for it once, with `recoveryKey`, and the reply's buffer is cleared after it
-//! is serialized. Work offline and Pause stop every round. The interface calls one command, `sync_call`, with an
+//! Nothing runs until the person sets sync up. The device's own secret, and a WebDAV password, live in the
+//! system's credential store (`OpenNote/sync/device` and `OpenNote/sync/webdav`: Windows Credential Manager, the
+//! Keychain, or the Secret Service), never in a file, a log, or the interface. A store that forgets them at exit
+//! (a Linux desktop with no Secret Service) can't hold sync.
+//!
+//! The passphrase, the recovery key, and a pairing code are taken out of the call's arguments into `Zeroizing`
+//! buffers before anything else runs, used once, and never kept. A new vault's recovery key is not in the setup
+//! reply: the interface asks for it once, with `recoveryKey`, and the reply's buffer is cleared after it is
+//! serialized. Work offline and Pause stop every round. The interface calls one command, `sync_call`, with an
 //! operation name.
 
 use std::fs;
@@ -149,7 +152,13 @@ pub enum Reply {
 impl SyncService {
     /// The service for this profile. Nothing is read until the first call.
     pub fn new(paths: &Paths) -> SyncService {
-        SyncService::build(paths.local.join("sync"), platform_store(), cfg!(windows))
+        SyncService::from_store(paths.local.join("sync"), platform_store())
+    }
+
+    /// Sync is set up only when the store keeps secrets across restarts, which it says itself.
+    fn from_store(dir: PathBuf, secrets: Arc<dyn SecretStore>) -> SyncService {
+        let keeps = secrets.keeps_secrets();
+        SyncService::build(dir, secrets, keeps)
     }
 
     #[cfg(test)]
@@ -293,7 +302,7 @@ impl SyncService {
         let recovery_key = take_secret(args, "recoveryKey");
         if !self.inner.keeps_secrets {
             return Err(bad(
-                "Sync can't keep this computer's key between starts here yet. Set it up on a Windows PC for now.",
+                "Sync needs the system keyring to keep this computer's key. Start GNOME Keyring or KWallet, then try again.",
             ));
         }
         if self.config().is_some() {
@@ -326,9 +335,10 @@ impl SyncService {
         );
         if stored.is_err() {
             let _ = vault::remove_device(store.as_ref(), &keys, &tag, now_ms());
-            return Err(bad(
-                "Windows Credential Manager didn't keep this device's key, so sync wasn't set up.",
-            ));
+            return Err(bad(&format!(
+                "{} didn't keep this device's key, so sync wasn't set up.",
+                self.inner.secrets.place()
+            )));
         }
         if matches!(backend, BackendConfig::Webdav { .. })
             && self
@@ -337,9 +347,10 @@ impl SyncService {
                 .put(WEBDAV_PASSWORD, &Secret::new(password.as_str()))
                 .is_err()
         {
-            return Err(bad(
-                "Windows Credential Manager didn't keep the server password, so sync wasn't set up.",
-            ));
+            return Err(bad(&format!(
+                "{} didn't keep the server password, so sync wasn't set up.",
+                self.inner.secrets.place()
+            )));
         }
         let _ = fs::remove_file(self.state_path());
         self.save_config(&Config {

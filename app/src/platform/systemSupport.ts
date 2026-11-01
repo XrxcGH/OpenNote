@@ -16,7 +16,7 @@ export type SystemLimit =
   | 'windowTools'
   | 'updates'
   | 'commandLine'
-  | 'sync'
+  | 'syncKeyring'
   | 'penPressure';
 
 const BOTH: readonly SystemLimit[] = [
@@ -28,13 +28,12 @@ const BOTH: readonly SystemLimit[] = [
   'shareTarget',
   'windowTools',
   'commandLine',
-  'sync',
 ];
 
 const LIMITS: Record<HostSystem, readonly SystemLimit[]> = {
   windows: [],
   macos: [...BOTH, 'systemAudio', 'updates'],
-  linux: [...BOTH, 'systemAudio', 'penPressure'],
+  linux: [...BOTH, 'systemAudio', 'syncKeyring', 'penPressure'],
 };
 
 /** The limits of `system`, in the order the list shows them. Windows has none. */

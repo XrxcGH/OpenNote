@@ -76,6 +76,14 @@ zeroize = "1.9.0"
 [target.'cfg(not(windows))'.dependencies]
 tauri-plugin-dialog = "2"
 
+# Connector tokens and sync keys on a Mac: the login Keychain (src/connectors/store.rs). Already linked by native-tls.
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "3.7.0"
+
+# Connector tokens and sync keys on Linux: the Secret Service over D-Bus (GNOME Keyring, KWallet), in plain Rust.
+[target.'cfg(target_os = "linux")'.dependencies]
+secret-service = { version = "4.0.0", features = ["rt-async-io-crypto-rust"] }
+
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
 # For `#[implement]`, which the Snap Layouts overlay's UI Automation provider uses.
