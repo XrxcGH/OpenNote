@@ -33,7 +33,7 @@ Every shortcut that uses Ctrl on Windows uses Command (⌘) on a Mac: ⌘K opens
 Open Settings, then **About**, or press ⌘K (Ctrl+K on Linux) and choose **Show what works on this computer**. The list names each feature that still needs Windows, and what to do instead:
 
 - Text in pictures and scanned pages is read on the device: by Apple's Vision on a Mac, and by Tesseract on Linux once you install the tesseract-ocr package and a language pack, such as tesseract-ocr-eng.
-- Handwriting doesn't turn into text, because it uses recognition that Windows provides. Your ink is kept as drawn.
+- Handwriting turns into text on the device too. A Mac reads it with Vision. On Linux, Tesseract reads it, best when the letters are neat and printed. Your ink is kept as drawn either way.
 - Read aloud has no voices, because it uses the voices Windows has.
 - Saving a page as PDF and printing aren't here yet. Export as Word or HTML, then print that.
 - Protected sections open with their password. Windows Hello, docking to a screen edge, Snap Layouts, and Share to OpenNote are Windows features.

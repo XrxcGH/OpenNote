@@ -62,8 +62,8 @@ export const settings = {
     limits: {
       textInPicturesTesseract:
         'Text in pictures is read with Tesseract. Install tesseract-ocr and a language pack, like tesseract-ocr-eng.',
-      handwriting:
-        "Handwriting doesn't turn into text yet, because it needs Windows Ink Analysis. Your ink is kept as drawn.",
+      handwritingTesseract:
+        'Tesseract turns handwriting into text, and reads neat, printed letters best. It needs tesseract-ocr.',
       readAloud:
         "Read aloud has no voices yet, because it uses the voices Windows has. Copy the text to your system's reader instead.",
       hello: 'Protected sections open with their password. Windows Hello is a Windows feature.',

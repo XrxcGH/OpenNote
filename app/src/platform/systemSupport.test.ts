@@ -27,6 +27,13 @@ describe('systemLimits', () => {
     expect(t('settings.about.limits.textInPicturesTesseract')).toMatch(/tesseract-ocr/);
   });
 
+  it('turns handwriting into text on a Mac, and says on Linux that Tesseract reads print best', () => {
+    const mac: readonly string[] = systemLimits('macos');
+    expect(mac).not.toContain('handwriting');
+    expect(systemLimits('linux')).toContain('handwritingTesseract');
+    expect(t('settings.about.limits.handwritingTesseract')).toMatch(/neat, printed letters/);
+  });
+
   it('has a sentence for every limit it lists', () => {
     for (const system of ['macos', 'linux'] as const) {
       for (const limit of systemLimits(system)) {

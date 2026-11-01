@@ -7,7 +7,7 @@ import type { HostSystem } from './types';
 /** A feature that is missing or works differently on a system, with the string key that explains it. */
 export type SystemLimit =
   | 'textInPicturesTesseract'
-  | 'handwriting'
+  | 'handwritingTesseract'
   | 'readAloud'
   | 'hello'
   | 'pdf'
@@ -20,7 +20,6 @@ export type SystemLimit =
   | 'penPressure';
 
 const BOTH: readonly SystemLimit[] = [
-  'handwriting',
   'readAloud',
   'hello',
   'pdf',
@@ -32,7 +31,7 @@ const BOTH: readonly SystemLimit[] = [
 const LIMITS: Record<HostSystem, readonly SystemLimit[]> = {
   windows: [],
   macos: [...BOTH, 'systemAudio', 'updates'],
-  linux: [...BOTH, 'textInPicturesTesseract', 'systemAudio', 'syncKeyring', 'penPressure'],
+  linux: [...BOTH, 'textInPicturesTesseract', 'handwritingTesseract', 'systemAudio', 'syncKeyring', 'penPressure'],
 };
 
 /** The limits of `system`, in the order the list shows them. Windows has none. */
