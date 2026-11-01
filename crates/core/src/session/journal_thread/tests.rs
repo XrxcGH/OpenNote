@@ -170,6 +170,26 @@ fn an_appended_transaction_is_in_the_file_when_append_returns() {
     assert!(matches!(read(&s, 1).records.last(), Some(JournalRecord::Txn { seq, .. }) if *seq == next));
 }
 
+/// An append for a journal the thread no longer holds is never written, so it doesn't make the edit wait out
+/// `WRITE_WAIT`: it is answered at once, as not written.
+#[test]
+fn an_append_to_a_journal_the_thread_dropped_answers_at_once_as_not_written() {
+    let s = setup(slow());
+    let handle = s
+        .thread
+        .open_page(&key(), sample_page().id, meta("boot-1"), base(0))
+        .unwrap();
+    handle.commands.send(Command::Detach { id: handle.id }).unwrap();
+    let started = std::time::Instant::now();
+    let seq = handle.append_txn(&txn(1));
+    assert!(
+        started.elapsed() < Duration::from_millis(500),
+        "the append waited {:?} for a journal nobody holds",
+        started.elapsed()
+    );
+    assert!(!handle.written(seq), "a record no journal holds was reported written");
+}
+
 /// A journal thread slower than the append's wait doesn't hold the core. The append then doesn't claim the record
 /// is written, so the edit's answer says so and the interface keeps saying "Saving". Before, the wait's timeout
 /// was dropped, and a slow first generation still let an unwritten stroke show as Saved.

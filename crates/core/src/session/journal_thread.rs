@@ -347,6 +347,7 @@ impl JournalHandle {
             seq: *seq,
             bytes,
             edit: true,
+            shared: Arc::clone(&self.shared),
         };
         if self.commands.send(command).is_err() {
             self.shared.health.close();
