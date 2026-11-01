@@ -5,7 +5,7 @@
 import { distance } from '../primitives';
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
-import { sampleArc } from './generate';
+import { arcEnd } from './generate';
 import { dragSpline, splineHandles } from './spline';
 import type { Shape } from './types';
 
@@ -188,11 +188,9 @@ export function dragHandle(shape: Shape, id: string, to: Vec): Shape {
           ? { start: angle, sweep: end - angle - 2 * Math.PI * Math.round((end - angle - shape.sweep) / (2 * Math.PI)) }
           : { start: shape.start, sweep: shape.sweep + turnBetween(end, angle) };
       if (shape.kind === 'arc') return { ...shape, ...next };
-      const body = sampleArc(shape.center, shape.radius, next.start, next.sweep);
-      const tip = body[body.length - 1];
-      const back = body[Math.max(0, body.length - 4)];
+      const { tip, direction } = arcEnd(shape.center, shape.radius, next.start, next.sweep);
       const head = distance(shape.barbs[0], at(shape.center, shape.radius, shape.start + shape.sweep));
-      return { ...shape, ...next, barbs: headBarbs(tip, unit(back, tip), head || 24) };
+      return { ...shape, ...next, barbs: headBarbs(tip, direction, head || 24) };
     }
     case 'spline':
       return dragSpline(shape, id, to);
