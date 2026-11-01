@@ -28,6 +28,8 @@ export const kitMolBio = {
   insertShort: 'Insert',
   insertPicture: 'Insert picture',
   insertThis: 'Insert {what}',
+  figureOf: 'Figure: {what}',
+  textOf: 'Text: {what}',
   inserted: 'Inserted into the page.',
   noPage: 'Nothing was inserted: open a page and click where it should go, then insert again.',
   example: 'Reset to the example',

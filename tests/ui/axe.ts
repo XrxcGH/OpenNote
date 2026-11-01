@@ -11,9 +11,14 @@ const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 
-export async function expectNoAxeViolations(page: Page, options: { include?: string; tags?: string[] } = {}) {
-  await page.addScriptTag({ content: AXE });
-  const violations = await page.evaluate(
+/** Runs axe on the page as it is now and returns one readable line per violation. */
+export async function axeViolations(
+  page: Page,
+  options: { include?: string; tags?: string[] } = {},
+): Promise<string[]> {
+  const loaded = await page.evaluate(() => Boolean((window as unknown as { axe?: unknown }).axe));
+  if (!loaded) await page.addScriptTag({ content: AXE });
+  return page.evaluate(
     async ({ include, tags }) => {
       const axe = (window as unknown as { axe: typeof import('axe-core') }).axe;
       const results = await axe.run(include ?? document, { runOnly: { type: 'tag', values: tags } });
@@ -21,5 +26,8 @@ export async function expectNoAxeViolations(page: Page, options: { include?: str
     },
     { include: options.include, tags: options.tags ?? AXE_TAGS },
   );
-  expect(violations).toEqual([]);
+}
+
+export async function expectNoAxeViolations(page: Page, options: { include?: string; tags?: string[] } = {}) {
+  expect(await axeViolations(page, options)).toEqual([]);
 }

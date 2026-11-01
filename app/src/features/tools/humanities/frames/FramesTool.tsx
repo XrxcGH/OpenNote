@@ -1,5 +1,6 @@
 // Note frames: pick a structure by subject or by searching, look at it, and insert it at the caret as headings,
 // prompts, lists, and a table.
+import { VisuallyHidden } from '../../../../ui/VisuallyHidden';
 import '../text';
 import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
@@ -77,6 +78,13 @@ export function FramesTool() {
           onChange={setGroup}
         />
       </Fields>
+      <VisuallyHidden>
+        <span role="status" aria-live="polite">
+          {shown.length === 0
+            ? t('kitHumanities.frames.none')
+            : t('kitHumanities.frames.count', { count: shown.length })}
+        </span>
+      </VisuallyHidden>
       {shown.length === 0 ? (
         <Note>{t('kitHumanities.frames.none')}</Note>
       ) : (

@@ -6,6 +6,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, openMenu } from '../../../../ui';
 import type { RenderOptions, RenderResult } from '../../../math';
+import { ScrollMath } from '../../ui/ScrollMath';
 import { loadStored, saveStored } from '../../ui/storage';
 import chem from '../../ui/chem.module.css';
 import extra from '../../ui/extra.module.css';
@@ -240,7 +241,7 @@ function Steps({ outcome }: { outcome: Outcome }) {
           return (
             <li key={i}>
               {say(step)}
-              {drawn?.ok ? <span className={styles.math} dangerouslySetInnerHTML={{ __html: drawn.html }} /> : null}
+              {drawn?.ok ? <ScrollMath className={styles.math} html={drawn.html} /> : null}
             </li>
           );
         })}

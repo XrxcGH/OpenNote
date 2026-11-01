@@ -82,7 +82,9 @@ export function Results({ report, problem, title, tool, inputs }: ResultsProps) 
       {(report.blocks ?? []).map((block, i) => (
         <div key={i} className={styles.section}>
           <h3 className={styles.heading}>{col(block.title)}</h3>
-          <pre className={styles.mono}>{block.text}</pre>
+          <pre className={styles.mono} tabIndex={0} role="group" aria-label={col(block.title)}>
+            {block.text}
+          </pre>
         </div>
       ))}
       {plots.map((spec, i) => (
@@ -110,16 +112,20 @@ export function ResultTable({ table }: { table: KitTable }) {
   const insert = () => announce(say(insertTable(table) ? 'kitStatInfer.ui.inserted' : 'kitStatInfer.ui.noPage'));
   return (
     <div className={styles.section}>
-      <div className={styles.scroll}>
+      <div className={styles.scroll} tabIndex={0} role="region" aria-label={col(table.title)}>
         <table className={styles.table}>
           <caption>{col(table.title)}</caption>
           <thead>
             <tr>
-              {table.columns.map((h, i) => (
-                <th key={i} scope="col">
-                  {heading(h)}
-                </th>
-              ))}
+              {table.columns.map((h, i) =>
+                heading(h) === '' ? (
+                  <td key={i} />
+                ) : (
+                  <th key={i} scope="col">
+                    {heading(h)}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
           <tbody>
