@@ -42,9 +42,13 @@ pub async fn speech_voices() -> IpcResult<Vec<Voice>> {
     }
     #[cfg(not(windows))]
     {
-        tauri::async_runtime::spawn_blocking(system_voices)
-            .await
-            .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
+        tauri::async_runtime::spawn_blocking(|| {
+            let fresh = system_voices();
+            store_voices(&fresh);
+            fresh
+        })
+        .await
+        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
     }
 }
 
@@ -60,8 +64,8 @@ pub async fn speech_synthesize(text: String, voice: String) -> IpcResult<tauri::
     {
         check_text(&text)?;
         let reply = tauri::async_runtime::spawn_blocking(move || {
-            let known = system_voices();
-            let chosen = voices::choose(&known, &voice)?;
+            let known = cached_voices();
+            let chosen = voices::choose(&known, &voice);
             let wav = synthesize_with(chosen.as_deref(), &text)?;
             wav::reply(&text, wav)
         })
@@ -147,6 +151,36 @@ fn synthesize_with(_voice: Option<&str>, _text: &str) -> IpcResult<Vec<u8>> {
     Err(IpcError::not_implemented("speech_synthesize"))
 }
 
+/// How long the voice list is reused before the program is asked again.
+#[cfg(not(windows))]
+const VOICES_TTL: Duration = Duration::from_secs(60);
+
+#[cfg(not(windows))]
+static VOICE_CACHE: std::sync::Mutex<Option<(Instant, Vec<Voice>)>> = std::sync::Mutex::new(None);
+
+#[cfg(not(windows))]
+fn store_voices(list: &[Voice]) {
+    if let Ok(mut cache) = VOICE_CACHE.lock() {
+        *cache = Some((Instant::now(), list.to_vec()));
+    }
+}
+
+/// The voice list, from the last listing when it is under a minute old, so reading a page doesn't run the
+/// voice-list program twice for every paragraph.
+#[cfg(not(windows))]
+fn cached_voices() -> Vec<Voice> {
+    if let Ok(cache) = VOICE_CACHE.lock() {
+        if let Some((at, list)) = cache.as_ref() {
+            if at.elapsed() < VOICES_TTL {
+                return list.clone();
+            }
+        }
+    }
+    let fresh = system_voices();
+    store_voices(&fresh);
+    fresh
+}
+
 /// What a program prints, or `None` when it is missing or fails.
 #[cfg_attr(windows, allow(dead_code))]
 fn run_for_output(program: &str, args: &[&str]) -> Option<String> {
@@ -178,8 +212,13 @@ fn run_to_file(program: &str, args: &[String], text: &str, out: &Path) -> IpcRes
         .stderr(Stdio::null())
         .spawn()
         .map_err(|_| unavailable())?;
+    // Written from a thread: a program that stops reading would otherwise block this call before the timeout runs.
+    // The thread ends when the program exits or is killed and the pipe closes.
     if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(text.as_bytes());
+        let text = text.to_owned();
+        std::thread::spawn(move || {
+            let _ = stdin.write_all(text.as_bytes());
+        });
     }
     let started = Instant::now();
     loop {
@@ -201,6 +240,26 @@ fn run_to_file(program: &str, args: &[String], text: &str, out: &Path) -> IpcRes
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
+
+    /// Runs the real `say` or `espeak-ng`. CI installs the Linux one and sets OPENNOTE_REQUIRE_NATIVE_TOOLS, so a
+    /// missing tool fails there; on a machine without one the test is skipped.
+    #[cfg(not(windows))]
+    #[test]
+    fn the_real_speech_program_makes_a_wav_with_word_times() {
+        if system_voices().is_empty() {
+            assert!(
+                std::env::var_os("OPENNOTE_REQUIRE_NATIVE_TOOLS").is_none(),
+                "a speech program is required here"
+            );
+            return;
+        }
+        let wav = synthesize_with(None, "hello world").unwrap();
+        assert_eq!(&wav[..4], b"RIFF");
+        let reply = wav::reply("hello world", wav).unwrap();
+        let json_len = u32::from_le_bytes(reply[..4].try_into().unwrap()) as usize;
+        let boundaries: serde_json::Value = serde_json::from_slice(&reply[4..4 + json_len]).unwrap();
+        assert_eq!(boundaries.as_array().unwrap().len(), 2, "one boundary for each word");
+    }
 
     #[test]
     fn text_must_be_present_and_bounded() {

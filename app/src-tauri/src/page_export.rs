@@ -198,8 +198,8 @@ pub async fn print_render(
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
     let bytes = match outcome {
         Ok(Ok(true)) => fs::read(&file).map_err(IpcError::from),
-        Ok(Ok(false)) => Err(IpcError::new(codes::INTERNAL, "WebView2 didn't write the PDF.")),
-        Ok(Err(message)) => Err(IpcError::new(codes::INTERNAL, format!("PrintToPdf failed: {message}"))),
+        Ok(Ok(false)) => Err(IpcError::new(codes::INTERNAL, "The PDF wasn't written.")),
+        Ok(Err(message)) => Err(IpcError::new(codes::INTERNAL, format!("The PDF failed: {message}"))),
         Err(_) => Err(IpcError::new("timeout", "Printing to PDF took too long.")),
     };
     let _ = fs::remove_file(&file);

@@ -27,7 +27,7 @@ function setup(
   };
   const frames: (() => void)[] = [];
   const client: SpeechClient = {
-    voices: () => Promise.resolve([{ id: 'Alex', name: 'Alex', language: 'en-US' }]),
+    voices: vi.fn(() => Promise.resolve([{ id: 'Alex', name: 'Alex', language: 'en-US' }])),
     synthesize: vi.fn(() => Promise.resolve({ wav: new ArrayBuffer(8), boundaries })),
   };
   const release = vi.fn();
@@ -35,6 +35,7 @@ function setup(
     client,
     () => ({ start: () => audio, release }),
     (run) => frames.push(run),
+    () => 'en-US',
   );
   const tick = () => frames.splice(0).forEach((run) => run());
   return { audio, client, engine, release, tick };
@@ -43,6 +44,18 @@ function setup(
 const noop = () => undefined;
 
 describe('the system speech engine', () => {
+  it('speaks the default voice, the one the picker marks, when the saved voice is not installed', async () => {
+    const { client, engine } = setup();
+    vi.mocked(client.voices).mockResolvedValue([
+      { id: 'Albert', name: 'Albert', language: 'af-ZA' },
+      { id: 'Alex', name: 'Alex', language: 'en-US' },
+    ]);
+    expect((await engine.voices()).map((voice) => voice.isDefault)).toEqual([false, true]);
+    engine.speak('Hi', { voice: 'Samantha-from-another-computer', rate: 1 }, noop, noop);
+    await flush();
+    expect(client.synthesize).toHaveBeenCalledWith('Hi', 'Alex');
+  });
+
   it('lists the system voices with the first as default', async () => {
     const { engine } = setup();
     expect(await engine.voices()).toEqual([{ id: 'Alex', name: 'Alex', language: 'en-US', isDefault: true }]);
@@ -85,11 +98,11 @@ describe('the system speech engine', () => {
     expect(quiet).not.toHaveBeenCalled();
   });
 
-  it('asks for the default voice when none is chosen', async () => {
+  it('speaks the voice the picker marks as default when none is chosen', async () => {
     const { engine, client } = setup();
     engine.speak('Hi', { voice: null, rate: 1 }, noop, noop);
     await flush();
-    expect(client.synthesize).toHaveBeenCalledWith('Hi', '');
+    expect(client.synthesize).toHaveBeenCalledWith('Hi', 'Alex');
   });
 
   it('pauses and resumes the audio', async () => {
@@ -117,6 +130,32 @@ function fake(voices: number): SpeechEngine & { spoke: ReturnType<typeof vi.fn> 
     spoke,
   };
 }
+
+describe('stopping while the engine is choosing', () => {
+  it('does not speak after Stop pressed in the window before the voices are known', async () => {
+    const web = fake(0);
+    const system = fake(2);
+    const engine = createReadAloudEngine(web, system);
+    engine?.speak('a', { voice: null, rate: 1 }, vi.fn(), vi.fn());
+    engine?.cancel();
+    await flush();
+    expect(system.spoke).not.toHaveBeenCalled();
+    expect(web.spoke).not.toHaveBeenCalled();
+    engine?.speak('b', { voice: null, rate: 1 }, vi.fn(), vi.fn());
+    await flush();
+    expect(system.spoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a pause pressed while choosing', async () => {
+    const system = fake(2);
+    const engine = createReadAloudEngine(fake(0), system);
+    engine?.speak('a', { voice: null, rate: 1 }, vi.fn(), vi.fn());
+    engine?.pause();
+    await flush();
+    expect(system.spoke).toHaveBeenCalledTimes(1);
+    expect(system.pause).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('choosing between the web view and the system', () => {
   it('uses the web view when it has voices', async () => {

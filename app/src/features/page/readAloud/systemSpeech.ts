@@ -3,7 +3,8 @@
 // comes. Text stays on the computer: the shell speaks it through `say` or `espeak-ng`.
 
 import type { SpeechClient } from '../../../platform/types';
-import type { SpeechEngine, SpeechVoice } from './engine';
+import { voiceLanguage } from '../../../state/language';
+import { pickVoice, type SpeechEngine, type SpeechVoice } from './engine';
 
 /** The part of an audio element this engine uses, so a test can stand in for it. */
 export interface Playback {
@@ -41,16 +42,30 @@ export function createSystemSpeechEngine(
   client: SpeechClient,
   makePlayback: () => PlaybackSource = browserPlayback,
   frame: Frame = (run) => requestAnimationFrame(run),
+  language: () => string = voiceLanguage,
 ): SpeechEngine {
   let turn = 0;
   let stop: () => void = () => undefined;
   let current: Playback | null = null;
+  let known: SpeechVoice[] | null = null;
+
+  // The default is the voice for the interface language, the same rule the web engine uses, and it is the voice
+  // that is spoken when none is saved or the saved one is not installed here.
+  const listed = async (): Promise<SpeechVoice[]> => {
+    const list = await client.voices().catch(() => []);
+    const best = pickVoice(
+      list.map((voice) => ({ voiceURI: voice.id, lang: voice.language, default: false })),
+      null,
+      language(),
+    );
+    known = list.map((voice): SpeechVoice => ({ ...voice, isDefault: voice.id === best?.voiceURI }));
+    return known;
+  };
+  const voiceFor = (list: readonly SpeechVoice[], saved: string | null): string =>
+    list.find((voice) => voice.id === saved)?.id ?? list.find((voice) => voice.isDefault)?.id ?? '';
 
   return {
-    async voices() {
-      const list = await client.voices().catch(() => []);
-      return list.map((voice, index): SpeechVoice => ({ ...voice, isDefault: index === 0 }));
-    },
+    voices: listed,
     speak(text, options, onBoundary, onEnd) {
       stop();
       const mine = ++turn;
@@ -62,8 +77,8 @@ export function createSystemSpeechEngine(
         current = null;
         source.release();
       };
-      client
-        .synthesize(text, options.voice ?? '')
+      (known ? Promise.resolve(known) : listed())
+        .then((list) => client.synthesize(text, voiceFor(list, options.voice)))
         .then(({ wav, boundaries }) => {
           if (mine !== turn) return;
           const audio = source.start(wav);
@@ -119,6 +134,12 @@ export function createReadAloudEngine(web: SpeechEngine | null, system: SpeechEn
   if (!system) return web;
   if (!web) return system;
   let chosen: SpeechEngine = web;
+  // Each speak or cancel starts a new turn, so a speak that was waiting on the choice does nothing once the
+  // person pressed Stop or asked for something else. The choice is made once and refreshed on each listing.
+  let turn = 0;
+  let started = false;
+  let pausedEarly = false;
+  let decided: Promise<SpeechVoice[]> | null = null;
   const decide = async (): Promise<SpeechVoice[]> => {
     const webVoices = await web.voices();
     if (webVoices.length > 0) {
@@ -130,13 +151,34 @@ export function createReadAloudEngine(web: SpeechEngine | null, system: SpeechEn
     return systemVoices;
   };
   return {
-    voices: decide,
-    speak(text, options, onBoundary, onEnd) {
-      void decide().then(() => chosen.speak(text, options, onBoundary, onEnd));
+    voices: () => {
+      decided = decide();
+      return decided;
     },
-    pause: () => chosen.pause(),
-    resume: () => chosen.resume(),
+    speak(text, options, onBoundary, onEnd) {
+      const mine = ++turn;
+      started = false;
+      pausedEarly = false;
+      decided ??= decide();
+      void decided.then(() => {
+        if (mine !== turn) return;
+        started = true;
+        chosen.speak(text, options, onBoundary, onEnd);
+        if (pausedEarly) chosen.pause();
+      });
+    },
+    pause() {
+      if (started) chosen.pause();
+      else pausedEarly = true;
+    },
+    resume() {
+      if (started) chosen.resume();
+      else pausedEarly = false;
+    },
     cancel: () => {
+      turn += 1;
+      started = false;
+      pausedEarly = false;
       web.cancel();
       system.cancel();
     },

@@ -55,6 +55,18 @@ pub fn watch_for_pdf(file: &Path, limit: Duration, tx: &mpsc::Sender<Result<bool
     let _ = tx.send(Err("The print operation wrote no PDF.".to_owned()));
 }
 
+/// How long to wait for a print job's PDF to appear before giving up. A job that never starts, such as a sheet that
+/// will not run, then fails with a message instead of waiting for the longer render limit.
+#[cfg_attr(windows, allow(dead_code))]
+const PRINT_LIMIT: Duration = Duration::from_secs(120);
+
+/// The name of GTK's file printer as this language shows it: GTK translates "Print to File", and the printer is
+/// found by that translated name, so the English name alone fails on a non-English system.
+#[cfg(target_os = "linux")]
+fn file_printer_name() -> String {
+    gtk::glib::dgettext(Some("gtk30"), "Print to File").to_string()
+}
+
 #[cfg(target_os = "linux")]
 pub fn start_print(
     window: &WebviewWindow,
@@ -69,11 +81,14 @@ pub fn start_print(
     let uri = url::Url::from_file_path(&file)
         .map_err(|()| IpcError::new(codes::INTERNAL, "The print file's path isn't valid."))?
         .to_string();
+    // If neither `finished` nor `failed` ever fires, a file that never appears still ends the wait.
+    let watcher = tx.clone();
+    std::thread::spawn(move || watch_for_pdf(&file, PRINT_LIMIT, &watcher));
     window
         .with_webview(move |webview| {
             let operation = PrintOperation::new(&webview.inner());
             let settings = PrintSettings::new();
-            settings.set_printer("Print to File");
+            settings.set_printer(&file_printer_name());
             settings.set("output-file-format", Some("pdf"));
             settings.set("output-uri", Some(&uri));
             operation.set_print_settings(&settings);
@@ -203,7 +218,7 @@ pub fn start_print(
             }
         })
         .map_err(IpcError::from)?;
-    std::thread::spawn(move || watch_for_pdf(&file, Duration::from_secs(120), &tx));
+    std::thread::spawn(move || watch_for_pdf(&file, PRINT_LIMIT, &tx));
     Ok(())
 }
 

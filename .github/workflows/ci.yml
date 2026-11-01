@@ -435,6 +435,11 @@ jobs:
       - name: WebKitGTK and the other system libraries the app links (Linux)
         if: runner.os == 'Linux'
         run: bash packaging/linux/install-build-deps.sh
+      - name: The speech and spelling programs the app drives (Linux)
+        # The tests run the real tools, not stand-ins for them: espeak-ng makes a WAV and hunspell flags a
+        # misspelling at the right place. On a Mac, `say` and NSSpellChecker are already there.
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y espeak-ng hunspell hunspell-en-us
       - name: Install tools
         run: npm ci
       - name: Build the interface (the Rust app embeds it)
@@ -444,6 +449,9 @@ jobs:
       - name: Fetch every platform's crates (the no-network test reads all of them offline)
         run: cargo fetch --locked
       - name: Rust tests
+        env:
+          # A missing speech or spelling program fails the run instead of skipping its tests.
+          OPENNOTE_REQUIRE_NATIVE_TOOLS: ${{ runner.os == 'Linux' && '1' || '' }}
         run: cargo test --workspace
       - name: Build of the app, without a bundle
         run: npx tauri build --no-bundle -- --profile ci

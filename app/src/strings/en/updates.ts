@@ -53,8 +53,6 @@ export const updates = {
       "OpenNote can't update itself in this folder. " +
       'Add it to the Start menu, which moves it to your user folder, or download the new version.',
     manualMode: 'OpenNote checks for updates only when you ask.',
-    byHand:
-      'OpenNote checks for updates and downloads them. Open the installer, then drag OpenNote to Applications.',
     idle: 'OpenNote checks for updates in the background.',
     checking: 'Checking for updates…',
     upToDate: 'OpenNote is up to date.',
@@ -113,6 +111,7 @@ export const updates = {
   commands: {
     check: 'Check for updates',
     restart: 'Restart to update',
+    openInstaller: 'Open the installer',
     goBack: 'Go back to the previous version',
     download: 'Download the update',
     skip: 'Skip this update',

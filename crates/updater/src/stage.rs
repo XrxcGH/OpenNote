@@ -28,10 +28,16 @@ use crate::{
     Offer, UpdateError,
 };
 
-/// The name of a copy of one version for one platform: `OpenNote-<version>-<platform>.exe`. Staged updates in
-/// `updates\` and the previous copy in `previous\` both use it.
+/// The name of a copy of one version for one platform: `OpenNote-<version>-<platform>.exe`, or `.dmg` for the Mac
+/// disk image, whose extension is how macOS decides to mount it. Staged updates in `updates\` and the previous
+/// copy in `previous\` both use it.
 pub fn copy_name(version: &Version, platform: PlatformKey) -> String {
-    format!("OpenNote-{version}-{}.exe", platform.key())
+    let extension = if platform == PlatformKey::MacosUniversal {
+        "dmg"
+    } else {
+        "exe"
+    };
+    format!("OpenNote-{version}-{}.{extension}", platform.key())
 }
 
 /// The name a download streams to before it's verified.
@@ -373,9 +379,18 @@ fn remove_copies_except(updates: &Path, keep: Option<&Path>) {
             continue;
         }
         let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
-        let ours = [".exe", ".exe.partial", ".exe.part", ".exe.part.json"]
-            .iter()
-            .any(|end| name.ends_with(end));
+        let ours = [
+            ".exe",
+            ".exe.partial",
+            ".exe.part",
+            ".exe.part.json",
+            ".dmg",
+            ".dmg.partial",
+            ".dmg.part",
+            ".dmg.part.json",
+        ]
+        .iter()
+        .any(|end| name.ends_with(end));
         if name.starts_with("OpenNote-") && ours {
             if let Err(error) = fs::remove_file(&path) {
                 log::warn!("Couldn't delete {}: {error}", path.display());
@@ -431,6 +446,11 @@ mod tests {
         assert_eq!(
             partial_name(&version, PlatformKey::WindowsAarch64),
             "OpenNote-0.5.0-beta.1-windows-aarch64.exe.partial"
+        );
+        // macOS picks the opener from the extension, so the Mac's disk image must end in .dmg.
+        assert_eq!(
+            copy_name(&version, PlatformKey::MacosUniversal),
+            "OpenNote-0.5.0-beta.1-darwin-universal.dmg"
         );
     }
 }

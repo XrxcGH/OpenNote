@@ -37,8 +37,34 @@ pub fn dictionaries_in(folder: &Path) -> Vec<String> {
     tags
 }
 
-/// Every installed dictionary tag.
+/// Whether the `hunspell` program runs. Without it every check would return nothing and every word would pass, so
+/// no language is offered.
+pub fn available() -> bool {
+    Command::new("hunspell")
+        .arg("--version")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok_and(|status| status.success())
+}
+
+/// The folders that have dictionaries, as a `DICPATH` value: Hunspell's own search path leaves out
+/// `/usr/local/share/hunspell` and LibreOffice's `myspell` folders.
+pub fn dicpath() -> String {
+    DICTIONARY_FOLDERS
+        .iter()
+        .filter(|folder| !dictionaries_in(Path::new(folder)).is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(":")
+}
+
+/// Every installed dictionary tag, or none when Hunspell isn't installed.
 pub fn installed() -> Vec<String> {
+    if !available() {
+        return Vec::new();
+    }
     let mut all: Vec<String> = DICTIONARY_FOLDERS
         .iter()
         .flat_map(|folder| dictionaries_in(Path::new(folder)))
@@ -69,16 +95,37 @@ pub fn flagged(line: &str) -> Option<(String, Vec<String>)> {
     }
 }
 
+/// Whether a character belongs inside a word for Hunspell.
+fn word_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '\'' || c == '\u{2019}' || c == '-'
+}
+
+/// The first place at or after `from` where `word` stands as a whole word: not inside a longer one, so `ther` is
+/// not found in `other`.
+fn find_word(text: &str, from: usize, word: &str) -> Option<usize> {
+    let mut at = from;
+    while let Some(found) = text[at..].find(word) {
+        let start = at + found;
+        let end = start + word.len();
+        let before = text[..start].chars().next_back().is_none_or(|c| !word_char(c));
+        let after = text[end..].chars().next().is_none_or(|c| !word_char(c));
+        if before && after {
+            return Some(start);
+        }
+        at = start + text[start..].chars().next().map_or(1, char::len_utf8);
+    }
+    None
+}
+
 /// The errors in `text` from Hunspell's answer to it. The flagged words come back in order, so each is looked for
-/// after the last one found; that gives UTF-16 units however Hunspell counts its own offsets.
+/// as a whole word after the last one found; that gives UTF-16 units however Hunspell counts its own offsets.
 pub fn errors_in(text: &str, answer: &str) -> Vec<SpellError> {
     let mut errors = Vec::new();
     let (mut byte_cursor, mut unit_cursor) = (0usize, 0u32);
     for (word, _) in answer.lines().filter_map(flagged) {
-        let Some(found) = text[byte_cursor..].find(&word) else {
+        let Some(start) = find_word(text, byte_cursor, &word) else {
             continue;
         };
-        let start = byte_cursor + found;
         unit_cursor += text[byte_cursor..start].encode_utf16().count() as u32;
         let length = word.encode_utf16().count() as u32;
         errors.push(SpellError {
@@ -100,6 +147,7 @@ pub fn pipe_input(text: &str) -> String {
 pub fn run(tag: &str, text: &str) -> Option<String> {
     let mut child = Command::new("hunspell")
         .args(["-d", &tag.replace('-', "_"), "-i", "utf-8", "-a"])
+        .env("DICPATH", dicpath())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
@@ -169,6 +217,45 @@ mod tests {
             errors_in("teh teh", answer),
             vec![SpellError { start: 0, length: 3 }, SpellError { start: 4, length: 3 }]
         );
+    }
+
+    #[test]
+    fn a_misspelling_inside_an_earlier_word_is_not_the_one_marked() {
+        let at = |text: &str, answer: &str| errors_in(text, answer);
+        assert_eq!(
+            at("other ther", "& ther 1 0: there\n"),
+            vec![SpellError { start: 6, length: 4 }]
+        );
+        assert_eq!(
+            at("that tha", "& tha 1 0: the\n"),
+            vec![SpellError { start: 5, length: 3 }]
+        );
+        assert_eq!(
+            at("stehen teh", "& teh 1 0: the\n"),
+            vec![SpellError { start: 7, length: 3 }]
+        );
+        assert_eq!(
+            at("don't dont", "& dont 1 0: don't\n"),
+            vec![SpellError { start: 6, length: 4 }]
+        );
+    }
+
+    /// Runs the real `hunspell` with an English dictionary. CI installs both and sets OPENNOTE_REQUIRE_NATIVE_TOOLS,
+    /// so a missing tool fails there; on a machine without them the test is skipped.
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn real_hunspell_marks_the_right_word() {
+        if !installed().iter().any(|tag| tag == "en-US") {
+            assert!(
+                std::env::var_os("OPENNOTE_REQUIRE_NATIVE_TOOLS").is_none(),
+                "hunspell with the en_US dictionary is required here"
+            );
+            return;
+        }
+        assert_eq!(check("en-US", "other ther"), vec![SpellError { start: 6, length: 4 }]);
+        assert_eq!(check("en-US", "the cat teh"), vec![SpellError { start: 8, length: 3 }]);
+        assert!(check("en-US", "the cat").is_empty());
+        assert!(suggest("en-US", "teh").iter().any(|word| word == "the"));
     }
 
     #[test]

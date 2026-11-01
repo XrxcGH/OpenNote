@@ -20,9 +20,11 @@ c.setLanguage($(argv[0])); var s = $(argv[1]); var n = s.length; var out = []; v
 while (at < n) { var r = c.checkSpellingOfStringStartingAt(s, at); if (r.length === 0) { break; }\
 out.push([r.location, r.length]); at = r.location + r.length; } return JSON.stringify(out); }";
 
-/// Prints the guesses for the word argv[1] in the language argv[0].
+/// Prints the guesses for the word argv[1] in the language argv[0], and none when the word is spelled right.
 pub const SUGGEST_SCRIPT: &str = "ObjC.import('AppKit');\
 function run(argv) { var c = $.NSSpellChecker.sharedSpellChecker; var s = $(argv[1]);\
+c.automaticallyIdentifiesLanguages = false; c.setLanguage($(argv[0]));\
+if (c.checkSpellingOfStringStartingAt(s, 0).length === 0) { return '[]'; }\
 var g = c.guessesForWordRangeInStringLanguageInSpellDocumentWithTag($.NSMakeRange(0, s.length), s, $(argv[0]), 0);\
 return JSON.stringify(g ? ObjC.deepUnwrap(g) : []); }";
 
@@ -113,10 +115,21 @@ mod tests {
         assert_eq!(web_tag("en_US"), "en-US");
     }
 
+    /// Runs the real scripts through `osascript` and NSSpellChecker; only a Mac has them.
+    #[cfg(target_os = "macos")]
     #[test]
-    fn the_scripts_read_their_arguments_in_the_order_the_code_passes_them() {
-        assert!(CHECK_SCRIPT.contains("argv[0]") && CHECK_SCRIPT.contains("argv[1]"));
-        assert!(CHECK_SCRIPT.contains("checkSpellingOfStringStartingAt"));
-        assert!(SUGGEST_SCRIPT.contains("guessesForWordRange"));
+    fn the_scripts_flag_and_suggest_on_this_mac() {
+        let found = languages();
+        let english = found
+            .available
+            .iter()
+            .find(|tag| tag.as_str() == "en_US")
+            .or_else(|| found.available.iter().find(|tag| tag.starts_with("en")))
+            .expect("an English dictionary")
+            .clone();
+        assert_eq!(check(&english, "teh cat"), vec![SpellError { start: 0, length: 3 }]);
+        assert!(check(&english, "the cat").is_empty());
+        assert!(suggest(&english, "teh").iter().any(|word| word == "the"));
+        assert!(suggest(&english, "cat").is_empty());
     }
 }

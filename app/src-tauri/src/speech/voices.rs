@@ -2,7 +2,6 @@
 //! tested on every system.
 
 use super::Voice;
-use crate::ipc::{IpcError, IpcResult};
 
 /// `say -v ?` prints one voice a line: the name, its locale, and `# a sample sentence`. A name can hold spaces and
 /// brackets (`Eddy (English (US))`), so the locale is the last word before the `#`.
@@ -47,17 +46,11 @@ pub fn parse_espeak(output: &str) -> Vec<Voice> {
         .collect()
 }
 
-/// The voice to pass to the program: the chosen id when the system lists it, `None` for the system default when
-/// the id is empty, and a refusal for any other id, so an id can never become a program option.
-pub fn choose(known: &[Voice], id: &str) -> IpcResult<Option<String>> {
-    if id.is_empty() {
-        return Ok(None);
-    }
-    known
-        .iter()
-        .find(|voice| voice.id == id)
-        .map(|voice| Some(voice.id.clone()))
-        .ok_or_else(|| IpcError::invalid("voice", "That voice isn't installed."))
+/// The voice to pass to the program: the chosen id when the system lists it, and `None`, the system default, for
+/// an empty id or one that isn't installed here (a saved voice from another computer must not stop reading). An id
+/// that isn't listed never reaches the program, so it can never become a program option.
+pub fn choose(known: &[Voice], id: &str) -> Option<String> {
+    known.iter().find(|voice| voice.id == id).map(|voice| voice.id.clone())
 }
 
 #[cfg(test)]
@@ -94,9 +87,9 @@ mod tests {
     #[test]
     fn only_a_listed_voice_reaches_the_program() {
         let known = parse_say("Alex en_US # hi\n");
-        assert_eq!(choose(&known, "").unwrap(), None);
-        assert_eq!(choose(&known, "Alex").unwrap(), Some("Alex".to_owned()));
-        assert!(choose(&known, "-o /etc/passwd").is_err());
-        assert!(choose(&known, "Zed").is_err());
+        assert_eq!(choose(&known, ""), None);
+        assert_eq!(choose(&known, "Alex"), Some("Alex".to_owned()));
+        assert_eq!(choose(&known, "-o /etc/passwd"), None);
+        assert_eq!(choose(&known, "Zed"), None);
     }
 }
