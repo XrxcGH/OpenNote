@@ -11,7 +11,7 @@ export interface MohrSpec {
   readonly circles: readonly { readonly c: number; readonly r: number }[];
   /** Points as [normal, shear], shear drawn positive downward, each with a label. */
   readonly points: readonly { readonly x: number; readonly y: number; readonly label: string }[];
-  /** Words for the axes, already chosen by the tool. */
+  /** Text keys for the axes' words; the drawing looks them up with the context's `say`. */
   readonly axes: { readonly x: string; readonly y: string };
 }
 
@@ -57,10 +57,10 @@ export function mohrSvg(spec: MohrSpec, ctx: DrawContext): string {
     parts.push(text(x + 6, y - 6, point.label, p.text, 'start'));
   }
   const units = unitOf(spec.kind, ctx.system);
-  parts.push(text((left + W - 16) / 2, H - 8, `${spec.axes.x} (${units})`, p.text, 'middle'));
+  parts.push(text((left + W - 16) / 2, H - 8, `${ctx.say(spec.axes.x)} (${units})`, p.text, 'middle'));
   parts.push(
     `<text x="14" y="${cy}" fill="${p.text}" font-size="12" text-anchor="middle" ` +
-      `transform="rotate(-90 14 ${cy})">${escapeXml(`${spec.axes.y} (${units})`)}</text>`,
+      `transform="rotate(-90 14 ${cy})">${escapeXml(`${ctx.say(spec.axes.y)} (${units})`)}</text>`,
   );
   return svg(parts, p);
 }
