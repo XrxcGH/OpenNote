@@ -3,6 +3,7 @@
 import type { kitPhysics as all } from './kitPhysics';
 
 export const kitPhysicsStart = {
+  title: 'Physics tools',
   open: 'Open physics tools',
   keywords: 'physics fields waves optics relativity nuclear orbits spacecraft',
   waves: {

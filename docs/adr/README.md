@@ -65,7 +65,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0022](0022-page-viewport.md) | Pan with a native scroll container, pan and pinch touch in the app, and zoom with one transform | Proposed, pending spike S5 on real touch hardware | 2026-10-02 |
 | [0023](0023-spell-check-and-read-aloud.md) | Check spelling with the Windows Spell Checking API from one Rust thread, and read aloud with the Web Speech API and local voices only | Proposed, pending a run with NVDA and Narrator | 2026-10-03 |
 | [0024](0024-typed-notes-keyboard.md) | Keep Tab inside an editor, leave it with Escape, let AltGr text win, and move between blocks in reading order | Proposed, pending the owner's confirmation of the OneNote set's editor keys | 2026-10-02 |
-| [0025](0025-paste-and-images.md) | Handle every paste and drop in one pipeline whose schema allowlists what reaches the page, and import images through it | Proposed, pending real captures for spike S4 and the image memory measurement in spike S3 | 2026-10-03 |
+| [0025](0025-paste-and-images.md) | Handle every paste and drop in one pipeline whose schema allowlists what reaches the page, and import images through it | Proposed, pending real captures for spike S4 | 2026-10-03 |
 | [0026](0026-text-box-layout.md) | Size text boxes to their content, move boxes below an edited one to keep clear of it, and fix a page's reading order | Proposed, pending the Phase 3 owner's agreement to P3-1 and P3-11 | 2026-10-02 |
 | [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
 | [0030](0030-connectors-and-sign-in.md) | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager | Proposed, pending a sign-in with real client IDs | 2026-10-03 |
@@ -99,7 +99,7 @@ Most records are still Proposed, because each waits on a check by a person. Agen
 | 0022 | Touch checks on real hardware (spike S5) |
 | 0023 | A run with NVDA and Narrator |
 | 0024 | The owner's confirmation of the OneNote set's editor keys |
-| 0025 | Real captures (spike S4) and the image memory measurement (spike S3) |
+| 0025 | Real captures (spike S4) |
 | 0026 | The Phase 3 owner's agreement |
 | 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
 | 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |

@@ -83,8 +83,14 @@ From one unit-suite run on the loaded machine. The machine scale stayed at its c
 - The 4-core reference laptop, and the screen measure (Desktop Duplication), both in section 24.5's nightly run.
 - Typing with the real core saving and journaling, and with a UI Automation client attached. The screen reader condition here turns on Chromium's accessibility tree with `--force-renderer-accessibility`, which is what a client does.
 - Page open (500 and 5,000 blocks), editor mounts, the 50 ms feedback budgets in the desktop app, and memory by the M4 method.
-- Spike S3 and spike S5 on real hardware.
+- Spike S5 on real hardware.
 
 ## Accessibility found in passing
 
 The sampler's text reads the same static and mounted, apart from controls only an editor draws, after one fix: static math showed nothing until an editor mounted. Two gaps remain for the schema's owner, held in an expected-failure test in `tests/ui/a11y/page.aria.spec.ts`. Static task items show their state only as a drawn box, with no checkbox, and static callouts have no name.
+
+## Bundle budgets left raised
+
+The lazy limits for the engineering kits and the solvers window were lowered to what they measure plus about 2 KB. Those windows load after the tool-window host, so they are counted without it (the `after` rule on `features/tools/ui/host` in `app/bundle-budget.json`). These limits stay above their old values, and the cause is one fault, tracked here:
+
+- `features/tools/index.ts` re-exports the host (`ui/host`), so every group that imports the tools index (the accounts commands, the kits' `open.ts` files, `tables/index`) loads the host's 176 KB and its libraries. That is why `accounts/lms/commands` (271 KB), `meetings/commands` (197 KB), `tasks/auto` and `tasks/commands` (196 KB), `tools/index` (359 KB) and `tables/index` (73 KB) cannot come down. The import-boundary rule stops the accounts from importing the `upcoming` and `upcomingMerge` modules directly. The fix is to move the open-window store and `openTools` into a small module the index re-exports, make `openTool`, `closeTool` and `resetToolWindows` load the host on call, and then lower all six limits. Do it as one change, with the callers in `auditHooks.ts` and `registrations/qolStudy.ts`.

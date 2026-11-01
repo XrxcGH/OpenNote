@@ -3,6 +3,7 @@
 import type { kitElectrical as all } from './kitElectrical';
 
 export const kitElectricalStart = {
+  window: 'Circuits and energy',
   open: 'Open the circuits and energy tools',
   openKeywords: 'electrical electronics circuit power energy instrument fit lab',
   t: {

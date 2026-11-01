@@ -3,6 +3,7 @@
 import type { kitAero as all } from './kitAero';
 
 export const kitAeroStart = {
+  window: 'Aerospace',
   open: 'Open the aerospace tools',
   openKeywords:
     'aerospace aerodynamics gas dynamics propulsion flight mechanics ' + 'compressible airfoil wing rocket jet',

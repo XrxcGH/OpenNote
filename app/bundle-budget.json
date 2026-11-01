@@ -48,6 +48,13 @@
     {
       "within": "features/engineering/thermo/",
       "entry": "features/engineering/thermo/ui/ThermoKit"
+    },
+    {
+      "within": [
+        "features/engineering/",
+        "features/math/solvers/ui/SolversTool"
+      ],
+      "entry": "features/tools/ui/host"
     }
   ],
   "lazyKb": {
@@ -66,7 +73,7 @@
     "features/accounts/tasks/commands.ts": 196,
     "features/ink/index.ts": 67,
     "features/math/index.ts": 224,
-    "features/math/solvers/ui/SolversTool.tsx": 234,
+    "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 85,
     "features/pages/host/shareRender.ts": 62,
     "features/pages/host/videoRaster.ts": 62,
@@ -78,8 +85,8 @@
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 73,
     "features/tools/index.ts": 359,
-    "features/engineering/control/ui/ControlKit.tsx": 480,
-    "features/engineering/index.ts": 379,
+    "features/engineering/control/ui/ControlKit.tsx": 312,
+    "features/engineering/index.ts": 205,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
     "@mermaid-js/parser": 130,
@@ -108,13 +115,13 @@
     "features/trash": 40,
     "features/updates": 40,
     "features/tools": 260,
-    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 469,
-    "features/engineering/mechdyn/ui/MechDynKit.tsx": 142,
-    "features/engineering/electrical/KitElectricalTool.tsx": 48,
+    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 301,
+    "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
+    "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 387,
-    "features/engineering/solids/ui/SolidsKit.tsx": 138,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 553
+    "features/engineering/aero/ui/KitAeroTool.tsx": 211,
+    "features/engineering/solids/ui/SolidsKit.tsx": 119,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 385
   },
   "lazyDefaultKb": 40
 }
