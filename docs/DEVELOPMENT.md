@@ -203,7 +203,7 @@ Status: built, and in beta testing on branch `beta`.
 
 - Built: Pens, the highlighter, erasers, the lasso, shapes, and palm rejection, with 21 of the 24 extras. They include gestures, insert space, replay, and handwriting to text.
 - Built since: The pen library (fountain, brush, calligraphy, dashed, dotted) behind `ink.penLibrary`, and links on handwriting behind `ink.links`. Not built: strokes in the audio stamp index.
-- Needs the owner: Layers (a format decision), pen settings sync, and pen writing in text fields.
+- Needs the owner: accepting ADR 0037 (layers), pen settings sync, and a real-pen check of pen writing in text fields.
 - Checked by agents: Unit tests, the 10,000-stroke benchmark ([docs/perf/phase-5-core.md](perf/phase-5-core.md)), and the palm replays ([docs/perf/palm-accuracy.md](perf/palm-accuracy.md)). Two palm timing tests and two highlight idle-time tests failed under load and were not rerun.
 - Checked by hand: Not yet. That includes the real-pen test in [docs/testing/palm-rejection.md](testing/palm-rejection.md).
 

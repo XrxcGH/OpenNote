@@ -1,0 +1,247 @@
+[
+  {
+    "name": "setup-welcome",
+    "category": "First-time setup",
+    "caption": "Step 1 of 6: the welcome desk by the window."
+  },
+  {
+    "name": "setup-look",
+    "category": "First-time setup",
+    "caption": "Step 2: the Light, Dark, and Match Windows preview cards."
+  },
+  {
+    "name": "setup-intelligence",
+    "category": "First-time setup",
+    "caption": "Step 3: on-device intelligence, with Not now selected."
+  },
+  {
+    "name": "setup-keys-and-pen",
+    "category": "First-time setup",
+    "caption": "Step 4: the shortcut set and the pen top button."
+  },
+  {
+    "name": "setup-storage",
+    "category": "First-time setup",
+    "caption": "Step 5: the notes folder and the first notebook."
+  },
+  {
+    "name": "setup-import",
+    "category": "First-time setup",
+    "caption": "Step 6: bringing in notes from another app."
+  },
+  {
+    "name": "workspace",
+    "category": "The workspace",
+    "caption": "Notebooks, pages, and a page of typed notes with a heading, a list, and a page link."
+  },
+  {
+    "name": "workspace-empty",
+    "category": "The workspace",
+    "caption": "The empty state: no notebooks yet, and the desk by the window beside the page card."
+  },
+  {
+    "name": "tab-home",
+    "category": "The workspace",
+    "caption": "The Home tab with the recording control and the formatting bar."
+  },
+  {
+    "name": "tab-insert",
+    "category": "Writing and drawing",
+    "caption": "The Insert tab: link, code block, callout, divider, template, file, equation, and table."
+  },
+  {
+    "name": "tab-draw",
+    "category": "Writing and drawing",
+    "caption": "The Draw tab: the tools, the pen slots, color, and width (1600 by 900)."
+  },
+  {
+    "name": "tab-view",
+    "category": "Writing and drawing",
+    "caption": "The View tab: panes, page layout, paper, background, and focus mode."
+  },
+  {
+    "name": "ink-pens",
+    "category": "Writing and drawing",
+    "caption": "Ink on a page: a highlighter, three pens, and a pencil sketch (1600 by 900)."
+  },
+  {
+    "name": "lined-paper",
+    "category": "Writing and drawing",
+    "caption": "Typed notes on lined paper, with the text sitting on the rules."
+  },
+  {
+    "name": "table-chart",
+    "category": "Writing and drawing",
+    "caption": "A smart table with a formula cell and the bar chart made from it."
+  },
+  {
+    "name": "math-graph",
+    "category": "Graphs, math, and tools",
+    "caption": "An inline equation in a sentence and a graph block with its function."
+  },
+  {
+    "name": "search",
+    "category": "Find, link, and record",
+    "caption": "The search panel with a result, the matched word in bold, and a preview."
+  },
+  {
+    "name": "backlinks",
+    "category": "Find, link, and record",
+    "caption": "The linked pages pane, listing the page that links here."
+  },
+  {
+    "name": "recording",
+    "category": "Find, link, and record",
+    "caption": "The recording options under the Record button. Nothing is recording."
+  },
+  {
+    "name": "import",
+    "category": "Import and export",
+    "caption": "The Import notes dialog before a file is chosen, with the supported sources."
+  },
+  {
+    "name": "import-review",
+    "category": "Import and export",
+    "caption": "The review after choosing a file: what comes over and what does not."
+  },
+  {
+    "name": "export",
+    "category": "Import and export",
+    "caption": "The Export dialog with a section and the Word document format chosen."
+  },
+  {
+    "name": "settings-general",
+    "category": "Settings",
+    "caption": "General: the notes folder and start-up."
+  },
+  {
+    "name": "settings-appearance",
+    "category": "Settings",
+    "caption": "Appearance: theme cards, page color, text size, and interface size."
+  },
+  {
+    "name": "settings-editing",
+    "category": "Settings",
+    "caption": "Editing: Markdown shortcuts, the slash menu, and AutoCorrect."
+  },
+  {
+    "name": "settings-intelligence",
+    "category": "Settings",
+    "caption": "On-device intelligence: every feature off, each marked as running on this device."
+  },
+  {
+    "name": "settings-privacy",
+    "category": "Settings",
+    "caption": "Privacy: work offline and a plain list of every network use."
+  },
+  {
+    "name": "settings-connectors",
+    "category": "Settings",
+    "caption": "Connectors: accounts that some features use, each saying \"Needs setup\"."
+  },
+  {
+    "name": "settings-shortcuts",
+    "category": "Settings",
+    "caption": "Shortcuts: the two sets and the list of commands to change."
+  },
+  {
+    "name": "settings-about",
+    "category": "Settings",
+    "caption": "About: version, channel, license, and the window drawing."
+  },
+  {
+    "name": "trash",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "Trash with two deleted pages and a Restore button for each."
+  },
+  {
+    "name": "palette",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The command palette over a page, with pages and commands."
+  },
+  {
+    "name": "tool-timer",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The timers window with a countdown running."
+  },
+  {
+    "name": "tool-calculator",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The calculator after a unit conversion, with its history."
+  },
+  {
+    "name": "tool-upcoming",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The Upcoming window for tasks and due dates."
+  },
+  {
+    "name": "study-flashcards",
+    "category": "Study",
+    "caption": "The Flashcards window, with cards made from three typed lines."
+  },
+  {
+    "name": "study-tutor",
+    "category": "Study",
+    "caption": "The Tutor panel giving the first of four hints on a worked line, without the answer."
+  },
+  {
+    "name": "daily-calendar",
+    "category": "Find, link, and record",
+    "caption": "The daily notes calendar, with today marked and buttons for the day, week, month, and year notes."
+  },
+  {
+    "name": "insert-mind-map",
+    "category": "Writing and drawing",
+    "caption": "A mind map on a page, with a main idea and branches added under and beside it."
+  },
+  {
+    "name": "insert-diagram",
+    "category": "Writing and drawing",
+    "caption": "A flowchart written as text, drawn below its source."
+  },
+  {
+    "name": "ink-layers",
+    "category": "Writing and drawing",
+    "caption": "The Layers window with three layers, each with Make active, Hide, Lock, Move, Export, and Delete."
+  },
+  {
+    "name": "ink-groups",
+    "category": "Writing and drawing",
+    "caption": "Two pen strokes lassoed and grouped, with the Ungroup button on the selection bar."
+  },
+  {
+    "name": "ink-links",
+    "category": "Writing and drawing",
+    "caption": "The list of links on a page after a lassoed stroke was linked to a web address."
+  },
+  {
+    "name": "pdf-import",
+    "category": "Import and export",
+    "caption": "A PDF inserted as locked page pictures to write on."
+  },
+  {
+    "name": "translate",
+    "category": "Import and export",
+    "caption": "The Translate window, with the language pack and its size shown before anything is downloaded."
+  },
+  {
+    "name": "protected-section",
+    "category": "Connectors and sync",
+    "caption": "A password-protected section after it locks, with the Unlock section button."
+  },
+  {
+    "name": "sync-settings",
+    "category": "Connectors and sync",
+    "caption": "Settings, then Sync: step 1 of 4, choosing where sync keeps its encrypted data."
+  },
+  {
+    "name": "engineering-beam",
+    "category": "Graphs, math, and tools",
+    "caption": "The beam deflection tool of the solid mechanics kit, with its supports and loads."
+  },
+  {
+    "name": "subject-statistics",
+    "category": "Graphs, math, and tools",
+    "caption": "The Statistics tab of the calculator after summarizing six numbers."
+  }
+]

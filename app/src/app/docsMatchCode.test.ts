@@ -3,8 +3,14 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { regenerate, readScreens, SCREEN_CATEGORIES } from '../../../docs/tools/featureList';
 
 const docs = join(import.meta.dirname, '..', '..', '..', 'docs');
+function markdown(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? markdown(join(dir, e.name)) : e.name.endsWith('.md') ? [join(dir, e.name)] : [],
+  );
+}
 const read = (...parts: string[]) => readFileSync(join(docs, ...parts), 'utf8');
 
 describe('architecture decision records', () => {
@@ -24,6 +30,18 @@ describe('architecture decision records', () => {
   });
 });
 
+describe('ADR links', () => {
+  it('show the number of the record they point at', () => {
+    const roots = [join(docs, '..', 'README.md'), ...markdown(docs)];
+    const wrong = roots.flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(/\[ADR (\d{4})\]\([^)]*?(\d{4})-[^)]*\.md\)/g)]
+        .filter((m) => m[1] !== m[2])
+        .map((m) => `${file.slice(docs.length)}: ${m[0]}`),
+    );
+    expect(wrong).toEqual([]);
+  });
+});
+
 describe('feature list', () => {
   const list = read('FEATURE-LIST.md');
 
@@ -33,6 +51,23 @@ describe('feature list', () => {
       .filter((l) => l.startsWith('## ') && !/Contents|How to read the status/.test(l))
       .map((l) => l.slice(3).trim());
     for (const heading of headings) expect(list, heading).toContain(`## ${heading}`);
+  });
+
+  it('is what `npm run docs:features` makes from FEATURES.md, so it cannot go stale', () => {
+    expect(list).toBe(regenerate());
+  });
+
+  it('has a picture, in both themes, for every category of screen', () => {
+    const screens = readScreens();
+    for (const category of SCREEN_CATEGORIES)
+      expect(
+        screens.some((s) => s.category === category),
+        category,
+      ).toBe(true);
+    for (const s of screens) {
+      expect(existsSync(join(docs, 'screens', `${s.name}-light.png`)), s.name).toBe(true);
+      expect(existsSync(join(docs, 'screens', `${s.name}-dark.png`)), s.name).toBe(true);
+    }
   });
 
   it('points at pictures that exist', () => {
@@ -56,12 +91,15 @@ describe('status pages', () => {
     const dev = read('DEVELOPMENT.md');
     expect(dev).not.toMatch(/Not built: The pen library/);
     expect(dev).not.toMatch(/Not built: The whisper\.cpp/);
+    expect(dev).not.toContain('Layers (a format decision)');
     expect(readFileSync(join(docs, '..', 'README.md'), 'utf8')).not.toContain('Not built yet in beta');
     expect(read('help', 'phone-scan.md')).not.toContain("isn't built yet");
   });
 
   it('describe ink layers, groups and links in the format spec', () => {
     const spec = read('format', 'README.md');
-    for (const key of ['`groups`', '`inkLayers.order`', '`inkLayers.assign`', '`inkLinks`']) expect(spec).toContain(key);
+    expect(spec).not.toContain('The `base` layer has no entry');
+    for (const key of ['`groups`', '`inkLayers.order`', '`inkLayers.assign`', '`inkLinks`'])
+      expect(spec).toContain(key);
   });
 });
