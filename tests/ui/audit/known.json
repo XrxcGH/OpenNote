@@ -200,6 +200,9 @@
   "tool.kit-solids | target-small | div.field > div.entry > input.input",
   "tool.kit-solids | target-small | div.field > div.entry > textarea.input",
   "tool.kit-solids | target-small | div.row > label.field > select.input",
-  "tool.kit-solids | target-small | div.tool > div[role=tablist].tabs > button[role=tab].tab"
+  "tool.kit-solids | target-small | div.tool > div[role=tablist].tabs > button[role=tab].tab",
+  "tool.kitelectrical | target-small | div.form > div.field > input.input",
+  "tool.kitelectrical | target-small | div.form > div.field > select.input",
+  "tool.kitelectrical | target-small | div.kit > div[role=tablist].tabs > button[role=tab].tab"
  ]
 }
