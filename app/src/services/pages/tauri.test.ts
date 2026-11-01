@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CoreClient, DecodedEnvelope } from '../../core/client';
 import type { ImagesClient } from '../../platform/types';
 import { resetStores } from '../../state/store';
-import { coreStalled, saveHealthStore } from './saveHealth';
+import { coreStalled, pageWaiting, saveHealthStore } from './saveHealth';
 import { clientPrefix, createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
 
 const AT = '2026-10-01T09:00:00.000Z';
@@ -123,6 +123,18 @@ describe('the Tauri page service’s requests', () => {
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });
     await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'coreBusy', resync: false });
     expect(coreStalled(saveHealthStore.get())).toBe(true);
+  });
+
+  it('keeps a page saving after the core answers an edit as not yet in its journal, until a save holds it', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    const unwritten = { seq: 9, orderKeys: {}, canUndo: true, canRedo: false, written: false };
+    calls.pageApply.mockImplementationOnce(() => Promise.resolve(unwritten));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({ edits: [] });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
   });
 
   it('reads the read-only reason the core tags as { kind }, so a page opened after the wait can say why', async () => {

@@ -2,7 +2,7 @@
 // one onto a core command through the client in app/src/core/, which keeps one request in flight per page. The
 // core's `core:*` events become frames, external changes, and read-only notices for the page they name.
 import type { CoreClient, DecodedEnvelope, FrameInfo } from '../../core/client';
-import { coreBusy, pageClosed, watchSaveHealth } from './saveHealth';
+import { coreBusy, pageClosed, pageUnwritten, watchSaveHealth } from './saveHealth';
 import type { ImagesClient, IpcError } from '../../platform/types';
 import { inkListeners } from './ink';
 import { PageServiceError } from './types';
@@ -319,7 +319,11 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient,
             };
             // Phase 5: new strokes go with page_add_strokes, after the batch's edits in the same transaction.
             return batch.strokes ? client.pageAddStrokes(request, batch.strokes) : client.pageApply(request);
-          }).catch(rejectAs),
+          }).then((ack) => {
+            // Not in the journal file yet: "Saving" until a save holds it, not "Saved" over an edit a crash loses.
+            if (ack.written === false) pageUnwritten(pageId, ack.seq);
+            return ack;
+          }, rejectAs),
         undo: () => turn(() => client.pageUndo(pageId, name)).then(frame, rejectAs),
         redo: () => turn(() => client.pageRedo(pageId, name)).then(frame, rejectAs),
         saveNow: () => turn(() => client.pageSaveNow(pageId)).catch(rejectAs),

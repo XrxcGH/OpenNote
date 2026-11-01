@@ -14,7 +14,7 @@ import {
   anySaveFailing,
   combinedStatus,
   coreStalled,
-  pageSending,
+  pageWaiting,
   saveHealthStore,
 } from '../../services/pages/saveHealth';
 import { useStore } from '../../state/store';
@@ -36,7 +36,7 @@ export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | '
   const notes = useStore(treeStore, (state) => state.saveStatus);
   const pageFailing = useStore(saveHealthStore, anySaveFailing);
   const stalled = useStore(saveHealthStore, coreStalled);
-  const sending = useStore(saveHealthStore, pageSending);
+  const sending = useStore(saveHealthStore, pageWaiting);
   const status = combinedStatus(notes, pageFailing, stalled, sending);
   useEffect(() => {
     if (status === 'error') announce(t('tree.save.errorAnnounce'), 'assertive');

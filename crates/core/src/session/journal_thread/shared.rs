@@ -61,6 +61,12 @@ impl Health {
         self.update(|p| p.handled = p.handled.max(seq));
     }
 
+    /// Whether `seq` is in the journal file: the thread wrote it, and the journal isn't degraded.
+    pub fn written(&self, seq: u64) -> bool {
+        let p = lock(&self.progress);
+        p.error.is_none() && p.handled.max(p.durable) >= seq
+    }
+
     /// The highest sequence number on disk.
     pub fn durable(&self) -> u64 {
         lock(&self.progress).durable

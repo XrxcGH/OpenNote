@@ -557,6 +557,40 @@ fn requests_resolve_apply_and_undo() {
     assert_eq!(handle.page_for_tests().title, "Resolved");
 }
 
+/// An edit's answer says whether the edit is in the journal file. While it isn't (here, a journal that can't be
+/// written), the interface keeps saying "Saving" until a `core:saved` whose `through` covers the edit.
+#[test]
+fn an_answer_says_whether_the_edit_is_written_and_the_save_says_which_it_holds() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let rename = |n: u64, title: &str| TxnRequest {
+        page: s.page,
+        client: c.clone(),
+        client_seq: n,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::SetPage {
+            title: Some(title.into()),
+            tags: None,
+            view: None,
+        }],
+    };
+    assert!(handle.apply(rename(1, "Journaled")).unwrap().written);
+    s.kit.backend.degrade_journal(true);
+    let ack = handle.apply(rename(2, "Unjournaled")).unwrap();
+    assert!(
+        !ack.written,
+        "an edit the journal couldn't take was answered as written"
+    );
+    s.kit.advance(secs(2));
+    let through = s.kit.events.events().iter().find_map(|e| match e {
+        CoreEvent::Saved { through, .. } => Some(*through),
+        _ => None,
+    });
+    assert_eq!(through, Some(ack.seq), "the save names the last edit it holds");
+}
+
 #[test]
 fn binary_strokes_resolve_into_one_transaction() {
     let s = setup();

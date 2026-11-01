@@ -170,6 +170,37 @@ fn an_appended_transaction_is_in_the_file_when_append_returns() {
     assert!(matches!(read(&s, 1).records.last(), Some(JournalRecord::Txn { seq, .. }) if *seq == next));
 }
 
+/// A journal thread slower than the append's wait doesn't hold the core. The append then doesn't claim the record
+/// is written, so the edit's answer says so and the interface keeps saying "Saving". Before, the wait's timeout
+/// was dropped, and a slow first generation still let an unwritten stroke show as Saved.
+#[test]
+fn an_append_that_outlasts_its_wait_is_not_reported_written() {
+    let mut s = setup(slow());
+    s.thread.write_wait = Duration::from_millis(50);
+    let handle = s
+        .thread
+        .open_page(&key(), sample_page().id, meta("boot-1"), base(0))
+        .unwrap();
+    s.fs.slow_creates(400);
+    let started = std::time::Instant::now();
+    let seq = handle.append_txn(&txn(1));
+    assert!(
+        started.elapsed() < Duration::from_millis(300),
+        "the append waited {:?}",
+        started.elapsed()
+    );
+    assert!(
+        !handle.written(seq),
+        "a record still in the thread's queue was reported written"
+    );
+    let deadline = std::time::Instant::now() + WAIT;
+    while !handle.written(seq) && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert!(handle.written(seq), "the record was never reported written");
+    assert!(s.fs.inner.exists(&generation_path(1)));
+}
+
 #[test]
 fn save_begin_is_flushed_before_it_returns() {
     let s = setup(slow());
@@ -420,6 +451,7 @@ fn opening_a_journal_gives_up_when_the_journal_thread_does_not_answer() {
         codec: Arc::new(RegistryCodec::new()),
         thread: None,
         open_wait: Duration::from_millis(50),
+        write_wait: Duration::from_millis(50),
     };
     let started = std::time::Instant::now();
     let page = thread.open_page(&key(), sample_page().id, meta("boot-1"), base(0));

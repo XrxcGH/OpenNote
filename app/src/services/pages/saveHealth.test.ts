@@ -10,6 +10,8 @@ import {
   pageSaveFailed,
   pageSaved,
   pageSending,
+  pageUnwritten,
+  pageWaiting,
   saveHealthStore,
   sendingPage,
   setCoreStalled,
@@ -105,5 +107,24 @@ describe('save health', () => {
     expect(combinedStatus('saved', false, false, pageSending(saveHealthStore.get()))).toBe('saved');
     expect(combinedStatus('saved', true, false, true)).toBe('error');
     expect(combinedStatus('saved', false, true, true)).toBe('stalled');
+  });
+
+  it('says "Saving" over an edit answered as not written until a save holds it', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    pageUnwritten('p1', 7);
+    pageUnwritten('p1', 5);
+    expect(combinedStatus('saved', false, false, pageWaiting(saveHealthStore.get()))).toBe('saving');
+    // A save that began before the edit doesn't hold it.
+    client.emit('core:saved', { page: 'p1', through: 6 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    client.emit('core:saved', { page: 'p2', through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    client.emit('core:saved', { page: 'p1', through: 7 });
+    expect(combinedStatus('saved', false, false, pageWaiting(saveHealthStore.get()))).toBe('saved');
+    pageUnwritten('p2', 3);
+    pageClosed('p2');
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+    stop();
   });
 });
