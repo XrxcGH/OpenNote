@@ -13,7 +13,7 @@ import { CloudChoice } from './cloud/CloudChoice';
 import styles from './intel.module.css';
 import { intelState } from './choices';
 import PlusSection from './PlusSection';
-import { offersWindowsSettings, platformNeeds } from './platformNeeds';
+import { offersWindowsSettings, platformNeeds, platformText } from './platformNeeds';
 import { loadIntel, ON_DEVICE_FEATURES, refreshStatus, setFeature } from './runtime';
 import type { OnDeviceFeature } from './runtime';
 
@@ -98,7 +98,7 @@ function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
         }}
       />
       <p id={helpId} className={styles.help}>
-        {t(text.help)} {t('intel.settings.localOnly')}
+        {t(platformText(text.help))} {t('intel.settings.localOnly')}
       </p>
       <p id={statusId} className={problem ? `${styles.status} ${styles.problem}` : styles.status} role="status">
         {line}
