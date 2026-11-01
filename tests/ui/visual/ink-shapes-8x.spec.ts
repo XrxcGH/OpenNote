@@ -1,7 +1,8 @@
 // Shapes from Shapes > Basic shapes, drawn by the app's own tiles at 8 device pixels to the page unit. The page is zoomed
 // to 200 percent in a window of 4 device pixels to the CSS pixel. Each crop sits where shape ink is easiest to get
 // wrong: a curved arrow's tip and body, the ends of a double arrow, an arrow's tip, and the corners and sides of the
-// closed shapes. Each is compared with its golden. A crop without a golden is skipped until one is taken (npm run
+// closed shapes. The heads of curved and double arrows are cropped in the dark theme too, where the ink is light on a
+// dark sheet. Each is compared with its golden. A crop without a golden is skipped until one is taken (npm run
 // test:ui:update), as in the gallery. Adding a crop then never blocks a pull request on a missing image.
 
 import { existsSync } from 'node:fs';
@@ -13,12 +14,17 @@ import type { Vec } from '../paperSnap';
 
 test.use({ viewport: VIEWPORT, deviceScaleFactor: 4 });
 
-/** Each shape's crops: a name and the stored point it centers on, by index into the shape's points. */
-const CROPS: { name: string; label: string; at: (points: readonly Vec[]) => Vec[] }[] = [
+/** Each shape's crops: a name, the stored point it centers on by index into the shape's points, and the themes. */
+const CROPS: { name: string; label: string; at: (points: readonly Vec[]) => Vec[]; dark?: boolean }[] = [
   // A curved arrow's points are its arc, then barb, tip, barb.
-  { name: 'curved-arrow', label: 'Curved arrow', at: (p) => [p.at(-2)!, p[Math.floor((p.length - 3) / 2)]] },
+  {
+    name: 'curved-arrow',
+    label: 'Curved arrow',
+    at: (p) => [p.at(-2)!, p[Math.floor((p.length - 3) / 2)]],
+    dark: true,
+  },
   // A double arrow's: barb, start, barb, start, end, barb, end, barb.
-  { name: 'double-arrow', label: 'Double arrow', at: (p) => [p[1], p[4]] },
+  { name: 'double-arrow', label: 'Double arrow', at: (p) => [p[1], p[4]], dark: true },
   { name: 'arrow', label: 'Arrow', at: (p) => [p[1]] },
   { name: 'rectangle', label: 'Rectangle', at: (p) => [p[1], mid(p[1], p[2])] },
   { name: 'triangle', label: 'Triangle', at: (p) => [p[0], p[2]] },
@@ -40,9 +46,18 @@ async function addFromLibrary(page: Page, label: string): Promise<Vec[]> {
   return (await page.evaluate(storedStrokes)).slice(before).flatMap((stroke) => stroke.points);
 }
 
-for (const { name, label, at } of CROPS) {
-  test(`${label.toLowerCase()} at 8x: clean tips, joins, caps, and an even width`, async ({ page }, testInfo) => {
+const RUNS = CROPS.flatMap((crop) => [
+  { ...crop, theme: 'light' as const },
+  ...(crop.dark ? [{ ...crop, theme: 'dark' as const }] : []),
+]);
+
+for (const { name, label, at, theme } of RUNS) {
+  const suffix = theme === 'dark' ? ', dark theme' : '';
+  test(`${label.toLowerCase()} at 8x${suffix}: clean tips, joins, caps, and an even width`, async ({
+    page,
+  }, testInfo) => {
     test.setTimeout(180_000);
+    await page.emulateMedia({ colorScheme: theme });
     // Dot paper in page view: its sparse dots leave the ink clear in a crop, and the shape snaps to them the same each
     // run. Each shape gets a fresh page.
     await openPaper(page, 'Dot grid');
@@ -58,7 +73,7 @@ for (const { name, label, at } of CROPS) {
     const size = CROP_UNITS * world.zoom;
     let shown = 0;
     for (const [k, p] of at(points).entries()) {
-      const file = `${name}-${k + 1}.png`;
+      const file = theme === 'dark' ? `${name}-dark-${k + 1}.png` : `${name}-${k + 1}.png`;
       if (skipWithoutBaseline(testInfo.config.updateSnapshots, existsSync(testInfo.snapshotPath(file)))) continue;
       const c = { x: world.x + p.x * world.zoom, y: world.y + p.y * world.zoom };
       await expect(page).toHaveScreenshot(file, {

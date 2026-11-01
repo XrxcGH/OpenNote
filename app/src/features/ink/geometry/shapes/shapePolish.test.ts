@@ -177,15 +177,74 @@ const RECOGNIZED: Shape[] = [
   { kind: 'arc', center: { x: 0, y: 0 }, radius: 90, start: 0.3, sweep: 2.4 },
 ] as Shape[];
 
-/** The places along a shape's sides, away from its corners, where its fill is not one band of `width`. */
-function uneven(shape: Shape, width: number): string[] {
+/** Where a curved shape truly runs: a point on the curve and the curve's unit normal there, at many places. */
+function trueCurve(shape: Shape, half: number): { on: Vec; n: Vec }[] {
+  const along = (count: number, at: (f: number) => { on: Vec; n: Vec }) =>
+    Array.from({ length: count }, (_, i) => at((i + 0.5) / count));
+  const onCircle = (c: Vec, r: number, t: number) => ({
+    on: { x: c.x + r * Math.cos(t), y: c.y + r * Math.sin(t) },
+    n: { x: Math.cos(t), y: Math.sin(t) },
+  });
+  switch (shape.kind) {
+    case 'circle':
+      return along(72, (f) => onCircle(shape.center, shape.radius, f * 2 * Math.PI));
+    case 'ellipse': {
+      const { center, rx, ry, rotation } = shape;
+      const [cos, sin] = [Math.cos(rotation), Math.sin(rotation)];
+      const turn = (v: Vec): Vec => ({ x: v.x * cos - v.y * sin, y: v.x * sin + v.y * cos });
+      return along(72, (f) => {
+        const t = f * 2 * Math.PI;
+        const p = turn({ x: rx * Math.cos(t), y: ry * Math.sin(t) });
+        return {
+          on: { x: center.x + p.x, y: center.y + p.y },
+          n: unit(turn({ x: Math.cos(t) / rx, y: Math.sin(t) / ry })),
+        };
+      });
+    }
+    case 'arc':
+    case 'curvedArrow': {
+      // Clear of the round ends by a width. Where a curved arrow's barbs lie over its body, the bulge check skips.
+      const clear = (2 * half) / shape.radius;
+      const span = Math.abs(shape.sweep) - 2 * clear;
+      const way = Math.sign(shape.sweep);
+      return along(48, (f) => onCircle(shape.center, shape.radius, shape.start + way * (clear + f * span)));
+    }
+    default:
+      return [];
+  }
+}
+
+/** Where the line `on + s n` first meets the polyline, nearest `on`. */
+function meet(line: readonly Vec[], on: Vec, n: Vec): Vec | undefined {
+  let best: number | undefined;
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1];
+    const d = sub(line[i], a);
+    const den = n.x * d.y - n.y * d.x;
+    if (Math.abs(den) < 1e-12) continue;
+    const w = sub(a, on);
+    const s = (w.x * d.y - w.y * d.x) / den;
+    const u = (w.x * n.y - w.y * n.x) / den;
+    if (u >= 0 && u <= 1 && (best === undefined || Math.abs(s) < Math.abs(best))) best = s;
+  }
+  return best === undefined ? undefined : { x: on.x + n.x * best, y: on.y + n.y * best };
+}
+
+/**
+ * The places along a shape's sides where its fill is not one band of `width`, and how many places were checked. Straight
+ * sides are checked away from their corners; curves along the true curve, where the sampled outline's band must reach
+ * half a width either way.
+ */
+function uneven(shape: Shape, width: number): { found: string[]; checked: number } {
   const half = width / 2;
   const line = shapePoints(shape);
   const pieces = exactOutline(line, width);
   // Only places farther from every corner than a miter reaches: there the fill is exactly a band.
   const corner = (p: Vec) => line.some((q) => Math.hypot(p.x - q.x, p.y - q.y) < half * MITER_LIMIT + 1e-6);
   const found: string[] = [];
+  let checked = 0;
   const check = (on: Vec, n: Vec, what: string) => {
+    checked++;
     for (const sign of [1, -1]) {
       const at = (k: number) => ({ x: on.x + n.x * half * k * sign, y: on.y + n.y * half * k * sign });
       if (!inside(pieces, at(0.98))) found.push(`${what}: thin`);
@@ -194,20 +253,33 @@ function uneven(shape: Shape, width: number): string[] {
       if (fromLine(line, out) > half * 1.01 && inside(pieces, out)) found.push(`${what}: bulge`);
     }
   };
-  for (let i = 1; i < line.length; i++) {
+  const curve = trueCurve(shape, half);
+  curve.forEach(({ on, n }, k) => {
+    const q = meet(line, on, n);
+    if (q) check(q, n, `${shape.kind} curve place ${k}`);
+    else found.push(`${shape.kind} curve place ${k}: no outline`);
+  });
+  // A curve's sampled segments are all checked along the curve; a curved arrow's head is straight.
+  const first = curve.length === 0 ? 1 : shape.kind === 'curvedArrow' ? line.length - 3 : line.length;
+  for (let i = first; i < line.length; i++) {
     const a = line[i - 1];
     const d = sub(line[i], a);
     const n = unit({ x: -d.y, y: d.x });
     const places = [0.2, 0.35, 0.5, 0.65, 0.8].map((t) => ({ x: a.x + d.x * t, y: a.y + d.y * t }));
     places.filter((on) => !corner(on)).forEach((on, k) => check(on, n, `${shape.kind} side ${i} place ${k}`));
   }
-  return found;
+  return { found, checked };
 }
 
 describe('recognized shapes', () => {
   it('keep one even width along every side, with no bulge or thin spot between corners', () => {
     for (const width of [1, 4, 9]) {
-      for (const shape of RECOGNIZED) expect(uneven(shape, width), `width ${width}`).toEqual([]);
+      for (const shape of RECOGNIZED) {
+        const { found, checked } = uneven(shape, width);
+        expect(found, `${shape.kind} width ${width}`).toEqual([]);
+        // An exclusion that empties the set would pass with nothing checked.
+        expect(checked, `${shape.kind} width ${width} places checked`).toBeGreaterThanOrEqual(5);
+      }
     }
   });
 
@@ -230,6 +302,11 @@ describe('recognized shapes', () => {
       const shape = curved(radius);
       const { tip } = arcEnd(shape.center, shape.radius, shape.start, shape.sweep);
       expect(spike(tip, headAxis(tip, shape.barbs), shapePoints(shape)), `radius ${radius}`).toBeCloseTo(v, 6);
+      // After a handle drag the V points along the arc's end tangent, not along a chord into the arc: measured along
+      // the tangent, a leaning head's V falls short.
+      const moved = dragHandle(shape, 'end', { x: 300 + radius * 0.2, y: 300 - radius }) as typeof shape;
+      const end = arcEnd(moved.center, moved.radius, moved.start, moved.sweep);
+      expect(spike(end.tip, end.direction, shapePoints(moved)), `dragged, radius ${radius}`).toBeCloseTo(v, 6);
     }
   });
 });

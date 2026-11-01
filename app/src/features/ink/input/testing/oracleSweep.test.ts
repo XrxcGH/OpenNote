@@ -20,6 +20,26 @@ const record = JSON.parse(readFileSync(SWEEP_FILE, 'utf8')) as {
   failures: (Omit<SweepCase, 'problems'> & { class: 'generator' | 'classifier'; fixed: boolean; why: string })[];
 };
 
+/**
+ * How a run of cases `from` to `to` differs from the record: failing cases not recorded as open, and open cases in the
+ * range that now pass. A case recorded as fixed that fails again counts as unrecorded.
+ */
+function againstRecord(
+  failed: readonly SweepCase[],
+  from: number,
+  to: number,
+  failures: readonly { case: number; fixed: boolean }[] = record.failures,
+): { unrecorded: string[]; nowPass: number[] } {
+  const open = new Set(failures.filter((f) => !f.fixed && f.case >= from && f.case < to).map((f) => f.case));
+  const failing = new Set(failed.map((c) => c.case));
+  return {
+    unrecorded: failed
+      .filter((c) => !open.has(c.case))
+      .map((c) => `case ${c.case}: ${c.scenario} on ${c.profile}, seed ${c.seed}: ${c.problems.join('; ')}`),
+    nowPass: [...open].filter((n) => !failing.has(n)).sort((x, y) => x - y),
+  };
+}
+
 const env = (name: string) => (typeof process === 'undefined' ? undefined : process.env[name]);
 const to = Number(env('PALM_SWEEP_TO') ?? 0);
 
@@ -35,7 +55,12 @@ describe('the label oracle sweep', () => {
       }
       const out = env('PALM_SWEEP_OUT');
       if (out) writeFileSync(out, JSON.stringify({ from, to, failed }, null, 1));
-      expect(failed).toEqual([]);
+      const { unrecorded, nowPass } = againstRecord(failed, from, to);
+      // A new failure is a regression; an open case that passes now is fixed, and the record must say so.
+      expect(
+        { unrecorded, nowPass },
+        `against ${SWEEP_FILE.pathname}: ${unrecorded.length} failing cases not recorded open, ${nowPass.length} open cases now passing`,
+      ).toEqual({ unrecorded: [], nowPass: [] });
     },
     24 * 3600_000,
   );
@@ -69,4 +94,26 @@ describe('the label oracle sweep', () => {
       }
     },
   );
+});
+
+describe('a full sweep shard against the record', () => {
+  const at = (n: number): SweepCase => ({ ...sweepCase(pairs, n), problems: ['p0 committed ink'] });
+  const open = record.failures.filter((f) => !f.fixed).map((f) => f.case);
+  const lo = open[0];
+  const hi = open[open.length - 1] + 1;
+
+  it('passes when it fails only the open cases in its range', () => {
+    const inRange = open.filter((n) => n >= lo && n < lo + 20_000);
+    expect(againstRecord(inRange.map(at), lo, lo + 20_000)).toEqual({ unrecorded: [], nowPass: [] });
+  });
+
+  it('names a failure that is not recorded open, and an open case that now passes', () => {
+    const fixed = record.failures.find((f) => f.fixed)!.case;
+    const fresh = Array.from({ length: hi }, (_, n) => n).find((n) => !record.failures.some((f) => f.case === n))!;
+    const { unrecorded, nowPass } = againstRecord([...open.slice(1), fixed, fresh].map(at), 0, hi);
+    expect(unrecorded.map((u) => Number(/^case (\d+)/.exec(u)![1])).sort((x, y) => x - y)).toEqual(
+      [fixed, fresh].sort((x, y) => x - y),
+    );
+    expect(nowPass).toEqual([open[0]]);
+  });
 });
