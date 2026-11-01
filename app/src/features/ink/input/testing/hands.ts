@@ -52,6 +52,10 @@ export const LIMITS = {
 export type Limit = keyof typeof LIMITS;
 
 const { FINGERTIP_MAJOR_MM, PALM_MAJOR_MM, RADIUS_STEP_MM, SETTLE_TRAVEL_MM } = palmThresholds;
+/** How far past a size bound a size must be to read past it after the round trip through pixels. */
+const SIZE_ROUNDING_MM = 1e-6;
+/** How long before a lift a palm part's last size report can come: parts report every 14 ms (`palm`). */
+const LAST_SAMPLE_MS = 14;
 /** The longest touch that is a bounce. */
 const BOUNCE_MS = 300;
 
@@ -62,12 +66,14 @@ const sizeless = (p: SimProfile) => p.size === 'none' || p.size === 'constant';
  * or on a digitizer that cannot tell.
  */
 export function palmLimit(p: SimProfile, s: PalmShape, scale: number, ms: number): Limit | undefined {
-  const actual = sizeAt(s, 0, ms, scale)[0];
+  // The size the digitizer last reported: a lift carries none, so the size at the lift itself is never seen.
+  const actual = sizeAt(s, 0, Math.max(0, ms - LAST_SAMPLE_MS), scale)[0];
   // A digitizer that reports one radius rounds it in steps, and tells a palm one step higher.
   const quantized = p.size === 'quantized';
   const size = quantized ? Math.round(actual / RADIUS_STEP_MM) * RADIUS_STEP_MM : actual;
   const palmAt = quantized ? PALM_MAJOR_MM + RADIUS_STEP_MM : PALM_MAJOR_MM;
-  if (!sizeless(p) && size >= palmAt) return undefined;
+  // A size on the bound reads either side of it once turned to pixels and back (seed 7353: 24 mm read 23.99).
+  if (!sizeless(p) && size >= palmAt + SIZE_ROUNDING_MM) return undefined;
   // The noise is on both ends of the travel the filter sees, up to a diagonal each way, so a drift that near the bound can read as past it.
   if (s.drift + JITTER_MM * Math.SQRT2 >= SETTLE_TRAVEL_MM) return 'slides-like-a-stroke';
   if (ms < BOUNCE_MS) return 'bounce';
@@ -303,10 +309,13 @@ export function handFollow(plan: PenPlan): (t: number) => Vec2 {
  * Whether the writing hand covers a point: its palm, 85 mm around the heel, its forearm (70 mm either side of the line
  * from the tip through the heel, as the pen's lean varies by 15 degrees), and 25 mm around the tip. A margin widens all
  * three: a finger that near the hand is ambiguous, because a palm learned from a few rests reaches past the model.
+ * With `drawn`, the heel's offset from the tip where the scenario drew it, the hand lies that way instead.
  */
-export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2, margin = 0): boolean {
+export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2, margin = 0, drawn?: Vec2): boolean {
   const sx = hand === 'left' ? -1 : 1;
-  const heel: Vec2 = grip === 'hooked' ? [tip[0] + sx * 38, tip[1] - 36] : [tip[0] + sx * 42, tip[1] + 48];
+  const model: Vec2 = grip === 'hooked' ? [sx * 38, -36] : [sx * 42, 48];
+  const [hx, hy] = drawn ?? model;
+  const heel: Vec2 = [tip[0] + hx, tip[1] + hy];
   const ax = heel[0] - tip[0];
   const ay = heel[1] - tip[1];
   const n = Math.hypot(ax, ay);

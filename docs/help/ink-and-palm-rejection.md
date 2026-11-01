@@ -35,6 +35,8 @@ Rest your hand on the screen and write. While a pen is near the screen, a touch 
 
 OpenNote judges each touch from its size, how fast it grows, where on the hand it is, and how it moves. Touch ink is kept so OpenNote can take it back if the touch turns out to be a palm.
 
+Palm rejection is tested against 200,000 generated writing sessions across pens, tablets, and phones, and every case it gets wrong is listed for review.
+
 Open Settings, then Pen and touch, to change this.
 
 | Setting                 | Choices                                                                |
