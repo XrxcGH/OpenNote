@@ -15,6 +15,33 @@ export function sampleArc(center: Vec, radius: number, start: number, sweep: num
   });
 }
 
+/**
+ * The end of an arc and the way it runs there: along the circle, turning the way the arc sweeps. A curved arrow's head
+ * points this way, never along a chord back into the arc, which leans the head inward by half the angle it spans.
+ */
+export function arcEnd(center: Vec, radius: number, start: number, sweep: number): { tip: Vec; direction: Vec } {
+  const end = start + sweep;
+  const way = Math.sign(sweep) || 1;
+  return {
+    tip: { x: center.x + radius * Math.cos(end), y: center.y + radius * Math.sin(end) },
+    direction: { x: -Math.sin(end) * way, y: Math.cos(end) * way },
+  };
+}
+
+/**
+ * A curved arrow's body: the sampled arc with one more point on it just short of the tip, so the last segment runs
+ * along the end tangent within a hundredth of a degree for any radius and the head's two sides meet it alike.
+ */
+export function curvedArrowBody(center: Vec, radius: number, start: number, sweep: number): Vec[] {
+  const body = sampleArc(center, radius, start, sweep);
+  const step = Math.abs(sweep) / (body.length - 1);
+  const near = Math.min(step / 2, 0.0004);
+  const angle = start + sweep - Math.sign(sweep) * near;
+  const tip = body.pop()!;
+  body.push({ x: center.x + radius * Math.cos(angle), y: center.y + radius * Math.sin(angle) }, tip);
+  return body;
+}
+
 /** A regular polygon's corners, closing on the first. */
 export function polygonCorners(center: Vec, radius: number, sides: number, rotation: number): Vec[] {
   return Array.from({ length: sides + 1 }, (_, i) => {
@@ -77,7 +104,7 @@ export function shapePoints(shape: Shape): Vec[] {
     case 'arc':
       return sampleArc(shape.center, shape.radius, shape.start, shape.sweep);
     case 'curvedArrow': {
-      const body = sampleArc(shape.center, shape.radius, shape.start, shape.sweep);
+      const body = curvedArrowBody(shape.center, shape.radius, shape.start, shape.sweep);
       const tip = body[body.length - 1];
       return [...body, shape.barbs[0], tip, shape.barbs[1]];
     }

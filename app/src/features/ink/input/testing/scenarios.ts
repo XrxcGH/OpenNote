@@ -75,7 +75,11 @@ function otherFinger(
 function otherPinch(w: SessionWriter, r: Rand, t0: number, tip: Vec2, thumb?: Vec2): void {
   const gap = between(r, 30, 50);
   const spread = between(r, 10, 18);
-  const a = otherHand(r, side(w), w.options.grip, tip, screen(w), gap + spread);
+  // Clear of the hand where each finger lands and where it ends: the upper finger moves up by the spread, and the hand
+  // region scores a contact where it is now (CI seed 906 ended the upper finger in a hooked hand's forearm).
+  const ends = (p: Vec2) => handCovers(side(w), w.options.grip, tip, [p[0], p[1] - spread]) || p[1] - spread < 15;
+  let a = otherHand(r, side(w), w.options.grip, tip, screen(w), gap + spread);
+  for (let k = 0; k < 200 && ends(a); k++) a = otherHand(r, side(w), w.options.grip, tip, screen(w), gap + spread);
   otherFinger(w, t0, a, [0, -spread], 450, { intent: 'zoom' });
   otherFinger(w, t0 + between(r, 0, 100), [a[0], a[1] + gap], [0, spread], 450, { intent: 'zoom', size: thumb });
 }
@@ -227,12 +231,20 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
     const up = plan.strokes[plan.strokes.length - 1][1] + 1;
     const move = between(r, 30, 60);
     // Clear of the hand where the pen lifted as well as where it was just before: the hand follows the pen.
+    // The whole scroll stays clear, from where it lands to where it ends (CI seed 43487 ended in the hand).
     const lastTip = plan.pos(up);
+    const start = (p: Vec2): Vec2 => [p[0], Math.max(p[1], 15 + move)];
+    const covered = (p: Vec2) =>
+      [start(p), [start(p)[0], start(p)[1] - move] as Vec2].some(
+        (q) =>
+          handCovers(side(w), w.options.grip, lastTip, q) ||
+          handCovers(side(w), w.options.grip, plan.pos(leave - 200), q),
+      );
     let at = otherHand(r, side(w), w.options.grip, plan.pos(leave - 200), screen(w), 0);
-    for (let k = 0; k < 200 && handCovers(side(w), w.options.grip, lastTip, at); k++) {
+    for (let k = 0; k < 200 && covered(at); k++) {
       at = otherHand(r, side(w), w.options.grip, plan.pos(leave - 200), screen(w), 0);
     }
-    const from: Vec2 = [at[0], Math.max(at[1], 15 + move)];
+    const from = start(at);
     otherFinger(w, up + between(r, 0, 5000), from, [0, -move], 300, { intent: 'scroll' });
   }),
   pen('otherHandTapRecent', (w, r) => {
@@ -241,10 +253,18 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
     const plan = writeWithPalm(w, r, { lines: 1 });
     const up = plan.strokes[plan.strokes.length - 1][1] + 1;
     const tip = plan.pos(up - 1);
+    // The palm rests where `heelOffset` drew it, which the model of the grip can miss (an overwriter's rests above the
+    // line): keep clear of that place at the tip and at both line starts too (CI seed 115).
+    const heel = plan.heel ?? [0, 0];
+    const nearHeel = (p: Vec2) =>
+      [tip, [60, 60], [60, 70]].some((a) => Math.hypot(p[0] - a[0] - heel[0], p[1] - a[1] - heel[1]) < 85);
+    const covered = (p: Vec2) => handCovers(side(w), w.options.grip, [60, 70], p) || nearHeel(p);
     let at = otherHand(r, side(w), w.options.grip, tip, screen(w));
-    for (let k = 0; k < 200 && handCovers(side(w), w.options.grip, [60, 70], at); k++) {
+    for (let k = 0; k < 200 && covered(at); k++) {
       at = otherHand(r, side(w), w.options.grip, tip, screen(w));
     }
+    // On a small screen the hand may leave no room: then the other hand does not tap (CI seed 22079).
+    if (covered(at)) return;
     const after = between(r, ...RANGES.afterUpMs);
     otherFinger(w, up + after, at, [0, 0], between(r, 60, 150), {
       intent: 'tap',
@@ -271,26 +291,37 @@ export const PEN_SCENARIOS: readonly Scenario[] = [
     // The palm rests where `heelOffset` drew it, which the model of the grip can miss: keep clear of that place too.
     const heel = plan.heel ?? [0, 0];
     const nearHeel = (p: Vec2, at: Vec2) => Math.hypot(p[0] - at[0] - heel[0], p[1] - at[1] - heel[1]) < 60 + 15;
+    // Its forearm runs from the tip through that place too: an overwriter's reaches up and away (corpus seed 3).
     const clear = (p: Vec2) =>
       !handCovers(side(w), w.options.grip, tip, p, 15) &&
       !handCovers(side(w), w.options.grip, next, p, 15) &&
+      !(plan.heel && handCovers(side(w), w.options.grip, tip, p, 15, plan.heel)) &&
+      !(plan.heel && handCovers(side(w), w.options.grip, next, p, 15, plan.heel)) &&
       !nearHeel(p, tip) &&
       !nearHeel(p, next);
-    let at: Vec2 = [15, 15];
-    for (let k = 0; k < 400; k++) {
+    const fits = (p: Vec2) =>
+      Array.from({ length: fingers }, (_, f): Vec2 => [p[0] + f * gap, p[1]]).every(
+        (q) => q[0] < screen(w)[0] - 10 && clear(q),
+      );
+    let at: Vec2 | undefined;
+    for (let k = 0; k < 400 && !at; k++) {
       const p = otherHand(r, side(w), w.options.grip, tip, screen(w));
-      const row = Array.from({ length: fingers }, (_, f): Vec2 => [p[0] + f * gap, p[1]]);
-      if (row.every((q) => q[0] < screen(w)[0] - 10 && clear(q))) {
-        at = p;
-        break;
-      }
+      if (fits(p)) at = p;
     }
+    // Where random draws found no room, every place on the screen in 5 mm steps. With none, the other hand has nowhere
+    // clear of the writing hand to tap, so it does not: a row in the hand is a palm's by every signal (CI seed 7527 put
+    // three fingers on an overwriter's resting palm).
+    for (let y = 15; y <= screen(w)[1] - 15 && !at; y += 5) {
+      for (let x = 15; x <= screen(w)[0] - 15 && !at; x += 5) if (fits([x, y])) at = [x, y];
+    }
+    if (!at) return;
+    const spot = at;
     // Without lean or size, the mirror image of the hand is as likely a hand: a tap there is refused.
     const mirror = side(w) === 'left' ? 'right' : 'left';
-    const row = Array.from({ length: fingers }, (_, f): Vec2 => [at[0] + f * gap, at[1]]);
+    const row = Array.from({ length: fingers }, (_, f): Vec2 => [spot[0] + f * gap, spot[1]]);
     const blind =
       unknownSide(w) && row.some((q) => handCovers(mirror, 'tripod', tip, q) || handCovers(mirror, 'tripod', next, q));
-    doubleTap(w, r, t0, at, gap, fingers, blind ? 'side-unknown' : undefined);
+    doubleTap(w, r, t0, spot, gap, fingers, blind ? 'side-unknown' : undefined);
   }),
   pen(
     'fingerAfterPen',

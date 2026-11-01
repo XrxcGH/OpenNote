@@ -1,8 +1,9 @@
 name: nightly
 
 # The long-running hardening tests of DEVELOPMENT.md section 8: fuzzing, the kill harness, property tests with
-# many cases, the performance budgets, a two-hour random-editing soak, and an NVDA run of the keyboard and screen
-# reader checklist. The e2e-full job runs every E2E spec in the full app on Windows. It is the Phase 3 skeleton,
+# many cases, the performance budgets, a two-hour random-editing soak, the palm label oracle's full sweep, and an
+# NVDA run of the keyboard and screen reader checklist. The e2e-full job runs every E2E spec in the full app on
+# Windows. It is the Phase 3 skeleton,
 # which later phases grow with other architectures, 200% text, start-up baselines, and the frame probe. The bundles
 # job builds the macOS dmg and the Linux AppImage.
 #
@@ -360,6 +361,45 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  palm-sweep:
+    # The palm label oracle's full sweep (docs/testing/palm-sweep.md): 200,000 cases in four shards of 50,000. Each
+    # shard fails on a failing case that tests/fixtures/palm/oracle-sweep.json does not record as open, and on an
+    # open case that now passes, so the record never goes stale after a generator or classifier change.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      PALM_SWEEP_FROM: ${{ matrix.shard * 50000 }}
+      PALM_SWEEP_TO: ${{ (matrix.shard + 1) * 50000 }}
+      PALM_SWEEP_OUT: palm-sweep-${{ matrix.shard }}.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Sweep cases ${{ matrix.shard * 50000 }} to ${{ (matrix.shard + 1) * 50000 }}
+        run: |
+          npx vitest run --config app/vitest.config.ts --project unit \
+            app/src/features/ink/input/testing/oracleSweep.test.ts -t "full sweep"
+      - name: Keep the failing cases
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: palm-sweep-${{ matrix.shard }}
+          path: palm-sweep-${{ matrix.shard }}.json
+          if-no-files-found: ignore
+          retention-days: 30
+
   nvda:
     # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
     # records what it said (A4-42). The Guidepup packages are installed here, under tests/nvda, not in package.json, so no other job
@@ -463,7 +503,7 @@ jobs:
   report:
     # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
     # job that can write, it can only write issues, and it never checks out the code.
-    needs: [plan, fuzz, kill, proptest, perf, e2e-full, bundles, soak, nvda]
+    needs: [plan, fuzz, kill, proptest, perf, e2e-full, bundles, soak, palm-sweep, nvda]
     if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -482,6 +522,7 @@ jobs:
           E2E_RESULT: ${{ needs.e2e-full.result }}
           BUNDLES_RESULT: ${{ needs.bundles.result }}
           SOAK_RESULT: ${{ needs.soak.result }}
+          PALM_SWEEP_RESULT: ${{ needs.palm-sweep.result }}
           NVDA_RESULT: ${{ needs.nvda.result }}
         run: |
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
@@ -497,6 +538,8 @@ jobs:
             [ "$BUNDLES_RESULT" = failure ] && echo "- The macOS dmg or the Linux AppImage didn't build"
             # checks-disable-next-line length: one shell line that writes one line of the run summary
             [ "$SOAK_RESULT" = failure ] && echo "- Random-editing soak: the samples are in the run's artifacts; replay with the run number as the seed"
+            # checks-disable-next-line length: one shell line that writes one line of the run summary
+            [ "$PALM_SWEEP_RESULT" = failure ] && echo "- Palm label oracle sweep: the cases that differ from the record are in the log and the run's artifacts"
             [ "$NVDA_RESULT" = failure ] && echo "- NVDA checklist: the spoken log is in the run's artifacts"
             echo
             echo "Run: $run_url"
