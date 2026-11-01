@@ -35,7 +35,7 @@ export const RANGES = {
 export const LIMITS = {
   'slides-like-a-stroke':
     'A palm part that slides 10 mm or more as it lands (further than a palm settles) and is smaller than a palm, ' +
-    'or on a digitizer without sizes: a stroke or a scroll by every signal until a pen or a neighbour tells.',
+    'or on a digitizer without sizes: a stroke or a scroll by every signal until a pen or a neighbor tells.',
   bounce:
     'A palm part down for under 300 ms, smaller than a palm or on a digitizer without sizes, that moves less than ' +
     'a palm settles: a dot or a quick short mark by every signal.',

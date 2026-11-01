@@ -110,7 +110,7 @@ npm install && npm start
 That opens the OpenNote window in development mode. Run `npm run setup-hooks` once, so CHECKS runs before every commit. To test your changes, run:
 
 ```sh
-npm test                 # CHECKS, lint rule, and unit tests
+npm test                 # CHECKS (including American English spelling), lint rule, and unit tests
 npm run test:components  # component tests in the installed Edge or Chrome
 npm run test:ui          # screen and accessibility tests in Playwright
 npm run test:e2e         # real-app tests, which need tauri-driver and msedgedriver
