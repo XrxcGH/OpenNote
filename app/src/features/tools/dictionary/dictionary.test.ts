@@ -240,3 +240,30 @@ describe('dialect spelling', () => {
     expect(toAmericanSpelling('promise')).toBe('promise');
   });
 });
+
+describe('American English by default', () => {
+  it('has the American spelling as the headword', async () => {
+    for (const word of ['color', 'center', 'analyze', 'meter']) {
+      expect((await lookupWord(word, englishLoader))?.word).toBe(word);
+    }
+  });
+
+  it('sends the British forms to the American headword', async () => {
+    const { toAmericanSpelling } = await import('./spelling');
+    const pairs = { colour: 'color', centre: 'center', analyse: 'analyze', metre: 'meter' };
+    for (const [british, american] of Object.entries(pairs)) {
+      expect(toAmericanSpelling(british)).toBe(american);
+      expect((await lookupWord(toAmericanSpelling(british), englishLoader))?.word).toBe(american);
+    }
+  });
+});
+
+describe('-yse and -yze spelling', () => {
+  it('maps analyse and analyze both ways and keeps the plural noun', async () => {
+    const { toAmericanSpelling, toDialectSpelling } = await import('./spelling');
+    expect(toAmericanSpelling('analysed')).toBe('analyzed');
+    expect(toAmericanSpelling('paralysing')).toBe('paralyzing');
+    expect(toAmericanSpelling('analyses')).toBe('analyses');
+    expect(toDialectSpelling('catalyze')).toBe('catalyse');
+  });
+});

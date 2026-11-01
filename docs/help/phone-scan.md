@@ -22,6 +22,6 @@ Your phone and your PC need to be on the same Wi-Fi network. A phone using mobil
 
 ## Tidy up a photo
 
-Scan cleanup, which straightens a photo of a page and evens out its lighting, isn't built yet. Once it is, it runs on each photo from your phone as it arrives.
+Scan cleanup straightens a photo of a page and evens out its lighting. Select the photo on the page, then choose Clean up scan from the command palette. Photos from your phone don't clean themselves up as they arrive. See [Import and export](import-and-export.md).
 
 From phone is on in Beta builds.

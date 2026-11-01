@@ -1,4 +1,4 @@
-# ADR 0041: PDF files are read by pdf.js in the webview
+# ADR 0040: PDF files are read by pdf.js in the webview
 
 - Status: Proposed
 - Date: 2026-10-15

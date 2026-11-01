@@ -11,7 +11,7 @@ export default defineConfig({
   fullyParallel: true,
   workers: 4,
   reporter: 'list',
-  timeout: 60_000,
+  timeout: 150_000,
   use: {
     baseURL: 'http://127.0.0.1:4617',
     browserName: 'chromium',

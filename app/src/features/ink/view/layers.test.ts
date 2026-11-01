@@ -33,6 +33,18 @@ const three = () => {
   return layers;
 };
 
+describe('the base ink layer entry', () => {
+  it('keeps a name, hidden and locked written for base, as the format spec says', () => {
+    const layers = noLayers();
+    const patch = setLayerPatch(layers, BASE_LAYER, { name: 'Typed notes', hidden: true, locked: true })!;
+    const edit = layersEdit(patch);
+    const view = (edit as { view: unknown }).view;
+    const back = layersOf(view);
+    expect(back.defs.get(BASE_LAYER)).toEqual({ name: 'Typed notes', hidden: true, locked: true, imported: false });
+    expect((view as { inkLayers: { layers: Record<string, unknown> } }).inkLayers.layers).toHaveProperty('base');
+  });
+});
+
 // checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('ink layers', () => {
   it('starts with the base layer, and reads a damaged view without throwing', () => {

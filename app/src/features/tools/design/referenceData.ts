@@ -111,7 +111,7 @@ export const TYPE_CARDS: readonly RefCard[] = [
     id: 'type-float',
     group: 'types',
     title: 'float, double, long double',
-    body: 'Binary floating point: about 7, 16 and 18 or more decimal digits. 0.1 cannot be stored exactly, so compare with a tolerance, not ==. Dividing a double by zero gives infinity; integer division by zero is undefined behaviour.',
+    body: 'Binary floating point: about 7, 16 and 18 or more decimal digits. 0.1 cannot be stored exactly, so compare with a tolerance, not ==. Dividing a double by zero gives infinity; integer division by zero is undefined behavior.',
     code: 'double x = 0.1 + 0.2;\nbool same = (x == 0.3);  // false',
   },
   {
@@ -139,7 +139,7 @@ export const TYPE_CARDS: readonly RefCard[] = [
     id: 'type-array',
     group: 'types',
     title: 'Arrays and pointer arithmetic',
-    body: 'a[i] means *(a + i). Adding 1 to a pointer moves it by one element, not one byte. Indexing outside the array is undefined behaviour, not an error the program reports.',
+    body: 'a[i] means *(a + i). Adding 1 to a pointer moves it by one element, not one byte. Indexing outside the array is undefined behavior, not an error the program reports.',
     code: 'int a[3] = {1, 2, 3};\nint* q = a + 1;\n*q = 9;  // a is {1, 9, 3}',
   },
   {
@@ -239,7 +239,7 @@ export const ERROR_CARDS: readonly RefCard[] = [
     id: 'err-return',
     group: 'errors',
     title: 'control reaches end of non-void function',
-    body: 'A function promises a value but some path ends without a return. Flowing off the end of a function that should return a value is undefined behaviour.',
+    body: 'A function promises a value but some path ends without a return. Flowing off the end of a function that should return a value is undefined behavior.',
   },
   {
     id: 'err-lvalue',
@@ -251,7 +251,7 @@ export const ERROR_CARDS: readonly RefCard[] = [
     id: 'err-narrowing',
     group: 'errors',
     title: 'narrowing conversion',
-    body: 'Curly-brace initialisation refuses conversions that could lose information, such as double to int. Use an explicit cast if you mean it.',
+    body: 'Curly-brace initialization refuses conversions that could lose information, such as double to int. Use an explicit cast if you mean it.',
     code: 'int n{3.7};              // error\nint m = static_cast<int>(3.7);',
   },
   {
@@ -265,7 +265,7 @@ export const ERROR_CARDS: readonly RefCard[] = [
     id: 'err-uninit',
     group: 'errors',
     title: 'uninitialized variable',
-    body: 'A local variable of a basic type holds garbage until you set it. Reading it is undefined behaviour and may "work" on one run and fail on another. Give every variable a value where it is declared.',
+    body: 'A local variable of a basic type holds garbage until you set it. Reading it is undefined behavior and may "work" on one run and fail on another. Give every variable a value where it is declared.',
   },
   {
     id: 'err-redefinition',
@@ -336,7 +336,7 @@ export const MATLAB_CARDS: readonly RefCard[] = [
     id: 'm-for',
     group: 'matlab',
     title: 'for and while loops',
-    body: 'A for loop runs over the columns of the list it is given. end closes every block. Vectorised code (no loop) is usually shorter and faster.',
+    body: 'A for loop runs over the columns of the list it is given. end closes every block. Vectorized code (no loop) is usually shorter and faster.',
     code: 'for k = 1:5\n  total = total + k;\nend\nwhile err > tol\n  err = err / 2;\nend',
   },
   {

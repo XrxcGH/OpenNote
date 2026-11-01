@@ -1,4 +1,4 @@
-# ADR 0036: iCloud stays folder-based, with no iCloud sign-in
+# ADR 0038: iCloud stays folder-based, with no iCloud sign-in
 
 - Status: Accepted
 - Date: 2026-10-07

@@ -173,8 +173,12 @@ In another app, choose Share, then OpenNote. Text, a web link, a picture, or up 
 
 Share to OpenNote is on in Beta builds. Windows only lists OpenNote in the Share window once the app has its package identity. A signed release gets it from its installer. A developer can try it with `packaging/msix/register-dev.ps1`. To save web pages, use the [web clipper](web-clipper.md).
 
+## Share as a file
+
+Share as a file is in the command palette. It opens the Export dialog in its share mode, which makes one `.opennote` file with an optional password and page history. Opening that file later brings it in as a new notebook.
+
 ## Not built yet
 
-Share as a file is not finished and has no screen yet. Ink in OneNote files does not come over yet.
+Ink in OneNote files does not come over yet.
 
 Import and export are built. Agents opened each dialog once. Nobody has tried a real import by hand. OneNote files were tested with files made to match Microsoft's published description, not yet with files OneNote saved.
