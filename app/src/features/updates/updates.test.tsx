@@ -2,7 +2,6 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { describe, expect, it } from 'vitest';
 import type { WebUpdater } from '../../platform/web/updater';
 import type { UpdaterPhase, UpdaterStatus } from '../../platform/types';
-import { hostSystem, setHostSystem } from '../../platform/system';
 import { getSettings } from '../../state/settings';
 import { DEFAULT_UPDATER_STATUS } from '../../state/updater';
 import { announcements, expectNoAxeViolations, renderApp } from '../../test';
@@ -20,8 +19,12 @@ const ready = (version: string, blockedBy: 'recording' | null = null): UpdaterPh
   blockedBy,
 });
 
-async function start(initial: UpdaterStatus, install: 'auto' | 'ask' | 'manual' = 'auto') {
-  const app = await renderApp({ boot: { updater: initial }, settings: { updates: { install } } });
+async function start(
+  initial: UpdaterStatus,
+  install: 'auto' | 'ask' | 'manual' = 'auto',
+  system: 'windows' | 'macos' | 'linux' = 'windows',
+) {
+  const app = await renderApp({ boot: { updater: initial, system }, settings: { updates: { install } } });
   // Start-up focus lands on the tree once it draws. A popover opened before then would lose focus to it.
   await expect.poll(() => document.activeElement?.getAttribute('role')).toBe('treeitem');
   return { ...app, updater: app.platform.updater as WebUpdater };
@@ -55,19 +58,13 @@ describe('the update chip', () => {
   });
 
   it('on a Mac opens the installer instead of restarting', async () => {
-    const before = hostSystem();
-    setHostSystem('macos');
-    try {
-      const { updater } = await start(status(ready('0.6.0')));
-      fireEvent.click(chip('Update ready')!);
-      const dialog = screen.getByRole('dialog', { name: 'Update ready' });
-      expect(dialog.textContent).toContain('drag OpenNote to Applications');
-      expect(screen.queryByRole('button', { name: 'Restart to update' })).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Open the installer' }));
-      await waitFor(() => expect(updater.calls).toContain('restartToUpdate'));
-    } finally {
-      setHostSystem(before);
-    }
+    const { updater } = await start(status(ready('0.6.0')), 'auto', 'macos');
+    fireEvent.click(chip('Update ready')!);
+    const dialog = screen.getByRole('dialog', { name: 'Update ready' });
+    expect(dialog.textContent).toContain('drag OpenNote to Applications');
+    expect(screen.queryByRole('button', { name: 'Restart to update' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open the installer' }));
+    await waitFor(() => expect(updater.calls).toContain('restartToUpdate'));
   });
 
   it('says why a blocked update waits, and keeps the restart from running', async () => {
