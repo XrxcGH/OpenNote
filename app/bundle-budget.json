@@ -50,10 +50,7 @@
       "entry": "features/engineering/thermo/ui/ThermoKit"
     },
     {
-      "within": [
-        "features/engineering/",
-        "features/math/solvers/ui/SolversTool"
-      ],
+      "within": ["features/engineering/", "features/math/solvers/ui/SolversTool"],
       "entry": "features/tools/ui/host"
     }
   ],
