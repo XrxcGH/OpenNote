@@ -15,3 +15,17 @@ export async function openKit(page: Page, command: string, title: string): Promi
 export function resultRow(dialog: Locator, label: string | RegExp): Locator {
   return dialog.getByRole('row', { name: label }).first();
 }
+
+/** Checks a result row, changes one input, and checks that the row recomputed. */
+export async function expectRecompute(
+  dialog: Locator,
+  row: RegExp,
+  before: string,
+  input: Locator,
+  value: string,
+  after: string,
+): Promise<void> {
+  await expect(resultRow(dialog, row)).toContainText(before);
+  await input.fill(value);
+  await expect(resultRow(dialog, row)).toContainText(after);
+}

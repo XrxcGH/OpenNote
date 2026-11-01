@@ -1,4 +1,4 @@
-// Daily notes, collections, quick capture and the accessibility checker: each one's main path in the web build.
+// Daily notes, collections, quick capture, and the accessibility checker: each one's main path in the web build.
 import { expect, test } from '../../fixtures';
 import { openSmart, runCommand } from '../smart';
 
