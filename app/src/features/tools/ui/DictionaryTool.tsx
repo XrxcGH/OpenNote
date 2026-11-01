@@ -95,10 +95,10 @@ export function DictionaryTool({ store = packs(), full = shellFullClient() }: Di
             ? englishLoader
             : await store.get(language).then((pack) => (pack ? packLoader(pack) : englishLoader));
         const related = useFull ? loaders.related : undefined;
-        // A word typed the dialect's way finds its American entry.
+        // A word typed the British way finds its American entry, whichever dialect is chosen.
         const result =
           (await lookupWord(word, loader, related)) ??
-          (gb && toAmericanSpelling(word) !== word
+          (toAmericanSpelling(word) !== word
             ? await lookupWord(toAmericanSpelling(word), loader, related)
             : null);
         if (!current) return;
