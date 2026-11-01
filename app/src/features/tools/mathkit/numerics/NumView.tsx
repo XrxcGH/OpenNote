@@ -19,7 +19,7 @@ export const lineText = (item: NumOut['lines'][number], ns = 'numerics'): string
 function TableView({ table, ns }: { table: NumTable; ns: string }) {
   const title = say(`kitMath.${ns}.table.${table.title}`);
   return (
-    <div className={styles.scroll}>
+    <div className={styles.scroll} tabIndex={0} role="region" aria-label={title}>
       <table className={styles.table}>
         <caption>{title}</caption>
         <thead>

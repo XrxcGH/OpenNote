@@ -1,6 +1,7 @@
 // One tool of the kit: its fields, ready-made examples, the results, and the Insert menu. The typed texts are kept
 // on this device for each tool. The tool works the results out from a deferred copy of the texts, so typing stays
 // quick while a larger model refits.
+import { VisuallyHidden } from '../../../../ui/VisuallyHidden';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
@@ -157,6 +158,11 @@ export function ToolPanel({ tool, spec }: { tool: string; spec: ToolSpec }) {
           />
         ))}
       </div>
+      <VisuallyHidden>
+        <span role="status" aria-live="polite">
+          {run.ok ? answerText({ tool, outcome: run.outcome, say }) : ''}
+        </span>
+      </VisuallyHidden>
       {!run.ok && (
         <p className={styles.problem} role="status">
           {run.error ? errorText(run.error) : say('kitStatModels.ui.fixFields')}

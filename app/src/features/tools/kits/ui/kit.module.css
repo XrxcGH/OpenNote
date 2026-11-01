@@ -225,6 +225,8 @@
 
   .math {
     overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: var(--space-1);
     color: var(--color-text-primary);
   }
 
