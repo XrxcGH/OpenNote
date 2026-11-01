@@ -353,6 +353,20 @@ fn object_groups_in_the_view_round_trip() {
 }
 
 #[test]
+fn an_entry_for_the_base_ink_layer_round_trips() {
+    // The base layer is always present and may be renamed, hidden, or locked like any other.
+    let mut value = minimal();
+    value["view"]["inkLayers"] = json!({
+        "order": ["base"],
+        "layers": { "base": { "name": "Typed notes", "hidden": true, "locked": true, "imported": false } }
+    });
+    let page = read(&value).unwrap().page;
+    let bytes = write_page(&page);
+    let back: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(back["view"]["inkLayers"], value["view"]["inkLayers"]);
+}
+
+#[test]
 fn links_on_handwriting_and_ink_layers_in_the_view_round_trip() {
     // ADR 0036 and 0037: ink links and ink layers are unknown view keys that a reader keeps as they are.
     let mut value = minimal();

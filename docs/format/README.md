@@ -535,6 +535,32 @@ Common spacings are 22.68 (6 mm narrow ruling), 26.46 (7 mm college ruling), 32.
 
 In paginated mode, sheet `k` shows the content from `y = k × paper.height` to `y = (k + 1) × paper.height`. Page breaks are part of the view, not gaps in the coordinates.
 
+### 5.4.1 Groups, ink layers, and ink links
+
+Three more view keys are written by the ink tools. They hold only IDs of blocks and strokes, so no block or stroke record changes. A reader that does not know a key keeps it unchanged (section 2.9). A reader skips any entry that is damaged, and drops IDs that no longer name a live block or stroke.
+
+```json
+"groups": {
+  "g_01": { "blocks": ["blk_01"], "strokes": ["stk_01", "stk_02"] }
+},
+"inkLayers": {
+  "order": ["base", "lyr_01"],
+  "layers": { "lyr_01": { "name": "Tracing", "hidden": false, "locked": true, "imported": false } },
+  "assign": { "stk_01": "lyr_01" }
+},
+"inkLinks": {
+  "lnk_01": { "block": "blk_02", "strokes": ["stk_03"], "label": "Chapter 2", "target": { "kind": "page", "page": "pg_09", "heading": "Summary" } }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `groups` | A map from a group ID to `blocks` and `strokes`, the IDs of the text boxes, images, and strokes kept together. Selecting one member selects them all. A new group replaces any group it touches, so a member sits in one group. A group needs two or more members when it is made |
+| `inkLayers.order` | Layer IDs from the bottom to the top. The layer `base` is always present and is where a stroke sits when it has no `assign` entry |
+| `inkLayers.layers` | A map from a layer ID to `name`, `hidden`, `locked`, and `imported`. `imported` marks the locked bottom layer made for imported PDF pages and slides. At most 24 layers exist. The `base` layer is always present and may have an entry (name, `hidden`, `locked`) like any other layer; its `imported` stays false, and it cannot be deleted |
+| `inkLayers.assign` | A map from a stroke ID to the layer it sits on. A stroke that is not listed, or that names a missing layer, sits on `base`. Hidden layers stay out of print and of the readable SVG |
+| `inkLinks` | A map from a link ID to the `block` that holds the strokes, the `strokes` the link covers, a `label` for lists and screen readers, and a `target`. The target `kind` is `page` (with `page` and an optional `heading`), `url` (a web or mail address only), or `recording` (the recording as it was when the strokes were written) |
+
 ### 5.5 A complete page.json
 
 ```json
@@ -789,7 +815,7 @@ A smart table keeps what it adds beside its cells in the table block's `data.sma
 | `options` | list | The choices, in the order the person set them. Each is `{name, color}`: `name` is one line of up to 60 characters with no comma, unique without regard to case, and `color` is one of `indigo`, `amber`, `ink`, `fern`, `brick`, `walnut`, or `plum`. At most 50 |
 | `multi` | boolean | `true` when a cell may hold several choices. Defaults to `false` |
 
-A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0047](../adr/0048-choice-columns.md).
+A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0048](../adr/0048-choice-columns.md).
 
 ### 6.4 Reserved and extension types
 

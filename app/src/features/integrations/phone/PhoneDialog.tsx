@@ -4,7 +4,6 @@
 // the one the phone's browser shows.
 
 import { useEffect, useRef, useState } from 'react';
-import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import { Dialog } from '../../../ui';
 import { apiHost, errorCode } from '../api/host';
@@ -84,8 +83,6 @@ export function PhoneDialog({ onClose, pasteTarget, host = apiHost() }: PhoneDia
           }
           setAdded((count) => count + files.length);
           setStatus(t('platformApi.phone.added', { count: files.length }));
-          // Scan cleanup (A3-20) straightens the photo when that feature is part of the build.
-          void executeCommand('object.scanCleanup', undefined, 'menu').catch(() => false);
         })
         .catch(() => undefined);
     const stop = host.listen((event) => {
