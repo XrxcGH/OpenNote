@@ -95,6 +95,8 @@ for (const { name, label, at, theme } of RUNS) {
       const file = theme === 'dark' ? `${name}-dark-${k + 1}.png` : `${name}-${k + 1}.png`;
       if (skipWithoutBaseline(testInfo.config.updateSnapshots, existsSync(testInfo.snapshotPath(file)))) continue;
       const c = { x: world.x + p.x * world.zoom, y: world.y + p.y * world.zoom };
+      console.log(`[8x] ${file} try ${testInfo.retry} world ${JSON.stringify(world)} c ${JSON.stringify(c)}`);
+      console.log(`[8x] ${file} points ${JSON.stringify(points)}`);
       await expect(page).toHaveScreenshot(file, {
         clip: { x: c.x - size / 2, y: c.y - size / 2, width: size, height: size },
         // At the window's 4 device pixels to the CSS pixel, not a CSS-pixel picture scaled up.
