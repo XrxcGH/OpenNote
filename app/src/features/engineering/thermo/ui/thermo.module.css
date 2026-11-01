@@ -100,6 +100,11 @@
     color: var(--color-text-secondary);
   }
 
+  /* A select is as wide as its longest option, so no option text is clipped; it wraps to its own line before it shrinks. */
+  .field:has(select) {
+    min-inline-size: fit-content;
+  }
+
   .wide {
     flex-basis: 100%;
   }
