@@ -6,6 +6,7 @@
 // outside the focused text box, they say what it was.
 import type { MarkdownCache } from '../../../editor/markdown';
 import type { BeforeExitAnswer } from '../../../registries/types';
+import { sendingPage } from '../../../services/pages/saveHealth';
 import { PageServiceError } from '../../../services/pages/types';
 import type { AppliedFrame, BlockId, Edit, EditBatch, OpenPage, TxnAck } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -205,10 +206,16 @@ class Queue implements SyncQueue, QueueInternals {
   }
 
   async send(batch: EditBatch): Promise<TxnAck> {
-    await this.flushAll('command');
-    const ack = await this.enqueue(() => batch, null);
-    if (!ack) throw new PageServiceError('invalid', 'The batch was empty.', false);
-    return ack;
+    // The title bar says "Saving" from now, while the flushes before it run, until the core has the batch.
+    const sent = sendingPage();
+    try {
+      await this.flushAll('command');
+      const ack = await this.enqueue(() => batch, null);
+      if (!ack) throw new PageServiceError('invalid', 'The batch was empty.', false);
+      return ack;
+    } finally {
+      sent();
+    }
   }
 
   async sendAndShow(batch: EditBatch): Promise<TxnAck> {
@@ -283,9 +290,11 @@ class Queue implements SyncQueue, QueueInternals {
   }
 
   enqueue(build: BatchBuilder, block: BlockId | null, failed?: (error: unknown) => void): Promise<TxnAck | null> {
+    const sent = sendingPage();
     const run = () => this.run(build, block, failed);
     const next = this.chain.then(run, run);
     this.chain = next.catch(() => undefined);
+    next.then(sent, sent);
     return next;
   }
 

@@ -9,7 +9,9 @@ import {
   pageClosed,
   pageSaveFailed,
   pageSaved,
+  pageSending,
   saveHealthStore,
+  sendingPage,
   setCoreStalled,
   watchSaveHealth,
 } from './saveHealth';
@@ -90,5 +92,18 @@ describe('save health', () => {
     expect(combinedStatus('error', false)).toBe('error');
     expect(combinedStatus('saved', false, true)).toBe('stalled');
     expect(combinedStatus('saving', true, true)).toBe('stalled');
+  });
+
+  it('says "Saving" while a page batch is on its way to the core, until the last one arrives', () => {
+    const first = sendingPage();
+    const second = sendingPage();
+    expect(combinedStatus('saved', false, false, pageSending(saveHealthStore.get()))).toBe('saving');
+    first();
+    first();
+    expect(pageSending(saveHealthStore.get())).toBe(true);
+    second();
+    expect(combinedStatus('saved', false, false, pageSending(saveHealthStore.get()))).toBe('saved');
+    expect(combinedStatus('saved', true, false, true)).toBe('error');
+    expect(combinedStatus('saved', false, true, true)).toBe('stalled');
   });
 });

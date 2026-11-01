@@ -5,6 +5,10 @@
 // pages whose last try failed, for the status to show "Couldn't save" until the page saves. The core's watchdog
 // says `core:stalled` while one command has held the core for too long, and `core:responsive` once it answers
 // again; the status says "Not responding" in between.
+//
+// A page's batch counts as sending from when its send queue takes it until the core answers. The core answers
+// once the edit is in its journal file. So "Saved" never shows over a stroke the page draws before the core has it,
+// which a crash in between would lose.
 
 import { createStore } from '../../state/store';
 import type { SaveStatus } from '../notes';
@@ -14,9 +18,14 @@ export interface SaveHealth {
   readonly failing: ReadonlySet<string>;
   /** Whether a command has held the core for too long, so nothing reaches the disk until it returns. */
   readonly stalled: boolean;
+  /** How many page batches are on their way to the core. */
+  readonly sending: number;
 }
 
-export const saveHealthStore = createStore<SaveHealth>({ failing: new Set(), stalled: false }, 'saveHealth');
+export const saveHealthStore = createStore<SaveHealth>(
+  { failing: new Set(), stalled: false, sending: 0 },
+  'saveHealth',
+);
 
 /** Whether any page's last save failed. */
 export const anySaveFailing = (health: SaveHealth): boolean => health.failing.size > 0;
@@ -24,13 +33,29 @@ export const anySaveFailing = (health: SaveHealth): boolean => health.failing.si
 /** Whether the core has stopped answering. */
 export const coreStalled = (health: SaveHealth): boolean => health.stalled;
 
+/** Whether a page batch is on its way to the core. */
+export const pageSending = (health: SaveHealth): boolean => health.sending > 0;
+
+/** A page batch is on its way to the core. The returned function says it arrived or failed; a second call does nothing. */
+export function sendingPage(): () => void {
+  saveHealthStore.set((state) => ({ ...state, sending: state.sending + 1 }));
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    saveHealthStore.set((state) => ({ ...state, sending: Math.max(0, state.sending - 1) }));
+  };
+}
+
 /**
  * The status to show: "Not responding" while the core is stalled, else the notes bridge's, unless a page's last
- * save failed while nothing is on its way.
+ * save failed while nothing is on its way, or a page batch is still on its way.
  */
-export function combinedStatus(notes: SaveStatus, pageFailing: boolean, stalled = false): SaveStatus {
+export function combinedStatus(notes: SaveStatus, pageFailing: boolean, stalled = false, sending = false): SaveStatus {
   if (stalled) return 'stalled';
-  return notes === 'saved' && pageFailing ? 'error' : notes;
+  if (notes !== 'saved') return notes;
+  if (pageFailing) return 'error';
+  return sending ? 'saving' : 'saved';
 }
 
 export function setCoreStalled(stalled: boolean): void {

@@ -10,7 +10,13 @@ import { CloudXIcon } from '@phosphor-icons/react/dist/csr/CloudX';
 import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 import type { SaveStatus as Status } from '../../services/notes';
-import { anySaveFailing, combinedStatus, coreStalled, saveHealthStore } from '../../services/pages/saveHealth';
+import {
+  anySaveFailing,
+  combinedStatus,
+  coreStalled,
+  pageSending,
+  saveHealthStore,
+} from '../../services/pages/saveHealth';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
@@ -30,7 +36,8 @@ export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | '
   const notes = useStore(treeStore, (state) => state.saveStatus);
   const pageFailing = useStore(saveHealthStore, anySaveFailing);
   const stalled = useStore(saveHealthStore, coreStalled);
-  const status = combinedStatus(notes, pageFailing, stalled);
+  const sending = useStore(saveHealthStore, pageSending);
+  const status = combinedStatus(notes, pageFailing, stalled, sending);
   useEffect(() => {
     if (status === 'error') announce(t('tree.save.errorAnnounce'), 'assertive');
     if (status === 'stalled') announce(t('tree.save.stalledAnnounce'), 'assertive');
