@@ -40,7 +40,9 @@ describe('exporting a PDF from the real app', { skip: skipReason() }, () => {
     await dialog.waitForExist({ timeout: 10_000 });
     await dialog.$('//*[@role="radio"][contains(normalize-space(.), "PDF files")]').click();
     await dialog.$('button=Choose a folder…').click();
-    await dialog.$(`//*[contains(normalize-space(.), ${JSON.stringify(basename(out))})]`).waitForExist({ timeout: 10_000 });
+    await dialog
+      .$(`//*[contains(normalize-space(.), ${JSON.stringify(basename(out))})]`)
+      .waitForExist({ timeout: 10_000 });
     await dialog.$('//button[normalize-space(.)="Export"]').click();
     await dialog
       .$('//*[normalize-space(.)="Export finished"]')

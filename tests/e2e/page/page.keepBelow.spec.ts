@@ -20,8 +20,9 @@ describe('keep-below', { skip: skipReason() }, () => {
     await makeBox(browser, 100, 200, 'Above');
     const height = await browser.execute(
       () =>
-        document.querySelector<HTMLElement>('[aria-label="Text box 1 of 1"]')!.closest<HTMLElement>('[data-block-id]')!
-          .offsetHeight,
+        document
+          .querySelector<HTMLElement>('[role="textbox"][aria-label^="Text box"]')!
+          .closest<HTMLElement>('[data-block-id]')!.offsetHeight,
     );
     await makeBox(browser, 100, 200 + height + 10, 'Below');
     await clickAt(browser, await clientPoint(browser, 110, 210));

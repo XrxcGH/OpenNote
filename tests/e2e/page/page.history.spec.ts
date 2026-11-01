@@ -2,7 +2,6 @@
 // version, compares it with <ins> and <del>, and restores the old paragraph.
 
 import assert from 'node:assert/strict';
-import { } from 'node:fs';
 import { after, describe, it } from 'node:test';
 import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';

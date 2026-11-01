@@ -17,7 +17,17 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createServer, connect } from 'node:net';
 import { EOL, homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -188,6 +198,17 @@ async function startDriver(
   const driver = spawn(tauriDriver, args, { env, stdio: ['ignore', log, log] });
   // A driver that outlived its spec would keep this process, and so the whole test run, from ever ending.
   driver.unref();
+  // A driver that dies on its own is what resets the spec's connection (ECONNRESET), so say how it ended.
+  driver.on('exit', (code, signal) => {
+    try {
+      appendFileSync(
+        join(LOGS, `tauri-driver-${stamp}.log`),
+        `${EOL}tauri-driver exited: code ${code}, signal ${signal}${EOL}`,
+      );
+    } catch {
+      // Logging must not fail a spec.
+    }
+  });
   return { driver, port };
 }
 
@@ -260,8 +281,10 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
     browser,
     profileDir,
     async close() {
+      const diedEarly = driver.exitCode !== null;
       await browser.deleteSession().catch(() => {});
       stopDriver(driver);
+      if (diedEarly) keepAppLogs(profileDir, stamp);
       removeProfile();
     },
   };

@@ -292,9 +292,9 @@ jobs:
         run: |
           $failed = @()
           foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
-            node --test --test-concurrency=1 $spec.FullName
+            node --test --test-concurrency=1 --test-timeout=600000 $spec.FullName
             if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
-            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue | Stop-Process -Force
+            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
           }
           if ($failed.Count -gt 0) {
             "Failed specs: $($failed -join ', ')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
@@ -303,7 +303,7 @@ jobs:
       - name: Start-up baseline for main
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nightly-e2e-logs
