@@ -294,7 +294,8 @@ jobs:
           foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
             node --test --test-concurrency=1 --test-timeout=600000 $spec.FullName
             if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
-            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue |
+              Stop-Process -Force -ErrorAction SilentlyContinue
           }
           if ($failed.Count -gt 0) {
             "Failed specs: $($failed -join ', ')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
