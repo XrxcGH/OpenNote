@@ -2,11 +2,11 @@
 // spec chose, and each file is a real PDF. The WebView2 print path and the app's PDF writer both run.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
 import { answerPickers, clickRow, dialogWith, runCommand } from './steps.ts';
 
@@ -28,7 +28,7 @@ describe('exporting a PDF from the real app', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(out, { recursive: true, force: true });
+    removeFolder(out);
   });
 
   it('exports a section as PDF files that open as PDFs', async () => {
@@ -40,7 +40,7 @@ describe('exporting a PDF from the real app', { skip: skipReason() }, () => {
     await dialog.waitForExist({ timeout: 10_000 });
     await dialog.$('//*[@role="radio"][contains(normalize-space(.), "PDF files")]').click();
     await dialog.$('button=Choose a folder…').click();
-    await dialog.$(`//*[contains(normalize-space(.), ${JSON.stringify(out)})]`).waitForExist({ timeout: 10_000 });
+    await dialog.$(`//*[contains(normalize-space(.), ${JSON.stringify(basename(out))})]`).waitForExist({ timeout: 10_000 });
     await dialog.$('//button[normalize-space(.)="Export"]').click();
     await dialog
       .$('//*[normalize-space(.)="Export finished"]')

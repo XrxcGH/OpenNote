@@ -5,11 +5,11 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { describe, it } from 'node:test';
-import { launchApp, skipReason, tools } from '../harness.ts';
+import { launchApp, skipReason, tools, removeFolder } from '../harness.ts';
 import type { Browser } from '../harness.ts';
 
 const RUNS = Number(process.env.OPENNOTE_CRASH_RUNS ?? 50);
@@ -50,7 +50,7 @@ async function openTextBox(browser: Browser) {
       { timeout: 20_000 },
     );
   }
-  const box = browser.$('[role="textbox"][aria-label="Text"]');
+  const box = browser.$('[role="textbox"][aria-label="Page text"]');
   await box.waitForExist({ timeout: 20_000 });
   return box;
 }
@@ -90,7 +90,7 @@ describe('typing survives a crash', { skip: skipReason() }, () => {
           await again.close();
         }
       } finally {
-        rmSync(profileDir, { recursive: true, force: true });
+        removeFolder(profileDir);
       }
     });
   }

@@ -3,9 +3,9 @@
 // Runners without an English spell checker skip the check rather than fail.
 
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
+import { } from 'node:fs';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 import { flaggedProfile, openMitosisText } from './helpers.ts';
 
@@ -18,7 +18,7 @@ describe('spell check', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('underlines a misspelling and fixes it from F7', async (context) => {
@@ -37,7 +37,7 @@ describe('spell check', { skip: skipReason() }, () => {
     const menu = browser.$('[role="menu"][aria-label="Spelling"]');
     await menu.waitForExist({ timeout: 5_000 });
     await browser.keys(['Enter']);
-    const box = browser.$('[role="textbox"][aria-label="Text"]');
+    const box = browser.$('[role="textbox"][aria-label="Page text"]');
     await browser.waitUntil(async () => (await box.getText()).includes('I receive mail'), { timeout: 5_000 });
     assert.ok(!(await squiggles(browser)).includes('recieve'));
   });

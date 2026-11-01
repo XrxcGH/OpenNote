@@ -3,11 +3,11 @@
 // and it survives a restart. It skips where the WebDriver tools aren't installed, like the smoke specs.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 
 /** Clicks the row of a tree whose label reads `name`, once it shows. */
@@ -63,14 +63,14 @@ describe('tables in a page', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('inserts a table, types its cells, adds a row, and keeps it all after a restart', async () => {
     session = await launchApp({ profileDir });
     const { browser } = session;
     await openMitosis(browser);
-    const box = browser.$('[role="textbox"][aria-label="Text"]');
+    const box = browser.$('[role="textbox"][aria-label="Page text"]');
     await box.waitForExist({ timeout: 20_000 });
     await box.click();
     await runCommand(browser, 'Insert table');

@@ -287,7 +287,19 @@ jobs:
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
         # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
-        run: node --test --test-concurrency=1 "tests/e2e/**/*.spec.ts"
+        # Each spec file runs in a process of its own, and any app or driver it left behind is stopped before the
+        # next one starts, so one spec that dies cannot reset the connections of the 70 after it.
+        run: |
+          $failed = @()
+          foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
+            node --test --test-concurrency=1 $spec.FullName
+            if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
+            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue | Stop-Process -Force
+          }
+          if ($failed.Count -gt 0) {
+            "Failed specs: $($failed -join ', ')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
       - name: Start-up baseline for main
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs

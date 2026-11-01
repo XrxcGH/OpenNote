@@ -3,11 +3,11 @@
 // survives a restart too. The stroke is pen pointer events sent to the page, which take the same path as a pen.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 
 /** Clicks the row of a tree whose label reads `name`, once it shows. */
@@ -124,7 +124,7 @@ describe('ink survives a restart', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('keeps a stroke drawn on a page, and keeps its undo', async () => {
