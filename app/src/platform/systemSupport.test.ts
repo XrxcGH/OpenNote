@@ -19,6 +19,14 @@ describe('systemLimits', () => {
     expect(t('settings.about.limits.syncKeyring')).toMatch(/GNOME Keyring or KWallet/);
   });
 
+  it('reads text in pictures on a Mac with Vision, and asks for Tesseract on Linux', () => {
+    const mac: readonly string[] = systemLimits('macos');
+    expect(mac).not.toContain('textInPictures');
+    expect(mac).not.toContain('textInPicturesTesseract');
+    expect(systemLimits('linux')).toContain('textInPicturesTesseract');
+    expect(t('settings.about.limits.textInPicturesTesseract')).toMatch(/tesseract-ocr/);
+  });
+
   it('has a sentence for every limit it lists', () => {
     for (const system of ['macos', 'linux'] as const) {
       for (const limit of systemLimits(system)) {

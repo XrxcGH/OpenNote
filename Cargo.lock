@@ -3798,6 +3798,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-vision"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfc194758a2d5d7540b1ad283bfb9ca318ec608991892326e95b428230b2689b"
+dependencies = [
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-foundation",
+]
+
+[[package]]
 name = "objc2-web-kit"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3976,6 +3988,11 @@ dependencies = [
 name = "opennote-intel"
 version = "0.1.0"
 dependencies = [
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-foundation",
+ "objc2-vision",
  "opennote-intel",
  "proptest",
  "serde",
@@ -3989,6 +4006,7 @@ dependencies = [
 name = "opennote-intel-engines"
 version = "0.1.0"
 dependencies = [
+ "libloading 0.8.9",
  "ndarray 0.16.1",
  "opennote-intel",
  "ort",

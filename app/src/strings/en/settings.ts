@@ -60,8 +60,8 @@ export const settings = {
     limitsTitle: 'What works differently on {system}',
     limitsIntro: 'Everything else works as it does on Windows. Your notes stay on this computer either way.',
     limits: {
-      textInPictures:
-        "Text in pictures and scanned pages isn't found by search yet, because it needs Windows' text recognition.",
+      textInPicturesTesseract:
+        'Text in pictures is read with Tesseract. Install tesseract-ocr and a language pack, like tesseract-ocr-eng.',
       handwriting:
         "Handwriting doesn't turn into text yet, because it needs Windows Ink Analysis. Your ink is kept as drawn.",
       readAloud:
