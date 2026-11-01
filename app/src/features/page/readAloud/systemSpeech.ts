@@ -10,8 +10,8 @@ import { pickVoice, type SpeechEngine, type SpeechVoice } from './engine';
 export interface Playback {
   playbackRate: number;
   readonly currentTime: number;
-  onended: (() => void) | null;
-  onerror: (() => void) | null;
+  onended: ((ev: Event) => unknown) | null;
+  onerror: ((ev: Event | string) => unknown) | null;
   play(): Promise<void> | void;
   pause(): void;
 }

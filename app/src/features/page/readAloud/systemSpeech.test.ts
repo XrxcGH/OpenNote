@@ -77,7 +77,7 @@ describe('the system speech engine', () => {
       [0, 3],
       [4, 3],
     ]);
-    audio.onended?.();
+    audio.onended?.(new Event('ended'));
     expect(onEnd).toHaveBeenCalledWith(true);
   });
 
@@ -94,7 +94,7 @@ describe('the system speech engine', () => {
     canceled.engine.speak('Hi', { voice: null, rate: 1 }, noop, quiet);
     canceled.engine.cancel();
     await flush();
-    canceled.audio.onended?.();
+    canceled.audio.onended?.(new Event('ended'));
     expect(quiet).not.toHaveBeenCalled();
   });
 
