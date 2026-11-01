@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { skipWithoutBaseline } from '../matrix';
-import { openPaper, settledWorld, setZoom, storedStrokes, VIEWPORT } from '../paperSnap';
+import { openPaper, settledWorld, storedStrokes, VIEWPORT } from '../paperSnap';
 import type { Vec } from '../paperSnap';
 
 test.use({ viewport: VIEWPORT, deviceScaleFactor: 4 });
@@ -37,6 +37,28 @@ const mid = (a: Vec, b: Vec): Vec => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 /** Each crop is this many page units square: 192 device pixels at 8 to the unit. */
 const CROP_UNITS = 24;
 
+/**
+ * Zooms the page to exactly 200 percent with the View tab's zoom steps, about the middle of the view. A Ctrl+wheel zoom
+ * lands only near the target, and a crop then sits a fraction of a device pixel off its golden, which shifts the
+ * antialiasing of every edge.
+ */
+async function zoomToTwice(page: Page): Promise<void> {
+  await page.getByRole('tab', { name: 'View' }).click();
+  // The zoom commands sit under More commands at this width.
+  const run = async (name: string) => {
+    await page
+      .getByRole('toolbar', { name: 'View' })
+      .getByRole('button', { name: 'More commands', exact: true })
+      .click();
+    await page.getByRole('menu', { name: 'More commands' }).getByRole('menuitem', { name, exact: true }).click();
+  };
+  await run('Actual page size');
+  // 100, 110, 125, 150, 175, then 200 percent.
+  for (let i = 0; i < 5; i += 1) await run('Zoom page in');
+  await expect.poll(async () => (await settledWorld(page)).zoom).toBe(2);
+  await page.getByRole('tab', { name: 'Draw' }).click();
+}
+
 async function addFromLibrary(page: Page, label: string): Promise<Vec[]> {
   await page.getByRole('toolbar', { name: 'Draw' }).getByRole('button', { name: 'Shapes', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Basic shapes' }).hover();
@@ -61,10 +83,7 @@ for (const { name, label, at, theme } of RUNS) {
     // Dot paper in page view: its sparse dots leave the ink clear in a crop, and the shape snaps to them the same each
     // run. Each shape gets a fresh page.
     await openPaper(page, 'Dot grid');
-    const overlay = (await page.locator('[data-ink-overlay]').boundingBox())!;
-    // Zoom about the middle of the sheet, so the middle of the view, where a library shape goes, is on the sheet.
-    const world0 = await settledWorld(page);
-    await setZoom(page, 2, overlay, { x: world0.x + 408 * world0.zoom, y: overlay.y + overlay.height / 2 });
+    await zoomToTwice(page);
     const points = await addFromLibrary(page, label);
     // Clear the selection, so its frame and handles leave the crop.
     await page.keyboard.press('Escape');
