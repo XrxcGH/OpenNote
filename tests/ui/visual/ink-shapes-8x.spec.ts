@@ -108,8 +108,6 @@ for (const { name, label, at, theme } of RUNS) {
         // Antialiased ink differs by a shade at a few edge pixels between GPUs; a misplaced join moves dozens.
         maxDiffPixelRatio: 0.01,
         threshold: 0.2,
-        // On a loaded runner the ink can take seconds to draw at full resolution; keep comparing until it has.
-        timeout: 15_000,
       });
       shown += 1;
     }
