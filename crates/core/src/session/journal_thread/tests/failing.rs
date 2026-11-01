@@ -1,8 +1,8 @@
-//! An in-memory file system whose writes can be made to fail, like a full system drive.
+//! An in-memory file system whose writes can be made to fail, like a full system drive, or made slow.
 
 use std::ops::Range;
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 
 use crate::error::{FsError, FsErrorKind};
@@ -14,6 +14,8 @@ use crate::testing::MemFs;
 pub struct FailingFs {
     pub inner: MemFs,
     failing: Arc<AtomicBool>,
+    /// Milliseconds each durable create takes, like a slow disk with a virus scanner.
+    slow_ms: Arc<AtomicU64>,
 }
 
 impl FailingFs {
@@ -21,7 +23,13 @@ impl FailingFs {
         FailingFs {
             inner,
             failing: Arc::new(AtomicBool::new(false)),
+            slow_ms: Arc::new(AtomicU64::new(0)),
         }
+    }
+
+    /// Makes each durable create take `ms` milliseconds.
+    pub fn slow_creates(&self, ms: u64) {
+        self.slow_ms.store(ms, Ordering::SeqCst);
     }
 
     /// Makes writes fail, or work again.
@@ -84,6 +92,7 @@ impl Fs for FailingFs {
         self.inner.replace_durable(path, bytes)
     }
     fn create_durable(&self, path: &Path, bytes: &[u8]) -> Result<Committed, FsError> {
+        std::thread::sleep(std::time::Duration::from_millis(self.slow_ms.load(Ordering::SeqCst)));
         self.check(path)?;
         self.inner.create_durable(path, bytes)
     }

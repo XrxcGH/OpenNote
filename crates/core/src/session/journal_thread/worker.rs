@@ -28,6 +28,8 @@ pub enum Command {
         seq: u64,
         bytes: Vec<u8>,
         edit: bool,
+        /// The handle's progress, so a record for a journal the thread no longer holds stops its wait at once.
+        shared: Arc<PageShared>,
     },
     SaveBegin {
         id: u64,
@@ -195,11 +197,18 @@ impl Worker {
                     }
                 }
             }
-            Command::Append { id, seq, bytes, edit } => {
-                if let Some(page) = self.pages.get_mut(&id) {
-                    page.append(config, seq, bytes, edit);
-                }
-            }
+            Command::Append {
+                id,
+                seq,
+                bytes,
+                edit,
+                shared,
+            } => match self.pages.get_mut(&id) {
+                Some(page) => page.append(config, seq, bytes, edit),
+                // No journal holds the record, so it is never written: the edit is answered at once as not
+                // written, instead of waiting out `WRITE_WAIT` for a record nobody will write.
+                None => shared.health.close(),
+            },
             Command::SaveBegin { id, seq, bytes, reply } => {
                 let result = match self.pages.get_mut(&id) {
                     Some(page) => page.save_begin(config, seq, bytes),

@@ -117,6 +117,8 @@ export interface EditBatch {
 
 export interface TxnAck {
   seq: number;
+  /** False when the edit isn't in the core's journal file yet, so only a save through `seq` makes it safe. */
+  written?: boolean;
   orderKeys: Record<BlockId, string>;
   canUndo: boolean;
   canRedo: boolean;

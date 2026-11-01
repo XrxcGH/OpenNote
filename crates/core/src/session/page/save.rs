@@ -161,7 +161,7 @@ impl PageSession {
             journal.after_save(outcome.durability, base, snapshot.through);
         }
         self.version_after(&snapshot.dir, outcome, &saved_page, (why, edited));
-        self.report_saved(&saved_page, snapshot.hint, encrypted);
+        self.report_saved(&saved_page, snapshot.through, snapshot.hint, encrypted);
         RevisionInfo {
             revision: outcome.revision.id,
             saved_at: outcome.revision.saved_at,
@@ -235,11 +235,12 @@ impl PageSession {
     }
 
     /// Step S12, and the work of step S11 that can wait.
-    fn report_saved(&self, page: &Page, hint: Hint, encrypted: bool) {
+    fn report_saved(&self, page: &Page, through: u64, hint: Hint, encrypted: bool) {
         self.ctx.events.emit(CoreEvent::Saved {
             page: self.id,
             revision: page.revision.id,
             at: page.revision.saved_at,
+            through,
         });
         let Some(notebook) = self.notebook.upgrade() else {
             return;

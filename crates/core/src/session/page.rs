@@ -49,6 +49,10 @@ pub use view::StrokeRead;
 pub struct TxnAck {
     /// The journal sequence number of the transaction.
     pub seq: u64,
+    /// Whether the transaction is in the journal file, so an app crash no longer loses it. When false (the journal
+    /// thread is slower than its wait, or the journal can't be written), the edit is safe only once a save through
+    /// `seq` reports `core:saved`, and the interface must not say "Saved" before then.
+    pub written: bool,
     /// The order keys the core made for new blocks.
     pub order_keys: BTreeMap<BlockId, OrderKey>,
     /// Whether the client can undo.

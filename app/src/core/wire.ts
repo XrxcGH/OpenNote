@@ -31,6 +31,8 @@ export interface DecodedEnvelope {
 /** The JSON part of a frame (crates/core/src/wire/frames.rs, FrameInfo). */
 export interface FrameInfo {
   seq: number;
+  /** Whether the change is in the journal file (as `TxnAck.written`); missing from an older core. */
+  written?: boolean;
   changes: {
     pageFields: boolean;
     blocksChanged: string[];
