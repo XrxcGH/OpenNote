@@ -8,33 +8,27 @@ import type { HostSystem } from './types';
 export type SystemLimit =
   | 'textInPictures'
   | 'handwriting'
-  | 'readAloud'
+  | 'systemTools'
   | 'hello'
-  | 'pdf'
   | 'systemAudio'
   | 'shareTarget'
   | 'windowTools'
-  | 'updates'
-  | 'commandLine'
   | 'sync'
   | 'penPressure';
 
 const BOTH: readonly SystemLimit[] = [
   'textInPictures',
   'handwriting',
-  'readAloud',
   'hello',
-  'pdf',
   'shareTarget',
   'windowTools',
-  'commandLine',
   'sync',
 ];
 
 const LIMITS: Record<HostSystem, readonly SystemLimit[]> = {
   windows: [],
-  macos: [...BOTH, 'systemAudio', 'updates'],
-  linux: [...BOTH, 'systemAudio', 'penPressure'],
+  macos: [...BOTH, 'systemAudio'],
+  linux: [...BOTH, 'systemTools', 'systemAudio', 'penPressure'],
 };
 
 /** The limits of `system`, in the order the list shows them. Windows has none. */
