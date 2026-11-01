@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use opennote_api::{client::Endpoint, testing::TestApi, Access, Decision, Scope};
 use opennote_cli::{
-    store::{assistant_token, MemorySecrets, Secrets, CLI_TOKEN},
+    store::{assistant_token, FileSecrets, MemorySecrets, Secrets, CLI_TOKEN},
     Env,
 };
 use serde_json::{json, Value};
@@ -516,4 +516,40 @@ fn hostile_params_never_panic_in_the_mcp_server() {
         test.backend.markdown("p-secret").as_deref(),
         Some("A secret about mitochondria.")
     );
+}
+
+/// A Mac or Linux run: the tool finds the app by the discovery and key files in its folder, and keeps its own key
+/// in a file there, so the second run (a new process) neither asks again nor loses access, and `disconnect` works.
+#[test]
+fn the_tool_finds_the_app_by_its_folder_and_keeps_its_key_in_a_file() {
+    use opennote_api::client::{write_discovery, write_key_file, Discovery, DISCOVERY_FILE, KEY_FILE};
+
+    let test = TestApi::start();
+    let dir = tempfile::tempdir().expect("temp dir");
+    let folder = dir.path().join("local");
+    write_discovery(
+        &folder.join(DISCOVERY_FILE),
+        &Discovery {
+            port: test.port,
+            pipe: None,
+        },
+    )
+    .expect("discovery");
+    write_key_file(&folder.join(KEY_FILE), &test.api.proof_key()).expect("key file");
+    let start = || Env::from_folder(Some(&folder), Arc::new(FileSecrets::new(&folder)));
+
+    test.approver
+        .answer(allow(Access::Read, Scope::Notebooks(vec!["nb-bio".into()])));
+    let first = run(&start(), &["notebooks"], "");
+    assert_eq!(first.code, 0, "{}", first.err);
+    assert!(first.out.contains("Biology"));
+
+    let second = run(&start(), &["read", "p-mito"], "");
+    assert_eq!(second.code, 0, "{}", second.err);
+    assert!(second.out.contains("The powerhouse of the cell."));
+    assert_eq!(test.approver.asked().len(), 1, "the key from the file is reused");
+
+    let gone = run(&start(), &["disconnect"], "");
+    assert_eq!(gone.code, 0, "{}", gone.err);
+    assert_eq!(FileSecrets::new(&folder).get(CLI_TOKEN), None);
 }

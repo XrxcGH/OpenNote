@@ -362,4 +362,20 @@ describe('the files that get signed', () => {
     expect(jobs.build).not.toContain('rust-cache');
     expect(jobs.build).not.toContain('actions/cache');
   });
+
+  it('carry the opennote command in the Mac and Linux bundles, each Mac processor with its own build', () => {
+    const step = stepsOf(jobs.build).find((text) => text.startsWith('name: Build the opennote command (macOS and Linux)'));
+    expect(step).toBeDefined();
+    expect(step).toContain("if: runner.os != 'Windows'");
+    // The names build.rs reads: one tool for each processor of the universal app, one for the Linux build.
+    for (const name of ['OPENNOTE_CLI_EXE_AARCH64', 'OPENNOTE_CLI_EXE_X86_64', 'OPENNOTE_CLI_EXE=']) {
+      expect(step).toContain(name);
+    }
+    const build = readFileSync(join(import.meta.dirname, '..', '..', 'src-tauri', 'build.rs'), 'utf8');
+    expect(build).toContain('OPENNOTE_CLI_EXE_{arch}');
+    const order = stepsOf(jobs.build).map((text) => text.split(/\r?\n/)[0]);
+    expect(order.findIndex((name) => name.includes('Build the opennote command (macOS and Linux)'))).toBeLessThan(
+      order.findIndex((name) => name.includes('(macOS and Linux)') && name.includes('Build ${{ matrix.file }}')),
+    );
+  });
 });

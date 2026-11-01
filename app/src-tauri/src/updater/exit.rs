@@ -29,6 +29,19 @@ pub enum ExitAction {
 
 /// The decision for each reason (section 18.7): never during Windows shutdown or a move.
 pub fn exit_action(reason: ExitReason, policy: InstallPolicy) -> ExitAction {
+    exit_action_on(
+        reason,
+        policy,
+        opennote_updater::platform::PlatformKey::current().is_none_or(|p| p.replaces_itself()),
+    )
+}
+
+/// `exit_action` for a system that does or doesn't swap its own file. A Mac never does: its update is a dmg the
+/// person opens, so no exit installs anything.
+pub fn exit_action_on(reason: ExitReason, policy: InstallPolicy, replaces_itself: bool) -> ExitAction {
+    if !replaces_itself {
+        return ExitAction::Nothing;
+    }
     match reason {
         ExitReason::RestartToUpdate => ExitAction::Apply(When::Now),
         ExitReason::Close if policy == InstallPolicy::Auto => ExitAction::Apply(When::NextLaunch),
@@ -153,6 +166,18 @@ mod tests {
     use semver::Version;
 
     use super::*;
+
+    #[test]
+    fn a_system_that_keeps_its_bundle_never_swaps_on_exit() {
+        use ExitReason::*;
+        for reason in [RestartToUpdate, Close, GoBack, MoveApp, SessionEnd] {
+            assert_eq!(exit_action_on(reason, InstallPolicy::Auto, false), ExitAction::Nothing);
+        }
+        assert_eq!(
+            exit_action_on(RestartToUpdate, InstallPolicy::Manual, true),
+            ExitAction::Apply(When::Now)
+        );
+    }
 
     #[test]
     fn applies_only_on_restart_close_in_automatic_mode_and_goes_back_on_request() {

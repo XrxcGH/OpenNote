@@ -76,6 +76,15 @@ zeroize = "1.9.0"
 [target.'cfg(not(windows))'.dependencies]
 tauri-plugin-dialog = "2"
 
+# Save as PDF and Print on Linux go through WebKitGTK's print operation and GTK's "Print to File" printer; on macOS
+# through the web view's NSPrintOperation (src/print_native.rs). These are the versions Tauri already builds.
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"
+webkit2gtk = "2.0"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
 # For `#[implement]`, which the Snap Layouts overlay's UI Automation provider uses.

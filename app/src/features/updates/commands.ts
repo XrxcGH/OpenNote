@@ -6,6 +6,7 @@ import { defineCommand } from '../../commands/registry';
 import type { CommandContext } from '../../commands/types';
 import { commands } from '../../registries';
 import { getUpdaterStatus } from '../../state/updater';
+import { hostSystem } from '../../platform/system';
 import { t } from '../../strings/t';
 import { confirm } from '../../ui';
 import { canCheck, checkIsOffered } from './model';
@@ -38,7 +39,8 @@ function registerPaletteCommands(): void {
   commands.register(
     defineCommand({
       id: 'updates.restart',
-      title: 'updates.commands.restart',
+      // A Mac opens the downloaded disk image rather than restarting.
+      title: hostSystem() === 'macos' ? 'updates.commands.openInstaller' : 'updates.commands.restart',
       category: 'updates',
       when: () => phase().kind === 'ready',
       enabled: () => {
