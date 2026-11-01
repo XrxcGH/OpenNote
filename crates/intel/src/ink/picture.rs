@@ -1,11 +1,15 @@
 //! Handwriting read as a picture, for the platforms whose recognizer reads images rather than strokes: Apple's
 //! Vision on a Mac, and Tesseract on Linux. The strokes are drawn dark on white at a size the OCR engine reads
 //! well, the engine finds the words, and each stroke goes to the word whose box it overlaps most. A stroke that
-//! overlaps no word is taken for drawing and left out, as Ink Analysis does on Windows.
+//! overlaps no word is taken for drawing and left out, as Ink Analysis does on Windows. When the caller says the
+//! strokes are all writing, such a stroke goes to the nearest word instead. So i-dots, t-crosses and full stops
+//! outside the engine's word box are converted along with their word.
 
 use std::sync::Arc;
 
-use super::{validate_all, InkLine, InkOptions, InkRecognition, InkRecognizer, InkStroke, InkWord, StrokeKey};
+use super::{
+    validate_all, InkLine, InkOptions, InkRecognition, InkRecognizer, InkStroke, InkWord, StrokeKey, StrokeKind,
+};
 use crate::error::IntelError;
 use crate::geometry::Rect;
 use crate::ocr::{OcrEngine, OcrImage, OcrOptions, PixelFormat, MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE};
@@ -125,6 +129,37 @@ fn overlap(a: &Rect, b: &Rect) -> f32 {
     (w.max(0.0) + 1e-3) * (h.max(0.0) + 1e-3) * f32::from(u8::from(w >= 0.0 && h >= 0.0))
 }
 
+/// The empty space between two boxes, across and down; zero on an axis where they overlap.
+fn gaps(a: &Rect, b: &Rect) -> (f32, f32) {
+    let across = (a.x - b.right()).max(b.x - a.right()).max(0.0);
+    let down = (a.y - b.bottom()).max(b.y - a.bottom()).max(0.0);
+    (across, down)
+}
+
+/// The word nearest the stroke: among the words on a line the stroke sits on (within half the line's height above
+/// or below it) first, then any word, by the shortest gap between the boxes.
+fn nearest(stroke: &Rect, words: &[(usize, Rect, String, Vec<usize>)], lines: &[Option<Rect>]) -> Option<usize> {
+    let on_line = |line: usize| {
+        lines[line].is_some_and(|band| {
+            let reach = band.height / 2.0;
+            stroke.bottom() >= band.y - reach && stroke.y <= band.bottom() + reach
+        })
+    };
+    let gap = |word: &Rect| {
+        let (across, down) = gaps(stroke, word);
+        across.hypot(down)
+    };
+    words
+        .iter()
+        .enumerate()
+        .min_by(|(_, a), (_, b)| {
+            let rank = |w: &(usize, Rect, String, Vec<usize>)| (!on_line(w.0), gap(&w.1));
+            let (ra, rb) = (rank(a), rank(b));
+            ra.0.cmp(&rb.0).then(ra.1.total_cmp(&rb.1))
+        })
+        .map(|(at, _)| at)
+}
+
 /// Handwriting through an OCR engine.
 pub struct PictureInk {
     ocr: Arc<dyn OcrEngine>,
@@ -138,7 +173,7 @@ impl PictureInk {
 }
 
 impl InkRecognizer for PictureInk {
-    fn recognize(&self, strokes: &[InkStroke], _options: &InkOptions) -> Result<InkRecognition, IntelError> {
+    fn recognize(&self, strokes: &[InkStroke], options: &InkOptions) -> Result<InkRecognition, IntelError> {
         validate_all(strokes)?;
         if strokes.is_empty() {
             return Ok(InkRecognition::default());
@@ -153,16 +188,29 @@ impl InkRecognizer for PictureInk {
                 words.push((index, placement.to_page(&word.bounds), word.text.clone(), Vec::new()));
             }
         }
+        // Each line's band in page units, from its words' boxes.
+        let bands: Vec<Option<Rect>> = (0..found.lines.len())
+            .map(|index| Rect::union_all(words.iter().filter(|w| w.0 == index).map(|w| &w.1)))
+            .collect();
         for (stroke, stroke_box) in boxes.iter().enumerate() {
             let best = words
                 .iter()
                 .enumerate()
                 .map(|(at, (_, word_box, _, _))| (at, overlap(stroke_box, word_box)))
                 .filter(|(_, area)| *area > 0.0)
-                .max_by(|a, b| a.1.total_cmp(&b.1));
-            if let Some((at, _)) = best {
+                .max_by(|a, b| a.1.total_cmp(&b.1))
+                .map(|(at, _)| at)
+                .or_else(|| match options.kind {
+                    StrokeKind::Writing => nearest(stroke_box, &words, &bands),
+                    _ => None,
+                });
+            if let Some(at) = best {
                 words[at].3.push(stroke);
             }
+        }
+        // A word keeps its strokes in the order they were written.
+        for word in &mut words {
+            word.3.sort_unstable();
         }
         let mut lines: Vec<InkLine> = Vec::new();
         for (index, _) in found.lines.iter().enumerate() {
@@ -329,6 +377,65 @@ mod tests {
                 .flat_map(|l| &l.words)
                 .all(|w| !w.strokes.contains(&StrokeKey([4; 16]))),
             "the doodle is not writing"
+        );
+    }
+
+    #[test]
+    fn strokes_outside_every_word_go_to_the_nearest_word_only_when_all_are_writing() {
+        // An "i" stem, its dot above the engine's word box, a full stop after "it" on the next line, and "it".
+        let strokes = [
+            stroke(1, &[(0.0, 4.0), (0.0, 12.0)]),
+            stroke(2, &[(0.0, 0.0)]),
+            stroke(3, &[(0.0, 24.0), (0.0, 32.0)]),
+            stroke(4, &[(14.0, 32.0)]),
+        ];
+        let (_, placement) = draw(&strokes).unwrap();
+        let pixels = |x: f32, y: f32, w: f32, h: f32| Rect {
+            x: x * placement.scale + MARGIN,
+            y: y * placement.scale + MARGIN,
+            width: w * placement.scale,
+            height: h * placement.scale,
+        };
+        let engine = || {
+            Arc::new(Found {
+                words: vec![
+                    (0, "i", pixels(-1.0, 3.0, 2.0, 10.0)),
+                    (1, "it", pixels(-1.0, 23.0, 8.0, 10.0)),
+                ],
+                seen: Mutex::new(None),
+            })
+        };
+        let keys = |found: &InkRecognition| -> Vec<Vec<StrokeKey>> {
+            found
+                .lines
+                .iter()
+                .flat_map(|l| &l.words)
+                .map(|w| w.strokes.clone())
+                .collect()
+        };
+        let writing = PictureInk::new(engine())
+            .recognize(
+                &strokes,
+                &InkOptions {
+                    kind: StrokeKind::Writing,
+                },
+            )
+            .unwrap();
+        assert_eq!(
+            keys(&writing),
+            vec![
+                vec![StrokeKey([1; 16]), StrokeKey([2; 16])],
+                vec![StrokeKey([3; 16]), StrokeKey([4; 16])],
+            ],
+            "the dot and the full stop go with their words"
+        );
+        let auto = PictureInk::new(engine())
+            .recognize(&strokes, &InkOptions { kind: StrokeKind::Auto })
+            .unwrap();
+        assert_eq!(
+            keys(&auto),
+            vec![vec![StrokeKey([1; 16])], vec![StrokeKey([3; 16])]],
+            "left to tell writing from drawing, strokes outside every word are left out"
         );
     }
 
