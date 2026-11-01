@@ -68,21 +68,23 @@ Rules of thumb:
 
 The palette is warm paper, walnut ink, moss, and clay, with candlelight, dusk and night-sky tones for ambience. It deliberately avoids the light-blue-on-black look of developer tools. Every pairing below is checked by CHECKS: body text reaches at least 7:1 contrast and secondary text at least 4.5:1.
 
+The Evening theme's surfaces, text, and borders are a neutral charcoal gray, not brown. Each gray keeps red a point or two above blue, so it never turns cold or blue. The evening's warmth comes from the accents, the candle, and the dusk sky.
+
 ### Surfaces and text
 
 | Token | Light (Daylight) | Dark (Evening) | Use |
 |---|---|---|---|
-| `surface.page` | `#FFFCF6` paper | `#24201C` | The note page, the brightest (light) or most readable (dark) area |
-| `surface.app` | `#F3EEE6` oat | `#1C1916` walnut | Window background, sidebars, toolbars |
-| `surface.raised` | `#FFFDF9` | `#2C2722` | Menus, dialogs, popovers |
-| `surface.sunken` | `#EAE3D8` | `#171411` | Text fields, wells, the canvas behind paginated pages |
-| `surface.hover` | `#ECE5DA` | `#332C26` | Hovered rows and buttons |
+| `surface.page` | `#FFFCF6` paper | `#262624` | The note page, the brightest (light) or most readable (dark) area |
+| `surface.app` | `#F3EEE6` oat | `#1E1E1C` charcoal | Window background, sidebars, toolbars |
+| `surface.raised` | `#FFFDF9` | `#30302E` | Menus, dialogs, popovers |
+| `surface.sunken` | `#EAE3D8` | `#181817` | Text fields, wells, the canvas behind paginated pages |
+| `surface.hover` | `#ECE5DA` | `#383836` | Hovered rows and buttons |
 | `surface.selected` | `#DDE8DA` | `#2E3B30` | Selected page, section, or tool |
-| `text.primary` | `#2B2521` walnut ink | `#F0E9DE` | Body text and headings |
-| `text.secondary` | `#5C534A` | `#CFC5B7` | Labels, metadata |
-| `text.muted` | `#6B6054` | `#ABA093` | Placeholders, timestamps |
-| `border.subtle` | `#E3DACC` | `#3A322B` | Dividers, paper rules |
-| `border.control` | `#877B6C` | `#8D8174` | Input and checkbox outlines (3:1 or more) |
+| `text.primary` | `#2B2521` walnut ink | `#F2F1EC` | Body text and headings |
+| `text.secondary` | `#5C534A` | `#CBCAC3` | Labels, metadata |
+| `text.muted` | `#6B6054` | `#A7A59D` | Placeholders, timestamps |
+| `border.subtle` | `#E3DACC` | `#3C3C39` | Dividers, paper rules |
+| `border.control` | `#877B6C` | `#8C8B85` | Input and checkbox outlines (3:1 or more) |
 
 ### Accents and status
 

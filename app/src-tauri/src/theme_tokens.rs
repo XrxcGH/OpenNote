@@ -17,17 +17,17 @@ pub struct ThemePair {
 /// `color.surface.app` in both themes.
 pub const SURFACE_APP: ThemePair = ThemePair {
     light: Rgb(0xF3, 0xEE, 0xE6),
-    dark: Rgb(0x1C, 0x19, 0x16),
+    dark: Rgb(0x1E, 0x1E, 0x1C),
 };
 
 /// `color.border.subtle` in both themes.
 pub const BORDER_SUBTLE: ThemePair = ThemePair {
     light: Rgb(0xE3, 0xDA, 0xCC),
-    dark: Rgb(0x3A, 0x32, 0x2B),
+    dark: Rgb(0x3C, 0x3C, 0x39),
 };
 
 /// `color.text.primary` in both themes.
 pub const TEXT_PRIMARY: ThemePair = ThemePair {
     light: Rgb(0x2B, 0x25, 0x21),
-    dark: Rgb(0xF0, 0xE9, 0xDE),
+    dark: Rgb(0xF2, 0xF1, 0xEC),
 };
