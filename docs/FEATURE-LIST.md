@@ -124,6 +124,7 @@ Every tool, action, and feature in OpenNote, grouped by category, with one sente
 - A held line or arrow works differently: keep holding and move, and its far end follows the pen, snapping to the paper's lines and crossings when snapping is on
 - Irregular shapes snap too: a trapezoid, a parallelogram, a house, an L, or any closed outline of 4 to 7 corners becomes a clean polygon with a handle on each corner
 - Straight lines, arcs, curved arrows, and double arrows snap the same way
+- A curved arrow's head points along the arc at its tip, from the library, after a handle drag, and when recognized, at any zoom
 - Shapes keep editable handles, and connectors stay attached when shapes move
 - Editable curves (Beta): Make curve turns a line, arrow, connector, recognized shape, or freehand stroke into a curve of Bezier segments with a point at each join and two handles
 
@@ -541,6 +542,11 @@ Every tool, action, and feature in OpenNote, grouped by category, with one sente
 
 - **macOS and Linux builds.** `OpenNote_macOS.dmg` (one universal app for macOS 11 and later) and `OpenNote_Linux.AppImage` (64-bit, glibc 2.35 or later), unsigned until the owner adds the signing secrets
 - **Menu bar on macOS.** The Mac menu bar lists OpenNote's commands, one menu per category as in the shortcut list, with each command's key equivalent (`⇧⌘D`), next to the app menu (About, Settings, Hide, Quit), Edit (Undo, Cut, Copy, Paste), and Window
+- **Save as PDF and Print on macOS and Linux.** Save as PDF and Print use the same print window, range, and headers as on Windows
+- **Read aloud and spell check on macOS and Linux.** Read aloud uses the system voices (`say` on a Mac, `espeak-ng` on Linux), with each word marked as it is read
+- **Command line on macOS and Linux.** The `opennote` command is built for both Mac processors and Linux, and OpenNote puts it at `~/.local/bin/opennote` each time it starts
+- **Sign-ins and sync keys on macOS and Linux.** Connector tokens and sync keys go in the login Keychain on a Mac, and in the Secret Service (GNOME Keyring or KWallet) on Linux
+- **Text in pictures and handwriting on macOS and Linux.** Text in pictures is read on the device by Apple's Vision on a Mac, and by Tesseract on Linux when it is installed
 
 ## Subject kit foundations
 
