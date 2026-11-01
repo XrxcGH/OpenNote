@@ -20,7 +20,10 @@ use std::{collections::BTreeMap, thread, time::Duration};
 
 use tauri::{Manager, WebviewWindow};
 
-use super::caption::{CaptionLayout, CaptionOverlay};
+use super::{
+    caption::{CaptionLayout, CaptionOverlay},
+    tao_window::TaoWindow,
+};
 use crate::{boot::Channel, ipc::IpcResult};
 
 /// The flag's id, shared with the interface's `FlagId`.
@@ -102,14 +105,20 @@ pub fn await_first_report(window: &WebviewWindow) {
 }
 
 fn apply_now(window: &WebviewWindow, layout: Option<&CaptionLayout>, frame_changed: bool) -> IpcResult<()> {
-    let custom = layout.is_some();
+    switch_frame(window, layout.is_some(), frame_changed)?;
+    platform::apply(window, layout)
+}
+
+/// Gives the window the custom frame or the native one. Tao skips `set_decorations` when it already counts the
+/// window as undecorated, as it does from creation, so a report that switches the frame also recomputes it.
+fn switch_frame(window: &impl TaoWindow, custom: bool, frame_changed: bool) -> tauri::Result<()> {
     if window.is_decorated()? == custom {
         window.set_decorations(!custom)?;
     }
     if frame_changed {
         platform::refresh_frame(window)?;
     }
-    platform::apply(window, layout)
+    Ok(())
 }
 
 #[cfg(windows)]
@@ -122,10 +131,10 @@ mod platform {
         },
     };
 
-    use super::super::{caption::CaptionLayout, resize_border, snap_overlay, subclass};
+    use super::super::{caption::CaptionLayout, resize_border, snap_overlay, subclass, tao_window::TaoWindow};
     use crate::ipc::IpcResult;
 
-    pub fn refresh_frame(window: &WebviewWindow) -> IpcResult<()> {
+    pub fn refresh_frame(window: &impl TaoWindow) -> tauri::Result<()> {
         recompute_frame(window.hwnd()?);
         Ok(())
     }
@@ -155,11 +164,11 @@ mod platform {
 mod platform {
     use tauri::WebviewWindow;
 
-    use super::super::caption::CaptionLayout;
+    use super::super::{caption::CaptionLayout, tao_window::TaoWindow};
     use crate::ipc::IpcResult;
 
     /// Other systems keep their own title bars, and Tauri's `set_decorations` redraws them.
-    pub fn refresh_frame(_window: &WebviewWindow) -> IpcResult<()> {
+    pub fn refresh_frame(_window: &impl TaoWindow) -> tauri::Result<()> {
         Ok(())
     }
 
@@ -222,60 +231,127 @@ mod tests {
         assert!(is_enabled(Channel::Dev, &[&flags(true), &BTreeMap::new()]));
     }
 
-    // tao's undecorated window, as section 10.1 describes: a stale native caption from creation.
+    // The app's real window: tao's, without the native frame, hidden until it is placed and shown. See the
+    // `tao_window` module docs for the flags tao keeps.
     #[cfg(windows)]
     mod frame {
-        use std::cell::Cell;
-
-        use windows::{
-            core::w,
-            Win32::{
-                Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
-                Graphics::Gdi::ClientToScreen,
-                UI::WindowsAndMessaging::{DefWindowProcW, GetWindowRect, WM_NCCALCSIZE},
+        use tao::{
+            dpi::LogicalSize,
+            event_loop::EventLoopBuilder,
+            platform::windows::EventLoopBuilderExtWindows,
+            window::{Window, WindowBuilder},
+        };
+        use windows::Win32::{
+            Foundation::{POINT, RECT},
+            Graphics::Gdi::ClientToScreen,
+            UI::{
+                HiDpi::{GetDpiForWindow, GetSystemMetricsForDpi},
+                WindowsAndMessaging::{
+                    GetWindowRect, IsWindowVisible, SetWindowPlacement, SM_CYCAPTION, WINDOWPLACEMENT,
+                },
             },
         };
 
-        use super::super::{super::test_windows, platform::recompute_frame};
+        use super::super::{
+            super::{
+                placement::{self, WindowPlacement},
+                tao_window::TaoWindow,
+            },
+            switch_frame,
+        };
 
-        thread_local! {
-            /// Whether the procedure answers `WM_NCCALCSIZE`, as tao does once the window is created.
-            static FRAMELESS: Cell<bool> = const { Cell::new(false) };
+        fn app_window(target: &tao::event_loop::EventLoop<()>) -> Window {
+            WindowBuilder::new()
+                .with_title("OpenNote test")
+                .with_decorations(false)
+                .with_visible(false)
+                .with_inner_size(LogicalSize::new(800.0, 600.0))
+                .build(target)
+                .expect("a tao window")
         }
 
-        /// Answers `WM_NCCALCSIZE` the way tao does for a window without the native frame: the client area fills
-        /// the window. During creation tao isn't ready yet, so the default handling gives the native caption.
-        unsafe extern "system" fn proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-            if msg == WM_NCCALCSIZE && wparam.0 != 0 && FRAMELESS.get() {
-                return LRESULT(0);
-            }
-            // SAFETY: Windows calls this with a live window of this class.
-            unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
-        }
-
-        /// How far the client area starts below the window's top edge: the native caption's height, or 0.
-        fn caption_height(hwnd: HWND) -> i32 {
-            let mut window = RECT::default();
+        /// Whether the client area starts a native caption's height or more below the window's top edge. Without
+        /// the native frame, tao keeps only a thin top inset for the window's shadow.
+        fn has_native_caption(window: &Window) -> bool {
+            let hwnd = TaoWindow::hwnd(window).expect("the handle");
+            let mut rect = RECT::default();
             let mut client = POINT::default();
             // SAFETY: `hwnd` is live on this thread, and both outputs are locals.
-            unsafe {
-                GetWindowRect(hwnd, &mut window).expect("the window rectangle");
+            let caption = unsafe {
+                GetWindowRect(hwnd, &mut rect).expect("the window rectangle");
                 let _ = ClientToScreen(hwnd, &mut client);
+                GetSystemMetricsForDpi(SM_CYCAPTION, GetDpiForWindow(hwnd))
+            };
+            client.y - rect.top >= caption
+        }
+
+        fn is_visible(window: &Window) -> bool {
+            // SAFETY: the handle is a live window of this thread.
+            unsafe { IsWindowVisible(TaoWindow::hwnd(window).expect("the handle")).as_bool() }
+        }
+
+        /// The window's own rectangle as a saved normal placement (`SW_SHOWNORMAL`), so placing it neither moves
+        /// nor sizes the window, as when the app starts where it was last closed.
+        fn where_it_is(window: &Window) -> WindowPlacement {
+            let mut rect = RECT::default();
+            // SAFETY: the handle is a live window of this thread, and `rect` is a local.
+            unsafe { GetWindowRect(TaoWindow::hwnd(window).expect("the handle"), &mut rect) }.expect("the rectangle");
+            WindowPlacement {
+                show_cmd: 1,
+                normal: [rect.left, rect.top, rect.right, rect.bottom],
             }
-            client.y - window.top
         }
 
         #[test]
-        fn recomputing_drops_the_native_caption_left_from_creation() {
-            let class = w!("OpenNoteTestFrameless");
-            test_windows::register_with(class, proc);
-            FRAMELESS.set(false);
-            let window = test_windows::top_level(class);
-            FRAMELESS.set(true);
-            // Nothing has moved or sized the window since tao took over, so the caption from creation stays.
-            assert!(caption_height(window.0) > 0);
-            recompute_frame(window.0);
-            assert_eq!(caption_height(window.0), 0);
+        fn one_title_bar_after_a_saved_placement_and_the_fallbacks() {
+            let event_loop = EventLoopBuilder::new().with_any_thread(true).build();
+
+            // A start with a saved placement shows only the page's title bar.
+            let window = app_window(&event_loop);
+            assert!(
+                has_native_caption(&window),
+                "the window should start with the caption from creation"
+            );
+            assert!(placement::restore(&window, &where_it_is(&window)));
+            assert!(is_visible(&window));
+            assert!(
+                !has_native_caption(&window),
+                "the native caption stayed over the page's title bar"
+            );
+
+            // The deadline or page-lost fallback brings the native frame back, and the window stays on screen.
+            switch_frame(&window, false, true).expect("the native frame");
+            assert!(is_visible(&window), "the native frame coming back hid the window");
+            assert!(has_native_caption(&window));
+
+            // The page's next report takes the native frame away again.
+            switch_frame(&window, true, true).expect("the custom frame");
+            assert!(is_visible(&window));
+            assert!(!has_native_caption(&window));
+
+            // A window that Windows showed without tao keeps the caption from creation, and tao already counts it as
+            // undecorated. The page's first report removes the caption all the same.
+            let stale = app_window(&event_loop);
+            let WindowPlacement {
+                normal: [left, top, right, bottom],
+                ..
+            } = where_it_is(&stale);
+            let raw = WINDOWPLACEMENT {
+                length: u32::try_from(std::mem::size_of::<WINDOWPLACEMENT>()).expect("the size"),
+                showCmd: 1,
+                rcNormalPosition: RECT {
+                    left,
+                    top,
+                    right,
+                    bottom,
+                },
+                ..WINDOWPLACEMENT::default()
+            };
+            // SAFETY: the handle is a live window of this thread, and `raw` is a local with its length set.
+            unsafe { SetWindowPlacement(TaoWindow::hwnd(&stale).expect("the handle"), &raw) }.expect("placed");
+            assert!(has_native_caption(&stale));
+            switch_frame(&stale, true, true).expect("the custom frame");
+            assert!(!has_native_caption(&stale), "the first report left the native caption");
         }
     }
 }

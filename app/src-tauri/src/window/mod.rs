@@ -16,6 +16,7 @@ pub mod snap_overlay;
 #[cfg(windows)]
 pub mod subclass;
 pub mod system_menu;
+pub mod tao_window;
 #[cfg(all(test, windows))]
 mod test_windows;
 pub mod webview;
@@ -147,12 +148,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
             .placement
             .as_ref()
             .is_some_and(|saved| placement::restore(&window, saved));
-        if restored {
-            // The placement showed the window behind tao's back, so tao still counts it as hidden. Tao then skips the
-            // frame refresh that showing does, which leaves the native caption over the page's title bar. Its next
-            // style change, such as the native frame coming back, would also hide the window.
-            let _ = window.show();
-        } else {
+        if !restored {
             let _ = window.center();
         }
         show(app);

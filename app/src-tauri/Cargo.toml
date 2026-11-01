@@ -134,3 +134,7 @@ rcgen = "0.13.2"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 tempfile.workspace = true
 ts-rs = { version = "12.0.1", features = ["no-serde-warnings"] }
+
+# The window tests run the app's real window library, the version Tauri uses, to check the frame Windows draws.
+[target.'cfg(windows)'.dev-dependencies]
+tao = { version = "0.37.1", default-features = false }

@@ -21,9 +21,6 @@ use windows::{
 
 const PARENT_CLASS: PCWSTR = w!("OpenNoteTestParent");
 
-/// A window procedure.
-pub type WindowProc = unsafe extern "system" fn(HWND, u32, WPARAM, LPARAM) -> LRESULT;
-
 /// A window that destroys itself when dropped.
 pub struct TestWindow(pub HWND);
 
@@ -41,16 +38,11 @@ unsafe extern "system" fn default_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
 
 /// Registers a window class that only does the default handling.
 pub fn register(class: PCWSTR) {
-    register_with(class, default_proc);
-}
-
-/// Registers a window class with its own window procedure.
-pub fn register_with(class: PCWSTR, proc: WindowProc) {
-    // SAFETY: `proc` handles any message it is given, and `class` names a 'static string.
+    // SAFETY: the procedure is the system's, and `class` names a 'static string.
     unsafe {
         let class = WNDCLASSEXW {
             cbSize: u32::try_from(std::mem::size_of::<WNDCLASSEXW>()).unwrap_or_default(),
-            lpfnWndProc: Some(proc),
+            lpfnWndProc: Some(default_proc),
             hInstance: GetModuleHandleW(None).unwrap_or_default().into(),
             lpszClassName: class,
             ..Default::default()
@@ -64,18 +56,12 @@ pub fn register_with(class: PCWSTR, proc: WindowProc) {
 pub fn parent() -> TestWindow {
     static REGISTER: Once = Once::new();
     REGISTER.call_once(|| register(PARENT_CLASS));
-    // SAFETY: COM may already be initialized on this thread, which is fine.
-    let _ = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) };
-    top_level(PARENT_CLASS)
-}
-
-/// A hidden, resizable top-level window of a registered `class`, with a 800 × 600 window rectangle.
-pub fn top_level(class: PCWSTR) -> TestWindow {
-    // SAFETY: plain window creation on the test thread.
+    // SAFETY: plain window creation on the test thread; COM may already be initialized, which is fine.
     unsafe {
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
         let hwnd = CreateWindowExW(
             WINDOW_EX_STYLE::default(),
-            class,
+            PARENT_CLASS,
             w!("OpenNote test"),
             WS_OVERLAPPEDWINDOW,
             100,
