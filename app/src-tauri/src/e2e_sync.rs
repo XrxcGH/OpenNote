@@ -83,9 +83,10 @@ pub struct Status {
 struct Inner {
     dir: PathBuf,
     secrets: Arc<dyn SecretStore>,
-    /// Whether `secrets` outlasts a restart. Off Windows the store is memory only (ADR 0055), so a device key put
-    /// there would be gone at the next start and the vault slot would be lost with it.
-    keeps_secrets: bool,
+    /// Whether `secrets` outlasts a restart, when a test says so; otherwise the store is asked at each setup, since
+    /// on Linux a keyring may start after the app does. A device key put in a store that forgets it would be gone at
+    /// the next start and the vault slot would be lost with it.
+    keeps_secrets: Option<bool>,
     running: Mutex<()>,
     status: Mutex<Status>,
     app: Mutex<Option<AppHandle>>,
@@ -157,16 +158,15 @@ impl SyncService {
 
     /// Sync is set up only when the store keeps secrets across restarts, which it says itself.
     fn from_store(dir: PathBuf, secrets: Arc<dyn SecretStore>) -> SyncService {
-        let keeps = secrets.keeps_secrets();
-        SyncService::build(dir, secrets, keeps)
+        SyncService::build(dir, secrets, None)
     }
 
     #[cfg(test)]
     fn with_store(dir: PathBuf, secrets: Arc<dyn SecretStore>) -> SyncService {
-        SyncService::build(dir, secrets, true)
+        SyncService::build(dir, secrets, Some(true))
     }
 
-    fn build(dir: PathBuf, secrets: Arc<dyn SecretStore>, keeps_secrets: bool) -> SyncService {
+    fn build(dir: PathBuf, secrets: Arc<dyn SecretStore>, keeps_secrets: Option<bool>) -> SyncService {
         SyncService {
             inner: Arc::new(Inner {
                 dir,
@@ -300,7 +300,11 @@ impl SyncService {
         let passphrase = take_secret(args, "passphrase");
         let code = take_secret(args, "code");
         let recovery_key = take_secret(args, "recoveryKey");
-        if !self.inner.keeps_secrets {
+        if !self
+            .inner
+            .keeps_secrets
+            .unwrap_or_else(|| self.inner.secrets.keeps_secrets())
+        {
             return Err(bad(
                 "Sync needs the system keyring to keep this computer's key. Start GNOME Keyring or KWallet, then try again.",
             ));

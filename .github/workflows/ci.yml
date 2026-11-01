@@ -443,8 +443,23 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Fetch every platform's crates (the no-network test reads all of them offline)
         run: cargo fetch --locked
-      - name: Rust tests
+      - name: Rust tests (macOS)
+        if: runner.os == 'macOS'
         run: cargo test --workspace
+      - name: Tesseract and a keyring, so the Linux text recognition and secret store tests run (not app dependencies)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng gnome-keyring dbus-x11
+      - name: Rust tests (Linux), in a D-Bus session with GNOME Keyring unlocked
+        if: runner.os == 'Linux'
+        env:
+          # The Tesseract and Secret Service tests fail instead of skipping when these are set.
+          OPENNOTE_EXPECT_TESSERACT: "1"
+          OPENNOTE_EXPECT_KEYRING: "1"
+        run: >-
+          dbus-run-session -- sh -c
+          'echo -n test | gnome-keyring-daemon --unlock --components=secrets && cargo test --workspace'
       - name: Build of the app, without a bundle
         run: npx tauri build --no-bundle -- --profile ci
 
