@@ -140,32 +140,6 @@ describe('the Tauri page service’s requests', () => {
     expect(coreStalled(saveHealthStore.get())).toBe(true);
   });
 
-  it('keeps a page saving after the core answers an edit as not yet in its journal, until a save holds it', async () => {
-    resetStores();
-    const { core, calls, emit } = fakeCore([envelope([])]);
-    const unwritten = { seq: 9, orderKeys: {}, canUndo: true, canRedo: false, written: false };
-    calls.pageApply.mockImplementationOnce(() => Promise.resolve(unwritten));
-    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
-    await page.send({ edits: [] });
-    expect(pageWaiting(saveHealthStore.get())).toBe(true);
-    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
-    expect(pageWaiting(saveHealthStore.get())).toBe(false);
-  });
-
-  it('keeps a page saving after a redo the core answers as not yet in its journal, until a save holds it', async () => {
-    resetStores();
-    const { core, calls, emit } = fakeCore([envelope([])]);
-    const redone = { ...frameInfo(), seq: 11, written: false };
-    Object.assign(calls, { pageRedo: vi.fn(() => Promise.resolve(redone)) });
-    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
-    await page.redo();
-    expect(pageWaiting(saveHealthStore.get())).toBe(true);
-    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 10 });
-    expect(pageWaiting(saveHealthStore.get())).toBe(true);
-    emit('core:saved', { page: 'p1', revision: 'r3', at: AT, through: 11 });
-    expect(pageWaiting(saveHealthStore.get())).toBe(false);
-  });
-
   it('reads the read-only reason the core tags as { kind }, so a page opened after the wait can say why', async () => {
     const { core } = fakeCore([envelope([], { kind: 'stillClosing' })]);
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });
@@ -201,6 +175,55 @@ describe('the Tauri page service’s requests', () => {
     await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'outOfOrder', resync: true });
     await page.send({ edits: [] });
     expect(calls.pageApply.mock.calls.at(-1)).toMatchObject([{ clientSeq: 8 }]);
+  });
+});
+
+describe('the Tauri page service’s unwritten edits', () => {
+  it('keeps a page saving after the core answers an edit as not yet in its journal, until a save holds it', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    const unwritten = { seq: 9, orderKeys: {}, canUndo: true, canRedo: false, written: false };
+    calls.pageApply.mockImplementationOnce(() => Promise.resolve(unwritten));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({ edits: [] });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+  });
+
+  it('keeps a page saving after it closes with an unwritten edit, until a save holds the edit', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    calls.pageApply.mockImplementationOnce(() =>
+      Promise.resolve({ seq: 9, orderKeys: {}, canUndo: true, canRedo: false, written: false }),
+    );
+    let closed = () => {};
+    calls.pageClose.mockImplementationOnce(() => new Promise<void>((resolve) => (closed = resolve)));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({ edits: [] });
+    const closing = page.close();
+    await settle();
+    expect(calls.pageClose).toHaveBeenCalled();
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    closed();
+    await closing;
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 9 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
+  });
+
+  it('keeps a page saving after a redo the core answers as not yet in its journal, until a save holds it', async () => {
+    resetStores();
+    const { core, calls, emit } = fakeCore([envelope([])]);
+    const redone = { ...frameInfo(), seq: 11, written: false };
+    Object.assign(calls, { pageRedo: vi.fn(() => Promise.resolve(redone)) });
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.redo();
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r2', at: AT, through: 10 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(true);
+    emit('core:saved', { page: 'p1', revision: 'r3', at: AT, through: 11 });
+    expect(pageWaiting(saveHealthStore.get())).toBe(false);
   });
 });
 

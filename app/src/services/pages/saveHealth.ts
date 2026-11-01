@@ -9,8 +9,9 @@
 // A page's batch counts as sending from when its send queue takes it until the core answers. An edit, an undo, a
 // redo, and a restore of blocks are each answered once the change is in the journal file. When the journal
 // thread is slower than the core's wait, or the journal can't be written, the answer says `written: false`. The
-// page then counts as unwritten until a `core:saved` whose `through` covers that change. So "Saved" never shows
-// over a stroke that only this process's memory holds, which a crash would lose.
+// page then counts as unwritten until a `core:saved` whose `through` covers that change, even after the page closes:
+// the close's own save may fail, or another window may keep the page open, so only that save says it is safe.
+// So "Saved" never shows over a stroke that only this process's memory holds, which a crash would lose.
 
 import { createStore } from '../../state/store';
 import type { SaveStatus } from '../notes';
@@ -24,10 +25,12 @@ export interface SaveHealth {
   readonly sending: number;
   /** The pages with an edit the core answered as not yet written, by ID, with the latest such edit's sequence number. */
   readonly unwritten: ReadonlyMap<string, number>;
+  /** The last edit a `core:saved` held, by page ID, since this window opened the page. */
+  readonly savedThrough: ReadonlyMap<string, number>;
 }
 
 export const saveHealthStore = createStore<SaveHealth>(
-  { failing: new Set(), stalled: false, sending: 0, unwritten: new Map() },
+  { failing: new Set(), stalled: false, sending: 0, unwritten: new Map(), savedThrough: new Map() },
   'saveHealth',
 );
 
@@ -43,10 +46,21 @@ export const pageSending = (health: SaveHealth): boolean => health.sending > 0;
 /** Whether an edit isn't safe from a crash yet: on its way to the core, or answered as not yet written. */
 export const pageWaiting = (health: SaveHealth): boolean => health.sending > 0 || health.unwritten.size > 0;
 
-/** The core answered an edit of `page` as not yet written (`TxnAck.written`): it is safe once a save holds `seq`. */
+/** What holds the status at "Saving": the batches on their way, and each unwritten page with its edit's number. */
+export function waitingDetail(health: SaveHealth): string {
+  const parts = [...health.unwritten].map(([page, seq]) => `unwritten ${page}@${seq}`);
+  if (health.sending > 0) parts.unshift(`sending ${health.sending}`);
+  return parts.join('; ') || 'none';
+}
+
+/**
+ * The core answered an edit of `page` as not yet written (`TxnAck.written`): it is safe once a save holds `seq`.
+ * A `core:saved` through `seq` that arrived before the answer already holds it, so it doesn't wait for another.
+ */
 export function pageUnwritten(page: string, seq: number): void {
   saveHealthStore.set((state) => {
     if ((state.unwritten.get(page) ?? -1) >= seq) return state;
+    if ((state.savedThrough.get(page) ?? -1) >= seq) return state;
     return { ...state, unwritten: new Map(state.unwritten).set(page, seq) };
   });
 }
@@ -54,11 +68,26 @@ export function pageUnwritten(page: string, seq: number): void {
 /** `page` saved every edit through `through`, so no edit up to it waits any longer. */
 export function pageWritten(page: string, through: number): void {
   saveHealthStore.set((state) => {
+    const seen = (state.savedThrough.get(page) ?? -1) >= through;
+    const savedThrough = seen ? state.savedThrough : new Map(state.savedThrough).set(page, through);
     const seq = state.unwritten.get(page);
-    if (seq === undefined || seq > through) return state;
+    if (seq === undefined || seq > through) return seen ? state : { ...state, savedThrough };
     const unwritten = new Map(state.unwritten);
     unwritten.delete(page);
-    return { ...state, unwritten };
+    return { ...state, unwritten, savedThrough };
+  });
+}
+
+/**
+ * This window opens `page`. The core numbers a page's edits afresh once its journal is gone, so a save seen before
+ * says nothing about the edits from now on.
+ */
+export function pageOpened(page: string): void {
+  saveHealthStore.set((state) => {
+    if (!state.savedThrough.has(page)) return state;
+    const savedThrough = new Map(state.savedThrough);
+    savedThrough.delete(page);
+    return { ...state, savedThrough };
   });
 }
 
@@ -113,12 +142,12 @@ export function pageSaved(page: string): void {
 }
 
 /**
- * A page closed, so no `core:saved` will come for it: it stops counting as failing or unwritten (closing saves
- * it). A page that still can't save counts again at its next try, which the core reports as before.
+ * A page closed: it stops counting as failing, and a page that still can't save counts again at the close's try,
+ * which the core reports as before. An unwritten edit keeps the page waiting: only the `core:saved` through it
+ * (from the close's save, or from another window that still has the page open) says a crash can't lose it.
  */
 export function pageClosed(page: string): void {
   pageSaved(page);
-  pageWritten(page, Number.POSITIVE_INFINITY);
 }
 
 const pageOf = (payload: unknown): string | null => {
