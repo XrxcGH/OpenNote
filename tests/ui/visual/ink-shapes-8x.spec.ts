@@ -88,6 +88,10 @@ for (const { name, label, at, theme } of RUNS) {
     // Clear the selection, so its frame and handles leave the crop.
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-ink-selection]')).toBeHidden();
+    await expect(page.locator('[data-ink-shape-handle]')).toHaveCount(0);
+    // A placed shape whose points snapped to the dots rings those dots for most of a second. A crop taken in that time
+    // keeps the rings: once a screenshot differs, the comparison waits only for the picture to hold still.
+    await expect(page.locator('[data-ink-snap-marks] > *')).toHaveCount(0);
     const world = await settledWorld(page);
     const size = CROP_UNITS * world.zoom;
     let shown = 0;
@@ -95,7 +99,9 @@ for (const { name, label, at, theme } of RUNS) {
       const file = theme === 'dark' ? `${name}-dark-${k + 1}.png` : `${name}-${k + 1}.png`;
       if (skipWithoutBaseline(testInfo.config.updateSnapshots, existsSync(testInfo.snapshotPath(file)))) continue;
       const c = { x: world.x + p.x * world.zoom, y: world.y + p.y * world.zoom };
-      await expect(page).toHaveScreenshot(file, {
+      // A failure names where the crop was and the shape it holds, so a run that differs can be told apart.
+      const where = `${file} at ${JSON.stringify(c)}, world ${JSON.stringify(world)}, points ${JSON.stringify(points)}`;
+      await expect(page, where).toHaveScreenshot(file, {
         clip: { x: c.x - size / 2, y: c.y - size / 2, width: size, height: size },
         // At the window's 4 device pixels to the CSS pixel, not a CSS-pixel picture scaled up.
         scale: 'device',
