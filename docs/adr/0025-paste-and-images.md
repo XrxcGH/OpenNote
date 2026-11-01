@@ -1,6 +1,6 @@
 # ADR 0025: Paste, clipboard facts, and image import
 
-- Status: Proposed, pending real captures for spike S4 and the image memory measurement in spike S3
+- Status: Proposed, pending real captures for spike S4. Spike S3 is done: display-size renditions are not built (docs/perf/images.md)
 - Date: 2026-10-03
 
 ## Context
@@ -20,7 +20,7 @@ We will:
 2. Keep structure, highlights, and text colors from Word, OneNote, Google Docs, and Excel, and drop colors, fonts, and sizes from web pages. A background maps to the nearest of the five highlighters. A text color maps to the nearest pen within a CIEDE2000 distance of 10, or else to a hex color, and black is no color.
 3. Read clipboard facts in Rust (`clipboard_facts`): the sequence number, a SHA-256 of the plain text, the source address, and Word's temporary images as random tokens that expire after 60 seconds, for files whose resolved path Rust checked. The page uses the facts only when the text hash matches its own paste, and it never passes a path.
 4. Import images through Rust commands (`image_import`, `image_import_url`, and `image_import_clip`) that read the pixel size, orientation, and format from the file header (confirmed by the Windows Imaging Component on Windows), check the type, and call the core's `import_asset` with the size. The page runs at most 4 imports and 64 MB of source bytes at once, reading each file only when its turn comes. Web images are downloaded once, with size, type, redirect, and address limits.
-5. Keep display-size renditions as the defined fallback behind `page.imageRenditions`, turned on only if spike S3 shows images above their 12 MB share. HEIC and TIFF conversion through WIC is built behind `page.heicImport`, off by default.
+5. Show images from the original asset with lazy, asynchronous decoding. Display-size renditions were the fallback behind `page.imageRenditions`; spike S3 measured no memory saving, so they are not built and the flag is gone. HEIC and TIFF conversion through WIC is built behind `page.heicImport`, off by default.
 
 ## Options considered
 
@@ -47,4 +47,4 @@ We will:
 - A paste that makes new blocks (tables, more text boxes, images) undoes in two steps: the text in the editor, then the blocks. The text sync owns the editor's batches, so one batch would need a sync seam.
 - The source link prompt is a toast with one action, Always; Never lives in Settings, Editing, Paste. Until answered, no link is added, and the prompt shows once a session.
 - Follow-up work: the privacy panel entry for web image downloads (Phase 13), and the context menu's Paste through `clipboard_read` once the page context menu lands.
-- Revisit if spike S3 shows image memory above its share (turn on renditions), if people ask for HEIC often (turn on conversion), or if WebView2 exposes the clipboard facts itself.
+- Revisit renditions only if a measurement on a real device shows images above their share. Revisit if people ask for HEIC often (turn on conversion), or if WebView2 exposes the clipboard facts itself.

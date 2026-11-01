@@ -16,9 +16,9 @@ Flags keep unfinished features out of the build people receive. A flag that noth
 
 ## Flags that wait for their feature
 
-`WAITING` in the test holds them. Today they are deck import and export, exam countdowns, the timetable, Open with OpenNote for single files, Share as a file, the local API, the dictionary tool window, and display-size image renditions.
+`WAITING` in the test holds them. Today they are deck import and export, exam countdowns, the timetable, Open with OpenNote for single files, Share as a file, the local API, and the dictionary tool window.
 
-`page.imageRenditions` waits for spike S3. The flag stays off in every channel. The ADR on paste and images says it turns on only if that spike shows images above their share of memory.
+`page.imageRenditions` was removed after spike S3 showed that display-size renditions do not lower image memory (docs/perf/images.md). The menu and shortcut tests that need a flag that is off now turn `page.heicImport` off for the test.
 
 ## Flags removed
 

@@ -10,7 +10,6 @@ export type PageFlagId = Extract<FlagId, `page.${string}` | 'editor.spelling' | 
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 /** On in every build. */
-const everywhere = { dev: true, nightly: true, beta: true, stable: true };
 const off = { dev: false, nightly: false, beta: false, stable: false };
 
 const flag = (id: PageFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
@@ -33,7 +32,6 @@ export const PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.formattingBar', 'The formatting bar after touch and pen selections.', everywhere),
   flag('page.readingOrder', 'The Reading order pane.', everywhere),
   flag('page.history', 'Compare versions, restoring parts, named versions, and deleting history.', everywhere),
-  flag('page.imageRenditions', 'Display-size image renditions, if spike S3 needs them.', off),
   flag('page.heicImport', 'Converting HEIC and TIFF images at import.', everywhere),
   flag('editor.spelling', 'Spell check and its settings.', everywhere),
   flag('editor.readAloud', 'Read aloud.', everywhere),

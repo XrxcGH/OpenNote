@@ -5,6 +5,7 @@ import { setHostSystem } from '../platform/system';
 import type { Platform } from '../platform/types';
 import { commands } from '../registries';
 import type { NotesService } from '../services/notes/types';
+import { initFlags } from '../app/flags';
 import { resetStores } from '../state/store';
 import { acceleratorFor, appMenuSpec, installAppMenu, KEY_ECHO_MS } from './appMenu';
 import { chord, configureCommands, defineCommand } from './registry';
@@ -77,7 +78,8 @@ describe('appMenuSpec', () => {
     add('test.copy', { keys: [chord('Ctrl+C')] });
     add('test.quit', { keys: [chord('Ctrl+Q')] });
     add('test.hidden', { palette: false });
-    add('test.flagged', { flag: 'page.imageRenditions' });
+    initFlags('dev', { 'page.heicImport': false });
+    add('test.flagged', { flag: 'page.heicImport' });
     const items = appMenuSpec().groups.flatMap((group) => group.items);
     expect(items.map(({ id, accelerator }) => [id, accelerator])).toEqual([
       ['test.copy', null],

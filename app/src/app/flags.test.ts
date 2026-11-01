@@ -28,7 +28,6 @@ describe('flags', () => {
     expect(isEnabled('page.editor')).toBe(true);
     initFlags('stable');
     expect(isEnabled('page.editor')).toBe(true);
-    expect(isEnabled('page.imageRenditions')).toBe(false);
   });
 
   it('take overrides in development and nightly builds only, the later ones winning', () => {

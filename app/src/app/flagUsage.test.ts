@@ -11,9 +11,7 @@ const SRC = join(import.meta.dirname, '..');
 const RUST = join(SRC, '..', 'src-tauri', 'src');
 
 /** Registered flags whose feature is not built yet (docs/FEATURES.md lists each as not built). */
-const WAITING: Readonly<Record<string, string>> = {
-  'page.imageRenditions': 'display-size renditions wait for spike S3 (docs/adr/0025-paste-and-images.md)',
-};
+const WAITING: Readonly<Record<string, string>> = {};
 
 function sources(dir: string, pattern: RegExp, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {

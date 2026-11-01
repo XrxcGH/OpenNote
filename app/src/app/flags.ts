@@ -145,7 +145,6 @@ type Phase4FlagId =
   | 'page.formattingBar'
   | 'page.readingOrder'
   | 'page.history'
-  | 'page.imageRenditions'
   | 'page.heicImport'
   | 'editor.spelling'
   | 'editor.readAloud'
