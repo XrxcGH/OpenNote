@@ -84,3 +84,52 @@ describe('check-bundle', () => {
     expect(summary(now, null)).toContain('no baseline');
   });
 });
+
+describe('check-bundle after rules', () => {
+  it('takes several after rules, one for each kit window, each leaving out only its own window', () => {
+    const lazy = (src: string, file: string, imports: string[]) => ({
+      file,
+      src,
+      isDynamicEntry: true,
+      imports,
+    });
+    const manifest: Manifest = {
+      'index.html': { file: 'assets/index.js', isEntry: true },
+      'src/features/engineering/aero/ui/AeroKit.tsx': lazy('src/features/engineering/aero/ui/AeroKit.tsx', 'a.js', [
+        '_words-a.js',
+      ]),
+      'src/features/engineering/aero/wing/tool.ts': lazy('src/features/engineering/aero/wing/tool.ts', 'wing.js', [
+        '_words-a.js',
+      ]),
+      'src/features/engineering/thermo/ui/ThermoKit.tsx': lazy(
+        'src/features/engineering/thermo/ui/ThermoKit.tsx',
+        't.js',
+        ['_words-t.js'],
+      ),
+      'src/features/engineering/thermo/steam/tool.ts': lazy(
+        'src/features/engineering/thermo/steam/tool.ts',
+        'steam.js',
+        ['_words-t.js', '_words-a.js'],
+      ),
+      '_words-a.js': { file: 'assets/words-a.js' },
+      '_words-t.js': { file: 'assets/words-t.js' },
+    };
+    const budget: Budget = {
+      ...BUDGET,
+      after: [
+        { within: 'engineering/aero/', entry: 'engineering/aero/ui/AeroKit' },
+        { within: 'engineering/thermo/', entry: 'engineering/thermo/ui/ThermoKit' },
+      ],
+    };
+    const files = Object.fromEntries(
+      groups(manifest, budget)
+        .slice(2)
+        .map((g) => [g.name.split('/').slice(-2).join('/'), g.files]),
+    );
+    expect(files['ui/AeroKit.tsx']).toEqual(['a.js', 'assets/words-a.js']);
+    expect(files['wing/tool.ts']).toEqual(['wing.js']);
+    expect(files['ui/ThermoKit.tsx']).toEqual(['t.js', 'assets/words-t.js']);
+    // The steam tool follows the thermo window only, so the aero words still count against it.
+    expect(files['steam/tool.ts']).toEqual(['steam.js', 'assets/words-a.js']);
+  });
+});

@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { MechError } from '../kit/errors';
 import { readDh } from './spec';

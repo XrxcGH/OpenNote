@@ -1,5 +1,6 @@
 // The physics window's Insert row in a real browser: with no page to insert into, the reason shows next to the
 // buttons, not only in the screen-reader announcement.
+import '../text';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

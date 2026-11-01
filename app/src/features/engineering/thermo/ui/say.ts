@@ -1,6 +1,7 @@
 // t() for keys built at run time, such as a step's key or a result's name. Each key exists in
 // strings/en/kitThermo.ts, and the engines' key types are taken from that file, so a wrong key fails type-checking
 // where it is made.
+import '../text';
 import { t } from '../../../../strings/t';
 import { ThermoError } from '../common/types';
 

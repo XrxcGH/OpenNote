@@ -1,5 +1,6 @@
 // The engineering mathematics window in a real browser: every tab opens on an answer with no problem showing, and each
 // follows the theme with no axe violations.
+import '../text';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

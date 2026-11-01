@@ -1,3 +1,4 @@
+import './text';
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, PRECEDENCE, groupsFirst, rankOf, searchCards, traceTable, traceVariables } from './referenceData';
 

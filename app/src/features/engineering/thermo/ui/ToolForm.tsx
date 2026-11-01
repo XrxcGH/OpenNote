@@ -1,5 +1,6 @@
 // One kit tool: its modes, its fields, and the answer, which updates as the person types. The form is saved on this
 // device per tool, so the kit opens where it was left. Problems with the input are said in words in a status line.
+import '../text';
 import { useEffect, useMemo } from 'react';
 import { t } from '../../../../strings/t';
 import type { ToolSpec } from '../common/spec';

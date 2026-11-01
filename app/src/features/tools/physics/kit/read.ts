@@ -2,6 +2,7 @@
 // of range stops the solve with a message that names the field, so the window can say what to fix. Engines stop the
 // same way, with fail(), when the numbers describe something impossible (a speed at or above c, a mass that does not
 // fit, total internal reflection).
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import type { FieldDef, KitStep, ModeDef, Outcome, ToolInputs, ToolSpec, UnitSystem } from './types';
 import { defaultUnit, toSI, unitOf } from './units';

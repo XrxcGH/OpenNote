@@ -1,4 +1,5 @@
 // The unit system toggle and the first state of a tool in US units.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { SPECS } from '../specs';
 import { convertTexts, firstState, firstTexts, firstUnits, readFields } from './read';

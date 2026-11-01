@@ -2,6 +2,7 @@
 // the ARIA pattern, and a unit that measures something else is marked on its field. A change of units keeps the
 // values, the Insert menu puts the work into the page, and a palette command opens the window on its tool.
 /* eslint-disable opennote/feature-boundaries -- The test reads the tool layer the window lives in. */
+import '../text';
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';

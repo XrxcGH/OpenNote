@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { addDim, addEntity, alignedOffset, History, pick, refAt, remove, updateEntity } from './edit';
 import { dimLines, emptyDoc } from './model';

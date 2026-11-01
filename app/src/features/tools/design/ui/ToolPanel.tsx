@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: the panel is one component that holds the form state
+import '../text';
 
 // One calculating tool of the kit: its fields with a unit for each number, a choice of SI or US units, ready-made
 // examples, the results, and the Insert menu. The typed texts are kept on this device for each tool, and the unit

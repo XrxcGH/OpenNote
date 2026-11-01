@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: the canvas is one component that turns pointer events into points
+import '../text';
 
 // The drawing surface of the drafting sheet: the sheet as paper with its title block, every shape, and dimension, the
 // selection, a rubber band for the shape being drawn, and a mark where the pointer will snap. It works with a mouse, a

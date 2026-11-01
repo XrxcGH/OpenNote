@@ -1,6 +1,7 @@
 // Airfoils against independent results: the planned cases (computed apart with SciPy), more digits from a separate
 // Python panel code (scratch panel.py), NACA's tabulated five-digit constants against their definitions, and the
 // vortex panel method against the exact Joukowski airfoil.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { AeroError, DEG, brent } from '../common';
 import { airfoil } from './engine';

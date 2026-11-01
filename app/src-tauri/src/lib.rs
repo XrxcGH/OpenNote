@@ -124,7 +124,7 @@ pub fn run(context: EarlyContext) {
     let share = share::ShareState {
         inbox: share::inbox(&paths),
     };
-    let builder = desktop::with_dialogs(images::register_renditions(tauri::Builder::default()));
+    let builder = desktop::with_dialogs(images::register_image_schemes(tauri::Builder::default()));
     let app = builder
         .manage(loaded.store)
         .manage(state)

@@ -1,6 +1,7 @@
 // The finite element workbench's form: a problem kind, then its typed tables (nodes, elements, supports, and
 // loads) or the rectangle mesher's sizes. The steps show each element matrix while the model is small, the
 // assembly map, the reduced system, and how stresses are recovered.
+import '../text';
 import { numberLatex } from '../kit/format';
 import type { DrawContext } from '../kit/picture';
 import {

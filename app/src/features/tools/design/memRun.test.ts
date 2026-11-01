@@ -1,4 +1,5 @@
 // checks-disable-file length: steps and comments keep a formula on one line
+import './text';
 
 import { describe, expect, it } from 'vitest';
 import { STEP_CAP, run } from './memRun';

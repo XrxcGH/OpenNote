@@ -1,4 +1,5 @@
 // The radiation form end to end.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { radiationSpec } from './spec';

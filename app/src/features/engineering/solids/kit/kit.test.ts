@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { en } from '../../../../strings/en';
 import { SOLIDS_TOOLS } from '../meta';

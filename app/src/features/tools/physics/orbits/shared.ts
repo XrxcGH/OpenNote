@@ -1,5 +1,6 @@
 // Pieces the orbit and maneuver tools share: the central-body field, reading vectors in km, writing vectors and
 // angles, and a picture of an orbit in its own plane.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { deg, fmt, q } from '../kit/format';
 import type { Reader } from '../kit/read';

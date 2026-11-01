@@ -1,5 +1,6 @@
 // The geometric optics and Gaussian beams tool: refraction at a face, a thin lens or mirror with its ray diagram, the
 // lensmaker's equation, a train of elements by ray-transfer matrices, step-index fibers, and Gaussian beams.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { deg, fmt, q, qIn } from '../kit/format';
 import { fail } from '../kit/read';

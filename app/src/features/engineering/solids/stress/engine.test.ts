@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { SolidsError } from '../kit/types';
 import { criteria, hookePlane, planeStress, rosette, rotate, tensorStress } from './engine';

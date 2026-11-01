@@ -1,5 +1,6 @@
 // A small line plot of a tool's curve, drawn as SVG on theme colors. It is a picture of numbers that are also in the
 // results table, so it is described in words for screen readers rather than read point by point.
+import './text';
 import { t } from '../../../strings/t';
 import { fmt } from './shared';
 import type { Plot as PlotData } from './shared';

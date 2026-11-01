@@ -1,6 +1,7 @@
 // The orbital maneuvers tool against its validation cases (first principles) and independent working: energy
 // bookkeeping on the transfer ellipse, the bi-elliptic crossover ratio, a phasing orbit that meets its target, and
 // Lambert solutions checked by propagation.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { specProblems } from '../kit/checkSpec';
 import { problem, runMode, value } from '../kit/run';

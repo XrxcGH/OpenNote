@@ -1,5 +1,6 @@
 // Puts something on the page the student last worked in, through the tools' insert event, and says whether a page
 // took it.
+import '../text';
 import { t } from '../../../../strings/t';
 import { announce } from '../../../../ui';
 import { INSERT_EVENT } from '../../../tools';

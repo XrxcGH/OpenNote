@@ -1,4 +1,5 @@
 // The pipe form end to end, checked against an independent Colebrook iteration and the closed relations between modes.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { firstTexts, runTool } from '../kit/read';
 import { pipesSpec } from './spec';

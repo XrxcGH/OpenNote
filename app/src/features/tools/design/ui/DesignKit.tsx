@@ -1,6 +1,7 @@
 // The design kit window: a tab for each tool. The tabs follow the ARIA tabs pattern: arrow keys move between them,
 // Home and End go to the ends, and only the chosen tab is in the Tab order. A tool's code loads the first time its
 // tab opens.
+import '../text';
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { DESIGN_TOOLS } from '../meta';
 import { followTab, saveTab, savedTab } from '../open';

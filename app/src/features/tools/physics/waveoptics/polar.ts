@@ -1,5 +1,6 @@
 // The wave optics tool's thin film and polarization calculations: thin films, Malus's law, the Fresnel equations,
 // and Jones calculus through polarizers and wave plates.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { deg, fmt, q, qIn, rad } from '../kit/format';
 import { fail } from '../kit/read';

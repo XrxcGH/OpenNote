@@ -1,4 +1,5 @@
 // The properties form end to end: values for water at 20 C and air at 300 K against published figures.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { refuses, row, solver } from '../kit/testing';
 import { propsSpec } from './spec';

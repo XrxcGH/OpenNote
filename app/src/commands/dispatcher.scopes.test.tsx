@@ -4,6 +4,7 @@ import { navigate } from '../app/location';
 import { commands } from '../registries';
 import { createMemoryNotesService } from '../services/notes/memory';
 import { pushLayer } from '../state/layers';
+import { initFlags } from '../app/flags';
 import { resetStores } from '../state/store';
 import { createTestPlatform } from '../test/platform';
 import { activeScopes, commandForKey, installDispatcher, layerScopes, reachesCommandsInText } from './dispatcher';
@@ -146,7 +147,8 @@ describe('text fields, dialogs, repeats, and flags', () => {
   it('repeat only commands that allow it, skip flags that are off, and leave key capture alone', () => {
     add('toggle', { keys: [chord('Ctrl+Shift+D')] });
     add('move', { keys: [chord('Ctrl+Shift+Up')], allowRepeat: true });
-    add('flagged', { keys: [chord('Ctrl+Alt+B')], flag: 'page.imageRenditions' });
+    initFlags('dev', { 'page.heicImport': false });
+    add('flagged', { keys: [chord('Ctrl+Alt+B')], flag: 'page.heicImport' });
     expect(run(document.body, 'D', 'KeyD', 'ctrl shift', true)).toBeNull();
     expect(run(document.body, 'ArrowUp', 'ArrowUp', 'ctrl shift', true)).toBe('test.move');
     expect(run(document.body, 'b', 'KeyB', 'ctrl alt')).toBeNull();

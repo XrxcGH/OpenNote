@@ -1,5 +1,6 @@
 // The fields tool's electric calculations: point charges by superposition with a field-line and equipotential plot,
 // Gauss's law for symmetric charge, capacitors, and capacitors in series or parallel.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { EPS0, K_E } from '../kit/constants';
 import { fmt, q, qIn } from '../kit/format';

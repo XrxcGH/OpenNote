@@ -1,5 +1,6 @@
 // Results as text for the screen and the page: each value in the chosen unit system, the answer line, the result
 // table, the worked steps as numbered lines, and a cycle's state table. Pure: the words come in through say().
+import '../text';
 import { fmt } from '../common/format';
 import type { KitStep, PlotSpec, ResultRow, StateRow, ThermoResult } from '../common/types';
 import { defaultUnit, fromEngine, type System } from '../common/units';

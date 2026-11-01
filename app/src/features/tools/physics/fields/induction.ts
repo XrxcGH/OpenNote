@@ -1,5 +1,6 @@
 // The fields tool's induction calculations: Faraday's law for a changing flux, motional emf, a rotating coil, and a
 // solenoid's inductance with its stored energy and time constant.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { fmt, q, qIn } from '../kit/format';
 import type { Reader } from '../kit/read';

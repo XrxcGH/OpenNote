@@ -1,5 +1,6 @@
 // The fields tool's magnetic calculations: the Biot-Savart law for straight segments; the fields of wires, loops,
 // solenoids, and toroids; and the Lorentz force on a charge or a wire.
+import '../text';
 import type { MessageKey } from '../../../../strings/t';
 import { MU0 } from '../kit/constants';
 import { fmt, q, qIn } from '../kit/format';

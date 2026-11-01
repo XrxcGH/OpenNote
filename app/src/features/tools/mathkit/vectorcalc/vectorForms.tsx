@@ -1,4 +1,5 @@
 // The fields of each vector calculus operation, in the order a student works.
+import '../text';
 import type { ReactNode } from 'react';
 import { Choice, say } from '../ui/parts';
 import type { Operation, State } from './run';

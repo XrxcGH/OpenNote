@@ -1,5 +1,6 @@
 // The ideal-gas tool against the published validation values, then against independent calculations: the entropy
 // change integrated from cp directly, the first law, and the NASA fits joining smoothly at 1000 K.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { integrate } from '../common/num';
 import { ThermoError, type ThermoResult } from '../common/types';

@@ -1,5 +1,6 @@
 // The rocket tool's form: the planning cases through the fields, US units that give the same impulse, the mass
 // ratio left blank, and a separation warning at sea level.
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { initialValues, runSpec, unitKey } from '../ui/spec';
 import type { ToolOutput } from '../ui/spec';

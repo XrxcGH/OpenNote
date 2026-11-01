@@ -1,3 +1,4 @@
+import '../text';
 import { describe, expect, it } from 'vitest';
 import { parseUnit } from '../../../../core/units';
 import { CalcError } from '../numeric';

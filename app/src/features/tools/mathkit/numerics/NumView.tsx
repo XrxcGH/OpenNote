@@ -1,5 +1,6 @@
 // How any numerical answer is drawn: the result lines, each table, the plots, a shaded grid for a field, the worked
 // steps, and the Insert buttons.
+import '../text';
 import { t } from '../../../../strings/t';
 import { fmt } from '../numeric';
 import styles from '../ui/mathkit.module.css';

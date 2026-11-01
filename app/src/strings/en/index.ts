@@ -63,7 +63,7 @@ import { kitMusic } from './kitMusicStart';
 import { chem } from './chem';
 import { kitEcon } from './kitEconStart';
 import { kitReasoning } from './kitReasoningStart';
-import { kitChemMat } from './kitChemMat';
+import { kitChemMat } from './kitChemMatStart';
 import { docStructure } from './docStructure';
 import { codeCells } from './codeCells';
 import { kitStatModels } from './kitStatModels';
@@ -80,17 +80,17 @@ import { stepCheck } from './stepCheck';
 import { tutor } from './tutor';
 import { exams } from './exams';
 import { sync } from './sync';
-import { kitControl } from './kitControl';
-import { kitDesign } from './kitDesign';
-import { kitMath } from './kitMath';
-import { kitMechDyn } from './kitMechDyn';
-import { kitPhysics } from './kitPhysics';
+import { kitControl } from './kitControlStart';
+import { kitDesign } from './kitDesignStart';
+import { kitMath } from './kitMathStart';
+import { kitMechDyn } from './kitMechDynStart';
+import { kitPhysics } from './kitPhysicsStart';
 import { kitStatInfer } from './kitStatInfer';
-import { kitElectrical } from './kitElectrical';
-import { kitFluidHeat } from './kitFluidHeat';
-import { kitSolids } from './kitSolids';
-import { kitAero } from './kitAero';
-import { kitThermo } from './kitThermo';
+import { kitElectrical } from './kitElectricalStart';
+import { kitFluidHeat } from './kitFluidHeatStart';
+import { kitSolids } from './kitSolidsStart';
+import { kitAero } from './kitAeroStart';
+import { kitThermo } from './kitThermoStart';
 
 export const en = {
   common,
