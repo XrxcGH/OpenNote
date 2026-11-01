@@ -3,7 +3,25 @@ import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { openSmart, runCommand } from '../smart';
 
+const problems = new WeakMap<Page, string[]>();
+
+/** Starts collecting what a page logs as an error and every script exception, for `expectNoErrors`. */
+function watchErrors(page: Page): void {
+  const found: string[] = [];
+  problems.set(page, found);
+  page.on('console', (message) => {
+    if (message.type() === 'error') found.push(`${message.text()} ${message.location().url}`);
+  });
+  page.on('pageerror', (error) => found.push(error.message));
+}
+
+/** Expects that the page logged no console error and threw no exception since `openKit`. */
+export function expectNoErrors(page: Page): void {
+  expect(problems.get(page) ?? []).toEqual([]);
+}
+
 export async function openKit(page: Page, command: string, title: string): Promise<Locator> {
+  watchErrors(page);
   await openSmart(page);
   await runCommand(page, command);
   const dialog = page.getByRole('dialog', { name: title });
