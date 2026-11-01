@@ -21,6 +21,14 @@ export async function axeViolations(
   return page.evaluate(
     async ({ include, tags }) => {
       const axe = (window as unknown as { axe: typeof import('axe-core') }).axe;
+      // A color change that starts a transition (a theme switch, a hover) is measured half way by axe, so wait for the
+      // finite ones to end. An endless animation, such as a spinner, is left running.
+      await Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+          .map((animation) => animation.finished.catch(() => undefined)),
+      );
       const results = await axe.run(include ?? document, { runOnly: { type: 'tag', values: tags } });
       return results.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`);
     },
