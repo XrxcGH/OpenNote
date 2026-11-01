@@ -2,7 +2,8 @@
 //! safe to share between threads, and frees it before it returns.
 
 use std::ffi::{c_char, c_int, c_void, CStr, CString};
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Mutex, OnceLock};
 
 use libloading::Library;
 use opennote_intel::error::IntelError;
@@ -66,6 +67,9 @@ fn api() -> Result<&'static Api, IntelError> {
     API.get_or_init(load).as_ref().ok_or_else(missing)
 }
 
+/// How many handles have been opened, which the tests count.
+static OPENED: AtomicUsize = AtomicUsize::new(0);
+
 /// One Tesseract handle, ended, and freed when dropped.
 struct Session {
     api: &'static Api,
@@ -82,6 +86,7 @@ impl Session {
         if handle.is_null() {
             return Err(IntelError::Engine("Tesseract couldn't start".to_owned()));
         }
+        OPENED.fetch_add(1, Ordering::Relaxed);
         let session = Session { api, handle };
         // SAFETY: the handle is live, a null data path means the default folder, and the codes end with a null.
         if unsafe { (api.init)(handle, std::ptr::null(), codes.as_ptr()) } != 0 {
@@ -120,10 +125,18 @@ impl Drop for Session {
 }
 
 /// The codes of the installed languages. Listing needs an open handle, so it opens one with English, which every
-/// distribution installs with Tesseract, or with the orientation model.
-fn installed(api: &'static Api) -> Result<Vec<String>, IntelError> {
+/// distribution installs with Tesseract, or with the orientation model. Opening one loads a language's model, so
+/// the list is kept: `refresh` lists again, as the settings screen's check does, to see a pack installed since.
+fn installed(api: &'static Api, refresh: bool) -> Result<Vec<String>, IntelError> {
+    static INSTALLED: Mutex<Option<Vec<String>>> = Mutex::new(None);
+    let mut kept = INSTALLED.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let (false, Some(codes)) = (refresh, kept.as_ref()) {
+        return Ok(codes.clone());
+    }
     let session = Session::open(api, "eng").or_else(|_| Session::open(api, "osd"))?;
-    Ok(session.languages())
+    let codes = session.languages();
+    *kept = Some(codes.clone());
+    Ok(codes)
 }
 
 /// OCR through Tesseract.
@@ -139,12 +152,15 @@ impl TesseractOcr {
 
 impl OcrEngine for TesseractOcr {
     fn available_languages(&self) -> Result<Vec<Language>, IntelError> {
-        Ok(installed(api()?)?.iter().filter_map(|code| bcp47_for(code)).collect())
+        Ok(installed(api()?, true)?
+            .iter()
+            .filter_map(|code| bcp47_for(code))
+            .collect())
     }
 
     fn recognize(&self, image: &OcrImage, options: &OcrOptions) -> Result<OcrResult, IntelError> {
         let api = api()?;
-        let codes = installed(api)?;
+        let codes = installed(api, false)?;
         let code = match &options.language {
             Some(language) => code_for(language, &codes)
                 .ok_or_else(|| IntelError::LanguageUnavailable(language.as_str().to_owned()))?,
@@ -178,5 +194,44 @@ impl OcrEngine for TesseractOcr {
             lines: parse_tsv(&text),
             angle: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use opennote_intel::ocr::PixelFormat;
+
+    use super::*;
+
+    /// Each picture opens one handle, for its language, once the installed list is known.
+    #[test]
+    fn a_picture_opens_one_tesseract_handle() {
+        if api().is_err() {
+            assert!(
+                std::env::var_os("OPENNOTE_EXPECT_TESSERACT").is_none(),
+                "Tesseract was expected on this machine"
+            );
+            eprintln!("skipped: no libtesseract");
+            return;
+        }
+        let engine = TesseractOcr::new();
+        // The printed line of the OCR fixtures: a binary PGM, a short header, then one byte per pixel.
+        let bytes = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../intel/tests/fixtures/printed-line.bin"
+        ))
+        .unwrap();
+        let header: Vec<&[u8]> = bytes.splitn(4, |b| *b == b'\n').take(3).collect();
+        let size: Vec<u32> = std::str::from_utf8(header[1])
+            .unwrap()
+            .split(' ')
+            .map(|n| n.parse().unwrap())
+            .collect();
+        let start = header.iter().map(|line| line.len() + 1).sum::<usize>();
+        let image = OcrImage::new(size[0], size[1], PixelFormat::Gray8, bytes[start..].to_vec()).unwrap();
+        engine.recognize(&image, &OcrOptions::default()).unwrap();
+        let before = OPENED.load(Ordering::Relaxed);
+        engine.recognize(&image, &OcrOptions::default()).unwrap();
+        assert_eq!(OPENED.load(Ordering::Relaxed) - before, 1);
     }
 }

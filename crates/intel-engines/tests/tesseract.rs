@@ -1,5 +1,6 @@
 //! Tesseract on Linux, when the machine has it: the printed line of the OCR fixtures. A machine without
-//! libtesseract skips the reading and checks that the engine says what is missing.
+//! libtesseract skips the reading and checks that the engine says what is missing, unless
+//! `OPENNOTE_EXPECT_TESSERACT` is set, as CI sets it after installing Tesseract: then a skip is a failure.
 #![cfg(target_os = "linux")]
 
 use opennote_intel::ocr::{OcrEngine, OcrImage, OcrOptions, PixelFormat};
@@ -26,6 +27,10 @@ fn tesseract_reads_a_printed_line_when_it_is_installed() {
         assert!(
             message.contains("tesseract") || message.contains("recognizer"),
             "a missing Tesseract says so: {message}"
+        );
+        assert!(
+            std::env::var_os("OPENNOTE_EXPECT_TESSERACT").is_none(),
+            "Tesseract was expected on this machine: {message}"
         );
         eprintln!("skipped: {message}");
         return;
