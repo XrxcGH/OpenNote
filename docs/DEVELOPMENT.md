@@ -327,7 +327,7 @@ Done when: all math renders on screen and in PDF identically.
 Status: built, and in beta testing.
 
 - Built: Importers for Markdown, Obsidian, Word, HTML, Notion, Google Keep, Logseq, Evernote, and more. Also the exporters and the import report with undo. 13 of the 26 extras are built, such as .odt, .xlsx, .pptx, .eml, Sticky Notes, and send to folders.
-- Built since: PDF in the dialog, OneNote `.one` and `.onepkg` files, PDF import with note space, PDF highlights, dimmed PDFs, scan cleanup, opening single Markdown files, the local API, the command-line tool, a Model Context Protocol (MCP) server, the web clipper, the phone camera, the embed block, and the Share as a file screen. All are untested by hand.
+- Built since: PDF in the dialog, OneNote `.one` and `.onepkg` files, PDF import with note space, PDF highlights, dimmed PDFs, scan cleanup. Also built: opening single Markdown files, the local API, and the command-line tool. A Model Context Protocol (MCP) server, the web clipper, the phone camera, the embed block, and the Share as a file screen are built too. All of them are untested by hand.
 - Needs the owner: Everything that needs a Google or Microsoft account.
 - Checked by agents: The `crates/interop` tests and [docs/perf/phase-11-core.md](perf/phase-11-core.md).
 - Checked by hand: Not yet. See section 11 of [the beta 4 checklist](testing/beta-4-checklist.md).
