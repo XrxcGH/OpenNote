@@ -314,7 +314,10 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         // Click away to keep the equation, as Escape would cancel it.
         await textBox(p).getByText('Question for Thursday').click();
         await p.waitForTimeout(800);
-        await p.getByRole('math').first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
+        await p
+          .getByRole('math')
+          .first()
+          .evaluate((e) => e.scrollIntoView({ block: 'center' }));
       },
     },
     {

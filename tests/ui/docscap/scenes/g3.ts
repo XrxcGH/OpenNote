@@ -262,7 +262,10 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         await d.getByRole('tab', { name: 'Score', exact: true }).click();
         await d.getByLabel('Music in ABC notation').fill(ABC);
         await p.waitForTimeout(1500);
-        await d.getByRole('img', { name: 'Twinkle' }).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
+        await d
+          .getByRole('img', { name: 'Twinkle' })
+          .first()
+          .evaluate((e) => e.scrollIntoView({ block: 'center' }));
         await p.waitForTimeout(800);
       },
     },
