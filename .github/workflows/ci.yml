@@ -454,7 +454,8 @@ jobs:
           # The speech and spell check tests drive `say` and NSSpellChecker, which every Mac has; one that doesn't
           # answer fails the run instead of testing only the fallback.
           OPENNOTE_REQUIRE_NATIVE_TOOLS: "1"
-        run: cargo test --workspace
+        # Every crate's tests run, so one round lists every macOS failure, not only the first crate's.
+        run: cargo test --workspace --no-fail-fast
       - name: Tesseract and a keyring, so the Linux text recognition and secret store tests run (not app dependencies)
         if: runner.os == 'Linux'
         run: |
