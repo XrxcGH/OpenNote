@@ -222,7 +222,7 @@
   {
     "name": "tags-pane",
     "category": "Find, link, and organize",
-    "caption": "The tagged lines pane, listing to-do and important lines with the page each is on."
+    "caption": "The tagged lines pane, listing each tagged line with the page it is on."
   },
   {
     "name": "graph-view",

@@ -2,11 +2,6 @@
 // section and row of FEATURES.md, each command prefix, and each picture. Each title bar item also gets a sentence.
 // app/src/app/featureRegistry.test.ts fails when a registered command or title bar item has no place here.
 
-/** Pictures whose caption CHECKS misreads, with the rule to skip and why. */
-export const CAPTION_EXEMPT: Readonly<Record<string, string>> = {
-  'tags-pane': 'grammar: "to-do and important lines" is one phrase, not a list',
-};
-
 /** The categories of the Screens page (docs/screens/README.md), in order. Every one needs a picture. */
 export const SCREEN_CATEGORIES = [
   'First-time setup',

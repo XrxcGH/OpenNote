@@ -890,11 +890,9 @@ The app registers 880 commands and 47 tool windows. 24 of the windows are subjec
 
 ![The linked pages pane, listing the page that links here.](screens/backlinks-light.png)
 
-<!-- checks-disable-next-line grammar: "to-do and important lines" is one phrase, not a list -->
-**tags-pane.** The tagged lines pane, listing to-do and important lines with the page each is on. ([dark](screens/tags-pane-dark.png))
+**tags-pane.** The tagged lines pane, listing each tagged line with the page it is on. ([dark](screens/tags-pane-dark.png))
 
-<!-- checks-disable-next-line grammar: "to-do and important lines" is one phrase, not a list -->
-![The tagged lines pane, listing to-do and important lines with the page each is on.](screens/tags-pane-light.png)
+![The tagged lines pane, listing each tagged line with the page it is on.](screens/tags-pane-light.png)
 
 **graph-view.** The graph view, with pages as dots and their links as lines. ([dark](screens/graph-view-dark.png))
 

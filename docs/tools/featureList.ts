@@ -8,7 +8,6 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  CAPTION_EXEMPT,
   CATEGORIES,
   COMMAND_PREFIX,
   ROW_CATEGORY,
@@ -126,10 +125,8 @@ const anchor = (title: string) =>
     .replace(/ /g, '-');
 
 const picture = (s: Screen) => [
-  ...(CAPTION_EXEMPT[s.name] ? [`<!-- checks-disable-next-line ${CAPTION_EXEMPT[s.name]} -->`] : []),
   `**${s.name}.** ${s.caption} ([dark](screens/${s.name}-dark.png))`,
   '',
-  ...(CAPTION_EXEMPT[s.name] ? [`<!-- checks-disable-next-line ${CAPTION_EXEMPT[s.name]} -->`] : []),
   `![${s.caption}](screens/${s.name}-light.png)`,
   '',
 ];

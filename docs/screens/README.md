@@ -93,10 +93,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [search](search-light.png) ([dark](search-dark.png)): The search panel with a result, the matched word in bold, and a preview.
 - [find-replace](find-replace-light.png) ([dark](find-replace-dark.png)): Find and replace on the page, with every match highlighted.
 - [backlinks](backlinks-light.png) ([dark](backlinks-dark.png)): The linked pages pane, listing the page that links here.
-
-<!-- checks-disable-next-line grammar: "to-do and important lines" is one phrase, not a list -->
-
-- [tags-pane](tags-pane-light.png) ([dark](tags-pane-dark.png)): The tagged lines pane, listing to-do and important lines with the page each is on.
+- [tags-pane](tags-pane-light.png) ([dark](tags-pane-dark.png)): The tagged lines pane, listing each tagged line with the page it is on.
 - [graph-view](graph-view-light.png) ([dark](graph-view-dark.png)): The graph view, with pages as dots and their links as lines.
 - [collections](collections-light.png) ([dark](collections-dark.png)): A live collection of pages shown as a board, grouped by status.
 - [daily-calendar](daily-calendar-light.png) ([dark](daily-calendar-dark.png)): The daily notes calendar, with today marked and buttons for the day, week, month, and year notes.
