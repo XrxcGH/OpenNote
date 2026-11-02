@@ -450,6 +450,10 @@ jobs:
         run: cargo fetch --locked
       - name: Rust tests (macOS)
         if: runner.os == 'macOS'
+        env:
+          # The speech and spell check tests drive `say` and NSSpellChecker, which every Mac has; one that doesn't
+          # answer fails the run instead of testing only the fallback.
+          OPENNOTE_REQUIRE_NATIVE_TOOLS: "1"
         run: cargo test --workspace
       - name: Tesseract and a keyring, so the Linux text recognition and secret store tests run (not app dependencies)
         if: runner.os == 'Linux'
