@@ -8,9 +8,14 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import '../features';
 // Some commands register after start-up: on-device intelligence once the app is idle, and the ink commands when the
-// ink view mounts on a page. They are loaded here too, so the list has every command, not only the start-up ones.
+// ink view mounts on a page. The pages area's second pass loads with the first page, and the code block and table
+// commands load in idle time or with their first block. They are loaded here too, so the list has every command, not
+// only the start-up ones.
 import '../features/page/intel/register';
 import '../features/page/intel/plus';
+import '../features/pages/registerMore';
+import '../features/page/code/register';
+import '../features/page/tables/commands';
 import { installInk } from '../features/ink/view/install';
 import type { InkHost } from '../features/ink/view/host';
 import { commands, settingsSections, setupSteps, titleBarItems } from '../registries';

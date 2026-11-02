@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 848 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the on-device intelligence commands, which register once start-up is done. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 880 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -168,6 +168,8 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 | Select the page title | Selects the page title so you can rename the page. |  |
 | Undo | Undoes the last change. | Ctrl+Z |
 | Redo | Redoes the last change you undid. | Ctrl+Y, Ctrl+Shift+Z |
+| Set code language… | Sets the programming language of the code block. |  |
+| Leave code block | Leaves the code block and starts a new line below it. | Ctrl+Enter |
 
 ### Pictures
 
@@ -290,6 +292,18 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 | Table: Eigenvalues of the selection as an equation | Inserts the eigenvalues of the selected matrix as an equation. |  |
 | Table: Solution of Ax = b as an equation | Inserts the solution of Ax = b from the selected cells as an equation. |  |
 | Insert table | Inserts a table. |  |
+| Add row above | Adds a row above the current one. |  |
+| Add row below | Adds a row below the current one. | Ctrl+Enter |
+| Move row up | Moves the current row up one place. | Alt+Shift+Up |
+| Move row down | Moves the current row down one place. | Alt+Shift+Down |
+| Add column left | Adds a column to the left of the current one. |  |
+| Add column right | Adds a column to the right of the current one. |  |
+| Header row | Turns the header row of the table on or off. |  |
+| Delete row | Deletes the current row. |  |
+| Delete column | Deletes the current column. |  |
+| Column width… | Sets the width of the current column. |  |
+| Select table | Selects the whole table. |  |
+| Delete table | Deletes the whole table. |  |
 
 ### Pictures
 
@@ -544,6 +558,23 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 | Margin line | Shows or hides the margin line on the page. |  |
 | Paper (not in the palette) | Opens the menu of paper sizes, orientation, and margins. |  |
 | Background (not in the palette) | Opens the menu of page backgrounds. |  |
+| Lab notebook | Gives the page a lab notebook layout. |  |
+| Planner | Gives the page a planner layout. |  |
+| Storyboard | Gives the page a storyboard layout of frames. |  |
+| Line spacing… | Sets the spacing of the lines, squares, or dots on the paper. |  |
+| Layout templates… | Saves, applies, imports, and exports custom page layouts. |  |
+| Use this layout for new pages in this notebook | Makes this page's layout the one new pages in the notebook get. |  |
+| Stop using a layout for new pages in this notebook | Stops giving new pages in the notebook a set layout. |  |
+| Sheet strip | Shows or hides a strip of sheet thumbnails beside the page. |  |
+| Flip sheets one at a time | Shows one sheet at a time, like turning pages in a book. |  |
+| Go to sheet… | Jumps to a sheet by its number. |  |
+| Next sheet | Goes to the next sheet. | Alt+PageDown |
+| Previous sheet | Goes to the previous sheet. | Alt+PageUp |
+| Add a sheet | Adds a blank sheet to the end of the page. |  |
+| Elements library… | Opens your saved elements, so you can place one on the page. |  |
+| Save selection as element… | Saves the selection as an element you can place again later. |  |
+| Copy selection as image | Copies the selection to the clipboard as a picture. |  |
+| Present page with laser pointer | Presents the page full screen with a laser pointer. | Shift+F5 |
 
 ### Pictures
 
@@ -2049,6 +2080,7 @@ Open it with the command "Open upcoming".
 | Clean up scan | Straightens, crops, and cleans up a photo of a document or whiteboard. |  |
 | Scan pages from photos | Turns photos of pages into cleaned-up scanned pages. |  |
 | Restore the original photo | Puts back the original photo in place of the cleaned-up scan. |  |
+| Export selection… | Exports only the selected part of the page as a file. |  |
 
 ### Pictures
 

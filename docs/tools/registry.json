@@ -5872,6 +5872,242 @@
       "flag": "intel.writing"
     },
     {
+      "id": "pages.template.lab",
+      "title": "Lab notebook",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.template.planner",
+      "title": "Planner",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.template.storyboard",
+      "title": "Storyboard",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.spacing",
+      "title": "Line spacing…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.layoutTemplates",
+      "title": "Layout templates…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.notebookDefault",
+      "title": "Use this layout for new pages in this notebook",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.notebookDefaultClear",
+      "title": "Stop using a layout for new pages in this notebook",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.layouts"
+    },
+    {
+      "id": "pages.sheet.navigator",
+      "title": "Sheet strip",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.sheets"
+    },
+    {
+      "id": "pages.sheet.flip",
+      "title": "Flip sheets one at a time",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.sheets"
+    },
+    {
+      "id": "pages.sheet.goTo",
+      "title": "Go to sheet…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.sheets"
+    },
+    {
+      "id": "pages.sheet.next",
+      "title": "Next sheet",
+      "category": "view",
+      "keys": [
+        "Alt+PageDown"
+      ],
+      "flag": "pages.sheets"
+    },
+    {
+      "id": "pages.sheet.previous",
+      "title": "Previous sheet",
+      "category": "view",
+      "keys": [
+        "Alt+PageUp"
+      ],
+      "flag": "pages.sheets"
+    },
+    {
+      "id": "pages.sheet.add",
+      "title": "Add a sheet",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.sheets"
+    },
+    {
+      "id": "pages.elements.library",
+      "title": "Elements library…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.elements"
+    },
+    {
+      "id": "pages.elements.save",
+      "title": "Save selection as element…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.elements"
+    },
+    {
+      "id": "pages.exportSelection",
+      "title": "Export selection…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.exportSelection"
+    },
+    {
+      "id": "pages.copyImage",
+      "title": "Copy selection as image",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.exportSelection"
+    },
+    {
+      "id": "pages.presentPage",
+      "title": "Present page with laser pointer",
+      "category": "view",
+      "keys": [
+        "Shift+F5"
+      ],
+      "flag": "pages.laser"
+    },
+    {
+      "id": "code.setLanguage",
+      "title": "Set code language…",
+      "category": "format",
+      "keys": []
+    },
+    {
+      "id": "code.exit",
+      "title": "Leave code block",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Enter"
+      ]
+    },
+    {
+      "id": "table.rowAbove",
+      "title": "Add row above",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.rowBelow",
+      "title": "Add row below",
+      "category": "table",
+      "keys": [
+        "Ctrl+Enter"
+      ],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.moveRowUp",
+      "title": "Move row up",
+      "category": "table",
+      "keys": [
+        "Alt+Shift+Up"
+      ],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.moveRowDown",
+      "title": "Move row down",
+      "category": "table",
+      "keys": [
+        "Alt+Shift+Down"
+      ],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.columnLeft",
+      "title": "Add column left",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.columnRight",
+      "title": "Add column right",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.headerRow",
+      "title": "Header row",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.deleteRow",
+      "title": "Delete row",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.deleteColumn",
+      "title": "Delete column",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.columnWidth",
+      "title": "Column width…",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.select",
+      "title": "Select table",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "table.deleteTable",
+      "title": "Delete table",
+      "category": "table",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
       "id": "ink.myHandwriting.write",
       "title": "Write in my handwriting",
       "category": "editing",
