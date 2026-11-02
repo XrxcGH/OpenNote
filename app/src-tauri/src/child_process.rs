@@ -1,6 +1,6 @@
-//! Runs a helper program with a time limit. The system's spell checker and voice list are separate programs on
-//! macOS (`osascript`, `say`), and a program that never answers, such as a script stuck in a loop or a system
-//! service that never starts, must not hold the thread that asked, or the lock that thread holds, forever.
+//! Runs a helper program with a time limit. On macOS the system's spell checker and voice list are separate
+//! programs (`osascript`, `say`). One may never answer: a script stuck in a loop, or a service that never starts.
+//! It must not hold the thread that asked, or the lock that thread holds, forever.
 
 use std::{
     io::Read,

@@ -4,9 +4,9 @@
 //! reading of their answers, which need no Mac to test.
 //!
 //! AppKit is only ever touched inside `osascript`, on that process's own main thread, never on a thread of the app.
-//! Spell check must never hold the app up, so every run has a time limit: a run that passes it is stopped, the text
-//! gets no flags and the word no suggestions, the reason is logged, and the checker is left alone for a while so a
-//! checker that stopped answering costs one limit, not one for every paragraph.
+//! Spell check must never hold the app up, so every run has a time limit. A run that passes it is stopped: the text
+//! gets no flags, the word no suggestions, and the reason is logged. The checker is then left alone for a while, so
+//! one that stopped answering costs one limit, not one for every paragraph.
 
 use std::{
     process::Command,
