@@ -1,0 +1,6001 @@
+{
+  "commands": [
+    {
+      "id": "meetings.new",
+      "title": "New meeting note",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.meetings"
+    },
+    {
+      "id": "share.slack",
+      "title": "Share page to Slack",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.share"
+    },
+    {
+      "id": "share.teams",
+      "title": "Share page to Teams",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.share"
+    },
+    {
+      "id": "lms.bring",
+      "title": "Bring in course assignments",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.lms"
+    },
+    {
+      "id": "lms.submit",
+      "title": "Submit page as PDF",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.lms"
+    },
+    {
+      "id": "sendto.drive",
+      "title": "Send to Google Drive",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.sendTo"
+    },
+    {
+      "id": "sendto.onedrive",
+      "title": "Send to OneDrive",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.sendTo"
+    },
+    {
+      "id": "sendto.dropbox",
+      "title": "Send to Dropbox",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.cloudSync"
+    },
+    {
+      "id": "sendto.box",
+      "title": "Send to Box",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.cloudSync"
+    },
+    {
+      "id": "sendto.webdav",
+      "title": "Send to a WebDAV server",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.cloudSync"
+    },
+    {
+      "id": "sendto.update",
+      "title": "Update the copy that was sent to the cloud",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.sendTo"
+    },
+    {
+      "id": "sendto.sync",
+      "title": "Sync Dropbox, Box, and WebDAV copies",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.cloudSync"
+    },
+    {
+      "id": "sendto.autoOn",
+      "title": "Keep Dropbox, Box, and WebDAV copies up to date automatically",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.cloudSync"
+    },
+    {
+      "id": "sendto.autoOff",
+      "title": "Stop keeping Dropbox, Box, and WebDAV copies up to date automatically",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.cloudSync"
+    },
+    {
+      "id": "googleOffice.import",
+      "title": "Import from Google Docs, Sheets, or Slides",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "accounts.googleOffice"
+    },
+    {
+      "id": "googleOffice.docs",
+      "title": "Export to Google Docs",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.googleOffice"
+    },
+    {
+      "id": "googleOffice.sheets",
+      "title": "Export tables to Google Sheets",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.googleOffice"
+    },
+    {
+      "id": "googleOffice.slides",
+      "title": "Export to Google Slides",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.googleOffice"
+    },
+    {
+      "id": "onenote.import",
+      "title": "Import OneNote notebooks from Microsoft",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "accounts.onenoteGraph"
+    },
+    {
+      "id": "tasks.microsoft",
+      "title": "Sync tasks with Microsoft To Do",
+      "category": "general",
+      "keys": [],
+      "flag": "accounts.tasksSync"
+    },
+    {
+      "id": "tasks.google",
+      "title": "Sync tasks with Google Tasks",
+      "category": "general",
+      "keys": [],
+      "flag": "accounts.tasksSync"
+    },
+    {
+      "id": "tasks.log",
+      "title": "Show task sync changes made in both places",
+      "category": "general",
+      "keys": [],
+      "flag": "accounts.tasksSync"
+    },
+    {
+      "id": "penSync.sync",
+      "title": "Sync pen settings across my devices",
+      "category": "general",
+      "keys": [],
+      "flag": "accounts.penSync"
+    },
+    {
+      "id": "penSync.off",
+      "title": "Stop syncing pen settings on this device",
+      "category": "general",
+      "keys": [],
+      "flag": "accounts.penSync"
+    },
+    {
+      "id": "readwise.sync",
+      "title": "Sync Readwise",
+      "category": "general",
+      "keys": [],
+      "flag": "accounts.readwise"
+    },
+    {
+      "id": "canvas.open",
+      "title": "Open the canvas",
+      "category": "view",
+      "keys": [],
+      "flag": "canvas.cards"
+    },
+    {
+      "id": "collections.open",
+      "title": "Open collections",
+      "category": "navigation",
+      "keys": [],
+      "flag": "collections.views"
+    },
+    {
+      "id": "daily.open",
+      "title": "Open today's note",
+      "category": "navigation",
+      "keys": [],
+      "flag": "daily.notes"
+    },
+    {
+      "id": "daily.calendar",
+      "title": "Open the daily notes calendar",
+      "category": "navigation",
+      "keys": [],
+      "flag": "daily.notes"
+    },
+    {
+      "id": "diagnostics.help",
+      "title": "Check OpenNote",
+      "category": "help",
+      "keys": [],
+      "flag": "diagnostics.selfCheck"
+    },
+    {
+      "id": "diagnostics.feedback",
+      "title": "Send feedback",
+      "category": "help",
+      "keys": [],
+      "flag": "diagnostics.feedback"
+    },
+    {
+      "id": "diagnostics.privacy",
+      "title": "Privacy settings",
+      "category": "general",
+      "keys": [],
+      "flag": "privacy.panel"
+    },
+    {
+      "id": "diagnostics.workOffline",
+      "title": "Work offline",
+      "category": "general",
+      "keys": [],
+      "flag": "privacy.workOffline"
+    },
+    {
+      "id": "graph.open",
+      "title": "Open the graph view",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+Shift+G"
+      ],
+      "flag": "graph.view"
+    },
+    {
+      "id": "insert.fromPhone",
+      "title": "From phone",
+      "category": "insert",
+      "keys": [],
+      "flag": "integrations.phoneScan"
+    },
+    {
+      "id": "api.cliPathOnMove",
+      "title": "Add the opennote command to PATH",
+      "category": "general",
+      "keys": [],
+      "flag": "api.local"
+    },
+    {
+      "id": "interop.import",
+      "title": "Import notes…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.import"
+    },
+    {
+      "id": "interop.export",
+      "title": "Export…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.export"
+    },
+    {
+      "id": "interop.exportLatex",
+      "title": "Export as LaTeX…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.latexExport"
+    },
+    {
+      "id": "interop.share",
+      "title": "Share as a file…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.share"
+    },
+    {
+      "id": "interop.openFile",
+      "title": "Open file…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.openFiles"
+    },
+    {
+      "id": "interop.defaultApp",
+      "title": "Make OpenNote the default app for Markdown and text files…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.openFiles"
+    },
+    {
+      "id": "layout.toggleNotebooks",
+      "title": "Notebooks pane",
+      "category": "view",
+      "keys": [
+        "Ctrl+Shift+1"
+      ]
+    },
+    {
+      "id": "layout.togglePages",
+      "title": "Pages pane",
+      "category": "view",
+      "keys": [
+        "Ctrl+Shift+2"
+      ]
+    },
+    {
+      "id": "layout.widerNotebooks",
+      "title": "Widen the notebooks pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.narrowerNotebooks",
+      "title": "Narrow the notebooks pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.resetNotebooks",
+      "title": "Reset the notebooks pane width",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.collapseNotebooks",
+      "title": "Collapse the notebooks pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.expandNotebooks",
+      "title": "Expand the notebooks pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.widerPages",
+      "title": "Widen the pages pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.narrowerPages",
+      "title": "Narrow the pages pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.resetPages",
+      "title": "Reset the pages pane width",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.collapsePages",
+      "title": "Collapse the pages pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.expandPages",
+      "title": "Expand the pages pane",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "layout.paneWidths",
+      "title": "Pane widths",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "view.nextRegion",
+      "title": "Go to the next region",
+      "category": "navigation",
+      "keys": [
+        "F6"
+      ]
+    },
+    {
+      "id": "view.previousRegion",
+      "title": "Go to the previous region",
+      "category": "navigation",
+      "keys": [
+        "Shift+F6"
+      ]
+    },
+    {
+      "id": "nav.back",
+      "title": "Go back",
+      "category": "navigation",
+      "keys": [
+        "Alt+Left"
+      ]
+    },
+    {
+      "id": "nav.forward",
+      "title": "Go forward",
+      "category": "navigation",
+      "keys": [
+        "Alt+Right"
+      ]
+    },
+    {
+      "id": "nav.revealInTree",
+      "title": "Reveal in tree",
+      "category": "navigation",
+      "keys": []
+    },
+    {
+      "id": "window.minimize",
+      "title": "Minimize the window",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "window.toggleMaximize",
+      "title": "Maximize or restore the window",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "window.close",
+      "title": "Close OpenNote",
+      "category": "general",
+      "keys": []
+    },
+    {
+      "id": "window.systemMenu",
+      "title": "Open the window menu",
+      "category": "view",
+      "keys": [
+        "Alt+Space"
+      ]
+    },
+    {
+      "id": "audio.record",
+      "title": "Start recording",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+A"
+      ],
+      "flag": "audio.record"
+    },
+    {
+      "id": "audio.stop",
+      "title": "Stop recording",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+S"
+      ],
+      "flag": "audio.record"
+    },
+    {
+      "id": "audio.pause",
+      "title": "Pause recording",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+P"
+      ],
+      "flag": "audio.record"
+    },
+    {
+      "id": "audio.play",
+      "title": "Play or pause the recording",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+K"
+      ],
+      "flag": "audio.record"
+    },
+    {
+      "id": "audio.skipBack",
+      "title": "Skip back 10 seconds",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+J"
+      ],
+      "flag": "audio.record"
+    },
+    {
+      "id": "audio.skipForward",
+      "title": "Skip forward 10 seconds",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+L"
+      ],
+      "flag": "audio.record"
+    },
+    {
+      "id": "audio.flag",
+      "title": "Flag this moment",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+M"
+      ],
+      "flag": "audio.flags"
+    },
+    {
+      "id": "audio.nextFlag",
+      "title": "Go to the next flag",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+N"
+      ],
+      "flag": "audio.flags"
+    },
+    {
+      "id": "audio.previousFlag",
+      "title": "Go to the previous flag",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+B"
+      ],
+      "flag": "audio.flags"
+    },
+    {
+      "id": "audio.playFromCaret",
+      "title": "Play the recording from the caret",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+C"
+      ],
+      "flag": "audio.stamps"
+    },
+    {
+      "id": "audio.playFromInk",
+      "title": "Play the recording from the selected ink",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.stamps"
+    },
+    {
+      "id": "audio.trimSilence",
+      "title": "Trim silence from the recording",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.trim"
+    },
+    {
+      "id": "audio.split",
+      "title": "Split the recording here",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.trim"
+    },
+    {
+      "id": "audio.enhance",
+      "title": "Enhance the voice of the recording",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.enhance"
+    },
+    {
+      "id": "audio.exportWav",
+      "title": "Save the recording as a WAV file",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.export"
+    },
+    {
+      "id": "audio.exportOpus",
+      "title": "Save the recording as an Opus file",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.export"
+    },
+    {
+      "id": "audio.exportVideo",
+      "title": "Export the recording as a narrated video",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.exportVideo"
+    },
+    {
+      "id": "audio.uploadYoutube",
+      "title": "Upload the recording to YouTube",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.youtubeUpload"
+    },
+    {
+      "id": "audio.removePart",
+      "title": "Remove a part",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.trim"
+    },
+    {
+      "id": "audio.storage",
+      "title": "Manage recordings and the space they take",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.storage"
+    },
+    {
+      "id": "transcripts.make",
+      "title": "Make a transcript of the recording",
+      "category": "insert",
+      "keys": [],
+      "flag": "transcripts.block"
+    },
+    {
+      "id": "transcripts.add",
+      "title": "Add a transcript from text or captions",
+      "category": "insert",
+      "keys": [],
+      "flag": "transcripts.block"
+    },
+    {
+      "id": "transcripts.recap",
+      "title": "Copy the meeting recap",
+      "category": "insert",
+      "keys": [],
+      "flag": "transcripts.recap"
+    },
+    {
+      "id": "transcripts.quote",
+      "title": "Copy the selected transcript lines into the notes",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+O"
+      ],
+      "flag": "transcripts.notes"
+    },
+    {
+      "id": "audio.snapScreen",
+      "title": "Snap the screen onto the page",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+X"
+      ],
+      "flag": "audio.snap"
+    },
+    {
+      "id": "audio.snapWindow",
+      "title": "Snap the window behind OpenNote onto the page",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+W"
+      ],
+      "flag": "audio.snap"
+    },
+    {
+      "id": "audio.snapRegion",
+      "title": "Snap a part of the screen onto the page",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+Z"
+      ],
+      "flag": "audio.snap"
+    },
+    {
+      "id": "insert.flashcards",
+      "title": "Insert flashcards",
+      "category": "insert",
+      "keys": [],
+      "flag": "study.cards"
+    },
+    {
+      "id": "insert.quiz",
+      "title": "Insert quiz",
+      "category": "insert",
+      "keys": [],
+      "flag": "study.cards"
+    },
+    {
+      "id": "tools.flashcards",
+      "title": "Open flashcards",
+      "category": "general",
+      "keys": [],
+      "flag": "study.cards"
+    },
+    {
+      "id": "study.generatePage",
+      "title": "Make flashcards from this page",
+      "category": "general",
+      "keys": [],
+      "flag": "study.cards"
+    },
+    {
+      "id": "study.generateSelection",
+      "title": "Make flashcards from the selected text",
+      "category": "general",
+      "keys": [],
+      "flag": "study.cards"
+    },
+    {
+      "id": "study.generateSection",
+      "title": "Make flashcards from this section",
+      "category": "general",
+      "keys": [],
+      "flag": "study.cards"
+    },
+    {
+      "id": "insert.bibliography",
+      "title": "Insert bibliography",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.citations"
+    },
+    {
+      "id": "tools.converter",
+      "title": "Open the unit converter",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.converter"
+    },
+    {
+      "id": "tools.reference",
+      "title": "Open the reference tables",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.reference"
+    },
+    {
+      "id": "tools.citations",
+      "title": "Open citations",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.citations"
+    },
+    {
+      "id": "tools.chemcalc",
+      "title": "Open the chemistry calculators",
+      "category": "general",
+      "keys": [
+        "Ctrl+Alt+Y"
+      ],
+      "flag": "tools.chemCalc"
+    },
+    {
+      "id": "tools.structure",
+      "title": "Open the chemical structure drawer",
+      "category": "general",
+      "keys": [
+        "Ctrl+Alt+Z"
+      ],
+      "flag": "tools.structure"
+    },
+    {
+      "id": "tools.properties",
+      "title": "Open the steam, gas, and materials tables",
+      "category": "general",
+      "keys": [
+        "Ctrl+Alt+U"
+      ],
+      "flag": "tools.properties"
+    },
+    {
+      "id": "tools.symbols",
+      "title": "Open the symbol palette",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+Shift+S"
+      ],
+      "flag": "tools.symbols"
+    },
+    {
+      "id": "study.import",
+      "title": "Import cards",
+      "category": "general",
+      "keys": [],
+      "flag": "study.import"
+    },
+    {
+      "id": "tools.dictionary",
+      "title": "Open the dictionary",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.dictionary"
+    },
+    {
+      "id": "tools.dictionary.lookup",
+      "title": "Look up the selected word",
+      "category": "general",
+      "keys": [
+        "Ctrl+Alt+D"
+      ],
+      "flag": "tools.dictionary"
+    },
+    {
+      "id": "tools.resetWindows",
+      "title": "Reset tool windows",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.windows"
+    },
+    {
+      "id": "table.calculatedColumn",
+      "title": "Calculated column…",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.calculated"
+    },
+    {
+      "id": "table.clearCalculated",
+      "title": "Turn calculated column into values",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.calculated"
+    },
+    {
+      "id": "insert.tape",
+      "title": "Insert study tape",
+      "category": "insert",
+      "keys": [],
+      "flag": "study.tape"
+    },
+    {
+      "id": "tape.showAll",
+      "title": "Show all study tape",
+      "category": "general",
+      "keys": [],
+      "flag": "study.tape"
+    },
+    {
+      "id": "tape.hideAll",
+      "title": "Hide all study tape",
+      "category": "general",
+      "keys": [],
+      "flag": "study.tape"
+    },
+    {
+      "id": "insert.mindmap",
+      "title": "Insert mind map",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.mindMaps"
+    },
+    {
+      "id": "insert.diagram",
+      "title": "Insert diagram from text",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.diagrams"
+    },
+    {
+      "id": "insert.codeCell",
+      "title": "Insert code cell",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+Shift+K"
+      ],
+      "flag": "math.codeCells"
+    },
+    {
+      "id": "insert.collection",
+      "title": "Insert a live collection",
+      "category": "insert",
+      "keys": [],
+      "flag": "collections.block"
+    },
+    {
+      "id": "doc.equation.number",
+      "title": "Number this equation",
+      "category": "insert",
+      "keys": [],
+      "flag": "doc.equationNumbers"
+    },
+    {
+      "id": "doc.equation.numberAll",
+      "title": "Number all equations",
+      "category": "editing",
+      "keys": [],
+      "flag": "doc.equationNumbers"
+    },
+    {
+      "id": "doc.equation.unnumber",
+      "title": "Remove equation number",
+      "category": "editing",
+      "keys": [],
+      "flag": "doc.equationNumbers"
+    },
+    {
+      "id": "doc.equation.reference",
+      "title": "Insert equation reference",
+      "category": "insert",
+      "keys": [],
+      "flag": "doc.equationNumbers"
+    },
+    {
+      "id": "tools.formulasheet",
+      "title": "Open formula sheet builder",
+      "category": "general",
+      "keys": [],
+      "flag": "doc.formulaSheet"
+    },
+    {
+      "id": "tools.practice",
+      "title": "Practice this problem",
+      "category": "general",
+      "keys": [],
+      "flag": "doc.practice"
+    },
+    {
+      "id": "tools.figure",
+      "title": "Export figure as a picture",
+      "category": "general",
+      "keys": [],
+      "flag": "doc.figureExport"
+    },
+    {
+      "id": "format.bold",
+      "title": "Bold",
+      "category": "format",
+      "keys": [
+        "Ctrl+B"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.italic",
+      "title": "Italic",
+      "category": "format",
+      "keys": [
+        "Ctrl+I"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.underline",
+      "title": "Underline",
+      "category": "format",
+      "keys": [
+        "Ctrl+U"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.strike",
+      "title": "Strikethrough",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+S"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.highlight",
+      "title": "Highlight",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+H"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.code",
+      "title": "Inline code",
+      "category": "format",
+      "keys": [
+        "Ctrl+E"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.subscript",
+      "title": "Subscript",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.superscript",
+      "title": "Superscript",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.larger",
+      "title": "Larger text",
+      "category": "format",
+      "keys": [
+        "Ctrl+>"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.smaller",
+      "title": "Smaller text",
+      "category": "format",
+      "keys": [
+        "Ctrl+<"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.textColor",
+      "title": "Text color",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.textSize",
+      "title": "Text size",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.clear",
+      "title": "Clear formatting",
+      "category": "format",
+      "keys": [
+        "Ctrl+\\"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.clearAll",
+      "title": "Clear all formatting",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "format.link",
+      "title": "Link",
+      "category": "insert",
+      "keys": [
+        "Ctrl+K"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.normal",
+      "title": "Normal text",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+N"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.heading1",
+      "title": "Heading 1",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+1"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.heading2",
+      "title": "Heading 2",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+2"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.heading3",
+      "title": "Heading 3",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+3"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.heading4",
+      "title": "Heading 4",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+4"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.heading5",
+      "title": "Heading 5",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+5"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.heading6",
+      "title": "Heading 6",
+      "category": "format",
+      "keys": [
+        "Ctrl+Alt+6"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.bulletList",
+      "title": "Bulleted list",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+8"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.orderedList",
+      "title": "Numbered list",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+7"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.checklist",
+      "title": "Checklist",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+9"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.quote",
+      "title": "Quote",
+      "category": "format",
+      "keys": [
+        "Ctrl+Shift+B"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.callout",
+      "title": "Callout",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.codeBlock",
+      "title": "Code block",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.todoCycle",
+      "title": "To Do",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.toggleCheck",
+      "title": "Check or uncheck",
+      "category": "format",
+      "keys": [
+        "Ctrl+Enter"
+      ],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.divider",
+      "title": "Divider",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "block.turnInto",
+      "title": "Turn into",
+      "category": "format",
+      "keys": [],
+      "flag": "page.slashMenu"
+    },
+    {
+      "id": "insert.date",
+      "title": "Date",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+D"
+      ],
+      "flag": "page.typingHelpers"
+    },
+    {
+      "id": "insert.time",
+      "title": "Time",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+T"
+      ],
+      "flag": "page.typingHelpers"
+    },
+    {
+      "id": "insert.dateTime",
+      "title": "Date and time",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+F"
+      ],
+      "flag": "page.typingHelpers"
+    },
+    {
+      "id": "outline.moveUp",
+      "title": "Move up",
+      "category": "editing",
+      "keys": [
+        "Alt+Shift+Up"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.moveDown",
+      "title": "Move down",
+      "category": "editing",
+      "keys": [
+        "Alt+Shift+Down"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.promote",
+      "title": "Promote",
+      "category": "editing",
+      "keys": [
+        "Alt+Shift+Left"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.demote",
+      "title": "Demote",
+      "category": "editing",
+      "keys": [
+        "Alt+Shift+Right"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.fold",
+      "title": "Fold",
+      "category": "editing",
+      "keys": [
+        "Alt+_"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.unfold",
+      "title": "Unfold",
+      "category": "editing",
+      "keys": [
+        "Alt++"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showAll",
+      "title": "Show all levels",
+      "category": "editing",
+      "keys": [
+        "Alt+Shift+0"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel1",
+      "title": "Show level 1",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+1"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel2",
+      "title": "Show level 2",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+2"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel3",
+      "title": "Show level 3",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+3"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel4",
+      "title": "Show level 4",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+4"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel5",
+      "title": "Show level 5",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+5"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel6",
+      "title": "Show level 6",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+6"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel7",
+      "title": "Show level 7",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+7"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel8",
+      "title": "Show level 8",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+8"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "outline.showLevel9",
+      "title": "Show level 9",
+      "category": "view",
+      "keys": [
+        "Alt+Shift+9"
+      ],
+      "flag": "page.outline"
+    },
+    {
+      "id": "text.setColor",
+      "title": "Text color of the selected blocks",
+      "category": "format",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "link.open",
+      "title": "Open link",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "link.copy",
+      "title": "Copy link",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "link.edit",
+      "title": "Edit link",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "link.remove",
+      "title": "Remove link",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "styles.edit",
+      "title": "Text styles",
+      "category": "format",
+      "keys": [],
+      "flag": "page.styles"
+    },
+    {
+      "id": "insert.freeBodyDiagram",
+      "title": "Insert free-body diagram",
+      "category": "insert",
+      "keys": [],
+      "flag": "engineering.fbd"
+    },
+    {
+      "id": "insert.beam",
+      "title": "Insert beam solver",
+      "category": "insert",
+      "keys": [],
+      "flag": "engineering.structures"
+    },
+    {
+      "id": "insert.truss",
+      "title": "Insert truss solver",
+      "category": "insert",
+      "keys": [],
+      "flag": "engineering.structures"
+    },
+    {
+      "id": "insert.circuit",
+      "title": "Insert circuit",
+      "category": "insert",
+      "keys": [],
+      "flag": "engineering.circuit"
+    },
+    {
+      "id": "table.setUnit",
+      "title": "Set column unit",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.units"
+    },
+    {
+      "id": "table.engineeringNotation",
+      "title": "Show column in engineering notation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.units"
+    },
+    {
+      "id": "table.siPrefixes",
+      "title": "Show column with SI prefixes",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.units"
+    },
+    {
+      "id": "table.plainNotation",
+      "title": "Show column in plain numbers",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.units"
+    },
+    {
+      "id": "study.examPage",
+      "title": "Make a practice exam from this page",
+      "category": "general",
+      "keys": [],
+      "flag": "study.exams"
+    },
+    {
+      "id": "study.examSection",
+      "title": "Make a practice exam from this section",
+      "category": "general",
+      "keys": [],
+      "flag": "study.exams"
+    },
+    {
+      "id": "study.examNotebook",
+      "title": "Make a practice exam from this notebook",
+      "category": "general",
+      "keys": [],
+      "flag": "study.exams"
+    },
+    {
+      "id": "study.examRetake",
+      "title": "Retake this practice exam",
+      "category": "general",
+      "keys": [],
+      "flag": "study.exams"
+    },
+    {
+      "id": "tools.exam",
+      "title": "Open practice exams",
+      "category": "general",
+      "keys": [],
+      "flag": "study.exams"
+    },
+    {
+      "id": "math.simplify",
+      "title": "Simplify",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.latex"
+    },
+    {
+      "id": "math.solve",
+      "title": "Solve",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.latex"
+    },
+    {
+      "id": "insert.graph",
+      "title": "Insert graph",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.grapher"
+    },
+    {
+      "id": "insert.equation",
+      "title": "Insert equation",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.latex"
+    },
+    {
+      "id": "insert.inlineMath",
+      "title": "Insert inline equation",
+      "category": "insert",
+      "keys": [
+        "Alt+="
+      ],
+      "flag": "math.latex"
+    },
+    {
+      "id": "table.sortAscending",
+      "title": "Sort smallest first",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.sortDescending",
+      "title": "Sort largest first",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.fillDown",
+      "title": "Fill down",
+      "category": "table",
+      "keys": [
+        "Ctrl+D"
+      ],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.fillRight",
+      "title": "Fill right",
+      "category": "table",
+      "keys": [
+        "Ctrl+R"
+      ],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.filterEqual",
+      "title": "Show rows equal to this cell",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.filterNotEmpty",
+      "title": "Show rows with something in this column",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.clearFilter",
+      "title": "Clear filter",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.formatAutomatic",
+      "title": "Automatic",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.formatNumber",
+      "title": "Number",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.formatCurrency",
+      "title": "Currency",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.formatPercent",
+      "title": "Percent",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.formatDate",
+      "title": "Date",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.moreDecimals",
+      "title": "More decimal places",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.fewerDecimals",
+      "title": "Fewer decimal places",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.saveView",
+      "title": "Save table view…",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.savedViews"
+    },
+    {
+      "id": "table.showAllRows",
+      "title": "Show every row of the table",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.savedViews"
+    },
+    {
+      "id": "table.formatChoice",
+      "title": "Choice, pick one",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.choice"
+    },
+    {
+      "id": "table.formatChoices",
+      "title": "Choice, pick several",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.choice"
+    },
+    {
+      "id": "table.chooseValue",
+      "title": "Choose a value…",
+      "category": "table",
+      "keys": [
+        "Alt+Down"
+      ],
+      "flag": "tables.choice"
+    },
+    {
+      "id": "table.editChoices",
+      "title": "Edit choices…",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.choice"
+    },
+    {
+      "id": "table.totalSum",
+      "title": "Sum",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "table.totalNone",
+      "title": "None",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.smart"
+    },
+    {
+      "id": "insert.chartBar",
+      "title": "Bar chart",
+      "category": "insert",
+      "keys": [],
+      "flag": "tables.charts"
+    },
+    {
+      "id": "insert.chartLine",
+      "title": "Line chart",
+      "category": "insert",
+      "keys": [],
+      "flag": "tables.charts"
+    },
+    {
+      "id": "insert.chartArea",
+      "title": "Area chart",
+      "category": "insert",
+      "keys": [],
+      "flag": "tables.charts"
+    },
+    {
+      "id": "insert.chartPie",
+      "title": "Pie chart",
+      "category": "insert",
+      "keys": [],
+      "flag": "tables.charts"
+    },
+    {
+      "id": "insert.chartScatter",
+      "title": "Scatter chart",
+      "category": "insert",
+      "keys": [],
+      "flag": "tables.charts"
+    },
+    {
+      "id": "table.analyzeSummary",
+      "title": "Table: Summary statistics of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeHistogram",
+      "title": "Table: Histogram of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeBoxPlot",
+      "title": "Table: Box plot of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeLinear",
+      "title": "Table: Linear fit of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeQuadratic",
+      "title": "Table: Quadratic fit of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeCubic",
+      "title": "Table: Cubic fit of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzePolynomial",
+      "title": "Table: Polynomial fit of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeExponential",
+      "title": "Table: Exponential fit of the selection",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeDeterminant",
+      "title": "Table: Matrix determinant",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeInverse",
+      "title": "Table: Matrix inverse",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeTranspose",
+      "title": "Table: Matrix transpose",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeMultiply",
+      "title": "Table: Multiply the selected matrix by another range",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeRref",
+      "title": "Table: Row reduce the selected matrix with steps",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeRank",
+      "title": "Table: Matrix rank",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeEigenvalues",
+      "title": "Table: Matrix eigenvalues",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeSolve",
+      "title": "Table: Solve the selected system Ax = b",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeLinearEquation",
+      "title": "Table: Linear fit of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeQuadraticEquation",
+      "title": "Table: Quadratic fit of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeCubicEquation",
+      "title": "Table: Cubic fit of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeExponentialEquation",
+      "title": "Table: Exponential fit of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeDeterminantEquation",
+      "title": "Table: Determinant of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeInverseEquation",
+      "title": "Table: Inverse of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeTransposeEquation",
+      "title": "Table: Transpose of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeRrefEquation",
+      "title": "Table: Row reduced form of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeRankEquation",
+      "title": "Table: Rank of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeEigenvaluesEquation",
+      "title": "Table: Eigenvalues of the selection as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "table.analyzeSolveEquation",
+      "title": "Table: Solution of Ax = b as an equation",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.analysis"
+    },
+    {
+      "id": "tools.timers",
+      "title": "Open timers",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.windows"
+    },
+    {
+      "id": "tools.calculator",
+      "title": "Open calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.windows"
+    },
+    {
+      "id": "tools.upcoming",
+      "title": "Open upcoming",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.windows"
+    },
+    {
+      "id": "insert.graph3d",
+      "title": "Insert 3D graph",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.graph3d"
+    },
+    {
+      "id": "insert.curveGraph",
+      "title": "Insert parametric or polar graph",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.curves"
+    },
+    {
+      "id": "tools.vectors",
+      "title": "Open vector tools",
+      "category": "general",
+      "keys": [],
+      "flag": "math.vectors"
+    },
+    {
+      "id": "tools.solids",
+      "title": "Open solids of revolution",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solids"
+    },
+    {
+      "id": "tools.projectile",
+      "title": "Open projectile simulator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.projectile"
+    },
+    {
+      "id": "history.deleteSectionHistory",
+      "title": "Delete section history",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.deleteNotebookHistory",
+      "title": "Delete notebook history",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.open",
+      "title": "Page history",
+      "category": "view",
+      "keys": [],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.compareWith",
+      "title": "Compare with another version",
+      "category": "view",
+      "keys": [],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.nameVersion",
+      "title": "Name this version",
+      "category": "view",
+      "keys": [],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.deleteHistory",
+      "title": "Delete page history",
+      "category": "view",
+      "keys": [],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.nextChange",
+      "title": "Next change",
+      "category": "view",
+      "keys": [
+        "F8"
+      ],
+      "flag": "page.history"
+    },
+    {
+      "id": "history.previousChange",
+      "title": "Previous change",
+      "category": "view",
+      "keys": [
+        "Shift+F8"
+      ],
+      "flag": "page.history"
+    },
+    {
+      "id": "insert.image",
+      "title": "Image…",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.images"
+    },
+    {
+      "id": "object.crop",
+      "title": "Crop image",
+      "category": "object",
+      "keys": [],
+      "flag": "page.images"
+    },
+    {
+      "id": "object.altText",
+      "title": "Alt text…",
+      "category": "object",
+      "keys": [],
+      "flag": "page.images"
+    },
+    {
+      "id": "edit.copyAsMarkdown",
+      "title": "Copy as Markdown",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.editor"
+    },
+    {
+      "id": "tools.kitaero",
+      "title": "Open the aerospace tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.atmosphere",
+      "title": "Standard atmosphere",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.compressible",
+      "title": "Compressible flow relations",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.nozzle",
+      "title": "Nozzle and diffuser flow",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.rocket",
+      "title": "Rocket nozzle performance",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.airfoil",
+      "title": "Airfoils",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.wing",
+      "title": "Finite wings",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.performance",
+      "title": "Aircraft performance and static stability",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.potential",
+      "title": "Potential flow",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.flightmodes",
+      "title": "Aircraft dynamic modes",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "kits.aero.jetengine",
+      "title": "Jet engine cycle analysis",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.aero"
+    },
+    {
+      "id": "tools.kit-chemmat",
+      "title": "Open Chemistry and materials",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.thermochem",
+      "title": "Open the thermochemistry tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.equilibrium",
+      "title": "Open the chemical equilibrium tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.acidbase",
+      "title": "Open the acids, bases, and buffers tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.electrochem",
+      "title": "Open the electrochemistry tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.kinetics",
+      "title": "Open the chemical kinetics tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.solutions",
+      "title": "Open the solutions and lab calculations tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.crystals",
+      "title": "Open the crystal structures and diffraction tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.diffusion",
+      "title": "Open the defects, diffusion, and oxidation tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.phases",
+      "title": "Open the phase diagrams and mechanical behavior tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kitChemMat.atoms",
+      "title": "Open the atoms, light, and bonding tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.chemmat"
+    },
+    {
+      "id": "tools.kit-civil",
+      "title": "Civil and chemical engineering",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.indeterminate",
+      "title": "Open indeterminate structures and influence lines",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.soils",
+      "title": "Open soil properties, consolidation, and strength",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.foundations",
+      "title": "Open earth pressure, foundations, and slopes",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.hydraulics",
+      "title": "Open hydrology and open channels",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.groundwater",
+      "title": "Open groundwater and wells",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.water",
+      "title": "Open water quality and treatment",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.transport",
+      "title": "Open traffic, highways, surveying, and site planning",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.process",
+      "title": "Open material balances and separations",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "kitCivil.reactors",
+      "title": "Open chemical and biological reactors",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.civil"
+    },
+    {
+      "id": "tools.kit-control",
+      "title": "Open the dynamics and control tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.systems",
+      "title": "System models and responses",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.rootlocus",
+      "title": "Root locus and Routh-Hurwitz",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.frequency",
+      "title": "Frequency response: Bode and Nyquist",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.compensator",
+      "title": "Compensator and PID design",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.statespace",
+      "title": "State-space design",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.digital",
+      "title": "Digital control",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.stochastic",
+      "title": "Random processes and Kalman filtering",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.markov",
+      "title": "Markov chains and queues",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.distributions",
+      "title": "Probability distributions and inference",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kitControl.reliability",
+      "title": "Reliability, quality, and inventory",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.control"
+    },
+    {
+      "id": "tools.kit-design",
+      "title": "Open the design tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.drafting",
+      "title": "Drafting sheet",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.views",
+      "title": "Orthographic views",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.tolerances",
+      "title": "Tolerances and fits",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.machining",
+      "title": "Machining speeds, feeds, and tool life",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.forming",
+      "title": "Forming, casting, and joining",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.microfab",
+      "title": "Micro and nano fabrication",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.memtrace",
+      "title": "Memory and pointer tracer",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.numrep",
+      "title": "Number representation",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.references",
+      "title": "Programming references",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.paper.computation",
+      "title": "Computation paper",
+      "category": "view",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.paper.threeView",
+      "title": "Three-view drawing paper",
+      "category": "view",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kitDesign.paper.titleBlock",
+      "title": "Title block",
+      "category": "view",
+      "keys": [],
+      "flag": "kits.design"
+    },
+    {
+      "id": "tools.kit-earth",
+      "title": "Open the earth sciences kit",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.moist",
+      "title": "Open atmospheric thermodynamics and soundings",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.climate",
+      "title": "Open radiation, climate, and footprints",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.dating",
+      "title": "Open geochronology, isotopes, and the time scale",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.stereonet",
+      "title": "Open stereonets and structural geology",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.geodiagrams",
+      "title": "Open stratigraphy and classification diagrams",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.air",
+      "title": "Open air quality and weather observations",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.seismic",
+      "title": "Open seismology and seismic surveys",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.geophysics",
+      "title": "Open gravity, magnetics, heat flow, and plates",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "kits.earth.ocean",
+      "title": "Open ocean, waves, and planetary flow",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.earth"
+    },
+    {
+      "id": "tools.econ",
+      "title": "Open economics and finance tools",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.econ"
+    },
+    {
+      "id": "tools.kitelectrical",
+      "title": "Open the circuits and energy tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.transients",
+      "title": "First- and second-order circuits",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.netlist",
+      "title": "Circuit simulator",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.opamps",
+      "title": "Op-amp circuits and filters",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.semis",
+      "title": "Diodes and transistors",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.instruments",
+      "title": "Instrumentation and measurement",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.acpower",
+      "title": "AC power and three-phase systems",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.powerflow",
+      "title": "Power flow and economic dispatch",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.labfit",
+      "title": "Lab data fitting and uncertainty",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "kits.electrical.energy",
+      "title": "Energy systems and the environment",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.electrical"
+    },
+    {
+      "id": "tools.kit-fluidheat",
+      "title": "Open the fluid mechanics and heat transfer tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.statics",
+      "title": "Fluid statics, Bernoulli, and flow measurement",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.pipes",
+      "title": "Pipe flow and pumps",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.dimensional",
+      "title": "Dimensional analysis and similitude",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.external",
+      "title": "External flow, drag, and boundary layers",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.viscous",
+      "title": "Viscous and biological flows",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.conduction",
+      "title": "Conduction and thermal circuits",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.fins",
+      "title": "Extended surfaces (fins)",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.transient",
+      "title": "Transient conduction and diffusion",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.convection",
+      "title": "Convection correlations (heat and mass transfer)",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.hx",
+      "title": "Heat exchangers",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.radiation",
+      "title": "Radiation heat transfer",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kitFluidHeat.props",
+      "title": "Water and air properties",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.fluidheat"
+    },
+    {
+      "id": "tools.kit-humanities",
+      "title": "Open the history, places, languages, and texts kit",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.frames",
+      "title": "Insert a note frame",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.maps",
+      "title": "Open the map maker",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.coordinates",
+      "title": "Open coordinates and navigation",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.timeline",
+      "title": "Open the timeline builder",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.calendars",
+      "title": "Open the calendar and era converter",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.scripts",
+      "title": "Open scripts, keyboards, and romanization",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.linguistics",
+      "title": "Open linguistic structures",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.textlab",
+      "title": "Open text analysis and verse",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "kits.humanities.keys",
+      "title": "Open identification keys",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.humanities"
+    },
+    {
+      "id": "tools.lifesys",
+      "title": "Open life science tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.physiology",
+      "title": "Open physiology calculators",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.neuron",
+      "title": "Open neurons and excitable cells",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.pharmacology",
+      "title": "Open pharmacokinetics and drug response",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.curves",
+      "title": "Open binding, enzyme, and dose-response fits",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.bench",
+      "title": "Open bench calculations",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.population",
+      "title": "Open population dynamics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.demography",
+      "title": "Open life tables and demography",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.networks",
+      "title": "Open compartment, reaction, and agent models",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "lifesys.diversity",
+      "title": "Open biodiversity and field sampling",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.lifesys"
+    },
+    {
+      "id": "tools.kit-math",
+      "title": "Open the engineering mathematics tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.series",
+      "title": "Series and convergence",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.complex",
+      "title": "Complex analysis",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.odes",
+      "title": "Systems of ODEs",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.fourier",
+      "title": "Fourier series and boundary value problems",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.numerics",
+      "title": "Numerical methods",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.console",
+      "title": "Matrix console",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.linalg",
+      "title": "Linear algebra workbench",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kitMath.vectorcalc",
+      "title": "Vector calculus and optimization",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.math"
+    },
+    {
+      "id": "tools.kit-mechdyn",
+      "title": "Open the mechanisms and dynamics kit",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.linkage",
+      "title": "Linkage analyzer",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.cam",
+      "title": "Cam designer",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.gears",
+      "title": "Gears and gear trains",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.compliant",
+      "title": "Compliant mechanisms",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.kinetics",
+      "title": "Particle and planar rigid-body dynamics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.rigid3d",
+      "title": "Three-dimensional rigid bodies and rotations",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.lagrange",
+      "title": "Lagrangian mechanics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.sdof",
+      "title": "Single-degree-of-freedom vibration",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.mdof",
+      "title": "Multi-degree-of-freedom and continuous vibration",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.robotkin",
+      "title": "Robot arm kinematics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kitMechDyn.robotdyn",
+      "title": "Robot dynamics and control",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mechdyn"
+    },
+    {
+      "id": "tools.kit-mind",
+      "title": "Open the psychology and behavior tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.sdt",
+      "title": "Signal detection",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.psychophysics",
+      "title": "Psychophysics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.learning",
+      "title": "Learning and reinforcement",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.choice",
+      "title": "Decision and choice models",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.rt",
+      "title": "Response times and movement",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.observe",
+      "title": "Behavior observation",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.agreement",
+      "title": "Inter-rater agreement",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.scales",
+      "title": "Scales and psychometrics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kitMind.coding",
+      "title": "Qualitative coding",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.mind"
+    },
+    {
+      "id": "tools.kit-modphys",
+      "title": "Open the modern physics and astronomy tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.schrodinger",
+      "title": "Open the quantum wells and barriers tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.atoms",
+      "title": "Open the atoms and spectra tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.spin",
+      "title": "Open the spin and qubits tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.molecules",
+      "title": "Open the molecular spectra and polymers tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.solids",
+      "title": "Open the solids and semiconductors tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.plasma",
+      "title": "Open the plasma and space physics tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.stars",
+      "title": "Open the stars and exoplanets tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.sky",
+      "title": "Open the sky positions and sun paths tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.modphys.cosmos",
+      "title": "Open the cosmology and telescopes tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.modphys"
+    },
+    {
+      "id": "tools.kitmolbio",
+      "title": "Open the biology tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.sequence",
+      "title": "DNA and RNA sequences",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.cloning",
+      "title": "Cloning, PCR, and gels",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.protein",
+      "title": "Proteins and peptides",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.align",
+      "title": "Sequence alignment",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.phylo",
+      "title": "Phylogenetic trees",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.crosses",
+      "title": "Genetic crosses and linkage",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.popgen",
+      "title": "Population genetics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "kits.molbio.family",
+      "title": "Family, pedigree, and kinship charts",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.molbio"
+    },
+    {
+      "id": "tools.kitmusic",
+      "title": "Open the music, script, camera, and studio tools",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.score",
+      "title": "Score block",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.theory",
+      "title": "Music theory",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.ear",
+      "title": "Ear training",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.partwriting",
+      "title": "Voice-leading checker",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.script",
+      "title": "Script formatter",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.camera",
+      "title": "Camera, timing, and lighting",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.studio",
+      "title": "Scale, color, and materials",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "kits.music.rhythm",
+      "title": "Tuning and rhythm",
+      "category": "general",
+      "keys": [],
+      "flag": "tools.music"
+    },
+    {
+      "id": "tools.kit-physics",
+      "title": "Open physics tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.fields",
+      "title": "Open the electric and magnetic fields tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.waves",
+      "title": "Open the waves and sound tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.geooptics",
+      "title": "Open the geometric optics and Gaussian beams tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.waveoptics",
+      "title": "Open the interference, diffraction, and polarization tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.relativity",
+      "title": "Open the special relativity tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.nuclear",
+      "title": "Open the nuclear science tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.orbits",
+      "title": "Open the orbital mechanics tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.maneuvers",
+      "title": "Open the orbital maneuvers and Lambert’s problem tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.physics.spacecraft",
+      "title": "Open the spacecraft sizing and link budgets tool",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.physics"
+    },
+    {
+      "id": "tools.kit-reasoning",
+      "title": "Open the reasoning kit",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.logic",
+      "title": "Open the logic workbench",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.automata",
+      "title": "Open automata and grammars",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.discrete",
+      "title": "Open numbers, counting, and groups",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.digital",
+      "title": "Open digital logic design",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.systems",
+      "title": "Open computer systems, networks, and databases",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.algorithms",
+      "title": "Open algorithms, data structures, and networks",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.optimize",
+      "title": "Open optimization, projects, and decisions",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-reasoning.games",
+      "title": "Open games, voting, and apportionment",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.reasoning"
+    },
+    {
+      "id": "tools.kit-signals",
+      "title": "Open signals and sound tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.spectrum",
+      "title": "Open spectrum analyzer",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.filters",
+      "title": "Open digital filter designer",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.systems",
+      "title": "Open convolution and sampling",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.neurodata",
+      "title": "Open neural and physiological time series",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.images",
+      "title": "Open image lab",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.medimaging",
+      "title": "Open medical imaging physics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.audio",
+      "title": "Open sound analysis and acoustics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.comms",
+      "title": "Open information, coding, and modulation",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.signals.rf",
+      "title": "Open transmission lines and RF",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.signals"
+    },
+    {
+      "id": "tools.kit-solids",
+      "title": "Open the solid mechanics tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.columns",
+      "title": "Columns and buckling",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.stress",
+      "title": "Stress and strain at a point",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.sections",
+      "title": "Section properties",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.members",
+      "title": "Axial, torsion, and bending",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.deflection",
+      "title": "Beam deflection",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.vessels",
+      "title": "Pressure vessels, fits, and curved beams",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.thinwalled",
+      "title": "Thin-walled structures",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.composites",
+      "title": "Composite laminates",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.biomech",
+      "title": "Tissues and joints",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.machine",
+      "title": "Fatigue and machine elements",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kitSolids.fem",
+      "title": "Finite element workbench",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.solids"
+    },
+    {
+      "id": "tools.kit-statinfer",
+      "title": "Open the statistics kit",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.describe",
+      "title": "Describe data",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.groups",
+      "title": "Compare groups (ANOVA)",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.ranks",
+      "title": "Rank-based tests",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.tables",
+      "title": "Contingency tables",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.epi",
+      "title": "Epidemiology and diagnostic tests",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.correlation",
+      "title": "Correlation",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.power",
+      "title": "Power and sample size",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.multiple",
+      "title": "Multiple testing and meta-analysis",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.resample",
+      "title": "Simulation and resampling",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.bayes",
+      "title": "Bayesian updating",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statinfer.design",
+      "title": "Sampling and randomization",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statinfer"
+    },
+    {
+      "id": "tools.kit-statmodels",
+      "title": "Open the statistical models tools",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.regression",
+      "title": "Linear regression",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.glm",
+      "title": "Logistic and Poisson regression",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.causal",
+      "title": "Econometrics and causal inference",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.survival",
+      "title": "Survival analysis",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.timeseries",
+      "title": "Time series and forecasting",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.multivariate",
+      "title": "PCA, factors, and clusters",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.ml",
+      "title": "Machine learning lab",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kitStatModels.spatial",
+      "title": "Spatial statistics",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.statmodels"
+    },
+    {
+      "id": "tools.kit-thermo",
+      "title": "Open the thermodynamics kit",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.steam",
+      "title": "Find a state of water or steam from two properties",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.r134a",
+      "title": "Find a state of refrigerant R-134a from two properties",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.idealgas",
+      "title": "Work an ideal-gas process or state with variable specific heats",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.realgas",
+      "title": "Find Z and departures from a cubic equation of state, or the properties of a gas mixture",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.devices",
+      "title": "Balance a turbine, compressor, nozzle, or other steady-flow device with the second law",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.cycles",
+      "title": "Analyze a Rankine, Brayton, Otto, Diesel, refrigeration, or Carnot cycle",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.psychro",
+      "title": "Work moist-air states and air-conditioning processes",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.combustion",
+      "title": "Balance a combustion reaction and find heating values and the adiabatic flame temperature",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "tools.kitThermo.statthermo",
+      "title": "Find partition functions, heat capacities, and molecular speeds",
+      "category": "general",
+      "keys": [],
+      "flag": "kits.thermo"
+    },
+    {
+      "id": "insert.plot3d",
+      "title": "Insert 3D function plot",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.graph3d"
+    },
+    {
+      "id": "tools.calculator.basic",
+      "title": "Basic calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "tools.calculator.scientific",
+      "title": "Scientific calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "tools.calculator.graphing",
+      "title": "Graphing calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "tools.calculator.graphing3d",
+      "title": "3D graphing calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "tools.calculator.programmer",
+      "title": "Programmer calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "tools.calculator.statistics",
+      "title": "Statistics calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "tools.calculator.matrix",
+      "title": "Matrix calculator",
+      "category": "general",
+      "keys": [],
+      "flag": "math.calcModes"
+    },
+    {
+      "id": "math.graph",
+      "title": "Graph equation",
+      "category": "insert",
+      "keys": [
+        "Alt+Shift+G"
+      ],
+      "flag": "math.graphPopup"
+    },
+    {
+      "id": "math.graphHandwriting",
+      "title": "Graph handwritten equation",
+      "category": "object",
+      "keys": [],
+      "flag": "math.graphPopup"
+    },
+    {
+      "id": "math.steps",
+      "title": "Show steps for the equation",
+      "category": "insert",
+      "keys": [],
+      "flag": "math.steps"
+    },
+    {
+      "id": "media.insertFromLink",
+      "title": "Insert video, podcast, or embed from link",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.mediaEmbeds"
+    },
+    {
+      "id": "media.captions",
+      "title": "Add captions as a transcript",
+      "category": "insert",
+      "keys": [],
+      "flag": "accounts.captions"
+    },
+    {
+      "id": "page.zoomIn",
+      "title": "Zoom page in",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+="
+      ]
+    },
+    {
+      "id": "page.zoomOut",
+      "title": "Zoom page out",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+-"
+      ]
+    },
+    {
+      "id": "page.zoom100",
+      "title": "Actual page size",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+0"
+      ]
+    },
+    {
+      "id": "page.zoomFitWidth",
+      "title": "Fit page to width",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "page.newTextBox",
+      "title": "New text box",
+      "category": "insert",
+      "keys": []
+    },
+    {
+      "id": "page.layout",
+      "title": "Change page layout",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "page.readingView",
+      "title": "Switch between reading view and canvas",
+      "category": "view",
+      "keys": []
+    },
+    {
+      "id": "page.readingOrderPane",
+      "title": "Reading order",
+      "category": "view",
+      "keys": [],
+      "flag": "page.readingOrder"
+    },
+    {
+      "id": "object.bringToFront",
+      "title": "Bring to front",
+      "category": "object",
+      "keys": [
+        "Ctrl+}"
+      ]
+    },
+    {
+      "id": "object.sendToBack",
+      "title": "Send to back",
+      "category": "object",
+      "keys": [
+        "Ctrl+{"
+      ]
+    },
+    {
+      "id": "object.bringForward",
+      "title": "Bring forward",
+      "category": "object",
+      "keys": [
+        "Ctrl+]"
+      ]
+    },
+    {
+      "id": "object.sendBackward",
+      "title": "Send backward",
+      "category": "object",
+      "keys": [
+        "Ctrl+["
+      ]
+    },
+    {
+      "id": "object.edit",
+      "title": "Edit text",
+      "category": "object",
+      "keys": [
+        "F2"
+      ]
+    },
+    {
+      "id": "object.delete",
+      "title": "Delete",
+      "category": "object",
+      "keys": [
+        "Delete"
+      ]
+    },
+    {
+      "id": "object.lock",
+      "title": "Lock",
+      "category": "object",
+      "keys": []
+    },
+    {
+      "id": "object.lockPosition",
+      "title": "Lock position",
+      "category": "object",
+      "keys": []
+    },
+    {
+      "id": "object.unlock",
+      "title": "Unlock",
+      "category": "object",
+      "keys": []
+    },
+    {
+      "id": "object.float",
+      "title": "Float",
+      "category": "object",
+      "keys": []
+    },
+    {
+      "id": "object.putInFlow",
+      "title": "Put in flow",
+      "category": "object",
+      "keys": []
+    },
+    {
+      "id": "object.sizeAndPosition",
+      "title": "Size and position",
+      "category": "object",
+      "keys": []
+    },
+    {
+      "id": "page.lockForReading",
+      "title": "Lock page for reading",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+L"
+      ],
+      "flag": "page.readingLock"
+    },
+    {
+      "id": "page.announceWordCount",
+      "title": "Announce word count",
+      "category": "view",
+      "keys": [],
+      "flag": "page.wordCount"
+    },
+    {
+      "id": "checklist.checkAll",
+      "title": "Check all items",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.checklistExtras"
+    },
+    {
+      "id": "checklist.uncheckAll",
+      "title": "Uncheck all items",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.checklistExtras"
+    },
+    {
+      "id": "checklist.finished.keep",
+      "title": "Keep finished items in place",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.checklistExtras"
+    },
+    {
+      "id": "checklist.finished.bottom",
+      "title": "Move finished items to the bottom",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.checklistExtras"
+    },
+    {
+      "id": "checklist.finished.hide",
+      "title": "Hide finished items",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.checklistExtras"
+    },
+    {
+      "id": "checklist.doneCount",
+      "title": "Show done count",
+      "category": "view",
+      "keys": [],
+      "flag": "page.checklistExtras"
+    },
+    {
+      "id": "page.typewriter",
+      "title": "Turn typewriter scrolling on or off",
+      "category": "view",
+      "keys": [],
+      "flag": "page.typewriter"
+    },
+    {
+      "id": "page.find",
+      "title": "Find on page",
+      "category": "editing",
+      "keys": [
+        "Ctrl+F"
+      ],
+      "flag": "page.findReplace"
+    },
+    {
+      "id": "page.replace",
+      "title": "Find and replace on page",
+      "category": "editing",
+      "keys": [
+        "Ctrl+H"
+      ],
+      "flag": "page.findReplace"
+    },
+    {
+      "id": "page.toc",
+      "title": "Show or hide the table of contents",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+T"
+      ],
+      "flag": "page.toc"
+    },
+    {
+      "id": "templates.newPage",
+      "title": "New page from template",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.templates"
+    },
+    {
+      "id": "templates.insert",
+      "title": "Insert template",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.templates"
+    },
+    {
+      "id": "templates.save",
+      "title": "Use this page as a template",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.templates"
+    },
+    {
+      "id": "templates.remove",
+      "title": "Stop using this page as a template",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.templates"
+    },
+    {
+      "id": "templates.setDefault",
+      "title": "Set the default template for this section",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.templates"
+    },
+    {
+      "id": "series.newPage",
+      "title": "New page in series",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.series"
+    },
+    {
+      "id": "series.list",
+      "title": "Show pages in this series",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.seriesList"
+    },
+    {
+      "id": "page.markdownSource",
+      "title": "Show page as Markdown",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+M"
+      ],
+      "flag": "page.markdownSource"
+    },
+    {
+      "id": "insert.attachFile",
+      "title": "Attach file",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.attachments"
+    },
+    {
+      "id": "object.openAttachment",
+      "title": "Open attachment",
+      "category": "object",
+      "keys": [],
+      "flag": "page.attachments"
+    },
+    {
+      "id": "object.attachmentDisplay",
+      "title": "Show attachment as icon or preview",
+      "category": "object",
+      "keys": [],
+      "flag": "page.attachments"
+    },
+    {
+      "id": "object.saveAttachmentCopy",
+      "title": "Save a copy of the attachment",
+      "category": "object",
+      "keys": [],
+      "flag": "page.attachments"
+    },
+    {
+      "id": "image.wrap.alone",
+      "title": "Stand alone",
+      "category": "object",
+      "keys": [],
+      "flag": "page.wrapImages"
+    },
+    {
+      "id": "image.wrap.inline",
+      "title": "In line",
+      "category": "object",
+      "keys": [],
+      "flag": "page.wrapImages"
+    },
+    {
+      "id": "image.wrap.left",
+      "title": "Image on the left, text wraps",
+      "category": "object",
+      "keys": [],
+      "flag": "page.wrapImages"
+    },
+    {
+      "id": "image.wrap.right",
+      "title": "Image on the right, text wraps",
+      "category": "object",
+      "keys": [],
+      "flag": "page.wrapImages"
+    },
+    {
+      "id": "page.extractSelection",
+      "title": "Extract selection to a new page",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.extractMerge"
+    },
+    {
+      "id": "page.mergePages",
+      "title": "Merge pages",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.extractMerge"
+    },
+    {
+      "id": "page.splitAtHeadings",
+      "title": "Split page at headings",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "page.extractMerge"
+    },
+    {
+      "id": "readAloud.toggle",
+      "title": "Read aloud",
+      "category": "view",
+      "keys": [
+        "Ctrl+Shift+U"
+      ],
+      "flag": "editor.readAloud"
+    },
+    {
+      "id": "readAloud.nextParagraph",
+      "title": "Read next paragraph",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+."
+      ],
+      "flag": "editor.readAloud"
+    },
+    {
+      "id": "readAloud.previousParagraph",
+      "title": "Read previous paragraph",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+,"
+      ],
+      "flag": "editor.readAloud"
+    },
+    {
+      "id": "readAloud.stop",
+      "title": "Stop reading aloud",
+      "category": "view",
+      "keys": [],
+      "flag": "editor.readAloud"
+    },
+    {
+      "id": "tools.latex",
+      "title": "Insert LaTeX",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+X"
+      ],
+      "flag": "math.latexInsert"
+    },
+    {
+      "id": "tools.constants",
+      "title": "Insert a scientific constant",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+N"
+      ],
+      "flag": "tools.constants"
+    },
+    {
+      "id": "tools.sigfigs",
+      "title": "Open the significant-figures helper",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+F"
+      ],
+      "flag": "tools.sigfigs"
+    },
+    {
+      "id": "sigfigs.countSelection",
+      "title": "Count significant figures of the selection",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.sigfigs"
+    },
+    {
+      "id": "sigfigs.roundSelection",
+      "title": "Round the selection to significant figures",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.sigfigs"
+    },
+    {
+      "id": "tools.solvers",
+      "title": "Open Math solvers",
+      "category": "general",
+      "keys": [
+        "Ctrl+Alt+Shift+M"
+      ],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.integrals",
+      "title": "Solve a double or triple integral",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.equations",
+      "title": "Solve a differential equation",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.transforms",
+      "title": "Find a Laplace or Fourier transform",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.series",
+      "title": "Expand a Taylor series",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.roots",
+      "title": "Find a root with Newton's method",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.errors",
+      "title": "Propagate uncertainty or check units",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.probability",
+      "title": "Find a normal, binomial, or t probability",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.matrices",
+      "title": "Find eigenvalues and eigenvectors",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "tools.solvers.projectile",
+      "title": "Simulate a projectile",
+      "category": "general",
+      "keys": [],
+      "flag": "math.solvers"
+    },
+    {
+      "id": "spelling.next",
+      "title": "Next spelling error",
+      "category": "editing",
+      "keys": [
+        "F7"
+      ],
+      "flag": "editor.spelling"
+    },
+    {
+      "id": "spelling.previous",
+      "title": "Previous spelling error",
+      "category": "editing",
+      "keys": [
+        "Shift+F7"
+      ],
+      "flag": "editor.spelling"
+    },
+    {
+      "id": "math.checkWork",
+      "title": "Check my work",
+      "category": "view",
+      "keys": [],
+      "flag": "math.checkWork"
+    },
+    {
+      "id": "page.openInEditor",
+      "title": "Open in another editor",
+      "category": "view",
+      "keys": [],
+      "flag": "page.markdownSource"
+    },
+    {
+      "id": "page.undo",
+      "title": "Undo",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Z"
+      ]
+    },
+    {
+      "id": "page.redo",
+      "title": "Redo",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Y",
+        "Ctrl+Shift+Z"
+      ]
+    },
+    {
+      "id": "insert.table",
+      "title": "Insert table",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.tables"
+    },
+    {
+      "id": "tutor.open",
+      "title": "Open the tutor",
+      "category": "view",
+      "keys": [],
+      "flag": "study.tutor"
+    },
+    {
+      "id": "tutor.hint",
+      "title": "Give me a hint",
+      "category": "view",
+      "keys": [],
+      "flag": "study.tutor"
+    },
+    {
+      "id": "tutor.explain",
+      "title": "Explain this step",
+      "category": "view",
+      "keys": [],
+      "flag": "study.tutor"
+    },
+    {
+      "id": "media.insertVideo",
+      "title": "Insert video file",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.localVideo"
+    },
+    {
+      "id": "media.videoCaptions",
+      "title": "Add captions to a video",
+      "category": "insert",
+      "keys": [],
+      "flag": "page.localVideo"
+    },
+    {
+      "id": "citations.zotero.addEditCitation",
+      "title": "Add or edit citation with Zotero",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.zotero"
+    },
+    {
+      "id": "citations.zotero.addEditBibliography",
+      "title": "Add or edit bibliography with Zotero",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.zotero"
+    },
+    {
+      "id": "citations.zotero.refresh",
+      "title": "Refresh Zotero citations",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.zotero"
+    },
+    {
+      "id": "citations.zotero.removeCodes",
+      "title": "Unlink Zotero citations",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.zotero"
+    },
+    {
+      "id": "citations.zotero.setDocPrefs",
+      "title": "Zotero document settings",
+      "category": "insert",
+      "keys": [],
+      "flag": "tools.zotero"
+    },
+    {
+      "id": "pages.print",
+      "title": "Print…",
+      "category": "view",
+      "keys": [
+        "Ctrl+P"
+      ],
+      "flag": "pages.pdf"
+    },
+    {
+      "id": "pages.exportPdf",
+      "title": "Export as PDF…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.pdf"
+    },
+    {
+      "id": "pages.exportMarkdown",
+      "title": "Export as Markdown…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.exportText"
+    },
+    {
+      "id": "pages.exportWord",
+      "title": "Export as Word…",
+      "category": "view",
+      "keys": [],
+      "flag": "interop.export"
+    },
+    {
+      "id": "pages.exportHtml",
+      "title": "Export as HTML…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.exportText"
+    },
+    {
+      "id": "pages.tapeBlanks",
+      "title": "Turn study tape into blanks when printing and exporting",
+      "category": "view",
+      "keys": [],
+      "flag": "study.tapeBlanks"
+    },
+    {
+      "id": "pages.exportImage",
+      "title": "Export selection as image…",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.exportImage"
+    },
+    {
+      "id": "pages.readingAids",
+      "title": "Reading aids",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.reading"
+    },
+    {
+      "id": "pages.gallery",
+      "title": "Page gallery",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.gallery"
+    },
+    {
+      "id": "pages.present",
+      "title": "Present as slides",
+      "category": "view",
+      "keys": [
+        "F5"
+      ],
+      "flag": "pages.slides"
+    },
+    {
+      "id": "pages.view.canvas",
+      "title": "Infinite canvas",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.view.pages",
+      "title": "Pages with breaks",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.layout.flow",
+      "title": "Document flow",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.layout.free",
+      "title": "Free canvas",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.fitSheet",
+      "title": "Fit page",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.letter",
+      "title": "Letter",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.a4",
+      "title": "A4",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.a5",
+      "title": "A5",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.legal",
+      "title": "Legal",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.tabloid",
+      "title": "Tabloid",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.portrait",
+      "title": "Portrait",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paper.landscape",
+      "title": "Landscape",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.margins.narrow",
+      "title": "Narrow margins",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.margins.normal",
+      "title": "Normal margins",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.margins.wide",
+      "title": "Wide margins",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.plain",
+      "title": "Plain",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.ruled-narrow",
+      "title": "Lined, narrow",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.ruled-college",
+      "title": "Lined, college",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.ruled-wide",
+      "title": "Lined, wide",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.grid-5mm",
+      "title": "Grid, 5 mm",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.grid-quarter-inch",
+      "title": "Grid, quarter inch",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.grid-1cm",
+      "title": "Grid, 1 cm",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.dots",
+      "title": "Dot grid",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.isometric",
+      "title": "Isometric",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.cornell",
+      "title": "Cornell notes",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.staff",
+      "title": "Music staff",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.background.marginLine",
+      "title": "Margin line",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.paperMenu",
+      "title": "Paper",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.backgroundMenu",
+      "title": "Background",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.view"
+    },
+    {
+      "id": "pages.exportMenu",
+      "title": "Export",
+      "category": "view",
+      "keys": [],
+      "flag": "pages.pdf"
+    },
+    {
+      "id": "app.palette",
+      "title": "Open command palette",
+      "category": "general",
+      "keys": [
+        "Ctrl+K"
+      ]
+    },
+    {
+      "id": "app.quickSwitcher",
+      "title": "Go to a page",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+O"
+      ]
+    },
+    {
+      "id": "pdf.import",
+      "title": "Import PDF as pages",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "interop.pdfImport"
+    },
+    {
+      "id": "pdf.insert",
+      "title": "Insert PDF",
+      "category": "insert",
+      "keys": [],
+      "flag": "interop.pdfImport"
+    },
+    {
+      "id": "pdf.noteSpace",
+      "title": "Add note space",
+      "category": "insert",
+      "keys": [],
+      "flag": "interop.pdfImport"
+    },
+    {
+      "id": "pdf.handouts",
+      "title": "Make handouts",
+      "category": "insert",
+      "keys": [],
+      "flag": "interop.pdfImport"
+    },
+    {
+      "id": "pdf.highlight",
+      "title": "Highlight the selected words",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Shift+H"
+      ],
+      "flag": "pdf.highlights"
+    },
+    {
+      "id": "pdf.highlights",
+      "title": "PDF highlights",
+      "category": "view",
+      "keys": [],
+      "flag": "pdf.highlights"
+    },
+    {
+      "id": "pdf.look.original",
+      "title": "Show PDF pages as they are",
+      "category": "view",
+      "keys": [],
+      "flag": "pdf.dim"
+    },
+    {
+      "id": "pdf.look.dim",
+      "title": "Dim PDF pages in the dark theme",
+      "category": "view",
+      "keys": [],
+      "flag": "pdf.dim"
+    },
+    {
+      "id": "pdf.look.invert",
+      "title": "Invert PDF pages in the dark theme",
+      "category": "view",
+      "keys": [],
+      "flag": "pdf.dim"
+    },
+    {
+      "id": "pdf.copyText",
+      "title": "Copy the text of PDF pages",
+      "category": "editing",
+      "keys": [],
+      "flag": "pdf.textLayer"
+    },
+    {
+      "id": "pdf.scanCleanup",
+      "title": "Clean up scan",
+      "category": "object",
+      "keys": [],
+      "flag": "pdf.scan"
+    },
+    {
+      "id": "pdf.scanPages",
+      "title": "Scan pages from photos",
+      "category": "insert",
+      "keys": [],
+      "flag": "pdf.scan"
+    },
+    {
+      "id": "pdf.scanOriginal",
+      "title": "Restore the original photo",
+      "category": "object",
+      "keys": [],
+      "flag": "pdf.scan"
+    },
+    {
+      "id": "protect.lockEntry",
+      "title": "Lock entry",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.lockEntry"
+    },
+    {
+      "id": "protect.unlockEntry",
+      "title": "Unlock entry…",
+      "category": "editing",
+      "keys": [],
+      "flag": "page.lockEntry"
+    },
+    {
+      "id": "protect.protectSection",
+      "title": "Protect with password…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.unlockSection",
+      "title": "Unlock section…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.lockSection",
+      "title": "Lock section",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.changePassword",
+      "title": "Change section password…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.unprotectSection",
+      "title": "Remove protection…",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.helloOn",
+      "title": "Unlock with Windows Hello",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.helloOff",
+      "title": "Stop unlocking with Windows Hello",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "protect.lockAll",
+      "title": "Lock all protected sections",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "sections.protect"
+    },
+    {
+      "id": "tree.pin",
+      "title": "Pin page",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.unpin",
+      "title": "Unpin page",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.pinSection",
+      "title": "Pin section",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.unpinSection",
+      "title": "Unpin section",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.duplicate",
+      "title": "Duplicate",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.copyTo",
+      "title": "Copy to",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.sort",
+      "title": "Sort",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.sort.title",
+      "title": "Sort by title",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.sort.created",
+      "title": "Sort by date created",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.sort.modified",
+      "title": "Sort by date modified",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.pins"
+    },
+    {
+      "id": "tree.archive",
+      "title": "Archive",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.archive"
+    },
+    {
+      "id": "tree.unarchive",
+      "title": "Restore from archive",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.archive"
+    },
+    {
+      "id": "tree.showArchived",
+      "title": "Show archived",
+      "category": "view",
+      "keys": [],
+      "flag": "qol.archive"
+    },
+    {
+      "id": "tabs.openInNewTab",
+      "title": "Open in new tab",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Enter"
+      ],
+      "flag": "qol.tabs"
+    },
+    {
+      "id": "tabs.duplicate",
+      "title": "Duplicate tab",
+      "category": "navigation",
+      "keys": [],
+      "flag": "qol.tabs"
+    },
+    {
+      "id": "tabs.close",
+      "title": "Close tab",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+W"
+      ],
+      "flag": "qol.tabs"
+    },
+    {
+      "id": "tabs.next",
+      "title": "Go to the next tab",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Tab"
+      ],
+      "flag": "qol.tabs"
+    },
+    {
+      "id": "tabs.previous",
+      "title": "Go to the previous tab",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Shift+Tab"
+      ],
+      "flag": "qol.tabs"
+    },
+    {
+      "id": "tabs.reopenClosed",
+      "title": "Reopen closed tab",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Shift+T"
+      ],
+      "flag": "qol.recentlyClosed"
+    },
+    {
+      "id": "tabs.openInWindow",
+      "title": "Open in new window",
+      "category": "navigation",
+      "keys": [],
+      "flag": "qol.tabs"
+    },
+    {
+      "id": "view.focusMode",
+      "title": "Focus mode",
+      "category": "view",
+      "keys": [
+        "F11"
+      ],
+      "flag": "qol.focusMode"
+    },
+    {
+      "id": "window.toggleMini",
+      "title": "Keep on top",
+      "category": "view",
+      "keys": [],
+      "flag": "qol.miniWindow"
+    },
+    {
+      "id": "window.dockLeft",
+      "title": "Dock to the left edge",
+      "category": "view",
+      "keys": [],
+      "flag": "qol.dock"
+    },
+    {
+      "id": "window.dockRight",
+      "title": "Dock to the right edge",
+      "category": "view",
+      "keys": [],
+      "flag": "qol.dock"
+    },
+    {
+      "id": "app.quickNote",
+      "title": "Quick note",
+      "category": "general",
+      "keys": [],
+      "flag": "qol.quickCapture"
+    },
+    {
+      "id": "app.home",
+      "title": "Go home",
+      "category": "navigation",
+      "keys": [],
+      "flag": "qol.home"
+    },
+    {
+      "id": "notes.openFolder",
+      "title": "Open a notebook from a folder",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.openFolder"
+    },
+    {
+      "id": "notes.checkNotebook",
+      "title": "Check notebook",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.checkNotebook"
+    },
+    {
+      "id": "notes.backupNow",
+      "title": "Back up now",
+      "category": "general",
+      "keys": [],
+      "flag": "qol.scheduledBackups"
+    },
+    {
+      "id": "notes.createShortcut",
+      "title": "Create shortcut",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "qol.shortcuts"
+    },
+    {
+      "id": "page.checkAccessibility",
+      "title": "Check accessibility",
+      "category": "general",
+      "keys": [],
+      "flag": "qol.a11yCheck"
+    },
+    {
+      "id": "search.copyPageLink",
+      "title": "Copy link to this page",
+      "category": "navigation",
+      "keys": [],
+      "flag": "search.paragraphLinks"
+    },
+    {
+      "id": "search.copyParagraphLink",
+      "title": "Copy link to this paragraph",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.paragraphLinks"
+    },
+    {
+      "id": "search.tag.todo",
+      "title": "Tag as To do",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.important",
+      "title": "Tag as Important",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.question",
+      "title": "Tag as Question",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.idea",
+      "title": "Tag as Idea",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.remember",
+      "title": "Tag as Remember for later",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.definition",
+      "title": "Tag as Definition",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.highlight",
+      "title": "Tag as Highlight",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.contact",
+      "title": "Tag as Contact",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tag.phone",
+      "title": "Tag as Phone number",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tagLine",
+      "title": "Tag this line",
+      "category": "editing",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.tagsPane",
+      "title": "Show tagged lines",
+      "category": "navigation",
+      "keys": [],
+      "flag": "search.lineTags"
+    },
+    {
+      "id": "search.replace",
+      "title": "Replace in all notebooks",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Alt+H"
+      ],
+      "flag": "search.replace"
+    },
+    {
+      "id": "search.open",
+      "title": "Search notes",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Shift+F"
+      ],
+      "flag": "search.panel"
+    },
+    {
+      "id": "search.linkedPages",
+      "title": "Show linked pages",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+G"
+      ],
+      "flag": "search.backlinks"
+    },
+    {
+      "id": "search.manageTags",
+      "title": "Manage tags",
+      "category": "general",
+      "keys": [],
+      "flag": "search.tags"
+    },
+    {
+      "id": "search.insertLink",
+      "title": "Link to a page",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+K"
+      ],
+      "flag": "search.links"
+    },
+    {
+      "id": "search.followLink",
+      "title": "Open the linked page",
+      "category": "navigation",
+      "keys": [
+        "Ctrl+Alt+Enter"
+      ],
+      "flag": "search.links"
+    },
+    {
+      "id": "search.previewLink",
+      "title": "Preview the linked page",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+P"
+      ],
+      "flag": "search.links"
+    },
+    {
+      "id": "search.rebuild",
+      "title": "Rebuild the search index",
+      "category": "general",
+      "keys": [],
+      "flag": "search.panel"
+    },
+    {
+      "id": "app.settings",
+      "title": "Open settings",
+      "category": "general",
+      "keys": [
+        "Ctrl+,"
+      ]
+    },
+    {
+      "id": "settings.back",
+      "title": "Back to notes",
+      "category": "navigation",
+      "keys": []
+    },
+    {
+      "id": "app.systemSupport",
+      "title": "Show what works on this computer",
+      "category": "general",
+      "keys": []
+    },
+    {
+      "id": "app.shortcuts",
+      "title": "Show keyboard shortcuts",
+      "category": "help",
+      "keys": [
+        "Ctrl+/"
+      ]
+    },
+    {
+      "id": "page.selectTitle",
+      "title": "Select the page title",
+      "category": "navigation",
+      "keys": []
+    },
+    {
+      "id": "sync.now",
+      "title": "Sync now",
+      "category": "general",
+      "keys": [],
+      "flag": "sync.e2ee"
+    },
+    {
+      "id": "sync.pause",
+      "title": "Pause sync",
+      "category": "general",
+      "keys": [],
+      "flag": "sync.e2ee"
+    },
+    {
+      "id": "sync.preview",
+      "title": "Preview sync changes",
+      "category": "general",
+      "keys": [],
+      "flag": "sync.e2ee"
+    },
+    {
+      "id": "sync.changePassphrase",
+      "title": "Change sync passphrase",
+      "category": "general",
+      "keys": [],
+      "flag": "sync.e2ee"
+    },
+    {
+      "id": "sync.open",
+      "title": "Sync settings",
+      "category": "general",
+      "keys": [],
+      "flag": "sync.e2ee"
+    },
+    {
+      "id": "theme.toggle",
+      "title": "Toggle dark mode",
+      "category": "appearance",
+      "keys": [
+        "Ctrl+Shift+D"
+      ]
+    },
+    {
+      "id": "theme.light",
+      "title": "Use the light theme",
+      "category": "appearance",
+      "keys": []
+    },
+    {
+      "id": "theme.dark",
+      "title": "Use the dark theme",
+      "category": "appearance",
+      "keys": []
+    },
+    {
+      "id": "theme.system",
+      "title": "Match the Windows theme",
+      "category": "appearance",
+      "keys": []
+    },
+    {
+      "id": "theme.openAppearance",
+      "title": "Open appearance settings",
+      "category": "appearance",
+      "keys": []
+    },
+    {
+      "id": "view.zoomIn",
+      "title": "Zoom in",
+      "category": "view",
+      "keys": [
+        "Ctrl+="
+      ]
+    },
+    {
+      "id": "view.zoomOut",
+      "title": "Zoom out",
+      "category": "view",
+      "keys": [
+        "Ctrl+-"
+      ]
+    },
+    {
+      "id": "view.zoomReset",
+      "title": "Actual size",
+      "category": "view",
+      "keys": [
+        "Ctrl+0"
+      ]
+    },
+    {
+      "id": "trash.open",
+      "title": "Open Trash",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "trash.view"
+    },
+    {
+      "id": "trash.restore",
+      "title": "Restore",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "trash.view"
+    },
+    {
+      "id": "trash.empty",
+      "title": "Empty Trash",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "trash.purge"
+    },
+    {
+      "id": "trash.deleteForever",
+      "title": "Delete forever",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "trash.purge"
+    },
+    {
+      "id": "notes.newNotebook",
+      "title": "New notebook",
+      "category": "notebooks",
+      "keys": []
+    },
+    {
+      "id": "notes.newSectionGroup",
+      "title": "New section group",
+      "category": "notebooks",
+      "keys": [],
+      "flag": "notes.sectionGroups"
+    },
+    {
+      "id": "notes.newSection",
+      "title": "New section",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+T"
+      ]
+    },
+    {
+      "id": "notes.newPage",
+      "title": "New page",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+N"
+      ]
+    },
+    {
+      "id": "notes.newSubpage",
+      "title": "New subpage",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+Alt+Shift+N"
+      ]
+    },
+    {
+      "id": "tree.moveUp",
+      "title": "Move up",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+Shift+Up"
+      ]
+    },
+    {
+      "id": "tree.moveDown",
+      "title": "Move down",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+Shift+Down"
+      ]
+    },
+    {
+      "id": "pages.indent",
+      "title": "Make subpage",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+Shift+Right",
+        "Ctrl+Alt+]"
+      ]
+    },
+    {
+      "id": "pages.outdent",
+      "title": "Promote",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+Shift+Left",
+        "Ctrl+Alt+["
+      ]
+    },
+    {
+      "id": "tree.rename",
+      "title": "Rename",
+      "category": "notebooks",
+      "keys": [
+        "F2"
+      ]
+    },
+    {
+      "id": "tree.color",
+      "title": "Color",
+      "category": "notebooks",
+      "keys": []
+    },
+    {
+      "id": "tree.moveTo",
+      "title": "Move to",
+      "category": "notebooks",
+      "keys": [
+        "Ctrl+Shift+M"
+      ]
+    },
+    {
+      "id": "tree.trash",
+      "title": "Delete",
+      "category": "notebooks",
+      "keys": [
+        "Delete"
+      ]
+    },
+    {
+      "id": "edit.undo",
+      "title": "Undo",
+      "category": "general",
+      "keys": [
+        "Ctrl+Z"
+      ]
+    },
+    {
+      "id": "edit.redo",
+      "title": "Redo",
+      "category": "general",
+      "keys": [
+        "Ctrl+Y",
+        "Ctrl+Shift+Z"
+      ]
+    },
+    {
+      "id": "updates.check",
+      "title": "Check for updates",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.restart",
+      "title": "Restart to update",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.goBack",
+      "title": "Go back to the previous version",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.download",
+      "title": "Download the update",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.skip",
+      "title": "Skip this update",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.unskip",
+      "title": "Install the skipped update",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.whatsNew",
+      "title": "Open the release notes",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.report",
+      "title": "Report a problem with an update",
+      "category": "updates",
+      "keys": []
+    },
+    {
+      "id": "updates.moveApp",
+      "title": "Add OpenNote to the Start menu",
+      "category": "updates",
+      "keys": []
+    }
+  ],
+  "titleBar": [
+    {
+      "id": "nav.back",
+      "side": "start"
+    },
+    {
+      "id": "nav.forward",
+      "side": "start"
+    },
+    {
+      "id": "layout.breadcrumb",
+      "side": "start"
+    },
+    {
+      "id": "page.undoButton",
+      "side": "end"
+    },
+    {
+      "id": "page.redoButton",
+      "side": "end"
+    },
+    {
+      "id": "notes.saveStatus",
+      "side": "end"
+    },
+    {
+      "id": "sync.status",
+      "side": "end"
+    },
+    {
+      "id": "diagnostics.offline",
+      "side": "end"
+    },
+    {
+      "id": "audio.indicator",
+      "side": "end"
+    },
+    {
+      "id": "tools.timerChip",
+      "side": "end"
+    },
+    {
+      "id": "diagnostics.safeMode",
+      "side": "end"
+    },
+    {
+      "id": "daily.open",
+      "side": "end"
+    },
+    {
+      "id": "search.open",
+      "side": "end"
+    },
+    {
+      "id": "updates.chip",
+      "side": "end"
+    },
+    {
+      "id": "theme.toggle",
+      "side": "end"
+    }
+  ],
+  "tools": [
+    {
+      "id": "timers",
+      "title": "Timers"
+    },
+    {
+      "id": "calculator",
+      "title": "Calculator"
+    },
+    {
+      "id": "upcoming",
+      "title": "Upcoming"
+    },
+    {
+      "id": "flashcards",
+      "title": "Flashcards"
+    },
+    {
+      "id": "exam",
+      "title": "Practice exams"
+    },
+    {
+      "id": "converter",
+      "title": "Unit converter"
+    },
+    {
+      "id": "reference",
+      "title": "Reference tables"
+    },
+    {
+      "id": "dictionary",
+      "title": "Dictionary"
+    },
+    {
+      "id": "symbols",
+      "title": "Symbols"
+    },
+    {
+      "id": "kit-fluidheat",
+      "title": "Fluids and heat transfer"
+    },
+    {
+      "id": "citations",
+      "title": "Citations"
+    },
+    {
+      "id": "constants",
+      "title": "Scientific constants"
+    },
+    {
+      "id": "sigfigs",
+      "title": "Significant figures"
+    },
+    {
+      "id": "latex",
+      "title": "Insert LaTeX"
+    },
+    {
+      "id": "solvers",
+      "title": "Math solvers"
+    },
+    {
+      "id": "vectors",
+      "title": "Vectors"
+    },
+    {
+      "id": "solids",
+      "title": "Solids of revolution"
+    },
+    {
+      "id": "projectile",
+      "title": "Projectile simulator"
+    },
+    {
+      "id": "chemcalc",
+      "title": "Chemistry calculators"
+    },
+    {
+      "id": "structure",
+      "title": "Chemical structures"
+    },
+    {
+      "id": "properties",
+      "title": "Property tables"
+    },
+    {
+      "id": "formulasheet",
+      "title": "Formula sheet"
+    },
+    {
+      "id": "practice",
+      "title": "Practice mode"
+    },
+    {
+      "id": "figure",
+      "title": "Export figure"
+    },
+    {
+      "id": "econ",
+      "title": "Economics and finance"
+    },
+    {
+      "id": "kit-statinfer",
+      "title": "Statistics: inference and design"
+    },
+    {
+      "id": "kit-statmodels",
+      "title": "Statistical models"
+    },
+    {
+      "id": "kit-mind",
+      "title": "Psychology and behavior"
+    },
+    {
+      "id": "kitmolbio",
+      "title": "Biology tools"
+    },
+    {
+      "id": "lifesys",
+      "title": "Life science tools"
+    },
+    {
+      "id": "kit-civil",
+      "title": "Civil and chemical engineering"
+    },
+    {
+      "id": "kit-modphys",
+      "title": "Modern physics and astronomy"
+    },
+    {
+      "id": "kit-signals",
+      "title": "Signals and sound"
+    },
+    {
+      "id": "kit-earth",
+      "title": "Earth sciences"
+    },
+    {
+      "id": "kit-humanities",
+      "title": "History, places, languages, and texts"
+    },
+    {
+      "id": "kit-reasoning",
+      "title": "Reasoning kit"
+    },
+    {
+      "id": "kitmusic",
+      "title": "Music, script, camera, and studio tools"
+    },
+    {
+      "id": "kitelectrical",
+      "title": "Circuits and energy"
+    },
+    {
+      "id": "kit-solids",
+      "title": "Solid mechanics"
+    },
+    {
+      "id": "kitaero",
+      "title": "Aerospace"
+    },
+    {
+      "id": "kit-chemmat",
+      "title": "Chemistry and materials"
+    },
+    {
+      "id": "kit-thermo",
+      "title": "Thermodynamics kit"
+    },
+    {
+      "id": "kit-control",
+      "title": "Dynamics and control"
+    },
+    {
+      "id": "kit-design",
+      "title": "Design tools"
+    },
+    {
+      "id": "kit-math",
+      "title": "Engineering mathematics"
+    },
+    {
+      "id": "kit-mechdyn",
+      "title": "Mechanisms and dynamics"
+    },
+    {
+      "id": "kit-physics",
+      "title": "Physics tools"
+    }
+  ],
+  "settings": [
+    {
+      "id": "general",
+      "title": "General"
+    },
+    {
+      "id": "appearance",
+      "title": "Appearance"
+    },
+    {
+      "id": "language",
+      "title": "Language"
+    },
+    {
+      "id": "editing",
+      "title": "Editing"
+    },
+    {
+      "id": "recording",
+      "title": "Recording"
+    },
+    {
+      "id": "penAndTouch",
+      "title": "Pen and touch"
+    },
+    {
+      "id": "myHandwriting",
+      "title": "My handwriting"
+    },
+    {
+      "id": "intel",
+      "title": "On-device intelligence"
+    },
+    {
+      "id": "storage",
+      "title": "Storage and backups"
+    },
+    {
+      "id": "updates",
+      "title": "Updates"
+    },
+    {
+      "id": "privacy",
+      "title": "Privacy"
+    },
+    {
+      "id": "windows",
+      "title": "Windows and power"
+    },
+    {
+      "id": "appPermissions",
+      "title": "App permissions"
+    },
+    {
+      "id": "connectors",
+      "title": "Connectors"
+    },
+    {
+      "id": "sync",
+      "title": "Sync"
+    },
+    {
+      "id": "help",
+      "title": "Help"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Shortcuts"
+    },
+    {
+      "id": "about",
+      "title": "About"
+    }
+  ],
+  "setup": [
+    {
+      "id": "welcome",
+      "title": "Welcome to OpenNote"
+    },
+    {
+      "id": "look",
+      "title": "Choose your look"
+    },
+    {
+      "id": "language",
+      "title": "Language and spelling"
+    },
+    {
+      "id": "smartFeatures",
+      "title": "On-device intelligence"
+    },
+    {
+      "id": "habits",
+      "title": "Keys and pen"
+    },
+    {
+      "id": "storage",
+      "title": "Where to keep things"
+    },
+    {
+      "id": "import",
+      "title": "Bring in your notes"
+    }
+  ]
+}

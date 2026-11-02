@@ -1,179 +1,295 @@
-// Makes docs/FEATURE-LIST.md from docs/FEATURES.md and docs/tools/screens.json: `npm run docs:features` writes it, and
-// docsMatchCode.test.ts regenerates it in memory, so a new feature or a changed row that is not in the list fails CI.
+// Makes docs/FEATURE-LIST.md: `npm run docs:features` writes it, and docsMatchCode.test.ts makes it again in memory,
+// so a changed row that is not in the list fails CI. The list has four sources. Every command, title bar item, tool
+// window, settings section, and setup step comes from docs/tools/registry.json. app/src/app/featureRegistry.test.ts
+// writes that file from the live registries and checks it in CI. The feature sentences come from docs/FEATURES.md
+// (featureRows.ts), and the pictures from docs/tools/screens.json. The words the registries lack are in
+// featureMaps.ts and featureTools.ts.
+import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import {
+  CAPTION_EXEMPT,
+  CATEGORIES,
+  COMMAND_PREFIX,
+  ROW_CATEGORY,
+  SCREEN_CATEGORY,
+  SECTION_CATEGORY,
+  TITLE_BAR,
+  type Category,
+} from './featureMaps.ts';
+import { entryName, entryText, rowName, sectionsOf, type Section } from './featureRows.ts';
+import { TOOL_ENTRIES } from './featureTools.ts';
+
+export { CATEGORIES, SCREEN_CATEGORIES, TITLE_BAR } from './featureMaps.ts';
+export { sectionsOf } from './featureRows.ts';
+export { TOOL_ENTRIES } from './featureTools.ts';
 
 export interface Screen {
   /** The picture's name: docs/screens/<name>-light.png and <name>-dark.png. */
   name: string;
-  /** What the picture is of, in the list's category words. */
+  /** What the picture is of, in the Screens page's category words. */
   category: string;
   caption: string;
 }
 
-/** The categories of the Screens section, in order. Every category needs a picture (docsMatchCode.test.ts). */
-export const SCREEN_CATEGORIES = [
-  'First-time setup',
-  'The workspace',
-  'Writing and page blocks',
-  'Drawing and ink',
-  'Find, link, and organize',
-  'Audio and transcripts',
-  'Import and export',
-  'Study and homework',
-  'Math, graphs, and calculators',
-  'Engineering kits',
-  'Science kits',
-  'Data and society kits',
-  'Humanities and arts kits',
-  'Connectors and sync',
-  'Settings',
-  'Trash, the palette, and tool windows',
-] as const;
+/** What the app registers, as featureRegistry.test.ts writes it into docs/tools/registry.json. */
+export interface Registry {
+  commands: { id: string; title: string; category: string; keys: string[]; flag?: string }[];
+  titleBar: { id: string; side: string }[];
+  tools: { id: string; title: string }[];
+  settings: { id: string; title: string }[];
+  setup: { id: string; title: string }[];
+}
+type Command = Registry['commands'][number];
 
-const SKIPPED = /^(Contents|How to read the status|Screens)$/;
+/** The FEATURES.md sections that SECTION_CATEGORY does not place: the list cannot be made until they are. */
+export const unplacedSections = (features: string) =>
+  sectionsOf(features)
+    .map((s) => s.title)
+    .filter((title) => !SECTION_CATEGORY[title]);
 
-const MAX_WORDS = 44;
-
-/** At most 44 words, since the checks fail a sentence of 45: cut at the last comma or semicolon, else at the last word. */
-function shortened(sentence: string): string {
-  const words = sentence.split(' ');
-  if (words.length <= MAX_WORDS) return sentence;
-  const head = words.slice(0, MAX_WORDS).join(' ');
-  const cut = Math.max(head.lastIndexOf(','), head.lastIndexOf(';'));
-  const text = cut > head.length / 2 ? head.slice(0, cut) : head;
-  return text.replace(/,?\s+(and|or|the|a|of|to|with)$/, '').replace(/[,;:]$/, '');
+/** The tool window a command opens or belongs to, if any. */
+export function toolOfCommand(id: string): string | undefined {
+  return Object.entries(TOOL_ENTRIES).find(
+    ([tool, entry]) =>
+      id === `tools.${tool}` || id.startsWith(`tools.${tool}.`) || (entry.tabs && id.startsWith(entry.tabs)),
+  )?.[0];
 }
 
-/** The first sentence of a piece of text, without its final full stop. */
-function firstSentence(text: string): string {
-  const clean = text.replace(/\s+/g, ' ').trim();
-  const stop = /[.!?](?=\s+[A-Z`"(])/.exec(clean);
-  const sentence = (stop ? clean.slice(0, stop.index) : clean).replace(/[.]$/, '').trim();
-  return shortened(sentence);
+/** The category of a command: its tool window's, else the longest COMMAND_PREFIX that starts its id. */
+export function categoryOfCommand(command: { id: string }): Category | undefined {
+  const tool = toolOfCommand(command.id);
+  if (tool) return TOOL_ENTRIES[tool]!.category;
+  const id = command.id;
+  const prefix = Object.keys(COMMAND_PREFIX)
+    .filter((p) => id === p || id.startsWith(`${p}.`) || (p.includes('.') && id.startsWith(p)))
+    .sort((a, b) => b.length - a.length)[0];
+  return prefix ? COMMAND_PREFIX[prefix] : undefined;
 }
 
-const withoutStatus = (text: string) => text.replace(/\s*Status:.*$/, '').trim();
-const cells = (row: string) =>
-  row
-    .trim()
-    .replace(/^\||\|$/g, '')
-    .split(/(?<!\\)\|/)
-    .map((c) => c.trim());
-const isRule = (row: string) => /^\|?[\s:|-]+\|?$/.test(row);
+export const categoryOfTool = (id: string): Category | undefined => TOOL_ENTRIES[id]?.category;
 
-/** The list entry for one table row, given the table's header cells. */
-function rowEntry(header: string[], row: string[]): string | null {
-  const name = row[0]!.replace(/^\*\*|\*\*$/g, '');
-  if (!name) return null;
-  const importAt = header.indexOf('Import');
-  const exportAt = header.indexOf('Export');
-  if (importAt > 0 && exportAt > 0) {
-    const parts = [];
-    const imports = firstSentence(row[importAt] ?? '');
-    const exports = firstSentence(row[exportAt] ?? '');
-    if (imports && !/^(none|\(none\))$/i.test(imports)) parts.push(`Imports ${imports}`);
-    if (exports && !/^(none|\(none\))$/i.test(exports))
-      parts.push(`${parts.length ? 'exports' : 'Exports'} ${exports}`);
-    return `- **${name}.** ${parts.join(' and ')}`;
-  }
-  // The description is the first cell after the name that is not a status.
-  const body = row
-    .slice(1)
-    .find((c, i) => c && !(i === row.length - 2 && /^(Built|Not built|Needs the owner)/.test(c)));
-  return body ? `- **${name}.** ${firstSentence(withoutStatus(body))}` : null;
-}
-
-function bulletEntry(text: string): string {
-  const named = /^\*\*(.+?)[:.]\*\*\s*(.*)$/.exec(text);
-  if (named) return `- **${named[1]}.** ${firstSentence(withoutStatus(named[2]!))}`;
-  return `- ${firstSentence(withoutStatus(text))}`;
-}
-
-interface Section {
-  title: string;
-  entries: string[];
-}
-
-/** The sections of FEATURES.md that list features, with a `###` shown as `## Parent: Child`. */
-export function sectionsOf(features: string): Section[] {
-  const sections: Section[] = [];
-  let parent = '';
-  let current: Section | null = null;
-  let header: string[] | null = null;
-  for (const line of features.split('\n')) {
-    const h2 = /^## (.+)$/.exec(line);
-    const h3 = /^### (.+)$/.exec(line);
-    if (h2 || h3) {
-      parent = h2 ? h2[1]!.trim() : parent;
-      const title = h2 ? parent : `${parent}: ${h3![1]!.trim()}`;
-      current = SKIPPED.test(parent) ? null : { title, entries: [] };
-      if (current) sections.push(current);
-      header = null;
-      continue;
-    }
-    if (!current) continue;
-    if (line.startsWith('|')) {
-      if (isRule(line)) continue;
-      if (!header) {
-        header = cells(line);
-        continue;
-      }
-      const entry = rowEntry(header, cells(line));
-      if (entry) current.entries.push(entry);
-      continue;
-    }
-    header = null;
-    const bullet = /^(?:- |\d+\. )(.+)$/.exec(line);
-    if (bullet) current.entries.push(bulletEntry(bullet[1]!));
-  }
-  // A parent heading with no entries of its own, such as a heading over `###` parts, is not listed.
-  return sections.filter((s) => s.entries.length > 0);
-}
-
+const normal = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/^open (the )?/, '')
+    .replace(/ tools?$/, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+const MINOR = new Set(['and', 'the', 'with', 'from', 'open', 'find', 'tool', 'tools']);
+/** The words of a name that say what it is about, without a plural s. */
+const keywords = (name: string) =>
+  normal(name)
+    .split(' ')
+    .filter((w) => w.length > 3 && !MINOR.has(w))
+    .map((w) => w.replace(/s$/, ''));
+/** A tab's command title as a tab name: "Open the waves and sound tool" is "Waves and sound". */
+const tabName = (title: string) => {
+  const bare = title.replace(/^Open (the )?/, '').replace(/ tool$/, '');
+  return bare.charAt(0).toUpperCase() + bare.slice(1);
+};
+const cell = (text: string) => text.replace(/\|/g, '\\|');
 const anchor = (title: string) =>
   title
     .toLowerCase()
     .replace(/[^\p{L}\p{N} -]/gu, '')
     .replace(/ /g, '-');
+/** "a, b, and c". */
+const series = (items: readonly string[]) =>
+  items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')}, and ${items.at(-1)}`;
 
-export function generateFeatureList(features: string, screens: readonly Screen[]): string {
+const picture = (s: Screen) => [
+  ...(CAPTION_EXEMPT[s.name] ? [`<!-- checks-disable-next-line ${CAPTION_EXEMPT[s.name]} -->`] : []),
+  `**${s.name}.** ${s.caption} ([dark](screens/${s.name}-dark.png))`,
+  '',
+  ...(CAPTION_EXEMPT[s.name] ? [`<!-- checks-disable-next-line ${CAPTION_EXEMPT[s.name]} -->`] : []),
+  `![${s.caption}](screens/${s.name}-light.png)`,
+  '',
+];
+
+/** Everything the generator reads. */
+interface Sources {
+  sections: Section[];
+  screens: readonly Screen[];
+  registry: Registry;
+  /** Each tool window's sentence. */
+  sentence: Map<string, string>;
+  /** The FEATURES.md rows that a tool window lists, so the Features lists leave them out. */
+  used: Set<string>;
+}
+
+const sectionRows = (sections: readonly Section[], title?: string) =>
+  title ? (sections.find((s) => s.title === title)?.entries ?? []) : [];
+
+/** Reads the sources, and gives each tool window its sentence and its rows before any category is listed. */
+function sources(features: string, screens: readonly Screen[], registry: Registry): Sources {
   const sections = sectionsOf(features);
-  const out: string[] = [
+  const rows = sections.flatMap((s) => s.entries);
+  const src: Sources = { sections, screens, registry, sentence: new Map(), used: new Set() };
+  for (const [id, entry] of Object.entries(TOOL_ENTRIES)) {
+    const row = entry.feature ? rows.find((e) => entryName(e) === entry.feature) : undefined;
+    if (entry.feature && !row) throw new Error(`FEATURES.md has no row named ${entry.feature} (tool ${id})`);
+    src.sentence.set(id, row ? entryText(row) : `${entry.text}.`);
+    for (const e of [...(row ? [row] : []), ...sectionRows(sections, entry.section)]) src.used.add(e);
+  }
+  return src;
+}
+
+/** The FEATURES.md rows that describe a tool window's tabs, with the tab each one belongs to. */
+function tabRows(described: readonly string[], tabs: readonly Command[]): Map<string, string> {
+  // A tab takes the row of its own name, or else the free row that shares the most words with it.
+  const rowOf = new Map<string, string>();
+  const free = (e: string) => ![...rowOf.values()].includes(e);
+  const same = (a: string, b: string) => a === b || a.includes(b) || b.includes(a);
+  for (const tab of tabs) {
+    const row = described.find((e) => free(e) && rowName(e) && same(normal(rowName(e)), normal(tabName(tab.title))));
+    if (row) rowOf.set(tab.id, row);
+  }
+  for (const tab of tabs) {
+    if (rowOf.has(tab.id)) continue;
+    const mine = keywords(tabName(tab.title));
+    const best = described
+      .filter((e) => free(e) && rowName(e))
+      .map((e) => ({ e, score: keywords(rowName(e)).filter((w) => mine.includes(w)).length }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (best && best.score > 0) rowOf.set(tab.id, best.e);
+  }
+  return rowOf;
+}
+
+/** A tool window: its sentence, picture, open command, and each tab with its row. */
+function toolLines(src: Sources, tool: Registry['tools'][number]): string[] {
+  const entry = TOOL_ENTRIES[tool.id]!;
+  const out = [`#### ${tool.title}`, '', src.sentence.get(tool.id)!, ''];
+  const shot = entry.screen ? src.screens.find((s) => s.name === entry.screen) : undefined;
+  if (shot) out.push(...picture(shot));
+  const open = src.registry.commands.find((c) => c.id === `tools.${tool.id}`);
+  const keys = open?.keys.length ? ` (${open.keys.join(', ')})` : '';
+  if (open) out.push(`Open it with the command "${open.title}"${keys}.`, '');
+  const tabs = src.registry.commands.filter((c) => c.id !== `tools.${tool.id}` && toolOfCommand(c.id) === tool.id);
+  const described = sectionRows(src.sections, entry.section);
+  const rowOf = tabRows(described, tabs);
+  if (tabs.length) {
+    out.push(`Commands (${tabs.length}):`, '');
+    for (const tab of tabs) {
+      const row = rowOf.get(tab.id);
+      out.push(`- **${tabName(tab.title)}.**${row ? ` ${entryText(row)}` : ''}`);
+    }
+    out.push('');
+  }
+  const rest = described.filter((e) => ![...rowOf.values()].includes(e));
+  if (rest.length) out.push(tabs.length ? 'Also in this window:' : 'In this window:', '', ...rest, '');
+  return out;
+}
+
+/** The category's FEATURES.md rows, under the title of the section they come from, without repeats. */
+function featureLines(src: Sources, category: Category): string[] {
+  const groups = new Map<string, string[]>();
+  const names = new Set<string>();
+  for (const s of src.sections) {
+    for (const e of s.entries) {
+      const moved = ROW_CATEGORY.find(([pattern]) => pattern.test(e))?.[1];
+      const placed = moved ?? SECTION_CATEGORY[s.title];
+      const name = entryName(e) || e;
+      if (src.used.has(e) || placed !== category || names.has(name)) continue;
+      names.add(name);
+      // A row from a section about something else goes under More, since its section's title would mislead.
+      const title = moved && moved !== SECTION_CATEGORY[s.title] ? 'More' : s.title.replace(/^Phase \d+: /, '');
+      groups.set(title, [...(groups.get(title) ?? []), e]);
+    }
+  }
+  if (!groups.size) return [];
+  // More comes last.
+  const ordered = [...groups].sort(([a], [b]) => Number(a === 'More') - Number(b === 'More'));
+  return ['### Features', '', ...ordered.flatMap(([title, rows]) => [`#### ${title}`, '', ...rows, ''])];
+}
+
+/** The lists only one category has: the title bar, and the settings sections and setup steps. */
+function registryLines(src: Sources, category: Category): string[] {
+  if (category === 'Notebooks and navigation') {
+    const items = src.registry.titleBar.flatMap((item) => (TITLE_BAR[item.id] ? [TITLE_BAR[item.id]!] : []));
+    return ['### Title bar', '', ...items.map((item) => `- **${item.name}.** ${item.text}`), ''];
+  }
+  if (category !== 'Settings and accessibility') return [];
+  return [
+    '### Settings and first-run setup',
+    '',
+    `- **Settings sections.** ${series(src.registry.settings.map((s) => s.title))}.`,
+    `- **First-run setup steps.** ${series(src.registry.setup.map((s) => s.title))}.`,
+    '',
+  ];
+}
+
+/** One category: its features, its own lists, its tool windows, its other commands, and its other pictures. */
+function categoryLines(src: Sources, category: Category): string[] {
+  const out = [`## ${category}`, '', ...featureLines(src, category), ...registryLines(src, category)];
+  const tools = src.registry.tools
+    .filter((t) => TOOL_ENTRIES[t.id]?.category === category)
+    .sort((a, b) => a.title.localeCompare(b.title));
+  const kits = category === 'Engineering kits' || category === 'Subject and catalog kits';
+  if (tools.length) out.push(kits ? '### Kits' : '### Tool windows', '', ...tools.flatMap((t) => toolLines(src, t)));
+  const commands = src.registry.commands.filter((c) => categoryOfCommand(c) === category && !toolOfCommand(c.id));
+  if (commands.length) {
+    out.push('### Commands', '', '| Command | Default keys |', '| --- | --- |');
+    out.push(...commands.map((c) => `| ${cell(c.title)} | ${cell(c.keys.join(', '))} |`), '');
+  }
+  const shown = new Set(Object.values(TOOL_ENTRIES).flatMap((e) => (e.screen ? [e.screen] : [])));
+  const shots = src.screens.filter(
+    (s) => !shown.has(s.name) && (SCREEN_CATEGORY[s.name] ?? SCREEN_CATEGORY[s.category]) === category,
+  );
+  if (shots.length) out.push('### Pictures', '', ...shots.flatMap(picture));
+  return out;
+}
+
+function introLines(registry: Registry): string[] {
+  const kits = registry.tools.filter((t) =>
+    ['Engineering kits', 'Subject and catalog kits'].includes(TOOL_ENTRIES[t.id]?.category ?? ''),
+  ).length;
+  return [
     '# OpenNote feature list',
     '',
-    'Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. This list is made from ' +
-      '[FEATURES.md](FEATURES.md) by `npm run docs:features`. FEATURES.md also says what has been tested by hand, what ' +
-      'waits on an account or a device, and which flag turns each one on. The [help pages](help/README.md) explain how ' +
-      'to use them. Pictures of every major page are at the end, in light. [docs/screens](screens/README.md) has them ' +
-      'in dark too.',
+    'Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. ' +
+      '`npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and ' +
+      'setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature ' +
+      'sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag ' +
+      'turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) ' +
+      'has every picture in light and dark.',
+    '',
+    `The app registers ${registry.commands.length} commands and ${registry.tools.length} tool windows. ${kits} of the ` +
+      'windows are engineering, subject, and catalog kits. Every command is in the command palette (Ctrl+K). The keys ' +
+      'shown are the defaults of the standard shortcut set.',
     '',
     '## Contents',
     '',
-    ...sections.map((s) => `- [${s.title}](#${anchor(s.title)})`),
-    '- [Screens](#screens)',
+    ...CATEGORIES.map((c) => `- [${c}](#${anchor(c)})`),
     '',
   ];
-  for (const s of sections) out.push(`## ${s.title}`, '', ...s.entries, '');
-  out.push('## Screens', '');
-  for (const category of SCREEN_CATEGORIES) {
-    const shown = screens.filter((s) => s.category === category);
-    if (!shown.length) continue;
-    out.push(`### ${category}`, '');
-    for (const s of shown) {
-      out.push(`**${s.name}.** ${s.caption} ([dark](screens/${s.name}-dark.png))`, '');
-      out.push(`![${s.caption}](screens/${s.name}-light.png)`, '');
-    }
-  }
-  return out.join('\n').replace(/\n+$/, '\n');
+}
+
+export function generateFeatureList(features: string, screens: readonly Screen[], registry: Registry): string {
+  const unplaced = unplacedSections(features);
+  if (unplaced.length) throw new Error(`Give these FEATURES.md sections a category: ${unplaced.join('; ')}`);
+  const src = sources(features, screens, registry);
+  const lines = [...introLines(registry), ...CATEGORIES.flatMap((c) => categoryLines(src, c))];
+  return lines.join('\n').replace(/\n+$/, '\n');
 }
 
 const root = join(import.meta.dirname, '..', '..');
 export const readScreens = (): Screen[] =>
   JSON.parse(readFileSync(join(root, 'docs', 'tools', 'screens.json'), 'utf8')) as Screen[];
+export const readRegistry = (): Registry =>
+  JSON.parse(readFileSync(join(root, 'docs', 'tools', 'registry.json'), 'utf8')) as Registry;
 export const regenerate = () =>
-  generateFeatureList(readFileSync(join(root, 'docs', 'FEATURES.md'), 'utf8'), readScreens());
+  generateFeatureList(readFileSync(join(root, 'docs', 'FEATURES.md'), 'utf8'), readScreens(), readRegistry());
 
 if (process.argv[1] && import.meta.filename === process.argv[1]) {
+  // The registry test writes registry.json from the live registries first, unless --no-registry says not to.
+  if (!process.argv.includes('--no-registry')) {
+    const run = spawnSync(
+      'npx vitest run --config app/vitest.config.ts --project unit app/src/app/featureRegistry.test.ts',
+      { cwd: root, shell: true, stdio: 'inherit', env: { ...process.env, OPENNOTE_WRITE_REGISTRY: '1' } },
+    );
+    if (run.status !== 0) process.exit(run.status ?? 1);
+  }
   writeFileSync(join(root, 'docs', 'FEATURE-LIST.md'), regenerate());
 }

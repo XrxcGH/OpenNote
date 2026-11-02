@@ -1,9 +1,15 @@
 // The docs match the code: every ADR number is used once and listed in the index, the feature list covers every
-// section of FEATURES.md and its pictures exist, and the status pages no longer call built features unbuilt.
+// section of FEATURES.md in a category and its pictures exist, and the status pages no longer call built features unbuilt.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { regenerate, readScreens, SCREEN_CATEGORIES } from '../../../docs/tools/featureList';
+import {
+  CATEGORIES,
+  regenerate,
+  readScreens,
+  SCREEN_CATEGORIES,
+  unplacedSections,
+} from '../../../docs/tools/featureList';
 
 const docs = join(import.meta.dirname, '..', '..', '..', 'docs');
 function markdown(dir: string): string[] {
@@ -45,12 +51,9 @@ describe('ADR links', () => {
 describe('feature list', () => {
   const list = read('FEATURE-LIST.md');
 
-  it('has a section for every section of FEATURES.md that lists features', () => {
-    const headings = read('FEATURES.md')
-      .split('\n')
-      .filter((l) => l.startsWith('## ') && !/Contents|How to read the status/.test(l))
-      .map((l) => l.slice(3).trim());
-    for (const heading of headings) expect(list, heading).toContain(`## ${heading}`);
+  it('puts every section of FEATURES.md in a category, and has a heading for every category', () => {
+    expect(unplacedSections(read('FEATURES.md'))).toEqual([]);
+    for (const category of CATEGORIES) expect(list, category).toContain(`## ${category}`);
   });
 
   it('is what `npm run docs:features` makes from FEATURES.md, so it cannot go stale', () => {

@@ -1,6 +1,6 @@
 # OpenNote feature specification
 
-This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELOPMENT.md). Each feature notes the phase that builds it, and a status that says where it stands in beta 7 (0.1.0-beta.7).
+This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELOPMENT.md). Each feature notes the phase that builds it, and a status that says where it stands in beta 8 (the version files still say 0.1.0-beta.7). The [feature list](FEATURE-LIST.md) groups everything by category, with every command and tool window the app registers.
 
 ## Contents
 
@@ -39,6 +39,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Statistics kit](#statistics-kit)
 - [Psychology and behavior kit](#psychology-and-behavior-kit)
 - [Life science tools](#life-science-tools)
+- [Appearance and layout](#appearance-and-layout)
 
 ## How to read the status
 
@@ -826,3 +827,17 @@ On in Beta and off in Stable. The [help page](help/subject-tool-kits.md) explain
 | Life tables and demography              | Life tables, fertility rates, R₀ and r, Leslie and Lefkovitch matrices with elasticities, cohort projections, and pyramids.                                                                                                        | Built, untested by hand |
 | Compartment, reaction, and agent models | SIR-type epidemics, fitting β and γ to case counts, final size, Reed-Frost, reaction networks by ODE and seeded Gillespie runs, Schelling, lattice and network SIR, thresholds, the voter model, Life, cellular automata, and random networks.                     | Built, untested by hand |
 | Biodiversity and field sampling         | Diversity and Hill numbers, Chao and ACE richness, rarefaction, similarity indices, quadrat and transect sampling, dispersion, and mark-recapture.                                                                                 | Built, untested by hand |
+
+## Appearance and layout
+
+Settings, then Appearance, holds these choices. The title bar's moon button switches the theme.
+
+| Feature | What it does | Status |
+|---|---|---|
+| Themes | Light, Dark, or Match Windows, from Settings, the moon button in the title bar, or the command palette. The dark theme is a neutral charcoal gray. | Built, untested by hand |
+| Page color in dark mode | A page can match the dark theme or stay paper white. | Built, untested by hand |
+| Text size | Scales everything. Ctrl+= and Ctrl+- change it from anywhere, and Ctrl+0 resets it. | Built, untested by hand |
+| Reduce motion | Matches the Windows setting, or always reduces motion. | Built, untested by hand |
+| Size of buttons and rows | Automatic follows the pointer you used last, Standard sizes them for a mouse, and Large gives every pointer touch-size targets. | Built, untested by hand |
+| Windows contrast themes | When a Windows contrast theme is on, Windows sets the colors, and your theme choice applies again when it is off. | Built, untested by hand |
+| Compact layout | A narrow window or a tablet shows an app bar, one pane at a time, a drawer, and a notebooks rail. | Built, untested by hand |
