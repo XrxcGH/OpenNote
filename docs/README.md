@@ -17,7 +17,7 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 
 ## Help for people using the app
 
-The [help index](help/README.md) lists every page. Each one is short and has a screenshot.
+The [help index](help/README.md) lists every page. Each one is short, and most have a picture of the app. The [feature list](FEATURE-LIST.md) names every tool, command, and feature by category.
 
 - [typed-notes.md](help/typed-notes.md): text, lists, checklists, the slash menu, templates, and find and replace.
 - [moving-between-blocks.md](help/moving-between-blocks.md): the keys that move between text, images, tables, and code on a page.
@@ -71,7 +71,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [DEVELOPMENT.md](DEVELOPMENT.md): the step-by-step plan for the Windows prototype, with phases, technology choices, tests, and release gates. Each phase has a status note for beta 8.
 - [FEATURES.md](FEATURES.md): the feature spec for Office and Google integration, handwriting, transcripts, study tools, and more. Each feature is marked built, built but untested by hand, not built yet, or needing the owner.
 - [RESEARCH.md](RESEARCH.md): popular and rising note apps, the features people love, and the gaps OpenNote can fill.
-- [../CHANGELOG.md](../CHANGELOG.md): what each beta added, changed, and fixed.
+- [../CHANGELOG.md](../CHANGELOG.md): what changed since the last beta, and what betas 1 to 4 added, changed, and fixed.
 
 ## Design and screens
 
@@ -79,7 +79,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [design/platform-api-THREATS.md](design/platform-api-THREATS.md): the threat model for the local API.
 - [design/SCREENS.md](design/SCREENS.md): 34 wireframes of every major screen, with sizes and keep-out zones. The drawings are in `design/images/`, and `design/generate.ts` makes them.
 - [screens/README.md](screens/README.md): 264 real screenshots of 132 screens, each in light and in dark, and what each one shows.
-- [FEATURE-LIST.md](FEATURE-LIST.md): one sentence on every feature, with a picture of each major page.
+- [FEATURE-LIST.md](FEATURE-LIST.md): every feature, command, tool window, and kit tab in 17 categories, one sentence each, with the pictures. `npm run docs:features` makes it from the app's registries and FEATURES.md.
 
 ## Quality and testing
 
@@ -104,7 +104,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 
 - [intel.md](intel.md): the `opennote-intel` crate, with the engines for text in pictures, handwriting, read aloud, summaries, and speech.
 - [ATTRIBUTION.md](ATTRIBUTION.md): the author, source, and license of every picture, font, sound, model, and vendored crate.
-- [tools/](tools/): the scripts that make the feature list and the screenshots (`featureList.ts`, `screens.json`).
+- [tools/](tools/): the feature list generator (`featureList.ts` and its parts), the registry it reads (`registry.json`, written by `app/src/app/featureRegistry.test.ts`), and the list of pictures (`screens.json`).
 - [CONNECTORS.md](CONNECTORS.md): the owner's guide to registering OpenNote with each service that connected accounts use, and where the client IDs go.
 
 ## Performance records
