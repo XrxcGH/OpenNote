@@ -308,26 +308,5 @@ mod engine {
 
 #[cfg(not(windows))]
 mod engine {
-    use crate::spelling::{SpellError, SpellLanguage};
-
-    /// Other systems have no spell checker yet: every word passes.
-    pub struct Engine;
-
-    impl Engine {
-        pub fn start() -> Self {
-            Self
-        }
-        pub fn languages(&self) -> Vec<SpellLanguage> {
-            Vec::new()
-        }
-        pub fn resolve(&self, _wanted: &[String]) -> Vec<String> {
-            Vec::new()
-        }
-        pub fn check(&mut self, _tag: &str, _text: &str) -> Vec<SpellError> {
-            Vec::new()
-        }
-        pub fn suggest(&mut self, _tag: &str, _word: &str) -> Vec<String> {
-            Vec::new()
-        }
-    }
+    pub use crate::spelling::system::Engine;
 }

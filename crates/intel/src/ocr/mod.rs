@@ -1,7 +1,8 @@
 //! Optical character recognition (OCR): text and word boxes from an image.
 //!
-//! [`OcrEngine`] is the platform-neutral interface. On Windows, [`default_engine`] returns an
-//! engine backed by Windows.Media.Ocr. Other platforms swap in their own engine later.
+//! [`OcrEngine`] is the platform-neutral interface. [`default_engine`] returns the engine of this platform:
+//! Windows.Media.Ocr on Windows, Apple's Vision framework on a Mac, and on Linux the engine that
+//! `opennote-intel-engines` installs with [`install_engine`] (Tesseract), which brings a native library along.
 
 use serde::{Deserialize, Serialize};
 
@@ -14,6 +15,27 @@ mod winrt;
 pub use self::winrt::WindowsOcr;
 #[cfg(all(windows, feature = "winrt", not(feature = "unstable-engines")))]
 use self::winrt::WindowsOcr;
+
+#[cfg(all(target_os = "macos", feature = "winrt"))]
+mod vision;
+#[cfg(all(target_os = "macos", feature = "winrt", feature = "unstable-engines"))]
+pub use self::vision::VisionOcr;
+#[cfg(all(target_os = "macos", feature = "winrt", not(feature = "unstable-engines")))]
+use self::vision::VisionOcr;
+
+#[cfg(any(test, all(target_os = "macos", feature = "winrt")))]
+pub(crate) mod words;
+
+/// Makes the engine of a platform whose engine lives in another crate. See [`install_engine`].
+pub type EngineMaker = fn() -> Result<Box<dyn OcrEngine>, IntelError>;
+
+static INSTALLED: std::sync::OnceLock<EngineMaker> = std::sync::OnceLock::new();
+
+/// Installs the engine of a platform with no engine in this crate, such as Tesseract on Linux, which
+/// `opennote-intel-engines` brings. The first call wins. [`default_engine`] uses it where this crate has none.
+pub fn install_engine(make: EngineMaker) {
+    let _ = INSTALLED.set(make);
+}
 
 /// The longest side an image may have, in pixels. Windows OCR accepts no more.
 pub const MAX_IMAGE_SIDE: u32 = 10_000;
@@ -188,11 +210,18 @@ engine_api! {
         {
             Ok(Box::new(WindowsOcr::new()))
         }
-        #[cfg(not(all(windows, feature = "winrt")))]
+        #[cfg(all(target_os = "macos", feature = "winrt"))]
         {
-            Err(IntelError::Unsupported {
-                feature: "text recognition in images",
-            })
+            Ok(Box::new(VisionOcr::new()))
+        }
+        #[cfg(not(any(all(windows, feature = "winrt"), all(target_os = "macos", feature = "winrt"))))]
+        {
+            match INSTALLED.get() {
+                Some(make) => make(),
+                None => Err(IntelError::Unsupported {
+                    feature: "text recognition in images",
+                }),
+            }
         }
     }
 }

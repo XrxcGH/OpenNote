@@ -1,12 +1,11 @@
-// Read-aloud voices through the shell (owner after WP0: WP7). Only built if spike S2 shows WebView2 lacks local
-// voices; until then the platform has no speech client.
-import type { SpeechClient } from '../types';
+// Read-aloud voices through the shell, for macOS and Linux, where the web view lists none: `say` and `espeak-ng` make
+// the sound. Windows keeps the web view's voices, so there the platform has no speech client.
+import type { HostSystem, SpeechClient } from '../types';
 import { invoke } from './invoke';
 
-export const SPEECH_FALLBACK_BUILT = false;
-
-export function createTauriSpeech(): SpeechClient | null {
-  if (!SPEECH_FALLBACK_BUILT) return null;
+/** The shell speaks through the system's own program everywhere but Windows. `system` comes from the boot payload. */
+export function createTauriSpeech(system: HostSystem): SpeechClient | null {
+  if (system === 'windows') return null;
   return {
     voices: () => invoke('speech_voices'),
     synthesize: async (text, voice) => {

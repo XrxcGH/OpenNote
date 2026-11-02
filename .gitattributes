@@ -5,3 +5,5 @@
 *.woff2 binary
 # Files saved by Word and Excel, kept byte for byte.
 crates/interop/tests/data/legacy/* binary
+# Fuzzer crash inputs, replayed byte for byte.
+crates/*/fuzz/regressions/** binary

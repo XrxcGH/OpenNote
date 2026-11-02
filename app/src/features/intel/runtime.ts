@@ -9,6 +9,7 @@ import type { Feature, IntelClient, IntelExt } from '../../services/intel';
 import { t } from '../../strings/t';
 import { confirm, showToast } from '../../ui';
 import { intelState, isOn, OFF } from './choices';
+import { offersWindowsSettings, platformText } from './platformNeeds';
 
 /** The features this phase's interface offers. Transcription is Phase 9's. */
 export const ON_DEVICE_FEATURES = ['ocr', 'handwriting', 'readAloud', 'summaries', 'transcription'] as const;
@@ -103,7 +104,7 @@ async function askOnce(feature: OnDeviceFeature): Promise<boolean> {
   const name = t(FEATURE_NAME[feature]);
   const yes = await confirm({
     title: t('intel.offer.title', { feature: name }),
-    body: `${t(OFFER_BODY[feature])} ${t('intel.offer.where')}`,
+    body: `${t(platformText(OFFER_BODY[feature]))} ${t('intel.offer.where')}`,
     confirmLabel: t('intel.offer.turnOn'),
     cancelLabel: t('intel.offer.notNow'),
   });
@@ -153,8 +154,12 @@ export function describeProblem(
   }
   if (failure.code === 'languageUnavailable') {
     const handwriting = kind === 'handwriting';
+    const message = t(
+      platformText(handwriting ? 'intel.problems.handwritingUnavailable' : 'intel.problems.languageUnavailable'),
+    );
+    if (!offersWindowsSettings()) return { message };
     return {
-      message: t(handwriting ? 'intel.problems.handwritingUnavailable' : 'intel.problems.languageUnavailable'),
+      message,
       action: { label: t('intel.settings.openLanguageSettings'), run: () => openWindowsSettings('language') },
     };
   }

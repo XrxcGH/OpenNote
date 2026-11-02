@@ -1,6 +1,7 @@
 // The words and checks of the Sync page, kept apart from the screens so they can be tested alone.
 
 import { formatDate, formatTime } from '../../strings/format';
+import { hostSystem } from '../../platform/system';
 import { t } from '../../strings/t';
 import { formatBytes } from '../diagnostics';
 import { SyncFailure } from './types';
@@ -49,6 +50,17 @@ export function deviceLines(device: DeviceRow, now: number): string[] {
   lines.push(last === null ? t('sync.devices.neverSynced') : t('sync.devices.lastSync', { when: whenText(last) }));
   if (isQuiet(device, now)) lines.push(t('sync.devices.quiet', { days: quietDays(device, now) }));
   return lines;
+}
+
+/** The sentences that say where this device keeps its secrets, which is a different store on each system. */
+type KeyStoreLine = 'sync.explainer.item4' | 'sync.wizard.passwordHelp';
+
+/** `key` as this system says it: Credential Manager on Windows, the Keychain on a Mac, the keyring on Linux. */
+export function keyStoreText(key: KeyStoreLine): string {
+  const system = hostSystem();
+  if (system === 'macos') return t(`${key}Macos`);
+  if (system === 'linux') return t(`${key}Linux`);
+  return t(key);
 }
 
 export function placeText(backend: BackendConfig): string {

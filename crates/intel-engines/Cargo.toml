@@ -34,3 +34,7 @@ ndarray = { version = "0.16", optional = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+# Tesseract on Linux, opened at run time so that neither the build nor the start needs it (src/tesseract).
+[target.'cfg(target_os = "linux")'.dependencies]
+libloading = "0.8.9"

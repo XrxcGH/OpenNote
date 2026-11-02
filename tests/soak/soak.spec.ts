@@ -167,7 +167,11 @@ test(`random editing for ${minutes} minutes`, async ({ page }) => {
   test.setTimeout((minutes + 15) * 60_000);
   const crashes: string[] = [];
   page.on('crash', () => crashes.push('The renderer crashed.'));
-  page.on('pageerror', (error) => crashes.push(`Uncaught error: ${error.message}`));
+  page.on('pageerror', (error) => {
+    crashes.push(`Uncaught error: ${error.message}`);
+    // The stack names the command that threw, so a crash can be turned into a unit repro without a rerun.
+    console.log(`Uncaught error:\n${error.stack ?? error.message}`);
+  });
   await installKeyTimer(page);
   await openFixture(page, 'twentyPage');
   await page.waitForTimeout(1_000);

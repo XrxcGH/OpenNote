@@ -208,6 +208,26 @@ jobs:
         # The Windows app carries the command-line tool inside it and installs it as bin\opennote.exe (install/cli.rs).
         if: runner.os == 'Windows'
         run: cargo build --release --locked -p opennote-cli --target $env:RELEASE_TARGET
+      - name: Build the opennote command (macOS and Linux)
+        # The app carries the tool and puts it in ~/.local/bin at each start (install/cli_unix.rs). A universal Mac app is
+        # built once for each processor, so each gets the tool built for it (build.rs).
+        if: runner.os != 'Windows'
+        run: |
+          if ($env:RUNNER_OS -eq 'macOS') {
+            foreach ($triple in @('aarch64-apple-darwin', 'x86_64-apple-darwin')) {
+              cargo build --release --locked -p opennote-cli --target $triple
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+            $arm = (Resolve-Path 'target/aarch64-apple-darwin/release/opennote-cli').Path
+            $intel = (Resolve-Path 'target/x86_64-apple-darwin/release/opennote-cli').Path
+            "OPENNOTE_CLI_EXE_AARCH64=$arm" | Out-File -FilePath $env:GITHUB_ENV -Append
+            "OPENNOTE_CLI_EXE_X86_64=$intel" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            cargo build --release --locked -p opennote-cli --target $env:RELEASE_TARGET
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $tool = (Resolve-Path "target/$env:RELEASE_TARGET/release/opennote-cli").Path
+            "OPENNOTE_CLI_EXE=$tool" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
       - name: Build the language model program
         # llama.cpp lives in a program of its own, which the exe carries inside it, because whisper.cpp and llama.cpp
         # each bundle ggml and cannot be linked into one program. Windows runners have CMake and LLVM.

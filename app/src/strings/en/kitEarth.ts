@@ -5,6 +5,7 @@ import type { kitEarthTools } from './kitEarthTools';
 
 const LIGHT = {
   title: 'Earth sciences',
+  resultTable: 'Table of values',
   open: 'Open the earth sciences kit',
   keywords: 'earth geology geophysics atmosphere weather ocean climate',
   topic: 'Topic',
