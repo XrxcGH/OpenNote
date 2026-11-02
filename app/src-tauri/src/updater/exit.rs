@@ -179,24 +179,29 @@ mod tests {
         );
     }
 
+    /// The decisions of a system that swaps its own file (Windows and Linux). A Mac never swaps on exit, which
+    /// the test above covers, so this asks `exit_action_on` for a swapping system on every runner, and checks that
+    /// `exit_action` gives this system's own answer.
     #[test]
     fn applies_only_on_restart_close_in_automatic_mode_and_goes_back_on_request() {
         use ExitReason::*;
         let auto = InstallPolicy::Auto;
+        let swaps = |reason, policy| exit_action_on(reason, policy, true);
         assert_eq!(
-            exit_action(RestartToUpdate, InstallPolicy::Manual),
+            swaps(RestartToUpdate, InstallPolicy::Manual),
             ExitAction::Apply(When::Now)
         );
-        assert_eq!(exit_action(Close, auto), ExitAction::Apply(When::NextLaunch));
-        assert_eq!(exit_action(Close, InstallPolicy::Ask), ExitAction::Nothing);
-        assert_eq!(exit_action(Close, InstallPolicy::Manual), ExitAction::Nothing);
-        assert_eq!(exit_action(GoBack, auto), ExitAction::GoBack);
-        assert_eq!(
-            exit_action(SessionEnd, auto),
-            ExitAction::Nothing,
-            "never during shutdown"
-        );
-        assert_eq!(exit_action(MoveApp, auto), ExitAction::Nothing);
+        assert_eq!(swaps(Close, auto), ExitAction::Apply(When::NextLaunch));
+        assert_eq!(swaps(Close, InstallPolicy::Ask), ExitAction::Nothing);
+        assert_eq!(swaps(Close, InstallPolicy::Manual), ExitAction::Nothing);
+        assert_eq!(swaps(GoBack, auto), ExitAction::GoBack);
+        assert_eq!(swaps(SessionEnd, auto), ExitAction::Nothing, "never during shutdown");
+        assert_eq!(swaps(MoveApp, auto), ExitAction::Nothing);
+        let this_system = opennote_updater::platform::PlatformKey::current().is_none_or(|p| p.replaces_itself());
+        assert_eq!(this_system, !cfg!(target_os = "macos"), "only a Mac keeps its bundle");
+        for reason in [RestartToUpdate, Close, GoBack, MoveApp, SessionEnd] {
+            assert_eq!(exit_action(reason, auto), exit_action_on(reason, auto, this_system));
+        }
     }
 
     #[test]
