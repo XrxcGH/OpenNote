@@ -351,10 +351,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        include:
+          - { shard: 0, from: 0, to: 50000 }
+          - { shard: 1, from: 50000, to: 100000 }
+          - { shard: 2, from: 100000, to: 150000 }
+          - { shard: 3, from: 150000, to: 200000 }
     env:
-      PALM_SWEEP_FROM: ${{ matrix.shard * 50000 }}
-      PALM_SWEEP_TO: ${{ (matrix.shard + 1) * 50000 }}
+      PALM_SWEEP_FROM: ${{ matrix.from }}
+      PALM_SWEEP_TO: ${{ matrix.to }}
       PALM_SWEEP_OUT: palm-sweep-${{ matrix.shard }}.json
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -366,7 +370,7 @@ jobs:
           cache: npm
       - name: Install tools
         run: npm ci
-      - name: Sweep cases ${{ matrix.shard * 50000 }} to ${{ (matrix.shard + 1) * 50000 }}
+      - name: Sweep cases ${{ matrix.from }} to ${{ matrix.to }}
         run: |
           npx vitest run --config app/vitest.config.ts --project unit \
             app/src/features/ink/input/testing/oracleSweep.test.ts -t "full sweep"
