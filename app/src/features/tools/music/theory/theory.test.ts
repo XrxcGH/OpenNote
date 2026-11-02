@@ -25,6 +25,11 @@ describe('intervals', () => {
     expect(rowOf(result, 'intervalOut')).toBe(name);
     expect(rowOf(result, 'semitoneCount')).toBe(semis);
   });
+  it('fills every value the quality step names, so its sentence never reads "undefined semitones"', () => {
+    const result = run('interval', { note1: 'C4', note2: 'G4' });
+    const quality = result.ok ? result.steps.find((step) => step.key === 'thIntervalQuality') : undefined;
+    expect(quality?.vars).toEqual({ semis: '7', name: 'perfect fifth' });
+  });
   it('inverts a fifth to a fourth and reduces a tenth to a third', () => {
     expect(rowOf(run('interval', { note1: 'C4', note2: 'G4' }), 'inversionOut')).toBe('perfect fourth');
     expect(rowOf(run('interval', { note1: 'C4', note2: 'E5' }), 'simpleOut')).toBe('major third');

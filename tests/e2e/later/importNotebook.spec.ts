@@ -2,11 +2,11 @@
 // notebook that shows in the tree with its pages. Nothing is added before the person presses Import.
 
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
 import { answerPickers, dialogWith, runCommand } from './steps.ts';
 
@@ -26,7 +26,7 @@ describe('importing a notebook into the real app', { skip: skipReason() }, () =>
 
   after(async () => {
     await session?.close();
-    rmSync(root, { recursive: true, force: true });
+    removeFolder(root);
   });
 
   it('shows what will come over, then adds the notebook with its pages', async () => {

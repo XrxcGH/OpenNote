@@ -28,12 +28,43 @@ pub struct Env {
     pub secrets: Arc<dyn Secrets>,
 }
 
-/// The app's local data folder: `%LOCALAPPDATA%\OpenNote`, or `local` inside `OPENNOTE_PROFILE_DIR`.
+/// The app's local data folder: `%LOCALAPPDATA%\OpenNote` on Windows, `$XDG_DATA_HOME/OpenNote` on Linux, and
+/// `~/Library/Application Support/OpenNote/Device` on a Mac, as the app chooses it (app/src-tauri/src/paths.rs).
+/// `OPENNOTE_PROFILE_DIR` names the `local` folder inside a test profile on every system.
 pub fn local_folder() -> Option<PathBuf> {
     if let Some(profile) = std::env::var_os("OPENNOTE_PROFILE_DIR").filter(|dir| !dir.is_empty()) {
         return Some(PathBuf::from(profile).join("local"));
     }
-    std::env::var_os("LOCALAPPDATA").map(|dir| PathBuf::from(dir).join("OpenNote"))
+    #[cfg(windows)]
+    {
+        std::env::var_os("LOCALAPPDATA").map(|dir| PathBuf::from(dir).join("OpenNote"))
+    }
+    #[cfg(not(windows))]
+    {
+        let home = std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .filter(|home| home.is_absolute())?;
+        Some(unix_local_folder(cfg!(target_os = "macos"), &home, |name| {
+            std::env::var_os(name)
+        }))
+    }
+}
+
+/// This computer's folder on macOS or Linux, by the same rule as the app's `unix_folders`: a Mac keeps it in
+/// `Device` under Application Support; Linux uses `$XDG_DATA_HOME` when it is an absolute path, else `~/.local/share`.
+pub fn unix_local_folder(macos: bool, home: &Path, env: impl Fn(&str) -> Option<std::ffi::OsString>) -> PathBuf {
+    if macos {
+        return home
+            .join("Library")
+            .join("Application Support")
+            .join("OpenNote")
+            .join("Device");
+    }
+    let data = env("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .filter(|dir| dir.is_absolute() || dir.starts_with("/"))
+        .unwrap_or_else(|| home.join(".local/share"));
+    data.join("OpenNote")
 }
 
 impl Env {
@@ -253,6 +284,24 @@ pub fn id_ok(id: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finds_the_folder_the_app_writes_on_a_mac_and_on_linux() {
+        let home = Path::new("/home/ada");
+        let none = |_: &str| None;
+        assert_eq!(
+            unix_local_folder(true, Path::new("/Users/ada"), none),
+            Path::new("/Users/ada/Library/Application Support/OpenNote/Device")
+        );
+        assert_eq!(unix_local_folder(false, home, none), home.join(".local/share/OpenNote"));
+        let xdg = |name: &str| (name == "XDG_DATA_HOME").then(|| "/data".into());
+        assert_eq!(unix_local_folder(false, home, xdg), Path::new("/data/OpenNote"));
+        let relative = |name: &str| (name == "XDG_DATA_HOME").then(|| "data".into());
+        assert_eq!(
+            unix_local_folder(false, home, relative),
+            home.join(".local/share/OpenNote")
+        );
+    }
 
     #[test]
     fn takes_only_pipe_names_and_ids_the_app_makes() {

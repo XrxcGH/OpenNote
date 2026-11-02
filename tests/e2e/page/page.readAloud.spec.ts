@@ -3,9 +3,8 @@
 // without a local voice skip.
 
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 import { flaggedProfile, openMitosisText } from './helpers.ts';
 
@@ -18,7 +17,7 @@ describe('read aloud', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('reads with a local voice and highlights each word', async (context) => {

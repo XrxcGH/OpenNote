@@ -10,6 +10,7 @@ export const updates = {
   details: {
     readyTitle: 'Version {version} is ready',
     readyBody: 'Downloaded and checked. Restarting takes about 2 seconds.',
+    readyBodyMac: 'Downloaded and checked. Open the installer, then drag OpenNote to Applications.',
     availableTitle: 'Version {version} is available',
     availableBody: "It's a {size} download.",
     waitingForUnmetered: "It downloads when you're on a network without a data limit.",
@@ -26,6 +27,7 @@ export const updates = {
   },
   actions: {
     restart: 'Restart to update',
+    openInstaller: 'Open the installer',
     whatsNew: "What's new",
     later: 'Later',
     download: 'Download',
@@ -40,6 +42,7 @@ export const updates = {
   announce: {
     readyAuto: 'Update ready. It installs when you close OpenNote, or choose Restart to update.',
     readyAsk: 'Update ready. Restart OpenNote to install it.',
+    readyMac: 'Update ready. Open the installer, then drag OpenNote to Applications.',
   },
   status: {
     devBuild: 'Updates are off in development builds.',
@@ -50,9 +53,6 @@ export const updates = {
       "OpenNote can't update itself in this folder. " +
       'Add it to the Start menu, which moves it to your user folder, or download the new version.',
     manualMode: 'OpenNote checks for updates only when you ask.',
-    byHand:
-      "On a Mac, OpenNote doesn't install updates itself yet. " +
-      'Download OpenNote_macOS.dmg from the download page, then drag OpenNote to Applications.',
     idle: 'OpenNote checks for updates in the background.',
     checking: 'Checking for updates…',
     upToDate: 'OpenNote is up to date.',
@@ -111,6 +111,7 @@ export const updates = {
   commands: {
     check: 'Check for updates',
     restart: 'Restart to update',
+    openInstaller: 'Open the installer',
     goBack: 'Go back to the previous version',
     download: 'Download the update',
     skip: 'Skip this update',

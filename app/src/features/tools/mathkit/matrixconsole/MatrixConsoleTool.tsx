@@ -98,7 +98,7 @@ function Workspace({ rows }: { rows: ReturnType<Session['workspace']> }) {
       {rows.length === 0 ? (
         <Note>{t('kitMath.console.workspaceEmpty')}</Note>
       ) : (
-        <div className={styles.scroll}>
+        <div className={styles.scroll} tabIndex={0} role="region" aria-label={t('kitMath.console.workspaceCaption')}>
           <table className={styles.table}>
             <caption>{t('kitMath.console.workspaceCaption')}</caption>
             <thead>

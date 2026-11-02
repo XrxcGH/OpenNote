@@ -39,7 +39,7 @@ export async function openMitosisText(browser: Browser): Promise<void> {
       { timeout: 20_000 },
     );
   }
-  const box = browser.$('[role="textbox"][aria-label="Text"]');
+  const box = browser.$('[role="textbox"][aria-label="Page text"]');
   await box.waitForExist({ timeout: 20_000 });
   await box.click();
   await browser.keys(['Control', 'End']);

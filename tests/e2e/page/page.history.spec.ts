@@ -2,9 +2,8 @@
 // version, compares it with <ins> and <del>, and restores the old paragraph.
 
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 import { flaggedProfile, openMitosisText } from './helpers.ts';
 
@@ -23,7 +22,7 @@ describe('page history', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('compares with an earlier version and restores a paragraph', async () => {
@@ -43,7 +42,7 @@ describe('page history', { skip: skipReason() }, () => {
     await versions[0].click();
     await panel.$('del').waitForExist({ timeout: 5_000 });
     await panel.$('button=Restore this paragraph').click();
-    const box = browser.$('[role="textbox"][aria-label="Text"]');
+    const box = browser.$('[role="textbox"][aria-label="Page text"]');
     await browser.waitUntil(async () => (await box.getText()).includes('An earlier line.'), { timeout: 5_000 });
   });
 });

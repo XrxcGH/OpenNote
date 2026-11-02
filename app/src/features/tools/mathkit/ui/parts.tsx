@@ -1,6 +1,7 @@
 // Pieces every tool of the kit shares: fields that keep their text between visits, an equation drawn by KaTeX, the
 // worked steps as a numbered list, a small line plot, and the buttons that put the work into the page.
 import '../text';
+import { ScrollMath } from '../../ui/ScrollMath';
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
@@ -70,7 +71,7 @@ export function MathView({ latex, display = true }: { latex: string; display?: b
   const render = useRenderer();
   const drawn = useMemo(() => (render ? render(latex, { displayMode: display }) : null), [render, latex, display]);
   if (drawn && drawn.ok) {
-    return <div className={styles.math} dangerouslySetInnerHTML={{ __html: drawn.html }} />;
+    return <ScrollMath as="div" className={styles.math} html={drawn.html} />;
   }
   return <code className={styles.mono}>{latex}</code>;
 }

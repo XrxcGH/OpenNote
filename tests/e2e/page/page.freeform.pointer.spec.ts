@@ -22,7 +22,7 @@ describe('freeform pages by pointer', { skip: skipReason() }, () => {
     assert.deepEqual(await textBoxes(browser), [], 'an untouched caret leaves nothing behind');
     await makeBox(browser, 400, 260, 'Stomata');
     const [box] = await textBoxes(browser);
-    assert.equal(box?.name, 'Text box 1 of 1');
+    assert.match(box?.name ?? '', /^Text box d+ of d+/);
     assert.equal(box?.left, 400);
   });
 

@@ -18,6 +18,8 @@ export interface ToolWindowProps {
   width: number;
   /** The space between this panel's right edge and the window's: the panels docked to its right, or for a floating one, its place. */
   right: number;
+  /** For a floating window that had to overlap others: how far it starts below the top, so its title stays clear. */
+  down?: number;
   /** True when the window is too narrow to keep a usable page beside the panels, so they overlay it. */
   overlay: boolean;
   /** Its place among the tool windows that overlap: higher is in front. */
@@ -39,14 +41,14 @@ export const MIN_PANEL = 280;
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
-function frameStyle(width: number, right: number, overlay: boolean, stack: number): CSSProperties {
+function frameStyle(width: number, right: number, overlay: boolean, stack: number, down: number): CSSProperties {
   // Docked, the panel is a column from the command bar's line to the status line. Floating, it is as tall as its
   // content and no taller than the room between them, so a short tool leaves no empty box and a long one scrolls.
   return overlay
     ? {
         insetInlineEnd: right,
-        insetBlockStart: 'var(--panel-top)',
-        maxBlockSize: 'calc(100dvh - var(--panel-top) - var(--panel-bottom))',
+        insetBlockStart: down ? `calc(var(--panel-top) + ${down}px)` : 'var(--panel-top)',
+        maxBlockSize: `calc(100dvh - var(--panel-top) - var(--panel-bottom) - ${down}px)`,
         inlineSize: width,
         zIndex: stack,
       }
@@ -82,6 +84,7 @@ export function ToolWindow({
   tool,
   width,
   right,
+  down = 0,
   overlay,
   stack,
   onRaise,
@@ -122,7 +125,7 @@ export function ToolWindow({
       role="dialog"
       aria-modal="false"
       aria-label={title}
-      style={frameStyle(width, right, overlay, stack)}
+      style={frameStyle(width, right, overlay, stack, down)}
       onPointerDownCapture={onRaise}
       onFocusCapture={onRaise}
       onKeyDown={(event) => {

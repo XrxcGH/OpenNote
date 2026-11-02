@@ -28,10 +28,24 @@ use crate::testing::MemFs;
 /// The most steps a script runs, so a long input can't take long.
 const MAX_STEPS: usize = 48;
 
+/// The seed of the IDs a script makes, so a crash file makes the same notebook, and fails, on every run.
+pub const SEED: u64 = 1;
+
 /// An arbitrary folder tree in `testing::MemFs`, opened and scanned. The scan must end, show every page at
 /// most once, and change nothing when it runs twice. (Checking the result with WP4's `verify_notebook` needs
 /// the real page store, so the scan's own rules stand in for it here.)
 pub fn notebook_tree(data: &[u8]) {
+    notebook_tree_seeded(data, SEED);
+}
+
+/// [`notebook_tree`] with the IDs from another seed.
+pub fn notebook_tree_seeded(data: &[u8], seed: u64) {
+    crate::id::seed_ids(Some(seed));
+    run_script(data);
+    crate::id::seed_ids(None);
+}
+
+fn run_script(data: &[u8]) {
     let kit = Kit::new();
     let Ok(mut store) = kit.open() else { return };
     let mut input = Input::new(data);
@@ -52,7 +66,31 @@ pub fn notebook_tree(data: &[u8]) {
     let second = fresh.scan();
     let changed = second.as_ref().is_ok_and(|report| report.changed_files());
     assert!(!changed, "a second scan changed files: {second:?}");
-    assert!(snapshot(&kit.fs.inner) == before, "a second scan changed the notebook");
+    let after = snapshot(&kit.fs.inner);
+    assert!(
+        after == before,
+        "a second scan changed the notebook: {}",
+        changes(&before, &after)
+    );
+}
+
+/// The files that differ between two snapshots, as `+ added`, `- removed`, and `~ changed` lines.
+fn changes(before: &BTreeMap<PathBuf, Vec<u8>>, after: &BTreeMap<PathBuf, Vec<u8>>) -> String {
+    let mut lines = Vec::new();
+    for (path, bytes) in after {
+        match before.get(path) {
+            None => lines.push(format!("+ {}", path.display())),
+            Some(old) if old != bytes => lines.push(format!("~ {}", path.display())),
+            Some(_) => {}
+        }
+    }
+    for path in before.keys().filter(|p| !after.contains_key(*p)) {
+        lines.push(format!("- {}", path.display()));
+    }
+    lines.join(
+        "
+",
+    )
 }
 
 fn snapshot(fs: &MemFs) -> BTreeMap<PathBuf, Vec<u8>> {
@@ -243,6 +281,26 @@ mod tests {
             }
             notebook_tree(&bytes);
         }
+    }
+
+    /// The nightly crash of a page restored from one Trash item while a second item also holds it. Whether it
+    /// failed hung on the random IDs, so it runs over many seeds.
+    #[test]
+    fn the_restore_and_second_deletion_crash_passes_with_every_seed() {
+        let crash =
+            include_bytes!("../../fuzz/regressions/notebook_tree/crash-e691c790279917580bc59fa65208f421aefcb917");
+        let mut failed = Vec::new();
+        for seed in 0..64 {
+            let hook = std::panic::take_hook();
+            std::panic::set_hook(Box::new(|_| {}));
+            let result = std::panic::catch_unwind(|| notebook_tree_seeded(crash, seed));
+            std::panic::set_hook(hook);
+            crate::id::seed_ids(None);
+            if result.is_err() {
+                failed.push(seed);
+            }
+        }
+        assert!(failed.is_empty(), "failed with seeds {failed:?}");
     }
 
     #[test]

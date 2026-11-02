@@ -7,7 +7,7 @@ Sync keeps your notebooks the same on all your devices. It is off until you set 
 1. Open Settings, then Sync, and choose **Set up sync**.
 2. Choose where sync keeps its data:
    - **A folder**: one that OneDrive, Dropbox, iCloud Drive, or Syncthing already syncs, a network share, or a USB drive. Use an empty folder just for sync. The service that syncs the folder only ever sees encrypted files.
-   - **A WebDAV server**, such as Nextcloud, ownCloud, or a NAS. The address must start with `https://`. The password is kept in Windows Credential Manager.
+   - **A WebDAV server**, such as Nextcloud, ownCloud, or a NAS. The address must start with `https://`. The password is kept in the system's credential store: Windows Credential Manager, the Keychain on a Mac, or the system keyring (GNOME Keyring or KWallet) on Linux.
 3. Choose a passphrase of at least 10 characters, and type it twice. A few unrelated words are easy to remember and hard to guess.
 4. Save the **recovery key**. It is shown once. If you forget your passphrase, it is the only way to unlock sync, and nobody else can recover it. Write it down or print it, and keep it away from this device. To finish, type two of its groups back.
 
@@ -26,7 +26,7 @@ Both devices show the same **sync code**, such as `K7Q2-M9XA`, when they joined 
 - Every page, picture, recording, and file is encrypted with XChaCha20-Poly1305 before it is sent.
 - File names, notebook and page titles, and how your notebooks are organized are encrypted too. The folder or server sees only blobs with random names, their rough sizes, how many there are, and when they change. It can tell how many devices sync, but not which.
 - Your passphrase never leaves your device. It unlocks the key through Argon2id, which makes guessing it slow.
-- Each device keeps its own key in Windows Credential Manager, so background sync never asks for the passphrase. OpenNote has no copy of any key. Sync can't be set up on macOS or Linux yet, because those systems have no place for the key in OpenNote so far.
+- Each device keeps its own key in the system's credential store (Windows Credential Manager, the Keychain on a Mac, or the system keyring on Linux), so background sync never asks for the passphrase. OpenNote has no copy of any key. On Linux, sync is set up only while GNOME Keyring or KWallet is running; start one, then try again.
 - Password-protected sections stay sealed with their own password. Sync copies them as they are, and never opens them.
 - Nothing is sent anywhere else, and sync sends no usage data.
 

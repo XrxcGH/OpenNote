@@ -121,6 +121,27 @@ fn every_entry_returns_on_its_seeds_cut_short_or_with_flipped_bytes() {
     }
 }
 
+/// Every crash the nightly fuzzer found and that was fixed, kept in `fuzz/regressions/<entry>/`. A crash fixed
+/// once stays fixed.
+#[test]
+fn past_crashes_never_panic() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("fuzz")
+        .join("regressions");
+    let mut replayed = 0;
+    for (name, entry) in ENTRIES {
+        let Ok(files) = fs::read_dir(root.join(name)) else {
+            continue;
+        };
+        for file in files {
+            let path = file.expect("lists a regression").path();
+            entry(&fs::read(&path).expect("reads a regression"));
+            replayed += 1;
+        }
+    }
+    assert!(replayed > 0, "the regressions folder holds the fixed crashes");
+}
+
 proptest! {
     #![proptest_config(ProptestConfig { cases: 16, failure_persistence: None, ..ProptestConfig::default() })]
 

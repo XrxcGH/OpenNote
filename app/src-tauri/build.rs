@@ -51,12 +51,21 @@ fn main() {
 /// `OUT_DIR/opennote-cli.bin`, which `src/install/cli.rs` includes, so the one exe can install the tool. Without the
 /// variable the file is empty, and the app says the tool isn't installed.
 fn embed_cli(out_dir: &Path) {
+    // A universal Mac app is built once for each processor, so each gets the tool built for it:
+    // OPENNOTE_CLI_EXE_AARCH64 or OPENNOTE_CLI_EXE_X86_64 first, then OPENNOTE_CLI_EXE.
+    let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default().to_uppercase();
+    let by_arch = format!("OPENNOTE_CLI_EXE_{arch}");
+    println!("cargo:rerun-if-env-changed={by_arch}");
     println!("cargo:rerun-if-env-changed=OPENNOTE_CLI_EXE");
-    let bytes = match env::var_os("OPENNOTE_CLI_EXE").filter(|path| !path.is_empty()) {
+    let chosen = env::var_os(&by_arch)
+        .filter(|path| !path.is_empty())
+        .or_else(|| env::var_os("OPENNOTE_CLI_EXE").filter(|path| !path.is_empty()));
+    let bytes = match chosen {
         Some(path) => {
             let path = PathBuf::from(path);
             println!("cargo:rerun-if-changed={}", path.display());
-            fs::read(&path).unwrap_or_else(|error| panic!("OPENNOTE_CLI_EXE {} can't be read: {error}", path.display()))
+            fs::read(&path)
+                .unwrap_or_else(|error| panic!("The opennote tool {} can't be read: {error}", path.display()))
         }
         None => Vec::new(),
     };

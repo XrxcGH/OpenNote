@@ -259,7 +259,7 @@ fn errors_reach_the_interface_as_a_code_and_a_detail_never_as_english() {
 #[test]
 fn a_system_that_cannot_keep_the_device_key_refuses_to_set_up_or_join() {
     let dir = tempfile::tempdir().expect("temp");
-    let service = SyncService::build(dir.path().join("sync"), Arc::new(MemoryStore::default()), false);
+    let service = SyncService::build(dir.path().join("sync"), Arc::new(MemoryStore::default()), Some(false));
     let backend = json!({ "kind": "folder", "path": dir.path().join("storage").to_string_lossy() });
     let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Mac" });
     assert_eq!(code(&service, None, "setUp", setup.clone()), codes::INVALID);
@@ -269,4 +269,85 @@ fn a_system_that_cannot_keep_the_device_key_refuses_to_set_up_or_join() {
         "nothing was written to storage"
     );
     assert_eq!(ok(&service, None, "status", Value::Null)["configured"], json!(false));
+}
+
+/// A system store for the tests: memory that says it lasts, and can be told to refuse writes or to be missing.
+#[derive(Default)]
+struct Kept {
+    inner: MemoryStore,
+    refuses: bool,
+    missing: std::sync::atomic::AtomicBool,
+}
+
+impl SecretStore for Kept {
+    fn put(&self, target: &str, secret: &Secret) -> Result<(), crate::connectors::StoreError> {
+        if self.refuses {
+            return Err(crate::connectors::StoreError);
+        }
+        self.inner.put(target, secret)
+    }
+    fn get(&self, target: &str) -> Result<Option<Secret>, crate::connectors::StoreError> {
+        self.inner.get(target)
+    }
+    fn delete(&self, target: &str) -> Result<(), crate::connectors::StoreError> {
+        self.inner.delete(target)
+    }
+    fn keeps_secrets(&self) -> bool {
+        !self.missing.load(std::sync::atomic::Ordering::SeqCst)
+    }
+    fn place(&self) -> &'static str {
+        "The Keychain"
+    }
+}
+
+#[test]
+fn whether_sync_can_be_set_up_comes_from_the_store_itself() {
+    let dir = tempfile::tempdir().expect("temp");
+    let backend = json!({ "kind": "folder", "path": dir.path().join("storage").to_string_lossy() });
+    let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Mac" });
+
+    let memory = SyncService::from_store(dir.path().join("memory"), Arc::new(MemoryStore::default()));
+    assert_eq!(code(&memory, None, "setUp", setup.clone()), codes::INVALID);
+
+    let refusing = SyncService::from_store(
+        dir.path().join("refusing"),
+        Arc::new(Kept {
+            refuses: true,
+            ..Kept::default()
+        }),
+    );
+    let mut args = setup.clone();
+    let error = refusing.call(None, "setUp", &mut args).unwrap_err();
+    assert_eq!(
+        error.message, "The Keychain didn't keep this device's key, so sync wasn't set up.",
+        "the message names the store this system has"
+    );
+
+    // Its own storage: the refused setup above left a vault behind in the first.
+    let backend = json!({ "kind": "folder", "path": dir.path().join("storage-2").to_string_lossy() });
+    let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Mac" });
+    let keychain = SyncService::from_store(dir.path().join("keychain"), Arc::new(Kept::default()));
+    let made = ok(&keychain, None, "setUp", setup);
+    assert_eq!(
+        made["unfinished"], true,
+        "a store that keeps secrets lets sync be set up"
+    );
+}
+
+#[test]
+fn starting_the_keyring_lets_sync_be_set_up_without_a_restart() {
+    let dir = tempfile::tempdir().expect("temp");
+    let backend = json!({ "kind": "folder", "path": dir.path().join("storage").to_string_lossy() });
+    let setup = json!({ "backend": backend, "passphrase": "correct horse battery", "deviceName": "Linux" });
+    let store = Arc::new(Kept::default());
+    store.missing.store(true, std::sync::atomic::Ordering::SeqCst);
+    let service = SyncService::from_store(dir.path().join("sync"), store.clone());
+    assert_eq!(
+        code(&service, None, "setUp", setup.clone()),
+        codes::INVALID,
+        "no keyring yet"
+    );
+    store.missing.store(false, std::sync::atomic::Ordering::SeqCst);
+    let made = ok(&service, None, "setUp", setup);
+    assert_eq!(made["unfinished"], true, "the keyring started since is used");
 }

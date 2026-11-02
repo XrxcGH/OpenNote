@@ -14,6 +14,7 @@ pub mod audio_more;
 pub mod boot;
 #[cfg(test)]
 mod build_rules;
+pub mod child_process;
 pub mod clipboard;
 pub mod command_list;
 pub mod connectors;
@@ -44,6 +45,7 @@ pub mod paths;
 pub mod perf;
 pub mod platform_flags;
 pub mod print_job;
+pub mod print_native;
 pub mod settings;
 pub mod share;
 pub mod shell;

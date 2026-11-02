@@ -146,7 +146,7 @@ describe('errors', () => {
     await expect(platform.install.status()).rejects.toMatchObject({ code: 'notImplemented' });
   });
 
-  it('sends the Phase 4 clients to their commands, and has no speech client until the fallback is built', async () => {
+  it('sends the Phase 4 clients to their commands, and has no speech client on Windows', async () => {
     answers['spell_suggest'] = ['the'];
     await expect(platform.spelling.suggest('teh', ['en-US'])).resolves.toEqual(['the']);
     expect(last()).toEqual({ command: 'spell_suggest', args: { word: 'teh', languages: ['en-US'] } });
@@ -158,6 +158,15 @@ describe('errors', () => {
     });
     expect(last()).toEqual({ command: 'image_import_url', args: { page: 'p1', url: 'https://example.com/a.png' } });
     expect(platform.speech).toBeNull();
+  });
+
+  it('speaks through the system program on macOS and Linux', async () => {
+    for (const system of ['macos', 'linux'] as const) {
+      const shell = createTauriPlatform({ ...defaultBootData(), system });
+      answers['speech_voices'] = [];
+      await expect(shell.speech?.voices()).resolves.toEqual([]);
+      expect(last()).toEqual({ command: 'speech_voices', args: {} });
+    }
   });
 
   it('opens a page through the core and sends edits with growing client sequence numbers', async () => {

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { announce } from '../../../../ui';
 import { VisuallyHidden } from '../../../../ui/VisuallyHidden';
 import type { KitResultRow, KitStep } from '../types';
+import { ScrollMath } from '../../ui/ScrollMath';
 import { say, stepWords, stepsText } from './words';
 import styles from './kit.module.css';
 
@@ -74,7 +75,7 @@ export function MathLine({ latex, display = false }: { latex: string; display?: 
     };
   }, [latex, display]);
   if (html === null) return <code className={styles.math}>{latex}</code>;
-  return <span className={styles.math} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <ScrollMath className={styles.math} html={html} />;
 }
 
 export function StepsView({ steps, title }: { steps: readonly KitStep[]; title?: string }) {

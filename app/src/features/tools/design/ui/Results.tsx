@@ -1,6 +1,7 @@
 // A tool's outcome in the window: the results table, any further tables, the picture, the assumptions, and the
 // worked steps with typeset math. Everything a picture shows is also in the tables and steps, as text.
 import '../text';
+import { ScrollMath } from '../../ui/ScrollMath';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { useMemo } from 'react';
@@ -27,7 +28,7 @@ export function Equation({ latex }: { latex: string }) {
     () => katex.renderToString(latex, { throwOnError: false, displayMode: true, output: 'htmlAndMathml' }),
     [latex],
   );
-  return <div className={styles.math} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <ScrollMath as="div" className={styles.math} html={html} />;
 }
 
 export function Results(props: { tool: string; outcome: Outcome; system: System; say: Say; units: boolean }) {

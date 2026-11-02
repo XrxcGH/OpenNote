@@ -32,10 +32,13 @@ test.describe('on a Mac', () => {
     await expect(facts.getByText('macOS', { exact: true })).toBeVisible();
     await expect(facts.getByText('WebKit (WKWebView)')).toBeVisible();
     const limits = page.getByRole('region', { name: 'What works differently on macOS' });
-    await expect(limits.getByRole('listitem')).toHaveCount(11);
-    await expect(limits.getByText(/Saving a page as PDF and printing aren't here yet/)).toBeVisible();
-    await expect(limits.getByText(/Sync can't be set up here yet/)).toBeVisible();
-    await expect(limits.getByText(/Download the new dmg/)).toBeVisible();
+    await expect(limits.getByRole('listitem')).toHaveCount(4);
+    // PDF, printing, read aloud, spell check, the command line, and Mac updates all work on a Mac now.
+    await expect(limits.getByText(/Saving a page as PDF/)).toHaveCount(0);
+    await expect(limits.getByText(/espeak-ng/)).toHaveCount(0);
+    await expect(limits.getByText(/Download the new dmg/)).toHaveCount(0);
+    // The Keychain holds sync keys, and Vision reads text in pictures and handwriting, so none of them is listed.
+    await expect(limits.getByText(/sync|Tesseract|handwriting/i)).toHaveCount(0);
   });
 
   test('keeps the native title bar, with no caption buttons of its own', async ({ page }) => {
@@ -63,6 +66,10 @@ test.describe('on Linux', () => {
     const limits = page.getByRole('region', { name: 'What works differently on Linux' });
     await expect(limits).toBeVisible();
     await expect(limits.getByText(/Pen pressure depends on the desktop/)).toBeVisible();
+    await expect(limits.getByText(/espeak-ng for voices and hunspell for spelling/)).toBeVisible();
+    await expect(limits.getByText(/kept in GNOME Keyring or KWallet/)).toBeVisible();
+    await expect(limits.getByText(/Text in pictures is read with Tesseract/)).toBeVisible();
+    await expect(limits.getByText(/Tesseract turns handwriting into text/)).toBeVisible();
     await expect(limits.getByText(/Download the new dmg/)).toHaveCount(0);
   });
 });

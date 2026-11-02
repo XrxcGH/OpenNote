@@ -17,7 +17,7 @@ When a card says Connected, it shows the account name. Choose Disconnect to remo
 
 ## Where your tokens live
 
-OpenNote keeps each token in Windows Credential Manager. It never writes one to a file, the log, or the feedback file. Work offline blocks connecting.
+OpenNote keeps each token in the system's credential store: Windows Credential Manager, the Keychain on a Mac, or the system keyring (GNOME Keyring or KWallet) on Linux. It never writes one to a file, the log, or the feedback file. Work offline blocks connecting.
 
 ## Why a card says Needs setup
 

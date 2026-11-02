@@ -83,15 +83,44 @@ export function minimalReplacement(doc: PMNode, next: PMNode): { from: number; t
 
 const bytes = (text: string) => new TextEncoder().encode(text).length;
 
+type TextState = { doc: PMNode; markdown: string };
+
+/** The change from the text shown to `markdown`, worked out at once, without the worker. */
+function changeNow(state: TextState, markdown: string, cache: MarkdownCache): Exclude<Reparse, 'full'> | null {
+  const ranged = reparseRange(state.doc, state.markdown, markdown, cache);
+  return ranged !== 'full' ? ranged : minimalReplacement(state.doc, parseTextBlock(markdown));
+}
+
 async function textChange(
-  state: { doc: PMNode; markdown: string },
+  state: TextState,
   markdown: string,
   cache: MarkdownCache,
-): Promise<Reparse | { full: PMNode } | null> {
+): Promise<Exclude<Reparse, 'full'> | null> {
+  if (bytes(markdown) <= WORKER_PARSE_BYTES) return changeNow(state, markdown, cache);
   const ranged = reparseRange(state.doc, state.markdown, markdown, cache);
   if (ranged !== 'full') return ranged;
-  const parsed = bytes(markdown) > WORKER_PARSE_BYTES ? await parseInWorker(markdown) : parseTextBlock(markdown);
-  return minimalReplacement(state.doc, parsed);
+  return minimalReplacement(state.doc, await parseInWorker(markdown));
+}
+
+/** How many times a big text parses in the worker before the frame parses it at once. */
+const WORKER_TRIES = 2;
+
+/**
+ * Replaces a text block's text with the frame's. Typing while a big text parses in the worker changes the text the
+ * editor shows, and a change worked out before the wait would land at old positions. So the change is worked out
+ * again against the text shown after the wait, and the last try parses at once, with nothing to wait for.
+ */
+async function replaceShownText(ctx: FrameContext, block: BlockId, markdown: string, cache: MarkdownCache) {
+  for (let tries = 0; ; tries++) {
+    const text = ctx.textState(block);
+    if (!text || text.markdown === markdown) return;
+    const waits = tries < WORKER_TRIES;
+    const change = waits ? await textChange(text, markdown, cache) : changeNow(text, markdown, cache);
+    if (waits && ctx.textState(block)?.doc !== text.doc) continue;
+    // A text the editor already shows needs only the sync told; replaceText does that too.
+    ctx.replaceText(block, change ?? { from: 0, to: 0, content: text.doc.content.cut(0, 0) }, markdown);
+    return;
+  }
 }
 
 export async function applyFrame(
@@ -104,13 +133,7 @@ export async function applyFrame(
   const changed: BlockId[] = [];
   for (const block of frame.blocks) {
     changed.push(block.id);
-    const text = block.type === 'text' ? ctx.textState(block.id) : null;
-    const markdown = markdownOf(block);
-    if (text && text.markdown !== markdown) {
-      const change = await textChange(text, markdown, cache);
-      // A text the editor already shows needs only the sync told; replaceText does that too.
-      ctx.replaceText(block.id, change ?? { from: 0, to: 0, content: text.doc.content.cut(0, 0) }, markdown);
-    }
+    if (block.type === 'text') await replaceShownText(ctx, block.id, markdownOf(block), cache);
     ctx.upsertBlock(block);
   }
   frame.removed.forEach((id) => ctx.removeBlock(id));

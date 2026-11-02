@@ -231,6 +231,9 @@ function build(): Record<string, () => PageFixture> {
           paper: { size: 'custom', orientation: 'portrait', width: 650, height: 901.37 },
         },
       ),
+    // A line of text and a picture with no description, for the accessibility checker's main path.
+    unlabeled: () =>
+      page('Unlabeled picture', [text(0, 'A picture follows.'), block('image', 1, { asset: null, alt: '' })]),
   };
 }
 
@@ -244,7 +247,8 @@ export type PageFixtureName =
   | 'freeform8'
   | 'budget500'
   | 'ruled'
-  | 'ruledSheets';
+  | 'ruledSheets'
+  | 'unlabeled';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

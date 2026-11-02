@@ -96,7 +96,7 @@ function FieldRow({ field, values, setValues, name }: FieldProps & { name: strin
 
 function Table({ header, rows }: { header?: readonly string[]; rows: readonly (readonly string[])[] }) {
   return (
-    <div className={styles.tableWrap}>
+    <div className={styles.tableWrap} role="region" tabIndex={0} aria-label={t('kitEarth.resultTable')}>
       <table className={styles.table}>
         {header ? (
           <thead>

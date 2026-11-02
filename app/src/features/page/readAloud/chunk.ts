@@ -11,7 +11,7 @@ import { announce } from '../../../ui';
 import { intelSpeechEngine } from '../../intel';
 import { shownPool } from '../pool/shown';
 import { shownViewport } from '../viewport/viewport';
-import { createWebSpeechEngine } from './engine';
+import { appSpeechEngine } from './appEngine';
 import type { SpeechEngine } from './engine';
 import { createReader } from './reader';
 import type { Reader } from './reader';
@@ -45,7 +45,7 @@ function ensureReader(): Reader | null {
   const device = intelSpeechEngine();
   if ((device !== null) !== onDevice) resetReadAloud();
   onDevice = device !== null;
-  engine ??= device ?? createWebSpeechEngine();
+  engine ??= device ?? appSpeechEngine();
   if (!engine) return null;
   reader ??= createReader(engine, {
     speakOptions: () => {
