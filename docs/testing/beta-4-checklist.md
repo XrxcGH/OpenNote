@@ -1,5 +1,7 @@
 # OpenNote beta 4 (0.1.0-beta.4): hand test checklist
 
+This list was written for beta 4 and has not been extended. It does not cover the school tool kits, the tutor, practice exams, sync, code cells, My handwriting, the macOS and Linux builds, or the local API. Beta 8 has no hand checklist for them yet.
+
 Agents only started this exe and opened each main entry point once. Everything below is untested by hand.
 This exe was built from commit `907d90f1` (the pushed branch head adds only these docs).
 Tick each step; when one fails, stop that section, report it (see "Reporting a failure"), and go on to the next section.
