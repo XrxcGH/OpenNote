@@ -44,7 +44,9 @@ export function barLayer(build: Build): Layer {
   const horizontal = build.horizontal;
   const [category, value, facet] = horizontal ? (['y', 'x', 'fy'] as const) : (['x', 'y', 'fx'] as const);
   const options: Record<string, unknown> = { [category]: 'x', [value]: 'y' };
-  const scales: Record<string, unknown> = {};
+  // The bars keep the table's row order. Without a domain, Plot sorts the categories, so Feb would come before Jan.
+  const order = [...new Set(rows.map((r) => r.x))];
+  const scales: Record<string, unknown> = { [category]: { domain: order } };
   if (single) {
     options.fill = build.styles[0].paint;
   } else {
@@ -55,7 +57,7 @@ export function barLayer(build: Build): Layer {
       options[facet] = 'x';
       options[category] = 'series';
       scales[category] = { axis: null, domain: names };
-      scales[facet] = { label: build.data.xName };
+      scales[facet] = { label: build.data.xName, domain: order };
     }
   }
   const zero: MarkSpec = { mark: horizontal ? 'ruleX' : 'ruleY', data: [0], options: {} };
