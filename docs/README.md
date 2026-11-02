@@ -78,7 +78,7 @@ The [help index](help/README.md) lists every page. Each one is short, and most h
 - [BRAND.md](BRAND.md): colors, type, layout, motion, voice, accessibility, and performance budgets.
 - [design/platform-api-THREATS.md](design/platform-api-THREATS.md): the threat model for the local API.
 - [design/SCREENS.md](design/SCREENS.md): 34 wireframes of every major screen, with sizes and keep-out zones. The drawings are in `design/images/`, and `design/generate.ts` makes them.
-- [screens/README.md](screens/README.md): 264 real screenshots of 132 screens, each in light and in dark, and what each one shows.
+- [screens/README.md](screens/README.md): 266 pictures of 133 screens, each in light and in dark, and what each one shows.
 - [FEATURE-LIST.md](FEATURE-LIST.md): every feature, command, tool window, and kit tab in 17 categories, one sentence each, with the pictures. `npm run docs:features` makes it from the app's registries and FEATURES.md.
 
 ## Quality and testing

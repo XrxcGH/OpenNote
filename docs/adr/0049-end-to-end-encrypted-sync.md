@@ -25,7 +25,7 @@ ADR 0008 also asks the sync design to make garbage collection safe across device
 
 ## Decision
 
-We will build a sync engine (`crates/sync`, the `opennote-sync` crate) that keeps an encrypted copy of the notes folder in "dumb" storage: storage that can only store, list, read, and delete named blobs. It ships with a **folder** backend (any synced or network folder, including the OneDrive, Dropbox, iCloud Drive, and Syncthing folders people already have, see [ADR 0036](0036-icloud-is-folder-based.md)) and a **WebDAV** backend. A backend for S3-compatible storage fits the same interface and is a follow-up. Sync is off until the person sets it up in Settings > Sync, and it is labeled Beta.
+We will build a sync engine (`crates/sync`, the `opennote-sync` crate) that keeps an encrypted copy of the notes folder in "dumb" storage: storage that can only store, list, read, and delete named blobs. It ships with a **folder** backend (any synced or network folder, including the OneDrive, Dropbox, iCloud Drive, and Syncthing folders people already have, see [ADR 0038](0038-icloud-is-folder-based.md)) and a **WebDAV** backend. A backend for S3-compatible storage fits the same interface and is a follow-up. Sync is off until the person sets it up in Settings > Sync, and it is labeled Beta.
 
 ### What is stored
 

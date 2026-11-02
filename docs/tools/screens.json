@@ -82,7 +82,7 @@
   {
     "name": "tab-insert",
     "category": "The workspace",
-    "caption": "The Insert tab: link, code block, callout, divider, template, file, equation, and table."
+    "caption": "The Insert tab, with buttons for the chemistry, structure, materials, and economics tools, then Link, Insert table, and More."
   },
   {
     "name": "tab-draw",
@@ -422,7 +422,7 @@
   {
     "name": "kit-circuits",
     "category": "Engineering kits",
-    "caption": "The circuit simulator of the Circuits and energy kit, with a small circuit and its results."
+    "caption": "The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots."
   },
   {
     "name": "kit-engineering-math",
@@ -527,7 +527,7 @@
   {
     "name": "kit-music-score",
     "category": "Humanities and arts kits",
-    "caption": "A score block on a page, with a short melody on the staff."
+    "caption": "A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar."
   },
   {
     "name": "protected-section",

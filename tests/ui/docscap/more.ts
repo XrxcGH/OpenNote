@@ -1,7 +1,7 @@
 // The pictures added for the feature list: study, the tutor, the daily calendar, diagrams, mind maps, ink layers,
 // groups, and links, PDF import, translate, protected sections, sync, and the tool kits.
 import { expect, type Page } from '@playwright/test';
-import { choose, draw, ellipse, line } from '../ink';
+import { choose, draw, ellipse } from '../ink';
 import { HANDOUT, lecturePdf } from './lecturePdf';
 
 export interface Scene {
@@ -230,7 +230,9 @@ export function scenes(h: Helpers): Scene[] {
         await openMembranes(p);
         const chooser = p.waitForEvent('filechooser');
         await h.command(p, 'Insert PDF', 'Insert PDF');
-        await (await chooser).setFiles({ name: 'lecture.pdf', mimeType: 'application/pdf', buffer: lecturePdf(HANDOUT) });
+        await (
+          await chooser
+        ).setFiles({ name: 'lecture.pdf', mimeType: 'application/pdf', buffer: lecturePdf(HANDOUT) });
         await expect(p.getByRole('group', { name: /Page 2 of 2 from lecture\.pdf/ })).toBeVisible({ timeout: 30_000 });
         // Let the page pictures finish drawing, then take the toast away so only the pages show.
         await p.waitForTimeout(3000);

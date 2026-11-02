@@ -292,9 +292,9 @@ function introLines(registry: Registry): string[] {
     '',
     `The app registers ${registry.commands.length} commands and ${registry.tools.length} tool windows. ${kits} of the ` +
       'windows are subject and engineering kits. The count includes the ink commands, which register when a page ' +
-      'first shows its ink, and the on-device intelligence commands, which register once start-up is done. The command palette (Ctrl+K) runs every command not marked as ' +
-      'left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults ' +
-      'of the standard shortcut set.',
+      'first shows its ink, and the on-device intelligence commands, which register once start-up is done. The ' +
+      'command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature ' +
+      'flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.',
     '',
     '## Contents',
     '',

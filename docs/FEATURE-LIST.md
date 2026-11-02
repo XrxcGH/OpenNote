@@ -331,6 +331,7 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 
 #### Ink
 
+- **Palm rejection.** While a pen is near the screen, a resting palm never draws.
 - **Insert space.** Drag a line across the page to push everything below it down, or drag up to close a gap.
 - **Ink that stays with its text.** Underlines, circles, and margin notes drawn on typed text are anchored to the words they touch.
 - **Zoom writing box.** A magnified strip docks at the bottom of the window.
@@ -589,6 +590,7 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 
 #### Document model and storage
 
+- **Automatic saving and crash recovery.** Every edit is written to a journal file as you make it, and the title bar says Saved only once the change is on disk.
 - **Scheduled backups.** Copies notebooks on a schedule, from hourly to weekly, to a folder the person picks, such as a USB drive or a second disk.
 - **Edits from other apps.** OpenNote watches the notes folder and reloads pages that other programs change, such as Git, Syncthing, or a script.
 - **Notes in OneDrive or Dropbox.** Setup and Settings notice when the notes folder is inside OneDrive, Dropbox, iCloud Drive, or Google Drive.
@@ -744,9 +746,9 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 
 ![The Home tab with the recording control and the formatting bar.](screens/tab-home-light.png)
 
-**tab-insert.** The Insert tab: link, code block, callout, divider, template, file, equation, and table. ([dark](screens/tab-insert-dark.png))
+**tab-insert.** The Insert tab, with buttons for the chemistry, structure, materials, and economics tools, then Link, Insert table, and More. ([dark](screens/tab-insert-dark.png))
 
-![The Insert tab: link, code block, callout, divider, template, file, equation, and table.](screens/tab-insert-light.png)
+![The Insert tab, with buttons for the chemistry, structure, materials, and economics tools, then Link, Insert table, and More.](screens/tab-insert-light.png)
 
 **tab-draw.** The Draw tab: the tools, the pen slots, color, and width (1600 by 900). ([dark](screens/tab-draw-dark.png))
 
@@ -880,6 +882,7 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 
 #### Audio recording
 
+- **Recording recovery.** If OpenNote or the PC stops while a recording runs, the audio already written is kept.
 - **Playback speed and skips.** Recordings play at 0.5x to 3x without changing pitch.
 - **Recording guard.** A live level meter shows while recording.
 - **Trim, split, and remove parts.** Trim silence at the start or end, split a long recording, or remove an "off the record" part from both the audio and its transcript.
@@ -1191,9 +1194,9 @@ Commands (10):
 
 Transients, a circuit simulator (DC, AC sweep, transient), op-amps and filters, semiconductors, instruments, AC power, power flow, data fitting, and energy.
 
-**kit-circuits.** The circuit simulator of the Circuits and energy kit, with a small circuit and its results. ([dark](screens/kit-circuits-dark.png))
+**kit-circuits.** The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots. ([dark](screens/kit-circuits-dark.png))
 
-![The circuit simulator of the Circuits and energy kit, with a small circuit and its results.](screens/kit-circuits-light.png)
+![The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots.](screens/kit-circuits-light.png)
 
 Open it with the command "Open the circuits and energy tools".
 
@@ -1553,7 +1556,7 @@ Commands (9):
 
 #### Economics and finance
 
-One window with 87 calculators in eight subjects (money over time, markets, firms, consumer choice, macroeconomics, measurement, accounting, investments).
+One window with 82 calculators in eight subjects (money over time, markets, firms, consumer choice, macroeconomics, measurement, accounting, investments).
 
 **kit-economics.** The Economics and finance kit on its markets and welfare tab, with supply and demand curves. ([dark](screens/kit-economics-dark.png))
 
@@ -1781,9 +1784,9 @@ Commands (11):
 
 ### Pictures
 
-**kit-music-score.** A score block on a page, with a short melody on the staff. ([dark](screens/kit-music-score-dark.png))
+**kit-music-score.** A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar. ([dark](screens/kit-music-score-dark.png))
 
-![A score block on a page, with a short melody on the staff.](screens/kit-music-score-light.png)
+![A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar.](screens/kit-music-score-light.png)
 
 ## Study tools
 

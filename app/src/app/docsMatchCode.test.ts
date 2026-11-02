@@ -96,6 +96,29 @@ describe('feature list', () => {
     for (const s of readScreens()) expect(page, s.name).toContain(`[${s.name}](${s.name}-light.png)`);
   });
 
+  it('shows each picture with the caption of screens.json on the Screens page', () => {
+    const page = read('screens', 'README.md');
+    const lines = page.split(/\r?\n/);
+    for (const s of readScreens())
+      expect(
+        lines.some((line) => line.startsWith(`- [${s.name}](`) && line.endsWith(`: ${s.caption}`)),
+        s.name,
+      ).toBe(true);
+  });
+
+  it('says in the docs index how many pictures and screens there are', () => {
+    const screens = readScreens();
+    const pngs = readdirSync(join(docs, 'screens')).filter(
+      (f) => f.endsWith('.png') && f.includes('-light.png'),
+    ).length;
+    const all = readdirSync(join(docs, 'screens')).filter((f) => f.endsWith('.png') && /-(light|dark)\.png$/.test(f));
+    expect(pngs).toBe(screens.length);
+    expect(all.length).toBe(screens.length * 2);
+    expect(read('README.md')).toContain(
+      `${all.length} pictures of ${screens.length} screens, each in light and in dark`,
+    );
+  });
+
   it('points at pictures that exist', () => {
     const pictures = [...list.matchAll(/\]\((screens\/[^)]+\.png)\)/g)].map((m) => m[1]!);
     expect(pictures.length).toBeGreaterThan(20);

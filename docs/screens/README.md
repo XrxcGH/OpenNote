@@ -56,7 +56,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [focus-mode](focus-mode-light.png) ([dark](focus-mode-dark.png)): Focus mode, with the panes and the command bar hidden around the page.
 - [quick-capture](quick-capture-light.png) ([dark](quick-capture-dark.png)): The Quick note window, which saves a note in Quick notes.
 - [tab-home](tab-home-light.png) ([dark](tab-home-dark.png)): The Home tab with the recording control and the formatting bar.
-- [tab-insert](tab-insert-light.png) ([dark](tab-insert-dark.png)): The Insert tab: link, code block, callout, divider, template, file, equation, and table.
+- [tab-insert](tab-insert-light.png) ([dark](tab-insert-dark.png)): The Insert tab, with buttons for the chemistry, structure, materials, and economics tools, then Link, Insert table, and More.
 - [tab-draw](tab-draw-light.png) ([dark](tab-draw-dark.png)): The Draw tab: the tools, the pen slots, color, and width (1600 by 900).
 - [tab-view](tab-view-light.png) ([dark](tab-view-dark.png)): The View tab: panes, page layout, paper, background, and focus mode.
 
@@ -149,7 +149,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [kit-solids-fem](kit-solids-fem-light.png) ([dark](kit-solids-fem-dark.png)): The finite element workbench of the Solid mechanics kit, with a meshed part and its stresses.
 - [kit-mechanisms](kit-mechanisms-light.png) ([dark](kit-mechanisms-dark.png)): The linkage analyzer of the Mechanisms and dynamics kit, with a four-bar linkage.
 - [kit-control](kit-control-light.png) ([dark](kit-control-dark.png)): The Dynamics and control kit drawing a Bode plot for a transfer function.
-- [kit-circuits](kit-circuits-light.png) ([dark](kit-circuits-dark.png)): The circuit simulator of the Circuits and energy kit, with a small circuit and its results.
+- [kit-circuits](kit-circuits-light.png) ([dark](kit-circuits-dark.png)): The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots.
 - [kit-engineering-math](kit-engineering-math-light.png) ([dark](kit-engineering-math-dark.png)): The linear algebra workbench of the Engineering mathematics kit, with a matrix and its results.
 - [kit-civil](kit-civil-light.png) ([dark](kit-civil-dark.png)): The Civil and chemical engineering kit on its hydrology and open channels tab.
 - [kit-design](kit-design-light.png) ([dark](kit-design-dark.png)): The drafting sheet of the Design kit, with a title block.
@@ -179,7 +179,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 
 - [kit-humanities](kit-humanities-light.png) ([dark](kit-humanities-dark.png)): The map maker of the History, places, languages, and texts kit.
 - [kit-music](kit-music-light.png) ([dark](kit-music-dark.png)): The Music, script, camera, and studio kit on its music theory tab.
-- [kit-music-score](kit-music-score-light.png) ([dark](kit-music-score-dark.png)): A score block on a page, with a short melody on the staff.
+- [kit-music-score](kit-music-score-light.png) ([dark](kit-music-score-dark.png)): A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar.
 
 ## Connectors and sync
 
