@@ -167,6 +167,28 @@ mod tests {
         assert!(started.elapsed() < Duration::from_secs(10), "stopped, not waited for");
     }
 
+    /// Each step of a check with what it answered, for a failure message.
+    #[cfg(target_os = "macos")]
+    const DIAGNOSE_SCRIPT: &str = concat!(
+        "ObjC.import('AppKit'); function run(argv) { var o = {}; ",
+        "function t(k, f) { try { o[k] = f(); } catch (e) { o[k] = 'threw ' + e; } } ",
+        "var c = $.NSSpellChecker.sharedSpellChecker; var s = $(argv[1]); var l = $(argv[0]); ",
+        "t('auto', function () { return c.automaticallyIdentifiesLanguages; }); ",
+        "t('autoOff', function () { c.automaticallyIdentifiesLanguages = false; return c.automaticallyIdentifiesLanguages; }); ",
+        "t('set', function () { return c.setLanguage(l); }); ",
+        "t('language', function () { return ObjC.unwrap(c.language); }); ",
+        "t('nsLength', function () { return s.length; }); t('jsLength', function () { return argv[1].length; }); ",
+        "t('first', function () { var r = c.checkSpellingOfStringStartingAt(s, 0); return [r.location, r.length]; }); ",
+        "t('keys', function () { return Object.keys(c.checkSpellingOfStringStartingAt(s, 0)); }); ",
+        "t('fromThree', function () { var r = c.checkSpellingOfStringStartingAt(s, 3); return [r.location, r.length]; }); ",
+        "t('full', function () { var r = c.checkSpellingOfStringStartingAtLanguageWrapInSpellDocumentWithTagWordCount( ",
+        "s, 0, l, false, 0, null); return [r.location, r.length]; }); ",
+        "t('guesses', function () { var g = c.guessesForWordRangeInStringLanguageInSpellDocumentWithTag( ",
+        "$.NSMakeRange(0, 3), s, l, 0); return g ? ObjC.deepUnwrap(g) : null; }); ",
+        "t('later', function () { delay(3); var r = c.checkSpellingOfStringStartingAt(s, 0); return [r.location, r.length]; }); ",
+        "return JSON.stringify(o); } ",
+    );
+
     /// Runs the real scripts through `osascript` and NSSpellChecker. Whether this Mac's checker answers is probed
     /// first: a Mac whose spelling service or English dictionary is missing gets no flags and no suggestions, which
     /// the test then checks instead. CI sets OPENNOTE_REQUIRE_NATIVE_TOOLS, so there the real checker must answer.
@@ -197,7 +219,13 @@ mod tests {
         let guessed = |word: &str| {
             run_within(SUGGEST_SCRIPT, &[english.as_str(), word], CHECK_LIMIT).map(|out| parse_words(&out))
         };
-        assert_eq!(checked("teh cat"), Ok(vec![SpellError { start: 0, length: 3 }]));
+        let found = checked("teh cat");
+        assert_eq!(
+            found,
+            Ok(vec![SpellError { start: 0, length: 3 }]),
+            "languages {probe:?}; the checker in detail: {:?}",
+            run_within(DIAGNOSE_SCRIPT, &[english.as_str(), "teh cat"], LANGUAGES_LIMIT)
+        );
         assert_eq!(
             checked("teh cat thier"),
             Ok(vec![
