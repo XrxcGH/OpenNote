@@ -101,12 +101,15 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
       tab: 'Bode and Nyquist',
       scroll: (d) => d.getByRole('row', { name: /^Gain crossover/ }),
     }),
-    kit('kit-circuits', {
-      command: 'Open the circuits and energy tools',
-      window: 'Circuits and energy',
-      tab: 'Simulator',
-      scroll: results,
-    }),
+    kit(
+      'kit-circuits',
+      {
+        command: 'Open the circuits and energy tools',
+        window: 'Circuits and energy',
+        tab: 'Simulator',
+      },
+      { width: 1280, height: 1560 },
+    ),
     kit('kit-engineering-math', {
       command: 'Open the engineering mathematics tools',
       window: 'Engineering mathematics',
@@ -258,14 +261,8 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         await d.waitFor({ timeout: 20_000 });
         await d.getByRole('tab', { name: 'Score', exact: true }).click();
         await d.getByLabel('Music in ABC notation').fill(ABC);
-        await p.waitForTimeout(1200);
-        await d.getByRole('button', { name: 'Picture', exact: true }).click();
-        await p.waitForTimeout(800);
-        await d.getByRole('button', { name: 'Close' }).click();
-        await p.keyboard.press('Escape');
-        await p.keyboard.press('ArrowDown');
-        await p.keyboard.press('ArrowDown');
-        await p.getByRole('img', { name: /./ }).last().scrollIntoViewIfNeeded();
+        await p.waitForTimeout(1500);
+        await d.getByRole('img', { name: 'Twinkle' }).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
         await p.waitForTimeout(800);
       },
     },

@@ -310,6 +310,15 @@ const SHOTS: Shot[] = [
       await p.keyboard.press('Enter');
       await expect(p.getByRole('application', { name: /^Graph of/ })).toBeVisible({ timeout: 20_000 });
       await scrollTop(p);
+      // The line is laid out a moment after the graph shows; wait until it sits above the graph.
+      const line = p.locator('p', { hasText: 'The area under the parabola' });
+      for (let tries = 0; tries < 5 && (await line.evaluate((e) => e.getBoundingClientRect().y)) > 500; tries++) {
+        await p.setViewportSize({ width: 1281 + tries, height: 800 });
+        await p.setViewportSize({ width: 1280, height: 800 });
+        await scrollTop(p);
+        await p.waitForTimeout(500);
+      }
+      await expect.poll(() => line.evaluate((e) => e.getBoundingClientRect().y), { timeout: 5_000 }).toBeLessThan(500);
     },
   },
   {

@@ -422,7 +422,7 @@
   {
     "name": "kit-circuits",
     "category": "Engineering kits",
-    "caption": "The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots."
+    "caption": "The circuit simulator of the Circuits and energy kit, showing the netlist of an RC low-pass filter with its AC sweep results, the -3 dB frequency, and the magnitude and phase plots (1280 by 1560)."
   },
   {
     "name": "kit-engineering-math",
@@ -527,7 +527,7 @@
   {
     "name": "kit-music-score",
     "category": "Humanities and arts kits",
-    "caption": "A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar."
+    "caption": "The Score tab of the music kit: a short melody engraved on a staff, with its results and the Play button."
   },
   {
     "name": "protected-section",

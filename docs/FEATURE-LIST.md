@@ -1194,9 +1194,9 @@ Commands (10):
 
 Transients, a circuit simulator (DC, AC sweep, transient), op-amps and filters, semiconductors, instruments, AC power, power flow, data fitting, and energy.
 
-**kit-circuits.** The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots. ([dark](screens/kit-circuits-dark.png))
+**kit-circuits.** The circuit simulator of the Circuits and energy kit, showing the netlist of an RC low-pass filter with its AC sweep results, the -3 dB frequency, and the magnitude and phase plots (1280 by 1560). ([dark](screens/kit-circuits-dark.png))
 
-![The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots.](screens/kit-circuits-light.png)
+![The circuit simulator of the Circuits and energy kit, showing the netlist of an RC low-pass filter with its AC sweep results, the -3 dB frequency, and the magnitude and phase plots (1280 by 1560).](screens/kit-circuits-light.png)
 
 Open it with the command "Open the circuits and energy tools".
 
@@ -1784,9 +1784,9 @@ Commands (11):
 
 ### Pictures
 
-**kit-music-score.** A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar. ([dark](screens/kit-music-score-dark.png))
+**kit-music-score.** The Score tab of the music kit: a short melody engraved on a staff, with its results and the Play button. ([dark](screens/kit-music-score-dark.png))
 
-![A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar.](screens/kit-music-score-light.png)
+![The Score tab of the music kit: a short melody engraved on a staff, with its results and the Play button.](screens/kit-music-score-light.png)
 
 ## Study tools
 

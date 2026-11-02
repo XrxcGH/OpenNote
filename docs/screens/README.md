@@ -149,7 +149,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [kit-solids-fem](kit-solids-fem-light.png) ([dark](kit-solids-fem-dark.png)): The finite element workbench of the Solid mechanics kit, with a meshed part and its stresses.
 - [kit-mechanisms](kit-mechanisms-light.png) ([dark](kit-mechanisms-dark.png)): The linkage analyzer of the Mechanisms and dynamics kit, with a four-bar linkage.
 - [kit-control](kit-control-light.png) ([dark](kit-control-dark.png)): The Dynamics and control kit drawing a Bode plot for a transfer function.
-- [kit-circuits](kit-circuits-light.png) ([dark](kit-circuits-dark.png)): The circuit simulator of the Circuits and energy kit, showing the AC sweep of an RC low-pass filter with its magnitude and phase plots.
+- [kit-circuits](kit-circuits-light.png) ([dark](kit-circuits-dark.png)): The circuit simulator of the Circuits and energy kit, showing the netlist of an RC low-pass filter with its AC sweep results, the -3 dB frequency, and the magnitude and phase plots (1280 by 1560).
 - [kit-engineering-math](kit-engineering-math-light.png) ([dark](kit-engineering-math-dark.png)): The linear algebra workbench of the Engineering mathematics kit, with a matrix and its results.
 - [kit-civil](kit-civil-light.png) ([dark](kit-civil-dark.png)): The Civil and chemical engineering kit on its hydrology and open channels tab.
 - [kit-design](kit-design-light.png) ([dark](kit-design-dark.png)): The drafting sheet of the Design kit, with a title block.
@@ -179,7 +179,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 
 - [kit-humanities](kit-humanities-light.png) ([dark](kit-humanities-dark.png)): The map maker of the History, places, languages, and texts kit.
 - [kit-music](kit-music-light.png) ([dark](kit-music-dark.png)): The Music, script, camera, and studio kit on its music theory tab.
-- [kit-music-score](kit-music-score-light.png) ([dark](kit-music-score-dark.png)): A short melody on a staff, shown as a selected image on a page with its Crop image, Alt text, and Copy text bar.
+- [kit-music-score](kit-music-score-light.png) ([dark](kit-music-score-dark.png)): The Score tab of the music kit: a short melody engraved on a staff, with its results and the Play button.
 
 ## Connectors and sync
 
