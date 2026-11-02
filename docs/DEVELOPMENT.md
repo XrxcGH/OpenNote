@@ -91,7 +91,7 @@ Each phase below opens with a status note. The notes were last reviewed for beta
 How the beta branch was checked:
 
 - Agents ran the type check, lint, Clippy, and the unit tests. CI runs them on every pull request.
-- The repository has 1,309 test files, about 10,900 `it` and `test` calls in them, and about 3,570 Rust `#[test]` functions. These are counts of the source with `git grep`, not results of a run.
+- The repository has more than 1,300 test files, more than 11,000 `it` and `test` calls in them, and about 3,570 Rust `#[test]` functions. These are counts of the source, not results of a run. At the last count there were 1,317 files (`git ls-files '*.test.ts' '*.test.tsx' '*.spec.ts' '*.test.mjs' '*.test.mts' | wc -l`), 11,621 calls (`git grep -hE '^ *(it|test)(\.[a-z]+)*\(' -- '*.test.ts' '*.test.tsx' '*.spec.ts' '*.test.mjs' '*.test.mts' | wc -l`), and 3,568 Rust tests (`git grep -hF '#[test]' -- '*.rs' | wc -l`).
 - Agents started the real exe and opened each main screen. The browser UI tests run in CI, and the real-device tests do not.
 - Nobody has checked the app by hand yet. The only hand test is [the beta 4 checklist](testing/beta-4-checklist.md). It does not cover the school tool kits, the tutor, practice exams, sync, code cells, My handwriting, the macOS and Linux builds, or the local API.
 

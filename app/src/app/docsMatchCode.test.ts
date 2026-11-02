@@ -8,9 +8,10 @@ import {
   regenerate,
   readScreens,
   SCREEN_CATEGORIES,
+  sectionsOf,
   unplacedSections,
 } from '../../../docs/tools/featureList';
-import { balanced, firstSentence } from '../../../docs/tools/featureRows';
+import { balanced, entryName, firstSentence } from '../../../docs/tools/featureRows';
 
 const docs = join(import.meta.dirname, '..', '..', '..', 'docs');
 function markdown(dir: string): string[] {
@@ -128,6 +129,32 @@ describe('feature list', () => {
   it('is linked from the README and the help index', () => {
     expect(readFileSync(join(docs, '..', 'README.md'), 'utf8')).toContain('docs/FEATURE-LIST.md');
     expect(read('help', 'README.md')).toContain('FEATURE-LIST.md');
+  });
+});
+
+describe('feature list rows', () => {
+  it('lists every table row of FEATURES.md, so a row after a paragraph is not dropped silently', () => {
+    const rows: string[] = [];
+    let section = '';
+    const source = read('FEATURES.md').split(/\r?\n/);
+    const rule = /^\|?[\s:|-]+\|?$/;
+    source.forEach((line, at) => {
+      const heading = /^## (.+)$/.exec(line);
+      if (heading) section = heading[1]!.trim();
+      // A table row starts with a bar. The header is the row above the rule, and the rule has only dashes.
+      if (!line.startsWith('|') || rule.test(line) || rule.test(source[at + 1] ?? '')) return;
+      if (/^(Contents|How to read the status|Screens)$/.test(section)) return;
+      rows.push(
+        line
+          .split('|')[1]!
+          .trim()
+          .replace(/^\*\*|\*\*$/g, ''),
+      );
+    });
+    expect(rows.length).toBeGreaterThan(50);
+    // The generator's first stage keeps one entry for each row. The tool windows are then named from the registry.
+    const kept = new Set(sectionsOf(read('FEATURES.md')).flatMap((one) => one.entries.map(entryName)));
+    expect(rows.filter((name) => name && !kept.has(name))).toEqual([]);
   });
 });
 

@@ -63,9 +63,9 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 ## Writing and page blocks
 
 - [slash-menu](slash-menu-light.png) ([dark](slash-menu-dark.png)): The slash menu after typing a slash on an empty line, listing the blocks to insert.
-- [formatting-bar](formatting-bar-light.png) ([dark](formatting-bar-dark.png)): The formatting bar over a selected sentence, with bold, italic, color, and link.
+- [formatting-bar](formatting-bar-light.png) ([dark](formatting-bar-dark.png)): The formatting bar over a selected sentence, with Bold, Italic, Highlight, Link, and More formatting.
 - [block-callouts](block-callouts-light.png) ([dark](block-callouts-dark.png)): Note, tip, and warning callouts on a page, each with its own color and icon.
-- [block-code](block-code-light.png) ([dark](block-code-dark.png)): A code block with Python highlighting, its language label, and the copy button.
+- [block-code](block-code-light.png) ([dark](block-code-dark.png)): A code block with Python highlighting and its language label.
 - [lined-paper](lined-paper-light.png) ([dark](lined-paper-dark.png)): Typed notes on lined paper, with the text sitting on the rules.
 - [table-chart](table-chart-light.png) ([dark](table-chart-dark.png)): A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words.
 - [insert-mind-map](insert-mind-map-light.png) ([dark](insert-mind-map-dark.png)): A mind map on a page, with a main idea and branches added under and beside it.
@@ -101,7 +101,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 ## Audio and transcripts
 
 - [recording](recording-light.png) ([dark](recording-dark.png)): The recording options under the Record button. Nothing is recording.
-- [recording-block](recording-block-light.png) ([dark](recording-block-dark.png)): A recording block on a page, with its player, speed, and time-stamped notes beside it.
+- [recording-block](recording-block-light.png) ([dark](recording-block-dark.png)): A recording block on a page: its player, speed, Skip silence, and flags that mark moments, with the notes typed below it.
 - [transcript-block](transcript-block-light.png) ([dark](transcript-block-dark.png)): A transcript block with speaker names and time stamps under its recording.
 - [speech-model](speech-model-light.png) ([dark](speech-model-dark.png)): The speech model in Settings, with its size shown before anything is downloaded.
 

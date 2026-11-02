@@ -177,17 +177,17 @@ The app registers 880 commands and 47 tool windows. 24 of the windows are subjec
 
 ![The slash menu after typing a slash on an empty line, listing the blocks to insert.](screens/slash-menu-light.png)
 
-**formatting-bar.** The formatting bar over a selected sentence, with bold, italic, color, and link. ([dark](screens/formatting-bar-dark.png))
+**formatting-bar.** The formatting bar over a selected sentence, with Bold, Italic, Highlight, Link, and More formatting. ([dark](screens/formatting-bar-dark.png))
 
-![The formatting bar over a selected sentence, with bold, italic, color, and link.](screens/formatting-bar-light.png)
+![The formatting bar over a selected sentence, with Bold, Italic, Highlight, Link, and More formatting.](screens/formatting-bar-light.png)
 
 **block-callouts.** Note, tip, and warning callouts on a page, each with its own color and icon. ([dark](screens/block-callouts-dark.png))
 
 ![Note, tip, and warning callouts on a page, each with its own color and icon.](screens/block-callouts-light.png)
 
-**block-code.** A code block with Python highlighting, its language label, and the copy button. ([dark](screens/block-code-dark.png))
+**block-code.** A code block with Python highlighting and its language label. ([dark](screens/block-code-dark.png))
 
-![A code block with Python highlighting, its language label, and the copy button.](screens/block-code-light.png)
+![A code block with Python highlighting and its language label.](screens/block-code-light.png)
 
 **lined-paper.** Typed notes on lined paper, with the text sitting on the rules. ([dark](screens/lined-paper-dark.png))
 
@@ -975,9 +975,9 @@ The app registers 880 commands and 47 tool windows. 24 of the windows are subjec
 
 ![The recording options under the Record button. Nothing is recording.](screens/recording-light.png)
 
-**recording-block.** A recording block on a page, with its player, speed, and time-stamped notes beside it. ([dark](screens/recording-block-dark.png))
+**recording-block.** A recording block on a page: its player, speed, Skip silence, and flags that mark moments, with the notes typed below it. ([dark](screens/recording-block-dark.png))
 
-![A recording block on a page, with its player, speed, and time-stamped notes beside it.](screens/recording-block-light.png)
+![A recording block on a page: its player, speed, Skip silence, and flags that mark moments, with the notes typed below it.](screens/recording-block-light.png)
 
 **transcript-block.** A transcript block with speaker names and time stamps under its recording. ([dark](screens/transcript-block-dark.png))
 
@@ -2109,6 +2109,8 @@ Open it with the command "Open upcoming".
 - **PowerPoint / Google Slides.** Imports `.pptx`, Google Slides as annotatable pages and exports `.pptx` (one page per slide), PDF.
 - **LaTeX.** Exports `.tex` for a page, section, or notebook; a `.zip` with `images/` and `references.bib` when there is more than one file.
 - **OneNote / Evernote.** Imports Graph API, `.enex` and exports PDF, Markdown.
+- **Windows metafile pictures (EMF, WMF, and EMF+).** Charts and clip art saved in these formats in Word and PowerPoint files are drawn into SVG pictures on import, sharp at any size, with their text left as text.
+- **Older Office and OpenDocument files.** Imports `.doc`, `.rtf`, `.xls`, `.xlsb`, `.ods`.
 - People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle.
 - The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder.
 - Favorite destinations are saved, so "Send to Drive: Biology/Lab reports" becomes one click.

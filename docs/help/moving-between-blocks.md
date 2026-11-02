@@ -2,7 +2,7 @@
 
 A page holds blocks: text, images, tables, and code. On a document page they stack from top to bottom. On a freeform page, text boxes sit wherever you put them. These keys move between them without the mouse.
 
-![A code block with Python highlighting, its language label, and the copy button](../screens/block-code-light.png)
+![A code block with Python highlighting and its language label](../screens/block-code-light.png)
 
 ## In the flow of a document page
 

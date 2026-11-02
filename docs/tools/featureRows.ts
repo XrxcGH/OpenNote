@@ -128,6 +128,13 @@ export function sectionsOf(features: string): Section[] {
       if (entry) current.entries.push(entry);
       continue;
     }
+    // A paragraph written straight under a table row, with no blank line, belongs to the table: the rows after it
+    // still have the header, and the paragraph is an entry named by the words before its colon.
+    const note = header && line.trim() && !/^(?:- |\d+\. )/.test(line) ? /^([^:|]{3,80}):\s+(.+)$/.exec(line) : null;
+    if (note) {
+      current.entries.push(`- **${note[1]!.trim()}.** ${firstSentence(withoutStatus(note[2]!))}.`);
+      continue;
+    }
     header = null;
     const bullet = /^(?:- |\d+\. )(.+)$/.exec(line);
     if (bullet) current.entries.push(bulletEntry(bullet[1]!));

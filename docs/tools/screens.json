@@ -102,7 +102,7 @@
   {
     "name": "formatting-bar",
     "category": "Writing and page blocks",
-    "caption": "The formatting bar over a selected sentence, with bold, italic, color, and link."
+    "caption": "The formatting bar over a selected sentence, with Bold, Italic, Highlight, Link, and More formatting."
   },
   {
     "name": "block-callouts",
@@ -112,7 +112,7 @@
   {
     "name": "block-code",
     "category": "Writing and page blocks",
-    "caption": "A code block with Python highlighting, its language label, and the copy button."
+    "caption": "A code block with Python highlighting and its language label."
   },
   {
     "name": "lined-paper",
@@ -247,7 +247,7 @@
   {
     "name": "recording-block",
     "category": "Audio and transcripts",
-    "caption": "A recording block on a page, with its player, speed, and time-stamped notes beside it."
+    "caption": "A recording block on a page: its player, speed, Skip silence, and flags that mark moments, with the notes typed below it."
   },
   {
     "name": "transcript-block",
