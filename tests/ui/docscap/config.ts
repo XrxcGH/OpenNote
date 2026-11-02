@@ -7,13 +7,13 @@ import { browserChannel } from '../../browser';
 export default defineConfig({
   testDir: import.meta.dirname,
   testMatch: '*.spec.ts',
-  outputDir: join(tmpdir(), 'docscap-results'),
+  outputDir: join(tmpdir(), `docscap-results-${process.pid}`),
   fullyParallel: true,
   workers: 4,
   reporter: 'list',
   timeout: 150_000,
   use: {
-    baseURL: 'http://127.0.0.1:4617',
+    baseURL: process.env.CAP_URL ?? 'http://127.0.0.1:4617',
     browserName: 'chromium',
     channel: browserChannel(),
     screenshot: 'only-on-failure',

@@ -19,6 +19,12 @@ export interface Helpers {
   command(p: Page, query: string, option: string | RegExp): Promise<void>;
   settings(p: Page, section: string): Promise<void>;
   typeNotes(p: Page): Promise<void>;
+  /** Opens a page of the fixture: the section, then the page title. */
+  openPage(p: Page, section: string, title: string): Promise<void>;
+  /** Types lines into the page, pressing Enter between them; waits until `saved` is held when given. */
+  write(p: Page, lines: string[], saved?: string): Promise<void>;
+  /** Clicks a command bar tab and waits for the page to settle. */
+  tab(p: Page, name: string): Promise<void>;
 }
 
 // checks-disable-next-line modifiability: one list of capture scenes that share their helpers; split it when it grows again

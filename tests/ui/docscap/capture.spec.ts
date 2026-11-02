@@ -1,9 +1,11 @@
 // Documentation screenshot capture: every picture in docs/screens, in the light theme and the dark one. Run it with
 // `npx playwright test --config tests/ui/docscap/config.ts` against the web build served on port 4617, and list the
-// pictures in docs/tools/screens.json. CAP_ONLY=name,name takes some; CAP_OUT changes the folder.
+// pictures in docs/tools/screens.json. CAP_ONLY=name,name takes some; CAP_OUT changes the folder; CAP_URL serves
+// from another address. More scenes are in more.ts and in the group files of scenes/.
 import { expect, test, type Page } from '@playwright/test';
 import { settle } from '../screens';
 import { scenes } from './more';
+import { groupScenes } from './scenes';
 
 const RAW = process.env.CAP_OUT ?? 'docs/screens';
 const THEMES = ['light', 'dark'] as const;
@@ -189,7 +191,7 @@ const SHOTS: Shot[] = [
     },
   },
   {
-    name: 'ink',
+    name: 'ink-pens',
     viewport: { width: 1600, height: 900 },
     run: async (p) => {
       await typeNotes(p);
@@ -253,7 +255,7 @@ const SHOTS: Shot[] = [
     },
   },
   {
-    name: 'ruled',
+    name: 'lined-paper',
     run: async (p) => {
       await typeNotes(p);
       await tab(p, 'View');
@@ -436,7 +438,8 @@ const SHOTS: Shot[] = [
   },
 ];
 
-SHOTS.push(...scenes({ ready, command, settings, typeNotes }));
+const helpers = { ready, command, settings, typeNotes, openPage, write, tab };
+SHOTS.push(...scenes(helpers), ...groupScenes(helpers));
 
 const only = process.env.CAP_ONLY?.split(',');
 
