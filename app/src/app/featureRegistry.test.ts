@@ -35,6 +35,7 @@ function registered(): Registry {
       category: def.category,
       keys: [...(def.keys ?? [])],
       ...(def.flag ? { flag: def.flag } : {}),
+      ...(def.palette === false ? { palette: false as const } : {}),
     })),
     titleBar: [...titleBarItems.list()]
       .sort((a, b) => b.side.localeCompare(a.side) || a.order - b.order)

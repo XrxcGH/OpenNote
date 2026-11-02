@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 778 commands and 47 tool windows. 27 of the windows are engineering, subject, and catalog kits. Every command is in the command palette (Ctrl+K). The keys shown are the defaults of the standard shortcut set.
+The app registers 778 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -115,10 +115,10 @@ The app registers 778 commands and 47 tool windows. 27 of the windows are engine
 | Show level 8 | Alt+Shift+8 |
 | Show level 9 | Alt+Shift+9 |
 | Text color of the selected blocks |  |
-| Open link |  |
-| Copy link |  |
-| Edit link |  |
-| Remove link |  |
+| Open link (not in the palette) |  |
+| Copy link (not in the palette) |  |
+| Edit link (not in the palette) |  |
+| Remove link (not in the palette) |  |
 | Text styles |  |
 | Image… |  |
 | Crop image |  |
@@ -482,8 +482,8 @@ The app registers 778 commands and 47 tool windows. 27 of the windows are engine
 | Cornell notes |  |
 | Music staff |  |
 | Margin line |  |
-| Paper |  |
-| Background |  |
+| Paper (not in the palette) |  |
+| Background (not in the palette) |  |
 
 ### Pictures
 
@@ -574,9 +574,9 @@ The app registers 778 commands and 47 tool windows. 27 of the windows are engine
 | Reset the pages pane width |  |
 | Collapse the pages pane |  |
 | Expand the pages pane |  |
-| Pane widths |  |
-| Go to the next region | F6 |
-| Go to the previous region | Shift+F6 |
+| Pane widths (not in the palette) |  |
+| Go to the next region (not in the palette) | F6 |
+| Go to the previous region (not in the palette) | Shift+F6 |
 | Go back | Alt+Left |
 | Go forward | Alt+Right |
 | Reveal in tree |  |
@@ -597,7 +597,7 @@ The app registers 778 commands and 47 tool windows. 27 of the windows are engine
 | Extract selection to a new page |  |
 | Merge pages |  |
 | Split page at headings |  |
-| Open command palette | Ctrl+K |
+| Open command palette (not in the palette) | Ctrl+K |
 | Go to a page | Ctrl+O |
 | Pin page |  |
 | Unpin page |  |
@@ -605,7 +605,7 @@ The app registers 778 commands and 47 tool windows. 27 of the windows are engine
 | Unpin section |  |
 | Duplicate |  |
 | Copy to |  |
-| Sort |  |
+| Sort (not in the palette) |  |
 | Sort by title |  |
 | Sort by date created |  |
 | Sort by date modified |  |
@@ -630,20 +630,20 @@ The app registers 778 commands and 47 tool windows. 27 of the windows are engine
 | Back up now |  |
 | Create shortcut |  |
 | Open Trash |  |
-| Restore |  |
+| Restore (not in the palette) |  |
 | Empty Trash |  |
-| Delete forever |  |
+| Delete forever (not in the palette) |  |
 | New notebook |  |
 | New section group |  |
 | New section | Ctrl+T |
 | New page | Ctrl+N |
 | New subpage | Ctrl+Alt+Shift+N |
-| Move up | Ctrl+Shift+Up |
-| Move down | Ctrl+Shift+Down |
+| Move up (not in the palette) | Ctrl+Shift+Up |
+| Move down (not in the palette) | Ctrl+Shift+Down |
 | Make subpage | Ctrl+Shift+Right, Ctrl+Alt+] |
 | Promote | Ctrl+Shift+Left, Ctrl+Alt+[ |
 | Rename | F2 |
-| Color |  |
+| Color (not in the palette) |  |
 | Move to | Ctrl+Shift+M |
 | Delete | Delete |
 
@@ -1937,7 +1937,7 @@ Open it with the command "Open upcoming".
 | Export as Word… |  |
 | Export as HTML… |  |
 | Export selection as image… |  |
-| Export |  |
+| Export (not in the palette) |  |
 | Import PDF as pages |  |
 | Insert PDF |  |
 | Add note space |  |
@@ -2259,14 +2259,14 @@ Open it with the command "Open upcoming".
 
 | Command | Default keys |
 | --- | --- |
-| Add the opennote command to PATH |  |
+| Add the opennote command to PATH (not in the palette) |  |
 | Show what works on this computer |  |
 | Check for updates |  |
 | Restart to update |  |
 | Go back to the previous version |  |
 | Download the update |  |
-| Skip this update |  |
-| Install the skipped update |  |
-| Open the release notes |  |
-| Report a problem with an update |  |
-| Add OpenNote to the Start menu |  |
+| Skip this update (not in the palette) |  |
+| Install the skipped update (not in the palette) |  |
+| Open the release notes (not in the palette) |  |
+| Report a problem with an update (not in the palette) |  |
+| Add OpenNote to the Start menu (not in the palette) |  |

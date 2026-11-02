@@ -15,6 +15,8 @@ export interface ToolEntry {
   tabs?: string;
   /** The FEATURES.md section whose rows describe its tabs; they are listed under the window. */
   section?: string;
+  /** True for a subject or engineering kit window. */
+  kit?: boolean;
 }
 
 const engineering: Category = 'Engineering kits';
@@ -37,6 +39,9 @@ const kit = (category: Category, text: string, screen: string, section: string, 
   section,
   ...(tabs ? { tabs } : {}),
 });
+
+/** A subject or engineering kit window. */
+const asKit = (entry: ToolEntry): ToolEntry => ({ ...entry, kit: true });
 
 export const TOOL_ENTRIES: Readonly<Record<string, ToolEntry>> = {
   timers: row(study, 'Timers', 'tool-timer'),
@@ -71,87 +76,107 @@ export const TOOL_ENTRIES: Readonly<Record<string, ToolEntry>> = {
   formulasheet: row(math, 'Formula sheet builder'),
   practice: row(math, 'Practice mode'),
   figure: row(math, 'Figure exporter'),
-  econ: row(subject, 'Economics and finance calculators', 'kit-economics'),
-  'kit-statinfer': kit(
-    subject,
-    'Describes data and runs tests, epidemiology, power, resampling, Bayesian updating, and sampling',
-    'kit-statistics',
-    'Statistics kit',
+  econ: asKit(row(subject, 'Economics and finance calculators', 'kit-economics')),
+  'kit-statinfer': asKit(
+    kit(
+      subject,
+      'Describes data and runs tests, epidemiology, power, resampling, Bayesian updating, and sampling',
+      'kit-statistics',
+      'Statistics kit',
+    ),
   ),
-  'kit-statmodels': kit(
-    subject,
-    'Fits regression, causal, survival, time-series, multivariate, machine learning, and spatial models',
-    'kit-stat-models',
-    'Statistical models kit',
-    'tools.kitStatModels.',
+  'kit-statmodels': asKit(
+    kit(
+      subject,
+      'Fits regression, causal, survival, time-series, multivariate, machine learning, and spatial models',
+      'kit-stat-models',
+      'Statistical models kit',
+      'tools.kitStatModels.',
+    ),
   ),
-  'kit-mind': kit(
-    subject,
-    'Works signal detection, psychophysics, learning, choice, response times, observation, agreement, and scales',
-    'kit-psychology',
-    'Psychology and behavior kit',
-    'tools.kitMind.',
+  'kit-mind': asKit(
+    kit(
+      subject,
+      'Works signal detection, psychophysics, learning, choice, response times, observation, agreement, and scales',
+      'kit-psychology',
+      'Psychology and behavior kit',
+      'tools.kitMind.',
+    ),
   ),
-  kitmolbio: kit(
-    subject,
-    'Works with sequences, cloning, proteins, alignments, trees, crosses, population genetics, and pedigrees',
-    'kit-biology',
-    'Molecular biology, genetics, and evolution',
-    'kits.molbio.',
+  kitmolbio: asKit(
+    kit(
+      subject,
+      'Works with sequences, cloning, proteins, alignments, trees, crosses, population genetics, and pedigrees',
+      'kit-biology',
+      'Molecular biology, genetics, and evolution',
+      'kits.molbio.',
+    ),
   ),
-  lifesys: kit(
-    subject,
-    'Works physiology, neurons, drugs, curve fits, bench math, populations, models, and field sampling',
-    'kit-life-science',
-    'Life science tools',
-    'lifesys.',
+  lifesys: asKit(
+    kit(
+      subject,
+      'Works physiology, neurons, drugs, curve fits, bench math, populations, models, and field sampling',
+      'kit-life-science',
+      'Life science tools',
+      'lifesys.',
+    ),
   ),
-  'kit-civil': kit(
-    engineering,
-    'Works structures, soils, foundations, water, transportation, material balances, and reactors',
-    'kit-civil',
-    'Civil, environmental, and chemical engineering tools',
-    'kitCivil.',
+  'kit-civil': asKit(
+    kit(
+      engineering,
+      'Works structures, soils, foundations, water, transportation, material balances, and reactors',
+      'kit-civil',
+      'Civil, environmental, and chemical engineering tools',
+      'kitCivil.',
+    ),
   ),
-  'kit-modphys': kit(
-    subject,
-    'Works quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology',
-    'kit-modern-physics',
-    'Modern physics and astronomy tools',
-    'tools.modphys.',
+  'kit-modphys': asKit(
+    kit(
+      subject,
+      'Works quantum wells, spin, atoms, molecules, solids, plasmas, stars, the sky, and cosmology',
+      'kit-modern-physics',
+      'Modern physics and astronomy tools',
+      'tools.modphys.',
+    ),
   ),
-  'kit-signals': kit(
-    engineering,
-    'Works spectra, filters, sampling, body signals, sound, images, medical imaging, coding, and RF lines',
-    'kit-signals',
-    'Signals, images, sound, and communications',
-    'tools.signals.',
+  'kit-signals': asKit(
+    kit(
+      engineering,
+      'Works spectra, filters, sampling, body signals, sound, images, medical imaging, coding, and RF lines',
+      'kit-signals',
+      'Signals, images, sound, and communications',
+      'tools.signals.',
+    ),
   ),
-  'kit-earth': row(subject, 'Earth sciences', 'kit-earth', 'kits.earth.'),
-  'kit-humanities': kit(
-    subject,
-    'Builds note frames, maps, timelines, calendars, scripts, linguistic structures, text analyses, and keys',
-    'kit-humanities',
-    'History, places, languages, and texts kit',
-    'kits.humanities.',
+  'kit-earth': asKit(row(subject, 'Earth sciences', 'kit-earth', 'kits.earth.')),
+  'kit-humanities': asKit(
+    kit(
+      subject,
+      'Builds note frames, maps, timelines, calendars, scripts, linguistic structures, text analyses, and keys',
+      'kit-humanities',
+      'History, places, languages, and texts kit',
+      'kits.humanities.',
+    ),
   ),
-  'kit-reasoning': row(subject, 'Reasoning kit', 'kit-reasoning'),
-  kitmusic: kit(
-    subject,
-    'Writes scores and works music theory, ear training, tuning, scripts, camera math, and studio math',
-    'kit-music',
-    'Music, script, camera, and studio tools',
-    'kits.music.',
+  'kit-reasoning': asKit(row(subject, 'Reasoning kit', 'kit-reasoning')),
+  kitmusic: asKit(
+    kit(
+      subject,
+      'Writes scores and works music theory, ear training, tuning, scripts, camera math, and studio math',
+      'kit-music',
+      'Music, script, camera, and studio tools',
+      'kits.music.',
+    ),
   ),
-  kitelectrical: row(engineering, 'Circuits and energy', 'kit-circuits', 'kits.electrical.'),
-  'kit-solids': row(engineering, 'Solid mechanics', 'kit-solids-fem', 'tools.kitSolids.'),
-  kitaero: row(engineering, 'Aerospace', 'kit-aerospace', 'kits.aero.'),
-  'kit-chemmat': row(subject, 'Chemistry and materials', 'kit-chemistry', 'tools.kitChemMat.'),
-  'kit-thermo': row(engineering, 'Thermodynamics', 'kit-thermo', 'tools.kitThermo.'),
-  'kit-fluidheat': row(engineering, 'Fluids and heat transfer', 'kit-fluid-heat', 'tools.kitFluidHeat.'),
-  'kit-control': row(engineering, 'Dynamics and control', 'kit-control', 'tools.kitControl.'),
-  'kit-design': row(engineering, 'Design tools', 'kit-design', 'tools.kitDesign.'),
-  'kit-math': row(engineering, 'Engineering mathematics', 'kit-engineering-math', 'tools.kitMath.'),
-  'kit-mechdyn': row(engineering, 'Mechanisms and dynamics', 'kit-mechanisms', 'tools.kitMechDyn.'),
-  'kit-physics': row(subject, 'Physics tools', 'kit-physics', 'tools.physics.'),
+  kitelectrical: asKit(row(engineering, 'Circuits and energy', 'kit-circuits', 'kits.electrical.')),
+  'kit-solids': asKit(row(engineering, 'Solid mechanics', 'kit-solids-fem', 'tools.kitSolids.')),
+  kitaero: asKit(row(engineering, 'Aerospace', 'kit-aerospace', 'kits.aero.')),
+  'kit-chemmat': asKit(row(subject, 'Chemistry and materials', 'kit-chemistry', 'tools.kitChemMat.')),
+  'kit-thermo': asKit(row(engineering, 'Thermodynamics', 'kit-thermo', 'tools.kitThermo.')),
+  'kit-fluidheat': asKit(row(engineering, 'Fluids and heat transfer', 'kit-fluid-heat', 'tools.kitFluidHeat.')),
+  'kit-control': asKit(row(engineering, 'Dynamics and control', 'kit-control', 'tools.kitControl.')),
+  'kit-design': asKit(row(engineering, 'Design tools', 'kit-design', 'tools.kitDesign.')),
+  'kit-math': asKit(row(engineering, 'Engineering mathematics', 'kit-engineering-math', 'tools.kitMath.')),
+  'kit-mechdyn': asKit(row(engineering, 'Mechanisms and dynamics', 'kit-mechanisms', 'tools.kitMechDyn.')),
+  'kit-physics': asKit(row(subject, 'Physics tools', 'kit-physics', 'tools.physics.')),
 };

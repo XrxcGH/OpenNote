@@ -252,7 +252,8 @@
       "title": "Add the opennote command to PATH",
       "category": "general",
       "keys": [],
-      "flag": "api.local"
+      "flag": "api.local",
+      "palette": false
     },
     {
       "id": "interop.import",
@@ -376,7 +377,8 @@
       "id": "layout.paneWidths",
       "title": "Pane widths",
       "category": "view",
-      "keys": []
+      "keys": [],
+      "palette": false
     },
     {
       "id": "view.nextRegion",
@@ -384,7 +386,8 @@
       "category": "navigation",
       "keys": [
         "F6"
-      ]
+      ],
+      "palette": false
     },
     {
       "id": "view.previousRegion",
@@ -392,7 +395,8 @@
       "category": "navigation",
       "keys": [
         "Shift+F6"
-      ]
+      ],
+      "palette": false
     },
     {
       "id": "nav.back",
@@ -1360,28 +1364,32 @@
       "title": "Open link",
       "category": "editing",
       "keys": [],
-      "flag": "page.editor"
+      "flag": "page.editor",
+      "palette": false
     },
     {
       "id": "link.copy",
       "title": "Copy link",
       "category": "editing",
       "keys": [],
-      "flag": "page.editor"
+      "flag": "page.editor",
+      "palette": false
     },
     {
       "id": "link.edit",
       "title": "Edit link",
       "category": "editing",
       "keys": [],
-      "flag": "page.editor"
+      "flag": "page.editor",
+      "palette": false
     },
     {
       "id": "link.remove",
       "title": "Remove link",
       "category": "editing",
       "keys": [],
-      "flag": "page.editor"
+      "flag": "page.editor",
+      "palette": false
     },
     {
       "id": "styles.edit",
@@ -4733,21 +4741,24 @@
       "title": "Paper",
       "category": "view",
       "keys": [],
-      "flag": "pages.view"
+      "flag": "pages.view",
+      "palette": false
     },
     {
       "id": "pages.backgroundMenu",
       "title": "Background",
       "category": "view",
       "keys": [],
-      "flag": "pages.view"
+      "flag": "pages.view",
+      "palette": false
     },
     {
       "id": "pages.exportMenu",
       "title": "Export",
       "category": "view",
       "keys": [],
-      "flag": "pages.pdf"
+      "flag": "pages.pdf",
+      "palette": false
     },
     {
       "id": "app.palette",
@@ -4755,7 +4766,8 @@
       "category": "general",
       "keys": [
         "Ctrl+K"
-      ]
+      ],
+      "palette": false
     },
     {
       "id": "app.quickSwitcher",
@@ -4975,7 +4987,8 @@
       "title": "Sort",
       "category": "notebooks",
       "keys": [],
-      "flag": "qol.pins"
+      "flag": "qol.pins",
+      "palette": false
     },
     {
       "id": "tree.sort.title",
@@ -5453,7 +5466,8 @@
       "title": "Restore",
       "category": "notebooks",
       "keys": [],
-      "flag": "trash.view"
+      "flag": "trash.view",
+      "palette": false
     },
     {
       "id": "trash.empty",
@@ -5467,7 +5481,8 @@
       "title": "Delete forever",
       "category": "notebooks",
       "keys": [],
-      "flag": "trash.purge"
+      "flag": "trash.purge",
+      "palette": false
     },
     {
       "id": "notes.newNotebook",
@@ -5512,7 +5527,8 @@
       "category": "notebooks",
       "keys": [
         "Ctrl+Shift+Up"
-      ]
+      ],
+      "palette": false
     },
     {
       "id": "tree.moveDown",
@@ -5520,7 +5536,8 @@
       "category": "notebooks",
       "keys": [
         "Ctrl+Shift+Down"
-      ]
+      ],
+      "palette": false
     },
     {
       "id": "pages.indent",
@@ -5552,7 +5569,8 @@
       "id": "tree.color",
       "title": "Color",
       "category": "notebooks",
-      "keys": []
+      "keys": [],
+      "palette": false
     },
     {
       "id": "tree.moveTo",
@@ -5615,31 +5633,36 @@
       "id": "updates.skip",
       "title": "Skip this update",
       "category": "updates",
-      "keys": []
+      "keys": [],
+      "palette": false
     },
     {
       "id": "updates.unskip",
       "title": "Install the skipped update",
       "category": "updates",
-      "keys": []
+      "keys": [],
+      "palette": false
     },
     {
       "id": "updates.whatsNew",
       "title": "Open the release notes",
       "category": "updates",
-      "keys": []
+      "keys": [],
+      "palette": false
     },
     {
       "id": "updates.report",
       "title": "Report a problem with an update",
       "category": "updates",
-      "keys": []
+      "keys": [],
+      "palette": false
     },
     {
       "id": "updates.moveApp",
       "title": "Add OpenNote to the Start menu",
       "category": "updates",
-      "keys": []
+      "keys": [],
+      "palette": false
     }
   ],
   "titleBar": [

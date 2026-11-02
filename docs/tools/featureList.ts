@@ -34,7 +34,7 @@ export interface Screen {
 
 /** What the app registers, as featureRegistry.test.ts writes it into docs/tools/registry.json. */
 export interface Registry {
-  commands: { id: string; title: string; category: string; keys: string[]; flag?: string }[];
+  commands: { id: string; title: string; category: string; keys: string[]; flag?: string; palette?: false }[];
   titleBar: { id: string; side: string }[];
   tools: { id: string; title: string }[];
   settings: { id: string; title: string }[];
@@ -88,6 +88,8 @@ const tabName = (title: string) => {
   const bare = title.replace(/^Open (the )?/, '').replace(/ tool$/, '');
   return bare.charAt(0).toUpperCase() + bare.slice(1);
 };
+/** A command's title, marked when the palette leaves it out. */
+const commandName = (c: Command) => (c.palette === false ? `${c.title} (not in the palette)` : c.title);
 const cell = (text: string) => text.replace(/\|/g, '\\|');
 const anchor = (title: string) =>
   title
@@ -173,7 +175,9 @@ function toolLines(src: Sources, tool: Registry['tools'][number]): string[] {
     out.push(`Commands (${tabs.length}):`, '');
     for (const tab of tabs) {
       const row = rowOf.get(tab.id);
-      out.push(`- **${tabName(tab.title)}.**${row ? ` ${entryText(row)}` : ''}`);
+      out.push(
+        `- **${tabName(tab.title)}.**${tab.palette === false ? ' Not in the palette.' : ''}${row ? ` ${entryText(row)}` : ''}`,
+      );
     }
     out.push('');
   }
@@ -231,7 +235,7 @@ function categoryLines(src: Sources, category: Category): string[] {
   const commands = src.registry.commands.filter((c) => categoryOfCommand(c) === category && !toolOfCommand(c.id));
   if (commands.length) {
     out.push('### Commands', '', '| Command | Default keys |', '| --- | --- |');
-    out.push(...commands.map((c) => `| ${cell(c.title)} | ${cell(c.keys.join(', '))} |`), '');
+    out.push(...commands.map((c) => `| ${cell(commandName(c))} | ${cell(c.keys.join(', '))} |`), '');
   }
   const shown = new Set(Object.values(TOOL_ENTRIES).flatMap((e) => (e.screen ? [e.screen] : [])));
   const shots = src.screens.filter(
@@ -242,9 +246,7 @@ function categoryLines(src: Sources, category: Category): string[] {
 }
 
 function introLines(registry: Registry): string[] {
-  const kits = registry.tools.filter((t) =>
-    ['Engineering kits', 'Subject and catalog kits'].includes(TOOL_ENTRIES[t.id]?.category ?? ''),
-  ).length;
+  const kits = registry.tools.filter((t) => TOOL_ENTRIES[t.id]?.kit).length;
   return [
     '# OpenNote feature list',
     '',
@@ -256,8 +258,9 @@ function introLines(registry: Registry): string[] {
       'has every picture in light and dark.',
     '',
     `The app registers ${registry.commands.length} commands and ${registry.tools.length} tool windows. ${kits} of the ` +
-      'windows are engineering, subject, and catalog kits. Every command is in the command palette (Ctrl+K). The keys ' +
-      'shown are the defaults of the standard shortcut set.',
+      'windows are subject and engineering kits. The command palette (Ctrl+K) runs every command not marked as ' +
+      'left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults ' +
+      'of the standard shortcut set.',
     '',
     '## Contents',
     '',
