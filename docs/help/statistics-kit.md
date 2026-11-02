@@ -3,6 +3,8 @@
 Describe data, run tests, plan studies, and work the numbers of epidemiology, resampling, and Bayesian updating, with the steps shown so you can follow them.
 The kit is new in Beta, so check its answers against your own work while you learn it.
 
+![The Statistics kit describing a column of data, with its summary table](../screens/kit-statistics-light.png)
+
 ## Open the kit
 
 - Open the command palette and type Statistics, or the name of a tool, such as ANOVA, power, or bootstrap. Each tool has its own command.

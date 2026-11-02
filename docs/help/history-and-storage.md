@@ -2,6 +2,8 @@
 
 OpenNote keeps every notebook as an ordinary folder in your notes folder. This guide covers page history, Trash, where your notes live, locked entries, and how to check a notebook.
 
+![The page history panel with earlier versions and the compare view of one of them](../screens/page-history-light.png)
+
 ## Page history
 
 OpenNote saves versions of a page while you work. Open a page's History panel to compare two versions or restore part of one.

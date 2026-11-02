@@ -2,6 +2,8 @@
 
 One window holds 87 calculators in eight subjects, named Economics and finance. Each one shows its fields, a headline answer, numbered steps you can follow by hand, and a graph where one helps. "Insert answer" and "Insert with steps" add the result to your page. These tools are new in Beta, so check answers against your own work while you learn them.
 
+![The Economics and finance kit on its markets and welfare tab, with supply and demand curves](../screens/kit-economics-light.png)
+
 To open it, use the command palette (Ctrl+K) or the Insert tab's math group, then pick a subject and a calculator.
 
 ## Money over time

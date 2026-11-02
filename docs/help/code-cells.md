@@ -2,6 +2,8 @@
 
 Write a short Python or JavaScript program on a page and run it there. Use it to check a worked problem, try Newton's method, or print a table of values. Code cells are in Beta.
 
+![A Python code cell that has run, with its output below the code](../screens/code-cell-light.png)
+
 ## Add a code cell
 
 - Open Insert, then Code cell. Or type `/code cell` in text, or press Ctrl+Alt+Shift+K. The command palette (Ctrl+K) finds it too.

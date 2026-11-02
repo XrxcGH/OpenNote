@@ -2,6 +2,8 @@
 
 Work calculus, engineering, and statistics problems step by step, check the answer, and put the working into your notes.
 
+![The Math solvers window on its integrals tab, with the worked steps](../screens/solvers-integrals-light.png)
+
 ## Open the solvers
 
 - Open Insert, then Math solvers. Or press Ctrl+Alt+Shift+M.

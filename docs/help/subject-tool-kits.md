@@ -2,6 +2,8 @@
 
 Thirteen tool windows work engineering, science, math, earth science, and reasoning problems. Each window has a tab for each tool. A tool takes typed values with units, works the problem, and shows the results, the worked steps, and its assumptions. These kits are new in Beta and off in Stable. Check the answers against your own work while you learn them.
 
+![The Thermodynamics kit finding a state of water from two properties](../screens/kit-thermo-light.png)
+
 ## Open a kit
 
 - Press Ctrl+K and type the kit's name, such as "solid mechanics" or "physics tools".
@@ -28,13 +30,13 @@ Thirteen tool windows work engineering, science, math, earth science, and reason
 | Kit                      | Tools                                                                                                                                                                                                                                                    |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Circuits and energy      | Transients, the circuit simulator (DC, AC sweep, and transient), op-amps and filters, semiconductors, instruments, AC power, power flow, data fitting, and energy                                                                                        |
-| Fluids and heat transfer | Fluid statics and Bernoulli, pipe flow and pumps, dimensional analysis, viscous flows, external flow and drag, conduction, fins, transient conduction, convection, heat exchangers, radiation, and water and air properties                              |
+| Fluids and heat transfer (fluid mechanics) | Fluid statics and Bernoulli, pipe flow and pumps, dimensional analysis, viscous flows, external flow and drag, conduction, fins, transient conduction, convection, heat exchangers, radiation, and water and air properties                              |
 | Solid mechanics          | Columns, stress and strain at a point, section properties, axial, torsion, and bending, beam deflection, pressure vessels, thin-walled structures, composite laminates, tissues and joints, fatigue and machine elements, and a finite element workbench |
 | Aerospace                | Standard atmosphere, compressible flow, nozzles and diffusers, rocket nozzles, finite wings, aircraft performance and stability, potential flow, aircraft dynamic modes, jet engine cycles, and airfoils                                                 |
 | Chemistry and materials  | Thermochemistry, equilibrium, acids and bases, electrochemistry, kinetics, solutions, crystal structures and diffraction, defects and diffusion, phase diagrams, and atoms and bonding                                                                   |
 | Thermodynamics           | Statistical thermodynamics, ideal gases, steam and water, psychrometrics, R-134a, steady-flow devices, power and refrigeration cycles, real gases and mixtures, and combustion                                                                           |
 | Dynamics and control     | System models, root locus, Bode and Nyquist, compensators and PID, state-space design, digital control, probability, Markov chains and queues, reliability, and Kalman filtering                                                                         |
-| Design tools             | Tolerances and fits, machining, forming and joining, micro and nano fabrication, number representation, programming references, orthographic views, a memory and pointer tracer, and a drafting sheet                                                    |
+| Design tools             | Tolerances and fits, machining, forming and joining, micro and nano fabrication, number representation, programming references, orthographic views, a memory and pointer tracer, and a drafting sheet. It also sets a page to computation paper or three-view drawing paper and adds a title block. |
 | Engineering mathematics  | Series, complex analysis, systems of ODEs, Fourier series and boundary value problems, numerical methods, a matrix console, a linear algebra workbench, and vector calculus                                                                              |
 | Mechanisms and dynamics  | Linkages, cams, gears, compliant mechanisms, rigid-body dynamics, Lagrangian mechanics, 3D rotations, vibration, and robot arms                                                                                                                          |
 | Physics tools            | Waves and sound, special relativity, wave and geometric optics, nuclear science, spacecraft sizing, electric and magnetic fields, and orbits and maneuvers                                                                                               |

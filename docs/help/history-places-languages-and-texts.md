@@ -2,6 +2,8 @@
 
 The history, places, languages, and texts kit is one tool window with a tab for each tool. Open it from the command palette: type the tool's name, such as Identification keys, or open the whole kit and pick a tab. Every tool shows its steps and puts its result on the page with the insert buttons under it. Click in a page first, then insert. The kit is new in Beta, so check the answers against your own work while you learn it.
 
+![The map maker of the History, places, languages, and texts kit](../screens/kit-humanities-light.png)
+
 ## Contents
 
 - [Tools](#tools)
