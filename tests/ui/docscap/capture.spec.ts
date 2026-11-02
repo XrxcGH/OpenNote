@@ -372,7 +372,18 @@ const SHOTS: Shot[] = [
       });
     },
   },
-  { name: 'settings-general', run: (p) => settings(p, 'General') },
+  {
+    name: 'settings-general',
+    run: async (p) => {
+      // A person who has chosen a notes folder sees its path, so start with one chosen.
+      await p.addInitScript(() => {
+        const boot = window.__OPENNOTE_BOOT__ as unknown as { settings: Record<string, unknown> };
+        boot.settings = { ...boot.settings, storage: { notesFolder: 'C:\\Users\\Ada\\Documents\\OpenNote' } };
+      });
+      await p.reload();
+      await settings(p, 'General');
+    },
+  },
   { name: 'settings-appearance', run: (p) => settings(p, 'Appearance') },
   { name: 'settings-editing', run: (p) => settings(p, 'Editing') },
   { name: 'settings-intelligence', run: (p) => settings(p, 'On-device intelligence') },
@@ -433,7 +444,14 @@ const SHOTS: Shot[] = [
     run: async (p) => {
       await typeNotes(p);
       await command(p, 'Open upcoming', 'Open upcoming');
-      await p.getByRole('dialog', { name: /Upcoming/ }).waitFor();
+      const d = p.getByRole('dialog', { name: /Upcoming/ });
+      await d.waitFor();
+      const tasks = ['Read chapter 4 today 5 PM', 'Lab report due tomorrow 9 AM', 'Quiz on cell division Friday 10 AM'];
+      for (const task of tasks) {
+        await d.getByLabel('Task and when it is due').fill(task);
+        await d.getByRole('button', { name: 'Add a task' }).click();
+      }
+      await expect(d.getByRole('heading', { name: /Today/ })).toBeVisible();
     },
   },
 ];

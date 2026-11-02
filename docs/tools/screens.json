@@ -337,12 +337,12 @@
   {
     "name": "tool-calculator",
     "category": "Math, graphs, and calculators",
-    "caption": "The calculator after a unit conversion, with its history."
+    "caption": "The scientific calculator after a unit conversion, with the answer and its Copy and Insert buttons."
   },
   {
     "name": "calc-graphing",
     "category": "Math, graphs, and calculators",
-    "caption": "The graphing calculator with two functions and the point where they cross."
+    "caption": "The graphing calculator with two functions drawn, and a value read off the graph near where they cross."
   },
   {
     "name": "calc-graphing-3d",
@@ -367,7 +367,7 @@
   {
     "name": "math-actions",
     "category": "Math, graphs, and calculators",
-    "caption": "The math actions on a selected equation, with its solution and steps on the page."
+    "caption": "The math actions on an equation: a solved equation on the page, and the worked steps of a derivative inserted below an equation."
   },
   {
     "name": "graph-3d",

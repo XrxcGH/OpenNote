@@ -2,7 +2,7 @@
 // groups, and links, PDF import, translate, protected sections, sync, and the tool kits.
 import { expect, type Page } from '@playwright/test';
 import { choose, draw, ellipse, line } from '../ink';
-import { insertPdf } from '../pdf';
+import { HANDOUT, lecturePdf } from './lecturePdf';
 
 export interface Scene {
   name: string;
@@ -76,7 +76,15 @@ export function scenes(h: Helpers): Scene[] {
         ]);
         await p.waitForTimeout(2500);
         await h.command(p, 'Open flashcards', 'Open flashcards');
-        await expect(p.getByRole('dialog', { name: 'Flashcards' }).getByText(/3 cards/)).toBeVisible();
+        const decks = p.getByRole('dialog', { name: 'Flashcards' });
+        await expect(decks.getByText(/3 cards/)).toBeVisible();
+        // The deck made from the page's lines has no name of its own yet, so give it one, as a person would.
+        await decks.locator('li button').first().click();
+        await decks.getByRole('button', { name: 'Rename deck' }).click();
+        await decks.getByRole('textbox', { name: 'Deck name' }).fill('Quick facts');
+        await p.keyboard.press('Enter');
+        await decks.getByRole('button', { name: 'Back to decks' }).click();
+        await expect(decks.getByRole('button', { name: 'Quick facts' })).toBeVisible();
       },
     },
     {
@@ -181,8 +189,22 @@ export function scenes(h: Helpers): Scene[] {
       quick: true,
       run: async (p) => {
         await openMembranes(p);
-        await insertPdf(p, 'lecture.pdf', ['Cell walls', 'Osmosis']);
-        await expect(p.getByRole('group', { name: /Page 2 of 2 from lecture\.pdf/ })).toBeVisible();
+        const chooser = p.waitForEvent('filechooser');
+        await h.command(p, 'Insert PDF', 'Insert PDF');
+        await (await chooser).setFiles({ name: 'lecture.pdf', mimeType: 'application/pdf', buffer: lecturePdf(HANDOUT) });
+        await expect(p.getByRole('group', { name: /Page 2 of 2 from lecture\.pdf/ })).toBeVisible({ timeout: 30_000 });
+        // Let the page pictures finish drawing, then take the toast away so only the pages show.
+        await p.waitForTimeout(3000);
+        const close = p.locator('button', { hasText: /^Close$/ });
+        if (await close.count()) await close.first().click();
+        // Scroll a little past the top of the first page, so its Original button is not under the Properties pill.
+        await p.getByRole('group', { name: /Page 1 of 2 from lecture\.pdf/ }).evaluate((e) => {
+          e.scrollIntoView({ block: 'start' });
+          let scroller = e.parentElement;
+          while (scroller && scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
+          if (scroller) scroller.scrollTop += 90;
+        });
+        await p.waitForTimeout(500);
       },
     },
     {
@@ -240,3 +262,15 @@ export function scenes(h: Helpers): Scene[] {
     },
   ];
 }
+        // Widen the window until every tab of the calculator shows.
+        await p.getByRole('separator', { name: /^Resize Calculator/ }).focus();
+        for (let i = 0; i < 22; i += 1) await p.keyboard.press('ArrowLeft');
+        await p.getByRole('dialog', { name: 'Calculator' }).getByRole('heading', { name: 'Calculator' }).click();
+        const d = p.getByRole('dialog', { name: 'Solid mechanics', exact: true });
+        await d.waitFor({ timeout: 20_000 });
+        await p.waitForTimeout(1500);
+        // The form fills the window: scroll to the results and the beam diagrams below it.
+        await d
+          .getByText('Results', { exact: true })
+          .first()
+          .evaluate((e) => e.scrollIntoView({ block: 'start' }));
