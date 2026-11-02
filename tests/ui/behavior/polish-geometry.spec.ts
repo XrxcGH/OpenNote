@@ -280,6 +280,25 @@ test.describe('the Properties chip', () => {
   }
 });
 
+test.describe('the Properties chip in focus mode', () => {
+  test('stays clear of the Exit focus mode button at 1280 by 800', async ({ page }) => {
+    await openMembranes(page, 1280);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await runCommand(page, 'Focus mode');
+    const exit = page.getByRole('button', { name: 'Exit focus mode' });
+    const chip = page.getByRole('button', { name: /^Properties/ });
+    await expect(exit).toBeVisible();
+    await expect(chip).toBeVisible();
+    // The chip floats at the page area's end edge; the exit button is fixed at the window's. They must not overlap.
+    await expect(async () => {
+      const a = (await exit.boundingBox())!;
+      const b = (await chip.boundingBox())!;
+      const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+      expect(overlap, 'the Properties chip covers the Exit focus mode button').toBe(false);
+    }).toPass({ timeout: 5000 });
+  });
+});
+
 test('a tool window wider than a phone-size window stays inside it', async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 800 });
   await page.goto('/?fixture=smart');
