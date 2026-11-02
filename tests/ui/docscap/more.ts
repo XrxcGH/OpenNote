@@ -50,14 +50,23 @@ export function scenes(h: Helpers): Scene[] {
     }
   }
 
-  async function lassoed(p: Page) {
+  const wavy = (x0: number, y: number, w: number, cycles: number): [number, number][] =>
+    Array.from({ length: 41 }, (_, i) => [x0 + (w * i) / 40, y + 9 * Math.sin((i / 40) * cycles * 6.2832)]);
+
+  /** A page of notes with two handwritten lines under them. */
+  async function inked(p: Page) {
     await openMembranes(p);
+    await typeLines(p, ['## Cell membranes', 'The membrane is a double layer of phospholipids.']);
     await p.getByRole('tab', { name: 'Draw' }).click();
     await choose(p, 'Pen, Ink, 0.5 mm');
-    await draw(p, line([150, 350], [260, 360]));
-    await draw(p, line([420, 350], [530, 360]));
+    await draw(p, wavy(150, 350, 230, 5));
+    await draw(p, wavy(420, 350, 230, 6));
+  }
+
+  async function lassoed(p: Page) {
+    await inked(p);
     await choose(p, 'Lasso select');
-    await draw(p, ellipse(340, 355, 240, 70));
+    await draw(p, ellipse(400, 355, 340, 70));
     const bar = p.getByRole('toolbar', { name: 'Selected ink and text' });
     await bar.waitFor();
     return bar;
@@ -111,7 +120,15 @@ export function scenes(h: Helpers): Scene[] {
       name: 'daily-calendar',
       run: async (p) => {
         await h.typeNotes(p);
+        await p.getByRole('button', { name: "Open today's note" }).click();
+        await expect(p.getByRole('heading', { level: 1, name: '2026-09-30' })).toBeVisible();
+        for (const day of ['Tuesday, September 29, 2026', 'Monday, September 28, 2026']) {
+          await h.command(p, 'daily notes calendar', /daily notes calendar/);
+          await p.getByRole('dialog', { name: 'Daily notes' }).getByRole('button', { name: day }).click();
+          await p.waitForTimeout(500);
+        }
         await h.command(p, 'daily notes calendar', /daily notes calendar/);
+        await p.getByRole('dialog', { name: 'Daily notes' }).waitFor();
         await p.waitForTimeout(500);
       },
     },
@@ -120,10 +137,23 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       run: async (p) => {
         await openMembranes(p);
+        await typeLines(p, ['## Cell membranes', 'A mind map of what the membrane does and is made of.', '']);
         await h.command(p, 'Insert mind map', 'Insert mind map');
-        await p.getByRole('button', { name: 'Add branch under' }).click();
-        await p.getByRole('button', { name: 'Add branch beside' }).click();
-        await p.getByRole('button', { name: 'Add branch under' }).click();
+        await p.getByText('Main idea').first().click();
+        await p.keyboard.press('Enter');
+        await p.keyboard.press('Control+a');
+        await p.keyboard.type('Cell membrane');
+        await p.keyboard.press('Tab');
+        await p.keyboard.type('Structure');
+        await p.keyboard.press('Enter');
+        await p.keyboard.type('Transport');
+        await p.keyboard.press('Enter');
+        await p.keyboard.type('Signaling');
+        await p.keyboard.press('Tab');
+        await p.keyboard.type('Receptor proteins');
+        await p.keyboard.press('Enter');
+        await p.keyboard.type('Hormones');
+        await p.keyboard.press('Escape');
         await p.waitForTimeout(800);
       },
     },
@@ -132,7 +162,17 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       run: async (p) => {
         await openMembranes(p);
+        await typeLines(p, ['## Photosynthesis', 'The light reaction feeds the Calvin cycle.', '']);
         await h.command(p, 'Insert diagram', /^Insert diagram/);
+        await p
+          .getByRole('textbox', { name: 'Diagram text' })
+          .fill(
+            'flowchart LR\n  A[Sunlight] --> B[Light reaction]\n  B --> C[ATP and NADPH]\n  C --> D[Calvin cycle]\n  D --> E[Glucose]',
+          );
+        await p
+          .getByRole('textbox', { name: 'Description of the diagram' })
+          .fill('Flowchart of photosynthesis, from sunlight to glucose');
+        await expect(p.getByText('Glucose').last()).toBeVisible({ timeout: 20_000 });
         await p.waitForTimeout(800);
       },
     },
@@ -141,14 +181,14 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       viewport: { width: 1600, height: 900 },
       run: async (p) => {
-        await openMembranes(p);
-        await p.getByRole('tab', { name: 'Draw' }).click();
-        await choose(p, 'Pen, Ink, 0.5 mm');
-        await draw(p, line([150, 350], [400, 350]));
+        await inked(p);
         await h.command(p, 'layers', /^Layers/);
         const d = p.getByRole('dialog', { name: 'Layers' });
         await d.getByRole('button', { name: 'Add a layer' }).click();
         await d.getByRole('button', { name: 'Add a layer' }).click();
+        await d.getByRole('textbox', { name: 'Name of Layer 3' }).fill('Labels');
+        await d.getByRole('textbox', { name: 'Name of Layer 2' }).fill('Diagram');
+        await d.getByRole('textbox', { name: 'Name of Layer 1' }).fill('Notes');
       },
     },
     {
@@ -166,12 +206,9 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       viewport: { width: 1600, height: 900 },
       run: async (p) => {
-        await openMembranes(p);
-        await p.getByRole('tab', { name: 'Draw' }).click();
-        await choose(p, 'Pen, Ink, 0.5 mm');
-        await draw(p, line([150, 350], [400, 380]));
+        await inked(p);
         await choose(p, 'Lasso select');
-        await draw(p, ellipse(275, 365, 220, 90));
+        await draw(p, ellipse(275, 355, 190, 60));
         const bar = p.getByRole('toolbar', { name: 'Selected ink and text' });
         await bar.getByRole('button', { name: 'Make link' }).click();
         const d = p.getByRole('dialog', { name: 'Make link' });
@@ -247,25 +284,6 @@ export function scenes(h: Helpers): Scene[] {
       run: async (p) => {
         await h.typeNotes(p);
         await h.command(p, 'beam', /beam/i);
-        await p.waitForTimeout(800);
-      },
-    },
-    {
-      name: 'subject-statistics',
-      run: async (p) => {
-        await h.typeNotes(p);
-        await h.command(p, 'statistics', /statistic/i);
-        await p.getByRole('textbox', { name: 'Data' }).fill('2, 4, 4, 5, 7, 9');
-        await p.getByRole('button', { name: 'Calculate' }).click();
-        await p.waitForTimeout(800);
-      },
-    },
-  ];
-}
-        // Widen the window until every tab of the calculator shows.
-        await p.getByRole('separator', { name: /^Resize Calculator/ }).focus();
-        for (let i = 0; i < 22; i += 1) await p.keyboard.press('ArrowLeft');
-        await p.getByRole('dialog', { name: 'Calculator' }).getByRole('heading', { name: 'Calculator' }).click();
         const d = p.getByRole('dialog', { name: 'Solid mechanics', exact: true });
         await d.waitFor({ timeout: 20_000 });
         await p.waitForTimeout(1500);
@@ -274,3 +292,22 @@ export function scenes(h: Helpers): Scene[] {
           .getByText('Results', { exact: true })
           .first()
           .evaluate((e) => e.scrollIntoView({ block: 'start' }));
+        await p.waitForTimeout(800);
+      },
+    },
+    {
+      name: 'subject-statistics',
+      run: async (p) => {
+        await h.typeNotes(p);
+        await h.command(p, 'statistics', /statistic/i);
+        // Widen the window until every tab of the calculator shows.
+        await p.getByRole('separator', { name: /^Resize Calculator/ }).focus();
+        for (let i = 0; i < 22; i += 1) await p.keyboard.press('ArrowLeft');
+        await p.getByRole('dialog', { name: 'Calculator' }).getByRole('heading', { name: 'Calculator' }).click();
+        await p.getByRole('textbox', { name: 'Data' }).fill('2, 4, 4, 5, 7, 9');
+        await p.getByRole('button', { name: 'Calculate' }).click();
+        await p.waitForTimeout(800);
+      },
+    },
+  ];
+}
