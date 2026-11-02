@@ -41,6 +41,8 @@ describe('beam deflection', () => {
     rel(r.thetaA, (-w * L ** 3) / (24 * EI), 1e-9);
     rel(r.thetaB, (w * L ** 3) / (24 * EI), 1e-9);
     expect(r.status).toBe('determinate');
+    // At midspan the slope is 0 exactly, not rounding noise such as 3.4694e-18 rad.
+    expect(r.points.find((p) => p.x === 2)?.theta).toBe(0);
   });
 
   it('gives PL³/(3EI) at the tip of a cantilever', () => {
