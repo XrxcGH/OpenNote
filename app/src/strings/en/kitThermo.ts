@@ -64,7 +64,7 @@ export const kitThermo = {
   },
   subject: {
     thermodynamics: 'Thermodynamics',
-    combustion: 'Combustion',
+    combustion: 'Fuels and burning',
     thermalPhysics: 'Thermal physics',
   },
   ui: {

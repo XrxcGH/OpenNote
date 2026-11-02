@@ -10,11 +10,11 @@
 // says, and the profile with its journals, in tests/e2e/logs, which CI uploads.
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { keepAppLogs, launchApp, LOGS, skipReason } from '../harness.ts';
+import { keepAppLogs, launchApp, LOGS, removeFolder, skipReason } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 
 /** Clicks the row of a tree whose label reads `name`, once it shows. */
@@ -176,7 +176,7 @@ describe('ink survives a restart', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(profileDir, { recursive: true, force: true });
+    removeFolder(profileDir);
   });
 
   it('keeps a stroke drawn on a page, and keeps its undo', async () => {

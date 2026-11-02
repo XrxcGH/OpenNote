@@ -55,6 +55,70 @@ impl Secrets for MemorySecrets {
     }
 }
 
+/// Secrets in a file in the app's local folder, for macOS and Linux, which have no Credential Manager: a JSON map
+/// that only this user can read (0600, written to a new file and renamed so a crash never leaves half a key).
+pub struct FileSecrets {
+    path: std::path::PathBuf,
+}
+
+impl FileSecrets {
+    pub fn new(folder: &std::path::Path) -> FileSecrets {
+        FileSecrets {
+            path: folder.join("cli-secrets.json"),
+        }
+    }
+
+    fn read(&self) -> HashMap<String, String> {
+        std::fs::read_to_string(&self.path)
+            .ok()
+            .and_then(|text| serde_json::from_str(&text).ok())
+            .unwrap_or_default()
+    }
+
+    fn write(&self, map: &HashMap<String, String>) -> bool {
+        use std::io::Write as _;
+        let Some(folder) = self.path.parent() else {
+            return false;
+        };
+        let partial = self.path.with_extension("json.new");
+        let result = (|| {
+            std::fs::create_dir_all(folder)?;
+            let _ = std::fs::remove_file(&partial);
+            let mut options = std::fs::OpenOptions::new();
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                options.mode(0o600);
+            }
+            let mut file = options.open(&partial)?;
+            file.write_all(serde_json::to_string(map)?.as_bytes())?;
+            file.sync_all()?;
+            std::fs::rename(&partial, &self.path)
+        })();
+        result.is_ok()
+    }
+}
+
+impl Secrets for FileSecrets {
+    fn get(&self, target: &str) -> Option<String> {
+        self.read().get(target).cloned()
+    }
+
+    fn put(&self, target: &str, secret: &str) -> bool {
+        let mut map = self.read();
+        map.insert(target.into(), secret.into());
+        self.write(&map)
+    }
+
+    fn delete(&self, target: &str) {
+        let mut map = self.read();
+        if map.remove(target).is_some() {
+            self.write(&map);
+        }
+    }
+}
+
 /// Unwraps the app's `<parts>|<text>` form. The tool's values are always one part.
 pub fn unwrap_parts(value: &str) -> Option<String> {
     let (count, text) = value.split_once('|')?;
@@ -139,5 +203,26 @@ mod tests {
         assert_eq!(unwrap_parts("1|abc"), Some("abc".into()));
         assert_eq!(unwrap_parts("2|abc"), None);
         assert_eq!(unwrap_parts("abc"), None);
+    }
+
+    #[test]
+    fn a_file_keeps_secrets_between_runs_and_forgets_them_on_delete() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let folder = dir.path().join("nested");
+        let first = FileSecrets::new(&folder);
+        assert_eq!(first.get(CLI_TOKEN), None);
+        assert!(first.put(CLI_TOKEN, "onapi_x"));
+        assert_eq!(FileSecrets::new(&folder).get(CLI_TOKEN).as_deref(), Some("onapi_x"));
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(folder.join("cli-secrets.json"))
+                .expect("file")
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+        first.delete(CLI_TOKEN);
+        assert_eq!(FileSecrets::new(&folder).get(CLI_TOKEN), None);
     }
 }

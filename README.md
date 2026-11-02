@@ -10,6 +10,8 @@ OpenNote is an open-source note-taking app that combines your favorite writing, 
 
 OpenNote is in beta testing on Windows. Each phase of the [development plan](docs/DEVELOPMENT.md#5-phases) gets its own branch and merges into `main` when it meets its exit gate. Phases 5 to 14 are built and wait together on branch `beta` for their hand tests, along with thirteen subject tool kits and eleven more subject tool windows for the sciences, statistics, economics, and the humanities. Seven later additions also wait there: Check my work, the tutor, practice exams, notes-app import, LaTeX export, macOS and Linux builds, and end-to-end-encrypted sync. Beta 7 adds ink fixes and smoother shapes, layout audit fixes, DeriveNotes parity features, 12 course tool kits and 13 more subject kits, and a start-up lock wait that fixes ink missing after a crash restart.
 
+The fin batch brings the Mac and Linux builds close to Windows: PDF and printing, read aloud, spell check, the command line, Mac updates, the Keychain and the Secret Service, and text in pictures and handwriting on the device. It also fixes the nightly crashes, sweeps 200,000 palm cases, trims start-up, keeps tool windows from covering each other, and adds behavior and keyboard tests for every kit.
+
 | Phase                                     | Focus                                                                                    | Status                                                                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | 0                                         | Project foundation                                                                       | Done and merged                                                                                                            |
@@ -67,7 +69,7 @@ OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux
 | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | ![An inline equation in a sentence and a graph block with its function](docs/screens/math-graph-light.png) | ![The search panel with a result, the matched word in bold, and a preview](docs/screens/search-light.png) | ![The recording options under the Record button](docs/screens/recording-light.png) |
 
-Every screen is in [docs/screens](docs/screens/README.md), in light and dark. The full list of tools and features is in [docs/FEATURE-LIST.md](docs/FEATURE-LIST.md), which `npm run docs:features` makes from FEATURES.md, and what is tested by hand and what is not is in [docs/FEATURES.md](docs/FEATURES.md).
+Every screen is in [docs/screens](docs/screens/README.md), in light and dark (the dark theme is a neutral charcoal gray, not brown). The full list of tools and features is in [docs/FEATURE-LIST.md](docs/FEATURE-LIST.md), which `npm run docs:features` makes from FEATURES.md, and what is tested by hand and what is not is in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Try the beta
 
@@ -95,7 +97,7 @@ There is no release yet. When one ships, it will appear on the [GitHub Releases 
 | `OpenNote_macOS.dmg`        | macOS 11 or later, on Apple silicon and Intel  |
 | `OpenNote_Linux.AppImage`   | 64-bit Linux, such as Ubuntu 22.04 or later    |
 
-The Mac and Linux builds are new and unsigned. [OpenNote on macOS and Linux](docs/help/install-macos-linux.md) says how to open them and what still needs Windows ([ADR 0055](docs/adr/0055-macos-and-linux.md)).
+The Mac and Linux builds are new and unsigned. They save PDFs, print, read aloud, check spelling, and read text in pictures with the system's own tools. [OpenNote on macOS and Linux](docs/help/install-macos-linux.md) says how to open them and what still needs Windows ([ADR 0055](docs/adr/0055-macos-and-linux.md)).
 
 ## Quick start for contributors
 

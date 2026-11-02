@@ -13,6 +13,7 @@ import { CloudChoice } from './cloud/CloudChoice';
 import styles from './intel.module.css';
 import { intelState } from './choices';
 import PlusSection from './PlusSection';
+import { offersWindowsSettings, platformNeeds, platformText } from './platformNeeds';
 import { loadIntel, ON_DEVICE_FEATURES, refreshStatus, setFeature } from './runtime';
 import type { OnDeviceFeature } from './runtime';
 
@@ -80,9 +81,9 @@ function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
     : status === null
       ? t('intel.settings.status.checking')
       : problem
-        ? t('intel.settings.status.unavailable', { reason: t(text.needs) })
+        ? t('intel.settings.status.unavailable', { reason: t(platformNeeds(feature, text.needs)) })
         : t('intel.settings.status.ready');
-  const fix = feature in FIX ? FIX[feature as keyof typeof FIX] : null;
+  const fix = offersWindowsSettings() && feature in FIX ? FIX[feature as keyof typeof FIX] : null;
   return (
     <li className={styles.feature}>
       <Switch
@@ -97,7 +98,7 @@ function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
         }}
       />
       <p id={helpId} className={styles.help}>
-        {t(text.help)} {t('intel.settings.localOnly')}
+        {t(platformText(text.help))} {t('intel.settings.localOnly')}
       </p>
       <p id={statusId} className={problem ? `${styles.status} ${styles.problem}` : styles.status} role="status">
         {line}

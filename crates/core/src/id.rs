@@ -128,8 +128,42 @@ fn decode_digit(byte: u8) -> Option<u8> {
         .and_then(|p| u8::try_from(p).ok())
 }
 
+#[cfg(any(test, feature = "testing"))]
+thread_local! {
+    /// This thread's seeded generator, when a test or fuzz target asked for one.
+    static SEEDED: std::cell::Cell<Option<u64>> = const { std::cell::Cell::new(None) };
+}
+
+/// Makes this thread's new IDs come from a fixed seed, or from the operating system again with `None`. Tests
+/// and fuzz targets use it so that a script makes the same IDs, and so the same notebook, on every run.
+#[cfg(any(test, feature = "testing"))]
+pub fn seed_ids(seed: Option<u64>) {
+    SEEDED.with(|s| s.set(seed));
+}
+
+/// Fills `buf` from this thread's seeded generator (SplitMix64), if a test set one. Returns whether it did.
+#[cfg(any(test, feature = "testing"))]
+fn fill_seeded(buf: &mut [u8]) -> bool {
+    SEEDED.with(|s| {
+        let Some(mut state) = s.get() else { return false };
+        for byte in buf.iter_mut() {
+            state = state.wrapping_add(0x9e37_79b9_7f4a_7c15);
+            let mut z = state;
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+            *byte = (z ^ (z >> 31)).to_le_bytes()[0];
+        }
+        s.set(Some(state));
+        true
+    })
+}
+
 /// Fills `buf` from the operating system's secure random generator.
 fn fill_random(buf: &mut [u8]) {
+    #[cfg(any(test, feature = "testing"))]
+    if fill_seeded(buf) {
+        return;
+    }
     // The generator fails only on systems OpenNote doesn't support. IDs must never repeat, so there is no fallback.
     getrandom::fill(buf).expect("the operating system's random generator failed");
 }

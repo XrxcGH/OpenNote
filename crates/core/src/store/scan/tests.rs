@@ -351,3 +351,56 @@ fn p11_a_renamed_folder_with_a_move_mark_finishes_its_move() {
     ])
     .unwrap();
 }
+
+/// The nightly fuzzer's notebook_tree crash: a page on its way back from one Trash item that a second item also
+/// holds. The first scan finished the restore, and only the second scan then finished the other deletion. Both
+/// now happen in the first scan, so the second one changes nothing. Deletion wins: the page is in the second
+/// item, and its section no longer lists it, so it shows only in Trash.
+#[test]
+fn a_restore_and_a_second_deletion_of_one_page_settle_in_one_scan() {
+    let (kit, mut store, [s1, _], pages) = setup();
+    let page = pages[0];
+    let first = store.delete(&[NodeRef::Page(page)], TrashReason::Deleted).unwrap()[0];
+    let mut second = store.trash[&first].file.clone();
+    second.id = crate::id::TrashItemId::generate(kit.clock.as_ref());
+    let second_dir = store.layout.trash_item_dir(second.id);
+    kit.fs.inner.put(
+        &second_dir.join(crate::store::layout::ITEM_JSON),
+        &kit.codec.write_trash_item(&second),
+    );
+    let entries = match &second.origin {
+        crate::model::TrashOrigin::Pages { entries, .. } => entries.clone(),
+        _ => Vec::new(),
+    };
+    let mut entry = entries.first().cloned().expect("a page's Trash item");
+    entry.moving = Some(Moving::FromTrash(first));
+    store.sections.get_mut(&s1).unwrap().file.pages.push(entry);
+    store.write_section(s1).unwrap();
+
+    let mut fresh = kit.open().unwrap();
+    let first_scan = fresh.scan().unwrap();
+    assert!(first_scan.unavailable.is_empty(), "{first_scan:?}");
+    let before = snapshot(&kit.fs.inner);
+    let again = fresh.scan().unwrap();
+    assert!(!again.changed_files(), "{again:?}");
+    assert!(again.unavailable.is_empty(), "{again:?}");
+    assert!(snapshot(&kit.fs.inner) == before, "a second scan changed the notebook");
+    let in_trash = second_dir.join(page.to_string()).join(PAGE_JSON);
+    assert!(kit.fs.inner.get(&in_trash).is_some(), "the page is kept in Trash");
+    let shown = fresh
+        .sections
+        .values()
+        .flat_map(|s| s.file.pages.iter())
+        .filter(|e| e.id == page);
+    assert_eq!(shown.count(), 0, "no section lists the page");
+    let listed = kit
+        .fs
+        .inner
+        .get(&store.sections[&s1].dir.join(SECTION_JSON))
+        .unwrap_or_default();
+    let listed = kit.codec.read_section(&listed, &kit.env.limits).unwrap();
+    assert!(
+        listed.pages.iter().all(|e| e.id != page),
+        "the section file doesn't list the page"
+    );
+}

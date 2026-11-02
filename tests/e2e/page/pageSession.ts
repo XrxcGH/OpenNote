@@ -74,11 +74,12 @@ export async function clickAt(browser: Browser, point: { x: number; y: number })
 /** The floating text boxes, by name, with their page-unit positions from their inline styles. */
 export async function textBoxes(
   browser: Browser,
-): Promise<{ name: string; text: string; left: number; top: number }[]> {
+): Promise<{ block: string; name: string; text: string; left: number; top: number }[]> {
   return browser.execute(() =>
     [...document.querySelectorAll<HTMLElement>('[role="textbox"][aria-label^="Text box"]')].map((root) => {
       const wrapper = root.closest<HTMLElement>('[data-block-id]')!;
       return {
+        block: wrapper.dataset.blockId ?? '',
         name: root.getAttribute('aria-label') ?? '',
         text: root.textContent ?? '',
         left: parseFloat(wrapper.style.left),

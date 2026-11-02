@@ -2,11 +2,11 @@
 // the notebooks into that folder and the page says when the last backup ran.
 
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
 import { answerPickers, openSettings } from './steps.ts';
 
@@ -21,7 +21,7 @@ describe('backing up in the real app', { skip: skipReason() }, () => {
 
   after(async () => {
     await session?.close();
-    rmSync(destination, { recursive: true, force: true });
+    removeFolder(destination);
   });
 
   it('chooses a folder, backs up now, and reports the last backup', async () => {
@@ -34,7 +34,7 @@ describe('backing up in the real app', { skip: skipReason() }, () => {
     assert.match(await section.getText(), /No backup has run yet\./);
     await section.$('button=Choose backup folder').click();
     await section
-      .$(`//*[contains(normalize-space(.), ${JSON.stringify(destination)})]`)
+      .$(`//*[contains(normalize-space(.), ${JSON.stringify(basename(destination))})]`)
       .waitForExist({ timeout: 10_000 });
     await section.$('button=Back up now').click();
     await browser.waitUntil(async () => /Last backup: /.test(await section.getText()), {

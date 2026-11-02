@@ -65,6 +65,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [CHECKS.md](CHECKS.md): the quality gate every file change must pass, with its rules and settings.
 - [testing/beta-4-checklist.md](testing/beta-4-checklist.md): the hand test checklist for beta 4, starting with how to run it on a throwaway profile so real notes stay safe.
 - [testing/palm-rejection.md](testing/palm-rejection.md): the palm rejection test with a real pen.
+- [testing/palm-sweep.md](testing/palm-sweep.md): the 200,000-case palm label sweep, with each open failure and a proposed fix for review.
 - [testing/keyboard-and-screen-reader.md](testing/keyboard-and-screen-reader.md): the checklist a person runs at each phase exit and before each beta, with a screen reader and no mouse.
 - [testing/hardware-kit.md](testing/hardware-kit.md): one command for each exit gate that needs a device (crash on a drive, typing on four cores, pen latency, Phase 12 accuracy), and where the results go.
 - [HARDENING.md](HARDENING.md): the nightly tests, opt-in crash reports, the self-check, the feedback file, and safe start.
@@ -89,6 +90,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [perf/phase-5.md](perf/phase-5.md): pen-to-screen time and frame rate on a page of 10,000 strokes.
 - [perf/palm-accuracy.md](perf/palm-accuracy.md): palm rejection accuracy on 61 adversarial scenarios and labeled recordings.
 - [perf/palm-competitors.md](perf/palm-competitors.md): the palm rejection baseline from other apps, so the claim of better accuracy can be checked.
+- [perf/images.md](perf/images.md): what a 12 MP photo costs as the original and as a smaller copy (spike S3), and why OpenNote keeps the original.
 - [perf/phase-6-core.md](perf/phase-6-core.md): the page views and the PDF export, measured.
 - [perf/phase-8-core.md](perf/phase-8-core.md): how fast the Phase 8 search core runs, with the corpus, the method, the numbers, and the open questions.
 - [perf/phase-9-core.md](perf/phase-9-core.md): what recording costs in processor time, how well the timestamps hold over three hours, and how much a crash loses.

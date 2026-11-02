@@ -55,7 +55,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     pageExtras: createTauriPageExtras(),
     exports: createTauriExports(),
     audio: createTauriAudio(),
-    speech: createTauriSpeech(),
+    speech: createTauriSpeech(boot.system),
     // With storage.core, the core keeps the notes; the Phase 2 snapshot is only for a build without it.
     notesSnapshot: !isEnabled('storage.core') && isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
     notesCore: isEnabled('storage.core') ? createTauriNotesCore() : null,

@@ -13,6 +13,7 @@ use std::{
 };
 
 pub mod cli;
+pub mod cli_unix;
 pub mod path_entry;
 mod shortcut;
 pub mod uninstall;

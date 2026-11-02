@@ -84,25 +84,25 @@ export const tokens = {
     },
     "dark": {
       "surface": {
-        "app": "#1C1916",
-        "page": "#24201C",
-        "raised": "#2C2722",
-        "sunken": "#171411",
-        "hover": "#332C26",
+        "app": "#1E1E1C",
+        "page": "#262624",
+        "raised": "#30302E",
+        "sunken": "#181817",
+        "hover": "#383836",
         "selected": "#2E3B30",
-        "scrim": "#1712108C"
+        "scrim": "#0F0F0E8C"
       },
       "text": {
-        "primary": "#F0E9DE",
-        "secondary": "#CFC5B7",
-        "muted": "#ABA093",
-        "onAccent": "#1C1916",
+        "primary": "#F2F1EC",
+        "secondary": "#CBCAC3",
+        "muted": "#A7A59D",
+        "onAccent": "#1E1E1C",
         "link": "#8FC29D",
-        "onSelected": "#F0E9DE"
+        "onSelected": "#F2F1EC"
       },
       "border": {
-        "subtle": "#3A322B",
-        "control": "#8D8174"
+        "subtle": "#3C3C39",
+        "control": "#8C8B85"
       },
       "accent": {
         "primary": "#8FC29D",
@@ -150,11 +150,11 @@ export const tokens = {
         "keyword": "#C2ABE8",
         "string": "#8FC29D",
         "number": "#F0AE68",
-        "comment": "#ABA093",
+        "comment": "#A7A59D",
         "function": "#9DB4EA",
         "type": "#E7BA62",
         "variable": "#D6AE86",
-        "punctuation": "#CFC5B7"
+        "punctuation": "#CBCAC3"
       }
     }
   },
@@ -857,7 +857,7 @@ export const tokens = {
       {
         "name": "Ink",
         "light": "#2B2521",
-        "dark": "#F0E9DE"
+        "dark": "#F2F1EC"
       },
       {
         "name": "Indigo",

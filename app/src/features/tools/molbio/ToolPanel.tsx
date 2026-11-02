@@ -209,7 +209,7 @@ function Parts({ result }: { result: KitOk }) {
       {result.figures?.map((item, i) => {
         const title = say(item.title, item.vars);
         return (
-          <section key={`f${i}`} className={styles.part} aria-label={title}>
+          <section key={`f${i}`} className={styles.part} aria-label={t('kitMolBio.figureOf', { what: title })}>
             <div className={styles.partHead}>
               <h4 className={styles.subheading}>{title}</h4>
               <Button
@@ -227,7 +227,7 @@ function Parts({ result }: { result: KitOk }) {
       {result.blocks?.map((block, i) => {
         const title = say(block.title);
         return (
-          <section key={`b${i}`} className={styles.part} aria-label={title}>
+          <section key={`b${i}`} className={styles.part} aria-label={t('kitMolBio.textOf', { what: title })}>
             <div className={styles.partHead}>
               <h4 className={styles.subheading}>{title}</h4>
               <Button

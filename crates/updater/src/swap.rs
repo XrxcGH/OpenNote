@@ -141,7 +141,7 @@ pub fn replace_or_restore(replacer: &dyn Replacer, exe: &Path, new: &Path, fallb
 pub fn checked_previous(previous_dir: &Path, record: &PreviousRecord) -> Option<PathBuf> {
     let name = Path::new(&record.path).file_name()?.to_str()?;
     let expected_start = format!("OpenNote-{}-", record.version);
-    if !name.starts_with(&expected_start) || !name.ends_with(".exe") {
+    if !name.starts_with(&expected_start) || !(name.ends_with(".exe") || name.ends_with(".dmg")) {
         return None;
     }
     let path = previous_dir.join(name);

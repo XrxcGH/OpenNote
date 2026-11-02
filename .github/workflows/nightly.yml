@@ -38,6 +38,10 @@ on:
         description: Minutes of random editing in the soak
         type: number
         default: 120
+      soak_seed:
+        description: Seed of the soak's random edits, to replay a night (empty uses the run number)
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -150,6 +154,8 @@ jobs:
     env:
       KILLS: ${{ inputs.kills || '1000' }}
       KILL_NOTEBOOK: ${{ github.workspace }}/kill-notebook
+      # The device-local data folder: the journal and the manifest the harness checks the notebook against.
+      KILL_DATA: ${{ github.workspace }}/kill-data
       # Optimized code runs more saves in the same time than debug code, and keeps debug assertions.
       CARGO_PROFILE_DEV_OPT_LEVEL: 2
     steps:
@@ -168,13 +174,15 @@ jobs:
         run: |
           mkdir -p "$KILL_NOTEBOOK"
           echo "Seed: $GITHUB_RUN_ID"
-          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
+          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --data "$KILL_DATA" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
       - name: Keep the notebook the harness checked
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: kill-notebook
-          path: kill-notebook
+          path: |
+            kill-notebook
+            kill-data
           if-no-files-found: ignore
           retention-days: 30
 
@@ -288,11 +296,24 @@ jobs:
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
         # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
-        run: node --test --test-concurrency=1 "tests/e2e/**/*.spec.ts"
+        # Each spec file runs in a process of its own, and any app or driver it left behind is stopped before the
+        # next one starts, so one spec that dies cannot reset the connections of the 70 after it.
+        run: |
+          $failed = @()
+          foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
+            node --test --test-concurrency=1 --test-timeout=600000 $spec.FullName
+            if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
+            Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue |
+              Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+          if ($failed.Count -gt 0) {
+            "Failed specs: $($failed -join ', ')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
       - name: Start-up baseline for main
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nightly-e2e-logs
@@ -303,14 +324,14 @@ jobs:
   soak:
     # A scripted person edits one long note at random for two hours and the job holds memory, nodes, and typing
     # time flat from the first quarter to the last (A4-35, tests/soak). The seed is the run number, so a failure
-    # can be replayed with OPENNOTE_SOAK_SEED.
+    # can be replayed with OPENNOTE_SOAK_SEED, or on Actions with the soak_seed input.
     runs-on: ubuntu-latest
     timeout-minutes: 200
     permissions:
       contents: read
     env:
       OPENNOTE_SOAK_MINUTES: ${{ inputs.soak_minutes || '120' }}
-      OPENNOTE_SOAK_SEED: ${{ github.run_number }}
+      OPENNOTE_SOAK_SEED: ${{ inputs.soak_seed || github.run_number }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -381,7 +402,7 @@ jobs:
 
   nvda:
     # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
-    # records what it said (A4-42). The Guidepup packages are installed here, not in package.json, so no other job
+    # records what it said (A4-42). The Guidepup packages are installed here, under tests/nvda, not in package.json, so no other job
     # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
     runs-on: windows-latest
     timeout-minutes: 45
@@ -398,7 +419,9 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Install Guidepup
-        run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+        # Into tests/nvda/node_modules, away from the repository's own tree: installing on top of it failed with
+        # "Cannot read properties of null (reading 'edgesOut')". The spec still finds the package from there.
+        run: npm install --prefix tests/nvda --no-save --no-package-lock --no-audit --no-fund @guidepup/guidepup@0.35.0
       - name: Set up NVDA
         run: npx --yes @guidepup/setup@0.29.1 setup --ci
       - name: Walk the checklist with NVDA

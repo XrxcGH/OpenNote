@@ -139,6 +139,7 @@ function Windows() {
             tool={tool}
             width={placed.width}
             right={placed.right}
+            down={placed.down}
             overlay={overlay}
             stack={stack(id)}
             maxWidth={
