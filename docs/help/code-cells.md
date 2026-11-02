@@ -12,7 +12,7 @@ Write a short Python or JavaScript program on a page and run it there. Use it to
 
 - Press Run, or Ctrl+Enter in the code. What the program prints appears under it, and errors show in red.
 - In JavaScript, use `console.log` or `print`. The value of the last line is shown after an arrow.
-- In Python, use `print`. Python cells use MicroPython, which has most of the language and modules such as `math`, `random`, `json`, and `re`. It has no NumPy.
+- In Python, use `print`. Python cells use MicroPython, which has most of the language and modules such as `math`, `random`, `json`, and `re`. It has no NumPy, and no `asyncio.run` or `input`.
 - Press Stop, or Escape in the code, to end a run. Clear output removes what was printed.
 - Code runs only when you press Run. Opening a page, or a page someone shared with you, never runs it.
 
@@ -22,7 +22,8 @@ Each run starts in a sandbox of its own, on this device, and works offline.
 
 - It has no network, so it cannot download or send anything.
 - It cannot open your files or your notes, and cannot change the page or the app. A Python cell's `open` works only on a short-lived, empty in-memory disk.
-- It stops after 10 seconds and when it uses more than 64 MB. The first 100,000 characters of output are kept.
+- It stops after 10 seconds and when it uses more than 64 MB. The first 100,000 characters of output are kept, and the cell says when the rest was cut.
+- A function that calls itself without end stops with a stack overflow error.
 - Nothing is kept from one run to the next. The page saves the code, not the output.
 
 ## In exports and other apps
