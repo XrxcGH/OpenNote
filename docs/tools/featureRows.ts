@@ -1,29 +1,59 @@
 // Reads the feature rows of docs/FEATURES.md for the feature list (featureList.ts): one short sentence for each
 // table row or bullet, grouped by the section it sits in.
 
+import { SHORT } from './featureShort.ts';
+
 const SKIPPED = /^(Contents|How to read the status|Screens)$/;
 
-/** CHECKS warns about a sentence over 30 words, so a longer one is cut. */
+/** CHECKS warns about a sentence over 30 words, so a longer one takes its short form from featureShort.ts. */
 const MAX_WORDS = 30;
 
-/** At most 30 words: cut at the last comma or semicolon, else at the last word, and keep a cut list a list. */
+/** At most 30 words: a longer sentence is replaced by its short form, written by hand. */
 function shortened(sentence: string): string {
-  const words = sentence.split(' ');
-  if (words.length <= MAX_WORDS) return sentence;
-  const head = words.slice(0, MAX_WORDS).join(' ');
-  const cut = Math.max(head.lastIndexOf(','), head.lastIndexOf(';'));
-  let text = (cut > 0 ? head.slice(0, cut) : head).replace(/,?\s+(and|or|the|a|of|to|with)$/, '').replace(/[,;:]$/, '');
-  // "a, b, c, d" lost its "and d" in the cut, so the last item takes the "and".
-  const last = text.lastIndexOf(', ');
-  if (last > 0 && !/^, (and|or) /.test(text.slice(last)) && text.slice(0, last).includes(','))
-    text = `${text.slice(0, last)}, and ${text.slice(last + 2)}`;
-  return text;
+  if (sentence.split(' ').length <= MAX_WORDS) return sentence;
+  const short = SHORT[sentence.slice(0, 40)];
+  if (!short) throw new Error(`Give this sentence a short form in docs/tools/featureShort.ts: ${sentence}`);
+  return short;
 }
+
+/** Words whose full stop does not end a sentence. */
+const ABBREVIATION = /(?:^|[\s(])(?:e\.g|i\.e|vs|approx|Fig|No|Eq|cf|al|St|Dr|Mr|Mrs|Ms|U\.S)\.$/;
+
+/** Where the sentences of a text end: a stop before a capital, outside parentheses, and not after an abbreviation. */
+export function sentenceStops(clean: string): number[] {
+  const stops: number[] = [];
+  let depth = 0;
+  let code = false;
+  for (let i = 0; i < clean.length; i += 1) {
+    const ch = clean[i]!;
+    // Code such as `![[` is not text, so its brackets do not count.
+    if (ch === '`') code = !code;
+    else if (code) continue;
+    else if (ch === '(' || ch === '[') depth += 1;
+    else if ((ch === ')' || ch === ']') && depth > 0) depth -= 1;
+    else if (depth === 0 && '.!?'.includes(ch) && /^\s+[A-Z`"(]/.test(clean.slice(i + 1, i + 3))) {
+      if (ch === '.' && ABBREVIATION.test(clean.slice(Math.max(0, i - 8), i + 1))) continue;
+      stops.push(i);
+    }
+  }
+  return stops;
+}
+
+/** True when every parenthesis of a text, outside code, is closed. */
+export const balanced = (text: string) => {
+  let depth = 0;
+  for (const ch of text.replace(/`[^`]*`/g, '')) {
+    if (ch === '(') depth += 1;
+    else if (ch === ')') depth -= 1;
+    if (depth < 0) return false;
+  }
+  return depth === 0;
+};
 
 /** The first sentence of a piece of text, without its final full stop. A sentence under five words takes the next. */
 export function firstSentence(text: string): string {
   const clean = text.replace(/\s+/g, ' ').trim();
-  const stops = [...clean.matchAll(/[.!?](?=\s+[A-Z`"(])/g)].map((m) => m.index);
+  const stops = sentenceStops(clean);
   const end = stops.find((at) => clean.slice(0, at).split(' ').length >= 5) ?? clean.length;
   const sentence = clean.slice(0, end).replace(/[.]$/, '').trim();
   return shortened(sentence.charAt(0).toUpperCase() + sentence.slice(1));

@@ -17,7 +17,8 @@ import {
   TITLE_BAR,
   type Category,
 } from './featureMaps.ts';
-import { entryName, entryText, rowName, sectionsOf, type Section } from './featureRows.ts';
+import { COMMAND_TEXT, SETTINGS_TEXT, SETUP_TEXT } from './featureCommands.ts';
+import { entryName, entryText, firstSentence, rowName, sectionsOf, type Section } from './featureRows.ts';
 import { TOOL_ENTRIES } from './featureTools.ts';
 
 export { CATEGORIES, SCREEN_CATEGORIES, TITLE_BAR } from './featureMaps.ts';
@@ -34,7 +35,15 @@ export interface Screen {
 
 /** What the app registers, as featureRegistry.test.ts writes it into docs/tools/registry.json. */
 export interface Registry {
-  commands: { id: string; title: string; category: string; keys: string[]; flag?: string; palette?: false }[];
+  commands: {
+    id: string;
+    title: string;
+    category: string;
+    keys: string[];
+    flag?: string;
+    palette?: false;
+    about?: string;
+  }[];
   titleBar: { id: string; side: string }[];
   tools: { id: string; title: string }[];
   settings: { id: string; title: string }[];
@@ -88,6 +97,25 @@ const tabName = (title: string) => {
   const bare = title.replace(/^Open (the )?/, '').replace(/ tool$/, '');
   return bare.charAt(0).toUpperCase() + bare.slice(1);
 };
+/** A command's sentence: its kit tab's own words, else its line in featureCommands.ts. */
+export const commandText = (c: Command): string | undefined =>
+  c.about ? `${firstSentence(c.about)}.` : COMMAND_TEXT[c.id];
+
+/** The listed commands with no sentence, which the list cannot be made without. */
+export function commandsWithoutText(registry: Registry, features: string): string[] {
+  const src = sources(features, [], registry);
+  const missing: string[] = [];
+  for (const tool of registry.tools) {
+    const entry = TOOL_ENTRIES[tool.id];
+    if (!entry) continue;
+    const tabs = registry.commands.filter((c) => c.id !== `tools.${tool.id}` && toolOfCommand(c.id) === tool.id);
+    const rowOf = tabRows(sectionRows(src.sections, entry.section), tabs);
+    missing.push(...tabs.filter((c) => !rowOf.has(c.id) && !commandText(c)).map((c) => c.id));
+  }
+  missing.push(...registry.commands.filter((c) => !toolOfCommand(c.id) && !commandText(c)).map((c) => c.id));
+  return missing;
+}
+
 /** A command's title, marked when the palette leaves it out. */
 const commandName = (c: Command) => (c.palette === false ? `${c.title} (not in the palette)` : c.title);
 const cell = (text: string) => text.replace(/\|/g, '\\|');
@@ -96,9 +124,6 @@ const anchor = (title: string) =>
     .toLowerCase()
     .replace(/[^\p{L}\p{N} -]/gu, '')
     .replace(/ /g, '-');
-/** "a, b, and c". */
-const series = (items: readonly string[]) =>
-  items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')}, and ${items.at(-1)}`;
 
 const picture = (s: Screen) => [
   ...(CAPTION_EXEMPT[s.name] ? [`<!-- checks-disable-next-line ${CAPTION_EXEMPT[s.name]} -->`] : []),
@@ -175,11 +200,13 @@ function toolLines(src: Sources, tool: Registry['tools'][number]): string[] {
     out.push(`Commands (${tabs.length}):`, '');
     for (const tab of tabs) {
       const row = rowOf.get(tab.id);
-      out.push(
-        `- **${tabName(tab.title)}.**${tab.palette === false ? ' Not in the palette.' : ''}${row ? ` ${entryText(row)}` : ''}`,
-      );
+      const text = row ? entryText(row) : commandText(tab);
+      out.push(`- **${tabName(tab.title)}.**${tab.palette === false ? ' Not in the palette.' : ''} ${text}`);
     }
     out.push('');
+  }
+  if (entry.parts) {
+    out.push(`Tabs (${entry.parts.length}):`, '', ...entry.parts.map(([name, text]) => `- **${name}.** ${text}`), '');
   }
   const rest = described.filter((e) => ![...rowOf.values()].includes(e));
   if (rest.length) out.push(tabs.length ? 'Also in this window:' : 'In this window:', '', ...rest, '');
@@ -216,10 +243,13 @@ function registryLines(src: Sources, category: Category): string[] {
   }
   if (category !== 'Settings and accessibility') return [];
   return [
-    '### Settings and first-run setup',
+    '### Settings sections',
     '',
-    `- **Settings sections.** ${series(src.registry.settings.map((s) => s.title))}.`,
-    `- **First-run setup steps.** ${series(src.registry.setup.map((s) => s.title))}.`,
+    ...src.registry.settings.map((s) => `- **${s.title}.** ${SETTINGS_TEXT[s.id]}`),
+    '',
+    '### First-run setup steps',
+    '',
+    ...src.registry.setup.map((s) => `- **${s.title}.** ${SETUP_TEXT[s.id]}`),
     '',
   ];
 }
@@ -234,8 +264,11 @@ function categoryLines(src: Sources, category: Category): string[] {
   if (tools.length) out.push(kits ? '### Kits' : '### Tool windows', '', ...tools.flatMap((t) => toolLines(src, t)));
   const commands = src.registry.commands.filter((c) => categoryOfCommand(c) === category && !toolOfCommand(c.id));
   if (commands.length) {
-    out.push('### Commands', '', '| Command | Default keys |', '| --- | --- |');
-    out.push(...commands.map((c) => `| ${cell(commandName(c))} | ${cell(c.keys.join(', '))} |`), '');
+    out.push('### Commands', '', '| Command | What it does | Default keys |', '| --- | --- | --- |');
+    out.push(
+      ...commands.map((c) => `| ${cell(commandName(c))} | ${cell(commandText(c)!)} | ${cell(c.keys.join(', '))} |`),
+      '',
+    );
   }
   const shown = new Set(Object.values(TOOL_ENTRIES).flatMap((e) => (e.screen ? [e.screen] : [])));
   const shots = src.screens.filter(
@@ -272,6 +305,14 @@ function introLines(registry: Registry): string[] {
 export function generateFeatureList(features: string, screens: readonly Screen[], registry: Registry): string {
   const unplaced = unplacedSections(features);
   if (unplaced.length) throw new Error(`Give these FEATURES.md sections a category: ${unplaced.join('; ')}`);
+  const bare = commandsWithoutText(registry, features);
+  if (bare.length) throw new Error(`Give these commands a sentence in featureCommands.ts: ${bare.join(', ')}`);
+  const unsaid = [
+    ...registry.settings.filter((s) => !SETTINGS_TEXT[s.id]),
+    ...registry.setup.filter((s) => !SETUP_TEXT[s.id]),
+  ];
+  if (unsaid.length)
+    throw new Error(`Give these a sentence in featureCommands.ts: ${unsaid.map((s) => s.id).join(', ')}`);
   const src = sources(features, screens, registry);
   const lines = [...introLines(registry), ...CATEGORIES.flatMap((c) => categoryLines(src, c))];
   return lines.join('\n').replace(/\n+$/, '\n');

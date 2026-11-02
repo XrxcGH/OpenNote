@@ -17,6 +17,8 @@ export interface ToolEntry {
   section?: string;
   /** True for a subject or engineering kit window. */
   kit?: boolean;
+  /** The window's tabs, with a sentence each, when they have no commands of their own. */
+  parts?: readonly (readonly [string, string])[];
 }
 
 const engineering: Category = 'Engineering kits';
@@ -76,7 +78,52 @@ export const TOOL_ENTRIES: Readonly<Record<string, ToolEntry>> = {
   formulasheet: row(math, 'Formula sheet builder'),
   practice: row(math, 'Practice mode'),
   figure: row(math, 'Figure exporter'),
-  econ: asKit(row(subject, 'Economics and finance calculators', 'kit-economics')),
+  econ: asKit({
+    ...row(subject, 'Economics and finance calculators', 'kit-economics'),
+    // The eight subjects of app/src/strings/en/kitEcon/*.ts, in the window's order.
+    parts: [
+      [
+        'Time value, projects, and loans',
+        'Works single sums, annuities, interest rates, loans, savings goals, NPV and IRR, depreciation, real estate ' +
+          'returns, and cost-effectiveness.',
+      ],
+      [
+        'Markets and welfare',
+        'Works supply, demand, and surplus, elasticity, taxes and price controls, trade and tariffs, externalities, ' +
+          'and labor markets.',
+      ],
+      [
+        'Firms and market power',
+        'Works monopoly, price discrimination, Cournot, Bertrand, and Stackelberg competition, collusion, and ' +
+          'market concentration.',
+      ],
+      [
+        'Consumer and producer choice',
+        'Works utility maximization, substitution and income effects, cost minimization, short-run supply, and ' +
+          'two-period consumption.',
+      ],
+      [
+        'Macroeconomic models',
+        'Works the Keynesian cross, IS-LM, Solow growth, the Taylor rule, the Phillips curve, money, interest and ' +
+          'price parity, and cobweb models.',
+      ],
+      [
+        'Prices, inequality, regions, and taxes',
+        'Works price indexes, inflation adjustment, inequality, poverty, segregation, regional economics, the Human ' +
+          'Development Index, and tax schedules.',
+      ],
+      [
+        'Accounting and managerial analysis',
+        'Works statements, inventory costing, ratios, break-even, variances, process and activity-based costing, ' +
+          'bonds payable, audit sampling, and unit economics.',
+      ],
+      [
+        'Bonds, portfolios, options, and valuation',
+        'Works bonds and yield curves, returns, CAPM, portfolios, options, the cost of capital, valuation, and ' +
+          'startup funding rounds.',
+      ],
+    ],
+  }),
   'kit-statinfer': asKit(
     kit(
       subject,

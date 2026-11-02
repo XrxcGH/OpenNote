@@ -1,4 +1,5 @@
-// Temporary: documentation screenshot capture. Not committed.
+// The documentation screenshot capture (docs/screens). It is a capture script, not a test, so checks.config.json
+// leaves this folder out of CHECKS.
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { defineConfig } from '@playwright/test';

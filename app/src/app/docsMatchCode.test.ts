@@ -10,6 +10,7 @@ import {
   SCREEN_CATEGORIES,
   unplacedSections,
 } from '../../../docs/tools/featureList';
+import { balanced, firstSentence } from '../../../docs/tools/featureRows';
 
 const docs = join(import.meta.dirname, '..', '..', '..', 'docs');
 function markdown(dir: string): string[] {
@@ -50,10 +51,27 @@ describe('ADR links', () => {
 
 describe('feature list', () => {
   const list = read('FEATURE-LIST.md');
+  const lines = list.split('\n');
 
   it('puts every section of FEATURES.md in a category, and has a heading for every category', () => {
     expect(unplacedSections(read('FEATURES.md'))).toEqual([]);
     for (const category of CATEGORIES) expect(list, category).toContain(`## ${category}`);
+  });
+
+  it('closes every parenthesis, so no sentence was cut inside one', () => {
+    // Pictures and their captions are left out: a picture's alt text is its caption.
+    const text = lines.filter((line) => !/^(!\[|<!--|\*\*[a-z0-9-]+\.\*\*)/.test(line));
+    expect(text.filter((line) => !balanced(line))).toEqual([]);
+    expect(balanced('air resistance (from mass')).toBe(false);
+    expect(firstSentence('A window (0.00120 has 3. 1200 has 2) that counts. More words here.')).toBe(
+      'A window (0.00120 has 3. 1200 has 2) that counts',
+    );
+  });
+
+  it('gives every command, tab, and bullet a sentence', () => {
+    expect(lines.filter((line) => /^- \*\*[^*]+\.\*\*( Not in the palette\.)?\s*$/.test(line))).toEqual([]);
+    // A command row has its name, its sentence, and its keys.
+    expect(lines.filter((line) => /^\| [^|]+ \|\s*\|/.test(line) && !line.startsWith('| ---'))).toEqual([]);
   });
 
   it('is what `npm run docs:features` makes from FEATURES.md, so it cannot go stale', () => {

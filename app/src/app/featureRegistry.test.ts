@@ -9,6 +9,7 @@ import '../features';
 import { commands, settingsSections, setupSteps, titleBarItems } from '../registries';
 import type { MessageKey } from '../strings/t';
 import { t } from '../strings/t';
+import { en } from '../strings/en';
 import { TOOLS } from '../features/tools';
 import {
   categoryOfCommand,
@@ -24,6 +25,22 @@ const words = (key: string) =>
   t(key as MessageKey)
     .replace(/\s+/g, ' ')
     .trim();
+// A kit loads most of its words with its code, so the full namespaces are read here as well as the start-up ones.
+const FULL = import.meta.glob(['../strings/en/*.ts', '!../strings/en/*Start.ts', '!../strings/en/*.test.ts'], {
+  eager: true,
+});
+const fullWords: Record<string, unknown> = Object.assign({}, ...Object.values(FULL));
+type Words = { readonly [key: string]: unknown } | undefined;
+const walk = (root: unknown, key: string): unknown => key.split('.').reduce<unknown>((o, k) => (o as Words)?.[k], root);
+const at = (key: string): unknown => [en, fullWords].map((root) => walk(root, key)).find((v) => v !== undefined);
+/** A kit tab's own sentence: the about, intro, lead, or summary next to its title or open words. */
+function aboutOf(title: string): string | undefined {
+  if (!/\.(title|open)$/.test(title)) return undefined;
+  const base = title.replace(/\.[^.]+$/, '');
+  return ['about', 'intro', 'lead', 'summary']
+    .map((s) => at(`${base}.${s}`))
+    .find((v): v is string => typeof v === 'string' && !v.includes('{'));
+}
 const inOrder = <T extends { order: number }>(items: readonly T[]) => [...items].sort((a, b) => a.order - b.order);
 
 function registered(): Registry {
@@ -36,6 +53,7 @@ function registered(): Registry {
       keys: [...(def.keys ?? [])],
       ...(def.flag ? { flag: def.flag } : {}),
       ...(def.palette === false ? { palette: false as const } : {}),
+      ...(aboutOf(def.title) ? { about: aboutOf(def.title)!.replace(/\s+/g, ' ').trim() } : {}),
     })),
     titleBar: [...titleBarItems.list()]
       .sort((a, b) => b.side.localeCompare(a.side) || a.order - b.order)

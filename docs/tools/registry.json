@@ -781,7 +781,8 @@
       "title": "Open the dictionary",
       "category": "general",
       "keys": [],
-      "flag": "tools.dictionary"
+      "flag": "tools.dictionary",
+      "about": "A short list of English words comes with the app and works offline."
     },
     {
       "id": "tools.dictionary.lookup",
@@ -2066,70 +2067,80 @@
       "title": "Standard atmosphere",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "Air temperature, pressure, density, speed of sound and viscosity at altitude, or the altitude for a value."
     },
     {
       "id": "kits.aero.compressible",
       "title": "Compressible flow relations",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "Every ratio of a compressible flow family from one known value: isentropic flow, shocks, expansion fans, and duct flow with friction or heating."
     },
     {
       "id": "kits.aero.nozzle",
       "title": "Nozzle and diffuser flow",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "A converging-diverging nozzle at any back pressure: whether it chokes, where a shock stands, the exit state, and the mass flow."
     },
     {
       "id": "kits.aero.rocket",
       "title": "Rocket nozzle performance",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "Ideal rocket performance from the chamber state: characteristic velocity, thrust coefficient, specific impulse, thrust, and the rocket equation."
     },
     {
       "id": "kits.aero.airfoil",
       "title": "Airfoils",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "NACA four- and five-digit sections: their coordinates, thin airfoil theory for the zero-lift angle, lift, and moment, and a vortex panel method for the pressure distribution."
     },
     {
       "id": "kits.aero.wing",
       "title": "Finite wings",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "Lift, induced drag, and span efficiency of a straight wing by Prandtl’s lifting-line theory, with the spanwise load."
     },
     {
       "id": "kits.aero.performance",
       "title": "Aircraft performance and static stability",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "Best speeds from the drag polar, range and endurance, climb and glide, turns, and the neutral point and static margin."
     },
     {
       "id": "kits.aero.potential",
       "title": "Potential flow",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "Superpose uniform flow, sources, doublets, and vortices to see the streamlines, stagnation points, pressure, and lift."
     },
     {
       "id": "kits.aero.flightmodes",
       "title": "Aircraft dynamic modes",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "The short period, phugoid, Dutch roll, roll, and spiral modes from a state matrix or stability derivatives."
     },
     {
       "id": "kits.aero.jetengine",
       "title": "Jet engine cycle analysis",
       "category": "general",
       "keys": [],
-      "flag": "kits.aero"
+      "flag": "kits.aero",
+      "about": "On-design cycle analysis of a turbojet, turbofan, or ramjet: specific thrust, fuel consumption, efficiencies, and the total temperature and pressure at each station."
     },
     {
       "id": "tools.kit-chemmat",
@@ -2143,70 +2154,80 @@
       "title": "Open the thermochemistry tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Reaction enthalpy, entropy, Gibbs energy, and K from standard data, and how they change with temperature."
     },
     {
       "id": "tools.kitChemMat.equilibrium",
       "title": "Open the chemical equilibrium tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Solve an equilibrium exactly from its ICE table, find the solubility of a salt from Ksp, or convert between Kc and Kp."
     },
     {
       "id": "tools.kitChemMat.acidbase",
       "title": "Open the acids, bases, and buffers tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Exact pH from the charge balance for weak acids and bases, buffers, and polyprotic acids. You type the constants."
     },
     {
       "id": "tools.kitChemMat.electrochem",
       "title": "Open the electrochemistry tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Cell potentials, the Nernst equation, ΔG and K, concentration cells, and electrolysis with Faraday's laws."
     },
     {
       "id": "tools.kitChemMat.kinetics",
       "title": "Open the chemical kinetics tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Rate laws, half-lives, the order from data, orders from initial rates, and the Arrhenius equation."
     },
     {
       "id": "tools.kitChemMat.solutions",
       "title": "Open the solutions and lab calculations tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Colligative properties, osmotic pressure, calorimetry, a calibration line for an unknown, and percent yield."
     },
     {
       "id": "tools.kitChemMat.crystals",
       "title": "Open the crystal structures and diffraction tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Unit cells and density, plane spacing, angles, Bragg angles, allowed reflections, indexing a powder pattern, and crystallite size."
     },
     {
       "id": "tools.kitChemMat.diffusion",
       "title": "Open the defects, diffusion, and oxidation tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Vacancy fractions, diffusion coefficients, Fick’s laws, carburizing, dopant profiles, and thermal oxide growth."
     },
     {
       "id": "tools.kitChemMat.phases",
       "title": "Open the phase diagrams and mechanical behavior tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "The lever rule, eutectic microconstituents, a tensile test, fracture toughness, fatigue life, and creep rupture life."
     },
     {
       "id": "tools.kitChemMat.atoms",
       "title": "Open the atoms, light, and bonding tool",
       "category": "general",
       "keys": [],
-      "flag": "kits.chemmat"
+      "flag": "kits.chemmat",
+      "about": "Photons, the hydrogen atom, matter waves, a box, quantum numbers, configurations, shape, and molecular orbitals."
     },
     {
       "id": "tools.kit-civil",
@@ -2290,70 +2311,80 @@
       "title": "System models and responses",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Model a dynamic system, move between its forms, read its time response, find steady-state errors, and fit a model to a measured step."
     },
     {
       "id": "tools.kitControl.rootlocus",
       "title": "Root locus and Routh-Hurwitz",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Count unstable roots with the Routh array, find the gains that keep a loop stable, and draw the root locus with every rule worked out."
     },
     {
       "id": "tools.kitControl.frequency",
       "title": "Frequency response: Bode and Nyquist",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Draw the Bode and Nyquist plots of an open loop, read the gain and phase margins, and count encirclements of −1 to judge the closed loop."
     },
     {
       "id": "tools.kitControl.compensator",
       "title": "Compensator and PID design",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Design a lead, lag or lead-lag compensator for a phase margin, a lead for target poles on the root locus, or PID gains by Ziegler-Nichols or SIMC, and check the closed loop."
     },
     {
       "id": "tools.kitControl.statespace",
       "title": "State-space design",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Check controllability and observability, place poles by Ackermann’s formula, design an observer, and solve the linear quadratic regulator for ẋ = Ax + Bu, y = Cx + Du."
     },
     {
       "id": "tools.kitControl.digital",
       "title": "Digital control",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Discretize a plant or controller, analyze a discrete transfer function against the unit circle, find the gains that keep a sampled loop stable, check aliasing, and write a digital PID."
     },
     {
       "id": "tools.kitControl.stochastic",
       "title": "Random processes and Kalman filtering",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Find the steady covariance and sample paths of a linear system driven by noise. Find the spectrum and variance of filtered white noise, or the steady Kalman filter."
     },
     {
       "id": "tools.kitControl.markov",
       "title": "Markov chains and queues",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Type a transition matrix or a generator to classify the chain and find its long-run, n-step, and absorption behavior, or work out a queue."
     },
     {
       "id": "tools.kitControl.distributions",
       "title": "Probability distributions and inference",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Find probabilities and quantiles of the common distributions, confidence intervals, and hypothesis tests, with the region shaded and every step shown."
     },
     {
       "id": "tools.kitControl.reliability",
       "title": "Reliability, quality, and inventory",
       "category": "general",
       "keys": [],
-      "flag": "kits.control"
+      "flag": "kits.control",
+      "about": "Work out system reliability, life models, Weibull fits, control charts, process capability, sampling plans, and order quantities."
     },
     {
       "id": "tools.kit-design",
@@ -2367,63 +2398,72 @@
       "title": "Drafting sheet",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Draw 2D engineering sketches with the usual line types and add dimensions that read their size from the geometry and update when it moves. Dimensions show true size at the drawing scale. This is drafting paper with tools, not a CAD program."
     },
     {
       "id": "tools.kitDesign.views",
       "title": "Orthographic views",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Build a model from unit cubes, one layer at a time, and see its front, top, and right views the way an engineering drawing shows them, with hidden edges dashed. Press a cell to add or remove a cube."
     },
     {
       "id": "tools.kitDesign.tolerances",
       "title": "Tolerances and fits",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Stack up a chain of dimensions, check a hole and shaft fit, or test a feature’s true position. Type lengths in one unit and read the answers in the same unit."
     },
     {
       "id": "tools.kitDesign.machining",
       "title": "Machining speeds, feeds, and tool life",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Work out spindle speed, feed rate, material removal rate and cutting time for a cut, find tool life or the speed for a wanted life, and read the forces on the tool from the chip. Typed lengths use the unit beside each field."
     },
     {
       "id": "tools.kitDesign.forming",
       "title": "Forming, casting, and joining",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Estimate the force or pressure of a forming process, size a bend or a riser, find a casting’s solidification time, the heat put into a weld, or the layers of a printed part. The formulas are the textbook first estimates, so treat the answers as such."
     },
     {
       "id": "tools.kitDesign.microfab",
       "title": "Micro and nano fabrication",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Estimate what a process step can resolve or deposit, how much stress a thin film puts on a wafer, how many dies fit on a wafer and how many work, or how molecules bind to a surface. These are first estimates from standard formulas."
     },
     {
       "id": "tools.kitDesign.memtrace",
       "title": "Memory and pointer tracer",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Type a short C++ snippet and step through it one statement at a time. Each step draws the stack and the heap as boxes, with an arrow from every pointer to what it points at, and warns about mistakes such as a leak or a read past the end of an array."
     },
     {
       "id": "tools.kitDesign.numrep",
       "title": "Number representation",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "See how a computer stores a number or a character: the bits of an integer in each scheme, what overflow does, a number in another base, the exact value a floating-point number really holds and its rounding error, and the bytes of text."
     },
     {
       "id": "tools.kitDesign.references",
       "title": "Programming references",
       "category": "general",
       "keys": [],
-      "flag": "kits.design"
+      "flag": "kits.design",
+      "about": "Quick references for learning to program: how C++ types and escape sequences work, what common errors mean, MATLAB habits, which operator binds first, and a blank trace table to fill in as you read code by hand."
     },
     {
       "id": "tools.kitDesign.paper.computation",
@@ -2535,63 +2575,72 @@
       "title": "First- and second-order circuits",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Natural and step responses of RC, RL, and series or parallel RLC circuits."
     },
     {
       "id": "kits.electrical.netlist",
       "title": "Circuit simulator",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Type a circuit as a short netlist, then find its DC operating point, AC sweep, transient response, or Thevenin equivalent."
     },
     {
       "id": "kits.electrical.opamps",
       "title": "Op-amp circuits and filters",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Ideal op-amp stages, active filter sections, the order and poles a filter specification needs, and passive RC and RLC filters."
     },
     {
       "id": "kits.electrical.semis",
       "title": "Diodes and transistors",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Diode and zener circuits, rectifier ripple, and the bias point and gain of BJT and MOSFET amplifiers."
     },
     {
       "id": "kits.electrical.instruments",
       "title": "Instrumentation and measurement",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Resistor codes, bridges and strain gauges, thermocouples, RTDs, signal levels, and converter resolution."
     },
     {
       "id": "kits.electrical.acpower",
       "title": "AC power and three-phase systems",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Power triangles, power factor correction, transformer equivalent circuits, balanced three-phase loads, and per unit."
     },
     {
       "id": "kits.electrical.powerflow",
       "title": "Power flow and economic dispatch",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Voltages and line flows of a small network, and the cheapest way for generators to meet a demand."
     },
     {
       "id": "kits.electrical.labfit",
       "title": "Lab data fitting and uncertainty",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Fit a line, polynomial, exponential, power law, or your own formula to lab data with uncertainties."
     },
     {
       "id": "kits.electrical.energy",
       "title": "Energy systems and the environment",
       "category": "general",
       "keys": [],
-      "flag": "kits.electrical"
+      "flag": "kits.electrical",
+      "about": "Wind and solar estimates, emissions per kilowatt-hour, the cost of energy, and energy unit conversion."
     },
     {
       "id": "tools.kit-fluidheat",
@@ -2899,77 +2948,88 @@
       "title": "Linkage analyzer",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Positions, velocities, and accelerations of a four-bar or slider-crank through its whole cycle, with the Grashof class, transmission angle, and coupler curve."
     },
     {
       "id": "tools.kitMechDyn.cam",
       "title": "Cam designer",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "A follower motion program, its SVAJ diagrams, and the cam profile, with the pressure angle and curvature."
     },
     {
       "id": "tools.kitMechDyn.gears",
       "title": "Gears and gear trains",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "A spur gear pair, a simple or compound train, or a planetary train: sizes, contact, speeds, and tooth forces."
     },
     {
       "id": "tools.kitMechDyn.compliant",
       "title": "Compliant mechanisms",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Large deflection of a flexure, solved exactly (the elastica) and by the pseudo-rigid-body model, side by side."
     },
     {
       "id": "tools.kitMechDyn.kinetics",
       "title": "Particle and planar rigid-body dynamics",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Motion from typed coordinates, two points on a turning body, an impact, a body rolling down an incline, or a rigid body under forces, free, pinned, rolling, or on smooth contacts."
     },
     {
       "id": "tools.kitMechDyn.rigid3d",
       "title": "Three-dimensional rigid bodies and rotations",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Inertia tensors of composite bodies, principal moments and axes, Euler’s equations, and conversions between rotation matrices, Euler angles, quaternions, and axis-angle."
     },
     {
       "id": "tools.kitMechDyn.lagrange",
       "title": "Lagrangian mechanics",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Equations of motion from the kinetic and potential energy, the equilibria and their small oscillations, and a simulation."
     },
     {
       "id": "tools.kitMechDyn.sdof",
       "title": "Single-degree-of-freedom vibration",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "A mass on a spring and damper: natural frequency, damping, response, and isolation. x is from equilibrium, positive with the force."
     },
     {
       "id": "tools.kitMechDyn.mdof",
       "title": "Multi-degree-of-freedom and continuous vibration",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Natural frequencies, mode shapes, and response of a chain of masses, typed M and K matrices, or a string, bar, shaft, or beam."
     },
     {
       "id": "tools.kitMechDyn.robotkin",
       "title": "Robot arm kinematics",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "Forward and inverse kinematics of a serial arm from its Denavit-Hartenberg table, with the Jacobian and the workspace."
     },
     {
       "id": "tools.kitMechDyn.robotdyn",
       "title": "Robot dynamics and control",
       "category": "general",
       "keys": [],
-      "flag": "kits.mechdyn"
+      "flag": "kits.mechdyn",
+      "about": "The equations of motion of a planar arm of up to three links, and a simulation under a joint-space controller."
     },
     {
       "id": "tools.kit-mind",
@@ -3123,56 +3183,64 @@
       "title": "DNA and RNA sequences",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Count, complement, and translate sequences; find ORFs, motifs, and CRISPR guides; describe mutations."
     },
     {
       "id": "kits.molbio.cloning",
       "title": "Cloning, PCR, and gels",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Restriction digests and maps, gels and band sizes, primer melting temperatures, PCR, and ligation."
     },
     {
       "id": "kits.molbio.protein",
       "title": "Proteins and peptides",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Masses, extinction coefficient, charge and pI, hydropathy, helical wheels, and fragment ions from a sequence."
     },
     {
       "id": "kits.molbio.align",
       "title": "Sequence alignment",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Align 2 DNA or protein sequences globally, locally, or with free end gaps, and see the score matrix."
     },
     {
       "id": "kits.molbio.phylo",
       "title": "Phylogenetic trees",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Distances, UPGMA and neighbor-joining, parsimony, bootstrap support, and Newick trees to draw and read."
     },
     {
       "id": "kits.molbio.crosses",
       "title": "Genetic crosses and linkage",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Punnett squares, ratios and probabilities, chi-square tests, gene mapping, LOD scores, and carrier risk."
     },
     {
       "id": "kits.molbio.popgen",
       "title": "Population genetics",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Allele frequencies, Hardy-Weinberg tests, selection, mutation, migration, drift, linkage disequilibrium, and heritability."
     },
     {
       "id": "kits.molbio.family",
       "title": "Family, pedigree, and kinship charts",
       "category": "general",
       "keys": [],
-      "flag": "kits.molbio"
+      "flag": "kits.molbio",
+      "about": "Draw pedigrees, genealogies, kinship charts, and genograms; check inheritance patterns and work out relatedness."
     },
     {
       "id": "tools.kitmusic",
@@ -3186,56 +3254,64 @@
       "title": "Score block",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Write music in ABC notation and see it engraved, hear it played, transpose it, and read it as numbered notation, sargam, or guitar tablature."
     },
     {
       "id": "kits.music.theory",
       "title": "Music theory",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Name intervals, spell scales from several traditions, chords, and keys, find Roman numerals, transpose for instruments, work with pitch-class sets and twelve-tone rows, and look up jazz scales and guitar shapes."
     },
     {
       "id": "kits.music.ear",
       "title": "Ear training",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Practice hearing intervals, chords, scales, melodies, and rhythms. Every drill is seeded, so the same seed gives the same items, and missed items are scheduled for review."
     },
     {
       "id": "kits.music.partwriting",
       "title": "Voice-leading checker",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Check four-part chorale writing and two-voice species counterpoint against the common-practice rules, with each problem located and explained."
     },
     {
       "id": "kits.music.script",
       "title": "Script formatter",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Write a screenplay or stage play in plain Fountain text and see it laid out in script format, with a page estimate, a scene list, character and location lists, and breakdown sheets."
     },
     {
       "id": "kits.music.camera",
       "title": "Camera, timing, and lighting",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "The arithmetic of cameras, film timing, animation, and lighting. Pick what to work out, and each answer shows its formula with your numbers."
     },
     {
       "id": "kits.music.studio",
       "title": "Scale, color, and materials",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Scale drawings, color checks, perspective grids, and material quantities for art, design, and theater work. Pick what to work out, and each answer shows its arithmetic."
     },
     {
       "id": "kits.music.rhythm",
       "title": "Tuning and rhythm",
       "category": "general",
       "keys": [],
-      "flag": "tools.music"
+      "flag": "tools.music",
+      "about": "Compare tunings in cents, work out beat rates and the harmonic series, and practice rhythm with a metronome, Euclidean rhythms, polyrhythms, and the cycles of several traditions."
     },
     {
       "id": "tools.kit-physics",
@@ -3319,56 +3395,64 @@
       "title": "Open the logic workbench",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Truth tables, normal forms, proof checking, syllogisms, models, resolution, lambda terms, argument maps, and fault trees."
     },
     {
       "id": "tools.kit-reasoning.automata",
       "title": "Open automata and grammars",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Finite automata, regular expressions, pumping, pushdown automata, grammars and parsing tables, Turing machines, and transducers."
     },
     {
       "id": "tools.kit-reasoning.discrete",
       "title": "Open numbers, counting, and groups",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Number theory with every step, classical ciphers and toy public keys, exact counting, and finite groups and fields."
     },
     {
       "id": "tools.kit-reasoning.digital",
       "title": "Open digital logic design",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "From truth tables to minimal circuits: maps, gates, timing, flip-flops, and state machines."
     },
     {
       "id": "tools.kit-reasoning.systems",
       "title": "Open computer systems, networks, and databases",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Caches, paging, scheduling, pipelines, deadlock, subnets, delays, routing, clocks, normal forms, relational algebra, and digests."
     },
     {
       "id": "tools.kit-reasoning.algorithms",
       "title": "Open algorithms, data structures, and networks",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Sorting and searching with counts, data structures, graph algorithms, search, dynamic programming, and network measures."
     },
     {
       "id": "tools.kit-reasoning.optimize",
       "title": "Open optimization, projects, and decisions",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Linear and integer programs, shipping and assignment, project schedules, decisions, and queues, with every step."
     },
     {
       "id": "tools.kit-reasoning.games",
       "title": "Open games, voting, and apportionment",
       "category": "general",
       "keys": [],
-      "flag": "kits.reasoning"
+      "flag": "kits.reasoning",
+      "about": "Solve games, tally elections under many rules, apportion seats, and measure voting power and districts."
     },
     {
       "id": "tools.kit-signals",
@@ -3382,63 +3466,72 @@
       "title": "Open spectrum analyzer",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Amplitude, power, and density spectra with window corrections, spectrograms, band powers, and damping."
     },
     {
       "id": "tools.signals.filters",
       "title": "Open digital filter designer",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "FIR and IIR filters from specifications, their responses and poles, rounded coefficients, and filtering data."
     },
     {
       "id": "tools.signals.systems",
       "title": "Open convolution and sampling",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Convolution step by step, correlation, difference equations, sampling and aliasing, quantization, and rate changes."
     },
     {
       "id": "tools.signals.neurodata",
       "title": "Open neural and physiological time series",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Event-related averages, fMRI regressors and fits, spike-train statistics, ECG heart-rate variability, and 10-20 maps."
     },
     {
       "id": "tools.signals.images",
       "title": "Open image lab",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Adjust, threshold and count, filter, measure, and transform images; band math; and CT by filtered back-projection."
     },
     {
       "id": "tools.signals.medimaging",
       "title": "Open medical imaging physics",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "MRI signals and a Bloch simulator, k-space, CT numbers, ultrasound, X-ray attenuation, and PET uptake."
     },
     {
       "id": "tools.signals.audio",
       "title": "Open sound analysis and acoustics",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Waveform, spectrogram, pitch, intensity, formants, vowel space, a tuner, tones, audiograms, and decibels."
     },
     {
       "id": "tools.signals.comms",
       "title": "Open information, coding, and modulation",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Entropy and capacity, source codes, block codes and CRCs, Viterbi decoding, and digital modulation with bit-error rates."
     },
     {
       "id": "tools.signals.rf",
       "title": "Open transmission lines and RF",
       "category": "general",
       "keys": [],
-      "flag": "kits.signals"
+      "flag": "kits.signals",
+      "about": "Reflection and line impedance on a Smith chart, matching networks, line types, two-ports, noise, antennas, and decibels."
     },
     {
       "id": "tools.kit-solids",
