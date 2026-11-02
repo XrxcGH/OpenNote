@@ -46,10 +46,29 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [on-device-intelligence.md](help/on-device-intelligence.md): reading pictures, summaries, Ask your notes, and handwriting to text.
 - [privacy-and-work-offline.md](help/privacy-and-work-offline.md): what uses the network, and how to stop it.
 - [connectors.md](help/connectors.md): signing in to other services.
+- [3d-graphs-vectors-and-motion.md](help/3d-graphs-vectors-and-motion.md): surfaces, curves, vectors, solids, and projectiles.
+- [accessibility-checker.md](help/accessibility-checker.md): find images with no description, skipped headings, and low contrast, and fix them.
+- [chemistry-and-data.md](help/chemistry-and-data.md): balancing, stoichiometry, gas laws, titration, structure drawing, and steam, gas, and materials tables.
+- [code-cells.md](help/code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
+- [command-line.md](help/command-line.md): add to and search your notes from a terminal or script.
+- [document-structure.md](help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
+- [history-and-storage.md](help/history-and-storage.md): page history, Trash, the notes folder, edits from other apps, Check notebook, Lock entry, and password-protected sections.
+- [install-macos-linux.md](help/install-macos-linux.md): the dmg and the AppImage, updates, Command shortcuts, and what works differently there.
+- [language-and-spelling.md](help/language-and-spelling.md): American English by default, the other dialects and languages, and what the choice sets.
+- [local-api.md](help/local-api.md): which programs on your PC may read or add notes, and the access log.
+- [math-solvers.md](help/math-solvers.md): integrals, differential equations, transforms, series, roots, uncertainty, probability, matrices, and projectiles, with worked steps.
+- [my-handwriting.md](help/my-handwriting.md): teach OpenNote your handwriting, then write typed text and math in your own hand.
+- [notes-apps.md](help/notes-apps.md): the handwriting apps' own files, and their PDF exports.
+- [phone-scan.md](help/phone-scan.md): scan a code to send photos onto the open page.
+- [settings.md](help/settings.md): every Settings section, appearance, and shortcuts.
+- [sync.md](help/sync.md): optional end-to-end-encrypted sync through a folder or WebDAV server you already have.
+- [tutor.md](help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
+- [web-clipper.md](help/web-clipper.md): save web pages and emails into your notes.
+- [workspace-and-title-bar.md](help/workspace-and-title-bar.md): the title bar, Home, page tabs, the compact layout, focus mode, keep on top, quick capture, and the command palette.
 
 ## Plan
 
-- [DEVELOPMENT.md](DEVELOPMENT.md): the step-by-step plan for the Windows prototype, with phases, technology choices, tests, and release gates. Each phase has a beta 4 status note.
+- [DEVELOPMENT.md](DEVELOPMENT.md): the step-by-step plan for the Windows prototype, with phases, technology choices, tests, and release gates. Each phase has a status note for beta 8.
 - [FEATURES.md](FEATURES.md): the feature spec for Office and Google integration, handwriting, transcripts, study tools, and more. Each feature is marked built, built but untested by hand, not built yet, or needing the owner.
 - [RESEARCH.md](RESEARCH.md): popular and rising note apps, the features people love, and the gaps OpenNote can fill.
 - [../CHANGELOG.md](../CHANGELOG.md): what each beta added, changed, and fixed.
@@ -57,13 +76,16 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 ## Design and screens
 
 - [BRAND.md](BRAND.md): colors, type, layout, motion, voice, accessibility, and performance budgets.
+- [design/platform-api-THREATS.md](design/platform-api-THREATS.md): the threat model for the local API.
 - [design/SCREENS.md](design/SCREENS.md): 34 wireframes of every major screen, with sizes and keep-out zones. The drawings are in `design/images/`, and `design/generate.ts` makes them.
-- [screens/README.md](screens/README.md): 70 real screenshots of beta 4, 35 screens in light and dark, with what each one shows.
+- [screens/README.md](screens/README.md): 264 real screenshots of 132 screens, each in light and in dark, and what each one shows.
+- [FEATURE-LIST.md](FEATURE-LIST.md): one sentence on every feature, with a picture of each major page.
 
 ## Quality and testing
 
 - [CHECKS.md](CHECKS.md): the quality gate every file change must pass, with its rules and settings.
-- [testing/beta-4-checklist.md](testing/beta-4-checklist.md): the hand test checklist for beta 4, starting with how to run it on a throwaway profile so real notes stay safe.
+- [testing/beta-4-checklist.md](testing/beta-4-checklist.md): the hand test checklist, written for beta 4, starting with how to run it on a throwaway profile so real notes stay safe.
+- [testing/flags.md](testing/flags.md): the flag check: a test that fails when a flag is defined but nothing reads it.
 - [testing/palm-rejection.md](testing/palm-rejection.md): the palm rejection test with a real pen.
 - [testing/palm-sweep.md](testing/palm-sweep.md): the 200,000-case palm label sweep, with each open failure and a proposed fix for review.
 - [testing/keyboard-and-screen-reader.md](testing/keyboard-and-screen-reader.md): the checklist a person runs at each phase exit and before each beta, with a screen reader and no mouse.
@@ -81,10 +103,13 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 ## Engineering guides
 
 - [intel.md](intel.md): the `opennote-intel` crate, with the engines for text in pictures, handwriting, read aloud, summaries, and speech.
+- [ATTRIBUTION.md](ATTRIBUTION.md): the author, source, and license of every picture, font, sound, model, and vendored crate.
+- [tools/](tools/): the scripts that make the feature list and the screenshots (`featureList.ts`, `screens.json`).
 - [CONNECTORS.md](CONNECTORS.md): the owner's guide to registering OpenNote with each service that connected accounts use, and where the client IDs go.
 
 ## Performance records
 
+- [perf/hardware-gates.md](perf/hardware-gates.md): the results of the device runs for each exit gate.
 - [perf/phase-4.md](perf/phase-4.md): how Phase 4's typing speed was measured, the numbers, and what is still over budget.
 - [perf/phase-5-core.md](perf/phase-5-core.md): the 10,000-stroke benchmark of the ink core, with its method and numbers.
 - [perf/phase-5.md](perf/phase-5.md): pen-to-screen time and frame rate on a page of 10,000 strokes.
