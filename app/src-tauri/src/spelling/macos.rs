@@ -31,21 +31,29 @@ return JSON.stringify({ available: ObjC.deepUnwrap(c.availableLanguages),\
 preferred: ObjC.deepUnwrap($.NSLocale.preferredLanguages) }); }";
 
 /// Prints `[[start, length], ...]` for the misspelled words of argv[1] in the language argv[0].
-/// `checkSpellingOfString:startingAt:` wraps: past the last misspelling it starts over at the beginning and finds
-/// the first one again. A range before `at` is that wrap, so the loop ends there instead of running forever.
-pub const CHECK_SCRIPT: &str = "ObjC.import('AppKit');\
-function run(argv) { var c = $.NSSpellChecker.sharedSpellChecker; c.automaticallyIdentifiesLanguages = false;\
-c.setLanguage($(argv[0])); var s = $(argv[1]); var n = s.length; var out = []; var at = 0;\
-while (at < n) { var r = c.checkSpellingOfStringStartingAt(s, at); if (r.length === 0 || r.location < at) { break; }\
-out.push([r.location, r.length]); at = r.location + r.length; } return JSON.stringify(out); }";
+/// The bridge hands NSUInteger values over as strings ("0", "3"), so each is made a number first: on strings, `+`
+/// joins ("0" + "3" is "03") and `=== 0` never holds, which kept the loop going forever. The length of argv[1] is
+/// a number already, in the same UTF-16 units. `checkSpellingOfString:startingAt:` also wraps. Past the last
+/// misspelling it finds the first one again, and a range before `at` is that wrap, so the loop ends there.
+pub const CHECK_SCRIPT: &str = concat!(
+    "ObjC.import('AppKit'); function run(argv) { var c = $.NSSpellChecker.sharedSpellChecker; ",
+    "c.automaticallyIdentifiesLanguages = false; c.setLanguage($(argv[0])); ",
+    "var s = $(argv[1]); var n = argv[1].length; var out = []; var at = 0; ",
+    "while (at < n) { var r = c.checkSpellingOfStringStartingAt(s, at); ",
+    "var start = Number(r.location); var length = Number(r.length); ",
+    "if (length === 0 || start < at) { break; } ",
+    "out.push([start, length]); at = start + length; } return JSON.stringify(out); }",
+);
 
 /// Prints the guesses for the word argv[1] in the language argv[0], and none when the word is spelled right.
-pub const SUGGEST_SCRIPT: &str = "ObjC.import('AppKit');\
-function run(argv) { var c = $.NSSpellChecker.sharedSpellChecker; var s = $(argv[1]);\
-c.automaticallyIdentifiesLanguages = false; c.setLanguage($(argv[0]));\
-if (c.checkSpellingOfStringStartingAt(s, 0).length === 0) { return '[]'; }\
-var g = c.guessesForWordRangeInStringLanguageInSpellDocumentWithTag($.NSMakeRange(0, s.length), s, $(argv[0]), 0);\
-return JSON.stringify(g ? ObjC.deepUnwrap(g) : []); }";
+pub const SUGGEST_SCRIPT: &str = concat!(
+    "ObjC.import('AppKit'); function run(argv) { var c = $.NSSpellChecker.sharedSpellChecker; ",
+    "var s = $(argv[1]); c.automaticallyIdentifiesLanguages = false; c.setLanguage($(argv[0])); ",
+    "if (Number(c.checkSpellingOfStringStartingAt(s, 0).length) === 0) { return '[]'; } ",
+    "var g = c.guessesForWordRangeInStringLanguageInSpellDocumentWithTag(",
+    "$.NSMakeRange(0, argv[1].length), s, $(argv[0]), 0); ",
+    "return JSON.stringify(g ? ObjC.deepUnwrap(g) : []); }",
+);
 
 /// What `LANGUAGES_SCRIPT` prints.
 #[derive(Debug, Default, PartialEq, Eq, serde::Deserialize)]
