@@ -108,6 +108,13 @@
     scroll-padding: var(--space-3);
   }
 
+  /* Floating, the window's last child is this square body. Its opaque background (the scroll shades) and its own scroll
+     bar would paint over the window's rounded bottom corners and hide the border's arc there. So the body follows the
+     window's inner corners: the outer radius less the 1 px border. Docked, the window has no radius to follow. */
+  .window:not([data-docked]) > .body {
+    clip-path: inset(0 round 0 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px));
+  }
+
   /* While a tool's code loads, the body says so instead of standing empty. */
   .body:empty::before {
     content: attr(data-loading);
