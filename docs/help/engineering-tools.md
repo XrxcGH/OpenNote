@@ -3,7 +3,7 @@
 Draw statics and circuit problems as parts that snap together, and see the answers worked out beside the drawing.
 These tools are new in Beta, so check the answers against your own work while you learn them.
 
-![The beam deflection tool of the solid mechanics kit, with its supports and loads](../screens/engineering-beam-light.png)
+![The beam deflection tool of the solid mechanics kit: the supports and loads of a simply supported beam, its results and reactions, and its deflection curve](../screens/engineering-beam-light.png)
 
 ## Free-body diagrams
 

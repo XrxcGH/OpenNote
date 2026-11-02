@@ -99,6 +99,14 @@ async function setCell(p: Page, row: number, column: number, text: string) {
   await p.keyboard.press('End');
   await p.keyboard.press('Shift+Home');
   await p.keyboard.type(text);
+  // The fixture's cells are bold, and typed-over text keeps that. Clear formatting, so the values read as plain numbers.
+  // The command loads after start-up, so the first presses can do nothing; press again until the bold is gone.
+  await expect(async () => {
+    await p.keyboard.press('Shift+Home');
+    await p.keyboard.press('Control+Backslash');
+    await p.keyboard.press('End');
+    await expect(cell.locator('strong')).toHaveCount(0, { timeout: 500 });
+  }).toPass({ timeout: 15_000 });
 }
 
 async function newLine(p: Page) {
@@ -267,6 +275,8 @@ const SHOTS: Shot[] = [
   {
     name: 'table-chart',
     path: '/?fixture=smart',
+    // Tall enough for the title, the table, the chart, and its summary in words.
+    viewport: { width: 1280, height: 1040 },
     run: async (p) => {
       await openSmart(p);
       await hidePagesPane(p);
@@ -277,15 +287,17 @@ const SHOTS: Shot[] = [
         ['Mar', '90', '70'],
       ];
       for (const [r, row] of rows.entries()) for (const [c, text] of row.entries()) await setCell(p, r, c, text);
+      await expect(p.locator('table td strong')).toHaveCount(0);
       await p.locator('table tr').nth(1).locator('td').first().click();
       await p.getByRole('button', { name: 'Data' }).click();
       await p.getByRole('menuitem', { name: 'Insert chart' }).click();
       await p.getByRole('menuitem', { name: 'Bar chart' }).click();
       await expect(p.getByRole('img', { name: /^Bar chart/ }).locator('svg')).toBeVisible();
-      await p.locator('table tr').first().locator('th').first().click();
+      // Select the formula cell, so its =B2*0.6 source shows.
+      await p.locator('table tr').nth(2).locator('td').nth(2).click();
+      // Leave the page title above the table in view.
       await p
-        .locator('table')
-        .first()
+        .getByRole('heading', { level: 1, name: 'Membranes' })
         .evaluate((e) => e.scrollIntoView({ block: 'start' }));
       await settle(p);
     },

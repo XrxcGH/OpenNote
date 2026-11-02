@@ -307,9 +307,9 @@ The app registers 880 commands and 47 tool windows. 24 of the windows are subjec
 
 ### Pictures
 
-**table-chart.** A smart table with a formula cell and the bar chart made from it. ([dark](screens/table-chart-dark.png))
+**table-chart.** A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words. ([dark](screens/table-chart-dark.png))
 
-![A smart table with a formula cell and the bar chart made from it.](screens/table-chart-light.png)
+![A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words.](screens/table-chart-light.png)
 
 ## Drawing and ink
 
@@ -1470,9 +1470,9 @@ Commands (9):
 
 ![The Thermodynamics kit working a Rankine cycle, with its diagram and results.](screens/kit-thermo-cycles-light.png)
 
-**engineering-beam.** The beam deflection tool of the solid mechanics kit, with its supports and loads. ([dark](screens/engineering-beam-dark.png))
+**engineering-beam.** The beam deflection tool of the solid mechanics kit: the supports and loads of a simply supported beam, its results and reactions, and its deflection curve. ([dark](screens/engineering-beam-dark.png))
 
-![The beam deflection tool of the solid mechanics kit, with its supports and loads.](screens/engineering-beam-light.png)
+![The beam deflection tool of the solid mechanics kit: the supports and loads of a simply supported beam, its results and reactions, and its deflection curve.](screens/engineering-beam-light.png)
 
 **kit-design-code.** The memory and pointer tracer of the Design kit, stepping through a short program. ([dark](screens/kit-design-code-dark.png))
 

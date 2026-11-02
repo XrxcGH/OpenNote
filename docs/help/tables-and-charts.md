@@ -2,7 +2,7 @@
 
 A smart table holds typed columns, formulas, and several views of the same rows. A chart reads its numbers from a table.
 
-![A smart table with a formula cell, and the bar chart made from it](../screens/table-chart-light.png)
+![A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words](../screens/table-chart-light.png)
 
 ## Make a table
 

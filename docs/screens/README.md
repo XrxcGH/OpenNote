@@ -67,7 +67,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [block-callouts](block-callouts-light.png) ([dark](block-callouts-dark.png)): Note, tip, and warning callouts on a page, each with its own color and icon.
 - [block-code](block-code-light.png) ([dark](block-code-dark.png)): A code block with Python highlighting, its language label, and the copy button.
 - [lined-paper](lined-paper-light.png) ([dark](lined-paper-dark.png)): Typed notes on lined paper, with the text sitting on the rules.
-- [table-chart](table-chart-light.png) ([dark](table-chart-dark.png)): A smart table with a formula cell and the bar chart made from it.
+- [table-chart](table-chart-light.png) ([dark](table-chart-dark.png)): A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words.
 - [insert-mind-map](insert-mind-map-light.png) ([dark](insert-mind-map-dark.png)): A mind map on a page, with a main idea and branches added under and beside it.
 - [insert-diagram](insert-diagram-light.png) ([dark](insert-diagram-dark.png)): A flowchart written as text, drawn below its source.
 - [code-cell](code-cell-light.png) ([dark](code-cell-dark.png)): A Python code cell that has run, with its output below the code.
@@ -93,7 +93,9 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [search](search-light.png) ([dark](search-dark.png)): The search panel with a result, the matched word in bold, and a preview.
 - [find-replace](find-replace-light.png) ([dark](find-replace-dark.png)): Find and replace on the page, with every match highlighted.
 - [backlinks](backlinks-light.png) ([dark](backlinks-dark.png)): The linked pages pane, listing the page that links here.
+
 <!-- checks-disable-next-line grammar: "to-do and important lines" is one phrase, not a list -->
+
 - [tags-pane](tags-pane-light.png) ([dark](tags-pane-dark.png)): The tagged lines pane, listing to-do and important lines with the page each is on.
 - [graph-view](graph-view-light.png) ([dark](graph-view-dark.png)): The graph view, with pages as dots and their links as lines.
 - [collections](collections-light.png) ([dark](collections-dark.png)): A live collection of pages shown as a board, grouped by status.
@@ -145,7 +147,7 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 - [kit-thermo-cycles](kit-thermo-cycles-light.png) ([dark](kit-thermo-cycles-dark.png)): The Thermodynamics kit working a Rankine cycle, with its diagram and results.
 - [kit-fluid-heat](kit-fluid-heat-light.png) ([dark](kit-fluid-heat-dark.png)): The Fluid mechanics and heat transfer kit on its pipe flow and pumps tab.
 - [kit-aerospace](kit-aerospace-light.png) ([dark](kit-aerospace-dark.png)): The Aerospace kit on its standard atmosphere tab, with the values at one altitude.
-- [engineering-beam](engineering-beam-light.png) ([dark](engineering-beam-dark.png)): The beam deflection tool of the solid mechanics kit, with its supports and loads.
+- [engineering-beam](engineering-beam-light.png) ([dark](engineering-beam-dark.png)): The beam deflection tool of the solid mechanics kit: the supports and loads of a simply supported beam, its results and reactions, and its deflection curve.
 - [kit-solids-fem](kit-solids-fem-light.png) ([dark](kit-solids-fem-dark.png)): The finite element workbench of the Solid mechanics kit, with a meshed part and its stresses.
 - [kit-mechanisms](kit-mechanisms-light.png) ([dark](kit-mechanisms-dark.png)): The linkage analyzer of the Mechanisms and dynamics kit, with a four-bar linkage.
 - [kit-control](kit-control-light.png) ([dark](kit-control-dark.png)): The Dynamics and control kit drawing a Bode plot for a transfer function.

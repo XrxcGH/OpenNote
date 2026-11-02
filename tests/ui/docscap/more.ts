@@ -285,15 +285,17 @@ export function scenes(h: Helpers): Scene[] {
     },
     {
       name: 'engineering-beam',
+      // Tall enough for the supports, the loads, the results, and the deflection curve together.
+      viewport: { width: 1280, height: 1700 },
       run: async (p) => {
         await h.typeNotes(p);
         await h.command(p, 'beam', /beam/i);
         const d = p.getByRole('dialog', { name: 'Solid mechanics', exact: true });
         await d.waitFor({ timeout: 20_000 });
         await p.waitForTimeout(1500);
-        // The form fills the window: scroll to the results and the beam diagrams below it.
+        // Scroll to the supports and the loads, so the beam's setup shows with the results and the curve below it.
         await d
-          .getByText('Results', { exact: true })
+          .getByText('Supports, one to a line', { exact: true })
           .first()
           .evaluate((e) => e.scrollIntoView({ block: 'start' }));
         await p.waitForTimeout(800);
