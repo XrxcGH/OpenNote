@@ -181,19 +181,16 @@ fn cached_voices() -> Vec<Voice> {
     fresh
 }
 
-/// What a program prints, or `None` when it is missing or fails.
+/// The longest the voice list may take. It holds up the reader's first paragraph, so a speech service that never
+/// answers ends it with no voices instead.
+const VOICES_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// What a program prints, or `None`, with the reason logged, when it is missing, fails, or runs past the limit.
 #[cfg_attr(windows, allow(dead_code))]
 fn run_for_output(program: &str, args: &[&str]) -> Option<String> {
-    let output = Command::new(program)
-        .args(args)
-        .stdin(Stdio::null())
-        .stderr(Stdio::null())
-        .output()
-        .ok()?;
-    output
-        .status
-        .success()
-        .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
+    crate::child_process::output_within(Command::new(program).args(args), VOICES_TIMEOUT)
+        .inspect_err(|failure| log::warn!("No voice list: {failure}"))
+        .ok()
 }
 
 /// Runs a speech program with `text` on stdin, waits for it, and returns the WAV it wrote to `out`.
