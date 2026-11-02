@@ -134,6 +134,35 @@ The drawings get their color from five soft tints, one for each motif color, so 
 
 A notebook's pages use `accent.candleSubtle` as warm paper, and the night window's upper sky uses `accent.nightSubtle`. The lines on top stay `border.control`, so a fill never hides an edge. Under Windows contrast themes the tints become the system canvas, and the drawings go back to plain outlines.
 
+### Other tokens
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `surface.scrim` | `#2B252147` | `#0F0F0E8C` | The dim layer behind a dialog |
+| `accent.primaryHover` | `#325C42` | `#A2CEAE` | A primary button under the pointer |
+| `accent.primaryPressed` | `#2A4D38` | `#7DB28C` | A primary button while pressed |
+| `caption.closeHover` | `#C42B1C` | `#C42B1C` | The window close button under the pointer |
+| `caption.closeHoverText` | `#FFFCF6` | `#FFFCF6` | The close button's glyph while hovered |
+| `code.keyword` | `#6A4A9C` | `#C2ABE8` | Keywords in code blocks and code cells |
+| `code.string` | `#2E6B45` | `#8FC29D` | Strings |
+| `code.number` | `#9A4A1F` | `#F0AE68` | Numbers |
+| `code.comment` | `#6B6054` | `#A7A59D` | Comments |
+| `code.function` | `#2F4F9A` | `#9DB4EA` | Function names |
+| `code.type` | `#7A5410` | `#E7BA62` | Type names |
+| `code.variable` | `#6E4B2E` | `#D6AE86` | Variable names |
+| `code.punctuation` | `#5C534A` | `#CBCAC3` | Punctuation |
+
+### How much color the app may show
+
+The rules that keep the app pretty without pulling the eye from the work:
+
+- Moss is the one accent for actions. Clay is secondary.
+- Candle, dusk, and night never stand alone as a signal, never are status colors, and never fill a button.
+- The ambient washes stay within 1.5:1 contrast against `surface.sunken`.
+- The drawing tints are fills only: never text, never a button, never a signal.
+- Color is never the only signal. Status pairs color with an icon or text.
+- Under a Windows contrast theme, the tints become the system canvas and the drawings go back to plain outlines.
+
 ### Ink colors
 
 Ink is content, not interface, so it has its own palette. Each pen has a light and a dark value, and notes store the pen name. That way handwriting stays readable when the theme changes. The default pens are Ink, Indigo, Brick, Fern, Plum, Amber and Walnut, and each is at least 4.2:1 against the page in both themes. Highlighters (Honey, Mint, Rose, Apricot, Lilac) are 40% transparent and draw behind ink. Custom colors are allowed; in dark mode the app lightens them until they reach 3:1.
