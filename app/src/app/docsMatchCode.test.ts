@@ -1,9 +1,17 @@
 // The docs match the code: every ADR number is used once and listed in the index, the feature list covers every
-// section of FEATURES.md and its pictures exist, and the status pages no longer call built features unbuilt.
+// section of FEATURES.md in a category and its pictures exist, and the status pages no longer call built features unbuilt.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { regenerate, readScreens, SCREEN_CATEGORIES } from '../../../docs/tools/featureList';
+import {
+  CATEGORIES,
+  regenerate,
+  readScreens,
+  SCREEN_CATEGORIES,
+  sectionsOf,
+  unplacedSections,
+} from '../../../docs/tools/featureList';
+import { balanced, entryName, firstSentence } from '../../../docs/tools/featureRows';
 
 const docs = join(import.meta.dirname, '..', '..', '..', 'docs');
 function markdown(dir: string): string[] {
@@ -44,13 +52,27 @@ describe('ADR links', () => {
 
 describe('feature list', () => {
   const list = read('FEATURE-LIST.md');
+  const lines = list.split('\n');
 
-  it('has a section for every section of FEATURES.md that lists features', () => {
-    const headings = read('FEATURES.md')
-      .split('\n')
-      .filter((l) => l.startsWith('## ') && !/Contents|How to read the status/.test(l))
-      .map((l) => l.slice(3).trim());
-    for (const heading of headings) expect(list, heading).toContain(`## ${heading}`);
+  it('puts every section of FEATURES.md in a category, and has a heading for every category', () => {
+    expect(unplacedSections(read('FEATURES.md'))).toEqual([]);
+    for (const category of CATEGORIES) expect(list, category).toContain(`## ${category}`);
+  });
+
+  it('closes every parenthesis, so no sentence was cut inside one', () => {
+    // Pictures and their captions are left out: a picture's alt text is its caption.
+    const text = lines.filter((line) => !/^(!\[|<!--|\*\*[a-z0-9-]+\.\*\*)/.test(line));
+    expect(text.filter((line) => !balanced(line))).toEqual([]);
+    expect(balanced('air resistance (from mass')).toBe(false);
+    expect(firstSentence('A window (0.00120 has 3. 1200 has 2) that counts. More words here.')).toBe(
+      'A window (0.00120 has 3. 1200 has 2) that counts',
+    );
+  });
+
+  it('gives every command, tab, and bullet a sentence', () => {
+    expect(lines.filter((line) => /^- \*\*[^*]+\.\*\*( Not in the palette\.)?\s*$/.test(line))).toEqual([]);
+    // A command row has its name, its sentence, and its keys.
+    expect(lines.filter((line) => /^\| [^|]+ \|\s*\|/.test(line) && !line.startsWith('| ---'))).toEqual([]);
   });
 
   it('is what `npm run docs:features` makes from FEATURES.md, so it cannot go stale', () => {
@@ -70,6 +92,34 @@ describe('feature list', () => {
     }
   });
 
+  it('lists every picture of screens.json on the Screens page', () => {
+    const page = read('screens', 'README.md');
+    for (const s of readScreens()) expect(page, s.name).toContain(`[${s.name}](${s.name}-light.png)`);
+  });
+
+  it('shows each picture with the caption of screens.json on the Screens page', () => {
+    const page = read('screens', 'README.md');
+    const lines = page.split(/\r?\n/);
+    for (const s of readScreens())
+      expect(
+        lines.some((line) => line.startsWith(`- [${s.name}](`) && line.endsWith(`: ${s.caption}`)),
+        s.name,
+      ).toBe(true);
+  });
+
+  it('says in the docs index how many pictures and screens there are', () => {
+    const screens = readScreens();
+    const pngs = readdirSync(join(docs, 'screens')).filter(
+      (f) => f.endsWith('.png') && f.includes('-light.png'),
+    ).length;
+    const all = readdirSync(join(docs, 'screens')).filter((f) => f.endsWith('.png') && /-(light|dark)\.png$/.test(f));
+    expect(pngs).toBe(screens.length);
+    expect(all.length).toBe(screens.length * 2);
+    expect(read('README.md')).toContain(
+      `${all.length} pictures of ${screens.length} screens, each in light and in dark`,
+    );
+  });
+
   it('points at pictures that exist', () => {
     const pictures = [...list.matchAll(/\]\((screens\/[^)]+\.png)\)/g)].map((m) => m[1]!);
     expect(pictures.length).toBeGreaterThan(20);
@@ -79,6 +129,32 @@ describe('feature list', () => {
   it('is linked from the README and the help index', () => {
     expect(readFileSync(join(docs, '..', 'README.md'), 'utf8')).toContain('docs/FEATURE-LIST.md');
     expect(read('help', 'README.md')).toContain('FEATURE-LIST.md');
+  });
+});
+
+describe('feature list rows', () => {
+  it('lists every table row of FEATURES.md, so a row after a paragraph is not dropped silently', () => {
+    const rows: string[] = [];
+    let section = '';
+    const source = read('FEATURES.md').split(/\r?\n/);
+    const rule = /^\|?[\s:|-]+\|?$/;
+    source.forEach((line, at) => {
+      const heading = /^## (.+)$/.exec(line);
+      if (heading) section = heading[1]!.trim();
+      // A table row starts with a bar. The header is the row above the rule, and the rule has only dashes.
+      if (!line.startsWith('|') || rule.test(line) || rule.test(source[at + 1] ?? '')) return;
+      if (/^(Contents|How to read the status|Screens)$/.test(section)) return;
+      rows.push(
+        line
+          .split('|')[1]!
+          .trim()
+          .replace(/^\*\*|\*\*$/g, ''),
+      );
+    });
+    expect(rows.length).toBeGreaterThan(50);
+    // The generator's first stage keeps one entry for each row. The tool windows are then named from the registry.
+    const kept = new Set(sectionsOf(read('FEATURES.md')).flatMap((one) => one.entries.map(entryName)));
+    expect(rows.filter((name) => name && !kept.has(name))).toEqual([]);
   });
 });
 

@@ -27,7 +27,12 @@ The [nightly workflow](../.github/workflows/nightly.yml) runs every night on the
 | `proptest` | All tests of `opennote-core`, with more random cases | 10,000 cases |
 | `perf` | The benchmarks in `tests/perf/core`, with their budget check | A 1,000-page notebook |
 | `soak` | A scripted person edits one long note at random in the web build (`tests/soak`) and the job holds memory, nodes, and typing time flat | 120 minutes |
+| `e2e-full` | Builds the app with the test endpoints and runs every end-to-end spec on Windows | Every spec |
+| `palm-sweep` | The palm label oracle's full sweep, in four shards ([the sweep](testing/palm-sweep.md)) | 200,000 cases |
+| `bundles` | Builds the macOS dmg and the Linux AppImage unsigned, so a packaging problem shows the day it lands | Both bundles |
 | `nvda` | NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in `tests/nvda` on Windows and records what it said | 6 checks |
+
+The `plan` job lists the fuzz targets, so a new target is never forgotten. The `report` job opens an issue when any job fails on the main branch, or adds a comment to the issue that is already open.
 
 The fuzz corpus is kept in the Actions cache, so each night starts from the inputs found the night before. A crashing input is uploaded with the run.
 
@@ -136,9 +141,9 @@ OpenNote keeps a small record of how each session ended: counts and times, with 
 
 ## Screenshot matrix and component gallery
 
-Two test tools are in place for the phases that build screens, and both start empty.
+Two test tools are in place for the screens.
 
-- The **screenshot matrix** takes every screen state that a package lists in `tests/ui/screens` at four window sizes and in both themes. Run `npm run test:matrix` to check its plan. See [the interface tests README](../tests/ui/README.md).
+- The **screenshot matrix** takes every screen state that a package lists in `tests/ui/screens` at four window sizes and in both themes. `tests/ui/screens` holds the screen lists (`brand.ts`, `hardening.ts`, and `later.ts` among them). Run `npm run test:matrix` to check its plan. See [the interface tests README](../tests/ui/README.md).
 - The **component gallery** is a test-build page that shows each component state at its own address, and axe checks every entry on the day it is added. Run `npm run app:gallery` to see it. See [the gallery README](../app/src/dev/gallery/README.md).
 
 Baselines for pictures come only from the update-screenshots workflow, so a picture without one is skipped and says so.

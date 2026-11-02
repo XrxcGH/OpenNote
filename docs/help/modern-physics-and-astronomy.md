@@ -2,6 +2,8 @@
 
 Nine calculators for quantum mechanics, atoms, molecules, solids, plasmas, stars, the sky, and cosmology share one tool window. They are new in Beta, so check the answers against your own work while you learn them.
 
+![The Modern physics and astronomy kit on its quantum wells and barriers tab](../screens/kit-modern-physics-light.png)
+
 ## Open a tool
 
 - Open the command palette and type the tool's name, such as "Open the atoms and spectra tool" or "spin". Each tool has its own command.

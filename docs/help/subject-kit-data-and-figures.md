@@ -2,6 +2,8 @@
 
 Every subject kit (statistics, the sciences, the humanities, economics, music, and the rest) takes data, makes random results you can repeat, and puts its diagrams on the page the same way. These parts are new in Beta, so check the answers against your own work while you learn them.
 
+![The Statistics tab of the calculator after summarizing six numbers](../screens/subject-statistics-light.png)
+
 ## Data
 
 - A data field takes data three ways. Paste or type it, one row per line, with columns separated by tabs, commas, semicolons, or spaces. Choose Open a file for a CSV, TSV, or text file. Or choose Find tables on the page, pick a table, and choose Use this table.

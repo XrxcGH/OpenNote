@@ -2,6 +2,8 @@
 
 Sync keeps your notebooks the same on all your devices. It is off until you set it up, and it needs no OpenNote account or server: it keeps its data in a folder or on a WebDAV server you already have. Everything is encrypted on your device before it leaves.
 
+![Settings, then Sync: step 1 of 4, choosing where sync keeps its encrypted data](../screens/sync-settings-light.png)
+
 ## Set up sync
 
 1. Open Settings, then Sync, and choose **Set up sync**.

@@ -1,12 +1,14 @@
 // The pictures added for the feature list: study, the tutor, the daily calendar, diagrams, mind maps, ink layers,
 // groups, and links, PDF import, translate, protected sections, sync, and the tool kits.
 import { expect, type Page } from '@playwright/test';
-import { choose, draw, ellipse, line } from '../ink';
-import { insertPdf } from '../pdf';
+import { choose, draw, ellipse } from '../ink';
+import { HANDOUT, lecturePdf } from './lecturePdf';
 
 export interface Scene {
   name: string;
   fixture?: string;
+  /** Where the app opens, such as `/?searchExtras`. */
+  path?: string;
   viewport?: { width: number; height: number };
   /** Skip the wait for pictures to settle: a page of PDF pictures never reports settled. */
   quick?: boolean;
@@ -19,6 +21,12 @@ export interface Helpers {
   command(p: Page, query: string, option: string | RegExp): Promise<void>;
   settings(p: Page, section: string): Promise<void>;
   typeNotes(p: Page): Promise<void>;
+  /** Opens a page of the fixture: the section, then the page title. */
+  openPage(p: Page, section: string, title: string): Promise<void>;
+  /** Types lines into the page, pressing Enter between them; waits until `saved` is held when given. */
+  write(p: Page, lines: string[], saved?: string): Promise<void>;
+  /** Clicks a command bar tab and waits for the page to settle. */
+  tab(p: Page, name: string): Promise<void>;
 }
 
 // checks-disable-next-line modifiability: one list of capture scenes that share their helpers; split it when it grows again
@@ -44,14 +52,23 @@ export function scenes(h: Helpers): Scene[] {
     }
   }
 
-  async function lassoed(p: Page) {
+  const wavy = (x0: number, y: number, w: number, cycles: number): [number, number][] =>
+    Array.from({ length: 41 }, (_, i) => [x0 + (w * i) / 40, y + 9 * Math.sin((i / 40) * cycles * 6.2832)]);
+
+  /** A page of notes with two handwritten lines under them. */
+  async function inked(p: Page) {
     await openMembranes(p);
+    await typeLines(p, ['## Cell membranes', 'The membrane is a double layer of phospholipids.']);
     await p.getByRole('tab', { name: 'Draw' }).click();
     await choose(p, 'Pen, Ink, 0.5 mm');
-    await draw(p, line([150, 350], [260, 360]));
-    await draw(p, line([420, 350], [530, 360]));
+    await draw(p, wavy(150, 350, 230, 5));
+    await draw(p, wavy(420, 350, 230, 6));
+  }
+
+  async function lassoed(p: Page) {
+    await inked(p);
     await choose(p, 'Lasso select');
-    await draw(p, ellipse(340, 355, 240, 70));
+    await draw(p, ellipse(400, 355, 340, 70));
     const bar = p.getByRole('toolbar', { name: 'Selected ink and text' });
     await bar.waitFor();
     return bar;
@@ -70,7 +87,15 @@ export function scenes(h: Helpers): Scene[] {
         ]);
         await p.waitForTimeout(2500);
         await h.command(p, 'Open flashcards', 'Open flashcards');
-        await expect(p.getByRole('dialog', { name: 'Flashcards' }).getByText(/3 cards/)).toBeVisible();
+        const decks = p.getByRole('dialog', { name: 'Flashcards' });
+        await expect(decks.getByText(/3 cards/)).toBeVisible();
+        // The deck made from the page's lines has no name of its own yet, so give it one, as a person would.
+        await decks.locator('li button').first().click();
+        await decks.getByRole('button', { name: 'Rename deck' }).click();
+        await decks.getByRole('textbox', { name: 'Deck name' }).fill('Quick facts');
+        await p.keyboard.press('Enter');
+        await decks.getByRole('button', { name: 'Back to decks' }).click();
+        await expect(decks.getByRole('button', { name: 'Quick facts' })).toBeVisible();
       },
     },
     {
@@ -97,7 +122,15 @@ export function scenes(h: Helpers): Scene[] {
       name: 'daily-calendar',
       run: async (p) => {
         await h.typeNotes(p);
+        await p.getByRole('button', { name: "Open today's note" }).click();
+        await expect(p.getByRole('heading', { level: 1, name: '2026-09-30' })).toBeVisible();
+        for (const day of ['Tuesday, September 29, 2026', 'Monday, September 28, 2026']) {
+          await h.command(p, 'daily notes calendar', /daily notes calendar/);
+          await p.getByRole('dialog', { name: 'Daily notes' }).getByRole('button', { name: day }).click();
+          await p.waitForTimeout(500);
+        }
         await h.command(p, 'daily notes calendar', /daily notes calendar/);
+        await p.getByRole('dialog', { name: 'Daily notes' }).waitFor();
         await p.waitForTimeout(500);
       },
     },
@@ -106,10 +139,23 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       run: async (p) => {
         await openMembranes(p);
+        await typeLines(p, ['## Cell membranes', 'A mind map of what the membrane does and is made of.', '']);
         await h.command(p, 'Insert mind map', 'Insert mind map');
-        await p.getByRole('button', { name: 'Add branch under' }).click();
-        await p.getByRole('button', { name: 'Add branch beside' }).click();
-        await p.getByRole('button', { name: 'Add branch under' }).click();
+        await p.getByText('Main idea').first().click();
+        await p.keyboard.press('Enter');
+        await p.keyboard.press('Control+a');
+        await p.keyboard.type('Cell membrane');
+        await p.keyboard.press('Tab');
+        await p.keyboard.type('Structure');
+        await p.keyboard.press('Enter');
+        await p.keyboard.type('Transport');
+        await p.keyboard.press('Enter');
+        await p.keyboard.type('Signaling');
+        await p.keyboard.press('Tab');
+        await p.keyboard.type('Receptor proteins');
+        await p.keyboard.press('Enter');
+        await p.keyboard.type('Hormones');
+        await p.keyboard.press('Escape');
         await p.waitForTimeout(800);
       },
     },
@@ -118,7 +164,17 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       run: async (p) => {
         await openMembranes(p);
+        await typeLines(p, ['## Photosynthesis', 'The light reaction feeds the Calvin cycle.', '']);
         await h.command(p, 'Insert diagram', /^Insert diagram/);
+        await p
+          .getByRole('textbox', { name: 'Diagram text' })
+          .fill(
+            'flowchart LR\n  A[Sunlight] --> B[Light reaction]\n  B --> C[ATP and NADPH]\n  C --> D[Calvin cycle]\n  D --> E[Glucose]',
+          );
+        await p
+          .getByRole('textbox', { name: 'Description of the diagram' })
+          .fill('Flowchart of photosynthesis, from sunlight to glucose');
+        await expect(p.getByText('Glucose').last()).toBeVisible({ timeout: 20_000 });
         await p.waitForTimeout(800);
       },
     },
@@ -127,14 +183,14 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       viewport: { width: 1600, height: 900 },
       run: async (p) => {
-        await openMembranes(p);
-        await p.getByRole('tab', { name: 'Draw' }).click();
-        await choose(p, 'Pen, Ink, 0.5 mm');
-        await draw(p, line([150, 350], [400, 350]));
+        await inked(p);
         await h.command(p, 'layers', /^Layers/);
         const d = p.getByRole('dialog', { name: 'Layers' });
         await d.getByRole('button', { name: 'Add a layer' }).click();
         await d.getByRole('button', { name: 'Add a layer' }).click();
+        await d.getByRole('textbox', { name: 'Name of Layer 3' }).fill('Labels');
+        await d.getByRole('textbox', { name: 'Name of Layer 2' }).fill('Diagram');
+        await d.getByRole('textbox', { name: 'Name of Layer 1' }).fill('Notes');
       },
     },
     {
@@ -152,12 +208,9 @@ export function scenes(h: Helpers): Scene[] {
       fixture: 'smart',
       viewport: { width: 1600, height: 900 },
       run: async (p) => {
-        await openMembranes(p);
-        await p.getByRole('tab', { name: 'Draw' }).click();
-        await choose(p, 'Pen, Ink, 0.5 mm');
-        await draw(p, line([150, 350], [400, 380]));
+        await inked(p);
         await choose(p, 'Lasso select');
-        await draw(p, ellipse(275, 365, 220, 90));
+        await draw(p, ellipse(275, 355, 190, 60));
         const bar = p.getByRole('toolbar', { name: 'Selected ink and text' });
         await bar.getByRole('button', { name: 'Make link' }).click();
         const d = p.getByRole('dialog', { name: 'Make link' });
@@ -175,8 +228,24 @@ export function scenes(h: Helpers): Scene[] {
       quick: true,
       run: async (p) => {
         await openMembranes(p);
-        await insertPdf(p, 'lecture.pdf', ['Cell walls', 'Osmosis']);
-        await expect(p.getByRole('group', { name: /Page 2 of 2 from lecture\.pdf/ })).toBeVisible();
+        const chooser = p.waitForEvent('filechooser');
+        await h.command(p, 'Insert PDF', 'Insert PDF');
+        await (
+          await chooser
+        ).setFiles({ name: 'lecture.pdf', mimeType: 'application/pdf', buffer: lecturePdf(HANDOUT) });
+        await expect(p.getByRole('group', { name: /Page 2 of 2 from lecture\.pdf/ })).toBeVisible({ timeout: 30_000 });
+        // Let the page pictures finish drawing, then take the toast away so only the pages show.
+        await p.waitForTimeout(3000);
+        const close = p.locator('button', { hasText: /^Close$/ });
+        if (await close.count()) await close.first().click();
+        // Scroll a little past the top of the first page, so its Original button is not under the Properties pill.
+        await p.getByRole('group', { name: /Page 1 of 2 from lecture\.pdf/ }).evaluate((e) => {
+          e.scrollIntoView({ block: 'start' });
+          let scroller = e.parentElement;
+          while (scroller && scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
+          if (scroller) scroller.scrollTop += 90;
+        });
+        await p.waitForTimeout(500);
       },
     },
     {
@@ -216,9 +285,19 @@ export function scenes(h: Helpers): Scene[] {
     },
     {
       name: 'engineering-beam',
+      // Tall enough for the supports, the loads, the results, and the deflection curve together.
+      viewport: { width: 1280, height: 1700 },
       run: async (p) => {
         await h.typeNotes(p);
         await h.command(p, 'beam', /beam/i);
+        const d = p.getByRole('dialog', { name: 'Solid mechanics', exact: true });
+        await d.waitFor({ timeout: 20_000 });
+        await p.waitForTimeout(1500);
+        // Scroll to the supports and the loads, so the beam's setup shows with the results and the curve below it.
+        await d
+          .getByText('Supports, one to a line', { exact: true })
+          .first()
+          .evaluate((e) => e.scrollIntoView({ block: 'start' }));
         await p.waitForTimeout(800);
       },
     },
@@ -227,6 +306,10 @@ export function scenes(h: Helpers): Scene[] {
       run: async (p) => {
         await h.typeNotes(p);
         await h.command(p, 'statistics', /statistic/i);
+        // Widen the window until every tab of the calculator shows.
+        await p.getByRole('separator', { name: /^Resize Calculator/ }).focus();
+        for (let i = 0; i < 22; i += 1) await p.keyboard.press('ArrowLeft');
+        await p.getByRole('dialog', { name: 'Calculator' }).getByRole('heading', { name: 'Calculator' }).click();
         await p.getByRole('textbox', { name: 'Data' }).fill('2, 4, 4, 5, 7, 9');
         await p.getByRole('button', { name: 'Calculate' }).click();
         await p.waitForTimeout(800);

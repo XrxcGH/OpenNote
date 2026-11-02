@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+The current build is beta 8. The version files still say 0.1.0-beta.7. Betas 5 to 7 have no section of their own here; the wiki's development updates say what they added.
+
 ### Changed
+
+- The dark theme's neutral colors are a charcoal gray, not brown.
+- The save status in the title bar says Saving until an edit is written, and Saved only once it is. A closed page stays Saving until its last edit is saved.
+- The custom title bar is recomputed, so the Windows title bar no longer stays above OpenNote's own.
+- The feature list ([docs/FEATURE-LIST.md](docs/FEATURE-LIST.md)) is made from the app's registries, so it lists every command, title bar item, tool window, and kit tab by category.
 
 - OpenNote uses American English by default, even when Windows uses another language. One language setting (Settings, Language) now sets spell check, the dictionary, hyphenation, the read-aloud voice, handwriting and math recognition, and text in pictures, and first-run setup has a Language and spelling step with English (United States) chosen. The interface text stays in American English for now. The spelling check in CHECKS also reads the text in string literals, so a British spelling in the app's text is caught.
 - Quick capture no longer takes Ctrl+Alt+Q, which AltGr+Q also presses and which types @ on many keyboards. It is off until it is turned on in Settings, where the shortcut can be chosen and a clash with OpenNote's own keys is shown. A beta 4 profile that kept Ctrl+Alt+Q gets no shortcut until new keys are chosen, and its switch can still be turned off.

@@ -1,9 +1,11 @@
 // Documentation screenshot capture: every picture in docs/screens, in the light theme and the dark one. Run it with
 // `npx playwright test --config tests/ui/docscap/config.ts` against the web build served on port 4617, and list the
-// pictures in docs/tools/screens.json. CAP_ONLY=name,name takes some; CAP_OUT changes the folder.
+// pictures in docs/tools/screens.json. CAP_ONLY=name,name takes some; CAP_OUT changes the folder; CAP_URL serves
+// from another address. More scenes are in more.ts and in the group files of scenes/.
 import { expect, test, type Page } from '@playwright/test';
 import { settle } from '../screens';
 import { scenes } from './more';
+import { groupScenes } from './scenes';
 
 const RAW = process.env.CAP_OUT ?? 'docs/screens';
 const THEMES = ['light', 'dark'] as const;
@@ -97,6 +99,14 @@ async function setCell(p: Page, row: number, column: number, text: string) {
   await p.keyboard.press('End');
   await p.keyboard.press('Shift+Home');
   await p.keyboard.type(text);
+  // The fixture's cells are bold, and typed-over text keeps that. Clear formatting, so the values read as plain numbers.
+  // The command loads after start-up, so the first presses can do nothing; press again until the bold is gone.
+  await expect(async () => {
+    await p.keyboard.press('Shift+Home');
+    await p.keyboard.press('Control+Backslash');
+    await p.keyboard.press('End');
+    await expect(cell.locator('strong')).toHaveCount(0, { timeout: 500 });
+  }).toPass({ timeout: 15_000 });
 }
 
 async function newLine(p: Page) {
@@ -189,7 +199,7 @@ const SHOTS: Shot[] = [
     },
   },
   {
-    name: 'ink',
+    name: 'ink-pens',
     viewport: { width: 1600, height: 900 },
     run: async (p) => {
       await typeNotes(p);
@@ -253,7 +263,7 @@ const SHOTS: Shot[] = [
     },
   },
   {
-    name: 'ruled',
+    name: 'lined-paper',
     run: async (p) => {
       await typeNotes(p);
       await tab(p, 'View');
@@ -265,6 +275,8 @@ const SHOTS: Shot[] = [
   {
     name: 'table-chart',
     path: '/?fixture=smart',
+    // Tall enough for the title, the table, the chart, and its summary in words.
+    viewport: { width: 1280, height: 1040 },
     run: async (p) => {
       await openSmart(p);
       await hidePagesPane(p);
@@ -275,15 +287,17 @@ const SHOTS: Shot[] = [
         ['Mar', '90', '70'],
       ];
       for (const [r, row] of rows.entries()) for (const [c, text] of row.entries()) await setCell(p, r, c, text);
+      await expect(p.locator('table td strong')).toHaveCount(0);
       await p.locator('table tr').nth(1).locator('td').first().click();
       await p.getByRole('button', { name: 'Data' }).click();
       await p.getByRole('menuitem', { name: 'Insert chart' }).click();
       await p.getByRole('menuitem', { name: 'Bar chart' }).click();
       await expect(p.getByRole('img', { name: /^Bar chart/ }).locator('svg')).toBeVisible();
-      await p.locator('table tr').first().locator('th').first().click();
+      // Select the formula cell, so its =B2*0.6 source shows.
+      await p.locator('table tr').nth(2).locator('td').nth(2).click();
+      // Leave the page title above the table in view.
       await p
-        .locator('table')
-        .first()
+        .getByRole('heading', { level: 1, name: 'Membranes' })
         .evaluate((e) => e.scrollIntoView({ block: 'start' }));
       await settle(p);
     },
@@ -308,6 +322,15 @@ const SHOTS: Shot[] = [
       await p.keyboard.press('Enter');
       await expect(p.getByRole('application', { name: /^Graph of/ })).toBeVisible({ timeout: 20_000 });
       await scrollTop(p);
+      // The line is laid out a moment after the graph shows; wait until it sits above the graph.
+      const line = p.locator('p', { hasText: 'The area under the parabola' });
+      for (let tries = 0; tries < 5 && (await line.evaluate((e) => e.getBoundingClientRect().y)) > 500; tries++) {
+        await p.setViewportSize({ width: 1281 + tries, height: 800 });
+        await p.setViewportSize({ width: 1280, height: 800 });
+        await scrollTop(p);
+        await p.waitForTimeout(500);
+      }
+      await expect.poll(() => line.evaluate((e) => e.getBoundingClientRect().y), { timeout: 5_000 }).toBeLessThan(500);
     },
   },
   {
@@ -370,7 +393,18 @@ const SHOTS: Shot[] = [
       });
     },
   },
-  { name: 'settings-general', run: (p) => settings(p, 'General') },
+  {
+    name: 'settings-general',
+    run: async (p) => {
+      // A person who has chosen a notes folder sees its path, so start with one chosen.
+      await p.addInitScript(() => {
+        const boot = window.__OPENNOTE_BOOT__ as unknown as { settings: Record<string, unknown> };
+        boot.settings = { ...boot.settings, storage: { notesFolder: 'C:\\Users\\Ada\\Documents\\OpenNote' } };
+      });
+      await p.reload();
+      await settings(p, 'General');
+    },
+  },
   { name: 'settings-appearance', run: (p) => settings(p, 'Appearance') },
   { name: 'settings-editing', run: (p) => settings(p, 'Editing') },
   { name: 'settings-intelligence', run: (p) => settings(p, 'On-device intelligence') },
@@ -431,12 +465,20 @@ const SHOTS: Shot[] = [
     run: async (p) => {
       await typeNotes(p);
       await command(p, 'Open upcoming', 'Open upcoming');
-      await p.getByRole('dialog', { name: /Upcoming/ }).waitFor();
+      const d = p.getByRole('dialog', { name: /Upcoming/ });
+      await d.waitFor();
+      const tasks = ['Read chapter 4 today 5 PM', 'Lab report due tomorrow 9 AM', 'Quiz on cell division Friday 10 AM'];
+      for (const task of tasks) {
+        await d.getByLabel('Task and when it is due').fill(task);
+        await d.getByRole('button', { name: 'Add a task' }).click();
+      }
+      await expect(d.getByRole('heading', { name: /Today/ })).toBeVisible();
     },
   },
 ];
 
-SHOTS.push(...scenes({ ready, command, settings, typeNotes }));
+const helpers = { ready, command, settings, typeNotes, openPage, write, tab };
+SHOTS.push(...scenes(helpers), ...groupScenes(helpers));
 
 const only = process.env.CAP_ONLY?.split(',');
 

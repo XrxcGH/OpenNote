@@ -19,7 +19,8 @@
     "app/src/features/ink/pens/golden/*.txt",
     "crates/third_party/**",
     "app/src/theme/fonts/**",
-    "crates/*/fuzz/regressions/**"
+    "crates/*/fuzz/regressions/**",
+    "tests/ui/docscap/**"
   ],
   "rules": {
     "spelling": {

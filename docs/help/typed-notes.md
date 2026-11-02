@@ -52,9 +52,9 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 
 ## Spelling and reading aloud
 
-A misspelled word is marked. Right-click it for fixes. Select text, press Ctrl+K, and choose Read aloud to hear it in a Windows voice. Nothing is sent anywhere.
+A misspelled word is marked. Right-click it for fixes. Select text, open the command palette, and choose Read aloud to hear it in a Windows voice. Nothing is sent anywhere.
 
-Typed notes are built and, in beta 4, not yet tried by hand. The [feature list](../FEATURES.md) says where each one stands.
+The [feature list](../FEATURE-LIST.md) has one sentence on every typed-note feature.
 - In the Elements library, choose Move to put an element in another folder. Folders have Rename and Move too.
 
 ## Checking accessibility before you export

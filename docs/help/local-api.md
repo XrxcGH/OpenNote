@@ -2,6 +2,8 @@
 
 Programs on your PC can work with your notes through OpenNote's local API, but only as far as you allow. The `opennote` command, an AI assistant, the web clipper, the mail add-ins, and your own scripts all use it. Nothing on the network can reach it.
 
+![App permissions: the local API and the apps allowed to use it](../screens/settings-app-permissions-light.png)
+
 ## Turn it on or off
 
 Open Settings, then **App permissions**. Settings, then **Privacy**, has a button that opens it too. **Let apps on this PC connect** turns the API on or off. When it is off, OpenNote doesn't listen at all, and every app stops at once. In beta builds it starts on, with no apps connected.

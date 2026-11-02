@@ -2,7 +2,7 @@
   {
     "name": "setup-welcome",
     "category": "First-time setup",
-    "caption": "Step 1 of 6: the welcome desk by the window."
+    "caption": "Step 1 of 7: the welcome desk by the window."
   },
   {
     "name": "setup-look",
@@ -10,24 +10,29 @@
     "caption": "Step 2: the Light, Dark, and Match Windows preview cards."
   },
   {
+    "name": "setup-language",
+    "category": "First-time setup",
+    "caption": "Step 3: the language and spelling choice, with American English as the default."
+  },
+  {
     "name": "setup-intelligence",
     "category": "First-time setup",
-    "caption": "Step 3: on-device intelligence, with Not now selected."
+    "caption": "Step 4: on-device intelligence, with Not now selected."
   },
   {
     "name": "setup-keys-and-pen",
     "category": "First-time setup",
-    "caption": "Step 4: the shortcut set and the pen top button."
+    "caption": "Step 5: the shortcut set and the pen top button."
   },
   {
     "name": "setup-storage",
     "category": "First-time setup",
-    "caption": "Step 5: the notes folder and the first notebook."
+    "caption": "Step 6: the notes folder and the first notebook."
   },
   {
     "name": "setup-import",
     "category": "First-time setup",
-    "caption": "Step 6: bringing in notes from another app."
+    "caption": "Step 7: bringing in notes from another app."
   },
   {
     "name": "workspace",
@@ -37,7 +42,37 @@
   {
     "name": "workspace-empty",
     "category": "The workspace",
-    "caption": "The empty state: no notebooks yet, and the desk by the window beside the page card."
+    "caption": "The empty state: no notebooks yet, and an open book and candle on the page card."
+  },
+  {
+    "name": "home-screen",
+    "category": "The workspace",
+    "caption": "The Home screen with recent pages, pinned pages, and what is coming up."
+  },
+  {
+    "name": "title-bar-states",
+    "category": "The workspace",
+    "caption": "The title bar with back and forward, the page path, the save status, and a running timer chip."
+  },
+  {
+    "name": "page-tabs",
+    "category": "The workspace",
+    "caption": "Three pages open as tabs in the strip above the page."
+  },
+  {
+    "name": "compact-layout",
+    "category": "The workspace",
+    "caption": "The compact layout of a narrow window, with the app bar and one pane at a time."
+  },
+  {
+    "name": "focus-mode",
+    "category": "The workspace",
+    "caption": "Focus mode, with the panes and the command bar hidden around the page."
+  },
+  {
+    "name": "quick-capture",
+    "category": "The workspace",
+    "caption": "The Quick note window, which saves a note in Quick notes."
   },
   {
     "name": "tab-home",
@@ -46,53 +81,183 @@
   },
   {
     "name": "tab-insert",
-    "category": "Writing and drawing",
-    "caption": "The Insert tab: link, code block, callout, divider, template, file, equation, and table."
+    "category": "The workspace",
+    "caption": "The Insert tab, with buttons for the chemistry, structure, materials, and economics tools, then Link, Insert table, and More."
   },
   {
     "name": "tab-draw",
-    "category": "Writing and drawing",
+    "category": "The workspace",
     "caption": "The Draw tab: the tools, the pen slots, color, and width (1600 by 900)."
   },
   {
     "name": "tab-view",
-    "category": "Writing and drawing",
+    "category": "The workspace",
     "caption": "The View tab: panes, page layout, paper, background, and focus mode."
   },
   {
-    "name": "ink-pens",
-    "category": "Writing and drawing",
-    "caption": "Ink on a page: a highlighter, three pens, and a pencil sketch (1600 by 900)."
+    "name": "slash-menu",
+    "category": "Writing and page blocks",
+    "caption": "The slash menu after typing a slash on an empty line, listing the blocks to insert."
+  },
+  {
+    "name": "formatting-bar",
+    "category": "Writing and page blocks",
+    "caption": "The formatting bar over a selected sentence, with Bold, Italic, Highlight, Link, and More formatting."
+  },
+  {
+    "name": "block-callouts",
+    "category": "Writing and page blocks",
+    "caption": "Note, tip, and warning callouts on a page, each with its own color and icon."
+  },
+  {
+    "name": "block-code",
+    "category": "Writing and page blocks",
+    "caption": "A code block with Python highlighting and its language label."
   },
   {
     "name": "lined-paper",
-    "category": "Writing and drawing",
+    "category": "Writing and page blocks",
     "caption": "Typed notes on lined paper, with the text sitting on the rules."
   },
   {
     "name": "table-chart",
-    "category": "Writing and drawing",
-    "caption": "A smart table with a formula cell and the bar chart made from it."
+    "category": "Writing and page blocks",
+    "caption": "A smart table with its formula cell selected, showing =B2*0.6, and the bar chart made from it with its summary in words."
   },
   {
-    "name": "math-graph",
-    "category": "Graphs, math, and tools",
-    "caption": "An inline equation in a sentence and a graph block with its function."
+    "name": "insert-mind-map",
+    "category": "Writing and page blocks",
+    "caption": "A mind map on a page, with a main idea and branches added under and beside it."
+  },
+  {
+    "name": "insert-diagram",
+    "category": "Writing and page blocks",
+    "caption": "A flowchart written as text, drawn below its source."
+  },
+  {
+    "name": "code-cell",
+    "category": "Writing and page blocks",
+    "caption": "A Python code cell that has run, with its output below the code."
+  },
+  {
+    "name": "page-templates",
+    "category": "Writing and page blocks",
+    "caption": "The new page chooser with the Problem set, Cornell notes, and Lab report templates."
+  },
+  {
+    "name": "page-history",
+    "category": "Writing and page blocks",
+    "caption": "The page history panel with earlier versions and the compare view of one of them."
+  },
+  {
+    "name": "canvas-view",
+    "category": "Writing and page blocks",
+    "caption": "The canvas view, with pages and notes as cards joined by arrows."
+  },
+  {
+    "name": "writing-tools",
+    "category": "Writing and page blocks",
+    "caption": "The writing tools on a selected paragraph, with a suggested change to accept or reject."
+  },
+  {
+    "name": "ink-pens",
+    "category": "Drawing and ink",
+    "caption": "Ink on a page: a highlighter, three pens, and a pencil sketch (1600 by 900)."
+  },
+  {
+    "name": "ink-pen-types",
+    "category": "Drawing and ink",
+    "caption": "Lines drawn with the fountain pen, brush, calligraphy pen, dashed pen, and dotted pen."
+  },
+  {
+    "name": "ink-eraser",
+    "category": "Drawing and ink",
+    "caption": "The eraser options open on the Draw tab, with the stroke and partial erasers."
+  },
+  {
+    "name": "ink-lasso",
+    "category": "Drawing and ink",
+    "caption": "Strokes chosen with the lasso, with the selection frame and the selection bar."
+  },
+  {
+    "name": "ink-shapes",
+    "category": "Drawing and ink",
+    "caption": "Hand-drawn shapes snapped to a clean line, arrow, rectangle, and circle, with the Shapes menu open."
+  },
+  {
+    "name": "ink-ruler",
+    "category": "Drawing and ink",
+    "caption": "The ruler and the protractor on a page, with a straight line drawn along the ruler."
+  },
+  {
+    "name": "ink-layers",
+    "category": "Drawing and ink",
+    "caption": "The Layers window with three layers, each with Make active, Hide, Lock, Move, Export, and Delete."
+  },
+  {
+    "name": "ink-groups",
+    "category": "Drawing and ink",
+    "caption": "Two pen strokes lassoed and grouped, with the Ungroup button on the selection bar."
+  },
+  {
+    "name": "ink-links",
+    "category": "Drawing and ink",
+    "caption": "The list of links on a page after a lassoed stroke was linked to a web address."
   },
   {
     "name": "search",
-    "category": "Find, link, and record",
+    "category": "Find, link, and organize",
     "caption": "The search panel with a result, the matched word in bold, and a preview."
   },
   {
+    "name": "find-replace",
+    "category": "Find, link, and organize",
+    "caption": "Find and replace on the page, with every match highlighted."
+  },
+  {
     "name": "backlinks",
-    "category": "Find, link, and record",
+    "category": "Find, link, and organize",
     "caption": "The linked pages pane, listing the page that links here."
   },
   {
+    "name": "tags-pane",
+    "category": "Find, link, and organize",
+    "caption": "The tagged lines pane, listing each tagged line with the page it is on."
+  },
+  {
+    "name": "graph-view",
+    "category": "Find, link, and organize",
+    "caption": "The graph view, with pages as dots and their links as lines."
+  },
+  {
+    "name": "collections",
+    "category": "Find, link, and organize",
+    "caption": "A live collection of pages shown as a board, grouped by status."
+  },
+  {
+    "name": "daily-calendar",
+    "category": "Find, link, and organize",
+    "caption": "The daily notes calendar, with today marked and buttons for the day, week, month, and year notes."
+  },
+  {
     "name": "recording",
-    "category": "Find, link, and record",
+    "category": "Audio and transcripts",
     "caption": "The recording options under the Record button. Nothing is recording."
+  },
+  {
+    "name": "recording-block",
+    "category": "Audio and transcripts",
+    "caption": "A recording block on a page: its player, speed, Skip silence, and flags that mark moments, with the notes typed below it."
+  },
+  {
+    "name": "transcript-block",
+    "category": "Audio and transcripts",
+    "caption": "A transcript block with speaker names and time stamps under its recording."
+  },
+  {
+    "name": "speech-model",
+    "category": "Audio and transcripts",
+    "caption": "The speech model in Settings, with its size shown before anything is downloaded."
   },
   {
     "name": "import",
@@ -110,6 +275,276 @@
     "caption": "The Export dialog with a section and the Word document format chosen."
   },
   {
+    "name": "print-preview",
+    "category": "Import and export",
+    "caption": "The print preview of a page, with the paper size and margins beside it."
+  },
+  {
+    "name": "pdf-import",
+    "category": "Import and export",
+    "caption": "A PDF inserted as locked page pictures to write on."
+  },
+  {
+    "name": "translate",
+    "category": "Import and export",
+    "caption": "The Translate window, with the language pack and its size shown before anything is downloaded."
+  },
+  {
+    "name": "study-flashcards",
+    "category": "Study and homework",
+    "caption": "The Flashcards window, with cards made from three typed lines."
+  },
+  {
+    "name": "flashcard-review",
+    "category": "Study and homework",
+    "caption": "A flashcard under review, with its answer shown and the buttons to rate it."
+  },
+  {
+    "name": "quiz-block",
+    "category": "Study and homework",
+    "caption": "A quiz block on a page, with one answer chosen and its feedback."
+  },
+  {
+    "name": "study-tutor",
+    "category": "Study and homework",
+    "caption": "The Tutor panel giving the first of four hints on a worked line, without the answer."
+  },
+  {
+    "name": "step-checker",
+    "category": "Study and homework",
+    "caption": "Check my work on three lines of working, with the wrong line marked and the reason."
+  },
+  {
+    "name": "practice-exam",
+    "category": "Study and homework",
+    "caption": "A practice exam made from a page, with its questions ready to answer."
+  },
+  {
+    "name": "practice-exam-results",
+    "category": "Study and homework",
+    "caption": "The marked results of a practice exam, with the score and each question's answer."
+  },
+  {
+    "name": "citations",
+    "category": "Study and homework",
+    "caption": "The Citations window with two sources and the bibliography style."
+  },
+  {
+    "name": "math-graph",
+    "category": "Math, graphs, and calculators",
+    "caption": "An inline equation in a sentence and a graph block with its function."
+  },
+  {
+    "name": "tool-calculator",
+    "category": "Math, graphs, and calculators",
+    "caption": "The scientific calculator after a unit conversion, with the answer and its Copy and Insert buttons."
+  },
+  {
+    "name": "calc-graphing",
+    "category": "Math, graphs, and calculators",
+    "caption": "The graphing calculator with two functions drawn, and a value read off the graph near where they cross."
+  },
+  {
+    "name": "calc-graphing-3d",
+    "category": "Math, graphs, and calculators",
+    "caption": "The 3D graphing calculator with a surface plotted from one function."
+  },
+  {
+    "name": "subject-statistics",
+    "category": "Math, graphs, and calculators",
+    "caption": "The Statistics tab of the calculator after summarizing six numbers."
+  },
+  {
+    "name": "solvers-integrals",
+    "category": "Math, graphs, and calculators",
+    "caption": "The Math solvers window on its integrals tab, with the worked steps."
+  },
+  {
+    "name": "solvers-equations",
+    "category": "Math, graphs, and calculators",
+    "caption": "The Math solvers window on its differential equations tab, with the solution and its steps."
+  },
+  {
+    "name": "math-actions",
+    "category": "Math, graphs, and calculators",
+    "caption": "The math actions on an equation: a solved equation on the page, and the worked steps of a derivative inserted below an equation."
+  },
+  {
+    "name": "graph-3d",
+    "category": "Math, graphs, and calculators",
+    "caption": "A 3D graph block on a page, with a surface and its axes."
+  },
+  {
+    "name": "unit-converter",
+    "category": "Math, graphs, and calculators",
+    "caption": "The unit converter with a length converted from meters to feet."
+  },
+  {
+    "name": "kit-thermo",
+    "category": "Engineering kits",
+    "caption": "The Thermodynamics kit finding a state of water from two properties."
+  },
+  {
+    "name": "kit-thermo-cycles",
+    "category": "Engineering kits",
+    "caption": "The Thermodynamics kit working a Rankine cycle, with its diagram and results."
+  },
+  {
+    "name": "kit-fluid-heat",
+    "category": "Engineering kits",
+    "caption": "The Fluid mechanics and heat transfer kit on its pipe flow and pumps tab."
+  },
+  {
+    "name": "kit-aerospace",
+    "category": "Engineering kits",
+    "caption": "The Aerospace kit on its standard atmosphere tab, with the values at one altitude."
+  },
+  {
+    "name": "engineering-beam",
+    "category": "Engineering kits",
+    "caption": "The beam deflection tool of the solid mechanics kit: the supports and loads of a simply supported beam, its results and reactions, and its deflection curve."
+  },
+  {
+    "name": "kit-solids-fem",
+    "category": "Engineering kits",
+    "caption": "The finite element workbench of the Solid mechanics kit, with a meshed part and its stresses."
+  },
+  {
+    "name": "kit-mechanisms",
+    "category": "Engineering kits",
+    "caption": "The linkage analyzer of the Mechanisms and dynamics kit, with a four-bar linkage."
+  },
+  {
+    "name": "kit-control",
+    "category": "Engineering kits",
+    "caption": "The Dynamics and control kit drawing a Bode plot for a transfer function."
+  },
+  {
+    "name": "kit-circuits",
+    "category": "Engineering kits",
+    "caption": "The circuit simulator of the Circuits and energy kit, showing the netlist of an RC low-pass filter with its AC sweep results, the -3 dB frequency, and the magnitude and phase plots (1280 by 1560)."
+  },
+  {
+    "name": "kit-engineering-math",
+    "category": "Engineering kits",
+    "caption": "The linear algebra workbench of the Engineering mathematics kit, with a matrix and its results."
+  },
+  {
+    "name": "kit-civil",
+    "category": "Engineering kits",
+    "caption": "The Civil and chemical engineering kit on its hydrology and open channels tab."
+  },
+  {
+    "name": "kit-design",
+    "category": "Engineering kits",
+    "caption": "The drafting sheet of the Design kit, with a title block."
+  },
+  {
+    "name": "kit-design-code",
+    "category": "Engineering kits",
+    "caption": "The memory and pointer tracer of the Design kit, stepping through a short program."
+  },
+  {
+    "name": "kit-signals",
+    "category": "Engineering kits",
+    "caption": "The spectrum analyzer of the Signals and sound kit, with a signal and its spectrum."
+  },
+  {
+    "name": "kit-physics",
+    "category": "Science kits",
+    "caption": "The Physics kit on its electric and magnetic fields tab, with field lines around two charges."
+  },
+  {
+    "name": "kit-modern-physics",
+    "category": "Science kits",
+    "caption": "The Modern physics and astronomy kit on its quantum wells and barriers tab."
+  },
+  {
+    "name": "kit-chemistry",
+    "category": "Science kits",
+    "caption": "The Chemistry calculators window balancing an equation."
+  },
+  {
+    "name": "kit-chemistry-structure",
+    "category": "Science kits",
+    "caption": "The Chemical structures window drawing aspirin from SMILES."
+  },
+  {
+    "name": "kit-chemmat",
+    "category": "Science kits",
+    "caption": "The Chemistry and materials kit on its chemical equilibrium tab, solving an ICE table."
+  },
+  {
+    "name": "kit-earth",
+    "category": "Science kits",
+    "caption": "The Earth sciences kit on its atmospheric thermodynamics and soundings tab."
+  },
+  {
+    "name": "kit-life-science",
+    "category": "Science kits",
+    "caption": "The Life science kit on its population dynamics tab, with a population curve."
+  },
+  {
+    "name": "kit-biology",
+    "category": "Science kits",
+    "caption": "The Biology tools kit on its DNA and RNA sequences tab, with a sequence and its details."
+  },
+  {
+    "name": "kit-statistics",
+    "category": "Data and society kits",
+    "caption": "The Statistics kit describing a column of data, with its summary table."
+  },
+  {
+    "name": "kit-stat-models",
+    "category": "Data and society kits",
+    "caption": "The Statistical models kit fitting a linear regression, with its fit statistics and coefficients."
+  },
+  {
+    "name": "kit-psychology",
+    "category": "Data and society kits",
+    "caption": "The Psychology and behavior kit on its signal detection tab."
+  },
+  {
+    "name": "kit-reasoning",
+    "category": "Data and society kits",
+    "caption": "The logic workbench of the Reasoning kit, with a truth table."
+  },
+  {
+    "name": "kit-economics",
+    "category": "Data and society kits",
+    "caption": "The Economics and finance kit on its markets and welfare tab, with supply and demand curves."
+  },
+  {
+    "name": "kit-humanities",
+    "category": "Humanities and arts kits",
+    "caption": "The map maker of the History, places, languages, and texts kit."
+  },
+  {
+    "name": "kit-music",
+    "category": "Humanities and arts kits",
+    "caption": "The Music, script, camera, and studio kit on its music theory tab."
+  },
+  {
+    "name": "kit-music-score",
+    "category": "Humanities and arts kits",
+    "caption": "The Score tab of the music kit: a short melody engraved on a staff, with its results and the Play button."
+  },
+  {
+    "name": "protected-section",
+    "category": "Connectors and sync",
+    "caption": "A password-protected section after it locks, with the Unlock section button."
+  },
+  {
+    "name": "sync-settings",
+    "category": "Connectors and sync",
+    "caption": "Settings, then Sync: step 1 of 4, choosing where sync keeps its encrypted data."
+  },
+  {
+    "name": "connector-prompt",
+    "category": "Connectors and sync",
+    "caption": "A connector card after Connect, stopped at the sign-in step with nothing sent yet."
+  },
+  {
     "name": "settings-general",
     "category": "Settings",
     "caption": "General: the notes folder and start-up."
@@ -120,9 +555,29 @@
     "caption": "Appearance: theme cards, page color, text size, and interface size."
   },
   {
+    "name": "settings-language",
+    "category": "Settings",
+    "caption": "Language: the language and spelling choices, with American English as the default."
+  },
+  {
     "name": "settings-editing",
     "category": "Settings",
     "caption": "Editing: Markdown shortcuts, the slash menu, and AutoCorrect."
+  },
+  {
+    "name": "settings-recording",
+    "category": "Settings",
+    "caption": "Recording: live captions, a transcript of every recording, formats, and the consent reminder."
+  },
+  {
+    "name": "settings-pen",
+    "category": "Settings",
+    "caption": "Pen and touch: the writing hand, drawing with a finger, steady pen, and the pressure curve."
+  },
+  {
+    "name": "settings-my-handwriting",
+    "category": "Settings",
+    "caption": "My handwriting: calibration and the symbols written in your own hand."
   },
   {
     "name": "settings-intelligence",
@@ -130,14 +585,39 @@
     "caption": "On-device intelligence: every feature off, each marked as running on this device."
   },
   {
+    "name": "settings-storage",
+    "category": "Settings",
+    "caption": "Storage and backups: backups and the notebooks that cannot be found."
+  },
+  {
+    "name": "settings-updates",
+    "category": "Settings",
+    "caption": "Updates: the update channel, checking for updates, and going back to the last version."
+  },
+  {
+    "name": "settings-windows",
+    "category": "Settings",
+    "caption": "Windows and power: quick capture and its shortcut."
+  },
+  {
     "name": "settings-privacy",
     "category": "Settings",
     "caption": "Privacy: work offline and a plain list of every network use."
   },
   {
+    "name": "settings-app-permissions",
+    "category": "Settings",
+    "caption": "App permissions: the local API and the apps allowed to use it."
+  },
+  {
     "name": "settings-connectors",
     "category": "Settings",
     "caption": "Connectors: accounts that some features use, each saying \"Needs setup\"."
+  },
+  {
+    "name": "settings-help",
+    "category": "Settings",
+    "caption": "Help: this copy of OpenNote and the ways to get help."
   },
   {
     "name": "settings-shortcuts",
@@ -165,83 +645,23 @@
     "caption": "The timers window with a countdown running."
   },
   {
-    "name": "tool-calculator",
-    "category": "Trash, the palette, and tool windows",
-    "caption": "The calculator after a unit conversion, with its history."
-  },
-  {
     "name": "tool-upcoming",
     "category": "Trash, the palette, and tool windows",
     "caption": "The Upcoming window for tasks and due dates."
   },
   {
-    "name": "study-flashcards",
-    "category": "Study",
-    "caption": "The Flashcards window, with cards made from three typed lines."
+    "name": "accessibility-checker",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The accessibility checker's report on a page, with each problem and how to fix it."
   },
   {
-    "name": "study-tutor",
-    "category": "Study",
-    "caption": "The Tutor panel giving the first of four hints on a worked line, without the answer."
+    "name": "dictionary",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The dictionary window with a word's definitions and related words."
   },
   {
-    "name": "daily-calendar",
-    "category": "Find, link, and record",
-    "caption": "The daily notes calendar, with today marked and buttons for the day, week, month, and year notes."
-  },
-  {
-    "name": "insert-mind-map",
-    "category": "Writing and drawing",
-    "caption": "A mind map on a page, with a main idea and branches added under and beside it."
-  },
-  {
-    "name": "insert-diagram",
-    "category": "Writing and drawing",
-    "caption": "A flowchart written as text, drawn below its source."
-  },
-  {
-    "name": "ink-layers",
-    "category": "Writing and drawing",
-    "caption": "The Layers window with three layers, each with Make active, Hide, Lock, Move, Export, and Delete."
-  },
-  {
-    "name": "ink-groups",
-    "category": "Writing and drawing",
-    "caption": "Two pen strokes lassoed and grouped, with the Ungroup button on the selection bar."
-  },
-  {
-    "name": "ink-links",
-    "category": "Writing and drawing",
-    "caption": "The list of links on a page after a lassoed stroke was linked to a web address."
-  },
-  {
-    "name": "pdf-import",
-    "category": "Import and export",
-    "caption": "A PDF inserted as locked page pictures to write on."
-  },
-  {
-    "name": "translate",
-    "category": "Import and export",
-    "caption": "The Translate window, with the language pack and its size shown before anything is downloaded."
-  },
-  {
-    "name": "protected-section",
-    "category": "Connectors and sync",
-    "caption": "A password-protected section after it locks, with the Unlock section button."
-  },
-  {
-    "name": "sync-settings",
-    "category": "Connectors and sync",
-    "caption": "Settings, then Sync: step 1 of 4, choosing where sync keeps its encrypted data."
-  },
-  {
-    "name": "engineering-beam",
-    "category": "Graphs, math, and tools",
-    "caption": "The beam deflection tool of the solid mechanics kit, with its supports and loads."
-  },
-  {
-    "name": "subject-statistics",
-    "category": "Graphs, math, and tools",
-    "caption": "The Statistics tab of the calculator after summarizing six numbers."
+    "name": "reference-tables",
+    "category": "Trash, the palette, and tool windows",
+    "caption": "The reference tables window with a table of standard values."
   }
 ]

@@ -2,6 +2,8 @@
 
 Bring notes over from the handwriting apps on a tablet or phone. There are two ways in: the app's own file, or a PDF that the app exports. The PDF always works and keeps every page as it looks. The app's own file keeps more of what you can still edit, where OpenNote can read it.
 
+![The Import notes dialog before a file is chosen, with the supported sources](../screens/import-light.png)
+
 ## Contents
 
 - [The dependable way: a PDF](#the-dependable-way-a-pdf)

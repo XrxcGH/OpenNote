@@ -310,6 +310,7 @@ export function beamDeflection(typed: DeflectionInput): DeflectionResult {
     (x) => at(x).theta,
   );
   const steepest = largest(X, L, (x) => at(x).theta, moment);
+  const mMax = Math.max(...X.map((x) => Math.abs(moment(x))));
   const pieces: MomentPiece[] = breaks.slice(0, -1).map((a, i) => ({
     a,
     b: breaks[i + 1],
@@ -327,10 +328,19 @@ export function beamDeflection(typed: DeflectionInput): DeflectionResult {
     thetaMax: { x: steepest.x, theta: steepest.value },
     thetaA: at(0).theta,
     thetaB: at(L).theta,
-    points: (input.at ?? []).map((x) => ({ x, ...at(x), M: moment(x) })),
+    points: (input.at ?? []).map((x) => {
+      const { v, theta } = at(x);
+      return { x, v: snap(v, peak.value), theta: snap(theta, steepest.value), M: snap(moment(x), mMax) };
+    }),
     curve: X.map((x) => [x, at(x).v] as const),
   };
   return { ...result, steps: deflectionSteps(input, result) };
+}
+
+/** Rounding noise, such as a slope of 3e-18 rad where the answer is 0, shows as 0: anything a billion times smaller than
+ * the largest value of the same quantity. */
+function snap(value: number, scale: number): number {
+  return Math.abs(value) <= 1e-9 * Math.abs(scale) ? 0 : value;
 }
 
 function deflectionSteps(input: DeflectionInput, r: Omit<DeflectionResult, 'steps'>): KitStep[] {

@@ -2,6 +2,8 @@
 
 Fit models to data and see each answer worked out, step by step. These tools are new in Beta, so check the answers against your own work while you learn them.
 
+![The Statistical models kit fitting a linear regression, with its fit statistics and coefficients](../screens/kit-stat-models-light.png)
+
 ## Open the tools
 
 - Open the command palette (Ctrl+K) and type the tool's name, such as "Time series and forecasting", or type "Statistical models" to open the window on its first tab.

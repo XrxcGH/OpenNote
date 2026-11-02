@@ -86,14 +86,14 @@ The file format is the most important long-term decision, because every future p
 
 Each phase lists what to build, how to test it, and when it is done. Time estimates are left out on purpose; the exit gates decide when to move on.
 
-Each phase below opens with a status note for beta 7 (0.1.0-beta.7). A note says what is built, what is not, and how it was checked. The plan's own wording is unchanged.
+Each phase below opens with a status note. The notes were last reviewed for beta 8 (the version files still say 0.1.0-beta.7). A note says what is built, what is not, and how it was checked. The plan's own wording is unchanged.
 
 How the beta branch was checked:
 
-- Agents ran the type check, lint, Clippy, and the unit tests. The JavaScript suites had 4,247 passes. Three failures were fixed, and four timing tests, which ran while Rust was building, were not rerun.
-- The Rust tests passed (2,577), and agents started the real exe and opened each main screen once.
-- Agents did not run the browser UI tests, the component tests, or the real-device tests.
-- Nobody has checked beta 4 by hand yet. The hand test is [the beta 4 checklist](testing/beta-4-checklist.md).
+- Agents ran the type check, lint, Clippy, and the unit tests. CI runs them on every pull request.
+- The repository has more than 1,300 test files, more than 11,000 `it` and `test` calls in them, and about 3,570 Rust `#[test]` functions. These are counts of the source, not results of a run. At the last count there were 1,317 files (`git ls-files '*.test.ts' '*.test.tsx' '*.spec.ts' '*.test.mjs' '*.test.mts' | wc -l`), 11,621 calls (`git grep -hE '^ *(it|test)(\.[a-z]+)*\(' -- '*.test.ts' '*.test.tsx' '*.spec.ts' '*.test.mjs' '*.test.mts' | wc -l`), and 3,568 Rust tests (`git grep -hF '#[test]' -- '*.rs' | wc -l`).
+- Agents started the real exe and opened each main screen. The browser UI tests run in CI, and the real-device tests do not.
+- Nobody has checked the app by hand yet. The only hand test is [the beta 4 checklist](testing/beta-4-checklist.md). It does not cover the school tool kits, the tutor, practice exams, sync, code cells, My handwriting, the macOS and Linux builds, or the local API.
 
 ### Phase 0: Foundation
 
@@ -135,7 +135,7 @@ Status: done and merged on 2026-10-02 ([pull request #8](https://github.com/Xrxc
 
 - Built: The shell, and all 21 shell extras of beta 4: multi-select, pins, tabs, dock, portable mode, scheduled backups, focus mode, quick capture, the OneNote shortcut set, and more.
 - Not built: The self-updater is built but not used. The beta exe is unsigned and has no updater.
-- Checked by agents: It passed its component, keyboard, and screen tests when it merged. On beta 4, only the unit tests and a start-up run.
+- Checked by agents: It passed its component, keyboard, and screen tests when it merged. Since then CI also runs the browser UI tests.
 - Checked by hand: Not yet. See section 2 of [the beta 4 checklist](testing/beta-4-checklist.md).
 
 Build:
@@ -370,7 +370,7 @@ Done when: all three features pass their accuracy targets, and the app stays smo
 Status: partly built.
 
 - Built: Opt-in crash reports with consent, the self-check, the feedback file, safe start, and the Privacy page with Work offline. Interface text is in translation files.
-- Built since: An NVDA run of the keyboard and screen reader checklist in the nightly build. Not built: a hand check with Narrator, and testing updates from every earlier beta, because the beta exe has no updater.
+- Built since: An NVDA run of the keyboard and screen reader checklist in the nightly build. Not built: a hand check with Narrator, and a hand check of updates. The release workflow has an `update-test` job that installs the new build over an earlier one, but the beta exe has no update key.
 - Needs the owner: The four-week public beta.
 - Checked by agents: Unit tests and the Rust tests.
 - Checked by hand: Not yet. See section 13 of [the beta 4 checklist](testing/beta-4-checklist.md).
@@ -399,10 +399,10 @@ Complete the [release checklist](#10-release-checklist), then tag version 1.0.0.
 
 The next steps, in rough order:
 
-1. Sync: folder-based first, then an optional self-hosted server.
-2. macOS and Linux builds.
+1. Sync through a self-hosted server. Sync through a folder or a WebDAV server is built (Beta).
+2. Hand checks of the macOS and Linux builds. The builds exist; see [OpenNote on macOS and Linux](help/install-macos-linux.md).
 3. Android and iOS apps using the compact layout.
-4. PDF annotation, flashcards from notes, and citation support.
+4. More PDF annotation. Flashcards from notes, citations, and PDF highlights are built.
 5. Meeting mode with speaker labels.
 6. Real-time collaboration.
 7. Plugins and scripts, with the same permissions and access log as the local API.

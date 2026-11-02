@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { EconForm, Values } from './forms';
 import { tx } from './forms';
@@ -33,4 +35,14 @@ describe('every economics calculator', () => {
       });
     }
   }
+});
+
+describe('the economics window in the docs', () => {
+  it('has the calculator count the docs give, which is the sum of the forms of its subjects', () => {
+    const count = ECON_TOOLS.reduce((sum, tool) => sum + tool.forms.length, 0);
+    expect(ECON_TOOLS).toHaveLength(8);
+    const docs = join(import.meta.dirname, '..', '..', '..', '..', '..', 'docs');
+    for (const file of ['FEATURES.md', 'FEATURE-LIST.md', join('help', 'economics-and-finance.md')])
+      expect(readFileSync(join(docs, file), 'utf8'), file).toContain(`${count} calculators in eight subjects`);
+  });
 });

@@ -2,6 +2,8 @@
 
 Plot surfaces and curves in space, trace parametric and polar curves, work with vectors, lines, and planes, find volumes of solids of revolution, and fly a projectile. These tools are in the Beta channel.
 
+![A 3D graph block on a page, with a surface and its axes](../screens/graph-3d-light.png)
+
 ## 3D graphs
 
 Open Insert, then 3D graph, or type `/3d graph`. The block starts with a saddle, its tangent plane at one point, and its level curves.

@@ -45,6 +45,24 @@ describe('bar marks', () => {
     expect(spec.plot?.y).toMatchObject({ label: 'Seeds', grid: true });
   });
 
+  it('keeps the bars in the rows order, not sorted by name', () => {
+    const months = createTable(
+      [
+        { name: 'Month', type: 'text' },
+        { name: 'Sales', type: 'number' },
+        { name: 'Cost', type: 'number' },
+      ],
+      [
+        ['Jan', '120', '80'],
+        ['Feb', '150', '90'],
+        ['Mar', '90', '70'],
+      ],
+      EN_US,
+    );
+    expect(build({ kind: 'bar' }, months).plot?.x).toMatchObject({ domain: ['Jan', 'Feb', 'Mar'] });
+    expect(build({ kind: 'bar', series: [1, 2] }, months).plot?.fx).toMatchObject({ domain: ['Jan', 'Feb', 'Mar'] });
+  });
+
   it('rounds the value axis out to a tick, so no bar rises above the top grid line', () => {
     expect(build({ kind: 'bar' }).plot?.y).toMatchObject({ nice: true });
     expect(build({ kind: 'line' }).plot?.y).toMatchObject({ nice: true });

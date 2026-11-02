@@ -235,7 +235,7 @@ The table lives in [app/release-files.json](../app/release-files.json). [write-m
 
 ## What the release workflow does
 
-Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). Running it by hand is a [dry run](#trying-a-release-with-a-dry-run). The workflow has seven jobs: `version`, `checklist`, `ci`, `build`, `sbom`, `package`, and `publish`. The build job runs five times side by side, once for each release file: the three exes, the dmg, and the AppImage. Each job starts only when the ones it needs succeed, and nothing is published until the last step of the publish job.
+Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). Running it by hand is a [dry run](#trying-a-release-with-a-dry-run). The workflow has eight jobs: `version`, `checklist`, `ci`, `build`, `sbom`, `package`, `update-test`, and `publish`. The build job runs five times side by side, once for each release file: the three exes, the dmg, and the AppImage. Each job starts only when the ones it needs succeed, and nothing is published until the last step of the publish job.
 
 Each job gets only the permissions it needs, and no checkout keeps a GitHub token on disk. Every action is pinned to a full commit SHA, with the version in a comment. That includes the actions in `ci.yml`, because the release run runs its jobs too, and any job of a run can upload artifacts to it. Change the SHA and its comment together when you update an action. A test, [workflow.test.ts](../app/scripts/release/workflow.test.ts), fails if a secret, a permission, or a pin moves where it shouldn't.
 

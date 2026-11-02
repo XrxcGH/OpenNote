@@ -2,6 +2,8 @@
 
 OpenNote uses American English until you choose another language. That holds even when Windows itself uses a different language. One choice sets the language for everything that reads or writes words.
 
+![Language: the language and spelling choices, with American English as the default](../screens/settings-language-light.png)
+
 ## What the language sets
 
 | Part of OpenNote | What the language does |

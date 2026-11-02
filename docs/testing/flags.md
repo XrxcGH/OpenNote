@@ -16,7 +16,7 @@ Flags keep unfinished features out of the build people receive. A flag that noth
 
 ## Flags that wait for their feature
 
-`WAITING` in the test holds them. Today they are deck import and export, exam countdowns, the timetable, Open with OpenNote for single files, Share as a file, the local API, and the dictionary tool window.
+`WAITING` in the test holds them. Today it is empty: every flag is read by a feature that is built.
 
 `page.imageRenditions` was removed after spike S3 showed that display-size renditions do not lower image memory (docs/perf/images.md). The menu and shortcut tests that need a flag that is off now turn `page.heicImport` off for the test.
 
