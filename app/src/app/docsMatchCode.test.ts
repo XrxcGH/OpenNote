@@ -73,6 +73,11 @@ describe('feature list', () => {
     }
   });
 
+  it('lists every picture of screens.json on the Screens page', () => {
+    const page = read('screens', 'README.md');
+    for (const s of readScreens()) expect(page, s.name).toContain(`[${s.name}](${s.name}-light.png)`);
+  });
+
   it('points at pictures that exist', () => {
     const pictures = [...list.matchAll(/\]\((screens\/[^)]+\.png)\)/g)].map((m) => m[1]!);
     expect(pictures.length).toBeGreaterThan(20);
