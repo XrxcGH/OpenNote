@@ -487,12 +487,12 @@
   {
     "name": "kit-statistics",
     "category": "Data and society kits",
-    "caption": "The Statistics kit describing a column of data, with its summary and a plot."
+    "caption": "The Statistics kit describing a column of data, with its summary table."
   },
   {
     "name": "kit-stat-models",
     "category": "Data and society kits",
-    "caption": "The Statistical models kit fitting a linear regression, with its table and plot."
+    "caption": "The Statistical models kit fitting a linear regression, with its fit statistics and coefficients."
   },
   {
     "name": "kit-psychology",
