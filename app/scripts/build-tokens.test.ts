@@ -6,7 +6,7 @@ import { buildCss, buildRust, rustConstName, rustRgb, springEasing, type Tokens 
 
 const color: Tokens['color'] = {
   light: { surface: { app: '#F3EEE6' }, border: { subtle: '#e3dacc' }, text: { primary: '#2B2521' } },
-  dark: { surface: { app: '#1C1916' }, border: { subtle: '#3A322B' }, text: { primary: '#F0E9DE' } },
+  dark: { surface: { app: '#1E1E1C' }, border: { subtle: '#3C3C39' }, text: { primary: '#F2F1EC' } },
 };
 
 describe('rustConstName', () => {
@@ -18,7 +18,7 @@ describe('rustConstName', () => {
 
 describe('rustRgb', () => {
   it('writes each channel as an uppercase hex byte', () => {
-    expect(rustRgb('#1c1916', 'x')).toBe('Rgb(0x1C, 0x19, 0x16)');
+    expect(rustRgb('#1e1e1c', 'x')).toBe('Rgb(0x1E, 0x1E, 0x1C)');
   });
 
   it('rejects colors the window background cannot use', () => {
@@ -34,7 +34,7 @@ describe('buildRust', () => {
       [
         'pub const SURFACE_APP: ThemePair = ThemePair {',
         '    light: Rgb(0xF3, 0xEE, 0xE6),',
-        '    dark: Rgb(0x1C, 0x19, 0x16),',
+        '    dark: Rgb(0x1E, 0x1E, 0x1C),',
         '};',
       ].join('\n'),
     );
@@ -65,7 +65,7 @@ describe('buildCss', () => {
   it('gives chips each pen in both themes and in the scoped blocks', () => {
     expect(blockOf(':root')).toContain('--ink-amber: #B8620F;');
     expect(blockOf(':root[data-theme="dark"]')).toContain('--ink-amber: #F0AE68;');
-    expect(blockOf('[data-theme-scope="dark"]')).toContain('--color-surface-app: #1C1916;');
+    expect(blockOf('[data-theme-scope="dark"]')).toContain('--color-surface-app: #1E1E1C;');
     expect(css).toContain('[data-theme-scope="light"],\n:root[data-page-color="paper"] [data-region="page"] {');
   });
 

@@ -67,7 +67,7 @@ OpenNote runs as a desktop app on Windows, with first builds for macOS and Linux
 | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | ![An inline equation in a sentence and a graph block with its function](docs/screens/math-graph-light.png) | ![The search panel with a result, the matched word in bold, and a preview](docs/screens/search-light.png) | ![The recording options under the Record button](docs/screens/recording-light.png) |
 
-Every screen is in [docs/screens](docs/screens/README.md), in light and dark. The full list of tools and features is in [docs/FEATURE-LIST.md](docs/FEATURE-LIST.md), which `npm run docs:features` makes from FEATURES.md, and what is tested by hand and what is not is in [docs/FEATURES.md](docs/FEATURES.md).
+Every screen is in [docs/screens](docs/screens/README.md), in light and dark (the dark theme is a neutral charcoal gray, not brown). The full list of tools and features is in [docs/FEATURE-LIST.md](docs/FEATURE-LIST.md), which `npm run docs:features` makes from FEATURES.md, and what is tested by hand and what is not is in [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Try the beta
 
