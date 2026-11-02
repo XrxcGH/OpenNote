@@ -126,3 +126,15 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 | [tool-timer](tool-timer-light.png) ([dark](tool-timer-dark.png)) | The timers window with a countdown running. |
 | [tool-calculator](tool-calculator-light.png) ([dark](tool-calculator-dark.png)) | The calculator after a unit conversion, with its history. |
 | [tool-upcoming](tool-upcoming-light.png) ([dark](tool-upcoming-dark.png)) | The Upcoming window for tasks and due dates. |
+
+## Real window pictures
+
+These pictures show the real Windows app window (the beta 8 build), including the OpenNote title bar and its caption buttons. They are not browser renders. They live in `docs/screens/real/` and show a sample biology page with typed text, a table, and a stroke written with synthetic pen input.
+
+- `real/real-workspace-light.png`: the full window in the light theme, with the notebook list, page list, typed lines, a table, and handwriting.
+- `real/real-workspace-dark.png`: the same window in the neutral dark gray theme.
+- `real/real-ink-light.png`: the Draw tab with the Writing pen selected, in the light theme.
+- `real/real-ink-dark.png`: the Draw tab with the Writing pen selected, in the dark theme.
+- `real/real-settings-dark.png`: Settings on the Appearance page in the dark theme.
+- `real/real-tool-window-dark.png`: the Chemistry calculators panel open beside a page, in the dark theme.
+- `real/real-title-bar-light.png`: the top 120 pixels of the light window, showing the single title bar, tabs, and caption buttons (taken at 150 percent display scale).
