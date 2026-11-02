@@ -42,7 +42,7 @@
   {
     "name": "workspace-empty",
     "category": "The workspace",
-    "caption": "The empty state: no notebooks yet, and the desk by the window beside the page card."
+    "caption": "The empty state: no notebooks yet, and an open book and candle on the page card."
   },
   {
     "name": "home-screen",
@@ -72,7 +72,7 @@
   {
     "name": "quick-capture",
     "category": "The workspace",
-    "caption": "The Quick note window, a small window for jotting a note into a chosen section."
+    "caption": "The Quick note window, which saves a note in Quick notes."
   },
   {
     "name": "tab-home",
@@ -462,12 +462,17 @@
   {
     "name": "kit-chemistry",
     "category": "Science kits",
-    "caption": "The chemistry calculators of the Chemistry and materials kit, with a balanced equation."
+    "caption": "The Chemistry calculators window balancing an equation."
   },
   {
     "name": "kit-chemistry-structure",
     "category": "Science kits",
-    "caption": "The chemical structure drawer of the Chemistry and materials kit, with a drawn molecule."
+    "caption": "The Chemical structures window drawing aspirin from SMILES."
+  },
+  {
+    "name": "kit-chemmat",
+    "category": "Science kits",
+    "caption": "The Chemistry and materials kit on its chemical equilibrium tab, solving an ICE table."
   },
   {
     "name": "kit-earth",

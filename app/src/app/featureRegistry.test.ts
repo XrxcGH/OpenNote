@@ -2,6 +2,7 @@
 // commands, title bar items, tool windows, settings sections, and setup steps with docs/tools/registry.json.
 // docs/tools/featureList.ts turns that file into docs/FEATURE-LIST.md. `npm run docs:features` rewrites the file,
 // since it sets OPENNOTE_WRITE_REGISTRY. The test also fails when something registered has no place in the list.
+/* eslint-disable opennote/feature-boundaries -- The test loads the registrations that run late, inside their features. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

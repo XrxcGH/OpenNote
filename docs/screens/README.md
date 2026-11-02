@@ -48,13 +48,13 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 ## The workspace
 
 - [workspace](workspace-light.png) ([dark](workspace-dark.png)): Notebooks, pages, and a page of typed notes with a heading, a list, and a page link.
-- [workspace-empty](workspace-empty-light.png) ([dark](workspace-empty-dark.png)): The empty state: no notebooks yet, and the desk by the window beside the page card.
+- [workspace-empty](workspace-empty-light.png) ([dark](workspace-empty-dark.png)): The empty state: no notebooks yet, and an open book and candle on the page card.
 - [home-screen](home-screen-light.png) ([dark](home-screen-dark.png)): The Home screen with recent pages, pinned pages, and what is coming up.
 - [title-bar-states](title-bar-states-light.png) ([dark](title-bar-states-dark.png)): The title bar with back and forward, the page path, the save status, and a running timer chip.
 - [page-tabs](page-tabs-light.png) ([dark](page-tabs-dark.png)): Three pages open as tabs in the strip above the page.
 - [compact-layout](compact-layout-light.png) ([dark](compact-layout-dark.png)): The compact layout of a narrow window, with the app bar and one pane at a time.
 - [focus-mode](focus-mode-light.png) ([dark](focus-mode-dark.png)): Focus mode, with the panes and the command bar hidden around the page.
-- [quick-capture](quick-capture-light.png) ([dark](quick-capture-dark.png)): The Quick note window, a small window for jotting a note into a chosen section.
+- [quick-capture](quick-capture-light.png) ([dark](quick-capture-dark.png)): The Quick note window, which saves a note in Quick notes.
 - [tab-home](tab-home-light.png) ([dark](tab-home-dark.png)): The Home tab with the recording control and the formatting bar.
 - [tab-insert](tab-insert-light.png) ([dark](tab-insert-dark.png)): The Insert tab: link, code block, callout, divider, template, file, equation, and table.
 - [tab-draw](tab-draw-light.png) ([dark](tab-draw-dark.png)): The Draw tab: the tools, the pen slots, color, and width (1600 by 900).
@@ -160,8 +160,9 @@ Every name below has two files, one ending in `-light.png` and one in `-dark.png
 
 - [kit-physics](kit-physics-light.png) ([dark](kit-physics-dark.png)): The Physics kit on its electric and magnetic fields tab, with field lines around two charges.
 - [kit-modern-physics](kit-modern-physics-light.png) ([dark](kit-modern-physics-dark.png)): The Modern physics and astronomy kit on its quantum wells and barriers tab.
-- [kit-chemistry](kit-chemistry-light.png) ([dark](kit-chemistry-dark.png)): The chemistry calculators of the Chemistry and materials kit, with a balanced equation.
-- [kit-chemistry-structure](kit-chemistry-structure-light.png) ([dark](kit-chemistry-structure-dark.png)): The chemical structure drawer of the Chemistry and materials kit, with a drawn molecule.
+- [kit-chemistry](kit-chemistry-light.png) ([dark](kit-chemistry-dark.png)): The Chemistry calculators window balancing an equation.
+- [kit-chemistry-structure](kit-chemistry-structure-light.png) ([dark](kit-chemistry-structure-dark.png)): The Chemical structures window drawing aspirin from SMILES.
+- [kit-chemmat](kit-chemmat-light.png) ([dark](kit-chemmat-dark.png)): The Chemistry and materials kit on its chemical equilibrium tab, solving an ICE table.
 - [kit-earth](kit-earth-light.png) ([dark](kit-earth-dark.png)): The Earth sciences kit on its atmospheric thermodynamics and soundings tab.
 - [kit-life-science](kit-life-science-light.png) ([dark](kit-life-science-dark.png)): The Life science kit on its population dynamics tab, with a population curve.
 - [kit-biology](kit-biology-light.png) ([dark](kit-biology-dark.png)): The Biology tools kit on its DNA and RNA sequences tab, with a sequence and its details.

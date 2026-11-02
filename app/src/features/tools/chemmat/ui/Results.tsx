@@ -27,7 +27,8 @@ function ResultRows({ solved, system }: { solved: Solved; system: System }) {
               return (
                 <tr key={i}>
                   <th scope="row">{s.label}</th>
-                  <td className={chem.numeric}>{s.value}</td>
+                  {/* A word answer is a sentence, so it wraps; only a number keeps to one line at the end. */}
+                  <td className={row.word ? undefined : chem.numeric}>{s.value}</td>
                   <td>{s.unit}</td>
                 </tr>
               );

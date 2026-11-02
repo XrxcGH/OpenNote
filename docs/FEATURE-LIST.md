@@ -712,9 +712,9 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 
 ![Notebooks, pages, and a page of typed notes with a heading, a list, and a page link.](screens/workspace-light.png)
 
-**workspace-empty.** The empty state: no notebooks yet, and the desk by the window beside the page card. ([dark](screens/workspace-empty-dark.png))
+**workspace-empty.** The empty state: no notebooks yet, and an open book and candle on the page card. ([dark](screens/workspace-empty-dark.png))
 
-![The empty state: no notebooks yet, and the desk by the window beside the page card.](screens/workspace-empty-light.png)
+![The empty state: no notebooks yet, and an open book and candle on the page card.](screens/workspace-empty-light.png)
 
 **home-screen.** The Home screen with recent pages, pinned pages, and what is coming up. ([dark](screens/home-screen-dark.png))
 
@@ -736,9 +736,9 @@ The app registers 848 commands and 47 tool windows. 24 of the windows are subjec
 
 ![Focus mode, with the panes and the command bar hidden around the page.](screens/focus-mode-light.png)
 
-**quick-capture.** The Quick note window, a small window for jotting a note into a chosen section. ([dark](screens/quick-capture-dark.png))
+**quick-capture.** The Quick note window, which saves a note in Quick notes. ([dark](screens/quick-capture-dark.png))
 
-![The Quick note window, a small window for jotting a note into a chosen section.](screens/quick-capture-light.png)
+![The Quick note window, which saves a note in Quick notes.](screens/quick-capture-light.png)
 
 **tab-home.** The Home tab with the recording control and the formatting bar. ([dark](screens/tab-home-dark.png))
 
@@ -1490,9 +1490,9 @@ Commands (8):
 
 Type SMILES text or choose a starting structure, and see a skeletal formula with its formula and molar mass.
 
-**kit-chemistry-structure.** The chemical structure drawer of the Chemistry and materials kit, with a drawn molecule. ([dark](screens/kit-chemistry-structure-dark.png))
+**kit-chemistry-structure.** The Chemical structures window drawing aspirin from SMILES. ([dark](screens/kit-chemistry-structure-dark.png))
 
-![The chemical structure drawer of the Chemistry and materials kit, with a drawn molecule.](screens/kit-chemistry-structure-light.png)
+![The Chemical structures window drawing aspirin from SMILES.](screens/kit-chemistry-structure-light.png)
 
 Open it with the command "Open the chemical structure drawer" (Ctrl+Alt+Z).
 
@@ -1500,9 +1500,9 @@ Open it with the command "Open the chemical structure drawer" (Ctrl+Alt+Z).
 
 Thermochemistry, equilibrium, acids and bases, electrochemistry, kinetics, solutions, crystals and diffraction, defects and diffusion, phase diagrams, and atoms and bonding.
 
-**kit-chemistry.** The chemistry calculators of the Chemistry and materials kit, with a balanced equation. ([dark](screens/kit-chemistry-dark.png))
+**kit-chemmat.** The Chemistry and materials kit on its chemical equilibrium tab, solving an ICE table. ([dark](screens/kit-chemmat-dark.png))
 
-![The chemistry calculators of the Chemistry and materials kit, with a balanced equation.](screens/kit-chemistry-light.png)
+![The Chemistry and materials kit on its chemical equilibrium tab, solving an ICE table.](screens/kit-chemmat-light.png)
 
 Open it with the command "Open Chemistry and materials".
 
@@ -1522,6 +1522,10 @@ Commands (10):
 #### Chemistry calculators
 
 One window with six tabs: balancing, molar mass, stoichiometry, gas laws, solutions, and titration.
+
+**kit-chemistry.** The Chemistry calculators window balancing an equation. ([dark](screens/kit-chemistry-dark.png))
+
+![The Chemistry calculators window balancing an equation.](screens/kit-chemistry-light.png)
 
 Open it with the command "Open the chemistry calculators" (Ctrl+Alt+Y).
 

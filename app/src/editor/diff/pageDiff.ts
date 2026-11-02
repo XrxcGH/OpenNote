@@ -76,14 +76,16 @@ const markdownOf = (block: DiffBlock | undefined) => {
   return typeof value === 'string' ? value : '';
 };
 
+/** A block's text with a line break between its inner blocks, so a list's items do not run together. */
+const textOf = (node: PMNode): string => node.textBetween(0, node.content.size, '\n');
+
 /** Pairs a run of removed paragraphs with the run of added ones after it, in order, when their words match. */
 function pairRuns(removed: ParagraphChange[], added: ParagraphChange[]): ParagraphChange[] {
   const out: ParagraphChange[] = [];
   let next = 0;
   for (const gone of removed) {
     const match = added.findIndex(
-      (item, index) =>
-        index >= next && wordSimilarity(gone.before!.node.textContent, item.after!.node.textContent) >= PAIRING,
+      (item, index) => index >= next && wordSimilarity(textOf(gone.before!.node), textOf(item.after!.node)) >= PAIRING,
     );
     if (match < 0) {
       out.push(gone);
@@ -91,7 +93,7 @@ function pairRuns(removed: ParagraphChange[], added: ParagraphChange[]): Paragra
     }
     out.push(...added.slice(next, match));
     const pair = added[match];
-    const words = diffWords(gone.before!.node.textContent, pair.after!.node.textContent);
+    const words = diffWords(textOf(gone.before!.node), textOf(pair.after!.node));
     out.push({ status: 'changed', before: gone.before, after: pair.after, words });
     next = match + 1;
   }

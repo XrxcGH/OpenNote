@@ -178,16 +178,29 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
       query: 'chemistry calc',
       window: 'Chemistry calculators',
     }),
-    kit('kit-chemistry-structure', {
-      command: 'Open the chemical structure drawer',
-      query: 'chemical structure',
-      window: 'Chemical structures',
-      after: async (d) => {
-        await d.getByLabel('Structure as SMILES text').fill('CC(=O)Oc1ccccc1C(=O)O');
-        await d.getByRole('img', { name: /Skeletal formula/ }).waitFor();
-        await d.getByLabel('Structure as SMILES text').blur();
+    kit(
+      'kit-chemistry-structure',
+      {
+        command: 'Open the chemical structure drawer',
+        query: 'chemical structure',
+        window: 'Chemical structures',
+        after: async (d) => {
+          await d.getByLabel('Structure as SMILES text').fill('CC(=O)Oc1ccccc1C(=O)O');
+          await d.getByRole('img', { name: /Skeletal formula/ }).waitFor();
+          await d.getByLabel('Structure as SMILES text').blur();
+        },
       },
-    }),
+      { width: 1280, height: 900 },
+    ),
+    kit(
+      'kit-chemmat',
+      {
+        command: 'Open the chemical equilibrium tool',
+        window: 'Chemistry and materials',
+        scroll: (d) => d.getByText('Equilibrium constant K', { exact: true }),
+      },
+      { width: 1280, height: 900 },
+    ),
     kit('kit-earth', {
       command: 'Open the earth sciences kit',
       window: 'Earth sciences',

@@ -30,6 +30,11 @@
     font-weight: var(--font-weight-semibold);
   }
 
+  /* A unit such as mol/L stays on one line beside its number. */
+  .rows td:last-child {
+    white-space: nowrap;
+  }
+
   .heading {
     margin: var(--space-3) 0 var(--space-1);
     font-size: var(--type-small-size);

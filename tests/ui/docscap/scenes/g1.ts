@@ -281,27 +281,40 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
     {
       name: 'page-history',
       run: async (p) => {
+        // The clean page without its last phase, saved as a version, then one real edit: the Telophase bullet.
+        const away = async () => {
+          await pagesTree(p).getByRole('treeitem', { name: 'Meiosis' }).click();
+          await pagesTree(p).getByRole('treeitem', { name: 'Mitosis' }).click();
+          await commandsReady(p);
+        };
         await h.openPage(p, 'Lectures', 'Mitosis');
         await commandsReady(p);
-        await h.write(p, MITOSIS.slice(0, 3), 'Prophase');
-        await pagesTree(p).getByRole('treeitem', { name: 'Meiosis' }).click();
-        await pagesTree(p).getByRole('treeitem', { name: 'Mitosis' }).click();
-        await commandsReady(p);
-        await toEnd(p);
-        await keys(
+        await h.write(
           p,
-          '{Enter}Metaphase: the chromosomes line up along the middle of the cell{Enter}Anaphase: the sister chromatids pull apart',
+          MITOSIS.filter((line) => !line.startsWith('Telophase')),
+          'Question for Thursday',
         );
-        await expect.poll(() => p.evaluate(() => document.body.innerText.includes('Anaphase'))).toBe(true);
-        await pagesTree(p).getByRole('treeitem', { name: 'Meiosis' }).click();
-        await pagesTree(p).getByRole('treeitem', { name: 'Mitosis' }).click();
-        await commandsReady(p);
+        await away();
+        await p.getByText('Anaphase: the sister chromatids pull apart', { exact: true }).click();
+        await p.keyboard.press('End');
+        await keys(p, '{Enter}Telophase: two new nuclei form');
+        await expect
+          .poll(() => p.evaluate(() => document.body.innerText.includes('Telophase: two new nuclei form')))
+          .toBe(true);
+        await p.waitForTimeout(1500);
+        await away();
         await h.command(p, 'Page history', /^Page history/);
         const panel = p
           .getByRole('region', { name: 'Page history' })
           .or(p.getByRole('complementary', { name: 'Page history' }));
         await panel.waitFor();
-        await panel.getByRole('list', { name: 'Versions' }).getByRole('button').last().click();
+        // The older of the two versions saved on closing the page is the one without the Telophase bullet.
+        await panel
+          .getByRole('list', { name: 'Versions' })
+          .getByRole('button')
+          .filter({ hasText: 'Saved when you closed the page' })
+          .last()
+          .click();
         await p.waitForTimeout(800);
       },
     },

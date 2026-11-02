@@ -141,6 +141,8 @@
   .static > :first-child,
   .words {
     margin-block-start: 0;
+    /* Each item of a changed list is on its own line, as on the page. */
+    white-space: pre-line;
   }
 
   .static > :last-child,
