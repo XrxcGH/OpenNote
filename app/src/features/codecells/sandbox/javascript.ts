@@ -3,7 +3,7 @@
 // it sees only the language and the console given here: no fetch, timers, modules, or worker globals. QuickJS stops
 // the cell at the memory limit, the stack limit, and the time limit.
 import { newQuickJSWASMModuleFromVariant, newVariant, shouldInterruptAfterDeadline } from 'quickjs-emscripten-core';
-import type { QuickJSContext, QuickJSHandle } from 'quickjs-emscripten-core';
+import type { QuickJSContext, QuickJSHandle, QuickJSRuntime } from 'quickjs-emscripten-core';
 import releaseSync from '@jitl/quickjs-wasmfile-release-sync';
 import wasmUrl from '@jitl/quickjs-wasmfile-release-sync/wasm?url';
 import type { Output } from './output';
@@ -49,10 +49,16 @@ interface Thrown {
   stack?: string;
 }
 
-function failure(error: unknown, output: Output): Ran {
+const STACK_OVERFLOW = 'InternalError: stack overflow (too much recursion)\n';
+
+function failure(error: unknown, output: Output, deadline: number): Ran {
   const thrown = (typeof error === 'object' && error !== null ? error : { message: String(error) }) as Thrown;
   const message = thrown.message ?? '';
-  if (thrown.name === 'InternalError' && message === 'interrupted') return { status: 'time', message: '' };
+  // Only the real deadline counts: a cell that throws its own {name: 'InternalError', message: 'interrupted'} is an
+  // ordinary error.
+  if (thrown.name === 'InternalError' && message === 'interrupted' && Date.now() >= deadline) {
+    return { status: 'time', message: '' };
+  }
   if (thrown.name === 'InternalError' && /out of memory|stack overflow/i.test(message)) {
     output.write('err', `${thrown.name}: ${message}\n`);
     return { status: 'memory', message };
@@ -74,34 +80,15 @@ export async function prepareJavaScript(
     runtime.setInterruptHandler(shouldInterruptAfterDeadline(deadline));
     const vm = runtime.newContext();
     try {
-      addConsole(vm, output);
-      const result = vm.evalCode(source, 'cell.js');
-      if (result.error) {
-        const error = vm.dump(result.error);
-        result.error.dispose();
-        return failure(error, output);
+      return runIn(vm, runtime, source, output, deadline);
+    } catch (error) {
+      // Deep recursion can use up the worker's own stack before QuickJS's stack limit trips; the browser then throws
+      // a RangeError out of the interpreter. It is reported as an ordinary error in the cell, not as a failure of the runtime.
+      if (error instanceof RangeError) {
+        output.write('err', STACK_OVERFLOW);
+        return { status: 'error', message: 'stack overflow' };
       }
-      // Promises the cell made settle now, inside the same limits.
-      const jobs = runtime.executePendingJobs();
-      if (jobs.error) {
-        result.value.dispose();
-        const error = vm.dump(jobs.error);
-        jobs.error.dispose();
-        return failure(error, output);
-      }
-      // The last value, or what a promise for it settled to.
-      const state = vm.getPromiseState(result.value);
-      if (state.type === 'rejected') {
-        const error = vm.dump(state.error);
-        state.error.dispose();
-        result.value.dispose();
-        return failure(error, output);
-      }
-      const value: unknown = state.type === 'fulfilled' ? vm.dump(state.value) : undefined;
-      if (state.type === 'fulfilled' && !state.notAPromise) state.value.dispose();
-      result.value.dispose();
-      if (value !== undefined) output.write('out', `→ ${shown(value)}\n`);
-      return { status: 'ok', message: '' };
+      throw error;
     } finally {
       try {
         vm.dispose();
@@ -111,4 +98,35 @@ export async function prepareJavaScript(
       }
     }
   };
+}
+
+function runIn(vm: QuickJSContext, runtime: QuickJSRuntime, source: string, output: Output, deadline: number): Ran {
+  addConsole(vm, output);
+  const result = vm.evalCode(source, 'cell.js');
+  if (result.error) {
+    const error = vm.dump(result.error);
+    result.error.dispose();
+    return failure(error, output, deadline);
+  }
+  // Promises the cell made settle now, inside the same limits.
+  const jobs = runtime.executePendingJobs();
+  if (jobs.error) {
+    result.value.dispose();
+    const error = vm.dump(jobs.error);
+    jobs.error.dispose();
+    return failure(error, output, deadline);
+  }
+  // The last value, or what a promise for it settled to.
+  const state = vm.getPromiseState(result.value);
+  if (state.type === 'rejected') {
+    const error = vm.dump(state.error);
+    state.error.dispose();
+    result.value.dispose();
+    return failure(error, output, deadline);
+  }
+  const value: unknown = state.type === 'fulfilled' ? vm.dump(state.value) : undefined;
+  if (state.type === 'fulfilled' && !state.notAPromise) state.value.dispose();
+  result.value.dispose();
+  if (value !== undefined) output.write('out', `→ ${shown(value)}\n`);
+  return { status: 'ok', message: '' };
 }

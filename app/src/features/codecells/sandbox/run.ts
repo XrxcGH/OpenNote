@@ -36,6 +36,9 @@ export function runCode(
       clearTimeout(timer);
       worker.terminate();
       finish = () => undefined;
+      // The worker cuts output at the limit and says so only when it finishes, so a run ended here (time limit or
+      // Stop) after that cut still counts as cut.
+      truncated ||= kept >= limits.outputChars;
       resolve({ status, message, elapsedMs: started ? performance.now() - started : 0, truncated });
     };
     worker.onerror = (event) => {
