@@ -7,6 +7,8 @@ import { HANDOUT, lecturePdf } from './lecturePdf';
 export interface Scene {
   name: string;
   fixture?: string;
+  /** Where the app opens, such as `/?searchExtras`. */
+  path?: string;
   viewport?: { width: number; height: number };
   /** Skip the wait for pictures to settle: a page of PDF pictures never reports settled. */
   quick?: boolean;

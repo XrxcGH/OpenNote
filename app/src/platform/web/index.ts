@@ -64,6 +64,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
   const log = createWebLog();
   const pages = createWebPages();
   const connectors = createWebConnectors();
+  const snapshot = createWebSnapshot(options.fixture ?? 'sample');
   return {
     kind: 'web',
     boot,
@@ -76,7 +77,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     updater: createWebUpdater(boot.updater),
     shell: createWebShell(),
     pages,
-    search: createWebSearch(pages),
+    search: createWebSearch(pages, async () => (await snapshot.load()) ?? '{}'),
     diagnostics: createWebDiagnostics(),
     connectors,
     accounts: createWebAccounts(connectors),
@@ -89,7 +90,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     audio: createWebAudio(),
     speech: createWebSpeech(),
     interop: createWebInterop(),
-    notesSnapshot: createWebSnapshot(options.fixture ?? 'sample'),
+    notesSnapshot: snapshot,
     notesCore: null,
     perf: createWebPerf(),
     log: log.log,

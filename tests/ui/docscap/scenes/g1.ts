@@ -128,7 +128,11 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         await h.typeNotes(p);
         await pagesTree(p).getByRole('treeitem', { name: 'Meiosis' }).click();
         await commandsReady(p);
-        await h.write(p, ['## Meiosis in brief', 'Meiosis makes four cells with half the chromosomes.'], 'half the chromosomes');
+        await h.write(
+          p,
+          ['## Meiosis in brief', 'Meiosis makes four cells with half the chromosomes.'],
+          'half the chromosomes',
+        );
         await blur(p);
         await p.keyboard.press('Alt+ArrowLeft');
         await pagesTree(p).getByRole('treeitem', { name: 'Meiosis' }).click();
@@ -201,7 +205,10 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
       name: 'formatting-bar',
       run: async (p) => {
         await h.settings(p, 'Editing');
-        await p.getByRole('radiogroup', { name: 'Show the formatting bar' }).getByText('Always', { exact: true }).click();
+        await p
+          .getByRole('radiogroup', { name: 'Show the formatting bar' })
+          .getByText('Always', { exact: true })
+          .click();
         await p.keyboard.press('Escape');
         await pageWith(p, 'Lectures', 'Membranes', [
           '## Cell membranes',
@@ -242,7 +249,10 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
           'The population doubles every hour, so its size after t hours is a power of two.',
           '',
         ]);
-        await keys(p, '```python def population(start, hours):{Enter}    return start * 2 ** hours{Enter}{Enter}print(population(100, 3))');
+        await keys(
+          p,
+          '```python def population(start, hours):{Enter}    return start * 2 ** hours{Enter}{Enter}print(population(100, 3))',
+        );
         await p.waitForTimeout(600);
       },
     },
@@ -278,13 +288,18 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         await pagesTree(p).getByRole('treeitem', { name: 'Mitosis' }).click();
         await commandsReady(p);
         await toEnd(p);
-        await keys(p, '{Enter}Metaphase: the chromosomes line up along the middle of the cell{Enter}Anaphase: the sister chromatids pull apart');
+        await keys(
+          p,
+          '{Enter}Metaphase: the chromosomes line up along the middle of the cell{Enter}Anaphase: the sister chromatids pull apart',
+        );
         await expect.poll(() => p.evaluate(() => document.body.innerText.includes('Anaphase'))).toBe(true);
         await pagesTree(p).getByRole('treeitem', { name: 'Meiosis' }).click();
         await pagesTree(p).getByRole('treeitem', { name: 'Mitosis' }).click();
         await commandsReady(p);
         await h.command(p, 'Page history', /^Page history/);
-        const panel = p.getByRole('region', { name: 'Page history' }).or(p.getByRole('complementary', { name: 'Page history' }));
+        const panel = p
+          .getByRole('region', { name: 'Page history' })
+          .or(p.getByRole('complementary', { name: 'Page history' }));
         await panel.waitFor();
         await panel.getByRole('list', { name: 'Versions' }).getByRole('button').last().click();
         await p.waitForTimeout(800);
@@ -311,7 +326,8 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
     {
       name: 'writing-tools',
       run: async (p) => {
-        const draft = 'the membrane let some things in and keep other things out, which is why its called selectively permeable';
+        const draft =
+          'the membrane let some things in and keep other things out, which is why its called selectively permeable';
         await pageWith(p, 'Lectures', 'Membranes', ['## Cell membranes', draft]);
         await p.getByText(draft).click({ clickCount: 3 });
         await p.getByText(draft).click({ button: 'right' });
@@ -417,8 +433,14 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         await inkPage(p, ['## Measuring', 'Lay the ruler on the page and draw along its edge.']);
         await press(p, 'Ruler', true);
         await press(p, 'Protractor', true);
-        await p.getByRole('toolbar', { name: 'Draw' }).getByRole('button', { name: 'More commands', exact: true }).click();
-        await p.getByRole('menu', { name: 'More commands' }).getByRole('menuitemcheckbox', { name: 'Units: centimeters', exact: true }).click();
+        await p
+          .getByRole('toolbar', { name: 'Draw' })
+          .getByRole('button', { name: 'More commands', exact: true })
+          .click();
+        await p
+          .getByRole('menu', { name: 'More commands' })
+          .getByRole('menuitemcheckbox', { name: 'Units: centimeters', exact: true })
+          .click();
         await choose(p, 'Pen, Indigo, 0.5 mm');
         const ruler = p.locator('[data-ink-widget="ruler"]');
         const prot = p.locator('[data-ink-widget="protractor"]');
@@ -461,6 +483,8 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
     },
     {
       name: 'tags-pane',
+      // The desktop host's search extras, which these windows read (platform/web/searchExtras.ts).
+      path: '/?searchExtras',
       run: async (p) => {
         await h.openPage(p, 'Lectures', 'Mitosis');
         await commandsReady(p);
@@ -493,12 +517,29 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
     },
     {
       name: 'graph-view',
+      // The desktop host's search extras, which these windows read (platform/web/searchExtras.ts).
+      path: '/?searchExtras',
       run: async (p) => {
         await h.typeNotes(p);
         const linked: [string, string, string[], string][] = [
-          ['Lectures', 'Meiosis', ['Compare with [[Mitosis]], and see [[Cell structure]] for the details.'], 'for the details'],
-          ['Lectures', 'Membranes', ['The membrane is part of the [[Cell structure]], so read that page too.'], 'read that page too'],
-          ['Lectures', 'Photosynthesis', ['Happens in the chloroplast, see [[Cell structure]] for the parts.'], 'for the parts'],
+          [
+            'Lectures',
+            'Meiosis',
+            ['Compare with [[Mitosis]], and see [[Cell structure]] for the details.'],
+            'for the details',
+          ],
+          [
+            'Lectures',
+            'Membranes',
+            ['The membrane is part of the [[Cell structure]], so read that page too.'],
+            'read that page too',
+          ],
+          [
+            'Lectures',
+            'Photosynthesis',
+            ['Happens in the chloroplast, see [[Cell structure]] for the parts.'],
+            'for the parts',
+          ],
           ['Labs', 'Photosynthesis lab', ['Background: [[Photosynthesis]], then the method below.'], 'method below'],
         ];
         for (const [section, title, lines, saved] of linked) {
@@ -514,6 +555,8 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
     },
     {
       name: 'collections',
+      // The desktop host's search extras, which these windows read (platform/web/searchExtras.ts).
+      path: '/?searchExtras',
       run: async (p) => {
         const status = async (section: string, title: string, value: string) => {
           await h.openPage(p, section, title);
@@ -535,6 +578,15 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         const d = p.getByRole('dialog', { name: 'Collections' });
         await d.getByRole('button', { name: 'New collection' }).click();
         await d.getByRole('textbox', { name: 'Name' }).fill('Lecture review');
+        // A new collection opens with its rules shown; Rules hides them again.
+        await d
+          .getByRole('combobox', { name: 'Section', exact: true })
+          .filter({ visible: true })
+          .selectOption({ label: 'Biology 101 / Lectures' });
+        await d
+          .getByRole('combobox', { name: 'Group by', exact: true })
+          .filter({ visible: true })
+          .selectOption({ label: 'Status' });
         await d.getByRole('button', { name: 'Rules' }).click();
         await d.getByRole('button', { name: 'Board' }).click();
         await p.waitForTimeout(800);
@@ -581,7 +633,10 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
         }
         const toastClose = p.locator('button', { hasText: /^Close$/ });
         while (await toastClose.count()) await toastClose.first().click();
-        await p.getByRole('heading', { name: 'Transcript' }).first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+        await p
+          .getByRole('heading', { name: 'Transcript' })
+          .first()
+          .evaluate((e) => e.scrollIntoView({ block: 'start' }));
         await p.mouse.move(700, 400);
         await p.mouse.wheel(0, -90);
         await p.waitForTimeout(800);
@@ -591,7 +646,10 @@ export const scenes: (h: Helpers) => Scene[] = (h) => {
       name: 'speech-model',
       run: async (p) => {
         await h.settings(p, 'On-device intelligence');
-        await p.getByText('Models', { exact: true }).first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+        await p
+          .getByText('Models', { exact: true })
+          .first()
+          .evaluate((e) => e.scrollIntoView({ block: 'start' }));
         await p.waitForTimeout(500);
       },
     },
