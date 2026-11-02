@@ -5756,6 +5756,510 @@
       "category": "updates",
       "keys": [],
       "palette": false
+    },
+    {
+      "id": "intel.copyImageText",
+      "title": "Copy text from image",
+      "category": "object",
+      "keys": [],
+      "flag": "intel.ocr"
+    },
+    {
+      "id": "intel.summarizePage",
+      "title": "Summarize this page",
+      "category": "view",
+      "keys": [],
+      "flag": "intel.summaries"
+    },
+    {
+      "id": "intel.handwritingToText",
+      "title": "Convert handwriting to text",
+      "category": "object",
+      "keys": [],
+      "flag": "intel.handwriting"
+    },
+    {
+      "id": "intel.dictate",
+      "title": "Dictate",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+V"
+      ],
+      "flag": "intel.dictation"
+    },
+    {
+      "id": "intel.convertToMath",
+      "title": "Convert handwriting to math",
+      "category": "object",
+      "keys": [],
+      "flag": "intel.mathInk"
+    },
+    {
+      "id": "intel.translate",
+      "title": "Translate",
+      "category": "view",
+      "keys": [],
+      "flag": "intel.translate"
+    },
+    {
+      "id": "intel.editVocabulary",
+      "title": "Edit custom vocabulary",
+      "category": "view",
+      "keys": [],
+      "flag": "intel.vocabulary"
+    },
+    {
+      "id": "intel.showBackgroundWork",
+      "title": "Show background work",
+      "category": "view",
+      "keys": [],
+      "flag": "intel.background"
+    },
+    {
+      "id": "intel.findByMeaning",
+      "title": "Find by meaning",
+      "category": "navigation",
+      "keys": [],
+      "flag": "intel.meaning"
+    },
+    {
+      "id": "intel.relatedPages",
+      "title": "Show related pages",
+      "category": "view",
+      "keys": [],
+      "flag": "intel.meaning"
+    },
+    {
+      "id": "intel.askNotes",
+      "title": "Ask your notes",
+      "category": "navigation",
+      "keys": [],
+      "flag": "intel.ask"
+    },
+    {
+      "id": "intel.proofread",
+      "title": "Proofread",
+      "category": "editing",
+      "keys": [],
+      "flag": "intel.writing"
+    },
+    {
+      "id": "intel.rewrite",
+      "title": "Rewrite in plain words",
+      "category": "editing",
+      "keys": [],
+      "flag": "intel.writing"
+    },
+    {
+      "id": "intel.shorten",
+      "title": "Shorten",
+      "category": "editing",
+      "keys": [],
+      "flag": "intel.writing"
+    },
+    {
+      "id": "intel.makeList",
+      "title": "Make a list",
+      "category": "editing",
+      "keys": [],
+      "flag": "intel.writing"
+    },
+    {
+      "id": "intel.tidyStructure",
+      "title": "Tidy structure",
+      "category": "editing",
+      "keys": [],
+      "flag": "intel.writing"
+    },
+    {
+      "id": "ink.myHandwriting.write",
+      "title": "Write in my handwriting",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.myHandwriting"
+    },
+    {
+      "id": "ink.myHandwriting.type",
+      "title": "Type as handwriting",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.myHandwriting"
+    },
+    {
+      "id": "ink.canvasLock",
+      "title": "Canvas lock",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+Shift+L"
+      ],
+      "flag": "ink.canvasLock"
+    },
+    {
+      "id": "ink.hover",
+      "title": "Pen hover circle",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.hover"
+    },
+    {
+      "id": "ink.describe",
+      "title": "Describe drawing",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.describe"
+    },
+    {
+      "id": "ink.insertSpace",
+      "title": "Insert space",
+      "category": "insert",
+      "keys": [],
+      "flag": "ink.insertSpace"
+    },
+    {
+      "id": "ink.snap.ruler",
+      "title": "Ruler",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.snapTools"
+    },
+    {
+      "id": "ink.snap.protractor",
+      "title": "Protractor",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.snapTools"
+    },
+    {
+      "id": "ink.snap.gridSnap",
+      "title": "Snap to grid",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.snapTools"
+    },
+    {
+      "id": "ink.snap.paperSnap",
+      "title": "Snap to paper lines",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.paperSnap"
+    },
+    {
+      "id": "ink.geometry.measure",
+      "title": "Measure",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+Shift+R"
+      ],
+      "flag": "ink.geometry"
+    },
+    {
+      "id": "ink.geometry.compass",
+      "title": "Compass",
+      "category": "insert",
+      "keys": [
+        "Ctrl+Alt+Shift+C"
+      ],
+      "flag": "ink.geometry"
+    },
+    {
+      "id": "ink.geometry.measureSelection",
+      "title": "Measure the selected line",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.geometry"
+    },
+    {
+      "id": "ink.geometry.units.auto",
+      "title": "Units: automatic",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.geometry"
+    },
+    {
+      "id": "ink.geometry.units.metric",
+      "title": "Units: centimeters",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.geometry"
+    },
+    {
+      "id": "ink.geometry.units.imperial",
+      "title": "Units: inches",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.geometry"
+    },
+    {
+      "id": "ink.convertToTable",
+      "title": "Convert to table",
+      "category": "insert",
+      "keys": [],
+      "flag": "ink.gridTable"
+    },
+    {
+      "id": "ink.addShapeText",
+      "title": "Add text to shape",
+      "category": "insert",
+      "keys": [],
+      "flag": "ink.shapeTools"
+    },
+    {
+      "id": "ink.curve.make",
+      "title": "Make curve",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.splines"
+    },
+    {
+      "id": "ink.curve.addPoint",
+      "title": "Add curve point",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.splines"
+    },
+    {
+      "id": "ink.curve.removePoint",
+      "title": "Remove curve point",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.splines"
+    },
+    {
+      "id": "ink.curve.smooth",
+      "title": "Smooth point",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.splines"
+    },
+    {
+      "id": "ink.curve.corner",
+      "title": "Corner point",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.splines"
+    },
+    {
+      "id": "ink.replay",
+      "title": "Replay ink",
+      "category": "view",
+      "keys": [],
+      "flag": "ink.replay"
+    },
+    {
+      "id": "ink.penEdit.strike",
+      "title": "Strike through words to delete them",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.penEditing"
+    },
+    {
+      "id": "ink.penEdit.space",
+      "title": "Draw a line between words to add a space",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.penEditing"
+    },
+    {
+      "id": "ink.penEdit.split",
+      "title": "Draw a long line between words to split the paragraph",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.penEditing"
+    },
+    {
+      "id": "ink.penEdit.circle",
+      "title": "Circle words to select them",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.penEditing"
+    },
+    {
+      "id": "ink.penEdit.write",
+      "title": "Write in a gap between words to insert text",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.penEditing"
+    },
+    {
+      "id": "ink.writing",
+      "title": "Writing pen",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.handwriting"
+    },
+    {
+      "id": "ink.writing.showInk",
+      "title": "Show written ink",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.handwriting"
+    },
+    {
+      "id": "ink.handwriting.convert",
+      "title": "Convert to text",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.handwriting"
+    },
+    {
+      "id": "ink.handwriting.straighten",
+      "title": "Straighten",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.handwriting"
+    },
+    {
+      "id": "ink.handwriting.evenSpacing",
+      "title": "Even spacing",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.handwriting"
+    },
+    {
+      "id": "ink.zoomBox",
+      "title": "Zoom writing box",
+      "category": "view",
+      "keys": [
+        "Ctrl+Alt+Shift+Z"
+      ],
+      "flag": "ink.zoomBox"
+    },
+    {
+      "id": "ink.anchor",
+      "title": "Anchor to text",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.anchoring"
+    },
+    {
+      "id": "ink.detach",
+      "title": "Detach from text",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.anchoring"
+    },
+    {
+      "id": "ink.anchorToText",
+      "title": "Ink drawn on text follows the words",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.anchoring"
+    },
+    {
+      "id": "ink.group",
+      "title": "Group",
+      "category": "editing",
+      "keys": [
+        "Ctrl+G"
+      ],
+      "flag": "ink.groups"
+    },
+    {
+      "id": "ink.ungroup",
+      "title": "Ungroup",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Shift+G"
+      ],
+      "flag": "ink.groups"
+    },
+    {
+      "id": "ink.makeLink",
+      "title": "Make link",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.links"
+    },
+    {
+      "id": "ink.removeLink",
+      "title": "Remove link",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.links"
+    },
+    {
+      "id": "ink.links",
+      "title": "Links on this page",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.links"
+    },
+    {
+      "id": "ink.layers",
+      "title": "Layers",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.layers"
+    },
+    {
+      "id": "ink.gestures.scribbleErase",
+      "title": "Scribble to erase",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.gestures"
+    },
+    {
+      "id": "ink.gestures.circleSelect",
+      "title": "Circle and tap to select",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.gestures"
+    },
+    {
+      "id": "ink.gestures.twoFingerUndo",
+      "title": "Two-finger double tap to undo",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.gestures"
+    },
+    {
+      "id": "ink.gestures.threeFingerRedo",
+      "title": "Three-finger double tap to redo",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.gestures"
+    },
+    {
+      "id": "ink.select",
+      "title": "Select and type",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.core"
+    },
+    {
+      "id": "ink.pen",
+      "title": "Pen",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.core"
+    },
+    {
+      "id": "ink.eraser",
+      "title": "Stroke eraser",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.erasers"
+    },
+    {
+      "id": "ink.partialEraser",
+      "title": "Partial eraser",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.erasers"
+    },
+    {
+      "id": "ink.lasso",
+      "title": "Lasso select",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.lasso"
+    },
+    {
+      "id": "ink.inkToShape",
+      "title": "Ink to shape",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.shapes"
     }
   ],
   "titleBar": [

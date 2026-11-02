@@ -6,6 +6,12 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import '../features';
+// Some commands register after start-up: on-device intelligence once the app is idle, and the ink commands when the
+// ink view mounts on a page. They are loaded here too, so the list has every command, not only the start-up ones.
+import '../features/page/intel/register';
+import '../features/page/intel/plus';
+import { installInk } from '../features/ink/view/install';
+import type { InkHost } from '../features/ink/view/host';
 import { commands, settingsSections, setupSteps, titleBarItems } from '../registries';
 import type { MessageKey } from '../strings/t';
 import { t } from '../strings/t';
@@ -19,6 +25,22 @@ import {
   TOOL_ENTRIES,
   type Registry,
 } from '../../../docs/tools/featureList';
+
+// The ink view is installed with a host whose every part does nothing and has no page, since only its registrations
+// are read.
+const noop: unknown = new Proxy(() => undefined, {
+  get: (_target, key) => (key === 'then' || typeof key === 'symbol' ? undefined : noop),
+  apply: () => undefined,
+});
+// It also adds listeners to the window and the document, so they get the same stand-in while it installs.
+const g = globalThis as Record<string, unknown>;
+const missing = ['window', 'document'].filter((name) => !(name in g));
+for (const name of missing) g[name] = noop;
+installInk(noop as InkHost);
+// With a window, the test build adds My handwriting's test hooks a moment later, so the stand-ins wait for that.
+await import('../features/ink/view/myhand/testHooks');
+await new Promise((resolve) => setTimeout(resolve, 0));
+for (const name of missing) delete g[name];
 
 const file = join(import.meta.dirname, '..', '..', '..', 'docs', 'tools', 'registry.json');
 const words = (key: string) =>

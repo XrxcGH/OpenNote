@@ -192,6 +192,8 @@ export const COMMAND_PREFIX: Readonly<Record<string, Category>> = {
   pages: views,
   canvas: views,
   'pages.export': 'Import and export',
+  ink: 'Drawing and ink',
+  intel: 'On-device intelligence',
   ...all(
     'pages.indent pages.outdent page.extractSelection page.mergePages page.splitAtHeadings layout nav view window tabs',
     navigation,

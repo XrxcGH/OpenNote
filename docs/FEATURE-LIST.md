@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 778 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 848 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the on-device intelligence commands, which register once start-up is done. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -357,6 +357,65 @@ The app registers 778 commands and 47 tool windows. 24 of the windows are subjec
 - **Measuring ruler, measure, and compass.** Drawing aids on the Draw tab, in the command list, and in the page's right-click menu.
 - **Snap to paper lines.** On ruled, grid, and dot paper, lines, shapes, and shape handles snap to the lines the paper draws.
 - **Links on handwriting.** Lasso handwriting and choose "Make link" to link it to a page, a heading, a web address, or a moment in a recording.
+
+### Commands
+
+| Command | What it does | Default keys |
+| --- | --- | --- |
+| Write in my handwriting | Writes the selected text as ink in your own handwriting. |  |
+| Type as handwriting | Turns on typing that appears as your handwriting. |  |
+| Canvas lock | Stops the page from scrolling or zooming while you write. | Ctrl+Alt+Shift+L |
+| Pen hover circle | Shows a circle at the pen tip while the pen hovers above the screen. |  |
+| Describe drawing | Adds a text description to a drawing, or marks it as decoration. |  |
+| Insert space | Opens or closes space on the page and moves everything below it. |  |
+| Ruler | Shows a ruler that straight ink follows. |  |
+| Protractor | Shows a protractor for measuring and drawing angles. |  |
+| Snap to grid | Snaps ink to a grid on plain paper. |  |
+| Snap to paper lines | Snaps ink to the lines of ruled, grid, or dot paper. |  |
+| Measure | Measures lengths and angles on the page. | Ctrl+Alt+Shift+R |
+| Compass | Draws circles and arcs with a compass. | Ctrl+Alt+Shift+C |
+| Measure the selected line | Shows the length of the selected line. |  |
+| Units: automatic | Shows ruler units that follow your region. |  |
+| Units: centimeters | Shows ruler units in centimeters. |  |
+| Units: inches | Shows ruler units in inches. |  |
+| Convert to table | Turns a hand-drawn grid into a table. |  |
+| Add text to shape | Adds text inside the selected shape. |  |
+| Make curve | Turns the selected stroke into a curve you can edit by its points. |  |
+| Add curve point | Adds a point to the selected curve. |  |
+| Remove curve point | Removes the selected point from a curve. |  |
+| Smooth point | Makes the selected curve point smooth. |  |
+| Corner point | Makes the selected curve point a corner. |  |
+| Replay ink | Plays the ink back stroke by stroke, with the recording when there is one. |  |
+| Strike through words to delete them | Turns on deleting typed words by striking through them with the pen. |  |
+| Draw a line between words to add a space | Turns on adding a space by drawing a line between words. |  |
+| Draw a long line between words to split the paragraph | Turns on splitting a paragraph by drawing a long line between words. |  |
+| Circle words to select them | Turns on selecting typed words by circling them. |  |
+| Write in a gap between words to insert text | Turns on inserting text by writing in a gap between words. |  |
+| Writing pen | Picks the writing pen, which turns handwriting into typed text as you write. |  |
+| Show written ink | Shows the ink that the writing pen faded after it typed the words. |  |
+| Convert to text | Turns the selected handwriting into typed text beside it. |  |
+| Straighten | Straightens the lines of the selected handwriting. |  |
+| Even spacing | Evens out the space between the selected words. |  |
+| Zoom writing box | Opens a large writing strip whose ink lands small on the page. | Ctrl+Alt+Shift+Z |
+| Anchor to text | Ties the selected ink to the text under it, so it moves with the words. |  |
+| Detach from text | Frees the selected ink from the text it was tied to. |  |
+| Ink drawn on text follows the words | Turns on tying ink drawn on text to the words it touches. |  |
+| Group | Groups the selected ink and objects so they move together. | Ctrl+G |
+| Ungroup | Breaks the selected group apart. | Ctrl+Shift+G |
+| Make link | Makes the selected handwriting a link to a page, a heading, a web address, or a recording. |  |
+| Remove link | Removes the link from the selected handwriting. |  |
+| Links on this page | Lists the links on handwriting on this page. |  |
+| Layers | Opens the ink layers, which you can hide, lock, rename, and reorder. |  |
+| Scribble to erase | Turns on erasing ink by scribbling over it. |  |
+| Circle and tap to select | Turns on selecting ink by circling it and tapping. |  |
+| Two-finger double tap to undo | Turns on undo with a two-finger double tap. |  |
+| Three-finger double tap to redo | Turns on redo with a three-finger double tap. |  |
+| Select and type | Picks the tool for selecting and typing. |  |
+| Pen | Picks the pen. |  |
+| Stroke eraser | Picks the eraser that removes whole strokes. |  |
+| Partial eraser | Picks the eraser that removes only the part of a stroke it touches. |  |
+| Lasso select | Picks the lasso, which selects ink by drawing around it. |  |
+| Ink to shape | Turns on snapping a held stroke into a clean shape. |  |
 
 ### Pictures
 
@@ -1883,6 +1942,27 @@ Open it with the command "Open upcoming".
 - **Writing tools.** Select text, and choose Proofread, Rewrite, Shorten, Make a list, or Tidy structure.
 - **Action items and chapters.** After transcription, "Find action items" lists tasks and decisions.
 - **Translate on this device.** Translates a selection, a page, or a transcript into another language and puts the translation beside or below the original, never over it.
+
+### Commands
+
+| Command | What it does | Default keys |
+| --- | --- | --- |
+| Copy text from image | Copies the text in the selected image, read on this device. |  |
+| Summarize this page | Writes a short summary of the page on this device. |  |
+| Convert handwriting to text | Turns the selected handwriting into typed text and keeps the ink. |  |
+| Dictate | Types what you say into the page, transcribed on this device. | Ctrl+Alt+V |
+| Convert handwriting to math | Turns handwritten math into a typed equation. |  |
+| Translate | Translates what is on the page and adds the translation below it. |  |
+| Edit custom vocabulary | Edits the names and terms that the transcriber should prefer. |  |
+| Show background work | Shows what OpenNote is doing in the background, in plain words. |  |
+| Find by meaning | Finds pages by what they mean, not only by the words in them. |  |
+| Show related pages | Lists the pages that are about the same things as this one. |  |
+| Ask your notes | Answers a question from your own notes and shows where each answer comes from. |  |
+| Proofread | Suggests fixes for spelling and grammar in the selected text. |  |
+| Rewrite in plain words | Suggests the selected text in plainer words. |  |
+| Shorten | Suggests a shorter version of the selected text. |  |
+| Make a list | Suggests the selected text as a list. |  |
+| Tidy structure | Suggests headings and paragraphs for the selected text. |  |
 
 ### Pictures
 
