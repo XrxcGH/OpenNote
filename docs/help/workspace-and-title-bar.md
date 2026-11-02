@@ -61,11 +61,11 @@ In a narrow window or on a tablet, OpenNote shows one pane at a time. A drawer h
 - **Keep OpenNote on top of other windows.** The window floats above other apps.
 - **Dock to the left edge** and **Dock to the right edge.** The window fills half the screen. Turn docking off to restore the old size.
 
-All three are on the View tab and in the command palette.
+Focus mode, Keep on top, and Dock to the right edge are on the View tab. All of them, and Dock to the left edge, are in the command palette. Keep on top and both docking buttons are also in Settings, then Windows and power.
 
 ## Quick capture
 
-![The Quick note window for jotting a note into a chosen section](../screens/quick-capture-light.png)
+![The Quick note window, which saves a note in Quick notes](../screens/quick-capture-light.png)
 
 Quick capture opens a small Quick note window over any app. It is off until you turn it on in Settings, then **Windows and power**. The shortcut starts as Win+Shift+Q, and you can change it. Type a note and press Ctrl+Enter to save it in Quick notes. Press Escape to close it without saving. The first line is the title.
 

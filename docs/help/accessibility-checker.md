@@ -6,7 +6,7 @@ The accessibility checker looks for things on a page that are hard for a screen 
 
 ## Open it
 
-Choose **Check accessibility** on the View tab, in the command palette (Ctrl+K), or in the menu of a page or section in the pages pane. A section checks the pages inside it.
+Choose **Check accessibility** on the View tab, in the command palette (Ctrl+K), or in the menu of a page in the pages pane, or of a section in the notebooks pane. A section checks the pages inside it.
 
 ## What it finds
 
