@@ -75,6 +75,13 @@
     align-items: center;
   }
 
+  /* An item whose component renders nothing (the idle timer chip, the recording indicator) leaves an empty wrapper,
+     and the group's gap would still space it out as a blank slot. It takes no part in the layout. */
+  .item:empty,
+  .breadcrumbItem:empty {
+    display: none;
+  }
+
   .breadcrumbItem {
     display: flex;
     flex: none;
