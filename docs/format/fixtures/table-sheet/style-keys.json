@@ -1,0 +1,203 @@
+{
+  "name": "every style key",
+  "rules": [
+    "R-SHT-7",
+    "R-SHT-8",
+    "R-SHT-9",
+    "R-VAL-1",
+    "R-VAL-3",
+    "R-VAL-4",
+    "R-VAL-7",
+    "R-NUM-1"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Price"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2.5"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "styles": {
+              "1xeg72": {
+                "fmt": "[h]:mm:ss",
+                "font": {
+                  "family": "Georgia",
+                  "size": 409.5,
+                  "weight": 300,
+                  "italic": true,
+                  "underline": "doubleAccounting",
+                  "strike": "double",
+                  "color": "theme:accent3",
+                  "script": "super"
+                },
+                "fill": {
+                  "pattern": "lightTrellis",
+                  "color": "fern",
+                  "back": "#ffffff"
+                },
+                "border": {
+                  "t": {
+                    "style": "thin"
+                  },
+                  "b": {
+                    "style": "double",
+                    "color": "ink"
+                  },
+                  "du": {
+                    "style": "hair",
+                    "width": 0.25
+                  },
+                  "l": {
+                    "style": "none"
+                  }
+                },
+                "align": {
+                  "h": "centerAcross",
+                  "v": "middle",
+                  "wrap": "clip",
+                  "shrink": true,
+                  "rotate": -45,
+                  "indent": 15,
+                  "dir": "rtl"
+                },
+                "pad": {
+                  "t": 2,
+                  "r": 4,
+                  "b": 2,
+                  "l": 4
+                },
+                "protect": {
+                  "locked": false,
+                  "hideFormula": true
+                }
+              },
+              "44gc9w": {
+                "fill": {
+                  "gradient": {
+                    "angle": 90,
+                    "stops": [
+                      {
+                        "at": 0,
+                        "color": "brick"
+                      },
+                      {
+                        "at": 0.5,
+                        "color": "#ffffff"
+                      },
+                      {
+                        "at": 1,
+                        "color": "fern"
+                      }
+                    ]
+                  }
+                }
+              },
+              "peaijk": {
+                "font": {
+                  "size": 1639,
+                  "weight": 450,
+                  "underline": "squiggle"
+                },
+                "align": {
+                  "rotate": 91
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  },
+  "problems": [
+    "blocks[0].data.sheet.styles.peaijk.font.size: a number from 1 to 1638, step 0.5",
+    "blocks[0].data.sheet.styles.peaijk.font.weight: a number from 100 to 900, step 100",
+    "blocks[0].data.sheet.styles.peaijk.font.underline: one of single, double, words, thick, dotted, dottedHeavy, dash, dashedHeavy, dashLong, dashLongHeavy, dotDash, dashDotHeavy, dotDotDash, dashDotDotHeavy, wave, wavyHeavy, wavyDouble, singleAccounting, doubleAccounting, none",
+    "blocks[0].data.sheet.styles.peaijk.align.rotate: an integer from -90 to 90"
+  ],
+  "expect": {
+    "layers": [
+      "defaults",
+      "look",
+      "table",
+      "column",
+      "row",
+      "cell",
+      "conditional",
+      "run marks"
+    ]
+  }
+}

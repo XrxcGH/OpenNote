@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import read_opennote  # noqa: E402
 from ink_segments import SegmentError, decode_points, decode_segment  # noqa: E402
+from format_v2 import readable_text  # noqa: E402
 from markdown_text import escape_text  # noqa: E402
 from readable_text import fixed  # noqa: E402
 
@@ -105,6 +106,18 @@ class ReferenceReaderTest(unittest.TestCase):
         for case in cases:
             with self.subTest(text=case["text"], at_line_start=case["atLineStart"]):
                 self.assertEqual(escape_text(case["text"], case["atLineStart"]), case["escaped"])
+
+    def test_inline_v2_reads_to_its_readable_text(self) -> None:
+        """Every case of docs/format/fixtures/markdown/inline-v2 reads to its text: tags drop and keep their content,
+        and hostile tags stay literal (spec 7.9 and 7.13)."""
+        cases = json.loads((FIXTURES / "markdown" / "inline-v2" / "cases.json").read_text(encoding="utf-8"))["cases"]
+        self.assertGreaterEqual(len(cases), 120)
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                self.assertEqual(readable_text(case["markdown"]), case["text"])
+                self.assertEqual(readable_text(case.get("canonical", case["markdown"])), case["text"])
+                if case.get("hostile"):
+                    self.assertEqual(case["text"].count("<"), case["markdown"].count("<"), "every tag stays literal")
 
     def test_readable_copies_follow_the_rules_of_spec_11(self) -> None:
         """Decorative images, empty titles, and unknown blocks, which the fixture notebook doesn't show."""

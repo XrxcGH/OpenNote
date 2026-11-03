@@ -1,0 +1,234 @@
+{
+  "name": "notebook styles",
+  "rules": [
+    "R-STY-4",
+    "R-STY-9",
+    "R-STY-1",
+    "R-THM-1",
+    "R-VER-1",
+    "R-STAMP-3"
+  ],
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  },
+  "copies": [
+    {
+      "styles": {
+        "normal": {
+          "sizePt": 11,
+          "size": 14.67
+        },
+        "h1": {
+          "sizePt": 20,
+          "size": 26.67
+        },
+        "u-a": {
+          "basedOn": "u-b",
+          "sizePt": 9,
+          "size": 12
+        },
+        "u-b": {
+          "basedOn": "u-a"
+        }
+      },
+      "stylesChanged": {
+        "h1": "2026-11-02T10:00:00.000Z",
+        "u-a": "2026-11-01T09:00:00.000Z"
+      },
+      "theme": {
+        "fonts": {
+          "body": "Literata"
+        }
+      }
+    },
+    {
+      "styles": {
+        "normal": {
+          "sizePt": 12,
+          "size": 16
+        },
+        "h1": {
+          "sizePt": 22,
+          "size": 29.33
+        },
+        "u-a": {
+          "basedOn": "u-b",
+          "sizePt": 10,
+          "size": 13.33
+        },
+        "u-c": {
+          "italic": true
+        }
+      },
+      "stylesChanged": {
+        "h1": "2026-11-02T09:00:00.000Z",
+        "u-a": "2026-11-01T09:00:00.000Z"
+      }
+    }
+  ],
+  "merged": {
+    "styles": {
+      "h1": {
+        "sizePt": 20,
+        "size": 26.67
+      },
+      "normal": {
+        "sizePt": 12,
+        "size": 16
+      },
+      "u-a": {
+        "basedOn": "u-b",
+        "sizePt": 10,
+        "size": 13.33
+      },
+      "u-b": {
+        "basedOn": "u-a"
+      },
+      "u-c": {
+        "italic": true
+      }
+    },
+    "stylesChanged": {
+      "h1": "2026-11-02T10:00:00.000Z",
+      "u-a": "2026-11-01T09:00:00.000Z"
+    }
+  },
+  "chains": {
+    "cycle": {
+      "styles": {
+        "normal": {
+          "sizePt": 11,
+          "size": 14.67
+        },
+        "h1": {
+          "sizePt": 20,
+          "size": 26.67
+        },
+        "u-a": {
+          "basedOn": "u-b",
+          "sizePt": 9,
+          "size": 12
+        },
+        "u-b": {
+          "basedOn": "u-a"
+        }
+      },
+      "name": "u-a",
+      "chain": [
+        "u-a",
+        "u-b"
+      ]
+    },
+    "deep": {
+      "styles": {
+        "u-s0": {
+          "basedOn": "u-s1"
+        },
+        "u-s1": {
+          "basedOn": "u-s2"
+        },
+        "u-s2": {
+          "basedOn": "u-s3"
+        },
+        "u-s3": {
+          "basedOn": "u-s4"
+        },
+        "u-s4": {
+          "basedOn": "u-s5"
+        },
+        "u-s5": {
+          "basedOn": "u-s6"
+        },
+        "u-s6": {
+          "basedOn": "u-s7"
+        },
+        "u-s7": {
+          "basedOn": "u-s8"
+        },
+        "u-s8": {
+          "basedOn": "u-s9"
+        },
+        "u-s9": {
+          "basedOn": "u-s10"
+        },
+        "u-s10": {
+          "basedOn": "u-s11"
+        },
+        "u-s11": {
+          "basedOn": "u-s12"
+        },
+        "u-s12": {
+          "basedOn": "u-s13"
+        },
+        "u-s13": {
+          "basedOn": "u-s14"
+        },
+        "u-s14": {
+          "basedOn": "u-s15"
+        },
+        "u-s15": {
+          "basedOn": "u-s16"
+        },
+        "u-s16": {
+          "basedOn": "u-s17"
+        },
+        "u-s17": {
+          "basedOn": "u-s18"
+        },
+        "u-s18": {
+          "basedOn": "u-s19"
+        },
+        "u-s19": {
+          "basedOn": "u-s20"
+        }
+      },
+      "name": "u-s0",
+      "chain": [
+        "u-s0",
+        "u-s1",
+        "u-s2",
+        "u-s3",
+        "u-s4",
+        "u-s5",
+        "u-s6",
+        "u-s7",
+        "u-s8",
+        "u-s9",
+        "u-s10",
+        "u-s11",
+        "u-s12",
+        "u-s13",
+        "u-s14",
+        "u-s15",
+        "u-s16"
+      ]
+    },
+    "heading": {
+      "styles": {
+        "normal": {
+          "sizePt": 11,
+          "size": 14.67
+        },
+        "h1": {
+          "sizePt": 20,
+          "size": 26.67
+        },
+        "u-a": {
+          "basedOn": "u-b",
+          "sizePt": 9,
+          "size": 12
+        },
+        "u-b": {
+          "basedOn": "u-a"
+        }
+      },
+      "name": "h1",
+      "chain": [
+        "h1",
+        "normal"
+      ]
+    }
+  }
+}

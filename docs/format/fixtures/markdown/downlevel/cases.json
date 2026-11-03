@@ -1,0 +1,2083 @@
+{
+  "cases": [
+    {
+      "name": "plain text",
+      "rules": [
+        "R-STAMP-1",
+        "R-VER-8"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Plain **text**."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      },
+      "upgrades": false
+    },
+    {
+      "name": "paras only",
+      "rules": [
+        "R-STAMP-2",
+        "R-VER-8"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Centered.",
+              "ids": [
+                "01m3sbcmt0000000000000e001"
+              ],
+              "paras": {
+                "01m3sbcmt0000000000000e001": {
+                  "align": "center"
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      },
+      "upgrades": false
+    },
+    {
+      "name": "a font span",
+      "rules": [
+        "R-STAMP-8",
+        "R-VER-8",
+        "R-VER-2",
+        "R-VER-6",
+        "R-VER-7"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "A <span data-font=\"Georgia\">serif</span> word."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      },
+      "upgrades": true
+    },
+    {
+      "name": "a font span saved as version 2",
+      "rules": [
+        "R-STAMP-8",
+        "R-VER-4"
+      ],
+      "page": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "A <span data-font=\"Georgia\">serif</span> word."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "readOnly",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "the last version 2 feature removed",
+      "rules": [
+        "R-VER-9",
+        "R-STAMP-1"
+      ],
+      "page": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "A serif word."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "readOnly",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a weight span",
+      "rules": [
+        "R-STAMP-8",
+        "R-MRK-5"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "A <span data-weight=\"300\">light</span> word."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      },
+      "upgrades": true
+    },
+    {
+      "name": "a version 1 tag with a version 2 value",
+      "rules": [
+        "R-STAMP-8",
+        "R-INL-8"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Size <span data-size=\"12\">twelve</span>."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a foreign mark",
+      "rules": [
+        "R-STAMP-8",
+        "R-INL-9"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "A <span data-glow=\"soft\">glowing</span> word."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a tag in a table cell",
+      "rules": [
+        "R-STAMP-8"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                },
+                {
+                  "id": "01m3sbcmt0000000000000k002",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "<span data-font=\"Georgia\">x</span>"
+                    },
+                    "01m3sbcmt0000000000000k002": {
+                      "markdown": "y"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a footnote",
+      "rules": [
+        "R-STAMP-9",
+        "R-STAMP-10",
+        "R-NOTE-1",
+        "R-FN-5"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Light[^01m3sbcmt0000000000000n001] splits water.",
+              "notes": {
+                "01m3sbcmt0000000000000n001": {
+                  "markdown": "In the thylakoid."
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "an endnote in a table",
+      "rules": [
+        "R-NOTE-1",
+        "R-NOTE-2"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "a[^01m3sbcmt0000000000000n001]"
+                    }
+                  }
+                }
+              ],
+              "notes": {
+                "01m3sbcmt0000000000000n001": {
+                  "kind": "end",
+                  "markdown": "Measured twice."
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a note with no reference",
+      "rules": [
+        "R-STAMP-10",
+        "R-NOTE-2"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Text.",
+              "notes": {
+                "01m3sbcmt0000000000000n001": {
+                  "markdown": "Orphan."
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a comment",
+      "rules": [
+        "R-STAMP-10",
+        "R-CMT-1",
+        "R-CMT-2",
+        "R-CMT-3",
+        "R-MRK-19"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "<span data-comment=\"01m3sbcmt0000000000000c001\">Checked</span> text.",
+              "comments": {
+                "01m3sbcmt0000000000000c001": {
+                  "author": "Reviewer",
+                  "time": "2026-11-02T10:00:00.000Z",
+                  "markdown": "Check this.",
+                  "replies": [
+                    {
+                      "author": "Editor",
+                      "time": "2026-11-02T10:00:00.000Z",
+                      "markdown": "Done."
+                    }
+                  ],
+                  "resolved": true
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a comment over two paragraphs",
+      "rules": [
+        "R-CMT-2",
+        "R-CMT-4"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "<span data-comment=\"01m3sbcmt0000000000000c001\">One.</span>\n\n<span data-comment=\"01m3sbcmt0000000000000c001\">Two.</span>",
+              "comments": {
+                "01m3sbcmt0000000000000c001": {
+                  "author": "Reviewer",
+                  "time": "2026-11-02T10:00:00.000Z",
+                  "markdown": "Check this.",
+                  "replies": [
+                    {
+                      "author": "Editor",
+                      "time": "2026-11-02T10:00:00.000Z",
+                      "markdown": "Done."
+                    }
+                  ],
+                  "resolved": true
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a suggested format change",
+      "rules": [
+        "R-STAMP-10",
+        "R-SUG-1",
+        "R-SUG-2",
+        "R-SUG-3",
+        "R-MRK-22"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "<span data-fmt=\"01m3sbcmt0000000000000s001\">old</span>",
+              "suggestions": {
+                "01m3sbcmt0000000000000s001": {
+                  "kind": "fmt",
+                  "author": "Reviewer",
+                  "time": "2026-11-02T10:00:00.000Z",
+                  "before": "**old**"
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a suggestion whose record is missing",
+      "rules": [
+        "R-SUG-2",
+        "R-MRK-20"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "<span data-ins=\"01m3sbcmt0000000000000s001\">new</span>"
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a page break",
+      "rules": [
+        "R-STAMP-11",
+        "R-BRK-1",
+        "R-BRK-2",
+        "R-BRK-3"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Before."
+            }
+          },
+          {
+            "id": "01m3sbcmt0000000000000b002",
+            "type": "break",
+            "order": "a1",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "kind": "page"
+            },
+            "fallback": {
+              "markdown": "---"
+            }
+          },
+          {
+            "id": "01m3sbcmt0000000000000b003",
+            "type": "text",
+            "order": "a2",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "After."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a column break",
+      "rules": [
+        "R-BRK-1",
+        "R-BRK-3"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "break",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "kind": "column"
+            },
+            "fallback": {
+              "markdown": "---"
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a break with a wrong fallback",
+      "rules": [
+        "R-BRK-2"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "break",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {},
+            "fallback": {
+              "markdown": "Break"
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      },
+      "problems": [
+        "blocks[0].fallback: exactly {\"markdown\": \"---\"} (R-BRK-2)"
+      ]
+    },
+    {
+      "name": "a code project block",
+      "rules": [
+        "R-STAMP-7",
+        "R-CODE-1"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "ext:org.opennote/codeproject",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "v": 3,
+              "minEditor": 2,
+              "name": "Two sum",
+              "language": "python",
+              "files": {
+                "f01": {
+                  "path": "main.py",
+                  "text": "print(1)\n",
+                  "order": 0
+                }
+              }
+            },
+            "fallback": {
+              "markdown": "**Two sum** (Python, 1 file)"
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a code cell of version 2",
+      "rules": [
+        "R-STAMP-7",
+        "R-CODE-1"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "ext:org.opennote/codecell",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "v": 2,
+              "minEditor": 2,
+              "language": "lua",
+              "source": "print(1)"
+            },
+            "fallback": {
+              "markdown": "```lua\nprint(1)\n```"
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "sheet styles only",
+      "rules": [
+        "R-STAMP-6"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                },
+                {
+                  "id": "01m3sbcmt0000000000000k002",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "a"
+                    },
+                    "01m3sbcmt0000000000000k002": {
+                      "markdown": "1"
+                    }
+                  }
+                }
+              ],
+              "sheet": {
+                "styles": {
+                  "6zxrkp": {
+                    "fill": "honey"
+                  }
+                },
+                "cells": {
+                  "01m3sbcmt0000000000000r001": {
+                    "01m3sbcmt0000000000000k001": "6zxrkp"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "sheet merges",
+      "rules": [
+        "R-STAMP-12"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                },
+                {
+                  "id": "01m3sbcmt0000000000000k002",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "a"
+                    },
+                    "01m3sbcmt0000000000000k002": {
+                      "markdown": ""
+                    }
+                  }
+                }
+              ],
+              "sheet": {
+                "merges": {
+                  "m1": {
+                    "from": [
+                      "01m3sbcmt0000000000000r001",
+                      "01m3sbcmt0000000000000k001"
+                    ],
+                    "to": [
+                      "01m3sbcmt0000000000000r001",
+                      "01m3sbcmt0000000000000k002"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "sheet with an empty map",
+      "rules": [
+        "R-STAMP-12",
+        "R-STAMP-6"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "a"
+                    }
+                  }
+                }
+              ],
+              "sheet": {
+                "merges": {}
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "sheet v and one formula",
+      "rules": [
+        "R-STAMP-13",
+        "R-SHT-4",
+        "R-SHT-5"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                },
+                {
+                  "id": "01m3sbcmt0000000000000k002",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "2"
+                    },
+                    "01m3sbcmt0000000000000k002": {
+                      "markdown": "\\=A1\\*2"
+                    }
+                  }
+                }
+              ],
+              "sheet": {
+                "v": 1
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "sheet v without a formula",
+      "rules": [
+        "R-STAMP-13",
+        "R-SHT-4"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                },
+                {
+                  "id": "01m3sbcmt0000000000000k002",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "2"
+                    },
+                    "01m3sbcmt0000000000000k002": {
+                      "markdown": "3"
+                    }
+                  }
+                }
+              ],
+              "sheet": {
+                "v": 1
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "a formula without sheet v",
+      "rules": [
+        "R-STAMP-13",
+        "R-SHT-4"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                },
+                {
+                  "id": "01m3sbcmt0000000000000k002",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "2"
+                    },
+                    "01m3sbcmt0000000000000k002": {
+                      "markdown": "=A1\\*2"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "sheet links and a fingerprint only",
+      "rules": [
+        "R-STAMP-6"
+      ],
+      "page": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "table",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "columns": [
+                {
+                  "id": "01m3sbcmt0000000000000k001",
+                  "width": 120
+                }
+              ],
+              "rows": [
+                {
+                  "id": "01m3sbcmt0000000000000r001",
+                  "cells": {
+                    "01m3sbcmt0000000000000k001": {
+                      "markdown": "a"
+                    }
+                  }
+                }
+              ],
+              "sheet": {
+                "valuesOf": "fnv1a:0000000000000000",
+                "links": {
+                  "Prices": "01m3sbcmt0000000000000p002"
+                }
+              }
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "edit",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "version 3 that version 2 may edit",
+      "rules": [
+        "R-VER-2",
+        "R-VER-3",
+        "R-VER-4",
+        "R-VER-5"
+      ],
+      "page": {
+        "formatVersion": 3,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "A <span data-glow=\"soft\">later</span> tag."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 3,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "readers": {
+        "1": "readOnly",
+        "2": "edit"
+      }
+    },
+    {
+      "name": "version 3 without minWriterVersion",
+      "rules": [
+        "R-VER-3",
+        "R-VER-5"
+      ],
+      "page": {
+        "formatVersion": 3,
+        "minReaderVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Text."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 3,
+        "minReaderVersion": 1,
+        "minWriterVersion": 3
+      },
+      "readers": {
+        "1": "readOnly",
+        "2": "readOnly"
+      }
+    },
+    {
+      "name": "version 3 that needs a version 3 reader",
+      "rules": [
+        "R-VER-4"
+      ],
+      "page": {
+        "formatVersion": 3,
+        "minReaderVersion": 3,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Text."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 3,
+        "minReaderVersion": 3,
+        "minWriterVersion": 3
+      },
+      "readers": {
+        "1": "pageMd",
+        "2": "pageMd"
+      }
+    },
+    {
+      "name": "minWriterVersion above formatVersion",
+      "rules": [
+        "R-VER-3"
+      ],
+      "page": {
+        "formatVersion": 3,
+        "minReaderVersion": 1,
+        "minWriterVersion": 4,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Text."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 3,
+        "minReaderVersion": 1,
+        "minWriterVersion": 4
+      },
+      "readers": {
+        "1": "readOnly",
+        "2": "readOnly"
+      }
+    },
+    {
+      "name": "minWriterVersion below minReaderVersion",
+      "rules": [
+        "R-VER-3"
+      ],
+      "page": {
+        "formatVersion": 3,
+        "minReaderVersion": 2,
+        "minWriterVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Text."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 3,
+        "minReaderVersion": 2,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "pageMd",
+        "2": "readOnly"
+      }
+    },
+    {
+      "name": "version 2 that allows version 1 editors",
+      "rules": [
+        "R-VER-4",
+        "R-VER-3"
+      ],
+      "page": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1,
+        "kind": "opennote.page",
+        "id": "01m3sbcmt0000000000000p001",
+        "title": "Fixture",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "view": {
+          "layout": "flow"
+        },
+        "blocks": [
+          {
+            "id": "01m3sbcmt0000000000000b001",
+            "type": "text",
+            "order": "a0",
+            "created": "2026-11-02T10:00:00.000Z",
+            "modified": "2026-11-02T10:00:00.000Z",
+            "data": {
+              "markdown": "Text."
+            }
+          }
+        ],
+        "revision": {
+          "id": "01m3sbcmt0000000000000v001",
+          "parents": [],
+          "ancestors": [],
+          "savedAt": "2026-11-02T10:00:00.000Z",
+          "device": {
+            "id": "01m3sbcmt0000000000000d001",
+            "label": "Test device"
+          },
+          "writer": "Fixture"
+        }
+      },
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "readers": {
+        "1": "readOnly",
+        "2": "edit"
+      }
+    }
+  ]
+}

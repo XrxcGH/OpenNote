@@ -1,0 +1,262 @@
+{
+  "name": "conditional formats",
+  "rules": [
+    "R-SHT-15",
+    "R-SHT-22",
+    "R-SHT-9",
+    "R-STAMP-12"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Price"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2.5"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "styles": {
+              "uvqwee": {
+                "fill": "honey",
+                "font": {
+                  "bold": true,
+                  "family": "+body"
+                }
+              }
+            },
+            "conditional": {
+              "c1": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "order": 1,
+                "type": "cell",
+                "op": "greater",
+                "a": "3",
+                "style": "uvqwee",
+                "stop": true
+              },
+              "c2": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "order": 2,
+                "type": "text",
+                "op": "begins",
+                "text": "T",
+                "style": "uvqwee"
+              },
+              "c3": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "order": 3,
+                "type": "scale",
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "brick"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "50",
+                    "color": "#ffffff"
+                  },
+                  {
+                    "at": "max",
+                    "color": "fern"
+                  }
+                ]
+              },
+              "c4": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "order": 4,
+                "type": "bar",
+                "color": "indigo",
+                "gradient": false,
+                "min": {
+                  "at": "num",
+                  "value": "0"
+                },
+                "axis": "middle"
+              },
+              "c5": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "order": 5,
+                "type": "icons",
+                "set": "3TrafficLights",
+                "thresholds": [
+                  {
+                    "at": "percent",
+                    "value": "33"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "67",
+                    "gte": false
+                  }
+                ]
+              },
+              "c6": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "order": 6,
+                "type": "top",
+                "rank": 10,
+                "percent": true,
+                "style": "uvqwee"
+              },
+              "c7": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "order": 6,
+                "type": "average",
+                "below": true,
+                "stdDev": 1,
+                "style": "uvqwee"
+              },
+              "c8": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "order": 8,
+                "type": "date",
+                "period": "last7Days",
+                "style": "uvqwee"
+              },
+              "c9": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "order": 9,
+                "type": "duplicate",
+                "style": "uvqwee"
+              },
+              "d1": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "order": 10,
+                "type": "formula",
+                "a": "A1=\"Tea\"",
+                "style": "uvqwee"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "expect": {
+    "applyOrder": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "c7",
+      "c8",
+      "c9",
+      "d1"
+    ]
+  }
+}

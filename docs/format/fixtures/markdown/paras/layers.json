@@ -1,0 +1,22 @@
+{
+  "name": "where a look comes from",
+  "rules": [
+    "R-STY-6",
+    "R-STY-8"
+  ],
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "layers": [
+    "app",
+    "theme",
+    "normal",
+    "style chain from the root",
+    "page style sheet",
+    "paras",
+    "character style",
+    "run marks"
+  ]
+}

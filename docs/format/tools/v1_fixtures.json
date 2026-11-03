@@ -1,0 +1,86 @@
+{
+  "about": "SHA-256 digests of the version 1 Markdown fixtures, which never change (spec 7.8). test_format_v2.py checks them.",
+  "escape/cases.json": "bd2c2bb1f50565b80a6b1e1fe98763f0d6eec67a1df11dc20944c5fc60e626d5",
+  "documents/cases.json": [
+    {
+      "name": "paragraph",
+      "sha256": "84cff6c40a14fa6ad276ebd6c4c665d211f72c558d343c70b0d7b6900571b6bc"
+    },
+    {
+      "name": "heading and emphasis",
+      "sha256": "72db6e25801b38d71786878d02d50aba0587710dba770f2984796cd19c328b1c"
+    },
+    {
+      "name": "highlights and subscripts",
+      "sha256": "314f2b9d96c76f4e7fed5079c9c1ca964a1a8ceeb2c9d839c17d955c57abb615"
+    },
+    {
+      "name": "colors and sizes",
+      "sha256": "acaa08ab559ba94af804044d162c4cb0f295ee87173dd5e8750bf4c369931a3f"
+    },
+    {
+      "name": "a delimiter that can't close",
+      "sha256": "8d72749aedebfd8232591b7bd72fb915c3b8fd6c312c9bfb840bb539b82bf2bb"
+    },
+    {
+      "name": "links and images",
+      "sha256": "461fd079d6e8fe5cdd0577f1051faec3ebe51f05b43a569a072f32812df94c77"
+    },
+    {
+      "name": "escapes and a hard break",
+      "sha256": "e8a844c5d1e61c21fe01e56c763143f23207ad801ad822d36e24660de3d7865e"
+    },
+    {
+      "name": "task list",
+      "sha256": "4aa0a08167fc8060c7d27674e4c15ad3038e944110fbaa992691843ee253aabb"
+    },
+    {
+      "name": "numbered list",
+      "sha256": "640f658af9f5ee73f3775c7cf9756775bbf812251820c9cf35b31c7a0deb848f"
+    },
+    {
+      "name": "loose list",
+      "sha256": "aad233d465a41255ccebd19e1afc2fd43e58249afe7f20433e19784d0d6f3ac0"
+    },
+    {
+      "name": "callout",
+      "sha256": "4fd67257cb3818e84b54c5dc4245899ee2535da26f5cc1b9263135ee58046d7b"
+    },
+    {
+      "name": "quote",
+      "sha256": "981868bf91fd324914d0cd7e3e504784227fa7106e0f386453ca7b1d951bf49c"
+    },
+    {
+      "name": "code block and break",
+      "sha256": "5159529c89a6045765c8a4b3d18bf334c5d0964a28f6086b134b00f59623bb07"
+    },
+    {
+      "name": "a bulleted list beside a numbered list",
+      "sha256": "4b18e0ab6de7af408e7574753d3af769186813c0f1a60172251637e01b398ea3"
+    },
+    {
+      "name": "two lists of one kind are written as one",
+      "sha256": "84252f2d53cc7090bc55ee2e860a4608352623253713dc82727a2680bc7df067"
+    },
+    {
+      "name": "callouts with folds",
+      "sha256": "df3ef7b9398c23d09fd782be82027e82e31e0c3aa1d4b7f9e2580f6157eef47f"
+    },
+    {
+      "name": "every mark overlap",
+      "sha256": "17960937ddeda6afd779b0cfe8738e5d41eb505f928948ba4f84aaba6fee4ab5"
+    },
+    {
+      "name": "flanking fallbacks",
+      "sha256": "69e8eb57bb61d0c18034a0586a69136b04937255aae69268df671662833a4c0a"
+    },
+    {
+      "name": "adjacent lists of two kinds inside an item and a quote",
+      "sha256": "e6142b543628ca8a90415364e6caf4179ffe0644a79fd3d65d25fd385ae35139"
+    },
+    {
+      "name": "math atoms",
+      "sha256": "240f9a3857b224f299aa11416914073e026a7132c9e88f9f77f6bb1c41ab5722"
+    }
+  ]
+}
