@@ -181,6 +181,7 @@ npm test                 # CHECKS, design, lint rule, matrix, extension, hardwar
 npm run test:components  # component tests in the installed Edge or Chrome
 npm run test:ui          # screen and accessibility tests in Playwright
 npm run test:e2e         # real-app tests, which need tauri-driver and msedgedriver
+npm run audit:layout      # layout audit ratchet (tests/ui/audit); timing-dependent findings are listed as intermittent
 npm run perf:typing      # the typing latency benchmark
 npm run docs:features    # rebuild docs/FEATURE-LIST.md from the app's registries
 cargo test --workspace   # Rust tests
