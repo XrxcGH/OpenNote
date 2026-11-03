@@ -28,7 +28,7 @@ export type { Params, ParamsArg } from './params';
 
 type Part =
   | { kind: 'text'; text: string }
-  | { kind: 'arg'; name: string }
+  | { kind: 'arg'; name: string; raw: string }
   | { kind: 'plural' | 'select'; name: string; branches: Record<string, Part[]> };
 
 const cache = new Map<string, Part[]>();
@@ -75,7 +75,7 @@ function parse(message: string): Part[] {
     if (trimmedKind === 'plural' || trimmedKind === 'select') {
       parts.push({ kind: trimmedKind, name: name.trim(), branches: parseBranches(rest.join(',')) });
     } else {
-      parts.push({ kind: 'arg', name: name.trim() });
+      parts.push({ kind: 'arg', name: name.trim(), raw: message.slice(open, end + 1) });
     }
     i = end + 1;
   }
@@ -88,6 +88,8 @@ function render(parts: readonly Part[], values: Record<string, unknown>, count?:
       if (part.kind === 'text')
         return count === undefined ? part.text : part.text.replaceAll('#', numbers.format(count));
       const value = values[part.name];
+      // Braces that name nothing the caller passed are literal text, such as the set {a, b} or LaTeX e^{pT}.
+      if (part.kind === 'arg' && value === undefined && !(part.name in values)) return part.raw;
       if (part.kind === 'arg') return typeof value === 'number' ? numbers.format(value) : String(value);
       if (part.kind === 'select') return render(part.branches[String(value)] ?? part.branches.other ?? [], values);
       const n = Number(value);

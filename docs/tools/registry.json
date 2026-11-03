@@ -465,6 +465,13 @@
       "flag": "audio.record"
     },
     {
+      "id": "audio.options",
+      "title": "Recording options",
+      "category": "insert",
+      "keys": [],
+      "flag": "audio.record"
+    },
+    {
       "id": "audio.pause",
       "title": "Pause recording",
       "category": "insert",

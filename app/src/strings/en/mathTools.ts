@@ -11,6 +11,7 @@ export const mathTools = {
     integralTitle: 'Steps for the integral',
     limitTitle: 'Steps for the limit',
     sumTitle: 'Steps for the sum',
+    equationTitle: 'Steps for the equation',
     noEquation: 'Edit an equation first, then use this.',
     insert: 'Insert steps',
     insertLabel: 'Insert these steps on the page, below the equation',
@@ -27,8 +28,13 @@ export const mathTools = {
       undefinedOnInterval:
         'The function is undefined somewhere between the limits, so this integral has no ordinary value.',
       tooLarge: 'This is too large to work out step by step.',
+      noRealSolution: 'This equation has no real solution, so there is nothing to show step by step.',
     },
     rules: {
+      collect: 'Move every term to the left side and add up like terms.',
+      isolate: 'Move the number to the right side by doing the same to both sides.',
+      divideBoth: 'Divide both sides by the number in front of the letter.',
+      quadraticFormula: 'A quadratic ax² + bx + c = 0 has x = (−b ± √(b² − 4ac)) / 2a.',
       constant: 'Constant rule: a constant has no rate of change, and its integral is the constant times x.',
       variable: 'The derivative of the variable itself is 1.',
       sum: 'Sum rule: work out each term on its own.',
@@ -79,6 +85,10 @@ export const mathTools = {
       seriesNumeric: 'Partial sums, with the rest estimated from how fast the terms shrink.',
     },
     names: {
+      collect: 'Collect terms',
+      isolate: 'Isolate the letter',
+      divideBoth: 'Divide both sides',
+      quadraticFormula: 'Quadratic formula',
       constant: 'Constant rule',
       variable: 'Variable rule',
       sum: 'Sum rule',

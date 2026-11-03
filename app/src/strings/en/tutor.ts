@@ -84,6 +84,7 @@ export const tutor = {
   },
   errors: {
     nothing: 'There is no problem to work with yet. Select it on the page, or type it in the box.',
+    questionTooLong: 'That question is longer than the tutor reads. Keep it under 1,000 characters.',
     tooLong: 'That is more text than the tutor reads at once. Pick the problem and your working only.',
     handwritingOff:
       'Reading handwriting is off, so the tutor can use typed lines only. Turn it on in Settings, then Ink.',

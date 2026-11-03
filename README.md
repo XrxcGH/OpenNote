@@ -56,7 +56,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 - [Typed notes](docs/help/typed-notes.md): text, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.
-- [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page.
+- [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page; a cell from a newer version opens read-only instead of being changed.
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
@@ -71,7 +71,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Record and listen
 
-- [Recording](docs/help/recording.md): recording with stamped notes, trimming, transcript blocks, speakers, and meeting recaps.
+- [Recording](docs/help/recording.md): recording with stamped notes, trimming, transcript blocks, speakers, and meeting recaps. A full walk of recording, captions, dictation, and read aloud fixed start-up, command, length, rename, and layout bugs.
 - [On-device intelligence](docs/help/on-device-intelligence.md): text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on.
 
 ### Math and homework
@@ -79,7 +79,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 - [Math and graphs](docs/help/math-and-graphs.md): equations, quick math, Check my work on your steps, the grapher, diagrams from text, and mind maps.
 - [Math solvers](docs/help/math-solvers.md): calculus, engineering, and statistics problems worked step by step.
 - [3D graphs, vectors, and motion](docs/help/3d-graphs-vectors-and-motion.md): surfaces and curves in space, vectors, lines and planes, solids of revolution, and projectiles.
-- [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
+- [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away. Long questions and the full hint ladder now work, and absurd aerospace inputs are reported by name instead of crashing.
 - [Study tools](docs/help/study-tools.md): flashcards, practice exams, Anki decks, study tape, Upcoming, timers, a calculator, and citations.
 
 ### Subject and engineering kits

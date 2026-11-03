@@ -106,3 +106,10 @@ describe('the English strings', () => {
     }
   });
 });
+
+describe('literal braces', () => {
+  it('keeps braces that name no passed value', () => {
+    expect(formatMessage('Phase e^{i(kz − ωt)} over {a, b}')).toBe('Phase e^{i(kz − ωt)} over {a, b}');
+    expect(formatMessage('{n} in {a, b}', { n: 2 })).toBe('2 in {a, b}');
+  });
+});

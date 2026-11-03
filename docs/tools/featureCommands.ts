@@ -182,6 +182,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'window.systemMenu': 'Opens the window menu, with Move, Size, and Close.',
   'audio.record': 'Starts recording audio on the page.',
   'audio.stop': 'Stops the recording.',
+  'audio.options': 'Opens the recording options: the microphone, the format, and the quality.',
   'audio.pause': 'Pauses the recording.',
   'audio.play': 'Plays the recording, or pauses it.',
   'audio.skipBack': 'Skips the recording back 10 seconds.',

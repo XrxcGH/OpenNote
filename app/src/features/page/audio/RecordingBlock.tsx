@@ -20,6 +20,7 @@ import { IconButton, Switch } from '../../../ui';
 import audioStyles from './audio.module.css';
 import styles from './block.module.css';
 import { activeNs, recordingIdOf } from './blocks';
+import { nameOf, positionOfCapture } from './entry';
 import { holdHint, recordingEntries, recoveryHolds } from './entries';
 import { addFlag, removeFlag } from './flagEdits';
 import { clock, clockNs, lengthNs } from './format';
@@ -73,7 +74,7 @@ function FlagList({ pageId, block, entry }: { pageId: string; block: string; ent
   return (
     <ul className={styles.flags} aria-label={t('audio.block.flags')}>
       {list.map((flag) => {
-        const time = clockNs(flag.captureNs - entry.startedNs);
+        const time = clockNs(positionOfCapture(entry, flag.captureNs));
         return (
           <li key={flag.id} className={styles.flag}>
             <FlagIcon aria-hidden="true" />
@@ -172,10 +173,15 @@ function Transport({ open }: { open: Open }) {
             PageUp: 30,
             PageDown: -30,
           };
+          if (event.altKey || event.ctrlKey || event.metaKey) return;
+          // Home and End go to the ends. The browser's own End stops at the last whole step, short of the end.
+          const ends: Record<string, number> = { Home: 0, End: total };
+          const end = ends[event.key];
           const seconds = keys[event.key];
-          if (seconds === undefined || event.altKey || event.ctrlKey || event.metaKey) return;
+          if (end === undefined && seconds === undefined) return;
           event.preventDefault();
-          const to = Math.min(Math.max(position + seconds * 1e9, 0), total);
+          event.stopPropagation();
+          const to = end ?? Math.min(Math.max(position + (seconds ?? 0) * 1e9, 0), total);
           void open.whenOpen(() => seek(to));
         }}
       />
@@ -192,7 +198,7 @@ function Extras(props: { open: Open; block: BlockJson; entry: RecordingEntry; pa
   return (
     <>
       <select
-        className={audioStyles.select}
+        className={`${audioStyles.select} ${styles.speed}`}
         aria-label={t('audio.block.speed')}
         value={open.status?.speed ?? 1}
         onChange={(event) => {
@@ -250,8 +256,10 @@ function Player({ block, entry, pageId }: { block: BlockJson; entry: RecordingEn
       </div>
     );
   }
+  const name = nameOf(entry);
   return (
     <div className={styles.player}>
+      {name && <strong className={styles.name}>{name}</strong>}
       <div className={styles.controls}>
         <Transport open={open} />
         <Extras open={open} block={block} entry={entry} pageId={pageId} />

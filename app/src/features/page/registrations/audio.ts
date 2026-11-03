@@ -38,10 +38,9 @@ const SPECS: readonly Spec[] = [
     key: 'Alt+Shift+A',
     flag: 'audio.record',
     // Always available, because the command bar reads it when it draws, before a page is shown; with no page open,
-    // the command says so.
+    // the command says so. It never stops a recording that runs (Stop recording does that): it says one is running.
     run: async () => {
-      const commands = await work();
-      await (running() ? commands.stop() : commands.record());
+      await (await work()).record();
     },
   },
   {
@@ -51,6 +50,13 @@ const SPECS: readonly Spec[] = [
     flag: 'audio.record',
     when: running,
     run: async () => (await work()).stop(),
+  },
+  {
+    id: 'audio.options',
+    title: 'audio.commands.options',
+    key: '',
+    flag: 'audio.record',
+    run: async () => (await import('../audio/openOptions')).openOptions(),
   },
   {
     id: 'audio.pause',
