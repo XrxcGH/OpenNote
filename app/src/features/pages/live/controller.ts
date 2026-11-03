@@ -116,6 +116,8 @@ class PagesView {
     const element = document.createElement('div');
     element.className = className;
     element.setAttribute('aria-hidden', 'true');
+    // Not content: the page's extent leaves it out (layout/flow.ts), since it is drawn to the world's size.
+    element.dataset.backdrop = '';
     this.mounted.viewport.world.prepend(element);
     return element;
   }
