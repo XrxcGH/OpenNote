@@ -75,6 +75,15 @@ function readChoices(): RecordingChoices {
 
 export const recordingChoices = createStore<RecordingChoices>(readChoices(), 'audio recording choices');
 
+// Settings and the Options popover share these choices, and a second window (a torn-off page or Settings) has its
+// own copy of this store. Without following the other window's writes, the copies drift apart, and the next change
+// made in one window writes its stale copy back over the other's choice.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === CHOICES_KEY) recordingChoices.set(readChoices());
+  });
+}
+
 export function chooseRecording(patch: Partial<RecordingChoices>): void {
   const next = { ...recordingChoices.get(), ...patch };
   recordingChoices.set(next);

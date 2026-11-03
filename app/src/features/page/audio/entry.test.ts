@@ -3,7 +3,7 @@ import type { RecordingEntry } from '../../../core/audio';
 import { createWebAudio, spansOf } from '../../../platform/web/audio';
 import type { BlockJson } from '../../../services/pages/types';
 import { entriesOf, recordingEntries } from './entries';
-import { activeNs, dataOf, fallbackFor } from './entry';
+import { activeNs, dataOf, fallbackFor, positionOfCapture } from './entry';
 import { clock, clockNs } from './format';
 import { RECORDING_TYPE } from './state';
 
@@ -131,5 +131,16 @@ describe('the web platform recorder', () => {
     const recovered = await audio.host.recover('x', cut);
     expect(recovered.entry.state).toBe('recovered');
     expect(activeNs(recovered.entry)).toBeGreaterThan(0);
+  });
+});
+
+describe('where a flag sits', () => {
+  it('leaves out the time paused before it, so a flag after a pause stays inside the recording', () => {
+    const paused = entry({ pauses: [{ pausedNs: 20 * SECOND, resumedNs: 24 * SECOND }] });
+    expect(positionOfCapture(paused, 15 * SECOND)).toBe(5 * SECOND);
+    expect(positionOfCapture(paused, 30 * SECOND)).toBe(16 * SECOND);
+    // A flag dropped while paused sits where the audio resumes.
+    expect(positionOfCapture(paused, 22 * SECOND)).toBe(10 * SECOND);
+    expect(positionOfCapture(paused, 70 * SECOND)).toBe(activeNs(paused));
   });
 });

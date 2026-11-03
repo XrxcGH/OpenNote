@@ -568,7 +568,12 @@ class MathView implements NodeView {
       else field.value = result.latex;
       this.showPreview();
       this.host.announce(t('smart.math.done'));
-    } else this.host.announce(t(`smart.math.${result.reason}`));
+    } else {
+      // The sentence shows under the field too, so a press that changes nothing still answers.
+      const message = t(`smart.math.${result.reason}`);
+      if (this.problem) this.problem.textContent = message;
+      this.host.announce(message);
+    }
     field.focus();
   }
 

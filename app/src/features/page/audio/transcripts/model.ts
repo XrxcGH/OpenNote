@@ -169,6 +169,21 @@ export function shiftBy(data: TranscriptData, deltaMs: number): TranscriptData {
   };
 }
 
+/**
+ * The transcript of a recording that now ends at `lengthMs`, as after trimming its end: the lines said after the end
+ * go, and a line that runs past it ends there. The summary and chapters go when a line goes, as removeRange does.
+ */
+export function endAt(data: TranscriptData, lengthMs: number): TranscriptData {
+  const kept = data.lines.filter((line) => line.startMs < lengthMs);
+  const lines = kept.map((line) => (line.endMs > lengthMs ? { ...line, endMs: lengthMs } : line));
+  return {
+    ...data,
+    lines,
+    summary: kept.length === data.lines.length ? data.summary : '',
+    chapters: kept.length === data.lines.length ? data.chapters : [],
+  };
+}
+
 /** The lines before and after a split position. The second half's times start again from zero. */
 export function splitAt(data: TranscriptData, atMs: number): [TranscriptData, TranscriptData] {
   const first = data.lines.filter((line) => line.startMs < atMs);
@@ -208,6 +223,28 @@ export function fromSegments(
     chapters: [],
     source,
   };
+}
+
+/**
+ * The segments without what a speech model writes for sound that has no words. That is markers in square brackets
+ * such as `[BLANK_AUDIO]` and `[ Pause ]`, even split over two segments. It is also a segment that is one marker in
+ * parentheses such as `(silence)`, and a segment with no letters or digits at all.
+ */
+export function withoutNonSpeech(segments: readonly Segment[]): Segment[] {
+  const kept: Segment[] = [];
+  let inside = false;
+  for (const segment of segments) {
+    let text = '';
+    for (const char of segment.text) {
+      if (inside) inside = char !== ']';
+      else if (char === '[') inside = true;
+      else text += char;
+    }
+    const words = text.replace(/\s+/g, ' ').trim();
+    if (/^\(.*\)$/.test(words) || !/[\p{L}\p{N}]/u.test(words)) continue;
+    kept.push({ ...segment, text: words });
+  }
+  return kept;
 }
 
 /** "00:01:02,500" or "1:02.5" or "62" as milliseconds, or null. */
@@ -264,7 +301,10 @@ const LEADING_STAMP = /^\[?((?:\d+:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?)\]?\s*[-–:]
  * Reads a transcript from text: SRT or WebVTT captions, lines that start with a time such as `[12:05] words`, or plain
  * paragraphs. Plain paragraphs have no times, so they are spread over `durationMs` by their length.
  */
-export function parseTranscript(text: string, durationMs: number): { segments: Segment[]; timed: boolean } {
+export function parseTranscript(
+  text: string,
+  durationMs: number,
+): { segments: Segment[]; timed: boolean; malformed: boolean } {
   const rows = text
     .replace(/\r\n?/g, '\n')
     .replace(/^\uFEFF/, '')
@@ -278,7 +318,12 @@ export function parseTranscript(text: string, durationMs: number): { segments: S
     while (i + 1 < rows.length && rows[i + 1].trim() !== '') words.push(rows[(i += 1)].trim());
     cues.push({ startMs: start, endMs: end, text: cueText(words.join(' ')) });
   }
-  if (cues.length > 0) return { segments: cues, timed: true };
+  if (cues.length > 0) return { segments: cues, timed: true, malformed: false };
+  // Text that reads as captions (a WebVTT header, or a cue's time and arrow) but has no cue that could be read is a
+  // broken caption file, not paragraphs: taking its timings as words would make a transcript of garbage.
+  if (/^\s*WEBVTT\b|^\s*(?:\d+:)?\d{1,2}:\d{2}[,.]\d{1,3}\s*-+>/m.test(text)) {
+    return { segments: [], timed: false, malformed: true };
+  }
   const stamped: Segment[] = [];
   for (const row of rows) {
     const found = LEADING_STAMP.exec(row.trim());
@@ -290,7 +335,7 @@ export function parseTranscript(text: string, durationMs: number): { segments: S
     stamped.forEach(
       (segment, index) => (segment.endMs = stamped[index + 1]?.startMs ?? Math.max(segment.startMs, durationMs)),
     );
-    return { segments: stamped, timed: true };
+    return { segments: stamped, timed: true, malformed: false };
   }
   const paragraphs = text
     .split(/\n\s*\n|\n/)
@@ -304,7 +349,7 @@ export function parseTranscript(text: string, durationMs: number): { segments: S
     at += length;
     return segment;
   });
-  return { segments: spread, timed: false };
+  return { segments: spread, timed: false, malformed: false };
 }
 
 const escapeHtml = (text: string): string =>

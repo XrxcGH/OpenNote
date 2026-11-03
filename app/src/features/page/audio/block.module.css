@@ -32,6 +32,22 @@
     gap: var(--space-2);
   }
 
+  /* While recording, the level is the card's sign of life, so its meter is thick enough to see move. */
+  .live > [role='meter'] {
+    block-size: var(--space-3);
+  }
+
+  /* The speed menu is as wide as its words, so play, the position, the speed, Flag, and More share one row. */
+  .controls .speed {
+    flex: none;
+    inline-size: auto;
+  }
+
+  .name {
+    overflow-wrap: anywhere;
+    font-weight: var(--font-weight-semibold);
+  }
+
   .spacer {
     flex: 1;
   }

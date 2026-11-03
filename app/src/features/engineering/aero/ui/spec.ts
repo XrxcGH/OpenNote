@@ -250,9 +250,16 @@ export type RunResult =
 /** Runs a tool, turning an input problem into a failure the window says in words. Other errors are bugs. */
 export function runSpec(spec: ToolSpec, values: Values, system: UnitSystem = 'si'): RunResult {
   try {
-    return { ok: true, output: spec.run(readInputs(spec, values, system)) };
+    const output = spec.run(readInputs(spec, values, system));
+    // An absurd input (1e12 of anything) makes an engine return Infinity or NaN: say so instead of printing it.
+    if (output.rows.some((row) => row.value !== undefined && !Number.isFinite(row.value))) {
+      return { ok: false, error: new AeroError('outOfRange') };
+    }
+    return { ok: true, output };
   } catch (error) {
     if (error instanceof AeroError) return { ok: false, error };
+    // A value too large for the arrays and loops an engine builds (RangeError) is an input problem, not a bug.
+    if (error instanceof RangeError) return { ok: false, error: new AeroError('outOfRange') };
     throw error;
   }
 }
