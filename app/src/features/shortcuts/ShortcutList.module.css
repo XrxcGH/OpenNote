@@ -129,9 +129,14 @@
     color: var(--color-text-secondary);
   }
 
+  /* Change and Reset sit side by side when they fit; in a narrow column Reset wraps under Change instead of
+     running back over the keys cell (full walk VA-7). */
   .actions {
-    white-space: nowrap;
     text-align: end;
+  }
+
+  .actions > * {
+    margin-block: calc(var(--space-1) / 2);
   }
 
   .chords,

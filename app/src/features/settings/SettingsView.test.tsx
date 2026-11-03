@@ -147,4 +147,27 @@ describe('the Settings sections and screens', () => {
     expect(await screen.findByRole('navigation', { name: 'Settings sections' })).toBeTruthy();
     expect(getLocation().view).toBe('settings');
   });
+
+  it('is two screens in the medium size class too, as at 640 px or 200 percent text', async () => {
+    await renderApp({ sizeClass: 'medium' });
+    await pressChord('Ctrl+,');
+    await expectFocus(await screen.findByRole('heading', { level: 1, name: 'Settings' }));
+    expect(screen.queryByRole('heading', { level: 1, name: 'General' })).toBeNull();
+  });
+
+  it('moves between the section links with the arrow keys, Home and End', async () => {
+    await renderApp();
+    await openSettings();
+    const nav = screen.getByRole('navigation', { name: 'Settings sections' });
+    const links = within(nav).getAllByRole('link');
+    links[0].focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(links[1]);
+    await userEvent.keyboard('{End}');
+    expect(document.activeElement).toBe(links.at(-1));
+    await userEvent.keyboard('{ArrowUp}');
+    expect(document.activeElement).toBe(links.at(-2));
+    await userEvent.keyboard('{Home}');
+    expect(document.activeElement).toBe(links[0]);
+  });
 });

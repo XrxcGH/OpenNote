@@ -104,11 +104,32 @@ function Notices() {
   );
 }
 
-/** The features that need Windows, on macOS and Linux (ADR 0055). Nothing shows on Windows. */
+/** What this computer can use: touch and pen input it reports, and that every feature works on Windows. */
+function WorksHere() {
+  const touch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
+  return (
+    <section className={styles.block} aria-labelledby="settings-about-limits">
+      <h2 id="settings-about-limits" tabIndex={-1}>
+        {t('settings.about.worksTitle')}
+      </h2>
+      <p className={styles.help}>{t('settings.about.worksWindows')}</p>
+      <ul className={styles.limits}>
+        <li>{t(touch ? 'settings.about.touchYes' : 'settings.about.touchNo')}</li>
+        <li>{t('settings.about.worksHello')}</li>
+        <li>{t('settings.about.worksAudio')}</li>
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * What works on this computer (ADR 0055): on macOS and Linux, the features that need Windows; on Windows, that
+ * everything works, with the touch and pen input the computer reports (full walk A-A03-9).
+ */
 function SystemLimits() {
   const system = hostSystem();
   const limits = systemLimits(system);
-  if (limits.length === 0) return null;
+  if (limits.length === 0) return <WorksHere />;
   return (
     <section className={styles.block} aria-labelledby="settings-about-limits">
       <h2 id="settings-about-limits" tabIndex={-1}>

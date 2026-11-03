@@ -24,7 +24,12 @@
     scroll-padding-block: var(--space-3);
   }
 
-  :global(:root[data-size-class='compact']) .body {
+  /* Beside the section, the list measures its height from this scroller, so its own scroll bar ends inside it. */
+  .page:not([data-stacked]) .body {
+    container-type: size;
+  }
+
+  .page[data-stacked] .body {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -34,7 +39,7 @@
     position: sticky;
     inset-block-start: 0;
     align-self: start;
-    max-block-size: calc(100dvh - var(--size-title-bar) - var(--space-10) - var(--space-3));
+    max-block-size: 100cqb;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
