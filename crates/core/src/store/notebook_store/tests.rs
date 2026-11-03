@@ -469,6 +469,41 @@ fn a_group_moves_to_another_notebook_with_its_sections() {
 }
 
 #[test]
+fn moving_a_section_away_and_back_keeps_one_original_in_trash() {
+    let kit = Kit::new();
+    let mut store = kit.open().unwrap();
+    let s1 = store.create_section("Week 1", None, None).unwrap();
+    store.create_page(s1, None, None, "Notes").unwrap();
+    let target_root = create_notebook(&kit.env, Path::new("/notes"), "Archive").unwrap();
+    let mut target = NotebookStore::open(
+        kit.env.clone(),
+        &target_root,
+        PageCache::detached(),
+        Box::new(crate::store::tree_log::MemIntentLog::new()),
+    )
+    .unwrap();
+    let to = NodePlacement {
+        parent: ParentRef::Notebook,
+        before: None,
+    };
+    let holding = |store: &NotebookStore| {
+        store
+            .trash_items()
+            .iter()
+            .filter(|item| item.contents.contains(&s1.0))
+            .count()
+    };
+    // Away, back (an undo), and away again (a redo).
+    store.move_section_to(NodeRef::Section(s1), &mut target, &to).unwrap();
+    target.move_section_to(NodeRef::Section(s1), &mut store, &to).unwrap();
+    assert_eq!(holding(&store), 0, "the live section has no stale copy in Trash");
+    assert_eq!(holding(&target), 1);
+    store.move_section_to(NodeRef::Section(s1), &mut target, &to).unwrap();
+    assert_eq!(holding(&store), 1);
+    assert_eq!(holding(&target), 0);
+}
+
+#[test]
 fn equal_order_keys_get_new_keys_when_a_node_goes_between_them() {
     let a = (OrderKey::parse("a0").unwrap(), Id::from_parts(1, 1));
     let b = (OrderKey::parse("a0").unwrap(), Id::from_parts(2, 2));
