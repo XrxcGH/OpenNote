@@ -86,7 +86,16 @@ pub fn is_app_url(url: &tauri::Url) -> bool {
 /// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
 /// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
 /// when the page reports no caption buttons in time or its process fails.
+///
+/// A failure is logged here: Tauri turns the setup error into a panic whose message the panic log leaves out (it is
+/// built at run time), so the log said only where Tauri panicked (full walk A-A01-6).
 pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+    build_main(app).inspect_err(|error| {
+        ::log::error!("The main window could not be made, so OpenNote could not start: {error}");
+    })
+}
+
+fn build_main(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let windows = &app.config().app.windows;
     let config = windows
         .iter()
