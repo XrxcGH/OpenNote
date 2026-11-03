@@ -8,7 +8,7 @@ import { XIcon } from '@phosphor-icons/react/dist/csr/X';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { Button, IconButton, TextField } from '../../ui';
-import type { Plan } from './ladder';
+import { LAST_RUNG, type Plan } from './ladder';
 import {
   answerConsentCard,
   askTutor,
@@ -130,7 +130,7 @@ function Actions({ plan, busy, rung }: { plan: Plan; busy: boolean; rung: number
   return (
     <footer className={styles.footer}>
       <div className={styles.row}>
-        <Button variant="primary" onClick={() => void nextHint()} disabled={busy}>
+        <Button variant="primary" onClick={() => void nextHint()} disabled={busy || rung >= LAST_RUNG}>
           {rung === 0 ? t('tutor.panel.hint') : t('tutor.panel.nextHint')}
         </Button>
         {plan.kind === 'mistake' && (
