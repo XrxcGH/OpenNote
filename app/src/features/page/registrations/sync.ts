@@ -16,7 +16,7 @@ import { RedoButton, UndoButton } from '../sync/UndoRedoButtons';
 export function pageHasUndo(ctx?: CommandContext, direction: 'undo' | 'redo' = 'undo'): boolean {
   const queue = shownQueue.get();
   if (queue === null) return false;
-  // The command bar, the palette and menus run Undo with focus on a control or the palette, not the page: the shown
+  // The command bar, the palette, and menus run Undo with focus on a control or the palette, not the page: the shown
   // page undoes when it can, as the title bar's button does (Beta 8 walk A-A05-10). Focus in the tree keeps the tree's.
   if (ctx && ctx.source !== 'keyboard' && ctx.source !== 'test') {
     const outside = ctx.focusZone === 'notebooks' || ctx.focusZone === 'pages' || ctx.focusZone === 'dialog';
