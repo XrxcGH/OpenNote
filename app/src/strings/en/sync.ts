@@ -169,6 +169,9 @@ export const sync = {
     mismatch: 'The two passphrases differ. Type them again.',
     tooShort: 'Use at least 10 characters.',
     needPlace: 'Fill in where sync keeps its data.',
+    folderNotWritable:
+      'OpenNote can’t save files in that folder. Check that it exists and that you can save files in it.',
+    folderNotAbsolute: 'Type the whole path of a folder on this computer, such as C:\\Users\\Sam\\OneDrive\\Sync.',
     howLabel: 'How do you want to join?',
     byCode: 'With a pairing code',
     byCodeHelp: 'Make one on a device that already syncs: Settings, Sync, Add a device.',
