@@ -22,6 +22,7 @@ import type { PageLayout, PageViewSpec } from '../layout';
 import { GAP_HALF, MARGIN_PRESETS, MAX_SHEETS } from '../pagination';
 import { PRESETS, TEMPLATE_IDS, infinitePaths, paperLattice, paperPaths, paperRules, paperSvg } from '../paper';
 import type { PageBackground } from '../paper';
+import { DRAWING_KEY, readDrawing } from '../paper/drawing';
 import { lightTheme } from '../export/style';
 import { paperStyle } from '../print/css';
 import { currentSheet, fitSheet, openingZoom } from '../zoom';
@@ -43,7 +44,9 @@ const MAX_PAPER_SIDE = 40_000;
 /** The preset a background stands for, or 'custom'. */
 function presetOf(background: PageViewSpec['background']): string {
   if (background.pattern === 'template') {
-    return Object.entries(TEMPLATE_IDS).find(([, id]) => id === background.template)?.[0] ?? 'custom';
+    // A built-in template names itself in its drawing; background.template holds only saved templates' IDs.
+    const named = background.template ?? readDrawing(background.extra[DRAWING_KEY])?.id;
+    return Object.entries(TEMPLATE_IDS).find(([, id]) => id === named)?.[0] ?? 'custom';
   }
   for (const [id, preset] of Object.entries(PRESETS) as [string, PageBackground][]) {
     if (preset.pattern !== background.pattern) continue;
