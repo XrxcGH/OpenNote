@@ -7983,6 +7983,1073 @@
         "minReaderVersion": 1,
         "minWriterVersion": 1
       }
+    },
+    {
+      "name": "font with an apostrophe",
+      "rules": [
+        "R-VAL-2",
+        "R-INL-2",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-font=\"O'Hare Sans\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-font=\"O'Hare Sans\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "font with a double quote",
+      "rules": [
+        "R-VAL-2",
+        "R-INL-1",
+        "R-INL-2",
+        "R-INL-5"
+      ],
+      "markdown": "a <span data-font=\"Times \"New\" Roman\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a <span data-font=\"Times \"New\" Roman\">word</span> b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "canonical": "a \\<span data-font=\"Times \"New\" Roman\">word\\</span> b",
+      "text": "a <span data-font=\"Times \"New\" Roman\">word</span> b",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "hostile": true
+    },
+    {
+      "name": "font of one character",
+      "rules": [
+        "R-MRK-1",
+        "R-VAL-2"
+      ],
+      "markdown": "a <span data-font=\"X\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "font": "X"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "empty font name",
+      "rules": [
+        "R-VAL-2",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-font=\"\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-font=\"\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "font token in uppercase",
+      "rules": [
+        "R-VAL-2",
+        "R-THM-2",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-font=\"+Body\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-font=\"+Body\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size of 30 digits",
+      "rules": [
+        "R-VAL-1",
+        "R-VAL-3",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-size=\"999999999999999999999999999999\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-size=\"999999999999999999999999999999\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size with a leading zero",
+      "rules": [
+        "R-VAL-1",
+        "R-NUM-1",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-size=\"010\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-size=\"010\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size with a plus sign",
+      "rules": [
+        "R-VAL-1",
+        "R-NUM-1",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-size=\"+10.5\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-size=\"+10.5\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size in exponent form",
+      "rules": [
+        "R-VAL-1",
+        "R-NUM-1",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-size=\"1e3\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-size=\"1e3\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size 10.25 off the step",
+      "rules": [
+        "R-VAL-3",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-size=\"10.25\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-size=\"10.25\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size 1.5",
+      "rules": [
+        "R-MRK-2",
+        "R-VAL-3"
+      ],
+      "markdown": "a <span data-size=\"1.5\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "size": "1.5"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "size 1637.5",
+      "rules": [
+        "R-MRK-2",
+        "R-VAL-3"
+      ],
+      "markdown": "a <span data-size=\"1637.5\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "size": "1637.5"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "negative size",
+      "rules": [
+        "R-VAL-3",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-size=\"-12\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-size=\"-12\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "weight 200",
+      "rules": [
+        "R-MRK-5",
+        "R-VAL-4"
+      ],
+      "markdown": "a <span data-weight=\"200\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "weight": "200"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "weight 800",
+      "rules": [
+        "R-MRK-5",
+        "R-VAL-4"
+      ],
+      "markdown": "a <span data-weight=\"800\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "weight": "800"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "weight of 30 digits",
+      "rules": [
+        "R-VAL-1",
+        "R-VAL-4",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-weight=\"900000000000000000000000000000\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-weight=\"900000000000000000000000000000\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "weight -100",
+      "rules": [
+        "R-VAL-4",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-weight=\"-100\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-weight=\"-100\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "weight bold as a word",
+      "rules": [
+        "R-VAL-4",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-weight=\"bold\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-weight=\"bold\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "strike triple",
+      "rules": [
+        "R-MRK-4",
+        "R-VAL-6",
+        "R-INL-7"
+      ],
+      "markdown": "a <del data-line=\"triple\">word</del> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<del data-line=\"triple\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "underline style in the wrong case",
+      "rules": [
+        "R-VAL-5",
+        "R-INL-7"
+      ],
+      "markdown": "a <u data-line=\"Double\">word</u> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<u data-line=\"Double\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "tint syntax on a theme color is foreign",
+      "rules": [
+        "R-VAL-7",
+        "R-VAL-8",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-color=\"theme:accent1/100\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-color=\"theme:accent1/100\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "a tint is stored as its hex value",
+      "rules": [
+        "R-MRK-16",
+        "R-VAL-7",
+        "R-VAL-8"
+      ],
+      "markdown": "a <span data-color=\"#7f9fbf\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "color": "#7f9fbf"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      }
+    },
+    {
+      "name": "color in uppercase hex",
+      "rules": [
+        "R-VAL-7",
+        "R-INL-7"
+      ],
+      "markdown": "a <span data-color=\"#FFEE00\">word</span> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<span data-color=\"#FFEE00\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "foreign inside foreign around a known mark",
+      "rules": [
+        "R-INL-9",
+        "R-INL-10",
+        "R-MRK-24"
+      ],
+      "markdown": "<span data-a=\"1\"><span data-b=\"1\"><u data-line=\"double\">x</u></span></span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "underline": {
+                    "line": "double"
+                  }
+                },
+                {
+                  "foreign": "<span data-a=\"1\">"
+                },
+                {
+                  "foreign": "<span data-b=\"1\">"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "canonical": "<u data-line=\"double\"><span data-a=\"1\"><span data-b=\"1\">x</span></span></u>",
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "an unclosed foreign tag before a pair",
+      "rules": [
+        "R-INL-5",
+        "R-INL-9"
+      ],
+      "markdown": "<span data-a=\"1\">x<span data-b=\"1\">y</span>z",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "<span data-a=\"1\">x",
+              "marks": []
+            },
+            {
+              "text": "y",
+              "marks": [
+                {
+                  "foreign": "<span data-b=\"1\">"
+                }
+              ]
+            },
+            {
+              "text": "z",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "canonical": "\\<span data-a=\"1\">x<span data-b=\"1\">y</span>z",
+      "text": "<span data-a=\"1\">xyz",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "foreign tag that closes with another name",
+      "rules": [
+        "R-INL-4",
+        "R-INL-5"
+      ],
+      "markdown": "<span data-a=\"1\">x</u>y",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "<span data-a=\"1\">x</u>y",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "canonical": "\\<span data-a=\"1\">x\\</u>y",
+      "text": "<span data-a=\"1\">x</u>y",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "hostile": true
+    },
+    {
+      "name": "foreign pair inside an unclosed foreign tag",
+      "rules": [
+        "R-INL-5",
+        "R-INL-9"
+      ],
+      "markdown": "<span data-a=\"1\"><span data-b=\"1\">x</span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "<span data-a=\"1\">",
+              "marks": []
+            },
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "foreign": "<span data-b=\"1\">"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "canonical": "\\<span data-a=\"1\"><span data-b=\"1\">x</span>",
+      "text": "<span data-a=\"1\">x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "an s tag with an unknown attribute",
+      "rules": [
+        "R-INL-1",
+        "R-INL-7",
+        "R-INL-9"
+      ],
+      "markdown": "a <s data-x=\"1\">word</s> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<s data-x=\"1\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "an ins tag with an unknown attribute",
+      "rules": [
+        "R-INL-1",
+        "R-INL-7",
+        "R-INL-9"
+      ],
+      "markdown": "a <ins data-x=\"1\">word</ins> b",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "word",
+              "marks": [
+                {
+                  "foreign": "<ins data-x=\"1\">"
+                }
+              ]
+            },
+            {
+              "text": " b",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "a word b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
     }
   ]
 }

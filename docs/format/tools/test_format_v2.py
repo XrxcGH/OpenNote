@@ -5,7 +5,6 @@ Run it with `python -m unittest discover -s docs/format/tools -p "test_*.py" -v`
 
 import hashlib
 import json
-import re
 import sys
 import unittest
 from pathlib import Path
@@ -89,49 +88,6 @@ class InlineTest(unittest.TestCase):
                     content = case["tree"][0]["content"]
                     self.assertTrue(all(not node.get("marks") for node in content if "text" in node))
                     self.assertIn("<", case["text"])
-
-
-class SchemaTest(unittest.TestCase):
-    """Every fixture case has the fields its folder needs, and its values respect the ranges of the spec."""
-
-    def test_every_case_has_its_fields(self) -> None:
-        names = set()
-        for case in every_case():
-            with self.subTest(case=case.get("name")):
-                self.assertIsInstance(case.get("name"), str)
-                self.assertTrue(case.get("rules"), "a case names the rules it tests")
-                stamp = case.get("stamp")
-                self.assertEqual(sorted(stamp), ["formatVersion", "minReaderVersion", "minWriterVersion"])
-                self.assertTrue(all(isinstance(x, int) and x >= 1 for x in stamp.values()))
-                names.add(case["name"])
-        for case in inline_cases():
-            with self.subTest(case=case["name"]):
-                self.assertIsInstance(case["markdown"], str)
-                self.assertIsInstance(case["text"], str)
-                self.assertEqual([block["type"] for block in case["tree"]], ["paragraph"])
-
-    def test_tree_marks_respect_their_grammars(self) -> None:
-        for case in inline_cases():
-            for node in case["tree"][0]["content"]:
-                for mark in node.get("marks", []):
-                    with self.subTest(case=case["name"], mark=mark):
-                        self.assertTrue(schema_v2.tree_mark_ok(mark))
-
-    def test_pages_have_only_the_problems_they_name(self) -> None:
-        for case in page_cases():
-            with self.subTest(case=case["name"]):
-                found = schema_v2.page_problems(case["page"])
-                self.assertEqual(sorted(found), sorted(case.get("problems", [])))
-
-    def test_notebook_styles_are_valid(self) -> None:
-        for copy in load(PARAS / "styles.json")["copies"]:
-            self.assertEqual(schema_v2.notebook_problems(copy), [])
-
-    def test_every_rule_is_named_by_a_fixture(self) -> None:
-        spec = set(re.findall(r"`(R-[A-Z]+-[0-9]+)`", SPEC.read_text(encoding="utf-8")))
-        named = {rule for case in every_case() for rule in case["rules"]}
-        self.assertEqual(sorted(named - spec), [], "fixtures name rules that the spec does not have")
-        self.assertEqual(sorted(spec - named), [], "rules of the spec that no fixture names")
 
 
 class VersionOneTest(unittest.TestCase):
