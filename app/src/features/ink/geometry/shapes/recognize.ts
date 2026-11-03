@@ -11,6 +11,8 @@ import { ELLIPSE_TOLERANCE, ellipseShape, fitEllipse } from './ellipse';
 import { shapePoints } from './generate';
 import { fitLine, LINE_TOLERANCE, snapSegment } from './lines';
 import { polygonCandidates } from './polygons';
+import { nodeCount } from './spline';
+import { splineFromInk } from './toSpline';
 import { SIMPLICITY } from './types';
 import type { Candidate, RecognizeOptions, ShapeMatch } from './types';
 
@@ -187,4 +189,27 @@ export function recognizeShape(points: readonly Vec[], options: RecognizeOptions
   const best = pickBest(candidates);
   if (!best) return null;
   return { shape: best.shape, points: shapePoints(best.shape), confidence: 1 - Math.min(1, best.ratio) / 2 };
+}
+
+/** A held curve turns at most this much in all: an S or a wave and a half. A scribble or a word turns more. */
+const MAX_CURVE_TURNING = 3 * Math.PI;
+/** And keeps to this many curve points. */
+const MAX_CURVE_NODES = 8;
+
+/**
+ * A held open stroke that no shape fits, as a smooth curve: a held S curve becomes a Curve with its points to edit
+ * (full walk 2, A1-A10-4). Closed strokes, scribbles, and strokes smaller than `minSize` stay ink.
+ */
+export function recognizeCurve(points: readonly Vec[], options: RecognizeOptions = {}): ShapeMatch | null {
+  const { minSize = DEFAULT_MIN_SIZE } = options;
+  const drawn = withoutRepeats(points);
+  const box = boundsOf(drawn);
+  const diagonal = Math.hypot(box.maxX - box.minX, box.maxY - box.minY);
+  const clean = drawn.length > 2 ? withoutHold(drawn, HOLD_REACH * diagonal) : drawn;
+  if (clean.length < 3 || diagonal < minSize) return null;
+  if (distance(clean[0], clean[clean.length - 1]) < CLOSE_GAP * polylineLength(clean)) return null;
+  if (totalTurning(simplify(clean, TURNING_SIMPLIFY * diagonal)) > MAX_CURVE_TURNING) return null;
+  const shape = splineFromInk(clean);
+  if (!shape || shape.closed || nodeCount(shape) > MAX_CURVE_NODES) return null;
+  return { shape, points: shapePoints(shape), confidence: 0.5 };
 }

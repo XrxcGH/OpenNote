@@ -19,6 +19,7 @@ import {
   followsEnd,
   inLineOfWriting,
   pivotOf,
+  recognizeCurve,
   recognizeShape,
   reshapeFor,
   smallAndQuick,
@@ -453,11 +454,10 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
   const points = g.builder.points;
   if (points.length < 4) return;
   const zoom = surface.cameraNow().zoom;
-  const match = recognizeShape(points, {
-    minSize: 16 / zoom,
-    width: g.style.width,
-    extra: isEnabled('ink.shapeTools'),
-  });
+  // A held open stroke no shape fits becomes a smooth curve, with curves on.
+  const match =
+    recognizeShape(points, { minSize: 16 / zoom, width: g.style.width, extra: isEnabled('ink.shapeTools') }) ??
+    (isEnabled('ink.splines') ? recognizeCurve(points, { minSize: 16 / zoom }) : null);
   if (!match) return;
   hold.shape = toPaper(g, surface, match);
   hold.snapAt = { x: hold.x, y: hold.y };

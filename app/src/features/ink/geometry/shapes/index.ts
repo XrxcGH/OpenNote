@@ -1,6 +1,6 @@
 // The shape recognizer's public face.
 
-export { recognizeShape } from './recognize';
+export { recognizeCurve, recognizeShape } from './recognize';
 export { besideBox, inLineOfWriting, smallAndQuick } from './handwriting';
 export { dragHandle, handlesOf } from './edit';
 export type { Handle } from './edit';
