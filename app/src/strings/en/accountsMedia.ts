@@ -18,6 +18,9 @@ export const accountsMedia = {
     confirm: 'Insert',
     unknown: 'That link is not one of the sites that can be shown on a page. It was left as it is.',
     liveOff: 'Live embeds are turned off.',
+    linked: 'That site can’t be shown on a page, so it went in as a normal link.',
+    notLink: 'That isn’t a web address. Paste a link that starts with https://.',
+    nowhere: 'Click in the page’s text first, then insert the link.',
     nothing: 'Open a page first.',
   },
   block: {
