@@ -170,4 +170,16 @@ describe('the Settings sections and screens', () => {
     await userEvent.keyboard('{Home}');
     expect(document.activeElement).toBe(links[0]);
   });
+
+  it('fills a wide window with columns of settings, the heading across them all', async () => {
+    await setViewport(2560, 1200);
+    await renderApp({ sizeClass: 'expanded' });
+    const heading = await openSettings();
+    const main = heading.parentElement!;
+    await waitFor(() => expect(main.children.length).toBeGreaterThan(3));
+    const lefts = new Set([...main.children].slice(1).map((child) => Math.round(child.getBoundingClientRect().left)));
+    expect(lefts.size).toBeGreaterThan(1);
+    const used = Math.max(...[...main.children].map((child) => child.getBoundingClientRect().right));
+    expect(used - main.getBoundingClientRect().left).toBeGreaterThan(main.clientWidth / 2);
+  });
 });
