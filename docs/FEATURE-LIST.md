@@ -640,7 +640,7 @@ The app registers 885 commands and 47 tool windows. 24 of the windows are subjec
 - **Breadcrumb.** Shows the notebook, section, and page you are on.
 - **Undo.** Undoes the last change.
 - **Redo.** Redoes the change you undid last.
-- **Save status.** Says Saving until an edit is written and Saved once it is, or Couldn't save, Offline, or Not responding.
+- **Save status.** Says Saving until an edit is written and Saved once it is, or Couldn't save, Offline, or Not responding. Choose Couldn't save to see why, then Retry or Copy text.
 - **Sync.** Says Synced, Syncing, Sync paused, Sync waiting, or Sync stopped, and opens sync.
 - **Working offline.** Shows that OpenNote makes no network requests right now.
 - **Recording.** Shows a recording and its time, and opens the recording controls.

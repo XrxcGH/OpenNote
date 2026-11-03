@@ -3,6 +3,7 @@
 // holds the shown page's view. Kept free of the page view's code, so start-up loads none of it.
 import type { Registry } from '../../registries';
 import { createRegistry } from '../../registries';
+import { setSaveRecovery } from '../../services/pages/saveHealth';
 import { createStore } from '../../state/store';
 import { dismissActionToasts } from '../../state/toasts';
 import type { MountedPage } from './mount';
@@ -48,3 +49,23 @@ export async function snapshotShownPage(title: string): Promise<import('../../se
 export function shownAssetUrl(asset: string): string | null {
   return shownMounted.get()?.page.assetUrl(asset) ?? null;
 }
+
+// The save notice (features/tree) retries the shown page and copies its text through this, so the tree needs no
+// import of the page view. Only the shown page is open in this window, so any other page answers "not here".
+setSaveRecovery({
+  holds: (page) => shownMounted.get()?.page.id === page,
+  async retry(page) {
+    const mounted = shownMounted.get();
+    if (mounted?.page.id !== page) return false;
+    await mounted.page.saveNow();
+    return true;
+  },
+  async text(page) {
+    if (shownMounted.get()?.page.id !== page) return null;
+    const json = await snapshotShownPage('');
+    if (!json) return null;
+    const blocks = json.blocks.filter((block) => block.type === 'text');
+    blocks.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0));
+    return blocks.map((block) => String(block.data.markdown ?? '')).join('\n\n');
+  },
+});

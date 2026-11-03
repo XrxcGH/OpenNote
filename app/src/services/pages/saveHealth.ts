@@ -16,9 +16,29 @@
 import { createStore } from '../../state/store';
 import type { SaveStatus } from '../notes';
 
+/** Why a page's last save failed, as the core reports it (`core:save-failed`). */
+export interface SaveFailure {
+  /** The core's error kind, such as `diskFull` or `readOnlyFile`. */
+  readonly kind: string;
+  /** Whether autosave tries again on its own. */
+  readonly retrying: boolean;
+}
+
+/** What the page that is shown lets the save notice do: save it now, and read its text so it can be copied. */
+export interface SaveRecovery {
+  /** Whether `page` is the one this window has open. */
+  holds(page: string): boolean;
+  /** Saves `page` now. Resolves false when this window can't (the page isn't open here); rejects when the save fails. */
+  retry(page: string): Promise<boolean>;
+  /** The text of `page` as the window holds it, or null when the page isn't open here. */
+  text(page: string): Promise<string | null>;
+}
+
 export interface SaveHealth {
   /** The pages whose last save failed, by ID. */
   readonly failing: ReadonlySet<string>;
+  /** Why each failing page's last save failed, by ID. */
+  readonly failures: ReadonlyMap<string, SaveFailure>;
   /** Whether a command has held the core for too long, so nothing reaches the disk until it returns. */
   readonly stalled: boolean;
   /** How many page batches are on their way to the core. */
@@ -30,7 +50,14 @@ export interface SaveHealth {
 }
 
 export const saveHealthStore = createStore<SaveHealth>(
-  { failing: new Set(), stalled: false, sending: 0, unwritten: new Map(), savedThrough: new Map() },
+  {
+    failing: new Set(),
+    failures: new Map(),
+    stalled: false,
+    sending: 0,
+    unwritten: new Map(),
+    savedThrough: new Map(),
+  },
   'saveHealth',
 );
 
@@ -125,10 +152,16 @@ export function coreBusy(): void {
   setCoreStalled(true);
 }
 
-export function pageSaveFailed(page: string): void {
+/** `page`'s save failed. `failure` says why, so the save notice can say it in plain words. */
+export function pageSaveFailed(page: string, failure: SaveFailure = { kind: 'io', retrying: true }): void {
   saveHealthStore.set((state) => {
-    if (state.failing.has(page)) return state;
-    return { ...state, failing: new Set([...state.failing, page]) };
+    const known = state.failures.get(page);
+    if (state.failing.has(page) && known?.kind === failure.kind && known.retrying === failure.retrying) return state;
+    return {
+      ...state,
+      failing: new Set([...state.failing, page]),
+      failures: new Map(state.failures).set(page, failure),
+    };
   });
 }
 
@@ -137,9 +170,21 @@ export function pageSaved(page: string): void {
     if (!state.failing.has(page)) return state;
     const failing = new Set(state.failing);
     failing.delete(page);
-    return { ...state, failing };
+    const failures = new Map(state.failures);
+    failures.delete(page);
+    return { ...state, failing, failures };
   });
 }
+
+let recovery: SaveRecovery | null = null;
+
+/** The page view says how to save the shown page now and read its text. Null takes it away. */
+export function setSaveRecovery(next: SaveRecovery | null): void {
+  recovery = next;
+}
+
+/** The save notice's way to act on a failing page, or null before any page view has registered. */
+export const saveRecovery = (): SaveRecovery | null => recovery;
 
 /**
  * A page closed: it stops counting as failing, and a page that still can't save counts again at the close's try,
@@ -155,6 +200,11 @@ const pageOf = (payload: unknown): string | null => {
   return typeof page === 'string' ? page : null;
 };
 
+const failureOf = (payload: unknown): SaveFailure => {
+  const { kind, retryInMs } = (payload ?? {}) as { kind?: unknown; retryInMs?: unknown };
+  return { kind: typeof kind === 'string' ? kind : 'io', retrying: typeof retryInMs === 'number' };
+};
+
 const throughOf = (payload: unknown): number | null => {
   const through = (payload as { through?: unknown } | null)?.through;
   return typeof through === 'number' ? through : null;
@@ -167,7 +217,7 @@ export function watchSaveHealth(client: {
   const stops = [
     client.onEvent('core:save-failed', (payload) => {
       const page = pageOf(payload);
-      if (page) pageSaveFailed(page);
+      if (page) pageSaveFailed(page, failureOf(payload));
     }),
     client.onEvent('core:saved', (payload) => {
       const page = pageOf(payload);

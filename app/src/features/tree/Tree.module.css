@@ -351,6 +351,25 @@
     color: var(--color-status-danger);
   }
 
+  /* The trouble state is a real button: no chrome of its own, but a hover and a focus ring, and room for a fingertip. */
+  .saveStatusButton {
+    min-block-size: var(--size-target-pointer);
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .saveStatusButton {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .saveStatusButton:hover {
+    background: var(--color-surface-hover);
+  }
+
   .visuallyHidden {
     position: absolute;
     inline-size: 1px;
