@@ -207,7 +207,12 @@ export function rulerInView(ruler: Ruler, view: View, pad: number): Ruler {
   const across = ruler.width / 2;
   const fits = [-1, 1].every((end) =>
     [-1, 1].every((side) =>
-      inside(view, ruler.cx + end * half * cos - side * across * sin, ruler.cy + end * half * sin + side * across * cos, 0),
+      inside(
+        view,
+        ruler.cx + end * half * cos - side * across * sin,
+        ruler.cy + end * half * sin + side * across * cos,
+        0,
+      ),
     ),
   );
   if (fits) return ruler;
@@ -218,7 +223,10 @@ export function rulerInView(ruler: Ruler, view: View, pad: number): Ruler {
 /** The protractor where all of it can be seen, by the same rule as the ruler. */
 export function protractorInView(protractor: Protractor, view: View, pad: number): Protractor {
   const r = protractor.radius + pad;
-  if (inside(view, protractor.cx - r, protractor.cy - r, 0) && inside(view, protractor.cx + r, protractor.cy + pad, 0)) {
+  if (
+    inside(view, protractor.cx - r, protractor.cy - r, 0) &&
+    inside(view, protractor.cx + r, protractor.cy + pad, 0)
+  ) {
     return protractor;
   }
   const radius = Math.max(MIN_RULER / 2, Math.min(DEFAULT_PROTRACTOR.radius, view.w / 2 - pad, view.h - 2 * pad));

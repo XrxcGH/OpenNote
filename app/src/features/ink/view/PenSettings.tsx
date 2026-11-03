@@ -233,7 +233,11 @@ export function ShapeSnapping() {
           onChange={(value) => void updateSettings({ ink: { shapes: { holdMs: Number(value) } } })}
         >
           {HOLD_TIMES_MS.map((ms) => (
-            <RadioCard<string> key={ms} value={String(ms)} label={t('ink.settings.snapHoldValue', { seconds: ms / 1000 })} />
+            <RadioCard<string>
+              key={ms}
+              value={String(ms)}
+              label={t('ink.settings.snapHoldValue', { seconds: ms / 1000 })}
+            />
           ))}
         </RadioGroup>
       )}

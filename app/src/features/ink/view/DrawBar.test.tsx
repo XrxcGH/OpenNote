@@ -71,7 +71,9 @@ describe('the Draw tab', () => {
     const field = await screen.findByRole('textbox', { name: 'Color as six hex digits, such as 3A6EA5' });
     await userEvent.type(field, '3A6EA5');
     await userEvent.click(screen.getByRole('button', { name: 'Use color' }));
-    await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.color).toBe(['#', '3a6ea5'].join(''));
+    await expect
+      .poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.color)
+      .toBe(['#', '3a6ea5'].join(''));
     expect(screen.getByRole('button', { name: 'Pen, Custom color, 0.5 mm' })).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'Highlighter, Honey, 4 mm' }));

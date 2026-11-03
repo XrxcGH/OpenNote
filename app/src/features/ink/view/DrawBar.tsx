@@ -125,7 +125,8 @@ function libraryItems(active: PenSlot): MenuItemSpec[] {
   const sets = getSettings().ink.penSets ?? [];
   items.push({ id: 'save', label: t('ink.penLibrary.saveSet'), separatorBefore: true });
   for (const set of sets) items.push({ id: `apply:${set.id}`, label: set.name });
-  for (const set of sets) items.push({ id: `delete:${set.id}`, label: t('ink.penLibrary.deleteSet', { name: set.name }) });
+  for (const set of sets)
+    items.push({ id: `delete:${set.id}`, label: t('ink.penLibrary.deleteSet', { name: set.name }) });
   return items;
 }
 
@@ -206,14 +207,12 @@ export async function openPenColorMenu(anchor: MenuAnchor = menuAnchor()): Promi
     anchor,
     returnFocus: anchorElement(anchor),
     items: [
-      ...slotsForTool(active.tool).map(
-        (entry): MenuItemSpec => ({
-          id: entry.name,
-          label: t(`ink.colors.${entry.name}` as MessageKey),
-          kind: 'radio',
-          checked: paletteByName(active.color)?.slot === entry.slot,
-        }),
-      ),
+      ...slotsForTool(active.tool).map((entry): MenuItemSpec => ({
+        id: entry.name,
+        label: t(`ink.colors.${entry.name}` as MessageKey),
+        kind: 'radio',
+        checked: paletteByName(active.color)?.slot === entry.slot,
+      })),
       ...custom,
     ],
   });
@@ -232,14 +231,12 @@ export async function openPenWidthMenu(anchor: MenuAnchor = menuAnchor()): Promi
     anchor,
     returnFocus: anchorElement(anchor),
     items: [
-      ...WIDTH_PRESETS_MM[active.tool].map(
-        (mm): MenuItemSpec => ({
-          id: String(mm),
-          label: t('ink.pens.widthValue', { width: mm }),
-          kind: 'radio',
-          checked: active.width === mm,
-        }),
-      ),
+      ...WIDTH_PRESETS_MM[active.tool].map((mm): MenuItemSpec => ({
+        id: String(mm),
+        label: t('ink.pens.widthValue', { width: mm }),
+        kind: 'radio',
+        checked: active.width === mm,
+      })),
       ...(library ? libraryItems(active) : []),
     ],
   });
@@ -261,14 +258,12 @@ export async function openPenSlotMenu(anchor: MenuAnchor = menuAnchor()): Promis
     label: t('ink.pens.group'),
     anchor,
     returnFocus: anchorElement(anchor),
-    items: slots.map(
-      (slot): MenuItemSpec => ({
-        id: slot.id,
-        label: slotLabel(slot),
-        kind: 'radio',
-        checked: onPen && active?.id === slot.id,
-      }),
-    ),
+    items: slots.map((slot): MenuItemSpec => ({
+      id: slot.id,
+      label: slotLabel(slot),
+      kind: 'radio',
+      checked: onPen && active?.id === slot.id,
+    })),
   });
   const slot = slots.find((candidate) => candidate.id === chosen);
   if (!slot) return;
