@@ -53,7 +53,7 @@ class Layer implements PageBlockLayer {
     private readonly container: HTMLElement,
     ctx: BlockRenderContext,
   ) {
-    // A view that changes its own block (an image's alt text, crop or size) shows it through the layer, so the
+    // A view that changes its own block (an image's alt text, crop, or size) shows it through the layer, so the
     // layer's copy, which commands read, never lags behind the screen.
     this.ctx = { ...ctx, local: (block) => this.upsert(block) };
   }
