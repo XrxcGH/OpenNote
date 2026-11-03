@@ -1,9 +1,10 @@
 # OpenNote note format
 
-This document specifies version 1 of the OpenNote note format. It describes how a notebook is stored as a folder of files, and how to read and write those files safely. It is written for anyone who builds software that reads or writes OpenNote notebooks, including OpenNote itself on each platform. An architecture decision record (ADR), [ADR 0008](../adr/0008-note-file-format.md), records why the format looks the way it does.
+This document specifies versions 1 and 2 of the OpenNote note format. It describes how a notebook is stored as a folder of files, and how to read and write those files safely. It is written for anyone who builds software that reads or writes OpenNote notebooks, including OpenNote itself on each platform. An architecture decision record (ADR), [ADR 0008](../adr/0008-note-file-format.md), records why the format looks the way it does.
 
-- Format version: 1
-- Status: draft. Version 1 is frozen when Phase 3 merges into `main`. After that it never changes. Later versions add sections and list their changes in [Appendix C](#appendix-c-change-log).
+- Format version: 2
+- Status: draft. Version 1 is frozen when Phase 3 merges into `main`. After that it never changes. Version 2 is frozen when the first release that writes it ships. Later versions add sections and list their changes in [Appendix C](#appendix-c-change-log).
+- Version 2 adds text formatting, footnotes, comments, suggestions, breaks, named styles in points, and spreadsheet data in tables. A file uses version 2 only when it holds a feature that needs it (section 15.6).
 
 ## Contents
 
@@ -31,6 +32,7 @@ This document specifies version 1 of the OpenNote note format. It describes how 
 - [Appendix A: Constants](#appendix-a-constants)
 - [Appendix B: Test vectors and fixtures](#appendix-b-test-vectors-and-fixtures)
 - [Appendix C: Change log](#appendix-c-change-log)
+- [Appendix D: Shared value grammars](#appendix-d-shared-value-grammars)
 
 ## 1. About this specification
 
@@ -65,6 +67,21 @@ A tool that only exports notebooks needs sections 2 to 11, 15, 16, and 21.
 - Older apps open newer files read-only. Newer apps upgrade older files with tested migrations.
 - The same rules work on Windows, macOS, Linux, iOS, and Android.
 
+### 1.5 Rule IDs
+
+Each rule that version 2 adds has a stable ID, such as `R-INL-5`, written at the start of the rule or in a table's first column. The fixtures name the rules they test by these IDs (Appendix B.6), and a test checks that every ID here is named by at least one fixture. An ID is never reused, even when its rule is removed. The prefixes are:
+
+| Prefix | Topic | Sections |
+|---|---|---|
+| `R-VER`, `R-STAMP` | Version keys, reading rules, and stamping | 15 |
+| `R-JSON`, `R-NUM` | Key order and typographic numbers | 2 |
+| `R-STY`, `R-THM` | Named styles and the theme | 4.6 |
+| `R-VIEW`, `R-PRN` | Text settings, headers, and footers | 5.4.2, 5.4.3 |
+| `R-SHT` | Spreadsheet data in tables | 6.3 |
+| `R-PARA`, `R-LIST`, `R-NOTE`, `R-CMT`, `R-SUG`, `R-LAY`, `R-BRK`, `R-CODE` | Paragraphs, lists, notes, comments, suggestions, layout, breaks, and code | 6.8 to 6.13 |
+| `R-INL`, `R-MRK`, `R-WS`, `R-FN`, `R-TXT` | Inline tags, marks, whitespace, footnote references, and readable text | 7.9 to 7.13 |
+| `R-VAL` | Shared value grammars | Appendix D |
+
 ## 2. Conventions
 
 ### 2.1 Binary values and checksums
@@ -96,6 +113,10 @@ Writers must produce the canonical form, so the same content always gives the sa
 
 Writers leave a file alone when the bytes they would write equal the bytes it already holds. Git, sync tools, and backups then see a change only when the content changed. The readable copies in section 11 use the same encoding, line endings, and final newline.
 
+`R-JSON-1`. A key that version 2 adds to an object that version 1 defines is written after that object's version 1 keys, in code point order together with the unknown keys. Its value has its keys in code point order at every level, as a version 1 writer writes an unknown value. A version 1 writer, which treats the key as unknown, then writes the same bytes as a version 2 writer. So every object that version 2 adds, such as `data.paras` and `data.sheet`, is written in code point order. The one exception is `minWriterVersion`, which follows `minReaderVersion` (`R-VER-2`).
+
+`R-JSON-2`. Every map that version 2 adds, keyed by an ID, a name, or a style name, has its keys in code point order, as the maps above do.
+
 ### 2.3 Numbers
 
 Integers are written in decimal, with no fraction and no leading zeros.
@@ -103,6 +124,8 @@ Integers are written in decimal, with no fraction and no leading zeros.
 Geometry values (positions, sizes, spacing, margins, and angles) are rounded to 0.01 before writing. They are written in the shortest form, with no exponent, no trailing zeros after the decimal point, and `0` instead of `-0`. Examples: `96`, `96.5`, `793.7`, and `-12.25`. Their absolute value must be at most 10,000,000.
 
 NaN and infinity are never valid.
+
+`R-NUM-1`. Typographic values of version 2 (section 2.6) are not geometry values. Each has a range and a step, such as "1 to 1638, step 0.5". A value is valid when it lies in the range and is a whole multiple of the step, computed in exact decimal arithmetic. JSON writes it as a number in the shortest form above. Inside a Markdown tag it is text in the same form: an optional `-`, no `+`, no exponent, no leading zeros, no trailing zeros after the point, and `0` instead of `-0`. A value outside its range, off its step, or in another form is invalid. Where a key holds an invalid value, a reader acts as if the key were missing and keeps it unchanged (section 2.9). For a tag, section 7.9 says what happens.
 
 ### 2.4 IDs
 
@@ -132,6 +155,8 @@ Writers take times from the wall clock, anchored to a monotonic clock once per s
 
 One page unit is 1/96 inch (0.2645833 mm), which is one CSS pixel at 100% zoom. The origin is the top-left corner of the page. The x axis grows to the right and the y axis grows down. Angles are in degrees, clockwise.
 
+`R-NUM-2`. Version 2 measures every typographic value in points. One point is 1/72 inch, so 1 point is 4/3 page units. Typographic values are font sizes, spacing before and after paragraphs, indents, tab stops, line spacing, letter spacing, baseline shifts, borders around text, and cell padding. Positions, frames, paper sizes, margins, table column widths, and table row heights stay in page units. Version 1 keys that hold a size in page units keep their meaning (section 4.6).
+
 ### 2.7 Colors
 
 A color is a palette name, a hexadecimal color, or absent (no color).
@@ -143,6 +168,8 @@ A color is a palette name, a hexadecimal color, or absent (no color).
 | Hexadecimal | `#rrggbb`, lowercase. Where alpha is allowed, `#rrggbbaa` |
 
 The app maps a palette name to its light or dark value from its design tokens, so colors follow the theme. Readers must keep unknown palette names from newer versions and show them in a neutral color.
+
+Version 2 adds theme colors, written `theme:NAME`, which follow the notebook's theme (section 4.6). [Appendix D](#appendix-d-shared-value-grammars) gives the one color grammar that every version 2 field uses. A version 1 reader that finds a theme color in a version 1 field keeps it unchanged (section 2.9) and shows a neutral color or the field's default.
 
 ### 2.8 Order keys
 
@@ -323,6 +350,7 @@ Per-device view state, such as scroll position, zoom, the last open page, and co
 | `defaults` | object | none | Defaults for new pages. Only `view` (section 5.4) is defined in version 1 |
 | `groups` | array | `[]` | Section groups (section 4.3) |
 | `styles` | object | none | How this notebook shows each named style (below) |
+| `stylesChanged`, `theme` | object | none | Version 2: when each style last changed, and the theme's fonts and colors (section 4.6) |
 
 The `styles` object maps a style name to how the notebook shows it. The names of version 1 are `normal` (body text), `h1` to `h6` (headings), `title`, `quote`, and `code`. Each value is an object whose keys are all optional:
 
@@ -422,6 +450,69 @@ When a writer creates a page, it copies a `view` object into the new `page.json`
 
 Pages do not follow later changes to these defaults. Each `page.json` is complete on its own, so any reader can show a page without reading the files around it.
 
+### 4.6 Named styles and themes in version 2
+
+Version 2 gives named styles the formatting that styles in Word and Google Docs have, measured in points. All of it is version 1 data: a version 1 reader keeps every key below and shows each style with the keys of section 4.1 (`R-STAMP-3`). So `notebook.json` and `section.json` stay at version 1.
+
+`R-STY-1`. A style object, in `notebook.json` `styles` or in a page's style sheet (`R-STY-7`), may hold these keys besides the keys of section 4.1. Every key is optional. A missing key comes from the style the object is based on, and then from the app.
+
+| Key | Type and range | Default |
+|---|---|---|
+| `type` | `paragraph` or `character` | `paragraph` |
+| `label` | The name people see for a user style: a string of 1 to 60 characters | The style's own name |
+| `basedOn` | A style name (`R-STY-3`) | `normal` for paragraph styles other than `normal`. None for `normal` and for character styles |
+| `next` | A style name, the style of a new paragraph after Enter at the end | `normal` for `title`, `subtitle`, and `h1` to `h9`. The style itself otherwise |
+| `order` | Integer, 0 to 9,999: the place in the style gallery | After the styles that have one, by name |
+| `hidden` | Boolean: left out of the style gallery | `false` |
+| `font` | The version 1 key, which now also takes a theme token (Appendix D.2) | |
+| `sizePt` | Points, 1 to 1638, step 0.5 (Appendix D.3) | |
+| `weight` | 100 to 900, step 100 (Appendix D.4) | |
+| `italic` | Boolean | |
+| `underline` | An underline style (Appendix D.5), or `none` | |
+| `strike` | `single`, `double`, or `none` | |
+| `caps` | `small`, `all`, or `none` | |
+| `tracking` | Letter spacing in points, -1584 to 1584, step 0.05 | |
+| `color` | The version 1 key, which now takes any color of Appendix D.7 | |
+| `highlight` | A color (Appendix D.7) or `none` | |
+| `align`, `indent`, `before`, `after`, `line`, `contextual`, `keepNext`, `keepLines`, `widows`, `tabs`, `border`, `shade`, `outline`, `dir`, `lang` | As the keys of `data.paras` (section 6.8) | |
+| `list` | `{"id": list ID, "level": 1 to 9}`: a style tied to a list level, such as numbered headings | |
+
+`R-STY-2`. Where a version 2 key and a version 1 key say the same thing, the version 2 key wins: `sizePt` over `size`, `before` over `spaceBefore`, `after` over `spaceAfter`, and `line` over `lineHeight`. A writer that writes the version 2 key also writes the version 1 key whenever version 1 can hold the value, so a version 1 reader shows it. The version 1 values are `size` = `sizePt` × 4/3, `spaceBefore` = `before` × 4/3, and `spaceAfter` = `after` × 4/3, each rounded as a geometry value (section 2.3). The `lineHeight` is the `line` value when its rule is `multiple` and the value is from 0.5 to 10. When version 1 can't hold the value, such as `"auto"` spacing or an exact line height, the writer leaves the version 1 key out.
+
+`R-STY-3`. Style names are the names of version 1, plus `subtitle`, `citation`, `h7`, `h8`, `h9`, and `quote2` (Intense Quote), plus user styles: `u-` followed by 1 to 32 characters from `a-z`, `0-9`, and `-`. Readers keep any other name (section 2.9). Headings 7 to 9 are paragraphs whose style is `h7` to `h9` and whose `data.paras` entry has `outline` 7 to 9, because Markdown has only 6 heading levels.
+
+`R-STY-4`. A reader follows `basedOn` from a style toward the root. It stops at the first name it has already seen, at a name that is not defined, and after 16 steps. A character style is based only on character styles, and a paragraph style only on paragraph styles. A `basedOn` that breaks this rule is ignored.
+
+`R-STY-5`. A notebook has at most 64 styles (section 4.1), and a page's style sheet has at most 64.
+
+`R-STY-6`. The look of a character comes from these layers, lowest first:
+
+1. The app's defaults.
+2. The theme (`R-THM-2`).
+3. The notebook's `normal` style.
+4. The style chain of the character's element, from the root down.
+5. The page's style sheet: the same chain, where each key of the page's style overrides the notebook's.
+6. The element's `data.paras` entry.
+7. The character style mark (`R-MRK-23`).
+8. The run's other marks.
+
+This is Word's order, with the page's style sheet between the document's styles and direct formatting. Table cells use the layers of `R-SHT-9` instead.
+
+`R-STY-7`. A page may hold its own style sheet in the `styles` key of `page.json` (section 5.2), with the same shape as the notebook's. Imported documents use it. A style that the page and the notebook both define takes each key from the page and every other key from the notebook. A style that only the page defines is a style of that page. Unlike the notebook's, the page's style names are in code point order (`R-JSON-1`).
+
+`R-STY-8`. A character style applies through the `charStyle` mark (`R-MRK-23`). Only its run keys apply: `font`, `sizePt`, `weight`, `italic`, `underline`, `strike`, `caps`, `tracking`, `color`, `highlight`, `lang`, and `dir`. A mark that names a paragraph style or a missing style draws nothing, and readers keep it.
+
+`R-STY-9`. `notebook.json` may hold `stylesChanged`, a map from a style name to the time that style last changed. Two copies of `notebook.json` merge their `styles` style by style: the result has every name of both copies, and a style that differs takes the value from the copy with the later time in `stylesChanged`. A missing time is earlier than any time. When the times are equal, the value whose canonical JSON (section 2.2) is greater in code point order wins. The merged `stylesChanged` keeps the later time of each name. The other fields still merge by `changed` (section 14.3).
+
+`R-THM-1`. `notebook.json` and `page.json` may hold `theme`, the fonts and colors that tokens resolve to:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `fonts` | Object with `heading`, `body`, and `mono`, each a font name (Appendix D.2, without tokens) | The fonts of `+heading`, `+body`, and `+mono` |
+| `colors` | Object with `accent1` to `accent6`, `text`, and `background`, each `#rrggbb` | The colors of `theme:accent1` and the other theme colors |
+
+`R-THM-2`. A theme token resolves through the page's `theme`, then the notebook's `theme`, then the app's defaults. The app's fonts are OpenNote Sans for `+heading` and `+body`, and Atkinson Hyperlegible Mono for `+mono`. The app's colors are the pens `indigo`, `brick`, `fern`, `plum`, `amber`, and `walnut` for `accent1` to `accent6`, `ink` for `text`, and the paper color of the page for `background`. Changing the theme changes everything that names a token, as in Word.
+
 ## 5. Pages
 
 ### 5.1 The page folder
@@ -436,6 +527,7 @@ A page folder holds `page.json` and, when needed, `page.md`, `ink.svg`, `ink/`, 
 |---|---|---|---|
 | `formatVersion` | integer | required | The format version the writer used |
 | `minReaderVersion` | integer | required | The oldest reader version that can show this page |
+| `minWriterVersion` | integer | `formatVersion` | Version 2: the oldest reader version that can edit this page without losing anything (section 15.2) |
 | `kind` | string | required | Always `"opennote.page"` |
 | `id` | ID | required | The page's identity. It matches the folder name |
 | `title` | string | required | Plain text, not Markdown, at most 1,000 characters. It may be empty |
@@ -448,7 +540,8 @@ A page folder holds `page.json` and, when needed, `page.md`, `ink.svg`, `ink/`, 
 | `ink` | object | none | The ink segment list (section 8.3) |
 | `recordings` | array | `[]` | Reserved for audio recordings (section 5.6) |
 | `encryption` | object | none | Reserved for pages in encrypted sections (section 5.7) |
-| `revision` | object | required | This saved revision (section 5.3). Always the last known key |
+| `revision` | object | required | This saved revision (section 5.3). Always the last version 1 key |
+| `styles`, `theme` | object | none | Version 2: the page's own style sheet and theme (section 4.6). Written after `revision`, as `R-JSON-1` says |
 
 Outgoing links are not stored separately. They live inside the Markdown of text blocks, so they can never disagree with the text.
 
@@ -560,6 +653,40 @@ Three more view keys are written by the ink tools. They hold only IDs of blocks 
 | `inkLayers.layers` | A map from a layer ID to `name`, `hidden`, `locked`, and `imported`. `imported` marks the locked bottom layer made for imported PDF pages and slides. At most 24 layers exist. The `base` layer is always present and may have an entry (name, `hidden`, `locked`) like any other layer; its `imported` stays false, and it cannot be deleted |
 | `inkLayers.assign` | A map from a stroke ID to the layer it sits on. A stroke that is not listed, or that names a missing layer, sits on `base`. Hidden layers stay out of print and of the readable SVG |
 | `inkLinks` | A map from a link ID to the `block` that holds the strokes, the `strokes` the link covers, a `label` for lists and screen readers, and a `target`. The target `kind` is `page` (with `page` and an optional `heading`), `url` (a web or mail address only), or `recording` (the recording as it was when the strokes were written) |
+
+### 5.4.2 Text settings
+
+Version 2 adds `view.text`, the page's settings for typed text. Like the rest of `view`, it changes by merge patch. A version 1 reader keeps it (`R-STAMP-4`).
+
+```json
+"text": {
+  "defaultTab": 36,
+  "hyphenate": true,
+  "lineNumbers": { "countBy": 5 },
+  "pageNumbers": { "format": "lowerRoman" }
+}
+```
+
+`R-VIEW-1`. The keys of `view.text`:
+
+| Key | Type and range | Default | Meaning |
+|---|---|---|---|
+| `defaultTab` | Points, 1 to 1584, step 0.05 | 36 | The distance between default tab stops, half an inch as in Word and Google Docs |
+| `hyphenate` | Boolean | `false` | Automatic hyphenation. A paragraph's `hyphenate` key overrides it (section 6.8) |
+| `lineNumbers` | Object, or absent for none | none | Line numbers in print and PDF only (`R-VIEW-2`) |
+| `pageNumbers` | Object | none | How page numbers are counted and written (`R-VIEW-3`) |
+
+`R-VIEW-2`. `lineNumbers` holds `start` (integer, 1 to 32,767, default 1), `countBy` (integer, 1 to 100, default 1: show every nth number), and `restart` (`page` or `continuous`, default `page`). An empty object turns line numbers on with every default.
+
+`R-VIEW-3`. `pageNumbers` holds `format` (`decimal`, `lowerRoman`, `upperRoman`, `lowerLetter`, or `upperLetter`, default `decimal`) and `start` (integer, 0 to 32,767, default 1). The `{page}` field of headers and footers (section 5.4.3) uses them.
+
+`R-VIEW-4`. A reader shows a key whose value is invalid as if it were missing, and keeps it (section 2.9).
+
+### 5.4.3 Headers and footers
+
+`R-PRN-1`. Version 2 saves a page's headers and footers in `view.print.header` and `view.print.footer`, which print and PDF export draw in the top and bottom margins. Each is a band: an object with `left`, `center`, and `right`, each a string of 0 to 200 characters, and an optional `firstPage`, a band without `firstPage` that the first sheet shows instead. A band whose parts are all empty draws nothing, so an empty `firstPage` hides the band on the first sheet. A missing `header` or `footer` draws nothing.
+
+`R-PRN-2`. A band's text is plain text, not Markdown. These fields in it are replaced when it is drawn: `{page}`, `{pages}`, `{title}`, `{notebook}`, `{section}`, and `{date}`. Any other text in braces stays as written. A version 1 reader keeps `view.print` (`R-STAMP-4`).
 
 ### 5.5 A complete page.json
 
@@ -767,11 +894,11 @@ Writers keep the list in step with the blocks:
 
 | Type | `data` fields | Meaning |
 |---|---|---|
-| `text` | `markdown`, `ids`, `tags`, `styles` | A text box. It holds one or more paragraphs, headings, lists, quotes, callouts, and code blocks in OpenNote Markdown (section 7). The other fields name its elements (section 6.6) |
+| `text` | `markdown`, `ids`, `tags`, `styles` | A text box. It holds one or more paragraphs, headings, lists, quotes, callouts, and code blocks in OpenNote Markdown (section 7). The other fields name its elements (section 6.6). Version 2 adds `paras`, `lists`, `notes`, `comments`, `suggestions`, and `layout` (sections 6.8 to 6.11) |
 | `ink` | `role`, `strokeCount`, `anchor`, `alt`, `decorative` | A place for strokes (section 8). `role` is `layer` for the page's handwriting layer, `drawing` for a drawing area, or `anchored` for ink tied to text. `strokeCount` is a cached count of live strokes. `anchor` says where the text is (section 8.1) |
 | `image` | `asset`, `alt`, `decorative`, `crop` | An image from the asset table. `crop` is `{x, y, w, h}` as fractions from 0 to 1, and defaults to the whole image |
 | `file` | `asset`, `display`, `alt`, `decorative` | An attachment from the asset table, shown as an `icon` (the default) or a `preview` |
-| `table` | `header`, `columns`, `rows` | A table (below) |
+| `table` | `header`, `columns`, `rows` | A table (below). Version 2 adds `sheet` (below), and `notes`, `comments`, and `suggestions` for the Markdown of its cells (section 6.10) |
 
 Section 6.7 describes `alt` and `decorative`.
 
@@ -817,9 +944,147 @@ A smart table keeps what it adds beside its cells in the table block's `data.sma
 
 A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0048](../adr/0048-choice-columns.md).
 
+#### Spreadsheet data
+
+`R-SHT-1`. In version 2 a table block may hold `data.sheet`: the cell formatting, rules, and cached results that make the table a spreadsheet. It sits beside `data.smart`, never inside it, because a reader that rebuilds `smart` from the keys it knows would drop anything new there. A reader that does not know `sheet` keeps it unchanged (section 2.9).
+
+```json
+"sheet": {
+  "cols": { "01m3sabc31y0rfa24eeh6j4ky4": { "style": "q81bz0" } },
+  "merges": { "m1": { "from": ["01m3sabc336ewa9gjr9z4z3dpv", "01m3sabc31y0rfa24eeh6j4ky4"], "to": ["01m3sabc336ewa9gjr9z4z3dpv", "01m3sabc32dwqknfawtgwtsgcj"] } },
+  "names": { "TaxRate": { "ref": "0.0825", "scope": "page" } },
+  "rows": { "01m3sabc336ewa9gjr9z4z3dpv": { "height": 28, "style": "k3f9a2" } },
+  "styles": {
+    "k3f9a2": { "align": { "h": "center", "v": "middle" }, "fill": "#fde68a", "font": { "bold": true } },
+    "q81bz0": { "fmt": "#,##0.00;[Red]-#,##0.00", "pad": { "l": 6, "r": 6 } }
+  },
+  "table": { "band": { "rows": true }, "freeze": { "rows": 1 }, "look": "medium-indigo", "style": "q81bz0" },
+  "v": 1,
+  "values": { "01m3sabc336ewa9gjr9z4z3dpv": { "01m3sabc32dwqknfawtgwtsgcj": 42.5 } },
+  "valuesOf": "fnv1a:8c1d02aa5be3f417"
+}
+```
+
+`R-SHT-2`. Every map in `sheet` is keyed by IDs or names, never by position. A merge patch then changes one entry without sending the others, and two devices' changes to different cells merge. An entry that names a row or a column the table no longer has is ignored, and writers drop it at the next save of the block.
+
+`R-SHT-3`. The keys of `sheet`. Like every object of version 2, it is written in code point order (`R-JSON-1`):
+
+| Key | Type | Default | Limit | Meaning |
+|---|---|---|---|---|
+| `v` | integer from 1 | none | | The data version of `sheet` (`R-SHT-4`) |
+| `styles` | map from a style ID to a style | `{}` | 4,096 styles | The table's style sheet (`R-SHT-6`, `R-SHT-7`) |
+| `table` | object | `{}` | | Settings of the whole table (`R-SHT-10`) |
+| `cols` | map from a column ID to settings | `{}` | | Column styles and outline (`R-SHT-11`) |
+| `rows` | map from a row ID to settings | `{}` | | Row styles, heights, and outline (`R-SHT-11`) |
+| `cells` | map from a row ID to a map from a column ID to a style ID | `{}` | 1,000,000 cells per table | The style of each cell |
+| `merges` | map from a merge ID to `{from, to}` | `{}` | 10,000 merges | Merged cells (`R-SHT-12`) |
+| `names` | map from a name to `{ref, scope, comment}` | `{}` | 1,024 names | Named ranges, constants, formulas, and LAMBDAs (`R-SHT-13`) |
+| `validation` | map from a rule ID to a rule | `{}` | 256 rules | Data validation (`R-SHT-14`) |
+| `conditional` | map from a rule ID to a rule | `{}` | 256 rules | Conditional formats (`R-SHT-15`) |
+| `notes` | map from a row ID to a map from a column ID to a note | `{}` | 10,000 notes of 64 KiB each | Notes on cells (`R-SHT-16`) |
+| `values` | map from a row ID to a map from a column ID to a value | `{}` | One per cell | Cached results of formula cells and spilled cells (`R-SHT-17`) |
+| `valuesOf` | string | none | | The fingerprint of the cells when `values` was written (`R-SHT-18`) |
+| `links` | map from a page title to a page ID | `{}` | 1,024 links | The pages that cross-page references name (`R-SHT-19`) |
+
+`R-SHT-4`. `v` is the data version of `sheet`. It rises only when a key changes meaning, and a value is never reused. Format version 2 defines `v` 1. Writers write `v` on a table that holds a formula cell, and on no other table. A formula in a table without `v` keeps the result it had before version 2: a reader reads `-x^y` as `-(x^y)`, `a^b^c` as `a^(b^c)`, and the name `E` as `EXP(1)`. A reader that finds a higher `v` shows what it understands, keeps every key and value, and edits normally.
+
+`R-SHT-5`. A formula cell is a cell whose readable text (`R-TXT-1`) starts with `=`. A new formula holds at most 8,192 characters. Longer formulas already stored still load.
+
+`R-SHT-6`. A style ID is 1 to 16 characters from `0-9` and `a-z`. Readers treat it as an opaque key and never compute it. Writers derive it from the style, so the same style made on two devices gets the same ID. They take the style's canonical JSON in compact form: no whitespace, keys in code point order at every level, and strings and numbers as sections 2.2 and 2.3 write them. They hash its UTF-8 bytes with FNV-1a 64 (offset basis `cbf29ce484222325`, prime `100000001b3`, both hexadecimal). The ID is the hash modulo 36<sup>6</sup>, written in base 36 with lowercase letters and padded with `0` to 6 characters. When that ID already names a different style in the table, the writer appends `#1` to the JSON text and hashes again, then `#2`, and so on, until the ID is free or names the same style.
+
+#### Cell styles
+
+`R-SHT-7`. Every key of a style is optional, and a missing key is inherited (`R-SHT-9`).
+
+| Key | Values |
+|---|---|
+| `fmt` | A number format code in the invariant (en-US) form that `.xlsx` files store (ECMA-376 Part 1, 18.8.31), 1 to 255 characters, such as `#,##0.00`, `0%`, `yyyy-mm-dd`, `[h]:mm:ss`, or `@` |
+| `font` | An object: `family` (a font name or theme token, Appendix D.2), `size` (points, Appendix D.3), `weight` (100 to 900, Appendix D.4), `bold` (boolean, `true` for weight 700 and `false` for 400; `weight` wins when both are present), `italic` (boolean), `underline` (an underline style of Appendix D.5, including the accounting styles, or `none`), `strike` (`single`, `double`, or `none`), `color` (Appendix D.7), and `script` (`super`, `sub`, or `none`) |
+| `fill` | A color (Appendix D.7) or `none`. Or a pattern, `{pattern, color, back}`: `pattern` is one of the 18 OOXML names (`solid`, `gray125`, `gray0625`, `lightGray`, `mediumGray`, `darkGray`, `darkHorizontal`, `darkVertical`, `darkDown`, `darkUp`, `darkGrid`, `darkTrellis`, `lightHorizontal`, `lightVertical`, `lightDown`, `lightUp`, `lightGrid`, `lightTrellis`), and `color` and `back` are the pattern's and the background's colors. Or a gradient, `{"gradient": {angle, stops}}`: `angle` is an integer from 0 to 359 (default 0), and `stops` holds 2 to 8 `{at, color}` objects with `at` from 0 to 1, step 0.0001, in increasing order |
+| `border` | An object with `t`, `r`, `b`, `l`, `du` (diagonal up), and `dd` (diagonal down). Each side is `{style, color, width}`: `style` is one of the 13 OOXML names (`thin`, `medium`, `thick`, `hair`, `dotted`, `dashed`, `mediumDashed`, `dashDot`, `mediumDashDot`, `dashDotDot`, `mediumDashDotDot`, `slantDashDot`, `double`) or `none`; `color` is a color (default the text color); `width` is in points, 0.25 to 6, step 0.125, and wins over the weight that the style's name implies |
+| `align` | An object: `h` (`general`, `left`, `center`, `right`, `fill`, `justify`, `centerAcross`, or `distributed`), `v` (`top`, `middle`, `bottom`, `justify`, or `distributed`), `wrap` (`wrap`, `overflow`, or `clip`), `shrink` (boolean), `rotate` (an integer from -90 to 90 degrees, or `stacked`), `indent` (an integer from 0 to 15, each level 3 characters wide), and `dir` (`context`, `ltr`, or `rtl`) |
+| `pad` | An object with `t`, `r`, `b`, and `l`, in points, 0 to 1584, step 0.05 |
+| `protect` | An object: `locked` (boolean, default `true`) and `hideFormula` (boolean, default `false`) |
+
+`R-SHT-8`. Where nothing sets a property, a cell uses the theme's body font (`+body`) at the page's body size, no fill, gridlines as `table.grid` says, `h` `general`, `v` `top`, `wrap` `wrap`, and padding of 4 points left and right and 2 points top and bottom. A writer that makes a table holding numbers or formulas sets `align.v` to `bottom` in the table's style, so the default never flips later.
+
+`R-SHT-9`. A cell's look comes from these layers, lowest first: the defaults of `R-SHT-8`, the look's element for the cell's place (`R-SHT-10`), `table.style`, the column's style, the row's style, the cell's style, the conditional formats that match (`R-SHT-15`), and then the marks of the runs in the cell's Markdown. A higher layer overrides a lower one key by key inside `font`, `align`, `pad`, `protect`, and `border`. A `fill` and each border side replace the lower value whole. Where no layer sets `fmt`, the column's type in `data.smart` (currency, percent, date, and decimals) gives the format. Conditional formats change only what is drawn, never the stored styles.
+
+#### Table, rows, and columns
+
+`R-SHT-10`. The keys of `table`:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `style` | style ID | none | The table's own style |
+| `look` | A look name of 1 to 32 characters from `a-z`, `0-9`, and `-`. Or an object that maps look elements (`whole`, `header`, `total`, `firstCol`, `lastCol`, `band1`, `band2`, `colBand1`, `colBand2`) to style IDs | none | A table style drawn from the theme. A reader draws a look name it does not know as no look, and keeps it |
+| `band` | `{rows, cols}`, booleans | `false`, `false` | Banded rows and columns |
+| `emphasis` | `{firstCol, lastCol, totalRow}`, booleans | `false` each | Emphasis of the first column, the last column, and the total row |
+| `freeze` | `{rows, cols}`, integers from 0 to the number of rows or columns | 0, 0 | Rows and columns that stay in view |
+| `pad` | As the style key `pad` | `R-SHT-8` | Default padding of every cell |
+| `grid` | boolean | `true` | Gridlines where a cell has no border |
+| `name` | A name (`R-SHT-13`), unique among the page's tables without regard to case | `Table1`, `Table2`, and so on, by the table's place in the page's reading order | The name formulas use for this table |
+
+`R-SHT-11`. A column's settings are `style` (style ID), `hidden` (boolean, default `false`), `level` (outline depth, an integer from 0 to 7, default 0), and `collapsed` (boolean, default `false`). A row's settings add `height` and `exact`. `height` is in page units, from 1 to 10,000, rounded as a geometry value; absent means the row fits its content. `exact` is `true` when the height is exact, and `false` (the default) when it is a minimum. Column widths stay in the `width` of `data.columns`, in page units (`R-NUM-2`).
+
+#### Merges, names, and rules
+
+`R-SHT-12`. A merge ID is 1 to 16 characters from `a-z` and `0-9`. A merge is `{"from": [row ID, column ID], "to": [row ID, column ID]}`: it covers every row from the position of one corner's row to the other's, in the table's current order, and every column likewise. The top-left cell is the anchor and holds the content. Writers empty the Markdown of the other cells, so a reader that does not know merges shows the anchor's text and blank cells beside it. A merge that covers one cell, or that names a missing row or column, is ignored. Writers never write merges that overlap. A reader that finds two that overlap uses the one whose ID is lower in code point order, and ignores the other until someone edits it.
+
+`R-SHT-13`. A name has 1 to 255 characters. It starts with a letter, `_`, or `\`, and goes on with letters, digits, `_`, and `.`. It is not a cell reference: not 1 to 3 letters followed by 1 to 7 digits, and not `R`, `C`, or the forms `R` digits, `C` digits, and `R` digits `C` digits, in any case. Names are unique within their scope without regard to case. The value is `{ref, scope, comment}`: `ref` is the formula text without its leading `=`, 1 to 8,192 characters, and may be a range, a constant, a formula, or a function made with LAMBDA. `scope` is `table` (the default) or `page`. `comment` holds 0 to 255 characters and defaults to empty.
+
+`R-SHT-14`. A rule ID, for validation and for conditional formats, is 1 to 16 characters from `a-z` and `0-9`. A validation rule has these keys:
+
+| Key | Type | Default |
+|---|---|---|
+| `ranges` | 1 to 64 ranges (`R-SHT-22`) | required |
+| `kind` | `any`, `whole`, `decimal`, `list`, `date`, `time`, `textLength`, `custom`, or `checkbox` | `any` |
+| `op` | `between`, `notBetween`, `equal`, `notEqual`, `greater`, `less`, `greaterOrEqual`, or `lessOrEqual` | `between` |
+| `a`, `b` | Formula text or a constant, 0 to 8,192 characters. `b` is used only with `between` and `notBetween`, and `a` holds the formula of a `custom` rule | `""` |
+| `items` | For `list`: 1 to 1,000 strings of 1 to 255 characters | none |
+| `source` | For `list`: formula text that names the cells holding the items | none |
+| `dropDown` | Boolean: show the items in a menu | `true` |
+| `checked`, `unchecked` | For `checkbox`: the values of a checked and an unchecked box, 0 to 255 characters | `TRUE`, `FALSE` |
+| `ignoreBlank` | Boolean | `true` |
+| `alert` | `stop` (reject), `warning`, or `information` | `stop` |
+| `input`, `error` | `{title, text}`: a title of 0 to 32 characters and a text of 0 to 255 characters | none |
+
+`R-SHT-15`. A conditional format has `ranges` (as above), `order` (an integer from 1 to 256; rules apply in increasing order, and equal orders go by rule ID), `type`, `stop` (boolean, default `false`: when the rule matches, later rules are skipped), and `style` (a style ID, for every type except `scale`, `bar`, and `icons`). Each type adds its own keys:
+
+| Type | Keys |
+|---|---|
+| `cell` | `op`, `a`, and `b`, as in validation |
+| `text` | `op` (`contains`, `notContains`, `begins`, or `ends`) and `text` (1 to 255 characters) |
+| `date` | `period`: `yesterday`, `today`, `tomorrow`, `last7Days`, `lastWeek`, `thisWeek`, `nextWeek`, `lastMonth`, `thisMonth`, or `nextMonth` |
+| `blank`, `noBlank`, `error`, `noError`, `duplicate`, `unique` | none |
+| `top` | `rank` (an integer from 1 to 1,000), `percent` (boolean, default `false`), and `bottom` (boolean, default `false`) |
+| `average` | `below` (boolean, default `false`), `equal` (boolean, default `false`), and `stdDev` (an integer from 0 to 3, default 0) |
+| `formula` | `a`: formula text, relative to the top-left cell of the first range |
+| `scale` | `stops`: 2 or 3 objects `{at, value, color}`. `at` is `min`, `max`, `num`, `percent`, `percentile`, or `formula`. `value` is text, used with the last four |
+| `bar` | `color`, `gradient` (boolean, default `true`), `border` (a color, or absent for none), `min` and `max` (each `{at, value}`, where `at` may also be `auto`, the default), `negative` (a color, default `brick`), `axis` (`auto`, `middle`, or `none`, default `auto`), and `barOnly` (boolean, default `false`) |
+| `icons` | `set` (`3Arrows`, `3Triangles`, `3TrafficLights`, `3Signs`, `3Symbols`, `3Flags`, `3Stars`, `4Arrows`, `4Rating`, `5Arrows`, `5Rating`, `5Quarters`, or `5Boxes`), `reverse` and `iconOnly` (booleans, default `false`), and `thresholds`: one fewer than the icons, each `{at, value, gte}`, where `gte` defaults to `true`. The default thresholds split the range in equal percents |
+
+A rule of a type or kind that a reader does not know is kept and ignored. So is a rule with no valid range.
+
+`R-SHT-22`. A range is `{"col": column ID}`, `{"row": row ID}`, or `{"from": [row ID, column ID], "to": [row ID, column ID]}`, whose corners work as in merges. A range that names a missing row or column is ignored.
+
+#### Notes, cached values, and links
+
+`R-SHT-16`. A note on a cell is `{markdown, at}`: OpenNote Markdown of one or more paragraphs, at most 64 KiB, and the time it last changed. Notes are version 1 data: a table with notes and no other version 2 feature stays at version 1.
+
+`R-SHT-17`. A cached value is a finite number, a string of at most 32,767 characters, a boolean, `null` (an empty result), or an error `{"e": TOKEN}`, where TOKEN is `#NULL!`, `#DIV/0!`, `#VALUE!`, `#REF!`, `#NAME?`, `#NUM!`, `#N/A`, `#SPILL!`, `#CALC!`, `#FIELD!`, or `#BUSY!`. A reader keeps an error token it does not know and shows it as written. An array is never cached as one value: each spilled cell has its own entry. A number is written in the shortest form that reads back as the same 64-bit value, as JavaScript writes numbers, so it has an exponent only when it is at least 10<sup>21</sup> or less than 10<sup>-6</sup> in size. Writers write `values` in the same change as the edit that changed them.
+
+`R-SHT-18`. `valuesOf` is `fnv1a:` and 16 lowercase hexadecimal digits: the FNV-1a 64 hash (`R-SHT-6`) of the compact canonical JSON of the array `[header, columns, rows, smart]`. `header` is the block's `header` value, `columns` holds the IDs of `data.columns` in order, and `rows` holds, for each row in order, `[row ID, [the Markdown of the row's cell in each column, in column order, or "" where there is no cell]]`. `smart` is the block's `data.smart`, or `null` without one. A reader computes the fingerprint. When `valuesOf` is missing or differs, `values` is stale: readers and exporters do not use it as current results, and the next writer that calculates the table replaces both.
+
+`R-SHT-19`. `links` maps a page title, as cross-page references write it, to that page's ID. Renaming a page rewrites its title in the formulas and here.
+
+`R-SHT-20`. A version 1 reader, such as Beta 8, keeps `sheet` when it edits the table. Its row and column inserts and deletes leave entries for missing IDs, which `R-SHT-2` ignores. Its cell edits make `values` stale, which `R-SHT-18` detects. A version 2 writer then drops the orphaned entries and writes fresh values.
+
+`R-SHT-21`. A cell holds exactly one paragraph and has no element ID, so `data.paras` never applies inside a table. A cell's alignment, padding, and line settings are properties of its style.
+
 ### 6.4 Reserved and extension types
 
-These type names are reserved for later versions: `chart`, `math`, `graph`, `embed`, `audio`, `pdf`, `card`, `break`, `shape`, and `group`. Nobody else may use them.
+These type names are reserved for later versions: `chart`, `math`, `graph`, `embed`, `audio`, `pdf`, `card`, `break`, `shape`, and `group`. Nobody else may use them. Version 2 defines `break` (section 6.12).
 
 Plugins and other tools may add their own types, named `ext:<reverse domain name>/<name>`, such as `ext:org.example/kanban`. Extension types follow the same rules as types from newer versions.
 
@@ -859,11 +1124,107 @@ Images, drawings, and embedded files carry a description for screen readers and 
 
 The fields apply to `image` blocks, `ink` blocks whose role is `drawing`, and `file` blocks. Later types that show pictures, such as `chart`, `embed`, and `pdf`, use the same two fields. The app's accessibility checks point out a picture that has neither a description nor the `decorative` flag.
 
+### 6.8 Paragraph formatting
+
+`R-PARA-1`. In version 2 a text block may hold `paras`, a map from an element ID (section 6.6) to that element's paragraph formatting. Every key of an entry is optional, and a missing key comes from the element's style (`R-STY-6`). Values in points use `R-NUM-1`.
+
+| Key | Type and range | Meaning |
+|---|---|---|
+| `align` | `start`, `center`, `end`, `justify`, or `distribute` | Alignment. `start` and `end` follow the paragraph's direction, so they flip in right-to-left text. `distribute` also spreads the last line |
+| `indent` | `{start, end, first}`, each in points from -1584 to 1584, step 0.05 | Indents from the start and end edges, and of the first line. A negative `first` is a hanging indent |
+| `before`, `after` | Points from 0 to 1584, step 0.05, or `"auto"` (14 points, Word's HTML spacing) | Space above and below |
+| `contextual` | Boolean | Drops `before` and `after` between neighbors of the same style |
+| `line` | `{"rule": "multiple", "value": 0.06 to 132, step 0.01}`, or `{"rule": "exact" or "atLeast", "value": points from 0.7 to 1584, step 0.05}` | Line spacing |
+| `keepNext`, `keepLines`, `breakBefore` | Boolean | Keep with the next paragraph, keep the lines together, and start on a new sheet |
+| `widows` | Boolean, default `true` | Widow and orphan control: at least two lines at the top and bottom of a sheet |
+| `tabs` | Up to 64 stops `{pos, align, leader}`, sorted by `pos`, each `pos` once. `pos` is in points from 0 to 1584, step 0.05. `align` is `start` (the default), `center`, `end`, `decimal`, `bar`, or `clear`. `leader` is `none` (the default), `dot`, `hyphen`, `underscore`, `heavy`, or `middleDot` | Tab stops. `clear` removes a stop the style sets |
+| `border` | `{top, bottom, start, end, between}`, each `{style, width, space, color}`. `style` is `single`, `double`, `dotted`, `dashed`, `thick`, `triple`, `thinThickSmallGap`, `thickThinSmallGap`, `wave`, `doubleWave`, `dashDotStroked`, `threeDEmboss`, `threeDEngrave`, `inset`, or `outset`. `width` is in points from 0.25 to 6, step 0.125 (default 0.5). `space` is an integer number of points from 0 to 31 (default 1). `color` is a color (default the text color) | Borders. Neighbors with equal borders share one box, and `between` draws between them |
+| `shade` | `{fill, pattern, color}`. `fill` and `color` are colors. `pattern` is an OOXML `ST_Shd` name: `clear` (the default), `solid`, `horzStripe`, `vertStripe`, `reverseDiagStripe`, `diagStripe`, `horzCross`, `diagCross`, `thinHorzStripe`, `thinVertStripe`, `thinReverseDiagStripe`, `thinDiagStripe`, `thinHorzCross`, `thinDiagCross`, or `pct5`, `pct10`, `pct12`, `pct15`, `pct20`, `pct25`, `pct30`, `pct35`, `pct37`, `pct40`, `pct45`, `pct50`, `pct55`, `pct60`, `pct62`, `pct65`, `pct70`, `pct75`, `pct80`, `pct85`, `pct87`, `pct90`, `pct95` | Shading behind the paragraph |
+| `dir` | `rtl` or `ltr` | Direction |
+| `lang` | A language tag (Appendix D.8) | Language, for spelling, hyphenation, and voices |
+| `outline` | Integer, 1 to 9 | Outline level, for headings 7 to 9 (`R-STY-3`) and outline views |
+| `dropCap` | `{"mode": "drop" or "margin", "lines": 1 to 10 (default 3), "distance": points from 0 to 1584, step 0.05 (default 0)}` | A drop cap on the first letter |
+| `list` | `{"id": list ID, "restart": boolean}`, with `restart` defaulting to `false` | On a list item: the list definition it follows (section 6.9), and whether numbering starts again here |
+| `hyphenate` | Boolean | Overrides `view.text.hyphenate` (section 5.4.2) |
+
+`R-PARA-2`. Keys of `paras` that name no element in `ids` are ignored, and writers drop them, as for `styles` (section 6.6). Paragraph formatting is version 1 data (`R-STAMP-2`): a version 1 reader keeps `paras`, and the entries stay with their paragraphs through its edits, because element IDs move with their elements.
+
+`R-PARA-3`. A table block has no `paras`. A reader ignores one there and keeps it (`R-SHT-21`).
+
+### 6.9 Lists
+
+`R-LIST-1`. A text block may hold `lists`, a map from a list ID to a list definition, at most 256 per block. A list ID is 1 to 16 characters from `a-z` and `0-9`. A definition is `{"levels": [...]}`, with 1 to 9 levels, the first for the outermost items. Each level is an object whose keys are all optional:
+
+| Key | Type and range | Default for level n |
+|---|---|---|
+| `format` | `decimal`, `decimalZero`, `lowerLetter`, `upperLetter`, `lowerRoman`, `upperRoman`, `ordinal`, `cardinalText`, `ordinalText`, `bullet`, `none`, `hebrew1`, `hebrew2`, `arabicAlpha`, `arabicAbjad`, `hindiNumbers`, `thaiNumbers`, `chineseCounting`, `japaneseCounting`, or `koreanCounting`: the OOXML `ST_NumberFormat` names | Numbered lists: `decimal`, `lowerLetter`, and `lowerRoman`, repeating. Bulleted lists: `bullet` |
+| `text` | 0 to 64 characters, where `%1` to `%9` stand for the numbers of levels 1 to 9. A `%k` with k greater than n, or a `%` not followed by a digit from 1 to 9, is written as it is | `%n.` for numbered levels, the symbol for bullets |
+| `start` | Integer, 0 to 32,767 | 1 |
+| `indent` | Points from 0 to 1584, step 0.05: where the text starts | 36 × n |
+| `hanging` | Points from 0 to 1584, step 0.05: how far the number hangs before the text | 18 |
+| `symbol` | One character: the bullet | The app's bullet for that level |
+| `font` | A font name or token (Appendix D.2): the font of the number or bullet | The paragraph's font |
+| `align` | `start`, `center`, or `end`: how the number sits in its space | `start` |
+
+`R-LIST-2`. A list item names its definition with `paras[item].list.id`. Separate Markdown lists whose items name the same list ID number as one list: each item counts on from the last item of the same level before it. An item whose list ID names no definition uses the defaults above.
+
+`R-LIST-3`. For version 1 readers and other Markdown tools, a writer writes a numbered list's Markdown start number (section 7.2) as the number its first item shows, such as `4.` for a list that continues from three items. In decimal lists, `page.md` and version 1 readers then show the right numbers.
+
+`R-LIST-4`. Lists are version 1 data (`R-STAMP-2`).
+
+### 6.10 Notes, comments, and suggestions
+
+Version 2 adds footnotes and endnotes, comments, and suggested changes. Their marks and references live in the Markdown of a text block or of a table's cells (sections 7.10 and 7.12), and their records live in the `data` of the same block. Each record is keyed by an ID (section 2.4) from the page's ID space.
+
+`R-NOTE-1`. `data.notes` maps a note ID to `{kind, markdown}`: `kind` is `foot` (the default) or `end`, and `markdown` is inline OpenNote Markdown with hard breaks, at most 64 KiB. A block has at most 10,000 notes. The note's reference is `[^ID]` in the block's Markdown (`R-FN-1`).
+
+`R-NOTE-2`. A note belongs to the block that holds its reference. A writer that moves a paragraph to another block, or splits a block, moves each note with its reference. Writers drop notes that no reference in the block names.
+
+`R-CMT-1`. `data.comments` maps a comment ID to a comment. A block has at most 10,000 comments.
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `author` | String, 1 to 100 characters | required | The display name of the person, as set in the app |
+| `time` | timestamp | required | When the comment was made |
+| `markdown` | Inline OpenNote Markdown with hard breaks, at most 64 KiB | required | The comment's text |
+| `replies` | Up to 256 objects `{author, time, markdown}`, oldest first | `[]` | Replies |
+| `resolved` | Boolean | `false` | Whether the comment is resolved |
+
+`R-CMT-2`. A comment covers the text inside its `comment` marks (`R-MRK-19`). The marks with one ID may sit in several paragraphs of one block, which together are its range. Writers drop comments that no mark in the block names.
+
+`R-CMT-3`. An author is only a display name. It is never an account ID or an email address, and writers never send it anywhere.
+
+`R-CMT-4`. A writer never splits a block where the marks or references of one comment, suggestion, or note would end up in two blocks.
+
+`R-SUG-1`. `data.suggestions` maps a suggestion ID to `{kind, author, time, before}`. `kind` is `ins` (inserted text), `del` (deleted text), or `fmt` (a format change). `author` and `time` are as in comments. `before` is present only for `fmt`: the canonical inline Markdown of the range as it was before the change, at most 64 KiB. A block has at most 10,000 suggestions.
+
+`R-SUG-2`. The marks `insertion`, `deletion`, and `formatChange` (`R-MRK-20` to `R-MRK-22`) name their records. A mark whose record is missing, or whose record has another kind, is shown as a suggestion by an unknown author, and readers keep it. Writers drop records that no mark in the block names.
+
+`R-SUG-3`. Notes, comments, and suggestions are version 2 data (`R-STAMP-10`).
+
+### 6.11 Text layout
+
+`R-LAY-1`. A text block may hold `layout`: `{columns, gap, rule}`. `columns` is an integer from 1 to 4 (default 1), the number of newspaper columns. `gap` is the space between them in points, from 0 to 1584, step 0.05 (default 36). `rule` is a boolean (default `false`) that draws a line between columns. Layout is version 1 data (`R-STAMP-2`).
+
+### 6.12 Break blocks
+
+`R-BRK-1`. A `break` block is a flowing block whose `data` is `{"kind": "page"}` or `{"kind": "column"}`. `kind` defaults to `page`. A break has no frame. A reader ignores a frame on one.
+
+`R-BRK-2`. Like every block type newer than version 1, a break carries a fallback (section 6.5). Its fallback is exactly `{"markdown": "---"}`, so a version 1 reader shows a divider.
+
+`R-BRK-3`. In paginated mode, the flowing blocks after a page break start at the top margin of the next sheet. A column break starts the next column of a text layout with columns, and acts as a page break elsewhere. In infinite mode, a break is drawn as a divider. A writer splits a text block where a break is inserted, which section 6.3 allows. A page with a break uses version 2 (`R-STAMP-11`).
+
+### 6.13 Code blocks and the format version
+
+`R-CODE-1`. The code blocks `ext:org.opennote/codeproject` and `ext:org.opennote/codecell` are extension blocks (section 6.4). Whatever their `data` holds, including a data version `v` and `minEditor`, they never change a page's format version (`R-STAMP-7`). Their own `data.v` and `data.minEditor` decide who may edit the block: a reader whose code version is below `minEditor` shows the block read-only with its fallback.
+
 ## 7. OpenNote Markdown
 
 ### 7.1 Base
 
 Text blocks and table cells store OpenNote Markdown 1: CommonMark 0.31.2 with two extensions from GitHub Flavored Markdown (GFM), task list items and strikethrough with `~~`, plus the additions in this section.
+
+Format version 2 stores OpenNote Markdown 2: Markdown 1 plus the reserved inline tags, the marks, and the footnote references of sections 7.9 to 7.13. Text that uses none of them is the same in both.
 
 Readers must parse the whole CommonMark syntax, because text can come from hand edits and imports. Writers must write only the canonical form described here, so that saving, reloading, and undo give identical text. The editor in the app's interface serializes and parses this dialect. The Rust core stores `markdown` as an opaque string, except for escaping text it generates (section 7.6) and rewriting links in `page.md` (section 11.1).
 
@@ -917,7 +1278,7 @@ Only these exact tags have meaning. Attribute values come from fixed lists, so t
 | `<span data-size="SIZE">` | `</span>` | Text size: `small`, `large`, or `xlarge` |
 | `<em>`, `<strong>`, `<del>`, `<mark>` | `</em>`, `</strong>`, `</del>`, `</mark>` | The same as `*`, `**`, `~~`, and `==`. Writers use these forms only where delimiters would not work (section 7.7) |
 
-Tags must nest properly and close within the same paragraph, heading, or cell. Readers must treat any other raw HTML as plain text, and writers then escape its `<`.
+Tags must nest properly and close within the same paragraph, heading, or cell. Readers must treat any other raw HTML as plain text, and writers then escape its `<`. Version 2 adds one grammar for many more tags (section 7.9). These version 1 tags keep their meaning there.
 
 Other Markdown tools show these tags as intended where they render HTML. Where they do not, the text inside stays readable.
 
@@ -962,6 +1323,10 @@ The rules apply to text outside code spans, code blocks, link destinations, and 
 | `>` | First on a paragraph line | Block quotes |
 | `-` and `+` | First on a paragraph line | Lists, breaks, and setext headings |
 | `.` and `)` | After 1 to 9 digits that begin a paragraph line | Numbered lists |
+| `!` | Right before a link's `[`, as the app's version 1 writer already does, or before a footnote reference (version 2) | Images |
+| `(` and `:` | Right after a footnote reference (version 2) | Links and link reference definitions (`R-FN-3`) |
+
+"First" and "last" on a line, "beside", and "the start of a word" are judged on the text of the line alone, with tags and delimiters left out. So a space right after a tag that opens a paragraph line is still first on that line.
 
 #### Typed hashtags
 
@@ -981,8 +1346,8 @@ Every other character is written as itself. Text never contains `U+000D`: a line
 - Exactly one blank line separates blocks. There are no blank lines at the start, no trailing spaces on any line, and no newline at the end of the `markdown` string.
 - A list is tight, with no blank lines between items, unless an item holds more than one block. Then one blank line separates its items.
 - A writer never writes two lists of one kind next to each other, both bulleted (task lists included) or both numbered. The blank line between them would read back as one loose list. It joins them first: the later list's items follow the earlier list's, which keeps its start number. A bulleted list beside a numbered list stays two lists.
-- Marks nest in this order, outermost first: link, strong emphasis, emphasis, strikethrough, underline, highlight, text color, text size, subscript or superscript, and code. Where two ranges overlap, the mark that comes later in this order is closed and reopened.
-- Whitespace at either edge of a marked range is moved outside the delimiters.
+- Marks nest in this order, outermost first: link, strong emphasis, emphasis, strikethrough, underline, highlight, text color, text size, subscript or superscript, and code. Where two ranges overlap, the mark that comes later in this order is closed and reopened. Version 2 extends the order with its marks (`R-MRK-24`).
+- Whitespace at either edge of a marked range is moved outside the delimiters. In version 2, marks that show on spaces keep their spaces (`R-WS-1`).
 - Where a delimiter (`*`, `**`, `~~`, or `==`) would not open or close under CommonMark's rules for that position, the writer uses the matching HTML tag from section 7.4 for that range.
 - A code span uses the smallest number of backticks that does not appear as a run of exactly that length in its content. It adds one space inside each end when the content starts or ends with a backtick, or starts and ends with a space without being all spaces.
 - A code fence is 3 backticks, or 1 more than the longest run of backticks that starts any line of its content after up to 3 spaces, whichever is more. The closing fence matches the opening fence.
@@ -996,8 +1361,102 @@ Every other character is written as itself. Text never contains `U+000D`: a line
 |---|---|---|
 | `escape/` | Pairs of plain text and its escaped form | The Rust escaping function, the TypeScript serializer, and the Python reference reader |
 | `documents/` | Canonical Markdown paired with a neutral document tree, which that folder's README defines | The serializer and parser in the interface |
+| `inline-v2/` | Markdown 2: canonical Markdown and its tree, the readable text, and the stamp a page with it needs. It includes foreign tags, overlaps, every value boundary, and hostile input that must stay literal | Every reader of version 2, and the Python reference reader |
 
-Every implementation must pass both sets. For any document `d`, `parse(serialize(d))` equals `d`. For any canonical string `m`, `serialize(parse(m))` equals `m`.
+Every implementation must pass both version 1 sets, and every implementation of version 2 must pass `inline-v2/` too. For any document `d`, `parse(serialize(d))` equals `d`. For any canonical string `m`, `serialize(parse(m))` equals `m`.
+
+### 7.9 Reserved inline tags and foreign marks
+
+Version 2 reserves one grammar for every inline tag: the tags of this version and the tags of later versions. A reader that knows version 2 then keeps the formatting of a later version that it cannot show. [ADR 0076](../adr/0076-reserved-inline-tags-and-foreign-marks.md) records why.
+
+```text
+open  = "<" name 1*8( " " attr "=" DQUOTE value DQUOTE ) ">"
+name  = "span" / "u" / "del" / "mark" / "ins" / "s"
+attr  = "lang" / "dir" / "data-" 1*16( %x61-7A / DIGIT / "-" )
+value = 0*200( any character except DQUOTE, "<", ">", "&", and Unicode control characters )
+close = "</" name ">"
+```
+
+| Rule | Statement |
+|---|---|
+| `R-INL-1` | An opening tag has a name from the list and 1 to 8 attributes. Each attribute is one space, then `lang`, `dir`, or `data-` and 1 to 16 characters from `a-z`, `0-9`, and `-`, then `="`, the value, and `"`. Nothing else may appear: no other spaces, no single quotes, no uppercase letters, and no `/` before `>` |
+| `R-INL-2` | A value has 0 to 200 characters, none of which is `"`, `<`, `>`, `&`, or a Unicode control character (category Cc). So a value never needs escaping, and backslashes and Markdown characters in it are literal |
+| `R-INL-3` | Attribute names appear in increasing code point order, each once |
+| `R-INL-4` | A closing tag is `</` and the name and `>`. The version 1 tags `<u>`, `<sub>`, `<sup>`, `<em>`, `<strong>`, `<del>`, and `<mark>`, which have no attributes, close the same way |
+| `R-INL-5` | Tags pair like brackets within one paragraph, heading, cell, or note. Reading from left to right, an opening tag goes on a stack. A closing tag pairs with the opening tag on top of the stack when the names match. Otherwise it stays literal text and the stack does not change. Opening tags left on the stack at the end stay literal text. A tag never pairs across a paragraph break |
+| `R-INL-6` | A pair inside 32 or more other pairs is literal text, both its tags. So tags nest at most 32 deep |
+| `R-INL-7` | A pair is a known mark when its tag name and its exact set of attributes match a row of section 7.10, and every value is in that row's grammar. Every other pair is a foreign mark. That includes a known attribute with a value outside its grammar, an unknown attribute, and two marks in one tag |
+| `R-INL-8` | The tags of version 1 (section 7.4) keep their meaning. `<mark data-color>`, `<span data-color>`, and `<span data-size>` are now rows of section 7.10, whose values include those of version 1 |
+| `R-INL-9` | A foreign mark keeps the exact bytes of its opening tag. The text inside is shown without formatting and can be edited. Writers write the opening tag back byte for byte, and the matching closing tag |
+| `R-INL-10` | Foreign marks come last in the nesting order, just outside code (`R-MRK-24`). Several can cover the same text: they don't exclude each other, and they nest in code point order of their opening tags. Two adjacent ranges with byte-identical opening tags join |
+| `R-INL-11` | Any other raw HTML is literal text, as in version 1, and writers escape its `<` when they write the text (section 7.6) |
+| `R-INL-12` | A tag inside a code span is code text. A pair may hold code spans, links, footnote references, and hard breaks |
+
+A reader of version 1 sees every tag outside section 7.4, and every value of version 2, as literal text, and its writer would escape them. That is why a page that uses one is stamped `formatVersion` 2 (`R-STAMP-8`), which a version 1 reader opens read-only (section 15.2).
+
+### 7.10 Marks of version 2
+
+`R-MRK-25`. One mark is one tag. A tag holds several attributes only when they belong to one mark, as for underline and box, in code point order.
+
+| Rule | Mark | Canonical tag | Values |
+|---|---|---|---|
+| `R-MRK-1` | `font` | `<span data-font="F">` | A font name or theme token (Appendix D.2) |
+| `R-MRK-2` | `textSize` | `<span data-size="S">` | `small`, `large`, or `xlarge` (version 1), or points from 1 to 1638, step 0.5 (Appendix D.3) |
+| `R-MRK-3` | `underline` | `<u>` (single, version 1), `<u data-line="L">`, `<u data-line="L" data-line-color="C">`, or `<u data-line-color="C">` | L is one of the 16 underline styles other than `single` (Appendix D.5). C is a color (Appendix D.7). Without `data-line`, the line is single |
+| `R-MRK-4` | `strike` | `~~` or `<del>` (single, version 1), or `<del data-line="double">` | `double` |
+| `R-MRK-5` | `weight` | `<span data-weight="W">` | 100 to 900, step 100, except 400 (no mark) and 700 (written `**`, `R-MRK-27`) |
+| `R-MRK-6` | `caps` | `<span data-caps="V">` | `small` (small capitals) or `all` (all capitals) |
+| `R-MRK-7` | `tracking` | `<span data-tracking="T">` | Letter spacing in points, -1584 to 1584, step 0.05, except 0 |
+| `R-MRK-8` | `scale` | `<span data-scale="P">` | Character width in percent, an integer from 1 to 600, except 100 |
+| `R-MRK-9` | `shift` | `<span data-shift="H">` | Raised (positive) or lowered text in points, -1584 to 1584, step 0.5, except 0 |
+| `R-MRK-10` | `kern` | `<span data-kern="K">` | `0` (no kerning), or points from 1 to 1638, step 0.5: kern at this size and above |
+| `R-MRK-11` | `otf` | `<span data-otf="TOKENS">` | OpenType features: one or more of `clig-none`, `dlig`, `hlig`, `liga-none`, `lnum`, `onum`, `pnum`, `tnum`, `zero`, and `ss01` to `ss20`, each once, separated by one space, in code point order |
+| `R-MRK-12` | `effect` | `<span data-effect="TOKENS">` | One or more of `emboss`, `engrave`, `outline`, and `shadow`, each once, separated by one space, in code point order. `emboss` and `engrave` exclude each other |
+| `R-MRK-13` | `box` | `<span data-box="B">` or `<span data-box="B" data-box-color="C">` | B is `single`, `double`, `dotted`, `dashed`, or `thick`. C is a color |
+| `R-MRK-14` | `highlight` | `==` (Honey, version 1), or `<mark data-color="C">` | Any color of Appendix D.7 except `honey`, which is written `==`. Version 1 has only `mint`, `rose`, `apricot`, and `lilac` |
+| `R-MRK-15` | `shade` | `<span data-shade="C">` | A color: shading drawn behind the text and behind any highlight |
+| `R-MRK-16` | `textColor` | `<span data-color="C">` | A color. Version 1 has only pen names and `#rrggbb` |
+| `R-MRK-17` | `lang` | `<span lang="L">` | A language tag (Appendix D.8) |
+| `R-MRK-18` | `dir` | `<span dir="D">` | `rtl` or `ltr`: the run is isolated in that direction |
+| `R-MRK-19` | `comment` | `<span data-comment="ID">` | The ID of a comment in `data.comments` (`R-CMT-2`) |
+| `R-MRK-20` | `insertion` | `<span data-ins="ID">` | The ID of a suggestion of kind `ins` |
+| `R-MRK-21` | `deletion` | `<span data-del="ID">` | The ID of a suggestion of kind `del` |
+| `R-MRK-22` | `formatChange` | `<span data-fmt="ID">` | The ID of a suggestion of kind `fmt` |
+| `R-MRK-23` | `charStyle` | `<span data-style="NAME">` | The name of a character style (`R-STY-8`) |
+
+The IDs in tags are IDs as section 2.4 writes them: 26 lowercase characters. An ID in any other form is outside the grammar. The marks of version 1 without tags (link, strong emphasis, emphasis, subscript, superscript, and code) are unchanged.
+
+`R-MRK-24`. Marks nest in this order, outermost first: link, comment, insertion, deletion, formatChange, dir, lang, charStyle, strong emphasis, weight, emphasis, strike, underline, highlight, shade, textColor, font, textSize, caps, tracking, scale, shift, kern, otf, effect, box, subscript or superscript, foreign marks, and code. Where two ranges overlap, the mark that comes later in the order is closed and reopened, as in version 1.
+
+`R-MRK-26`. Adjacent ranges of one mark with equal values join. Several comments may cover the same text; they nest in code point order of their IDs, the lowest outermost.
+
+`R-MRK-27`. `**` stays the only form of bold, so a writer never writes weight 700 as a tag. Strong emphasis and weight exclude each other in the editor. A reader that finds both on the same text keeps both and draws the weight.
+
+### 7.11 Whitespace at the edges of marks
+
+`R-WS-1`. Whitespace at the edges of a marked range moves outside the range, as in version 1, except for marks that show on spaces: underline (other than the `words` style), strike, highlight, shade, box, insertion, deletion, and foreign marks. Those keep spaces at their edges, because a space under an underline prints in Word. Where a delimiter could not then close, the writer uses the tag (section 7.7), such as `<mark>a </mark>` for a highlight with a space at its end.
+
+`R-WS-2`. A hard break at the edge of any marked range moves outside the range.
+
+`R-WS-3`. Text whose marks are all of version 1 stays version 1, even with spaces kept inside them (`R-STAMP-5`). A version 1 writer that rewrites such a paragraph moves those spaces outside, which only changes how the spaces look.
+
+### 7.12 Footnote references
+
+`R-FN-1`. A footnote reference is `[^ID]`, where ID is an ID as section 2.4 writes it: 26 characters, lowercase. In version 1 a writer always escapes `[` in text (section 7.6), so an unescaped `[^` can only start this syntax. The reference is an inline atom: it holds no text and can carry marks. Any other text after `[^` is literal.
+
+`R-FN-2`. CommonMark goes first. A `[^ID]` that CommonMark reads as part of a link, an image, or a link reference definition is not a reference, such as `[^ID](x)`, which is a link.
+
+`R-FN-3`. A writer escapes a `(` or a `:` right after a reference, and a `!` right before one (section 7.6), so a reference never turns into a link, a definition, or an image.
+
+`R-FN-4`. The Markdown of a note, a comment, and a cell note holds no references. There, a writer escapes `[` as usual, and a reader reads an unescaped `[^ID]` as literal text.
+
+`R-FN-5`. A reference names a note in `data.notes` of its own block (`R-NOTE-2`). A reference whose note is missing is drawn with no note text, and readers keep it.
+
+`R-FN-6`. The number a reference shows is not stored. Readers number the references of each kind, foot and end, from 1 in reading order (section 6.2).
+
+### 7.13 Readable text
+
+`R-TXT-1`. The readable text of inline Markdown is the text of its runs in order, with every mark dropped, including foreign marks, so tags disappear and their content stays. A hard break becomes a line feed, a footnote reference becomes nothing, and paragraphs are joined by a blank line. Literal tags (`R-INL-5`, `R-INL-11`) stay as written. Search, formula detection (`R-SHT-5`), and the Python reference reader use it.
 
 ## 8. Ink
 
@@ -1678,20 +2137,29 @@ A file that is only in the cloud, such as a file in OneDrive that is not downloa
 
 All JSON files share one format version number. A later version raises it at most once per app release, even for changes that only add things. The change log in Appendix C lists what each version changed.
 
+`R-VER-1`. Version 2 is the format version of the release that adds text formatting and spreadsheet tables. In version 2, only `page.json` files ever need version 2, because no other file holds a version 2 feature. Writers of version 2 write `notebook.json`, `section.json`, `item.json`, and `versions.json` with `formatVersion` 1. Ink segments, journal files, and readable copies keep their version 1 values.
+
+`R-VER-2`. A JSON file of the table above may hold a third version key, `minWriterVersion`: an integer, the oldest reader version that can edit the file without losing anything. It is written right after `minReaderVersion`. When it is missing, it equals `formatVersion`, and writers leave it out when it does (section 2.2). So in version 2 it appears only in a file of a later version whose writer allows older editors. [ADR 0077](../adr/0077-min-writer-version.md) records why.
+
+`R-VER-3`. A valid `minWriterVersion` W meets R ≤ W ≤ F, where R is `minReaderVersion` and F is `formatVersion`. A reader treats a missing or invalid W as equal to F.
+
 ### 15.2 Reading rules
 
-Let V be the newest format version a reader supports. For a file with `formatVersion` F and `minReaderVersion` R:
+Let V be the newest format version a reader supports. For a file with `formatVersion` F, `minReaderVersion` R, and `minWriterVersion` W (`R-VER-3`):
 
-| Condition | What the reader does |
-|---|---|
-| F ≤ V | Reads and writes normally. An older file is upgraded in memory first (section 15.3) |
-| F > V and R ≤ V | Opens it read-only and shows what it can, using fallbacks. The banner says "This page was saved by a newer version of OpenNote. You can read it here. Update OpenNote to edit it." |
-| R > V | Cannot show it. Shows the page's `page.md` read-only if it exists, with "This page needs a newer version of OpenNote." |
-| `formatVersion` missing, or `kind` wrong | Reports that the file is not an OpenNote file, with its path |
+| Rule | Condition | What the reader does |
+|---|---|---|
+| | F ≤ V | Reads and writes normally. An older file is upgraded in memory first (section 15.3) |
+| `R-VER-4` | F > V, R ≤ V, and W ≤ V, for a reader of version 2 or later | Reads and writes it. It keeps every tag, key, and block it does not know, as foreign marks (section 7.9) and unknown data (section 2.9) |
+| | F > V, R ≤ V, and W > V | Opens it read-only and shows what it can, using fallbacks. The banner says "This page was saved by a newer version of OpenNote. You can read it here. Update OpenNote to edit it." |
+| | R > V | Cannot show it. Shows the page's `page.md` read-only if it exists, with "This page needs a newer version of OpenNote." |
+| | `formatVersion` missing, or `kind` wrong | Reports that the file is not an OpenNote file, with its path |
+
+A reader of version 1 does not know `minWriterVersion`, so it opens every file with F > 1 read-only when R ≤ 1.
 
 Read-only applies per file. A newer `page.json` makes that page read-only. A newer `section.json` freezes that section's settings and page list, while its pages follow their own versions. A newer `notebook.json` freezes the notebook's groups and defaults.
 
-Writers must never replace a file whose version is newer than the version they write. Writers set `minReaderVersion` to the oldest version that can show the file usefully with fallbacks, which is normally 1. They raise it only when older readers would show something wrong, such as encrypted content.
+`R-VER-5`. Writers must never replace a file whose version is newer than the version they write, unless W ≤ V. A writer that edits such a file writes its `formatVersion`, `minReaderVersion`, and `minWriterVersion` back as they were, and never lowers them. Writers set `minReaderVersion` to the oldest version that can show the file usefully with fallbacks, which is normally 1. They raise it only when older readers would show something wrong, such as encrypted content. Every version 2 feature keeps `minReaderVersion` at 1.
 
 ### 15.3 Migrations
 
@@ -1699,14 +2167,15 @@ A migration upgrades a file from one version to the next. The chain of migration
 
 - Migrations are pure functions on JSON values. They use no files, no clock, and no randomness, so running one twice gives the same result.
 - They never drop data. A renamed field moves. A removed feature keeps its data as unknown keys.
-- They run in memory whenever an older file is read. The file is written in the new version only when it is saved because of an edit. Untouched pages stay in the old version, so an older device that shares the notebook can still edit them.
+- They run in memory whenever an older file is read. A file is saved only because of an edit, and then with the lowest version its content needs (section 15.6). Untouched pages, and pages that use nothing newer, stay in the old version, so an older device that shares the notebook can still edit them.
+- `R-VER-6`. The migration from version 1 to version 2 is the identity on JSON. No field moves or changes. Only the version keys change, when a file first needs version 2.
 - Ink segments are never migrated. Readers keep a decoder for every segment version ever released, and compaction writes the current one.
 - History snapshots are never rewritten. They are upgraded in memory when opened.
 - Every migration has fixture tests: an input file for each older version and the expected output.
 
 ### 15.4 Backups before an upgrade
 
-Before a writer first writes an upgraded file into a notebook, it copies every JSON file of the notebook to its device-local backups folder (section 20.1). The copies keep their relative paths, and the writer flushes them. Ink and assets are never rewritten by migrations, so they need no backup. Writers keep the 3 newest backup sets per notebook. Each page's last revision before the upgrade is also kept as a version with the reason `beforeUpgrade`, so it is one click away inside the app.
+Before a writer first writes an upgraded file into a notebook, it copies every JSON file of the notebook to its device-local backups folder (section 20.1). `R-VER-7`. With lowest-version stamping, a file is upgraded when a save first gives it a higher `formatVersion` than the file on disk has. The backup runs then. The copies keep their relative paths, and the writer flushes them. Ink and assets are never rewritten by migrations, so they need no backup. Writers keep the 3 newest backup sets per notebook. Each page's last revision before the upgrade is also kept as a version with the reason `beforeUpgrade`, so it is one click away inside the app.
 
 ### 15.5 Rules for later versions
 
@@ -1716,7 +2185,35 @@ These rules are for people who change this format:
 - A new field must be optional and have a stated default.
 - A name or a binary code is never reused with a new meaning.
 - A new encoding of ink gets a new segment version. Decoders for old versions stay forever.
-- Every change raises `formatVersion`, updates this specification and Appendix C, adds fixtures, and adds a migration when old files need one.
+- Every change defines a new `formatVersion`, updates this specification and Appendix C, adds fixtures, and adds a migration when old files need one.
+- Each version lists the features that need it in a stamping table, as section 15.6 does for version 2. A feature that an older reader keeps without misreading, and that its edits leave correct, does not need the new version.
+- A new inline formatting feature uses the reserved grammar of section 7.9, so readers of version 2 keep it. When all of a version's new features are such tags or unknown keys, its writers set `minWriterVersion` to 2.
+
+### 15.6 Stamping the lowest version a file needs
+
+`R-VER-8`. A writer stamps each file with the lowest format version whose features the file uses, computed from the content at save time. [ADR 0078](../adr/0078-stamp-the-lowest-version.md) records why. For a page of version 1 or 2, the stamp is `formatVersion` 2 when any row marked 2 below applies, and 1 otherwise, with `minReaderVersion` 1 and `minWriterVersion` equal to `formatVersion`. A file of a later version keeps its keys (`R-VER-5`).
+
+`R-VER-9`. A page goes back to version 1 when a save removes its last version 2 feature. This is safe, because a version 1 reader accepts every key that remains.
+
+This is the one stamping table for every part of the app:
+
+| Rule | The page holds | Version | A version 1 reader (Beta 8) |
+|---|---|---|---|
+| `R-STAMP-1` | Only version 1 constructs | 1 | Edits it |
+| `R-STAMP-2` | `data.paras`, `data.lists`, or `data.layout` in text blocks, and list start numbers as `R-LIST-3` writes them | 1 | Edits it. Paragraph formats, list formats, and columns are not drawn, but they are kept and stay with their paragraphs |
+| `R-STAMP-3` | Version 2 style keys, a page style sheet, a page or notebook `theme`, or `stylesChanged` | 1 | Edits it, and draws the styles with the version 1 keys |
+| `R-STAMP-4` | `view.text` or `view.print` | 1 | Edits it. Its print has no saved headers or footers |
+| `R-STAMP-5` | Version 1 tags with version 1 values only, including spaces kept inside them (`R-WS-3`) | 1 | Edits it |
+| `R-STAMP-6` | `data.sheet` with only `styles`, `table`, `cols`, `rows`, `cells`, `notes`, `links`, or `valuesOf`, and no `v` beside a formula cell | 1 | Edits it. Cell formats are not drawn but are kept (`R-SHT-20`) |
+| `R-STAMP-7` | Any code project block or code cell, of any data version (`R-CODE-1`) | 1 | Edits the page. The blocks follow their own `minEditor` |
+| `R-STAMP-8` | A tag that pairs (section 7.9) and is not a version 1 tag with a version 1 value: any mark of section 7.10 beyond version 1, including `weight` and `charStyle`, a version 1 tag with a value of version 2 such as `<span data-size="12">`, and any foreign mark | 2 | Read-only with the newer-version banner. Nothing is lost |
+| `R-STAMP-9` | A footnote reference `[^ID]` | 2 | Read-only |
+| `R-STAMP-10` | An entry in `data.notes`, `data.comments`, or `data.suggestions` | 2 | Read-only |
+| `R-STAMP-11` | A `break` block | 2 | Read-only |
+| `R-STAMP-12` | `data.sheet` with an entry in `merges`, `names`, `validation`, `conditional`, or `values` | 2 | Read-only |
+| `R-STAMP-13` | `data.sheet` with `v`, in a table that holds a formula cell (`R-SHT-5`) | 2 | Read-only. Its old engine may show other results for `-x^y`, `a^b^c`, and `E` |
+
+The rows apply to the Markdown of text blocks and of table cells alike. An empty map, such as `"merges": {}`, holds no entry.
 
 ## 16. Validation and limits
 
@@ -1739,6 +2236,12 @@ Readers check every file they read, and writers check every change they apply. A
 | Title | 1,000 characters |
 | Tags | 1,000 per page and per text element, 200 characters each |
 | Element IDs | 100,000 per text block |
+| Inline tags (version 2) | 8 attributes per tag, 200 characters per value, 32 levels of nesting (section 7.9) |
+| Notes, comments, and suggestions (version 2) | 10,000 of each per block; 64 KiB of Markdown each; 256 replies per comment |
+| Lists (version 2) | 256 definitions per block, 9 levels each |
+| Tab stops (version 2) | 64 per paragraph |
+| Styles (version 2) | 64 per notebook and 64 per page; `basedOn` chains of 16 |
+| Spreadsheet data (version 2) | Per table: 4,096 styles, 10,000 merges, 256 validation rules, 256 conditional formats, 1,024 names of 255 characters, 10,000 cell notes of 64 KiB, 1,024 links, and 1,000,000 cells. A new formula holds 8,192 characters, and a cached string 32,767 |
 
 Structural checks:
 
@@ -2223,6 +2726,8 @@ Notebooks can come from other people, so readers must treat every file as untrus
 - Check every limit in section 16 before allocating memory. Never trust a count in a file before checking it against the bytes that are really there. Cap the size of every gzip stream you decompress.
 - Reject JSON with duplicate keys or deep nesting.
 - Show Markdown only through the dialect in section 7. Treat HTML other than the allowed tags as text, never open links with unknown schemes, and do not load remote images without the person's consent.
+- Never turn the value of a tag into markup. A foreign mark's opening tag is kept as bytes and shown as nothing, and a value of a known mark is used only after its grammar accepts it (Appendix D). Font names never load fonts from the network.
+- Cap the nesting of tags at 32 and every other count at the limits of section 16 before building any structure from them.
 - Never keep plain text of an encrypted section outside it: no readable copies, index entries, thumbnails, or cache entries (section 5.7).
 - Never use a computer name or account name as a default device label (section 5.3).
 
@@ -2330,13 +2835,69 @@ The folder `docs/format/fixtures/` holds files that every implementation tests a
 | `ink/` | Segment files with their decoded strokes as JSON, including damaged files and their expected reports |
 | `journal/` | Journal generations with the pages recovery must produce |
 | `markdown/escape/` and `markdown/documents/` | The conformance fixtures of section 7.8 |
+| `markdown/inline-v2/` | Markdown 2 (sections 7.9 to 7.13): canonical Markdown, its tree, its readable text, and the stamp a page with it needs |
+| `markdown/paras/` | Version 1 pages that hold paragraph formatting, lists, layout, text settings, and page styles, written byte for byte as a version 1 writer writes them, with their stamps |
+| `markdown/downlevel/` | Pages of versions 1, 2, and 3 with the stamp a writer gives them and what readers of versions 1 and 2 do with them (section 15) |
+| `table-sheet/` | One page for each key of `data.sheet`, a page that Beta 8 edited and that version 2 reads back, and the fingerprints and style IDs a reader must compute (section 6.3) |
 | `readable/` | Pages with their exact `page.md`, `ink.svg`, and `index.md` |
 | `reading-order/` | Pages with the reading order of section 6.2 that a reader must find |
 
-The folder `docs/format/tools/` holds `read_opennote.py`, a reference reader written with only the Python standard library. It turns a notebook into Markdown and SVG files, and its test runs it against the fixtures. It shows that this specification is enough to read a notebook without OpenNote's code.
+Every case of the version 2 folders has a `name`, the `rules` it tests (section 1.5), and an expected `stamp` with `formatVersion`, `minReaderVersion`, and `minWriterVersion`. The stamp gives the value of `minWriterVersion`, and a writer writes that key only when it is less than `formatVersion` (`R-VER-2`). Each folder's README describes the rest.
+
+The folder `docs/format/tools/` holds `read_opennote.py`, a reference reader written with only the Python standard library. It turns a notebook into Markdown and SVG files, and its test runs it against the fixtures. It shows that this specification is enough to read a notebook without OpenNote's code. Its `format_v2.py` reads and writes Markdown 2, finds readable text and stamps, and checks version 2 values against Appendix D.
 
 ## Appendix C: Change log
 
 | Version | Date | Changes |
 |---|---|---|
 | 1 | 2026 | First version. Section 7.6 says how typed hashtags are written and when they become page tags |
+| 2 | 2026 | Markdown 2: the reserved inline tag grammar and foreign marks (7.9), 23 marks (7.10), spaces kept by marks that show on them (7.11), footnote references (7.12), and readable text (7.13). Text blocks gain `paras`, `lists`, `notes`, `comments`, `suggestions`, and `layout` (6.8 to 6.11), and the `break` block is defined (6.12). Table blocks gain `data.sheet` (6.3). Named styles gain version 2 keys in points, page style sheets, themes, and `stylesChanged` (4.6). Pages gain `view.text` and `view.print` (5.4.2, 5.4.3) and the key `minWriterVersion` (15.1, 15.2). Writers stamp the lowest version a file needs (15.6), so only pages with a version 2 feature use version 2. Values in points (2.6) and one set of value grammars (Appendix D) |
+
+## Appendix D: Shared value grammars
+
+Text marks (section 7.10), named styles (section 4.6), paragraph formatting (section 6.8), and cell styles (section 6.3) share these grammars, so one implementation checks all of them. A value outside its grammar is invalid: section 2.3 (`R-NUM-1`) says what a reader does with an invalid key, and section 7.9 (`R-INL-7`) what it does with a tag.
+
+### D.1 Numbers
+
+`R-VAL-1`. Each number has a range and a step and follows `R-NUM-1`. In JSON it is a number. In a tag it is text, such as `10.5`, never `10.50`, `010`, or `+10.5`.
+
+### D.2 Font names and theme tokens
+
+`R-VAL-2`. A font name has 1 to 63 characters. The first is a letter or a digit (Unicode categories L and N), the others are letters, digits, spaces, `.`, `_`, `+`, and `-`, and the last is not a space. A theme token is `+body`, `+heading`, or `+mono`, which resolve as `R-THM-2` says. A name never starts with `+`, so the two can't be confused. Readers match a name to the device's fonts without regard to case. A font the device lacks is drawn with a fallback stack, the font menu shows its name in italics with "Not installed", and readers keep it. A font name never makes a reader load anything from the network.
+
+### D.3 Sizes
+
+`R-VAL-3`. A size is in points, from 1 to 1638, step 0.5, the range of Word. The `textSize` mark also takes the version 1 names `small`, `large`, and `xlarge`, which are 0.85, 1.25, and 1.5 times the size of the paragraph. An export to `.xlsx` clamps a size above 409 to 409 and says so in its report.
+
+### D.4 Weights
+
+`R-VAL-4`. A weight is 100 to 900, step 100: 100 Thin, 200 Extra Light, 300 Light, 400 Regular, 500 Medium, 600 Semibold, 700 Bold, 800 Extra Bold, and 900 Black. A reader draws the nearest face the font has. The `weight` mark leaves out 400 and 700 (`R-MRK-5`).
+
+### D.5 Underline styles
+
+`R-VAL-5`. There are 17 underline styles, the OOXML `ST_Underline` values other than `none`: `single`, `double`, `words` (under words, not spaces), `thick`, `dotted`, `dottedHeavy`, `dash`, `dashedHeavy`, `dashLong`, `dashLongHeavy`, `dotDash`, `dashDotHeavy`, `dotDotDash`, `dashDotDotHeavy`, `wave`, `wavyHeavy`, and `wavyDouble`. Cell styles add the two accounting styles of spreadsheets, `singleAccounting` and `doubleAccounting`. A field that can override an inherited value also takes `none`.
+
+### D.6 Strikethrough
+
+`R-VAL-6`. A strikethrough is single or double. Marks write them as `~~` or `<del>`, and `<del data-line="double">`. Styles and cells write `single`, `double`, or `none`.
+
+### D.7 Colors
+
+`R-VAL-7`. A color is one of these four kinds. Every version 2 field takes all four unless its section says otherwise.
+
+| Kind | Values |
+|---|---|
+| Pen name | `ink`, `indigo`, `brick`, `fern`, `plum`, `amber`, `walnut` (section 2.7) |
+| Highlighter name | `honey`, `mint`, `rose`, `apricot`, `lilac` |
+| Hexadecimal | `#rrggbb`, lowercase |
+| Theme color | `theme:` followed by `accent1`, `accent2`, `accent3`, `accent4`, `accent5`, `accent6`, `text`, or `background` (`R-THM-2`) |
+
+`R-VAL-8`. A tint or shade of a theme color, and a color picked from More colors, is stored as its `#rrggbb` value, worked out when it is applied. So exports get plain RGB, and the grammar has no tint syntax. Automatic color and No color are stored as no value: no mark, or a missing key. A field that can override an inherited value writes `none` for them. Readers keep a palette name they do not know (section 2.7).
+
+### D.8 Language tags
+
+`R-VAL-9`. A language tag is a language of 2 or 3 lowercase letters, then optionally `-` and a script of 4 letters with the first in uppercase, then optionally `-` and a region of 2 uppercase letters or 3 digits: `en`, `en-US`, `zh-Hant-TW`, or `es-419`. The tag `zxx` means "do not check spelling". Other forms of BCP 47 tags are outside the grammar.
+
+### D.9 IDs in values
+
+`R-VAL-10`. An ID inside a tag or a footnote reference is written exactly as section 2.4 writes IDs: 26 lowercase characters, the first from `0` to `7`. The uppercase form that section 2.4 lets readers accept elsewhere is outside the grammar here, so such a tag is a foreign mark and such a reference is literal text.
