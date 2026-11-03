@@ -10,7 +10,8 @@ import styles from './audio.module.css';
 import { platformAudio, switchMicrophone } from './controller';
 import { chooseRecording, recordingChoices } from './state';
 
-export default function OptionsPanel() {
+/** `heading` is false inside a dialog, which already names the options. */
+export default function OptionsPanel({ heading = true }: { heading?: boolean }) {
   const choices = useStore(recordingChoices, (state) => state);
   const system = useFlag('audio.systemAudio');
   const [devices, setDevices] = useState<DeviceInfo[] | null>(null);
@@ -30,7 +31,7 @@ export default function OptionsPanel() {
   const known = devices?.some((device) => device.id === choices.microphone) ?? true;
   return (
     <div className={styles.panel}>
-      <h2>{t('audio.options.title')}</h2>
+      {heading && <h2>{t('audio.options.title')}</h2>}
       <div className={styles.field}>
         <label htmlFor={selectId}>{t('audio.options.microphone')}</label>
         <select

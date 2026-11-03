@@ -1,6 +1,10 @@
 /* The transcript block and its dialogs. Tokens only (BRAND.md section 14). */
 @layer components {
+  /* The panel is app chrome, like the recording card above it, so it uses the interface font, not the page's. */
   .card {
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
     padding: var(--space-4);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
@@ -48,6 +52,11 @@
     margin: 0;
   }
 
+  /* Make a summary starts at the left edge with the rest, not stretched and centered across the card. */
+  .summary > button {
+    justify-self: start;
+  }
+
   .help,
   .label {
     margin: 0;
@@ -66,9 +75,10 @@
     overflow-y: auto;
   }
 
+  /* The checkbox, the time, and the words sit on one baseline. */
   .line {
     display: flex;
-    align-items: flex-start;
+    align-items: baseline;
     gap: var(--space-2);
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-md);
@@ -159,7 +169,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-3) var(--space-5);
   }
 
   .suggest {

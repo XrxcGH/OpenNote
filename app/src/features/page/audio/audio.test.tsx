@@ -1,13 +1,29 @@
 // Recording in the browser, through the whole interface and the web platform's fake recorder (Phase 9).
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MeterState } from '../../../core/audio';
 import type { MemoryPageService } from '../../../services/pages/memory';
 import { expectNoAxeViolations, pressChord, renderApp } from '../../../test';
 import { RecordingIndicator } from './Indicator';
 import { Meter } from './Meter';
 import { IDLE, RECORDING_TYPE, recordingUi } from './state';
+
+/** When set, the next update of a recording's entry fails, as when the core is busy for seconds. */
+const failing = vi.hoisted(() => ({ next: false }));
+vi.mock('./blocks', async (original) => {
+  const actual = await original<typeof import('./blocks')>();
+  return {
+    ...actual,
+    writeEntry: (...args: Parameters<typeof actual.writeEntry>) => {
+      if (failing.next) {
+        failing.next = false;
+        return Promise.reject(new Error('The core is busy.'));
+      }
+      return actual.writeEntry(...args);
+    },
+  };
+});
 
 /** The first use of a lazy chunk in the dev server waits for it to be transformed. */
 const SLOW = { timeout: 15_000 };
@@ -81,6 +97,30 @@ describe('recording on a page', () => {
     const block = await screen.findByRole('group', { name: /^Recording, \d+:\d\d$/ });
     expect(await within(block).findByRole('button', { name: 'Play' })).toBeTruthy();
     await expectNoAxeViolations(block);
+  });
+
+  it('keeps a recording that started running and shown when its entry can not be updated yet', async () => {
+    await openMitosis();
+    failing.next = true;
+    const group = await screen.findByRole('group', { name: 'Recording' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Record' }));
+    expect(await screen.findByTestId('recording-indicator', {}, SLOW)).toBeTruthy();
+    expect(screen.queryByText(/Recording couldn.t start/)).toBeNull();
+    fireEvent.click(within(screen.getByRole('group', { name: 'Recording' })).getByRole('button', { name: 'Stop' }));
+    await waitFor(() => expect(screen.queryByTestId('recording-indicator')).toBeNull(), SLOW);
+  });
+
+  it('says a recording is running when Start recording runs again, and keeps recording', async () => {
+    await openMitosis();
+    (await screen.findByRole('textbox', { name: 'Page text' })).focus();
+    await pressChord('Alt+Shift+A');
+    expect(await screen.findByTestId('recording-indicator', {}, SLOW)).toBeTruthy();
+    await waitFor(() => expect(recordingUi.get().phase).toBe('recording'));
+    await pressChord('Alt+Shift+A');
+    expect(await screen.findByText('A recording is already running.')).toBeTruthy();
+    expect(recordingUi.get().phase).toBe('recording');
+    await pressChord('Alt+Shift+S');
+    await waitFor(() => expect(screen.queryByTestId('recording-indicator')).toBeNull(), SLOW);
   });
 
   it('starts and stops from the keyboard while the caret is in the text', async () => {

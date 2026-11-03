@@ -148,7 +148,7 @@ function stamped<T extends RecordingEntry>(entry: T, page: { initial: { view: Re
 
 export async function startRecording(): Promise<boolean> {
   if (recordingUi.get().phase !== 'idle') {
-    announce(t('audio.errors.busy'));
+    showToast({ message: t('audio.errors.busy') });
     return false;
   }
   const page = shownOpenPage.get();
@@ -158,6 +158,7 @@ export async function startRecording(): Promise<boolean> {
   }
   const audio = platformAudio();
   const choices = recordingChoices.get();
+  const systemAudio = isEnabled('audio.systemAudio') && choices.systemAudio;
   const session = new RecordingSession(audio.host, hostClock);
   update({ ...IDLE, phase: 'starting', page: page.id });
   let block: string | null = null;
@@ -169,7 +170,7 @@ export async function startRecording(): Promise<boolean> {
       {
         assetsDir,
         microphone: choices.microphone,
-        systemAudio: isEnabled('audio.systemAudio') && choices.systemAudio,
+        systemAudio,
         systemDevice: null,
       },
       async (prepared) => {
@@ -204,13 +205,28 @@ export async function startRecording(): Promise<boolean> {
       }),
     };
     update({ phase: 'recording', block, recording: entry.id, source });
-    await writeEntry(page.id, block, stampedEntry);
     watch(run);
+    // The block and its entry were saved before the audio started, so the recording is safe even when this update
+    // can't be written now (the core can be busy for seconds). Stopping writes the entry again. Failing here would
+    // report a recording that runs as one that didn't start, and leave it running unseen.
+    await writeEntry(page.id, block, stampedEntry).catch((error: unknown) => {
+      commandContext('commandBar').platform.log(
+        'warn',
+        `The recording entry wasn't updated: ${describeFailure(error)}`,
+      );
+    });
     announce(t('audio.announce.started'));
+    // Recording the PC's sound records the other people in a meeting, so the reminder comes when it starts.
+    if (systemAudio) showToast({ message: t('audio.options.consent') });
     void import('./watch').then((module) => module.activate());
     return true;
   } catch (error) {
     commandContext('commandBar').platform.log('error', `Recording couldn't start: ${describeFailure(error)}`);
+    // A recording that is reported as not started must not keep running with nothing on screen.
+    if (run) {
+      run.stopExit();
+      await session.stop().catch(() => undefined);
+    }
     run = null;
     update({ ...IDLE });
     showToast({

@@ -60,26 +60,25 @@ export function RecordControl({ toolProps }: CommandBarComponentProps) {
           {flags && <Tool command="audio.flag" name="audio.bar.flag" toolProps={toolProps} />}
         </>
       ) : (
-        <>
-          <Tool command="audio.record" name="audio.bar.record" toolProps={toolProps} disabled={waiting} />
-          <button
-            ref={anchor}
-            type="button"
-            {...toolProps}
-            className={tools.tool}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            onClick={() => setOpen((shown) => !shown)}
-          >
-            {t('audio.bar.options')}
-          </button>
-          <Popover anchor={anchor} label={t('audio.options.title')} open={open} onClose={() => setOpen(false)}>
-            <Suspense fallback={null}>
-              <Options />
-            </Suspense>
-          </Popover>
-        </>
+        <Tool command="audio.record" name="audio.bar.record" toolProps={toolProps} disabled={waiting} />
       )}
+      {/* Options stays while recording, so the microphone can be switched without stopping. */}
+      <button
+        ref={anchor}
+        type="button"
+        {...toolProps}
+        className={tools.tool}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((shown) => !shown)}
+      >
+        {t('audio.bar.options')}
+      </button>
+      <Popover anchor={anchor} label={t('audio.options.title')} open={open} onClose={() => setOpen(false)}>
+        <Suspense fallback={null}>
+          <Options />
+        </Suspense>
+      </Popover>
     </span>
   );
 }
