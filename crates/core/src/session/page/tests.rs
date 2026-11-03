@@ -557,6 +557,42 @@ fn requests_resolve_apply_and_undo() {
     assert_eq!(handle.page_for_tests().title, "Resolved");
 }
 
+/// Bring to front and the other arrange commands move a block among its siblings; the answer carries the moved
+/// block's new order key so the interface can restack it without waiting for a reload.
+#[test]
+fn a_move_answers_with_the_moved_block_order_key() {
+    let page = crate::testing::sample::sample_page();
+    let ids: Vec<BlockId> = page.blocks.iter().map(|b| b.id).collect();
+    let [first, second, ..] = ids[..] else {
+        panic!("the sample page has two blocks")
+    };
+    let clock = crate::testing::sample::test_clock();
+    let limits = crate::Limits::default();
+    let ctx = crate::ops::resolve::ResolveCtx {
+        clock: &clock,
+        limits: &limits,
+        imported: &|_| None,
+    };
+    let req = TxnRequest {
+        page: page.id,
+        client: client("main-1"),
+        client_seq: 1,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::MoveBlock {
+            block: second,
+            frame: None,
+            after: None,
+            before: Some(first),
+        }],
+    };
+    let txn = crate::ops::resolve::resolve(&page, &req, &ctx).unwrap();
+    let mut moved = page.clone();
+    moved.apply(&txn).unwrap();
+    let key = moved.blocks.get(second).unwrap().order.clone();
+    assert_eq!(PageSession::new_order_keys(&txn).get(&second), Some(&key));
+}
+
 /// An edit's answer says whether the edit is in the journal file. While it isn't (here, a journal that can't be
 /// written), the interface keeps saying "Saving" until a `core:saved` whose `through` covers the edit.
 #[test]
