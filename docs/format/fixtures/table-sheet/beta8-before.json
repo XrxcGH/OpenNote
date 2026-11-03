@@ -68,7 +68,16 @@
             }
           ],
           "sheet": {
-            "v": 1,
+            "cells": {
+              "01m3sbcmt0000000000000r002": {
+                "01m3sbcmt0000000000000k001": "uvqwee"
+              }
+            },
+            "rows": {
+              "01m3sbcmt0000000000000r002": {
+                "style": "uvqwee"
+              }
+            },
             "styles": {
               "uvqwee": {
                 "fill": "honey",
@@ -78,16 +87,7 @@
                 }
               }
             },
-            "rows": {
-              "01m3sbcmt0000000000000r002": {
-                "style": "uvqwee"
-              }
-            },
-            "cells": {
-              "01m3sbcmt0000000000000r002": {
-                "01m3sbcmt0000000000000k001": "uvqwee"
-              }
-            },
+            "v": 1,
             "values": {
               "01m3sbcmt0000000000000r001": {
                 "01m3sbcmt0000000000000k003": 5

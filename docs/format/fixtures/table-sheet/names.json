@@ -74,9 +74,9 @@
                 "ref": "[Price]"
               },
               "TaxRate": {
+                "comment": "Sales tax",
                 "ref": "0.0825",
-                "scope": "page",
-                "comment": "Sales tax"
+                "scope": "page"
               },
               "\\Back": {
                 "ref": "1"

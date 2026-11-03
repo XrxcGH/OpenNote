@@ -68,6 +68,16 @@
             }
           ],
           "sheet": {
+            "cols": {
+              "01m3sbcmt0000000000000k001": {
+                "hidden": true,
+                "style": "uvqwee"
+              },
+              "01m3sbcmt0000000000000k002": {
+                "collapsed": true,
+                "level": 7
+              }
+            },
             "styles": {
               "uvqwee": {
                 "fill": "honey",
@@ -75,16 +85,6 @@
                   "bold": true,
                   "family": "+body"
                 }
-              }
-            },
-            "cols": {
-              "01m3sbcmt0000000000000k001": {
-                "style": "uvqwee",
-                "hidden": true
-              },
-              "01m3sbcmt0000000000000k002": {
-                "level": 7,
-                "collapsed": true
               }
             }
           }

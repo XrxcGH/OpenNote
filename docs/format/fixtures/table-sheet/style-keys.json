@@ -77,29 +77,19 @@
           "sheet": {
             "styles": {
               "1xeg72": {
-                "fmt": "[h]:mm:ss",
-                "font": {
-                  "family": "Georgia",
-                  "size": 409.5,
-                  "weight": 300,
-                  "italic": true,
-                  "underline": "doubleAccounting",
-                  "strike": "double",
-                  "color": "theme:accent3",
-                  "script": "super"
-                },
-                "fill": {
-                  "pattern": "lightTrellis",
-                  "color": "fern",
-                  "back": "#ffffff"
+                "align": {
+                  "dir": "rtl",
+                  "h": "centerAcross",
+                  "indent": 15,
+                  "rotate": -45,
+                  "shrink": true,
+                  "v": "middle",
+                  "wrap": "clip"
                 },
                 "border": {
-                  "t": {
-                    "style": "thin"
-                  },
                   "b": {
-                    "style": "double",
-                    "color": "ink"
+                    "color": "ink",
+                    "style": "double"
                   },
                   "du": {
                     "style": "hair",
@@ -107,26 +97,36 @@
                   },
                   "l": {
                     "style": "none"
+                  },
+                  "t": {
+                    "style": "thin"
                   }
                 },
-                "align": {
-                  "h": "centerAcross",
-                  "v": "middle",
-                  "wrap": "clip",
-                  "shrink": true,
-                  "rotate": -45,
-                  "indent": 15,
-                  "dir": "rtl"
+                "fill": {
+                  "back": "#ffffff",
+                  "color": "fern",
+                  "pattern": "lightTrellis"
+                },
+                "fmt": "[h]:mm:ss",
+                "font": {
+                  "color": "theme:accent3",
+                  "family": "Georgia",
+                  "italic": true,
+                  "script": "super",
+                  "size": 409.5,
+                  "strike": "double",
+                  "underline": "doubleAccounting",
+                  "weight": 300
                 },
                 "pad": {
-                  "t": 2,
-                  "r": 4,
                   "b": 2,
-                  "l": 4
+                  "l": 4,
+                  "r": 4,
+                  "t": 2
                 },
                 "protect": {
-                  "locked": false,
-                  "hideFormula": true
+                  "hideFormula": true,
+                  "locked": false
                 }
               },
               "44gc9w": {
@@ -151,13 +151,13 @@
                 }
               },
               "peaijk": {
-                "font": {
-                  "size": 1639,
-                  "weight": 450,
-                  "underline": "squiggle"
-                },
                 "align": {
                   "rotate": 91
+                },
+                "font": {
+                  "size": 1639,
+                  "underline": "squiggle",
+                  "weight": 450
                 }
               }
             }

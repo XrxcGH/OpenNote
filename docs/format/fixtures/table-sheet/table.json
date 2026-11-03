@@ -80,8 +80,6 @@
               }
             },
             "table": {
-              "style": "uvqwee",
-              "look": "medium-indigo",
               "band": {
                 "rows": true
               },
@@ -89,14 +87,16 @@
                 "totalRow": true
               },
               "freeze": {
-                "rows": 1,
-                "cols": 1
+                "cols": 1,
+                "rows": 1
               },
+              "grid": false,
+              "look": "medium-indigo",
+              "name": "Prices",
               "pad": {
                 "l": 6
               },
-              "grid": false,
-              "name": "Prices"
+              "style": "uvqwee"
             }
           }
         }

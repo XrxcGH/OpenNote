@@ -72,22 +72,28 @@
           "sheet": {
             "validation": {
               "v1": {
+                "a": "0",
+                "alert": "stop",
+                "b": "100",
+                "input": {
+                  "text": "From 0 to 100.",
+                  "title": "Price"
+                },
+                "kind": "decimal",
+                "op": "between",
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k002"
                   }
-                ],
-                "kind": "decimal",
-                "op": "between",
-                "a": "0",
-                "b": "100",
-                "alert": "stop",
-                "input": {
-                  "title": "Price",
-                  "text": "From 0 to 100."
-                }
+                ]
               },
               "v2": {
+                "dropDown": true,
+                "items": [
+                  "Tea",
+                  "Rice"
+                ],
+                "kind": "list",
                 "ranges": [
                   {
                     "from": [
@@ -99,46 +105,40 @@
                       "01m3sbcmt0000000000000k001"
                     ]
                   }
-                ],
-                "kind": "list",
-                "items": [
-                  "Tea",
-                  "Rice"
-                ],
-                "dropDown": true
+                ]
               },
               "v3": {
+                "checked": "Yes",
+                "ignoreBlank": false,
+                "kind": "checkbox",
                 "ranges": [
                   {
                     "row": "01m3sbcmt0000000000000r003"
                   }
                 ],
-                "kind": "checkbox",
-                "checked": "Yes",
-                "unchecked": "No",
-                "ignoreBlank": false
+                "unchecked": "No"
               },
               "v4": {
-                "ranges": [
-                  {
-                    "col": "01m3sbcmt0000000000000k001"
-                  }
-                ],
-                "kind": "custom",
                 "a": "LEN(A1)<20",
                 "alert": "information",
                 "error": {
-                  "title": "Too long",
-                  "text": "Use fewer letters."
-                }
+                  "text": "Use fewer letters.",
+                  "title": "Too long"
+                },
+                "kind": "custom",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ]
               },
               "v5": {
+                "kind": "list",
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k001"
                   }
                 ],
-                "kind": "list",
                 "source": "Prices"
               }
             }

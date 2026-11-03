@@ -83,11 +83,11 @@
                 "fmt": "0 fgcajehae"
               },
               "gmw6lq": {
-                "fmt": "#,##0.00",
                 "align": {
                   "h": "right",
                   "v": "bottom"
                 },
+                "fmt": "#,##0.00",
                 "pad": {
                   "l": 6,
                   "r": 6

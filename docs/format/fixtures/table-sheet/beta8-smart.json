@@ -1,0 +1,382 @@
+{
+  "name": "a page Beta 8 wrote, a smart table with every key it keeps, read back unchanged",
+  "rules": [
+    "R-SHT-1",
+    "R-SHT-4",
+    "R-STAMP-1",
+    "R-VER-8"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "header": true,
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 200
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k004",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k005",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k006",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k007",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k008",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Task"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Status"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Cost"
+                },
+                "01m3sbcmt0000000000000k004": {
+                  "markdown": "Done"
+                },
+                "01m3sbcmt0000000000000k005": {
+                  "markdown": "Due"
+                },
+                "01m3sbcmt0000000000000k006": {
+                  "markdown": "Load"
+                },
+                "01m3sbcmt0000000000000k007": {
+                  "markdown": "Share"
+                },
+                "01m3sbcmt0000000000000k008": {
+                  "markdown": "Tags"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Order tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Todo"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "12.50"
+                },
+                "01m3sbcmt0000000000000k004": {
+                  "markdown": "false"
+                },
+                "01m3sbcmt0000000000000k005": {
+                  "markdown": "2026-03-01"
+                },
+                "01m3sbcmt0000000000000k006": {
+                  "markdown": "4.5"
+                },
+                "01m3sbcmt0000000000000k007": {
+                  "markdown": "25%"
+                },
+                "01m3sbcmt0000000000000k008": {
+                  "markdown": "Shop, Home"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Pay rent"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Doing"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "980"
+                },
+                "01m3sbcmt0000000000000k004": {
+                  "markdown": "false"
+                },
+                "01m3sbcmt0000000000000k005": {
+                  "markdown": "2026-03-05"
+                },
+                "01m3sbcmt0000000000000k006": {
+                  "markdown": "0"
+                },
+                "01m3sbcmt0000000000000k007": {
+                  "markdown": "50%"
+                },
+                "01m3sbcmt0000000000000k008": {
+                  "markdown": "Home"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r004",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Plan trip"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Done"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "240.99"
+                },
+                "01m3sbcmt0000000000000k004": {
+                  "markdown": "true"
+                },
+                "01m3sbcmt0000000000000k005": {
+                  "markdown": "2026-02-11"
+                },
+                "01m3sbcmt0000000000000k006": {
+                  "markdown": "12.25"
+                },
+                "01m3sbcmt0000000000000k007": {
+                  "markdown": "25%"
+                },
+                "01m3sbcmt0000000000000k008": {
+                  "markdown": ""
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r005",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Total"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=SUM(C2:C4)"
+                },
+                "01m3sbcmt0000000000000k004": {
+                  "markdown": "=COUNTIF(D2:D4,TRUE)"
+                },
+                "01m3sbcmt0000000000000k005": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k006": {
+                  "markdown": "=AVERAGE(F2:F4)"
+                },
+                "01m3sbcmt0000000000000k007": {
+                  "markdown": "=SUM(G2:G4)"
+                },
+                "01m3sbcmt0000000000000k008": {
+                  "markdown": ""
+                }
+              }
+            }
+          ],
+          "smart": {
+            "columns": {
+              "01m3sbcmt0000000000000k002": {
+                "type": "choice",
+                "options": [
+                  {
+                    "name": "Todo",
+                    "color": "brick"
+                  },
+                  {
+                    "name": "Doing",
+                    "color": "amber"
+                  },
+                  {
+                    "name": "Done",
+                    "color": "fern"
+                  }
+                ]
+              },
+              "01m3sbcmt0000000000000k003": {
+                "type": "currency",
+                "currency": "EUR",
+                "decimals": 2,
+                "total": "sum"
+              },
+              "01m3sbcmt0000000000000k004": {
+                "type": "checkbox",
+                "total": "checked"
+              },
+              "01m3sbcmt0000000000000k005": {
+                "type": "date"
+              },
+              "01m3sbcmt0000000000000k006": {
+                "type": "number",
+                "decimals": 2,
+                "unit": "kN",
+                "notation": "si",
+                "total": "average"
+              },
+              "01m3sbcmt0000000000000k007": {
+                "type": "percent",
+                "decimals": 0,
+                "total": "sum"
+              },
+              "01m3sbcmt0000000000000k008": {
+                "type": "choice",
+                "multi": true,
+                "choices": [
+                  "Shop",
+                  "Home"
+                ],
+                "options": [
+                  {
+                    "name": "Shop",
+                    "color": "indigo"
+                  },
+                  {
+                    "name": "Home",
+                    "color": "plum"
+                  }
+                ]
+              }
+            },
+            "filters": [
+              {
+                "column": "01m3sbcmt0000000000000k003",
+                "op": "gt",
+                "value": "3"
+              },
+              {
+                "column": "01m3sbcmt0000000000000k005",
+                "op": "between",
+                "value": "2026-01-01",
+                "to": "2026-12-31"
+              },
+              {
+                "column": "01m3sbcmt0000000000000k002",
+                "op": "has",
+                "value": "Todo"
+              },
+              {
+                "column": "01m3sbcmt0000000000000k004",
+                "op": "unchecked"
+              }
+            ],
+            "charts": [
+              {
+                "id": "chart-bars",
+                "kind": "bar",
+                "x": "01m3sbcmt0000000000000k001",
+                "series": [
+                  "01m3sbcmt0000000000000k003"
+                ],
+                "title": "Cost by task",
+                "aggregate": "sum",
+                "stacked": false,
+                "patterns": true,
+                "rows": {
+                  "from": 0,
+                  "to": 2
+                }
+              },
+              {
+                "id": "chart-line",
+                "kind": "line",
+                "x": "01m3sbcmt0000000000000k005",
+                "series": [
+                  "01m3sbcmt0000000000000k003",
+                  "01m3sbcmt0000000000000k006"
+                ],
+                "summary": "Cost and load by due date."
+              }
+            ],
+            "view": {
+              "kind": "board",
+              "group": "01m3sbcmt0000000000000k002",
+              "title": "01m3sbcmt0000000000000k001"
+            },
+            "sort": {
+              "column": "01m3sbcmt0000000000000k003",
+              "desc": true
+            },
+            "saved": [
+              {
+                "id": "open",
+                "name": "Open tasks",
+                "filters": [
+                  {
+                    "column": "01m3sbcmt0000000000000k002",
+                    "op": "has",
+                    "value": "Todo"
+                  }
+                ],
+                "sort": {
+                  "column": "01m3sbcmt0000000000000k001"
+                }
+              }
+            ],
+            "savedActive": "open"
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  },
+  "expect": {
+    "roundTrip": true,
+    "smartKeys": [
+      "charts",
+      "columns",
+      "filters",
+      "saved",
+      "savedActive",
+      "sort",
+      "view"
+    ]
+  }
+}

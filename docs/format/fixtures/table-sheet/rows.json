@@ -69,6 +69,17 @@
             }
           ],
           "sheet": {
+            "rows": {
+              "01m3sbcmt0000000000000r001": {
+                "exact": true,
+                "height": 28.5,
+                "style": "uvqwee"
+              },
+              "01m3sbcmt0000000000000r003": {
+                "hidden": true,
+                "level": 1
+              }
+            },
             "styles": {
               "uvqwee": {
                 "fill": "honey",
@@ -76,17 +87,6 @@
                   "bold": true,
                   "family": "+body"
                 }
-              }
-            },
-            "rows": {
-              "01m3sbcmt0000000000000r001": {
-                "style": "uvqwee",
-                "height": 28.5,
-                "exact": true
-              },
-              "01m3sbcmt0000000000000r003": {
-                "hidden": true,
-                "level": 1
               }
             }
           }

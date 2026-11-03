@@ -212,8 +212,23 @@ SHEET_KEYS = {
 SHEET = obj(SHEET_KEYS)
 
 
+TOTALS = (("cells", 1_000_000, "cells"), ("notes", 10_000, "notes"), ("values", 1_000_000, "values"))
+
+
+def over_limit(sheet: dict, path: str) -> list[str]:
+    """The limits of section 16 count the entries of every row together, not the rows."""
+    found = []
+    for key, limit, what in TOTALS:
+        rows = sheet.get(key)
+        if isinstance(rows, dict) and all(isinstance(by_col, dict) for by_col in rows.values()):
+            if sum(len(by_col) for by_col in rows.values()) > limit:
+                found.append(f"{path}.{key}: at most {limit:,} {what} per table")
+    return found
+
+
 def sheet_problems(sheet: dict, path: str) -> list[str]:
     problems = SHEET(sheet, path)
+    problems += over_limit(sheet, path)
     names = [n.lower() for n in sheet.get("names", {})]
     if len(names) != len(set(names)):
         problems.append(f"{path}.names: unique without regard to case (R-SHT-13)")

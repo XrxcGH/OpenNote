@@ -71,49 +71,39 @@
             }
           ],
           "sheet": {
-            "styles": {
-              "uvqwee": {
-                "fill": "honey",
-                "font": {
-                  "bold": true,
-                  "family": "+body"
-                }
-              }
-            },
             "conditional": {
               "c1": {
+                "a": "3",
+                "op": "greater",
+                "order": 1,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k002"
                   }
                 ],
-                "order": 1,
-                "type": "cell",
-                "op": "greater",
-                "a": "3",
+                "stop": true,
                 "style": "uvqwee",
-                "stop": true
+                "type": "cell"
               },
               "c2": {
+                "op": "begins",
+                "order": 2,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k001"
                   }
                 ],
-                "order": 2,
-                "type": "text",
-                "op": "begins",
+                "style": "uvqwee",
                 "text": "T",
-                "style": "uvqwee"
+                "type": "text"
               },
               "c3": {
+                "order": 3,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k002"
                   }
                 ],
-                "order": 3,
-                "type": "scale",
                 "stops": [
                   {
                     "at": "min",
@@ -121,39 +111,39 @@
                   },
                   {
                     "at": "percentile",
-                    "value": "50",
-                    "color": "#ffffff"
+                    "color": "#ffffff",
+                    "value": "50"
                   },
                   {
                     "at": "max",
                     "color": "fern"
                   }
-                ]
+                ],
+                "type": "scale"
               },
               "c4": {
-                "ranges": [
-                  {
-                    "col": "01m3sbcmt0000000000000k002"
-                  }
-                ],
-                "order": 4,
-                "type": "bar",
+                "axis": "middle",
                 "color": "indigo",
                 "gradient": false,
                 "min": {
                   "at": "num",
                   "value": "0"
                 },
-                "axis": "middle"
-              },
-              "c5": {
+                "order": 4,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k002"
                   }
                 ],
+                "type": "bar"
+              },
+              "c5": {
                 "order": 5,
-                "type": "icons",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
                 "set": "3TrafficLights",
                 "thresholds": [
                   {
@@ -162,66 +152,76 @@
                   },
                   {
                     "at": "percent",
-                    "value": "67",
-                    "gte": false
+                    "gte": false,
+                    "value": "67"
                   }
-                ]
+                ],
+                "type": "icons"
               },
               "c6": {
+                "order": 6,
+                "percent": true,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k002"
                   }
                 ],
-                "order": 6,
-                "type": "top",
                 "rank": 10,
-                "percent": true,
-                "style": "uvqwee"
+                "style": "uvqwee",
+                "type": "top"
               },
               "c7": {
+                "below": true,
+                "order": 6,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k002"
                   }
                 ],
-                "order": 6,
-                "type": "average",
-                "below": true,
                 "stdDev": 1,
-                "style": "uvqwee"
+                "style": "uvqwee",
+                "type": "average"
               },
               "c8": {
+                "order": 8,
+                "period": "last7Days",
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k001"
                   }
                 ],
-                "order": 8,
-                "type": "date",
-                "period": "last7Days",
-                "style": "uvqwee"
+                "style": "uvqwee",
+                "type": "date"
               },
               "c9": {
+                "order": 9,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k001"
                   }
                 ],
-                "order": 9,
-                "type": "duplicate",
-                "style": "uvqwee"
+                "style": "uvqwee",
+                "type": "duplicate"
               },
               "d1": {
+                "a": "A1=\"Tea\"",
+                "order": 10,
                 "ranges": [
                   {
                     "col": "01m3sbcmt0000000000000k001"
                   }
                 ],
-                "order": 10,
-                "type": "formula",
-                "a": "A1=\"Tea\"",
-                "style": "uvqwee"
+                "style": "uvqwee",
+                "type": "formula"
+              }
+            },
+            "styles": {
+              "uvqwee": {
+                "fill": "honey",
+                "font": {
+                  "bold": true,
+                  "family": "+body"
+                }
               }
             }
           }
