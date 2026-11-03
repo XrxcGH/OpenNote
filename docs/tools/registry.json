@@ -6153,7 +6153,7 @@
     },
     {
       "id": "ink.insertSpace",
-      "title": "Insert space",
+      "title": "Insert space by height",
       "category": "insert",
       "keys": [],
       "flag": "ink.insertSpace"
@@ -6238,6 +6238,13 @@
       "category": "insert",
       "keys": [],
       "flag": "ink.gridTable"
+    },
+    {
+      "id": "ink.library.open",
+      "title": "Shapes",
+      "category": "insert",
+      "keys": [],
+      "flag": "ink.shapeTools"
     },
     {
       "id": "ink.addShapeText",
@@ -6496,6 +6503,27 @@
       "category": "editing",
       "keys": [],
       "flag": "ink.lasso"
+    },
+    {
+      "id": "ink.pens.choose",
+      "title": "Choose pen",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.core"
+    },
+    {
+      "id": "ink.pens.color",
+      "title": "Pen color",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.core"
+    },
+    {
+      "id": "ink.pens.width",
+      "title": "Pen width",
+      "category": "editing",
+      "keys": [],
+      "flag": "ink.core"
     },
     {
       "id": "ink.inkToShape",

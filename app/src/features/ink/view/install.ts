@@ -8,7 +8,7 @@ import { createStore } from '../../../state/store';
 import { applyToPoint } from '../geometry/matrix';
 import type { Stroke } from '../geometry/types';
 import type { InkHost } from './host';
-import { DrawPens, DrawTools } from './DrawBar';
+import { DrawPens, DrawTools, openPenColorMenu, openPenSlotMenu, openPenWidthMenu } from './DrawBar';
 import { handleTouchGesture } from './gestures';
 import { registerExportStrokes } from './exportSource';
 import { createPenTool } from './input';
@@ -88,6 +88,16 @@ const tool = (id: `ink.${string}`, title: CommandDef['title'], to: DrawTool, fla
   run: () => chooseTool(to),
 });
 
+/** A command that opens one of the pens' menus. */
+const menuCommand = (id: `ink.${string}`, title: CommandDef['title'], open: () => Promise<void>): CommandDef => ({
+  id,
+  title,
+  keywords: 'ink.tools.keywords',
+  category: 'editing',
+  flag: 'ink.core',
+  run: () => void open(),
+});
+
 export function installInk(host: InkHost): () => void {
   installInkTestHooks(() => current?.surface ?? null);
   const pen = createPenTool(host, () => current?.surface ?? null);
@@ -116,6 +126,10 @@ export function installInk(host: InkHost): () => void {
     tool('ink.eraser', 'ink.tools.eraser', 'eraser', 'ink.erasers'),
     tool('ink.partialEraser', 'ink.tools.partialEraser', 'partialEraser', 'ink.erasers'),
     tool('ink.lasso', 'ink.tools.lasso', 'lasso', 'ink.lasso'),
+    // The pens' controls as commands, so More and the command palette reach them when the bar has no room for them.
+    menuCommand('ink.pens.choose', 'ink.pens.choose', () => openPenSlotMenu()),
+    menuCommand('ink.pens.color', 'ink.pens.colorMenu', () => openPenColorMenu()),
+    menuCommand('ink.pens.width', 'ink.pens.widthMenu', () => openPenWidthMenu()),
     {
       id: 'ink.inkToShape',
       title: 'ink.shapes.inkToShape',
@@ -150,6 +164,8 @@ export function installInk(host: InkHost): () => void {
       priority: 80,
       presentation: 'component',
       Component: DrawPens,
+      // On a narrow bar, More offers the Pen tool, the pen slots, and their color and width (full walk 2, A1-A09-5).
+      overflow: ['ink.pen', 'ink.pens.choose', 'ink.pens.color', 'ink.pens.width'],
       flag: 'ink.core',
     }),
     commandBar.register({

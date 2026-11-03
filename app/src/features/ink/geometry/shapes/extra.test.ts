@@ -4,7 +4,7 @@ import { densify } from '../simplify';
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
 import { polygonCorners, sampleArc, shapePoints, starCorners } from './generate';
-import { recognizeShape } from './recognize';
+import { recognizeCurve, recognizeShape } from './recognize';
 import type { Shape } from './types';
 
 const C = { x: 300, y: 300 };
@@ -91,5 +91,38 @@ describe('more shapes, tried when a stroke is held', () => {
       { x: 320, y: 100 },
     ];
     expect(kindOf(handDrawn(line, 11))).toBe('line');
+  });
+});
+
+describe('curved arrows and curves from the full walk', () => {
+  it('keeps a small arrow head on a curved arrow, never an arc (full walk 2, A1-A10-5)', () => {
+    for (const [head, seed] of [
+      [10, 3],
+      [14, 5],
+      [18, 8],
+    ] as const) {
+      const body = sampleArc(C, 110, Math.PI, 2.1);
+      const tip = body[body.length - 1];
+      const before = body[body.length - 4];
+      const length = Math.hypot(tip.x - before.x, tip.y - before.y);
+      const direction = { x: (tip.x - before.x) / length, y: (tip.y - before.y) / length };
+      const [a, b] = headBarbs(tip, direction, head);
+      const match = recognizeShape(handDrawn([...body, a, tip, b], seed, 0.5), { extra: true });
+      expect(match?.shape.kind, `head ${head}`).toBe('curvedArrow');
+    }
+  });
+
+  it('reads a held open S curve as a curve, and leaves a scribble and a loop as ink (full walk 2, A1-A10-4)', () => {
+    for (const size of [40, 300]) {
+      const wave = Array.from({ length: 40 }, (_, i) => {
+        const t = i / 39;
+        return { x: 100 + size * t, y: 100 + size * 0.3 + Math.sin(t * Math.PI * 1.5) * size * 0.25 };
+      });
+      expect(recognizeShape(wave, { extra: true }), `size ${size}`).toBeNull();
+      expect(recognizeCurve(handDrawn(wave, 4, 0.3))?.shape.kind, `size ${size}`).toBe('spline');
+    }
+    const scribble = Array.from({ length: 120 }, (_, i) => ({ x: 100 + i * 2, y: 100 + (i % 2 ? 30 : -30) }));
+    expect(recognizeCurve(scribble)).toBeNull();
+    expect(recognizeCurve(shapePoints({ kind: 'circle', center: C, radius: 80 }))).toBeNull();
   });
 });

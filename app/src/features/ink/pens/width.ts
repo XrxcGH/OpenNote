@@ -55,10 +55,16 @@ export interface HoverPreview {
   readonly ring: boolean;
 }
 
-/** The pen-tip circle for the hover cursor: the nominal width at the zoom, kept to 3 to 32 pixels (design 5.7). */
+/**
+ * The smallest pen-tip circle. A fine pen at 100% is 2 or 3 pixels wide, a dot no one sees under the pen, so the
+ * circle never shrinks below this (full walk 2, A1-A10-11).
+ */
+export const MIN_PEN_CURSOR_PX = 6;
+
+/** The pen-tip circle for the hover cursor: the nominal width at the zoom, kept to 6 to 32 pixels (design 5.7). */
 export function penHoverPreview(nominal: number, zoom: number): HoverPreview {
   const px = nominal * zoom;
-  return { diameter: Math.min(MAX_CURSOR_PX, Math.max(MIN_CURSOR_PX, px)), ring: false };
+  return { diameter: Math.min(MAX_CURSOR_PX, Math.max(MIN_PEN_CURSOR_PX, px)), ring: false };
 }
 
 /** The eraser circle for the hover cursor: up to 128 pixels as a cursor, and larger sizes draw a ring. */
