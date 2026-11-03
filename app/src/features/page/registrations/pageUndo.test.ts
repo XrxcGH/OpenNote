@@ -7,7 +7,7 @@ import type { SyncQueue } from '../sync/queue';
 import { pageHasUndo } from './sync';
 
 const queue = (canUndo: boolean, canRedo = false) =>
-  ({ canUndo: () => canUndo, canRedo: () => canRedo }) as unknown as SyncQueue;
+  ({ canUndo: () => canUndo, canRedo: () => canRedo, onUndoState: () => () => undefined }) as unknown as SyncQueue;
 const ctx = (source: CommandContext['source'], focusZone: CommandContext['focusZone']) =>
   ({ source, focusZone }) as CommandContext;
 

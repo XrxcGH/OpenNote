@@ -4067,6 +4067,23 @@
       "keys": []
     },
     {
+      "id": "page.undo",
+      "title": "Undo",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Z"
+      ]
+    },
+    {
+      "id": "page.redo",
+      "title": "Redo",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Y",
+        "Ctrl+Shift+Z"
+      ]
+    },
+    {
       "id": "page.lockForReading",
       "title": "Lock page for reading",
       "category": "view",
@@ -4471,23 +4488,6 @@
       "category": "view",
       "keys": [],
       "flag": "page.markdownSource"
-    },
-    {
-      "id": "page.undo",
-      "title": "Undo",
-      "category": "editing",
-      "keys": [
-        "Ctrl+Z"
-      ]
-    },
-    {
-      "id": "page.redo",
-      "title": "Redo",
-      "category": "editing",
-      "keys": [
-        "Ctrl+Y",
-        "Ctrl+Shift+Z"
-      ]
     },
     {
       "id": "insert.table",
