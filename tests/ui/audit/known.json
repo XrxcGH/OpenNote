@@ -246,6 +246,7 @@
   "command | text-overlap | span > span > span.mop x span.mord > span.mrel",
   "tool.kit-control | text-overlap | span > span > span.mop x span.mord > span.mord",
   "tool.kit-control | text-overlap | span > span > span.mop x span.mord > span.mrel",
+  "tool.kit-earth | dead-space | div[role=status] > div.result > div[role=region].tableWrap (nested)",
   "tool.kit-math | text-overlap | span > span > span.mop x span.mord > span.mord",
   "tool.kit-math | text-overlap | span > span > span.mop x span.mord > span.mrel",
   "tool.kit-solids | target-small | div.field > div.entry > input.input",

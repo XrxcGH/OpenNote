@@ -30,6 +30,7 @@ Beta 8 is beta 7 plus these changes:
 - It also fixes the nightly crashes, sweeps 200,000 palm rejection cases, trims start-up, keeps tool windows from covering each other, and adds behavior and keyboard tests for every kit.
 - Title bar and save fixes: the Windows title bar no longer stays above OpenNote's own, and the save status says Saving until an edit is written, then Saved.
 - A dark theme in neutral charcoal gray, not brown.
+- A flaky test of the box around a stroke's ink is fixed. It now checks the shape the renderer fills, and the macOS counterexample runs every time.
 
 Beta 7 added ink fixes and smoother shapes, layout fixes, more course and subject kits, and a start-up wait that fixes ink missing after a crash restart. The school tools now include 24 subject and engineering kit windows, Check my work, the tutor, practice exams, document structure, and code cells.
 
@@ -181,6 +182,7 @@ npm test                 # CHECKS, design, lint rule, matrix, extension, hardwar
 npm run test:components  # component tests in the installed Edge or Chrome
 npm run test:ui          # screen and accessibility tests in Playwright
 npm run test:e2e         # real-app tests, which need tauri-driver and msedgedriver
+npm run audit:layout      # layout audit ratchet (tests/ui/audit); timing-dependent findings are listed as intermittent
 npm run perf:typing      # the typing latency benchmark
 npm run docs:features    # rebuild docs/FEATURE-LIST.md from the app's registries
 cargo test --workspace   # Rust tests
