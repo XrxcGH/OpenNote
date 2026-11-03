@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Undo from the command bar, the palette and menus reaches the shown page, not the tree (Beta 8 walk A-A05-10).
+// Undo from the command bar, the palette, and menus reaches the shown page, not the tree (Beta 8 walk A-A05-10).
 import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandContext } from '../../../commands/types';
 import { shownQueue } from '../sync/shown';
