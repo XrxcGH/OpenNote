@@ -79,6 +79,7 @@ export const history = {
     cancel: 'Cancel',
     done: 'Version named.',
   },
+  untitled: 'Untitled page',
   delete: {
     action: 'Delete history',
     title: 'Delete the history of "{name}"?',
