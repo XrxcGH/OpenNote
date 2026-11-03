@@ -98,6 +98,40 @@ describe('Size and position for an image', () => {
     // The popover closes after the crop, because the image's frame changed with it.
     await vi.waitFor(() => expect(screen.queryByLabelText('Crop left')).toBeNull());
   });
+
+  it('keeps every crop field typed before Apply, and the layer shows the crop at once', async () => {
+    const { page, id } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    page.mounted.objects.command('sizeAndPosition');
+    const left = await vi.waitFor(() => screen.getByLabelText('Crop left'), { timeout: 10_000 });
+    const before = page.sent().length;
+    await userEvent.clear(left);
+    await userEvent.type(left, '20');
+    await userEvent.tab();
+    // Leaving a field neither sends half a crop nor closes the popover.
+    expect(screen.getByLabelText('Crop top')).toBe(document.activeElement);
+    expect(page.sent().length).toBe(before);
+    await userEvent.clear(screen.getByLabelText('Crop top'));
+    await userEvent.type(screen.getByLabelText('Crop top'), '10');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await vi.waitFor(() => expect(page.sent().length).toBe(before + 1));
+    expect(page.sent().at(-1)!.edits[0]).toMatchObject({ data: { crop: { x: 0.2, y: 0.1, w: 0.8, h: 0.9 } } });
+    expect(page.mounted.layer.block(id)!.data.crop).toEqual({ x: 0.2, y: 0.1, w: 0.8, h: 0.9 });
+  });
+});
+
+describe('editing alt text', () => {
+  it('shows the new description at once, in the view and the block layer', async () => {
+    const { page, id, handle } = await pageWithImage();
+    const { editAltText } = await import('./AltTextDialog');
+    const done = editAltText(handle);
+    const field = await vi.waitFor(() => screen.getByLabelText('Description'), { timeout: 10_000 });
+    await userEvent.type(field, 'A black box');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(handle.element.getAttribute('aria-label')).toBe('Image: A black box');
+    expect(page.mounted.layer.block(id)!.data.alt).toBe('A black box');
+    await expect(done).resolves.toBe(true);
+  });
 });
 
 describe('the alt text dialog', () => {
