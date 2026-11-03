@@ -39,8 +39,14 @@ function stateLine(model: ModelInfo): string {
   }
 }
 
-function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id: string) => void }) {
-  const { model, selected = false, onSelect } = props;
+function ModelRow(props: {
+  model: ModelInfo;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+  /** Work offline is on: nothing can download, so Download and Resume are off, and the panel says why. */
+  offline?: boolean;
+}) {
+  const { model, selected = false, onSelect, offline = false } = props;
   const nameId = useId();
   const size = formatSize(model.sizeBytes);
   const busy = model.state === 'downloading';
@@ -74,6 +80,7 @@ function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id:
           <Button
             variant="secondary"
             aria-label={t('intelPlus.models.downloadNamed', { name: model.name, size })}
+            disabled={offline}
             onClick={() => void downloadModel(model)}
           >
             {t('intelPlus.models.download')}
@@ -83,6 +90,7 @@ function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id:
           <Button
             variant="secondary"
             aria-label={t('intelPlus.models.resumeNamed', { name: model.name })}
+            disabled={offline}
             onClick={() => void downloadModel(model)}
           >
             {t('intelPlus.models.resume')}
@@ -183,22 +191,34 @@ export default function ModelsPanel() {
       <p className={styles.help}>{t('intelPlus.models.speechHelp')}</p>
       <ul className={styles.list} aria-label={t('intelPlus.models.speechHeading')}>
         {speech.map((model) => (
-          <ModelRow key={model.id} model={model} selected={selected === model.id} onSelect={choose} />
+          <ModelRow
+            key={model.id}
+            offline={list?.offline === true}
+            model={model}
+            selected={selected === model.id}
+            onSelect={choose}
+          />
         ))}
       </ul>
       <ModelGroup heading={t('intelPlus.models.languageHeading')} help={t('intelPlus.models.languageHelp')}>
         {languageModels.map((model) => (
-          <ModelRow key={model.id} model={model} selected={languageInUse === model.id} onSelect={chooseLanguage} />
+          <ModelRow
+            key={model.id}
+            offline={list?.offline === true}
+            model={model}
+            selected={languageInUse === model.id}
+            onSelect={chooseLanguage}
+          />
         ))}
       </ModelGroup>
       <ModelGroup heading={t('intelPlus.models.meaningHeading')} help={t('intelPlus.models.meaningHelp')}>
         {of('meaning').map((model) => (
-          <ModelRow key={model.id} model={model} />
+          <ModelRow key={model.id} offline={list?.offline === true} model={model} />
         ))}
       </ModelGroup>
       <ModelGroup heading={t('intelPlus.models.translateHeading')} help={t('intelPlus.models.translateHelp')}>
         {of('translate').map((model) => (
-          <ModelRow key={model.id} model={model} />
+          <ModelRow key={model.id} offline={list?.offline === true} model={model} />
         ))}
       </ModelGroup>
       <p className={styles.help}>{t('intelPlus.models.folder')}</p>

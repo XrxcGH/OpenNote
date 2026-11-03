@@ -95,9 +95,9 @@ export async function trimSilence(block: string, pageId: string, entry: Recordin
     const edited = await audio.trimSilence(dir, entry);
     if (!edited) return void announce(t('audio.announce.nothingToTrim'));
     await replace(block, pageId, entry, edited.entry);
-    // What was said later now starts earlier by the silence cut from the start.
-    const head = firstCaptureNs(edited.entry) - firstCaptureNs(entry);
-    if (head > 0) await withTranscripts((module) => module.afterTrim(entry.id, head));
+    // What was said later now starts earlier by the silence cut from the start, and nothing is said past the new end.
+    const head = Math.max(0, firstCaptureNs(edited.entry) - firstCaptureNs(entry));
+    await withTranscripts((module) => module.afterTrim(entry.id, head, edited.durationNs));
     announce(t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
@@ -141,7 +141,7 @@ export async function removePart(block: string, pageId: string, entry: Recording
     await replace(block, pageId, entry, edited.entry);
     // The removed words go from the transcript, and the page's saved versions, which could bring the part back, go.
     await purgeRemoved(pageId, entry.id, startNs, endNs);
-    announce(t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }));
+    showToast({ message: t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }) });
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }

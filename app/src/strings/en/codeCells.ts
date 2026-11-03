@@ -9,6 +9,8 @@ export const codeCells = {
   language: 'Language',
   languages: { python: 'Python', javascript: 'JavaScript' },
   code: 'Code',
+  newer: 'This code cell needs a newer version of OpenNote',
+  storedLanguage: 'Language: {language}',
   codeHelp:
     'Tab indents and Shift+Tab outdents. Press Escape, then Tab, to move on. Ctrl+Enter runs the cell, and Escape stops it.',
   run: 'Run',
