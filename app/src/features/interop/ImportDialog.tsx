@@ -137,7 +137,7 @@ function Review({ flow, state }: { flow: ImportFlow; state: Extract<ImportState,
           <ul className={`${styles.list} ${styles.scroll}`} aria-label={sectionsText}>
             {preview.sections.map((section, index) => (
               <li key={`${section.title}-${index}`} className={styles.row}>
-                <span>{section.title}</span>
+                <span data-user-content>{section.title}</span>
                 <span className={styles.note}>{t('interop.import.review.sectionPages', { pages: section.pages })}</span>
               </li>
             ))}
