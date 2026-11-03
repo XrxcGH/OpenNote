@@ -24,6 +24,24 @@ const LABELS: Record<Field, MessageKey> = {
 
 let open: (() => void) | null = null;
 
+/**
+ * Puts the popover under the block, or above it when there is no room below, and always inside the window: a
+ * popover past the window's edge hides its fields and its Apply button.
+ */
+export function placePopover(form: HTMLElement, box: DOMRect, origin: DOMRect): void {
+  const margin = 8;
+  const height = form.offsetHeight;
+  const width = form.offsetWidth;
+  const viewH = form.ownerDocument.defaultView?.innerHeight ?? 0;
+  const viewW = form.ownerDocument.defaultView?.innerWidth ?? 0;
+  let top = box.bottom + margin;
+  if (top + height > viewH - margin && box.top - margin - height >= margin) top = box.top - margin - height;
+  top = Math.max(margin, Math.min(top, viewH - margin - height));
+  const left = Math.max(margin, Math.min(box.left, viewW - margin - width));
+  form.style.insetInlineStart = `${left - origin.left}px`;
+  form.style.insetBlockStart = `${top - origin.top}px`;
+}
+
 function field(form: HTMLFormElement, name: Field, value: number): HTMLInputElement {
   const label = form.ownerDocument.createElement('label');
   label.className = styles.field;
@@ -64,22 +82,21 @@ export function openSizeAndPosition(
   }
   inputs.w = field(form, 'w', block.frame?.w ?? rect.w);
   if (block.type !== 'text') inputs.h = field(form, 'h', block.frame?.h ?? rect.h);
+  const initial: Partial<Record<Field, string>> = {};
+  for (const name of Object.keys(inputs) as Field[]) initial[name] = inputs[name]!.value;
   const apply = doc.createElement('button');
   apply.type = 'submit';
   apply.textContent = t('page.object.apply');
   form.append(apply);
   // An image also gets its crop fields and "Reset crop", the keyboard way to crop.
   const image = block.type === 'image' ? imageHandle(id) : null;
-  const unmountCrop = image ? mountCropFields(form, image, () => close()) : null;
-  const box = view.element.getBoundingClientRect();
-  const origin = container.getBoundingClientRect();
-  form.style.insetInlineStart = `${Math.max(8, box.left - origin.left)}px`;
-  form.style.insetBlockStart = `${Math.max(8, box.bottom - origin.top + 8)}px`;
+  const crop = image ? mountCropFields(form, image) : null;
   container.append(form);
+  placePopover(form, view.element.getBoundingClientRect(), container.getBoundingClientRect());
 
   const close = () => {
     open = null;
-    unmountCrop?.();
+    crop?.unmount();
     form.remove();
     doc.removeEventListener('pointerdown', onOutside, true);
     view.element.focus({ preventScroll: true });
@@ -98,7 +115,13 @@ export function openSizeAndPosition(
     if (value('y') !== undefined) frame.y = frameValue(value('y')!);
     if (value('w') !== undefined) frame.w = frameValue(value('w')!, block.type === 'text' ? MIN_TEXT_WIDTH : 16);
     if (value('h') !== undefined) frame.h = frameValue(value('h')!, 16);
-    if (!objects.locked(block)) objects.commitFrames(new Map([[id, frame]]));
+    const typed = (Object.keys(inputs) as Field[]).some((name) => inputs[name]!.value !== initial[name]);
+    if (!objects.locked(block)) {
+      // The crop goes first: it keeps the image's scale by changing its frame, and typed sizes win over that.
+      void (crop?.apply() ?? Promise.resolve(false)).then(() => {
+        if (typed || !crop) objects.commitFrames(new Map([[id, frame]]));
+      });
+    }
     close();
   });
   form.addEventListener('keydown', (event) => {

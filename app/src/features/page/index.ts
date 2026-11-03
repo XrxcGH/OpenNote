@@ -8,6 +8,8 @@ export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from
 export { targetEditor } from './formattingBar/target';
 /** Reading pages and making pages from templates or text loads when first used, so start-up stays small. */
 export const loadTemplates = () => import('./templates/apply');
+/** The page on screen as a Replace in all notebooks target, which takes the batch through the page's own queue. */
+export const loadReplaceTarget = () => import('./find/replaceTarget');
 export type { MountedPage, MountedPageHook } from './pagesApi';
 export { shownQueue } from './sync/shown';
 export { shownStrokes } from './seams/inkStrokes';

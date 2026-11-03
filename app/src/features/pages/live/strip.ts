@@ -43,6 +43,8 @@ export function createStrip(parent: HTMLElement, host: StripHost): Strip {
   const root = doc.createElement('nav');
   root.className = styles.strip;
   root.setAttribute('aria-label', t('pagesPlus.sheets.strip'));
+  // A rail at the page's end edge: the Properties chip keeps to its left instead of covering it.
+  root.dataset.pagePane = '';
   root.hidden = true;
   const list = doc.createElement('div');
   list.className = styles.stripList;

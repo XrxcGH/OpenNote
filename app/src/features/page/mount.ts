@@ -5,16 +5,18 @@ import { newId } from '../../editor/ids';
 import type { EditorHost } from '../../editor/host';
 import { createMarkdownCache } from '../../editor/markdown';
 import type { MarkdownCache } from '../../editor/markdown';
+import { commandContext } from '../../commands/registry';
 import { beforeExit } from '../../registries';
 import type { PageViewMode } from '../../platform/bindings/PageViewMode';
 import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/pages/types';
+import type { NodeId } from '../../services/notes/types';
 import { osStore } from '../../state/os';
 import { createStore } from '../../state/store';
 import { announce } from '../../ui';
 import { createBlockLayer } from './blocks/blockLayer';
 import type { PageBlockLayer } from './blocks/blockLayer';
 import { frameContext } from './blocks/frameContext';
-import { markDraft } from './blocks/textBlock';
+import { markDraft, syncOf } from './blocks/textBlock';
 import { createEditorHost } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
@@ -32,14 +34,14 @@ import type { PageLayout } from './layout/actions';
 import { attachPageMedia } from './images/attach';
 import { shownPage as shownOpenPage } from './history/shown';
 import { createEditorPool, shownPool } from './pool/pool';
-import type { PagePool } from './pool/pool';
+import type { EditorPool, PagePool } from './pool/pool';
 import { createSelectTool } from './pool/selectTool';
 import { savePageView } from './runtime';
 import { setGeometrySource } from './seams/geometry';
 import { pageSelection, selectOnPage } from './seams/selectionStore';
 import { createSyncQueue, exitHook, shownQueue } from './sync';
 import { keepLinksInPlace } from './linkClicks';
-import type { SyncQueue } from './sync';
+import type { FrameContext, SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
 import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
@@ -104,6 +106,64 @@ function draftTextBlock(): BlockJson {
   const id = newId();
   const block: BlockJson = { id, type: 'text', order: 'zz', created: now, modified: now, data: { markdown: '' } };
   return markDraft(block, { block: { id, type: 'text' } });
+}
+
+/**
+ * Gives a page with no text an empty text box. It does so at once, and again when an undo or another window takes
+ * the last text block away. Before, an undo of the first insert into a new page left no editor at all. The box
+ * goes again, unsaved, when a frame brings a text block back while it is still empty.
+ */
+function keepTextBox(frames: FrameContext, layer: PageBlockLayer, pool: EditorPool, readOnly: boolean): void {
+  if (readOnly) return;
+  let draft: BlockId | null = null;
+  const hasText = () => layer.blocks().some((block) => block.type === 'text' && block.id !== draft);
+  const add = () => {
+    if (hasText() || (draft && layer.block(draft))) return;
+    const block = draftTextBlock();
+    draft = block.id;
+    layer.upsert(block);
+  };
+  const { removeBlock, upsertBlock } = frames;
+  frames.removeBlock = (block) => {
+    removeBlock(block);
+    add();
+  };
+  frames.upsertBlock = (block) => {
+    upsertBlock(block);
+    if (!draft || block.type !== 'text' || block.id === draft || !layer.block(draft)) return;
+    // Only a box known to be untouched goes: its editor is there, empty, and has sent nothing.
+    const editor = pool.editor(draft);
+    if (!editor || editor.state.doc.textContent !== '' || syncOf(editor)?.lastSent() !== '') return;
+    layer.remove(draft);
+    draft = null;
+  };
+  add();
+}
+
+/** The page an OpenNote page link points at (`opennote:page/<id>` or `opennote://page/<id>`), or null. */
+export function linkedPage(href: string): string | null {
+  const page = /^opennote:(?:\/\/)?page\/([^#?/]+)/i.exec(href)?.[1];
+  return page ? decodeURIComponent(page) : null;
+}
+
+/**
+ * Follows a link to another page (a series' Before and Next, an extracted page): with Ctrl or Command in text being
+ * edited, as in other editors, and with a plain click or tap where the text isn't being edited. Web links still open
+ * only through the Open link command. Returns a function that stops.
+ */
+function followPageLinks(container: HTMLElement): () => void {
+  const onClick = (event: MouseEvent) => {
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+    const page = link ? linkedPage(link.getAttribute('href') ?? '') : null;
+    if (!link || !page) return;
+    const editing = link.closest('[contenteditable="true"]') !== null;
+    if (editing && !event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    const ctx = commandContext('menu');
+    ctx.navigate({ view: 'workspace', notebookId: null, sectionId: null, pageId: page as NodeId });
+  };
+  container.addEventListener('click', onClick);
+  return () => container.removeEventListener('click', onClick);
 }
 
 /** The block under a point in page units: a hit test, so only at pointer down. */
@@ -248,7 +308,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const sync = createSyncQueue({ page, cache, frames, announce });
   const layer = createBlockLayer(flow.element, { page, host, viewport, pool, sync, cache, reading });
   layer.apply(page.initial);
-  if (!page.readOnly && !page.initial.blocks.some((block) => block.type === 'text')) layer.upsert(draftTextBlock());
+  keepTextBox(frames, layer, pool, page.readOnly !== null);
   const title = titleBand(viewport.world, { page, sync, layer, pool }, options);
   const compact = options.compact ?? false;
   const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, compact, reading });
@@ -273,6 +333,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     rememberView(page.id, viewport),
     routePointers(container, viewport, [gestures, objectsTool, select]),
     keepLinksInPlace(container),
+    followPageLinks(container),
     installObjectKeys(viewport.world, objects, layer),
     objectMenus(container, objects, layer),
     () => chrome.destroy(),

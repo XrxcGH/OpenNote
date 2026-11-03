@@ -32,7 +32,9 @@ describe('engineering paper on the shown page', () => {
       expect(applyDraftingPaper(key)).toBe(true);
       const background = f.now().background;
       expect(background.pattern).toBe('template');
-      expect(background.template).toBe(DRAFTING_IDS[key]);
+      // A built-in name is not a core ID, so only the drawing carries it.
+      expect(background.template).toBeUndefined();
+      expect(readDrawing(background.extra[DRAWING_KEY])?.id).toBe(DRAFTING_IDS[key]);
       expect(readDrawing(background.extra[DRAWING_KEY])?.elements.length).toBeGreaterThan(0);
       expect(f.notes).toHaveLength(1);
     }
