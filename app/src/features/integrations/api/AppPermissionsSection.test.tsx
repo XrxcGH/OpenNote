@@ -49,6 +49,16 @@ describe('App permissions', () => {
     expect(within(card).getByText('Locked sections are never shared with any app.')).toBeTruthy();
   });
 
+  it('shows when an app was last used once its calls are logged', async () => {
+    render(<AppPermissionsSection />);
+    const card = await screen.findByRole('article', { name: 'opennote' });
+    expect(within(card).getByText(/Not used yet/)).toBeTruthy();
+    fake.state.apps[0].lastUsed = Math.floor(Date.now() / 1000);
+    fake.state.log = [{ time: Date.now(), app: cli.id, name: 'opennote', action: 'search', outcome: 'allowed' }];
+    fake.emit({ kind: 'changed', what: 'log' });
+    await waitFor(() => expect(within(card).getByText(/Last used/)).toBeTruthy());
+  });
+
   it('revokes an app only after the person confirms', async () => {
     render(<AppPermissionsSection />);
     const card = await screen.findByRole('article', { name: 'opennote' });
@@ -85,6 +95,8 @@ describe('App permissions', () => {
     render(<AppPermissionsSection />);
     fireEvent.click(await screen.findByRole('button', { name: 'Make a pairing code' }));
     expect(await screen.findByText('Pairing code: K7Q2-M9XD')).toBeTruthy();
+    // Typed into the extension, so plain digits with no thousands separator (full walk B2-B14-8).
+    expect(screen.getByText(/Port: 49321 /)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Copy MCP config' }));
     await waitFor(() => expect(copied).toContain('"mcp"'));
     expect(copied).not.toContain('--author');
