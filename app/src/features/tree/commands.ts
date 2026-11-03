@@ -28,6 +28,9 @@ import { redo, undo } from './undo';
  */
 async function toShownPage(id: 'page.undo' | 'page.redo', ctx: CommandContext): Promise<boolean> {
   const focused = typeof document === 'undefined' ? null : document.activeElement;
+  if (ctx.source === 'commandBar' || ctx.source === 'palette' || ctx.source === 'menu') {
+    return executeCommand(id, undefined, ctx.source);
+  }
   if (ctx.source !== 'keyboard' || (focused && focused !== document.body)) return false;
   return executeCommand(id, undefined, 'keyboard');
 }

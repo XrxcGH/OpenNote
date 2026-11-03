@@ -1,6 +1,7 @@
 // WP2's registrations. Undo and redo on the page refine the tree's Ctrl+Z and Ctrl+Y while focus is in the page, so
 // typing is never undone by a tree command. A hidden window flushes (ARCHITECTURE.md section 10.2), so typed text
 // reaches the core before Windows can suspend or end the app.
+import type { CommandContext } from '../../../commands/types';
 import { dismissActionToasts } from '../../../state/toasts';
 import { titleBarItems } from '../../../registries';
 import { registerPageCommand } from '../keys';
@@ -12,8 +13,15 @@ import { RedoButton, UndoButton } from '../sync/UndoRedoButtons';
  * removes the focused block or a page tool closes, and the next Ctrl+Z must not undo a tree change such as the page's
  * creation (Beta 5 walk W2-4, W2-5). Focus in the tree, a dialog, or any other field keeps its own undo.
  */
-export function pageHasUndo(): boolean {
-  if (shownQueue.get() === null) return false;
+export function pageHasUndo(ctx?: CommandContext, direction: 'undo' | 'redo' = 'undo'): boolean {
+  const queue = shownQueue.get();
+  if (queue === null) return false;
+  // The command bar, the palette and menus run Undo with focus on a control or the palette, not the page: the shown
+  // page undoes when it can, as the title bar's button does (Beta 8 walk A-A05-10). Focus in the tree keeps the tree's.
+  if (ctx && ctx.source !== 'keyboard' && ctx.source !== 'test') {
+    const outside = ctx.focusZone === 'notebooks' || ctx.focusZone === 'pages' || ctx.focusZone === 'dialog';
+    return !outside && (direction === 'undo' ? queue.canUndo() : queue.canRedo());
+  }
   const focused = typeof document === 'undefined' ? null : document.activeElement;
   return !focused || focused === document.body || focused.closest('[data-scope="page"]') !== null;
 }
@@ -32,7 +40,7 @@ registerPageCommand({
   id: 'page.redo',
   title: 'pageSync.redo',
   category: 'editing',
-  when: pageHasUndo,
+  when: (ctx) => pageHasUndo(ctx, 'redo'),
   run: () => shownQueue.get()?.redo(),
 });
 
