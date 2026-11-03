@@ -24,7 +24,12 @@
     scroll-padding-block: var(--space-3);
   }
 
-  :global(:root[data-size-class='compact']) .body {
+  /* Beside the section, the list measures its height from this scroller, so its own scroll bar ends inside it. */
+  .page:not([data-stacked]) .body {
+    container-type: size;
+  }
+
+  .page[data-stacked] .body {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -34,7 +39,7 @@
     position: sticky;
     inset-block-start: 0;
     align-self: start;
-    max-block-size: calc(100dvh - var(--size-title-bar) - var(--space-10) - var(--space-3));
+    max-block-size: 100cqb;
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -80,12 +85,25 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
+  /* The settings flow down in columns as wide as a line of text, as many as the window holds, so a wide screen is
+     not two thirds empty (full walk A-A02-3, VB-10). A setting never splits across two columns. */
   .main {
-    display: grid;
-    gap: var(--space-6);
-    align-content: start;
     min-inline-size: 0;
     padding: var(--space-3) var(--space-7) var(--space-8);
+    columns: var(--size-reading-measure) 3;
+    column-gap: var(--space-7);
+  }
+
+  .main > * {
+    break-inside: avoid;
+  }
+
+  .main > * + * {
+    margin-block-start: var(--space-6);
+  }
+
+  .main > .heading {
+    column-span: all;
   }
 
   /* Room inside the focus ring that Tab and a section change put on the heading, so the ring clears the glyphs. */
@@ -210,7 +228,7 @@
 
   /* The ink stroke signs off the heading, so it sits close under it instead of a grid gap away. */
   .stroke {
-    margin-block-start: calc(-1 * var(--space-5));
+    margin-block-start: calc(var(--space-6) - var(--space-5));
   }
 
   /* The logo mark and the window, side by side above the facts. */

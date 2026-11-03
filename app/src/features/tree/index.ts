@@ -2,7 +2,8 @@
 // Trash view need from the tree.
 
 export { NotebooksPane, PagesPane } from './Panes';
-export { titleOf } from './actions';
+export { recordTrashRestore, titleOf } from './actions';
+export { recordCreated } from './create';
 export { listRestored, useTreeNode } from './access';
 
 // What the quality-of-life features (features/qol) use: the open row, selections, the actions on them, and the store.
@@ -13,6 +14,7 @@ export type { SortKey } from './qolActions';
 export const loadMultiActions = () => import('./multiActions');
 export const loadQolActions = () => import('./qolActions');
 export { locationFor } from './selection';
+export { useMenuTriggers } from './pressMenu';
 export { ancestors, getNode, isProtectedNode, notebookOf, treeStore } from './store';
 export { relist, startTree, stopTree } from './load';
 export { undoStore } from './undo';

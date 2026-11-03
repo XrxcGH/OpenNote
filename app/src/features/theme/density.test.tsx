@@ -17,11 +17,23 @@ describe('density', () => {
     fireEvent.pointerDown(window, { pointerType: 'touch' });
     expect(density()).toBe('mouse');
     pointerUp('touch');
-    expect(density()).toBe('touch');
+    await expect.poll(density).toBe('touch');
     pointerUp('pen');
     expect(density()).toBe('touch');
     pointerUp('mouse');
-    expect(density()).toBe('mouse');
+    await expect.poll(density).toBe('mouse');
+  });
+
+  it('waits for the click of a tap, so the tap acts on what was under the finger', async () => {
+    await renderApp();
+    const button = document.body.appendChild(document.createElement('button'));
+    let atClick: string | undefined;
+    button.addEventListener('click', () => (atClick = density()));
+    pointerUp('touch');
+    fireEvent.click(button);
+    expect(atClick).toBe('mouse');
+    await expect.poll(density).toBe('touch');
+    button.remove();
   });
 
   it('ignores a palm-sized touch lifting, so it cannot resize the ribbon mid-stroke', async () => {
@@ -29,7 +41,7 @@ describe('density', () => {
     fireEvent.pointerUp(window, { pointerType: 'touch', width: 40, height: 60 });
     expect(density()).toBe('mouse');
     fireEvent.pointerUp(window, { pointerType: 'touch', width: 10, height: 10 });
-    expect(density()).toBe('touch');
+    await expect.poll(density).toBe('touch');
   });
 
   it('stays as chosen when set by hand', async () => {
@@ -61,8 +73,8 @@ describe('density', () => {
     const offset = () => row.getBoundingClientRect().top - list.getBoundingClientRect().top;
     const before = offset();
     pointerUp('touch');
+    await expect.poll(density).toBe('touch');
     await expect.poll(() => Math.abs(offset() - before)).toBeLessThan(1);
-    expect(density()).toBe('touch');
     style.remove();
     list.remove();
   });

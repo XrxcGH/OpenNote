@@ -5,7 +5,7 @@ import type { NodeId, NotesService } from '../../services/notes';
 import { createStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
-import { listRestored, titleOf } from '../tree';
+import { listRestored, recordTrashRestore, titleOf } from '../tree';
 
 /** Changes whenever the Trash list may have changed, so the view lists it again. */
 export const trashStore = createStore<{ readonly version: number }>({ version: 0 }, 'trash');
@@ -19,6 +19,7 @@ export async function restoreTrashItem(notes: NotesService, id: NodeId): Promise
   try {
     const restored = await notes.restoreFromTrash([id]);
     await listRestored(restored);
+    recordTrashRestore(restored, trashChanged);
     const title = restored[0] ? titleOf(restored[0]) : '';
     announce(t('tree.trash.restored', { title }));
     return restored.length > 0;

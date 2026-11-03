@@ -24,6 +24,14 @@
     color: var(--color-text-secondary);
   }
 
+  .tab[data-drop='before'] {
+    box-shadow: inset var(--size-focus-ring-width) 0 0 var(--color-focus-ring);
+  }
+
+  .tab[data-drop='after'] {
+    box-shadow: inset calc(-1 * var(--size-focus-ring-width)) 0 0 var(--color-focus-ring);
+  }
+
   .tab[data-active] {
     border-color: var(--color-border-subtle);
     background: var(--color-surface-page);

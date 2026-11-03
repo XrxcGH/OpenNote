@@ -145,6 +145,7 @@ export async function copyTo(notes: NotesService, nodes: readonly NodeSummary[])
   const place = await chooseDestination(
     nodes.length === 1 ? titleOf(nodes[0]) : describeSelection(nodes),
     places.filter((candidate) => nodes.every((node) => node.id !== candidate.id)),
+    'copy',
   );
   if (!place) {
     requestFocus(treeOf(nodes[0]), nodes[0].id);

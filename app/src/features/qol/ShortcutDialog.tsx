@@ -35,10 +35,13 @@ export function rememberPlace(place: ShortcutPlace): void {
 
 export function ShortcutDialog({
   title,
+  kind = 'page',
   platform,
   done,
 }: {
   title: string;
+  /** What the shortcut opens, so the text names it. */
+  kind?: 'notebook' | 'sectionGroup' | 'section' | 'page';
   platform: Platform;
   done(choice: ShortcutChoice | null): void;
 }) {
@@ -59,7 +62,7 @@ export function ShortcutDialog({
   return (
     <Dialog
       title={t('qol.shortcut.title')}
-      description={t('qol.shortcut.description', { title })}
+      description={t(`qol.shortcut.description.${kind}`, { title })}
       size="small"
       onDismiss={() => done(null)}
       actions={[

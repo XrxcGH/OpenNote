@@ -40,7 +40,7 @@
   /* The text that is read before anything is sent or saved: all of it, selectable, and scrollable by keyboard. */
   .text {
     box-sizing: border-box;
-    max-block-size: 40vh;
+    max-block-size: min(40vh, 18rem);
     margin: 0;
     padding: var(--space-4);
     overflow: auto;
