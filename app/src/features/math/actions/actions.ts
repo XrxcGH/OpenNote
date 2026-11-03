@@ -14,7 +14,9 @@ import {
 import type { Node } from '../../../core/expr';
 import * as matrices from '../../../core/matrix';
 import type { Matrix } from '../../../core/matrix';
+import { simplest } from '../calculus/algebra';
 import { compileExpression } from '../grapher';
+import { cancelQuotient } from './cancel';
 import { Unsupported, latexToText, treeToLatex } from './convert';
 
 export type ActionResult =
@@ -81,11 +83,23 @@ function constantLatex(node: Node): string | null {
   }
 }
 
+/** The shortest of the engine's simplification, the multiplied-out form, and the form with a common factor canceled. */
+function best(node: Node): string {
+  const options = [treeToLatex(simplify(node))];
+  const names = letters(node);
+  try {
+    const canceled = names.length === 1 ? cancelQuotient(node, names[0]) : null;
+    options.push(treeToLatex(simplest(canceled ?? node)));
+  } catch {
+    // An expression too large to multiply out keeps the engine's form.
+  }
+  return options.reduce((shortest, next) => (next.length < shortest.length ? next : shortest));
+}
+
 export function simplifyLatex(latex: string): ActionResult {
   const sides = parseLatex(latex);
   if (!sides) return unsupported;
-  const one = (node: Node) =>
-    letters(node).length === 0 ? (constantLatex(node) ?? treeToLatex(simplify(node))) : treeToLatex(simplify(node));
+  const one = (node: Node) => (letters(node).length === 0 ? (constantLatex(node) ?? best(node)) : best(node));
   const next = sides.right ? `${one(sides.left)} = ${one(sides.right)}` : one(sides.left);
   const compact = (text: string) => text.replace(/\s+/g, '');
   return compact(next) === compact(latex) ? { ok: false, reason: 'unchanged' } : { ok: true, latex: next };

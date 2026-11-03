@@ -139,6 +139,7 @@ export const performance = {
     pfCmAlpha: 'Pitching moment slope about the center of gravity; it must be negative for static stability.',
   },
   e: {
+    altitudeRange: 'The standard atmosphere covers −5 km to 86 km geometric altitude (84.852 km geopotential).',
     oswaldRange: 'The span efficiency factor e must be greater than 0 and at most 1.',
     fuelFraction: 'The fuel fraction must be between 0 and 1.',
     cannotClimb: 'The thrust or power available is too low to hold level flight, so the aircraft cannot climb.',

@@ -78,7 +78,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 - [Math and graphs](docs/help/math-and-graphs.md): equations, quick math, Check my work on your steps, the grapher, diagrams from text, and mind maps.
 - [Math solvers](docs/help/math-solvers.md): calculus, engineering, and statistics problems worked step by step.
 - [3D graphs, vectors, and motion](docs/help/3d-graphs-vectors-and-motion.md): surfaces and curves in space, vectors, lines and planes, solids of revolution, and projectiles.
-- [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
+- [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away. Long questions and the full hint ladder now work, and absurd aerospace inputs are reported by name instead of crashing.
 - [Study tools](docs/help/study-tools.md): flashcards, practice exams, Anki decks, study tape, Upcoming, timers, a calculator, and citations.
 
 ### Subject and engineering kits

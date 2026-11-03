@@ -60,13 +60,20 @@ const only =
   (v: Values) =>
     modes.includes(modeOf(v));
 
-const choice = (id: string, label: Field['label'], initial: string, values: readonly string[], when?: Field['when']) =>
+const choice = (
+  id: string,
+  label: Field['label'],
+  initial: string,
+  values: readonly string[],
+  when?: Field['when'],
+  literal = false,
+) =>
   ({
     id,
     label,
     initial,
     kind: 'select',
-    options: values.map((value) => ({ value, label: value as Field['label'] })),
+    options: values.map((value) => ({ value, label: value as Field['label'], ...(literal ? { literal } : {}) })),
     when,
   }) satisfies Field;
 
@@ -116,7 +123,7 @@ const FIELDS: readonly Field[] = [
   { id: 'fom', label: 'fixedOm', initial: '0', when: only('lcoe') },
   { id: 'vom', label: 'variableCost', initial: '0', when: only('lcoe') },
   { id: 'ev', label: 'energyValue', initial: '1', when: only('convert') },
-  choice('eunit', 'energyUnit', 'kWh', Object.keys(ENERGY_UNITS), only('convert')),
+  choice('eunit', 'energyUnit', 'kWh', Object.keys(ENERGY_UNITS), only('convert'), true),
 ];
 
 /** Reads the date, the clock time, the zone, and the longitude, then runs the NOAA algorithm. */
