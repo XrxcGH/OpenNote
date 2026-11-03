@@ -30,6 +30,10 @@ export function cropEdits(handle: ImageHandle, next: Crop | null): Edit[] {
 export function applyCrop(handle: ImageHandle, next: Crop | null): Promise<boolean> {
   const edits = cropEdits(handle, next);
   if (edits.length === 0) return Promise.resolve(false);
+  for (const edit of edits) {
+    if (edit.edit === 'patchBlock') handle.showChange({ data: edit.data ?? {} });
+    if (edit.edit === 'moveBlock' && edit.frame) handle.showChange({ frame: edit.frame });
+  }
   return handle.ctx.sync.send({ edits }).then(
     () => true,
     () => false,

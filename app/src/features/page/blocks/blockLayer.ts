@@ -47,10 +47,16 @@ class Layer implements PageBlockLayer {
   private idle = 0;
   private destroyed = false;
 
+  private readonly ctx: BlockRenderContext;
+
   constructor(
     private readonly container: HTMLElement,
-    private readonly ctx: BlockRenderContext,
-  ) {}
+    ctx: BlockRenderContext,
+  ) {
+    // A view that changes its own block (an image's alt text, crop or size) shows it through the layer, so the
+    // layer's copy, which commands read, never lags behind the screen.
+    this.ctx = { ...ctx, local: (block) => this.upsert(block) };
+  }
 
   apply(page: PageJson): void {
     [...this.entries.keys()].forEach((id) => this.drop(id));
