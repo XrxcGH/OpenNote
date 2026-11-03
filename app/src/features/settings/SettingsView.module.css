@@ -228,7 +228,7 @@
 
   /* The ink stroke signs off the heading, so it sits close under it instead of a grid gap away. */
   .stroke {
-    margin-block-start: calc(-1 * var(--space-5));
+    margin-block-start: calc(var(--space-6) - var(--space-5));
   }
 
   /* The logo mark and the window, side by side above the facts. */
