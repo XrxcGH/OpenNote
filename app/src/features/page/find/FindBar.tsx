@@ -25,11 +25,29 @@ function selectedWord(mounted: MountedPage): string {
   return text.length <= 100 && !text.includes('\n') ? text : '';
 }
 
+interface Caret {
+  block: string;
+  anchor: number;
+  head: number;
+}
+
 /** Opening, or asking again, puts the caret in the Find field, with the selected word in it. */
-function useOpenFocus(mounted: MountedPage, open: boolean, nonce: number, root: RefObject<HTMLDivElement | null>) {
+function useOpenFocus(
+  mounted: MountedPage,
+  open: boolean,
+  nonce: number,
+  root: RefObject<HTMLDivElement | null>,
+  originRef: RefObject<Caret | null>,
+) {
   const [word, setWord] = useState('');
   useEffect(() => {
     if (!open) return;
+    // Where the caret was, so closing with no match puts it back.
+    const active = mounted.pool.active();
+    if (active?.editor && !root.current?.contains(document.activeElement)) {
+      const { anchor, head } = active.editor.state.selection;
+      originRef.current = { block: active.block, anchor, head };
+    }
     // The word goes in on the next tick, so the field is filled before it is selected.
     const found = selectedWord(mounted);
     const filled = found ? window.setTimeout(() => setWord(found), 0) : 0;
@@ -190,7 +208,8 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
   const [replacement, setReplacement] = useState('');
   const [options, setOptions] = useState<FindOptions>({ caseSensitive: false, wholeWord: false });
   const root = useRef<HTMLDivElement>(null);
-  const selected = useOpenFocus(mounted, open, request.nonce, root);
+  const originRef = useRef<Caret | null>(null);
+  const selected = useOpenFocus(mounted, open, request.nonce, root, originRef);
   // A word picked up from the selection replaces what was typed, once, when the bar opens.
   const [seen, setSeen] = useState('');
   if (selected !== seen) {
@@ -202,8 +221,17 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
   const close = () => {
     const match = matches[current];
     closeFind();
-    // The caret goes to the match that was current, so typing carries on from there.
-    if (match) mounted.pool.mount(match.block, { kind: 'selection', anchor: match.from, head: match.to }, 'target');
+    // The caret goes to the match that was current, so typing carries on from there; with no match, back to
+    // where it was before the bar opened. Either way the editor gets the focus back, as Escape promises.
+    const caret = match ? { block: match.block, anchor: match.from, head: match.to } : originRef.current;
+    originRef.current = null;
+    if (!caret) return;
+    const editor = mounted.pool.mount(
+      caret.block,
+      { kind: 'selection', anchor: caret.anchor, head: caret.head },
+      'target',
+    );
+    editor?.commands.focus();
   };
   const replace = async (all: boolean) => {
     const list = all ? matches : matches.slice(current, current + 1);
