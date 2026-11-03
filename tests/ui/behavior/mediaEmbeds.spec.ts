@@ -58,7 +58,11 @@ test('inserts a live Desmos view, shown only after the person asks', async ({ pa
 test('puts a link from another site in as a normal link, with no player', async ({ page }) => {
   await openMembranes(page);
   await insertFromLink(page, 'https://example.com/video');
-  await expect(page.getByText('That site can’t be shown on a page, so it went in as a normal link.')).toBeVisible();
+  await expect(
+    page
+      .getByRole('status', { name: 'Notifications' })
+      .getByText('That site can’t be shown on a page, so it went in as a normal link.'),
+  ).toBeVisible();
   await expect(page.locator('a[href="https://example.com/video"]')).toHaveCount(1);
   await expect(page.getByRole('button', { name: /^Play / })).toHaveCount(0);
 });
