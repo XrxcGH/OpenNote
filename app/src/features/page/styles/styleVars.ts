@@ -2,7 +2,7 @@
 // on a root, such as --style-h2-size, and the page's CSS reads only those, with the type tokens as fallbacks.
 // Changing a style re-renders nothing and moves nothing: it swaps variables. Markdown stays semantic.
 import { tokens } from '../../../theme/tokens';
-import './styleVars.module.css';
+import './styleVars.css';
 
 export const STYLE_NAMES = ['normal', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'title', 'quote', 'code'] as const;
 export type StyleName = (typeof STYLE_NAMES)[number];

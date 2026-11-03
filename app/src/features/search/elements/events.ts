@@ -1,3 +1,4 @@
+import { focusedEditor } from '../links/events';
 // Commands reach the editor that has focus through an event on its element, so the commands (loaded at start-up)
 // never import the editor code (loaded with the first page).
 export const ELEMENT_EVENT = 'opennote:element-action';
@@ -12,8 +13,7 @@ export type ElementAction =
 
 /** Runs an action on the editor that has focus. Returns false when no editor does. */
 export function runElementAction(action: ElementAction): boolean {
-  const focused = document.activeElement;
-  const editable = focused instanceof Element ? focused.closest('.ProseMirror') : null;
+  const editable = focusedEditor();
   if (!editable) return false;
   editable.dispatchEvent(new CustomEvent<ElementAction>(ELEMENT_EVENT, { detail: action }));
   return true;

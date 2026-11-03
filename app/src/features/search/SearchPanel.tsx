@@ -135,7 +135,7 @@ function Preview({ hit }: { hit: SearchHit | undefined }) {
   if (!hit) return <p className={styles.previewEmpty}>{t('search.panel.previewEmpty')}</p>;
   return (
     <div className={styles.preview} aria-label={t('search.panel.preview')} role="region">
-      <h3 className={styles.previewTitle}>
+      <h3 className={styles.previewTitle} data-user-content>
         <Highlighted text={hit.title || t('tree.page.noneTitle')} ranges={hit.title ? hit.titleHighlights : []} />
       </h3>
       <p className={styles.previewDate}>{t('search.panel.changed', { date: formatDate(hit.modified) })}</p>
@@ -256,7 +256,7 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
           onPointerMove={() => onHover(hit.page)}
           onClick={() => onOpen(hit)}
         >
-          <span className={styles.optionTitle}>
+          <span className={styles.optionTitle} data-user-content>
             <Highlighted text={hit.title || t('tree.page.noneTitle')} ranges={hit.title ? hit.titleHighlights : []} />
           </span>
           {hit.heading && (

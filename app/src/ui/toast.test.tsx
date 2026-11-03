@@ -213,6 +213,14 @@ describe('toasts and focus', () => {
     expect(document.activeElement).toBe(page);
   });
 
+  it('dismisses on Escape while focus is on the page, not in the toast (Beta 8 walk A1-A08-4)', async () => {
+    renderUi(<Page />);
+    screen.getByRole('button', { name: 'Page button' }).focus();
+    show({ message: 'Saved.' });
+    await userEvent.keyboard('{Escape}');
+    expect(toastText()).toBe('');
+  });
+
   it('gives focus back when the toast goes while focus is in it', () => {
     renderUi(<Page />);
     const page = screen.getByRole('button', { name: 'Page button' });

@@ -38,7 +38,9 @@ function useCloseOnOutsidePress(inside: { current: HTMLElement | null }) {
     const onPointerDown = (event: PointerEvent) => {
       const dialog = inside.current?.closest('[role="dialog"]');
       const target = event.target instanceof Element ? event.target : null;
-      if (!dialog || !target || dialog.contains(target) || target.closest('[data-title-bar]')) return;
+      if (!dialog || !target || dialog.contains(target)) return;
+      // The title bar and a menu or dialog opened from the drawer (a row's context menu, Export) are not outside.
+      if (target.closest('[data-title-bar], [role="menu"], [role="dialog"], [role="alertdialog"]')) return;
       close();
     };
     document.addEventListener('pointerdown', onPointerDown, true);

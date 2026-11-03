@@ -116,6 +116,8 @@ describe('links', () => {
   it('link the selection, insert the address at a caret, and remove a link', () => {
     expect(applyTo('a [b] c', setLink('example.com'))).toBe('a [b](https://example.com) c');
     expect(applyTo('see []', setLink('example.com'))).toBe('see [https://example.com](https://example.com)');
+    // Changing only the address of a link whose selection ends in a space keeps that space (walk A-A05-6).
+    expect(applyTo('a [b ]c', setLink('example.com', 'b '))).toBe('a [b](https://example.com) c');
     expect(applyToAll('[b](https://x.org)', removeLink())).toBe('b');
   });
 });

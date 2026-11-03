@@ -2,6 +2,7 @@
 // mounts the link layer and the linked pages pane from their own files.
 export { installSearch } from './install';
 export { openSearchPanel } from './open';
+export { SAVED_SEARCHES_EVENT } from './saved';
 export { SEARCH_FLAGS } from './flags';
 export { indexMediaText } from './media/indexer';
 export { FIELD_TYPES, compareValues, displayValue, fieldNamed, readFields, viewPatch } from './properties/model';
