@@ -20,7 +20,11 @@ export function looksLikeAddress(text: string): boolean {
 async function insertPlainLink(link: string): Promise<void> {
   const { insertTarget } = await import('../registrations/smart');
   const editor = insertTarget();
-  const done = editor?.chain().focus().command(({ state, dispatch }) => setLink(link)(state, dispatch)).run();
+  const done = editor
+    ?.chain()
+    .focus()
+    .command(({ state, dispatch }) => setLink(link)(state, dispatch))
+    .run();
   if (!done) return void showToast({ message: t('accounts.media.ask.nowhere') });
   announce(t('accounts.media.ask.linked'));
   showToast({ message: t('accounts.media.ask.linked') });
