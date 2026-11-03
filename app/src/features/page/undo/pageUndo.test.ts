@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { CommandContext } from '../../../commands/types';
 import { shownQueue } from '../sync/shown';
 import type { SyncQueue } from '../sync/queue';
-import { pageHasUndo } from './sync';
+import { pageHasUndo } from '../registrations/sync';
 
 const queue = (canUndo: boolean, canRedo = false) =>
   ({ canUndo: () => canUndo, canRedo: () => canRedo, onUndoState: () => () => undefined }) as unknown as SyncQueue;
