@@ -13,7 +13,7 @@ import { useResolvedTheme } from '../../theme/theme';
 import { locationOf, nodeIndex } from '../palette';
 import type { NodeEntry } from '../palette';
 import { readPrefs, writePrefs } from '../qol';
-import { openSearchPanel } from '../search';
+import { openSearchPanel, SAVED_SEARCHES_EVENT } from '../search';
 import type { HomeChoice, HomeSectionId } from './layout';
 import { arrange, moved } from './layout';
 import { UpcomingSection } from './UpcomingSection';
@@ -73,7 +73,17 @@ function loadSaved(): SavedSearch[] {
 }
 
 function Saved() {
-  const saved = loadSaved();
+  const [saved, setSaved] = useState(loadSaved);
+  // The search panel saves and deletes while Home stays shown (Beta 8 walk A-A04-7).
+  useEffect(() => {
+    const refresh = () => setSaved(loadSaved());
+    window.addEventListener(SAVED_SEARCHES_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(SAVED_SEARCHES_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
   if (saved.length === 0) return <p className={styles.empty}>{t('qol.home.savedNone')}</p>;
   return (
     <ul className={styles.list}>
