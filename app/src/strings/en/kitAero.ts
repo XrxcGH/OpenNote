@@ -43,6 +43,7 @@ export const kitAero = {
   noPage: 'Click in a page first, then insert.',
   error: {
     notNumber: 'Enter a number in “{name}”.',
+    outOfRange: 'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
     notPositive: '{name} must be greater than zero.',
     notNegative: '{name} cannot be negative.',
     gammaRange: 'γ = {value} is outside the range a gas can have. Use a value above 1 and at most 2 (air is 1.4).',
