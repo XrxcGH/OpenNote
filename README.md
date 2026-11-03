@@ -66,7 +66,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 - [The workspace and title bar](docs/help/workspace-and-title-bar.md): the title bar, the command bar, the Home screen, page tabs, the compact layout, focus mode, the mini window, and quick capture.
 - [Search and links](docs/help/search-and-links.md): search, page links, backlinks, tags, daily notes, and the graph view.
-- [History, Trash, and storage](docs/help/history-and-storage.md): page history, Trash, where notes live, locked entries, and checking a notebook.
+- [History, Trash, and storage](docs/help/history-and-storage.md): page history, Trash, where notes live, locked entries, and checking a notebook. Page edits, undo and redo, images, and replace now stay in step with the page core.
 
 ### Record and listen
 
