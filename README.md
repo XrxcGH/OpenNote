@@ -71,7 +71,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Record and listen
 
-- [Recording](docs/help/recording.md): recording with stamped notes, trimming, transcript blocks, speakers, and meeting recaps. A full walk of recording, captions, dictation, and read aloud fixed start-up, command, length, rename, and layout bugs.
+- [Recording](docs/help/recording.md): recording with stamped notes, trimming, transcript blocks, speakers, and meeting recaps. A full walk of recording, captions, dictation, and read aloud fixed start-up, command, length, rename, and layout bugs. Deleting a recording block now asks first, names the recording, and Undo brings it back, and Trim shows how much it cuts before it deletes anything.
 - [On-device intelligence](docs/help/on-device-intelligence.md): text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on.
 
 ### Math and homework
