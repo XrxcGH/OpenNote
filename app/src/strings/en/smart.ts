@@ -15,7 +15,7 @@ export const smart = {
     done: 'The equation was changed. Press Enter to keep it, or Escape to put the old one back.',
     unsupported: 'This uses LaTeX the action cannot read yet.',
     unchanged: 'It is already as simple as this action can make it.',
-    none: 'No solution was found between -1000 and 1000.',
+    none: 'No real solution was found between -1000 and 1000.',
     letters: 'Solve needs an equation with exactly one letter in it.',
   },
   grapher: {
