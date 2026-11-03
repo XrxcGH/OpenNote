@@ -5,9 +5,11 @@ import { newId } from '../../editor/ids';
 import type { EditorHost } from '../../editor/host';
 import { createMarkdownCache } from '../../editor/markdown';
 import type { MarkdownCache } from '../../editor/markdown';
+import { commandContext } from '../../commands/registry';
 import { beforeExit } from '../../registries';
 import type { PageViewMode } from '../../platform/bindings/PageViewMode';
 import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/pages/types';
+import type { NodeId } from '../../services/notes/types';
 import { osStore } from '../../state/os';
 import { createStore } from '../../state/store';
 import { announce } from '../../ui';
@@ -136,6 +138,32 @@ function keepTextBox(frames: FrameContext, layer: PageBlockLayer, pool: EditorPo
     draft = null;
   };
   add();
+}
+
+/** The page an OpenNote page link points at (`opennote:page/<id>` or `opennote://page/<id>`), or null. */
+export function linkedPage(href: string): string | null {
+  const page = /^opennote:(?:\/\/)?page\/([^#?/]+)/i.exec(href)?.[1];
+  return page ? decodeURIComponent(page) : null;
+}
+
+/**
+ * Follows a link to another page (a series' Before and Next, an extracted page): with Ctrl or Command in text being
+ * edited, as in other editors, and with a plain click or tap where the text isn't being edited. Web links still open
+ * only through the Open link command. Returns a function that stops.
+ */
+function followPageLinks(container: HTMLElement): () => void {
+  const onClick = (event: MouseEvent) => {
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+    const page = link ? linkedPage(link.getAttribute('href') ?? '') : null;
+    if (!link || !page) return;
+    const editing = link.closest('[contenteditable="true"]') !== null;
+    if (editing && !event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    const ctx = commandContext('menu');
+    ctx.navigate({ view: 'workspace', notebookId: null, sectionId: null, pageId: page as NodeId });
+  };
+  container.addEventListener('click', onClick);
+  return () => container.removeEventListener('click', onClick);
 }
 
 /** The block under a point in page units: a hit test, so only at pointer down. */
@@ -305,6 +333,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     rememberView(page.id, viewport),
     routePointers(container, viewport, [gestures, objectsTool, select]),
     keepLinksInPlace(container),
+    followPageLinks(container),
     installObjectKeys(viewport.world, objects, layer),
     objectMenus(container, objects, layer),
     () => chrome.destroy(),
