@@ -79,7 +79,7 @@ describe('the code cell block', () => {
     const patch = vi.fn();
     const source = 'x = 1\n';
     const handle = mountCodeCell(container, {
-      data: { language: 'nope', source },
+      data: { language: 'python', source },
       readOnly: false,
       patch,
       announce: () => undefined,
