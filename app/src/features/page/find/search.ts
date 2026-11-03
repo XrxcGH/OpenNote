@@ -5,6 +5,7 @@
 import { unfoldAroundDom } from '../../../editor/commands/fold';
 import { serializeTextBlock } from '../../../editor/markdown';
 import type { BlockId, Edit } from '../../../services/pages/types';
+import { showSentText } from '../blocks/showText';
 import { liveText } from '../blocks/textBlock';
 import type { LazyBlockView } from '../blocks/textBlock';
 import type { MountedPage } from '../mount';
@@ -172,10 +173,7 @@ export async function replaceMatches(
   }
   if (edits.length === 0) return 0;
   await mounted.sync.send({ edits });
-  for (const { block, markdown } of changed) {
-    mounted.pool.demote(block);
-    const current = mounted.layer.block(block);
-    if (current) mounted.layer.upsert({ ...current, data: { ...current.data, markdown } });
-  }
+  // The focused editor shows the new text too: demoting it would be refused while it has focus.
+  for (const { block, markdown } of changed) showSentText(mounted.pool, mounted.layer, block, markdown);
   return count;
 }
