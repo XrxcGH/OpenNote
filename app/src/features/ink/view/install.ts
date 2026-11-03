@@ -164,8 +164,8 @@ export function installInk(host: InkHost): () => void {
       priority: 80,
       presentation: 'component',
       Component: DrawPens,
-      // On a narrow bar, More offers the pens, their color, and their width (full walk 2, A1-A09-5).
-      overflow: ['ink.pens.choose', 'ink.pens.color', 'ink.pens.width'],
+      // On a narrow bar, More offers the Pen tool, the pen slots, and their color and width (full walk 2, A1-A09-5).
+      overflow: ['ink.pen', 'ink.pens.choose', 'ink.pens.color', 'ink.pens.width'],
       flag: 'ink.core',
     }),
     commandBar.register({
