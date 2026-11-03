@@ -121,7 +121,7 @@ function Review({ flow, state }: { flow: ImportFlow; state: Extract<ImportState,
           ? t('interop.import.review.empty')
           : t('interop.import.review.summary', { pages: preview.pages, title: preview.notebookTitle })}
       </StepHeading>
-      <p className={styles.path} title={path}>
+      <p className={styles.path} title={path} data-user-content>
         {preview.detected.label}: {fileName(path)}
       </p>
       {/* Nothing to import, but the check says why, such as a password to remove: show its reasons. */}
