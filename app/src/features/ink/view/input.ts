@@ -35,7 +35,7 @@ import type { StrokeBuilder } from '../input/strokeBuilder';
 import type { RawSample } from '../input/samples';
 import type { InkStroke } from '../model/types';
 import { mmToPage } from '../pens/tools';
-import { trailFor } from './delegatedTrail';
+import { trailFor, trailShows } from './delegatedTrail';
 import { brandColor, fillOf } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
@@ -216,7 +216,9 @@ export function createPenTool(
     if (samples.length === 0) return;
     const area = target();
     const newest = events.at(-1);
-    if (g.builder && area && newest && isEnabled('ink.delegatedTrail')) {
+    // The system's trail draws the pen where it is, so a stroke held to the ruler, protractor, or grid draws only its
+    // own held line: a raw trail showed every wobble along the ruler (full walk 2, A1-A10-8).
+    if (g.builder && area && newest && trailShows(g) && isEnabled('ink.delegatedTrail')) {
       const color = fillOf(g.style, surface.scheme());
       const diameter = g.style.width * surface.cameraNow().zoom;
       void trailFor(area).then((trail) => trail.update(newest, color, diameter));
