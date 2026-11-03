@@ -281,6 +281,7 @@
   "command | offscreen | div[data-scope=palette].panel > div.body > div[role=listbox].results",
   "command | target-gap | div.body > div[role=listbox].results > div[role=option].option x div[role=listbox].results > div[role=option].option",
   "command | target-gap | div.controls > div[role=group].choice > button.button x div[role=group].choice > button.button",
+  "command | target-small | div.content > div[data-scope=palette].palette > input[role=combobox].input",
   "command | target-small | div.controls > div[role=group].choice > button.button",
   "command | text-overlap | span > span > span.mop x span.mord > span.mord",
   "command | text-overlap | span > span > span.mop x span.mord > span.mrel",
