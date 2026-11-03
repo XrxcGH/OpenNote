@@ -1,6 +1,7 @@
 // The page's layout actions (ARCHITECTURE.md sections 6 and 11.1; owner WP3): new text boxes, the page layout, and
 // the compact Reading view. A new text box is a caret first: a draft block that joins page.json with its first
 // change, and disappears unsaved if it loses focus while empty, so a tap never creates anything hidden.
+import { getSizeClass } from '../../../state/layout';
 import { newId } from '../../../editor/ids';
 import type { BlockId, BlockJson, OpenPage, PageViewJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -151,7 +152,9 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
       void sync.send({ edits: [{ edit: 'setPage', view: { layout } }] });
       announce(t(layout === 'flow' ? 'page.layout.nowFlow' : 'page.layout.nowFreeform'));
     },
-    readingAvailable: () => parts.compact,
+    // The size class now, not at mount: a window made narrow after the page opened offers the Reading view too, and
+    // a page in it can always switch back.
+    readingAvailable: () => reading || parts.compact || getSizeClass() === 'compact',
     reading: () => reading,
     setReading(on) {
       if (reading === on) return;
