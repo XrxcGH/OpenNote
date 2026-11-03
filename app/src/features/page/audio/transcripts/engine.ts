@@ -11,6 +11,11 @@ export interface TranscribeRequest {
   entry: RecordingEntry;
   /** Reports how far along it is, from 0 to 1. */
   onProgress?(fraction: number): void;
+  /**
+   * Called once the job really starts, after any question the engine asks (turning transcription on) is answered
+   * and a model is found, so a "working" message never sits behind that question.
+   */
+  onStart?(): void;
   /** Stops the job; the promise then rejects. */
   signal?: AbortSignal;
   /** False for work the person didn't ask for just now: the engine then never asks or shows anything. */

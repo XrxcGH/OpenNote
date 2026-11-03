@@ -214,6 +214,18 @@ export async function playFromCaret(): Promise<boolean> {
 
 let clicks: (() => void) | null = null;
 
+/** Whether a click at (x, y) landed to the right of the caret at `offset`, on the caret's line: past the text. */
+function pastLineEnd(offset: number, x: number, y: number): boolean {
+  const view = shownPool.get()?.active()?.editor.view;
+  if (!view) return false;
+  try {
+    const box = view.coordsAtPos(offset);
+    return x > box.right + 2 && y >= box.top && y <= box.bottom;
+  } catch {
+    return false;
+  }
+}
+
 /** The block that holds an event's target, if the target is in one. */
 const blockOf = (event: Event): string | undefined =>
   (event.target as Element | null)?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
@@ -246,9 +258,14 @@ export function installTapToHear(): void {
     const block = blockOf(event);
     if (!block) return;
     // The press before the click has already put the caret in the word, so the caret says which word it was.
+    const { clientX, clientY } = event;
     setTimeout(() => {
       const at = caret();
-      void playFromText(block, at?.block === block ? at.offset : undefined);
+      const offset = at?.block === block ? at.offset : undefined;
+      // A click in the space after the end of a line puts the caret after the line's last character, which is
+      // where the next line's words start. The words clicked beside are the ones before the caret.
+      const after = offset !== undefined && offset > 0 && pastLineEnd(offset, clientX, clientY);
+      void playFromText(block, after ? offset - 1 : offset);
     }, 0);
   };
   const taps = new TapRecognizer();

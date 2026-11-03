@@ -48,6 +48,8 @@ function LineRow(props: {
   line: Line;
   editing: boolean;
   speakers: boolean;
+  /** The line before is the same speaker's, so the name isn't said again. */
+  sameSpeaker: boolean;
   selectable: boolean;
   selected: boolean;
   active: boolean;
@@ -76,7 +78,7 @@ function LineRow(props: {
         {time}
       </Button>
       <div className={styles.words}>
-        {speakers && !editing && who && <strong className={styles.speaker}>{who}</strong>}
+        {speakers && !editing && who && !props.sameSpeaker && <strong className={styles.speaker}>{who}</strong>}
         {speakers && editing && (
           <select
             className={styles.select}
@@ -381,13 +383,14 @@ export function TranscriptView({ block }: { block: BlockJson }) {
         />
       )}
       <ol className={styles.lines}>
-        {data.lines.map((line) => (
+        {data.lines.map((line, index) => (
           <LineRow
             key={line.id}
             data={data}
             line={line}
             editing={editing}
             speakers={speakersOn}
+            sameSpeaker={index > 0 && data.lines[index - 1]?.speaker === line.speaker}
             selectable={notesOn}
             selected={selected.has(line.id)}
             active={line.id === activeId}

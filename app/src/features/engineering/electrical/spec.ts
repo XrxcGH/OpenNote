@@ -5,6 +5,8 @@ import type { FieldKey, KitResult, Values } from './shared';
 export interface FieldOption {
   value: string;
   label: FieldKey;
+  /** The label is shown as written, not looked up (unit symbols such as kWh). */
+  literal?: boolean;
 }
 
 export interface Field {

@@ -28,6 +28,8 @@ Each run starts in a sandbox of its own, on this device, and works offline.
 - A function that calls itself without end stops with a stack overflow error.
 - Nothing is kept from one run to the next. The page saves the code, not the output.
 
+A cell made by a newer version of OpenNote, in a language this version does not run, opens read-only. It shows the code and says it needs a newer version, and it is never changed or run.
+
 ## In exports and other apps
 
 A code cell exports as a code block with its language, in Markdown, PDF, and web page exports. Search finds the code.
