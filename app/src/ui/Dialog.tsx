@@ -106,6 +106,7 @@ export function Dialog(props: DialogProps) {
         <dialog
           ref={dialogRef}
           tabIndex={-1}
+          role="dialog"
           aria-modal="true"
           aria-labelledby={`${id}-title`}
           aria-describedby={description ? `${id}-description` : undefined}
