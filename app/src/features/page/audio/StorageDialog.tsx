@@ -1,6 +1,6 @@
 // The list of what recordings take (Phase 9, "Recording storage"): each recording's length and size, the page and
 // notebook that hold it, and what each can free. Nothing changes until a button is pressed and confirmed.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import type { StoredRecording } from '../../../core/audio';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
@@ -10,6 +10,18 @@ import { bytesText, lengthNs } from './format';
 import styles from './more.module.css';
 import { recordingChoices } from './state';
 import { compressStored, freedBy, removeStoredAudio, scanStorage } from './storage';
+
+type Order = 'size' | 'newest' | 'page';
+
+/** The recordings in the order the person chose. Ties keep the order the scan found them in. */
+export function sorted(items: readonly StoredRecording[], order: Order): StoredRecording[] {
+  const by: Record<Order, (a: StoredRecording, b: StoredRecording) => number> = {
+    size: (a, b) => b.bytes - a.bytes,
+    newest: (a, b) => (a.entry.started < b.entry.started ? 1 : a.entry.started > b.entry.started ? -1 : 0),
+    page: (a, b) => a.pageTitle.localeCompare(b.pageTitle),
+  };
+  return [...items].sort(by[order]);
+}
 
 type Listing =
   { state: 'loading' } | { state: 'failed'; message: string } | { state: 'ready'; items: StoredRecording[] };
@@ -34,7 +46,12 @@ function Row({
           {t('audioMore.storage.where', { notebook: item.notebook, section: item.section })}
         </span>
         <span className={styles.help}>
-          {t('audioMore.storage.row', { length: lengthNs(item.durationNs), size: bytesText(item.bytes) })}
+          {t('audioMore.storage.row', {
+            length: lengthNs(item.durationNs),
+            size: bytesText(item.bytes),
+            // The day it was recorded tells apart recordings on pages that share a name.
+            date: item.entry.started.slice(0, 10),
+          })}
         </span>
       </div>
       <div className={styles.actions}>
@@ -62,6 +79,8 @@ function Row({
 export function StorageDialog({ onClose }: { onClose(): void }) {
   const [listing, setListing] = useState<Listing>({ state: 'loading' });
   const [busy, setBusy] = useState(false);
+  const [order, setOrder] = useState<Order>('size');
+  const orderId = useId();
   const load = useCallback(() => {
     scanStorage().then(
       (items) => setListing({ state: 'ready', items }),
@@ -95,8 +114,21 @@ export function StorageDialog({ onClose }: { onClose(): void }) {
       {items.length > 0 && (
         <>
           <p className={styles.help}>{t('audioMore.storage.total', { size: bytesText(total) })}</p>
+          <div className={styles.field}>
+            <label htmlFor={orderId}>{t('audioMore.storage.sort')}</label>
+            <select
+              id={orderId}
+              className={styles.select}
+              value={order}
+              onChange={(event) => setOrder(event.target.value as Order)}
+            >
+              <option value="size">{t('audioMore.storage.sortSize')}</option>
+              <option value="newest">{t('audioMore.storage.sortNewest')}</option>
+              <option value="page">{t('audioMore.storage.sortPage')}</option>
+            </select>
+          </div>
           <ul className={styles.list}>
-            {items.map((item) => (
+            {sorted(items, order).map((item) => (
               <Row key={item.entry.id} item={item} busy={busy} onChange={change} />
             ))}
           </ul>
