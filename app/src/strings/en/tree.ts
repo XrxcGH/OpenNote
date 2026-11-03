@@ -104,6 +104,9 @@ export const tree = {
     move: 'Move',
     noMatches: 'No destinations match.',
     none: 'There is nowhere else to move this.',
+    copyTitle: 'Copy "{title}" to',
+    copy: 'Copy',
+    noneCopy: 'There is nowhere to copy this.',
   },
   trash: {
     title: 'Trash',
