@@ -714,5 +714,9 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'ink.eraser': 'Picks the eraser that removes whole strokes.',
   'ink.partialEraser': 'Picks the eraser that removes only the part of a stroke it touches.',
   'ink.lasso': 'Picks the lasso, which selects ink by drawing around it.',
+  'ink.library.open': 'Opens the shapes library so a shape can be placed on the page.',
+  'ink.pens.choose': 'Picks a pen from the Draw tab by number.',
+  'ink.pens.color': 'Sets the color of the pen in use.',
+  'ink.pens.width': 'Sets the width of the pen in use.',
   'ink.inkToShape': 'Turns on snapping a held stroke into a clean shape.',
 };
