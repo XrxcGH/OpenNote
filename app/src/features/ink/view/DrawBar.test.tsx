@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { getSettings, settingsStore } from '../../../state/settings';
 import { expectNoAxeViolations, renderUi } from '../../../test';
-import { DrawPens, DrawTools } from './DrawBar';
+import { customHex, DrawPens, DrawTools, openPenSlotMenu } from './DrawBar';
 import PenSettings from './PenSettings';
 import { inkPrefs } from './prefs';
 import { deletePenSet, drawState, MAX_PEN_SETS, savePenSet, setSlotTool, updateSlot } from './state';
@@ -55,6 +55,37 @@ describe('the Draw tab', () => {
     await userEvent.click(await screen.findByRole('menuitemradio', { name: 'Plum' }));
     await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.color).toBe('plum');
     expect(screen.getByRole('button', { name: 'Pen, Plum, 2 mm' })).toBeTruthy();
+  });
+
+  it('offers a custom color for a pen, never for a highlighter (full walk 2, A1-A09-6)', async () => {
+    renderUi(
+      <main>
+        <div role="toolbar" aria-label="Draw">
+          <DrawPens toolProps={toolProps} />
+        </div>
+      </main>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Pen, Indigo, 0.5 mm' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Color' }));
+    await userEvent.click(await screen.findByRole('menuitemradio', { name: 'Custom color' }));
+    const field = await screen.findByRole('textbox', { name: 'Color as six hex digits, such as 3A6EA5' });
+    await userEvent.type(field, '3A6EA5');
+    await userEvent.click(screen.getByRole('button', { name: 'Use color' }));
+    await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.color).toBe(['#', '3a6ea5'].join(''));
+    expect(screen.getByRole('button', { name: 'Pen, Custom color, 0.5 mm' })).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Highlighter, Honey, 4 mm' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Color' }));
+    await screen.findByRole('menuitemradio', { name: 'Honey' });
+    expect(screen.queryByRole('menuitemradio', { name: 'Custom color' })).toBeNull();
+    await userEvent.keyboard('{Escape}');
+  });
+
+  it('picks a pen slot from the menu More and the palette open (full walk 2, A1-A09-5)', async () => {
+    renderUi(<main />);
+    void openPenSlotMenu({ x: 10, y: 10 });
+    await userEvent.click(await screen.findByRole('menuitemradio', { name: 'Highlighter, Honey, 4 mm' }));
+    await expect.poll(() => drawState.get()).toMatchObject({ tool: 'pen', slot: 'h1' });
   });
 
   it('changes the active pen to a library pen, and saves, applies and deletes a pen set', async () => {
@@ -127,6 +158,27 @@ describe('Settings, Pen and touch', () => {
   });
 });
 
+describe('Settings, Pen and touch, shape snapping (full walk 2, A1-A10-6)', () => {
+  it('turns snapping on hold off and on, and sets how long to hold', async () => {
+    renderUi(
+      <main>
+        <PenSettings />
+      </main>,
+    );
+    const group = screen.getByRole('group', { name: 'Shape snapping' });
+    const hold = within(group).getByRole('switch', { name: /pen holds still/ });
+    const time = within(group).getByRole('radiogroup', { name: 'Hold for' });
+    await userEvent.click(within(time).getByRole('radio', { name: '0.8 s' }));
+    await expect.poll(() => getSettings().ink.shapes.holdMs).toBe(800);
+    await userEvent.click(hold);
+    await expect.poll(() => getSettings().ink.shapes.hold).toBe(false);
+    expect(within(group).queryByRole('radiogroup', { name: 'Hold for' })).toBeNull();
+    await userEvent.click(hold);
+    await expect.poll(() => getSettings().ink.shapes.hold).toBe(true);
+    await expectNoAxeViolations(document.body);
+  });
+});
+
 describe('Settings, Pen and touch, ruler units', () => {
   it('chooses the units the ruler, the measure, and the compass show', async () => {
     renderUi(
@@ -159,5 +211,14 @@ describe('Settings, Pen and touch, Palm lab', () => {
     expect(within(lab).getByRole('button', { name: 'Stop recording' })).toBeTruthy();
     await userEvent.click(within(lab).getByRole('button', { name: 'Stop recording' }));
     expect(lab.querySelector('[data-palm-lab-result]')).toBeTruthy();
+  });
+});
+
+describe('customHex', () => {
+  it('reads six hex digits with or without the #, and nothing else', () => {
+    expect(customHex(' 3A6EA5 ')).toBe(['#', '3a6ea5'].join(''));
+    expect(customHex(['#', '00ff00'].join(''))).toBe(['#', '00ff00'].join(''));
+    expect(customHex(['#', '0f0'].join(''))).toBeNull();
+    expect(customHex('blue')).toBeNull();
   });
 });

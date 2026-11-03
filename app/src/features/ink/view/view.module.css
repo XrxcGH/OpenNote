@@ -23,6 +23,9 @@
 
   :global(:root[data-density='touch']) .tool {
     min-block-size: var(--size-target-touch);
+    /* A pen slot holds only its swatch: in touch density it is a full target both ways. */
+    min-inline-size: var(--size-target-touch);
+    justify-content: center;
   }
 
   .tool:hover {

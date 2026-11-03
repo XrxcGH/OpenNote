@@ -209,6 +209,43 @@ function PenChoices() {
   );
 }
 
+/** How long a pen holds still before a stroke snaps to a shape, in milliseconds. */
+export const HOLD_TIMES_MS = [300, 500, 800, 1200] as const;
+
+/**
+ * Snapping a held stroke to a shape, and how long to hold (full walk 2, A1-A10-6): before, only the Draw tab's Ink to
+ * shape button reached the shapes, and the hold could not be turned off or slowed.
+ */
+export function ShapeSnapping() {
+  const shapes = useSettings((settings) => settings.ink.shapes);
+  return (
+    <div role="group" aria-label={t('ink.settings.snapping')}>
+      <h3>{t('ink.settings.snapping')}</h3>
+      <Switch
+        label={t('ink.settings.snapHold')}
+        checked={shapes.hold}
+        onChange={(hold) => void updateSettings({ ink: { shapes: { hold } } })}
+      />
+      {shapes.hold && (
+        <RadioGroup<string>
+          label={t('ink.settings.snapHoldTime')}
+          value={String(shapes.holdMs)}
+          onChange={(value) => void updateSettings({ ink: { shapes: { holdMs: Number(value) } } })}
+        >
+          {HOLD_TIMES_MS.map((ms) => (
+            <RadioCard<string> key={ms} value={String(ms)} label={t('ink.settings.snapHoldValue', { seconds: ms / 1000 })} />
+          ))}
+        </RadioGroup>
+      )}
+      <Switch
+        label={t('ink.settings.inkToShape')}
+        checked={shapes.inkToShape}
+        onChange={(inkToShape) => void updateSettings({ ink: { shapes: { inkToShape } } })}
+      />
+    </div>
+  );
+}
+
 /** The ruler's, the measure's, and the compass's units, also in the Draw tab's Units menu. */
 function RulerUnits() {
   const units = useStore(inkPrefs, (state) => state.rulerUnits);
@@ -259,6 +296,7 @@ export default function PenSettings() {
   const geometryFlag = useFlag('ink.geometry');
   const snapFlag = useFlag('ink.snapTools');
   const geometry = geometryFlag && snapFlag;
+  const shapesOn = useFlag('ink.shapes');
   const hovering = useStore(inkPrefs, (state) => state.hover);
   const fields = useStore(inkPrefs, (state) => state.penFields);
   return (
@@ -300,6 +338,7 @@ export default function PenSettings() {
       {hover && (
         <Switch label={t('ink.settings.hover')} checked={hovering} onChange={(on) => setPrefs({ hover: on })} />
       )}
+      {shapesOn && <ShapeSnapping />}
       {geometry && <RulerUnits />}
       <PenChoices />
       {zoomBox && <ZoomBoxSettings />}
