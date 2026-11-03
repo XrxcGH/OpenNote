@@ -12,12 +12,19 @@ function save(entries: readonly Replacement[]): void {
   void updateSettings({ editing: { autocorrect: { entries: entries.map(({ from, to }) => ({ from, to })) } } });
 }
 
+/** The longest text each side may hold, as the settings check it (src-tauri/src/settings/editing.rs). */
+const FROM_MAX = 32;
+const TO_MAX = 256;
+
 function AddReplacement({ list }: { list: readonly Replacement[] }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const duplicate = from.trim() !== '' && list.some((entry) => entry.from === from.trim());
+  // The settings refuse longer text, so the fields used to clear with nothing added (full walk A-A02-6).
+  const fromLong = [...from.trim()].length > FROM_MAX;
+  const toLong = [...to].length > TO_MAX;
   const add = () => {
-    if (from.trim() === '' || to === '' || duplicate) return;
+    if (from.trim() === '' || to === '' || duplicate || fromLong || toLong) return;
     save([...list, { from: from.trim(), to }]);
     setFrom('');
     setTo('');
@@ -34,9 +41,20 @@ function AddReplacement({ list }: { list: readonly Replacement[] }) {
         label={t('editor.autocorrect.from')}
         value={from}
         onChange={setFrom}
-        error={duplicate ? t('editor.autocorrect.duplicate', { from: from.trim() }) : undefined}
+        error={
+          duplicate
+            ? t('editor.autocorrect.duplicate', { from: from.trim() })
+            : fromLong
+              ? t('editor.autocorrect.tooLong', { max: FROM_MAX })
+              : undefined
+        }
       />
-      <TextField label={t('editor.autocorrect.to')} value={to} onChange={setTo} />
+      <TextField
+        label={t('editor.autocorrect.to')}
+        value={to}
+        onChange={setTo}
+        error={toLong ? t('editor.autocorrect.tooLong', { max: TO_MAX }) : undefined}
+      />
       <Button type="submit">{t('editor.autocorrect.add')}</Button>
     </form>
   );

@@ -61,6 +61,21 @@ describe('the quick capture settings', () => {
     expect(field.value).toBe('Win+Shift+Q');
   });
 
+  it('says at once why typed keys cannot be used, and saves usable keys on leaving the field', async () => {
+    const shell = fakeQuickShell({ enabled: true, key: 'Win+Shift+Q' });
+    renderSection();
+    const field = (await screen.findByRole('textbox', { name: 'Shortcut' })) as HTMLInputElement;
+    await waitFor(() => expect(field.value).toBe('Win+Shift+Q'));
+    await userEvent.clear(field);
+    await userEvent.type(field, 'zzz');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    await userEvent.clear(field);
+    await userEvent.type(field, 'Win+Shift+J');
+    expect(field.getAttribute('aria-invalid')).toBeNull();
+    await userEvent.tab();
+    await waitFor(() => expect(shell.saved.key).toBe('Win+Shift+J'));
+  });
+
   it('still refuses to turn on with an AltGr key', async () => {
     const shell = fakeQuickShell({ enabled: false, key: 'Ctrl+Alt+Q' });
     renderSection();
