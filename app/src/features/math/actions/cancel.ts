@@ -46,7 +46,7 @@ function divide(top: Rational[], bottom: Rational[]): Rational[] | null {
   return rest.every((r) => fractions.sign(r) === 0) ? quotient : null;
 }
 
-/** The quotient's cancelled form as a tree, or null when `node` is not a quotient that divides evenly. */
+/** The quotient's canceled form as a tree, or null when `node` is not a quotient that divides evenly. */
 export function cancelQuotient(node: Node, name: string): Node | null {
   if (node.type !== 'binary' || node.op !== '/') return null;
   const top = polynomial(node.left, name);

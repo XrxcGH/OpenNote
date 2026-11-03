@@ -83,13 +83,13 @@ function constantLatex(node: Node): string | null {
   }
 }
 
-/** The shortest of the engine's simplification, the multiplied-out form, and the form with a common factor cancelled. */
+/** The shortest of the engine's simplification, the multiplied-out form, and the form with a common factor canceled. */
 function best(node: Node): string {
   const options = [treeToLatex(simplify(node))];
   const names = letters(node);
   try {
-    const cancelled = names.length === 1 ? cancelQuotient(node, names[0]) : null;
-    options.push(treeToLatex(simplest(cancelled ?? node)));
+    const canceled = names.length === 1 ? cancelQuotient(node, names[0]) : null;
+    options.push(treeToLatex(simplest(canceled ?? node)));
   } catch {
     // An expression too large to multiply out keeps the engine's form.
   }
