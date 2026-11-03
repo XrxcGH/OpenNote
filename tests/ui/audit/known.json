@@ -276,6 +276,7 @@
   "block | text-overlap | div[role=group].block > div > p.muted x button.tape > span",
   "block | text-overlap | td > p > strong x div[role=group].actions > button",
   "block | text-overlap | tr > th > p x div[role=group].actions > button",
+  "command | dead-space | div[data-scope=palette].panel > div.body > div[role=listbox].results (nested)",
   "command | document-scroll | ",
   "command | offscreen | div.content > div.scroller > div[role=listbox].grid",
   "command | offscreen | div[data-scope=palette].panel > div.body > div[role=listbox].results",
