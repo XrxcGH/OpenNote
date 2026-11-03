@@ -40,8 +40,9 @@ export type TemplateLookup = (id: string) => PaperTemplate | undefined;
  * template that can't be found either way draws nothing.
  */
 export function resolveBackground(spec: BackgroundSpec, lookup?: TemplateLookup): PageBackground {
-  const template =
-    spec.template === undefined ? undefined : (readDrawing(spec.extra[DRAWING_KEY]) ?? lookup?.(spec.template));
+  // A built-in template has no ID in `template` (the core takes only IDs there): its drawing alone names it.
+  const drawing = spec.pattern === 'template' ? readDrawing(spec.extra[DRAWING_KEY]) : undefined;
+  const template = drawing ?? (spec.template === undefined ? undefined : lookup?.(spec.template));
   return {
     pattern: spec.pattern,
     spacing: spec.spacing,

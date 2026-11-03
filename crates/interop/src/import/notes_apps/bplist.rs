@@ -136,6 +136,7 @@ impl<'a> Plist<'a> {
         self.objects.len()
     }
 
+    #[cfg(any(test, feature = "testing"))]
     /// Whether there are no objects. A parsed list always has its top object.
     pub fn is_empty(&self) -> bool {
         self.objects.is_empty()

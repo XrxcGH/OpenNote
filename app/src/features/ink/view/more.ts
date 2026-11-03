@@ -28,7 +28,7 @@ import { DrawSnap } from './DrawSnap';
 import type { Store } from '../../../state/store';
 import type { InkHost } from './host';
 import { setViewContext } from './context';
-import { DrawShapes } from './DrawShapes';
+import { DrawShapes, openShapeLibrary } from './DrawShapes';
 import { installHover } from './hover';
 import { installReplay, startReplay } from './replay';
 import { installZoomBox, toggleZoomBox } from './zoomBox';
@@ -227,6 +227,14 @@ export function installMore(context: MoreContext): () => void {
         const current = surface();
         if (current) void convertSelectionToTable(host, current);
       },
+    },
+    {
+      id: 'ink.library.open',
+      title: 'ink.library.menu',
+      keywords: 'ink.library.keywords',
+      category: 'insert',
+      flag: 'ink.shapeTools',
+      run: () => void openShapeLibrary(),
     },
     {
       id: 'ink.addShapeText',
@@ -525,6 +533,8 @@ export function installMore(context: MoreContext): () => void {
       priority: 55,
       presentation: 'component',
       Component: DrawShapes,
+      // On a narrow bar, More offers the shapes menu as well as text in a shape.
+      overflow: ['ink.library.open', 'ink.addShapeText'],
       flag: 'ink.shapeTools',
     }),
     commandBar.register({

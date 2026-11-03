@@ -1,7 +1,9 @@
 // Density (ARCHITECTURE.md section 9.8): the size of buttons and rows. "Automatic" starts from the primary pointer,
 // then follows the last pointer used. A touch pointerup switches to touch sizes. A pen does not, because the first
 // stroke would resize the ribbon and move the page under the pen. A mouse pointerup switches back.
-// It switches on pointerup only, never in the middle of a gesture. "Standard" and "Large" stay as chosen.
+// It switches after the pointerup and its click, never in the middle of a gesture. Switching before the click moved
+// the rows, so a first tap opened the item that slid under the finger (full walk A-A02-4).
+// "Standard" and "Large" stay as chosen.
 // A switch keeps the focused row where it was, so a magnifier user doesn't lose the spot.
 
 import { setDensity } from '../../state/layout';
@@ -10,6 +12,9 @@ import { getSettings, settingsStore } from '../../state/settings';
 
 /** A touch this wide (CSS px) is a palm; ink/view/touch.ts uses the same width. */
 const PALM_PX = 28;
+
+/** How long a switch waits for the click a pointerup makes, when none comes (a drag, a scroll). */
+const CLICK_WAIT_MS = 400;
 
 /** Touch uses touch sizes. A pen is precise and leaves the sizes as they are. */
 function densityOf(pointerType: string): Density | null {
@@ -61,13 +66,31 @@ export function installDensity(view: Window = window): () => void {
     const seen = densityOf(event.pointerType);
     if (!seen || seen === automatic) return;
     automatic = seen;
-    apply();
+    afterClick();
+  };
+  let waiting: (() => void) | null = null;
+  /** Applies the change once the click this pointerup makes has reached its handlers, or after a short wait. */
+  const afterClick = () => {
+    waiting?.();
+    const run = () => {
+      waiting?.();
+      apply();
+    };
+    const onClick = () => void view.setTimeout(run, 0);
+    const timer = view.setTimeout(run, CLICK_WAIT_MS);
+    view.addEventListener('click', onClick, { once: true });
+    waiting = () => {
+      waiting = null;
+      view.clearTimeout(timer);
+      view.removeEventListener('click', onClick);
+    };
   };
   setDensity(applied);
   view.addEventListener('pointerup', onPointerUp, true);
   const stop = settingsStore.subscribe(apply);
   return () => {
     view.removeEventListener('pointerup', onPointerUp, true);
+    waiting?.();
     stop();
   };
 }

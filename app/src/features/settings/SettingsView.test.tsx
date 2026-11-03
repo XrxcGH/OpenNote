@@ -147,4 +147,39 @@ describe('the Settings sections and screens', () => {
     expect(await screen.findByRole('navigation', { name: 'Settings sections' })).toBeTruthy();
     expect(getLocation().view).toBe('settings');
   });
+
+  it('is two screens in the medium size class too, as at 640 px or 200 percent text', async () => {
+    await renderApp({ sizeClass: 'medium' });
+    await pressChord('Ctrl+,');
+    await expectFocus(await screen.findByRole('heading', { level: 1, name: 'Settings' }));
+    expect(screen.queryByRole('heading', { level: 1, name: 'General' })).toBeNull();
+  });
+
+  it('moves between the section links with the arrow keys, Home and End', async () => {
+    await renderApp();
+    await openSettings();
+    const nav = screen.getByRole('navigation', { name: 'Settings sections' });
+    const links = within(nav).getAllByRole('link');
+    links[0].focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(links[1]);
+    await userEvent.keyboard('{End}');
+    expect(document.activeElement).toBe(links.at(-1));
+    await userEvent.keyboard('{ArrowUp}');
+    expect(document.activeElement).toBe(links.at(-2));
+    await userEvent.keyboard('{Home}');
+    expect(document.activeElement).toBe(links[0]);
+  });
+
+  it('fills a wide window with columns of settings, the heading across them all', async () => {
+    await setViewport(2560, 1200);
+    await renderApp({ sizeClass: 'expanded' });
+    const heading = await openSettings();
+    const main = heading.parentElement!;
+    await waitFor(() => expect(main.children.length).toBeGreaterThan(3));
+    const lefts = new Set([...main.children].slice(1).map((child) => Math.round(child.getBoundingClientRect().left)));
+    expect(lefts.size).toBeGreaterThan(1);
+    const used = Math.max(...[...main.children].map((child) => child.getBoundingClientRect().right));
+    expect(used - main.getBoundingClientRect().left).toBeGreaterThan(main.clientWidth / 2);
+  });
 });

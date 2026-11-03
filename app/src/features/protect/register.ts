@@ -19,6 +19,7 @@ import { loadExternalNotice } from '../qol';
 import { ancestors, currentNode, treeStore } from '../tree';
 import { pointToCheck } from './crashPointer';
 import { entryLockState } from './entryLock';
+import { usesHello } from './helloState';
 
 if (typeof window !== 'undefined') {
   shellHost().listen((event) => {
@@ -158,7 +159,10 @@ for (const [id, title, on] of [
       keywords: 'storage.sections.keywords',
       category: 'notebooks',
       flag: 'sections.protect',
-      when: (ctx) => sectionFor(ctx)?.protected === 'unlocked',
+      when: (ctx) => {
+        const section = sectionFor(ctx);
+        return section?.protected === 'unlocked' && usesHello(section.id) !== on;
+      },
       async run(ctx) {
         const section = sectionFor(ctx);
         if (section) await (await loadSections()).setHello(section, on);

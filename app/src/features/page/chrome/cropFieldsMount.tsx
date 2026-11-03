@@ -5,34 +5,42 @@ import type { ImageHandle } from '../blocks/imageBlock';
 import { CropFields } from '../images/CropFields';
 import { applyCrop } from '../images/cropMode';
 import { cropOf } from '../images/geometry';
+import type { Crop } from '../images/geometry';
 import styles from './sizePosition.module.css';
 
+/** The mounted crop fields: the crop typed so far, sent only when the popover applies. */
+export interface MountedCropFields {
+  /** Sends the typed crop, if it changed, as one undo step. Resolves whether anything changed. */
+  apply(): Promise<boolean>;
+  unmount(): void;
+}
+
 /**
- * Adds the crop fields to `form`. Each change is one undo step through applyCrop, then `done` runs (the popover
- * closes, since the image's frame changed with the crop). Returns a function that unmounts the fields.
+ * Adds the crop fields to `form`. A field only records its value: moving between fields must not close the
+ * popover or send half a crop. Apply (or Enter in any field) submits the form, which calls `apply`.
  */
-export function mountCropFields(form: HTMLElement, handle: ImageHandle, done: () => void): () => void {
+export function mountCropFields(form: HTMLFormElement, handle: ImageHandle): MountedCropFields {
   const host = form.ownerDocument.createElement('div');
   host.className = styles.cropHost;
-  // Enter inside a crop field commits the crop; it must not also submit the popover's size fields.
+  // Enter inside a crop field submits the popover once React has recorded the field's value.
   host.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') event.preventDefault();
+    if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return;
+    event.preventDefault();
+    setTimeout(() => form.isConnected && form.requestSubmit(), 0);
   });
   form.append(host);
   const root = createRoot(host);
-  // Enter and the blur that follows both commit; the second must not send the same crop again.
-  let sent = false;
-  const render = () =>
-    root.render(
-      <CropFields
-        crop={cropOf(handle.block().data)}
-        onChange={(crop) => {
-          if (sent) return;
-          sent = true;
-          void applyCrop(handle, crop).then(done);
-        }}
-      />,
-    );
-  render();
-  return () => queueMicrotask(() => root.unmount());
+  let pending: { crop: Crop | null } | null = null;
+  root.render(
+    <CropFields
+      crop={cropOf(handle.block().data)}
+      onChange={(crop) => {
+        pending = { crop };
+      }}
+    />,
+  );
+  return {
+    apply: () => (pending ? applyCrop(handle, pending.crop) : Promise.resolve(false)),
+    unmount: () => queueMicrotask(() => root.unmount()),
+  };
 }

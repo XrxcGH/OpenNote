@@ -249,3 +249,26 @@ export async function restoreReceipt(notes: NotesService, receipt: TrashReceipt)
   await Promise.all([...parents].map((parent) => relist(parent)));
   return restored;
 }
+
+/**
+ * Puts a restore from the Trash view on the undo stack: undo moves the items back to Trash, redo restores them
+ * again. Without it, Ctrl+Z after Restore tried the older trash entry again and failed (full walk A-A02-13).
+ */
+export function recordTrashRestore(restored: readonly NodeSummary[], changed: () => void): void {
+  const ids = restored.filter((node) => !restored.some((other) => other.id === node.parentId)).map((node) => node.id);
+  if (ids.length === 0) return;
+  const title = titleOf(restored[0]);
+  let receipt: TrashReceipt | null = null;
+  recordUndo({
+    undone: t('tree.undo.trashedAgain', { title }),
+    redone: t('tree.undo.restored', { title }),
+    undo: async (service) => {
+      receipt = await trashNodes(service, ids, { record: false });
+      changed();
+    },
+    redo: async (service) => {
+      if (receipt) await restoreReceipt(service, receipt);
+      changed();
+    },
+  });
+}

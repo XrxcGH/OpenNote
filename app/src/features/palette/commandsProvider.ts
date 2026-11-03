@@ -54,6 +54,15 @@ function resultFor(def: AnyCommand, ctx: CommandContext, query: string, recent: 
   };
 }
 
+/**
+ * Drops a disabled command when an enabled one with the same title is listed, so a section selected with focus
+ * in the tree lists one Delete, the one that works, and Enter runs it (full walk A-A03-3).
+ */
+export function withoutDisabledTwins(results: readonly PaletteResult[]): PaletteResult[] {
+  const working = new Set(results.filter((result) => !result.disabled).map((result) => result.title));
+  return results.filter((result) => !result.disabled || !working.has(result.title));
+}
+
 export const commandsProvider: PaletteProvider = {
   id: 'app.commands',
   filter: 'commands',
@@ -61,10 +70,10 @@ export const commandsProvider: PaletteProvider = {
     const ctx = paletteContext();
     if (!ctx) return [];
     const recent = sessionStore.get().recentCommands;
-    return commands
+    const results = commands
       .list()
       .filter((def) => available(def, ctx))
-      .map((def) => resultFor(def, ctx, query, recent))
-      .sort((a, b) => a.title.localeCompare(b.title));
+      .map((def) => resultFor(def, ctx, query, recent));
+    return withoutDisabledTwins(results).sort((a, b) => a.title.localeCompare(b.title));
   },
 };

@@ -25,7 +25,7 @@ describe('Convert to text when it cannot run', () => {
     const ensure = vi.fn(() => Promise.resolve(false));
     await convertSelection(hostWith(ensure), surface());
     expect(ensure).toHaveBeenCalledTimes(1);
-    expect(toast).toHaveBeenCalledWith({ message: t('ink.handwriting.unavailable') });
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ message: t('ink.handwriting.unavailable') }));
   });
 
   it('tells the person to select handwriting first', async () => {
@@ -34,7 +34,7 @@ describe('Convert to text when it cannot run', () => {
       hostWith(() => Promise.resolve(true), []),
       { ...surface(), strokes: () => [] } as never,
     );
-    expect(toast).toHaveBeenCalledWith({ message: t('ink.handwriting.selectFirst') });
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ message: t('ink.handwriting.selectFirst') }));
   });
 
   it('says a read-only page cannot be changed', async () => {
@@ -43,6 +43,6 @@ describe('Convert to text when it cannot run', () => {
       hostWith(() => Promise.resolve(true)),
       surface(true),
     );
-    expect(toast).toHaveBeenCalledWith({ message: t('ink.handwriting.readOnly') });
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ message: t('ink.handwriting.readOnly') }));
   });
 });

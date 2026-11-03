@@ -48,7 +48,10 @@ function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: n
     floating ||= child.style.left !== '' && child.offsetLeft + child.offsetWidth > flow.offsetLeft + flow.offsetWidth;
   }
   for (const child of world.children) {
-    if (child instanceof HTMLElement && child !== flow) h = Math.max(h, child.offsetTop + child.offsetHeight);
+    // A backdrop (the paper under the canvas) is drawn to the world's size: counting it would grow the world each
+    // time the paper is drawn again.
+    if (!(child instanceof HTMLElement) || child === flow || child.dataset.backdrop !== undefined) continue;
+    h = Math.max(h, child.offsetTop + child.offsetHeight);
   }
   return { w, h, floating };
 }

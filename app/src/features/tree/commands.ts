@@ -19,6 +19,7 @@ import { levelAfter, stepOf } from './moves';
 import { deleteNode } from './remove';
 import { startRename } from './rename';
 import { treeStore } from './store';
+import { keepTreeFocus } from './keepFocus';
 import { redo, undo } from './undo';
 
 /**
@@ -193,7 +194,7 @@ const editCommands = [
     run: async (ctx) => {
       if (await toShownPage('page.undo', ctx)) return;
       dismissActionToasts();
-      if (!(await undo(ctx.notes))) announce(t('tree.undo.nothing'));
+      if (!(await keepTreeFocus(() => undo(ctx.notes)))) announce(t('tree.undo.nothing'));
     },
   }),
   defineCommand({
@@ -204,7 +205,7 @@ const editCommands = [
     scope: 'workspace',
     run: async (ctx) => {
       if (await toShownPage('page.redo', ctx)) return;
-      if (!(await redo(ctx.notes))) announce(t('tree.undo.nothingToRedo'));
+      if (!(await keepTreeFocus(() => redo(ctx.notes)))) announce(t('tree.undo.nothingToRedo'));
     },
   }),
 ];

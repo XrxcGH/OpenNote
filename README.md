@@ -31,6 +31,7 @@ Beta 8 is beta 7 plus these changes:
 - Title bar and save fixes: the Windows title bar no longer stays above OpenNote's own, and the save status says Saving until an edit is written, then Saved.
 - A dark theme in neutral charcoal gray, not brown.
 - A flaky test of the box around a stroke's ink is fixed. It now checks the shape the renderer fills, and the macOS counterexample runs every time.
+- Ink fixes from the full walk: the ruler stays in view and you can draw along it from inside, shapes are reachable at every width and held curves snap, and the Draw tab's pens fit at every width and touch size.
 
 Beta 7 added ink fixes and smoother shapes, layout fixes, more course and subject kits, and a start-up wait that fixes ink missing after a crash restart. The school tools now include 24 subject and engineering kit windows, Check my work, the tutor, practice exams, document structure, and code cells.
 
@@ -66,7 +67,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 - [The workspace and title bar](docs/help/workspace-and-title-bar.md): the title bar, the command bar, the Home screen, page tabs, the compact layout, focus mode, the mini window, and quick capture.
 - [Search and links](docs/help/search-and-links.md): search, page links, backlinks, tags, daily notes, and the graph view.
-- [History, Trash, and storage](docs/help/history-and-storage.md): page history, Trash, where notes live, locked entries, and checking a notebook.
+- [History, Trash, and storage](docs/help/history-and-storage.md): page history, Trash, where notes live, locked entries, and checking a notebook. Page edits, undo and redo, images, and replace now stay in step with the page core.
 
 ### Record and listen
 

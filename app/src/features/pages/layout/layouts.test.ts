@@ -37,10 +37,16 @@ describe('template backgrounds', () => {
     const view = setTemplate(DEFAULT_VIEW, template);
     const stored = writeView(view);
     const reread = readView(JSON.parse(JSON.stringify(stored))).view;
-    expect(reread.background.template).toBe(TEMPLATE_IDS.lab);
+    // The core takes only a saved template's ID there; a built-in one is named by its drawing alone.
+    expect(reread.background.template).toBeUndefined();
     const layout = pageLayout(reread);
     expect(layout.background.template?.id).toBe(TEMPLATE_IDS.lab);
     expect(paperPaths(layout.background, layout.sheet).labels.length).toBeGreaterThan(0);
+  });
+
+  it('keeps a saved template ID in background.template', () => {
+    const saved = { ...builtinTemplate('lab', DEFAULT_VIEW, TEXTS), id: '01k6f0000000000000000t0009' };
+    expect(setTemplate(DEFAULT_VIEW, saved).background.template).toBe(saved.id);
   });
 
   it('draws nothing for a template name with no drawing and no lookup', () => {

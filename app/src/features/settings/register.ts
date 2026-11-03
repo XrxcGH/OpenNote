@@ -42,7 +42,7 @@ function focusWhenShown(ids: readonly string[], deadline = Date.now() + 2_000): 
 }
 
 // Settings, then About, at the list of what needs Windows (ADR 0055). On Windows, where the list is empty, it
-// stops at the version details.
+// shows what works on this computer instead.
 commands.register(
   defineCommand({
     id: 'app.systemSupport',

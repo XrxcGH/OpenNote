@@ -1,6 +1,7 @@
 // The Settings page (ARCHITECTURE.md section 16.1). It replaces the workspace. The sections from the registry sit
-// beside the current one; in the compact size class the list and the section are two screens. Every change applies
-// at once, so there is no Save button.
+// beside the current one. In the compact and medium size classes the list and the section are two screens: beside
+// a 240 px list, a section has too little room at 640 px or at 200 percent text (full walk A-A02-1, VB-4).
+// Every change applies at once, so there is no Save button.
 
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
@@ -28,7 +29,8 @@ function useScreens(sectionId: string | undefined, compact: boolean) {
 export function SettingsView() {
   const location = useLocation();
   const sections = useSections();
-  const compact = useSizeClass() === 'compact';
+  const sizeClass = useSizeClass();
+  const compact = sizeClass === 'compact' || sizeClass === 'medium';
   const requested = location.view === 'settings' ? location.section : 'general';
   const section = sections.find((one) => one.id === requested) ?? sections[0];
   const { heading, showList, setListShowing } = useScreens(section?.id, compact);
@@ -44,7 +46,7 @@ export function SettingsView() {
   };
   const title = showList || !section ? t('settings.title') : t(section.title);
   return (
-    <div className={styles.page} data-scope="settings" onKeyDown={onKeyDown}>
+    <div className={styles.page} data-scope="settings" data-stacked={compact ? '' : undefined} onKeyDown={onKeyDown}>
       <div className={styles.header}>
         {compact && !showList ? (
           <Button variant="quiet" onClick={() => setListShowing(true)}>

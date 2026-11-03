@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 881 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 885 commands and 47 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -382,7 +382,7 @@ The app registers 881 commands and 47 tool windows. 24 of the windows are subjec
 | Canvas lock | Stops the page from scrolling or zooming while you write. | Ctrl+Alt+Shift+L |
 | Pen hover circle | Shows a circle at the pen tip while the pen hovers above the screen. |  |
 | Describe drawing | Adds a text description to a drawing, or marks it as decoration. |  |
-| Insert space | Opens or closes space on the page and moves everything below it. |  |
+| Insert space by height | Opens or closes space on the page and moves everything below it. |  |
 | Ruler | Shows a ruler that straight ink follows. |  |
 | Protractor | Shows a protractor for measuring and drawing angles. |  |
 | Snap to grid | Snaps ink to a grid on plain paper. |  |
@@ -394,6 +394,7 @@ The app registers 881 commands and 47 tool windows. 24 of the windows are subjec
 | Units: centimeters | Shows ruler units in centimeters. |  |
 | Units: inches | Shows ruler units in inches. |  |
 | Convert to table | Turns a hand-drawn grid into a table. |  |
+| Shapes | Opens the shapes library so a shape can be placed on the page. |  |
 | Add text to shape | Adds text inside the selected shape. |  |
 | Make curve | Turns the selected stroke into a curve you can edit by its points. |  |
 | Add curve point | Adds a point to the selected curve. |  |
@@ -430,6 +431,9 @@ The app registers 881 commands and 47 tool windows. 24 of the windows are subjec
 | Stroke eraser | Picks the eraser that removes whole strokes. |  |
 | Partial eraser | Picks the eraser that removes only the part of a stroke it touches. |  |
 | Lasso select | Picks the lasso, which selects ink by drawing around it. |  |
+| Choose pen | Picks a pen from the Draw tab by number. |  |
+| Pen color | Sets the color of the pen in use. |  |
+| Pen width | Sets the width of the pen in use. |  |
 | Ink to shape | Turns on snapping a held stroke into a clean shape. |  |
 
 ### Pictures

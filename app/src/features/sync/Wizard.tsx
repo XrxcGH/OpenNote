@@ -7,6 +7,7 @@ import type { FormEvent } from 'react';
 import { t } from '../../strings/t';
 import { Button, RadioCard, RadioGroup, TextField, announce, showToast } from '../../ui';
 import { checkGroups, codeOf, errorText, groupMatches, keyStoreText, passphraseProblem, placeReady } from './model';
+import { settingsHost } from '../settings';
 import { setView, syncClient } from './runtime';
 import styles from './sync.module.css';
 import type { BackendConfig, BeginInput, SyncView } from './types';
@@ -250,7 +251,7 @@ function useWizard(mode: Mode, onDone: (view: SyncView) => void) {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (step === 1) return placeReady(backendOf(f)) ? go(2) : setProblem(t('sync.wizard.needPlace'));
+    if (step === 1) return void checkPlace();
     if (step === 2) return void begin();
     if (step === 3) return go(4);
     const key = made?.recovery ?? '';
@@ -258,6 +259,20 @@ function useWizard(mode: Mode, onDone: (view: SyncView) => void) {
       return void confirmKey();
     }
     setProblem(t('sync.wizard.checkWrong'));
+  };
+
+  // A folder that can't take files is named on this step, not after the passphrase (full walk B2-B13-12).
+  const checkPlace = async () => {
+    const backend = backendOf(f);
+    if (!placeReady(backend)) return setProblem(t('sync.wizard.needPlace'));
+    if (backend.kind === 'folder') {
+      const check = await settingsHost()
+        .install.checkNotesFolder(backend.path)
+        .catch(() => null);
+      if (check?.kind === 'notWritable') return setProblem(t('sync.wizard.folderNotWritable'));
+      if (check?.kind === 'notAbsolute') return setProblem(t('sync.wizard.folderNotAbsolute'));
+    }
+    go(2);
   };
 
   // Sync waits, paused, from setup until the key is checked; only then does it start.

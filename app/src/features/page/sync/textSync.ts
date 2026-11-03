@@ -104,6 +104,11 @@ function changedRange(tr: Transaction): { from: number; to: number } {
 class Sync implements TextSyncHandle {
   private readonly internals: QueueInternals;
   private sent: string;
+  /**
+   * How the editor writes the text the core holds, which can differ from `sent` (a trailing space, an empty
+   * paragraph): a document that still writes this has nothing to send. Sending it would clear the redo stack.
+   */
+  private echo: string | null = null;
   private insert: PendingInsert | null;
   /** The tag edit for the batch being built, which goes as a step of its own after the text. */
   private tagNext: Edit | null = null;
@@ -139,7 +144,16 @@ class Sync implements TextSyncHandle {
       composing: () => this.composing(),
       compositionDone: () => this.compositionDone(),
     });
-    accepted.set(this, (markdown) => (this.sent = markdown));
+    accepted.set(this, (markdown) => {
+      this.sent = markdown;
+      this.noteEcho();
+    });
+    if (!this.insert) this.noteEcho();
+  }
+
+  /** Notes how the editor writes the text the core holds now. */
+  private noteEcho(): void {
+    this.echo = keyOf(this.source.serialize(this.editor.state.doc));
   }
 
   get dirty(): boolean {
@@ -213,7 +227,7 @@ class Sync implements TextSyncHandle {
   private build(doc: PMNode, selections: EditBatch['ui'], target: string | null): EditBatch | null {
     const content = this.source.serialize(doc);
     const key = keyOf(content);
-    if (this.insert ? isEmpty(content) : key === this.sent) return null;
+    if (this.insert ? isEmpty(content) : key === this.sent || key === this.echo) return null;
     const edits = this.editsFor(content);
     // A typed #word becomes a tag in a step of its own, sent after the text, so Ctrl+Z leaves the plain #word.
     this.tagNext = null;
@@ -222,6 +236,7 @@ class Sync implements TextSyncHandle {
     }
     const typing = target !== null && !this.insert;
     this.sent = key;
+    this.echo = null;
     this.insert = null;
     const batch: EditBatch = { edits };
     if (typing) batch.coalesce = { kind: 'typing', target };

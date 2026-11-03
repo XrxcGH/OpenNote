@@ -8,6 +8,7 @@ import type { PaletteProvider, PaletteResult } from '../../registries/types';
 import type { NodeId } from '../../services/notes/types';
 import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
+import { recordCreated } from '../tree';
 import { nodesProvider } from './nodes';
 
 export const CREATE_RESULT_ID = 'switcher:create';
@@ -40,6 +41,7 @@ export async function createPage(title: string): Promise<void> {
   try {
     const { notes } = commandContext('palette');
     const page = await notes.create({ kind: 'page', placement: { parentId: where.sectionId, beforeId: null }, title });
+    recordCreated(page);
     navigate({ view: 'workspace', ...where, pageId: page.id }, { focus: 'target' });
     announce(t('palette.created', { title: page.title }));
   } catch {

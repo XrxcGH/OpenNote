@@ -69,7 +69,13 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
       {school && (
         <TextField
           label={t(webdav ? 'connectors.detail.webdavAddressLabel' : 'connectors.detail.addressLabel')}
-          help={t(webdav ? 'connectors.detail.webdavAddressHelp' : 'connectors.detail.addressHelp')}
+          help={t(
+            webdav
+              ? 'connectors.detail.webdavAddressHelp'
+              : info.id === 'moodle'
+                ? 'connectors.detail.addressHelp.moodle'
+                : 'connectors.detail.addressHelp.canvas',
+          )}
           value={address}
           onChange={setAddress}
         />
@@ -217,7 +223,7 @@ export function ConnectorCard(props: ConnectorCardProps) {
         {actions.setup && <p className={styles.help}>{t('connectors.detail.setupHelp', { name: info.name })}</p>}
         {error && (
           <p id={errorId} className={styles.error}>
-            {errorText(error, info.name)}
+            {errorText(error, info.name, info.id)}
           </p>
         )}
         <div className={styles.actions}>

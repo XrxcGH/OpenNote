@@ -3,13 +3,16 @@
 // feeds or tips.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { isEnabled } from '../../app/flags';
 import { navigate } from '../../app/location';
+import { executeCommand } from '../../commands/registry';
 import { useNotes } from '../../services/notes';
 import { sessionStore } from '../../state/session';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { Button, DeskScene } from '../../ui';
 import { useResolvedTheme } from '../../theme/theme';
+import { noteTitle, toYmd } from '../daily';
 import { locationOf, nodeIndex } from '../palette';
 import type { NodeEntry } from '../palette';
 import { readPrefs, writePrefs } from '../qol';
@@ -22,9 +25,17 @@ import { currentLocale } from '../../state/language';
 
 const RECENT_SHOWN = 8;
 
-/** The title today's note would have. */
+/** Today, as the Home page says it. */
 export function todayTitle(now: Date = new Date()): string {
   return now.toLocaleDateString(currentLocale(), { dateStyle: 'long' });
+}
+
+/**
+ * The titles today's note may have: the daily notes title (2026-10-31), which the title bar's Today button and
+ * Start today note both use, and the long date earlier versions gave it (full walk A-A03-8).
+ */
+export function todayTitles(now: Date = new Date()): readonly string[] {
+  return [noteTitle('day', toYmd(now)), todayTitle(now)];
 }
 
 function PageLinks({ entries, empty }: { entries: readonly NodeEntry[]; empty: string }) {
@@ -45,7 +56,8 @@ function PageLinks({ entries, empty }: { entries: readonly NodeEntry[]; empty: s
 
 function Today({ entries, onStart }: { entries: readonly NodeEntry[]; onStart(): void }) {
   const title = todayTitle();
-  const today = entries.find((entry) => entry.node.kind === 'page' && entry.node.title.trim() === title);
+  const titles = todayTitles();
+  const today = entries.find((entry) => entry.node.kind === 'page' && titles.includes(entry.node.title.trim()));
   if (today) return <PageLinks entries={[today]} empty="" />;
   return (
     <div className={styles.row}>
@@ -120,6 +132,11 @@ function useEntries(): NodeEntry[] {
 }
 
 async function startToday(entries: readonly NodeEntry[]): Promise<void> {
+  // Daily notes make the page in their own section, from the day's template, as the title bar's Today button does.
+  if (isEnabled('daily.notes')) {
+    await executeCommand('daily.open', undefined, 'palette');
+    return;
+  }
   const notes = (await import('../../services/notes')).currentNotesService();
   if (!notes) return;
   const section = entries.find((entry) => entry.node.kind === 'section' && !entry.node.archived);
@@ -127,7 +144,7 @@ async function startToday(entries: readonly NodeEntry[]): Promise<void> {
   const page = await notes.create({
     kind: 'page',
     placement: { parentId: section.node.id, beforeId: null },
-    title: todayTitle(),
+    title: todayTitles()[0],
   });
   navigate({ view: 'workspace', notebookId: section.notebookId, sectionId: section.node.id, pageId: page.id });
 }

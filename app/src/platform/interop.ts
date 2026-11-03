@@ -129,6 +129,8 @@ export interface LatexOptions {
   author: string;
   date: 'none' | 'today' | 'edited';
   citations: LatexSource[];
+  /** Minutes to add to UTC for local time, so the edited date is the day the page shows. */
+  utcOffsetMinutes?: number;
 }
 
 export interface ExportRequest {

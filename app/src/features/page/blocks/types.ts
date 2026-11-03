@@ -17,6 +17,8 @@ export interface BlockRenderContext {
   readonly cache: MarkdownCache;
   /** The compact Reading view. */
   readonly reading: boolean;
+  /** Shows a block changed here at once, before the core answers. The block layer sets it. */
+  readonly local?: (block: BlockJson) => void;
 }
 
 export interface BlockView {
