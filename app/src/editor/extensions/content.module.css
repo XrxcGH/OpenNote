@@ -27,6 +27,13 @@
     cursor: pointer;
   }
 
+  /* A finger needs 44 px: the marker's invisible hit area grows around the box, and a tap on it toggles the box. */
+  :global(:root[data-density='touch']) .taskBox::before {
+    content: '';
+    position: absolute;
+    inset: calc((1em - var(--size-target-touch)) / 2);
+  }
+
   .taskBox input:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: var(--size-focus-ring-offset);
