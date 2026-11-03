@@ -7,7 +7,10 @@ const fake = (run: ToolSpec['run']): ToolSpec => ({ id: 'jetengine', fields: [],
 
 describe('absurd inputs in the aerospace window', () => {
   it('reports a non-finite answer as a named problem', () => {
-    const result = runSpec(fake(() => ({ rows: [{ id: 'thrust', value: Infinity }], steps: [] })), {});
+    const result = runSpec(
+      fake(() => ({ rows: [{ id: 'thrust', value: Infinity }], steps: [] })),
+      {},
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBeInstanceOf(AeroError);
   });
