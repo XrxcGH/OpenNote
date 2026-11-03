@@ -4,11 +4,39 @@ import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { entryOf } from './entries';
 
-/** The recorded time of an entry: its run less the pauses and the parts removed. */
+/** Frames a second in a track's timeline (crates/media/src/audio/timeline.rs). */
+const FRAMES_PER_SECOND = 48_000;
+
+/**
+ * The recorded time of an entry: its run less the pauses and the parts removed. Removing a part from the middle
+ * leaves a hole in the tracks' capture time that is not a pause, so the frames the tracks hold count too: without
+ * them the block kept the length from before the removal.
+ */
 export function activeNs(entry: RecordingEntry): number {
   const run = Math.max(0, entry.endedNs - entry.startedNs);
   const holes = entry.pauses.reduce((sum, hole) => sum + Math.max(0, hole.resumedNs - hole.pausedNs), 0);
-  return Math.max(0, run - holes);
+  const timed = Math.max(0, run - holes);
+  const frames = Math.max(0, ...entry.tracks.map((track) => track.timeline?.frames ?? 0));
+  return frames > 0 ? Math.min(timed, Math.round((frames / FRAMES_PER_SECOND) * 1e9)) : timed;
+}
+
+/**
+ * Where a capture time sits in the audio a person plays: its time since the start, less the pauses before it. A
+ * flag dropped after a pause would otherwise point past the end of the recording.
+ */
+export function positionOfCapture(entry: RecordingEntry, captureNs: number): number {
+  let paused = 0;
+  for (const hole of entry.pauses) {
+    if (hole.pausedNs >= captureNs) continue;
+    paused += Math.max(0, Math.min(hole.resumedNs, captureNs) - hole.pausedNs);
+  }
+  return Math.max(0, captureNs - entry.startedNs - paused);
+}
+
+/** The name the person gave a recording, or null. */
+export function nameOf(entry: RecordingEntry): string | null {
+  const name = entry['name'];
+  return typeof name === 'string' && name.trim() !== '' ? name : null;
 }
 
 /** What a reader that doesn't know the block shows. It can't change, so it doesn't name the length. */
