@@ -1381,7 +1381,7 @@ close = "</" name ">"
 |---|---|
 | `R-INL-1` | An opening tag has a name from the list and 1 to 8 attributes. Each attribute is one space, then `lang`, `dir`, or `data-` and 1 to 16 characters from `a-z`, `0-9`, and `-`, then `="`, the value, and `"`. Nothing else may appear: no other spaces, no single quotes, no uppercase letters, and no `/` before `>` |
 | `R-INL-2` | A value has 0 to 200 characters, none of which is `"`, `<`, `>`, `&`, or a Unicode control character (category Cc). So a value never needs escaping, and backslashes and Markdown characters in it are literal |
-| `R-INL-3` | Attribute names appear in increasing code point order, each once |
+| `R-INL-3` | Attribute names appear in increasing code point order, each once. A tag that breaks `R-INL-1`, `R-INL-2`, or `R-INL-3` is not a tag of the grammar: it is never a mark, known or foreign, and it stays literal text (`R-INL-11`) |
 | `R-INL-4` | A closing tag is `</` and the name and `>`. The version 1 tags `<u>`, `<sub>`, `<sup>`, `<em>`, `<strong>`, `<del>`, and `<mark>`, which have no attributes, close the same way |
 | `R-INL-5` | Tags pair like brackets within one paragraph, heading, cell, or note. Reading from left to right, an opening tag goes on a stack. A closing tag pairs with the opening tag on top of the stack when the names match. Otherwise it stays literal text and the stack does not change. Opening tags left on the stack at the end stay literal text. A tag never pairs across a paragraph break |
 | `R-INL-6` | A pair inside 32 or more other pairs is literal text, both its tags. So tags nest at most 32 deep |
@@ -1390,7 +1390,7 @@ close = "</" name ">"
 | `R-INL-9` | A foreign mark keeps the exact bytes of its opening tag. The text inside is shown without formatting and can be edited. Writers write the opening tag back byte for byte, and the matching closing tag |
 | `R-INL-10` | Foreign marks come last in the nesting order, just outside code (`R-MRK-24`). Several can cover the same text: they don't exclude each other, and they nest in code point order of their opening tags. Two adjacent ranges with byte-identical opening tags join |
 | `R-INL-11` | Any other raw HTML is literal text, as in version 1, and writers escape its `<` when they write the text (section 7.6) |
-| `R-INL-12` | A tag inside a code span is code text. A pair may hold code spans, links, footnote references, and hard breaks |
+| `R-INL-12` | A tag inside a code span is code text. A pair may hold code spans, links, images, footnote references, and hard breaks |
 
 A reader of version 1 sees every tag outside section 7.4, and every value of version 2, as literal text, and its writer would escape them. That is why a page that uses one is stamped `formatVersion` 2 (`R-STAMP-8`), which a version 1 reader opens read-only (section 15.2).
 
@@ -1423,14 +1423,19 @@ A reader of version 1 sees every tag outside section 7.4, and every value of ver
 | `R-MRK-21` | `deletion` | `<span data-del="ID">` | The ID of a suggestion of kind `del` |
 | `R-MRK-22` | `formatChange` | `<span data-fmt="ID">` | The ID of a suggestion of kind `fmt` |
 | `R-MRK-23` | `charStyle` | `<span data-style="NAME">` | The name of a character style (`R-STY-8`) |
+| `R-MRK-29` | `float` | `<span data-float="F">` | `start` or `end`: the images inside float to that edge of the paragraph (below) |
 
 The IDs in tags are IDs as section 2.4 writes them: 26 lowercase characters. An ID in any other form is outside the grammar. The marks of version 1 without tags (link, strong emphasis, emphasis, subscript, superscript, and code) are unchanged.
 
-`R-MRK-24`. Marks nest in this order, outermost first: link, comment, insertion, deletion, formatChange, dir, lang, charStyle, strong emphasis, weight, emphasis, strike, underline, highlight, shade, textColor, font, textSize, caps, tracking, scale, shift, kern, otf, effect, box, subscript or superscript, foreign marks, and code. Where two ranges overlap, the mark that comes later in the order is closed and reopened, as in version 1.
+`R-MRK-24`. Marks nest in this order, outermost first: float, link, comment, insertion, deletion, formatChange, dir, lang, charStyle, strong emphasis, weight, emphasis, strike, underline, highlight, shade, textColor, font, textSize, caps, tracking, scale, shift, kern, otf, effect, box, subscript or superscript, foreign marks, and code. Where two ranges overlap, the mark that comes later in the order is closed and reopened, as in version 1.
 
 `R-MRK-26`. Adjacent ranges of one mark with equal values join. Several comments may cover the same text; they nest in code point order of their IDs, the lowest outermost.
 
 `R-MRK-27`. `**` stays the only form of bold, so a writer never writes weight 700 as a tag. Strong emphasis and weight exclude each other in the editor. A reader that finds both on the same text keeps both and draws the weight.
+
+`R-MRK-28`. A run carries at most one value of each mark kind. Subscript and superscript are one kind, and so are the version 1 and version 2 forms of a mark, such as `~~` and `<del data-line="double">`. Where pairs of one kind nest, the innermost pair's value applies to its text and the outer value applies only to the rest of the outer range, so `<span data-font="A"><span data-font="B">x</span></span>` reads as `x` in font B, and a writer writes `<span data-font="B">x</span>`. Comments (`R-MRK-26`) and foreign marks (`R-INL-10`) are the exceptions: several may cover the same text. Strong emphasis and weight are different kinds (`R-MRK-27`).
+
+`R-MRK-29`. The `float` mark floats each image inside it (section 7.3) to the start or end edge of its paragraph, in the paragraph's direction, and the paragraph's text wraps around it, as Word's square wrapping does. An image without the mark stays inline. Text inside the mark draws as if the mark were not there, and readers keep the mark. Its tag uses the reserved grammar, so a page with a float is stamped version 2 (`R-STAMP-8`), and a version 1 reader opens it read-only. Writers write the mark around the image alone, outside any link around it: `<span data-float="start">![A heron](asset:01m3sabc35ffgj8zaxqqb4nf0v)</span>`.
 
 ### 7.11 Whitespace at the edges of marks
 

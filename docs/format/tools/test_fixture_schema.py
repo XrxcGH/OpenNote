@@ -109,6 +109,7 @@ def mark_ok(mark) -> bool:
         "fmt": lambda v: isinstance(v, str) and bool(ID.fullmatch(v)),
         "style": lambda v: isinstance(v, str) and bool(re.fullmatch(r"u-[a-z0-9-]{1,32}|[a-z][a-zA-Z0-9]{0,31}", v)),
         "foreign": lambda v: isinstance(v, str) and bool(FOREIGN.fullmatch(v)),
+        "float": lambda v: v in ("start", "end"),
     }
     return key in checks and checks[key](value)
 

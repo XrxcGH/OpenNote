@@ -34,6 +34,11 @@ Marks are listed in the nesting order of spec 7.10, outermost first. Values are 
 | Language, direction | `{"lang": "fr-CA"}`, `{"dir": "rtl"}` |
 | Comment, insertion, deletion, format change | `{"comment": ID}`, `{"ins": ID}`, `{"del": ID}`, `{"fmt": ID}` |
 | Character style | `{"style": "u-key-term"}` |
+| Image float | `{"float": "start"}` or `{"float": "end"}` (`R-MRK-29`), the outermost mark |
 | Foreign mark | `{"foreign": "<span data-glow=\"soft\">"}`, the exact opening tag |
+
+A run holds at most one mark of each kind, except comments and foreign marks (`R-MRK-28`). The cases of nested marks of one kind show that the innermost value wins.
+
+The Python reference reader does not read images, so no case here holds one. The cases of `float` pin its grammar and its stamp, around text.
 
 A footnote reference is the inline `{"footnote": ID, "marks": [...]}`. It adds nothing to the readable text.

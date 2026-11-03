@@ -9,8 +9,8 @@ import re
 import unicodedata
 
 from inline_tags import (
-    CLOSE_TAG, MAX_DEPTH, RAW_CLOSE, RAW_OPEN, V1_SIMPLE, V1_SIMPLE_MARKS, is_control, known_mark, parse_open_tag,
-    sort_marks,
+    CLOSE_TAG, MAX_DEPTH, RAW_CLOSE, RAW_OPEN, V1_SIMPLE, V1_SIMPLE_MARKS, is_control, kind, known_mark,
+    parse_open_tag, sort_marks,
 )  # fmt: skip
 from markdown_text import WHITE_SPACE
 
@@ -255,7 +255,16 @@ def read_inline(text: str) -> list[dict]:
     active: list[tuple[object, object]] = []
 
     def marks() -> list:
-        return sort_marks([mark for _, mark in active])
+        # R-MRK-28: one value of each kind per run, the innermost; comments and foreign marks may repeat.
+        many: list = []
+        one: dict = {}
+        for _, mark in active:
+            k = kind(mark)
+            if k in ("comment", "foreign"):
+                many.append(mark)
+            else:
+                one["sub" if k == "sup" else k] = mark
+        return sort_marks(many + list(one.values()))
 
     def add(node: dict) -> None:
         last = content[-1] if content else None

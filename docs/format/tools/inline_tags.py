@@ -64,6 +64,7 @@ SPAN_ONE = {
     "data-del": ("del", lambda v: bool(ID.fullmatch(v))),
     "data-fmt": ("fmt", lambda v: bool(ID.fullmatch(v))),
     "data-style": ("style", style_name),
+    "data-float": ("float", lambda v: v in ("start", "end")),
 }
 
 
@@ -100,7 +101,7 @@ def known_mark(name: str, attrs: tuple) -> object | None:
 
 # Spec 7.10: the canonical nesting order, outermost first.
 ORDER = [
-    "link", "comment", "ins", "del", "fmt", "dir", "lang", "style", "strong", "weight", "emphasis", "strike",
+    "float", "link", "comment", "ins", "del", "fmt", "dir", "lang", "style", "strong", "weight", "emphasis", "strike",
     "underline", "highlight", "shade", "color", "font", "size", "caps", "tracking", "scale", "shift", "kern", "otf",
     "effect", "box", "sub", "foreign", "code",
 ]  # fmt: skip

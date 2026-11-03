@@ -9050,6 +9050,330 @@
         "minReaderVersion": 1,
         "minWriterVersion": 2
       }
+    },
+    {
+      "name": "a font inside a font: the inner value wins",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-1"
+      ],
+      "markdown": "<span data-font=\"Arial\"><span data-font=\"Georgia\">x</span></span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "font": "Georgia"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "canonical": "<span data-font=\"Georgia\">x</span>"
+    },
+    {
+      "name": "the same fonts swapped",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-1"
+      ],
+      "markdown": "<span data-font=\"Georgia\"><span data-font=\"Arial\">x</span></span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "font": "Arial"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "canonical": "<span data-font=\"Arial\">x</span>"
+    },
+    {
+      "name": "a size inside part of a size",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-2"
+      ],
+      "markdown": "a<span data-size=\"12\">b<span data-size=\"large\">c</span>d</span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a",
+              "marks": []
+            },
+            {
+              "text": "b",
+              "marks": [
+                {
+                  "size": "12"
+                }
+              ]
+            },
+            {
+              "text": "c",
+              "marks": [
+                {
+                  "size": "large"
+                }
+              ]
+            },
+            {
+              "text": "d",
+              "marks": [
+                {
+                  "size": "12"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "abcd",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "canonical": "a<span data-size=\"12\">b</span><span data-size=\"large\">c</span><span data-size=\"12\">d</span>"
+    },
+    {
+      "name": "a double strike inside a single strike",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-4"
+      ],
+      "markdown": "~~<del data-line=\"double\">x</del>~~",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "strike": "double"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "canonical": "<del data-line=\"double\">x</del>"
+    },
+    {
+      "name": "a single strike inside a double strike",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-4"
+      ],
+      "markdown": "<del data-line=\"double\">~~x~~</del>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                "strike"
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "canonical": "~~x~~"
+    },
+    {
+      "name": "a text color inside a text color",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-16"
+      ],
+      "markdown": "<span data-color=\"brick\"><span data-color=\"theme:accent1\">x</span></span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "color": "theme:accent1"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "canonical": "<span data-color=\"theme:accent1\">x</span>"
+    },
+    {
+      "name": "an underline style inside a plain underline",
+      "rules": [
+        "R-MRK-28",
+        "R-MRK-3"
+      ],
+      "markdown": "<u><u data-line=\"wave\">x</u></u>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "underline": {
+                    "line": "wave"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "canonical": "<u data-line=\"wave\">x</u>"
+    },
+    {
+      "name": "two foreign marks of one name both stay",
+      "rules": [
+        "R-MRK-28",
+        "R-INL-10"
+      ],
+      "markdown": "<span data-glow=\"a\"><span data-glow=\"b\">x</span></span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "x",
+              "marks": [
+                {
+                  "foreign": "<span data-glow=\"a\">"
+                },
+                {
+                  "foreign": "<span data-glow=\"b\">"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "x",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "an image float around text draws nothing and reads as a mark",
+      "rules": [
+        "R-MRK-29",
+        "R-STAMP-8"
+      ],
+      "markdown": "a <span data-float=\"start\">b</span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a ",
+              "marks": []
+            },
+            {
+              "text": "b",
+              "marks": [
+                {
+                  "float": "start"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "a b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
+    },
+    {
+      "name": "an image float with a value outside its grammar is a foreign mark",
+      "rules": [
+        "R-MRK-29",
+        "R-INL-7"
+      ],
+      "markdown": "<span data-float=\"left\">b</span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "b",
+              "marks": [
+                {
+                  "foreign": "<span data-float=\"left\">"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "b",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      }
     }
   ]
 }
