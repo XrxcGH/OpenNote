@@ -92,6 +92,26 @@ export function closeTab(id: string): void {
   announce(t('qol.tabs.closed', { title: closed.title }));
 }
 
+/** Moves a tab to another place in the strip (drag to reorder, or the tab menu). */
+export function moveTab(id: string, toIndex: number): void {
+  const state = qolStore.get();
+  const from = state.tabs.findIndex((tab) => tab.id === id);
+  if (from === -1) return;
+  const to = Math.max(0, Math.min(state.tabs.length - 1, toIndex));
+  if (to === from) return;
+  const tabs = [...state.tabs];
+  const [tab] = tabs.splice(from, 1);
+  tabs.splice(to, 0, tab);
+  qolStore.set({ ...state, tabs });
+  announce(t('qol.tabs.moved', { title: tabTitle(tab.location), position: to + 1, count: tabs.length }));
+}
+
+/** Closes every tab but one, keeping the closed places on the recently closed list. */
+export function closeOtherTabs(id: string): void {
+  for (const tab of qolStore.get().tabs) if (tab.id !== id) closeTab(tab.id);
+  activateTab(id);
+}
+
 export function closeActiveTab(): void {
   const { activeTab } = qolStore.get();
   if (activeTab) closeTab(activeTab);
