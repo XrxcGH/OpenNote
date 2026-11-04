@@ -94,6 +94,7 @@ export const audioMore = {
     audioRemoved: 'Audio removed. {size} freed.',
     removedNote: 'The audio was removed to save space. The transcript and flags are kept.',
     total: 'Together they take {size}.',
+    free: '{size} is free on the drive that holds your notebooks.',
     close: 'Close',
     cancel: 'Cancel',
     untitled: 'Untitled page',

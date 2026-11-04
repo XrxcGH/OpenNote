@@ -62,12 +62,14 @@ function LineRow(props: {
   return (
     <li className={styles.line} aria-current={active ? 'true' : undefined} data-active={active ? 'true' : undefined}>
       {selectable && (
-        <input
-          type="checkbox"
-          aria-label={t('audioMore.transcript.selectLine', { time })}
-          checked={selected}
-          onChange={(event) => props.onSelect(event.target.checked)}
-        />
+        <label className={styles.pick}>
+          <input
+            type="checkbox"
+            aria-label={t('audioMore.transcript.selectLine', { time })}
+            checked={selected}
+            onChange={(event) => props.onSelect(event.target.checked)}
+          />
+        </label>
       )}
       <Button
         variant="quiet"

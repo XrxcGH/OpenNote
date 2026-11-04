@@ -63,10 +63,33 @@
     color: var(--color-text-secondary);
   }
 
+  /* The range input is as tall as a button beside it, so a thumb is a target a pointer or a finger can hit. */
   .slider {
     flex: 1 1 8rem;
     min-inline-size: 6rem;
+    min-block-size: var(--size-target-pointer);
+    margin: 0;
     accent-color: var(--color-accent-primary);
+  }
+
+  :global(:root[data-density='touch']) .slider {
+    min-block-size: var(--size-target-touch);
+  }
+
+  /* While recording, the last few seconds of level are drawn as bars that move across, so a silent microphone shows. */
+  .wave {
+    display: block;
+    inline-size: 100%;
+    block-size: var(--space-8);
+    color: var(--color-accent-primary);
+  }
+
+  .wave rect {
+    fill: currentColor;
+  }
+
+  .wave[data-clipped] {
+    color: var(--color-status-danger);
   }
 
   .sliderLabel {

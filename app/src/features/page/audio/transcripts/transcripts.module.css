@@ -88,6 +88,28 @@
     background: var(--color-surface-selected);
   }
 
+  /* The box is small, so its label is the target: as high as a button, and a finger-size square in touch density. */
+  .pick {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    inline-size: var(--size-target-pointer);
+    block-size: var(--size-target-pointer);
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .pick {
+    inline-size: var(--size-target-touch);
+    block-size: var(--size-target-touch);
+  }
+
+  .pick input {
+    margin: 0;
+    accent-color: var(--color-accent-primary);
+  }
+
   .time {
     flex: none;
     font-variant-numeric: tabular-nums;
