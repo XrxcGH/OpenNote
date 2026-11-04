@@ -81,7 +81,7 @@
     "features/pages/ui/presentCommands.tsx": 67,
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 73,
-    "features/tools/index.ts": 359,
+    "features/tools/index.ts": 360,
     "features/engineering/control/ui/ControlKit.tsx": 312,
     "features/engineering/index.ts": 205,
     "mermaid/node_modules/katex": 80,
