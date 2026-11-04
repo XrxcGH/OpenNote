@@ -139,7 +139,11 @@ describe('the Settings sections and screens', () => {
     await openSettings();
     await userEvent.click(screen.getByRole('link', { name: 'Shortcuts' }));
     const group = await screen.findByRole('radiogroup', { name: 'Shortcut set' });
-    expect(within(group).getByRole('radio', { name: /Google Docs/ }).getAttribute('aria-checked')).toBe('true');
+    expect(
+      within(group)
+        .getByRole('radio', { name: /Google Docs/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 
   it('is two screens in the compact size class', async () => {
