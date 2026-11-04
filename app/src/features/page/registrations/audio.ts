@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { RecordControl } from '../audio/RecordControl';
 import { RecordingIndicator } from '../audio/Indicator';
+import { recordingDeletePrompt } from '../audio/deletePrompt';
 import { adoptPage, entriesOf } from '../audio/entries';
 import { isRunning, playbackOpen, RECORDING_TYPE, recordingUi } from '../audio/state';
 import { shownPage as shownOpenPage } from '../history/shown';
@@ -182,6 +183,7 @@ blockRenderers.register({
   flag: 'audio.record',
   create: (block, ctx) =>
     lazyBlockView(block, ctx, () => import('../audio/blockRenderer'), t('audio.block.labelWhile')),
+  deletePrompt: recordingDeletePrompt,
 });
 
 // A page that opens with a recording the crash cut off gets it back. A recording that plays closes when another

@@ -32,12 +32,27 @@ export interface BlockView {
   destroy(): void;
 }
 
+/** What a block of a kind that holds something the person made asks before it is deleted. */
+export interface DeletePrompt {
+  title: string;
+  /** Names what is lost and how to get it back. */
+  body: string;
+  confirmLabel: string;
+  /** The toast after the delete, which names it, in place of the generic count. */
+  done: string;
+}
+
 export interface BlockRendererDef {
   id: string;
   types: readonly string[];
   priority: number;
   flag?: FlagId;
   create(block: BlockJson, ctx: BlockRenderContext): BlockView;
+  /**
+   * Asks before blocks of these types are deleted, for blocks whose loss costs more than a keystroke, such as a
+   * recording. It gets the blocks of its types among those about to go. Null deletes with no question.
+   */
+  deletePrompt?(blocks: readonly BlockJson[]): DeletePrompt | null;
 }
 
 export interface BlockLayer {

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MeterState } from '../../../core/audio';
 import type { MemoryPageService } from '../../../services/pages/memory';
 import { expectNoAxeViolations, pressChord, renderApp } from '../../../test';
+import { selectOnPage } from '../seams/selectionStore';
 import { RecordingIndicator } from './Indicator';
 import { Meter } from './Meter';
 import { IDLE, RECORDING_TYPE, recordingUi } from './state';
@@ -98,6 +99,40 @@ describe('recording on a page', () => {
     expect(await within(block).findByRole('button', { name: 'Play' })).toBeTruthy();
     await expectNoAxeViolations(block);
   });
+
+  it('asks before deleting a recording block, names it, and Undo brings it back', async () => {
+    const { platform } = await openMitosis();
+    const held = () => (platform.pages as MemoryPageService).held('p-mitosis');
+    const recordingBlocks = () => held()?.blocks.filter((block) => block.type === RECORDING_TYPE) ?? [];
+    fireEvent.click(
+      within(await screen.findByRole('group', { name: 'Recording' })).getByRole('button', { name: 'Record' }),
+    );
+    expect(await screen.findByTestId('recording-indicator', {}, SLOW)).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('group', { name: 'Recording' })).getByRole('button', { name: 'Stop' }));
+    const block = await screen.findByRole('group', { name: /^Recording, \d+:\d\d$/ }, SLOW);
+    await waitFor(() => expect(recordingBlocks()).toHaveLength(1));
+    selectOnPage({ blocks: [block.dataset.blockId!], strokes: [] });
+    block.focus();
+
+    // Backspace on the selected block asks first; Cancel keeps the recording.
+    await pressChord('Backspace');
+    const dialog = await screen.findByRole('dialog', { name: 'Delete this recording?' });
+    expect(within(dialog).getByText(/“Recording” \(\d+:\d\d\) leaves the page/)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(recordingBlocks()).toHaveLength(1);
+
+    // Confirming deletes it and names it in the message, which offers Undo.
+    selectOnPage({ blocks: [block.dataset.blockId!], strokes: [] });
+    block.focus();
+    await pressChord('Backspace');
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete recording' }));
+    await waitFor(() => expect(recordingBlocks()).toHaveLength(0));
+    expect(await screen.findByText(/^Deleted “Recording” \(\d+:\d\d\)\.$/)).toBeTruthy();
+    // The ribbon has an Undo too; the message's comes last.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Undo' }).at(-1)!);
+    await waitFor(() => expect(recordingBlocks()).toHaveLength(1));
+  }, 40_000);
 
   it('keeps a recording that started running and shown when its entry can not be updated yet', async () => {
     await openMitosis();

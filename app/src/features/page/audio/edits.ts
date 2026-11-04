@@ -13,6 +13,7 @@ import { shownLayer } from '../mount';
 import { shownQueue } from '../sync/shown';
 import { insertRecordingBlock, writeEntry } from './blocks';
 import { describeError, platformAudio } from './controller';
+import { activeNs } from './entry';
 import { clockNs, lengthNs } from './format';
 import { moreClient } from './moreClient';
 import { closePlayback } from './playback';
@@ -94,6 +95,17 @@ export async function trimSilence(block: string, pageId: string, entry: Recordin
     await closePlayback();
     const edited = await audio.trimSilence(dir, entry);
     if (!edited) return void announce(t('audio.announce.nothingToTrim'));
+    // The old audio goes for good once the page is saved, so the person sees what is cut first. The new files are
+    // deleted when they decline, and the recording stays as it was.
+    const [before, after] = [lengthNs(activeNs(entry)), lengthNs(edited.durationNs)];
+    const ok = await confirm({
+      title: t('audio.block.trimConfirm'),
+      body: t('audio.block.trimBody', { before, after }),
+      confirmLabel: t('audio.block.trimAction'),
+      cancelLabel: t('audio.block.cancel'),
+      danger: true,
+    });
+    if (!ok) return void (await deleteAudioFiles(dir, edited.entry));
     await replace(block, pageId, entry, edited.entry);
     // What was said later now starts earlier by the silence cut from the start, and nothing is said past the new end.
     const head = Math.max(0, firstCaptureNs(edited.entry) - firstCaptureNs(entry));
