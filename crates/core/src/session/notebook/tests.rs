@@ -275,6 +275,23 @@ fn trash_expires_when_the_notebook_opens() {
 }
 
 #[test]
+fn the_open_work_runs_at_once_when_asked_and_the_queued_copy_then_finds_nothing() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    notebook.delete(&[NodeRef::Section(section)]).unwrap();
+    let path = notebook.path().to_path_buf();
+    notebook.close().unwrap();
+    kit.clock.advance(Duration::from_secs(31 * 86_400));
+    let again = kit.core.open_notebook(&path).unwrap();
+    again.run_open_work().unwrap();
+    assert!(again.trash().unwrap().is_empty());
+    kit.core.run_pending_work();
+    assert!(again.trash().unwrap().is_empty());
+    assert!(again.verify().unwrap().is_clean());
+}
+
+#[test]
 fn the_notebook_takes_its_color_and_styles_as_props() {
     let kit = CoreKit::new();
     let notebook = kit.notebook("Biology").unwrap();

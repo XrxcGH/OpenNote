@@ -251,9 +251,7 @@ impl NotebookShared {
             .maintenance
             .after(self.ctx.clock.as_ref(), std::time::Duration::ZERO, key, move || {
                 let Some(shared) = me.upgrade() else { return };
-                let handle = NotebookHandle { inner: shared };
-                let _ = handle.scan();
-                let _ = handle.change(false, |t| t.store.purge_expired());
+                let _ = NotebookHandle { inner: shared }.run_open_work();
             });
     }
 
