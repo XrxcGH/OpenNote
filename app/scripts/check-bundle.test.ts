@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { failures, groups, measure, summary } from './check-bundle.ts';
+import { failures, groups, measure, summary, unmatchedKeys } from './check-bundle.ts';
 import type { Budget, Manifest } from './check-bundle.ts';
 
 const MANIFEST: Manifest = {
@@ -26,6 +26,15 @@ const MANIFEST: Manifest = {
 const BUDGET: Budget = { startup: { jsKb: 1, cssKb: 1 }, lazyKb: { 'features/palette': 2 }, lazyDefaultKb: 3 };
 
 describe('check-bundle', () => {
+  it('names the lazyKb keys that match no dynamic entry', () => {
+    const budget = {
+      ...BUDGET,
+      lazyKb: { 'features/palette': 2, 'features/tables/engine/formula/fn/lazy/financial': 9 },
+    };
+    expect(unmatchedKeys(MANIFEST, budget)).toEqual(['features/tables/engine/formula/fn/lazy/financial']);
+    expect(unmatchedKeys(MANIFEST, BUDGET)).toEqual([]);
+  });
+
   it('groups start-up files and each lazy chunk without what start-up loads', () => {
     expect(groups(MANIFEST, BUDGET)).toEqual([
       { name: 'start-up JavaScript', files: ['assets/index.js', 'assets/shared.js'], limitKb: 1 },

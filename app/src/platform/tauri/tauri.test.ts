@@ -23,7 +23,8 @@ beforeEach(async () => {
       calls.push({ command, args });
       const answer = answers[command];
       if (answer instanceof Error) throw answer;
-      if (typeof answer === 'object' && answer !== null && 'code' in answer) throw answer;
+      // An IpcError has a string code. Settings have a `code` group too, which is not an error.
+      if (typeof (answer as { code?: unknown } | null)?.code === 'string') throw answer;
       return answer ?? null;
     },
     { shouldMockEvents: true },

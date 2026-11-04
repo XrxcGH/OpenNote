@@ -212,6 +212,18 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
+## Text formatting: crates, fonts, and data
+
+Beta 9 adds these for text formatting. The crates are built into the app. The fonts and the Unicode names arrive with the lanes that use them, and their files then get rows in [docs/ATTRIBUTION.md](docs/ATTRIBUTION.md). The lane that adds a font checks its copyright line here against the font's own files.
+
+| Component | Used for | Source | License |
+|---|---|---|---|
+| `fontdb` | Listing the device's fonts, their faces, and their metrics (ADR 0080) | `https://github.com/RazrFalcon/fontdb`, version 0.23 | MIT |
+| `ttf-parser` | Reading font tables: names, OS/2 metrics, and embedding permissions | `https://github.com/harfbuzz/ttf-parser`, version 0.25 | MIT OR Apache-2.0. OpenNote elects Apache-2.0. |
+| Carlito | A stand-in with the same metrics as Calibri, loaded on demand (ADR 0081). Copyright 2010-2013 tyPoland Lukasz Dziedzic, with Reserved Font Name "Carlito" | `https://github.com/googlefonts/carlito` | SIL Open Font License 1.1, copied in full above |
+| Caladea | A stand-in with the same metrics as Cambria, loaded on demand (ADR 0081). Copyright 2012 Huerta Tipográfica | `https://github.com/huertatipografica/Caladea` | SIL Open Font License 1.1 in the current release (the first release was Apache-2.0) |
+| Unicode Character Database names subset | Searching symbols by name in the symbol dialog (ADR 0088), generated at build time from `UnicodeData.txt` | `https://www.unicode.org/Public/UCD/latest/ucd/` | Unicode License v3 (`Unicode-3.0`), `https://www.unicode.org/license.txt`. Copyright Unicode, Inc. |
+
 ## Optional downloaded data
 
 The full dictionary and thesaurus is an optional download that the person starts from the Dictionary window. It is not part of the installer. Nothing is downloaded until they say so, and each file is checked against the size and SHA-256 pinned in `app/src-tauri/src/dictionary/mod.rs` before it is used.

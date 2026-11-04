@@ -54,7 +54,7 @@ pub fn read(paths: &Paths) -> Read {
                 if let Err(error) = fs::copy(path, file::with_suffix(path, ".bak")) {
                     log::warn!("Couldn't copy the settings to settings.json.bak: {error}");
                 }
-                prepare(Read::fresh(raw), paths)
+                prepare(Read::fresh(raw), path, paths)
             }
             None => restore(paths),
         },
@@ -85,11 +85,10 @@ fn restore(paths: &Paths) -> Read {
         log::error!("Couldn't set the unreadable settings aside: {error}");
     }
     log::warn!("The settings file wasn't valid JSON; it's saved as {saved_as}.");
-    let backup = fs::read(file::with_suffix(path, ".bak"))
-        .ok()
-        .and_then(|bytes| parse_object(&bytes));
+    let backup_file = file::with_suffix(path, ".bak");
+    let backup = fs::read(&backup_file).ok().and_then(|bytes| parse_object(&bytes));
     let mut read = match backup {
-        Some(raw) => prepare(Read::fresh(raw), paths),
+        Some(raw) => prepare(Read::fresh(raw), &backup_file, paths),
         None => Read::fresh(defaults()),
     };
     read.needs_write = !read.read_only;
@@ -98,7 +97,8 @@ fn restore(paths: &Paths) -> Read {
 }
 
 /// Handles the schema version: read-only for files older versions may not write, a migration for older ones.
-fn prepare(mut read: Read, paths: &Paths) -> Read {
+/// `source` is the file the settings came from, which the migration backs up: the `.bak` copy after a restore.
+fn prepare(mut read: Read, source: &Path, paths: &Paths) -> Read {
     if migrate::min_writer_of(&read.raw) > SCHEMA_VERSION {
         log::warn!("The settings were saved by a newer version that older versions may not write; read-only.");
         read.read_only = true;
@@ -109,7 +109,7 @@ fn prepare(mut read: Read, paths: &Paths) -> Read {
     if version >= SCHEMA_VERSION {
         return read;
     }
-    let files = (paths.settings_file.as_path(), paths.backups.as_path());
+    let files = (source, paths.backups.as_path());
     match migrate_with_backup(&read.raw, files, migrate::MIGRATIONS, SCHEMA_VERSION) {
         Ok(migrated) => {
             read.raw = migrated;

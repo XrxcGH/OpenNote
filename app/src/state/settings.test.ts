@@ -53,6 +53,32 @@ describe('the settings slice', () => {
   });
 });
 
+describe('schema version 2', () => {
+  it('starts every new key at its default', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({
+      schemaVersion: 2,
+      minWriterSchema: 1,
+      text: {
+        paste: { word: 'keepSource', docs: 'keepSource', onenote: 'keepSource', web: 'mergeFormatting' },
+        measurementUnit: 'inches',
+        darkCustomBackgrounds: 'exact',
+      },
+      tables: { newTableKeys: 'spreadsheet', formulaBar: true },
+      code: {},
+    });
+  });
+
+  it('saves and reads back the Docs shortcut set', async () => {
+    const platform = start();
+    await updateSettings({ keymap: { preset: 'docs' } });
+    expect(getSettings().keymap.preset).toBe('docs');
+    const saved = JSON.parse(JSON.stringify(getSettings())) as typeof DEFAULT_SETTINGS;
+    expect(saved.keymap.preset).toBe('docs');
+    const bad = { keymap: { preset: 'word' } } as unknown as Parameters<typeof updateSettings>[0];
+    await expect(platform.settings.update(bad)).rejects.toMatchObject({ field: 'keymap.preset' });
+  });
+});
+
 describe('settings from an older shell', () => {
   it("fills fields the host doesn't send with defaults, and keeps what it sends", async () => {
     const platform = createWebPlatform();

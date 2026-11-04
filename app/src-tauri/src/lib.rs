@@ -26,6 +26,7 @@ pub mod e2e_sync;
 pub mod early;
 pub mod events;
 pub mod export_replace;
+pub mod fonts;
 pub mod hardening;
 pub mod images;
 pub mod ink_bridge;
@@ -36,6 +37,7 @@ pub mod interop;
 pub mod ipc;
 pub mod lifecycle;
 pub mod log;
+pub mod notebook_styles;
 pub mod notes;
 pub mod notes_snapshot;
 pub mod page_docx;
@@ -386,5 +388,8 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         share::share_take,
         connectors::accounts_call,
         e2e_sync::sync_call,
+        fonts::fonts_list,
+        notebook_styles::notebook_styles_get,
+        notebook_styles::notebook_styles_set,
     ]
 }

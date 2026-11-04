@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "minWriterSchema": 1,
   "appearance": {
     "theme": "system",
@@ -156,5 +156,20 @@
   },
   "language": {
     "locale": "en-US"
-  }
+  },
+  "text": {
+    "paste": {
+      "word": "keepSource",
+      "docs": "keepSource",
+      "onenote": "keepSource",
+      "web": "mergeFormatting"
+    },
+    "measurementUnit": "inches",
+    "darkCustomBackgrounds": "exact"
+  },
+  "tables": {
+    "newTableKeys": "spreadsheet",
+    "formulaBar": true
+  },
+  "code": {}
 }
