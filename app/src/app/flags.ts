@@ -361,7 +361,7 @@ export function defineFlag(def: FlagDef): FlagDef {
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
-/** The flags the shell reads too (platform_flags.rs): on up to Beta, off in Stable. */
+/** On up to Beta, off in Stable (platform_flags.rs mirrors the ones the shell reads). */
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
 
 const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>) =>
