@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 521,
+    "jsKb": 538,
     "cssKb": 27
   },
   "after": [
@@ -55,6 +55,11 @@
     }
   ],
   "lazyKb": {
+    "features/tables/engine/formula/fn/lazy/statistics": 40,
+    "features/tables/engine/formula/fn/lazy/financial": 30,
+    "features/tables/engine/formula/fn/lazy/engineering": 30,
+    "theme/fonts/carlito": 8,
+    "theme/fonts/caladea": 8,
     "node_modules/mathlive/mathlive.min.mjs": 226,
     "node_modules/pdfjs-dist/build/pdf.mjs": 131,
     "core/audio/index.ts": 116,
@@ -96,7 +101,7 @@
     "features/page/readAloud": 10,
     "features/page/styles": 15,
     "features/page/readingOrder": 15,
-    "features/page/PageBody": 242,
+    "features/page/PageBody": 276,
     "@observablehq/plot": 135,
     "features/math": 185,
     "features/tables": 52,

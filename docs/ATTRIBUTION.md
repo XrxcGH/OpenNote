@@ -8,6 +8,7 @@ A check keeps the table honest. `node checks/attribution.ts` (and `npm test`) fa
 
 - [How to add a row](#how-to-add-a-row)
 - [Assets](#assets)
+- [Assets that are on their way](#assets-that-are-on-their-way)
 - [Vendored code](#vendored-code)
 - [File format descriptions](#file-format-descriptions)
 
@@ -42,6 +43,13 @@ A check keeps the table honest. `node checks/attribution.ts` (and `npm test`) fa
 | `npm:@fontsource-variable/literata`                   | The Literata Project Authors                   | https://github.com/googlefonts/literata, bundled from the npm package                                                 | SIL OFL 1.1 |
 
 Fonts reach the app through npm, so their rows start with `npm:` and name the package. The check compares them with the `@fontsource` packages in `package.json`. The copyright lines and the license text ship in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), which the app shows under Settings, then About.
+
+## Assets that are on their way
+
+A row must match a tracked file, so these assets get their rows in the commit that adds their files. Their notices are already in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), and the check keeps them there.
+
+- Carlito and Caladea, the metric stand-ins for Calibri and Cambria, under the SIL Open Font License 1.1. text:fonts-bundled adds them under `app/src/theme/fonts/`.
+- The Unicode Character Database names subset, under the Unicode License v3. text:special-chars generates it at build time.
 
 ## Vendored code
 

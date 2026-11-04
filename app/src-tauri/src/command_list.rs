@@ -57,6 +57,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "api_call", "share_take",
     "accounts_call",
     "sync_call",
+    "fonts_list", "notebook_styles_get", "notebook_styles_set",
 ];
 
 #[cfg(test)]

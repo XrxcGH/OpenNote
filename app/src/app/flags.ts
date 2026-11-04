@@ -126,7 +126,11 @@ export type FlagId =
   /** The tutor (features/tutor/flags.ts). */
   | TutorFlagId
   /** The physics tool kit window (features/tools/physics). */
-  | 'kits.physics';
+  | 'kits.physics'
+  /** The controls that create version 2 text formatting. Beta 9 reads and keeps it; Beta 10 turns it on up to Beta. */
+  | 'text.v2Controls'
+  /** Writing cell formats and formulas to a table's data.sheet. Beta 9 reads it; Beta 10 turns it on up to Beta. */
+  | 'tables.sheetWrites';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -357,7 +361,7 @@ export function defineFlag(def: FlagDef): FlagDef {
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
-/** The flags the shell reads too (platform_flags.rs): on up to Beta, off in Stable. */
+/** On up to Beta, off in Stable (platform_flags.rs mirrors the ones the shell reads). */
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
 
 const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>) =>
@@ -386,6 +390,12 @@ export const FLAGS: readonly FlagDef[] = [
     'The physics tools: fields, waves, optics, relativity, nuclear, orbits, and spacecraft.',
     betaBuilds,
   ),
+  flag(
+    'text.v2Controls',
+    'The controls that create version 2 text formatting: fonts, sizes, weights, underlines, spacing, and styles.',
+    betaBuilds,
+  ),
+  flag('tables.sheetWrites', 'Cell, row, column, and table formatting and formulas saved in a table.', betaBuilds),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,

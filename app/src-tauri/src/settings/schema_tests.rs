@@ -3,9 +3,9 @@ use serde_json::json;
 use super::*;
 
 #[test]
-fn defaults_match_schema_version_1() {
+fn defaults_match_schema_version_2() {
     let mut expected = json!({
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "minWriterSchema": 1,
         "appearance": {
             "theme": "system", "pageColor": "matchTheme", "textSize": 100, "uiScale": 100, "motion": "system",
@@ -18,7 +18,14 @@ fn defaults_match_schema_version_1() {
         "updates": { "install": "auto", "channel": "stable", "skippedVersion": null },
         "setup": { "completedSteps": [] },
         "experimental": { "flags": {} },
-        "language": { "locale": "en-US" }
+        "language": { "locale": "en-US" },
+        "text": {
+            "paste": { "word": "keepSource", "docs": "keepSource", "onenote": "keepSource", "web": "mergeFormatting" },
+            "measurementUnit": "inches",
+            "darkCustomBackgrounds": "exact"
+        },
+        "tables": { "newTableKeys": "spreadsheet", "formulaBar": true },
+        "code": {}
     });
     expected["editing"] = serde_json::to_value(EditingSettings::default()).expect("serializes");
     expected["ink"] = serde_json::to_value(InkSettings::default()).expect("serializes");
@@ -103,6 +110,16 @@ fn names_the_onenote_shortcut_set() {
         serde_json::to_value(keymap).expect("serializes"),
         json!({ "preset": "onenote" })
     );
+}
+
+#[test]
+fn names_the_docs_shortcut_set_and_reads_it_back() {
+    let keymap = Keymap {
+        preset: KeymapPreset::Docs,
+    };
+    let value = serde_json::to_value(&keymap).expect("serializes");
+    assert_eq!(value, json!({ "preset": "docs" }));
+    assert_eq!(serde_json::from_value::<Keymap>(value).expect("parses"), keymap);
 }
 
 #[test]

@@ -113,6 +113,8 @@ export const shortcuts = {
     defaultHelp: 'The shortcuts OpenNote is designed around.',
     onenote: 'OneNote',
     onenoteHelp: 'Keys keep the meaning they have in OneNote, such as Ctrl+E for search.',
+    docs: 'Google Docs',
+    docsHelp: 'Formatting keys follow Google Docs, such as Alt+Shift+5 for strikethrough.',
     changed: 'Using the {set} shortcut set.',
   },
 } as const;
