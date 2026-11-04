@@ -1227,7 +1227,7 @@ Version 2 adds footnotes and endnotes, comments, and suggested changes. Their ma
 
 ### 6.13 Code blocks and the format version
 
-`R-CODE-1`. The code blocks `ext:org.opennote/codeproject` and `ext:org.opennote/codecell` are extension blocks (section 6.4). Whatever their `data` holds, including a data version `v` and `minEditor`, they never change a page's format version (`R-STAMP-7`). Their own `data.v` and `data.minEditor` decide who may edit the block: a reader whose code version is below `minEditor` shows the block read-only with its fallback.
+`R-CODE-1`. The code blocks `ext:org.opennote/codeproject` and `ext:org.opennote/codecell` are extension blocks (section 6.4). Whatever their `data` holds, including a data version `v` and `minEditor`, they never change a page's format version (`R-STAMP-7`). Their own `data.v` and `data.minEditor` decide who may edit the block: a reader whose code version is below `minEditor` shows the block read-only with its fallback. ADR 0069 of the code studio owns that rule.
 
 ## 7. OpenNote Markdown
 
