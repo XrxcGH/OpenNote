@@ -49,27 +49,79 @@ pub enum Script {
     Sup,
 }
 
-/// The marks of a run of text. The fields follow the nesting order of spec 7.7, outermost first.
+/// The marks of a run of text. The fields follow the nesting order of spec 7.10 (`R-MRK-24`), outermost first.
+///
+/// Values of version 2 marks are kept as the text of their tag, which the grammar of spec Appendix D already
+/// makes canonical, so a run writes back byte for byte. [`values`] and [`size_points`] read them.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Marks {
+    /// `start` or `end`: images inside float to that edge of the paragraph (`R-MRK-29`).
+    pub float: Option<String>,
     /// The link destination.
     pub link: Option<String>,
+    /// The IDs of the comments that cover the text, in code point order (`R-MRK-26`).
+    pub comments: Vec<String>,
+    /// The ID of the suggestion that inserted the text.
+    pub insertion: Option<String>,
+    /// The ID of the suggestion that deletes the text.
+    pub deletion: Option<String>,
+    /// The ID of the suggestion that changed the text's format.
+    pub format_change: Option<String>,
+    /// `rtl` or `ltr`: the run is isolated in that direction.
+    pub dir: Option<String>,
+    /// A language tag (Appendix D.8), or `zxx` for "do not check spelling".
+    pub lang: Option<String>,
+    /// The name of a character style.
+    pub char_style: Option<String>,
     /// Strong emphasis.
     pub strong: bool,
+    /// A weight from 100 to 900 other than 400 and 700, such as `600`.
+    pub weight: Option<String>,
     /// Emphasis.
     pub emphasis: bool,
     /// Strikethrough.
     pub strike: bool,
+    /// Whether the strikethrough is double. Only with `strike`.
+    pub strike_double: bool,
     /// Underline.
     pub underline: bool,
-    /// A highlighter name, where `honey` is the default highlight.
+    /// The underline style other than single, such as `double` or `wave` (Appendix D.5). Only with `underline`.
+    pub underline_line: Option<String>,
+    /// The color of the underline. Only with `underline`.
+    pub underline_color: Option<String>,
+    /// A highlight color, where `honey` is the default highlight. Version 2 takes any color of Appendix D.7.
     pub highlight: Option<String>,
-    /// A pen name or `#rrggbb`.
+    /// Shading behind the text and any highlight: a color.
+    pub shade: Option<String>,
+    /// A text color: a pen name or `#rrggbb`, and in version 2 any color of Appendix D.7.
     pub color: Option<String>,
+    /// A font name or a theme token such as `+body`.
+    pub font: Option<String>,
     /// `small`, `large`, or `xlarge`, or points from 1 to 1638 in steps of 0.5, such as `10.5` ([`size_points`]).
     pub size: Option<String>,
+    /// `small` (small capitals) or `all` (all capitals).
+    pub caps: Option<String>,
+    /// Letter spacing in points, such as `1.5`.
+    pub tracking: Option<String>,
+    /// Character width in percent, such as `90`.
+    pub scale: Option<String>,
+    /// Raised (positive) or lowered text in points.
+    pub shift: Option<String>,
+    /// `0` for no kerning, or the size in points from which the text is kerned.
+    pub kern: Option<String>,
+    /// OpenType feature tokens, such as `onum tnum`.
+    pub otf: Option<String>,
+    /// Text effects, such as `outline shadow`.
+    pub effect: Option<String>,
+    /// A box around the text: `single`, `double`, `dotted`, `dashed`, or `thick`.
+    pub text_box: Option<String>,
+    /// The color of the box. Only with `text_box`.
+    pub box_color: Option<String>,
     /// Subscript or superscript.
     pub script: Option<Script>,
+    /// The exact opening tags of marks from a later version (`R-INL-9`), in code point order. Each one closes with
+    /// the closing tag of its name.
+    pub foreign: Vec<String>,
     /// Inline code.
     pub code: bool,
     /// TeX math, written `$...$`, or between `$$` lines when it is a paragraph on its own (spec 7.6).
@@ -117,6 +169,14 @@ pub enum Inline {
         dest: String,
         /// The description.
         alt: String,
+    },
+    /// A footnote or endnote reference, `[^ID]` (spec 7.12). Its note is in the block's
+    /// `data.notes`. It holds no text, but it can carry marks.
+    Note {
+        /// The note's ID.
+        id: String,
+        /// Its marks.
+        marks: Marks,
     },
 }
 
@@ -216,6 +276,7 @@ pub fn plain_text(inlines: &[Inline]) -> String {
             Inline::Text { text, .. } => out.push_str(text),
             Inline::HardBreak | Inline::SoftBreak => out.push(' '),
             Inline::Image { alt, .. } => out.push_str(alt),
+            Inline::Note { .. } => {}
         }
     }
     out

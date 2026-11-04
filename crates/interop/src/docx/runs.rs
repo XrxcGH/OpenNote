@@ -68,6 +68,8 @@ impl<'a> State<'a> {
                 Inline::HardBreak => out.push_str("<w:r><w:br/></w:r>"),
                 Inline::SoftBreak => out.push_str("<w:r><w:t xml:space=\"preserve\"> </w:t></w:r>"),
                 Inline::Image { dest, alt } => out.push_str(&self.picture(dest, alt)),
+                // Footnotes come with the version 2 Word writer.
+                Inline::Note { .. } => {}
             }
         }
         out

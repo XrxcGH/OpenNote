@@ -284,6 +284,7 @@ fn cell_text(inlines: &[Inline]) -> String {
             Inline::HardBreak => out.push('\n'),
             Inline::SoftBreak => out.push(' '),
             Inline::Image { alt, .. } => out.push_str(alt),
+            Inline::Note { .. } => {}
         }
     }
     out

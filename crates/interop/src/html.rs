@@ -233,6 +233,8 @@ pub fn inlines_html(inlines: &[Inline]) -> String {
                 )),
                 None => out.push_str(&escape(alt)),
             },
+            // Footnotes come with the version 2 HTML writer.
+            Inline::Note { .. } => {}
         }
     }
     out

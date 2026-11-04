@@ -10,7 +10,7 @@ use opennote_core::model::{
 };
 use opennote_core::{AssetId, PageId};
 
-use crate::doc::parse::{parse, SoftBreaks};
+use crate::doc::parse::{parse_note, parse_page};
 use crate::doc::{visit_inlines_mut, Block, Inline, Marks};
 use crate::report::PageReport;
 
@@ -218,7 +218,9 @@ impl Convert<'_> {
     /// The inlines of a footnote: its paragraphs, joined by spaces.
     fn note(&mut self, markdown: &str) -> Vec<Inline> {
         let mut inlines = Vec::new();
-        for block in self.markdown(markdown) {
+        let mut blocks = parse_note(markdown).blocks;
+        visit_inlines_mut(&mut blocks, &mut |inlines| self.fix_inlines(inlines));
+        for block in blocks {
             if let Block::Paragraph(content) = block {
                 if !inlines.is_empty() {
                     inlines.push(Inline::text(" "));
@@ -230,7 +232,7 @@ impl Convert<'_> {
     }
 
     fn markdown(&mut self, markdown: &str) -> Vec<Block> {
-        let mut blocks = parse(markdown, SoftBreaks::Space).blocks;
+        let mut blocks = parse_page(markdown).blocks;
         visit_inlines_mut(&mut blocks, &mut |inlines| self.fix_inlines(inlines));
         blocks
     }
@@ -340,7 +342,7 @@ impl Convert<'_> {
         for inline in inlines {
             match inline {
                 Inline::Image { dest, alt } => *inline = self.fix_image(dest, alt),
-                Inline::Text { marks, .. } => {
+                Inline::Text { marks, .. } | Inline::Note { marks, .. } => {
                     if let Some(dest) = marks.link.take() {
                         marks.link = self.link(&dest);
                     }
