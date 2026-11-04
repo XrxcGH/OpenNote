@@ -30,17 +30,6 @@ describe('flags', () => {
     expect(isEnabled('page.editor')).toBe(true);
   });
 
-  it('turn on the version 2 text and table controls up to Beta in Beta 10, not in Stable', () => {
-    for (const channel of ['dev', 'nightly', 'beta'] as const) {
-      initFlags(channel);
-      expect(isEnabled('text.v2Controls'), channel).toBe(true);
-      expect(isEnabled('tables.sheetWrites'), channel).toBe(true);
-    }
-    initFlags('stable');
-    expect(isEnabled('text.v2Controls')).toBe(false);
-    expect(isEnabled('tables.sheetWrites')).toBe(false);
-  });
-
   it('take overrides in development and nightly builds only, the later ones winning', () => {
     initFlags('nightly', { 'storage.core': true }, { 'storage.core': false, 'trash.view': false });
     expect(isEnabled('storage.core')).toBe(false);
@@ -58,5 +47,18 @@ describe('flags', () => {
       { id: 'c', flag: 'notes.sectionGroups' as const },
     ];
     expect(withEnabledFlags(items).map((item) => item.id)).toEqual(['a', 'c']);
+  });
+});
+
+describe('the Beta 10 flags', () => {
+  it('turn on the version 2 text and table controls up to Beta in Beta 10, not in Stable', () => {
+    for (const channel of ['dev', 'nightly', 'beta'] as const) {
+      initFlags(channel);
+      expect(isEnabled('text.v2Controls'), channel).toBe(true);
+      expect(isEnabled('tables.sheetWrites'), channel).toBe(true);
+    }
+    initFlags('stable');
+    expect(isEnabled('text.v2Controls')).toBe(false);
+    expect(isEnabled('tables.sheetWrites')).toBe(false);
   });
 });
