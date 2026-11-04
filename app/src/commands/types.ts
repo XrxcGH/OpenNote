@@ -31,6 +31,14 @@ export type KeyScope =
   | 'editor'
   | 'editor.table'
   | 'editor.code'
+  /** A table in Grid mode: the selection is whole cells, and keys act like a spreadsheet's (Beta 10). */
+  | 'tableGrid'
+  /** A table cell in Edit mode: the caret is in the cell's text (Beta 10). */
+  | 'tableEdit'
+  /** A focused code editor, in the code studio or a code cell (Beta 11). Deeper than page and editor commands. */
+  | 'codeEditor'
+  /** A code editor while a debug session is paused, where F10 steps over (Beta 13). */
+  | 'codeDebug'
   | 'pageObject'
   | 'zoomBox';
 export type CommandCategory =

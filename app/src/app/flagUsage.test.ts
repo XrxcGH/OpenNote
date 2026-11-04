@@ -11,7 +11,10 @@ const SRC = join(import.meta.dirname, '..');
 const RUST = join(SRC, '..', 'src-tauri', 'src');
 
 /** Registered flags whose feature is not built yet (docs/FEATURES.md lists each as not built). */
-const WAITING: Readonly<Record<string, string>> = {};
+const WAITING: Readonly<Record<string, string>> = {
+  'text.v2Controls': 'Beta 10: the Home tab and the formatting commands read it.',
+  'tables.sheetWrites': 'Beta 10: the table bar and the formula bar read it.',
+};
 
 function sources(dir: string, pattern: RegExp, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {

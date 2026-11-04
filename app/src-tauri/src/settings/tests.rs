@@ -140,7 +140,10 @@ fn a_corrupt_file_without_a_backup_gives_the_defaults() {
     assert_eq!(loaded.store.get(), Settings::default());
     assert!(!loaded.first_run);
     assert!(matches!(loaded.notices.as_slice(), [Notice::SettingsReset { .. }]));
-    assert_eq!(on_disk(&paths.settings_file)["schemaVersion"], json!(1));
+    assert_eq!(
+        on_disk(&paths.settings_file)["schemaVersion"],
+        json!(schema::SCHEMA_VERSION)
+    );
 }
 
 #[test]
@@ -171,7 +174,7 @@ fn a_newer_schema_that_allows_older_writers_is_written_through() {
 #[test]
 fn a_newer_schema_that_forbids_older_writers_is_never_written() {
     let (_folder, paths) = profile();
-    let newer = r#"{ "schemaVersion": 2, "minWriterSchema": 2, "appearance": { "theme": "dark" } }"#;
+    let newer = r#"{ "schemaVersion": 3, "minWriterSchema": 3, "appearance": { "theme": "dark" } }"#;
     write(&paths.settings_file, newer);
     let loaded = SettingsStore::load(&paths);
     assert!(loaded.store.read_only());
@@ -248,6 +251,36 @@ fn a_saved_version_1_file_loads() {
     );
     assert_eq!(settings.shortcuts["theme.toggle"], ["Ctrl+Alt+K"]);
     assert_eq!(settings.updates.skipped_version.as_deref(), Some("0.4.1"));
+}
+
+#[test]
+fn a_beta_8_file_loads_with_the_new_keys_at_their_defaults_and_saves_as_version_2() {
+    let (_folder, paths) = profile();
+    write(
+        &paths.settings_file,
+        include_str!("../../tests/fixtures/settings-beta8.json"),
+    );
+    let loaded = SettingsStore::load(&paths);
+    assert!(!loaded.store.read_only() && loaded.notices.is_empty());
+    let settings = loaded.store.get();
+    assert_eq!(settings.appearance.theme, ThemePreference::Dark);
+    assert_eq!(settings.keymap.preset, schema::KeymapPreset::OneNote);
+    assert_eq!(settings.text, schema::TextSettings::default());
+    assert_eq!(settings.tables, schema::TablesSettings::default());
+    assert_eq!(settings.code, schema::CodeSettings::default());
+    assert_eq!(settings.schema_version, 2);
+    loaded
+        .store
+        .update(json!({ "keymap": { "preset": "docs" } }), "main")
+        .expect("valid");
+    loaded.store.flush().expect("saves");
+    let saved = on_disk(&paths.settings_file);
+    assert_eq!(
+        (saved["schemaVersion"].clone(), saved["minWriterSchema"].clone()),
+        (json!(2), json!(1))
+    );
+    assert_eq!(saved["keymap"], json!({ "preset": "docs" }));
+    assert_eq!(saved["editing"]["slashMenu"], json!(false));
 }
 
 /// The environment variable that turns [`kill_child_writes_forever`] into the child process of the kill test.

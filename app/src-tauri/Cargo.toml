@@ -35,6 +35,9 @@ base64 = "0.23.1"
 chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["alloc", "zeroize"] }
 crc32fast = "1.5.2"
 flate2 = "1.1.10"
+# Font discovery and metrics (ADR 0080): fontdb lists the device's fonts, and ttf-parser reads their tables.
+fontdb = "0.23.0"
+ttf-parser = "0.25.1"
 # Connectors: PKCE and sign-in state need the operating system's random generator, the token endpoints take
 # form bodies, and the account name is read from the payload of an ID token. All three are already built.
 getrandom = "0.3.4"
