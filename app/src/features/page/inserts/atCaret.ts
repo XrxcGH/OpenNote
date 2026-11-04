@@ -27,7 +27,8 @@ function insertRange(editor: Editor, kind: 'word' | 'inline' | 'blocks'): { from
     const $to = doc.resolve(to);
     const top = $to.depth === 0 ? null : $to.node(1);
     // An empty paragraph (the caret on a new line) takes the steps; anything else keeps its text.
-    if (top && top.type.name === 'paragraph' && top.content.size === 0) return { from: $to.before(1), to: $to.after(1) };
+    if (top && top.type.name === 'paragraph' && top.content.size === 0)
+      return { from: $to.before(1), to: $to.after(1) };
     const end = afterTopLevel(editor, to);
     return { from: end, to: end };
   }
@@ -40,10 +41,14 @@ function insertRange(editor: Editor, kind: 'word' | 'inline' | 'blocks'): { from
 }
 
 /** Each insert is a command, so it is an undo step of its own and never joins the typing before it. */
-function asCommand(editor: Editor, content: Parameters<Editor['commands']['insertContentAt']>[1], range: {
-  from: number;
-  to: number;
-}): boolean {
+function asCommand(
+  editor: Editor,
+  content: Parameters<Editor['commands']['insertContentAt']>[1],
+  range: {
+    from: number;
+    to: number;
+  },
+): boolean {
   return editor
     .chain()
     .focus()
