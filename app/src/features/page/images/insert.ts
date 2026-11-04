@@ -1,6 +1,7 @@
 // Getting images onto the page (Phase 4 ARCHITECTURE.md sections 12.1, 12.2, and 6.1): each image goes through the
 // page's import queue, and one batch adds the assets and inserts the image blocks. On a freeform page they float
 // just below the current text box, or at the drop point; on a flow page they flow after the current block.
+import './text';
 import { newId } from '../../../editor/ids';
 import type { BlockId, Edit, Frame, ImportedAsset, NewBlock, OpenPage, PageRect } from '../../../services/pages/types';
 import { t } from '../../../strings/t';

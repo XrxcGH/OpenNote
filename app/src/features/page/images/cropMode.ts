@@ -1,6 +1,7 @@
 // Crop mode (Phase 4 ARCHITECTURE.md section 12.4): the whole image shows dimmed with the crop rectangle bright and
 // 8 crop handles. Enter or a click outside keeps the crop as one batch: a patchBlock with data.crop, and a
 // moveBlock so the image keeps its scale. Escape cancels. Each handle moves by the arrow keys too, 1% a press.
+import './text';
 import type { Edit, Frame } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';

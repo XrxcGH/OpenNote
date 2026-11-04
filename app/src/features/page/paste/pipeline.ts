@@ -2,6 +2,7 @@
 // images, apply, and extras. The text goes into the focused editor at once, so a one-page paste shows within 50 ms;
 // tables, later text, and images become blocks after it (flow) or below it (freeform), and images follow as their
 // imports finish. Each extra is its own undo step.
+import '../images/text';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Editor } from '@tiptap/core';

@@ -2,6 +2,7 @@
 // at the size the asset table gives, so layout never shifts and the page never decodes an image to learn its size.
 // The crop is plain layout in percent, so every WebView and print show the same part. A selected image shows its
 // handles, a small toolbar, and a "No alt text" badge when it has neither a description nor the decorative mark.
+import '../images/text';
 import type { AssetJson, BlockJson, Frame } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { assetTable } from '../images/assets';
