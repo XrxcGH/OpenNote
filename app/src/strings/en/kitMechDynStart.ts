@@ -13,7 +13,8 @@ export const kitMechDynStart = {
   cam: {
     title: 'Cam designer',
     keywords:
-      'cam follower svaj displacement velocity acceleration jerk cycloidal ' + 'harmonic polynomial pressure angle cams',
+      'cam follower svaj displacement velocity acceleration jerk cycloidal ' +
+      'harmonic polynomial pressure angle cams',
   },
   gears: {
     title: 'Gears and gear trains',

@@ -100,7 +100,8 @@ export const mechanisms = {
     title: 'Cam designer',
     short: 'Cams',
     about: 'A follower motion program, its SVAJ diagrams, and the cam profile, with the pressure angle and curvature.',
-    keywords: 'cam follower svaj displacement velocity acceleration jerk cycloidal harmonic polynomial pressure angle cams',
+    keywords:
+      'cam follower svaj displacement velocity acceleration jerk cycloidal harmonic polynomial pressure angle cams',
     field: {
       program: 'Motion program, one segment per line',
       follower: 'Follower',

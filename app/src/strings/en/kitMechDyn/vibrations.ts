@@ -6,7 +6,8 @@ export const vibrations = {
     short: 'Vibration, one mass',
     about:
       'A mass on a spring and damper: natural frequency, damping, response, and isolation. x is from equilibrium, positive with the force.',
-    keywords: 'vibration natural frequency damping ratio resonance transmissibility isolation spring mass damper vibration one mass',
+    keywords:
+      'vibration natural frequency damping ratio resonance transmissibility isolation spring mass damper vibration one mass',
     field: {
       m: 'Mass, m',
       k: 'Stiffness, k',
