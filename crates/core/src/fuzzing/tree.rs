@@ -283,12 +283,8 @@ mod tests {
         }
     }
 
-    /// The nightly crash of a page restored from one Trash item while a second item also holds it. Whether it
-    /// failed hung on the random IDs, so it runs over many seeds.
-    #[test]
-    fn the_restore_and_second_deletion_crash_passes_with_every_seed() {
-        let crash =
-            include_bytes!("../../fuzz/regressions/notebook_tree/crash-e691c790279917580bc59fa65208f421aefcb917");
+    /// The seeds, of 64, with which a crash input still fails.
+    fn failing_seeds(crash: &[u8]) -> Vec<u64> {
         let mut failed = Vec::new();
         for seed in 0..64 {
             let hook = std::panic::take_hook();
@@ -300,6 +296,26 @@ mod tests {
                 failed.push(seed);
             }
         }
+        failed
+    }
+
+    /// The nightly crash of a page restored from one Trash item while a second item also holds it. Whether it
+    /// failed hung on the random IDs, so it runs over many seeds.
+    #[test]
+    fn the_restore_and_second_deletion_crash_passes_with_every_seed() {
+        let crash =
+            include_bytes!("../../fuzz/regressions/notebook_tree/crash-e691c790279917580bc59fa65208f421aefcb917");
+        let failed = failing_seeds(crash);
+        assert!(failed.is_empty(), "failed with seeds {failed:?}");
+    }
+
+    /// The nightly crash of a page restored from one Trash item and then taken by a second one. A copy of its
+    /// folder sat in another section, and only the second scan added it. The first scan must add it.
+    #[test]
+    fn the_copy_left_by_a_second_deletion_is_added_by_the_first_scan() {
+        let crash =
+            include_bytes!("../../fuzz/regressions/notebook_tree/crash-c7416f02a7a547015e63402d8537fc43ac2a8a9c");
+        let failed = failing_seeds(crash);
         assert!(failed.is_empty(), "failed with seeds {failed:?}");
     }
 
