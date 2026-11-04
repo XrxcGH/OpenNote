@@ -866,6 +866,13 @@
       "flag": "math.codeCells"
     },
     {
+      "id": "tools.code",
+      "title": "Open the code studio",
+      "category": "code",
+      "keys": [],
+      "flag": "code.studio"
+    },
+    {
       "id": "insert.collection",
       "title": "Insert a live collection",
       "category": "insert",

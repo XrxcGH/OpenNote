@@ -4,6 +4,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
+import { isEnabled } from '../../../app/flags';
 import { createStore, useStore } from '../../../state/store';
 import { CalculatorTool } from './CalculatorTool';
 import { TimersTool } from './TimersTool';
@@ -44,7 +45,8 @@ export function ToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'calculator') return <CalculatorTool />;
   if (tool === 'upcoming') return <UpcomingTool />;
   if (tool === 'code')
-    return (
+    // A popped window that names the studio stays empty and loads nothing while code.studio is off.
+    return isEnabled('code.studio') && (
       <Suspense fallback={null}>
         <CodeStudioWindow />
       </Suspense>

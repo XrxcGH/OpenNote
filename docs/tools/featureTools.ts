@@ -226,5 +226,8 @@ export const TOOL_ENTRIES: Readonly<Record<string, ToolEntry>> = {
   'kit-math': asKit(row(engineering, 'Engineering mathematics', 'kit-engineering-math', 'tools.kitMath.')),
   'kit-mechdyn': asKit(row(engineering, 'Mechanisms and dynamics', 'kit-mechanisms', 'tools.kitMechDyn.')),
   'kit-physics': asKit(row(subject, 'Physics tools', 'kit-physics', 'tools.physics.')),
-  code: { category: 'Writing and typing', text: 'Writes, runs, and tests programs in a sandbox on this device' },
+  code: {
+    category: 'Writing and typing',
+    text: 'The code studio window, which Beta 12 fills with the editor, console, and problems panel',
+  },
 };

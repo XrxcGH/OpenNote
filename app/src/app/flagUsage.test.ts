@@ -14,7 +14,6 @@ const RUST = join(SRC, '..', 'src-tauri', 'src');
 const WAITING: Readonly<Record<string, string>> = {
   'text.v2Controls': 'Beta 10: the Home tab and the formatting commands read it.',
   'tables.sheetWrites': 'Beta 10: the table bar and the formula bar read it.',
-  'code.studio': 'Beta 11 and 12: the studio lanes read it; the first one deletes this line.',
   'code.tier2': 'Beta 14: code:L16 and code:L17 run installed toolchains behind it.',
   'code.models': 'Beta 13: code:L13a and code:L13b read it for the code models.',
 };

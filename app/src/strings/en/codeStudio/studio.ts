@@ -3,4 +3,6 @@
 
 export const codeStudioStudio = {
   title: 'Code studio',
+  open: 'Open the code studio',
+  keywords: 'code programming program run test editor console sandbox',
 } as const;
