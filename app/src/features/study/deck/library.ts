@@ -450,6 +450,16 @@ export function deleteCard(deckId: string, cardId: string): void {
   changeDeck(deckId, (deck) => ({ ...deck, cards: deck.cards.filter((card) => card.id !== cardId) }));
 }
 
+/** Puts a removed card back where it was (its place in the deck, clamped when the deck has shrunk). */
+export function restoreCard(deckId: string, card: Card, index: number): void {
+  changeDeck(deckId, (deck) => {
+    if (deck.cards.some((one) => one.id === card.id)) return deck;
+    const cards = [...deck.cards];
+    cards.splice(Math.min(Math.max(index, 0), cards.length), 0, card);
+    return { ...deck, cards };
+  });
+}
+
 /** Records a review of one card: the new state is saved and the card's next day is set. */
 export function recordReview(deckId: string, cardId: string, grade: Grade, now: Date = new Date()): void {
   const today = dayKey(now);
