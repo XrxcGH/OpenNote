@@ -63,7 +63,7 @@ async function setUp(page: Page, item: Item): Promise<void> {
 test.describe('NVDA', () => {
   test.skip(
     !enabled,
-    'Needs NVDA: set OPENNOTE_NVDA=1 on Windows after `npm ci`, `guidepup setup --ci`, and `guidepup install nvda` in tests/nvda.',
+    'Needs NVDA: set OPENNOTE_NVDA=1 on Windows, after `npm ci`, `guidepup setup --ci` and `guidepup install nvda`.',
   );
   test.setTimeout(10 * 60_000);
 
@@ -81,7 +81,7 @@ test.describe('NVDA', () => {
         throw explainStartFailure(error);
       });
       for (const item of ITEMS) {
-        // Focus moved with Playwright is spoken as it lands, and setUp waits for that, so the log is cleared first and
+        // Focus moved with Playwright is spoken as it lands, and setUp waits for it. So the log is cleared first, and
         // the phrases of the focus are in it before any key.
         await nvda.clearSpokenPhraseLog();
         await setUp(page, item);

@@ -84,7 +84,7 @@ export const NVDA_MISSING_HELP = [
   '  npm ci',
   '  npx guidepup setup --ci     (prepares Windows once per machine)',
   '  npx guidepup install nvda   (downloads the NVDA build the pinned Guidepup version needs)',
-  'In the nightly workflow these are the steps "Install Guidepup" and "Set up the machine for NVDA". See docs/HARDENING.md.',
+  'The nightly workflow runs them as "Install Guidepup" and "Set up the machine for NVDA". See docs/HARDENING.md.',
 ].join('\n');
 
 /**

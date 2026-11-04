@@ -9,7 +9,8 @@ import { flaggedProfile, openMitosisText } from './helpers.ts';
 
 /** Runs a command from the palette by its title. */
 async function runCommand(browser: Browser, title: string): Promise<void> {
-  await browser.keys(['Control', 'Shift', 'p']);
+  // Ctrl+K opens the palette in the text box when nothing is selected. Ctrl+Shift+P is not a key of the app.
+  await browser.keys(['Control', 'k']);
   const input = browser.$('[role="combobox"]');
   await input.waitForExist({ timeout: 5_000 });
   await browser.keys(title);
@@ -31,7 +32,9 @@ describe('page history', { skip: skipReason() }, () => {
     await openMitosisText(browser);
     await browser.keys(['Enter', ...'An earlier line.']);
     await browser.keys(['Control', 's']);
-    await browser.keys(['Shift', 'Home', 'Backspace', ...'A later line.']);
+    // A modifier stays down until its keys call ends, so each chord has a call of its own.
+    await browser.keys(['Shift', 'Home']);
+    await browser.keys(['Backspace', ...'A later line.']);
     await runCommand(browser, 'Page history');
     const panel = browser.$('aside[aria-label="Page history"]');
     await panel.waitForExist({ timeout: 5_000 });

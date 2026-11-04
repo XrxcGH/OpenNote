@@ -16,6 +16,16 @@ import type { CommandContext, CommandDef, CommandId, CommandTarget, FocusZone } 
 // The canonical chord form lives in chords.ts, with the rest of the keyboard layout rules.
 export { NAMED_KEYS, chord, isChordText } from './chords';
 
+/** Why a command failed. A call to the host rejects with a { code, message } object, which String() shows as [object Object]. */
+function failureText(error: unknown): string {
+  if (error instanceof Error) return error.message || String(error);
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    const code = 'code' in error && typeof error.code === 'string' ? `${error.code}: ` : '';
+    return `${code}${error.message}`;
+  }
+  return String(error);
+}
+
 export function defineCommand<Args = void>(def: CommandDef<Args>): CommandDef<Args> {
   return def;
 }
@@ -89,7 +99,7 @@ export async function executeCommand<Args>(
     return true;
   } catch (error) {
     showToast({ message: t('errors.commandFailed'), tone: 'danger' });
-    ctx.platform.log('error', `Command ${id} failed: ${String(error)}`);
+    ctx.platform.log('error', `Command ${id} failed: ${failureText(error)}`);
     return false;
   } finally {
     running = null;

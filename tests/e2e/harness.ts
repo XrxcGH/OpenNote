@@ -262,7 +262,16 @@ async function keepWindow(browser: Browser, stamp: number): Promise<void> {
   const capture = async () => {
     mkdirSync(LOGS, { recursive: true });
     await browser.saveScreenshot(join(LOGS, `${name}.png`));
-    const text = await browser.execute(() => document.body.innerText.slice(0, 6000));
+    const text = await browser.execute(() => {
+      const element = document.activeElement as HTMLElement | null;
+      const focus = element
+        ? `${element.tagName.toLowerCase()} role=${element.getAttribute('role')} label=${element.getAttribute('aria-label')} block=${element.dataset.blockId}`
+        : 'none';
+      const notices = [...document.querySelectorAll('[role="status"], [role="alert"]')].map((node) => node.textContent);
+      return `FOCUS: ${focus}
+NOTICES: ${JSON.stringify(notices)}
+${document.body.innerText.slice(0, 6000)}`;
+    });
     writeFileSync(join(LOGS, `${name}.txt`), String(text));
   };
   let timer: NodeJS.Timeout | undefined;

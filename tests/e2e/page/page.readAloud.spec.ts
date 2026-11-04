@@ -34,6 +34,8 @@ describe('read aloud', { skip: skipReason() }, () => {
       return;
     }
     await openMitosisText(browser);
+    // The sample page starts empty, so there is something to read first.
+    await browser.keys([...'Cells divide in two. Each new cell is the same as the first.']);
     await browser.keys(['Control', 'Home']);
     await browser.keys(['Control', 'Shift', 'u']);
     await browser.$('[role="region"][aria-label="Read aloud"]').waitForExist({ timeout: 5_000 });
