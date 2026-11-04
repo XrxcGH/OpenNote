@@ -22,7 +22,7 @@ use opennote_core::{
     session::notebook::HistoryScope, store::layout::NotebookLayout, store::layout::ASSETS_DIR, PageId,
 };
 use opennote_media::{
-    audio::{ClockAnchor, TrackKind},
+    audio::{ClockAnchor, Environment, SystemEnvironment, TrackKind},
     convert::{self, Quality, Settings},
     edit,
     layout::{RecordingEntry, RecordingPlan},
@@ -191,6 +191,20 @@ pub async fn audio_storage_scan(state: State<'_, AudioState>, bridge: State<'_, 
         }
         found.sort_by_key(|stored| std::cmp::Reverse(stored.bytes));
         Ok(found)
+    })
+    .await
+}
+
+/// The least space free on the drives that hold the open notebooks, in bytes: the figure that decides how much more can
+/// be recorded. None when no notebook is open or the system cannot say.
+#[tauri::command]
+pub async fn audio_free_space(state: State<'_, AudioState>, bridge: State<'_, CoreBridge>) -> IpcResult<Option<u64>> {
+    let notebooks = bridge.run(|bridge| Ok(bridge.notebooks())).await?;
+    blocking(&state, move |_| {
+        Ok(notebooks
+            .iter()
+            .filter_map(|notebook| SystemEnvironment.free_bytes(notebook.path()))
+            .min())
     })
     .await
 }
