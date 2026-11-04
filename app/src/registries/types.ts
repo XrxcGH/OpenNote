@@ -46,7 +46,7 @@ export interface CommandBarComponentProps {
 
 export interface CommandBarItem {
   id: string;
-  tab: 'home' | 'insert' | 'draw' | 'view';
+  tab: 'home' | 'insert' | 'draw' | 'view' | 'layout' | 'review';
   group: string;
   /** Also what the item runs from the More menu when the bar is too narrow to show it. */
   command: CommandId;

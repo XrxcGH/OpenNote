@@ -5,6 +5,7 @@
 import { defineCommand } from '../../commands/registry';
 import type { Chord, CommandDef, CommandId, KeyScope } from '../../commands/types';
 import { commands } from '../../registries';
+import { TEXT_KEYS } from './keys/text';
 
 export interface KeySpec {
   /** The default set. */
@@ -145,6 +146,7 @@ export const PAGE_KEYS = {
   'history.previousChange': scoped('page', ['Shift+F8'], { allowInTextInput: true }),
   'history.nameVersion': scoped('page'),
   'history.deleteHistory': scoped('page'),
+  ...TEXT_KEYS,
 } as const satisfies Record<string, KeySpec>;
 
 export type PageCommandId = keyof typeof PAGE_KEYS;

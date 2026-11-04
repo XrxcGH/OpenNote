@@ -28,6 +28,8 @@ import type { ToggledMark } from './marks';
 import { blockKindAt, isMarkActive, markAttrs } from './state';
 import { toggleKind, turnInto, turnIntoChange } from './turnInto';
 import type { BlockKind } from './turnInto';
+import { TEXT_PARA_ENTRIES } from './textParaCatalog';
+import { TEXT_RUN_ENTRIES } from './textRunCatalog';
 
 /** What a command may take: a color, a size, a block kind, or a link. */
 export interface EditorCommandArgs {
@@ -38,7 +40,7 @@ export interface EditorCommandArgs {
   text?: string;
 }
 
-interface Entry {
+export interface CatalogEntry {
   /** The command, or null when it needs arguments it didn't get. */
   command(args: EditorCommandArgs): Command | null;
   /** Whether the command is on at the selection, for toggles. */
@@ -48,14 +50,14 @@ interface Entry {
   announce?: 'toggle' | 'block';
 }
 
-const mark = (name: ToggledMark, title: MessageKey): Entry => ({
+const mark = (name: ToggledMark, title: MessageKey): CatalogEntry => ({
   command: () => toggleMark(name),
   on: (state) => isMarkActive(state, name),
   name: title,
   announce: 'toggle',
 });
 
-const kind = (block: BlockKind, title: MessageKey): Entry => ({
+const kind = (block: BlockKind, title: MessageKey): CatalogEntry => ({
   command: () => toggleKind(block),
   on: (state) => blockKindAt(state) === block,
   name: title,
@@ -64,7 +66,7 @@ const kind = (block: BlockKind, title: MessageKey): Entry => ({
 
 const HEADINGS = [1, 2, 3, 4, 5, 6] as const;
 
-const ENTRIES: Record<string, Entry> = {
+const ENTRIES: Record<string, CatalogEntry> = {
   'format.bold': mark('bold', 'editor.commands.bold'),
   'format.italic': mark('italic', 'editor.commands.italic'),
   'format.underline': mark('underline', 'editor.commands.underline'),
@@ -115,6 +117,8 @@ const ENTRIES: Record<string, Entry> = {
   'insert.date': { command: () => insertDateTime('date') },
   'insert.time': { command: () => insertDateTime('time') },
   'insert.dateTime': { command: () => insertDateTime('dateTime') },
+  ...TEXT_RUN_ENTRIES,
+  ...TEXT_PARA_ENTRIES,
 };
 
 /** The IDs this catalog runs. */

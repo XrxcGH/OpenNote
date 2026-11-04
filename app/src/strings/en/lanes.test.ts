@@ -26,6 +26,14 @@ const RELEASES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     textFonts: 'text:fonts-ui',
     textStyles: 'text:styles',
     textHome: 'text:home-tab-ui',
+    textPane: 'text:format-pane',
+    textRuler: 'text:ruler',
+    textSymbols: 'text:special-chars',
+    textLanguage: 'text:language-direction',
+    textNotes: 'text:footnotes',
+    textReview: 'text:review',
+    textLayout: 'text:page-layout',
+    textFind: 'text:find-format',
   },
 };
 
