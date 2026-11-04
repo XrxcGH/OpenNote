@@ -7,7 +7,7 @@ import { announce } from '../../../ui';
 import type { ImageHandle } from '../blocks/imageBlock';
 import type { Crop, Handle } from './geometry';
 import { cropDrag, cropOf, frameForCrop, HANDLES, isWhole } from './geometry';
-import { arrowStep, trackDrag } from './drag';
+import { arrowStep, ownsItsDrag, trackDrag } from './drag';
 import styles from './images.module.css';
 
 /** The edits that change an image's crop and keep its scale, or none when nothing changed. */
@@ -86,7 +86,7 @@ class CropSession {
   }
 
   private addHandle(edge: Handle): HTMLButtonElement {
-    const button = this.region.appendChild(document.createElement('button'));
+    const button = ownsItsDrag(this.region.appendChild(document.createElement('button')));
     button.type = 'button';
     button.className = `${styles.handle} ${styles[edge]}`;
     button.setAttribute('aria-label', t('images.cropMode.handle', { edge: t(`images.edges.${edge}`) }));

@@ -6,7 +6,7 @@ import type { AssetJson, BlockJson, Frame } from '../../../services/pages/types'
 import { t } from '../../../strings/t';
 import { assetTable } from '../images/assets';
 import type { AssetTable } from '../images/assets';
-import { arrowStep, trackDrag } from '../images/drag';
+import { arrowStep, ownsItsDrag, trackDrag } from '../images/drag';
 import type { Crop, Handle, Rect } from '../images/geometry';
 import { cropOf, FREEFORM_MAX_WIDTH, HANDLES, heightFor, initialSize, resizeRect } from '../images/geometry';
 import { shownImageIds } from '../images/shown';
@@ -391,7 +391,7 @@ class ImageView implements BlockView, ImageHandle {
   private addGapHandle(): void {
     const wrap = this.wrap();
     if (wrap !== 'left' && wrap !== 'right') return;
-    const button = this.element.appendChild(document.createElement('button'));
+    const button = ownsItsDrag(this.element.appendChild(document.createElement('button')));
     button.type = 'button';
     button.className = `${styles.handle} ${styles.gapHandle}`;
     button.dataset.side = wrap;
@@ -406,7 +406,7 @@ class ImageView implements BlockView, ImageHandle {
   private addHandles(): void {
     const handles = this.floating() ? HANDLES : (['se'] as const);
     for (const handle of handles) {
-      const button = this.element.appendChild(document.createElement('button'));
+      const button = ownsItsDrag(this.element.appendChild(document.createElement('button')));
       button.type = 'button';
       button.className = `${styles.handle} ${styles[handle]}`;
       button.tabIndex = -1;

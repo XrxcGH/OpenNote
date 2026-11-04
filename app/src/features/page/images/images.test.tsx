@@ -55,6 +55,38 @@ describe('image blocks', () => {
     await expectNoAxeViolations(handle.element);
   });
 
+  it('resizes with a finger as far as the finger went, not by its last step (Beta 8 walk A1-A07-8)', async () => {
+    const { page, id } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    const corner = await vi.waitFor(() => screen.getByRole('button', { name: 'Resize from the bottom right corner' }));
+    const box = corner.getBoundingClientRect();
+    const finger = (type: string, dx: number) =>
+      corner.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          isPrimary: true,
+          pointerId: 7,
+          pointerType: 'touch',
+          button: 0,
+          buttons: type === 'pointerup' ? 0 : 1,
+          clientX: box.x + box.width / 2 + dx,
+          clientY: box.y + box.height / 2,
+        }),
+      );
+    const before = page.sent().length;
+    finger('pointerdown', 0);
+    // Past the touch slop, where a one-finger pan would take the pointer.
+    for (let step = 1; step <= 12; step++) finger('pointermove', step * 5);
+    finger('pointerup', 60);
+    const width = () => {
+      const move = page.sent().slice(before).flatMap((batch) => batch.edits).find((edit) => edit.edit === 'moveBlock');
+      return move?.edit === 'moveBlock' ? (move.frame?.w ?? null) : null;
+    };
+    await vi.waitFor(() => expect(width()).not.toBeNull());
+    expect(width()).toBe(460);
+  });
+
   it('crop mode keeps a crop as one patch and one move', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;
