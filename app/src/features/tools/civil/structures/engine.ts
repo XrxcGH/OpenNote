@@ -194,6 +194,14 @@ export function beamDiagrams(spans: readonly Span[], sol: BeamSolution, per = 40
   return points;
 }
 
+/** The bending moment (sagging positive) at the middle of each span. */
+export function midspanMoments(spans: readonly Span[], sol: BeamSolution): number[] {
+  return spans.map((s, i) => {
+    const x = s.L / 2;
+    return sol.moments[i]![0] + sol.shears[i]![0] * x - (s.w * x * x) / 2 - (x > s.a ? s.P * (x - s.a) : 0);
+  });
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Influence lines and moving loads on a simple span
 

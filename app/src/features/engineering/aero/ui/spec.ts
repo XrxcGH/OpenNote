@@ -2,7 +2,8 @@
 // window draws the form, the units, the answer, the steps, the plots, and the Insert buttons, so a tool file is only
 // its fields and a call to its engine. Text is named by key: a key such as "regime.design" is looked up in the tool's
 // own strings section, so specs and engines stay free of sentences and can be tested without a page.
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
+import { switchedText } from '../../../../core/units';
 import { AeroError } from '../common';
 import type { AeroStep, XY } from '../common';
 import type { AeroToolId } from '../meta';
@@ -172,7 +173,9 @@ export function switchSystem(spec: ToolSpec, values: Values, system: UnitSystem)
     const to = defaultUnit(field.qty, system);
     const value = readNumber(values[field.id] ?? '');
     if (from.sym === to.sym || (value !== undefined && !Number.isFinite(value))) continue;
-    if (value !== undefined) next[field.id] = inputText(fromSI(toSI(value, from), to));
+    if (value !== undefined) {
+      next[field.id] = switchedText(values[field.id] ?? '', from.sym, to.sym, fromSI(toSI(value, from), to));
+    }
     next[unitKey(field.id)] = to.sym;
   }
   return next;
@@ -184,7 +187,7 @@ export function readNumber(text: string): number | undefined {
   if (plain === '') return undefined;
   const direct = Number(plain);
   if (Number.isFinite(direct)) return direct;
-  const result = evaluate(plain);
+  const result = evaluateTyped(plain);
   return result.ok && Number.isFinite(result.value) ? result.value : NaN;
 }
 

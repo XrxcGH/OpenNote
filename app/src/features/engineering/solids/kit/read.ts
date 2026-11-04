@@ -1,7 +1,8 @@
 // Reads a tool's typed fields into values for its engine, and runs it. A field that cannot be read is reported on
 // that field, so the window can mark it, and the tool is not run until every shown field reads.
+import { hasNonFinite, isRangeError } from '../../../../core/finite';
 import { SolidsError } from './types';
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
 import { endsInSign, fromShown, readQuantity, toShown, typedUnit, type System } from './units';
 import { typedLines } from './lines';
 import { shownFields, type Columns, type Outcome, type ToolSpec, type Values } from './spec';
@@ -51,8 +52,12 @@ export function runTool(spec: ToolSpec, texts: Readonly<Record<string, string>>,
   const { values, problems } = readValues(spec, texts, system);
   if (problems.length > 0) return { ok: false, fields: problems, error: null };
   try {
-    return { ok: true, outcome: spec.run(values, system), values };
+    const outcome = spec.run(values, system);
+    // An absurd input (1e12 of anything) makes an engine return NaN (an infinite answer is shown as ∞): say so instead of printing it.
+    if (hasNonFinite(outcome.rows, true)) return { ok: false, fields: [], error: new SolidsError('outOfRange') };
+    return { ok: true, outcome, values };
   } catch (error) {
+    if (isRangeError(error)) return { ok: false, fields: [], error: new SolidsError('outOfRange') };
     // A slip in a tool must not take the window down with it; it reads as a problem that could not be worked out.
     return { ok: false, fields: [], error: error instanceof SolidsError ? error : new SolidsError('unknown') };
   }
@@ -100,7 +105,7 @@ export function pinUnits(
     }
     if (field.type !== 'quantity') continue;
     const unit = typedUnit(field.kind, from);
-    if (text === '' || unit === '' || endsInSign(text) || !evaluate(text).ok) continue;
+    if (text === '' || unit === '' || endsInSign(text) || !evaluateTyped(text).ok) continue;
     out[field.id] = `${text} ${unit}`;
   }
   return out;

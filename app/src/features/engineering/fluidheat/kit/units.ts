@@ -1,7 +1,7 @@
 // The kinds of quantity the fluid mechanics and heat transfer tools read and show, each with the unit it shows in SI
 // and in US customary units. The engines work in base SI (m, kg, s, Pa, K); these units are only for people. The SI
 // set is m, mm, kPa, and degrees Celsius, and the US set is ft, in, psi, and degrees Fahrenheit.
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
 import { parseUnit, sameDim, type Dim } from '../../../../core/units';
 import { FluidHeatError } from './types';
 
@@ -121,13 +121,13 @@ export const fromShown = (value: number, kind: Kind, system: System): number =>
 
 /** What a person typed, as a number and the unit after it ('' when none). */
 function splitTyped(text: string): { number: number; unit: string } | null {
-  const whole = evaluate(text);
+  const whole = evaluateTyped(text);
   if (whole.ok) return { number: whole.value, unit: '' };
   for (let i = 1; i < text.length; i += 1) {
     if (!/[A-Za-zµμΩ°%]/.test(text[i]) || !/[\s\d).]/.test(text[i - 1])) continue;
     const unit = text.slice(i).trim();
     if (!parseUnit(unit)) continue;
-    const number = evaluate(text.slice(0, i).trim());
+    const number = evaluateTyped(text.slice(0, i).trim());
     if (number.ok) return { number: number.value, unit };
   }
   return null;

@@ -12,7 +12,7 @@ Each tab answers as you type and shows its steps. Press Insert answer to put the
 
 - **Balance.** Type an equation with an arrow, such as `C3H8 + O2 -> CO2 + H2O`. It gives the smallest whole-number coefficients and the molar mass of each substance. Ions work with a charge: `MnO4-`, `Fe^3+`, and `e-`.
 - **Molar mass.** Type a formula such as `Ca(OH)2` or `CuSO4.5H2O` for its molar mass and percent composition.
-- **Stoichiometry.** Type a reaction and the mass of each reactant you have. It names the limiting reagent, gives the theoretical yield of each product, and says how much of each reactant is left over. Add an actual yield for percent yield.
+- **Stoichiometry.** Type a reaction and the mass of each reactant you have. It names the limiting reagent (or says the reactants run out together when you give them in exactly the ratio of the equation), gives the theoretical yield of each product, and says how much of each reactant is left over. Add an actual yield for percent yield.
 - **Gas laws.** The ideal gas law, the combined gas law, Graham's law, and gas density. Leave exactly one box empty and that is the one it solves for. Pick any common unit; it converts inside.
 - **Solutions.** Dilution (C₁V₁ = C₂V₂, with how much stock and water to mix), molarity from mass, the pH of a strong or weak acid or base, and a buffer by the Henderson–Hasselbalch equation.
 - **Titration.** A titration curve for a strong or weak acid or base against a strong titrant, with the equivalence point marked and the pH there. A second form finds an unknown concentration from the titrant used.

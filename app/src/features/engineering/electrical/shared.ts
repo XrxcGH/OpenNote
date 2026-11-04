@@ -114,6 +114,9 @@ const superscript = (n: number): string => [...String(n)].map((c) => SUPERSCRIPT
 export function eng(value: number, unit: string, digits = 5): string {
   if (!Number.isFinite(value)) return `${value} ${unit}`;
   if (value === 0) return `0 ${unit}`;
+  // A prefix on a squared or cubed unit scales the base unit, not the power (a "k" on m² would mean km², a million
+  // times too much), so areas and volumes keep the plain unit.
+  if (/[²³⁴]$/.test(unit)) return `${fmt(value, digits)} ${unit}`;
   const power = Math.max(-12, Math.min(9, Math.floor(Math.log10(Math.abs(value)) / 3) * 3));
   if (unit === '1/s' || unit === 'rad/s') {
     // A prefix on 1/s reads as "k1" ("12.5 k1/s"), so rates take a power of ten instead.

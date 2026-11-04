@@ -1,7 +1,7 @@
 // The kinds of quantity the solid mechanics tools read and show, each with the unit it shows in SI and in US
 // customary units. The engines work in base SI (m, N, Pa, kg, s, rad, K); these units are only for people. The SI
 // set is N, mm, and MPa, and the US set is kip, in, and ksi, so the numbers in a worked step agree with each other.
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
 import { parseUnit, sameDim, type Dim } from '../../../../core/units';
 import { SolidsError } from './types';
 
@@ -147,14 +147,14 @@ function unitOfText(text: string): { factor: number; dim: Dim; offset?: number }
 
 /** What a person typed, as a number and the unit after it ('' when none, 'SI' when the number is already in SI). */
 function splitTyped(text: string): { number: number; unit: string } | null {
-  const whole = evaluate(text);
+  const whole = evaluateTyped(text);
   if (whole.ok) return { number: whole.value, unit: endsInSign(text) ? 'SI' : '' };
   for (let i = 1; i < text.length; i += 1) {
     const inverse = text.startsWith('1/', i) && /\s/.test(text[i - 1]);
     if (!inverse && (!/[A-Za-zµμΩ°%]/.test(text[i]) || !/[\s\d).]/.test(text[i - 1]))) continue;
     const unit = text.slice(i).trim();
     if (!unitOfText(unit) && !STRAIN.test(unit)) continue;
-    const number = evaluate(text.slice(0, i).trim());
+    const number = evaluateTyped(text.slice(0, i).trim());
     if (number.ok) return { number: number.value, unit };
   }
   return null;

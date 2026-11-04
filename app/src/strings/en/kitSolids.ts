@@ -122,6 +122,8 @@ export const kitSolids = {
     elementLine: 'Element line {detail} could not be read. Check its word and how many numbers it has.',
     femSupportLine: 'Support line {detail} could not be read. Type the node, then how it is held.',
     holeSize: 'The hole’s diameter must be less than 0.9 times the plate’s width and its height.',
+    outOfRange:
+      'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
     unknown: 'That could not be worked out.',
   },
   columns,

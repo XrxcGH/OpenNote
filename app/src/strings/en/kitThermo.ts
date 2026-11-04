@@ -594,6 +594,8 @@ export const kitThermo = {
     notPositive: '{name} must be above zero.',
     noRoot: 'No solution was found in the range the method searched.',
     rotationLowT: 'The high-temperature rotation formula needs T well above θ_rot = {theta} K; raise the temperature.',
+    outOfRange:
+      'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
     unknown: 'Something went wrong with that calculation.',
     unknownElement: 'The formula has an element the kit does not know: {element}.',
     gasRange: 'The data for {formula} covers 200 K to {max} K; keep the temperatures in that range.',

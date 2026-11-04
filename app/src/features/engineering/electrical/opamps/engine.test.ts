@@ -206,6 +206,17 @@ describe('the op-amp tool form', () => {
     expect(runTool(spec, { ...values, mode: 'order', ap: 'x' }).ok).toBe(false);
     expect(runTool(spec, { ...values, mode: 'order', fs: '500' }).ok).toBe(false);
   });
+  it('names an order the tool cannot design, and does not build a filter of infinite order', () => {
+    // Butterworth: n = log10((10^(As/10) - 1)/(10^(Ap/10) - 1)) / (2 log10(fs/fp)) = 6.65 for 3 dB at 1 kHz, 40 dB at 2 kHz.
+    const real = { family: 'butterworth' as const, fp: 1000, fs: 2000, ap: 3, as: 40 };
+    expect(exactOrder(real)).toBeCloseTo(Math.log10(9999 / (10 ** 0.3 - 1)) / (2 * Math.log10(2)), 12);
+    expect(order(real)).toBe(7);
+    // A stop-band loss of 1e12 dB asks for infinitely many poles (this used to run out of memory).
+    const values = { ...initialValues(spec), mode: 'order', as: '1e12' };
+    const result = runTool(spec, values);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toBe('orderTooHigh');
+  });
   it('a Butterworth section (Q 0.7071) has its 3 dB point at f0', () => {
     const c = sallenKeyStage(1000, Math.SQRT1_2, 10e-9);
     const r = runTool(spec, {

@@ -513,6 +513,10 @@ export function SeedField({ value, onChange }: SeedFieldProps) {
           aria-invalid={bad ? true : undefined}
           aria-describedby={`${id}-hint`}
           onChange={(event) => onChange(event.target.value)}
+          // A seed left empty means "a new run": it becomes a fresh seed (shown, so the run can be repeated).
+          onBlur={() => {
+            if (value.trim() === '') fresh();
+          }}
         />
         <Button onClick={fresh}>{sayS('seed.new')}</Button>
       </div>
