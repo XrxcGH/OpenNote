@@ -8,7 +8,37 @@ pub mod escape;
 pub(crate) mod html_tags;
 mod inline;
 pub mod parse;
+pub mod values;
 pub mod write;
+
+#[cfg(test)]
+mod tests;
+
+/// The body size that the `textSize` names scale, in points.
+pub const BODY_POINTS: f64 = 12.0;
+
+/// The size in points of a `textSize` value (R-VAL-3). A name scales the 12 point body: `small` is 10 (0.85 of
+/// the body, to the nearest point), `large` 15 (1.25), and `xlarge` 18 (1.5). Points are 1 to 1638, step 0.5.
+pub fn size_points(size: &str) -> Option<f64> {
+    match size {
+        "small" => Some(10.0),
+        "large" => Some(15.0),
+        "xlarge" => Some(18.0),
+        _ if values::size_points_text(size) => size.parse().ok(),
+        _ => None,
+    }
+}
+
+/// A `textSize` value as an attribute gives it, when it is in the grammar: a version 1 name in any case, or
+/// points. Readers of HTML use it, so a size that OpenNote wrote comes back.
+pub fn size_value(value: &str) -> Option<String> {
+    let value = value.trim();
+    let name = value.to_ascii_lowercase();
+    if values::SIZE_NAMES.contains(&name.as_str()) {
+        return Some(name);
+    }
+    values::size_points_text(value).then(|| value.to_owned())
+}
 
 /// Subscript or superscript.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -36,7 +66,7 @@ pub struct Marks {
     pub highlight: Option<String>,
     /// A pen name or `#rrggbb`.
     pub color: Option<String>,
-    /// `small`, `large`, or `xlarge`.
+    /// `small`, `large`, or `xlarge`, or points from 1 to 1638 in steps of 0.5, such as `10.5` ([`size_points`]).
     pub size: Option<String>,
     /// Subscript or superscript.
     pub script: Option<Script>,

@@ -200,11 +200,7 @@ fn run_props(marks: &Marks) -> String {
     }
 }
 
+/// `w:sz` is in half-points, so `large` (15 points at the 12 point body) is 30.
 fn size_half_points(size: &str) -> Option<u32> {
-    match size {
-        "small" => Some(18),
-        "large" => Some(28),
-        "xlarge" => Some(36),
-        _ => None,
-    }
+    crate::doc::size_points(size).map(|points| (points * 2.0).round() as u32)
 }

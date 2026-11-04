@@ -14,7 +14,7 @@ pre{overflow:auto;padding:.75rem;background:#f4f0ea}\
 .callout{padding:.5rem 1rem;border-left:3px solid #2F4F9A;background:#f4f0ea}.callout-title{font-weight:600}\
 mark{background:#FAECB7}mark[data-color=mint]{background:#D2EFDB}mark[data-color=rose]{background:#F9D9E3}\
 mark[data-color=apricot]{background:#FBE2CA}mark[data-color=lilac]{background:#E8E0F9}\
-[data-size=small]{font-size:.85em}[data-size=large]{font-size:1.25em}[data-size=xlarge]{font-size:1.6em}\
+[data-size=small]{font-size:.85em}[data-size=large]{font-size:1.25em}[data-size=xlarge]{font-size:1.5em}\
 li.task{list-style:none;margin-left:-1.2rem}";
 
 /// What the head of an exported page says besides its title, so an import can read it back.
@@ -250,7 +250,12 @@ fn run_html(text: &str, marks: &Marks) -> String {
         None => {}
     }
     if let Some(size) = &marks.size {
-        wrap(format!("<span data-size=\"{}\">", escape(size)), "</span>");
+        // A size in points has no rule in the style sheet, so it carries its own.
+        let style = match size.as_str() {
+            "small" | "large" | "xlarge" => String::new(),
+            points => format!(" style=\"font-size:{}pt\"", escape(points)),
+        };
+        wrap(format!("<span data-size=\"{}\"{style}>", escape(size)), "</span>");
     }
     if let Some(color) = &marks.color {
         let style = pen_hex(color).map_or(String::new(), |hex| format!(" style=\"color:#{hex}\""));
