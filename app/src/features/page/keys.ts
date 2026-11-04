@@ -40,7 +40,7 @@ const showLevels = Object.fromEntries(
 ) as Record<`outline.showLevel${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`, KeySpec>;
 const moves = { allowInTextInput: true, allowRepeat: true };
 
-export const PAGE_KEYS = {
+export const BUILT_IN_PAGE_KEYS = {
   // WP4: formatting, blocks, outline, typing helpers.
   'format.bold': editor(['Ctrl+B']),
   'format.italic': editor(['Ctrl+I']),
@@ -146,8 +146,19 @@ export const PAGE_KEYS = {
   'history.previousChange': scoped('page', ['Shift+F8'], { allowInTextInput: true }),
   'history.nameVersion': scoped('page'),
   'history.deleteHistory': scoped('page'),
-  ...TEXT_KEYS,
 } as const satisfies Record<string, KeySpec>;
+
+/** Joins the text lanes' keys to the built-in ones. A text key that names a built-in command is an error, never a silent override. */
+export function mergeKeys<A extends Record<string, KeySpec>, B extends Record<string, KeySpec>>(
+  text: A,
+  builtIn: B,
+): A & B {
+  const clash = Object.keys(text).filter((id) => id in builtIn);
+  if (clash.length > 0) throw new Error(`Text keys repeat built-in page commands: ${clash.join(', ')}`);
+  return { ...text, ...builtIn };
+}
+
+export const PAGE_KEYS = mergeKeys(TEXT_KEYS, BUILT_IN_PAGE_KEYS);
 
 export type PageCommandId = keyof typeof PAGE_KEYS;
 

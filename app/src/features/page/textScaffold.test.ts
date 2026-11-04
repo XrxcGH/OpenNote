@@ -7,7 +7,7 @@ import { TEXT_PARA_ENTRIES } from '../../editor/commands/textParaCatalog';
 import { TEXT_RUN_ENTRIES } from '../../editor/commands/textRunCatalog';
 import { paraStyle } from '../../editor/render/paraStyle';
 import { runStyle } from '../../editor/render/runStyle';
-import { PAGE_KEYS } from './keys';
+import { BUILT_IN_PAGE_KEYS, PAGE_KEYS, mergeKeys } from './keys';
 import { TEXT_KEYS } from './keys/text';
 
 const NAMES = [
@@ -35,6 +35,13 @@ describe('the text flags', () => {
 });
 
 describe('the seams', () => {
+  it('never lets a text key share an id with a built-in page command', () => {
+    for (const key of Object.keys(TEXT_KEYS)) expect(BUILT_IN_PAGE_KEYS, key).not.toHaveProperty(key);
+    expect(() => mergeKeys({ 'format.bold': { keys: ['Ctrl+Q'], scope: 'editor' } }, BUILT_IN_PAGE_KEYS)).toThrow(
+      /format\.bold/,
+    );
+  });
+
   it('puts every key of the text part in the page key table', () => {
     for (const key of Object.keys(TEXT_KEYS)) expect(PAGE_KEYS, key).toHaveProperty(key);
   });
