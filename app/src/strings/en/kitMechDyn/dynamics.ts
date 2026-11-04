@@ -8,7 +8,8 @@ export const dynamics = {
       'Motion from typed coordinates, two points on a turning body, an impact, a body rolling down an incline, ' +
       'or a rigid body under forces, free, pinned, rolling, or on smooth contacts.',
     keywords:
-      'kinematics kinetics particle polar coordinates normal tangential rigid body instantaneous center impact restitution rolling incline',
+      'kinematics kinetics particle polar coordinates normal tangential rigid body instantaneous center impact ' +
+      'restitution rolling incline particles and bodies',
     field: {
       mode: 'Problem',
       system: 'Coordinates',
@@ -249,7 +250,7 @@ export const dynamics = {
       'between rotation matrices, Euler angles, quaternions, and axis-angle.',
     keywords:
       'rigid body inertia tensor moment of inertia product of inertia parallel axis principal axes euler equations ' +
-      'torque-free precession nutation gyroscope rotation matrix euler angles quaternion axis angle gimbal lock',
+      'torque-free precession nutation gyroscope rotation matrix euler angles quaternion axis angle gimbal lock rigid bodies in 3d',
     field: {
       task: 'Work out',
       bodies: 'Parts, one per line',

@@ -11,7 +11,7 @@ addCommand({
   icon: 'Flask',
   flag: 'kits.chemmat',
   anywhere: true,
-  run: async () => (await import('../../tools')).openChemMatTool(CHEMMAT_META[0].id),
+  run: async () => (await import('../../tools')).openTool('kit-chemmat'),
 });
 
 for (const tool of CHEMMAT_META) {
