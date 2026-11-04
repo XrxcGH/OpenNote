@@ -62,7 +62,7 @@ function LiveBar() {
         )}
         <IconButton label={t('audio.commands.stop')} icon={StopIcon} command="audio.stop" onPress={run('audio.stop')} />
       </div>
-      <Wave state={ui.meters.microphone} />
+      <Wave state={ui.meters.microphone} paused={paused} />
       <Meter state={ui.meters.microphone} label={t('audio.indicator.meter')} />
       <p className={styles.hint}>{t('audio.block.liveHint')}</p>
     </div>

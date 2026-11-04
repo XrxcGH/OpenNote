@@ -85,6 +85,17 @@ describe('the live wave', () => {
     expect(shown.at(-2)).toBeCloseTo(0.5);
     expect(shown.at(-3)).toBe(0);
   });
+
+  it('goes flat while paused, so a paused card does not show sound that is not being heard', () => {
+    const { rerender } = render(<Wave state={state(0)} />);
+    expect(Math.max(...levels())).toBe(1);
+    rerender(<Wave state={state(-10)} paused />);
+    expect(Math.max(...levels())).toBe(0);
+    rerender(<Wave state={state(-20)} paused />);
+    expect(Math.max(...levels())).toBe(0);
+    rerender(<Wave state={state(-30)} />);
+    expect(levels().at(-1)).toBeCloseTo(0.5);
+  });
 });
 
 async function openMitosis() {
