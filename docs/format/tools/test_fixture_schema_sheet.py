@@ -162,7 +162,7 @@ class CoverageTest(unittest.TestCase):
                 self.assertIn(path, shown)
 
     def test_every_table_row_and_column_key_is_shown(self) -> None:
-        seen = {path for _, sheet in valid_sheets() for path, _ in walk(sheet)}
+        seen = {path for _, sheet in valid_sheets() for path, _ in walk(sheet) if path}
         wanted = "style look band.rows band.cols emphasis.firstCol emphasis.lastCol emphasis.totalRow freeze.rows "
         for path in (wanted + "freeze.cols pad.t grid name").split():
             with self.subTest(table=path):
