@@ -1,34 +1,38 @@
 # ADR 0078: Writers stamp the lowest format version a file needs
 
 - Status: Proposed
-- Date: 2026-11-01
+- Date: 2026-11-02
 
 ## Context
 
-Spec 15.3 says a file is written in the new version whenever an edit saves it. Text formatting adds two kinds of data:
+[Format spec](../format/README.md) section 15.3 says a file is written in the new version whenever an edit saves it. Beta 9 adds two kinds of data, from the text and the tables programs:
 
-- Inline tags, which a version 1 reader would corrupt, so it must not edit them.
-- Keys beside the Markdown: `paras`, `lists`, `layout`, a page's `styles`, `view.text`, and new style keys. A version 1 reader already keeps these unchanged (spec 2.9), and element IDs keep them attached to their paragraphs (spec 6.6).
+- Inline tags, footnote references, notes, comments, suggestions, and breaks, which a version 1 reader would corrupt, so it must not edit them. For tables: merges, names, validation, conditional formats, cached values, and formulas whose meaning `data.sheet.v` changes, which a version 1 reader would misread or leave stale.
+- Keys beside the Markdown: `paras`, `lists`, `layout`, a page's `styles`, `view.text`, `view.print`, new style keys, and cell styles in `data.sheet`. A version 1 reader already keeps these unchanged (spec section 2.9), and element, row, and column IDs keep them attached to what they format (spec sections 6.3 and 6.6).
 
-People sync one notebook across devices that update at different times. If every save stamps version 2, a phone on Beta 8 can no longer edit any page the laptop touched, even pages that only gained a centered paragraph.
+People sync one notebook across devices that update at different times. If every save stamps version 2, a phone on Beta 8 can no longer edit any page that the laptop touched, even pages that only gained a centered paragraph or a colored cell. The owner decided on 2026-11-02 to have one format version 2 for text, tables, and code, with lowest-version stamping and `minWriterVersion` (decision N1).
 
 ## Decision
 
-We will stamp each file with the lowest format version whose features it uses, and change spec 15.3 and 15.5 to say so.
+We will stamp each file with the lowest format version whose features it uses, computed at save time from its content, and change spec sections 15.3 and 15.5 to say so.
 
-- Each version's section of the spec lists the features that require it. For version 2, those are inline tags beyond version 1, `[^id]` footnote references, `data.notes`, comments, suggestions, and `break` blocks.
-- Keys that a version 1 reader keeps without misreading do not raise the version.
-- The core computes the stamp at save time from the page's contents, and fixtures test both outcomes.
-- The backup before the first upgrade (spec 15.4) runs when a file first needs the higher version.
+- Spec section 15.6 holds one stamping table for every program, with rules `R-STAMP-1` to `R-STAMP-13`. Version 2 is needed by inline tags beyond version 1 (including the weight mark), version 1 tags with version 2 values, foreign marks, `[^id]` references, entries in `data.notes`, `data.comments`, or `data.suggestions`, `break` blocks, and a `data.sheet` with entries in `merges`, `names`, `validation`, `conditional`, or `values`, or with `v` in a table that holds a formula cell.
+- Everything else stays at version 1: paragraph formatting, lists, layout, styles, themes, text settings, headers and footers, and a `data.sheet` with only styles, table settings, rows, columns, cells, notes, and links. Code blocks never change a page's version; their own `data.v` and `data.minEditor` decide who may edit them.
+- Every version 2 feature keeps `minReaderVersion` at 1, so Beta 8 still shows the page, read-only.
+- A page can go back to version 1 when its last version 2 feature is removed.
+- The backup before an upgrade (spec section 15.4) runs when a save first gives a file a higher version than it has on disk.
+- The fixtures in `docs/format/fixtures/markdown/downlevel/`, `markdown/paras/`, and `table-sheet/` pin every row.
 
 ## Options considered
 
 | Option | For | Against |
 |---|---|---|
-| Stamp the lowest version needed (chosen) | Older devices keep editing pages that use only additive keys; paragraph formatting and styles never lock anyone out | The writer must know which features need which version; a page can move up and down as features are added and removed |
-| Always stamp the newest version (spec 15.3 today) | Simple | Locks older devices out after any edit |
-| Never raise the version for formatting | Old devices edit everything | Old devices would corrupt inline tags |
+| Stamp the lowest version needed (chosen) | Older devices keep editing pages that use only additive keys; paragraph formatting, styles, and cell formats never lock anyone out | The writer must know which features need which version; a page can move up and down as features are added and removed |
+| Always stamp the newest version (spec section 15.3 today) | Simple | Locks older devices out after any edit |
+| Never raise the version for formatting | Old devices edit everything | Old devices would corrupt inline tags, leave cached results stale, and break merges |
 
 ## Consequences
 
-A page can go back to version 1 when its last version 2 feature is removed. That is safe, because version 1 readers already accept every remaining key. The rule also applies to features from other designers in the same release, such as tables, so the format change is one bundle with one owner (PLAN.md owner decision 2).
+- The core computes the stamp in one place (`core-format-v2`), with the same rules for text blocks and table cells.
+- A version 1 reader that edits a page with paragraph formatting keeps the formatting but does not draw it, and a version 1 writer may move a space out of an underline when it rewrites that paragraph. Both are visible only, and nothing is lost.
+- Later versions follow the same rule: each lists the features that need it in a stamping table (spec section 15.5).

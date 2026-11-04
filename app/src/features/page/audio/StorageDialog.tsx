@@ -9,7 +9,7 @@ import { describeError } from './controller';
 import { bytesText, lengthNs } from './format';
 import styles from './more.module.css';
 import { recordingChoices } from './state';
-import { compressStored, freedBy, removeStoredAudio, scanStorage } from './storage';
+import { compressStored, freedBy, freeSpace, removeStoredAudio, scanStorage } from './storage';
 
 type Order = 'size' | 'newest' | 'page';
 
@@ -79,6 +79,7 @@ function Row({
 export function StorageDialog({ onClose }: { onClose(): void }) {
   const [listing, setListing] = useState<Listing>({ state: 'loading' });
   const [busy, setBusy] = useState(false);
+  const [free, setFree] = useState<number | null>(null);
   const [order, setOrder] = useState<Order>('size');
   const orderId = useId();
   const load = useCallback(() => {
@@ -86,6 +87,8 @@ export function StorageDialog({ onClose }: { onClose(): void }) {
       (items) => setListing({ state: 'ready', items }),
       (error: unknown) => setListing({ state: 'failed', message: describeError(error) }),
     );
+    // Freeing space is the point of this list, so what is left is read again after each change.
+    void freeSpace().then(setFree);
   }, []);
   useEffect(load, [load]);
   const change = (action: () => Promise<boolean>) => {
@@ -113,7 +116,10 @@ export function StorageDialog({ onClose }: { onClose(): void }) {
       {listing.state === 'ready' && items.length === 0 && <p className={styles.help}>{t('audioMore.storage.none')}</p>}
       {items.length > 0 && (
         <>
-          <p className={styles.help}>{t('audioMore.storage.total', { size: bytesText(total) })}</p>
+          <p className={styles.help}>
+            {t('audioMore.storage.total', { size: bytesText(total) })}
+            {free !== null && ` ${t('audioMore.storage.free', { size: bytesText(free) })}`}
+          </p>
           <div className={styles.field}>
             <label htmlFor={orderId}>{t('audioMore.storage.sort')}</label>
             <select
