@@ -321,7 +321,7 @@ export function solveCompliant(input: CompliantInput): Outcome<CompliantResult> 
   const steps: MechStep[] = [
     {
       key: 'compliantSection',
-      math: `I = \\frac{wt^3}{12} = ${tex(I)}\\ \\mathrm{m^4},\\quad EI = ${tex(EI)}\\ \\mathrm{N\\,m^2}`,
+      math: `I = \\frac{wt^3}{12} = ${tex(I, 5, 0)}\\ \\mathrm{m^4},\\quad EI = ${tex(EI, 5, 0)}\\ \\mathrm{N\\,m^2}`,
     },
   ];
   const reach = type === 'pivot' ? L + rigidLength : L;
@@ -348,7 +348,7 @@ export function solveCompliant(input: CompliantInput): Outcome<CompliantResult> 
     key: 'compliantStress',
     math:
       `\\sigma_{\\max} = \\frac{|M|_{\\max}\\,c}{I} + \\frac{|N|}{A} = ` +
-      `\\frac{${tex(exact.maxMoment)} \\times ${tex(c)}}{${tex(I)}} + ` +
+      `\\frac{${tex(exact.maxMoment)} \\times ${tex(c)}}{${tex(I, 5, 0)}} + ` +
       `\\frac{${tex(Math.abs(exact.axialAtMax))}}{${tex(area)}} = ${tex(max / 1e6)}\\ \\mathrm{MPa}`,
   });
   const undeformed: [number, number][] = [

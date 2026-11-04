@@ -102,7 +102,7 @@ export async function createItem(notes: NotesService, item: NewItem): Promise<No
     aliasKey(node.id, temp);
     treeStore.set((state) => swapped(state, temp, node));
     answered(node.id);
-    recordCreate(node);
+    recordCreated(node);
     return node;
   } catch (error) {
     treeStore.set((state) => ({ ...withoutNodes(state, [temp]), renaming: null }));
@@ -114,7 +114,8 @@ export async function createItem(notes: NotesService, item: NewItem): Promise<No
   }
 }
 
-function recordCreate(node: NodeSummary): void {
+/** Puts a new item on the undo stack, so Ctrl+Z takes it back (a page made in the quick switcher, too). */
+export function recordCreated(node: NodeSummary): void {
   let receipt: Awaited<ReturnType<typeof trashNodes>> = null;
   const title = () => titleOf(treeStore.get().nodes[node.id] ?? node);
   recordUndo({

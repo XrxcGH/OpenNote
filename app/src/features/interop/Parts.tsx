@@ -33,8 +33,12 @@ export function LossList({ losses }: { losses: readonly LossGroup[] }) {
           <span className={styles.tag}>
             {loss.outcome === 'skipped' ? t('interop.import.review.skipped') : t('interop.import.review.simplified')}
           </span>
-          <span>{loss.why}</span>
-          {loss.examples.length > 0 && <span className={styles.note}>{loss.examples.join(', ')}</span>}
+          <span data-user-content>{loss.why}</span>
+          {loss.examples.length > 0 && (
+            <span className={styles.note} data-user-content>
+              {loss.examples.join(', ')}
+            </span>
+          )}
           {loss.pages > 0 && (
             <span className={styles.note}>{t('interop.import.review.lossPages', { pages: loss.pages })}</span>
           )}

@@ -24,11 +24,14 @@ interface Spot {
   error: SpellRange;
 }
 
+/** The editor the last move selected a word in: the spelling menu holds focus then, so no editor is active. */
+let lastEditor: Editor | null = null;
+
 /** Where the caret or selection starts, as a textblock element and an offset in its text. */
 function caretSpot(pool: EditorPool): { element: Element; offset: number; selected: boolean } | null {
-  const active = pool.active();
-  if (!active) return null;
-  const { view } = active.editor;
+  const editor = pool.active()?.editor ?? (lastEditor?.isDestroyed === false ? lastEditor : null);
+  if (!editor) return null;
+  const { view } = editor;
   const { from, empty } = view.state.selection;
   const { node } = view.domAtPos(from);
   const element = (node instanceof Element ? node : node.parentElement)?.closest(TEXTBLOCK_SELECTOR);
@@ -97,6 +100,7 @@ export async function moveToError(direction: 1 | -1): Promise<boolean> {
     return false;
   }
   const { editor, from, to } = target;
+  lastEditor = editor;
   editor.commands.scrollIntoView();
   const word = editor.state.doc.textBetween(from, to);
   await openSpellingMenu({ editor, from, to, word, engine, announceWord: true });

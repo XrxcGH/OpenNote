@@ -125,6 +125,8 @@ pub struct LatexOptions {
     pub date: DateChoice,
     /// The citation library, for citations and bibliographies.
     pub citations: Vec<Citation>,
+    /// Minutes to add to UTC for the person's local time, so the edited date is the day the page shows.
+    pub utc_offset_minutes: i32,
 }
 
 impl Default for LatexOptions {
@@ -138,6 +140,7 @@ impl Default for LatexOptions {
             author: String::new(),
             date: DateChoice::default(),
             citations: Vec::new(),
+            utc_offset_minutes: 0,
         }
     }
 }

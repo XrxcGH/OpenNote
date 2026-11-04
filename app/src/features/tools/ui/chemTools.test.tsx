@@ -69,6 +69,19 @@ describe('the property tables', () => {
     });
   }
 
+  it('head the ideal-gas columns with their own units, and k as the ratio cp/cv', async () => {
+    renderUi(<PropertiesTool />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Ideal gases' }));
+    const table = screen.getByRole('region', { name: 'Ideal-gas properties' });
+    const heads = within(table)
+      .getAllByRole('columnheader')
+      .map((head) => head.textContent);
+    // Air at 300 K: cp 1.005 kJ/(kg K), R 0.287 kJ/(kg K), k = cp/cv = 1.4 (it was headed "k (W/m·K)").
+    expect(heads).toContain('cp (kJ/kg·K)');
+    expect(heads).toContain('k = cp/cv');
+    expect(heads.some((head) => (head ?? '').includes('W/m'))).toBe(false);
+  });
+
   it('read steam at a temperature and search materials', async () => {
     renderUi(<PropertiesTool />);
     expect(screen.getByRole('region', { name: 'Saturated steam table' })).toBeTruthy();

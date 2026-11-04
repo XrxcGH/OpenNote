@@ -2,7 +2,7 @@
 // folder comes from the settings, or from Windows' Documents folder, and is checked each time it changes.
 // What the step chose stays in the draft, so Back and closing the app never lose it.
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { isEnabled } from '../../../app/flags';
 import type { FolderCheck, InstallStatus } from '../../../platform/types';
 import type { SetupStepProps } from '../../../registries';
@@ -156,12 +156,30 @@ function AppChoice({ props, install }: { props: SetupStepProps; install: Install
 }
 
 function FirstNotebook({ props }: { props: SetupStepProps }) {
-  const { draft, setDraft } = props;
+  const { draft } = props;
   const storage = draft.storage;
   if (!storage || opensExistingLibrary(draft)) return null;
+  return <NotebookFields props={props} storage={storage} />;
+}
+
+function NotebookFields({
+  props,
+  storage,
+}: {
+  props: SetupStepProps;
+  storage: NonNullable<SetupStepProps['draft']['storage']>;
+}) {
+  const { setDraft } = props;
   const name = storage.notebookName;
+  const empty = !name.trim();
+  const group = useRef<HTMLElement>(null);
+  // The field sits at the bottom of the scrolling step, so its error line would be cut off (full walk A-A01-1).
+  useEffect(() => {
+    if (empty)
+      group.current?.querySelector('[aria-invalid="true"]')?.parentElement?.scrollIntoView({ block: 'nearest' });
+  }, [empty]);
   return (
-    <section className={styles.group} aria-label={t('setup.storage.notebook.label')}>
+    <section ref={group} className={styles.group} aria-label={t('setup.storage.notebook.label')}>
       <h2 className={styles.label}>{t('setup.storage.notebook.label')}</h2>
       <TextField
         label={t('setup.storage.notebook.name')}

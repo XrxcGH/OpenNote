@@ -4,7 +4,17 @@ import type { NodeId, NodeSummary, NotesService } from '../../services/notes';
 import { INITIAL_QOL, qolStore } from '../../state/qol';
 import { sessionStore } from '../../state/session';
 import { treeStore } from '../tree';
-import { closeActiveTab, closeTab, openInNewTab, reopenClosed, stepTab, tabTitle, trackTabs } from './tabs';
+import {
+  closeActiveTab,
+  closeOtherTabs,
+  closeTab,
+  moveTab,
+  openInNewTab,
+  reopenClosed,
+  stepTab,
+  tabTitle,
+  trackTabs,
+} from './tabs';
 
 const id = (value: string) => value as NodeId;
 
@@ -102,5 +112,28 @@ describe('tabs', () => {
     expect(tabTitle({ ...place('zzz'), pageId: null, sectionId: id('nope'), notebookId: id('nope') })).toBe(
       'Untitled page',
     );
+  });
+
+  it('moves a tab to a new place and keeps the active tab', () => {
+    openInNewTab(place('b'));
+    openInNewTab(place('c'));
+    const [first] = qolStore.get().tabs;
+    moveTab(first.id, 2);
+    const state = qolStore.get();
+    expect(state.tabs.map((tab) => tab.location.pageId)).toEqual(['b', 'c', 'a']);
+    expect(getLocation()).toMatchObject({ pageId: 'c' });
+    moveTab(first.id, -5);
+    expect(qolStore.get().tabs.map((tab) => tab.location.pageId)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('closes the other tabs and goes to the one kept', () => {
+    openInNewTab(place('b'));
+    openInNewTab(place('c'));
+    const middle = qolStore.get().tabs[1];
+    closeOtherTabs(middle.id);
+    const state = qolStore.get();
+    expect(state.tabs.map((tab) => tab.id)).toEqual([middle.id]);
+    expect(getLocation()).toMatchObject({ pageId: 'b' });
+    expect(state.closedTabs).toHaveLength(2);
   });
 });

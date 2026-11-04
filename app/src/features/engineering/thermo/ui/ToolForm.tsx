@@ -3,7 +3,7 @@
 import '../text';
 import { useEffect, useMemo } from 'react';
 import { t } from '../../../../strings/t';
-import type { ToolSpec } from '../common/spec';
+import { solveChecked, type ToolSpec } from '../common/spec';
 import type { ThermoResult } from '../common/types';
 import type { System } from '../common/units';
 import type { ThermoToolId } from '../meta';
@@ -42,7 +42,7 @@ function useSolved(spec: ToolSpec, form: SavedForm, system: System) {
       return { result: null, problem: empty.length ? t('kitThermo.error.missing', { name }) : '' };
     }
     try {
-      return { result: spec.solve(mode.id, values), problem: '' };
+      return { result: solveChecked(spec, mode.id, values), problem: '' };
     } catch (error) {
       return { result: null, problem: describe(error) };
     }

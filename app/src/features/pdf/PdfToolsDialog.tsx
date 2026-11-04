@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
 import { t } from '../../strings/t';
-import { Dialog, RadioCard, RadioGroup, TextField } from '../../ui';
+import { Dialog, RadioCard, RadioGroup, TextField, showToast } from '../../ui';
 import { addNoteSpace, makeHandouts } from './actions';
 import type { Scope, ToolDeps } from './actions';
 import type { Paper, PerSheet, Side } from './noteSpace';
@@ -39,6 +39,8 @@ export default function PdfToolsDialog({ tool, deps, onClose }: PdfToolsDialogPr
       if (tool === 'noteSpace') await addNoteSpace(deps, scope, side, paper);
       else await makeHandouts(deps, scope, Number(perSheet) as PerSheet, paper);
       onClose();
+    } catch {
+      showToast({ message: t('pdf.tools.failed'), tone: 'danger' });
     } finally {
       setBusy(false);
     }

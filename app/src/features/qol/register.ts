@@ -13,7 +13,7 @@ import { commandBar, commands, paletteProviders, setupSteps, settingsSections } 
 import type { NodeSummary } from '../../services/notes';
 import { qolStore } from '../../state/qol';
 import { t } from '../../strings/t';
-import { announce, showToast } from '../../ui';
+import { announce } from '../../ui';
 import { commitHabits } from './setup/habits';
 import {
   currentNode,
@@ -392,14 +392,7 @@ register(
     title: 'qol.commands.backupNow',
     category: 'general',
     flag: 'qol.scheduledBackups',
-    run: async () => {
-      try {
-        await shellCall('backup.run');
-        showToast({ message: t('qol.backup.done') });
-      } catch {
-        showToast({ message: t('qol.backup.failed'), tone: 'danger' });
-      }
-    },
+    run: async () => void (await (await import('./backupNow')).runBackupNow()),
   }),
   defineCommand({
     id: 'notes.createShortcut',

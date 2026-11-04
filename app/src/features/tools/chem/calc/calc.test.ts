@@ -77,6 +77,16 @@ describe('stoichiometry', () => {
     const h2 = r.ok && r.lines.find((l) => l.text === 'H2');
     expect(h2 && h2.leftover).toBeCloseTo(10 - 3 * (10 / 28.014) * 2.016, 2);
   });
+  it('says the reagents run out together when they are given in the exact ratio of the equation', () => {
+    // 2 H2 + O2 -> 2 H2O: 2 mol H2 and 1 mol O2 are 2 / 2 = 1 / 1 reactions each, a tie; no leftover of either.
+    const r = limitingReagent('2H2 + O2 -> 2H2O', { H2: 2 * molarMass('H2')!, O2: molarMass('O2')! });
+    expect(r.ok && r.tied.sort()).toEqual(['H2', 'O2']);
+    expect(r.ok && r.steps.join(' ')).toContain('run out together');
+    // 3 g of H2 is 1.488 mol and needs only 0.744 mol O2: not a tie, and O2 (1 mol) is the one in excess.
+    const unequal = limitingReagent('2H2 + O2 -> 2H2O', { H2: 3, O2: molarMass('O2')! });
+    expect(unequal.ok && unequal.tied).toEqual([]);
+    expect(unequal.ok && unequal.limiting).toBe('H2');
+  });
   it('gives percent yield and an empirical formula', () => {
     expect(percentYield(8.5, 10)).toBeCloseTo(85, 5);
     const glucose = empiricalFormula([

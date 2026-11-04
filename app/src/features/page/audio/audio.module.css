@@ -148,10 +148,11 @@
     gap: var(--space-3);
   }
 
+  /* The gap keeps the select and the button under it apart, so a press can't land on the wrong one. */
   .field {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-1);
+    gap: var(--space-3);
   }
 
   .select {
@@ -165,6 +166,10 @@
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
     font: inherit;
+  }
+
+  :global(:root[data-density='touch']) .select {
+    min-block-size: var(--size-target-touch);
   }
 
   .hint {

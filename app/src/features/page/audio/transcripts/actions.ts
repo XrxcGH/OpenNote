@@ -30,6 +30,8 @@ import {
   taskContent,
   momentHref,
   clockMs,
+  endAt,
+  withoutNonSpeech,
 } from './model';
 import type { Chapter, DocNode, Recap, TranscriptData } from './model';
 import { addTranscript, dataOf, saveTranscript, speakerWord, transcriptBlocks, transcriptOf } from './store';
@@ -70,13 +72,19 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
     return false;
   }
   const stop = new AbortController();
-  const working = (message: string) =>
-    showToast({
+  // The working message waits for the job to start: before that the engine may ask to turn transcription on, and the
+  // message would sit behind that question, or say a transcript is being made when none will be.
+  let started: { dismiss(): void } | null = null;
+  const working = (message: string) => {
+    started = showToast({
       id: WORKING,
       message,
       action: { label: t('intelSpeech.transcribe.stop'), run: () => stop.abort() },
     });
-  working(t('audioMore.transcript.engineWorking'));
+  };
+  const begin = () => {
+    if (!started) working(t('audioMore.transcript.engineWorking'));
+  };
   // Progress shows in steps of ten, so a screen reader hears a few updates and not a hundred.
   let shown = 0;
   try {
@@ -86,22 +94,34 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
       assetsDir: await platformAudio().assetsDir(page),
       entry: playable(entry, which),
       signal: stop.signal,
+      onStart: begin,
       onProgress: (fraction) => {
+        begin();
         const percent = Math.floor(fraction * 10) * 10;
         if (percent <= shown || percent >= 100) return;
         shown = percent;
         working(t('intelSpeech.transcribe.progress', { percent }));
       },
     });
-    const data = fromSegments(entry.id, result.segments, 'engine', result.language);
+    const data = fromSegments(entry.id, withoutNonSpeech(result.segments), 'engine', result.language);
+    if (data.lines.length === 0) {
+      // Silence, or sound with no words: the model's markers for it are not a transcript.
+      showToast({ id: WORKING, message: t('audioMore.transcript.noSpeech') });
+      return false;
+    }
     const summary = await quietSummary(data);
     await place(holder, summary ? { ...data, summary } : data);
     showToast({ id: WORKING, message: t('audioMore.transcript.engineDone') });
     return true;
   } catch (error) {
     const reason = (error as { reason?: string } | null)?.reason;
-    // Stopping, saying not now, and a missing model were each already answered, so they end quietly.
-    if (reason === 'canceled' || reason === 'off' || reason === 'noModel') {
+    // A missing model was answered with its own message, which offers the download: it is left to be read.
+    if (reason === 'noModel') {
+      (started as { dismiss(): void } | null)?.dismiss();
+      return false;
+    }
+    // Stopping and saying not now were each already answered, so they end quietly.
+    if (reason === 'canceled' || reason === 'off') {
       showToast({
         id: WORKING,
         message: t(reason === 'canceled' ? 'intelSpeech.transcribe.canceled' : 'intelSpeech.transcribe.notMade'),
@@ -120,7 +140,11 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
 /** Reads text or captions the person gave, and puts them on the page as the recording's transcript. */
 export async function transcriptFromText(holder: BlockJson, entry: RecordingEntry, text: string): Promise<boolean> {
   const durationMs = Math.max(0, entry.endedNs - entry.startedNs) / 1e6;
-  const { segments, timed } = parseTranscript(text, durationMs);
+  const { segments, timed, malformed } = parseTranscript(text, durationMs);
+  if (malformed) {
+    showToast({ message: t('audioMore.transcript.addMalformed'), tone: 'danger' });
+    return false;
+  }
   const data = fromSegments(entry.id, segments, 'imported');
   if (data.lines.length === 0) {
     showToast({ message: t('audioMore.transcript.addEmpty'), tone: 'danger' });
@@ -342,10 +366,12 @@ export async function afterRemoval(recording: string, startNs: number, endNs: nu
 }
 
 /** Silence was trimmed from the start of the audio, so what was said starts earlier by that much. */
-export async function afterTrim(recording: string, headNs: number): Promise<void> {
+export async function afterTrim(recording: string, headNs: number, lengthNs: number): Promise<void> {
   const block = transcriptOf(recording);
   const data = block && dataOf(block);
-  if (block && data) await saveTranscript(block.id, data, shiftBy(data, -headNs / 1e6));
+  if (!block || !data) return;
+  const next = endAt(shiftBy(data, -headNs / 1e6), lengthNs / 1e6);
+  if (next !== data) await saveTranscript(block.id, data, next);
 }
 
 /** The recording was split: each half keeps its words, and the second half's go to a transcript of its own. */

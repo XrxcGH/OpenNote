@@ -58,6 +58,14 @@ export const settings = {
     webviewOther: 'Web view',
     webviews: { windows: 'WebView2', macos: 'WebKit (WKWebView)', linux: 'WebKitGTK' },
     limitsTitle: 'What works differently on {system}',
+    worksTitle: 'What works on this computer',
+    worksWindows: 'Every OpenNote feature works on Windows. Your notes stay on this computer.',
+    touchYes:
+      'Touch and pen: this computer reports a touch screen, so OpenNote shows larger touch targets when you use it.',
+    touchNo:
+      'Touch and pen: this computer reports no touch screen. A pen tablet or mouse works for writing and drawing.',
+    worksHello: 'Protected sections can open with Windows Hello when it is set up.',
+    worksAudio: 'Recordings can take the microphone, what the computer plays, or both.',
     limitsIntro: 'Everything else works as it does on Windows. Your notes stay on this computer either way.',
     limits: {
       textInPicturesTesseract:

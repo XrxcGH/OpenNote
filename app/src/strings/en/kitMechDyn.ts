@@ -46,7 +46,7 @@ export const kitMechDyn = {
     insertPlot: 'Picture: {name}',
     insertCalc: 'Live calculation block',
     calcBlock: 'Mechanisms and dynamics calculation',
-    calcOpen: 'Open in the tool',
+    calcOpen: 'Open in tool',
     calcOpened: 'Opened {tool} with this block’s inputs.',
     calcBad: 'This calculation block’s inputs can’t be read.',
     inserted: 'Inserted into the page.',
@@ -62,6 +62,8 @@ export const kitMechDyn = {
     fieldEmpty: 'Enter a value.',
     fieldUnreadable: '“{text}” isn’t a number with a unit this tool can read.',
     fieldUnit: '{unit} measures something else. Use a unit like {wanted}.',
+    outOfRange:
+      'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
     unknown: 'Something went wrong working this out. Check the values and try again.',
     listRow: 'Line {line} needs {count, plural, one {# number} other {# numbers}}.',
     listEmpty: 'Type at least one line.',

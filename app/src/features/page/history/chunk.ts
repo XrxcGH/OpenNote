@@ -14,12 +14,19 @@ import { shownPage } from './shown';
 let panel: { host: HTMLElement; root: Root; returnTo: HTMLElement | null } | null = null;
 let stopWatching: (() => void) | null = null;
 
+/** The page's title as it shows now, for the panel's questions; an untitled page gets a name to read. */
+function currentTitle(viewport: HTMLElement, initial: string): string {
+  const shown = viewport.querySelector<HTMLElement>('[data-page-title]')?.textContent?.trim();
+  return shown || initial.trim() || t('history.untitled');
+}
+
 /** Opens the Page history panel for the shown page, or focuses it when it's open. */
-export function openHistory(title = ''): void {
+export function openHistory(given = ''): void {
   const page = shownPage.get();
   const viewport = shownViewport.get();
   const parent = viewport?.viewport.parentElement;
   if (!page || !parent) return;
+  const title = given || currentTitle(viewport.viewport, page.initial.title);
   stopWatching ??= shownPage.subscribe(() => closeHistory());
   if (!panel?.host.isConnected) {
     panel?.root.unmount();

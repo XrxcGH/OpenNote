@@ -1,10 +1,37 @@
 import '../text';
 import { describe, expect, it } from 'vitest';
-import { eigenpairs, fourierSeries, readPieces, recognizePattern, solveBvp, solveLaplace } from './engine';
+import {
+  coefficientRows,
+  eigenpairs,
+  fourierSeries,
+  readPieces,
+  recognizePattern,
+  solveBvp,
+  solveLaplace,
+} from './engine';
 
 const SQUARE = '-1 ; -pi ; 0\n1 ; 0 ; pi';
 
 describe('Fourier series', () => {
+  it('lists the coefficients of a half-range sine series, with a0 = 0 and a(n) = 0', () => {
+    // f = 1 on (0, pi): b(n) = (2/pi) (1 - cos(n pi)) / n = 4/(n pi) for odd n, else 0; no a(n) or a0 at all.
+    const r = fourierSeries('1 ; 0 ; pi', 'sine', Math.PI, 12);
+    expect(r.a0).toBe(0);
+    const rows = coefficientRows(r);
+    expect(rows).toHaveLength(8);
+    expect(rows[0]).toEqual(['1', '0', '1.27324']);
+    expect(Number(rows[2][2])).toBeCloseTo(4 / (3 * Math.PI), 5);
+    expect(rows[1]).toEqual(['2', '0', '0']);
+  });
+  it('shows an exact 0, not round-off noise, for the coefficients that vanish', () => {
+    // f = x on (-pi, pi) is odd: every a(n) and a0 is 0 exactly, not 9e-18.
+    const r = fourierSeries('x', 'full', Math.PI, 20);
+    expect(r.a0).toBe(0);
+    for (const a of r.a) expect(a).toBe(0);
+    for (const row of coefficientRows(r)) expect(row[1]).toBe('0');
+    // Real coefficients survive the clean-up: b(1) = 2.
+    expect(r.b[0]).toBeCloseTo(2, 10);
+  });
   it('the odd square wave has b_n = 4/(n pi) for odd n and 0 for even n', () => {
     const r = fourierSeries(SQUARE, 'full', Math.PI, 30);
     r.b.forEach((b, i) => {

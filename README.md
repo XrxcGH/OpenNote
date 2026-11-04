@@ -28,8 +28,10 @@ Beta 8 is beta 7 plus these changes:
 
 - The finish-all work brings the Mac and Linux builds close to Windows. They now have PDF and printing, read aloud, spell check, the command line, Mac updates, the Keychain and the Secret Service, and text in pictures and handwriting on the device.
 - It also fixes the nightly crashes, sweeps 200,000 palm rejection cases, trims start-up, keeps tool windows from covering each other, and adds behavior and keyboard tests for every kit.
-- Title bar and save fixes: the Windows title bar no longer stays above OpenNote's own, and the save status says Saving until an edit is written, then Saved.
+- Title bar and save fixes: the Windows title bar no longer stays above OpenNote's own, and the save status says Saving until an edit is written, then Saved, and Couldn't save opens a notice with the reason, Retry, and Copy text.
 - A dark theme in neutral charcoal gray, not brown.
+- A flaky test of the box around a stroke's ink is fixed. It now checks the shape the renderer fills, and the macOS counterexample runs every time.
+- Ink fixes from the full walk: the ruler stays in view and you can draw along it from inside, shapes are reachable at every width and held curves snap, and the Draw tab's pens fit at every width and touch size.
 
 Beta 7 added ink fixes and smoother shapes, layout fixes, more course and subject kits, and a start-up wait that fixes ink missing after a crash restart. The school tools now include 24 subject and engineering kit windows, Check my work, the tutor, practice exams, document structure, and code cells.
 
@@ -51,10 +53,10 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 ### Write and draw
 
-- [Typed notes](docs/help/typed-notes.md): text, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace.
+- [Typed notes](docs/help/typed-notes.md): text, headings, lists, checklists, tables, code, callouts, Markdown, templates, and find and replace, with typed web and e-mail addresses turning into links.
 - [Moving between blocks](docs/help/moving-between-blocks.md): keys that move between text, pictures, tables, and code without the mouse.
 - [Document structure](docs/help/document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figures.
-- [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page.
+- [Code cells](docs/help/code-cells.md): short Python or JavaScript programs that run on the page; a cell from a newer version opens read-only instead of being changed.
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
@@ -65,11 +67,11 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 
 - [The workspace and title bar](docs/help/workspace-and-title-bar.md): the title bar, the command bar, the Home screen, page tabs, the compact layout, focus mode, the mini window, and quick capture.
 - [Search and links](docs/help/search-and-links.md): search, page links, backlinks, tags, daily notes, and the graph view.
-- [History, Trash, and storage](docs/help/history-and-storage.md): page history, Trash, where notes live, locked entries, and checking a notebook.
+- [History, Trash, and storage](docs/help/history-and-storage.md): page history, Trash, where notes live, locked entries, and checking a notebook. Page edits, undo and redo, images, and replace now stay in step with the page core.
 
 ### Record and listen
 
-- [Recording](docs/help/recording.md): recording with stamped notes, trimming, transcript blocks, speakers, and meeting recaps.
+- [Recording](docs/help/recording.md): recording with stamped notes, trimming, transcript blocks, speakers, and meeting recaps. A full walk of recording, captions, dictation, and read aloud fixed start-up, command, length, rename, and layout bugs. Deleting a recording block now asks first, names the recording, and Undo brings it back, and Trim shows how much it cuts before it deletes anything.
 - [On-device intelligence](docs/help/on-device-intelligence.md): text in pictures, read aloud, summaries, Ask your notes, and writing tools, each off until turned on.
 
 ### Math and homework
@@ -77,7 +79,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 - [Math and graphs](docs/help/math-and-graphs.md): equations, quick math, Check my work on your steps, the grapher, diagrams from text, and mind maps.
 - [Math solvers](docs/help/math-solvers.md): calculus, engineering, and statistics problems worked step by step.
 - [3D graphs, vectors, and motion](docs/help/3d-graphs-vectors-and-motion.md): surfaces and curves in space, vectors, lines and planes, solids of revolution, and projectiles.
-- [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away.
+- [Tutor](docs/help/tutor.md): hints one step at a time, and explanations of flagged steps, without giving the answer away. Long questions and the full hint ladder now work, and absurd aerospace inputs are reported by name instead of crashing.
 - [Study tools](docs/help/study-tools.md): flashcards, practice exams, Anki decks, study tape, Upcoming, timers, a calculator, and citations.
 
 ### Subject and engineering kits
@@ -181,6 +183,7 @@ npm test                 # CHECKS, design, lint rule, matrix, extension, hardwar
 npm run test:components  # component tests in the installed Edge or Chrome
 npm run test:ui          # screen and accessibility tests in Playwright
 npm run test:e2e         # real-app tests, which need tauri-driver and msedgedriver
+npm run audit:layout      # layout audit ratchet (tests/ui/audit); timing-dependent findings are listed as intermittent
 npm run perf:typing      # the typing latency benchmark
 npm run docs:features    # rebuild docs/FEATURE-LIST.md from the app's registries
 cargo test --workspace   # Rust tests

@@ -57,7 +57,7 @@
   "lazyKb": {
     "node_modules/mathlive/mathlive.min.mjs": 226,
     "node_modules/pdfjs-dist/build/pdf.mjs": 131,
-    "core/audio/index.ts": 115,
+    "core/audio/index.ts": 116,
     "features/accounts/googleOffice/commands.ts": 82,
     "features/accounts/lms/commands.ts": 271,
     "features/accounts/meetings/commands.ts": 197,
@@ -118,7 +118,7 @@
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 211,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 385
+    "features/engineering/thermo/ui/ThermoKit.tsx": 390
   },
   "lazyDefaultKb": 40
 }

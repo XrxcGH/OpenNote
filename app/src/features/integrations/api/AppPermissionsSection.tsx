@@ -40,7 +40,10 @@ function useApiData() {
       host.call<LogEntry[]>('log', { limit: 200 }).then((list) => setLog(list ?? [])),
     ]).catch(() => {});
     return host.listen((event) => {
-      if (event.kind === 'changed' && event.what !== 'webhooks') void refresh(event.what).catch(() => {});
+      if (event.kind !== 'changed' || event.what === 'webhooks') return;
+      void refresh(event.what).catch(() => {});
+      // A logged call also moves the app's last-used time, which the list of apps shows (full walk B2-B14-10).
+      if (event.what === 'log') void refresh('grants').catch(() => {});
     });
   }, [refresh]);
   return { status, apps, log, refresh };
@@ -207,7 +210,7 @@ function PairPanel({ running }: { running: boolean }) {
         <div className={styles.code} role="status">
           <p className={styles.codeText}>{t('platformApi.pair.code', { code: code.code })}</p>
           <p className={styles.meta}>
-            {t('platformApi.pair.port', { port: code.port })}
+            {t('platformApi.pair.port', { port: String(code.port) })}
             {' · '}
             {t('platformApi.pair.expires', { time: formatTime(iso(code.expiresAt)) })}
           </p>

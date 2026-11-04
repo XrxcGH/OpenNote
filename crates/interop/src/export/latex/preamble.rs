@@ -149,7 +149,10 @@ pub(super) fn top(top: &Top<'_>, missing: &mut Missing) -> String {
         let date = match options.date {
             DateChoice::None => String::new(),
             DateChoice::Today => "\\today".to_owned(),
-            DateChoice::Edited => top.edited.map_or_else(String::new, long_date),
+            // The day in the person's time zone, as the page shows it, not the UTC day (full walk B2-B13-8).
+            DateChoice::Edited => top.edited.map_or_else(String::new, |ms| {
+                long_date(ms + i64::from(options.utc_offset_minutes) * 60_000)
+            }),
         };
         out.push_str(&format!("\\date{{{date}}}\n"));
     }
@@ -178,5 +181,23 @@ mod tests {
         assert_eq!(long_date(1_772_582_400_000), "March 4, 2026");
         assert_eq!(long_date(951_782_400_000), "February 29, 2000");
         assert_eq!(long_date(-86_400_000), "December 31, 1969");
+    }
+
+    #[test]
+    fn the_edited_date_is_the_local_day() {
+        // 01:30 UTC on November 2 is still November 1 at UTC-5.
+        let options = LatexOptions {
+            date: DateChoice::Edited,
+            utc_offset_minutes: -300,
+            ..LatexOptions::default()
+        };
+        let page = Top {
+            options: &options,
+            title: "Notes",
+            stem: "notes",
+            edited: Some(1_793_583_000_000),
+            with_bibliography: false,
+        };
+        assert!(top(&page, &mut Missing::default()).contains(r"\date{November 1, 2026}"));
     }
 }

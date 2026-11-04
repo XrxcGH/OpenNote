@@ -229,6 +229,7 @@ export const editor = {
     removeShort: 'Remove',
     empty: 'No replacements yet.',
     duplicate: 'There’s already a replacement for {from}.',
+    tooLong: 'Use {max} characters or fewer.',
     reset: 'Restore the default replacements',
   },
   general: {

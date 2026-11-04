@@ -101,7 +101,7 @@ export const kitSubjects = {
   },
   seed: {
     label: 'Seed',
-    hint: 'The same seed gives the same results, so a page can show exactly how they were made.',
+    hint: 'The same seed gives the same results, so a page can show exactly how they were made. Leave it empty for a new one.',
     invalid: 'Type a whole number from 0 to 18446744073709551615.',
     new: 'New seed',
     changed: 'The seed is now {seed}.',

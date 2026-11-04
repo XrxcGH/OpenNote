@@ -3,3 +3,4 @@
 export { SI_PREFIXES, parsePrefixed, prefixFor, superscriptPower, withPrefix } from './prefix';
 export { convertUnit, engineeringText, parseUnit, prefixedText, sameDim, splitQuantity } from './units';
 export type { Dim, Notation, Unit } from './units';
+export { forgetSwitched, roundedText, switchedText } from './switched';

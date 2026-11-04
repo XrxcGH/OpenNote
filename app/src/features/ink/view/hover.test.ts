@@ -14,7 +14,7 @@ const hover = { pointerType: 'pen', buttons: 0, pressure: 0 };
 
 describe('the pen hover circle', () => {
   it('shows the tip width for a hovering pen, kept to the cursor limits', () => {
-    expect(hoverCircle(hover, base)).toEqual({ kind: 'pen', diameter: 3 });
+    expect(hoverCircle(hover, base)).toEqual({ kind: 'pen', diameter: 6 });
     expect(hoverCircle(hover, { ...base, penWidth: 100 })).toEqual({ kind: 'pen', diameter: 32 });
     expect(hoverCircle(hover, { ...base, penWidth: 10, zoom: 2 })).toEqual({ kind: 'pen', diameter: 20 });
   });

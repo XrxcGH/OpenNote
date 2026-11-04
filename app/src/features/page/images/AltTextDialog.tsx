@@ -120,14 +120,12 @@ export function editAltText(handle: ImageHandle): Promise<boolean> {
     const onSave = (value: AltTextValue) => {
       close();
       if (value.alt === initial.alt && value.decorative === initial.decorative) return resolve(false);
-      void handle.ctx.sync
-        .send({
-          edits: [{ edit: 'patchBlock', block: block.id, data: { alt: value.alt, decorative: value.decorative } }],
-        })
-        .then(
-          () => resolve(true),
-          () => resolve(false),
-        );
+      const data = { alt: value.alt, decorative: value.decorative };
+      handle.showChange({ data });
+      void handle.ctx.sync.send({ edits: [{ edit: 'patchBlock', block: block.id, data }] }).then(
+        () => resolve(true),
+        () => resolve(false),
+      );
     };
     const onCancel = () => {
       close();

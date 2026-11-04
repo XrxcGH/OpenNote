@@ -98,6 +98,7 @@ class TaskItemView implements NodeView {
   dom: HTMLLIElement;
   contentDOM: HTMLElement;
   private box: HTMLInputElement;
+  private marker: HTMLElement;
 
   constructor(
     private node: PMNode,
@@ -109,10 +110,15 @@ class TaskItemView implements NodeView {
     const marker = document.createElement('span');
     marker.className = styles.taskBox;
     marker.contentEditable = 'false';
+    this.marker = marker;
     this.box = document.createElement('input');
     this.box.type = 'checkbox';
     this.box.tabIndex = -1;
     this.box.addEventListener('change', () => this.toggle());
+    // In touch density the marker's hit area is 44 px around the 1 em box (content.module.css): a tap on it toggles.
+    marker.addEventListener('click', (event) => {
+      if (event.target === marker) this.box.click();
+    });
     marker.append(this.box);
     this.contentDOM = document.createElement('div');
     this.contentDOM.className = styles.taskBody;
@@ -144,7 +150,7 @@ class TaskItemView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    return event.target === this.box;
+    return event.target === this.box || event.target === this.marker;
   }
 
   ignoreMutation(mutation: ViewMutationRecord): boolean {

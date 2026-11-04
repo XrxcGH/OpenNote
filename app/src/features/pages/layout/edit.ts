@@ -100,10 +100,19 @@ export function setBackground(view: PageViewSpec, background: Partial<Background
   return { ...view, background: { ...rest, extra } };
 }
 
-/** Puts a template on the page: its name in `background.template` and its drawing beside it, so the page holds both. */
+/** A core ID (a ULID in lowercase Crockford base 32), which is all `background.template` may hold (format spec). */
+const CORE_ID = /^[0-9a-hjkmnp-tv-z]{26}$/;
+
+/**
+ * Puts a template on the page: its drawing in the background's extra keys, and, for a saved template, its ID in
+ * `background.template`. A built-in template (lab notebook, planner, storyboard) has a name, not an ID: the core
+ * refuses a name there, so the name stays only in the drawing.
+ */
 export function setTemplate(view: PageViewSpec, template: PaperTemplate): PageViewSpec {
   const extra = { ...view.background.extra, [DRAWING_KEY]: template as unknown as Json };
-  return { ...view, background: { ...view.background, pattern: 'template', template: template.id, extra } };
+  const { template: _old, ...background } = view.background;
+  const id = CORE_ID.test(template.id) ? { template: template.id } : {};
+  return { ...view, background: { ...background, pattern: 'template', ...id, extra } };
 }
 
 /** Changes the spacing of ruled and grid paper, kept within the range the pattern allows. */

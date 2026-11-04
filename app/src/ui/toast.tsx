@@ -1,11 +1,11 @@
 // Toasts (ARCHITECTURE.md section 15.5): bottom center of the page column, one at a time. They show in an
 // always-present "Notifications" status region, so a screen reader reads each toast politely and F6 reaches it.
 // Toasts close after 6 seconds (12 with an action such as Undo), and the timer waits while the pointer or focus is
-// on the toast. Escape on a focused toast dismisses it. Toasts never take focus: a press on one doesn't move it.
+// on the toast. Escape dismisses the showing toast. Toasts never take focus: a press on one doesn't move it.
 //
 // A toast with an id replaces the toast with the same id, so a repeated gesture updates one toast.
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties, KeyboardEvent, RefCallback } from 'react';
 import { hasModalLayer } from '../state/layers';
 import { dismissToast, enqueueToast, toastStore } from '../state/toasts';
@@ -95,6 +95,17 @@ export interface ToasterProps {
 export function Toaster({ region }: ToasterProps) {
   const current = useStore(toastStore, (state) => state.current);
   const lane = useToastLane(current?.key, hasModalLayer);
+  const shownKey = current?.key;
+  // Toasts never take focus, so Escape anywhere dismisses the showing one unless something else used the key first.
+  useEffect(() => {
+    if (shownKey === undefined) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || hasModalLayer()) return;
+      dismissToast(shownKey);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [shownKey]);
   const style = { '--toast-start': `${lane.start}px`, '--toast-end': `${lane.end}px` } as CSSProperties;
   return (
     <div

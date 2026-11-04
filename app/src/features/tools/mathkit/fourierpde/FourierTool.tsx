@@ -21,6 +21,7 @@ import {
   type Series,
 } from '../ui/parts';
 import {
+  coefficientRows,
   fourierSeries,
   solveBvp,
   solveLaplace,
@@ -88,10 +89,9 @@ function run(s: State): Run {
 }
 
 function SeriesOutput({ out, terms }: { out: FourierResult; terms: number }) {
-  const shown = Math.min(out.a.length, out.b.length, 8);
-  const rows = Array.from({ length: shown }, (_, i) => [String(i + 1), fmt(out.a[i], 6), fmt(out.b[i], 6)]);
+  const rows = coefficientRows(out);
   const lines = [
-    t('kitMath.fourier.a0', { a0: fmt(out.a0, 8) }),
+    ...(out.kind === 'sine' ? [] : [t('kitMath.fourier.a0', { a0: fmt(out.a0, 8) })]),
     t('kitMath.fourier.parseval', { lhs: fmt(out.parseval.integral, 8), rhs: fmt(out.parseval.series, 8) }),
   ];
   if (out.gibbs) {

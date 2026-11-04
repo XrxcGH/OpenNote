@@ -82,6 +82,7 @@ export const study = {
     cancel: 'Cancel',
     remove: 'Remove card',
     removed: 'Card removed.',
+    undoRemove: 'Undo',
     saved: 'Card saved.',
     kind: 'Card type',
     kinds: {
@@ -281,6 +282,8 @@ export const study = {
     text: 'Diagram text',
     label: '{kind}, drawn from the diagram text',
     problem: 'The diagram text has a problem. {message}',
+    checkLine: 'Check line {line} for a missing word, arrow, or bracket.',
+    checkGeneral: 'Check the first line and each arrow or bracket.',
     save: 'Save as SVG',
     svgLabel: 'SVG picture',
     exportLabel: 'Diagram',

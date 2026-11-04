@@ -5,13 +5,15 @@
 // Ctrl+Arrows 1. Shift+Arrows change a text box's width the same way, and Alt+Shift+Up and Down reorder the flow.
 import type { BlockId, BlockJson, Edit, EditBatch, Frame, OpenPage } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce, showToast } from '../../../ui';
+import { announce, confirm, showToast } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { hasGrip, isFloating } from '../blocks/textBlock';
+import type { DeletePrompt } from '../blocks/types';
 import { snapY, stepY } from '../layout/rules';
 import type { RuleGrid } from '../layout/rules';
 import type { PagePool } from '../pool/pool';
 import { readingLock } from '../qol/stores';
+import { blockRenderers } from '../registries';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import type { SyncQueue } from '../sync';
 import type { ObjectCommandId } from '../viewport/shown';
@@ -109,7 +111,7 @@ export class Objects {
     if (blocks.length === 0) return announce(t('page.object.nothingSelected'));
     if (command === 'edit') return this.edit(blocks[0]!);
     if (readingLock.get()) return announce(t('pageExtras.lock.blocked'));
-    if (command === 'delete') return this.remove(blocks);
+    if (command === 'delete') return this.askThenRemove(blocks);
     if (command === 'sizeAndPosition') return this.parts.openSizeAndPosition(blocks[0]!);
     if (command === 'lock' || command === 'lockPosition' || command === 'unlock') return this.lock(blocks, command);
     if (command === 'float' || command === 'putInFlow') return this.place(blocks, command);
@@ -291,7 +293,36 @@ export class Objects {
     if (edits.length > 0) this.send({ edits });
   }
 
-  private remove(blocks: BlockId[]): void {
+  /**
+   * What deleting these blocks asks first, from the renderers of blocks that hold something the person made, such as
+   * a recording. Plain blocks ask nothing, since Undo brings them back.
+   */
+  private prompts(blocks: readonly BlockId[]): DeletePrompt[] {
+    const json = blocks.flatMap((id) => this.parts.layer.block(id) ?? []);
+    return blockRenderers
+      .list()
+      .flatMap((def) => {
+        const own = json.filter((block) => def.types.includes(block.type));
+        return own.length > 0 && def.deletePrompt ? [def.deletePrompt(own)] : [];
+      })
+      .flatMap((prompt) => (prompt ? [prompt] : []));
+  }
+
+  /** Deletes the blocks, after asking when one of them holds a recording or the like. Undo brings them back. */
+  private askThenRemove(blocks: BlockId[]): void {
+    const prompts = this.prompts(blocks);
+    const first = prompts[0];
+    if (!first) return this.remove(blocks);
+    void confirm({ title: first.title, body: first.body, confirmLabel: first.confirmLabel, danger: true }).then(
+      (ok) => {
+        // The page may have changed behind the question: delete only the blocks that are still there.
+        const left = blocks.filter((id) => this.parts.layer.block(id));
+        if (ok && left.length > 0) this.remove(left, first.done);
+      },
+    );
+  }
+
+  private remove(blocks: BlockId[], done?: string): void {
     const order = this.parts.layer.blocks().map((block) => block.id);
     const next = order.slice(order.indexOf(blocks.at(-1)!) + 1).find((id) => !blocks.includes(id));
     this.clear();
@@ -300,7 +331,7 @@ export class Objects {
     const after = next ? this.parts.layer.view(next)?.element : null;
     if (after) this.select([next!], { focus: true });
     else this.parts.viewport.viewport.focus({ preventScroll: true });
-    const message = t('page.object.deleted', { count: blocks.length });
+    const message = done ?? t('page.object.deleted', { count: blocks.length });
     showToast({
       message,
       action: { label: t('page.object.undo'), run: () => this.parts.sync.undo() },

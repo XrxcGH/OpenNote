@@ -182,6 +182,7 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'window.systemMenu': 'Opens the window menu, with Move, Size, and Close.',
   'audio.record': 'Starts recording audio on the page.',
   'audio.stop': 'Stops the recording.',
+  'audio.options': 'Opens the recording options: the microphone, the format, and the quality.',
   'audio.pause': 'Pauses the recording.',
   'audio.play': 'Plays the recording, or pauses it.',
   'audio.skipBack': 'Skips the recording back 10 seconds.',
@@ -714,5 +715,9 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'ink.eraser': 'Picks the eraser that removes whole strokes.',
   'ink.partialEraser': 'Picks the eraser that removes only the part of a stroke it touches.',
   'ink.lasso': 'Picks the lasso, which selects ink by drawing around it.',
+  'ink.library.open': 'Opens the shapes library so a shape can be placed on the page.',
+  'ink.pens.choose': 'Picks a pen from the Draw tab by number.',
+  'ink.pens.color': 'Sets the color of the pen in use.',
+  'ink.pens.width': 'Sets the width of the pen in use.',
   'ink.inkToShape': 'Turns on snapping a held stroke into a clean shape.',
 };

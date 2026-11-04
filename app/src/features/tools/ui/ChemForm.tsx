@@ -3,6 +3,7 @@
 // a status region so a screen reader hears it, and Insert writes it (or the answer with its steps) at the page's caret.
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { isRangeError, printsNonFinite } from '../../../core/finite';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
 import { insertFigure } from '../subjects/ui/insertFigure';
@@ -50,6 +51,22 @@ export function num(values: Values, id: string): number | null {
     .replace(/×\s*10\^?/, 'e');
   if (raw === '') return null;
   return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(raw) ? Number(raw) : NaN;
+}
+
+/**
+ * Runs a form and turns an absurd input (1e12 of anything) into the named problem "out of range": an answer that
+ * prints NaN or Infinity is never shown, and a RangeError from an array sized by the input is not a crash.
+ */
+export function guardedSolve(solve: (values: Values) => Outcome, values: Values): Outcome {
+  const outOfRange: Outcome = { ok: false, message: t('chem.outOfRange') };
+  try {
+    const outcome = guardedSolve(solve, values);
+    if (outcome.ok && [outcome.headline, ...outcome.steps].some(printsNonFinite)) return outOfRange;
+    return outcome;
+  } catch (error) {
+    if (isRangeError(error)) return outOfRange;
+    throw error;
+  }
 }
 
 export interface ChemFormProps {

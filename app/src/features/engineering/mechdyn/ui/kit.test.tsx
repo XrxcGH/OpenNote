@@ -123,7 +123,7 @@ describe('the kit window and the page', () => {
     kit.unmount();
     renderUi(<MechDynKit />);
     renderUi(<CalcBlock data={data} readOnly={false} patch={() => undefined} announce={() => undefined} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Open in the tool' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open in tool' }));
     // The panel remounts and loads its tool again, which can take a while on a busy machine.
     await waitFor(
       () => {

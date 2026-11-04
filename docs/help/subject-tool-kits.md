@@ -16,7 +16,7 @@ Thirteen tool windows work engineering, science, math, earth science, and reason
 - Pick SI or US units. Switching keeps the values; a unit of the wrong kind is marked on its field.
 - Pick an example to fill in a ready-made problem.
 - Use the arrow keys, Home, and End to move between tabs.
-- Insert puts the work into the page: the answer line, the equation, the results table, the worked steps, or a picture of the plot.
+- Insert puts the work into the page: the answer line, the equation, the results table, the worked steps, or a picture of the plot. Each Insert adds below what is already there (it never replaces an earlier insert) and is its own undo step. A tool with no worked steps does not list them.
 
 ## Live calculation blocks
 

@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { RecordControl } from '../audio/RecordControl';
 import { RecordingIndicator } from '../audio/Indicator';
+import { recordingDeletePrompt } from '../audio/deletePrompt';
 import { adoptPage, entriesOf } from '../audio/entries';
 import { isRunning, playbackOpen, RECORDING_TYPE, recordingUi } from '../audio/state';
 import { shownPage as shownOpenPage } from '../history/shown';
@@ -38,10 +39,9 @@ const SPECS: readonly Spec[] = [
     key: 'Alt+Shift+A',
     flag: 'audio.record',
     // Always available, because the command bar reads it when it draws, before a page is shown; with no page open,
-    // the command says so.
+    // the command says so. It never stops a recording that runs (Stop recording does that): it says one is running.
     run: async () => {
-      const commands = await work();
-      await (running() ? commands.stop() : commands.record());
+      await (await work()).record();
     },
   },
   {
@@ -51,6 +51,13 @@ const SPECS: readonly Spec[] = [
     flag: 'audio.record',
     when: running,
     run: async () => (await work()).stop(),
+  },
+  {
+    id: 'audio.options',
+    title: 'audio.commands.options',
+    key: '',
+    flag: 'audio.record',
+    run: async () => (await import('../audio/openOptions')).openOptions(),
   },
   {
     id: 'audio.pause',
@@ -176,6 +183,7 @@ blockRenderers.register({
   flag: 'audio.record',
   create: (block, ctx) =>
     lazyBlockView(block, ctx, () => import('../audio/blockRenderer'), t('audio.block.labelWhile')),
+  deletePrompt: recordingDeletePrompt,
 });
 
 // A page that opens with a recording the crash cut off gets it back. A recording that plays closes when another

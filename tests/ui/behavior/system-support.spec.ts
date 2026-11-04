@@ -74,8 +74,9 @@ test.describe('on Linux', () => {
   });
 });
 
-test('on Windows the command stops at the version details, with nothing missing', async ({ page }) => {
+test('on Windows the command says what works on this computer, with nothing missing', async ({ page }) => {
   await runFromPalette(page, 'Control+KeyK');
-  await expect(page.getByRole('heading', { level: 2, name: 'About OpenNote' })).toBeFocused();
+  await expect(page.getByRole('heading', { level: 2, name: 'What works on this computer' })).toBeFocused();
+  await expect(page.getByText(/Every OpenNote feature works on Windows/)).toBeVisible();
   await expect(page.getByRole('heading', { name: /What works differently/ })).toHaveCount(0);
 });

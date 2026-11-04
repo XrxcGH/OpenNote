@@ -14,6 +14,8 @@ export interface SavedSearch {
 }
 
 const KEY = 'opennote.savedSearches';
+/** Fired on the window when the list changes, for views (Home) that show it. */
+export const SAVED_SEARCHES_EVENT = 'opennote:saved-searches';
 export const MAX_SAVED = 50;
 
 export function loadSaved(): SavedSearch[] {
@@ -33,6 +35,7 @@ function store(list: SavedSearch[]): SavedSearch[] {
   } catch {
     // Storage is blocked: the list lasts until the panel closes.
   }
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(SAVED_SEARCHES_EVENT));
   return list;
 }
 
