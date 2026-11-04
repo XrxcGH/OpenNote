@@ -22,18 +22,19 @@ type Render = (latex: string, options?: { displayMode?: boolean }) => { ok: true
 const LEAST_FIT = 0.6;
 
 /** Shrinks the text of a box whose content is wider than the box so that it fits, instead of scrolling sideways. */
+function fitWidth(el: HTMLElement): void {
+  el.style.fontSize = '';
+  if (el.scrollWidth > el.clientWidth + 1)
+    el.style.fontSize = `${Math.max(LEAST_FIT, el.clientWidth / el.scrollWidth)}em`;
+}
+
 function useFitWidth(box: RefObject<HTMLElement | null>, content: string | undefined): void {
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
-    const fit = () => {
-      el.style.fontSize = '';
-      if (el.scrollWidth > el.clientWidth + 1)
-        el.style.fontSize = `${Math.max(LEAST_FIT, el.clientWidth / el.scrollWidth)}em`;
-    };
-    fit();
+    fitWidth(el);
     if (typeof ResizeObserver === 'undefined') return;
-    const watch = new ResizeObserver(fit);
+    const watch = new ResizeObserver(() => fitWidth(el));
     watch.observe(el);
     return () => watch.disconnect();
   }, [box, content]);
