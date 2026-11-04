@@ -1,0 +1,207 @@
+{
+  "name": "every key of the table settings, with the freeze at the size of the table",
+  "rules": [
+    "R-SHT-10",
+    "R-SHT-8",
+    "R-STAMP-6"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "header": true,
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Qty"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Price"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "3.5"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "1.25"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r004",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Total"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "6"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "9.5"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "styles": {
+              "1gn087": {
+                "fill": "#ffffff"
+              },
+              "27yucf": {
+                "border": {
+                  "t": {
+                    "style": "double"
+                  }
+                },
+                "font": {
+                  "bold": true
+                }
+              },
+              "5euaeq": {
+                "font": {
+                  "italic": true
+                }
+              },
+              "896lyh": {
+                "align": {
+                  "v": "bottom"
+                }
+              },
+              "g5dof0": {
+                "align": {
+                  "h": "right"
+                }
+              },
+              "gs29t1": {
+                "font": {
+                  "family": "+body"
+                }
+              },
+              "jbhrdr": {
+                "fill": "#fef3c7"
+              },
+              "jrwsnj": {
+                "fill": "#f8fafc"
+              },
+              "qk97mt": {
+                "fill": "#fef9c3"
+              },
+              "qki4gw": {
+                "fill": "#e0e7ff",
+                "font": {
+                  "bold": true
+                }
+              }
+            },
+            "table": {
+              "band": {
+                "cols": true,
+                "rows": true
+              },
+              "emphasis": {
+                "firstCol": true,
+                "lastCol": true,
+                "totalRow": true
+              },
+              "freeze": {
+                "cols": 3,
+                "rows": 4
+              },
+              "grid": false,
+              "look": {
+                "band1": "jrwsnj",
+                "band2": "1gn087",
+                "colBand1": "qk97mt",
+                "colBand2": "jbhrdr",
+                "firstCol": "5euaeq",
+                "header": "qki4gw",
+                "lastCol": "g5dof0",
+                "total": "27yucf",
+                "whole": "gs29t1"
+              },
+              "name": "Budget_2026",
+              "pad": {
+                "b": 2,
+                "l": 4,
+                "r": 4,
+                "t": 2
+              },
+              "style": "896lyh"
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  }
+}
