@@ -71,7 +71,10 @@ export async function clickAt(browser: Browser, point: { x: number; y: number })
     .perform();
 }
 
-/** The floating text boxes, by name, with their page-unit positions from their inline styles. */
+/**
+ * The floating text boxes, by name, with their page-unit positions. A box's left is its inline style. Its top is
+ * the custom property --frame-y, because the stylesheet places it, snapped to the rules on ruled paper.
+ */
 export async function textBoxes(
   browser: Browser,
 ): Promise<{ block: string; name: string; text: string; left: number; top: number }[]> {
@@ -83,7 +86,7 @@ export async function textBoxes(
         name: root.getAttribute('aria-label') ?? '',
         text: root.textContent ?? '',
         left: parseFloat(wrapper.style.left),
-        top: parseFloat(wrapper.style.top),
+        top: parseFloat(wrapper.style.getPropertyValue('--frame-y') || wrapper.style.top),
       };
     }),
   );

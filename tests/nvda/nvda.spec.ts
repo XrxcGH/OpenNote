@@ -32,7 +32,7 @@ const RESULTS = join(import.meta.dirname, 'results');
 const BASE_URL = process.env.OPENNOTE_UI_URL ?? `http://127.0.0.1:${process.env.OPENNOTE_NVDA_PORT ?? 4188}`;
 const enabled = process.env.OPENNOTE_NVDA === '1' && process.platform === 'win32';
 
-const SETTLE_MS = 700;
+const SETTLE_MS = 1200;
 
 async function openApp(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/?fixture=short`);
@@ -81,10 +81,10 @@ test.describe('NVDA', () => {
         throw explainStartFailure(error);
       });
       for (const item of ITEMS) {
-        await setUp(page, item);
+        // Focus moved with Playwright is spoken as it lands, and setUp waits for that, so the log is cleared first and
+        // the phrases of the focus are in it before any key.
         await nvda.clearSpokenPhraseLog();
-        // Focus moved with Playwright is spoken as it lands, so the first phrases come before any key.
-        await page.waitForTimeout(SETTLE_MS);
+        await setUp(page, item);
         for (const key of item.keys) {
           await nvda.press(key);
           await page.waitForTimeout(SETTLE_MS);

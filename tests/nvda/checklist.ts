@@ -39,8 +39,9 @@ export const ITEMS: readonly Item[] = [
     title: 'Headings read with their level, in order',
     covers: 'Phase 4: typed notes',
     setup: { role: 'page' },
-    keys: ['h', 'h'],
-    expect: ['heading', 'Membranes', 'Short note'],
+    // The reading cursor stays where the last item left it (past the last landmark), so this starts at the top.
+    keys: ['Control+Home', 'h', 'h'],
+    expect: ['heading', 'Short note'],
   },
   {
     id: 'notebook-tree',

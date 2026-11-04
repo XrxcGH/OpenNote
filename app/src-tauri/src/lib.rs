@@ -56,6 +56,8 @@ pub mod speech;
 pub mod spelling;
 pub mod state;
 pub mod study;
+#[cfg(feature = "test-endpoints")]
+pub mod test_pick;
 pub mod theme_tokens;
 pub mod tool_windows;
 pub mod updater;
