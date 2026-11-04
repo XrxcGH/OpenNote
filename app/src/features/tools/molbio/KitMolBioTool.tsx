@@ -1,9 +1,10 @@
 // The body of the molecular biology window: tabs for the tools, and the chosen tool's form and answer. What was typed
 // in each tool is remembered on this device, so closing the window loses nothing.
 import './text';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
+import { useKitReopen } from '../kits/panelForm';
 import { loadStored, saveStored } from '../ui/storage';
 import { KIT_STORE, KIT_TAB_EVENT } from './events';
 import { LOADERS } from './kit';
@@ -53,6 +54,7 @@ function Loaded({ id, saved, onSave }: { id: MolToolId; saved: Values | undefine
 }
 
 export function KitMolBioTool() {
+  const panel = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<MolToolId>(() => {
     const saved = loadStored<Saved>(KIT_STORE, {});
     return isTool(saved.tab) ? saved.tab : MOLBIO_TOOLS[0].id;
@@ -69,6 +71,7 @@ export function KitMolBioTool() {
     window.addEventListener(KIT_TAB_EVENT, onTab);
     return () => window.removeEventListener(KIT_TAB_EVENT, onTab);
   }, []);
+  useKitReopen('molbio', tab, panel);
   const choose = (next: MolToolId) => {
     setTab(next);
     remember(next);
@@ -112,7 +115,14 @@ export function KitMolBioTool() {
           </button>
         ))}
       </div>
-      <div id="kit-molbio-panel" role="tabpanel" aria-labelledby={`kit-molbio-tab-${tab}`}>
+      <div
+        id="kit-molbio-panel"
+        ref={panel}
+        data-kit-form="molbio"
+        data-kit-tool={tab}
+        role="tabpanel"
+        aria-labelledby={`kit-molbio-tab-${tab}`}
+      >
         <Loaded key={tab} id={tab} saved={saved.values?.[tab]} onSave={(values) => remember(tab, values)} />
       </div>
     </div>

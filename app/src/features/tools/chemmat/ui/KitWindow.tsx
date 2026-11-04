@@ -3,6 +3,7 @@
 // system is chosen are remembered; the palette opens a particular tab (see ../open.ts).
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { useKitReopen } from '../../kits/panelForm';
 import { loadStored, saveStored } from '../../ui/storage';
 import tools from '../../ui/tools.module.css';
 import extra from '../../ui/extra.module.css';
@@ -112,6 +113,8 @@ export function KitWindow() {
     saveStored(TAB_STORE, id);
   };
   const spec = CHEMMAT_TOOLS.find((x) => x.id === tab) ?? CHEMMAT_TOOLS[0];
+  const panel = useRef<HTMLDivElement>(null);
+  useKitReopen('chemmat', spec.id, panel);
 
   return (
     <div className={`${tools.tool} ${own.root}`}>
@@ -126,7 +129,15 @@ export function KitWindow() {
           }}
         />
       </div>
-      <div id="chemmat-panel" role="tabpanel" aria-labelledby={`chemmat-tab-${spec.id}`} className={extra.scroll}>
+      <div
+        id="chemmat-panel"
+        ref={panel}
+        data-kit-form="chemmat"
+        data-kit-tool={spec.id}
+        role="tabpanel"
+        aria-labelledby={`chemmat-tab-${spec.id}`}
+        className={extra.scroll}
+      >
         <ToolView key={spec.id} spec={spec} system={system} />
       </div>
     </div>

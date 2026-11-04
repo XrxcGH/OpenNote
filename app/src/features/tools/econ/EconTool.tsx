@@ -1,6 +1,7 @@
 // The economics and finance window: a picker for the tool, a picker for the form within it, and the shared form
 // (ui/ChemForm) that shows the answer, its steps, and Insert. The methods are plain modules beside this file.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useKitReopen } from '../kits/panelForm';
 import { ChemForm } from '../ui/ChemForm';
 import extra from '../ui/extra.module.css';
 import { loadStored, saveStored } from '../ui/storage';
@@ -19,12 +20,15 @@ export function EconTool() {
   const tool = ECON_TOOLS.find((x) => x.id === toolId) ?? ECON_TOOLS[0];
   const current = tool.forms.find((f) => f.id === formId[tool.id]) ?? tool.forms[0];
   const { id, intro, ...props } = current;
+  const panel = useRef<HTMLDivElement>(null);
+  // One window: a block's saved values include which tool and calculator were open, and put them back.
+  useKitReopen('econ', 'econ', panel);
 
   const remember = (nextTool: string, nextForm: Record<string, string>) =>
     saveStored(STORE, { tool: nextTool, form: nextForm });
 
   return (
-    <div className={styles.tool}>
+    <div ref={panel} data-kit-form="econ" data-kit-tool="econ" aria-label={tx('title')} className={styles.tool}>
       <label className={extra.field}>
         {tx('common.tool')}
         <select

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import 'katex/dist/katex.min.css';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
+import { insertLiveFromPanel } from '../../kits/ui/insert';
 import { say, sayKey, sayText, showRow, rowText } from '../kit/say';
 import type { ShownRow } from '../kit/say';
 import { TOKEN_PALETTE, plotToSvg } from '../kit/svg';
@@ -105,6 +106,24 @@ function InsertButtons(props: {
       </Button>
       <Button variant="quiet" onClick={() => done(insert.steps(steps))}>
         {t('kitPhysics.ui.insertSteps')}
+      </Button>
+      <Button
+        variant="quiet"
+        onClick={(event) => {
+          const ok = insertLiveFromPanel(event.currentTarget, {
+            summary: answer,
+            rows: shown.map((row) => ({
+              label: row.symbol ? `${row.name} ${row.symbol}` : row.name,
+              value: row.value,
+              unit: row.unit,
+            })),
+            ...(outcome.latex ? { latex: outcome.latex } : {}),
+          });
+          announce(t(ok ? 'kitPhysics.ui.liveInserted' : 'kitPhysics.ui.noPage'));
+          setMissed(ok ? 0 : (n) => n + 1);
+        }}
+      >
+        {t('kitPhysics.ui.insertLive')}
       </Button>
       {plot ? (
         <Button

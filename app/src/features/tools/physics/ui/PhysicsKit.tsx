@@ -2,7 +2,8 @@
 // stays one row high at any width, where a row of tabs would fill a narrow window. The window remembers its tool, its
 // unit system, and what was typed in each tool.
 import '../text';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useKitReopen } from '../../kits/panelForm';
 import { t } from '../../../../strings/t';
 import { PHYSICS_KIT } from '../kit';
 import { sayKey } from '../kit/say';
@@ -28,6 +29,8 @@ export function PhysicsKit() {
   const [tab, setTab] = useState(() => known(savedPhysicsTab()));
   const [system, setSystem] = useState<UnitSystem>(saved.system === 'US' ? 'US' : 'SI');
   const [inputs, setInputs] = useState<Record<string, unknown>>(saved.inputs ?? {});
+  const panel = useRef<HTMLElement>(null);
+  useKitReopen('physics', tab, panel);
 
   useEffect(() => followPhysicsTab(() => setTab(known(savedPhysicsTab()))), []);
   useEffect(() => saveStored(STORE, { system, inputs }), [system, inputs]);
@@ -67,7 +70,7 @@ export function PhysicsKit() {
           </select>
         </label>
       </div>
-      <section aria-label={sayKey(shown.title)}>
+      <section ref={panel} data-kit-form="physics" data-kit-tool={shown.id} aria-label={sayKey(shown.title)}>
         <Suspense fallback={<p className={tools.note}>{t('kitPhysics.ui.loading')}</p>}>
           <Tool
             key={shown.id}

@@ -4,6 +4,7 @@ import '../text';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../../strings/t';
+import { useKitReopen } from '../../../tools';
 import { LOADERS } from '../kit';
 import { AERO_TOOLS, isAeroTool } from '../meta';
 import type { AeroToolId } from '../meta';
@@ -54,6 +55,8 @@ export function KitAeroTool() {
     return isAeroTool(saved) ? saved : AERO_TOOLS[0].id;
   });
   const systemId = useId();
+  const panel = useRef<HTMLDivElement>(null);
+  useKitReopen('aero', tab, panel);
   const [system, setSystem] = useState<UnitSystem>(() => (loadKit().system === 'us' ? 'us' : 'si'));
   useEffect(() => {
     const onTab = () => {
@@ -108,7 +111,15 @@ export function KitAeroTool() {
           </button>
         ))}
       </div>
-      <div id="kit-aero-panel" role="tabpanel" aria-labelledby={`kit-aero-tab-${tab}`} className={styles.body}>
+      <div
+        id="kit-aero-panel"
+        ref={panel}
+        data-kit-form="aero"
+        data-kit-tool={tab}
+        role="tabpanel"
+        aria-labelledby={`kit-aero-tab-${tab}`}
+        className={styles.body}
+      >
         <div className={styles.heading}>
           <h2 className={styles.title}>{toolText(tab, 'title')}</h2>
           <div className={styles.system}>
