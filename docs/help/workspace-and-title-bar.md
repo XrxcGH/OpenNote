@@ -22,7 +22,7 @@ The workspace is the main screen. It holds the notebooks pane, the pages pane, a
 | Undo and redo | Undo text and ink first, then changes to notebooks, sections, and pages. |
 | Search | Opens search (Ctrl+Shift+F). |
 | Daily note | Opens today's note. |
-| Save status | Says Saved, Saving, Offline, Couldn't save, or Not responding. Saving stays until the edit is written. |
+| Save status | Says Saved, Saving, Offline, Couldn't save, or Not responding. Saving stays until the edit is written. Choose Couldn't save to see which page failed and why, then Retry to save it now, or Copy text to keep what you wrote elsewhere. What you typed stays on the page while OpenNote tries. |
 | Sync chip | Shows the state of [sync](sync.md). |
 | Timers chip | Shows a running timer or stopwatch. |
 | Update chip | Appears when an update is ready. |

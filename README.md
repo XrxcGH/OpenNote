@@ -28,7 +28,7 @@ Beta 8 is beta 7 plus these changes:
 
 - The finish-all work brings the Mac and Linux builds close to Windows. They now have PDF and printing, read aloud, spell check, the command line, Mac updates, the Keychain and the Secret Service, and text in pictures and handwriting on the device.
 - It also fixes the nightly crashes, sweeps 200,000 palm rejection cases, trims start-up, keeps tool windows from covering each other, and adds behavior and keyboard tests for every kit.
-- Title bar and save fixes: the Windows title bar no longer stays above OpenNote's own, and the save status says Saving until an edit is written, then Saved.
+- Title bar and save fixes: the Windows title bar no longer stays above OpenNote's own, and the save status says Saving until an edit is written, then Saved, and Couldn't save opens a notice with the reason, Retry, and Copy text.
 - A dark theme in neutral charcoal gray, not brown.
 - A flaky test of the box around a stroke's ink is fixed. It now checks the shape the renderer fills, and the macOS counterexample runs every time.
 - Ink fixes from the full walk: the ruler stays in view and you can draw along it from inside, shapes are reachable at every width and held curves snap, and the Draw tab's pens fit at every width and touch size.

@@ -1,6 +1,7 @@
 // The save status in the title bar (ARCHITECTURE.md section 13): "Saved", "Saving", "Offline", "Couldn't save",
 // or "Not responding" while a command holds the core. Only the trouble is announced, because the rest would
-// chatter. In the compact layout it is an icon whose name is its text.
+// chatter. In the compact layout it is an icon whose name is its text. "Couldn't save" is a button that opens the
+// notice (SaveNotice.tsx) with the reason, Retry, and Copy text.
 
 import { CloudCheckIcon } from '@phosphor-icons/react/dist/csr/CloudCheck';
 import { CloudSlashIcon } from '@phosphor-icons/react/dist/csr/CloudSlash';
@@ -22,6 +23,7 @@ import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import type { IconProps } from '../../ui';
+import { openSaveNotice } from './SaveNotice';
 import { treeStore } from './store';
 import styles from './Tree.module.css';
 
@@ -66,6 +68,24 @@ export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | '
   }, [status]);
   const Icon = ICONS[status];
   const text = t(`tree.save.${status}`);
+  const label = presentation === 'icon' ? <span className={styles.visuallyHidden}>{text}</span> : <span>{text}</span>;
+  // The trouble is a button: it opens the notice with the reason, Retry, and Copy text.
+  if (status === 'error') {
+    return (
+      <button
+        type="button"
+        className={`${styles.saveStatus} ${styles.saveStatusButton}`}
+        data-save-status
+        data-status={status}
+        title={t('tree.save.errorDetails')}
+        aria-haspopup="dialog"
+        onClick={openSaveNotice}
+      >
+        <Icon aria-hidden />
+        {label}
+      </button>
+    );
+  }
   return (
     <span
       className={styles.saveStatus}
@@ -74,7 +94,7 @@ export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | '
       title={presentation === 'icon' ? text : undefined}
     >
       <Icon aria-hidden />
-      {presentation === 'icon' ? <span className={styles.visuallyHidden}>{text}</span> : <span>{text}</span>}
+      {label}
     </span>
   );
 }
