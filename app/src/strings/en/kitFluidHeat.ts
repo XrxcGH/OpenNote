@@ -58,6 +58,8 @@ export const kitFluidHeat = {
     notFinite: '{detail} must be a number.',
     partsLine: 'Line {detail} could not be read. Check how many numbers it has and that each has the right unit.',
     calc: '{detail}',
+    outOfRange:
+      'These values are too large or too small for this tool to give a finite answer. Try values closer to real ones.',
     unknown: 'That could not be worked out.',
   },
   statics,

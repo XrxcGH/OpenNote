@@ -20,6 +20,9 @@ const say: Say = (key, vars = {}) => {
 describe('form state', () => {
   it('reads numbers and simple math, and tells empty from wrong', () => {
     expect(readNumber('1.5e3')).toBe(1500);
+    // A half-typed exponent is a slip, not 2.5 times Euler's number (6.79).
+    expect(readNumber('2.5e')).toBeNaN();
+    expect(readNumber('1e-')).toBeNaN();
     expect(readNumber('1,000')).toBe(1000);
     expect(readNumber('2*pi')).toBeCloseTo(2 * Math.PI, 12);
     expect(readNumber('')).toBeNull();

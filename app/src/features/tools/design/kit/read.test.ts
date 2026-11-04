@@ -31,3 +31,14 @@ describe('switching units', () => {
     expect(Number(back.texts.v)).toBeCloseTo(150, 11);
   });
 });
+
+describe('switching units and back', () => {
+  it('restores the typed text exactly, with no drift such as 99.9999999999999', async () => {
+    const spec = await SPECS.machining!();
+    const si = { texts: firstTexts(spec), units: firstUnits(spec, 'si') };
+    const us = convertTexts(spec, si.texts, si.units, 'us');
+    expect(us.texts.v).not.toBe(si.texts.v);
+    const back = convertTexts(spec, us.texts, us.units, 'si');
+    expect(back.texts).toEqual(si.texts);
+  });
+});

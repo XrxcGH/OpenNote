@@ -1,6 +1,6 @@
 // A tool form's state and its values: the typed text and unit of each field, read as numbers in the engine's
 // units, and kept in step when the unit system changes. Pure, so the window and the tests share it.
-import { evaluate } from '../../../../core/expr';
+import { evaluateTyped } from '../../../../core/expr';
 import { fmt } from '../common/format';
 import type { FieldSpec, ModeSpec, Values } from '../common/spec';
 import { UNITS, defaultUnit, fromEngine, toEngine, type System } from '../common/units';
@@ -11,7 +11,7 @@ export function readNumber(text: string): number | null {
   const trimmed = text.trim().replace(/,/g, '');
   if (trimmed === '') return null;
   if (/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(trimmed)) return Number(trimmed);
-  const result = evaluate(trimmed.replace(/×/g, '*').replace(/−/g, '-'));
+  const result = evaluateTyped(trimmed.replace(/×/g, '*').replace(/−/g, '-'));
   return result.ok && Number.isFinite(result.value) ? result.value : NaN;
 }
 
