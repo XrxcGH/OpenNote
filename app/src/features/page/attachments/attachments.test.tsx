@@ -58,4 +58,17 @@ describe('attachments', () => {
     expect(card.querySelector('img')).toBeNull();
     expect(card.textContent).toContain('PDF');
   });
+
+  it('gives Open a 44 px target with touch-size controls (Beta 8 walk A1-A07-19)', async () => {
+    document.documentElement.dataset.density = 'touch';
+    try {
+      const { page, id } = await pageWithAttachment();
+      const open = page.mounted.layer.view(id)!.element.querySelector('button')!;
+      expect(open.textContent).toBe('Open');
+      const box = open.getBoundingClientRect();
+      expect([box.width >= 44, box.height >= 44]).toEqual([true, true]);
+    } finally {
+      delete document.documentElement.dataset.density;
+    }
+  });
 });

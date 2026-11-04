@@ -55,6 +55,28 @@ describe('image blocks', () => {
     await expectNoAxeViolations(handle.element);
   });
 
+  it('give every handle and toolbar button a 44 px target with touch-size controls (Beta 8 walk A1-A07-19)', async () => {
+    document.documentElement.dataset.density = 'touch';
+    try {
+      const { id, handle } = await pageWithImage();
+      selectOnPage({ blocks: [id], strokes: [] });
+      await vi.waitFor(() => expect(handle.element.querySelector('[role="toolbar"]')).not.toBeNull(), {
+        timeout: 10_000,
+      });
+      const targets = [...handle.element.querySelectorAll('button')].filter((button) => button.offsetParent);
+      expect(targets.length).toBeGreaterThan(8);
+      for (const button of targets) {
+        const box = button.getBoundingClientRect();
+        expect([button.getAttribute('aria-label') ?? button.textContent, box.width >= 44 && box.height >= 44]).toEqual([
+          button.getAttribute('aria-label') ?? button.textContent,
+          true,
+        ]);
+      }
+    } finally {
+      delete document.documentElement.dataset.density;
+    }
+  });
+
   it('crop mode keeps a crop as one patch and one move', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;
