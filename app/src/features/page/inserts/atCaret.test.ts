@@ -70,13 +70,15 @@ describe('inserts at the caret', () => {
   });
 });
 
+// The shape the kits' stepsHtml gives: the title, then a numbered list whose item holds the words and a math block.
+const STEPS = '<p>Worked steps</p><ol><li><p>Divide by 3</p><div data-math-block="x=6/3"></div></li></ol>';
+
 describe('worked steps', () => {
-  it('adds the kit steps after an equation and keeps the steps own math', async () => {
-    const { stepsHtml } = await import('../../tools/kits/ui/words');
+  it('adds the kit steps after an equation and keeps the steps own math', () => {
     mounted = mountEditor('Work:');
     mounted.editor.commands.focus('end');
     insertMathAtCaret(mounted.editor, 'x=2', true);
-    const html = stepsHtml([{ key: 'kits.steps.title', math: 'x=6/3' }] as never);
+    const html = STEPS;
     expect(insertTextAtCaret(mounted.editor, html)).toBe(true);
     expect(insertTextAtCaret(mounted.editor, html)).toBe(true);
     const sources: string[] = [];
@@ -89,11 +91,10 @@ describe('worked steps', () => {
 });
 
 describe('after worked steps', () => {
-  it('puts an answer line below the steps and a second steps list after it', async () => {
-    const { stepsHtml } = await import('../../tools/kits/ui/words');
+  it('puts an answer line below the steps and a second steps list after it', () => {
     mounted = mountEditor('Work:');
     mounted.editor.commands.focus('end');
-    const html = stepsHtml([{ key: 'kits.steps.title', math: 'x=6/3' }] as never);
+    const html = STEPS;
     insertTextAtCaret(mounted.editor, html);
     insertTextAtCaret(mounted.editor, 'x = 2');
     insertTextAtCaret(mounted.editor, html);

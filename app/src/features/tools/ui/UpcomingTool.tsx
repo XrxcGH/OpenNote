@@ -22,6 +22,7 @@ import { RemindersSwitch } from './RemindersSwitch';
 import { Overview } from './UpcomingOverview';
 import { Planner } from './UpcomingPlanner';
 import { decksStore } from '../../study';
+import { useMinute } from './upcomingShared';
 import { examItems } from './homeUpcoming';
 import { examsStore, pageItemsStore } from './upcomingStores';
 import { UPCOMING_CHANGED } from './upcomingMerge';
@@ -86,11 +87,12 @@ export function UpcomingTool() {
   const everything = useMemo(() => [...saved.items, ...pageItems], [saved.items, pageItems]);
   // The week and month grids show exams too (the list shows them in its own section above). A newly added exam is
   // here at once, because both stores are read as they change.
+  const now = useMinute();
   const exams = useStore(examsStore, (current) => current);
   const decks = useStore(decksStore, (current) => current);
   const onGrid = useMemo(
-    () => [...everything, ...examItems(Date.now(), context().timeZone, exams, decks)],
-    [everything, exams, decks],
+    () => [...everything, ...examItems(now, context().timeZone, exams, decks)],
+    [everything, exams, decks, now],
   );
   const groups = useMemo(() => groupUpcoming(everything, context(), { includeDone: false }), [everything]);
   const update = (next: Saved) => {
