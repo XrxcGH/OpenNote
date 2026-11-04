@@ -233,7 +233,7 @@ Beta 5 finished these pages, tables, export, and search features. Each is behind
 These answer known complaints about other note apps:
 
 - **Versions and trash:** page history, and a trash that keeps deleted items for 30 days. Status: Built.
-- **Clean paste:** pasting from the web keeps structure but drops stray fonts and colors. Ctrl+Shift+V pastes plain text. Status: Built.
+- **Clean paste:** pasting from the web keeps structure but drops stray fonts and colors. A table on the clipboard, or spreadsheet cells copied as tab-separated text, pastes as a table block. Ctrl+Shift+V pastes plain text. Copying text puts the words, with list markers and no Markdown marks, on the clipboard as plain text, beside the formatted copy. Status: Built.
 - **Speed:** large notebooks open lazily, and nothing freezes while syncing. Status: Built.
 - **Content locks:** text boxes and images can be locked in place. Status: Built, untested by hand.
 - **Sections and pages:** can be pinned, colored, sorted, and duplicated. Status: Built, untested by hand. The tree Sort menu was finished late.

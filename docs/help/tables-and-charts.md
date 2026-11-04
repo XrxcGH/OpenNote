@@ -10,7 +10,13 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 - Format a column as number, currency, percent, date, or text. Sort and filter the rows, and use Board to group rows by any column of repeating text (the stand-in for a choice column).
 - Draw a grid with the pen and it becomes a table.
 - Import an Excel file and each sheet becomes a table page.
+- Right-click a cell, or press Shift+F10 or the Menu key in it, for Cut, Copy, Paste, and Select all, then the table's own commands: add a row above or below, move a row, add a column, set the header row, change the column width, and delete a row, a column, or the table.
 - Give a number column a unit, such as kN or mm, and cells in other units of the same kind convert to it. See [Engineering tools](engineering-tools.md#units-in-tables).
+
+## Analyze
+
+- Select cells, with or without the header row, and choose a tool under Analyze: statistics, a histogram, a box plot, a fit, or a matrix tool. The answer lands below the table. A box plot or a fit adds two tables together, and one Undo takes both away.
+- A tool that cannot run says why on the screen, for example when a cell in a matrix is not a number.
 
 ## Formulas
 
