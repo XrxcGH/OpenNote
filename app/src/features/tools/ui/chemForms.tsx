@@ -132,7 +132,11 @@ const stoichForm: Form = {
     }
     return ok(
       out.limiting && Object.keys(given).length > 1
-        ? `${t('chem.calc.limiting', { name: out.limiting })}. ${headline}`
+        ? `${
+            out.tied.length > 1
+              ? t('chem.calc.tied', { names: out.tied.join(', ') })
+              : t('chem.calc.limiting', { name: out.limiting })
+          }. ${headline}`
         : headline,
       steps,
     );
