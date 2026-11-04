@@ -197,16 +197,38 @@ function dock(id: ToolId): void {
     root = createRoot(host);
     root.render(<Windows />);
   }
-  if (!layer.get().open.includes(id)) layer.set((current) => ({ ...current, open: [...current.open, id] }));
+  const opening = !layer.get().open.includes(id);
+  if (opening) {
+    const from = document.activeElement;
+    if (from instanceof HTMLElement && from !== document.body) openers.set(id, from);
+    layer.set((current) => ({ ...current, open: [...current.open, id] }));
+  }
   raise(id);
-  requestAnimationFrame(() =>
-    document
-      .querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`)
-      ?.focus({ focusVisible: false } as FocusOptions),
-  );
+  focusWindow(id, 10);
+}
+
+/** Where focus was when each tool window opened, so closing the window gives it back. */
+const openers = new Map<ToolId, HTMLElement>();
+
+/**
+ * Moves focus to the window's header once it has rendered. The first tool opened in a session mounts the layer's root,
+ * which renders after the next frame, so the window may not exist yet: it tries again for a few frames.
+ */
+function focusWindow(id: ToolId, frames: number): void {
+  requestAnimationFrame(() => {
+    const header = document.querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`);
+    if (header) header.focus({ focusVisible: false } as FocusOptions);
+    else if (frames > 0) focusWindow(id, frames - 1);
+  });
 }
 
 export function closeTool(id: ToolId): void {
+  const window_ = document.querySelector(`[data-tool="${id}"]`);
+  // Focus inside the closing window (or lost with it) goes back to where it was when the window opened.
+  const hadFocus = Boolean(window_?.contains(document.activeElement));
+  const opener = openers.get(id);
+  openers.delete(id);
+  if (hadFocus && opener?.isConnected) requestAnimationFrame(() => opener.focus());
   layer.set((current) => ({
     ...current,
     open: current.open.filter((one) => one !== id),
