@@ -264,7 +264,7 @@ fn flatten(block: &Block, level: usize, out: &mut Vec<Piece>) {
                 out.push(Piece::Para(p));
             }
         }
-        Block::Table { header, rows } => out.push(Piece::Table {
+        Block::Table { header, rows, .. } => out.push(Piece::Table {
             header: *header,
             rows: rows.clone(),
         }),

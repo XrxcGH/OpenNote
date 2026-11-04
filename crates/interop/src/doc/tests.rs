@@ -422,3 +422,22 @@ fn every_inline_v2_tree_writes_its_canonical_markdown() {
         failed.join("\n")
     );
 }
+
+#[test]
+fn a_table_cell_holds_its_sheet_style() {
+    let rows = vec![vec![vec![Inline::text("a")], vec![Inline::text("b")]]];
+    let plain = Block::table(true, rows.clone());
+    assert_eq!(plain.cell_style(0, 0), None);
+    let style = cell_style::CellStyle {
+        fill: Some(cell_style::Fill::Color("#fde68a".to_owned())),
+        ..Default::default()
+    };
+    let styled = Block::Table {
+        header: true,
+        rows,
+        cell_styles: vec![vec![None, Some(style.clone())]],
+    };
+    assert_eq!(styled.cell_style(0, 1), Some(&style));
+    assert_eq!(styled.cell_style(0, 0), None);
+    assert_eq!(styled.cell_style(1, 0), None);
+}

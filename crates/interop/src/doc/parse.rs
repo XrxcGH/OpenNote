@@ -364,7 +364,7 @@ impl Builder {
     fn end_table(&mut self) {
         let rows = std::mem::take(&mut self.table);
         if self.frames.len() == 1 {
-            self.add_block(Block::Table { header: true, rows });
+            self.add_block(Block::table(true, rows));
             return;
         }
         self.notes.tables_flattened += 1;

@@ -152,7 +152,7 @@ fn block_html(block: &Block) -> String {
             format!("<pre><code{class}>{}</code></pre>\n", escape(text))
         }
         Block::Break => "<hr>\n".to_owned(),
-        Block::Table { header, rows } => table_html(*header, rows),
+        Block::Table { header, rows, .. } => table_html(*header, rows),
     }
 }
 

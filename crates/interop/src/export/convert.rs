@@ -329,10 +329,7 @@ impl Convert<'_> {
                     .collect()
             })
             .collect();
-        Block::Table {
-            header: table.header,
-            rows,
-        }
+        Block::table(table.header, rows)
     }
 
     /// The inlines of a table cell: its paragraphs, joined by breaks.

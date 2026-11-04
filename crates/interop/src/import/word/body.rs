@@ -413,7 +413,7 @@ impl<'a> Reader<'a> {
                 }
             }
         }
-        Some(Block::Table { header, rows })
+        Some(Block::table(header, rows))
     }
 
     /// The text of a table cell: its paragraphs, joined by line breaks.

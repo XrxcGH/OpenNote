@@ -206,7 +206,7 @@ impl Flow {
             row.resize(width, Vec::new());
         }
         self.tables += 1;
-        self.blocks.push(Block::Table { header: true, rows });
+        self.blocks.push(Block::table(true, rows));
     }
 }
 

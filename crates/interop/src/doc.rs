@@ -4,6 +4,7 @@
 //! and each run carries its marks. Parsing turns Markdown (OpenNote, Obsidian, or Joplin) into this tree, and the
 //! writers turn it into canonical OpenNote Markdown (spec 7), HTML, or Word.
 
+pub mod cell_style;
 pub mod data;
 pub mod escape;
 pub(crate) mod html_tags;
@@ -266,7 +267,29 @@ pub enum Block {
         header: bool,
         /// The rows of cells.
         rows: Vec<Vec<Vec<Inline>>>,
+        /// The sheet style of each cell, by row and column like `rows`, from the table's `data.sheet`. Empty when
+        /// the table has no sheet styles, and a row may be shorter than its cells.
+        cell_styles: Vec<Vec<Option<cell_style::CellStyle>>>,
     },
+}
+
+impl Block {
+    /// A table without sheet styles.
+    pub fn table(header: bool, rows: Vec<Vec<Vec<Inline>>>) -> Block {
+        Block::Table {
+            header,
+            rows,
+            cell_styles: Vec::new(),
+        }
+    }
+
+    /// The sheet style of the cell at `row` and `column` of a table.
+    pub fn cell_style(&self, row: usize, column: usize) -> Option<&cell_style::CellStyle> {
+        match self {
+            Block::Table { cell_styles, .. } => cell_styles.get(row)?.get(column)?.as_ref(),
+            _ => None,
+        }
+    }
 }
 
 /// The text of inlines with no marks, for titles and names. A break becomes a space.

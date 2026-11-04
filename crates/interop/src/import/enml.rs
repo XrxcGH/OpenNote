@@ -259,7 +259,7 @@ impl<'a> Converter<'a> {
             rows.push(cells.iter().map(|cell| self.cell(cell, marks)).collect());
         }
         if !rows.is_empty() {
-            pieces.push(Piece::Block(Block::Table { header, rows }));
+            pieces.push(Piece::Block(Block::table(header, rows)));
         }
     }
 
