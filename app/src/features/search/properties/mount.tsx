@@ -6,7 +6,7 @@ import { PropertiesBar } from './PropertiesBar';
 import styles from './properties.module.css';
 
 /** The least width, in screen px, that the title keeps beside the chip; below it the chip moves above the title. */
-const MIN_TITLE_ROOM = 220;
+const MIN_TITLE_ROOM = 150;
 
 export function mountProperties(mounted: MountedPage): () => void {
   const host = document.createElement('div');
