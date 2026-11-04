@@ -166,6 +166,7 @@ export const editor = {
     invalid: 'Enter a web address, an email address, or an OpenNote link.',
     blocked: 'OpenNote doesn’t make links that run scripts.',
     copied: 'Link copied.',
+    copyFailed: 'The link could not be copied.',
     inert: 'OpenNote doesn’t open {scheme} links.',
   },
   textMenu: 'Text',

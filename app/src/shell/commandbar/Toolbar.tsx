@@ -15,7 +15,7 @@ import type { MessageKey } from '../../strings/t';
 import { openMenu, Tooltip } from '../../ui';
 import type { MenuItemSpec } from '../../ui';
 import styles from './CommandBar.module.css';
-import { useBarItems } from './useBarItems';
+import { currentBarEntries, useBarItems } from './useBarItems';
 import type { BarEntry, BarTab } from './useBarItems';
 import { useOverflow, useRovingTools } from './useToolbar';
 
@@ -126,14 +126,40 @@ function overflowItems(entry: BarEntry): MenuItemSpec[] {
   });
 }
 
-function MoreButton({ entries, measuring }: { entries: readonly BarEntry[]; measuring: boolean }) {
+/**
+ * What the More menu lists: the tools that did not fit, as they are now. A tool that became available since the bar
+ * last rendered was never measured, so it is on neither the bar nor the list unless it is added here.
+ */
+function moreEntries(
+  tab: BarTab,
+  shown: readonly BarEntry[],
+  overflow: readonly BarEntry[],
+): readonly BarEntry[] {
+  const seen = new Set(shown.map((entry) => entry.item.id));
+  const moved = new Set(overflow.map((entry) => entry.item.id));
+  return currentBarEntries().filter(
+    (entry) => entry.item.tab === tab && (moved.has(entry.item.id) || !seen.has(entry.item.id)),
+  );
+}
+
+function MoreButton({
+  tab,
+  shown,
+  entries,
+  measuring,
+}: {
+  tab: BarTab;
+  shown: readonly BarEntry[];
+  entries: readonly BarEntry[];
+  measuring: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const onClick = async (event: MouseEvent<HTMLButtonElement>) => {
     const anchor = event.currentTarget;
     setOpen(true);
     await openMenu({
       label: t('commands.bar.moreLabel'),
-      items: entries.flatMap(overflowItems),
+      items: moreEntries(tab, shown, entries).flatMap(overflowItems),
       anchor,
       returnFocus: anchor,
     });
@@ -178,7 +204,7 @@ export function Toolbar({ tab, label }: { tab: BarTab; label: string }) {
             <Tool entry={entry} />
           </span>
         ))}
-      <MoreButton entries={overflow} measuring={overflow.length === 0} />
+      <MoreButton tab={tab} shown={entries} entries={overflow} measuring={overflow.length === 0} />
     </div>
   );
 }

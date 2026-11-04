@@ -111,6 +111,21 @@ describe('the command bar tools', () => {
   });
 });
 
+describe('the command bar menu tools', () => {
+  it('open their menu on Arrow Down, as well as on Enter and Space', async () => {
+    command('amber', 'commands.colors.amber');
+    command('choice', 'commands.colors.walnut', { run: vi.fn() });
+    tool('amber', { presentation: 'menu', menu: 'view.paneWidths' });
+    stops.push(
+      contextMenus.register({ id: 'c', menu: 'view.paneWidths', command: 'test.choice', group: 'g', order: 0 }),
+    );
+    await renderApp();
+    screen.getByRole('button', { name: 'Amber' }).focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(await screen.findByRole('menuitem', { name: 'Walnut' })).toBeTruthy();
+  });
+});
+
 describe('the command bar overflow', () => {
   it('moves the lowest-priority tools into More when the bar is narrow', async () => {
     const ran = vi.fn();
@@ -136,6 +151,30 @@ describe('the command bar overflow', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Walnut' }));
     await vi.waitFor(() => expect(ran).toHaveBeenCalledWith('walnut'));
   });
+  it('lists a tool that became available after the bar last rendered, when More opens', async () => {
+    let ready = false;
+    COLORS.forEach((color, i) => {
+      command(color, `commands.colors.${color}`);
+      tool(color, { priority: 100 - i });
+    });
+    const longer = ['commands.bar.shortcuts', 'commands.bar.notebooks'] as const;
+    longer.forEach((title, i) => {
+      command(`long${i}`, title);
+      tool(`long${i}`, { priority: 200 });
+    });
+    // What its `when` reads changes with no store, as the editor with the caret does.
+    command('late', 'commands.bar.settings', { when: () => ready });
+    tool('late', { priority: 1 });
+    await setViewport(640, 800);
+    await renderApp({ sizeClass: 'medium' });
+    const toolbar = screen.getByRole('toolbar', { name: 'Home' });
+    const more = await within(toolbar).findByRole('button', { name: 'More commands' });
+    expect(within(toolbar).queryByRole('button', { name: 'Settings' })).toBeNull();
+    ready = true;
+    await userEvent.click(more);
+    expect(await screen.findByRole('menuitem', { name: 'Settings' })).toBeTruthy();
+  });
+
   it('lists each available switch of a component tool that moved into More', async () => {
     const ran = vi.fn();
     command('indigo', 'commands.colors.indigo', { run: () => ran('indigo'), checked: () => true });

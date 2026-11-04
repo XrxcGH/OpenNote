@@ -11,6 +11,21 @@ export function typewriterDelta(caretY: number, view: { top: number; height: num
   return caretY - (view.top + (view.height * at) / 100);
 }
 
+/**
+ * Where the page should be scrolled to (an offset from the top, not a distance to move) to put the caret at `at`
+ * percent of the view. It is the same answer while a glide is still on its way, because the caret and the offset
+ * are read at the same moment: a move by a distance, added to the glide's old end, overshot when keys came quickly
+ * (Beta 8 walk A1-A08-5).
+ */
+export function typewriterTarget(
+  scrollTop: number,
+  caretY: number,
+  view: { top: number; height: number },
+  at: number,
+): number {
+  return Math.max(0, scrollTop + typewriterDelta(caretY, view, at));
+}
+
 /** Moves smaller than this are not worth a scroll. */
 const SLACK = 2;
 const NAVIGATION = new Set(['PageUp', 'PageDown', 'Home', 'End']);
@@ -38,15 +53,13 @@ export function attachTypewriter(mounted: MountedPage): () => void {
       return;
     }
     const box = scroller.getBoundingClientRect();
-    const delta = typewriterDelta(
-      (caret.top + caret.bottom) / 2,
-      { top: box.top, height: box.height },
-      prefs.typewriterAt,
-    );
+    const caretMiddle = (caret.top + caret.bottom) / 2;
+    const delta = typewriterDelta(caretMiddle, { top: box.top, height: box.height }, prefs.typewriterAt);
     if (Math.abs(delta) < SLACK) return;
     const glide = osStore.get().animations;
-    if (typeof scroller.scrollBy === 'function')
-      scroller.scrollBy({ top: delta, behavior: glide ? 'smooth' : 'instant' });
+    if (typeof scroller.scrollTo === 'function') {
+      scroller.scrollTo({ top: typewriterTarget(scroller.scrollTop, caretMiddle, box, prefs.typewriterAt), behavior: glide ? 'smooth' : 'instant' });
+    }
   };
 
   const schedule = () => {
