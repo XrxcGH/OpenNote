@@ -6,15 +6,25 @@ import type { IpcError, Settings, SettingsClient, SettingsPatch } from '../types
 import { emitter } from './emitter';
 import { registerTestHook } from './testHooks';
 
+const PASTE = ['keepSource', 'mergeFormatting', 'textOnly'];
+
 const CHOICES: Record<string, readonly unknown[]> = {
   'appearance.theme': ['light', 'dark', 'system'],
   'appearance.pageColor': ['matchTheme', 'paper'],
   'appearance.textSize': [80, 90, 100, 110, 125, 150, 175, 200],
   'appearance.motion': ['system', 'reduce'],
   'appearance.density': ['auto', 'mouse', 'touch'],
-  'keymap.preset': ['default', 'onenote'],
+  'keymap.preset': ['default', 'docs', 'onenote'],
   'updates.install': ['auto', 'ask', 'manual'],
   'updates.channel': ['stable', 'beta'],
+  'text.paste.word': PASTE,
+  'text.paste.docs': PASTE,
+  'text.paste.onenote': PASTE,
+  'text.paste.web': PASTE,
+  'text.measurementUnit': ['inches', 'centimeters', 'millimeters', 'points', 'picas'],
+  'text.darkCustomBackgrounds': ['exact', 'soften'],
+  'tables.newTableKeys': ['spreadsheet', 'document'],
+  'tables.formulaBar': [true, false],
 };
 
 function invalidField(settings: Settings): IpcError | null {
