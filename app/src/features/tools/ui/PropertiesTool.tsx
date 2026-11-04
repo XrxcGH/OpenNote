@@ -16,6 +16,7 @@ import styles from './chem.module.css';
 import extra from './extra.module.css';
 import ref from './reference.module.css';
 import { loadStored, saveStored } from './storage';
+import { moveBetweenTabs } from './tabKeys';
 import tools from './tools.module.css';
 
 type Tab = 'steam' | 'gases' | 'materials';
@@ -349,7 +350,7 @@ export function PropertiesTool() {
   const [tab, setTab] = useState<Tab>(TABS.includes(saved.tab as Tab) ? (saved.tab as Tab) : 'steam');
   return (
     <div className={tools.tool}>
-      <div className={tools.tabs} role="tablist" aria-label={t('chem.data.title')}>
+      <div className={tools.tabs} role="tablist" aria-label={t('chem.data.title')} onKeyDown={moveBetweenTabs}>
         {TABS.map((id) => (
           <button
             key={id}
@@ -358,6 +359,7 @@ export function PropertiesTool() {
             id={`props-tab-${id}`}
             aria-selected={tab === id}
             aria-controls="props-panel"
+            tabIndex={tab === id ? 0 : -1}
             className={tools.tab}
             onClick={() => {
               setTab(id);
