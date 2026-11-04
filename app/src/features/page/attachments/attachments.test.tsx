@@ -1,5 +1,6 @@
 // Attachments on a real page view: "Save a copy" from the command and from the card's menu, and the card keeping
 // its badge where Windows can't draw a thumbnail (as in a plain browser).
+import { screen } from '@testing-library/react';
 import { vi, describe, expect, it, afterEach } from 'vitest';
 import { executeCommand } from '../../../commands/registry';
 import '../registrations/qol';
@@ -8,7 +9,8 @@ import { cleanupPages, renderPage } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
 import { assetTable } from '../images/assets';
 import { showInserted } from '../images/insert';
-import { attachmentEdits } from './attach';
+import { attachFiles, attachmentEdits } from './attach';
+import { commandContext } from '../../../commands/registry';
 import { thumbnailUrl } from './thumbnails';
 
 interface TestHooks {
@@ -69,6 +71,28 @@ describe('attachments', () => {
       expect([box.width >= 44, box.height >= 44]).toEqual([true, true]);
     } finally {
       delete document.documentElement.dataset.density;
+    }
+  });
+
+  it('shows the quiet progress bar while a large file goes to the shell (Beta 8 walk A1-A07-12)', async () => {
+    const page = await renderPage({ fixture: textPageFixture('Files'), flags: { 'page.attachments': true } });
+    const extras = commandContext('menu').platform.pageExtras;
+    let release = () => undefined as void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const slow = vi.spyOn(extras, 'attachBytes').mockImplementation(async (_page, bytes, name, mime) => {
+      await held;
+      return page.page.importImage({ kind: 'bytes', bytes, name, mime });
+    });
+    try {
+      const done = attachFiles(page.mounted, [new File(['big'], 'big.bin')]);
+      const bar = await vi.waitFor(() => screen.getByRole('progressbar', { name: 'Attaching 1 file' }), {
+        timeout: 3000,
+      });
+      release();
+      await done;
+      expect(bar.isConnected).toBe(false);
+    } finally {
+      slow.mockRestore();
     }
   });
 });
