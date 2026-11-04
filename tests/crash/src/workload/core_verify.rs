@@ -170,8 +170,8 @@ fn may_have_expired(deleted: u64, now: u64) -> bool {
 /// Starts a core, recovers the notebook, and opens it.
 /// The core runs on the iteration's own clock, as the writers do: on the real one, the Trash would be long past its
 /// 30 days once the real date left the script's, and recovery would purge what the check expects to find.
-/// The scan and Trash expiry that opening queues run before the notebook is handed back: left to the maintenance
-/// thread, they raced the close, so one recovery purged an expired item that the one before had closed too soon to.
+/// The scan and Trash expiry that opening queues run before the notebook is handed back. Left to the maintenance
+/// thread, they raced the close, and a second recovery purged what the first had closed too soon to purge.
 fn recover(data: &Path, manifest: &Manifest, iteration: u64) -> Result<(Core, NotebookHandle), String> {
     let core = start_core(data, Arc::new(script::clock_for(iteration)))?;
     core.recover_pending(Some(&manifest.notebook))
@@ -249,9 +249,9 @@ mod tests {
         assert!(may_have_expired(5, 5 + 720));
     }
 
-    /// The nightly run failed at iteration 750 with "a second recovery changed the notebook": opening queues the
-    /// Trash expiry for the maintenance thread, the first recovery closed the notebook before the thread got to
-    /// it, and the second recovery, which reads the tree before it closes, gave the thread the time to purge.
+    /// The nightly run failed at iteration 750 with "a second recovery changed the notebook". Opening queues the
+    /// Trash expiry for the maintenance thread. The first recovery closed the notebook before the thread got to
+    /// it. The second read the tree before it closed, which gave the thread the time to purge.
     #[test]
     fn a_recovery_expires_trash_before_it_closes_so_a_second_one_changes_nothing() {
         let dir = tempfile::tempdir().unwrap();
