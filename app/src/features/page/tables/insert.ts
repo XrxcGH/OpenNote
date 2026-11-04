@@ -55,7 +55,10 @@ async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>
   const active = pool?.active() ?? null;
   const id: BlockId = newId();
   const edits: Edit[] = [];
-  let after: BlockId | undefined = active?.block;
+  // A draft text box, such as the one on a page with no text yet, is not in the page until it is typed in, and the
+  // core has no block to put the table after. Then the table goes at the end, and the draft stays as it was.
+  const draft = active ? (syncOf(active.editor)?.unsaved ?? false) : false;
+  let after: BlockId | undefined = draft ? undefined : active?.block;
   let frame: Frame | undefined;
   let tail: { id: BlockId; markdown: string } | null = null;
   const source = active && layer.view(active.block);

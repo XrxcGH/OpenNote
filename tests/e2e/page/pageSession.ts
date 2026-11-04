@@ -98,3 +98,33 @@ export async function makeBox(browser: Browser, x: number, y: number, text: stri
   await browser.keys(text);
   await browser.waitUntil(async () => (await textBoxes(browser)).some((box) => box.text === text), { timeout: 5_000 });
 }
+
+/**
+ * Waits for `work`, and when it fails says where every text box was and what had focus, so a timeout on a position
+ * or a count shows what the page held instead.
+ */
+export async function explain<T>(browser: Browser, work: Promise<T>): Promise<T> {
+  try {
+    return await work;
+  } catch (error) {
+    const boxes = await browser
+      .execute(() => {
+        const active = document.activeElement as HTMLElement | null;
+        const boxes = [...document.querySelectorAll<HTMLElement>('[data-block-id]')].map((wrapper) => {
+          const rect = wrapper.getBoundingClientRect();
+          return {
+            block: wrapper.dataset.blockId,
+            text: wrapper.textContent?.slice(0, 30),
+            frameY: wrapper.style.getPropertyValue('--frame-y'),
+            left: wrapper.style.left,
+            rect: [rect.left, rect.top, rect.width, rect.height].map(Math.round),
+          };
+        });
+        const focus = active ? `${active.tagName} ${active.getAttribute('aria-label')} ${active.dataset.blockId}` : '';
+        return JSON.stringify({ focus, scroll: window.scrollY, boxes });
+      })
+      .catch(() => 'unavailable');
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`${reason} Page: ${boxes}`, { cause: error });
+  }
+}

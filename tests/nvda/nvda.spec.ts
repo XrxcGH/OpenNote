@@ -24,6 +24,7 @@ interface Nvda {
   stop(): Promise<void>;
   press(key: string): Promise<void>;
   spokenPhraseLog(): Promise<string[]>;
+  perform(command: unknown): Promise<unknown>;
   clearSpokenPhraseLog(): Promise<void>;
   lastSpokenPhrase(): Promise<string>;
 }
@@ -70,25 +71,35 @@ test.describe('NVDA', () => {
   test('walks the keyboard and screen reader checklist', async () => {
     // The package name is held in a variable so TypeScript does not look for types the repository does not install.
     const packageName = '@guidepup/guidepup';
-    const { nvda } = (await import(packageName)) as { nvda: Nvda };
+    const guidepup = (await import(packageName)) as {
+      nvda: Nvda;
+      NVDAKeyCodeCommands: { reportCurrentFocus: unknown };
+    };
+    const { nvda } = guidepup;
     const channel = browserChannel();
     const browser = await chromium.launch({ channel, headless: false, args: ['--force-renderer-accessibility'] });
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const results: Result[] = [];
+    const reportFocus = async () => {
+      await nvda.perform(guidepup.NVDAKeyCodeCommands.reportCurrentFocus);
+      await page.waitForTimeout(SETTLE_MS);
+    };
     try {
       await openApp(page);
       await nvda.start().catch((error: unknown) => {
         throw explainStartFailure(error);
       });
       for (const item of ITEMS) {
-        // Focus moved with Playwright is spoken as it lands, and setUp waits for it. So the log is cleared first, and
-        // the phrases of the focus are in it before any key.
+        // The log starts empty for each item, so a phrase of an earlier item cannot count for this one.
         await nvda.clearSpokenPhraseLog();
+        await page.bringToFront();
         await setUp(page, item);
+        if (item.reportFocus === 'before') await reportFocus();
         for (const key of item.keys) {
           await nvda.press(key);
           await page.waitForTimeout(SETTLE_MS);
         }
+        if (item.reportFocus === 'after') await reportFocus();
         const spoken = await nvda.spokenPhraseLog();
         results.push(result(item, spoken));
         // Close the palette or anything else the item opened.
