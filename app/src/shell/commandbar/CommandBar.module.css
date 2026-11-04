@@ -155,6 +155,16 @@
     cursor: pointer;
   }
 
+  /* A label wider than its button (200 percent text in a 300 px bar) is cut with an ellipsis, not spilled over the
+     next button. The button shrinks with the bar, down to its icon. */
+  .bottomLabel {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .bottomButton svg {
     inline-size: var(--size-icon-md);
     block-size: var(--size-icon-md);

@@ -83,4 +83,29 @@ describe('touch density targets', () => {
       await setViewport(1280, 800);
     }
   });
+
+  it('cuts a bottom bar label that is wider than its button instead of spilling it (Beta 8 walk VA-13)', async () => {
+    await setViewport(220, 450);
+    try {
+      await renderApp({ density: 'touch', sizeClass: 'compact' });
+      const bar = await screen.findByRole('navigation', { name: 'Quick actions' });
+      const buttons = [...bar.querySelectorAll('button')];
+      expect(buttons.length).toBeGreaterThan(2);
+      for (const button of buttons) {
+        expect(button.scrollWidth, button.textContent ?? '').toBeLessThanOrEqual(button.clientWidth + 1);
+      }
+    } finally {
+      await setViewport(1280, 800);
+    }
+  });
+
+  it('makes the page chrome hit areas 44 px with touch density, 32 px with a mouse (Beta 8 walk VA-30)', async () => {
+    await renderApp({ density: 'mouse' });
+    const probe = document.body.appendChild(document.createElement('div'));
+    probe.style.minBlockSize = 'var(--size-chrome-hit)';
+    expect(probe.offsetHeight).toBe(32);
+    document.documentElement.dataset.density = 'touch';
+    expect(probe.offsetHeight).toBe(44);
+    probe.remove();
+  });
 });
