@@ -35,16 +35,11 @@
     cursor: pointer;
   }
 
-  /* A finger needs 44 px and 8 px between targets: the tab fills the bar's height (the title bar's buttons are
-     further away than a mouse can slip) and the tabs and tools stand 8 px apart. */
+  /* A finger needs 8 px between targets: the tabs and the tools stand 8 px apart. The tab's 4 px top margin stays: it
+     keeps the tab off the title bar's buttons, and the bar is tall enough that the tab is still 44 px. */
   :global(:root[data-density='touch']) .tabs,
   :global(:root[data-density='touch']) .toolbar {
     gap: var(--space-3);
-  }
-
-  :global(:root[data-density='touch']) .tab {
-    margin-block-start: 0;
-    min-block-size: var(--size-target-touch);
   }
 
   .tab[aria-selected='true'] {
