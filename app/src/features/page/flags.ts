@@ -47,8 +47,14 @@ const textFlag = (id: TextFlagId, description: string): FlagDef =>
 
 /** The text formatting flags. Off in Nightly, Beta, and Stable until the feature meets the definition of done. */
 const TEXT_FLAGS: readonly FlagDef[] = [
-  textFlag('text.runFormats', 'Character formatting that version 2 pages keep: weights, underline styles, spacing, and case.'),
-  textFlag('text.paraFormats', 'Paragraph formatting that version 2 pages keep: alignment, indents, spacing, and tabs.'),
+  textFlag(
+    'text.runFormats',
+    'Character formatting that version 2 pages keep: weights, underline styles, spacing, and case.',
+  ),
+  textFlag(
+    'text.paraFormats',
+    'Paragraph formatting that version 2 pages keep: alignment, indents, spacing, and tabs.',
+  ),
   textFlag('text.fontPicker', 'The font picker and the size box.'),
   textFlag('text.styles2', 'Text styles with paragraph and character parts.'),
   textFlag('text.formatPane', 'The Format pane for text.'),

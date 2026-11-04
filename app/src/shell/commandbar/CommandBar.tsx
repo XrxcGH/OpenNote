@@ -1,5 +1,6 @@
 // The command bar (ARCHITECTURE.md section 14.5). A tab list holds Home and View, with Insert, Draw, Layout, and
-// Review behind their flags (Layout and Review: text:scaffold). Beside it, the active tab's toolbar shows tools from the commandBar registry.
+// Review behind their flags (Layout and Review: text:scaffold). Beside it, the active tab's toolbar shows tools
+// from the commandBar registry.
 // - Arrow keys switch tabs. Tab moves into the toolbar, arrow keys move between its tools, and Tab leaves.
 // - Escape returns focus to the page.
 // - Tools that don't fit move into a "More" menu, lowest priority first.
