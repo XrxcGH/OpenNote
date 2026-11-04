@@ -68,3 +68,16 @@ describe('fixing a word in a transcript', () => {
     expect(screen.queryByText(/to your vocabulary/)).toBeNull();
   });
 });
+
+describe('the line checkboxes', () => {
+  it('sit in a label that is as big as a button, since the box itself is only as big as the text', async () => {
+    initFlags('dev', { 'transcripts.notes': true });
+    renderUi(<TranscriptView block={BLOCK} />);
+    const box = await screen.findByRole('checkbox', { name: /0:00/ });
+    const label = box.closest('label');
+    expect(label).not.toBeNull();
+    const size = label!.getBoundingClientRect();
+    expect(size.width).toBeGreaterThanOrEqual(32);
+    expect(size.height).toBeGreaterThanOrEqual(32);
+  });
+});
