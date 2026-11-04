@@ -3,6 +3,7 @@ import '../text';
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
 import { DESIGN_TOOLS } from '../meta';
 import { say } from './ToolPanel';
@@ -41,6 +42,22 @@ describe('the design kit window', () => {
     await open('tolerances');
     expect(screen.getByText(say('kitDesign.tolerances.row.worstMax'))).toBeTruthy();
     expect(screen.getByRole('heading', { name: say('kitDesign.ui.steps') })).toBeTruthy();
+  });
+
+  it('offers Worked steps in the Insert menu only for a tool that has steps', async () => {
+    renderUi(<DesignKit />);
+    const entries = async () => {
+      await userEvent.click(screen.getByRole('button', { name: say('kitDesign.ui.insert') }));
+      const names = (await screen.findAllByRole('menuitem')).map((item) => item.textContent);
+      await userEvent.keyboard('{Escape}');
+      return names;
+    };
+    await open('tolerances');
+    expect(await entries()).toContain(say('kitDesign.ui.insertSteps'));
+    await open('numrep');
+    await userEvent.selectOptions(screen.getByLabelText(say('kitDesign.numrep.field.mode')), 'decode');
+    expect(screen.queryByRole('heading', { name: say('kitDesign.ui.steps') })).toBeNull();
+    expect(await entries()).not.toContain(say('kitDesign.ui.insertSteps'));
   });
 
   it('a wrong number marks the field and explains, and keeps no stale result', async () => {
