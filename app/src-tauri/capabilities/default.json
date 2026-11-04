@@ -203,6 +203,14 @@
     "allow-sync-call",
     "allow-fonts-list",
     "allow-notebook-styles-get",
-    "allow-notebook-styles-set"
+    "allow-notebook-styles-set",
+    "allow-packs-list",
+    "allow-packs-download",
+    "allow-packs-remove",
+    "allow-coderun-detect",
+    "allow-coderun-start",
+    "allow-coderun-cancel",
+    "allow-code-complete",
+    "allow-code-cancel"
   ]
 }

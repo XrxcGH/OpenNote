@@ -16,6 +16,7 @@ pub mod boot;
 mod build_rules;
 pub mod child_process;
 pub mod clipboard;
+pub mod coderun;
 pub mod command_list;
 pub mod connectors;
 pub mod core_bridge;
@@ -40,6 +41,7 @@ pub mod log;
 pub mod notebook_styles;
 pub mod notes;
 pub mod notes_snapshot;
+pub mod packs;
 pub mod page_docx;
 pub mod page_export;
 pub mod page_extras;
@@ -75,6 +77,11 @@ use state::DeviceStateStore;
 /// default `bindings` folder under this crate. `cargo test` writes them, and CI fails when they drift.
 #[cfg(test)]
 pub(crate) const BINDINGS: &str = "../../src/platform/bindings/";
+
+/// The app's own URL schemes: page assets, and the verified runtime packs of the code studio.
+fn with_schemes(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<tauri::Wry> {
+    packs::register(images::register_image_schemes(builder))
+}
 
 /// Starts the app with what the early steps found. Doesn't return.
 pub fn run(context: EarlyContext) {
@@ -128,7 +135,7 @@ pub fn run(context: EarlyContext) {
     let share = share::ShareState {
         inbox: share::inbox(&paths),
     };
-    let builder = desktop::with_dialogs(images::register_image_schemes(tauri::Builder::default()));
+    let builder = desktop::with_dialogs(with_schemes(tauri::Builder::default()));
     let app = builder
         .manage(loaded.store)
         .manage(state)
@@ -391,5 +398,13 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         fonts::fonts_list,
         notebook_styles::notebook_styles_get,
         notebook_styles::notebook_styles_set,
+        packs::packs_list,
+        packs::packs_download,
+        packs::packs_remove,
+        coderun::coderun_detect,
+        coderun::coderun_start,
+        coderun::coderun_cancel,
+        intel::code::code_complete,
+        intel::code::code_cancel,
     ]
 }

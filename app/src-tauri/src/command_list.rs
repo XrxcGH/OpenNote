@@ -58,6 +58,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "accounts_call",
     "sync_call",
     "fonts_list", "notebook_styles_get", "notebook_styles_set",
+    "packs_list", "packs_download", "packs_remove", "coderun_detect", "coderun_start", "coderun_cancel",
+    "code_complete", "code_cancel",
 ];
 
 #[cfg(test)]
