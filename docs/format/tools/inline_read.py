@@ -88,8 +88,9 @@ def link_destination(text: str, at: int) -> tuple[str, int] | None:
     return None
 
 
-def tokenize(text: str) -> list[list]:
-    """Flat events: text, break, code, footnote, html, delim, link brackets."""
+def tokenize(text: str, spans: dict | None = None) -> list[list]:
+    """Flat events: text, break, code, footnote, html, delim, link brackets. `spans`, when given, maps the `id` of
+    each html and footnote event to where it sits in `text`."""
     events: list[list] = []
     brackets: list[int] = []
     i = 0
@@ -122,9 +123,13 @@ def tokenize(text: str) -> list[list]:
                 i = span[1]
         elif c == "<" and (found := RAW_OPEN.match(text, i) or RAW_CLOSE.match(text, i)):
             events.append(["html", found.group(0)])
+            if spans is not None:
+                spans[id(events[-1])] = (i, found.end())
             i = found.end()
         elif c == "[" and (found := FOOTNOTE.match(text, i)) and text[found.end() : found.end() + 1] != "(":
             events.append(["footnote", found.group(1)])
+            if spans is not None:
+                spans[id(events[-1])] = (i, found.end())
             i = found.end()
         elif c == "[":
             brackets.append(len(events))
@@ -237,12 +242,20 @@ def raw_of(event: list) -> str:
 
 
 def depth_limit(events: list[list], pairs: list[tuple[int, int]]) -> None:
-    """A pair inside more than 31 other pairs is literal text (R-INL-12)."""
-    for open_index, close_index in pairs:
-        depth = sum(1 for o, c in pairs if o <= open_index and c >= close_index)
-        if depth > MAX_DEPTH:
-            events[open_index] = ["html", events[open_index][2]]
-            events[close_index] = ["html", events[close_index][2]]
+    """A pair inside more than 31 other pairs is literal text (R-INL-12). Stack pairs nest, so one pass that counts
+    the pairs open at each opening tag finds every depth in linear time."""
+    close_of = dict(pairs)
+    closes = set(close_of.values())
+    depth = 0
+    for index in range(len(events)):
+        if index in close_of:
+            depth += 1
+            if depth > MAX_DEPTH:
+                close_index = close_of[index]
+                events[index] = ["html", events[index][2]]
+                events[close_index] = ["html", events[close_index][2]]
+        elif index in closes:
+            depth -= 1
 
 
 def read_inline(text: str) -> list[dict]:
@@ -323,3 +336,59 @@ def readable_text(markdown: str) -> str:
 
 def read_paragraphs(markdown: str) -> list[dict]:
     return [{"type": "paragraph", "content": read_inline(part)} for part in markdown.split("\n\n")]
+
+
+# The readable copy: Markdown with the tags of version 2 dropped (spec 11.1).
+
+
+def dropped_spans(text: str) -> list[tuple[int, int]]:
+    """Where the paired tags of section 7.9, the paired foreign tags, and the footnote references of one inline
+    container sit. The tags of section 7.4 and literal tags are not among them."""
+    spans: dict[int, tuple[int, int]] = {}
+    events = tokenize(text, spans)
+    process_delimiters(events)
+    events = expand(events)
+    where = {index: spans[id(event)] for index, event in enumerate(events) if id(event) in spans}
+    pair_tags(events)
+    found = []
+    for index, event in enumerate(events):
+        if event[0] == "tag_open" and event[2] not in V1_SIMPLE:
+            found += [where[index], where[event[3]]]
+        elif event[0] == "footnote":
+            found.append(where[index])
+    return sorted(found)
+
+
+def drop_tags(text: str) -> str:
+    out, at = [], 0
+    for start, end in dropped_spans(text):
+        out.append(text[at:start])
+        at = end
+    return "".join(out) + text[at:]
+
+
+def readable_markdown(markdown: str) -> str:
+    """The Markdown of a text block or cell of a version 2 page as `page.md` writes it (spec 11.1): each paragraph
+    drops what readable text drops (R-TXT-1) and keeps the rest of its Markdown as it is. Fenced code stays."""
+    out: list[str] = []
+    group: list[str] = []
+    fence = False
+
+    def flush() -> None:
+        if group:
+            out.append(drop_tags("\n".join(group)))
+            group.clear()
+
+    for line in markdown.split("\n"):
+        inner = line.lstrip(" >")
+        if inner.startswith("```"):
+            flush()
+            out.append(line)
+            fence = not fence
+        elif fence or not inner.strip():
+            flush()
+            out.append(line)
+        else:
+            group.append(line)
+    flush()
+    return "\n".join(out)

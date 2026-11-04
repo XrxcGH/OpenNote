@@ -1452,7 +1452,7 @@ The IDs in tags are IDs as section 2.4 writes them: 26 lowercase characters. An 
 
 `R-WS-1`. Whitespace at the edges of a marked range moves outside the range, as in version 1, except for marks that show on spaces: underline (other than the `words` style), strike, highlight, shade, box, insertion, deletion, and foreign marks. Those keep spaces at their edges, because a space under an underline prints in Word. Where a delimiter could not then close, the writer uses the tag (section 7.7), such as `<mark>a </mark>` for a highlight with a space at its end.
 
-`R-WS-2`. A hard break at the edge of any marked range moves outside the range.
+`R-WS-2`. A hard break at the edge of any marked range moves outside the range. A hard break with nothing after it in its paragraph is dropped, because CommonMark reads no hard break at the end of a block. So the canonical writer writes none there.
 
 `R-WS-3`. Text whose marks are all of version 1 stays version 1, even with spaces kept inside them (`R-STAMP-5`). A version 1 writer that rewrites such a paragraph moves those spaces outside, which only changes how the spaces look.
 
@@ -1472,7 +1472,7 @@ The IDs in tags are IDs as section 2.4 writes them: 26 lowercase characters. An 
 
 ### 7.13 Readable text
 
-`R-TXT-1`. The readable text of inline Markdown is the text of its runs in order, with every mark dropped, including foreign marks, so tags disappear and their content stays. A hard break becomes a line feed, a footnote reference becomes nothing, and paragraphs are joined by a blank line. Literal tags (`R-INL-5`, `R-INL-11`) stay as written. Search, formula detection (`R-SHT-5`), and the Python reference reader use it.
+`R-TXT-1`. The readable text of inline Markdown is the text of its runs in order, with every mark dropped, including foreign marks, so tags disappear and their content stays. A hard break becomes a line feed, a footnote reference becomes nothing, and paragraphs are joined by a blank line. Literal tags (`R-INL-5`, `R-INL-11`) stay as written. Search and formula detection (`R-SHT-5`) use it. The `page.md` of a version 2 page drops tags and footnote references the same way, and keeps the rest of its Markdown (section 11.1).
 
 ## 8. Ink
 
@@ -1824,7 +1824,7 @@ Rules:
 - The front matter is YAML, with every string written as a JSON string, so any title is valid. Obsidian, Hugo, Pandoc, and other tools read `title` and `tags` from it. `tags` is left out when there are none.
 - The title follows as a level 1 heading, escaped as section 7.6 requires. A page with an empty title has no heading.
 - A page with at least one stroke gets the line `![Handwriting on this page](ink.svg)` after the title.
-- Blocks follow in reading order (section 6.2), with one blank line between them. Text blocks are copied as they are. Images become `![alt](assets/<file>)`, and files become `[name](assets/<file>)`. Tables become GFM tables, with a hard break in a cell written as `<br>`, and with an empty header row when the table has none. Ink blocks add nothing more, except that a drawing that has a description and is not decorative adds the description, escaped, as a line in italics. Blocks of unknown types use their fallback's Markdown, or the line `*This part of the page needs a newer version of OpenNote.*`
+- Blocks follow in reading order (section 6.2), with one blank line between them. Text blocks are copied as they are. In a page of version 2, each paragraph of a text block or cell first drops its paired tags of section 7.9, its paired foreign tags, and its footnote references, and keeps their content (`R-TXT-1`). Tags of section 7.4, literal tags, code, and fenced code stay as written. Images become `![alt](assets/<file>)`, and files become `[name](assets/<file>)`. Tables become GFM tables, with a hard break in a cell written as `<br>`, and with an empty header row when the table has none. Ink blocks add nothing more, except that a drawing that has a description and is not decorative adds the description, escaped, as a line in italics. Blocks of unknown types use their fallback's Markdown, or the line `*This part of the page needs a newer version of OpenNote.*`
 - An image marked `decorative` gets an empty description: `![](assets/<file>)`.
 - Element IDs, tags, and styles (section 6.6) are left out, so the Markdown stays clean.
 - Links are rewritten so other tools can follow them. `opennote:page/<ID>` becomes a relative path to that page's `page.md` when the page is in the same notebook, and `asset:<ID>` becomes `assets/<file>`. Other links stay as they are.

@@ -202,6 +202,24 @@ class PagesTest(unittest.TestCase):
                 found = schema_v2.page_problems(case["page"])
                 self.assertEqual(sorted(found), sorted(case.get("problems", [])))
 
+    def test_malformed_shapes_are_problems_and_stamp_version_1(self) -> None:
+        """Hostile pages of the wrong shape get a problem with a path, and stamping them raises nothing."""
+        table = lambda rows: {"blocks": [{"type": "table", "data": {"rows": rows}}]}  # noqa: E731
+        cases = {
+            "blocks: a list": {"blocks": "x"},
+            "blocks[0]: an object": {"blocks": ["x"]},
+            "blocks[0].data: an object": {"blocks": [{"type": "table", "data": None}]},
+            "blocks[0].data.markdown: a string": {"blocks": [{"type": "text", "data": {"markdown": None}}]},
+            "blocks[0].data.rows: a list": table("x"),
+            "blocks[0].data.rows[0]: an object": table(["x"]),
+            "blocks[0].data.rows[0].cells: an object": table([{"cells": [1]}]),
+            "blocks[0].data.rows[0].cells.a: an object with a string markdown": table([{"cells": {"a": "x"}}]),
+        }
+        for problem, page in cases.items():
+            with self.subTest(problem=problem):
+                self.assertEqual(schema_v2.page_problems(page), [problem])
+                self.assertEqual(schema_v2.v2.stamp(page)["formatVersion"], 1)
+
     def test_notebook_styles_are_valid(self) -> None:
         for copy in fixtures.load(fixtures.PARAS / "styles.json")["copies"]:
             self.assertEqual(schema_v2.notebook_problems(copy), [])

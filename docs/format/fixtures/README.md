@@ -14,6 +14,7 @@ These files test every implementation of the [note format](../README.md) against
 | `markdown/downlevel/` | Pages of versions 1 to 3, the stamps a writer gives them, and what older readers do with them (spec 15) |
 | `table-sheet/` | Spreadsheet data in tables, one case for each key of `data.sheet` (spec 6.3) |
 | `readable/spec-example/` | The page of spec 5.5 with the exact `page.md` of spec 11.1 and `ink.svg` of spec 11.3 |
+| `readable/v2-tags/` | A version 2 page and its `page.md`, worked by hand: tags and footnote references drop, their content stays (spec 11.1) |
 
 ## The version 1 notebook
 

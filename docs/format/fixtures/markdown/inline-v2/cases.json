@@ -9374,6 +9374,75 @@
         "minReaderVersion": 1,
         "minWriterVersion": 2
       }
+    },
+    {
+      "name": "hard break at the end of a paragraph drops",
+      "rules": [
+        "R-WS-2"
+      ],
+      "markdown": "<span data-font=\"Georgia\">a</span>",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "a",
+              "marks": [
+                {
+                  "font": "Georgia"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "text": "a",
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "alsoWrittenFrom": [
+        [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "text": "a",
+                "marks": [
+                  {
+                    "font": "Georgia"
+                  }
+                ]
+              },
+              {
+                "hardBreak": true
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "text": "a",
+                "marks": [
+                  {
+                    "font": "Georgia"
+                  }
+                ]
+              },
+              {
+                "hardBreak": true
+              },
+              {
+                "hardBreak": true
+              }
+            ]
+          }
+        ]
+      ]
     }
   ]
 }

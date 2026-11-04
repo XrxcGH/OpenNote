@@ -55,13 +55,32 @@ def stamp(page: dict) -> dict:
         keep = {"formatVersion": current, "minReaderVersion": page.get("minReaderVersion", 1)}
         keep["minWriterVersion"] = page.get("minWriterVersion", current)
         return keep
-    version = 2 if any(block_needs_v2(block) for block in page.get("blocks", [])) else 1
+    version = 2 if any(block_needs_v2(block) for block in blocks_of(page)) else 1
     return {"formatVersion": version, "minReaderVersion": 1, "minWriterVersion": version}
+
+
+def blocks_of(page: dict) -> list[dict]:
+    """The blocks of a page that are objects. Other shapes hold no version 2 feature; `schema_v2` reports them."""
+    blocks = page.get("blocks") if isinstance(page, dict) else None
+    return [block for block in blocks if isinstance(block, dict)] if isinstance(blocks, list) else []
+
+
+def cell_markdowns(data: dict) -> list[str]:
+    """The Markdown of every cell of a table block that has the shape of section 6, in table order."""
+    rows = data.get("rows")
+    found = []
+    for row in rows if isinstance(rows, list) else []:
+        cells = row.get("cells") if isinstance(row, dict) else None
+        for cell in cells.values() if isinstance(cells, dict) else []:
+            markdown = cell.get("markdown") if isinstance(cell, dict) else None
+            found += [markdown] if isinstance(markdown, str) else []
+    return found
 
 
 def block_needs_v2(block: dict) -> bool:
     kind_ = block.get("type")
-    data = block.get("data") or {}
+    data = block.get("data")
+    data = data if isinstance(data, dict) else {}
     if kind_ == "break":
         return True
     if kind_ not in ("text", "table"):
@@ -69,8 +88,9 @@ def block_needs_v2(block: dict) -> bool:
     if any(data.get(key) for key in ("notes", "comments", "suggestions")):
         return True
     if kind_ == "text":
-        return markdown_needs_v2(data.get("markdown", ""))
-    cells = [cell.get("markdown", "") for row in data.get("rows", []) for cell in (row.get("cells") or {}).values()]
+        markdown = data.get("markdown", "")
+        return isinstance(markdown, str) and markdown_needs_v2(markdown)
+    cells = cell_markdowns(data)
     if any(markdown_needs_v2(md) for md in cells):
         return True
     return sheet_needs_v2(data.get("sheet"), cells)

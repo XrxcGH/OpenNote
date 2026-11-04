@@ -15,9 +15,43 @@ from schema_text import (
 )  # fmt: skip
 
 
-def page_problems(page: dict) -> list[str]:
-    """Every version 2 value of a page, checked against its schema."""
+def shape_problems(page: dict) -> list[str]:
+    """Blocks, data, rows, cells, and Markdown that do not have the shape of section 6, by path."""
+    blocks = page.get("blocks", [])
+    if not isinstance(blocks, list):
+        return ["blocks: a list"]
     problems = []
+    for i, block in enumerate(blocks):
+        data = block.get("data") if isinstance(block, dict) else None
+        if not isinstance(data, dict):
+            problems.append(f"blocks[{i}]" + (".data: an object" if isinstance(block, dict) else ": an object"))
+            continue
+        path = f"blocks[{i}].data"
+        if block.get("type") == "text" and not isinstance(data.get("markdown", ""), str):
+            problems.append(f"{path}.markdown: a string")
+        if block.get("type") != "table":
+            continue
+        rows = data.get("rows", [])
+        if not isinstance(rows, list):
+            problems.append(f"{path}.rows: a list")
+            continue
+        for r, row in enumerate(rows):
+            cells = row.get("cells", {}) if isinstance(row, dict) else None
+            if not isinstance(cells, dict):
+                problems.append(f"{path}.rows[{r}]" + (".cells: an object" if isinstance(row, dict) else ": an object"))
+                continue
+            for key, cell in cells.items():
+                if not isinstance(cell, dict) or not isinstance(cell.get("markdown", ""), str):
+                    problems.append(f"{path}.rows[{r}].cells.{key}: an object with a string markdown")
+    return problems
+
+
+def page_problems(page: dict) -> list[str]:
+    """Every version 2 value of a page, checked against its schema. A page without the shape of section 6 gets only
+    its shape problems, so no check fails on a value of the wrong type."""
+    problems = shape_problems(page)
+    if problems:
+        return problems
     view = page.get("view") or {}
     if "text" in view:
         problems += VIEW_TEXT(view["text"], "view.text")

@@ -39,7 +39,7 @@ Each file holds one case for `data.sheet` (spec 6.3). Between them they show eve
 | `notes.json` | Notes on cells, which stay at version 1 | `R-SHT-16` |
 | `v.json`, `values.json`, `valuesOf.json`, `spill.json` | `v`, cached values, fingerprints, spilled cells, and every shape of cached value, among them the unknown error `#LATER!` and numbers written with an exponent | `R-SHT-4`, `R-SHT-5`, `R-SHT-17`, `R-SHT-18` |
 | `links.json` | The pages that cross-page references name | `R-SHT-19` |
-| `beta8-before.json`, `beta8-after.json` | A page of version 2 that Beta 8 edited: the entries of deleted rows stay, and the cached values are stale | `R-SHT-20`, `R-SHT-2` |
+| `beta8-before.json`, `beta8-after.json` | A page of version 2 that Beta 8 edited: the entries of deleted rows stay, and the cached values are stale. `beta8-after.json` is modeled by hand from `R-SHT-20`, not captured, so it is a schema example only. Its key order and its copy of `data.sheet` are not evidence of what Beta 8 writes | `R-SHT-20`, `R-SHT-2` |
 | `beta8-smart.json` | A page as Beta 8 writes it today: a smart table with `data.smart` holding every key the app keeps (typed columns, choices, a unit, filters, two charts, a board view, a sort, a saved view) and formulas in its cells. It stays at version 1 and a reader keeps every key | `R-SHT-1`, `R-STAMP-1` |
 | `smart-and-sheet.json`, `smart-edited-stale.json` | `data.smart` beside `data.sheet`. The fingerprint covers the smart settings, so changing one makes the cached values stale | `R-SHT-1`, `R-SHT-18` |
 | `limits/cases.json` | Each limit of spec section 16, once at its boundary and once past it | `R-SHT-3` and others |
