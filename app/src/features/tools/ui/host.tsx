@@ -31,7 +31,9 @@ interface Layer {
 
 // The code studio loads the first time its window opens (code:L04 owns the window).
 const CodeStudioWindow = lazy(() =>
-  import('../../codestudio/window').then((studio) => ({ default: studio.CodeStudioWindow })),
+  import('../../codestudio')
+    .then((studio) => studio.loadCodeStudioWindow())
+    .then((loaded) => ({ default: loaded.CodeStudioWindow })),
 );
 
 const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0, widths: {}, used: [] }, 'tool windows');
