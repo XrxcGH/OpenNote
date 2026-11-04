@@ -265,13 +265,15 @@ pub struct Keymap {
     pub preset: KeymapPreset,
 }
 
-/// OpenNote's own shortcuts, or the optional set that follows OneNote's.
+/// OpenNote's own shortcuts (Word's keys for text formatting), the set that follows Google Docs, or the set that
+/// follows OneNote's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum KeymapPreset {
     #[default]
     Default,
+    Docs,
     #[serde(rename = "onenote")]
     OneNote,
 }
