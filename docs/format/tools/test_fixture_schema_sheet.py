@@ -330,6 +330,17 @@ class ValueTest(unittest.TestCase):
         self.assertTrue(v2.orphans(case["page"]["blocks"][0]["data"]))
         self.assertEqual(schema_v2.page_problems(case["page"]), [])
 
+    def test_beta8_edits_only_a_version_1_sheet(self) -> None:
+        """R-SHT-20: Beta 8 opens a version 2 page read-only (section 15.2), so it edits only a page whose sheet
+        holds the keys of R-STAMP-6. It keeps the sheet as it was, and has no cached values to make stale."""
+        before, after = load(FOLDER / "beta8-before.json"), load(FOLDER / "beta8-after.json")
+        for case in (before, after):
+            self.assertEqual(case["page"]["formatVersion"], 1)
+            self.assertEqual(v2.read_permission(case["page"], 1), "edit")
+            self.assertFalse({"v", "values", "valuesOf"} & set(sheet_of(case)))
+        self.assertEqual(sheet_of(before), sheet_of(after))
+        self.assertTrue(v2.formula_cells(before["page"]["blocks"][0]["data"]), "a formula cell without v")
+
 
 class Beta8Test(unittest.TestCase):
     """A page that Beta 8 wrote has `data.smart` and no `data.sheet`, and a reader of version 1 keeps all of it."""

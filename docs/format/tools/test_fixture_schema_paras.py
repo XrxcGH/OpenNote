@@ -98,8 +98,8 @@ class FieldsTest(unittest.TestCase):
             stamp = case["stamp"]
             if not stamp["minReaderVersion"] <= stamp["minWriterVersion"] <= stamp["formatVersion"]:
                 broken.append(case["name"])
-        # Only the two cases that show a file with inconsistent keys (spec 15.2, R-VER-3) keep them as they are.
-        self.assertEqual(broken, ["minWriterVersion above formatVersion", "minWriterVersion below minReaderVersion"])
+        # A writer writes an invalid minWriterVersion as F (R-VER-3, R-VER-5), so every stamp is in range.
+        self.assertEqual(broken, [])
 
     def test_there_is_a_case_for_each_data_the_lane_names(self) -> None:
         seen: set[str] = set()

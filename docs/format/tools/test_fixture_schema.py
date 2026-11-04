@@ -220,6 +220,40 @@ class PagesTest(unittest.TestCase):
                 self.assertEqual(schema_v2.page_problems(page), [problem])
                 self.assertEqual(schema_v2.v2.stamp(page)["formatVersion"], 1)
 
+    def test_version_keys_of_the_wrong_shape_are_problems(self) -> None:
+        """R-VER-2 and R-VER-3: the version keys are integers with 1 ≤ R ≤ W ≤ F."""
+        cases = {
+            "formatVersion: an integer of at least 1": [{"formatVersion": "2"}, {"formatVersion": 0}],
+            "minReaderVersion: an integer from 1 to formatVersion": [
+                {"formatVersion": 2, "minReaderVersion": 200},
+                {"formatVersion": 2, "minReaderVersion": "1"},
+            ],
+            "minWriterVersion: an integer from minReaderVersion to formatVersion": [
+                {"formatVersion": 2, "minWriterVersion": "x"},
+                {"formatVersion": 3, "minReaderVersion": 2, "minWriterVersion": 1},
+                {"formatVersion": 3, "minWriterVersion": True},
+            ],
+        }
+        for problem, pages in cases.items():
+            for page in pages:
+                with self.subTest(page=page):
+                    self.assertEqual(schema_v2.page_problems({**page, "blocks": []}), [problem])
+        self.assertEqual(schema_v2.page_problems({"formatVersion": 3, "minWriterVersion": 2, "blocks": []}), [])
+
+    def test_reader_computations_skip_wrong_shapes(self) -> None:
+        """The computations of spec 6.3 skip what shape_problems reports, so none raises on a hostile table."""
+        for rows in ([None, {"cells": None}], "x", [{"id": "r", "cells": {"c": None}}], [{"cells": {"c": "x"}}]):
+            data = {"columns": [None, {"id": "c"}], "rows": rows, "sheet": {"cells": {"r": None}, "merges": "x"}}
+            with self.subTest(rows=rows):
+                self.assertTrue(schema_v2.shape_problems({"blocks": [{"type": "table", "data": data}]}))
+                self.assertEqual(schema_v2.v2.formula_cells(data), [])
+                self.assertEqual(schema_v2.v2.active_merges(data), [])
+                self.assertIsInstance(schema_v2.v2.orphans(data), list)
+                self.assertFalse(schema_v2.v2.values_fresh(data))
+                self.assertTrue(schema_v2.v2.fingerprint(data).startswith("fnv1a:"))
+        for sheet in (None, "x", {"cols": "x", "rows": [1], "notes": {"r": "x"}}):
+            self.assertIsInstance(schema_v2.v2.orphans({"rows": [], "sheet": sheet}), list)
+
     def test_notebook_styles_are_valid(self) -> None:
         for copy in fixtures.load(fixtures.PARAS / "styles.json")["copies"]:
             self.assertEqual(schema_v2.notebook_problems(copy), [])

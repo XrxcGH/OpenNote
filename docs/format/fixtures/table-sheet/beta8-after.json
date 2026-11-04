@@ -3,11 +3,10 @@
   "rules": [
     "R-SHT-20",
     "R-SHT-2",
-    "R-SHT-18",
-    "R-VER-5"
+    "R-STAMP-6"
   ],
   "page": {
-    "formatVersion": 2,
+    "formatVersion": 1,
     "minReaderVersion": 1,
     "kind": "opennote.page",
     "id": "01m3sbcmt0000000000000p001",
@@ -33,10 +32,6 @@
             {
               "id": "01m3sbcmt0000000000000k002",
               "width": 120
-            },
-            {
-              "id": "01m3sbcmt0000000000000k003",
-              "width": 120
             }
           ],
           "rows": [
@@ -48,9 +43,6 @@
                 },
                 "01m3sbcmt0000000000000k002": {
                   "markdown": "3"
-                },
-                "01m3sbcmt0000000000000k003": {
-                  "markdown": "\\=B1\\*2"
                 }
               }
             },
@@ -62,9 +54,6 @@
                 },
                 "01m3sbcmt0000000000000k002": {
                   "markdown": "1"
-                },
-                "01m3sbcmt0000000000000k003": {
-                  "markdown": ""
                 }
               }
             }
@@ -73,6 +62,19 @@
             "cells": {
               "01m3sbcmt0000000000000r002": {
                 "01m3sbcmt0000000000000k001": "uvqwee"
+              }
+            },
+            "cols": {
+              "01m3sbcmt0000000000000k003": {
+                "style": "uvqwee"
+              }
+            },
+            "notes": {
+              "01m3sbcmt0000000000000r002": {
+                "01m3sbcmt0000000000000k001": {
+                  "at": "2026-11-02T10:00:00.000Z",
+                  "markdown": "From the shop."
+                }
               }
             },
             "rows": {
@@ -88,17 +90,7 @@
                   "family": "+body"
                 }
               }
-            },
-            "v": 1,
-            "values": {
-              "01m3sbcmt0000000000000r001": {
-                "01m3sbcmt0000000000000k003": 5
-              },
-              "01m3sbcmt0000000000000r002": {
-                "01m3sbcmt0000000000000k003": 8
-              }
-            },
-            "valuesOf": "fnv1a:dd84688c38984212"
+            }
           }
         }
       }
@@ -116,16 +108,17 @@
     }
   },
   "stamp": {
-    "formatVersion": 2,
+    "formatVersion": 1,
     "minReaderVersion": 1,
-    "minWriterVersion": 2
+    "minWriterVersion": 1
   },
   "expect": {
-    "fresh": false,
     "orphans": [
+      "cols.01m3sbcmt0000000000000k003",
       "rows.01m3sbcmt0000000000000r002",
       "cells.01m3sbcmt0000000000000r002",
-      "values.01m3sbcmt0000000000000r002"
-    ]
+      "notes.01m3sbcmt0000000000000r002"
+    ],
+    "formulaCells": []
   }
 }

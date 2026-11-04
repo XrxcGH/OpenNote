@@ -9443,6 +9443,71 @@
           }
         ]
       ]
+    },
+    {
+      "name": "hard break at the start of a paragraph",
+      "rules": [
+        "R-WS-2"
+      ],
+      "markdown": "\\\n]",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "]",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "]",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "canonical": "\\]"
+    },
+    {
+      "name": "hard break before everything else is not written",
+      "rules": [
+        "R-WS-2"
+      ],
+      "markdown": "\\]",
+      "tree": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "text": "]",
+              "marks": []
+            }
+          ]
+        }
+      ],
+      "text": "]",
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "alsoWrittenFrom": [
+        [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "hardBreak": true
+              },
+              {
+                "text": "]",
+                "marks": []
+              }
+            ]
+          }
+        ]
+      ]
     }
   ]
 }

@@ -65,6 +65,43 @@ class HostileTest(unittest.TestCase):
                 self.assertTrue(content)
         self.assertEqual(readable_text(nested).count("<span"), 10_000 - 32, "pairs deeper than 32 stay literal")
 
+    def test_text_up_to_the_block_limit_reads_in_linear_time(self) -> None:
+        """Plain text, tags, delimiter runs, and open links and code spans up to the 4 MiB block limit (section 16)
+        read in linear time: doubling the text at most doubles the time, with room for a busy machine. Growing a run
+        one piece at a time, scanning every opener per closer, and scanning to the end of the text per open link or
+        code span each took minutes here."""
+        tag = '<span data-zz="1">'
+        cases = {
+            "plain": (1 << 20, lambda n: "a" * n),
+            "flat tags": (4 << 20, lambda n: (tag + "x</span>") * (n // 26)),
+            "nested tags": (4 << 20, lambda n: tag * (n // 50) + "x" + "</span>" * (n // 50)),
+            "strong runs": (4 << 20, lambda n: "**a" * (n // 3)),
+            "open emphasis": (1 << 20, lambda n: "*a " * (n // 6) + "a* " * (n // 6)),
+            "open links": (1 << 20, lambda n: "[a](b" * (n // 5)),
+            "open code spans": (1 << 20, lambda n: "`a``" * (n // 4)),
+        }
+        for name, (size, make) in cases.items():
+            with self.subTest(case=name):
+                times = []
+                for n in (size // 2, size):
+                    text = make(n)
+                    start = time.perf_counter()
+                    content = read_inline(text)
+                    times.append(time.perf_counter() - start)
+                    self.assertTrue(content)
+                self.assertLess(times[1], 60.0)
+                self.assertLess(times[1], 3 * times[0] + 0.5, f"{times[0]:.2f} s, then {times[1]:.2f} s")
+
+    def test_page_md_of_a_long_paragraph_is_quick(self) -> None:
+        """page.md of a version 2 page routes every text block through readable_markdown (spec 11.1), so a long
+        paragraph took minutes there too."""
+        page = read_opennote.read_json(V2_TAGS / "page.json")
+        page["blocks"] = [{**page["blocks"][0], "data": {"markdown": "word " * (1 << 18)}}]
+        start = time.perf_counter()
+        page_md = read_opennote.render_page_md(page, {}, lambda target: None)
+        self.assertLess(time.perf_counter() - start, 10.0)
+        self.assertIn("word " * 100, page_md)
+
 
 if __name__ == "__main__":
     unittest.main()

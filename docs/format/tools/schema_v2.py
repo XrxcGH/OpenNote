@@ -17,10 +17,10 @@ from schema_text import (
 
 def shape_problems(page: dict) -> list[str]:
     """Blocks, data, rows, cells, and Markdown that do not have the shape of section 6, by path."""
+    problems = version_problems(page)
     blocks = page.get("blocks", [])
     if not isinstance(blocks, list):
-        return ["blocks: a list"]
-    problems = []
+        return problems + ["blocks: a list"]
     for i, block in enumerate(blocks):
         data = block.get("data") if isinstance(block, dict) else None
         if not isinstance(data, dict):
@@ -44,6 +44,21 @@ def shape_problems(page: dict) -> list[str]:
                 if not isinstance(cell, dict) or not isinstance(cell.get("markdown", ""), str):
                     problems.append(f"{path}.rows[{r}].cells.{key}: an object with a string markdown")
     return problems
+
+
+def version_problems(page: dict) -> list[str]:
+    """The version keys (R-VER-2 and R-VER-3): integers with 1 ≤ R ≤ W ≤ F. A reader still reads a file whose
+    `minWriterVersion` breaks this, taking it as F, but the file holds a value no writer writes."""
+    formats = page.get("formatVersion", 1)
+    if not v2.is_int(formats) or formats < 1:
+        return ["formatVersion: an integer of at least 1"]
+    readers = page.get("minReaderVersion", 1)
+    if not v2.is_int(readers) or not 1 <= readers <= formats:
+        return ["minReaderVersion: an integer from 1 to formatVersion"]
+    writers = page.get("minWriterVersion", formats)
+    if not v2.is_int(writers) or not readers <= writers <= formats:
+        return ["minWriterVersion: an integer from minReaderVersion to formatVersion"]
+    return []
 
 
 def page_problems(page: dict) -> list[str]:

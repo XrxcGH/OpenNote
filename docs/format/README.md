@@ -1089,7 +1089,7 @@ A rule of a type or kind that a reader does not know is kept and ignored. So is 
 
 `R-SHT-19`. `links` maps a page title, as cross-page references write it, to that page's ID. Renaming a page rewrites its title in the formulas and here.
 
-`R-SHT-20`. A version 1 reader, such as Beta 8, keeps `sheet` when it edits the table. Its row and column inserts and deletes leave entries for missing IDs, which `R-SHT-2` ignores. Its cell edits make `values` stale, which `R-SHT-18` detects. A version 2 writer then drops the orphaned entries and writes fresh values.
+`R-SHT-20`. A version 1 reader, such as Beta 8, opens every page of version 2 read-only (section 15.2). So it edits only a page whose `sheet` holds the keys of `R-STAMP-6`, with no `values` to go stale. It keeps `sheet` when it edits the table. Its row and column inserts and deletes leave entries in `cols`, `rows`, `cells`, and `notes` for missing IDs, which `R-SHT-2` ignores. A version 2 writer then drops the orphaned entries. A reader of version 2 that edits a page of a later version (`R-VER-4`) keeps `sheet` the same way. Its cell edits can make `values` stale, which `R-SHT-18` detects.
 
 `R-SHT-21`. A cell holds exactly one paragraph and has no element ID, so `data.paras` never applies inside a table. A cell's alignment, padding, and line settings are properties of its style.
 
@@ -1452,7 +1452,7 @@ The IDs in tags are IDs as section 2.4 writes them: 26 lowercase characters. An 
 
 `R-WS-1`. Whitespace at the edges of a marked range moves outside the range, as in version 1, except for marks that show on spaces: underline (other than the `words` style), strike, highlight, shade, box, insertion, deletion, and foreign marks. Those keep spaces at their edges, because a space under an underline prints in Word. Where a delimiter could not then close, the writer uses the tag (section 7.7), such as `<mark>a </mark>` for a highlight with a space at its end.
 
-`R-WS-2`. A hard break at the edge of any marked range moves outside the range. A hard break with nothing after it in its paragraph is dropped, because CommonMark reads no hard break at the end of a block. So the canonical writer writes none there.
+`R-WS-2`. A hard break at the edge of any marked range moves outside the range. A hard break with nothing after it in its paragraph is dropped, because CommonMark reads no hard break at the end of a block. A hard break with nothing before it in its paragraph is dropped too: a reader drops it, so the canonical writer writes none there either.
 
 `R-WS-3`. Text whose marks are all of version 1 stays version 1, even with spaces kept inside them (`R-STAMP-5`). A version 1 writer that rewrites such a paragraph moves those spaces outside, which only changes how the spaces look.
 
@@ -2175,7 +2175,7 @@ A reader of version 1 does not know `minWriterVersion`, so it opens every file w
 
 Read-only applies per file. A newer `page.json` makes that page read-only. A newer `section.json` freezes that section's settings and page list, while its pages follow their own versions. A newer `notebook.json` freezes the notebook's groups and defaults.
 
-`R-VER-5`. Writers must never replace a file whose version is newer than the version they write, unless W ≤ V. A writer that edits such a file writes its `formatVersion`, `minReaderVersion`, and `minWriterVersion` back as they were, and never lowers them. Writers set `minReaderVersion` to the oldest version that can show the file usefully with fallbacks, which is normally 1. They raise it only when older readers would show something wrong, such as encrypted content. Every version 2 feature keeps `minReaderVersion` at 1.
+`R-VER-5`. Writers must never replace a file whose version is newer than the version they write, unless W ≤ V. A writer that edits such a file writes its `formatVersion`, `minReaderVersion`, and `minWriterVersion` back as they were, and never lowers them. It writes an invalid `minWriterVersion` as F, the value a reader takes it for (`R-VER-3`). Writers set `minReaderVersion` to the oldest version that can show the file usefully with fallbacks, which is normally 1. They raise it only when older readers would show something wrong, such as encrypted content. Every version 2 feature keeps `minReaderVersion` at 1.
 
 ### 15.3 Migrations
 

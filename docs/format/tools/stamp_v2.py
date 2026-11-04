@@ -52,11 +52,18 @@ def stamp(page: dict) -> dict:
     """The version keys a writer gives the page (R-VER-6, R-STAMP-1 to R-STAMP-13)."""
     current = page.get("formatVersion", 1)
     if isinstance(current, int) and current > 2:
-        keep = {"formatVersion": current, "minReaderVersion": page.get("minReaderVersion", 1)}
-        keep["minWriterVersion"] = page.get("minWriterVersion", current)
-        return keep
+        readers = page.get("minReaderVersion", 1)
+        writers = page.get("minWriterVersion", current)
+        # R-VER-5 keeps the keys as they were. An invalid W is written as F, the value a reader takes it for (R-VER-3).
+        if not (is_int(readers) and is_int(writers) and readers <= writers <= current):
+            writers = current
+        return {"formatVersion": current, "minReaderVersion": readers, "minWriterVersion": writers}
     version = 2 if any(block_needs_v2(block) for block in blocks_of(page)) else 1
     return {"formatVersion": version, "minReaderVersion": 1, "minWriterVersion": version}
+
+
+def is_int(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def blocks_of(page: dict) -> list[dict]:
@@ -155,52 +162,82 @@ def style_id(style: dict, taken: dict | None = None) -> str:
         n += 1
 
 
+# The parts of a table block a reader computes from. Each skips what does not have the shape of section 6, which
+# `schema_v2.shape_problems` reports by path, so no computation raises on a hostile file.
+
+
+def table_rows(data: dict) -> list[dict]:
+    rows = data.get("rows") if isinstance(data, dict) else None
+    return [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+
+
+def row_cells(row: dict) -> dict:
+    cells = row.get("cells")
+    return cells if isinstance(cells, dict) else {}
+
+
+def cell_text(cells: dict, column: object) -> str:
+    cell = cells.get(column) if isinstance(column, str) else None
+    markdown = cell.get("markdown", "") if isinstance(cell, dict) else ""
+    return markdown if isinstance(markdown, str) else ""
+
+
+def column_ids(data: dict) -> list:
+    columns = data.get("columns") if isinstance(data, dict) else None
+    return [c.get("id") for c in columns if isinstance(c, dict)] if isinstance(columns, list) else []
+
+
+def sheet_map(data: dict, key: str) -> dict:
+    sheet = data.get("sheet") if isinstance(data, dict) else None
+    found = sheet.get(key) if isinstance(sheet, dict) else None
+    return found if isinstance(found, dict) else {}
+
+
 def fingerprint(data: dict) -> str:
     """`valuesOf` of a table block's data (R-SHT-18)."""
-    columns = [c["id"] for c in data.get("columns", [])]
+    columns = column_ids(data)
     rows = []
-    for row in data.get("rows", []):
-        cells = row.get("cells") or {}
-        rows.append([row["id"], [(cells.get(c) or {}).get("markdown", "") for c in columns]])
+    for row in table_rows(data):
+        cells = row_cells(row)
+        rows.append([row.get("id"), [cell_text(cells, c) for c in columns]])
     doc = [bool(data.get("header", False)), columns, rows, data.get("smart")]
     return "fnv1a:%016x" % fnv1a64(compact_json(doc).encode("utf-8"))
 
 
 def formula_cells(data: dict) -> list[list[str]]:
     """The formula cells of a table block (R-SHT-5), as [row ID, column ID] in table order."""
-    columns = [c["id"] for c in data.get("columns", [])]
+    columns = column_ids(data)
     found = []
-    for row in data.get("rows", []):
-        cells = row.get("cells") or {}
-        found += [[row["id"], c] for c in columns if c in cells and is_formula(cells[c].get("markdown", ""))]
+    for row in table_rows(data):
+        cells = row_cells(row)
+        found += [[row.get("id"), c] for c in columns if c in cells and is_formula(cell_text(cells, c))]
     return found
 
 
 def orphans(data: dict) -> list[str]:
     """Entries of `data.sheet` that name a row or column the table no longer has (R-SHT-2), as paths."""
-    sheet = data.get("sheet") or {}
-    rows = {r["id"] for r in data.get("rows", [])}
-    cols = {c["id"] for c in data.get("columns", [])}
-    found = [f"cols.{c}" for c in sheet.get("cols", {}) if c not in cols]
-    found += [f"rows.{r}" for r in sheet.get("rows", {}) if r not in rows]
+    rows = {r.get("id") for r in table_rows(data) if isinstance(r.get("id"), str)}
+    cols = {c for c in column_ids(data) if isinstance(c, str)}
+    found = [f"cols.{c}" for c in sheet_map(data, "cols") if c not in cols]
+    found += [f"rows.{r}" for r in sheet_map(data, "rows") if r not in rows]
     for key in ("cells", "notes", "values"):
-        for r, by_col in sheet.get(key, {}).items():
+        for r, by_col in sheet_map(data, key).items():
             if r not in rows:
                 found.append(f"{key}.{r}")
-            else:
+            elif isinstance(by_col, dict):
                 found += [f"{key}.{r}.{c}" for c in by_col if c not in cols]
     return found
 
 
 def active_merges(data: dict) -> list[str]:
     """The merges a reader uses (R-SHT-12): valid, larger than one cell, and not overlapping a lower ID."""
-    sheet = data.get("sheet") or {}
-    rows = {r["id"]: i for i, r in enumerate(data.get("rows", []))}
-    cols = {c["id"]: i for i, c in enumerate(data.get("columns", []))}
+    rows = {r.get("id"): i for i, r in enumerate(table_rows(data)) if isinstance(r.get("id"), str)}
+    cols = {c: i for i, c in enumerate(column_ids(data)) if isinstance(c, str)}
     used: list[tuple[int, int, int, int]] = []
     active = []
-    for merge_id in sorted(sheet.get("merges", {})):
-        merge = sheet["merges"][merge_id]
+    merges = sheet_map(data, "merges")
+    for merge_id in sorted(merges):
+        merge = merges[merge_id]
         try:
             (r1, c1), (r2, c2) = merge["from"], merge["to"]
             box = (min(rows[r1], rows[r2]), max(rows[r1], rows[r2]), min(cols[c1], cols[c2]), max(cols[c1], cols[c2]))
@@ -217,8 +254,8 @@ def active_merges(data: dict) -> list[str]:
 
 def values_fresh(data: dict) -> bool:
     """Whether `values` may be used as current results (R-SHT-18)."""
-    sheet = data.get("sheet") or {}
-    return "valuesOf" in sheet and sheet["valuesOf"] == fingerprint(data)
+    sheet = data.get("sheet") if isinstance(data, dict) else None
+    return isinstance(sheet, dict) and "valuesOf" in sheet and sheet["valuesOf"] == fingerprint(data)
 
 
 def style_chain(styles: dict, name: str) -> list[str]:

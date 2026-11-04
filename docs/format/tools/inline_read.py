@@ -4,6 +4,8 @@ CommonMark parser."""
 
 from __future__ import annotations
 
+import bisect
+import functools
 import html.entities
 import re
 import unicodedata
@@ -18,8 +20,15 @@ from markdown_text import WHITE_SPACE
 FOOTNOTE = re.compile(r"\[\^([0-7][0-9a-hjkmnp-tv-z]{25})\]")
 ENTITY = re.compile(r"&(#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});")
 ASCII_PUNCT = set("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+# Characters that start nothing, so a run of them reads as one piece of text.
+PLAIN = re.compile(r"[^\\&`<\[\]*~=]+")
+ESCAPE_OR_PAREN = re.compile(r"\\[!-/:-@\[-`{-~]|[()]")
+UNESCAPE = re.compile(r"\\([!-/:-@\[-`{-~])")
+RUNS = {c: re.compile(re.escape(c) + "+") for c in "`*~="}
+SPACE_OR_CONTROL = re.compile("[\x00-\x20\x7f-\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]")
 
 
+@functools.lru_cache(maxsize=4096)
 def char_class(c: str | None) -> str:
     if c is None or c in WHITE_SPACE:
         return "ws"
@@ -43,24 +52,35 @@ def decode_entity(found: re.Match) -> str | None:
     return html.entities.html5.get(body + ";")
 
 
-def code_span(text: str, at: int) -> tuple[str, int] | None:
-    run = len(text[at:]) - len(text[at:].lstrip("`"))
-    i = at + run
-    while i < len(text):
-        if text[i] != "`":
-            i += 1
-            continue
-        length = len(text[i:]) - len(text[i:].lstrip("`"))
-        if length == run:
-            body = text[at + run : i].replace("\n", " ")
-            if len(body) >= 2 and body[0] == " " and body[-1] == " " and body.strip(" "):
-                body = body[1:-1]
-            return body, i + length
-        i += length
-    return None
+def run_length(text: str, at: int, c: str) -> int:
+    """How many times `c` repeats from `at`, read without copying the rest of the text."""
+    found = RUNS[c].match(text, at)
+    return found.end() - at if found else 0
 
 
-def link_destination(text: str, at: int) -> tuple[str, int] | None:
+def backtick_runs(text: str) -> dict[int, list[int]]:
+    """Where each whole run of backticks starts, by its length, so a code span finds its closer in one lookup."""
+    runs: dict[int, list[int]] = {}
+    for found in re.finditer("`+", text):
+        runs.setdefault(len(found.group()), []).append(found.start())
+    return runs
+
+
+def code_span(text: str, at: int, runs: dict[int, list[int]]) -> tuple[str, int] | None:
+    """The code span whose opening run starts at `at`, closed by the next run of the same length (CommonMark 6.1)."""
+    run = run_length(text, at, "`")
+    starts = runs.get(run, [])
+    found = bisect.bisect_left(starts, at + run)
+    if found == len(starts):
+        return None
+    i = starts[found]
+    body = text[at + run : i].replace("\n", " ")
+    if len(body) >= 2 and body[0] == " " and body[-1] == " " and body.strip(" "):
+        body = body[1:-1]
+    return body, i + run
+
+
+def link_destination(text: str, at: int, dests: Destinations) -> tuple[str, int] | None:
     """The destination of `](...)` whose `(` is at `at`, and where the link ends."""
     i = at + 1
     if text[i : i + 1] == "<":
@@ -71,21 +91,43 @@ def link_destination(text: str, at: int) -> tuple[str, int] | None:
             out.append(text[i])
             i += 1
         return ("".join(out), i + 2) if text[i : i + 2] == ">)" else None
-    out, depth = [], 0
-    while i < len(text):
-        c = text[i]
-        if c == "\\" and i + 1 < len(text) and text[i + 1] in ASCII_PUNCT:
-            out.append(text[i + 1])
-            i += 2
-            continue
-        if c == ")" and depth == 0:
-            return "".join(out), i + 1
-        if c in WHITE_SPACE or is_control(c):
+    found = dests.close(i)
+    return (UNESCAPE.sub(r"\1", text[i:found]), found + 1) if found is not None else None
+
+
+class Destinations:
+    """Where each bare link destination of one text ends (CommonMark 6.3): at the first `)` outside its balanced
+    parentheses, unless a space or control comes first. Worked out once for the whole text, so a text of many open
+    links does not scan the rest of the text once per link."""
+
+    def __init__(self, text: str) -> None:
+        # An escape starts nowhere inside another, so the escapes found from the start of the text are the ones
+        # found from just after any `(`.
+        self.parens: list[int] = []
+        level, levels, closes = 0, [], []
+        for found in ESCAPE_OR_PAREN.finditer(text):
+            c = found.group()
+            if len(c) == 1:
+                self.parens.append(found.start())
+                levels.append(level)
+                closes.append(c == ")")
+                level += 1 if c == "(" else -1
+        # first[e]: the first `)` from paren e on that leaves the level paren e starts at.
+        self.first: list[int | None] = [None] * len(levels)
+        later: dict[int, int] = {}
+        for e in range(len(levels) - 1, -1, -1):
+            if closes[e]:
+                later[levels[e]] = self.parens[e]
+            self.first[e] = later.get(levels[e])
+        self.stops = [found.start() for found in SPACE_OR_CONTROL.finditer(text)]
+
+    def close(self, start: int) -> int | None:
+        e = bisect.bisect_left(self.parens, start)
+        end = self.first[e] if e < len(self.parens) else None
+        if end is None:
             return None
-        depth += 1 if c == "(" else -1 if c == ")" else 0
-        out.append(c)
-        i += 1
-    return None
+        stop = bisect.bisect_left(self.stops, start)
+        return end if stop == len(self.stops) or self.stops[stop] > end else None
 
 
 def tokenize(text: str, spans: dict | None = None) -> list[list]:
@@ -93,18 +135,38 @@ def tokenize(text: str, spans: dict | None = None) -> list[list]:
     each html and footnote event to where it sits in `text`."""
     events: list[list] = []
     brackets: list[int] = []
+    # Text collects in pieces and joins once per event, so a long text costs its length and not its square.
+    pieces: list[str] = []
+    runs: dict[int, list[int]] | None = None
+    dests: Destinations | None = None
     i = 0
 
-    def add_text(s: str) -> None:
-        if events and events[-1][0] == "text":
-            events[-1][1] += s
-        else:
-            events.append(["text", s])
+    def flush() -> None:
+        if pieces:
+            events.append(["text", "".join(pieces)])
+            pieces.clear()
 
+    def push(event: list) -> None:
+        flush()
+        events.append(event)
+
+    add_text = pieces.append
     while i < len(text):
         c = text[i]
-        if c == "\\" and text[i + 1 : i + 2] == "\n":
-            events.append(["break"])
+        if c not in "\\&`<[]*~=" and (found := PLAIN.match(text, i)):
+            add_text(found.group())
+            i = found.end()
+        elif c in "*~=":
+            run = run_length(text, i, c)
+            prev = text[i - 1] if i > 0 else None
+            nxt = text[i + run] if i + run < len(text) else None
+            left, right = flanking(prev, nxt)
+            if c == "=":
+                left, right = char_class(nxt) != "ws", char_class(prev) != "ws"
+            push(["delim", c, run, left, right, run])
+            i += run
+        elif c == "\\" and text[i + 1 : i + 2] == "\n":
+            push(["break"])
             i += 2
         elif c == "\\" and i + 1 < len(text) and text[i + 1] in ASCII_PUNCT:
             add_text(text[i + 1])
@@ -113,60 +175,67 @@ def tokenize(text: str, spans: dict | None = None) -> list[list]:
             add_text(decoded)
             i = found.end()
         elif c == "`":
-            span = code_span(text, i)
+            runs = backtick_runs(text) if runs is None else runs
+            span = code_span(text, i, runs)
             if span is None:
-                run = len(text[i:]) - len(text[i:].lstrip("`"))
+                run = run_length(text, i, "`")
                 add_text("`" * run)
                 i += run
             else:
-                events.append(["code", span[0]])
+                push(["code", span[0]])
                 i = span[1]
         elif c == "<" and (found := RAW_OPEN.match(text, i) or RAW_CLOSE.match(text, i)):
-            events.append(["html", found.group(0)])
+            push(["html", found.group(0)])
             if spans is not None:
                 spans[id(events[-1])] = (i, found.end())
             i = found.end()
         elif c == "[" and (found := FOOTNOTE.match(text, i)) and text[found.end() : found.end() + 1] != "(":
-            events.append(["footnote", found.group(1)])
+            push(["footnote", found.group(1)])
             if spans is not None:
                 spans[id(events[-1])] = (i, found.end())
             i = found.end()
         elif c == "[":
-            brackets.append(len(events))
-            events.append(["lbracket"])
+            push(["lbracket"])
+            brackets.append(len(events) - 1)
             i += 1
-        elif c == "]" and brackets and text[i + 1 : i + 2] == "(" and (dest := link_destination(text, i + 1)):
+        elif c == "]" and brackets and text[i + 1 : i + 2] == "(":
+            dests = Destinations(text) if dests is None else dests
+            if not (dest := link_destination(text, i + 1, dests)):
+                add_text(c)
+                i += 1
+                continue
             opener = brackets.pop()
             events[opener] = ["link_open", dest[0]]
-            events.append(["link_close"])
+            push(["link_close"])
             i = dest[1]
-        elif c in "*~=":
-            run = len(text[i:]) - len(text[i:].lstrip(c))
-            prev = text[i - 1] if i > 0 else None
-            nxt = text[i + run] if i + run < len(text) else None
-            left, right = flanking(prev, nxt)
-            if c == "=":
-                left, right = char_class(nxt) != "ws", char_class(prev) != "ws"
-            events.append(["delim", c, run, left, right, run])
-            i += run
         else:
             add_text(c)
             i += 1
+    flush()
     for at in brackets:
         events[at] = ["text", "["]
     return events
 
 
 def process_delimiters(events: list[list]) -> None:
-    """CommonMark's emphasis rule for `*`, and pairs of 2 for `~~` and `==`, in place."""
+    """CommonMark's emphasis rule for `*`, and pairs of 2 for `~~` and `==`, in place. Like CommonMark's
+    openers_bottom, `bottom` keeps, for each kind of closer, the event below which no opener can match it, so no
+    closer looks at the same openers twice and a long run of unmatched delimiters reads in linear time."""
     stack: list[int] = []
+    bottom: dict[tuple, int] = {}
     for index, event in enumerate(events):
         if event[0] != "delim":
             continue
         char, _, can_open, can_close, _ = event[1:]
+        # Whether an opener matches depends on the closer only through these (the rule of 3 for `*`).
+        key = (char, event[5] % 3, can_open) if char == "*" else (char,)
         while can_close and event[2] > 0:
+            if char != "*" and event[2] < 2:
+                break
             match = None
             for s in range(len(stack) - 1, -1, -1):
+                if stack[s] < bottom.get(key, 0):
+                    break
                 opener = events[stack[s]]
                 if opener[1] != char or opener[2] == 0:
                     continue
@@ -178,6 +247,7 @@ def process_delimiters(events: list[list]) -> None:
                 match = s
                 break
             if match is None:
+                bottom[key] = index
                 break
             opener = events[stack[match]]
             use = 2 if opener[2] >= 2 and event[2] >= 2 else 1
@@ -199,6 +269,16 @@ def expand(events: list[list]) -> list[list]:
             out.append(event)
             continue
         char, left = event[1], event[2]
+        if len(event) < 8:
+            # No pair or one, the common cases, without building lists.
+            pair = event[6] if len(event) == 7 else ("", "")
+            if pair[0] == "close":
+                out.append(["mark_close", pair[1]])
+            if left:
+                out.append(["text", char * left])
+            if pair[0] == "open":
+                out.append(["mark_open", pair[1]])
+            continue
         pairs = event[6:]
         closes = [p for p in pairs if p[0] == "close"]
         opens = [p for p in pairs if p[0] == "open"]
@@ -265,57 +345,78 @@ def read_inline(text: str) -> list[dict]:
     events = expand(events)
     pair_tags(events)
     content: list[dict] = []
-    active: list[tuple[object, object]] = []
+    # The open marks by kind, outermost first, so the marks of a run cost the number of kinds and not the depth.
+    # Comments and foreign marks may repeat (R-MRK-28) and come only from tags, which nest at most 32 deep.
+    by_kind: dict[str, list[tuple[object, object]]] = {}
+    many: list[tuple[object, object]] = []
+    cached: list[list] = []
 
     def marks() -> list:
         # R-MRK-28: one value of each kind per run, the innermost; comments and foreign marks may repeat.
-        many: list = []
-        one: dict = {}
-        for _, mark in active:
-            k = kind(mark)
-            if k in ("comment", "foreign"):
-                many.append(mark)
-            else:
-                one["sub" if k == "sup" else k] = mark
-        return sort_marks(many + list(one.values()))
+        if not cached:
+            cached.append(sort_marks([m for _, m in many] + [open_[-1][1] for open_ in by_kind.values() if open_]))
+        return cached[0]
+
+    def opened(mark: object) -> list[tuple[object, object]]:
+        k = kind(mark)
+        if k in ("comment", "foreign"):
+            return many
+        return by_kind.setdefault("sub" if k == "sup" else k, [])
+
+    def open_mark(key: tuple, mark: object) -> None:
+        opened(mark).append((key, mark))
+        cached.clear()
+
+    def close_mark(key: tuple, mark: object) -> None:
+        # The innermost open mark with this key. Each kind keeps its marks in the order they opened.
+        open_ = opened(mark)
+        for at in range(len(open_) - 1, -1, -1):
+            if open_[at][0] == key:
+                del open_[at]
+                cached.clear()
+                return
+
+    # Text runs collect their pieces and join once, so a long run costs its length and not its square.
+    parts: list[list[str]] = []
 
     def add(node: dict) -> None:
         last = content[-1] if content else None
         if "text" in node and last and "text" in last and last["marks"] == node["marks"]:
-            last["text"] += node["text"]
+            parts[-1].append(node["text"])
         elif "text" not in node or node["text"]:
             content.append(node)
+            parts.append([node["text"]] if "text" in node else [])
 
     for index, event in enumerate(events):
         tag = event[0]
         if tag == "text":
-            add({"text": event[1], "marks": marks()})
+            if cached and content and "text" in content[-1] and content[-1]["marks"] is cached[0]:
+                parts[-1].append(event[1])  # The same marks as the run before, so the same run.
+            else:
+                add({"text": event[1], "marks": marks()})
         elif tag == "code":
             add({"text": event[1], "marks": marks() + ["code"]})
-        elif tag == "break":
-            content.append({"hardBreak": True})
+        elif tag == "break" and content:
+            # R-WS-2: a hard break with nothing before it in its paragraph is dropped, as CommonMark reads none.
+            add({"hardBreak": True})
         elif tag == "footnote":
-            content.append({"footnote": event[1], "marks": marks()})
+            add({"footnote": event[1], "marks": list(marks())})
         elif tag == "link_open":
-            active.append((("link", index), {"link": event[1]}))
+            open_mark(("link",), {"link": event[1]})
         elif tag == "link_close":
-            drop(active, lambda key: key[0] == "link")
+            close_mark(("link",), {"link": ""})
         elif tag == "mark_open":
-            active.append((("delim", event[1], index), event[1]))
+            open_mark(("delim", event[1]), event[1])
         elif tag == "mark_close":
-            drop(active, lambda key, name=event[1]: key[0] == "delim" and key[1] == name)
+            close_mark(("delim", event[1]), event[1])
         elif tag == "tag_open":
-            active.append((("tag", index), event[1]))
+            open_mark(("tag", index), event[1])
         elif tag == "tag_close":
-            drop(active, lambda key, at=event[1]: key == ("tag", at))
+            close_mark(("tag", event[1]), events[event[1]][1])
+    for node, pieces in zip(content, parts):
+        if "text" in node:
+            node["text"] = "".join(pieces)
     return content
-
-
-def drop(active: list, match) -> None:
-    for at in range(len(active) - 1, -1, -1):
-        if match(active[at][0]):
-            del active[at]
-            return
 
 
 def plain_text(content: list[dict]) -> str:
