@@ -287,6 +287,35 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER I
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
+## Code studio: bundled libraries
+
+Beta 11 adds these for the code studio (ADR 0068). They are bundled from npm and load only when the studio opens.
+
+| Component | Used for | Package | License |
+|---|---|---|---|
+| CodeMirror | The code editor, its language modes, completion, problems, and search (ADR 0068) | `@codemirror/view` 6.43.15, `@codemirror/state` 6.7.6, `@codemirror/language` 6.13.1, `@codemirror/commands` 6.11.1, `@codemirror/autocomplete` 6.20.4, `@codemirror/lint` 6.9.7, `@codemirror/search` 6.7.2, the `@codemirror/lang-*` packs, and `@codemirror/legacy-modes` 6.5.5, from `https://github.com/codemirror`. Copyright (C) 2018-2021 by Marijn Haverbeke and others. | MIT |
+| Lezer | The incremental parsers under the language modes | `@lezer/common`, `@lezer/lr`, `@lezer/highlight`, and the `@lezer/*` grammars, from `https://github.com/lezer-parser`. Copyright (C) 2018 by Marijn Haverbeke and others. The helpers `style-mod`, `crelt`, and `@marijn/find-cluster-break` carry the same author's copyright. | MIT |
+| Sucrase | Removing TypeScript's types before a program runs | `sucrase` 3.35.1, from `https://github.com/alangpierce/sucrase`. Copyright (c) 2012-2018 various contributors (see AUTHORS). Its helpers `lines-and-columns` (Copyright (c) 2015 Brian Donovan, MIT) and `ts-interface-checker` (Apache-2.0) come with it. | MIT |
+| SQLite WebAssembly | Running SQL in the studio | `@sqlite.org/sqlite-wasm` 3.54.1-build1, from `https://sqlite.org/wasm`. SQLite itself is in the public domain. | Apache-2.0 (the npm wrapper); SQLite is public domain |
+| wasmoon | Running Lua 5.4 in the studio | `wasmoon` 1.16.0, from `https://github.com/ceifa/wasmoon`. Copyright (c) 2023 Gabriel Francisco. Lua is Copyright Lua.org, PUC-Rio, under the MIT license. | MIT |
+| browser_wasi_shim | The WASI system calls that compiled C and C++ programs make | `@bjorn3/browser_wasi_shim` 0.4.2, from `https://github.com/bjorn3/browser_wasi_shim` | MIT OR Apache-2.0. OpenNote elects Apache-2.0. |
+| acorn | Reading JavaScript for the debugger's step points | `acorn` 8.18.0, from `https://github.com/acornjs/acorn`. Copyright (C) 2012-2022 by various contributors (see AUTHORS). | MIT |
+
+The MIT License text above, under the "Code cell runtimes" table, applies to each MIT component here under its own copyright line.
+
+## Code studio: runtime packs and code models
+
+These are never part of the installer. Each is a download that the person starts, checked against the size and SHA-256 pinned in the app before it is used (ADR 0070). The lane that adds a pack checks the copyright line here against the pack's own license file.
+
+| Component | Used for | Source | License |
+|---|---|---|---|
+| Pyodide | Running full Python (CPython) in the studio | `https://github.com/pyodide/pyodide`, version 314.0.7. The files are used unmodified; their source is at `https://github.com/pyodide/pyodide/tree/314.0.7`. | Mozilla Public License 2.0, `https://www.mozilla.org/MPL/2.0/` |
+| YoWASP Clang | Compiling C and C++ to WebAssembly in the studio | `@yowasp/clang` 22.0.0-git20542-10, from `https://github.com/YoWASP/clang`. LLVM, Clang, and lld are from `https://llvm.org`. | ISC (the YoWASP package); Apache-2.0 with LLVM Exceptions (LLVM) |
+| ruby.wasm | Running Ruby in the studio | `@ruby/3.4-wasm-wasi` 2.10.1, from `https://github.com/ruby/ruby.wasm`. Ruby itself is under the Ruby license or BSD-2-Clause. | MIT |
+| Ruff | Checking and formatting Python in the code tools pack | `https://github.com/astral-sh/ruff`, version 0.17.3, built for WebAssembly | MIT |
+| TypeScript | Type checks, completion, and rename for TypeScript and JavaScript in the code tools pack | `typescript` 6.0.3, from `https://github.com/microsoft/TypeScript`. Copyright (c) Microsoft Corporation. | Apache-2.0 |
+| Qwen2.5-Coder | The on-device code models for completion, fixes, and explanations | `https://huggingface.co/Qwen`, the 0.5B and 1.5B models in GGUF form | Apache-2.0 |
+
 ## Software libraries
 
 The npm packages the interface imports and the Rust crates the app is built from each keep their own license. Their names, versions, licenses, and hashes are listed in the bill of materials (`OpenNote.sbom.cdx.json`) that comes with every release, and in `package-lock.json` and `Cargo.lock`.

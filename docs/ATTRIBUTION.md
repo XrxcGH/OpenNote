@@ -50,6 +50,7 @@ A row must match a tracked file, so these assets get their rows in the commit th
 
 - Carlito and Caladea, the metric stand-ins for Calibri and Cambria, under the SIL Open Font License 1.1. text:fonts-bundled adds them under `app/src/theme/fonts/`.
 - The Unicode Character Database names subset, under the Unicode License v3. text:special-chars generates it at build time.
+- The code studio's WebAssembly files. SQLite (`sqlite3.wasm`) and wasmoon (`glue.wasm`) reach the app from npm, so no tracked file needs a row. The runtime packs (Pyodide, YoWASP Clang, ruby.wasm, the code tools pack) and the code models are downloads, never tracked files. All of them have their notices in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ## Vendored code
 
