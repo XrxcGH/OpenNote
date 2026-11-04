@@ -1,7 +1,7 @@
 // Two-ports, noise, antennas, and decibels. Two-port matrices convert through ABCD, which every network has; Z or Y
 // is reported missing when it does not exist (a series element has no Z matrix). Pure: no DOM.
 import { SignalError } from '../shared/errors';
-import { cabs, cadd, cconj, cdiv, cmul, csub, cx, fmt, fmtComplex, type Complex } from '../shared/num';
+import { cabs, cadd, cconj, cdiv, cmul, csub, cx, fmt, fmtComplex, need, type Complex } from '../shared/num';
 import { step, type Step } from '../shared/steps';
 import { SPEED_OF_LIGHT } from './lines';
 
@@ -209,6 +209,7 @@ export function friisLink(ptDbm: number, gtDbi: number, grDbi: number, frequency
   const pathLossDb = 20 * Math.log10((4 * Math.PI * distance) / wavelength);
   const eirpDbm = ptDbm + gtDbi;
   const receivedDbm = eirpDbm + grDbi - pathLossDb;
+  if (![pathLossDb, receivedDbm].every(Number.isFinite)) throw new SignalError('resultRange');
   const aperture = (gDbi: number) => (fromDb(gDbi) * wavelength ** 2) / (4 * Math.PI);
   return {
     wavelength,
@@ -241,7 +242,9 @@ export function radar(
   steps: Step[];
 } {
   if (!(ptW > 0) || !(rcs > 0) || !(range > 0)) throw new SignalError('radarInput');
-  if (!(frequency > 0)) throw new SignalError('rfFrequency');
+  if (!(frequency > 0) || !Number.isFinite(frequency)) throw new SignalError('rfFrequency');
+  need(gainDbi, 'kitSignals.rf.antenna.radarGain');
+  need(minDbm, 'kitSignals.rf.antenna.minimum');
   const wavelength = SPEED_OF_LIGHT / frequency;
   const g = fromDb(gainDbi);
   const numerator = ptW * g * g * wavelength ** 2 * rcs;
@@ -249,6 +252,7 @@ export function radar(
   const receivedDbm = 10 * Math.log10(pr * 1000);
   const minW = fromDb(minDbm) / 1000;
   const maxRange = (numerator / ((4 * Math.PI) ** 3 * minW)) ** 0.25;
+  if (![receivedDbm, maxRange].every(Number.isFinite)) throw new SignalError('resultRange');
   return {
     receivedDbm,
     maxRange,

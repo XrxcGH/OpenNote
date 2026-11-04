@@ -243,3 +243,34 @@ describe('noise, links, and decibels', () => {
     expect(errorKey(() => convertDb(-1, 'W'))).toBe('positiveRatio');
   });
 });
+
+describe('absurd inputs to the antenna link and radar', () => {
+  const key = (run: () => unknown): string | undefined => {
+    try {
+      run();
+    } catch (error) {
+      return error instanceof SignalError ? error.key : 'other';
+    }
+    return undefined;
+  };
+
+  it('names a gain that is not a number or is infinite, instead of printing NaN or Infinity', () => {
+    expect(key(() => radar(1000, NaN, 2.4e9, 1, 10000, -100))).toBe('outOfRange');
+    expect(key(() => radar(1000, 30, 2.4e9, 1, 10000, Infinity))).toBe('outOfRange');
+    expect(key(() => radar(1000, 1e12, 2.4e9, 1, 10000, -100))).toBe('resultRange');
+    expect(key(() => radar(1000, 30, Infinity, 1, 10000, -100))).toBe('rfFrequency');
+  });
+
+  it('names a link whose path loss overflows', () => {
+    expect(key(() => friisLink(20, 6, 3, 2.4e9, 1e300))).toBeUndefined();
+    expect(key(() => friisLink(20, 6, 3, 1e-320, 1e300))).toBe('resultRange');
+  });
+
+  it('still gives the radar range equation for real values', () => {
+    // Pt 1 kW, G 30 dBi (1000), 3 GHz, sigma 1 m2, R 10 km: Pr = Pt G^2 lambda^2 sigma / ((4 pi)^3 R^4).
+    const lambda = 299792458 / 3e9;
+    const pr = (1000 * 1000 ** 2 * lambda ** 2) / ((4 * Math.PI) ** 3 * 10000 ** 4);
+    const result = radar(1000, 30, 3e9, 1, 10000, -100);
+    expect(result.receivedDbm).toBeCloseTo(10 * Math.log10(pr * 1000), 9);
+  });
+});
