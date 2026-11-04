@@ -5,8 +5,19 @@ import type { MountedPage } from '../../page';
 import { PropertiesBar } from './PropertiesBar';
 import styles from './properties.module.css';
 
-/** The least width, in screen px, that the title keeps beside the chip; below it the chip moves above the title. */
-const MIN_TITLE_ROOM = 150;
+let measure: CanvasRenderingContext2D | null | undefined;
+
+/** The width in screen px of the title's longest word, which no line break can make narrower. */
+function longestWord(title: Element): number {
+  measure ??= document.createElement('canvas').getContext('2d');
+  if (!measure) return 0;
+  const style = getComputedStyle(title);
+  measure.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const box = title.getBoundingClientRect();
+  const scale = title instanceof HTMLElement && title.offsetWidth > 0 ? box.width / title.offsetWidth : 1;
+  const words = (title.textContent ?? '').split(/\s+/);
+  return Math.max(0, ...words.map((word) => measure!.measureText(word).width)) * scale;
+}
 
 export function mountProperties(mounted: MountedPage): () => void {
   const host = document.createElement('div');
@@ -31,13 +42,14 @@ export function mountProperties(mounted: MountedPage): () => void {
     host.style.insetInlineEnd = `${inset}px`;
     // Never wider than the page area, so the chip and its panel stay inside it however narrow the page gets.
     host.style.maxInlineSize = `${Math.max(0, right - Math.max(rect.left, 0) - 32)}px`;
-    // The title wraps before it reaches the chip: the chip's width, its 16 px inset, and an 8 px gap. On a page area so
-    // narrow that the title would have less than MIN_TITLE_ROOM left of the chip, the chip takes a line of its own
-    // above the title instead, and the title keeps the full width.
+    // The title wraps before it reaches the chip: the chip's width, its 16 px inset, and an 8 px gap. A single word
+    // that is wider than that room runs on under the chip, so the chip then takes a line of its own above the title,
+    // and the title keeps the full width.
     const box = host.querySelector('button')?.getBoundingClientRect();
     const chip = box?.width ?? 0;
-    const titleLeft = viewport.querySelector('[data-page-title]')?.getBoundingClientRect().left ?? rect.left;
-    const crowded = chip > 0 && right - titleLeft - (Math.ceil(chip) + 24) < MIN_TITLE_ROOM;
+    const title = viewport.querySelector('[data-page-title]');
+    const crowded =
+      chip > 0 && !!box && !!title && title.getBoundingClientRect().left + longestWord(title) > box.left - 4;
     viewport.style.setProperty('--page-chip-room', `${chip && !crowded ? Math.ceil(chip) + 24 : 0}px`);
     viewport.style.setProperty('--page-chip-drop', `${box && crowded ? Math.ceil(box.height) + 16 : 0}px`);
   };
@@ -55,6 +67,11 @@ export function mountProperties(mounted: MountedPage): () => void {
   observer?.observe(viewport);
   observer?.observe(host);
   window.addEventListener('resize', placeLater);
+  // A longer word typed into the title can reach the chip.
+  const onInput = (event: Event) => {
+    if (event.target instanceof Element && event.target.closest('[data-page-title]')) placeLater();
+  };
+  viewport.addEventListener('input', onInput);
   // A pane opening or closing beside the page changes its siblings, not the page's own size.
   const panes = typeof MutationObserver === 'undefined' ? null : new MutationObserver(placeLater);
   // The page's ancestors gain or lose a child (never watching their subtrees, so typing does not wake it).
@@ -64,6 +81,7 @@ export function mountProperties(mounted: MountedPage): () => void {
   root.render(<PropertiesBar page={mounted.page} />);
   return () => {
     window.removeEventListener('resize', placeLater);
+    viewport.removeEventListener('input', onInput);
     cancelAnimationFrame(frame);
     observer?.disconnect();
     panes?.disconnect();
