@@ -1,7 +1,9 @@
 // Table editing in a table block's editor (ARCHITECTURE.md sections 13 and 22.4; owner: WP6). Tab and Shift+Tab
 // move between cells, and Tab in the last cell adds a row. Enter and Shift+Enter break the line inside the cell.
-// A normalizing plugin keeps the grid whole. Decorations give the table its name and the header cells their scope.
-// The table nodes come from editor/schema, so this file adds behavior only.
+// A normalizing plugin keeps the grid whole and gives rows and cells their IDs.
+//
+// spans.ts says which merged cells may stay, and keySeam.ts adds key bindings. Decorations give the table its name
+// and the header cells their scope. The table nodes come from editor/schema, so this file adds behavior only.
 import { Extension } from '@tiptap/core';
 import type { Extensions } from '@tiptap/core';
 import type { Node as PMNode, NodeType } from '@tiptap/pm/model';
@@ -12,8 +14,13 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import { cellAt, cellTextPos } from '../commands/tables';
 import type { EditorHost } from '../host';
+import { newId } from '../ids';
 import { META_REMOTE } from '../meta';
+import { extraTableKeys } from './keySeam';
+import type { TableKeyCommand } from './keySeam';
 import { headerNames, tableOf } from './mapping';
+import { allowedSpans } from './spans';
+import type { CellSpan } from './spans';
 
 /** The table's accessible name: "Table: Stage, Where it happens", or "Table" without a header row. */
 export function tableName(doc: PMNode): string {
@@ -21,50 +28,118 @@ export function tableName(doc: PMNode): string {
   return names.length > 0 ? t('tables.name', { columns: names.join(', ') }) : t('tables.nameUnnamed');
 }
 
-/** Whether the table is a grid: every row as wide as the widest, no merged cells, header cells only on top. */
-function isWhole(table: PMNode): boolean {
-  let width = -1;
-  let whole = true;
+/** A cell placed in the grid: the column it starts in, and whether it keeps its span. */
+interface Placed {
+  cell: PMNode;
+  column: number;
+  keep: boolean;
+}
+
+/**
+ * A slot of the grid. It holds the cell that starts there, or a slot a kept span covers. A slot a split span
+ * covered becomes an empty cell, and a gap is undefined.
+ */
+type Slot = Placed | 'covered' | 'split' | undefined;
+
+const spanOf = (cell: PMNode, name: 'colspan' | 'rowspan') => Math.max(1, (cell.attrs[name] as number) || 1);
+
+/**
+ * The table laid out as a grid. Each cell takes the first free slot of its row, left to right, and a span takes
+ * the slots it covers, as ProseMirror's table map places them. A span that spans.ts allows keeps its slots; any
+ * other span is split, and the slots it covered become empty cells.
+ */
+function layout(table: PMNode, allowed: readonly CellSpan[]): Slot[][] {
+  const height = table.childCount;
+  const slots: Slot[][] = Array.from({ length: height }, () => []);
+  const free = (r: number, c: number, rows: number, columns: number) => {
+    for (let y = r; y < r + rows; y++) for (let x = c; x < c + columns; x++) if (slots[y][x]) return false;
+    return true;
+  };
   table.forEach((row, _offset, r) => {
-    if (!whole) return;
-    if (width === -1) width = row.childCount;
-    if (row.childCount !== width) whole = false;
+    let column = 0;
+    row.forEach((cell) => {
+      while (slots[r][column]) column++;
+      const columns = spanOf(cell, 'colspan');
+      const rows = Math.min(spanOf(cell, 'rowspan'), height - r);
+      const fits = free(r, column, rows, columns);
+      const keep =
+        fits &&
+        (columns > 1 || rows > 1) &&
+        rows === spanOf(cell, 'rowspan') &&
+        allowed.some((s) => s.row === r && s.column === column && s.rows === rows && s.columns === columns);
+      if (fits) {
+        for (let y = r; y < r + rows; y++)
+          for (let x = column; x < column + columns; x++) slots[y][x] = keep ? 'covered' : 'split';
+      }
+      slots[r][column] = { cell, column, keep };
+      column += fits ? columns : 1;
+    });
+  });
+  return slots;
+}
+
+/** Whether the table is a grid: every row as wide as the widest, only allowed spans, header cells only on top. */
+function isWhole(table: PMNode, allowed: readonly CellSpan[]): boolean {
+  const slots = layout(table, allowed);
+  const width = Math.max(0, ...slots.map((row) => row.length));
+  let whole = width > 0;
+  table.forEach((row, _offset, r) => {
     const firstType = row.firstChild?.type.name;
     row.forEach((cell) => {
-      if ((cell.attrs.colspan as number) !== 1 || (cell.attrs.rowspan as number) !== 1) whole = false;
       if (r > 0 && cell.type.name === 'tableHeader') whole = false;
       if (r === 0 && cell.type.name !== firstType) whole = false;
     });
+    for (let c = 0; c < width; c++) {
+      const slot = slots[r][c];
+      if (!slot || slot === 'split') whole = false;
+      else if (
+        slot !== 'covered' &&
+        !slot.keep &&
+        (spanOf(slot.cell, 'colspan') > 1 || spanOf(slot.cell, 'rowspan') > 1)
+      )
+        whole = false;
+    }
   });
-  return whole && width > 0;
+  return whole;
 }
 
-/** The same table as a grid: merged cells split, short rows padded, header cells only in a whole first row. */
-export function wholeTable(table: PMNode): PMNode {
+/**
+ * The same table as a grid: merged cells that spans.ts doesn't allow split, short rows padded, header cells only
+ * in a whole first row. Rows and cells keep their other attributes, their IDs among them.
+ */
+export function wholeTable(table: PMNode, allowed: readonly CellSpan[] = []): PMNode {
   const { nodes } = table.type.schema;
-  const grid: PMNode[][] = [];
-  table.forEach((row) => {
-    const cells: PMNode[] = [];
-    row.forEach((cell) => {
-      const span = Math.max(1, (cell.attrs.colspan as number) || 1);
-      const widths = (cell.attrs.colwidth as number[] | null) ?? [];
-      cells.push(cell.type.create({ colwidth: widths[0] ? [widths[0]] : null }, cell.content));
-      for (let i = 1; i < span; i++) {
-        cells.push(cell.type.create({ colwidth: widths[i] ? [widths[i]] : null }, nodes.paragraph.create()));
-      }
-    });
-    grid.push(cells);
-  });
-  const width = Math.max(1, ...grid.map((cells) => cells.length));
-  const header = grid[0]?.length > 0 && grid[0][0].type === nodes.tableHeader;
-  const widths = Array.from({ length: width }, (_, c) => grid.find((cells) => cells[c])?.[c].attrs.colwidth ?? null);
-  const rows = grid.map((cells, r) => {
+  const slots = layout(table, allowed);
+  const width = Math.max(1, ...slots.map((row) => row.length));
+  const widths: (number | null)[] = Array.from({ length: width }, () => null);
+  for (const row of slots) {
+    for (const slot of row) {
+      if (!slot || typeof slot === 'string') continue;
+      const own = (slot.cell.attrs.colwidth as number[] | null) ?? [];
+      for (let i = 0; i < spanOf(slot.cell, 'colspan'); i++) widths[slot.column + i] ??= own[i] || null;
+    }
+  }
+  const first = slots[0]?.[0];
+  const header = typeof first === 'object' && first.cell.type === nodes.tableHeader;
+  const rows: PMNode[] = [];
+  table.forEach((row, _offset, r) => {
     const type: NodeType = header && r === 0 ? nodes.tableHeader : nodes.tableCell;
-    const filled = Array.from({ length: width }, (_, c) => {
-      const content = cells[c]?.content.size ? cells[c].content : nodes.paragraph.create();
-      return type.create({ colwidth: widths[c] }, content);
-    });
-    return nodes.tableRow.create(null, filled);
+    const cells: PMNode[] = [];
+    for (let c = 0; c < width; c++) {
+      const slot = slots[r][c];
+      if (slot === 'covered') continue;
+      const placed = typeof slot === 'object' ? slot : null;
+      if (placed?.keep) {
+        const own = widths.slice(c, c + spanOf(placed.cell, 'colspan'));
+        const colwidth = own.every((w) => w !== null) ? own : null;
+        cells.push(type.create({ ...placed.cell.attrs, colwidth }, placed.cell.content));
+        continue;
+      }
+      const content = placed?.cell.content.size ? placed.cell.content : nodes.paragraph.create();
+      const colwidth = widths[c] ? [widths[c]] : null;
+      cells.push(type.create({ ...placed?.cell.attrs, colspan: 1, rowspan: 1, colwidth }, content));
+    }
+    rows.push(nodes.tableRow.create(row.attrs, cells));
   });
   return table.type.create(
     table.attrs,
@@ -72,17 +147,70 @@ export function wholeTable(table: PMNode): PMNode {
   );
 }
 
+/**
+ * Gives every row a unique `rowId` and every cell its column's `colId` (editor/schema/schema.ts). A column takes
+ * the first ID its cells carry, top to bottom, that no other column took. A row or column without one, such as a
+ * pasted one, gets a fresh ID. Only attributes change, so positions stay. Says whether it changed anything.
+ */
+function stampIds(tr: Transaction, allowed: readonly CellSpan[]): boolean {
+  const table = tableOf(tr.doc);
+  if (!table) return false;
+  const slots = layout(table, allowed);
+  const width = Math.max(0, ...slots.map((row) => row.length));
+  const seen = new Set<string>();
+  const taken = (id: unknown): id is string => typeof id === 'string' && id !== '' && !seen.has(id);
+  const claim = (id: unknown): string => {
+    const next = taken(id) ? id : newId();
+    seen.add(next);
+    return next;
+  };
+  const columnIds = Array.from({ length: width }, (_, c) => {
+    for (const row of slots) {
+      const slot = row[c];
+      const id = typeof slot === 'object' ? (slot.cell.attrs.colId as unknown) : null;
+      if (taken(id)) return claim(id);
+    }
+    return claim(null);
+  });
+  let changed = false;
+  let rowPos = 1;
+  table.forEach((row, _offset, r) => {
+    const rowId = claim(row.attrs.rowId);
+    if (row.attrs.rowId !== rowId) {
+      tr.setNodeMarkup(rowPos, undefined, { ...row.attrs, rowId });
+      changed = true;
+    }
+    let cellPos = rowPos + 1;
+    row.forEach((cell, _at, index) => {
+      const placed = slots[r].find((slot): slot is Placed => typeof slot === 'object' && slot.cell === cell);
+      const colId = columnIds[placed?.column ?? index];
+      if (colId !== undefined && cell.attrs.colId !== colId) {
+        tr.setNodeMarkup(cellPos, undefined, { ...cell.attrs, colId });
+        changed = true;
+      }
+      cellPos += cell.nodeSize;
+    });
+    rowPos += row.nodeSize;
+  });
+  return changed;
+}
+
 const normalizeKey = new PluginKey('opennote.tableNormalize');
 
-/** Keeps the table a grid after any change, such as a paste of cells, in the same undo step. */
+/** Keeps the table a grid with IDs after any change, such as a paste of cells, in the same undo step. */
 function normalizePlugin(): Plugin {
   return new Plugin({
     key: normalizeKey,
     appendTransaction(transactions: readonly Transaction[], _old: EditorState, state: EditorState) {
       if (!transactions.some((tr) => tr.docChanged)) return null;
       const table = tableOf(state.doc);
-      if (!table || isWhole(table)) return null;
-      const tr = state.tr.replaceWith(0, state.doc.content.size, wholeTable(table));
+      if (!table) return null;
+      const allowed = allowedSpans(table);
+      const tr = state.tr;
+      const whole = isWhole(table, allowed);
+      if (!whole) tr.replaceWith(0, state.doc.content.size, wholeTable(table, allowed));
+      const stamped = stampIds(tr, whole ? allowed : allowedSpans(tableOf(tr.doc) ?? table));
+      if (whole && !stamped) return null;
       if (transactions.some((one) => one.getMeta(META_REMOTE))) tr.setMeta(META_REMOTE, true);
       return tr;
     },
@@ -135,9 +263,11 @@ function nextCellOrRow(state: EditorState, dispatch?: (tr: Transaction) => void)
   const last = table.child(table.childCount - 1);
   const { nodes } = state.schema;
   const cells: PMNode[] = [];
-  last.forEach((cell) =>
-    cells.push(nodes.tableCell.create({ colwidth: cell.attrs.colwidth as unknown }, nodes.paragraph.create())),
-  );
+  last.forEach((cell) => {
+    const attrs = { colwidth: cell.attrs.colwidth as unknown, colId: cell.attrs.colId as unknown };
+    cells.push(nodes.tableCell.create(attrs, nodes.paragraph.create()));
+  });
+  // The new row has no ID yet: the normalizer gives it a fresh one in the same step.
   const tr = state.tr.insert(1 + table.content.size, nodes.tableRow.create(null, cells));
   const pos = cellTextPos(tr.doc, { row: at.row + 1, column: 0 });
   if (pos !== null) tr.setSelection(TextSelection.create(tr.doc, pos));
@@ -145,23 +275,35 @@ function nextCellOrRow(state: EditorState, dispatch?: (tr: Transaction) => void)
   return true;
 }
 
-const TableKeys = Extension.create({
-  name: 'opennoteTableKeys',
-  // Ahead of the table extension's own Tab handling and of every keymap shared with text editors.
-  priority: 1000,
-  addKeyboardShortcuts() {
-    const run = (command: (state: EditorState, dispatch?: (tr: Transaction) => void) => boolean) => () =>
-      command(this.editor.state, (tr) => this.editor.view.dispatch(tr));
-    return {
-      Tab: run(nextCellOrRow),
-      'Shift-Tab': run(goToNextCell(-1)),
-      Enter: run(insertBreak),
-      'Shift-Enter': run(insertBreak),
-    };
-  },
-  addProseMirrorPlugins: () => [normalizePlugin(), a11yPlugin()],
-});
+/** TableKeys' own bindings. */
+const OWN_KEYS: Readonly<Record<string, TableKeyCommand>> = {
+  Tab: nextCellOrRow,
+  'Shift-Tab': goToNextCell(-1),
+  Enter: insertBreak,
+  'Shift-Enter': insertBreak,
+};
 
-export function tableKitExtensions(_host: EditorHost): Extensions {
-  return [TableKeys];
+/** The table keys: keySeam.ts's binding for a key first, then the table's own. */
+function tableKeys(host: EditorHost): Extension {
+  const extra = extraTableKeys(host);
+  return Extension.create({
+    name: 'opennoteTableKeys',
+    // Ahead of the table extension's own Tab handling and of every keymap shared with text editors.
+    priority: 1000,
+    addKeyboardShortcuts() {
+      const names = [...new Set([...Object.keys(extra), ...Object.keys(OWN_KEYS)])];
+      const run = (name: string) => () => {
+        const { view } = this.editor;
+        const dispatch = (tr: Transaction) => view.dispatch(tr);
+        if (extra[name]?.(view.state, dispatch, view)) return true;
+        return OWN_KEYS[name]?.(view.state, dispatch, view) ?? false;
+      };
+      return Object.fromEntries(names.map((name) => [name, run(name)]));
+    },
+    addProseMirrorPlugins: () => [normalizePlugin(), a11yPlugin()],
+  });
+}
+
+export function tableKitExtensions(host: EditorHost): Extensions {
+  return [tableKeys(host)];
 }
