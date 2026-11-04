@@ -1,6 +1,8 @@
-//! Settings schema version 1 (ARCHITECTURE.md section 16.3), serialized in camelCase to match the interface's
+//! Settings schema version 2 (ARCHITECTURE.md section 16.3), serialized in camelCase to match the interface's
 //! `Settings` type. Missing fields take their defaults. Adding a field with a default keeps the schema version;
-//! the `editing` group (Phase 4) and the `ink` group (Phase 5) were added that way.
+//! the `editing` group (Phase 4) and the `ink` group (Phase 5) were added that way. Version 2 (Beta 9) adds the
+//! `text`, `tables`, and `code` groups in one raise, with every key the formatting, tables, and code programs
+//! know of at its default. The step from version 1 changes nothing else, so Beta 8 may still write the file.
 
 use std::collections::BTreeMap;
 
@@ -14,7 +16,10 @@ use super::{
 use crate::ipc::IpcResult;
 
 /// The schema version this build reads and writes.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
+
+/// The oldest schema version that may write a file this build creates. Version 2 broke nothing, so Beta 8 may.
+pub const MIN_WRITER_SCHEMA: u32 = 1;
 
 /// The text sizes the Appearance section offers, in percent.
 pub const TEXT_SIZES: [u16; 8] = [80, 90, 100, 110, 125, 150, 175, 200];
@@ -49,13 +54,19 @@ pub struct Settings {
     pub ink: InkSettings,
     #[cfg_attr(test, ts(inline))]
     pub language: Language,
+    #[cfg_attr(test, ts(inline))]
+    pub text: TextSettings,
+    #[cfg_attr(test, ts(inline))]
+    pub tables: TablesSettings,
+    #[cfg_attr(test, ts(inline))]
+    pub code: CodeSettings,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
             schema_version: SCHEMA_VERSION,
-            min_writer_schema: SCHEMA_VERSION,
+            min_writer_schema: MIN_WRITER_SCHEMA,
             appearance: Appearance::default(),
             storage: Storage::default(),
             startup: Startup::default(),
@@ -67,6 +78,9 @@ impl Default for Settings {
             editing: EditingSettings::default(),
             ink: InkSettings::default(),
             language: Language::default(),
+            text: TextSettings::default(),
+            tables: TablesSettings::default(),
+            code: CodeSettings::default(),
         }
     }
 }
@@ -325,6 +339,109 @@ pub struct Experimental {
     pub flags: BTreeMap<String, bool>,
 }
 
+/// Text formatting (Beta 9): the paste default per source, the units of the ruler and the paragraph boxes, and how
+/// custom background colors show in dark mode.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct TextSettings {
+    #[cfg_attr(test, ts(inline))]
+    pub paste: PasteDefaults,
+    pub measurement_unit: MeasurementUnit,
+    pub dark_custom_backgrounds: DarkCustomBackgrounds,
+}
+
+/// What a paste keeps, by where the content came from. Word, Google Docs, and OneNote keep their formatting, and a
+/// web page pastes clean.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct PasteDefaults {
+    pub word: PasteKeep,
+    pub docs: PasteKeep,
+    pub onenote: PasteKeep,
+    pub web: PasteKeep,
+}
+
+impl Default for PasteDefaults {
+    fn default() -> Self {
+        Self {
+            word: PasteKeep::KeepSource,
+            docs: PasteKeep::KeepSource,
+            onenote: PasteKeep::KeepSource,
+            web: PasteKeep::MergeFormatting,
+        }
+    }
+}
+
+/// The three Paste Options: keep the source's formatting, keep only bold, italic, links, and lists, or keep text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum PasteKeep {
+    KeepSource,
+    #[default]
+    MergeFormatting,
+    TextOnly,
+}
+
+/// The unit of the ruler, indents, and tab stops. Typographic values such as sizes stay in points.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum MeasurementUnit {
+    #[default]
+    Inches,
+    Centimeters,
+    Millimeters,
+    Points,
+    Picas,
+}
+
+/// Highlights, shading, and fills a person chose: shown exactly in dark mode, or softened.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum DarkCustomBackgrounds {
+    #[default]
+    Exact,
+    Soften,
+}
+
+/// Spreadsheet tables (Beta 9): the keys new tables use and whether the formula bar shows.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct TablesSettings {
+    pub new_table_keys: TableKeys,
+    pub formula_bar: bool,
+}
+
+impl Default for TablesSettings {
+    fn default() -> Self {
+        Self {
+            new_table_keys: TableKeys::Spreadsheet,
+            formula_bar: true,
+        }
+    }
+}
+
+/// Spreadsheet keys (Enter moves down, typing replaces the cell) or document keys (Enter adds a line).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum TableKeys {
+    #[default]
+    Spreadsheet,
+    Document,
+}
+
+/// The code studio's settings. Empty until the code program fills it in Beta 12.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct CodeSettings {}
+
 /// A top-level settings section that `settings_reset` can put back to its defaults.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -341,11 +458,14 @@ pub enum SettingsSectionKey {
     Editing,
     Ink,
     Language,
+    Text,
+    Tables,
+    Code,
 }
 
 impl SettingsSectionKey {
     /// Every section, in the order of `settings.json`.
-    pub const ALL: [SettingsSectionKey; 11] = [
+    pub const ALL: [SettingsSectionKey; 14] = [
         Self::Appearance,
         Self::Storage,
         Self::Startup,
@@ -357,6 +477,9 @@ impl SettingsSectionKey {
         Self::Editing,
         Self::Ink,
         Self::Language,
+        Self::Text,
+        Self::Tables,
+        Self::Code,
     ];
 
     /// The section's key in `settings.json`.
@@ -373,6 +496,9 @@ impl SettingsSectionKey {
             Self::Editing => "editing",
             Self::Ink => "ink",
             Self::Language => "language",
+            Self::Text => "text",
+            Self::Tables => "tables",
+            Self::Code => "code",
         }
     }
 }
