@@ -130,11 +130,7 @@ function overflowItems(entry: BarEntry): MenuItemSpec[] {
  * What the More menu lists: the tools that did not fit, as they are now. A tool that became available since the bar
  * last rendered was never measured, so it is on neither the bar nor the list unless it is added here.
  */
-function moreEntries(
-  tab: BarTab,
-  shown: readonly BarEntry[],
-  overflow: readonly BarEntry[],
-): readonly BarEntry[] {
+function moreEntries(tab: BarTab, shown: readonly BarEntry[], overflow: readonly BarEntry[]): readonly BarEntry[] {
   const seen = new Set(shown.map((entry) => entry.item.id));
   const moved = new Set(overflow.map((entry) => entry.item.id));
   return currentBarEntries().filter(

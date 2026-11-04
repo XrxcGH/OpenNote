@@ -58,7 +58,10 @@ export function attachTypewriter(mounted: MountedPage): () => void {
     if (Math.abs(delta) < SLACK) return;
     const glide = osStore.get().animations;
     if (typeof scroller.scrollTo === 'function') {
-      scroller.scrollTo({ top: typewriterTarget(scroller.scrollTop, caretMiddle, box, prefs.typewriterAt), behavior: glide ? 'smooth' : 'instant' });
+      scroller.scrollTo({
+        top: typewriterTarget(scroller.scrollTop, caretMiddle, box, prefs.typewriterAt),
+        behavior: glide ? 'smooth' : 'instant',
+      });
     }
   };
 

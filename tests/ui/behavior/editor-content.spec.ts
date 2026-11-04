@@ -61,7 +61,10 @@ test('pastes spreadsheet text as a table, and a copy gives plain text', async ({
 test('a table cell has its own menu with the row and column commands', async ({ page }) => {
   await openPage(page);
   await paste(page, { 'text/plain': 'a\tb\nc\td' });
-  const cell = page.getByRole('group', { name: /^Table(:|$)/ }).getByRole('cell').first();
+  const cell = page
+    .getByRole('group', { name: /^Table(:|$)/ })
+    .getByRole('cell')
+    .first();
   await cell.click();
   await cell.click({ button: 'right' });
   await expect(page.getByRole('menuitem', { name: 'Add row above' })).toBeVisible();

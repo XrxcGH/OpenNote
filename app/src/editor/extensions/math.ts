@@ -718,7 +718,9 @@ function trailingLine(editor: Editor): Plugin {
     appendTransaction(_transactions, _before, after) {
       const last = after.doc.lastChild;
       if (!editor.isEditable || last?.type.name !== 'mathBlock') return null;
-      return after.tr.insert(after.doc.content.size, after.schema.nodes.paragraph.create()).setMeta('addToHistory', false);
+      return after.tr
+        .insert(after.doc.content.size, after.schema.nodes.paragraph.create())
+        .setMeta('addToHistory', false);
     },
   });
 }

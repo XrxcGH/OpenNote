@@ -11,9 +11,11 @@ function copied(html: string): string {
 
 describe('plain copy', () => {
   it('drops the Markdown marks and keeps the words', () => {
-    expect(copied('<p>A <strong>bold</strong>, <em>slanted</em>, <code>code</code> and <a href="https://x.test/">link</a></p>')).toBe(
-      'A bold, slanted, code and link',
-    );
+    expect(
+      copied(
+        '<p>A <strong>bold</strong>, <em>slanted</em>, <code>code</code> and <a href="https://x.test/">link</a></p>',
+      ),
+    ).toBe('A bold, slanted, code and link');
   });
 
   it('separates blocks with a blank line and keeps list markers', () => {

@@ -61,7 +61,9 @@ $$`,
 const estimatedHeight = (data: Record<string, unknown>): number =>
   (((data as Partial<TableData>).rows?.length ?? 1) + 1) * 36;
 
-async function insertBlocks(items: readonly { type: 'table' | 'text'; data: Record<string, unknown> }[]): Promise<boolean> {
+async function insertBlocks(
+  items: readonly { type: 'table' | 'text'; data: Record<string, unknown> }[],
+): Promise<boolean> {
   if (items.length === 0) return false;
   const { type } = items[0];
   const queue = shownQueue.get();
