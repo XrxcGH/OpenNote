@@ -24,7 +24,7 @@ import { nameOf, positionOfCapture } from './entry';
 import { holdHint, recordingEntries, recoveryHolds } from './entries';
 import { addFlag, removeFlag } from './flagEdits';
 import { clock, clockNs, lengthNs } from './format';
-import { Meter } from './Meter';
+import { Meter, Wave } from './Meter';
 import { MoreMenu } from './MoreMenu';
 import { captureNow, openFor, playbackUi, seek, setSkipSilence, setSpeed } from './playback';
 import { isRunning, recordingUi } from './state';
@@ -62,6 +62,7 @@ function LiveBar() {
         )}
         <IconButton label={t('audio.commands.stop')} icon={StopIcon} command="audio.stop" onPress={run('audio.stop')} />
       </div>
+      <Wave state={ui.meters.microphone} paused={paused} />
       <Meter state={ui.meters.microphone} label={t('audio.indicator.meter')} />
       <p className={styles.hint}>{t('audio.block.liveHint')}</p>
     </div>

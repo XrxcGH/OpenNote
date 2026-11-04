@@ -9,7 +9,7 @@ Record a lecture or a meeting while you type or write. Your notes are stamped wi
 1. Choose Record, or press Ctrl+K and choose Start recording. Allow the microphone if Windows asks.
 2. Open Options to pick a microphone. Turn on Also record sound from this PC to capture the other people in a meeting.
 3. Type or write your notes. Add a flag to mark a moment you want to find again.
-4. Pause, resume, or stop. A recording block appears on the page.
+4. Pause, resume, or stop. A recording block appears on the page. While it records, the block draws the last few seconds of sound as a moving wave above the level meter, so you can see the microphone hears you.
 
 OpenNote reminds you to tell everyone before you record a meeting. If the app stops while it records, it offers to recover the recording the next time you start.
 
@@ -28,7 +28,7 @@ Tap a stamped word or stroke and the recording plays from that moment. You can c
 | Make a quiet voice clearer              | Turn on Voice enhancement.                                                                                                                  |
 | Share the audio                         | Export the recording as an audio file.                                                                                                      |
 | Share the lesson as a video             | Choose Export as video in the More menu, or press Ctrl+K and choose Export the recording as a narrated video.                               |
-| Free up disk space                      | Open the recording storage list. Compress a recording, or remove its audio and keep the transcript.                                         |
+| Free up disk space                      | Open the recording storage list, which shows the space left. Compress a recording, or remove its audio and keep the transcript.             |
 
 Settings has a Recording section for the defaults.
 

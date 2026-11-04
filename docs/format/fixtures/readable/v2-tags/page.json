@@ -1,0 +1,90 @@
+{
+  "formatVersion": 2,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sb12426sg32pmtyffjaqcf",
+  "title": "Version 2 tags",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "view": {
+    "mode": "paginated",
+    "paper": {
+      "size": "a4",
+      "width": 793.7,
+      "height": 1122.52
+    },
+    "background": {
+      "pattern": "ruled"
+    }
+  },
+  "blocks": [
+    {
+      "id": "01m3sb14y9zszek1wdk3snddsn",
+      "type": "text",
+      "order": "a0",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "markdown": "## Light <span data-font=\"Georgia\">reactions</span>\n\nPlain <span data-font=\"Georgia\">fancy</span> and **bold <u data-u=\"double\">twice</u>** with O<sub>2</sub> and <u>once</u>.[^01m3sa9c4n5w7x8y9z0abcdefg]\n\n<span data-zz=\"1\">foreign</span> stays as text, `<span data-font=\"x\">code</span>` stays as code, and </span> alone stays.\n\n```\n<span data-font=\"Georgia\">fenced</span>\n```\n\n> <mark data-color=\"yellow\">Quoted</mark> [link](https://example.com/a)",
+        "notes": {
+          "01m3sa9c4n5w7x8y9z0abcdefg": {
+            "markdown": "A note."
+          }
+        }
+      }
+    },
+    {
+      "id": "01m3sb2f8r6p3q4s5t6v7w8x9y",
+      "type": "table",
+      "order": "a1",
+      "created": "2026-09-30T14:06:01.000Z",
+      "modified": "2026-09-30T14:06:30.000Z",
+      "data": {
+        "header": true,
+        "columns": [
+          {
+            "id": "01m3sb2f8r6p3q4s5t6v7w8xa0"
+          },
+          {
+            "id": "01m3sb2f8r6p3q4s5t6v7w8xa1"
+          }
+        ],
+        "rows": [
+          {
+            "id": "01m3sb2f8r6p3q4s5t6v7w8xb0",
+            "cells": {
+              "01m3sb2f8r6p3q4s5t6v7w8xa0": {
+                "markdown": "Name"
+              },
+              "01m3sb2f8r6p3q4s5t6v7w8xa1": {
+                "markdown": "<span data-font=\"Georgia\">Value</span>"
+              }
+            }
+          },
+          {
+            "id": "01m3sb2f8r6p3q4s5t6v7w8xb1",
+            "cells": {
+              "01m3sb2f8r6p3q4s5t6v7w8xa0": {
+                "markdown": "a|b"
+              },
+              "01m3sb2f8r6p3q4s5t6v7w8xa1": {
+                "markdown": "<del data-by=\"x\">old</del> new"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "revision": {
+    "id": "01m3sb8yf8bryf28a7sjgb7mmc",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.5.0 (windows)"
+  }
+}
