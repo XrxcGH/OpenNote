@@ -8,12 +8,12 @@ export const kitMechDynStart = {
     keywords:
       'linkage four-bar fourbar slider-crank inverted slider crank rocker ' +
       'coupler grashof transmission angle freudenstein toggle vector loop ' +
-      'coupler curve mechanism',
+      'coupler curve mechanism linkages',
   },
   cam: {
     title: 'Cam designer',
     keywords:
-      'cam follower svaj displacement velocity acceleration jerk cycloidal ' + 'harmonic polynomial pressure angle',
+      'cam follower svaj displacement velocity acceleration jerk cycloidal ' + 'harmonic polynomial pressure angle cams',
   },
   gears: {
     title: 'Gears and gear trains',
@@ -27,7 +27,7 @@ export const kitMechDynStart = {
     title: 'Particle and planar rigid-body dynamics',
     keywords:
       'kinematics kinetics particle polar coordinates normal tangential rigid ' +
-      'body instantaneous center impact restitution rolling incline',
+      'body instantaneous center impact restitution rolling incline particles and bodies',
   },
   lagrange: {
     title: 'Lagrangian mechanics',
@@ -42,18 +42,20 @@ export const kitMechDynStart = {
       'rigid body inertia tensor moment of inertia product of inertia ' +
       'parallel axis principal axes euler equations torque-free precession ' +
       'nutation gyroscope rotation matrix euler angles quaternion axis angle ' +
-      'gimbal lock',
+      'gimbal lock rigid bodies in 3d',
   },
   sdof: {
     title: 'Single-degree-of-freedom vibration',
-    keywords: 'vibration natural frequency damping ratio resonance transmissibility isolation spring mass damper',
+    keywords:
+      'vibration natural frequency damping ratio resonance transmissibility isolation spring mass damper ' +
+      'vibration one mass',
   },
   mdof: {
     title: 'Multi-degree-of-freedom and continuous vibration',
     keywords:
       'vibration modes mode shape natural frequencies mass matrix stiffness ' +
       'matrix eigenvalue modal analysis absorber string bar beam cantilever ' +
-      'continuous',
+      'continuous vibration many masses',
   },
   robotdyn: {
     title: 'Robot dynamics and control',

@@ -34,7 +34,7 @@ export const kitElectricalStart = {
     },
     semis: {
       title: 'Diodes and transistors',
-      keywords: 'diode shockley zener regulator rectifier ripple bjt mosfet bias gm small-signal common-emitter',
+      keywords: 'diode shockley zener regulator rectifier ripple bjt mosfet bias gm small-signal common-emitter semiconductors',
     },
     powerflow: {
       title: 'Power flow and economic dispatch',

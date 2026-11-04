@@ -9,7 +9,7 @@ export const mechanisms = {
       'Grashof class, transmission angle, and coupler curve.',
     keywords:
       'linkage four-bar fourbar slider-crank inverted slider crank rocker coupler grashof transmission angle ' +
-      'freudenstein toggle vector loop coupler curve mechanism',
+      'freudenstein toggle vector loop coupler curve mechanism linkages',
     field: {
       type: 'Mechanism',
       a: 'Crank, a (O₂A)',
@@ -100,7 +100,7 @@ export const mechanisms = {
     title: 'Cam designer',
     short: 'Cams',
     about: 'A follower motion program, its SVAJ diagrams, and the cam profile, with the pressure angle and curvature.',
-    keywords: 'cam follower svaj displacement velocity acceleration jerk cycloidal harmonic polynomial pressure angle',
+    keywords: 'cam follower svaj displacement velocity acceleration jerk cycloidal harmonic polynomial pressure angle cams',
     field: {
       program: 'Motion program, one segment per line',
       follower: 'Follower',

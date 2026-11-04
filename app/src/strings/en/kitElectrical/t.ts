@@ -42,7 +42,7 @@ export const t = {
   semis: {
     title: 'Diodes and transistors',
     short: 'Semiconductors',
-    keywords: 'diode shockley zener regulator rectifier ripple bjt mosfet bias gm small-signal common-emitter',
+    keywords: 'diode shockley zener regulator rectifier ripple bjt mosfet bias gm small-signal common-emitter semiconductors',
     about: 'Diode and zener circuits, rectifier ripple, and the bias point and gain of BJT and MOSFET amplifiers.',
   },
 
