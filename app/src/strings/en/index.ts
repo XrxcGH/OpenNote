@@ -109,6 +109,25 @@ import { textCommands } from './textCommands';
 import { textFonts } from './textFonts';
 import { textStyles } from './textStyles';
 import { textHome } from './textHome';
+// Text formatting, spreadsheet tables, and the code studio, Beta 11.
+import { sheetConditional } from './sheetConditional';
+import { fnArrays } from './fnArrays';
+import { fnFinance } from './fnFinance';
+import { fnStats } from './fnStats';
+import { sheetFormat } from './sheetFormat';
+import { sheetMerge } from './sheetMerge';
+import { sheetValidation } from './sheetValidation';
+import { sheetTools } from './sheetTools';
+import { textFind } from './textFind';
+import { textPane } from './textPane';
+import { textLanguage } from './textLanguage';
+import { textRuler } from './textRuler';
+import { textSymbols } from './textSymbols';
+import { codeStudioEditor } from './codeStudio/editor';
+import { codeStudioProject } from './codeStudio/project';
+import { codeStudioRun } from './codeStudio/run';
+import { codeStudioPacks } from './codeStudio/packs';
+import { codeStudioStudio } from './codeStudio/studio';
 
 export const en = {
   common,
@@ -219,4 +238,25 @@ export const en = {
   textFonts,
   textStyles,
   textHome,
+  sheetConditional,
+  fnArrays,
+  fnFinance,
+  fnStats,
+  sheetFormat,
+  sheetMerge,
+  sheetValidation,
+  sheetTools,
+  textFind,
+  textPane,
+  textLanguage,
+  textRuler,
+  textSymbols,
+  /** The code studio's namespaces, one file per lane under codeStudio/. */
+  codeStudio: {
+    editor: codeStudioEditor,
+    project: codeStudioProject,
+    run: codeStudioRun,
+    packs: codeStudioPacks,
+    studio: codeStudioStudio,
+  },
 } as const;

@@ -27,6 +27,29 @@ const RELEASES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     textStyles: 'text:styles',
     textHome: 'text:home-tab-ui',
   },
+  B11: {
+    sheetConditional: 'tables:conditional',
+    fnArrays: 'tables:fn-arrays',
+    fnFinance: 'tables:fn-finance',
+    fnStats: 'tables:fn-stats',
+    sheetFormat: 'tables:format-dialog',
+    sheetMerge: 'tables:merge',
+    sheetValidation: 'tables:validation',
+    sheetTools: 'tables:data-tools',
+    textFind: 'text:find-format',
+    textPane: 'text:format-pane',
+    textLanguage: 'text:language-direction',
+    textRuler: 'text:ruler',
+    textSymbols: 'text:special-chars',
+    'codeStudio.editor': 'code:L01',
+    'codeStudio.project': 'code:L02',
+    'codeStudio.run': 'code:L03',
+    'codeStudio.packs': 'code:L18',
+  },
+  /** Registered in Beta 11, because the code studio's tool window entry needs its title. */
+  B12: {
+    'codeStudio.studio': 'code:L04',
+  },
 };
 
 /** The dotted paths of every leaf that is not a non-empty string. */
@@ -38,11 +61,15 @@ function missing(value: unknown, path: string): string[] {
 
 const index = en as unknown as Record<string, unknown>;
 
+/** The namespace at a dotted name, such as codeStudio.editor for the file codeStudio/editor.ts. */
+const at = (name: string): unknown =>
+  name.split('.').reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key], index);
+
 describe.each(Object.entries(RELEASES))('the %s namespaces', (_release, namespaces) => {
   it.each(Object.entries(namespaces))('registers %s, owned by %s, with no missing keys', (name, lane) => {
-    expect(index[name], name).toBeTypeOf('object');
-    expect(missing(index[name], name)).toEqual([]);
-    const header = readFileSync(join(import.meta.dirname, `${name}.ts`), 'utf8')
+    expect(at(name), name).toBeTypeOf('object');
+    expect(missing(at(name), name)).toEqual([]);
+    const header = readFileSync(join(import.meta.dirname, `${name.replaceAll('.', '/')}.ts`), 'utf8')
       .split('\n')
       .slice(0, 3)
       .join('\n');
