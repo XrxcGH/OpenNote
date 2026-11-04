@@ -60,3 +60,7 @@ The [feature list](../FEATURE-LIST.md) has one sentence on every typed-note feat
 ## Checking accessibility before you export
 
 Turn on Check accessibility first in the Export, Print or PDF, or Send dialog. OpenNote then looks for problems such as images with no description before it writes the file. You can continue anyway, review and fix, or cancel. The choice is remembered.
+
+## Menus with a pen or a finger
+
+Every menu that opens with a right-click opens another way on a touch screen. Press and hold a finger or a pen on a block, a table, or an empty part of the page, and keep still, to open its menu. With a pen, press its side button and lift without dragging. Right-click empty page for Insert table and Insert image.
