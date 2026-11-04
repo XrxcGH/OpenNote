@@ -86,6 +86,9 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0053](0053-notes-app-import.md) | Import from Goodnotes, Notability, and Samsung Notes reads what the packages show, and the PDF export is the dependable route | Proposed | 2026-10-29 |
 | [0054](0054-latex-export.md) | LaTeX export writes escaped text, checked math, and typeset code, and never compiles | Proposed | 2026-10-29 |
 | [0055](0055-macos-and-linux.md) | macOS and Linux builds degrade feature by feature and say what they lack | Proposed | 2026-10-29 |
+| [0076](0076-reserved-inline-tags-and-foreign-marks.md) | OpenNote Markdown 2 reserves one inline tag grammar, and readers keep tags they do not know | Proposed | 2026-11-02 |
+| [0077](0077-min-writer-version.md) | Files carry minWriterVersion, the oldest version that may edit them | Proposed | 2026-11-02 |
+| [0078](0078-stamp-the-lowest-version.md) | Writers stamp the lowest format version a file needs | Proposed | 2026-11-02 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 
