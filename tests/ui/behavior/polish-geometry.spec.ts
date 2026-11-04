@@ -326,6 +326,32 @@ test('a long title wraps before the Properties chip', async ({ page }) => {
   expect(right).toBeLessThanOrEqual(chip.x - 4);
 });
 
+test('the Properties chip shares no pixel with the page title at 600 px, where the page area is narrow', async ({
+  page,
+}) => {
+  await openMembranes(page, 1280);
+  await page.setViewportSize({ width: 600, height: 900 });
+  const chip = page.getByRole('button', { name: /^Properties/ });
+  await expect(chip).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = (await chip.boundingBox())!;
+      return page.evaluate((chipBox) => {
+        const range = document.createRange();
+        range.selectNodeContents(document.querySelector('[data-page-title]')!);
+        const rects = [...range.getClientRects()];
+        return rects.some(
+          (rect) =>
+            rect.left < chipBox.x + chipBox.width &&
+            rect.right > chipBox.x &&
+            rect.top < chipBox.y + chipBox.height &&
+            rect.bottom > chipBox.y,
+        );
+      }, box);
+    })
+    .toBe(false);
+});
+
 test.describe('controls line up with the text and fields around them', () => {
   for (const width of WIDTHS) {
     test(`a settings switch lines up with its heading, and its track with the fields at ${width}`, async ({ page }) => {

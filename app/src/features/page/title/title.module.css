@@ -6,8 +6,9 @@
     /* Positioned, so it paints above the sheets of pages with breaks, as the flow below it does. */
     position: relative;
     /* At its end it leaves room for the chips that float at the page's top end (search/properties/mount.tsx). */
-    padding: 24px max(var(--flow-margin, 48px), calc(var(--page-chip-room, 0px) / var(--page-zoom, 1))) 0
-      var(--flow-start, 48px);
+    /* On a page area too narrow to share a line with the chip, the chip sits above the title and this moves it down. */
+    padding: max(24px, calc(var(--page-chip-drop, 0px) / var(--page-zoom, 1)))
+      max(var(--flow-margin, 48px), calc(var(--page-chip-room, 0px) / var(--page-zoom, 1))) 0 var(--flow-start, 48px);
     margin-block-end: 16px;
   }
 
@@ -31,6 +32,9 @@
   .text {
     display: inline-block;
     min-inline-size: 8ch;
+    max-inline-size: 100%;
+    /* One long word breaks at the edge instead of running past it, under the chip. */
+    overflow-wrap: anywhere;
   }
 
   .text:empty::before {
@@ -57,7 +61,8 @@
    * Each line is trimmed to its capitals and its baseline, and padded down one line from its top, less the lift.
    */
   :global([data-ruled]) .band {
-    padding-block-start: 0;
+    /* The chip's line, in whole rules, so the title stays on its rule. */
+    padding-block-start: round(up, calc(var(--page-chip-drop, 0px) / var(--page-zoom, 1)), var(--rule));
     margin-block-end: var(--rule);
   }
 

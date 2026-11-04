@@ -5,6 +5,9 @@ import type { MountedPage } from '../../page';
 import { PropertiesBar } from './PropertiesBar';
 import styles from './properties.module.css';
 
+/** The least width, in screen px, that the title keeps beside the chip; below it the chip moves above the title. */
+const MIN_TITLE_ROOM = 220;
+
 export function mountProperties(mounted: MountedPage): () => void {
   const host = document.createElement('div');
   host.className = styles.host;
@@ -28,9 +31,15 @@ export function mountProperties(mounted: MountedPage): () => void {
     host.style.insetInlineEnd = `${inset}px`;
     // Never wider than the page area, so the chip and its panel stay inside it however narrow the page gets.
     host.style.maxInlineSize = `${Math.max(0, right - Math.max(rect.left, 0) - 32)}px`;
-    // The title wraps before it reaches the chip: the chip's width, its 16 px inset, and an 8 px gap.
-    const chip = host.querySelector('button')?.getBoundingClientRect().width ?? 0;
-    viewport.style.setProperty('--page-chip-room', `${chip ? Math.ceil(chip) + 24 : 0}px`);
+    // The title wraps before it reaches the chip: the chip's width, its 16 px inset, and an 8 px gap. On a page area so
+    // narrow that the title would have less than MIN_TITLE_ROOM left of the chip, the chip takes a line of its own
+    // above the title instead, and the title keeps the full width.
+    const box = host.querySelector('button')?.getBoundingClientRect();
+    const chip = box?.width ?? 0;
+    const titleLeft = viewport.querySelector('[data-page-title]')?.getBoundingClientRect().left ?? rect.left;
+    const crowded = chip > 0 && right - titleLeft - (Math.ceil(chip) + 24) < MIN_TITLE_ROOM;
+    viewport.style.setProperty('--page-chip-room', `${chip && !crowded ? Math.ceil(chip) + 24 : 0}px`);
+    viewport.style.setProperty('--page-chip-drop', `${box && crowded ? Math.ceil(box.height) + 16 : 0}px`);
   };
   place();
   // Placing the chip resizes the host and the title room, which the observer watches: placing from inside its callback
@@ -62,5 +71,6 @@ export function mountProperties(mounted: MountedPage): () => void {
     setTimeout(() => root.unmount(), 0);
     host.remove();
     viewport.style.removeProperty('--page-chip-room');
+    viewport.style.removeProperty('--page-chip-drop');
   };
 }
