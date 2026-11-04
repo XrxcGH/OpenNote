@@ -7,7 +7,6 @@
   "block | text-overlap | span.mathInline > div.holderInline > button.toggle x th > p": "The Edit/Simplify/Solve holder opens as a popover laid over the text after the equation, by design; it is closed again by Escape or a click away.",
   "block | text-overlap | td > p > strong x div.holderInline > button.toggle": "The Edit/Simplify/Solve holder opens as a popover laid over the text after the equation, by design; it is closed again by Escape or a click away.",
   "block | text-overlap | tr > th > p x div.holderInline > button.toggle": "The Edit/Simplify/Solve holder opens as a popover laid over the text after the equation, by design; it is closed again by Escape or a click away.",
-  "command | box-overlap | div[data-scope=palette].panel > div[role=group].filters > button[role=switch].labeled x div[role=group].filters > button[role=switch].labeled": "The palette filter switches sit in one row and their focus outlines touch at the narrowest width; the labels are not covered.",
   "command | dead-space | details > label.field > textarea.mono (nested)": "The box is a text area, a table region, or a typeset equation that grows with its content, so it is larger than its content until the person types more; the room is its own.",
   "command | dead-space | div.content > div.list > div[role=region].scroll (nested)": "The box is a scroll region, preview, or empty frame that fills when the dialog has content (a preview, a table, or a list of results); its room is by design, not clipped content.",
   "command | dead-space | div.fields > label.field > textarea.textarea": "The box is a text area, a table region, or a typeset equation that grows with its content, so it is larger than its content until the person types more; the room is its own.",
@@ -140,7 +139,6 @@
   "command | text-clip | div.form > div.field > input.input": "The field shows one line of a long value and scrolls it as the person types; the full value is reachable with the keyboard.",
   "command | text-spill | div.kit > section.part > pre.block": "The block is preformatted text that scrolls inside its own box; nothing is cut off.",
   "palette | dead-space | div.content > div[data-scope=palette].palette > div[role=listbox].list (nested)": "The palette list is sized for its longest result list, so it is taller than a short list of results.",
-  "palette | target-small | div[data-scope=palette].palette > div[role=radiogroup].chips > button[role=radio].chip": "The palette scope chips are compact pills in one row; touch density raises them to 44 px.",
   "tool.kit-chemmat | dead-space | tbody > tr > td (empty box)": "A results table cell with no value yet is empty by design; it fills as soon as the inputs give a result.",
   "tool.kit-design | dead-space | div.panel > section.section > div[role=region].scroll (nested)": "A results table in the design kit scrolls inside its own section so a long table keeps the inputs in view; the nested scroll area is the table, not spare space.",
   "tool.kit-design | dead-space | div[role=region].scroll > table.table > tbody (empty box)": "A design kit table body that has no rows until the inputs give a result is an empty box by design; it fills as soon as a value is entered.",
@@ -298,6 +296,10 @@
   "tool.kit-solids | target-small | div.tool > div[role=tablist].tabs > button[role=tab].tab",
   "tool.kitelectrical | target-small | div.form > div.field > input.input",
   "tool.kitelectrical | target-small | div.form > div.field > select.input",
-  "tool.kitelectrical | target-small | div.kit > div[role=tablist].tabs > button[role=tab].tab"
+  "tool.kitelectrical | target-small | div.kit > div[role=tablist].tabs > button[role=tab].tab",
+  "command | target-small | div.panel > div[role=group].filters > button[role=switch].labeled",
+  "command | target-small | div.body > div.choices > button.button",
+  "tool.kit-humanities | target-small | section.tool > div[role=tablist].tabs > button[role=tab].tab",
+  "tool.kit-humanities | target-small | section.tool > label.field > select"
  ]
 }
