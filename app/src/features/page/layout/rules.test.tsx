@@ -9,6 +9,7 @@ import { textPageFixture } from '../test/fixtures';
 import type { PageFixture } from '../test/fixtures';
 import { ruleLift } from '../../../core/ruled';
 import type { RuleGrid } from './rules';
+import { createTitle } from '../title/title';
 
 const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
 /**
@@ -158,6 +159,24 @@ describe('ruled paper', () => {
         expect(offLift(baseline(harness, line), next), note).toBeLessThan(TOLERANCE);
       }
     }, SETTLE);
+  });
+
+  it('puts the text back on its rules when a title band is added above it or its title wraps', async () => {
+    const harness = await ruled(textPageFixture(MARKDOWN));
+    const paragraph = harness.viewport.world.querySelector('.ProseMirror > p')!;
+    const band = createTitle(harness.viewport.world, {
+      title: 'Short',
+      changed: null,
+      readOnly: false,
+      send() {},
+      enterPage() {},
+    });
+    await frames();
+    expect(offLift(baseline(harness, paragraph)), 'after the band was added').toBeLessThan(TOLERANCE);
+    // A band of a height that is no whole number of rules, as a wrapped title with an uneven lead can be.
+    band.element.style.paddingBlockEnd = '13px';
+    await frames();
+    expect(offLift(baseline(harness, paragraph)), 'after the band grew').toBeLessThan(TOLERANCE);
   });
 
   it('changes nothing on plain paper', async () => {

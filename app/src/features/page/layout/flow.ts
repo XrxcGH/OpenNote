@@ -126,8 +126,13 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
   let grid: RuleGrid | null = null;
   let frame = 0;
   const watched = new Set<Element>();
+  // What sits above the flow in the world (the title band): when it grows, as a long title wraps, the flow's first
+  // line moves, and its lead is measured again.
+  const above = new Set<Element>();
   const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
   const mutations = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => schedule());
+  // A band added above the flow, or taken away, moves the flow as well.
+  const around = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => schedule());
 
   /** How far down the page an element ends, in page units from the top of the world. */
   const bottomOf = (rect: DOMRect) => (rect.bottom - world.getBoundingClientRect().top) / viewport.camera().zoom;
@@ -170,6 +175,15 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       found.add(inner);
       moved = pad(inner) || moved;
     }
+    const over = new Set<Element>();
+    for (const child of world.children) {
+      if (child === flow || !(child instanceof HTMLElement) || child.dataset.backdrop !== undefined) continue;
+      over.add(child);
+      if (!above.has(child)) resizes?.observe(child);
+    }
+    for (const element of above) if (!over.has(element)) resizes?.unobserve(element);
+    above.clear();
+    over.forEach((element) => above.add(element));
     for (const element of watched) if (!found.has(element)) resizes?.unobserve(element);
     for (const element of found) if (!watched.has(element)) resizes?.observe(element);
     watched.clear();
@@ -192,8 +206,11 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       (element as HTMLElement).style.removeProperty('--rule-pad');
     }
     watched.clear();
+    for (const element of above) resizes?.unobserve(element);
+    above.clear();
     resizes?.unobserve(flow);
     mutations?.disconnect();
+    around?.disconnect();
   }
 
   return {
@@ -208,6 +225,7 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       if (!was) {
         resizes?.observe(flow);
         mutations?.observe(flow, { childList: true, subtree: true });
+        around?.observe(world, { childList: true });
         // The fonts load after the page does and can change what sits above the flow.
         void document.fonts?.ready.then(schedule);
       }
