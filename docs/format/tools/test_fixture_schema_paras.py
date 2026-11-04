@@ -123,6 +123,32 @@ class FieldsTest(unittest.TestCase):
                 self.assertEqual(sorted(found), sorted(case.get("problems", [])))
 
 
+class NotebookColorTest(unittest.TestCase):
+    """R-COL-1 and R-STY-2: a theme color sits only in textColor, so a version 1 reader still opens the notebook."""
+
+    # What the Beta 8 core accepts in a color field (crates/core Color::parse): a lowercase name or a hex color.
+    V1_PARSE = re.compile(r"[a-z][a-z0-9-]*|#(?:[0-9a-fA-F]{2}){3,4}")
+
+    def test_theme_colors_stay_out_of_version_1_keys(self) -> None:
+        notebook = load(PARAS / "notebook-theme-color.json")
+        self.assertEqual(schema_v2.notebook_problems(notebook), [])
+        self.assertEqual(notebook["formatVersion"], 1)
+        themed = 0
+        for name, style in notebook["styles"].items():
+            with self.subTest(style=name):
+                if "color" in style:
+                    self.assertRegex(style["color"], self.V1_PARSE)
+                    self.assertEqual(style["color"], style["textColor"])
+                else:
+                    themed += 1
+                    self.assertTrue(style["textColor"].startswith("theme:"))
+        self.assertGreater(themed, 0)
+
+    def test_a_theme_color_in_the_version_1_key_is_a_problem(self) -> None:
+        notebook = {"styles": {"h1": {"color": "theme:accent1"}}}
+        self.assertEqual(len(schema_v2.notebook_problems(notebook)), 1)
+
+
 class StampingTest(unittest.TestCase):
     ONE = {"formatVersion": 1, "minReaderVersion": 1, "minWriterVersion": 1}
     TWO = {"formatVersion": 2, "minReaderVersion": 1, "minWriterVersion": 2}

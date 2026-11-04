@@ -113,6 +113,7 @@
     {
       "name": "a page style sheet and theme",
       "rules": [
+        "R-COL-1",
         "R-STY-1",
         "R-STY-2",
         "R-STY-3",

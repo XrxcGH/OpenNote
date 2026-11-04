@@ -169,7 +169,9 @@ A color is a palette name, a hexadecimal color, or absent (no color).
 
 The app maps a palette name to its light or dark value from its design tokens, so colors follow the theme. Readers must keep unknown palette names from newer versions and show them in a neutral color.
 
-Version 2 adds theme colors, written `theme:NAME`, which follow the notebook's theme (section 4.6). [Appendix D](#appendix-d-shared-value-grammars) gives the one color grammar that every version 2 field uses. A version 1 reader that finds a theme color in a version 1 field keeps it unchanged (section 2.9) and shows a neutral color or the field's default.
+Version 2 adds theme colors, written `theme:NAME`, which follow the notebook's theme (section 4.6). [Appendix D](#appendix-d-shared-value-grammars) gives the one color grammar that every version 2 field uses.
+
+`R-COL-1`. A color field of version 1 holds only the colors of the table above, in every version. That covers the `color` of notebooks, sections, pages, and their styles (section 4.1), and every other color key that version 1 defines. A version 1 reader rejects a value with any other character: the Beta 8 core reads a notebook whose style has `"color": "theme:accent1"` as invalid and cannot open it. So a theme color goes only in a field of version 2, such as the style key `textColor` (`R-STY-2`) or a tag whose page is stamped version 2 (`R-STAMP-8`). A palette name that a later version adds to a version 1 field is lowercase letters, digits, and `-`, starting with a letter, because a version 1 reader keeps such a name.
 
 ### 2.8 Order keys
 
@@ -454,7 +456,9 @@ Pages do not follow later changes to these defaults. Each `page.json` is complet
 
 Version 2 gives named styles the formatting that styles in Word and Google Docs have, measured in points. All of it is version 1 data: a version 1 reader keeps every key below and shows each style with the keys of section 4.1 (`R-STAMP-3`). So `notebook.json` and `section.json` stay at version 1.
 
-`R-STY-1`. A style object, in `notebook.json` `styles` or in a page's style sheet (`R-STY-7`), may hold these keys besides the keys of section 4.1. Every key is optional. A missing key comes from the style the object is based on, and then from the app.
+#### Style keys
+
+`R-STY-1`. A style object, in `notebook.json` `styles` or in a page's style sheet (`R-STY-7`), may hold these keys besides the keys of section 4.1. Every key is optional. A missing key comes from the style the object is based on (`R-STY-4`), and at the end of that chain from the Default column. Where the Default is the app's value, it is the app's own value for that style, as for the keys of section 4.1, and the app's built-in style set holds it.
 
 | Key | Type and range | Default |
 |---|---|---|
@@ -464,20 +468,23 @@ Version 2 gives named styles the formatting that styles in Word and Google Docs 
 | `next` | A style name, the style of a new paragraph after Enter at the end | `normal` for `title`, `subtitle`, and `h1` to `h9`. The style itself otherwise |
 | `order` | Integer, 0 to 9,999: the place in the style gallery | After the styles that have one, by name |
 | `hidden` | Boolean: left out of the style gallery | `false` |
-| `font` | The version 1 key, which now also takes a theme token (Appendix D.2) | |
-| `sizePt` | Points, 1 to 1638, step 0.5 (Appendix D.3) | |
-| `weight` | 100 to 900, step 100 (Appendix D.4) | |
-| `italic` | Boolean | |
-| `underline` | An underline style (Appendix D.5), or `none` | |
-| `strike` | `single`, `double`, or `none` | |
-| `caps` | `small`, `all`, or `none` | |
-| `tracking` | Letter spacing in points, -1584 to 1584, step 0.05 | |
-| `color` | The version 1 key, which now takes any color of Appendix D.7 | |
-| `highlight` | A color (Appendix D.7) or `none` | |
-| `align`, `indent`, `before`, `after`, `line`, `contextual`, `keepNext`, `keepLines`, `widows`, `tabs`, `border`, `shade`, `outline`, `dir`, `lang` | As the keys of `data.paras` (section 6.8) | |
-| `list` | `{"id": list ID, "level": 1 to 9}`: a style tied to a list level, such as numbered headings | |
+| `font` | The version 1 key, which now also takes a theme token (Appendix D.2) | The app's value: `+heading` for `title`, `subtitle`, and `h1` to `h9`, `+mono` for `code`, and `+body` for the others |
+| `sizePt` | Points, 1 to 1638, step 0.5 (Appendix D.3) | The value of `size` in points (`size` × 3/4), and without `size` the app's value |
+| `weight` | 100 to 900, step 100 (Appendix D.4) | 400 |
+| `italic` | Boolean | `false` |
+| `underline` | An underline style (Appendix D.5), or `none` | `none` |
+| `strike` | `single`, `double`, or `none` | `none` |
+| `caps` | `small`, `all`, or `none` | `none` |
+| `tracking` | Letter spacing in points, -1584 to 1584, step 0.05 | 0 |
+| `color` | The version 1 key: a pen name, a highlighter name, or `#rrggbb` (`R-COL-1`), never a theme color | The text color of the theme (`theme:text`) |
+| `textColor` | Any color of Appendix D.7. It wins over `color` (`R-STY-2`) | The value of `color` |
+| `highlight` | A color (Appendix D.7) or `none` | `none` |
+| `align`, `indent`, `before`, `after`, `line`, `contextual`, `keepNext`, `keepLines`, `widows`, `tabs`, `border`, `shade`, `outline`, `dir`, `lang` | As the keys of `data.paras` (section 6.8) | As the Default column of `R-PARA-1`. `before`, `after`, and `line` come first from the version 1 keys `spaceBefore`, `spaceAfter`, and `lineHeight` (`R-STY-2`) |
+| `list` | `{"id": list ID, "level": 1 to 9}`: a style tied to a list level, such as numbered headings | None |
 
-`R-STY-2`. Where a version 2 key and a version 1 key say the same thing, the version 2 key wins: `sizePt` over `size`, `before` over `spaceBefore`, `after` over `spaceAfter`, and `line` over `lineHeight`. A writer that writes the version 2 key also writes the version 1 key whenever version 1 can hold the value, so a version 1 reader shows it. The version 1 values are `size` = `sizePt` × 4/3, `spaceBefore` = `before` × 4/3, and `spaceAfter` = `after` × 4/3, each rounded as a geometry value (section 2.3). The `lineHeight` is the `line` value when its rule is `multiple` and the value is from 0.5 to 10. When version 1 can't hold the value, such as `"auto"` spacing or an exact line height, the writer leaves the version 1 key out.
+`R-STY-2`. Where a version 2 key and a version 1 key say the same thing, the version 2 key wins: `sizePt` over `size`, `textColor` over `color`, `before` over `spaceBefore`, `after` over `spaceAfter`, and `line` over `lineHeight`. A writer that writes the version 2 key also writes the version 1 key whenever version 1 can hold the value, so a version 1 reader shows it. The version 1 values are `size` = `sizePt` × 4/3, `spaceBefore` = `before` × 4/3, and `spaceAfter` = `after` × 4/3, each rounded as a geometry value (section 2.3). The `color` is the `textColor` value when it is a pen name, a highlighter name, or `#rrggbb`. The `lineHeight` is the `line` value when its rule is `multiple` and the value is from 0.5 to 10. When version 1 can't hold the value, such as `"auto"` spacing, an exact line height, or a theme color, the writer leaves the version 1 key out. A writer never writes a theme color in `color` (`R-COL-1`), and a reader that finds one there treats the key as missing (`R-NUM-1`) and keeps it.
+
+#### Style names, chains, and layers
 
 `R-STY-3`. Style names are the names of version 1, plus `subtitle`, `citation`, `h7`, `h8`, `h9`, and `quote2` (Intense Quote), plus user styles: `u-` followed by 1 to 32 characters from `a-z`, `0-9`, and `-`. Readers keep any other name (section 2.9). Headings 7 to 9 are paragraphs whose style is `h7` to `h9` and whose `data.paras` entry has `outline` 7 to 9, because Markdown has only 6 heading levels.
 
@@ -498,11 +505,15 @@ Version 2 gives named styles the formatting that styles in Word and Google Docs 
 
 This is Word's order, with the page's style sheet between the document's styles and direct formatting. Table cells use the layers of `R-SHT-9` instead.
 
+#### Page style sheets and merging
+
 `R-STY-7`. A page may hold its own style sheet in the `styles` key of `page.json` (section 5.2), with the same shape as the notebook's. Imported documents use it. A style that the page and the notebook both define takes each key from the page and every other key from the notebook. A style that only the page defines is a style of that page. Unlike the notebook's, the page's style names are in code point order (`R-JSON-1`).
 
-`R-STY-8`. A character style applies through the `charStyle` mark (`R-MRK-23`). Only its run keys apply: `font`, `sizePt`, `weight`, `italic`, `underline`, `strike`, `caps`, `tracking`, `color`, `highlight`, `lang`, and `dir`. A mark that names a paragraph style or a missing style draws nothing, and readers keep it.
+`R-STY-8`. A character style applies through the `charStyle` mark (`R-MRK-23`). Only its run keys apply: `font`, `sizePt`, `weight`, `italic`, `underline`, `strike`, `caps`, `tracking`, `color`, `textColor`, `highlight`, `lang`, and `dir`. A mark that names a paragraph style or a missing style draws nothing, and readers keep it.
 
-`R-STY-9`. `notebook.json` may hold `stylesChanged`, a map from a style name to the time that style last changed. Two copies of `notebook.json` merge their `styles` style by style: the result has every name of both copies, and a style that differs takes the value from the copy with the later time in `stylesChanged`. A missing time is earlier than any time. When the times are equal, the value whose canonical JSON (section 2.2) is greater in code point order wins. The merged `stylesChanged` keeps the later time of each name. The other fields still merge by `changed` (section 14.3).
+`R-STY-9`. `notebook.json` may hold `stylesChanged`, a map from a style name to the time that style last changed, with at most 64 entries, as for `styles` (`R-STY-5`). Two copies of `notebook.json` merge their `styles` style by style: the result has every name of both copies, and a style that differs takes the value from the copy with the later time in `stylesChanged`. A missing time is earlier than any time. When the times are equal, the value whose canonical JSON (section 2.2) is greater in code point order wins. The merged `stylesChanged` keeps the later time of each name. The other fields still merge by `changed` (section 14.3).
+
+#### Themes
 
 `R-THM-1`. `notebook.json` and `page.json` may hold `theme`, the fonts and colors that tokens resolve to:
 
@@ -1126,26 +1137,26 @@ The fields apply to `image` blocks, `ink` blocks whose role is `drawing`, and `f
 
 ### 6.8 Paragraph formatting
 
-`R-PARA-1`. In version 2 a text block may hold `paras`, a map from an element ID (section 6.6) to that element's paragraph formatting. Every key of an entry is optional, and a missing key comes from the element's style (`R-STY-6`). Values in points use `R-NUM-1`.
+`R-PARA-1`. In version 2 a text block may hold `paras`, a map from an element ID (section 6.6) to that element's paragraph formatting. Every key of an entry is optional, and a missing key comes from the element's style (`R-STY-6`). Where no layer sets a key, it has the value of the Default column, the app's defaults of `R-STY-6` layer 1. Values in points use `R-NUM-1`.
 
-| Key | Type and range | Meaning |
-|---|---|---|
-| `align` | `start`, `center`, `end`, `justify`, or `distribute` | Alignment. `start` and `end` follow the paragraph's direction, so they flip in right-to-left text. `distribute` also spreads the last line |
-| `indent` | `{start, end, first}`, each in points from -1584 to 1584, step 0.05 | Indents from the start and end edges, and of the first line. A negative `first` is a hanging indent |
-| `before`, `after` | Points from 0 to 1584, step 0.05, or `"auto"` (14 points, Word's HTML spacing) | Space above and below |
-| `contextual` | Boolean | Drops `before` and `after` between neighbors of the same style |
-| `line` | `{"rule": "multiple", "value": 0.06 to 132, step 0.01}`, or `{"rule": "exact" or "atLeast", "value": points from 0.7 to 1584, step 0.05}` | Line spacing |
-| `keepNext`, `keepLines`, `breakBefore` | Boolean | Keep with the next paragraph, keep the lines together, and start on a new sheet |
-| `widows` | Boolean, default `true` | Widow and orphan control: at least two lines at the top and bottom of a sheet |
-| `tabs` | Up to 64 stops `{pos, align, leader}`, sorted by `pos`, each `pos` once. `pos` is in points from 0 to 1584, step 0.05. `align` is `start` (the default), `center`, `end`, `decimal`, `bar`, or `clear`. `leader` is `none` (the default), `dot`, `hyphen`, `underscore`, `heavy`, or `middleDot` | Tab stops. `clear` removes a stop the style sets |
-| `border` | `{top, bottom, start, end, between}`, each `{style, width, space, color}`. `style` is `single`, `double`, `dotted`, `dashed`, `thick`, `triple`, `thinThickSmallGap`, `thickThinSmallGap`, `wave`, `doubleWave`, `dashDotStroked`, `threeDEmboss`, `threeDEngrave`, `inset`, or `outset`. `width` is in points from 0.25 to 6, step 0.125 (default 0.5). `space` is an integer number of points from 0 to 31 (default 1). `color` is a color (default the text color) | Borders. Neighbors with equal borders share one box, and `between` draws between them |
-| `shade` | `{fill, pattern, color}`. `fill` and `color` are colors. `pattern` is an OOXML `ST_Shd` name: `clear` (the default), `solid`, `horzStripe`, `vertStripe`, `reverseDiagStripe`, `diagStripe`, `horzCross`, `diagCross`, `thinHorzStripe`, `thinVertStripe`, `thinReverseDiagStripe`, `thinDiagStripe`, `thinHorzCross`, `thinDiagCross`, or `pct5`, `pct10`, `pct12`, `pct15`, `pct20`, `pct25`, `pct30`, `pct35`, `pct37`, `pct40`, `pct45`, `pct50`, `pct55`, `pct60`, `pct62`, `pct65`, `pct70`, `pct75`, `pct80`, `pct85`, `pct87`, `pct90`, `pct95` | Shading behind the paragraph |
-| `dir` | `rtl` or `ltr` | Direction |
-| `lang` | A language tag (Appendix D.8) | Language, for spelling, hyphenation, and voices |
-| `outline` | Integer, 1 to 9 | Outline level, for headings 7 to 9 (`R-STY-3`) and outline views |
-| `dropCap` | `{"mode": "drop" or "margin", "lines": 1 to 10 (default 3), "distance": points from 0 to 1584, step 0.05 (default 0)}` | A drop cap on the first letter |
-| `list` | `{"id": list ID, "restart": boolean}`, with `restart` defaulting to `false` | On a list item: the list definition it follows (section 6.9), and whether numbering starts again here |
-| `hyphenate` | Boolean | Overrides `view.text.hyphenate` (section 5.4.2) |
+| Key | Type and range | Default | Meaning |
+|---|---|---|---|
+| `align` | `start`, `center`, `end`, `justify`, or `distribute` | `start` | Alignment. `start` and `end` follow the paragraph's direction, so they flip in right-to-left text. `distribute` also spreads the last line |
+| `indent` | `{start, end, first}`, each in points from -1584 to 1584, step 0.05 | 0 for each of `start`, `end`, and `first` | Indents from the start and end edges, and of the first line. A negative `first` is a hanging indent |
+| `before`, `after` | Points from 0 to 1584, step 0.05, or `"auto"` (14 points, Word's HTML spacing) | The app's value (section 4.1) | Space above and below |
+| `contextual` | Boolean | `false` | Drops `before` and `after` between neighbors of the same style |
+| `line` | `{"rule": "multiple", "value": 0.06 to 132, step 0.01}`, or `{"rule": "exact" or "atLeast", "value": points from 0.7 to 1584, step 0.05}` | The app's value (section 4.1) | Line spacing |
+| `keepNext`, `keepLines`, `breakBefore` | Boolean | `false` | Keep with the next paragraph, keep the lines together, and start on a new sheet |
+| `widows` | Boolean | `true` | Widow and orphan control: at least two lines at the top and bottom of a sheet |
+| `tabs` | Up to 64 stops `{pos, align, leader}`, sorted by `pos`, each `pos` once. `pos` is in points from 0 to 1584, step 0.05. `align` is `start` (the default), `center`, `end`, `decimal`, `bar`, or `clear`. `leader` is `none` (the default), `dot`, `hyphen`, `underscore`, `heavy`, or `middleDot` | No stops: default stops every `view.text.defaultTab` (section 5.4.2) | Tab stops. `clear` removes a stop the style sets |
+| `border` | `{top, bottom, start, end, between}`, each `{style, width, space, color}`. `style` is `single`, `double`, `dotted`, `dashed`, `thick`, `triple`, `thinThickSmallGap`, `thickThinSmallGap`, `wave`, `doubleWave`, `dashDotStroked`, `threeDEmboss`, `threeDEngrave`, `inset`, or `outset`. `width` is in points from 0.25 to 6, step 0.125 (default 0.5). `space` is an integer number of points from 0 to 31 (default 1). `color` is a color (default the text color) | No border on any side | Borders. Neighbors with equal borders share one box, and `between` draws between them |
+| `shade` | `{fill, pattern, color}`. `fill` is the background color, absent for no fill. `color` is the color of the pattern's lines and dots, and defaults to the text color. `pattern` is an OOXML `ST_Shd` name: `clear` (the default), `solid`, `horzStripe`, `vertStripe`, `reverseDiagStripe`, `diagStripe`, `horzCross`, `diagCross`, `thinHorzStripe`, `thinVertStripe`, `thinReverseDiagStripe`, `thinDiagStripe`, `thinHorzCross`, `thinDiagCross`, or `pct5`, `pct10`, `pct12`, `pct15`, `pct20`, `pct25`, `pct30`, `pct35`, `pct37`, `pct40`, `pct45`, `pct50`, `pct55`, `pct60`, `pct62`, `pct65`, `pct70`, `pct75`, `pct80`, `pct85`, `pct87`, `pct90`, `pct95` | No shading | Shading behind the paragraph |
+| `dir` | `rtl` or `ltr` | `ltr` | Direction |
+| `lang` | A language tag (Appendix D.8) | None: the app's language | Language, for spelling, hyphenation, and voices |
+| `outline` | Integer, 1 to 9 | None: body text | Outline level, for headings 7 to 9 (`R-STY-3`) and outline views |
+| `dropCap` | `{"mode": "drop" or "margin", "lines": 1 to 10 (default 3), "distance": points from 0 to 1584, step 0.05 (default 0)}` | None | A drop cap on the first letter |
+| `list` | `{"id": list ID, "restart": boolean}`, with `restart` defaulting to `false` | None: not a list item of a definition | On a list item: the list definition it follows (section 6.9), and whether numbering starts again here |
+| `hyphenate` | Boolean | `view.text.hyphenate` | Overrides `view.text.hyphenate` (section 5.4.2) |
 
 `R-PARA-2`. Keys of `paras` that name no element in `ids` are ignored, and writers drop them, as for `styles` (section 6.6). Paragraph formatting is version 1 data (`R-STAMP-2`): a version 1 reader keeps `paras`, and the entries stay with their paragraphs through its edits, because element IDs move with their elements.
 
@@ -1162,7 +1173,7 @@ The fields apply to `image` blocks, `ink` blocks whose role is `drawing`, and `f
 | `start` | Integer, 0 to 32,767 | 1 |
 | `indent` | Points from 0 to 1584, step 0.05: where the text starts | 36 × n |
 | `hanging` | Points from 0 to 1584, step 0.05: how far the number hangs before the text | 18 |
-| `symbol` | One character: the bullet | The app's bullet for that level |
+| `symbol` | One Unicode code point, not a control character (category Cc): the bullet. A sequence of code points, such as an emoji with a variation selector, is outside the range | The app's bullet for that level |
 | `font` | A font name or token (Appendix D.2): the font of the number or bullet | The paragraph's font |
 | `align` | `start`, `center`, or `end`: how the number sits in its space | `start` |
 
@@ -1187,7 +1198,7 @@ Version 2 adds footnotes and endnotes, comments, and suggested changes. Their ma
 | `author` | String, 1 to 100 characters | required | The display name of the person, as set in the app |
 | `time` | timestamp | required | When the comment was made |
 | `markdown` | Inline OpenNote Markdown with hard breaks, at most 64 KiB | required | The comment's text |
-| `replies` | Up to 256 objects `{author, time, markdown}`, oldest first | `[]` | Replies |
+| `replies` | Up to 256 objects `{author, time, markdown}`, oldest first. Each has the types and limits of the keys above, so its `markdown` is at most 64 KiB | `[]` | Replies |
 | `resolved` | Boolean | `false` | Whether the comment is resolved |
 
 `R-CMT-2`. A comment covers the text inside its `comment` marks (`R-MRK-19`). The marks with one ID may sit in several paragraphs of one block, which together are its range. Writers drop comments that no mark in the block names.

@@ -3,6 +3,8 @@ named styles (spec 4.6, 5.4.2, 5.4.3, and 6.8 to 6.12)."""
 
 from __future__ import annotations
 
+import unicodedata
+
 import format_v2 as v2
 from schema_base import *  # noqa: F403
 
@@ -83,7 +85,7 @@ LEVEL = obj(
         "start": integer(0, 32767),
         "indent": PT_POS,
         "hanging": PT_POS,
-        "symbol": text(1, 1),
+        "symbol": ok(lambda v: isinstance(v, str) and len(v) == 1 and unicodedata.category(v) != "Cc", "one code point"),
         "font": FONT,
         "align": enum("start", "center", "end"),
     }
@@ -134,11 +136,13 @@ BAND_PARTS = {"left": text(0, 200), "center": text(0, 200), "right": text(0, 200
 BAND = obj({**BAND_PARTS, "firstPage": obj(BAND_PARTS)})
 VIEW_PRINT = obj({"header": BAND, "footer": BAND})
 
-# Section 4.6.
+# Section 4.6. The version 1 key `color` holds only the colors of version 1 (R-COL-1).
+V1_COLOR = ok(lambda v: v2.color(v, "pen highlighter hex"), "a version 1 color (R-COL-1)")
 STYLE_KEYS = {
     "font": either(text(1, 200), FONT),
     "size": points(1, 1000, "0.01"),
-    "color": ANY_COLOR,
+    "color": V1_COLOR,
+    "textColor": ANY_COLOR,
     "spaceBefore": points(0, 1000, "0.01"),
     "spaceAfter": points(0, 1000, "0.01"),
     "lineHeight": points(0.5, 10, "0.01"),
@@ -191,6 +195,11 @@ def style_versions(styles: dict, path: str) -> list[str]:
                 expected = round(value * 4 / 3 + 1e-9, 2)
                 if 0 <= expected <= 1000 and style.get(old) != expected:
                     problems.append(f"{path}.{name}.{old}: {expected}, the value of {new} in page units (R-STY-2)")
+        text_color = style.get("textColor")
+        if v2.color(text_color, "pen highlighter hex") and style.get("color") != text_color:
+            problems.append(f"{path}.{name}.color: {text_color}, the value of textColor (R-STY-2)")
+        if v2.color(text_color, "theme") and "color" in style:
+            problems.append(f"{path}.{name}.color: left out beside a theme color in textColor (R-STY-2)")
         line = style.get("line")
         if isinstance(line, dict) and line.get("rule") == "multiple" and 0.5 <= line.get("value", 0) <= 10:
             if style.get("lineHeight") != line["value"]:
