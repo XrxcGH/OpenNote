@@ -33,6 +33,7 @@ import {
 } from '../images/insert';
 import type { QueuedImage } from '../images/importQueue';
 import type { MountedPage } from '../mount';
+import { hasRoomFor, splitToBudget } from '../sync/textLimit';
 import { addSourceLink, joinPdfLines, linkOverSelection } from './extras';
 import { factsFor } from './facts';
 import { imageKind } from './images';
@@ -184,6 +185,26 @@ export function insertIntoEditor(editor: Editor, doc: PMNode): { from: number; t
   if (typeof Range !== 'undefined' && 'getClientRects' in Range.prototype) tr.scrollIntoView();
   editor.view.dispatch(tr);
   return { from, to: editor.state.selection.to };
+}
+
+/**
+ * Text larger than one block holds, cut into several text pieces (sync/textLimit.ts), and whether the first piece goes
+ * into the focused editor. A cut paste goes wholly into new text blocks after it, so one Ctrl+Z takes it all back.
+ */
+function fitTextBlocks(
+  pieces: readonly ApplyPiece[],
+  editor: Editor | null,
+): { pieces: ApplyPiece[]; joinsEditor: boolean } {
+  let cut = false;
+  const fitted = pieces.flatMap<ApplyPiece>((piece) => {
+    if (piece.kind !== 'text') return [piece];
+    const docs = splitToBudget(piece.doc);
+    cut ||= docs.length > 1;
+    return docs.map((doc) => ({ kind: 'text', doc }));
+  });
+  const first = fitted[0];
+  const joinsEditor = !cut && !!editor && first?.kind === 'text' && hasRoomFor(editor.state.doc, first.doc);
+  return { pieces: fitted, joinsEditor };
 }
 
 interface Placed {
@@ -359,13 +380,13 @@ export async function runPaste(
   const facts = request.origin === 'drop' ? null : (request.facts ?? (await factsFor(clipboard, request.text ?? null)));
   const result = resultFor(request, facts, editor ? 'text' : 'page');
   if (result.plainFallback) showToast({ message: t('paste.tooLarge') });
-  const pieces = splitImages(result.pieces);
+  const { pieces, joinsEditor } = fitTextBlocks(splitImages(result.pieces), editor);
   if (pieces.length === 0) return;
 
   // The text first, into the focused editor.
   let rest = pieces;
   let inserted: { from: number; to: number } | null = null;
-  if (editor && pieces[0].kind === 'text') {
+  if (editor && joinsEditor && pieces[0].kind === 'text') {
     inserted = insertIntoEditor(editor, pieces[0].doc);
     rest = pieces.slice(1);
   }
