@@ -1,8 +1,8 @@
-// Opens the page's context menu for a touch long press and a pen's barrel button. Chromium raises a contextmenu
-// event for these only when Windows press and hold is on, so the page asks for one itself: it dispatches a
-// contextmenu event under the press, and the page's menus (the object, text, table, and empty-page menus) answer it
-// as they answer a right-click. A press that also raises a native event opens one menu: whichever comes first wins,
-// and the other is dropped within `DUPLICATE_MS`.
+// Opens the page's context menu for a touch long press and a pen's barrel button.
+// Chromium raises a contextmenu event for these only when Windows press and hold is on, so the page asks for one
+// itself. It dispatches a contextmenu event under the press, and the page's menus answer it as they answer a
+// right-click. A press that also raises a native event opens one menu: whichever comes first wins, and the other
+// is dropped within `DUPLICATE_MS`.
 
 /** A second request this soon after the first is the same press. */
 const DUPLICATE_MS = 400;

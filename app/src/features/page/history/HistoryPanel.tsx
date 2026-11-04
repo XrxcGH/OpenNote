@@ -197,7 +197,7 @@ function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string
   );
 }
 
-/** The versions whose date, reason, device, or name has all of the words typed; the current page always stays. */
+/** The versions whose date, reason, device, or name has all the words typed; the current page always stays. */
 export function filterVersions(versions: readonly VersionInfo[], query: string): VersionInfo[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [...versions];

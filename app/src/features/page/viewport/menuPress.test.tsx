@@ -1,6 +1,7 @@
-// The page's context menu for touch and pen in a real browser: a finger or pen held still on the page raises a
-// contextmenu event (Chromium raises none without Windows press and hold), a pen's barrel press that never moves does
-// too, a press that moves or a mouse does not, and a native event right after the page's own is dropped.
+// The page's context menu for touch and pen, in a real browser.
+// A finger or pen held still on the page raises a contextmenu event, because Chromium raises none without Windows
+// press and hold. So does a pen's barrel press that never moves. A press that moves, or a mouse, does not.
+// A native event right after the page's own is dropped.
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tokens } from '../../../theme/tokens';
 import { createSelectTool } from '../pool/selectTool';

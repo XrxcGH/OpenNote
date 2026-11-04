@@ -161,6 +161,19 @@ describe('ruled paper', () => {
     }, SETTLE);
   });
 
+  it('changes nothing on plain paper', async () => {
+    const harness = await ruled(textPageFixture(MARKDOWN), null);
+    expect(harness.viewport.world.dataset.ruled).toBeUndefined();
+    const paragraph = harness.viewport.world.querySelector('.ProseMirror > p')!;
+    expect(getComputedStyle(paragraph).paddingBlockStart).toBe('0px');
+    expect(harness.mounted.flow.rules()).toBeNull();
+    // The measure can tell: on plain paper the same lines are not on the rules.
+    const lines = [paragraph, ...harness.viewport.world.querySelectorAll('h2, li > p')];
+    expect(Math.max(...lines.map((line) => offRule(baseline(harness, line))))).toBeGreaterThan(2);
+  });
+});
+
+describe('ruled paper under a title band', () => {
   it('puts the text back on its rules when a title band is added above it or its title wraps', async () => {
     const harness = await ruled(textPageFixture(MARKDOWN));
     const paragraph = harness.viewport.world.querySelector('.ProseMirror > p')!;
@@ -177,16 +190,5 @@ describe('ruled paper', () => {
     band.element.style.paddingBlockEnd = '13px';
     await frames();
     expect(offLift(baseline(harness, paragraph)), 'after the band grew').toBeLessThan(TOLERANCE);
-  });
-
-  it('changes nothing on plain paper', async () => {
-    const harness = await ruled(textPageFixture(MARKDOWN), null);
-    expect(harness.viewport.world.dataset.ruled).toBeUndefined();
-    const paragraph = harness.viewport.world.querySelector('.ProseMirror > p')!;
-    expect(getComputedStyle(paragraph).paddingBlockStart).toBe('0px');
-    expect(harness.mounted.flow.rules()).toBeNull();
-    // The measure can tell: on plain paper the same lines are not on the rules.
-    const lines = [paragraph, ...harness.viewport.world.querySelectorAll('h2, li > p')];
-    expect(Math.max(...lines.map((line) => offRule(baseline(harness, line))))).toBeGreaterThan(2);
   });
 });
