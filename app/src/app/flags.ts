@@ -130,7 +130,13 @@ export type FlagId =
   /** The controls that create version 2 text formatting. Beta 9 reads and keeps it; Beta 10 turns it on up to Beta. */
   | 'text.v2Controls'
   /** Writing cell formats and formulas to a table's data.sheet. Beta 9 reads it; Beta 10 turns it on up to Beta. */
-  | 'tables.sheetWrites';
+  | 'tables.sheetWrites'
+  /** The code studio: the editor, projects, and the sandboxed runtimes (Beta 11 onward, on up to Beta). */
+  | 'code.studio'
+  /** Running code with the person's installed toolchains (tier 2). Development and nightly builds only. */
+  | 'code.tier2'
+  /** The on-device code models: completion, fixes, and explanations (on up to Beta). */
+  | 'code.models';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -396,6 +402,9 @@ export const FLAGS: readonly FlagDef[] = [
     betaBuilds,
   ),
   flag('tables.sheetWrites', 'Cell, row, column, and table formatting and formulas saved in a table.', betaBuilds),
+  flag('code.studio', 'The code studio: write, run, and test programs in a sandbox on this device.', betaBuilds),
+  flag('code.tier2', 'Run code with the compilers and interpreters installed on this device.', testBuilds),
+  flag('code.models', 'On-device code models for completion, fixes, and explanations.', betaBuilds),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,
