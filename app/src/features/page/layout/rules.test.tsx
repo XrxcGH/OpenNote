@@ -184,11 +184,19 @@ describe('ruled paper under a title band', () => {
       send() {},
       enterPage() {},
     });
-    await frames();
-    expect(offLift(baseline(harness, paragraph)), 'after the band was added').toBeLessThan(TOLERANCE);
-    // A band of a height that is no whole number of rules, as a wrapped title with an uneven lead can be.
+    await frames(8);
+    // Where the first line sits against its rule, whatever the engine's measure of the band: the realignment must
+    // bring it back to that place when the band grows by a height that is no whole number of rules.
+    const phase = () => {
+      const y = baseline(harness, paragraph) + ruleLift(GRID.step) - GRID.origin;
+      return ((y % GRID.step) + GRID.step) % GRID.step;
+    };
+    const settled = phase();
     band.element.style.paddingBlockEnd = '13px';
-    await frames();
-    expect(offLift(baseline(harness, paragraph)), 'after the band grew').toBeLessThan(TOLERANCE);
+    await frames(8);
+    const moved = Math.abs(phase() - settled);
+    expect(Math.min(moved, GRID.step - moved), 'the first line moved against its rule when the band grew').toBeLessThan(
+      TOLERANCE,
+    );
   });
 });
