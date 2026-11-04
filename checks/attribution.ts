@@ -70,6 +70,27 @@ export interface Gaps {
   packages: string[];
 }
 
+/**
+ * Components whose notice must stay in THIRD_PARTY_NOTICES.md, each as a table row that starts with its name. They
+ * are added before their files land (crates, fonts, and data the text program brings in), so no file row covers
+ * them yet.
+ */
+export const REQUIRED_NOTICES: readonly string[] = [
+  '`fontdb`',
+  '`ttf-parser`',
+  'Carlito',
+  'Caladea',
+  'Unicode Character Database names',
+];
+
+/** The required notices that have no table row in the notices text. */
+export function missingNotices(notices: string, required: readonly string[] = REQUIRED_NOTICES): string[] {
+  const rows = notices.split(/\r?\n/).filter((line) => line.startsWith('| '));
+  return required
+    .filter((name) => !rows.some((row) => row.startsWith(`| ${name}`)))
+    .map((name) => `THIRD_PARTY_NOTICES.md has no row for ${name}`);
+}
+
 /** npm packages that ship font or picture files into the app. A package with this prefix needs an `npm:` row. */
 const ASSET_PACKAGES = /^@fontsource(-variable)?\//;
 
@@ -181,7 +202,10 @@ export function packageFacts(root = repoRoot()): PackageFacts {
 }
 
 export function attributionGaps(root = repoRoot()): Gaps {
-  return findGaps(trackedFiles(root), readFileSync(join(root, 'docs', 'ATTRIBUTION.md'), 'utf8'), packageFacts(root));
+  const facts = packageFacts(root);
+  const gaps = findGaps(trackedFiles(root), readFileSync(join(root, 'docs', 'ATTRIBUTION.md'), 'utf8'), facts);
+  gaps.packages.push(...missingNotices(facts.notices));
+  return gaps;
 }
 
 export function describeGaps(gaps: Gaps): string[] {
