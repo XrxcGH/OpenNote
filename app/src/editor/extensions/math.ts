@@ -5,7 +5,7 @@
 // starts a new line of display math, and Escape puts the old source back.
 import { InputRule, type Editor, type Extensions } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { NodeSelection, TextSelection } from '@tiptap/pm/state';
+import { NodeSelection, Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { NodeView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import type { EditorHost, MathActionResult, MathRenderer, MathSuggestion, VisualMathField } from '../host';
@@ -627,6 +627,15 @@ class MathView implements NodeView {
     if (save && source !== this.source()) {
       tr.setNodeMarkup(pos, undefined, { ...this.node.attrs, source }).setMeta(META_COMMAND, true);
     }
+    // Escape on an equation that was never filled in cancels it, so no empty "$$" placeholder is left in the page
+    // (Beta 8 walk B-B04-17).
+    if (!save && this.source().trim() === '') {
+      tr.delete(pos, pos + this.node.nodeSize).setMeta(META_COMMAND, true);
+      tr.setSelection(TextSelection.near(tr.doc.resolve(Math.min(pos, tr.doc.content.size)), -1));
+      this.editor.view.dispatch(tr);
+      this.editor.view.focus();
+      return;
+    }
     tr.setSelection(TextSelection.near(tr.doc.resolve(pos + this.node.nodeSize)));
     this.editor.view.dispatch(tr);
     this.editor.view.focus();
@@ -699,6 +708,21 @@ export function runMathAction(editor: Editor, kind: MathActionKind): boolean {
   return lastClosed?.usableIn(editor) ? lastClosed.runAction(kind) : false;
 }
 
+/**
+ * Keeps an empty paragraph after a final equation, so Enter or the arrow keys have somewhere to go. An empty paragraph
+ * is not part of the Markdown, so the saved text does not change.
+ */
+function trailingLine(editor: Editor): Plugin {
+  return new Plugin({
+    key: new PluginKey('trailingLine'),
+    appendTransaction(_transactions, _before, after) {
+      const last = after.doc.lastChild;
+      if (!editor.isEditable || last?.type.name !== 'mathBlock') return null;
+      return after.tr.insert(after.doc.content.size, after.schema.nodes.paragraph.create()).setMeta('addToHistory', false);
+    },
+  });
+}
+
 export function mathBlockExtensions(host: EditorHost): Extensions {
   return [
     MathBlock.extend({
@@ -708,6 +732,10 @@ export function mathBlockExtensions(host: EditorHost): Extensions {
           new MathView(node, editor, getPos, true, host),
       addKeyboardShortcuts() {
         return { Enter: () => openSelected(this.editor) };
+      },
+      // A page never ends on an equation: a line below it is always there to continue on (Beta 8 walk A-A06-5).
+      addProseMirrorPlugins() {
+        return [trailingLine(this.editor)];
       },
       // Typing $$x^2$$ alone on a line makes display math.
       addInputRules() {

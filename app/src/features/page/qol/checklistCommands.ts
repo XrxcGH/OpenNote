@@ -63,5 +63,8 @@ export async function setFinishedMode(mode: FinishedMode): Promise<void> {
 }
 
 export function toggleDoneCount(): void {
-  setPrefs({ doneCount: !pageExtrasPrefs.get().doneCount });
+  const on = !pageExtrasPrefs.get().doneCount;
+  setPrefs({ doneCount: on });
+  // On a page with no checklist nothing shows, so the command says what it did (Beta 8 walk A-A06-13).
+  announce(t(on ? 'pageExtras.checklist.countOn' : 'pageExtras.checklist.countOff'));
 }
