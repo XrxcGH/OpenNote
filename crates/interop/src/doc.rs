@@ -4,6 +4,7 @@
 //! and each run carries its marks. Parsing turns Markdown (OpenNote, Obsidian, or Joplin) into this tree, and the
 //! writers turn it into canonical OpenNote Markdown (spec 7), HTML, or Word.
 
+pub mod data;
 pub mod escape;
 pub(crate) mod html_tags;
 mod inline;

@@ -10,6 +10,7 @@ use opennote_core::model::{
 };
 use opennote_core::{AssetId, PageId};
 
+use crate::doc::data::TextData;
 use crate::doc::parse::{parse_note, parse_page};
 use crate::doc::{visit_inlines_mut, Block, Inline, Marks};
 use crate::report::PageReport;
@@ -108,6 +109,48 @@ pub fn page_to_blocks_traced(
 ) -> (Vec<Block>, Vec<opennote_core::BlockId>) {
     let converted = convert_page(page, resolver, report, None);
     (converted.blocks, converted.origins)
+}
+
+/// A converted page with the records of its text blocks, for the exports that write paragraph formatting,
+/// lists, notes, comments, and suggestions.
+#[derive(Debug)]
+pub struct Document {
+    /// The blocks.
+    pub blocks: Vec<Block>,
+    /// The page block that each of `blocks` came from.
+    pub origins: Vec<opennote_core::BlockId>,
+    /// The records of each text block, by block. The blocks that came from one text block follow each other, so
+    /// [`TextData::elements`] of that run of blocks ties each element to its paragraph formatting.
+    pub texts: std::collections::BTreeMap<opennote_core::BlockId, TextData>,
+}
+
+/// Converts a page like [`page_to_blocks_traced`], with the records of its text blocks.
+pub fn page_to_document(page: &Page, resolver: &mut dyn Resolver, report: &mut PageReport) -> Document {
+    let converted = convert_page(page, resolver, report, None);
+    let texts = converted
+        .origins
+        .iter()
+        .filter_map(|id| match &page.blocks.get(*id)?.data {
+            BlockData::Text(text) => Some((*id, text_data(text))),
+            _ => None,
+        })
+        .collect();
+    Document {
+        blocks: converted.blocks,
+        origins: converted.origins,
+        texts,
+    }
+}
+
+/// The records of a core text block.
+pub fn text_data(text: &opennote_core::model::TextData) -> TextData {
+    let ids: Vec<String> = text.ids.iter().map(ToString::to_string).collect();
+    let styles = text
+        .styles
+        .iter()
+        .map(|(id, style)| (id.to_string(), style.clone()))
+        .collect();
+    TextData::read(&ids, &styles, &text.extra)
 }
 
 /// A converted page, for the exports that keep more than the blocks.

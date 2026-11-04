@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use opennote_core::Timestamp;
 use serde_json::Value;
 
+use super::data::{Indent, LineSpacing, NoteKind, Spacing, TextData};
 use super::*;
 use crate::docx::{build, read_parts, Part, WordInput};
 
@@ -219,6 +220,187 @@ fn foreign_tags_pass_through_the_model_unchanged() {
         ]
     );
     assert_eq!(write::to_markdown(&blocks), markdown);
+}
+
+/// The first text block of a fixture page, read as block data.
+fn text_of(page: &Value) -> (TextData, Vec<Block>) {
+    let block = page["blocks"]
+        .as_array()
+        .and_then(|blocks| blocks.iter().find(|b| b["type"] == "text"))
+        .expect("a text block");
+    let data = block["data"].as_object().expect("data");
+    let ids: Vec<String> = data
+        .get("ids")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|id| id.as_str().map(str::to_owned))
+        .collect();
+    let markdown = data["markdown"].as_str().unwrap_or_default();
+    (
+        TextData::read(&ids, &Default::default(), data),
+        parse::parse_page(markdown).blocks,
+    )
+}
+
+fn paras_fixture(name: &str) -> Value {
+    let path = format!(
+        "{}/../../docs/format/fixtures/markdown/paras/{name}",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    serde_json::from_str(&std::fs::read_to_string(path).expect("the fixture")).expect("JSON")
+}
+
+#[test]
+fn every_paragraph_key_reads_from_block_data() {
+    let (text, blocks) = text_of(&paras_fixture("every-paragraph-key.json"));
+    let elements = text.elements(&blocks);
+    assert_eq!(elements.len(), 3);
+    let first = elements[0].para.as_ref().expect("the heading's formatting");
+    assert_eq!((first.align.as_deref(), first.outline), (Some("center"), Some(1)));
+    let p = elements[1].para.as_ref().expect("the second paragraph's formatting");
+    assert_eq!(p.after, Some(Spacing::Auto));
+    assert_eq!(p.before, Some(Spacing::Points(6.0)));
+    assert_eq!(
+        p.indent,
+        Some(Indent {
+            start: 36.0,
+            end: 18.0,
+            first: -18.0
+        })
+    );
+    assert_eq!(p.line, Some(LineSpacing::Multiple(1.15)));
+    assert_eq!(
+        (p.keep_lines, p.keep_next, p.widows, p.contextual),
+        (Some(true), Some(true), Some(false), Some(true))
+    );
+    assert_eq!(
+        (p.dir.as_deref(), p.lang.as_deref(), p.hyphenate),
+        (Some("ltr"), Some("en-US"), Some(true))
+    );
+    let top = p.border.as_ref().and_then(|b| b.top.clone()).expect("a top border");
+    assert_eq!(
+        (top.style.as_str(), top.width, top.space, top.color.as_deref()),
+        ("double", 0.75, 4, Some("indigo"))
+    );
+    let between = p
+        .border
+        .as_ref()
+        .and_then(|b| b.between.clone())
+        .expect("a between border");
+    assert_eq!((between.width, between.space, between.color), (0.5, 1, None));
+    let shade = p.shade.as_ref().expect("shading");
+    assert_eq!(
+        (shade.fill.as_deref(), shade.pattern.as_str()),
+        (Some("#f2f2f2"), "pct10")
+    );
+    let tabs: Vec<(f64, &str, &str)> = p
+        .tabs
+        .iter()
+        .map(|t| (t.pos, t.align.as_str(), t.leader.as_str()))
+        .collect();
+    assert_eq!(tabs, [(72.0, "decimal", "dot"), (144.5, "end", "none")]);
+    let third = elements[2].para.as_ref().expect("the third paragraph's formatting");
+    assert_eq!(third.break_before, Some(true));
+    assert_eq!(third.line, Some(LineSpacing::Exact(14.0)));
+    let drop = third.drop_cap.as_ref().expect("a drop cap");
+    assert_eq!((drop.mode.as_str(), drop.lines, drop.distance), ("drop", 3, 2.0));
+}
+
+#[test]
+fn lists_layout_and_unknown_elements_read_from_block_data() {
+    let (text, _) = paras_fixture_text("a-key-that-names-no-element.json");
+    assert!(!text.paras.contains_key("01m3sbcmt0000000000000e006"));
+    for name in ["lists-that-continue.json", "a-list-that-restarts.json"] {
+        let page = paras_fixture(name);
+        let (text, blocks) = text_of(&page);
+        let has_lists = page["blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|b| b["data"].get("lists").is_some());
+        assert_eq!(!text.lists.is_empty(), has_lists, "{name}");
+        let items = text
+            .elements(&blocks)
+            .into_iter()
+            .filter(|e| e.para.as_ref().is_some_and(|p| p.list.is_some()));
+        assert!(items.count() > 0, "{name}");
+    }
+    let (_, blocks) = paras_fixture_text("a-list-that-restarts.json");
+    let (text, _) = paras_fixture_text("a-list-that-restarts.json");
+    assert!(text.elements(&blocks).iter().any(|e| e
+        .para
+        .as_ref()
+        .and_then(|p| p.list.as_ref())
+        .is_some_and(|l| l.restart)));
+    let (text, _) = paras_fixture_text("columns.json");
+    let layout = text.layout.expect("a layout");
+    assert!(layout.columns >= 2, "{layout:?}");
+}
+
+fn paras_fixture_text(name: &str) -> (TextData, Vec<Block>) {
+    text_of(&paras_fixture(name))
+}
+
+#[test]
+fn notes_comments_and_suggestions_read_from_block_data() {
+    let path = format!(
+        "{}/../../docs/format/fixtures/markdown/downlevel/cases.json",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let root: Value = serde_json::from_str(&std::fs::read_to_string(path).expect("the fixture")).expect("JSON");
+    let case = |name: &str| {
+        let case = root["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["name"] == name)
+            .expect(name);
+        text_of(&case["page"])
+    };
+    let (text, blocks) = case("a footnote");
+    let note = text.notes.get("01m3sbcmt0000000000000n001").expect("the note");
+    assert_eq!(note.kind, NoteKind::Foot);
+    assert!(!note.inlines().is_empty());
+    let Some(Block::Paragraph(content)) = blocks.first() else {
+        panic!("a paragraph")
+    };
+    assert!(content
+        .iter()
+        .any(|i| matches!(i, Inline::Note { id, .. } if id == "01m3sbcmt0000000000000n001")));
+    let (text, _) = case("a comment");
+    let comment = text.comments.get("01m3sbcmt0000000000000c001").expect("the comment");
+    assert!(!comment.author.is_empty() && !comment.markdown.is_empty());
+    let (text, _) = case("a suggested format change");
+    let suggestion = text
+        .suggestions
+        .get("01m3sbcmt0000000000000s001")
+        .expect("the suggestion");
+    assert_eq!(suggestion.kind, "fmt");
+    assert!(suggestion.before.is_some());
+}
+
+#[test]
+fn elements_follow_spec_6_6() {
+    // A list item's first paragraph belongs to the item; quotes are not elements, but their blocks are.
+    let blocks = parse::parse_page("# A\n\n- one\n\n  more\n- two\n\n> quoted\n\n```\ncode\n```\n\n---").blocks;
+    let paths: Vec<Vec<usize>> = TextData::default()
+        .elements(&blocks)
+        .into_iter()
+        .map(|e| e.path)
+        .collect();
+    assert_eq!(
+        paths,
+        [
+            vec![0],
+            vec![1, 0],
+            vec![1, 0, 1],
+            vec![1, 1],
+            vec![2, 0],
+            vec![3],
+            vec![4]
+        ]
+    );
 }
 
 #[test]
