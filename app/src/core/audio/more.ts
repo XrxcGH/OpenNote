@@ -58,6 +58,8 @@ export interface AudioMore {
   enhance(assetsDir: string, entry: RecordingEntry): Promise<Edited>;
   compress(assetsDir: string, entry: RecordingEntry, quality: CompressQuality): Promise<Edited>;
   storageScan(): Promise<StoredRecording[]>;
+  /** The least space free on the drives that hold the open notebooks, in bytes, or null when it can't be read. */
+  freeSpace(): Promise<number | null>;
   /** Deletes the saved versions of a page. Answers how many. */
   purgeHistory(page: string): Promise<number>;
   /** Writes the recording to a path that `export_pick_save` chose. Answers the file's size. */
@@ -98,6 +100,7 @@ export function moreOver(invoke: RawInvoke): AudioMore {
     enhance: (assetsDir, entry) => call('enhance', { assetsDir, entry }),
     compress: (assetsDir, entry, quality) => call('compress', { assetsDir, entry, quality }),
     storageScan: () => call('storage_scan'),
+    freeSpace: () => call('free_space'),
     purgeHistory: (page) => call('purge_history', { page }),
     exportAudio: (assetsDir, entry, dest, format) => call('export', { assetsDir, entry, dest, format }),
     exportVideo: (assetsDir, entry, target, scene) => {
