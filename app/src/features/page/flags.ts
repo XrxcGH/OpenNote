@@ -7,8 +7,8 @@ import { QOL_PAGE_FLAGS } from './qolFlags';
 export type { QolPageFlagId } from './qolFlags';
 
 /**
- * The flags of the text formatting program (Beta 9 to Beta 12). text:scaffold registers them all, on only in
- * development builds, so each lane flips only its own. The Layout and Review tabs of the command bar read
+ * The flags of the text formatting program (Beta 9 to Beta 12). text:scaffold registers them all, off everywhere, so
+ * each lane turns on only its own with an override. The Layout and Review tabs of the command bar read
  * text.layout and text.review. The lane that builds a feature owns its flag and removes it from WAITING in
  * app/flagUsage.test.ts when it reads the flag.
  */
@@ -33,17 +33,16 @@ const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 /** On in every build. */
 const everywhere = { dev: true, nightly: true, beta: true, stable: true };
 
-const flag = (id: PageFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
+const flag = (id: PageFlagId | TextFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
   id,
   description,
   issue: `${ISSUES}${encodeURIComponent(id)}`,
   enabled,
 });
 
-const inDev = { dev: true, nightly: false, beta: false, stable: false };
+const nowhere = { dev: false, nightly: false, beta: false, stable: false };
 
-const textFlag = (id: TextFlagId, description: string): FlagDef =>
-  flag(id as unknown as PageFlagId, description, inDev);
+const textFlag = (id: TextFlagId, description: string): FlagDef => flag(id, description, nowhere);
 
 /** The text formatting flags. Off in Nightly, Beta, and Stable until the feature meets the definition of done. */
 const TEXT_FLAGS: readonly FlagDef[] = [

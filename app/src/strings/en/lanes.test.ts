@@ -26,14 +26,19 @@ const RELEASES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
     textFonts: 'text:fonts-ui',
     textStyles: 'text:styles',
     textHome: 'text:home-tab-ui',
+  },
+  // text:scaffold registers these early; the lanes fill them in Beta 11 and 12.
+  B11: {
     textPane: 'text:format-pane',
     textRuler: 'text:ruler',
     textSymbols: 'text:special-chars',
     textLanguage: 'text:language-direction',
+    textFind: 'text:find-format',
+  },
+  B12: {
     textNotes: 'text:footnotes',
     textReview: 'text:review',
     textLayout: 'text:page-layout',
-    textFind: 'text:find-format',
   },
 };
 

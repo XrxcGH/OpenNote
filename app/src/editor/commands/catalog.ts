@@ -66,7 +66,7 @@ const kind = (block: BlockKind, title: MessageKey): CatalogEntry => ({
 
 const HEADINGS = [1, 2, 3, 4, 5, 6] as const;
 
-const ENTRIES: Record<string, CatalogEntry> = {
+const BUILT_IN: Record<string, CatalogEntry> = {
   'format.bold': mark('bold', 'editor.commands.bold'),
   'format.italic': mark('italic', 'editor.commands.italic'),
   'format.underline': mark('underline', 'editor.commands.underline'),
@@ -117,9 +117,13 @@ const ENTRIES: Record<string, CatalogEntry> = {
   'insert.date': { command: () => insertDateTime('date') },
   'insert.time': { command: () => insertDateTime('time') },
   'insert.dateTime': { command: () => insertDateTime('dateTime') },
-  ...TEXT_RUN_ENTRIES,
-  ...TEXT_PARA_ENTRIES,
 };
+
+/** The text lanes' entries go first, so a built-in command is never replaced by a lane's entry of the same ID. */
+const ENTRIES: Record<string, CatalogEntry> = { ...TEXT_RUN_ENTRIES, ...TEXT_PARA_ENTRIES, ...BUILT_IN };
+
+/** The IDs of the commands that are not the text lanes' (a lane's entry may not reuse one). */
+export const BUILT_IN_COMMAND_IDS: readonly string[] = Object.keys(BUILT_IN);
 
 /** The IDs this catalog runs. */
 export const EDITOR_COMMAND_IDS: readonly string[] = Object.keys(ENTRIES);
