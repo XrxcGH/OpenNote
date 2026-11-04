@@ -1,0 +1,262 @@
+{
+  "name": "conditional formats",
+  "rules": [
+    "R-SHT-15",
+    "R-SHT-22",
+    "R-SHT-9",
+    "R-STAMP-12"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Price"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2.5"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "conditional": {
+              "c1": {
+                "a": "3",
+                "op": "greater",
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": true,
+                "style": "uvqwee",
+                "type": "cell"
+              },
+              "c2": {
+                "op": "begins",
+                "order": 2,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "style": "uvqwee",
+                "text": "T",
+                "type": "text"
+              },
+              "c3": {
+                "order": 3,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "brick"
+                  },
+                  {
+                    "at": "percentile",
+                    "color": "#ffffff",
+                    "value": "50"
+                  },
+                  {
+                    "at": "max",
+                    "color": "fern"
+                  }
+                ],
+                "type": "scale"
+              },
+              "c4": {
+                "axis": "middle",
+                "color": "indigo",
+                "gradient": false,
+                "min": {
+                  "at": "num",
+                  "value": "0"
+                },
+                "order": 4,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "type": "bar"
+              },
+              "c5": {
+                "order": 5,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "set": "3TrafficLights",
+                "thresholds": [
+                  {
+                    "at": "percent",
+                    "value": "33"
+                  },
+                  {
+                    "at": "percent",
+                    "gte": false,
+                    "value": "67"
+                  }
+                ],
+                "type": "icons"
+              },
+              "c6": {
+                "order": 6,
+                "percent": true,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 10,
+                "style": "uvqwee",
+                "type": "top"
+              },
+              "c7": {
+                "below": true,
+                "order": 6,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stdDev": 1,
+                "style": "uvqwee",
+                "type": "average"
+              },
+              "c8": {
+                "order": 8,
+                "period": "last7Days",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "style": "uvqwee",
+                "type": "date"
+              },
+              "c9": {
+                "order": 9,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "style": "uvqwee",
+                "type": "duplicate"
+              },
+              "d1": {
+                "a": "A1=\"Tea\"",
+                "order": 10,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ],
+                "style": "uvqwee",
+                "type": "formula"
+              }
+            },
+            "styles": {
+              "uvqwee": {
+                "fill": "honey",
+                "font": {
+                  "bold": true,
+                  "family": "+body"
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "expect": {
+    "applyOrder": [
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "c7",
+      "c8",
+      "c9",
+      "d1"
+    ]
+  }
+}

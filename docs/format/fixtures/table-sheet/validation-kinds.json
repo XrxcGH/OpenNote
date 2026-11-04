@@ -1,0 +1,362 @@
+{
+  "name": "every kind and operator of data validation, and the three shapes of range",
+  "rules": [
+    "R-SHT-14",
+    "R-SHT-22",
+    "R-STAMP-12"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Qty"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Note"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "x"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "y"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "validation": {
+              "v01": {
+                "ignoreBlank": false,
+                "kind": "any",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v02": {
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v03": {
+                "a": "1",
+                "alert": "warning",
+                "b": "100",
+                "kind": "whole",
+                "op": "between",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v04": {
+                "a": "1",
+                "alert": "information",
+                "b": "100",
+                "kind": "whole",
+                "op": "notBetween",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v05": {
+                "a": "7",
+                "kind": "whole",
+                "op": "equal",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v06": {
+                "a": "0",
+                "kind": "whole",
+                "op": "notEqual",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v07": {
+                "a": "0.5",
+                "kind": "decimal",
+                "op": "greater",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v08": {
+                "a": "TaxRate",
+                "kind": "decimal",
+                "op": "less",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v09": {
+                "a": "$D$1",
+                "kind": "decimal",
+                "op": "greaterOrEqual",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v10": {
+                "a": "MAX(B2:B9)",
+                "kind": "decimal",
+                "op": "lessOrEqual",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v11": {
+                "a": "DATE(2026,1,1)",
+                "kind": "date",
+                "op": "greater",
+                "ranges": [
+                  {
+                    "row": "01m3sbcmt0000000000000r002"
+                  }
+                ]
+              },
+              "v12": {
+                "a": "TIME(17,0,0)",
+                "kind": "time",
+                "op": "lessOrEqual",
+                "ranges": [
+                  {
+                    "row": "01m3sbcmt0000000000000r002"
+                  }
+                ]
+              },
+              "v13": {
+                "a": "10",
+                "kind": "textLength",
+                "op": "equal",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v14": {
+                "dropDown": false,
+                "items": [
+                  "Tea",
+                  "Rice",
+                  "Beans"
+                ],
+                "kind": "list",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v15": {
+                "kind": "list",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "source": "$A$2:$A$9"
+              },
+              "v16": {
+                "dropDown": true,
+                "ignoreBlank": true,
+                "items": [
+                  "a"
+                ],
+                "kind": "list",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "source": "Fruits"
+              },
+              "v17": {
+                "a": "AND(ISNUMBER(B2),B2>0)",
+                "kind": "custom",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v18": {
+                "checked": "Yes",
+                "kind": "checkbox",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "unchecked": "No"
+              },
+              "v19": {
+                "kind": "checkbox",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v20": {
+                "a": "0",
+                "b": "9",
+                "error": {
+                  "text": "",
+                  "title": ""
+                },
+                "input": {
+                  "text": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+                  "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+                },
+                "kind": "whole",
+                "op": "between",
+                "ranges": [
+                  {
+                    "from": [
+                      "01m3sbcmt0000000000000r002",
+                      "01m3sbcmt0000000000000k001"
+                    ],
+                    "to": [
+                      "01m3sbcmt0000000000000r003",
+                      "01m3sbcmt0000000000000k002"
+                    ]
+                  },
+                  {
+                    "col": "01m3sbcmt0000000000000k003"
+                  },
+                  {
+                    "row": "01m3sbcmt0000000000000r001"
+                  }
+                ]
+              },
+              "v21": {
+                "a": "1",
+                "alert": "stop",
+                "b": "2",
+                "error": {
+                  "text": "Enter a whole number from 1 to 2.",
+                  "title": "Not allowed"
+                },
+                "input": {},
+                "kind": "whole",
+                "op": "between",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "v22": {
+                "a": "",
+                "b": "",
+                "kind": "custom",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k001"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  }
+}
