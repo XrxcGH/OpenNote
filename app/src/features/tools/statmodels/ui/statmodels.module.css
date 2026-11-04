@@ -21,7 +21,7 @@
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);
@@ -83,7 +83,7 @@
 
   .input {
     flex: 1 1 auto;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     min-inline-size: 0;
     padding-inline: var(--space-3);
     font: inherit;
@@ -247,7 +247,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     color: var(--color-text-primary);
   }
   .check input {
