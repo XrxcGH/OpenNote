@@ -57,6 +57,37 @@ export function tableData(table: HTMLTableElement, newId: () => string): TableDa
   };
 }
 
+/**
+ * Table data from text whose lines are rows and whose tabs separate cells, which is how a spreadsheet copies as text.
+ * Null unless it has two rows or more with the same number of cells (two or more) and no row begins with a tab, so
+ * indented code and a lone line with a tab in it stay text.
+ */
+export function tabTableData(text: string, newId: () => string): TableData | null {
+  const rows = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/\n+$/, '')
+    .split('\n')
+    .map((line) => line.split('\t'));
+  const count = rows[0].length;
+  if (rows.length < 2 || count < 2 || rows.length > 5000 || count > 64) return null;
+  if (rows.some((row) => row.length !== count || row[0] === '' || row.every((cell) => cell.trim() === ''))) return null;
+  const columns = Array.from({ length: count }, () => ({ id: newId(), width: DEFAULT_COLUMN_WIDTH }));
+  return {
+    header: false,
+    columns,
+    rows: rows.map((row) => ({
+      id: newId(),
+      cells: Object.fromEntries(
+        columns.map((column, at) => {
+          const cell = row[at].replace(/\0/g, '�').trim();
+          const paragraph = nodes.paragraph.create(null, cell === '' ? [] : textSchema.text(cell));
+          return [column.id, { markdown: serializeInline(paragraph, TITLE).trim() }];
+        }),
+      ),
+    })),
+  };
+}
+
 /** Swaps each table that stands among the blocks for a marker paragraph, and returns the tables in order. */
 export function extractTables(body: HTMLElement, newId: () => string): TableData[] {
   const found: TableData[] = [];

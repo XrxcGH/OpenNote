@@ -263,6 +263,7 @@ export const editor = {
     weight: 'Weight',
     color: 'Color',
     colorHex: 'Custom color, as #rrggbb',
+    colorInvalid: 'That is not a color. Type six digits or letters from 0 to 9 and a to f, such as #1a73e8.',
     spaceBefore: 'Space before',
     spaceAfter: 'Space after',
     lineHeight: 'Line height',

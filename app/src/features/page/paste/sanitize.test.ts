@@ -231,3 +231,21 @@ describe('resolving images', () => {
     expect(shape(resolved)).toBe('doc(paragraph("See ", linkhttps://example.com/a.png("the chart"), " and "))');
   });
 });
+
+describe('tab-separated text', () => {
+  it('becomes a table, with empty cells kept', () => {
+    const result = paste({ text: 'Item\tQty\r\nPens\t12\r\n1. Paper\t\r\n' });
+    expect(outline(result)).toEqual(['table[["Item","Qty"],["Pens","12"],["1. Paper",""]]']);
+  });
+
+  it('stays text when rows differ in length, a row begins with a tab, or there is only one line', () => {
+    for (const text of ['a\tb\nc', '\tindented\n\talso', 'one\ttwo']) {
+      expect(paste({ text }).pieces.map((piece) => piece.kind)).toEqual(['text']);
+    }
+  });
+
+  it('stays text with Ctrl+Shift+V', () => {
+    const result = sanitizePaste({ text: 'a\tb\nc\td' }, { newId: counter(), plain: true });
+    expect(result.pieces.map((piece) => piece.kind)).toEqual(['text']);
+  });
+});
