@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { LsError } from '../num/errors';
 import {
   acidBaseResult,
+  bmrResult,
   alveolarO2,
   cardiacOutputResult,
   classify,
@@ -130,6 +131,15 @@ describe('renal and acid-base', () => {
 });
 
 describe('fluids and energy', () => {
+  it('gives the body mass index with the energy rows', () => {
+    // BMI = 70 kg / (1.75 m)^2 = 22.857; Mifflin-St Jeor for a man of 30: 10 x 70 + 6.25 x 175 - 5 x 30 + 5 = 1648.75.
+    const result = bmrResult('male', 70, 175, 30, 'sedentary');
+    const bmi = result.rows.find((row) => row.label === 'physiology.r.bmi');
+    expect(bmi?.value).toBeCloseTo(70 / 1.75 ** 2, 9);
+    expect(bmi?.value).toBeCloseTo(22.857, 3);
+    expect(result.rows.find((row) => row.label === 'physiology.r.bmr')?.value).toBeCloseTo(1648.75, 9);
+  });
+
   it('leaves cells unchanged after isotonic saline and swells them after water', () => {
     const iso = infuse(70, 0.6, 290, 1, 290);
     expect(iso.after.icf).toBeCloseTo(iso.before.icf, 9);

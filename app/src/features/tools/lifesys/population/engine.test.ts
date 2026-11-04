@@ -5,6 +5,7 @@ import {
   classify,
   competition,
   competitionResult,
+  growthResult,
   growthSeries,
   harvest,
   levinsResult,
@@ -123,5 +124,25 @@ describe('equilibrium classes', () => {
   it('names a saddle and a stable spiral', () => {
     expect(classify([1, 0, 0, -1]).kind).toBe('saddle');
     expect(classify([-0.1, -1, 1, -0.1]).kind).toBe('stableSpiral');
+  });
+});
+
+describe('the growth rate row', () => {
+  const input = { N0: 10, r: 0.5, K: 100, A: 20, t: 8 } as const;
+  it('gives dN/dt = rN(1 - N/K) at the end of a logistic run', () => {
+    const result = growthResult({ ...input, model: 'logistic' });
+    const N = logistic(10, 0.5, 100, 8);
+    const rate = result.rows.find((row) => row.label === 'population.r.rate');
+    expect(rate?.value).toBeCloseTo(0.5 * N * (1 - N / 100), 9);
+  });
+  it('gives dN/dt = rN for exponential growth', () => {
+    const result = growthResult({ ...input, model: 'exponential' });
+    const N = 10 * Math.exp(0.5 * 8);
+    expect(result.rows.find((row) => row.label === 'population.r.rate')?.value).toBeCloseTo(0.5 * N, 6);
+  });
+  it('gives the change in the last step for a discrete model', () => {
+    // Geometric growth with lambda = 1.5: N(8) - N(7) = 10 x 1.5^7 x (1.5 - 1).
+    const result = growthResult({ ...input, r: 1.5, model: 'geometric' });
+    expect(result.rows.find((row) => row.label === 'population.r.change')?.value).toBeCloseTo(10 * 1.5 ** 7 * 0.5, 6);
   });
 });
