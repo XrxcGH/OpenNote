@@ -126,7 +126,11 @@ export type FlagId =
   /** The tutor (features/tutor/flags.ts). */
   | TutorFlagId
   /** The physics tool kit window (features/tools/physics). */
-  | 'kits.physics';
+  | 'kits.physics'
+  /** The controls that create version 2 text formatting. Beta 9 reads and keeps it; Beta 10 turns this on. */
+  | 'text.v2Controls'
+  /** Writing cell formats and formulas to a table's data.sheet. Beta 9 reads and draws it; Beta 10 turns this on. */
+  | 'tables.sheetWrites';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -359,6 +363,8 @@ const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
 /** The flags the shell reads too (platform_flags.rs): on up to Beta, off in Stable. */
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
+/** Off in every build, until its release turns it on. */
+const nowhere = { dev: false, nightly: false, beta: false, stable: false };
 
 const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>) =>
   defineFlag({ id, description, issue: `${ISSUES}${encodeURIComponent(id)}`, enabled });
@@ -386,6 +392,12 @@ export const FLAGS: readonly FlagDef[] = [
     'The physics tools: fields, waves, optics, relativity, nuclear, orbits, and spacecraft.',
     betaBuilds,
   ),
+  flag(
+    'text.v2Controls',
+    'The controls that create version 2 text formatting: fonts, sizes, weights, underlines, spacing, and styles.',
+    nowhere,
+  ),
+  flag('tables.sheetWrites', 'Cell, row, column, and table formatting and formulas saved in a table.', nowhere),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,

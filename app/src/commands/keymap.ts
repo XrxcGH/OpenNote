@@ -31,6 +31,10 @@ export const SCOPE_PARENT: Readonly<Record<KeyScope, KeyScope | null>> = {
   editor: 'page',
   'editor.table': 'editor',
   'editor.code': 'editor',
+  tableGrid: 'editor.table',
+  tableEdit: 'editor.table',
+  codeEditor: 'editor',
+  codeDebug: 'codeEditor',
   pageObject: 'page',
   zoomBox: 'page',
 };

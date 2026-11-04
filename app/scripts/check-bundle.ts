@@ -98,6 +98,12 @@ export function groups(manifest: Manifest, budget: Budget): Group[] {
   return result;
 }
 
+/** The lazyKb keys that match no dynamic entry, so a lane that names its entry differently gets the default limit. */
+export function unmatchedKeys(manifest: Manifest, budget: Budget): string[] {
+  const lazyKeys = Object.keys(manifest).filter((key) => manifest[key].isDynamicEntry);
+  return Object.keys(budget.lazyKb).filter((fragment) => !lazyKeys.some((key) => key.includes(fragment)));
+}
+
 export function measure(dist: string, group: Group): Measured {
   const bytes = group.files.reduce(
     (sum, file) => sum + gzipSync(readFileSync(join(dist, file)), { level: 9 }).length,
@@ -136,6 +142,9 @@ function main(): void {
   const manifest = JSON.parse(readFileSync(join(dist, '.vite', 'manifest.json'), 'utf8')) as Manifest;
   const budget = JSON.parse(readFileSync(values.budget, 'utf8')) as Budget;
   const measured = groups(manifest, budget).map((group) => measure(dist, group));
+  for (const fragment of unmatchedKeys(manifest, budget)) {
+    console.warn(`The lazyKb key "${fragment}" matches no dynamic entry yet, so it sets no limit.`);
+  }
   const compare = values['compare-with'];
   const baseline = compare && existsSync(compare) ? (JSON.parse(readFileSync(compare, 'utf8')) as Measured[]) : null;
   const table = summary(measured, baseline);
