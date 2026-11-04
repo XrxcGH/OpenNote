@@ -51,6 +51,7 @@
     "allow-audio-enhance",
     "allow-audio-compress",
     "allow-audio-storage-scan",
+    "allow-audio-free-space",
     "allow-audio-purge-history",
     "allow-audio-export",
     "allow-audio-export-video",
@@ -200,6 +201,9 @@
     "allow-api-call",
     "allow-share-take",
     "allow-accounts-call",
-    "allow-sync-call"
+    "allow-sync-call",
+    "allow-fonts-list",
+    "allow-notebook-styles-get",
+    "allow-notebook-styles-set"
   ]
 }

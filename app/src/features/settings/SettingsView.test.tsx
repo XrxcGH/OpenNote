@@ -134,6 +134,18 @@ describe('the Settings sections and screens', () => {
     await waitFor(() => expect(getSettings().keymap.preset).toBe('onenote'));
   });
 
+  it('shows the Google Docs set as chosen when the settings name it', async () => {
+    await renderApp({ settings: { keymap: { preset: 'docs' } } });
+    await openSettings();
+    await userEvent.click(screen.getByRole('link', { name: 'Shortcuts' }));
+    const group = await screen.findByRole('radiogroup', { name: 'Shortcut set' });
+    expect(
+      within(group)
+        .getByRole('radio', { name: /Google Docs/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
   it('is two screens in the compact size class', async () => {
     await renderApp({ sizeClass: 'compact' });
     await pressChord('Ctrl+,');

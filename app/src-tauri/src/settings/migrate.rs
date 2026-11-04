@@ -3,7 +3,8 @@
 //! saved file. A step that older versions must not write through is marked `breaking`, which raises
 //! `minWriterSchema` so older versions open the file read-only. The store backs the file up before migrating.
 //!
-//! Version 1 is the first schema, so there's nothing to migrate yet.
+//! Version 2 (Beta 9) only adds groups with defaults, so its step changes nothing and isn't breaking: Beta 8 still
+//! writes the file, and keeps the keys it doesn't know.
 
 use serde_json::Value;
 
@@ -18,7 +19,16 @@ pub struct Migration {
 }
 
 /// Every migration, in order.
-pub const MIGRATIONS: &[Migration] = &[];
+pub const MIGRATIONS: &[Migration] = &[Migration {
+    from: 1,
+    breaking: false,
+    run: add_text_tables_and_code,
+}];
+
+/// Version 1 to 2: the `text`, `tables`, and `code` groups take their defaults when the file is read.
+fn add_text_tables_and_code(raw: Value) -> Value {
+    raw
+}
 
 /// Why a document couldn't be brought up to date.
 #[derive(Debug, Clone, PartialEq, Eq)]

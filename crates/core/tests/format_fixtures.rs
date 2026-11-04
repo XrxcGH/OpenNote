@@ -414,3 +414,64 @@ fn fixture_reading_order_cases() {
     let path = fixtures().join("reading-order").join("cases.json");
     check_file(&path, &ascii_json(&json!({ "cases": out })));
 }
+
+/// `R-SHT-20`: Beta 8 edits a version 1 page whose `data.sheet` holds only the keys of `R-STAMP-6`. The core keeps
+/// `sheet` among the table's unknown keys, so its row and column deletes leave entries for missing IDs, and there
+/// are no cached values to go stale. Each save maps rows and columns by position, as the Beta 8 table editor does,
+/// so the edits are four saves: a cell edit, a row delete, a column delete, and a row insert at the end.
+/// `table-sheet/beta8-after.json` is what this round trip writes.
+#[test]
+fn fixture_beta8_edits_keep_the_sheet() {
+    use opennote_core::id::RowId;
+    use opennote_core::model::{BlockData, TableCell, TableRow};
+    let dir = fixtures().join("table-sheet");
+    let case = |name: &str| -> Value { serde_json::from_slice(&std::fs::read(dir.join(name)).unwrap()).unwrap() };
+    let before = case("beta8-before.json");
+    let mut page = read_page(&serde_json::to_vec(&before["page"]).unwrap(), &limits())
+        .unwrap()
+        .page;
+    assert_eq!(page.format.access, Access::ReadWrite, "Beta 8 edits a version 1 page");
+    let block = page.blocks.iter().next().unwrap().clone();
+    let mut edited = (*block).clone();
+    let BlockData::Table(table) = &mut edited.data else {
+        panic!("the fixture holds a table");
+    };
+    let sheet = table.extra.get("sheet").cloned();
+    assert!(sheet.is_some(), "the core keeps the sheet among the unknown keys");
+    let tea = table.rows[0].id;
+    let second = table.columns[1].id;
+    table.rows[0].cells.get_mut(&second).unwrap().markdown = "3".to_owned();
+    table.rows.remove(1);
+    let last = table.columns.pop().unwrap().id;
+    for row in &mut table.rows {
+        row.cells.remove(&last);
+    }
+    let mut cells = std::collections::BTreeMap::new();
+    for (column, text) in table.columns.iter().zip(["Salt", "1"]) {
+        let cell = TableCell {
+            markdown: text.to_owned(),
+            ..TableCell::default()
+        };
+        cells.insert(column.id, cell);
+    }
+    let salt = RowId::parse("01m3sbcmt0000000000000r006").unwrap();
+    table.rows.push(TableRow {
+        id: salt,
+        cells,
+        extra: Default::default(),
+    });
+    assert_eq!(
+        table.extra.get("sheet").cloned(),
+        sheet,
+        "edits leave the sheet as it was"
+    );
+    assert_ne!(table.rows[0].id, salt);
+    assert_eq!(table.rows[0].id, tea);
+    page.blocks.replace(std::sync::Arc::new(edited)).unwrap();
+    let written: Value = serde_json::from_slice(&write_page(&page)).unwrap();
+    assert_eq!(
+        written,
+        case("beta8-after.json")["page"],
+        "beta8-after.json is what the core writes"
+    );
+}

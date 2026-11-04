@@ -5,6 +5,7 @@ import type { EditorState, Transaction } from '@tiptap/pm/state';
 import type { HighlightColor, TextSizeName } from '../schema/specs';
 import { fromChange, selectedTextblocks } from './command';
 import type { Change, Command } from './command';
+import { viaFormatTarget } from './formatTarget';
 import { isMarkActive, markAttrs } from './state';
 
 export { isMarkActive, markAttrs } from './state';
@@ -49,44 +50,47 @@ function canMark(tr: Transaction, type: MarkType): boolean {
 
 /** Bold, italic, and the other marks without attributes: on unless the whole selection has it already. */
 export function toggleMark(name: ToggledMark): Command {
-  return (state, dispatch) => {
+  return viaFormatTarget({ format: name, toggle: true }, (state, dispatch) => {
     const type = state.schema.marks[name];
     const active = isMarkActive(state, name);
     return fromChange((tr) => (active ? removeMark(tr, type) : addMark(tr, type, null)))(state, dispatch);
-  };
+  });
 }
 
 /** Highlight in a color; null is Honey. The same color again takes the highlight off. */
 export function toggleHighlight(color: HighlightColor | null = null): Command {
-  return (state, dispatch) => {
+  return viaFormatTarget({ format: 'highlight', color, toggle: true }, (state, dispatch) => {
     const type = state.schema.marks.highlight;
     const active = isMarkActive(state, 'highlight', { color });
     return fromChange((tr) => (active ? removeMark(tr, type) : addMark(tr, type, { color })))(state, dispatch);
-  };
+  });
 }
 
 /** Sets the highlight color, or takes the highlight off with `'none'`. */
 export function setHighlight(color: HighlightColor | null | 'none'): Command {
-  return fromChange((tr) => {
+  const change = fromChange((tr) => {
     const type = tr.doc.type.schema.marks.highlight;
     return color === 'none' ? removeMark(tr, type) : addMark(tr, type, { color });
   });
+  return viaFormatTarget({ format: 'highlight', color, toggle: false }, change);
 }
 
 /** A pen name or `#rrggbb`; null takes the color off. */
 export function setTextColor(color: string | null): Command {
-  return fromChange((tr) => {
+  const change = fromChange((tr) => {
     const type = tr.doc.type.schema.marks.textColor;
     return color === null ? removeMark(tr, type) : addMark(tr, type, { color });
   });
+  return viaFormatTarget({ format: 'textColor', color }, change);
 }
 
 /** A text size; null is normal size. */
 export function setTextSize(size: TextSizeName | null): Command {
-  return fromChange((tr) => {
+  const change = fromChange((tr) => {
     const type = tr.doc.type.schema.marks.textSize;
     return size === null ? removeMark(tr, type) : addMark(tr, type, { size });
   });
+  return viaFormatTarget({ format: 'textSize', size }, change);
 }
 
 /** The size of the selection's first character, or null for normal text. */
@@ -96,12 +100,12 @@ export function currentTextSize(state: EditorState): TextSizeName | null {
 
 /** One step larger (1) or smaller (-1), from small through normal to extra large. False at either end. */
 export function stepTextSize(direction: 1 | -1): Command {
-  return (state, dispatch) => {
+  return viaFormatTarget({ format: 'textSizeStep', direction }, (state, dispatch) => {
     const at = SIZE_STEPS.indexOf(currentTextSize(state));
     const next = at + direction;
     if (next < 0 || next >= SIZE_STEPS.length) return false;
     return setTextSize(SIZE_STEPS[next])(state, dispatch);
-  };
+  });
 }
 
 /** Takes off every character format but links, which are content rather than formatting. */
@@ -118,5 +122,5 @@ export const clearFormattingChange: Change = (tr) => {
 };
 
 export function clearFormatting(): Command {
-  return fromChange(clearFormattingChange);
+  return viaFormatTarget({ format: 'clear' }, fromChange(clearFormattingChange));
 }

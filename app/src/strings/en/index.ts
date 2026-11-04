@@ -92,6 +92,23 @@ import { kitFluidHeat } from './kitFluidHeatStart';
 import { kitSolids } from './kitSolidsStart';
 import { kitAero } from './kitAeroStart';
 import { kitThermo } from './kitThermoStart';
+// Text formatting and spreadsheet tables, Beta 9 and Beta 10. Each file names its owning lane.
+import { sheetModel } from './sheetModel';
+import { numfmt } from './numfmt';
+import { color } from './color';
+import { fnDateTime } from './fnDateTime';
+import { fnLogicInfo } from './fnLogicInfo';
+import { fnLookup } from './fnLookup';
+import { fnMath } from './fnMath';
+import { fnText } from './fnText';
+import { sheetKeys } from './sheetKeys';
+import { sheetFormula } from './sheetFormula';
+import { sheetToolbar } from './sheetToolbar';
+import { textPaste } from './textPaste';
+import { textCommands } from './textCommands';
+import { textFonts } from './textFonts';
+import { textStyles } from './textStyles';
+import { textHome } from './textHome';
 
 export const en = {
   common,
@@ -186,4 +203,20 @@ export const en = {
   kitSolids,
   kitAero,
   kitThermo,
+  sheetModel,
+  numfmt,
+  color,
+  fnDateTime,
+  fnLogicInfo,
+  fnLookup,
+  fnMath,
+  fnText,
+  sheetKeys,
+  sheetFormula,
+  sheetToolbar,
+  textPaste,
+  textCommands,
+  textFonts,
+  textStyles,
+  textHome,
 } as const;
