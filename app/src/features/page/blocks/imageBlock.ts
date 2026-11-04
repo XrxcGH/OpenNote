@@ -117,6 +117,9 @@ class ImageView implements BlockView, ImageHandle {
     element.dataset.appMenu = 'page.image';
     this.frameElement = element.appendChild(document.createElement('div'));
     this.frameElement.className = styles.frame;
+    // The picture is the block's body: dragging it moves the image in Select and type, as a grip moves a text box
+    // (objects/objectsTool.ts). A click still selects it, and the handles at its edges still resize it.
+    this.frameElement.dataset.blockDrag = '';
     element.addEventListener('pointerdown', (event) => this.onPointerDown(event));
     element.addEventListener('dblclick', () => {
       if (this.editable()) void import('../images/cropMode').then(({ startCrop }) => startCrop(this));

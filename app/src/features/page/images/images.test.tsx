@@ -55,38 +55,6 @@ describe('image blocks', () => {
     await expectNoAxeViolations(handle.element);
   });
 
-  it('resizes with a finger as far as the finger went, not by its last step (Beta 8 walk A1-A07-8)', async () => {
-    const { page, id } = await pageWithImage();
-    selectOnPage({ blocks: [id], strokes: [] });
-    const corner = await vi.waitFor(() => screen.getByRole('button', { name: 'Resize from the bottom right corner' }));
-    const box = corner.getBoundingClientRect();
-    const finger = (type: string, dx: number) =>
-      corner.dispatchEvent(
-        new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          isPrimary: true,
-          pointerId: 7,
-          pointerType: 'touch',
-          button: 0,
-          buttons: type === 'pointerup' ? 0 : 1,
-          clientX: box.x + box.width / 2 + dx,
-          clientY: box.y + box.height / 2,
-        }),
-      );
-    const before = page.sent().length;
-    finger('pointerdown', 0);
-    // Past the touch slop, where a one-finger pan would take the pointer.
-    for (let step = 1; step <= 12; step++) finger('pointermove', step * 5);
-    finger('pointerup', 60);
-    const width = () => {
-      const move = page.sent().slice(before).flatMap((batch) => batch.edits).find((edit) => edit.edit === 'moveBlock');
-      return move?.edit === 'moveBlock' ? (move.frame?.w ?? null) : null;
-    };
-    await vi.waitFor(() => expect(width()).not.toBeNull());
-    expect(width()).toBe(460);
-  });
-
   it('crop mode keeps a crop as one patch and one move', async () => {
     const { page, handle } = await pageWithImage();
     const before = page.sent().length;
@@ -110,6 +78,57 @@ describe('image blocks', () => {
     await userEvent.keyboard('{ArrowRight}{Escape}');
     expect(handle.element.querySelector('[role="group"]')).toBeNull();
     expect(page.sent().length).toBe(before);
+  });
+});
+
+/** A pointer event at a point, from a mouse or a finger. */
+function press(target: Element, type: string, pointerType: 'mouse' | 'touch', x: number, y: number): void {
+  const init = { bubbles: true, cancelable: true, isPrimary: true, pointerId: pointerType === 'touch' ? 7 : 8 };
+  const button = type === 'pointermove' && pointerType === 'mouse' ? -1 : 0;
+  const buttons = type === 'pointerup' ? 0 : 1;
+  target.dispatchEvent(new PointerEvent(type, { ...init, pointerType, button, buttons, clientX: x, clientY: y }));
+}
+
+/** Drags from the middle of the target by (dx, dy) in that many moves. */
+function dragFrom(target: Element, pointerType: 'mouse' | 'touch', dx: number, dy: number, steps: number): void {
+  const box = target.getBoundingClientRect();
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+  press(target, 'pointerdown', pointerType, x, y);
+  for (let step = 1; step <= steps; step++)
+    press(target, 'pointermove', pointerType, x + (dx * step) / steps, y + (dy * step) / steps);
+  press(target, 'pointerup', pointerType, x + dx, y + dy);
+}
+
+/** The frame of the first moveBlock for the block sent after the batches already sent, once it is sent. */
+async function movedFrame(page: Awaited<ReturnType<typeof renderPage>>, id: string, before: number) {
+  const frame = () => {
+    const edits = page
+      .sent()
+      .slice(before)
+      .flatMap((batch) => batch.edits);
+    const move = edits.find((edit) => edit.edit === 'moveBlock' && edit.block === id);
+    return move?.edit === 'moveBlock' ? (move.frame ?? null) : null;
+  };
+  await vi.waitFor(() => expect(frame()).not.toBeNull());
+  return frame();
+}
+
+describe('dragging an image', () => {
+  it('moves it by its picture with Select and type (Beta 8 walk A1-A07-2)', async () => {
+    const { page, id, handle } = await pageWithImage();
+    const before = page.sent().length;
+    dragFrom(handle.element.querySelector('img')!, 'mouse', 60, 30, 6);
+    expect(await movedFrame(page, id, before)).toMatchObject({ x: 100, y: 230 });
+  });
+
+  it('resizes it with a finger as far as the finger went (Beta 8 walk A1-A07-8)', async () => {
+    const { page, id } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    const corner = await vi.waitFor(() => screen.getByRole('button', { name: 'Resize from the bottom right corner' }));
+    const before = page.sent().length;
+    // Twelve 5 px steps go past the touch slop, where a one-finger pan would take the pointer.
+    dragFrom(corner, 'touch', 60, 0, 12);
+    expect((await movedFrame(page, id, before))?.w).toBe(460);
   });
 });
 
