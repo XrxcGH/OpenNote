@@ -14,7 +14,7 @@ import { newId } from '../../../editor/ids';
 import type { OpenPage } from '../../../services/pages/types';
 import type { PageSuggestion } from '../../../services/search/types';
 import { t } from '../../../strings/t';
-import { Button, TextField } from '../../../ui';
+import { Button } from '../../../ui';
 import type { IconProps } from '../../../ui/icons';
 import { maybeSearchClient } from '../client';
 import { FIELD_TYPES, readFields, viewPatch } from './model';
@@ -50,7 +50,12 @@ function PageLink({ field, onChange }: { field: Field; onChange(patch: Partial<F
   }, [text, field.label]);
   return (
     <div className={styles.linkField}>
-      <TextField label={field.name} value={text} onChange={setText} />
+      <input
+        className={styles.input}
+        aria-label={field.name}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+      />
       {found.length > 0 && (
         <ul className={styles.suggestions} aria-label={t('qolSearch.properties.pages')}>
           {found.map((page) => (
@@ -257,7 +262,7 @@ export function PropertiesBar({ page, sync }: { page: OpenPage; sync?: Pick<Open
                 />
                 {field.type === 'choice' && (
                   <input
-                    className={styles.input}
+                    className={`${styles.input} ${styles.options}`}
                     aria-label={t('qolSearch.properties.optionsOf', { name: field.name })}
                     placeholder={t('qolSearch.properties.optionsHint')}
                     defaultValue={(field.options ?? []).join(', ')}

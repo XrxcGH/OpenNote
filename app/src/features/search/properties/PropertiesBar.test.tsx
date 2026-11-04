@@ -69,4 +69,17 @@ describe('property edits', () => {
     await userEvent.click(document.querySelector<HTMLButtonElement>('button[aria-label^="Remove"]')!);
     expect(sent).toEqual([{ edits: [{ edit: 'setPage', view: { properties: null } }] }]);
   });
+
+  it('lines every row up the same: Remove ends the first line, and a page link has no label of its own (B2-B13-1)', async () => {
+    const fields = [
+      { id: 'a', name: 'Stage', type: 'choice', value: 'Open', options: ['Open', 'Done'] },
+      { id: 'b', name: 'Related', type: 'page', value: null },
+    ];
+    const page = { ...stub, initial: { view: { properties: { fields } } } } as unknown as OpenPage;
+    renderUi(<PropertiesBar page={page} />);
+    await userEvent.click(fold());
+    const top = (label: string) => document.querySelector(`[aria-label="${label}"]`)!.getBoundingClientRect().top;
+    expect(Math.abs(top('Remove Stage') - top('Stage'))).toBeLessThan(12);
+    expect(document.querySelector('[aria-label="Related"]')!.closest('label')).toBeNull();
+  });
 });
