@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import '../../features';
 import { commandBar } from '../../registries';
 import type { CommandBarItem } from '../../registries/types';
-import { INSERT_GROUPS, inBarOrder } from './barOrder';
+import { INSERT_GROUPS, inBarOrder, type InsertGroup } from './barOrder';
 
 const item = (
   tab: CommandBarItem['tab'],
@@ -34,7 +34,7 @@ describe('the Insert tab order', () => {
     ]);
   });
 
-  it('keeps other groups in registration order ahead of the fixed ones, and other tabs untouched', () => {
+  it('keeps other groups in registration order after the fixed ones, and other tabs untouched', () => {
     const items = [
       item('insert', 'comment'),
       item('insert', 'blocks', 'insert.a'),
@@ -44,13 +44,22 @@ describe('the Insert tab order', () => {
       item('insert', 'blocks', 'insert.c'),
     ];
     expect(inBarOrder(items).map((entry) => entry.id)).toEqual([
+      'insert.tables',
+      'insert.comment',
       'insert.a',
       'insert.c',
       'home.comment',
       'insert.b',
-      'insert.tables',
-      'insert.comment',
     ]);
+  });
+});
+
+describe('the Insert group names', () => {
+  it('are typed, so a misspelled name fails to compile', () => {
+    const name: InsertGroup = 'codeCell';
+    // @ts-expect-error not a fixed Insert group
+    const bad: InsertGroup = 'codecell';
+    expect([name, bad]).toHaveLength(2);
   });
 });
 

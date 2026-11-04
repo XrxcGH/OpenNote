@@ -1,7 +1,8 @@
-// The command bar's items with their commands and current states, in bar order: groups in the order their first
-// item registered (the Insert tab's fixed groups last, see barOrder.ts), and items in registration order within a
-// group. Items hide when their flag or their command's flag is off, when the command doesn't exist, and when it
-// isn't available (`when`).
+// The command bar's items with their commands and current states, in bar order.
+// Groups sit in the order their first item registered. The Insert tab's fixed groups come first (see barOrder.ts).
+// Items sit in registration order within a group.
+// Items hide when their flag or their command's flag is off, when the command doesn't exist, or when it isn't
+// available (`when`).
 
 import { isEnabled } from '../../app/flags';
 import type { AnyCommand } from '../../commands/keymap';
