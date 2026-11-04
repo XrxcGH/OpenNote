@@ -59,8 +59,9 @@ export function tableData(table: HTMLTableElement, newId: () => string): TableDa
 
 /**
  * Table data from text whose lines are rows and whose tabs separate cells, which is how a spreadsheet copies as text.
- * A first row of words above rows with numbers is the header. Null unless it has two rows or more with the same number of cells (two or more) and no row begins with a tab, so
- * indented code and a lone line with a tab in it stay text.
+ * A first row of words above rows with numbers is the header. The text must have two rows or more with the same
+ * number of cells, two or more, and no row may begin with a tab. Indented code, and a lone line with a tab in it,
+ * stay text.
  */
 export function tabTableData(text: string, newId: () => string): TableData | null {
   const rows = text
