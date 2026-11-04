@@ -97,10 +97,11 @@ async function insertBlocks(
     after = undefined;
   }
   const frames: (Frame | undefined)[] = [];
+  let nextY = frame?.y;
   items.forEach((item, i) => {
-    const at = frame ? { x: frame.x, y: frame.y } : undefined;
+    const at = frame && nextY !== undefined ? { x: frame.x, y: nextY } : undefined;
     frames.push(at);
-    if (frame) frame = { x: frame.x, y: frame.y + estimatedHeight(item.data) + 16 };
+    if (nextY !== undefined) nextY += estimatedHeight(item.data) + 16;
     edits.push({
       edit: 'insertBlock',
       block: { id: ids[i], type: item.type, data: { ...item.data }, ...(at ? { frame: at } : {}) },

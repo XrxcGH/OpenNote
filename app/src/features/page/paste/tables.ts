@@ -59,7 +59,7 @@ export function tableData(table: HTMLTableElement, newId: () => string): TableDa
 
 /**
  * Table data from text whose lines are rows and whose tabs separate cells, which is how a spreadsheet copies as text.
- * Null unless it has two rows or more with the same number of cells (two or more) and no row begins with a tab, so
+ * A first row of words above rows with numbers is the header. Null unless it has two rows or more with the same number of cells (two or more) and no row begins with a tab, so
  * indented code and a lone line with a tab in it stay text.
  */
 export function tabTableData(text: string, newId: () => string): TableData | null {
@@ -72,8 +72,12 @@ export function tabTableData(text: string, newId: () => string): TableData | nul
   if (rows.length < 2 || count < 2 || rows.length > 5000 || count > 64) return null;
   if (rows.some((row) => row.length !== count || row[0] === '' || row.every((cell) => cell.trim() === ''))) return null;
   const columns = Array.from({ length: count }, () => ({ id: newId(), width: DEFAULT_COLUMN_WIDTH }));
+  // A first row of words above rows with numbers in them is the column titles.
+  const isNumber = (cell: string) => cell.trim() !== '' && Number.isFinite(Number(cell.trim().replace(/,/g, '')));
+  const header =
+    rows[0].every((cell) => cell.trim() !== '' && !isNumber(cell)) && rows.slice(1).some((row) => row.some(isNumber));
   return {
-    header: false,
+    header,
     columns,
     rows: rows.map((row) => ({
       id: newId(),

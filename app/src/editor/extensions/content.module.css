@@ -76,7 +76,7 @@
     gap: var(--space-1);
     user-select: none;
     /* Over the title, whose box runs the whole width of the callout, so the buttons take every kind of press. */
-    z-index: 1;
+    z-index: var(--layer-page-chrome);
   }
 
   .calloutType,

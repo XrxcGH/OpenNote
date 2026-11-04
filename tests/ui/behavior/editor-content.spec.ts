@@ -1,6 +1,6 @@
-// Editor content, from the Beta 8 full walk (group 47 to 53): spreadsheet text pastes as a table, a copy gives plain
-// text, a bad custom color says why, a callout's buttons answer the keyboard, a last equation keeps a line below it,
-// and a table cell's menu has the row and column commands.
+// Editor content, from the Beta 8 full walk (groups 47 to 53). Spreadsheet text pastes as a table. A copy gives plain
+// text. A callout's buttons answer the keyboard. A last equation keeps a line below it. A table cell's menu has the
+// row and column commands.
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
@@ -46,10 +46,10 @@ test('pastes spreadsheet text as a table, and a copy gives plain text', async ({
   // A copy of bold words puts the words, not the Markdown marks, on the clipboard as text.
   await page.getByRole('textbox', { name: 'Text' }).first().click();
   await page.keyboard.type('Alpha **bold part** omega');
+  await page.keyboard.press('Control+a');
   const flavors = await page.evaluate(() => {
     // The text box with the caret, not the table's editor, which comes first in the page.
     const editor = document.activeElement as HTMLElement;
-    getSelection()!.selectAllChildren(editor);
     const transfer = new DataTransfer();
     editor.dispatchEvent(new ClipboardEvent('copy', { clipboardData: transfer, bubbles: true, cancelable: true }));
     return { text: transfer.getData('text/plain'), html: transfer.getData('text/html') };
@@ -96,4 +96,24 @@ test('keeps an empty line below a last equation', async ({ page }) => {
       }),
     )
     .toBe('P');
+});
+
+test('a fit adds its two tables in one step, and one Undo takes both away', async ({ page }) => {
+  await openPage(page);
+  await paste(page, { 'text/plain': 'x\ty\n1\t3\n2\t5\n3\t7' });
+  const cell = page
+    .getByRole('group', { name: /^Table(:|$)/ })
+    .getByRole('cell')
+    .first();
+  await cell.click();
+  const tables = () => held(page).then((blocks) => blocks.filter((block) => block.type === 'table').length);
+  await expect.poll(tables).toBe(1);
+  await page.keyboard.press('Control+k');
+  const box = page.getByPlaceholder('Type a command or a page name');
+  await box.fill('Table: Linear fit of the selection');
+  await expect(page.getByRole('option', { name: /^Table: Linear fit of the selection/ }).first()).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect.poll(tables).toBe(3);
+  await page.keyboard.press('Control+z');
+  await expect.poll(tables).toBe(1);
 });

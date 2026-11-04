@@ -233,9 +233,14 @@ describe('resolving images', () => {
 });
 
 describe('tab-separated text', () => {
-  it('becomes a table, with empty cells kept', () => {
+  it('becomes a table, with empty cells kept and a header over numbers', () => {
     const result = paste({ text: 'Item\tQty\r\nPens\t12\r\n1. Paper\t\r\n' });
-    expect(outline(result)).toEqual(['table[["Item","Qty"],["Pens","12"],["1. Paper",""]]']);
+    expect(outline(result)).toEqual(['table[header][["Item","Qty"],["Pens","12"],["1. Paper",""]]']);
+  });
+
+  it('has no header when the first row is numbers, or nothing below it is', () => {
+    expect(outline(paste({ text: '1\t2\n3\t4' }))).toEqual(['table[["1","2"],["3","4"]]']);
+    expect(outline(paste({ text: 'a\tb\nc\td' }))).toEqual(['table[["a","b"],["c","d"]]']);
   });
 
   it('stays text when rows differ in length, a row begins with a tab, or there is only one line', () => {
