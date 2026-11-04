@@ -51,6 +51,7 @@
     "allow-audio-enhance",
     "allow-audio-compress",
     "allow-audio-storage-scan",
+    "allow-audio-free-space",
     "allow-audio-purge-history",
     "allow-audio-export",
     "allow-audio-export-video",
