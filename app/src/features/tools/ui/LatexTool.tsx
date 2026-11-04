@@ -72,8 +72,10 @@ function useLatex() {
     () => (clean === '' || render === null ? null : render(clean, { displayMode: state.display })),
     [clean, render, state.display],
   );
+  // Source that does not draw is never put on the page: it would replace a selected equation with raw text.
+  const drawable = drawn?.ok === true;
   const insert = () => {
-    if (clean === '') return;
+    if (clean === '' || !drawable) return;
     const ok = insertIntoPage({ math: { source: clean, display: state.display } });
     announce(t(ok ? 'science.latex.inserted' : 'science.latex.noPage'));
   };
@@ -105,7 +107,7 @@ function useLatex() {
     setNote('');
     update({ ...state, source });
   };
-  return { state, note, area, clean, drawn, update, insert, copy, addSnippet, onPaste, edit };
+  return { state, note, area, clean, drawn, drawable, update, insert, copy, addSnippet, onPaste, edit };
 }
 
 type Latex = ReturnType<typeof useLatex>;
@@ -213,7 +215,7 @@ export function LatexTool() {
       </p>
       <Preview drawn={latex.drawn} />
       <div className={styles.buttons}>
-        <Button variant="primary" disabled={latex.clean === ''} onClick={latex.insert}>
+        <Button variant="primary" disabled={latex.clean === '' || !latex.drawable} onClick={latex.insert}>
           {t('science.latex.insert')}
         </Button>
         <Button variant="quiet" disabled={latex.clean === ''} onClick={() => void latex.copy()}>

@@ -166,7 +166,12 @@ export function CalculatorTool() {
   };
   return (
     <div className={styles.tool}>
-      <div ref={tabs} role="tablist" aria-label={t('smart.tools.calculator.tabs')} className={styles.tabs}>
+      <div
+        ref={tabs}
+        role="tablist"
+        aria-label={t('smart.tools.calculator.tabs')}
+        className={`${styles.tabs} ${own.modeTabs}`}
+      >
         {modes.map((id) => (
           <button
             key={id}
@@ -299,13 +304,19 @@ function useScientific(basic: boolean) {
     } else setProblem(t('smart.tools.calculator.convertFailed'));
     return true;
   };
+  // The last operation of a basic calculation, so pressing = again repeats it on the answer (12.5×8−3 = 97, = 94).
+  const repeat = useRef('');
   const run = () => {
-    const source = input.trim();
+    let source = input.trim();
+    if (source === '' && basic && repeat.current !== '' && answer?.value !== undefined) {
+      source = `${answer.value}${repeat.current}`;
+    }
     if (source === '' || convert(source)) return;
     const done = submit(session, source.replace(/−/g, '-'));
     if (!done.result.ok) return setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
     const { value } = done.result;
     keep(done.session);
+    if (basic) repeat.current = /([+\-−×÷*/])\s*(\d*\.?\d+%?)\s*$/.exec(source)?.slice(1).join('') ?? '';
     const figured = sig && !basic ? sigFigCalculate(source.replace(/−/g, '-')) : null;
     if (figured?.ok) setAnswer({ text: figured.text, rule: ruleText(figured) });
     else
@@ -340,7 +351,7 @@ function useScientific(basic: boolean) {
 /** Scientific mode, or with `basic` the four-function calculator, which shares its history. */
 function Scientific({ basic = false }: { basic?: boolean }) {
   const calc = useScientific(basic);
-  const { session, keep, input, setInput, answer, problem, field, run, type } = calc;
+  const { session, keep, input, setInput, answer, problem, field, run, type, clear } = calc;
   return (
     <>
       <div className={styles.entry}>
@@ -358,6 +369,11 @@ function Scientific({ basic = false }: { basic?: boolean }) {
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
               if (event.key === 'Enter' && !event.nativeEvent.isComposing) run();
+              // Escape clears what was typed; with the field already empty it closes the window as before.
+              if (event.key === 'Escape' && input) {
+                event.preventDefault();
+                clear();
+              }
             }}
           />
         </label>
@@ -374,6 +390,7 @@ function Scientific({ basic = false }: { basic?: boolean }) {
       </div>
       {answer?.rule ? <p className={styles.note}>{answer.rule}</p> : null}
       {answer ? <AnswerActions text={answer.text} /> : null}
+      {basic ? <p className={styles.note}>{t('smart.tools.calculator.percentNote')}</p> : null}
       {basic ? (
         <BasicKeypad
           onKey={type}
@@ -426,6 +443,14 @@ interface MemoryProps {
   onRecall(): void;
 }
 
+/** The angle modes in the order the button cycles through them, and each one's name. */
+const NEXT_ANGLE = { deg: 'rad', rad: 'grad', grad: 'deg' } as const;
+const ANGLE_NAMES = {
+  deg: 'smart.tools.calculator.degrees',
+  rad: 'smart.tools.calculator.radians',
+  grad: 'smart.tools.calculator.gradians',
+} as const;
+
 /** The angle unit and the one memory slot. */
 function MemoryBar({ session, onChange, onRecall }: MemoryProps) {
   const lastValue = session.history.at(-1)?.value;
@@ -436,9 +461,9 @@ function MemoryBar({ session, onChange, onRecall }: MemoryProps) {
         <Button
           variant="quiet"
           aria-pressed={session.angle === 'deg'}
-          onClick={() => onChange(setAngleMode(session, session.angle === 'deg' ? 'rad' : 'deg'))}
+          onClick={() => onChange(setAngleMode(session, NEXT_ANGLE[session.angle]))}
         >
-          {t(session.angle === 'deg' ? 'smart.tools.calculator.degrees' : 'smart.tools.calculator.radians')}
+          {t(ANGLE_NAMES[session.angle])}
         </Button>
         <Button
           variant="quiet"
@@ -484,16 +509,16 @@ function History({ session, onUse, onClear }: HistoryProps) {
               .reverse()
               .slice(0, 30)
               .map((entry) => (
-                <li key={entry.id} className={styles.item}>
+                <li key={entry.id} className={`${styles.item} ${own.historyItem}`}>
                   <button
                     type="button"
-                    className={styles.link}
+                    className={`${styles.link} ${own.historyText}`}
                     aria-label={t('smart.tools.calculator.useEntry', { expression: entry.expression })}
                     onClick={() => onUse(entry.expression)}
                   >
                     {entry.expression}
                   </button>
-                  <span className={styles.itemDue}>
+                  <span className={`${styles.itemDue} ${own.historyText}`}>
                     {t('smart.tools.calculator.answer', {
                       value: entry.unit ? `${formatNumber(entry.value)} ${entry.unit}` : formatNumber(entry.value),
                     })}
