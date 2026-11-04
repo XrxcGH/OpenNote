@@ -14,15 +14,21 @@ const clock = (text: string) => {
   return found ? { hour: Number(found[1]), minute: Number(found[2]) } : null;
 };
 
+/** An exam shown as an event (not a to-do that can be ticked off). */
+export const isExamItem = (item: UpcomingItem): boolean => item.id.startsWith('exam:');
+
 /** Exams ahead (a deck's exam day too, unless an exam is linked to that deck) as events with their dates. */
-function examItems(now: number, timeZone: string): UpcomingItem[] {
+export function examItems(
+  now: number,
+  timeZone: string,
+  exams: readonly Exam[] = examsStore.get(),
+  decks: readonly { id: string; name: string; exam?: string }[] = decksStore.get(),
+): UpcomingItem[] {
   if (!isEnabled('tools.exams')) return [];
-  const exams = examsStore.get();
   const linked = new Set(exams.map((exam) => exam.deck).filter(Boolean));
   const all: Exam[] = [
     ...exams,
-    ...decksStore
-      .get()
+    ...decks
       .filter((deck) => deck.exam && !linked.has(deck.id))
       .map((deck): Exam => ({ id: `deck:${deck.id}`, name: deck.name, date: deck.exam!, time: '' })),
   ];

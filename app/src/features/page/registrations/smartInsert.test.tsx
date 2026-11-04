@@ -11,6 +11,7 @@ describe('page insert listener', () => {
     const inserted: unknown[] = [];
     const chain = {
       focus: () => chain,
+      command: () => chain,
       insertContentAt: (range: unknown, text: unknown) => {
         inserted.push({ range, text });
         return chain;

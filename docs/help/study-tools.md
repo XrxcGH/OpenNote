@@ -12,6 +12,7 @@ Open Insert, then Flashcards. A page can hold several decks.
 - Type `Q :: A` on a line to make a card in place. Type `{{blank}}` in a sentence for a fill-in-the-blank card.
 - Review cards in the review screen. A schedule shows which cards are due.
 - Set an exam date for a deck and the schedule works back from it.
+- Removing a card shows an Undo button for a few seconds, and the card comes back in the same place.
 - Import and export Anki decks (`.apkg`) and CSV files.
 
 Open a deck and press Quiz, or insert a quiz block, to be asked a random set of the deck's cards. Type each answer and check it. If the check missed a good answer, press "I had it right". The end tells you how many were right and lists the cards to look at again. A quiz does not change when cards come back for review, and it keeps no score history.
@@ -47,7 +48,7 @@ To take the same exam again, open its paper, answer key, or results page, press 
 
 ## Upcoming
 
-The Upcoming window lists exams, classes, and tasks, from every notebook you have open. Locked sections are left out. It has Day, Week, and Month views you can move around with the arrow keys. Check an item off and a checkbox line on the page is checked too. Press an item to go to it.
+The Upcoming window lists exams, classes, and tasks, from every notebook you have open. Locked sections are left out. It has Day, Week, and Month views you can move around with the arrow keys. Exams show on the Week and Month grids on their day. Check an item off and a checkbox line on the page is checked too. Press an item to go to it.
 
 - Import a calendar (.ics) file to fill in your classes.
 - Put a due date on a checkbox, and repeat it if you need to. Type phrases such as "every weekday", "every 2 weeks", or "monthly on the 1st". When you check a repeating line on a page, the next one appears.

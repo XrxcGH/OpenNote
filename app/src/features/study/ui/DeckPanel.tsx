@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useFlag } from '../../../app/flags';
 import { t } from '../../../strings/t';
-import { Button, announce, confirm } from '../../../ui';
+import { Button, announce, confirm, showToast } from '../../../ui';
 import { useStore } from '../../../state/store';
 import { dayKey, daysBetween, isDayKey } from '../deck/dates';
 import { exportDeck } from '../io/save';
@@ -15,6 +15,7 @@ import {
   decksStore,
   deleteCard,
   removeDeck,
+  restoreCard,
   saveCard,
   statesOf,
   statesStore,
@@ -104,8 +105,12 @@ function CardsView({ deck }: { deck: Deck }) {
               variant="quiet"
               aria-label={t('study.edit.remove')}
               onClick={() => {
+                const index = deck.cards.findIndex((one) => one.id === card.id);
                 deleteCard(deck.id, card.id);
-                announce(t('study.edit.removed'));
+                showToast({
+                  message: t('study.edit.removed'),
+                  action: { label: t('study.edit.undoRemove'), run: () => restoreCard(deck.id, card, index) },
+                });
               }}
             >
               ×

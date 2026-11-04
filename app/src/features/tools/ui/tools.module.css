@@ -167,6 +167,8 @@
   .empty,
   .note {
     margin: 0;
+    /* A long unbroken word (a 300-letter lookup) wraps inside the window instead of widening it. */
+    overflow-wrap: anywhere;
     color: var(--color-text-muted);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
@@ -174,6 +176,7 @@
 
   .problem {
     margin: 0;
+    overflow-wrap: anywhere;
     color: var(--color-status-danger);
   }
 
@@ -383,6 +386,7 @@
 
   .groupTitle {
     margin: 0;
+    overflow-wrap: anywhere;
     font-size: var(--type-small-size);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-secondary);

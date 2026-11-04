@@ -46,7 +46,7 @@ export const kitMechDyn = {
     insertPlot: 'Picture: {name}',
     insertCalc: 'Live calculation block',
     calcBlock: 'Mechanisms and dynamics calculation',
-    calcOpen: 'Open in the tool',
+    calcOpen: 'Open in tool',
     calcOpened: 'Opened {tool} with this block’s inputs.',
     calcBad: 'This calculation block’s inputs can’t be read.',
     inserted: 'Inserted into the page.',

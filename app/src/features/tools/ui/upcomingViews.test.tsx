@@ -7,12 +7,13 @@ import { renderUi } from '../../../test';
 import { UpcomingTool } from './UpcomingTool';
 import { ClassButtons } from './ClassButtons';
 import { loadStored } from './storage';
-import { pageItemsStore } from './upcomingStores';
+import { examsStore, pageItemsStore, setExams } from './upcomingStores';
 
 beforeEach(() => localStorage.clear());
 afterEach(() => {
   localStorage.clear();
   pageItemsStore.set({});
+  examsStore.set([]);
 });
 
 async function addTask(text: string) {
@@ -55,6 +56,20 @@ describe('the week and month views', () => {
     const before = screen.getByRole('heading', { name: /\d{4}$/ }).textContent;
     await userEvent.keyboard('{PageDown}');
     await waitFor(() => expect(screen.getByRole('heading', { name: /\d{4}$/ }).textContent).not.toBe(before));
+  });
+
+  it('show an exam added while the grid is open, on its day, and it is not a to-do to tick', async () => {
+    renderUi(<UpcomingTool />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Month' }));
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    setExams([{ id: 'e1', name: 'Chem midterm', date, time: '' }]);
+    const today = await screen.findByRole('gridcell', { name: /1 item, today/ });
+    await userEvent.click(today);
+    const day = within(screen.getByRole('region', { name: /^Due on/ }));
+    expect(day.getByText('Chem midterm')).toBeTruthy();
+    const box = day.getByRole('checkbox', { name: 'Done: Chem midterm' }) as HTMLInputElement;
+    expect(box.disabled).toBe(true);
   });
 
   it('say when nothing is due on the chosen day', async () => {

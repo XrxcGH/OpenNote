@@ -2,6 +2,8 @@
 // diagram is shown and nowhere else, so pages without diagrams never fetch it. It runs in its strictest mode, which
 // removes scripts and links from what it draws, and nothing leaves the computer.
 
+import { t } from '../../../strings/t';
+
 type Mermaid = (typeof import('mermaid'))['default'];
 
 let loading: Promise<Mermaid> | null = null;
@@ -30,7 +32,16 @@ async function engine(): Promise<Mermaid> {
 
 export type Drawn = { ok: true; svg: string } | { ok: false; message: string };
 
-/** The diagram as an SVG string, or what is wrong with the text in Mermaid's own words. */
+/**
+ * What is wrong with the diagram text, in plain words. Mermaid's own message lists the tokens the parser expected,
+ * which says nothing to a person who never saw a token, so only the line it points at is kept.
+ */
+export function plainProblem(raw: string): string {
+  const line = /\bline (\d+)/i.exec(raw)?.[1];
+  return line ? t('study.diagram.checkLine', { line }) : t('study.diagram.checkGeneral');
+}
+
+/** The diagram as an SVG string, or what is wrong with the text in plain words. */
 export async function drawDiagram(source: string): Promise<Drawn> {
   if (source.trim() === '') return { ok: false, message: '' };
   const mermaid = await engine();
@@ -44,7 +55,6 @@ export async function drawDiagram(source: string): Promise<Drawn> {
     return { ok: true, svg };
   } catch (error) {
     document.getElementById(`dopennote-diagram-${counter}`)?.remove();
-    const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, message: message.split('\n').slice(0, 4).join('\n') };
+    return { ok: false, message: plainProblem(error instanceof Error ? error.message : String(error)) };
   }
 }
