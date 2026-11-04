@@ -6783,6 +6783,10 @@
     {
       "id": "kit-physics",
       "title": "Physics tools"
+    },
+    {
+      "id": "code",
+      "title": "Code studio"
     }
   ],
   "settings": [

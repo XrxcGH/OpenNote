@@ -55,6 +55,9 @@
     }
   ],
   "lazyKb": {
+    "features/codestudio/window": 190,
+    "@codemirror/lang-": 40,
+    "@codemirror/legacy-modes": 40,
     "features/tables/engine/formula/fn/lazy/statistics": 40,
     "features/tables/engine/formula/fn/lazy/financial": 30,
     "features/tables/engine/formula/fn/lazy/engineering": 30,
