@@ -137,7 +137,11 @@ function Value({ field, onChange }: { field: Field; onChange(patch: Partial<Fiel
   }
 }
 
-export function PropertiesBar({ page }: { page: OpenPage }) {
+/**
+ * The properties header. The sync queue of the page view, when given, carries the edits, so they take their turn after
+ * typed text and the Undo button and Ctrl+Z can take them back (Beta 8 walk B2-B13-2). Without one they go to the page.
+ */
+export function PropertiesBar({ page, sync }: { page: OpenPage; sync?: Pick<OpenPage, 'send'> }) {
   const [fields, setFields] = useState<Field[]>(() => readFields(page.initial.view));
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState<FieldType>('text');
@@ -163,20 +167,24 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
       setFields(next);
       if (timer.current) clearTimeout(timer.current);
       const send = () =>
-        void page.send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] }).catch(() => undefined);
+        void (sync ?? page)
+          .send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] })
+          .catch(() => undefined);
       if (now) send();
       else timer.current = setTimeout(send, 500);
     },
-    [page],
+    [page, sync],
   );
   useEffect(
     () => () => {
       if (timer.current) {
         clearTimeout(timer.current);
-        void page.send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] }).catch(() => undefined);
+        void (sync ?? page)
+          .send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] })
+          .catch(() => undefined);
       }
     },
-    [page],
+    [page, sync],
   );
 
   const toggle = () => {

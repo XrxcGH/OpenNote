@@ -51,3 +51,22 @@ describe('the properties panel and Escape', () => {
     editor.remove();
   });
 });
+
+describe('property edits', () => {
+  it('go through the page sync queue, so Undo can take them back (Beta 8 walk B2-B13-2)', async () => {
+    const sent: unknown[] = [];
+    const page = {
+      initial: { view: { properties: { fields: [{ id: 'a', name: 'Topic', type: 'text', value: 'Cells' }] } } },
+      onFrame: () => () => undefined,
+      send: () => Promise.reject(new Error('Property edits must go through the queue.')),
+    } as unknown as OpenPage;
+    const sync = { send: (batch: unknown) => (sent.push(batch), Promise.resolve()) } as unknown as Pick<
+      OpenPage,
+      'send'
+    >;
+    renderUi(<PropertiesBar page={page} sync={sync} />);
+    await userEvent.click(fold());
+    await userEvent.click(document.querySelector<HTMLButtonElement>('button[aria-label^="Remove"]')!);
+    expect(sent).toEqual([{ edits: [{ edit: 'setPage', view: { properties: null } }] }]);
+  });
+});

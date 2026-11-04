@@ -9,6 +9,8 @@ export function mountProperties(mounted: MountedPage): () => void {
   const host = document.createElement('div');
   host.className = styles.host;
   host.dataset.region = 'page-properties';
+  // Ctrl+Z in the panel undoes the page's steps, its own edits among them (page/registrations/sync.ts).
+  host.dataset.pageUndo = '';
   document.body.append(host);
   const viewport = mounted.viewport.viewport;
   const place = () => {
@@ -52,7 +54,7 @@ export function mountProperties(mounted: MountedPage): () => void {
   let up: Element | null = viewport.parentElement;
   for (let level = 0; up && level < 8; level += 1, up = up.parentElement) panes?.observe(up, { childList: true });
   const root = createRoot(host);
-  root.render(<PropertiesBar page={mounted.page} />);
+  root.render(<PropertiesBar page={mounted.page} sync={mounted.sync} />);
   return () => {
     window.removeEventListener('resize', placeLater);
     cancelAnimationFrame(frame);
