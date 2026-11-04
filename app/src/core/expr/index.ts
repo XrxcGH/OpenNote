@@ -73,3 +73,4 @@ export type { RootOptions } from './solve';
 export type { AngleMode } from './trig';
 export { rejectUnknown, splitWords } from './words';
 export type { OnUnknown } from './words';
+export { danglingExponent, evaluateTyped } from './typed';

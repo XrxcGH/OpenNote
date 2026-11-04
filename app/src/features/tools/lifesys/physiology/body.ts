@@ -104,8 +104,10 @@ export function bmrResult(sex: 'male' | 'female', kg: number, cm: number, age: n
   const bmr = mifflin(sex, kg, cm, age);
   if (!(bmr > 0)) throw new LsError('physiology.e.bmr');
   const factor = ACTIVITY[activity];
+  const bmi = kg / (cm / 100) ** 2;
   return {
     rows: [
+      { label: 'physiology.r.bmi', value: bmi, unit: 'kg/m²' },
       { label: 'physiology.r.bmr', value: bmr, unit: 'kcal/day' },
       { label: 'physiology.r.tdee', value: bmr * factor, unit: 'kcal/day' },
     ],
@@ -116,6 +118,7 @@ export function bmrResult(sex: 'male' | 'female', kg: number, cm: number, age: n
         math: 'BMR = 10W + 6.25H - 5A + s',
       },
       { key: 'physiology.s.tdee', vars: { b: bmr, f: factor, t: bmr * factor } },
+      { key: 'physiology.s.bmi', vars: { w: kg, h: cm, i: bmi }, math: 'BMI = W / H^2' },
     ],
     latex: 'BMR = 10W + 6.25H - 5A + s',
     source: 'physiology.src.mifflin',

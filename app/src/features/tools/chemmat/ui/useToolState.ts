@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { loadStored, saveStored } from '../../ui/storage';
 import { buildInput, parseNumber } from '../input';
+import { solveChecked } from '../solve';
 import type { ToolSpec } from '../spec';
 import type { Outcome } from '../types';
 import { DIMS, convertFromBase, convertToBase, defaultUnit } from '../units';
@@ -70,11 +71,7 @@ export function useToolState(spec: ToolSpec, system: System) {
   const outcome: Outcome = useMemo(() => {
     const built = buildInput(spec, state.values, state.units);
     if (!built.ok) return { ok: false, key: 'kitChemMat.err.number', vars: { name: tr(built.field) } };
-    try {
-      return spec.solve(built.input);
-    } catch {
-      return { ok: false, key: 'kitChemMat.err.unexpected' };
-    }
+    return solveChecked(spec, built.input);
   }, [spec, state]);
 
   const setValue = (id: string, next: string) =>

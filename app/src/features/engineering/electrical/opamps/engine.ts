@@ -126,7 +126,16 @@ export function exactOrder(s: OrderSpec): number {
     : Math.acosh(Math.sqrt(ratio)) / Math.acosh(s.fs / s.fp);
 }
 
-export const order = (s: OrderSpec): number => Math.max(1, Math.ceil(exactOrder(s) - 1e-9));
+/** The most poles the design builds: a real filter is of order 2 to 12, and a specification that asks for more is a slip. */
+export const MAX_ORDER = 100;
+
+export function order(s: OrderSpec): number {
+  const exact = exactOrder(s);
+  // An absurd loss (1e12 dB) gives an order of Infinity, and building that many poles never ends.
+  if (!Number.isFinite(exact) || exact > MAX_ORDER)
+    fail('orderTooHigh', { exact: Number.isFinite(exact) ? String(Math.ceil(exact)) : '∞', max: String(MAX_ORDER) });
+  return Math.max(1, Math.ceil(exact - 1e-9));
+}
 
 export interface Design {
   n: number;

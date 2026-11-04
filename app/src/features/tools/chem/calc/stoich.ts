@@ -31,7 +31,7 @@ export interface Line {
 }
 
 export type StoichResult =
-  | { ok: true; lines: Line[]; steps: string[]; limiting: string | null; equation: string }
+  | { ok: true; lines: Line[]; steps: string[]; limiting: string | null; tied: string[]; equation: string }
   | { ok: false; reason: 'equation' | 'mass' | 'given' | 'target' };
 
 /** Convert a given mass of one species to the mass of another through the balanced equation. */
@@ -95,7 +95,17 @@ export function limitingReagent(equation: string, given: Record<string, number>)
       limiting = r.text;
     }
   }
-  if (provided.length > 1) steps.push(`Fewest reactions possible: ${limiting}, so it is the limiting reagent.`);
+  // Two reactants given in exactly the ratio of the equation run out together: neither is in excess, and calling
+  // one of them "the" limiting reagent would hide that.
+  const tied = provided.filter((r) => {
+    const possible = given[r.text] / (molarMass(r.text) ?? Infinity) / r.coefficient;
+    return Math.abs(possible - extent) <= 1e-9 * extent;
+  });
+  if (tied.length > 1) {
+    steps.push(`${tied.map((r) => r.text).join(' and ')} give the same number of reactions, so they run out together.`);
+  } else if (provided.length > 1) {
+    steps.push(`Fewest reactions possible: ${limiting}, so it is the limiting reagent.`);
+  }
   for (const r of reactants) {
     const mass = molarMass(r.text) ?? 0;
     const have = (given[r.text] ?? 0) / mass;
@@ -119,7 +129,14 @@ export function limitingReagent(equation: string, given: Record<string, number>)
       `${p.text} made: ${sig(extent)} × ${p.coefficient} = ${sig(moles)} mol × ${sig(mass)} g/mol = ${sig(moles * mass)} g`,
     );
   }
-  return { ok: true, lines, steps, limiting, equation: result.balanced.text };
+  return {
+    ok: true,
+    lines,
+    steps,
+    limiting,
+    tied: tied.length > 1 ? tied.map((r) => r.text) : [],
+    equation: result.balanced.text,
+  };
 }
 
 export function percentYield(actual: number, theoretical: number): number {

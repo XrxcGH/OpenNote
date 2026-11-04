@@ -141,7 +141,9 @@ export const TITLE_BAR: Readonly<Record<string, { name: string; text: string }>>
   'daily.open': { name: 'Today', text: "Opens today's daily note." },
   'notes.saveStatus': {
     name: 'Save status',
-    text: "Says Saving until an edit is written and Saved once it is, or Couldn't save, Offline, or Not responding.",
+    text:
+      "Says Saving until an edit is written and Saved once it is, or Couldn't save, Offline, or Not responding. " +
+      "Choose Couldn't save to see why, then Retry or Copy text.",
   },
   'sync.status': {
     name: 'Sync',

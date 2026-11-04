@@ -34,6 +34,7 @@ export const common = {
     divideByZero: 'A division by zero came up. Check that the values are not all zero.',
     notNumber: '“{text}” is not a number. Use digits, a decimal point, and an optional exponent such as 2e-3.',
     outOfRange: '{field} is out of range. Check the value.',
+    resultRange: 'These values give an answer too large or too small to show. Try values closer to real ones.',
     empty: 'There are no samples yet. Type or paste some numbers.',
     windowLength: 'The window needs at least 1 point.',
     tooFewSamples: 'Give at least {count} samples.',

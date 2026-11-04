@@ -1,5 +1,6 @@
 // What a tool is to the window: a title, some fields, and a function from what was typed to an answer. The window
 // draws the form, the result, the steps, the plot, and the Insert buttons, so a tool is only its fields and engine.
+import { isRangeError, printsNonFinite } from '../../../core/finite';
 import type { FieldKey, KitResult, Values } from './shared';
 
 export interface FieldOption {
@@ -36,8 +37,14 @@ export const initialValues = (spec: ToolSpec): Values =>
 /** Runs a tool, turning a thrown input problem into a failure the window can say in words. */
 export function runTool(spec: ToolSpec, values: Values): KitResult {
   try {
-    return spec.run(values);
+    const result = spec.run(values);
+    // An absurd input (1e12 of anything) makes an engine print NaN or Infinity as an answer: say it is out of range.
+    if (result.ok && [result.answer, ...result.rows.map((row) => row.value)].some(printsNonFinite)) {
+      return { ok: false, error: 'outOfRange' };
+    }
+    return result;
   } catch (error) {
+    if (isRangeError(error)) return { ok: false, error: 'outOfRange' };
     if (error instanceof Error && 'key' in error && 'vars' in error) {
       const known = error as unknown as { key: never; vars: Record<string, string> };
       return { ok: false, error: known.key, vars: known.vars };

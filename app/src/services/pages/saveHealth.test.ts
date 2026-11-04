@@ -88,6 +88,22 @@ describe('save health', () => {
     expect(client.listening()).toEqual([]);
   });
 
+  it('keeps why a page failed and whether autosave tries again, until the page saves', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    client.emit('core:save-failed', { page: 'p1', kind: 'diskFull', message: 'x', retryInMs: 5000 });
+    expect(saveHealthStore.get().failures.get('p1')).toEqual({ kind: 'diskFull', retrying: true });
+    client.emit('core:save-failed', { page: 'p1', kind: 'readOnlyFile', message: 'x', retryInMs: null });
+    expect(saveHealthStore.get().failures.get('p1')).toEqual({ kind: 'readOnlyFile', retrying: false });
+    client.emit('core:save-failed', { page: 'p2', message: 'x' });
+    expect(saveHealthStore.get().failures.get('p2')).toEqual({ kind: 'io', retrying: false });
+    client.emit('core:saved', { page: 'p1', revision: 'r2' });
+    expect([...saveHealthStore.get().failures.keys()]).toEqual(['p2']);
+    pageClosed('p2');
+    expect(saveHealthStore.get().failures.size).toBe(0);
+    stop();
+  });
+
   it('turns "Saved" into "Couldn\'t save" while a page fails, and leaves the rest to the notes bridge', () => {
     expect(combinedStatus('saved', true)).toBe('error');
     expect(combinedStatus('saved', false)).toBe('saved');

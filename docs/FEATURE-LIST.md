@@ -640,7 +640,7 @@ The app registers 885 commands and 47 tool windows. 24 of the windows are subjec
 - **Breadcrumb.** Shows the notebook, section, and page you are on.
 - **Undo.** Undoes the last change.
 - **Redo.** Redoes the change you undid last.
-- **Save status.** Says Saving until an edit is written and Saved once it is, or Couldn't save, Offline, or Not responding.
+- **Save status.** Says Saving until an edit is written and Saved once it is, or Couldn't save, Offline, or Not responding. Choose Couldn't save to see why, then Retry or Copy text.
 - **Sync.** Says Synced, Syncing, Sync paused, Sync waiting, or Sync stopped, and opens sync.
 - **Working offline.** Shows that OpenNote makes no network requests right now.
 - **Recording.** Shows a recording and its time, and opens the recording controls.
@@ -2114,7 +2114,7 @@ Open it with the command "Open upcoming".
 - **PowerPoint / Google Slides.** Imports `.pptx`, Google Slides as annotatable pages and exports `.pptx` (one page per slide), PDF.
 - **LaTeX.** Exports `.tex` for a page, section, or notebook; a `.zip` with `images/` and `references.bib` when there is more than one file.
 - **OneNote / Evernote.** Imports Graph API, `.enex` and exports PDF, Markdown.
-- **Windows metafile pictures (EMF, WMF, and EMF+): Charts and clip art saved in these formats in Word and PowerPoint files are drawn into SVG pictures on import, sharp at any size, with their text left as text. A picture that cannot be read is replaced by its description and counted in the import review. Pasting or dropping an `.emf` or `.wmf` image onto a page does the same. Status: Built, untested by hand. Always on, with Import (`interop.import`)..** .
+- **Windows metafile pictures (EMF, WMF, and EMF+).** Charts and clip art saved in these formats in Word and PowerPoint files are drawn into SVG pictures on import, sharp at any size, with their text left as text.
 - **Older Office and OpenDocument files.** Imports `.doc`, `.rtf`, `.xls`, `.xlsb`, `.ods`.
 - People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle.
 - The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder.

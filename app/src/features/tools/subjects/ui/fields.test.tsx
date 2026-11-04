@@ -109,6 +109,19 @@ describe('subject fields', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New seed' }));
     expect(field.value).toMatch(/^\d+$/);
   });
+
+  it('makes a new seed when the field is left empty, not an error', () => {
+    function Harness() {
+      const [seed, setSeed] = useState('42');
+      return <SeedField value={seed} onChange={setSeed} />;
+    }
+    renderUi(<Harness />);
+    const field = screen.getByLabelText('Seed') as HTMLInputElement;
+    fireEvent.change(field, { target: { value: '' } });
+    fireEvent.blur(field);
+    expect(field.value).toMatch(/^\d+$/);
+    expect(screen.queryByText('Type a whole number from 0 to 18446744073709551615.')).toBeNull();
+  });
 });
 
 describe('subject outputs', () => {

@@ -216,11 +216,11 @@ function GasTab() {
   const columns: Column<(typeof rows)[number]>[] = [
     { key: 'name', head: t('chem.data.gasCols.name'), text: (r) => r.gas.name },
     { key: 'formula', head: t('chem.data.gasCols.formula'), text: (r) => r.gas.formula },
-    { key: 'M', head: 'M', text: (r) => fmt(r.gas.molarMass), numeric: true },
-    { key: 'R', head: 'R', text: (r) => fmt(r.gas.R), numeric: true },
-    { key: 'cp', head: 'cp (J/kg·K)', text: (r) => (r.p ? fmt(r.p.cp) : '—'), numeric: true },
-    { key: 'cv', head: 'cv', text: (r) => (r.p ? fmt(r.p.cv) : '—'), numeric: true },
-    { key: 'k', head: 'k (W/m·K)', text: (r) => (r.p ? fmt(r.p.k) : '—'), numeric: true },
+    { key: 'M', head: t('chem.data.gasCols.M'), text: (r) => fmt(r.gas.molarMass), numeric: true },
+    { key: 'R', head: t('chem.data.gasCols.R'), text: (r) => fmt(r.gas.R), numeric: true },
+    { key: 'cp', head: t('chem.data.gasCols.cp'), text: (r) => (r.p ? fmt(r.p.cp) : '—'), numeric: true },
+    { key: 'cv', head: t('chem.data.gasCols.cv'), text: (r) => (r.p ? fmt(r.p.cv) : '—'), numeric: true },
+    { key: 'k', head: t('chem.data.gasCols.k'), text: (r) => (r.p ? fmt(r.p.k) : '—'), numeric: true },
   ];
   return (
     <>
