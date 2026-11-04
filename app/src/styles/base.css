@@ -90,9 +90,3 @@
     --toolbar-size: var(--size-toolbar-touch);
   }
 }
-
-/* The page chrome's hit areas (image toolbar buttons, handles, dialog rows) are 44 px for a finger too. The token is
-   set on :root, outside every layer, so this rule is too: a layered rule would lose to it. */
-:root[data-density='touch'] {
-  --size-chrome-hit: var(--size-chrome-hit-touch);
-}

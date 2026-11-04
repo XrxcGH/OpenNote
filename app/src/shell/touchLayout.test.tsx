@@ -98,14 +98,4 @@ describe('touch density targets', () => {
       await setViewport(1280, 800);
     }
   });
-
-  it('makes the page chrome hit areas 44 px with touch density, 32 px with a mouse (Beta 8 walk VA-30)', async () => {
-    await renderApp({ density: 'mouse' });
-    const probe = document.body.appendChild(document.createElement('div'));
-    probe.style.minBlockSize = 'var(--size-chrome-hit)';
-    expect(probe.offsetHeight).toBe(32);
-    document.documentElement.dataset.density = 'touch';
-    expect(probe.offsetHeight).toBe(44);
-    probe.remove();
-  });
 });
