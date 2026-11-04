@@ -1,0 +1,185 @@
+{
+  "name": "hidden rows and columns, outline levels 0 to 7, and heights at both ends",
+  "rules": [
+    "R-SHT-11",
+    "R-NUM-2",
+    "R-STAMP-6"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "a"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "b"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "c"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "d"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "e"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "f"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "g"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "h"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "i"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r004",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "j"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "k"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "l"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r005",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "m"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "n"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "o"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "cols": {
+              "01m3sbcmt0000000000000k001": {
+                "hidden": true
+              },
+              "01m3sbcmt0000000000000k002": {
+                "collapsed": true,
+                "level": 7,
+                "style": "8x8dxu"
+              },
+              "01m3sbcmt0000000000000k003": {
+                "collapsed": false,
+                "hidden": false,
+                "level": 0
+              }
+            },
+            "rows": {
+              "01m3sbcmt0000000000000r001": {
+                "exact": true,
+                "height": 1
+              },
+              "01m3sbcmt0000000000000r002": {
+                "exact": false,
+                "height": 10000
+              },
+              "01m3sbcmt0000000000000r003": {
+                "collapsed": true,
+                "hidden": true,
+                "level": 7
+              },
+              "01m3sbcmt0000000000000r004": {
+                "collapsed": true,
+                "height": 28.5,
+                "level": 1,
+                "style": "5euaeq"
+              },
+              "01m3sbcmt0000000000000r005": {
+                "exact": true,
+                "height": 40.01
+              }
+            },
+            "styles": {
+              "5euaeq": {
+                "font": {
+                  "italic": true
+                }
+              },
+              "8x8dxu": {
+                "fill": "#f1f5f9"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "minWriterVersion": 1
+  }
+}

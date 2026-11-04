@@ -1,0 +1,248 @@
+{
+  "name": "validation rules with values just outside their grammar",
+  "rules": [
+    "R-SHT-14",
+    "R-SHT-22"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Qty"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Note"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "x"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "y"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "validation": {
+              "p01": {
+                "ranges": []
+              },
+              "p02": {
+                "alert": "halt",
+                "kind": "whole",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p03": {
+                "items": [],
+                "kind": "list",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p04": {
+                "items": [
+                  "a",
+                  ""
+                ],
+                "kind": "list",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p05": {
+                "items": [
+                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ],
+                "kind": "list",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p06": {
+                "input": {
+                  "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+                },
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p07": {
+                "error": {
+                  "text": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+                },
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p08": {
+                "checked": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                "kind": "checkbox",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p09": {
+                "a": 1,
+                "kind": "whole",
+                "op": "between",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p10": {
+                "ignoreBlank": "yes",
+                "kind": "whole",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              },
+              "p11": {
+                "ranges": [
+                  {
+                    "col": "x"
+                  }
+                ]
+              },
+              "p12": {
+                "ranges": [
+                  {
+                    "from": [
+                      "01m3sbcmt0000000000000r001"
+                    ],
+                    "to": [
+                      "01m3sbcmt0000000000000r001",
+                      "01m3sbcmt0000000000000k001"
+                    ]
+                  }
+                ]
+              },
+              "p13": {
+                "kind": "whole"
+              },
+              "p14": {
+                "kind": "whole",
+                "op": "near",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "problems": [
+    "blocks[0].data.sheet.validation.p01.ranges: an array of 1 to 64 items",
+    "blocks[0].data.sheet.validation.p02.alert: one of stop, warning, information",
+    "blocks[0].data.sheet.validation.p03.items: an array of 1 to 1000 items",
+    "blocks[0].data.sheet.validation.p04.items[1]: a string of 1 to 255 characters",
+    "blocks[0].data.sheet.validation.p05.items[0]: a string of 1 to 255 characters",
+    "blocks[0].data.sheet.validation.p06.input.title: a string of 0 to 32 characters",
+    "blocks[0].data.sheet.validation.p07.error.text: a string of 0 to 255 characters",
+    "blocks[0].data.sheet.validation.p08.checked: a string of 0 to 255 characters",
+    "blocks[0].data.sheet.validation.p09.a: a string of 0 to 8192 characters",
+    "blocks[0].data.sheet.validation.p10.ignoreBlank: a boolean",
+    "blocks[0].data.sheet.validation.p11.ranges[0].col: an ID",
+    "blocks[0].data.sheet.validation.p12.ranges[0].from: [row ID, column ID]",
+    "blocks[0].data.sheet.validation.p13.ranges: required",
+    "blocks[0].data.sheet.validation.p14.op: one of between, notBetween, equal, notEqual, greater, less, greaterOrEqual, lessOrEqual"
+  ]
+}

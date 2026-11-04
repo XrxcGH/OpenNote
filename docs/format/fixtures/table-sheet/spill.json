@@ -1,0 +1,242 @@
+{
+  "name": "spilled cells, one entry each, and every shape of cached value",
+  "rules": [
+    "R-SHT-17",
+    "R-SHT-5",
+    "R-SHT-4",
+    "R-SHT-18",
+    "R-STAMP-12",
+    "R-STAMP-13"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Qty"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Result"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "=SEQUENCE(3,2)"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=1/0"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=TRUE"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r004",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=\"\""
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r005",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "=SEQUENCE(2)"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "x"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=0.1+0.2"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r006",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=1E21"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r007",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "=FILTER(A2:A3,B2:B3>9)"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": ""
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "=1E-7"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "v": 1,
+            "values": {
+              "01m3sbcmt0000000000000r002": {
+                "01m3sbcmt0000000000000k001": 1,
+                "01m3sbcmt0000000000000k002": 2,
+                "01m3sbcmt0000000000000k003": {
+                  "e": "#DIV/0!"
+                }
+              },
+              "01m3sbcmt0000000000000r003": {
+                "01m3sbcmt0000000000000k001": 3,
+                "01m3sbcmt0000000000000k002": 4,
+                "01m3sbcmt0000000000000k003": true
+              },
+              "01m3sbcmt0000000000000r004": {
+                "01m3sbcmt0000000000000k001": 5,
+                "01m3sbcmt0000000000000k002": 6,
+                "01m3sbcmt0000000000000k003": ""
+              },
+              "01m3sbcmt0000000000000r005": {
+                "01m3sbcmt0000000000000k001": {
+                  "e": "#SPILL!"
+                },
+                "01m3sbcmt0000000000000k003": 0.30000000000000004
+              },
+              "01m3sbcmt0000000000000r006": {
+                "01m3sbcmt0000000000000k003": 1e+21
+              },
+              "01m3sbcmt0000000000000r007": {
+                "01m3sbcmt0000000000000k001": null,
+                "01m3sbcmt0000000000000k003": 1e-7
+              }
+            },
+            "valuesOf": "fnv1a:c5144b45aabaa0d3"
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "expect": {
+    "formulaCells": [
+      [
+        "01m3sbcmt0000000000000r002",
+        "01m3sbcmt0000000000000k001"
+      ],
+      [
+        "01m3sbcmt0000000000000r002",
+        "01m3sbcmt0000000000000k003"
+      ],
+      [
+        "01m3sbcmt0000000000000r003",
+        "01m3sbcmt0000000000000k003"
+      ],
+      [
+        "01m3sbcmt0000000000000r004",
+        "01m3sbcmt0000000000000k003"
+      ],
+      [
+        "01m3sbcmt0000000000000r005",
+        "01m3sbcmt0000000000000k001"
+      ],
+      [
+        "01m3sbcmt0000000000000r005",
+        "01m3sbcmt0000000000000k003"
+      ],
+      [
+        "01m3sbcmt0000000000000r006",
+        "01m3sbcmt0000000000000k003"
+      ],
+      [
+        "01m3sbcmt0000000000000r007",
+        "01m3sbcmt0000000000000k001"
+      ],
+      [
+        "01m3sbcmt0000000000000r007",
+        "01m3sbcmt0000000000000k003"
+      ]
+    ],
+    "fresh": true,
+    "fingerprint": "fnv1a:c5144b45aabaa0d3"
+  }
+}

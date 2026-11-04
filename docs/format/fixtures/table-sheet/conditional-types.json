@@ -1,0 +1,1130 @@
+{
+  "name": "all 15 types of conditional format, every operator, period, icon set, and the order at both ends",
+  "rules": [
+    "R-SHT-15",
+    "R-SHT-22",
+    "R-STAMP-12"
+  ],
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k003",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Item"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Qty"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "Note"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "x"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                },
+                "01m3sbcmt0000000000000k003": {
+                  "markdown": "y"
+                }
+              }
+            }
+          ],
+          "sheet": {
+            "conditional": {
+              "a0": {
+                "order": 33,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "a1": {
+                "below": true,
+                "order": 34,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "a2": {
+                "equal": true,
+                "order": 35,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "a3": {
+                "order": 36,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stdDev": 3,
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "a4": {
+                "below": true,
+                "equal": true,
+                "order": 37,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stdDev": 0,
+                "style": "xpb9b9",
+                "type": "average"
+              },
+              "b0": {
+                "color": "indigo",
+                "order": 42,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "type": "bar"
+              },
+              "b1": {
+                "axis": "middle",
+                "barOnly": true,
+                "border": "ink",
+                "color": "fern",
+                "gradient": false,
+                "max": {
+                  "at": "formula",
+                  "value": "MAX(B:B)"
+                },
+                "min": {
+                  "at": "num",
+                  "value": "0"
+                },
+                "negative": "brick",
+                "order": 43,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "type": "bar"
+              },
+              "b2": {
+                "axis": "none",
+                "color": "#0a1b2c",
+                "max": {
+                  "at": "percentile",
+                  "value": "95"
+                },
+                "min": {
+                  "at": "auto"
+                },
+                "order": 44,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "type": "bar"
+              },
+              "b3": {
+                "axis": "auto",
+                "color": "amber",
+                "max": {
+                  "at": "max"
+                },
+                "min": {
+                  "at": "min"
+                },
+                "order": 45,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "type": "bar"
+              },
+              "c0": {
+                "a": "1",
+                "b": "10",
+                "op": "between",
+                "order": 11,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c1": {
+                "a": "1",
+                "b": "10",
+                "op": "notBetween",
+                "order": 12,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c2": {
+                "a": "1",
+                "op": "equal",
+                "order": 13,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c3": {
+                "a": "1",
+                "op": "notEqual",
+                "order": 14,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c4": {
+                "a": "1",
+                "op": "greater",
+                "order": 15,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c5": {
+                "a": "1",
+                "op": "less",
+                "order": 16,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c6": {
+                "a": "1",
+                "op": "greaterOrEqual",
+                "order": 17,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "c7": {
+                "a": "1",
+                "op": "lessOrEqual",
+                "order": 18,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "cell"
+              },
+              "d0": {
+                "order": 19,
+                "period": "yesterday",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d1": {
+                "order": 20,
+                "period": "today",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d2": {
+                "order": 21,
+                "period": "tomorrow",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d3": {
+                "order": 22,
+                "period": "last7Days",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d4": {
+                "order": 23,
+                "period": "lastWeek",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d5": {
+                "order": 24,
+                "period": "thisWeek",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d6": {
+                "order": 25,
+                "period": "nextWeek",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d7": {
+                "order": 26,
+                "period": "lastMonth",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d8": {
+                "order": 27,
+                "period": "thisMonth",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "d9": {
+                "order": 28,
+                "period": "nextMonth",
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "date"
+              },
+              "f0": {
+                "a": "$B2>100",
+                "order": 38,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "formula"
+              },
+              "i0": {
+                "iconOnly": false,
+                "order": 46,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "3Arrows",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "10"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "20"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i1": {
+                "iconOnly": false,
+                "order": 47,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": true,
+                "set": "3Triangles",
+                "thresholds": [
+                  {
+                    "at": "percent",
+                    "gte": false,
+                    "value": "10"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "20"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i10": {
+                "iconOnly": false,
+                "order": 56,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "5Rating",
+                "thresholds": [
+                  {
+                    "at": "percentile",
+                    "gte": false,
+                    "value": "10"
+                  },
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "30"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "40"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i11": {
+                "iconOnly": false,
+                "order": 57,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": true,
+                "set": "5Quarters",
+                "thresholds": [
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "20"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "30"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "40"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i12": {
+                "iconOnly": true,
+                "order": 58,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "5Boxes",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "10"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "20"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "30"
+                  },
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i2": {
+                "iconOnly": false,
+                "order": 48,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "3TrafficLights",
+                "thresholds": [
+                  {
+                    "at": "percentile",
+                    "value": "10"
+                  },
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i3": {
+                "iconOnly": false,
+                "order": 49,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": true,
+                "set": "3Signs",
+                "thresholds": [
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "20"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i4": {
+                "iconOnly": false,
+                "order": 50,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "3Symbols",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "gte": false,
+                    "value": "10"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "20"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i5": {
+                "iconOnly": false,
+                "order": 51,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": true,
+                "set": "3Flags",
+                "thresholds": [
+                  {
+                    "at": "percent",
+                    "value": "10"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "20"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i6": {
+                "iconOnly": false,
+                "order": 52,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "3Stars",
+                "thresholds": [
+                  {
+                    "at": "percentile",
+                    "value": "10"
+                  },
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i7": {
+                "iconOnly": false,
+                "order": 53,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": true,
+                "set": "4Arrows",
+                "thresholds": [
+                  {
+                    "at": "formula",
+                    "gte": false,
+                    "value": "B1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "20"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "30"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i8": {
+                "iconOnly": false,
+                "order": 54,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": false,
+                "set": "4Rating",
+                "thresholds": [
+                  {
+                    "at": "num",
+                    "value": "10"
+                  },
+                  {
+                    "at": "percent",
+                    "value": "20"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "30"
+                  }
+                ],
+                "type": "icons"
+              },
+              "i9": {
+                "iconOnly": false,
+                "order": 55,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "reverse": true,
+                "set": "5Arrows",
+                "thresholds": [
+                  {
+                    "at": "percent",
+                    "value": "10"
+                  },
+                  {
+                    "at": "percentile",
+                    "value": "20"
+                  },
+                  {
+                    "at": "formula",
+                    "value": "B1"
+                  },
+                  {
+                    "at": "num",
+                    "value": "40"
+                  }
+                ],
+                "type": "icons"
+              },
+              "k0": {
+                "order": 29,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 10,
+                "style": "xpb9b9",
+                "type": "top"
+              },
+              "k1": {
+                "order": 30,
+                "percent": true,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 1000,
+                "style": "xpb9b9",
+                "type": "top"
+              },
+              "k2": {
+                "bottom": true,
+                "order": 31,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 1,
+                "style": "xpb9b9",
+                "type": "top"
+              },
+              "k3": {
+                "bottom": true,
+                "order": 32,
+                "percent": true,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "rank": 50,
+                "style": "xpb9b9",
+                "type": "top"
+              },
+              "o1": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "o2": {
+                "order": 256,
+                "ranges": [
+                  {
+                    "row": "01m3sbcmt0000000000000r001"
+                  },
+                  {
+                    "from": [
+                      "01m3sbcmt0000000000000r002",
+                      "01m3sbcmt0000000000000k001"
+                    ],
+                    "to": [
+                      "01m3sbcmt0000000000000r003",
+                      "01m3sbcmt0000000000000k003"
+                    ]
+                  }
+                ],
+                "stop": true,
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "o3": {
+                "order": 5,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "s0": {
+                "order": 39,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "#ffffff"
+                  },
+                  {
+                    "at": "max",
+                    "color": "fern"
+                  }
+                ],
+                "type": "scale"
+              },
+              "s1": {
+                "order": 40,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "min",
+                    "color": "brick"
+                  },
+                  {
+                    "at": "percentile",
+                    "color": "amber",
+                    "value": "50"
+                  },
+                  {
+                    "at": "max",
+                    "color": "fern"
+                  }
+                ],
+                "type": "scale"
+              },
+              "s2": {
+                "order": 41,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stops": [
+                  {
+                    "at": "num",
+                    "color": "ink",
+                    "value": "0"
+                  },
+                  {
+                    "at": "formula",
+                    "color": "theme:accent1",
+                    "value": "AVERAGE(B:B)"
+                  },
+                  {
+                    "at": "percent",
+                    "color": "plum",
+                    "value": "90"
+                  }
+                ],
+                "type": "scale"
+              },
+              "t0": {
+                "order": 1,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": false,
+                "style": "xpb9b9",
+                "type": "blank"
+              },
+              "t1": {
+                "order": 2,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": true,
+                "style": "xpb9b9",
+                "type": "noBlank"
+              },
+              "t2": {
+                "order": 3,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": false,
+                "style": "xpb9b9",
+                "type": "error"
+              },
+              "t3": {
+                "order": 4,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": false,
+                "style": "xpb9b9",
+                "type": "noError"
+              },
+              "t4": {
+                "order": 5,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": false,
+                "style": "xpb9b9",
+                "type": "duplicate"
+              },
+              "t5": {
+                "order": 6,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "stop": false,
+                "style": "xpb9b9",
+                "type": "unique"
+              },
+              "x0": {
+                "op": "contains",
+                "order": 7,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "1isxy1",
+                "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                "type": "text"
+              },
+              "x1": {
+                "op": "notContains",
+                "order": 8,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "1isxy1",
+                "text": "a",
+                "type": "text"
+              },
+              "x2": {
+                "op": "begins",
+                "order": 9,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "1isxy1",
+                "text": "a",
+                "type": "text"
+              },
+              "x3": {
+                "op": "ends",
+                "order": 10,
+                "ranges": [
+                  {
+                    "col": "01m3sbcmt0000000000000k002"
+                  }
+                ],
+                "style": "1isxy1",
+                "text": "a",
+                "type": "text"
+              }
+            },
+            "styles": {
+              "1isxy1": {
+                "font": {
+                  "bold": true,
+                  "color": "brick"
+                }
+              },
+              "xpb9b9": {
+                "fill": "#fde68a"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "stamp": {
+    "formatVersion": 2,
+    "minReaderVersion": 1,
+    "minWriterVersion": 2
+  },
+  "expect": {
+    "applyOrder": [
+      "o1",
+      "t0",
+      "t1",
+      "t2",
+      "t3",
+      "o3",
+      "t4",
+      "t5",
+      "x0",
+      "x1",
+      "x2",
+      "x3",
+      "c0",
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "c7",
+      "d0",
+      "d1",
+      "d2",
+      "d3",
+      "d4",
+      "d5",
+      "d6",
+      "d7",
+      "d8",
+      "d9",
+      "k0",
+      "k1",
+      "k2",
+      "k3",
+      "a0",
+      "a1",
+      "a2",
+      "a3",
+      "a4",
+      "f0",
+      "s0",
+      "s1",
+      "s2",
+      "b0",
+      "b1",
+      "b2",
+      "b3",
+      "i0",
+      "i1",
+      "i2",
+      "i3",
+      "i4",
+      "i5",
+      "i6",
+      "i7",
+      "i8",
+      "i9",
+      "i10",
+      "i11",
+      "i12",
+      "o2"
+    ]
+  }
+}

@@ -1,0 +1,916 @@
+{
+  "name": "limits of data.sheet, each at its boundary and one past it",
+  "page": {
+    "formatVersion": 1,
+    "minReaderVersion": 1,
+    "kind": "opennote.page",
+    "id": "01m3sbcmt0000000000000p001",
+    "title": "Fixture",
+    "created": "2026-11-02T10:00:00.000Z",
+    "modified": "2026-11-02T10:00:00.000Z",
+    "view": {
+      "layout": "flow"
+    },
+    "blocks": [
+      {
+        "id": "01m3sbcmt0000000000000b001",
+        "type": "table",
+        "order": "a0",
+        "created": "2026-11-02T10:00:00.000Z",
+        "modified": "2026-11-02T10:00:00.000Z",
+        "data": {
+          "columns": [
+            {
+              "id": "01m3sbcmt0000000000000k001",
+              "width": 120
+            },
+            {
+              "id": "01m3sbcmt0000000000000k002",
+              "width": 120
+            }
+          ],
+          "rows": [
+            {
+              "id": "01m3sbcmt0000000000000r001",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Head"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "Total"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r002",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Tea"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "2.5"
+                }
+              }
+            },
+            {
+              "id": "01m3sbcmt0000000000000r003",
+              "cells": {
+                "01m3sbcmt0000000000000k001": {
+                  "markdown": "Rice"
+                },
+                "01m3sbcmt0000000000000k002": {
+                  "markdown": "4"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "revision": {
+      "id": "01m3sbcmt0000000000000v001",
+      "parents": [],
+      "ancestors": [],
+      "savedAt": "2026-11-02T10:00:00.000Z",
+      "device": {
+        "id": "01m3sbcmt0000000000000d001",
+        "label": "Test device"
+      },
+      "writer": "Fixture"
+    }
+  },
+  "cases": [
+    {
+      "name": "4,096 styles",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-6",
+        "R-STAMP-6"
+      ],
+      "at": 4096,
+      "past": 4097,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "styles": {
+          "$map": {
+            "count": "limit",
+            "key": "%06x",
+            "value": {
+              "pad": {
+                "l": 1
+              }
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.styles: a map of at most 4096 entries"
+      ]
+    },
+    {
+      "name": "10,000 merges",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-12",
+        "R-STAMP-12"
+      ],
+      "at": 10000,
+      "past": 10001,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "merges": {
+          "$map": {
+            "count": "limit",
+            "key": "%06x",
+            "value": {
+              "from": [
+                "01m3sbcmt0000000000000r001",
+                "01m3sbcmt0000000000000k001"
+              ],
+              "to": [
+                "01m3sbcmt0000000000000r001",
+                "01m3sbcmt0000000000000k002"
+              ]
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.merges: a map of at most 10000 entries"
+      ]
+    },
+    {
+      "name": "1,024 names",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-13",
+        "R-STAMP-12"
+      ],
+      "at": 1024,
+      "past": 1025,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "names": {
+          "$map": {
+            "count": "limit",
+            "key": "Name%05d",
+            "value": {
+              "ref": "1"
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.names: a map of at most 1024 entries"
+      ]
+    },
+    {
+      "name": "256 validation rules",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-14",
+        "R-STAMP-12"
+      ],
+      "at": 256,
+      "past": 257,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "$map": {
+            "count": "limit",
+            "key": "%03x",
+            "value": {
+              "ranges": [
+                {
+                  "col": "01m3sbcmt0000000000000k001"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation: a map of at most 256 entries"
+      ]
+    },
+    {
+      "name": "256 conditional formats",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-15",
+        "R-STAMP-12"
+      ],
+      "at": 256,
+      "past": 257,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "conditional": {
+          "$map": {
+            "count": "limit",
+            "key": "%03x",
+            "value": {
+              "order": 1,
+              "ranges": [
+                {
+                  "col": "01m3sbcmt0000000000000k001"
+                }
+              ],
+              "style": "a",
+              "type": "blank"
+            }
+          }
+        },
+        "styles": {
+          "a": {
+            "font": {
+              "bold": true
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.conditional: a map of at most 256 entries"
+      ]
+    },
+    {
+      "name": "10,000 cell notes",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-16",
+        "R-STAMP-6"
+      ],
+      "at": 10000,
+      "past": 10001,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "notes": {
+          "$cells": {
+            "count": "limit",
+            "perRow": 100,
+            "value": {
+              "at": "2026-11-02T10:00:00.000Z",
+              "markdown": "n"
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.notes: at most 10,000 notes per table"
+      ]
+    },
+    {
+      "name": "1,024 links",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-19",
+        "R-STAMP-6"
+      ],
+      "at": 1024,
+      "past": 1025,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "links": {
+          "$map": {
+            "count": "limit",
+            "key": "Page %05d",
+            "value": "01m3sbcmt0000000000000p002"
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.links: a map of at most 1024 entries"
+      ]
+    },
+    {
+      "name": "1,000,000 cells",
+      "rules": [
+        "R-SHT-3",
+        "R-SHT-2"
+      ],
+      "at": 1000000,
+      "past": 1000001,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "cells": {
+          "$cells": {
+            "count": "limit",
+            "perRow": 100000,
+            "value": "a"
+          }
+        },
+        "styles": {
+          "a": {
+            "font": {
+              "bold": true
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.cells: at most 1,000,000 cells per table"
+      ]
+    },
+    {
+      "name": "a name of 255 characters",
+      "rules": [
+        "R-SHT-13",
+        "R-STAMP-12"
+      ],
+      "at": 255,
+      "past": 256,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "names": {
+          "$map": {
+            "count": 1,
+            "key": {
+              "$chars": "a",
+              "count": "limit"
+            },
+            "value": {
+              "ref": "1"
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.names: key 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' is not a name (R-SHT-13)"
+      ]
+    },
+    {
+      "name": "a name's formula of 8,192 characters",
+      "rules": [
+        "R-SHT-13",
+        "R-STAMP-12"
+      ],
+      "at": 8192,
+      "past": 8193,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "names": {
+          "Long": {
+            "ref": {
+              "$chars": "1",
+              "count": "limit"
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.names.Long.ref: a string of 1 to 8192 characters"
+      ]
+    },
+    {
+      "name": "a name's comment of 255 characters",
+      "rules": [
+        "R-SHT-13",
+        "R-STAMP-12"
+      ],
+      "at": 255,
+      "past": 256,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "names": {
+          "Long": {
+            "comment": {
+              "$chars": "c",
+              "count": "limit"
+            },
+            "ref": "1"
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.names.Long.comment: a string of 0 to 255 characters"
+      ]
+    },
+    {
+      "name": "a number format of 255 characters",
+      "rules": [
+        "R-SHT-7",
+        "R-STAMP-6"
+      ],
+      "at": 255,
+      "past": 256,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "styles": {
+          "a": {
+            "fmt": {
+              "$chars": "0",
+              "count": "limit"
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.styles.a.fmt: a string of 1 to 255 characters"
+      ]
+    },
+    {
+      "name": "64 ranges in a rule",
+      "rules": [
+        "R-SHT-14",
+        "R-SHT-22",
+        "R-STAMP-12"
+      ],
+      "at": 64,
+      "past": 65,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "v": {
+            "ranges": {
+              "$list": {
+                "count": "limit",
+                "value": {
+                  "col": "01m3sbcmt0000000000000k001"
+                }
+              }
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation.v.ranges: an array of 1 to 64 items"
+      ]
+    },
+    {
+      "name": "1,000 items in a list",
+      "rules": [
+        "R-SHT-14",
+        "R-STAMP-12"
+      ],
+      "at": 1000,
+      "past": 1001,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "v": {
+            "items": {
+              "$list": {
+                "count": "limit",
+                "value": "a"
+              }
+            },
+            "kind": "list",
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ]
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation.v.items: an array of 1 to 1000 items"
+      ]
+    },
+    {
+      "name": "an item of 255 characters",
+      "rules": [
+        "R-SHT-14",
+        "R-STAMP-12"
+      ],
+      "at": 255,
+      "past": 256,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "v": {
+            "items": [
+              {
+                "$chars": "a",
+                "count": "limit"
+              }
+            ],
+            "kind": "list",
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ]
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation.v.items[0]: a string of 1 to 255 characters"
+      ]
+    },
+    {
+      "name": "a validation formula of 8,192 characters",
+      "rules": [
+        "R-SHT-14",
+        "R-STAMP-12"
+      ],
+      "at": 8192,
+      "past": 8193,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "v": {
+            "a": {
+              "$chars": "1",
+              "count": "limit"
+            },
+            "kind": "custom",
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ]
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation.v.a: a string of 0 to 8192 characters"
+      ]
+    },
+    {
+      "name": "a message title of 32 characters",
+      "rules": [
+        "R-SHT-14",
+        "R-STAMP-12"
+      ],
+      "at": 32,
+      "past": 33,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "v": {
+            "input": {
+              "title": {
+                "$chars": "t",
+                "count": "limit"
+              }
+            },
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ]
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation.v.input.title: a string of 0 to 32 characters"
+      ]
+    },
+    {
+      "name": "a message text of 255 characters",
+      "rules": [
+        "R-SHT-14",
+        "R-STAMP-12"
+      ],
+      "at": 255,
+      "past": 256,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "validation": {
+          "v": {
+            "error": {
+              "text": {
+                "$chars": "t",
+                "count": "limit"
+              }
+            },
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ]
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.validation.v.error.text: a string of 0 to 255 characters"
+      ]
+    },
+    {
+      "name": "a cached string of 32,767 characters",
+      "rules": [
+        "R-SHT-17",
+        "R-STAMP-12"
+      ],
+      "at": 32767,
+      "past": 32768,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "v": 1,
+        "values": {
+          "01m3sbcmt0000000000000r002": {
+            "01m3sbcmt0000000000000k002": {
+              "$chars": "s",
+              "count": "limit"
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.values.01m3sbcmt0000000000000r002.01m3sbcmt0000000000000k002: at most 32,767 characters"
+      ]
+    },
+    {
+      "name": "a note of 65,536 bytes",
+      "rules": [
+        "R-SHT-16",
+        "R-STAMP-6"
+      ],
+      "at": 65536,
+      "past": 65537,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "notes": {
+          "01m3sbcmt0000000000000r002": {
+            "01m3sbcmt0000000000000k001": {
+              "at": "2026-11-02T10:00:00.000Z",
+              "markdown": {
+                "$chars": "n",
+                "count": "limit"
+              }
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.notes.01m3sbcmt0000000000000r002.01m3sbcmt0000000000000k001.markdown: text of at most 65536 bytes"
+      ]
+    },
+    {
+      "name": "a note of 65,536 bytes in two-byte characters",
+      "rules": [
+        "R-SHT-16",
+        "R-STAMP-6"
+      ],
+      "at": 32768,
+      "past": 32769,
+      "stamp": {
+        "formatVersion": 1,
+        "minReaderVersion": 1,
+        "minWriterVersion": 1
+      },
+      "sheet": {
+        "notes": {
+          "01m3sbcmt0000000000000r002": {
+            "01m3sbcmt0000000000000k001": {
+              "at": "2026-11-02T10:00:00.000Z",
+              "markdown": {
+                "$chars": "é",
+                "count": "limit"
+              }
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.notes.01m3sbcmt0000000000000r002.01m3sbcmt0000000000000k001.markdown: text of at most 65536 bytes"
+      ]
+    },
+    {
+      "name": "a conditional text of 255 characters",
+      "rules": [
+        "R-SHT-15",
+        "R-STAMP-12"
+      ],
+      "at": 255,
+      "past": 256,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "conditional": {
+          "c": {
+            "op": "contains",
+            "order": 1,
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ],
+            "style": "a",
+            "text": {
+              "$chars": "t",
+              "count": "limit"
+            },
+            "type": "text"
+          }
+        },
+        "styles": {
+          "a": {
+            "font": {
+              "bold": true
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.conditional.c.text: a string of 1 to 255 characters"
+      ]
+    },
+    {
+      "name": "a conditional formula of 8,192 characters",
+      "rules": [
+        "R-SHT-15",
+        "R-STAMP-12"
+      ],
+      "at": 8192,
+      "past": 8193,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "conditional": {
+          "c": {
+            "a": {
+              "$chars": "1",
+              "count": "limit"
+            },
+            "order": 1,
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ],
+            "style": "a",
+            "type": "formula"
+          }
+        },
+        "styles": {
+          "a": {
+            "font": {
+              "bold": true
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.conditional.c.a: a string of 1 to 8192 characters"
+      ]
+    },
+    {
+      "name": "the last order of a conditional format",
+      "rules": [
+        "R-SHT-15",
+        "R-STAMP-12"
+      ],
+      "at": 256,
+      "past": 257,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "conditional": {
+          "c": {
+            "order": {
+              "$limit": 0
+            },
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ],
+            "style": "a",
+            "type": "blank"
+          }
+        },
+        "styles": {
+          "a": {
+            "font": {
+              "bold": true
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.conditional.c.order: an integer from 1 to 256"
+      ]
+    },
+    {
+      "name": "the highest rank of a top rule",
+      "rules": [
+        "R-SHT-15",
+        "R-STAMP-12"
+      ],
+      "at": 1000,
+      "past": 1001,
+      "stamp": {
+        "formatVersion": 2,
+        "minReaderVersion": 1,
+        "minWriterVersion": 2
+      },
+      "sheet": {
+        "conditional": {
+          "c": {
+            "order": 1,
+            "ranges": [
+              {
+                "col": "01m3sbcmt0000000000000k001"
+              }
+            ],
+            "rank": {
+              "$limit": 0
+            },
+            "style": "a",
+            "type": "top"
+          }
+        },
+        "styles": {
+          "a": {
+            "font": {
+              "bold": true
+            }
+          }
+        }
+      },
+      "problems": [
+        "blocks[0].data.sheet.conditional.c.rank: an integer from 1 to 1000"
+      ]
+    }
+  ]
+}
