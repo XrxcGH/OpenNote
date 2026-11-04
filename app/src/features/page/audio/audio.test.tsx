@@ -7,7 +7,7 @@ import type { MemoryPageService } from '../../../services/pages/memory';
 import { expectNoAxeViolations, pressChord, renderApp } from '../../../test';
 import { selectOnPage } from '../seams/selectionStore';
 import { RecordingIndicator } from './Indicator';
-import { Meter } from './Meter';
+import { Meter, Wave, WAVE_BARS } from './Meter';
 import { IDLE, RECORDING_TYPE, recordingUi } from './state';
 
 /** When set, the next update of a recording's entry fails, as when the core is busy for seconds. */
@@ -68,6 +68,25 @@ describe('the level meter', () => {
   });
 });
 
+describe('the live wave', () => {
+  const state = (barDb: number): MeterState => ({ barDb, holdDb: barDb, heldMs: 0, clipped: false });
+  const levels = () =>
+    Array.from(screen.getByTestId('recording-wave').querySelectorAll('rect'), (bar) => Number(bar.dataset.level));
+
+  it('moves the readings across, newest last, and is hidden from screen readers', () => {
+    const { rerender } = render(<Wave state={state(-60)} />);
+    expect(screen.getByTestId('recording-wave').getAttribute('aria-hidden')).toBe('true');
+    expect(levels()).toHaveLength(WAVE_BARS);
+    expect(levels().every((level) => level === 0)).toBe(true);
+    rerender(<Wave state={state(-30)} />);
+    rerender(<Wave state={state(0)} />);
+    const shown = levels();
+    expect(shown.at(-1)).toBe(1);
+    expect(shown.at(-2)).toBeCloseTo(0.5);
+    expect(shown.at(-3)).toBe(0);
+  });
+});
+
 async function openMitosis() {
   const app = await renderApp();
   const notebooks = await screen.findByRole('tree', { name: 'Notebooks' });
@@ -99,6 +118,18 @@ describe('recording on a page', () => {
     expect(await within(block).findByRole('button', { name: 'Play' })).toBeTruthy();
     await expectNoAxeViolations(block);
   });
+
+  it('draws the level as a moving wave while recording, and a position slider a finger can hit once stopped', async () => {
+    await openMitosis();
+    fireEvent.click(
+      within(await screen.findByRole('group', { name: 'Recording' })).getByRole('button', { name: 'Record' }),
+    );
+    expect(await screen.findByTestId('recording-wave', {}, SLOW)).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('group', { name: 'Recording' })).getByRole('button', { name: 'Stop' }));
+    const block = await screen.findByRole('group', { name: /^Recording, \d+:\d\d$/ }, SLOW);
+    const slider = within(block).getByRole('slider');
+    expect(slider.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
+  }, 40_000);
 
   it('asks before deleting a recording block, names it, and Undo brings it back', async () => {
     const { platform } = await openMitosis();

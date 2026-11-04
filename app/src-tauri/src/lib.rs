@@ -236,6 +236,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         audio_more::audio_enhance,
         audio_more::audio_compress,
         audio_more::audio_storage_scan,
+        audio_more::audio_free_space,
         audio_more::audio_purge_history,
         audio_more::audio_export,
         audio_more::audio_export_video,
