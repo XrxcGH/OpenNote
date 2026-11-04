@@ -31,7 +31,9 @@ describe('a tool window and Escape', () => {
     openTool('flashcards');
     const window_ = await screen.findByRole('dialog', { name: /Flashcards/ });
     await waitFor(() => expect(window_.contains(document.activeElement)).toBe(true));
-    const control = window_.querySelector<HTMLElement>('[data-loading] input, [data-loading] select, [data-loading] button');
+    const control = window_.querySelector<HTMLElement>(
+      '[data-loading] input, [data-loading] select, [data-loading] button',
+    );
     expect(control, 'the tool has a control').not.toBeNull();
     control!.focus();
     await userEvent.keyboard('{Escape}');
