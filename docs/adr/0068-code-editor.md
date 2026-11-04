@@ -7,7 +7,7 @@
 
 The owner wants people to write, test, and debug code in OpenNote with the editing they know from VS Code, JetBrains, Replit, and LeetCode. Today code cells are a plain `<textarea>` with Tab indenting (`app/src/features/codecells/CodeCellPanel.tsx`, `indent.ts`), and page code blocks are ProseMirror text highlighted by lowlight (ADR 0021). ADR 0021 rejected CodeMirror 6 for page code blocks and said to revisit "if people ask for code editing features (then a CodeMirror view in a node view or a dialog, with its own ADR)". This is that ADR.
 
-Forces: typing within 16 ms; touch, pen, and on-screen keyboard use on the Surface; screen readers; the 40 KB default budget for a lazy chunk and the 520 KB start-up budget (`app/bundle-budget.json`); diagnostics, completion, ghost text, breakpoints, and inline values need an editor with decorations, gutters, and transactions.
+Forces: typing within 16 ms; touch, pen, and on-screen keyboard use on the Surface; screen readers; the 40 KB default budget for a lazy chunk and the 538 KB start-up budget (`app/bundle-budget.json`); diagnostics, completion, ghost text, breakpoints, and inline values need an editor with decorations, gutters, and transactions.
 
 ## Decision
 

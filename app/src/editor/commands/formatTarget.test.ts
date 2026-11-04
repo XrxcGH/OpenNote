@@ -4,7 +4,7 @@ import { AllSelection, EditorState, TextSelection } from '@tiptap/pm/state';
 import { afterEach, describe, expect, it } from 'vitest';
 import { formatTargetFor, registerFormatTarget } from './formatTarget';
 import type { FormatRequest } from './formatTarget';
-import { clearFormatting, setTextColor, stepTextSize, toggleMark } from './marks';
+import { clearFormatting, setHighlight, setTextColor, stepTextSize, toggleHighlight, toggleMark } from './marks';
 import { applyTo, marked, markdownOf } from './testing';
 
 const stops: (() => void)[] = [];
@@ -52,13 +52,34 @@ describe('the format target seam', () => {
       expect(command(state, (tr) => (after = state.apply(tr)))).toBe(true);
     }
     expect(received).toEqual([
-      { format: 'bold' },
+      { format: 'bold', toggle: true },
       { format: 'textColor', color: 'fern' },
       { format: 'textSizeStep', direction: 1 },
       { format: 'clear' },
     ]);
     expect(after).toBeNull();
     expect(markdownOf(state)).toBe('a b');
+  });
+
+  it('tells the target whether a highlight toggles, sets a color, or comes off', () => {
+    const received: FormatRequest[] = [];
+    fakeTarget(received);
+    const state = withSelectAll('a b');
+    const commands = [
+      toggleHighlight(),
+      toggleHighlight('mint'),
+      setHighlight('rose'),
+      setHighlight(null),
+      setHighlight('none'),
+    ];
+    for (const command of commands) expect(command(state, () => {})).toBe(true);
+    expect(received).toEqual([
+      { format: 'highlight', color: null, toggle: true },
+      { format: 'highlight', color: 'mint', toggle: true },
+      { format: 'highlight', color: 'rose', toggle: false },
+      { format: 'highlight', color: null, toggle: false },
+      { format: 'highlight', color: 'none', toggle: false },
+    ]);
   });
 
   it('asks the target without dispatching when a command only checks', () => {

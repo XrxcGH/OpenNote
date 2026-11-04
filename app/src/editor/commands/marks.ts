@@ -50,7 +50,7 @@ function canMark(tr: Transaction, type: MarkType): boolean {
 
 /** Bold, italic, and the other marks without attributes: on unless the whole selection has it already. */
 export function toggleMark(name: ToggledMark): Command {
-  return viaFormatTarget({ format: name }, (state, dispatch) => {
+  return viaFormatTarget({ format: name, toggle: true }, (state, dispatch) => {
     const type = state.schema.marks[name];
     const active = isMarkActive(state, name);
     return fromChange((tr) => (active ? removeMark(tr, type) : addMark(tr, type, null)))(state, dispatch);
@@ -59,7 +59,7 @@ export function toggleMark(name: ToggledMark): Command {
 
 /** Highlight in a color; null is Honey. The same color again takes the highlight off. */
 export function toggleHighlight(color: HighlightColor | null = null): Command {
-  return viaFormatTarget({ format: 'highlight', color }, (state, dispatch) => {
+  return viaFormatTarget({ format: 'highlight', color, toggle: true }, (state, dispatch) => {
     const type = state.schema.marks.highlight;
     const active = isMarkActive(state, 'highlight', { color });
     return fromChange((tr) => (active ? removeMark(tr, type) : addMark(tr, type, { color })))(state, dispatch);
@@ -72,7 +72,7 @@ export function setHighlight(color: HighlightColor | null | 'none'): Command {
     const type = tr.doc.type.schema.marks.highlight;
     return color === 'none' ? removeMark(tr, type) : addMark(tr, type, { color });
   });
-  return viaFormatTarget({ format: 'highlight', color }, change);
+  return viaFormatTarget({ format: 'highlight', color, toggle: false }, change);
 }
 
 /** A pen name or `#rrggbb`; null takes the color off. */

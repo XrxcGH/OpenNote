@@ -6,13 +6,20 @@
 // shared:x-shared wrote this stub. text:editor-commands owns it next, and tables registers the cell-range target
 // from features/tables/sheet/formatTarget.ts.
 import type { EditorState, Transaction } from '@tiptap/pm/state';
+import type { HighlightColor } from '../schema/specs';
 import type { Command } from './command';
 
-/** The formats a target can take. Each command sends one request, with its value where it has one. */
+/**
+ * The formats a target can take. Each command sends one request, with its value where it has one. `toggle` says
+ * whether the command turns the format off when the selection has it already (true) or always sets it (false).
+ */
 export type FormatRequest =
-  | { format: 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'subscript' | 'superscript' }
-  /** null is the default highlighter, and 'none' takes the highlight off. */
-  | { format: 'highlight'; color: string | null }
+  /** Bold and the other plain marks always toggle. */
+  | { format: 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'subscript' | 'superscript'; toggle: true }
+  /** null is the default highlighter. */
+  | { format: 'highlight'; color: HighlightColor | null; toggle: boolean }
+  /** Takes the highlight off. */
+  | { format: 'highlight'; color: 'none'; toggle: false }
   | { format: 'textColor'; color: string | null }
   | { format: 'textSize'; size: string | null }
   | { format: 'textSizeStep'; direction: 1 | -1 }
