@@ -76,6 +76,29 @@ export const ITEMS: readonly Item[] = [
   },
 ];
 
+/** What to do when Guidepup cannot find NVDA, shown in place of its own short message. */
+export const NVDA_MISSING_HELP = [
+  'NVDA is not installed where Guidepup looks for it.',
+  'Guidepup needs two steps, from the tests/nvda folder, on Windows:',
+  '  npm ci',
+  '  npx guidepup setup --ci     (prepares Windows once per machine)',
+  '  npx guidepup install nvda   (downloads the NVDA build the pinned Guidepup version needs)',
+  'In the nightly workflow these are the steps "Install Guidepup" and "Set up the machine for NVDA". See docs/HARDENING.md.',
+].join('\n');
+
+/**
+ * Turns the error from starting NVDA into one that says how to fix a missing install. Any other error is returned
+ * as it is, because it says something different.
+ */
+export function explainStartFailure(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/not installed/i.test(message)) {
+    const said = message.split('\n')[0];
+    return new Error(`${NVDA_MISSING_HELP}\n\nGuidepup said: ${said}`, { cause: error });
+  }
+  return error instanceof Error ? error : new Error(message);
+}
+
 /**
  * Finds the phrases in the spoken log, in order. A phrase may be said in the same line as the one before it. It
  * returns the phrases that were not found, which is empty when the item passes.

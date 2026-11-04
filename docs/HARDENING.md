@@ -38,7 +38,7 @@ The fuzz corpus is kept in the Actions cache, so each night starts from the inpu
 
 The soak types, deletes, undoes, formats, moves, scrolls, and switches pages for the whole time. Every minute it forces a garbage collection and reads the heap, the nodes, and the listeners, and it times a fixed burst of keys. It fails when memory or nodes grow by half from the first quarter to the last, when typing slows by half, or when the page crashes or throws. The seed is the run number. The samples are kept for 90 days, with the table in the run summary.
 
-The NVDA job installs Guidepup and NVDA on the runner. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
+The NVDA job installs the pinned Guidepup from `tests/nvda/package-lock.json`, sets up Windows with `guidepup setup`, and downloads NVDA with `guidepup install nvda`. A missing NVDA fails the job with those steps in the message. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
 
 The performance job runs on a hosted runner. It catches large regressions. The budgets in BRAND.md still count only when they pass on the reference laptop.
 
@@ -65,8 +65,9 @@ cargo run --release -p opennote-perf -- bench all --pages 1000 ./perf-scratch
 # The soak for five minutes, with the seed from a failed run
 OPENNOTE_SOAK_MINUTES=5 OPENNOTE_SOAK_SEED=123456 npm run soak
 
-# The NVDA checklist, on Windows with NVDA set up by `npx @guidepup/setup setup`
-npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+# The NVDA checklist, on Windows. Guidepup and its setup tool are pinned in tests/nvda/package.json. `setup` changes
+# the machine's registry and speech settings, so run it only on a machine meant for this; `install` downloads NVDA.
+cd tests/nvda && npm ci && npx guidepup setup --ci && npx guidepup install nvda && cd ../..
 OPENNOTE_NVDA=1 npm run nvda
 ```
 

@@ -1,11 +1,12 @@
 // The NVDA run (A4-42): Guidepup starts NVDA on Windows, this spec opens the web build in a headed browser, walks
 // the checklist in checklist.ts with the keys a person would press, and records what NVDA said. It runs in the
-// nightly workflow, where `npx @guidepup/setup setup --ci` has put NVDA in place and the Guidepup packages are
-// installed. Nowhere else: it skips unless OPENNOTE_NVDA=1 on Windows, because it needs a screen reader and takes
-// over the machine's speech.
+// nightly workflow, where `guidepup setup --ci` and `guidepup install nvda` (run in this folder) have put NVDA in
+// place. Nowhere else: it skips unless OPENNOTE_NVDA=1 on Windows, because it needs a screen reader and takes over
+// the machine's speech.
 //
-// The Guidepup packages are not dependencies of the repository, so nothing else has to install NVDA's tooling. The
-// spec loads them by name when it runs.
+// The Guidepup packages are not dependencies of the repository. They have a package.json and a lock file of their
+// own in this folder (`npm ci` here), so nothing else has to install NVDA's tooling. The spec loads them by name
+// when it runs. A missing NVDA fails with the steps that fix it.
 //
 // The results go to results/nvda.json (every item with what NVDA said) and results/nvda.md (the table).
 
@@ -14,7 +15,7 @@ import { join } from 'node:path';
 import { chromium, expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { browserChannel } from '../browser';
-import { failures, ITEMS, result, table } from './checklist';
+import { explainStartFailure, failures, ITEMS, result, table } from './checklist';
 import type { Item, Result, Run } from './checklist';
 
 /** The part of Guidepup's NVDA class this spec uses. */
@@ -60,7 +61,10 @@ async function setUp(page: Page, item: Item): Promise<void> {
 }
 
 test.describe('NVDA', () => {
-  test.skip(!enabled, 'Needs NVDA: set OPENNOTE_NVDA=1 on Windows after `npx @guidepup/setup setup --ci`.');
+  test.skip(
+    !enabled,
+    'Needs NVDA: set OPENNOTE_NVDA=1 on Windows after `npm ci`, `guidepup setup --ci`, and `guidepup install nvda` in tests/nvda.',
+  );
   test.setTimeout(10 * 60_000);
 
   test('walks the keyboard and screen reader checklist', async () => {
@@ -73,7 +77,9 @@ test.describe('NVDA', () => {
     const results: Result[] = [];
     try {
       await openApp(page);
-      await nvda.start();
+      await nvda.start().catch((error: unknown) => {
+        throw explainStartFailure(error);
+      });
       for (const item of ITEMS) {
         await setUp(page, item);
         await nvda.clearSpokenPhraseLog();

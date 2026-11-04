@@ -293,6 +293,8 @@ jobs:
       - name: Every E2E spec
         env:
           OPENNOTE_E2E_EXE: target/ci/opennote.exe
+          # Each spec keeps a screenshot and the page text of its last moment, with the app's logs (tests/e2e/harness.ts).
+          OPENNOTE_E2E_DIAG: '1'
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
         # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
@@ -406,7 +408,7 @@ jobs:
 
   nvda:
     # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
-    # records what it said (A4-42). The Guidepup packages are installed here, under tests/nvda, not in package.json, so no other job
+    # records what it said (A4-42). The Guidepup packages are installed here from the lock file in tests/nvda, not from package.json, so no other job
     # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
     runs-on: windows-latest
     timeout-minutes: 45
@@ -423,11 +425,19 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Install Guidepup
-        # Into tests/nvda/node_modules, away from the repository's own tree: installing on top of it failed with
-        # "Cannot read properties of null (reading 'edgesOut')". The spec still finds the package from there.
-        run: npm install --prefix tests/nvda --no-save --no-package-lock --no-audit --no-fund @guidepup/guidepup@0.35.0
-      - name: Set up NVDA
-        run: npx --yes @guidepup/setup@0.29.1 setup --ci
+        # From the lock file in tests/nvda, which is a package of its own, away from the repository's tree: installing on
+        # top of it failed with "Cannot read properties of null (reading 'edgesOut')". The spec finds the package from
+        # there. No install scripts run, and the optional recorder (with its ffmpeg download) is left out.
+        run: npm ci --prefix tests/nvda --ignore-scripts --omit=optional --no-audit --no-fund
+      - name: Set up the machine for NVDA
+        # Guidepup 0.35 and later keep the machine setup and the screen reader download apart: "setup" prepares Windows
+        # (registry and speech settings), and "install" downloads the NVDA build in the Guidepup manifest, checks its
+        # checksum, and unpacks it into the cache where Guidepup looks. Without "install", NVDA is not installed and
+        # the first call to nvda.start() fails. Run from tests/nvda so that "install" finds its Guidepup package.
+        working-directory: tests/nvda
+        run: |
+          npx --no-install guidepup setup --ci
+          npx --no-install guidepup install nvda
       - name: Walk the checklist with NVDA
         env:
           OPENNOTE_NVDA: '1'

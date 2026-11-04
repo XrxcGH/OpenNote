@@ -42,9 +42,18 @@ function check(condition: unknown, message: string): asserts condition {
   if (!condition) throw new ContractFailure(message);
 }
 
+/** JSON with the keys of every object in order, so two services that list the same fields differently still match. */
+export function canonicalJson(value: unknown): string {
+  return JSON.stringify(value, (_key, inner: unknown) =>
+    inner && typeof inner === 'object' && !Array.isArray(inner)
+      ? Object.fromEntries(Object.entries(inner).sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0)))
+      : inner,
+  );
+}
+
 function equal(actual: unknown, expected: unknown, what: string): void {
-  const a = JSON.stringify(actual);
-  const e = JSON.stringify(expected);
+  const a = canonicalJson(actual);
+  const e = canonicalJson(expected);
   check(a === e, `${what}: expected ${e}, got ${a}`);
 }
 
