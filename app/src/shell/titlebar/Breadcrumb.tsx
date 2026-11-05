@@ -30,7 +30,8 @@ export function Breadcrumb({ presentation }: { presentation: 'full' | 'icon' | '
           data-after-ellipsis={hiddenCount > 0 && index === hiddenCount ? '' : undefined}
           aria-current={index === titles.length - 1 ? 'location' : undefined}
           data-ink={index === 0 && ink ? '' : undefined}
-          data-notebook-mark={index === 0 && ink ? 'breadcrumb' : undefined}
+          // A crumb cut from the start of a narrow bar is hidden, so its dot is not a mark on screen.
+          data-notebook-mark={index === 0 && ink && hiddenCount === 0 ? 'breadcrumb' : undefined}
           style={index === 0 && ink ? ({ '--crumb-ink': `var(--ink-${ink})` } as CSSProperties) : undefined}
         >
           {title}

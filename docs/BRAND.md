@@ -92,7 +92,7 @@ The Evening theme's surfaces, text, and borders are a neutral charcoal gray, not
 |---|---|---|---|
 | `accent.primary` | `#3B6A4D` moss | `#8FC29D` | Primary buttons, links, active tool |
 | `accent.primarySubtle` | `#E2ECE1` | `#2E3B30` | Selected backgrounds, toggles |
-| `accent.clay` | `#A9502F` clay | `#E59372` | Secondary highlights, the logo's pen tip |
+| `accent.clay` | `#A9502F` clay | `#E59372` | Secondary highlights, the logo's pen tip, the page title's rule when the notebook has no color |
 | `focus.ring` | `#A9502F` | `#E7BA62` | Keyboard focus outline |
 | `status.danger` / `recording` | `#A8342A` | `#F2907F` | Destructive actions, the recording dot |
 | `status.warning` | `#855B0C` | `#E7BA62` | Warnings |
@@ -112,13 +112,15 @@ Three small accent families and one ambient group give the shell its warmth. Eac
 | `accent.night` | `#4A5590` | `#A9B4EC` | The moon icon, night line art |
 | `accent.nightSubtle` | `#E8EAF3` | `#1F2233` | The upper night sky in the evening window |
 | `ambient.canvasTop` | `#FFF0D4` window light | `#1B2036` night sky | The pool of light from the window's corner by day; the top of the evening sky |
-| `ambient.canvasBottom` | `#EAE3D8` (the sunken color) | `#33243A` dusk | Bottom of the evening sky, above the sunset band |
-| `ambient.glow` | `#FCE4B8` window light on the desk | `#45302C` sunset | The warmest light on the canvas: the patch of window light by day, the low sunset band in the evening |
+| `ambient.canvasBottom` | `#EAE3D8` (the sunken color) | `#33243A` dusk | Bottom of the evening sky, above the plum glow |
+| `ambient.glow` | `#FCE4B8` window light on the desk | `#40303A` plum evening glow | The warmest light on the canvas: the patch of window light by day; in the evening, the low plum glow at the horizon and the hills in the evening window |
 | `ambient.spark` | `#F2CF8A` sun disc | `#E7D9B0` starlight | The sun disc and stars only, never text |
 
 Candle, dusk, and night are never status colors and never fill a button, so candle can't be mistaken for `status.warning`. They also never stand alone as a signal.
 
-The ambient washes stay calm: CHECKS holds `ambient.canvasTop`, `ambient.canvasBottom`, and `ambient.glow` to at most 1.5:1 against `surface.sunken` (a `max` ceiling on a contrast pair). The ceiling was 1.3 until the evening sky gained its sunset band, which sits just under 1.5. Every text pairing on these tones keeps the same targets as on the canvas, and the washes only ever show around the page card, never behind text. Under Windows contrast themes the accents become the system text color, and the fills and ambient tokens become the system canvas, so the gradients flatten and the stars disappear.
+In the shell each color family has one job. Moss marks state: what is active or chosen. A notebook's own pen color marks place: which notebook you are in. Clay is the brand's mark: the logo's pen tip, and the page title's rule when the notebook has no color. Candle and night mark the time of day: the sun and moon of the theme toggle. Dusk and the ambient tones are the sky outside the window, and only show around the page card and in the drawings. None of candle, dusk, or night marks state, selection, or place. Forms keep one meaning too: a bar at the start of a row means the row is highlighted or selected, so a notebook's color never takes that form.
+
+The ambient washes stay calm: CHECKS holds `ambient.canvasTop`, `ambient.canvasBottom`, and `ambient.glow` to at most 1.5:1 against `surface.sunken` (a `max` ceiling on a contrast pair). The ceiling was 1.3 until the evening sky gained its glow at the horizon, which sits just under 1.5. The glow is plum: its blue is at or above its green, and its red is no more than 8 above its blue, so it never reads as brown or maroon. The evening window's hills use the same plum. Every text pairing on these tones keeps the same targets as on the canvas, and the washes only ever show around the page card, never behind text. Under Windows contrast themes the accents become the system text color, and the fills and ambient tokens become the system canvas, so the gradients flatten and the stars disappear.
 
 ### Drawing tints
 
@@ -129,7 +131,7 @@ The drawings get their color from five soft tints, one for each motif color, so 
 | `art.moss` | `#C8DCC6` | `#3E5A46` | Leaves, vines, the day window's hills, a moss spine |
 | `art.clay` | `#EDC3AF` | `#6A4332` | Pots and the candle dish |
 | `art.candle` | `#F5D59C` | `#6A4E27` | The glow around a flame, the sunset band, an amber spine |
-| `art.dusk` | `#EDC0C9` | `#62404D` | The rose of the sunset band, the evening hills, a rose spine |
+| `art.dusk` | `#EDC0C9` | `#62404D` | The rose of the sunset band, a rose spine |
 | `art.night` | `#C7CEEA` | `#383F6C` | The night window's horizon, an indigo spine |
 
 A notebook's pages use `accent.candleSubtle` as warm paper, and the night window's upper sky uses `accent.nightSubtle`. The lines on top stay `border.control`, so a fill never hides an edge. Under Windows contrast themes the tints become the system canvas, and the drawings go back to plain outlines.
@@ -166,6 +168,12 @@ The rules that keep the app pretty without pulling the eye from the work:
 ### Ink colors
 
 Ink is content, not interface, so it has its own palette. Each pen has a light and a dark value, and notes store the pen name. That way handwriting stays readable when the theme changes. The default pens are Ink, Indigo, Brick, Fern, Plum, Amber and Walnut, and each is at least 4.2:1 against the page in both themes. Highlighters (Honey, Mint, Rose, Apricot, Lilac) are 40% transparent and draw behind ink. Custom colors are allowed; in dark mode the app lightens them until they reach 3:1.
+
+**Notebook accents.** A notebook's color is one of the seven pens. The shell may repeat it in four small marks: the chip in the tree, the dot in the breadcrumb, a 2-pixel top edge on the active page tab, and the 48-by-2-pixel rule under the page title.
+
+It is never a fill behind text, never a button or icon color, never the bar at the start of a row, and never marks state. It is never a dot in a list row either, because there a dot is the page's or section's own color. Each mark sits beside the notebook's or the page's name, so color is never the only signal.
+
+In the Evening theme Fern matches the moss accent and Brick matches the danger color, which is why the name carries the meaning. A notebook without a color gets no marks, and its title rule stays clay. Under Windows contrast themes the marks use the system text color or disappear, and the chips keep their outline.
 
 Color is never the only signal. Pens show their name on hover and in screen reader labels, and status always pairs color with an icon or text.
 
@@ -258,7 +266,13 @@ Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.
 
 ### Icons
 
-Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut. A button that shows its name gets a tooltip only to add its shortcut, never one that repeats its label.
+Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle button (`IconButton`, `ui/Button.tsx` line 79) and for the current screen in the compact bottom bar; a pressed tool in the command bar keeps the Regular weight. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut. A button that shows its name gets a tooltip only to add its shortcut, never one that repeats its label.
+
+In the command bar, a tool's icon comes before its name. The common formatting commands show their icon only, with a tooltip that gives the name and shortcut: bold, italic, underline, strikethrough, highlight, subscript, superscript, clear formatting, the three lists, promote, and demote. With touch, a long press shows the tooltip and runs nothing. Undo lives in the title bar, so the command bar lists it under More.
+
+Other tools show their icon and name in the Wide and Expanded size classes and their name alone in Medium. A group's tools all have icons or none do, and the Draw tools keep their names alone, with tighter padding, so the pens stay in view. Bar icons use the text colors, never an accent.
+
+A pressed tool keeps its Regular icon and shows the selected fill inside a thin control-colored outline. A pressed tool with a name also turns its name semibold. So nothing flashes while you type, and nothing looks like an underline. Each command's icon is listed once, in `app/src/ui/commandIcons.ts` and `commandIcons.lazy.ts`.
 
 ### Logo
 
@@ -293,7 +307,8 @@ A drawing never moves to a pane that has none, and the extra motifs live inside 
 
 - The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The card itself stays plain paper.
 - By day, warm light pools from the window's top corner, and a soft patch of it, wider than it is tall, lies on the desk. The patch stops growing at 420 by 300 pixels, so a wide window doesn't stretch it. The setup backdrop keeps only the pool, so the steps stay calm.
-- In the evening, the sky deepens from night indigo through dusk to a low sunset band at the horizon. Twenty-five stars sit at the top, 0.75 to 1.25 pixels in radius at 45 to 70 percent opacity, with three larger ones, up to 1.8 pixels, at up to 80 percent. They are drawn at 1:1 at any width, and each stays above the card's top edge, at least 5 pixels clear of it, so none looks like a speck on the card.
+- In the evening, the sky deepens from night indigo through dusk to a low plum glow at the horizon. Twenty-five stars sit at the top, 0.75 to 1.25 pixels in radius at 45 to 70 percent opacity, with three larger ones, up to 1.8 pixels, at up to 80 percent. They are drawn at 1:1 at any width, and each stays above the card's top edge, at least 5 pixels clear of it, so none looks like a speck on the card.
+- When the system asks for more contrast, the canvas is flat `surface.sunken` with no stars, and command bar dividers use `border.control`.
 
 No 3D renders, gradient blobs, stock photos, or mascots.
 
@@ -349,16 +364,16 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 |---|---|
 | Buttons | Primary (moss fill), secondary (outline), quiet (text only), danger (clay-red text; fill only in confirmations). One primary button per view. |
 | Text fields | `surface.sunken` fill, `border.control` outline, label above, help, or error text below. |
-| Command bar | Slim bar with Home, Insert, Draw, and View tabs, familiar to OneNote users. It collapses into a "More" menu when narrow. |
+| Command bar | Slim bar with Home, Insert, Draw, and View tabs, familiar to OneNote users. It collapses into a "More" menu when narrow. Tools show their icon and name, and the common formatting commands show their icon only (see section 8). Groups are separated by a short 20-pixel divider. |
 | Pen palette | Floating, draggable, and collapsible. It shows the active pen, color, and width. Left-handed mode mirrors it. |
-| Navigation tree | Notebooks, sections, and pages with color chips. Drag to reorder. Full keyboard support with arrow keys. |
+| Navigation tree | Notebooks, sections, and pages with color chips. Drag to reorder. Full keyboard support with arrow keys. The selected page in the page list keeps its fill and its own chip; the notebook's color is shown by the breadcrumb, the active tab and the title rule, not in the list. Under Windows contrast themes the selected row uses the system highlight. |
 | Page canvas | Paper backgrounds (plain, lined, dot grid, graph, Cornell) drawn with `border.subtle`. Page breaks are dashed lines with the page number in `text.muted`. |
 | Recording bar | Pinned above the page, with a pulsing dot, elapsed time, and pause and stop buttons. Timestamps link to ink and text. |
 | Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch, with a hidden description of how to reach Light, Dark, and Match Windows. |
 | Choice cards | A radio group of cards. The cards of one choice share one width, and a row that wraps splits evenly, never leaving one card alone. |
 | Theme cards | Three cards in a radio group named "Theme", each with a small live preview that screen readers and Tab skip. Holding an arrow key moves one step. |
 | Empty states | One small drawing above one plain sentence, on a page card. The sentence carries the meaning; the drawing is only company. |
-| Ambient canvas | The desk behind the page card: window light in Daylight, a dusk sky with a few stars in Evening. Static, painted once, and kept within 1.3:1 of `surface.sunken`. Flat under Windows contrast themes. |
+| Ambient canvas | The desk behind the page card: window light in Daylight, a dusk sky with a few stars in Evening. Static, painted once, and kept within 1.5:1 of `surface.sunken`. Flat under Windows contrast themes. |
 | Sync status | A small icon with a text tooltip in the title bar: saved, syncing, offline, or needs attention. Never a blocking dialog. |
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
 | Update notice | A small "Update ready" chip in the title bar, with release notes on hover or tap. "Restart to update" applies it; otherwise it applies the next time the app closes. Never a pop-up, never mid-task. |
@@ -369,9 +384,9 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 
 OpenNote meets the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA (the level most accessibility laws require). Body text goes further and meets the AAA (highest level) contrast of 7:1.
 
-- **Keyboard:** everything works without a mouse. Focus is always visible (a 2-pixel `focus.ring` with a 2-pixel gap). Tab order follows reading order. Shortcuts are listed with Ctrl+/ and can be changed.
+- **Keyboard:** everything works without a mouse. Keyboard focus is always visible (a 2-pixel `focus.ring` with a 2-pixel gap). The one exception is focus the app moves itself, such as a dialog's first control, a Settings heading, or a setup step's first control. After a click or tap or before any input, it shows no ring until the next Tab, arrow key, or Escape (in a text field, where arrows move the caret, Tab, or Escape). Focus that follows a key press always shows the ring. Tab order follows reading order. Shortcuts are listed with Ctrl+/ and can be changed.
 - **Screen readers:** every control has a name, role, and state for Narrator and NVDA (a free screen reader). Ink regions are announced with their recognized text. Recording and sync changes are announced politely.
-- **Vision:** text scales to 200% without losing content. Windows contrast themes switch the app to system colors. Color is never the only signal.
+- **Vision:** text scales to 200% without losing content. Windows contrast themes switch the app to system colors. Color is never the only signal. Pressed and selected things show a fill plus a second signal that isn't color: a thin outline around every pressed command bar tool, semibold text on a pressed tool with a name, and semibold text on the active page tab. Under Windows contrast themes they use the system highlight colors. When the system asks for more contrast, the canvas turns flat.
 - **Motion:** the app follows the reduced-motion setting (see Motion).
 - **Hearing:** recordings can be transcribed on the device, and transcripts sync to the notes.
 - **Motor:** targets meet the sizes in section 6. Left-handed mode is available. No action needs a timed or multi-finger gesture.
@@ -383,10 +398,11 @@ Every pull request that changes UI goes through automated accessibility tests an
 
 - Light blue on black, neon accents, and "hacker" dark themes.
 - Pure black (`#000000`) or pure white (`#FFFFFF`) as large surfaces. CHECKS warns about both.
-- Purple-to-blue gradients, glowing edges, glassmorphism, and heavy blur.
+- Saturated purple-to-blue gradients, glowing edges, glassmorphism, and heavy blur. The evening sky is the one gradient: muted indigo, dusk, and plum, at most 33% saturation, painted once, and held to 1.5:1 against `surface.sunken`.
 - Bouncy or elastic easing, parallax, auto-playing media, and confetti.
 - Spinners that appear instantly, skeleton shimmer and fake progress.
 - Icon-only toolbars without tooltips; gray text that fails contrast.
+- Color-coded tabs, tool groups, or icons; color in the shell is for state (moss) and place (the notebook).
 - Wallpapers, textures, or decoration behind text or the writing surface; twinkling, flickering, or drifting decoration; illustrations in menus, dialogs, or toasts.
 - Dark patterns: pre-checked upsells, hidden "No thanks" links, nagging sign-in prompts.
 - AI features that start on their own or send data without saying so.

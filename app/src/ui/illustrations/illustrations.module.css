@@ -169,6 +169,13 @@
     display: block;
   }
 
+  /* With more contrast the canvas is flat, so there is no sky to hold stars. */
+  @media (prefers-contrast: more) {
+    :global(:root[data-theme='dark']) .stars {
+      display: none;
+    }
+  }
+
   /* "Always paper white" lights the whole page area, so there is no night sky to put them in. */
   :global(:root[data-page-color='paper']) .stars {
     display: none;

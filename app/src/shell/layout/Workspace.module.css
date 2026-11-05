@@ -147,6 +147,14 @@
         linear-gradient(to bottom, var(--color-ambient-canvas-top) 10%, var(--color-ambient-canvas-bottom) 88%);
   }
 
+  /* When the system asks for more contrast, the canvas is flat, with no sky or window light behind the page. */
+  @media (prefers-contrast: more) {
+    .page,
+    :global(:root[data-theme='dark']) .page {
+      background: var(--color-surface-sunken);
+    }
+  }
+
   .page:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: calc(-1 * var(--size-focus-ring-width));
