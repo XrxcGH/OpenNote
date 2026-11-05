@@ -123,3 +123,54 @@ describe('the ambient canvas', () => {
     expect(on('ambient.canvasBottom')).toEqual(on('ambient.canvasTop'));
   });
 });
+
+function rgb(hex: string): [number, number, number] {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+function hue([r, g, b]: [number, number, number]): number {
+  const [max, min] = [Math.max(r, g, b), Math.min(r, g, b)];
+  const d = max - min;
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+}
+
+function luminance(hex: string): number {
+  const lin = rgb(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+}
+
+const ratio = (a: string, b: string) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+describe('the plum evening glow', () => {
+  it('is plum, not brown or maroon, and still visible against the evening sky', () => {
+    const { glow, canvasBottom } = tokens.color.dark.ambient;
+    const [r, g, b] = rgb(glow);
+    expect(hue([r, g, b])).toBeGreaterThanOrEqual(280);
+    expect(hue([r, g, b])).toBeLessThanOrEqual(340);
+    expect(b).toBeGreaterThanOrEqual(g);
+    expect(r - b).toBeLessThanOrEqual(8);
+    expect(ratio(glow, canvasBottom)).toBeGreaterThanOrEqual(1.15);
+  });
+
+  it('is drawn in the regenerated design image', () => {
+    const svg = readFileSync(join(__dirname, '../../../docs/design/images/03-new-page-dark.svg'), 'utf8');
+    expect(svg).toContain('#40303A');
+    expect(svg).not.toContain('#45302C');
+  });
+});
+
+describe('notebook pens on the page', () => {
+  it('measures each of the seven pens against the page color', () => {
+    const pens = ['Ink', 'Indigo', 'Brick', 'Fern', 'Plum', 'Amber', 'Walnut'];
+    for (const pen of pens) {
+      expect(tokens.contrast).toContainEqual({ fg: `ink.pens.${pen}`, bg: 'surface.page', min: 3 });
+    }
+  });
+});

@@ -41,6 +41,11 @@
     fill: var(--color-art-dusk);
   }
 
+  /* The evening window's hills are the plum glow of the canvas below them, not the rose of the book spines. */
+  .moon ~ .fillDusk {
+    fill: var(--color-ambient-glow);
+  }
+
   .fillNight {
     fill: var(--color-art-night);
   }
