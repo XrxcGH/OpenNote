@@ -135,6 +135,14 @@ pub fn markdown(data: &[u8]) {
     run_file(import_markdown_folder, "note.md", data);
 }
 
+/// The Markdown of an OpenNote page (version 2): the reader, then the writer, then the reader again on what the
+/// writer wrote. Invalid UTF-8 is read lossily, as a note's text is always a string.
+pub fn page_markdown(data: &[u8]) {
+    let text = String::from_utf8_lossy(data);
+    let written = crate::doc::write::to_markdown(&crate::doc::parse::parse_page(&text).blocks);
+    let _ = crate::doc::parse::parse_page(&written);
+}
+
 /// A CSV file: the reader, then the import that infers column types.
 pub fn csv(data: &[u8]) {
     let _ = crate::csv::parse_bytes(

@@ -7,15 +7,16 @@ Thirteen tool windows work engineering, science, math, earth science, and reason
 ## Open a kit
 
 - Press Ctrl+K and type the kit's name, such as "solid mechanics" or "physics tools".
-- Or type a tool's subject, such as "Tsai-Wu", "Bode", or "Lambert". Each tool has its own command, which opens the kit on that tab.
-- The window remembers the last tab and what you typed in each tool.
-- Open in its own window moves the kit into a window of its own, as for the other tools.
+- Or type a tool's subject or the name on its tab, such as "Tsai-Wu", "Bode", "Cams", or "Lambert". Each tool has its own command, which opens the kit on that tab.
+- The kit's own command reopens it on the tab you last used, with what you typed in each tool.
+- Open in its own window moves the kit into a window of its own, as for the other tools. If a window cannot open, a message says so, and the kit stays where it is.
 
 ## Use a tool
 
 - Pick SI or US units. Switching keeps the values; a unit of the wrong kind is marked on its field.
 - Pick an example to fill in a ready-made problem.
-- Use the arrow keys, Home, and End to move between tabs.
+- Use the arrow keys, Home, and End to move between tabs. The same keys work in the tab lists of the chemistry calculators, the property tables, the reference tables, and the LaTeX snippets.
+- Tabs, menus, and fields are 44 px tall in touch density, in every kit window.
 - Insert puts the work into the page: the answer line, the equation, the results table, the worked steps, or a picture of the plot. Each Insert adds below what is already there (it never replaces an earlier insert) and is its own undo step. A tool with no worked steps does not list them.
 
 ## Live calculation blocks

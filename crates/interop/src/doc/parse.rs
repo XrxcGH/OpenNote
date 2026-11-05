@@ -3,6 +3,8 @@
 
 mod clean;
 mod highlight;
+pub(super) mod tags;
+mod v2;
 
 use pulldown_cmark::{CodeBlockKind, Event, LinkType, Options, Parser, Tag, TagEnd};
 
@@ -44,16 +46,42 @@ pub const WIKI_PREFIX: &str = "wiki:";
 /// walks, writers, and drop are recursive, so a note of a hundred thousand `>` would overflow the stack.
 pub const MAX_NESTING: usize = 64;
 
-/// Reads Markdown.
+/// Reads Markdown from other apps and files. Raw HTML that OpenNote knows becomes marks, and other tags are
+/// dropped with their text kept.
 pub fn parse(markdown: &str, soft: SoftBreaks) -> Parsed {
+    read(markdown, soft, None)
+}
+
+/// Reads the Markdown of an OpenNote page: a text block or a table cell (spec 7). The tags of spec 7.4 and 7.9
+/// pair within their paragraph and become marks, foreign marks keep tags from later versions, `[^ID]` is a
+/// footnote reference, and any other raw HTML is literal text (`R-INL-11`).
+pub fn parse_page(markdown: &str) -> Parsed {
+    read(markdown, SoftBreaks::Space, Some(true))
+}
+
+/// Reads the Markdown of a note, a comment, or a cell note, where `[^ID]` is literal text (`R-FN-4`).
+pub fn parse_note(markdown: &str) -> Parsed {
+    read(markdown, SoftBreaks::Space, Some(false))
+}
+
+/// Reads Markdown. `page` is `None` for Markdown from elsewhere, or whether footnote references are read in a
+/// page's Markdown.
+fn read(markdown: &str, soft: SoftBreaks, page: Option<bool>) -> Parsed {
     let options = Options::ENABLE_STRIKETHROUGH
         | Options::ENABLE_TASKLISTS
         | Options::ENABLE_TABLES
         | Options::ENABLE_WIKILINKS
         | Options::ENABLE_MATH;
-    let mut builder = Builder::default();
+    let mut builder = Builder {
+        page: page.is_some(),
+        references: page == Some(true),
+        ..Builder::default()
+    };
     builder.frames.push(Frame::Container(Kind::Root, Vec::new()));
-    for event in Parser::new_ext(markdown, options) {
+    for (event, range) in Parser::new_ext(markdown, options).into_offset_iter() {
+        if builder.page && builder.page_event(&event, &range, markdown) {
+            continue;
+        }
         builder.event(event);
     }
     builder.finish(soft)
@@ -92,6 +120,14 @@ struct Builder {
     notes: Notes,
     /// Quotes, lists, and items opened past [`MAX_NESTING`], whose content goes to the deepest container kept.
     too_deep: usize,
+    /// Whether this is a page's Markdown, whose inline events collect in `evs` (see `v2.rs`).
+    page: bool,
+    /// Whether `[^ID]` is a footnote reference.
+    references: bool,
+    /// The inline events of the paragraph so far, in a page's Markdown.
+    evs: Vec<v2::Ev>,
+    /// The keys of the Markdown marks open in `evs`, innermost last.
+    md_open: Vec<usize>,
 }
 
 impl Builder {
@@ -109,7 +145,7 @@ impl Builder {
             size: html.size.clone().or_else(|| md.size.clone()),
             script: html.script.or(md.script),
             code: md.code || html.code,
-            math: false,
+            ..Marks::default()
         }
     }
 
@@ -237,6 +273,17 @@ impl Builder {
             }
             TagEnd::BlockQuote(_) => self.end_quote(),
             TagEnd::CodeBlock => self.end_code(),
+            TagEnd::HtmlBlock if self.page => {
+                // R-INL-11: raw HTML in a page is literal text.
+                let html = self.html_block.take().unwrap_or_default();
+                for (i, line) in html.trim_end_matches('\n').split('\n').enumerate() {
+                    if i > 0 {
+                        self.evs.push(v2::Ev::Soft);
+                    }
+                    self.evs.push(v2::Ev::Lit(line.to_owned()));
+                }
+                self.flush();
+            }
             TagEnd::HtmlBlock => {
                 let html = self.html_block.take().unwrap_or_default();
                 self.html(&html);
@@ -317,7 +364,7 @@ impl Builder {
     fn end_table(&mut self) {
         let rows = std::mem::take(&mut self.table);
         if self.frames.len() == 1 {
-            self.add_block(Block::Table { header: true, rows });
+            self.add_block(Block::table(true, rows));
             return;
         }
         self.notes.tables_flattened += 1;
@@ -337,6 +384,10 @@ impl Builder {
     }
 
     fn take_inlines(&mut self) -> Vec<Inline> {
+        if self.page && !self.evs.is_empty() {
+            let inlines = self.page_inlines();
+            self.cur.extend(inlines);
+        }
         self.revert_open_highlight();
         std::mem::take(&mut self.cur)
     }

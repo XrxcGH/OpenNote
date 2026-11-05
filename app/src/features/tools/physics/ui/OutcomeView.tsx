@@ -2,7 +2,8 @@
 // the window's unit system, the governing equation, the worked steps, the figure, the assumptions, and the Insert
 // buttons. A problem with the inputs shows instead, saying which field to fix.
 import '../text';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import 'katex/dist/katex.min.css';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
@@ -17,8 +18,31 @@ import styles from './physics.module.css';
 
 type Render = (latex: string, options?: { displayMode?: boolean }) => { ok: true; html: string } | { ok: false };
 
-function Equation({ latex }: { latex: string }) {
+/** How far a wide equation shrinks to fit its box; past that it scrolls sideways inside it. */
+const LEAST_FIT = 0.6;
+
+/** Shrinks the text of a box whose content is wider than the box so that it fits, instead of scrolling sideways. */
+function fitWidth(el: HTMLElement): void {
+  el.style.fontSize = '';
+  if (el.scrollWidth > el.clientWidth + 1)
+    el.style.fontSize = `${Math.max(LEAST_FIT, el.clientWidth / el.scrollWidth)}em`;
+}
+
+function useFitWidth(box: RefObject<HTMLElement | null>, content: string | undefined): void {
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    fitWidth(el);
+    if (typeof ResizeObserver === 'undefined') return;
+    const watch = new ResizeObserver(() => fitWidth(el));
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [box, content]);
+}
+
+export function Equation({ latex }: { latex: string }) {
   const [render, setRender] = useState<Render | null>(null);
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let live = true;
     void import('../../../math').then((math) => live && setRender(() => math.renderLatex as Render));
@@ -27,8 +51,9 @@ function Equation({ latex }: { latex: string }) {
     };
   }, []);
   const drawn = render?.(latex, { displayMode: true });
+  useFitWidth(box, drawn?.ok ? drawn.html : undefined);
   if (!drawn?.ok) return null;
-  return <div className={styles.equation} dangerouslySetInnerHTML={{ __html: drawn.html }} />;
+  return <div ref={box} className={styles.equation} dangerouslySetInnerHTML={{ __html: drawn.html }} />;
 }
 
 function ResultTable({ rows }: { rows: readonly ShownRow[] }) {

@@ -109,6 +109,14 @@ import { textCommands } from './textCommands';
 import { textFonts } from './textFonts';
 import { textStyles } from './textStyles';
 import { textHome } from './textHome';
+import { textPane } from './textPane';
+import { textRuler } from './textRuler';
+import { textSymbols } from './textSymbols';
+import { textLanguage } from './textLanguage';
+import { textNotes } from './textNotes';
+import { textReview } from './textReview';
+import { textLayout } from './textLayout';
+import { textFind } from './textFind';
 
 export const en = {
   common,
@@ -219,4 +227,12 @@ export const en = {
   textFonts,
   textStyles,
   textHome,
+  textPane,
+  textRuler,
+  textSymbols,
+  textLanguage,
+  textNotes,
+  textReview,
+  textLayout,
+  textFind,
 } as const;

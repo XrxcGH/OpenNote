@@ -43,6 +43,15 @@ export function useRovingTools(ref: RefObject<HTMLElement | null>) {
     const step = STEPS[event.key];
     const tools = toolsIn(ref.current);
     const index = tools.indexOf(document.activeElement as HTMLElement);
+    // A tool that opens a menu opens it on Arrow Down too, as a menu button does elsewhere (Beta 8 walk A2-A12-5).
+    const tool = tools[index];
+    if (event.key === 'ArrowDown' && tool?.getAttribute('aria-haspopup') === 'menu') {
+      if (tool.getAttribute('aria-expanded') !== 'true') {
+        event.preventDefault();
+        tool.click();
+      }
+      return;
+    }
     if (!step || index === -1) return;
     event.preventDefault();
     const next = tools[step(index, tools.length)];

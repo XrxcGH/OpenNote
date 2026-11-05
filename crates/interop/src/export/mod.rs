@@ -19,7 +19,7 @@ mod single;
 mod tables;
 mod word;
 
-pub use convert::Resolver;
+pub use convert::{page_to_document, text_data, Document, Resolver};
 pub use files::{export_files, export_files_with, Exported, Format};
 pub use latex::{
     export_latex, export_latex_with, latex_preview, Citation as LatexCitation, DateChoice as LatexDate,
