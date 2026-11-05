@@ -1,19 +1,30 @@
 # ADR 0083: Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity
 
-- Status: Proposed
-- Date: 2026-11-01
+- Status: Accepted for the writer (Beta 10). The reader half lands with the Word import lane.
+- Date: 2026-11-04
 
 ## Context
 
-The Word export (`crates/interop/src/docx/`, 952 lines) and import (`crates/interop/src/import/word/`, 2,195 lines) are hand-written over the crate's own ZIP and XML code. They write 9 run properties and read 8. They also disagree on sizes: `large` shows as 15 pt and exports as 14 pt. The owner wants every format to round-trip.
+The Word export (`crates/interop/src/docx/`, 952 lines) and import (`crates/interop/src/import/word/`, 2,195 lines) are hand-written over the crate's own ZIP and XML code. They wrote 9 run properties and read 8. They also disagreed on sizes: `large` showed as 15 pt and exported as 14 pt. Every export wrote Letter paper, whatever the page's paper was. The owner wants every format to round-trip.
 
 ## Decision
 
-We will extend the existing writer and reader rather than adopt a library.
+We extend the existing writer and reader rather than adopt a library.
 
-- The writer gains complete `w:rPr` and `w:pPr`, `styles.xml` from the style sheets, `numbering.xml` per list definition, `fontTable.xml`, `theme1.xml`, `footnotes.xml`, `endnotes.xml`, `comments.xml` with `commentsExtended.xml`, tracked changes, headers and footers with `PAGE` and `NUMPAGES` fields, page setup from the page's paper, page breaks, language, and bidi.
-- The reader resolves styles in ECMA-376 order with toggle-property semantics, theme fonts and colors, numbering overrides, notes, comments, and tracked changes.
-- Exact values are tested against ECMA-376 units and against fixture files saved by Word and Google Docs.
+- The writer writes every run mark of format version 2 (`w:rPr`) and every `data.paras` key (`w:pPr`).
+- `styles.xml` comes from the notebook's styles with a page's own sheet over them. `numbering.xml` has one `w:abstractNum` per list definition and a `w:lvlOverride` per restart. `theme1.xml` comes from the notebook's and page's `theme`, and `fontTable.xml` names every font with its class and pitch.
+- Notes go to `footnotes.xml` and `endnotes.xml`. Comments go to `comments.xml`, with replies and resolved state in `commentsExtended.xml`. Suggestions are tracked changes: `w:ins`, `w:del`, and `w:rPrChange`.
+- Each page is a section with its paper, margins, orientation, and page numbers. Its saved header and footer use `PAGE`, `NUMPAGES`, and `DATE` fields, with a first-sheet variant. A text block with columns is a continuous section of its own. Break blocks are page or column breaks.
+- Children of each element are written in the order of the ECMA-376 sequence. Values convert exactly: half-points, twips, eighths of a point, and 240ths of a line.
+- A weight other than regular and bold has no Word property. The writer writes `w:b` from 600 up, and names the device's face (such as "Segoe UI Semibold") when the caller passes the device's face list.
+- Font files are never embedded by default. On request, only the bundled fonts under the SIL Open Font License or the Apache License that the document uses are embedded, obfuscated as ECMA-376 Part 1, 17.8.1 requires. A font whose OS/2 `fsType` restricts embedding is refused.
+- "Remove personal information" replaces every author with "Author", drops dates from comments, changes, and the document properties, and sets Word's `removePersonalInformation` and `removeDateAndTime`.
+- The reader resolves styles in ECMA-376 order with toggle-property semantics, theme fonts and colors, numbering overrides, notes, comments, and tracked changes. A named face such as "Segoe UI Semibold" maps back to the family and weight.
+- Known-answer tests take their values from ECMA-376 units and its enumerations, worked by hand (`crates/interop/tests/fixtures/word-v2/export/known-xml.json`).
+
+### Schema validation (owner decision 11)
+
+The ECMA-376 schema files are not vendored. Rust has no mature XSD validator, a binding to libxml2 would add a C dependency only for a test, and the schemas add several megabytes of fixtures. Decision 11 named the fallback: a hand-written subset. The test transcribes the sequences of the complex types the writer uses (`CT_RPr`, `CT_PPr`, `CT_SectPr`, `CT_Style`, `CT_Settings`, `CT_Font`, `CT_Lvl`, numbering, tables, and the DrawingML theme), the enumerations of the values it writes, and the counts the theme needs. It checks every written part for order, enumerations, colors, declared prefixes, and well-formed XML.
 
 ## Options considered
 
@@ -25,4 +36,4 @@ We will extend the existing writer and reader rather than adopt a library.
 
 ## Consequences
 
-The interop document model (`crates/interop/src/doc.rs`) grows to carry every format. A schema-validation test needs the ECMA-376 transitional schemas as test fixtures (PLAN.md owner decision 11). Equations as OMML stay with the math design, through a hook in the writer.
+The interop document model (`crates/interop/src/doc.rs`) carries every format. The export takes options (`WordOptions`): the device's faces, fonts to embed, and removing personal information. The app passes the defaults until the export dialog offers them. Word has one set of styles per file, so a page's own style sheet applies when one page is exported; a larger export uses the notebook's styles and says so in its report. Equations as OMML stay with the math design, through a hook in the writer.
