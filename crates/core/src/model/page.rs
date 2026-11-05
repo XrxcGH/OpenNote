@@ -138,17 +138,22 @@ pub struct FormatInfo {
     pub version_read: u32,
     /// The file's `minReaderVersion`.
     pub min_reader: u32,
+    /// The file's `minWriterVersion`, or its `formatVersion` when the key is missing or invalid (spec 15.1,
+    /// `R-VER-3`).
+    pub min_writer: u32,
     /// Whether the file may be changed.
     pub access: Access,
     /// Problems the reader worked around.
     pub warnings: Vec<Warning>,
 }
 
+/// A file made in memory reads as version 1: a writer stamps it with the version its content needs (spec 15.6).
 impl Default for FormatInfo {
     fn default() -> FormatInfo {
         FormatInfo {
-            version_read: crate::FORMAT_VERSION,
+            version_read: crate::FIRST_FORMAT_VERSION,
             min_reader: crate::MIN_READER_VERSION,
+            min_writer: crate::FIRST_FORMAT_VERSION,
             access: Access::ReadWrite,
             warnings: Vec::new(),
         }

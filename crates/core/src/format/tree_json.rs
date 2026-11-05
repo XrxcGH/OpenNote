@@ -50,7 +50,7 @@ pub fn read_section(bytes: &[u8], limits: &Limits) -> Result<SectionFile, Format
 
 /// Writes `section.json` in canonical form.
 pub fn write_section(file: &SectionFile) -> Vec<u8> {
-    let mut obj = header::start(kinds::SECTION);
+    let mut obj = header::start(kinds::SECTION, header::Stamp::of_other_file(&file.format));
     obj.put("id", Json::string(file.id.to_string()))
         .put("title", Json::str(&file.title))
         .opt("color", file.color.as_ref().map(|c| Json::string(c.to_text())))
@@ -94,7 +94,7 @@ pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, Form
 
 /// Writes `notebook.json` in canonical form.
 pub fn write_notebook(file: &NotebookFile) -> Vec<u8> {
-    let mut obj = header::start(kinds::NOTEBOOK);
+    let mut obj = header::start(kinds::NOTEBOOK, header::Stamp::of_other_file(&file.format));
     obj.put("id", Json::string(file.id.to_string()))
         .put("title", Json::str(&file.title))
         .opt("color", file.color.as_ref().map(|c| Json::string(c.to_text())))

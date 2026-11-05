@@ -2,7 +2,10 @@
 
 mod blocks;
 mod data;
+pub mod inline;
 mod parts;
+pub mod stamp;
+pub mod values;
 mod view;
 
 use std::collections::{BTreeMap, HashSet};
@@ -69,6 +72,7 @@ pub fn read_page(bytes: &[u8], limits: &Limits) -> Result<ReadPage, FormatError>
 
 /// Validates a page as read, and decides whether it may be changed.
 fn check(mut page: Page, mut info: FormatInfo, mut warnings: Vec<Warning>, limits: &Limits) -> ReadPage {
+    warnings.splice(0..0, std::mem::take(&mut info.warnings));
     let report = validate_page(&page, limits);
     if page.encryption.is_some() {
         restrict(&mut info, ReadOnlyReason::Encrypted);
@@ -88,7 +92,7 @@ fn check(mut page: Page, mut info: FormatInfo, mut warnings: Vec<Warning>, limit
 /// `view.readingOrder` keeps only IDs of blocks on the page, once each (spec 6.2). Everything else is written
 /// as the page holds it.
 pub fn write_page(page: &Page) -> Vec<u8> {
-    let mut obj = header::start(kinds::PAGE);
+    let mut obj = header::start(kinds::PAGE, stamp::page_stamp(page));
     let mut seen = HashSet::new();
     let reading: Vec<_> = page
         .view

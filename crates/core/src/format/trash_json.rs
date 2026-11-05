@@ -78,7 +78,7 @@ fn read_origin(kind: TrashKind, value: Value, warnings: &mut Vec<Warning>) -> Re
 
 /// Writes `item.json` in canonical form.
 pub fn write_trash_item(file: &TrashItemFile) -> Vec<u8> {
-    let mut obj = header::start(kinds::TRASH_ITEM);
+    let mut obj = header::start(kinds::TRASH_ITEM, header::Stamp::of_other_file(&file.format));
     obj.put("id", Json::string(file.id.to_string()))
         .put("itemKind", Json::str(file.kind.name()))
         .put("title", Json::str(&file.title))

@@ -8,6 +8,7 @@ use std::collections::HashSet;
 
 use crate::format::markdown::{outgoing_links, LinkTarget};
 use crate::format::names::check_asset_file_name;
+use crate::format::page_json::stamp::BREAK_TYPE;
 use crate::id::{AssetId, Id};
 use crate::limits::Limits;
 use crate::model::{Block, BlockData, Page, TableData, TextData, Warning};
@@ -127,6 +128,16 @@ fn check_block(page: &Page, block: &Block, limits: &Limits, ids: &mut HashSet<Id
         BlockData::File(file) => asset(file.asset, report),
         BlockData::Table(table) => check_table(table, limits, &owner, report),
         BlockData::Ink(_) => {}
+        BlockData::Other(other) if &*other.type_name == BREAK_TYPE => {
+            let exact = block
+                .fallback
+                .as_ref()
+                .is_some_and(|f| f.markdown == "---" && f.image.is_none() && f.extra.is_empty());
+            if !exact {
+                let detail = format!("{owner}: a break's fallback is exactly {{\"markdown\": \"---\"}} (R-BRK-2)");
+                report.warn("block.breakFallback", detail);
+            }
+        }
         BlockData::Other(other) => match &other.unreadable {
             Some(reason) => report.warn("block.unreadable", format!("{owner}: {reason}")),
             None if block.fallback.is_none() => report.warn("block.fallback", format!("{owner} has no fallback")),
