@@ -74,6 +74,15 @@ test.describe('pressed tools', () => {
   });
 });
 
+test('shows the selected page row with the system highlight in a contrast theme @forced', async ({ page }) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+  await openPage(page);
+  const row = page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' });
+  await expect(row).toHaveAttribute('aria-selected', 'true');
+  const highlight = await paint(page, 'Highlight', 'background-color');
+  expect(await row.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe(highlight);
+});
+
 test('draws each group divider 20 px tall, short of the bar', async ({ page }) => {
   await openPage(page);
   const dividers = await toolbar(page, 'Home')
@@ -225,8 +234,10 @@ test('paints the evening horizon plum, not maroon', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await openScreen(page, byId('workspace.empty'), { size: 'wide', theme: 'dark' });
   await settle(page);
-  const [, g, b] = await pixel(page, 720, 896);
+  const [r, g, b] = await pixel(page, 720, 895);
+  // Plum has blue at or above green and a red only a little above its blue. The old maroon had red 20 above blue.
   expect(b).toBeGreaterThanOrEqual(g);
+  expect(r - b).toBeLessThanOrEqual(8);
 });
 
 test.describe('more contrast', () => {
@@ -282,25 +293,28 @@ test.describe('focus the app moves', () => {
   test('a dialog opened by a script click shows no ring until Tab', async ({ page }) => {
     await openPage(page);
     await page.getByRole('tab', { name: 'Home' }).click();
-    const opened = await page.evaluate(() => {
-      const more = document.querySelector('[role=toolbar] [aria-haspopup="menu"]:last-child') as HTMLElement | null;
-      return Boolean(more);
-    });
-    expect(opened).toBe(true);
+    // No pointer or key event: every click here is HTMLElement.click() from the page.
     await page.evaluate(() => {
-      const button = [...document.querySelectorAll<HTMLElement>('[role=toolbar] button')].find((node) =>
-        /^Import/.test(node.getAttribute('aria-label') ?? node.textContent ?? ''),
-      );
-      button?.click();
+      const buttons = () => [...document.querySelectorAll<HTMLElement>('[role=toolbar] button')];
+      const named = (node: Element) => node.getAttribute('aria-label') ?? node.textContent ?? '';
+      if (!buttons().some((node) => /^Import/.test(named(node)))) {
+        buttons()
+          .find((node) => named(node) === 'More commands')
+          ?.click();
+      }
+    });
+    await page.waitForTimeout(300);
+    await page.evaluate(() => {
+      const items = [...document.querySelectorAll<HTMLElement>('[role=toolbar] button, [role=menuitem]')];
+      items.find((node) => /^Import/.test(node.getAttribute('aria-label') ?? node.textContent ?? ''))?.click();
     });
     const dialog = page.getByRole('dialog');
-    if (await dialog.count()) {
-      const focused = dialog.locator(':focus').first();
-      await expect(focused).toBeVisible();
-      expect(await outline(focused)).toBe('none');
-      await page.keyboard.press('Tab');
-      expect(await outline(page.locator(':focus'))).not.toBe('none');
-    }
+    await expect(dialog).toBeVisible();
+    const focused = dialog.locator(':focus').first();
+    await expect(focused).toBeVisible();
+    expect(await outline(focused)).toBe('none');
+    await page.keyboard.press('Tab');
+    expect(await outline(page.locator(':focus'))).not.toBe('none');
   });
 
   test('a keyboard choice keeps the ring on the focused heading', async ({ page }) => {
