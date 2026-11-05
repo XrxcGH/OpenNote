@@ -30,13 +30,14 @@ describe('page history', { skip: skipReason() }, () => {
     session = await launchApp({ profileDir });
     const { browser } = session;
     await openMitosisText(browser);
-    await browser.keys(['Enter', ...'An earlier line.']);
+    await browser.keys([...'An earlier line.']);
     // The core keeps a version of a page that was edited when the page closes, so go to another page and come back.
     await clickRow(browser, 'Pages', 'Cell structure');
     await openMitosisText(browser);
-    // A modifier stays down until its keys call ends, so each chord has a call of its own.
-    await browser.keys(['Shift', 'Home']);
-    await browser.keys(['Backspace', ...'A later line.']);
+    // The same text block gets new text, so the older paragraph is one that the block still has a place for. A
+    // modifier stays down until its keys call ends, so each chord has a call of its own.
+    await browser.keys(['Control', 'a']);
+    await browser.keys([...'A later line.']);
     await runCommand(browser, 'Page history');
     const panel = browser.$('aside[aria-label="Page history"]');
     await panel.waitForExist({ timeout: 5_000 });
