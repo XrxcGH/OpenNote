@@ -1,0 +1,18 @@
+# Where the reference apps disagree
+
+Excel, Google Sheets, and LibreOffice Calc give different answers in a few places. OpenNote follows Excel unless a line
+below says otherwise (ADR 0058, ADR 0060). A fixture case whose LibreOffice value differs from Excel's documented value
+keeps Excel's value and is marked `oracle-differs`, so the nightly oracle does not flag it. Each family lane adds its
+own lines here. "Not yet checked" means no fixture pins that app's answer yet.
+
+| Case                                             | Excel                                                                  | Sheets and Calc                              | OpenNote                                                                                                          |
+| ------------------------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `0^0` and `POWER(0,0)`                           | `#NUM!`                                                                | 1                                            | `#NUM!`, for the operator and the function                                                                        |
+| `-2^2` and `2^3^2`                               | 4 and 64                                                               | 4 and 64                                     | The same in a table with `data.sheet.v`. A table written before it keeps -4 and 512 (`legacy.ts`)                 |
+| The bare word `E`                                | An unknown name                                                        | Not yet checked                              | `#NAME?` with `data.sheet.v`; e (2.718...) in a table written before it                                           |
+| Dates before 1900-03-01                          | One higher, for a 1900-02-29 that never was                            | Count the true calendar, day 0 on 1899-12-30 | The true calendar. Import and export add or remove Excel's extra day                                              |
+| Dates before 1899-12-30                          | Not dates                                                              | Negative serials in Sheets                   | Negative serials                                                                                                  |
+| `DATE` with a year from 100 to 1899              | Adds 1900                                                              | Not yet checked                              | The year as written, so `DATE(1899,12,30)` is 0. Years 0 to 99 add 1900, as before                                |
+| Text in arithmetic (`"$5"+1`)                    | The region's number, currency, percent, fraction, time, and date forms | Not yet checked                              | US forms for now: `$`, `%`, grouped digits, `1 1/2`, `1:30 PM`, ISO dates, month-first dates, English month names |
+| A final `+` or `-` within rounding error of zero | 0 (Microsoft's `=0.5-0.4-0.1` example)                                 | Not yet checked                              | 0 when the result is smaller than 2^-48 of the larger operand                                                     |
+| `=` on numbers                                   | Compares 15 significant digits                                         | Not yet checked                              | Compares 15 significant digits                                                                                    |
