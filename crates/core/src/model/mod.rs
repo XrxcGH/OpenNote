@@ -24,6 +24,11 @@ use serde::{Deserialize, Serialize, Serializer};
 use thiserror::Error;
 
 pub use asset::Asset;
+pub use block::format::{
+    Align, BorderLine, Comment, Direction, DropCap, DropCapMode, Indent, LineRule, LineSpacing, ListAlign, ListDef,
+    ListLevel, ListRef, Note, NoteKind, ParaBorders, ParaFormat, Reply, Shade, Spacing, Suggestion, SuggestionKind,
+    TabAlign, TabLeader, TabStop, TextFormatting, TextLayout,
+};
 pub use block::{
     AnchorQuote, Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData,
     InkRole, Lock, OtherData, TableCell, TableColumn, TableData, TableRow, TextData,

@@ -147,6 +147,7 @@ impl PageStore {
         let blocks: HashSet<_> = next.blocks.iter().map(|b| b.id).collect();
         next.view.reading_order.retain(|id| blocks.contains(id));
         fix_counts(&mut next.blocks, &page.ink);
+        drop_stale_paras(&mut next.blocks);
         next
     }
 
@@ -223,6 +224,23 @@ fn fix_counts(blocks: &mut Blocks, ink: &Ink) {
         let mut fixed = Block::clone(&block);
         if let BlockData::Ink(data) = &mut fixed.data {
             data.stroke_count = ink.count_in_block(block.id);
+        }
+        // The block exists, so replacing it can't fail.
+        let _ = blocks.replace(Arc::new(fixed));
+    }
+}
+
+/// Drops the `paras` entries of text blocks that name no element of the block, as writers do (`R-PARA-2`).
+fn drop_stale_paras(blocks: &mut Blocks) {
+    let stale: Vec<Arc<Block>> = blocks
+        .iter()
+        .filter(|b| matches!(&b.data, BlockData::Text(text) if text.has_stale_paras()))
+        .cloned()
+        .collect();
+    for block in stale {
+        let mut fixed = Block::clone(&block);
+        if let BlockData::Text(text) = &mut fixed.data {
+            text.drop_stale_paras();
         }
         // The block exists, so replacing it can't fail.
         let _ = blocks.replace(Arc::new(fixed));

@@ -5,6 +5,7 @@ mod data;
 pub mod inline;
 mod parts;
 pub mod stamp;
+pub mod text_v2;
 pub mod values;
 mod view;
 

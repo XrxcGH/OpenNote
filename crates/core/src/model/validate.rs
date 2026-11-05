@@ -170,6 +170,14 @@ fn check_text(
     for tags in text.tags.values() {
         check_tags(tags, limits, owner, report);
     }
+    // Version 2 data (spec 6.8 to 6.11): an invalid value reads as missing, and a limit passed is an error.
+    let formatting = text.formatting(limits);
+    for problem in formatting.problems {
+        report.warn("text.invalid", format!("{owner}: {problem}"));
+    }
+    for over in formatting.over_limits {
+        report.error("limit.text", format!("page.json, {owner}: {over}"));
+    }
     for link in outgoing_links(&text.markdown) {
         if let LinkTarget::Asset(asset) = link {
             if !page.assets.contains_key(&asset) {
