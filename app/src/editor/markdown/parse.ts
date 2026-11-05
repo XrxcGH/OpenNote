@@ -9,17 +9,20 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
 import { CALLOUT_TYPE_PATTERN, LANGUAGE_PATTERN, isBlockedHref } from '../schema/specs';
 import { inlineNodes } from './parseInline';
-import { highlightPlugin, mathPlugin } from './rules';
+import { footnotePlugin, highlightPlugin, mathPlugin } from './rules';
 
 const { nodes } = textSchema;
 const DATA_IMAGE = /^data:image\/(?:gif|png|jpeg|webp);/i;
 
-/** One markdown-it instance: CommonMark, strikethrough, highlights, and math. The paste parser also turns tables on. */
+/**
+ * One markdown-it instance: CommonMark, strikethrough, highlights, math, and footnote references. The paste parser
+ * also turns tables on.
+ */
 export function createMarkdown(tables = false): Md {
   const md = new MarkdownIt('commonmark', { html: true, linkify: false, typographer: false });
   md.enable('strikethrough');
   if (tables) md.enable('table');
-  md.use(highlightPlugin).use(mathPlugin);
+  md.use(highlightPlugin).use(mathPlugin).use(footnotePlugin);
   // Links are kept as written: no percent-encoding, no punycode. The writer and the reader then agree.
   md.normalizeLink = (url) => url;
   md.normalizeLinkText = (text) => text;

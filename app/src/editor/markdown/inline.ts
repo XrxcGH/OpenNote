@@ -1,13 +1,15 @@
-// The canonical Markdown of one paragraph, heading, or title (SPEC 7.3, 7.6, and 7.7). Text is escaped as one line
-// of code points, so that an escape depends on the text around it and never on how marks split that text.
+// The canonical Markdown of one paragraph, heading, or title (SPEC 7.3, 7.6, 7.7, and 7.9 to 7.12). Text is escaped
+// as one line of code points, so that an escape depends on the text around it and never on how marks split that text.
 import { Fragment, Mark } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { LABEL, cleanText, escapeCodePoints } from './escape';
+import { isElementId } from '../schema/constants';
+import { LABEL, NOTE, cleanText, escapeCodePoints } from './escape';
 import type { EscapeMode, Seams } from './escape';
 import { collectLeaves, dropEdgeBreaks, isCode, trimMarkEdges } from './leaves';
 import type { Leaf } from './leaves';
 import { parseInlineNodes } from './parse';
+import { canonicalMarks } from './markOrder';
 import { planRanges } from './marksPlan';
 import type { Plan, Range } from './marksPlan';
 import {
@@ -36,9 +38,13 @@ export function codeSpan(text: string): string {
 /** An image description as one line, cleaned like any other text that leaves the editor (SPEC 7.7). */
 const altText = (alt: string) => cleanText(alt).replace(/\s*\n\s*/g, ' ');
 
-/** An image or inline math. */
+/** An image, inline math, or a footnote reference. A reference whose ID is outside the grammar can't be written. */
 function atomSource(node: PMNode): string {
   if (node.type.name === 'mathInline') return `$${cleanText(node.attrs.source as string)}$`;
+  if (node.type.name === 'footnoteRef') {
+    const id = String(node.attrs.id);
+    return isElementId(id) ? `[^${id}]` : '';
+  }
   const alt = escapeCodePoints(Array.from(altText(node.attrs.alt as string)), LABEL).join('');
   return `![${alt}](${formatDestination(node.attrs.src as string)})`;
 }
@@ -46,7 +52,7 @@ function atomSource(node: PMNode): string {
 function viewOf(leaf: Leaf): string[] {
   if (leaf.kind === 'break') return ['\n'];
   if (leaf.kind === 'text' && !isCode(leaf)) return Array.from(leaf.text);
-  return [ATOM];
+  return [leaf.kind === 'atom' && leaf.node.type.name === 'footnoteRef' ? NOTE : ATOM];
 }
 
 /** Where markup sits in the escape view, so that a `_` or `=` beside it is escaped. */
@@ -87,12 +93,15 @@ function render(plan: Plan, outputs: readonly string[], styles: ReadonlyMap<Rang
       if (open === '[' && bangIsBare(text)) text = `${text.slice(0, -1)}\\!`;
       text += open;
     }
-    if (at < outputs.length) text += outputs[at];
+    if (at < outputs.length) {
+      if (outputs[at].startsWith('[^') && bangIsBare(text)) text = `${text.slice(0, -1)}\\!`;
+      text += outputs[at];
+    }
   });
   return text;
 }
 
-/** A `!` right before a link's `[` would read as an image. (SPEC 7.6 has no row for this yet.) */
+/** A `!` right before a link's `[` or a footnote reference would read as an image (SPEC 7.6). */
 function bangIsBare(text: string): boolean {
   const slashes = /\\*$/.exec(text.slice(0, -1))?.[0].length ?? 0;
   return text.endsWith('!') && slashes % 2 === 0;
@@ -109,7 +118,9 @@ function writtenAttrs(attrs: Readonly<Record<string, unknown>>): Record<string, 
 
 /** The same marks in textSchema, which the reader builds. Editors use their own schema instance. */
 function readerMarks(marks: readonly Mark[]): readonly Mark[] {
-  return Mark.setFrom(marks.map((mark) => textSchema.marks[mark.type.name].create(writtenAttrs(mark.attrs))));
+  return Mark.setFrom(
+    canonicalMarks(marks.map((mark) => textSchema.marks[mark.type.name].create(writtenAttrs(mark.attrs)))),
+  );
 }
 
 /** The nodes that the leaves stand for, to check that the written text reads back as the same content. */
