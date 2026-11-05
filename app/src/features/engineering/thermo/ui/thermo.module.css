@@ -45,7 +45,7 @@
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);
@@ -116,7 +116,7 @@
   }
 
   .input {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-2);
     font: inherit;
     font-size: var(--type-body-size);

@@ -28,6 +28,9 @@
     font: inherit;
     text-align: start;
     cursor: pointer;
+    /* A long word, such as LaTeX with no spaces, wraps inside the card and does not run past the dialog (Beta 8 walk VB-2). */
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
   }
 
   .radioCard[aria-checked='true'] {
