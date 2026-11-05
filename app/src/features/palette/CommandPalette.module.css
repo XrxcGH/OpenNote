@@ -35,8 +35,13 @@
     gap: var(--space-2);
   }
 
+  :global(:root[data-density='touch']) .chips {
+    gap: var(--space-3);
+  }
+
   .chip {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
+    min-inline-size: var(--target-size);
     padding-inline: var(--space-4);
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-pill);
@@ -59,7 +64,10 @@
     display: grid;
     gap: var(--space-3);
     /* The list reaches into the dialog's bottom padding (16 px), so it may be that much taller. */
-    max-block-size: min(60vh, calc(100dvh - var(--size-palette-top) - 174px + var(--space-5)));
+    max-block-size: min(
+      60vh,
+      var(--palette-list-room, calc(100dvh - var(--size-palette-top) - 174px + var(--space-5)))
+    );
     /* The padding is inside the scroller, with a short fade, so the last row scrolls clear of the edge and a row
        cut by it fades out instead of showing as a sliver of glyph tops. */
     padding-block-end: var(--space-7);

@@ -15,6 +15,7 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
+import { menuPosition } from './menuPosition';
 import styles from './slashMenu.module.css';
 
 const GROUPS: readonly SlashItemDef['group'][] = ['basic', 'lists', 'media', 'advanced'];
@@ -88,8 +89,17 @@ class SlashMenu implements SlashMenuUi {
 
   private place(): void {
     const at = this.session.rect();
-    this.list.style.insetInlineStart = `${Math.max(0, at.left)}px`;
-    this.list.style.insetBlockStart = `${at.bottom + 4}px`;
+    // Measured at its natural size, then kept inside the window: under the slash, or above it when that is roomier.
+    this.list.style.maxBlockSize = '';
+    const size = this.list.getBoundingClientRect();
+    const spot = menuPosition(
+      at,
+      { width: size.width, height: size.height },
+      { width: window.innerWidth, height: window.innerHeight },
+    );
+    this.list.style.insetInlineStart = `${spot.left}px`;
+    this.list.style.insetBlockStart = `${spot.top}px`;
+    this.list.style.maxBlockSize = `min(${spot.maxHeight}px, 22rem, 50vh)`;
   }
 
   private render(): void {

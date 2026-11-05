@@ -60,7 +60,9 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
     align-items: end;
-    gap: var(--space-3) var(--space-4);
+    /* A switch hangs out 13 px at each side (ui/Switch), so the columns stand apart by those and 8 px more: the
+       switches' outlines and hover areas never touch, and a select never sits 3 px from a switch. */
+    gap: var(--space-3) calc(2 * (var(--space-3) + 1px) + var(--space-3));
   }
 
   .filters .filter select {
