@@ -24,11 +24,10 @@ export interface Item {
   /** Phrases NVDA must say, in this order. */
   readonly expect: readonly string[];
   /**
-   * Has NVDA report the control that has focus, before the keys or after them. A focus moved by script is not
-   * spoken by NVDA as it lands, because the window does not take the system focus from the runner's session, so the
-   * item asks for it, as a person would with NVDA+Tab.
+   * Has NVDA report the control that has focus before the keys. A focus moved by script is not spoken by NVDA as it
+   * lands, so the item asks for it, as a person would with NVDA+Tab.
    */
-  readonly reportFocus?: 'before' | 'after';
+  readonly reportFocus?: boolean;
 }
 
 export const ITEMS: readonly Item[] = [
@@ -56,7 +55,7 @@ export const ITEMS: readonly Item[] = [
     setup: { role: 'tree', name: 'Notebooks', item: 'Lectures' },
     keys: ['ArrowDown'],
     expect: ['Lectures', 'Labs'],
-    reportFocus: 'before',
+    reportFocus: true,
   },
   {
     id: 'command-tabs',
@@ -65,7 +64,7 @@ export const ITEMS: readonly Item[] = [
     setup: { role: 'tab', name: 'Home' },
     keys: ['ArrowRight'],
     expect: ['Home', 'Insert'],
-    reportFocus: 'before',
+    reportFocus: true,
   },
   {
     id: 'page-text',
@@ -74,7 +73,7 @@ export const ITEMS: readonly Item[] = [
     setup: { role: 'textbox', name: 'Page text' },
     keys: [],
     expect: ['Page text', 'edit'],
-    reportFocus: 'before',
+    reportFocus: true,
   },
   {
     id: 'palette',
@@ -82,8 +81,9 @@ export const ITEMS: readonly Item[] = [
     covers: 'Phase 2: command palette',
     setup: { role: 'page' },
     keys: ['Control+k'],
-    expect: ['Search commands and pages'],
-    reportFocus: 'after',
+    // NVDA says the dialog's name and role when it opens. With the first result active, it then names that result,
+    // not the search box, because the box points at it with aria-activedescendant.
+    expect: ['Command palette', 'dialog'],
   },
 ];
 

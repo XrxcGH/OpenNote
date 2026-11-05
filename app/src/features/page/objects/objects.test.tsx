@@ -172,6 +172,19 @@ describe('object commands', () => {
     expect(document.activeElement).toBe(wrapper(mounted, ids[1]));
   });
 
+  it('deletes the selection with the Delete key too, which a text box wrapper does not get from the keymap', async () => {
+    const { mounted, edits } = await open(
+      boxes([
+        { markdown: 'Gone', x: 40, y: 40 },
+        { markdown: 'Stays', x: 300, y: 40 },
+      ]),
+    );
+    mounted.objects.select([ids[0]], { focus: true });
+    await userEvent.keyboard('{Delete}');
+    await expect.poll(edits).toContainEqual({ edit: 'deleteBlocks', blocks: [ids[0]] });
+    expect(mounted.layer.block(ids[0])).toBeNull();
+  });
+
   it('brings a block to the front, and says so at the end', async () => {
     const { mounted, edits } = await open(
       boxes([

@@ -130,16 +130,21 @@ pub async fn print_prepare(app: AppHandle, job: String, input: Value) -> IpcResu
     let listener = app.listen_any(RESULT_EVENT, move |event| {
         let _ = tx.send(event.payload().to_owned());
     });
-    let built = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("print.html".into()))
-        .title("OpenNote print")
-        .inner_size(1280.0, 960.0)
-        .visible(false)
-        .decorations(false)
-        .skip_taskbar(true)
-        .focused(false)
-        .initialization_script(format!("window.__OPENNOTE_PRINT__ = {setup};"))
-        .on_navigation(crate::window::is_app_url)
-        .build();
+    // A build driven by WebDriver gives the print window the main window's browser arguments, or WebView2 refuses it.
+    let built = crate::window::webview::with_driver_args(WebviewWindowBuilder::new(
+        &app,
+        &label,
+        WebviewUrl::App("print.html".into()),
+    ))
+    .title("OpenNote print")
+    .inner_size(1280.0, 960.0)
+    .visible(false)
+    .decorations(false)
+    .skip_taskbar(true)
+    .focused(false)
+    .initialization_script(format!("window.__OPENNOTE_PRINT__ = {setup};"))
+    .on_navigation(crate::window::is_app_url)
+    .build();
     if let Err(error) = built {
         app.unlisten(listener);
         return Err(error.into());

@@ -94,12 +94,11 @@ test.describe('NVDA', () => {
         await nvda.clearSpokenPhraseLog();
         await page.bringToFront();
         await setUp(page, item);
-        if (item.reportFocus === 'before') await reportFocus();
+        if (item.reportFocus) await reportFocus();
         for (const key of item.keys) {
           await nvda.press(key);
           await page.waitForTimeout(SETTLE_MS);
         }
-        if (item.reportFocus === 'after') await reportFocus();
         const spoken = await nvda.spokenPhraseLog();
         results.push(result(item, spoken));
         // Close the palette or anything else the item opened.

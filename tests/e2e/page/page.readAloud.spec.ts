@@ -23,14 +23,32 @@ describe('read aloud', { skip: skipReason() }, () => {
   it('reads with a local voice and highlights each word', async (context) => {
     session = await launchApp({ profileDir });
     const { browser } = session;
-    const local = await browser.executeAsync((done: (count: number) => void) => {
-      const count = () => speechSynthesis.getVoices().filter((voice) => voice.localService).length;
-      if (count()) done(count());
-      else speechSynthesis.addEventListener('voiceschanged', () => done(count()), { once: true });
-      setTimeout(() => done(count()), 3_000);
+    // The web speech engine itself must be able to speak here. A runner with voices and no audio output lists the
+    // voices and then fails every utterance (audio-hardware), which the app rightly reports as no voice.
+    const speech = await browser.executeAsync((done: (result: { local: number; error: string | null }) => void) => {
+      const voices = () => speechSynthesis.getVoices().filter((voice) => voice.localService);
+      const speak = () => {
+        const first = voices()[0];
+        if (!first) return done({ local: 0, error: null });
+        const utterance = new SpeechSynthesisUtterance('Test.');
+        utterance.voice = first;
+        utterance.onstart = () => {
+          speechSynthesis.cancel();
+          done({ local: voices().length, error: null });
+        };
+        utterance.onerror = (event) => done({ local: voices().length, error: event.error });
+        speechSynthesis.speak(utterance);
+      };
+      if (voices().length) speak();
+      else speechSynthesis.addEventListener('voiceschanged', speak, { once: true });
+      setTimeout(() => done({ local: voices().length, error: 'no start within 8 seconds' }), 8_000);
     });
-    if (!local) {
+    if (!speech.local) {
       context.skip('No local voices on this runner.');
+      return;
+    }
+    if (speech.error) {
+      context.skip(`This runner's voices cannot speak (${speech.error}).`);
       return;
     }
     await openMitosisText(browser);

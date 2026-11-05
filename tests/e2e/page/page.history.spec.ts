@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
-import { flaggedProfile, openMitosisText } from './helpers.ts';
+import { clickRow, flaggedProfile, openMitosisText } from './helpers.ts';
 
 /** Runs a command from the palette by its title. */
 async function runCommand(browser: Browser, title: string): Promise<void> {
@@ -31,7 +31,9 @@ describe('page history', { skip: skipReason() }, () => {
     const { browser } = session;
     await openMitosisText(browser);
     await browser.keys(['Enter', ...'An earlier line.']);
-    await browser.keys(['Control', 's']);
+    // The core keeps a version of a page that was edited when the page closes, so go to another page and come back.
+    await clickRow(browser, 'Pages', 'Cell structure');
+    await openMitosisText(browser);
     // A modifier stays down until its keys call ends, so each chord has a call of its own.
     await browser.keys(['Shift', 'Home']);
     await browser.keys(['Backspace', ...'A later line.']);
