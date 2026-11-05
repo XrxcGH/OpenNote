@@ -10,6 +10,7 @@ import type { Node as PMNode, NodeType } from '@tiptap/pm/model';
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { goToNextCell } from '@tiptap/pm/tables';
+import { Mapping } from '@tiptap/pm/transform';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import { cellAt, cellTextPos } from '../commands/tables';
@@ -44,9 +45,15 @@ type Slot = Placed | 'covered' | 'split' | undefined;
 const spanOf = (cell: PMNode, name: 'colspan' | 'rowspan') => Math.max(1, (cell.attrs[name] as number) || 1);
 
 /**
+ * The widest a span may reach. Pasted HTML can ask for 1000 columns per cell, so a span that ends past this column
+ * lays out as one column. Cells are never dropped, so a table with more plain cells than this stays whole.
+ */
+export const SPAN_COLUMN_LIMIT = 256;
+
+/**
  * The table laid out as a grid. Each cell takes the first free slot of its row, left to right, and a span takes
  * the slots it covers, as ProseMirror's table map places them. A span that spans.ts allows keeps its slots; any
- * other span is split, and the slots it covered become empty cells.
+ * other span is split, and the slots it covered become empty cells. A span past SPAN_COLUMN_LIMIT takes one slot.
  */
 function layout(table: PMNode, allowed: readonly CellSpan[]): Slot[][] {
   const height = table.childCount;
@@ -59,12 +66,14 @@ function layout(table: PMNode, allowed: readonly CellSpan[]): Slot[][] {
     let column = 0;
     row.forEach((cell) => {
       while (slots[r][column]) column++;
-      const columns = spanOf(cell, 'colspan');
+      const wanted = spanOf(cell, 'colspan');
+      const columns = column + wanted > SPAN_COLUMN_LIMIT ? 1 : wanted;
       const rows = Math.min(spanOf(cell, 'rowspan'), height - r);
       const fits = free(r, column, rows, columns);
       const keep =
         fits &&
         (columns > 1 || rows > 1) &&
+        columns === wanted &&
         rows === spanOf(cell, 'rowspan') &&
         allowed.some((s) => s.row === r && s.column === column && s.rows === rows && s.columns === columns);
       if (fits) {
@@ -116,7 +125,8 @@ export function wholeTable(table: PMNode, allowed: readonly CellSpan[] = []): PM
     for (const slot of row) {
       if (!slot || typeof slot === 'string') continue;
       const own = (slot.cell.attrs.colwidth as number[] | null) ?? [];
-      for (let i = 0; i < spanOf(slot.cell, 'colspan'); i++) widths[slot.column + i] ??= own[i] || null;
+      const span = Math.min(spanOf(slot.cell, 'colspan'), width - slot.column);
+      for (let i = 0; i < span; i++) widths[slot.column + i] ??= own[i] || null;
     }
   }
   const first = slots[0]?.[0];
@@ -150,12 +160,18 @@ export function wholeTable(table: PMNode, allowed: readonly CellSpan[] = []): PM
 /**
  * Gives every row a unique `rowId` and every cell its column's `colId` (editor/schema/schema.ts). A column takes
  * the first ID its cells carry, top to bottom, that no other column took. A row or column without one, such as a
- * pasted one, gets a fresh ID. Only attributes change, so positions stay. Says whether it changed anything.
+ * pasted one, gets a fresh ID. When two rows carry one ID, the row `sources` names keeps it, else the first. Only
+ * attributes change, so positions stay. Says whether it changed anything.
  */
-function stampIds(tr: Transaction, allowed: readonly CellSpan[]): boolean {
+function stampIds(tr: Transaction, allowed: readonly CellSpan[], sources: ReadonlyMap<string, number>): boolean {
   const table = tableOf(tr.doc);
   if (!table) return false;
   const slots = layout(table, allowed);
+  const owners = new Map<unknown, number>();
+  table.forEach((row, _offset, r) => {
+    if (!owners.has(row.attrs.rowId)) owners.set(row.attrs.rowId, r);
+  });
+  for (const [id, r] of sources) if (r < table.childCount && table.child(r).attrs.rowId === id) owners.set(id, r);
   const width = Math.max(0, ...slots.map((row) => row.length));
   const seen = new Set<string>();
   const taken = (id: unknown): id is string => typeof id === 'string' && id !== '' && !seen.has(id);
@@ -175,14 +191,16 @@ function stampIds(tr: Transaction, allowed: readonly CellSpan[]): boolean {
   let changed = false;
   let rowPos = 1;
   table.forEach((row, _offset, r) => {
-    const rowId = claim(row.attrs.rowId);
+    const rowId = claim(owners.get(row.attrs.rowId) === r ? row.attrs.rowId : null);
     if (row.attrs.rowId !== rowId) {
       tr.setNodeMarkup(rowPos, undefined, { ...row.attrs, rowId });
       changed = true;
     }
+    const byCell = new Map<PMNode, Placed>();
+    for (const slot of slots[r]) if (typeof slot === 'object' && !byCell.has(slot.cell)) byCell.set(slot.cell, slot);
     let cellPos = rowPos + 1;
     row.forEach((cell, _at, index) => {
-      const placed = slots[r].find((slot): slot is Placed => typeof slot === 'object' && slot.cell === cell);
+      const placed = byCell.get(cell);
       const colId = columnIds[placed?.column ?? index];
       if (colId !== undefined && cell.attrs.colId !== colId) {
         tr.setNodeMarkup(cellPos, undefined, { ...cell.attrs, colId });
@@ -195,13 +213,43 @@ function stampIds(tr: Transaction, allowed: readonly CellSpan[]): boolean {
   return changed;
 }
 
+/**
+ * Where each row of the old table went: its ID and its row index in the new one. A row's start maps through the
+ * changes, and a row inserted right before it, such as a copy dropped above it, maps to the side before it. So the
+ * row that held an ID keeps it, and a copy that carries the same ID gets a fresh one. wholeTable keeps the rows in
+ * order, so the index also holds after the normalizer rebuilds the table.
+ */
+function sourceRows(transactions: readonly Transaction[], old: PMNode, doc: PMNode): Map<string, number> {
+  const sources = new Map<string, number>();
+  const before = tableOf(old);
+  const after = tableOf(doc);
+  if (!before || !after) return sources;
+  const starts = new Map<number, number>();
+  let pos = 1;
+  after.forEach((row, _offset, r) => {
+    starts.set(pos, r);
+    pos += row.nodeSize;
+  });
+  const mapping = new Mapping();
+  for (const tr of transactions) mapping.appendMapping(tr.mapping);
+  pos = 1;
+  before.forEach((row) => {
+    const id = row.attrs.rowId as unknown;
+    const moved = mapping.mapResult(pos, 1);
+    const r = moved.deleted ? undefined : starts.get(moved.pos);
+    if (typeof id === 'string' && r !== undefined) sources.set(id, r);
+    pos += row.nodeSize;
+  });
+  return sources;
+}
+
 const normalizeKey = new PluginKey('opennote.tableNormalize');
 
 /** Keeps the table a grid with IDs after any change, such as a paste of cells, in the same undo step. */
 function normalizePlugin(): Plugin {
   return new Plugin({
     key: normalizeKey,
-    appendTransaction(transactions: readonly Transaction[], _old: EditorState, state: EditorState) {
+    appendTransaction(transactions: readonly Transaction[], old: EditorState, state: EditorState) {
       if (!transactions.some((tr) => tr.docChanged)) return null;
       const table = tableOf(state.doc);
       if (!table) return null;
@@ -209,7 +257,8 @@ function normalizePlugin(): Plugin {
       const tr = state.tr;
       const whole = isWhole(table, allowed);
       if (!whole) tr.replaceWith(0, state.doc.content.size, wholeTable(table, allowed));
-      const stamped = stampIds(tr, whole ? allowed : allowedSpans(tableOf(tr.doc) ?? table));
+      const sources = sourceRows(transactions, old.doc, state.doc);
+      const stamped = stampIds(tr, whole ? allowed : allowedSpans(tableOf(tr.doc) ?? table), sources);
       if (whole && !stamped) return null;
       if (transactions.some((one) => one.getMeta(META_REMOTE))) tr.setMeta(META_REMOTE, true);
       return tr;

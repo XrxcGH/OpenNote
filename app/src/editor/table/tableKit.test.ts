@@ -93,6 +93,29 @@ describe('the table normalizer', () => {
     expect(next.rows[0].id).toBe(pasted.attrs.rowId);
     editor.destroy();
   });
+
+  it('lets the source row keep its ID when a copy that carries it is dropped above it', () => {
+    const data = newTableData(2, 2, false);
+    const root = document.body.appendChild(document.createElement('div'));
+    roots.push(root);
+    const editor = createBlockEditor(root, tableDataToDoc(data), { kind: 'table', block: 'b1', host });
+    // A drag within one editor keeps the row's attributes in the slice, so the copy carries the source's ID.
+    const source = tableOf(editor.state.doc)!.child(1);
+    editor.view.dispatch(editor.state.tr.insert(1, source));
+    const rows = tableOf(editor.state.doc)!;
+    expect(rows.child(2).attrs.rowId).toBe(data.rows[1].id);
+    expect(rows.child(1).attrs.rowId).toBe(data.rows[0].id);
+    expect(typeof rows.child(0).attrs.rowId).toBe('string');
+    expect(data.rows.map((one) => one.id)).not.toContain(rows.child(0).attrs.rowId);
+    editor.destroy();
+  });
+
+  it('lays a pasted span past the column limit out as one column', () => {
+    const wide = table([row(Array.from({ length: 10 }, () => cell('x', { colspan: 1000 })))]);
+    const whole = wholeTable(wide);
+    expect(whole.child(0).childCount).toBe(10);
+    whole.child(0).forEach((one) => expect(one.attrs.colspan).toBe(1));
+  });
 });
 
 describe('the table seams', () => {
