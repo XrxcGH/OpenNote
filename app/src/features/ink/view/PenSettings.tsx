@@ -254,11 +254,14 @@ export function ShapeSnapping() {
 function RulerUnits() {
   const units = useStore(inkPrefs, (state) => state.rulerUnits);
   return (
-    <RadioGroup<UnitsChoice> label={t('ink.settings.rulerUnits')} value={units} onChange={setRulerUnits}>
-      <RadioCard<UnitsChoice> value="auto" label={t('ink.settings.rulerUnitsAuto')} />
-      <RadioCard<UnitsChoice> value="metric" label={t('ink.settings.rulerUnitsMetric')} />
-      <RadioCard<UnitsChoice> value="imperial" label={t('ink.settings.rulerUnitsImperial')} />
-    </RadioGroup>
+    <>
+      <h3>{t('ink.settings.rulerUnits')}</h3>
+      <RadioGroup<UnitsChoice> label={t('ink.settings.rulerUnits')} value={units} onChange={setRulerUnits}>
+        <RadioCard<UnitsChoice> value="auto" label={t('ink.settings.rulerUnitsAuto')} />
+        <RadioCard<UnitsChoice> value="metric" label={t('ink.settings.rulerUnitsMetric')} />
+        <RadioCard<UnitsChoice> value="imperial" label={t('ink.settings.rulerUnitsImperial')} />
+      </RadioGroup>
+    </>
   );
 }
 
@@ -306,6 +309,8 @@ export default function PenSettings() {
   return (
     <section className={styles.section} aria-labelledby="ink-settings">
       <h2 id="ink-settings">{t('ink.settings.title')}</h2>
+      {/* Each choice group has a visible name, not only an accessible one (full walk VA-50). */}
+      <h3>{t('ink.settings.handedness')}</h3>
       <RadioGroup<Handedness>
         label={t('ink.settings.handedness')}
         value={ink.handedness}
@@ -315,6 +320,7 @@ export default function PenSettings() {
         <RadioCard<Handedness> value="right" label={t('ink.settings.handednessRight')} />
         <RadioCard<Handedness> value="left" label={t('ink.settings.handednessLeft')} />
       </RadioGroup>
+      <h3>{t('ink.settings.fingerDraw')}</h3>
       <RadioGroup<FingerDraw>
         label={t('ink.settings.fingerDraw')}
         value={ink.touch.finger}
