@@ -9,6 +9,17 @@ function afterTopLevel(editor: Editor, pos: number): number {
   return $pos.depth === 0 ? pos : $pos.after(1);
 }
 
+/**
+ * The place for new blocks at `at`, between two top-level blocks. The empty line the editor keeps below a last
+ * equation is taken by what is inserted there, so a page does not end up with two.
+ */
+function blocksAt(editor: Editor, at: number): { from: number; to: number } {
+  const { doc } = editor.state;
+  const next = doc.resolve(at).nodeAfter;
+  const blank = next?.type.name === 'paragraph' && next.content.size === 0 && at + next.nodeSize === doc.content.size;
+  return { from: at, to: blank ? at + next.nodeSize : at };
+}
+
 /** Whether the content is blocks (the worked steps are a title and a list), not a line of text. */
 const isBlocks = (text: string): boolean => /^\s*<(p|ol|ul|div|h[1-6]|table)[\s>]/i.test(text);
 
@@ -22,15 +33,14 @@ function insertRange(editor: Editor, kind: 'word' | 'inline' | 'blocks'): { from
   const { selection, doc } = editor.state;
   const { from, to } = selection;
   // A node selection (the equation an insert left selected) has the node it holds.
-  if ('node' in selection) return { from: afterTopLevel(editor, to), to: afterTopLevel(editor, to) };
+  if ('node' in selection) return blocksAt(editor, afterTopLevel(editor, to));
   if (kind === 'blocks') {
     const $to = doc.resolve(to);
     const top = $to.depth === 0 ? null : $to.node(1);
     // An empty paragraph (the caret on a new line) takes the steps; anything else keeps its text.
     if (top && top.type.name === 'paragraph' && top.content.size === 0)
       return { from: $to.before(1), to: $to.after(1) };
-    const end = afterTopLevel(editor, to);
-    return { from: end, to: end };
+    return blocksAt(editor, afterTopLevel(editor, to));
   }
   if (kind === 'inline') return { from, to };
   const selected = doc.textBetween(from, to, ' ', ' ');

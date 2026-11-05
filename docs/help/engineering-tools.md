@@ -48,5 +48,5 @@ These tools are new in Beta, so check the answers against your own work while yo
 - In a smart table, open the Data menu, then Number format, then Unit, and type a unit such as kN, mm, MPa, N·m, m/s^2, or kΩ. The command palette has Set column unit too.
 - The column becomes a number column in that unit. A cell typed in another unit of the same kind is converted: 250 N in a kN column is 0.25 kN. A cell with a unit of another kind, such as 3 m in a kN column, is marked as not fitting the column.
 - Totals and formulas use the converted values, so a sum adds like with like.
-- Under Number format, choose Engineering to write values with powers of ten in steps of three, such as 12.5×10³ kN, or SI prefixes to write them as 12.5 MN. Plain writes ordinary numbers.
+- Under Number format, choose Engineering to write values with powers of ten in steps of three, such as 12.5×10³ kN, or SI prefixes to write them as 12.5 MN. A column with no unit takes SI prefixes too, as 12.5k. Up to six digits of a number show. Plain writes ordinary numbers.
 - OpenNote knows SI units with any prefix, US customary units such as lbf, kip, psi, ksi, ft, and in, and products, quotients, and powers of them. C is the coulomb and F the farad, so write temperatures as °C and °F.

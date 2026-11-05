@@ -13,6 +13,14 @@ describe('static DOM', () => {
     expect(into.querySelector('em')?.textContent).toBe('this');
   });
 
+  it('adds the empty line the editor keeps below a last equation', () => {
+    const into = document.createElement('div');
+    renderStatic(parseTextBlock('Before\n\n$$\nx^2\n$$'), into);
+    expect([...into.children].map((child) => child.tagName)).toEqual(['P', 'DIV', 'P']);
+    renderStatic(parseTextBlock('$$\nx^2\n$$\n\nAfter'), into);
+    expect([...into.children].map((child) => child.tagName)).toEqual(['DIV', 'P']);
+  });
+
   it('renders in slices and stops when aborted', async () => {
     const items = ['one', 'two', 'three'].map((text) => ({
       doc: parseTextBlock(text),

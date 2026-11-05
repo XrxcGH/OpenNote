@@ -67,11 +67,21 @@ function codeBlockView(host: EditorHost): NodeViewRenderer {
     let current = node;
     const dom = document.createElement('pre');
     dom.className = styles.block;
-    const button = dom.appendChild(document.createElement('button'));
+    // The language and Copy buttons sit together in the block's corner.
+    const tools = dom.appendChild(document.createElement('span'));
+    tools.setAttribute('contenteditable', 'false');
+    tools.className = styles.tools;
+    const button = tools.appendChild(document.createElement('button'));
     button.type = 'button';
     button.setAttribute('contenteditable', 'false');
     button.className = styles.language;
     button.dataset.codeLanguage = '';
+    const copy = tools.appendChild(document.createElement('button'));
+    copy.type = 'button';
+    copy.setAttribute('contenteditable', 'false');
+    copy.className = styles.language;
+    copy.textContent = t('code.copy.button');
+    copy.setAttribute('aria-label', t('code.copy.label'));
     const code = dom.appendChild(document.createElement('code'));
     code.setAttribute('spellcheck', 'false');
     const show = (shown: PMNode) => {
@@ -89,6 +99,16 @@ function codeBlockView(host: EditorHost): NodeViewRenderer {
       const pos = getPos();
       if (typeof pos === 'number') pickCodeLanguage(editor.view, pos, button, host);
     });
+    // Copy puts the whole block's text on the clipboard, whatever the caret and selection are (Beta 8 walk A-A06-8).
+    copy.addEventListener('mousedown', (event) => event.preventDefault());
+    copy.addEventListener('click', (event) => {
+      event.preventDefault();
+      const text = current.textContent;
+      const done = () => host.announce(t('code.copy.done'));
+      const failed = () => host.announce(t('code.copy.failed'));
+      if (!navigator.clipboard) return failed();
+      navigator.clipboard.writeText(text).then(done, failed);
+    });
     return {
       dom,
       contentDOM: code,
@@ -98,9 +118,9 @@ function codeBlockView(host: EditorHost): NodeViewRenderer {
         current = next;
         return true;
       },
-      stopEvent: (event) => button.contains(event.target as Node),
+      stopEvent: (event) => tools.contains(event.target as Node),
       ignoreMutation: (mutation) =>
-        mutation.type === 'attributes' || (mutation.type !== 'selection' && button.contains(mutation.target)),
+        mutation.type === 'attributes' || (mutation.type !== 'selection' && tools.contains(mutation.target)),
     };
   };
 }
