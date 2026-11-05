@@ -12,7 +12,9 @@ import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/
 import type { NodeId } from '../../services/notes/types';
 import { osStore } from '../../state/os';
 import { createStore } from '../../state/store';
-import { announce } from '../../ui';
+import { announce, openMenu } from '../../ui';
+import { menuItemsFor } from '../../commands/menus';
+import { t } from '../../strings/t';
 import { createBlockLayer } from './blocks/blockLayer';
 import type { PageBlockLayer } from './blocks/blockLayer';
 import { frameContext } from './blocks/frameContext';
@@ -45,6 +47,7 @@ import type { FrameContext, SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
 import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
+import { dropDuplicateMenus } from './viewport/menuRequests';
 import { createRouter } from './viewport/router';
 import type { PointerToolDef } from './viewport/router';
 import { shownFitWidth, shownPage } from './viewport/shown';
@@ -186,6 +189,27 @@ function routePointers(container: HTMLElement, viewport: PageViewport, tools: re
   });
 }
 
+/** Whether a contextmenu target is the page itself: not a block, the title, a control, or text being edited. */
+function onEmptyPage(target: Element, container: HTMLElement): boolean {
+  return (
+    container.contains(target) &&
+    !target.closest(
+      '[data-block-id], [data-handle], [data-page-title], [data-app-menu], [data-scope~="editor"], button, a, input, textarea',
+    )
+  );
+}
+
+/** The menu of the empty page (what it can add), from right-click, a long press, or a barrel press. */
+function openCanvasMenu(event: MouseEvent): void {
+  const items = menuItemsFor('page.canvas', commandContext('menu'));
+  if (items.length === 0) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const keyboard = event.clientX === 0 && event.clientY === 0;
+  const anchor = keyboard ? { x: 0, y: 0 } : { x: event.clientX, y: event.clientY };
+  void openMenu({ label: t('page.canvas.menuLabel'), items, anchor });
+}
+
 /** The object menu from right-click, a long press, Shift+F10, or the Menu key on a block's wrapper or grip. */
 function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockLayer): () => void {
   const onMenu = (event: MouseEvent) => {
@@ -193,6 +217,7 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
     const handle = target?.closest<HTMLElement>('[data-handle]');
     const wrapper = target?.closest<HTMLElement>('[data-block-id]');
     const block = handle?.dataset.block ?? wrapper?.dataset.blockId;
+    if (!block && target && onEmptyPage(target, container)) return void openCanvasMenu(event);
     if (!block || !layer.block(block) || target?.closest('[data-scope~="editor"]')) return;
     event.preventDefault();
     event.stopPropagation();
@@ -202,7 +227,11 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
     void openObjectMenu(objects, anchor);
   };
   container.addEventListener('contextmenu', onMenu);
-  return () => container.removeEventListener('contextmenu', onMenu);
+  const stopDuplicates = dropDuplicateMenus(container);
+  return () => {
+    container.removeEventListener('contextmenu', onMenu);
+    stopDuplicates();
+  };
 }
 
 /** Points the shown page's stores at this view. Returns a function that clears them if they still point here. */

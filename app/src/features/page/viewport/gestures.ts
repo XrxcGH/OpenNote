@@ -7,6 +7,7 @@
 // gesture ends. While anything holds the camera (Phase 5 does while a pen is down), nothing here moves the page.
 import { prefersReducedMotion } from '../../../shell/layout/motion';
 import type { Point } from './camera';
+import { requestContextMenu } from './menuRequests';
 import type { PointerToolDef, RouterContext } from './router';
 import type { PageViewport } from './viewport';
 
@@ -125,6 +126,10 @@ class Gestures implements GestureTool {
     const contact = this.contacts.get(event.pointerId);
     this.contacts.delete(event.pointerId);
     if (contact?.pen && this.mode === 'pan') this.swallowMenu();
+    // A barrel press that never moved opens the menu itself: Chromium raises no event for it without press and hold.
+    else if (contact?.pen && this.mode === 'none') {
+      requestContextMenu(this.view.document, event.clientX, event.clientY, event.target);
+    }
     if (this.mode === 'pinch' && this.contacts.size === 1) {
       // One finger lifted: the other keeps panning.
       if (this.frame) this.flush();
