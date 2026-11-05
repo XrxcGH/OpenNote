@@ -5,7 +5,7 @@
 
 mod entries;
 mod merge;
-mod styles;
+pub mod styles;
 
 use super::header::{self, restrict};
 use super::json::{self, Json};
@@ -67,7 +67,7 @@ pub fn write_section(file: &SectionFile) -> Vec<u8> {
 
 /// Reads `notebook.json`.
 pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, FormatError> {
-    let (mut fields, format) = header::read_file(bytes, limits, kinds::NOTEBOOK, FileKind::Notebook)?;
+    let (mut fields, mut format) = header::read_file(bytes, limits, kinds::NOTEBOOK, FileKind::Notebook)?;
     let groups = fields
         .array("groups")?
         .into_iter()
@@ -83,7 +83,7 @@ pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, Form
         defaults: fields.opt_object("defaults")?,
         styles: fields
             .take("styles")
-            .map(styles::read_styles)
+            .map(|value| styles::read_styles(value, &mut format.warnings))
             .transpose()?
             .unwrap_or_default(),
         groups,

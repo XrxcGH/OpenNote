@@ -243,11 +243,23 @@ impl NotebookStore {
                 return Err(invalid_move(format!("style {name}: {problem}")));
             }
         }
+        // A writer that writes a version 2 key also writes the version 1 key it decides (R-STY-2).
+        let styles: crate::model::NotebookStyles = styles
+            .iter()
+            .map(|(name, style)| (name.clone(), crate::format::tree_json::styles::with_v1_keys(style)))
+            .collect();
         if self.notebook.styles == styles {
             return Ok(());
         }
-        self.notebook.styles = styles;
-        self.notebook.changed = self.now();
+        let now = self.now();
+        let before = std::mem::replace(&mut self.notebook.styles, styles);
+        crate::format::tree_json::styles::touch_styles_changed(
+            &mut self.notebook.extra,
+            &before,
+            &self.notebook.styles,
+            now,
+        );
+        self.notebook.changed = now;
         self.write_notebook()
     }
 

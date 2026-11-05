@@ -22,6 +22,7 @@ use crate::model::validate::validate_page;
 use crate::model::{FormatInfo, Ink, Page, ReadOnlyReason, Warning};
 
 pub use parts::{parse_crc, read_device, write_device};
+pub use view::{style_sheet, text_settings};
 
 /// Reads `page.json`, upgrading older versions in memory. Sets `format.access` to read-only for newer
 /// versions, damaged data, and reserved content such as encryption.
