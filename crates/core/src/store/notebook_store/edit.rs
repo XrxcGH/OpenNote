@@ -252,7 +252,12 @@ impl NotebookStore {
             return Ok(());
         }
         let now = self.now();
-        let before = std::mem::replace(&mut self.notebook.styles, styles);
+        // Compare with the version 1 keys derived on both sides. A style that an older writer saved without them
+        // is not a change the person made, so it gets no new time and cannot win a later merge.
+        let before: crate::model::NotebookStyles = std::mem::replace(&mut self.notebook.styles, styles)
+            .iter()
+            .map(|(name, style)| (name.clone(), crate::format::tree_json::styles::with_v1_keys(style)))
+            .collect();
         crate::format::tree_json::styles::touch_styles_changed(
             &mut self.notebook.extra,
             &before,

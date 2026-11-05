@@ -115,3 +115,14 @@ fn a_page_returns_to_version_1_when_its_last_version_2_feature_goes() {
     );
     assert!(written.get("minWriterVersion").is_none());
 }
+
+#[test]
+fn a_formula_cell_is_judged_on_readable_text_like_the_reference_reader() {
+    // The reference reader (`docs/format/tools/stamp_v2.py`) reads a cell's readable text paragraph by
+    // paragraph and never strips a block prefix, so a cell that starts with one is not a formula (R-SHT-5).
+    assert!(is_formula("=SUM(A1:A2)"));
+    assert!(is_formula("<span data-font=\"Georgia\">=A1</span>"));
+    assert!(!is_formula("- =SUM(A1:A2)"));
+    assert!(!is_formula("# =A1"));
+    assert!(!is_formula("x\n\n=A1"));
+}

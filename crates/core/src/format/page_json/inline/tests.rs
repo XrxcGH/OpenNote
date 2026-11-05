@@ -1,4 +1,9 @@
-#![allow(clippy::unwrap_used, clippy::indexing_slicing, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::arithmetic_side_effects
+)]
 
 use serde_json::Value;
 
@@ -52,13 +57,39 @@ fn paragraphs_are_read_one_at_a_time_outside_fenced_code() {
     ));
 }
 
+/// Hostile inline Markdown of about `chars` characters: unclosed links, unclosed tags, unclosed marks, and
+/// unclosed code spans, a quarter each.
+fn hostile(chars: usize) -> String {
+    let quarter = chars / 4;
+    let mut text = String::with_capacity(chars);
+    for unit in ["[](", "<span data-x=\"1\">", "**a", "`"] {
+        text.push_str(&unit.repeat(quarter / unit.len()));
+    }
+    text
+}
+
+/// The fastest of three reads of `text`, so that a busy machine adds as little noise as it can.
+fn read_time(text: &str) -> std::time::Duration {
+    (0..3)
+        .map(|_| {
+            let started = std::time::Instant::now();
+            std::hint::black_box(needs_v2(std::hint::black_box(text)));
+            std::hint::black_box(readable_text(std::hint::black_box(text)));
+            started.elapsed()
+        })
+        .min()
+        .unwrap()
+}
+
 #[test]
 fn long_hostile_text_reads_in_linear_time() {
-    let started = std::time::Instant::now();
-    let mut text = "[](".repeat(100_000);
-    text.push_str(&"<span data-x=\"1\">".repeat(50_000));
-    text.push_str(&"**a".repeat(100_000));
-    text.push_str(&"`".repeat(1_000));
-    assert!(needs_v2(&text) || !needs_v2(&text));
-    assert!(started.elapsed() < std::time::Duration::from_secs(20));
+    // A block holds at most 64 KiB. Four times the text must take about four times as long, not sixteen.
+    let small = read_time(&hostile(64 * 1024));
+    let large = read_time(&hostile(256 * 1024));
+    let floor = std::time::Duration::from_millis(20);
+    assert!(
+        large <= small * 8 + floor,
+        "64 KiB took {small:?}, 256 KiB took {large:?}"
+    );
+    assert!(small < std::time::Duration::from_secs(2), "64 KiB took {small:?}");
 }
