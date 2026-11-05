@@ -60,7 +60,8 @@ function cellXml(value: CellInput | { formula: string } | undefined): string {
   }
   if (typeof value === 'boolean') {
     const word = value ? 'true' : 'false';
-    return `<table:table-cell office:value-type="boolean" office:boolean-value="${word}"><text:p>${word.toUpperCase()}</text:p></table:table-cell>`;
+    const shown = `<text:p>${word.toUpperCase()}</text:p>`;
+    return `<table:table-cell office:value-type="boolean" office:boolean-value="${word}">${shown}</table:table-cell>`;
   }
   return `<table:table-cell office:value-type="string"><text:p>${escapeXml(value)}</text:p></table:table-cell>`;
 }

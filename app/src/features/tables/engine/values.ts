@@ -232,7 +232,7 @@ export function textToNumber(text: string): number | null {
 }
 
 /**
- * Excel's coercion to a number: empty is 0, booleans are 0 and 1, text that reads as a number is that number
+ * Excel's coercion to a number. Empty is 0. FALSE is 0 and TRUE is 1. Text that reads as a number is that number
  * (textToNumber), and other text is #VALUE!. An array gives its top-left item.
  */
 export function toNumber(value: Value): number | FormulaError {

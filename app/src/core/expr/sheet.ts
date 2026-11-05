@@ -4,11 +4,14 @@
 // call, and the host decides later whether the function exists. The syntax says which decimal mark and separator
 // the text uses, because people type formulas in their region's form.
 //
-// Two sets of rules share this grammar. 'textbook' (the default) reads -2^2 as -4 and 2^3^2 as 512, and knows the
-// constant E. 'excel' is what table formulas use (ADR 0058): a leading sign binds tighter than "^" and "^" groups
-// left to right, so -2^2 is 4 and 2^3^2 is 64; E is a name, not a constant; typed numbers keep 15 significant
-// digits; and the reference grammar grows array constants, A1#, "@", the space and union operators, Sheet!A1,
-// structured references, and whole rows. R1C1 references read when `r1c1` gives the cell they are relative to.
+// Two sets of rules share this grammar. 'textbook' is the default: -2^2 is -4, 2^3^2 is 512, and E is the constant e.
+// Table formulas use 'excel' (ADR 0058).
+// - A leading sign binds tighter than "^", and "^" groups left to right. So -2^2 is 4 and 2^3^2 is 64.
+// - E is a name, not a constant.
+// - Typed numbers keep 15 significant digits.
+// - The reference grammar adds array constants, A1#, "@", the space and union operators, Sheet!A1, structured
+//   references, and whole rows.
+// R1C1 references read when `r1c1` gives the cell they are relative to.
 
 import { BASE_LEX, setOf, type Dialect } from './dialect';
 

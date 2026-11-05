@@ -157,7 +157,9 @@ describe('references', () => {
     expect(() => excel('{1,A1}')).toThrow(ExprError);
     expect(excel('{c1}')).toMatchObject({ type: 'col', by: 'id', key: 'c1' });
   });
+});
 
+describe('reference operators and other tables', () => {
   it('reads spill references, @, intersection, and union', () => {
     expect(excel('A1#')).toMatchObject({ type: 'spill', ref: { type: 'cell', col: 0, row: 0 } });
     expect(() => excel('A1 #')).toThrow(ExprError);
@@ -191,7 +193,9 @@ describe('references', () => {
       expect(formatExpression(excel(text), { excel: true })).toBe(text);
     }
   });
+});
 
+describe('structured references', () => {
   it('reads structured references', () => {
     expect(plain(excel('Table1[Price]'))).toEqual({
       type: 'struct',
@@ -239,7 +243,9 @@ describe('references', () => {
     }
     expect(() => excel('T[[a],[b]]')).toThrow(ExprError);
   });
+});
 
+describe('R1C1 references', () => {
   it('reads R1C1 references relative to a cell when asked', () => {
     const at = sheetDialect({ decimal: '.', separator: ',', rules: 'excel', r1c1: { row: 4, col: 2 } });
     expect(plain(parse('R2C3', at))).toEqual({ type: 'cell', col: 2, row: 1, abs: { col: true, row: true } });

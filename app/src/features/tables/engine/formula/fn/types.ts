@@ -12,13 +12,13 @@ export interface Env {
 }
 
 /**
- * How an argument reaches a function:
- * - value: any value, coerced by the function itself;
- * - number, text, bool: one value the function reads as that kind;
- * - range: every cell of a reference, or a value typed directly (see `direct`);
- * - array: an array, or a single value as a one-by-one array;
- * - lambda: a LAMBDA value;
- * - lazy: not evaluated until the function asks, as IF's branches.
+ * How an argument reaches a function.
+ * - value: any value. The function coerces it itself.
+ * - number, text, bool: one value the function reads as that kind.
+ * - range: every cell of a reference, or a value typed directly (see `direct`).
+ * - array: an array. A single value comes as a one-by-one array.
+ * - lambda: a function value, made by LAMBDA.
+ * - lazy: not evaluated until the function asks, as IF's branches are.
  */
 export type ParamKind = 'value' | 'number' | 'text' | 'bool' | 'range' | 'array' | 'lambda' | 'lazy';
 
