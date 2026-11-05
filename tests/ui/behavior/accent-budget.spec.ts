@@ -51,7 +51,7 @@ const EXEMPT = [
 interface Walk {
   /** Elements whose paint used a time-of-day accent, with what they are. */
   timeOfDayUses: string[];
-  /** Buttons, tabs and button roles with a candle, dusk or night background. */
+  /** Buttons, tabs, and button roles with a candle, dusk or night background. */
   timeOfDayBackgrounds: string[];
   /** Tagged marks by kind. */
   marks: string[];

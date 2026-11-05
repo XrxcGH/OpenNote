@@ -1,7 +1,7 @@
 // How tools render in the command bar (docs/BRAND.md section 8): an icon before the name, icon-only formatting glyphs
 // with a tooltip, a pressed tool that keeps its icon weight and shows an outline, and Undo in More.
-// One page opens once and each part of the bar is checked in turn: the formatting tools show only with the caret in the
-// editor, the Draw tab waits for the ink tools to load, and the editor does not open a second time in one file.
+// One page opens once, and each part of the bar is checked in turn. The formatting tools show only with the caret in
+// the editor. The Draw tab waits for the ink tools to load. The editor does not open a second time in one file.
 
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';

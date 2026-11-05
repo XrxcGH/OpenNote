@@ -1,6 +1,6 @@
-// The calm polish of the shell (docs/BRAND.md sections 4, 8, 11, and 12): pressed tools that survive a Windows contrast
-// theme, short group dividers, the notebook's color in three marks, the plum evening, a flat canvas for more
-// contrast, interface text selection, and no focus ring after a pointer on focus the app moved.
+// The calm polish of the shell (docs/BRAND.md sections 4, 8, 11, and 12). Pressed tools survive a Windows contrast
+// theme. Group dividers are short. The notebook's color shows in three marks. The evening is plum. The canvas is flat
+// for more contrast. Interface text uses the selection color. Focus the app moves shows no ring after a pointer.
 
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
@@ -217,7 +217,7 @@ test.describe('the notebook color', () => {
   });
 });
 
-/** The red, green and blue of one pixel of a screenshot. */
+/** The red, green, and blue of one pixel of a screenshot. */
 async function pixel(page: Page, x: number, y: number): Promise<[number, number, number]> {
   const shot = await page.screenshot({ clip: { x, y, width: 1, height: 1 } });
   return page.evaluate(async (base64) => {
