@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { skipReason } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { clickAt, clientPoint, explain, makeBox, openEmptyPage, textBoxes } from './pageSession.ts';
+import { explain, makeBox, openEmptyPage, textBoxes } from './pageSession.ts';
 
 describe('keep-below', { skip: skipReason() }, () => {
   let session: AppSession | undefined;
@@ -27,8 +27,11 @@ describe('keep-below', { skip: skipReason() }, () => {
     await makeBox(browser, 100, 200 + height + 10, 'Below');
     // A box is placed with its first line centered on the click, so its top is not the point that was clicked.
     const lowerTop = (await textBoxes(browser))[1]!.top;
-    // Into the text of the upper box, not onto its grip at the left edge, and wait until the caret is there.
-    await clickAt(browser, await clientPoint(browser, 130, 210));
+    // Back to the upper box from the keyboard: Escape selects the lower box, Shift+Tab goes to the one before it in
+    // reading order, and Enter edits it. A click on a box that is already drawn does not move the caret.
+    await browser.keys('Escape');
+    await browser.keys(['Shift', 'Tab']);
+    await browser.keys('Enter');
     await explain(
       browser,
       browser.waitUntil(

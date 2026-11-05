@@ -273,7 +273,9 @@ async function keepWindow(browser: Browser, stamp: number): Promise<void> {
       const focus = element
         ? `${element.tagName.toLowerCase()} role=${element.getAttribute('role')} label=${element.getAttribute('aria-label')} block=${element.dataset.blockId}`
         : 'none';
-      const notices = [...document.querySelectorAll('[role="status"], [role="alert"]')].map((node) => node.textContent);
+      const notices = [...document.querySelectorAll('[role="status"], [role="alert"], [aria-live]')].map(
+        (node) => node.textContent,
+      );
       return `FOCUS: ${focus}
 NOTICES: ${JSON.stringify(notices)}
 ${document.body.innerText.slice(0, 6000)}`;

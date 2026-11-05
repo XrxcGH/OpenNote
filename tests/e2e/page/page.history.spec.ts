@@ -56,6 +56,14 @@ describe('page history', { skip: skipReason() }, () => {
     await panel.$('del').waitForExist({ timeout: 5_000 });
     await panel.$('button=Restore this paragraph').click();
     const box = browser.$('[role="textbox"][aria-label="Page text"]');
-    await browser.waitUntil(async () => (await box.getText()).includes('An earlier line.'), { timeout: 5_000 });
+    await browser
+      .waitUntil(async () => (await box.getText()).includes('An earlier line.'), { timeout: 5_000 })
+      .catch(async (error: unknown) => {
+        const notes = await browser.execute(() =>
+          [...document.querySelectorAll('[aria-live]')].map((node) => node.textContent).join(' | '),
+        );
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(`${reason} Page text: ${JSON.stringify(await box.getText())}. Announced: ${notes}`);
+      });
   });
 });
