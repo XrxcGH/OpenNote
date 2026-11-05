@@ -129,7 +129,7 @@ impl<'a> PageBuilder<'a> {
     pub fn push_blocks(&mut self, blocks: Vec<DocBlock>) {
         for block in blocks {
             match block {
-                DocBlock::Table { header, rows } => {
+                DocBlock::Table { header, rows, .. } => {
                     self.flush_text();
                     let data = table_data(header, rows, self.env);
                     self.pieces.push(BlockData::Table(data));

@@ -98,6 +98,8 @@ export interface CommandDef<Args = void> {
   when?: (ctx: CommandContext) => boolean;
   /** Shown but disabled when false. */
   enabled?: (ctx: CommandContext) => boolean;
+  /** Why a disabled command is disabled, in words: a menu shows it on the item (tooltip and aria-description). */
+  disabledReason?: (ctx: CommandContext) => string | undefined;
   /** For menuitemcheckbox, menuitemradio, and the palette. */
   checked?: (ctx: CommandContext) => boolean;
   /** Default true. */

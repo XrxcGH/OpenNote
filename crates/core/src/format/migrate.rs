@@ -1,4 +1,4 @@
-//! Migrations between format versions (spec 15.3). Owned by WP1. Version 1 has none.
+//! Migrations between format versions (spec 15.3). Owned by WP1. Version 1 to 2 is the identity (`R-VER-6`).
 //!
 //! A migration is a pure function on a JSON value. It uses no files, no clock, and no randomness, so running it
 //! twice gives the same result. The function [`upgrade`] runs the chain one step at a time, from the file's
@@ -46,8 +46,19 @@ pub struct Migration {
     pub run: fn(&mut serde_json::Value) -> Result<(), MigrationError>,
 }
 
-/// Every migration, in order. Empty in version 1.
-pub static MIGRATIONS: &[Migration] = &[];
+/// Every migration, in order.
+pub static MIGRATIONS: &[Migration] = &[Migration {
+    from: 1,
+    kinds: &FileKind::ALL,
+    name: "v1-to-v2",
+    run: v1_to_v2,
+}];
+
+/// Version 1 to 2 (`R-VER-6`): no field moves or changes. Only `formatVersion` changes, which [`upgrade`] sets.
+/// Version 2 keeps every key of version 1 with its meaning, and adds only optional keys and tags.
+fn v1_to_v2(_value: &mut Value) -> Result<(), MigrationError> {
+    Ok(())
+}
 
 /// A migration that couldn't run.
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
@@ -172,13 +183,26 @@ mod tests {
     ];
 
     #[test]
-    fn version_one_has_no_migrations_and_current_files_stay_as_they_are() {
-        assert!(MIGRATIONS.is_empty());
-        let mut value = json!({"formatVersion": 1, "title": "x"});
+    fn version_one_files_of_every_kind_upgrade_to_two_with_only_the_version_changed() {
+        for kind in FileKind::ALL {
+            let mut value = json!({"formatVersion": 1, "minReaderVersion": 1, "title": "x", "zz": {"b": 1}});
+            let report = upgrade(kind, &mut value).unwrap();
+            assert_eq!((report.from, report.to), (1, 2));
+            assert_eq!(report.applied, ["v1-to-v2"]);
+            assert_eq!(
+                value,
+                json!({"formatVersion": 2, "minReaderVersion": 1, "title": "x", "zz": {"b": 1}})
+            );
+        }
+    }
+
+    #[test]
+    fn current_files_stay_as_they_are() {
+        let mut value = json!({"formatVersion": 2, "title": "x"});
         let report = upgrade(FileKind::Page, &mut value).unwrap();
-        assert_eq!((report.from, report.to), (1, 1));
+        assert_eq!((report.from, report.to), (2, 2));
         assert!(report.applied.is_empty());
-        assert_eq!(value, json!({"formatVersion": 1, "title": "x"}));
+        assert_eq!(value, json!({"formatVersion": 2, "title": "x"}));
     }
 
     #[test]

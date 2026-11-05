@@ -1,6 +1,8 @@
-// The command bar's items with their commands and current states, in bar order: groups in the order their first
-// item registered, and items in registration order within a group. Items hide when their flag or their command's
-// flag is off, when the command doesn't exist, and when it isn't available (`when`).
+// The command bar's items with their commands and current states, in bar order.
+// Groups sit in the order their first item registered. The Insert tab's fixed groups come first (see barOrder.ts).
+// Items sit in registration order within a group.
+// Items hide when their flag or their command's flag is off, when the command doesn't exist, or when it isn't
+// available (`when`).
 
 import { isEnabled } from '../../app/flags';
 import type { AnyCommand } from '../../commands/keymap';
@@ -13,6 +15,7 @@ import { osStore } from '../../state/os';
 import { sessionStore } from '../../state/session';
 import { settingsStore } from '../../state/settings';
 import { useStore } from '../../state/store';
+import { inBarOrder } from './barOrder';
 
 export type BarTab = CommandBarItem['tab'];
 
@@ -43,12 +46,6 @@ function contextOrNull(): CommandContext | null {
     // Commands aren't configured, as in a test that renders the bar alone.
     return null;
   }
-}
-
-function inBarOrder(items: readonly CommandBarItem[]): CommandBarItem[] {
-  const groups = [...new Set(items.map((item) => `${item.tab} ${item.group}`))];
-  const rank = (item: CommandBarItem) => groups.indexOf(`${item.tab} ${item.group}`);
-  return [...items].sort((a, b) => rank(a) - rank(b));
 }
 
 /** Whether a command exists, its flag is on, and it is available now. */

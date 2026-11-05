@@ -48,6 +48,27 @@ fn a_notebook_becomes_markdown_files_with_assets_and_relative_links() {
 }
 
 #[test]
+fn an_exported_page_keeps_its_properties_in_front_matter() {
+    let world = TestEnv::new();
+    let mut sample = sample_notebook(&world.env());
+    let fields = serde_json::json!({ "fields": [
+        { "id": "a", "name": "Status", "type": "choice", "value": "Draft" },
+        { "id": "b", "name": "Pages read", "type": "number", "value": 12 },
+        { "id": "c", "name": "Done", "type": "checkbox", "value": true },
+    ] });
+    let page = sample.source.page_mut(sample.photo).expect("the page");
+    page.view.extra.insert("properties".to_owned(), fields);
+    let out = tempfile::tempdir().expect("a temp folder");
+    let exported =
+        export_files(&sample.source, Scope::Page(sample.photo), Format::Markdown, out.path()).expect("exports");
+    let photo = fs::read_to_string(&exported.files[0]).expect("the page is written");
+    assert!(
+        photo.contains("properties:\n  \"Status\": \"Draft\"\n  \"Pages read\": 12\n  \"Done\": true\n---\n"),
+        "{photo}"
+    );
+}
+
+#[test]
 fn links_to_pages_outside_the_export_keep_only_their_text_and_the_report_says_so() {
     let world = TestEnv::new();
     let sample = sample_notebook(&world.env());

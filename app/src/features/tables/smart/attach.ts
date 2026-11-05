@@ -142,11 +142,14 @@ class SmartTable implements SmartInstance, TableExtraHandle {
   }
 
   async commit(next: SmartData, change?: (data: TableData) => TableData | null): Promise<void> {
+    const before = this.current;
     this.current = next;
     this.refresh();
-    // The rows and the new data go in one step, so one Ctrl+Z puts both back.
-    if (change && (await this.host.apply(change, smartPatch(next)))) return;
-    await this.host.patch(smartPatch(next));
+    // Only the keys that changed go, so keys a later version wrote stay. The rows and the new data go in one
+    // step, so one Ctrl+Z puts both back.
+    const patch = smartPatch(next, before);
+    if (change && (await this.host.apply(change, patch))) return;
+    await this.host.patch(patch);
   }
 
   private render(shown: SmartModel): void {

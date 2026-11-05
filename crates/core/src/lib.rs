@@ -36,8 +36,13 @@ pub use limits::{Limits, Policy, Timings};
 pub use order::OrderKey;
 pub use time::{Clock, SystemClock, TestClock, Timestamp};
 
-/// The newest note format version this crate reads and writes (spec 15.1).
-pub const FORMAT_VERSION: u32 = 1;
+/// The newest note format version this crate reads and writes (spec 15.1). Writers stamp each file with the
+/// lowest version its content needs (spec 15.6, ADR 0078), so most files are still written as version 1.
+pub const FORMAT_VERSION: u32 = 2;
+
+/// The version of the files that never need a newer one: readable copies, journal files, and ink segments
+/// (spec 15.1, `R-VER-1`).
+pub const FIRST_FORMAT_VERSION: u32 = 1;
 
 /// The `minReaderVersion` this crate writes: the oldest reader that can show its files.
 pub const MIN_READER_VERSION: u32 = 1;

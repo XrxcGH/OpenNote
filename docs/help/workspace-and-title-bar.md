@@ -10,6 +10,7 @@ The workspace is the main screen. It holds the notebooks pane, the pages pane, a
 - **Command bar.** The tabs Home, Insert, Draw, and View. In a narrow window, the least-used buttons move into **More**.
 - **Notebooks and pages panes.** Drag a splitter to resize a pane. Double-click it to reset it. Press Ctrl+Shift+1 or Ctrl+Shift+2 to hide or show a pane.
 - **Regions.** Press F6 and Shift+F6 to move between the title bar, command bar, panes, and page.
+- **Menus.** A command that can't run right now is dimmed. Point at it, or move to it with a screen reader, to hear why, such as "Biology is already first" on Move up.
 
 ## The title bar
 
