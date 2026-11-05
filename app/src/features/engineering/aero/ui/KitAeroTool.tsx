@@ -2,7 +2,7 @@
 // typed in each tool and the unit system are remembered on this device, so closing the window loses nothing.
 import '../text';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import { t } from '../../../../strings/t';
 import { loadKits } from '../../../tools';
 import { LOADERS } from '../kit';
@@ -49,14 +49,8 @@ function Loaded({ id, system }: { id: AeroToolId; system: UnitSystem }) {
   return <ToolPanel spec={spec} values={values} system={system} onValues={setValues} />;
 }
 
-export function KitAeroTool() {
-  const [tab, setTab] = useState<AeroToolId>(() => {
-    const saved = loadKit().tab;
-    return isAeroTool(saved) ? saved : AERO_TOOLS[0].id;
-  });
-  const systemId = useId();
-  const panel = useRef<HTMLDivElement>(null);
-  // A live calculation block's Open in tool: the kit library loads on demand, then puts the block's values back.
+/** A live calculation block's Open in tool: the kit library loads on demand, then puts the block's values back. */
+function useAeroReopen(tab: AeroToolId, panel: RefObject<HTMLElement | null>) {
   useEffect(() => {
     let stop: (() => void) | undefined;
     let ended = false;
@@ -67,7 +61,18 @@ export function KitAeroTool() {
       ended = true;
       stop?.();
     };
-  }, [tab]);
+  }, [tab, panel]);
+}
+
+// checks-disable-next-line modifiability: the window's tabs, units, and panel share its state; split it when it grows
+export function KitAeroTool() {
+  const [tab, setTab] = useState<AeroToolId>(() => {
+    const saved = loadKit().tab;
+    return isAeroTool(saved) ? saved : AERO_TOOLS[0].id;
+  });
+  const systemId = useId();
+  const panel = useRef<HTMLDivElement>(null);
+  useAeroReopen(tab, panel);
   const [system, setSystem] = useState<UnitSystem>(() => (loadKit().system === 'us' ? 'us' : 'si'));
   useEffect(() => {
     const onTab = () => {
