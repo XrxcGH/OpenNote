@@ -92,7 +92,7 @@ fn front_matter(page: &Page) -> String {
     out.push_str("opennote:\n");
     out.push_str(&format!("  page: \"{}\"\n", page.id));
     out.push_str(&format!("  revision: \"{}\"\n", page.revision.id));
-    out.push_str(&format!("  format: {}\n", crate::FORMAT_VERSION));
+    out.push_str(&format!("  format: {}\n", crate::FIRST_FORMAT_VERSION));
     out.push_str("  checksum: \"crc32:00000000\"\n---\n");
     out
 }
