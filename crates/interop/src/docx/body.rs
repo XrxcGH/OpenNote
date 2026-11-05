@@ -78,7 +78,7 @@ impl State<'_> {
             } => self.callout(kind, title, blocks, frame),
             Block::Code { text, .. } => self.code(text),
             Block::Break => format!("<w:p><w:pPr>{RULE}</w:pPr></w:p>"),
-            Block::Table { header, rows } => self.table(*header, rows),
+            Block::Table { header, rows, .. } => self.table(*header, rows),
         }
     }
 
