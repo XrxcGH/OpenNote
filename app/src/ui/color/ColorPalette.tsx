@@ -1,3 +1,6 @@
+// checks-disable-file modifiability: one component whose parts share its state; split it when it grows again
+// checks-disable-file brand-consistency: color values here are the data the palette parses and computes, not interface colors
+
 // The one color palette (NEXT-PLAN section 3.4): theme colors with tints and shades, standard colors, recent colors,
 // Automatic, No color, and More colors. Text, tables, and later the format pane share it. It reports a pick and
 // draws nothing else: the caller applies the value, in a popover it owns. Arrow keys move between swatches

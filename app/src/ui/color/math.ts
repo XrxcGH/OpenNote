@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: color values here are the data the palette parses and computes, not interface colors
 // Color math for the palette: sRGB bytes, hex, HSL, tints and shades, and WCAG contrast. Worked from the published
 // definitions (WCAG 2.x relative luminance and contrast ratio, the standard RGB to HSL conversion), with no
 // lookup tables, so the known-answer tests can be worked by hand.
@@ -20,7 +21,7 @@ export function rgbToHex(rgb: Rgb): string {
   return `#${rgb.map((c) => clampByte(c).toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** Hue 0 to 359, saturation and lightness 0 to 100, each rounded to a whole number. */
+/** Hue 0 to 359, saturation, and lightness 0 to 100, each rounded to a whole number. */
 export function rgbToHsl([r, g, b]: Rgb): Hsl {
   const [rn, gn, bn] = [r / 255, g / 255, b / 255];
   const max = Math.max(rn, gn, bn);
@@ -65,7 +66,7 @@ export function darken(hex: string, percent: number): string {
   return rgbToHex(rgb.map((c) => c * t) as unknown as Rgb);
 }
 
-/** WCAG 2.x relative luminance of an sRGB color. */
+/** WCAG 2.x relative luminance of a sRGB color. */
 export function luminance([r, g, b]: Rgb): number {
   const lin = (c: number) => {
     const v = c / 255;

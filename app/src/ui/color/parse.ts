@@ -1,4 +1,5 @@
-// The shared color value parser (spec Appendix D.7, R-VAL-7 and R-VAL-8). `parseColor` reads what a person types;
+// checks-disable-file brand-consistency: these colors are data the palette parses, not interface colors
+// The shared color value parser (spec Appendix D.7, R-VAL-7, and R-VAL-8). `parseColor` reads what a person types;
 // `parseColorValue` reads what a page stores; `resolveColor` turns a stored value into `#rrggbb` for drawing and
 // for export. Tints are never stored: they become `#rrggbb` when applied.
 

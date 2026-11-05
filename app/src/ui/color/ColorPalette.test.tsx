@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 import { fireEvent, screen, within } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 import { beforeEach, describe, expect, it } from 'vitest';
 import { contrastRatio, darken, hexToRgb, hslToRgb, lighten, rgbToHex, rgbToHsl } from './math';
 import { parseColor, resolveColor } from './parse';

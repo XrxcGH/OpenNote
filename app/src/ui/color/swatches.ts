@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the standard colors are data the palette offers, not interface colors
 // The palette's swatches: eight theme columns with five tints and shades each, and ten standard colors.
 
 import { darken, lighten } from './math';
