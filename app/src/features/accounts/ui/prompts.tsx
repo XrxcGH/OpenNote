@@ -71,6 +71,8 @@ export interface AskOptions {
   confirmLabel: string;
   /** Hides what is typed. */
   secret?: boolean;
+  /** When set, an empty answer keeps the dialog open and shows this as the field's error. */
+  emptyMessage?: string;
 }
 
 /** Asks for one line of text. Resolves with the trimmed text, or null when canceled or left empty. */
@@ -79,7 +81,9 @@ export function askText(options: AskOptions): Promise<string | null> {
   return openDialog((close) => {
     function Asker() {
       const [value, setValue] = useState(options.initial ?? '');
+      const [error, setError] = useState<string | undefined>();
       const finish = () => {
+        if (value.trim() === '' && options.emptyMessage) return setError(options.emptyMessage);
         answer = value.trim() === '' ? null : value.trim();
         close();
       };
@@ -97,7 +101,11 @@ export function askText(options: AskOptions): Promise<string | null> {
             label={options.label}
             help={options.help}
             value={value}
-            onChange={setValue}
+            onChange={(next) => {
+              setValue(next);
+              setError(undefined);
+            }}
+            error={error}
             secret={options.secret}
             onCommit={finish}
             onCancel={close}

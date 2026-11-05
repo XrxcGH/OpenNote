@@ -1,10 +1,15 @@
 // The table mapping (PLAN.md section 10.5): data and documents round trip, the ID normalizer makes any data safe,
-// and after random table commands every row still has the first row's columns, in order.
+// and after random table commands every row still has the first row's columns, in order. Keys it doesn't know are
+// kept, and rows and columns keep their IDs through pastes and moves in the document.
+import type { Node as PMNode } from '@tiptap/pm/model';
+import { EditorState } from '@tiptap/pm/state';
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { applyTableOp, fitAddedColumn } from '../commands/tables';
 import type { TableOp } from '../commands/tables';
 import { createMarkdownCache } from '../markdown';
+import { tableSchema } from '../schema/schema';
+import { tableNodeSpecs } from '../schema/specs';
 import type { TableData } from '../schema/specs';
 import {
   MAX_COLUMN_WIDTH,
@@ -236,5 +241,90 @@ describe('a column added to a table that fits its page (Beta 5 walk W2-13)', () 
     expect(fitAddedColumn(data, added, each * 2)).toBe(added);
     expect(fitAddedColumn(data, added, each * 10)).toBe(added);
     expect(fitAddedColumn(data, added, 0)).toBe(added);
+  });
+});
+
+describe('keys the mapping does not know (SPEC 2.9)', () => {
+  it('survive a trip through the document on cells, rows, and columns', () => {
+    const data = newTableData(2, 2, false);
+    const [first, second] = data.columns;
+    const columns = [{ ...first, futureKey: { nested: [1, 'two'] } }, second];
+    const rows = data.rows.map((row, r) => ({
+      ...row,
+      ...(r === 0 ? { futureRow: true } : {}),
+      cells: { ...row.cells, [first.id]: { markdown: 'a', futureKey: 'kept' } },
+    }));
+    const before: TableData = { ...data, columns, rows };
+    const after = docToTableData(tableDataToDoc(before), before, cache);
+    expect(after).toEqual(before);
+    expect(sameTableData(after, before)).toBe(true);
+    expect(sameTableData(after, { ...before, columns: [first, second] })).toBe(false);
+  });
+
+  it('are kept by the normalizer, which fixes only the keys it knows', () => {
+    const data = normalizeTableData({
+      header: true,
+      futureTop: 1,
+      columns: [{ id: 'c', width: 5, futureKey: 'col' }],
+      rows: [{ id: 'r', futureKey: 'row', cells: { c: { markdown: 7, futureKey: 'cell' } } }],
+    });
+    expect(data.columns[0]).toEqual({ id: 'c', width: MIN_COLUMN_WIDTH, futureKey: 'col' });
+    expect(data.rows[0]).toEqual({ id: 'r', futureKey: 'row', cells: { c: { markdown: '', futureKey: 'cell' } } });
+  });
+});
+
+describe('row and column IDs on nodes', () => {
+  /** A row the way a paste brings it in: cells with text, and no IDs, since IDs are never in HTML. */
+  function pastedRow(texts: readonly string[]): PMNode {
+    const { nodes } = tableSchema;
+    const cells = texts.map((text) =>
+      nodes.tableCell.create(null, nodes.paragraph.create(null, tableSchema.text(text))),
+    );
+    return nodes.tableRow.create(null, cells);
+  }
+
+  function filled(): TableData {
+    const data = newTableData(2, 2, false);
+    data.rows.forEach((row, r) => data.columns.forEach((column, c) => (row.cells[column.id].markdown = `r${r}c${c}`)));
+    return data;
+  }
+
+  it('keep the original rows’ IDs on their content when two rows are pasted above row 1', () => {
+    const data = filled();
+    const state = EditorState.create({ doc: tableDataToDoc(data) });
+    // Position 1 is the start of the table's content, before its first row.
+    const tr = state.tr.insert(1, [pastedRow(['p0', 'p1']), pastedRow(['q0', 'q1'])]);
+    const next = docToTableData(tr.doc, data, cache);
+    const idOfText = (text: string) =>
+      next.rows.find((row) => row.cells[next.columns[0].id].markdown === text)?.id ?? null;
+    expect(idOfText('r0c0')).toBe(data.rows[0].id);
+    expect(idOfText('r1c0')).toBe(data.rows[1].id);
+    expect(next.rows).toHaveLength(4);
+    expect(new Set(ids(next)).size).toBe(ids(next).length);
+    expect(next.columns.map((column) => column.id)).toEqual(data.columns.map((column) => column.id));
+  });
+
+  it('keep a row’s ID when a transaction moves the row', () => {
+    const data = filled();
+    const doc = tableDataToDoc(data);
+    const table = doc.firstChild!;
+    const firstRow = table.child(0);
+    const state = EditorState.create({ doc });
+    const tr = state.tr.delete(1, 1 + firstRow.nodeSize);
+    tr.insert(tr.doc.firstChild!.content.size + 1, firstRow);
+    const next = docToTableData(tr.doc, data, cache);
+    expect(next.rows.map((row) => row.id)).toEqual([data.rows[1].id, data.rows[0].id]);
+    expect(next.rows[1].cells[data.columns[0].id].markdown).toBe('r0c0');
+  });
+
+  it('are never written to HTML, so a copied row pastes without them', () => {
+    const doc = tableDataToDoc(filled());
+    const row = doc.firstChild!.firstChild!;
+    const cell = row.firstChild!;
+    expect(row.attrs.rowId).toBeTruthy();
+    expect(cell.attrs.colId).toBeTruthy();
+    const html = JSON.stringify([tableNodeSpecs.tableRow.toDOM!(row), tableNodeSpecs.tableCell.toDOM!(cell)]);
+    expect(html).not.toContain(row.attrs.rowId as string);
+    expect(html).not.toContain(cell.attrs.colId as string);
   });
 });

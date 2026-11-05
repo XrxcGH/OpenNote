@@ -172,7 +172,7 @@ pub(crate) fn journal_meta(
         app: ctx.writer.clone(),
         device: ctx.device().id,
         boot: ctx.boot.clone(),
-        page_format: u16::try_from(crate::FORMAT_VERSION).unwrap_or(1),
+        page_format: u16::try_from(crate::FIRST_FORMAT_VERSION).unwrap_or(1),
     }
 }
 

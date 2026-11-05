@@ -1370,8 +1370,11 @@ mod tests {
         // The watch ends; its copy holds what the note has, so it goes (G8).
         assert!(in_sync(&copy));
         setup.stop(&copy);
+        // The copy goes first, then its record, so the record is awaited too.
         eventually("the copy is removed", || !copy.exists());
-        assert!(!record_path(&copy).expect("a record").exists());
+        eventually("its record is removed", || {
+            !record_path(&copy).expect("a record").exists()
+        });
     }
 
     #[test]

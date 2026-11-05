@@ -132,12 +132,41 @@ fn bad_data_of_a_known_type_is_kept_exactly() {
 }
 
 #[test]
+fn a_version_1_reader_opens_a_version_2_page_read_only_and_a_version_2_reader_edits_what_min_writer_allows() {
+    use crate::format::header::{found, permission, Permission};
+    let mut v2 = minimal();
+    v2["formatVersion"] = json!(2);
+    let stamp = found(&v2).unwrap().stamp;
+    assert_eq!(permission(stamp, 1), Permission::ReadOnly);
+    assert_eq!(permission(stamp, 2), Permission::Edit);
+    assert_eq!(read(&v2).unwrap().page.format.access, Access::ReadWrite);
+
+    let mut v3 = minimal();
+    v3["formatVersion"] = json!(3);
+    v3["minWriterVersion"] = json!(2);
+    v3["zz-later"] = json!({"b": 1, "a": 2});
+    let page = read(&v3).unwrap().page;
+    assert_eq!(page.format.access, Access::ReadWrite);
+    assert_eq!(permission(found(&v3).unwrap().stamp, 1), Permission::ReadOnly);
+    let written = String::from_utf8(write_page(&page)).unwrap();
+    assert!(written.starts_with(
+        "{
+  \"formatVersion\": 3,
+  \"minReaderVersion\": 1,
+  \"minWriterVersion\": 2,
+"
+    ));
+    let back: Value = serde_json::from_str(&written).unwrap();
+    assert_eq!(back["zz-later"], json!({"a": 2, "b": 1}));
+}
+
+#[test]
 fn headers_decide_what_a_reader_may_do() {
     let mut newer = minimal();
-    newer["formatVersion"] = json!(2);
+    newer["formatVersion"] = json!(3);
     let page = read(&newer).unwrap().page;
     assert_eq!(page.format.access, Access::ReadOnly(ReadOnlyReason::NewerFormat));
-    assert_eq!(page.format.version_read, 2);
+    assert_eq!(page.format.version_read, 3);
 
     let mut too_new = minimal();
     too_new["minReaderVersion"] = json!(3);

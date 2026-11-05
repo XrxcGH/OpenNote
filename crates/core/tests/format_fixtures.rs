@@ -106,8 +106,12 @@ fn fixture_notebook_files_round_trip() {
             _ => continue,
         };
         let mut value: Value = serde_json::from_slice(&bytes).unwrap();
+        let before = value.clone();
         let report = upgrade(kind, &mut value).unwrap();
-        assert!(report.applied.is_empty(), "version 1 files need no migration");
+        // R-VER-6: version 1 to 2 is the identity on JSON, apart from the version.
+        assert_eq!(report.applied, ["v1-to-v2"], "{name}");
+        value["formatVersion"] = before["formatVersion"].clone();
+        assert_eq!(value, before, "{name}");
         assert_eq!(round_trip(kind, &bytes), bytes, "{}", path.display());
         checked += 1;
     }

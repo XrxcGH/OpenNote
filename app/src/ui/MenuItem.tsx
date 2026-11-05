@@ -17,6 +17,8 @@ export interface MenuItemSpec {
   kind?: 'item' | 'checkbox' | 'radio';
   checked?: boolean;
   disabled?: boolean;
+  /** Why the item is disabled: its tooltip and aria-description while it is disabled. */
+  disabledReason?: string;
   danger?: boolean;
   separatorBefore?: boolean;
   submenu?: readonly MenuItemSpec[];
@@ -57,6 +59,7 @@ export function MenuItem({ item, id, columns, expanded, onActivate, onHover }: M
   const submenu = hasSubmenu(item);
   // The shortcut is shown in the user's words, such as "Ctrl+Shift+D", which is also the keymap's chord form.
   const keys = item.shortcut ? ariaKeyShortcuts([item.shortcut.replaceAll(' ', '') as Chord]) : undefined;
+  const reason = item.disabled ? item.disabledReason : undefined;
   return (
     <>
       {item.separatorBefore && <div role="separator" className={styles.separator} />}
@@ -67,6 +70,8 @@ export function MenuItem({ item, id, columns, expanded, onActivate, onHover }: M
         className={styles.item}
         data-danger={item.danger || undefined}
         aria-disabled={item.disabled || undefined}
+        aria-description={reason}
+        title={reason}
         aria-checked={role === 'menuitem' ? undefined : Boolean(item.checked)}
         aria-haspopup={submenu ? 'menu' : undefined}
         aria-expanded={submenu ? expanded : undefined}

@@ -340,6 +340,29 @@ fn archiving_marks_an_unknown_key_that_the_next_open_still_sees() {
 }
 
 #[test]
+fn only_the_styles_a_person_changes_get_a_new_time() {
+    let (_kit, mut store, _, _) = with_pages();
+    let v2 = |points: f64| {
+        let mut extra = serde_json::Map::new();
+        extra.insert("sizePt".to_owned(), serde_json::Value::from(points));
+        crate::model::StyleSpec {
+            extra,
+            ..Default::default()
+        }
+    };
+    // An older writer saved version 2 keys without the version 1 keys they decide (R-STY-2).
+    store.notebook.styles = [("h1".to_owned(), v2(20.0)), ("h2".to_owned(), v2(16.0))]
+        .into_iter()
+        .collect();
+    store.notebook.extra.remove(crate::model::STYLES_CHANGED);
+    let mut next = store.notebook.styles.clone();
+    next.insert("h2".to_owned(), v2(18.0));
+    store.set_notebook_styles(next).unwrap();
+    let times = store.notebook.extra[crate::model::STYLES_CHANGED].as_object().unwrap();
+    assert_eq!(times.keys().collect::<Vec<_>>(), ["h2"], "h1 was not changed");
+}
+
+#[test]
 fn a_notebook_keeps_its_named_styles() {
     let (kit, mut store, section, _) = with_pages();
     let styles = |size: f64| {
