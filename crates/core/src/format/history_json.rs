@@ -54,7 +54,7 @@ fn read_entry(value: serde_json::Value, index: usize) -> Result<VersionEntry, Fo
 
 /// Writes `versions.json` in canonical form.
 pub fn write_versions(file: &VersionsFile) -> Vec<u8> {
-    let mut obj = header::start(kinds::HISTORY);
+    let mut obj = header::start(kinds::HISTORY, header::Stamp::of_other_file(&file.format));
     obj.put("page", Json::string(file.page.to_string()));
     let versions: Vec<Json<'_>> = file.versions.iter().map(write_entry).collect();
     obj.unless("versions", versions.is_empty(), || Json::Array(versions));

@@ -58,7 +58,7 @@ pub fn render_ink_svg(page: &Page) -> Vec<u8> {
         "<!-- opennote: {{\"page\": {}, \"revision\": {}, \"format\": {}, \"checksum\": \"crc32:00000000\"}} -->",
         quoted(&page.id.to_string()),
         quoted(&page.revision.id.to_string()),
-        crate::FORMAT_VERSION
+        crate::FIRST_FORMAT_VERSION
     );
     let [vx, vy, vw, vh] = &view;
     let _ = writeln!(

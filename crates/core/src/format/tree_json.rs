@@ -5,7 +5,7 @@
 
 mod entries;
 mod merge;
-mod styles;
+pub mod styles;
 
 use super::header::{self, restrict};
 use super::json::{self, Json};
@@ -50,7 +50,7 @@ pub fn read_section(bytes: &[u8], limits: &Limits) -> Result<SectionFile, Format
 
 /// Writes `section.json` in canonical form.
 pub fn write_section(file: &SectionFile) -> Vec<u8> {
-    let mut obj = header::start(kinds::SECTION);
+    let mut obj = header::start(kinds::SECTION, header::Stamp::of_other_file(&file.format));
     obj.put("id", Json::string(file.id.to_string()))
         .put("title", Json::str(&file.title))
         .opt("color", file.color.as_ref().map(|c| Json::string(c.to_text())))
@@ -67,7 +67,7 @@ pub fn write_section(file: &SectionFile) -> Vec<u8> {
 
 /// Reads `notebook.json`.
 pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, FormatError> {
-    let (mut fields, format) = header::read_file(bytes, limits, kinds::NOTEBOOK, FileKind::Notebook)?;
+    let (mut fields, mut format) = header::read_file(bytes, limits, kinds::NOTEBOOK, FileKind::Notebook)?;
     let groups = fields
         .array("groups")?
         .into_iter()
@@ -83,7 +83,7 @@ pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, Form
         defaults: fields.opt_object("defaults")?,
         styles: fields
             .take("styles")
-            .map(styles::read_styles)
+            .map(|value| styles::read_styles(value, &mut format.warnings))
             .transpose()?
             .unwrap_or_default(),
         groups,
@@ -94,7 +94,7 @@ pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, Form
 
 /// Writes `notebook.json` in canonical form.
 pub fn write_notebook(file: &NotebookFile) -> Vec<u8> {
-    let mut obj = header::start(kinds::NOTEBOOK);
+    let mut obj = header::start(kinds::NOTEBOOK, header::Stamp::of_other_file(&file.format));
     obj.put("id", Json::string(file.id.to_string()))
         .put("title", Json::str(&file.title))
         .opt("color", file.color.as_ref().map(|c| Json::string(c.to_text())))
