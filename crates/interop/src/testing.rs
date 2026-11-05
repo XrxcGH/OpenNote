@@ -122,13 +122,13 @@ fn sample_pages(env: &ImportEnv<'_>) -> (ImportedPage, ImportedPage, ImportedPag
     photo.push_blocks(parse(&markdown, SoftBreaks::Space).blocks);
     photo.push_image(leaf, "Leaf section".to_owned());
     photo.push_file(notes);
-    photo.push_blocks(vec![Block::Table {
-        header: true,
-        rows: vec![
+    photo.push_blocks(vec![Block::table(
+        true,
+        vec![
             vec![vec![Inline::text("Stage")], vec![Inline::text("Where it happens")]],
             vec![vec![Inline::text("Light reactions")], vec![Inline::text("Thylakoid")]],
         ],
-    }]);
+    )]);
     let back = format!(
         "Back to [Photosynthesis](opennote:page/{}).\n\n1. First\n2. Second",
         photo.id()

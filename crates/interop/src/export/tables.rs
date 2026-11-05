@@ -143,7 +143,7 @@ fn collect_tables(
             .iter()
             .enumerate()
             .filter_map(|(at, b)| match b {
-                Block::Table { header, rows } => Some((
+                Block::Table { header, rows, .. } => Some((
                     *header,
                     rows.iter().map(|r| r.iter().map(|c| cell_text(c)).collect()).collect(),
                     choice_lists(&page, origins.get(at)),
@@ -284,6 +284,7 @@ fn cell_text(inlines: &[Inline]) -> String {
             Inline::HardBreak => out.push('\n'),
             Inline::SoftBreak => out.push(' '),
             Inline::Image { alt, .. } => out.push_str(alt),
+            Inline::Note { .. } => {}
         }
     }
     out
