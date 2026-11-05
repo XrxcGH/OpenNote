@@ -141,20 +141,34 @@ describe('hostile input', () => {
     keepsBytes(markdown);
   });
 
-  it('caps 10,000 nested tags at 32 pairs, quickly', () => {
+  // The budget sits well under the test's own timeout, so a slow parse fails on the assertion, not the timer.
+  it('caps 10,000 nested tags at 32 pairs, quickly', { timeout: 15_000 }, () => {
     const depth = 10_000;
     const opens = Array.from({ length: depth }, (_, i) => `<span data-d="${i}">`).join('');
     const markdown = `${opens}x${'</span>'.repeat(depth)}`;
     const started = performance.now();
     const doc = parseTextBlock(markdown);
     const written = serializeTextBlock(doc);
-    expect(performance.now() - started).toBeLessThan(20_000);
+    expect(performance.now() - started).toBeLessThan(2_000);
     let most = 0;
     doc.descendants((node) => {
       most = Math.max(most, node.marks.length);
     });
     expect(most).toBe(32);
     expect(serializeTextBlock(parseTextBlock(written))).toBe(written);
+  });
+
+  // Each `!` before a reference or a link makes the writer look back for backslashes; that look must stay short.
+  it.each([
+    ['footnote references', `\\![^0${'a'.repeat(25)}] `],
+    ['links', '\\![a](https://example.org) '],
+  ])('writes a paragraph of 10,000 %s in linear time', { timeout: 15_000 }, (_, unit) => {
+    const markdown = unit.repeat(10_000).trimEnd();
+    const doc = parseTextBlock(markdown);
+    const started = performance.now();
+    const written = serializeTextBlock(doc);
+    expect(performance.now() - started).toBeLessThan(1_000);
+    expect(written).toBe(markdown);
   });
 
   it('reads 10,000 nested tags of one kind as one mark', () => {

@@ -87,19 +87,27 @@ const MARK_OPEN: Readonly<Record<string, string>> = {
 class InlineBuilder {
   readonly out: PMNode[] = [];
   private readonly open: { key: string; mark: Mark | null }[] = [];
+  /** The active set, kept until the open stack changes, so a long run of literal text does not sort it again. */
+  private cached: readonly Mark[] | null = null;
 
   /** Inner marks of one kind replace outer ones (R-MRK-28), except comments and foreign marks, which stack. */
   private active(): readonly Mark[] {
-    return canonicalMarks(this.open.reduce<readonly Mark[]>((set, { mark }) => (mark ? mark.addToSet(set) : set), []));
+    this.cached ??= canonicalMarks(
+      this.open.reduce<readonly Mark[]>((set, { mark }) => (mark ? mark.addToSet(set) : set), []),
+    );
+    return this.cached;
   }
 
   push(key: string, mark: Mark | null): void {
     this.open.push({ key, mark });
+    if (mark) this.cached = null;
   }
 
   close(key: string): void {
     const at = this.open.map((entry) => entry.key).lastIndexOf(key);
-    if (at >= 0) this.open.splice(at, 1);
+    if (at < 0) return;
+    if (this.open[at].mark) this.cached = null;
+    this.open.splice(at, 1);
   }
 
   text(content: string, extra?: Mark): void {

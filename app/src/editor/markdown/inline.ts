@@ -85,26 +85,43 @@ function leafOutputs(leaves: readonly Leaf[], plan: Plan, mode: EscapeMode): str
 }
 
 function render(plan: Plan, outputs: readonly string[], styles: ReadonlyMap<Range, Style>): string {
-  let text = '';
+  // Pieces, never one growing string: escaping a `!` then edits only the last piece, so writing stays linear.
+  const parts: string[] = [];
+  const add = (piece: string) => {
+    if (piece !== '') parts.push(piece);
+  };
   plan.boundaries.forEach(({ closes, opens }, at) => {
-    for (const range of closes) text += closeToken(range, styles.get(range) ?? 'tag');
+    for (const range of closes) add(closeToken(range, styles.get(range) ?? 'tag'));
     for (const range of opens) {
       const open = openToken(range, styles.get(range) ?? 'tag');
-      if (open === '[' && bangIsBare(text)) text = `${text.slice(0, -1)}\\!`;
-      text += open;
+      if (open === '[') escapeBareBang(parts);
+      add(open);
     }
     if (at < outputs.length) {
-      if (outputs[at].startsWith('[^') && bangIsBare(text)) text = `${text.slice(0, -1)}\\!`;
-      text += outputs[at];
+      if (outputs[at].startsWith('[^')) escapeBareBang(parts);
+      add(outputs[at]);
     }
   });
-  return text;
+  return parts.join('');
 }
 
-/** A `!` right before a link's `[` or a footnote reference would read as an image (SPEC 7.6). */
-function bangIsBare(text: string): boolean {
-  const slashes = /\\*$/.exec(text.slice(0, -1))?.[0].length ?? 0;
-  return text.endsWith('!') && slashes % 2 === 0;
+/**
+ * A `!` right before a link's `[` or a footnote reference would read as an image (SPEC 7.6), so a `!` that no
+ * backslash escapes gets one. It looks back only over the backslashes before the `!`.
+ */
+function escapeBareBang(parts: string[]): void {
+  const last = parts.length - 1;
+  if (last < 0 || !parts[last].endsWith('!')) return;
+  let slashes = 0;
+  let part = last;
+  let at = parts[last].length - 2;
+  for (;;) {
+    while (at < 0 && part > 0) at = parts[--part].length - 1;
+    if (at < 0 || parts[part][at] !== '\\') break;
+    slashes++;
+    at--;
+  }
+  if (slashes % 2 === 0) parts[last] = `${parts[last].slice(0, -1)}\\!`;
 }
 
 /** Attributes as the writer writes them: their text cleaned of what Markdown never holds. */

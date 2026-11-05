@@ -8,7 +8,7 @@ import { textExtensions } from '../schema/schema';
 import { createMarkdownCache } from './cache';
 import { fromNeutral, toNeutral } from './neutral';
 import type { NeutralBlock } from './neutral';
-import { parseTextBlock } from './parse';
+import { parseNoteText, parseTextBlock } from './parse';
 import { serializeTextBlock } from './serialize';
 
 const FILE = fileURLToPath(new URL('../../../../docs/format/fixtures/markdown/inline-v2/cases.json', import.meta.url));
@@ -59,5 +59,22 @@ describe('the shared inline-v2 fixtures', () => {
     every.push('otf', 'effect', 'box', 'highlight', 'shade', 'color', 'lang', 'dir', 'comment', 'ins', 'del', 'fmt');
     every.push('style', 'float', 'foreign');
     expect(every.filter((kind) => !kinds.has(kind))).toEqual([]);
+  });
+});
+
+// R-FN-4: in a note's, comment's, or cell note's Markdown, a reader reads an unescaped `[^ID]` as literal text.
+describe('note Markdown holds no references', () => {
+  const hasNote = (blocks: readonly NeutralBlock[]) => JSON.stringify(blocks).includes('"footnote":');
+
+  it('reads the reference fixture as the literal text it was written as', () => {
+    const reference = cases.find((c) => c.name === 'footnote reference') as InlineCase;
+    expect(hasNote(reference.tree)).toBe(true);
+    expect(toNeutral(parseNoteText(reference.markdown))).toEqual([
+      { type: 'paragraph', content: [{ text: reference.markdown, marks: [] }] },
+    ]);
+  });
+
+  it.each(cases.filter((c) => hasNote(c.tree)).map((c) => [c.name, c] as const))('%s', (_name, c) => {
+    expect(hasNote(toNeutral(parseNoteText(c.markdown)))).toBe(false);
   });
 });

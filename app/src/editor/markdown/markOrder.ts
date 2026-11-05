@@ -8,13 +8,15 @@ const RANK: ReadonlyMap<string, number> = new Map(MARK_ORDER.map((name, i) => [n
 
 /** Compares two strings by code point, as the spec orders tags and IDs. */
 export function compareCodePoints(a: string, b: string): number {
-  const left = Array.from(a);
-  const right = Array.from(b);
-  for (let i = 0; i < Math.min(left.length, right.length); i++) {
-    const diff = (left[i].codePointAt(0) as number) - (right[i].codePointAt(0) as number);
-    if (diff !== 0) return diff;
+  let i = 0;
+  while (i < a.length && i < b.length) {
+    const left = a.codePointAt(i) as number;
+    const right = b.codePointAt(i) as number;
+    if (left !== right) return left - right;
+    // Equal code points take the same number of UTF-16 units, so one index serves both strings.
+    i += left > 0xffff ? 2 : 1;
   }
-  return left.length - right.length;
+  return Math.sign(a.length - i) - Math.sign(b.length - i);
 }
 
 /** The key that orders marks of one kind that may repeat. */
