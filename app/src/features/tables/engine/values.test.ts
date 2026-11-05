@@ -107,6 +107,7 @@ describe('legacy formulas', () => {
     expect(calc('-2^2')).toBe(4);
     expect(calc('2^3^2')).toBe(64);
     expect(calc('E')).toEqual(err('NAME'));
+    expect(calc('@4')).toBe(4);
   });
 
   it.each([

@@ -106,7 +106,8 @@ class Compiler {
 
   private unary(node: Extract<Node, { type: 'unary' }>): Part {
     if (node.op === '-') return this.map(node.arg, applyNegate);
-    return node.op === '+' ? this.map(node.arg, (v) => v) : this.map(node.arg, applySqrt);
+    // "@" on one value is that value; reading one row of a range waits for lane engine-eval.
+    return node.op === '√' ? this.map(node.arg, applySqrt) : this.map(node.arg, (v) => v);
   }
 
   private map(arg: Node, f: (v: Value) => Value): Part {
