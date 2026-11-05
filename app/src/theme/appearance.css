@@ -29,3 +29,41 @@
     outline: none;
   }
 }
+
+/* The open notebook's pen color, for the few marks of place: the breadcrumb dot, the active tab's edge and the page
+   title's rule (docs/BRAND.md section 4). A mark reads the variable and never a pen directly. */
+@layer tokens {
+  [data-accent='ink'] {
+    --notebook-accent: var(--ink-ink);
+  }
+
+  [data-accent='indigo'] {
+    --notebook-accent: var(--ink-indigo);
+  }
+
+  [data-accent='brick'] {
+    --notebook-accent: var(--ink-brick);
+  }
+
+  [data-accent='fern'] {
+    --notebook-accent: var(--ink-fern);
+  }
+
+  [data-accent='plum'] {
+    --notebook-accent: var(--ink-plum);
+  }
+
+  [data-accent='amber'] {
+    --notebook-accent: var(--ink-amber);
+  }
+
+  [data-accent='walnut'] {
+    --notebook-accent: var(--ink-walnut);
+  }
+
+  @media (forced-colors: active) {
+    [data-accent] {
+      --notebook-accent: CanvasText;
+    }
+  }
+}

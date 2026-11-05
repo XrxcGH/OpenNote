@@ -38,6 +38,22 @@
     color: var(--color-text-primary);
   }
 
+  /* The active tab says so with more than color: a semibold name, and when its notebook has a color, a 2 px top edge.
+     The tab's width is fixed by its basis, so the heavier name never moves its neighbors. */
+  .tab[data-active] .title {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .tab[data-active][data-notebook-mark='tab'] {
+    box-shadow: inset 0 2px 0 var(--notebook-accent);
+  }
+
+  @media (forced-colors: active) {
+    .tab[data-active][data-notebook-mark='tab'] {
+      box-shadow: none;
+    }
+  }
+
   .tab:not([data-active]):hover {
     background: var(--color-surface-hover);
   }

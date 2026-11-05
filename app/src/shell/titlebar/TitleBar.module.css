@@ -138,6 +138,13 @@
     forced-color-adjust: none;
   }
 
+  /* Like the tree's chip, the dot keeps an outline under Windows contrast themes. */
+  @media (forced-colors: active) {
+    .crumb[data-ink]::before {
+      outline: 1px solid CanvasText;
+    }
+  }
+
   .crumb[aria-current] {
     color: var(--color-text-primary);
   }
