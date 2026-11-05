@@ -25,18 +25,31 @@ describe('keep-below', { skip: skipReason() }, () => {
           .closest<HTMLElement>('[data-block-id]')!.offsetHeight,
     );
     await makeBox(browser, 100, 200 + height + 10, 'Below');
-    await clickAt(browser, await clientPoint(browser, 110, 210));
+    // A box is placed with its first line centered on the click, so its top is not the point that was clicked.
+    const lowerTop = (await textBoxes(browser))[1]!.top;
+    // Into the text of the upper box, not onto its grip at the left edge, and wait until the caret is there.
+    await clickAt(browser, await clientPoint(browser, 130, 210));
+    await explain(
+      browser,
+      browser.waitUntil(
+        () =>
+          browser.execute(
+            () => document.activeElement?.closest<HTMLElement>('[data-block-id]')?.textContent === 'Above',
+          ),
+        { timeout: 5_000 },
+      ),
+    );
     await browser.keys(['End', 'Enter', 'A', 'n', 'o', 't', 'h', 'e', 'r']);
     await explain(
       browser,
-      browser.waitUntil(async () => (await textBoxes(browser))[1]!.top > 200 + height + 10, { timeout: 5_000 }),
+      browser.waitUntil(async () => (await textBoxes(browser))[1]!.top > lowerTop, { timeout: 5_000 }),
     );
-    const moved = (await textBoxes(browser))[1]!.top - (200 + height + 10);
+    const moved = (await textBoxes(browser))[1]!.top - lowerTop;
     assert.ok(moved > 10, 'the lower box moved down by the new line');
     await browser.keys(['Control', 'z']);
     await explain(
       browser,
-      browser.waitUntil(async () => (await textBoxes(browser))[1]!.top === 200 + height + 10, { timeout: 5_000 }),
+      browser.waitUntil(async () => (await textBoxes(browser))[1]!.top === lowerTop, { timeout: 5_000 }),
     );
   });
 });

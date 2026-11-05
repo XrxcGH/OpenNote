@@ -43,12 +43,13 @@ jobs:
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
         # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
+        # The timeout is for a whole file: the crash spec starts the app 50 times and takes about nine minutes.
         # Each spec file runs in a process of its own, and any app or driver it left behind is stopped before the
         # next one starts, so one spec that dies cannot reset the connections of the 70 after it.
         run: |
           $failed = @()
           foreach ($spec in Get-ChildItem tests/e2e -Recurse -Filter '*.spec.ts' | Sort-Object FullName) {
-            node --test --test-concurrency=1 --test-timeout=600000 $spec.FullName
+            node --test --test-concurrency=1 --test-timeout=1800000 $spec.FullName
             if ($LASTEXITCODE -ne 0) { $failed += $spec.Name }
             Get-Process -Name opennote, msedgedriver, tauri-driver -ErrorAction SilentlyContinue |
               Stop-Process -Force -ErrorAction SilentlyContinue

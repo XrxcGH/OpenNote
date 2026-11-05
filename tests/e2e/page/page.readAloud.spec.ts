@@ -25,24 +25,27 @@ describe('read aloud', { skip: skipReason() }, () => {
     const { browser } = session;
     // The web speech engine itself must be able to speak here. A runner with voices and no audio output lists the
     // voices and then fails every utterance (audio-hardware), which the app rightly reports as no voice.
-    const speech = await browser.executeAsync((done: (result: { local: number; error: string | null }) => void) => {
-      const voices = () => speechSynthesis.getVoices().filter((voice) => voice.localService);
-      const speak = () => {
-        const first = voices()[0];
-        if (!first) return done({ local: 0, error: null });
-        const utterance = new SpeechSynthesisUtterance('Test.');
-        utterance.voice = first;
-        utterance.onstart = () => {
-          speechSynthesis.cancel();
-          done({ local: voices().length, error: null });
+    const speech = await browser
+      .executeAsync((done: (result: { local: number; error: string | null }) => void) => {
+        const voices = () => speechSynthesis.getVoices().filter((voice) => voice.localService);
+        const speak = () => {
+          const first = voices()[0];
+          if (!first) return done({ local: 0, error: null });
+          const utterance = new SpeechSynthesisUtterance('Test.');
+          utterance.voice = first;
+          utterance.onstart = () => {
+            speechSynthesis.cancel();
+            done({ local: voices().length, error: null });
+          };
+          utterance.onerror = (event) => done({ local: voices().length, error: event.error });
+          speechSynthesis.speak(utterance);
         };
-        utterance.onerror = (event) => done({ local: voices().length, error: event.error });
-        speechSynthesis.speak(utterance);
-      };
-      if (voices().length) speak();
-      else speechSynthesis.addEventListener('voiceschanged', speak, { once: true });
-      setTimeout(() => done({ local: voices().length, error: 'no start within 8 seconds' }), 8_000);
-    });
+        if (voices().length) speak();
+        else speechSynthesis.addEventListener('voiceschanged', speak, { once: true });
+        setTimeout(() => done({ local: voices().length, error: 'no start within 8 seconds' }), 8_000);
+      })
+      // The engine may also fail by throwing, as it did on a runner without audio ("synthesis-failed").
+      .catch((error: unknown) => ({ local: 1, error: error instanceof Error ? error.message : String(error) }));
     if (!speech.local) {
       context.skip('No local voices on this runner.');
       return;

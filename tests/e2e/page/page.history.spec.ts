@@ -40,10 +40,18 @@ describe('page history', { skip: skipReason() }, () => {
     await runCommand(browser, 'Page history');
     const panel = browser.$('aside[aria-label="Page history"]');
     await panel.waitForExist({ timeout: 5_000 });
-    const versions = await panel.$$('ul[aria-label="Versions"] button:not([disabled])');
-    if (!versions.length) {
-      assert.fail('The panel lists no earlier version after a save.');
-    }
+    const versionButtons = 'ul[aria-label="Versions"] button:not([disabled])';
+    // The panel shows "Loading versions" until the core has listed them.
+    await browser
+      .waitUntil(
+        async () => {
+          const found = await panel.$$(versionButtons);
+          return [...found].length > 0;
+        },
+        { timeout: 15_000 },
+      )
+      .catch(() => assert.fail('The panel lists no earlier version after the page closed with an edit.'));
+    const versions = await panel.$$(versionButtons);
     await versions[0].click();
     await panel.$('del').waitForExist({ timeout: 5_000 });
     await panel.$('button=Restore this paragraph').click();
