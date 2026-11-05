@@ -12,7 +12,7 @@ import { codePieces, codeText } from './normalize/vscode';
 import { joinBrokenLines } from './pdf';
 import { detectSource } from './sources';
 import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from '../../../editor/markdown/paste';
-import { extractTables, tableMarker } from './tables';
+import { extractTables, tabTableData, tableMarker } from './tables';
 import { tidyDoc } from './tidy';
 import { MAX_HTML_LENGTH } from './types';
 import type { ImageRequest, PasteInput, PasteOptions, PasteResult, PastedPiece, TableData } from './types';
@@ -82,6 +82,10 @@ function fromHtml(html: string, input: PasteInput, newId: () => string): PasteRe
 }
 
 function fromText(text: string, newId: () => string, plainFallback: boolean): PasteResult {
+  const grid = tabTableData(text, newId);
+  if (grid) {
+    return { source: 'plain', pieces: [{ kind: 'table', data: grid }], images: [], plainFallback, joinedText: null };
+  }
   const markdown = looksLikeMarkdown(text);
   const pieces = markdown ? parsePastedMarkdown(text, newId) : plainTextPieces(text);
   const joinedText = markdown ? null : joinBrokenLines(text);

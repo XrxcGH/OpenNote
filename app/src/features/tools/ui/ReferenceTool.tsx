@@ -16,6 +16,7 @@ import { InsertButton } from './InsertButton';
 import { UnitsSheet } from './UnitsSheet';
 import extra from './extra.module.css';
 import ref from './reference.module.css';
+import { moveBetweenTabs } from './tabKeys';
 import styles from './tools.module.css';
 
 type Tab = 'elements' | 'units' | 'chemistry' | 'constants' | 'prefixes' | 'greek';
@@ -57,7 +58,7 @@ export function ReferenceTool() {
 
   return (
     <div className={styles.toolFill}>
-      <div className={styles.tabs} role="tablist" aria-label={t('study.reference.title')}>
+      <div className={styles.tabs} role="tablist" aria-label={t('study.reference.title')} onKeyDown={moveBetweenTabs}>
         {TABS.map((one) => (
           <button
             key={one}
@@ -66,6 +67,7 @@ export function ReferenceTool() {
             id={`reference-tab-${one}`}
             aria-selected={tab === one}
             aria-controls="reference-panel"
+            tabIndex={tab === one ? 0 : -1}
             className={styles.tab}
             onClick={() => {
               // A search is for the table it was typed in: another table starts with all of its rows.

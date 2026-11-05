@@ -25,6 +25,8 @@ export const commands = {
     insert: 'Insert',
     draw: 'Draw',
     view: 'View',
+    layout: 'Layout',
+    review: 'Review',
     more: 'More',
     // Short names for the tools whose command names are whole sentences, so the Insert tab fits a narrow bar.
     short: {

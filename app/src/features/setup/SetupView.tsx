@@ -136,7 +136,7 @@ function StepForm(props: FormProps) {
             <FocusFirst key={step.id} content={content} draft={draft} />
           </Suspense>
         </div>
-        <footer className={styles.footer}>
+        <footer className={styles.footer} data-toast-above="">
           {index > 0 && (
             <Button variant="quiet" onClick={() => goTo(steps[index - 1])}>
               {t('setup.actions.back')}

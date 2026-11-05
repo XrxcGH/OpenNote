@@ -6,7 +6,8 @@ export const vibrations = {
     short: 'Vibration, one mass',
     about:
       'A mass on a spring and damper: natural frequency, damping, response, and isolation. x is from equilibrium, positive with the force.',
-    keywords: 'vibration natural frequency damping ratio resonance transmissibility isolation spring mass damper',
+    keywords:
+      'vibration natural frequency damping ratio resonance transmissibility isolation spring mass damper vibration one mass',
     field: {
       m: 'Mass, m',
       k: 'Stiffness, k',
@@ -88,7 +89,7 @@ export const vibrations = {
       'bar, shaft, or beam.',
     keywords:
       'vibration modes mode shape natural frequencies mass matrix stiffness matrix eigenvalue modal analysis ' +
-      'absorber string bar beam cantilever continuous',
+      'absorber string bar beam cantilever continuous vibration many masses',
     field: {
       model: 'System',
       masses: 'Masses, left to right',

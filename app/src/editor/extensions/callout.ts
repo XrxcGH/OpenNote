@@ -1,6 +1,7 @@
 // Callouts (ARCHITECTURE.md section 8.2; owner: WP4): a note named by its type and title, a type menu, and the
 // fold button of a foldable callout. A callout's fold is content (SPEC 7.2's `[!type]-`), so the button changes the
 // Markdown in one undo step and folds it for everyone. Backspace at the start of the title unwraps the callout.
+import { Extension } from '@tiptap/core';
 import type { Editor, Extensions } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
@@ -27,13 +28,19 @@ export function calloutName(node: PMNode): string {
   return title ? t('editor.callout.named', { type, title }) : type;
 }
 
-function button(className: string, onPress: () => void): HTMLButtonElement {
+function button(className: string, onPress: () => void, editor: Editor): HTMLButtonElement {
   const element = document.createElement('button');
   element.type = 'button';
-  element.tabIndex = -1;
   element.className = className;
   element.addEventListener('mousedown', (event) => event.preventDefault());
   element.addEventListener('click', onPress);
+  // Escape gives the caret back to the text, so the buttons are a visit and not a trap (Beta 8 walk A-A06-2).
+  element.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    editor.view.focus();
+  });
   return element;
 }
 
@@ -55,9 +62,9 @@ class CalloutView implements NodeView {
     const controls = document.createElement('span');
     controls.contentEditable = 'false';
     controls.className = styles.calloutControls;
-    this.typeButton = button(styles.calloutType, () => void this.chooseType());
+    this.typeButton = button(styles.calloutType, () => void this.chooseType(), editor);
     this.typeButton.setAttribute('aria-haspopup', 'menu');
-    this.foldButton = button(styles.calloutFold, () => this.toggleFold());
+    this.foldButton = button(styles.calloutFold, () => this.toggleFold(), editor);
     controls.append(this.typeButton, this.foldButton);
     this.contentDOM = document.createElement('div');
     this.contentDOM.className = styles.calloutBody;
@@ -128,6 +135,20 @@ class CalloutView implements NodeView {
   }
 }
 
+/**
+ * Tab in a callout's title moves to its type button, and Tab again to the fold button. A title is a line of words, so
+ * a tab character in it is no use, and this is the one way from the keys to the buttons (Beta 8 walk A-A06-2).
+ */
+function tabToControls(editor: Editor): boolean {
+  const { $from } = editor.state.selection;
+  if (!editor.isEditable || $from.parent.type.name !== 'calloutTitle') return false;
+  const dom = editor.view.nodeDOM($from.before(-1));
+  const buttons = dom instanceof HTMLElement ? [...dom.querySelectorAll<HTMLButtonElement>('button')] : [];
+  const first = buttons.find((one) => !one.hidden);
+  first?.focus();
+  return first !== undefined;
+}
+
 /** Backspace at the very start of a callout's title turns the callout back into text. */
 function unwrapAtTitleStart(editor: Editor): boolean {
   const { $from, empty } = editor.state.selection;
@@ -159,6 +180,14 @@ export function calloutExtensions(host: EditorHost): Extensions {
       },
       addKeyboardShortcuts() {
         return { Backspace: () => unwrapAtTitleStart(this.editor) };
+      },
+    }),
+    Extension.create({
+      name: 'opennoteCalloutKeys',
+      // Ahead of the text editor's own Tab key, which types a tab character.
+      priority: 1100,
+      addKeyboardShortcuts() {
+        return { Tab: () => tabToControls(this.editor) };
       },
     }),
   ];

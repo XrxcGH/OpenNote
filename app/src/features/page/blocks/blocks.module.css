@@ -215,49 +215,78 @@
     margin-block: var(--space-1) 0;
   }
 
+  /* The title leaves room at its end for the type and fold buttons, which sit on its line. */
   .text :global(.ProseMirror) [data-callout-title] {
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-block-size: 1lh;
+    padding-inline-end: calc(2 * var(--target-size) + var(--space-3));
     font-weight: var(--font-weight-semibold);
   }
 
+  /* Each type has its own glyph and its own color, so neither is the only way to tell two types apart. */
   .text :global(.ProseMirror) [data-callout-title]::before {
-    content: '';
+    content: var(--callout-glyph, '\25CF');
     flex: none;
-    inline-size: 0.55em;
-    block-size: 0.55em;
-    border-radius: 50%;
-    background: var(--callout);
+    color: var(--callout);
+    font-size: 0.9em;
+    line-height: 1;
   }
 
-  .text :global(.ProseMirror) :is([data-callout='note'], [data-callout='info']) {
+  .text :global(.ProseMirror) [data-callout='note'] {
     --callout: var(--ink-indigo);
+    --callout-glyph: '\270E';
   }
 
-  .text :global(.ProseMirror) :is([data-callout='tip'], [data-callout='success']) {
-    --callout: var(--color-accent-primary);
+  .text :global(.ProseMirror) [data-callout='info'] {
+    --callout: color-mix(in srgb, var(--ink-indigo) 50%, var(--ink-fern));
+    --callout-glyph: 'i';
   }
 
-  .text :global(.ProseMirror) :is([data-callout='important'], [data-callout='example']) {
-    --callout: var(--ink-amber);
+  .text :global(.ProseMirror) [data-callout='tip'] {
+    --callout: var(--ink-fern);
+    --callout-glyph: '\2726';
   }
 
-  .text :global(.ProseMirror) [data-callout='question'] {
+  .text :global(.ProseMirror) [data-callout='success'] {
+    --callout: color-mix(in srgb, var(--ink-fern) 55%, var(--ink-amber));
+    --callout-glyph: '\2713';
+  }
+
+  .text :global(.ProseMirror) [data-callout='important'] {
     --callout: var(--ink-plum);
+    --callout-glyph: '!';
   }
 
-  .text :global(.ProseMirror) :is([data-callout='warning'], [data-callout='caution']) {
+  .text :global(.ProseMirror) [data-callout='warning'] {
+    --callout: var(--ink-amber);
+    --callout-glyph: '\25B2';
+  }
+
+  .text :global(.ProseMirror) [data-callout='caution'] {
     --callout: var(--color-accent-clay);
+    --callout-glyph: '\26A0\FE0E';
   }
 
   .text :global(.ProseMirror) [data-callout='danger'] {
-    --callout: var(--color-status-danger);
+    --callout: var(--ink-brick);
+    --callout-glyph: '\2715';
+  }
+
+  .text :global(.ProseMirror) [data-callout='question'] {
+    --callout: var(--color-accent-night);
+    --callout-glyph: '?';
+  }
+
+  .text :global(.ProseMirror) [data-callout='example'] {
+    --callout: var(--ink-walnut);
+    --callout-glyph: '\2756';
   }
 
   .text :global(.ProseMirror) [data-callout='quote'] {
-    --callout: var(--ink-walnut);
+    --callout: var(--color-accent-dusk);
+    --callout-glyph: '\275D';
   }
 
   @media (forced-colors: active) {
@@ -267,7 +296,7 @@
     }
 
     .text :global(.ProseMirror) [data-callout-title]::before {
-      background: CanvasText;
+      color: CanvasText;
     }
   }
 
@@ -456,7 +485,6 @@
   :global([data-ruled]) .text :global(.ProseMirror) [data-callout-title]::before {
     display: inline-block;
     margin-inline-end: var(--space-2);
-    vertical-align: calc(0.5cap - 0.275em);
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) h2 {

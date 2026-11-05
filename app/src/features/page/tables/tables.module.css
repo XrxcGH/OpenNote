@@ -117,6 +117,14 @@
     padding-block: var(--space-1) 0;
   }
 
+  /* A table straight after another has that table's sideways scroll bar just above it, which the tools would cover, so
+     its tools go below it too (Beta 8 walk VA-5, VA-6). */
+  :global([data-layout]) > .wrapper + .wrapper .toolbarWrap {
+    inset-block-end: auto;
+    inset-block-start: 100%;
+    padding-block: var(--space-1) 0;
+  }
+
   .wrapper[data-current] .toolbarWrap {
     display: flex;
   }
