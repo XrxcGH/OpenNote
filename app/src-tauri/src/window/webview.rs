@@ -123,6 +123,23 @@ pub fn show_runtime_message(check: &RuntimeCheck) {
 #[cfg(not(windows))]
 pub fn show_runtime_message(_check: &RuntimeCheck) {}
 
+/// Tells the person the main window couldn't be made, with the reason under the sentence.
+#[cfg(windows)]
+pub fn show_no_window_message(reason: &str) {
+    use windows::{
+        core::{w, HSTRING},
+        Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONERROR, MB_OK},
+    };
+
+    let text = format!("{}\n\n{reason}", super::NO_WINDOW_MESSAGE);
+    // SAFETY: both strings are NUL-terminated and outlive the call, and there is no owner window.
+    let _ = unsafe { MessageBoxW(None, &HSTRING::from(text), w!("OpenNote"), MB_OK | MB_ICONERROR) };
+}
+
+/// Other systems log the reason only ([`super::create`] does that).
+#[cfg(not(windows))]
+pub fn show_no_window_message(_reason: &str) {}
+
 /// Sets WebView2's settings for the main window (section 8.6). Development builds keep DevTools and the
 /// accelerator keys, so the inspector and reload still work there.
 #[cfg(windows)]
