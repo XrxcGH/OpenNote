@@ -5,6 +5,7 @@ mod features;
 mod props;
 mod readback;
 mod schema;
+mod sections;
 
 use std::collections::{BTreeMap, HashMap};
 

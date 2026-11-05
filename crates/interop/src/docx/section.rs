@@ -93,7 +93,7 @@ impl HeaderParts {
 
 /// The text width of a setup in twips: the paper less the side margins.
 fn text_width(setup: &PageSetup) -> i64 {
-    page_twips(setup.width - setup.margins[1] - setup.margins[3]).max(720)
+    page_twips(setup.width - setup.margins[1] - setup.margins[3]).clamp(720, MAX_TWIPS)
 }
 
 /// The paragraph of a band: three parts at a start, center, and end tab stop, with `{page}` and `{pages}` as
@@ -168,15 +168,41 @@ fn template_runs(template: &str, fields: &BandFields) -> String {
     out
 }
 
-/// `w:sectPr` of a setup. Its header and footer parts are added to `parts`. `next_page` starts the section on a
-/// new sheet; a continuous section, such as one with columns, does not.
+/// The largest page side and margin Word accepts, in twips: 22 inches.
+const MAX_TWIPS: i64 = 31_680;
+
+/// A setup Word can open: a paper that is not a finite size is Letter, and the sides and margins are clamped to
+/// Word's range, with the side margins never negative.
+fn sane(setup: &PageSetup) -> PageSetup {
+    let mut setup = setup.clone();
+    let letter = PageSetup::default();
+    if !(setup.width.is_finite() && setup.height.is_finite()) {
+        (setup.width, setup.height) = (letter.width, letter.height);
+    }
+    for (i, margin) in setup.margins.iter_mut().enumerate() {
+        if !margin.is_finite() {
+            *margin = letter.margins[i];
+        }
+    }
+    setup
+}
+
+/// Page units as twips, clamped to `low..=MAX_TWIPS`.
+fn clamped(units: f64, low: i64) -> i64 {
+    page_twips(units.clamp(-1e9, 1e9)).clamp(low, MAX_TWIPS)
+}
+
+/// `w:sectPr` of a setup. Its header and footer parts are added to `parts`. A `continuous` section goes on the
+/// sheet of the section before it; any other starts a new sheet.
 pub fn sect_pr(
     setup: &PageSetup,
     fields: &BandFields,
     parts: &mut HeaderParts,
     rel_id: &mut dyn FnMut() -> String,
     columns: Option<(u8, f64, bool)>,
+    continuous: bool,
 ) -> String {
+    let setup = &sane(setup);
     let mut out = "<w:sectPr>".to_owned();
     let width = text_width(setup);
     let mut first_page = false;
@@ -192,13 +218,14 @@ pub fn sect_pr(
             first_page = true;
         }
     }
-    if columns.is_some() {
+    if continuous {
         out.push_str("<w:type w:val=\"continuous\"/>");
     }
-    let (w, h) = (page_twips(setup.width), page_twips(setup.height));
+    let (w, h) = (clamped(setup.width, 1), clamped(setup.height, 1));
     let orient = if setup.landscape { " w:orient=\"landscape\"" } else { "" };
     out.push_str(&format!("<w:pgSz w:w=\"{w}\" w:h=\"{h}\"{orient}/>"));
-    let [top, right, bottom, left] = setup.margins.map(page_twips);
+    let [top, bottom] = [setup.margins[0], setup.margins[2]].map(|m| clamped(m, -MAX_TWIPS));
+    let [right, left] = [setup.margins[1], setup.margins[3]].map(|m| clamped(m, 0));
     let band = |margin: i64| (margin / 2).clamp(0, 720);
     out.push_str(&format!(
         "<w:pgMar w:top=\"{top}\" w:right=\"{right}\" w:bottom=\"{bottom}\" w:left=\"{left}\" \

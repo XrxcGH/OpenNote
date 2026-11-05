@@ -269,9 +269,32 @@ fn body_xml<'a>(state: &mut State<'a>, parts: &'a [Part], headers: &mut HeaderPa
     let any_footer = parts
         .iter()
         .any(|p| matches!(p, Part::Section { setup, .. } if setup.footer.is_some()));
+    let effective = |setup: &PageSetup| {
+        let mut setup = setup.clone();
+        if any_header && setup.header.is_none() {
+            setup.header = Some(Bands::default());
+        }
+        if any_footer && setup.footer.is_none() {
+            setup.footer = Some(Bands::default());
+        }
+        setup
+    };
+    // The page a part is on: the setup and fields of the next section, which closes that page.
+    let mut pages: Vec<Option<(PageSetup, BandFields)>> = vec![None; parts.len()];
+    let mut next = None;
+    for (index, part) in parts.iter().enumerate().rev() {
+        if let Part::Section { setup, fields } = part {
+            next = Some((effective(setup), fields.clone()));
+        }
+        pages[index] = next.clone();
+    }
     let mut current = PageSetup::default();
     let mut fields = BandFields::default();
     let mut rel_ids = RelIds { next: 1 };
+    // Whether a section of this page has ended already, so the next one goes on the same sheet.
+    let mut on_page = false;
+    // The length of the body at the end of the last section.
+    let mut sect_end = 0;
     for (index, part) in parts.iter().enumerate() {
         match part {
             Part::Title { text, bookmark } => body.push_str(&title_xml(state, text, bookmark.as_deref())),
@@ -297,40 +320,43 @@ fn body_xml<'a>(state: &mut State<'a>, parts: &'a [Part], headers: &mut HeaderPa
                 state.begin_text(Some(data), elements);
                 count_block_comments(state, blocks);
                 let columns = data.layout.filter(|l| l.columns > 1);
+                // Columns are a section of their own, with the setup and fields of the page they are on.
+                let (page, page_fields) = match &pages[index] {
+                    Some((setup, f)) => (setup, f),
+                    None => (&current, &fields),
+                };
                 let mut rel_id = || rel_ids.take();
-                if columns.is_some() {
-                    // Columns are a section of their own: end the text before them in a continuous section.
-                    let before = sect_pr(&current, &fields, headers, &mut rel_id, Some((1, 0.0, false)));
+                if columns.is_some() && body.len() > sect_end {
+                    // End the text before the columns in a section of its own.
+                    let before = sect_pr(page, page_fields, headers, &mut rel_id, None, on_page);
                     body.push_str(&format!("<w:p><w:pPr>{before}</w:pPr></w:p>"));
+                    on_page = true;
                 }
                 body.push_str(&state.blocks(blocks, Frame::default()));
                 body.push_str(&state.end_text());
                 if let Some(layout) = columns {
                     let cols = Some((layout.columns, layout.gap, layout.rule));
-                    let sect = sect_pr(&current, &fields, headers, &mut rel_id, cols);
+                    let sect = sect_pr(page, page_fields, headers, &mut rel_id, cols, on_page);
                     body.push_str(&format!("<w:p><w:pPr>{sect}</w:pPr></w:p>"));
+                    on_page = true;
+                    sect_end = body.len();
                 }
             }
             Part::Section { setup, fields: f } => {
-                let mut setup = (**setup).clone();
-                if any_header && setup.header.is_none() {
-                    setup.header = Some(Bands::default());
-                }
-                if any_footer && setup.footer.is_none() {
-                    setup.footer = Some(Bands::default());
-                }
-                current = setup;
+                current = effective(setup);
                 fields = f.clone();
                 if Some(index) != last_section {
                     let mut rel_id = || rel_ids.take();
-                    let sect = sect_pr(&current, &fields, headers, &mut rel_id, None);
+                    let sect = sect_pr(&current, &fields, headers, &mut rel_id, None, on_page);
                     body.push_str(&format!("<w:p><w:pPr>{sect}</w:pPr></w:p>"));
+                    sect_end = body.len();
+                    on_page = false;
                 }
             }
         }
     }
     let mut rel_id = || rel_ids.take();
-    body.push_str(&sect_pr(&current, &fields, headers, &mut rel_id, None));
+    body.push_str(&sect_pr(&current, &fields, headers, &mut rel_id, None, on_page));
     body
 }
 

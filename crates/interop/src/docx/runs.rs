@@ -182,10 +182,11 @@ impl<'a> State<'a> {
         if self.remove_personal {
             return " w:author=\"Author\"".to_owned();
         }
-        let date = if time.is_empty() {
-            String::new()
-        } else {
-            format!(" w:date=\"{}\"", xml_escape(time))
+        // `w:date` is an `xsd:dateTime`, so a time that is not a timestamp is left out rather than written.
+        let date = match opennote_core::Timestamp::parse(time) {
+            Ok(_) if !time.bytes().any(|b| b.is_ascii_lowercase()) => format!(" w:date=\"{time}\""),
+            Ok(stamp) => format!(" w:date=\"{stamp}\""),
+            Err(_) => String::new(),
         };
         format!(" w:author=\"{}\"{date}", xml_escape(author))
     }

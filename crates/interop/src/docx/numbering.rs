@@ -10,6 +10,8 @@ use crate::doc::data::{ListDef, ListLevel};
 const BULLETS: [(&str, Option<&str>); 3] = [("\u{2022}", None), ("o", Some("Courier New")), ("\u{25AA}", None)];
 /// The number formats of the default numbered levels, repeating.
 const NUMBERED: [&str; 3] = ["decimal", "lowerLetter", "lowerRoman"];
+/// The last level of a definition: `w:ilvl` runs from 0 to 8 (ECMA-376 Part 1, 17.9.3).
+pub const LAST_LEVEL: u32 = 8;
 
 /// The list definitions and lists of a document.
 #[derive(Debug, Default)]
@@ -49,7 +51,7 @@ impl Lists {
 
     /// A new numbered list with the defaults, starting at `start` at `level`.
     pub fn numbered(&mut self, level: u32, start: u64) -> usize {
-        self.nums.push((1, vec![(level, start)]));
+        self.nums.push((1, vec![(level.min(LAST_LEVEL), start)]));
         self.nums.len()
     }
 
@@ -64,6 +66,7 @@ impl Lists {
 
     /// A new list of a definition. With `restart`, `level` starts again at `start`.
     pub fn list(&mut self, abstract_id: usize, restart: Option<(u32, u64)>) -> usize {
+        let restart = restart.map(|(level, start)| (level.min(LAST_LEVEL), start));
         self.nums.push((abstract_id, restart.into_iter().collect()));
         self.nums.len()
     }
@@ -108,7 +111,7 @@ fn abstract_xml(id: usize, abs: &Abstract, mono: &str) -> String {
         "hybridMultilevel"
     };
     let mut out = format!("<w:abstractNum w:abstractNumId=\"{id}\"><w:multiLevelType w:val=\"{multi}\"/>");
-    for level in 0..9u32 {
+    for level in 0..=LAST_LEVEL {
         let given = abs.def.as_ref().and_then(|d| d.levels.get(level as usize));
         out.push_str(&level_xml(level, given, abs.ordered, mono));
     }

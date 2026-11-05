@@ -65,6 +65,8 @@ impl ParaProps<'_> {
         }
         flag(&mut out, "widowControl", para.widows);
         if let Some((id, level)) = self.num {
+            // A list definition has the nine levels 0 to 8, so a deeper item stays at the last one.
+            let level = level.min(super::numbering::LAST_LEVEL);
             out.push_str(&format!(
                 "<w:numPr><w:ilvl w:val=\"{level}\"/><w:numId w:val=\"{id}\"/></w:numPr>"
             ));
