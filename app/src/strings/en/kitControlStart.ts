@@ -79,7 +79,7 @@ export const kitControlStart = {
       'spring damper rlc circuit dc motor thermal tank analogy block diagram ' +
       'step impulse ramp response rise time peak time overshoot settling time ' +
       'final value theorem steady state error system type identification ' +
-      'first order plus dead time',
+      'first order plus dead time systems',
   },
   compensator: {
     title: 'Compensator and PID design',

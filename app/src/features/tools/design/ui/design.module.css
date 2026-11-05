@@ -21,7 +21,7 @@
   }
 
   .tab {
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding-inline: var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);
@@ -83,7 +83,7 @@
 
   .input {
     flex: 1 1 auto;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     min-inline-size: 0;
     padding-inline: var(--space-3);
     font: inherit;
@@ -275,8 +275,8 @@
   }
 
   .cell {
-    block-size: var(--size-target-pointer);
-    inline-size: var(--size-target-pointer);
+    block-size: var(--target-size);
+    inline-size: var(--target-size);
     padding: 0;
     background: transparent;
     border: 1px solid var(--color-border-control);
@@ -361,7 +361,7 @@
     display: flex;
     gap: var(--space-2);
     align-items: center;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     font-size: var(--type-small-size);
   }
 
@@ -387,7 +387,7 @@
 
   .item {
     inline-size: 100%;
-    min-block-size: var(--size-target-pointer);
+    min-block-size: var(--target-size);
     padding: var(--space-1) var(--space-3);
     font: inherit;
     font-size: var(--type-small-size);
