@@ -1,5 +1,6 @@
-// The command bar (ARCHITECTURE.md section 14.5). A tab list holds Home and View, with Insert and Draw behind their
-// flags. Beside it, the active tab's toolbar shows tools from the commandBar registry.
+// The command bar (ARCHITECTURE.md section 14.5). A tab list holds Home and View, with Insert, Draw, Layout, and
+// Review behind their flags (Layout and Review: text:scaffold). Beside it, the active tab's toolbar shows tools
+// from the commandBar registry.
 // - Arrow keys switch tabs. Tab moves into the toolbar, arrow keys move between its tools, and Tab leaves.
 // - Escape returns focus to the page.
 // - Tools that don't fit move into a "More" menu, lowest priority first.
@@ -28,14 +29,23 @@ const TABS: readonly TabDef[] = [
   { id: 'home', label: 'commands.bar.home' },
   { id: 'insert', label: 'commands.bar.insert', flag: 'commandBar.insert' },
   { id: 'draw', label: 'commands.bar.draw', flag: 'commandBar.draw' },
+  { id: 'layout', label: 'commands.bar.layout', flag: 'text.layout' },
+  { id: 'review', label: 'commands.bar.review', flag: 'text.review' },
   { id: 'view', label: 'commands.bar.view' },
 ];
 
 function useTabs(): TabDef[] {
   const insert = useFlag('commandBar.insert');
   const draw = useFlag('commandBar.draw');
+  const layout = useFlag('text.layout');
+  const review = useFlag('text.review');
   const items = useBarItems();
-  const on: Partial<Record<FlagId, boolean>> = { 'commandBar.insert': insert, 'commandBar.draw': draw };
+  const on: Partial<Record<FlagId, boolean>> = {
+    'commandBar.insert': insert,
+    'commandBar.draw': draw,
+    'text.layout': layout,
+    'text.review': review,
+  };
   return TABS.filter((tab) => (!tab.flag || on[tab.flag]) && items.some((entry) => entry.item.tab === tab.id));
 }
 

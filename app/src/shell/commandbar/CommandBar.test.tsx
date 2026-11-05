@@ -82,6 +82,23 @@ describe('the command bar tabs', () => {
   });
 });
 
+describe('the Layout and Review tabs', () => {
+  it.each([
+    ['layout', 'Layout', 'text.layout'],
+    ['review', 'Review', 'text.review'],
+  ] as const)('shows the %s tab only when %s has an item and its flag is on', async (tab, label, flag) => {
+    command('ink', 'commands.colors.ink');
+    tool('ink');
+    tool('wide', { tab });
+    command('wide', 'commands.colors.fern');
+    const { unmount } = await renderApp({ boot: { channel: 'dev', flagOverrides: { [flag]: true } } });
+    expect(screen.getAllByRole('tab').map((entry) => entry.textContent)).toContain(label);
+    unmount();
+    await renderApp({ boot: { channel: 'dev', flagOverrides: { [flag]: false } } });
+    expect(screen.getAllByRole('tab').map((entry) => entry.textContent)).not.toContain(label);
+  });
+});
+
 describe('the command bar tools', () => {
   it('runs commands, and shows toggles, disabled tools, and menus', async () => {
     const ran = vi.fn();
