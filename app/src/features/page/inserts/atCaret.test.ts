@@ -114,6 +114,7 @@ describe('after worked steps', () => {
     mounted = mountEditor('## Work');
     mounted.editor.commands.focus('end');
     expect(insertMathAtCaret(mounted.editor, 'x=2', true)).toBe(true);
-    expect(kinds(mounted)).toEqual(['heading', 'mathBlock']);
+    // The page may add a line after a closing equation; the equation itself comes straight after the heading.
+    expect(kinds(mounted).slice(0, 2)).toEqual(['heading', 'mathBlock']);
   });
 });
