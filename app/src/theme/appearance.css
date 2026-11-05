@@ -11,3 +11,21 @@
     zoom: var(--ui-scale, 1);
   }
 }
+
+/* Text you select in the interface (a page title, help text, a dialog sentence) uses the selection color in place of
+   the system blue. The editor, the PDF viewer and Markdown source set their own. */
+@layer base {
+  ::selection {
+    background: var(--color-selection-highlight);
+    color: var(--color-text-primary);
+  }
+}
+
+/* Focus the app moved by script after a pointer, or before any input, shows no ring until the next Tab, arrow key, or
+   Escape (ui/focusOrigin.ts). Keyboard focus keeps the ring. */
+@layer states {
+  /* checks-disable-next-line usability: script focus after a pointer or before any input; Tab, arrows and Escape bring the ring back (BRAND section 12) */
+  [data-focus-origin='pointer']:focus-visible {
+    outline: none;
+  }
+}
