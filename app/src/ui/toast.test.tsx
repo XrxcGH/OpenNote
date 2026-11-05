@@ -7,7 +7,7 @@ import { announcements, expectNoAxeViolations, renderUi } from '../test';
 import { Announcer } from './announce';
 import { showToast, Toaster } from './toast';
 import type { ToastSpec } from './toast';
-import { toastLane } from './toastHooks';
+import { toastLane, toastLift } from './toastHooks';
 
 function Page() {
   return (
@@ -309,5 +309,32 @@ describe('where a toast goes', () => {
     workspace(true);
     document.querySelector<HTMLElement>('main')!.style.left = `${window.innerWidth - 500}px`;
     expect(toastLane(false)).toEqual({ start: 0, end: 0 });
+  });
+});
+
+describe('what a toast stands above', () => {
+  afterEach(() => document.querySelector('[data-footer-test]')?.remove());
+
+  function footer(bottom: number, height: number) {
+    const element = document.createElement('footer');
+    element.dataset.footerTest = '';
+    element.dataset.toastAbove = '';
+    element.style.cssText = `position:fixed;left:0;right:0;bottom:${bottom}px;height:${height}px`;
+    document.body.append(element);
+    return element;
+  }
+
+  it('lifts above a footer whose buttons the toast would cover (setup, Beta 8 walk A-A01-2)', () => {
+    renderUi(<Toaster />);
+    const box = footer(0, 80).getBoundingClientRect();
+    const region = document.querySelector('[data-region="notifications"]')!.getBoundingClientRect();
+    // The lift reaches from the toast's floor up to the footer's top.
+    expect(toastLift()).toBe(Math.ceil(region.bottom - box.top));
+  });
+
+  it('lifts nothing for a footer well above the toast', () => {
+    renderUi(<Toaster />);
+    footer(window.innerHeight - 300, 80);
+    expect(toastLift()).toBe(0);
   });
 });

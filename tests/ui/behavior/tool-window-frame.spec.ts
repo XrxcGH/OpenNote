@@ -98,11 +98,37 @@ async function arcColors(page: Page, window: Locator) {
 
 const distance = (a: number[], b: number[]) => Math.max(...a.map((value, i) => Math.abs(value - b[i])));
 
+/**
+ * Waits for a window to be fully built: its tool's code has loaded into the body (an empty body is the loading state,
+ * a short box that the loaded tool then grows), and the box has held still for several frames. The arcs are sampled
+ * from a screenshot at the box's place, so a box still growing under load would be sampled where the window no longer is.
+ */
+async function settled(window: Locator) {
+  await expect(window.locator(':scope > [data-loading]:not(:empty)'), 'the tool has loaded').toHaveCount(1);
+  await window.evaluate(
+    (frame) =>
+      new Promise<void>((resolve) => {
+        const key = () => JSON.stringify(frame.getBoundingClientRect());
+        let last = key();
+        let still = 0;
+        const frameTick = () => {
+          const now = key();
+          still = now === last ? still + 1 : 0;
+          last = now;
+          if (still >= 5) resolve();
+          else requestAnimationFrame(frameTick);
+        };
+        requestAnimationFrame(frameTick);
+      }),
+  );
+}
+
 async function checkFrame(page: Page, windows: Locator[], height: number) {
   await expect.poll(async () => (await chrome(page)).bottom, { message: 'the status line shows' }).toBeLessThan(height);
   const edges = await chrome(page);
   for (const window of windows) {
     await expect(window).toBeVisible();
+    await settled(window);
     await expect(window, 'the window floats').not.toHaveAttribute('data-docked');
     const box = (await window.boundingBox())!;
     expect(box.y, 'below the command bar and its line').toBeGreaterThanOrEqual(edges.top - 0.5);

@@ -413,7 +413,7 @@ impl<'a> Reader<'a> {
                 }
             }
         }
-        Some(Block::Table { header, rows })
+        Some(Block::table(header, rows))
     }
 
     /// The text of a table cell: its paragraphs, joined by line breaks.
@@ -503,8 +503,8 @@ fn run_marks(props: &Element) -> Marks {
             .any(|font| CODE_FONTS.contains(&font.to_lowercase().as_str()))
     });
     marks.size = val(props, "w:sz").and_then(|v| match v {
-        "18" => Some("small".to_owned()),
-        "28" => Some("large".to_owned()),
+        "20" => Some("small".to_owned()),
+        "30" => Some("large".to_owned()),
         "36" => Some("xlarge".to_owned()),
         _ => None,
     });

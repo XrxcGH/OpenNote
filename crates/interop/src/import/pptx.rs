@@ -493,7 +493,7 @@ fn table_block(table: &Element, rels: &Rels, dir: &str) -> Block {
                 .collect()
         })
         .collect();
-    Block::Table { header, rows }
+    Block::table(header, rows)
 }
 
 #[cfg(test)]

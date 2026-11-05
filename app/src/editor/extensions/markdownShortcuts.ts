@@ -208,6 +208,19 @@ export function fenceOnEnter(view: EditorView): boolean {
   return true;
 }
 
+/** Enter after "***" or "___" on a line of its own makes a divider, as "---" does while typing (Beta 8 walk A-A06-6). */
+export function dividerOnEnter(view: EditorView): boolean {
+  const { $from, empty } = view.state.selection;
+  const rule = /^(?:\*\*\*|___)$/.exec($from.parent.textContent);
+  if (!empty || !rule || $from.parentOffset !== $from.parent.content.size || !canAutoChange(view, $from.pos)) {
+    return false;
+  }
+  const tr = divider(view.state, rule, $from.start(), $from.pos);
+  if (!tr) return false;
+  view.dispatch(markAutoChange(tr, { from: $from.start(), to: $from.pos, text: '' }).scrollIntoView());
+  return true;
+}
+
 export const markdownShortcutsKey = new PluginKey('opennoteMarkdownShortcuts');
 
 export function markdownShortcutsPlugin(host: EditorHost): Plugin {
@@ -220,7 +233,7 @@ export function markdownShortcutsPlugin(host: EditorHost): Plugin {
       },
       handleKeyDown(view, event) {
         if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return false;
-        return host.settings().markdownShortcuts && fenceOnEnter(view);
+        return host.settings().markdownShortcuts && (fenceOnEnter(view) || dividerOnEnter(view));
       },
     },
   });
