@@ -26,13 +26,16 @@ describe('metric stand-in fonts in the browser', () => {
     await loadStandIn('Calibri');
     await document.fonts.load("400 100px 'Carlito'", 'Hello');
     // A device with Calibri draws Calibri, which has Carlito's widths. One without it draws Carlito.
+    // The 0.5 px bound is taken at 16 px: a 100 px measurement is scaled by 0.16.
     const stack = advance('Hello', "'Calibri', 'Carlito', sans-serif");
     const carlito = advance('Hello', "'Carlito', sans-serif");
     expect(Math.abs(stack - carlito) * 0.16).toBeLessThanOrEqual(0.5);
     // The stand-in is not the default sans font: the widths differ from a plain sans-serif.
     expect(advance('Hello', "'NoSuchFont', 'Carlito', sans-serif")).toBeCloseTo(carlito, 1);
+    expect(Math.abs(carlito - advance('Hello', 'sans-serif'))).toBeGreaterThan(1);
     const faces = [...document.fonts].filter((face) => face.family.replace(/['"]/g, '') === 'Carlito');
     expect(faces.length).toBeGreaterThan(0);
+    expect(faces.some((face) => face.status === 'loaded')).toBe(true);
   });
 
   it('loads the Caladea rules on request and only once', async () => {
