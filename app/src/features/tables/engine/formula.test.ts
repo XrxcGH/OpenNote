@@ -114,7 +114,7 @@ describe('functions', () => {
     ['LEFT("abc",1)&LEN("ab")', 'a2'],
     ['UPPER(LEFT("abc",2))&RIGHT("abc",1)', 'ABc'],
     ['TRIM("  a   b ")', 'a b'],
-    ['DATE(2026,9,30)', 20726],
+    ['DATE(2026,9,30)', 46295],
     ['YEAR(DATE(2026,9,30))*10000+MONTH(DATE(2026,9,30))*100+DAY(DATE(2026,9,30))', 20260930],
     ['DAYS(DATE(2026,3,1),DATE(2026,2,1))', 28],
   ])('%s gives %j', (formula, expected) => {

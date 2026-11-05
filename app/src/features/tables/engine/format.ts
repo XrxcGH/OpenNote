@@ -1,5 +1,6 @@
 // Display text for values, in the person's regional format. Formats are cached because grids call this per cell.
 
+import { serialToDate } from './dates';
 import type { Column } from './model';
 import type { Locale } from './locale';
 import { ERROR_WORDS, isError, numberToText, type Value } from './values';
@@ -51,7 +52,7 @@ function formatNumber(value: number, column: Column, locale: Locale): string {
         ...(column.decimals === undefined ? { maximumFractionDigits: 2 } : fixed(column)),
       }).format(value);
     case 'date':
-      return dateFormat(locale, value !== Math.floor(value)).format(new Date(value * 86_400_000));
+      return dateFormat(locale, value !== Math.floor(value)).format(serialToDate(value));
     default:
       return column.unit || column.notation
         ? withUnit(value, column, locale)

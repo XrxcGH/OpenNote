@@ -1,10 +1,8 @@
-// Text and date functions. Dates are day numbers since 1970-01-01, so a date minus a date is a number of days.
+// Text and date functions. Dates are serials (days since 1899-12-30), so a date minus a date is a number of days.
 
-import { daysToYmd } from '../dates';
+import { daysToYmd, ymdToSerial } from '../dates';
 import { err, finish, toNumber, toNumbers, toText, type Value } from '../values';
 import type { Env, FnSpec } from './functions';
-
-const DAY_MS = 86_400_000;
 
 function text1(f: (s: string) => Value): FnSpec {
   return {
@@ -74,8 +72,11 @@ export const DATE_TEXT_FUNCTIONS: Record<string, FnSpec> = {
     run: (args) => {
       const nums = toNumbers(args);
       if (!Array.isArray(nums)) return nums;
-      const [y, m, d] = nums.map(Math.trunc);
-      return finish(Date.UTC(y, m - 1, d) / DAY_MS);
+      const [year, m, d] = nums.map(Math.trunc);
+      // Years 0 to 99 mean 1900 to 1999. Other years count as written, so 1899-12-30 is serial 0 and earlier
+      // dates are negative serials, as in Sheets (DIFFERENCES.md lists Excel's rule).
+      const y = year >= 0 && year < 100 ? year + 1900 : year;
+      return y < 0 || y > 9999 ? err('NUM') : finish(ymdToSerial(y, m, d));
     },
   },
   YEAR: datePart((p) => p.y),

@@ -5,7 +5,7 @@ import { err, finish, isError, isNumber, toBool, toNumbers, type FormulaError, t
 import { DATE_TEXT_FUNCTIONS } from './textDate';
 
 export interface Env {
-  /** Today as a day number, read when a formula is calculated. */
+  /** Today as a serial, read when a formula is calculated. */
   today: () => number;
 }
 
