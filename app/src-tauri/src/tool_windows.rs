@@ -491,20 +491,24 @@ pub async fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> Ipc
     let os = app.state::<Current>().get();
     let data = boot::payload(&app.state::<Startup>(), &settings, &state, &os, install::status(&paths));
     let Rgb(r, g, b) = boot::window_color(settings.appearance.theme, &os, boot::system_window_color());
-    let window = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html".into()))
-        .title(spec.title)
-        .inner_size(spec.width, spec.height)
-        .min_inner_size(320.0, 360.0)
-        .always_on_top(pinned)
-        .visible(false)
-        .background_color(Color(r, g, b, 255))
-        .initialization_script(script(&boot::initialization_script(&data), spec))
-        .data_directory(paths.webview.clone())
-        .disable_drag_drop_handler()
-        .on_navigation(crate::window::is_app_url)
-        .zoom_hotkeys_enabled(false)
-        .build()
-        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
+    let window = crate::window::webview::with_driver_args(WebviewWindowBuilder::new(
+        &app,
+        &label,
+        WebviewUrl::App("index.html".into()),
+    ))
+    .title(spec.title)
+    .inner_size(spec.width, spec.height)
+    .min_inner_size(320.0, 360.0)
+    .always_on_top(pinned)
+    .visible(false)
+    .background_color(Color(r, g, b, 255))
+    .initialization_script(script(&boot::initialization_script(&data), spec))
+    .data_directory(paths.webview.clone())
+    .disable_drag_drop_handler()
+    .on_navigation(crate::window::is_app_url)
+    .zoom_hotkeys_enabled(false)
+    .build()
+    .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
     crate::lifecycle::watch_window(&window);
     restore_and_show(&app, spec.id, &window);
     watch(&app, spec.id, &window);
