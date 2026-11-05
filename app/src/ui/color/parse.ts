@@ -1,4 +1,4 @@
-// checks-disable-file brand-consistency: these colors are data the palette parses, not interface colors
+// checks-disable-file brand-consistency: values here are palette data
 // The shared color value parser (spec Appendix D.7, R-VAL-7, and R-VAL-8). `parseColor` reads what a person types;
 // `parseColorValue` reads what a page stores; `resolveColor` turns a stored value into `#rrggbb` for drawing and
 // for export. Tints are never stored: they become `#rrggbb` when applied.
@@ -8,7 +8,16 @@ import { hexToRgb, hslToRgb, rgbToHex } from './math';
 
 export type Scheme = 'light' | 'dark';
 
-export const THEME_NAMES = ['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6', 'text', 'background'] as const;
+export const THEME_NAMES = [
+  'accent1',
+  'accent2',
+  'accent3',
+  'accent4',
+  'accent5',
+  'accent6',
+  'text',
+  'background',
+] as const;
 export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ParsedColor = { ok: true; hex: string } | { ok: false };

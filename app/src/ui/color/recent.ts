@@ -39,7 +39,9 @@ function load(): Readonly<Record<string, readonly string[]>> {
     const out: Record<string, string[]> = Object.create(null) as Record<string, string[]>;
     for (const [id, list] of Object.entries(raw).slice(-NOTEBOOK_LIMIT)) {
       if (Array.isArray(list)) {
-        out[id] = list.filter((c): c is string => typeof c === 'string' && /^#[0-9a-f]{6}$/.test(c)).slice(0, RECENT_LIMIT);
+        out[id] = list
+          .filter((c): c is string => typeof c === 'string' && /^#[0-9a-f]{6}$/.test(c))
+          .slice(0, RECENT_LIMIT);
       }
     }
     return out;

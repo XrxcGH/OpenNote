@@ -148,4 +148,42 @@ describe('More colors number fields', () => {
     fireEvent.blur(red);
     expect(red.value).toBe('200');
   });
+
+  it('keeps a typed hue on a gray, and does not shift a color on commit', async () => {
+    open();
+    await userEvent.click(screen.getByRole('button', { name: 'More colors' }));
+    await typeHex('#000000');
+    const field = (name: string) => screen.getByRole('spinbutton', { name }) as HTMLInputElement;
+    const set = async (name: string, value: string) => {
+      const input = field(name);
+      await userEvent.clear(input);
+      await userEvent.type(input, `${value}{Enter}`);
+    };
+    await set('Hue', '200');
+    expect(field('Hue').value).toBe('200');
+    await set('Saturation', '100');
+    await set('Lightness', '50');
+    expect(field('Hue').value).toBe('200');
+    expect((screen.getByRole('textbox', { name: 'Hex' }) as HTMLInputElement).value).toBe('#00aaff');
+    await typeHex('#2f4f9a');
+    const before = field('Hue').value;
+    await set('Hue', before);
+    expect((screen.getByRole('textbox', { name: 'Hex' }) as HTMLInputElement).value).toBe('#2f4f9a');
+  });
+
+  it('starts the single Tab stop on the chosen swatch', () => {
+    open({ current: '#e03131' });
+    expect(screen.getByRole('button', { name: 'Red' }).getAttribute('tabindex')).toBe('0');
+    expect(screen.getByRole('button', { name: 'Automatic' }).getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('picks theme tokens by default and hex with themeTokens off', async () => {
+    const a = open();
+    await userEvent.click(screen.getByRole('button', { name: 'Indigo' }));
+    expect(a.onPick).toHaveBeenCalledWith({ kind: 'color', value: 'theme:accent1' });
+    a.unmount();
+    const b = open({ themeTokens: false });
+    await userEvent.click(screen.getByRole('button', { name: 'Indigo' }));
+    expect(b.onPick.mock.calls[0][0].value).toMatch(/^#[0-9a-f]{6}$/);
+  });
 });

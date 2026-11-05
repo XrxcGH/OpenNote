@@ -44,6 +44,7 @@ export const color = {
   lightness: 'Lightness',
   apply: 'Apply',
   eyedropper: 'Pick from screen',
+  eyedropperError: 'The screen picker did not work. Type the color instead.',
   contrastGood: 'Contrast {ratio} to 1, passes for text',
   contrastLow: 'Contrast {ratio} to 1, low for text',
 } as const;

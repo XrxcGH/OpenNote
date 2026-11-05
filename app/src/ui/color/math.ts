@@ -1,7 +1,7 @@
-// checks-disable-file brand-consistency: color values here are the data the palette parses and computes, not interface colors
-// Color math for the palette: sRGB bytes, hex, HSL, tints and shades, and WCAG contrast. Worked from the published
-// definitions (WCAG 2.x relative luminance and contrast ratio, the standard RGB to HSL conversion), with no
-// lookup tables, so the known-answer tests can be worked by hand.
+// checks-disable-file brand-consistency: values here are palette data
+// Color math for the palette: sRGB bytes, hex, HSL, tints and shades, and WCAG contrast.
+// Worked from the published definitions. These are WCAG 2.x relative luminance and contrast ratio, and the
+// standard RGB to HSL conversion. There are no lookup tables, so the tests can be worked by hand.
 
 export type Rgb = readonly [number, number, number];
 export type Hsl = readonly [number, number, number];
@@ -79,4 +79,16 @@ export function luminance([r, g, b]: Rgb): number {
 export function contrastRatio(a: Rgb, b: Rgb): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Automatic text color: the ink or the paper, whichever has the higher WCAG contrast with the background. On a tie
+ * the ink wins. Defaults are black and white.
+ */
+export function automaticTextColor(background: string, ink = '#000000', paper = '#ffffff'): string {
+  const bg = hexToRgb(background);
+  const a = hexToRgb(ink);
+  const b = hexToRgb(paper);
+  if (!bg || !a || !b) return ink;
+  return contrastRatio(a, bg) >= contrastRatio(b, bg) ? ink : paper;
 }

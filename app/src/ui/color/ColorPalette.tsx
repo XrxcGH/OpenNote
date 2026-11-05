@@ -1,5 +1,5 @@
-// checks-disable-file modifiability: one component whose parts share its state; split it when it grows again
-// checks-disable-file brand-consistency: color values here are the data the palette parses and computes, not interface colors
+// checks-disable-file modifiability: one component with shared state
+// checks-disable-file brand-consistency: values here are palette data
 
 // The one color palette (NEXT-PLAN section 3.4): theme colors with tints and shades, standard colors, recent colors,
 // Automatic, No color, and More colors. Text, tables, and later the format pane share it. It reports a pick and
@@ -36,6 +36,8 @@ export interface ColorPaletteProps {
   noColor?: boolean;
   /** The stored value now in use, so its swatch shows as chosen. */
   current?: string | null;
+  /** False stores a base theme swatch as its light `#rrggbb`, not `theme:NAME`, for a version 1 field. */
+  themeTokens?: boolean;
   /** The color the contrast badge compares with; the page color by default. */
   against?: string;
 }
@@ -56,7 +58,17 @@ const eyeDropper = (): (new () => EyeDropperLike) | undefined =>
   (globalThis as { EyeDropper?: new () => EyeDropperLike }).EyeDropper;
 
 export function ColorPalette(props: ColorPaletteProps) {
-  const { onPick, scheme, theme, notebookId, automatic = true, noColor = true, current, against } = props;
+  const {
+    onPick,
+    scheme,
+    theme,
+    notebookId,
+    automatic = true,
+    noColor = true,
+    current,
+    against,
+    themeTokens = true,
+  } = props;
   const recent = useRecentColors(notebookId ?? '');
   const [more, setMore] = useState(false);
   const refs = useRef(new Map<string, HTMLButtonElement>());
@@ -65,15 +77,19 @@ export function ColorPalette(props: ColorPaletteProps) {
   const isCurrent = (value: string) => current != null && current.toLowerCase() === value;
   const rows: Cell[][] = [];
   if (automatic) {
-    rows.push([{ key: 'auto', label: t('color.automatic'), pick: { kind: 'auto' }, chosen: current == null, kind: 'wide' }]);
+    rows.push([
+      { key: 'auto', label: t('color.automatic'), pick: { kind: 'auto' }, chosen: current == null, kind: 'wide' },
+    ]);
   }
   if (noColor) {
-    rows.push([{ key: 'none', label: t('color.none'), pick: { kind: 'none' }, chosen: current === 'none', kind: 'wide' }]);
+    rows.push([
+      { key: 'none', label: t('color.none'), pick: { kind: 'none' }, chosen: current === 'none', kind: 'wide' },
+    ]);
   }
   const themeStart = rows.length;
   const themeRows: Cell[][] = Array.from({ length: TINTS.length + 1 }, () => []);
   THEME_COLUMNS.forEach((column, c) => {
-    themeColumn(column, scheme, theme).forEach((s, r) => {
+    themeColumn(column, scheme, theme, themeTokens).forEach((s, r) => {
       const name = t(s.name);
       const label = !s.tint
         ? name
@@ -94,36 +110,33 @@ export function ColorPalette(props: ColorPaletteProps) {
   rows.push(...themeRows);
   const standardStart = rows.length;
   rows.push(
-    STANDARD_COLORS.map(
-      (s, i): Cell => ({
-        key: `std-${i}`,
-        label: t(s.name),
-        hex: s.hex,
-        pick: { kind: 'color', value: s.hex },
-        chosen: isCurrent(s.hex),
-        kind: 'swatch',
-      }),
-    ),
+    STANDARD_COLORS.map((s, i): Cell => ({
+      key: `std-${i}`,
+      label: t(s.name),
+      hex: s.hex,
+      pick: { kind: 'color', value: s.hex },
+      chosen: isCurrent(s.hex),
+      kind: 'swatch',
+    })),
   );
   const recentStart = rows.length;
   if (recent.length > 0) {
     rows.push(
-      recent.map(
-        (hex, i): Cell => ({
-          key: `recent-${i}`,
-          label: t('color.recentSwatch', { hex }),
-          hex,
-          pick: { kind: 'color', value: hex },
-          chosen: isCurrent(hex),
-          kind: 'swatch',
-        }),
-      ),
+      recent.map((hex, i): Cell => ({
+        key: `recent-${i}`,
+        label: t('color.recentSwatch', { hex }),
+        hex,
+        pick: { kind: 'color', value: hex },
+        chosen: isCurrent(hex),
+        kind: 'swatch',
+      })),
     );
   }
 
   const where = new Map<string, [number, number]>();
   rows.forEach((row, r) => row.forEach((cell, c) => where.set(cell.key, [r, c])));
-  const tabbable = where.has(active) ? active : (rows[0]?.[0]?.key ?? '');
+  const chosenKey = rows.flat().find((cell) => cell.chosen)?.key;
+  const tabbable = where.has(active) ? active : (chosenKey ?? rows[0]?.[0]?.key ?? '');
 
   const focus = (r: number, c: number) => {
     const row = rows[r];
@@ -213,11 +226,14 @@ function MoreColors(props: { seed: string; against: string; onApply(hex: string)
   const [text, setText] = useState(props.seed);
   const [error, setError] = useState<string | undefined>();
   const rgb = hexToRgb(hex) ?? [0, 0, 0];
-  const hsl = rgbToHsl(rgb);
+  // HSL is its own state: it is filled from the color when hex or RGB change, and only an HSL edit writes RGB from it.
+  const [hsl, setHsl] = useState<Hsl>(() => rgbToHsl(rgb));
+  const [dropperError, setDropperError] = useState(false);
   const set = (next: string) => {
     setHex(next);
     setText(next);
     setError(undefined);
+    setHsl(rgbToHsl(hexToRgb(next) ?? [0, 0, 0]));
   };
   const onText = (value: string) => {
     setText(value);
@@ -228,6 +244,7 @@ function MoreColors(props: { seed: string; against: string; onApply(hex: string)
     const parsed = parseColor(value);
     if (parsed.ok) {
       setHex(parsed.hex);
+      setHsl(rgbToHsl(hexToRgb(parsed.hex) ?? [0, 0, 0]));
       setError(undefined);
     } else {
       setError(t('color.hexError'));
@@ -236,8 +253,16 @@ function MoreColors(props: { seed: string; against: string; onApply(hex: string)
   const clamp = (value: string, max: number) => Math.min(max, Math.max(0, Math.round(Number(value) || 0)));
   const channel = (index: number, value: string) =>
     set(rgbToHex(rgb.map((c, i) => (i === index ? clamp(value, 255) : c)) as unknown as Rgb));
-  const hslField = (index: number, value: string) =>
-    set(rgbToHex(hslToRgb(hsl.map((c, i) => (i === index ? clamp(value, index === 0 ? 359 : 100) : c)) as unknown as Hsl)));
+  const hslField = (index: number, value: string) => {
+    // Committing a value that did not change must not move the color.
+    if (clamp(value, index === 0 ? 359 : 100) === hsl[index]) return;
+    const next = hsl.map((c, i) => (i === index ? clamp(value, index === 0 ? 359 : 100) : c)) as unknown as Hsl;
+    const nextHex = rgbToHex(hslToRgb(next));
+    setHex(nextHex);
+    setText(nextHex);
+    setError(undefined);
+    setHsl(next);
+  };
   const ratio = contrastRatio(rgb, hexToRgb(props.against) ?? [255, 255, 255]);
   const shown = (Math.floor(ratio * 10) / 10).toFixed(1);
   const good = ratio >= 4.5;
@@ -260,19 +285,23 @@ function MoreColors(props: { seed: string; against: string; onApply(hex: string)
       <p className={styles.badge} data-good={good} role="status">
         {t(good ? 'color.contrastGood' : 'color.contrastLow', { ratio: shown })}
       </p>
+      {dropperError && <p role="status">{t('color.eyedropperError')}</p>}
       <div className={styles.actions}>
         {Dropper && (
           <button
             type="button"
             className={styles.more}
             onClick={() => {
+              setDropperError(false);
               new Dropper()
                 .open()
                 .then((result) => {
                   const parsed = parseColor(result.sRGBHex);
                   if (parsed.ok) set(parsed.hex);
                 })
-                .catch(() => {});
+                .catch((e: unknown) => {
+                  if ((e as { name?: string } | null)?.name !== 'AbortError') setDropperError(true);
+                });
             }}
           >
             {t('color.eyedropper')}

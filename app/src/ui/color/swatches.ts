@@ -40,17 +40,19 @@ export interface Swatch {
 /**
  * One theme column: the base, then the five tints and shades. A tint is stored as `#rrggbb` and exported to DOCX
  * and XLSX, so it comes from the document's (light) theme value whatever the UI scheme is. The scheme changes only
- * what the base swatch draws.
+ * what the base swatch draws. With `themeTokens` false the base swatch stores its light `#rrggbb`, for a version 1
+ * field that has no `theme:NAME` grammar.
  */
 export function themeColumn(
   column: (typeof THEME_COLUMNS)[number],
   scheme: Scheme,
   theme: ThemeColors = {},
+  themeTokens = true,
 ): Swatch[] {
   const base = themeColor(column.name, scheme, theme);
   const stored = themeColor(column.name, 'light', theme);
   return [
-    { value: `theme:${column.name}`, hex: base, name: column.label },
+    { value: themeTokens ? `theme:${column.name}` : stored, hex: base, name: column.label },
     ...TINTS.map((tint): Swatch => {
       const hex = tint.kind === 'lighter' ? lighten(stored, tint.percent) : darken(stored, tint.percent);
       return { value: hex, hex, name: column.label, tint };

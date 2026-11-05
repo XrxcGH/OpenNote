@@ -1,6 +1,6 @@
 // checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 import { beforeEach, describe, expect, it } from 'vitest';
-import { contrastRatio, darken, hexToRgb, hslToRgb, lighten, rgbToHex, rgbToHsl } from './math';
+import { automaticTextColor, contrastRatio, darken, hexToRgb, hslToRgb, lighten, rgbToHex, rgbToHsl } from './math';
 import { parseColor, resolveColor } from './parse';
 import { RECENT_LIMIT, recentColors, rememberColor, setRecentStorage } from './recent';
 import { STANDARD_COLORS, THEME_COLUMNS, themeColumn } from './swatches';
@@ -101,7 +101,10 @@ describe('recent colors', () => {
 
 describe('hostile input', () => {
   it('refuses a very long ambiguous string fast', () => {
-    const hostile = ['rgb(1 ' + ' '.repeat(100_000) + '2' + ' '.repeat(100_000) + 'x', 'hsl(1' + ' '.repeat(100_000) + 'x'];
+    const hostile = [
+      'rgb(1 ' + ' '.repeat(100_000) + '2' + ' '.repeat(100_000) + 'x',
+      'hsl(1' + ' '.repeat(100_000) + 'x',
+    ];
     const start = performance.now();
     for (const text of hostile) expect(parseColor(text)).toEqual({ ok: false });
     expect(performance.now() - start).toBeLessThan(50);
@@ -138,5 +141,30 @@ describe('recent colors cap', () => {
     setRecentStorage({ read: () => poisoned, write: () => {} });
     expect(recentColors('nbx')).toEqual(['#333333']);
     expect(({} as Record<string, unknown>).length).toBeUndefined();
+  });
+});
+
+describe('automaticTextColor', () => {
+  it('picks the higher WCAG contrast: ink on light, paper on dark', () => {
+    // Black on white is 21:1 and white on black is 21:1; mid gray #777777 has about 4.48:1 on white, 4.69:1 on black.
+    expect(automaticTextColor('#ffffff')).toBe('#000000');
+    expect(automaticTextColor('#000000')).toBe('#ffffff');
+    expect(automaticTextColor('#ffff00')).toBe('#000000');
+    expect(automaticTextColor('#1b2a6b')).toBe('#ffffff');
+    expect(automaticTextColor('#777777')).toBe('#000000');
+    expect(automaticTextColor('#767676', '#222222', '#fafafa')).toBe('#fafafa');
+    expect(automaticTextColor('#ffffff', '#222222', '#fafafa')).toBe('#222222');
+    expect(automaticTextColor('#101010', '#222222', '#fafafa')).toBe('#fafafa');
+    expect(automaticTextColor('nope')).toBe('#000000');
+  });
+});
+
+describe('themeColumn without theme tokens', () => {
+  it('stores the base swatch as its light hex', () => {
+    const col = THEME_COLUMNS[1];
+    expect(themeColumn(col, 'dark', {}, true)[0].value).toBe('theme:accent1');
+    const plain = themeColumn(col, 'dark', {}, false)[0];
+    expect(plain.value).toBe(themeColumn(col, 'light')[0].hex);
+    expect(plain.value).toMatch(/^#[0-9a-f]{6}$/);
   });
 });
