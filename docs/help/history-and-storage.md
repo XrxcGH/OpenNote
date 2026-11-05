@@ -8,6 +8,8 @@ OpenNote keeps every notebook as an ordinary folder in your notes folder. This g
 
 OpenNote saves versions of a page while you work. Open a page's History panel to compare two versions or restore part of one.
 
+A page with more than a handful of versions shows a Filter versions field above the list. Type part of a date, a reason, a device, or a name to narrow the list; the current page always stays at the top.
+
 ### How long history is kept
 
 Open Settings, then Editing, and choose how long history keeps versions: 30 days, 1 year, or forever. One year is the default. The choice applies at once. Versions older than the choice are removed page by page, each time a page is tidied after you close it. Named versions and the newest version of each page are always kept.

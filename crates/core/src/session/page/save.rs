@@ -57,6 +57,7 @@ impl PageSession {
                 return Ok(None);
             };
             self.version_before(&snapshot);
+            self.backup_before_upgrade(&snapshot);
             let result = {
                 let journal = self.journal();
                 let input = SaveInput {
@@ -114,6 +115,36 @@ impl PageSession {
             reason,
             name: None,
         });
+    }
+
+    /// Before a save first gives the page a higher `formatVersion` than the file on disk has (`R-VER-7`), keeps
+    /// the page's last revision as a `beforeUpgrade` version and copies every JSON file of the notebook to the
+    /// device's backups (spec 15.4). Best effort, as history is: a failure never stops the save.
+    fn backup_before_upgrade(&self, snapshot: &Snapshot) {
+        let Some(from) = crate::format::header::leading_version(&snapshot.base) else {
+            return;
+        };
+        if from >= crate::FORMAT_VERSION {
+            return;
+        }
+        let to = crate::format::page_json::stamp::page_stamp(&snapshot.page).format;
+        if to <= from {
+            return;
+        }
+        if let Ok(read) = self.ctx.codec.read_page(&snapshot.base, &self.ctx.limits) {
+            let _ = self.ctx.backend.write_version(VersionToWrite {
+                dir: &snapshot.dir,
+                bytes: &snapshot.base,
+                page: &read.page,
+                reason: VersionReason::BeforeUpgrade,
+                name: None,
+            });
+        }
+        if let Some(notebook) = self.notebook.upgrade() {
+            let backups = self.ctx.data.backups_dir(notebook.id());
+            let fs = self.ctx.fs.as_ref();
+            let _ = crate::store::backup::backup_before_upgrade(fs, &notebook.root, &backups, from, to);
+        }
     }
 
     /// Steps S9 to S12: the page's new base, the journal's rotation, history, events, and the work that can

@@ -29,13 +29,16 @@ impl NotebookStore {
         self.reread_trash(&mut report);
         self.mark_pending();
         self.finish_pending()?;
-        let found = self.list_page_folders()?;
+        let mut found = self.list_page_folders()?;
         self.match_entries(&found, &mut report)?;
-        // Matching can bring a folder to where a pending deletion looks for it, such as a page renamed by hand
-        // on its way back from Trash while a second item also holds it. Deletion wins, in this pass, so a second
-        // scan finds nothing left to do (property P11).
-        if self.finish_deletions()? {
+        // Matching can bring a folder to where a pending deletion looks for it. An example is a page renamed by
+        // hand on its way back from Trash while a second item also holds it. Deletion wins, in this pass. A copy
+        // of that page in another folder then has no entry, so the folders are matched again. The copy is added
+        // now, not by the next scan (property P11). Each round moves a folder into Trash for good, so it ends.
+        while self.finish_deletions()? {
             self.mark_pending();
+            found = self.list_page_folders()?;
+            self.match_entries(&found, &mut report)?;
         }
         self.clean_partials(&found, &mut report);
         self.mark_pending();

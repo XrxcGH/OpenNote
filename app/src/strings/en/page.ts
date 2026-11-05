@@ -86,6 +86,9 @@ export const page = {
     nothingSelected: 'Select a block on the page first.',
     menuLabel: 'Object',
   },
+  canvas: {
+    menuLabel: 'Page',
+  },
   selection: {
     count: '{count, plural, one {# item selected.} other {# items selected.}}',
     badge: '{count, plural, one {# selected} other {# selected}}',
