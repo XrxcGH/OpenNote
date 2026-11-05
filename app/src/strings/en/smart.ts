@@ -49,6 +49,7 @@ export const smart = {
       keepOnTop: 'Keep on top',
       loading: 'Opening {title}…',
       popOut: 'Open in its own window',
+      popOutFailed: '{title} couldn’t open in its own window. It stays here.',
       resize: 'Resize {title}. Use the left and right arrow keys, or drag.',
     },
     timers: {

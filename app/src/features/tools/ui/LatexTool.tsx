@@ -15,6 +15,7 @@ import { insertIntoPage } from './CalculatorTool';
 import { loadStored, saveStored } from './storage';
 import extra from './extra.module.css';
 import science from './science.module.css';
+import { moveBetweenTabs } from './tabKeys';
 import styles from './tools.module.css';
 
 const STORE = 'latex';
@@ -169,7 +170,7 @@ function Palette({ addSnippet }: { addSnippet: Latex['addSnippet'] }) {
   const [group, setGroup] = useState<SnippetGroup>('basics');
   return (
     <>
-      <div className={styles.tabs} role="tablist" aria-label={t('science.latex.snippets')}>
+      <div className={styles.tabs} role="tablist" aria-label={t('science.latex.snippets')} onKeyDown={moveBetweenTabs}>
         {SNIPPET_GROUPS.map((one) => (
           <button
             key={one}
@@ -178,6 +179,7 @@ function Palette({ addSnippet }: { addSnippet: Latex['addSnippet'] }) {
             id={`latex-tab-${one}`}
             aria-selected={group === one}
             aria-controls="latex-snippets"
+            tabIndex={group === one ? 0 : -1}
             className={styles.tab}
             onClick={() => setGroup(one)}
           >

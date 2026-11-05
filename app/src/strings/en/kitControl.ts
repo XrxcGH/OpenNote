@@ -1559,7 +1559,7 @@ export const kitControl = {
     keywords:
       'dynamic system model transfer function zero pole gain state space mass spring damper rlc circuit dc motor ' +
       'thermal tank analogy block diagram step impulse ramp response rise time peak time overshoot settling time ' +
-      'final value theorem steady state error system type identification first order plus dead time',
+      'final value theorem steady state error system type identification first order plus dead time systems',
     lead:
       'Model a dynamic system, move between its forms, read its time response, find steady-state errors, and fit ' +
       'a model to a measured step.',
