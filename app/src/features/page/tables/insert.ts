@@ -35,25 +35,43 @@ function splitAtCaret(editor: Editor): { head: string; tail: string; headEnd: nu
 }
 
 export async function insertTable(data: TableData = newTableData(3, 3, true)): Promise<boolean> {
-  return insertBlock('table', data as unknown as Record<string, unknown>);
+  return insertBlocks([{ type: 'table', data: data as unknown as Record<string, unknown> }]);
+}
+
+/** Several tables, one below the other after the block with focus, as one step: one undo removes them all. */
+export async function insertTables(list: readonly TableData[]): Promise<boolean> {
+  return insertBlocks(list.map((data) => ({ type: 'table', data: data as unknown as Record<string, unknown> })));
 }
 
 /** A display equation, as a text block of its own after the block with focus. */
 export function insertMathBlock(source: string): Promise<boolean> {
-  return insertBlock('text', {
-    markdown: `$$
+  return insertBlocks([
+    {
+      type: 'text',
+      data: {
+        markdown: `$$
 ${source}
 $$`,
-  });
+      },
+    },
+  ]);
 }
 
-async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>): Promise<boolean> {
+/** A table's estimated height in page units, for stacking floating tables before they are measured. */
+const estimatedHeight = (data: Record<string, unknown>): number =>
+  (((data as Partial<TableData>).rows?.length ?? 1) + 1) * 36;
+
+async function insertBlocks(
+  items: readonly { type: 'table' | 'text'; data: Record<string, unknown> }[],
+): Promise<boolean> {
+  if (items.length === 0) return false;
+  const { type } = items[0];
   const queue = shownQueue.get();
   const layer = shownLayer.get();
   const pool = shownPool.get();
   if (!queue || !layer) return false;
   const active = pool?.active() ?? null;
-  const id: BlockId = newId();
+  const ids: BlockId[] = items.map(() => newId());
   const edits: Edit[] = [];
   // A draft text box, such as the one on a page with no text yet, is not in the page until it is typed in, and the
   // core has no block to put the table after. Then the table goes at the end, and the draft stays as it was.
@@ -81,16 +99,24 @@ async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>
   } else if (!active) {
     after = undefined;
   }
-  edits.push({
-    edit: 'insertBlock',
-    block: { id, type, data: { ...data }, ...(frame ? { frame } : {}) },
-    after,
+  const frames: (Frame | undefined)[] = [];
+  let nextY = frame?.y;
+  items.forEach((item, i) => {
+    const at = frame && nextY !== undefined ? { x: frame.x, y: nextY } : undefined;
+    frames.push(at);
+    if (nextY !== undefined) nextY += estimatedHeight(item.data) + 16;
+    edits.push({
+      edit: 'insertBlock',
+      block: { id: ids[i], type: item.type, data: { ...item.data }, ...(at ? { frame: at } : {}) },
+      after: i === 0 ? after : ids[i - 1],
+    });
   });
+  const last = ids[ids.length - 1];
   if (tail)
     edits.push({
       edit: 'insertBlock',
       block: { id: tail.id, type: 'text', data: { markdown: tail.markdown } },
-      after: id,
+      after: last,
     });
   const ack = await queue.send({ edits });
   const now = new Date().toISOString();
@@ -103,12 +129,12 @@ async function insertBlock(type: 'table' | 'text', data: Record<string, unknown>
     data: blockData,
     ...(at ? { frame: at } : {}),
   });
-  layer.upsert(made(id, type, { ...data }, frame));
+  items.forEach((item, i) => layer.upsert(made(ids[i], item.type, { ...item.data }, frames[i])));
   if (tail) layer.upsert(made(tail.id, 'text', { markdown: tail.markdown }));
   if (type === 'table') announce(t('tables.announce.inserted'));
-  const view = layer.view(id);
+  const view = layer.view(last);
   if (view) await whenViewReady(view.element);
-  const editor = pool?.mount(id, { kind: 'start' }, 'focus');
+  const editor = pool?.mount(last, { kind: 'start' }, 'focus');
   editor?.commands.focus('start');
   return true;
 }

@@ -78,8 +78,9 @@ const frame = (page: Page) => page.evaluate(() => new Promise((done) => requestA
 
 /**
  * Focuses a text box and puts the caret at its start, middle, or end, after a space for the middle so typing
- * makes a new word. The editor reads the DOM selection, as it does after a click. It returns once the box's editor
- * is mounted and holds both focus and the caret, and says so if it can't.
+ * makes a new word. A box with no text gets the caret in its first line, whichever place is asked for. The editor
+ * reads the DOM selection, as it does after a click. It returns once the box's editor is mounted and holds both
+ * focus and the caret, and says so if it can't.
  */
 export async function placeCaret(page: Page, box: Locator, caret: Caret): Promise<void> {
   await box.click({ position: { x: 8, y: 8 } });
@@ -92,6 +93,13 @@ export async function placeCaret(page: Page, box: Locator, caret: Caret): Promis
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes: Text[] = [];
     while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+    if (nodes.length === 0) {
+      // A box with no text, such as a note whose text was all deleted, has its caret in its first line.
+      const line = root.querySelector('p, li, pre, h1, h2, h3, h4, h5, h6') ?? root;
+      getSelection()!.collapse(line, 0);
+      line.scrollIntoView({ block: 'center' });
+      return;
+    }
     let node = nodes[0];
     let offset = 0;
     if (caret === 'end') {

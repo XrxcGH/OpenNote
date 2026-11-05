@@ -24,6 +24,8 @@ export function Breadcrumb({ presentation }: { presentation: 'full' | 'icon' | '
         <li
           key={`${index}-${title}`}
           className={index < hiddenCount ? styles.visuallyHidden : styles.crumb}
+          // A crumb cut short with an ellipsis still shows its whole name on hover and long press.
+          title={index < hiddenCount ? undefined : title}
           data-after-ellipsis={hiddenCount > 0 && index === hiddenCount ? '' : undefined}
           aria-current={index === titles.length - 1 ? 'location' : undefined}
           data-ink={index === 0 && ink ? '' : undefined}

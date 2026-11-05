@@ -258,6 +258,8 @@ export function engineeringText(value: number, digits = 4): string {
  * "4.2 mm". Null when the column's unit is not one prefixable symbol (N·m, ft, °C), which then shows as written.
  */
 export function prefixedText(value: number, unit: string, digits = 4): string | null {
+  // No unit: the number alone with the prefix beside it, "12.5k", which is also how it is typed.
+  if (unit.trim() === '') return withPrefix(value, '', digits).replace(' ', '');
   const symbol = unit.trim().replace(/^[uμ]/, 'µ');
   if (PLAIN.some(([plain]) => plain === symbol)) return null;
   for (const [base] of PREFIXABLE) {

@@ -193,7 +193,7 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
     const handle = target?.closest<HTMLElement>('[data-handle]');
     const wrapper = target?.closest<HTMLElement>('[data-block-id]');
     const block = handle?.dataset.block ?? wrapper?.dataset.blockId;
-    if (!block || !layer.block(block) || target?.closest('[data-scope="editor"]')) return;
+    if (!block || !layer.block(block) || target?.closest('[data-scope~="editor"]')) return;
     event.preventDefault();
     event.stopPropagation();
     if (!objects.selected().includes(block)) objects.select([block], { focus: true });
