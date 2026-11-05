@@ -28,7 +28,7 @@ export function EconTool() {
     saveStored(STORE, { tool: nextTool, form: nextForm });
 
   return (
-    <div ref={panel} data-kit-form="econ" data-kit-tool="econ" aria-label={tx('title')} className={styles.tool}>
+    <div ref={panel} data-kit-form="econ" data-kit-tool="econ" data-kit-title={tx('title')} className={styles.tool}>
       <label className={extra.field}>
         {tx('common.tool')}
         <select

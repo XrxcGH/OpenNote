@@ -88,6 +88,15 @@ describe('panel form', () => {
     expect(panel).toMatchObject({ kit: 'demo', tool: 'beam', title: 'Beam' });
   });
 
+  it('takes the title from data-kit-title, because a generic div may not carry an aria-label', () => {
+    renderUi(
+      <div data-kit-form="demo" data-kit-tool="beam" data-kit-title="Beam tool">
+        <button type="button">Keep</button>
+      </div>,
+    );
+    expect(panelOf(screen.getByRole('button', { name: 'Keep' }))?.title).toBe('Beam tool');
+  });
+
   it('makes a live block that Open in tool restores, also through a field that appears after a select changes', async () => {
     const sent: { panel?: { data: { inputs: unknown } } }[] = [];
     const take = (event: Event) => {

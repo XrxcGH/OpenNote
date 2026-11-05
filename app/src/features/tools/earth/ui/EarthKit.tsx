@@ -37,7 +37,7 @@ export function EarthKit() {
         ref={panel}
         data-kit-form="earth"
         data-kit-tool={tool}
-        aria-label={t(`kitEarth.tools.${tool}.title` as MessageKey)}
+        data-kit-title={t(`kitEarth.tools.${tool}.title` as MessageKey)}
         style={{ display: 'contents' }}
       >
         <Suspense fallback={null}>

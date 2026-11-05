@@ -171,5 +171,10 @@ export function panelOf(from: Element): { root: HTMLElement; kit: string; tool: 
   if (!root || !kit || !tool) return null;
   // The tool's name is the tab that labels the panel, when there is one.
   const tab = document.getElementById(root.getAttribute('aria-labelledby') ?? '');
-  return { root, kit, tool, title: tab?.textContent?.trim() || root.getAttribute('aria-label') || tool };
+  return {
+    root,
+    kit,
+    tool,
+    title: tab?.textContent?.trim() || root.getAttribute('data-kit-title') || root.getAttribute('aria-label') || tool,
+  };
 }
