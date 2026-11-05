@@ -7,7 +7,7 @@ import type { RefObject } from 'react';
 import 'katex/dist/katex.min.css';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
-import { insertLiveFromPanel } from '../../kits/ui/insert';
+import { insertLive as keepLive } from '../../kits/liveInsert';
 import { say, sayKey, sayText, showRow, rowText } from '../kit/say';
 import type { ShownRow } from '../kit/say';
 import { TOKEN_PALETTE, plotToSvg } from '../kit/svg';
@@ -135,7 +135,7 @@ function InsertButtons(props: {
       <Button
         variant="quiet"
         onClick={(event) => {
-          const ok = insertLiveFromPanel(event.currentTarget, {
+          void keepLive(event.currentTarget, {
             summary: answer,
             rows: shown.map((row) => ({
               label: row.symbol ? `${row.name} ${row.symbol}` : row.name,
@@ -143,9 +143,10 @@ function InsertButtons(props: {
               unit: row.unit,
             })),
             ...(outcome.latex ? { latex: outcome.latex } : {}),
+          }).then((ok) => {
+            announce(t(ok ? 'kitPhysics.ui.liveInserted' : 'kitPhysics.ui.noPage'));
+            setMissed(ok ? 0 : (n) => n + 1);
           });
-          announce(t(ok ? 'kitPhysics.ui.liveInserted' : 'kitPhysics.ui.noPage'));
-          setMissed(ok ? 0 : (n) => n + 1);
         }}
       >
         {t('kitPhysics.ui.insertLive')}

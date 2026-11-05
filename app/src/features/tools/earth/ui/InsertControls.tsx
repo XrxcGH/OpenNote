@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce, openMenu } from '../../../../ui';
 import type { MenuItemSpec } from '../../../../ui';
-import { insertLiveFromPanel } from '../../kits/ui/insert';
+import { insertLive as keepLive } from '../../kits/liveInsert';
 import { insertIntoPage } from '../../ui/insert';
 import { figureSvg } from '../core/figure';
 import type { Outcome } from './form';
@@ -50,14 +50,11 @@ function menuItems(outcome: Outcome, say: Say, anchor: Element): MenuItemSpec[] 
     id: 'live',
     label: t('kitEarth.insertLive'),
     onSelect: () =>
-      say(
-        insertLiveFromPanel(anchor, {
-          summary: outcome.answer,
-          rows: (outcome.rows ?? []).slice(0, 12).map(([label, value]) => ({ label, value, unit: '' })),
-          ...(outcome.latex ? { latex: outcome.latex } : {}),
-        }),
-        'kitEarth.liveInserted',
-      ),
+      void keepLive(anchor, {
+        summary: outcome.answer,
+        rows: (outcome.rows ?? []).slice(0, 12).map(([label, value]) => ({ label, value, unit: '' })),
+        ...(outcome.latex ? { latex: outcome.latex } : {}),
+      }).then((ok) => say(ok, 'kitEarth.liveInserted')),
   });
   (outcome.figures ?? []).forEach((figure, i) => {
     const bytes = new TextEncoder().encode(figureSvg(figure)).buffer as ArrayBuffer;

@@ -134,7 +134,7 @@ describe('the engineering mathematics window live calculation blocks', () => {
         await userEvent.click(screen.getAllByRole('tab')[MATH_TOOLS.indexOf(tool)]);
         await waitFor(() => expect(container.querySelector('[aria-live="polite"]')?.textContent).toBeTruthy());
         await userEvent.click(await screen.findByRole('button', { name: 'Live calculation block' }));
-        expect(blocks).toHaveLength(1);
+        await waitFor(() => expect(blocks).toHaveLength(1));
         expect(blocks[0].data).toMatchObject({ kit: 'math', tool: tool.id });
         expect(blocks[0].data.summary.length).toBeGreaterThan(0);
         expect(blocks[0].data.inputs.fields.length).toBeGreaterThan(0);

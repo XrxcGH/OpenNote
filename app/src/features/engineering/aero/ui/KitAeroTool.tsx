@@ -4,7 +4,6 @@ import '../text';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
 import { t } from '../../../../strings/t';
-import { loadKits } from '../../../tools';
 import { LOADERS } from '../kit';
 import { AERO_TOOLS, isAeroTool } from '../meta';
 import type { AeroToolId } from '../meta';
@@ -54,9 +53,12 @@ function useAeroReopen(tab: AeroToolId, panel: RefObject<HTMLElement | null>) {
   useEffect(() => {
     let stop: (() => void) | undefined;
     let ended = false;
-    void loadKits().then((kits) => {
-      if (!ended) stop = kits.watchKitReopen('aero', tab, () => panel.current);
-    });
+    // A dynamic import: a static one would put the whole tools index in this window's chunk.
+    void import('../../../tools')
+      .then((tools) => tools.loadKits())
+      .then((kits) => {
+        if (!ended) stop = kits.watchKitReopen('aero', tab, () => panel.current);
+      });
     return () => {
       ended = true;
       stop?.();

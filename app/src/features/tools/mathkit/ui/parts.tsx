@@ -5,7 +5,7 @@ import { ScrollMath } from '../../ui/ScrollMath';
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button, announce } from '../../../../ui';
-import { insertLiveFromPanel } from '../../kits/ui/insert';
+import { insertLive as keepLive } from '../../kits/liveInsert';
 import { insertIntoPage } from '../../ui/insert';
 import { loadStored, saveStored } from '../../ui/storage';
 import { KitError, type KitStep } from '../types';
@@ -237,21 +237,15 @@ export function InsertBar(props: {
         <Button
           variant="quiet"
           onClick={(event) =>
-            announce(
-              t(
-                insertLiveFromPanel(event.currentTarget, {
-                  summary: answer,
-                  rows: (table?.rows ?? []).slice(0, 12).map((row) => ({
-                    label: row[0] ?? '',
-                    value: row.slice(1).join(' '),
-                    unit: '',
-                  })),
-                  ...(latex ? { latex } : {}),
-                })
-                  ? 'kitMath.ui.liveInserted'
-                  : 'kitMath.ui.noPage',
-              ),
-            )
+            void keepLive(event.currentTarget, {
+              summary: answer,
+              rows: (table?.rows ?? []).slice(0, 12).map((row) => ({
+                label: row[0] ?? '',
+                value: row.slice(1).join(' '),
+                unit: '',
+              })),
+              ...(latex ? { latex } : {}),
+            }).then((ok) => announce(t(ok ? 'kitMath.ui.liveInserted' : 'kitMath.ui.noPage')))
           }
         >
           {t('kitMath.ui.insertLive')}

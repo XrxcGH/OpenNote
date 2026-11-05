@@ -7,7 +7,7 @@ import { isRangeError, printsNonFinite } from '../../../core/finite';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
 import { panelOf } from '../kits/panelForm';
-import { insertLiveFromPanel } from '../kits/ui/insert';
+import { insertLive as keepLive } from '../kits/liveInsert';
 import { insertFigure } from '../subjects/ui/insertFigure';
 import { insertIntoPage } from './CalculatorTool';
 import styles from './chem.module.css';
@@ -114,13 +114,14 @@ export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
   useEffect(() => setKept(!!root.current && panelOf(root.current) !== null), []);
   const insertLive = (from: Element) => {
     if (!outcome.ok) return;
-    const ok = insertLiveFromPanel(from, {
+    void keepLive(from, {
       summary: outcome.headline,
       rows: outcome.steps.slice(0, 12).map((step, i) => ({ label: String(i + 1), value: step, unit: '' })),
+    }).then((ok) => {
+      const words = t(ok ? 'chem.liveInserted' : 'chem.noPage');
+      setNote(words);
+      announce(words);
     });
-    const words = t(ok ? 'chem.liveInserted' : 'chem.noPage');
-    setNote(words);
-    announce(words);
   };
 
   const insertGraph = () => {
