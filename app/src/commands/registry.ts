@@ -16,7 +16,7 @@ import type { CommandContext, CommandDef, CommandId, CommandTarget, FocusZone } 
 // The canonical chord form lives in chords.ts, with the rest of the keyboard layout rules.
 export { NAMED_KEYS, chord, isChordText } from './chords';
 
-/** Why a command failed. A call to the host rejects with a { code, message } object, which String() shows as [object Object]. */
+/** Why a command failed. A host call rejects with { code, message }, which String() turns into "[object Object]". */
 function failureText(error: unknown): string {
   if (error instanceof Error) return error.message || String(error);
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {

@@ -252,6 +252,16 @@ pub fn with_driver_args<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
     builder
 }
 
+/// A builder for a window that shares the main window's user data folder, with the browser arguments of
+/// [`with_driver_args`]. The print window of a PDF export takes this, so a build driven by WebDriver can print.
+pub fn new_window<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    manager: &'a M,
+    label: &str,
+    url: tauri::WebviewUrl,
+) -> tauri::WebviewWindowBuilder<'a, R, M> {
+    with_driver_args(tauri::WebviewWindowBuilder::new(manager, label, url))
+}
+
 /// Gives a window of a build driven by WebDriver the browser arguments the main window has; here it changes nothing.
 #[cfg(not(feature = "test-endpoints"))]
 pub fn with_driver_args<'a, R: tauri::Runtime, M: tauri::Manager<R>>(

@@ -270,8 +270,9 @@ async function keepWindow(browser: Browser, stamp: number): Promise<void> {
     await browser.saveScreenshot(join(LOGS, `${name}.png`));
     const text = await browser.execute(() => {
       const element = document.activeElement as HTMLElement | null;
+      const label = element?.getAttribute('aria-label');
       const focus = element
-        ? `${element.tagName.toLowerCase()} role=${element.getAttribute('role')} label=${element.getAttribute('aria-label')} block=${element.dataset.blockId}`
+        ? `${element.tagName.toLowerCase()} label=${label} block=${element.dataset.blockId}`
         : 'none';
       const notices = [...document.querySelectorAll('[role="status"], [role="alert"], [aria-live]')].map(
         (node) => node.textContent,
