@@ -1,19 +1,27 @@
 //! Exporting to a Word file: one `.docx` for a page, a section, or a notebook.
+//!
+//! Each page is a section of the document with its own paper, header, and footer. Text blocks bring their
+//! paragraph formatting, lists, notes, comments, and suggestions; the notebook's styles and theme become the
+//! document's (ADR 0083).
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
-use opennote_core::model::{Asset, Page};
-use opennote_core::{PageId, Timestamp};
+use opennote_core::model::{Asset, BlockData, Named, Orientation, Page};
+use opennote_core::{BlockId, PageId, Timestamp};
+use serde_json::{Map, Value};
 
-use super::convert::{page_to_blocks, Resolver};
+use super::convert::{page_to_document, Resolver};
 use super::files::Exported;
 use super::names::sanitize_name;
 use super::plan::{self, PlannedPage, Scope};
 use crate::assets::image_size;
 use crate::doc::Block as DocBlock;
-use crate::docx::{self, Media, Part, WordInput};
+use crate::docx::{
+    self, sheet_from_json, Band, BandFields, Bands, Media, PageSetup, Part, Setup, StyleSheet, TextSettings, Theme,
+    WordInput, WordOptions,
+};
 use crate::error::{InteropError, Result};
 use crate::report::{PageReport, Report, ReportKind};
 use crate::run::{Control, Phase, Unit};
@@ -27,6 +35,18 @@ pub fn export_docx(source: &dyn NoteSource, scope: Scope, out_dir: &Path) -> Res
 /// Exports to a Word file. It reports progress, and it stops when the control is canceled. Nothing is written
 /// until every page has been read, so a canceled export leaves no file.
 pub fn export_docx_with(source: &dyn NoteSource, scope: Scope, out_dir: &Path, control: &Control) -> Result<Exported> {
+    export_docx_options(source, scope, out_dir, control, &WordOptions::default())
+}
+
+/// Exports to a Word file with choices: the device's font faces, fonts to embed, and whether personal
+/// information is removed.
+pub fn export_docx_options(
+    source: &dyn NoteSource,
+    scope: Scope,
+    out_dir: &Path,
+    control: &Control,
+    options: &WordOptions,
+) -> Result<Exported> {
     let plan = plan::build(source, scope, "docx")?;
     control.begin(Phase::Writing, Unit::Items, Some(plan.pages.len() as u64));
     let mut resolver = WordResolver {
@@ -37,7 +57,13 @@ pub fn export_docx_with(source: &dyn NoteSource, scope: Scope, out_dir: &Path, c
         attachments: 0,
     };
     let mut report = Report::new(ReportKind::Export, format!("{} as Word", plan.title));
-    let mut body = Body::default();
+    let notebook = source.notebook();
+    let mut body = Body {
+        notebook: notebook.title.clone(),
+        ..Body::default()
+    };
+    let mut page_sheets: Vec<StyleSheet> = Vec::new();
+    let mut page_theme: Option<Map<String, Value>> = None;
     for planned in &plan.pages {
         control.checkpoint()?;
         control.step(Phase::Writing, 1, &planned.title);
@@ -47,9 +73,15 @@ pub fn export_docx_with(source: &dyn NoteSource, scope: Scope, out_dir: &Path, c
                     title: page.title.clone(),
                     ..PageReport::default()
                 };
-                let blocks = page_to_blocks(&page, &mut resolver, &mut page_report);
+                let document = page_to_document(&page, &mut resolver, &mut page_report);
                 report.add_page(page_report);
-                body.add(planned, &page, blocks, scope == Scope::Notebook);
+                if let Some(styles) = page.extra.get("styles") {
+                    page_sheets.push(sheet_from_json(styles));
+                }
+                if page_theme.is_none() {
+                    page_theme = page.extra.get("theme").and_then(Value::as_object).cloned();
+                }
+                body.add(planned, &page, document, scope == Scope::Notebook);
             }
             Err(error) => {
                 report
@@ -59,12 +91,44 @@ pub fn export_docx_with(source: &dyn NoteSource, scope: Scope, out_dir: &Path, c
         }
     }
     resolver.describe(&mut report);
+    // A page's own style sheet and theme apply when it is the only page. Word has one set of styles per file, so
+    // an export of several pages uses the notebook's.
+    let single = plan.pages.len() == 1;
+    let notebook_sheet: StyleSheet = notebook
+        .styles
+        .iter()
+        .filter_map(|(name, spec)| Some((name.clone(), serde_json::to_value(spec).ok()?.as_object()?.clone())))
+        .collect();
+    let mut styles = notebook_sheet;
+    if single {
+        for sheet in &page_sheets {
+            styles = docx::merge_styles(styles, &[sheet]);
+        }
+    } else if !page_sheets.is_empty() {
+        report.general.simplified(
+            "page style sheets".to_owned(),
+            "Word files hold one set of styles, so the notebook's styles are used.",
+        );
+    }
+    let mut theme = Theme::default();
+    if let Some(notebook_theme) = notebook.extra.get("theme").and_then(Value::as_object) {
+        theme.read(notebook_theme);
+    }
+    if let (true, Some(page_theme)) = (single, &page_theme) {
+        theme.read(page_theme);
+    }
     let input = WordInput {
         title: plan.title.clone(),
         created: body.created.unwrap_or(Timestamp::EPOCH),
         modified: body.modified.unwrap_or(Timestamp::EPOCH),
         parts: body.parts,
         media: resolver.media,
+        setup: Setup {
+            styles,
+            theme,
+            text: body.text.unwrap_or_default(),
+            options: options.clone(),
+        },
     };
     let bytes = docx::build(&input)?;
     let path = unique_file(out_dir, &plan.title)?;
@@ -83,14 +147,14 @@ struct Body {
     created: Option<Timestamp>,
     modified: Option<Timestamp>,
     last_section: Option<String>,
+    notebook: String,
+    /// The text settings of the first page.
+    text: Option<TextSettings>,
 }
 
 impl Body {
-    /// Adds a page after a page break, with its section's name when that changes.
-    fn add(&mut self, planned: &PlannedPage, page: &Page, blocks: Vec<DocBlock>, show_section: bool) {
-        if !self.parts.is_empty() {
-            self.parts.push(Part::PageBreak);
-        }
+    /// Adds a page as a section of its own, with its section's name when that changes.
+    fn add(&mut self, planned: &PlannedPage, page: &Page, document: super::Document, show_section: bool) {
         if show_section && self.last_section.as_deref() != Some(planned.section.as_str()) {
             self.parts.push(Part::Subtitle(planned.section.clone()));
             self.last_section = Some(planned.section.clone());
@@ -99,9 +163,148 @@ impl Body {
             text: page.title.clone(),
             bookmark: Some(bookmark(page.id)),
         });
-        self.parts.push(Part::Blocks(blocks));
+        self.parts.extend(page_parts(page, document));
+        self.parts.push(Part::Section {
+            setup: Box::new(page_setup(page)),
+            fields: BandFields {
+                title: page.title.clone(),
+                notebook: self.notebook.clone(),
+                section: planned.section.clone(),
+            },
+        });
+        if self.text.is_none() {
+            self.text = Some(text_settings(page));
+        }
         self.created = Some(self.created.map_or(page.created, |t| t.min(page.created)));
         self.modified = Some(self.modified.map_or(page.modified, |t| t.max(page.modified)));
+    }
+}
+
+/// The parts of a page: each text block's blocks with its records, break blocks as breaks, and other blocks as
+/// they converted.
+fn page_parts(page: &Page, document: super::Document) -> Vec<Part> {
+    let super::Document {
+        blocks,
+        origins,
+        mut texts,
+    } = document;
+    let mut parts = Vec::new();
+    let mut run: Vec<DocBlock> = Vec::new();
+    let mut run_origin: Option<BlockId> = None;
+    let flush = |parts: &mut Vec<Part>,
+                 run: &mut Vec<DocBlock>,
+                 origin: Option<BlockId>,
+                 texts: &mut std::collections::BTreeMap<BlockId, crate::doc::data::TextData>| {
+        if run.is_empty() {
+            return;
+        }
+        let blocks = std::mem::take(run);
+        match origin.and_then(|id| texts.remove(&id)) {
+            Some(data) => parts.push(Part::Text {
+                blocks,
+                data: Box::new(data),
+            }),
+            None => parts.push(Part::Blocks(blocks)),
+        }
+    };
+    for (block, origin) in blocks.into_iter().zip(origins) {
+        if let Some(kind) = break_kind(page, origin) {
+            flush(&mut parts, &mut run, run_origin, &mut texts);
+            run_origin = None;
+            parts.push(if kind == "column" {
+                Part::ColumnBreak
+            } else {
+                Part::PageBreak
+            });
+            continue;
+        }
+        if run_origin != Some(origin) {
+            flush(&mut parts, &mut run, run_origin, &mut texts);
+            run_origin = Some(origin);
+        }
+        run.push(block);
+    }
+    flush(&mut parts, &mut run, run_origin, &mut texts);
+    parts
+}
+
+/// The kind of a break block (spec 6.12): `page` or `column`.
+fn break_kind(page: &Page, id: BlockId) -> Option<&str> {
+    match &page.blocks.get(id)?.data {
+        BlockData::Other(other) if &*other.type_name == "break" => {
+            Some(match other.data.get("kind").and_then(Value::as_str) {
+                Some("column") => "column",
+                _ => "page",
+            })
+        }
+        _ => None,
+    }
+}
+
+/// The page setup of a page's paper, with its saved header and footer.
+fn page_setup(page: &Page) -> PageSetup {
+    let paper = &page.view.paper;
+    let print = page.view.extra.get("print").and_then(Value::as_object);
+    let bands = |key: &str| {
+        print
+            .and_then(|p| p.get(key))
+            .and_then(Value::as_object)
+            .map(read_bands)
+    };
+    let text = page.view.extra.get("text").and_then(Value::as_object);
+    let page_numbers = text
+        .and_then(|t| t.get("pageNumbers"))
+        .and_then(Value::as_object)
+        .and_then(|numbers| {
+            let format = numbers.get("format").and_then(Value::as_str).unwrap_or("decimal");
+            let ok = format.len() <= 32 && format.bytes().all(|b| b.is_ascii_alphanumeric());
+            let start = numbers
+                .get("start")
+                .and_then(Value::as_u64)
+                .and_then(|s| u32::try_from(s).ok());
+            ok.then(|| (format.to_owned(), start))
+        });
+    PageSetup {
+        width: paper.width,
+        height: paper.height,
+        margins: paper.margins,
+        landscape: paper.orientation == Named::Known(Orientation::Landscape) || paper.width > paper.height,
+        header: bands("header"),
+        footer: bands("footer"),
+        page_numbers,
+    }
+}
+
+/// A band and its first-sheet variant (`R-PRN-1`). Each part is at most 200 characters.
+fn read_bands(value: &Map<String, Value>) -> Bands {
+    let band = |v: &Map<String, Value>| {
+        let part = |key: &str| {
+            v.get(key)
+                .and_then(Value::as_str)
+                .map(|s| s.chars().take(200).collect())
+                .unwrap_or_default()
+        };
+        Band {
+            left: part("left"),
+            center: part("center"),
+            right: part("right"),
+        }
+    };
+    Bands {
+        all: band(value),
+        first: value.get("firstPage").and_then(Value::as_object).map(band),
+    }
+}
+
+/// The text settings of a page (`view.text`).
+fn text_settings(page: &Page) -> TextSettings {
+    let text = page.view.extra.get("text").and_then(Value::as_object);
+    TextSettings {
+        default_tab: text
+            .and_then(|t| t.get("defaultTab"))
+            .and_then(Value::as_f64)
+            .filter(|v| (0.0..=1584.0).contains(v)),
+        hyphenate: text.and_then(|t| t.get("hyphenate")).and_then(Value::as_bool),
     }
 }
 

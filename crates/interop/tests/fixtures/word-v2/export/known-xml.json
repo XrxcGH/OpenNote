@@ -1,0 +1,31 @@
+{
+  "about": "Known XML of the Word writer, one case per row of DESIGN 9.1. Each expected value is worked by hand from ECMA-376 Part 1 units: half-points (w:sz, w:position, w:kern), twentieths of a point (w:ind, w:spacing, w:tab), 240ths of a line (w:line with lineRule auto), eighths of a point (border w:sz), and the 16 ST_HighlightColor values of 17.18.40. A case gives Markdown, optional paragraph formatting for its one element, and strings document.xml must hold.",
+  "cases": [
+    { "name": "10.5 pt is 21 half-points", "markdown": "<span data-size=\"10.5\">a</span>", "expect": ["<w:sz w:val=\"21\"/><w:szCs w:val=\"21\"/>"] },
+    { "name": "large is 15 pt at the 12 pt body", "markdown": "<span data-size=\"large\">a</span>", "expect": ["<w:sz w:val=\"30\"/>"] },
+    { "name": "a named font fills all four slots", "markdown": "<span data-font=\"Georgia\">a</span>", "expect": ["<w:rFonts w:ascii=\"Georgia\" w:hAnsi=\"Georgia\" w:cs=\"Georgia\" w:eastAsia=\"Georgia\"/>"] },
+    { "name": "+heading is the major theme font", "markdown": "<span data-font=\"+heading\">a</span>", "expect": ["<w:rFonts w:asciiTheme=\"majorHAnsi\""] },
+    { "name": "double underline with a color", "markdown": "<u data-line=\"double\" data-line-color=\"#c00000\">a</u>", "expect": ["<w:u w:val=\"double\" w:color=\"C00000\"/>"] },
+    { "name": "double strikethrough", "markdown": "<del data-line=\"double\">a</del>", "expect": ["<w:dstrike/>"] },
+    { "name": "small capitals", "markdown": "<span data-caps=\"small\">a</span>", "expect": ["<w:smallCaps/>"] },
+    { "name": "tracking 1.5 pt is 30 twips", "markdown": "<span data-tracking=\"1.5\">a</span>", "expect": ["<w:spacing w:val=\"30\"/>"] },
+    { "name": "scale 150 percent", "markdown": "<span data-scale=\"150\">a</span>", "expect": ["<w:w w:val=\"150\"/>"] },
+    { "name": "shift 3 pt is 6 half-points", "markdown": "<span data-shift=\"3\">a</span>", "expect": ["<w:position w:val=\"6\"/>"] },
+    { "name": "kerning from 14 pt is 28 half-points", "markdown": "<span data-kern=\"14\">a</span>", "expect": ["<w:kern w:val=\"28\"/>"] },
+    { "name": "outline and shadow", "markdown": "<span data-effect=\"outline shadow\">a</span>", "expect": ["<w:outline/><w:shadow/>"] },
+    { "name": "#ffff00 is the yellow highlight", "markdown": "<mark data-color=\"#ffff00\">a</mark>", "expect": ["<w:highlight w:val=\"yellow\"/>"] },
+    { "name": "#123456 is not one of the 16, so it is shading", "markdown": "<mark data-color=\"#123456\">a</mark>", "expect": ["<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"123456\"/>"] },
+    { "name": "a language", "markdown": "<span lang=\"fr-CA\">a</span>", "expect": ["<w:lang w:val=\"fr-CA\"/>"] },
+    { "name": "do not check spelling", "markdown": "<span lang=\"zxx\">a</span>", "expect": ["<w:noProof/>"] },
+    { "name": "right to left", "markdown": "<span dir=\"rtl\">a</span>", "expect": ["<w:rtl/>"] },
+    { "name": "centered", "markdown": "a", "para": { "align": "center" }, "expect": ["<w:jc w:val=\"center\"/>"] },
+    { "name": "justified", "markdown": "a", "para": { "align": "justify" }, "expect": ["<w:jc w:val=\"both\"/>"] },
+    { "name": "distributed", "markdown": "a", "para": { "align": "distribute" }, "expect": ["<w:jc w:val=\"distribute\"/>"] },
+    { "name": "indent start 36 first -18", "markdown": "a", "para": { "indent": { "start": 36, "first": -18 } }, "expect": ["<w:ind w:left=\"720\" w:hanging=\"360\"/>"] },
+    { "name": "space before 12 after 8", "markdown": "a", "para": { "before": 12, "after": 8 }, "expect": ["<w:spacing w:before=\"240\" w:after=\"160\"/>"] },
+    { "name": "line multiple 1.15 is 276 240ths", "markdown": "a", "para": { "line": { "rule": "multiple", "value": 1.15 } }, "expect": ["w:line=\"276\" w:lineRule=\"auto\""] },
+    { "name": "line exactly 18 pt is 360 twips", "markdown": "a", "para": { "line": { "rule": "exact", "value": 18 } }, "expect": ["w:line=\"360\" w:lineRule=\"exact\""] },
+    { "name": "a decimal tab with a dot leader at 144 pt", "markdown": "a", "para": { "tabs": [{ "pos": 144, "align": "decimal", "leader": "dot" }] }, "expect": ["<w:tabs><w:tab w:val=\"decimal\" w:leader=\"dot\" w:pos=\"2880\"/></w:tabs>"] },
+    { "name": "a half-point bottom border is 4 eighths", "markdown": "a", "para": { "border": { "bottom": { "style": "single", "width": 0.5, "space": 1, "color": "#000000" } } }, "expect": ["<w:pBdr><w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"1\" w:color=\"000000\"/></w:pBdr>"] }
+  ]
+}

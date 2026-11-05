@@ -31,4 +31,4 @@ pub use pptx::export_pptx;
 pub use share::{export_share, export_share_with, EXTENSION as SHARE_EXTENSION};
 pub use single::export_html_single;
 pub use tables::{export_tables, TableFormat};
-pub use word::{export_docx, export_docx_with};
+pub use word::{export_docx, export_docx_options, export_docx_with};
