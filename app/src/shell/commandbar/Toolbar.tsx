@@ -19,6 +19,7 @@ import {
   GLYPH_COMMANDS,
   LAZY_TABS,
   groupHasIcons,
+  iconElementFor,
   iconFor,
   lazyIconsLoaded,
   loadLazyIcons,
@@ -75,11 +76,11 @@ function Tool({ entry }: { entry: BarEntry }) {
   const label = shortKey ? t(shortKey) : full;
   const isMenu = item.presentation === 'menu' && item.menu !== undefined;
   const iconGroup = groupHasIcons(item.tab, item.group);
-  const Icon = iconGroup ? iconFor(def.id) : undefined;
-  const glyph = GLYPH_COMMANDS.has(def.id) && Icon !== undefined;
+  const icon = iconGroup ? iconElementFor(def.id) : undefined;
+  const glyph = GLYPH_COMMANDS.has(def.id) && icon !== undefined;
   // A named tool shows its icon before its name, except at the Medium size class, where the name stands alone.
   const named = iconGroup && !glyph && sizeClass !== 'medium';
-  const pending = named && !Icon && !loaded && LAZY_TABS.has(item.tab);
+  const pending = named && !icon && !loaded && LAZY_TABS.has(item.tab);
   const onClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (disabled) return;
     if (isMenu) void showMenu(entry, event.currentTarget, setMenuOpen);
@@ -95,7 +96,7 @@ function Tool({ entry }: { entry: BarEntry }) {
       type="button"
       {...TOOL_PROPS}
       className={styles.tool}
-      data-kind={glyph ? 'glyph' : named && (Icon || pending) ? 'named' : undefined}
+      data-kind={glyph ? 'glyph' : named && (icon || pending) ? 'named' : undefined}
       aria-label={glyph || label !== full ? full : undefined}
       aria-disabled={disabled || undefined}
       aria-pressed={item.presentation === 'toggle' ? Boolean(checked) : undefined}
@@ -105,19 +106,13 @@ function Tool({ entry }: { entry: BarEntry }) {
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      {glyph && Icon ? (
-        <IconSlot>
-          <Icon aria-hidden />
-        </IconSlot>
+      {glyph ? (
+        <IconSlot>{icon}</IconSlot>
       ) : (
         <>
-          {named && Icon && (
-            <IconSlot>
-              <Icon aria-hidden />
-            </IconSlot>
-          )}
+          {named && icon && <IconSlot>{icon}</IconSlot>}
           {pending && <IconSlot />}
-          {named && (Icon || pending) ? (
+          {named && (icon || pending) ? (
             // The name sits in a one-cell grid with a hidden semibold copy, so a pressed tool never changes width.
             <span className={styles.label}>
               <span>{label}</span>

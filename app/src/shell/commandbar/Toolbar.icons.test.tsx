@@ -8,8 +8,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { FLAGS } from '../../app/flags';
 import { navigate } from '../../app/location';
+import { defineCommand } from '../../commands/registry';
+import { commandBar, commands } from '../../registries';
 import type { NodeId } from '../../services/notes/types';
-import { renderApp, setViewport } from '../../test';
+import { disposeApp, renderApp, setViewport } from '../../test';
 
 vi.setConfig({ testTimeout: 90_000 });
 
@@ -150,5 +152,38 @@ describe('the Draw bar', () => {
     await waitFor(() => expect(toggle.getAttribute('aria-pressed')).toBe(String(!pressed)));
     expect(svgs(toggle)[0].innerHTML).toBe(before);
     expect(ringOf(toggle) !== 'none').toBe(!pressed);
+  });
+});
+
+describe('the group dividers', () => {
+  it('are a short line, 20 px tall (24 px with touch sizes), in place of a full-height border', async () => {
+    const stops = [commandBar.replaceAll([])];
+    for (const id of ['one', 'two']) {
+      stops.push(
+        commands.register(
+          defineCommand({ id: `test.${id}`, title: 'commands.colors.ink', category: 'general', run() {} }),
+        ),
+      );
+      stops.push(commandBar.register({ id, tab: 'home', group: id, command: `test.${id}`, priority: 50 }));
+    }
+    try {
+      for (const [density, height] of [
+        ['mouse', '20px'],
+        ['touch', '24px'],
+      ] as const) {
+        await renderApp({ density });
+        const slot = await waitFor(() => {
+          const found = bar('Home').querySelector('[data-group-start]');
+          expect(found).not.toBeNull();
+          return found as HTMLElement;
+        });
+        expect(getComputedStyle(slot, '::before').height).toBe(height);
+        expect(getComputedStyle(slot).borderInlineStartWidth).toBe('0px');
+        expect(slot.getBoundingClientRect().height).toBeGreaterThan(parseFloat(height));
+        disposeApp();
+      }
+    } finally {
+      stops.forEach((stop) => stop());
+    }
   });
 });

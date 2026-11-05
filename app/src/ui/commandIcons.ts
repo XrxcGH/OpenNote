@@ -5,6 +5,8 @@
 // show the name only. A command with no entry in either table has no icon. Bar icons use the text colors, never an
 // accent.
 
+import { createElement } from 'react';
+import type { ReactElement } from 'react';
 import type { IconComponent } from './icons';
 import { ArrowUUpLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowUUpLeft';
 import { BinocularsIcon } from '@phosphor-icons/react/dist/csr/Binoculars';
@@ -132,6 +134,12 @@ function byName(name: string): IconComponent | undefined {
 /** The icon for a command id: the tables first, then the command's own `icon` name when a table holds that icon. */
 export function iconFor(id: string, iconName?: string): IconComponent | undefined {
   return HOME_ICONS[id] ?? lazyTable?.[id] ?? (iconName ? byName(iconName) : undefined);
+}
+
+/** The icon for a command id as an element, so the bar can draw it without creating a component while it renders. */
+export function iconElementFor(id: string): ReactElement | undefined {
+  const Icon = iconFor(id);
+  return Icon ? createElement(Icon, { 'aria-hidden': true }) : undefined;
 }
 
 /** Whether a tool in this tab and group is drawn with an icon: a group is all icons or none. */

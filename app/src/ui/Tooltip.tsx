@@ -182,7 +182,7 @@ export function Tooltip({ label, shortcut, touchHold = false, children }: Toolti
       onBlur={onBlur}
       onPointerDown={(event) => {
         state.dismiss(true);
-        if (touchHold && event.pointerType === 'touch') hold.onPointerDown(event);
+        if (touchHold && event.pointerType === 'touch') hold.onPointerDown?.(event);
       }}
       onPointerMove={touchHold ? hold.onPointerMove : undefined}
       onPointerUp={touchHold ? hold.onPointerUp : undefined}

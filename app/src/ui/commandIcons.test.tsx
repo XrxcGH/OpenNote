@@ -7,15 +7,14 @@ import { navigate } from '../app/location';
 import { FLAGS } from '../app/flags';
 import { commandBar } from '../registries';
 import type { CommandBarItem } from '../registries/types';
-import type { NodeId } from '../services/notes/types';
 import { renderApp } from '../test';
 import { GLYPH_COMMANDS, groupHasIcons, iconFor, loadLazyIcons } from './commandIcons';
 
 const mitosis = {
   view: 'workspace' as const,
-  notebookId: 'n-biology' as NodeId,
-  sectionId: 's-lectures' as NodeId,
-  pageId: 'p-mitosis' as NodeId,
+  notebookId: 'n-biology' as never,
+  sectionId: 's-lectures' as never,
+  pageId: 'p-mitosis' as never,
 };
 
 /** Items drawn by a component that holds several tools of its own, such as the shape library's two buttons. */
