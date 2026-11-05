@@ -101,13 +101,16 @@ impl Builder {
 
     /// Collects the description of an image.
     fn image_event(&mut self, event: &Event<'_>) -> bool {
-        let (_, alt) = self.image.as_mut().expect("an image is open");
+        let Some((_, alt)) = self.image.as_mut() else {
+            return false;
+        };
         match event {
             Event::Text(text) | Event::Code(text) | Event::InlineMath(text) => alt.push_str(text),
             Event::SoftBreak | Event::HardBreak => alt.push(' '),
             Event::End(TagEnd::Image) => {
-                let (dest, alt) = self.image.take().expect("an image is open");
-                self.evs.push(Ev::Image(dest, super::clean::clean_alt(&alt)));
+                if let Some((dest, alt)) = self.image.take() {
+                    self.evs.push(Ev::Image(dest, super::clean::clean_alt(&alt)));
+                }
             }
             _ => {}
         }
@@ -265,8 +268,9 @@ fn pair_tags(evs: &mut [Ev], key: usize) {
         match read_tag(raw) {
             Some(Tag::Open { name, mark }) => stack.push((i, name, mark)),
             Some(Tag::Close(name)) if stack.last().is_some_and(|(_, n, _)| *n == name) => {
-                let (open, _, mark) = stack.pop().expect("the stack has a top");
-                pairs.push((open, i, mark));
+                if let Some((open, _, mark)) = stack.pop() {
+                    pairs.push((open, i, mark));
+                }
             }
             _ => {}
         }
