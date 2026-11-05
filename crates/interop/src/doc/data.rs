@@ -317,11 +317,14 @@ impl TextData {
                 .filter_map(|(k, v)| Some((k.clone(), v.as_object()?)))
                 .collect::<Vec<_>>()
         };
-        let paras = entries("paras", usize::MAX)
-            .into_iter()
-            .filter(|(id, _)| ids.contains(id))
-            .map(|(id, v)| (id, read_para(v)))
-            .collect();
+        // Look up each element ID in `paras`, so the work grows with the IDs and never with their product.
+        let paras = map("paras")
+            .map(|paras| {
+                ids.iter()
+                    .filter_map(|id| Some((id.clone(), read_para(paras.get(id)?.as_object()?))))
+                    .collect()
+            })
+            .unwrap_or_default();
         let lists = entries("lists", 256)
             .into_iter()
             .filter(|(id, _)| list_id(id))

@@ -190,8 +190,12 @@ fn tokens(text: &str, allowed: impl Fn(&str) -> bool) -> bool {
 pub fn otf(text: &str) -> bool {
     tokens(text, |t| {
         OTF.contains(&t)
-            || t.strip_prefix("ss")
-                .is_some_and(|n| n.len() == 2 && n.parse::<u8>().is_ok_and(|n| (1..=20).contains(&n)))
+            || t.strip_prefix("ss").is_some_and(|n| {
+                // Two ASCII digits only: `parse` alone would also take `+1`.
+                n.len() == 2
+                    && n.bytes().all(|b| b.is_ascii_digit())
+                    && n.parse::<u8>().is_ok_and(|n| (1..=20).contains(&n))
+            })
     })
 }
 
@@ -231,6 +235,7 @@ mod tests {
         );
         assert!(style_name("u-term") && style_name("quote2") && !style_name("u-") && !style_name("Heading1"));
         assert!(otf("dlig onum ss01") && !otf("onum dlig") && !otf("ss21") && !otf("dlig dlig"));
+        assert!(!otf("ss+1") && !otf("ss 1") && !otf("ss-1") && otf("ss20"));
         assert!(effect("outline shadow") && !effect("emboss engrave"));
     }
 }

@@ -441,3 +441,37 @@ fn a_table_cell_holds_its_sheet_style() {
     assert_eq!(styled.cell_style(0, 0), None);
     assert_eq!(styled.cell_style(1, 0), None);
 }
+
+#[test]
+fn paras_read_in_time_that_grows_with_the_ids() {
+    // A hostile block with 100,000 IDs and 100,000 paras. Matching each para against the list of IDs would take
+    // 5e9 string compares, far beyond the bound below; a lookup per ID takes well under a second.
+    let ids: Vec<String> = (0..100_000).map(|i| format!("p{i:06}")).collect();
+    let paras: serde_json::Map<String, Value> = ids
+        .iter()
+        .map(|id| (id.clone(), serde_json::json!({ "align": "center" })))
+        .collect();
+    let mut data = serde_json::Map::new();
+    data.insert("paras".to_owned(), Value::Object(paras));
+    let start = std::time::Instant::now();
+    let text = TextData::read(&ids, &Default::default(), &data);
+    assert_eq!(text.paras.len(), ids.len());
+    assert!(
+        start.elapsed() < std::time::Duration::from_secs(5),
+        "{:?}",
+        start.elapsed()
+    );
+}
+
+#[test]
+fn hostile_page_markdown_reads_and_writes_without_a_panic() {
+    let deep = "<span data-caps=\"small\">".repeat(50_000) + "x" + &"</span>".repeat(50_000);
+    let unpaired = "<u data-line=\"wave\">a</span>".repeat(100_000);
+    let equals = "=".repeat(1_000_000);
+    let notes = "[^n1][^".repeat(10_000);
+    for page in [deep, unpaired, equals, notes] {
+        let blocks = parse::parse_page(&page).blocks;
+        let written = write::to_markdown(&blocks);
+        let _ = parse::parse_page(&written);
+    }
+}
