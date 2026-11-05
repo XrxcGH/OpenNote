@@ -5,6 +5,8 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { createStore, useStore } from '../../../state/store';
+import { t } from '../../../strings/t';
+import { showToast } from '../../../ui';
 import { CalculatorTool } from './CalculatorTool';
 import { TimersTool } from './TimersTool';
 import { ExtraToolBody } from './extraTools';
@@ -48,7 +50,10 @@ async function popOut(tool: ToolId, pinned: boolean): Promise<void> {
     await invoke('tool_window_open', { tool, pinned });
     closeTool(tool);
   } catch {
-    // The tool stays where it is.
+    // The tool stays where it is, and the person is told, so the button never seems to do nothing.
+    showToast({
+      message: t('smart.tools.window.popOutFailed', { title: t(TOOLS.find((one) => one.id === tool)!.title) }),
+    });
   }
 }
 

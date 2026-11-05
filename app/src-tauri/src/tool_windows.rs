@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one list of every tool window with the tests that read it; split it when it grows again
 //! Tool windows (Phase 10): the timers, the calculator, and Upcoming in windows of their own.
 //!
 //! The interface opens its tools as floating windows over the page. A tool's "Open in its own window" button calls
@@ -252,6 +253,84 @@ pub const TOOLS: &[Tool] = &[
         width: 560.0,
         height: 720.0,
     },
+    Tool {
+        id: "exam",
+        title: "Practice exams",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "constants",
+        title: "Scientific constants",
+        width: 520.0,
+        height: 640.0,
+    },
+    Tool {
+        id: "sigfigs",
+        title: "Significant figures",
+        width: 420.0,
+        height: 560.0,
+    },
+    Tool {
+        id: "latex",
+        title: "Insert LaTeX",
+        width: 480.0,
+        height: 600.0,
+    },
+    Tool {
+        id: "chemcalc",
+        title: "Chemistry calculators",
+        width: 460.0,
+        height: 640.0,
+    },
+    Tool {
+        id: "structure",
+        title: "Chemical structures",
+        width: 420.0,
+        height: 640.0,
+    },
+    Tool {
+        id: "properties",
+        title: "Property tables",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "formulasheet",
+        title: "Formula sheet",
+        width: 400.0,
+        height: 560.0,
+    },
+    Tool {
+        id: "practice",
+        title: "Practice mode",
+        width: 440.0,
+        height: 600.0,
+    },
+    Tool {
+        id: "figure",
+        title: "Export figure",
+        width: 420.0,
+        height: 600.0,
+    },
+    Tool {
+        id: "econ",
+        title: "Economics and finance",
+        width: 520.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "lifesys",
+        title: "Life science tools",
+        width: 480.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "symbols",
+        title: "Symbols",
+        width: 420.0,
+        height: 560.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it
@@ -463,16 +542,16 @@ mod tests {
     }
 
     #[test]
-    fn lists_every_kit_window_the_interface_offers() {
-        // Each kit's Open in its own window asks for its tool id; one missing here fails with "does not exist".
+    fn lists_every_tool_window_the_interface_offers() {
+        // Each tool's Open in its own window asks for its tool id; one missing here fails with "does not exist"
+        // (the chemistry calculators, economics, and life science windows were, so their button did nothing).
         let ts = include_str!("../../src/features/tools/ui/tools.ts");
         let kits: Vec<&str> = ts
             .split("{ id: '")
             .skip(1)
             .filter_map(|rest| rest.split("'").next())
-            .filter(|id| id.starts_with("kit"))
             .collect();
-        assert!(kits.len() >= 11, "found {kits:?}");
+        assert!(kits.len() >= 40, "found {kits:?}");
         for id in kits {
             assert!(find(id).is_some(), "{id} has no tool window");
         }
