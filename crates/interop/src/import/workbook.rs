@@ -159,7 +159,7 @@ pub(super) fn sheet_page(
             )
         };
         report.skipped_count(grid.rows.len() - kept + grid.cut_rows, (one, many), why);
-        builder.push_blocks(vec![Block::Table { header: true, rows }]);
+        builder.push_blocks(vec![Block::table(true, rows)]);
     }
     report_counts(&mut report, &grid);
     Ok(ConvertedPage {

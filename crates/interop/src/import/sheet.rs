@@ -133,7 +133,7 @@ pub(super) fn typed_table_content(
     );
     NoteContent {
         title,
-        blocks: vec![Block::Table { header: true, rows }],
+        blocks: vec![Block::table(true, rows)],
         notes: report.entries,
         table_kinds: kinds,
         ..NoteContent::default()

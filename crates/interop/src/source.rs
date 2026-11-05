@@ -88,6 +88,11 @@ impl MemorySource {
         self.sections.push(section);
     }
 
+    /// A page to change in place, such as a test that gives it properties.
+    pub fn page_mut(&mut self, id: PageId) -> Option<&mut Page> {
+        self.pages.get_mut(&id)
+    }
+
     /// Adds a page and its assets.
     pub fn add_page(&mut self, imported: ImportedPage) {
         self.assets.extend(imported.asset_bytes);

@@ -107,7 +107,7 @@ describe('shiftFormula', () => {
 });
 
 describe('smart data', () => {
-  it('reads what it understands and ignores the rest', () => {
+  it('reads what it understands, ignores bad values, and keeps keys it does not know (SPEC 2.9)', () => {
     const smart = readSmart({
       smart: {
         columns: { a: { type: 'currency', decimals: 2, currency: 'EUR', junk: 1 }, b: { type: 'nonsense' } },
@@ -118,7 +118,7 @@ describe('smart data', () => {
         ],
       },
     });
-    expect(smart.columns).toEqual({ a: { type: 'currency', decimals: 2, currency: 'EUR' } });
+    expect(smart.columns).toEqual({ a: { type: 'currency', decimals: 2, currency: 'EUR', junk: 1 } });
     expect(smart.filters).toEqual([{ column: 'a', op: 'gt', value: '3' }]);
     expect(smart.charts).toEqual([{ id: 'c1', kind: 'bar', x: 'a', series: ['b'] }]);
     expect(readSmart({})).toBe(EMPTY_SMART);

@@ -53,6 +53,7 @@ impl Writer<'_> {
                 }
                 Inline::SoftBreak => out.push(' '),
                 Inline::Image { dest, alt } => out.push_str(&self.picture(dest, alt)),
+                Inline::Note { .. } => {}
             }
         }
         let trimmed = out.trim_end_matches("\\newline{}").trim();
