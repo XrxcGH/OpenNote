@@ -194,7 +194,7 @@ function onEmptyPage(target: Element, container: HTMLElement): boolean {
   return (
     container.contains(target) &&
     !target.closest(
-      '[data-block-id], [data-handle], [data-page-title], [data-app-menu], [data-scope="editor"], button, a, input, textarea',
+      '[data-block-id], [data-handle], [data-page-title], [data-app-menu], [data-scope~="editor"], button, a, input, textarea',
     )
   );
 }
@@ -218,7 +218,7 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
     const wrapper = target?.closest<HTMLElement>('[data-block-id]');
     const block = handle?.dataset.block ?? wrapper?.dataset.blockId;
     if (!block && target && onEmptyPage(target, container)) return void openCanvasMenu(event);
-    if (!block || !layer.block(block) || target?.closest('[data-scope="editor"]')) return;
+    if (!block || !layer.block(block) || target?.closest('[data-scope~="editor"]')) return;
     event.preventDefault();
     event.stopPropagation();
     if (!objects.selected().includes(block)) objects.select([block], { focus: true });

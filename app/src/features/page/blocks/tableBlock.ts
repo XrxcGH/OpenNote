@@ -314,7 +314,10 @@ class TableView implements InnerView {
     });
     this.stopActive = this.ctx.pool.onActiveChange((active) => {
       // Focus visiting the palette or a menu keeps this the current table.
-      if (active !== null) this.setCurrent(active === block);
+      if (active === null) return;
+      this.setCurrent(active === block);
+      // Cells selected here do not stay lit once the person works somewhere else (Beta 8 walk B-B03-24).
+      if (active !== block) this.collapseCells(editor);
     });
     editor.on('focus', () => this.setCurrent(true));
     editor.on('selectionUpdate', () => this.renderToolbar());
@@ -323,6 +326,15 @@ class TableView implements InnerView {
     });
     this.placeHandles();
     this.attachExtras(editor);
+  }
+
+  /** Turns a block of selected cells into a caret in the first of them. */
+  private collapseCells(editor: Editor): void {
+    const { state, view } = editor;
+    if (!(state.selection instanceof CellSelection) || view.isDestroyed) return;
+    const inside = state.selection.$anchorCell.pos + 2;
+    const caret = TextSelection.near(state.doc.resolve(Math.min(inside, state.doc.content.size)));
+    view.dispatch(state.tr.setSelection(caret).setMeta('addToHistory', false));
   }
 
   /** What features that add to the table may do (see tables/extras.ts). */
@@ -347,6 +359,8 @@ class TableView implements InnerView {
       announce: (text) => this.ctx.host.announce(text),
       flag: (id) => this.ctx.host.flag(id),
       insertTable: async (data) => (await import('../tables/insert')).insertTable(data as unknown as TableData),
+      insertTables: async (list) =>
+        (await import('../tables/insert')).insertTables(list as unknown as readonly TableData[]),
       insertMath: async (source) => (await import('../tables/insert')).insertMathBlock(source),
     };
     for (const def of tableExtras.list()) {

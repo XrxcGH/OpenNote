@@ -64,6 +64,19 @@ export function useAvailable(): (id: CommandId) => boolean {
 export function useBarItems(): BarEntry[] {
   const items = useRegistry(commandBar);
   useCommandInputs();
+  return barEntries(items);
+}
+
+/**
+ * The entries as they stand now. The bar renders them when a store changes, but what a command's `when` reads, such
+ * as the editor with the caret, can change without one, so a menu built from the last render can lack commands that
+ * are available now. The More menu asks again when it opens (Beta 8 walk A-A05-2).
+ */
+export function currentBarEntries(): BarEntry[] {
+  return barEntries(commandBar.list());
+}
+
+function barEntries(items: readonly CommandBarItem[]): BarEntry[] {
   const ctx = contextOrNull();
   if (!ctx) return [];
   const shown = inBarOrder(items).flatMap((item) => {

@@ -13,14 +13,22 @@ A page holds text boxes, headings, lists, checklists, quotes, code, callouts, ta
 | Make text bold | Press Ctrl+B. |
 | Link to another page | Type `[[` and pick a page. |
 | Show another page inside this one | Type `![[` and pick a page. To show one paragraph, write `![[Page#^id]]` with the paragraph ID you copied. When you export, the embedded text is included. |
-| Paste with the structure and without stray fonts | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. |
+| Paste with the structure and without stray fonts | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. A table from a web page or a spreadsheet, or cells copied as tab-separated text, becomes a table. |
+| Copy text to another app | Press Ctrl+C. The other app gets the words as plain text, with list markers and without Markdown marks, or the formatted text if it takes that. |
 | Paste a screenshot | Press Win+Shift+S, then Ctrl+V. |
 
 Moving around without a mouse is in [moving between blocks](moving-between-blocks.md).
 
 ## Checklists
 
-Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the list shows a count. Choose Check all to finish a whole list.
+Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the list shows a count. Choose Check all to finish a whole list. Choose Show done count to turn the count on or off; it shows beside each checklist and the command says which it did.
+
+## Callouts, dividers, equations, and code
+
+- In a callout, press Tab in the title to reach the type button and again for the fold button. Enter or Space opens the type menu or folds the callout, and Escape returns to the text. Each of the eleven types has its own symbol and color.
+- Type `---`, or `***` or `___` and Enter, on a line of its own to make a divider.
+- A page that ends on an equation always has an empty line below it to continue on. Escape in the box of a new equation that is still empty takes the equation away.
+- A code block has a Copy button beside its language button. It copies the whole block.
 
 ## Find, count, and navigate
 
