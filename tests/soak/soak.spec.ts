@@ -16,121 +16,18 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { openFixture, placeCaret } from '../perf/typing/conditions';
+import { openFixture } from '../perf/typing/conditions';
 import { installKeyTimer, readKeys, recordKeys } from '../perf/typing/keyTimer';
-import { judge, pickAction, seeded, soakMinutes, someWords } from './plan';
+import { ensureCaret, key, perform, textLength, trim } from './drive';
+import { judge, nextStep, seeded, soakMinutes } from './plan';
 import type { ActionId, Sample } from './plan';
 
 const RESULTS = join(import.meta.dirname, 'results');
-const TEXT_BLOCKS = '[data-scope="editor"][data-block]';
 const PROBE_KEYS = 40;
 
 const minutes = soakMinutes(process.env.OPENNOTE_SOAK_MINUTES);
 const seed = Number(process.env.OPENNOTE_SOAK_SEED ?? Date.now() % 1_000_000);
 const sampleSeconds = Number(process.env.OPENNOTE_SOAK_SAMPLE_SECONDS ?? Math.min(60, (minutes * 60) / 10));
-
-const key = (page: Page, name: string, times = 1) =>
-  page.keyboard.press(name, { delay: 5 }).then(async () => {
-    for (let i = 1; i < times; i += 1) await page.keyboard.press(name, { delay: 5 });
-  });
-
-/** The characters in the page's text blocks, so the soak can keep the note about the size it started. */
-const textLength = (page: Page) =>
-  page.evaluate(
-    (selector) =>
-      [...document.querySelectorAll(selector)].reduce((sum, block) => sum + (block.textContent?.length ?? 0), 0),
-    TEXT_BLOCKS,
-  );
-
-/** Puts the caret back in the longest text box if a page switch or a click took it out. */
-async function ensureCaret(page: Page): Promise<void> {
-  const inEditor = await page.evaluate(() => {
-    const active = document.activeElement;
-    return active instanceof HTMLElement && active.isContentEditable && active.closest('[data-block]') !== null;
-  });
-  if (inEditor) return;
-  const id = await page.evaluate((selector) => {
-    const blocks = [...document.querySelectorAll<HTMLElement>(selector)];
-    const lengths = blocks.map((block) => block.textContent?.length ?? 0);
-    return blocks[lengths.indexOf(Math.max(...lengths))]?.dataset.block ?? null;
-  }, TEXT_BLOCKS);
-  if (id === null) throw new Error('The page has no text block.');
-  await placeCaret(page, page.locator(`${TEXT_BLOCKS}[data-block=${JSON.stringify(id)}]`), 'middle');
-}
-
-/** Deletes text from the caret toward the start until the note is no longer than `limit` characters. */
-async function trim(page: Page, limit: number): Promise<void> {
-  for (let round = 0; round < 40 && (await textLength(page)) > limit; round += 1) {
-    await key(page, 'Control+Shift+Home');
-    await key(page, 'Backspace');
-  }
-}
-
-const ARROWS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'] as const;
-
-async function perform(page: Page, id: ActionId, random: () => number): Promise<void> {
-  const some = (n: number) => 1 + Math.floor(random() * n);
-  switch (id) {
-    case 'type':
-      await page.keyboard.type(someWords(random), { delay: 4 });
-      return;
-    case 'enter':
-      await key(page, 'Enter');
-      return;
-    case 'backspace':
-      await key(page, 'Backspace', some(12));
-      return;
-    case 'undo':
-      await key(page, 'Control+z', some(4));
-      return;
-    case 'redo':
-      await key(page, 'Control+Shift+z', some(4));
-      return;
-    case 'bold':
-    case 'italic': {
-      const chord = id === 'bold' ? 'Control+b' : 'Control+i';
-      await key(page, chord);
-      await page.keyboard.type(someWords(random), { delay: 4 });
-      await key(page, chord);
-      return;
-    }
-    case 'move':
-      for (let i = some(10); i > 0; i -= 1) await key(page, ARROWS[Math.floor(random() * ARROWS.length)]);
-      return;
-    case 'jump':
-      await key(page, ['Home', 'End', 'Control+Home', 'Control+End', 'PageUp', 'PageDown'][Math.floor(random() * 6)]);
-      return;
-    case 'scroll':
-      await page.mouse.wheel(0, (random() - 0.5) * 1200);
-      await page.waitForTimeout(40);
-      return;
-    case 'switch': {
-      const pages = page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem');
-      const count = await pages.count();
-      if (count < 2) return;
-      const here = await pages.evaluateAll((items) =>
-        items.findIndex((item) => item.getAttribute('aria-selected') === 'true'),
-      );
-      await pages.nth((Math.max(here, 0) + 1) % count).click();
-      await page.waitForTimeout(150);
-      await pages.nth(Math.max(here, 0)).click();
-      await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
-      await page.waitForTimeout(150);
-      return;
-    }
-    case 'list':
-      await key(page, 'Enter');
-      await page.keyboard.type(`- ${someWords(random)}`, { delay: 4 });
-      await key(page, 'Enter');
-      await key(page, 'Enter');
-      return;
-    case 'heading':
-      await key(page, 'Enter');
-      await page.keyboard.type(`## ${someWords(random)}`, { delay: 4 });
-      await key(page, 'Enter');
-      return;
-  }
-}
 
 /** Forces a garbage collection, then reads what the page keeps. */
 async function readMetrics(page: Page) {
@@ -187,15 +84,15 @@ test(`random editing for ${minutes} minutes`, async ({ page }) => {
 
   console.log(`Soak: ${minutes} minutes, seed ${seed}, a sample every ${sampleSeconds} s.`);
   while (Date.now() - start < minutes * 60_000 && crashes.length === 0) {
-    const id = pickAction(random);
+    const step = nextStep(random);
     try {
       await ensureCaret(page);
-      await perform(page, id, random);
+      await perform(page, step);
     } catch (error) {
       if (crashes.length > 0) break;
-      throw new Error(`Action ${actions} (${id}, seed ${seed}) failed.`, { cause: error });
+      throw new Error(`Action ${actions} (${step.id}, seed ${seed}) failed.`, { cause: error });
     }
-    counts[id] = (counts[id] ?? 0) + 1;
+    counts[step.id] = (counts[step.id] ?? 0) + 1;
     actions += 1;
     if (actions % 50 === 0 && (await textLength(page)) > startLength * 1.2) await trim(page, startLength);
     if (Date.now() >= nextSample) {
