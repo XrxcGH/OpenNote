@@ -9,6 +9,12 @@ export function renderStatic(doc: PMNode, into: HTMLElement): void {
   const serializer = DOMSerializer.fromSchema(doc.type.schema);
   const fragment = serializer.serializeFragment(doc.content, { document: into.ownerDocument });
   into.replaceChildren(fragment);
+  // The editor keeps an empty line below a last equation (extensions/math.ts), so the static view has it too, and the
+  // page reads the same and keeps its height when the editor mounts.
+  if (doc.lastChild?.type.name === 'mathBlock') {
+    const line = into.appendChild(into.ownerDocument.createElement('p'));
+    line.appendChild(into.ownerDocument.createElement('br'));
+  }
 }
 
 function nextTask(): Promise<void> {

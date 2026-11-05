@@ -59,11 +59,15 @@ function formatNumber(value: number, column: Column, locale: Locale): string {
   }
 }
 
-/** A number column with a unit or a notation: "12.5 kN", "12.5×10³ N", or "12,500 N". */
+/**
+ * A number column with a unit or a notation: "12.5 kN", "12.5×10³ N", or "12,500 N". Without a unit, SI prefixes
+ * write the number alone ("12.5k"), and the digits kept are the ones typed up to six, not four, so 12345 reads
+ * 12.345×10³ and not 12.35×10³ (Beta 8 walk A1-A09-3).
+ */
 function withUnit(value: number, column: Column, locale: Locale): string {
   const unit = column.unit ?? '';
-  const digits = column.decimals === undefined ? 4 : Math.max(1, column.decimals + 1);
-  if (column.notation === 'si' && unit) {
+  const digits = column.decimals === undefined ? 6 : Math.max(1, column.decimals + 1);
+  if (column.notation === 'si') {
     const prefixed = prefixedText(value, unit, digits);
     if (prefixed) return prefixed;
   }

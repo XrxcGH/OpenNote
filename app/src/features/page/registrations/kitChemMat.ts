@@ -12,7 +12,7 @@ addCommand({
   icon: 'Flask',
   flag: 'kits.chemmat',
   anywhere: true,
-  run: async () => (await import('../../tools')).openChemMatTool(CHEMMAT_META[0].id),
+  run: async () => (await import('../../tools')).openTool('kit-chemmat'),
 });
 
 // A live calculation block's Open in tool opens the window on the block's tool and puts its values back.

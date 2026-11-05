@@ -35,6 +35,13 @@
     cursor: pointer;
   }
 
+  /* A finger needs 8 px between targets: the tabs and the tools stand 8 px apart. The tab's 4 px top margin stays: it
+     keeps the tab off the title bar's buttons, and the bar is tall enough that the tab is still 44 px. */
+  :global(:root[data-density='touch']) .tabs,
+  :global(:root[data-density='touch']) .toolbar {
+    gap: var(--space-3);
+  }
+
   .tab[aria-selected='true'] {
     border-block-end-color: var(--color-accent-primary);
     color: var(--color-text-primary);
@@ -141,6 +148,16 @@
     font-size: var(--type-caption-size);
     line-height: var(--type-caption-line);
     cursor: pointer;
+  }
+
+  /* A label wider than its button (200 percent text in a 300 px bar) is cut with an ellipsis, not spilled over the
+     next button. The button shrinks with the bar, down to its icon. */
+  .bottomLabel {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .bottomButton svg {

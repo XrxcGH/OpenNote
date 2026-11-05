@@ -75,6 +75,8 @@
     display: flex;
     gap: var(--space-1);
     user-select: none;
+    /* Over the title, whose box runs the whole width of the callout, so the buttons take every kind of press. */
+    z-index: var(--layer-page-chrome);
   }
 
   .calloutType,
@@ -99,11 +101,9 @@
   }
 
   .calloutType::before {
-    content: '';
-    inline-size: 0.6em;
-    block-size: 0.6em;
-    border-radius: 50%;
-    background: var(--callout, var(--color-border-control));
+    content: var(--callout-glyph, '\25CF');
+    color: var(--callout, var(--color-border-control));
+    line-height: 1;
   }
 
   .calloutFold::before {
@@ -239,7 +239,7 @@
 
   @media (forced-colors: active) {
     .calloutType::before {
-      background: CanvasText;
+      color: CanvasText;
     }
 
     :global(.ProseMirror) span[data-color^='#'] {

@@ -50,9 +50,12 @@ export function TitleBarOverflow({ items }: { items: readonly TitleBarItemDef[] 
       />
       <Popover anchor={anchor} label={t('titleBar.more')} open={open} onClose={closeAndReturn}>
         <div ref={body} className={styles.overflowList} onClick={onUse}>
-          {items.map(({ id, Component }) => (
-            <Component key={id} presentation="menuItem" />
-          ))}
+          {/* In the order the bar shows them (Undo before Redo), not the order they moved in. */}
+          {[...items]
+            .sort((a, b) => a.order - b.order)
+            .map(({ id, Component }) => (
+              <Component key={id} presentation="menuItem" />
+            ))}
         </div>
       </Popover>
     </span>
