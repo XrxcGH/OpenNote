@@ -86,7 +86,7 @@
     "features/pages/ui/presentCommands.tsx": 67,
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 73,
-    "features/tools/index.ts": 368,
+    "features/tools/index.ts": 366,
     "features/engineering/control/ui/ControlKit.tsx": 312,
     "features/engineering/index.ts": 205,
     "mermaid/node_modules/katex": 80,
@@ -121,7 +121,7 @@
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
     "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 213,
+    "features/engineering/aero/ui/KitAeroTool.tsx": 214,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
     "features/engineering/thermo/ui/ThermoKit.tsx": 390
   },
