@@ -36,6 +36,33 @@
     background: var(--color-surface-selected);
   }
 
+  /* The Draw tools keep their names alone, with 4 px less padding a side, which brings the seven pens back onto the bar
+     at 1,280 px (docs/BRAND.md section 8). */
+  .tool[data-ink-tool] {
+    padding-inline: var(--space-2);
+  }
+
+  /* The shapes library's two buttons show an icon before the name; at the Medium size class the name stands alone. */
+  .toolIcon {
+    flex: none;
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+    color: var(--color-text-secondary);
+  }
+
+  :global(:root[data-size-class='medium']) .toolIcon {
+    display: none;
+  }
+
+  /* A contrast theme turns the selected fill into Canvas, so the chosen tool uses the system highlight. */
+  @media (forced-colors: active) {
+    .tool[aria-pressed='true'] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+    }
+  }
+
   .tool:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: calc(-1 * var(--size-focus-ring-width));

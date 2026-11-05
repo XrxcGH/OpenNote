@@ -73,10 +73,32 @@
     flex: none;
   }
 
+  /* A short divider, centered on the bar, in place of a full-height line (docs/BRAND.md section 11). */
   .slot[data-group-start] {
-    padding-inline-start: var(--space-4);
-    border-inline-start: 1px solid var(--color-border-subtle);
+    position: relative;
+    padding-inline-start: calc(var(--space-4) + 1px);
     margin-inline-start: var(--space-2);
+  }
+
+  .slot[data-group-start]::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    inline-size: 1px;
+    block-size: 20px;
+    transform: translateY(-50%);
+    background: var(--color-border-subtle);
+  }
+
+  :global(:root[data-density='touch']) .slot[data-group-start]::before {
+    block-size: var(--size-icon-lg);
+  }
+
+  @media (prefers-contrast: more) {
+    .slot[data-group-start]::before {
+      background: var(--color-border-control);
+    }
   }
 
   /* The More button while nothing overflows: measured, but invisible and out of the tab order. */
@@ -86,6 +108,9 @@
   }
 
   .tool {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
     min-block-size: var(--size-target-pointer);
     padding-inline: var(--space-4);
     border: none;
@@ -97,6 +122,59 @@
     cursor: pointer;
   }
 
+  /* A named tool has an icon before its name; a glyph tool is the icon alone. */
+  .tool[data-kind='named'] {
+    padding-inline: var(--space-3);
+  }
+
+  .tool[data-kind='glyph'] {
+    justify-content: center;
+    min-inline-size: var(--size-target-pointer);
+    padding-inline: 0;
+  }
+
+  :global(:root[data-density='touch']) .tool[data-kind='glyph'] {
+    min-inline-size: var(--size-target-touch);
+  }
+
+  /* The icon rests in the secondary text color, and a glyph's icon carries the meaning alone, so it is primary. */
+  .toolIcon {
+    display: inline-flex;
+    flex: none;
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+    color: var(--color-text-secondary);
+  }
+
+  .toolIcon svg {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .tool[data-kind='glyph'] .toolIcon,
+  .tool:hover .toolIcon,
+  .tool[aria-pressed='true'] .toolIcon {
+    color: var(--color-text-primary);
+  }
+
+  /* The name and a hidden semibold copy share one grid cell, so the button is as wide as its pressed name. */
+  .label {
+    display: inline-grid;
+  }
+
+  .label > * {
+    grid-area: 1 / 1;
+  }
+
+  .labelSizer {
+    font-weight: var(--font-weight-semibold);
+    visibility: hidden;
+  }
+
+  .tool[aria-pressed='true'] .label > :first-child {
+    font-weight: var(--font-weight-semibold);
+  }
+
   :global(:root[data-density='touch']) .tool {
     min-block-size: var(--size-target-touch);
   }
@@ -106,13 +184,24 @@
     background: var(--color-surface-hover);
   }
 
+  /* A pressed tool keeps its icon weight and shows a fill inside a thin outline, so the state reads without color and
+     a tool that flips as the caret moves stays quiet. */
   .tool[aria-pressed='true'] {
     background: var(--color-surface-selected);
+    box-shadow: inset 0 0 0 1px var(--color-border-control);
   }
 
   .tool[aria-disabled='true'] {
     color: var(--color-text-muted);
     cursor: default;
+  }
+
+  .tool[aria-disabled='true'] .toolIcon {
+    color: var(--color-text-muted);
+  }
+
+  .tool[aria-disabled='true']:hover {
+    background: transparent;
   }
 
   .tool:focus-visible,
@@ -121,6 +210,25 @@
   .moreItem:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  /* Contrast themes remove box shadows and turn fills into Canvas, so a pressed tool uses the system highlight. */
+  @media (forced-colors: active) {
+    .tool[aria-pressed='true'] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+      box-shadow: inset 0 0 0 1px HighlightText;
+    }
+
+    .tool[aria-pressed='true'] .toolIcon {
+      color: HighlightText;
+    }
+
+    .tool[aria-disabled='true'],
+    .tool[aria-disabled='true'] .toolIcon {
+      color: GrayText;
+    }
   }
 
   .bottomBar {

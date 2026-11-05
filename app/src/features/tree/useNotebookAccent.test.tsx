@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the pen names in the fixture are inputs, not design colors
 import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { navigate } from '../../app/location';

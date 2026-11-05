@@ -1,4 +1,5 @@
 // @vitest-environment node
+// checks-disable-file brand-consistency: the tests read the token values and compare them with expected colors
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';

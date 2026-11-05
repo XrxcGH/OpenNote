@@ -57,8 +57,8 @@
   }
 
   /* Focus is always visible (ARCHITECTURE.md section 15.7): a 2 px focus.ring outline with a 2 px gap. Outlines
-     survive Windows contrast themes, which remove box shadows. Components may move the ring, never remove it. The one exception is the pointer-origin
-     rule in theme/appearance.css (docs/BRAND.md section 12). */
+     survive Windows contrast themes, which remove box shadows. Components may move the ring, never remove it.
+     The one exception is the pointer-origin rule in theme/appearance.css (docs/BRAND.md section 12). */
   :focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: var(--size-focus-ring-offset);

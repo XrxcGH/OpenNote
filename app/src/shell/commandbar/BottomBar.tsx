@@ -13,8 +13,9 @@ import { ariaKeyShortcuts, formatChord, useKeysFor } from '../../commands/keymap
 import { useFlag } from '../../app/flags';
 import { executeCommand } from '../../commands/registry';
 import type { CommandId } from '../../commands/types';
+import type { CompactScreen } from '../../state/layout';
 import { titleBarItems, useRegistry } from '../../registries';
-import { useSizeClass } from '../../state/layout';
+import { useLayout, useSizeClass } from '../../state/layout';
 import { t } from '../../strings/t';
 import type { MessageKey } from '../../strings/t';
 import { Popover, Tooltip } from '../../ui';
@@ -28,10 +29,12 @@ interface BottomAction {
   command: CommandId;
   label: MessageKey;
   icon: ComponentType<IconProps>;
+  /** The screen this button opens: its icon is Fill while that screen is open. */
+  screen?: CompactScreen;
 }
 
 const ACTIONS: readonly BottomAction[] = [
-  { command: 'layout.toggleNotebooks', label: 'commands.bar.notebooks', icon: BooksIcon },
+  { command: 'layout.toggleNotebooks', label: 'commands.bar.notebooks', icon: BooksIcon, screen: 'notebooks' },
   { command: 'app.palette', label: 'commands.bar.search', icon: MagnifyingGlassIcon },
   { command: 'notes.newPage', label: 'commands.bar.newPage', icon: FilePlusIcon },
 ];
@@ -48,14 +51,16 @@ function ActionButton({ action }: { action: BottomAction }) {
   const keys = useKeysFor(action.command);
   const label = t(action.label);
   const Icon = action.icon;
+  const open = useLayout((state) => action.screen !== undefined && state.compactScreen === action.screen);
   const button = (
     <button
       type="button"
       className={styles.bottomButton}
+      aria-current={open || undefined}
       aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
       onClick={() => void executeCommand(action.command, undefined, 'commandBar')}
     >
-      <Icon aria-hidden />
+      <Icon aria-hidden weight={open ? 'fill' : 'regular'} />
       <span className={styles.bottomLabel}>{label}</span>
     </button>
   );

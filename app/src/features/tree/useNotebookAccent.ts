@@ -1,4 +1,4 @@
-// The open page's notebook color, as one of the seven pen names. The breadcrumb dot, the active tab's edge and the
+// The open page's notebook color, as one of the seven pen names. The breadcrumb dot, the active tab's edge, and the
 // page title's rule all read it, so one notebook shows one color across the screen. Section colors are not used.
 
 import { useLocation } from '../../app/location';
