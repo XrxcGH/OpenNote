@@ -236,5 +236,10 @@ class Compiler {
 /** Compiles one formula for the cell or column that owns it. */
 export function compile(node: Node, scope: Scope, owner: Owner): Compiled {
   const compiler = new Compiler(scope, owner);
+  if (node.type === 'binary' && (node.op === '+' || node.op === '-')) {
+    // The formula's last operation adds or subtracts, where Excel sets a result within rounding error to 0.
+    const [l, r] = [compiler.scalar(node.left).fn, compiler.scalar(node.right).fn];
+    return { fn: (ctx) => applyBinary(node.op, l(ctx), r(ctx), true), deps: compiler.deps };
+  }
   return { fn: compiler.scalar(node).fn, deps: compiler.deps };
 }

@@ -117,7 +117,7 @@ export type FormulaResult = { ok: true; table: Table } | { ok: false; problem: F
 export function setColumnFormula(table: Table, col: number, formula: string | undefined, env?: Env): FormulaResult {
   if (!table.columns[col]) return { ok: false, problem: { message: 'That column is gone.', pos: 0 } };
   if (formula === undefined) return { ok: true, table: clearFormula(table, col) };
-  const parsed = parseFormula(formula);
+  const parsed = parseFormula(formula, undefined, { legacy: table.sheetVersion === undefined });
   if (!parsed.ok) return { ok: false, problem: parsed.problem };
   const base = withColumn(table, col, { formula });
   const rows = base.rows.map((row) => {

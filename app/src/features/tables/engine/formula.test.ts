@@ -35,7 +35,8 @@ describe('precedence and operators', () => {
     ['2+3*4', 14],
     ['(2+3)*4', 20],
     ['10/4', 2.5],
-    ['0.1+0.2', 0.3],
+    // Results keep the full double (ADR 0058); a cell shows 15 digits, 0.3.
+    ['0.1+0.2', 0.1 + 0.2],
     ['1&2+3', '15'],
     ['"a"&"b"', 'ab'],
     ['1<2', true],
@@ -62,7 +63,7 @@ describe('references', () => {
   });
 
   it('means the whole column inside an aggregate', () => {
-    expect(calc('[Price]/SUM([Price])')).toEqual([0.666666666666667, 0.333333333333333]);
+    expect(calc('[Price]/SUM([Price])')).toEqual([10 / 15, 5 / 15]);
   });
 
   it('reads A1 cells and ranges by data row', () => {

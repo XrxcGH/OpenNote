@@ -3,7 +3,7 @@
 import { serialToDate } from './dates';
 import type { Column } from './model';
 import type { Locale } from './locale';
-import { ERROR_WORDS, isError, numberToText, type Value } from './values';
+import { ERROR_WORDS, isError, numberToText, toScalar, type Value } from './values';
 import { engineeringText, prefixedText } from '../../../core/units';
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
@@ -84,7 +84,8 @@ function digits(column: Column): Intl.NumberFormatOptions {
 }
 
 /** The text a cell shows. Errors show plain words, never tokens. Text in a typed column shows as typed. */
-export function formatValue(value: Value, column: Column, locale: Locale): string {
+export function formatValue(input: Value, column: Column, locale: Locale): string {
+  const value = toScalar(input);
   if (value === null) return '';
   if (isError(value)) return ERROR_WORDS[value.error];
   if (typeof value === 'string') return value;
