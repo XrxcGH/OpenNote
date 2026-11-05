@@ -40,6 +40,13 @@ describe('unit columns', () => {
     expect(formatValue(1234.5, loads().columns[0], EN_US)).toBe('1,234.5 kN');
   });
 
+  it('writes a column with no unit in engineering notation or with SI prefixes, keeping the digits typed', () => {
+    const made = (notation: 'engineering' | 'si') =>
+      createTable([{ name: 'Value', type: 'number', notation }], [['12345']], EN_US).columns[0];
+    expect(formatValue(12345, made('engineering'), EN_US)).toBe('12.345×10³');
+    expect(formatValue(12345, made('si'), EN_US)).toBe('12.345k');
+  });
+
   it('reads the decimal mark of the region', () => {
     const table = createTable([{ name: 'Länge', type: 'number', unit: 'mm' }], [['2,5 cm']], DE_DE);
     expect(table.rows[0].cells[0].value).toBe(25);

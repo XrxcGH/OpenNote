@@ -13,6 +13,17 @@ const RUST = join(SRC, '..', 'src-tauri', 'src');
 /** Registered flags whose feature is not built yet (docs/FEATURES.md lists each as not built). */
 const WAITING: Readonly<Record<string, string>> = {
   'text.v2Controls': 'Beta 10: the Home tab and the formatting commands read it.',
+  'text.runFormats': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.paraFormats': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.fontPicker': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.styles2': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.formatPane': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.ruler': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.symbols': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.language': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.footnotes': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.pasteFidelity': 'Beta 10 to 12: the lane that builds it reads it.',
+  'text.findFormat': 'Beta 10 to 12: the lane that builds it reads it.',
   'tables.sheetWrites': 'Beta 10: the table bar and the formula bar read it.',
   'code.tier2': 'Beta 14: code:L16 and code:L17 run installed toolchains behind it.',
   'code.models': 'Beta 13: code:L13a and code:L13b read it for the code models.',

@@ -33,6 +33,8 @@ export const pageExtras = {
     toggleCount: 'Show done count',
     commandKeywords: 'checklist check all uncheck finished done tasks to do',
     count: '{done} of {total} done',
+    countOn: 'The done count is on. It shows beside each checklist.',
+    countOff: 'The done count is off.',
     hidden: '{count, plural, one {# finished item hidden} other {# finished items hidden}}',
     show: 'Show',
     hideAgain: 'Hide',

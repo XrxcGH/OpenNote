@@ -169,12 +169,7 @@ impl NotebookStore {
             self.keep_tree_copy(&path, &format!("{id}-{SECTION_JSON}"), &bytes)?;
         }
         let now = self.now();
-        let mut pages = Vec::new();
-        for entry in listing.iter().filter(|e| e.is_dir) {
-            let Ok(page) = PageId::parse(&entry.name) else { continue };
-            let title = self.read_title(&dir.join(&entry.name)).unwrap_or_default();
-            pages.push((page, title));
-        }
+        let pages = self.rebuilt_pages(dir, listing);
         let keys = OrderKey::spread(None, None, pages.len()).unwrap_or_default();
         let order = self.children_of(None, None).last().map(|s| s.0.clone());
         let order = OrderKey::between(order.as_ref(), None).or_else(|_| OrderKey::parse("a0"));
@@ -203,6 +198,23 @@ impl NotebookStore {
         report.rebuilt.push(id);
         self.notices.push(Warning::new("tree.sectionRebuilt", id.to_string()));
         Ok(Some(file))
+    }
+
+    /// The pages of a section folder whose `section.json` is rebuilt, with their titles. A folder with no
+    /// `page.json` is not a page, as the scan's own listing of page folders says. Listing it would make an entry
+    /// that the same scan then moves or drops.
+    fn rebuilt_pages(&self, dir: &Path, listing: &[DirEntry]) -> Vec<(PageId, String)> {
+        let mut pages = Vec::new();
+        for entry in listing.iter().filter(|e| e.is_dir) {
+            let Ok(page) = PageId::parse(&entry.name) else { continue };
+            let inner = self.env.fs.read_dir(&dir.join(&entry.name)).unwrap_or_default();
+            if super::has_page_json(&inner).is_none() {
+                continue;
+            }
+            let title = self.read_title(&dir.join(&entry.name)).unwrap_or_default();
+            pages.push((page, title));
+        }
+        pages
     }
 
     /// A page's title from the start of its `page.json`.

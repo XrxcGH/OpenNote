@@ -516,10 +516,7 @@ impl Walker<'_> {
         while rows.last().is_some_and(|r| r.iter().all(Vec::is_empty)) {
             rows.pop();
         }
-        Block::Table {
-            header: header_rows > 0,
-            rows,
-        }
+        Block::table(header_rows > 0, rows)
     }
 
     /// Reads a row into `rows`. A cell or a row written once is always kept; its repeats come out of `budget`, the

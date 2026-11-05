@@ -2122,7 +2122,7 @@ Open it with the command "Open upcoming".
 - **PowerPoint / Google Slides.** Imports `.pptx`, Google Slides as annotatable pages and exports `.pptx` (one page per slide), PDF.
 - **LaTeX.** Exports `.tex` for a page, section, or notebook; a `.zip` with `images/` and `references.bib` when there is more than one file.
 - **OneNote / Evernote.** Imports Graph API, `.enex` and exports PDF, Markdown.
-- **Windows metafile pictures (EMF, WMF, and EMF+).** Charts and clip art saved in these formats in Word and PowerPoint files are drawn into SVG pictures on import, sharp at any size, with their text left as text.
+- **Windows metafile pictures (EMF, WMF, and EMF+): Charts and clip art saved in these formats in Word and PowerPoint files are drawn into SVG pictures on import, sharp at any size, with their text left as text. A picture that cannot be read is replaced by its description and counted in the import review. Pasting or dropping an `.emf` or `.wmf` image onto a page does the same. Status: Built, untested by hand. Always on, with Import (`interop.import`)..** .
 - **Older Office and OpenDocument files.** Imports `.doc`, `.rtf`, `.xls`, `.xlsb`, `.ods`.
 - People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle.
 - The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder.

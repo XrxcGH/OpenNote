@@ -128,6 +128,9 @@ import { codeStudioProject } from './codeStudio/project';
 import { codeStudioRun } from './codeStudio/run';
 import { codeStudioPacks } from './codeStudio/packs';
 import { codeStudioStudio } from './codeStudio/studio';
+import { textNotes } from './textNotes';
+import { textReview } from './textReview';
+import { textLayout } from './textLayout';
 
 export const en = {
   common,
@@ -251,6 +254,9 @@ export const en = {
   textLanguage,
   textRuler,
   textSymbols,
+  textNotes,
+  textReview,
+  textLayout,
   /** The code studio's namespaces, one file per lane under codeStudio/. */
   codeStudio: {
     editor: codeStudioEditor,

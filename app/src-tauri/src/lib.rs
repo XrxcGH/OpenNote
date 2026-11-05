@@ -99,16 +99,7 @@ pub fn run(context: EarlyContext) {
     let loaded = SettingsStore::load(&paths);
     let (state, state_notice) = DeviceStateStore::load(&paths);
     perf::mark("settingsLoaded", None);
-    let mut launch = boot::Launch { args, guard };
-    deeplink::remember_launch(&launch.args.rest);
-    // A Markdown or text file the app was opened with, from Explorer's "Open with" (A3-18).
-    interop::open_files::remember_launch(&launch.args.rest);
-    // A moved-from path that isn't the copy this one was made from is dropped, so it also gets no "Moved" notice.
-    if let Some(old) = launch.args.moved_from.take() {
-        if install::delete_moved_from(&paths, old.clone()) {
-            launch.args.moved_from = Some(old);
-        }
-    }
+    let launch = launch_of(args, guard, &paths);
     let settings = loaded.store.get();
     install::uninstall::refresh_if_installed(&paths, &settings.experimental.flags);
     install::cli::refresh(&paths, &settings.experimental.flags);
@@ -125,64 +116,91 @@ pub fn run(context: EarlyContext) {
         flag_overrides: boot::flag_overrides(&std::env::var("OPENNOTE_FLAGS").unwrap_or_default()),
     };
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
-    let pages = core_bridge::CoreBridge::new(&paths);
-    pages.set_retention(settings.editing.history.keep);
-    let audio = audio::AudioState::new(&paths);
-    let intel = intel::IntelState::new(&paths);
-    let dictionary = dictionary::DictionaryState::new(&paths);
-    let connectors = connectors::Connectors::new(&paths);
-    let local_api = api::ApiState::new(&paths);
-    let share = share::ShareState {
-        inbox: share::inbox(&paths),
-    };
     let builder = desktop::with_dialogs(with_schemes(tauri::Builder::default()));
-    let app = builder
+    let app = with_services(builder, &paths, &settings)
         .manage(loaded.store)
         .manage(state)
         .manage(hooks)
         .manage(startup)
         .manage(launch)
         .manage(paths)
+        .manage(hardening)
+        // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
+        .manage(instance)
+        .setup(setup)
+        .invoke_handler(commands())
+        .build(tauri::generate_context!())
+        .expect("OpenNote failed to start");
+    app.run(on_run_event);
+}
+
+/// The launch, once the links and files it was opened with are remembered.
+fn launch_of(args: args::Args, guard: updater::GuardOutcome, paths: &paths::Paths) -> boot::Launch {
+    let mut launch = boot::Launch { args, guard };
+    deeplink::remember_launch(&launch.args.rest);
+    // A Markdown or text file the app was opened with, from Explorer's "Open with" (A3-18).
+    interop::open_files::remember_launch(&launch.args.rest);
+    // A moved-from path that isn't the copy this one was made from is dropped, so it also gets no "Moved" notice.
+    if let Some(old) = launch.args.moved_from.take() {
+        if install::delete_moved_from(paths, old.clone()) {
+            launch.args.moved_from = Some(old);
+        }
+    }
+    launch
+}
+
+/// Adds the app's services, each made for this profile, to the managed state.
+fn with_services(
+    builder: tauri::Builder<tauri::Wry>,
+    paths: &paths::Paths,
+    settings: &settings::schema::Settings,
+) -> tauri::Builder<tauri::Wry> {
+    let pages = core_bridge::CoreBridge::new(paths);
+    pages.set_retention(settings.editing.history.keep);
+    builder
         .manage(ExitState::default())
         .manage(pages)
-        .manage(hardening)
         .manage(clipboard::ClipTokens::default())
         .manage(spelling::SpellService)
         .manage(page_export::ExportGrants::default())
         .manage(export_replace::ReplaceUndo::default())
-        .manage(audio)
-        .manage(intel)
-        .manage(dictionary)
-        .manage(connectors)
-        .manage(local_api)
-        .manage(share)
-        // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
-        .manage(instance)
-        .setup(|app| {
-            let handle = app.handle().clone();
-            app.state::<InstanceGuard>()
-                .on_forwarded(move |forwarded| window::receive_forwarded(&handle, forwarded.args));
-            window::caption::init(app.handle());
-            window::create(app.handle())?;
-            shellqol::start(app.handle());
-            page_extras::attach::sweep_old_copies();
-            api::start(app.handle());
-            e2e_sync::start(app.handle());
-            Ok(())
+        .manage(audio::AudioState::new(paths))
+        .manage(intel::IntelState::new(paths))
+        .manage(dictionary::DictionaryState::new(paths))
+        .manage(connectors::Connectors::new(paths))
+        .manage(api::ApiState::new(paths))
+        .manage(share::ShareState {
+            inbox: share::inbox(paths),
         })
-        .invoke_handler(commands())
-        .build(tauri::generate_context!())
-        .expect("OpenNote failed to start");
-    app.run(|app, event| {
-        if let tauri::RunEvent::Exit = event {
-            app.state::<api::ApiState>().stop();
-            audio::shutdown(app);
-            page_extras::attach::shutdown();
-            flush_files(app);
-            app.state::<core_bridge::CoreBridge>().shutdown();
-            app.state::<hardening::Hardening>().end_clean();
-        }
-    });
+}
+
+/// Makes the main window and starts what runs beside it. It never returns an error: Tauri panics on one, so a
+/// window that can't be made closes the app with a message instead (see [`window::create_at_start`]).
+fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let handle = app.handle().clone();
+    app.state::<InstanceGuard>()
+        .on_forwarded(move |forwarded| window::receive_forwarded(&handle, forwarded.args));
+    window::caption::init(app.handle());
+    if !window::create_at_start(app.handle()) {
+        return Ok(());
+    }
+    shellqol::start(app.handle());
+    page_extras::attach::sweep_old_copies();
+    api::start(app.handle());
+    e2e_sync::start(app.handle());
+    Ok(())
+}
+
+/// Stops the services and saves what waits to be saved as the app exits.
+fn on_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
+    if let tauri::RunEvent::Exit = event {
+        app.state::<api::ApiState>().stop();
+        audio::shutdown(app);
+        page_extras::attach::shutdown();
+        flush_files(app);
+        app.state::<core_bridge::CoreBridge>().shutdown();
+        app.state::<hardening::Hardening>().end_clean();
+    }
 }
 
 /// Saves the settings and the device state that are still waiting for their writers.

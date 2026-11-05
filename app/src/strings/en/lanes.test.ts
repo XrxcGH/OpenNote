@@ -49,6 +49,9 @@ const RELEASES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   /** Registered in Beta 11, because the code studio's tool window entry needs its title. */
   B12: {
     'codeStudio.studio': 'code:L04',
+    textNotes: 'text:footnotes',
+    textReview: 'text:review',
+    textLayout: 'text:page-layout',
   },
 };
 

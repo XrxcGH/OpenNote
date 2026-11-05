@@ -1,4 +1,4 @@
-// Language per run and paragraph, right-to-left text, and hyphenation.
-// Owner: text:language-direction (B11). shared:x-shared registered it in the string index, and the owner fills it in.
+// Per-run language and text direction.
+// Owner: text:language-direction (B11 and B12). text:scaffold registered it in the string index.
 
 export const textLanguage = {} as const;

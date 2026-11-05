@@ -271,16 +271,30 @@
 
   /* Equation numbers (flag doc.equationNumbers): the number sits at the right of a numbered display equation, and a
      reference shows the number it names in place of its source. */
+  /* The number is taken out of the flow and centered on the equation's own line: a float after the equation's box
+     would drop to the line below it (Beta 8 walk A-A06-4). Room is kept at both sides so the equation stays centered. */
+  :global([data-eq-number]),
+  :global([data-eq-duplicate]) {
+    position: relative;
+    padding-inline: 3.5em;
+  }
+
+  :global([data-eq-number])::after,
+  :global([data-eq-duplicate])::after {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+  }
+
   :global([data-eq-number])::after {
     content: '(' attr(data-eq-number) ')';
-    float: inline-end;
     font-family: var(--font-reading);
     color: var(--color-text-secondary);
   }
 
   :global([data-eq-duplicate])::after {
     content: '(??)';
-    float: inline-end;
     color: var(--color-status-danger);
   }
 

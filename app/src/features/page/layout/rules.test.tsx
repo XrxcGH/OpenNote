@@ -9,6 +9,7 @@ import { textPageFixture } from '../test/fixtures';
 import type { PageFixture } from '../test/fixtures';
 import { ruleLift } from '../../../core/ruled';
 import type { RuleGrid } from './rules';
+import { createTitle } from '../title/title';
 
 const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
 /**
@@ -169,5 +170,33 @@ describe('ruled paper', () => {
     // The measure can tell: on plain paper the same lines are not on the rules.
     const lines = [paragraph, ...harness.viewport.world.querySelectorAll('h2, li > p')];
     expect(Math.max(...lines.map((line) => offRule(baseline(harness, line))))).toBeGreaterThan(2);
+  });
+});
+
+describe('ruled paper under a title band', () => {
+  it('puts the text back on its rules when a title band is added above it or its title wraps', async () => {
+    const harness = await ruled(textPageFixture(MARKDOWN));
+    const paragraph = harness.viewport.world.querySelector('.ProseMirror > p')!;
+    const band = createTitle(harness.viewport.world, {
+      title: 'Short',
+      changed: null,
+      readOnly: false,
+      send() {},
+      enterPage() {},
+    });
+    await frames(8);
+    // Where the first line sits against its rule, whatever the engine's measure of the band: the realignment must
+    // bring it back to that place when the band grows by a height that is no whole number of rules.
+    const phase = () => {
+      const y = baseline(harness, paragraph) + ruleLift(GRID.step) - GRID.origin;
+      return ((y % GRID.step) + GRID.step) % GRID.step;
+    };
+    const settled = phase();
+    band.element.style.paddingBlockEnd = '13px';
+    await frames(8);
+    const moved = Math.abs(phase() - settled);
+    expect(Math.min(moved, GRID.step - moved), 'the first line moved against its rule when the band grew').toBeLessThan(
+      TOLERANCE,
+    );
   });
 });

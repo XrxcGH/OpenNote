@@ -106,7 +106,11 @@ export function Toaster({ region }: ToasterProps) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [shownKey]);
-  const style = { '--toast-start': `${lane.start}px`, '--toast-end': `${lane.end}px` } as CSSProperties;
+  const style = {
+    '--toast-start': `${lane.start}px`,
+    '--toast-end': `${lane.end}px`,
+    '--toast-lift': `${lane.lift}px`,
+  } as CSSProperties;
   return (
     <div
       ref={region?.ref}

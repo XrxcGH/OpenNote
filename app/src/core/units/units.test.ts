@@ -49,3 +49,11 @@ describe('engineering units', () => {
     expect(prefixedText(3, 'N·m')).toBeNull();
   });
 });
+
+describe('SI prefixes without a unit', () => {
+  it('writes the number with the prefix beside it', () => {
+    expect(prefixedText(12345, '', 6)).toBe('12.345k');
+    expect(prefixedText(0.0042, '')).toBe('4.2m');
+    expect(prefixedText(250, '')).toBe('250');
+  });
+});
