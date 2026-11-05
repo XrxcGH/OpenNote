@@ -76,8 +76,8 @@
   /* A short divider, centered on the bar, in place of a full-height line (docs/BRAND.md section 11). */
   .slot[data-group-start] {
     position: relative;
-    padding-inline-start: calc(var(--space-4) + 1px);
-    margin-inline-start: var(--space-2);
+    padding-inline-start: calc(var(--space-3) + 1px);
+    margin-inline-start: 0;
   }
 
   .slot[data-group-start]::before {
@@ -110,7 +110,7 @@
   .tool {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: calc(var(--space-2) - 1px);
     min-block-size: var(--size-target-pointer);
     padding-inline: var(--space-4);
     border: none;
@@ -124,7 +124,7 @@
 
   /* A named tool has an icon before its name; a glyph tool is the icon alone. */
   .tool[data-kind='named'] {
-    padding-inline: var(--space-3);
+    padding-inline: var(--space-2);
   }
 
   .tool[data-kind='glyph'] {

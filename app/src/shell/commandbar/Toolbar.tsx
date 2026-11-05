@@ -76,7 +76,7 @@ function Tool({ entry }: { entry: BarEntry }) {
   const label = shortKey ? t(shortKey) : full;
   const isMenu = item.presentation === 'menu' && item.menu !== undefined;
   const iconGroup = groupHasIcons(item.tab, item.group);
-  const icon = iconGroup ? iconElementFor(def.id) : undefined;
+  const icon = iconGroup ? iconElementFor(def.id, def.icon) : undefined;
   const glyph = GLYPH_COMMANDS.has(def.id) && icon !== undefined;
   // A named tool shows its icon before its name, except at the Medium size class, where the name stands alone.
   const named = iconGroup && !glyph && sizeClass !== 'medium';
@@ -152,7 +152,7 @@ function overflowItem({ item, def, disabled, checked }: BarEntry): MenuItemSpec 
   return {
     id: item.id,
     label: t(def.title),
-    icon: groupHasIcons(item.tab, item.group) ? iconFor(def.id) : undefined,
+    icon: groupHasIcons(item.tab, item.group) ? iconFor(def.id, def.icon) : undefined,
     shortcut: shortcutHint(def.id) ?? undefined,
     kind: item.presentation === 'toggle' ? 'checkbox' : 'item',
     checked: item.presentation === 'toggle' ? Boolean(checked) : undefined,
@@ -178,7 +178,7 @@ function overflowItems(entry: BarEntry): MenuItemSpec[] {
       {
         id: `${entry.item.id}:${id}`,
         label: t(def.title),
-        icon: groupHasIcons(entry.item.tab, entry.item.group) ? iconFor(def.id) : undefined,
+        icon: groupHasIcons(entry.item.tab, entry.item.group) ? iconFor(def.id, def.icon) : undefined,
         shortcut: shortcutHint(def.id) ?? undefined,
         kind: checked === undefined ? ('item' as const) : ('checkbox' as const),
         checked,

@@ -1,7 +1,7 @@
 // Accent roles in the shell (docs/BRAND.md section 4). Each color family has one job there, so a later change that
 // makes the shell louder fails here instead of slowly changing the look:
 //   1. Candle, dusk and night (the non-subtle accents) belong to the theme toggle, and are never a background.
-//   2. The ambient tones belong to the canvas.
+//   2. The ambient tones are the sky outside the window, and they belong to the canvas.
 //   3. The pen colors and the notebook accent belong to the few files that mark a notebook.
 //   4. Nothing in the shell loops an animation.
 // The rules read only the shell's own files. Content features (tools, engineering, math, page blocks, tables, PDF, ink)
@@ -63,7 +63,8 @@ export const accentRoles: Rule = {
         findings.push(
           report(
             line,
-            'The ambient tones belong to the canvas. Add this file to the "ambient" list only after review.',
+            'The ambient tones are the sky outside the window, and they belong to the canvas. ' +
+              'Add this file to the "ambient" list only after review.',
           ),
         );
       if (PEN.test(raw) && !allowed('pens'))

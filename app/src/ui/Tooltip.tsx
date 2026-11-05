@@ -155,6 +155,9 @@ export function Tooltip({ label, shortcut, touchHold = false, children }: Toolti
     trigger.current = wrapper.current?.firstElementChild as HTMLElement | null;
     state.reveal();
   });
+  // A touch long press ends in a context menu event, which the hold swallows. A mouse or the keyboard keeps its own.
+  const touching = useRef(false);
+  const untouch = useRef<number>(0);
   const within = (node: EventTarget | null) => node instanceof Node && Boolean(wrapper.current?.contains(node));
   const arrive = () => {
     trigger.current = wrapper.current?.firstElementChild as HTMLElement | null;
@@ -182,13 +185,37 @@ export function Tooltip({ label, shortcut, touchHold = false, children }: Toolti
       onBlur={onBlur}
       onPointerDown={(event) => {
         state.dismiss(true);
+        window.clearTimeout(untouch.current);
+        touching.current = event.pointerType === 'touch';
         if (touchHold && event.pointerType === 'touch') hold.onPointerDown?.(event);
       }}
       onPointerMove={touchHold ? hold.onPointerMove : undefined}
-      onPointerUp={touchHold ? hold.onPointerUp : undefined}
-      onPointerCancel={touchHold ? hold.onPointerCancel : undefined}
+      onPointerUp={
+        touchHold
+          ? (event) => {
+              untouch.current = window.setTimeout(() => (touching.current = false), 600);
+              hold.onPointerUp?.(event);
+            }
+          : undefined
+      }
+      onPointerCancel={
+        touchHold
+          ? (event) => {
+              untouch.current = window.setTimeout(() => (touching.current = false), 600);
+              hold.onPointerCancel?.(event);
+            }
+          : undefined
+      }
       onClickCapture={touchHold ? hold.onClickCapture : undefined}
-      onContextMenuCapture={touchHold ? (event) => (event.preventDefault(), event.stopPropagation()) : undefined}
+      onContextMenuCapture={
+        touchHold
+          ? (event) => {
+              if (!touching.current) return;
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          : undefined
+      }
     >
       {children}
       {state.open && <TooltipSurface text={tooltipText(label, shortcut)} tip={tip} trigger={trigger} />}

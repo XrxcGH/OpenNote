@@ -80,9 +80,31 @@ async function glyphs() {
   expect(screen.queryByRole('tooltip')).toBeNull();
   await new Promise((resolve) => setTimeout(resolve, 600));
   expect((await screen.findByRole('tooltip')).textContent).toBe('Bold (Ctrl+B)');
+  // The long press ends in a context menu event, which a touch hold swallows and a mouse right-click does not.
+  const held = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+  bold.dispatchEvent(held);
+  expect(held.defaultPrevented).toBe(true);
   touch('pointerup');
   bold.click();
+  // The swallowed click runs nothing. Give a late update a few frames to show.
+  await new Promise((resolve) => setTimeout(resolve, 150));
   expect(bold.getAttribute('aria-pressed')).toBe('false');
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  const mouseMenu = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+  fireEvent(bold, new PointerEvent('pointerdown', { pointerType: 'mouse', bubbles: true }));
+  bold.dispatchEvent(mouseMenu);
+  expect(mouseMenu.defaultPrevented).toBe(false);
+  fireEvent(bold, new PointerEvent('pointerup', { pointerType: 'mouse', bubbles: true }));
+
+  // A touch press of 200 ms is a tap: Bold runs and no tooltip shows.
+  touch('pointerdown');
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  touch('pointerup');
+  bold.click();
+  await waitFor(() => expect(bold.getAttribute('aria-pressed')).toBe('true'));
+  expect(screen.queryByRole('tooltip')).toBeNull();
+  bold.click();
+  await waitFor(() => expect(bold.getAttribute('aria-pressed')).toBe('false'));
 
   // Named tools show the icon and the name.
   const wide = tool('Home', 'New page');

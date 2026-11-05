@@ -137,8 +137,8 @@ export function iconFor(id: string, iconName?: string): IconComponent | undefine
 }
 
 /** The icon for a command id as an element, so the bar can draw it without creating a component while it renders. */
-export function iconElementFor(id: string): ReactElement | undefined {
-  const Icon = iconFor(id);
+export function iconElementFor(id: string, iconName?: string): ReactElement | undefined {
+  const Icon = iconFor(id, iconName);
   return Icon ? createElement(Icon, { 'aria-hidden': true }) : undefined;
 }
 

@@ -2,8 +2,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { messages, run } from '../test/helpers.ts';
-import { accentRoles } from './accent-roles.ts';
+import { messages, run } from './helpers.ts';
+import { accentRoles } from '../rules/accent-roles.ts';
 
 const settings = {
   candle: ['app/src/features/theme/ThemeToggle.module.css'],

@@ -37,6 +37,7 @@ function timeOfDay(theme: Theme): string[] {
 const EXEMPT = [
   '[data-region=page] .ProseMirror',
   '[data-ink-overlay]',
+  '[data-ink-chrome]',
   'svg[focusable="false"]',
   '[data-theme-scope]',
   '[data-color-swatch]',
@@ -61,16 +62,39 @@ interface Walk {
   untaggedPen: string[];
   /** Animations still running that loop forever. */
   loops: number;
+  /** R1: the accent families painted anywhere on the screen (moss, clay, the pen, candle, dusk, night). */
+  families: string[];
+  /** Where each family was painted, for the failure message. */
+  familyUses: string[];
+  /** R3: the area of non-text elements painted with an accent, as a share of the viewport. */
+  accentShare: number;
+  /** R4: elements inside the page card that carry an accent, apart from the title's rule. */
+  pageCardAccents: string[];
 }
 
-async function walk(page: Page, theme: Theme, pen: string | null): Promise<Walk> {
+/** The accent families as the browser prints them, by name. The pen is the notebook's own color. */
+function accentFamilies(theme: Theme, pen: string | null): Record<string, string> {
+  const { accent } = tokens.color[theme];
+  const families: Record<string, string> = {
+    moss: rgb(accent.primary),
+    clay: rgb(accent.clay),
+    candle: rgb(accent.candle),
+    dusk: rgb(accent.dusk),
+    night: rgb(accent.night),
+  };
+  if (pen) families.pen = pen;
+  return families;
+}
+
+async function walk(page: Page, theme: Theme, pen: string | null, chips = ''): Promise<Walk> {
   const forbidden = timeOfDay(theme);
+  const families = accentFamilies(theme, pen);
   return page.evaluate(
-    ({ forbidden, exempt, pen }) => {
+    ({ forbidden, exempt, pen, families }) => {
       const describe = (element: Element) =>
         `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${
-          element.getAttribute('aria-label') ? `[${element.getAttribute('aria-label')}]` : ''
-        }`;
+          typeof element.className === 'string' && element.className ? `.${element.className.split(' ')[0]}` : ''
+        }${element.getAttribute('aria-label') ? `[${element.getAttribute('aria-label')}]` : ''}`;
       const paints = (element: Element, pseudo?: string) => {
         const style = getComputedStyle(element, pseudo);
         const shadow = style.boxShadow === 'none' ? '' : style.boxShadow;
@@ -79,7 +103,8 @@ async function walk(page: Page, theme: Theme, pen: string | null): Promise<Walk>
           style.backgroundColor,
           style.borderTopColor,
           style.borderBottomColor,
-          style.outlineStyle === 'none' ? '' : style.outlineColor,
+          // The focus ring is the focus color, not an accent, and it moves with the keyboard.
+          style.outlineStyle === 'none' || element.matches(':focus') ? '' : style.outlineColor,
           style.fill,
           style.stroke,
           shadow,
@@ -92,13 +117,44 @@ async function walk(page: Page, theme: Theme, pen: string | null): Promise<Walk>
         unpainted: [],
         untaggedPen: [],
         loops: 0,
+        families: [],
+        familyUses: [],
+        accentShare: 0,
+        pageCardAccents: [],
       };
+      const found = new Set<string>();
+      const named = Object.entries(families);
+      // Controls mark state, and the family limit already bounds them. R3 counts the decorative fills.
+      const area = (element: Element, pseudo?: string) => {
+        if (element.matches('button, [role=button], [role=tab], input, select')) return 0;
+        const style = getComputedStyle(element, pseudo);
+        if (!named.some(([, color]) => style.backgroundColor === color)) return 0;
+        if (!pseudo) {
+          const box = element.getBoundingClientRect();
+          return box.width * box.height;
+        }
+        return (parseFloat(style.width) || 0) * (parseFloat(style.height) || 0);
+      };
+      let painted = 0;
       for (const element of document.querySelectorAll('body *')) {
         if (element.closest(exempt)) continue;
         const style = getComputedStyle(element);
         if (style.display === 'none' || style.visibility === 'hidden') continue;
         const kind = (element as HTMLElement).dataset?.notebookMark;
         const seen = [paints(element), paints(element, '::before'), paints(element, '::after')].join(' ');
+        for (const [name, color] of named)
+          if (seen.includes(color)) {
+            found.add(name);
+            result.familyUses.push(`${name}: ${describe(element)}`);
+          }
+        painted += area(element) + area(element, '::before') + area(element, '::after');
+        if (element.closest('[data-region=page]') && !element.closest('[role=tablist]')) {
+          const isRule = element.matches('[data-notebook-mark="title-rule"], h1, [data-page-title]');
+          const inPage = [paints(element), paints(element, '::before'), isRule ? '' : paints(element, '::after')].join(
+            ' ',
+          );
+          if (named.some(([, color]) => inPage.includes(color))) result.pageCardAccents.push(describe(element));
+        }
         if (forbidden.some((color) => seen.includes(color))) result.timeOfDayUses.push(describe(element));
         if (
           element.matches('button, [role=button], [role=tab]') &&
@@ -119,10 +175,19 @@ async function walk(page: Page, theme: Theme, pen: string | null): Promise<Walk>
           (animation) =>
             animation.playState === 'running' && animation.effect?.getComputedTiming().iterations === Infinity,
         ).length;
+      result.families = [...found].sort();
+      result.accentShare = painted / (window.innerWidth * window.innerHeight);
       return result;
     },
-    { forbidden, exempt: EXEMPT, pen },
+    { forbidden, exempt: chips ? `${EXEMPT}, ${chips}` : EXEMPT, pen, families },
   );
+}
+
+/** R1: at most 2 accent families. R3: accent area at most 0.4 percent. R4: only the title's rule inside the page card. */
+function holdBudget(result: Walk): void {
+  expect(result.families.length, `families: ${result.families.join(', ')}`).toBeLessThanOrEqual(2);
+  expect(result.accentShare).toBeLessThanOrEqual(0.004);
+  expect(result.pageCardAccents).toEqual([]);
 }
 
 async function penOf(page: Page, name: string): Promise<string> {
@@ -174,7 +239,7 @@ for (const theme of THEMES) {
         );
       });
 
-      test(`the Plum screen shows the notebook marks and keeps every other limit @forced`, async ({ page }) => {
+      test(`the Plum screen shows the notebook marks and keeps every other limit`, async ({ page }) => {
         await plumScreen(page, false);
         await page.setViewportSize({ width: size.width, height: size.height });
         const result = await walk(page, theme, await penOf(page, 'plum'));
@@ -182,6 +247,7 @@ for (const theme of THEMES) {
         expect(result.timeOfDayBackgrounds).toEqual([]);
         expect(result.unpainted).toEqual([]);
         expect(result.loops).toBe(0);
+        holdBudget(result);
         const kinds = [...new Set(result.marks)].sort();
         if (size.width >= 1000) expect(kinds).toEqual(['breadcrumb', 'tab', 'title-rule']);
         else {
@@ -214,6 +280,7 @@ for (const theme of THEMES) {
         expect(result.timeOfDayUses).toEqual([]);
         expect(result.marks).toEqual([]);
         expect(result.loops).toBe(0);
+        holdBudget(result);
       });
 
       for (const tab of ['Home', 'Insert', 'Draw', 'View']) {
@@ -227,6 +294,7 @@ for (const theme of THEMES) {
           expect(result.timeOfDayUses).toEqual([]);
           expect(result.timeOfDayBackgrounds).toEqual([]);
           expect(result.loops).toBe(0);
+          holdBudget(result);
         });
       }
 
@@ -238,6 +306,7 @@ for (const theme of THEMES) {
           expect(result.timeOfDayUses).toEqual([]);
           expect(result.timeOfDayBackgrounds).toEqual([]);
           expect(result.loops).toBe(0);
+          holdBudget(result);
         });
       }
     });
@@ -253,4 +322,43 @@ test('the walk fails when a tool icon is tinted with candle', async ({ page }) =
   });
   const result = await walk(page, 'light', null);
   expect(result.timeOfDayUses.length).toBeGreaterThan(0);
+});
+
+test('the walk fails when a third accent family, a large accent fill, or a page-card accent appears', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
+  await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
+  const { accent } = tokens.color.light;
+  await page.addStyleTag({
+    content: `[role=toolbar] { background: ${accent.primary} !important; }
+      [role=tablist] { background: ${accent.clay} !important; }
+      [data-region=page] { border-top: 3px solid ${accent.primary} !important; }
+      [role=tree] { color: ${accent.candle} !important; }`,
+  });
+  const result = await walk(page, 'light', null);
+  expect(result.families.length).toBeGreaterThan(2);
+  expect(result.accentShare).toBeGreaterThan(0.004);
+  expect(result.pageCardAccents.length).toBeGreaterThan(0);
+});
+
+// R7: under forced colors the accents become system colors, so no accent value is left outside the exempt chips.
+// The breadcrumb's dot is a chip like the tree's: it keeps its color and gains an outline.
+test('forced colors paint no accent, pen or time-of-day color @forced', async ({ page }) => {
+  // The pen is the variable's own value (a hex), since a contrast theme turns its computed color into a system color.
+  await page.goto('/');
+  const hex = (
+    await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink-plum'))
+  ).trim();
+  expect(hex).toMatch(/^#[0-9a-f]{6}$/i);
+  const pen = rgb(hex);
+  await page.emulateMedia({ forcedColors: 'active' });
+  await plumScreen(page, false);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  expect(await page.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
+  const result = await walk(page, 'light', pen, '[data-ink]');
+  expect(result.families, result.familyUses.join('; ')).toEqual([]);
+  expect(result.timeOfDayUses).toEqual([]);
+  expect(result.untaggedPen).toEqual([]);
 });

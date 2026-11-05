@@ -6,7 +6,7 @@ import { defineCommand } from '../../commands/registry';
 import { commandBar, commands } from '../../registries';
 import { disposeApp, renderApp } from '../../test';
 
-const bar = () => document.querySelector('[role="toolbar"][aria-label="Home"]') as HTMLElement;
+const bar = (name: string) => document.querySelector(`[role="toolbar"][aria-label="${name}"]`) as HTMLElement;
 
 describe('the group dividers', () => {
   it('are a short line, 20 px tall (24 px with touch sizes), in place of a full-height border', async () => {

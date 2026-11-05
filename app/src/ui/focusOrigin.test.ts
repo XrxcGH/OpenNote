@@ -66,7 +66,9 @@ describe('focusFromScript', () => {
     }
     press('Tab');
     expect(input.hasAttribute('data-focus-origin')).toBe(false);
+    document.dispatchEvent(new Event('pointerdown'));
     focusFromScript(input);
+    expect(input.getAttribute('data-focus-origin')).toBe('pointer');
     press('Escape');
     expect(input.hasAttribute('data-focus-origin')).toBe(false);
   });

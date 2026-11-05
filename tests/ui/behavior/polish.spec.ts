@@ -117,6 +117,23 @@ test.describe('the Draw bar', () => {
     });
   }
 
+  test('with touch sizes at 1,280 by 800, keeps the tools and reaches every pen from More', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__OPENNOTE_BOOT__ = { settings: { appearance: { density: 'touch' } }, bootVersion: 1 } as never;
+    });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openPage(page);
+    await expect(page.locator('html')).toHaveAttribute('data-density', 'touch');
+    await page.getByRole('tab', { name: 'Draw' }).click();
+    const draw = toolbar(page, 'Draw');
+    await expect(draw.getByRole('button', { name: 'Select and type' })).toBeVisible();
+    const more = draw.getByRole('button', { name: 'More commands' });
+    await more.click();
+    // At touch sizes the seven pens fold into More, behind one Choose pen item, with Pen color and Pen width.
+    for (const name of ['Choose pen', 'Pen color', 'Pen width'])
+      await expect(page.getByRole('menuitem', { name, exact: true })).toBeVisible();
+  });
+
   test('keeps the five tools on the bar at 1,024 by 768 and reaches the pens from More', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await openPage(page);
@@ -126,6 +143,46 @@ test.describe('the Draw bar', () => {
     await expect(draw.getByRole('button', { name: 'Lasso select' })).toBeVisible();
     await draw.getByRole('button', { name: 'More commands' }).click();
     await expect(page.getByRole('menuitem', { name: /^Pen/ }).first()).toBeVisible();
+  });
+});
+
+/** The tools on one tab of the bar: its visible buttons, apart from the More menu. */
+async function barCount(page: Page, tab: string): Promise<number> {
+  await page.getByRole('tab', { name: tab }).click();
+  await page.waitForTimeout(300);
+  return toolbar(page, tab)
+    .getByRole('button')
+    .evaluateAll(
+      (buttons) =>
+        buttons.filter(
+          (b) => (b as HTMLElement).offsetParent !== null && b.getAttribute('aria-label') !== 'More commands',
+        ).length,
+    );
+}
+
+// The tools each tab showed at 1,280 by 800 on beta before the bar was polished (the merge base of this lane). The bar
+// may fold a few into More to make room for icons, but not many.
+const BETA_COUNTS = { homePage: 10, homeEmpty: 10, insertEmpty: 5, drawPage: 8 };
+
+test.describe('tool counts at 1,280 by 800', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('Home with a page open loses at most 1 tool against beta, and Draw at most 1', async ({ page }) => {
+    await openPage(page);
+    const home = await barCount(page, 'Home');
+    if (process.env.OPENNOTE_COUNTS) console.log('COUNTS homePage', home, 'drawPage', await barCount(page, 'Draw'));
+    expect(home).toBeGreaterThanOrEqual(BETA_COUNTS.homePage - 1);
+    expect(await barCount(page, 'Draw')).toBeGreaterThanOrEqual(BETA_COUNTS.drawPage - 1);
+  });
+
+  test('Home and Insert with no page open lose at most 2 tools against beta', async ({ page }) => {
+    await openScreen(page, byId('workspace.empty'), { size: 'wide', theme: 'light' });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const home = await barCount(page, 'Home');
+    const insert = await barCount(page, 'Insert');
+    if (process.env.OPENNOTE_COUNTS) console.log('COUNTS homeEmpty', home, 'insertEmpty', insert);
+    expect(home).toBeGreaterThanOrEqual(BETA_COUNTS.homeEmpty - 2);
+    expect(insert).toBeGreaterThanOrEqual(BETA_COUNTS.insertEmpty - 2);
   });
 });
 
@@ -290,30 +347,126 @@ test.describe('focus the app moves', () => {
     expect(await outline(start)).not.toBe('none');
   });
 
-  test('a dialog opened by a script click shows no ring until Tab', async ({ page }) => {
-    await openPage(page);
-    await page.getByRole('tab', { name: 'Home' }).click();
-    // No pointer or key event: every click here is HTMLElement.click() from the page.
-    await page.evaluate(() => {
-      const buttons = () => [...document.querySelectorAll<HTMLElement>('[role=toolbar] button')];
-      const named = (node: Element) => node.getAttribute('aria-label') ?? node.textContent ?? '';
-      if (!buttons().some((node) => /^Import/.test(named(node)))) {
-        buttons()
-          .find((node) => named(node) === 'More commands')
-          ?.click();
-      }
+  test('a dialog opened by a script click, with no pointer or key before it, shows no ring until Tab', async ({
+    page,
+  }) => {
+    // The page opens on a page through the boot payload, so no click or key reaches it before the dialog.
+    await page.addInitScript(() => {
+      window.__OPENNOTE_BOOT__ = {
+        state: {
+          location: { view: 'workspace', notebookId: 'n-biology', sectionId: 's-lectures', pageId: 'p-mitosis' },
+        },
+        bootVersion: 1,
+      } as never;
     });
-    await page.waitForTimeout(300);
-    await page.evaluate(() => {
-      const items = [...document.querySelectorAll<HTMLElement>('[role=toolbar] button, [role=menuitem]')];
-      items.find((node) => /^Import/.test(node.getAttribute('aria-label') ?? node.textContent ?? ''))?.click();
-    });
+    await page.goto('/');
+    await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
+    // Every step here is HTMLElement.click() or a read from the page.
+    const click = (pattern: string) =>
+      page.evaluate((source) => {
+        const regex = new RegExp(source);
+        const items = [...document.querySelectorAll<HTMLElement>('[role=toolbar] button, [role=menuitem]')];
+        const named = (node: Element) => node.getAttribute('aria-label') ?? node.textContent ?? '';
+        const found = items.find((node) => regex.test(named(node)));
+        found?.click();
+        return Boolean(found);
+      }, pattern);
+    if (!(await click('^Import'))) {
+      expect(await click('^More commands$')).toBe(true);
+      await page.waitForTimeout(300);
+      expect(await click('^Import')).toBe(true);
+    }
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     const focused = dialog.locator(':focus').first();
     await expect(focused).toBeVisible();
     expect(await outline(focused)).toBe('none');
     await page.keyboard.press('Tab');
+    expect(await outline(page.locator(':focus'))).not.toBe('none');
+  });
+});
+
+test.describe('focus the app moves, by pointer and by key', () => {
+  const outline = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).outlineStyle);
+
+  test('clicking Appearance in Settings leaves the heading with no ring', async ({ page }) => {
+    await openPage(page);
+    await page.keyboard.press('Control+Comma');
+    const sections = page.getByRole('navigation', { name: 'Settings sections' });
+    await sections.waitFor();
+    await sections.getByRole('link', { name: 'Appearance', exact: true }).click();
+    const heading = page.getByRole('heading', { level: 1, name: 'Appearance', exact: true });
+    await expect(heading).toBeVisible();
+    await expect(page.locator(':focus')).toHaveCount(1);
+    expect(await outline(page.locator(':focus'))).toBe('none');
+  });
+
+  test('choosing Appearance in Settings with the keyboard shows the ring', async ({ page }) => {
+    await openPage(page);
+    await page.keyboard.press('Control+Comma');
+    const sections = page.getByRole('navigation', { name: 'Settings sections' });
+    await sections.waitFor();
+    const link = sections.getByRole('link', { name: 'Appearance', exact: true });
+    await link.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { level: 1, name: 'Appearance', exact: true })).toBeVisible();
+    await expect(page.locator(':focus')).toHaveCount(1);
+    expect(await outline(page.locator(':focus'))).not.toBe('none');
+  });
+
+  test('opening Import with a mouse click leaves the dialog with no ring', async ({ page }) => {
+    await openPage(page);
+    await page.getByRole('tab', { name: 'Home' }).click();
+    const bar = toolbar(page, 'Home');
+    const direct = bar.getByRole('button', { name: /^Import/ });
+    if (await direct.count()) await direct.first().click();
+    else {
+      await bar.getByRole('button', { name: 'More commands' }).click();
+      await page
+        .getByRole('menuitem', { name: /^Import/ })
+        .first()
+        .click();
+    }
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const focused = dialog.locator(':focus').first();
+    await expect(focused).toBeVisible();
+    expect(await outline(focused)).toBe('none');
+  });
+
+  test('opening Import from the palette with Enter shows the ring', async ({ page }) => {
+    await openPage(page);
+    await page.locator('[contenteditable=true] p').first().click();
+    await page.keyboard.press('Control+k');
+    await page.getByPlaceholder('Type a command or a page name').fill('Import');
+    await page
+      .getByRole('option', { name: /^Import/ })
+      .first()
+      .waitFor();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const focused = dialog.locator(':focus').first();
+    await expect(focused).toBeVisible();
+    // The palette's Enter is a key, so the dialog's focus carries no pointer mark.
+    await expect(focused).not.toHaveAttribute('data-focus-origin', 'pointer');
+    await expect(page.locator('[data-focus-origin]')).toHaveCount(0);
+  });
+
+  test('clicking Get started moves focus on with no ring', async ({ page }) => {
+    await openScreen(page, byId('setup.welcome'), { size: 'wide', theme: 'light' });
+    await page.getByRole('button', { name: 'Get started' }).click();
+    await expect(page.getByRole('button', { name: 'Get started' })).toHaveCount(0);
+    await expect(page.locator(':focus')).toHaveCount(1);
+    expect(await outline(page.locator(':focus'))).toBe('none');
+  });
+
+  test('pressing Enter on Get started moves focus on with the ring', async ({ page }) => {
+    await openScreen(page, byId('setup.welcome'), { size: 'wide', theme: 'light' });
+    await expect(page.getByRole('button', { name: 'Get started' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('button', { name: 'Get started' })).toHaveCount(0);
+    await expect(page.locator(':focus')).toHaveCount(1);
     expect(await outline(page.locator(':focus'))).not.toBe('none');
   });
 
