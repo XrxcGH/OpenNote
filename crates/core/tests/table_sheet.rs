@@ -5,6 +5,7 @@
 
 mod common;
 
+use opennote_core::format::page_json::stamp::page_needs_v2;
 use opennote_core::format::page_json::{read_page, write_page};
 use opennote_core::model::{BlockData, Page};
 use opennote_core::Limits;
@@ -73,14 +74,17 @@ fn fixture_table_sheet_pages_write_back_exactly() {
     }
 }
 
-/// A page without `data.sheet` keeps format version 1 on save.
+/// A page without `data.sheet` keeps format version 1 on save, unless its cells hold inline version 2 syntax
+/// (a foreign tag, for one), which stamps version 2 by itself.
 #[test]
 fn fixture_a_table_without_a_sheet_keeps_version_1() {
     for (name, case) in cases() {
         let mut page = case["page"].clone();
         page["blocks"][0]["data"].as_object_mut().unwrap().remove("sheet");
-        let value: Value = serde_json::from_slice(&write_page(&read(&page))).unwrap();
-        assert_eq!(value["formatVersion"], json!(1), "{name}");
+        let read_back = read(&page);
+        let version = if page_needs_v2(&read_back) { 2 } else { 1 };
+        let value: Value = serde_json::from_slice(&write_page(&read_back)).unwrap();
+        assert_eq!(value["formatVersion"], json!(version), "{name}");
         assert_eq!(value["minReaderVersion"], json!(1), "{name}");
     }
 }
