@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::{Access, Color, FormatInfo, JsonMap, Warning};
+use super::{named_enum, Access, Color, FormatInfo, JsonMap, Warning};
 use crate::id::{GroupId, NotebookId, PageId, SectionId};
 use crate::order::OrderKey;
 use crate::time::Timestamp;
@@ -62,6 +62,79 @@ impl StyleSpec {
         }
     }
 }
+
+named_enum! {
+    /// Whether a style formats paragraphs or runs of text (`R-STY-1`).
+    StyleType {
+        /// A paragraph style.
+        Paragraph = "paragraph",
+        /// A character style, applied with the `charStyle` mark.
+        Character = "character",
+    }
+}
+
+/// The version 2 keys of a style (`R-STY-1`). They live in [`StyleSpec::extra`] as JSON, so every key is kept;
+/// a key whose value is invalid reads as missing.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct StyleFormat {
+    /// Paragraph or character.
+    pub kind: Option<StyleType>,
+    /// The name people see for a user style.
+    pub label: Option<String>,
+    /// The style this one is based on.
+    pub based_on: Option<String>,
+    /// The style of a new paragraph after Enter at the end.
+    pub next: Option<String>,
+    /// The place in the style gallery.
+    pub order: Option<u32>,
+    /// Left out of the style gallery.
+    pub hidden: Option<bool>,
+    /// The size in points. It wins over `size` (`R-STY-2`).
+    pub size_pt: Option<f64>,
+    /// 100 to 900.
+    pub weight: Option<u32>,
+    /// Italic.
+    pub italic: Option<bool>,
+    /// An underline style, or `none`.
+    pub underline: Option<String>,
+    /// `single`, `double`, or `none`.
+    pub strike: Option<String>,
+    /// `small`, `all`, or `none`.
+    pub caps: Option<String>,
+    /// Letter spacing in points.
+    pub tracking: Option<f64>,
+    /// Any color, including theme colors. It wins over `color` (`R-STY-2`).
+    pub text_color: Option<String>,
+    /// A color, or `none`.
+    pub highlight: Option<String>,
+    /// The paragraph keys, as in `data.paras`.
+    pub para: super::ParaFormat,
+    /// A list ID and a level from 1 to 9, for numbered headings.
+    pub list: Option<(String, u8)>,
+}
+
+/// The fonts a theme gives the font tokens (`R-THM-1`).
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct ThemeFonts {
+    /// `+heading`.
+    pub heading: Option<String>,
+    /// `+body`.
+    pub body: Option<String>,
+    /// `+mono`.
+    pub mono: Option<String>,
+}
+
+/// A notebook's or a page's theme (`R-THM-1`).
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct Theme {
+    /// The fonts of the font tokens.
+    pub fonts: ThemeFonts,
+    /// `#rrggbb` by theme color name, such as `accent1`.
+    pub colors: BTreeMap<String, String>,
+}
+
+/// The key of `notebook.json` that holds when each style last changed (`R-STY-9`).
+pub const STYLES_CHANGED: &str = "stylesChanged";
 
 /// The most styles a notebook keeps, and the longest style name (spec 16).
 pub const MAX_STYLES: usize = 64;

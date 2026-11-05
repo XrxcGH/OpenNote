@@ -299,6 +299,9 @@ const BAR: readonly CommandBarItem[] = [
 BAR.forEach((item) => commandBar.register(item));
 
 const MENU: readonly ContextMenuItem[] = [
+  // The empty page's menu (right-click, long press, or barrel press on empty page): what it can add.
+  { id: 'editor.canvas.table', menu: 'page.canvas', command: 'insert.table', group: 'insert', order: 10 },
+  { id: 'editor.canvas.image', menu: 'page.canvas', command: 'insert.image', group: 'insert', order: 20 },
   { id: 'editor.text.bold', menu: 'page.text', command: 'format.bold', group: 'format', order: 10 },
   { id: 'editor.text.italic', menu: 'page.text', command: 'format.italic', group: 'format', order: 20 },
   { id: 'editor.text.highlight', menu: 'page.text', command: 'format.highlight', group: 'format', order: 30 },

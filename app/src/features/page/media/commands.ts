@@ -38,6 +38,7 @@ export async function insertFromPrompt(): Promise<void> {
     label: t('accounts.media.ask.label'),
     help: t('accounts.media.ask.help'),
     confirmLabel: t('accounts.media.ask.confirm'),
+    emptyMessage: t('accounts.media.ask.empty'),
   });
   if (link === null) return;
   if (!recognize(link)) {

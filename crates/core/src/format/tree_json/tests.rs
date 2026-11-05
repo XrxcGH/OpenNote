@@ -96,7 +96,6 @@ fn styles_with_the_wrong_types_are_errors() {
         json!([]),
         json!({"h1": 5}),
         json!({"h1": {"size": "big"}}),
-        json!({"h1": {"color": "Not A Color"}}),
         json!({"h1": {"font": 3}}),
     ] {
         assert!(read(&notebook_with(styles.clone())).is_err(), "{styles}");
@@ -104,7 +103,7 @@ fn styles_with_the_wrong_types_are_errors() {
 }
 
 #[test]
-fn merged_copies_take_the_styles_of_the_copy_changed_later() {
+fn merged_copies_take_each_style_from_the_copy_that_changed_it_later() {
     let mut ours = sample_notebook();
     let mut theirs = ours.clone();
     ours.styles = read(&notebook_with(json!({"h1": {"size": 30}}))).unwrap().styles;
@@ -113,11 +112,36 @@ fn merged_copies_take_the_styles_of_the_copy_changed_later() {
         .styles;
     ours.changed = Timestamp::parse("2026-09-30T14:00:00.000Z").unwrap();
     theirs.changed = Timestamp::parse("2026-09-30T15:00:00.000Z").unwrap();
+    // R-STY-9: without stylesChanged the times are equal, and the greater canonical JSON wins.
     let merged = merge_notebooks(&ours, &theirs);
-    assert_eq!(merged.styles, theirs.styles);
-    assert_eq!(merge_notebooks(&theirs, &ours).styles, theirs.styles);
-    ours.changed = Timestamp::parse("2026-09-30T16:00:00.000Z").unwrap();
-    assert_eq!(merge_notebooks(&theirs, &ours).styles, ours.styles);
+    assert_eq!(merged.styles["h1"], ours.styles["h1"]);
+    assert_eq!(merged.styles["quote"], theirs.styles["quote"]);
+    assert_eq!(merge_notebooks(&theirs, &ours).styles, merged.styles);
+    theirs.extra = serde_json::from_value(json!({"stylesChanged": {"h1": "2026-09-30T15:00:00.000Z"}})).unwrap();
+    let merged = merge_notebooks(&ours, &theirs);
+    assert_eq!(merged.styles["h1"], theirs.styles["h1"]);
+    assert_eq!(merged.extra["stylesChanged"], json!({"h1": "2026-09-30T15:00:00.000Z"}));
+    assert_eq!(merge_notebooks(&theirs, &ours), merged);
+}
+
+#[test]
+fn a_theme_color_in_a_version_1_color_key_reads_as_missing_and_is_kept() {
+    let file = read(&notebook_with(
+        json!({"h1": {"color": "theme:accent1", "textColor": "theme:accent1"}}),
+    ))
+    .unwrap();
+    assert_eq!(file.styles["h1"].color, None);
+    assert!(file
+        .format
+        .warnings
+        .iter()
+        .any(|w| w.code == "styles.invalid" && w.detail.contains("h1.color")));
+    let again: Value = serde_json::from_slice(&write_notebook(&file)).unwrap();
+    assert_eq!(
+        again["styles"]["h1"],
+        json!({"color": "theme:accent1", "textColor": "theme:accent1"})
+    );
+    assert_eq!(again["formatVersion"], 1);
 }
 
 /// Styles are written rounded (sizes and spacing to 0.01, the line height to two decimals) and read back the

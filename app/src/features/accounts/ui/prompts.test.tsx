@@ -58,4 +58,20 @@ describe('askText', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(await empty).toBeNull();
   });
+
+  it('keeps the dialog open and names the problem when an empty answer is not allowed', async () => {
+    const typed = askText({
+      title: 'Insert',
+      label: 'Link',
+      confirmLabel: 'Insert',
+      emptyMessage: 'Paste a link first.',
+    });
+    const field = await screen.findByRole('textbox', { name: 'Link' });
+    fireEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    expect(await screen.findByText('Paste a link first.')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Insert' })).toBeTruthy();
+    fireEvent.change(field, { target: { value: 'https://example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Insert' }));
+    expect(await typed).toBe('https://example.com');
+  });
 });

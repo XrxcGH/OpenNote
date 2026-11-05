@@ -170,6 +170,8 @@ fn may_have_expired(deleted: u64, now: u64) -> bool {
 /// Starts a core, recovers the notebook, and opens it.
 /// The core runs on the iteration's own clock, as the writers do: on the real one, the Trash would be long past its
 /// 30 days once the real date left the script's, and recovery would purge what the check expects to find.
+/// The scan and Trash expiry that opening queues run before the notebook is handed back. Left to the maintenance
+/// thread, they raced the close, and a second recovery purged what the first had closed too soon to purge.
 fn recover(data: &Path, manifest: &Manifest, iteration: u64) -> Result<(Core, NotebookHandle), String> {
     let core = start_core(data, Arc::new(script::clock_for(iteration)))?;
     core.recover_pending(Some(&manifest.notebook))
@@ -177,6 +179,9 @@ fn recover(data: &Path, manifest: &Manifest, iteration: u64) -> Result<(Core, No
     let notebook = core
         .open_notebook(&manifest.notebook)
         .map_err(|e| format!("open_notebook: {e}"))?;
+    notebook
+        .run_open_work()
+        .map_err(|e| format!("the scan and Trash expiry after opening: {e}"))?;
     Ok((core, notebook))
 }
 
@@ -233,11 +238,67 @@ fn snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
 
 #[cfg(test)]
 mod tests {
-    use super::may_have_expired;
+    use opennote_core::session::notebook::{NodePlacement, NodeRef, ParentRef};
+    use opennote_core::store::layout::NotebookLayout;
+
+    use super::{may_have_expired, recover, snapshot, Manifest, Paths};
 
     #[test]
     fn trash_items_may_expire_after_thirty_days_of_iterations() {
         assert!(!may_have_expired(5, 5 + 719));
         assert!(may_have_expired(5, 5 + 720));
+    }
+
+    /// The nightly run failed at iteration 750 with "a second recovery changed the notebook". Opening queues the
+    /// Trash expiry for the maintenance thread. The first recovery closed the notebook before the thread got to
+    /// it. The second read the tree before it closed, which gave the thread the time to purge.
+    #[test]
+    fn a_recovery_expires_trash_before_it_closes_so_a_second_one_changes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = Paths {
+            notebook: dir.path().join("notebooks").join("Kill"),
+            data: dir.path().join("data"),
+        };
+        super::super::core::setup(&paths).unwrap();
+        let manifest = Manifest::load(&paths.data).unwrap();
+        let layout = NotebookLayout::new(&manifest.notebook);
+        let section = manifest.section_id().unwrap();
+        let at_end = NodePlacement {
+            parent: ParentRef::Section(section),
+            before: None,
+        };
+        let (core, notebook) = recover(&paths.data, &manifest, 0).unwrap();
+        let mut items = Vec::new();
+        for _ in 0..3 {
+            let page = notebook.create_page(section, at_end).unwrap();
+            items.extend(notebook.delete(&[NodeRef::Page(page)]).unwrap());
+        }
+        notebook.close().unwrap();
+        drop(core);
+        assert!(items.iter().all(|item| layout.trash_item_dir(*item).exists()));
+        // Thirty days on, every item has expired. Each round deletes nothing new, so a recovery that skips the
+        // expiry leaves the items for the next one.
+        for iteration in [721, 722, 723] {
+            let (core, notebook) = recover(&paths.data, &manifest, iteration).unwrap();
+            notebook.close().unwrap();
+            drop(core);
+            let left: Vec<_> = items
+                .iter()
+                .filter(|item| layout.trash_item_dir(**item).exists())
+                .collect();
+            assert!(
+                left.is_empty(),
+                "iteration {iteration}: the recovery left expired Trash items {left:?}"
+            );
+            let before = snapshot(&manifest.notebook);
+            let (core, notebook) = recover(&paths.data, &manifest, iteration).unwrap();
+            assert!(notebook.trash().unwrap().is_empty());
+            notebook.close().unwrap();
+            drop(core);
+            assert!(
+                snapshot(&manifest.notebook) == before,
+                "a second recovery changed the notebook"
+            );
+        }
     }
 }

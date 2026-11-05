@@ -14,11 +14,31 @@ export type { TableNodeName, TextNodeName } from './schema';
 export type HighlightColor = (typeof HIGHLIGHT_COLORS)[number];
 export type TextSizeName = (typeof TEXT_SIZES)[number];
 
+/** A table column (SPEC 6.3). Keys this version doesn't know are kept as they are (SPEC 2.9). */
+export interface TableColumnData {
+  id: string;
+  width: number;
+  [key: string]: unknown;
+}
+
+/** A table cell (SPEC 6.3), with any unknown keys as they were. */
+export interface TableCellData {
+  markdown: string;
+  [key: string]: unknown;
+}
+
+/** A table row, with its cells keyed by column ID (SPEC 6.3), and any unknown keys as they were. */
+export interface TableRowData {
+  id: string;
+  cells: Record<string, TableCellData>;
+  [key: string]: unknown;
+}
+
 /** A table block's data (SPEC 6.3). */
 export interface TableData {
   header: boolean;
-  columns: { id: string; width: number }[];
-  rows: { id: string; cells: Record<string, { markdown: string }> }[];
+  columns: TableColumnData[];
+  rows: TableRowData[];
 }
 
 /** A new table column's width, in page units (SPEC 2.6). */

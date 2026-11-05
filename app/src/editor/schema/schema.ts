@@ -89,24 +89,37 @@ const SPANS = {
   rowspan: { default: 1, parseHTML: spanOf('rowspan') },
 };
 
+/**
+ * A row's or column's ID from the table's data, so the mapping reads IDs from nodes, not positions. It is never
+ * written to HTML or Markdown and never read from them, so a pasted row gets a fresh ID.
+ */
+const ID_ATTR = { default: null, rendered: false, parseHTML: () => null, keepOnSplit: false };
+
+/** A row carries its row ID. */
+export const IdRow = TableRow.extend({
+  addAttributes() {
+    return { ...this.parent?.(), rowId: ID_ATTR };
+  },
+});
+
 /** A cell holds exactly one paragraph, because a table cell is one line of Markdown (SPEC 6.3). */
 export const OneParagraphCell = TableCell.extend({
   content: 'paragraph',
   addAttributes() {
-    return { ...this.parent?.(), ...SPANS };
+    return { ...this.parent?.(), ...SPANS, colId: ID_ATTR };
   },
 });
 export const OneParagraphHeader = TableHeader.extend({
   content: 'paragraph',
   addAttributes() {
-    return { ...this.parent?.(), ...SPANS };
+    return { ...this.parent?.(), ...SPANS, colId: ID_ATTR };
   },
 });
 
 export const tableExtensions: Extensions = [
   TableDoc,
   Table.configure({ resizable: false }),
-  TableRow,
+  IdRow,
   OneParagraphHeader,
   OneParagraphCell,
   nodes.Paragraph,

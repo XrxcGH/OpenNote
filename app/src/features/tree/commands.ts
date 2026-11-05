@@ -8,7 +8,7 @@ import type { ChipColor, NodeId } from '../../services/notes';
 import { dismissActionToasts } from '../../state/toasts';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
-import { colorNode } from './actions';
+import { colorNode, titleOf } from './actions';
 import { canCreate, createFromContext } from './creation';
 import type { NewKind } from './creation';
 import { currentNode } from './current';
@@ -89,6 +89,10 @@ function moveCommand(direction: 'up' | 'down') {
     allowRepeat: true,
     palette: false,
     enabled: (ctx) => canStep(ctx, direction),
+    disabledReason: (ctx) => {
+      const node = currentNode(ctx);
+      return node && t(up ? 'tree.moves.alreadyFirst' : 'tree.moves.alreadyLast', { title: titleOf(node) });
+    },
     run: (ctx) => {
       const node = currentNode(ctx);
       return node ? moveStep(ctx.notes, node, direction) : undefined;
@@ -116,6 +120,10 @@ function levelCommand(change: 1 | -1) {
       return node?.kind === 'page' && (indent || node.pageLevel > 0 || ctx.source === 'keyboard');
     },
     enabled: (ctx) => canChangeLevel(ctx, change),
+    disabledReason: (ctx) => {
+      const node = currentNode(ctx);
+      return node && t(indent ? 'tree.moves.cantIndent' : 'tree.moves.alreadyTop', { title: titleOf(node) });
+    },
     run: (ctx) => {
       const node = currentNode(ctx);
       return node ? changeLevel(ctx.notes, node, change) : undefined;
