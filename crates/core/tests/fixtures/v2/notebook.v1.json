@@ -1,0 +1,56 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.notebook",
+  "id": "01m3s9q9xbpmxwz4cz4ht6twg9",
+  "title": "Biology",
+  "color": "fern",
+  "created": "2026-09-30T13:58:02.411Z",
+  "changed": "2026-09-30T13:59:10.000Z",
+  "defaults": {
+    "view": {
+      "mode": "paginated",
+      "paper": {
+        "height": 1122.52,
+        "size": "a4",
+        "width": 793.7
+      }
+    }
+  },
+  "styles": {
+    "normal": {
+      "font": "Georgia",
+      "size": 16,
+      "lineHeight": 1.5
+    },
+    "h1": {
+      "size": 28,
+      "color": "indigo",
+      "spaceBefore": 18,
+      "spaceAfter": 6
+    },
+    "zz-callout": {
+      "color": "#aabbcc",
+      "zzshadow": {
+        "blur": 3
+      }
+    }
+  },
+  "groups": [
+    {
+      "id": "01m3sa1mj800000000000052cw",
+      "title": "Semester 1",
+      "order": "a0",
+      "created": "2026-09-30T13:59:10.000Z",
+      "changed": "2026-09-30T13:59:10.000Z"
+    },
+    {
+      "id": "01m3sa1nhg0000000000005a4b",
+      "title": "Labs",
+      "parent": "01m3sa1mj800000000000052cw",
+      "order": "a0",
+      "created": "2026-09-30T13:59:10.000Z",
+      "changed": "2026-09-30T13:59:10.000Z"
+    }
+  ]
+}
