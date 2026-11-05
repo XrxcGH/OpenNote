@@ -122,6 +122,36 @@ fn a_damaged_section_json_is_rebuilt_from_its_folders() {
 }
 
 #[test]
+fn a_rebuilt_section_json_lists_no_folder_without_a_page_json() {
+    let (kit, mut store, [s1, s2], pages) = setup();
+    let moved = pages[0];
+    store
+        .move_node(
+            NodeRef::Page(moved),
+            &crate::session::notebook::NodePlacement {
+                parent: crate::session::notebook::ParentRef::Section(s2),
+                before: None,
+            },
+        )
+        .unwrap();
+    kit.fs.inner.mkdir_all(&section_dir(&kit, s1).join(moved.to_string()));
+    kit.fs.inner.put(&section_dir(&kit, s1).join(SECTION_JSON), b"{damaged");
+    let report = store.scan().unwrap();
+    assert_eq!(report.rebuilt, vec![s1]);
+    // Only the rebuild writes the file: matching finds no entry of its own to move or drop.
+    let rebuilt = section_dir(&kit, s1).join(SECTION_JSON);
+    assert_eq!(
+        report.written.iter().filter(|p| **p == rebuilt).count(),
+        1,
+        "{report:?}"
+    );
+    assert!(report.moved.is_empty(), "{report:?}");
+    let ids: Vec<PageId> = store.sections[&s1].file.pages.iter().map(|e| e.id).collect();
+    assert!(!ids.contains(&moved), "{ids:?}");
+    assert_eq!(store.tree().find_page(moved).unwrap().0.id, s2);
+}
+
+#[test]
 fn a_sync_tool_copy_of_section_json_is_merged_and_kept_aside() {
     let (kit, mut store, [s1, _], pages) = setup();
     let mut copy = store.sections[&s1].file.clone();
