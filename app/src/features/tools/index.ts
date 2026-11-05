@@ -50,14 +50,12 @@ export {
   takeKitInputs,
 } from './kits/registry';
 export type { FormInputs, KitId, KitOpener } from './kits/registry';
-export { useKitReopen } from './kits/panelForm';
 export type { KitDef, KitInsertContent, KitResultRow, KitStep, KitToolDef, KitToolProps } from './kits/types';
 export const loadKits = () => import('./kits');
 // The kit figure block's page view (features/tools/subjects/figure), loaded when a page shows a figure.
 export const loadKitFigure = () => import('./subjects/figure/block');
 export { CHEMMAT_META } from './chemmat/meta';
 export { openChemMatTool } from './chemmat/open';
-export { openChemCalc } from './ui/chemCalcOpen';
 
 /** A kit's opener that loads its module on first use, so the kits stay out of every window that imports this file. */
 function later<M, K extends keyof M>(load: () => Promise<M>, name: K) {
@@ -69,6 +67,7 @@ function later<M, K extends keyof M>(load: () => Promise<M>, name: K) {
 
 export const openStatModelsKit = later(() => import('./statmodels/open'), 'openStatModelsKit');
 export const openHumanitiesTool = later(() => import('./humanities/open'), 'openHumanitiesTool');
+export const openChemCalc = later(() => import('./ui/chemCalcOpen'), 'openChemCalc');
 export const openMolBio = later(() => import('./molbio/open'), 'openMolBio');
 export const openLifeSys = later(() => import('./lifesys/open'), 'openLifeSys');
 export const reopenLifeSys = later(() => import('./lifesys/open'), 'reopenLifeSys');

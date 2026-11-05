@@ -4,7 +4,7 @@ import './text';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
-import { useKitReopen } from '../kits/panelForm';
+import { useKitReopen } from '../kits/useKitReopen';
 import { loadStored, saveStored } from '../ui/storage';
 import { KIT_STORE, KIT_TAB_EVENT } from './events';
 import { LOADERS } from './kit';

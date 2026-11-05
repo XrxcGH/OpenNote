@@ -2,7 +2,7 @@
 // holds one or more forms (chemForms.tsx) over the methods in ../chem/calc.
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../strings/t';
-import { useKitReopen } from '../kits/panelForm';
+import { useKitReopen } from '../kits/useKitReopen';
 import { ChemForm } from './ChemForm';
 import { CHEMCALC_STORE, CHEMCALC_TAB_EVENT } from './chemCalcOpen';
 import { CALC_TABS, SUB_FORMS } from './chemForms';

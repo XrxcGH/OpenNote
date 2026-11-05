@@ -5,8 +5,9 @@ import { useRef, useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../../test';
 import { INSERT_EVENT } from '../flags';
-import { applyPanelForm, panelOf, readPanelForm, readSavedPanelForm, useKitReopen } from './panelForm';
+import { applyPanelForm, panelOf, readPanelForm, readSavedPanelForm } from './panelForm';
 import { openKitTool, registerKit, resetKits } from './registry';
+import { useKitReopen } from './useKitReopen';
 import { insertLiveFromPanel } from './ui/insert';
 
 afterEach(() => {

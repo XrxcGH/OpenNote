@@ -2,7 +2,7 @@
 // tab that was last open comes back, and a command from the palette can pick one.
 import '../text';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useKitReopen } from '../../kits/panelForm';
+import { useKitReopen } from '../../kits/useKitReopen';
 import { t } from '../../../../strings/t';
 import { followMathTab, savedMathTab, saveMathTab } from '../open';
 import { MATH_TOOLS } from '../meta';

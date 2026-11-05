@@ -1,7 +1,7 @@
 // The economics and finance window: a picker for the tool, a picker for the form within it, and the shared form
 // (ui/ChemForm) that shows the answer, its steps, and Insert. The methods are plain modules beside this file.
 import { useRef, useState } from 'react';
-import { useKitReopen } from '../kits/panelForm';
+import { useKitReopen } from '../kits/useKitReopen';
 import { ChemForm } from '../ui/ChemForm';
 import extra from '../ui/extra.module.css';
 import { loadStored, saveStored } from '../ui/storage';

@@ -4,7 +4,7 @@ import '../text';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../../strings/t';
-import { useKitReopen } from '../../../tools';
+import { loadKits } from '../../../tools';
 import { LOADERS } from '../kit';
 import { AERO_TOOLS, isAeroTool } from '../meta';
 import type { AeroToolId } from '../meta';
@@ -56,7 +56,18 @@ export function KitAeroTool() {
   });
   const systemId = useId();
   const panel = useRef<HTMLDivElement>(null);
-  useKitReopen('aero', tab, panel);
+  // A live calculation block's Open in tool: the kit library loads on demand, then puts the block's values back.
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    let ended = false;
+    void loadKits().then((kits) => {
+      if (!ended) stop = kits.watchKitReopen('aero', tab, () => panel.current);
+    });
+    return () => {
+      ended = true;
+      stop?.();
+    };
+  }, [tab]);
   const [system, setSystem] = useState<UnitSystem>(() => (loadKit().system === 'us' ? 'us' : 'si'));
   useEffect(() => {
     const onTab = () => {

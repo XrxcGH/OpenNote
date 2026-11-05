@@ -4,7 +4,7 @@ import { Suspense, useRef } from 'react';
 import type { MessageKey } from '../../../../strings/t';
 import { t } from '../../../../strings/t';
 import { useStore } from '../../../../state/store';
-import { useKitReopen } from '../../kits/panelForm';
+import { useKitReopen } from '../../kits/useKitReopen';
 import extra from '../../ui/extra.module.css';
 import tools from '../../ui/tools.module.css';
 import { KIT } from '../kit';

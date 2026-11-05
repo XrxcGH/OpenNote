@@ -2,8 +2,6 @@
 // tool brings the same inputs back. A kit marks the panel that holds the open tool with data-kit-form (its kit id)
 // and data-kit-tool (the tool's id). The values are read from the controls by their labels, and put back by setting
 // the controls the way a person would, so a tool needs no code of its own to take part. Nothing here throws.
-import { useEffect, useState } from 'react';
-import type { RefObject } from 'react';
 import { onKitInputs, takeKitInputs } from './registry';
 
 export const PANEL_FORM_ATTRIBUTE = 'data-kit-form';
@@ -140,22 +138,29 @@ export function applyPanelForm(root: ParentNode, form: PanelForm): number {
 const PASSES = [0, 60, 200, 450, 900, 1600];
 
 /**
- * Brings a live calculation block's inputs back into the open tool. The kit window calls this with its kit id, the
- * tool it is showing and the panel that holds it (marked with data-kit-form).
+ * Brings a live calculation block's inputs back into the open tool: now, if inputs for `tool` of `kit` are waiting,
+ * and whenever a block hands some over later (the window may still be on another tool, which then switches). Returns
+ * the function that stops it. A kit window calls this from an effect, with the panel that holds the open tool.
  */
-export function useKitReopen(kit: string, tool: string, panel: RefObject<HTMLElement | null>): void {
-  const [arrivals, setArrivals] = useState(0);
-  useEffect(() => onKitInputs(kit, () => setArrivals((count) => count + 1)), [kit]);
-  useEffect(() => {
+export function watchKitReopen(kit: string, tool: string, panel: () => HTMLElement | null): () => void {
+  let timers: number[] = [];
+  const attempt = () => {
     const form = readSavedPanelForm(takeKitInputs(kit, tool));
     if (!form) return;
-    const timers = PASSES.map((delay) =>
+    timers.forEach((timer) => window.clearTimeout(timer));
+    timers = PASSES.map((delay) =>
       window.setTimeout(() => {
-        if (panel.current) applyPanelForm(panel.current, form);
+        const root = panel();
+        if (root) applyPanelForm(root, form);
       }, delay),
     );
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [kit, tool, arrivals, panel]);
+  };
+  attempt();
+  const stop = onKitInputs(kit, attempt);
+  return () => {
+    stop();
+    timers.forEach((timer) => window.clearTimeout(timer));
+  };
 }
 
 /** The panel an Insert button sits in, and the tool it shows. */

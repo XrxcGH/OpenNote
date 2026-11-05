@@ -3,7 +3,7 @@
 // unit system, and what was typed in each tool.
 import '../text';
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useKitReopen } from '../../kits/panelForm';
+import { useKitReopen } from '../../kits/useKitReopen';
 import { t } from '../../../../strings/t';
 import { PHYSICS_KIT } from '../kit';
 import { sayKey } from '../kit/say';

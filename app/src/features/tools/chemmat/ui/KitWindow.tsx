@@ -3,7 +3,7 @@
 // system is chosen are remembered; the palette opens a particular tab (see ../open.ts).
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { useKitReopen } from '../../kits/panelForm';
+import { useKitReopen } from '../../kits/useKitReopen';
 import { loadStored, saveStored } from '../../ui/storage';
 import tools from '../../ui/tools.module.css';
 import extra from '../../ui/extra.module.css';
