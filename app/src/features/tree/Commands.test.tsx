@@ -394,6 +394,18 @@ describe('context menu contents', () => {
     const items = within(menu).getAllByRole('menuitem');
     expect(items[items.length - 1].textContent).toContain('Delete');
   });
+
+  it('says why Move up is disabled, and gives no reason on an enabled item (A2-A12-1)', async () => {
+    await renderTree();
+    await openMenuOn(notebooksTree, 'Lectures');
+    const menu = screen.getByRole('menu');
+    const up = within(menu).getByRole('menuitem', { name: /^Move up/ });
+    expect(up.getAttribute('aria-description')).toBe('Lectures is already first.');
+    expect(up.getAttribute('title')).toBe('Lectures is already first.');
+    const down = within(menu).getByRole('menuitem', { name: /^Move down/ });
+    expect(down.getAttribute('aria-description')).toBeNull();
+    expect(down.getAttribute('title')).toBeNull();
+  });
 });
 
 describe('context menu actions', () => {
