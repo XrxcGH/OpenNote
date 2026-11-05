@@ -9,6 +9,7 @@ import chem from './chem.module.css';
 import extra from './extra.module.css';
 import { loadStored, saveStored } from './storage';
 import { useSelectedTabInView } from './tabScroll';
+import { moveBetweenTabs } from './tabKeys';
 import styles from './tools.module.css';
 
 const STORE = 'chemcalc';
@@ -29,7 +30,13 @@ export function ChemCalcTool() {
 
   return (
     <div className={styles.toolFill}>
-      <div ref={strip} className={styles.tabs} role="tablist" aria-label={t('chem.calc.title')}>
+      <div
+        ref={strip}
+        className={styles.tabs}
+        role="tablist"
+        aria-label={t('chem.calc.title')}
+        onKeyDown={moveBetweenTabs}
+      >
         {CALC_TABS.map((id) => (
           <button
             key={id}
@@ -38,6 +45,7 @@ export function ChemCalcTool() {
             id={`chem-tab-${id}`}
             aria-selected={tab === id}
             aria-controls="chem-panel"
+            tabIndex={tab === id ? 0 : -1}
             className={styles.tab}
             onClick={() => {
               setTab(id);
