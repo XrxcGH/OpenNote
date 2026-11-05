@@ -264,7 +264,7 @@ fn flatten(block: &Block, level: usize, out: &mut Vec<Piece>) {
                 out.push(Piece::Para(p));
             }
         }
-        Block::Table { header, rows } => out.push(Piece::Table {
+        Block::Table { header, rows, .. } => out.push(Piece::Table {
             header: *header,
             rows: rows.clone(),
         }),
@@ -676,7 +676,7 @@ impl SlideWriter<'_> {
                 Inline::HardBreak | Inline::SoftBreak => {
                     runs.push_str("<a:br><a:rPr lang=\"en-US\" sz=\"2000\"/></a:br>")
                 }
-                Inline::Image { .. } => {}
+                Inline::Image { .. } | Inline::Note { .. } => {}
             }
         }
         format!("<a:p>{props}{runs}<a:endParaRPr lang=\"en-US\" sz=\"2000\" dirty=\"0\"/></a:p>")

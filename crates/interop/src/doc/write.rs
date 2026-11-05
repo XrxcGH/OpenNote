@@ -52,7 +52,7 @@ fn render_block(block: &Block) -> Vec<String> {
         } => render_callout(kind, *fold, title, blocks),
         Block::Code { language, text } => render_code(language, text),
         Block::Break => vec!["---".to_owned()],
-        Block::Table { header, rows } => render_table(*header, rows),
+        Block::Table { header, rows, .. } => render_table(*header, rows),
     }
 }
 
