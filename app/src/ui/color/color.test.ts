@@ -98,3 +98,45 @@ describe('recent colors', () => {
     expect(recentColors('nb1')).toEqual([]);
   });
 });
+
+describe('hostile input', () => {
+  it('refuses a very long ambiguous string fast', () => {
+    const hostile = ['rgb(1 ' + ' '.repeat(100_000) + '2' + ' '.repeat(100_000) + 'x', 'hsl(1' + ' '.repeat(100_000) + 'x'];
+    const start = performance.now();
+    for (const text of hostile) expect(parseColor(text)).toEqual({ ok: false });
+    expect(performance.now() - start).toBeLessThan(50);
+  });
+  it('refuses a hostile string just under the input cap fast, and keeps both separators', () => {
+    const start = performance.now();
+    expect(parseColor('rgb(1 ' + ' '.repeat(25) + '2' + ' '.repeat(25) + 'x')).toEqual({ ok: false });
+    expect(performance.now() - start).toBeLessThan(50);
+    expect(parseColor('rgb(1 ,  2 3)')).toEqual({ ok: true, hex: '#010203' });
+    expect(parseColor('rgb( 1 ,2,   3 )')).toEqual({ ok: true, hex: '#010203' });
+    expect(parseColor('hsl(120 100% 25%)')).toEqual({ ok: true, hex: '#008000' });
+  });
+});
+
+describe('stored tints', () => {
+  it('are the same in light and dark', () => {
+    for (const column of THEME_COLUMNS) {
+      const light = themeColumn(column, 'light').map((s) => s.value);
+      const dark = themeColumn(column, 'dark').map((s) => s.value);
+      expect(dark).toEqual(light);
+    }
+  });
+});
+
+describe('recent colors cap', () => {
+  it('keeps at most 50 notebooks, dropping the oldest, and survives a __proto__ key', () => {
+    let saved = '{}';
+    setRecentStorage({ read: () => saved, write: (text) => (saved = text) });
+    for (let i = 0; i < 55; i++) rememberColor(`nb${i}`, '#111111');
+    expect(Object.keys(JSON.parse(saved))).toHaveLength(50);
+    expect(recentColors('nb0')).toEqual([]);
+    expect(recentColors('nb54')).toEqual(['#111111']);
+    const poisoned = '{"__proto__":["#222222"],"nbx":["#333333"]}';
+    setRecentStorage({ read: () => poisoned, write: () => {} });
+    expect(recentColors('nbx')).toEqual(['#333333']);
+    expect(({} as Record<string, unknown>).length).toBeUndefined();
+  });
+});

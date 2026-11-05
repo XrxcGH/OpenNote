@@ -13,6 +13,11 @@ export type ThemeName = (typeof THEME_NAMES)[number];
 
 export type ParsedColor = { ok: true; hex: string } | { ok: false };
 
+/** The longest typed color worth matching: `hsl(360, 100%, 100%)` with generous spaces fits. */
+export const MAX_COLOR_INPUT = 64;
+/** One separator: a comma with optional spaces, or spaces alone. The two cannot match the same text twice. */
+const SEP = String.raw`(?:\s*,\s*|\s+)`;
+
 const byte = (s: string) => {
   const n = Number(s);
   return Number.isInteger(n) && n >= 0 && n <= 255 ? n : null;
@@ -23,18 +28,21 @@ const byte = (s: string) => {
  * allowed around the parts. The result is lowercase `#rrggbb`.
  */
 export function parseColor(input: string): ParsedColor {
+  // A hostile paste must not cost more than a constant amount of work (Appendix D.7).
+  if (input.length > MAX_COLOR_INPUT * 4) return { ok: false };
   const text = input.trim().toLowerCase();
+  if (text.length > MAX_COLOR_INPUT) return { ok: false };
   const hex6 = /^#?([0-9a-f]{6})$/.exec(text);
   if (hex6) return { ok: true, hex: `#${hex6[1]}` };
   const hex3 = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(text);
   if (hex3) return { ok: true, hex: `#${hex3[1]}${hex3[1]}${hex3[2]}${hex3[2]}${hex3[3]}${hex3[3]}` };
-  const rgb = /^rgb\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*\)$/.exec(text);
+  const rgb = new RegExp(String.raw`^rgb\(\s*(\d{1,3})${SEP}(\d{1,3})${SEP}(\d{1,3})\s*\)$`).exec(text);
   if (rgb) {
     const parts = [byte(rgb[1]), byte(rgb[2]), byte(rgb[3])];
     if (parts.every((p): p is number => p !== null)) return { ok: true, hex: rgbToHex([parts[0], parts[1], parts[2]]) };
     return { ok: false };
   }
-  const hsl = /^hsl\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})%?\s*[, ]\s*(\d{1,3})%?\s*\)$/.exec(text);
+  const hsl = new RegExp(String.raw`^hsl\(\s*(\d{1,3})${SEP}(\d{1,3})%?${SEP}(\d{1,3})%?\s*\)$`).exec(text);
   if (hsl) {
     const [h, s, l] = [Number(hsl[1]), Number(hsl[2]), Number(hsl[3])];
     if (h <= 360 && s <= 100 && l <= 100) return { ok: true, hex: rgbToHex(hslToRgb([h, s, l])) };

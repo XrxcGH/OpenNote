@@ -136,3 +136,16 @@ describe('ColorPalette', () => {
     expect(root.scrollWidth).toBeLessThanOrEqual(root.clientWidth + 1);
   });
 });
+
+describe('More colors number fields', () => {
+  it('lets a person clear a field and type, committing on blur', async () => {
+    open();
+    await userEvent.click(screen.getByRole('button', { name: 'More colors' }));
+    const red = screen.getByRole('spinbutton', { name: 'Red' }) as HTMLInputElement;
+    fireEvent.change(red, { target: { value: '' } });
+    expect(red.value).toBe('');
+    fireEvent.change(red, { target: { value: '200' } });
+    fireEvent.blur(red);
+    expect(red.value).toBe('200');
+  });
+});

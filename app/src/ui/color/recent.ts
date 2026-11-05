@@ -4,6 +4,8 @@
 import { createStore, useStore } from '../../state/store';
 
 export const RECENT_LIMIT = 10;
+/** The most notebooks kept, newest first, so the stored object cannot grow without bound. */
+export const NOTEBOOK_LIMIT = 50;
 const KEY = 'opennote.recentColors';
 
 export interface RecentStorage {
@@ -34,8 +36,8 @@ function load(): Readonly<Record<string, readonly string[]>> {
   try {
     const raw: unknown = JSON.parse(storage.read() ?? '{}');
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-    const out: Record<string, string[]> = {};
-    for (const [id, list] of Object.entries(raw)) {
+    const out: Record<string, string[]> = Object.create(null) as Record<string, string[]>;
+    for (const [id, list] of Object.entries(raw).slice(-NOTEBOOK_LIMIT)) {
       if (Array.isArray(list)) {
         out[id] = list.filter((c): c is string => typeof c === 'string' && /^#[0-9a-f]{6}$/.test(c)).slice(0, RECENT_LIMIT);
       }
@@ -62,7 +64,10 @@ export function recentColors(notebookId: string): readonly string[] {
 export function rememberColor(notebookId: string, hex: string): void {
   const color = hex.toLowerCase();
   const next = [color, ...recentColors(notebookId).filter((c) => c !== color)].slice(0, RECENT_LIMIT);
-  const all = { ...store.get(), [notebookId]: next };
+  // The notebook just used goes last; the oldest fall away past the cap.
+  const rest = Object.entries(store.get()).filter(([id]) => id !== notebookId);
+  const all: Record<string, readonly string[]> = Object.create(null) as Record<string, readonly string[]>;
+  for (const [id, list] of [...rest, [notebookId, next] as const].slice(-NOTEBOOK_LIMIT)) all[id] = list;
   store.set(all);
   storage.write(JSON.stringify(all));
 }

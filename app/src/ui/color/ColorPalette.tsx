@@ -23,7 +23,10 @@ export type ColorPick = { kind: 'auto' } | { kind: 'none' } | { kind: 'color'; v
 export interface ColorPaletteProps {
   onPick(pick: ColorPick): void;
   scheme: Scheme;
-  /** The notebook's own theme colors (R-THM-2). */
+  /**
+   * The notebook's own theme colors (R-THM-2). Callers must pass the page's paper color as `theme.background`, or
+   * the Paper column follows the app's default page surface instead of the page.
+   */
   theme?: ThemeColors;
   /** Recent custom colors are kept per notebook. Without it, none are kept. */
   notebookId?: string;
@@ -71,10 +74,11 @@ export function ColorPalette(props: ColorPaletteProps) {
   const themeRows: Cell[][] = Array.from({ length: TINTS.length + 1 }, () => []);
   THEME_COLUMNS.forEach((column, c) => {
     themeColumn(column, scheme, theme).forEach((s, r) => {
+      const name = t(s.name);
       const label = !s.tint
-        ? s.name
+        ? name
         : t(s.tint.kind === 'lighter' ? 'color.swatchLighter' : 'color.swatchDarker', {
-            name: s.name,
+            name,
             percent: s.tint.percent,
           });
       themeRows[r].push({
@@ -93,7 +97,7 @@ export function ColorPalette(props: ColorPaletteProps) {
     STANDARD_COLORS.map(
       (s, i): Cell => ({
         key: `std-${i}`,
-        label: s.name,
+        label: t(s.name),
         hex: s.hex,
         pick: { kind: 'color', value: s.hex },
         chosen: isCurrent(s.hex),
@@ -284,10 +288,27 @@ function MoreColors(props: { seed: string; against: string; onApply(hex: string)
 
 function Num(props: { label: string; value: number; max: number; onChange(value: string): void }) {
   const id = useId();
+  // A draft lets a person clear the field and type a new number; it commits on blur or Enter.
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft !== null && draft.trim() !== '') props.onChange(draft);
+    setDraft(null);
+  };
   return (
     <div className={styles.num}>
       <label htmlFor={id}>{props.label}</label>
-      <input id={id} type="number" min={0} max={props.max} value={props.value} onChange={(e) => props.onChange(e.target.value)} />
+      <input
+        id={id}
+        type="number"
+        min={0}
+        max={props.max}
+        value={draft ?? props.value}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+        }}
+      />
     </div>
   );
 }
