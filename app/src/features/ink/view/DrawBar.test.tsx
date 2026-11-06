@@ -158,6 +158,17 @@ describe('Settings, Pen and touch', () => {
     await expect.poll(() => getSettings().ink.touch).toMatchObject({ finger: 'off', draws: false });
     await expectNoAxeViolations(document.body);
   });
+
+  it('names each choice group on the page, not only to a screen reader (full walk VA-50)', () => {
+    renderUi(
+      <main>
+        <PenSettings />
+      </main>,
+    );
+    for (const name of ['Writing hand', 'Draw with a finger']) {
+      expect(screen.getByRole('heading', { level: 3, name }).checkVisibility()).toBe(true);
+    }
+  });
 });
 
 describe('Settings, Pen and touch, shape snapping (full walk 2, A1-A10-6)', () => {

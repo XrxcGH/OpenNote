@@ -31,6 +31,9 @@ const REASONS = new Set([
   'recovered',
 ]);
 
+/** A page with more versions than this gets a filter above its list. */
+const FILTER_FROM = 6;
+
 const when = new Intl.DateTimeFormat(currentLocale(), { dateStyle: 'medium', timeStyle: 'short' });
 
 export function reasonText(reason: string): string {
@@ -194,7 +197,37 @@ function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string
   );
 }
 
+/** The versions whose date, reason, device, or name has all the words typed; the current page always stays. */
+export function filterVersions(versions: readonly VersionInfo[], query: string): VersionInfo[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [...versions];
+  return versions.filter((version, index) => {
+    if (index === 0) return true;
+    const text = `${versionLabel(version)} ${reasonText(version.reason)} ${version.name ?? ''}`.toLowerCase();
+    return words.every((word) => text.includes(word));
+  });
+}
+
 function VersionList(props: { versions: VersionInfo[]; onChoose(revision: string): void }) {
+  const [query, setQuery] = useState('');
+  const shown = filterVersions(props.versions, query);
+  return (
+    <>
+      {props.versions.length > FILTER_FROM && (
+        <TextField
+          label={t('history.filter.label')}
+          help={t('history.filter.help')}
+          value={query}
+          onChange={setQuery}
+        />
+      )}
+      {shown.length === 1 && query.trim() !== '' && <p role="status">{t('history.filter.none')}</p>}
+      <VersionItems versions={shown} onChoose={props.onChoose} />
+    </>
+  );
+}
+
+function VersionItems(props: { versions: VersionInfo[]; onChoose(revision: string): void }) {
   return (
     <ul className={styles.versions} aria-label={t('history.versions')}>
       {props.versions.map((version, index) => (

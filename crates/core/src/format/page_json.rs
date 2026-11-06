@@ -2,7 +2,11 @@
 
 mod blocks;
 mod data;
+pub mod inline;
 mod parts;
+pub mod stamp;
+pub mod text_v2;
+pub mod values;
 mod view;
 
 use std::collections::{BTreeMap, HashSet};
@@ -18,6 +22,7 @@ use crate::model::validate::validate_page;
 use crate::model::{FormatInfo, Ink, Page, ReadOnlyReason, Warning};
 
 pub use parts::{parse_crc, read_device, write_device};
+pub use view::{style_sheet, text_settings};
 
 /// Reads `page.json`, upgrading older versions in memory. Sets `format.access` to read-only for newer
 /// versions, damaged data, and reserved content such as encryption.
@@ -69,6 +74,7 @@ pub fn read_page(bytes: &[u8], limits: &Limits) -> Result<ReadPage, FormatError>
 
 /// Validates a page as read, and decides whether it may be changed.
 fn check(mut page: Page, mut info: FormatInfo, mut warnings: Vec<Warning>, limits: &Limits) -> ReadPage {
+    warnings.splice(0..0, std::mem::take(&mut info.warnings));
     let report = validate_page(&page, limits);
     if page.encryption.is_some() {
         restrict(&mut info, ReadOnlyReason::Encrypted);
@@ -88,7 +94,7 @@ fn check(mut page: Page, mut info: FormatInfo, mut warnings: Vec<Warning>, limit
 /// `view.readingOrder` keeps only IDs of blocks on the page, once each (spec 6.2). Everything else is written
 /// as the page holds it.
 pub fn write_page(page: &Page) -> Vec<u8> {
-    let mut obj = header::start(kinds::PAGE);
+    let mut obj = header::start(kinds::PAGE, stamp::page_stamp(page));
     let mut seen = HashSet::new();
     let reading: Vec<_> = page
         .view
