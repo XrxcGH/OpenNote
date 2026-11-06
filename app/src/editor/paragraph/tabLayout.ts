@@ -95,6 +95,23 @@ function formatOf(doc: PMNode, blockPos: number) {
   return paraFormat(holder?.attrs ?? {});
 }
 
+/**
+ * The document position of the first '.' between `from` and `to`, or -1. It walks the text nodes, so a hard break,
+ * inline math, or an image between the tab and the sign moves the position by its own size, as in the document.
+ */
+export function decimalAt(doc: PMNode, from: number, to: number): number {
+  let found = -1;
+  doc.nodesBetween(from, to, (node, pos) => {
+    if (found !== -1) return false;
+    if (!node.isText || !node.text) return true;
+    const start = Math.max(from, pos);
+    const at = node.text.slice(start - pos, to - pos).indexOf('.');
+    if (at !== -1) found = start + at;
+    return false;
+  });
+  return found;
+}
+
 interface Measured extends Width {
   pos: number;
 }
@@ -158,10 +175,9 @@ function measureBlock(
     const x = (edge / scale + shift) / PX_PER_PT;
     const stop = nextStop(x, stops, defaultTab);
     const nextTab = group[at + 1]?.pos ?? end;
-    const text = doc.textBetween(tab.pos + 1, nextTab);
     const width = rangeWidth(view, tab.pos + 1, nextTab) / scale / PX_PER_PT;
-    const dot = text.indexOf('.');
-    const beforeDecimal = dot === -1 ? width : rangeWidth(view, tab.pos + 1, tab.pos + 1 + dot) / scale / PX_PER_PT;
+    const dot = decimalAt(doc, tab.pos + 1, nextTab);
+    const beforeDecimal = dot === -1 ? width : rangeWidth(view, tab.pos + 1, dot) / scale / PX_PER_PT;
     const px = tabWidth(x, stop, { width, beforeDecimal }) * PX_PER_PT;
     shift += px - rect.width / scale;
     out.push({ pos: tab.pos, px, leader: stop.leader });

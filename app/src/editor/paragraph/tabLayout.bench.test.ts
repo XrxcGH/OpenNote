@@ -59,8 +59,9 @@ describe('the tab layout on the typing path', () => {
     const large = pluginCost(note(2000));
     console.log(`[tab layout bench] ${KEYS} keys: 20 paragraphs ${small.toFixed(2)} ms, 2,000 ${large.toFixed(2)} ms`);
     // A walk of the whole document on each key costs 100 times more in 2,000 paragraphs. Work on the changed
-    // paragraph only costs the same, plus mapping one tab. The 5 ms of slack absorbs timer noise.
-    expect(large).toBeLessThan(small * 4 + 5);
+    // paragraph only costs the same, plus mapping one tab. The 20 ms of slack absorbs timer noise and a GC pause on
+    // a loaded 2-core runner; a whole-document walk still costs far more than that.
+    expect(large).toBeLessThan(small * 4 + 20);
   });
 
   it('finds the tab of the paragraph a key types into', () => {

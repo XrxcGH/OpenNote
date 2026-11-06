@@ -91,7 +91,8 @@ export function levelOf(levels: readonly Partial<ListLevel>[] | undefined, depth
   const bullet = own.symbol ?? DEFAULT_BULLETS[depth % DEFAULT_BULLETS.length];
   return {
     format,
-    text: own.text ?? (format === 'bullet' ? bullet : `%${depth + 1}.`),
+    // A pattern names levels %1 to %9 only. A deeper plain Markdown item reads its last nine levels, so %9 is its own number.
+    text: own.text ?? (format === 'bullet' ? bullet : `%${Math.min(depth + 1, MAX_LEVELS)}.`),
     start: own.start ?? 1,
     indent: own.indent ?? 36 * (depth + 1),
     hanging: own.hanging ?? 18,
@@ -151,7 +152,11 @@ export function numberItems(doc: PMNode, lists: ListDefinitions = new Map()): It
       }
       markdownValue = Math.min(MARKDOWN_START_MAX, markdownValue + 1);
       const formats = values.map((_, k) => levelAt(k).format);
-      const label = level.format === 'bullet' ? (level.symbol ?? '') : levelText(level.text, values, formats);
+      const from = Math.max(0, values.length - MAX_LEVELS);
+      const label =
+        level.format === 'bullet'
+          ? (level.symbol ?? '')
+          : levelText(level.text, values.slice(from), formats.slice(from));
       out.push({ pos, depth, listId: ref?.id ?? null, values, label });
       item.forEach((child, childOffset) => {
         if (child.type.name === 'bulletList' || child.type.name === 'orderedList') {

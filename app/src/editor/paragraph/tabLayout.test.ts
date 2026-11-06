@@ -3,7 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import type { TabStop } from './attributes';
 import { borderPlaces } from './borders';
-import { effectiveStops, nextStop, tabWidth } from './tabLayout';
+import { parseTextBlock } from '../markdown/parse';
+import { decimalAt, effectiveStops, nextStop, tabWidth } from './tabLayout';
 
 const none = { width: 0, beforeDecimal: 0 };
 const end = (x: number, stops: TabStop[] = [], following = none) => {
@@ -65,5 +66,15 @@ describe('border groups', () => {
       'single',
     ]);
     expect(borderPlaces([box, { ...box, indent: { start: 18, end: 0, first: 0 } }])).toEqual(['single', 'single']);
+  });
+});
+
+describe('finding the decimal sign', () => {
+  it('counts a hard break before the sign at its size in the document', () => {
+    // a=1, b=2, the hard break=3, c=4, d=5, so the '.' is at 6. A text walk that drops the break would say 5.
+    const doc = parseTextBlock('ab\\\ncd.e');
+    expect(doc.firstChild!.child(1).type.name).toBe('hardBreak');
+    expect(decimalAt(doc, 1, doc.firstChild!.nodeSize - 1)).toBe(6);
+    expect(decimalAt(doc, 1, 6)).toBe(-1);
   });
 });

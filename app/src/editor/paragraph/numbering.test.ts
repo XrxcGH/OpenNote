@@ -187,6 +187,14 @@ describe('numbering a document', () => {
     expect(numberItems(parseTextBlock(markdown)).map((item) => item.label)).toEqual(['3.', 'a.', 'i.', 'b.']);
   });
 
+  it('labels the tenth level of a plain Markdown nest with its own number, not the outermost one and a 0', () => {
+    // Levels 1 to 10 at 3 spaces each; the outer list starts at 3, the tenth at 5. Level 10 cycles back to decimal.
+    const markdown = Array.from({ length: 10 }, (_, k) => `${' '.repeat(3 * k)}${k === 0 ? 3 : k === 9 ? 5 : 1}. x${k}`);
+    const labels = numberItems(parseTextBlock(markdown.join('\n\n'))).map((item) => item.label);
+    expect(labels).toHaveLength(10);
+    expect(labels[9]).toBe('5.');
+  });
+
   it('writes the start number an ordered list shows for down-level readers: 4 when continued, 1 on restart', () => {
     const markdown = '1. one\n2. two\n3. three\n\nA paragraph.\n\n1. four';
     const list = { list: { id: 'l1' } };

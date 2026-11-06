@@ -12,6 +12,7 @@ import { parseTextBlock } from '../markdown/parse';
 import { serializeTextBlock } from '../markdown/serialize';
 import { LISTS_META } from '../extensions/listItem';
 import type { ElementData } from '../markdown/elements';
+import { numberItems } from './numbering';
 import { deepHeadingAttrs, outlineLevel } from './attributes';
 
 let editor: Editor | null = null;
@@ -81,6 +82,16 @@ describe('carrying paragraph formatting', () => {
 });
 
 describe('list start numbers in the editor', () => {
+  it('counts on after Enter at the end of a restarted item: 1., 2., not 1., 1.', () => {
+    const page = mount('1. one', { ids: ['i1'], paras: { i1: { list: { id: 'l1', restart: true } } } });
+    caret(page, page.state.doc.content.size - 3);
+    expect(press(page, 'Enter')).toBe(true);
+    typeInto(page, 'two');
+    expect(numberItems(page.state.doc).map((item) => item.label)).toEqual(['1.', '2.']);
+    const { data } = extractElementData(page.state.doc, newId);
+    expect(data.paras[data.ids[1]]).toEqual({ list: { id: 'l1' } });
+  });
+
   it('keeps a continued list writing the number it shows, and a restart writing its start (R-LIST-3)', () => {
     const list = { list: { id: 'l1' } };
     const page = mount('1. one\n2. two\n\nBetween\n\n1. three', {
