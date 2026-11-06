@@ -2,17 +2,17 @@
 // width takes the text after it to the next stop: the paragraph's stops, then the style's, then a default stop every
 // `view.text.defaultTab` points. Start, center, end, and decimal stops align the text after the tab; leaders fill
 // the gap. Positions are measured after layout, from the start edge of the block's text, one paragraph at a time
-// and only in paragraphs that hold a tab, in one animation frame.
+// and only in paragraphs that changed, within a frame budget.
 import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import type { EditorState, PluginView, Transaction } from '@tiptap/pm/state';
-import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import type { EditorState, PluginView } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { editorExtensions } from '../extensions/kit';
 import { paraFormat } from './attributes';
 import type { TabLeader, TabStop } from './attributes';
-import styles from './tabLayout.module.css';
+import { applyMeasurement, blocksOf, initial, mapState } from './tabIndex';
+import type { Measurement, TabAt, TabState, Width } from './tabIndex';
 
 /** Word's and Docs' default interval: half an inch. */
 export const DEFAULT_TAB = 36;
@@ -76,48 +76,16 @@ export function tabWidth(x: number, stop: Stop, following: Following): number {
 }
 
 // ---- The plugin ----
-
-interface TabState {
-  /** Width in CSS pixels and leader of each tab, by its position. */
-  widths: ReadonlyMap<number, { px: number; leader: TabLeader }>;
-  decorations: DecorationSet;
-}
+//
+// The view measures only the paragraphs that changed (tabIndex.ts), within FRAME_BUDGET_MS a frame, and goes on in
+// the next frame.
 
 const key = new PluginKey<TabState>('opennoteTabLayout');
 const SET_WIDTHS = 'opennote.tabWidths';
-/** Measuring again after a pass can move later tabs, so each change gets a few passes at most. */
-const MAX_PASSES = 4;
+const REMEASURE = 'opennote.tabRemeasure';
 const TOLERANCE_PX = 0.25;
-
-/** The tab characters of a document, by position, with the paragraph each is in. */
-function tabsOf(doc: PMNode): { pos: number; block: PMNode; blockPos: number }[] {
-  const found: { pos: number; block: PMNode; blockPos: number }[] = [];
-  doc.descendants((node, pos) => {
-    if (!node.isTextblock) return true;
-    if (node.type.spec.code || !node.textContent.includes('\t')) return false;
-    node.descendants((child, offset) => {
-      if (!child.isText || !child.text) return;
-      for (let at = child.text.indexOf('\t'); at !== -1; at = child.text.indexOf('\t', at + 1)) {
-        found.push({ pos: pos + 1 + offset + at, block: node, blockPos: pos });
-      }
-    });
-    return false;
-  });
-  return found;
-}
-
-function decorate(doc: PMNode, widths: TabState['widths']): DecorationSet {
-  const decorations = tabsOf(doc).map(({ pos }) => {
-    const known = widths.get(pos);
-    const attrs: Record<string, string> = { class: styles.tab, 'data-tab': '' };
-    if (known) {
-      attrs.style = `width: ${known.px.toFixed(2)}px`;
-      if (known.leader !== 'none') attrs['data-leader'] = known.leader;
-    }
-    return Decoration.inline(pos, pos + 1, attrs);
-  });
-  return DecorationSet.create(doc, decorations);
-}
+/** The layout's share of a frame (text DESIGN.md 7.2). */
+const FRAME_BUDGET_MS = 2;
 
 /** The paragraph formatting of the element that holds a textblock: the list item for an item's first paragraph. */
 function formatOf(doc: PMNode, blockPos: number) {
@@ -127,10 +95,8 @@ function formatOf(doc: PMNode, blockPos: number) {
   return paraFormat(holder?.attrs ?? {});
 }
 
-interface Measured {
+interface Measured extends Width {
   pos: number;
-  px: number;
-  leader: TabLeader;
 }
 
 function rangeWidth(view: EditorView, from: number, to: number): number {
@@ -143,93 +109,103 @@ function rangeWidth(view: EditorView, from: number, to: number): number {
   return range.getBoundingClientRect().width;
 }
 
-/** Measures every tab and works out its width, one paragraph at a time. */
-function measure(view: EditorView, defaultTab: number): Measured[] {
+/** The text area of the editor, in viewport pixels, and its CSS scale. */
+interface Frame {
+  left: number;
+  right: number;
+  scale: number;
+}
+
+function frameOf(view: EditorView): Frame | null {
   const root = view.dom;
   const rootRect = root.getBoundingClientRect();
   const scale = root.offsetWidth > 0 ? rootRect.width / root.offsetWidth : 1;
-  if (!(scale > 0)) return [];
+  if (!(scale > 0)) return null;
   const style = getComputedStyle(root);
   const left = rootRect.left + (root.clientLeft + Number.parseFloat(style.paddingLeft || '0')) * scale;
   const right = rootRect.right - (Number.parseFloat(style.paddingRight || '0') + root.clientLeft) * scale;
-  const out: Measured[] = [];
+  return { left, right, scale };
+}
+
+/** Measures the tabs of one paragraph and works out their widths. */
+function measureBlock(
+  view: EditorView,
+  frame: Frame,
+  blockPos: number,
+  group: readonly TabAt[],
+  defaultTab: number,
+): Measured[] {
   const doc = view.state.doc;
-  const tabs = tabsOf(doc);
+  const block = doc.nodeAt(blockPos);
+  const blockDom = view.nodeDOM(blockPos);
+  if (!block || !(blockDom instanceof HTMLElement)) return [];
+  const { left, right, scale } = frame;
   const spans = new Map<number, HTMLElement>();
-  for (const span of root.querySelectorAll<HTMLElement>('[data-tab]')) spans.set(view.posAtDOM(span, 0), span);
-  let index = 0;
-  while (index < tabs.length) {
-    const { block, blockPos } = tabs[index];
-    const group = tabs.filter((tab) => tab.blockPos === blockPos);
-    index += group.length;
-    const blockDom = view.nodeDOM(blockPos);
-    const rtl = blockDom instanceof HTMLElement && getComputedStyle(blockDom).direction === 'rtl';
-    const format = formatOf(doc, blockPos);
-    const stops = effectiveStops([], format.tabs);
-    const end = blockPos + 1 + block.content.size;
-    let shift = 0;
-    let line = Number.NaN;
-    group.forEach((tab, at) => {
-      const element = spans.get(tab.pos);
-      if (!element) return;
-      const rect = element.getBoundingClientRect();
-      if (Math.abs(rect.top - line) > 1) shift = 0;
-      line = rect.top;
-      const edge = rtl ? right - rect.right : rect.left - left;
-      const x = (edge / scale + shift) / PX_PER_PT;
-      const stop = nextStop(x, stops, defaultTab);
-      const nextTab = group[at + 1]?.pos ?? end;
-      const text = doc.textBetween(tab.pos + 1, nextTab);
-      const width = rangeWidth(view, tab.pos + 1, nextTab) / scale / PX_PER_PT;
-      const dot = text.indexOf('.');
-      const beforeDecimal = dot === -1 ? width : rangeWidth(view, tab.pos + 1, tab.pos + 1 + dot) / scale / PX_PER_PT;
-      const px = tabWidth(x, stop, { width, beforeDecimal }) * PX_PER_PT;
-      shift += px - rect.width / scale;
-      out.push({ pos: tab.pos, px, leader: stop.leader });
-    });
-  }
+  for (const span of blockDom.querySelectorAll<HTMLElement>('[data-tab]')) spans.set(view.posAtDOM(span, 0), span);
+  const rtl = getComputedStyle(blockDom).direction === 'rtl';
+  const stops = effectiveStops([], formatOf(doc, blockPos).tabs);
+  const end = blockPos + 1 + block.content.size;
+  const out: Measured[] = [];
+  let shift = 0;
+  let line = Number.NaN;
+  group.forEach((tab, at) => {
+    const element = spans.get(tab.pos);
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    if (Math.abs(rect.top - line) > 1) shift = 0;
+    line = rect.top;
+    const edge = rtl ? right - rect.right : rect.left - left;
+    const x = (edge / scale + shift) / PX_PER_PT;
+    const stop = nextStop(x, stops, defaultTab);
+    const nextTab = group[at + 1]?.pos ?? end;
+    const text = doc.textBetween(tab.pos + 1, nextTab);
+    const width = rangeWidth(view, tab.pos + 1, nextTab) / scale / PX_PER_PT;
+    const dot = text.indexOf('.');
+    const beforeDecimal = dot === -1 ? width : rangeWidth(view, tab.pos + 1, tab.pos + 1 + dot) / scale / PX_PER_PT;
+    const px = tabWidth(x, stop, { width, beforeDecimal }) * PX_PER_PT;
+    shift += px - rect.width / scale;
+    out.push({ pos: tab.pos, px, leader: stop.leader });
+  });
   return out;
 }
 
-function changed(state: TabState, measured: readonly Measured[]): boolean {
-  if (measured.length !== state.widths.size) return true;
-  return measured.some((tab) => {
-    const known = state.widths.get(tab.pos);
-    return !known || Math.abs(known.px - tab.px) > TOLERANCE_PX || known.leader !== tab.leader;
-  });
-}
+const differs = (known: Width | undefined, tab: Measured) =>
+  !known || Math.abs(known.px - tab.px) > TOLERANCE_PX || known.leader !== tab.leader;
 
 export interface TabLayoutOptions {
   /** The page's default tab interval in points (`view.text.defaultTab`). */
   defaultTab?: () => number;
 }
 
-/** The widths of a state, moved through a change. A tab that was deleted loses its width. */
-function mapWidths(tr: Transaction, old: TabState): TabState {
-  const widths = new Map<number, { px: number; leader: TabLeader }>();
-  for (const [pos, width] of old.widths) {
-    const mapped = tr.mapping.mapResult(pos, 1);
-    if (!mapped.deleted) widths.set(mapped.pos, width);
-  }
-  return { widths, decorations: decorate(tr.doc, widths) };
-}
-
-/** Measures after each change, in the next frame, until the widths settle or the passes run out. */
+/** Measures the paragraphs that changed in the next frame, within the frame budget, until their widths settle. */
 class TabLayoutView implements PluginView {
   private frame = 0;
-  private passes = 0;
-  private seen: TabState['widths'] | undefined;
+  private readonly resize: ResizeObserver | null = null;
+  private width = Number.NaN;
 
   constructor(
     private readonly view: EditorView,
     private readonly defaultTab: () => number,
   ) {
-    this.seen = key.getState(view.state)?.widths;
+    // A new width can rewrap every paragraph, so a resize measures every tab again.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resize = new ResizeObserver(() => this.resized());
+      this.resize.observe(view.dom);
+    }
     this.schedule();
   }
 
+  private resized(): void {
+    const width = this.view.dom.clientWidth;
+    if (width === this.width || this.view.isDestroyed) return;
+    const first = Number.isNaN(this.width);
+    this.width = width;
+    if (!first) this.view.dispatch(this.view.state.tr.setMeta(REMEASURE, true).setMeta('addToHistory', false));
+  }
+
   private schedule(): void {
-    if (this.frame === 0 && tabsOf(this.view.state.doc).length > 0) {
+    const state = key.getState(this.view.state);
+    if (this.frame === 0 && state && state.dirty.size > 0) {
       this.frame = requestAnimationFrame(() => this.run());
     }
   }
@@ -237,24 +213,39 @@ class TabLayoutView implements PluginView {
   private run(): void {
     this.frame = 0;
     const state = this.view.isDestroyed ? undefined : key.getState(this.view.state);
-    if (!state) return;
-    const measured = measure(this.view, this.defaultTab());
-    if (!changed(state, measured) || this.passes >= MAX_PASSES) return;
-    this.passes++;
-    const widths = new Map(measured.map((tab) => [tab.pos, { px: tab.px, leader: tab.leader }]));
-    this.view.dispatch(this.view.state.tr.setMeta(SET_WIDTHS, widths).setMeta('addToHistory', false));
+    const frame = state && state.dirty.size > 0 ? frameOf(this.view) : null;
+    if (!state || !frame) return;
+    const started = performance.now();
+    const groups = new Map<number, TabAt[]>();
+    for (const tab of state.tabs) {
+      const group = groups.get(tab.blockPos);
+      if (group) group.push(tab);
+      else groups.set(tab.blockPos, [tab]);
+    }
+    const widths = new Map<number, Width>();
+    const blocks = new Map<number, boolean>();
+    const defaultTab = this.defaultTab();
+    for (const blockPos of [...state.dirty.keys()].sort((a, b) => a - b)) {
+      const group = groups.get(blockPos);
+      const measured = group ? measureBlock(this.view, frame, blockPos, group, defaultTab) : [];
+      for (const tab of measured) widths.set(tab.pos, { px: tab.px, leader: tab.leader });
+      blocks.set(
+        blockPos,
+        measured.some((tab) => differs(state.widths.get(tab.pos), tab)),
+      );
+      if (performance.now() - started > FRAME_BUDGET_MS) break;
+    }
+    const measurement: Measurement = { widths, blocks };
+    this.view.dispatch(this.view.state.tr.setMeta(SET_WIDTHS, measurement).setMeta('addToHistory', false));
   }
 
-  update(_view: EditorView, previous: EditorState): void {
-    const widths = key.getState(this.view.state)?.widths;
-    if (previous.doc === this.view.state.doc && widths === this.seen) return;
-    if (previous.doc !== this.view.state.doc) this.passes = 0;
-    this.seen = widths;
+  update(): void {
     this.schedule();
   }
 
   destroy(): void {
     if (this.frame) cancelAnimationFrame(this.frame);
+    this.resize?.disconnect();
   }
 }
 
@@ -264,11 +255,12 @@ export function tabLayoutPlugin(options: TabLayoutOptions = {}): Plugin<TabState
   return new Plugin<TabState>({
     key,
     state: {
-      init: (_config, state: EditorState) => ({ widths: new Map(), decorations: decorate(state.doc, new Map()) }),
+      init: (_config, state: EditorState) => initial(state.doc),
       apply(tr, old) {
-        const set = tr.getMeta(SET_WIDTHS) as TabState['widths'] | undefined;
-        if (set) return { widths: set, decorations: decorate(tr.doc, set) };
-        return tr.docChanged ? mapWidths(tr, old) : old;
+        const measured = tr.getMeta(SET_WIDTHS) as Measurement | undefined;
+        if (measured) return applyMeasurement(tr.doc, old, measured);
+        if (tr.getMeta(REMEASURE)) return { ...old, dirty: blocksOf(old.tabs) };
+        return tr.docChanged ? mapState(tr, old) : old;
       },
     },
     props: { decorations: (state) => key.getState(state)?.decorations },

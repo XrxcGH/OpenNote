@@ -12,11 +12,12 @@ const META_OFF = { rendered: false, parseHTML: () => null };
 /** Element metadata (SPEC 6.6). It lives in the block's `ids`, `tags`, `styles`, and `checked`, not in the Markdown. */
 function elementAttributes() {
   const noTags: readonly string[] = Object.freeze([]);
+  // A split gives the new element no ID and no tags, so the document never holds an ID twice. The style carries.
   return {
-    id: { default: null, ...META_OFF },
-    tags: { default: noTags, ...META_OFF },
+    id: { default: null, keepOnSplit: false, ...META_OFF },
+    tags: { default: noTags, keepOnSplit: false, ...META_OFF },
     style: { default: null, ...META_OFF },
-    tagChecked: { default: false, ...META_OFF },
+    tagChecked: { default: false, keepOnSplit: false, ...META_OFF },
   };
 }
 

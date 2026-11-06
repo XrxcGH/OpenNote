@@ -5,6 +5,7 @@ import type { Editor } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import { afterEach, describe, expect, it } from 'vitest';
 import { testHost, typeInto } from '../commands/testing';
+import { turnInto } from '../commands/turnInto';
 import { createBlockEditor } from '../extensions/kit';
 import { applyElementData, extractElementData } from '../markdown/elements';
 import { parseTextBlock } from '../markdown/parse';
@@ -45,6 +46,9 @@ describe('carrying paragraph formatting', () => {
     caret(page, page.state.doc.firstChild!.nodeSize - 1);
     expect(press(page, 'Enter')).toBe(true);
     typeInto(page, 'next');
+    // The editor's own document holds no second 'a': extractElementData below would hide one by renaming it.
+    expect(page.state.doc.child(0).attrs.id).toBe('a');
+    expect(page.state.doc.child(1).attrs.id).not.toBe('a');
     const { data } = extractElementData(page.state.doc, newId);
     expect(data.ids).toHaveLength(2);
     expect(data.ids[0]).toBe('a');
@@ -68,6 +72,8 @@ describe('carrying paragraph formatting', () => {
     caret(page, page.state.doc.content.size - 3);
     expect(press(page, 'Enter')).toBe(true);
     typeInto(page, 'two');
+    const items = page.state.doc.firstChild!;
+    expect(items.child(1).attrs.id).not.toBe(items.child(0).attrs.id);
     const { data } = extractElementData(page.state.doc, newId);
     expect(data.ids).toHaveLength(2);
     expect(data.paras[data.ids[1]]).toEqual({ list: { id: 'l1' } });
@@ -88,6 +94,23 @@ describe('list start numbers in the editor', () => {
     const restart = { ...last.attrs, list: { id: 'l1', restart: true } };
     page.view.dispatch(page.state.tr.setNodeMarkup(at, undefined, restart));
     expect(serializeTextBlock(page.state.doc)).toBe('1. one\n2. two\n\nBetween\n\n1. three');
+  });
+});
+
+describe('turning a formatted paragraph into a code block and back', () => {
+  it('keeps the entry whole in the code block, then reads its known keys again in the paragraph', () => {
+    const entry = { align: 'center', later: 1 };
+    const page = mount('Words', { ids: ['a'], paras: { a: entry } });
+    caret(page, 2);
+    expect(turnInto('codeBlock')(page.state, page.view.dispatch)).toBe(true);
+    const code = page.state.doc.firstChild!;
+    expect(code.type.name).toBe('codeBlock');
+    expect(code.attrs.paraRest).toEqual(entry);
+    expect(turnInto('paragraph')(page.state, page.view.dispatch)).toBe(true);
+    const back = page.state.doc.firstChild!;
+    expect(back.attrs.align).toBe('center');
+    expect(back.attrs.paraRest).toEqual({ later: 1 });
+    expect(back.attrs.id).toBe('a');
   });
 });
 

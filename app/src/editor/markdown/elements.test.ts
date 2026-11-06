@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyElementData, countElements, extractElementData, withShownStarts } from './elements';
+import { applyElementData, countElements, extractElementData } from './elements';
 import { parseTextBlock } from './parse';
 import { serializeTextBlock } from './serialize';
 
@@ -121,18 +121,5 @@ describe('paragraph formatting of elements', () => {
     const doc = applyElementData(parseTextBlock('one\n\ntwo'), { ids: ['a', 'b'], paras });
     const shorter = doc.copy(doc.content.cut(0, doc.firstChild!.nodeSize));
     expect(extractElementData(shorter, counter()).data.paras).toEqual({ a: { align: 'end' } });
-  });
-
-  it('writes 4. as the Markdown start of a list that continues, and 1. for a restart (R-LIST-3)', () => {
-    const markdown = '1. one\n2. two\n3. three\n\nA paragraph.\n\n1. four';
-    const list = { list: { id: 'l1' } };
-    const ids = ['i1', 'i2', 'i3', 'p1', 'i4'];
-    const paras = { i1: list, i2: list, i3: list, i4: list };
-    const lists = { l1: { levels: [{ format: 'decimal' }] } };
-    const continued = applyElementData(parseTextBlock(markdown), { ids, paras });
-    expect(serializeTextBlock(withShownStarts(continued, lists))).toBe(markdown.replace('1. four', '4. four'));
-    const restart = { ...paras, i4: { list: { id: 'l1', restart: true } } };
-    const restarted = applyElementData(parseTextBlock(markdown.replace('1. four', '9. four')), { ids, paras: restart });
-    expect(serializeTextBlock(withShownStarts(restarted, lists))).toBe(markdown);
   });
 });

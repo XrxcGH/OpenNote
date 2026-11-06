@@ -207,3 +207,33 @@ describe('numbering a document', () => {
     expect(lists.get('good')).toEqual([{ format: 'upperRoman', start: 3 }]);
   });
 });
+
+describe('label size caps', () => {
+  it('shows a letter label of more than 64 letters in decimal', () => {
+    // 1664 = 26 x 64: the 64th round of z. 1665 would need 65 letters.
+    expect(formatNumber(1664, 'lowerLetter')).toBe('z'.repeat(64));
+    expect(formatNumber(1665, 'lowerLetter')).toBe('1665');
+    expect(formatNumber(1665, 'upperLetter')).toBe('1665');
+    // Hebrew has 22 letters (22 x 64 = 1408) and Arabic 28 (28 x 64 = 1792).
+    expect(formatNumber(1408, 'hebrew2')).toBe('ת'.repeat(64));
+    expect(formatNumber(1409, 'hebrew2')).toBe('1409');
+    expect(formatNumber(1793, 'arabicAlpha')).toBe('1793');
+    expect(formatNumber(1793, 'arabicAbjad')).toBe('1793');
+    expect(formatNumber(999_999_999, 'lowerLetter')).toBe('999999999');
+  });
+
+  it('cuts a label off at 256 characters', () => {
+    expect(levelText('%1'.repeat(32), [1664], ['upperLetter'])).toBe('Z'.repeat(256));
+  });
+
+  it('numbers a hostile list quickly: a 9-digit nested start and a %1 x 32 pattern', () => {
+    const markdown = '1. a\n\n   999999999. b\n   999999999. c\n2. d';
+    const lists = readLists({ l1: { levels: [{ format: 'upperLetter', start: 1664, text: '%1'.repeat(32) }] } });
+    const hostile = doc(markdown, { 3: { list: { id: 'l1' } } }, 4);
+    const start = performance.now();
+    const labels = numberItems(hostile, lists).map((item) => item.label);
+    expect(performance.now() - start).toBeLessThan(50);
+    // The nested items need more than 64 letters, so they show in decimal. The second stays at the Markdown cap.
+    expect(labels).toEqual(['1.', '999999999.', '999999999.', 'Z'.repeat(256)]);
+  });
+});

@@ -55,4 +55,17 @@ describe('tab layout', () => {
     await frames(8);
     expect(Math.abs(xOf(root, 'c') - 36) * PX_PER_PT).toBeLessThan(0.5);
   });
+
+  it('lays out again only the paragraph a key changed, and keeps the stop', async () => {
+    const root = mount('ab\tc\n\nother', {});
+    await frames(8);
+    editor!.view.dispatch(editor!.state.tr.insertText('xy', 1));
+    await frames(8);
+    expect(Math.abs(xOf(root, 'c') - 36) * PX_PER_PT).toBeLessThan(0.5);
+    // A tab typed into the second paragraph is found and laid out, without a walk of the note.
+    const end = editor!.state.doc.content.size - 1;
+    editor!.view.dispatch(editor!.state.tr.insertText('\tz', end));
+    await frames(8);
+    expect(Math.abs(xOf(root, 'z') - 36) * PX_PER_PT).toBeLessThan(0.5);
+  });
 });

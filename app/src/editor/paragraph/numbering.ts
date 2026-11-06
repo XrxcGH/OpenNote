@@ -12,6 +12,11 @@ export type { NumberFormat } from './numberFormats';
 export const MAX_LEVELS = 9;
 export const MAX_LISTS = 256;
 export const MAX_START = 32_767;
+/** The highest start number a Markdown ordered list may have (spec 7.2). */
+const MARKDOWN_START_MAX = 999_999_999;
+
+/** A Markdown list's start number as a whole number from 0 to MARKDOWN_START_MAX. */
+const markdownStart = (value: unknown) => Math.min(MARKDOWN_START_MAX, Math.max(0, Math.trunc(Number(value)) || 0));
 
 // ---- List definitions ----
 
@@ -125,7 +130,7 @@ export function numberItems(doc: PMNode, lists: ListDefinitions = new Map()): It
   const byList = new Map<string, Counters>();
   const visit = (list: PMNode, listPos: number, depth: number, outer: number[]) => {
     const ordered = list.type.name === 'orderedList';
-    let markdownValue = ordered ? Number(list.attrs.start) || 0 : 1;
+    let markdownValue = ordered ? markdownStart(list.attrs.start) : 1;
     list.forEach((item, offset) => {
       const pos = listPos + 1 + offset;
       if (item.type.name !== 'listItem') return;
@@ -144,7 +149,7 @@ export function numberItems(doc: PMNode, lists: ListDefinitions = new Map()): It
       } else {
         values = [...outer, markdownValue];
       }
-      markdownValue++;
+      markdownValue = Math.min(MARKDOWN_START_MAX, markdownValue + 1);
       const formats = values.map((_, k) => levelAt(k).format);
       const label = level.format === 'bullet' ? (level.symbol ?? '') : levelText(level.text, values, formats);
       out.push({ pos, depth, listId: ref?.id ?? null, values, label });
@@ -165,9 +170,6 @@ export function numberItems(doc: PMNode, lists: ListDefinitions = new Map()): It
   walk(doc, 0);
   return out;
 }
-
-/** The highest start number a Markdown ordered list may have (spec 7.2). */
-const MARKDOWN_START_MAX = 999_999_999;
 
 /**
  * The Markdown start number each ordered list should have, for down-level readers: the number its first item shows,

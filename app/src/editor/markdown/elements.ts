@@ -4,7 +4,6 @@
 // and this module moves them between the two.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { attrsFromEntry, clearedParaAttrs, entryFromAttrs } from '../paragraph/attributes';
-import { readLists, shownStarts } from '../paragraph/numbering';
 import { ELEMENT_TYPES } from '../schema/specs';
 
 /** The `ids`, `tags`, `styles`, `checked`, and `paras` fields of a text block's `data` (SPEC 6.6 and 6.8). */
@@ -90,27 +89,6 @@ export function applyElementData(doc: PMNode, data: Partial<ElementData>): PMNod
 
 function byKey<T>(record: Record<string, T>): Record<string, T> {
   return Object.fromEntries(Object.entries(record).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
-}
-
-/**
- * The document with each ordered list's Markdown start number set to the number its first item shows. This applies
- * when that item names a list of `lists`, the block's `data.lists`: `4.` for a list that continues from three items
- * (R-LIST-3).
- */
-export function withShownStarts(doc: PMNode, lists?: unknown): PMNode {
-  const starts = new Map(shownStarts(doc, readLists(lists)).map((entry) => [entry.pos, entry.start]));
-  if (starts.size === 0) return doc;
-  const rebuild = (node: PMNode, pos: number): PMNode => {
-    if (node.isTextblock || node.isLeaf) return node;
-    const children: PMNode[] = [];
-    node.forEach((child, offset) => children.push(rebuild(child, pos + 1 + offset)));
-    const start = starts.get(pos);
-    const attrs = start === undefined ? node.attrs : { ...node.attrs, start };
-    return node.type.create(attrs, children, node.marks);
-  };
-  const children: PMNode[] = [];
-  doc.forEach((child, offset) => children.push(rebuild(child, offset)));
-  return doc.type.create(doc.attrs, children, doc.marks);
 }
 
 /**

@@ -24,9 +24,18 @@ export const NUMBER_FORMATS = [
 ] as const;
 export type NumberFormat = (typeof NUMBER_FORMATS)[number];
 
-/** Letters that count like Word's lowerLetter: a to z, then aa, bb, ... zz, then aaa (the letter repeats). */
+/** The most times a letter repeats in a letter label. Past that, the number shows in decimal. */
+export const MAX_REPEAT = 64;
+/** The longest label a level's pattern makes. The rest is cut off. Spec 16's longest attribute value is 200. */
+export const MAX_LABEL = 256;
+
+/**
+ * Letters that count like Word's lowerLetter: a to z, then aa, bb, ... zz, then aaa (the letter repeats). A number
+ * that needs more than MAX_REPEAT letters shows in decimal, so a label never grows without bound.
+ */
 function repeating(n: number, alphabet: readonly string[]): string {
   const size = alphabet.length;
+  if (n > size * MAX_REPEAT) return String(n);
   return alphabet[(n - 1) % size].repeat(Math.floor((n - 1) / size) + 1);
 }
 
@@ -286,8 +295,15 @@ export function formatNumber(n: number, format: NumberFormat): string {
  * level's format. A `%k` deeper than the item, or a `%` not followed by 1 to 9, is written as it is (R-LIST-1).
  */
 export function levelText(pattern: string, values: readonly number[], formats: readonly NumberFormat[]): string {
-  return pattern.replace(/%([1-9])/g, (whole, digit: string) => {
-    const k = Number(digit) - 1;
-    return k < values.length ? formatNumber(values[k], formats[k] ?? 'decimal') : whole;
-  });
+  let out = '';
+  let last = 0;
+  for (const match of pattern.matchAll(/%([1-9])/g)) {
+    const k = Number(match[1]) - 1;
+    out += pattern.slice(last, match.index);
+    out += k < values.length ? formatNumber(values[k], formats[k] ?? 'decimal') : match[0];
+    last = match.index + match[0].length;
+    // A label stops at MAX_LABEL characters, so a long pattern of big numbers cannot fill the memory.
+    if (out.length >= MAX_LABEL) return out.slice(0, MAX_LABEL);
+  }
+  return (out + pattern.slice(last)).slice(0, MAX_LABEL);
 }
