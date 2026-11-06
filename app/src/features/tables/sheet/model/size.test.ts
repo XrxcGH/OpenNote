@@ -45,4 +45,26 @@ describe('the size of data.sheet (DESIGN 3.4)', () => {
     // One cell style costs its column ID, its style ID, and the punctuation: 38 bytes in compact form.
     expect(compact / 40_000).toBeLessThan(40);
   });
+
+  it('records what 100,000 single-cell styles cost, with no help from column styles', () => {
+    // The honest worst case of DESIGN 3.4: each of 100,000 cells has its own reference to one of 30 styles. Measured:
+    // 5.21 MiB in the canonical page.json form and 3.65 MiB compact (38 bytes a cell), over the 3 MiB above and the
+    // design's 30 bytes a cell, because row and column IDs have 26 characters. The bounds stop it from growing
+    // unseen; whether the format should shrink it is an owner decision (ADR 0056).
+    const sheet: Sheet = {};
+    const cells: JsonObject = {};
+    for (const r of range(1, 1000)) {
+      const byCol: JsonObject = {};
+      for (const c of range(1, 100)) put(byCol, K(c), intern(sheet, { font: { size: 10 + ((r + c) % 30) } }) as string);
+      put(cells, R(r), byCol);
+    }
+    sheet.cells = cells;
+    const written = writeSheet(sheet) as Json;
+    expect(Object.keys(sheet.styles as object)).toHaveLength(30);
+    const onDisk = new TextEncoder().encode(`"sheet": ${pretty(written, 4)}`).length;
+    const compact = new TextEncoder().encode(canonical(written)).length;
+    expect(onDisk).toBeLessThan(5.3 * MiB);
+    expect(compact).toBeLessThan(3.7 * MiB);
+    expect(compact / 100_000).toBeLessThan(39);
+  });
 });

@@ -3,7 +3,16 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { applyToColumns, applyToRange, applyToRows, applyToTable } from './apply';
 import { applyPatch, type Json } from './json';
 import { DEFAULT_STYLE, layer, lookElements, resolve } from './resolve';
-import { setConditionalLayer } from './rules';
+import {
+  applyOrder,
+  RANGE_LIMIT,
+  removeRule,
+  RULE_LIMIT,
+  rulesAt,
+  rulesOf,
+  setConditionalLayer,
+  setRule,
+} from './rules';
 import { K, R, makeTable, range, specCase } from './testing';
 import type { Sheet } from './types';
 
@@ -143,5 +152,73 @@ describe('looks and hooks', () => {
     const columnFormat = () => '#,##0.00';
     expect(resolve(sheet, table, R(1), K(1), { columnFormat }).style.fmt).toBe('#,##0.00');
     expect(resolve(sheet, table, R(1), K(2), { columnFormat }).style.fmt).toBe('0.0%');
+  });
+});
+
+describe('conditional formats at scale (R-SHT-15)', () => {
+  it('resolves 2,000 cells at the limit of 256 rules of 64 ranges in well under a second', () => {
+    const table = makeTable(range(1, 100), range(1, 64));
+    const conditional: Record<string, Json> = {};
+    for (let n = 1; n <= RULE_LIMIT; n++) {
+      const ranges = range(1, RANGE_LIMIT).map((c) => ({
+        from: [R(1 + (n % 50)), K(c)],
+        to: [R(51 + (n % 50)), K(c)],
+      }));
+      conditional[`c${n}`] = { order: 1 + (n % RULE_LIMIT), type: 'blank', ranges, style: 'dddddd' };
+    }
+    const sheet: Sheet = { styles: { dddddd: { fill: 'plum' } }, conditional };
+    let seen = 0;
+    const hook = (rules: readonly unknown[]) => {
+      seen += rules.length;
+      return [];
+    };
+    const start = performance.now();
+    for (let r = 1; r <= 100; r++)
+      for (let c = 1; c <= 20; c++) resolve(sheet, table, R(r), K(c), { conditional: hook });
+    // About 2.4 s when every call read and sorted the rules again.
+    expect(performance.now() - start).toBeLessThan(500);
+    expect(seen).toBeGreaterThan(0);
+  });
+
+  it('sees a rule set or removed in place at once, though rules are read once per table', () => {
+    const table = makeTable(range(1, 2), range(1, 2));
+    const sheet: Sheet = { conditional: { c1: { order: 2, type: 'blank', ranges: [{ col: K(1) }] } } };
+    expect(rulesAt(sheet, table, 'conditional', 0, 0).map((r) => r.id)).toEqual(['c1']);
+    setRule(sheet, 'conditional', 'c2', { order: 1, type: 'blank', ranges: [{ row: R(1) }] });
+    expect(rulesAt(sheet, table, 'conditional', 0, 0).map((r) => r.id)).toEqual(['c2', 'c1']);
+    expect(applyOrder(sheet)).toEqual(['c2', 'c1']);
+    removeRule(sheet, 'conditional', 'c2');
+    expect(rulesAt(sheet, table, 'conditional', 0, 0).map((r) => r.id)).toEqual(['c1']);
+  });
+
+  it('finds the same rules for every cell as a check of every box', () => {
+    const table = makeTable(range(1, 10), range(1, 10));
+    const conditional: Record<string, Json> = {};
+    let seed = 11;
+    const next = (n: number) => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return 1 + (seed % n);
+    };
+    for (let n = 1; n <= 40; n++) {
+      const ranges = range(1, next(4)).map((): Json =>
+        next(5) === 1 ? { col: K(next(10)) } : { from: [R(next(10)), K(next(10))], to: [R(next(10)), K(next(10))] },
+      );
+      conditional[`c${n}`] = { order: next(256), type: 'blank', ranges };
+    }
+    const sheet: Sheet = { conditional };
+    const all = rulesOf(sheet, table, 'conditional');
+    const order = applyOrder(sheet);
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 10; c++) {
+        const want = all
+          .filter((x) => x.boxes.some((b) => r >= b.top && r <= b.bottom && c >= b.left && c <= b.right))
+          .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+          .map((x) => x.id);
+        expect(
+          rulesAt(sheet, table, 'conditional', r, c).map((x) => x.id),
+          `${r},${c}`,
+        ).toEqual(want);
+      }
+    }
   });
 });

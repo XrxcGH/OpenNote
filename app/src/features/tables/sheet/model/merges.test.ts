@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gridOf, type Box } from './grid';
-import { activeMerges, addMerge, removeMerge, repairMerges } from './merges';
+import { activeMerges, addMerge, MERGE_LIMIT, mergeAt, mergeSet, removeMerge, repairMerges } from './merges';
 import { tidy } from './sheet';
 import { K, R, makeTable, range, specCase } from './testing';
 import type { Sheet, TableLike } from './types';
@@ -99,5 +99,51 @@ describe('merges (R-SHT-12)', () => {
     expect(activeMerges(sheet, table).map((m) => m.id)).toEqual(['m1']);
     tidy(sheet, table);
     expect(Object.keys(sheet.merges as object).sort()).toEqual(['m1', 'x9']);
+  });
+});
+
+describe('merges at scale', () => {
+  it('adds and tidies 10,000 merges, the limit, in well under a second', () => {
+    // 200 rows by 100 columns, merged into 10,000 boxes of two rows by one column.
+    const table = makeTable(range(1, 200), range(1, 100));
+    const sheet: Sheet = {};
+    const start = performance.now();
+    const set = mergeSet(sheet, table);
+    let added = 0;
+    for (let r = 1; r <= 200; r += 2)
+      for (let c = 1; c <= 100; c++) if ('id' in addMerge(sheet, table, [R(r), K(c)], [R(r + 1), K(c)], set)) added++;
+    expect(added).toBe(MERGE_LIMIT);
+    expect(addMerge(sheet, table, [R(1), K(1)], [R(1), K(1)], set)).toEqual({ refused: 'single' });
+    expect(addMerge(sheet, table, [R(1), K(1)], [R(1), K(2)], set)).toEqual({ refused: 'overlap' });
+    tidy(sheet, table);
+    expect(activeMerges(sheet, table)).toHaveLength(MERGE_LIMIT);
+    // About 12 s before the merges were indexed by row; the bound leaves room for a loaded machine.
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(Object.keys(sheet.merges as object)).toHaveLength(MERGE_LIMIT);
+  });
+
+  it('finds the same overlaps and covering merges as a check of every pair', () => {
+    const table = makeTable(range(1, 12), range(1, 12));
+    const sheet: Sheet = {};
+    let seed = 7;
+    const next = (n: number) => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return 1 + (seed % n);
+    };
+    for (let n = 0; n < 300; n++) {
+      const box = [next(12), next(12), next(12), next(12)];
+      const plain = activeMerges(sheet, table);
+      const r1 = Math.min(box[0], box[1]) - 1;
+      const r2 = Math.max(box[0], box[1]) - 1;
+      const c1 = Math.min(box[2], box[3]) - 1;
+      const c2 = Math.max(box[2], box[3]) - 1;
+      const clash = plain.some((m) => !(m.box.bottom < r1 || r2 < m.box.top || m.box.right < c1 || c2 < m.box.left));
+      const got = addMerge(sheet, table, [R(box[0]), K(box[2])], [R(box[1]), K(box[3])]);
+      if (r1 === r2 && c1 === c2) expect(got).toEqual({ refused: 'single' });
+      else expect('refused' in got, `box ${box.join(',')}`).toBe(clash);
+    }
+    const set = mergeSet(sheet, table);
+    for (let r = 0; r < 12; r++)
+      for (let c = 0; c < 12; c++) expect(set.index.at(r, c)).toBe(mergeAt(set.list, r, c)?.id);
   });
 });

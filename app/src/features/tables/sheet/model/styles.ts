@@ -82,11 +82,37 @@ export function intern(sheet: Sheet, style: CellStyle | JsonObject): string | nu
   return id;
 }
 
+/**
+ * The keys a problem's path names in `style`, below the root name `s`. A key may hold a dot, so each step takes the
+ * longest own key that the rest of the path starts with. The path stops at an array: a problem inside one drops the
+ * whole array, as `[i]` names an item, not a key.
+ */
+function keysOf(style: JsonObject, where: string): string[] {
+  const keys: string[] = [];
+  let node: Json | undefined = style;
+  let rest = where.startsWith('s.') ? where.slice(2) : '';
+  while (rest !== '' && isObject(node)) {
+    const here: JsonObject = node;
+    const key = Object.keys(here)
+      .filter((k) => rest === k || rest.startsWith(`${k}.`) || rest.startsWith(`${k}[`))
+      .sort((a, b) => b.length - a.length)[0];
+    // A required key that is missing is not in the object: it is the rest of the path.
+    const step = key ?? rest;
+    keys.push(step);
+    node = here[step];
+    rest = rest.slice(step.length).replace(/^\./, '');
+    if (rest.startsWith('[')) break;
+  }
+  return keys;
+}
+
 /** Removes the path of a problem from a copy of a style: the key itself, or its object when a key is required. */
 function drop(style: JsonObject, problem: string): void {
-  const [where, what] = problem.split(': ');
-  const parts = where.split('.').slice(1);
-  if (what === 'required') parts.pop();
+  const at = problem.lastIndexOf(': ');
+  const where = problem.slice(0, problem.indexOf(': '));
+  const parts = keysOf(style, where);
+  if (problem.slice(at + 2) === 'required') parts.pop();
+  if (parts.length === 0) return;
   let node: Json | undefined = style;
   for (const part of parts.slice(0, -1)) node = own(node, part);
   if (isObject(node)) delete node[parts[parts.length - 1]];

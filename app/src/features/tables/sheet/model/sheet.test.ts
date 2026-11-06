@@ -16,6 +16,15 @@ function inOrder(value: Json): boolean {
 }
 
 describe('readSheet and writeSheet', () => {
+  it('keeps a very deep unknown value without running out of stack', () => {
+    let deep: Json = 'bottom';
+    for (let n = 0; n < 20_000; n++) deep = [deep];
+    const sheet = readSheet({ sheet: { later: deep, styles: { aaaaaa: { fill: 'fern' } } } });
+    const written = writeSheet(sheet) as Sheet;
+    expect(Object.keys(written)).toEqual(['later', 'styles']);
+    expect(sheetPatch(sheet, { ...sheet, styles: {} })).toEqual({ sheet: { styles: { aaaaaa: null } } });
+  });
+
   it('has the lane fixtures', () => {
     expect(ownCases().map((c) => c.file)).toEqual(['every-key.json', 'future-keys.json', 'invalid-values.json']);
   });

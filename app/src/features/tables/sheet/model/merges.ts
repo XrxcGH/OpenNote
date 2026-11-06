@@ -2,7 +2,7 @@
 // between its corners in the table's current order, so inserting a row inside it makes it taller with no change to
 // the file. Deleting a corner's row or column moves that corner to the nearest row or column left inside the merge.
 
-import { boxOf, cornersOf, gridOf, isCorner, isSingle, overlaps, type Box, type Grid } from './grid';
+import { boxOf, cornersOf, gridOf, isCorner, isSingle, type Box, type Grid } from './grid';
 import { isObject, own, ownObject, put, sortedKeys } from './json';
 import type { Sheet, TableLike } from './types';
 
@@ -14,21 +14,92 @@ export interface ActiveMerge {
 }
 
 /**
+ * Disjoint boxes indexed by row: for each row, the column spans the boxes cover there, sorted by left edge. Spans of
+ * one row never overlap, so their right edges are sorted too, and an overlap test is a binary search per row. Adding
+ * a box costs one sorted insert per row it covers, so a table's merges cost at most one entry per covered cell.
+ */
+export class BoxIndex {
+  private readonly byRow = new Map<number, { left: number[]; right: number[]; id: string[] }>();
+
+  /** The first span of a row whose right edge is at or after `col`, as an index into the row's arrays. */
+  private static firstFrom(right: readonly number[], col: number): number {
+    let lo = 0;
+    let hi = right.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (right[mid] < col) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  }
+
+  /** True when a box of the index overlaps `box`. */
+  overlaps(box: Box): boolean {
+    for (let row = box.top; row <= box.bottom; row++) {
+      const spans = this.byRow.get(row);
+      if (!spans) continue;
+      const at = BoxIndex.firstFrom(spans.right, box.left);
+      if (at < spans.left.length && spans.left[at] <= box.right) return true;
+    }
+    return false;
+  }
+
+  /** Adds a box that overlaps none of the index. */
+  add(id: string, box: Box): void {
+    for (let row = box.top; row <= box.bottom; row++) {
+      let spans = this.byRow.get(row);
+      if (!spans) {
+        spans = { left: [], right: [], id: [] };
+        this.byRow.set(row, spans);
+      }
+      const at = BoxIndex.firstFrom(spans.right, box.left);
+      spans.left.splice(at, 0, box.left);
+      spans.right.splice(at, 0, box.right);
+      spans.id.splice(at, 0, id);
+    }
+  }
+
+  /** The ID of the box that covers a cell, or undefined. */
+  at(row: number, col: number): string | undefined {
+    const spans = this.byRow.get(row);
+    if (!spans) return undefined;
+    const at = BoxIndex.firstFrom(spans.right, col);
+    return at < spans.left.length && spans.left[at] <= col ? spans.id[at] : undefined;
+  }
+}
+
+/** The active merges of a sheet, in ID order, with an index for overlap tests and lookups by cell. */
+export interface MergeSet {
+  list: ActiveMerge[];
+  index: BoxIndex;
+  /** No ID below `m` and this number is free; IDs are only added while the set is in use. */
+  nextFree: number;
+  /** The entries of `merges` in the file, valid or not, which the limit counts. */
+  stored: number;
+}
+
+/**
  * The merges a reader uses, in ID order: valid, larger than one cell, and not overlapping a merge with a lower ID
  * (two devices merged at once). The others are kept in the file and ignored.
  */
 export function activeMerges(sheet: Sheet, table: TableLike): ActiveMerge[] {
+  return mergeSet(sheet, table).list;
+}
+
+/** The active merges with their index. Pass it to addMerge when adding many merges in a row. */
+export function mergeSet(sheet: Sheet, table: TableLike): MergeSet {
   const merges = ownObject(sheet, 'merges');
-  if (!merges) return [];
+  const set: MergeSet = { list: [], index: new BoxIndex(), nextFree: 1, stored: Object.keys(merges ?? {}).length };
+  if (!merges) return set;
   const grid = gridOf(table);
-  const active: ActiveMerge[] = [];
   for (const id of sortedKeys(merges)) {
     const merge = merges[id];
     const box = boxOf(grid, own(merge, 'from'), own(merge, 'to'));
-    if (!box || isSingle(box) || active.some((m) => overlaps(m.box, box))) continue;
-    active.push({ id, box });
+    if (!box || isSingle(box) || set.index.overlaps(box)) continue;
+    set.list.push({ id, box });
+    set.index.add(id, box);
   }
-  return active;
+  return set;
 }
 
 /** The active merge that covers a cell, or undefined. */
@@ -38,31 +109,38 @@ export function mergeAt(merges: readonly ActiveMerge[], row: number, col: number
 
 export type MergeRefusal = 'single' | 'overlap' | 'limit' | 'missing';
 
-/** A free merge ID: `m` and the lowest number not in use. */
-function freeId(merges: Record<string, unknown>): string {
-  for (let n = 1; ; n++) if (!Object.hasOwn(merges, `m${n}`)) return `m${n}`;
+/** A free merge ID: `m` and the lowest number not in use, starting the search at `from`. */
+function freeId(merges: Record<string, unknown>, from = 1): number {
+  for (let n = from; ; n++) if (!Object.hasOwn(merges, `m${n}`)) return n;
 }
 
 /**
  * Merges the box between two cells. Changes `sheet` in place and returns the new merge's ID. It refuses a box of one
- * cell, a box that overlaps an active merge, a corner that is not in the table, and a merge past the limit.
+ * cell, a box that overlaps an active merge, a corner that is not in the table, and a merge past the limit. For a
+ * batch, give each call the same set from mergeSet as `active`. Each call keeps that set current.
  */
 export function addMerge(
   sheet: Sheet,
   table: TableLike,
   from: [string, string],
   to: [string, string],
+  active: MergeSet = mergeSet(sheet, table),
 ): { id: string } | { refused: MergeRefusal } {
   const grid = gridOf(table);
   const box = boxOf(grid, from, to);
   if (!box) return { refused: 'missing' };
   if (isSingle(box)) return { refused: 'single' };
-  if (activeMerges(sheet, table).some((m) => overlaps(m.box, box))) return { refused: 'overlap' };
+  if (active.index.overlaps(box)) return { refused: 'overlap' };
   const merges = ownObject(sheet, 'merges') ?? {};
-  if (Object.keys(merges).length >= MERGE_LIMIT) return { refused: 'limit' };
-  const id = freeId(merges);
+  if (active.stored >= MERGE_LIMIT) return { refused: 'limit' };
+  const n = freeId(merges, active.nextFree);
+  const id = `m${n}`;
+  active.nextFree = n + 1;
+  active.stored++;
   put(merges, id, cornersOf(grid, box));
   put(sheet, 'merges', merges);
+  active.list.push({ id, box });
+  active.index.add(id, box);
   return { id };
 }
 
@@ -117,18 +195,18 @@ export function repairMerges(sheet: Sheet, before: TableLike, after: TableLike):
   if (!merges) return;
   const was = gridOf(before);
   const now = gridOf(after);
-  const kept: ActiveMerge[] = [];
+  const kept = new BoxIndex();
   for (const id of sortedKeys(merges)) {
     const merge = merges[id];
     const from = own(merge, 'from');
     const to = own(merge, 'to');
     if (!isObject(merge) || !isCorner(from) || !isCorner(to)) continue;
     const box = moveCorners(was, now, from, to);
-    if (!box || isSingle(box) || kept.some((m) => overlaps(m.box, box))) {
+    if (!box || isSingle(box) || kept.overlaps(box)) {
       delete merges[id];
       continue;
     }
-    kept.push({ id, box });
+    kept.add(id, box);
     if (stillThere(now, from, to)) continue;
     const corners = cornersOf(now, box);
     put(merge, 'from', corners.from);

@@ -9,8 +9,8 @@ export { resolve, layer, lookElements, DEFAULT_STYLE } from './resolve';
 export type { LookElement, NamedLook, ResolveHooks, Resolved, LayerName } from './resolve';
 export { applyToRange, applyToRows, applyToColumns, applyToTable, changeStyle, clearProperties } from './apply';
 export type { Applied } from './apply';
-export { activeMerges, mergeAt, addMerge, removeMerge, repairMerges, MERGE_LIMIT } from './merges';
-export type { ActiveMerge, MergeRefusal } from './merges';
+export { activeMerges, mergeAt, mergeSet, addMerge, removeMerge, repairMerges, MERGE_LIMIT, BoxIndex } from './merges';
+export type { ActiveMerge, MergeRefusal, MergeSet } from './merges';
 export {
   rangeBox,
   rulesOf,

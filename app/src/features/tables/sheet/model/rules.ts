@@ -39,10 +39,35 @@ export function wholeTable(table: TableLike): SheetRange[] {
   return table.columns.map((col) => ({ col: col.id }));
 }
 
-/** The rules of one kind with the boxes of their valid ranges. A rule with no valid range is left out. */
-export function rulesOf(sheet: Sheet, table: TableLike, kind: RuleKind): Rule[] {
-  const rules = ownObject(sheet, kind);
-  if (!rules) return [];
+/**
+ * What the model reads from one map of rules for one table: its rules with boxes, and for conditional formats the
+ * known types in the order they apply. Kept per map object and table object, as gridOf keeps grids, so a draw that
+ * resolves every visible cell reads the rules once. The model's own changes in place (setRule, removeRule,
+ * repairRanges) forget it; other callers treat the maps as immutable.
+ */
+interface Prepared {
+  rules: Rule[];
+  /** The rules rulesAt gives: all of them for validation, the known types in order for conditional formats. */
+  list: Rule[];
+  /** For the rows asked about so far: the rules of `list` with a box in the row, and their column spans there. */
+  rows: Map<number, { rule: Rule; spans: number[] }[]>;
+}
+
+/** The most rows whose rules are kept; past it the row cache starts again, so scrolling a long table stays small. */
+const ROW_CACHE = 4096;
+
+const prepared = new WeakMap<JsonObject, WeakMap<TableLike, Prepared>>();
+const orders = new WeakMap<JsonObject, string[]>();
+
+function forget(rules: JsonObject): void {
+  prepared.delete(rules);
+  orders.delete(rules);
+}
+
+function prepare(rules: JsonObject, table: TableLike, kind: RuleKind): Prepared {
+  let byTable = prepared.get(rules);
+  const known = byTable?.get(table);
+  if (known) return known;
   const grid = gridOf(table);
   const found: Rule[] = [];
   for (const id of Object.keys(rules)) {
@@ -51,31 +76,83 @@ export function rulesOf(sheet: Sheet, table: TableLike, kind: RuleKind): Rule[] 
     const boxes = rule.ranges.map((r) => rangeBox(grid, r)).filter((b): b is Box => b !== null);
     if (boxes.length > 0) found.push({ id, rule, boxes });
   }
-  return found;
+  const rank = new Map(orderOf(rules).map((id, i) => [id, i]));
+  const applying = found
+    .filter((r) => typeof r.rule.type === 'string' && CONDITIONAL_TYPES.includes(r.rule.type))
+    .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+  const made: Prepared = { rules: found, list: kind === 'validation' ? found : applying, rows: new Map() };
+  if (!byTable) {
+    byTable = new WeakMap();
+    prepared.set(rules, byTable);
+  }
+  byTable.set(table, made);
+  return made;
+}
+
+/** The rules of one kind with the boxes of their valid ranges. A rule with no valid range is left out. */
+export function rulesOf(sheet: Sheet, table: TableLike, kind: RuleKind): Rule[] {
+  const rules = ownObject(sheet, kind);
+  return rules ? [...prepare(rules, table, kind).rules] : [];
 }
 
 /** The order of a conditional format: an integer from 1 to 256, or last when it is invalid. */
-function orderOf(rule: JsonObject): number {
+function rankOf(rule: JsonObject): number {
   const order = rule.order;
   return typeof order === 'number' && Number.isInteger(order) && order >= 1 && order <= RULE_LIMIT ? order : 257;
 }
 
 /** Conditional formats in the order they apply: increasing `order`, equal orders by rule ID (R-SHT-15). */
 export function applyOrder(sheet: Sheet): string[] {
-  const rules = ownObject(sheet, 'conditional') ?? {};
-  return Object.keys(rules)
+  const rules = ownObject(sheet, 'conditional');
+  return rules ? [...orderOf(rules)] : [];
+}
+
+function orderOf(rules: JsonObject): string[] {
+  const known = orders.get(rules);
+  if (known) return known;
+  const order = Object.keys(rules)
     .filter((id) => isObject(rules[id]))
-    .sort((a, b) => orderOf(rules[a] as JsonObject) - orderOf(rules[b] as JsonObject) || byCodePoint(a, b));
+    .sort((a, b) => rankOf(rules[a] as JsonObject) - rankOf(rules[b] as JsonObject) || byCodePoint(a, b));
+  orders.set(rules, order);
+  return order;
 }
 
 /** The rules of a kind that cover a cell, by position. Conditional formats come in the order they apply. */
 export function rulesAt(sheet: Sheet, table: TableLike, kind: RuleKind, row: number, col: number): Rule[] {
-  const rules = rulesOf(sheet, table, kind).filter((r) => r.boxes.some((b) => contains(b, row, col)));
-  if (kind === 'validation') return rules;
-  const order = applyOrder(sheet);
-  return rules
-    .filter((r) => typeof r.rule.type === 'string' && CONDITIONAL_TYPES.includes(r.rule.type))
-    .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  const rules = ownObject(sheet, kind);
+  if (!rules) return [];
+  const ready = prepare(rules, table, kind);
+  const found: Rule[] = [];
+  for (const { rule, spans } of rowOf(ready, row)) {
+    for (let i = 0; i < spans.length && spans[i] <= col; i += 2) {
+      if (col <= spans[i + 1]) {
+        found.push(rule);
+        break;
+      }
+    }
+  }
+  return found;
+}
+
+/** The rules with a box in a row, with the column spans of their boxes there: sorted, and joined where they touch. */
+function rowOf(ready: Prepared, row: number): { rule: Rule; spans: number[] }[] {
+  const known = ready.rows.get(row);
+  if (known) return known;
+  if (ready.rows.size >= ROW_CACHE) ready.rows.clear();
+  const entries: { rule: Rule; spans: number[] }[] = [];
+  for (const rule of ready.list) {
+    const boxes = rule.boxes.filter((b) => contains(b, row, b.left)).sort((a, b) => a.left - b.left);
+    if (boxes.length === 0) continue;
+    const spans: number[] = [];
+    for (const b of boxes) {
+      const last = spans.length - 1;
+      if (last > 0 && b.left <= spans[last] + 1) spans[last] = Math.max(spans[last], b.right);
+      else spans.push(b.left, b.right);
+    }
+    entries.push({ rule, spans });
+  }
+  ready.rows.set(row, entries);
+  return entries;
 }
 
 /** The validation rule of a cell. Validation ranges should not overlap; when they do, the lowest ID wins. */
@@ -115,6 +192,7 @@ export function freeRuleId(sheet: Sheet, kind: RuleKind, prefix = kind === 'vali
 export function setRule(sheet: Sheet, kind: RuleKind, id: string, rule: JsonObject): boolean {
   const rules = ownObject(sheet, kind) ?? {};
   if (!Object.hasOwn(rules, id) && Object.keys(rules).length >= RULE_LIMIT) return false;
+  forget(rules);
   put(rules, id, rule);
   put(sheet, kind, rules);
   return true;
@@ -123,6 +201,7 @@ export function setRule(sheet: Sheet, kind: RuleKind, id: string, rule: JsonObje
 export function removeRule(sheet: Sheet, kind: RuleKind, id: string): void {
   const rules = ownObject(sheet, kind);
   if (!rules) return;
+  forget(rules);
   delete rules[id];
   if (Object.keys(rules).length === 0) delete sheet[kind];
 }
@@ -161,6 +240,7 @@ export function repairRanges(sheet: Sheet, before: TableLike, after: TableLike):
   for (const kind of ['validation', 'conditional'] as const) {
     const rules = ownObject(sheet, kind);
     if (!rules) continue;
+    forget(rules);
     for (const id of Object.keys(rules)) {
       const rule = rules[id];
       if (!isObject(rule) || !Array.isArray(rule.ranges)) continue;
