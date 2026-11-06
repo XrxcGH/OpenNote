@@ -100,6 +100,22 @@ mod tests {
     }
 
     #[test]
+    fn a_version_2_key_comes_back_with_its_version_1_key_added() {
+        let (_dir, bridge, notes, id) = library();
+        let set_in = json!({ "Quote": { "textColor": "#336699", "size": 11 } });
+        bridge
+            .notes(Some(notes.clone()), |b| {
+                set(b, &id, set_in.clone()).map(|()| Value::Null)
+            })
+            .expect("saved");
+        let got = bridge.notes(Some(notes), |b| get(b, &id)).expect("styles");
+        assert_eq!(got["Quote"]["textColor"], "#336699", "the key that was set is kept");
+        assert_eq!(got["Quote"]["color"], "#336699", "the core adds the version 1 key");
+        assert_ne!(got, set_in);
+        bridge.shutdown();
+    }
+
+    #[test]
     fn a_wrong_id_or_a_bad_object_is_refused() {
         let (_dir, bridge, notes, id) = library();
         let bad_id = bridge.notes(Some(notes.clone()), |b| get(b, "nope"));

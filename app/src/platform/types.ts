@@ -244,6 +244,14 @@ export interface FontFace {
   readonly monospace: boolean;
   /** What the font's embedding permission (OS/2 fsType) allows. */
   readonly embedding: 'installable' | 'editable' | 'preview-print' | 'restricted' | 'unknown';
+  /** An export may embed just the glyphs it uses (fsType bit 8 is clear). */
+  readonly subsettable: boolean;
+  /** Only bitmap strikes may be embedded, not outlines (fsType bit 9). */
+  readonly bitmapOnly: boolean;
+  /** The face comes from a variable font. */
+  readonly variable: boolean;
+  /** The named instance of a variable font, such as `Bold`; null for a static font. */
+  readonly instance: string | null;
   readonly unitsPerEm: number;
   readonly winAscent: number;
   readonly winDescent: number;
@@ -275,7 +283,10 @@ export type NotebookStylesJson = Readonly<Record<string, Readonly<Record<string,
 /** Reads and writes a notebook's named styles. An empty object means the notebook has none. */
 export interface NotebookStylesClient {
   get(notebook: string): Promise<NotebookStylesJson>;
-  /** Replaces all the notebook's styles. */
+  /**
+   * Replaces all the notebook's styles. The core adds the version 1 key for each version 2 key (such as `color`
+   * for `textColor`), so `get` after `set` can return more keys than were set.
+   */
   set(notebook: string, styles: NotebookStylesJson): Promise<void>;
 }
 

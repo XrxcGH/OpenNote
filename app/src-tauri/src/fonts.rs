@@ -31,6 +31,14 @@ pub struct FontFace {
     pub monospace: bool,
     /// What `OS/2` `fsType` allows: `installable`, `editable`, `preview-print`, `restricted`, or `unknown`.
     pub embedding: &'static str,
+    /// `fsType` bit 8 is clear: an export may embed just the glyphs it uses.
+    pub subsettable: bool,
+    /// `fsType` bit 9 is set: only bitmap strikes may be embedded, not outlines.
+    pub bitmap_only: bool,
+    /// The face comes from a variable font (it has an `fvar` table).
+    pub variable: bool,
+    /// The named instance of a variable font, such as `Bold`; none for a static font.
+    pub instance: Option<String>,
     /// Font units per em.
     pub units_per_em: u16,
     /// `usWinAscent` (the hhea ascender when the font has no `OS/2` table).
@@ -117,29 +125,115 @@ fn style_rank(style: &str) -> u8 {
     }
 }
 
-/// Reads one face's metrics. A face `ttf-parser` can't read is left out.
-fn read_face(info: &fontdb::FaceInfo, data: &[u8]) -> Option<(FontFace, &'static str)> {
+const FVAR: Tag = Tag::from_bytes(b"fvar");
+
+/// A big-endian `u16` at `at`.
+fn be16(bytes: &[u8], at: usize) -> Option<u16> {
+    Some(u16::from_be_bytes(bytes.get(at..at + 2)?.try_into().ok()?))
+}
+
+/// The OS/2 fields read straight from the table bytes: `fsType` at 8, `usWinAscent` at 74, `usWinDescent` at 76.
+/// `usWinDescent` is unsigned, so a value above 32767 is kept as it is.
+fn os2_fields(face: &Font) -> Option<(u16, u16, u16)> {
+    let table = face.raw_face().table(OS2)?;
+    Some((be16(table, 8)?, be16(table, 74)?, be16(table, 76)?))
+}
+
+/// The `usWidthClass` (1 to 9) nearest to a `wdth` axis value, which is a percent of normal width.
+fn width_class(percent: f32) -> u8 {
+    const CLASSES: [f32; 9] = [50.0, 62.5, 75.0, 87.5, 100.0, 112.5, 125.0, 150.0, 200.0];
+    let mut best = 5;
+    let mut gap = f32::MAX;
+    for (i, c) in CLASSES.iter().enumerate() {
+        if (c - percent).abs() < gap {
+            gap = (c - percent).abs();
+            best = i as u8 + 1;
+        }
+    }
+    best
+}
+
+struct Instance {
+    name_id: u16,
+    ps_name_id: Option<u16>,
+    weight: Option<u16>,
+    stretch: Option<u8>,
+}
+
+/// The named instances of an `fvar` table (OpenType 1.9, "fvar"): the weight and width of each.
+fn named_instances(face: &Font) -> Vec<Instance> {
+    let Some(t) = face.raw_face().table(FVAR) else {
+        return Vec::new();
+    };
+    let read = || -> Option<Vec<Instance>> {
+        let axes_at = usize::from(be16(t, 4)?);
+        let (axis_count, axis_size) = (usize::from(be16(t, 8)?), usize::from(be16(t, 10)?));
+        let (count, size) = (usize::from(be16(t, 12)?), usize::from(be16(t, 14)?));
+        let tags: Vec<[u8; 4]> = (0..axis_count)
+            .map(|i| t.get(axes_at + i * axis_size..)?.get(..4)?.try_into().ok())
+            .collect::<Option<_>>()?;
+        let first = axes_at + axis_count * axis_size;
+        let mut out = Vec::new();
+        for n in 0..count {
+            let at = first + n * size;
+            let coord = |axis: usize| -> Option<f32> {
+                let b = t.get(at + 4 + axis * 4..at + 8 + axis * 4)?;
+                Some(i32::from_be_bytes(b.try_into().ok()?) as f32 / 65536.0)
+            };
+            let find = |tag: &[u8; 4]| tags.iter().position(|t| t == tag).and_then(coord);
+            let ps = if size >= 6 + axis_count * 4 {
+                be16(t, at + 4 + axis_count * 4).filter(|id| *id != 0xFFFF)
+            } else {
+                None
+            };
+            out.push(Instance {
+                name_id: be16(t, at)?,
+                ps_name_id: ps,
+                weight: find(b"wght").map(|w| w.round().clamp(1.0, 1000.0) as u16),
+                stretch: find(b"wdth").map(width_class),
+            });
+        }
+        Some(out)
+    };
+    read().unwrap_or_default()
+}
+
+fn name_of(face: &Font, id: u16) -> Option<String> {
+    face.names()
+        .into_iter()
+        .find(|n| n.name_id == id && n.is_unicode())
+        .and_then(|n| n.to_string())
+}
+
+/// Reads one face's metrics, one entry per named instance for a variable font. A face `ttf-parser` can't read
+/// is left out.
+fn read_face(info: &fontdb::FaceInfo, data: &[u8]) -> Option<(Vec<FontFace>, &'static str)> {
     let face = Font::parse(data, info.index).ok()?;
-    let (win_ascent, win_descent, typo_line_gap) = match face.tables().os2 {
-        Some(os2) => (
-            os2.windows_ascender() as u16,
-            os2.windows_descender().unsigned_abs(),
-            os2.typographic_line_gap(),
-        ),
+    let os2_bytes = os2_fields(&face);
+    let (win_ascent, win_descent) = match os2_bytes {
+        Some((_, ascent, descent)) => (ascent, descent),
         None => (
             face.ascender().max(0) as u16,
             face.descender().saturating_neg().max(0) as u16,
-            face.line_gap(),
         ),
     };
+    let typo_line_gap = face
+        .tables()
+        .os2
+        .map_or_else(|| face.line_gap(), |os2| os2.typographic_line_gap());
+    let fs_type = os2_bytes.map(|(fs, _, _)| fs);
     let generic = class_and_panose(&face).map_or("unknown", |(class, panose)| generic_class(class, panose));
-    let out = FontFace {
+    let base = FontFace {
         post_script_name: info.post_script_name.clone(),
         style: style_name(info.style),
         weight: info.weight.0,
         stretch: info.stretch.to_number() as u8,
         monospace: info.monospaced,
         embedding: embedding(&face),
+        subsettable: fs_type.is_none_or(|fs| fs & 0x0100 == 0),
+        bitmap_only: fs_type.is_some_and(|fs| fs & 0x0200 != 0),
+        variable: face.is_variable(),
+        instance: None,
         units_per_em: face.units_per_em(),
         win_ascent,
         win_descent,
@@ -147,18 +241,73 @@ fn read_face(info: &fontdb::FaceInfo, data: &[u8]) -> Option<(FontFace, &'static
         x_height: face.x_height(),
         cap_height: face.capital_height(),
     };
-    Some((out, generic))
+    let instances = if base.variable {
+        named_instances(&face)
+    } else {
+        Vec::new()
+    };
+    if instances.is_empty() {
+        return Some((vec![base], generic));
+    }
+    let prefix = base.post_script_name.split('-').next().unwrap_or_default().to_owned();
+    let faces = instances
+        .iter()
+        .map(|i| {
+            let name = name_of(&face, i.name_id);
+            let post_script_name = i
+                .ps_name_id
+                .and_then(|id| name_of(&face, id))
+                .unwrap_or_else(|| format!("{prefix}-{}", name.as_deref().unwrap_or("Instance").replace(' ', "")));
+            FontFace {
+                post_script_name,
+                weight: i.weight.unwrap_or(base.weight),
+                stretch: i.stretch.unwrap_or(base.stretch),
+                instance: name,
+                ..base.clone()
+            }
+        })
+        .collect();
+    Some((faces, generic))
+}
+
+type Read = Option<(Vec<FontFace>, &'static str)>;
+
+/// Reads every face of the database on several threads, keeping the database's order.
+fn read_all(db: &Database) -> Vec<(&fontdb::FaceInfo, Read)> {
+    let infos: Vec<&fontdb::FaceInfo> = db.faces().collect();
+    let threads = std::thread::available_parallelism().map_or(1, usize::from).clamp(1, 8);
+    let chunk = infos.len().div_ceil(threads).max(1);
+    std::thread::scope(|scope| {
+        let jobs: Vec<_> = infos
+            .chunks(chunk)
+            .map(|part| {
+                scope.spawn(move || {
+                    part.iter()
+                        .map(|info| {
+                            (
+                                *info,
+                                db.with_face_data(info.id, |data, _| read_face(info, data)).flatten(),
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect();
+        jobs.into_iter()
+            .flat_map(|job| job.join().unwrap_or_default())
+            .collect()
+    })
 }
 
 /// The families of a database, sorted by name, with their faces sorted by weight and then style.
 pub(crate) fn scan(db: &Database) -> Vec<FontFamily> {
     let mut families: Vec<FontFamily> = Vec::new();
     let mut by_name = HashMap::<String, usize>::new();
-    for info in db.faces() {
+    for (info, read) in read_all(db) {
         let Some(name) = info.families.first().map(|(name, _)| name.clone()) else {
             continue;
         };
-        let Some((face, generic)) = db.with_face_data(info.id, |data, _| read_face(info, data)).flatten() else {
+        let Some((read, generic)) = read else {
             continue;
         };
         let slot = *by_name.entry(name.to_lowercase()).or_insert_with(|| {
@@ -171,16 +320,18 @@ pub(crate) fn scan(db: &Database) -> Vec<FontFamily> {
             families.len() - 1
         });
         let family = &mut families[slot];
-        // The same face twice, as when a font is installed for the user and for the machine, counts once.
-        let same = |f: &FontFace| f.weight == face.weight && f.style == face.style && f.stretch == face.stretch;
-        if family.faces.iter().any(same) {
-            continue;
+        for face in read {
+            // The same face twice, as when a font is installed for the user and for the machine, counts once.
+            let same = |f: &FontFace| f.weight == face.weight && f.style == face.style && f.stretch == face.stretch;
+            if family.faces.iter().any(same) {
+                continue;
+            }
+            if (face.weight == 400 && face.style == "normal") || family.faces.is_empty() {
+                family.generic = generic;
+                family.monospace = face.monospace;
+            }
+            family.faces.push(face);
         }
-        if (face.weight == 400 && face.style == "normal") || family.faces.is_empty() {
-            family.generic = generic;
-            family.monospace = face.monospace;
-        }
-        family.faces.push(face);
     }
     for family in &mut families {
         family.faces.sort_by_key(|f| (f.weight, style_rank(f.style), f.stretch));
@@ -194,6 +345,14 @@ fn scan_system() -> Vec<FontFamily> {
     let mut db = Database::new();
     db.load_system_fonts();
     scan(&db)
+}
+
+/// Starts the first scan in the background, so the first `fonts_list` call finds the list ready or waits only for
+/// what is left of the scan.
+pub fn warm() {
+    std::thread::spawn(|| {
+        let _ = cached(false, scan_system);
+    });
 }
 
 static CACHE: Mutex<Option<Arc<Vec<FontFamily>>>> = Mutex::new(None);
@@ -236,6 +395,9 @@ mod tests {
         class: i16,
         panose: [u8; 10],
         mono: bool,
+        win_descent: u16,
+        /// Named instances of a variable font: name, `wght`, `wdth`.
+        instances: Vec<(&'static str, f32, f32)>,
     }
 
     impl Spec {
@@ -249,6 +411,8 @@ mod tests {
                 class: 0,
                 panose: [0; 10],
                 mono: false,
+                win_descent: 300,
+                instances: Vec::new(),
             }
         }
     }
@@ -280,7 +444,7 @@ mod tests {
         os2.resize(62, 0);
         u16s(&mut os2, &[if spec.italic { 1 } else { 0x40 }, 32, 126]);
         // sTypoAscender, sTypoDescender, sTypoLineGap, usWinAscent, usWinDescent.
-        u16s(&mut os2, &[800, (-200_i16) as u16, 90, 1100, 300]);
+        u16s(&mut os2, &[800, (-200_i16) as u16, 90, 1100, spec.win_descent]);
         os2.resize(86, 0);
         // sxHeight, sCapHeight.
         u16s(&mut os2, &[500, 700]);
@@ -290,11 +454,14 @@ mod tests {
         post.extend_from_slice(&u32::from(spec.mono).to_be_bytes());
         post.resize(32, 0);
         let postscript = format!("{}-{}", spec.family.replace(' ', ""), spec.style.replace(' ', ""));
-        let names = [
+        let mut names = vec![
             (1_u16, spec.family.clone()),
             (2, spec.style.to_owned()),
             (6, postscript),
         ];
+        for (i, (instance, _, _)) in spec.instances.iter().enumerate() {
+            names.push((256 + i as u16, (*instance).to_owned()));
+        }
         let mut name = Vec::new();
         u16s(&mut name, &[0, names.len() as u16, 6 + 12 * names.len() as u16]);
         let mut strings = Vec::new();
@@ -304,7 +471,23 @@ mod tests {
             strings.extend(bytes);
         }
         name.extend(strings);
-        let mut tables = [
+        // fvar: header, then the wght and wdth axes, then each instance (name id, flags, two coordinates).
+        let fixed = |v: f32| ((v * 65536.0) as i32).to_be_bytes();
+        let mut fvar = Vec::new();
+        u16s(&mut fvar, &[1, 0, 16, 2, 2, 20, spec.instances.len() as u16, 12]);
+        for tag in [b"wght", b"wdth"] {
+            fvar.extend_from_slice(tag);
+            fvar.extend_from_slice(&fixed(1.0));
+            fvar.extend_from_slice(&fixed(1.0));
+            fvar.extend_from_slice(&fixed(1000.0));
+            u16s(&mut fvar, &[0, 2]);
+        }
+        for (i, (_, wght, wdth)) in spec.instances.iter().enumerate() {
+            u16s(&mut fvar, &[256 + i as u16, 0]);
+            fvar.extend_from_slice(&fixed(*wght));
+            fvar.extend_from_slice(&fixed(*wdth));
+        }
+        let mut tables = vec![
             (*b"OS/2", os2),
             (*b"head", head),
             (*b"hhea", hhea),
@@ -312,6 +495,9 @@ mod tests {
             (*b"name", name),
             (*b"post", post),
         ];
+        if !spec.instances.is_empty() {
+            tables.push((*b"fvar", fvar));
+        }
         tables.sort_by_key(|(tag, _)| *tag);
         let mut out = vec![0, 1, 0, 0];
         u16s(&mut out, &[tables.len() as u16, 64, 2, 32]);
@@ -456,19 +642,23 @@ mod tests {
         assert!(!Arc::ptr_eq(&first, &fresh));
     }
 
-    /// 1,000 synthetic families listed under 150 ms on the reference laptop. The nightly job sets the variable
-    /// and gates on it; any other run reports the time and checks only that it isn't absurd.
+    /// What the first call does: read 1,000 font files from a folder, then scan them. The nightly job sets the
+    /// variable and gates on the 150 ms budget of ADR 0080; any other run reports the time and checks only that
+    /// it isn't absurd. The app starts this scan at launch, so a person waits only for what is left of it.
     #[test]
-    fn a_thousand_families_list_quickly() {
-        let mut db = Database::new();
-        for i in 0..1000 {
-            db.load_font_data(build(&Spec::new(&format!("Family {i:04}"), "Regular", 400)));
-        }
+    fn a_thousand_font_files_load_and_list_quickly() {
+        let specs: Vec<Spec> = (0..1000)
+            .map(|i| Spec::new(&format!("Family {i:04}"), "Regular", 400))
+            .collect();
+        let dir = folder(&specs);
         let start = Instant::now();
+        let mut db = Database::new();
+        db.load_fonts_dir(dir.path());
+        let loaded = start.elapsed();
         let list = scan(&db);
         let took = start.elapsed();
         assert_eq!(list.len(), 1000);
-        eprintln!("fonts: 1000 families listed in {took:?}");
+        eprintln!("fonts: 1000 files loaded in {loaded:?}, loaded and listed in {took:?}");
         let limit = if std::env::var_os("OPENNOTE_BENCH_GATE").is_some() {
             150
         } else {
@@ -478,14 +668,110 @@ mod tests {
     }
 
     #[test]
+    fn a_win_descent_above_32767_is_read_as_unsigned() {
+        for descent in [32767_u16, 32768, 40000, 65535] {
+            let spec = Spec {
+                win_descent: descent,
+                ..Spec::new("Deep", "Regular", 400)
+            };
+            let list = scan_dir(folder(&[spec]).path());
+            assert_eq!(list[0].faces[0].win_descent, descent);
+        }
+    }
+
+    #[test]
+    fn fs_type_bits_for_subsetting_and_bitmaps_are_reported() {
+        let cases = [
+            (0_u16, true, false),
+            (0x0100, false, false),
+            (0x0200, true, true),
+            (0x0300, false, true),
+        ];
+        for (fs_type, subsettable, bitmap_only) in cases {
+            let spec = Spec {
+                fs_type,
+                ..Spec::new("Bits", "Regular", 400)
+            };
+            let list = scan_dir(folder(&[spec]).path());
+            let face = &list[0].faces[0];
+            assert_eq!(
+                (face.subsettable, face.bitmap_only),
+                (subsettable, bitmap_only),
+                "fsType {fs_type:#x}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_variable_font_lists_one_face_per_named_instance() {
+        let spec = Spec {
+            instances: vec![
+                ("Light", 300.0, 100.0),
+                ("Regular", 400.0, 100.0),
+                ("Bold", 700.0, 100.0),
+                ("Bold Condensed", 700.0, 75.0),
+            ],
+            ..Spec::new("Flex", "Regular", 400)
+        };
+        let list = scan_dir(folder(&[spec]).path());
+        let faces = &list[0].faces;
+        let got: Vec<(u16, u8, Option<&str>)> = faces
+            .iter()
+            .map(|f| (f.weight, f.stretch, f.instance.as_deref()))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                (300, 5, Some("Light")),
+                (400, 5, Some("Regular")),
+                (700, 3, Some("Bold Condensed")),
+                (700, 5, Some("Bold")),
+            ]
+        );
+        assert!(faces.iter().all(|f| f.variable));
+        assert_eq!(faces[3].post_script_name, "Flex-Bold");
+    }
+
+    #[test]
+    fn a_static_font_is_not_variable() {
+        let list = scan_dir(folder(&[Spec::new("Fixed", "Regular", 400)]).path());
+        let face = &list[0].faces[0];
+        assert!(!face.variable && face.instance.is_none());
+    }
+
+    #[test]
     fn no_font_name_reaches_a_diagnostics_bundle() {
         use opennote_crashreport::Scrubber;
         use opennote_diagnostics::{Bundle, BundleInputs, BundleOptions, SystemFacts};
 
+        /// Keeps every log record, so the test can look for the font name in them.
+        struct Capture(Mutex<Vec<String>>);
+        impl log::Log for Capture {
+            fn enabled(&self, _: &log::Metadata) -> bool {
+                true
+            }
+            fn log(&self, record: &log::Record) {
+                self.0
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .push(record.args().to_string());
+            }
+            fn flush(&self) {}
+        }
+        static CAPTURE: Capture = Capture(Mutex::new(Vec::new()));
+        log::set_logger(&CAPTURE).expect("no other test sets a logger");
+        log::set_max_level(log::LevelFilter::Trace);
+
         let name = "Zzyzx Quillfeather";
         let dir = folder(&[Spec::new(name, "Regular", 400)]);
-        let list = scan_dir(dir.path());
+        // The cached list takes the same path as a `fonts_list` call, with the folder in place of the device.
+        let list = cached(true, || scan_dir(dir.path()));
         assert_eq!(list[0].name, name, "the scan did find the font");
+        let records = CAPTURE.0.lock().unwrap_or_else(PoisonError::into_inner).join(
+            "
+",
+        );
+        assert!(!records.contains("Quillfeather"), "a log record names a font");
         let logs = tempfile::tempdir().expect("a logs folder");
         let options = BundleOptions::default();
         let bundle = Bundle::build(&BundleInputs {
