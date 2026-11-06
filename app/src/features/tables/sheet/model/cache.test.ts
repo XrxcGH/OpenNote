@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { applyToColumns } from './apply';
 import { fingerprint, formulaCells, isFresh, readValues, valueAt, writeValues } from './cache';
+import { applyPatch, clone, type Json, type JsonObject } from './json';
+import { sheetPatch, writeSheet } from './sheet';
 import { K, R, makeTable, range, specCases } from './testing';
 import type { CachedValue, Sheet, TableLike } from './types';
 
@@ -83,5 +85,73 @@ describe('the value cache (R-SHT-17, R-SHT-18)', () => {
         c.file,
       ).toEqual(want.filter((x) => !skip.has(x)));
     }
+  });
+});
+
+describe('the value cache through merge patches (R-SHT-17)', () => {
+  /** Every shape R-SHT-17 allows, the empty result among them. */
+  const shapes: CachedValue[] = [null, 0, -0.125, 1e21, 1e-7, 0.30000000000000004, '', 'text', true, false];
+  shapes.push({ e: '#DIV/0!' }, { e: '#LATER!' });
+
+  it('keeps every shape after sheetPatch and applyPatch, and the patch round-trips with its inverse', () => {
+    const table = makeTable(range(1, 3), range(1, shapes.length));
+    const earlier: Sheet = {};
+    writeValues(earlier, table, new Map([[R(3), new Map<string, CachedValue>([[K(1), 'old']])]]));
+    for (const before of [{}, earlier] as Sheet[]) {
+      const after = clone(before);
+      const byCol = new Map<string, CachedValue>(shapes.map((v, i) => [K(i + 1), v]));
+      // Row 2 holds only empty results, so its whole entry is absent too.
+      writeValues(
+        after,
+        table,
+        new Map([
+          [R(1), byCol],
+          [R(2), new Map<string, CachedValue>([[K(1), null]])],
+        ]),
+      );
+      const patch = sheetPatch(before, after);
+      const data = { sheet: before } as JsonObject;
+      const patched = applyPatch(data, patch as Json) as JsonObject;
+      expect(patched.sheet).toEqual(writeSheet(after));
+      const back = applyPatch(patched, sheetPatch(after, before) as Json) as JsonObject;
+      expect(back.sheet ?? {}).toEqual(writeSheet(before) ?? {});
+      const sheet = patched.sheet as Sheet;
+      shapes.forEach((v, i) => expect(valueAt(sheet, table, R(1), K(i + 1))).toEqual(v));
+      expect(valueAt(sheet, table, R(2), K(1))).toBeNull();
+      expect(valueAt(sheet, table, R(3), K(1))).toBeNull();
+    }
+  });
+
+  it('stamps valuesOf for a cache of only empty results, so it reads as fresh', () => {
+    const table = makeTable(range(1, 1), range(1, 1));
+    const sheet: Sheet = {};
+    writeValues(sheet, table, new Map([[R(1), new Map<string, CachedValue>([[K(1), null]])]]));
+    expect(sheet).toEqual({ valuesOf: fingerprint(table) });
+    expect(valueAt(sheet, table, R(1), K(1))).toBeNull();
+  });
+
+  it('reads a null a file holds as an empty result', () => {
+    const table = makeTable(range(1, 1), range(1, 2));
+    const sheet: Sheet = { values: { [R(1)]: { [K(1)]: null } }, valuesOf: fingerprint(table) };
+    expect(readValues(sheet, table).values.get(R(1))?.get(K(1))).toBeNull();
+    expect(valueAt(sheet, table, R(1), K(1))).toBeNull();
+  });
+
+  it('answers 10,000 valueAt calls on a 100,000-cell table in well under a second', () => {
+    const cols = range(1, 100).map((c) => ({ id: K(c) }));
+    const rows = range(1, 1000).map((r) => ({
+      id: R(r),
+      cells: Object.fromEntries(cols.map((c) => [c.id, { markdown: `=${r}*2` }])),
+    }));
+    const table: TableLike = { columns: cols, rows };
+    const sheet: Sheet = {};
+    writeValues(sheet, table, new Map([[R(1), new Map<string, CachedValue>([[K(1), 7]])]]));
+    const start = performance.now();
+    let found = 0;
+    for (let n = 0; n < 10_000; n++)
+      if (valueAt(sheet, table, R(1 + (n % 1000)), K(1 + (n % 100))) !== undefined) found++;
+    expect(found).toBe(10_000);
+    // The first call hashes the table once (about 2 MB of canonical JSON); every later call reuses it.
+    expect(performance.now() - start).toBeLessThan(1000);
   });
 });

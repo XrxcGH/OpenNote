@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { canonical, fnv1a64, type Json } from './json';
 import { gc, intern, STYLE_LIMIT, StyleLimitError, styleId, validStyle } from './styles';
-import { specCase } from './testing';
+import { range, specCase } from './testing';
 import type { Sheet } from './types';
 
 describe('style IDs (R-SHT-6)', () => {
@@ -10,6 +10,19 @@ describe('style IDs (R-SHT-6)', () => {
     // The FNV reference values for the empty string and "a".
     expect(fnv1a64('')).toBe(0xcbf29ce484222325n);
     expect(fnv1a64('a')).toBe(0xaf63dc4c8601ec8cn);
+    expect(fnv1a64('foobar')).toBe(0x85944171f73967e8n);
+  });
+
+  it('gives what the FNV-1a formula gives in 64-bit arithmetic, for long and non-ASCII text', () => {
+    // The formula of the FNV reference, worked byte by byte in BigInt: xor the byte, multiply by the prime, mod 2^64.
+    const formula = (text: string): bigint => {
+      let hash = 0xcbf29ce484222325n;
+      for (const byte of new TextEncoder().encode(text)) hash = ((hash ^ BigInt(byte)) * 0x100000001b3n) % 2n ** 64n;
+      return hash;
+    };
+    const texts = ['ÿĀ￿', '\u{1f600} cell', 'x'.repeat(5000), '{"a":[1,2]}'];
+    for (let n = 0; n < 64; n++) texts.push(String.fromCharCode(...range(1, n).map((i) => (i * 7919 + n) % 0xd7ff)));
+    for (const text of texts) expect(fnv1a64(text), text.slice(0, 20)).toBe(formula(text));
   });
 
   it('writes compact canonical JSON with keys in code point order at every level', () => {
@@ -93,6 +106,21 @@ describe('validStyle', () => {
       glow: 1,
     });
     expect(style).toEqual({ font: { italic: true }, align: { h: 'center' }, border: { t: { style: 'thin' } } });
+  });
+
+  it('removes unknown keys that hold a dot, and a gradient with a bad stop, without touching the rest', () => {
+    expect(validStyle({ 'a.b': 1, font: { 'x.y': true, bold: true } })).toEqual({ font: { bold: true } });
+    expect(validStyle({ 'font.bold': 1, font: { bold: true } })).toEqual({ font: { bold: true } });
+    const gradient = {
+      gradient: {
+        angle: 90,
+        stops: [
+          { at: 0, color: 'ink' },
+          { at: 2, color: 'paper' },
+        ],
+      },
+    };
+    expect(validStyle({ fill: gradient, font: { italic: true } })).toEqual({ font: { italic: true } });
   });
 
   it('accepts sizes from 1 to 1638 in steps of 0.5 and rotations from -90 to 90 or stacked', () => {

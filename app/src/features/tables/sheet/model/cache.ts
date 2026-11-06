@@ -11,17 +11,24 @@ function markdownOf(row: TableLike['rows'][number], col: string): string {
   return typeof cell?.markdown === 'string' ? cell.markdown : '';
 }
 
+const fingerprints = new WeakMap<TableLike, string>();
+
 /**
  * The fingerprint of a table (R-SHT-18): `fnv1a:` and the FNV-1a 64 hash, in 16 lowercase hexadecimal digits, of
  * the compact canonical JSON of `[header, column IDs, [[row ID, [Markdown per column]] per row], smart]`. Styles and
- * the rest of `data.sheet` are not part of it, so formatting never makes the cache stale.
+ * the rest of `data.sheet` are not part of it, so formatting never makes the cache stale. It is computed once per
+ * table object, as `gridOf` reads it: callers treat a table as immutable and make a new object for each edit.
  */
 export function fingerprint(table: TableLike): string {
+  const known = fingerprints.get(table);
+  if (known !== undefined) return known;
   const cols = table.columns.map((c) => c.id);
   const rows: Json = table.rows.map((row) => [row.id, cols.map((c) => markdownOf(row, c))]);
   const smart = (table.smart ?? null) as Json;
   const hash = fnv1a64(canonical([table.header === true, cols, rows, smart]));
-  return `fnv1a:${hash.toString(16).padStart(16, '0')}`;
+  const found = `fnv1a:${hash.toString(16).padStart(16, '0')}`;
+  fingerprints.set(table, found);
+  return found;
 }
 
 /** True when the sheet's cached values were computed from the table as it is now. */
@@ -30,7 +37,10 @@ export function isFresh(sheet: Sheet, table: TableLike): boolean {
   return typeof written === 'string' && written === fingerprint(table);
 }
 
-/** A cached value as R-SHT-17 allows it, or undefined. An error token this version does not know is kept. */
+/**
+ * A cached value as R-SHT-17 allows it, or undefined. An error token this version does not know is kept. `null` is an
+ * empty result: readers accept it, but writers write an empty result as no entry, since a merge patch cannot set it.
+ */
 export function cachedValue(value: Json | undefined): CachedValue | undefined {
   if (value === null || typeof value === 'boolean' || typeof value === 'string') return value;
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
@@ -63,16 +73,21 @@ export function readValues(sheet: Sheet, table: TableLike): CachedValues {
   return { values, fresh: isFresh(sheet, table) };
 }
 
-/** The cached value of one cell when the cache is fresh, else undefined. */
+/**
+ * The cached value of one cell when the cache is fresh, else undefined. A cell with no entry in a fresh cache gives
+ * null: for a formula or spilled cell that is an empty result (R-SHT-17).
+ */
 export function valueAt(sheet: Sheet, table: TableLike, row: string, col: string): CachedValue | undefined {
   if (!isFresh(sheet, table)) return undefined;
-  return cachedValue(own(ownObject(ownObject(sheet, 'values'), row), col));
+  const stored = own(ownObject(ownObject(sheet, 'values'), row), col);
+  return stored === undefined ? null : cachedValue(stored);
 }
 
 /**
  * Writes the value cache in the same change as the edit that changed the values (R-SHT-17): replaces `values` and
  * stamps `valuesOf` with the table's fingerprint. Arrays are never cached as one value: give each spilled cell its
- * own entry. Changes `sheet` in place; an empty cache removes both keys.
+ * own entry. An empty result (null) is written as no entry, because `null` inside a merge patch deletes. Changes
+ * `sheet` in place. A cache of only empty results keeps `valuesOf` alone; no values at all removes both keys.
  */
 export function writeValues(
   sheet: Sheet,
@@ -80,21 +95,21 @@ export function writeValues(
   values: ReadonlyMap<string, ReadonlyMap<string, CachedValue>>,
 ): void {
   const out: JsonObject = {};
+  let any = false;
   for (const [row, byCol] of values) {
     const cells: JsonObject = {};
     for (const [col, value] of byCol) {
       const kept = cachedValue(value as Json);
-      if (kept !== undefined) put(cells, col, kept);
+      if (kept === undefined) continue;
+      any = true;
+      if (kept !== null) put(cells, col, kept);
     }
     if (Object.keys(cells).length > 0) put(out, row, cells);
   }
-  if (Object.keys(out).length === 0) {
-    delete sheet.values;
-    delete sheet.valuesOf;
-    return;
-  }
-  put(sheet, 'values', out);
-  put(sheet, 'valuesOf', fingerprint(table));
+  if (Object.keys(out).length > 0) put(sheet, 'values', out);
+  else delete sheet.values;
+  if (any) put(sheet, 'valuesOf', fingerprint(table));
+  else delete sheet.valuesOf;
 }
 
 /** The readable text of a cell's Markdown (R-TXT-1), as the editor's Markdown reader gives it. */

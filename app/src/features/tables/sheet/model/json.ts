@@ -49,21 +49,29 @@ export function sortedKeys(record: JsonObject): string[] {
   return Object.keys(record).sort(compareKeys);
 }
 
-/** A deep copy with the keys of every object in code point order (R-JSON-1). */
-export function ordered(value: Json): Json {
-  if (Array.isArray(value)) return value.map(ordered);
+/**
+ * How deep the copies below go. A value nested deeper is shared as it is, not copied, so a file with a very deep
+ * unknown value never runs out of stack. Known keys of the sheet sit at most 6 levels deep.
+ */
+export const COPY_DEPTH = 64;
+
+/** A deep copy with the keys of every object in code point order (R-JSON-1), down to COPY_DEPTH. */
+export function ordered(value: Json, depth = 0): Json {
+  if (depth >= COPY_DEPTH) return value;
+  if (Array.isArray(value)) return value.map((x) => ordered(x, depth + 1));
   if (!isObject(value)) return value;
   const out: JsonObject = {};
-  for (const key of sortedKeys(value)) put(out, key, ordered(value[key]));
+  for (const key of sortedKeys(value)) put(out, key, ordered(value[key], depth + 1));
   return out;
 }
 
-/** A deep copy that keeps key order. */
-export function clone<T extends Json>(value: T): T {
-  if (Array.isArray(value)) return value.map(clone) as T;
+/** A deep copy that keeps key order, down to COPY_DEPTH. */
+export function clone<T extends Json>(value: T, depth = 0): T {
+  if (depth >= COPY_DEPTH) return value;
+  if (Array.isArray(value)) return value.map((x) => clone(x, depth + 1)) as T;
   if (!isObject(value)) return value;
   const out: JsonObject = {};
-  for (const key of Object.keys(value)) put(out, key, clone(value[key]));
+  for (const key of Object.keys(value)) put(out, key, clone(value[key], depth + 1));
   return out as T;
 }
 
@@ -103,15 +111,30 @@ export function pretty(value: Json, depth = 0): string {
   return canonical(value);
 }
 
-const FNV_OFFSET = 0xcbf29ce484222325n;
-const FNV_PRIME = 0x100000001b3n;
-const MASK = 0xffffffffffffffffn;
+const encoder = new TextEncoder();
 
-/** FNV-1a 64 of the UTF-8 bytes of `text` (offset basis cbf29ce484222325, prime 100000001b3). */
+/**
+ * FNV-1a 64 of the UTF-8 bytes of `text` (offset basis cbf29ce484222325, prime 100000001b3). The hash is kept in four
+ * 16-bit parts, lowest first, so each byte costs a few small integer steps instead of BigInt arithmetic. The prime is
+ * 2^40 + 0x1b3, so a product is the parts times 0x1b3, plus the parts moved up 40 bits (2.5 parts).
+ */
 export function fnv1a64(text: string): bigint {
-  let hash = FNV_OFFSET;
-  for (const byte of new TextEncoder().encode(text)) hash = ((hash ^ BigInt(byte)) * FNV_PRIME) & MASK;
-  return hash;
+  let h0 = 0x2325;
+  let h1 = 0x8422;
+  let h2 = 0x9ce4;
+  let h3 = 0xcbf2;
+  for (const byte of encoder.encode(text)) {
+    h0 ^= byte;
+    const t0 = h0 * 0x1b3;
+    const t1 = h1 * 0x1b3 + (t0 >>> 16);
+    const t2 = h2 * 0x1b3 + (h0 << 8) + (t1 >>> 16);
+    const t3 = h3 * 0x1b3 + (h1 << 8) + (t2 >>> 16);
+    h0 = t0 & 0xffff;
+    h1 = t1 & 0xffff;
+    h2 = t2 & 0xffff;
+    h3 = t3 & 0xffff;
+  }
+  return (BigInt(h3 * 0x10000 + h2) << 32n) | BigInt(h1 * 0x10000 + h0);
 }
 
 export function jsonEqual(a: Json | undefined, b: Json | undefined): boolean {
