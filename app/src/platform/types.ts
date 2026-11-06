@@ -115,6 +115,10 @@ export interface Platform {
   readonly notesSnapshot: NotesSnapshotClient | null;
   /** The notes bridge over the core, which keeps the tree in the notes folder. Null on the web platform. */
   readonly notesCore: NotesCoreClient | null;
+  /** The device's fonts, listed by the shell (ADR 0080). The web platform has a fixed list. */
+  readonly fonts: FontsClient;
+  /** A notebook's named styles, kept in its notebook.json (ADR 0082). */
+  readonly notebookStyles: NotebookStylesClient;
   readonly perf: PerfClient;
   log(level: LogLevel, message: string): void;
 }
@@ -227,6 +231,52 @@ export interface NotesSnapshotClient {
   load(): Promise<string | null>;
   /** Rust writes atomically, with a 5 MB cap. */
   save(json: string): Promise<void>;
+}
+
+/** One face of a font family, with the metrics line spacing and exports need (ADR 0080). Lengths are font units. */
+export interface FontFace {
+  readonly postScriptName: string;
+  readonly style: 'normal' | 'italic' | 'oblique';
+  /** 100 to 900. */
+  readonly weight: number;
+  /** 1 (ultra condensed) to 9 (ultra expanded); 5 is normal. */
+  readonly stretch: number;
+  readonly monospace: boolean;
+  /** What the font's embedding permission (OS/2 fsType) allows. */
+  readonly embedding: 'installable' | 'editable' | 'preview-print' | 'restricted' | 'unknown';
+  readonly unitsPerEm: number;
+  readonly winAscent: number;
+  readonly winDescent: number;
+  readonly typoLineGap: number;
+  readonly xHeight: number | null;
+  readonly capHeight: number | null;
+}
+
+export type FontGeneric = 'serif' | 'sans-serif' | 'cursive' | 'fantasy' | 'symbol' | 'unknown';
+
+/** A font family on the device. */
+export interface FontFamily {
+  readonly name: string;
+  readonly generic: FontGeneric;
+  readonly monospace: boolean;
+  /** One face per weight and style, lightest first. */
+  readonly faces: readonly FontFace[];
+}
+
+/** The device's fonts. The list stays on the device: never log it, send it, or put it in a report. */
+export interface FontsClient {
+  /** The families, sorted by name. The shell caches the list for the session; `refresh` scans again. */
+  list(refresh?: boolean): Promise<readonly FontFamily[]>;
+}
+
+/** A notebook's named styles as notebook.json keeps them: style name to style. Unknown keys are kept. */
+export type NotebookStylesJson = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+
+/** Reads and writes a notebook's named styles. An empty object means the notebook has none. */
+export interface NotebookStylesClient {
+  get(notebook: string): Promise<NotebookStylesJson>;
+  /** Replaces all the notebook's styles. */
+  set(notebook: string, styles: NotebookStylesJson): Promise<void>;
 }
 
 export interface PerfClient {

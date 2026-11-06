@@ -23,3 +23,7 @@ We will add the `fontdb` crate (MIT, with `ttf-parser`, MIT or Apache-2.0) to th
 ## Consequences
 
 `app/src-tauri/Cargo.toml` and `Cargo.lock` gain the crate, and `THIRD_PARTY_NOTICES.md` its notice. A benchmark holds the first call under 150 ms for 1,000 families on the reference laptop. Revisit if `fontdb` stops being maintained.
+
+## Implementation notes
+
+`fonts_list` takes an optional `refresh` flag and returns families sorted by name. Each family has a generic class (from `OS/2` `sFamilyClass`, then PANOSE) and a monospace flag; each face has its weight, style, stretch, `fsType` permission, units per em, `usWinAscent`, `usWinDescent`, `sTypoLineGap`, x-height, and cap height. A face installed twice counts once. The module writes no log line. Tests build small TrueType files from the OpenType table layouts, because the shipped fonts are woff2 and `fontdb` reads only TrueType and OpenType.
