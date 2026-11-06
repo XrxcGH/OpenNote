@@ -3,7 +3,7 @@
 // are cards, which lane or day each is in, and the new cell text a move writes. Moving a card edits a cell, so the
 // table is always the one source of truth, and a move is one undo step.
 import { formatValue, isError } from '../engine';
-import { daysToIso, daysToYmd, ymdToDays } from '../engine/dates';
+import { daysToIso, daysToYmd, weekdayOf, ymdToDays } from '../engine/dates';
 import type { Locale } from '../engine';
 import { readCell, rewrite } from './choice';
 import type { ChoiceInfo } from './choice';
@@ -126,7 +126,7 @@ export interface Month {
 /** The weeks of a month as day numbers, Sunday first, with days of the neighboring months filling the first and last week. */
 export function monthWeeks(at: Month): number[][] {
   const first = ymdToDays(at.year, at.month, 1) ?? 0;
-  const offset = ((first % 7) + 4) % 7; // 1970-01-01 was a Thursday, so day 0 has weekday 4.
+  const offset = weekdayOf(first);
   const start = first - offset;
   const next = at.month === 12 ? { year: at.year + 1, month: 1 } : { year: at.year, month: at.month + 1 };
   const length = (ymdToDays(next.year, next.month, 1) ?? first) - first;
