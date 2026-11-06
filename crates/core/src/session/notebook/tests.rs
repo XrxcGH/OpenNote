@@ -259,19 +259,35 @@ fn a_closed_notebook_refuses_work_and_can_open_again() {
     assert!(again.verify().unwrap().is_clean());
 }
 
-#[test]
-fn trash_expires_when_the_notebook_opens() {
-    let kit = CoreKit::new();
+/// A notebook opened again 31 days after a section went to Trash, so its Trash item has expired.
+fn reopened_after_expiry(kit: &CoreKit) -> super::NotebookHandle {
     let notebook = kit.notebook("Biology").unwrap();
     let section = notebook.create_section("Lab", top()).unwrap();
     notebook.delete(&[NodeRef::Section(section)]).unwrap();
     let path = notebook.path().to_path_buf();
     notebook.close().unwrap();
     kit.clock.advance(Duration::from_secs(31 * 86_400));
-    let again = kit.core.open_notebook(&path).unwrap();
+    kit.core.open_notebook(&path).unwrap()
+}
+
+#[test]
+fn trash_expires_when_the_notebook_opens() {
+    let kit = CoreKit::new();
+    let again = reopened_after_expiry(&kit);
     assert_eq!(again.trash().unwrap().len(), 1);
     kit.core.run_pending_work();
     assert!(again.trash().unwrap().is_empty());
+}
+
+#[test]
+fn the_open_work_runs_at_once_when_asked_and_the_queued_copy_then_finds_nothing() {
+    let kit = CoreKit::new();
+    let again = reopened_after_expiry(&kit);
+    again.run_open_work().unwrap();
+    assert!(again.trash().unwrap().is_empty());
+    kit.core.run_pending_work();
+    assert!(again.trash().unwrap().is_empty());
+    assert!(again.verify().unwrap().is_clean());
 }
 
 #[test]
