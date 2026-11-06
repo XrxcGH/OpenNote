@@ -255,14 +255,18 @@ fn page_setup(page: &Page) -> PageSetup {
     let page_numbers = text
         .and_then(|t| t.get("pageNumbers"))
         .and_then(Value::as_object)
-        .and_then(|numbers| {
-            let format = numbers.get("format").and_then(Value::as_str).unwrap_or("decimal");
-            let ok = format.len() <= 32 && format.bytes().all(|b| b.is_ascii_alphanumeric());
+        .map(|numbers| {
+            // A format outside the ST_NumberFormat values would make the file unreadable in Word: decimal.
+            let format = numbers
+                .get("format")
+                .and_then(Value::as_str)
+                .filter(|f| docx::NUMBER_FORMATS.contains(f))
+                .unwrap_or("decimal");
             let start = numbers
                 .get("start")
                 .and_then(Value::as_u64)
                 .and_then(|s| u32::try_from(s).ok());
-            ok.then(|| (format.to_owned(), start))
+            (format.to_owned(), start)
         });
     PageSetup {
         width: paper.width,

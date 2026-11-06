@@ -3,7 +3,7 @@
 
 use super::parts::{xml_escape, NS_W, XML_HEADER};
 use super::rpr::fonts_xml;
-use super::units::twips;
+use super::units::{twips, NUMBER_FORMATS};
 use crate::doc::data::{ListDef, ListLevel};
 
 /// The bullets of Word's default set: a bullet, `o`, and a square, repeating.
@@ -123,7 +123,10 @@ fn abstract_xml(id: usize, abs: &Abstract, mono: &str) -> String {
 fn level_xml(level: u32, given: Option<&ListLevel>, ordered: bool, mono: &str) -> String {
     let i = level as usize % 3;
     let default_format = if ordered { NUMBERED[i] } else { "bullet" };
-    let format = given.and_then(|g| g.format.as_deref()).unwrap_or(default_format);
+    let format = given
+        .and_then(|g| g.format.as_deref())
+        .filter(|f| NUMBER_FORMATS.contains(f))
+        .unwrap_or(default_format);
     let bullet = format == "bullet";
     let text = match (
         given.and_then(|g| g.symbol.as_deref()),

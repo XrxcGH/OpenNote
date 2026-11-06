@@ -47,6 +47,62 @@ fn a_page_export_writes_the_page_paper_not_letter() {
     assert!(doc.contains("<w:pgMar w:top=\"1080\" w:right=\"1080\" w:bottom=\"1080\" w:left=\"1080\""));
 }
 
+/// Exports one page, with `text` as its `view.text`, and returns its document part.
+fn page_doc(text: Value) -> String {
+    use crate::page_builder::PageBuilder;
+    use crate::testing::{at, TestEnv};
+    use crate::tree::{section_orders, SectionBuilder};
+    use opennote_core::model::NotebookFile;
+    use opennote_core::NotebookId;
+
+    let world = TestEnv::new();
+    let env = world.env();
+    let created = at("2026-01-05T09:30:00Z");
+    let mut builder = PageBuilder::new(&env, "Numbers", created, created);
+    builder.push_blocks(parse_page("Hello.").blocks);
+    let mut page = builder.finish().expect("the page builds");
+    page.page.view.extra.insert("text".to_owned(), text);
+    let notebook = NotebookFile::new(NotebookId::generate(env.clock), "Book", created);
+    let mut source = crate::MemorySource::new(notebook);
+    let mut section = SectionBuilder::new(&env, "Unit", created);
+    section.add_page(&page.page, None);
+    let page_id = page.page.id;
+    source.add_page(page);
+    let key = section_orders(1).expect("a key").remove(0);
+    source.add_section(section.finish(key).expect("the section builds"));
+    let out = tempfile::tempdir().expect("a temp folder");
+    let exported = crate::export_docx(&source, crate::Scope::Page(page_id), out.path()).expect("exports");
+    let bytes = std::fs::read(&exported.files[0]).expect("the file");
+    read_parts(&bytes)
+        .into_iter()
+        .find(|(name, _)| name == "word/document.xml")
+        .map(|(_, b)| String::from_utf8(b).expect("UTF-8"))
+        .expect("the document")
+}
+
+#[test]
+fn a_page_number_format_outside_st_number_format_is_written_as_decimal() {
+    // ECMA-376 Part 1, 17.18.59: "foo" is not one of the ST_NumberFormat values, so Word would call the file unreadable.
+    let doc = page_doc(json!({"pageNumbers": {"format": "foo", "start": 3}}));
+    assert!(doc.contains("<w:pgNumType w:fmt=\"decimal\" w:start=\"3\"/>"), "{doc}");
+    schema::check_part("word/document.xml", &doc);
+    // A value from 17.18.59 is kept.
+    let doc = page_doc(json!({"pageNumbers": {"format": "upperRoman"}}));
+    assert!(doc.contains("<w:pgNumType w:fmt=\"upperRoman\"/>"), "{doc}");
+    schema::check_part("word/document.xml", &doc);
+}
+
+#[test]
+fn the_schema_check_rejects_a_number_format_outside_st_number_format() {
+    let bad = |xml: &'static str| std::panic::catch_unwind(|| schema::check_part("bad", xml)).is_err();
+    assert!(bad("<w:sectPr xmlns:w=\"x\"><w:pgNumType w:fmt=\"foo\"/></w:sectPr>"));
+    assert!(bad("<w:lvl xmlns:w=\"x\"><w:numFmt w:val=\"foo\"/></w:lvl>"));
+    schema::check_part(
+        "good",
+        "<w:sectPr xmlns:w=\"x\"><w:pgNumType w:fmt=\"lowerRoman\"/></w:sectPr>",
+    );
+}
+
 #[test]
 fn a_weight_names_the_device_face_and_is_bold_from_600() {
     let faces = vec![

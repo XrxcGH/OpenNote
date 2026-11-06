@@ -24,7 +24,7 @@ We extend the existing writer and reader rather than adopt a library.
 
 ### Schema validation (owner decision 11)
 
-The ECMA-376 schema files are not vendored. Rust has no mature XSD validator, a binding to libxml2 would add a C dependency only for a test, and the schemas add several megabytes of fixtures. Decision 11 named the fallback: a hand-written subset. The test transcribes the sequences of the complex types the writer uses (`CT_RPr`, `CT_PPr`, `CT_SectPr`, `CT_Style`, `CT_Settings`, `CT_Font`, `CT_Lvl`, numbering, tables, and the DrawingML theme), the enumerations of the values it writes, and the counts the theme needs. It checks every written part for order, enumerations, colors, declared prefixes, and well-formed XML.
+The ECMA-376 schema files are not vendored. Rust has no mature XSD validator, a binding to libxml2 would add a C dependency only for a test, and the schemas add several megabytes of fixtures. Decision 11 named the fallback: a hand-written subset. The owner did not answer before B10.2, so that default applied (NEXT-PLAN 6.2, text D11). The test transcribes the sequences of the complex types the writer uses (`CT_RPr`, `CT_PPr`, `CT_SectPr`, `CT_Style`, `CT_Settings`, `CT_Font`, `CT_Lvl`, numbering, tables, and the DrawingML theme), the enumerations of the values it writes, and the counts the theme needs. It checks every written part for order, enumerations, colors, declared prefixes, and well-formed XML.
 
 ## Options considered
 

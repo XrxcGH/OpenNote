@@ -172,7 +172,8 @@ fn measures(marks: &Marks) -> String {
     if let Some(percent) = marks.scale.as_deref() {
         out.push_str(&format!("<w:w w:val=\"{percent}\"/>"));
     }
-    if let Some(points) = number(marks.kern.as_deref()).filter(|k| *k > 0.0) {
+    // 0 turns kerning off, which a run under a style that kerns must say; only a missing mark is left out.
+    if let Some(points) = number(marks.kern.as_deref()).filter(|k| *k >= 0.0) {
         out.push_str(&format!("<w:kern w:val=\"{}\"/>", half_points(points)));
     }
     if let Some(points) = number(marks.shift.as_deref()) {

@@ -119,6 +119,17 @@ fn counts() -> BTreeMap<&'static str, (usize, usize)> {
     map
 }
 
+/// `ST_NumberFormat`, transcribed from ECMA-376 Part 1, 17.18.59 (without `custom`, which needs `w:format`).
+const ST_NUMBER_FORMAT: &str = "decimal upperRoman lowerRoman upperLetter lowerLetter ordinal cardinalText \
+     ordinalText hex chicago ideographDigital japaneseCounting aiueo iroha decimalFullWidth decimalHalfWidth \
+     japaneseLegal japaneseDigitalTenThousand decimalEnclosedCircle decimalFullWidth2 aiueoFullWidth irohaFullWidth \
+     decimalZero bullet ganada chosung decimalEnclosedFullstop decimalEnclosedParen decimalEnclosedCircleChinese \
+     ideographEnclosedCircle ideographTraditional ideographZodiac ideographZodiacTraditional taiwaneseCounting \
+     ideographLegalTraditional taiwaneseCountingThousand taiwaneseDigital chineseCounting chineseLegalSimplified \
+     chineseCountingThousand koreanDigital koreanCounting koreanLegal koreanDigital2 vietnameseCounting \
+     russianLower russianUpper none numberInDash hebrew1 hebrew2 arabicAlpha arabicAbjad hindiVowels \
+     hindiConsonants hindiNumbers hindiCounting thaiLetters thaiNumbers thaiCounting bahtText dollarText";
+
 /// The schema's enumerations of the values this writer writes, by `element@attribute`, separated by spaces.
 const ENUMERATIONS: &[(&str, &str)] = &[
     ("w:jc@w:val", "start center end both distribute left right"),
@@ -137,6 +148,8 @@ const ENUMERATIONS: &[(&str, &str)] = &[
     ("w:framePr@w:dropCap", "none drop margin"),
     ("w:lvlJc@w:val", "start center end both left right"),
     ("w:multiLevelType@w:val", "singleLevel multilevel hybridMultilevel"),
+    ("w:pgNumType@w:fmt", ST_NUMBER_FORMAT),
+    ("w:numFmt@w:val", ST_NUMBER_FORMAT),
     (
         "w14:ligatures@w14:val",
         "none standard contextual historical discretional standardContextual standardHistorical \

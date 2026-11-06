@@ -76,10 +76,17 @@ pub struct HeaderParts {
     pub files: Vec<(String, &'static str, String)>,
     /// The relationships of the document part to them.
     pub rels: Vec<String>,
+    /// The relationship ID of each file, in the order of `files`.
+    ids: Vec<String>,
 }
 
 impl HeaderParts {
+    /// Adds a header or footer part and returns its relationship ID. A part with the same kind and content as
+    /// one already added, such as the header of a page's columns section, reuses that part.
     fn add(&mut self, kind: &'static str, xml: String, rel_id: &mut dyn FnMut() -> String) -> String {
+        if let Some(i) = self.files.iter().position(|(_, k, x)| *k == kind && *x == xml) {
+            return self.ids[i].clone();
+        }
         let n = self.files.iter().filter(|(_, k, _)| *k == kind).count() + 1;
         let name = format!("{kind}{n}.xml");
         let rid = rel_id();
@@ -87,6 +94,7 @@ impl HeaderParts {
             "<Relationship Id=\"{rid}\" Type=\"{NS_R}/{kind}\" Target=\"{name}\"/>"
         ));
         self.files.push((name, kind, xml));
+        self.ids.push(rid.clone());
         rid
     }
 }

@@ -9,7 +9,7 @@ use serde_json::{json, Map, Value};
 use super::*;
 
 /// Run marks that Word holds exactly: every mark of DESIGN 2.2 but two kinds. Word has no property for `weight`
-/// without a device face, `otf` `zero`, `kern` 0, `float`, or `foreign`. And some share a Word form with another
+/// without a device face, `otf` `zero`, `float`, or `foreign`. And some share a Word form with another
 /// mark: point sizes 10, 15, and 18 are the size names, and a highlight that is not one of the 16 is shading.
 fn arb_marks() -> impl Strategy<Value = Marks> {
     let font = prop::option::of(prop::sample::select(vec!["Georgia", "+body", "+heading", "Segoe UI"]));

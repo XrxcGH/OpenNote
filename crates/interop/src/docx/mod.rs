@@ -26,6 +26,7 @@ pub use self::fonts::{EmbedFont, Theme, BUNDLED};
 pub use self::rpr::weight_face;
 pub use self::section::{Band, BandFields, Bands, PageSetup};
 pub use self::styles::{app_styles, merge as merge_styles, sheet_from_json, style_id, StyleSheet};
+pub use self::units::NUMBER_FORMATS;
 
 use self::body::Frame;
 use self::parts::{content_types, core_props, document_rels, root_rels, xml_escape, Extras};

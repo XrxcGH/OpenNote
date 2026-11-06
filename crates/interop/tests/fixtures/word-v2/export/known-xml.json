@@ -12,6 +12,7 @@
     { "name": "scale 150 percent", "markdown": "<span data-scale=\"150\">a</span>", "expect": ["<w:w w:val=\"150\"/>"] },
     { "name": "shift 3 pt is 6 half-points", "markdown": "<span data-shift=\"3\">a</span>", "expect": ["<w:position w:val=\"6\"/>"] },
     { "name": "kerning from 14 pt is 28 half-points", "markdown": "<span data-kern=\"14\">a</span>", "expect": ["<w:kern w:val=\"28\"/>"] },
+    { "name": "kerning 0 (off) is written as 0, so it overrides a style that kerns", "markdown": "<span data-kern=\"0\">a</span>", "expect": ["<w:kern w:val=\"0\"/>"] },
     { "name": "outline and shadow", "markdown": "<span data-effect=\"outline shadow\">a</span>", "expect": ["<w:outline/><w:shadow/>"] },
     { "name": "#ffff00 is the yellow highlight", "markdown": "<mark data-color=\"#ffff00\">a</mark>", "expect": ["<w:highlight w:val=\"yellow\"/>"] },
     { "name": "#123456 is not one of the 16, so it is shading", "markdown": "<mark data-color=\"#123456\">a</mark>", "expect": ["<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"123456\"/>"] },

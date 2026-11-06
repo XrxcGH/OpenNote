@@ -16,7 +16,7 @@ Writes a Word file (`.docx`) by hand, so the crate needs no Word library (ADR 00
 
 ## What the UI wiring needs
 
-"Export as Word" calls `export_docx_with` with the default options. The export dialog can pass `WordOptions` through `export_docx_options` once it offers "Embed bundled fonts" and "Remove personal information", and once `fonts_list` returns the device's faces.
+The export dialog offers "Remove personal information" for Word. The app sends it as `word.removePersonal`, and `app/src-tauri/src/interop/export.rs` passes it to `export_docx_options` in `WordOptions`. Two options are not reachable from the app yet. "Embed bundled fonts" needs sfnt (TTF or OTF) bytes of the bundled families, which ship only as WOFF2 subsets today. The device's faces (`WordOptions.faces`) wait for `fonts_list` (text:native-bridge).
 
 ## Tests
 

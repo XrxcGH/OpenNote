@@ -76,6 +76,11 @@ fn columns_on_a_page_use_that_page_setup_and_stay_on_its_sheet() {
         "the text before the columns starts the sheet"
     );
     assert!(doc.find("Before.") < doc.find("<w:sectPr>"));
+    // The three sections of the page share one header part.
+    let headers: Vec<_> = all.keys().filter(|name| name.starts_with("word/header")).collect();
+    assert_eq!(headers, ["word/header1.xml"], "{headers:?}");
+    let rels = &all["word/_rels/document.xml.rels"];
+    assert_eq!(rels.matches("/header\"").count(), 1, "{rels}");
 }
 
 #[test]
