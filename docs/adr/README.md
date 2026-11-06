@@ -111,7 +111,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0078](0078-stamp-the-lowest-version.md) | Writers stamp the lowest format version a file needs | Proposed | 2026-11-02 |
 | [0079](0079-run-and-paragraph-formatting-model.md) | Run formatting lives in the Markdown, paragraph formatting beside it by element ID, in points | Proposed | 2026-11-01 |
 | [0080](0080-font-discovery.md) | The Rust side lists the device's fonts with fontdb, and the list never leaves the device | Proposed | 2026-11-01 |
-| [0081](0081-bundled-fonts.md) | Bundle Carlito and Caladea as metric stand-ins, loaded on demand | Proposed | 2026-11-01 |
+| [0081](0081-bundled-fonts.md) | Bundle Carlito and Caladea as metric stand-ins, loaded on demand | Accepted | 2026-11-01 |
 | [0082](0082-named-styles-v2.md) | Named styles move to notebook.json, gain inheritance and user styles, and pages can carry their own sheet | Proposed | 2026-11-01 |
 | [0083](0083-docx-writer-and-reader.md) | Keep the hand-written DOCX writer and reader, and extend them to full formatting fidelity | Proposed | 2026-11-01 |
 | [0084](0084-clipboard-fidelity.md) | Copy writes formatting other apps read, and paste keeps source formatting with Paste Options | Proposed | 2026-11-01 |
