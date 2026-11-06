@@ -1,22 +1,27 @@
 // Text elements (SPEC 6.6). A text block names its paragraphs, headings, list items, code blocks, math blocks, and
-// thematic breaks in `data.ids`, in document order. It keeps their tags, styles, and checked to-dos beside the
-// Markdown, which never carries them. A document holds them as attributes, and this module moves them between the two.
+// thematic breaks in `data.ids`, in document order. It keeps their tags, styles, checked to-dos, and paragraph
+// formatting (`paras`, spec 6.8) beside the Markdown, which never carries them. A document holds them as attributes,
+// and this module moves them between the two.
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { attrsFromEntry, clearedParaAttrs, entryFromAttrs } from '../paragraph/attributes';
+import { readLists, shownStarts } from '../paragraph/numbering';
 import { ELEMENT_TYPES } from '../schema/specs';
 
-/** The `ids`, `tags`, `styles`, and `checked` fields of a text block's `data` (SPEC 6.6). */
+/** The `ids`, `tags`, `styles`, `checked`, and `paras` fields of a text block's `data` (SPEC 6.6 and 6.8). */
 export interface ElementData {
   ids: string[];
   tags: Record<string, string[]>;
   styles: Record<string, string>;
   checked: string[];
+  /** Paragraph formatting by element ID. Each entry is kept as the file had it, unknown keys too. */
+  paras: Record<string, unknown>;
 }
 
 export const MAX_TAGS_PER_ELEMENT = 1000;
 export const MAX_TAG_LENGTH = 200;
 
 export function emptyElementData(): ElementData {
-  return { ids: [], tags: {}, styles: {}, checked: [] };
+  return { ids: [], tags: {}, styles: {}, checked: [], paras: {} };
 }
 
 type Update = (node: PMNode, index: number) => Record<string, unknown>;
@@ -53,19 +58,32 @@ export function countElements(doc: PMNode): number {
   return count;
 }
 
+/** The paragraph formatting attributes of `node` for a `paras` entry. Each one the node has is set from it or cleared. */
+export function paraAttrsFor(node: PMNode, entry: unknown): Record<string, unknown> {
+  const attrs: Record<string, unknown> = {};
+  const set = attrsFromEntry(entry, node.type.name);
+  for (const [name, cleared] of Object.entries(clearedParaAttrs())) {
+    if (name in (node.type.spec.attrs ?? {})) attrs[name] = name in set ? set[name] : cleared;
+  }
+  return attrs;
+}
+
 /**
- * Gives each element the ID, tags, style, and checked state that the block's data names for it. A list with
- * fewer IDs than elements leaves the last elements without one, and extra IDs are ignored (SPEC 6.6).
+ * Gives each element the ID, tags, style, checked state, and paragraph formatting that the block's data names for
+ * it. A list with fewer IDs than elements leaves the last elements without one, and extra IDs are ignored (SPEC
+ * 6.6). An entry of `paras` whose ID names no element is ignored (R-PARA-2).
  */
 export function applyElementData(doc: PMNode, data: Partial<ElementData>): PMNode {
   const checked = new Set(data.checked ?? []);
-  return updateElements(doc, (_node, index) => {
+  const paras = data.paras ?? {};
+  return updateElements(doc, (node, index) => {
     const id = data.ids?.[index] ?? null;
     return {
       id,
       tags: id === null ? [] : (data.tags?.[id] ?? []),
       style: id === null ? null : (data.styles?.[id] ?? null),
       tagChecked: id !== null && checked.has(id),
+      ...paraAttrsFor(node, id !== null && Object.hasOwn(paras, id) ? paras[id] : undefined),
     };
   });
 }
@@ -75,8 +93,30 @@ function byKey<T>(record: Record<string, T>): Record<string, T> {
 }
 
 /**
+ * The document with each ordered list's Markdown start number set to the number its first item shows. This applies
+ * when that item names a list of `lists`, the block's `data.lists`: `4.` for a list that continues from three items
+ * (R-LIST-3).
+ */
+export function withShownStarts(doc: PMNode, lists?: unknown): PMNode {
+  const starts = new Map(shownStarts(doc, readLists(lists)).map((entry) => [entry.pos, entry.start]));
+  if (starts.size === 0) return doc;
+  const rebuild = (node: PMNode, pos: number): PMNode => {
+    if (node.isTextblock || node.isLeaf) return node;
+    const children: PMNode[] = [];
+    node.forEach((child, offset) => children.push(rebuild(child, pos + 1 + offset)));
+    const start = starts.get(pos);
+    const attrs = start === undefined ? node.attrs : { ...node.attrs, start };
+    return node.type.create(attrs, children, node.marks);
+  };
+  const children: PMNode[] = [];
+  doc.forEach((child, offset) => children.push(rebuild(child, offset)));
+  return doc.type.create(doc.attrs, children, doc.marks);
+}
+
+/**
  * The data fields for a document, and the document with an ID on every element. An element without an ID, or
- * with one that an earlier element has, gets a new one from `newId`. Maps come out with their keys in order.
+ * with one that an earlier element has, gets a new one from `newId`. Maps come out with their keys in order. Only
+ * elements in the document have a `paras` entry, so the entries of deleted elements are dropped (R-PARA-2).
  */
 export function extractElementData(doc: PMNode, newId: () => string): { doc: PMNode; data: ElementData } {
   const data = emptyElementData();
@@ -90,10 +130,13 @@ export function extractElementData(doc: PMNode, newId: () => string): { doc: PMN
     if (tags.length > 0) data.tags[id] = tags.map((tag) => tag.slice(0, MAX_TAG_LENGTH));
     if (node.attrs.style) data.styles[id] = node.attrs.style as string;
     if (node.attrs.tagChecked) data.checked.push(id);
+    const entry = entryFromAttrs(node.attrs);
+    if (entry !== undefined) data.paras[id] = entry;
     return { id };
   });
   data.tags = byKey(data.tags);
   data.styles = byKey(data.styles);
+  data.paras = byKey(data.paras);
   data.checked.sort();
   return { doc: withIds, data };
 }

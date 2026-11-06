@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyElementData, countElements, extractElementData } from './elements';
+import { applyElementData, countElements, extractElementData, withShownStarts } from './elements';
 import { parseTextBlock } from './parse';
 import { serializeTextBlock } from './serialize';
 
@@ -92,5 +92,47 @@ describe('text elements', () => {
     expect(extractElementData(doc, counter()).data.tags).toEqual({});
     const short = applyElementData(parseTextBlock('one\n\ntwo'), { ids: ['a'] });
     expect(short.lastChild?.attrs.id).toBeNull();
+  });
+});
+
+describe('paragraph formatting of elements', () => {
+  it('reads paragraph formatting by element ID into attributes, and writes the same entries back (spec 6.8)', () => {
+    const paras = {
+      [IDS[0]]: { outline: 1, align: 'center' },
+      [IDS[1]]: { indent: { start: 36, first: -18 }, tabs: [{ pos: 144, align: 'decimal', leader: 'dot' }] },
+      [IDS[2]]: { list: { id: 'l1' }, keepNext: true },
+      [IDS[6]]: { future: 'a key from a later version' },
+    };
+    const doc = applyElementData(parseTextBlock(MARKDOWN), { ids: IDS, paras });
+    expect(doc.firstChild?.attrs.align).toBe('center');
+    expect(doc.child(1).attrs.indent).toEqual({ start: 36, first: -18 });
+    expect(serializeTextBlock(doc)).toBe(MARKDOWN);
+    expect(extractElementData(doc, counter()).data.paras).toEqual(paras);
+  });
+
+  it('keeps keys it does not know and values out of range as the file had them', () => {
+    const entry = { align: 'sideways', before: 9999, later: { nested: [1, 2] } };
+    const doc = applyElementData(parseTextBlock('one'), { ids: ['a'], paras: { a: entry } });
+    expect(extractElementData(doc, counter()).data.paras).toEqual({ a: entry });
+  });
+
+  it('drops the entries of elements that are not in the document (R-PARA-2)', () => {
+    const paras = { a: { align: 'end' }, b: { align: 'center' }, stale: { align: 'start' } };
+    const doc = applyElementData(parseTextBlock('one\n\ntwo'), { ids: ['a', 'b'], paras });
+    const shorter = doc.copy(doc.content.cut(0, doc.firstChild!.nodeSize));
+    expect(extractElementData(shorter, counter()).data.paras).toEqual({ a: { align: 'end' } });
+  });
+
+  it('writes 4. as the Markdown start of a list that continues, and 1. for a restart (R-LIST-3)', () => {
+    const markdown = '1. one\n2. two\n3. three\n\nA paragraph.\n\n1. four';
+    const list = { list: { id: 'l1' } };
+    const ids = ['i1', 'i2', 'i3', 'p1', 'i4'];
+    const paras = { i1: list, i2: list, i3: list, i4: list };
+    const lists = { l1: { levels: [{ format: 'decimal' }] } };
+    const continued = applyElementData(parseTextBlock(markdown), { ids, paras });
+    expect(serializeTextBlock(withShownStarts(continued, lists))).toBe(markdown.replace('1. four', '4. four'));
+    const restart = { ...paras, i4: { list: { id: 'l1', restart: true } } };
+    const restarted = applyElementData(parseTextBlock(markdown.replace('1. four', '9. four')), { ids, paras: restart });
+    expect(serializeTextBlock(withShownStarts(restarted, lists))).toBe(markdown);
   });
 });

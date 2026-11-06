@@ -4,6 +4,7 @@
 // it override what the rule set.
 import { Node } from '@tiptap/core';
 import type { TagParseRule } from '@tiptap/pm/model';
+import { paraAttributes, paraRestAttribute } from '../paragraph/attributes';
 import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from './constants';
 
 const META_OFF = { rendered: false, parseHTML: () => null };
@@ -19,6 +20,16 @@ function elementAttributes() {
   };
 }
 
+/** An element that takes paragraph formatting (`data.paras`, spec 6.8): its metadata and one attribute per key. */
+function formattedAttributes() {
+  return { ...elementAttributes(), ...paraAttributes() };
+}
+
+/** An element without paragraph formatting. It keeps a `paras` entry whole, so a save writes it back. */
+function keptAttributes() {
+  return { ...elementAttributes(), ...paraRestAttribute() };
+}
+
 /** A heading's tag, from a level clamped to 1 to 6 so no value can name another element. */
 export function headingTag(level: unknown): string {
   return `h${Math.min(6, Math.max(1, Math.trunc(Number(level)) || 1))}`;
@@ -32,7 +43,7 @@ export const Paragraph = Node.create({
   priority: 1000,
   group: 'block',
   content: 'inline*',
-  addAttributes: elementAttributes,
+  addAttributes: formattedAttributes,
   parseHTML: () => [{ tag: 'p' }],
   renderHTML: () => ['p', 0],
 });
@@ -43,7 +54,7 @@ export const Heading = Node.create({
   content: 'inline*',
   defining: true,
   // The level comes from the tag the rule matched, never from a `level` attribute on the pasted element.
-  addAttributes: () => ({ level: { default: 1, rendered: false, parseHTML: () => null }, ...elementAttributes() }),
+  addAttributes: () => ({ level: { default: 1, rendered: false, parseHTML: () => null }, ...formattedAttributes() }),
   parseHTML: () => [1, 2, 3, 4, 5, 6].map((level): TagParseRule => ({ tag: `h${level}`, attrs: { level } })),
   renderHTML: ({ node }) => [headingTag(node.attrs.level), 0],
 });
@@ -61,7 +72,7 @@ export const HardBreak = Node.create({
 export const HorizontalRule = Node.create({
   name: 'horizontalRule',
   group: 'block',
-  addAttributes: elementAttributes,
+  addAttributes: keptAttributes,
   parseHTML: () => [{ tag: 'hr' }],
   renderHTML: () => ['hr'],
 });
@@ -93,7 +104,7 @@ export const ListItem = Node.create({
       rendered: false,
       parseHTML: (element: HTMLElement) => taskState(element),
     },
-    ...elementAttributes(),
+    ...formattedAttributes(),
   }),
   parseHTML: () => [{ tag: 'li' }],
   renderHTML: ({ node }) => {
@@ -180,7 +191,7 @@ export const CodeBlock = Node.create({
   defining: true,
   addAttributes: () => ({
     language: { default: null, rendered: false, parseHTML: codeLanguage },
-    ...elementAttributes(),
+    ...keptAttributes(),
   }),
   parseHTML: () => [{ tag: 'pre', preserveWhitespace: 'full' }],
   renderHTML: ({ node }) => {
@@ -196,7 +207,7 @@ export const MathBlock = Node.create({
   atom: true,
   addAttributes: () => ({
     source: { default: '', rendered: false, parseHTML: (el: HTMLElement) => el.getAttribute('data-math-block') ?? '' },
-    ...elementAttributes(),
+    ...keptAttributes(),
   }),
   parseHTML: () => [{ tag: 'div[data-math-block]' }],
   renderHTML: ({ node }) => ['div', { 'data-math-block': node.attrs.source as string }],

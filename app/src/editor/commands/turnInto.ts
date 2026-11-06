@@ -7,6 +7,7 @@ import { liftListItem, wrapInList } from '@tiptap/pm/schema-list';
 import { TextSelection } from '@tiptap/pm/state';
 import type { Transaction } from '@tiptap/pm/state';
 import { findWrapping, liftTarget } from '@tiptap/pm/transform';
+import { PARA_ATTRIBUTE_NAMES } from '../paragraph/attributes';
 import { ancestorDepth, fromChange, selectedTextblocks, viaCommand } from './command';
 import type { Change, Command } from './command';
 
@@ -69,10 +70,10 @@ function setTextblocks(type: NodeType, attrs: Record<string, unknown> | null): C
   };
 }
 
-/** Element metadata travels with the text (SPEC 6.6). */
+/** Element metadata and paragraph formatting travel with the text (SPEC 6.6 and 6.8). */
 function keptAttrs(node: PMNode, type: NodeType): Record<string, unknown> {
   const kept: Record<string, unknown> = {};
-  for (const name of ['id', 'tags', 'style', 'tagChecked']) {
+  for (const name of ['id', 'tags', 'style', 'tagChecked', ...PARA_ATTRIBUTE_NAMES]) {
     if (name in node.attrs && type.spec.attrs && name in type.spec.attrs) kept[name] = node.attrs[name];
   }
   return kept;
