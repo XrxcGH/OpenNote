@@ -48,10 +48,12 @@ export function ToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'upcoming') return <UpcomingTool />;
   if (tool === 'code')
     // A popped window that names the studio stays empty and loads nothing while code.studio is off.
-    return isEnabled('code.studio') && (
-      <Suspense fallback={null}>
-        <CodeStudioWindow />
-      </Suspense>
+    return (
+      isEnabled('code.studio') && (
+        <Suspense fallback={null}>
+          <CodeStudioWindow />
+        </Suspense>
+      )
     );
   return <ExtraToolBody tool={tool} />;
 }
