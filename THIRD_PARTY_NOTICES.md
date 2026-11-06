@@ -120,6 +120,8 @@ The fonts below are bundled in the app, so nothing downloads at run time. They c
 - OpenNote Sans, modified from Atkinson Hyperlegible Next. Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)
 - Atkinson Hyperlegible Mono. Copyright 2020-2024 The Atkinson Hyperlegible Mono Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next-mono)
 - Literata. Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata)
+- Carlito, a metric stand-in for Calibri, loaded only when a document uses it. Copyright 2013 The Carlito Project Authors (https://github.com/googlefonts/carlito)
+- Caladea, a metric stand-in for Cambria, loaded only when a document uses it. Copyright 2012 The Caladea Project Authors (https://github.com/huertatipografica/Caladea)
 
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL
