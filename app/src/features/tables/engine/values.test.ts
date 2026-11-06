@@ -3,7 +3,7 @@
 // "50%" is 0.5, "1 1/2" is 1.5, and "1:30" is 1.5 hours, 1.5/24 of a day.
 
 import { describe, expect, it } from 'vitest';
-import { createTable, setColumnFormula } from './edit';
+import { addRow, checkFormulaInput, createTable, setCellInput, setColumnFormula } from './edit';
 import { rewriteLegacy } from './formula/legacy';
 import { STORED } from './formula/lexer';
 import { EN_US } from './locale';
@@ -61,6 +61,15 @@ describe('coercion of text in arithmetic', () => {
     expect(textToNumber('$5$')).toBeNull();
     expect(textToNumber('1 1/0')).toBeNull();
     expect(textToNumber('25:61')).toBeNull();
+  });
+
+  it('refuses text too long for a number, and a currency sign with a percent sign, as Excel does', () => {
+    expect(textToNumber('1e999')).toBeNull();
+    expect(textToNumber(`$${'9'.repeat(398)}%`)).toBeNull();
+    expect(calc('"1e999"+1')).toEqual(err('VALUE'));
+    expect(textToNumber('$5%')).toBeNull();
+    expect(textToNumber('5$%')).toBeNull();
+    expect(calc('"$5%"+0')).toEqual(err('VALUE'));
   });
 
   it('makes zero to the power of zero #NUM! for the operator, as for POWER', () => {
@@ -130,6 +139,25 @@ describe('legacy formulas', () => {
     expect(() => rewriteLegacy('bad name', STORED)).toThrow();
     expect(calc('Rate*2')).toEqual(err('NAME'));
     expect(() => calc('Rate*2', null)).toThrow(/Rate/);
+  });
+
+  it('checks a typed cell formula by the rules of the table it goes in', () => {
+    // A1# and T[Price] exist only in Excel's grammar, so only a table with data.sheet.v takes them.
+    expect(checkFormulaInput('A1#', EN_US, { sheetVersion: 1 })).toBe('A1#');
+    expect(checkFormulaInput('T[Price]', EN_US, { sheetVersion: 1 })).toBe('T[Price]');
+    expect(checkFormulaInput('A1#', EN_US)).toMatchObject({ message: expect.any(String) });
+    // -2^2 is 4 by Excel's rules and -4 by the textbook rules, the same at entry as in recalc.
+    const stamped = createTable([{ name: 'A' }], [['=-2^2']], EN_US, undefined, 1);
+    expect(stamped.sheetVersion).toBe(1);
+    expect(stamped.rows[0].cells[0].value).toBe(4);
+    expect(createTable([{ name: 'A' }], [['=-2^2']], EN_US).rows[0].cells[0].value).toBe(-4);
+    const typed = setCellInput(stamped, { row: 0, col: 0, raw: '=@A1' }, EN_US);
+    expect(typed.rows[0].cells[0].formula).toBe('@A1');
+    const added = addRow(stamped, ['=T[A]'], EN_US);
+    expect(added.rows[1].cells[0].formula).toBe('T[A]');
+    expect(
+      setCellInput(createTable([{ name: 'A' }], [['']], EN_US), { row: 0, col: 0, raw: '=@A1' }, EN_US),
+    ).toMatchObject({ rows: [{ cells: [{ raw: '=@A1', value: '=@A1' }] }] });
   });
 });
 

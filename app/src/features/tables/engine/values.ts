@@ -184,7 +184,8 @@ function moneyOrPercent(text: string): number | null {
   const m = MONEY.exec(text);
   if (!m) return null;
   const [, sign1, before, sign2, digits, exponent, after, percent] = m;
-  if ((before && after) || (sign1 && sign2)) return null;
+  // Excel refuses a currency sign together with a percent sign ("$5%" is #VALUE!).
+  if ((before && after) || (sign1 && sign2) || ((before || after) && percent)) return null;
   const n = Number(digits.replace(/,/g, '')) * 10 ** Number(exponent ?? 0);
   const signed = sign1 === '-' || sign2 === '-' ? -n : n;
   return percent ? signed / 100 : signed;
@@ -219,7 +220,12 @@ function timeOfDay(text: string): number | null {
  */
 export function textToNumber(text: string): number | null {
   if (text.length > MAX_NUMBER_TEXT) return null;
-  const plain = text.trim();
+  const n = readNumberText(text.trim());
+  // Digits too long for a number ("1e999") are not a number, so no function reads Infinity from text.
+  return n !== null && Number.isFinite(n) ? n : null;
+}
+
+function readNumberText(plain: string): number | null {
   if (plain === '') return null;
   const canonical = parseCanonicalNumber(plain);
   if (canonical !== null) return canonical;

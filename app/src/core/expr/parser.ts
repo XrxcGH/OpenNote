@@ -174,6 +174,8 @@ class Parser implements Cursor {
         throw this.unexpected(token, 'operand');
       case 'col':
       case 'id':
+        // Excel refuses empty braces, and no column has an empty id.
+        if (excel && token.kind === 'id' && token.text.trim() === '') throw this.unexpected(token, 'operand');
         if (excel && token.kind === 'id' && isArrayText(token.text)) return this.array(this.next());
         if (excel && token.kind === 'col' && /^\s*[@#[]/.test(token.text)) return this.struct(undefined, this.next());
         this.next();

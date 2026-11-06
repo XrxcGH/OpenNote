@@ -68,6 +68,8 @@ test(
   () => {
     assert.ok(!absent, 'LibreOffice is required here but did not run.');
     const values = runOracle(sample.cases);
-    assert.deepEqual(changes(sample, values), []);
+    // The sample cases are worked by hand until a LibreOffice run records its version, so all of them are checked.
+    const all = { ...sample, cases: sample.cases.map((c) => ({ ...c, source: 'calc-oracle' })) };
+    assert.deepEqual(changes(all, values), []);
   },
 );

@@ -155,6 +155,8 @@ describe('references', () => {
     expect(formatExpression(excel('{1,2;3,4}'))).toBe('{1,2;3,4}');
     expect(() => excel('{1,2;3}')).toThrow(ExprError);
     expect(() => excel('{1,A1}')).toThrow(ExprError);
+    expect(() => excel('{}')).toThrow(expect.objectContaining({ code: 'unexpected-token', position: 0 }));
+    expect(() => excel('SUM({ })')).toThrow(ExprError);
     expect(excel('{c1}')).toMatchObject({ type: 'col', by: 'id', key: 'c1' });
   });
 });
