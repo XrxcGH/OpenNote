@@ -79,4 +79,11 @@ describe('focusFromScript', () => {
     button.blur();
     expect(button.hasAttribute('data-focus-origin')).toBe(false);
   });
+
+  it('leaves no mark when the focus does not land', () => {
+    const button = mount('<button disabled>Go</button>');
+    focusFromScript(button);
+    expect(document.activeElement).not.toBe(button);
+    expect(button.hasAttribute('data-focus-origin')).toBe(false);
+  });
 });

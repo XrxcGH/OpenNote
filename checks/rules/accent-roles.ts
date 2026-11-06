@@ -24,10 +24,11 @@ const DEFAULT_SCOPE = [
 ];
 const DEFAULT_OUT_OF_SCOPE = ['app/src/ui/illustrations/**', 'app/src/ui/color/**'];
 
-const COMMENT_LINE = /^\s*(\/\/|\/\*|\*)/;
+const COMMENT_LINE = /^\s*\/\//;
+const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 const TEST_FILE = /\.(test|spec)\.[a-z]+$/;
 const CANDLE = /--color-accent-(?:candle|dusk|night)(?![-\w])/;
-const CANDLE_BACKGROUND = /background(?:-color)?\s*:[^;]*--color-accent-(?:candle|dusk|night)(?![-\w])/;
+const CANDLE_BACKGROUND = /background(?:-color)?\s*:[^;{}]*--color-accent-(?:candle|dusk|night)(?![-\w])/;
 const AMBIENT = /--color-ambient-/;
 const PEN = /--ink-|--notebook-accent/;
 const INFINITE = /animation[^;]*\binfinite\b|animation-iteration-count\s*:\s*infinite/;
@@ -45,10 +46,19 @@ export const accentRoles: Rule = {
     const report = reporter('accent-roles', file);
     const allowed = (key: string) => matchesAny(file.path, stringList(ctx.settings, key));
     const findings: Finding[] = [];
-    file.lines.forEach((raw, i) => {
+    // Block comments are blanked (newlines kept, so line numbers hold), and a background declaration is matched
+    // across line breaks, so a comment before it or a value split over two lines does not hide it.
+    const text = file.lines.join('\n').replace(BLOCK_COMMENT, (c) => c.replace(/[^\n]/g, ' '));
+    const lines = text.split('\n');
+    const backgroundLines = new Set<number>();
+    for (const m of text.matchAll(new RegExp(CANDLE_BACKGROUND.source, 'g'))) {
+      const at = m.index + m[0].search(/--color/);
+      backgroundLines.add(text.slice(0, at).split('\n').length);
+    }
+    lines.forEach((raw, i) => {
       if (COMMENT_LINE.test(raw)) return;
       const line = i + 1;
-      if (CANDLE_BACKGROUND.test(raw))
+      if (backgroundLines.has(line))
         findings.push(
           report(line, 'Candle, dusk and night are never a background in the shell. They mark the time of day.'),
         );

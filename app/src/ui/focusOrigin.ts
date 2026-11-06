@@ -64,4 +64,6 @@ export function focusFromScript(element: HTMLElement, options?: FocusOptions): v
   if (last !== 'key') element.setAttribute(ATTRIBUTE, 'pointer');
   else element.removeAttribute(ATTRIBUTE);
   element.focus(options);
+  // Focus that did not land (a hidden or inert element) leaves no mark, so a later Tab onto it shows the ring.
+  if (document.activeElement !== element) element.removeAttribute(ATTRIBUTE);
 }

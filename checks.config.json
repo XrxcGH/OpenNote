@@ -113,7 +113,7 @@
       "pens": [
         "app/src/features/tree/Tree.module.css",
         "app/src/shell/layout/Rail.tsx",
-        "app/src/shell/titlebar/Breadcrumb.tsx",
+        "app/src/shell/titlebar/TitleBar.module.css",
         "app/src/features/setup/steps/ColorChips.tsx",
         "app/src/theme/appearance.css",
         "app/src/features/qol/TabStrip.module.css",

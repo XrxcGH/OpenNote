@@ -33,6 +33,18 @@ test('candle, dusk and night are never a background, even in the theme toggle', 
   assert.match(messages(found)[0], /never a background/);
 });
 
+test('a background after an inline comment, or split over two lines, is still a background', async () => {
+  const path = 'app/src/features/theme/ThemeToggle.module.css';
+  const after = await check(path, '.sun { /* x */ background: var(--color-accent-candle); }\n');
+  assert.equal(after.length, 1);
+  assert.match(messages(after)[0], /never a background/);
+  const split = await check(path, '.sun {\n  background:\n    var(--color-accent-night);\n}\n');
+  assert.equal(split.length, 1);
+  assert.match(messages(split)[0], /never a background/);
+  const commented = '.sun {\n  /* background: var(--color-accent-night); */\n  color: red;\n}\n';
+  assert.deepEqual(await check(path, commented), []);
+});
+
 test('the subtle accents are not candle, dusk or night', async () => {
   assert.deepEqual(
     await check(

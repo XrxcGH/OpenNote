@@ -3,7 +3,6 @@
 // narrow ('icon'), it shortens from the start on screen, "… › Lectures › Cell structure", while screen readers
 // still hear the whole path.
 
-import type { CSSProperties } from 'react';
 import { useLocation } from '../../app/location';
 import { useNotebookAccent } from '../../features/tree';
 import { t } from '../../strings/t';
@@ -32,7 +31,7 @@ export function Breadcrumb({ presentation }: { presentation: 'full' | 'icon' | '
           data-ink={index === 0 && ink ? '' : undefined}
           // A crumb cut from the start of a narrow bar is hidden, so its dot is not a mark on screen.
           data-notebook-mark={index === 0 && ink && hiddenCount === 0 ? 'breadcrumb' : undefined}
-          style={index === 0 && ink ? ({ '--crumb-ink': `var(--ink-${ink})` } as CSSProperties) : undefined}
+          data-accent={index === 0 && ink ? ink : undefined}
         >
           {title}
         </li>
