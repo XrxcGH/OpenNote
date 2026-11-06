@@ -337,3 +337,63 @@ export function quadrature(f: (x: number) => number, a: number, b: number, coars
 export function quadratureToInfinity(f: (t: number) => number, a = 0): number {
   return quadrature((s) => (s >= 1 ? 0 : f(a + s / (1 - s)) / (1 - s) ** 2), 0, 1);
 }
+
+/** What `checkedQuadrature` found when it cannot give a number. `at` is the place in the integration variable. */
+export type QuadratureProblem = { readonly kind: 'diverges' | 'undefined'; readonly at: number };
+
+/** A node this close to an end (as a fraction of the half-width) is left to the growth test, not the pole test. */
+const END_ZONE = 1e-3;
+/** A value this large at a node makes it a pole candidate. */
+const HUGE = 1e10;
+
+/**
+ * ∫ f from a to b, like `quadrature`, but it says so when the integral has no finite value. That is a point inside
+ * the limits where f is not finite (a pole such as 1/x at 0, or a square root of a negative number), or growth like
+ * 1/x or faster toward an end. A removable point such as sin(x)/x at 0 is filled in from its neighbors. A limit that
+ * is not finite gives NaN, as in `quadrature`.
+ */
+export function checkedQuadrature(
+  f: (x: number) => number,
+  a: number,
+  b: number,
+  coarse: boolean,
+  fail: (problem: QuadratureProblem) => never,
+): number {
+  if (a === b) return 0;
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return NaN;
+  const half = (b - a) / 2;
+  const reach = Math.abs(b - a);
+  let sum = 0;
+  for (const { far, weight } of coarse ? COARSE : FINE) {
+    const x = far > 0 ? b - half * far : a - half * far;
+    let value = f(x);
+    const interior = Math.abs(far) >= END_ZONE;
+    if (interior && (!Number.isFinite(value) || Math.abs(value) > HUGE)) {
+      const step = reach * 1e-9;
+      const [left, right] = [f(x - step), f(x + step)];
+      const biggest = Math.max(Math.abs(left), Math.abs(right));
+      const removable =
+        Number.isFinite(left) &&
+        Number.isFinite(right) &&
+        (Number.isFinite(value) ? Math.abs(value) <= 1e4 * biggest : biggest <= 1e6);
+      if (!removable) fail({ kind: 'undefined', at: x });
+      value = (left + right) / 2;
+    }
+    if (Number.isFinite(value)) sum += weight * value;
+  }
+  // Toward each end, |f| times the distance falls to nothing for an integrable singularity (1/√x, ln x) and holds
+  // steady for 1/x or worse. Two distances, four decades apart, tell them apart.
+  const direction = Math.sign(b - a);
+  for (const [end, inward] of [
+    [a, direction],
+    [b, -direction],
+  ] as const) {
+    const [near, nearer] = [1e-4, 1e-8].map((fraction) => {
+      const distance = reach * fraction;
+      return Math.abs(f(end + inward * distance)) * distance;
+    });
+    if (Number.isFinite(near) && Number.isFinite(nearer) && nearer > 0 && nearer >= 0.4 * near)
+      fail({ kind: 'diverges', at: end });
+  }
+  return sum * half;
+}

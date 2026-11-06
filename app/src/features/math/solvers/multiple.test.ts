@@ -99,3 +99,54 @@ describe('double and triple integrals', () => {
     ).toThrow('limits-order');
   });
 });
+
+describe('integrals that have no value, and backward limits', () => {
+  const one = (integrand: string, lower: string, upper: string, variable = 'x') =>
+    solveIntegral({ integrand, system: 'rectangular', limits: [{ variable, lower, upper }] });
+
+  it('names a divergent integral at an endpoint instead of printing a number', () => {
+    // The integral of 1/x from 0 to 1 does not converge (Stewart 7.8 style).
+    expect(() => one('1/x', '0', '1')).toThrow('integral-diverges');
+    expect(() => one('1/x', '1', '0')).toThrow('integral-diverges');
+    expect(() => one('1/(1 - x)^2', '0', '1')).toThrow('integral-diverges');
+    expect(() => one('1/x^2', '0', '2')).toThrow('integral-diverges');
+  });
+
+  it('names a pole inside the limits', () => {
+    expect(() => one('1/x', '-1', '1')).toThrow('integral-undefined');
+    expect(() => one('1/(x - 1)', '0', '2')).toThrow('integral-undefined');
+    expect(() => one('tan(x)', '0', 'pi')).toThrow('integral-undefined');
+  });
+
+  it('names the diverging variable of a double integral', () => {
+    expect(() =>
+      solveIntegral({
+        integrand: '1/x',
+        system: 'rectangular',
+        limits: [
+          { variable: 'y', lower: '0', upper: '1' },
+          { variable: 'x', lower: '0', upper: '1' },
+        ],
+      }),
+    ).toThrow('integral-diverges');
+  });
+
+  it('still finds integrable singularities and removable points', () => {
+    // Stewart 7.8: the integral of 1/sqrt(x) from 0 to 1 is 2, and of ln(x) from 0 to 1 is -1.
+    close(one('1/sqrt(x)', '0', '1').value, 2, 1e-9);
+    close(one('ln(x)', '0', '1').value, -1, 1e-9);
+    close(one('1/sqrt(1 - x^2)', '-1', '1').value, Math.PI, 1e-6);
+    // sin(x)/x has a removable point in the middle of the limits; Si(1) = 0.946083070367183, doubled.
+    close(one('sin(x)/x', '-1', '1').value, 2 * 0.946083070367183, 1e-9);
+  });
+
+  it('notes backward limits and keeps the sign', () => {
+    const forward = one('3*x^2', '0', '2');
+    const backward = one('3*x^2', '2', '0');
+    expect(forward.value).toBeCloseTo(8, 9);
+    expect(backward.value).toBeCloseTo(-8, 9);
+    expect(forward.steps.map((s) => s.key)).not.toContain('integralReversed');
+    const note = backward.steps.find((s) => s.key === 'integralReversed');
+    expect(note?.vars).toEqual({ variable: 'x', lower: '2', upper: '0' });
+  });
+});
