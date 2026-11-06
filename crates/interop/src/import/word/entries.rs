@@ -110,6 +110,14 @@ pub(super) fn loss_entries<R: Read + Seek>(
         "The file does not hold the footnote or endnote text.",
     );
     report.skipped_count(
+        package.sources.dropped_comments,
+        (
+            "comment past the 10,000 an import reads",
+            "comments past the 10,000 an import reads",
+        ),
+        "Their ranges show as plain text.",
+    );
+    report.skipped_count(
         stats.hidden_runs,
         ("piece of hidden text", "pieces of hidden text"),
         "Hidden text stays hidden by staying out.",

@@ -27,7 +27,14 @@ pub(super) struct Sources {
     pub comments: HashMap<String, CommentSource>,
     /// Comment IDs in file order, so replies keep their order.
     pub order: Vec<String>,
+    /// The replies of each top comment, in file order, worked out once when the comments are read.
+    replies_of: HashMap<String, Vec<String>>,
+    /// Comments past the most an import reads.
+    pub dropped_comments: usize,
 }
+
+/// The most comments an import reads, so a file with a flood of them cannot stall it.
+pub(super) const MAX_COMMENTS: usize = 10_000;
 
 /// The notes of a `w:footnotes` or `w:endnotes` part. Separators and continuation notices are not notes.
 pub(super) fn read_notes(root: &Element, name: &str) -> HashMap<String, Element> {
@@ -58,6 +65,10 @@ impl Sources {
             let Some(id) = c.attr("w:id") else {
                 continue;
             };
+            if self.comments.len() >= MAX_COMMENTS {
+                self.dropped_comments += 1;
+                continue;
+            }
             if let Some(para) = last_para_id(c) {
                 by_para.insert(para, id.to_owned());
             }
@@ -73,9 +84,20 @@ impl Sources {
                 },
             );
         }
-        let Some(extended) = extended else {
-            return;
-        };
+        if let Some(extended) = extended {
+            self.read_extended(extended, &by_para);
+        }
+        self.replies_of.clear();
+        for r in &self.order {
+            let top = self.thread(r);
+            if top != *r {
+                self.replies_of.entry(top).or_default().push(r.clone());
+            }
+        }
+    }
+
+    /// Reads the replies and resolved state of `commentsExtended.xml`, which names comments by paragraph ID.
+    fn read_extended(&mut self, extended: &Element, by_para: &HashMap<String, String>) {
         for ex in children(extended, "w15:commentex") {
             let Some(id) = ex.attr("w15:paraid").and_then(|p| by_para.get(&p.to_ascii_uppercase())) else {
                 continue;
@@ -108,9 +130,10 @@ impl Sources {
 
     /// The replies of a comment, in file order.
     pub fn replies(&self, id: &str) -> Vec<&CommentSource> {
-        self.order
-            .iter()
-            .filter(|r| r.as_str() != id && self.thread(r) == id)
+        self.replies_of
+            .get(id)
+            .into_iter()
+            .flatten()
             .filter_map(|r| self.comments.get(r))
             .collect()
     }
@@ -142,6 +165,53 @@ mod tests {
         let replies = sources.replies("0");
         assert_eq!(replies.len(), 1);
         assert_eq!(replies[0].author.as_deref(), Some("Ben"));
+    }
+
+    /// Builds a `w:comments` part and its extended part where every comment after the first replies to it.
+    fn reply_flood(count: usize) -> (Element, Element) {
+        let mut comments = String::from("<w:comments>");
+        let mut extended = String::from("<w15:commentsEx>");
+        for i in 0..count {
+            comments.push_str(&format!(
+                r#"<w:comment w:id="{i}" w:author="A"><w:p w14:paraId="{i:X}"><w:r><w:t>c</w:t></w:r></w:p></w:comment>"#
+            ));
+            let parent = if i == 0 {
+                String::new()
+            } else {
+                r#" w15:paraIdParent="0""#.to_owned()
+            };
+            extended.push_str(&format!(r#"<w15:commentEx w15:paraId="{i:X}"{parent}/>"#));
+        }
+        comments.push_str("</w:comments>");
+        extended.push_str("</w15:commentsEx>");
+        (parse(&comments), parse(&extended))
+    }
+
+    #[test]
+    fn replies_of_every_comment_are_found_in_linear_time() {
+        // Looking up the replies of every comment once per comment used to scan all comments each time, so
+        // 10,000 comments took minutes. Worked out once, the lookups take far less than a second.
+        let (comments, extended) = reply_flood(MAX_COMMENTS);
+        let mut sources = Sources::default();
+        sources.read_comments(&comments, Some(&extended));
+        let start = std::time::Instant::now();
+        let total: usize = sources.order.iter().map(|id| sources.replies(id).len()).sum();
+        assert_eq!(total, MAX_COMMENTS - 1);
+        assert_eq!(sources.replies("0").len(), MAX_COMMENTS - 1);
+        assert!(
+            start.elapsed() < std::time::Duration::from_secs(5),
+            "took {:?}",
+            start.elapsed()
+        );
+    }
+
+    #[test]
+    fn comments_past_the_cap_are_counted_not_read() {
+        let (comments, extended) = reply_flood(MAX_COMMENTS + 3);
+        let mut sources = Sources::default();
+        sources.read_comments(&comments, Some(&extended));
+        assert_eq!(sources.comments.len(), MAX_COMMENTS);
+        assert_eq!(sources.dropped_comments, 3);
     }
 
     #[test]
