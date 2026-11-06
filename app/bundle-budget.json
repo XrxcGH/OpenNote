@@ -128,5 +128,6 @@
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
     "features/engineering/thermo/ui/ThermoKit.tsx": 390
   },
-  "lazyDefaultKb": 40
+  "lazyDefaultKb": 40,
+  "bundledFontsKb": { "carlito": 460, "caladea": 150 }
 }
