@@ -3,10 +3,19 @@
 
 import { daysToIso, parseIsoDate } from './dates';
 import type { ColumnType } from './model';
-import { ERROR_TOKENS, errorFromToken, isError, numberToText, parseCanonicalNumber, type Value } from './values';
+import {
+  ERROR_TOKENS,
+  errorFromToken,
+  isError,
+  numberToText,
+  parseCanonicalNumber,
+  toScalar,
+  type Value,
+} from './values';
 
 /** The locale-free text of a value. */
-export function toCanonical(type: ColumnType, value: Value): string {
+export function toCanonical(type: ColumnType, input: Value): string {
+  const value = toScalar(input);
   if (value === null) return '';
   if (isError(value)) return ERROR_TOKENS[value.error];
   if (typeof value === 'string') return value;
