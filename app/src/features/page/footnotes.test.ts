@@ -12,7 +12,7 @@ import { readingOrder } from './readingOrder/order';
 import { blockId, syncPage, syncRig } from './sync/testSync';
 import { addTextRider } from './sync/textSync';
 import type { MountedPage } from './pagesApi';
-import { attachNotes } from './registrations/notes';
+import { attachNotes } from './footnotes/notes';
 
 vi.mock('../../ui/toast', () => ({ showToast: vi.fn() }));
 
