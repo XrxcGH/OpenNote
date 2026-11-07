@@ -1,6 +1,7 @@
-// Footnotes and endnotes (text program, Beta 12; ADR 0087), behind text.footnotes. It loads on demand (see registrations/notes.ts). Each page view gets a notes
-// model, the notes area under its text, and a text rider, so a reference and its note always change in one undo
-// step. The commands insert a reference, go between a reference and its note, and convert notes.
+// Footnotes and endnotes (text program, Beta 12; ADR 0087), behind text.footnotes. It loads on demand; see
+// registrations/notes.ts. Each page view gets a notes model, the notes area under its text, and a text rider, so a
+// reference and its note always change in one undo step. The commands insert a reference, go between a reference and
+// its note, and convert notes.
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { parseTextBlock } from '../../../editor/markdown';
