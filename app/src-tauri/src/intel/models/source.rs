@@ -11,7 +11,9 @@ pub struct Opened {
 
 /// Where model bytes come from. The app uses [`HttpSource`], and tests use a stand-in.
 pub trait Source: Send + Sync {
-    fn open(&self, url: &str, from: u64) -> Result<Opened, String>;
+    /// Opens `url` from byte `from`. `size` is the file's published size, so a range answer for some other file
+    /// length is not trusted.
+    fn open(&self, url: &str, from: u64, size: u64) -> Result<Opened, String>;
 }
 
 /// Downloads over HTTPS with Windows' TLS stack, as the updater does. No cookies and no proxy settings are read. It
@@ -34,17 +36,27 @@ impl HttpSource {
 
 /// What an answer to a request from byte `from` holds. `Some(true)` is the bytes from `from` on. `Some(false)` is
 /// the whole file. `None` is an answer that can't be trusted. jsDelivr, for one, counts a range in its compressed
-/// bytes. It answers 416, or 206 with a `Content-Range` that starts somewhere else. Then the file is asked for
+/// bytes. It answers 416, or 206 with a `Content-Range` that starts somewhere else or counts another total. A 206
+/// is trusted only when it starts at `from` and its total is the published `size`. Otherwise the file is asked for
 /// again from the start, so a broken range never corrupts a download.
-pub(crate) fn range_answer(status: u16, content_range: Option<&str>, from: u64) -> Result<Option<bool>, String> {
+pub(crate) fn range_answer(
+    status: u16,
+    content_range: Option<&str>,
+    from: u64,
+    size: u64,
+) -> Result<Option<bool>, String> {
     match status {
         200 => Ok(Some(false)),
         206 if from > 0 => {
-            let start = content_range
-                .and_then(|value| value.trim().strip_prefix("bytes "))
-                .and_then(|value| value.split('-').next())
+            // `bytes <start>-<end>/<total>`
+            let range = content_range.and_then(|value| value.trim().strip_prefix("bytes "));
+            let (span, total) = range.and_then(|value| value.split_once('/')).unwrap_or_default();
+            let start = span
+                .split('-')
+                .next()
                 .and_then(|value| value.trim().parse::<u64>().ok());
-            Ok((start == Some(from)).then_some(true))
+            let total = total.trim().parse::<u64>().ok();
+            Ok((start == Some(from) && total == Some(size)).then_some(true))
         }
         206 => Ok(Some(true)),
         416 if from > 0 => Ok(None),
@@ -87,18 +99,18 @@ impl HttpSource {
 }
 
 impl Source for HttpSource {
-    fn open(&self, url: &str, from: u64) -> Result<Opened, String> {
+    fn open(&self, url: &str, from: u64, size: u64) -> Result<Opened, String> {
         // Only the catalog's own addresses are ever opened.
         if !self.allowed.iter().any(|prefix| url.starts_with(prefix)) {
             return Err("That address is not one OpenNote downloads from.".to_owned());
         }
         let (status, range, reader) = self.get(url, from)?;
-        if let Some(resumed) = range_answer(status, range.as_deref(), from)? {
+        if let Some(resumed) = range_answer(status, range.as_deref(), from, size)? {
             return Ok(Opened { resumed, reader });
         }
         drop(reader);
         let (status, range, reader) = self.get(url, 0)?;
-        match range_answer(status, range.as_deref(), 0)? {
+        match range_answer(status, range.as_deref(), 0, size)? {
             Some(_) => Ok(Opened { resumed: false, reader }),
             None => Err(format!("The server answered with status {status}.")),
         }

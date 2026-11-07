@@ -69,7 +69,7 @@ struct Memory {
 }
 
 impl Source for Memory {
-    fn open(&self, _url: &str, from: u64) -> Result<Opened, String> {
+    fn open(&self, _url: &str, from: u64, _size: u64) -> Result<Opened, String> {
         self.asked.lock().unwrap().push(from);
         Ok(Opened {
             resumed: from > 0,
@@ -248,4 +248,53 @@ fn a_stopped_download_keeps_its_part() {
     let result = crate::intel::models::download(&memory, &DEMO, packs.dir(), &stop, &progress);
     assert_eq!(result, Err(DownloadError::Canceled));
     assert!(packs.dir().join("demo/demo.wasm.part").exists());
+}
+
+#[test]
+fn head_and_get_carry_the_exact_length_and_a_changed_file_is_checked_again() {
+    let (_dir, packs, _source) = demo(DATA);
+    packs.download("demo", false, false).unwrap();
+    assert_eq!(settle(&packs, "demo"), PackState::Ready { bytes: 11 });
+    let head = packs.serve(&Method::HEAD, "/demo/demo.wasm");
+    assert_eq!(head.status(), StatusCode::OK);
+    assert!(head.body().is_empty());
+    assert_eq!(head.headers()["content-length"], "11");
+    let get = packs.serve(&Method::GET, "/demo/demo.wasm");
+    assert_eq!(get.headers()["content-length"], "11");
+    assert_eq!(get.body().as_slice(), DATA);
+    // The file passed once. A later change of one byte, at the same size, is still refused.
+    thread::sleep(Duration::from_millis(20));
+    fs::write(packs.dir().join("demo/demo.wasm"), b"hello World").unwrap();
+    assert_eq!(
+        packs.serve(&Method::HEAD, "/demo/demo.wasm").status(),
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        packs.serve(&Method::GET, "/demo/demo.wasm").status(),
+        StatusCode::NOT_FOUND
+    );
+}
+
+#[test]
+fn a_partial_pack_stays_partial_while_work_offline_is_on() {
+    let (_dir, packs, _source) = demo(DATA);
+    fs::create_dir_all(packs.dir().join("demo")).unwrap();
+    fs::write(packs.dir().join("demo/demo.wasm.part"), &DATA[..5]).unwrap();
+    for (offline, safe_mode) in [(true, false), (false, true)] {
+        let list = packs.list(offline, safe_mode);
+        assert!(list.blocked.is_some());
+        // Still partial, so Remove stays. The list-level `blocked` turns Resume off.
+        assert_eq!(
+            list.packs[0].state,
+            PackState::Partial {
+                received_bytes: 5,
+                total_bytes: 11
+            }
+        );
+    }
+    packs.remove("demo").unwrap();
+    assert_eq!(
+        packs.list(true, false).packs[0].state,
+        PackState::Blocked { reason: "offline" }
+    );
 }

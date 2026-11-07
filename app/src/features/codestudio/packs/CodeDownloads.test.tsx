@@ -70,6 +70,24 @@ describe('the Code group', () => {
     expect(screen.getByText('Work offline is on. Turn it off to download this pack.')).toBeTruthy();
   });
 
+  it('keeps Remove for a partial pack while Work offline is on and turns Resume off', async () => {
+    useList({
+      packs: [
+        pack('pyodide', 'Python (full)', 13_531_207, {
+          kind: 'partial',
+          receivedBytes: 5_000_000,
+          totalBytes: 13_531_207,
+        }),
+      ],
+      blocked: 'offline',
+    });
+    renderUi(<CodeDownloads styles={{}} />);
+    const resume = await screen.findByRole('button', { name: 'Resume Python (full)' });
+    expect((resume as HTMLButtonElement).disabled).toBe(true);
+    const remove = screen.getByRole('button', { name: 'Remove Python (full)' });
+    expect((remove as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('shows the code models the panel passes in, in the same list', async () => {
     useList({ packs: [], blocked: null });
     renderUi(

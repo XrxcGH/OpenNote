@@ -31,12 +31,13 @@ export interface CodeDownloadsStyles {
   actions?: string;
 }
 
-function PackRow(props: { pack: PackInfo; styles: CodeDownloadsStyles }) {
+function PackRow(props: { pack: PackInfo; styles: CodeDownloadsStyles; blocked: boolean }) {
   const { pack, styles } = props;
   const nameId = useId();
   const size = formatSize(pack.bytes);
   const state = pack.state;
-  const offline = state.kind === 'blocked';
+  // Work offline or safe mode turns Download and Resume off. A partial or failed pack keeps Remove.
+  const blocked = props.blocked || state.kind === 'blocked';
   return (
     <li className={styles.item} aria-labelledby={nameId}>
       <div className={styles.itemHead}>
@@ -59,15 +60,16 @@ function PackRow(props: { pack: PackInfo; styles: CodeDownloadsStyles }) {
           aria-label={packStateLine(pack)}
         />
       )}
-      <p className={styles.help} role="status">
+      {/* Quiet while bytes arrive, so the line is not read out on every poll. It speaks when the state changes. */}
+      <p className={styles.help} role="status" aria-live={state.kind === 'downloading' ? 'off' : 'polite'}>
         {packStateLine(pack)}
       </p>
       <div className={styles.actions}>
-        {(state.kind === 'absent' || state.kind === 'failed' || offline) && (
+        {(state.kind === 'absent' || state.kind === 'failed' || state.kind === 'blocked') && (
           <Button
             variant="secondary"
             aria-label={t('codeStudio.packs.downloadNamed', { name: pack.name, size })}
-            disabled={offline}
+            disabled={blocked}
             onClick={() => void downloadPack(pack)}
           >
             {t('codeStudio.packs.download')}
@@ -77,6 +79,7 @@ function PackRow(props: { pack: PackInfo; styles: CodeDownloadsStyles }) {
           <Button
             variant="secondary"
             aria-label={t('codeStudio.packs.resumeNamed', { name: pack.name })}
+            disabled={blocked}
             onClick={() => void downloadPack(pack)}
           >
             {t('codeStudio.packs.resume')}
@@ -119,6 +122,7 @@ export default function CodeDownloads(props: { styles: CodeDownloadsStyles; chil
     return () => clearInterval(timer);
   }, [downloading]);
   const packs = state.list?.packs ?? [];
+  const blocked = Boolean(state.list?.blocked);
   const core = packs.filter((pack) => !pack.id.startsWith('pyodide:'));
   const packages = packs.filter((pack) => pack.id.startsWith('pyodide:'));
   return (
@@ -130,7 +134,7 @@ export default function CodeDownloads(props: { styles: CodeDownloadsStyles; chil
       {state.failed && !state.list && <p className={styles.help}>{t('codeStudio.packs.desktopOnly')}</p>}
       <ul className={styles.list} aria-label={t('codeStudio.packs.heading')}>
         {core.map((pack) => (
-          <PackRow key={pack.id} pack={pack} styles={styles} />
+          <PackRow key={pack.id} pack={pack} styles={styles} blocked={blocked} />
         ))}
         {children}
       </ul>
@@ -139,7 +143,7 @@ export default function CodeDownloads(props: { styles: CodeDownloadsStyles; chil
           <p className={styles.help}>{t('codeStudio.packs.packagesHelp')}</p>
           <ul className={styles.list} aria-label={t('codeStudio.packs.packagesHelp')}>
             {packages.map((pack) => (
-              <PackRow key={pack.id} pack={pack} styles={styles} />
+              <PackRow key={pack.id} pack={pack} styles={styles} blocked={blocked} />
             ))}
           </ul>
         </>

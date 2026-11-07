@@ -202,7 +202,7 @@ mod source;
 #[cfg(test)]
 mod tests;
 
-pub use self::download::{download, is_installed};
+pub use self::download::{download, is_installed, matches as file_matches};
 use self::download::{part_path, size_of};
 #[cfg(test)]
 pub(crate) use self::source::Opened;

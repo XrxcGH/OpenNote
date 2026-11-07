@@ -112,15 +112,17 @@ fn state_of(view: &ModelView, blocked: Option<&DownloadError>) -> PackState {
             received_bytes: view.bytes,
             total_bytes: total,
         },
-        _ if blocked.is_some() => PackState::Blocked {
-            reason: blocked.map_or("offline", blocked_reason),
-        },
+        // A partial or failed pack keeps its state while Work offline or safe mode is on, so it can still be
+        // removed. The list's `blocked` field turns Download and Resume off.
         "failed" => PackState::Failed {
             reason: view.error.unwrap_or("network"),
         },
         "partial" => PackState::Partial {
             received_bytes: view.bytes,
             total_bytes: total,
+        },
+        _ if blocked.is_some() => PackState::Blocked {
+            reason: blocked.map_or("offline", blocked_reason),
         },
         _ => PackState::Absent,
     }
