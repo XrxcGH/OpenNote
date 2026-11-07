@@ -28,7 +28,7 @@ export const SEARCH_BUDGET_MS = 400;
 export interface SearchResult {
   matches: FindMatch[];
   /** Why the search found nothing or stopped early: a bad pattern, or the time limit. */
-  problem: PatternProblem | 'slow' | null;
+  problem: PatternProblem | 'slow' | 'unavailable' | null;
 }
 
 /** Every match on the page, in reading order, and the problem with the query, if any. */
@@ -81,7 +81,8 @@ export async function searchPageAsync(
     options,
     budgetMs,
   );
-  if (scanned === 'slow') return { matches: [], problem: 'slow' };
+  if (scanned === 'slow' || scanned === 'unavailable') return { matches: [], problem: scanned };
+  if (scanned === 'superseded') return { matches: [], problem: null };
   let at = 0;
   const matches: FindMatch[] = [];
   for (const { block, doc } of boxes) {

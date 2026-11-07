@@ -203,7 +203,9 @@ function FormatEditor(props: {
           </div>
         );
       })}
-      <span>{t('textFind.formatColors', { names: PEN_COLORS.join(', ') })}</span>
+      <span>
+        {t('textFind.formatColors', { names: PEN_COLORS.map((key) => t(`commands.colors.${key}`)).join(', ') })}
+      </span>
       {invalid && <span role="status">{t('textFind.formatInvalid')}</span>}
       <Button variant="quiet" onClick={() => onChange({})}>
         {t('textFind.formatClear')}
@@ -383,7 +385,10 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
     editor?.commands.focus();
   };
   const replace = async (all: boolean) => {
-    const list = all ? matches : matches.slice(current, current + 1);
+    // The shown matches may be those of an older query while a search is pending, so search again first.
+    const fresh = await searchPageAsync(mounted, typed, options, criteria);
+    if (fresh.problem) return;
+    const list = all ? fresh.matches : fresh.matches.slice(current, current + 1);
     // No replacement text with formats chosen keeps the found text and sets the formats on it.
     const formats = criteriaOf(replaceFormats);
     const spec = { text: replacement === '' && formats.length > 0 ? null : replacement, formats, options };

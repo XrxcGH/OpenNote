@@ -8,7 +8,7 @@ import { canJoin } from '@tiptap/pm/transform';
 import { EditorState } from '@tiptap/pm/state';
 import { applyFormats, formatRuns, rangeFits } from './format';
 import type { FormatCriterion } from './format';
-import { compilePattern, expandReplacement, LEAF, LINE_BREAK, PARAGRAPH_MARK } from './pattern';
+import { compilePattern, expandReplacement, LEAF, LINE_BREAK, PARAGRAPH_MARK, usesMark } from './pattern';
 import type { PatternOptions } from './pattern';
 
 export { LEAF } from './pattern';
@@ -44,13 +44,15 @@ export type TextFinder = (text: string) => TextRange[];
 /** The matches of the pattern in each text, one list per text. The pattern is compiled once. */
 export function findInTexts(texts: readonly string[], query: string, options: FindOptions): TextRange[][] {
   const compiled = compilePattern(query, options);
-  return texts.map((text) => (compiled?.pattern ? scan(text, compiled.pattern) : []));
+  const mark = usesMark(query, options);
+  return texts.map((text) => (compiled?.pattern ? scan(text, compiled.pattern, mark) : []));
 }
 
-function scan(text: string, pattern: RegExp): TextRange[] {
-  if (text === '') return [];
+/** The paragraph mark is searched only when the query names it, so \s or [^x] never takes it by accident. */
+function scan(text: string, pattern: RegExp, withMark: boolean): TextRange[] {
+  if (text === '' && !withMark) return [];
   const found: TextRange[] = [];
-  for (const match of (text + PARAGRAPH_MARK).matchAll(pattern)) {
+  for (const match of (withMark ? text + PARAGRAPH_MARK : text).matchAll(pattern)) {
     const start = match.index;
     // A match starts in the text, or is exactly the paragraph mark at its end. Nothing starts past the mark.
     if (start > text.length) continue;
@@ -87,7 +89,8 @@ export function blockTexts(doc: PMNode): string[] {
 /** A finder that compiles the pattern once, for every textblock. */
 function compiledFinder(query: string, options: FindOptions): TextFinder {
   const compiled = query === '' ? null : compilePattern(query, options);
-  return (text) => (compiled?.pattern ? scan(text, compiled.pattern) : []);
+  const mark = usesMark(query, options);
+  return (text) => (compiled?.pattern ? scan(text, compiled.pattern, mark) : []);
 }
 
 /** Every match in a document, in order. With formats and no query, the runs that have the formats. */
@@ -144,16 +147,28 @@ export function replaceInDoc(doc: PMNode, matches: readonly DocMatch[], replacem
       continue;
     }
     const text = plain ? spec.text : expandReplacement(spec.text, match.groups ?? [''], options);
-    const content = replacementNodes(tr.doc, match.from, match.to, text);
-    if (content.size === 0) tr.delete(match.from, match.to);
-    else tr.replaceWith(match.from, match.to, content);
-    applyFormats(tr, match.from, match.from + content.size, spec.formats ?? []);
-    // A match that took the paragraph mark joins the paragraph with the next one, as Word does. The last
-    // paragraph of a box has none after it, so only its text changes.
-    if (match.groups?.[0]?.endsWith(PARAGRAPH_MARK)) {
-      const boundary = match.from + content.size + 1;
-      if (boundary < tr.doc.content.size && canJoin(tr.doc, boundary)) tr.join(boundary);
-    }
+    const takesMark = !!match.groups?.[0]?.endsWith(PARAGRAPH_MARK);
+    // The last paragraph of a box has no mark to replace: a match of only that mark changes nothing.
+    if (takesMark && match.from === match.to && !canJoin(tr.doc, match.to + 1)) continue;
+    // A ^p in the replacement splits the paragraph there.
+    let at = match.from;
+    let to = match.to;
+    text.split(PARAGRAPH_MARK).forEach((piece, index) => {
+      if (index > 0) {
+        tr.split(at);
+        at += 2;
+        to = at;
+      }
+      const content = replacementNodes(tr.doc, at, to, piece);
+      if (content.size === 0) {
+        if (to > at) tr.delete(at, to);
+      } else tr.replaceWith(at, to, content);
+      applyFormats(tr, at, at + content.size, spec.formats ?? []);
+      at += content.size;
+      to = at;
+    });
+    // A match that took the paragraph mark joins the paragraph with the next one, as Word does.
+    if (takesMark && at + 1 < tr.doc.content.size && canJoin(tr.doc, at + 1)) tr.join(at + 1);
   }
   return tr.doc;
 }

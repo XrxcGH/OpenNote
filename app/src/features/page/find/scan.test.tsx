@@ -27,3 +27,10 @@ it('still searches after a stop', async () => {
     [expect.objectContaining({ start: 0, end: 3 })],
   ]);
 });
+
+it('runs a fast search after a slow one that is still running', async () => {
+  const slow = scanTexts([LONG], 'a*a*a*a*c', regex, 5000);
+  const fast = scanTexts(['one two'], 'two', regex, 2000);
+  expect(await slow).toBe('superseded');
+  expect(await fast).toEqual([[expect.objectContaining({ start: 4, end: 7 })]]);
+});

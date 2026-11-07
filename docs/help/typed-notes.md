@@ -6,16 +6,16 @@ A page holds text boxes, headings, lists, checklists, quotes, code, callouts, ta
 
 ## Add things to a page
 
-| To do this | Do this |
-|---|---|
-| Insert a table, code block, callout, divider, or date | Type `/` on an empty line to open the slash menu. The Insert tab has the same items. |
-| Make a heading | Press Ctrl+Alt+1, Ctrl+Alt+2, or Ctrl+Alt+3. |
-| Make text bold | Press Ctrl+B. |
-| Link to another page | Type `[[` and pick a page. |
-| Show another page inside this one | Type `![[` and pick a page. To show one paragraph, write `![[Page#^id]]` with the paragraph ID you copied. When you export, the embedded text is included. |
-| Paste with the structure and without stray fonts | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. A table from a web page or a spreadsheet, or cells copied as tab-separated text, becomes a table. |
-| Copy text to another app | Press Ctrl+C. The other app gets the words as plain text, with list markers and without Markdown marks, or the formatted text if it takes that. |
-| Paste a screenshot | Press Win+Shift+S, then Ctrl+V. |
+| To do this                                            | Do this                                                                                                                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Insert a table, code block, callout, divider, or date | Type `/` on an empty line to open the slash menu. The Insert tab has the same items.                                                                       |
+| Make a heading                                        | Press Ctrl+Alt+1, Ctrl+Alt+2, or Ctrl+Alt+3.                                                                                                               |
+| Make text bold                                        | Press Ctrl+B.                                                                                                                                              |
+| Link to another page                                  | Type `[[` and pick a page.                                                                                                                                 |
+| Show another page inside this one                     | Type `![[` and pick a page. To show one paragraph, write `![[Page#^id]]` with the paragraph ID you copied. When you export, the embedded text is included. |
+| Paste with the structure and without stray fonts      | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. A table from a web page or a spreadsheet, or cells copied as tab-separated text, becomes a table.    |
+| Copy text to another app                              | Press Ctrl+C. The other app gets the words as plain text, with list markers and without Markdown marks, or the formatted text if it takes that.            |
+| Paste a screenshot                                    | Press Win+Shift+S, then Ctrl+V.                                                                                                                            |
 
 Moving around without a mouse is in [moving between blocks](moving-between-blocks.md).
 
@@ -32,22 +32,23 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 
 ## Find, count, and navigate
 
-| To do this | Do this |
-|---|---|
-| Find on the page | Press Ctrl+F. |
-| Replace on the page | Press Ctrl+H. |
-| See the word count and reading time | Press Ctrl+K and choose Word count. |
-| Jump between headings | Press Ctrl+K and choose Contents. Select a heading to go to it. |
-| Stop accidental edits and ink | Press Ctrl+K and choose Lock page. Choose it again to turn the lock off. |
-| Make the caret easier to see | The caret follows the Windows text cursor settings: its thickness, its blinking, and the indicator color. Turn on Settings, Accessibility, Text cursor in Windows, or choose a width in OpenNote's settings. |
+| To do this                          | Do this                                                                                                                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Find on the page                    | Press Ctrl+F.                                                                                                                                                                                                |
+| Replace on the page                 | Press Ctrl+H.                                                                                                                                                                                                |
+| See the word count and reading time | Press Ctrl+K and choose Word count.                                                                                                                                                                          |
+| Jump between headings               | Press Ctrl+K and choose Contents. Select a heading to go to it.                                                                                                                                              |
+| Stop accidental edits and ink       | Press Ctrl+K and choose Lock page. Choose it again to turn the lock off.                                                                                                                                     |
+| Make the caret easier to see        | The caret follows the Windows text cursor settings: its thickness, its blinking, and the indicator color. Turn on Settings, Accessibility, Text cursor in Windows, or choose a width in OpenNote's settings. |
 
 ### Find by format, special characters, and patterns
 
-- Choose Format in the Find bar to find text by bold, italic, underline, font, size, text color, highlight, or character style. Turn on Any for a color or highlight to find every one. In Replace, choose Format to set formats on the replacement, or on the found text when the replacement is empty.
+- Choose Format in the Find bar to find text by bold, italic, underline, font, size, text color, highlight, language, or character style. Turn on Any for any format that has a value to find every value of it. In Replace, choose Format to set formats on the replacement, or on the found text when the replacement is empty.
 - Choose Special to add a paragraph mark (^p), tab (^t), any character (^?), digit (^#), letter (^$), manual line break (^l), nonbreaking space (^s), or caret (^^). Replacing a paragraph mark joins that paragraph with the next one.
 - Turn on Wildcards for ?, *, [abc], [!abc], <, >, {n,m}, and @. Wildcards always match case.
 - Turn on Regular expressions to use a full pattern. In the replacement, $1 to $9 give the parts in parentheses.
-- A pattern may have at most 250 characters. A pattern that takes more than a moment stops with a message. Make it simpler.
+- A pattern may have at most 250 characters. A pattern that takes more than a moment stops with a message. Make it simpler. A class such as \s or [^x] never takes the paragraph mark. Only ^p (or \n in a regular expression) does.
+- In the replacement, ^p splits the paragraph. Replacing ^p with nothing removes an empty paragraph.
 
 ## Templates, series, and the source
 
@@ -71,6 +72,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 A misspelled word is marked. Right-click it for fixes. Select text, open the command palette, and choose Read aloud to hear it in a Windows voice. Nothing is sent anywhere.
 
 The [feature list](../FEATURE-LIST.md) has one sentence on every typed-note feature.
+
 - In the Elements library, choose Move to put an element in another folder. Folders have Rename and Move too.
 
 ## Checking accessibility before you export

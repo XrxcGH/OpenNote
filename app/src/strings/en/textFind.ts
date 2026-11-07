@@ -41,5 +41,6 @@ export const textFind = {
     invalid: 'The pattern is not valid.',
     unsafe: 'The pattern repeats a repeated part, which can take too long. Simplify it.',
     slow: 'The search took too long and stopped. Narrow the pattern.',
+    unavailable: 'Searching with a pattern is not available right now. Try again in a moment.',
   },
 } as const;

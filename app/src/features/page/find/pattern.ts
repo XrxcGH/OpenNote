@@ -94,10 +94,13 @@ function wildcardSource(query: string): string | null {
   return out;
 }
 
-/** Whether a regular expression has a repeated part that repeats or chooses inside itself, such as `(a+)+`. */
+/** A group that is one atom repeated without end, the inside of `(a+)+`. The worker limits every other pattern. */
+const REPEATED_ATOM = /^(?:\?:)?(?:\\.|\[(?:\\.|[^\]\\])*\]|[^()\\[\]|*+?{])[*+]$/;
+
+/** Whether a regular expression repeats a repeated atom without end, such as `(a+)+`, or repeats a group many times. */
 export function isUnsafeRegex(source: string): boolean {
   // Each open group: whether it holds a repeat or an alternative.
-  const stack: { repeats: boolean; chooses: boolean }[] = [];
+  const stack: { repeats: boolean; chooses: boolean; start: number }[] = [];
   const quantifierAt = (at: number): { repeat: boolean; count?: number; end: number } | null => {
     const char = source[at];
     if (char === '*' || char === '+') return { repeat: true, end: at + 1 };
@@ -123,7 +126,7 @@ export function isUnsafeRegex(source: string): boolean {
     }
     if (char === '[') inClass = true;
     else if (char === '(') {
-      stack.push({ repeats: false, chooses: false });
+      stack.push({ repeats: false, chooses: false, start: i + 1 });
       // A group such as (?: or (?<name> or (?= has its prefix skipped.
       if (source[i + 1] === '?') {
         const prefix = /^\?(?::|=|!|<=|<!|<[A-Za-z_$][\w$]*>)/.exec(source.slice(i + 1));
@@ -135,7 +138,7 @@ export function isUnsafeRegex(source: string): boolean {
     } else if (char === ')') {
       const group = stack.pop();
       const quantifier = quantifierAt(i + 1);
-      if (group && quantifier?.repeat && (group.repeats || group.chooses)) return true;
+      if (group && quantifier?.repeat && REPEATED_ATOM.test(source.slice(group.start, i))) return true;
       // A group that repeats or chooses, taken a fixed number of times, still multiplies its work: `(.*a){12}`.
       const times = quantifier?.count ?? 0;
       if (group && ((times > 1 && group.repeats) || (times >= 8 && group.chooses))) return true;
@@ -154,6 +157,15 @@ export function isUnsafeRegex(source: string): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Whether the query names the paragraph mark: ^p, or \n in a regular expression. Only then is the mark part of the
+ * searched text, so a class such as \s or [^x] never takes it by accident.
+ */
+export function usesMark(query: string, options: PatternOptions): boolean {
+  if (options.regex) return /\\n|\n/.test(query);
+  return query.replace(/\^\^/g, '').includes('^p');
 }
 
 export type Compiled = { pattern: RegExp; problem?: undefined } | { pattern?: undefined; problem: PatternProblem };
@@ -191,7 +203,14 @@ export function patternProblem(query: string, options: PatternOptions): PatternP
 export function expandReplacement(text: string, groups: readonly string[], options: PatternOptions): string {
   const found = groups[0] ?? '';
   const digit = (next: string) => (/[1-9]/.test(next) ? (groups[Number(next)] ?? '') : null);
-  const named: Readonly<Record<string, string>> = { t: '\t', l: LINE_BREAK, s: '\u00a0', '^': '^', '&': found };
+  const named: Readonly<Record<string, string>> = {
+    t: '\t',
+    p: PARAGRAPH_MARK,
+    l: LINE_BREAK,
+    s: '\u00a0',
+    '^': '^',
+    '&': found,
+  };
   let out = '';
   for (let i = 0; i < text.length; i += 1) {
     const char = text[i];
