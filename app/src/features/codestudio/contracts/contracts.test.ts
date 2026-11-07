@@ -1,6 +1,7 @@
 // Type-level tests of the code studio contracts. tsc checks the expectTypeOf lines (npm run typecheck); vitest
 // checks the lists. Expected DAP field names come from the Debug Adapter Protocol specification; the request
 // and event lists, caps and modes come from the code studio design: sections 3.1, 4.1, 8, and 9.
+// vitest alone does not enforce the expectTypeOf lines. Run npm run typecheck to catch a type regression.
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
@@ -14,6 +15,7 @@ import {
   TRACE_LIMITS,
   type CodeFile,
   type CodeProject,
+  type CodeProjectBlock,
   type DebugCommand,
   type DebugEventMap,
   type DebugRequest,
@@ -141,5 +143,13 @@ describe('the run, diagnostics and test contracts', () => {
     expectTypeOf<WorkerMessage['kind']>().toEqualTypeOf<
       'loading' | 'started' | 'out' | 'input-wanted' | 'rich' | 'diagnostic' | 'trace' | 'test' | 'done'
     >();
+  });
+});
+
+describe('the code project block contract', () => {
+  it('takes the extension-block fallback of format spec 6.5, with an optional image asset ID', () => {
+    expectTypeOf<CodeProjectBlock['fallback']>().toEqualTypeOf<{ markdown: string; image?: string }>();
+    const fallback: CodeProjectBlock['fallback'] = { markdown: '# main.py', image: 'asset-1' };
+    expect(fallback.image).toBe('asset-1');
   });
 });

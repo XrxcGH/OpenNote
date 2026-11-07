@@ -23,11 +23,12 @@ export type CompareSpec =
   | { mode: 'regex' };
 
 /**
- * One test case, by kind:
- * - `io` runs the program with `stdin` and `args`.
- * - `call` calls `fn` with `callArgs`, the JSON text of an argument array.
- * - `sql` runs the query and compares result sets, in order when `rowsOrdered` is true.
- * - `framework` cases are found in the code and not stored.
+ * One test case. DESIGN 9.1 is the authority for the fields. The DESIGN 3.1 stored example puts call
+ * arguments in `args`; here they go in `callArgs`. `id` repeats the key in the `tests` object.
+ *
+ * An `io` case runs the program with `stdin` and `args`. A `call` case calls `fn` with `callArgs`, the JSON
+ * text of an argument array. A `sql` case runs the query and compares result sets, in order when
+ * `rowsOrdered` is true. A `framework` case is found in the code and not stored.
  */
 export interface TestCase {
   id: string;

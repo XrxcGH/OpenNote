@@ -91,5 +91,6 @@ export interface CodeProject {
 export interface CodeProjectBlock {
   type: typeof CODE_PROJECT_TYPE;
   data: CodeProject;
-  fallback: { markdown: string };
+  /** The format spec's extension-block fallback (section 6.5). `image` is an optional asset ID. */
+  fallback: { markdown: string; image?: string };
 }

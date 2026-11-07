@@ -195,6 +195,10 @@ export interface ProtocolMessage {
 export interface DebugRequest<C extends DebugCommand = DebugCommand> extends ProtocolMessage {
   type: 'request';
   command: C;
+  /**
+   * Required here, on purpose: DAP makes it optional. The client always sends it, `{}` when empty. A reader
+   * (the Rust DAP proxy included) must still accept a request without it, as DAP allows.
+   */
   arguments: DebugRequestMap[C]['arguments'];
 }
 

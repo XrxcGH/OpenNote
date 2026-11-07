@@ -21,7 +21,10 @@ export interface PackInfo {
   state: PackState;
 }
 
-/** Languages that run through the person's installed toolchains (DESIGN 2.2). */
+/**
+ * Languages that run through the person's installed toolchains (DESIGN 2.2). A `javascript` or `typescript`
+ * project with runtime `toolchain` runs through `node` or `deno`. Keep this list aligned with PROJECT_LANGUAGES.
+ */
 export type ToolchainLanguage =
   | 'java'
   | 'kotlin'

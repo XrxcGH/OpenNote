@@ -21,8 +21,8 @@ export interface Fix {
 }
 
 /**
- * One problem in a file. `from` and `to` are offsets in the file's text. `code` is the familiar rule name: a
- * pyflakes code for Python, an ESLint name for JavaScript. `source` names the layer that found it.
+ * One problem in a file. `from` and `to` are offsets in the file's text. `code` is the familiar rule name.
+ * That is a pyflakes code for Python and an ESLint name for JavaScript. `source` names the layer that found it.
  */
 export interface Diagnostic {
   /** The project path. */
