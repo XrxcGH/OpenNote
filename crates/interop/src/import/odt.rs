@@ -10,7 +10,7 @@ use std::io::{Read, Seek};
 use std::path::Path;
 
 use super::files::{Converted, ConvertedPage};
-use super::odt_props::Props;
+use super::odt_props::{Faces, Props};
 use super::pictures;
 use super::sheet::MAX_TABLE_CELLS;
 use super::xmltree::{Element, Node};
@@ -152,11 +152,19 @@ struct Stats {
 struct Styles {
     parents: HashMap<String, String>,
     props: HashMap<String, Props>,
+    faces: Faces,
     ordered: HashMap<String, bool>,
 }
 
 impl Styles {
     fn read(&mut self, root: &Element) {
+        for decls in root.kids().filter(|e| e.name == "office:font-face-decls") {
+            for face in decls.kids().filter(|e| e.name == "style:font-face") {
+                if let (Some(name), Some(family)) = (face.attr("style:name"), face.attr("svg:font-family")) {
+                    self.faces.insert(name.to_owned(), family.to_owned());
+                }
+            }
+        }
         for group in root.kids().filter(|e| e.name.ends_with("styles")) {
             let automatic = group.name == "office:automatic-styles";
             for style in group.kids() {
@@ -170,7 +178,8 @@ impl Styles {
                         }
                         if let Some(text) = style.first("style:text-properties") {
                             let direct = automatic || style.attr("style:family") == Some("text");
-                            self.props.insert(name.to_owned(), Props::read(text, direct));
+                            self.props
+                                .insert(name.to_owned(), Props::read(text, direct, &self.faces));
                         }
                     }
                     "text:list-style" => {
@@ -602,6 +611,74 @@ mod tests {
             text.contains("[link](https://example.org/)") && text.contains("1. First"),
             "{text}"
         );
+    }
+
+    /// The Markdown of the first text block of a converted `content.xml` body.
+    fn import_text(styles: &str, body: &str) -> String {
+        let xml = format!(
+            r#"<office:document-content xmlns:office="o" xmlns:text="t"><office:font-face-decls>
+            <style:font-face style:name="Liberation Serif1" svg:font-family="&apos;Liberation Serif&apos;, serif"/>
+            </office:font-face-decls><office:automatic-styles>{styles}</office:automatic-styles>
+            <office:body><office:text>{body}</office:text></office:body></office:document-content>"#
+        );
+        let bytes = zip_bytes(&[("content.xml", xml.as_bytes())]);
+        let mut parts = Parts::from_reader(Cursor::new(bytes)).expect("opens");
+        let world = TestEnv::new();
+        let env = world.env();
+        let done = convert_parts(&mut parts, "plan", &env).expect("converts");
+        let text = done.pages[0]
+            .page
+            .page
+            .blocks
+            .iter()
+            .find_map(|b| match &b.data {
+                opennote_core::model::BlockData::Text(t) => Some(t.markdown.to_string()),
+                _ => None,
+            })
+            .expect("a text block");
+        text
+    }
+
+    #[test]
+    fn a_bold_span_inside_a_font_span_keeps_the_font() {
+        let styles = r#"<style:style style:name="T1" style:family="text"><style:text-properties fo:font-family="Georgia"/></style:style>
+            <style:style style:name="T2" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style>
+            <style:style style:name="P1" style:family="paragraph"><style:text-properties fo:font-family="Georgia"/></style:style>"#;
+        let nested = import_text(
+            styles,
+            r#"<text:p><text:span text:style-name="T1">one <text:span text:style-name="T2">two</text:span> three</text:span></text:p>"#,
+        );
+        // Every word keeps Georgia, the bold one too.
+        assert_eq!(nested.matches("data-font=\"Georgia\"").count(), 3, "{nested}");
+        assert!(
+            nested.contains("**<span data-font=\"Georgia\">two</span>**"),
+            "{nested}"
+        );
+        let para = import_text(
+            styles,
+            r#"<text:p text:style-name="P1">a <text:span text:style-name="T2">b</text:span> c</text:p>"#,
+        );
+        assert!(para.contains("<span data-font=\"Georgia\">b</span>"), "{para}");
+    }
+
+    #[test]
+    fn declared_fonts_sizes_and_spacing_import_in_the_grammar_units() {
+        let styles = r##"<style:style style:name="T1" style:family="text"><style:text-properties style:font-name="Liberation Serif1"
+              fo:font-size="10.5pt" fo:letter-spacing="0.035cm" style:text-underline-style="wave" style:text-underline-color="#ff0000"/></style:style>"##;
+        let out = import_text(
+            styles,
+            r#"<text:p><text:span text:style-name="T1">x</text:span></text:p>"#,
+        );
+        // The face declaration names the family; 0.035 cm is 0.992 pt, which rounds to 1 on the 0.05 step.
+        assert!(
+            out.contains("Liberation Serif") && !out.contains("Liberation Serif1"),
+            "{out}"
+        );
+        assert!(
+            out.contains("10.5") && out.contains("wave") && out.contains("#ff0000"),
+            "{out}"
+        );
+        assert!(out.contains("data-tracking=\"1\""), "{out}");
     }
 
     #[test]

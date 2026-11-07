@@ -98,16 +98,14 @@ pub(super) fn group() -> &'static str {
 /// The size of a slide's body text in points. Size names scale it as they scale the 12 point body of a page.
 pub(super) const SLIDE_BODY_POINTS: f64 = 20.0;
 
-/// The size of a run in hundredths of a point: `10.5` is `1050`. The names `small`, `large`, and `xlarge` scale the
-/// slide body by the page's ratios (0.85, 1.25, 1.5).
+/// The size of a run in hundredths of a point: `10.5` is `1050`. The names `small`, `large`, and `xlarge` are 10, 15,
+/// and 18 points at the 12 point page body, so on the slide body they scale it by that ratio.
 pub(super) fn size_hundredths(size: &str) -> Option<i64> {
-    let ratio = match size {
-        "small" => 0.85,
-        "large" => 1.25,
-        "xlarge" => 1.5,
-        _ => return crate::doc::size_points(size).map(|p| (p * 100.0).round() as i64),
-    };
-    Some((SLIDE_BODY_POINTS * ratio * 100.0).round() as i64)
+    let points = crate::doc::size_points(size)?;
+    if matches!(size, "small" | "large" | "xlarge") {
+        return Some((SLIDE_BODY_POINTS * points / 12.0 * 100.0).round() as i64);
+    }
+    Some((points * 100.0).round() as i64)
 }
 
 /// The `u` value of `a:rPr` (ECMA-376 21.1.2.3.32) for an underline style of the Markdown grammar.
@@ -191,6 +189,14 @@ pub(super) fn run_properties(marks: &crate::doc::Marks, bold: bool, italic: bool
         .and_then(crate::palette::color_hex)
     {
         children.push_str(&format!("<a:highlight><a:srgbClr val=\"{hex}\"/></a:highlight>"));
+    }
+    // ECMA-376 21.1.2.3.32 puts the underline fill after the highlight and before the fonts.
+    if marks.underline {
+        if let Some(hex) = marks.underline_color.as_deref().and_then(crate::palette::color_hex) {
+            children.push_str(&format!(
+                "<a:uFill><a:solidFill><a:srgbClr val=\"{hex}\"/></a:solidFill></a:uFill>"
+            ));
+        }
     }
     (attrs, children)
 }

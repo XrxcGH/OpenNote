@@ -1,6 +1,6 @@
 //! Runs of text with their marks, as LaTeX.
 
-use super::escape::href_target;
+use super::escape::{self, href_target};
 use super::math;
 use super::writer::Writer;
 use super::Engine;
@@ -175,10 +175,17 @@ impl Writer<'_> {
             }
             None => {}
         }
-        // The preamble loads fontspec under the Unicode engines only.
+        // `\opnfont` does nothing under pdfLaTeX and for a font the machine lacks (see the preamble).
         if self.engine == Engine::Unicode && !self.simple {
             if let Some(font) = marks.font.as_deref().filter(|f| !f.starts_with('+')) {
-                text = format!("{{\\fontspec{{{font}}}{text}}}");
+                let name = escape::text(font, Engine::Unicode, &mut self.missing);
+                text = format!("{{\\opnfont{{{name}}}{text}}}");
+            }
+            if let Some(name) = marks.lang.as_deref().and_then(polyglossia_name) {
+                if !self.languages.contains(&name) {
+                    self.languages.push(name);
+                }
+                text = format!("\\opnlang{{{name}}}{{{text}}}");
             }
         }
         if !self.simple {
@@ -186,11 +193,11 @@ impl Writer<'_> {
                 text = format!("\\textcolor[HTML]{{{hex}}}{{{text}}}");
             }
             if let Some(hex) = marks.shade.as_deref().and_then(hex_color) {
-                text = format!("\\colorbox[HTML]{{{hex}}}{{{text}}}");
+                text = format!("\\opnhlx{{{hex}}}{{{text}}}");
             }
             if let Some(name) = &marks.highlight {
                 text = match name.starts_with('#').then(|| hex_color(name)).flatten() {
-                    Some(hex) => format!("\\colorbox[HTML]{{{hex}}}{{{text}}}"),
+                    Some(hex) => format!("\\opnhlx{{{hex}}}{{{text}}}"),
                     None => format!("\\opnhl{{{}}}{{{text}}}", highlight_color(name)),
                 };
             }
@@ -233,6 +240,28 @@ impl Writer<'_> {
             }
         }
     }
+}
+
+/// The polyglossia name of a language tag, for the languages it knows besides English (the main language).
+pub(super) fn polyglossia_name(tag: &str) -> Option<&'static str> {
+    Some(match tag.split('-').next()? {
+        "es" => "spanish",
+        "fr" => "french",
+        "de" => "german",
+        "it" => "italian",
+        "pt" => "portuguese",
+        "nl" => "dutch",
+        "ru" => "russian",
+        "pl" => "polish",
+        "sv" => "swedish",
+        "da" => "danish",
+        "fi" => "finnish",
+        "el" => "greek",
+        "tr" => "turkish",
+        "cs" => "czech",
+        "la" => "latin",
+        _ => return None,
+    })
 }
 
 #[cfg(test)]
@@ -299,15 +328,29 @@ mod tests {
             font: Some("Georgia".to_owned()),
             ..Marks::default()
         };
-        assert_eq!(
-            run(sized),
-            "{\\fontspec{Georgia}{\\fontsize{10.5}{12.6}\\selectfont x}}"
-        );
+        assert_eq!(run(sized), "{\\opnfont{Georgia}{\\fontsize{10.5}{12.6}\\selectfont x}}");
         let shaded = Marks {
             shade: Some("#ffeecc".to_owned()),
             ..Marks::default()
         };
-        assert_eq!(run(shaded), "\\colorbox[HTML]{FFEECC}{x}");
+        assert_eq!(run(shaded), "\\opnhlx{FFEECC}{x}");
+    }
+
+    #[test]
+    fn fonts_and_languages_go_through_the_helpers_with_an_escaped_name() {
+        let font = Marks {
+            font: Some("Fira_Sans".to_owned()),
+            lang: Some("fr-CA".to_owned()),
+            ..Marks::default()
+        };
+        let out = render(&[marked("x", font)]);
+        assert_eq!(out, "\\opnlang{french}{{\\opnfont{Fira\\_Sans}x}}");
+        assert!(!out.contains("fontspec"), "{out}");
+        let english = Marks {
+            lang: Some("en-US".to_owned()),
+            ..Marks::default()
+        };
+        assert_eq!(render(&[marked("x", english)]), "x");
     }
 
     #[test]

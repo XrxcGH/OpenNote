@@ -636,7 +636,8 @@ impl SlideWriter<'_> {
             match inline {
                 Inline::Text { text, marks } => {
                     let (props, fills) = parts::run_properties(marks, p.bold, p.italic);
-                    let attrs = format!(" lang=\"en-US\"{props} dirty=\"0\"");
+                    let lang = marks.lang.as_deref().filter(|l| *l != "zxx").unwrap_or("en-US");
+                    let attrs = format!(" lang=\"{lang}\"{props} dirty=\"0\"");
                     let mut children = fills;
                     if let Some(font) = marks.font.as_deref().filter(|f| !f.starts_with('+')) {
                         children.push_str(&format!("<a:latin typeface=\"{}\"/>", escape(font)));
@@ -834,7 +835,20 @@ mod tests {
             size: Some("large".to_owned()),
             ..Marks::default()
         });
+        // 15 pt at the 12 pt body is 1.25, so 25 pt on the 20 pt slide body.
         assert!(named.contains("sz=\"2500\""), "{named}");
+        let small = run_xml(Marks {
+            size: Some("small".to_owned()),
+            underline: true,
+            underline_color: Some("#ff0000".to_owned()),
+            ..Marks::default()
+        });
+        // 10 pt at the 12 pt body is 20 * 10 / 12 = 16.67 pt.
+        assert!(small.contains("sz=\"1667\""), "{small}");
+        assert!(
+            small.contains("<a:uFill><a:solidFill><a:srgbClr val=\"FF0000\"/>") || small.contains("val=\"ff0000\""),
+            "{small}"
+        );
         let double = run_xml(Marks {
             strike: true,
             strike_double: true,

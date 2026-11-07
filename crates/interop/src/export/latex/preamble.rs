@@ -46,11 +46,23 @@ const PREAMBLE: &str = r"\usepackage{iftex}
 \newcounter{opnfn}
 % \ULon closes the group that \bgroup opens, so the group has no braces of its own here.
 \newcommand{\opnhl}[2]{\bgroup\markoverwith{\textcolor{#1}{\rule[-.55ex]{2pt}{2.4ex}}}\ULon{#2}}
+% A shade or hex highlight breaks across lines, unlike \colorbox. The color is an HTML hex.
+\newcommand{\opnhlx}[2]{\bgroup\markoverwith{\textcolor[HTML]{#1}{\rule[-.55ex]{2pt}{2.4ex}}}\ULon{#2}}
 \newenvironment{opncode}
   {\par\medskip\begingroup\ttfamily\small\setlength{\parskip}{0pt}\raggedright}
   {\endgroup\par\medskip}
 \newcommand{\opncodeline}[1]{\leavevmode\hangindent=1.5em\hangafter=1 #1\par}
 ";
+
+/// `\opnfont` and `\opnlang`, which the body uses for a run font and a run language. Under pdfLaTeX, and where the font
+/// or polyglossia is missing, they leave the text as it is, so one file compiles everywhere.
+fn font_and_language_commands(languages: &[&str]) -> String {
+    let others: String = languages.iter().map(|l| format!("\\setotherlanguage{{{l}}}")).collect();
+    let none = "\\newcommand{\\opnlang}[2]{#2}";
+    format!(
+        "\\ifPDFTeX\n  \\newcommand{{\\opnfont}}[1]{{}}\n  {none}\n\\else\n  \\newcommand{{\\opnfont}}[1]{{\\IfFontExistsTF{{#1}}{{\\fontspec{{#1}}}}{{}}}}\n  \\IfFileExists{{polyglossia.sty}}{{%\n    \\usepackage{{polyglossia}}\\setmainlanguage{{english}}{others}%\n    \\newcommand{{\\opnlang}}[2]{{\\csname text#1\\endcsname{{#2}}}}%\n  }}{{{none}}}\n\\fi\n"
+    )
+}
 
 fn paper(paper: Paper) -> &'static str {
     match paper {
@@ -107,6 +119,8 @@ pub(super) struct Top<'a> {
     /// Milliseconds since 1970 of the latest edit, for the "last edited" date.
     pub edited: Option<i64>,
     pub with_bibliography: bool,
+    /// The polyglossia names of the languages the body marks.
+    pub languages: &'a [&'static str],
 }
 
 /// Everything before the body.
@@ -138,6 +152,7 @@ pub(super) fn top(top: &Top<'_>, missing: &mut Missing) -> String {
         margin(options.margin)
     ));
     out.push_str(PREAMBLE);
+    out.push_str(&font_and_language_commands(top.languages));
     out.push_str(&format!(
         "\\hypersetup{{pdftitle={{{}}},pdfauthor={{{}}}}}\n",
         pdf_info(top.title, engine),
@@ -197,7 +212,29 @@ mod tests {
             stem: "notes",
             edited: Some(1_793_583_000_000),
             with_bibliography: false,
+            languages: &[],
         };
         assert!(top(&page, &mut Missing::default()).contains(r"\date{November 1, 2026}"));
+    }
+
+    #[test]
+    fn the_only_fontspec_call_is_inside_the_guarded_helper() {
+        let options = LatexOptions::default();
+        let page = Top {
+            options: &options,
+            title: "Notes",
+            stem: "notes",
+            edited: None,
+            with_bibliography: false,
+            languages: &["spanish"],
+        };
+        let out = top(&page, &mut Missing::default());
+        assert_eq!(out.matches(r"\fontspec{").count(), 1, "{out}");
+        assert!(out.contains(r"\IfFontExistsTF{#1}{\fontspec{#1}}{}"), "{out}");
+        assert!(
+            out.contains(r"\ifPDFTeX") && out.contains(r"\newcommand{\opnfont}[1]{}"),
+            "{out}"
+        );
+        assert!(out.contains(r"\setotherlanguage{spanish}"), "{out}");
     }
 }
