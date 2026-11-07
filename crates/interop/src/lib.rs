@@ -8,6 +8,7 @@
 
 pub mod archive;
 pub mod assets;
+pub mod bundled_fonts;
 pub mod csv;
 pub mod dates;
 pub mod dest;
