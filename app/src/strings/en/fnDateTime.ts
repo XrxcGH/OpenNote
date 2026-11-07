@@ -9,6 +9,7 @@ interface FnText {
 const date = 'A date, as a serial number or date text.';
 const dates = { start: 'The first date.', end: 'The last date.' };
 const holidays = 'Dates to treat as days off, in a range or typed directly.';
+const intl = (name: string, text: FnText): Record<string, FnText> => ({ [`${name}.INTL`]: text });
 const weekend = 'Which days are days off: a code 1 to 7 or 11 to 17, or seven digits of 0 and 1 starting Monday.';
 
 export const fnDateTime: Readonly<Record<string, FnText>> = {
@@ -18,7 +19,7 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
     summary: 'Builds a date from a year, a month, and a day. Months and days that run over roll into the next period.',
     args: {
       year: 'The year. 0 to 99 mean 1900 to 1999.',
-      month: 'The month, 1 to 12 or beyond.',
+      month: 'The month number. More than 12 rolls into the next year.',
       day: 'The day of the month.',
     },
   },
@@ -69,15 +70,15 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
     summary: 'Working days between two dates, counting both ends, with Saturday and Sunday off.',
     args: { ...dates, holidays },
   },
-  'NETWORKDAYS.INTL': {
+  ...intl('NETWORKDAYS', {
     summary: 'Working days between two dates, counting both ends, with weekend days you choose.',
     args: { ...dates, weekend, holidays },
-  },
+  }),
   WORKDAY: {
     summary: 'The date a number of working days from a start date, with Saturday and Sunday off.',
     args: { start: 'The starting date.', days: 'Working days to move. A negative number goes back.', holidays },
   },
-  'WORKDAY.INTL': {
+  ...intl('WORKDAY', {
     summary: 'The date a number of working days from a start date, with weekend days you choose.',
     args: {
       start: 'The starting date.',
@@ -85,7 +86,7 @@ export const fnDateTime: Readonly<Record<string, FnText>> = {
       weekend,
       holidays,
     },
-  },
+  }),
   DATEDIF: {
     summary: 'The difference between two dates in whole years, months, or days.',
     args: {
