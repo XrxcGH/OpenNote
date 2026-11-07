@@ -1,13 +1,14 @@
-// Display text for values, in the person's regional format. Formats are cached because grids call this per cell.
+// Display text for values, in the person's regional format. A cell's number format code (ADR 0057) wins; without one,
+// the column type maps to a code (columnCode). Compiled codes are cached because grids call this per cell.
 
-import { serialToDate } from './dates';
 import type { Column } from './model';
 import type { Locale } from './locale';
+import { fixedDigits, toDigits } from './numfmt/digits';
+import { lcidHex, regionDateCode, render, type Rendered } from './numfmt';
 import { ERROR_WORDS, isError, numberToText, toScalar, type Value } from './values';
 import { engineeringText, prefixedText } from '../../../core/units';
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
-const dateFormats = new Map<string, Intl.DateTimeFormat>();
 
 function numberFormat(locale: Locale, options: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = `${locale.tag}|${JSON.stringify(options)}`;
@@ -19,44 +20,87 @@ function numberFormat(locale: Locale, options: Intl.NumberFormatOptions): Intl.N
   return format;
 }
 
-function dateFormat(locale: Locale, withTime: boolean): Intl.DateTimeFormat {
-  const key = `${locale.tag}|${withTime}`;
-  let format = dateFormats.get(key);
-  if (!format) {
-    const options: Intl.DateTimeFormatOptions = withTime
-      ? { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }
-      : { dateStyle: 'medium', timeZone: 'UTC' };
-    format = new Intl.DateTimeFormat(locale.tag, options);
-    dateFormats.set(key, format);
-  }
-  return format;
-}
-
 function fixed(column: Column): Intl.NumberFormatOptions {
   return column.decimals === undefined
     ? { maximumFractionDigits: 10 }
     : { minimumFractionDigits: column.decimals, maximumFractionDigits: column.decimals };
 }
 
-function formatNumber(value: number, column: Column, locale: Locale): string {
+function digits(column: Column): Intl.NumberFormatOptions {
+  return column.decimals === undefined ? {} : fixed(column);
+}
+
+/** A literal in a code, quoted unless it is a plain space. */
+function quoted(text: string): string {
+  return text === ' ' ? ' ' : `"${text.replace(/"/g, '')}"`;
+}
+
+const currencyCodes = new Map<string, string>();
+const NUMERIC_PARTS = new Set(['integer', 'group', 'decimal', 'fraction']);
+
+/**
+ * The code of a currency column, read from how the region writes the currency: `[$$-409]#,##0.00` in en-US, and
+ * the digits, a no-break space, and `[$€-407]` for euros in de-DE. The language ID is the region's.
+ */
+function currencyCode(column: Column, locale: Locale): string {
+  const currency = column.currency ?? locale.currency;
+  const key = `${locale.tag}|${currency}|${column.decimals ?? ''}`;
+  const known = currencyCodes.get(key);
+  if (known !== undefined) return known;
+  const format = numberFormat(locale, { style: 'currency', currency, ...digits(column) });
+  const decimals = column.decimals ?? format.resolvedOptions().minimumFractionDigits ?? 2;
+  const parts = format.formatToParts(1_234_567.5);
+  const first = parts.findIndex((p) => NUMERIC_PARTS.has(p.type));
+  let last = first;
+  parts.forEach((p, i) => {
+    if (NUMERIC_PARTS.has(p.type)) last = i;
+  });
+  const id = lcidHex(locale.tag);
+  const piece = (p: Intl.NumberFormatPart): string => {
+    if (p.type === 'currency') return id !== null && !/[\]"]/.test(p.value) ? `[$${p.value}-${id}]` : quoted(p.value);
+    return p.type === 'literal' ? quoted(p.value) : '';
+  };
+  const grouped = parts.some((p) => p.type === 'group');
+  const core = `${grouped ? '#,##0' : '0'}${decimalsText(decimals)}`;
+  const code =
+    parts.slice(0, first).map(piece).join('') +
+    core +
+    parts
+      .slice(last + 1)
+      .map(piece)
+      .join('');
+  currencyCodes.set(key, code);
+  return code;
+}
+
+/** Digits after the point that a value needs, up to `max`, read from its 15-digit form. */
+function neededDecimals(value: number, max: number): number {
+  return fixedDigits(toDigits(value), max).frac.replace(/0+$/, '').length;
+}
+
+function decimalsText(n: number): string {
+  return n > 0 ? `.${'0'.repeat(n)}` : '';
+}
+
+/**
+ * The code a column type stands for when no style sets `fmt` (DESIGN.md section 5.3): number with 2 decimals is
+ * `#,##0.00`, percent is `0%` or `0.00%`, currency is the region's currency code, and date is the region's medium
+ * date. Without set decimals the value decides them, up to 10 for numbers and 2 for percents, as the column showed
+ * before codes. Unit and notation columns, text, checkbox, and choice columns have no code (null).
+ */
+export function columnCode(column: Column, locale: Locale, value = 0): string | null {
   switch (column.type) {
     case 'currency':
-      return numberFormat(locale, {
-        style: 'currency',
-        currency: column.currency ?? locale.currency,
-        ...digits(column),
-      }).format(value);
+      return currencyCode(column, locale);
     case 'percent':
-      return numberFormat(locale, {
-        style: 'percent',
-        ...(column.decimals === undefined ? { maximumFractionDigits: 2 } : fixed(column)),
-      }).format(value);
+      return `0${decimalsText(column.decimals ?? neededDecimals(value * 100, 2))}%`;
     case 'date':
-      return dateFormat(locale, value !== Math.floor(value)).format(serialToDate(value));
+      return regionDateCode(locale, value !== Math.floor(value) ? 'mediumDateTime' : 'medium');
+    case 'number':
+      if (column.unit || column.notation) return null;
+      return `#,##0${decimalsText(column.decimals ?? neededDecimals(value, 10))}`;
     default:
-      return column.unit || column.notation
-        ? withUnit(value, column, locale)
-        : numberFormat(locale, fixed(column)).format(value);
+      return null;
   }
 }
 
@@ -67,30 +111,46 @@ function formatNumber(value: number, column: Column, locale: Locale): string {
  */
 function withUnit(value: number, column: Column, locale: Locale): string {
   const unit = column.unit ?? '';
-  const digits = column.decimals === undefined ? 6 : Math.max(1, column.decimals + 1);
+  const kept = column.decimals === undefined ? 6 : Math.max(1, column.decimals + 1);
   if (column.notation === 'si') {
-    const prefixed = prefixedText(value, unit, digits);
+    const prefixed = prefixedText(value, unit, kept);
     if (prefixed) return prefixed;
   }
   const number =
     column.notation === 'engineering'
-      ? engineeringText(value, digits)
+      ? engineeringText(value, kept)
       : numberFormat(locale, fixed(column)).format(value);
   return unit ? `${number} ${unit}` : number;
 }
 
-function digits(column: Column): Intl.NumberFormatOptions {
-  return column.decimals === undefined ? {} : fixed(column);
+export interface DisplayOptions {
+  /** The cell's number format code (style `fmt`), which wins over the column type. Unit columns keep their units. */
+  fmt?: string | null;
+  /** The characters that fit in the cell, for the `#` overflow. */
+  maxChars?: number;
 }
 
-/** The text a cell shows. Errors show plain words, never tokens. Text in a typed column shows as typed. */
-export function formatValue(input: Value, column: Column, locale: Locale): string {
+function plain(text: string): Rendered {
+  return { text, color: null, fill: null, overflow: false };
+}
+
+/** What a cell shows: text, a color token, a fill, and overflow. Errors show plain words, never tokens. */
+export function renderValue(input: Value, column: Column, locale: Locale, options: DisplayOptions = {}): Rendered {
   const value = toScalar(input);
-  if (value === null) return '';
-  if (isError(value)) return ERROR_WORDS[value.error];
-  if (typeof value === 'string') return value;
+  if (value === null) return plain('');
+  if (isError(value)) return plain(ERROR_WORDS[value.error]);
+  const fmt = options.fmt || null;
+  if (typeof value === 'string') return fmt ? render(value, fmt, locale, options) : plain(value);
   if (typeof value === 'boolean')
-    return column.type === 'checkbox' ? (value ? '[x]' : '[ ]') : value ? 'TRUE' : 'FALSE';
-  if (!Number.isFinite(value)) return numberToText(value);
-  return formatNumber(value, column, locale);
+    return plain(column.type === 'checkbox' ? (value ? '[x]' : '[ ]') : value ? 'TRUE' : 'FALSE');
+  if (!Number.isFinite(value)) return plain(numberToText(value));
+  if (column.type === 'number' && (column.unit || column.notation)) return plain(withUnit(value, column, locale));
+  const code = fmt ?? columnCode(column, locale, value);
+  if (code === null) return plain(numberFormat(locale, fixed(column)).format(value));
+  return render(value, code, locale, options);
+}
+
+/** The text a cell shows. Text in a typed column shows as typed unless the code has a text section. */
+export function formatValue(input: Value, column: Column, locale: Locale, fmt?: string | null): string {
+  return renderValue(input, column, locale, { fmt }).text;
 }
