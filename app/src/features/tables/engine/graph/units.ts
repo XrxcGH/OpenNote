@@ -101,6 +101,19 @@ export function sheetInfo(table: Table, index: number): SheetInfo {
   };
 }
 
+/** True when a legacy array block of whole rows and columns, at least 1 by 1, fits in the table from its corner. */
+export function arrayFits(array: NonNullable<Cell['array']>, row: number, col: number, table: Table): boolean {
+  const { rows, cols } = array;
+  return (
+    Number.isInteger(rows) &&
+    Number.isInteger(cols) &&
+    rows >= 1 &&
+    cols >= 1 &&
+    row + rows <= table.rows.length &&
+    col + cols <= table.columns.length
+  );
+}
+
 export function sameShapeArray(a: Unit['array'], b: Cell['array']): boolean {
   return a?.rows === b?.rows && a?.cols === b?.cols;
 }

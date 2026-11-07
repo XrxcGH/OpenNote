@@ -44,22 +44,47 @@ function compare(op: Op, order: number): boolean {
   }
 }
 
-/** A wildcard pattern as a regular expression over the whole text, without regard to case. */
-export function wildcardPattern(pattern: string): RegExp {
-  let source = '';
-  for (let i = 0; i < pattern.length; i++) {
-    const char = pattern[i];
-    if (char === '~' && i + 1 < pattern.length && '*?~'.includes(pattern[i + 1])) {
-      source += escapeRegExp(pattern[++i]);
-    } else if (char === '*') source += '[\\s\\S]*';
-    else if (char === '?') source += '[\\s\\S]';
-    else source += escapeRegExp(char);
-  }
-  return new RegExp(`^${source}$`, 'iu');
-}
+const STAR = 0;
+const ONE = 1;
+type Token = string | typeof STAR | typeof ONE;
 
-function escapeRegExp(char: string): string {
-  return /[.*+?^${}()|[\]\\]/.test(char) ? `\\${char}` : char;
+/**
+ * A wildcard pattern as a test of the whole text, without regard to case. It runs in time linear in the pattern
+ * times the text, never exponential: a mismatch goes back only to the last star, which is enough for globs.
+ */
+export function wildcardMatcher(pattern: string): (text: string) => boolean {
+  const tokens: Token[] = [];
+  const chars = Array.from(pattern.toLowerCase());
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    if (char === '~' && i + 1 < chars.length && '*?~'.includes(chars[i + 1])) tokens.push(chars[++i]);
+    else if (char === '*') {
+      if (tokens[tokens.length - 1] !== STAR) tokens.push(STAR);
+    } else if (char === '?') tokens.push(ONE);
+    else tokens.push(char);
+  }
+  return (value) => {
+    const text = Array.from(value.toLowerCase());
+    let p = 0;
+    let t = 0;
+    let starP = -1;
+    let starT = 0;
+    while (t < text.length) {
+      const token = tokens[p];
+      if (p < tokens.length && (token === ONE || token === text[t])) {
+        p++;
+        t++;
+      } else if (token === STAR) {
+        starP = p++;
+        starT = t;
+      } else if (starP >= 0) {
+        p = starP + 1;
+        t = ++starT;
+      } else return false;
+    }
+    while (tokens[p] === STAR) p++;
+    return p === tokens.length;
+  };
 }
 
 /** True when the text has a wildcard that is not escaped. */
@@ -87,11 +112,11 @@ function numberCriterion(op: Op, target: number): Criterion {
 
 function textCriterion(op: Op, operand: string): Criterion {
   if (op === '=' || op === '<>') {
-    const pattern = hasWildcard(operand) ? wildcardPattern(operand) : null;
+    const matches = hasWildcard(operand) ? wildcardMatcher(operand) : null;
     const plain = operand.replace(/~([*?~])/g, '$1').toLowerCase();
     const equal = (value: Scalar): boolean => {
       if (typeof value !== 'string') return false;
-      return pattern ? pattern.test(value) : value.toLowerCase() === plain;
+      return matches ? matches(value) : value.toLowerCase() === plain;
     };
     return op === '=' ? equal : (value) => !equal(value);
   }

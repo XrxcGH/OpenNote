@@ -113,29 +113,55 @@ export function deleteRow(table: Table, row: number, env?: Env): Table {
 
 /** Deletes `count` rows from `at`, rewriting references as Excel does. */
 export function deleteRows(table: Table, at: number, count: number, env?: Env): Table {
-  if (count <= 0 || at < 0 || at >= table.rows.length) return table;
-  const adjusted = adjustTable(table, { kind: 'deleteRows', at, count });
-  return recalculate({ ...adjusted, rows: adjusted.rows.filter((_, i) => i < at || i >= at + count) }, env);
+  const change: RowChange = { kind: 'deleteRows', at, count };
+  return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
 }
 
 /** Inserts `count` empty rows before row `at`, rewriting references as Excel does. */
 export function insertRows(table: Table, at: number, count = 1, env?: Env): Table {
-  if (count <= 0 || at < 0 || at > table.rows.length) return table;
-  const adjusted = adjustTable(table, { kind: 'insertRows', at, count });
-  let id = Number(/^r(\d+)$/.exec(nextRowId(table.rows))?.[1] ?? table.rows.length);
-  const blank = (): Row => ({ id: `r${id++}`, cells: table.columns.map(() => EMPTY_CELL) });
-  const fresh = Array.from({ length: count }, blank);
-  return recalculate({ ...adjusted, rows: [...adjusted.rows.slice(0, at), ...fresh, ...adjusted.rows.slice(at)] }, env);
+  const change: RowChange = { kind: 'insertRows', at, count };
+  return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
 }
 
 /** Moves `count` rows from `from` so they start at `to` in the result, and their references follow them. */
 export function moveRows(table: Table, from: number, count: number, to: number, env?: Env): Table {
+  const change: RowChange = { kind: 'moveRows', from, count, to };
+  return rowChangeFits(table, change) ? recalculate(applyRowChange(adjustTable(table, change), change), env) : table;
+}
+
+/** A change of a table's rows. */
+export type RowChange =
+  | { readonly kind: 'insertRows'; readonly at: number; readonly count: number }
+  | { readonly kind: 'deleteRows'; readonly at: number; readonly count: number }
+  | { readonly kind: 'moveRows'; readonly from: number; readonly count: number; readonly to: number };
+
+/** True when the change does something and its rows are in the table. */
+export function rowChangeFits(table: Table, change: RowChange): boolean {
   const n = table.rows.length;
-  if (count <= 0 || from < 0 || from + count > n || to < 0 || to + count > n || to === from) return table;
-  const adjusted = adjustTable(table, { kind: 'moveRows', from, count, to });
-  const block = adjusted.rows.slice(from, from + count);
-  const rest = [...adjusted.rows.slice(0, from), ...adjusted.rows.slice(from + count)];
-  return recalculate({ ...adjusted, rows: [...rest.slice(0, to), ...block, ...rest.slice(to)] }, env);
+  if (change.count <= 0) return false;
+  if (change.kind === 'insertRows') return change.at >= 0 && change.at <= n;
+  if (change.kind === 'deleteRows') return change.at >= 0 && change.at < n;
+  const { from, count, to } = change;
+  return from >= 0 && from + count <= n && to >= 0 && to + count <= n && to !== from;
+}
+
+/** The table's rows after the change, without touching formulas. adjustTable rewrites them. */
+export function applyRowChange(table: Table, change: RowChange): Table {
+  const rows = table.rows;
+  if (change.kind === 'deleteRows') {
+    const { at, count } = change;
+    return { ...table, rows: rows.filter((_, i) => i < at || i >= at + count) };
+  }
+  if (change.kind === 'insertRows') {
+    let id = Number(/^r(\d+)$/.exec(nextRowId(rows))?.[1] ?? rows.length);
+    const blank = (): Row => ({ id: `r${id++}`, cells: table.columns.map(() => EMPTY_CELL) });
+    const fresh = Array.from({ length: change.count }, blank);
+    return { ...table, rows: [...rows.slice(0, change.at), ...fresh, ...rows.slice(change.at)] };
+  }
+  const { from, count, to } = change;
+  const block = rows.slice(from, from + count);
+  const rest = [...rows.slice(0, from), ...rows.slice(from + count)];
+  return { ...table, rows: [...rest.slice(0, to), ...block, ...rest.slice(to)] };
 }
 
 /** Recalculates everything now, as F9 does for a table in manual calculation. */

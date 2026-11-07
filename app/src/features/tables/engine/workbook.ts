@@ -2,7 +2,8 @@
 // in one table that reads another (Sales[Amount], Sales!B2) recalculates when that table changes. A table's name is
 // its `name`, or Table1, Table2, and so on in page order.
 
-import { makeCell, type CellEdit } from './edit';
+import { applyRowChange, makeCell, rowChangeFits, type CellEdit, type RowChange } from './edit';
+import { adjustTable } from './refactor';
 import type { Locale } from './locale';
 import type { Table } from './model';
 import { DEFAULT_ENV, Engine, engineOf, rememberEngine, type CycleCell, type EngineEnv } from './recalc';
@@ -44,6 +45,27 @@ export function recalculateBookCells(
   const result = engine.results();
   rememberEngine(result, engine);
   return result;
+}
+
+/**
+ * Inserts, deletes, or moves rows in one table of the page. Its own formulas and names adjust, and so does every
+ * reference to it from the other tables (Sales!B2, Sales[Amount]). Then the page recalculates.
+ */
+export function changeBookRows(
+  book: Workbook,
+  table: number,
+  change: RowChange,
+  env: EngineEnv = DEFAULT_ENV,
+): Table[] {
+  const target = book[table];
+  if (target === undefined || !rowChangeFits(target, change)) return [...book];
+  const names = tableNames(book);
+  const next = book.map((t, i) =>
+    i === table
+      ? applyRowChange(adjustTable(t, change, { tableName: names[i] }), change)
+      : adjustTable(t, change, { otherTable: names[table] }),
+  );
+  return recalculateBook(next, env);
 }
 
 /** Sets what one cell of one table holds from typed text, and recalculates the page. */

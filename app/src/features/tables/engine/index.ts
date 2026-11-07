@@ -40,6 +40,8 @@ export { columnLetter, isMismatch, ITERATE_DEFAULTS, letterToColumn, parseInput 
 export type { Cell, Column, ColumnType, IterateSettings, Row, Table, TableName, TotalKind } from './model';
 export { formatQuickMath, quickMath } from './quickMath';
 export type { QuickMathResult } from './quickMath';
+// Keep one EngineEnv object per page: recalculateCells and recalculateBookCells compare it by identity, and a new
+// object rebuilds the page from scratch (ADR 0065).
 export {
   errorOrigin,
   needsCalculation,
@@ -49,14 +51,15 @@ export {
   spillRange,
 } from './recalc';
 export type { CellRef, CycleCell, EngineEnv } from './recalc';
-export { explainOrigin } from './formula/explain';
-export type { ErrorOrigin, OriginCell } from './formula/explain';
+export { explainOrigin, originSentence } from './formula/explain';
+export type { ErrorOrigin, OriginCell, OriginSentence, OriginSentenceValues } from './formula/explain';
 export { adjustFormula, adjustNames, adjustTable } from './refactor';
 export type { AdjustOptions, StructureChange } from './refactor';
 export {
   bookCycles,
   bookErrorOrigin,
   bookSpillRange,
+  changeBookRows,
   recalculateBook,
   recalculateBookCells,
   setBookCellInput,

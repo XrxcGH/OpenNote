@@ -10,6 +10,7 @@ import type { Engine } from './engine';
 import { cellKey, PLANNED, sameBox, sameValue, type Unit } from './units';
 import { colKey } from '../formula/compile';
 import { err, type Scalar } from '../values';
+import { iterateLimits } from '../model';
 
 /** Records the blocks a function's returned references read, and runs again if one of them ran later. */
 export function afterDynamic(e: Engine, unit: Unit, ctx: Ctx): void {
@@ -87,5 +88,8 @@ export function cycle(e: Engine, ids: readonly number[]): void {
     .sort((a, b) => a.s - b.s || (a.row ?? -1) - (b.row ?? -1) || a.col - b.col);
   const settings = e.tables[units[0].s].iterate;
   if (settings === undefined) for (const unit of units) markCycle(e, unit);
-  else iterateCycle(e, units, Math.max(1, settings.max), settings.change);
+  else {
+    const { max, change } = iterateLimits(settings);
+    iterateCycle(e, units, max, change);
+  }
 }

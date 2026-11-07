@@ -34,24 +34,62 @@ export interface ErrorOrigin {
   readonly cell?: OriginCell;
 }
 
-/** The plain sentence for an origin, as the formula bar shows it under the formula. */
-export function explainOrigin(origin: ErrorOrigin, cellName: (cell: OriginCell) => string): string {
+/**
+ * Which sentence explains an origin. The engine holds no interface text: the formula bar keeps the sentences in its
+ * strings file (app/src/strings/en) and passes `say`, which turns a key and its values into the sentence.
+ */
+export type OriginSentence =
+  | 'function'
+  | 'functionUnnamed'
+  | 'operator'
+  | 'cell'
+  | 'cellUnknown'
+  | 'name'
+  | 'nameUnknown'
+  | 'spill'
+  | 'spillNoRoom'
+  | 'cycle'
+  | 'formula';
+
+/** The values a sentence may use: the function, operator, or name, and the cell's display name. */
+export interface OriginSentenceValues {
+  readonly name?: string;
+  readonly cell?: string;
+}
+
+/** The key and values for an origin's sentence. */
+export function originSentence(
+  origin: ErrorOrigin,
+  cellName: (cell: OriginCell) => string,
+): { key: OriginSentence; values: OriginSentenceValues } {
   switch (origin.kind) {
     case 'function':
-      return `${origin.name ?? 'A function'} gave this error.`;
+      return origin.name ? { key: 'function', values: { name: origin.name } } : { key: 'functionUnnamed', values: {} };
     case 'operator':
-      return `The ${origin.name ?? ''} operation gave this error.`;
+      return { key: 'operator', values: { name: origin.name ?? '' } };
     case 'cell':
-      return origin.cell ? `The error comes from ${cellName(origin.cell)}.` : 'The error comes from another cell.';
+      return origin.cell
+        ? { key: 'cell', values: { cell: cellName(origin.cell) } }
+        : { key: 'cellUnknown', values: {} };
     case 'name':
-      return `${origin.name ?? 'A name'} isn't a function, a name, or a column.`;
+      return origin.name ? { key: 'name', values: { name: origin.name } } : { key: 'nameUnknown', values: {} };
     case 'spill':
       return origin.cell
-        ? `${cellName(origin.cell)} is in the way of the results.`
-        : "The results don't fit in the table.";
+        ? { key: 'spill', values: { cell: cellName(origin.cell) } }
+        : { key: 'spillNoRoom', values: {} };
     case 'cycle':
-      return 'This formula uses its own result.';
+      return { key: 'cycle', values: {} };
     case 'formula':
-      return 'This formula gave this error.';
+      return { key: 'formula', values: {} };
   }
+}
+
+/** The plain sentence for an origin, as the formula bar shows it under the formula, in the strings `say` reads. */
+export function explainOrigin(
+  origin: ErrorOrigin,
+  cellName: (cell: OriginCell) => string,
+  say: (key: OriginSentence, values: OriginSentenceValues) => string,
+): string {
+  const { key, values } = originSentence(origin, cellName);
+  return say(key, values);
 }

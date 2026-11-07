@@ -19,6 +19,7 @@ import {
   parseCached,
   parseName,
   refused,
+  arrayFits,
   sameShapeArray,
   sameValue,
   sheetInfo,
@@ -167,9 +168,15 @@ export class Engine {
       ...(this.env.functions ? { functions: this.env.functions } : {}),
       parse: parseName,
     };
-    const compiled = result.ok ? compileSafely(result.node, scope, { col, row }, formula) : refused(formula);
+    // A legacy array block must be whole rows and columns that fit in the table from its corner; else #REF!.
+    const badArray = array !== undefined && row !== null && !arrayFits(array, row, col, table);
+    const compiled = badArray
+      ? refused('#REF!')
+      : result.ok
+        ? compileSafely(result.node, scope, { col, row }, formula)
+        : refused(formula);
     const id = this.nextId++;
-    const unit: Unit = { id, s, col, row, formula, compiled, ...(array ? { array } : {}) };
+    const unit: Unit = { id, s, col, row, formula, compiled, ...(array && !badArray ? { array } : {}) };
     this.units.set(id, unit);
     if (row === null) this.colUnit.set(colKey(s, col), id);
     else this.cellUnit.set(cellKey(s, col, row), id);

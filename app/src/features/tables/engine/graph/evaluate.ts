@@ -25,7 +25,9 @@ export function prepare(e: Engine, unit: Unit, row: number): Ctx {
 
 export function runFn(unit: Unit, ctx: Ctx): Value {
   try {
-    return unit.compiled.fn(ctx);
+    const value = unit.compiled.fn(ctx);
+    // A legacy array formula fills its block. addUnit keeps only blocks inside the table.
+    return unit.array && unit.row !== null ? fitTo(value, unit.array.rows, unit.array.cols) : value;
   } catch (error) {
     if (error instanceof RangeError) return err('NUM');
     throw error;
@@ -61,7 +63,6 @@ export function evaluateColumn(e: Engine, unit: Unit): void {
 export function evaluateCell(e: Engine, unit: Unit, r: number): void {
   const ctx = prepare(e, unit, r);
   let value = runFn(unit, ctx);
-  if (unit.array) value = fitTo(value, unit.array.rows, unit.array.cols);
   if (isArray(value) && value.rows * value.cols === 0) value = err('CALC');
   if (isArray(value) && value.rows * value.cols > 1) spill(e, unit, r, value, ctx.origin);
   else {

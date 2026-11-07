@@ -1,7 +1,7 @@
 // Criteria, from the documented rules of COUNTIF and its relatives. Expected counts are worked by hand.
 
 import { describe, expect, it } from 'vitest';
-import { countIf, hasWildcard, matchMask, parseCriterion, wildcardPattern } from './criteria';
+import { countIf, hasWildcard, matchMask, parseCriterion, wildcardMatcher } from './criteria';
 import { ymdToSerial } from '../../dates';
 import { err } from '../../values';
 
@@ -64,8 +64,37 @@ describe('criteria', () => {
   it('exposes the pieces the families build on', () => {
     expect(hasWildcard('a~*')).toBe(false);
     expect(hasWildcard('a*')).toBe(true);
-    expect(wildcardPattern('a*z').test('ABCZ')).toBe(true);
+    expect(wildcardMatcher('a*z')('ABCZ')).toBe(true);
     expect(matchMask(FRUIT, 'b*')).toEqual([false, false, true]);
     expect(parseCriterion('<>')('x')).toBe(true);
+  });
+
+  it('matches globs by hand-worked cases: stars, question marks, tildes, and a star that must go back', () => {
+    const cases: [string, string, boolean][] = [
+      ['*', '', true],
+      ['?', '', false],
+      ['a*b*c', 'axxbyyc', true],
+      ['a*b*c', 'axxbyy', false],
+      ['*ab', 'aab', true],
+      ['*a?c*', 'zzabcx', true],
+      ['a~*b', 'a*b', true],
+      ['a~*b', 'axb', false],
+      ['a~?', 'a?', true],
+      ['~~*', '~xyz', true],
+      ['**a**', 'BAB', true],
+      ['h?llo', 'HÉLLO', true],
+    ];
+    for (const [pattern, text, want] of cases)
+      expect([pattern, text, wildcardMatcher(pattern)(text)]).toEqual([pattern, text, want]);
+  });
+
+  it('matches many stars over long text in linear time, not exponential (gap G1)', () => {
+    const text = 'a'.repeat(10_000) + 'b';
+    const pattern = '*a'.repeat(20) + '*c';
+    countIf(['warm up'], pattern);
+    const start = performance.now();
+    expect(countIf([text], pattern)).toBe(0);
+    expect(countIf([text], '*a'.repeat(20) + '*b')).toBe(1);
+    expect(performance.now() - start).toBeLessThan(10);
   });
 });

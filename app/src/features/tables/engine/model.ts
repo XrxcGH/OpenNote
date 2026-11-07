@@ -92,6 +92,22 @@ export interface IterateSettings {
 /** Excel's defaults for iterative calculation. */
 export const ITERATE_DEFAULTS: IterateSettings = Object.freeze({ max: 100, change: 0.001 });
 
+/** Excel's documented upper limit on iteration passes. */
+export const ITERATE_MAX_PASSES = 32_767;
+
+/** Settings safe to run: passes a whole number from 1 to 32,767, and a change that is finite and not negative. */
+export function iterateLimits(settings: IterateSettings): IterateSettings {
+  const max = Number.isFinite(settings.max)
+    ? Math.min(ITERATE_MAX_PASSES, Math.max(1, Math.floor(settings.max)))
+    : Number.isNaN(settings.max)
+      ? ITERATE_DEFAULTS.max
+      : settings.max > 0
+        ? ITERATE_MAX_PASSES
+        : 1;
+  const change = Number.isFinite(settings.change) && settings.change >= 0 ? settings.change : ITERATE_DEFAULTS.change;
+  return { max, change };
+}
+
 export const EMPTY_CELL: Cell = Object.freeze({ raw: '', value: null });
 
 /** The spreadsheet letter of a column index: 0 is A, 25 is Z, and 26 is AA. The shared engine owns the rule. */

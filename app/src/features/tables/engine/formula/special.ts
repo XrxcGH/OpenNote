@@ -147,10 +147,13 @@ function compileIfError<C extends SpecialCtx>(args: readonly Node[], host: Speci
 
 function compileLet<C extends SpecialCtx>(args: readonly Node[], host: SpecialHost<C>): SpecialFn<C> {
   if (args.length < 3 || args.length % 2 === 0) return constant(err('VALUE'));
-  const names = [];
+  const names: string[] = [];
   for (let i = 0; i < args.length - 1; i += 2) {
     const param = paramName(args[i]);
     if (param === null || param.optional) return constant(err('VALUE'));
+    // Each name in one LET must be unique, without regard to case.
+    const upper = param.name.toUpperCase();
+    if (names.some((name) => name.toUpperCase() === upper)) return constant(err('VALUE'));
     names.push(param.name);
   }
   host.pushFrame();
