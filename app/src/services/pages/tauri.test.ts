@@ -5,7 +5,7 @@ import type { CoreClient, DecodedEnvelope } from '../../core/client';
 import type { ImagesClient } from '../../platform/types';
 import { resetStores } from '../../state/store';
 import { coreStalled, pageWaiting, saveHealthStore } from './saveHealth';
-import { clientPrefix, createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
+import { clientPrefix, createTauriPageService, readOnlyInfo, toCoreEdit, toVersionInfo } from './tauri';
 
 const AT = '2026-10-01T09:00:00.000Z';
 const block = (id: string, markdown: string) => ({
@@ -151,6 +151,30 @@ describe('the Tauri page service’s requests', () => {
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });
     expect(page.assetUrl('01k6asset')).toBe('http://opennote-asset.localhost/p1/01k6asset');
     expect(page.assetUrl('../x?y#z')).toBe('http://opennote-asset.localhost/p1/..%2Fx%3Fy%23z');
+  });
+
+  it('sends the removal of a frame and of a lock the way the core reads it, not as a null the core ignores', async () => {
+    const { core, calls } = fakeCore([envelope([])]);
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await page.send({
+      edits: [
+        { edit: 'moveBlock', block: 'b1', frame: null },
+        { edit: 'moveBlock', block: 'b1', frame: { x: 1, y: 2 }, after: 'b2' },
+        { edit: 'patchBlock', block: 'b1', lock: null },
+        { edit: 'patchBlock', block: 'b1', lock: 'all' },
+        { edit: 'patchBlock', block: 'b1', data: { a: 1 } },
+      ],
+    });
+    const [request] = calls.pageApply.mock.calls[0] as unknown as [{ edits: unknown[] }];
+    expect(request.edits).toEqual([
+      { edit: 'moveBlock', block: 'b1', frame: {} },
+      { edit: 'moveBlock', block: 'b1', frame: { x: 1, y: 2 }, after: 'b2' },
+      { edit: 'patchBlock', block: 'b1', lock: 'none' },
+      { edit: 'patchBlock', block: 'b1', lock: 'all' },
+      { edit: 'patchBlock', block: 'b1', data: { a: 1 } },
+    ]);
+    const unchanged = { edit: 'moveBlock', block: 'b1', after: 'b2' } as const;
+    expect(toCoreEdit(unchanged)).toBe(unchanged);
   });
 
   it('keeps edits, undo, and restores in the order they were asked for', async () => {

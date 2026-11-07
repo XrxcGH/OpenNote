@@ -14,6 +14,7 @@ import { isEnabled } from '../../app/flags';
 import type { IpcError } from '../../platform/types';
 import type { NotesService } from '../../services/notes/types';
 import { t } from '../../strings/t';
+import { removePersonalOn } from '../exportPrefs';
 import { collectRequest, pageCount } from './exportTarget';
 import type { ExportTarget } from './exportTarget';
 import { createFlowState, newJobName } from './flowState';
@@ -224,6 +225,7 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
       folder,
       ...extra,
       ...latexRequest,
+      ...(format === 'docx' ? { word: { removePersonal: removePersonalOn() } } : {}),
       ...(replace ? { replace } : {}),
     });
     if (outcome.status === 'done') {
