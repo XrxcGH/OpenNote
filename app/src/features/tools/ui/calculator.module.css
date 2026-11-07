@@ -3,6 +3,26 @@
  * statistics and matrices. Everything is on tokens, so a theme switch recolors it with no redraw.
  */
 @layer components {
+  /* The mode tabs wrap onto a second row rather than clip at the window's edge, so every mode name can be read. */
+  .modeTabs {
+    flex-wrap: wrap;
+    overflow: visible;
+    mask-image: none;
+  }
+
+  /* A history entry with a very long number or expression breaks inside the panel instead of widening it. */
+  .historyItem {
+    min-inline-size: 0;
+  }
+
+  .historyText {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    text-align: start;
+  }
+
   .basicKeys {
     display: grid;
     grid-template-columns: repeat(4, 1fr);

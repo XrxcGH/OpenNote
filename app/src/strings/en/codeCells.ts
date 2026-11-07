@@ -31,6 +31,11 @@ export const codeCells = {
     failed: 'The cell could not run. Try again.',
     truncated: 'Only the first part of the output is shown.',
   },
+  blocked: {
+    files: 'The sandbox blocks this: a code cell cannot read or write files on this computer.',
+    modules:
+      'The sandbox blocks this: a code cell has no network and no installed packages, only the built-in modules.',
+  },
   starter: {
     python: `# Newton’s method for the square root of 2
 x = 1.0

@@ -59,6 +59,9 @@ export function recordConversion(session: CalcSession, expression: string, value
   return { ...session, history, nextId: session.nextId + 1 };
 }
 
+/** The angle mode as saved: degrees unless it names radians or gradians. */
+const restoreAngle = (saved: unknown): AngleMode => (saved === 'rad' || saved === 'grad' ? saved : 'deg');
+
 export function setAngleMode(session: CalcSession, angle: AngleMode): CalcSession {
   return { ...session, angle };
 }
@@ -100,7 +103,7 @@ function restoreEntry(raw: unknown): HistoryEntry | null {
     id: raw.id,
     expression: raw.expression,
     value: raw.value,
-    angle: raw.angle === 'rad' ? 'rad' : 'deg',
+    angle: restoreAngle(raw.angle),
     ...unit,
   };
 }
@@ -113,5 +116,5 @@ export function restoreSession(raw: unknown): CalcSession {
   const saved = Array.isArray(raw.memory) ? raw.memory : [];
   const memory = fresh.memory.map((_, i) => (isNumber(saved[i]) ? saved[i] : null));
   const nextId = Math.max(1, ...history.map((e) => e.id + 1));
-  return { angle: raw.angle === 'rad' ? 'rad' : 'deg', history: history.slice(-MAX_HISTORY), memory, nextId };
+  return { angle: restoreAngle(raw.angle), history: history.slice(-MAX_HISTORY), memory, nextId };
 }

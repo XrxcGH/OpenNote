@@ -111,6 +111,8 @@ export const interop = {
     },
     removePersonal: 'Remove personal information',
     removePersonalHelp: 'Leaves the names of authors and the dates out of comments, suggestions, and the file details.',
+    embedFonts: 'Embed bundled fonts',
+    embedFontsHelp: 'Puts the fonts that come with OpenNote into the file, so it looks the same on any computer.',
     folderLabel: 'Where to save it',
     folderNone: 'No folder chosen yet',
     chooseFolder: 'Choose a folder…',

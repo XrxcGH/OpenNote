@@ -1,6 +1,6 @@
 // The symbol palette window: search, groups, recent symbols, and insertion at the caret.
 import { screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { INSERT_EVENT } from '../flags';
@@ -33,6 +33,19 @@ describe('the symbol palette', () => {
     expect(screen.getByRole('group', { name: 'Recent' }).querySelectorAll('button')).toHaveLength(1);
     await userEvent.click(screen.getByRole('button', { name: 'Clear recent symbols' }));
     expect(screen.getByText('Symbols you use appear here.')).toBeTruthy();
+  });
+  it('copies a symbol to the clipboard instead of inserting it when Copy is on', async () => {
+    const written: string[] = [];
+    const clipboard = vi.spyOn(navigator.clipboard, 'writeText').mockImplementation((text) => {
+      written.push(text);
+      return Promise.resolve();
+    });
+    renderUi(<SymbolsTool />);
+    await userEvent.click(screen.getByRole('button', { name: 'Copy to the clipboard instead of inserting' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Copy alpha' }));
+    expect(written).toEqual(['α']);
+    expect(inserted).toEqual([]);
+    clipboard.mockRestore();
   });
   it('searches by LaTeX name, by word, and by the symbol, and says when nothing matches', async () => {
     renderUi(<SymbolsTool />);

@@ -158,6 +158,8 @@ export interface ExportRequest {
 export interface WordChoices {
   /** Leave the names of authors and the dates out of the file, as Word's "Remove personal information" does. */
   removePersonal: boolean;
+  /** Embed the app's bundled fonts that the document uses. */
+  embedFonts: boolean;
 }
 
 export interface ExportResult {
