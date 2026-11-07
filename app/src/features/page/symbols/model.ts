@@ -70,12 +70,16 @@ export function searchSymbols(all: readonly SymbolEntry[], query: string, catego
   const q = query.trim();
   if (!q) return [...inCategory];
   if ([...q].length === 1) {
-    const single = all.filter((e) => e.char === q);
+    const single = inCategory.filter((e) => e.char === q);
     if (single.length > 0) return single;
   }
   const cp = codeOf(q);
   const byCode = cp === null ? [] : all.filter((e) => e.cp === cp);
-  const words = q.toUpperCase().split(/\s+/);
+  // The stored names keep the Unicode spelling, so the American spelling CENTER is a search alias.
+  const words = q
+    .toUpperCase()
+    .split(/\s+/)
+    .map((w) => (w === 'CENTER' ? 'CENTRE' : w));
   const byName = inCategory.filter((e) => words.every((w) => e.name.includes(w)));
   const whole = (e: SymbolEntry) => {
     const parts = e.name.split(/[\s-]+/);

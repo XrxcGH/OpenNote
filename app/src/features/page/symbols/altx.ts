@@ -9,7 +9,15 @@ export interface AltXResult {
   replacement: string;
 }
 
-const validCode = (cp: number): boolean => cp > 0 && cp <= 0x10ffff && !(cp >= 0xd800 && cp <= 0xdfff);
+/** Text only: no controls (tab excepted), surrogates, noncharacters, or the object placeholder U+FFFC. */
+const validCode = (cp: number): boolean => {
+  if (cp <= 0 || cp > 0x10ffff) return false;
+  if (cp < 0x20 && cp !== 9) return false;
+  if (cp >= 0x7f && cp <= 0x9f) return false;
+  if (cp >= 0xd800 && cp <= 0xdfff) return false;
+  if (cp >= 0xfdd0 && cp <= 0xfdef) return false;
+  return cp !== 0xfffc && (cp & 0xfffe) !== 0xfffe;
+};
 
 /**
  * What Alt+X does to the text just before the caret, or null when there is nothing to convert. The longest run of up

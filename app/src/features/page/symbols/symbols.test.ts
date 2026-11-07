@@ -103,7 +103,25 @@ describe('the special characters', () => {
   });
 });
 
+describe('Alt+X refuses non-text codes', () => {
+  it('does not turn 0a, 1b, fffe or fffc into characters', () => {
+    // U+000A is a line feed, U+001B an escape, U+FFFE a noncharacter, U+FFFC the object placeholder (Unicode charts).
+    expect(altX('0a')).toEqual({ length: 1, replacement: '0061' });
+    expect(altX('x1b')).toEqual({ length: 1, replacement: '0062' });
+    expect(altX('fffe')).toEqual({ length: 3, replacement: String.fromCodePoint(0xffe) });
+    expect(altX('fffc')).toEqual({ length: 3, replacement: String.fromCodePoint(0xffc) });
+    expect(altXSelected('0a')).toBeNull();
+  });
+});
+
 describe('the name list', () => {
+  it('treats CENTER as CENTRE and applies the group to a single character', () => {
+    expect(searchSymbols(all, 'center line', null).some((e) => e.name.includes('CENTRE LINE'))).toBe(true);
+    expect(searchSymbols(all, String.fromCodePoint(0xe9), 'arrows')).not.toContainEqual(
+      expect.objectContaining({ cp: 0xe9 }),
+    );
+  });
+
   it('lists U+2192 RIGHTWARDS ARROW when searching for arrow', () => {
     const found = searchSymbols(all, 'arrow', null);
     const right = found.find((e) => e.cp === 0x2192);
@@ -284,8 +302,8 @@ describe('the formatting marks while typing', () => {
       times.push(performance.now() - start);
     }
     times.sort((x, y) => x - y);
-    // A full redraw of 120 paragraphs of 60 words costs more than 40 ms a key here; one block costs a few.
-    expect(times[Math.ceil(times.length * 0.95) - 1]).toBeLessThan(40);
+    // A full redraw of 120 paragraphs of 60 words costs more than 16 ms a key here; one block costs a few.
+    expect(times[Math.ceil(times.length * 0.95) - 1]).toBeLessThan(16);
   });
 });
 

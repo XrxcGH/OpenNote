@@ -56,6 +56,12 @@
     border-color: var(--color-accent-primary);
   }
 
+  @media (forced-colors: active) {
+    .cell[aria-selected='true'] {
+      border: 2px solid Highlight;
+    }
+  }
+
   .cell:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: var(--size-focus-ring-offset);
