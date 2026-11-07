@@ -37,6 +37,28 @@ fn units(t: i64) -> f64 {
     (t as f64 / 15.0 * 100.0).round() / 100.0
 }
 
+/// The page numbers of a section (`w:pgNumType`, ECMA-376 Part 1, 17.6.12) as `view.text.pageNumbers`: the
+/// format, when it is one of the five that OpenNote has, and the first number. `None` when the section keeps
+/// Word's default of decimal numbers that count on.
+pub(super) fn page_numbers(sect: &Element) -> Option<Value> {
+    const FORMATS: [&str; 5] = ["decimal", "lowerRoman", "upperRoman", "lowerLetter", "upperLetter"];
+    let numbers = child(sect, "w:pgnumtype")?;
+    let mut out = Map::new();
+    if let Some(format) = numbers.attr("w:fmt").and_then(|f| FORMATS.iter().find(|k| **k == f)) {
+        if *format != "decimal" {
+            out.insert("format".to_owned(), Value::from(*format));
+        }
+    }
+    if let Some(start) = numbers
+        .attr("w:start")
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .filter(|s| *s <= 32_767)
+    {
+        out.insert("start".to_owned(), Value::from(start));
+    }
+    (!out.is_empty()).then_some(Value::Object(out))
+}
+
 /// The paper of a section, or `None` when it names no size.
 pub(super) fn paper(sect: &Element) -> Option<Paper> {
     let size = child(sect, "w:pgsz")?;
@@ -325,6 +347,27 @@ mod tests {
         assert_eq!(
             band,
             serde_json::json!({"left": "Report", "center": "", "right": "Page {page} of {pages}"})
+        );
+    }
+
+    #[test]
+    fn page_number_format_and_start_come_over() {
+        let sect = parse(r#"<w:sectPr><w:pgNumType w:fmt="lowerRoman" w:start="3"/></w:sectPr>"#);
+        assert_eq!(
+            page_numbers(&sect),
+            Some(serde_json::json!({"format": "lowerRoman", "start": 3}))
+        );
+        let plain = parse(r#"<w:sectPr><w:pgNumType w:fmt="decimal"/></w:sectPr>"#);
+        assert_eq!(
+            page_numbers(&plain),
+            None,
+            "decimal numbers that count on are the default"
+        );
+        let other = parse(r#"<w:sectPr><w:pgNumType w:fmt="chicago" w:start="40000"/></w:sectPr>"#);
+        assert_eq!(
+            page_numbers(&other),
+            None,
+            "an unknown format and a start past 32,767 are left out"
         );
     }
 
