@@ -42,3 +42,17 @@ In the same release we fix the two preservation defects: the table mapping keeps
 - The format specification gains section 6.3 text for `data.sheet`, limits in section 16, an Appendix C entry, and fixtures under `docs/format/fixtures/table-sheet/`.
 - Exporters (Rust) read `data.sheet` through a new `crates/interop/src/sheet/` module.
 - Revisit if the format ever stores tables as their own files, or if a block-level CRDT replaces merge patches (ADR 0049 follow-ups).
+
+## Implementation notes
+
+The sheet model lives in `app/src/features/tables/sheet/model/` (tables:sheet-model, B9):
+
+- `readSheet` copies `data.sheet` and keeps every key and value. `writeSheet` puts keys in code point order at every level. `sheetPatch` gives one RFC 7396 patch of the block's data.
+- `schema.ts` checks the grammar of spec 6.3 and words each problem as the reference reader does. Accessors read invalid values as missing; the file keeps them.
+- `intern` derives style IDs as R-SHT-6 says, collisions included. `gc` removes unused styles, except in a sheet whose `v` is above 1.
+- `resolve` layers defaults, look, table, column, row, cell, and conditional formats. The conditional lane adds its layer through `setConditionalLayer`. The render lane draws named looks through the `namedLook` hook.
+- `applyToRange`, `applyToRows`, `applyToColumns`, and `applyToTable` give Excel's result without a style per cell. A row or column format clears the same property in the cells inside. A column format also sets it on the cells where a row style sets it, since the row layer lies above the column layer.
+- `tidy` runs before each save: it moves merge and range corners after deletes, drops orphaned entries and overlapping merges, and removes unused styles.
+- The size test stores 100,000 formatted cells with 30 styles in 2.1 MiB of `page.json` (ten styles on columns, twenty on 40,000 single cells). A style on every single cell costs 38 bytes a cell in compact form, because row and column IDs have 26 characters. So 100,000 single-cell styles take 3.65 MiB compact and 5.21 MiB in the canonical `page.json` form, more than the 3 MiB and the 30 bytes a cell that the design first estimated. A second size test holds that case to its measure, so a regression shows. Whether the format should shrink it (for example run-length rows or shorter IDs) is an owner decision.
+- An empty cached result is written as no entry, never as `null`, because `null` inside a `PatchBlock` merge patch deletes the key (the spec owner adds this to R-SHT-17; until then this record holds it). A fresh cache of only empty results is `valuesOf` alone. Readers still read `null` as empty.
+- The fingerprint and the prepared rules are kept per table object (and per rule map), as `gridOf` is. The model's own in-place changes forget them; callers treat tables and maps as immutable. Active merges are indexed by row, and `addMerge` takes the merge set of a batch, so 10,000 merges add and tidy in under 100 ms.

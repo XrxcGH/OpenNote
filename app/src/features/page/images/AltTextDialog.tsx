@@ -1,6 +1,7 @@
 // The "Alt text" dialog (Phase 4 ARCHITECTURE.md section 20.2): a multi-line description of up to 2,000
 // characters and a "Decorative" checkbox that disables it. Save sends one patchBlock. Phase 5's drawing dialog
 // uses the same component.
+import './text';
 import { useId, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { t } from '../../../strings/t';

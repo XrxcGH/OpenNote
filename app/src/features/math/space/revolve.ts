@@ -25,6 +25,21 @@ export interface RevolveStep {
   readonly values: Readonly<Record<string, string>>;
 }
 
+/** Why a set of fields makes no solid: the limits or the axis are not numbers, the limits are not in order, or no curve. */
+export type RevolveInputProblem = 'numbers' | 'order' | 'curve';
+
+/** Checks the fields of the Solids tool before a spec is made, so a bad entry is named and never a blank result. */
+export function revolveInputProblem(
+  outer: string,
+  from: number,
+  to: number,
+  axisAt: number,
+): RevolveInputProblem | null {
+  if (![from, to, axisAt].every(Number.isFinite)) return 'numbers';
+  if (from >= to) return 'order';
+  return outer.trim() === '' ? 'curve' : null;
+}
+
 export type RevolveResult =
   | {
       readonly ok: true;

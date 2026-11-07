@@ -1,5 +1,6 @@
 // The small toolbar over a selected image: Crop, Alt text, and the one-click switch between "Actual size" and
 // "Fit to column" (FEATURES.md, Screenshot paste size). Arrow keys move between its buttons.
+import './text';
 import { isEnabled } from '../../../app/flags';
 import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';

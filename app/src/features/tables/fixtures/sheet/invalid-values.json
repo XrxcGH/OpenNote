@@ -1,0 +1,73 @@
+{
+  "name": "values outside the grammar, which a reader keeps and reads as missing",
+  "data": {
+    "header": true,
+    "columns": [
+      {
+        "id": "01m3sbcmt0000000000000k001",
+        "width": 120
+      },
+      {
+        "id": "01m3sbcmt0000000000000k002",
+        "width": 120
+      }
+    ],
+    "rows": [
+      {
+        "id": "01m3sbcmt0000000000000r001",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A1"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B1"
+          }
+        }
+      },
+      {
+        "id": "01m3sbcmt0000000000000r002",
+        "cells": {
+          "01m3sbcmt0000000000000k001": {
+            "markdown": "A2"
+          },
+          "01m3sbcmt0000000000000k002": {
+            "markdown": "B2"
+          }
+        }
+      }
+    ],
+    "sheet": {
+      "styles": {
+        "bad001": {
+          "font": {
+            "size": 1639,
+            "bold": "yes",
+            "italic": true
+          },
+          "fill": "chartreuse",
+          "align": {
+            "rotate": 91,
+            "h": "center"
+          }
+        }
+      },
+      "cells": {
+        "01m3sbcmt0000000000000r001": {
+          "01m3sbcmt0000000000000k001": "bad001"
+        }
+      },
+      "rows": {
+        "01m3sbcmt0000000000000r002": {
+          "height": 0,
+          "level": 9
+        }
+      },
+      "table": {
+        "freeze": {
+          "rows": -1
+        },
+        "grid": "no"
+      }
+    }
+  }
+}

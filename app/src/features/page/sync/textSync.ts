@@ -30,6 +30,8 @@ export interface TextSyncHandle {
   flush(reason: FlushReason): Promise<void>;
   /** The Markdown the core has. */
   lastSent(): string;
+  /** Whether the block is a draft the core does not have yet: its first change inserts it. */
+  readonly unsaved: boolean;
   /** Flushes first. */
   detach(): void;
 }
@@ -162,6 +164,10 @@ class Sync implements TextSyncHandle {
 
   lastSent(): string {
     return this.sent;
+  }
+
+  get unsaved(): boolean {
+    return this.insert !== null;
   }
 
   flush(reason: FlushReason): Promise<void> {

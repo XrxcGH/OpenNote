@@ -3,6 +3,8 @@
 export const shared = {
   ui: {
     openFile: 'Open a file',
+    fileRead: 'Read {name}.',
+    fileFailed: 'The file could not be read.',
     insertTable: 'Insert the table “{name}” into the page',
     insertTableShort: 'Insert table',
     inserted: 'Added to the page.',
@@ -39,6 +41,8 @@ export const shared = {
     seedNumber: 'The seed must be a whole number of 0 or more, at most 20 digits.',
     cellNumber: 'The cell in row {row}, column {column} is not a number.',
     chooseColumns: 'Choose the columns to use. The data needs numeric columns.',
+    chooseRole: 'Choose a column for {role}.',
+    chooseNumberRole: 'Choose a column of numbers for {role}.',
     correlationOpen: 'Each correlation must be strictly between −1 and 1.',
     pairLength: 'Each x needs a y: the 2 columns have different lengths.',
     negativeWeight: 'Weights can’t be negative.',

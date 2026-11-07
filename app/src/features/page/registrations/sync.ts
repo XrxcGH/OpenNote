@@ -23,7 +23,8 @@ export function pageHasUndo(ctx?: CommandContext, direction: 'undo' | 'redo' = '
     return !outside && (direction === 'undo' ? queue.canUndo() : queue.canRedo());
   }
   const focused = typeof document === 'undefined' ? null : document.activeElement;
-  return !focused || focused === document.body || focused.closest('[data-scope="page"]') !== null;
+  // The properties panel floats outside the page's own scope; its edits are the page's steps too.
+  return !focused || focused === document.body || focused.closest('[data-scope="page"], [data-page-undo]') !== null;
 }
 
 registerPageCommand({

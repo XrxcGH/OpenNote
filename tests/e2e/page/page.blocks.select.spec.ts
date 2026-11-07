@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { skipReason } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { clientPoint, drag, makeBox, openEmptyPage, textBoxes } from './pageSession.ts';
+import { clientPoint, drag, explain, makeBox, openEmptyPage, textBoxes } from './pageSession.ts';
 
 describe('selecting blocks', { skip: skipReason() }, () => {
   let session: AppSession | undefined;
@@ -29,7 +29,10 @@ describe('selecting blocks', { skip: skipReason() }, () => {
     );
     assert.equal(badge, '2 selected');
     await browser.keys('Delete');
-    await browser.waitUntil(async () => (await textBoxes(browser)).length === 0, { timeout: 5_000 });
+    await explain(
+      browser,
+      browser.waitUntil(async () => (await textBoxes(browser)).length === 0, { timeout: 5_000 }),
+    );
     const undo = await browser.$('button=Undo');
     await undo.click();
     await browser.waitUntil(async () => (await textBoxes(browser)).length === 2, { timeout: 5_000 });

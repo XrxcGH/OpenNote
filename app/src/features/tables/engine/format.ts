@@ -1,8 +1,9 @@
 // Display text for values, in the person's regional format. Formats are cached because grids call this per cell.
 
+import { serialToDate } from './dates';
 import type { Column } from './model';
 import type { Locale } from './locale';
-import { ERROR_WORDS, isError, numberToText, type Value } from './values';
+import { ERROR_WORDS, isError, numberToText, toScalar, type Value } from './values';
 import { engineeringText, prefixedText } from '../../../core/units';
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
@@ -51,7 +52,7 @@ function formatNumber(value: number, column: Column, locale: Locale): string {
         ...(column.decimals === undefined ? { maximumFractionDigits: 2 } : fixed(column)),
       }).format(value);
     case 'date':
-      return dateFormat(locale, value !== Math.floor(value)).format(new Date(value * 86_400_000));
+      return dateFormat(locale, value !== Math.floor(value)).format(serialToDate(value));
     default:
       return column.unit || column.notation
         ? withUnit(value, column, locale)
@@ -83,7 +84,8 @@ function digits(column: Column): Intl.NumberFormatOptions {
 }
 
 /** The text a cell shows. Errors show plain words, never tokens. Text in a typed column shows as typed. */
-export function formatValue(value: Value, column: Column, locale: Locale): string {
+export function formatValue(input: Value, column: Column, locale: Locale): string {
+  const value = toScalar(input);
   if (value === null) return '';
   if (isError(value)) return ERROR_WORDS[value.error];
   if (typeof value === 'string') return value;

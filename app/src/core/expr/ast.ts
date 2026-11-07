@@ -10,7 +10,8 @@ export interface Span {
   readonly pos: number;
 }
 
-export type UnaryOp = '-' | '+' | '√';
+/** "@" is Excel's implicit intersection: one value from a range, on the formula's own row. */
+export type UnaryOp = '-' | '+' | '√' | '@';
 export type PostfixOp = '!' | '%' | '°';
 export type BinaryOp = '+' | '-' | '*' | '/' | '^' | 'mod' | '&' | '=' | '<>' | '<' | '>' | '<=' | '>=';
 
@@ -39,19 +40,72 @@ export interface ColNode extends Span {
   readonly by: 'name' | 'id';
   readonly key: string;
 }
-/** A spreadsheet cell such as $B$3. Column and row are zero-based. */
+/** Which parts of a reference were written with a dollar sign, so filling and copying keep them. */
+export interface CellAbs {
+  readonly col: boolean;
+  readonly row: boolean;
+}
+/** A spreadsheet cell such as $B$3. Column and row are zero-based. `abs` is set only when a "$" was written. */
 export interface CellNode extends Span {
   readonly type: 'cell';
   readonly col: number;
   readonly row: number;
+  readonly abs?: CellAbs;
 }
-/** A block of cells. A whole column such as B:B has row1 0 and row2 Infinity. */
+/**
+ * A block of cells. A whole column such as B:B has row1 0 and row2 Infinity; a whole row such as 3:3 has col1 0 and
+ * col2 Infinity. `abs` gives the "$" of the first and the second corner as written, and is set only when one was.
+ */
 export interface RangeNode extends Span {
   readonly type: 'range';
   readonly col1: number;
   readonly row1: number;
   readonly col2: number;
   readonly row2: number;
+  readonly abs?: readonly [CellAbs, CellAbs];
+}
+/** An array constant such as {1,2;3,4}: `rows` rows of `cols` items in row-major order. Items are literals. */
+export interface ArrayNode extends Span {
+  readonly type: 'array';
+  readonly rows: number;
+  readonly cols: number;
+  readonly items: readonly Node[];
+}
+/** The space operator (the cells two references share) or the comma inside brackets (both references). */
+export interface RefOpNode extends Span {
+  readonly type: 'refop';
+  readonly op: ' ' | ',';
+  readonly left: Node;
+  readonly right: Node;
+}
+/** A reference in another table or page: Sales!B2, 'Q1 budget'!Totals[Amount]. */
+export interface QualifiedNode extends Span {
+  readonly type: 'qualified';
+  /** The name before "!", without quotes. */
+  readonly scope: string;
+  /** Whether the name was written in single quotes. */
+  readonly quoted: boolean;
+  readonly ref: Node;
+}
+/** The special items of a structured reference. */
+export type StructItem = '#All' | '#Data' | '#Headers' | '#Totals' | '#This Row';
+/**
+ * A structured reference: Table[Col], Table[[#Headers],[Col]], [@Col], [#Totals], Table[[Col1]:[Col2]]. `table` is
+ * unset for the formula's own table. A plain [Col] without a table stays a column node.
+ */
+export interface StructNode extends Span {
+  readonly type: 'struct';
+  readonly table?: string;
+  readonly items: readonly StructItem[];
+  /** "@": the formula's own row. */
+  readonly thisRow: boolean;
+  readonly col1?: string;
+  readonly col2?: string;
+}
+/** A spill reference such as A1#: the whole array that spills from a cell. */
+export interface SpillNode extends Span {
+  readonly type: 'spill';
+  readonly ref: Node;
 }
 export interface UnaryNode extends Span {
   readonly type: 'unary';
@@ -119,7 +173,12 @@ export type Node =
   | BinaryNode
   | CallNode
   | QuantityNode
-  | ConvertNode;
+  | ConvertNode
+  | ArrayNode
+  | RefOpNode
+  | QualifiedNode
+  | StructNode
+  | SpillNode;
 
 /** A line that gives a name a value ("rent = 1200") or defines a function ("f(x) = x^2"). */
 export interface Definition {
@@ -154,12 +213,18 @@ export function children(node: Node): readonly Node[] {
     case 'postfix':
       return [node.arg];
     case 'binary':
+    case 'refop':
       return [node.left, node.right];
     case 'call':
       return node.args;
     case 'quantity':
     case 'convert':
       return [node.value];
+    case 'array':
+      return node.items;
+    case 'qualified':
+    case 'spill':
+      return [node.ref];
     default:
       return [];
   }
@@ -209,6 +274,13 @@ export function stripPositions(node: Node): Node {
       return { ...node, ...span, value: { ...node.value, ...span }, unit: stripUnit(node.unit) };
     case 'convert':
       return { ...node, ...span, value: stripPositions(node.value), unit: stripUnit(node.unit) };
+    case 'refop':
+      return { ...node, ...span, left: stripPositions(node.left), right: stripPositions(node.right) };
+    case 'array':
+      return { ...node, ...span, items: node.items.map(stripPositions) };
+    case 'qualified':
+    case 'spill':
+      return { ...node, ...span, ref: stripPositions(node.ref) };
     default:
       return { ...node, ...span };
   }
@@ -216,6 +288,10 @@ export function stripPositions(node: Node): Node {
 
 function stripUnit(unit: UnitExpr): UnitExpr {
   return { start: 0, end: 0, factors: unit.factors.map((f) => ({ ...f, pos: 0 })) };
+}
+
+function absSignature(abs: CellAbs | undefined): string {
+  return abs === undefined || (!abs.col && !abs.row) ? '' : `,${abs.col ? '$' : ''}:${abs.row ? '$' : ''}`;
 }
 
 function unitSignature(unit: UnitExpr): string {
@@ -236,9 +312,21 @@ function signature(node: Node): string {
     case 'col':
       return `c(${node.by},${JSON.stringify(node.key)})`;
     case 'cell':
-      return `r(${node.col},${node.row})`;
-    case 'range':
-      return `g(${node.col1},${node.row1},${node.col2},${node.row2})`;
+      return `r(${node.col},${node.row}${absSignature(node.abs)})`;
+    case 'range': {
+      const abs = `${absSignature(node.abs?.[0])}${absSignature(node.abs?.[1])}`;
+      return `g(${node.col1},${node.row1},${node.col2},${node.row2}${abs})`;
+    }
+    case 'array':
+      return `y(${node.rows},${node.cols},${node.items.map(signature).join(',')})`;
+    case 'refop':
+      return `o(${JSON.stringify(node.op)},${signature(node.left)},${signature(node.right)})`;
+    case 'qualified':
+      return `k(${JSON.stringify(node.scope)},${signature(node.ref)})`;
+    case 'struct':
+      return `t(${JSON.stringify([node.table ?? null, node.items, node.thisRow, node.col1 ?? null, node.col2 ?? null])})`;
+    case 'spill':
+      return `h(${signature(node.ref)})`;
     case 'unary':
       return `u(${node.op},${signature(node.arg)})`;
     case 'postfix':
