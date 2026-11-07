@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 886 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 923 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -300,6 +300,43 @@ Open it with the command "Open the code studio".
 | Table: Eigenvalues of the selection as an equation | Inserts the eigenvalues of the selected matrix as an equation. |  |
 | Table: Solution of Ax = b as an equation | Inserts the solution of Ax = b from the selected cells as an equation. |  |
 | Insert table | Inserts a table. |  |
+| Extend the selection up (not in the palette) | In Grid mode, extends the selected cells one row up. | Shift+Up |
+| Extend the selection down (not in the palette) | In Grid mode, extends the selected cells one row down. | Shift+Down |
+| Extend the selection left (not in the palette) | In Grid mode, extends the selected cells one column left. | Shift+Left |
+| Extend the selection right (not in the palette) | In Grid mode, extends the selected cells one column right. | Shift+Right |
+| Go to the top edge of the data (not in the palette) | In Grid mode, goes to the top edge of the data in the column. | Ctrl+Up |
+| Go to the bottom edge of the data (not in the palette) | In Grid mode, goes to the bottom edge of the data in the column. | Ctrl+Down |
+| Go to the left edge of the data (not in the palette) | In Grid mode, goes to the left edge of the data in the row. | Ctrl+Left |
+| Go to the right edge of the data (not in the palette) | In Grid mode, goes to the right edge of the data in the row. | Ctrl+Right |
+| Extend the selection to the top edge of the data (not in the palette) | In Grid mode, extends the selected cells to the top edge of the data. | Ctrl+Shift+Up |
+| Extend the selection to the bottom edge of the data (not in the palette) | In Grid mode, extends the selected cells to the bottom edge of the data. | Ctrl+Shift+Down |
+| Extend the selection to the left edge of the data (not in the palette) | In Grid mode, extends the selected cells to the left edge of the data. | Ctrl+Shift+Left |
+| Extend the selection to the right edge of the data (not in the palette) | In Grid mode, extends the selected cells to the right edge of the data. | Ctrl+Shift+Right |
+| Go to the first cell (not in the palette) | In Grid mode, goes to the table's first cell. | Ctrl+Home |
+| Go to the last used cell (not in the palette) | In Grid mode, goes to the last cell that holds data. | Ctrl+End |
+| Extend the selection to the first cell (not in the palette) | In Grid mode, extends the selected cells to the table's first cell. | Ctrl+Shift+Home |
+| Extend the selection to the last used cell (not in the palette) | In Grid mode, extends the selected cells to the last cell that holds data. | Ctrl+Shift+End |
+| Extend the selection to the start of the row (not in the palette) | In Grid mode, extends the selected cells to the start of the row. | Shift+Home |
+| Move one screen left (not in the palette) | In Grid mode, moves one screen of columns left. | Alt+PageUp |
+| Move one screen right (not in the palette) | In Grid mode, moves one screen of columns right. | Alt+PageDown |
+| Move up a cell (not in the palette) | In Grid mode, moves up a cell, or back through the selected cells. | Shift+Enter |
+| Fill the selected cells with the active cell (not in the palette) | In Grid mode, fills every selected cell with the active cell, moving formula references. | Ctrl+Enter |
+| Edit the active cell (not in the palette) | In Grid mode, starts editing the active cell with the caret at the end. | F2 |
+| Clear the selected cells (not in the palette) | In Grid mode, clears the text of every selected cell. | Delete |
+| Clear the active cell and edit it (not in the palette) | In Grid mode, clears the active cell and starts editing it. | Backspace |
+| Select the column (not in the palette) | In Grid mode, selects the whole column. | Ctrl+Space |
+| Select the data around the cell, then the table (not in the palette) | In Grid mode, selects the data around the active cell, then the whole table. | Ctrl+A |
+| Fill down | In Grid mode, copies the top cell of the selection down, moving formula references. | Ctrl+D |
+| Fill right | In Grid mode, copies the left cell of the selection right, moving formula references. | Ctrl+R |
+| Copy the formula from the cell above (not in the palette) | In Grid mode, copies the formula of the cell above into the active cell. | Ctrl+' |
+| Copy the value from the cell above (not in the palette) | In Grid mode, copies the value of the cell above into the active cell. | Ctrl+" |
+| Enter today’s date | Enters today's date in the cell, as a date the formulas read. | Ctrl+; |
+| Enter the current time | Enters the current time in the cell. | Ctrl+: |
+| Finish the entry and move up (not in the palette) | In Edit mode, finishes the cell's entry and moves up. | Shift+Enter |
+| Finish the entry and stay in the cell (not in the palette) | In Edit mode, finishes the cell's entry and stays in the cell. | Ctrl+Enter |
+| Start a new line in the cell (not in the palette) | In Edit mode, starts a new line in the cell. | Alt+Enter |
+| Switch between Enter and Edit modes (not in the palette) | In Edit mode, switches between Enter mode, where arrows move to the next cell, and Edit mode. | F2 |
+| Use document keys in this table | Switches a table between spreadsheet keys and document keys, where Enter starts a new line. |  |
 | Add row above | Adds a row above the current one. |  |
 | Add row below | Adds a row below the current one. | Ctrl+Enter |
 | Move row up | Moves the current row up one place. | Alt+Shift+Up |

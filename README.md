@@ -60,7 +60,7 @@ You keep notebooks, sections, and pages in a notes folder you choose, as plain f
 - [Ink and palm rejection](docs/help/ink-and-palm-rejection.md): pens, a highlighter, erasers, the lasso, shapes, and gestures, with your palm resting on the screen.
 - [My handwriting](docs/help/my-handwriting.md): typed text and math written in your own hand, learned from a calibration page.
 - [Paper and page views](docs/help/paper-and-page-views.md): flow, paginated, and canvas pages, with lined, grid, and dot paper; slides, print, and PDF.
-- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views and formulas, and charts that update with them.
+- [Tables and charts](docs/help/tables-and-charts.md): smart tables with views and formulas, spreadsheet keys with Grid and Edit modes, and charts that update with them.
 - [Language and spelling](docs/help/language-and-spelling.md): American English by default, and one choice for every part that reads or writes words.
 
 ### Organize and find

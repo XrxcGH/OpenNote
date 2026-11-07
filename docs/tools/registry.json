@@ -5506,6 +5506,369 @@
       "flag": "sync.e2ee"
     },
     {
+      "id": "table.sheet.extendUp",
+      "title": "Extend the selection up",
+      "category": "table",
+      "keys": [
+        "Shift+Up"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendDown",
+      "title": "Extend the selection down",
+      "category": "table",
+      "keys": [
+        "Shift+Down"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendLeft",
+      "title": "Extend the selection left",
+      "category": "table",
+      "keys": [
+        "Shift+Left"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendRight",
+      "title": "Extend the selection right",
+      "category": "table",
+      "keys": [
+        "Shift+Right"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.jumpUp",
+      "title": "Go to the top edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Up"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.jumpDown",
+      "title": "Go to the bottom edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Down"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.jumpLeft",
+      "title": "Go to the left edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Left"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.jumpRight",
+      "title": "Go to the right edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Right"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendJumpUp",
+      "title": "Extend the selection to the top edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+Up"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendJumpDown",
+      "title": "Extend the selection to the bottom edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+Down"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendJumpLeft",
+      "title": "Extend the selection to the left edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+Left"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendJumpRight",
+      "title": "Extend the selection to the right edge of the data",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+Right"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.firstCell",
+      "title": "Go to the first cell",
+      "category": "table",
+      "keys": [
+        "Ctrl+Home"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.lastCell",
+      "title": "Go to the last used cell",
+      "category": "table",
+      "keys": [
+        "Ctrl+End"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendFirstCell",
+      "title": "Extend the selection to the first cell",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+Home"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendLastCell",
+      "title": "Extend the selection to the last used cell",
+      "category": "table",
+      "keys": [
+        "Ctrl+Shift+End"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.extendRowStart",
+      "title": "Extend the selection to the start of the row",
+      "category": "table",
+      "keys": [
+        "Shift+Home"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.screenLeft",
+      "title": "Move one screen left",
+      "category": "table",
+      "keys": [
+        "Alt+PageUp"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.screenRight",
+      "title": "Move one screen right",
+      "category": "table",
+      "keys": [
+        "Alt+PageDown"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.moveUp",
+      "title": "Move up a cell",
+      "category": "table",
+      "keys": [
+        "Shift+Enter"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.fillEntry",
+      "title": "Fill the selected cells with the active cell",
+      "category": "table",
+      "keys": [
+        "Ctrl+Enter"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.edit",
+      "title": "Edit the active cell",
+      "category": "table",
+      "keys": [
+        "F2"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.clear",
+      "title": "Clear the selected cells",
+      "category": "table",
+      "keys": [
+        "Delete"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.clearAndEdit",
+      "title": "Clear the active cell and edit it",
+      "category": "table",
+      "keys": [
+        "Backspace"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.selectColumn",
+      "title": "Select the column",
+      "category": "table",
+      "keys": [
+        "Ctrl+Space"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.selectRegion",
+      "title": "Select the data around the cell, then the table",
+      "category": "table",
+      "keys": [
+        "Ctrl+A"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.fillDown",
+      "title": "Fill down",
+      "category": "table",
+      "keys": [
+        "Ctrl+D"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.fillRight",
+      "title": "Fill right",
+      "category": "table",
+      "keys": [
+        "Ctrl+R"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.copyFormulaAbove",
+      "title": "Copy the formula from the cell above",
+      "category": "table",
+      "keys": [
+        "Ctrl+'"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.copyValueAbove",
+      "title": "Copy the value from the cell above",
+      "category": "table",
+      "keys": [
+        "Ctrl+\""
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.insertDate",
+      "title": "Enter today’s date",
+      "category": "table",
+      "keys": [
+        "Ctrl+;"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.insertTime",
+      "title": "Enter the current time",
+      "category": "table",
+      "keys": [
+        "Ctrl+:"
+      ],
+      "flag": "tables.sheetWrites"
+    },
+    {
+      "id": "table.sheet.commitUp",
+      "title": "Finish the entry and move up",
+      "category": "table",
+      "keys": [
+        "Shift+Enter"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.commitStay",
+      "title": "Finish the entry and stay in the cell",
+      "category": "table",
+      "keys": [
+        "Ctrl+Enter"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.lineBreak",
+      "title": "Start a new line in the cell",
+      "category": "table",
+      "keys": [
+        "Alt+Enter"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.toggleEnterMode",
+      "title": "Switch between Enter and Edit modes",
+      "category": "table",
+      "keys": [
+        "F2"
+      ],
+      "flag": "tables.sheetWrites",
+      "palette": false
+    },
+    {
+      "id": "table.sheet.documentKeys",
+      "title": "Use document keys in this table",
+      "category": "table",
+      "keys": [],
+      "flag": "tables.sheetWrites"
+    },
+    {
       "id": "theme.toggle",
       "title": "Toggle dark mode",
       "category": "appearance",
