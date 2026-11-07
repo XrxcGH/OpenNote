@@ -7,6 +7,12 @@ import type { CompileError, CompileResult, Compiled, Comparison, DateKind, Secti
 
 const DATE_LETTERS = new Set(['y', 'm', 'd', 'h', 's']);
 
+/** The whole character at `i`: two code units for one outside the Basic Multilingual Plane, such as an emoji. */
+function charAt(text: string, i: number): string {
+  const point = text.codePointAt(i);
+  return point === undefined ? '' : String.fromCodePoint(point);
+}
+
 /** Splits a code at the semicolons that are not inside quotes, brackets, or after a backslash. */
 export function splitSections(code: string): string[] | CompileError {
   const parts: string[] = [];
@@ -19,7 +25,7 @@ export function splitSections(code: string): string[] | CompileError {
       i = end;
     } else if (c === '\\' || c === '_' || c === '*') {
       if (i + 1 >= code.length) return 'escape';
-      i++;
+      i += charAt(code, i + 1).length;
     } else if (c === '[') {
       const end = code.indexOf(']', i + 1);
       if (end < 0) return 'bracket';
@@ -64,7 +70,9 @@ function readBracket(inner: string): Bracket {
       else if (low === 0xf400) out.system = 'time';
       else out.locale = tagOfLcid(n);
     } else if (/^[a-z]{2,3}(-[a-z0-9]+)*$/i.test(id)) {
-      out.locale = id;
+      // Extension subtags such as -u-ca-islamic would change the calendar or digits; only language, script, and
+      // region are kept, so names always come from the Gregorian calendar.
+      out.locale = id.split(/-[a-z0-9](?:-|$)/i)[0];
     }
     return out;
   }
@@ -105,10 +113,14 @@ export function readSection(text: string): Section | CompileError {
       i = end;
     } else if (c === '\\') {
       if (i + 1 >= text.length) return 'escape';
-      lit(tokens, text[++i]);
+      const ch = charAt(text, i + 1);
+      lit(tokens, ch);
+      i += ch.length;
     } else if (c === '_' || c === '*') {
       if (i + 1 >= text.length) return 'escape';
-      tokens.push(c === '_' ? { t: 'skip', c: text[++i] } : { t: 'fill', c: text[++i] });
+      const ch = charAt(text, i + 1);
+      tokens.push(c === '_' ? { t: 'skip', c: ch } : { t: 'fill', c: ch });
+      i += ch.length;
     } else if (c === '[') {
       const end = text.indexOf(']', i + 1);
       if (end < 0) return 'bracket';

@@ -16,7 +16,8 @@ function part(format: Intl.DateTimeFormat, date: Date, type: Intl.DateTimeFormat
 }
 
 function read(tag: string): Names {
-  const utc = { timeZone: 'UTC' } as const;
+  // Format codes count Gregorian days, so the names are Gregorian whatever the tag asks for.
+  const utc = { timeZone: 'UTC', calendar: 'gregory' } as const;
   const long = new Intl.DateTimeFormat(tag, { ...utc, month: 'long' });
   const short = new Intl.DateTimeFormat(tag, { ...utc, month: 'short' });
   const day = new Intl.DateTimeFormat(tag, { ...utc, weekday: 'long' });

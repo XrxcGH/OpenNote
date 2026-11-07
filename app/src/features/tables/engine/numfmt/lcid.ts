@@ -53,8 +53,9 @@ const IDS: Readonly<Record<number, string>> = {
   0x4009: 'en-IN',
 };
 
+// A tag with two IDs writes the later one: es-ES is 0x0C0A (modern sort), not 0x040A (traditional sort).
 const TAGS = new Map<string, number>();
-for (const [id, tag] of Object.entries(IDS)) if (!TAGS.has(tag.toLowerCase())) TAGS.set(tag.toLowerCase(), Number(id));
+for (const [id, tag] of Object.entries(IDS)) TAGS.set(tag.toLowerCase(), Number(id));
 
 /** The BCP 47 tag of a language ID, or null when the list does not have it. */
 export function tagOfLcid(id: number): string | null {

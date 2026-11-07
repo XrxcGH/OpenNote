@@ -8,8 +8,15 @@ import type { CompileError } from './types';
 const SPACE = /^[\s\u00a0\u202f\u2009]$/;
 const PLACEHOLDER = /^[0#?]$/;
 
-/** Calls `plain` on each character outside quotes, brackets, and escapes; the rest is copied. */
-function mapPlain(text: string, plain: (c: string, i: number) => string): string {
+const CONDITION = /^\[(<=|>=|<>|<|>|=)(.*)\]$/s;
+
+/** Calls `plain` on each character outside quotes, brackets, and escapes; the rest is copied, but a condition bracket
+ * such as `[>1.5]` goes through `condition`, which gets the number text. */
+function mapPlain(
+  text: string,
+  plain: (c: string, i: number) => string,
+  condition: (number: string) => string = (n) => n,
+): string {
   let out = '';
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
@@ -21,7 +28,9 @@ function mapPlain(text: string, plain: (c: string, i: number) => string): string
     } else if (c === '[') {
       const end = text.indexOf(']', i + 1);
       const stop = end < 0 ? text.length : end + 1;
-      out += text.slice(i, stop);
+      const bracket = text.slice(i, stop);
+      const cond = CONDITION.exec(bracket);
+      out += cond ? `[${cond[1]}${condition(cond[2])}]` : bracket;
       i = stop - 1;
     } else if (c === '\\' || c === '_' || c === '*') {
       out += text.slice(i, i + 2);
@@ -46,15 +55,20 @@ function sections(code: string): string[] {
 export function localizeCode(code: string, locale: Locale): string {
   if (locale.decimal === '.' && locale.group === ',' && percentSpace(locale) === '') return code;
   const space = percentSpace(locale);
+  const condition = (n: string): string => n.replace(/\./g, locale.decimal);
   return sections(code)
     .map((text) => {
-      if (!isNumberSection(text)) return text;
-      return mapPlain(text, (c, i) => {
-        if (c === '.') return locale.decimal;
-        if (c === ',') return locale.group;
-        if (c === '%' && space && /[0#?.]/.test(text[i - 1] ?? '')) return `${space}%`;
-        return c;
-      });
+      if (!isNumberSection(text)) return mapPlain(text, (c) => c, condition);
+      return mapPlain(
+        text,
+        (c, i) => {
+          if (c === '.') return locale.decimal;
+          if (c === ',') return locale.group;
+          if (c === '%' && space && /[0#?.]/.test(text[i - 1] ?? '')) return `${space}%`;
+          return c;
+        },
+        condition,
+      );
     })
     .join(';');
 }
@@ -64,8 +78,11 @@ export function delocalizeCode(typed: string, locale: Locale): string {
   if (locale.decimal === '.' && locale.group === ',' && percentSpace(locale) === '') return typed;
   const spaceGroup = SPACE.test(locale.group);
   const space = percentSpace(locale);
+  // A condition is a number in the region's form: [>1,5] in de-DE is [>1.5].
+  const condition = (n: string): string => n.split(locale.decimal).join('.');
   return sections(typed)
-    .map((text) => {
+    .map((typedText) => {
+      const text = mapPlain(typedText, (c) => c, condition);
       if (!isNumberSection(text)) return text;
       // The space in a fraction such as "# ?/?" is a literal, never a group separator.
       const fraction = text.includes('/');

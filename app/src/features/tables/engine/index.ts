@@ -26,7 +26,7 @@ export {
 export type { CellEdit, ColumnInit, FormulaResult } from './edit';
 export { filterIndices, viewIndices } from './filter';
 export type { FilterCondition, FilterOp, TableView } from './filter';
-export { columnCode, formatValue, renderValue, type DisplayOptions } from './format';
+export { formatValue } from './format';
 export { convertFormula, STORED, syntaxOf } from './formula/lexer';
 export type { FormulaProblem, Syntax } from './formula/lexer';
 export { parseFormula } from './formula/parser';

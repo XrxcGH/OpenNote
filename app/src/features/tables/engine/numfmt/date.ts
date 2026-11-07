@@ -3,6 +3,7 @@
 
 import { daysToYmd, weekdayOf, type Ymd } from '../dates';
 import type { Locale } from '../locale';
+import { intText } from './digits';
 import { generalText } from './general';
 import { namesOf, type Names } from './names';
 import { Out } from './out';
@@ -31,7 +32,7 @@ interface Clock {
 }
 
 function pad(n: number, width: number): string {
-  return String(n).padStart(width, '0');
+  return intText(n).padStart(width, '0');
 }
 
 function has(tokens: readonly Token[], kinds: readonly string[]): boolean {
@@ -104,6 +105,8 @@ export function renderDate(serial: number, section: Section, locale: Locale): Ou
   const elapsed = has(tokens, ['eh', 'em', 'es']);
   const { days, units, total } = split(serial, DAY_SECONDS * unit, elapsed);
   const needsDate = has(tokens, ['y', 'm', 'd']);
+  // Past 9999-12-31 the cell shows # instead of a date, a time, or an elapsed count.
+  if (!(daysToYmd(days).y <= 9999)) return null;
   const ymd = needsDate ? daysToYmd(days) : { y: 1900, m: 1, d: 1 };
   if (!(ymd.y >= 0 && ymd.y <= 9999)) return null;
   const clock: Clock = {

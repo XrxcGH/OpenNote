@@ -11,6 +11,7 @@ import {
   colorRgb,
   compile,
   delocalizeCode,
+  lcidHex,
   localizeCode,
   readTypedCode,
   regionDateCode,
@@ -234,5 +235,46 @@ describe('regional display', () => {
     expect(regionDateCode(EN_US, 'long')).toBe('dddd, mmmm d, yyyy');
     expect(regionDateCode(EN_US, 'time')).toBe('h:mm:ss AM/PM');
     expect(regionDateCode(DE_DE, 'short')).toBe('d.m.yyyy');
+  });
+});
+
+describe('hostile and unusual codes', () => {
+  it('writes huge whole numbers as digits, never in exponent form', () => {
+    // 1e300 has the single significant digit 1 and 300 zeros; a whole number blanks the fraction to spaces.
+    expect(render(1e300, '# ?/?', EN_US).text).toBe(`1${'0'.repeat(300)}    `);
+  });
+
+  it('shows # for times and elapsed counts past 9999-12-31', () => {
+    expect(render(1e300, 'h:mm', EN_US, { maxChars: 4 })).toMatchObject({ text: '####', overflow: true });
+    expect(render(1e300, '[s]', EN_US, { maxChars: 4 })).toMatchObject({ text: '####', overflow: true });
+    expect(render(1e10, '[h]:mm', EN_US, { maxChars: 4 })).toMatchObject({ overflow: true });
+  });
+
+  it('reads an escaped, skipped, or fill character as a whole code point', () => {
+    expect(render(5, '\\😀0', EN_US).text).toBe('😀5');
+    expect(render(5, '0*😀', EN_US)).toMatchObject({ text: '5', fill: { char: '😀', at: 1 } });
+    // `_x` writes one space the width of x.
+    expect(render(5, '0_😀', EN_US).text).toBe('5 ');
+  });
+
+  it('writes the integer digit before the exponent when the code has no placeholders', () => {
+    // 12345 = 1.2345 x 10^4; no decimals, so the mantissa rounds to 1.
+    expect(render(12345, 'E+00', EN_US).text).toBe('1E+04');
+  });
+
+  it('converts the decimal mark inside a condition', () => {
+    expect(readTypedCode('[>1,5]0', DE_DE)).toEqual({ ok: true, code: '[>1.5]0' });
+    expect(localizeCode('[>1.5]0.0', DE_DE)).toBe('[>1,5]0,0');
+    expect(delocalizeCode(localizeCode('[>1.5]0.0', DE_DE), DE_DE)).toBe('[>1.5]0.0');
+  });
+
+  it('takes month names from the Gregorian calendar whatever the tag extension asks', () => {
+    // Serial 45292 is 2024-01-01.
+    expect(render(45292, '[$-en-US-u-ca-islamic]mmmm', EN_US).text).toBe('January');
+  });
+
+  it('writes the modern Spanish language ID for es-ES', () => {
+    // MS-LCID: 0x0C0A is Spanish (Spain, modern sort); 0x040A is the traditional sort.
+    expect(lcidHex('es-ES')).toBe('C0A');
   });
 });

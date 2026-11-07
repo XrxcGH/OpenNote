@@ -25,6 +25,11 @@ export function toDigits(value: number): Digits {
   return { d, p };
 }
 
+/** The digits of a whole number, without the exponent form String gives from 1e21: 15 digits, then zeros. */
+export function intText(n: number): string {
+  return Math.abs(n) < 1e15 ? String(n) : fixedDigits(toDigits(n), 0).int;
+}
+
 /** Adds one to a string of digits, which may grow by one digit. */
 function increment(digits: string): string {
   const chars = digits.split('');

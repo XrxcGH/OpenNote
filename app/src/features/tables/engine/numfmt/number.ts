@@ -2,7 +2,7 @@
 // The value arrives without its sign; the caller adds the minus.
 
 import { groupSizes, percentSpace, type Locale } from '../locale';
-import { bestFraction, fixedDigits, groupDigits, roundHalfAway, toDigits } from './digits';
+import { bestFraction, fixedDigits, groupDigits, intText, roundHalfAway, toDigits } from './digits';
 import { generalText } from './general';
 import { Out } from './out';
 import { planOf, type Digit, type Plan } from './plan';
@@ -94,13 +94,13 @@ function fillFraction(value: number, plan: Plan, sizes: readonly number[]): Fill
     n %= d;
   }
   const blank = hasWhole && n === 0;
-  const wholeText = whole === 0 ? (n === 0 ? '0' : '') : String(whole);
+  const wholeText = whole === 0 ? (n === 0 ? '0' : '') : intText(whole);
   const dText = String(d);
   return {
     ...empty(),
     blank,
     ints: fillInt(wholeText, plan.whole, null, sizes),
-    num: blank ? plan.num.map(() => ' ') : fillInt(String(n), plan.num, null, sizes),
+    num: blank ? plan.num.map(() => ' ') : fillInt(intText(n), plan.num, null, sizes),
     den: plan.den.map((slot, i) => {
       if (blank) return ' ';
       const pad = slot.c === '?' ? ' ' : '';
@@ -161,7 +161,8 @@ function write(section: Section, plan: Plan, filled: Filled, locale: Locale, gen
   let extraDone = !filled.intExtra;
   tokens.forEach((t, i) => {
     const role = plan.roles[i];
-    if (!extraDone && (t.t === 'point' || role === 'dec')) {
+    // A code with no integer placeholders writes the integer digits before the point, or before E+ in `E+00`.
+    if (!extraDone && (t.t === 'point' || role === 'dec' || t.t === 'exp')) {
       out.push(filled.intExtra);
       extraDone = true;
     }

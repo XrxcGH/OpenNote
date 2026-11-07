@@ -15,3 +15,6 @@ otherwise. Each fixture file says how its expected values were worked out.
 | A section with a condition                                          | Not fully documented for negative values       | A minus sign, unless the condition is `<` or `<=` a number at or below zero       |
 | Localized date letters (`TT.MM.JJJJ` in German)                     | Shown and typed in the region's letters        | Not converted: date codes show and are typed with the invariant letters           |
 | A cell that doesn't fit                                             | `#` fills the column width                     | `#` repeats `maxChars` times when the caller gives a width, and 8 times otherwise |
+| The date column preset                                              | No preset: a date cell gets the short date     | The region's medium date (`mmm d, yyyy` in en-US), as the column showed before codes |
+| A tag with extension subtags (`[$-en-US-u-ca-islamic]`)             | Not documented                                 | The extension is dropped: names always come from the Gregorian calendar           |
+| Spanish (Spain) currency presets                                    | `[$€-C0A]` (modern sort)                       | The same: es-ES writes 0x0C0A, and both 0x040A and 0x0C0A read as es-ES           |

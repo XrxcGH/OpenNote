@@ -132,3 +132,25 @@ describe('cell codes', () => {
     });
   });
 });
+
+describe('column settings from a hostile note', () => {
+  it('clamps decimals to 0 to 30', () => {
+    expect(columnCode(column('number', { decimals: 1e6 }), EN_US)).toBe(`#,##0.${'0'.repeat(30)}`);
+    expect(columnCode(column('number', { decimals: -1 }), EN_US)).toBe('#,##0');
+    expect(columnCode(column('percent', { decimals: 1e6 }), EN_US)).toBe(`0.${'0'.repeat(30)}%`);
+    expect(formatValue(1, column('currency', { decimals: 1e6 }), EN_US)).toBe(`$1.${'0'.repeat(30)}`);
+    expect(formatValue(1.5, column('number', { decimals: -1 }), EN_US)).toBe('2');
+  });
+
+  it('falls back to the plain number for a currency or region Intl refuses', () => {
+    expect(formatValue(1234.5, column('currency', { currency: 'XXXX' }), EN_US)).toBe('1,234.50 XXXX');
+    expect(formatValue(1234.5, column('currency', { currency: '"' }), EN_US)).toBe('1,234.50 ');
+    const bad: Locale = { ...EN_US, tag: 'not a tag!' };
+    expect(formatValue(1234.5, column('currency'), bad)).toBe('$1,234.50');
+  });
+
+  it('stamps the modern Spanish language ID on es-ES currency codes', () => {
+    const esES: Locale = { tag: 'es-ES', decimal: ',', group: '.', list: ';', dateOrder: 'dmy', currency: 'EUR' };
+    expect(columnCode(column('currency'), esES)).toContain('[$€-C0A]');
+  });
+});

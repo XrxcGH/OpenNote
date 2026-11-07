@@ -10,24 +10,44 @@ import { engineeringText, prefixedText } from '../../../core/units';
 
 const numberFormats = new Map<string, Intl.NumberFormat>();
 
+/** Intl throws for a malformed tag; such a tag formats as en-US. */
+function intlTag(tag: string): string {
+  try {
+    return Intl.NumberFormat.supportedLocalesOf([tag]).length > 0 ? tag : 'en-US';
+  } catch {
+    return 'en-US';
+  }
+}
+
+/** A cached formatter. Throws a RangeError for options Intl refuses, such as a currency that is not an ISO code. */
 function numberFormat(locale: Locale, options: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = `${locale.tag}|${JSON.stringify(options)}`;
   let format = numberFormats.get(key);
   if (!format) {
-    format = new Intl.NumberFormat(locale.tag, options);
+    format = new Intl.NumberFormat(intlTag(locale.tag), options);
     numberFormats.set(key, format);
   }
   return format;
 }
 
+/** Excel allows 0 to 30 decimals. A note file may hold any number, so it is clamped here. */
+const MAX_DECIMALS = 30;
+
+function decimalsOf(column: Column): number | undefined {
+  const d = column.decimals;
+  if (typeof d !== 'number' || !Number.isFinite(d)) return undefined;
+  return Math.min(MAX_DECIMALS, Math.max(0, Math.trunc(d)));
+}
+
 function fixed(column: Column): Intl.NumberFormatOptions {
-  return column.decimals === undefined
+  const decimals = decimalsOf(column);
+  return decimals === undefined
     ? { maximumFractionDigits: 10 }
-    : { minimumFractionDigits: column.decimals, maximumFractionDigits: column.decimals };
+    : { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
 }
 
 function digits(column: Column): Intl.NumberFormatOptions {
-  return column.decimals === undefined ? {} : fixed(column);
+  return decimalsOf(column) === undefined ? {} : fixed(column);
 }
 
 /** A literal in a code, quoted unless it is a plain space. */
@@ -44,11 +64,19 @@ const NUMERIC_PARTS = new Set(['integer', 'group', 'decimal', 'fraction']);
  */
 function currencyCode(column: Column, locale: Locale): string {
   const currency = column.currency ?? locale.currency;
-  const key = `${locale.tag}|${currency}|${column.decimals ?? ''}`;
+  const key = `${locale.tag}|${currency}|${decimalsOf(column) ?? ''}`;
   const known = currencyCodes.get(key);
   if (known !== undefined) return known;
-  const format = numberFormat(locale, { style: 'currency', currency, ...digits(column) });
-  const decimals = column.decimals ?? format.resolvedOptions().minimumFractionDigits ?? 2;
+  let format: Intl.NumberFormat;
+  try {
+    format = numberFormat(locale, { style: 'currency', currency, ...digits(column) });
+  } catch {
+    // Not an ISO 4217 code (a hostile or hand-edited note): the plain number, then the code as written.
+    const plainCode = `#,##0${decimalsText(decimalsOf(column) ?? 2)}${currency ? ` ${quoted(currency)}` : ''}`;
+    currencyCodes.set(key, plainCode);
+    return plainCode;
+  }
+  const decimals = decimalsOf(column) ?? format.resolvedOptions().minimumFractionDigits ?? 2;
   const parts = format.formatToParts(1_234_567.5);
   const first = parts.findIndex((p) => NUMERIC_PARTS.has(p.type));
   let last = first;
@@ -93,12 +121,12 @@ export function columnCode(column: Column, locale: Locale, value = 0): string | 
     case 'currency':
       return currencyCode(column, locale);
     case 'percent':
-      return `0${decimalsText(column.decimals ?? neededDecimals(value * 100, 2))}%`;
+      return `0${decimalsText(decimalsOf(column) ?? neededDecimals(value * 100, 2))}%`;
     case 'date':
       return regionDateCode(locale, value !== Math.floor(value) ? 'mediumDateTime' : 'medium');
     case 'number':
       if (column.unit || column.notation) return null;
-      return `#,##0${decimalsText(column.decimals ?? neededDecimals(value, 10))}`;
+      return `#,##0${decimalsText(decimalsOf(column) ?? neededDecimals(value, 10))}`;
     default:
       return null;
   }
@@ -111,7 +139,8 @@ export function columnCode(column: Column, locale: Locale, value = 0): string | 
  */
 function withUnit(value: number, column: Column, locale: Locale): string {
   const unit = column.unit ?? '';
-  const kept = column.decimals === undefined ? 6 : Math.max(1, column.decimals + 1);
+  const set = decimalsOf(column);
+  const kept = set === undefined ? 6 : Math.max(1, set + 1);
   if (column.notation === 'si') {
     const prefixed = prefixedText(value, unit, kept);
     if (prefixed) return prefixed;
