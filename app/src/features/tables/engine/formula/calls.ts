@@ -73,6 +73,20 @@ function arityOf(spec: FnSpec2): [number, number] {
   return [min, max];
 }
 
+/** A reference read for a parameter that wants row states: the array, with each row's state when the host has them. */
+function withRowState(env: Host['scope']['env'], ref: RefPart, read: Fn): Fn {
+  return (ctx) => {
+    const value = read(ctx);
+    if (isError(value)) return value;
+    const array = asArray(value);
+    const box = ref.fn(ctx);
+    const rowState = env.rowState;
+    if (rowState === undefined || Array.isArray(box) || 'error' in box) return array;
+    const state = Array.from({ length: array.rows }, (_, i) => rowState(box.s, box.r1 + i));
+    return state.some((s) => s !== 0) ? { ...array, rowState: state } : array;
+  };
+}
+
 /** A call to a library function. */
 export function compileLibrary(h: Host, spec: FnSpec2, node: Call): Fn {
   const [min, max] = arityOf(spec);
@@ -171,6 +185,7 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     const ref = h.refOrNull(arg);
     if (ref !== null && returnsRef && kind === 'range') return (ctx) => toRefValue(h, ref.fn(ctx));
     const v = ref !== null ? h.deref(ref) : h.value(arg);
+    if (ref !== null && params[i]?.rowState === true) return withRowState(env, ref, v);
     return (ctx) => {
       const value = v(ctx);
       return isError(value) ? value : asArray(value);

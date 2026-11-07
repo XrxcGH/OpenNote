@@ -56,7 +56,7 @@ export function sheetDialect(syntax: SheetSyntax): Dialect {
         decimal: syntax.decimal,
         // A semicolon always separates arguments, and so does the comma when it is not the decimal mark.
         separators: syntax.separator === ';' ? ';' : ';,',
-        names: 'cell',
+        names: excel ? 'dotted' : 'cell',
         operators: excel ? EXCEL_OPERATORS : OPERATORS,
         aliases: ALIASES,
         superscripts: false,

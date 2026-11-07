@@ -36,10 +36,10 @@ export interface LexSpec {
   separators: string;
   /**
    * What a name looks like. 'ascii' is a letter or a low line, then letters, digits, or low lines. 'cell' also
-   * allows "$", for references such as $A$1. 'letters' is a run of any letters plus trailing digits. The parser
+   * allows "$", for references such as $A$1. 'dotted' also allows dots between parts, as CEILING.MATH has. 'letters' is a run of any letters plus trailing digits. The parser
    * splits that run into known names, so "pix" can mean pi times x.
    */
-  names: 'ascii' | 'cell' | 'letters';
+  names: 'ascii' | 'cell' | 'dotted' | 'letters';
   /** Every operator the dialect reads, in plain form. Multi-character ones such as "<=" are matched first. */
   operators: readonly string[];
   /** Other spellings of operators, such as the multiplication sign for "*". */
@@ -79,6 +79,8 @@ const SUPERSCRIPT_MINUS = '⁻';
 const NAME_PATTERNS = {
   ascii: /[A-Za-z_][A-Za-z0-9_]*/y,
   cell: /[A-Za-z_$][A-Za-z0-9_$]*/y,
+  // Excel's function names have dots inside: CEILING.MATH, STDEV.S, NORM.S.DIST.
+  dotted: /[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z][A-Za-z0-9_]*)*/y,
   letters: /\p{L}+\d*/uy,
 } as const;
 const WHITESPACE = /\s/;
@@ -218,7 +220,7 @@ class Lexer {
   private startsName(code: number): boolean {
     const letter = (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95;
     if (letter) return true;
-    if (this.plan.names === 'cell') return code === 36;
+    if (this.plan.names === 'cell' || this.plan.names === 'dotted') return code === 36;
     return this.plan.names === 'letters' && code > 127;
   }
 

@@ -3,12 +3,14 @@
 // never touch the same file. The descriptions people read (one line per function, one per argument) live in
 // app/src/strings/en/fn<Family>.ts under the function's name, written fresh in our own words.
 
-import { isError, isNumber, type FormulaError, type Value } from '../../values';
+import { isError, isNumber, type FormulaError, type RowState, type Value } from '../../values';
 
 /** What the formula engine gives every function. */
 export interface Env {
   /** Today as a serial, read when a formula is calculated. */
   today: () => number;
+  /** Whether a row of a table (by its index on the page) shows. Unset: every row shows. */
+  rowState?: (sheet: number, row: number) => RowState;
 }
 
 /**
@@ -35,6 +37,8 @@ export interface Param {
    * TRUE as 1, as SUM("3",TRUE) is 4; 'raw' keeps the value as it is, as COUNTA counts it.
    */
   readonly direct?: 'number' | 'raw';
+  /** For a range: a reference arrives with the state of each row (`ArrayValue.rowState`), as SUBTOTAL reads it. */
+  readonly rowState?: boolean;
 }
 
 /** Parameters that repeat together: value1, value2, and on, or criteria range and criteria pairs. */
