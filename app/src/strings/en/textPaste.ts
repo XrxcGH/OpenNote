@@ -9,6 +9,7 @@ export const textPaste = {
   options: 'Paste options',
   menu: 'Paste options',
   switched: 'Changed the paste to {choice}.',
+  unavailable: 'Not available: this paste has more than one block of text.',
   ended: 'The paste changed, so its options are closed.',
   settings: {
     title: 'Paste formatting',

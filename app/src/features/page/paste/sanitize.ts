@@ -103,6 +103,8 @@ function fromHtml(html: string, input: PasteInput, newId: () => string, options:
   if (choice === 'textOnly') return textOnly(input, body, source);
   // Paragraph formatting never comes from the HTML itself, except OpenNote's own copy.
   if (!own) body.querySelectorAll(`[${PARA_DATA}]`).forEach((element) => element.removeAttribute(PARA_DATA));
+  // A highlight color on a mark comes only from the Keep source pass below, never from the pasted markup.
+  if (!own) body.querySelectorAll('mark[data-color]').forEach((element) => element.removeAttribute('data-color'));
   if (choice === 'keepSource' && KEEPS.has(source)) keepSourceFormatting(body);
   if (own) {
     dropUnwanted(body);

@@ -81,7 +81,8 @@ export function normalizeWeb(body: HTMLElement, input: PasteInput): void {
   dropPageHeaders(body);
   markTaskBoxes(body);
   webHygiene(body, input);
-  body.querySelectorAll('mark').forEach(unwrap);
+  // A highlight the Keep source pass wrote carries a color. Any other mark is the page's own styling.
+  body.querySelectorAll('mark:not([data-color])').forEach(unwrap);
   fixNestedLists(body);
   breaksToNewlines(body);
   body.querySelectorAll('b[style]').forEach((element) => {

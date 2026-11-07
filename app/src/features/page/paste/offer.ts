@@ -67,10 +67,15 @@ async function choose(offer: PasteOffer, dismiss: () => void): Promise<void> {
     label: t(LABEL[choice]),
     kind: 'radio' as const,
     checked: choice === offer.choice,
+    // A choice that would drop part of the paste (a table, a picture, or more text) is not offered.
+    disabled: choice !== offer.choice && offer.rebuild(choice) === null,
+    disabledReason: t('textPaste.unavailable'),
   }));
   const picked = await openMenu({ label: t('textPaste.menu'), items, anchor: { x: at.left, y: at.bottom } });
-  if (!picked || picked === offer.choice) return;
-  const next = await switchChoice(offer, picked as PasteChoice);
+  const next = picked && picked !== offer.choice ? await switchChoice(offer, picked as PasteChoice) : null;
+  // The toast that held the focus is gone, so the caret goes to the end of the pasted text.
+  if (!offer.editor.isDestroyed && offerHolds(next ?? offer))
+    offer.editor.commands.focus((next ?? offer).to, { scrollIntoView: false });
   if (next) {
     announce(t('textPaste.switched', { choice: t(LABEL[next.choice]) }));
     offerPasteOptions(next);

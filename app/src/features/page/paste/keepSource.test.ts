@@ -134,3 +134,20 @@ describe('merge formatting and the other choices', () => {
     expect(JSON.stringify(plain.pieces)).not.toContain('"font"');
   });
 });
+
+describe('web paste, keep source formatting', () => {
+  const page = '<p>See <span style="background-color:#ffff00">marked words</span> here</p>';
+  const has = (result: ReturnType<typeof sanitizePaste>) =>
+    JSON.stringify(docOf(result)).includes('"type":"highlight"');
+
+  it('keeps a highlight, which the web normalizer no longer unwraps', () => {
+    expect(has(keep(page, 'keepSource'))).toBe(true);
+  });
+
+  it('drops it under merge formatting, and never takes a highlight color from the markup itself', () => {
+    expect(has(keep(page, 'mergeFormatting'))).toBe(false);
+    const hostile = '<p>See <mark data-color="#ffff00">words</mark></p>';
+    expect(has(keep(hostile, 'mergeFormatting'))).toBe(false);
+    expect(has(keep(hostile, 'keepSource'))).toBe(false);
+  });
+});

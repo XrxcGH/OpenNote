@@ -3,7 +3,6 @@
 // Paste Options (ADR 0084): switching the choice after a paste is one transaction and one undo step, and an edit
 // since the paste ends the chip.
 import type { Editor } from '@tiptap/core';
-import { Slice } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Step } from '@tiptap/pm/transform';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -12,6 +11,7 @@ import { createBlockEditor } from '../../../editor/extensions/kit';
 import { parseTextBlock } from '../../../editor/markdown/parse';
 import { offerHolds, offerPasteOptions, switchChoice } from './offer';
 import type { PasteOffer } from './offer';
+import { insertIntoEditor } from './pipeline';
 import { sanitizePaste } from './sanitize';
 import type { PasteChoice } from './types';
 
@@ -112,20 +112,23 @@ describe('undoing a switch', () => {
       return piece.kind === 'text' ? piece.doc : null;
     };
     const doc = build('keepSource')!;
-    const content = editor.schema.nodeFromJSON(doc.toJSON()).content;
-    editor.view.dispatch(editor.state.tr.replace(8, 8, Slice.maxOpen(content)));
+    editor.commands.setTextSelection(8);
+    const range = insertIntoEditor(editor, doc);
     const offer: PasteOffer = {
       editor,
-      from: 8,
-      to: 8 + content.size,
+      ...range,
       choice: 'keepSource',
       rebuild: build,
       settle: async () => undefined,
     };
+    const lines = () => editor!.state.doc.children.map((block) => block.textContent);
+    expect(lines()).toEqual(['Before One', 'Twoafter']);
     offerPasteOptions(offer);
     const next = await switchChoice(offer, 'textOnly');
     expect(next?.choice).toBe('textOnly');
-    expect(editor.state.doc.textContent).toContain('One');
-    expect(editor.state.doc.textContent).toContain('Two');
+    expect(lines()).toEqual(['Before One', 'Twoafter']);
+    const back = await switchChoice(next!, 'mergeFormatting');
+    expect(back?.choice).toBe('mergeFormatting');
+    expect(lines()).toEqual(['Before One', 'Twoafter']);
   });
 });

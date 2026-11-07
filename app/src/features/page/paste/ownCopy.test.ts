@@ -50,4 +50,18 @@ describe('a paste from OpenNote', () => {
     expect(doc.firstChild!.attrs.align).toBeNull();
     expect(doc.firstChild!.firstChild!.marks).toHaveLength(0);
   });
+
+  it('merge formatting keeps inline math and footnote references, which are content', () => {
+    const html =
+      '<p data-pm-slice="1 1 []" data-opennote-copy="1"><span data-font="Georgia">Area </span>' +
+      '<span data-math="x^2"></span> end<span data-footnote="0aaaaaaaaaaaaaaaaaaaaaaaaa"></span></p>';
+    const root = document.createElement('div');
+    root.innerHTML = html;
+    const { doc } = pasted(root, 'mergeFormatting');
+    const names: string[] = [];
+    doc.descendants((node) => void names.push(node.type.name));
+    expect(names).toContain('mathInline');
+    expect(names).toContain('footnoteRef');
+    expect(doc.textContent).toContain('Area');
+  });
 });

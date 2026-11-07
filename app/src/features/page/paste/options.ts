@@ -37,8 +37,22 @@ export function choiceFor(source: string, defaults: PasteDefaults | undefined): 
   return byProgram[source] ?? 'mergeFormatting';
 }
 
+/** The spans that are run formatting. Math, footnote references, and foreign-language marks are content, not formatting. */
+const MARK_SPANS = [
+  'data-font',
+  'data-size',
+  'data-color',
+  'data-weight',
+  'data-tracking',
+  'data-caps',
+  'data-shift',
+  'lang',
+]
+  .map((name) => `span[${name}]`)
+  .join(', ');
+
 /** Merge formatting for a paste from OpenNote: runs lose fonts, sizes, and colors, and paragraphs their format. */
 export function mergeOpenNote(body: HTMLElement): void {
-  body.querySelectorAll('span, mark').forEach(unwrap);
+  body.querySelectorAll(`mark, ${MARK_SPANS}`).forEach(unwrap);
   body.querySelectorAll(`[${PARA_DATA}]`).forEach((element) => element.removeAttribute(PARA_DATA));
 }

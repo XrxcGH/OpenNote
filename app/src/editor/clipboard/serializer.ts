@@ -79,6 +79,8 @@ function writeStyles(root: ParentNode): void {
 class CopySerializer extends DOMSerializer {
   override serializeFragment(...args: Parameters<DOMSerializer['serializeFragment']>) {
     const out = super.serializeFragment(...args);
+    // Nested content is serialized into a target element. Only the top-level call finishes the output.
+    if (args[2]) return out;
     mergeSpans(out);
     writeStyles(out);
     (out.firstElementChild as Element | null)?.setAttribute(COPY_MARKER, '1');

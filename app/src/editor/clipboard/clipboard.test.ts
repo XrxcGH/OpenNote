@@ -23,6 +23,12 @@ const georgia = () => [
 ];
 
 describe('copy', () => {
+  it('marks the copy once, on the first element, not on nested content', () => {
+    const root = copyHtml([nodes.paragraph.create(null, textSchema.text('Hello', georgia()))]);
+    expect(root.querySelectorAll('[data-opennote-copy]')).toHaveLength(1);
+    expect(root.firstElementChild?.hasAttribute('data-opennote-copy')).toBe(true);
+  });
+
   it('writes a run in Georgia 13 pt red as a span whose style holds all three', () => {
     const root = copyHtml([nodes.paragraph.create(null, textSchema.text('Hello', georgia()))]);
     const span = root.querySelector('span[style]') as HTMLElement;

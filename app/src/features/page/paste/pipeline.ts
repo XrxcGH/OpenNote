@@ -339,10 +339,13 @@ function offerOf(
   alone: boolean,
 ): PasteOffer | null {
   if (!editor || !inserted || !alone || !result.choice || !mounted.host.flag('text.pasteFidelity')) return null;
+  // A choice is offered only when it still gives one text piece that joins the editor, as the paste did. One that
+  // gives tables, images, more text, or a cut paste would lose them in a switch, so it gives nothing.
   const rebuild = (choice: PasteChoice): PMNode | null => {
     const again = resultFor(request, facts, 'text', { fidelity: true, mode: choice });
-    const first = fitTextBlocks(splitImages(again.pieces), editor).pieces[0];
-    return first?.kind === 'text' ? first.doc : null;
+    const fit = fitTextBlocks(splitImages(again.pieces), editor);
+    const only = fit.pieces[0];
+    return fit.pieces.length === 1 && fit.joinsEditor && only?.kind === 'text' ? only.doc : null;
   };
   return { editor, ...inserted, choice: result.choice, rebuild, settle: () => mounted.sync.flushAll('command') };
 }
