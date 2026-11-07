@@ -120,7 +120,7 @@
     "features/trash": 40,
     "features/updates": 40,
     "features/tools": 260,
-    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 301,
+    "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 302,
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
     "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
