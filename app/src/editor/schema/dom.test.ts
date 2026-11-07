@@ -38,6 +38,6 @@ describe('specs', () => {
   it('lists every node and mark of both schemas', () => {
     expect(Object.keys(nodeSpecs)).toContain('callout');
     expect(Object.keys(tableNodeSpecs)).toEqual(expect.arrayContaining(['table', 'tableCell', 'paragraph']));
-    expect(Object.keys(markSpecs)[0]).toBe('link');
+    expect(Object.keys(markSpecs)[0]).toBe('float');
   });
 });
