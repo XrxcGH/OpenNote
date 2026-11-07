@@ -20,7 +20,9 @@
     "crates/third_party/**",
     "app/src/theme/fonts/**",
     "crates/*/fuzz/regressions/**",
-    "tests/ui/docscap/**"
+    "tests/ui/docscap/**",
+    "app/scripts/unicode/ucd-subset.txt",
+    "app/scripts/unicode/LICENSE-UNICODE.txt"
   ],
   "rules": {
     "spelling": {

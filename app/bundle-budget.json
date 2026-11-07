@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 538,
+    "jsKb": 539,
     "cssKb": 27.5
   },
   "after": [
@@ -56,6 +56,7 @@
   ],
   "lazyKb": {
     "features/codestudio/window": 190,
+    "features/page/symbols": 80,
     "@codemirror/lang-": 40,
     "@codemirror/legacy-modes": 40,
     "features/tables/engine/formula/fn/lazy/statistics": 40,
@@ -82,7 +83,7 @@
     "features/page/audio/exportVideo.ts": 85,
     "features/pages/host/shareRender.ts": 62,
     "features/pages/host/videoRaster.ts": 62,
-    "features/pages/index.ts": 79,
+    "features/pages/index.ts": 80,
     "features/pages/ui/elementCommands.tsx": 73,
     "features/pages/ui/exportCommands.tsx": 67,
     "features/pages/ui/imageCommands.tsx": 67,
