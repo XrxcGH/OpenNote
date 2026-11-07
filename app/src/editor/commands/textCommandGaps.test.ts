@@ -14,7 +14,11 @@ import {
   checkedFormat,
   copiedFormat,
   forgetCopiedFormat,
-  painterState, pasteFormatting, startPainter, stopPainter } from './painter';
+  painterState,
+  pasteFormatting,
+  startPainter,
+  stopPainter,
+} from './painter';
 import { clearAll, setAlign, setPara } from './paragraph';
 import { runMarkPressed } from './runFormat';
 import { RangesSelection, selectSimilar } from './similar';
@@ -154,4 +158,3 @@ describe('refused and unchanged commands', () => {
     expect(after.doc.child(0).attrs.indent).toEqual({ start: 36, end: 0, first: 0 });
   });
 });
-
