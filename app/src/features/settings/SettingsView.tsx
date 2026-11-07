@@ -9,6 +9,7 @@ import { navigate, useLocation } from '../../app/location';
 import { useSizeClass } from '../../state/layout';
 import { t } from '../../strings/t';
 import { Button } from '../../ui';
+import { focusFromScript } from '../../ui/focusOrigin';
 import { escapeLeaves, leaveSettings, rememberOpener } from './focus';
 import { SectionNav } from './SectionNav';
 import { SectionBody, useSections } from './sections';
@@ -21,7 +22,7 @@ function useScreens(sectionId: string | undefined, compact: boolean) {
   const showList = compact && listShowing;
   useEffect(() => rememberOpener(), []);
   useEffect(() => {
-    heading.current?.focus();
+    if (heading.current) focusFromScript(heading.current);
   }, [sectionId, showList]);
   return { heading, showList, setListShowing };
 }

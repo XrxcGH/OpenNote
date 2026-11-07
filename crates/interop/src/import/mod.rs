@@ -72,5 +72,5 @@ pub use sticky::{
     import_sticky_notes, is_sticky_notes_database, sticky_notes_database, DATABASE_NAME as STICKY_NOTES_FILE,
 };
 pub use textbundle::{import_textbundle_folder, is_bundle_name};
-pub use word::{import_docx, import_docx_with, WordPages};
+pub use word::{import_docx, import_docx_options, import_docx_with, TrackedChanges, WordImport, WordPages};
 pub use xlsx::import_xlsx;

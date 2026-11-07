@@ -117,6 +117,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 The fonts below are bundled in the app, so nothing downloads at run time. They come from the `@fontsource` npm packages, which repackage the fonts unchanged, except OpenNote Sans: a Modified Version of Atkinson Hyperlegible Next whose zero has no slash (the counter is redrawn, every other glyph is unchanged). The fonts are licensed under the SIL Open Font License, Version 1.1, copied in full below.
 
+For Word export, `crates/interop/fonts/` also holds TrueType copies of each face's Latin subset, so a Word file can embed them. They are decompressed from the same WOFF2 files, with the glyphs and tables unchanged. One change: the npm static files of Atkinson Hyperlegible Mono name the family "Atkinson Hyperlegible Mono ExtraLight" in every weight, so the copies get the upstream family name back. These copies stay under the same license.
+
 - OpenNote Sans, modified from Atkinson Hyperlegible Next. Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)
 - Atkinson Hyperlegible Mono. Copyright 2020-2024 The Atkinson Hyperlegible Mono Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next-mono)
 - Literata. Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata)

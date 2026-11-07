@@ -10,6 +10,7 @@ import { createRoot } from 'react-dom/client';
 import type { LayerKind } from '../state/layers';
 import { t } from '../strings/t';
 import { Button } from './Button';
+import { focusFromScript } from './focusOrigin';
 import styles from './Dialog.module.css';
 import { FocusScope } from './FocusScope';
 import { useLayer } from './hooks';
@@ -43,11 +44,11 @@ export interface DialogProps {
 
 function focusInitial(dialog: HTMLElement, initial: DialogProps['initialFocus']): void {
   if (initial && typeof initial === 'object') {
-    (initial.current ?? dialog).focus();
+    focusFromScript(initial.current ?? dialog);
     return;
   }
   const least = initial === 'leastDestructive' ? dialog.querySelector<HTMLElement>('[data-least-destructive]') : null;
-  (least ?? tabbables(dialog)[0] ?? dialog).focus();
+  focusFromScript(least ?? tabbables(dialog)[0] ?? dialog);
 }
 
 /** True when focus can go back to the element: it's still on the page, visible, and not inert. */

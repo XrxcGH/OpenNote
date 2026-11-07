@@ -45,7 +45,7 @@ export default defineConfig<UiOptions>({
     { name: 'perf', testMatch: 'perf/**/*.spec.ts', retries: 0, fullyParallel: false },
     {
       name: 'forced-colors',
-      testMatch: ['visual/**/*.spec.ts', 'a11y/**/*.spec.ts'],
+      testMatch: ['visual/**/*.spec.ts', 'a11y/**/*.spec.ts', 'behavior/accent-budget.spec.ts'],
       grep: /@forced\b/,
       use: { forcedColors: 'active' },
     },
