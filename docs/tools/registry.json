@@ -5169,7 +5169,8 @@
       "title": "Go to the next tab",
       "category": "navigation",
       "keys": [
-        "Ctrl+Tab"
+        "Ctrl+Tab",
+        "Ctrl+PageDown"
       ],
       "flag": "qol.tabs"
     },
@@ -5178,7 +5179,8 @@
       "title": "Go to the previous tab",
       "category": "navigation",
       "keys": [
-        "Ctrl+Shift+Tab"
+        "Ctrl+Shift+Tab",
+        "Ctrl+PageUp"
       ],
       "flag": "qol.tabs"
     },
