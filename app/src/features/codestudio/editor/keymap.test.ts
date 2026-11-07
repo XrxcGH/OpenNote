@@ -3,8 +3,11 @@
 // the command each chord runs; the code editor runs the matching command, with every app feature registered, so
 // a chord the app uses elsewhere (F8, Ctrl+D, Ctrl+/, Ctrl+H, Ctrl+G) goes to the code editor while it has focus.
 // The completion keys follow the owner decision instead: Tab indents (tab.test.ts) and Ctrl+Tab accepts.
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import '../../../features';
+
+// The palette loads on the first Ctrl press; a load that outlives the test file fails the teardown.
+vi.mock('../../palette/open', async (original) => ({ ...(await original<object>()), preloadWhenIdle: () => () => {} }));
 import { commandForKey, reachesCommandsInText } from '../../../commands/dispatcher';
 import { commandsForChord, defaultConflicts } from '../../../commands/keymap';
 import { chord, defineCommand } from '../../../commands/registry';

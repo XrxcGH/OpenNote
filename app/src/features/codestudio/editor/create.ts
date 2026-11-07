@@ -213,6 +213,7 @@ class Controller implements CodeEditor {
   private lastPointer: string | null = null;
   private hovering = false;
   private menu: HTMLElement | null = null;
+  private actions!: GhostActions;
 
   constructor(
     container: HTMLElement,
@@ -232,7 +233,7 @@ class Controller implements CodeEditor {
     this.root.append(this.description);
     container.append(this.root);
 
-    const actions: GhostActions = {
+    const actions: GhostActions = (this.actions = {
       accept: (part) => this.acceptAndSay(part),
       dismiss: () => this.dismiss(),
       openMenu: (anchor) => this.openMenu(anchor),
@@ -242,7 +243,7 @@ class Controller implements CodeEditor {
         const keys = acceptKeys();
         return keys ? t('codeStudio.editor.acceptTooltip', { keys }) : t('codeStudio.editor.acceptButton');
       },
-    };
+    });
 
     this.view = new EditorView({
       parent: this.root,
@@ -667,9 +668,14 @@ class Controller implements CodeEditor {
     return this.lastPointer === 'touch' || this.lastPointer === 'pen' || this.hovering;
   }
 
+  /** The Accept button follows the pointer, the setting, and a remapped chord in its tooltip. */
   private refreshButton(): void {
     const visible = this.buttonVisible();
-    for (const button of this.root.querySelectorAll<HTMLButtonElement>('.cm-ghost-accept')) button.hidden = !visible;
+    const tooltip = this.actions.buttonTooltip();
+    for (const button of this.root.querySelectorAll<HTMLButtonElement>('.cm-ghost-accept')) {
+      button.hidden = !visible;
+      button.title = tooltip;
+    }
   }
 
   private hover(event: PointerEvent, entering: boolean): void {

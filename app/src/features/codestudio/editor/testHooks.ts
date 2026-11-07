@@ -1,6 +1,8 @@
 // Test hooks for the code editor's behavior specs. Only `vite build --mode test` builds have them:
 // window.__OPENNOTE_TEST__.codeEditorMount mounts an editor on top of the app (the studio window comes in B12), and
-// codeEditorSuggest gives it a fake suggestion source that completes a fixed prefix.
+// its `suggest` option gives it a fake suggestion source that completes a fixed prefix. codeEditorText and
+// codeEditorHead read its text and caret.
+import type { CodeEditor } from './create';
 
 interface MountOptions {
   language: string;
@@ -13,6 +15,7 @@ export function installCodeEditorTestHooks(): void {
   if (import.meta.env.MODE !== 'test' || typeof window === 'undefined') return;
   const hooks = (window.__OPENNOTE_TEST__ ??= {});
   let unmount: (() => void) | null = null;
+  let current: CodeEditor | null = null;
   hooks.codeEditorMount = async (options: MountOptions) => {
     unmount?.();
     const { createCodeEditor } = await import('./index');
@@ -37,12 +40,14 @@ export function installCodeEditorTestHooks(): void {
       );
     }
     await editor.ready;
+    current = editor;
     unmount = () => {
+      current = null;
       editor.destroy();
       host.remove();
     };
     return true;
   };
-  hooks.codeEditorText = () =>
-    document.querySelector('[data-testid="code-editor-host"] .cm-content')?.textContent ?? null;
+  hooks.codeEditorText = () => current?.getText() ?? null;
+  hooks.codeEditorHead = () => current?.view.state.selection.main.head ?? null;
 }

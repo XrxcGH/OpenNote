@@ -269,8 +269,8 @@ export const tabMovesFocusCommand = defineCommand({
 
 export const CODE_EDITOR_COMMANDS: readonly CommandDef[] = [...CODE_EDITOR_ROWS.map(rowCommand), tabMovesFocusCommand];
 
-/** Registers the commands. Returns a function that removes them. */
+/** Registers the commands once. Returns a function that removes the ones it added. */
 export function registerCodeEditorCommands(): () => void {
-  const stops = CODE_EDITOR_COMMANDS.map((def) => commands.register(def));
+  const stops = CODE_EDITOR_COMMANDS.filter((def) => !commands.get(def.id)).map((def) => commands.register(def));
   return () => stops.forEach((stop) => stop());
 }

@@ -94,6 +94,15 @@ class ArrowMarker extends GutterMarker {
   }
 }
 
+/** Keeps the gutter one marker wide; never drawn. */
+class SpacerMarker extends GutterMarker {
+  toDOM() {
+    const span = document.createElement('span');
+    span.textContent = '●';
+    return span;
+  }
+}
+
 const breakpointMarker = new BreakpointMarker();
 const arrowMarker = new ArrowMarker();
 
@@ -140,7 +149,7 @@ export function debugGutter(onToggle?: (line: number) => void): Extension {
         }
         return builder.finish();
       },
-      initialSpacer: () => breakpointMarker,
+      initialSpacer: () => new SpacerMarker(),
       domEventHandlers: {
         mousedown(view, block) {
           if (!onToggle) return false;

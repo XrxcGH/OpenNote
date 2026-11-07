@@ -4,6 +4,9 @@
 // a suggestion, or asks for one, and the page tab stays; with suggestions Off and nothing showing, Next tab runs.
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../../../features';
+
+// The palette loads on the first Ctrl press; a load that outlives the test file fails the teardown.
+vi.mock('../../palette/open', async (original) => ({ ...(await original<object>()), preloadWhenIdle: () => () => {} }));
 import { installDispatcher } from '../../../commands/dispatcher';
 import { commands } from '../../../registries';
 import type { NodeId, NodeSummary } from '../../../services/notes';
