@@ -13,6 +13,8 @@ export default function ShortcutsSection() {
   const preset = useSettings((settings) => settings.keymap.preset);
   // The OneNote set is offered while its flag is on, and always shown to someone already using it.
   const offered = useFlag('qol.onenoteKeys') || preset === 'onenote';
+  // The Google Docs set is offered while the text controls are on, and always shown to someone already using it.
+  const docsOffered = useFlag('text.v2Controls') || preset === 'docs';
   const choose = (next: KeymapPresetId) => {
     void setShortcutSet(next).then(() => announce(t('shortcuts.set.changed', { set: t(`shortcuts.set.${next}`) })));
   };
@@ -23,7 +25,9 @@ export default function ShortcutsSection() {
         {offered && (
           <RadioCard value="onenote" label={t('shortcuts.set.onenote')} description={t('shortcuts.set.onenoteHelp')} />
         )}
-        <RadioCard value="docs" label={t('shortcuts.set.docs')} description={t('shortcuts.set.docsHelp')} />
+        {docsOffered && (
+          <RadioCard value="docs" label={t('shortcuts.set.docs')} description={t('shortcuts.set.docsHelp')} />
+        )}
       </RadioGroup>
       <ShortcutList level={2} />
     </div>

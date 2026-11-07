@@ -3,6 +3,7 @@
 // toggles a task's check and otherwise breaks a paginated page (ADR 0085). The Word and Docs chords themselves are
 // tested against published lists in commands/textShortcuts.test.ts.
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { initFlags } from '../../app/flags';
 import './registrations/editor';
 import './registrations/sync';
 import './registrations/textKeys';
@@ -24,6 +25,7 @@ afterEach(async () => {
   await cleanupPages();
   settingsStore.set({ settings: DEFAULT_SETTINGS, readOnly: false });
   textSeams.set({});
+  initFlags('dev');
 });
 
 const cache = createMarkdownCache();
@@ -88,6 +90,25 @@ describe('the text keys in the editor', () => {
     textSeams.set({ canBreakPage: () => true, breakPage: vi.fn() });
     const { editor } = await open('- [ ] [task]');
     expect(commandForKey(press(editor.view.dom, 'Enter', 'Enter', 'ctrl'))?.id).toBe('block.toggleCheck');
+    const checked = () => {
+      let found: unknown = null;
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === 'listItem') found = node.attrs.checked;
+      });
+      return found;
+    };
+    const before = checked();
+    expect(await executeCommand('block.toggleCheck')).toBe(true);
+    expect(checked()).not.toBe(before);
+  });
+
+  it('keeps Ctrl+E for inline code until the text controls are on', async () => {
+    const { editor } = await open('one [two] three');
+    const key = () => commandForKey(press(editor.view.dom, 'e', 'KeyE', 'ctrl'))?.id ?? null;
+    expect(key()).toBe('para.alignCenter');
+    initFlags('stable');
+    use('default'); // a new settings object drops the chord index
+    expect(key()).toBe('format.code');
   });
 
   it('breaks a paginated page on Ctrl+Enter in a paragraph, and passes the key on otherwise', async () => {

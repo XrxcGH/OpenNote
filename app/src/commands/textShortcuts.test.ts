@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import '../features';
 import { commands } from '../registries';
+import { setHostSystem } from '../platform/system';
 import { chordMatches } from './chords';
 import type { KeyInput } from './chords';
 import table from './fixtures/textShortcuts.json';
@@ -100,6 +101,18 @@ describe('the macOS mapping', () => {
   it('leaves Command+M and Command+Q to the system', () => {
     // The Window and app menus own them on a Mac (commands/appMenu.ts), so the indent and Reset paragraph keys there
     // are for the other systems, and Tab and Shift+Tab indent in a list.
-    for (const id of ['para.indent', 'para.reset']) expect(commands.get(id)).toBeDefined();
+    const chords = (id: string) => setKeys(commands.get(id)!, 'default');
+    try {
+      setHostSystem('macos');
+      for (const id of ['para.indent', 'para.reset']) {
+        expect(chords(id), id).not.toContain('Ctrl+M');
+        expect(chords(id), id).not.toContain('Ctrl+Q');
+      }
+      setHostSystem('windows');
+      expect(chords('para.indent')).toContain('Ctrl+M');
+      expect(chords('para.reset')).toContain('Ctrl+Q');
+    } finally {
+      setHostSystem('windows');
+    }
   });
 });

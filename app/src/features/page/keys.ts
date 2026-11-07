@@ -4,6 +4,7 @@
 // form: a chord that needs Shift to type its character is stored by that character (Ctrl+Shift+] is Ctrl+}).
 import { defineCommand } from '../../commands/registry';
 import type { Chord, CommandDef, CommandId, KeyScope } from '../../commands/types';
+import type { FlagId } from '../../app/flags';
 import { commands } from '../../registries';
 import { TEXT_KEYS } from './keys/text';
 
@@ -14,6 +15,8 @@ export interface KeySpec {
   oneNoteKeys?: readonly string[];
   /** The Google Docs set; absent means the same as `keys`, so a key that Docs gives another meaning needs its own list. */
   docsKeys?: readonly string[];
+  /** Chords for the default and Docs sets while a flag is off (see CommandDef.keysWhileOff). */
+  keysWhileOff?: { readonly flag: FlagId; readonly keys: readonly string[] };
   scope: KeyScope;
   refines?: CommandId;
   allowInTextInput?: boolean;
@@ -60,8 +63,12 @@ export const BUILT_IN_PAGE_KEYS = {
   // outline level 5 in the default set, so only the Docs set has it. Ctrl+Shift+S now applies a style.
   'format.strike': editor(['Ctrl+Shift+X'], ['Ctrl+-'], 'view.zoomOut', ['Alt+Shift+5', 'Ctrl+Shift+X']),
   'format.highlight': editor(['Ctrl+Shift+H'], ['Ctrl+Alt+H'], 'pdf.highlight'),
-  // ADR 0085: Ctrl+E centers, so inline code moves to Ctrl+`.
-  'format.code': editor(['Ctrl+`'], []),
+  // ADR 0085: Ctrl+E centers, so inline code moves to Ctrl+`. Centering sits behind text.v2Controls, and until it is
+  // on, inline code keeps Ctrl+E.
+  'format.code': {
+    ...editor(['Ctrl+`'], []),
+    keysWhileOff: { flag: 'text.v2Controls', keys: ['Ctrl+E'] },
+  },
   'format.subscript': editor(['Ctrl+='], ['Ctrl+='], 'view.zoomIn', ['Ctrl+=']),
   'format.superscript': editor(['Ctrl++'], ['Ctrl++'], undefined, ['Ctrl+.', 'Ctrl++']),
   'format.larger': editor(['Ctrl+>']),
@@ -196,6 +203,7 @@ export function pageCommandDef<Args = void>(
           },
         }
       : {}),
+    ...(spec.keysWhileOff ? { keysWhileOff: spec.keysWhileOff as CommandDef<Args>['keysWhileOff'] } : {}),
     scope: spec.scope,
     ...(spec.refines ? { refines: spec.refines } : {}),
     ...(spec.allowInTextInput ? { allowInTextInput: true } : {}),

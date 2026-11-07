@@ -222,10 +222,10 @@
       "source": "ADR 0085: inline code moves here when Ctrl+E centers"
     },
     {
-      "app": "word",
+      "app": "opennote",
       "chord": "Ctrl+Enter",
       "command": "block.toggleCheck",
-      "source": "Microsoft Word keyboard shortcuts, formatting (published by Microsoft Support); in a task item the check wins (ADR 0085)",
+      "source": "ADR 0085 (OpenNote's own key): in a task item the check wins over the page break",
       "beats": ["insert.pageBreak"]
     },
     {
@@ -370,10 +370,10 @@
       "beats": ["app.palette"]
     },
     {
-      "app": "docs",
+      "app": "opennote",
       "chord": "Ctrl+Enter",
       "command": "block.toggleCheck",
-      "source": "Google Docs keyboard shortcuts, text and paragraph formatting (published by Google Docs Help); in a task item the check wins (ADR 0085)",
+      "source": "ADR 0085 (OpenNote's own key): in a task item the check wins over the page break",
       "beats": ["insert.pageBreak"]
     },
     {
