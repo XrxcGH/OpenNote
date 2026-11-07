@@ -4,15 +4,18 @@
 //! A version that another has seen loses to it. Versions that saw nothing of each other are concurrent: equal
 //! contents just join, an edit beats a delete, and different contents follow the rule for the kind of file. No rule
 //! drops text: when two versions of a page can't both be `page.json`, the other one goes to `.conflicts/`, which
-//! the app shows as a conflict to review (spec 14.1).
+//! the app shows as a conflict to review (spec 14.1). Before that, block types that registered a merger may merge
+//! the two versions of a page into one (ADR 0089).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
 
 use opennote_core::format::history_json::{merge_versions, read_versions, write_versions};
-use opennote_core::format::page_json::read_page;
+use opennote_core::format::page_json::{read_page, write_page};
 use opennote_core::format::tree_json::{merge_notebooks, merge_sections, read_notebook, read_section};
 use opennote_core::format::tree_json::{write_notebook, write_section};
+use opennote_core::merge::{merge_page, mergers, Mergers};
+use opennote_core::model::Page;
 use opennote_core::Limits;
 
 use crate::error::{Result, SyncError};
@@ -335,25 +338,26 @@ fn merge_tree(path: &str, live: &[Content], contents: &dyn Contents) -> Result<O
     })
 }
 
-/// The ink segments and assets a page file points at, as paths relative to its page folder.
-fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
+/// A page file, read whether it is plain or gzip-compressed, as `.history` snapshots are.
+fn read_any_page(bytes: &[u8]) -> Option<Page> {
     let mut plain = Vec::new();
     let bytes = if bytes.starts_with(&[0x1f, 0x8b]) {
-        if flate2::read::GzDecoder::new(bytes)
+        flate2::read::GzDecoder::new(bytes)
             .take(64 * 1024 * 1024)
             .read_to_end(&mut plain)
-            .is_err()
-        {
-            return BTreeSet::new();
-        }
+            .ok()?;
         &plain[..]
     } else {
         bytes
     };
-    let Ok(read) = read_page(bytes, &Limits::default()) else {
+    read_page(bytes, &Limits::default()).ok().map(|read| read.page)
+}
+
+/// The ink segments and assets a page file points at, as paths relative to its page folder.
+fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
+    let Some(page) = read_any_page(bytes) else {
         return BTreeSet::new();
     };
-    let page = read.page;
     let mut refs: BTreeSet<String> = page
         .ink
         .segments()
@@ -364,14 +368,93 @@ fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
     refs
 }
 
+/// Two devices changed one page, and neither saw the other's save: the one page that block mergers make of the
+/// two versions and the newest `.history` snapshot both started from (ADR 0089), or `None` to keep today's
+/// conflict copy. With no merger registered it is always `None`, so nothing changes.
+fn merge_page_blocks(
+    path: &str,
+    candidates: &[Entry],
+    by_path: &BTreeMap<&str, Vec<Entry>>,
+    contents: &dyn Contents,
+    mergers: &Mergers,
+) -> Result<Option<Entry>> {
+    if mergers.is_empty() || kind(path) != Kind::Page {
+        return Ok(None);
+    }
+    let top = maximal(candidates.to_vec());
+    let [a, b] = &top[..] else { return Ok(None) };
+    if a.deleted || b.deleted || a.content == b.content {
+        return Ok(None);
+    }
+    let (Some(mine), Some(theirs)) = (
+        read_any_page(&contents.bytes(&a.content)?),
+        read_any_page(&contents.bytes(&b.content)?),
+    ) else {
+        return Ok(None);
+    };
+    let (ra, rb) = (&mine.revision, &theirs.revision);
+    if ra.ancestors.contains(&rb.id) || rb.ancestors.contains(&ra.id) {
+        return Ok(None);
+    }
+    let shared: BTreeSet<_> = ra.ancestors.iter().filter(|r| rb.ancestors.contains(r)).collect();
+    let (dir, _) = split(path);
+    let prefix = if dir.is_empty() {
+        String::new()
+    } else {
+        format!("{dir}/")
+    };
+    let mut base = None;
+    for rev in shared.into_iter().rev() {
+        let snapshot = format!("{prefix}.history/{rev}.json.gz");
+        let Some(entry) = by_path.get(snapshot.as_str()).and_then(|e| e.iter().find(|e| e.live())) else {
+            continue;
+        };
+        if let Some(page) = read_any_page(&contents.bytes(&entry.content)?) {
+            base = Some(page);
+            break;
+        }
+    }
+    let Some(merged) = base.and_then(|base| merge_page(mergers, &base, &mine, &theirs)) else {
+        return Ok(None);
+    };
+    let bytes = write_page(&merged);
+    if read_page(&bytes, &Limits::default()).is_err() {
+        return Ok(None);
+    }
+    Ok(Some(Entry {
+        vv: join(&a.vv, &b.vv),
+        content: contents.make(bytes),
+        deleted: false,
+    }))
+}
+
 /// Merges manifests. `before` is this device's own manifest before the merge: folders where nothing changed are
-/// not checked again.
+/// not checked again. Block mergers registered for this process take part (ADR 0089).
 pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -> Result<Merged> {
+    merge_with(inputs, before, contents, &mergers())
+}
+
+/// [`merge`] with these block mergers.
+pub fn merge_with(
+    inputs: &[&Manifest],
+    before: &Manifest,
+    contents: &dyn Contents,
+    mergers: &Mergers,
+) -> Result<Merged> {
     let mut by_path: BTreeMap<&str, Vec<Entry>> = BTreeMap::new();
     for manifest in inputs {
         for (path, entry) in manifest.iter() {
             by_path.entry(path.as_str()).or_default().push(entry.clone());
         }
+    }
+    let mut block_merged = Vec::new();
+    for (path, candidates) in &by_path {
+        if let Some(entry) = merge_page_blocks(path, candidates, &by_path, contents, mergers)? {
+            block_merged.push((*path, entry));
+        }
+    }
+    for (path, entry) in block_merged {
+        by_path.insert(path, vec![entry]);
     }
     let mut merged = Merged::default();
     let mut extras: Vec<(String, String, Entry)> = Vec::new();
