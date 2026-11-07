@@ -12,15 +12,23 @@ export interface KeySpec {
   keys: readonly string[];
   /** The OneNote set; absent means the same as `keys`. */
   oneNoteKeys?: readonly string[];
+  /** The Google Docs set; absent means the same as `keys`, so a key that Docs gives another meaning needs its own list. */
+  docsKeys?: readonly string[];
   scope: KeyScope;
   refines?: CommandId;
   allowInTextInput?: boolean;
   allowRepeat?: boolean;
 }
 
-const editor = (keys: readonly string[] = [], oneNoteKeys?: readonly string[], refines?: CommandId): KeySpec => ({
+const editor = (
+  keys: readonly string[] = [],
+  oneNoteKeys?: readonly string[],
+  refines?: CommandId,
+  docsKeys?: readonly string[],
+): KeySpec => ({
   keys,
   ...(oneNoteKeys ? { oneNoteKeys } : {}),
+  ...(docsKeys ? { docsKeys } : {}),
   scope: 'editor',
   ...(refines ? { refines } : {}),
   allowInTextInput: true,
@@ -36,7 +44,10 @@ const headings = Object.fromEntries(
   [1, 2, 3, 4, 5, 6].map((level) => [`block.heading${level}`, editor([`Ctrl+Alt+${level}`])]),
 ) as Record<`block.heading${1 | 2 | 3 | 4 | 5 | 6}`, KeySpec>;
 const showLevels = Object.fromEntries(
-  [1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => [`outline.showLevel${level}`, editor([`Alt+Shift+${level}`])]),
+  [1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => [
+    `outline.showLevel${level}`,
+    editor([`Alt+Shift+${level}`], undefined, undefined, level === 5 ? [] : undefined),
+  ]),
 ) as Record<`outline.showLevel${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`, KeySpec>;
 const moves = { allowInTextInput: true, allowRepeat: true };
 
@@ -45,11 +56,14 @@ export const BUILT_IN_PAGE_KEYS = {
   'format.bold': editor(['Ctrl+B']),
   'format.italic': editor(['Ctrl+I']),
   'format.underline': editor(['Ctrl+U']),
-  'format.strike': editor(['Ctrl+Shift+S'], ['Ctrl+-'], 'view.zoomOut'),
+  // ADR 0085: Ctrl+Shift+X is the Mac key in Word and Docs, and Alt+Shift+5 is Docs' own key. Alt+Shift+5 shows
+  // outline level 5 in the default set, so only the Docs set has it. Ctrl+Shift+S now applies a style.
+  'format.strike': editor(['Ctrl+Shift+X'], ['Ctrl+-'], 'view.zoomOut', ['Alt+Shift+5', 'Ctrl+Shift+X']),
   'format.highlight': editor(['Ctrl+Shift+H'], ['Ctrl+Alt+H'], 'pdf.highlight'),
-  'format.code': editor(['Ctrl+E'], []),
-  'format.subscript': editor([], ['Ctrl+='], 'view.zoomIn'),
-  'format.superscript': editor([], ['Ctrl++']),
+  // ADR 0085: Ctrl+E centers, so inline code moves to Ctrl+`.
+  'format.code': editor(['Ctrl+`'], []),
+  'format.subscript': editor(['Ctrl+='], ['Ctrl+='], 'view.zoomIn', ['Ctrl+=']),
+  'format.superscript': editor(['Ctrl++'], ['Ctrl++'], undefined, ['Ctrl+.', 'Ctrl++']),
   'format.larger': editor(['Ctrl+>']),
   'format.smaller': editor(['Ctrl+<']),
   'format.textColor': none,
@@ -57,13 +71,15 @@ export const BUILT_IN_PAGE_KEYS = {
   'format.clear': editor(['Ctrl+\\']),
   'format.clearAll': editor([], ['Ctrl+Shift+N']),
   'format.link': editor(['Ctrl+K'], undefined, 'app.palette'),
-  'block.normal': editor(['Ctrl+Shift+N'], []),
+  // Docs' Ctrl+Alt+0 is Normal text; in that set it takes the key from the page zoom reset while the caret is in text.
+  'block.normal': editor(['Ctrl+Shift+N'], [], 'page.zoom100', ['Ctrl+Alt+0']),
   ...headings,
-  'block.bulletList': editor(['Ctrl+Shift+8'], ['Ctrl+.']),
+  'block.bulletList': editor(['Ctrl+Shift+8', 'Ctrl+Shift+L'], ['Ctrl+.'], undefined, ['Ctrl+Shift+8']),
   'block.orderedList': editor(['Ctrl+Shift+7'], ['Ctrl+/'], 'app.shortcuts'),
   'block.checklist': editor(['Ctrl+Shift+9'], []),
   'block.todoCycle': none,
-  'block.toggleCheck': editor(['Ctrl+Enter']),
+  // In a task item Ctrl+Enter toggles the check; elsewhere it falls through to insert.pageBreak (ADR 0085).
+  'block.toggleCheck': editor(['Ctrl+Enter'], undefined, 'insert.pageBreak'),
   'block.quote': editor(['Ctrl+Shift+B']),
   'block.codeBlock': none,
   'block.callout': none,
@@ -172,7 +188,14 @@ export function pageCommandDef<Args = void>(
   return defineCommand<Args>({
     ...def,
     keys: spec.keys as Chords,
-    ...(spec.oneNoteKeys ? { presetKeys: { onenote: spec.oneNoteKeys as Chords } } : {}),
+    ...(spec.oneNoteKeys || spec.docsKeys
+      ? {
+          presetKeys: {
+            ...(spec.oneNoteKeys ? { onenote: spec.oneNoteKeys as Chords } : {}),
+            ...(spec.docsKeys ? { docs: spec.docsKeys as Chords } : {}),
+          },
+        }
+      : {}),
     scope: spec.scope,
     ...(spec.refines ? { refines: spec.refines } : {}),
     ...(spec.allowInTextInput ? { allowInTextInput: true } : {}),
