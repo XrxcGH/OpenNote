@@ -3,6 +3,7 @@
 *.jpg binary
 *.ico binary
 *.woff2 binary
+*.ttf binary
 # Files saved by Word and Excel, kept byte for byte.
 crates/interop/tests/data/legacy/* binary
 # Fuzzer crash inputs, replayed byte for byte.
