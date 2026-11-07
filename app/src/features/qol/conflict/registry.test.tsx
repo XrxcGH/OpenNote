@@ -56,7 +56,12 @@ describe('the conflict view registry', () => {
     const { calls, closed, dialog } = await open([block('b1', 'test.view')]);
     const view = await within(dialog).findByRole('region', { name: 'Test compare b1' });
     expect(within(view).getByText('Here 1, on Laptop 2')).toBeTruthy();
-    expect(within(dialog).queryByText(TEXTS.mine)).toBeNull();
+    // The whole-page text stays one click away, so a title or tag difference is never hidden.
+    const details = within(dialog).getByText('Both whole pages as text').closest('details');
+    expect(details?.open).toBe(false);
+    await userEvent.click(within(dialog).getByText('Both whole pages as text'));
+    expect(details?.open).toBe(true);
+    expect(within(dialog).getByText(TEXTS.mine)).toBeTruthy();
     await userEvent.click(within(view).getByRole('button', { name: 'Take theirs' }));
     await closed;
     expect(calls.find(([name]) => name === 'conflict.resolve')?.[1]).toEqual({
@@ -73,6 +78,7 @@ describe('the conflict view registry', () => {
     expect(within(dialog).queryByRole('region', { name: 'Test compare b2' })).toBeNull();
     expect(within(dialog).getByText(TEXTS.mine)).toBeTruthy();
     expect(within(dialog).getByText(TEXTS.theirs)).toBeTruthy();
+    expect(within(dialog).queryByText('Both whole pages as text')).toBeNull();
   });
 
   it('shows only the text view when no type registered a view', async () => {

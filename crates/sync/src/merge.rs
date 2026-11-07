@@ -369,15 +369,20 @@ fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
 }
 
 /// Two devices changed one page, and neither saw the other's save: the one page that block mergers make of the
-/// two versions and the newest `.history` snapshot both started from (ADR 0089), or `None` to keep today's
-/// conflict copy. With no merger registered it is always `None`, so nothing changes.
+/// two versions and the newest revision both started from (ADR 0089), or `None` to keep today's conflict copy.
+/// The base is only that newest shared revision: an older one would turn a change one side undid into no change
+/// and bring the old value back. Without its `.history` snapshot the result is `None`. With no merger registered
+/// it is always `None`, so nothing changes.
+///
+/// The merged page comes with a `.history` snapshot of itself (path and entry), so the next merge of this page
+/// has its base.
 fn merge_page_blocks(
     path: &str,
     candidates: &[Entry],
     by_path: &BTreeMap<&str, Vec<Entry>>,
     contents: &dyn Contents,
     mergers: &Mergers,
-) -> Result<Option<Entry>> {
+) -> Result<Option<(Entry, String, Entry)>> {
     if mergers.is_empty() || kind(path) != Kind::Page {
         return Ok(None);
     }
@@ -396,36 +401,53 @@ fn merge_page_blocks(
     if ra.ancestors.contains(&rb.id) || rb.ancestors.contains(&ra.id) {
         return Ok(None);
     }
-    let shared: BTreeSet<_> = ra.ancestors.iter().filter(|r| rb.ancestors.contains(r)).collect();
+    let Some(newest) = ra.ancestors.iter().filter(|r| rb.ancestors.contains(r)).max() else {
+        return Ok(None);
+    };
     let (dir, _) = split(path);
     let prefix = if dir.is_empty() {
         String::new()
     } else {
         format!("{dir}/")
     };
-    let mut base = None;
-    for rev in shared.into_iter().rev() {
-        let snapshot = format!("{prefix}.history/{rev}.json.gz");
-        let Some(entry) = by_path.get(snapshot.as_str()).and_then(|e| e.iter().find(|e| e.live())) else {
-            continue;
-        };
-        if let Some(page) = read_any_page(&contents.bytes(&entry.content)?) {
-            base = Some(page);
-            break;
-        }
-    }
-    let Some(merged) = base.and_then(|base| merge_page(mergers, &base, &mine, &theirs)) else {
+    let snapshot = format!("{prefix}.history/{newest}.json.gz");
+    let Some(entry) = by_path.get(snapshot.as_str()).and_then(|e| e.iter().find(|e| e.live())) else {
+        return Ok(None);
+    };
+    let Some(base) = read_any_page(&contents.bytes(&entry.content)?) else {
+        return Ok(None);
+    };
+    let Some(merged) = merge_page(mergers, &base, &mine, &theirs) else {
         return Ok(None);
     };
     let bytes = write_page(&merged);
     if read_page(&bytes, &Limits::default()).is_err() {
         return Ok(None);
     }
-    Ok(Some(Entry {
-        vv: join(&a.vv, &b.vv),
+    let vv = join(&a.vv, &b.vv);
+    let snapshot = Entry {
+        vv: vv.clone(),
+        content: contents.make(gzip(&bytes)?),
+        deleted: false,
+    };
+    let page = Entry {
+        vv,
         content: contents.make(bytes),
         deleted: false,
-    }))
+    };
+    Ok(Some((
+        page,
+        format!("{prefix}.history/{}.json.gz", merged.revision.id),
+        snapshot,
+    )))
+}
+
+/// Gzip of `bytes`, the same on every device.
+fn gzip(bytes: &[u8]) -> Result<Vec<u8>> {
+    use std::io::Write;
+    let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+    gz.write_all(bytes).map_err(SyncError::local)?;
+    gz.finish().map_err(SyncError::local)
 }
 
 /// Merges manifests. `before` is this device's own manifest before the merge: folders where nothing changed are
@@ -441,6 +463,7 @@ pub fn merge_with(
     contents: &dyn Contents,
     mergers: &Mergers,
 ) -> Result<Merged> {
+    let mut snapshots: Vec<(String, Entry)> = Vec::new();
     let mut by_path: BTreeMap<&str, Vec<Entry>> = BTreeMap::new();
     for manifest in inputs {
         for (path, entry) in manifest.iter() {
@@ -449,12 +472,20 @@ pub fn merge_with(
     }
     let mut block_merged = Vec::new();
     for (path, candidates) in &by_path {
-        if let Some(entry) = merge_page_blocks(path, candidates, &by_path, contents, mergers)? {
+        if let Some((entry, at, snapshot)) = merge_page_blocks(path, candidates, &by_path, contents, mergers)? {
             block_merged.push((*path, entry));
+            if !by_path.contains_key(at.as_str()) {
+                snapshots.push((at, snapshot));
+            }
         }
     }
     for (path, entry) in block_merged {
         by_path.insert(path, vec![entry]);
+    }
+    // The merged revision's snapshot is the base of the next merge of its page. Another device that made the
+    // same merge already published the same snapshot.
+    for (at, snapshot) in &snapshots {
+        by_path.insert(at.as_str(), vec![snapshot.clone()]);
     }
     let mut merged = Merged::default();
     let mut extras: Vec<(String, String, Entry)> = Vec::new();

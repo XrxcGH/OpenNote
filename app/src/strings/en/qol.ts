@@ -134,6 +134,7 @@ export const qol = {
     mine: 'This version',
     theirs: 'From {device}, saved {date}',
     otherDevice: 'another device',
+    wholePage: 'Both whole pages as text',
     keepMine: 'Keep this version',
     keepTheirs: 'Keep the other version',
     keepBoth: 'Keep both',

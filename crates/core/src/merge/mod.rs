@@ -194,6 +194,12 @@ pub fn merge_page(mergers: &Mergers, base: &Page, mine: &Page, theirs: &Page) ->
     if mergers.is_empty() || mine.id != base.id || theirs.id != base.id || mine.revision.id == theirs.revision.id {
         return None;
     }
+    // A side this device may only read must not be rewritten by sync, and two sides read at different versions
+    // would leave the merged page stamped for one side while it holds the other's blocks (spec 15, `R-VER-5`).
+    let keys = |p: &Page| (p.format.version_read, p.format.min_reader, p.format.min_writer);
+    if mine.format.access.is_read_only() || theirs.format.access.is_read_only() || keys(mine) != keys(theirs) {
+        return None;
+    }
     let ids: BTreeSet<BlockId> = [base, mine, theirs]
         .iter()
         .flat_map(|p| p.blocks.iter().map(|b| b.id))
@@ -524,6 +530,27 @@ mod tests {
         // The merged page writes and reads back.
         let read = read_page(&write_page(&merged), &Limits::default()).expect("reads").page;
         assert_eq!(read.blocks, merged.blocks);
+    }
+
+    #[test]
+    fn a_side_read_as_a_newer_version_or_read_only_keeps_the_conflict_copy() {
+        let mine = edit(revision(2, &[1], 20), |p| set(p, tag_block(1, &["a", "m"])));
+        let theirs = edit(revision(3, &[1], 30), |p| set(p, tag_block(2, &["b", "t"])));
+        assert!(
+            merge_page(&fake(), &base(), &mine, &theirs).is_some(),
+            "the same sides merge"
+        );
+        // The other side was read as a newer version that this device may still edit (`R-VER-5`).
+        let mut newer = theirs.clone();
+        newer.format.version_read = crate::FORMAT_VERSION + 1;
+        newer.format.min_writer = crate::FORMAT_VERSION;
+        assert_eq!(merge_page(&fake(), &base(), &mine, &newer), None);
+        assert_eq!(merge_page(&fake(), &base(), &newer, &mine), None);
+        // A side this device may only read.
+        let mut locked = theirs.clone();
+        locked.format.access = crate::model::Access::ReadOnly(crate::model::ReadOnlyReason::NewerFormat);
+        assert_eq!(merge_page(&fake(), &base(), &mine, &locked), None);
+        assert_eq!(merge_page(&fake(), &base(), &locked, &mine), None);
     }
 
     #[test]

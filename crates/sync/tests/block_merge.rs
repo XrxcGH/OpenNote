@@ -333,3 +333,67 @@ fn with_no_shared_snapshot_the_page_keeps_the_conflict_copy() {
     let merged = merge_with(&[&a, &b], &a, &store, &fake()).expect("merges");
     assert_eq!(merged.conflicts.len(), 1, "no base to merge from");
 }
+
+/// A later save of `of` with these blocks, as the device that saved it lists its revisions.
+fn child(of: &Page, n: u128, saved: i64, blocks: &[Block]) -> Page {
+    let mut p = page(n, &[], saved, blocks);
+    p.revision.parents = vec![of.revision.id];
+    p.revision.ancestors = std::iter::once(of.revision.id)
+        .chain(of.revision.ancestors.iter().copied())
+        .collect();
+    p
+}
+
+/// The next concurrent round after a block merge merges against the merged revision, never an older snapshot:
+/// a tag one side removed after the merge stays removed (hand-worked: base {a}, one side removes x from {a, x}).
+#[test]
+fn the_round_after_a_block_merge_merges_against_the_merged_revision() {
+    let store = Store::default();
+    let base = page(1, &[], 10, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    let mine = page(2, &[1], 20, &[tag_block(1, &["a", "x"]), tag_block(2, &["b"])]);
+    let theirs = page(3, &[1], 30, &[tag_block(1, &["a"]), tag_block(2, &["b", "y"])]);
+    let (a, b) = devices(&store, &base, &mine, &theirs);
+    let first = merge_with(&[&a, &b], &a, &store, &fake()).expect("merges");
+    assert!(first.conflicts.is_empty(), "{:?}", first.conflicts);
+    let r4 = page_of(&store, &first);
+    let snapshot = format!("{}/.history/{}.json.gz", dir(), r4.revision.id);
+    assert!(
+        first.entries.contains_key(&snapshot),
+        "the merged revision has a snapshot"
+    );
+
+    let page_path = format!("{}/page.json", dir());
+    let merged_entry = first.entries[&page_path].clone();
+    let save = |device: &str, p: &Page| {
+        let mut e = merged_entry.clone();
+        *e.vv.entry(device.to_owned()).or_insert(0) += 1;
+        e.content = store.put(write_page(p));
+        e
+    };
+    let r5 = child(&r4, 5, 50, &[tag_block(1, &["a"]), tag_block(2, &["b", "y"])]);
+    let r6 = child(&r4, 6, 60, &[tag_block(1, &["a", "x"]), tag_block(2, &["b", "y", "z"])]);
+    let (mut a2, mut b2) = (first.entries.clone(), first.entries.clone());
+    a2.insert(page_path.clone(), save("d0", &r5));
+    b2.insert(page_path.clone(), save("d1", &r6));
+    let second = merge_with(&[&a2, &b2], &a2, &store, &fake()).expect("merges");
+    assert!(second.conflicts.is_empty(), "no conflict copy: {:?}", second.conflicts);
+    let merged = page_of(&store, &second);
+    let at = |n: u128| tags(merged.blocks.get(BlockId(id(n))).expect("block"));
+    assert_eq!(at(1), ["a"].map(String::from).into(), "the removed tag stays removed");
+    assert_eq!(at(2), ["b", "y", "z"].map(String::from).into());
+}
+
+/// When the newest shared revision has no snapshot, an older one is never the base: the page keeps the conflict
+/// copy.
+#[test]
+fn an_older_shared_snapshot_is_never_the_base() {
+    let store = Store::default();
+    let base = page(1, &[], 10, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    let newest = child(&base, 4, 15, &[tag_block(1, &["a", "x"]), tag_block(2, &["b"])]);
+    let mine = child(&newest, 5, 20, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    let theirs = child(&newest, 6, 30, &[tag_block(1, &["a", "x"]), tag_block(2, &["b", "z"])]);
+    // Only the older revision R1 has a snapshot.
+    let (a, b) = devices(&store, &base, &mine, &theirs);
+    let merged = merge_with(&[&a, &b], &a, &store, &fake()).expect("merges");
+    assert_eq!(merged.conflicts.len(), 1, "{:?}", merged.conflicts);
+}

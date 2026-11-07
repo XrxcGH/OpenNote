@@ -55,6 +55,18 @@ function ConflictContent(props: {
   const { registered, others } = splitByView(texts?.blocks);
   // The text view stays for every block without a view of its own, and when only page fields differ.
   const showText = others.length > 0 || registered.length === 0;
+  const columns = texts && (
+    <div className={styles.columns}>
+      <section aria-labelledby="conflict-mine">
+        <h3 id="conflict-mine">{t('qol.conflict.mine')}</h3>
+        <pre className={styles.text}>{texts.mine}</pre>
+      </section>
+      <section aria-labelledby="conflict-theirs">
+        <h3 id="conflict-theirs">{t('qol.conflict.theirs', { device: other, date: formatDate(props.savedAt) })}</h3>
+        <pre className={styles.text}>{texts.theirs}</pre>
+      </section>
+    </div>
+  );
   return (
     <Dialog
       title={t('qol.conflict.title')}
@@ -79,17 +91,13 @@ function ConflictContent(props: {
         registered.map(({ block, View }) => (
           <View key={block.id} block={block} otherDevice={other} resolve={(choice) => void resolve(choice)} />
         ))}
-      {texts && showText && (
-        <div className={styles.columns}>
-          <section aria-labelledby="conflict-mine">
-            <h3 id="conflict-mine">{t('qol.conflict.mine')}</h3>
-            <pre className={styles.text}>{texts.mine}</pre>
-          </section>
-          <section aria-labelledby="conflict-theirs">
-            <h3 id="conflict-theirs">{t('qol.conflict.theirs', { device: other, date: formatDate(props.savedAt) })}</h3>
-            <pre className={styles.text}>{texts.theirs}</pre>
-          </section>
-        </div>
+      {texts && showText && columns}
+      {texts && !showText && (
+        // Every changed block has its own view, but a title, tag, or other page field may differ too.
+        <details>
+          <summary>{t('qol.conflict.wholePage')}</summary>
+          {columns}
+        </details>
       )}
     </Dialog>
   );
