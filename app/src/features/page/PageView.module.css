@@ -24,7 +24,7 @@
     block-size: 2px;
     margin-block-start: var(--space-2);
     border-radius: 1px;
-    background: var(--color-accent-clay);
+    background: var(--notebook-accent, var(--color-accent-clay));
   }
 
   .changed {

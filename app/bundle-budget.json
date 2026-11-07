@@ -1,7 +1,7 @@
 {
   "startup": {
     "jsKb": 538,
-    "cssKb": 27
+    "cssKb": 27.5
   },
   "after": [
     {
@@ -65,7 +65,7 @@
     "theme/fonts/caladea": 8,
     "node_modules/mathlive/mathlive.min.mjs": 226,
     "node_modules/pdfjs-dist/build/pdf.mjs": 131,
-    "core/audio/index.ts": 116,
+    "core/audio/index.ts": 117,
     "features/accounts/googleOffice/commands.ts": 82,
     "features/accounts/lms/commands.ts": 276,
     "features/accounts/meetings/commands.ts": 202,

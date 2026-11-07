@@ -1,5 +1,7 @@
 // The shape libraries in the Draw tab: basic shapes, then flowchart, network, and entity diagram pieces. Choosing one
 // adds it in the middle of the view, selected, with its handles. A second button puts a text box inside a shape.
+import { SquareIcon } from '@phosphor-icons/react/dist/csr/Square';
+import { TextboxIcon } from '@phosphor-icons/react/dist/csr/Textbox';
 import { isEnabled, useFlag } from '../../../app/flags';
 import type { CommandBarComponentProps } from '../../../registries/types';
 import { t } from '../../../strings/t';
@@ -85,9 +87,11 @@ export function DrawShapes({ toolProps }: CommandBarComponentProps) {
         data-ink-library=""
         onClick={(event) => void openShapeLibrary(event.currentTarget)}
       >
+        <SquareIcon aria-hidden className={styles.toolIcon} />
         {t('ink.library.menu')}
       </button>
       <button type="button" {...toolProps} className={styles.tool} data-ink-shape-text="" onClick={text}>
+        <TextboxIcon aria-hidden className={styles.toolIcon} />
         {t('ink.library.addText')}
       </button>
     </div>

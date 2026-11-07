@@ -13,7 +13,7 @@ import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { IconButton } from '../../ui';
 import type { MenuItemSpec } from '../../ui';
-import { treeStore, useMenuTriggers } from '../tree';
+import { treeStore, useMenuTriggers, useNotebookAccentOf } from '../tree';
 import { activateTab, closeOtherTabs, closeTab, moveTab, openInNewTab, openInWindow, stepTab, tabTitle } from './tabs';
 import styles from './TabStrip.module.css';
 
@@ -60,6 +60,8 @@ export function tabMenuItems(tab: Tab, index: number, count: number): MenuItemSp
 
 function TabItem({ tab, index, count, active }: { tab: Tab; index: number; count: number; active: boolean }) {
   const title = tabTitle(tab.location);
+  // Each tab shows its own notebook's color; the active one draws it as a 2 px edge.
+  const accent = useNotebookAccentOf(tab.location.notebookId);
   const wrapper = useRef<HTMLDivElement>(null);
   const press = useMenuTriggers(wrapper, () => ({
     label: t('qol.tabs.menu', { title }),
@@ -83,6 +85,8 @@ function TabItem({ tab, index, count, active }: { tab: Tab; index: number; count
       ref={wrapper}
       className={styles.tab}
       data-active={active ? '' : undefined}
+      data-accent={accent ?? undefined}
+      data-notebook-mark={active && accent ? 'tab' : undefined}
       data-drop={dropSide ?? undefined}
       draggable
       onDragStart={(event) => {

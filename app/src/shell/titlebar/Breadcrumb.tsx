@@ -3,8 +3,8 @@
 // narrow ('icon'), it shortens from the start on screen, "… › Lectures › Cell structure", while screen readers
 // still hear the whole path.
 
-import type { CSSProperties } from 'react';
 import { useLocation } from '../../app/location';
+import { useNotebookAccent } from '../../features/tree';
 import { t } from '../../strings/t';
 import { useNodes } from '../layout/useNode';
 import styles from './TitleBar.module.css';
@@ -15,7 +15,7 @@ export function Breadcrumb({ presentation }: { presentation: 'full' | 'icon' | '
   const nodes = useNodes(ids).filter((node) => node?.title);
   const titles = nodes.map((node) => node?.title ?? '');
   // The notebook's color is a small dot before its name, as the tree shows it.
-  const ink = nodes[0]?.kind === 'notebook' ? nodes[0].color : null;
+  const ink = useNotebookAccent();
   if (titles.length === 0) return null;
   const hiddenCount = presentation !== 'full' && titles.length > 2 ? titles.length - 2 : 0;
   return (
@@ -29,7 +29,9 @@ export function Breadcrumb({ presentation }: { presentation: 'full' | 'icon' | '
           data-after-ellipsis={hiddenCount > 0 && index === hiddenCount ? '' : undefined}
           aria-current={index === titles.length - 1 ? 'location' : undefined}
           data-ink={index === 0 && ink ? '' : undefined}
-          style={index === 0 && ink ? ({ '--crumb-ink': `var(--ink-${ink})` } as CSSProperties) : undefined}
+          // A crumb cut from the start of a narrow bar is hidden, so its dot is not a mark on screen.
+          data-notebook-mark={index === 0 && ink && hiddenCount === 0 ? 'breadcrumb' : undefined}
+          data-accent={index === 0 && ink ? ink : undefined}
         >
           {title}
         </li>
