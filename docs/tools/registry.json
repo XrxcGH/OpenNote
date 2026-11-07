@@ -3942,6 +3942,48 @@
       "flag": "accounts.captions"
     },
     {
+      "id": "text.notes.footnote",
+      "title": "Insert footnote",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.endnote",
+      "title": "Insert endnote",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.goTo",
+      "title": "Go to note or reference",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.toEndnotes",
+      "title": "Convert all footnotes to endnotes",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.toFootnotes",
+      "title": "Convert all endnotes to footnotes",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
+      "id": "text.notes.convertOne",
+      "title": "Convert this note",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.footnotes"
+    },
+    {
       "id": "page.zoomIn",
       "title": "Zoom page in",
       "category": "view",

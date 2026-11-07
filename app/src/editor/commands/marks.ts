@@ -1,11 +1,15 @@
-// Character formatting (owner: WP4): the marks people toggle, highlight and text colors, text sizes, and clearing.
-// Each function is a ProseMirror command, so the page's commands, the formatting bar, and tests share one body.
-import type { MarkType } from '@tiptap/pm/model';
+// Character formatting (owner: text:editor-commands): toggled marks, colors, text sizes, and clearing. Each function
+// is a ProseMirror command, so the page's commands, the formatting bar, and tests share one body. Run formats beyond
+// these live in runFormat.ts; paragraph formats in paragraph.ts.
+import type { Mark } from '@tiptap/pm/model';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
 import type { HighlightColor, TextSizeName } from '../schema/specs';
-import { fromChange, selectedTextblocks } from './command';
+import { isTextSize } from '../schema/constants';
+import { fromChange } from './command';
 import type { Change, Command } from './command';
 import { viaFormatTarget } from './formatTarget';
+import { CONTENT_MARKS, addMark, removeMark } from './runFormat';
+import { BODY_POINTS, nudgeSize, pointsOf, sizeText, stepSize } from './sizes';
 import { isMarkActive, markAttrs } from './state';
 
 export { isMarkActive, markAttrs } from './state';
@@ -15,40 +19,8 @@ export type ToggledMark = 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 
 /** Text sizes from small to extra large. Normal text has no mark, so it sits between small and large. */
 const SIZE_STEPS: readonly (TextSizeName | null)[] = ['small', null, 'large', 'xlarge'];
 
-/** Adds the mark to the selection, replacing one of the same type, or stores it for typing at a caret. */
-function addMark(tr: Transaction, type: MarkType, attrs: Record<string, unknown> | null): boolean {
-  const { selection } = tr;
-  const mark = type.create(attrs);
-  if (selection.empty) {
-    const marks = tr.storedMarks ?? selection.$from.marks();
-    if (!mark.isInSet(marks) && !type.isInSet(marks) && !canMark(tr, type)) return false;
-    tr.setStoredMarks(mark.addToSet(type.removeFromSet(marks)));
-    return true;
-  }
-  if (!canMark(tr, type)) return false;
-  for (const range of selection.ranges) {
-    tr.removeMark(range.$from.pos, range.$to.pos, type);
-    tr.addMark(range.$from.pos, range.$to.pos, mark);
-  }
-  return true;
-}
-
-function removeMark(tr: Transaction, type: MarkType): boolean {
-  const { selection } = tr;
-  if (selection.empty) {
-    tr.setStoredMarks(type.removeFromSet(tr.storedMarks ?? selection.$from.marks()));
-    return true;
-  }
-  for (const range of selection.ranges) tr.removeMark(range.$from.pos, range.$to.pos, type);
-  return true;
-}
-
-/** Whether some textblock in the selection allows the mark (code blocks allow none). */
-function canMark(tr: Transaction, type: MarkType): boolean {
-  return selectedTextblocks(tr).some(({ node }) => node.type.allowsMarkType(type));
-}
-
-/** Bold, italic, and the other marks without attributes: on unless the whole selection has it already. */
+/** Bold, italic, and the other marks without attributes: on unless the whole selection has it already. Bold takes a
+ * weight mark off, so Ctrl+B on Semibold text gives bold (R-MRK-27). */
 export function toggleMark(name: ToggledMark): Command {
   return viaFormatTarget({ format: name, toggle: true }, (state, dispatch) => {
     const type = state.schema.marks[name];
@@ -84,41 +56,94 @@ export function setTextColor(color: string | null): Command {
   return viaFormatTarget({ format: 'textColor', color }, change);
 }
 
-/** A text size; null is normal size. */
-export function setTextSize(size: TextSizeName | null): Command {
+/** A text size: a version 1 name or points as text (`10.5`); null is normal size. */
+export function setTextSize(size: string | null): Command {
   const change = fromChange((tr) => {
     const type = tr.doc.type.schema.marks.textSize;
-    return size === null ? removeMark(tr, type) : addMark(tr, type, { size });
+    if (size === null) return removeMark(tr, type);
+    return isTextSize(size) && addMark(tr, type, { size });
   });
   return viaFormatTarget({ format: 'textSize', size }, change);
 }
 
-/** The size of the selection's first character, or null for normal text. */
+/** The size of the selection's first character, or null for normal text. Points are text, such as `10.5`. */
 export function currentTextSize(state: EditorState): TextSizeName | null {
   return (markAttrs(state, 'textSize')?.size as TextSizeName | undefined) ?? null;
 }
 
-/** One step larger (1) or smaller (-1), from small through normal to extra large. False at either end. */
+/** Moves the size of every run in the selection on its own, or the size typing at the caret takes. */
+function resize(tr: Transaction, next: (points: number) => number): boolean {
+  const type = tr.doc.type.schema.marks.textSize;
+  const sizeOf = (marks: readonly Mark[]) =>
+    pointsOf((marks.find((mark) => mark.type === type)?.attrs.size as string | undefined) ?? null, BODY_POINTS);
+  const { selection } = tr;
+  if (selection.empty) {
+    const marks = tr.storedMarks ?? selection.$from.marks();
+    const from = sizeOf(marks);
+    if (from === null || next(from) === from || !selection.$from.parent.type.allowsMarkType(type)) return false;
+    tr.setStoredMarks(type.create({ size: sizeText(next(from)) }).addToSet(type.removeFromSet(marks)));
+    return true;
+  }
+  const runs: { from: number; to: number; size: string }[] = [];
+  for (const range of selection.ranges) {
+    tr.doc.nodesBetween(range.$from.pos, range.$to.pos, (node, pos, parent) => {
+      if (!node.isText || !parent?.type.allowsMarkType(type)) return true;
+      const at = sizeOf(node.marks);
+      if (at === null || next(at) === at) return false;
+      const from = Math.max(pos, range.$from.pos);
+      const to = Math.min(pos + node.nodeSize, range.$to.pos);
+      if (from < to) runs.push({ from, to, size: sizeText(next(at)) });
+      return false;
+    });
+  }
+  for (const run of runs) tr.addMark(run.from, run.to, type.create({ size: run.size }));
+  return runs.length > 0;
+}
+
+/** Word's grow and shrink (Ctrl+Shift+> and <): every run moves to the next size on the preset list. */
+export function growFont(direction: 1 | -1): Command {
+  const change = fromChange((tr) => resize(tr, (points) => stepSize(points, direction)));
+  return viaFormatTarget({ format: 'textSizeStep', direction, by: 'preset' }, change);
+}
+
+/** Plus or minus one point (Word Ctrl+] and Ctrl+[), clamped to 1 and 1638. */
+export function nudgeFont(direction: 1 | -1): Command {
+  const change = fromChange((tr) => resize(tr, (points) => nudgeSize(points, direction)));
+  return viaFormatTarget({ format: 'textSizeStep', direction, by: 'point' }, change);
+}
+
+/** One step larger (1) or smaller (-1), from small through normal to extra large. False at either end. Text sized
+ * in points steps through Word's list instead, so a version 2 size never jumps back to a name. */
 export function stepTextSize(direction: 1 | -1): Command {
   return viaFormatTarget({ format: 'textSizeStep', direction }, (state, dispatch) => {
-    const at = SIZE_STEPS.indexOf(currentTextSize(state));
+    const size = currentTextSize(state);
+    const at = SIZE_STEPS.indexOf(size);
+    if (at < 0) return fromChange((tr) => resize(tr, (points) => stepSize(points, direction)))(state, dispatch);
     const next = at + direction;
     if (next < 0 || next >= SIZE_STEPS.length) return false;
     return setTextSize(SIZE_STEPS[next])(state, dispatch);
   });
 }
 
-/** Takes off every character format but links, which are content rather than formatting. */
+/** Marks that clear character formatting keeps (DESIGN.md 4.1): content, review marks, code, language, direction. */
+export const KEPT_ON_CLEAR: ReadonlySet<string> = new Set([...CONTENT_MARKS, 'code', 'lang', 'dir']);
+
+/** Clear character formatting (Word Ctrl+Space): takes off every run format but the kept marks. The paragraph's
+ * style and its paragraph formatting stay. False when there was no run format to take off. */
 export const clearFormattingChange: Change = (tr) => {
-  const marks = Object.values(tr.doc.type.schema.marks).filter((type) => type.name !== 'link');
+  const marks = Object.values(tr.doc.type.schema.marks).filter((type) => !KEPT_ON_CLEAR.has(type.name));
   if (tr.selection.empty) {
-    tr.setStoredMarks((tr.storedMarks ?? tr.selection.$from.marks()).filter((mark) => mark.type.name === 'link'));
+    const current = tr.storedMarks ?? tr.selection.$from.marks();
+    const kept = current.filter((mark) => KEPT_ON_CLEAR.has(mark.type.name));
+    if (kept.length === current.length) return false;
+    tr.setStoredMarks(kept);
     return true;
   }
+  const before = tr.doc;
   for (const range of tr.selection.ranges) {
     for (const type of marks) tr.removeMark(range.$from.pos, range.$to.pos, type);
   }
-  return true;
+  return !tr.doc.eq(before);
 };
 
 export function clearFormatting(): Command {
