@@ -34,3 +34,11 @@ Saved notes keep their formula text. When a formula written before this change i
 - The date change touches the ten files that use the 1970 epoch; they move to two helpers in `engine/dates.ts`. Charts, calendar, and timeline views do not change visibly.
 - The differences file (`features/tables/fixtures/fn/DIFFERENCES.md`) lists every place where Excel, Sheets, and Calc disagree and which one OpenNote follows.
 - Revisit the row numbering only together with a format version that can migrate formula text.
+
+## Implementation notes
+
+- `sheetDialect` takes `rules: 'excel'` for table formulas and keeps the textbook rules by default, so the calculator, the grapher, and quick math in a note read text as before. The Excel rules set the dialect options `signBindsTighter`, `powerAssociativity: 'left'`, `inputDigits: 15`, and `excelRefs`.
+- The engine's `Table` carries `sheetVersion` for `data.sheet.v`. Without it, `formula/legacy.ts` rewrites a formula's text before it is read, and text the old rules refused is still refused there. Writing `v` belongs to the lane that saves `data.sheet`.
+- The near-zero rule sets the result of a formula's last `+` or `-` to 0 when it is smaller than 2^-48 of the larger operand. Microsoft documents the behavior, not the bound, so the bound is ours and the two documented examples pin it.
+- Text in arithmetic reads US forms until the engine knows the person's region: `$`, `%`, grouped digits, accounting brackets, `1 1/2`, times, ISO and month-first dates, and English month names.
+- `DATE` keeps its year rule (years 0 to 99 add 1900; other years count as written), so `DATE(1899,12,30)` is serial 0. `fixtures/fn/DIFFERENCES.md` lists Excel's rule.

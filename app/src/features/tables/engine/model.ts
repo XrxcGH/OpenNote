@@ -52,6 +52,11 @@ export interface Row {
 export interface Table {
   columns: readonly Column[];
   rows: readonly Row[];
+  /**
+   * The table's data.sheet.v. A table that has it computes with Excel's rules (ADR 0058); one without it was written
+   * before them, and its formulas keep their old meaning (formula/legacy.ts).
+   */
+  sheetVersion?: number;
 }
 
 export const EMPTY_CELL: Cell = Object.freeze({ raw: '', value: null });

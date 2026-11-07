@@ -25,12 +25,14 @@ export interface CycleCell {
 
 const parsed = new Map<string, ParseResult>();
 
-function parseCached(formula: string): ParseResult {
-  let result = parsed.get(formula);
+/** Parses a formula once. `legacy` is true for a table without data.sheet.v (formula/legacy.ts). */
+function parseCached(formula: string, legacy: boolean): ParseResult {
+  const key = `${legacy ? 'L' : 'X'}${formula}`;
+  let result = parsed.get(key);
   if (!result) {
     if (parsed.size > 500) parsed.clear();
-    result = parseFormula(formula);
-    parsed.set(formula, result);
+    result = parseFormula(formula, undefined, { legacy });
+    parsed.set(key, result);
   }
   return result;
 }
@@ -38,7 +40,7 @@ function parseCached(formula: string): ParseResult {
 const REFUSED: Compiled = { fn: () => err('VALUE'), deps: [] };
 
 function buildUnit(formula: string, table: Table, owner: Owner, env: Env): Unit {
-  const result = parseCached(formula);
+  const result = parseCached(formula, table.sheetVersion === undefined);
   const scope = { columns: table.columns, rowCount: table.rows.length, env };
   return { ...owner, compiled: result.ok ? compileSafely(result.node, scope, owner) : REFUSED };
 }

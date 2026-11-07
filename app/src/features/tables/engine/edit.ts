@@ -13,11 +13,22 @@ export interface ColumnInit extends Partial<Column> {
   name: string;
 }
 
-/** Checks typed formula text (without the "=") in the person's syntax. Returns the stored form, or what's wrong. */
-export function checkFormulaInput(text: string, locale: Locale): string | FormulaProblem {
+/** The part of a table that decides which rules its formulas follow: Excel's with data.sheet.v, else the old ones. */
+export type SheetRules = Pick<Table, 'sheetVersion'>;
+
+/** True for a table whose formulas keep the textbook rules (formula/legacy.ts). No table means quick math's rules. */
+function isLegacy(table?: SheetRules): boolean {
+  return table?.sheetVersion === undefined;
+}
+
+/**
+ * Checks typed formula text (without the "=") in the person's syntax, under the rules of the table it goes in, so a
+ * formula is checked by the same rules recalc computes it with. Returns the stored form, or what's wrong.
+ */
+export function checkFormulaInput(text: string, locale: Locale, table?: SheetRules): string | FormulaProblem {
   const stored = convertFormula(text, syntaxOf(locale), STORED);
   if (typeof stored !== 'string') return stored;
-  const parsed = parseFormula(stored);
+  const parsed = parseFormula(stored, undefined, { legacy: isLegacy(table) });
   return parsed.ok ? stored : parsed.problem;
 }
 
@@ -25,10 +36,10 @@ export function checkFormulaInput(text: string, locale: Locale): string | Formul
  * Makes one cell from typed text. With `allowFormula`, text that starts with "=" and reads as a formula becomes one,
  * kept in stored form. Pasted text never passes it, so a pasted "=1+1" stays text, as does "=1+" typed by hand.
  */
-export function makeCell(column: Column, raw: string, locale: Locale, allowFormula: boolean): Cell {
+export function makeCell(column: Column, raw: string, locale: Locale, allowFormula: boolean, table?: SheetRules): Cell {
   if (column.formula !== undefined) return EMPTY_CELL;
   if (allowFormula && raw.startsWith('=')) {
-    const stored = checkFormulaInput(raw.slice(1), locale);
+    const stored = checkFormulaInput(raw.slice(1), locale, table);
     if (typeof stored === 'string') return { raw, value: null, formula: stored };
   }
   return { raw, value: parseInput(column, raw, locale) };
@@ -40,18 +51,21 @@ function nextRowId(rows: readonly Row[]): string {
   return `r${max + 1}`;
 }
 
+/** Builds a table. Give `sheetVersion` (the table's data.sheet.v) when it has one, so it follows Excel's rules. */
 export function createTable(
   inits: readonly ColumnInit[],
   data: readonly (readonly string[])[],
   locale: Locale,
   env: Env = DEFAULT_ENV,
+  sheetVersion?: number,
 ): Table {
+  const rules: SheetRules = sheetVersion === undefined ? {} : { sheetVersion };
   const columns: Column[] = inits.map((init, i) => ({ id: `c${i}`, type: 'text', ...init }));
   const rows: Row[] = data.map((line, r) => ({
     id: `r${r}`,
-    cells: columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true)),
+    cells: columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true, rules)),
   }));
-  return recalculate({ columns, rows }, env);
+  return recalculate({ columns, rows, ...rules }, env);
 }
 
 function replaceCell(table: Table, row: number, col: number, cell: Cell): Table {
@@ -76,11 +90,11 @@ export function setCellInput(table: Table, edit: CellEdit, locale: Locale, env?:
   const { row, col, raw } = edit;
   const column = table.columns[col];
   if (!column || !table.rows[row] || column.formula !== undefined) return table;
-  return recalculate(replaceCell(table, row, col, makeCell(column, raw, locale, true)), env);
+  return recalculate(replaceCell(table, row, col, makeCell(column, raw, locale, true, table)), env);
 }
 
 export function addRow(table: Table, line: readonly string[], locale: Locale, env?: Env): Table {
-  const cells = table.columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true));
+  const cells = table.columns.map((column, c) => makeCell(column, line[c] ?? '', locale, true, table));
   return recalculate({ ...table, rows: [...table.rows, { id: nextRowId(table.rows), cells }] }, env);
 }
 
@@ -117,7 +131,7 @@ export type FormulaResult = { ok: true; table: Table } | { ok: false; problem: F
 export function setColumnFormula(table: Table, col: number, formula: string | undefined, env?: Env): FormulaResult {
   if (!table.columns[col]) return { ok: false, problem: { message: 'That column is gone.', pos: 0 } };
   if (formula === undefined) return { ok: true, table: clearFormula(table, col) };
-  const parsed = parseFormula(formula);
+  const parsed = parseFormula(formula, undefined, { legacy: isLegacy(table) });
   if (!parsed.ok) return { ok: false, problem: parsed.problem };
   const base = withColumn(table, col, { formula });
   const rows = base.rows.map((row) => {

@@ -1,6 +1,6 @@
 // Solids of revolution against textbook answers (Stewart, Calculus, sections 6.2 and 6.3).
 import { describe, expect, it } from 'vitest';
-import { integrate, nearFraction, piText, revolveVolume } from './revolve';
+import { integrate, nearFraction, piText, revolveInputProblem, revolveVolume } from './revolve';
 import type { RevolveSpec } from './source3d';
 
 const about = (axis: 'x' | 'y', at = 0) => ({ kind: axis, at });
@@ -83,5 +83,16 @@ describe('solids of revolution', () => {
     expect(nearFraction(Math.SQRT2)).toBeNull();
     expect(piText([1, 2])).toBe('π/2');
     expect(piText([-1, 1])).toBe('−π');
+  });
+});
+
+describe('the Solids fields', () => {
+  it('names why no solid can be made', () => {
+    expect(revolveInputProblem('sqrt(x)', 0, 4, 0)).toBeNull();
+    expect(revolveInputProblem('sqrt(x)', 4, 0, 0)).toBe('order');
+    expect(revolveInputProblem('sqrt(x)', 2, 2, 0)).toBe('order');
+    expect(revolveInputProblem('sqrt(x)', Number.NaN, 4, 0)).toBe('numbers');
+    expect(revolveInputProblem('sqrt(x)', 0, 4, Number.NaN)).toBe('numbers');
+    expect(revolveInputProblem('  ', 0, 4, 0)).toBe('curve');
   });
 });
