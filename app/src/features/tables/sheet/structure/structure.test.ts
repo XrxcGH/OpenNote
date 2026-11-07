@@ -1,0 +1,307 @@
+// Row heights, auto-fit, hide and unhide, freeze, outline groups, and insert and delete cells (DESIGN 13.2).
+// Expected values are worked out by hand from the format spec's keys (rows, cols, table.freeze) and from Excel's
+// documented rules for outlines and shifting cells.
+import { describe, expect, it } from 'vitest';
+import type { TableData } from '../../../../editor/schema/specs';
+import { applyTableOp } from '../../../../editor/commands/tables';
+import { applyPatch, type Json, type JsonObject } from '../model/json';
+import type { Sheet } from '../model/types';
+import { deleteCells, insertCells } from './cells';
+import './hooks';
+import { columnPadding, distributedWidths, fitColumnWidths, fitWidth } from './fit';
+import { collapse, expand, group, levelOf, showLevels, ungroup } from './outline';
+import {
+  distributeRows,
+  freezeOf,
+  hideLines,
+  rowHeight,
+  setFreeze,
+  setRowHeight,
+  unhideLines,
+  visibleIndexes,
+} from './lines';
+import { shiftFormula } from './reflow';
+
+function table(rows: string[][], header = false): TableData {
+  const columns = rows[0].map((_, c) => ({ id: `k${c + 1}`, width: 160 }));
+  return {
+    header,
+    columns,
+    rows: rows.map((texts, r) => ({
+      id: `r${r + 1}`,
+      cells: Object.fromEntries(columns.map((c, i) => [c.id, { markdown: texts[i] ?? '' }])),
+    })),
+  };
+}
+
+const grid5 = () =>
+  table(Array.from({ length: 5 }, (_, r) => Array.from({ length: 4 }, (_, c) => `${'ABCD'[c]}${r + 1}`)));
+
+/** Applies a result's merge patch to the sheet the way the file does. */
+const after = (sheet: Sheet, patch: JsonObject | null): Sheet => {
+  if (!patch) return sheet;
+  return ((applyPatch({ sheet } as Json, patch as Json) as JsonObject).sheet ?? {}) as Sheet;
+};
+
+describe('row heights', () => {
+  it('sets an exact height, a minimum height, and clears it', () => {
+    const data = grid5();
+    const exact = setRowHeight({}, data, ['r2', 'r3'], 40, true);
+    expect(exact.sheet.rows).toEqual({ r2: { height: 40, exact: true }, r3: { height: 40, exact: true } });
+    const min = setRowHeight(exact.sheet, data, ['r2'], 55.456);
+    expect(rowHeight(min.sheet, 'r2')).toEqual({ height: 55.46, exact: false });
+    const cleared = setRowHeight(min.sheet, data, ['r2', 'r3'], null);
+    expect(cleared.sheet).toEqual({});
+    expect(cleared.patch).toEqual({ sheet: null });
+  });
+
+  it('keeps heights within 1 to 10,000', () => {
+    const data = grid5();
+    expect(rowHeight(setRowHeight({}, data, ['r1'], 0.2).sheet, 'r1')?.height).toBe(1);
+    expect(rowHeight(setRowHeight({}, data, ['r1'], 99999).sheet, 'r1')?.height).toBe(10000);
+  });
+
+  it('distributes rows to equal heights that keep the total', () => {
+    const data = grid5();
+    const sheet = setRowHeight({}, data, ['r1'], 20).sheet;
+    const out = distributeRows(sheet, data, 0, 2, [20, 40, 60]);
+    expect(out.sheet.rows).toEqual({ r1: { height: 40 }, r2: { height: 40 }, r3: { height: 40 } });
+  });
+
+  it('runs as a table op with the caret row by default', () => {
+    const change = applyTableOp(
+      grid5(),
+      { row: 2, column: 1 },
+      { op: 'rowHeight', height: 50, exact: true },
+      undefined,
+    )!;
+    expect(change.extra).toEqual({ sheet: { rows: { r3: { height: 50, exact: true } } } });
+    expect(applyTableOp(grid5(), { row: 2, column: 1 }, { op: 'fitRows' }, undefined)).toBeNull();
+  });
+});
+
+describe('auto-fit and distribute columns', () => {
+  const measure = (line: string) => line.length * 7;
+
+  it('fits a column to its longest text plus padding', () => {
+    const padding = columnPadding({});
+    expect(padding).toBeCloseTo(8 * (96 / 72) + 1, 1);
+    const widths = fitColumnWidths(
+      [
+        { index: 0, texts: ['Item', 'Revenue forecast', 'Cost'] },
+        { index: 1, texts: [''] },
+      ],
+      measure,
+      padding,
+    );
+    // 'Revenue forecast' is 16 characters, 112 wide, so the column is 112 plus the padding.
+    expect(Math.abs(widths.get(0)! - (112 + padding))).toBeLessThan(2);
+    expect(widths.get(1)).toBeNull();
+    expect(fitWidth(5, 0)).toBe(40);
+  });
+
+  it('runs as a table op', () => {
+    const data = table([['Revenue forecast', 'x']]);
+    const change = applyTableOp(
+      data,
+      { row: 0, column: 0 },
+      { op: 'fitColumns', texts: (c) => [data.rows[0].cells[data.columns[c].id].markdown], measure },
+      undefined,
+    )!;
+    expect(Math.abs(change.data.columns[0].width - (112 + columnPadding({})))).toBeLessThan(2);
+    expect(change.data.columns[1].width).toBe(160);
+  });
+
+  it('distributes widths evenly and keeps the total', () => {
+    expect(distributedWidths([100, 200, 300])).toEqual([200, 200, 200]);
+    const data = table([['a', 'b', 'c']]);
+    data.columns[0].width = 100;
+    data.columns[1].width = 200;
+    data.columns[2].width = 300;
+    const change = applyTableOp(
+      data,
+      { row: 0, column: 0 },
+      { op: 'distributeColumns', box: { row1: 0, col1: 0, row2: 0, col2: 2 } },
+      undefined,
+    )!;
+    expect(change.data.columns.map((c) => c.width)).toEqual([200, 200, 200]);
+  });
+});
+
+describe('hide and unhide', () => {
+  it('hides a column and Unhide with A:C selected shows it again, keeping its data', () => {
+    const data = grid5();
+    const hidden = hideLines({}, data, 'cols', 1, 1);
+    expect(hidden.sheet.cols).toEqual({ k2: { hidden: true } });
+    expect(visibleIndexes(hidden.sheet, data, 'cols')).toEqual([0, 2, 3]);
+    expect(data.rows[0].cells.k2.markdown).toBe('B1');
+    const shown = unhideLines(hidden.sheet, data, 'cols', 0, 2);
+    expect(shown.sheet).toEqual({});
+    expect(visibleIndexes(shown.sheet, data, 'cols')).toEqual([0, 1, 2, 3]);
+  });
+
+  it('runs as table ops on the selected block', () => {
+    const data = grid5();
+    const box = { row1: 1, col1: 1, row2: 2, col2: 1 };
+    const rows = applyTableOp(data, { row: 1, column: 1 }, { op: 'hideRows', box }, undefined)!;
+    expect(rows.extra).toEqual({ sheet: { rows: { r2: { hidden: true }, r3: { hidden: true } } } });
+    const stored = after({}, rows.extra as JsonObject);
+    const back = applyTableOp(
+      data,
+      { row: 0, column: 0 },
+      { op: 'unhideRows', box: { ...box, row1: 0, row2: 3 } },
+      stored,
+    )!;
+    expect(back.extra).toEqual({ sheet: null });
+    expect(applyTableOp(data, { row: 0, column: 0 }, { op: 'unhideRows' }, undefined)).toBeNull();
+  });
+
+  it('shows rows hidden by their outline too', () => {
+    const data = grid5();
+    const grouped = group({}, data, 'rows', 1, 2);
+    const closed = collapse(grouped.sheet, data, 'rows', 3);
+    expect(visibleIndexes(closed.sheet, data, 'rows')).toEqual([0, 3, 4]);
+    const shown = unhideLines(closed.sheet, data, 'rows', 0, 4);
+    expect(visibleIndexes(shown.sheet, data, 'rows')).toEqual([0, 1, 2, 3, 4]);
+  });
+});
+
+describe('freeze panes', () => {
+  it('freezing one row stores data.sheet.table.freeze.rows as 1', () => {
+    const data = grid5();
+    const frozen = setFreeze({}, data, 1, 0);
+    expect(frozen.sheet).toEqual({ table: { freeze: { rows: 1, cols: 0 } } });
+    expect(freezeOf(frozen.sheet)).toEqual({ rows: 1, cols: 0 });
+    const change = applyTableOp(data, { row: 0, column: 0 }, { op: 'freezeTopRow' }, undefined)!;
+    expect(change.extra).toEqual({ sheet: { table: { freeze: { rows: 1, cols: 0 } } } });
+  });
+
+  it('freezes at the caret, clamps, and unfreezes', () => {
+    const data = grid5();
+    const at = applyTableOp(data, { row: 2, column: 1 }, { op: 'freezeAtCaret' }, undefined)!;
+    expect(at.extra).toEqual({ sheet: { table: { freeze: { rows: 2, cols: 1 } } } });
+    expect(freezeOf(setFreeze({}, data, 99, -3).sheet)).toEqual({ rows: 5, cols: 0 });
+    const off = setFreeze(setFreeze({}, data, 1, 1).sheet, data, 0, 0);
+    expect(off.sheet).toEqual({});
+  });
+});
+
+describe('outline groups', () => {
+  it('groups, nests, and ungroups', () => {
+    const data = grid5();
+    const one = group({}, data, 'rows', 1, 3);
+    const two = group(one.sheet, data, 'rows', 2, 2);
+    expect([1, 2, 3].map((i) => levelOf(two.sheet, 'rows', `r${i + 1}`))).toEqual([1, 2, 1]);
+    const back = ungroup(two.sheet, data, 'rows', 1, 3);
+    expect([1, 2, 3].map((i) => levelOf(back.sheet, 'rows', `r${i + 1}`))).toEqual([0, 1, 0]);
+  });
+
+  it('caps the level at 7', () => {
+    let sheet: Sheet = {};
+    const data = grid5();
+    for (let i = 0; i < 9; i++) sheet = group(sheet, data, 'cols', 0, 0).sheet;
+    expect(levelOf(sheet, 'cols', 'k1')).toBe(7);
+  });
+
+  it('collapses the group above its summary row and expands it', () => {
+    const data = grid5();
+    const grouped = group({}, data, 'rows', 1, 2).sheet;
+    const closed = collapse(grouped, data, 'rows', 3);
+    expect(closed.sheet.rows).toEqual({
+      r2: { level: 1, hidden: true },
+      r3: { level: 1, hidden: true },
+      r4: { collapsed: true },
+    });
+    const open = expand(closed.sheet, data, 'rows', 3);
+    expect(open.sheet.rows).toEqual({ r2: { level: 1 }, r3: { level: 1 } });
+    expect(collapse(grouped, data, 'rows', 1).patch).toBeNull();
+  });
+
+  it('expanding an outer group leaves an inner collapsed group collapsed', () => {
+    const data = table(Array.from({ length: 7 }, (_, r) => [`r${r}`]));
+    // Rows 2..5 (index 1..4) are level 1, rows 3..4 (index 2..3) are level 2; row 6 (index 5) is the outer summary.
+    let sheet = group({}, data, 'rows', 1, 4).sheet;
+    sheet = group(sheet, data, 'rows', 2, 3).sheet;
+    sheet = collapse(sheet, data, 'rows', 4).sheet; // inner summary is index 4 (level 1)
+    sheet = collapse(sheet, data, 'rows', 5).sheet; // outer summary
+    expect(visibleIndexes(sheet, data, 'rows')).toEqual([0, 5, 6]);
+    sheet = expand(sheet, data, 'rows', 5).sheet;
+    expect(visibleIndexes(sheet, data, 'rows')).toEqual([0, 1, 4, 5, 6]);
+    sheet = expand(sheet, data, 'rows', 4).sheet;
+    expect(visibleIndexes(sheet, data, 'rows')).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('the level buttons show up to the chosen level', () => {
+    const data = grid5();
+    let sheet = group({}, data, 'rows', 1, 2).sheet;
+    sheet = group(sheet, data, 'rows', 2, 2).sheet;
+    expect(visibleIndexes(showLevels(sheet, data, 'rows', 1).sheet, data, 'rows')).toEqual([0, 3, 4]);
+    expect(visibleIndexes(showLevels(sheet, data, 'rows', 2).sheet, data, 'rows')).toEqual([0, 1, 3, 4]);
+    expect(visibleIndexes(showLevels(sheet, data, 'rows', 3).sheet, data, 'rows')).toEqual([0, 1, 2, 3, 4]);
+  });
+});
+
+describe('insert and delete cells', () => {
+  const text = (data: TableData, r: number, c: number) => data.rows[r].cells[data.columns[c].id].markdown;
+
+  it('insert cells shifting down moves the column below the block', () => {
+    const data = table([
+      ['a1', 'b1'],
+      ['a2', 'b2'],
+      ['a3', 'b3'],
+    ]);
+    const out = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down').data;
+    expect([0, 1, 2, 3].map((r) => text(out, r, 0))).toEqual(['a1', '', 'a2', 'a3']);
+    expect([0, 1, 2, 3].map((r) => text(out, r, 1))).toEqual(['b1', 'b2', 'b3', '']);
+    expect(out.rows).toHaveLength(4);
+  });
+
+  it('insert cells shifting right adds a column when content would leave the table', () => {
+    const data = table([['a', 'b']]);
+    const out = insertCells(data, {}, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'right').data;
+    expect(out.columns).toHaveLength(3);
+    expect([0, 1, 2].map((c) => text(out, 0, c))).toEqual(['', 'a', 'b']);
+  });
+
+  it('delete cells shifting up pulls the cells below in', () => {
+    const data = table([['a1'], ['a2'], ['a3'], ['a4']]);
+    const out = deleteCells(data, {}, { row1: 1, col1: 0, row2: 2, col2: 0 }, 'up').data;
+    expect([0, 1, 2, 3].map((r) => text(out, r, 0))).toEqual(['a1', 'a4', '', '']);
+  });
+
+  it('references follow the moved cells and a deleted cell reads #REF!', () => {
+    const data = table([
+      ['1', '=A2+A3'],
+      ['2', ''],
+      ['3', ''],
+    ]);
+    const down = insertCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'down').data;
+    expect(text(down, 0, 1)).toBe('=A3+A4');
+    const up = deleteCells(data, {}, { row1: 1, col1: 0, row2: 1, col2: 0 }, 'up').data;
+    expect(text(up, 0, 1)).toBe('=#REF!+A2');
+  });
+
+  it('styles move with their cells', () => {
+    const data = table([['a'], ['b'], ['c']]);
+    const sheet = { styles: { s1: { font: { bold: true } } }, cells: { r2: { k1: 's1' } } } as unknown as Sheet;
+    const out = insertCells(data, sheet, { row1: 0, col1: 0, row2: 0, col2: 0 }, 'down');
+    const next = after(sheet, out.patch);
+    expect(next.cells).toEqual({ r3: { k1: 's1' } });
+  });
+
+  it('runs as table ops', () => {
+    const data = table([['x'], ['y']]);
+    const change = applyTableOp(data, { row: 0, column: 0 }, { op: 'insertCells', shift: 'down' }, undefined)!;
+    expect(change.data.rows.map((r) => r.cells.k1.markdown)).toEqual(['', 'x', 'y']);
+  });
+});
+
+describe('shiftFormula', () => {
+  const block = { row1: 1, col1: 0, row2: Infinity, col2: 0, dRow: 2, dCol: 0 };
+  it('moves cells and whole ranges inside the block, leaves the rest', () => {
+    expect(shiftFormula('A1+A2+B2', block)).toBe('A1+A4+B2');
+    expect(shiftFormula('SUM(A2:A3)', block)).toBe('SUM(A4:A5)');
+    expect(shiftFormula('SUM(A1:A3)', block)).toBe('SUM(A1:A3)');
+    expect(shiftFormula('$A$2+Other!A2', block)).toBe('$A$4+Other!A2');
+  });
+});
