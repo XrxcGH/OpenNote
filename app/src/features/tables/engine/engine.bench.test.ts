@@ -1,6 +1,9 @@
 // The Phase 7 exit gate (DEVELOPMENT.md): a 1,000-row table sorts and redraws its chart within 100 ms.
-// Each run edits one cell, which recalculates every formula. It then filters and sorts on several columns,
-// and builds the chart specs. The median of several runs must stay under budget, and the test prints its numbers.
+// Each run edits one cell and recalculates. It then filters and sorts on several columns, and builds the chart
+// specs. The median of several runs must stay under budget, and the test prints its numbers.
+// The spreadsheet budgets of the tables design (section 18, ADR 0065) follow: 100,000 cells with 10,000 formulas, a
+// chain 10,000 formulas deep, and 1,000 sums over 10,000 rows. CI runners are slower than the development machine,
+// so budgets there are multiplied by CI_FACTOR.
 
 import { describe, expect, it } from 'vitest';
 import { buildChartSpec } from './chart';
@@ -10,6 +13,7 @@ import { EN_US } from './locale';
 import type { Table } from './model';
 
 const BUDGET_MS = 100;
+const CI_FACTOR = process.env.CI ? 3 : 1;
 const QTY = 2;
 const PRICE = 3;
 const DUE = 4;
@@ -100,5 +104,51 @@ describe('performance budget', () => {
     expect(row[TOTAL].value).toBeCloseTo((row[QTY].value as number) * (row[PRICE].value as number), 6);
     const share = edited.rows.reduce((sum, r) => sum + (r.cells[6].value as number), 0);
     expect(share).toBeCloseTo(1, 9);
+  });
+});
+
+describe('spreadsheet budgets (ADR 0065)', () => {
+  const NUMBERS = Array.from({ length: 10 }, (_, c) => ({ name: `N${c}`, type: 'number' as const }));
+
+  it('edits one cell of 100,000 cells with 10,000 formulas in under 16 ms', () => {
+    const data = Array.from({ length: 10_000 }, (_, i) => [
+      String(i),
+      String(i * 2),
+      String(i % 7),
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      `=A${i + 1}+B${i + 1}*C${i + 1}`,
+    ]);
+    const table = createTable(NUMBERS, data, EN_US);
+    const time = median(table, (t, i) => setCellInput(t, { row: 5 + i, col: 0, raw: String(9 + i) }, EN_US));
+    const edited = setCellInput(table, { row: 5, col: 0, raw: '100' }, EN_US);
+    console.info(`100,000 cells, 10,000 formulas: edit ${time.toFixed(1)} ms (budget 16 ms)`);
+    expect(edited.rows[5].cells[9].value).toBe(100 + 10 * 5);
+    expect(time).toBeLessThan(16 * CI_FACTOR);
+  });
+
+  it('edits the head of a 10,000-deep chain in under 30 ms', () => {
+    const data = Array.from({ length: 10_000 }, (_, i) => ['1', i === 0 ? '=A1' : `=B${i}+A${i + 1}`]);
+    const table = createTable(NUMBERS.slice(0, 2), data, EN_US);
+    expect(table.rows[9999].cells[1].value).toBe(10_000);
+    const time = median(table, (t, i) => setCellInput(t, { row: 0, col: 0, raw: String(2 + i) }, EN_US), 9);
+    const edited = setCellInput(table, { row: 0, col: 0, raw: '2' }, EN_US);
+    console.info(`10,000-deep chain: edit ${time.toFixed(1)} ms (budget 30 ms)`);
+    expect(edited.rows[9999].cells[1].value).toBe(10_001);
+    expect(time).toBeLessThan(30 * CI_FACTOR);
+  });
+
+  it('recalculates 1,000 cells of SUM(A1:A10000) in under 20 ms', () => {
+    const data = Array.from({ length: 10_000 }, (_, i) => [String(i), i < 1000 ? `=SUM(A1:A10000)+${i}` : '']);
+    const table = createTable(NUMBERS.slice(0, 2), data, EN_US);
+    const time = median(table, (t, i) => setCellInput(t, { row: 5000 + i, col: 0, raw: String(i) }, EN_US));
+    const edited = setCellInput(table, { row: 0, col: 0, raw: '1' }, EN_US);
+    console.info(`1,000 sums over 10,000 rows: edit ${time.toFixed(1)} ms (budget 20 ms)`);
+    expect(edited.rows[999].cells[1].value).toBe(49_995_000 + 1 + 999);
+    expect(time).toBeLessThan(20 * CI_FACTOR);
   });
 });
