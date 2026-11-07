@@ -20,7 +20,7 @@ import { diagnostics } from './diagnostics';
 import { keys } from './keys';
 import { pageSync } from './pageSync';
 import { editor } from './editor';
-import { images } from './images';
+import { images } from './imagesStart';
 import { paste } from './paste';
 import { tables } from './tables';
 import { code } from './code';
@@ -40,7 +40,7 @@ import { interopLatex } from './interopLatex';
 import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
-import { video } from './video';
+import { video } from './videoStart';
 import { study } from './study';
 import { science } from './science';
 import { qolSearch } from './qolSearch';
@@ -109,14 +109,28 @@ import { textCommands } from './textCommands';
 import { textFonts } from './textFonts';
 import { textStyles } from './textStyles';
 import { textHome } from './textHome';
+// Text formatting, spreadsheet tables, and the code studio, Beta 11.
+import { sheetConditional } from './sheetConditional';
+import { fnArrays } from './fnArrays';
+import { fnFinance } from './fnFinance';
+import { fnStats } from './fnStats';
+import { sheetFormat } from './sheetFormat';
+import { sheetMerge } from './sheetMerge';
+import { sheetValidation } from './sheetValidation';
+import { sheetTools } from './sheetTools';
+import { textFind } from './textFind';
 import { textPane } from './textPane';
+import { textLanguage } from './textLanguage';
 import { textRuler } from './textRuler';
 import { textSymbols } from './textSymbols';
-import { textLanguage } from './textLanguage';
+import { codeStudioEditor } from './codeStudio/editor';
+import { codeStudioProject } from './codeStudio/project';
+import { codeStudioRun } from './codeStudio/run';
+import { codeStudioPacks } from './codeStudio/packs';
+import { codeStudioStudio } from './codeStudio/studio';
 import { textNotes } from './textNotes';
 import { textReview } from './textReview';
 import { textLayout } from './textLayout';
-import { textFind } from './textFind';
 
 export const en = {
   common,
@@ -227,12 +241,28 @@ export const en = {
   textFonts,
   textStyles,
   textHome,
+  sheetConditional,
+  fnArrays,
+  fnFinance,
+  fnStats,
+  sheetFormat,
+  sheetMerge,
+  sheetValidation,
+  sheetTools,
+  textFind,
   textPane,
+  textLanguage,
   textRuler,
   textSymbols,
-  textLanguage,
   textNotes,
   textReview,
   textLayout,
-  textFind,
+  /** The code studio's namespaces, one file per lane under codeStudio/. */
+  codeStudio: {
+    editor: codeStudioEditor,
+    project: codeStudioProject,
+    run: codeStudioRun,
+    packs: codeStudioPacks,
+    studio: codeStudioStudio,
+  },
 } as const;

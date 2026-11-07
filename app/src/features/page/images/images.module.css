@@ -90,6 +90,18 @@
     touch-action: none;
   }
 
+  /* Touch-size controls (Settings, Appearance): every handle and toolbar button is a 44 px target (A1-A07-19). */
+  :global(:root[data-density='touch']) .handle {
+    inline-size: var(--size-chrome-hit-touch);
+    block-size: var(--size-chrome-hit-touch);
+    margin: calc(var(--size-chrome-hit-touch) / -2);
+  }
+
+  :global(:root[data-density='touch']) .toolbar button {
+    min-inline-size: var(--size-chrome-hit-touch);
+    min-block-size: var(--size-chrome-hit-touch);
+  }
+
   .handle::after {
     content: '';
     position: absolute;

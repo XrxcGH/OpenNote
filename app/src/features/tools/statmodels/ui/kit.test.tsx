@@ -64,6 +64,19 @@ describe('the statistical models kit window', () => {
     expect(await within(coefficients).findByText('extra')).toBeTruthy();
   });
 
+  it('says which file it read, and says when a damaged file could not be read', async () => {
+    saveTab('glm');
+    renderUi(<StatModelsKit />);
+    const data = (await screen.findByRole('textbox', { name: 'Data' })) as HTMLTextAreaElement;
+    const picker = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(picker, new File(['hours,passed\n0,0\n1,1'], 'study.csv', { type: 'text/csv' }));
+    expect(await screen.findByText('Read study.csv.')).toBeTruthy();
+    expect(data.value).toBe('hours,passed\n0,0\n1,1');
+    await userEvent.upload(picker, new File([new Uint8Array([0, 0, 255, 254, 1, 2, 0, 3])], 'broken.bin'));
+    expect(await screen.findByText('The file could not be read.')).toBeTruthy();
+    expect(data.value).toBe('hours,passed\n0,0\n1,1');
+  });
+
   it('keeps every number and term of a result table on one line in a narrow window', async () => {
     saveTab('glm');
     renderUi(
