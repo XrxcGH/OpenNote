@@ -29,6 +29,10 @@ export const textStyles = {
     word365: 'Word for Microsoft 365',
     googleDocs: 'Google Docs',
   },
+  summary: {
+    bold: 'bold',
+    italic: 'italic',
+  },
   source: {
     app: 'Built in',
     notebook: 'This notebook',

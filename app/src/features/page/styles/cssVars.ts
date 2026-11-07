@@ -1,8 +1,8 @@
 // Named styles as CSS (text DESIGN.md 2.4; ADR 0082). Each key a notebook or page sets on a style becomes a custom
 // property on the document root, such as --style-h1-size-pt, and one generated rule per style reads it. Changing a
 // value swaps a variable: nothing re-renders and the editor sees no transaction. Adding or removing a key changes
-// the generated rules, which is still a CSS change only. Keys only the app sets give no rule, so the type tokens
-// keep drawing an unstyled notebook exactly as before.
+// the generated rules, which is still a CSS change only. On built-in elements, keys only the app sets give no rule,
+// so the type tokens keep drawing an unstyled notebook exactly as before.
 import { PEN_COLORS } from '../../../editor/schema/constants';
 import type { Border, BorderSide, Indent, LineSpacing, Shade } from '../../../editor/paragraph/attributes';
 import { HEADING_STYLES } from './model';
@@ -152,36 +152,54 @@ export function namedStyleVar(style: string, key: string, index = 0): string {
   return `--style-${style}-${kebab(key)}${index === 0 ? '' : `-${index + 1}`}`;
 }
 
-/** The elements a style draws: its own name on any element, and the built-in elements that have no other style. */
-export function styleSelector(name: string, type: ResolvedStyle['type']): string {
-  const safe = name.replace(/[^a-z0-9-]/g, '');
-  if (type === 'character') return `span[data-style='${safe}']`;
-  const own = `[data-pstyle='${safe}']`;
-  if (name === 'normal') return `${own}, p:not([data-pstyle])`;
-  if (HEADING_STYLES.slice(0, 6).includes(name)) return `${own}, ${name}:not([data-page-title], [data-pstyle])`;
-  if (name === 'title') return `${own}, [data-page-title]`;
-  if (name === 'quote') return `${own}, blockquote > p:not([data-pstyle])`;
-  if (name === 'code') return `${own}, pre`;
-  return own;
+/**
+ * The built-in elements a style draws without a `style` of their own. Their rules carry only the keys the notebook
+ * or page sets, so the type tokens keep drawing the rest. The selectors are the ones of the first styles dialog.
+ */
+export function elementSelector(name: string): string | null {
+  if (name === 'normal') return 'p, li';
+  if (HEADING_STYLES.slice(0, 6).includes(name)) return `${name}:not([data-page-title])`;
+  if (name === 'title') return '[data-page-title]';
+  if (name === 'quote') return 'blockquote';
+  if (name === 'code') return 'pre, code';
+  return null;
 }
 
-/** The variables and the rules for the resolved styles: only keys that the notebook or page sets. */
+/**
+ * The elements that name the style: `data-pstyle` from decorations.ts, or a character style's `data-style`. The
+ * attribute is repeated so these rules outrank the element rules and the page's own heading rules.
+ */
+export function ownSelector(name: string, type: ResolvedStyle['type']): string {
+  const safe = name.replace(/[^a-z0-9-]/g, '');
+  return type === 'character' ? `span[data-style='${safe}'][data-style]` : `[data-pstyle='${safe}'][data-pstyle]`;
+}
+
+const SCOPE = `:is([${STYLES_ATTRIBUTE}] [data-scope~='page'], [${STYLES_ATTRIBUTE}][data-scope~='page'])`;
+
+/**
+ * The variables and rules of the resolved styles. An element that names a style gets its whole look, because no
+ * other CSS draws a user style or heading 7. A built-in element without a style gets only the keys that the
+ * notebook or page sets.
+ */
 export function namedStylesCss(styles: Iterable<ResolvedStyle>): { vars: Map<string, string>; rules: string } {
   const vars = new Map<string, string>();
   const rules: string[] = [];
   for (const style of styles) {
-    const body: string[] = [];
-    for (const key of style.own) {
+    const all: string[] = [];
+    const own: string[] = [];
+    for (const key of Object.keys(style.values) as LookKey[]) {
       declarations(key, style.values).forEach(([property, value], index) => {
         if (value === null) return;
         const name = namedStyleVar(style.name, key, index);
         vars.set(name, value);
-        if (property) body.push(`${property}: var(${name});`);
+        if (!property) return;
+        all.push(`${property}: var(${name});`);
+        if (style.own.has(key)) own.push(`${property}: var(${name});`);
       });
     }
-    if (body.length === 0) continue;
-    const scope = `:is([${STYLES_ATTRIBUTE}] [data-scope~='page'], [${STYLES_ATTRIBUTE}][data-scope~='page'])`;
-    rules.push(`${scope} :is(${styleSelector(style.name, style.type)}) { ${body.join(' ')} }`);
+    const element = style.type === 'paragraph' ? elementSelector(style.name) : null;
+    if (element && own.length > 0) rules.push(`${SCOPE} :is(${element}) { ${own.join(' ')} }`);
+    if (all.length > 0) rules.push(`${SCOPE} ${ownSelector(style.name, style.type)} { ${all.join(' ')} }`);
   }
   return { vars, rules: rules.length ? `@layer components {\n${rules.join('\n')}\n}` : '' };
 }
