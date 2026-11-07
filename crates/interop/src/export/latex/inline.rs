@@ -299,7 +299,10 @@ mod tests {
             font: Some("Georgia".to_owned()),
             ..Marks::default()
         };
-        assert_eq!(run(sized), "{\\fontspec{Georgia}{\\fontsize{10.5}{12.6}\\selectfont x}}");
+        assert_eq!(
+            run(sized),
+            "{\\fontspec{Georgia}{\\fontsize{10.5}{12.6}\\selectfont x}}"
+        );
         let shaded = Marks {
             shade: Some("#ffeecc".to_owned()),
             ..Marks::default()

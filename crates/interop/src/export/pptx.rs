@@ -20,7 +20,7 @@ use super::names::sanitize_name;
 use super::plan::{self, Scope};
 use super::pptx_parts::{self as parts, HEADER, NS_A, NS_P, NS_R};
 use crate::assets::image_size;
-use crate::doc::{plain_text, Block, Inline, Item, Script};
+use crate::doc::{plain_text, Block, Inline, Item};
 use crate::docx::zip::ZipWriter;
 use crate::docx::Media;
 use crate::error::{InteropError, Result};
@@ -635,26 +635,12 @@ impl SlideWriter<'_> {
         for inline in &p.inlines {
             match inline {
                 Inline::Text { text, marks } => {
-                    let mut attrs = String::from(" lang=\"en-US\" sz=\"2000\" dirty=\"0\"");
-                    if marks.strong || p.bold {
-                        attrs.push_str(" b=\"1\"");
-                    }
-                    if marks.emphasis || p.italic {
-                        attrs.push_str(" i=\"1\"");
-                    }
-                    if marks.underline {
-                        attrs.push_str(" u=\"sng\"");
-                    }
-                    if marks.strike {
-                        attrs.push_str(" strike=\"sngStrike\"");
-                    }
-                    match marks.script {
-                        Some(Script::Sup) => attrs.push_str(" baseline=\"30000\""),
-                        Some(Script::Sub) => attrs.push_str(" baseline=\"-25000\""),
-                        None => {}
-                    }
-                    let mut children = String::new();
-                    if p.mono || marks.code {
+                    let (props, fills) = parts::run_properties(marks, p.bold, p.italic);
+                    let attrs = format!(" lang=\"en-US\"{props} dirty=\"0\"");
+                    let mut children = fills;
+                    if let Some(font) = marks.font.as_deref().filter(|f| !f.starts_with('+')) {
+                        children.push_str(&format!("<a:latin typeface=\"{}\"/>", escape(font)));
+                    } else if p.mono || marks.code {
                         children.push_str("<a:latin typeface=\"Consolas\"/>");
                     }
                     if let Some(link) = &marks.link {
@@ -828,5 +814,51 @@ mod tests {
                 .collect(),
         };
         assert_eq!(fit(long).len(), 3);
+    }
+
+    fn run_xml(marks: crate::doc::Marks) -> String {
+        let (attrs, children) = parts::run_properties(&marks, false, false);
+        format!("<a:rPr{attrs}>{children}</a:rPr>")
+    }
+
+    #[test]
+    fn point_sizes_and_line_styles_use_the_drawingml_units() {
+        use crate::doc::Marks;
+        // ECMA-376 21.1.2.3.9: sz is in hundredths of a point, so 10.5 pt is 1050.
+        let sized = run_xml(Marks {
+            size: Some("10.5".to_owned()),
+            ..Marks::default()
+        });
+        assert!(sized.contains("sz=\"1050\""), "{sized}");
+        let named = run_xml(Marks {
+            size: Some("large".to_owned()),
+            ..Marks::default()
+        });
+        assert!(named.contains("sz=\"2500\""), "{named}");
+        let double = run_xml(Marks {
+            strike: true,
+            strike_double: true,
+            underline: true,
+            underline_line: Some("wave".to_owned()),
+            ..Marks::default()
+        });
+        assert!(
+            double.contains("strike=\"dblStrike\"") && double.contains("u=\"wavy\""),
+            "{double}"
+        );
+        // spc is hundredths of a point; baseline is thousandths of a percent of the size.
+        let spaced = run_xml(Marks {
+            caps: Some("small".to_owned()),
+            tracking: Some("1.5".to_owned()),
+            shift: Some("2".to_owned()),
+            color: Some("#112233".to_owned()),
+            ..Marks::default()
+        });
+        assert!(
+            spaced.contains("cap=\"small\"") && spaced.contains("spc=\"150\""),
+            "{spaced}"
+        );
+        assert!(spaced.contains("baseline=\"10000\""), "{spaced}");
+        assert!(spaced.contains("<a:srgbClr val=\"112233\"/>"), "{spaced}");
     }
 }
