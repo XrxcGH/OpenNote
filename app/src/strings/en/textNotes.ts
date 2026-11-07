@@ -1,4 +1,33 @@
 // Footnotes and endnotes.
 // Owner: text:footnotes (B11 and B12). text:scaffold registered it in the string index, and the owner fills it in.
 
-export const textNotes = {} as const;
+export const textNotes = {
+  insertFootnote: 'Insert footnote',
+  insertFootnoteKeywords: 'footnote note reference citation bottom',
+  insertEndnote: 'Insert endnote',
+  insertEndnoteKeywords: 'endnote note reference citation end',
+  goTo: 'Go to note or reference',
+  goToKeywords: 'footnote endnote jump reference note',
+  toEndnotes: 'Convert all footnotes to endnotes',
+  toFootnotes: 'Convert all endnotes to footnotes',
+  convertOne: 'Convert this note',
+  convertKeywords: 'footnote endnote convert swap',
+  needsText: 'Put the caret in a text box first.',
+  cannotHere: 'A note can’t go here. Put the caret in ordinary text.',
+  noNoteHere: 'Put the caret on a note reference or in a note.',
+  noNotes: 'This page has no notes to convert.',
+  converted: '{count, plural, one {# note converted} other {# notes converted}}',
+  area: 'Notes',
+  endnotes: 'Endnotes',
+  footnoteName: 'Footnote {label}',
+  endnoteName: 'Endnote {label}',
+  backTo: 'Go to reference {label}',
+  missing: 'This reference has no note text.',
+  options: 'Note options',
+  footnotes: 'Footnotes',
+  format: 'Number format',
+  start: 'Start at',
+  restart: 'Numbering',
+  continuous: 'Continuous',
+  heading: 'Restart at each Heading 1',
+} as const;
