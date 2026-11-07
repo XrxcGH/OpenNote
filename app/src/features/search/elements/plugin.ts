@@ -12,7 +12,7 @@ import { getLocation } from '../../../app/location';
 import type { EditorHost } from '../../../editor/host';
 import { LISTS_META } from '../../../editor/extensions/listItem';
 import { newId } from '../../../editor/ids';
-import { META_HIGHLIGHT } from '../../../editor/meta';
+import { META_ELEMENT_DATA, META_HIGHLIGHT } from '../../../editor/meta';
 import { t } from '../../../strings/t';
 import { shownMounted } from '../../page';
 import { copyLinkText } from '../deeplink/copy';
@@ -170,6 +170,8 @@ async function chooseTag(view: EditorView, host: EditorHost, layer: ElementLayer
 /** Loads a block's line data into the editor and writes changes back. One for each text editor. */
 class ElementLayer {
   private sent: LineData = emptyLineData();
+  /** List definitions a list command added, to save with the next change. */
+  private pendingLists: Record<string, unknown> = {};
   private tracked = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private suspended = false;
@@ -236,6 +238,13 @@ class ElementLayer {
     this.tracked = true;
   }
 
+  /** A command changed element data (META_ELEMENT_DATA): write it back from now on, with any list definitions. */
+  noteElementData(meta: unknown): void {
+    this.tracked = true;
+    const lists = typeof meta === 'object' && meta !== null ? (meta as { lists?: unknown }).lists : undefined;
+    if (typeof lists === 'object' && lists !== null) Object.assign(this.pendingLists, lists);
+  }
+
   update(): void {
     if (this.view.state.doc === this.lastDoc) return;
     this.lastDoc = this.view.state.doc;
@@ -255,14 +264,19 @@ class ElementLayer {
       this.view.dispatch(tr.setMeta(META_HIGHLIGHT, true).setMeta('addToHistory', false));
     }
     const next = readLineData(this.view.state.doc);
-    const patch = patchFor(this.sent, next);
-    if (!patch) return;
+    const lists = this.pendingLists;
+    const hasLists = Object.keys(lists).length > 0;
+    const found = patchFor(this.sent, next);
+    if (!found && !hasLists) return;
+    const patch: Record<string, unknown> = { ...found, ...(hasLists ? { lists } : {}) };
+    this.pendingLists = {};
     this.sent = next;
     const base = shownMounted.get()?.layer.block(block)?.data;
     if (this.cacheKey) known.set(this.cacheKey, { base, data: next });
     void page.send(patch, block).catch(() => {
       // The page keeps the last data it took, so the next change sends the whole difference again.
       this.sent = emptyLineData();
+      this.pendingLists = { ...lists, ...this.pendingLists };
     });
   }
 
@@ -302,6 +316,14 @@ function elementsPlugin(host: EditorHost, options: ElementOptions): Plugin<Decor
       init: (_config, state) => (options.tags ? badges(state, view) : DecorationSet.empty),
       apply: (tr, old, _before, state) =>
         options.tags && (tr.docChanged || tr.getMeta(REFRESH)) ? badges(state, view) : old,
+    },
+    appendTransaction(transactions) {
+      const layer = current ? layers.get(current) : undefined;
+      for (const tr of transactions) {
+        const meta: unknown = tr.getMeta(META_ELEMENT_DATA);
+        if (meta !== undefined) layer?.noteElementData(meta);
+      }
+      return null;
     },
     props: {
       decorations: (state) => key.getState(state),
