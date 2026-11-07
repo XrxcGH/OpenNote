@@ -27,6 +27,8 @@ mod values;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_gaps;
+#[cfg(test)]
 mod tests_more;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
