@@ -20,6 +20,7 @@ We extend the existing writer and reader rather than adopt a library.
 - Font files are never embedded by default. On request, only the bundled fonts under the SIL Open Font License or the Apache License that the document uses are embedded, obfuscated as ECMA-376 Part 1, 17.8.1 requires. A font whose OS/2 `fsType` restricts embedding is refused.
 - "Remove personal information" replaces every author with "Author", drops dates from comments, changes, and the document properties, and sets Word's `removePersonalInformation` and `removeDateAndTime`.
 - The reader resolves styles in ECMA-376 order with toggle-property semantics, theme fonts and colors, numbering overrides, notes, comments, and tracked changes. A named face such as "Segoe UI Semibold" maps back to the family and weight.
+- The theme font tokens `+body` and `+heading` do not come back from an export. The writer writes them as `w:asciiTheme="minorHAnsi"` and `"majorHAnsi"`, the same attributes Word writes for a run in the theme's fonts. The reader cannot tell an export's token from Word's own theme font, so it resolves both to the concrete theme font, which shows the same. The export-then-import property leaves `font` out on purpose.
 - Known-answer tests take their values from ECMA-376 units and its enumerations, worked by hand (`crates/interop/tests/fixtures/word-v2/export/known-xml.json`).
 
 ### Schema validation (owner decision 11)

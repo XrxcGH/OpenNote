@@ -38,8 +38,9 @@ fn units(t: i64) -> f64 {
 }
 
 /// The page numbers of a section (`w:pgNumType`, ECMA-376 Part 1, 17.6.12) as `view.text.pageNumbers`: the
-/// format, when it is one of the five that OpenNote has, and the first number. `None` when the section keeps
-/// Word's default of decimal numbers that count on.
+/// format, when it is one of the five that OpenNote has, and the first number. The first number may be 0 to
+/// 32,767, as in Word and in the page format (`R-VIEW-3`). `None` when the section keeps Word's default of
+/// decimal numbers that count on.
 pub(super) fn page_numbers(sect: &Element) -> Option<Value> {
     const FORMATS: [&str; 5] = ["decimal", "lowerRoman", "upperRoman", "lowerLetter", "upperLetter"];
     let numbers = child(sect, "w:pgnumtype")?;
@@ -368,6 +369,12 @@ mod tests {
             page_numbers(&other),
             None,
             "an unknown format and a start past 32,767 are left out"
+        );
+        let zero = parse(r#"<w:sectPr><w:pgNumType w:start="0"/></w:sectPr>"#);
+        assert_eq!(
+            page_numbers(&zero),
+            Some(serde_json::json!({"start": 0})),
+            "the page format allows a first number of 0 (R-VIEW-3)"
         );
     }
 

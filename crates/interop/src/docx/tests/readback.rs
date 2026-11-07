@@ -365,12 +365,7 @@ fn open_type(rpr: &El) -> Option<String> {
 
 /// Imports a written file with the crate's Word import, and returns the blocks of its text.
 pub fn import(docx: &[u8]) -> Vec<Block> {
-    let dir = tempfile::tempdir().expect("a temp folder");
-    let path = dir.path().join("generated.docx");
-    std::fs::write(&path, docx).expect("writes");
-    let world = crate::testing::TestEnv::new();
-    let mut sink = crate::MemorySink::default();
-    crate::import_docx(&path, &world.env(), &mut sink).expect("imports");
+    let sink = import_sink(docx);
     let mut blocks = Vec::new();
     for (_, imported) in &sink.pages {
         for block in imported.page.blocks.iter() {
@@ -380,4 +375,15 @@ pub fn import(docx: &[u8]) -> Vec<Block> {
         }
     }
     blocks
+}
+
+/// What the crate's Word import makes of a file.
+pub fn import_sink(docx: &[u8]) -> crate::MemorySink {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let path = dir.path().join("generated.docx");
+    std::fs::write(&path, docx).expect("writes");
+    let world = crate::testing::TestEnv::new();
+    let mut sink = crate::MemorySink::default();
+    crate::import_docx(&path, &world.env(), &mut sink).expect("imports");
+    sink
 }

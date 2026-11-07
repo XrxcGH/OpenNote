@@ -17,8 +17,10 @@ use super::theme::{Script as TextScript, Theme};
 use super::TrackedChanges;
 use crate::doc::{push_text, Block, Inline, Marks};
 use crate::import::xmltree::{Element, Node};
+use drop_cap::join_drop_cap;
 use opennote_core::{Clock, ElementId};
 
+mod drop_cap;
 mod records;
 mod tables;
 
@@ -153,6 +155,9 @@ pub(super) struct Reader<'a> {
     now: String,
     /// Paragraphs of text boxes, to add after the paragraph that holds them.
     pending: Vec<Item>,
+    /// When the paragraph just read is a drop cap frame: the number of items after it was added, and how many
+    /// of those came after it (the paragraphs of its text boxes).
+    cap: Option<(usize, usize)>,
     /// The comments whose ranges are open, by their IDs in the file, with the IDs they get.
     open_comments: Vec<(String, String)>,
     comment_ids: HashMap<String, String>,
@@ -186,6 +191,7 @@ impl<'a> Reader<'a> {
             changes: TrackedChanges::Suggest,
             now: String::new(),
             pending: Vec::new(),
+            cap: None,
             open_comments: Vec::new(),
             comment_ids: HashMap::new(),
             change: Vec::new(),
@@ -271,6 +277,8 @@ impl<'a> Reader<'a> {
     }
 
     fn paragraph(&mut self, p: &Element, items: &mut Vec<Item>) {
+        // Taken first, so that the paragraphs of a text box in this one do not see it.
+        let cap = self.cap.take();
         let props = child(p, "w:ppr");
         let style_id = self
             .styles
@@ -319,13 +327,17 @@ impl<'a> Reader<'a> {
             .map(str::to_owned)
             .collect();
         let fmt = if self.in_table > 0 || self.nested {
-            Fmt::default()
+            drop_cap::only(props, &self.theme)
         } else {
             self.fmt(&kind, props, style_id.as_deref())
         };
-        let (inlines, fmt) = join_drop_cap(items, inlines, fmt);
+        let frame = fmt.para.contains_key("dropCap");
+        let (inlines, fmt, bookmarks, trailing) = join_drop_cap(items, cap, inlines, fmt, bookmarks);
         self.emit(kind, shaded, bookmarks, inlines, fmt, items);
+        items.extend(trailing);
+        let after = self.pending.len();
         items.append(&mut self.pending);
+        self.cap = frame.then_some((items.len(), after));
     }
 
     /// The formatting of a paragraph: its style when its kind does not imply it, and its direct paragraph
@@ -689,37 +701,6 @@ impl<'a> Reader<'a> {
             self.stats.shapes += 1;
         }
     }
-}
-
-/// Word writes a drop cap as a framed paragraph of its own that holds the letter, then the paragraph with the
-/// rest (ECMA-376 Part 1, 17.3.1.11). The two become one paragraph again, with the `dropCap` attribute.
-fn join_drop_cap(items: &mut Vec<Item>, inlines: Vec<Inline>, mut fmt: Fmt) -> (Vec<Inline>, Fmt) {
-    let joins = match items.last() {
-        Some(Item::Para(cap)) => {
-            cap.fmt.para.contains_key("dropCap")
-                && !cap.inlines.is_empty()
-                && !inlines.is_empty()
-                && !fmt.para.contains_key("dropCap")
-        }
-        _ => false,
-    };
-    if !joins {
-        return (inlines, fmt);
-    }
-    let Some(Item::Para(cap)) = items.pop() else {
-        return (inlines, fmt);
-    };
-    if let Some(drop_cap) = cap.fmt.para.get("dropCap") {
-        fmt.para.insert("dropCap".to_owned(), drop_cap.clone());
-    }
-    let mut joined = Vec::new();
-    for inline in cap.inlines.into_iter().chain(inlines) {
-        match inline {
-            Inline::Text { text, marks } => push_text(&mut joined, &text, &marks),
-            other => joined.push(other),
-        }
-    }
-    (joined, fmt)
 }
 
 /// The text of a run, for telling its script.

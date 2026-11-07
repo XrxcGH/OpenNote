@@ -143,6 +143,72 @@ fn a_drop_cap_frame_joins_its_paragraph() {
     );
 }
 
+/// The body items of a document, read without a package.
+fn items_of(body: &str) -> Vec<super::body::Item> {
+    let root = crate::import::xmltree::parse(&format!("<w:document {W}><w:body>{body}</w:body></w:document>"));
+    let (rels, styles, numbering) = (
+        std::collections::HashMap::new(),
+        super::styles::Styles::default(),
+        super::numbering::Numbering::default(),
+    );
+    super::body::Reader::new(&rels, &styles, &numbering).document(&root)
+}
+
+const FRAME: &str = r#"<w:pPr><w:framePr w:dropCap="drop" w:lines="2" w:wrap="around" w:vAnchor="text"
+    w:hAnchor="text"/></w:pPr>"#;
+
+#[test]
+fn a_drop_cap_joins_past_its_text_box_and_keeps_its_bookmarks() {
+    // The frame's text box paragraph is read after the frame, so the frame is not the last item. The joined
+    // paragraph keeps the bookmarks of both halves, and the text box follows it. The paragraph after the
+    // joined one is a paragraph of its own.
+    let body = format!(
+        r#"<w:p>{FRAME}<w:bookmarkStart w:id="1" w:name="cap"/>{}<w:r><w:pict><w:txbxContent><w:p>{}</w:p>
+        </w:txbxContent></w:pict></w:r></w:p><w:p><w:bookmarkStart w:id="2" w:name="rest"/>{}</w:p><w:p>{}</w:p>"#,
+        plain("O"),
+        plain("Boxed"),
+        plain("nce upon a time."),
+        plain("Next."),
+    );
+    let items = items_of(&body);
+    let paras: Vec<_> = items
+        .iter()
+        .map(|item| match item {
+            super::body::Item::Para(p) => (
+                crate::doc::plain_text(&p.inlines),
+                p.bookmarks.clone(),
+                p.fmt.para.clone(),
+            ),
+            other => panic!("a paragraph, not {other:?}"),
+        })
+        .collect();
+    assert_eq!(paras.len(), 3, "{paras:?}");
+    assert_eq!(paras[0].0, "Once upon a time.");
+    assert_eq!(paras[0].1, ["cap", "rest"]);
+    assert_eq!(
+        paras[0].2["dropCap"],
+        json!({"mode": "drop", "lines": 2, "distance": 0})
+    );
+    assert_eq!(paras[1].0, "Boxed");
+    assert_eq!(paras[2].0, "Next.");
+    assert!(paras[2].2.get("dropCap").is_none(), "{:?}", paras[2]);
+}
+
+#[test]
+fn a_drop_cap_in_a_table_cell_joins_its_paragraph() {
+    // A cell keeps no paragraph formatting, but its drop cap letter still belongs to the paragraph after it.
+    let body = format!(
+        r#"<w:tbl><w:tr><w:tc><w:p>{FRAME}{}</w:p><w:p>{}</w:p></w:tc></w:tr></w:tbl>"#,
+        plain("O"),
+        plain("nce."),
+    );
+    let cell = match items_of(&body).into_iter().next() {
+        Some(super::body::Item::Table(crate::doc::Block::Table { rows, .. })) => rows[0][0].clone(),
+        other => panic!("a table, not {other:?}"),
+    };
+    assert_eq!(cell, vec![crate::doc::Inline::text("Once.")]);
+}
+
 #[test]
 fn user_style_ids_keep_their_name_and_page_numbers_come_over() {
     // OpenNote's export writes a user style "u-note" with that ID; it must not read back as "u-u-note".
