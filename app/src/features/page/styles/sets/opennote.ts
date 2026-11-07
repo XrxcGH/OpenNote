@@ -7,7 +7,7 @@ import type { ThemeFonts } from '../resolve';
 export const OPENNOTE_THEME: ThemeFonts = {};
 
 export const OPENNOTE_SET: StyleSheetJson = {
-  normal: { font: '+body', sizePt: 12 },
+  normal: { font: '+body', sizePt: 12, order: 2 },
   title: { font: '+heading', sizePt: 27, weight: 600, order: 0 },
   subtitle: { font: '+heading', sizePt: 13, order: 1 },
   h1: { font: '+heading', sizePt: 22.5, weight: 700, keepNext: true, order: 3 },

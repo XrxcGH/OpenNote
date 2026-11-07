@@ -11,7 +11,7 @@ describe('the style gallery', () => {
       notebook: { 'u-zeta': { label: 'Zeta' }, 'u-alpha': { label: 'Alpha' } },
     });
     const names = entries.map((entry) => entry.name);
-    expect(names.slice(0, 3)).toEqual(['title', 'subtitle', 'h1']);
+    expect(names.slice(0, 4)).toEqual(['title', 'subtitle', 'normal', 'h1']);
     expect(names.indexOf('u-alpha')).toBeLessThan(names.indexOf('u-zeta'));
     // Headings 7 to 9 are hidden in the app's set.
     expect(names).not.toContain('h7');

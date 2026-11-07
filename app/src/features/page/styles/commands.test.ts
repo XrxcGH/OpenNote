@@ -87,6 +87,26 @@ describe('applying a style', () => {
     expect(saved(e).data.paras).toEqual({});
   });
 
+  it('keeps a heading a real heading for a user style based on a heading style', () => {
+    const e = mount('# one\n\ntwo', ['a', 'b']);
+    caret(e, 2);
+    const sheet = { ...APP_STYLES, 'u-sub': { label: 'Sub', basedOn: 'h1' }, 'u-deep': { basedOn: 'u-sub' } };
+    applyStyle(e, 'u-sub', sheet);
+    expect(e.state.doc.child(0).type.name).toBe('heading');
+    expect(e.state.doc.child(0).attrs.level).toBe(1);
+    expect(serializeTextBlock(e.state.doc)).toBe('# one\n\ntwo');
+    expect(saved(e).data.styles).toEqual({ a: 'u-sub' });
+    expect(styleOfNode(e.state.doc.child(0))).toBe('u-sub');
+    // Two steps down the chain, on a plain paragraph, still gives the heading's level.
+    caret(e, e.state.doc.child(0).nodeSize + 2);
+    applyStyle(e, 'u-deep', sheet);
+    expect(e.state.doc.child(1).type.name).toBe('heading');
+    expect(saved(e).data.styles).toEqual({ a: 'u-sub', b: 'u-deep' });
+    applyStyle(e, 'normal', sheet);
+    expect(e.state.doc.child(1).type.name).toBe('paragraph');
+    expect(saved(e).data.styles).toEqual({ a: 'u-sub' });
+  });
+
   it('applies a character style as the charStyle mark', () => {
     const e = mount('one two', ['a']);
     e.view.dispatch(e.state.tr.setSelection(TextSelection.create(e.state.doc, 1, 4)));
@@ -125,6 +145,17 @@ describe('changing styles from the selection', () => {
     expect(second.name).toBe('u-new-style-2');
     expect(second.styles['u-new-style-2']).toMatchObject({ label: 'New style 2' });
     expect(second.styles['u-new-style']).toMatchObject({ label: 'New style' });
+  });
+
+  it('never writes a style name outside R-STY-3, whatever name the element carries', () => {
+    const c = ctx({ normal: { italic: true } });
+    for (const bad of ['Bad Name', 'x</style>', '__proto__', 'u-']) {
+      expect(updatedToMatch(c, bad, { weight: 700 })).toBe(c.notebook);
+      expect(Object.keys(updatedToMatch(c, bad, { weight: 700 }))).toEqual(['normal']);
+      expect(withHidden(c.notebook, bad, true)).toBe(c.notebook);
+      expect(withMoved(c.notebook, [bad, 'h1'], bad, 1)).toBe(c.notebook);
+      expect(createdFromSelection(c, 'Mine', bad, {}).styles['u-mine']).toMatchObject({ basedOn: 'normal' });
+    }
   });
 
   it('opens Modify style only on the styles its dialog can edit', () => {

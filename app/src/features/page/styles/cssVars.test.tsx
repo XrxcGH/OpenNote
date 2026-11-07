@@ -72,4 +72,29 @@ describe('named styles as CSS', () => {
     expect(plain.hasAttribute('data-pstyle')).toBe(false);
     expect(getComputedStyle(plain).fontStyle).toBe('normal');
   });
+
+  it('keeps the page line height and spacing on a styled paragraph whose style sets none', () => {
+    // The page's own paragraph rule, in the same layer as the generated rules and less specific than them, so a
+    // generated line-height or margin would win over it.
+    const page = document.head.appendChild(document.createElement('style'));
+    page.textContent = `@layer components { [data-scope~='page'] p { line-height: 1.625; margin-block: 6px 12px; } }`;
+    try {
+      const root = mount('quoted\n\nmine\n\nplain', { ids: ['a', 'b', 'c'], styles: { a: 'quote', b: 'u-x' } });
+      show({ 'u-x': { label: 'Mine', weight: 600 } });
+      const [quoted, mine, plain] = [...root.querySelectorAll('p')];
+      expect(quoted.getAttribute('data-pstyle')).toBe('quote');
+      expect(getComputedStyle(quoted).fontStyle).toBe('italic');
+      expect(getComputedStyle(mine).fontWeight).toBe('600');
+      // The line height as a multiple of the element's own size, so a style's size doesn't change the comparison.
+      const box = (element: Element) => {
+        const style = getComputedStyle(element);
+        return [(Number.parseFloat(style.lineHeight) / px(element)).toFixed(3), style.marginTop, style.marginBottom];
+      };
+      expect(box(plain)).toEqual(['1.625', '6px', '12px']);
+      expect(box(quoted)).toEqual(box(plain));
+      expect(box(mine)).toEqual(box(plain));
+    } finally {
+      page.remove();
+    }
+  });
 });

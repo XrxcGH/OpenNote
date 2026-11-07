@@ -45,7 +45,11 @@ export interface ResolvedStyle {
   readonly next: string;
 }
 
-/** Values every style starts from (R-STY-1 and R-PARA-1's Default columns). */
+/**
+ * Values every style starts from (R-STY-1 and R-PARA-1's Default columns). Space before, space after, and line
+ * spacing are not here: their default is the app's value (R-PARA-1, SPEC 4.1), which the page's tokens draw. A
+ * style gets them only when a layer sets them, so a styled paragraph keeps the page's spacing like a plain one.
+ */
 export const BASE_LOOK: Readonly<Partial<Record<LookKey, unknown>>> = {
   font: '+body',
   weight: 400,
@@ -57,9 +61,6 @@ export const BASE_LOOK: Readonly<Partial<Record<LookKey, unknown>>> = {
   textColor: 'theme:text',
   highlight: 'none',
   align: 'start',
-  before: 0,
-  after: 0,
-  line: { rule: 'multiple', value: 1 },
 };
 
 /** A style's checked values with the page's keys over the notebook's (R-STY-7). */

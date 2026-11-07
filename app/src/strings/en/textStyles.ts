@@ -15,6 +15,7 @@ export const textStyles = {
   deleted: 'Style "{name}" deleted.',
   setChanged: 'Style set changed to {name}.',
   newStyleLabel: 'New style',
+  badName: "This paragraph's style has a name OpenNote can't save. Apply a style from the gallery first.",
   modifyUnsupported:
     "This style can't be changed here yet. Format some text, then use Update style to match selection.",
   names: {
@@ -35,6 +36,13 @@ export const textStyles = {
   summary: {
     bold: 'bold',
     italic: 'italic',
+    points: '{value} pt',
+  },
+  pane: {
+    title: 'Styles',
+    close: 'Close',
+    hint: 'Choose a style to apply it to the selected paragraphs.',
+    empty: 'No styles to show.',
   },
   source: {
     app: 'Built in',
@@ -52,5 +60,6 @@ export const textStyles = {
     moveUp: 'Move earlier in the style gallery',
     moveDown: 'Move later in the style gallery',
     chooseSet: 'Choose a style set',
+    pane: 'Show or hide the Styles pane',
   },
 } as const;

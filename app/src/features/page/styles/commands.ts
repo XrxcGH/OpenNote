@@ -10,8 +10,10 @@ import type { Change } from '../../../editor/commands/command';
 import {
   HEADING_STYLES,
   LOOK_KEYS,
+  MAX_CHAIN,
   PARA_STYLE_KEYS,
   V1_TWINS,
+  isWritableStyleName,
   patchStyle,
   readStyle,
   styleType,
@@ -33,25 +35,49 @@ export function styleOfNode(node: PMNode): string {
 
 const level = (name: string) => (HEADING_STYLES.includes(name) ? Number(name.slice(1)) : 0);
 
+/**
+ * The outline level a paragraph style gives: its own heading level, else the one of the first heading style in its
+ * `basedOn` chain, so a user style based on Heading 1 keeps headings real headings. 0 when it gives none.
+ */
+export function outlineLevel(sheet: StyleSheetJson, name: string): number {
+  const seen = new Set<string>();
+  let at: string | undefined = name;
+  for (let step = 0; step <= MAX_CHAIN && at && !seen.has(at); step++) {
+    if (level(at)) return level(at);
+    seen.add(at);
+    at = readStyle(sheet[at]).basedOn;
+  }
+  return 0;
+}
+
 /** The node type, attributes, and style an element gets for a paragraph style. */
-function target(node: PMNode, name: string): { type: string; attrs: Record<string, unknown> } {
-  const n = level(name);
+function target(
+  node: PMNode,
+  name: string,
+  levelOf: (name: string) => number,
+): { type: string; attrs: Record<string, unknown> } {
+  const n = levelOf(name);
+  // A built-in heading style is the element's level alone; a style based on one keeps its own name too.
+  const builtIn = level(name) === n;
   const attrs: Record<string, unknown> = {};
-  const previous = level(styleOfNode(node));
+  const previous = levelOf(styleOfNode(node));
   // A paragraph that was heading 7 to 9 drops that outline level with its style.
   if (previous >= 7 && paraFormat(node.attrs).outline === previous) attrs.outline = null;
-  if (n >= 1 && n <= 6) return { type: 'heading', attrs: { ...attrs, level: n, style: null } };
-  if (n >= 7) return { type: 'paragraph', attrs: { ...attrs, ...deepHeadingAttrs(n as 7 | 8 | 9) } };
+  if (n >= 1 && n <= 6) return { type: 'heading', attrs: { ...attrs, level: n, style: builtIn ? null : name } };
+  if (n >= 7) {
+    const deep = deepHeadingAttrs(n as 7 | 8 | 9);
+    return { type: 'paragraph', attrs: { ...attrs, ...deep, style: builtIn ? deep.style : name } };
+  }
   return { type: 'paragraph', attrs: { ...attrs, style: name === 'normal' ? null : name } };
 }
 
 /** Applies a paragraph style to every selected paragraph and heading. List items keep their type. */
-export function applyParagraphStyle(name: string): Change {
+export function applyParagraphStyle(name: string, levelOf: (name: string) => number = level): Change {
   return (tr) => {
     let changed = false;
     for (const { node, pos } of selectedTextblocks(tr)) {
       if (node.type.name !== 'paragraph' && node.type.name !== 'heading') continue;
-      const want = target(node, name);
+      const want = target(node, name, levelOf);
       const at = tr.mapping.map(pos);
       const $at = tr.doc.resolve(at);
       const index = $at.index();
@@ -86,7 +112,10 @@ export function applyCharacterStyle(name: string): Change {
 
 /** Applies a style of either type in one transaction. */
 export function applyStyle(editor: Editor, name: string, sheet: StyleSheetJson): boolean {
-  const change = styleType(sheet[name]) === 'character' ? applyCharacterStyle(name) : applyParagraphStyle(name);
+  const change =
+    styleType(sheet[name]) === 'character'
+      ? applyCharacterStyle(name)
+      : applyParagraphStyle(name, (style) => outlineLevel(sheet, style));
   const tr = editor.state.tr;
   if (!change(tr)) return false;
   editor.view.dispatch(tr.scrollIntoView());
@@ -170,6 +199,8 @@ export function updatedToMatch(
   name: string,
   effective: Partial<Record<LookKey, unknown>>,
 ): StyleSheetJson {
+  // R-STY-3: an element can carry any name, from an import or a hostile page. Only valid names are written.
+  if (!isWritableStyleName(name)) return ctx.notebook;
   const look = differingFromInherited(ctx, name, effective);
   return { ...ctx.notebook, [name]: withLook(ctx.notebook[name], look) };
 }
@@ -195,7 +226,7 @@ export function createdFromSelection(
   const taken = [...Object.keys(ctx.app), ...Object.keys(ctx.notebook), ...Object.keys(ctx.page ?? {})];
   const unique = uniqueLabel(ctx, label);
   const name = userStyleName(unique, taken);
-  const seed: StyleJson = { label: unique, basedOn };
+  const seed: StyleJson = { label: unique, basedOn: isWritableStyleName(basedOn) ? basedOn : 'normal' };
   const withSeed: StyleContext = { ...ctx, notebook: { ...ctx.notebook, [name]: seed } };
   const look = differingFromInherited(withSeed, name, effective);
   return { name, label: unique, styles: { ...ctx.notebook, [name]: withLook(seed, look) } };
@@ -219,11 +250,13 @@ export function withoutStyle(sheet: StyleSheetJson, name: string): StyleSheetJso
 
 /** The notebook's styles with a style hidden from or shown in the gallery. */
 export function withHidden(sheet: StyleSheetJson, name: string, hidden: boolean): StyleSheetJson {
+  if (!isWritableStyleName(name)) return sheet;
   return { ...sheet, [name]: patchStyle(sheet[name], { hidden: hidden ? true : undefined }) };
 }
 
 /** The notebook's styles with `name` one place earlier or later in `order`, numbering the whole order again. */
 export function withMoved(sheet: StyleSheetJson, order: readonly string[], name: string, by: -1 | 1): StyleSheetJson {
+  if (!isWritableStyleName(name)) return sheet;
   const at = order.indexOf(name);
   const to = at + by;
   if (at < 0 || to < 0 || to >= order.length) return sheet;

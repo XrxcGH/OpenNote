@@ -43,3 +43,16 @@ Two parts differ from the decision above:
 
 - The bridge reads and writes only `styles`, so a notebook's `theme` can't be saved yet. Theme tokens resolve through the page's theme and then the app's fonts. Choosing a style set writes the set's theme fonts as font names.
 - The DOCX captures of owner decision N5 were not delivered before B10.2. The Word and Google Docs fixtures are hand-written WordprocessingML with the apps' documented defaults. A sanitized capture can replace each file, and the set test then checks the set against it.
+- Space before, space after, and line spacing have no base value in `resolve.ts`. A style gets them only when a layer sets them (`R-PARA-1`: the default is the app's value). So a Title, a Quote, or a user style keeps the page's own line height and paragraph spacing.
+- The Styles pane (`StylesPane.tsx`, command `styles.pane`) is a minimal sheet at the dock. It lists the gallery with a preview, the source, and a short look summary, and applies a style on activate. The Format pane's style mode (`text:format-pane`) replaces it later.
+- A user style based on a heading style keeps the element a heading of that level, with the style's name in `data.styles`.
+- The style commands write only valid names (`R-STY-3`). A paragraph that carries another name gets a toast and no change.
+
+## Open decision for the owner
+
+The resolution order above (the app's value of each chain step sits above the notebook's values of earlier steps) follows Word. It differs from SPEC `R-STY-6` and `R-STY-1`, which put the app's defaults at the bottom, and from the lane's contract test ("h2 based on normal, normal font Georgia, h2 size 16 resolves to Georgia 16"). `resolve.test.ts` now expects the app's heading font instead. Pick one:
+
+1. Keep Word's order. Then SPEC `R-STY-6` and `R-STY-1`, DESIGN.md 2.4, and the lane's test list change to match (an `x-shared` hand-over).
+2. Go back to the spec's order. Then the OpenNote set's heading fonts and sizes become the notebook's own values on upgrade, so Beta 8 and 9 notebooks keep their look.
+
+Until the owner chooses, the code keeps option 1.

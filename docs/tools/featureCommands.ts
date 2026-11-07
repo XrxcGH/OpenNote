@@ -296,6 +296,8 @@ export const COMMAND_TEXT: Readonly<Record<string, string>> = {
   'styles.moveUp': 'Moves the style of the paragraph at the caret earlier in the style gallery.',
   'styles.moveDown': 'Moves the style of the paragraph at the caret later in the style gallery.',
   'styles.chooseSet': 'Replaces the notebook styles with the OpenNote, Word, or Google Docs style set.',
+  'styles.pane':
+    'Shows the Styles pane: every gallery style with a preview, its source, and its look. Choosing one applies it.',
   'insert.freeBodyDiagram': 'Inserts a free-body diagram with forces, moments, and supports.',
   'insert.beam': 'Inserts a beam solver that finds reactions and draws shear and moment diagrams.',
   'insert.truss': 'Inserts a truss solver that finds member forces by the method of joints.',

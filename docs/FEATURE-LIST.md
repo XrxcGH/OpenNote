@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 896 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 897 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -181,6 +181,7 @@ Open it with the command "Open the code studio".
 | Move earlier in the style gallery | Moves the style of the paragraph at the caret earlier in the style gallery. |  |
 | Move later in the style gallery | Moves the style of the paragraph at the caret later in the style gallery. |  |
 | Choose a style set | Replaces the notebook styles with the OpenNote, Word, or Google Docs style set. |  |
+| Show or hide the Styles pane | Shows the Styles pane: every gallery style with a preview, its source, and its look. Choosing one applies it. |  |
 | Undo | Undoes the last change to the page. | Ctrl+Z |
 | Redo | Redoes the last change you undid on the page. | Ctrl+Y, Ctrl+Shift+Z |
 | Select the page title | Selects the page title so you can rename the page. |  |

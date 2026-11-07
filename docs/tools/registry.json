@@ -4557,6 +4557,13 @@
       "flag": "text.styles2"
     },
     {
+      "id": "styles.pane",
+      "title": "Show or hide the Styles pane",
+      "category": "format",
+      "keys": [],
+      "flag": "text.styles2"
+    },
+    {
       "id": "page.undo",
       "title": "Undo",
       "category": "editing",

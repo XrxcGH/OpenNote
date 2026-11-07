@@ -19,7 +19,8 @@ const parts = () =>
     import('../styles/commands'),
     import('../styles/gallery'),
     import('../styles/sets'),
-  ]).then(([store, styleCommands, gallery, sets]) => ({ store, styleCommands, gallery, sets }));
+    import('../styles/model'),
+  ]).then(([store, styleCommands, gallery, sets, model]) => ({ store, styleCommands, gallery, sets, model }));
 
 /** The editor and notebook a style command works on, or null with a toast that says why. */
 async function scope(): Promise<{
@@ -63,6 +64,13 @@ async function menuAtCaret(
   });
 }
 
+/** R-STY-3: whether a style name may be written. A name that may not gets a toast and no change. */
+function writable(loaded: Awaited<ReturnType<typeof parts>>, style: string): boolean {
+  if (loaded.model.isWritableStyleName(style)) return true;
+  showToast({ message: t('textStyles.badName') });
+  return false;
+}
+
 type Run = (s: NonNullable<Awaited<ReturnType<typeof scope>>>) => Promise<void> | void;
 
 function styleCommand(id: CommandId, title: MessageKey, run: Run): void {
@@ -93,12 +101,14 @@ styleCommand('styles.apply', 'textStyles.commands.apply', async ({ editor, noteb
 styleCommand('styles.update', 'textStyles.commands.update', async ({ editor, notebook, loaded }) => {
   const ctx = loaded.store.shownContext(notebook);
   const { style, look } = loaded.styleCommands.selectionLook(editor, ctx);
+  if (!writable(loaded, style)) return;
   await loaded.store.saveStyles(notebook, loaded.styleCommands.updatedToMatch(ctx, style, look));
 });
 
 styleCommand('styles.create', 'textStyles.commands.create', async ({ editor, notebook, loaded }) => {
   const ctx = loaded.store.shownContext(notebook);
   const { style, look } = loaded.styleCommands.selectionLook(editor, ctx);
+  if (!writable(loaded, style)) return;
   const made = loaded.styleCommands.createdFromSelection(ctx, t('textStyles.newStyleLabel'), style, look);
   const saved = await loaded.store.saveStyles(notebook, made.styles, {
     message: t('textStyles.created', { name: made.label }),
@@ -135,6 +145,7 @@ for (const [id, title, hidden] of [
 ] as const) {
   styleCommand(id, title, async ({ editor, notebook, loaded }) => {
     const style = loaded.styleCommands.styleOfNode(editor.state.selection.$from.parent);
+    if (!writable(loaded, style)) return;
     const ctx = loaded.store.shownContext(notebook);
     await loaded.store.saveStyles(notebook, loaded.styleCommands.withHidden(ctx.notebook, style, hidden));
   });
@@ -146,6 +157,7 @@ for (const [id, title, by] of [
 ] as const) {
   styleCommand(id, title, async ({ editor, notebook, loaded }) => {
     const style = loaded.styleCommands.styleOfNode(editor.state.selection.$from.parent);
+    if (!writable(loaded, style)) return;
     const ctx = loaded.store.shownContext(notebook);
     const order = loaded.gallery.galleryEntries(ctx, { includeHidden: true }).map((entry) => entry.name);
     await loaded.store.saveStyles(notebook, loaded.styleCommands.withMoved(ctx.notebook, order, style, by));
@@ -161,6 +173,33 @@ styleCommand('styles.chooseSet', 'textStyles.commands.chooseSet', async ({ edito
     message: t('textStyles.setChanged', { name: t(`textStyles.sets.${chosen.id}`) }),
   });
 });
+
+// The Styles pane needs a notebook but no caret: it applies to whatever is selected when a style is chosen.
+commands.register(
+  defineCommand({
+    id: 'styles.pane',
+    title: 'textStyles.commands.pane',
+    category: 'format',
+    keywords: 'editor.keywords.block',
+    flag: FLAG,
+    run: async () => {
+      const loaded = await parts();
+      const notebook = loaded.store.shownNotebook();
+      if (!notebook) {
+        showToast({ message: t('textStyles.noNotebook') });
+        return;
+      }
+      try {
+        await loaded.store.loadStyles(notebook);
+      } catch {
+        showToast({ message: t('textStyles.loadFailed'), tone: 'danger' });
+        return;
+      }
+      const { toggleStylesPane } = await import('../styles/StylesPane');
+      toggleStylesPane(notebook);
+    },
+  }),
+);
 
 // The decorations register themselves in every text editor whose host has text.styles2 on.
 void import('../styles/decorations').catch(() => undefined);

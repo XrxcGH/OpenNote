@@ -86,7 +86,7 @@ export function applyMenuItems(ctx: StyleContext, current: string): StyleMenuIte
 export function lookSummary(look: GalleryEntry['look']): string {
   const parts: string[] = [];
   if (typeof look.font === 'string') parts.push(look.font);
-  if (typeof look.sizePt === 'number') parts.push(`${look.sizePt} pt`);
+  if (typeof look.sizePt === 'number') parts.push(t('textStyles.summary.points', { value: look.sizePt }));
   if (typeof look.weight === 'number' && look.weight >= 600) parts.push(t('textStyles.summary.bold'));
   if (look.italic === true) parts.push(t('textStyles.summary.italic'));
   return parts.join(', ');
