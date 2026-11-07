@@ -28,6 +28,9 @@ export interface Seams {
 
 const NO_SEAMS: Seams = { highlights: new Set(), marks: new Set() };
 
+/** A footnote reference in the text the escapes see. A `(` or `:` right after one is escaped (R-FN-3). */
+export const NOTE = '\uE001';
+
 const ALWAYS = new Set(['\\', '`', '*', '~', '$', '[', ']', '{', '<', '|']);
 const LINE_START_ONLY = new Set(['>', '-', '+']);
 const LETTER_OR_DIGIT = /^[\p{L}\p{N}]$/u;
@@ -75,6 +78,7 @@ function escapeAt(where: Position): string {
   const { chars, at, lineStart, opens, mode } = where;
   const ch = chars[at];
   const first = opens && at === lineStart;
+  if ((ch === '(' || ch === ':') && at > 0 && chars[at - 1] === NOTE) return `\\${ch}`;
   if (ALWAYS.has(ch)) return `\\${ch}`;
   if (ch === '\t') return '&#9;';
   if (ch === ' ') return escapeSpace(where);

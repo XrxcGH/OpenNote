@@ -50,6 +50,8 @@ function LineRow(props: {
   speakers: boolean;
   /** The line before is the same speaker's, so the name isn't said again. */
   sameSpeaker: boolean;
+  /** The first line is what the "transcript is ready" toast must not cover, so the toast stands above it. */
+  first: boolean;
   selectable: boolean;
   selected: boolean;
   active: boolean;
@@ -60,7 +62,12 @@ function LineRow(props: {
   const time = clockMs(line.startMs);
   const who = line.speaker === undefined ? null : speakerName(data, line.speaker, speakerWord);
   return (
-    <li className={styles.line} aria-current={active ? 'true' : undefined} data-active={active ? 'true' : undefined}>
+    <li
+      className={styles.line}
+      aria-current={active ? 'true' : undefined}
+      data-active={active ? 'true' : undefined}
+      data-toast-above={props.first ? '' : undefined}
+    >
       {selectable && (
         <label className={styles.pick}>
           <input
@@ -393,6 +400,7 @@ export function TranscriptView({ block }: { block: BlockJson }) {
             editing={editing}
             speakers={speakersOn}
             sameSpeaker={index > 0 && data.lines[index - 1]?.speaker === line.speaker}
+            first={index === 0}
             selectable={notesOn}
             selected={selected.has(line.id)}
             active={line.id === activeId}
