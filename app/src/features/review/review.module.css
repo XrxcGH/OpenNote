@@ -1,0 +1,159 @@
+/*
+ * Comment and suggestion marks (ADR 0086). The marks are spans with data-comment, data-ins, data-del, and data-fmt
+ * (spec 7.10), in the editor and in static text alike. The markup view is a data attribute on the root element:
+ * All shows every mark, Simple shows the text with the changes made, and None also hides comment highlights. Under
+ * forced colors the marks keep a dashed underline in Highlight, so they never depend on color alone.
+ */
+@layer components {
+  :global([data-comment]) {
+    background-color: var(--color-accent-candle-subtle);
+    border-block-end: 1px dashed var(--color-text-muted);
+  }
+
+  :global([data-ins]) {
+    color: var(--color-status-success);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  :global([data-del]) {
+    color: var(--color-status-danger);
+    text-decoration-line: line-through;
+  }
+
+  :global([data-fmt]) {
+    text-decoration-line: underline;
+    text-decoration-style: double;
+    text-decoration-color: var(--color-text-muted);
+  }
+
+  :global([data-review-markup='simple'] [data-ins]),
+  :global([data-review-markup='none'] [data-ins]),
+  :global([data-review-markup='simple'] [data-fmt]),
+  :global([data-review-markup='none'] [data-fmt]) {
+    color: inherit;
+    text-decoration-line: none;
+  }
+
+  :global([data-review-markup='simple'] [data-del]),
+  :global([data-review-markup='none'] [data-del]) {
+    display: none;
+  }
+
+  /* Simple keeps a quiet bar at the start of each change, so changed lines can still be found. */
+  :global([data-review-markup='simple'] [data-ins]) {
+    box-shadow: inset 2px 0 0 var(--color-text-muted);
+  }
+
+  :global([data-review-markup='none'] [data-comment]) {
+    background-color: transparent;
+    border-block-end: 0;
+  }
+
+  @media (forced-colors: active) {
+    :global([data-comment]),
+    :global([data-ins]),
+    :global([data-del]),
+    :global([data-fmt]) {
+      text-decoration-color: Highlight;
+      border-block-end: 1px dashed Highlight;
+      forced-color-adjust: none;
+      color: CanvasText;
+    }
+  }
+}
+
+.pane {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: var(--layer-page-chrome);
+  display: flex;
+  flex-direction: column;
+  inline-size: min(320px, 100%);
+  background: var(--color-surface-raised);
+  border-inline-start: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-block-end: 1px solid var(--color-border-subtle);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--type-body-size);
+  font-weight: 600;
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+}
+
+.comment {
+  margin-block-end: 8px;
+  padding: 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  background: var(--color-surface-page);
+}
+
+.comment[data-active] {
+  border-color: var(--color-focus-ring);
+}
+
+.comment[data-resolved] {
+  color: var(--color-text-secondary);
+}
+
+.quote {
+  margin: 0 0 4px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--type-small-size);
+}
+
+.body {
+  margin: 4px 0;
+  white-space: pre-wrap;
+}
+
+.reply {
+  margin-inline-start: 12px;
+  padding-inline-start: 8px;
+  border-inline-start: 2px solid var(--color-border-subtle);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-block-start: 4px;
+}
+
+.input {
+  inline-size: 100%;
+  min-block-size: 3em;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.empty {
+  padding: 12px;
+  color: var(--color-text-secondary);
+}
