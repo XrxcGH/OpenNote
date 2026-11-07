@@ -1,7 +1,7 @@
 // The ruler itself (text DESIGN.md 5.4): the markers, the tab stops, and the pointer and keyboard moves that change
-// them. It knows nothing of the editor: it takes the paragraph's indent and tab stops, and hands back the new ones.
-// One drag is one change on release, so one Ctrl+Z undoes it. Every marker is a slider with a value in the unit, and
-// the arrow keys move it one step of the snap grid.
+// them. It knows nothing of the editor. It takes the paragraph's indent and tab stops, and hands back the new ones.
+// One drag is one change on release, so one Ctrl+Z undoes it. Every marker is a slider with a value in the unit.
+// The arrow keys move it one step of the snap grid. In a right-to-left paragraph the whole bar is mirrored.
 import { useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import type { Indent, TabStop } from '../../../editor/paragraph/attributes';
@@ -16,6 +16,7 @@ import {
   dragValue,
   firstLineAt,
   isTabAlign,
+  markerLimits,
   movedIndent,
   movedTab,
   offRuler,
@@ -23,10 +24,11 @@ import {
   withTab,
   withoutTab,
 } from './geometry';
-import type { MarkerKind, TabType } from './geometry';
+import type { Limits, MarkerKind, TabType } from './geometry';
 import { isPalm, useWatchPen } from './palm';
-import { RULER_UNITS, TICKS, fromPoints, roundPoints, shownNumber, snapPoints } from './units';
+import { RULER_UNITS, fromPoints, roundPoints, shownNumber, snapPoints } from './units';
 import type { RulerUnit } from './units';
+import { Ticks } from './Ticks';
 import styles from './ruler.module.css';
 
 export interface RulerBarProps {
@@ -36,6 +38,8 @@ export interface RulerBarProps {
   /** The width of the block's content box, in points. */
   width: number;
   indent: Indent;
+  /** A right-to-left paragraph: positions are measured from the right edge, and a drag to the left raises them. */
+  rtl?: boolean;
   tabs: readonly TabStop[];
   tabType: TabType;
   onIndent(next: Indent): void;
@@ -108,45 +112,6 @@ export function valueText(points: number, unit: RulerUnit): string {
   return t(`textRuler.value.${unit}` as 'textRuler.value.in', { n: Number(shownNumber(points, unit)) });
 }
 
-/** The tick marks and the numbers, from the left edge of the content box. */
-function Ticks({ unit, zoom, width }: Pick<RulerBarProps, 'unit' | 'zoom' | 'width'>) {
-  const { major, parts } = TICKS[unit];
-  const perMajor = major / fromPoints(1, unit);
-  const count = Math.floor((width / perMajor) * parts);
-  const marks = [];
-  for (let i = 0; i <= count; i++) {
-    const points = (i * perMajor) / parts;
-    const whole = i % parts === 0;
-    const half = parts % 2 === 0 && i % (parts / 2) === 0;
-    marks.push({
-      x: pointsToPixels(points, zoom),
-      size: whole ? 'major' : half ? 'half' : 'minor',
-      label: whole && i > 0 ? String(Math.round(fromPoints(points, unit))) : undefined,
-    });
-  }
-  const top = { major: '55%', half: '70%', minor: '80%' } as const;
-  return (
-    <svg
-      className={styles.ticks}
-      aria-hidden="true"
-      focusable="false"
-      width={pointsToPixels(width, zoom)}
-      height="100%"
-    >
-      {marks.map((mark) => (
-        <g key={mark.x}>
-          <line className={styles.tick} x1={mark.x} x2={mark.x} y1="100%" y2={top[mark.size as keyof typeof top]} />
-          {mark.label && (
-            <text className={styles.tickText} x={mark.x + 2} y="50%">
-              {mark.label}
-            </text>
-          )}
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 interface Edits {
   commit(marker: Marker, at: number): void;
   addAt(x: number): void;
@@ -173,7 +138,9 @@ function useEdits(props: RulerBarProps, grid: number): Edits {
     const next = movedIndent(marker.kind, indent, marker.kind === 'right' ? width - at : at, width);
     if (JSON.stringify(next) === JSON.stringify(indent)) return;
     props.onIndent(next);
-    announce(t('textRuler.announced', { name: markerName(marker), value: valueText(at, unit) }));
+    // The announced value is where the marker really ended up, after the limits.
+    const landed = markersOf(next, [], width).find((m) => m.kind === marker.kind)!.at;
+    announce(t('textRuler.announced', { name: markerName(marker), value: valueText(landed, unit) }));
   };
 
   /** A click on the bare ruler adds a stop of the selected type, or sets the indent for the two indent types. */
@@ -196,31 +163,57 @@ function useEdits(props: RulerBarProps, grid: number): Edits {
   return { commit, addAt, remove };
 }
 
-/** Arrow keys move a marker one grid step (Alt: half a point; Shift: four steps); Home and End go to the ends. */
-function markerKey(marker: Marker, edits: Edits, grid: number, width: number) {
+/** Arrow keys move a marker one grid step (Alt: half a point; Shift: four steps); Home and End go to its limits. */
+function markerKey(marker: Marker, edits: Edits, grid: number, limits: Limits) {
   return (event: KeyboardEvent) => {
     const step = (event.altKey ? 0.5 : grid) * (event.shiftKey ? 4 : 1);
     const forward = event.key === 'ArrowRight' || event.key === 'ArrowUp';
     const back = event.key === 'ArrowLeft' || event.key === 'ArrowDown';
-    if (forward || back) edits.commit(marker, clamp(roundPoints(marker.at + (forward ? step : -step)), 0, width));
-    else if (event.key === 'Home') edits.commit(marker, 0);
-    else if (event.key === 'End') edits.commit(marker, width);
+    if (forward || back) {
+      edits.commit(marker, clamp(roundPoints(marker.at + (forward ? step : -step)), limits.min, limits.max));
+    } else if (event.key === 'Home') edits.commit(marker, limits.min);
+    else if (event.key === 'End') edits.commit(marker, limits.max);
     else if ((event.key === 'Delete' || event.key === 'Backspace') && marker.kind === 'tab') edits.remove(marker);
     else return;
     event.preventDefault();
   };
 }
 
+/** The pointer in the track, with x measured from the start edge so a mirrored bar reads like a normal one. */
+function localPoint(track: HTMLElement, event: PointerEvent, rtl: boolean | undefined) {
+  const box = track.getBoundingClientRect();
+  const x = event.clientX - box.left;
+  return { x: rtl ? box.width - x : x, y: event.clientY - box.top, height: box.height };
+}
+
+function focusMarker(track: HTMLElement, marker: Marker): void {
+  track.querySelector<HTMLElement>(`[data-marker="${marker.id}"]`)?.focus();
+}
+
+/** What a pointer drag ends with: a tab stop off the ruler is removed, any other marker lands where it was dragged. */
+function finishDrag(marker: Marker, edits: Edits, drop: number, at: { y: number; height: number }): void {
+  const outside = at.y < 0 ? at.y : at.y > at.height ? at.y - at.height : 0;
+  if (marker.kind === 'tab' && offRuler(outside)) edits.remove(marker);
+  else edits.commit(marker, drop);
+}
+
 /** The track's pointer handling: pick a marker, start a drag past the threshold, and commit on release. */
-function useTrackPointer(props: RulerBarProps, markers: readonly Marker[], edits: Edits, grid: number) {
-  const { zoom, width } = props;
+function useTrackPointer(
+  props: RulerBarProps,
+  markers: readonly Marker[],
+  edits: Edits,
+  grid: number,
+  limitsOf: (marker: Marker) => Limits,
+) {
+  const { zoom, rtl } = props;
   useWatchPen();
   const track = useRef<HTMLDivElement>(null);
   const press = useRef<Press | null>(null);
   const [drag, setDrag] = useState<{ id: string; at: number } | null>(null);
-  const local = (event: PointerEvent) => {
-    const box = track.current!.getBoundingClientRect();
-    return { x: event.clientX - box.left, y: event.clientY - box.top, height: box.height };
+  const local = (event: PointerEvent) => localPoint(track.current!, event, rtl);
+  const dropAt = (marker: Marker, event: PointerEvent, from: number) => {
+    const { min, max } = limitsOf(marker);
+    return clamp(dragValue(marker.at, (rtl ? -1 : 1) * (event.clientX - from), zoom, grid, event.altKey), min, max);
   };
   const end = () => {
     press.current = null;
@@ -233,20 +226,18 @@ function useTrackPointer(props: RulerBarProps, markers: readonly Marker[], edits
     const marker = pickMarker(markers, x, y, height, zoom);
     press.current = { marker, pointer: event.pointerId, x: event.clientX, y: event.clientY, started: false };
     capture(track.current, event.pointerId, true);
-    if (marker) track.current.querySelector<HTMLElement>(`[data-marker="${marker.id}"]`)?.focus();
+    if (marker) focusMarker(track.current, marker);
     event.preventDefault();
   };
 
   const onPointerMove = (event: PointerEvent) => {
     const current = press.current;
     if (current?.pointer !== event.pointerId) return;
-    const dx = event.clientX - current.x;
     // A press that stays within the threshold is a tap: nothing moves.
-    if (!current.started && Math.hypot(dx, event.clientY - current.y) < DRAG_THRESHOLD_PX) return;
+    const moved = Math.hypot(event.clientX - current.x, event.clientY - current.y);
+    if (!current.started && moved < DRAG_THRESHOLD_PX) return;
     current.started = true;
-    if (!current.marker) return;
-    const at = clamp(dragValue(current.marker.at, dx, zoom, grid, event.altKey), 0, width);
-    setDrag({ id: current.marker.id, at });
+    if (current.marker) setDrag({ id: current.marker.id, at: dropAt(current.marker, event, current.x) });
   };
 
   const onPointerUp = (event: PointerEvent) => {
@@ -255,21 +246,10 @@ function useTrackPointer(props: RulerBarProps, markers: readonly Marker[], edits
     capture(track.current, event.pointerId, false);
     end();
     const { marker } = current;
+    if (current.started && marker) finishDrag(marker, edits, dropAt(marker, event, current.x), local(event));
+    else if (!current.started && !marker) edits.addAt(local(event).x);
     // The pointer is done: the text gets focus back, so typing goes on where it was.
-    const release = () => props.onRelease?.();
-    if (!current.started) {
-      if (!marker) edits.addAt(local(event).x);
-      return release();
-    }
-    if (!marker) return release();
-    const box = local(event);
-    // A tab stop dragged off the ruler, above, or below it, is removed.
-    const outside = box.y < 0 ? box.y : box.y > box.height ? box.y - box.height : 0;
-    if (marker.kind === 'tab' && offRuler(outside)) edits.remove(marker);
-    else {
-      edits.commit(marker, clamp(dragValue(marker.at, event.clientX - current.x, zoom, grid, event.altKey), 0, width));
-    }
-    release();
+    props.onRelease?.();
   };
 
   return { track, drag, handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: end } };
@@ -281,14 +261,14 @@ interface MarkerViewProps {
   dragging: boolean;
   unit: RulerUnit;
   zoom: number;
-  width: number;
+  limits: Limits;
   onKeyDown(event: KeyboardEvent): void;
 }
 
 /** A marker: a slider with its value in the unit, and a 44 px box that is a target for pen and touch. */
-function MarkerView({ marker, at, dragging, unit, zoom, width, onKeyDown }: MarkerViewProps) {
-  // Every marker shows its place from the left edge, so ArrowRight raises the value of all of them, the right
-  // indent included, and Home and End are the minimum and the maximum.
+function MarkerView({ marker, at, dragging, unit, zoom, limits, onKeyDown }: MarkerViewProps) {
+  // Every marker shows its place from the start edge. ArrowRight raises the value of all of them, the right indent
+  // included. Home and End are the minimum and the maximum.
   const shown = at;
   return (
     <span
@@ -300,8 +280,8 @@ function MarkerView({ marker, at, dragging, unit, zoom, width, onKeyDown }: Mark
       tabIndex={0}
       aria-orientation="horizontal"
       aria-label={markerName(marker)}
-      aria-valuemin={0}
-      aria-valuemax={Number(fromPoints(width, unit).toFixed(2))}
+      aria-valuemin={Number(fromPoints(limits.min, unit).toFixed(2))}
+      aria-valuemax={Number(fromPoints(limits.max, unit).toFixed(2))}
       aria-valuenow={Number(shownNumber(shown, unit))}
       aria-valuetext={valueText(shown, unit)}
       className={styles.marker}
@@ -309,6 +289,7 @@ function MarkerView({ marker, at, dragging, unit, zoom, width, onKeyDown }: Mark
       onKeyDown={onKeyDown}
     >
       <i className={styles.glyph} aria-hidden="true" />
+      <i className={styles.ring} aria-hidden="true" />
     </span>
   );
 }
@@ -349,21 +330,23 @@ export function UnitSelect({ unit, onUnit }: { unit: RulerUnit; onUnit(unit: Rul
 
 /** The track: its left edge is the left edge of the content box, so the host places it where the text starts. */
 export function RulerBar(props: RulerBarProps) {
-  const { unit, zoom, width, indent, tabs } = props;
+  const { unit, zoom, width, indent, tabs, rtl } = props;
   const grid = snapPoints(unit);
   const markers = markersOf(indent, tabs, width);
   const edits = useEdits(props, grid);
-  const { track, drag, handlers } = useTrackPointer(props, markers, edits, grid);
+  const limitsOf = (marker: Marker) => markerLimits(marker.kind, indent, width);
+  const { track, drag, handlers } = useTrackPointer(props, markers, edits, grid, limitsOf);
   return (
     <div className={styles.bar} role="group" aria-label={t('textRuler.label')} data-ruler>
       <div
         ref={track}
         className={styles.track}
         data-track
+        dir={rtl ? 'rtl' : 'ltr'}
         style={{ inlineSize: pointsToPixels(width, zoom) }}
         {...handlers}
       >
-        <Ticks unit={unit} zoom={zoom} width={width} />
+        <Ticks unit={unit} zoom={zoom} width={width} rtl={rtl} />
         {markers.map((marker) => (
           <MarkerView
             key={marker.id}
@@ -372,8 +355,8 @@ export function RulerBar(props: RulerBarProps) {
             dragging={drag?.id === marker.id}
             unit={unit}
             zoom={zoom}
-            width={width}
-            onKeyDown={markerKey(marker, edits, grid, width)}
+            limits={limitsOf(marker)}
+            onKeyDown={markerKey(marker, edits, grid, limitsOf(marker))}
           />
         ))}
       </div>

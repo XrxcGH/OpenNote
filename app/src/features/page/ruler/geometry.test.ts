@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TabStop } from '../../../editor/paragraph/attributes';
-import { dragValue, movedIndent, movedTab, pixelsToPoints, withTab, withoutTab } from './geometry';
+import { dragValue, markerLimits, movedIndent, movedTab, pixelsToPoints, withTab, withoutTab } from './geometry';
 import { defaultUnit, fromPoints, shownNumber, snapPoints, toPoints } from './units';
 
 describe('ruler arithmetic', () => {
@@ -57,5 +57,24 @@ describe('moving markers', () => {
     const stops: TabStop[] = [{ pos: 72, align: 'decimal', leader: 'dot' }];
     expect(movedTab(stops, 72, 144)).toEqual([{ pos: 144, align: 'decimal', leader: 'dot' }]);
     expect(withoutTab(stops, 72)).toEqual([]);
+  });
+});
+
+describe('marker limits', () => {
+  it('no marker passes another: the column keeps 1/16 inch', () => {
+    const indent = { start: 216, end: 0, first: 36 };
+    expect(markerLimits('right', indent, 468).min).toBe(252 + 4.5);
+    expect(markerLimits('left', { start: 0, end: 72, first: 18 }, 468).max).toBe(468 - 72 - 4.5 - 18);
+    expect(markerLimits('first', { start: 0, end: 72, first: 0 }, 468).max).toBe(468 - 72 - 4.5);
+  });
+
+  it('a negative indent stays valid, and a move never goes against its direction', () => {
+    expect(markerLimits('left', { start: -36, end: 0, first: 0 }, 468).min).toBeLessThan(-36);
+    expect(movedIndent('left', { start: -36, end: 0, first: 0 }, -40.5, 468).start).toBe(-40.5);
+    expect(movedIndent('first', { start: 0, end: 0, first: -36 }, -40.5, 468).first).toBe(-40.5);
+  });
+
+  it('a right marker already across the left one is brought back inside', () => {
+    expect(movedIndent('right', { start: 216, end: 468, first: 0 }, 468, 468).end).toBe(468 - 216 - 4.5);
   });
 });

@@ -4,7 +4,8 @@ import { render } from '@testing-library/react';
 import type { Editor } from '@tiptap/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initFlags } from '../../../app/flags';
-import { paraAt } from '../../../editor/commands/paragraph';
+import { paraAt, paraTargets } from '../../../editor/commands/paragraph';
+import { paraFormat } from '../../../editor/paragraph/attributes';
 import { mountEditor } from '../../../editor/commands/testing';
 import type { TestEditor } from '../../../editor/commands/testing';
 import type { MountedPage } from '../mount';
@@ -45,8 +46,8 @@ function fakePage(editor: Editor | null): MountedPage {
 }
 
 /** An editor 600 px wide with 20 px of padding on each side, scaled like a zoomed page. */
-function place(zoom: number, left = 100): TestEditor {
-  const placed = mountEditor('hello');
+function place(zoom: number, left = 100, source = 'hello'): TestEditor {
+  const placed = mountEditor(source);
   const style = placed.root.style;
   style.position = 'absolute';
   style.top = '200px';
@@ -123,6 +124,57 @@ describe('writing back', () => {
     expect(paraAt(editor.state).indent).toEqual({ start: 36, end: 0, first: 0 });
     // One drag is one transaction, so one undo step of the page's history takes the whole drag back.
     expect(changes).toHaveLength(1);
+  });
+});
+
+describe('writing back, with several paragraphs selected', () => {
+  it('a first-line drag changes only the first field of each, so every left indent stays', async () => {
+    mounted = place(1, 100, '[one\n\ntwo]');
+    const run = mounted.editor;
+    const targets = paraTargets(run.state.doc, 0, run.state.doc.content.size);
+    expect(targets).toHaveLength(2);
+    const tr = run.state.tr;
+    tr.setNodeAttribute(targets[0].pos, 'indent', { start: 36, end: 0, first: 0 });
+    tr.setNodeAttribute(targets[1].pos, 'indent', { start: 72, end: 0, first: 0 });
+    run.view.dispatch(tr);
+    setRulerShown(true);
+    const view = render(<Ruler mounted={fakePage(run)} />);
+    await frame();
+    await frames(3);
+    const track = view.container.querySelector<HTMLElement>('[data-track]')!;
+    const box = track.getBoundingClientRect();
+    const send = (type: string, dx: number) =>
+      track.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          pointerId: 9,
+          pointerType: 'mouse',
+          button: 0,
+          clientX: box.left + 48 + dx,
+          clientY: box.top + 0.2 * box.height,
+        }),
+      );
+    // The first-line marker of the first paragraph is at 36 pt = 48 px.
+    send('pointerdown', 0);
+    send('pointermove', 12);
+    send('pointermove', 24);
+    send('pointerup', 24);
+    const after = paraTargets(run.state.doc, 0, run.state.doc.content.size).map(
+      ({ node }) => paraFormat(node.attrs).indent,
+    );
+    expect(after).toEqual([
+      { start: 36, end: 0, first: 18 },
+      { start: 72, end: 0, first: 18 },
+    ]);
+  });
+});
+
+describe('the ruler follows the text block', () => {
+  it('re-measures when the block is resized with no camera move', async () => {
+    const { track, editor } = await show(1);
+    expect(track.getBoundingClientRect().width).toBeCloseTo(560, 0);
+    (editor.view.dom as HTMLElement).style.width = '440px';
+    await vi.waitFor(() => expect(track.getBoundingClientRect().width).toBeCloseTo(400, 0));
   });
 });
 

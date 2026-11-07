@@ -98,20 +98,33 @@
     cursor: ew-resize;
   }
 
-  /* The ring is drawn on the glyph; the box keeps a transparent one, which forced colors show. */
+  /*
+   * The ring is its own element with the glyph's box and no clip-path, because a clip-path would cut the outline
+   * off. The marker keeps a transparent outline, which forced colors show.
+   */
   .marker:focus {
     outline: var(--size-focus-ring-width) solid transparent;
   }
 
-  .marker:focus-visible .glyph {
+  .ring {
+    display: none;
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: var(--size-focus-ring-offset);
+    pointer-events: none;
   }
 
-  .glyph {
+  .marker:focus-visible .ring {
+    display: block;
+  }
+
+  .glyph,
+  .ring {
     position: absolute;
     inline-size: 10px;
     block-size: 8px;
+  }
+
+  .glyph {
     background: var(--color-accent-primary);
   }
 
@@ -119,26 +132,36 @@
     background: var(--color-accent-candle);
   }
 
-  .marker[data-kind='first'] .glyph {
+  .marker[data-kind='first'] :is(.glyph, .ring) {
     inset-block-start: 2px;
+  }
+
+  .marker[data-kind='first'] .glyph {
     clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  .marker[data-kind='hanging'] :is(.glyph, .ring),
+  .marker[data-kind='right'] :is(.glyph, .ring) {
+    inset-block-start: 20px;
   }
 
   .marker[data-kind='hanging'] .glyph,
   .marker[data-kind='right'] .glyph {
-    inset-block-start: 20px;
     clip-path: polygon(50% 0, 100% 100%, 0 100%);
   }
 
-  .marker[data-kind='left'] .glyph {
+  .marker[data-kind='left'] :is(.glyph, .ring) {
     inset-block-start: 30px;
     block-size: 6px;
   }
 
-  .marker[data-kind='tab'] .glyph {
+  .marker[data-kind='tab'] :is(.glyph, .ring) {
     inset-block-start: 26px;
     inline-size: 8px;
     block-size: 10px;
+  }
+
+  .marker[data-kind='tab'] .glyph {
     background: var(--color-text-primary);
   }
 
@@ -182,7 +205,7 @@
       background: Highlight;
     }
 
-    .marker:focus-visible .glyph {
+    .marker:focus-visible .ring {
       outline: 2px solid Highlight;
       outline-offset: 2px;
     }

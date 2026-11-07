@@ -11,6 +11,7 @@ import { targetEditor } from '../formattingBar/target';
 import type { MountedPage } from '../mount';
 import { t } from '../../../strings/t';
 import { RulerBar, TabTypeButton, UnitSelect } from './RulerBar';
+import { indentPatch, setIndentFields } from './setIndent';
 import { rulerState, rulerTabType, setRulerUnit } from './store';
 import { roundPoints } from './units';
 import styles from './ruler.module.css';
@@ -36,7 +37,7 @@ const sameFrame = (a: Frame | null, b: Frame | null): boolean =>
 
 /** A key for the paragraph parts the ruler shows, so a keystroke that changes neither redraws nothing. */
 const paraKey = (para: ParaFormat | null): string =>
-  para ? JSON.stringify([para.indent ?? null, para.tabs ?? null]) : '';
+  para ? JSON.stringify([para.indent ?? null, para.tabs ?? null, para.dir ?? null]) : '';
 
 const NO_INDENT: Indent = { start: 0, end: 0, first: 0 };
 
@@ -57,15 +58,13 @@ export function measureFrame(editor: Editor, host: HTMLElement): Frame | null {
   };
 }
 
-const storedIndent = (indent: Indent): Indent | null =>
-  indent.start === 0 && indent.end === 0 && indent.first === 0 ? null : indent;
-
 /** The frame and paragraph of the target editor, measured only when something that moves them changes. */
 function useRulerFrame(mounted: MountedPage, on: boolean, clip: RefObject<HTMLDivElement | null>) {
   const [frame, setFrame] = useState<Frame | null>(null);
   const [para, setPara_] = useState<ParaFormat | null>(null);
-  // Measuring forces a layout, so it runs only when the camera, the window, the active block, or the clip's size
-  // changes, once per frame at most. A keystroke only reads the paragraph, which is cheap.
+  // Measuring forces a layout. It runs once per frame at most. It runs only when something that moves the box
+  // changes: the camera, the window, the active block, or the size of the clip or the text block.
+  // A keystroke only reads the paragraph, which is cheap.
   const frameAt = useRef(0);
   const readPara = useCallback((editor: Editor | null) => {
     const next = editor && !editor.isDestroyed ? paraAt(editor.state) : null;
@@ -97,6 +96,8 @@ function useRulerFrame(mounted: MountedPage, on: boolean, clip: RefObject<HTMLDi
     }
     const observer = new ResizeObserver(refresh);
     if (clip.current) observer.observe(clip.current);
+    // A block resized, or text reflowed above it, moves the content box without a camera move.
+    if (editor) observer.observe(editor.view.dom);
     window.addEventListener('resize', refresh);
     return () => {
       stops.forEach((stop) => stop());
@@ -122,6 +123,11 @@ export function Ruler({ mounted }: { mounted: MountedPage }) {
   const run = (key: 'indent' | 'tabs', value: unknown) => {
     if (editor) setPara(key, value)(editor.state, editor.view.dispatch);
   };
+  const runIndent = (next: Indent) => {
+    if (!editor) return;
+    const patch = indentPatch(para?.indent ?? NO_INDENT, next);
+    setIndentFields(patch)(editor.state, editor.view.dispatch);
+  };
   return (
     <div className={styles.host} data-ruler-host>
       <span className={styles.control} hidden={!ready}>
@@ -135,9 +141,10 @@ export function Ruler({ mounted }: { mounted: MountedPage }) {
               zoom={frame.zoom}
               width={frame.width}
               indent={para.indent ?? NO_INDENT}
+              rtl={para.dir === 'rtl'}
               tabs={(para.tabs ?? []) as TabStop[]}
               tabType={tabType}
-              onIndent={(next) => run('indent', storedIndent(next))}
+              onIndent={runIndent}
               onTabs={(next) => run('tabs', next.length === 0 ? null : next)}
               onRelease={() => editor?.commands.focus()}
             />

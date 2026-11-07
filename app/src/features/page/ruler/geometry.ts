@@ -1,5 +1,5 @@
-// The ruler's arithmetic, apart from the DOM (text DESIGN.md 5.4). A drag is measured in client pixels, so the same
-// drag means fewer points when the page is zoomed in: points = pixels x 0.75 / zoom.
+// The ruler's arithmetic, apart from the DOM (text DESIGN.md 5.4). A drag is measured in client pixels.
+// The same drag means fewer points when the page is zoomed in: points = pixels x 0.75 / zoom.
 import type { Indent, TabAlign, TabStop } from '../../../editor/paragraph/attributes';
 import { MAX_TAB_STOPS } from '../../../editor/paragraph/attributes';
 import { roundPoints } from './units';
@@ -36,18 +36,43 @@ export function clamp(value: number, low: number, high: number): number {
 /** The first-line marker's position from the left edge of the content box. */
 export const firstLineAt = (indent: Indent): number => indent.start + indent.first;
 
+/** The least width of the text column between the right marker and the others: 1/16 inch. */
+export const MIN_COLUMN = 4.5;
+
+export interface Limits {
+  min: number;
+  max: number;
+}
+
 /**
- * The indent after a marker moves to `position` points from the left edge (from the right edge for `right`).
- * The first-line marker changes only `first`; the hanging marker moves the left indent and keeps the first line where
- * it is; the left marker moves both, as Word's three marker parts do.
+ * Where a marker may go, in points from the left edge. No marker passes another, so the text column keeps at least
+ * MIN_COLUMN. A negative indent is valid down to -MAX_POINTS. A tab stop stays inside the box.
+ */
+export function markerLimits(kind: MarkerKind, indent: Indent, width: number): Limits {
+  if (kind === 'tab') return { min: 0, max: Math.max(0, width) };
+  if (kind === 'right') {
+    const min = Math.max(firstLineAt(indent), indent.start, width - MAX_POINTS) + MIN_COLUMN;
+    return { min, max: Math.max(min, width, width - indent.end) };
+  }
+  const room = width - indent.end - MIN_COLUMN;
+  const max = kind === 'left' ? room - Math.max(0, indent.first) : room;
+  return { min: -MAX_POINTS, max: Math.max(-MAX_POINTS, max) };
+}
+
+/**
+ * The indent after a marker moves to `position` points from the left edge (from the right edge for `right`), kept
+ * inside `markerLimits`. The first-line marker changes only `first`. The hanging marker moves the left indent and
+ * keeps the first line where it is. The left marker moves both, as Word's three marker parts do.
  */
 export function movedIndent(kind: MarkerKind, indent: Indent, position: number, width: number): Indent {
-  const at = clamp(roundPoints(position), 0, MAX_POINTS);
-  if (kind === 'first') return { ...indent, first: roundPoints(at - indent.start) };
-  if (kind === 'hanging') return { ...indent, start: at, first: roundPoints(firstLineAt(indent) - at) };
-  if (kind === 'left') return { ...indent, start: at };
-  const end = clamp(at, 0, Math.max(0, width));
-  return { ...indent, end };
+  const lim = markerLimits(kind, indent, width);
+  if (kind === 'right')
+    return { ...indent, end: roundPoints(width - clamp(roundPoints(width - position), lim.min, lim.max)) };
+  const at = clamp(roundPoints(position), lim.min, lim.max);
+  const first = (value: number) => clamp(roundPoints(value), -MAX_POINTS, MAX_POINTS);
+  if (kind === 'first') return { ...indent, first: first(at - indent.start) };
+  if (kind === 'hanging') return { ...indent, start: at, first: first(firstLineAt(indent) - at) };
+  return { ...indent, start: at };
 }
 
 /** A marker's position as `movedIndent` reads it: points from the left edge, or from the right edge for `right`. */
