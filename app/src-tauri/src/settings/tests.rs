@@ -283,6 +283,24 @@ fn a_beta_8_file_loads_with_the_new_keys_at_their_defaults_and_saves_as_version_
     assert_eq!(saved["editing"]["slashMenu"], json!(false));
 }
 
+#[test]
+fn the_code_group_keeps_valid_changes_and_rejects_values_outside_its_choices() {
+    let store = SettingsStore::in_memory(&Settings::default());
+    let python = json!({ "tabSize": 2, "insertSpaces": true });
+    let patch = json!({ "code": { "suggestions": "onRequest", "indent": { "python": python } } });
+    let settings = store.update(patch, "main").expect("valid");
+    assert_eq!(settings.code.suggestions, code::CodeSuggestions::OnRequest);
+    assert_eq!(settings.code.indent_for("python").tab_size, 2);
+    let error = store
+        .update(json!({ "code": { "timeLimitSeconds": 600 } }), "main")
+        .expect_err("over the tier 1 limit");
+    assert_eq!(error.field.as_deref(), Some("code.timeLimitSeconds"));
+    assert!(store
+        .update(json!({ "code": { "acceptButton": "sometimes" } }), "main")
+        .is_err());
+    assert_eq!(store.get().code.time_limit_seconds, 10);
+}
+
 /// The environment variable that turns [`kill_child_writes_forever`] into the child process of the kill test.
 const KILL_TEST_FILE: &str = "OPENNOTE_KILL_TEST_FILE";
 

@@ -26,7 +26,7 @@ export {
 export type { ArtProps, EmptyKind, Sky } from './illustrations';
 export { useDelayedFlag, useLayer, useLongPress } from './hooks';
 export type { PointerHandlers, PressEvent } from './hooks';
-export type { IconName, IconProps } from './icons';
+export type { IconComponent, IconName, IconProps } from './icons';
 export { openMenu } from './Menu';
 export type { MenuAnchor, MenuItemSpec, MenuOptions } from './Menu';
 export { Popover, useHoverOpen } from './Popover';

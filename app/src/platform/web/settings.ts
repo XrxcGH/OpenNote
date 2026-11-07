@@ -25,13 +25,50 @@ const CHOICES: Record<string, readonly unknown[]> = {
   'text.darkCustomBackgrounds': ['exact', 'soften'],
   'tables.newTableKeys': ['spreadsheet', 'document'],
   'tables.formulaBar': [true, false],
+  'code.pythonRuntime': ['quick', 'full'],
+  'code.suggestions': ['off', 'onRequest', 'automaticRules', 'automaticModel'],
+  'code.acceptButton': ['touchOrPen', 'always', 'never'],
+  'code.diagnostics': ['errors', 'warnings', 'everything'],
+  'code.cStandard': ['c99', 'c11', 'c17', 'c23'],
+  'code.cppStandard': ['cpp14', 'cpp17', 'cpp20', 'cpp23'],
 };
+
+/** The code group's number ranges, as Rust checks them (settings/code.rs). */
+const RANGES: Record<string, readonly [number, number]> = {
+  'code.timeLimitSeconds': [1, 60],
+  'code.memoryLimitMib': [16, 256],
+};
+
+/** A key of code.indent, as Rust checks it (settings/code.rs, is_language_id). */
+const LANGUAGE_ID = /^[a-z](?:[a-z0-9-]{0,22}[a-z0-9])?$/;
+
+/** The code.indent map: at most 64 languages, each a language id with a tab size of 1 to 8. */
+function invalidIndent(indent: unknown): string | null {
+  const entries = Object.entries((indent ?? {}) as Record<string, { tabSize?: unknown }>);
+  if (entries.length > 64) return 'code.indent has more than 64 languages';
+  for (const [id, choice] of entries) {
+    if (!LANGUAGE_ID.test(id)) return `code.indent can't use ${id} as a language id`;
+    const size = choice?.tabSize;
+    if (typeof size !== 'number' || !Number.isInteger(size) || size < 1 || size > 8) {
+      return `code.indent.${id} tab size must be 1 to 8`;
+    }
+  }
+  return null;
+}
 
 function invalidField(settings: Settings): IpcError | null {
   for (const [path, choices] of Object.entries(CHOICES)) {
     const value = path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], settings);
     if (!choices.includes(value)) return { code: 'invalid', message: `${path} can't be ${String(value)}`, field: path };
   }
+  for (const [path, [min, max]] of Object.entries(RANGES)) {
+    const value = path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], settings);
+    if (typeof value !== 'number' || value < min || value > max) {
+      return { code: 'invalid', message: `${path} must be ${min} to ${max}`, field: path };
+    }
+  }
+  const indent = invalidIndent(settings.code?.indent);
+  if (indent) return { code: 'invalid', message: indent, field: 'code.indent' };
   const scale = settings.appearance.uiScale;
   if (typeof scale !== 'number' || scale < 90 || scale > 150) {
     return { code: 'invalid', message: 'appearance.uiScale must be 90 to 150', field: 'appearance.uiScale' };

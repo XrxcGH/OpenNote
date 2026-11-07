@@ -109,6 +109,8 @@ export const interop = {
       csv: 'Tables as CSV files',
       csvHint: 'One .csv file for a table, or a folder of them. Text outside tables is left out.',
     },
+    removePersonal: 'Remove personal information',
+    removePersonalHelp: 'Leaves the names of authors and the dates out of comments, suggestions, and the file details.',
     folderLabel: 'Where to save it',
     folderNone: 'No folder chosen yet',
     chooseFolder: 'Choose a folder…',

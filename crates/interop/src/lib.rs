@@ -8,6 +8,7 @@
 
 pub mod archive;
 pub mod assets;
+pub mod bundled_fonts;
 pub mod csv;
 pub mod dates;
 pub mod dest;
@@ -43,16 +44,17 @@ pub use detect::{detect, Detected, SourceKind};
 pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};
 pub use export::{
-    export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_latex,
-    export_latex_with, export_pdf_bundle, export_pptx, export_share, export_share_with, export_tables, latex_preview,
-    Exported, Format, LatexCitation, LatexDate, LatexEngine, LatexMargin, LatexOptions, LatexPaper, NoPdfRenderer,
-    PdfRenderer, PreparedPdfRenderer, Scope, TableFormat,
+    export_docx, export_docx_options, export_docx_with, export_files, export_files_with, export_html_single,
+    export_latex, export_latex_with, export_pdf_bundle, export_pptx, export_share, export_share_with, export_tables,
+    latex_preview, Exported, Format, LatexCitation, LatexDate, LatexEngine, LatexMargin, LatexOptions, LatexPaper,
+    NoPdfRenderer, PdfRenderer, PreparedPdfRenderer, Scope, TableFormat,
 };
 pub use import::{
-    import_csv, import_docx, import_docx_with, import_eml, import_enex, import_enex_reader, import_highlights,
-    import_html_folder, import_keep_folder, import_logseq_folder, import_markdown_folder, import_mht,
-    import_notes_apps, import_notion_folder, import_onenote, import_pptx, import_sticky_notes, import_text_folder,
-    import_textbundle_folder, import_xlsx, sticky_notes_database, Flavor, WordPages,
+    import_csv, import_docx, import_docx_options, import_docx_with, import_eml, import_enex, import_enex_reader,
+    import_highlights, import_html_folder, import_keep_folder, import_logseq_folder, import_markdown_folder,
+    import_mht, import_notes_apps, import_notion_folder, import_onenote, import_pptx, import_sticky_notes,
+    import_text_folder, import_textbundle_folder, import_xlsx, sticky_notes_database, Flavor, TrackedChanges,
+    WordImport, WordPages,
 };
 pub use job::{import, preview, ImportOptions, Preview, PreviewSection};
 pub use report::{Entry, LossGroup, Outcome, PageReport, Report, ReportKind};

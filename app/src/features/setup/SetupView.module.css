@@ -31,6 +31,13 @@
         linear-gradient(to bottom, var(--color-ambient-canvas-top) 10%, var(--color-ambient-canvas-bottom) 88%);
   }
 
+  @media (prefers-contrast: more) {
+    .screen,
+    :global(:root[data-theme='dark']) .screen {
+      background: var(--color-surface-sunken);
+    }
+  }
+
   .card {
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;

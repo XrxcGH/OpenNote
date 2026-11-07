@@ -26,6 +26,7 @@ use opennote_core::{
     },
     Clock, Limits, NotebookId, OrderKey, PageId, SectionId, SystemClock, Timings,
 };
+use opennote_interop::docx::WordOptions;
 use opennote_interop::{
     page_builder::PageBuilder, Control, Exported, Format, ImportEnv, InteropError, LatexOptions, NoteSource,
     PdfRenderer, Result, Scope, TableFormat,
@@ -135,6 +136,28 @@ pub struct ExportRequest {
     /// LaTeX: the options, and the citation library for `\cite` and the BibTeX file.
     #[serde(default)]
     pub latex: Option<LatexOptions>,
+    /// Word: the choices of the export dialog.
+    #[serde(default)]
+    pub word: Option<WordChoices>,
+}
+
+/// What the Word export asks besides the folder.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WordChoices {
+    /// Leave the names of authors and the dates out of the file, as Word's "Remove personal information" does.
+    #[serde(default)]
+    pub remove_personal: bool,
+}
+
+impl WordChoices {
+    /// The writer's options for these choices. The device's faces and font embedding are not offered yet.
+    pub fn options(&self) -> WordOptions {
+        WordOptions {
+            remove_personal: self.remove_personal,
+            ..WordOptions::default()
+        }
+    }
 }
 
 /// The notebook, sections, and pages of an export, read from the bridge's page files.
@@ -455,7 +478,10 @@ fn run_into(
         ExportFormat::Markdown => opennote_interop::export_files_with(source, scope, Format::Markdown, folder, control),
         ExportFormat::Html => opennote_interop::export_files_with(source, scope, Format::Html, folder, control),
         ExportFormat::HtmlSingle => opennote_interop::export_html_single(source, scope, folder, control),
-        ExportFormat::Docx => opennote_interop::export_docx_with(source, scope, folder, control),
+        ExportFormat::Docx => {
+            let options = request.word.clone().unwrap_or_default().options();
+            opennote_interop::export_docx_options(source, scope, folder, control, &options)
+        }
         ExportFormat::Pdf => opennote_interop::export_pdf_bundle(source, scope, pdf, folder, control),
         ExportFormat::Pptx => opennote_interop::export_pptx(source, scope, folder, control),
         ExportFormat::Xlsx => opennote_interop::export_tables(source, scope, TableFormat::Xlsx, folder, control),

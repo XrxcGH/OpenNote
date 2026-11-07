@@ -125,6 +125,30 @@ describe('Export', () => {
     expect(platform.interop.log.revealed).toEqual(['C:\\Users\\Sample\\Documents\\Biology 101']);
   });
 
+  it('offers Remove personal information for Word only, and sends the choice', async () => {
+    localStorage.removeItem('opennote.export.removePersonal');
+    try {
+      const { platform } = await renderApp();
+      const dialog = await openExport('Biology 101');
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Markdown files/ }));
+      expect(within(dialog).queryByRole('switch', { name: 'Remove personal information' })).toBeNull();
+      await userEvent.click(within(dialog).getByRole('radio', { name: /Word document/ }));
+      const remove = within(dialog).getByRole('switch', { name: 'Remove personal information' });
+      expect(remove.getAttribute('aria-checked')).toBe('false');
+      const helpId = remove.getAttribute('aria-describedby') ?? '';
+      expect(document.getElementById(helpId)?.textContent).toMatch(/^Leaves the names of authors/);
+      await userEvent.click(remove);
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
+      await within(dialog).findByText('C:\\Users\\Sample\\Documents');
+      await expectNoAxeViolations(dialog);
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
+      await within(dialog).findByRole('heading', { name: 'Export finished' });
+      expect(platform.interop.log.exports[0]).toMatchObject({ format: 'docx', word: { removePersonal: true } });
+    } finally {
+      localStorage.removeItem('opennote.export.removePersonal');
+    }
+  });
+
   it('opens on Word, ready to export the page, from the page Export as Word command', async () => {
     await renderApp();
     const tree = screen.getByRole('tree', { name: 'Notebooks' });

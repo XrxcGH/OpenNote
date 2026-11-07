@@ -17,6 +17,7 @@ fn word_body(inlines: Vec<Inline>) -> String {
         modified: Timestamp::EPOCH,
         parts: vec![Part::Blocks(vec![Block::Paragraph(inlines)])],
         media: HashMap::new(),
+        setup: Default::default(),
     };
     let docx = build(&input).expect("the file builds");
     let (_, xml) = read_parts(&docx)
