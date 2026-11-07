@@ -574,10 +574,9 @@ impl<'a> Reader<'a> {
         };
         let script = TextScript::of(&run_text(r));
         let (mut marks, hidden) = self.marks_for(direct.as_ref(), script);
-        if hidden {
-            self.stats.hidden_runs += 1;
-            return;
-        }
+        // Hidden text comes in as visible text and is counted (DESIGN 9.2): a note app has no "print without
+        // hidden text", and leaving it out would lose it.
+        self.stats.hidden_runs += usize::from(hidden);
         // A format change: kept as a suggestion with the marks before it, or settled.
         let before = props.and_then(|p| child(p, "w:rprchange")).map(|change| {
             let old = child(change, "w:rpr").map(RunProps::read).unwrap_or_default();
