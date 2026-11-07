@@ -30,6 +30,18 @@ const NAMED = createCatalog({
 });
 const box = () => screen.getByRole('combobox', { name: 'Font' });
 
+describe('the font box, odd names and mixed fonts', () => {
+  it('renders a font named Constructor without throwing', () => {
+    renderUi(<FontPicker catalog={NAMED} value="Constructor" onPick={() => undefined} />);
+    expect((box() as HTMLInputElement).value).toBe('Constructor');
+  });
+
+  it('shows a placeholder when the selection mixes fonts', () => {
+    renderUi(<FontPicker catalog={NAMED} value={null} onPick={() => undefined} />);
+    expect(box().getAttribute('placeholder')).toBe('Mixed fonts');
+  });
+});
+
 describe('the font box', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -210,6 +222,16 @@ describe('the size box', () => {
     fireEvent.change(size(), { target: { value: typed } });
     fireEvent.keyDown(size(), { key: 'Enter' });
     expect(onCommit).toHaveBeenCalledWith(points);
+  });
+
+  it('commits the typed size, not a stale list highlight', () => {
+    const onCommit = vi.fn();
+    renderUi(<Harness onCommit={onCommit} />);
+    fireEvent.keyDown(size(), { key: 'ArrowDown' });
+    fireEvent.keyDown(size(), { key: 'ArrowDown' });
+    fireEvent.change(size(), { target: { value: '15' } });
+    fireEvent.keyDown(size(), { key: 'Enter' });
+    expect(onCommit).toHaveBeenCalledWith(15);
   });
 
   it.each(['0', '1639'])('refuses %s with the range message', (typed) => {

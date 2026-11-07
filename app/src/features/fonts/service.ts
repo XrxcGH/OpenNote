@@ -32,6 +32,11 @@ export const BUNDLED_FAMILIES: readonly string[] = [
   'Caladea',
 ];
 
+/** An own property only, so names like "constructor" or "__proto__" never reach Object.prototype. */
+function ownEntry<T>(table: Readonly<Record<string, T>>, key: string): T | undefined {
+  return Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
 /** Metric-compatible stand-ins (design section 6.3): same advance widths as the original, so pages break alike. */
 export const METRIC_ALIASES: Readonly<Record<string, string>> = {
   calibri: 'Carlito',
@@ -113,7 +118,7 @@ function mergeFamilies(device: readonly FontFamily[]): FontFamily[] {
   for (const name of BUNDLED_FAMILIES) {
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
-    const kind = BUNDLED_KIND[key] ?? { generic: 'sans-serif' as const, monospace: false };
+    const kind = ownEntry(BUNDLED_KIND, key) ?? { generic: 'sans-serif' as const, monospace: false };
     merged.push({ name, ...kind, faces: [bundledFace(name, kind.monospace)] });
   }
   return merged;
@@ -190,7 +195,7 @@ export function resolveFont(rawName: string, catalog: FontCatalog): ResolvedFont
   const target = split?.family ?? themed;
   const installed = catalog.has(target);
   const device = catalog.family(target);
-  const alias = METRIC_ALIASES[target.toLowerCase()];
+  const alias = ownEntry(METRIC_ALIASES, target.toLowerCase());
   const own = Object.entries(catalog.substitutions).find(([key]) => key.toLowerCase() === target.toLowerCase())?.[1];
   const chosen = installed ? undefined : own;
   const standIn = installed ? null : (chosen ?? alias ?? GENERIC_STACKS.sans[0]);
@@ -210,7 +215,7 @@ const STAND_IN_FOR: Readonly<Record<string, string>> = { Carlito: 'Calibri', Cal
 /** Starts loading the bundled stand-in a resolved font uses. Safe to call again; a failure leaves the fallback. */
 export function prepareFont(font: ResolvedFont): void {
   for (const one of font.stack) {
-    const original = STAND_IN_FOR[one];
+    const original = ownEntry(STAND_IN_FOR, one);
     if (original !== undefined) void loadStandIn(original).catch(() => undefined);
   }
 }

@@ -125,6 +125,7 @@ export function FontPicker(props: FontPickerProps) {
         aria-describedby={described || undefined}
         autoComplete="off"
         spellCheck={false}
+        placeholder={current === null ? t('textFonts.mixed') : undefined}
         value={box.text ?? current?.target ?? ''}
         style={current === null ? undefined : { fontFamily: current.css }}
         onFocus={(event) => event.currentTarget.select()}

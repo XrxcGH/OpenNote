@@ -219,3 +219,10 @@ describe('weights', () => {
     expect(splitWeightName('Segoe UI', has)).toBeNull();
   });
 });
+
+describe('font names that are built-in object properties', () => {
+  it.each(['Constructor', '__proto__', 'toString', 'hasOwnProperty'])('resolves %s as a missing font', (name) => {
+    const resolved = resolveFont(name, createCatalog({ families: [] }));
+    expect(resolved).toMatchObject({ installed: false, standIn: 'OpenNote Sans' });
+  });
+});

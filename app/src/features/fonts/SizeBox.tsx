@@ -97,6 +97,7 @@ export function SizeBox(props: SizeBoxProps) {
         onChange={(event) => {
           box.setText(event.target.value);
           box.setError(null);
+          box.setActive(-1); // Typing replaces any list highlight, so Enter commits the typed size.
         }}
         onClick={() => box.setOpen(true)}
         onKeyDown={box.onKeyDown}
