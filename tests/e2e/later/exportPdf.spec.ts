@@ -8,7 +8,7 @@ import { basename, join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { answerPickers, clickRow, dialogWith, runCommand } from './steps.ts';
+import { clickRow, dialogWith, pickerEnv, runCommand } from './steps.ts';
 
 /** Every file under a folder. */
 function filesUnder(folder: string): string[] {
@@ -23,7 +23,7 @@ describe('exporting a PDF from the real app', { skip: skipReason() }, () => {
 
   before(async () => {
     out = mkdtempSync(join(tmpdir(), 'opennote-export-'));
-    session = await launchApp();
+    session = await launchApp({ env: pickerEnv({ folder: out }) });
   });
 
   after(async () => {
@@ -34,7 +34,6 @@ describe('exporting a PDF from the real app', { skip: skipReason() }, () => {
   it('exports a section as PDF files that open as PDFs', async () => {
     const { browser } = session;
     await clickRow(browser, 'Notebooks', 'Lectures');
-    await answerPickers(browser, { folder: out });
     await runCommand(browser, 'export', 'Export…');
     const dialog = dialogWith(browser, 'Choose a format and a folder');
     await dialog.waitForExist({ timeout: 10_000 });

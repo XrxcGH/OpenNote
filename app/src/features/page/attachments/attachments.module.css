@@ -103,6 +103,12 @@
     cursor: pointer;
   }
 
+  /* Touch-size controls (Settings, Appearance): Open is a 44 px target (A1-A07-19). */
+  :global(:root[data-density='touch']) .open {
+    min-inline-size: var(--size-target-touch);
+    min-block-size: var(--size-target-touch);
+  }
+
   .open:hover:not(:disabled) {
     background: var(--color-surface-hover);
   }

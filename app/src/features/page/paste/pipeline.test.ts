@@ -12,6 +12,7 @@ import { orderBetween, ordersBetween } from './order';
 import { dataUrlBytes, imageSource, runPaste, splitImages } from './pipeline';
 import type { PasteRequest } from './pipeline';
 import { sanitizePaste } from './sanitize';
+import { PASTE_TEXT_BUDGET } from '../sync/textLimit';
 
 // A 1 by 1 PNG.
 const PNG =
@@ -52,6 +53,27 @@ describe('the paste pipeline', () => {
     const { page, block } = await pageWith('Hello');
     await runPaste(page.mounted, request({ text: 'there\nand more' }), null);
     expect(page.markdown(block)).toBe('Hellothere\n\nand more');
+  });
+
+  it('puts text larger than one block holds into new text blocks within the limit, one undo step (A1-A07-17)', async () => {
+    const { page, block } = await pageWith('Intro');
+    const line = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(18);
+    const text = Array.from({ length: 2600 }, (_, i) => `${i} ${line}`).join('\n');
+    await runPaste(page.mounted, request({ text }), null);
+    await page.advance(1000);
+    expect(page.sent()).toHaveLength(1);
+    const texts = edits(page.sent()).flatMap((edit) =>
+      edit.edit === 'insertBlock' && edit.block.type === 'text' ? [String(edit.block.data.markdown)] : [],
+    );
+    const bytes = (markdown: string) => new TextEncoder().encode(markdown).length;
+    expect(texts.length).toBeGreaterThan(1);
+    for (const markdown of texts) expect(bytes(markdown)).toBeLessThanOrEqual(PASTE_TEXT_BUDGET);
+    // Every line is there once, in order, after the text box that had the caret.
+    const lines = texts.join('\n\n').split('\n\n');
+    expect(lines.map((one) => one.split(' ')[0])).toEqual(Array.from({ length: 2600 }, (_, i) => `${i}`));
+    expect(page.markdown(block)).toBe('Intro');
+    await page.mounted.sync.undo();
+    expect(page.mounted.layer.blocks().map((one) => one.id)).toEqual([block]);
   });
 
   it('parses Markdown', async () => {

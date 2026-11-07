@@ -27,4 +27,19 @@ describe('pageHasUndo', () => {
     expect(pageHasUndo(ctx('palette', 'none'), 'redo')).toBe(false);
     expect(pageHasUndo(ctx('palette', 'none'))).toBe(true);
   });
+
+  it('belongs to the page with focus in the properties panel, which floats outside the page (Beta 8 walk B2-B13-2)', () => {
+    shownQueue.set(queue(true));
+    const panel = document.body.appendChild(document.createElement('div'));
+    panel.dataset.pageUndo = '';
+    const button = panel.appendChild(document.createElement('button'));
+    button.focus();
+    try {
+      expect(pageHasUndo(ctx('keyboard', 'none'))).toBe(true);
+      delete panel.dataset.pageUndo;
+      expect(pageHasUndo(ctx('keyboard', 'none'))).toBe(false);
+    } finally {
+      panel.remove();
+    }
+  });
 });

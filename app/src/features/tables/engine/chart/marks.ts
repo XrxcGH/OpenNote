@@ -2,6 +2,7 @@
 // theme switch recolors a chart with no redraw. Bars share one mark and a color scale. Lines, areas, and dots get one
 // mark per series, because dashes and shapes are per series.
 
+import { serialToDate } from '../dates';
 import type { ChartData, Point, SeriesData } from './data';
 import type { MarkSpec, SeriesStyle } from './types';
 
@@ -19,14 +20,13 @@ export interface Layer {
   scales: Record<string, unknown>;
 }
 
-const DAY_MS = 86_400_000;
 const SHAPE_POINTS = 60;
 const DOT_RADIUS = 3;
 const AREA_OPACITY = 0.35;
 
-/** Dates are day numbers in the data, and Dates in Plot. */
+/** Dates are serials in the data, and Dates in Plot. */
 function xOf(build: Build, p: Point): unknown {
-  return build.data.xKind === 'date' ? new Date((p.x as number) * DAY_MS) : p.x;
+  return build.data.xKind === 'date' ? serialToDate(p.x as number) : p.x;
 }
 
 function series(build: Build): { data: SeriesData; style: SeriesStyle }[] {

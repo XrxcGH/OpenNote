@@ -355,6 +355,12 @@ fn assets_import_and_read_back_by_range() {
     assert_eq!(handle.import_asset(source).unwrap().id, asset.id);
     let part = handle.asset_bytes(asset.id, Some(10..13)).unwrap();
     assert_eq!((part.bytes.as_slice(), part.total), (&b"234"[..], 18));
+    // A video's first request is `Range: bytes=0-`, an open end. The range returned ends at the file's end, so the
+    // media element can play it (Beta 8 walk A1-A07-16).
+    let open_end = handle.asset_bytes(asset.id, Some(4..u64::MAX)).unwrap();
+    assert_eq!((open_end.range, open_end.bytes.len()), (Some(4..18), 14));
+    let past_end = handle.asset_bytes(asset.id, Some(16..40)).unwrap();
+    assert_eq!(past_end.range, Some(16..18));
     let fake = crate::store::assets::AssetSource::bytes("fake.png", "image/png", b"not a picture".to_vec());
     let refused = handle.import_asset(fake).unwrap_err();
     assert!(

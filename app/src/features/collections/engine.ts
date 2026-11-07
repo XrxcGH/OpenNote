@@ -202,6 +202,30 @@ export function groupRows(
   );
 }
 
+/**
+ * The columns of a board: the groups, plus an empty one for each choice no page has yet and one for no value, so a
+ * card can move to any of them (Beta 8 walk B2-B13-4). Other properties keep the groups as they are.
+ */
+export function boardColumns(
+  groups: readonly Group[],
+  rows: readonly Row[],
+  def: CollectionDef,
+  words: { none: string; yes: string; no: string },
+): Group[] {
+  const choices = rows.flatMap((row) => {
+    const field = fieldNamed(row.fields, def.groupBy);
+    return field?.type === 'choice' ? (field.options ?? []) : [];
+  });
+  if (!def.groupBy || choices.length === 0) return [...groups];
+  const columns = new Map(groups.map((group) => [group.key, group]));
+  for (const label of choices)
+    if (!columns.has(folded(label))) columns.set(folded(label), { key: folded(label), label, rows: [] });
+  if (!columns.has('~')) columns.set('~', { key: '~', label: words.none, rows: [] });
+  return [...columns.values()].sort((a, b) =>
+    a.key === '~' ? 1 : b.key === '~' ? -1 : a.key.localeCompare(b.key, undefined, { numeric: true }),
+  );
+}
+
 /** The fields with one set by name. A field the page lacks is added with the given type. */
 export function withValue(
   fields: readonly Field[],

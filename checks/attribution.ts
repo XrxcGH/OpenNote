@@ -81,6 +81,20 @@ export const REQUIRED_NOTICES: readonly string[] = [
   'Carlito',
   'Caladea',
   'Unicode Character Database names',
+  // The code studio (Beta 11): bundled from npm, and the packs and models it downloads.
+  'CodeMirror',
+  'Lezer',
+  'Sucrase',
+  'SQLite WebAssembly',
+  'wasmoon',
+  'browser_wasi_shim',
+  'acorn',
+  'Pyodide',
+  'YoWASP Clang',
+  'ruby.wasm',
+  'Ruff',
+  'TypeScript',
+  'Qwen2.5-Coder',
 ];
 
 /** The required notices that have no table row in the notices text. */

@@ -14,7 +14,7 @@ export type Aggregate = 'none' | 'sum' | 'average' | 'count' | 'min' | 'max';
 export type XKind = 'text' | 'number' | 'date';
 
 export interface Point {
-  /** A label for text, or a number (a day number for dates). */
+  /** A label for text, or a number (a serial for dates). */
   x: string | number;
   y: number;
 }

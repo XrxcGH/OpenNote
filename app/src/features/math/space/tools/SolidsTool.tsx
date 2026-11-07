@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import { t } from '../../../../strings/t';
 import { Graph3DView } from '../Graph3DView';
-import { revolveVolume, type RevolveMethod, type RevolveStep } from '../revolve';
+import { revolveInputProblem, revolveVolume, type RevolveMethod, type RevolveStep } from '../revolve';
 import { writeSpace, readSpace, type RevolveSpec } from '../source3d';
 import { readNumber } from '../vec';
 import { TextField } from '../../../../ui';
@@ -25,6 +25,12 @@ const STEP_KEYS = {
   horizontalShell: 'graph3d.tools.solids.horizontalShell',
 } as const;
 
+const INPUT_PROBLEM_KEYS = {
+  numbers: 'graph3d.tools.solids.badNumbers',
+  order: 'graph3d.tools.solids.badOrder',
+  curve: 'graph3d.tools.solids.badCurve',
+} as const;
+
 export const stepText = (step: RevolveStep): string =>
   // Each step's values are the ones its message names (revolve.ts).
   (t as (key: string, values: Readonly<Record<string, string>>) => string)(STEP_KEYS[step.id], step.values);
@@ -38,10 +44,13 @@ export function SolidsTool() {
   const [axisAt, setAxisAt] = useState('0');
   const [method, setMethod] = useState<RevolveMethod>('auto');
 
-  const spec: RevolveSpec | null = useMemo(() => {
+  const { spec, inputProblem } = useMemo(() => {
     const [a, b, k] = [readNumber(from), readNumber(to), readNumber(axisAt)];
-    if (![a, b, k].every(Number.isFinite) || a >= b || outer.trim() === '') return null;
-    return { outer: outer.trim(), inner: inner.trim() || '0', from: a, to: b, axis: { kind: axisKind, at: k } };
+    const problem = revolveInputProblem(outer, a, b, k);
+    const made: RevolveSpec | null = problem
+      ? null
+      : { outer: outer.trim(), inner: inner.trim() || '0', from: a, to: b, axis: { kind: axisKind, at: k } };
+    return { spec: made, inputProblem: problem };
   }, [outer, inner, from, to, axisKind, axisAt]);
   const result = useMemo(() => (spec ? revolveVolume(spec, method) : null), [spec, method]);
   const graph = spec && result?.ok ? writeSpace({ ...readSpace('@3d'), revolve: spec }) : null;
@@ -76,6 +85,11 @@ export function SolidsTool() {
           </select>
         </label>
       </div>
+      {inputProblem ? (
+        <p className={styles.problem} role="status">
+          {t(INPUT_PROBLEM_KEYS[inputProblem])}
+        </p>
+      ) : null}
       {result && !result.ok ? (
         <p className={styles.problem} role="status">
           {t('graph3d.tools.solids.bad', { message: result.error.message })}
