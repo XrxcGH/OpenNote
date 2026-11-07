@@ -1,8 +1,13 @@
-// Calendar days. A date is a number of days since 1970-01-01 with no time zone, fractional when it has a time.
+// Calendar days. A date is a spreadsheet serial: the number of days since 1899-12-30, with no time zone, fractional
+// when it has a time. Day 0 is 1899-12-30, as Sheets and LibreOffice count, which equals Excel's serial for every date
+// from 1900-03-01 (Excel also counts a 1900-02-29 that never existed). Dates before day 0 are negative serials.
+// dateToSerial and serialToDate are the only places that turn serials into milliseconds and back.
 
 import type { DateOrder } from './locale';
 
 const DAY_MS = 86_400_000;
+/** Days from 1899-12-30 to 1970-01-01, where JavaScript's clock starts. */
+const UNIX_DAY = 25_569;
 const MONTHS = 'january february march april may june july august september october november december'.split(' ');
 
 export interface Ymd {
@@ -11,28 +16,54 @@ export interface Ymd {
   d: number;
 }
 
-/** The day number of a calendar date, or null when the date doesn't exist, such as February 30. */
+/** The serial of a moment read as UTC: its calendar day, plus the time of day as a fraction. */
+export function dateToSerial(date: Date): number {
+  return date.getTime() / DAY_MS + UNIX_DAY;
+}
+
+/** The moment a serial stands for, as UTC. Formatters show it with the UTC time zone. */
+export function serialToDate(serial: number): Date {
+  return new Date(Math.round((serial - UNIX_DAY) * DAY_MS));
+}
+
+/** The serial of a calendar date, or null when the date doesn't exist, such as February 30. */
 export function ymdToDays(y: number, m: number, d: number): number | null {
   if (m < 1 || m > 12 || d < 1 || d > 31) return null;
-  const ms = Date.UTC(y, m - 1, d);
-  const check = new Date(ms);
-  if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) return null;
-  return ms / DAY_MS;
+  const date = utcDate(y, m, d);
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return null;
+  return dateToSerial(date);
+}
+
+/** A UTC date. Date.UTC reads years 0 to 99 as 1900 to 1999, so the year is set on its own. */
+function utcDate(y: number, m: number, d: number): Date {
+  const date = new Date(Date.UTC(2000, m - 1, d));
+  date.setUTCFullYear(y, m - 1, d);
+  return date;
+}
+
+/** The serial of a year, month, and day that may run over, as DATE counts: month 13 is January of the next year. */
+export function ymdToSerial(y: number, m: number, d: number): number {
+  return dateToSerial(utcDate(y, m, d));
 }
 
 export function daysToYmd(days: number): Ymd {
-  const date = new Date(Math.floor(days) * DAY_MS);
+  const date = serialToDate(Math.floor(days));
   return { y: date.getUTCFullYear(), m: date.getUTCMonth() + 1, d: date.getUTCDate() };
+}
+
+/** The day of the week, 0 for Sunday to 6 for Saturday. Day 0, 1899-12-30, was a Saturday. */
+export function weekdayOf(days: number): number {
+  return (((Math.floor(days) + 6) % 7) + 7) % 7;
 }
 
 /** Today's calendar day in the device's own time zone. */
 export function todayDays(now: Date = new Date()): number {
-  return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / DAY_MS;
+  return ymdToSerial(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
-/** Excel's 1900 date system: serials above 60 count from 1899-12-30, and earlier ones skip its false leap day. */
+/** Excel's 1900 date system: from serial 60 it counts as we do; earlier serials skip its false 1900-02-29. */
 export function excelSerialToDays(serial: number): number {
-  return serial < 60 ? serial - 25568 : serial - 25569;
+  return serial < 60 ? serial + 1 : serial;
 }
 
 function pad(n: number): string {

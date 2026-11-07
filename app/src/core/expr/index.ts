@@ -4,6 +4,13 @@
 
 export { children, freeNames, MAX_TREE_DEPTH, sameTree, stripPositions, treeDepth, walk } from './ast';
 export type {
+  ArrayNode,
+  CellAbs,
+  QualifiedNode,
+  RefOpNode,
+  SpillNode,
+  StructItem,
+  StructNode,
   BinaryNode,
   BinaryOp,
   BoolNode,
@@ -64,7 +71,17 @@ export { formatExpression, numberText } from './print';
 export type { PrintOptions } from './print';
 export * as fractions from './rational';
 export type { DecimalText, Rational } from './rational';
-export { columnFromLetters, lettersFromColumn, readCell, readColumn } from './refs';
+export {
+  columnFromLetters,
+  isAbsolute,
+  lettersFromColumn,
+  readCell,
+  readCellRef,
+  readColumn,
+  readR1C1,
+  readRow,
+} from './refs';
+export type { CellRef } from './refs';
 export { sheetDialect } from './sheet';
 export type { SheetSyntax } from './sheet';
 export { simplify } from './simplify';
