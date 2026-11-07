@@ -1,9 +1,9 @@
-// Trigonometry in degrees or radians. Angles that are whole degrees with a known sine, such as 30, 45, 60, and
-// every multiple of 90, give exact answers, so sin(180°) is 0 and not 1.2e-16, and tan(90°) is an error.
+// Trigonometry in degrees, radians, or gradians (400 to a full turn). Angles that are whole degrees with a known
+// sine, such as 30, 45, 60, and every multiple of 90, give exact answers, so sin(180°) is 0 and not 1.2e-16, and tan(90°) is an error.
 
 import { fail } from './numeric';
 
-export type AngleMode = 'deg' | 'rad';
+export type AngleMode = 'deg' | 'rad' | 'grad';
 
 const FIRST_QUADRANT = new Map<number, number>([
   [0, 0],
@@ -13,17 +13,19 @@ const FIRST_QUADRANT = new Map<number, number>([
   [90, 1],
 ]);
 
-const toDegrees = (x: number, mode: AngleMode) => (mode === 'deg' ? x : (x * 180) / Math.PI);
-const toRadians = (x: number, mode: AngleMode) => (mode === 'deg' ? (x * Math.PI) / 180 : x);
+const toDegrees = (x: number, mode: AngleMode) =>
+  mode === 'deg' ? x : mode === 'grad' ? (x * 9) / 10 : (x * 180) / Math.PI;
+const toRadians = (x: number, mode: AngleMode) =>
+  mode === 'deg' ? (x * Math.PI) / 180 : mode === 'grad' ? (x * Math.PI) / 200 : x;
 
 /** Converts an angle in radians to the current mode. */
 export function fromRadians(radians: number, mode: AngleMode): number {
-  return mode === 'deg' ? (radians * 180) / Math.PI : radians;
+  return mode === 'deg' ? (radians * 180) / Math.PI : mode === 'grad' ? (radians * 200) / Math.PI : radians;
 }
 
 /** Converts degrees to the current mode, for the degree sign. */
 export function degreesToMode(degrees: number, mode: AngleMode): number {
-  return mode === 'deg' ? degrees : (degrees * Math.PI) / 180;
+  return mode === 'deg' ? degrees : mode === 'grad' ? (degrees * 10) / 9 : (degrees * Math.PI) / 180;
 }
 
 function exactSine(degrees: number): number | null {

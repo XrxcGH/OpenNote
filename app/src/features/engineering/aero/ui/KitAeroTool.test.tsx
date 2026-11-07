@@ -1,13 +1,13 @@
 // The aerospace window: tabs by keyboard, a live answer, units that switch, a problem in words, and Insert.
 import '../text';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../../test';
-import { INSERT_EVENT } from '../../../tools';
+import { INSERT_EVENT, openKitTool, registerKit } from '../../../tools';
 import { KitAeroTool } from './KitAeroTool';
 
-const inserted: { text?: string; table?: unknown; math?: unknown }[] = [];
+const inserted: { text?: string; table?: unknown; math?: unknown; panel?: { data: { inputs: unknown } } }[] = [];
 const listen = (event: Event) => {
   const detail = (event as CustomEvent<{ text?: string; handled: boolean }>).detail;
   inserted.push(detail);
@@ -52,5 +52,19 @@ describe('the aerospace window', () => {
     expect(await screen.findByRole('table', { name: 'Stations' })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Total temperature Tt (K)' })).toBeTruthy();
     await expectNoAxeViolations(container);
+  });
+
+  it('keeps the answer and the typed values as a live block, and Open in tool puts the values back', async () => {
+    renderUi(<KitAeroTool />);
+    await userEvent.fill(await screen.findByLabelText('Altitude'), '5000');
+    expect(await screen.findByText(/255\.65 K/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Live calculation block' }));
+    await waitFor(() => expect(inserted.find((one) => one.panel)).toBeTruthy());
+    const inputs = inserted.find((one) => one.panel)!.panel!.data.inputs;
+    await userEvent.fill(screen.getByLabelText('Altitude'), '11000');
+    expect(await screen.findByText('216.65 K')).toBeTruthy();
+    registerKit('aero', () => undefined);
+    await openKitTool('aero', 'atmosphere', inputs);
+    await waitFor(() => expect((screen.getByLabelText('Altitude') as HTMLInputElement).value).toBe('5000'));
   });
 });
