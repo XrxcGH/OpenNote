@@ -11,15 +11,18 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
 
 use opennote_core::format::history_json::{merge_versions, read_versions, write_versions};
-use opennote_core::format::page_json::{read_page, write_page};
+use opennote_core::format::page_json::read_page;
 use opennote_core::format::tree_json::{merge_notebooks, merge_sections, read_notebook, read_section};
 use opennote_core::format::tree_json::{write_notebook, write_section};
-use opennote_core::merge::{merge_page, mergers, Mergers};
+use opennote_core::merge::{mergers, Mergers};
 use opennote_core::model::Page;
 use opennote_core::Limits;
 
 use crate::error::{Result, SyncError};
 use crate::manifest::{dominates, join, Content, Entry, Manifest, Vv};
+
+mod blocks;
+use blocks::merge_blocks_first;
 
 /// Reads small files for the merge rules, and turns bytes a rule wrote into content.
 pub trait Contents {
@@ -368,88 +371,6 @@ fn page_refs(bytes: &[u8]) -> BTreeSet<String> {
     refs
 }
 
-/// Two devices changed one page, and neither saw the other's save: the one page that block mergers make of the
-/// two versions and the newest revision both started from (ADR 0089), or `None` to keep today's conflict copy.
-/// The base is only that newest shared revision: an older one would turn a change one side undid into no change
-/// and bring the old value back. Without its `.history` snapshot the result is `None`. With no merger registered
-/// it is always `None`, so nothing changes.
-///
-/// The merged page comes with a `.history` snapshot of itself (path and entry), so the next merge of this page
-/// has its base.
-fn merge_page_blocks(
-    path: &str,
-    candidates: &[Entry],
-    by_path: &BTreeMap<&str, Vec<Entry>>,
-    contents: &dyn Contents,
-    mergers: &Mergers,
-) -> Result<Option<(Entry, String, Entry)>> {
-    if mergers.is_empty() || kind(path) != Kind::Page {
-        return Ok(None);
-    }
-    let top = maximal(candidates.to_vec());
-    let [a, b] = &top[..] else { return Ok(None) };
-    if a.deleted || b.deleted || a.content == b.content {
-        return Ok(None);
-    }
-    let (Some(mine), Some(theirs)) = (
-        read_any_page(&contents.bytes(&a.content)?),
-        read_any_page(&contents.bytes(&b.content)?),
-    ) else {
-        return Ok(None);
-    };
-    let (ra, rb) = (&mine.revision, &theirs.revision);
-    if ra.ancestors.contains(&rb.id) || rb.ancestors.contains(&ra.id) {
-        return Ok(None);
-    }
-    let Some(newest) = ra.ancestors.iter().filter(|r| rb.ancestors.contains(r)).max() else {
-        return Ok(None);
-    };
-    let (dir, _) = split(path);
-    let prefix = if dir.is_empty() {
-        String::new()
-    } else {
-        format!("{dir}/")
-    };
-    let snapshot = format!("{prefix}.history/{newest}.json.gz");
-    let Some(entry) = by_path.get(snapshot.as_str()).and_then(|e| e.iter().find(|e| e.live())) else {
-        return Ok(None);
-    };
-    let Some(base) = read_any_page(&contents.bytes(&entry.content)?) else {
-        return Ok(None);
-    };
-    let Some(merged) = merge_page(mergers, &base, &mine, &theirs) else {
-        return Ok(None);
-    };
-    let bytes = write_page(&merged);
-    if read_page(&bytes, &Limits::default()).is_err() {
-        return Ok(None);
-    }
-    let vv = join(&a.vv, &b.vv);
-    let snapshot = Entry {
-        vv: vv.clone(),
-        content: contents.make(gzip(&bytes)?),
-        deleted: false,
-    };
-    let page = Entry {
-        vv,
-        content: contents.make(bytes),
-        deleted: false,
-    };
-    Ok(Some((
-        page,
-        format!("{prefix}.history/{}.json.gz", merged.revision.id),
-        snapshot,
-    )))
-}
-
-/// Gzip of `bytes`, the same on every device.
-fn gzip(bytes: &[u8]) -> Result<Vec<u8>> {
-    use std::io::Write;
-    let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
-    gz.write_all(bytes).map_err(SyncError::local)?;
-    gz.finish().map_err(SyncError::local)
-}
-
 /// Merges manifests. `before` is this device's own manifest before the merge: folders where nothing changed are
 /// not checked again. Block mergers registered for this process take part (ADR 0089).
 pub fn merge(inputs: &[&Manifest], before: &Manifest, contents: &dyn Contents) -> Result<Merged> {
@@ -463,25 +384,13 @@ pub fn merge_with(
     contents: &dyn Contents,
     mergers: &Mergers,
 ) -> Result<Merged> {
-    let mut snapshots: Vec<(String, Entry)> = Vec::new();
     let mut by_path: BTreeMap<&str, Vec<Entry>> = BTreeMap::new();
     for manifest in inputs {
         for (path, entry) in manifest.iter() {
             by_path.entry(path.as_str()).or_default().push(entry.clone());
         }
     }
-    let mut block_merged = Vec::new();
-    for (path, candidates) in &by_path {
-        if let Some((entry, at, snapshot)) = merge_page_blocks(path, candidates, &by_path, contents, mergers)? {
-            block_merged.push((*path, entry));
-            if !by_path.contains_key(at.as_str()) {
-                snapshots.push((at, snapshot));
-            }
-        }
-    }
-    for (path, entry) in block_merged {
-        by_path.insert(path, vec![entry]);
-    }
+    let snapshots = merge_blocks_first(&mut by_path, contents, mergers)?;
     // The merged revision's snapshot is the base of the next merge of its page. Another device that made the
     // same merge already published the same snapshot.
     for (at, snapshot) in &snapshots {
@@ -506,8 +415,29 @@ pub fn merge_with(
         merged.entries.insert(path.to_owned(), resolved.entry);
         extras.extend(resolved.others.into_iter().map(|(at, e)| (path.to_owned(), at, e)));
     }
-    // Other versions land at new paths. A path may already hold one (another device kept it there too), so they
-    // merge like any other version. Each round moves names further from the original, and three rounds is plenty.
+    place_others(&mut merged, extras, &mut sealed_sets, contents)?;
+    part_case_collisions(&mut merged, contents)?;
+    merged
+        .conflicts
+        .sort_by(|a, b| (&a.path, &a.kept_as).cmp(&(&b.path, &b.kept_as)));
+    merged.conflicts.dedup();
+    let sealed = Sealed {
+        concurrent: &concurrent,
+        had_live: &had_live,
+    };
+    revive_referenced(&mut merged.entries, before, contents, &sealed)?;
+    copy_sealed_sets(&mut merged.entries, &sealed_sets, contents)?;
+    Ok(merged)
+}
+
+/// Other versions land at new paths. A path may already hold one (another device kept it there too), so they
+/// merge like any other version. Each round moves names further from the original, and three rounds is plenty.
+fn place_others(
+    merged: &mut Merged,
+    mut extras: Vec<(String, String, Entry)>,
+    sealed_sets: &mut Vec<(String, String)>,
+    contents: &dyn Contents,
+) -> Result<()> {
     for _ in 0..4 {
         if extras.is_empty() {
             break;
@@ -529,18 +459,7 @@ pub fn merge_with(
         }
         extras = next;
     }
-    part_case_collisions(&mut merged, contents)?;
-    merged
-        .conflicts
-        .sort_by(|a, b| (&a.path, &a.kept_as).cmp(&(&b.path, &b.kept_as)));
-    merged.conflicts.dedup();
-    let sealed = Sealed {
-        concurrent: &concurrent,
-        had_live: &had_live,
-    };
-    revive_referenced(&mut merged.entries, before, contents, &sealed)?;
-    copy_sealed_sets(&mut merged.entries, &sealed_sets, contents)?;
-    Ok(merged)
+    Ok(())
 }
 
 /// The version-vector entry that counts moves made because two paths differ only in case. Every device makes the

@@ -223,6 +223,41 @@ fn two_clients_share_a_session_and_hear_about_each_other() {
     assert_eq!(on_disk(&s).title, "Shared");
 }
 
+/// A conflict copy whose revision the page already lists among its ancestors was merged into it on another
+/// device (ADR 0089): it is not offered as a conflict, while a copy the page never saw still is.
+#[test]
+fn a_conflict_copy_the_page_already_includes_is_not_shown() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let dir = s.notebook.inner.tree().store.page_dir(s.page).unwrap();
+    let older = on_disk(&s);
+    handle
+        .commit_for_tests(&retitle(s.kit.clock.as_ref(), &c, "Photosynthesis", "Mine"))
+        .unwrap();
+    handle.save_now().unwrap();
+    assert!(handle.page_for_tests().revision.ancestors.contains(&older.revision.id));
+    s.kit.fs.inner.mkdir_all(&dir.join(crate::store::layout::CONFLICTS_DIR));
+    let copy = NotebookLayout::conflict_path(&dir, older.revision.id);
+    s.kit
+        .fs
+        .replace_durable(&copy, &s.kit.codec.write_page(&older))
+        .unwrap();
+    assert!(handle.conflicts().unwrap().is_empty());
+
+    let mut unseen = older.clone();
+    unseen.revision.id = RevisionId(crate::id::Id::from_parts(1_700_000_000_000, 77));
+    unseen.title = "Theirs".into();
+    let other = NotebookLayout::conflict_path(&dir, unseen.revision.id);
+    s.kit
+        .fs
+        .replace_durable(&other, &s.kit.codec.write_page(&unseen))
+        .unwrap();
+    let shown = handle.conflicts().unwrap();
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0].revision, unseen.revision.id);
+}
+
 #[test]
 fn a_change_made_elsewhere_is_kept_as_a_conflict() {
     let s = setup();

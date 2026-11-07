@@ -4,11 +4,15 @@
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+use opennote_core::format::gzip::gzip;
+use opennote_core::format::page_json::read_page;
+use opennote_core::Limits;
+
 use super::{digest, Action, Engine, LocalState, Plan, Store, Summary};
 use crate::error::{Result, SyncError};
 use crate::local::{self, Fingerprint};
 use crate::manifest::{self, Entry, Manifest, Vv};
-use crate::merge::{self, Merged};
+use crate::merge::{self, Contents, Merged};
 use crate::vault;
 
 /// The new heads to merge, and what this device will have seen after merging them.
@@ -47,7 +51,8 @@ impl Engine {
             local_paths,
             pending: RefCell::new(HashMap::new()),
         };
-        let mut inputs: Vec<&Manifest> = vec![&local_manifest, &state.deferred];
+        let snapshots = self.page_snapshots(&state, &incoming.heads, &local_manifest, &floor, &store)?;
+        let mut inputs: Vec<&Manifest> = vec![&local_manifest, &state.deferred, &snapshots];
         inputs.extend(incoming.heads.iter());
         let merged = merge::merge(&inputs, &local_manifest, &store)?;
         let pending = store.pending.into_inner();
@@ -152,6 +157,56 @@ impl Engine {
             manifest.insert(path.clone(), entry);
         }
         Ok((manifest, prints))
+    }
+
+    /// A `.history` snapshot of each `page.json` revision this device is about to upload that has none yet, so the
+    /// other devices hold the base a later block merge of the page needs (ADR 0089). The app keeps a version only
+    /// now and then, while every autosave is a new revision, so without this the newest shared revision of a page
+    /// that synced while open would rarely have one. The snapshot is the gzip of the exact bytes, as the app writes
+    /// versions, and lands in this folder like any merged file.
+    fn page_snapshots(
+        &self,
+        state: &LocalState,
+        heads: &[Manifest],
+        local_manifest: &Manifest,
+        floor: &HashMap<String, u64>,
+        store: &Store,
+    ) -> Result<Manifest> {
+        let mut out = Manifest::new();
+        let held = |path: &str| {
+            std::iter::once(local_manifest)
+                .chain(std::iter::once(&state.deferred))
+                .chain(heads)
+                .any(|m| m.get(path).is_some_and(Entry::live))
+        };
+        for (path, entry) in local_manifest {
+            let known = state
+                .files
+                .get(path)
+                .is_some_and(|k| k.entry.content.id == entry.content.id);
+            if known || !entry.live() || merge::kind(path) != merge::Kind::Page {
+                continue;
+            }
+            let Ok(bytes) = std::fs::read(local::join(&self.root, path)) else {
+                continue;
+            };
+            let Ok(read) = read_page(&bytes, &Limits::default()) else {
+                continue;
+            };
+            let dir = path.strip_suffix("page.json").unwrap_or_default();
+            let at = format!("{dir}.history/{}.json.gz", read.page.revision.id);
+            // The file changed since the scan: the next round snapshots what is there then.
+            if self.hash(&bytes).id != entry.content.id || held(&at) {
+                continue;
+            }
+            let entry = Entry {
+                vv: self.fresh(&Vv::new(), &at, floor),
+                content: store.make(gzip(&bytes)),
+                deleted: false,
+            };
+            out.insert(at, entry);
+        }
+        Ok(out)
     }
 
     /// A head's entries without the tombstones this device already dropped (see `prune_tombstones`).

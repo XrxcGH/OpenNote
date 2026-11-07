@@ -212,27 +212,7 @@ pub fn merge_page(mergers: &Mergers, base: &Page, mine: &Page, theirs: &Page) ->
         if changed {
             opted_in |= [b, m, t].into_iter().flatten().any(|x| mergers.handles(x.type_name()));
         }
-        let result = match (b, m, t) {
-            (Some(b), Some(m), Some(t)) => match mergers.merge_block(b.type_name(), b, m, t) {
-                BlockMerge::Merged(block) if *block == **m => Some(m.clone()),
-                BlockMerge::Merged(block) if *block == **t => Some(t.clone()),
-                BlockMerge::Merged(block) => Some(Arc::new(*block)),
-                BlockMerge::Conflict => return None,
-            },
-            // Deleted on one side or both: it stays deleted unless the other side changed it.
-            (Some(b), m, t) => {
-                if m.is_some_and(|m| m != b) || t.is_some_and(|t| t != b) {
-                    return None;
-                }
-                None
-            }
-            // Added on one side, or the same block added on both.
-            (None, m, t) => match (m, t) {
-                (Some(m), Some(t)) if m != t => return None,
-                (m, t) => m.or(t).cloned(),
-            },
-        };
-        kept.extend(result);
+        kept.extend(merge_one(mergers, b, m, t)?);
     }
     if !opted_in {
         return None;
@@ -242,6 +222,35 @@ pub fn merge_page(mergers: &Mergers, base: &Page, mine: &Page, theirs: &Page) ->
     for block in kept {
         merged.blocks.insert(block).ok()?;
     }
+    merge_fields(&mut merged, base, mine, theirs)?;
+    merged.revision = merged_revision(&mine.revision, &theirs.revision);
+    Some(merged)
+}
+
+/// One block from its base and two sides: `Some(None)` when it stays deleted, `None` for a conflict.
+fn merge_one(
+    mergers: &Mergers,
+    b: Option<&Arc<Block>>,
+    m: Option<&Arc<Block>>,
+    t: Option<&Arc<Block>>,
+) -> Option<Option<Arc<Block>>> {
+    match (b, m, t) {
+        (Some(b), Some(m), Some(t)) => match mergers.merge_block(b.type_name(), b, m, t) {
+            BlockMerge::Merged(block) if *block == **m => Some(Some(m.clone())),
+            BlockMerge::Merged(block) if *block == **t => Some(Some(t.clone())),
+            BlockMerge::Merged(block) => Some(Some(Arc::new(*block))),
+            BlockMerge::Conflict => None,
+        },
+        // Deleted on one side or both: it stays deleted unless the other side changed it.
+        (Some(b), m, t) => (!(m.is_some_and(|m| m != b) || t.is_some_and(|t| t != b))).then_some(None),
+        // Added on one side, or the same block added on both.
+        (None, Some(m), Some(t)) if m != t => None,
+        (None, m, t) => Some(m.or(t).cloned()),
+    }
+}
+
+/// The page fields outside the blocks, each from the side that changed it. `None` when both changed one apart.
+fn merge_fields(merged: &mut Page, base: &Page, mine: &Page, theirs: &Page) -> Option<()> {
     merged.title = pick(&base.title, &mine.title, &theirs.title)?.clone();
     merged.created = *pick(&base.created, &mine.created, &theirs.created)?;
     merged.modified = mine.modified.max(theirs.modified);
@@ -252,8 +261,7 @@ pub fn merge_page(mergers: &Mergers, base: &Page, mine: &Page, theirs: &Page) ->
     merged.recordings = pick(&base.recordings, &mine.recordings, &theirs.recordings)?.clone();
     merged.encryption = pick(&base.encryption, &mine.encryption, &theirs.encryption)?.clone();
     merged.extra = pick(&base.extra, &mine.extra, &theirs.extra)?.clone();
-    merged.revision = merged_revision(&mine.revision, &theirs.revision);
-    Some(merged)
+    Some(())
 }
 
 /// The side whose revision was saved later, then sorts later: the same on every device.

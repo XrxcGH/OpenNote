@@ -397,3 +397,49 @@ fn an_older_shared_snapshot_is_never_the_base() {
     let merged = merge_with(&[&a, &b], &a, &store, &fake()).expect("merges");
     assert_eq!(merged.conflicts.len(), 1, "{:?}", merged.conflicts);
 }
+
+/// A device whose clock runs behind saves a later revision with a smaller ID. The base is still the newest shared
+/// save, not the shared one with the highest ID. Hand-worked: Y adds x to {a}, and one side removes it again. So x
+/// stays removed. With the older base {a}, it would come back.
+#[test]
+fn the_base_is_the_newest_shared_save_even_when_its_id_is_older() {
+    let store = Store::default();
+    let x = page(9, &[], 10, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    // Y comes after X, but its ID sorts before X's: its device's clock was behind.
+    let y = child(&x, 4, 15, &[tag_block(1, &["a", "x"]), tag_block(2, &["b"])]);
+    assert!(y.revision.id < x.revision.id);
+    let mine = child(&y, 5, 20, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    let theirs = child(&y, 6, 30, &[tag_block(1, &["a", "x"]), tag_block(2, &["b", "z"])]);
+    let (mut a, mut b) = devices(&store, &x, &mine, &theirs);
+    let snapshot = entry("d0", 1, store.put(gzip(&write_page(&y))));
+    let at = format!("{}/.history/{}.json.gz", dir(), y.revision.id);
+    a.insert(at.clone(), snapshot.clone());
+    b.insert(at, snapshot);
+    let ab = merge_with(&[&a, &b], &a, &store, &fake()).expect("merges");
+    let ba = merge_with(&[&b, &a], &b, &store, &fake()).expect("merges");
+    assert!(ab.conflicts.is_empty(), "no conflict copy: {:?}", ab.conflicts);
+    assert_eq!(ab.entries, ba.entries);
+    let merged = page_of(&store, &ab);
+    let tags_of = |n: u128| tags(merged.blocks.get(BlockId(id(n))).expect("block"));
+    assert_eq!(
+        tags_of(1),
+        ["a"].map(String::from).into(),
+        "the removed tag stays removed"
+    );
+    assert_eq!(tags_of(2), ["b", "z"].map(String::from).into());
+}
+
+/// Two sides whose ancestor lists name different newest shared revisions (a damaged or hostile file) keep the
+/// conflict copy.
+#[test]
+fn sides_that_disagree_on_the_newest_shared_save_keep_the_conflict_copy() {
+    let store = Store::default();
+    let x = page(1, &[], 10, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    let y = child(&x, 4, 15, &[tag_block(1, &["a"]), tag_block(2, &["b"])]);
+    let mine = child(&y, 5, 20, &[tag_block(1, &["a", "m"]), tag_block(2, &["b"])]);
+    let mut theirs = child(&y, 6, 30, &[tag_block(1, &["a"]), tag_block(2, &["b", "t"])]);
+    theirs.revision.ancestors = vec![x.revision.id, y.revision.id];
+    let (a, b) = devices(&store, &x, &mine, &theirs);
+    let merged = merge_with(&[&a, &b], &a, &store, &fake()).expect("merges");
+    assert_eq!(merged.conflicts.len(), 1, "{:?}", merged.conflicts);
+}

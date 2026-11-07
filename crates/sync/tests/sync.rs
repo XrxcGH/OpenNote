@@ -26,7 +26,9 @@ fn files_reach_the_other_device_and_deletes_follow() {
     assert_eq!(report.summary.upload.len(), 3);
     assert_eq!(report.generation, Some(1));
     let report = d[1].engine.sync().expect("syncs");
-    assert_eq!(report.summary.download.len(), 3);
+    // The three files, and the `.history` snapshot of the page revision the first device uploaded (ADR 0089).
+    assert_eq!(report.summary.download.len(), 4);
+    assert!(d[0].read(&format!("{p}/.history/{}.json.gz", rev(1))).is_some());
     assert_eq!(d[1].files(), d[0].files());
 
     // Nothing changed: no head is written and nothing moves.
