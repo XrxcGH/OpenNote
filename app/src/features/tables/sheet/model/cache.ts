@@ -48,6 +48,17 @@ export function cachedValue(value: Json | undefined): CachedValue | undefined {
   return undefined;
 }
 
+/** The longest cached string (R-SHT-17), in UTF-16 code units. */
+export const CACHED_STRING_LIMIT = 32_767;
+
+/** A string cut to CACHED_STRING_LIMIT code units, never between the two halves of a surrogate pair. */
+function fitString(text: string): string {
+  if (text.length <= CACHED_STRING_LIMIT) return text;
+  const high = text.charCodeAt(CACHED_STRING_LIMIT - 1);
+  const end = high >= 0xd800 && high <= 0xdbff ? CACHED_STRING_LIMIT - 1 : CACHED_STRING_LIMIT;
+  return text.slice(0, end);
+}
+
 export interface CachedValues {
   /** The cached values by row ID, then column ID. */
   values: Map<string, Map<string, CachedValue>>;
@@ -86,8 +97,10 @@ export function valueAt(sheet: Sheet, table: TableLike, row: string, col: string
 /**
  * Writes the value cache in the same change as the edit that changed the values (R-SHT-17): replaces `values` and
  * stamps `valuesOf` with the table's fingerprint. Arrays are never cached as one value: give each spilled cell its
- * own entry. An empty result (null) is written as no entry, because `null` inside a merge patch deletes. Changes
- * `sheet` in place. A cache of only empty results keeps `valuesOf` alone; no values at all removes both keys.
+ * own entry. A string longer than 32,767 code units is cut to that length, the most R-SHT-17 allows, rather than
+ * dropped, since a missing entry would read as an empty result. An empty result (null) is written as no entry,
+ * because `null` inside a merge patch deletes. Changes `sheet` in place. A cache of only empty results keeps
+ * `valuesOf` alone; no values at all removes both keys.
  */
 export function writeValues(
   sheet: Sheet,
@@ -99,8 +112,9 @@ export function writeValues(
   for (const [row, byCol] of values) {
     const cells: JsonObject = {};
     for (const [col, value] of byCol) {
-      const kept = cachedValue(value as Json);
-      if (kept === undefined) continue;
+      const valid = cachedValue(value as Json);
+      if (valid === undefined) continue;
+      const kept = typeof valid === 'string' ? fitString(valid) : valid;
       any = true;
       if (kept !== null) put(cells, col, kept);
     }

@@ -14,7 +14,7 @@ import {
   setRule,
 } from './rules';
 import { K, R, makeTable, range, specCase } from './testing';
-import type { Sheet } from './types';
+import type { CellStyle, Sheet } from './types';
 
 const fill = (sheet: Sheet, table: ReturnType<typeof makeTable>, row: number, col: number) =>
   resolve(sheet, table, R(row), K(col)).style.fill;
@@ -81,6 +81,14 @@ describe('resolve (R-SHT-9)', () => {
       font: { bold: true, size: 14 },
       border: { t: { style: 'double' }, b: { style: 'thin' } },
     });
+  });
+
+  it('keeps a __proto__ key from a hook style as a property, never as the prototype', () => {
+    const upper = JSON.parse('{"__proto__": {"fill": "ink"}, "fill": "fern"}') as CellStyle;
+    const out = layer({}, upper);
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.hasOwn(out, '__proto__')).toBe(true);
+    expect(out.fill).toBe('fern');
   });
 
   it('starts from the defaults of R-SHT-8 and the table padding', () => {

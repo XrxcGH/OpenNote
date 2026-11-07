@@ -23,48 +23,61 @@ export function writeSheet(sheet: Sheet): Sheet | null {
 /** The maps keyed by row ID, then column ID. */
 const BY_CELL = ['cells', 'notes', 'values'] as const;
 
-/**
- * Entries that name a row or column the table no longer has (R-SHT-2), as paths: `cols.<id>`, `rows.<id>`, and
- * `cells.<row>` or `cells.<row>.<col>` (and the same for notes and values).
- */
-export function orphans(sheet: Sheet, table: TableLike): string[] {
+/** An entry that names a row or column the table no longer has: a whole row or column map, or one cell of a row. */
+interface Orphan {
+  key: string;
+  id: string;
+  col?: string;
+}
+
+/** The orphan entries as structured paths, so an ID that holds a dot never splits into the wrong keys. */
+function orphanEntries(sheet: Sheet, table: TableLike): Orphan[] {
   const rows = new Set(table.rows.map((r) => r.id));
   const cols = new Set(table.columns.map((c) => c.id));
-  const found = Object.keys(ownObject(sheet, 'cols') ?? {})
+  const found: Orphan[] = Object.keys(ownObject(sheet, 'cols') ?? {})
     .filter((c) => !cols.has(c))
-    .map((c) => `cols.${c}`);
+    .map((c) => ({ key: 'cols', id: c }));
   found.push(
     ...Object.keys(ownObject(sheet, 'rows') ?? {})
       .filter((r) => !rows.has(r))
-      .map((r) => `rows.${r}`),
+      .map((r) => ({ key: 'rows', id: r })),
   );
   for (const key of BY_CELL) {
     const map = ownObject(sheet, key) ?? {};
     for (const row of Object.keys(map)) {
       const byCol = map[row];
-      if (!rows.has(row)) found.push(`${key}.${row}`);
+      if (!rows.has(row)) found.push({ key, id: row });
       else if (isObject(byCol))
         found.push(
           ...Object.keys(byCol)
             .filter((c) => !cols.has(c))
-            .map((c) => `${key}.${row}.${c}`),
+            .map((c) => ({ key, id: row, col: c })),
         );
     }
   }
   return found;
 }
 
+/**
+ * Entries that name a row or column the table no longer has (R-SHT-2), as paths: `cols.<id>`, `rows.<id>`, and
+ * `cells.<row>` or `cells.<row>.<col>` (and the same for notes and values).
+ */
+export function orphans(sheet: Sheet, table: TableLike): string[] {
+  return orphanEntries(sheet, table).map((o) =>
+    o.col === undefined ? `${o.key}.${o.id}` : `${o.key}.${o.id}.${o.col}`,
+  );
+}
+
 /** Drops the entries of `orphans`, and maps left empty. Changes `sheet` in place. */
 export function dropOrphans(sheet: Sheet, table: TableLike): void {
-  for (const path of orphans(sheet, table)) {
-    const [key, row, col] = path.split('.');
+  for (const { key, id, col } of orphanEntries(sheet, table)) {
     const map = ownObject(sheet, key);
     if (!map) continue;
-    if (col === undefined) delete map[row];
+    if (col === undefined) delete map[id];
     else {
-      const byCol = ownObject(map, row);
+      const byCol = ownObject(map, id);
       if (byCol) delete byCol[col];
-      if (byCol && Object.keys(byCol).length === 0) delete map[row];
+      if (byCol && Object.keys(byCol).length === 0) delete map[id];
     }
   }
   for (const key of ['cols', 'rows', ...BY_CELL]) {

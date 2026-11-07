@@ -25,6 +25,24 @@ describe('readSheet and writeSheet', () => {
     expect(sheetPatch(sheet, { ...sheet, styles: {} })).toEqual({ sheet: { styles: { aaaaaa: null } } });
   });
 
+  it('applies styles and diffs a sheet whose stored style holds a very deep unknown value', () => {
+    const table = makeTable(range(1, 2), range(1, 2));
+    const parse = (): Sheet => {
+      let deep: Json = 'bottom';
+      for (let n = 0; n < 20_000; n++) deep = { x: deep };
+      return readSheet({
+        sheet: { styles: { aaaaaa: { fill: 'fern', later: deep } }, cells: { [R(1)]: { [K(1)]: 'aaaaaa' } } },
+      });
+    };
+    const applied = applyToRange(parse(), table, [R(1), K(1)], [R(1), K(1)], { font: { bold: true } });
+    const id = (applied.sheet.cells as Record<string, Record<string, string>>)[R(1)][K(1)];
+    expect(id).not.toBe('aaaaaa');
+    expect(sheetPatch(parse(), parse())).toBeNull();
+    const changed = parse();
+    changed.cells = { [R(2)]: { [K(2)]: 'aaaaaa' } };
+    expect(sheetPatch(parse(), changed)).toEqual({ sheet: { cells: { [R(1)]: null, [R(2)]: { [K(2)]: 'aaaaaa' } } } });
+  });
+
   it('has the lane fixtures', () => {
     expect(ownCases().map((c) => c.file)).toEqual(['every-key.json', 'future-keys.json', 'invalid-values.json']);
   });
@@ -94,6 +112,21 @@ describe('orphans (R-SHT-2)', () => {
     expect(orphans(sheet, table)).toEqual([`cells.${R(1)}.${K(9)}`]);
     tidy(sheet, table);
     expect(sheet.cells).toEqual({ [R(1)]: { [K(1)]: 'aaaaaa' } });
+  });
+
+  it('drops an orphan key that holds a dot and keeps its valid sibling', () => {
+    const table = makeTable(range(1, 2), range(1, 2));
+    const dotted = `${K(1)}.x`;
+    const sheet: Sheet = {
+      cells: { [R(1)]: { [K(1)]: 'aaaaaa', [dotted]: 'aaaaaa' } },
+      notes: { [R(1)]: { [K(1)]: 'kept', [dotted]: 'gone' } },
+      values: { [R(1)]: { [K(1)]: 1, [dotted]: 2 } },
+      styles: { aaaaaa: { fill: 'ink' } },
+    };
+    dropOrphans(sheet, table);
+    expect(sheet.cells).toEqual({ [R(1)]: { [K(1)]: 'aaaaaa' } });
+    expect(sheet.notes).toEqual({ [R(1)]: { [K(1)]: 'kept' } });
+    expect(sheet.values).toEqual({ [R(1)]: { [K(1)]: 1 } });
   });
 });
 

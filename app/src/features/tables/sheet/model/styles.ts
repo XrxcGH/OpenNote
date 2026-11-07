@@ -4,6 +4,7 @@
 import {
   canonical,
   clone,
+  COPY_DEPTH,
   fnv1a64,
   isObject,
   jsonEqual,
@@ -47,13 +48,17 @@ export function styleId(style: CellStyle | JsonObject, taken: Readonly<Record<st
   }
 }
 
-/** A style without empty objects, so `{font: {}}` and `{}` are one style. */
-export function compact(style: JsonObject): JsonObject {
+/**
+ * A style without empty objects, so `{font: {}}` and `{}` are one style. Objects below COPY_DEPTH are shared as they
+ * are, as `ordered` does, so a very deep unknown value never runs out of stack.
+ */
+export function compact(style: JsonObject, depth = 0): JsonObject {
+  if (depth >= COPY_DEPTH) return style;
   const out: JsonObject = {};
   for (const key of Object.keys(style)) {
     const value = style[key];
     if (isObject(value)) {
-      const inner = compact(value);
+      const inner = compact(value, depth + 1);
       if (Object.keys(inner).length > 0) put(out, key, inner);
     } else if (value !== undefined) put(out, key, value);
   }

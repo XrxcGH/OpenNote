@@ -28,7 +28,13 @@ export function layer(lower: CellStyle, upper: CellStyle): CellStyle {
     if (value === undefined) continue;
     const below = out[key];
     const merges = (MERGED as readonly string[]).includes(key) && typeof below === 'object' && below !== null;
-    out[key] = merges ? { ...below, ...(value as object) } : value;
+    // A data property even for `__proto__`, which a hook's style may hold, so the result's prototype never changes.
+    Object.defineProperty(out, key, {
+      value: merges ? { ...below, ...(value as object) } : value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
   }
   return out as CellStyle;
 }

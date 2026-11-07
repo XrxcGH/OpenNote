@@ -130,6 +130,28 @@ describe('the value cache through merge patches (R-SHT-17)', () => {
     expect(valueAt(sheet, table, R(1), K(1))).toBeNull();
   });
 
+  it('cuts a cached string to 32,767 code units, and never splits a surrogate pair', () => {
+    const table = makeTable(range(1, 1), range(1, 2));
+    const sheet: Sheet = {};
+    const long = 'a'.repeat(40_000);
+    const paired = `${'a'.repeat(32_766)}😀b`;
+    writeValues(
+      sheet,
+      table,
+      new Map([
+        [
+          R(1),
+          new Map<string, CachedValue>([
+            [K(1), long],
+            [K(2), paired],
+          ]),
+        ],
+      ]),
+    );
+    expect(valueAt(sheet, table, R(1), K(1))).toBe('a'.repeat(32_767));
+    expect(valueAt(sheet, table, R(1), K(2))).toBe('a'.repeat(32_766));
+  });
+
   it('reads a null a file holds as an empty result', () => {
     const table = makeTable(range(1, 1), range(1, 2));
     const sheet: Sheet = { values: { [R(1)]: { [K(1)]: null } }, valuesOf: fingerprint(table) };

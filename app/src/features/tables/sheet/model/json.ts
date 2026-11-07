@@ -81,14 +81,38 @@ export function clone<T extends Json>(value: T, depth = 0): T {
  * the shortest form that reads back as the same double, as JavaScript writes them.
  */
 export function canonical(value: Json): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (isObject(value)) {
-    return `{${sortedKeys(value)
-      .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
-      .join(',')}}`;
+  // An explicit stack instead of recursion, so a very deep value never runs out of stack and still hashes exactly.
+  let out = '';
+  const stack: (Json | Raw)[] = [value];
+  while (stack.length > 0) {
+    const item = stack.pop() as Json | Raw;
+    if (item instanceof Raw) out += item.text;
+    else if (Array.isArray(item)) {
+      out += '[';
+      stack.push(new Raw(']'));
+      for (let i = item.length - 1; i >= 0; i--) {
+        stack.push(item[i]);
+        if (i > 0) stack.push(new Raw(','));
+      }
+    } else if (isObject(item)) {
+      const keys = sortedKeys(item);
+      out += '{';
+      stack.push(new Raw('}'));
+      for (let i = keys.length - 1; i >= 0; i--) {
+        stack.push(item[keys[i]]);
+        stack.push(new Raw(`${i > 0 ? ',' : ''}${JSON.stringify(keys[i])}:`));
+      }
+    } else {
+      if (typeof item === 'number' && !Number.isFinite(item)) throw new Error('NaN and infinity are never valid');
+      out += JSON.stringify(item);
+    }
   }
-  if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('NaN and infinity are never valid');
-  return JSON.stringify(value);
+  return out;
+}
+
+/** Text that canonical writes as it is. */
+class Raw {
+  constructor(readonly text: string) {}
 }
 
 /**
@@ -137,25 +161,39 @@ export function fnv1a64(text: string): bigint {
   return (BigInt(h3 * 0x10000 + h2) << 32n) | BigInt(h1 * 0x10000 + h0);
 }
 
+/** Deep equality of two JSON values, with an explicit stack so a very deep value never runs out of stack. */
 export function jsonEqual(a: Json | undefined, b: Json | undefined): boolean {
-  if (a === b) return true;
-  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => jsonEqual(v, b[i]));
-  if (isObject(a) && isObject(b)) {
-    const keys = Object.keys(a);
-    return keys.length === Object.keys(b).length && keys.every((k) => Object.hasOwn(b, k) && jsonEqual(a[k], b[k]));
+  const stack: [Json | undefined, Json | undefined][] = [[a, b]];
+  while (stack.length > 0) {
+    const [x, y] = stack.pop() as [Json | undefined, Json | undefined];
+    if (x === y) continue;
+    if (Array.isArray(x) && Array.isArray(y)) {
+      if (x.length !== y.length) return false;
+      for (let i = 0; i < x.length; i++) stack.push([x[i], y[i]]);
+    } else if (isObject(x) && isObject(y)) {
+      const keys = Object.keys(x);
+      if (keys.length !== Object.keys(y).length) return false;
+      for (const k of keys) {
+        if (!Object.hasOwn(y, k)) return false;
+        stack.push([x[k], y[k]]);
+      }
+    } else return false;
   }
-  return false;
+  return true;
 }
 
-/** The RFC 7396 merge patch that turns `from` into `to`: changed keys, `null` for removed ones, lists whole. */
-export function diffPatch(from: JsonObject, to: JsonObject): JsonObject | null {
+/**
+ * The RFC 7396 merge patch that turns `from` into `to`: changed keys, `null` for removed ones, lists whole. Below
+ * COPY_DEPTH a changed object goes whole, so a very deep value never runs out of stack.
+ */
+export function diffPatch(from: JsonObject, to: JsonObject, depth = 0): JsonObject | null {
   const patch: JsonObject = {};
   for (const key of Object.keys(to)) {
     const a = own(from, key);
     const b = to[key];
     if (jsonEqual(a, b)) continue;
-    if (isObject(a) && isObject(b)) {
-      const inner = diffPatch(a, b);
+    if (isObject(a) && isObject(b) && depth + 1 < COPY_DEPTH) {
+      const inner = diffPatch(a, b, depth + 1);
       if (inner) put(patch, key, inner);
     } else put(patch, key, b);
   }
@@ -163,14 +201,17 @@ export function diffPatch(from: JsonObject, to: JsonObject): JsonObject | null {
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
-/** Applies an RFC 7396 merge patch: `null` removes a key, objects merge, and everything else replaces. */
-export function applyPatch(target: Json | undefined, patch: Json): Json {
-  if (!isObject(patch)) return patch;
+/**
+ * Applies an RFC 7396 merge patch: `null` removes a key, objects merge, and everything else replaces. Below
+ * COPY_DEPTH the patch value replaces as it is, the same cut diffPatch makes.
+ */
+export function applyPatch(target: Json | undefined, patch: Json, depth = 0): Json {
+  if (!isObject(patch) || depth >= COPY_DEPTH) return patch;
   const out: JsonObject = isObject(target) ? clone(target) : {};
   for (const key of Object.keys(patch)) {
     const value = patch[key];
     if (value === null) delete out[key];
-    else put(out, key, applyPatch(own(out, key), value));
+    else put(out, key, applyPatch(own(out, key), value, depth + 1));
   }
   return out;
 }
