@@ -27,6 +27,8 @@ mod values;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_gaps;
+#[cfg(test)]
 mod tests_more;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -235,6 +237,9 @@ fn page_setup<R: Read + Seek>(
         return (setup, report);
     };
     setup.paper = section::paper(sect);
+    if let Some(numbers) = section::page_numbers(sect) {
+        setup.text.insert("pageNumbers".to_owned(), numbers);
+    }
     let first_page = section::title_page(sect);
     for (name, key) in [("w:headerreference", "header"), ("w:footerreference", "footer")] {
         let refs = section::references(sect, name);

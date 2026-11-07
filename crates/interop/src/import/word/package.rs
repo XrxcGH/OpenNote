@@ -123,7 +123,7 @@ impl<R: Read + Seek> Package<R> {
             };
             Ok(xml_part(archive, &rels_path, unpacked)?.map(|e| read_rels(&e)))
         };
-        let theme = match part(&mut archive, &mut unpacked, "theme1.xml")? {
+        let mut theme = match part(&mut archive, &mut unpacked, "theme1.xml")? {
             Some(root) => Theme::read(&root),
             None => xml_part(&mut archive, &format!("{dir}/theme/theme1.xml"), &mut unpacked)?
                 .map(|root| Theme::read(&root))
@@ -144,6 +144,9 @@ impl<R: Read + Seek> Package<R> {
             sources.comment_rels = part_rels(&mut archive, &mut unpacked, "comments.xml")?;
         }
         let settings = part(&mut archive, &mut unpacked, "settings.xml")?;
+        if let Some(settings) = &settings {
+            theme.read_mapping(settings);
+        }
         let unread_parts = unread(&archive, &dir);
         Ok(Package {
             archive,
