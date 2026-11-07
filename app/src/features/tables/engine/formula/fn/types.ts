@@ -3,12 +3,43 @@
 // never touch the same file. The descriptions people read (one line per function, one per argument) live in
 // app/src/strings/en/fn<Family>.ts under the function's name, written fresh in our own words.
 
-import { isError, isNumber, type FormulaError, type Value } from '../../values';
+import { isError, isNumber, type FormulaError, type RefValue, type Scalar, type Value } from '../../values';
 
 /** What the formula engine gives every function. */
 export interface Env {
   /** Today as a serial, read when a formula is calculated. */
   today: () => number;
+  /** The page's title, which CELL("filename") returns. Unset gives an empty text, as an unsaved workbook does. */
+  title?: string;
+  /** What the engine knows about the formula's cell and page. Set only for a function with `refArgs`. */
+  probe?: Probe;
+}
+
+/** One cell as functions about cells see it (CELL, ISFORMULA). */
+export interface ProbeCell {
+  /** The cell's value. Empty cells are null. */
+  readonly value: Scalar;
+  /** True when the cell holds a formula, alone, or through its calculated column. */
+  readonly formula: boolean;
+  /** The column's type, such as "number" or "date". */
+  readonly type: string;
+  /** The column's decimal places, when set. */
+  readonly decimals?: number;
+}
+
+/** The look at the page that the engine lends to a function with `refArgs`. */
+export interface Probe {
+  /** The formula's own table, zero-based. */
+  readonly sheet: number;
+  /** The name of every table on the page, in order. */
+  readonly sheets: readonly string[];
+  /** The cell the formula is in. */
+  readonly self: RefValue;
+  readonly calc: 'auto' | 'manual';
+  /** The table a reference names, zero-based, or -1 when it names none. */
+  sheetOf(ref: RefValue): number;
+  /** The cell at the top left of a reference, or undefined when it lies outside the table. */
+  cell(ref: RefValue): ProbeCell | undefined;
 }
 
 /**
@@ -78,6 +109,11 @@ export interface FnSpec2 {
   readonly volatile?: boolean;
   /** Returns a reference rather than a value, as OFFSET and INDEX do. */
   readonly returnsRef?: boolean;
+  /**
+   * Array parameters get a reference as a reference (a RefValue) instead of its values, and `env.probe` is set. For
+   * functions that ask about a cell rather than its content, as ISREF and CELL do.
+   */
+  readonly refArgs?: boolean;
   /** An error argument reaches the function instead of becoming its result. */
   readonly handlesErrors?: boolean;
   /** Computes the result. A function with lazy parameters is evaluated by the compiler itself and never runs this. */

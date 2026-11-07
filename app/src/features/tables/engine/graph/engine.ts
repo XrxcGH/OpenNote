@@ -71,7 +71,17 @@ export class Engine {
   }
 
   makeCtx(): Ctx {
-    const ctx = newCtx([], { spillBox: (s, c, r) => spillBox(this, s, c, r) });
+    const ctx = newCtx([], {
+      spillBox: (s, c, r) => spillBox(this, s, c, r),
+      cellFacts: (s, c, r) => {
+        const column = this.tables[s]?.columns[c];
+        const cell = this.tables[s]?.rows[r]?.cells[c];
+        if (column === undefined || cell === undefined) return undefined;
+        const decimals = column.decimals === undefined ? {} : { decimals: column.decimals };
+        return { formula: column.formula !== undefined || cell.formula !== undefined, type: column.type, ...decimals };
+      },
+      calcMode: (s) => this.tables[s]?.calc ?? 'auto',
+    });
     ctx.sheets = this.sheets;
     return ctx;
   }

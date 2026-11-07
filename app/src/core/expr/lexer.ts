@@ -78,7 +78,8 @@ const SUPERSCRIPT_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
 const SUPERSCRIPT_MINUS = '⁻';
 const NAME_PATTERNS = {
   ascii: /[A-Za-z_][A-Za-z0-9_]*/y,
-  cell: /[A-Za-z_$][A-Za-z0-9_$]*/y,
+  // A dot between letters stays inside the name, as in ERROR.TYPE and STDEV.S.
+  cell: /[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*/y,
   letters: /\p{L}+\d*/uy,
 } as const;
 const WHITESPACE = /\s/;

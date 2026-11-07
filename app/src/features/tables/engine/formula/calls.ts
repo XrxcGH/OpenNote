@@ -20,7 +20,7 @@ import {
 } from '../values';
 import { asArray, mapN } from '../arrays';
 import type { Box } from '../graph';
-import { isGroup, paramsOf, type FnSpec2, type Param } from './fn';
+import { isGroup, paramsOf, type FnSpec2, type Param, type Probe, type ProbeCell } from './fn';
 import type { ArgSummary, ErrorOrigin } from './explain';
 import { cellsOf, colKey, constant, isBad, readBox, type Ctx, type Fn, type Host, type RefPart } from './context';
 
@@ -160,8 +160,27 @@ function runLifted(spec: FnSpec2, values: Value[], scalar: boolean[], env: Host[
   );
 }
 
+/** What a function with `refArgs` may ask about the page. */
+function probeOf(h: Host, ctx: Ctx): Probe {
+  const sheetOf = (ref: RefValue): number => (ref.table === undefined ? h.ownSheet : h.sheetNamed(ref.table));
+  return {
+    sheet: h.ownSheet,
+    sheets: h.book.map((info) => info.name),
+    self: { kind: 'ref', r1: ctx.row, c1: ctx.col, r2: ctx.row, c2: ctx.col },
+    calc: ctx.rt.calcMode?.(h.ownSheet) ?? 'auto',
+    sheetOf,
+    cell(ref): ProbeCell | undefined {
+      const s = sheetOf(ref);
+      const facts = ctx.rt.cellFacts?.(s, ref.c1, ref.r1);
+      if (facts === undefined) return undefined;
+      return { value: toScalar(ctx.sheets[s]?.[ref.c1]?.[ref.r1] ?? null), ...facts };
+    },
+  };
+}
+
 function plain(h: Host, spec: FnSpec2, node: Call): Fn {
   const env = h.scope.env;
+  const refArgs = spec.refArgs === true;
   const params = paramsFor(spec, node.args.length);
   const returnsRef = spec.returnsRef === true;
   if (returnsRef) h.dynamic = true;
@@ -169,6 +188,7 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
     const kind = params[i]?.kind ?? 'value';
     if (kind !== 'range' && kind !== 'array') return h.value(arg);
     const ref = h.refOrNull(arg);
+    if (ref !== null && refArgs) return (ctx) => toRefValue(h, ref.fn(ctx));
     if (ref !== null && returnsRef && kind === 'range') return (ctx) => toRefValue(h, ref.fn(ctx));
     const v = ref !== null ? h.deref(ref) : h.value(arg);
     return (ctx) => {
@@ -181,7 +201,7 @@ function plain(h: Host, spec: FnSpec2, node: Call): Fn {
   const origin = originOf(spec, node);
   return (ctx) => {
     const values = parts.map((p) => p(ctx));
-    let v = runLifted(spec, values, scalar, env);
+    let v = runLifted(spec, values, scalar, refArgs ? { ...env, probe: probeOf(h, ctx) } : env);
     if (isRef(v)) v = readReturned(h, ctx, v);
     if (ctx.origin === null && isError(v) && !values.some((a) => a === v)) {
       ctx.origin = { ...origin, code: v.error, args: values.map(summarize) };
