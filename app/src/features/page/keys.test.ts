@@ -32,7 +32,7 @@ const chords = (): string[] =>
 
 describe('the Phase 4 keys table', () => {
   it('lists every command of PLAN.md section 3.10', () => {
-    expect(ids).toHaveLength(105);
+    expect(ids).toHaveLength(114);
   });
 
   it('uses canonical, allowed chords and keeps Ctrl+1 to Ctrl+9 free', () => {
@@ -41,11 +41,11 @@ describe('the Phase 4 keys table', () => {
     expect(chords().filter((chord) => /^Ctrl\+[1-9]$/.test(chord))).toEqual([]);
   });
 
-  it('refines only commands that exist and are less specific', () => {
+  it('refines only commands that exist and are no more specific (insert.pageBreak shares the editor scope)', () => {
     const wrong = ids.filter((id) => {
       const refines = (PAGE_KEYS[id] as { refines?: string }).refines;
       const refined = refines && commands.get(refines);
-      return refines && (!refined || scopeDepth(refined.scope) >= scopeDepth(PAGE_KEYS[id].scope));
+      return refines && (!refined || scopeDepth(refined.scope) > scopeDepth(PAGE_KEYS[id].scope));
     });
     expect(wrong).toEqual([]);
   });

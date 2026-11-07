@@ -117,7 +117,7 @@ export const BUILT_IN_PAGE_KEYS = {
   // WP6: tables and code.
   'insert.table': none,
   'table.rowAbove': scoped('editor.table', [], { allowInTextInput: true }),
-  'table.rowBelow': scoped('editor.table', ['Ctrl+Enter'], { refines: 'block.toggleCheck', allowInTextInput: true }),
+  'table.rowBelow': scoped('editor.table', ['Ctrl+Enter'], { refines: 'insert.pageBreak', allowInTextInput: true }),
   'table.columnLeft': { keys: [], oneNoteKeys: ['Ctrl+Alt+E'], scope: 'editor.table', allowInTextInput: true },
   'table.columnRight': { keys: [], oneNoteKeys: ['Ctrl+Alt+R'], scope: 'editor.table', allowInTextInput: true },
   'table.deleteRow': scoped('editor.table', [], { allowInTextInput: true }),
@@ -132,7 +132,7 @@ export const BUILT_IN_PAGE_KEYS = {
   'table.columnWidth': scoped('editor.table', [], { allowInTextInput: true }),
   'table.select': scoped('editor.table', [], { allowInTextInput: true }),
   'code.setLanguage': scoped('editor.code', [], { allowInTextInput: true }),
-  'code.exit': scoped('editor.code', ['Ctrl+Enter'], { refines: 'block.toggleCheck', allowInTextInput: true }),
+  'code.exit': scoped('editor.code', ['Ctrl+Enter'], { refines: 'insert.pageBreak', allowInTextInput: true }),
   // WP7: spelling, read aloud, and history.
   'spelling.next': editor(['F7']),
   'spelling.previous': editor(['Shift+F7']),

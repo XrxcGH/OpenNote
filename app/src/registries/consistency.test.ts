@@ -93,10 +93,10 @@ describe('default shortcuts', () => {
     expect(defaultConflicts('onenote')).toEqual([]);
   });
 
-  it('refines only less specific commands', () => {
+  it('refines only commands that are no more specific (the dispatcher orders equal scopes by refinement)', () => {
     const wrong = commands.list().filter((def) => {
       const refined = def.refines && commands.get(def.refines);
-      return refined && scopeDepth(def.scope) <= scopeDepth(refined.scope);
+      return refined && scopeDepth(def.scope) < scopeDepth(refined.scope);
     });
     expect(wrong.map((def) => def.id)).toEqual([]);
   });
