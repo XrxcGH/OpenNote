@@ -1,8 +1,10 @@
 // The Paste part of Settings, Editing (Phase 4 ARCHITECTURE.md section 15.7): source links below text from a
 // browser, saving web images into the page, and joining broken lines from PDFs.
+import { isEnabled } from '../../../app/flags';
 import { updateSettings, useSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { RadioCard, RadioGroup, Switch } from '../../../ui';
+import PasteDefaults from '../paste/PasteDefaults';
 import styles from './EditingTyping.module.css';
 
 type SourceLink = 'ask' | 'always' | 'never';
@@ -34,6 +36,7 @@ export default function EditingPaste() {
         checked={paste.joinPdfLines}
         onChange={(joinPdfLines) => set({ joinPdfLines })}
       />
+      {isEnabled('text.pasteFidelity') && <PasteDefaults />}
     </section>
   );
 }
