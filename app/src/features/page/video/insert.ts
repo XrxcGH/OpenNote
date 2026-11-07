@@ -1,6 +1,7 @@
 // Putting local videos on the shown page, and captions on a video. Each file is checked (its name and type, its size,
 // and its first bytes) before the shell stores it as an asset of the page. Nothing is read from the network; the
 // video plays from the page's own asset address.
+import './text';
 import { commandContext } from '../../../commands/registry';
 import type { PageExtrasClient } from '../../../platform/types';
 import type { BlockId, Edit } from '../../../services/pages/types';
