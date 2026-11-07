@@ -25,6 +25,9 @@ mod tables;
 /// The character that stands for a page break inside a paragraph, until the paragraph is split.
 const BREAK_MARK: char = '\u{c}';
 
+/// The shading of OpenNote's callouts in a Word file, as the writer draws it (`docx::ppr::CALLOUT_FILL`).
+const CALLOUT_FILL: &str = "F4F0EA";
+
 /// What a paragraph is.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum Kind {
@@ -301,10 +304,12 @@ impl<'a> Reader<'a> {
         let mut link = None;
         self.inline_content(p, &Marks::none(), &mut link, &mut inlines);
         let kind = props.map_or(Kind::Styled(StyleKind::Normal), |props| self.kind(props));
+        // Only the shading OpenNote gives its callouts makes a callout. Other shading is the paragraph's own
+        // formatting (DESIGN 9.1 `shade`), which the paragraph keeps.
         let shaded = props
             .and_then(|props| child(props, "w:shd"))
             .and_then(|shd| shd.attr("w:fill"))
-            .is_some_and(|fill| !fill.eq_ignore_ascii_case("auto") && !fill.eq_ignore_ascii_case("FFFFFF"));
+            .is_some_and(|fill| fill.eq_ignore_ascii_case(CALLOUT_FILL));
         let page_break_before = props.is_some_and(|props| child(props, "w:pagebreakbefore").is_some());
         if page_break_before {
             items.push(Item::PageBreak);
@@ -318,6 +323,7 @@ impl<'a> Reader<'a> {
         } else {
             self.fmt(&kind, props, style_id.as_deref())
         };
+        let (inlines, fmt) = join_drop_cap(items, inlines, fmt);
         self.emit(kind, shaded, bookmarks, inlines, fmt, items);
         items.append(&mut self.pending);
     }
@@ -446,17 +452,14 @@ impl<'a> Reader<'a> {
                 };
             }
         }
-        if style == StyleKind::Normal {
-            let outline = val(props, "w:outlinelvl").and_then(|v| v.parse::<u8>().ok());
-            if let Some(level) = outline.filter(|l| *l < 6) {
-                return Kind::Styled(StyleKind::Heading(level + 1));
-            }
-        }
+        // A paragraph with its own outline level stays a paragraph: Word shows it in the outline and the
+        // navigation pane, but it keeps its style, so it keeps the `outline` attribute (DESIGN 9.1).
         Kind::Styled(style)
     }
 
     /// Counts a list item and returns the number it shows. Lists that share a definition count on, deeper levels
-    /// start again after a shallower item, and a `w:num` that overrides a level starts again at its first item.
+    /// start again after a shallower item as their `w:lvlRestart` says, and a `w:num` that overrides a level starts
+    /// again at its first item.
     fn count(&mut self, num_id: u32, level: u32, start: u64) -> u64 {
         let key = self.numbering.list_id(num_id).unwrap_or_else(|| format!("x{num_id}"));
         let fresh = self.numbering.restarts(num_id, level) && !self.restarted.contains(&(num_id, level));
@@ -685,6 +688,37 @@ impl<'a> Reader<'a> {
             self.stats.shapes += 1;
         }
     }
+}
+
+/// Word writes a drop cap as a framed paragraph of its own that holds the letter, then the paragraph with the
+/// rest (ECMA-376 Part 1, 17.3.1.11). The two become one paragraph again, with the `dropCap` attribute.
+fn join_drop_cap(items: &mut Vec<Item>, inlines: Vec<Inline>, mut fmt: Fmt) -> (Vec<Inline>, Fmt) {
+    let joins = match items.last() {
+        Some(Item::Para(cap)) => {
+            cap.fmt.para.contains_key("dropCap")
+                && !cap.inlines.is_empty()
+                && !inlines.is_empty()
+                && !fmt.para.contains_key("dropCap")
+        }
+        _ => false,
+    };
+    if !joins {
+        return (inlines, fmt);
+    }
+    let Some(Item::Para(cap)) = items.pop() else {
+        return (inlines, fmt);
+    };
+    if let Some(drop_cap) = cap.fmt.para.get("dropCap") {
+        fmt.para.insert("dropCap".to_owned(), drop_cap.clone());
+    }
+    let mut joined = Vec::new();
+    for inline in cap.inlines.into_iter().chain(inlines) {
+        match inline {
+            Inline::Text { text, marks } => push_text(&mut joined, &text, &marks),
+            other => joined.push(other),
+        }
+    }
+    (joined, fmt)
 }
 
 /// The text of a run, for telling its script.
