@@ -24,6 +24,12 @@ export const test = base.extend<UiOptions>({
       (options) => {
         window.__OPENNOTE_DEV__ = { fixture: options.fixture, pseudo: options.pseudo };
         if (options.boot) window.__OPENNOTE_BOOT__ = { ...options.boot, bootVersion: 1 };
+        // The one-time tip about spreadsheet keys would queue ahead of the toasts the tests wait for.
+        try {
+          localStorage.setItem('opennote.sheetKeys.tipShown', '1');
+        } catch {
+          // A blocked store only means the tip may show.
+        }
       },
       { fixture, pseudo: pseudoLocale, boot },
     );

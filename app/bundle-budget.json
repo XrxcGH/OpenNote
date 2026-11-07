@@ -1,7 +1,7 @@
 {
   "startup": {
     "jsKb": 549,
-    "cssKb": 27.5
+    "cssKb": 27.8
   },
   "after": [
     {
@@ -90,9 +90,9 @@
     "features/pages/ui/presentCommands.tsx": 67,
     "features/pdf/importPdf.ts": 69,
     "features/tables/index.ts": 89,
-    "features/tools/index.ts": 380,
-    "features/engineering/control/ui/ControlKit.tsx": 322,
-    "features/engineering/index.ts": 216,
+    "features/tools/index.ts": 381,
+    "features/engineering/control/ui/ControlKit.tsx": 323,
+    "features/engineering/index.ts": 217,
     "mermaid/node_modules/katex": 80,
     "node_modules/mermaid": 600,
     "@mermaid-js/parser": 130,
@@ -108,7 +108,7 @@
     "features/page/PageBody": 276,
     "@observablehq/plot": 135,
     "features/math": 185,
-    "features/tables": 52,
+    "features/tables": 56,
     "features/search/links": 195,
     "features/search/lineTags": 160,
     "features/page": 40,
@@ -120,14 +120,14 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
-    "features/tools": 274,
+    "features/tools": 275,
     "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 312,
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
     "features/engineering/electrical/KitElectricalTool.tsx": 30,
     "features/engineering/mechdyn": 12,
-    "features/engineering/aero/ui/KitAeroTool.tsx": 223,
+    "features/engineering/aero/ui/KitAeroTool.tsx": 225,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 412,
+    "features/engineering/thermo/ui/ThermoKit.tsx": 413,
     "features/study/ui/exam/ExamResults.tsx": 42
   },
   "lazyDefaultKb": 40,
