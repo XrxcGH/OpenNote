@@ -63,8 +63,10 @@ function movedNote(id: CommandId): string | null {
 }
 
 /**
- * Notes from code editor refinements (other refinements, such as Link over the palette, need none), with the keys as they are now so a remap updates them. The refined command says that
- * the refining one wins in its scope; the refining one says that it comes first. Nothing shows when they no longer
+ * Notes from code editor refinements (other refinements, such as Link over the palette, need none), with the keys
+ * as they are now so a remap updates them.
+ * The refined command says the refining one wins in its scope; the refining one says it comes first. Nothing
+ * shows when they no longer
  * share a key.
  */
 function refinementNote(def: AnyCommand): string | null {
