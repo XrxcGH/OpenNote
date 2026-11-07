@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 542,
+    "jsKb": 543,
     "cssKb": 27.5
   },
   "after": [
@@ -78,7 +78,7 @@
     "features/accounts/tasks/auto.ts": 206,
     "features/accounts/tasks/commands.ts": 206,
     "features/ink/index.ts": 67,
-    "features/math/index.ts": 239,
+    "features/math/index.ts": 248,
     "features/math/solvers/ui/SolversTool.tsx": 61,
     "features/page/audio/exportVideo.ts": 85,
     "features/pages/host/shareRender.ts": 62,
@@ -89,7 +89,7 @@
     "features/pages/ui/imageCommands.tsx": 67,
     "features/pages/ui/presentCommands.tsx": 67,
     "features/pdf/importPdf.ts": 69,
-    "features/tables/index.ts": 89,
+    "features/tables/index.ts": 96,
     "features/tools/index.ts": 380,
     "features/engineering/control/ui/ControlKit.tsx": 322,
     "features/engineering/index.ts": 216,
@@ -120,6 +120,7 @@
     "features/shortcuts": 40,
     "features/trash": 40,
     "features/updates": 40,
+    "features/tools/statinfer": 283,
     "features/tools": 274,
     "features/engineering/fluidheat/ui/FluidHeatKit.tsx": 312,
     "features/engineering/mechdyn/ui/MechDynKit.tsx": 124,
@@ -127,8 +128,8 @@
     "features/engineering/mechdyn": 12,
     "features/engineering/aero/ui/KitAeroTool.tsx": 223,
     "features/engineering/solids/ui/SolidsKit.tsx": 119,
-    "features/engineering/thermo/ui/ThermoKit.tsx": 412,
-    "features/study/ui/exam/ExamResults.tsx": 42
+    "features/engineering/thermo/ui/ThermoKit.tsx": 420,
+    "features/study/ui/exam/ExamResults.tsx": 43
   },
   "lazyDefaultKb": 40,
   "bundledFontsKb": { "carlito": 460, "caladea": 150 },
