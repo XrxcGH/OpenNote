@@ -20,6 +20,8 @@ export type { TranscriptAction, TranscriptContext } from './audio/transcripts/ac
 export { usePrefs as usePageExtrasPrefs } from './qol/prefs';
 export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
+/** What features add to a table block, such as the spreadsheet keys (a light module). */
+export { tableExtras } from './tables/extras';
 export { assetTable } from './images/assets';
 /** The exporter's helpers load when a page is exported, not at start-up. */
 export const expandEmbedText = async (...args: Parameters<typeof import('./embeds/expand').expandEmbedText>) =>
