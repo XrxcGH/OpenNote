@@ -2,7 +2,7 @@
 
 Every tool, action, and feature in OpenNote, grouped by category, with one sentence each. `npm run docs:features` makes this page. The commands, tool windows, title bar items, settings sections, and setup steps come from what the app registers, so a new one shows up here or fails the tests. The feature sentences come from [FEATURES.md](FEATURES.md), which also says what has been tested by hand and which flag turns each one on. The [help pages](help/README.md) explain how to use them. [docs/screens](screens/README.md) has every picture in light and dark.
 
-The app registers 886 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
+The app registers 892 commands and 48 tool windows. 24 of the windows are subject and engineering kits. The count includes the ink commands, which register when a page first shows its ink, and the commands that register once start-up is done or with the first page: on-device intelligence, the second pass of page commands, and the code block and table commands. The command palette (Ctrl+K) runs every command not marked as left out of it. Some commands need a feature flag, which FEATURES.md names. The keys shown are the defaults of the standard shortcut set.
 
 ## Contents
 
@@ -132,6 +132,12 @@ Open it with the command "Open the code studio".
 | Crop image | Crops the edges of the selected image. |  |
 | Alt text… | Writes the alt text that screen readers read for the image, or marks it decorative. |  |
 | Copy as Markdown | Copies the selection as Markdown text. |  |
+| Insert footnote | Inserts a footnote at the caret. Its note shows under the page, numbered in reading order. |  |
+| Insert endnote | Inserts an endnote at the caret. Its note collects at the end of the page. |  |
+| Go to note or reference | Jumps between a note reference and its note. |  |
+| Convert all footnotes to endnotes | Turns every footnote on the page into an endnote. |  |
+| Convert all endnotes to footnotes | Turns every endnote on the page into a footnote. |  |
+| Convert this note | Turns the note at the caret from a footnote into an endnote, or the other way. |  |
 | New text box | Adds a new text box on the page. |  |
 | Bring to front | Brings the selected object in front of all others. | Ctrl+} |
 | Send to back | Sends the selected object behind all others. | Ctrl+{ |
