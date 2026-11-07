@@ -4384,6 +4384,141 @@
       "flag": "editor.readAloud"
     },
     {
+      "id": "text.review.newComment",
+      "title": "New comment",
+      "category": "insert",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.showComments",
+      "title": "Show comments",
+      "category": "view",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.previousComment",
+      "title": "Previous comment",
+      "category": "navigation",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.nextComment",
+      "title": "Next comment",
+      "category": "navigation",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.resolveComment",
+      "title": "Resolve comment",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.reopenComment",
+      "title": "Reopen comment",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.deleteComment",
+      "title": "Delete comment",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.trackChanges",
+      "title": "Track changes",
+      "category": "editing",
+      "keys": [
+        "Ctrl+Shift+E"
+      ],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.markup.simple",
+      "title": "Simple markup",
+      "category": "view",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.markup.all",
+      "title": "All markup",
+      "category": "view",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.markup.none",
+      "title": "No markup",
+      "category": "view",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.accept",
+      "title": "Accept change",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.reject",
+      "title": "Reject change",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.acceptAll",
+      "title": "Accept all changes",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.rejectAll",
+      "title": "Reject all changes",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.acceptByAuthor",
+      "title": "Accept all changes by…",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.rejectByAuthor",
+      "title": "Reject all changes by…",
+      "category": "editing",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.previousChange",
+      "title": "Previous change",
+      "category": "navigation",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
+      "id": "text.review.nextChange",
+      "title": "Next change",
+      "category": "navigation",
+      "keys": [],
+      "flag": "text.review"
+    },
+    {
       "id": "tools.latex",
       "title": "Insert LaTeX",
       "category": "insert",
