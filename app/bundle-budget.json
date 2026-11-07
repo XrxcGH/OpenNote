@@ -1,6 +1,6 @@
 {
   "startup": {
-    "jsKb": 539,
+    "jsKb": 541,
     "cssKb": 27.5
   },
   "after": [
@@ -52,12 +52,17 @@
     {
       "within": ["features/engineering/", "features/math/solvers/ui/SolversTool"],
       "entry": "features/tools/ui/host"
+    },
+    {
+      "within": ["@codemirror/lang-", "@codemirror/legacy-modes", "@codemirror/language"],
+      "entry": "features/codestudio/editor/index.ts"
     }
   ],
   "lazyKb": {
     "features/codestudio/window": 190,
+    "features/codestudio/editor": 190,
     "features/page/symbols": 80,
-    "@codemirror/lang-": 40,
+    "@codemirror/lang-": 44,
     "@codemirror/legacy-modes": 40,
     "features/tables/engine/formula/fn/lazy/statistics": 40,
     "features/tables/engine/formula/fn/lazy/financial": 30,
