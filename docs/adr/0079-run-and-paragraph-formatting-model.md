@@ -26,3 +26,14 @@ Word and Docs format characters (font, size, underline style, caps, spacing, pos
 ## Consequences
 
 The schema (`app/src/editor/schema/`), the four tag readers, the core's `TextData`, and the interop document model all change. `paras` needs the same ID hygiene as `styles`: writers drop keys for elements that no longer exist.
+
+## Implementation notes
+
+The interface's schema and Markdown layer implement the run half of this decision.
+
+- **One mark per kind.** Each row of spec 7.10 is a mark in `app/src/editor/schema/marks.ts`, ranked in the nesting order of `R-MRK-24`. The `weight` mark (100 to 900, without 400 and 700) sits after strong emphasis. `**` stays the only bold form.
+- **Values stay text.** A mark attribute holds its value exactly as the tag writes it, such as `"10.5"` for a size. Each value has one canonical text form (`R-VAL-1`), so reading and writing never round a number.
+- **One grammar.** `app/src/editor/schema/constants.ts` holds the value grammars of Appendix D. `app/src/editor/markdown/tags.ts` holds the tag grammar of spec 7.9. The Markdown reader, the writer, and the schema's DOM rules all use them.
+- **Foreign marks.** A tag in the grammar that is not a known mark becomes a `foreign` mark holding its exact opening tag. It draws as a plain `<span data-foreign>`, so no value of a later version reaches the page as a style.
+- **CSS from one place.** Every mark's DOM comes from its `renderHTML`, which asks `app/src/editor/render/runStyle.ts` for declarations. The static view and the editor therefore draw the same.
+- **Footnote references.** `[^ID]` is the inline atom node `footnoteRef`, with marks like any other inline node.

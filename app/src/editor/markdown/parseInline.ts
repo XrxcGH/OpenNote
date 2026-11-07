@@ -1,16 +1,19 @@
-// Inline tokens to ProseMirror nodes: text with marks, hard breaks, images, and math. The allowed HTML tags of SPEC 7.4
-// become marks when they nest properly within one paragraph, heading, or title. Any other HTML is literal text.
+// Inline tokens to ProseMirror nodes: text with marks, hard breaks, images, math, and footnote references. Tags of
+// SPEC 7.4 and 7.9 become marks when they pair within one paragraph, heading, or title (R-INL-5). Pairs nest at most
+// 32 deep (R-INL-6). A pair is a known mark, or a foreign mark that keeps its exact tag (R-INL-9). Any other HTML is
+// literal text.
 import type { Token } from 'markdown-it';
 import type { Mark, Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { HIGHLIGHT_COLORS, TEXT_COLOR_PATTERN, TEXT_SIZES, isBlockedHref } from '../schema/specs';
+import { isBlockedHref } from '../schema/specs';
+import { canonicalMarks } from './markOrder';
+import { closingName, readOpenTag } from './tags';
+import type { TagMark } from './tags';
 
 const { marks, nodes } = textSchema;
 
-interface OpenTag {
-  readonly name: string;
-  readonly mark: Mark;
-}
+/** R-INL-6: a pair inside this many other pairs is literal text. */
+const MAX_DEPTH = 32;
 
 interface Live {
   readonly role: 'open' | 'close';
@@ -18,56 +21,46 @@ interface Live {
   readonly id: number;
 }
 
-const SIMPLE_TAGS: Readonly<Record<string, [string, string]>> = {
-  '<u>': ['u', 'underline'],
-  '<sub>': ['sub', 'subscript'],
-  '<sup>': ['sup', 'superscript'],
-  '<em>': ['em', 'italic'],
-  '<strong>': ['strong', 'bold'],
-  '<del>': ['del', 'strike'],
-  '<mark>': ['mark', 'highlight'],
-};
-const MARK_COLOR = /^<mark data-color="([a-z]+)">$/;
-const SPAN_COLOR = /^<span data-color="([^"]*)">$/;
-const SPAN_SIZE = /^<span data-size="([a-z]+)">$/;
-const CLOSING = /^<\/(u|sub|sup|em|strong|del|mark|span)>$/;
-
-function openTag(html: string): OpenTag | null {
-  const simple = SIMPLE_TAGS[html];
-  if (simple) return { name: simple[0], mark: marks[simple[1]].create() };
-  const color = MARK_COLOR.exec(html)?.[1];
-  if (color && (HIGHLIGHT_COLORS as readonly string[]).includes(color)) {
-    return { name: 'mark', mark: marks.highlight.create({ color }) };
-  }
-  const text = SPAN_COLOR.exec(html)?.[1];
-  if (text !== undefined && TEXT_COLOR_PATTERN.test(text)) {
-    return { name: 'span', mark: marks.textColor.create({ color: text }) };
-  }
-  const size = SPAN_SIZE.exec(html)?.[1];
-  if (size && (TEXT_SIZES as readonly string[]).includes(size)) {
-    return { name: 'span', mark: marks.textSize.create({ size }) };
-  }
-  return null;
+function markOf(tag: TagMark): Mark {
+  return marks[tag.type].create(tag.attrs);
 }
 
-/** Pairs the allowed tags. A tag that does not pair stays out of the result, so it becomes literal text. */
+/** Pairs the tags like brackets. A tag that does not pair stays out of the result, so it becomes literal text. */
 function pairTags(tokens: readonly Token[]): Map<number, Live> {
   const live = new Map<number, Live>();
-  const stack: { index: number; tag: OpenTag }[] = [];
+  const stack: { index: number; name: string; mark: TagMark }[] = [];
   tokens.forEach((token, index) => {
     if (token.type !== 'html_inline') return;
-    const tag = openTag(token.content);
-    if (tag) {
-      stack.push({ index, tag });
+    const open = readOpenTag(token.content);
+    if (open) {
+      stack.push({ index, name: open.name, mark: open.mark });
       return;
     }
-    const name = CLOSING.exec(token.content)?.[1];
-    if (name === undefined || stack.at(-1)?.tag.name !== name) return;
-    const open = stack.pop() as { index: number; tag: OpenTag };
-    live.set(open.index, { role: 'open', mark: open.tag.mark, id: open.index });
-    live.set(index, { role: 'close', id: open.index });
+    const name = closingName(token.content);
+    const top = stack.at(-1);
+    if (name === null || top?.name !== name) return;
+    stack.pop();
+    live.set(top.index, { role: 'open', mark: markOf(top.mark), id: top.index });
+    live.set(index, { role: 'close', id: top.index });
   });
+  limitDepth(live);
   return live;
+}
+
+/** Pairs nest, so counting the pairs open at each opening tag finds every depth in one pass. */
+function limitDepth(live: Map<number, Live>): void {
+  let depth = 0;
+  const literal = new Set<number>();
+  for (const index of [...live.keys()].sort((a, b) => a - b)) {
+    const tag = live.get(index) as Live;
+    if (tag.role === 'close') {
+      depth--;
+      continue;
+    }
+    depth++;
+    if (depth > MAX_DEPTH) literal.add(tag.id);
+  }
+  for (const [index, tag] of live) if (literal.has(tag.id)) live.delete(index);
 }
 
 /** The plain text of inline tokens, for an image's description. */
@@ -94,23 +87,32 @@ const MARK_OPEN: Readonly<Record<string, string>> = {
 class InlineBuilder {
   readonly out: PMNode[] = [];
   private readonly open: { key: string; mark: Mark | null }[] = [];
+  /** The active set, kept until the open stack changes, so a long run of literal text does not sort it again. */
+  private cached: readonly Mark[] | null = null;
 
+  /** Inner marks of one kind replace outer ones (R-MRK-28), except comments and foreign marks, which stack. */
   private active(): readonly Mark[] {
-    return this.open.reduce<readonly Mark[]>((set, { mark }) => (mark ? mark.addToSet(set) : set), []);
+    this.cached ??= canonicalMarks(
+      this.open.reduce<readonly Mark[]>((set, { mark }) => (mark ? mark.addToSet(set) : set), []),
+    );
+    return this.cached;
   }
 
   push(key: string, mark: Mark | null): void {
     this.open.push({ key, mark });
+    if (mark) this.cached = null;
   }
 
   close(key: string): void {
     const at = this.open.map((entry) => entry.key).lastIndexOf(key);
-    if (at >= 0) this.open.splice(at, 1);
+    if (at < 0) return;
+    if (this.open[at].mark) this.cached = null;
+    this.open.splice(at, 1);
   }
 
   text(content: string, extra?: Mark): void {
     if (content === '') return;
-    const set = extra ? extra.addToSet(this.active()) : this.active();
+    const set = extra ? canonicalMarks(extra.addToSet(this.active())) : this.active();
     this.out.push(textSchema.text(content, set));
   }
 
@@ -158,6 +160,8 @@ function addToken(builder: InlineBuilder, token: Token, index: number, live: Map
       return builder.node('image', { src: String(token.attrGet('src') ?? ''), alt: plainText(token.children ?? []) });
     case 'math_inline':
       return builder.node('mathInline', { source: token.content });
+    case 'footnote_ref':
+      return builder.node('footnoteRef', { id: token.content });
     case 'html_inline':
       if (!tag) return builder.text(token.content.replace(/\n/g, ' '));
       return tag.role === 'open' ? builder.push(`html${tag.id}`, tag.mark ?? null) : builder.close(`html${tag.id}`);
@@ -169,5 +173,11 @@ export function inlineNodes(tokens: readonly Token[]): PMNode[] {
   const live = pairTags(tokens);
   const builder = new InlineBuilder();
   tokens.forEach((token, index) => addToken(builder, token, index, live));
-  return builder.out;
+  // R-WS-2: a hard break with nothing before or after it in its paragraph breaks nothing, so it is dropped.
+  const isBreak = (node: PMNode | undefined) => node?.type.name === 'hardBreak';
+  let from = 0;
+  let to = builder.out.length;
+  while (from < to && isBreak(builder.out[from])) from++;
+  while (to > from && isBreak(builder.out[to - 1])) to--;
+  return builder.out.slice(from, to);
 }
