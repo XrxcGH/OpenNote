@@ -8,6 +8,7 @@ export const SETTINGS_TEXT: Readonly<Record<string, string>> = {
   appearance: 'Sets the theme, the page color in dark mode, the text and interface size, and reduced motion.',
   language: 'Sets the app language and the spelling dialect, with American English as the default.',
   editing: 'Turns Markdown shortcuts, the slash menu, and AutoCorrect on or off.',
+  tables: 'Chooses whether new tables use spreadsheet keys or document keys.',
   recording: 'Sets live captions, transcripts of recordings, audio formats, and the consent reminder.',
   penAndTouch: 'Sets the writing hand, finger drawing, the steady pen, and the pressure curve.',
   myHandwriting: 'Calibrates the app to your handwriting and the symbols you write by hand.',

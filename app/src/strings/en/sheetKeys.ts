@@ -93,4 +93,14 @@ export const sheetKeys = {
     editEscape: 'Edit mode: cancel the entry and go back to Grid mode',
     editArrows: 'Enter mode: finish the entry and move; Edit mode: move in the text',
   },
+  // Settings, then Tables.
+  settings: {
+    title: 'Tables',
+    newTableKeys: 'New tables use spreadsheet keys',
+    spreadsheet: 'Spreadsheet keys',
+    spreadsheetHelp: 'Enter finishes the entry and moves down. Arrows move between cells.',
+    document: 'Document keys',
+    documentHelp: 'Enter starts a new line. Arrows move in the text.',
+    help: 'Each table keeps the keys it was made with. The command “Use document keys in this table” switches one table.',
+  },
 } as const;

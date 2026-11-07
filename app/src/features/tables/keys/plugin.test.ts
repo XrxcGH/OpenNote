@@ -4,7 +4,9 @@
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { CellSelection } from '@tiptap/pm/tables';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { Decoration } from '@tiptap/pm/view';
+import axe from 'axe-core';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initFlags } from '../../../app/flags';
 import { linkApplies } from '../../../editor/commands/state';
 import { createBlockEditor } from '../../../editor/extensions/kit';
@@ -13,9 +15,10 @@ import type { EditorHost } from '../../../editor/host';
 import { tableSchema } from '../../../editor/schema/schema';
 import { parseDate, todayDays } from '../engine/dates';
 import { registerSheetKeyCommands } from './commands';
-import { activeCell, gridOf, modeOf, sheetKeysPlugin, textsOf } from './plugin';
+import { activeCell, gridOf, insideOneCell, modeOf, sheetKeysPlugin, textsOf } from './plugin';
 import type { SheetKeysOptions } from './plugin';
 import { address } from './grid';
+import { sheetKeysKey } from './state';
 
 const host: EditorHost = {
   settings: () => DEFAULT_EDITING_VIEW,
@@ -363,6 +366,86 @@ describe('screen readers', () => {
     expect(dom.getAttribute('data-scope')).toBe('editor editor.table tableGrid');
     sheet.caretIn('A1');
     expect(dom.getAttribute('data-scope')).toBe('editor editor.table tableEdit');
+  });
+});
+
+describe('the grid that screen readers read', () => {
+  it('makes a table with spreadsheet keys a grid, so aria-selected is allowed on its cells', async () => {
+    const sheet = mount(
+      [
+        ['Item', 'Qty'],
+        ['a', '1'],
+        ['b', '2'],
+      ],
+      { header: true },
+    );
+    const dom = sheet.editor.view.dom;
+    expect(dom.querySelector('table')?.getAttribute('role')).toBe('grid');
+    expect(dom.querySelector('th')?.getAttribute('role')).toBe('columnheader');
+    expect(dom.querySelector('td')?.getAttribute('role')).toBe('gridcell');
+    sheet.select('A1', 'B2');
+    expect(dom.querySelectorAll('td[aria-selected="true"]')).toHaveLength(4);
+    const rules = ['aria-allowed-attr', 'aria-required-children', 'aria-required-parent', 'aria-allowed-role'];
+    const results = await axe.run(dom, { runOnly: { type: 'rule', values: rules } });
+    expect(results.violations.map((violation) => violation.id)).toEqual([]);
+    sheet.editor.view.dispatch(sheet.editor.state.tr.setMeta(sheetKeysKey, { spreadsheet: false }));
+    expect(dom.querySelector('table')?.getAttribute('role')).toBeNull();
+    expect(dom.querySelector('td')?.getAttribute('role')).toBeNull();
+    expect(dom.querySelector('td')?.getAttribute('aria-rowindex')).toBe('2');
+  });
+
+  it('marks no cell selected while focus is outside the editor, as when the table is selected as an object', () => {
+    const sheet = mount(FIVE);
+    sheet.select('B2', 'C3');
+    const dom = sheet.editor.view.dom;
+    expect(dom.querySelectorAll('[aria-selected="true"]')).toHaveLength(4);
+    dom.dispatchEvent(new FocusEvent('blur'));
+    expect(dom.querySelectorAll('[aria-selected]')).toHaveLength(0);
+    dom.dispatchEvent(new FocusEvent('focus'));
+    expect(dom.querySelectorAll('[aria-selected="true"]')).toHaveLength(4);
+  });
+
+  it('maps the cell numbers through typing instead of rebuilding them for every cell', () => {
+    const rows = Array.from({ length: 30 }, () => Array.from({ length: 10 }, () => 'x'));
+    const sheet = mount(rows);
+    sheet.caretIn('B2');
+    // The first change gives the rows their IDs, which moves no cell but changes the rows; later ones don't.
+    sheet.editor.commands.insertContent('-');
+    const node = vi.spyOn(Decoration, 'node');
+    sheet.editor.commands.insertContent('typed');
+    // Only the active cell's outline is drawn again; the 300 cells' numbers are mapped.
+    expect(node.mock.calls.length).toBeLessThan(10);
+    node.mockRestore();
+    const b2 = sheet.editor.view.dom.querySelectorAll('tr')[1].querySelectorAll('td')[1];
+    expect(b2.textContent).toBe('-typedx');
+    expect(b2.getAttribute('aria-colindex')).toBe('2');
+  });
+
+  it('numbers the cells again when a row is added', () => {
+    const sheet = mount([
+      ['1', '2'],
+      ['3', '4'],
+    ]);
+    sheet.caretIn('A1');
+    sheet.editor.commands.addRowBefore();
+    const rows = sheet.editor.view.dom.querySelectorAll('tr');
+    expect(rows).toHaveLength(3);
+    expect(rows[2].querySelectorAll('td')[1].getAttribute('aria-rowindex')).toBe('3');
+    expect(rows[0].querySelectorAll('td')[1].getAttribute('aria-colindex')).toBe('2');
+    expect(rows[0].querySelectorAll('td')[1].getAttribute('role')).toBe('gridcell');
+  });
+
+  it('tells a change inside one cell from one that moves cells', () => {
+    const sheet = mount([
+      ['1', '2'],
+      ['3', '4'],
+    ]);
+    const { state } = sheet.editor;
+    expect(insideOneCell(state.tr.insertText('a', 4))).toBe(true);
+    expect(insideOneCell(state.tr.delete(4, 5))).toBe(true);
+    // From A1's text to B1's text crosses a cell's edge.
+    expect(insideOneCell(state.tr.delete(4, 10))).toBe(false);
+    expect(insideOneCell(state.tr.delete(1, 1 + state.doc.firstChild!.firstChild!.nodeSize))).toBe(false);
   });
 
   it('leaves Ctrl+K to the palette when cells are selected', () => {

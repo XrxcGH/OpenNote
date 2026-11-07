@@ -24,14 +24,18 @@ export interface SheetState {
   entry: Entry | null;
   /** The active cell inside a range, once Enter or Tab moved it; null means the range's anchor. */
   active: GridCell | null;
-  /** aria-rowindex and aria-colindex on every cell, rebuilt when the document changes. */
+  /** aria-rowindex and aria-colindex on every cell, and the grid roles with spreadsheet keys. Mapped through a
+   * change inside one cell; rebuilt when cells move or the keys change. */
   indexes: DecorationSet;
+  /** Whether the editor has focus. A table selected as an object, or focus elsewhere, marks no cell selected. */
+  focused: boolean;
 }
 
 export interface SheetMeta {
   spreadsheet?: boolean;
   entry?: Entry | null;
   active?: GridCell | null;
+  focused?: boolean;
 }
 
 export interface SheetKeysOptions {

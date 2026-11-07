@@ -40,20 +40,36 @@ export { dateText, runSheetCommand, setSheetKeys, timeText } from './actions';
 
 // ---- Decorations and announcements
 
-/** aria-rowindex and aria-colindex on every cell, counted from 1. */
-function indexesOf(doc: PMNode): DecorationSet {
+/**
+ * aria-rowindex and aria-colindex on every cell, counted from 1. With spreadsheet keys each cell is a "gridcell"
+ * or a "columnheader" of the grid that markGrid makes the table, so Grid mode's aria-selected is allowed.
+ */
+function indexesOf(doc: PMNode, spreadsheet: boolean): DecorationSet {
   const decorations: Decoration[] = [];
   cellsOf(doc).forEach((row, r) =>
-    row.forEach((cell, c) =>
-      decorations.push(
-        Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, {
-          'aria-rowindex': String(r + 1),
-          'aria-colindex': String(c + 1),
-        }),
-      ),
-    ),
+    row.forEach((cell, c) => {
+      const attrs: Record<string, string> = { 'aria-rowindex': String(r + 1), 'aria-colindex': String(c + 1) };
+      if (spreadsheet) attrs.role = cell.node.type.name === 'tableHeader' ? 'columnheader' : 'gridcell';
+      decorations.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs));
+    }),
   );
   return DecorationSet.create(doc, decorations);
+}
+
+/** Whether each step changed only the inside of one cell, so every cell keeps its row and column. */
+export function insideOneCell(tr: Transaction): boolean {
+  return tr.steps.every((step, i) => {
+    const doc = tr.docs[i];
+    let inside = true;
+    step.getMap().forEach((from, to) => {
+      if (!inside) return;
+      const $from = doc.resolve(from);
+      const $to = doc.resolve(to);
+      // A cell's content sits at depth 3: the document, the table, the row, then the cell.
+      inside = $from.depth >= 3 && $to.depth >= 3 && $from.start(3) === $to.start(3);
+    });
+    return inside;
+  });
 }
 
 /** What a screen reader hears when the active cell or the range changes. */
@@ -88,8 +104,12 @@ function spoken(state: EditorState): string | null {
 function applyMeta(tr: Transaction, value: SheetState, state: EditorState): SheetState {
   const meta = tr.getMeta(sheetKeysKey) as SheetMeta | undefined;
   const next: SheetState = { ...value };
-  if (tr.docChanged) next.indexes = indexesOf(state.doc);
   if (meta?.spreadsheet !== undefined) next.spreadsheet = meta.spreadsheet;
+  if (meta?.focused !== undefined) next.focused = meta.focused;
+  // Typing maps the cells' numbers through the change, so a keystroke costs the same in a big table as in a small one.
+  if (next.spreadsheet !== value.spreadsheet || (tr.docChanged && !insideOneCell(tr)))
+    next.indexes = indexesOf(state.doc, next.spreadsheet);
+  else if (tr.docChanged) next.indexes = value.indexes.map(tr.mapping, tr.doc);
   if (meta && 'active' in meta) next.active = meta.active ?? null;
   else if (tr.selectionSet) next.active = null;
   if (meta && 'entry' in meta) next.entry = meta.entry ?? null;
@@ -100,7 +120,10 @@ function applyMeta(tr: Transaction, value: SheetState, state: EditorState): Shee
   return next;
 }
 
-/** The cell numbers on every cell; in Grid mode the range's aria-selected; and the active cell's outline. */
+/**
+ * The cell numbers on every cell; in Grid mode the range's aria-selected while the editor has focus; and the active
+ * cell's outline.
+ */
 function decorationsOf(state: EditorState): DecorationSet | null {
   const sheet = sheetKeysKey.getState(state);
   if (!sheet) return null;
@@ -112,10 +135,18 @@ function decorationsOf(state: EditorState): DecorationSet | null {
     if (cell) extra.push(Decoration.node(cell.pos, cell.pos + cell.node.nodeSize, attrs));
   };
   const g = gridOf(state);
-  if (g) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
+  if (g && sheet.focused) for (const at of cellsIn(g.box)) mark(at, { 'aria-selected': 'true' });
   const active = activeCell(state);
   if (active) mark(active, { class: mode === 'grid' ? styles.active : styles.editing });
   return sheet.indexes.add(state.doc, extra);
+}
+
+/** Notes when the editor gains or loses focus, so a cell isn't announced as selected while focus is elsewhere. */
+function noteFocus(view: EditorView, focused: boolean): boolean {
+  const sheet = sheetKeysKey.getState(view.state);
+  if (!view.isDestroyed && sheet && sheet.focused !== focused)
+    view.dispatch(view.state.tr.setMeta(sheetKeysKey, { focused } satisfies SheetMeta));
+  return false;
 }
 
 /** A click on a cell's padding, not its text, selects the cell in Grid mode. */
@@ -139,7 +170,18 @@ function scopeOf(state: EditorState): Record<string, string> {
   return { 'data-scope': `editor editor.table${scope}` };
 }
 
-/** Makes this table the one commands act on while it has focus, and says each move. */
+/**
+ * role="grid" on the table element with spreadsheet keys. The table's node view draws the element, so a node
+ * decoration would land on its wrapper; the view ignores attribute changes on the element.
+ */
+function markGrid(view: EditorView, on: boolean): void {
+  const table = view.dom.querySelector('table');
+  if (!table || (table.getAttribute('role') === 'grid') === on) return;
+  if (on) table.setAttribute('role', 'grid');
+  else table.removeAttribute('role');
+}
+
+/** Makes this table the one commands act on while it has focus, marks it a grid, and says each move. */
 function sheetView(view: EditorView, options: SheetKeysOptions) {
   const runner: SheetRunner = {
     run: (command) => runSheetCommand(view, options, command),
@@ -148,9 +190,12 @@ function sheetView(view: EditorView, options: SheetKeysOptions) {
   const focus = () => setActiveSheet(runner);
   view.dom.addEventListener('focusin', focus);
   if (view.hasFocus()) focus();
+  const spreadsheet = (state: EditorState) => sheetKeysKey.getState(state)?.spreadsheet ?? false;
+  markGrid(view, spreadsheet(view.state));
   let said = spoken(view.state);
   return {
     update(next: EditorView) {
+      markGrid(next, spreadsheet(next.state));
       const now = spoken(next.state);
       if (now === said) return;
       said = now;
@@ -158,6 +203,7 @@ function sheetView(view: EditorView, options: SheetKeysOptions) {
       if (text) options.announce(text);
     },
     destroy() {
+      markGrid(view, false);
       view.dom.removeEventListener('focusin', focus);
       clearActiveSheet(runner);
     },
@@ -172,7 +218,8 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         spreadsheet: options.spreadsheet,
         entry: null,
         active: null,
-        indexes: indexesOf(state.doc),
+        indexes: indexesOf(state.doc, options.spreadsheet),
+        focused: true,
       }),
       apply: (tr, value, _old, state) => applyMeta(tr, value, state),
     },
@@ -184,7 +231,11 @@ export function sheetKeysPlugin(options: SheetKeysOptions): Plugin<SheetState> {
         const ctx: Ctx = { view, state: view.state, dispatch: (tr) => view.dispatch(tr), options, texts: [] };
         return typeOver(ctx, text);
       },
-      handleDOMEvents: { mousedown: clickPadding },
+      handleDOMEvents: {
+        mousedown: clickPadding,
+        focus: (view) => noteFocus(view, true),
+        blur: (view) => noteFocus(view, false),
+      },
       attributes: scopeOf,
       decorations: decorationsOf,
     },

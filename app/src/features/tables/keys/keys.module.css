@@ -3,6 +3,26 @@
  * mode a thin one, so the mode shows without color alone. Outlines stay visible in forced colors.
  */
 @layer components {
+  /* Settings, then Tables. */
+  .settings {
+    display: grid;
+    gap: var(--space-4);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .settings h2 {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
   .active {
     outline: calc(var(--size-focus-ring-width) * 1.5) solid var(--color-focus-ring);
     outline-offset: calc(var(--size-focus-ring-width) * -1.5);

@@ -5,6 +5,12 @@ import { sheetProblems } from '../sheet/model';
 import { isSheetValue, keysOf, keysPatch, storedKeys } from './mode';
 
 describe('table keys', () => {
+  it('reads a cell of a digit, a long run of spaces, and a letter quickly, as text', () => {
+    const start = performance.now();
+    expect(isSheetValue(`1${' '.repeat(100_000)}a`)).toBe(false);
+    expect(performance.now() - start).toBeLessThan(200);
+  });
+
   it('uses the stored choice first', () => {
     expect(keysOf({ sheet: { table: { keys: 'document' } } }, [['=1+2']])).toBe('document');
     expect(keysOf({ sheet: { table: { keys: 'spreadsheet' } } }, [['words']])).toBe('spreadsheet');

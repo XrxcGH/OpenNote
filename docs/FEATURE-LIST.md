@@ -2326,6 +2326,7 @@ Open it with the command "Open upcoming".
 - **Appearance.** Sets the theme, the page color in dark mode, the text and interface size, and reduced motion.
 - **Language.** Sets the app language and the spelling dialect, with American English as the default.
 - **Editing.** Turns Markdown shortcuts, the slash menu, and AutoCorrect on or off.
+- **Tables.** Chooses whether new tables use spreadsheet keys or document keys.
 - **Recording.** Sets live captions, transcripts of recordings, audio formats, and the consent reminder.
 - **Pen and touch.** Sets the writing hand, finger drawing, the steady pen, and the pressure curve.
 - **My handwriting.** Calibrates the app to your handwriting and the symbols you write by hand.

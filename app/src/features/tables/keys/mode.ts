@@ -19,11 +19,13 @@ export function storedKeys(data: Record<string, unknown>): TableKeys | null {
 
 // A plain number as people type one. It may start with a sign or a currency sign and end with a percent sign.
 const NUMBER = /^[-+]?[$€£¥]?\s*(?:\d[\d,.\u00a0 ]*|[.,]\d+)(?:[eE][-+]?\d+)?\s*%?$/;
+// No number people type is longer. The cap also keeps the pattern's backtracking short on a long run of spaces.
+const NUMBER_MAX = 64;
 
 /** Whether a cell's text is a number or a formula, which makes an older table a spreadsheet. */
 export function isSheetValue(text: string): boolean {
   const trimmed = text.trim();
-  return trimmed.startsWith('=') ? trimmed.length > 1 : NUMBER.test(trimmed);
+  return trimmed.startsWith('=') ? trimmed.length > 1 : trimmed.length <= NUMBER_MAX && NUMBER.test(trimmed);
 }
 
 /** The keys the table uses: its stored choice, else spreadsheet keys when it holds a number or a formula. */
