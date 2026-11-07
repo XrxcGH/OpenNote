@@ -16,4 +16,3 @@ export { armedChange, recordChange, undoArmedChange } from './changeSet';
 export { undoPageChanges } from './changeSet';
 export type { PageChange } from './changeSet';
 export { disarmChange } from './changeSet';
-export { hasLineData, lineDataOf } from './elements/model';

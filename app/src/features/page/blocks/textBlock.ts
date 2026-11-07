@@ -10,7 +10,7 @@ import { parseTextBlock, serializeTextBlock } from '../../../editor/markdown';
 import { applyElementData } from '../../../editor/markdown/elements';
 import { readLists } from '../../../editor/paragraph/numbering';
 import { renderStatic } from '../../../editor/schema/dom';
-import { hasLineData, lineDataOf } from '../../search';
+import { hasLineData, lineDataOf } from '../../search/elements/model';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { PagePool } from '../pool/pool';
