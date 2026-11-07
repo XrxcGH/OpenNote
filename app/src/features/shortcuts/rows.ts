@@ -20,6 +20,8 @@ export interface ShortcutRow {
   readonly customizable: boolean;
   /** Where the command went in the chosen shortcut set, when its keys moved. */
   readonly moved: string | null;
+  /** Which command shares a key on purpose, in either direction, such as Next tab and Accept suggestion. */
+  readonly refinement: string | null;
 }
 
 export interface ShortcutGroup {
@@ -60,6 +62,26 @@ function movedNote(id: CommandId): string | null {
   return here.length > 0 ? `${from} ${t('shortcuts.movedNow', { keys: joinKeys(here) })}` : from;
 }
 
+/**
+ * Notes from code editor refinements (other refinements, such as Link over the palette, need none), with the keys as they are now so a remap updates them. The refined command says that
+ * the refining one wins in its scope; the refining one says that it comes first. Nothing shows when they no longer
+ * share a key.
+ */
+function refinementNote(def: AnyCommand): string | null {
+  const keys = keysFor(def.id);
+  const shared = (other: AnyCommand) => keysFor(other.id).filter((key) => keys.includes(key));
+  const refiner = commands
+    .list()
+    .find((other) => other.refines === def.id && other.scope === 'codeEditor' && shared(other).length > 0);
+  if (refiner) {
+    return t('shortcuts.refinedBy', { keys: joinKeys(shared(refiner)), command: t(refiner.title) });
+  }
+  const refined = def.refines && commands.get(def.refines);
+  if (refined && def.scope === 'codeEditor' && shared(refined).length > 0)
+    return t('shortcuts.refines', { command: t(refined.title) });
+  return null;
+}
+
 function rowFor(def: AnyCommand): ShortcutRow {
   return {
     id: def.id,
@@ -68,6 +90,7 @@ function rowFor(def: AnyCommand): ShortcutRow {
     changed: hasOverride(def.id),
     customizable: def.customizable !== false,
     moved: movedNote(def.id),
+    refinement: refinementNote(def),
   };
 }
 
