@@ -1,9 +1,9 @@
 // The font service, size rules, weights, and type-ahead, with fake fonts. Expected values come from the design
 // (section 6.3 metric aliases, section 5 size box) and from the units' definitions (1 in = 72 pt, 1 px = 0.75 pt).
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FontFace, FontFamily } from '../../platform/types';
 import { buildRows, typeAheadIndex } from './rows';
-import { createCatalog, resolveFont, validFontName } from './service';
+import { createCatalog, resolveFont, splitFace, validFontName } from './service';
 import { parseSize } from './sizes';
 import { splitWeightName, weightsOf } from './weights';
 
@@ -59,6 +59,77 @@ describe('type-ahead', () => {
   it('lists Theme, then Recent, then All', () => {
     const rows = buildRows(createCatalog({ families: DEVICE, recent: ['Georgia'] }));
     expect(rows.filter((r) => r.kind === 'header').map((r) => r.id)).toEqual(['h-theme', 'h-recent', 'h-all']);
+  });
+});
+
+describe('the catalog', () => {
+  it('lists the bundled families the device lacks, with the right class', () => {
+    const catalog = createCatalog({ families: [] });
+    const names = catalog.families.map((one) => one.name);
+    for (const name of ['Literata', 'Carlito', 'Caladea', 'OpenNote Sans', 'Atkinson Hyperlegible Mono']) {
+      expect(names).toContain(name);
+    }
+    const rows = buildRows(catalog);
+    const all = rows.findIndex((r) => r.kind === 'header' && r.id === 'h-all');
+    expect(rows.slice(all).some((r) => r.kind === 'option' && r.name === 'Literata')).toBe(true);
+    expect(catalog.family('Literata')).toMatchObject({ generic: 'serif', monospace: false });
+    expect(catalog.family('Atkinson Hyperlegible Mono')).toMatchObject({ monospace: true });
+  });
+  it('keeps the device entry when it already has a bundled family, and drops repeated names', () => {
+    const catalog = createCatalog({
+      families: [family('Literata', [400, 700], 'serif'), family('arial'), family('Arial')],
+    });
+    expect(catalog.families.filter((one) => one.name === 'Literata')).toHaveLength(1);
+    expect(catalog.family('Literata')?.faces).toHaveLength(2);
+    expect(catalog.families.filter((one) => one.name.toLowerCase() === 'arial')).toHaveLength(1);
+  });
+});
+
+describe('style names', () => {
+  const catalog = createCatalog({ families: DEVICE });
+  it('"Segoe UI Semibold" is the installed family Segoe UI at weight 600', () => {
+    expect(resolveFont('Segoe UI Semibold', catalog)).toMatchObject({
+      name: 'Segoe UI Semibold',
+      target: 'Segoe UI',
+      weight: 600,
+      installed: true,
+      standIn: null,
+    });
+    expect(splitFace('Segoe UI Semibold', catalog)).toEqual({ family: 'Segoe UI', weight: 600 });
+  });
+  it('a real family name, a theme token, and an unknown name keep no weight', () => {
+    expect(splitFace('Segoe UI', catalog)).toEqual({ family: 'Segoe UI', weight: null });
+    expect(splitFace('+body', catalog)).toEqual({ family: '+body', weight: null });
+    expect(splitFace('Aptos Light', catalog)).toEqual({ family: 'Aptos Light', weight: null });
+    expect(resolveFont('Aptos Light', catalog)).toMatchObject({ weight: null, installed: false });
+  });
+});
+
+describe('hostile stored values', () => {
+  it('drops bad recent names and caps the substitutions', async () => {
+    const data = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => void data.set(key, value),
+    });
+    const local = localStorage;
+    local.setItem('opennote.fonts.recent', JSON.stringify(['Georgia', 'x"; a', 'y'.repeat(500), 7]));
+    const many: Record<string, string> = {};
+    for (let i = 0; i < 500; i++) many[`Font ${i}`] = 'Arial';
+    many['bad"name'] = 'Arial';
+    many['Good'] = 'z'.repeat(500);
+    local.setItem('opennote.fonts.substitutions', JSON.stringify(many));
+    vi.resetModules();
+    const fresh = await import('./recent');
+    expect(fresh.recentFonts.get()).toEqual(['Georgia']);
+    const subs = fresh.substitutions.get();
+    expect(Object.keys(subs).length).toBe(fresh.SUBSTITUTION_LIMIT);
+    expect(subs['bad"name']).toBeUndefined();
+    expect(subs.Good).toBeUndefined();
+    fresh.noteRecentFont('x"; a');
+    fresh.noteRecentFont('+body');
+    expect(fresh.recentFonts.get()).toEqual(['Georgia']);
+    vi.unstubAllGlobals();
   });
 });
 

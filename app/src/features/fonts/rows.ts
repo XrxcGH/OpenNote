@@ -7,6 +7,21 @@ export type Row =
   | { kind: 'header'; id: string; text: string }
   | { kind: 'option'; id: string; name: string; label: string; hint: string | null };
 
+/** Where each row sits: its section header's index, and its number among the option rows (1-based). */
+export function rowPlaces(rows: readonly Row[]): { section: number[]; number: number[]; options: number } {
+  const section: number[] = [];
+  const number: number[] = [];
+  let head = 0;
+  let count = 0;
+  rows.forEach((row, i) => {
+    if (row.kind === 'header') head = i;
+    else count += 1;
+    section.push(head);
+    number.push(count);
+  });
+  return { section, number, options: count };
+}
+
 export function buildRows(catalog: FontCatalog): Row[] {
   const rows: Row[] = [{ kind: 'header', id: 'h-theme', text: t('textFonts.sectionTheme') }];
   const labels = {

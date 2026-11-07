@@ -3,7 +3,7 @@ export type { FontPickerProps } from './FontPicker';
 export { FontSubstitutions } from './FontSubstitutions';
 export { MissingFontNotice } from './MissingFontNotice';
 export { noteRecentFont, recentFonts, setSubstitution, substitutions } from './recent';
-export { createCatalog, prepareFont, resolveFont, validFontName } from './service';
+export { createCatalog, prepareFont, resolveFont, splitFace, validFontName } from './service';
 export type { FontCatalog, ResolvedFont } from './service';
 export { SizeBox } from './SizeBox';
 export type { SizeBoxProps } from './SizeBox';

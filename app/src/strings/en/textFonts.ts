@@ -35,5 +35,6 @@ export const textFonts = {
   subTable: 'Missing fonts and their stand-ins',
   subMissing: 'Missing font',
   subStandIn: 'Shown as',
+  subStandInFor: 'Shown as, for {name}',
   subAutomatic: 'Automatic ({standIn})',
 } as const;

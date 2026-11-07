@@ -1,7 +1,8 @@
 // The font service: merges the device's fonts, the bundled stand-ins, and the theme's font tokens, and answers
 // what a font name draws as (ADR 0080, ADR 0081; design section 6). Pure functions, so tests need no device.
-import type { FontFamily, FontGeneric } from '../../platform/types';
+import type { FontFace, FontFamily, FontGeneric } from '../../platform/types';
 import { loadStandIn } from '../../theme/fonts';
+import { splitWeightName } from './weights';
 
 /** A font name as a document stores it: letters, numbers, spaces, and . _ + - (design section 2). */
 export const FONT_NAME = /^[\p{L}\p{N}][\p{L}\p{N} ._+-]{0,62}$/u;
@@ -68,8 +69,58 @@ function classOfName(name: string): FontClass {
   return 'sans';
 }
 
+/** The generic and monospace flag of each bundled family, for the entries the device does not list. */
+const BUNDLED_KIND: Readonly<Record<string, { generic: FontGeneric; monospace: boolean }>> = {
+  'opennote sans': { generic: 'sans-serif', monospace: false },
+  literata: { generic: 'serif', monospace: false },
+  'atkinson hyperlegible mono': { generic: 'sans-serif', monospace: true },
+  carlito: { generic: 'sans-serif', monospace: false },
+  caladea: { generic: 'serif', monospace: false },
+};
+
+/** One regular face, for a bundled family the device lacks. The app loads the real file by name. */
+function bundledFace(name: string, monospace: boolean): FontFace {
+  return {
+    postScriptName: name.replace(/ /g, ''),
+    style: 'normal',
+    weight: 400,
+    stretch: 5,
+    monospace,
+    embedding: 'installable',
+    subsettable: true,
+    bitmapOnly: false,
+    variable: false,
+    instance: null,
+    unitsPerEm: 1000,
+    winAscent: 900,
+    winDescent: 200,
+    typoLineGap: 0,
+    xHeight: null,
+    capHeight: null,
+  };
+}
+
+/** The device's families without repeats (first wins, any case), plus the bundled ones the device lacks. */
+function mergeFamilies(device: readonly FontFamily[]): FontFamily[] {
+  const seen = new Set<string>();
+  const merged: FontFamily[] = [];
+  for (const one of device) {
+    const key = one.name.trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(one);
+  }
+  for (const name of BUNDLED_FAMILIES) {
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    const kind = BUNDLED_KIND[key] ?? { generic: 'sans-serif' as const, monospace: false };
+    merged.push({ name, ...kind, faces: [bundledFace(name, kind.monospace)] });
+  }
+  return merged;
+}
+
 export interface FontCatalog {
-  /** The device's families, sorted by name. */
+  /** The device's families and the bundled ones, sorted by name. */
   readonly families: readonly FontFamily[];
   readonly theme: ThemeFonts;
   /** The person's own stand-ins for missing fonts: name (any case) to the font that replaces it. */
@@ -90,12 +141,16 @@ export interface CatalogInput {
 }
 
 export function createCatalog(input: CatalogInput): FontCatalog {
-  const families = [...input.families].sort((a, b) => a.name.localeCompare(b.name, 'en'));
+  const families = mergeFamilies(input.families).sort((a, b) => a.name.localeCompare(b.name, 'en'));
   const byName = new Map(families.map((one) => [one.name.toLowerCase(), one] as const));
   const bundled = new Set(BUNDLED_FAMILIES.map((name) => name.toLowerCase()));
   return {
     families,
-    theme: { ...APP_THEME_FONTS, ...input.theme },
+    theme: {
+      body: input.theme?.body ?? APP_THEME_FONTS.body,
+      heading: input.theme?.heading ?? APP_THEME_FONTS.heading,
+      mono: input.theme?.mono ?? APP_THEME_FONTS.mono,
+    },
     substitutions: input.substitutions ?? {},
     recent: input.recent ?? [],
     family: (name) => byName.get(name.trim().toLowerCase()),
@@ -106,8 +161,10 @@ export function createCatalog(input: CatalogInput): FontCatalog {
 export interface ResolvedFont {
   /** The name the document keeps. */
   readonly name: string;
-  /** The theme font behind a token, else the name. */
+  /** The theme font behind a token, else the family of the name ("Segoe UI" for "Segoe UI Semibold"). */
   readonly target: string;
+  /** The weight a style name such as "Semibold" carries, else null. */
+  readonly weight: number | null;
   readonly installed: boolean;
   /** What draws in its place when the font is missing, else null. */
   readonly standIn: string | null;
@@ -128,7 +185,9 @@ function quote(name: string): string {
 export function resolveFont(rawName: string, catalog: FontCatalog): ResolvedFont {
   const name = rawName.trim();
   const token = THEME_TOKENS.includes(name as ThemeToken);
-  const target = token ? catalog.theme[name.slice(1) as keyof ThemeFonts] : name;
+  const themed = token ? catalog.theme[name.slice(1) as keyof ThemeFonts] : name;
+  const split = catalog.has(themed) ? null : splitWeightName(themed, catalog.has);
+  const target = split?.family ?? themed;
   const installed = catalog.has(target);
   const device = catalog.family(target);
   const alias = METRIC_ALIASES[target.toLowerCase()];
@@ -143,7 +202,7 @@ export function resolveFont(rawName: string, catalog: FontCatalog): ResolvedFont
   if (chosen !== undefined) stack.push(chosen);
   if (alias !== undefined) stack.push(alias);
   for (const generic of GENERIC_STACKS[fontClass]) if (!stack.includes(generic)) stack.push(generic);
-  return { name, target, installed, standIn, stack, css: stack.map(quote).join(', ') };
+  return { name, target, weight: split?.weight ?? null, installed, standIn, stack, css: stack.map(quote).join(', ') };
 }
 
 const STAND_IN_FOR: Readonly<Record<string, string>> = { Carlito: 'Calibri', Caladea: 'Cambria' };
@@ -160,4 +219,13 @@ export function prepareFont(font: ResolvedFont): void {
 export function validFontName(text: string): string | null {
   const name = text.trim();
   return THEME_TOKENS.includes(name as ThemeToken) || FONT_NAME.test(name) ? name : null;
+}
+
+/**
+ * The family and weight a name stands for when it is chosen: "Segoe UI Semibold" on a device with the family
+ * "Segoe UI" gives that family and 600. Any other name stays as it is with no weight.
+ */
+export function splitFace(name: string, catalog: FontCatalog): { family: string; weight: number | null } {
+  if (name.startsWith('+') || catalog.has(name)) return { family: name, weight: null };
+  return splitWeightName(name, catalog.has) ?? { family: name, weight: null };
 }

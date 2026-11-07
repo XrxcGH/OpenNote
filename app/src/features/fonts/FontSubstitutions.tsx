@@ -1,5 +1,6 @@
 // Settings, Fonts: the substitution table. Each font a document uses that this device lacks gets a row, and the
 // person picks the stand-in, as in Word's Font Substitution. The choice is a device setting.
+import { useId } from 'react';
 import { t } from '../../strings/t';
 import { setSubstitution } from './recent';
 import { resolveFont } from './service';
@@ -20,7 +21,7 @@ function SubstitutionRow({ name, catalog }: { name: string; catalog: FontCatalog
       <th scope="row">{name}</th>
       <td>
         <select
-          aria-label={`${t('textFonts.subStandIn')}: ${name}`}
+          aria-label={t('textFonts.subStandInFor', { name })}
           value={chosen?.[1] ?? ''}
           onChange={(event) => setSubstitution(name, event.target.value === '' ? null : event.target.value)}
         >
@@ -37,10 +38,11 @@ function SubstitutionRow({ name, catalog }: { name: string; catalog: FontCatalog
 }
 
 export function FontSubstitutions({ catalog, used }: FontSubstitutionsProps) {
+  const titleId = useId();
   const names = [...new Set(used)].filter((name) => !catalog.has(name) && !name.startsWith('+'));
   return (
-    <section className={styles.subs} aria-labelledby="font-subs-title">
-      <h3 id="font-subs-title">{t('textFonts.subTitle')}</h3>
+    <section className={styles.subs} aria-labelledby={titleId}>
+      <h3 id={titleId}>{t('textFonts.subTitle')}</h3>
       <p>{t('textFonts.subIntro')}</p>
       {names.length === 0 ? (
         <p role="status">{t('textFonts.subNone')}</p>

@@ -61,8 +61,8 @@ function useSizeBox({ value, onCommit }: SizeBoxProps) {
     }
   };
   const leave = () => {
-    if (text !== null && error === null) commit(text);
-    else close();
+    if (text !== null && parseSize(text).ok) commit(text);
+    else revert(); // A bad entry does not outlive the blur, so the box never shows stale text.
   };
   return { shown, open, active, error, setText, setError, setOpen, setActive, commit, onKeyDown, leave };
 }
