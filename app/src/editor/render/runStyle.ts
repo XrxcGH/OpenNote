@@ -1,7 +1,7 @@
 // The CSS declarations for a run's version 2 formatting (text DESIGN.md 2.2 and 7). The schema's marks call this with
 // the mark's name and attributes while they render, so the static DOM and the editor's DOM carry the same style.
 import { THEME_COLORS } from '../schema/constants';
-import { loadStandIn } from '../../theme/fonts';
+import { loadStandIn } from '../../theme/fontLoader';
 import { fontStack } from './fallbacks';
 import { lineFactor } from './lineFactor';
 
