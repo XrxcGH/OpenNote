@@ -40,7 +40,7 @@ The soak types, deletes, undoes, formats, moves, scrolls, and switches pages for
 
 The edits of a seed are drawn in `tests/soak/plan.ts` without the browser, so `stepAt(seed, index)` names the action a failed night stopped at, and `tests/soak/replay.spec.ts` replays a failure in seconds. It holds the failure of run 41792295946 (seed 58, action 13251): the soak's own trim had deleted the whole note, so the caret search found no text.
 
-The NVDA job installs Guidepup and NVDA on the runner. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
+The NVDA job installs the pinned Guidepup from `tests/nvda/package-lock.json`, sets up Windows with `guidepup setup`, and downloads NVDA with `guidepup install nvda`. A missing NVDA fails the job with those steps in the message. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
 
 The performance job runs on a hosted runner. It catches large regressions. The budgets in BRAND.md still count only when they pass on the reference laptop.
 
@@ -70,8 +70,9 @@ OPENNOTE_SOAK_MINUTES=5 OPENNOTE_SOAK_SEED=123456 npm run soak
 # The replays of past soak failures, in seconds
 npm run soak -- replay
 
-# The NVDA checklist, on Windows with NVDA set up by `npx @guidepup/setup setup`
-npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+# The NVDA checklist, on Windows. Guidepup and its setup tool are pinned in tests/nvda/package.json. `setup` changes
+# the machine's registry and speech settings, so run it only on a machine meant for this; `install` downloads NVDA.
+cd tests/nvda && npm ci && npx guidepup setup --ci && npx guidepup install nvda && cd ../..
 OPENNOTE_NVDA=1 npm run nvda
 ```
 

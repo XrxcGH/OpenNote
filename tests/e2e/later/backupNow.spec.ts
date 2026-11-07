@@ -8,7 +8,7 @@ import { basename, join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { launchApp, skipReason, removeFolder } from '../harness.ts';
 import type { AppSession } from '../harness.ts';
-import { answerPickers, openSettings } from './steps.ts';
+import { openSettings, pickerEnv } from './steps.ts';
 
 describe('backing up in the real app', { skip: skipReason() }, () => {
   let session: AppSession;
@@ -16,7 +16,7 @@ describe('backing up in the real app', { skip: skipReason() }, () => {
 
   before(async () => {
     destination = mkdtempSync(join(tmpdir(), 'opennote-backup-'));
-    session = await launchApp();
+    session = await launchApp({ env: pickerEnv({ folder: destination }) });
   });
 
   after(async () => {
@@ -27,7 +27,6 @@ describe('backing up in the real app', { skip: skipReason() }, () => {
   it('chooses a folder, backs up now, and reports the last backup', async () => {
     const { browser } = session;
     await browser.$('[role="tree"][aria-label="Notebooks"]').waitForExist({ timeout: 20_000 });
-    await answerPickers(browser, { folder: destination });
     await openSettings(browser, 'Storage and backups');
     const section = browser.$('section[aria-labelledby="qol-backup"]');
     await section.waitForExist({ timeout: 10_000 });
