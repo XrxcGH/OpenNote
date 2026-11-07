@@ -6,13 +6,13 @@ Every subject kit (statistics, the sciences, the humanities, economics, music, a
 
 ## Data
 
-- A data field takes data three ways. Paste or type it, one row per line, with columns separated by tabs, commas, semicolons, or spaces. Choose Open a file for a CSV, TSV, or text file. Or choose Find tables on the page, pick a table, and choose Use this table.
+- A data field takes data three ways. Paste or type it, one row per line, with columns separated by tabs, commas, semicolons, or spaces. Choose Open a file for a CSV, TSV, or text file. The field says which file it read. A file that is not text, such as a picture or a damaged file, is not opened: the field says it could not be read and keeps what was there. Or choose Find tables on the page, pick a table, and choose Use this table.
 - The first row names the columns when it looks like a header. Each column is read as numbers, categories, dates, or text.
 - Blank cells, NA, N/A, a lone full stop, and NaN count as missing. A cell that cannot be read as its column's kind is missing too, and the field says how many there were and where the first one is.
 - A decimal comma, as in 3,25, is understood when the data uses it.
 - Data from a table is copied into the tool, so a figure or live block keeps the same numbers even when the table changes later.
 - At most 100,000 rows are used. The field says when a paste was longer.
-- Role pickers choose which column is the response, the predictors, the group, the subject, the weight, the time, or the event. A picker offers only the columns of the right kind.
+- Role pickers choose which column is the response, the predictors, the group, the subject, the weight, the time, or the event. A picker offers only the columns of the right kind, and choosing its empty entry empties the role.
 - Reshape stacks several measurement columns into one column with a column naming each measurement (wide to long), or spreads such a column back into one column per measurement (long to wide).
 - A matrix grid takes a small table of numbers, such as a contingency table or a payoff matrix. Rename its rows and columns in the label cells, and add or remove rows and columns with the buttons under it.
 - A list field takes one value per line and says which line is not a number.

@@ -1,10 +1,11 @@
 // Fields every tool of the statistics kit shares. The kit window keeps each tool's inputs, and a live calculation
 // block brings them back. A data box takes a paste or a file. The last hook turns inputs into a report or a problem.
-import { useId, useMemo, useRef, type ReactNode } from 'react';
+import { useDeferredValue, useId, useMemo, useRef, type ReactNode } from 'react';
 import { t } from '../../../../strings/t';
 import { Button } from '../../../../ui';
 import { KitError, type Report } from '../report';
 import type { KitToolProps } from '../../kits/types';
+import { useFileRead } from '../../subjects/ui/fileRead';
 import { subjectProblem } from '../../subjects/ui/words';
 import '../strings';
 import styles from './kit.module.css';
@@ -28,9 +29,12 @@ export function describeProblem(error: unknown): string {
   return subjectProblem(error);
 }
 
-/** Builds the report again only when the inputs change; gives it, or the words for what went wrong. */
+/**
+ * Builds the report again only when the inputs change; gives it, or the words for what went wrong. The build runs
+ * at a lower priority than typing, so a big data set does not make each key press wait for a new report.
+ */
 export function useReport<I>(input: I, build: (input: I) => Report): { report: Report | null; problem: string } {
-  const key = JSON.stringify(input);
+  const key = useDeferredValue(JSON.stringify(input));
   return useMemo(() => {
     try {
       return { report: build(input), problem: '' };
@@ -69,6 +73,7 @@ export function Field(props: {
 export function DataBox(props: { label: string; value: string; onChange: (value: string) => void; hint?: string }) {
   const file = useRef<HTMLInputElement>(null);
   const id = useId();
+  const { status, read, clear } = useFileRead(props.onChange);
   return (
     <div className={`${styles.field} ${styles.wide}`}>
       <label htmlFor={id}>{props.label}</label>
@@ -79,7 +84,10 @@ export function DataBox(props: { label: string; value: string; onChange: (value:
         value={props.value}
         spellCheck={false}
         {...(props.hint ? { 'aria-description': props.hint } : {})}
-        onChange={(event) => props.onChange(event.target.value)}
+        onChange={(event) => {
+          clear();
+          props.onChange(event.target.value);
+        }}
       />
       {props.hint && <span className={styles.note}>{props.hint}</span>}
       <div className={styles.buttons}>
@@ -94,10 +102,15 @@ export function DataBox(props: { label: string; value: string; onChange: (value:
         hidden
         onChange={(event) => {
           const chosen = event.target.files?.[0];
-          if (chosen) void chosen.text().then(props.onChange);
+          if (chosen) void read(chosen);
           event.target.value = '';
         }}
       />
+      {status && (
+        <span className={status === 'failed' ? styles.problem : styles.note} role="status">
+          {status === 'failed' ? say('kitStatInfer.ui.fileFailed') : say('kitStatInfer.ui.fileRead', status)}
+        </span>
+      )}
     </div>
   );
 }
