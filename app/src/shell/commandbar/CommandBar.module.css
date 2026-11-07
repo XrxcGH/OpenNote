@@ -177,6 +177,7 @@
 
   :global(:root[data-density='touch']) .tool {
     min-block-size: var(--size-target-touch);
+    min-inline-size: var(--size-target-touch);
   }
 
   .tool:hover,
