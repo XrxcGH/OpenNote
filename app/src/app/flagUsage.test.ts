@@ -18,7 +18,6 @@ const WAITING: Readonly<Record<string, string>> = {
   'text.fontPicker': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.styles2': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.formatPane': 'Beta 10 to 12: the lane that builds it reads it.',
-  'text.ruler': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.language': 'Beta 10 to 12: the lane that builds it reads it.',
   'text.findFormat': 'Beta 10 to 12: the lane that builds it reads it.',
   'tables.sheetWrites': 'Beta 10: the table bar and the formula bar read it.',
