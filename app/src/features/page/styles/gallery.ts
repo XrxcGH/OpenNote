@@ -5,7 +5,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { readStyle, styleLabel } from './model';
 import type { LookKey, StyleType } from './model';
-import { resolveStyle } from './resolve';
+import { resolveStyle, shownStyleNames } from './resolve';
 import type { StyleContext } from './resolve';
 
 export type StyleSource = 'app' | 'notebook' | 'page';
@@ -35,8 +35,7 @@ function sourceOf(ctx: StyleContext, name: string): StyleSource {
 
 /** Every style, in gallery order: by `order` where set, then by label (SPEC R-STY-1). */
 export function galleryEntries(ctx: StyleContext, options: { includeHidden?: boolean } = {}): GalleryEntry[] {
-  const names = new Set([...Object.keys(ctx.app), ...Object.keys(ctx.notebook), ...Object.keys(ctx.page ?? {})]);
-  const entries = [...names].map((name): GalleryEntry => {
+  const entries = shownStyleNames(ctx).map((name): GalleryEntry => {
     const own = { ...readStyle(ctx.app[name]), ...readStyle(ctx.notebook[name]), ...readStyle(ctx.page?.[name]) };
     const resolved = resolveStyle(ctx, name);
     const raw = ctx.page?.[name] ?? ctx.notebook[name] ?? ctx.app[name];
@@ -58,6 +57,29 @@ export function galleryEntries(ctx: StyleContext, options: { includeHidden?: boo
       if (a.order === null && b.order !== null) return 1;
       return a.label.localeCompare(b.label, 'en-US');
     });
+}
+
+export interface StyleMenuItem {
+  readonly id: string;
+  readonly label: string;
+  readonly checked: boolean;
+  readonly separatorBefore?: boolean;
+}
+
+/**
+ * The Apply style menu: the gallery's styles, then the hidden ones in a second group, so Headings 7 to 9 and other
+ * hidden styles can be applied before the Format pane exists (DESIGN.md 4.3).
+ */
+export function applyMenuItems(ctx: StyleContext, current: string): StyleMenuItem[] {
+  const all = galleryEntries(ctx, { includeHidden: true });
+  const shown = all.filter((entry) => !entry.hidden);
+  const hidden = all.filter((entry) => entry.hidden);
+  return [...shown, ...hidden].map((entry, index) => ({
+    id: entry.name,
+    label: entry.label,
+    checked: entry.name === current,
+    ...(index === shown.length && shown.length > 0 ? { separatorBefore: true } : {}),
+  }));
 }
 
 /** A short description of a style for its tooltip and accessible description: "Georgia, 16 pt, bold". */

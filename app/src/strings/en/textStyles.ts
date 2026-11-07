@@ -7,6 +7,7 @@ export const textStyles = {
   changedSpoken: 'Style changed. Undo is in the notification.',
   undo: 'Undo',
   saveFailed: "Couldn't save the style. The notebook may be read-only.",
+  loadFailed: "Couldn't read this notebook's styles. Try again in a moment.",
   noParagraph: 'Put the cursor in a paragraph first.',
   noNotebook: 'Open a page in a notebook to change its styles.',
   builtInDelete: "Built-in styles can't be deleted. You can hide them instead.",
@@ -14,6 +15,8 @@ export const textStyles = {
   deleted: 'Style "{name}" deleted.',
   setChanged: 'Style set changed to {name}.',
   newStyleLabel: 'New style',
+  modifyUnsupported:
+    "This style can't be changed here yet. Format some text, then use Update style to match selection.",
   names: {
     title: 'Title',
     subtitle: 'Subtitle',

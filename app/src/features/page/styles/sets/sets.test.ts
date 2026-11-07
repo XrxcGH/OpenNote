@@ -15,7 +15,8 @@ const fixture = (file: string) => readFileSync(join(import.meta.dirname, 'fixtur
 function resolvedSet(id: StyleSetId, name: string) {
   const set = styleSet(id);
   if (!set) throw new Error(id);
-  return resolveStyle({ app: APP_STYLES, notebook: set.styles, theme: [set.theme] }, name).values;
+  // What a notebook shows after choosing the set: the set as the notebook keeps it, over the app's own styles.
+  return resolveStyle({ app: APP_STYLES, notebook: setStylesForNotebook(set) }, name).values;
 }
 
 const FILES: readonly [StyleSetId, string][] = [

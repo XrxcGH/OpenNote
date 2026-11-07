@@ -32,7 +32,9 @@ Every key is optional and version 1 readers keep it, so this needs no version bu
 Beta 10 (`text:styles`) built this in `app/src/features/page/styles/`.
 
 - `store.ts` loads each notebook's styles through the bridge and does the one-time copy from local storage. A failed write keeps the local copy. The browser build has no notebook files, so local storage stays its store.
-- `resolve.ts` follows `R-STY-6`. The page sheet merges into the notebook's styles key by key (`R-STY-7`) before the chain is walked.
+- `resolve.ts` follows `R-STY-6`. The page sheet merges into the notebook's styles key by key (`R-STY-7`) before the chain is walked. At each step of the chain, the app's value of that style sits under the notebook's. So a notebook that sets only `normal` keeps the app's heading, title, and code sizes, as Word's Heading 1 keeps its size over Normal. Notebooks from Beta 8 and 9 keep their look on upgrade.
+- Choosing a style set writes out each key that the app sets on a style but the set leaves to inheritance, with the set's own value. Word's Subtitle stays in the body font. Styles a set lacks, such as `code`, keep the app's look.
+- Readers draw only valid style names (`R-STY-3`) and at most 64 styles of each sheet (`R-STY-5`). Other names stay in the file. A failed read leaves the notebook unloaded, and no save runs until a read succeeds.
 - `cssVars.ts` replaces the static style sheet. Every style key becomes a custom property, read by generated rules. A changed value swaps a variable, so the editor sees no transaction.
 - Applying a style is one editor transaction. Style changes are notebook changes with an Undo toast.
 - The style commands, the gallery data, and the `data-pstyle` decorations are behind the `text.styles2` flag.

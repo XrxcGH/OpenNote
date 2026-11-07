@@ -1,8 +1,12 @@
-// How a style's look is worked out (text DESIGN.md 2.4, SPEC R-STY-4 to R-STY-7, R-THM-2). Lowest first: the app's
-// defaults (its built-in set), then the theme, then the notebook's `normal`, then the element's style chain from
-// the root down. A page's own sheet overrides the notebook's styles key by key. `paras`, the character style mark,
-// and the run marks come after, in the editor and the page's CSS. This is Word's order (ECMA-376 Part 1, 17.7.2).
-import { LOOK_KEYS, MAX_CHAIN, RUN_KEYS, readStyle } from './model';
+// How a style's look is worked out (text DESIGN.md 2.4, SPEC R-STY-4 to R-STY-7, R-THM-2). Lowest first: the base
+// look, then each step of the style chain from the root down. At each step the app's value of that style comes
+// first, then the notebook's, then the page's sheet, key by key.
+//
+// So the app's h1 sits above the notebook's `normal`. A built-in Heading 1 sits above Normal the same way
+// (ECMA-376 Part 1, 17.7.2). A key the notebook leaves out keeps the app's value (SPEC 4.1). `paras`, the character
+// style mark, and the run marks come after, in the editor and the page's CSS.
+import { isStyleName } from '../../../editor/schema/constants';
+import { LOOK_KEYS, MAX_CHAIN, MAX_STYLES, RUN_KEYS, readStyle } from './model';
 import type { LookKey, StyleFormat, StyleSheetJson, StyleType } from './model';
 
 /** The fonts of the theme tokens `+heading`, `+body`, and `+mono` (R-THM-1). */
@@ -100,13 +104,6 @@ export function styleChain(ctx: StyleContext, name: string): string[] {
   return chain.reverse();
 }
 
-/** The app layer: the built-in set's chain over the base look. */
-function appLook(ctx: StyleContext, chain: readonly string[]): Record<string, unknown> {
-  const look: Record<string, unknown> = { ...BASE_LOOK };
-  for (const name of chain) Object.assign(look, pick(readStyle(ctx.app[name])));
-  return look;
-}
-
 function pick(format: StyleFormat, keys: readonly LookKey[] = LOOK_KEYS): Partial<Record<LookKey, unknown>> {
   const out: Partial<Record<LookKey, unknown>> = {};
   for (const key of keys) if (format[key] !== undefined) out[key] = format[key];
@@ -131,24 +128,23 @@ export function themeFont(font: unknown, theme: StyleContext['theme']): unknown 
 export function resolveStyle(ctx: StyleContext, name: string, options: { skipOwn?: boolean } = {}): ResolvedStyle {
   const chain = styleChain(ctx, name);
   const { type } = header(ctx, name);
-  const userChain = options.skipOwn ? chain.slice(0, -1) : chain;
-  const values: Record<string, unknown> = type === 'paragraph' ? appLook(ctx, chain) : {};
+  const keys = type === 'character' ? RUN_KEYS : LOOK_KEYS;
+  const values: Record<string, unknown> = type === 'paragraph' ? { ...BASE_LOOK } : {};
   const own = new Set<LookKey>();
-  const layer = (format: StyleFormat | null) => {
-    if (!format) return;
-    const picked = pick(format, type === 'character' ? RUN_KEYS : LOOK_KEYS);
-    for (const [key, value] of Object.entries(picked)) {
+  chain.forEach((step, index) => {
+    // The app's value of this step wins over what the notebook set on an earlier step, so it is not own.
+    for (const [key, value] of Object.entries(pick(readStyle(ctx.app[step]), keys))) {
+      values[key] = value;
+      own.delete(key as LookKey);
+    }
+    if (options.skipOwn && index === chain.length - 1) return;
+    const user = merged(ctx, step);
+    if (!user) return;
+    for (const [key, value] of Object.entries(pick(user, keys))) {
       values[key] = value;
       own.add(key as LookKey);
     }
-  };
-  if (type === 'character') {
-    for (const step of chain) layer(readStyle(ctx.app[step]));
-    own.clear();
-  } else if (!(options.skipOwn && name === 'normal')) {
-    layer(merged(ctx, 'normal'));
-  }
-  for (const step of userChain) layer(merged(ctx, step));
+  });
   if (values.font !== undefined) values.font = themeFont(values.font, ctx.theme);
   return { name, type, chain, values, own, next: nextStyle(ctx, name) };
 }
@@ -182,8 +178,26 @@ export function differingFromInherited(
   return out;
 }
 
-/** Every style defined in any layer, resolved. */
+/**
+ * The styles a reader draws: every style of the app's set, then the first 64 valid names of the notebook and of the
+ * page's sheet, in the order they are written (R-STY-3, R-STY-5). Other names stay in the file but are not drawn,
+ * so a bad or hostile name never reaches the page's CSS, and a huge sheet costs no more than a full one.
+ */
+export function shownStyleNames(ctx: StyleContext): string[] {
+  const names = new Set(Object.keys(ctx.app));
+  for (const sheet of [ctx.notebook, ctx.page ?? {}]) {
+    let taken = 0;
+    for (const name of Object.keys(sheet)) {
+      if (taken >= MAX_STYLES) break;
+      if (!isStyleName(name)) continue;
+      taken += 1;
+      names.add(name);
+    }
+  }
+  return [...names];
+}
+
+/** Every style a reader draws, resolved. */
 export function resolveAll(ctx: StyleContext): Map<string, ResolvedStyle> {
-  const names = new Set([...Object.keys(ctx.app), ...Object.keys(ctx.notebook), ...Object.keys(ctx.page ?? {})]);
-  return new Map([...names].map((name) => [name, resolveStyle(ctx, name)]));
+  return new Map(shownStyleNames(ctx).map((name) => [name, resolveStyle(ctx, name)]));
 }

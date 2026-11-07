@@ -13,6 +13,7 @@ import { serializeTextBlock } from '../../../editor/markdown/serialize';
 import {
   applyStyle,
   createdFromSelection,
+  dialogStyle,
   selectionLook,
   styleOfNode,
   updatedToMatch,
@@ -115,6 +116,21 @@ describe('changing styles from the selection', () => {
     const made = createdFromSelection(c, 'Aside', style, look);
     expect(made.name).toBe('u-aside');
     expect(made.styles['u-aside']).toEqual({ label: 'Aside', basedOn: 'normal', italic: true });
+  });
+
+  it('gives a second new style a numbered label and name', () => {
+    const first = createdFromSelection(ctx({}), 'New style', 'normal', { italic: true });
+    const second = createdFromSelection(ctx(first.styles), 'New style', 'normal', { italic: true });
+    expect(second.label).toBe('New style 2');
+    expect(second.name).toBe('u-new-style-2');
+    expect(second.styles['u-new-style-2']).toMatchObject({ label: 'New style 2' });
+    expect(second.styles['u-new-style']).toMatchObject({ label: 'New style' });
+  });
+
+  it('opens Modify style only on the styles its dialog can edit', () => {
+    expect(dialogStyle('h1')).toBe('h1');
+    expect(dialogStyle('code')).toBe('code');
+    for (const name of ['subtitle', 'citation', 'quote2', 'h7', 'u-memo']) expect(dialogStyle(name)).toBeNull();
   });
 
   it('deletes only user styles, hides, and reorders the gallery', () => {

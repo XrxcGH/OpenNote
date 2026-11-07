@@ -2,10 +2,11 @@
 // Style resolution (text DESIGN.md 2.4, SPEC R-STY-4 to R-STY-7, R-THM-2). Expected values are worked by hand from
 // the spec's layer order.
 import { describe, expect, it } from 'vitest';
+import { namedStylesCss } from './cssVars';
 import { patchStyle, readStyle, userStyleName } from './model';
-import { differingFromInherited, nextStyle, resolveStyle, styleChain } from './resolve';
+import { differingFromInherited, nextStyle, resolveAll, resolveStyle, styleChain } from './resolve';
 import type { StyleContext } from './resolve';
-import { APP_STYLES } from './sets';
+import { APP_STYLES, styleSet, withStyleSet } from './sets';
 
 const ctx = (notebook: StyleContext['notebook'], extra: Partial<StyleContext> = {}): StyleContext => ({
   app: APP_STYLES,
@@ -14,11 +15,46 @@ const ctx = (notebook: StyleContext['notebook'], extra: Partial<StyleContext> = 
 });
 
 describe('inheritance', () => {
-  it('resolves h2 based on normal with normal in Georgia and h2 at 16 pt to Georgia 16', () => {
+  it('resolves h2 based on normal at 16 pt, keeping the app heading font over the notebook normal font', () => {
     const look = resolveStyle(ctx({ normal: { font: 'Georgia' }, h2: { basedOn: 'normal', sizePt: 16 } }), 'h2');
-    expect(look.values.font).toBe('Georgia');
+    // The app's h2 sets +heading, which sits above the notebook's normal (DESIGN.md 2.4, ECMA-376 17.7.2).
+    expect(look.values.font).toBe('OpenNote Sans');
     expect(look.values.sizePt).toBe(16);
     expect(look.chain).toEqual(['normal', 'h2']);
+  });
+
+  it('gives a user style based on normal the notebook normal font', () => {
+    const look = resolveStyle(ctx({ normal: { font: 'Georgia' }, 'u-memo': { sizePt: 16 } }), 'u-memo');
+    expect(look.values.font).toBe('Georgia');
+    expect(look.own.has('font')).toBe(true);
+  });
+
+  it('keeps the app sizes of headings, title, and code when the notebook sets only normal (SPEC 4.1)', () => {
+    const c = ctx({ normal: { sizePt: 14, textColor: '#112233' } });
+    expect(resolveStyle(c, 'normal').values.sizePt).toBe(14);
+    const h1 = resolveStyle(c, 'h1');
+    expect(h1.values.sizePt).toBe(22.5);
+    expect(h1.own.has('sizePt')).toBe(false);
+    // The app's h1 sets no color, so the notebook's normal color reaches it, as Normal's does in Word.
+    expect(h1.values.textColor).toBe('#112233');
+    expect(resolveStyle(c, 'title').values.sizePt).toBe(27);
+    expect(resolveStyle(c, 'code').values.sizePt).toBe(10);
+  });
+
+  it('keeps code in the app mono font after choosing the Word set, which has no code style', () => {
+    const word = styleSet('word2016');
+    if (!word) throw new Error('missing set');
+    const c = ctx(withStyleSet({}, word));
+    expect(resolveStyle(c, 'normal').values.font).toBe('Calibri');
+    expect(resolveStyle(c, 'code').values.font).toBe('Atkinson Hyperlegible Mono');
+    expect(resolveStyle(c, 'code').values.sizePt).toBe(10);
+  });
+
+  it('reads a version 1 notebook normal size without changing the heading sizes', () => {
+    const c = ctx({ normal: { size: 24 } });
+    expect(resolveStyle(c, 'normal').values.sizePt).toBe(18);
+    expect(resolveStyle(c, 'h1').values.sizePt).toBe(22.5);
+    expect(resolveStyle(c, 'h3').values.sizePt).toBe(15);
   });
 
   it('cuts a cycle a to b to a at the first repeat, without hanging', () => {
@@ -89,9 +125,9 @@ describe('update style to match selection', () => {
   it('stores only values that differ from the inherited ones', () => {
     const c = ctx({ normal: { font: 'Georgia', sizePt: 11 }, h2: { sizePt: 16, italic: true } });
     const effective = { font: 'Georgia', sizePt: 16, weight: 700, italic: false, textColor: 'theme:text' };
-    // Without its own values, h2 takes 11 pt in Georgia from the notebook's normal. The app's h2 gives it 700. It
-    // isn't italic, and it has the theme's text color. Only the size differs; h2's own italic is dropped.
-    expect(differingFromInherited(c, 'h2', effective)).toEqual({ sizePt: 16 });
+    // Without its own values, h2 takes the app's h2 over the notebook's normal: OpenNote Sans, 18 pt, 700. It isn't
+    // italic, and it has the theme's text color. The font and the size differ; h2's own italic is dropped.
+    expect(differingFromInherited(c, 'h2', effective)).toEqual({ font: 'Georgia', sizePt: 16 });
   });
 });
 
@@ -114,5 +150,32 @@ describe('reading and writing', () => {
     expect(userStyleName('Lab Notes!', [])).toBe('u-lab-notes');
     expect(userStyleName('Lab notes', ['u-lab-notes'])).toBe('u-lab-notes-2');
     expect(userStyleName('***', [])).toBe('u-style');
+  });
+});
+
+describe('names a reader draws', () => {
+  it('skips names that are not style names (R-STY-3) but keeps them in the sheet', () => {
+    const page = { "x) } body { display:none } [data-y='": { sizePt: 9 }, 'U-Foo': { sizePt: 9 }, 'u-ok': {} };
+    const names = [...resolveAll(ctx({}, { page })).keys()];
+    expect(names).toContain('u-ok');
+    expect(names).not.toContain('U-Foo');
+    expect(names.some((name) => name.includes('display'))).toBe(false);
+  });
+
+  it('puts no declaration of a hostile name into the generated rules', () => {
+    const hostile = "x) } body { display:none } [data-y='";
+    const c = ctx({}, { page: { [hostile]: { sizePt: 9 } } });
+    expect(namedStylesCss(resolveAll(c).values()).rules).not.toContain('display');
+    // Even a style resolved by hand draws nothing under a name that is not a style name.
+    expect(namedStylesCss([resolveStyle(c, hostile)]).rules).not.toContain('display');
+  });
+
+  it('draws at most 64 styles of a page sheet (R-STY-5)', () => {
+    const page: Record<string, Record<string, unknown>> = {};
+    for (let i = 0; i < 1000; i++) page[`u-s${i}`] = { sizePt: 10 };
+    const drawn = [...resolveAll(ctx({}, { page })).keys()].filter((name) => name.startsWith('u-'));
+    expect(drawn).toHaveLength(64);
+    expect(drawn[0]).toBe('u-s0');
+    expect(drawn).not.toContain('u-s64');
   });
 });

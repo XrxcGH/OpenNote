@@ -3,7 +3,7 @@
 // value swaps a variable: nothing re-renders and the editor sees no transaction. Adding or removing a key changes
 // the generated rules, which is still a CSS change only. On built-in elements, keys only the app sets give no rule,
 // so the type tokens keep drawing an unstyled notebook exactly as before.
-import { PEN_COLORS } from '../../../editor/schema/constants';
+import { isStyleName, PEN_COLORS } from '../../../editor/schema/constants';
 import type { Border, BorderSide, Indent, LineSpacing, Shade } from '../../../editor/paragraph/attributes';
 import { HEADING_STYLES } from './model';
 import type { LookKey } from './model';
@@ -145,11 +145,14 @@ function declarations(key: LookKey, values: ResolvedStyle['values']): Declaratio
   }
 }
 
+/** A style name with only the characters a style name may have (R-STY-3), so it is safe inside CSS text. */
+const safeName = (name: string) => name.replace(/[^a-z0-9-]/g, '');
+
 const kebab = (name: string) => name.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
 
 /** The custom property of a style's key, with a suffix when one key sets more than one property. */
 export function namedStyleVar(style: string, key: string, index = 0): string {
-  return `--style-${style}-${kebab(key)}${index === 0 ? '' : `-${index + 1}`}`;
+  return `--style-${safeName(style)}-${kebab(key)}${index === 0 ? '' : `-${index + 1}`}`;
 }
 
 /**
@@ -170,7 +173,7 @@ export function elementSelector(name: string): string | null {
  * attribute is repeated so these rules outrank the element rules and the page's own heading rules.
  */
 export function ownSelector(name: string, type: ResolvedStyle['type']): string {
-  const safe = name.replace(/[^a-z0-9-]/g, '');
+  const safe = safeName(name);
   return type === 'character' ? `span[data-style='${safe}'][data-style]` : `[data-pstyle='${safe}'][data-pstyle]`;
 }
 
@@ -185,6 +188,8 @@ export function namedStylesCss(styles: Iterable<ResolvedStyle>): { vars: Map<str
   const vars = new Map<string, string>();
   const rules: string[] = [];
   for (const style of styles) {
+    // resolveAll draws only valid names; a name that slips through draws nothing rather than odd CSS.
+    if (!isStyleName(style.name)) continue;
     const all: string[] = [];
     const own: string[] = [];
     for (const key of Object.keys(style.values) as LookKey[]) {

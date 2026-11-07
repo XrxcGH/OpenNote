@@ -95,4 +95,18 @@ describe('saving', () => {
     expect(await saveStyles('nb1', { h1: { sizePt: 30 } })).toBe(false);
     expect(stylesFor('nb1')).toEqual({ h1: { sizePt: 20 } });
   });
+
+  it('writes nothing after a failed read, and reads again next time', async () => {
+    const files: Record<string, NotebookStylesJson> = { nb1: { quote: { weight: 600 }, h1: { sizePt: 30 } } };
+    const client = memoryClient(files);
+    const get = client.get;
+    client.get = () => Promise.reject(new Error('busy'));
+    configureStyleStorage({ client, persistent: true, storage: localStorage });
+    await expect(loadStyles('nb1')).rejects.toThrow('busy');
+    expect(await saveStyles('nb1', { quote: { hidden: true } })).toBe(false);
+    expect(client.sets).toBe(0);
+    expect(files.nb1).toEqual({ quote: { weight: 600 }, h1: { sizePt: 30 } });
+    client.get = get;
+    expect(await loadStyles('nb1')).toEqual(files.nb1);
+  });
 });

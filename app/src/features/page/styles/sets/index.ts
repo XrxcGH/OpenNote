@@ -1,6 +1,8 @@
 // The built-in style sets (text DESIGN.md 2.4): OpenNote, Word 2013 to 2021, Word for Microsoft 365, and Google
 // Docs. Choosing one replaces the notebook's built-in styles with the set's and keeps its user styles.
+import { LOOK_KEYS, readStyle } from '../model';
 import type { StyleJson, StyleSheetJson } from '../model';
+import { resolveStyle } from '../resolve';
 import type { ThemeFonts } from '../resolve';
 import { GOOGLE_DOCS_SET, GOOGLE_DOCS_THEME } from './googleDocs';
 import { OPENNOTE_SET, OPENNOTE_THEME } from './opennote';
@@ -30,7 +32,10 @@ export function styleSet(id: string): StyleSet | undefined {
 
 /**
  * A set's styles as a notebook keeps them. The notebook has no theme of its own yet, so each token that the set's
- * theme names becomes that font; the app's own tokens stay tokens.
+ * theme names becomes that font; the app's own tokens stay tokens. The app's value of a style sits under the
+ * notebook's (resolve.ts), so a key the app sets on a style but the set leaves to inheritance is written out with
+ * the value the set gives it. Word's Subtitle, for one, stays in the body font instead of taking the app's heading
+ * font.
  */
 export function setStylesForNotebook(set: StyleSet): StyleSheetJson {
   const out: Record<string, StyleJson> = {};
@@ -38,7 +43,14 @@ export function setStylesForNotebook(set: StyleSet): StyleSheetJson {
     const font = style.font;
     const key = typeof font === 'string' && font.startsWith('+') ? (font.slice(1) as keyof ThemeFonts) : null;
     const named = key ? set.theme[key] : undefined;
-    out[name] = named ? { ...style, font: named } : { ...style };
+    const next: Record<string, unknown> = named ? { ...style, font: named } : { ...style };
+    const app = readStyle(APP_STYLES[name]);
+    const missing = LOOK_KEYS.filter((look) => app[look] !== undefined && readStyle(style)[look] === undefined);
+    if (missing.length > 0) {
+      const own = resolveStyle({ app: {}, notebook: set.styles, theme: [set.theme] }, name).values;
+      for (const look of missing) if (own[look] !== undefined) next[look] = own[look];
+    }
+    out[name] = next;
   }
   return out;
 }

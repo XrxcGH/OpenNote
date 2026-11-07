@@ -7,10 +7,21 @@ import type { Mark, Node as PMNode } from '@tiptap/pm/model';
 import { deepHeadingAttrs, paraFormat } from '../../../editor/paragraph/attributes';
 import { selectedTextblocks } from '../../../editor/commands/command';
 import type { Change } from '../../../editor/commands/command';
-import { HEADING_STYLES, LOOK_KEYS, PARA_STYLE_KEYS, V1_TWINS, patchStyle, styleType, userStyleName } from './model';
+import {
+  HEADING_STYLES,
+  LOOK_KEYS,
+  PARA_STYLE_KEYS,
+  V1_TWINS,
+  patchStyle,
+  readStyle,
+  styleType,
+  userStyleName,
+} from './model';
 import type { LookKey, StyleJson, StyleSheetJson } from './model';
 import { differingFromInherited, resolveStyle } from './resolve';
 import type { StyleContext } from './resolve';
+import { STYLE_NAMES } from './styleVars';
+import type { StyleName } from './styleVars';
 
 /** The style an element has: its own `style`, else its heading level, else `normal`. */
 export function styleOfNode(node: PMNode): string {
@@ -164,18 +175,38 @@ export function updatedToMatch(
 }
 
 /** "New style from selection": a user style based on the selection's style, holding what differs from it. */
+/** `label`, or `label 2`, `label 3`, and so on: the first that no style of the notebook or page uses yet. */
+export function uniqueLabel(ctx: StyleContext, label: string): string {
+  const used = new Set(
+    [...Object.values(ctx.notebook), ...Object.values(ctx.page ?? {})].map((raw) => readStyle(raw).label),
+  );
+  if (!used.has(label)) return label;
+  let n = 2;
+  while (used.has(`${label} ${n}`)) n += 1;
+  return `${label} ${n}`;
+}
+
 export function createdFromSelection(
   ctx: StyleContext,
   label: string,
   basedOn: string,
   effective: Partial<Record<LookKey, unknown>>,
-): { name: string; styles: StyleSheetJson } {
+): { name: string; label: string; styles: StyleSheetJson } {
   const taken = [...Object.keys(ctx.app), ...Object.keys(ctx.notebook), ...Object.keys(ctx.page ?? {})];
-  const name = userStyleName(label, taken);
-  const seed: StyleJson = { label, basedOn };
+  const unique = uniqueLabel(ctx, label);
+  const name = userStyleName(unique, taken);
+  const seed: StyleJson = { label: unique, basedOn };
   const withSeed: StyleContext = { ...ctx, notebook: { ...ctx.notebook, [name]: seed } };
   const look = differingFromInherited(withSeed, name, effective);
-  return { name, styles: { ...ctx.notebook, [name]: withLook(seed, look) } };
+  return { name, label: unique, styles: { ...ctx.notebook, [name]: withLook(seed, look) } };
+}
+
+/**
+ * The style the Modify style dialog opens on, or null when the dialog can't edit that style yet. The dialog knows
+ * the ten styles of version 1; the others change through Update style to match selection until the Format pane.
+ */
+export function dialogStyle(name: string): StyleName | null {
+  return (STYLE_NAMES as readonly string[]).includes(name) ? (name as StyleName) : null;
 }
 
 /** The notebook's styles without a user style. Built-in styles can only be hidden. */

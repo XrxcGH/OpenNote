@@ -38,12 +38,21 @@ async function scope(): Promise<{
     showToast({ message: t('textStyles.noParagraph') });
     return null;
   }
-  await loaded.store.loadStyles(notebook);
+  try {
+    await loaded.store.loadStyles(notebook);
+  } catch {
+    showToast({ message: t('textStyles.loadFailed'), tone: 'danger' });
+    return null;
+  }
   return { editor, notebook, loaded };
 }
 
 /** A menu at the caret, resolving with the chosen item's id. */
-async function menuAtCaret(editor: Editor, label: string, items: { id: string; label: string; checked?: boolean }[]) {
+async function menuAtCaret(
+  editor: Editor,
+  label: string,
+  items: readonly { id: string; label: string; checked?: boolean; separatorBefore?: boolean }[],
+) {
   const { openMenu } = await import('../../../ui/Menu');
   const at = editor.view.coordsAtPos(editor.state.selection.from);
   return openMenu({
@@ -75,9 +84,7 @@ function styleCommand(id: CommandId, title: MessageKey, run: Run): void {
 styleCommand('styles.apply', 'textStyles.commands.apply', async ({ editor, notebook, loaded }) => {
   const ctx = loaded.store.shownContext(notebook);
   const current = loaded.styleCommands.styleOfNode(editor.state.selection.$from.parent);
-  const entries = loaded.gallery.galleryEntries(ctx);
-  const items = entries.map((entry) => ({ id: entry.name, label: entry.label, checked: entry.name === current }));
-  const chosen = await menuAtCaret(editor, t('textStyles.gallery'), items);
+  const chosen = await menuAtCaret(editor, t('textStyles.gallery'), loaded.gallery.applyMenuItems(ctx, current));
   if (!chosen) return;
   const sheet = { ...ctx.app, ...ctx.notebook, ...ctx.page };
   loaded.styleCommands.applyStyle(editor, chosen, sheet);
@@ -92,20 +99,22 @@ styleCommand('styles.update', 'textStyles.commands.update', async ({ editor, not
 styleCommand('styles.create', 'textStyles.commands.create', async ({ editor, notebook, loaded }) => {
   const ctx = loaded.store.shownContext(notebook);
   const { style, look } = loaded.styleCommands.selectionLook(editor, ctx);
-  const label = t('textStyles.newStyleLabel');
-  const made = loaded.styleCommands.createdFromSelection(ctx, label, style, look);
+  const made = loaded.styleCommands.createdFromSelection(ctx, t('textStyles.newStyleLabel'), style, look);
   const saved = await loaded.store.saveStyles(notebook, made.styles, {
-    message: t('textStyles.created', { name: label }),
+    message: t('textStyles.created', { name: made.label }),
   });
   if (saved) loaded.styleCommands.applyStyle(editor, made.name, made.styles);
 });
 
 styleCommand('styles.modify', 'textStyles.commands.modify', async ({ editor, notebook, loaded }) => {
   const style = loaded.styleCommands.styleOfNode(editor.state.selection.$from.parent);
+  const known = loaded.styleCommands.dialogStyle(style);
+  if (!known) {
+    showToast({ message: t('textStyles.modifyUnsupported') });
+    return;
+  }
   const { openTextStyles } = await import('../styles/TextStylesDialog');
-  const { STYLE_NAMES } = await import('../styles/styleVars');
-  const known = (STYLE_NAMES as readonly string[]).includes(style);
-  await openTextStyles(notebook, known ? (style as (typeof STYLE_NAMES)[number]) : undefined);
+  await openTextStyles(notebook, known);
 });
 
 styleCommand('styles.remove', 'textStyles.commands.remove', async ({ editor, notebook, loaded }) => {

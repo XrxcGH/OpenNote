@@ -107,7 +107,10 @@ async function adoptLocalStyles(of: Backend, notebook: string, current: Notebook
 
 const loading = new Map<string, Promise<StyleSheetJson>>();
 
-/** Loads a notebook's styles once, moving local styles into notebook.json on the way. */
+/**
+ * Loads a notebook's styles once, moving local styles into notebook.json on the way. A failed read rejects and
+ * leaves the notebook unloaded, so the next call tries again and no save writes over styles it never read.
+ */
 export function loadStyles(notebook: string): Promise<StyleSheetJson> {
   const known = notebookStyles.get()[notebook];
   if (known) return Promise.resolve(known);
@@ -117,12 +120,17 @@ export function loadStyles(notebook: string): Promise<StyleSheetJson> {
   const load = of.client
     .get(notebook)
     .then((current) => adoptLocalStyles(of, notebook, current))
-    .catch(() => ({}) as StyleSheetJson)
-    .then((styles) => {
-      notebookStyles.set((all) => ({ ...all, [notebook]: styles }));
-      loading.delete(notebook);
-      return styles;
-    });
+    .then(
+      (styles) => {
+        notebookStyles.set((all) => ({ ...all, [notebook]: styles }));
+        loading.delete(notebook);
+        return styles;
+      },
+      (error: unknown) => {
+        loading.delete(notebook);
+        throw error;
+      },
+    );
   loading.set(notebook, load);
   return load;
 }
@@ -152,6 +160,11 @@ export async function saveStyles(
   next: StyleSheetJson,
   options: { undo?: boolean; message?: string } = {},
 ): Promise<boolean> {
+  // Styles that were never read can't be saved: the sheet would be built from nothing and replace the file's.
+  if (!(notebook in notebookStyles.get())) {
+    showToast({ message: t('textStyles.saveFailed'), tone: 'danger' });
+    return false;
+  }
   const before = stylesFor(notebook);
   notebookStyles.set((all) => ({ ...all, [notebook]: next }));
   try {
@@ -176,7 +189,7 @@ export async function saveStyles(
 export function applyShownStyles(root: HTMLElement = document.documentElement): void {
   const notebook = shownNotebook();
   // A notebook shown for the first time loads; its styles apply when they arrive.
-  if (notebook && !(notebook in notebookStyles.get())) void loadStyles(notebook);
+  if (notebook && !(notebook in notebookStyles.get())) loadStyles(notebook).catch(() => undefined);
   applyNamedStyles(root, resolveAll(shownContext()).values());
 }
 

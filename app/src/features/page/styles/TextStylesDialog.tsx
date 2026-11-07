@@ -252,7 +252,14 @@ export async function openTextStyles(notebookId?: string, initialStyle?: StyleNa
     showToast({ message: t('editor.styles.noNotebook') });
     return;
   }
-  const initial = dialogValues(await loadStyles(notebook));
+  let loaded;
+  try {
+    loaded = await loadStyles(notebook);
+  } catch {
+    showToast({ message: t('textStyles.loadFailed'), tone: 'danger' });
+    return;
+  }
+  const initial = dialogValues(loaded);
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
   let draft = initial;
