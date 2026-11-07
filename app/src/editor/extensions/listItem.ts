@@ -108,6 +108,9 @@ interface StartsState {
 
 const startsKey = new PluginKey<StartsState>('opennoteListStarts');
 
+/** The block's list definitions the editor last took, for the list commands. */
+export const listDefinitionsOf = (state: EditorState): ListDefinitions => startsKey.getState(state)?.lists ?? new Map();
+
 const namesList = (node: PMNode) => node.type.name === 'listItem' && node.attrs.list != null;
 
 /** Whether a list item in the document names a list. */
