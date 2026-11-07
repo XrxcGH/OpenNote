@@ -171,7 +171,9 @@ describe('the code editor in the shortcut list', () => {
     await renderApp();
     const before = await openList();
     expect(rowOf(before, 'Go to the next tab').textContent).toContain('In the code editor');
-    expect(within(before).getByRole('table', { name: 'Code editor' }).textContent).toContain('Before Go to the next tab');
+    expect(within(before).getByRole('table', { name: 'Code editor' }).textContent).toContain(
+      'Before Go to the next tab',
+    );
     closeOverlay();
     await setShortcut('test.code.accept', [chord('Alt+Enter')]);
     const dialog = await openList();
