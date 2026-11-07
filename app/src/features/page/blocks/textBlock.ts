@@ -10,6 +10,7 @@ import { parseTextBlock, serializeTextBlock } from '../../../editor/markdown';
 import { applyElementData } from '../../../editor/markdown/elements';
 import { readLists } from '../../../editor/paragraph/numbering';
 import { renderStatic } from '../../../editor/schema/dom';
+// eslint-disable-next-line opennote/feature-boundaries -- The search index pulls the whole feature into start-up; this model file is small.
 import { hasLineData, lineDataOf } from '../../search/elements/model';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
