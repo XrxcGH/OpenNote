@@ -128,6 +128,15 @@ import { codeStudioProject } from './codeStudio/project';
 import { codeStudioRun } from './codeStudio/run';
 import { codeStudioPacks } from './codeStudio/packs';
 import { codeStudioStudio } from './codeStudio/studio';
+import { codeStudioPython } from './codeStudio/python';
+import { codeStudioJs } from './codeStudio/js';
+import { codeStudioSqlLua } from './codeStudio/sqlLua';
+import { codeStudioCpp } from './codeStudio/cpp';
+import { codeStudioDiagnostics } from './codeStudio/diagnostics';
+import { codeStudioComplete } from './codeStudio/complete';
+import { codeStudioFixes } from './codeStudio/fixes';
+import { codeStudioExplain } from './codeStudio/explain';
+import { codeStudioTesting } from './codeStudio/testing';
 import { textNotes } from './textNotes';
 import { textReview } from './textReview';
 import { textLayout } from './textLayout';
@@ -264,5 +273,14 @@ export const en = {
     run: codeStudioRun,
     packs: codeStudioPacks,
     studio: codeStudioStudio,
+    python: codeStudioPython,
+    js: codeStudioJs,
+    sqlLua: codeStudioSqlLua,
+    cpp: codeStudioCpp,
+    diagnostics: codeStudioDiagnostics,
+    complete: codeStudioComplete,
+    fixes: codeStudioFixes,
+    explain: codeStudioExplain,
+    testing: codeStudioTesting,
   },
 } as const;

@@ -62,6 +62,11 @@ async function openExport(ctx: CommandContext, format?: ExportFormat): Promise<v
       shown,
       signal,
       onPage,
+      onFailure: (title, error) =>
+        platform.log(
+          'error',
+          `Printing "${title}" for the export failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`,
+        ),
     });
   };
   showOverlay('interop-export', LazyExport, {

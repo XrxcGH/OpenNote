@@ -2,6 +2,7 @@
 // exports a Rule, then add it here, and document it in docs/CHECKS.md.
 
 import type { Rule } from '../types.ts';
+import { accentRoles } from './accent-roles.ts';
 import { aiMarkers } from './ai-markers.ts';
 import { brandConsistency } from './brand-consistency.ts';
 import { brandTokens } from './brand-tokens.ts';
@@ -32,4 +33,5 @@ export const RULES: Rule[] = [
   logicalProperties,
   uiVoice,
   layout,
+  accentRoles,
 ];

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { FocusEvent, KeyboardEvent, RefObject } from 'react';
-import { useDensity } from '../../state/layout';
+import { useDensity, useSizeClass } from '../../state/layout';
 import type { BarEntry } from './useBarItems';
 
 const STEPS: Record<string, (index: number, count: number) => number> = {
@@ -94,6 +94,7 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   const widths = useRef(new Map<string, number>());
   const latest = useRef(entries);
   const density = useDensity();
+  const sizeClass = useSizeClass();
   // A font that arrives after the first measure changes every width, so each font load measures again.
   const [fontLoads, setFontLoads] = useState(0);
   useEffect(() => {
@@ -103,7 +104,7 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
     fonts.addEventListener('loadingdone', again);
     return () => fonts.removeEventListener('loadingdone', again);
   }, []);
-  const key = `${density} ${fontLoads} ${entries.map((entry) => entry.item.id).join(' ')}`;
+  const key = `${density} ${sizeClass} ${fontLoads} ${entries.map((entry) => entry.item.id).join(' ')}`;
   const [measuredFor, setMeasuredFor] = useState(key);
   if (measuredFor !== key) {
     setMeasuredFor(key);

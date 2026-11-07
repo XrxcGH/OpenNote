@@ -540,7 +540,8 @@ const NUMBER_FORMATS: [&str; 20] = [
     "koreanCounting",
 ];
 
-fn read_para(v: &Map<String, Value>) -> Para {
+/// Reads paragraph formatting from a `data.paras` entry or a style's paragraph keys. Invalid values are dropped.
+pub fn read_para(v: &Map<String, Value>) -> Para {
     let flag = |key: &str| v.get(key).and_then(Value::as_bool);
     let spacing = |key: &str| match v.get(key) {
         Some(Value::String(auto)) if auto == "auto" => Some(Spacing::Auto),

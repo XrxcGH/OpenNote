@@ -16,29 +16,30 @@ export function flaggedProfile(prefix: string, flags: Record<string, boolean>): 
   return dir;
 }
 
+/** Clicks the row of a tree whose label reads `name`, once it shows. */
+export async function clickRow(browser: Browser, tree: string, name: string): Promise<void> {
+  await browser.waitUntil(
+    () =>
+      browser.execute(
+        (tree, name) => {
+          const rows = document.querySelectorAll(`[role="tree"][aria-label="${tree}"] [role="treeitem"]`);
+          const row = [...rows].find(
+            (item) => document.getElementById(item.getAttribute('aria-labelledby') ?? '')?.textContent === name,
+          );
+          (row as HTMLElement | undefined)?.click();
+          return Boolean(row);
+        },
+        tree,
+        name,
+      ),
+    { timeout: 20_000 },
+  );
+}
+
 /** Opens Lectures, then Mitosis, and puts the caret at the end of its first text box. */
 export async function openMitosisText(browser: Browser): Promise<void> {
-  for (const [tree, name] of [
-    ['Notebooks', 'Lectures'],
-    ['Pages', 'Mitosis'],
-  ]) {
-    await browser.waitUntil(
-      () =>
-        browser.execute(
-          (tree, name) => {
-            const rows = document.querySelectorAll(`[role="tree"][aria-label="${tree}"] [role="treeitem"]`);
-            const row = [...rows].find(
-              (item) => document.getElementById(item.getAttribute('aria-labelledby') ?? '')?.textContent === name,
-            );
-            (row as HTMLElement | undefined)?.click();
-            return Boolean(row);
-          },
-          tree,
-          name,
-        ),
-      { timeout: 20_000 },
-    );
-  }
+  await clickRow(browser, 'Notebooks', 'Lectures');
+  await clickRow(browser, 'Pages', 'Mitosis');
   const box = browser.$('[role="textbox"][aria-label="Page text"]');
   await box.waitForExist({ timeout: 20_000 });
   await box.click();

@@ -133,43 +133,58 @@
   }
 
   .chip[data-color='ink'] {
-    border-color: var(--ink-ink, var(--color-text-primary));
-    background: var(--ink-ink, var(--color-text-primary));
+    --notebook-accent: var(--ink-ink);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='indigo'] {
-    border-color: var(--ink-indigo, var(--color-text-link));
-    background: var(--ink-indigo, var(--color-text-link));
+    --notebook-accent: var(--ink-indigo);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='brick'] {
-    border-color: var(--ink-brick, var(--color-status-danger));
-    background: var(--ink-brick, var(--color-status-danger));
+    --notebook-accent: var(--ink-brick);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='fern'] {
-    border-color: var(--ink-fern, var(--color-status-success));
-    background: var(--ink-fern, var(--color-status-success));
+    --notebook-accent: var(--ink-fern);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='plum'] {
-    border-color: var(--ink-plum, var(--color-accent-clay));
-    background: var(--ink-plum, var(--color-accent-clay));
+    --notebook-accent: var(--ink-plum);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='amber'] {
-    border-color: var(--ink-amber, var(--color-status-warning));
-    background: var(--ink-amber, var(--color-status-warning));
+    --notebook-accent: var(--ink-amber);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   .chip[data-color='walnut'] {
-    border-color: var(--ink-walnut, var(--color-text-secondary));
-    background: var(--ink-walnut, var(--color-text-secondary));
+    --notebook-accent: var(--ink-walnut);
+    border-color: var(--notebook-accent);
+    background: var(--notebook-accent);
   }
 
   @media (forced-colors: active) {
     .chip {
       outline: 1px solid CanvasText;
+    }
+
+    /* A contrast theme turns the selected fill into Canvas, so the chosen rows use the system highlight. */
+    .row[aria-selected='true'],
+    .row[data-multi] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
     }
   }
 

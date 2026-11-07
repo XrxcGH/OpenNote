@@ -104,6 +104,25 @@
     "brand-tokens": {
       "maxDurationMs": 400
     },
+    "accent-roles": {
+      "candle": [
+        "app/src/features/theme/ThemeToggle.module.css"
+      ],
+      "ambient": [
+        "app/src/shell/layout/Workspace.module.css",
+        "app/src/features/setup/SetupView.module.css"
+      ],
+      "pens": [
+        "app/src/features/tree/Tree.module.css",
+        "app/src/shell/layout/Rail.tsx",
+        "app/src/shell/titlebar/TitleBar.module.css",
+        "app/src/features/setup/steps/ColorChips.tsx",
+        "app/src/theme/appearance.css",
+        "app/src/features/qol/TabStrip.module.css",
+        "app/src/features/page/PageView.module.css",
+        "app/src/features/page/title/title.module.css"
+      ]
+    },
     "logical-properties": {
       "include": [
         "app/src/**/*.{css,scss,tsx}"

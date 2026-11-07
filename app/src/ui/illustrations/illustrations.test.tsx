@@ -114,7 +114,8 @@ describe('in both themes', () => {
     expect(getComputedStyle(stars).stroke).toBe(colorOf('--color-ambient-spark'));
     expect(getComputedStyle(moon).fill).toBe(colorOf('--color-ambient-spark'));
     expect(getComputedStyle(moon).stroke).toBe(colorOf('--color-accent-night'));
-    expect(getComputedStyle(dusk).fill).toBe(colorOf('--color-art-dusk'));
+    // The hills take the plum glow of the canvas, not the rose of the dusk tint.
+    expect(getComputedStyle(dusk).fill).toBe(colorOf('--color-ambient-glow'));
   });
 
   it('draws lines in the control border color, so they read below the text', () => {

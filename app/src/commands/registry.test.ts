@@ -29,6 +29,25 @@ describe('executeCommand', () => {
   });
 });
 
+describe('executeCommand, when the host refuses', () => {
+  it('logs the host error code and message, not [object Object]', async () => {
+    const log = vi.fn();
+    configureCommands({ platform: { log } as unknown as Platform, notes: {} as NotesService });
+    const id = 'test.hostRefuses' as CommandId;
+    const stop = commands.register({
+      id,
+      title: 'errors.commandFailed',
+      run: () => Promise.reject({ code: 'internal', message: 'The window could not be made.' }),
+    } as unknown as CommandDef);
+    expect(await executeCommand(id)).toBe(false);
+    expect(log).toHaveBeenCalledWith(
+      'error',
+      'Command test.hostRefuses failed: internal: The window could not be made.',
+    );
+    stop();
+  });
+});
+
 describe('commandAvailable', () => {
   it("answers as running the command would: the lasso toolbar's Check my work follows its Settings switch", () => {
     let on = true;

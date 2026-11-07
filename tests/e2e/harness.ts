@@ -30,7 +30,7 @@ import {
 } from 'node:fs';
 import { createServer, connect } from 'node:net';
 import { EOL, homedir, tmpdir } from 'node:os';
-import { dirname, join, resolve, sep } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { remote } from 'webdriverio';
 
 export type Browser = Awaited<ReturnType<typeof remote>>;
@@ -252,6 +252,48 @@ export function keepAppLogs(profileDir: string, stamp: number): void {
   }
 }
 
+let windowsKept = 0;
+/** A spec file that starts the app dozens of times, such as the crash spec, keeps only the first few. */
+const KEEP_LIMIT = 6;
+
+/**
+ * What the window showed when the spec ended: a screenshot and the page's text, in the folder CI keeps. A spec that
+ * timed out waiting for an element says only what it waited for, and this says what was there instead. It runs when
+ * OPENNOTE_E2E_DIAG is set, which the nightly workflow does, and gives up after a few seconds on a window that is gone.
+ */
+async function keepWindow(browser: Browser, stamp: number): Promise<void> {
+  if (windowsKept >= KEEP_LIMIT) return;
+  windowsKept += 1;
+  const name = `${basename(process.argv[1] ?? 'spec', '.ts')}-${stamp}`;
+  const capture = async () => {
+    mkdirSync(LOGS, { recursive: true });
+    await browser.saveScreenshot(join(LOGS, `${name}.png`));
+    const text = await browser.execute(() => {
+      const element = document.activeElement as HTMLElement | null;
+      const label = element?.getAttribute('aria-label');
+      const focus = element
+        ? `${element.tagName.toLowerCase()} label=${label} block=${element.dataset.blockId}`
+        : 'none';
+      const notices = [...document.querySelectorAll('[role="status"], [role="alert"], [aria-live]')].map(
+        (node) => node.textContent,
+      );
+      return `FOCUS: ${focus}
+NOTICES: ${JSON.stringify(notices)}
+${document.body.innerText.slice(0, 6000)}`;
+    });
+    writeFileSync(join(LOGS, `${name}.txt`), String(text));
+  };
+  let timer: NodeJS.Timeout | undefined;
+  const gaveUp = new Promise<void>((done) => (timer = setTimeout(done, 8_000)));
+  try {
+    await Promise.race([capture(), gaveUp]);
+  } catch {
+    // The window may already be gone.
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function launchApp(options: LaunchOptions = {}): Promise<AppSession> {
   const found = tools();
   const exe = options.exe ?? found.exe;
@@ -282,9 +324,11 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
     profileDir,
     async close() {
       const diedEarly = driver.exitCode !== null;
+      const diagnose = Boolean(process.env.OPENNOTE_E2E_DIAG);
+      if (diagnose && !diedEarly) await keepWindow(browser, stamp);
       await browser.deleteSession().catch(() => {});
       stopDriver(driver);
-      if (diedEarly) keepAppLogs(profileDir, stamp);
+      if (diedEarly || (diagnose && windowsKept <= KEEP_LIMIT)) keepAppLogs(profileDir, stamp);
       removeProfile();
     },
   };
